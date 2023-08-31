@@ -1,5 +1,6 @@
 /* istanbul ignore file */
 
+import { ApiOptions } from '@polkadot/api/types';
 import { TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
@@ -674,6 +675,40 @@ export type UnsubCallback = () => void;
 export interface MiddlewareConfig {
   link: string;
   key: string;
+}
+
+export interface PolkadotConfig {
+  /**
+   * provide a locally saved metadata file for a modestly fast startup time (e.g. 1 second when provided, 1.5 seconds without).
+   *
+   * @note if not provided the SDK will read the needed data from chain during startup
+   *
+   * @note format is key as genesis hash and spec version and the value hex encoded chain metadata
+   *
+   * @example creating valid metadata
+   * ```ts
+   const meta = _polkadotApi.runtimeMetadata.toHex();
+   const genesisHash = _polkadotApi.genesisHash;
+   const specVersion = _polkadotApi.runtimeVersion.specVersion;
+
+  const metadata = {
+    [`${genesisHash}-${specVersion}`]: meta,
+  };
+  ```
+   */
+  metadata?: ApiOptions['metadata'];
+
+  /**
+   * set to `true` to disable polkadot start up warnings
+   */
+  noInitWarn?: boolean;
+
+  /**
+   * allows for types to be provided for multiple chain specs at once
+   *
+   * @note shouldn't be needed for most use cases
+   */
+  typesBundle?: ApiOptions['typesBundle'];
 }
 
 export interface EventIdentifier {

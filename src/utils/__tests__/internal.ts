@@ -521,7 +521,7 @@ describe('getApiAtBlock', () => {
 
   it('should throw an error if the node is not archive', () => {
     const context = dsMockUtils.getContextInstance({
-      isArchiveNode: false,
+      isCurrentNodeArchive: false,
     });
 
     return expect(getApiAtBlock(context, 'blockHash')).rejects.toThrow(
@@ -554,7 +554,7 @@ describe('requestAtBlock', () => {
 
   it('should fetch and return the value at a certain block (current if left empty)', async () => {
     const context = dsMockUtils.getContextInstance({
-      isArchiveNode: true,
+      isCurrentNodeArchive: true,
     });
     const returnValue = dsMockUtils.createMockU32(new BigNumber(5));
     const queryMock = dsMockUtils.createQueryMock('asset', 'tickers', {
