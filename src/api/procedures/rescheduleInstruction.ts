@@ -47,7 +47,7 @@ export async function prepareRescheduleInstruction(
   const transaction = tx.settlement.rescheduleInstruction;
 
   return {
-    transaction: transaction,
+    transaction,
     args: [rawId],
     resolver: instruction,
   };

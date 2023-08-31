@@ -114,9 +114,9 @@ describe('executeManualInstruction procedure', () => {
 
     dsMockUtils.createRpcMock('settlement', 'getExecuteInstructionInfo', {
       returnValue: {
-        fungibleTokens: fungibleTokens,
-        nonFungibleTokens: nonFungibleTokens,
-        offChainAssets: offChainAssets,
+        fungibleTokens,
+        nonFungibleTokens,
+        offChainAssets,
         consumedWeight: 'someWeight',
       },
     });

@@ -1135,7 +1135,7 @@ describe('Context class', () => {
         issuerId: issuerDid,
         issuanceDate: date,
         lastUpdateDate: date,
-        cddId: cddId,
+        cddId,
       };
       const claimsQueryResponse = {
         totalCount: 25,
@@ -1431,7 +1431,7 @@ describe('Context class', () => {
       const mock = dsMockUtils.createRpcMock('chain', 'subscribeFinalizedHeads');
       mock.mockImplementation(async callback => {
         setImmediate(() =>
-          // eslint-disable-next-line node/no-callback-literal
+          // eslint-disable-next-line n/no-callback-literal
           callback({
             number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(blockNumber)),
           })
@@ -1454,7 +1454,7 @@ describe('Context class', () => {
       const err = new Error('Foo');
       mock.mockImplementation(callback => {
         setImmediate(() =>
-          // eslint-disable-next-line node/no-callback-literal
+          // eslint-disable-next-line n/no-callback-literal
           callback({})
         );
         return P.delay(0).throw(err);

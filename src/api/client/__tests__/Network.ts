@@ -435,8 +435,8 @@ describe('Network Class', () => {
             {
               moduleId: ModuleIdEnum.Asset,
               callId: CallIdEnum.RegisterTicker,
-              extrinsicIdx: extrinsicIdx,
-              specVersionId: specVersionId,
+              extrinsicIdx,
+              specVersionId,
               paramsTxt: '[]',
               nonce: 12345,
               address: null,
