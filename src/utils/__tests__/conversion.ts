@@ -2253,6 +2253,14 @@ describe('bigNumberToBalance and balanceToBigNumber', () => {
       result = bigNumberToBalance(value, context);
 
       expect(result).toBe(fakeResult);
+
+      value = new BigNumber('');
+
+      when(context.createType)
+        .calledWith('Balance', value.multipliedBy(Math.pow(10, 6)).toString())
+        .mockReturnValue(fakeResult);
+
+      expect(result).toBe(fakeResult);
     });
 
     it('should throw an error if the value exceeds the max balance', () => {
