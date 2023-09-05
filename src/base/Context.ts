@@ -139,10 +139,21 @@ export class Context {
     this.polymeshApi = polymeshApi;
     this.ss58Format = ss58Format;
 
+    // `CanTransferGranularReturn` is a 6.0 type. We patch the types here to accommodate the breaking change
+    const registry = polymeshApi.registry;
+    const transferReturnDef = registry.get('CanTransferGranularReturn');
+
     this.unsubChainVersion = polymeshApi.query.system.lastRuntimeUpgrade(upgrade => {
       if (upgrade.isSome) {
         const { specVersion } = upgrade.unwrap();
         this.isV5 = specVersion.toNumber() < 6000000;
+
+        if (this.isV5) {
+          const transferResultDef = registry.get('GranularCanTransferResult');
+          registry.register('CanTransferGranularReturn', transferResultDef);
+        } else {
+          registry.register('CanTransferGranularReturn', transferReturnDef);
+        }
       }
     });
   }

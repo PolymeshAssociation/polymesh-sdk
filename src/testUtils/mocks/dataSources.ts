@@ -1003,7 +1003,10 @@ function initQueryMulti(): void {
  * @hidden
  */
 function initApi(): void {
-  mockInstanceContainer.apiInstance.registry = 'registry' as unknown as Registry;
+  mockInstanceContainer.apiInstance.registry = {
+    get: jest.fn(),
+    register: jest.fn(),
+  } as unknown as Registry;
   mockInstanceContainer.apiInstance.createType = jest.fn();
   mockInstanceContainer.apiInstance.runtimeVersion = {} as RuntimeVersion;
 
