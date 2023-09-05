@@ -72,7 +72,7 @@ export async function prepareSetPermissionGroup(
   const { ticker } = asset;
 
   const [currentGroup, currentAgents] = await Promise.all([
-    identity.assetPermissions.getGroup({ asset: asset }),
+    identity.assetPermissions.getGroup({ asset }),
     asset.permissions.getAgents(),
   ]);
 

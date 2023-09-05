@@ -1,10 +1,6 @@
 import { bool, Bytes, Option, Text, u8, U8aFixed, u16, u32, u64, u128 } from '@polkadot/types';
 import { AccountId, Balance, BlockHash, Hash, Permill } from '@polkadot/types/interfaces';
 import {
-  ConfidentialIdentityV2ClaimProofsScopeClaimProof,
-  ConfidentialIdentityV2ClaimProofsZkProofData,
-  ConfidentialIdentityV2SignSignature,
-  PalletAssetCheckpointScheduleSpec,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
   PalletCorporateActionsCorporateAction,
@@ -12,18 +8,10 @@ import {
   PalletCorporateActionsInitiateCorporateActionArgs,
   PalletCorporateActionsRecordDateSpec,
   PalletCorporateActionsTargetIdentities,
-  PalletMultisigProposalStatus,
-  PalletPortfolioMovePortfolioItem,
-  PalletSettlementAffirmationStatus,
-  PalletSettlementInstructionMemo,
-  PalletSettlementInstructionStatus,
-  PalletSettlementSettlementType,
-  PalletSettlementVenueType,
   PalletStoFundraiser,
   PalletStoFundraiserTier,
   PalletStoPriceTier,
-  PolymeshCommonUtilitiesBalancesMemo,
-  PolymeshCommonUtilitiesCheckpointStoredSchedule,
+  PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetAssetType,
@@ -32,7 +20,6 @@ import {
   PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
   PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
   PolymeshPrimitivesAuthorizationAuthorizationData,
-  PolymeshPrimitivesCalendarCalendarPeriod,
   PolymeshPrimitivesCddId,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesCondition,
@@ -41,7 +28,6 @@ import {
   PolymeshPrimitivesConditionTrustedIssuer,
   PolymeshPrimitivesDocument,
   PolymeshPrimitivesDocumentHash,
-  PolymeshPrimitivesEthereumEcdsaSignature,
   PolymeshPrimitivesIdentityClaimClaim,
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityClaimScope,
@@ -49,10 +35,18 @@ import {
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesIdentityIdPortfolioKind,
   PolymeshPrimitivesJurisdictionCountryCode,
+  PolymeshPrimitivesMemo,
+  PolymeshPrimitivesMultisigProposalStatus,
+  PolymeshPrimitivesPortfolioFund,
   PolymeshPrimitivesPosRatio,
   PolymeshPrimitivesSecondaryKey,
   PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesSecondaryKeySignatory,
+  PolymeshPrimitivesSettlementAffirmationStatus,
+  PolymeshPrimitivesSettlementInstructionStatus,
+  PolymeshPrimitivesSettlementLeg,
+  PolymeshPrimitivesSettlementSettlementType,
+  PolymeshPrimitivesSettlementVenueType,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatClaim,
   PolymeshPrimitivesStatisticsStatOpType,
@@ -65,6 +59,7 @@ import {
 import { ITuple } from '@polkadot/types/types';
 import { BTreeSet } from '@polkadot/types-codec';
 import {
+  hexHasPrefix,
   hexToString,
   hexToU8a,
   isHex,
@@ -110,25 +105,14 @@ import {
   Portfolio,
   Venue,
 } from '~/internal';
+import { AuthTypeEnum, CallIdEnum, ModuleIdEnum } from '~/middleware/enums';
 import {
-  CallIdEnum as MiddlewareV2CallId,
-  ModuleIdEnum as MiddlewareV2ModuleId,
-} from '~/middleware/enumsV2';
-import {
-  CallIdEnum,
-  ClaimScopeTypeEnum,
-  Event as MiddlewareEvent,
-  IdentityWithClaims as MiddlewareIdentityWithClaims,
-  ModuleIdEnum,
-  Portfolio as MiddlewarePortfolio,
-  Scope as MiddlewareScope,
-} from '~/middleware/types';
-import {
-  Block as MiddlewareV2Block,
-  Claim as MiddlewareV2Claim,
+  Block,
+  Claim as MiddlewareClaim,
   Instruction,
-  Portfolio as MiddlewareV2Portfolio,
-} from '~/middleware/typesV2';
+  Portfolio as MiddlewarePortfolio,
+} from '~/middleware/types';
+import { ClaimScopeTypeEnum, MiddlewareScope } from '~/middleware/typesV1';
 import {
   AssetComplianceResult,
   AuthorizationType as MeshAuthorizationType,
@@ -202,7 +186,6 @@ import {
   Requirement,
   RequirementCompliance,
   Scope,
-  ScopeClaimProof,
   ScopeType,
   SectionPermissions,
   SecurityIdentifier,
@@ -231,14 +214,12 @@ import {
   CorporateActionIdentifier,
   ExemptKey,
   ExtrinsicIdentifier,
-  ExtrinsicIdentifierV2,
   InstructionStatus,
   InternalAssetType,
   PalletPermissions,
   PermissionGroupIdentifier,
   PermissionsEnum,
   PolymeshTx,
-  ScheduleSpec,
   StatClaimInputType,
   StatClaimIssuer,
   TickerKey,
@@ -335,18 +316,6 @@ export function tickerToString(ticker: PolymeshPrimitivesTicker): string {
   return removePadding(u8aToString(ticker));
 }
 
-/* eslint-disable @typescript-eslint/naming-convention */
-/**
- * @hidden
- */
-export function stringToInvestorZKProofData(
-  proof: string,
-  context: Context
-): ConfidentialIdentityV2ClaimProofsZkProofData {
-  return context.createType('ConfidentialIdentityV2ClaimProofsZkProofData', proof);
-}
-/* eslint-enable @typescript-eslint/naming-convention */
-
 /**
  * @hidden
  */
@@ -420,16 +389,6 @@ export function stringToIdentityId(
  */
 export function identityIdToString(identityId: PolymeshPrimitivesIdentityId): string {
   return identityId.toString();
-}
-
-/**
- * @hidden
- */
-export function stringToEcdsaSignature(
-  signature: string,
-  context: Context
-): PolymeshPrimitivesEthereumEcdsaSignature {
-  return context.createType('PolymeshPrimitivesEthereumEcdsaSignature', signature);
 }
 
 /**
@@ -1080,6 +1039,10 @@ export function permissionsToMeshPermissions(
   return context.createType('PolymeshPrimitivesSecondaryKeyPermissions', value);
 }
 
+const formatTxTag = (dispatchable: string, moduleName: string): TxTag => {
+  return `${moduleName}.${camelCase(dispatchable)}` as TxTag;
+};
+
 /**
  * @hidden
  */
@@ -1098,9 +1061,6 @@ export function extrinsicPermissionsToTransactionPermissions(
 
   let txValues: (ModuleName | TxTag)[] = [];
   let exceptions: TxTag[] = [];
-  const formatTxTag = (dispatchable: string, moduleName: string): TxTag => {
-    return `${moduleName}.${camelCase(dispatchable)}` as TxTag;
-  };
 
   if (pallets) {
     pallets.forEach(({ palletName, dispatchableNames }) => {
@@ -1334,7 +1294,7 @@ export function bigNumberToBalance(value: BigNumber, context: Context, divisible
   }
 
   if (divisible) {
-    if (value.decimalPlaces() > MAX_DECIMALS) {
+    if ((value.decimalPlaces() ?? 0) > MAX_DECIMALS) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: 'The value has more decimal places than allowed',
@@ -1364,14 +1324,13 @@ export function balanceToBigNumber(balance: Balance): BigNumber {
 }
 
 /**
- * @hidden
+ * Assembles permissions group identifier + ticker into appropriate permission group based on group identifier
  */
-export function agentGroupToPermissionGroup(
-  agentGroup: PolymeshPrimitivesAgentAgentGroup,
+function assemblePermissionGroup(
+  permissionGroupIdentifier: PermissionGroupIdentifier,
   ticker: string,
   context: Context
 ): KnownPermissionGroup | CustomPermissionGroup {
-  const permissionGroupIdentifier = agentGroupToPermissionGroupIdentifier(agentGroup);
   switch (permissionGroupIdentifier) {
     case PermissionGroupType.ExceptMeta:
     case PermissionGroupType.Full:
@@ -1384,6 +1343,17 @@ export function agentGroupToPermissionGroup(
       return new CustomPermissionGroup({ id, ticker }, context);
     }
   }
+}
+/**
+ * @hidden
+ */
+export function agentGroupToPermissionGroup(
+  agentGroup: PolymeshPrimitivesAgentAgentGroup,
+  ticker: string,
+  context: Context
+): KnownPermissionGroup | CustomPermissionGroup {
+  const permissionGroupIdentifier = agentGroupToPermissionGroupIdentifier(agentGroup);
+  return assemblePermissionGroup(permissionGroupIdentifier, ticker, context);
 }
 
 /**
@@ -1502,13 +1472,17 @@ function assertMemoValid(value: string): void {
 /**
  * @hidden
  */
-export function stringToMemo(value: string, context: Context): PolymeshCommonUtilitiesBalancesMemo {
+export function stringToMemo(value: string, context: Context): PolymeshPrimitivesMemo {
   assertMemoValid(value);
 
-  return context.createType(
-    'PolymeshCommonUtilitiesBalancesMemo',
-    padString(value, MAX_MEMO_LENGTH)
-  );
+  if (context.isV5) {
+    return context.createType(
+      'PolymeshCommonUtilitiesBalancesMemo',
+      padString(value, MAX_MEMO_LENGTH)
+    );
+  } else {
+    return context.createType('PolymeshPrimitivesMemo', padString(value, MAX_MEMO_LENGTH));
+  }
 }
 
 /**
@@ -2141,14 +2115,6 @@ export function claimToMeshClaim(
   let value;
 
   switch (claim.type) {
-    case ClaimType.NoData: {
-      value = null;
-      break;
-    }
-    case ClaimType.NoType: {
-      value = null;
-      break;
-    }
     case ClaimType.CustomerDueDiligence: {
       value = stringToCddId(claim.id, context);
       break;
@@ -2156,19 +2122,6 @@ export function claimToMeshClaim(
     case ClaimType.Jurisdiction: {
       const { code, scope } = claim;
       value = tuple(code, scopeToMeshScope(scope, context));
-      break;
-    }
-    case ClaimType.InvestorUniqueness: {
-      const { scope, cddId, scopeId } = claim;
-      value = tuple(
-        scopeToMeshScope(scope, context),
-        stringToIdentityId(scopeId, context),
-        stringToCddId(cddId, context)
-      );
-      break;
-    }
-    case ClaimType.InvestorUniquenessV2: {
-      value = stringToCddId(claim.cddId, context);
       break;
     }
     default: {
@@ -2187,12 +2140,19 @@ export function middlewareScopeToScope(scope: MiddlewareScope): Scope {
 
   switch (type) {
     case ClaimScopeTypeEnum.Ticker:
-      // eslint-disable-next-line no-control-regex
       return { type: ScopeType.Ticker, value: removePadding(value) };
     case ClaimScopeTypeEnum.Identity:
     case ClaimScopeTypeEnum.Custom:
-      return { type: ScopeType[scope.type], value };
+      return { type: scope.type as ScopeType, value };
   }
+
+  throw new PolymeshError({
+    code: ErrorCode.UnexpectedError,
+    message: 'Unsupported Scope Type. Please contact the Polymesh team',
+    data: {
+      scope,
+    },
+  });
 }
 
 /**
@@ -2216,24 +2176,8 @@ export function scopeToMiddlewareScope(scope: Scope, padTicker = true): Middlewa
 /**
  * @hidden
  */
-export function middlewareEventToEventIdentifier(event: MiddlewareEvent): EventIdentifier {
-  const { block_id: blockNumber, block, event_idx: eventIndex } = event;
-
-  return {
-    blockNumber: new BigNumber(blockNumber),
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    blockDate: new Date(block!.datetime),
-    blockHash: block!.hash!,
-    /* eslint-enable @typescript-eslint/no-non-null-assertion */
-    eventIndex: new BigNumber(eventIndex),
-  };
-}
-
-/**
- * @hidden
- */
-export function middlewareV2EventDetailsToEventIdentifier(
-  block: MiddlewareV2Block,
+export function middlewareEventDetailsToEventIdentifier(
+  block: Block,
   eventIdx = 0
 ): EventIdentifier {
   const { blockId, datetime, hash } = block;
@@ -2256,12 +2200,6 @@ export function meshClaimToClaim(claim: PolymeshPrimitivesIdentityClaimClaim): C
       type: ClaimType.Jurisdiction,
       code: meshCountryCodeToCountryCode(code),
       scope: meshScopeToScope(scope),
-    };
-  }
-
-  if (claim.isNoData) {
-    return {
-      type: ClaimType.NoData,
     };
   }
 
@@ -2311,23 +2249,6 @@ export function meshClaimToClaim(claim: PolymeshPrimitivesIdentityClaimClaim): C
     return {
       type: ClaimType.Exempted,
       scope: meshScopeToScope(claim.asExempted),
-    };
-  }
-
-  if (claim.isInvestorUniqueness) {
-    const [scope, scopeId, cddId] = claim.asInvestorUniqueness;
-    return {
-      type: ClaimType.InvestorUniqueness,
-      scope: meshScopeToScope(scope),
-      scopeId: identityIdToString(scopeId),
-      cddId: cddIdToString(cddId),
-    };
-  }
-
-  if (claim.isInvestorUniquenessV2) {
-    return {
-      type: ClaimType.InvestorUniquenessV2,
-      cddId: cddIdToString(claim.asInvestorUniquenessV2),
     };
   }
 
@@ -2404,10 +2325,6 @@ export function meshClaimTypeToClaimType(
 
   if (claimType.isExempted) {
     return ClaimType.Exempted;
-  }
-
-  if (claimType.isNoType) {
-    return ClaimType.NoType;
   }
 
   return ClaimType.Blocked;
@@ -2742,20 +2659,7 @@ export function txTagToProtocolOp(
 /**
  * @hidden
  */
-export function txTagToExtrinsicIdentifier(tag: TxTag): ExtrinsicIdentifier {
-  const [moduleName, extrinsicName] = tag.split('.');
-  return {
-    moduleId: moduleName.toLowerCase() as ModuleIdEnum,
-    callId: snakeCase(extrinsicName) as CallIdEnum,
-  };
-}
-
-/**
- * @hidden
- */
-export function extrinsicIdentifierToTxTag(
-  extrinsicIdentifier: ExtrinsicIdentifier | ExtrinsicIdentifierV2
-): TxTag {
+export function extrinsicIdentifierToTxTag(extrinsicIdentifier: ExtrinsicIdentifier): TxTag {
   const { moduleId, callId } = extrinsicIdentifier;
   let moduleName;
   for (const txTagItem in TxTags) {
@@ -2770,11 +2674,11 @@ export function extrinsicIdentifierToTxTag(
 /**
  * @hidden
  */
-export function txTagToExtrinsicIdentifierV2(tag: TxTag): ExtrinsicIdentifierV2 {
+export function txTagToExtrinsicIdentifier(tag: TxTag): ExtrinsicIdentifier {
   const [moduleName, extrinsicName] = tag.split('.');
   return {
-    moduleId: moduleName.toLowerCase() as MiddlewareV2ModuleId,
-    callId: snakeCase(extrinsicName) as MiddlewareV2CallId,
+    moduleId: moduleName.toLowerCase() as ModuleIdEnum,
+    callId: snakeCase(extrinsicName) as CallIdEnum,
   };
 }
 
@@ -2824,6 +2728,16 @@ export function addressToKey(address: string, context: Context): string {
 }
 
 /**
+ *
+ */
+export const coerceHexToString = (input: string): string => {
+  if (hexHasPrefix(input)) {
+    return removePadding(hexToString(input));
+  }
+  return input;
+};
+
+/**
  * @hidden
  */
 export function transactionHexToTxTag(bytes: string, context: Context): TxTag {
@@ -2860,7 +2774,7 @@ export function secondaryAccountToMeshSecondaryKey(
 /**
  * @hidden
  */
-export function meshVenueTypeToVenueType(type: PalletSettlementVenueType): VenueType {
+export function meshVenueTypeToVenueType(type: PolymeshPrimitivesSettlementVenueType): VenueType {
   if (type.isOther) {
     return VenueType.Other;
   }
@@ -2882,22 +2796,34 @@ export function meshVenueTypeToVenueType(type: PalletSettlementVenueType): Venue
 export function venueTypeToMeshVenueType(
   type: VenueType,
   context: Context
-): PalletSettlementVenueType {
-  return context.createType('PalletSettlementVenueType', type);
+): PolymeshPrimitivesSettlementVenueType {
+  if (context.isV5) {
+    return context.createType('PalletSettlementVenueType', type);
+  } else {
+    return context.createType('PolymeshPrimitivesSettlementVenueType', type);
+  }
 }
 
 /**
  * @hidden
  */
 export function meshInstructionStatusToInstructionStatus(
-  status: PalletSettlementInstructionStatus
+  instruction: PolymeshPrimitivesSettlementInstructionStatus
 ): InstructionStatus {
-  if (status.isPending) {
+  if (instruction.isPending) {
     return InstructionStatus.Pending;
   }
 
-  if (status.isFailed) {
+  if (instruction.isFailed) {
     return InstructionStatus.Failed;
+  }
+
+  if (instruction.isRejected) {
+    return InstructionStatus.Executed;
+  }
+
+  if (instruction.isSuccess) {
+    return InstructionStatus.Executed;
   }
 
   return InstructionStatus.Unknown;
@@ -2907,7 +2833,7 @@ export function meshInstructionStatusToInstructionStatus(
  * @hidden
  */
 export function meshAffirmationStatusToAffirmationStatus(
-  status: PalletSettlementAffirmationStatus
+  status: PolymeshPrimitivesSettlementAffirmationStatus
 ): AffirmationStatus {
   if (status.isUnknown) {
     return AffirmationStatus.Unknown;
@@ -2924,7 +2850,7 @@ export function meshAffirmationStatusToAffirmationStatus(
  * @hidden
  */
 export function meshSettlementTypeToEndCondition(
-  type: PalletSettlementSettlementType
+  type: PolymeshPrimitivesSettlementSettlementType
 ): InstructionEndCondition {
   if (type.isSettleOnBlock) {
     return { type: InstructionType.SettleOnBlock, endBlock: u32ToBigNumber(type.asSettleOnBlock) };
@@ -2945,7 +2871,7 @@ export function meshSettlementTypeToEndCondition(
 export function endConditionToSettlementType(
   endCondition: InstructionEndCondition,
   context: Context
-): PalletSettlementSettlementType {
+): PolymeshPrimitivesSettlementSettlementType {
   let value;
 
   const { type } = endCondition;
@@ -2963,48 +2889,17 @@ export function endConditionToSettlementType(
       value = InstructionType.SettleOnAffirmation;
   }
 
-  return context.createType('PalletSettlementSettlementType', value);
+  if (context.isV5) {
+    return context.createType('PalletSettlementSettlementType', value);
+  } else {
+    return context.createType('PolymeshPrimitivesSettlementSettlementType', value);
+  }
 }
 
 /**
  * @hidden
  */
-export function toIdentityWithClaimsArray(
-  data: MiddlewareIdentityWithClaims[],
-  context: Context
-): IdentityWithClaims[] {
-  return data.map(({ did, claims }) => ({
-    identity: new Identity({ did }, context),
-    claims: claims.map(
-      ({
-        targetDID: targetDid,
-        issuer,
-        issuance_date: issuanceDate,
-        last_update_date: lastUpdateDate,
-        expiry,
-        type,
-        jurisdiction,
-        scope: claimScope,
-        cdd_id: cddId,
-      }) => ({
-        target: new Identity({ did: targetDid }, context),
-        issuer: new Identity({ did: issuer }, context),
-        issuedAt: new Date(issuanceDate),
-        lastUpdatedAt: new Date(lastUpdateDate),
-        expiry: expiry ? new Date(expiry) : null,
-        claim: createClaim(type, jurisdiction, claimScope, cddId, undefined),
-      })
-    ),
-  }));
-}
-
-/**
- * @hidden
- */
-export function middlewareV2ClaimToClaimData(
-  claim: MiddlewareV2Claim,
-  context: Context
-): ClaimData {
+export function middlewareClaimToClaimData(claim: MiddlewareClaim, context: Context): ClaimData {
   const {
     targetId,
     issuerId,
@@ -3022,15 +2917,15 @@ export function middlewareV2ClaimToClaimData(
     issuedAt: new Date(parseFloat(issuanceDate)),
     lastUpdatedAt: new Date(parseFloat(lastUpdateDate)),
     expiry: expiry ? new Date(parseFloat(expiry)) : null,
-    claim: createClaim(type, jurisdiction, scope, cddId, undefined),
+    claim: createClaim(type, jurisdiction, scope, cddId),
   };
 }
 
 /**
  * @hidden
  */
-export function toIdentityWithClaimsArrayV2(
-  data: MiddlewareV2Claim[],
+export function toIdentityWithClaimsArray(
+  data: MiddlewareClaim[],
   context: Context,
   groupByAttribute: string
 ): IdentityWithClaims[] {
@@ -3038,21 +2933,34 @@ export function toIdentityWithClaimsArrayV2(
 
   return map(groupedData, (claims, did) => ({
     identity: new Identity({ did }, context),
-    claims: claims.map(claim => middlewareV2ClaimToClaimData(claim, context)),
+    claims: claims.map(claim => middlewareClaimToClaimData(claim, context)),
   }));
 }
 
 /**
  * @hidden
  */
-export function portfolioMovementToMovePortfolioItem(
+export function portfolioMovementToPortfolioFund(
   portfolioItem: PortfolioMovement,
   context: Context
-): PalletPortfolioMovePortfolioItem {
+): PolymeshPrimitivesPortfolioFund {
   const { asset, amount, memo } = portfolioItem;
-  return context.createType('PalletPortfolioMovePortfolioItem', {
-    ticker: stringToTicker(asTicker(asset), context),
-    amount: bigNumberToBalance(amount, context),
+
+  if (context.isV5) {
+    return context.createType('PalletPortfolioMovePortfolioItem', {
+      ticker: stringToTicker(asTicker(asset), context),
+      amount: bigNumberToBalance(amount, context),
+      memo: optionize(stringToMemo)(memo, context),
+    });
+  }
+
+  return context.createType('PolymeshPrimitivesPortfolioFund', {
+    description: {
+      Fungible: {
+        ticker: stringToTicker(asTicker(asset), context),
+        amount: bigNumberToBalance(amount, context),
+      },
+    },
     memo: optionize(stringToMemo)(memo, context),
   });
 }
@@ -3064,9 +2972,7 @@ export function claimTypeToMeshClaimType(
   claimType: ClaimType,
   context: Context
 ): PolymeshPrimitivesIdentityClaimClaimType {
-  // NoData is the legacy name for NoType. Functionally they are the same, but createType only knows about one
-  const data = claimType === ClaimType.NoData ? ClaimType.NoType : claimType;
-  return context.createType('PolymeshPrimitivesIdentityClaimClaimType', data);
+  return context.createType('PolymeshPrimitivesIdentityClaimClaimType', claimType);
 }
 
 /**
@@ -3370,21 +3276,6 @@ export function middlewarePortfolioToPortfolio(
   portfolio: MiddlewarePortfolio,
   context: Context
 ): DefaultPortfolio | NumberedPortfolio {
-  const { did, kind } = portfolio;
-
-  if (kind.toLowerCase() === 'default' || kind === '0') {
-    return new DefaultPortfolio({ did }, context);
-  }
-  return new NumberedPortfolio({ did, id: new BigNumber(kind) }, context);
-}
-
-/**
- * @hidden
- */
-export function middlewareV2PortfolioToPortfolio(
-  portfolio: MiddlewareV2Portfolio,
-  context: Context
-): DefaultPortfolio | NumberedPortfolio {
   const { identityId: did, number } = portfolio;
 
   if (number) {
@@ -3500,111 +3391,6 @@ export function fundraiserToOfferingDetails(
 /**
  * @hidden
  */
-export function calendarPeriodToMeshCalendarPeriod(
-  period: CalendarPeriod,
-  context: Context
-): PolymeshPrimitivesCalendarCalendarPeriod {
-  const { unit, amount } = period;
-
-  if (amount.isNegative()) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Calendar period cannot have a negative amount',
-    });
-  }
-
-  return context.createType('PolymeshPrimitivesCalendarCalendarPeriod', {
-    unit: stringUpperFirst(unit),
-    amount: bigNumberToU64(amount, context),
-  });
-}
-
-/**
- * @hidden
- */
-export function meshCalendarPeriodToCalendarPeriod(
-  period: PolymeshPrimitivesCalendarCalendarPeriod
-): CalendarPeriod {
-  const { unit: rawUnit, amount } = period;
-
-  let unit: CalendarUnit;
-
-  if (rawUnit.isSecond) {
-    unit = CalendarUnit.Second;
-  } else if (rawUnit.isMinute) {
-    unit = CalendarUnit.Minute;
-  } else if (rawUnit.isHour) {
-    unit = CalendarUnit.Hour;
-  } else if (rawUnit.isDay) {
-    unit = CalendarUnit.Day;
-  } else if (rawUnit.isWeek) {
-    unit = CalendarUnit.Week;
-  } else if (rawUnit.isMonth) {
-    unit = CalendarUnit.Month;
-  } else {
-    unit = CalendarUnit.Year;
-  }
-
-  return {
-    unit,
-    amount: u64ToBigNumber(amount),
-  };
-}
-
-/**
- * @hidden
- */
-export function scheduleSpecToMeshScheduleSpec(
-  details: ScheduleSpec,
-  context: Context
-): PalletAssetCheckpointScheduleSpec {
-  const { start, period, repetitions } = details;
-
-  return context.createType('PalletAssetCheckpointScheduleSpec', {
-    start: start && dateToMoment(start, context),
-    period: calendarPeriodToMeshCalendarPeriod(
-      period ?? { unit: CalendarUnit.Month, amount: new BigNumber(0) },
-      context
-    ),
-    remaining: bigNumberToU64(repetitions || new BigNumber(0), context),
-  });
-}
-
-/**
- * @hidden
- */
-export function storedScheduleToCheckpointScheduleParams(
-  storedSchedule: PolymeshCommonUtilitiesCheckpointStoredSchedule
-): CheckpointScheduleParams {
-  const {
-    schedule: { start, period },
-    id,
-    at,
-    remaining,
-  } = storedSchedule;
-
-  return {
-    id: u64ToBigNumber(id),
-    period: meshCalendarPeriodToCalendarPeriod(period),
-    start: momentToDate(start),
-    remaining: u32ToBigNumber(remaining),
-    nextCheckpointDate: momentToDate(at),
-  };
-}
-
-/**
- * @hidden
- */
-export function stringToSignature(
-  signature: string,
-  context: Context
-): ConfidentialIdentityV2SignSignature {
-  return context.createType('ConfidentialIdentityV2SignSignature', signature);
-}
-
-/**
- * @hidden
- */
 export function meshCorporateActionToCorporateActionParams(
   corporateAction: PalletCorporateActionsCorporateAction,
   details: Bytes,
@@ -3684,34 +3470,6 @@ export function checkpointToRecordDateSpec(
   }
 
   return context.createType('PalletCorporateActionsRecordDateSpec', value);
-}
-
-/**
- * @hidden
- */
-export function scopeClaimProofToConfidentialIdentityClaimProof(
-  proof: ScopeClaimProof,
-  scopeId: string,
-  context: Context
-): ConfidentialIdentityV2ClaimProofsScopeClaimProof {
-  const {
-    proofScopeIdWellFormed,
-    proofScopeIdCddIdMatch: { challengeResponses, subtractExpressionsRes, blindedScopeDidHash },
-  } = proof;
-
-  const zkProofData = context.createType('ConfidentialIdentityClaimProofsZkProofData', {
-    /* eslint-disable @typescript-eslint/naming-convention */
-    challenge_responses: challengeResponses.map(cr => stringToU8aFixed(cr, context)),
-    subtract_expressions_res: stringToU8aFixed(subtractExpressionsRes, context),
-    blinded_scope_did_hash: stringToU8aFixed(blindedScopeDidHash, context),
-    /* eslint-enable @typescript-eslint/naming-convention */
-  });
-
-  return context.createType('ConfidentialIdentityV2ClaimProofsScopeClaimProof', {
-    proofScopeIdWellformed: stringToSignature(proofScopeIdWellFormed, context),
-    proofScopeIdCddIdMatch: zkProofData,
-    scopeId: stringToU8aFixed(scopeId, context),
-  });
 }
 
 /**
@@ -4180,7 +3938,7 @@ export function inputStatTypeToMeshStatType(
  * @hidden
  */
 export function meshProposalStatusToProposalStatus(
-  status: PalletMultisigProposalStatus,
+  status: PolymeshPrimitivesMultisigProposalStatus,
   expiry: Date | null
 ): ProposalStatus {
   const { type } = status;
@@ -4238,18 +3996,6 @@ export function metadataSpecToMeshMetadataSpec(
     description: optionize(stringToBytes)(description, context),
     typeDef: optionize(stringToBytes)(typeDef, context),
   });
-}
-
-/**
- * @hidden
- */
-export function stringToInstructionMemo(
-  value: string,
-  context: Context
-): PalletSettlementInstructionMemo {
-  assertMemoValid(value);
-
-  return context.createType('PalletSettlementInstructionMemo', padString(value, MAX_MEMO_LENGTH));
 }
 
 /**
@@ -4455,8 +4201,8 @@ export function middlewareInstructionToHistoricInstruction(
     legs: legs.map(({ from, to, assetId, amount }) => ({
       asset: new Asset({ ticker: assetId }, context),
       amount: new BigNumber(amount).shiftedBy(-6),
-      from: middlewareV2PortfolioToPortfolio(from!, context),
-      to: middlewareV2PortfolioToPortfolio(to!, context),
+      from: middlewarePortfolioToPortfolio(from!, context),
+      to: middlewarePortfolioToPortfolio(to!, context),
     })),
   };
   /* eslint-enable @typescript-eslint/no-non-null-assertion */
@@ -4475,3 +4221,401 @@ export function expiryToMoment(expiry: Date | undefined, context: Context): Mome
 
   return optionize(dateToMoment)(expiry, context);
 }
+
+/**
+ * @hidden
+ * Note: currently only supports fungible legs, see `portfolioToPortfolioKind` for exemplary API
+ */
+export function middlewarePortfolioDataToPortfolio(
+  data: {
+    did: string;
+    kind: { default: null } | { user: number };
+  },
+  context: Context
+): DefaultPortfolio | NumberedPortfolio {
+  const { did, kind } = data;
+
+  if ('default' in kind) {
+    return new DefaultPortfolio({ did }, context);
+  }
+  return new NumberedPortfolio({ did, id: new BigNumber(kind.user) }, context);
+}
+
+/**
+ * @hidden
+ */
+export function legToSettlementLeg(
+  leg: {
+    Fungible: {
+      sender: PolymeshPrimitivesIdentityIdPortfolioId;
+      receiver: PolymeshPrimitivesIdentityIdPortfolioId;
+      ticker: PolymeshPrimitivesTicker;
+      amount: Balance;
+    };
+  },
+  context: Context
+): PolymeshPrimitivesSettlementLeg {
+  return context.createType('PolymeshPrimitivesSettlementLeg', leg);
+}
+
+/**
+ * @hidden
+ */
+export function middlewareAgentGroupDataToPermissionGroup(
+  agentGroupData: Record<string, Record<string, null | number>>,
+  context: Context
+): KnownPermissionGroup | CustomPermissionGroup {
+  const asset = Object.keys(agentGroupData)[0];
+  const agentGroup = agentGroupData[asset];
+
+  let permissionGroupIdentifier: PermissionGroupIdentifier;
+  if ('full' in agentGroup) {
+    permissionGroupIdentifier = PermissionGroupType.Full;
+  } else if ('exceptMeta' in agentGroup) {
+    permissionGroupIdentifier = PermissionGroupType.ExceptMeta;
+  } else if ('polymeshV1CAA' in agentGroup) {
+    permissionGroupIdentifier = PermissionGroupType.PolymeshV1Caa;
+  } else if ('polymeshV1PIA' in agentGroup) {
+    permissionGroupIdentifier = PermissionGroupType.PolymeshV1Pia;
+  } else {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    permissionGroupIdentifier = { custom: new BigNumber(agentGroup.custom!) };
+  }
+
+  const ticker = coerceHexToString(asset);
+  return assemblePermissionGroup(permissionGroupIdentifier, ticker, context);
+}
+
+/**
+ * @hidden
+ */
+function middlewareExtrinsicPermissionsDataToTransactionPermissions(
+  permissions: Record<
+    string,
+    {
+      palletName: string;
+      dispatchableNames: Record<string, string[]>;
+    }[]
+  >
+): TransactionPermissions | null {
+  let extrinsicType: PermissionType;
+  let pallets;
+  if ('these' in permissions) {
+    extrinsicType = PermissionType.Include;
+    pallets = permissions.these;
+  } else if ('except' in permissions) {
+    extrinsicType = PermissionType.Exclude;
+    pallets = permissions.except;
+  }
+
+  let txValues: (ModuleName | TxTag)[] = [];
+  let exceptions: TxTag[] = [];
+
+  if (pallets) {
+    pallets.forEach(({ palletName, dispatchableNames }) => {
+      const moduleName = stringLowerFirst(coerceHexToString(palletName));
+      if ('except' in dispatchableNames) {
+        const dispatchables = [...dispatchableNames.except];
+        exceptions = [
+          ...exceptions,
+          ...dispatchables.map(name => formatTxTag(coerceHexToString(name), moduleName)),
+        ];
+        txValues = [...txValues, moduleName as ModuleName];
+      } else if ('these' in dispatchableNames) {
+        const dispatchables = [...dispatchableNames.these];
+        txValues = [
+          ...txValues,
+          ...dispatchables.map(name => formatTxTag(coerceHexToString(name), moduleName)),
+        ];
+      } else {
+        txValues = [...txValues, moduleName as ModuleName];
+      }
+    });
+
+    const result = {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      type: extrinsicType!,
+      values: txValues,
+    };
+
+    return exceptions.length ? { ...result, exceptions } : result;
+  }
+
+  return null;
+}
+
+/**
+ * @hidden
+ */
+export function datesToScheduleCheckpoints(
+  points: Date[],
+  context: Context
+): PolymeshCommonUtilitiesCheckpointScheduleCheckpoints {
+  const rawPoints = points.map(point => dateToMoment(point, context));
+
+  const pending = context.createType('BTreeSet<Moment>', rawPoints);
+
+  return context.createType('PolymeshCommonUtilitiesCheckpointScheduleCheckpoints', { pending });
+}
+
+/**
+ * @hidden
+ */
+export function middlewarePermissionsDataToPermissions(
+  permissionsData: string,
+  context: Context
+): Permissions {
+  const { asset, extrinsic, portfolio } = JSON.parse(permissionsData);
+
+  let assets: SectionPermissions<Asset> | null = null;
+  let transactions: TransactionPermissions | null = null;
+  let portfolios: SectionPermissions<DefaultPortfolio | NumberedPortfolio> | null = null;
+
+  let assetsType: PermissionType;
+  let assetsPermissions;
+  if ('these' in asset) {
+    assetsType = PermissionType.Include;
+    assetsPermissions = asset.these;
+  } else if ('except' in asset) {
+    assetsType = PermissionType.Exclude;
+    assetsPermissions = asset.except;
+  }
+
+  if (assetsPermissions) {
+    assets = {
+      values: [...assetsPermissions].map(
+        ticker => new Asset({ ticker: coerceHexToString(ticker) }, context)
+      ),
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      type: assetsType!,
+    };
+  }
+
+  transactions = middlewareExtrinsicPermissionsDataToTransactionPermissions(extrinsic);
+
+  let portfoliosType: PermissionType;
+  let portfolioIds;
+  if ('these' in portfolio) {
+    portfoliosType = PermissionType.Include;
+    portfolioIds = portfolio.these;
+  } else if ('except' in portfolio) {
+    portfoliosType = PermissionType.Exclude;
+    portfolioIds = portfolio.except;
+  }
+
+  if (portfolioIds) {
+    portfolios = {
+      values: [...portfolioIds].map(portfolioId =>
+        middlewarePortfolioDataToPortfolio(portfolioId, context)
+      ),
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      type: portfoliosType!,
+    };
+  }
+
+  return {
+    assets,
+    transactions,
+    transactionGroups: transactions ? transactionPermissionsToTxGroups(transactions) : [],
+    portfolios,
+  };
+}
+
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+/**
+ * @hidden
+ */
+export function middlewareAuthorizationDataToAuthorization(
+  context: Context,
+  type: AuthTypeEnum,
+  data?: string
+): Authorization {
+  switch (type) {
+    case AuthTypeEnum.AttestPrimaryKeyRotation:
+      return {
+        type: AuthorizationType.AttestPrimaryKeyRotation,
+        value: new Identity({ did: data! }, context),
+      };
+    case AuthTypeEnum.RotatePrimaryKey: {
+      return {
+        type: AuthorizationType.RotatePrimaryKey,
+      };
+    }
+    case AuthTypeEnum.RotatePrimaryKeyToSecondary: {
+      return {
+        type: AuthorizationType.RotatePrimaryKeyToSecondary,
+        value: middlewarePermissionsDataToPermissions(data!, context),
+      };
+    }
+    case AuthTypeEnum.JoinIdentity: {
+      return {
+        type: AuthorizationType.JoinIdentity,
+        value: middlewarePermissionsDataToPermissions(data!, context),
+      };
+    }
+    case AuthTypeEnum.AddMultiSigSigner:
+      return {
+        type: AuthorizationType.AddMultiSigSigner,
+        value: data!,
+      };
+    case AuthTypeEnum.AddRelayerPayingKey: {
+      // data is received in the format - {"5Ci94GCJC2JBM8U1PCkpHX6HkscWmucN9XwUrjb7o4TDgVns","5DZp1QYH49MKZhCtDupNaAeHp8xtqetuSzgf2p2cUWoxW3iu","1000000000"}
+      const [beneficiary, subsidizer, allowance] = data!
+        .substring(1, data!.length - 1)
+        .replace(/"/g, '')
+        .split(',');
+
+      return {
+        type: AuthorizationType.AddRelayerPayingKey,
+        value: {
+          beneficiary: new Account({ address: beneficiary }, context),
+          subsidizer: new Account({ address: subsidizer }, context),
+          allowance: new BigNumber(allowance).shiftedBy(-6),
+        },
+      };
+    }
+    case AuthTypeEnum.BecomeAgent: {
+      const becomeAgentData = JSON.parse(data!.replace(',', ':'));
+      return {
+        type: AuthorizationType.BecomeAgent,
+        value: middlewareAgentGroupDataToPermissionGroup(becomeAgentData, context),
+      };
+    }
+    case AuthTypeEnum.TransferTicker:
+      return {
+        type: AuthorizationType.TransferTicker,
+        value: coerceHexToString(data!),
+      };
+    case AuthTypeEnum.TransferAssetOwnership: {
+      return {
+        type: AuthorizationType.TransferAssetOwnership,
+        value: coerceHexToString(data!),
+      };
+    }
+    case AuthTypeEnum.PortfolioCustody: {
+      return {
+        type: AuthorizationType.PortfolioCustody,
+        value: middlewarePortfolioDataToPortfolio(JSON.parse(data!), context),
+      };
+    }
+  }
+
+  throw new PolymeshError({
+    code: ErrorCode.UnexpectedError,
+    message: 'Unsupported Authorization Type. Please contact the Polymesh team',
+    data: {
+      auth: data,
+    },
+  });
+}
+
+/* eslint-enable @typescript-eslint/no-non-null-assertion */
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+/**
+ * @hidden
+ *
+ * @note legacy, only for v5 chain
+ */
+export function calendarPeriodToMeshCalendarPeriod(period: CalendarPeriod, context: Context): any {
+  const { unit, amount } = period;
+
+  if (amount.isNegative()) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Calendar period cannot have a negative amount',
+    });
+  }
+
+  return context.createType('PolymeshPrimitivesCalendarCalendarPeriod', {
+    unit: stringUpperFirst(unit),
+    amount: bigNumberToU64(amount, context),
+  });
+}
+
+/** @hidden
+ *
+ * @note: legacy, only for < v5 chains
+ */
+export function meshCalendarPeriodToCalendarPeriod(period: any): CalendarPeriod {
+  const { unit: rawUnit, amount } = period;
+
+  let unit: CalendarUnit;
+
+  if (rawUnit.isSecond) {
+    unit = CalendarUnit.Second;
+  } else if (rawUnit.isMinute) {
+    unit = CalendarUnit.Minute;
+  } else if (rawUnit.isHour) {
+    unit = CalendarUnit.Hour;
+  } else if (rawUnit.isDay) {
+    unit = CalendarUnit.Day;
+  } else if (rawUnit.isWeek) {
+    unit = CalendarUnit.Week;
+  } else if (rawUnit.isMonth) {
+    unit = CalendarUnit.Month;
+  } else {
+    unit = CalendarUnit.Year;
+  }
+
+  return {
+    unit,
+    amount: u64ToBigNumber(amount),
+  };
+}
+
+/**
+ * @hidden
+ *
+ * @note: legacy, only for < v5 chains
+ */
+export function storedScheduleToCheckpointScheduleParams(
+  storedSchedule: any
+): CheckpointScheduleParams {
+  const {
+    schedule: { start, period },
+    id,
+    at,
+    remaining,
+  } = storedSchedule;
+
+  return {
+    id: u64ToBigNumber(id),
+    period: meshCalendarPeriodToCalendarPeriod(period),
+    start: momentToDate(start),
+    remaining: u32ToBigNumber(remaining),
+    nextCheckpointDate: momentToDate(at),
+  };
+}
+
+/**
+ * @hidden
+ *
+ * @note: legacy, only for < v5 chains
+ */
+export function scheduleSpecToMeshScheduleSpec(details: any, context: Context): any {
+  const { start, period, repetitions } = details;
+
+  return context.createType('PalletAssetCheckpointScheduleSpec', {
+    start: start && dateToMoment(start, context),
+    period: calendarPeriodToMeshCalendarPeriod(
+      period ?? { unit: CalendarUnit.Month, amount: new BigNumber(0) },
+      context
+    ),
+    remaining: bigNumberToU64(repetitions || new BigNumber(0), context),
+  });
+}
+
+/**
+ * @hidden
+ *
+ * @deprecated - v6 unifies memo structure so only `stringToMemo` is needed
+ */
+export function stringToInstructionMemo(value: string, context: Context): any {
+  assertMemoValid(value);
+
+  return context.createType('PalletSettlementInstructionMemo', padString(value, MAX_MEMO_LENGTH));
+}
+
+/* eslint-enable @typescript-eslint/no-explicit-any */

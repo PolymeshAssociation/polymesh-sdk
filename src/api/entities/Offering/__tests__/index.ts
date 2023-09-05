@@ -2,17 +2,13 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Context, Entity, Offering, PolymeshTransaction } from '~/internal';
-import { heartbeat, investments } from '~/middleware/queries';
-import { investmentsQuery } from '~/middleware/queriesV2';
-import { InvestmentResult } from '~/middleware/types';
+import { investmentsQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
-  Investment,
   OfferingBalanceStatus,
   OfferingDetails,
   OfferingSaleStatus,
   OfferingTimingStatus,
-  ResultSet,
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -138,7 +134,7 @@ describe('Offering class', () => {
       })
     );
 
-    const rawName = dsMockUtils.createMockBytes(name);
+    const rawName = dsMockUtils.createMockOption(dsMockUtils.createMockBytes(name));
 
     let offering: Offering;
 
@@ -273,99 +269,6 @@ describe('Offering class', () => {
   });
 
   describe('method: getInvestments', () => {
-    let ticker: string;
-    let id: BigNumber;
-    let offering: Offering;
-
-    beforeEach(() => {
-      ticker = 'SOME_TICKER';
-      id = new BigNumber(1);
-      offering = new Offering({ id, ticker }, context);
-    });
-
-    it('should return a list of investors', async () => {
-      dsMockUtils.configureMocks({
-        contextOptions: { middlewareV2Enabled: false },
-      });
-      const did = 'someDid';
-      const offeringToken = 'TICKER';
-      const raiseToken = 'USD';
-      const offeringTokenAmount = new BigNumber(10000);
-      const raiseTokenAmount = new BigNumber(1000);
-
-      const items = [
-        {
-          investor: did,
-          offeringToken,
-          raiseToken,
-          offeringTokenAmount: offeringTokenAmount.toNumber(),
-          raiseTokenAmount: raiseTokenAmount.toNumber(),
-          datetime: '2020-10-10',
-        },
-      ];
-
-      /* eslint-disable @typescript-eslint/naming-convention */
-      const investmentQueryResponse: InvestmentResult = {
-        totalCount: 1,
-        items,
-      };
-      /* eslint-enable @typescript-eslint/naming-convention */
-
-      dsMockUtils.createApolloQueryMock(heartbeat(), true);
-
-      dsMockUtils.createApolloQueryMock(
-        investments({
-          stoId: id.toNumber(),
-          ticker,
-          count: 5,
-          skip: 0,
-        }),
-        {
-          investments: investmentQueryResponse,
-        }
-      );
-
-      let result = await offering.getInvestments({
-        size: new BigNumber(5),
-        start: new BigNumber(0),
-      });
-
-      const { data } = result;
-
-      expect(data[0].investor.did).toBe(did);
-      expect(data[0].soldAmount).toEqual(offeringTokenAmount.div(Math.pow(10, 6)));
-      expect(data[0].investedAmount).toEqual(raiseTokenAmount.div(Math.pow(10, 6)));
-
-      dsMockUtils.createApolloQueryMock(
-        investments({
-          stoId: id.toNumber(),
-          ticker,
-          count: undefined,
-          skip: undefined,
-        }),
-        {
-          investments: {
-            totalCount: 0,
-            items: [],
-          },
-        }
-      );
-
-      result = await offering.getInvestments();
-      expect(result.data).toEqual([]);
-      expect(result.next).toBeNull();
-    });
-
-    it('should call v2 query if middlewareV2 is enabled', async () => {
-      const fakeResult = 'fakeResult' as unknown as ResultSet<Investment>;
-      jest.spyOn(offering, 'getInvestmentsV2').mockResolvedValue(fakeResult);
-
-      const result = await offering.getInvestments();
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('method: getInvestmentsV2', () => {
     it('should return a list of investors', async () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
@@ -391,7 +294,7 @@ describe('Offering class', () => {
         nodes,
       };
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         investmentsQuery(
           {
             stoId: id.toNumber(),
@@ -405,7 +308,7 @@ describe('Offering class', () => {
         }
       );
 
-      let result = await offering.getInvestmentsV2({
+      let result = await offering.getInvestments({
         size: new BigNumber(5),
         start: new BigNumber(0),
       });
@@ -416,7 +319,7 @@ describe('Offering class', () => {
       expect(data[0].soldAmount).toEqual(offeringTokenAmount.div(Math.pow(10, 6)));
       expect(data[0].investedAmount).toEqual(raiseTokenAmount.div(Math.pow(10, 6)));
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         investmentsQuery({
           stoId: id.toNumber(),
           offeringToken: ticker,
@@ -429,7 +332,7 @@ describe('Offering class', () => {
         }
       );
 
-      result = await offering.getInvestmentsV2();
+      result = await offering.getInvestments();
       expect(result.data).toEqual([]);
       expect(result.next).toBeNull();
     });

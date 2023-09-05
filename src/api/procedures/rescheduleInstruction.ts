@@ -25,9 +25,11 @@ export async function prepareRescheduleInstruction(
     },
     context,
   } = this;
+
   const { id } = args;
 
   const instruction = new Instruction({ id }, context);
+
   const { status } = await instruction.details();
 
   if (status !== InstructionStatus.Failed) {
@@ -42,8 +44,10 @@ export async function prepareRescheduleInstruction(
 
   const rawId = bigNumberToU64(id, context);
 
+  const transaction = tx.settlement.rescheduleInstruction;
+
   return {
-    transaction: tx.settlement.rescheduleInstruction,
+    transaction,
     args: [rawId],
     resolver: instruction,
   };

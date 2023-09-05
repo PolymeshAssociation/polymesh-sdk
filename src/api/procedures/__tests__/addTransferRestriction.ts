@@ -365,7 +365,6 @@ describe('addTransferRestriction procedure', () => {
 
     entityMockUtils.configureMocks({
       identityOptions: { getScopeId: identityScopeId },
-      assetOptions: { details: { requiresInvestorUniqueness: true } },
     });
     args = {
       type: TransferRestrictionType.ClaimCount,

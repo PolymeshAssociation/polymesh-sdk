@@ -103,17 +103,21 @@ describe('Documents class', () => {
               dsMockUtils.createMockU32(new BigNumber(index)),
             ],
           } as unknown as StorageKey,
-          dsMockUtils.createMockDocument({
-            uri: dsMockUtils.createMockBytes(uri),
-            name: dsMockUtils.createMockBytes(name),
-            contentHash: dsMockUtils.createMockDocumentHash({
-              H128: dsMockUtils.createMockU8aFixed(contentHash, true),
-            }),
-            docType: dsMockUtils.createMockOption(type ? dsMockUtils.createMockBytes(type) : null),
-            filingDate: dsMockUtils.createMockOption(
-              filedAt ? dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime())) : null
-            ),
-          })
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockDocument({
+              uri: dsMockUtils.createMockBytes(uri),
+              name: dsMockUtils.createMockBytes(name),
+              contentHash: dsMockUtils.createMockDocumentHash({
+                H128: dsMockUtils.createMockU8aFixed(contentHash, true),
+              }),
+              docType: dsMockUtils.createMockOption(
+                type ? dsMockUtils.createMockBytes(type) : null
+              ),
+              filingDate: dsMockUtils.createMockOption(
+                filedAt ? dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime())) : null
+              ),
+            })
+          )
         )
       );
 

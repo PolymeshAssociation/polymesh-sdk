@@ -127,8 +127,10 @@ export async function prepareStorage(
 
   currentDocEntries.forEach(([key, doc]) => {
     const [, id] = key.args;
-    currentDocIds.push(id);
-    currentDocs.push(documentToAssetDocument(doc));
+    if (doc.isSome) {
+      currentDocIds.push(id);
+      currentDocs.push(documentToAssetDocument(doc.unwrap()));
+    }
   });
 
   return {

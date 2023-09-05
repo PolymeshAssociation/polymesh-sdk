@@ -6,8 +6,7 @@ import { tuple } from '~/types/utils';
 import {
   permissionsLikeToPermissions,
   permissionsToMeshPermissions,
-  signerToSignerValue,
-  signerValueToSignatory,
+  stringToAccountId,
 } from '~/utils/conversion';
 import { asAccount, getSecondaryAccountPermissions } from '~/utils/internal';
 
@@ -24,7 +23,9 @@ export interface Storage {
 export async function prepareModifySignerPermissions(
   this: Procedure<ModifySignerPermissionsParams, void, Storage>,
   args: ModifySignerPermissionsParams
-): Promise<BatchTransactionSpec<void, ExtrinsicParams<'identity', 'setPermissionToSigner'>[]>> {
+): Promise<
+  BatchTransactionSpec<void, ExtrinsicParams<'identity', 'setSecondaryKeyPermissions'>[]>
+> {
   const {
     context: {
       polymeshApi: { tx },
@@ -46,13 +47,13 @@ export async function prepareModifySignerPermissions(
 
     const rawPermissions = permissionsToMeshPermissions(permissions, context);
 
-    return tuple(
-      signerValueToSignatory(signerToSignerValue(asAccount(account, context)), context),
-      rawPermissions
-    );
+    const { address } = asAccount(account, context);
+    const rawSignatory = stringToAccountId(address, context);
+
+    return tuple(rawSignatory, rawPermissions);
   });
 
-  const transaction = tx.identity.setPermissionToSigner;
+  const transaction = tx.identity.setSecondaryKeyPermissions;
 
   return {
     transactions: signersList.map(params => ({

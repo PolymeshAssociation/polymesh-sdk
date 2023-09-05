@@ -341,11 +341,7 @@ describe('configureDividendDistribution procedure', () => {
       await prepareConfigureDividendDistribution.call(proc, {
         ticker,
         declarationDate,
-        checkpoint: entityMockUtils.getCheckpointScheduleInstance({
-          details: {
-            nextCheckpointDate: new Date(new Date(new Date().getTime() + 1000 * 60 * 30)),
-          },
-        }),
+        checkpoint: entityMockUtils.getCheckpointScheduleInstance(),
         description,
         targets,
         defaultTaxWithholding,

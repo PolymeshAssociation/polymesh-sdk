@@ -1,5 +1,6 @@
 /* istanbul ignore file */
 
+import { ApiOptions } from '@polkadot/api/types';
 import { TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
@@ -38,23 +39,11 @@ export * from '~/api/entities/types';
 export * from '~/api/procedures/types';
 export * from '~/base/types';
 export * from '~/generated/types';
-export * from '~/middleware/enumsV2';
-export {
-  EventIdEnum,
-  ModuleIdEnum,
-  Order,
-  SettlementDirectionEnum,
-  SettlementResultEnum,
-  TransactionOrderByInput,
-  TransactionOrderFields,
-} from '~/middleware/types';
-export {
-  AssetHoldersOrderBy,
-  ExtrinsicsOrderBy,
-  PublicEnum7A0B4Cc03E,
-  PublicEnum8F5A39C8Ee,
-} from '~/middleware/typesV2';
-export { TxTags, TxTag, ModuleName, CountryCode };
+export * from '~/middleware/enums';
+
+export { AssetHoldersOrderBy, ExtrinsicsOrderBy, Scalars } from '~/middleware/types';
+export { ClaimScopeTypeEnum, MiddlewareScope, SettlementDirectionEnum } from '~/middleware/typesV1';
+export { CountryCode, ModuleName, TxTag, TxTags };
 
 export enum TransactionStatus {
   /**
@@ -226,10 +215,6 @@ export enum ClaimType {
   Jurisdiction = 'Jurisdiction',
   Exempted = 'Exempted',
   Blocked = 'Blocked',
-  InvestorUniqueness = 'InvestorUniqueness',
-  NoType = 'NoType',
-  NoData = 'NoData',
-  InvestorUniquenessV2 = 'InvestorUniquenessV2',
 }
 
 export interface AccreditedClaim {
@@ -278,29 +263,8 @@ export interface BlockedClaim {
   scope: Scope;
 }
 
-export interface InvestorUniquenessClaim {
-  type: ClaimType.InvestorUniqueness;
-  scope: Scope;
-  cddId: string;
-  scopeId: string;
-}
-
-export interface NoTypeClaim {
-  type: ClaimType.NoType;
-}
-
-export interface NoDataClaim {
-  type: ClaimType.NoData;
-}
-
-export interface InvestorUniquenessV2Claim {
-  type: ClaimType.InvestorUniquenessV2;
-  cddId: string;
-}
-
 export type ScopedClaim =
   | JurisdictionClaim
-  | InvestorUniquenessClaim
   | AccreditedClaim
   | AffiliateClaim
   | BuyLockupClaim
@@ -309,7 +273,7 @@ export type ScopedClaim =
   | ExemptedClaim
   | BlockedClaim;
 
-export type UnscopedClaim = NoDataClaim | NoTypeClaim | CddClaim | InvestorUniquenessV2Claim;
+export type UnscopedClaim = CddClaim;
 
 export type Claim = ScopedClaim | UnscopedClaim;
 
@@ -711,6 +675,40 @@ export type UnsubCallback = () => void;
 export interface MiddlewareConfig {
   link: string;
   key: string;
+}
+
+export interface PolkadotConfig {
+  /**
+   * provide a locally saved metadata file for a modestly fast startup time (e.g. 1 second when provided, 1.5 seconds without).
+   *
+   * @note if not provided the SDK will read the needed data from chain during startup
+   *
+   * @note format is key as genesis hash and spec version and the value hex encoded chain metadata
+   *
+   * @example creating valid metadata
+   * ```ts
+   const meta = _polkadotApi.runtimeMetadata.toHex();
+   const genesisHash = _polkadotApi.genesisHash;
+   const specVersion = _polkadotApi.runtimeVersion.specVersion;
+
+  const metadata = {
+    [`${genesisHash}-${specVersion}`]: meta,
+  };
+  ```
+   */
+  metadata?: ApiOptions['metadata'];
+
+  /**
+   * set to `true` to disable polkadot start up warnings
+   */
+  noInitWarn?: boolean;
+
+  /**
+   * allows for types to be provided for multiple chain specs at once
+   *
+   * @note shouldn't be needed for most use cases
+   */
+  typesBundle?: ApiOptions['typesBundle'];
 }
 
 export interface EventIdentifier {
@@ -1426,24 +1424,6 @@ export type ClaimCountStatInput =
       value: { countryCode: CountryCode; count: BigNumber }[];
     };
 
-export enum CalendarUnit {
-  Second = 'second',
-  Minute = 'minute',
-  Hour = 'hour',
-  Day = 'day',
-  Week = 'week',
-  Month = 'month',
-  Year = 'year',
-}
-
-/**
- * Represents a period of time measured in a specific unit (e.g. 20 days)
- */
-export interface CalendarPeriod {
-  unit: CalendarUnit;
-  amount: BigNumber;
-}
-
 export interface ScheduleWithDetails {
   schedule: CheckpointSchedule;
   details: ScheduleDetails;
@@ -1687,3 +1667,29 @@ export interface MiddlewareMetadata {
 export type MapTxData<ArgsArray extends unknown[][]> = {
   [K in keyof ArgsArray]: ArgsArray[K] extends unknown[] ? TxData<ArgsArray[K]> : never;
 };
+
+export enum CalendarUnit {
+  Second = 'second',
+  Minute = 'minute',
+  Hour = 'hour',
+  Day = 'day',
+  Week = 'week',
+  Month = 'month',
+  Year = 'year',
+}
+
+/**
+ * Represents a period of time measured in a specific unit (e.g. 20 days)
+ */
+export interface CalendarPeriod {
+  unit: CalendarUnit;
+  amount: BigNumber;
+}
+
+/**
+ *
+ */
+export interface SpWeightV2 {
+  refTime: BigNumber;
+  proofSize: BigNumber;
+}

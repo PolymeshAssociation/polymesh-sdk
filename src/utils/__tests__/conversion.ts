@@ -7,22 +7,14 @@ import {
   Hash,
   Moment,
   Permill,
-  Signature,
 } from '@polkadot/types/interfaces';
 import {
-  ConfidentialIdentityV2ClaimProofsZkProofData,
-  PalletAssetCheckpointScheduleSpec,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
   PalletCorporateActionsRecordDateSpec,
   PalletCorporateActionsTargetIdentities,
-  PalletMultisigProposalStatus,
-  PalletPortfolioMovePortfolioItem,
-  PalletSettlementInstructionMemo,
-  PalletSettlementSettlementType,
-  PalletSettlementVenueType,
   PalletStoPriceTier,
-  PolymeshCommonUtilitiesBalancesMemo,
+  PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetAssetType,
@@ -31,7 +23,6 @@ import {
   PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
   PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
   PolymeshPrimitivesAuthorizationAuthorizationData,
-  PolymeshPrimitivesCalendarCalendarPeriod,
   PolymeshPrimitivesCddId,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesCondition,
@@ -39,14 +30,19 @@ import {
   PolymeshPrimitivesConditionTrustedIssuer,
   PolymeshPrimitivesDocument,
   PolymeshPrimitivesDocumentHash,
-  PolymeshPrimitivesEthereumEcdsaSignature,
   PolymeshPrimitivesIdentityClaimClaim,
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityClaimScope,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesIdentityIdPortfolioKind,
+  PolymeshPrimitivesMemo,
+  PolymeshPrimitivesMultisigProposalStatus,
+  PolymeshPrimitivesPortfolioFund,
   PolymeshPrimitivesSecondaryKeySignatory,
+  PolymeshPrimitivesSettlementLeg,
+  PolymeshPrimitivesSettlementSettlementType,
+  PolymeshPrimitivesSettlementVenueType,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatClaim,
   PolymeshPrimitivesStatisticsStatOpType,
@@ -77,27 +73,24 @@ import {
   PolymeshError,
 } from '~/internal';
 import {
-  CallIdEnum as MiddlewareV2CallId,
-  ClaimTypeEnum as MiddlewareV2ClaimType,
-  InstructionStatusEnum,
-  ModuleIdEnum as MiddlewareV2ModuleId,
-} from '~/middleware/enumsV2';
-import {
+  AuthTypeEnum,
   CallIdEnum,
-  ClaimScopeTypeEnum,
   ClaimTypeEnum,
-  Event as MiddlewareEvent,
+  InstructionStatusEnum,
   ModuleIdEnum,
-} from '~/middleware/types';
+} from '~/middleware/enums';
 import {
-  Block as MiddlewareV2Block,
-  Claim as MiddlewareV2Claim,
+  Block,
+  Claim as MiddlewareClaim,
   Instruction,
-  Portfolio as MiddlewareV2Portfolio,
-} from '~/middleware/typesV2';
+  Portfolio as MiddlewarePortfolio,
+} from '~/middleware/types';
+import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   createMockOption,
+  createMockPortfolioId,
+  createMockTicker,
   createMockU32,
   createMockU64,
   createMockU128,
@@ -108,6 +101,7 @@ import {
   AssetDocument,
   Authorization,
   AuthorizationType,
+  CalendarPeriod,
   CalendarUnit,
   Claim,
   ClaimType,
@@ -137,7 +131,6 @@ import {
   PortfolioMovement,
   ProposalStatus,
   Scope,
-  ScopeClaimProof,
   ScopeType,
   SecurityIdentifierType,
   Signer,
@@ -158,7 +151,7 @@ import { InstructionStatus, PermissionGroupIdentifier } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
 import * as internalUtils from '~/utils/internal';
-import { padString } from '~/utils/internal';
+import { padString, periodComplexity } from '~/utils/internal';
 
 import {
   accountIdToString,
@@ -190,6 +183,7 @@ import {
   claimCountToClaimCountRestrictionValue,
   claimToMeshClaim,
   claimTypeToMeshClaimType,
+  coerceHexToString,
   complianceConditionsToBtreeSet,
   complianceRequirementResultToRequirementCompliance,
   complianceRequirementToRequirement,
@@ -198,6 +192,7 @@ import {
   corporateActionParamsToMeshCorporateActionArgs,
   countStatInputToStatUpdates,
   createStat2ndKey,
+  datesToScheduleCheckpoints,
   dateToMoment,
   distributionToDividendDistributionParams,
   documentHashToString,
@@ -221,6 +216,7 @@ import {
   isLeiValid,
   keyAndValueToStatUpdate,
   keyToAddress,
+  legToSettlementLeg,
   meshAffirmationStatusToAffirmationStatus,
   meshCalendarPeriodToCalendarPeriod,
   meshClaimToClaim,
@@ -240,13 +236,15 @@ import {
   metadataToMeshMetadataKey,
   metadataValueDetailToMeshMetadataValueDetail,
   metadataValueToMeshMetadataValue,
-  middlewareEventToEventIdentifier,
+  middlewareAgentGroupDataToPermissionGroup,
+  middlewareAuthorizationDataToAuthorization,
+  middlewareClaimToClaimData,
+  middlewareEventDetailsToEventIdentifier,
   middlewareInstructionToHistoricInstruction,
+  middlewarePermissionsDataToPermissions,
+  middlewarePortfolioDataToPortfolio,
   middlewarePortfolioToPortfolio,
   middlewareScopeToScope,
-  middlewareV2ClaimToClaimData,
-  middlewareV2EventDetailsToEventIdentifier,
-  middlewareV2PortfolioToPortfolio,
   moduleAddressToString,
   momentToDate,
   nameToAssetName,
@@ -259,12 +257,11 @@ import {
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
-  portfolioMovementToMovePortfolioItem,
+  portfolioMovementToPortfolioFund,
   portfolioToPortfolioKind,
   posRatioToBigNumber,
   requirementToComplianceRequirement,
   scheduleSpecToMeshScheduleSpec,
-  scopeClaimProofToConfidentialIdentityClaimProof,
   scopeToMeshScope,
   scopeToMiddlewareScope,
   secondaryAccountToMeshSecondaryKey,
@@ -281,19 +278,14 @@ import {
   statisticStatTypesToBtreeStatType,
   statsClaimToStatClaimInputType,
   statUpdatesToBtreeStatUpdate,
-  storedScheduleToCheckpointScheduleParams,
   stringToAccountId,
   stringToBlockHash,
   stringToBytes,
   stringToCddId,
   stringToDocumentHash,
-  stringToEcdsaSignature,
   stringToHash,
   stringToIdentityId,
-  stringToInstructionMemo,
-  stringToInvestorZKProofData,
   stringToMemo,
-  stringToSignature,
   stringToText,
   stringToTicker,
   stringToTickerKey,
@@ -304,7 +296,6 @@ import {
   tickerToDid,
   tickerToString,
   toIdentityWithClaimsArray,
-  toIdentityWithClaimsArrayV2,
   transactionHexToTxTag,
   transactionPermissionsToExtrinsicPermissions,
   transactionPermissionsToTxGroups,
@@ -316,7 +307,6 @@ import {
   trustedClaimIssuerToTrustedIssuer,
   txGroupToTxTags,
   txTagToExtrinsicIdentifier,
-  txTagToExtrinsicIdentifierV2,
   txTagToProtocolOp,
   u8ToBigNumber,
   u8ToTransferStatus,
@@ -463,35 +453,7 @@ describe('stringToBytes and bytesToString', () => {
   });
 });
 
-describe('stringToInvestorZKProofData', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should convert a string to a polkadot ConfidentialIdentityV2ClaimProofsZkProofData object', () => {
-    const value = 'someProof';
-    const fakeResult = 'convertedProof' as unknown as ConfidentialIdentityV2ClaimProofsZkProofData;
-    const context = dsMockUtils.getContextInstance();
-
-    when(context.createType)
-      .calledWith('ConfidentialIdentityV2ClaimProofsZkProofData', value)
-      .mockReturnValue(fakeResult);
-
-    const result = stringToInvestorZKProofData(value, context);
-
-    expect(result).toBe(fakeResult);
-  });
-});
-
-describe('portfolioMovementToMovePortfolioItem', () => {
+describe('portfolioMovementToPortfolioFund', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
@@ -514,9 +476,9 @@ describe('portfolioMovementToMovePortfolioItem', () => {
     const asset = entityMockUtils.getAssetInstance({ ticker });
     const rawTicker = dsMockUtils.createMockTicker(ticker);
     const rawAmount = dsMockUtils.createMockBalance(amount);
-    const rawMemo = 'memo' as unknown as PolymeshCommonUtilitiesBalancesMemo;
+    const rawMemo = 'memo' as unknown as PolymeshPrimitivesMemo;
     const fakeResult =
-      'PalletPortfolioMovePortfolioItem' as unknown as PalletPortfolioMovePortfolioItem;
+      'PolymeshPrimitivesPortfolioFund' as unknown as PolymeshPrimitivesPortfolioFund;
 
     let portfolioMovement: PortfolioMovement = {
       asset: ticker,
@@ -532,14 +494,18 @@ describe('portfolioMovementToMovePortfolioItem', () => {
       .mockReturnValue(rawAmount);
 
     when(context.createType)
-      .calledWith('PalletPortfolioMovePortfolioItem', {
-        ticker: rawTicker,
-        amount: rawAmount,
+      .calledWith('PolymeshPrimitivesPortfolioFund', {
+        description: {
+          Fungible: {
+            ticker: rawTicker,
+            amount: rawAmount,
+          },
+        },
         memo: null,
       })
       .mockReturnValue(fakeResult);
 
-    let result = portfolioMovementToMovePortfolioItem(portfolioMovement, context);
+    let result = portfolioMovementToPortfolioFund(portfolioMovement, context);
 
     expect(result).toBe(fakeResult);
 
@@ -548,18 +514,22 @@ describe('portfolioMovementToMovePortfolioItem', () => {
       amount,
     };
 
-    result = portfolioMovementToMovePortfolioItem(portfolioMovement, context);
+    result = portfolioMovementToPortfolioFund(portfolioMovement, context);
 
     expect(result).toBe(fakeResult);
 
     when(context.createType)
-      .calledWith('PolymeshCommonUtilitiesBalancesMemo', padString(memo, 32))
+      .calledWith('PolymeshPrimitivesMemo', padString(memo, 32))
       .mockReturnValue(rawMemo);
 
     when(context.createType)
-      .calledWith('PalletPortfolioMovePortfolioItem', {
-        ticker: rawTicker,
-        amount: rawAmount,
+      .calledWith('PolymeshPrimitivesPortfolioFund', {
+        description: {
+          Fungible: {
+            ticker: rawTicker,
+            amount: rawAmount,
+          },
+        },
         memo: rawMemo,
       })
       .mockReturnValue(fakeResult);
@@ -570,7 +540,7 @@ describe('portfolioMovementToMovePortfolioItem', () => {
       memo,
     };
 
-    result = portfolioMovementToMovePortfolioItem(portfolioMovement, context);
+    result = portfolioMovementToPortfolioFund(portfolioMovement, context);
 
     expect(result).toBe(fakeResult);
   });
@@ -857,34 +827,6 @@ describe('stringToIdentityId and identityIdToString', () => {
       const result = identityIdToString(identityId);
       expect(result).toBe(fakeResult);
     });
-  });
-});
-
-describe('stringToEcdsaSignature', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should convert a signature string into a polkadot PolymeshPrimitivesEthereumEcdsaSignature object', () => {
-    const signature = 'hexSig';
-    const fakeResult = 'sig' as unknown as PolymeshPrimitivesEthereumEcdsaSignature;
-    const context = dsMockUtils.getContextInstance();
-
-    when(context.createType)
-      .calledWith('PolymeshPrimitivesEthereumEcdsaSignature', signature)
-      .mockReturnValue(fakeResult);
-
-    const result = stringToEcdsaSignature(signature, context);
-
-    expect(result).toBe(fakeResult);
   });
 });
 
@@ -1296,6 +1238,24 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       when(createTypeMock)
         .calledWith('PolymeshPrimitivesAuthorizationAuthorizationData', {
           [value.type]: rawPermissions,
+        })
+        .mockReturnValue(fakeResult);
+
+      result = authorizationToAuthorizationData(value, context);
+      expect(result).toBe(fakeResult);
+
+      value = {
+        type: AuthorizationType.AddRelayerPayingKey,
+        value: {
+          beneficiary: new Account({ address: 'beneficiary' }, context),
+          subsidizer: new Account({ address: 'subsidizer' }, context),
+          allowance: new BigNumber(100),
+        },
+      };
+
+      when(createTypeMock)
+        .calledWith('PolymeshPrimitivesAuthorizationAuthorizationData', {
+          [value.type]: value.value,
         })
         .mockReturnValue(fakeResult);
 
@@ -2293,6 +2253,14 @@ describe('bigNumberToBalance and balanceToBigNumber', () => {
       result = bigNumberToBalance(value, context);
 
       expect(result).toBe(fakeResult);
+
+      value = new BigNumber('');
+
+      when(context.createType)
+        .calledWith('Balance', value.multipliedBy(Math.pow(10, 6)).toString())
+        .mockReturnValue(fakeResult);
+
+      expect(result).toBe(fakeResult);
     });
 
     it('should throw an error if the value exceeds the max balance', () => {
@@ -2431,13 +2399,13 @@ describe('stringToMemo', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should convert a string to a polkadot PolymeshCommonUtilitiesBalancesMemo object', () => {
+  it('should convert a string to a polkadot PolymeshPrimitivesMemo object', () => {
     const value = 'someDescription';
-    const fakeResult = 'memoDescription' as unknown as PolymeshCommonUtilitiesBalancesMemo;
+    const fakeResult = 'memoDescription' as unknown as PolymeshPrimitivesMemo;
     const context = dsMockUtils.getContextInstance();
 
     when(context.createType)
-      .calledWith('PolymeshCommonUtilitiesBalancesMemo', padString(value, 32))
+      .calledWith('PolymeshPrimitivesMemo', padString(value, 32))
       .mockReturnValue(fakeResult);
 
     const result = stringToMemo(value, context);
@@ -3552,68 +3520,6 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
       result = claimToMeshClaim(value, context);
 
       expect(result).toBe(fakeResult);
-
-      value = {
-        type: ClaimType.NoData,
-      };
-
-      when(createTypeMock)
-        .calledWith('PolymeshPrimitivesIdentityClaimClaim', { [value.type]: null })
-        .mockReturnValue(fakeResult);
-
-      result = claimToMeshClaim(value, context);
-
-      expect(result).toBe(fakeResult);
-
-      value = {
-        type: ClaimType.InvestorUniqueness,
-        scope: { type: ScopeType.Ticker, value: 'SOME_TICKER' },
-        cddId: 'someCddId',
-        scopeId: 'someScopeId',
-      };
-
-      when(createTypeMock)
-        .calledWith('PolymeshPrimitivesIdentityClaimClaim', {
-          [value.type]: [
-            scopeToMeshScope(value.scope, context),
-            stringToIdentityId(value.scopeId, context),
-            stringToCddId(value.cddId, context),
-          ],
-        })
-        .mockReturnValue(fakeResult);
-
-      result = claimToMeshClaim(value, context);
-
-      expect(result).toBe(fakeResult);
-
-      value = {
-        type: ClaimType.InvestorUniquenessV2,
-        cddId: 'someCddId',
-      };
-
-      when(createTypeMock)
-        .calledWith('PolymeshPrimitivesIdentityClaimClaim', {
-          [value.type]: stringToCddId(value.cddId, context),
-        })
-        .mockReturnValue(fakeResult);
-
-      result = claimToMeshClaim(value, context);
-
-      expect(result).toBe(fakeResult);
-
-      value = {
-        type: ClaimType.NoType,
-      };
-
-      when(createTypeMock)
-        .calledWith('PolymeshPrimitivesIdentityClaimClaim', {
-          [value.type]: null,
-        })
-        .mockReturnValue(fakeResult);
-
-      result = claimToMeshClaim(value, context);
-
-      expect(result).toBe(fakeResult);
     });
   });
 
@@ -3717,14 +3623,6 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
       expect(result).toEqual(fakeResult);
 
       fakeResult = {
-        type: ClaimType.NoData,
-      };
-      claim = dsMockUtils.createMockClaim('NoData');
-
-      result = meshClaimToClaim(claim);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = {
         type: ClaimType.SellLockup,
         scope,
       };
@@ -3745,34 +3643,6 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         Exempted: dsMockUtils.createMockScope({
           Identity: dsMockUtils.createMockIdentityId(scope.value),
         }),
-      });
-
-      result = meshClaimToClaim(claim);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = {
-        type: ClaimType.InvestorUniqueness,
-        scope,
-        scopeId: 'scopeId',
-        cddId: 'cddId',
-      };
-      claim = dsMockUtils.createMockClaim({
-        InvestorUniqueness: [
-          dsMockUtils.createMockScope({ Identity: dsMockUtils.createMockIdentityId(scope.value) }),
-          dsMockUtils.createMockIdentityId(fakeResult.scopeId),
-          dsMockUtils.createMockCddId(fakeResult.cddId),
-        ],
-      });
-
-      result = meshClaimToClaim(claim);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = {
-        type: ClaimType.InvestorUniquenessV2,
-        cddId: 'cddId',
-      };
-      claim = dsMockUtils.createMockClaim({
-        InvestorUniquenessV2: dsMockUtils.createMockCddId(fakeResult.cddId),
       });
 
       result = meshClaimToClaim(claim);
@@ -3985,13 +3855,6 @@ describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
       result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
-      fakeResult = ClaimType.NoType;
-
-      claimType = dsMockUtils.createMockClaimType(fakeResult);
-
-      result = meshClaimTypeToClaimType(claimType);
-      expect(result).toEqual(fakeResult);
-
       fakeResult = ClaimType.SellLockup;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
@@ -4010,17 +3873,6 @@ describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
         .mockReturnValue(mockClaim);
 
       const result = claimTypeToMeshClaimType(ClaimType.Accredited, context);
-      expect(result).toEqual(mockClaim);
-    });
-
-    it('should treat NoData as NoType', () => {
-      const context = dsMockUtils.getContextInstance();
-      const mockClaim = dsMockUtils.createMockClaimType(ClaimType.NoType);
-      when(context.createType)
-        .calledWith('PolymeshPrimitivesIdentityClaimClaimType', ClaimType.NoType)
-        .mockReturnValue(mockClaim);
-
-      const result = claimTypeToMeshClaimType(ClaimType.NoData, context);
       expect(result).toEqual(mockClaim);
     });
   });
@@ -4078,6 +3930,12 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
 
       expect(result).toEqual({ type: ScopeType.Custom, value: 'SOMETHING_ELSE' });
     });
+
+    it('should throw an error for invalid scope type', () => {
+      expect(() =>
+        middlewareScopeToScope({ type: 'RANDOM_TYPE', value: 'SOMETHING_ELSE' })
+      ).toThrow('Unsupported Scope Type. Please contact the Polymesh team');
+    });
   });
 
   describe('scopeToMiddlewareScope', () => {
@@ -4096,26 +3954,6 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
       scope = { type: ScopeType.Custom, value: 'customValue' };
       result = scopeToMiddlewareScope(scope);
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Custom, value: scope.value });
-    });
-  });
-});
-
-describe('middlewareEventToEventIdentifier', () => {
-  it('should convert a middleware Event object to an EventIdentifier', () => {
-    const event = {
-      /* eslint-disable @typescript-eslint/naming-convention */
-      block_id: 3000,
-      event_idx: 3,
-      /* eslint-enable @typescript-eslint/naming-convention */
-      block: {
-        datetime: new Date('10/14/1987').toISOString(),
-      },
-    } as MiddlewareEvent;
-
-    expect(middlewareEventToEventIdentifier(event)).toEqual({
-      blockNumber: new BigNumber(3000),
-      blockDate: new Date('10/14/1987'),
-      eventIndex: new BigNumber(3),
     });
   });
 });
@@ -4238,14 +4076,14 @@ describe('middlewareInstructionToHistoricInstruction', () => {
   });
 });
 
-describe('middlewareV2EventDetailsToEventIdentifier', () => {
+describe('middlewareEventDetailsToEventIdentifier', () => {
   it('should convert Event details to an EventIdentifier', () => {
     const eventIdx = 3;
     const block = {
       blockId: 3000,
       hash: 'someHash',
       datetime: new Date('10/14/1987').toISOString(),
-    } as MiddlewareV2Block;
+    } as Block;
 
     const fakeResult = {
       blockNumber: new BigNumber(3000),
@@ -4254,16 +4092,16 @@ describe('middlewareV2EventDetailsToEventIdentifier', () => {
       eventIndex: new BigNumber(3),
     };
 
-    expect(middlewareV2EventDetailsToEventIdentifier(block)).toEqual({
+    expect(middlewareEventDetailsToEventIdentifier(block)).toEqual({
       ...fakeResult,
       eventIndex: new BigNumber(0),
     });
 
-    expect(middlewareV2EventDetailsToEventIdentifier(block, eventIdx)).toEqual(fakeResult);
+    expect(middlewareEventDetailsToEventIdentifier(block, eventIdx)).toEqual(fakeResult);
   });
 });
 
-describe('middlewareV2ClaimToClaimData', () => {
+describe('middlewareClaimToClaimData', () => {
   let createClaimSpy: jest.SpyInstance;
 
   beforeAll(() => {
@@ -4281,12 +4119,12 @@ describe('middlewareV2ClaimToClaimData', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should convert middleware V2 Claim to ClaimData', () => {
+  it('should convert middleware Claim to ClaimData', () => {
     const context = dsMockUtils.getContextInstance();
     const issuanceDate = new Date('10/14/1987');
     const lastUpdateDate = new Date('10/14/1987');
     const expiry = new Date('10/10/1988');
-    const middlewareV2Claim = {
+    const middlewareClaim = {
       targetId: 'targetId',
       issuerId: 'issuerId',
       issuanceDate: issuanceDate.getTime(),
@@ -4294,7 +4132,7 @@ describe('middlewareV2ClaimToClaimData', () => {
       expiry: null,
       cddId: 'someCddId',
       type: 'CustomerDueDiligence',
-    } as MiddlewareV2Claim;
+    } as MiddlewareClaim;
     const claim = {
       type: ClaimType.CustomerDueDiligence,
       id: 'someCddId',
@@ -4310,12 +4148,12 @@ describe('middlewareV2ClaimToClaimData', () => {
       claim,
     };
 
-    expect(middlewareV2ClaimToClaimData(middlewareV2Claim, context)).toEqual(fakeResult);
+    expect(middlewareClaimToClaimData(middlewareClaim, context)).toEqual(fakeResult);
 
     expect(
-      middlewareV2ClaimToClaimData(
+      middlewareClaimToClaimData(
         {
-          ...middlewareV2Claim,
+          ...middlewareClaim,
           expiry: expiry.getTime(),
         },
         context
@@ -4327,7 +4165,7 @@ describe('middlewareV2ClaimToClaimData', () => {
   });
 });
 
-describe('toIdentityWithClaimsArrayV2', () => {
+describe('toIdentityWithClaimsArray', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -4346,7 +4184,7 @@ describe('toIdentityWithClaimsArrayV2', () => {
     const issuerDid = 'someIssuerDid';
     const cddId = 'someCddId';
     const date = 1589816265000;
-    const customerDueDiligenceType = MiddlewareV2ClaimType.CustomerDueDiligence;
+    const customerDueDiligenceType = ClaimTypeEnum.CustomerDueDiligence;
     const claim = {
       target: expect.objectContaining({ did: targetDid }),
       issuer: expect.objectContaining({ did: issuerDid }),
@@ -4381,9 +4219,9 @@ describe('toIdentityWithClaimsArrayV2', () => {
       issuerId: issuerDid,
       issuanceDate: date,
       lastUpdateDate: date,
-      cddId: cddId,
+      cddId,
     };
-    const fakeMiddlewareV2Claims = [
+    const fakemiddlewareClaims = [
       {
         ...commonClaimData,
         expiry: date,
@@ -4394,10 +4232,10 @@ describe('toIdentityWithClaimsArrayV2', () => {
         expiry: null,
         type: customerDueDiligenceType,
       },
-    ] as MiddlewareV2Claim[];
+    ] as MiddlewareClaim[];
     /* eslint-enable @typescript-eslint/naming-convention */
 
-    const result = toIdentityWithClaimsArrayV2(fakeMiddlewareV2Claims, context, 'targetId');
+    const result = toIdentityWithClaimsArray(fakemiddlewareClaims, context, 'targetId');
 
     expect(result).toEqual(fakeResult);
   });
@@ -4887,37 +4725,37 @@ describe('txTagToExtrinsicIdentifier and extrinsicIdentifierToTxTag', () => {
     });
   });
 
-  it('should convert a ExtrinsicIdentifierV2 object to a TxTag', () => {
+  it('should convert a ExtrinsicIdentifier object to a TxTag', () => {
     let result = extrinsicIdentifierToTxTag({
-      moduleId: MiddlewareV2ModuleId.Identity,
-      callId: MiddlewareV2CallId.CddRegisterDid,
+      moduleId: ModuleIdEnum.Identity,
+      callId: CallIdEnum.CddRegisterDid,
     });
 
     expect(result).toEqual(TxTags.identity.CddRegisterDid);
 
     result = extrinsicIdentifierToTxTag({
-      moduleId: MiddlewareV2ModuleId.Babe,
-      callId: MiddlewareV2CallId.ReportEquivocation,
+      moduleId: ModuleIdEnum.Babe,
+      callId: CallIdEnum.ReportEquivocation,
     });
 
     expect(result).toEqual(TxTags.babe.ReportEquivocation);
   });
 });
 
-describe('txTagToExtrinsicIdentifierV2', () => {
-  it('should convert a TxTag enum to a ExtrinsicIdentifierV2 object', () => {
-    let result = txTagToExtrinsicIdentifierV2(TxTags.identity.CddRegisterDid);
+describe('txTagToExtrinsicIdentifier', () => {
+  it('should convert a TxTag enum to a ExtrinsicIdentifier object', () => {
+    let result = txTagToExtrinsicIdentifier(TxTags.identity.CddRegisterDid);
 
     expect(result).toEqual({
-      moduleId: MiddlewareV2ModuleId.Identity,
-      callId: MiddlewareV2CallId.CddRegisterDid,
+      moduleId: ModuleIdEnum.Identity,
+      callId: CallIdEnum.CddRegisterDid,
     });
 
-    result = txTagToExtrinsicIdentifierV2(TxTags.babe.ReportEquivocation);
+    result = txTagToExtrinsicIdentifier(TxTags.babe.ReportEquivocation);
 
     expect(result).toEqual({
-      moduleId: MiddlewareV2ModuleId.Babe,
-      callId: MiddlewareV2CallId.ReportEquivocation,
+      moduleId: ModuleIdEnum.Babe,
+      callId: CallIdEnum.ReportEquivocation,
     });
   });
 });
@@ -5492,6 +5330,31 @@ describe('keyToAddress and addressToKey', () => {
   });
 });
 
+describe('coerceHexToString', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a hex string to string', () => {
+    const hex = '0x41434D450000000000000000';
+    const mockResult = 'ACME';
+
+    let result = coerceHexToString(hex);
+    expect(result).toEqual(mockResult);
+
+    result = coerceHexToString(mockResult);
+    expect(result).toEqual(mockResult);
+  });
+});
+
 describe('transactionHexToTxTag', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -5647,13 +5510,13 @@ describe('venueTypeToMeshVenueType and meshVenueTypeToVenueType', () => {
   });
 
   describe('venueTypeToMeshVenueType', () => {
-    it('should convert a VenueType to a polkadot PalletSettlementVenueType object', () => {
+    it('should convert a VenueType to a polkadot PolymeshPrimitivesSettlementVenueType object', () => {
       const value = VenueType.Other;
-      const fakeResult = 'Other' as unknown as PalletSettlementVenueType;
+      const fakeResult = 'Other' as unknown as PolymeshPrimitivesSettlementVenueType;
       const context = dsMockUtils.getContextInstance();
 
       when(context.createType)
-        .calledWith('PalletSettlementVenueType', value)
+        .calledWith('PolymeshPrimitivesSettlementVenueType', value)
         .mockReturnValue(fakeResult);
 
       const result = venueTypeToMeshVenueType(value, context);
@@ -5713,6 +5576,17 @@ describe('meshInstructionStatusToInstructionStatus', () => {
 
     fakeResult = InstructionStatus.Failed;
     instructionStatus = dsMockUtils.createMockInstructionStatus(fakeResult);
+
+    result = meshInstructionStatusToInstructionStatus(instructionStatus);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = InstructionStatus.Executed;
+    instructionStatus = dsMockUtils.createMockInstructionStatus('Rejected');
+
+    result = meshInstructionStatusToInstructionStatus(instructionStatus);
+    expect(result).toEqual(fakeResult);
+
+    instructionStatus = dsMockUtils.createMockInstructionStatus('Success');
 
     result = meshInstructionStatusToInstructionStatus(instructionStatus);
     expect(result).toEqual(fakeResult);
@@ -5821,12 +5695,12 @@ describe('endConditionToSettlementType', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should convert an end condition to a polkadot PalletSettlementSettlementType object', () => {
-    const fakeResult = 'type' as unknown as PalletSettlementSettlementType;
+  it('should convert an end condition to a polkadot PolymeshPrimitivesSettlementSettlementType object', () => {
+    const fakeResult = 'type' as unknown as PolymeshPrimitivesSettlementSettlementType;
     const context = dsMockUtils.getContextInstance();
 
     when(context.createType)
-      .calledWith('PalletSettlementSettlementType', InstructionType.SettleOnAffirmation)
+      .calledWith('PolymeshPrimitivesSettlementSettlementType', InstructionType.SettleOnAffirmation)
       .mockReturnValue(fakeResult);
 
     let result = endConditionToSettlementType(
@@ -5843,7 +5717,7 @@ describe('endConditionToSettlementType', () => {
       .calledWith('u32', blockNumber.toString())
       .mockReturnValue(rawBlockNumber);
     when(context.createType)
-      .calledWith('PalletSettlementSettlementType', {
+      .calledWith('PolymeshPrimitivesSettlementSettlementType', {
         [InstructionType.SettleOnBlock]: rawBlockNumber,
       })
       .mockReturnValue(fakeResult);
@@ -5856,7 +5730,7 @@ describe('endConditionToSettlementType', () => {
     expect(result).toBe(fakeResult);
 
     when(context.createType)
-      .calledWith('PalletSettlementSettlementType', {
+      .calledWith('PolymeshPrimitivesSettlementSettlementType', {
         [InstructionType.SettleManual]: rawBlockNumber,
       })
       .mockReturnValue(fakeResult);
@@ -5972,90 +5846,6 @@ describe('portfolioLikeToPortfolio', () => {
   it('should convert a PortfolioLike to a NumberedPortfolio instance', async () => {
     const result = portfolioLikeToPortfolio({ identity: did, id }, context);
     expect(result instanceof NumberedPortfolio).toBe(true);
-  });
-});
-
-describe('toIdentityWithClaimsArray', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-    entityMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-    entityMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should return an IdentityWithClaims array object', () => {
-    const context = dsMockUtils.getContextInstance();
-    const targetDid = 'someTargetDid';
-    const issuerDid = 'someIssuerDid';
-    const cddId = 'someCddId';
-    const date = 1589816265000;
-    const customerDueDiligenceType = ClaimTypeEnum.CustomerDueDiligence;
-    const claim = {
-      target: expect.objectContaining({ did: targetDid }),
-      issuer: expect.objectContaining({ did: issuerDid }),
-      issuedAt: new Date(date),
-      lastUpdatedAt: new Date(date),
-    };
-    const fakeResult = [
-      {
-        identity: expect.objectContaining({ did: targetDid }),
-        claims: [
-          {
-            ...claim,
-            expiry: new Date(date),
-            claim: {
-              type: customerDueDiligenceType,
-              id: cddId,
-            },
-          },
-          {
-            ...claim,
-            expiry: null,
-            claim: {
-              type: customerDueDiligenceType,
-              id: cddId,
-            },
-          },
-        ],
-      },
-    ];
-    /* eslint-disable @typescript-eslint/naming-convention */
-    const commonClaimData = {
-      targetDID: targetDid,
-      issuer: issuerDid,
-      issuance_date: date,
-      last_update_date: date,
-      cdd_id: cddId,
-    };
-    const fakeMiddlewareIdentityWithClaims = [
-      {
-        did: targetDid,
-        claims: [
-          {
-            ...commonClaimData,
-            expiry: date,
-            type: customerDueDiligenceType,
-          },
-          {
-            ...commonClaimData,
-            expiry: null,
-            type: customerDueDiligenceType,
-          },
-        ],
-      },
-    ];
-    /* eslint-enable @typescript-eslint/naming-convention */
-
-    const result = toIdentityWithClaimsArray(fakeMiddlewareIdentityWithClaims, context);
-
-    expect(result).toEqual(fakeResult);
   });
 });
 
@@ -6251,48 +6041,19 @@ describe('middlewarePortfolioToPortfolio', () => {
   it('should convert a MiddlewarePortfolio into a Portfolio', async () => {
     const context = dsMockUtils.getContextInstance();
     let middlewarePortfolio = {
-      kind: 'Default',
-      did: 'someDid',
-    };
+      identityId: 'someDid',
+      number: 0,
+    } as MiddlewarePortfolio;
 
     let result = await middlewarePortfolioToPortfolio(middlewarePortfolio, context);
     expect(result instanceof DefaultPortfolio).toBe(true);
 
     middlewarePortfolio = {
-      kind: '0',
-      did: 'someDid',
-    };
-
-    result = await middlewarePortfolioToPortfolio(middlewarePortfolio, context);
-    expect(result instanceof DefaultPortfolio).toBe(true);
-
-    middlewarePortfolio = {
-      kind: '10',
-      did: 'someDid',
-    };
-
-    result = await middlewarePortfolioToPortfolio(middlewarePortfolio, context);
-    expect(result instanceof NumberedPortfolio).toBe(true);
-  });
-});
-
-describe('middlewareV2PortfolioToPortfolio', () => {
-  it('should convert a MiddlewarePortfolio into a Portfolio', async () => {
-    const context = dsMockUtils.getContextInstance();
-    let middlewareV2Portfolio = {
-      identityId: 'someDid',
-      number: 0,
-    } as MiddlewareV2Portfolio;
-
-    let result = await middlewareV2PortfolioToPortfolio(middlewareV2Portfolio, context);
-    expect(result instanceof DefaultPortfolio).toBe(true);
-
-    middlewareV2Portfolio = {
       identityId: 'someDid',
       number: 10,
-    } as MiddlewareV2Portfolio;
+    } as MiddlewarePortfolio;
 
-    result = await middlewareV2PortfolioToPortfolio(middlewareV2Portfolio, context);
+    result = await middlewarePortfolioToPortfolio(middlewarePortfolio, context);
     expect(result instanceof NumberedPortfolio).toBe(true);
   });
 });
@@ -6867,12 +6628,12 @@ describe('fundraiserToOfferingDetails', () => {
 
     let fundraiser = dsMockUtils.createMockFundraiser({
       creator,
-      offeringPortfolio: offeringPortfolio,
-      offeringAsset: offeringAsset,
-      raisingPortfolio: raisingPortfolio,
-      raisingAsset: raisingAsset,
+      offeringPortfolio,
+      offeringAsset,
+      raisingPortfolio,
+      raisingAsset,
       tiers: rawTiers,
-      venueId: venueId,
+      venueId,
       start,
       end,
       status,
@@ -6887,12 +6648,12 @@ describe('fundraiserToOfferingDetails', () => {
 
     fundraiser = dsMockUtils.createMockFundraiser({
       creator,
-      offeringPortfolio: offeringPortfolio,
-      offeringAsset: offeringAsset,
-      raisingPortfolio: raisingPortfolio,
-      raisingAsset: raisingAsset,
+      offeringPortfolio,
+      offeringAsset,
+      raisingPortfolio,
+      raisingAsset,
       tiers: rawTiers,
-      venueId: venueId,
+      venueId,
       start: dsMockUtils.createMockMoment(new BigNumber(futureStart.getTime())),
       end: dsMockUtils.createMockOption(),
       status: dsMockUtils.createMockFundraiserStatus('Closed'),
@@ -6915,12 +6676,12 @@ describe('fundraiserToOfferingDetails', () => {
 
     fundraiser = dsMockUtils.createMockFundraiser({
       creator,
-      offeringPortfolio: offeringPortfolio,
-      offeringAsset: offeringAsset,
-      raisingPortfolio: raisingPortfolio,
-      raisingAsset: raisingAsset,
+      offeringPortfolio,
+      offeringAsset,
+      raisingPortfolio,
+      raisingAsset,
       tiers: rawTiers,
-      venueId: venueId,
+      venueId,
       start,
       end: dsMockUtils.createMockOption(),
       status: dsMockUtils.createMockFundraiserStatus('ClosedEarly'),
@@ -6942,10 +6703,10 @@ describe('fundraiserToOfferingDetails', () => {
 
     fundraiser = dsMockUtils.createMockFundraiser({
       creator,
-      offeringPortfolio: offeringPortfolio,
-      offeringAsset: offeringAsset,
-      raisingPortfolio: raisingPortfolio,
-      raisingAsset: raisingAsset,
+      offeringPortfolio,
+      offeringAsset,
+      raisingPortfolio,
+      raisingAsset,
       tiers: [
         dsMockUtils.createMockFundraiserTier({
           total: dsMockUtils.createMockBalance(amount),
@@ -6953,7 +6714,7 @@ describe('fundraiserToOfferingDetails', () => {
           remaining: dsMockUtils.createMockBalance(new BigNumber(0)),
         }),
       ],
-      venueId: venueId,
+      venueId,
       start,
       end: dsMockUtils.createMockOption(),
       status: dsMockUtils.createMockFundraiserStatus('Frozen'),
@@ -6981,10 +6742,10 @@ describe('fundraiserToOfferingDetails', () => {
 
     fundraiser = dsMockUtils.createMockFundraiser({
       creator,
-      offeringPortfolio: offeringPortfolio,
-      offeringAsset: offeringAsset,
-      raisingPortfolio: raisingPortfolio,
-      raisingAsset: raisingAsset,
+      offeringPortfolio,
+      offeringAsset,
+      raisingPortfolio,
+      raisingAsset,
       tiers: [
         dsMockUtils.createMockFundraiserTier({
           total: dsMockUtils.createMockBalance(amount),
@@ -6992,7 +6753,7 @@ describe('fundraiserToOfferingDetails', () => {
           remaining: dsMockUtils.createMockBalance(new BigNumber(1)),
         }),
       ],
-      venueId: venueId,
+      venueId,
       start: dsMockUtils.createMockMoment(new BigNumber(pastStart.getTime())),
       end: dsMockUtils.createMockOption(
         dsMockUtils.createMockMoment(new BigNumber(pastEnd.getTime()))
@@ -7017,246 +6778,6 @@ describe('fundraiserToOfferingDetails', () => {
       totalRemaining: new BigNumber(1).shiftedBy(-6),
       totalAmount: amount.shiftedBy(-6),
     });
-  });
-});
-
-describe('calendarPeriodToMeshCalendarPeriod and meshCalendarPeriodToCalendarPeriod', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  describe('calendarPeriodToMeshCalendarPeriod', () => {
-    it('should throw an error if amount is negative', () => {
-      const context = dsMockUtils.getContextInstance();
-
-      expect(() =>
-        calendarPeriodToMeshCalendarPeriod(
-          { unit: CalendarUnit.Month, amount: new BigNumber(-3) },
-          context
-        )
-      ).toThrow('Calendar period cannot have a negative amount');
-    });
-
-    it('should convert a CalendarPeriod to a polkadot PolymeshPrimitivesCalendarCalendarPeriod object', () => {
-      const amount = new BigNumber(1);
-      const value = { unit: CalendarUnit.Month, amount };
-      const fakeResult = 'Period' as unknown as PolymeshPrimitivesCalendarCalendarPeriod;
-      const context = dsMockUtils.getContextInstance();
-
-      const createTypeMock = context.createType;
-      const rawAmount = dsMockUtils.createMockU64(amount);
-
-      when(createTypeMock).calledWith('u64', `${amount}`).mockReturnValue(rawAmount);
-      when(createTypeMock)
-        .calledWith('PolymeshPrimitivesCalendarCalendarPeriod', {
-          unit: 'Month',
-          amount: rawAmount,
-        })
-        .mockReturnValue(fakeResult);
-
-      const result = calendarPeriodToMeshCalendarPeriod(value, context);
-
-      expect(result).toBe(fakeResult);
-    });
-  });
-
-  describe('meshCalendarPeriodToCalendarPeriod', () => {
-    it('should convert a polkadot PolymeshPrimitivesCalendarCalendarPeriod object to a CalendarPeriod', () => {
-      let fakeResult = { unit: CalendarUnit.Second, amount: new BigNumber(1) };
-      let calendarPeriod = dsMockUtils.createMockCalendarPeriod({
-        unit: dsMockUtils.createMockCalendarUnit('Second'),
-        amount: dsMockUtils.createMockU64(fakeResult.amount),
-      });
-
-      let result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = { unit: CalendarUnit.Minute, amount: new BigNumber(1) };
-      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
-        unit: dsMockUtils.createMockCalendarUnit('Minute'),
-        amount: dsMockUtils.createMockU64(fakeResult.amount),
-      });
-
-      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = { unit: CalendarUnit.Hour, amount: new BigNumber(1) };
-      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
-        unit: dsMockUtils.createMockCalendarUnit('Hour'),
-        amount: dsMockUtils.createMockU64(fakeResult.amount),
-      });
-
-      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = { unit: CalendarUnit.Day, amount: new BigNumber(1) };
-      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
-        unit: dsMockUtils.createMockCalendarUnit('Day'),
-        amount: dsMockUtils.createMockU64(fakeResult.amount),
-      });
-
-      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = { unit: CalendarUnit.Week, amount: new BigNumber(1) };
-      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
-        unit: dsMockUtils.createMockCalendarUnit('Week'),
-        amount: dsMockUtils.createMockU64(fakeResult.amount),
-      });
-
-      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = { unit: CalendarUnit.Month, amount: new BigNumber(1) };
-      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
-        unit: dsMockUtils.createMockCalendarUnit('Month'),
-        amount: dsMockUtils.createMockU64(fakeResult.amount),
-      });
-
-      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = { unit: CalendarUnit.Year, amount: new BigNumber(1) };
-      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
-        unit: dsMockUtils.createMockCalendarUnit('Year'),
-        amount: dsMockUtils.createMockU64(fakeResult.amount),
-      });
-
-      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
-      expect(result).toEqual(fakeResult);
-    });
-  });
-});
-
-describe('scheduleSpecToMeshScheduleSpec', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should convert a ScheduleDetails object to a polkadot PalletAssetCheckpointScheduleSpec object', () => {
-    const start = new Date('10/14/1987');
-    const amount = new BigNumber(1);
-    const period = { unit: CalendarUnit.Month, amount };
-    const repetitions = new BigNumber(10);
-
-    const value = { start, period, repetitions };
-    const fakeResult = 'Spec' as unknown as PalletAssetCheckpointScheduleSpec;
-    const context = dsMockUtils.getContextInstance();
-
-    const createTypeMock = context.createType;
-    const rawStart = dsMockUtils.createMockMoment(new BigNumber(start.getTime()));
-    const rawAmount = dsMockUtils.createMockU64(amount);
-    const rawZero = dsMockUtils.createMockU64(new BigNumber(0));
-    const rawPeriod = dsMockUtils.createMockCalendarPeriod({
-      unit: dsMockUtils.createMockCalendarUnit('Month'),
-      amount: rawAmount,
-    });
-    const rawZeroPeriod = dsMockUtils.createMockCalendarPeriod({
-      unit: dsMockUtils.createMockCalendarUnit('Month'),
-      amount: rawZero,
-    });
-    const rawRepetitions = dsMockUtils.createMockU64(repetitions);
-
-    when(createTypeMock).calledWith('u64', `${amount}`).mockReturnValue(rawAmount);
-    when(createTypeMock).calledWith('u64', '0').mockReturnValue(rawZero);
-    when(createTypeMock).calledWith('u64', `${repetitions}`).mockReturnValue(rawRepetitions);
-    when(createTypeMock).calledWith('u64', start.getTime()).mockReturnValue(rawStart);
-    when(createTypeMock)
-      .calledWith('PolymeshPrimitivesCalendarCalendarPeriod', { unit: 'Month', amount: rawAmount })
-      .mockReturnValue(rawPeriod);
-    when(createTypeMock)
-      .calledWith('PolymeshPrimitivesCalendarCalendarPeriod', { unit: 'Month', amount: rawZero })
-      .mockReturnValue(rawZeroPeriod);
-    when(createTypeMock)
-      .calledWith('PalletAssetCheckpointScheduleSpec', {
-        start: rawStart,
-        period: rawPeriod,
-        remaining: rawRepetitions,
-      })
-      .mockReturnValue(fakeResult);
-    when(createTypeMock)
-      .calledWith('PalletAssetCheckpointScheduleSpec', {
-        start: null,
-        period: rawZeroPeriod,
-        remaining: rawZero,
-      })
-      .mockReturnValue(fakeResult);
-
-    let result = scheduleSpecToMeshScheduleSpec(value, context);
-
-    expect(result).toBe(fakeResult);
-
-    result = scheduleSpecToMeshScheduleSpec(
-      { start: null, period: null, repetitions: null },
-      context
-    );
-
-    expect(result).toBe(fakeResult);
-  });
-});
-
-describe('storedScheduleToCheckpointScheduleParams', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should convert a polkadot PolymeshCommonUtilitiesCheckpointStoredSchedule object to a CheckpointScheduleParams object', () => {
-    const start = new Date('10/14/1987');
-    const nextCheckpointDate = new Date('10/14/2021');
-    const id = new BigNumber(1);
-    const remaining = new BigNumber(5);
-
-    const fakeResult = {
-      id,
-      period: {
-        unit: CalendarUnit.Month,
-        amount: new BigNumber(1),
-      },
-      start,
-      remaining,
-      nextCheckpointDate,
-    };
-
-    const storedSchedule = dsMockUtils.createMockStoredSchedule({
-      schedule: dsMockUtils.createMockCheckpointSchedule({
-        start: dsMockUtils.createMockMoment(new BigNumber(start.getTime())),
-        period: dsMockUtils.createMockCalendarPeriod({
-          unit: dsMockUtils.createMockCalendarUnit('Month'),
-          amount: dsMockUtils.createMockU64(new BigNumber(1)),
-        }),
-      }),
-      id: dsMockUtils.createMockU64(id),
-      remaining: dsMockUtils.createMockU32(remaining),
-      at: dsMockUtils.createMockMoment(new BigNumber(nextCheckpointDate.getTime())),
-    });
-
-    const result = storedScheduleToCheckpointScheduleParams(storedSchedule);
-
-    expect(result).toEqual(fakeResult);
   });
 });
 
@@ -7724,39 +7245,11 @@ describe('corporateActionIdentifierToCaId', () => {
     when(context.createType)
       .calledWith('PalletCorporateActionsCaId', {
         ticker,
-        localId: localId,
+        localId,
       })
       .mockReturnValue(fakeResult);
 
     const result = corporateActionIdentifierToCaId(args, context);
-    expect(result).toEqual(fakeResult);
-  });
-});
-
-describe('stringToSignature', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should convert a string to a polkadot Signature object', () => {
-    const value = 'someValue';
-    const fakeResult = 'convertedSignature' as unknown as Signature;
-    const context = dsMockUtils.getContextInstance();
-
-    when(context.createType)
-      .calledWith('ConfidentialIdentityV2SignSignature', value)
-      .mockReturnValue(fakeResult);
-
-    const result = stringToSignature(value, context);
-
     expect(result).toEqual(fakeResult);
   });
 });
@@ -7782,109 +7275,6 @@ describe('stringToU8aFixed', () => {
     when(context.createType).calledWith('U8aFixed', value).mockReturnValue(fakeResult);
 
     const result = stringToU8aFixed(value, context);
-
-    expect(result).toEqual(fakeResult);
-  });
-});
-
-describe('scopeClaimProofToConfidentialIdentityClaimProof', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should convert a proof and a scopeId to a polkadot ScopeClaimProof object', () => {
-    const [
-      scopeId,
-      proofScopeIdWellFormed,
-      firstChallengeResponse,
-      secondChallengeResponse,
-      subtractExpressionsRes,
-      blindedScopeDidHash,
-    ] = [
-      'someScopeId',
-      'someProofScopeIdWellFormed',
-      'someFirstChallengeResponse',
-      'someSecondChallengeResponse',
-      'someSubtractExpressionsRes',
-      'someBlindedScopeDidHash',
-    ];
-    const proof: ScopeClaimProof = {
-      proofScopeIdWellFormed,
-      proofScopeIdCddIdMatch: {
-        challengeResponses: [firstChallengeResponse, secondChallengeResponse],
-        subtractExpressionsRes,
-        blindedScopeDidHash,
-      },
-    };
-    /* eslint-disable @typescript-eslint/naming-convention */
-    const rawFirstChallengeResponse = dsMockUtils.createMockU8aFixed(firstChallengeResponse);
-    const rawSecondChallengeResponse = dsMockUtils.createMockU8aFixed(secondChallengeResponse);
-    const rawSubtractExpressionsRes = dsMockUtils.createMockU8aFixed(subtractExpressionsRes);
-    const rawBlindedScopeDidHash = dsMockUtils.createMockU8aFixed(blindedScopeDidHash);
-    const rawZkProofData = dsMockUtils.createMockZkProofData({
-      subtractExpressionsRes: subtractExpressionsRes,
-      challengeResponses: [firstChallengeResponse, secondChallengeResponse],
-      blindedScopeDidHash: blindedScopeDidHash,
-    });
-    const rawProofScopeIdWellFormed = dsMockUtils.createMockSignature(proofScopeIdWellFormed);
-    const rawScopeId = dsMockUtils.createMockU8aFixed(scopeId);
-    const fakeResult = dsMockUtils.createMockScopeClaimProof({
-      proofScopeIdWellformed: proofScopeIdWellFormed,
-      proofScopeIdCddIdMatch: {
-        subtractExpressionsRes: subtractExpressionsRes,
-        challengeResponses: [firstChallengeResponse, secondChallengeResponse],
-        blindedScopeDidHash: blindedScopeDidHash,
-      },
-      scopeId,
-    });
-
-    const zkProofData = {
-      challenge_responses: [rawFirstChallengeResponse, rawSecondChallengeResponse],
-      subtract_expressions_res: rawSubtractExpressionsRes,
-      blinded_scope_did_hash: rawBlindedScopeDidHash,
-    };
-    const scopeClaimProof = {
-      proofScopeIdWellformed: rawProofScopeIdWellFormed,
-      proofScopeIdCddIdMatch: rawZkProofData,
-      scopeId: rawScopeId,
-    };
-    /* eslint-enable @typescript-eslint/naming-convention */
-    const context = dsMockUtils.getContextInstance();
-
-    when(context.createType)
-      .calledWith('U8aFixed', firstChallengeResponse)
-      .mockReturnValue(rawFirstChallengeResponse);
-    when(context.createType)
-      .calledWith('U8aFixed', secondChallengeResponse)
-      .mockReturnValue(rawSecondChallengeResponse);
-    when(context.createType)
-      .calledWith('U8aFixed', subtractExpressionsRes)
-      .mockReturnValue(rawSubtractExpressionsRes);
-    when(context.createType)
-      .calledWith('U8aFixed', blindedScopeDidHash)
-      .mockReturnValue(rawBlindedScopeDidHash);
-    when(context.createType)
-      .calledWith('ConfidentialIdentityClaimProofsZkProofData', zkProofData)
-      .mockReturnValue(rawZkProofData);
-
-    when(context.createType)
-      .calledWith('ConfidentialIdentityV2SignSignature', proofScopeIdWellFormed)
-      .mockReturnValue(rawProofScopeIdWellFormed);
-    when(context.createType).calledWith('U8aFixed', scopeId).mockReturnValue(rawScopeId);
-
-    when(context.createType)
-      .calledWith('ConfidentialIdentityV2ClaimProofsScopeClaimProof', scopeClaimProof)
-      .mockReturnValue(fakeResult);
-
-    const result = scopeClaimProofToConfidentialIdentityClaimProof(proof, scopeId, context);
 
     expect(result).toEqual(fakeResult);
   });
@@ -8865,7 +8255,7 @@ describe('meshProposalStatusToProposalStatus', () => {
     const expectedError = new UnreachableCaseError('UnknownStatus' as never);
     return expect(() =>
       meshProposalStatusToProposalStatus(
-        { type: 'UnknownStatus' } as unknown as PalletMultisigProposalStatus,
+        { type: 'UnknownStatus' } as unknown as PolymeshPrimitivesMultisigProposalStatus,
         null
       )
     ).toThrowError(expectedError);
@@ -9282,17 +8672,17 @@ describe('stringToInstructionMemo and instructionMemoToString', () => {
     dsMockUtils.cleanup();
   });
 
-  describe('stringToInstructionMemo', () => {
+  describe('stringToMemo', () => {
     it('should convert a string to a polkadot PalletSettlementInstructionMemo object', () => {
       const value = 'someDescription';
-      const fakeResult = 'memoDescription' as unknown as PalletSettlementInstructionMemo;
+      const fakeResult = 'memoDescription' as unknown as PolymeshPrimitivesMemo;
       const context = dsMockUtils.getContextInstance();
 
       when(context.createType)
-        .calledWith('PalletSettlementInstructionMemo', padString(value, 32))
+        .calledWith('PolymeshPrimitivesMemo', padString(value, 32))
         .mockReturnValue(fakeResult);
 
-      const result = stringToInstructionMemo(value, context);
+      const result = stringToMemo(value, context);
 
       expect(result).toEqual(fakeResult);
     });
@@ -9301,7 +8691,7 @@ describe('stringToInstructionMemo and instructionMemoToString', () => {
   describe('instructionMemoToString', () => {
     it('should convert an InstructionMemo to string', () => {
       const fakeResult = 'memoDescription';
-      const rawMemo = dsMockUtils.createMockInstructionMemo(stringToHex(fakeResult));
+      const rawMemo = dsMockUtils.createMockMemo(stringToHex(fakeResult));
 
       const result = instructionMemoToString(rawMemo);
       expect(result).toBe(fakeResult);
@@ -9340,5 +8730,721 @@ describe('expiryToMoment', () => {
     const result = expiryToMoment(value, context);
 
     expect(result).toBe(fakeResult);
+  });
+});
+
+describe('middlewarePortfolioDataToPortfolio', () => {
+  it('should convert middleware portfolio like data into a Portfolio', async () => {
+    const context = dsMockUtils.getContextInstance();
+    const defaultPortfolioData = {
+      did: 'someDid',
+      kind: { default: null },
+    };
+
+    let result = await middlewarePortfolioDataToPortfolio(defaultPortfolioData, context);
+    expect(result instanceof DefaultPortfolio).toBe(true);
+
+    const numberedPortfolioData = {
+      did: 'someDid',
+      kind: { user: 10 },
+    };
+
+    result = await middlewarePortfolioDataToPortfolio(numberedPortfolioData, context);
+    expect(result instanceof NumberedPortfolio).toBe(true);
+  });
+});
+
+describe('middlewareAgentGroupDataToPermissionGroup', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a middleware agent group data object to a PermissionGroup entity', () => {
+    const ticker = 'SOME_TICKER';
+    const context = dsMockUtils.getContextInstance();
+
+    let agentGroup: Record<string, Record<string, null | number>> = { [ticker]: { full: null } };
+    let result = middlewareAgentGroupDataToPermissionGroup(agentGroup, context);
+    expect(result).toEqual(
+      expect.objectContaining({
+        asset: expect.objectContaining({ ticker }),
+        type: PermissionGroupType.Full,
+      })
+    );
+
+    agentGroup = { [ticker]: { exceptMeta: null } };
+
+    result = middlewareAgentGroupDataToPermissionGroup(agentGroup, context);
+    expect(result).toEqual(
+      expect.objectContaining({
+        asset: expect.objectContaining({ ticker }),
+        type: PermissionGroupType.ExceptMeta,
+      })
+    );
+
+    agentGroup = { [ticker]: { polymeshV1CAA: null } };
+    result = middlewareAgentGroupDataToPermissionGroup(agentGroup, context);
+    expect(result).toEqual(
+      expect.objectContaining({
+        asset: expect.objectContaining({ ticker }),
+        type: PermissionGroupType.PolymeshV1Caa,
+      })
+    );
+
+    agentGroup = { [ticker]: { polymeshV1PIA: null } };
+
+    result = middlewareAgentGroupDataToPermissionGroup(agentGroup, context);
+    expect(result).toEqual(
+      expect.objectContaining({
+        asset: expect.objectContaining({ ticker }),
+        type: PermissionGroupType.PolymeshV1Pia,
+      })
+    );
+
+    agentGroup = { [ticker]: { custom: 1 } };
+
+    result = middlewareAgentGroupDataToPermissionGroup(agentGroup, context);
+    expect(result).toEqual(
+      expect.objectContaining({ asset: expect.objectContaining({ ticker }), id: new BigNumber(1) })
+    );
+  });
+});
+
+describe('middlewarePermissionsDataToPermissions', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a middleware permissions data to a Permissions', () => {
+    const context = dsMockUtils.getContextInstance();
+    const ticker = 'SOME_TICKER';
+    const hexTicker = '0x534F4D455F5449434B455200';
+    const did = 'someDid';
+    let fakeResult: Permissions = {
+      assets: {
+        values: [expect.objectContaining({ ticker })],
+        type: PermissionType.Include,
+      },
+      transactions: {
+        type: PermissionType.Include,
+        values: [TxTags.identity.AddClaim, ModuleName.Authorship],
+      },
+      transactionGroups: [],
+      portfolios: {
+        values: [expect.objectContaining({ owner: expect.objectContaining({ did }) })],
+        type: PermissionType.Include,
+      },
+    };
+    let permissions: Record<string, unknown> = {
+      asset: { these: [hexTicker] },
+      extrinsic: {
+        these: [
+          {
+            palletName: 'Identity',
+            dispatchableNames: {
+              these: ['add_claim'],
+            },
+          },
+          {
+            palletName: 'Authorship',
+            dispatchableNames: {
+              whole: null,
+            },
+          },
+        ],
+      },
+      portfolio: {
+        these: [
+          {
+            did,
+            kind: { default: null },
+          },
+        ],
+      },
+    };
+
+    let result = middlewarePermissionsDataToPermissions(JSON.stringify(permissions), context);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      assets: null,
+      transactions: null,
+      transactionGroups: [],
+      portfolios: null,
+    };
+    permissions = {
+      asset: { whole: null },
+      portfolio: { whole: null },
+      extrinsic: { whole: null },
+    };
+
+    result = middlewarePermissionsDataToPermissions(JSON.stringify(permissions), context);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      assets: {
+        values: [expect.objectContaining({ ticker })],
+        type: PermissionType.Exclude,
+      },
+      transactions: {
+        type: PermissionType.Exclude,
+        values: [ModuleName.Identity],
+        exceptions: [TxTags.identity.AddClaim],
+      },
+      transactionGroups: [],
+      portfolios: {
+        values: [expect.objectContaining({ owner: expect.objectContaining({ did }) })],
+        type: PermissionType.Exclude,
+      },
+    };
+
+    permissions = {
+      asset: {
+        except: [hexTicker],
+      },
+      extrinsic: {
+        except: [
+          {
+            palletName: 'Identity',
+            dispatchableNames: {
+              except: ['add_claim'],
+            },
+          },
+        ],
+      },
+      portfolio: {
+        except: [
+          {
+            did,
+            kind: { default: null },
+          },
+        ],
+      },
+    };
+
+    result = middlewarePermissionsDataToPermissions(JSON.stringify(permissions), context);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('middlewareAuthorizationDataToAuthorization', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a middleware Authorization data to an Authorization', () => {
+    const context = dsMockUtils.getContextInstance();
+    let fakeResult: Authorization = {
+      type: AuthorizationType.AttestPrimaryKeyRotation,
+      value: expect.objectContaining({ did: 'someDid' }),
+    };
+    let authorizationData = 'someDid';
+
+    let result = middlewareAuthorizationDataToAuthorization(
+      context,
+      AuthTypeEnum.AttestPrimaryKeyRotation,
+      authorizationData
+    );
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: AuthorizationType.RotatePrimaryKey,
+    };
+
+    result = middlewareAuthorizationDataToAuthorization(context, AuthTypeEnum.RotatePrimaryKey);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: AuthorizationType.TransferTicker,
+      value: 'SOME_TICKER',
+    };
+    authorizationData = '0x534F4D455F5449434B455200';
+
+    result = middlewareAuthorizationDataToAuthorization(
+      context,
+      AuthTypeEnum.TransferTicker,
+      authorizationData
+    );
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: AuthorizationType.AddMultiSigSigner,
+      value: 'someAccount',
+    };
+    authorizationData = 'someAccount';
+
+    result = middlewareAuthorizationDataToAuthorization(
+      context,
+      AuthTypeEnum.AddMultiSigSigner,
+      authorizationData
+    );
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: AuthorizationType.PortfolioCustody,
+      value: expect.objectContaining({ owner: expect.objectContaining({ did: 'someDid' }) }),
+    };
+    authorizationData = JSON.stringify({
+      did: 'someDid',
+      kind: { default: null },
+    });
+
+    result = middlewareAuthorizationDataToAuthorization(
+      context,
+      AuthTypeEnum.PortfolioCustody,
+      authorizationData
+    );
+    expect(result).toEqual(fakeResult);
+
+    const portfolioId = new BigNumber(1);
+    fakeResult = {
+      type: AuthorizationType.PortfolioCustody,
+      value: expect.objectContaining({
+        owner: expect.objectContaining({ did: 'someDid' }),
+        id: portfolioId,
+      }),
+    };
+    authorizationData = JSON.stringify({
+      did: 'someDid',
+      kind: { user: 1 },
+    });
+
+    result = middlewareAuthorizationDataToAuthorization(
+      context,
+      AuthTypeEnum.PortfolioCustody,
+      authorizationData
+    );
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: AuthorizationType.TransferAssetOwnership,
+      value: 'SOME_TICKER',
+    };
+    authorizationData = '0x534F4D455F5449434B455200';
+
+    result = middlewareAuthorizationDataToAuthorization(
+      context,
+      AuthTypeEnum.TransferAssetOwnership,
+      authorizationData
+    );
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: AuthorizationType.JoinIdentity,
+      value: { assets: null, portfolios: null, transactions: null, transactionGroups: [] },
+    };
+    authorizationData = JSON.stringify({
+      asset: { whole: null },
+      portfolio: { whole: null },
+      extrinsic: { whole: null },
+    });
+
+    result = middlewareAuthorizationDataToAuthorization(
+      context,
+      AuthTypeEnum.JoinIdentity,
+      authorizationData
+    );
+    expect(result).toEqual(fakeResult);
+
+    const beneficiaryAddress = 'beneficiaryAddress';
+    const relayerAddress = 'relayerAddress';
+    const allowance = new BigNumber(1000);
+    fakeResult = {
+      type: AuthorizationType.AddRelayerPayingKey,
+      value: {
+        beneficiary: expect.objectContaining({ address: beneficiaryAddress }),
+        subsidizer: expect.objectContaining({ address: relayerAddress }),
+        allowance,
+      },
+    };
+    authorizationData = `{"${beneficiaryAddress}","${relayerAddress}",${allowance.shiftedBy(6)}}`;
+
+    result = middlewareAuthorizationDataToAuthorization(
+      context,
+      AuthTypeEnum.AddRelayerPayingKey,
+      authorizationData
+    );
+    expect(result).toEqual(fakeResult);
+
+    const ticker = 'SOME_TICKER';
+    const type = PermissionGroupType.Full;
+    fakeResult = {
+      type: AuthorizationType.BecomeAgent,
+      value: expect.objectContaining({
+        asset: expect.objectContaining({ ticker }),
+        type,
+      }),
+    };
+
+    authorizationData = `{"${ticker}",${JSON.stringify({ full: null })}}`;
+
+    result = middlewareAuthorizationDataToAuthorization(
+      context,
+      AuthTypeEnum.BecomeAgent,
+      authorizationData
+    );
+    expect(result).toEqual(fakeResult);
+
+    authorizationData = JSON.stringify({
+      asset: { whole: null },
+      portfolio: { whole: null },
+      extrinsic: { whole: null },
+    });
+    fakeResult = {
+      type: AuthorizationType.RotatePrimaryKeyToSecondary,
+      value: { assets: null, portfolios: null, transactions: null, transactionGroups: [] },
+    };
+
+    result = middlewareAuthorizationDataToAuthorization(
+      context,
+      AuthTypeEnum.RotatePrimaryKeyToSecondary,
+      authorizationData
+    );
+    expect(result).toEqual(fakeResult);
+  });
+
+  it('should throw an error if the authorization has an unsupported type', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() =>
+      middlewareAuthorizationDataToAuthorization(context, AuthTypeEnum.Custom, 'randomData')
+    ).toThrow('Unsupported Authorization Type. Please contact the Polymesh team');
+  });
+});
+
+describe('legToSettlementLeg', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+  it('should make a fungible leg', () => {
+    const context = dsMockUtils.getContextInstance();
+    const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesSettlementLeg;
+
+    const value = {
+      Fungible: {
+        sender: createMockPortfolioId(),
+        receiver: createMockPortfolioId(),
+        ticker: createMockTicker(),
+        amount: createMockU128(),
+      },
+    } as const;
+
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesSettlementLeg', value)
+      .mockReturnValue(fakeResult);
+
+    const result = legToSettlementLeg(value, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('datesToScheduleCheckpoints', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should make a BtreeSet<Moment>', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    const fakeMoment = 'fakeMoment' as unknown as Moment;
+
+    const fakeBtree = 'fakeBtree' as unknown as BTreeSet<Moment>;
+
+    const fakeResult =
+      'fakeResult' as unknown as PolymeshCommonUtilitiesCheckpointScheduleCheckpoints;
+
+    const input = [new Date()];
+
+    when(context.createType).calledWith('u64', input[0].getTime()).mockReturnValue(fakeMoment);
+    when(context.createType)
+      .calledWith('BTreeSet<Moment>', [fakeMoment])
+      .mockReturnValue(fakeBtree);
+
+    when(context.createType)
+      .calledWith('PolymeshCommonUtilitiesCheckpointScheduleCheckpoints', {
+        pending: fakeBtree,
+      })
+      .mockReturnValue(fakeResult);
+
+    const result = datesToScheduleCheckpoints(input, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('calendarPeriodToMeshCalendarPeriod and meshCalendarPeriodToCalendarPeriod', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  describe('calendarPeriodToMeshCalendarPeriod', () => {
+    it('should throw an error if amount is negative', () => {
+      const context = dsMockUtils.getContextInstance();
+
+      expect(() =>
+        calendarPeriodToMeshCalendarPeriod(
+          { unit: CalendarUnit.Month, amount: new BigNumber(-3) },
+          context
+        )
+      ).toThrow('Calendar period cannot have a negative amount');
+    });
+
+    it('should convert a CalendarPeriod to a polkadot PolymeshPrimitivesCalendarCalendarPeriod object', () => {
+      const amount = new BigNumber(1);
+      const value = { unit: CalendarUnit.Month, amount };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const fakeResult = 'Period' as unknown as any;
+      const context = dsMockUtils.getContextInstance();
+
+      const createTypeMock = context.createType;
+      const rawAmount = dsMockUtils.createMockU64(amount);
+
+      when(createTypeMock).calledWith('u64', `${amount}`).mockReturnValue(rawAmount);
+      when(createTypeMock)
+        .calledWith('PolymeshPrimitivesCalendarCalendarPeriod', {
+          unit: 'Month',
+          amount: rawAmount,
+        })
+        .mockReturnValue(fakeResult);
+
+      const result = calendarPeriodToMeshCalendarPeriod(value, context);
+
+      expect(result).toBe(fakeResult);
+    });
+  });
+
+  describe('meshCalendarPeriodToCalendarPeriod', () => {
+    it('should convert a polkadot PolymeshPrimitivesCalendarCalendarPeriod object to a CalendarPeriod', () => {
+      let fakeResult = { unit: CalendarUnit.Second, amount: new BigNumber(1) };
+      let calendarPeriod = dsMockUtils.createMockCalendarPeriod({
+        unit: dsMockUtils.createMockCalendarUnit('Second'),
+        amount: dsMockUtils.createMockU64(fakeResult.amount),
+      });
+
+      let result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = { unit: CalendarUnit.Minute, amount: new BigNumber(1) };
+      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
+        unit: dsMockUtils.createMockCalendarUnit('Minute'),
+        amount: dsMockUtils.createMockU64(fakeResult.amount),
+      });
+
+      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = { unit: CalendarUnit.Hour, amount: new BigNumber(1) };
+      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
+        unit: dsMockUtils.createMockCalendarUnit('Hour'),
+        amount: dsMockUtils.createMockU64(fakeResult.amount),
+      });
+
+      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = { unit: CalendarUnit.Day, amount: new BigNumber(1) };
+      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
+        unit: dsMockUtils.createMockCalendarUnit('Day'),
+        amount: dsMockUtils.createMockU64(fakeResult.amount),
+      });
+
+      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = { unit: CalendarUnit.Week, amount: new BigNumber(1) };
+      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
+        unit: dsMockUtils.createMockCalendarUnit('Week'),
+        amount: dsMockUtils.createMockU64(fakeResult.amount),
+      });
+
+      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = { unit: CalendarUnit.Month, amount: new BigNumber(1) };
+      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
+        unit: dsMockUtils.createMockCalendarUnit('Month'),
+        amount: dsMockUtils.createMockU64(fakeResult.amount),
+      });
+
+      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = { unit: CalendarUnit.Year, amount: new BigNumber(1) };
+      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
+        unit: dsMockUtils.createMockCalendarUnit('Year'),
+        amount: dsMockUtils.createMockU64(fakeResult.amount),
+      });
+
+      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
+      expect(result).toEqual(fakeResult);
+    });
+  });
+});
+
+describe('scheduleSpecToMeshScheduleSpec', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a ScheduleDetails object to a polkadot PalletAssetCheckpointScheduleSpec object', () => {
+    const start = new Date('10/14/1987');
+    const amount = new BigNumber(1);
+    const period = { unit: CalendarUnit.Month, amount };
+    const repetitions = new BigNumber(10);
+
+    const value = { start, period, repetitions };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fakeResult = 'Spec' as any;
+    const context = dsMockUtils.getContextInstance();
+
+    const createTypeMock = context.createType;
+    const rawStart = dsMockUtils.createMockMoment(new BigNumber(start.getTime()));
+    const rawAmount = dsMockUtils.createMockU64(amount);
+    const rawZero = dsMockUtils.createMockU64(new BigNumber(0));
+    const rawPeriod = dsMockUtils.createMockCalendarPeriod({
+      unit: dsMockUtils.createMockCalendarUnit('Month'),
+      amount: rawAmount,
+    });
+    const rawZeroPeriod = dsMockUtils.createMockCalendarPeriod({
+      unit: dsMockUtils.createMockCalendarUnit('Month'),
+      amount: rawZero,
+    });
+    const rawRepetitions = dsMockUtils.createMockU64(repetitions);
+
+    when(createTypeMock).calledWith('u64', `${amount}`).mockReturnValue(rawAmount);
+    when(createTypeMock).calledWith('u64', '0').mockReturnValue(rawZero);
+    when(createTypeMock).calledWith('u64', `${repetitions}`).mockReturnValue(rawRepetitions);
+    when(createTypeMock).calledWith('u64', start.getTime()).mockReturnValue(rawStart);
+    when(createTypeMock)
+      .calledWith('PolymeshPrimitivesCalendarCalendarPeriod', { unit: 'Month', amount: rawAmount })
+      .mockReturnValue(rawPeriod);
+    when(createTypeMock)
+      .calledWith('PolymeshPrimitivesCalendarCalendarPeriod', { unit: 'Month', amount: rawZero })
+      .mockReturnValue(rawZeroPeriod);
+    when(createTypeMock)
+      .calledWith('PalletAssetCheckpointScheduleSpec', {
+        start: rawStart,
+        period: rawPeriod,
+        remaining: rawRepetitions,
+      })
+      .mockReturnValue(fakeResult);
+    when(createTypeMock)
+      .calledWith('PalletAssetCheckpointScheduleSpec', {
+        start: null,
+        period: rawZeroPeriod,
+        remaining: rawZero,
+      })
+      .mockReturnValue(fakeResult);
+
+    let result = scheduleSpecToMeshScheduleSpec(value, context);
+
+    expect(result).toBe(fakeResult);
+
+    result = scheduleSpecToMeshScheduleSpec(
+      { start: null, period: null, repetitions: null },
+      context
+    );
+
+    expect(result).toBe(fakeResult);
+  });
+});
+
+describe('periodComplexity', () => {
+  it('should calculate complexity for any period', () => {
+    const period: CalendarPeriod = {
+      unit: CalendarUnit.Second,
+      amount: new BigNumber(1),
+    };
+    let result = periodComplexity(period);
+    expect(result).toEqual(new BigNumber(31536000));
+
+    period.unit = CalendarUnit.Minute;
+    result = periodComplexity(period);
+    expect(result).toEqual(new BigNumber(525600));
+
+    period.unit = CalendarUnit.Hour;
+    result = periodComplexity(period);
+    expect(result).toEqual(new BigNumber(8760));
+
+    period.unit = CalendarUnit.Day;
+    result = periodComplexity(period);
+    expect(result).toEqual(new BigNumber(365));
+
+    period.unit = CalendarUnit.Week;
+    result = periodComplexity(period);
+    expect(result).toEqual(new BigNumber(52));
+
+    period.unit = CalendarUnit.Month;
+    result = periodComplexity(period);
+    expect(result).toEqual(new BigNumber(12));
+
+    period.unit = CalendarUnit.Year;
+    result = periodComplexity(period);
+    expect(result).toEqual(new BigNumber(2));
+
+    period.amount = new BigNumber(0);
+    result = periodComplexity(period);
+    expect(result).toEqual(new BigNumber(1));
   });
 });

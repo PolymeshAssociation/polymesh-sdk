@@ -1,26 +1,23 @@
 import {
   ApolloClient,
-  ApolloLink,
-  HttpLink,
+  createHttpLink,
   InMemoryCache,
   NormalizedCacheObject,
-} from '@apollo/client';
-import { setContext } from '@apollo/client/link/context';
+} from '@apollo/client/core';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { SigningManager } from '@polymeshassociation/signing-manager-types';
-import BigNumber from 'bignumber.js';
 import fetch from 'cross-fetch';
 import schema from 'polymesh-types/schema';
 
 import { Account, Context, createTransactionBatch, Identity, PolymeshError } from '~/internal';
-import { heartbeat } from '~/middleware/queries';
 import {
   CreateTransactionBatchProcedureMethod,
   ErrorCode,
   MiddlewareConfig,
+  PolkadotConfig,
   UnsubCallback,
 } from '~/types';
-import { bigNumberToU32, signerToString } from '~/utils/conversion';
+import { signerToString } from '~/utils/conversion';
 import {
   assertExpectedChainVersion,
   assertExpectedSqVersion,
@@ -35,13 +32,22 @@ import { Network } from './Network';
 import { Settlements } from './Settlements';
 
 export interface ConnectParams {
+  /**
+   * The websocket URL for the Polymesh node to connect to
+   */
   nodeUrl: string;
+  /**
+   * Handles signing of transactions. Required to be set before submitting transactions
+   */
   signingManager?: SigningManager;
   /**
-   * @deprecated in favour of middlewareV2
+   * Allows for historical data to be queried. Required for some methods to work
    */
-  middleware?: MiddlewareConfig;
   middlewareV2?: MiddlewareConfig;
+  /**
+   * Advanced options that will be used with the underling polkadot.js instance
+   */
+  polkadot?: PolkadotConfig;
 }
 
 /**
@@ -52,22 +58,12 @@ function createMiddlewareApi(
 ): ApolloClient<NormalizedCacheObject> | null {
   return middleware
     ? new ApolloClient({
-        link: setContext((_, { headers }) => {
-          return {
-            headers: {
-              ...headers,
-              // eslint-disable-next-line @typescript-eslint/naming-convention
-              'x-api-key': middleware.key,
-            },
-          };
-        }).concat(
-          ApolloLink.from([
-            new HttpLink({
-              uri: middleware.link,
-              fetch,
-            }),
-          ])
-        ),
+        link: createHttpLink({
+          uri: middleware.link,
+          fetch,
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          headers: { 'x-api-key': middleware.key },
+        }),
         cache: new InMemoryCache(),
         defaultOptions: {
           watchQuery: {
@@ -142,15 +138,18 @@ export class Polymesh {
    * @param params.signingManager - object in charge of managing keys and signing transactions
    *   (optional, if not passed the SDK will not be able to submit transactions). Can be set later with
    *   `setSigningManager`
-   * @param params.middleware - middleware API URL and key (optional, used for historic queries)
    * @param params.middlewareV2 - middleware V2 API URL (optional, used for historic queries)
+   * @param params.polkadot - optional config for polkadot `ApiPromise`
    */
   static async connect(params: ConnectParams): Promise<Polymesh> {
-    const { nodeUrl, signingManager, middleware, middlewareV2 } = params;
+    const { nodeUrl, signingManager, middlewareV2, polkadot } = params;
     let context: Context;
     let polymeshApi: ApiPromise;
 
-    await assertExpectedChainVersion(nodeUrl);
+    const { metadata, noInitWarn, typesBundle } = polkadot ?? {};
+
+    // Defer `await` on any checks to minimize total startup time
+    const requiredChecks: Promise<void>[] = [assertExpectedChainVersion(nodeUrl)];
 
     try {
       const { types, rpc, signedExtensions } = schema;
@@ -160,11 +159,12 @@ export class Polymesh {
         types,
         rpc,
         signedExtensions,
+        metadata,
+        noInitWarn,
+        typesBundle,
       });
-
       context = await Context.create({
         polymeshApi,
-        middlewareApi: createMiddlewareApi(middleware),
         middlewareApiV2: createMiddlewareApi(middlewareV2),
         signingManager,
       });
@@ -178,45 +178,34 @@ export class Polymesh {
       });
     }
 
-    if (middleware) {
-      try {
-        await context.queryMiddleware(heartbeat());
-      } catch (err) {
+    if (middlewareV2) {
+      let middlewareMetadata = null;
+
+      const checkMiddleware = async (): Promise<void> => {
+        try {
+          middlewareMetadata = await context.getMiddlewareMetadata();
+        } catch (err) {
+          throw new PolymeshError({
+            code: ErrorCode.FatalError,
+            message: 'Could not query for middleware V2 metadata',
+          });
+        }
+
         if (
-          err.message.indexOf('Forbidden') > -1 ||
-          err.message.indexOf('Missing Authentication Token') > -1
+          !middlewareMetadata ||
+          middlewareMetadata.genesisHash !== polymeshApi.genesisHash.toString()
         ) {
           throw new PolymeshError({
             code: ErrorCode.FatalError,
-            message: 'Incorrect middleware URL or API key',
+            message: 'Middleware V2 URL is for a different chain than the given node URL',
           });
         }
-      }
+      };
+
+      requiredChecks.push(checkMiddleware(), assertExpectedSqVersion(context));
     }
 
-    if (middlewareV2) {
-      let metadata = null;
-      try {
-        metadata = await context.getMiddlewareMetadata();
-      } catch (err) {
-        throw new PolymeshError({
-          code: ErrorCode.FatalError,
-          message: 'Could not query for middleware V2 metadata',
-        });
-      }
-
-      const rawGenesisBlock = bigNumberToU32(new BigNumber(0), context);
-      const genesisHash = await polymeshApi.rpc.chain.getBlockHash(rawGenesisBlock);
-
-      if (!metadata || metadata.genesisHash !== genesisHash.toString()) {
-        throw new PolymeshError({
-          code: ErrorCode.FatalError,
-          message: 'Middleware V2 URL is for a different chain than the given node URL',
-        });
-      }
-
-      await assertExpectedSqVersion(context);
-    }
+    await Promise.all(requiredChecks);
 
     return new Polymesh(context);
   }
@@ -347,18 +336,10 @@ export class Polymesh {
 
   /* istanbul ignore next: not part of the official public API */
   /**
-   * Middleware client
-   */
-  public get _middlewareApi(): ApolloClient<NormalizedCacheObject> {
-    return this.context.middlewareApi;
-  }
-
-  /* istanbul ignore next: not part of the official public API */
-  /**
    * MiddlewareV2 client
    */
   public get _middlewareApiV2(): ApolloClient<NormalizedCacheObject> {
-    return this.context.middlewareApiV2;
+    return this.context.middlewareApi;
   }
   /* eslint-enable @typescript-eslint/naming-convention */
 }

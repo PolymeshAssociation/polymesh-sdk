@@ -11,7 +11,7 @@ import {
   removeCheckpointSchedule,
 } from '~/internal';
 import {
-  CalendarPeriod,
+  CalendarUnit,
   CreateCheckpointScheduleParams,
   ErrorCode,
   ProcedureMethod,
@@ -19,11 +19,12 @@ import {
   ScheduleWithDetails,
 } from '~/types';
 import {
+  momentToDate,
   storedScheduleToCheckpointScheduleParams,
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, periodComplexity } from '~/utils/internal';
+import { createProcedureMethod } from '~/utils/internal';
 
 /**
  * Handles all Asset Checkpoint Schedules related functionality
@@ -49,6 +50,8 @@ export class Schedules extends Namespace<Asset> {
 
   /**
    * Create a schedule for Checkpoint creation (e.g. "Create a checkpoint every week for 5 weeks, starting next tuesday")
+   *
+   * @note ⚠️ Chain v6 introduces changes in how checkpoints are created. Only a set amount of points can be specified, infinitely repeating schedules are deprecated
    *
    * @note due to chain limitations, schedules are advanced and (if appropriate) executed whenever the Asset is
    *   redeemed, issued or transferred between portfolios. This means that on an Asset without much movement, there may be disparities between intended Checkpoint creation dates
@@ -91,44 +94,63 @@ export class Schedules extends Namespace<Asset> {
         polymeshApi: {
           query: { checkpoint },
         },
+        isV5,
       },
       context,
     } = this;
 
     const rawTicker = stringToTicker(ticker, context);
 
-    const rawSchedules = await checkpoint.schedules(rawTicker);
+    if (isV5) {
+      const rawSchedules = await checkpoint.schedules(rawTicker);
 
-    return P.map(rawSchedules, async rawSchedule => {
-      const scheduleParams = storedScheduleToCheckpointScheduleParams(rawSchedule);
-      const schedule = new CheckpointSchedule({ ...scheduleParams, ticker }, context);
+      return P.map(rawSchedules, async rawSchedule => {
+        const scheduleParams = storedScheduleToCheckpointScheduleParams(rawSchedule);
+        const schedule = new CheckpointSchedule({ ...scheduleParams, ticker }, context);
 
-      const { remaining: remainingCheckpoints, nextCheckpointDate } = scheduleParams;
-      return {
-        schedule,
-        details: {
-          remainingCheckpoints,
-          nextCheckpointDate,
-        },
-      };
-    });
-  }
+        const { remaining: remainingCheckpoints, nextCheckpointDate } = scheduleParams;
+        return {
+          schedule,
+          details: {
+            remainingCheckpoints,
+            nextCheckpointDate,
+          },
+        };
+      });
+    } else {
+      const rawSchedulesEntries = await checkpoint.scheduledCheckpoints.entries(rawTicker);
 
-  /**
-   * Calculate an abstract measure of the complexity of a given Calendar Period
-   */
-  public complexityOf(period: CalendarPeriod): BigNumber {
-    return periodComplexity(period);
-  }
+      return rawSchedulesEntries.map(([key, rawScheduleOpt]) => {
+        const rawSchedule = rawScheduleOpt.unwrap();
+        const rawId = key.args[1];
+        const id = u64ToBigNumber(rawId);
+        const points = [...rawSchedule.pending].map(rawPoint => momentToDate(rawPoint));
+        const schedule = new CheckpointSchedule(
+          {
+            ticker,
+            id,
+            start: points[0],
+            nextCheckpointDate: points[0],
+            remaining: new BigNumber(points.length),
+            // Note: We put in a zero value instead of trying to infer a proper period
+            period: {
+              amount: new BigNumber(0),
+              unit: CalendarUnit.Second,
+            },
+          },
+          context
+        );
 
-  /**
-   * Calculate the sum of the complexity of all current Checkpoint Schedules for this Asset.
-   *   The number cannot exceed the Asset's maximum complexity (obtained via {@link maxComplexity})
-   */
-  public async currentComplexity(): Promise<BigNumber> {
-    const schedules = await this.get();
-
-    return schedules.reduce((prev, next) => prev.plus(next.schedule.complexity), new BigNumber(0));
+        const remainingCheckpoints = new BigNumber([...rawSchedule.pending].length);
+        return {
+          schedule,
+          details: {
+            remainingCheckpoints,
+            nextCheckpointDate: points[0],
+          },
+        };
+      });
+    }
   }
 
   /**

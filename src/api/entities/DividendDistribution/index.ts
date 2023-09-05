@@ -1,5 +1,4 @@
 import { Option } from '@polkadot/types';
-import { BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
 import { PalletCorporateActionsDistribution } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
@@ -24,10 +23,8 @@ import {
   PolymeshError,
   reclaimDividendDistributionFunds,
 } from '~/internal';
-import { getHistoryOfPaymentEventsForCa, getWithholdingTaxesOfCa } from '~/middleware/queries';
-import { distributionPaymentsQuery, distributionQuery } from '~/middleware/queriesV2';
+import { distributionPaymentsQuery, distributionQuery } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   CorporateActionKind,
   DistributionPayment,
@@ -43,14 +40,12 @@ import {
   TargetTreatment,
 } from '~/types';
 import { ProcedureParams } from '~/types/internal';
-import { Ensured, EnsuredV2, HumanReadableType, Modify, tuple } from '~/types/utils';
+import { Ensured, HumanReadableType, Modify, tuple } from '~/types/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_DECIMALS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   balanceToBigNumber,
-  bigNumberToU32,
   boolToBoolean,
   corporateActionIdentifierToCaId,
-  hashToString,
   stringToIdentityId,
 } from '~/utils/conversion';
 import {
@@ -445,7 +440,7 @@ export class DividendDistribution extends CorporateActionBase {
   /**
    * Retrieve the amount of taxes that have been withheld up to this point in this Distribution
    *
-   * @note uses the middleware
+   * @note uses the middlewareV2
    */
   public async getWithheldTax(): Promise<BigNumber> {
     const {
@@ -454,45 +449,7 @@ export class DividendDistribution extends CorporateActionBase {
       context,
     } = this;
 
-    if (context.isMiddlewareV2Enabled()) {
-      return this.getWithheldTaxV2();
-    }
-
-    const taxPromise = context.queryMiddleware<Ensured<Query, 'getWithholdingTaxesOfCA'>>(
-      getWithholdingTaxesOfCa({
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        CAId: { ticker, localId: id.toNumber() },
-      })
-    );
-
-    const [exists, result] = await Promise.all([this.exists(), taxPromise]);
-
-    if (!exists) {
-      throw new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message: notExistsMessage,
-      });
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const { taxes } = result.data.getWithholdingTaxesOfCA!;
-
-    return new BigNumber(taxes);
-  }
-
-  /**
-   * Retrieve the amount of taxes that have been withheld up to this point in this Distribution
-   *
-   * @note uses the middlewareV2
-   */
-  public async getWithheldTaxV2(): Promise<BigNumber> {
-    const {
-      id,
-      asset: { ticker },
-      context,
-    } = this;
-
-    const taxPromise = context.queryMiddlewareV2<EnsuredV2<QueryV2, 'distribution'>>(
+    const taxPromise = context.queryMiddleware<Ensured<Query, 'distribution'>>(
       distributionQuery({
         id: `${ticker}/${id.toString()}`,
       })
@@ -520,7 +477,7 @@ export class DividendDistribution extends CorporateActionBase {
   /**
    * Retrieve the payment history for this Distribution
    *
-   * @note uses the middleware
+   * @note uses the middleware V2
    * @note supports pagination
    */
   public async getPaymentHistory(
@@ -530,101 +487,10 @@ export class DividendDistribution extends CorporateActionBase {
       id,
       asset: { ticker },
       context,
-      context: {
-        polymeshApi: {
-          query: { system },
-        },
-      },
-    } = this;
-
-    if (context.isMiddlewareV2Enabled()) {
-      return this.getPaymentHistoryV2(opts);
-    }
-
-    const { size, start } = opts;
-
-    const paymentsPromise = context.queryMiddleware<
-      Ensured<Query, 'getHistoryOfPaymentEventsForCA'>
-    >(
-      getHistoryOfPaymentEventsForCa({
-        CAId: { ticker, localId: id.toNumber() },
-        fromDate: null,
-        toDate: null,
-        count: size?.toNumber(),
-        skip: start?.toNumber(),
-      })
-    );
-
-    const [exists, result] = await Promise.all([this.exists(), paymentsPromise]);
-
-    if (!exists) {
-      throw new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message: notExistsMessage,
-      });
-    }
-
-    const {
-      data: { getHistoryOfPaymentEventsForCA: getHistoryOfPaymentEventsForCaResult },
-    } = result;
-
-    const { items, totalCount } = getHistoryOfPaymentEventsForCaResult;
-
-    const count = new BigNumber(totalCount);
-    const data: Omit<DistributionPayment, 'blockHash'>[] = [];
-    const multiParams: BlockNumber[] = [];
-
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    items!.forEach(item => {
-      const { blockId, datetime, eventDid: did, balance, tax } = item!;
-
-      const blockNumber = new BigNumber(blockId);
-      multiParams.push(bigNumberToU32(blockNumber, context));
-      data.push({
-        blockNumber,
-        date: new Date(datetime),
-        target: new Identity({ did }, context),
-        amount: new BigNumber(balance).shiftedBy(-6),
-        withheldTax: new BigNumber(tax).shiftedBy(-4),
-      });
-    });
-    /* eslint-enable @typescript-eslint/no-non-null-assertion */
-
-    const next = calculateNextKey(count, data.length, start);
-
-    let hashes: Hash[] = [];
-
-    if (multiParams.length) {
-      hashes = await system.blockHash.multi(multiParams);
-    }
-
-    return {
-      data: data.map((payment, index) => ({
-        ...payment,
-        blockHash: hashToString(hashes[index]),
-      })),
-      next,
-      count,
-    };
-  }
-
-  /**
-   * Retrieve the payment history for this Distribution
-   *
-   * @note uses the middleware V2
-   * @note supports pagination
-   */
-  public async getPaymentHistoryV2(
-    opts: { size?: BigNumber; start?: BigNumber } = {}
-  ): Promise<ResultSet<DistributionPayment>> {
-    const {
-      id,
-      asset: { ticker },
-      context,
     } = this;
     const { size, start } = opts;
 
-    const paymentsPromise = context.queryMiddlewareV2<EnsuredV2<QueryV2, 'distributionPayments'>>(
+    const paymentsPromise = context.queryMiddleware<Ensured<Query, 'distributionPayments'>>(
       distributionPaymentsQuery(
         {
           distributionId: `${ticker}/${id.toString()}`,

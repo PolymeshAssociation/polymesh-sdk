@@ -47,6 +47,10 @@ describe('executeManualInstruction procedure', () => {
     did: dsMockUtils.createMockIdentityId('someDid'),
     kind: dsMockUtils.createMockPortfolioKind('Default'),
   });
+  const fungibleTokens = dsMockUtils.createMockU32(new BigNumber(1));
+  const nonFungibleTokens = dsMockUtils.createMockU32(new BigNumber(2));
+  const offChainAssets = dsMockUtils.createMockU32(new BigNumber(3));
+
   const did = 'someDid';
   let portfolio: DefaultPortfolio;
   let legAmount: BigNumber;
@@ -107,6 +111,15 @@ describe('executeManualInstruction procedure', () => {
       type: InstructionType.SettleManual,
       endAfterBlock: new BigNumber(1000),
     };
+
+    dsMockUtils.createRpcMock('settlement', 'getExecuteInstructionInfo', {
+      returnValue: {
+        fungibleTokens,
+        nonFungibleTokens,
+        offChainAssets,
+        consumedWeight: 'someWeight',
+      },
+    });
   });
 
   afterEach(() => {
@@ -213,7 +226,14 @@ describe('executeManualInstruction procedure', () => {
 
     expect(result).toEqual({
       transaction,
-      args: [rawInstructionId, rawLegAmount, rawPortfolioId],
+      args: [
+        rawInstructionId,
+        rawPortfolioId,
+        fungibleTokens,
+        nonFungibleTokens,
+        offChainAssets,
+        'someWeight',
+      ],
       resolver: expect.objectContaining({ id }),
     });
 
@@ -235,7 +255,14 @@ describe('executeManualInstruction procedure', () => {
 
     expect(result).toEqual({
       transaction,
-      args: [rawInstructionId, rawLegAmount, null],
+      args: [
+        rawInstructionId,
+        null,
+        fungibleTokens,
+        nonFungibleTokens,
+        offChainAssets,
+        'someWeight',
+      ],
       resolver: expect.objectContaining({ id }),
     });
   });

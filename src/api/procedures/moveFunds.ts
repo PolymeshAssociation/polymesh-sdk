@@ -15,7 +15,7 @@ import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/type
 import {
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolioId,
-  portfolioMovementToMovePortfolioItem,
+  portfolioMovementToPortfolioFund,
 } from '~/utils/conversion';
 import { asTicker } from '~/utils/internal';
 
@@ -121,9 +121,7 @@ export async function prepareMoveFunds(
   const rawFrom = portfolioIdToMeshPortfolioId(fromPortfolioId, context);
   const rawTo = portfolioIdToMeshPortfolioId(toPortfolioId, context);
 
-  const rawMovePortfolioItems = items.map(item =>
-    portfolioMovementToMovePortfolioItem(item, context)
-  );
+  const rawMovePortfolioItems = items.map(item => portfolioMovementToPortfolioFund(item, context));
 
   return {
     transaction: portfolio.movePortfolioFunds,

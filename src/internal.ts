@@ -69,7 +69,6 @@ export { deletePortfolio } from '~/api/procedures/deletePortfolio';
 export { renamePortfolio } from '~/api/procedures/renamePortfolio';
 export { moveFunds } from '~/api/procedures/moveFunds';
 export { setCustodian } from '~/api/procedures/setCustodian';
-export { addInvestorUniquenessClaim } from '~/api/procedures/addInvestorUniquenessClaim';
 export { redeemTokens } from '~/api/procedures/redeemTokens';
 export {
   addTransferRestriction,

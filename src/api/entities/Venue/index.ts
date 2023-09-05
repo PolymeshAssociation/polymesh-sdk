@@ -2,8 +2,8 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
 import { addInstruction, Context, Entity, Identity, Instruction, modifyVenue } from '~/internal';
-import { instructionsQuery } from '~/middleware/queriesV2';
-import { Query as QueryV2 } from '~/middleware/typesV2';
+import { instructionsQuery } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
 import {
   AddInstructionParams,
   AddInstructionsParams,
@@ -14,7 +14,7 @@ import {
   ProcedureMethod,
   ResultSet,
 } from '~/types';
-import { EnsuredV2 } from '~/types/utils';
+import { Ensured } from '~/types/utils';
 import {
   bigNumberToU64,
   bytesToString,
@@ -218,7 +218,7 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
       data: {
         instructions: { nodes: instructionsResult, totalCount },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'instructions'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(
       instructionsQuery(
         {
           venueId: id.toString(),

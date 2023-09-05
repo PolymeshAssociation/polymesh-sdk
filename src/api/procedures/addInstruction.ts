@@ -1,10 +1,9 @@
 import { u64 } from '@polkadot/types';
-import { Balance } from '@polkadot/types/interfaces';
 import {
-  PalletSettlementInstructionMemo,
-  PalletSettlementSettlementType,
   PolymeshPrimitivesIdentityIdPortfolioId,
-  PolymeshPrimitivesTicker,
+  PolymeshPrimitivesMemo,
+  PolymeshPrimitivesSettlementLeg,
+  PolymeshPrimitivesSettlementSettlementType,
 } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
@@ -37,10 +36,12 @@ import {
   bigNumberToU64,
   dateToMoment,
   endConditionToSettlementType,
+  legToSettlementLeg,
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
   stringToInstructionMemo,
+  stringToMemo,
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -70,17 +71,12 @@ export interface Storage {
  */
 type InternalAddAndAffirmInstructionParams = [
   u64,
-  PalletSettlementSettlementType,
+  PolymeshPrimitivesSettlementSettlementType,
   u64 | null,
   u64 | null,
-  {
-    from: PolymeshPrimitivesIdentityIdPortfolioId;
-    to: PolymeshPrimitivesIdentityIdPortfolioId;
-    asset: PolymeshPrimitivesTicker;
-    amount: Balance;
-  }[],
+  PolymeshPrimitivesSettlementLeg[],
   PolymeshPrimitivesIdentityIdPortfolioId[],
-  PalletSettlementInstructionMemo | null
+  PolymeshPrimitivesMemo | null
 ][];
 
 /**
@@ -88,16 +84,11 @@ type InternalAddAndAffirmInstructionParams = [
  */
 type InternalAddInstructionParams = [
   u64,
-  PalletSettlementSettlementType,
+  PolymeshPrimitivesSettlementSettlementType,
   u64 | null,
   u64 | null,
-  {
-    from: PolymeshPrimitivesIdentityIdPortfolioId;
-    to: PolymeshPrimitivesIdentityIdPortfolioId;
-    asset: PolymeshPrimitivesTicker;
-    amount: Balance;
-  }[],
-  PalletSettlementInstructionMemo | null
+  PolymeshPrimitivesSettlementLeg[],
+  PolymeshPrimitivesMemo | null
 ][];
 
 /**
@@ -233,13 +224,9 @@ async function getTxArgsAndErrors(
       const rawSettlementType = endConditionToSettlementType(endCondition, context);
       const rawTradeDate = optionize(dateToMoment)(tradeDate, context);
       const rawValueDate = optionize(dateToMoment)(valueDate, context);
-      const rawLegs: {
-        from: PolymeshPrimitivesIdentityIdPortfolioId;
-        to: PolymeshPrimitivesIdentityIdPortfolioId;
-        asset: PolymeshPrimitivesTicker;
-        amount: Balance;
-      }[] = [];
-      const rawInstructionMemo = optionize(stringToInstructionMemo)(memo, context);
+      const rawLegs: PolymeshPrimitivesSettlementLeg[] = [];
+      const memoConverter = context.isV5 ? stringToInstructionMemo : stringToMemo;
+      const rawInstructionMemo = optionize(memoConverter)(memo, context);
 
       await Promise.all(
         legs.map(async ({ from, to, amount, asset }) => {
@@ -254,12 +241,29 @@ async function getTxArgsAndErrors(
           const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromId, context);
           const rawToPortfolio = portfolioIdToMeshPortfolioId(toId, context);
 
-          rawLegs.push({
-            from: rawFromPortfolio,
-            to: rawToPortfolio,
-            asset: stringToTicker(asTicker(asset), context),
-            amount: bigNumberToBalance(amount, context),
-          });
+          let rawLeg;
+          if (context.isV5) {
+            rawLeg = {
+              from: rawFromPortfolio,
+              to: rawToPortfolio,
+              asset: stringToTicker(asTicker(asset), context),
+              amount: bigNumberToBalance(amount, context),
+            } as unknown as PolymeshPrimitivesSettlementLeg;
+          } else {
+            rawLeg = legToSettlementLeg(
+              {
+                Fungible: {
+                  sender: rawFromPortfolio,
+                  receiver: rawToPortfolio,
+                  ticker: stringToTicker(asTicker(asset), context),
+                  amount: bigNumberToBalance(amount, context),
+                },
+              },
+              context
+            );
+          }
+
+          rawLegs.push(rawLeg);
         })
       );
 
@@ -314,6 +318,7 @@ export async function prepareAddInstruction(
       polymeshApi: {
         tx: { settlement },
       },
+      isV5,
     },
     context,
     storage: { portfoliosToAffirm },
@@ -406,8 +411,12 @@ export async function prepareAddInstruction(
     });
   }
 
-  const addAndAffirmTx = settlement.addAndAffirmInstructionWithMemo;
-  const addTx = settlement.addInstructionWithMemo;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const addTx = isV5 ? (settlement as any).addInstructionWithMemo : settlement.addInstruction;
+  const addAndAffirmTx = isV5
+    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (settlement as any).addAndAffirmInstructionWithMemo
+    : settlement.addAndAffirmInstruction;
 
   const transactions = assembleBatchTransactions([
     {

@@ -117,6 +117,7 @@ describe('issueTokens procedure', () => {
       amount,
       ticker,
     };
+    mockContext.getSigningIdentity.mockResolvedValue(entityMockUtils.getIdentityInstance());
 
     entityMockUtils.configureMocks({
       assetOptions: {

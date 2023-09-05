@@ -23,15 +23,23 @@ export async function prepareRemoveCheckpointSchedule(
     context,
     context: {
       polymeshApi: { tx, query },
+      isV5,
     },
   } = this;
   const { ticker, schedule } = args;
 
   const id = schedule instanceof BigNumber ? schedule : schedule.id;
   const rawTicker = stringToTicker(ticker, context);
+  const rawId = bigNumberToU64(id, context);
 
-  const rawSchedules = await query.checkpoint.schedules(rawTicker);
-  const exists = rawSchedules.find(({ id: scheduleId }) => u64ToBigNumber(scheduleId).eq(id));
+  let exists: boolean;
+  if (isV5) {
+    const rawSchedules = await query.checkpoint.schedules(rawTicker);
+    exists = !!rawSchedules.find(rawSchedule => u64ToBigNumber(rawSchedule.id).eq(id));
+  } else {
+    const rawSchedule = await query.checkpoint.scheduledCheckpoints(rawTicker, rawId);
+    exists = rawSchedule.isSome;
+  }
 
   if (!exists) {
     throw new PolymeshError({

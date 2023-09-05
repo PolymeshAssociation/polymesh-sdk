@@ -1,4 +1,4 @@
-import { u32, Vec } from '@polkadot/types';
+import { Option, u32, Vec } from '@polkadot/types';
 import { PolymeshPrimitivesDocument, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -34,7 +34,7 @@ describe('setAssetDocuments procedure', () => {
   let documents: AssetDocument[];
   let rawTicker: PolymeshPrimitivesTicker;
   let rawDocuments: PolymeshPrimitivesDocument[];
-  let documentEntries: [[PolymeshPrimitivesTicker, u32], PolymeshPrimitivesDocument][];
+  let documentEntries: [[PolymeshPrimitivesTicker, u32], Option<PolymeshPrimitivesDocument>][];
   let args: Params;
 
   beforeAll(() => {
@@ -80,7 +80,10 @@ describe('setAssetDocuments procedure', () => {
       })
     );
     documentEntries = rawDocuments.map((doc, index) =>
-      tuple([rawTicker, dsMockUtils.createMockU32(new BigNumber(index))], doc)
+      tuple(
+        [rawTicker, dsMockUtils.createMockU32(new BigNumber(index))],
+        dsMockUtils.createMockOption(doc)
+      )
     );
     args = {
       ticker,

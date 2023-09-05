@@ -1,25 +1,13 @@
-import { ApolloLink, GraphQLRequest } from '@apollo/client';
 import { SigningManager } from '@polymeshassociation/signing-manager-types';
-import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Polymesh } from '~/api/client/Polymesh';
 import { PolymeshError, PolymeshTransactionBatch } from '~/internal';
-import { heartbeat } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { ErrorCode, TransactionArray } from '~/types';
 import { SUPPORTED_NODE_VERSION_RANGE } from '~/utils/constants';
-import * as utilsConversionModule from '~/utils/conversion';
 import * as internalUtils from '~/utils/internal';
 
-jest.mock('@apollo/client/react', () => ({}));
-
-jest.mock('@apollo/client/link/context', () => ({
-  ...jest.requireActual('@apollo/client/link/context'),
-  setContext: jest.fn().mockImplementation(cbFunc => {
-    return new ApolloLink(cbFunc({} as GraphQLRequest, {}));
-  }),
-}));
 jest.mock(
   '@polkadot/api',
   require('~/testUtils/mocks/dataSources').mockPolkadotModule('@polkadot/api')
@@ -29,8 +17,8 @@ jest.mock(
   require('~/testUtils/mocks/dataSources').mockContextModule('~/base/Context')
 );
 jest.mock(
-  '@apollo/client',
-  require('~/testUtils/mocks/dataSources').mockApolloModule('@apollo/client')
+  '@apollo/client/core',
+  require('~/testUtils/mocks/dataSources').mockApolloModule('@apollo/client/core')
 );
 jest.mock(
   '~/api/entities/TickerReservation',
@@ -57,7 +45,6 @@ jest.mock(
 
 describe('Polymesh Class', () => {
   let versionSpy: jest.SpyInstance;
-  let bigNumberToU32Spy: jest.SpyInstance;
   beforeEach(() => {
     versionSpy = jest
       .spyOn(internalUtils, 'assertExpectedChainVersion')
@@ -65,7 +52,6 @@ describe('Polymesh Class', () => {
       .mockImplementation()
       .mockResolvedValue(undefined);
     jest.spyOn(internalUtils, 'assertExpectedSqVersion').mockImplementation();
-    bigNumberToU32Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU32');
     dsMockUtils.configureMocks({ contextOptions: undefined });
   });
 
@@ -108,32 +94,8 @@ describe('Polymesh Class', () => {
       expect(createMock).toHaveBeenCalledTimes(1);
       expect(createMock).toHaveBeenCalledWith({
         polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: null,
         middlewareApiV2: null,
         signingManager,
-      });
-    });
-
-    it('should instantiate Context with middleware credentials and return a Polymesh instance', async () => {
-      const createMock = dsMockUtils.getContextCreateMock();
-      const middleware = {
-        link: 'someLink',
-        key: 'someKey',
-      };
-
-      dsMockUtils.createApolloQueryMock(heartbeat(), true);
-
-      await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        middleware,
-      });
-
-      expect(createMock).toHaveBeenCalledTimes(1);
-      expect(createMock).toHaveBeenCalledWith({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: dsMockUtils.getMiddlewareApi(),
-        middlewareApiV2: null,
-        signingManager: undefined,
       });
     });
 
@@ -145,18 +107,28 @@ describe('Polymesh Class', () => {
         key: '',
       };
 
-      const rawGenesisBlock = dsMockUtils.createMockU32(new BigNumber(0));
-      bigNumberToU32Spy.mockResolvedValue(rawGenesisBlock);
-
-      const genesisHash = 'someGenesisHash';
-      const rawGenesisHash = dsMockUtils.createMockBlockHash(genesisHash);
-
-      const getBlockHashMock = dsMockUtils.createRpcMock('chain', 'getBlockHash');
-      getBlockHashMock.mockResolvedValue(rawGenesisHash);
-
       await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         middlewareV2,
+      });
+
+      expect(createMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('should instantiate Context with Polkadot config and return  Polymesh instance', async () => {
+      const createMock = dsMockUtils.getContextCreateMock();
+
+      const metadata = {
+        someHashAndVersion: '0x00',
+      } as const;
+
+      const polkadot = {
+        metadata,
+      };
+
+      await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        polkadot,
       });
 
       expect(createMock).toHaveBeenCalledTimes(1);
@@ -195,56 +167,6 @@ describe('Polymesh Class', () => {
       ).rejects.toThrowError(error);
     });
 
-    it('should throw an error if the middleware credentials are incorrect', async () => {
-      const middleware = {
-        link: 'wrong',
-        key: 'alsoWrong',
-      };
-
-      dsMockUtils.throwOnMiddlewareQuery(new Error('Forbidden'));
-
-      let err;
-      try {
-        await Polymesh.connect({
-          nodeUrl: 'wss://some.url',
-          middleware,
-        });
-      } catch (e) {
-        err = e;
-      }
-
-      expect(err.message).toBe('Incorrect middleware URL or API key');
-
-      dsMockUtils.throwOnMiddlewareQuery(new Error('Missing Authentication Token'));
-      err = undefined;
-
-      try {
-        await Polymesh.connect({
-          nodeUrl: 'wss://some.url',
-          middleware,
-        });
-      } catch (e) {
-        err = e;
-      }
-
-      expect(err.message).toBe('Incorrect middleware URL or API key');
-
-      // other errors are caught when performing queries later on
-      dsMockUtils.throwOnMiddlewareQuery(new Error('Anything else'));
-      err = undefined;
-
-      try {
-        await Polymesh.connect({
-          nodeUrl: 'wss://some.url',
-          middleware,
-        });
-      } catch (e) {
-        err = e;
-      }
-
-      expect(err).toBeUndefined();
-    });
-
     it('should throw an error if the middleware V2 URL is incorrect', () => {
       const middlewareV2 = {
         link: 'wrong',
@@ -269,10 +191,10 @@ describe('Polymesh Class', () => {
 
     it('should throw an error if the middleware V2 URL is incompatible with given node URl', async () => {
       const genesisHash = 'someOtherHash';
-      const rawGenesisHash = dsMockUtils.createMockBlockHash(genesisHash);
 
-      const getBlockHashMock = dsMockUtils.createRpcMock('chain', 'getBlockHash');
-      getBlockHashMock.mockResolvedValue(rawGenesisHash);
+      const context = dsMockUtils.getContextInstance();
+      jest.spyOn(context.polymeshApi.genesisHash, 'toString').mockReturnValue(genesisHash);
+      dsMockUtils.getContextCreateMock().mockResolvedValue(context);
 
       const connection = Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -399,9 +321,9 @@ describe('Polymesh Class', () => {
     it('should call the underlying disconnect function', async () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
-        middleware: {
+        middlewareV2: {
           link: 'someLink',
-          key: 'someKey',
+          key: '',
         },
       });
 
@@ -415,9 +337,9 @@ describe('Polymesh Class', () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         signingManager: 'signingManager' as unknown as SigningManager,
-        middleware: {
+        middlewareV2: {
           link: 'someLink',
-          key: 'someKey',
+          key: '',
         },
       });
 
@@ -433,9 +355,9 @@ describe('Polymesh Class', () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         signingManager: 'signingManager' as unknown as SigningManager,
-        middleware: {
+        middlewareV2: {
           link: 'someLink',
-          key: 'someKey',
+          key: '',
         },
       });
 
@@ -453,9 +375,9 @@ describe('Polymesh Class', () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         signingManager: 'signingManager' as unknown as SigningManager,
-        middleware: {
+        middlewareV2: {
           link: 'someLink',
-          key: 'someKey',
+          key: '',
         },
       });
       const context = dsMockUtils.getContextInstance();

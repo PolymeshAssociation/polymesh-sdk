@@ -185,7 +185,7 @@ describe('rotatePrimaryKey procedure', () => {
 
     dsMockUtils.configureMocks({
       contextOptions: {
-        sentAuthorizations: sentAuthorizations,
+        sentAuthorizations,
       },
     });
 

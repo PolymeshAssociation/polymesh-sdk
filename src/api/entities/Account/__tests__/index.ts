@@ -1,22 +1,15 @@
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { AccountIdentityRelation, AccountKeyType } from '~/api/entities/Account/types';
+import {
+  AccountIdentityRelation,
+  AccountKeyType,
+  HistoricPolyxTransaction,
+} from '~/api/entities/Account/types';
 import { Account, Context, Entity } from '~/internal';
-import {
-  CallIdEnum as MiddlewareV2CallId,
-  ModuleIdEnum as MiddlewareV2ModuleId,
-} from '~/middleware/enumsV2';
-import { heartbeat, transactions } from '~/middleware/queries';
-import { extrinsicsByArgs } from '~/middleware/queriesV2';
-import {
-  CallIdEnum,
-  ExtrinsicResult,
-  ModuleIdEnum,
-  Order,
-  TransactionOrderFields,
-} from '~/middleware/types';
-import { ExtrinsicsOrderBy } from '~/middleware/typesV2';
+import { CallIdEnum, ModuleIdEnum } from '~/middleware/enums';
+import { extrinsicsByArgs } from '~/middleware/queries';
+import { ExtrinsicsOrderBy } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   createMockAccountId,
@@ -29,7 +22,6 @@ import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
   Balance,
-  ExtrinsicData,
   ModuleName,
   Permissions,
   PermissionType,
@@ -50,7 +42,6 @@ describe('Account class', () => {
   let context: Mocked<Context>;
 
   let address: string;
-  let key: string;
   let account: Account;
   let assertAddressValidSpy: jest.SpyInstance;
   let addressToKeySpy: jest.SpyInstance;
@@ -74,7 +65,6 @@ describe('Account class', () => {
     txTagToExtrinsicIdentifierSpy = jest.spyOn(utilsConversionModule, 'txTagToExtrinsicIdentifier');
 
     address = 'someAddress';
-    key = 'someKey';
   });
 
   beforeEach(() => {
@@ -280,44 +270,44 @@ describe('Account class', () => {
       const blockNumber2 = new BigNumber(2);
       const blockHash1 = 'someHash';
       const blockHash2 = 'otherHash';
+      const addressKey = 'd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d';
+      const order = ExtrinsicsOrderBy.CreatedAtAsc;
 
-      addressToKeySpy.mockReturnValue(key);
+      addressToKeySpy.mockReturnValue(addressKey);
+      keyToAddressSpy.mockReturnValue(address);
 
       when(txTagToExtrinsicIdentifierSpy).calledWith(tag).mockReturnValue({
         moduleId,
         callId,
       });
 
-      /* eslint-disable @typescript-eslint/naming-convention */
-      const transactionsQueryResponse: ExtrinsicResult = {
+      const extrinsicsQueryResponse = {
         totalCount: 20,
-        items: [
+        nodes: [
           {
-            module_id: ModuleIdEnum.Asset,
-            call_id: CallIdEnum.RegisterTicker,
-            extrinsic_idx: 2,
-            spec_version_id: 2006,
-            params: [],
-            block_id: blockNumber1.toNumber(),
+            moduleId: ModuleIdEnum.Asset,
+            callId: CallIdEnum.RegisterTicker,
+            extrinsicIdx: 2,
+            specVersionId: 2006,
+            paramsTxt: '[]',
+            blockId: blockNumber1.toNumber(),
             address,
             nonce: 1,
             success: 0,
-            signedby_address: 1,
+            signedbyAddress: 1,
             block: {
               hash: blockHash1,
-              id: blockNumber1.toNumber(),
-              datetime: '',
             },
           },
           {
-            module_id: ModuleIdEnum.Asset,
-            call_id: CallIdEnum.RegisterTicker,
-            extrinsic_idx: 2,
-            spec_version_id: 2006,
-            params: [],
-            block_id: blockNumber2.toNumber(),
+            moduleId: ModuleIdEnum.Asset,
+            callId: CallIdEnum.RegisterTicker,
+            extrinsicIdx: 2,
+            specVersionId: 2006,
+            paramsTxt: '[]',
+            blockId: blockNumber2.toNumber(),
             success: 1,
-            signedby_address: 1,
+            signedbyAddress: 1,
             block: {
               hash: blockHash2,
               id: blockNumber2.toNumber(),
@@ -326,33 +316,40 @@ describe('Account class', () => {
           },
         ],
       };
-      /* eslint-enable @typescript-eslint/naming-convention */
 
-      dsMockUtils.configureMocks({
-        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
-      });
-      dsMockUtils.createApolloQueryMock(heartbeat(), true);
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createQueryMock('system', 'blockHash', {
-        multi: [dsMockUtils.createMockHash(blockHash1), dsMockUtils.createMockHash(blockHash2)],
-      });
-      /* eslint-disable @typescript-eslint/naming-convention */
       dsMockUtils.createApolloQueryMock(
-        transactions({
-          block_id: blockNumber1.toNumber(),
-          address: key,
-          module_id: moduleId,
-          call_id: callId,
-          success: undefined,
-          count: 2,
-          skip: 1,
-          orderBy: undefined,
-        }),
+        extrinsicsByArgs(
+          {
+            blockId: blockNumber1.toString(),
+            address: addressKey,
+            moduleId,
+            callId,
+            success: undefined,
+          },
+          new BigNumber(2),
+          new BigNumber(1),
+          order
+        ),
         {
-          transactions: transactionsQueryResponse,
+          extrinsics: extrinsicsQueryResponse,
         }
       );
-      /* eslint-enable @typescript-eslint/naming-convention */
+
+      dsMockUtils.createRpcMock('chain', 'getBlock', {
+        returnValue: dsMockUtils.createMockSignedBlock({
+          block: {
+            header: {
+              parentHash: 'hash',
+              number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(blockNumber1)),
+              extrinsicsRoot: 'hash',
+              stateRoot: 'hash',
+            },
+            extrinsics: undefined,
+          },
+        }),
+      });
 
       let result = await account.getTransactionHistory({
         blockNumber: blockNumber1,
@@ -374,215 +371,25 @@ describe('Account class', () => {
       expect(result.count).toEqual(new BigNumber(20));
       expect(result.next).toEqual(new BigNumber(3));
 
-      dsMockUtils.createRpcMock('chain', 'getBlock', {
-        returnValue: dsMockUtils.createMockSignedBlock({
-          block: {
-            header: {
-              parentHash: 'hash',
-              number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(blockNumber1)),
-              extrinsicsRoot: 'hash',
-              stateRoot: 'hash',
-            },
-            extrinsics: undefined,
-          },
-        }),
-      });
-
-      result = await account.getTransactionHistory({
-        blockHash: blockHash1,
-        tag,
-        size: new BigNumber(2),
-        start: new BigNumber(1),
-      });
-
-      expect(result.data[0].blockNumber).toEqual(blockNumber1);
-      expect(result.data[1].blockNumber).toEqual(blockNumber2);
-      expect(result.data[0].blockHash).toEqual(blockHash1);
-      expect(result.data[1].blockHash).toEqual(blockHash2);
-      expect(result.data[0].address).toEqual(address);
-      expect(result.data[1].address).toBeNull();
-      expect(result.data[0].success).toBeFalsy();
-      expect(result.data[1].success).toBeTruthy();
-      expect(result.count).toEqual(new BigNumber(20));
-      expect(result.next).toEqual(new BigNumber(3));
-
-      /* eslint-disable @typescript-eslint/naming-convention */
       dsMockUtils.createApolloQueryMock(
-        transactions({
-          block_id: undefined,
-          address: key,
-          module_id: undefined,
-          call_id: undefined,
-          success: undefined,
-          count: undefined,
-          skip: undefined,
-          orderBy: undefined,
-        }),
+        extrinsicsByArgs(
+          {
+            blockId: blockNumber1.toString(),
+            address: addressKey,
+            moduleId,
+            callId,
+            success: 0,
+          },
+          new BigNumber(2),
+          new BigNumber(1),
+          order
+        ),
         {
-          transactions: transactionsQueryResponse,
+          extrinsics: extrinsicsQueryResponse,
         }
       );
-      /* eslint-enable @typescript-eslint/naming-convention */
-
-      result = await account.getTransactionHistory();
-
-      expect(result.data[0].blockNumber).toEqual(blockNumber1);
-      expect(result.data[0].address).toEqual(address);
-      expect(result.data[0].success).toBeFalsy();
-      expect(result.count).toEqual(new BigNumber(20));
-      expect(result.next).toEqual(new BigNumber(result.data.length));
-    });
-
-    it('should call v2 query if middlewareV2 is enabled', async () => {
-      const fakeResult = 'fakeResult' as unknown as ResultSet<ExtrinsicData>;
-      const getTransactionHistoryV2Spy = jest.spyOn(account, 'getTransactionHistoryV2');
-      getTransactionHistoryV2Spy.mockResolvedValue(fakeResult);
-
-      let result = await account.getTransactionHistory();
-      expect(result).toEqual(fakeResult);
-      expect(getTransactionHistoryV2Spy).toHaveBeenCalledWith({
-        orderBy: ExtrinsicsOrderBy.CreatedAtAsc,
-      });
 
       result = await account.getTransactionHistory({
-        orderBy: {
-          order: Order.Asc,
-          field: TransactionOrderFields.ModuleId,
-        },
-      });
-      expect(getTransactionHistoryV2Spy).toHaveBeenCalledWith({
-        orderBy: ExtrinsicsOrderBy.ModuleIdAsc,
-      });
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('method: getTransactionHistoryV2', () => {
-    it('should return a list of transactions', async () => {
-      const tag = TxTags.identity.CddRegisterDid;
-      const moduleId = MiddlewareV2ModuleId.Identity;
-      const callId = MiddlewareV2CallId.CddRegisterDid;
-      const blockNumber1 = new BigNumber(1);
-      const blockNumber2 = new BigNumber(2);
-      const blockHash1 = 'someHash';
-      const blockHash2 = 'otherHash';
-      const addressKey = 'd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d';
-
-      addressToKeySpy.mockReturnValue(addressKey);
-      keyToAddressSpy.mockReturnValue(address);
-
-      when(txTagToExtrinsicIdentifierSpy).calledWith(tag).mockReturnValue({
-        moduleId,
-        callId,
-      });
-
-      const extrinsicsQueryResponse = {
-        totalCount: 20,
-        nodes: [
-          {
-            moduleId: MiddlewareV2ModuleId.Asset,
-            callId: MiddlewareV2CallId.RegisterTicker,
-            extrinsicIdx: 2,
-            specVersionId: 2006,
-            paramsTxt: '[]',
-            blockId: blockNumber1.toNumber(),
-            address,
-            nonce: 1,
-            success: 0,
-            signedbyAddress: 1,
-            block: {
-              hash: blockHash1,
-            },
-          },
-          {
-            moduleId: MiddlewareV2ModuleId.Asset,
-            callId: MiddlewareV2CallId.RegisterTicker,
-            extrinsicIdx: 2,
-            specVersionId: 2006,
-            paramsTxt: '[]',
-            blockId: blockNumber2.toNumber(),
-            success: 1,
-            signedbyAddress: 1,
-            block: {
-              hash: blockHash2,
-              id: blockNumber2.toNumber(),
-              datetime: '',
-            },
-          },
-        ],
-      };
-
-      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
-
-      dsMockUtils.createApolloV2QueryMock(
-        extrinsicsByArgs(
-          {
-            blockId: blockNumber1.toString(),
-            address: addressKey,
-            moduleId,
-            callId,
-            success: undefined,
-          },
-          new BigNumber(2),
-          new BigNumber(1)
-        ),
-        {
-          extrinsics: extrinsicsQueryResponse,
-        }
-      );
-
-      dsMockUtils.createRpcMock('chain', 'getBlock', {
-        returnValue: dsMockUtils.createMockSignedBlock({
-          block: {
-            header: {
-              parentHash: 'hash',
-              number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(blockNumber1)),
-              extrinsicsRoot: 'hash',
-              stateRoot: 'hash',
-            },
-            extrinsics: undefined,
-          },
-        }),
-      });
-
-      let result = await account.getTransactionHistoryV2({
-        blockNumber: blockNumber1,
-        tag,
-        size: new BigNumber(2),
-        start: new BigNumber(1),
-      });
-
-      expect(result.data[0].blockNumber).toEqual(blockNumber1);
-      expect(result.data[1].blockNumber).toEqual(blockNumber2);
-      expect(result.data[0].blockHash).toEqual(blockHash1);
-      expect(result.data[1].blockHash).toEqual(blockHash2);
-      expect(result.data[0].address).toEqual(address);
-      expect(result.data[1].address).toBeNull();
-      expect(result.data[0].nonce).toEqual(new BigNumber(1));
-      expect(result.data[1].nonce).toBeNull();
-      expect(result.data[0].success).toBeFalsy();
-      expect(result.data[1].success).toBeTruthy();
-      expect(result.count).toEqual(new BigNumber(20));
-      expect(result.next).toEqual(new BigNumber(3));
-
-      dsMockUtils.createApolloV2QueryMock(
-        extrinsicsByArgs(
-          {
-            blockId: blockNumber1.toString(),
-            address: addressKey,
-            moduleId,
-            callId,
-            success: 0,
-          },
-          new BigNumber(2),
-          new BigNumber(1)
-        ),
-        {
-          extrinsics: extrinsicsQueryResponse,
-        }
-      );
-
-      result = await account.getTransactionHistoryV2({
         blockHash: blockHash1,
         tag,
         success: false,
@@ -601,20 +408,28 @@ describe('Account class', () => {
       expect(result.count).toEqual(new BigNumber(20));
       expect(result.next).toEqual(new BigNumber(3));
 
-      dsMockUtils.createApolloV2QueryMock(
-        extrinsicsByArgs({
-          blockId: undefined,
-          address: addressKey,
-          moduleId: undefined,
-          callId: undefined,
-          success: 1,
-        }),
+      dsMockUtils.createApolloQueryMock(
+        extrinsicsByArgs(
+          {
+            blockId: undefined,
+            address: addressKey,
+            moduleId: undefined,
+            callId: undefined,
+            success: 1,
+          },
+          undefined,
+          undefined,
+          ExtrinsicsOrderBy.ModuleIdAsc
+        ),
         {
           extrinsics: extrinsicsQueryResponse,
         }
       );
 
-      result = await account.getTransactionHistoryV2({ success: true });
+      result = await account.getTransactionHistory({
+        success: true,
+        orderBy: ExtrinsicsOrderBy.ModuleIdAsc,
+      });
 
       expect(result.data[0].blockNumber).toEqual(blockNumber1);
       expect(result.data[0].address).toEqual(address);
@@ -622,20 +437,25 @@ describe('Account class', () => {
       expect(result.count).toEqual(new BigNumber(20));
       expect(result.next).toEqual(new BigNumber(result.data.length));
 
-      dsMockUtils.createApolloV2QueryMock(
-        extrinsicsByArgs({
-          blockId: undefined,
-          address: addressKey,
-          moduleId: undefined,
-          callId: undefined,
-          success: undefined,
-        }),
+      dsMockUtils.createApolloQueryMock(
+        extrinsicsByArgs(
+          {
+            blockId: undefined,
+            address: addressKey,
+            moduleId: undefined,
+            callId: undefined,
+            success: undefined,
+          },
+          undefined,
+          undefined,
+          order
+        ),
         {
           extrinsics: { nodes: [] },
         }
       );
 
-      result = await account.getTransactionHistoryV2();
+      result = await account.getTransactionHistory();
       expect(result.data).toEqual([]);
       expect(result.next).toBeNull();
     });
@@ -1112,6 +932,19 @@ describe('Account class', () => {
         keyType: AccountKeyType.SmartContract,
         relation: AccountIdentityRelation.MultiSigSigner,
       });
+    });
+  });
+
+  describe('method: getPolyxTransactions', () => {
+    it('should return the polyx transactions for the current Account', async () => {
+      const fakeResult = 'someTransactions' as unknown as ResultSet<HistoricPolyxTransaction>;
+      context = dsMockUtils.getContextInstance({
+        getPolyxTransactions: fakeResult,
+      });
+      account = new Account({ address }, context);
+      const result = await account.getPolyxTransactions({});
+
+      expect(result).toEqual(fakeResult);
     });
   });
 });

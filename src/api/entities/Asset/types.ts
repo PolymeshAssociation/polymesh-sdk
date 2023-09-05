@@ -8,7 +8,7 @@ import {
   KnownPermissionGroup,
   NumberedPortfolio,
 } from '~/internal';
-import { EventIdEnum } from '~/middleware/enumsV2';
+import { EventIdEnum } from '~/middleware/enums';
 import { Compliance, EventIdentifier, TransferError, TransferRestriction } from '~/types';
 
 export interface AssetDetails {
@@ -18,10 +18,6 @@ export interface AssetDetails {
   owner: Identity;
   totalSupply: BigNumber;
   fullAgents: Identity[];
-  /**
-   * @deprecated This attribute will be removed in the future
-   */
-  requiresInvestorUniqueness: boolean;
 }
 
 /**

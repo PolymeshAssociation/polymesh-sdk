@@ -1,4 +1,3 @@
-import { PolymeshCommonUtilitiesCheckpointStoredSchedule } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -126,16 +125,10 @@ describe('CheckpointSchedule class', () => {
         { id: new BigNumber(2), ticker, period, start, remaining, nextCheckpointDate },
         context
       );
-      const rawScheduleId = dsMockUtils.createMockU64(id);
 
       stringToTickerSpy.mockReturnValue(dsMockUtils.createMockTicker(ticker));
-
-      dsMockUtils.createQueryMock('checkpoint', 'schedules', {
-        returnValue: [
-          dsMockUtils.createMockStoredSchedule({
-            id: rawScheduleId,
-          } as unknown as PolymeshCommonUtilitiesCheckpointStoredSchedule),
-        ],
+      dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
+        returnValue: dsMockUtils.createMockOption(),
       });
 
       let error;
@@ -150,32 +143,20 @@ describe('CheckpointSchedule class', () => {
     });
 
     it('should return the Schedule details ', async () => {
-      const rawRemaining = new BigNumber(2);
+      const rawRemaining = new BigNumber(1);
       const checkpointSchedule = new CheckpointSchedule(
         { id, ticker, period, start, remaining, nextCheckpointDate },
         context
       );
-      const rawScheduleId = dsMockUtils.createMockU64(id);
 
       stringToTickerSpy.mockReturnValue(dsMockUtils.createMockTicker(ticker));
       jest.spyOn(utilsConversionModule, 'u32ToBigNumber').mockClear().mockReturnValue(rawRemaining);
       jest.spyOn(utilsConversionModule, 'momentToDate').mockReturnValue(nextCheckpointDate);
 
-      dsMockUtils.createQueryMock('checkpoint', 'schedules', {
-        returnValue: [
-          dsMockUtils.createMockStoredSchedule({
-            schedule: dsMockUtils.createMockCheckpointSchedule({
-              start: dsMockUtils.createMockMoment(new BigNumber(start.getTime())),
-              period: dsMockUtils.createMockCalendarPeriod({
-                unit: dsMockUtils.createMockCalendarUnit('Month'),
-                amount: dsMockUtils.createMockU64(new BigNumber(1)),
-              }),
-            }),
-            id: rawScheduleId,
-            at: dsMockUtils.createMockMoment(new BigNumber(nextCheckpointDate.getTime())),
-            remaining: dsMockUtils.createMockU32(rawRemaining),
-          }),
-        ],
+      dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockCheckpointSchedule({ pending: [start] })
+        ),
       });
 
       const result = await checkpointSchedule.details();
@@ -191,13 +172,14 @@ describe('CheckpointSchedule class', () => {
         { id: new BigNumber(2), ticker, start, period, remaining, nextCheckpointDate },
         context
       );
-      const rawScheduleId = dsMockUtils.createMockU64(id);
 
-      dsMockUtils.createQueryMock('checkpoint', 'schedules', {
+      dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
         returnValue: [
-          dsMockUtils.createMockStoredSchedule({
-            id: rawScheduleId,
-          } as unknown as PolymeshCommonUtilitiesCheckpointStoredSchedule),
+          {
+            pending: dsMockUtils.createMockBTreeSet([
+              dsMockUtils.createMockMoment(new BigNumber(start.getTime())),
+            ]),
+          },
         ],
       });
 
@@ -214,21 +196,25 @@ describe('CheckpointSchedule class', () => {
 
     it('should return all the checkpoints created by the schedule', async () => {
       const schedule = new CheckpointSchedule(
-        { id, ticker, start, period, remaining, nextCheckpointDate },
+        {
+          id: new BigNumber(2),
+          ticker,
+          start,
+          period,
+          remaining,
+          nextCheckpointDate,
+        },
         context
       );
       const firstId = new BigNumber(1);
       const secondId = new BigNumber(2);
       const rawFirstId = dsMockUtils.createMockU64(firstId);
       const rawSecondId = dsMockUtils.createMockU64(secondId);
-      const rawScheduleId = dsMockUtils.createMockU64(id);
 
-      dsMockUtils.createQueryMock('checkpoint', 'schedules', {
-        returnValue: [
-          dsMockUtils.createMockStoredSchedule({
-            id: rawScheduleId,
-          } as unknown as PolymeshCommonUtilitiesCheckpointStoredSchedule),
-        ],
+      dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockCheckpointSchedule({ pending: [start] })
+        ),
       });
 
       dsMockUtils.createQueryMock('checkpoint', 'schedulePoints', {
@@ -252,17 +238,20 @@ describe('CheckpointSchedule class', () => {
         context
       );
 
-      dsMockUtils.createQueryMock('checkpoint', 'schedules', {
-        returnValue: [
-          dsMockUtils.createMockStoredSchedule({
-            id: dsMockUtils.createMockU64(id),
-          } as unknown as PolymeshCommonUtilitiesCheckpointStoredSchedule),
-        ],
+      dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockCheckpointSchedule({
+            pending: dsMockUtils.createMockBTreeSet([start]),
+          })
+        ),
       });
-
       let result = await schedule.exists();
 
       expect(result).toBe(true);
+
+      dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
 
       schedule = new CheckpointSchedule(
         { id: new BigNumber(2), ticker, start, period, remaining, nextCheckpointDate },

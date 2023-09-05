@@ -1,4 +1,4 @@
-import { bool, Bytes } from '@polkadot/types';
+import { bool, Bytes, Option } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import {
   PalletAssetSecurityToken,
@@ -14,26 +14,18 @@ import {
   DefaultPortfolio,
   Entity,
   NumberedPortfolio,
+  PolymeshError,
   PolymeshTransaction,
 } from '~/internal';
-import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/queries';
 import {
   assetQuery,
   assetTransactionQuery,
   tickerExternalAgentHistoryQuery,
-} from '~/middleware/queriesV2';
-import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
+} from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import {
-  EventIdentifier,
-  HistoricAgentOperation,
-  SecurityIdentifier,
-  SecurityIdentifierType,
-} from '~/types';
+import { ErrorCode, EventIdEnum, SecurityIdentifier, SecurityIdentifierType } from '~/types';
 import { tuple } from '~/types/utils';
-import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
-import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -93,12 +85,10 @@ describe('Asset class', () => {
     let isDivisible: boolean;
     let owner: string;
     let assetType: 'EquityCommon';
-    let iuDisabled: boolean;
     let did: string;
 
-    let rawToken: PalletAssetSecurityToken;
-    let rawName: Bytes;
-    let rawIuDisabled: bool;
+    let rawToken: Option<PalletAssetSecurityToken>;
+    let rawName: Option<Bytes>;
 
     let context: Context;
     let asset: Asset;
@@ -110,20 +100,20 @@ describe('Asset class', () => {
       isDivisible = true;
       owner = '0x0wn3r';
       assetType = 'EquityCommon';
-      iuDisabled = false;
       did = 'someDid';
       bytesToStringSpy = jest.spyOn(utilsConversionModule, 'bytesToString');
     });
 
     beforeEach(() => {
-      rawToken = dsMockUtils.createMockSecurityToken({
-        ownerDid: dsMockUtils.createMockIdentityId(owner),
-        assetType: dsMockUtils.createMockAssetType(assetType),
-        divisible: dsMockUtils.createMockBool(isDivisible),
-        totalSupply: dsMockUtils.createMockBalance(totalSupply),
-      });
-      rawIuDisabled = dsMockUtils.createMockBool(iuDisabled);
-      rawName = dsMockUtils.createMockBytes(name);
+      rawToken = dsMockUtils.createMockOption(
+        dsMockUtils.createMockSecurityToken({
+          ownerDid: dsMockUtils.createMockIdentityId(owner),
+          assetType: dsMockUtils.createMockAssetType(assetType),
+          divisible: dsMockUtils.createMockBool(isDivisible),
+          totalSupply: dsMockUtils.createMockBalance(totalSupply),
+        })
+      );
+      rawName = dsMockUtils.createMockOption(dsMockUtils.createMockBytes(name));
       context = dsMockUtils.getContextInstance();
       asset = new Asset({ ticker }, context);
 
@@ -146,9 +136,6 @@ describe('Asset class', () => {
       dsMockUtils.createQueryMock('asset', 'assetNames', {
         returnValue: rawName,
       });
-      dsMockUtils.createQueryMock('asset', 'disableInvestorUniqueness', {
-        returnValue: rawIuDisabled,
-      });
     });
 
     it('should return details for an Asset', async () => {
@@ -167,7 +154,6 @@ describe('Asset class', () => {
       expect(details.owner.did).toBe(owner);
       expect(details.assetType).toBe(assetType);
       expect(details.fullAgents[0].did).toBe(owner);
-      expect(details.requiresInvestorUniqueness).toBe(true);
 
       dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         entries: [
@@ -182,14 +168,16 @@ describe('Asset class', () => {
       expect(details.fullAgents[0].did).toEqual(did);
 
       tokensMock.mockResolvedValue(
-        dsMockUtils.createMockSecurityToken({
-          ownerDid: dsMockUtils.createMockIdentityId(owner),
-          assetType: dsMockUtils.createMockAssetType({
-            Custom: dsMockUtils.createMockU32(new BigNumber(10)),
-          }),
-          divisible: dsMockUtils.createMockBool(isDivisible),
-          totalSupply: dsMockUtils.createMockBalance(totalSupply),
-        })
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockSecurityToken({
+            ownerDid: dsMockUtils.createMockIdentityId(owner),
+            assetType: dsMockUtils.createMockAssetType({
+              Custom: dsMockUtils.createMockU32(new BigNumber(10)),
+            }),
+            divisible: dsMockUtils.createMockBool(isDivisible),
+            totalSupply: dsMockUtils.createMockBalance(totalSupply),
+          })
+        )
       );
 
       const customType = 'something';
@@ -201,6 +189,20 @@ describe('Asset class', () => {
 
       details = await asset.details();
       expect(details.assetType).toEqual(customType);
+    });
+
+    it('should throw if asset was not found', () => {
+      const tokensMock = dsMockUtils.createQueryMock('asset', 'tokens', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+      tokensMock.mockResolvedValue(dsMockUtils.createMockOption());
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'Asset detail information not found',
+      });
+
+      return expect(asset.details()).rejects.toThrow(expectedError);
     });
 
     it('should allow subscription', async () => {
@@ -227,7 +229,6 @@ describe('Asset class', () => {
           owner: expect.objectContaining({ did: owner }),
           totalSupply: new BigNumber(totalSupply).div(Math.pow(10, 6)),
           fullAgents: [expect.objectContaining({ did: owner })],
-          requiresInvestorUniqueness: true,
         })
       );
     });
@@ -438,65 +439,6 @@ describe('Asset class', () => {
   });
 
   describe('method: createdAt', () => {
-    let context: Context;
-    beforeEach(() => {
-      context = dsMockUtils.getContextInstance({ middlewareV2Enabled: false });
-    });
-
-    it('should return the event identifier object of the Asset creation', async () => {
-      const ticker = 'SOME_TICKER';
-      const blockNumber = new BigNumber(1234);
-      const blockDate = new Date('4/14/2020');
-      const eventIdx = new BigNumber(1);
-      const variables = {
-        moduleId: ModuleIdEnum.Asset,
-        eventId: EventIdEnum.AssetCreated,
-        eventArg1: utilsInternalModule.padString(ticker, MAX_TICKER_LENGTH),
-      };
-      const fakeResult = { blockNumber, blockDate, eventIndex: eventIdx };
-      const asset = new Asset({ ticker }, context);
-
-      dsMockUtils.createApolloQueryMock(eventByIndexedArgs(variables), {
-        /* eslint-disable @typescript-eslint/naming-convention */
-        eventByIndexedArgs: {
-          block_id: blockNumber.toNumber(),
-          block: { datetime: blockDate },
-          event_idx: eventIdx.toNumber(),
-        },
-        /* eslint-enable @typescript-eslint/naming-convention */
-      });
-
-      const result = await asset.createdAt();
-
-      expect(result).toEqual(fakeResult);
-    });
-
-    it('should return null if the query result is empty', async () => {
-      const ticker = 'SOME_TICKER';
-      const variables = {
-        moduleId: ModuleIdEnum.Asset,
-        eventId: EventIdEnum.AssetCreated,
-        eventArg1: utilsInternalModule.padString(ticker, MAX_TICKER_LENGTH),
-      };
-      const asset = new Asset({ ticker }, context);
-
-      dsMockUtils.createApolloQueryMock(eventByIndexedArgs(variables), {});
-      const result = await asset.createdAt();
-      expect(result).toBeNull();
-    });
-
-    it('should call v2 query if middlewareV2 is enabled', async () => {
-      dsMockUtils.configureMocks({ contextOptions: { middlewareV2Enabled: true } });
-      const asset = new Asset({ ticker: 'SOME_TICKER' }, context);
-      const fakeResult = 'fakeResult' as unknown as EventIdentifier;
-      jest.spyOn(asset, 'createdAtV2').mockResolvedValue(fakeResult);
-
-      const result = await asset.createdAt();
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('method: createdAtV2', () => {
     it('should return the event identifier object of the Asset creation', async () => {
       const ticker = 'SOME_TICKER';
       const blockNumber = new BigNumber(1234);
@@ -510,7 +452,7 @@ describe('Asset class', () => {
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
 
-      dsMockUtils.createApolloV2QueryMock(assetQuery(variables), {
+      dsMockUtils.createApolloQueryMock(assetQuery(variables), {
         assets: {
           nodes: [
             {
@@ -525,7 +467,7 @@ describe('Asset class', () => {
         },
       });
 
-      const result = await asset.createdAtV2();
+      const result = await asset.createdAt();
 
       expect(result).toEqual(fakeResult);
     });
@@ -538,12 +480,12 @@ describe('Asset class', () => {
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
 
-      dsMockUtils.createApolloV2QueryMock(assetQuery(variables), {
+      dsMockUtils.createApolloQueryMock(assetQuery(variables), {
         assets: {
           nodes: [],
         },
       });
-      const result = await asset.createdAtV2();
+      const result = await asset.createdAt();
       expect(result).toBeNull();
     });
   });
@@ -669,10 +611,6 @@ describe('Asset class', () => {
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
 
-      dsMockUtils.createQueryMock('asset', 'disableInvestorUniqueness', {
-        returnValue: dsMockUtils.createMockBool(true),
-      });
-
       boolToBooleanSpy.mockReturnValue(true);
 
       dsMockUtils.createQueryMock('asset', 'balanceOf', {
@@ -690,56 +628,6 @@ describe('Asset class', () => {
             dsMockUtils.createMockBalance(new BigNumber(0))
           ),
         ],
-      });
-
-      const result = await asset.investorCount();
-
-      expect(result).toEqual(new BigNumber(2));
-    });
-
-    it('should return the amount of unique investors that hold the Asset when PUIS is enabled', async () => {
-      const context = dsMockUtils.getContextInstance();
-      const asset = new Asset({ ticker }, context);
-
-      dsMockUtils.createQueryMock('asset', 'disableInvestorUniqueness', {
-        returnValue: dsMockUtils.createMockBool(false),
-      });
-
-      boolToBooleanSpy.mockReturnValue(false);
-
-      const identityScopes = [
-        {
-          scopeId: dsMockUtils.createMockIdentityId('someScopeId'),
-          identityId: dsMockUtils.createMockIdentityId('someDid'),
-          balance: dsMockUtils.createMockBalance(new BigNumber(100)),
-        },
-        {
-          scopeId: dsMockUtils.createMockIdentityId('someScopeId'),
-          identityId: dsMockUtils.createMockIdentityId('someOtherDid'),
-          balance: dsMockUtils.createMockBalance(new BigNumber(50)),
-        },
-        {
-          scopeId: dsMockUtils.createMockIdentityId('randomScopeId'),
-          identityId: dsMockUtils.createMockIdentityId('randomDid'),
-          balance: dsMockUtils.createMockBalance(new BigNumber(10)),
-        },
-        {
-          scopeId: dsMockUtils.createMockIdentityId('excludedScopeId'),
-          identityId: dsMockUtils.createMockIdentityId('zeroCountDid'),
-          balance: dsMockUtils.createMockBalance(new BigNumber(0)),
-        },
-      ];
-
-      dsMockUtils.createQueryMock('asset', 'scopeIdOf', {
-        entries: identityScopes.map(({ identityId, scopeId }) =>
-          tuple([rawTicker, identityId], scopeId)
-        ),
-      });
-
-      dsMockUtils.createQueryMock('asset', 'balanceOfAtScope', {
-        entries: identityScopes.map(({ identityId, scopeId, balance }) =>
-          tuple([scopeId, identityId], balance)
-        ),
       });
 
       const result = await asset.investorCount();
@@ -775,86 +663,6 @@ describe('Asset class', () => {
   describe('method: getOperationHistory', () => {
     it('should return a list of agent operations', async () => {
       const ticker = 'TICKER';
-      const context = dsMockUtils.getContextInstance({ middlewareV2Enabled: false });
-      const asset = new Asset({ ticker }, context);
-
-      const did = 'someDid';
-      const blockId = new BigNumber(1);
-      const blockHash = 'someHash';
-      const eventIndex = new BigNumber(1);
-      const datetime = '2020-10-10';
-
-      dsMockUtils.createQueryMock('system', 'blockHash', {
-        multi: [dsMockUtils.createMockHash(blockHash)],
-      });
-      dsMockUtils.createApolloQueryMock(
-        tickerExternalAgentHistory({
-          ticker,
-        }),
-        {
-          tickerExternalAgentHistory: [
-            /* eslint-disable @typescript-eslint/naming-convention */
-            {
-              did,
-              history: [
-                {
-                  block_id: blockId.toNumber(),
-                  datetime,
-                  event_idx: eventIndex.toNumber(),
-                },
-              ],
-            },
-            /* eslint-enable @typescript-eslint/naming-convention */
-          ],
-        }
-      );
-
-      let result = await asset.getOperationHistory();
-
-      expect(result.length).toEqual(1);
-      expect(result[0].identity.did).toEqual(did);
-      expect(result[0].history.length).toEqual(1);
-      expect(result[0].history[0]).toEqual({
-        blockNumber: blockId,
-        blockHash,
-        blockDate: new Date(`${datetime}Z`),
-        eventIndex,
-      });
-
-      dsMockUtils.createApolloQueryMock(
-        tickerExternalAgentHistory({
-          ticker,
-        }),
-        {
-          tickerExternalAgentHistory: [
-            {
-              did,
-              history: [],
-            },
-          ],
-        }
-      );
-
-      result = await asset.getOperationHistory();
-
-      expect(result.length).toEqual(1);
-      expect(result[0].identity.did).toEqual(did);
-      expect(result[0].history.length).toEqual(0);
-    });
-
-    it('should call v2 query if middlewareV2 is enabled', async () => {
-      const asset = new Asset({ ticker: 'SOME_TICKER' }, dsMockUtils.getContextInstance());
-      const fakeResult = 'fakeResult' as unknown as HistoricAgentOperation[];
-      jest.spyOn(asset, 'getOperationHistoryV2').mockResolvedValue(fakeResult);
-
-      const result = await asset.getOperationHistory();
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('method: getOperationHistoryV2', () => {
-    it('should return a list of agent operations', async () => {
-      const ticker = 'TICKER';
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
 
@@ -864,7 +672,7 @@ describe('Asset class', () => {
       const eventIndex = new BigNumber(1);
       const datetime = '2020-10-10';
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         tickerExternalAgentHistoryQuery({
           assetId: ticker,
         }),
@@ -885,7 +693,7 @@ describe('Asset class', () => {
         }
       );
 
-      let result = await asset.getOperationHistoryV2();
+      let result = await asset.getOperationHistory();
 
       expect(result.length).toEqual(1);
       expect(result[0].identity.did).toEqual(did);
@@ -897,7 +705,7 @@ describe('Asset class', () => {
         eventIndex,
       });
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         tickerExternalAgentHistoryQuery({
           assetId: ticker,
         }),
@@ -908,18 +716,17 @@ describe('Asset class', () => {
         }
       );
 
-      result = await asset.getOperationHistoryV2();
+      result = await asset.getOperationHistory();
 
       expect(result.length).toEqual(0);
     });
   });
 
   describe('method: getTransactionHistory', () => {
-    const ticker = 'TICKER';
-    const context = dsMockUtils.getContextInstance();
-    const asset = new Asset({ ticker }, context);
-
-    it('should return a list of Assets', async () => {
+    it('should return the list of asset transactions', async () => {
+      const ticker = 'TICKER';
+      const context = dsMockUtils.getContextInstance();
+      const asset = new Asset({ ticker }, context);
       const transactionResponse = {
         totalCount: new BigNumber(5),
         nodes: [
@@ -980,7 +787,7 @@ describe('Asset class', () => {
         ],
       };
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         assetTransactionQuery({ assetId: ticker }, new BigNumber(3), new BigNumber(0)),
         {
           assetTransactions: transactionResponse,

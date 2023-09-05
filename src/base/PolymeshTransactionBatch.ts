@@ -241,16 +241,24 @@ export class PolymeshTransactionBatch<
     reject: (reason?: unknown) => void,
     receipt: ISubmittableResult
   ): void {
+    const {
+      context: { isV5 },
+    } = this;
+
     // If one of the transactions in the batch fails, this event gets emitted
-    const [failed] = filterEventRecords(receipt, 'utility', 'BatchInterrupted', true);
+    const [failed] = isV5
+      ? filterEventRecords(receipt, 'utility', 'BatchInterrupted', true)
+      : filterEventRecords(receipt, 'utility', 'BatchInterruptedOld', true);
 
     if (failed) {
       const {
         data: [, failedData],
       } = failed;
 
-      const failedIndex = u32ToBigNumber(failedData[0]).toNumber();
-      const dispatchError = failedData[1];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const failedIndex = u32ToBigNumber((failedData as any)[0]).toNumber();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const dispatchError = (failedData as any)[1];
 
       this.handleExtrinsicFailure(resolve, reject, dispatchError, { failedIndex });
     } else {
