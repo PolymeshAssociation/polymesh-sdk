@@ -41,6 +41,7 @@ import {
   ErrorCode,
   MiddlewareMetadata,
   ModuleName,
+  PolkadotConfig,
   ProtocolFees,
   ResultSet,
   SubCallback,
@@ -109,11 +110,6 @@ export class Context {
 
   public polymeshApi: ApiPromise;
 
-  /**
-   * Whether the current node is an archive node (contains a full history from genesis onward) or not
-   */
-  public isArchiveNode = false;
-
   public ss58Format: BigNumber;
 
   private _middlewareApi: ApolloClient<NormalizedCacheObject> | null;
@@ -130,6 +126,8 @@ export class Context {
 
   private unsubChainVersion: UnsubscribePromise;
 
+  private _isArchiveNodeResult?: boolean;
+
   /**
    * @hidden
    */
@@ -141,10 +139,21 @@ export class Context {
     this.polymeshApi = polymeshApi;
     this.ss58Format = ss58Format;
 
+    // `CanTransferGranularReturn` is a 6.0 type. We patch the types here to accommodate the breaking change
+    const registry = polymeshApi.registry;
+    const transferReturnDef = registry.get('CanTransferGranularReturn');
+
     this.unsubChainVersion = polymeshApi.query.system.lastRuntimeUpgrade(upgrade => {
       if (upgrade.isSome) {
         const { specVersion } = upgrade.unwrap();
         this.isV5 = specVersion.toNumber() < 6000000;
+
+        if (this.isV5) {
+          const transferResultDef = registry.get('GranularCanTransferResult');
+          registry.register('CanTransferGranularReturn', transferResultDef);
+        } else {
+          registry.register('CanTransferGranularReturn', transferReturnDef);
+        }
       }
     });
   }
@@ -158,6 +167,7 @@ export class Context {
     polymeshApi: ApiPromise;
     middlewareApiV2: ApolloClient<NormalizedCacheObject> | null;
     signingManager?: SigningManager;
+    polkadot?: PolkadotConfig;
   }): Promise<Context> {
     const { polymeshApi, middlewareApiV2, signingManager } = params;
 
@@ -170,13 +180,9 @@ export class Context {
       ss58Format,
     });
 
-    const isArchiveNodePromise = context.isCurrentNodeArchive();
-
     if (signingManager) {
       await context.setSigningManager(signingManager);
     }
-
-    context.isArchiveNode = await isArchiveNodePromise;
 
     return new Proxy(context, {
       get: (target, prop: keyof Context): Context[keyof Context] => {
@@ -194,14 +200,22 @@ export class Context {
 
   /**
    * @hidden
+   *
+   * checks if current node is archive by querying the balance at genesis block
+   *
+   * @note caches first successful result to avoid repeated network calls
    */
-  private async isCurrentNodeArchive(): Promise<boolean> {
+  public async isCurrentNodeArchive(): Promise<boolean> {
     const {
       polymeshApi: {
         query: { system },
       },
       polymeshApi,
     } = this;
+
+    if (typeof this._isArchiveNodeResult !== 'undefined') {
+      return this._isArchiveNodeResult;
+    }
 
     try {
       const blockHash = await system.blockHash(bigNumberToU32(new BigNumber(0), this));
@@ -210,7 +224,9 @@ export class Context {
 
       const balance = await apiAt.query.balances.totalIssuance();
 
-      return balanceToBigNumber(balance).gt(new BigNumber(0));
+      this._isArchiveNodeResult = balanceToBigNumber(balance).gt(new BigNumber(0));
+
+      return this._isArchiveNodeResult;
     } catch (e) {
       return false;
     }

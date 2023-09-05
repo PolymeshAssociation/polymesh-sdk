@@ -2253,6 +2253,14 @@ describe('bigNumberToBalance and balanceToBigNumber', () => {
       result = bigNumberToBalance(value, context);
 
       expect(result).toBe(fakeResult);
+
+      value = new BigNumber('');
+
+      when(context.createType)
+        .calledWith('Balance', value.multipliedBy(Math.pow(10, 6)).toString())
+        .mockReturnValue(fakeResult);
+
+      expect(result).toBe(fakeResult);
     });
 
     it('should throw an error if the value exceeds the max balance', () => {
@@ -4211,7 +4219,7 @@ describe('toIdentityWithClaimsArray', () => {
       issuerId: issuerDid,
       issuanceDate: date,
       lastUpdateDate: date,
-      cddId: cddId,
+      cddId,
     };
     const fakemiddlewareClaims = [
       {
@@ -6620,12 +6628,12 @@ describe('fundraiserToOfferingDetails', () => {
 
     let fundraiser = dsMockUtils.createMockFundraiser({
       creator,
-      offeringPortfolio: offeringPortfolio,
-      offeringAsset: offeringAsset,
-      raisingPortfolio: raisingPortfolio,
-      raisingAsset: raisingAsset,
+      offeringPortfolio,
+      offeringAsset,
+      raisingPortfolio,
+      raisingAsset,
       tiers: rawTiers,
-      venueId: venueId,
+      venueId,
       start,
       end,
       status,
@@ -6640,12 +6648,12 @@ describe('fundraiserToOfferingDetails', () => {
 
     fundraiser = dsMockUtils.createMockFundraiser({
       creator,
-      offeringPortfolio: offeringPortfolio,
-      offeringAsset: offeringAsset,
-      raisingPortfolio: raisingPortfolio,
-      raisingAsset: raisingAsset,
+      offeringPortfolio,
+      offeringAsset,
+      raisingPortfolio,
+      raisingAsset,
       tiers: rawTiers,
-      venueId: venueId,
+      venueId,
       start: dsMockUtils.createMockMoment(new BigNumber(futureStart.getTime())),
       end: dsMockUtils.createMockOption(),
       status: dsMockUtils.createMockFundraiserStatus('Closed'),
@@ -6668,12 +6676,12 @@ describe('fundraiserToOfferingDetails', () => {
 
     fundraiser = dsMockUtils.createMockFundraiser({
       creator,
-      offeringPortfolio: offeringPortfolio,
-      offeringAsset: offeringAsset,
-      raisingPortfolio: raisingPortfolio,
-      raisingAsset: raisingAsset,
+      offeringPortfolio,
+      offeringAsset,
+      raisingPortfolio,
+      raisingAsset,
       tiers: rawTiers,
-      venueId: venueId,
+      venueId,
       start,
       end: dsMockUtils.createMockOption(),
       status: dsMockUtils.createMockFundraiserStatus('ClosedEarly'),
@@ -6695,10 +6703,10 @@ describe('fundraiserToOfferingDetails', () => {
 
     fundraiser = dsMockUtils.createMockFundraiser({
       creator,
-      offeringPortfolio: offeringPortfolio,
-      offeringAsset: offeringAsset,
-      raisingPortfolio: raisingPortfolio,
-      raisingAsset: raisingAsset,
+      offeringPortfolio,
+      offeringAsset,
+      raisingPortfolio,
+      raisingAsset,
       tiers: [
         dsMockUtils.createMockFundraiserTier({
           total: dsMockUtils.createMockBalance(amount),
@@ -6706,7 +6714,7 @@ describe('fundraiserToOfferingDetails', () => {
           remaining: dsMockUtils.createMockBalance(new BigNumber(0)),
         }),
       ],
-      venueId: venueId,
+      venueId,
       start,
       end: dsMockUtils.createMockOption(),
       status: dsMockUtils.createMockFundraiserStatus('Frozen'),
@@ -6734,10 +6742,10 @@ describe('fundraiserToOfferingDetails', () => {
 
     fundraiser = dsMockUtils.createMockFundraiser({
       creator,
-      offeringPortfolio: offeringPortfolio,
-      offeringAsset: offeringAsset,
-      raisingPortfolio: raisingPortfolio,
-      raisingAsset: raisingAsset,
+      offeringPortfolio,
+      offeringAsset,
+      raisingPortfolio,
+      raisingAsset,
       tiers: [
         dsMockUtils.createMockFundraiserTier({
           total: dsMockUtils.createMockBalance(amount),
@@ -6745,7 +6753,7 @@ describe('fundraiserToOfferingDetails', () => {
           remaining: dsMockUtils.createMockBalance(new BigNumber(1)),
         }),
       ],
-      venueId: venueId,
+      venueId,
       start: dsMockUtils.createMockMoment(new BigNumber(pastStart.getTime())),
       end: dsMockUtils.createMockOption(
         dsMockUtils.createMockMoment(new BigNumber(pastEnd.getTime()))
@@ -7237,7 +7245,7 @@ describe('corporateActionIdentifierToCaId', () => {
     when(context.createType)
       .calledWith('PalletCorporateActionsCaId', {
         ticker,
-        localId: localId,
+        localId,
       })
       .mockReturnValue(fakeResult);
 

@@ -514,7 +514,7 @@ describe('addInstruction procedure', () => {
               {
                 from,
                 to,
-                asset: asset,
+                asset,
                 amount,
               },
             ],

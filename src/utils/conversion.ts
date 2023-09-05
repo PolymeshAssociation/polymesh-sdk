@@ -1294,7 +1294,7 @@ export function bigNumberToBalance(value: BigNumber, context: Context, divisible
   }
 
   if (divisible) {
-    if (value.decimalPlaces() > MAX_DECIMALS) {
+    if ((value.decimalPlaces() ?? 0) > MAX_DECIMALS) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: 'The value has more decimal places than allowed',
@@ -4236,9 +4236,9 @@ export function middlewarePortfolioDataToPortfolio(
   const { did, kind } = data;
 
   if ('default' in kind) {
-    return new DefaultPortfolio({ did: did }, context);
+    return new DefaultPortfolio({ did }, context);
   }
-  return new NumberedPortfolio({ did: did, id: new BigNumber(kind.user) }, context);
+  return new NumberedPortfolio({ did, id: new BigNumber(kind.user) }, context);
 }
 
 /**

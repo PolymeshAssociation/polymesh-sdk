@@ -374,7 +374,7 @@ export async function prepareStorage(
     const rawValue = stringToBytes(assetType, context);
     const rawId = await context.polymeshApi.query.asset.customTypesInverse(rawValue);
 
-    const id = context.isV5 ? rawId : rawId.unwrap();
+    const id = context.isV5 ? rawId : rawId.unwrapOrDefault();
 
     return {
       customTypeData: {

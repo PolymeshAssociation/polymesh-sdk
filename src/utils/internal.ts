@@ -510,7 +510,9 @@ export async function getApiAtBlock(
   context: Context,
   blockHash: string | BlockHash
 ): Promise<ApiDecoration<'promise'>> {
-  const { polymeshApi, isArchiveNode } = context;
+  const { polymeshApi } = context;
+
+  const isArchiveNode = await context.isCurrentNodeArchive();
 
   if (!isArchiveNode) {
     throw new PolymeshError({
