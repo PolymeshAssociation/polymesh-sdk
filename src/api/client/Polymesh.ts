@@ -139,6 +139,7 @@ export class Polymesh {
    *   (optional, if not passed the SDK will not be able to submit transactions). Can be set later with
    *   `setSigningManager`
    * @param params.middlewareV2 - middleware V2 API URL (optional, used for historic queries)
+   * @param params.polkadot - optional config for polkadot `ApiPromise`
    */
   static async connect(params: ConnectParams): Promise<Polymesh> {
     const { nodeUrl, signingManager, middlewareV2, polkadot } = params;
