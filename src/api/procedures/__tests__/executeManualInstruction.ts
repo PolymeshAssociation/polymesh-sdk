@@ -140,7 +140,6 @@ describe('executeManualInstruction procedure', () => {
       Storage
     >(mockContext, {
       portfolios: [],
-      totalLegAmount: legAmount,
       instructionDetails,
       signerDid: 'someOtherDid',
     });
@@ -164,7 +163,6 @@ describe('executeManualInstruction procedure', () => {
       Storage
     >(mockContext, {
       portfolios: [portfolio, portfolio],
-      totalLegAmount: legAmount,
       instructionDetails,
       signerDid: did,
     });
@@ -188,7 +186,6 @@ describe('executeManualInstruction procedure', () => {
       Storage
     >(mockContext, {
       portfolios: [portfolio, portfolio],
-      totalLegAmount: legAmount,
       instructionDetails,
       signerDid: did,
     });
@@ -212,7 +209,6 @@ describe('executeManualInstruction procedure', () => {
       mockContext,
       {
         portfolios: [portfolio, portfolio],
-        totalLegAmount: legAmount,
         instructionDetails,
         signerDid: did,
       }
@@ -241,7 +237,6 @@ describe('executeManualInstruction procedure', () => {
       mockContext,
       {
         portfolios: [],
-        totalLegAmount: legAmount,
         instructionDetails,
         signerDid: did,
       }
@@ -278,7 +273,6 @@ describe('executeManualInstruction procedure', () => {
         Storage
       >(mockContext, {
         portfolios: [from, to],
-        totalLegAmount: legAmount,
         instructionDetails,
         signerDid: did,
       });
@@ -329,7 +323,6 @@ describe('executeManualInstruction procedure', () => {
           expect.objectContaining({ owner: expect.objectContaining({ did: fromDid }) }),
           expect.objectContaining({ owner: expect.objectContaining({ did: toDid }) }),
         ],
-        totalLegAmount: new BigNumber(1),
         instructionDetails,
         signerDid: did,
       });
@@ -360,7 +353,6 @@ describe('executeManualInstruction procedure', () => {
 
       expect(result).toEqual({
         portfolios: [],
-        totalLegAmount: new BigNumber(1),
         instructionDetails,
         signerDid: did,
       });

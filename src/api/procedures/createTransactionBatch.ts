@@ -61,7 +61,6 @@ export function prepareStorage<ReturnValues extends unknown[]>(
 ): Storage {
   const { transactions: inputTransactions } = args;
 
-  const isV5 = this.context.isV5;
   const resolvers: ResolverFunction<unknown>[] = [];
   const transactions: TxWithArgs[] = [];
   const tags: TxTag[] = [];
@@ -120,7 +119,7 @@ export function prepareStorage<ReturnValues extends unknown[]>(
       let value;
 
       if (isResolverFunction(resolver)) {
-        value = resolver(sliceBatchReceipt(receipt, startIndex, endIndex, isV5));
+        value = resolver(sliceBatchReceipt(receipt, startIndex, endIndex));
       } else {
         value = resolver;
       }

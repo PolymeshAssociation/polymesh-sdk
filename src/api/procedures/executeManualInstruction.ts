@@ -1,5 +1,4 @@
 import { PolymeshPrimitivesIdentityIdPortfolioId } from '@polkadot/types/lookup';
-import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
 import { assertInstructionValidForManualExecution } from '~/api/procedures/utils';
@@ -15,7 +14,6 @@ import {
 } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
-  bigNumberToU32,
   bigNumberToU64,
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolioId,
@@ -24,7 +22,6 @@ import {
 
 export interface Storage {
   portfolios: (DefaultPortfolio | NumberedPortfolio)[];
-  totalLegAmount: BigNumber; // v5 param
   instructionDetails: InstructionDetails;
   signerDid: string;
 }
@@ -45,10 +42,9 @@ export async function prepareExecuteManualInstruction(
         query: { settlement },
         rpc,
       },
-      isV5,
     },
     context,
-    storage: { portfolios, totalLegAmount, instructionDetails, signerDid },
+    storage: { portfolios, instructionDetails, signerDid },
   } = this;
 
   const { id, skipAffirmationCheck } = args;
@@ -88,33 +84,21 @@ export async function prepareExecuteManualInstruction(
     }
   }
 
-  if (isV5) {
-    return {
-      transaction: settlementTx.executeManualInstruction,
-      resolver: instruction,
-      args: [
-        rawInstructionId,
-        bigNumberToU32(totalLegAmount, context),
-        rawPortfolioIds.length ? rawPortfolioIds[0] : null,
-      ],
-    };
-  } else {
-    const { fungibleTokens, nonFungibleTokens, offChainAssets, consumedWeight } =
-      await rpc.settlement.getExecuteInstructionInfo(rawInstructionId);
+  const { fungibleTokens, nonFungibleTokens, offChainAssets, consumedWeight } =
+    await rpc.settlement.getExecuteInstructionInfo(rawInstructionId);
 
-    return {
-      transaction: settlementTx.executeManualInstruction,
-      resolver: instruction,
-      args: [
-        rawInstructionId,
-        rawPortfolioIds.length ? rawPortfolioIds[0] : null,
-        fungibleTokens,
-        nonFungibleTokens,
-        offChainAssets,
-        consumedWeight,
-      ],
-    };
-  }
+  return {
+    transaction: settlementTx.executeManualInstruction,
+    resolver: instruction,
+    args: [
+      rawInstructionId,
+      rawPortfolioIds.length ? rawPortfolioIds[0] : null,
+      fungibleTokens,
+      nonFungibleTokens,
+      offChainAssets,
+      consumedWeight,
+    ],
+  };
 }
 
 /**
@@ -178,7 +162,6 @@ export async function prepareStorage(
 
   return {
     portfolios,
-    totalLegAmount: new BigNumber(legs.length),
     instructionDetails: details,
     signerDid: did,
   };

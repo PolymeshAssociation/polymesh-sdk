@@ -132,7 +132,6 @@ export { leaveIdentity } from '~/api/procedures/leaveIdentity';
 export { createGroup } from '~/api/procedures/createGroup';
 export { quitCustody } from '~/api/procedures/quitCustody';
 export { inviteExternalAgent } from '~/api/procedures/inviteExternalAgent';
-export { rescheduleInstruction } from '~/api/procedures/rescheduleInstruction';
 export { setPermissionGroup } from '~/api/procedures/setPermissionGroup';
 export { setGroupPermissions } from '~/api/procedures/setGroupPermissions';
 export { removeExternalAgent } from '~/api/procedures/removeExternalAgent';
