@@ -51,6 +51,7 @@ import * as utilsConversionModule from '~/utils/conversion';
 import { SUPPORTED_NODE_VERSION_RANGE, SUPPORTED_SPEC_VERSION_RANGE } from '../constants';
 import {
   asAccount,
+  asChildIdentity,
   assertAddressValid,
   assertExpectedChainVersion,
   assertExpectedSqVersion,
@@ -2093,5 +2094,24 @@ describe('getIdentityFromKeyRecord', () => {
     const result = await getIdentityFromKeyRecord(unassignedKeyRecord, mockContext);
 
     expect(result).toBeNull();
+  });
+});
+
+describe('asChildIdentity', () => {
+  it('should return child identity instance', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+
+    const childDid = 'childDid';
+    const childIdentity = entityMockUtils.getChildIdentityInstance({
+      did: childDid,
+    });
+
+    let result = asChildIdentity(childDid, mockContext);
+
+    expect(result).toEqual(expect.objectContaining({ did: childDid }));
+
+    result = asChildIdentity(childIdentity, mockContext);
+
+    expect(result).toEqual(expect.objectContaining({ did: childDid }));
   });
 });

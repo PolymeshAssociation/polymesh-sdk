@@ -5,6 +5,7 @@ import {
   Asset,
   AuthorizationRequest,
   CheckpointSchedule,
+  ChildIdentity,
   CorporateActionBase,
   CustomPermissionGroup,
   DefaultPortfolio,
@@ -1047,3 +1048,25 @@ export type SetVenueFilteringParams = {
   allowedVenues?: BigNumber[];
   disallowedVenues?: BigNumber[];
 };
+
+export interface CreateChildIdentityParams {
+  /**
+   * The secondary key that will become the primary key of the new child Identity
+   */
+  secondaryKey: string | Account;
+}
+
+export interface CreateChildIdentitiesParams {
+  /**
+   * The secondary keys that will become the primary keys of the new child Identities
+   */
+  secondaryKeys: (string | Account)[];
+  /**
+   * Expiry date of the signed authorization
+   */
+  expiry: Date;
+}
+
+export interface UnlinkChildParams {
+  child: string | ChildIdentity;
+}

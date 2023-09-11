@@ -32,6 +32,7 @@ import {
   Asset,
   Checkpoint,
   CheckpointSchedule,
+  ChildIdentity,
   Context,
   Identity,
   PolymeshError,
@@ -191,6 +192,14 @@ export async function getDid(
  */
 export function asIdentity(value: string | Identity, context: Context): Identity {
   return typeof value === 'string' ? new Identity({ did: value }, context) : value;
+}
+
+/**
+ * @hidden
+ * Given a DID return the corresponding ChildIdentity, given an ChildIdentity return the ChildIdentity
+ */
+export function asChildIdentity(value: string | ChildIdentity, context: Context): ChildIdentity {
+  return typeof value === 'string' ? new ChildIdentity({ did: value }, context) : value;
 }
 
 /**
