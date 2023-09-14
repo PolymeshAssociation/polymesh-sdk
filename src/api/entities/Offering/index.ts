@@ -119,7 +119,6 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
         polymeshApi: {
           query: { sto },
         },
-        isV5,
       },
       id,
       asset: { ticker },
@@ -130,15 +129,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
       rawFundraiser: Option<PalletStoFundraiser>,
       rawName: Option<Bytes>
     ): OfferingDetails => {
-      if (isV5) {
-        return fundraiserToOfferingDetails(
-          rawFundraiser.unwrap(),
-          rawName as unknown as Bytes,
-          context
-        );
-      } else {
-        return fundraiserToOfferingDetails(rawFundraiser.unwrap(), rawName.unwrap(), context);
-      }
+      return fundraiserToOfferingDetails(rawFundraiser.unwrap(), rawName.unwrap(), context);
     };
 
     const rawTicker = stringToTicker(ticker, context);

@@ -1,4 +1,3 @@
-import { Bytes } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { remove } from 'lodash';
 
@@ -79,7 +78,6 @@ export class Offerings extends Namespace<Asset> {
         polymeshApi: {
           query: { sto },
         },
-        isV5,
       },
       context,
     } = this;
@@ -112,11 +110,7 @@ export class Offerings extends Namespace<Asset> {
         );
         return {
           offering: new Offering({ id, ticker }, context),
-          details: fundraiserToOfferingDetails(
-            fundraiser.unwrap(),
-            isV5 ? (name as unknown as Bytes) : name.unwrap(),
-            context
-          ),
+          details: fundraiserToOfferingDetails(fundraiser.unwrap(), name.unwrap(), context),
         };
       }
     );

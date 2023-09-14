@@ -86,20 +86,18 @@ export async function assertInstructionValidForManualExecution(
 ): Promise<void> {
   const { status, type } = details;
 
-  if (status === InstructionStatus.Executed) {
+  if (status === InstructionStatus.Success || status === InstructionStatus.Rejected) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
       message: 'The Instruction has already been executed',
     });
   }
 
-  if (type !== InstructionType.SettleManual) {
-    if (context.isV5 || status !== InstructionStatus.Failed) {
-      throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message: `You cannot manually execute settlement of type '${type}'`,
-      });
-    }
+  if (type !== InstructionType.SettleManual && status !== InstructionStatus.Failed) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: `You cannot manually execute settlement of type '${type}'`,
+    });
   }
 
   if (type === InstructionType.SettleManual) {

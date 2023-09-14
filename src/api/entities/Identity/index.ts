@@ -1,7 +1,6 @@
 import { Option, StorageKey, u64 } from '@polkadot/types';
 import { AccountId32 } from '@polkadot/types/interfaces';
 import {
-  PalletAssetSecurityToken,
   PolymeshPrimitivesIdentityDidRecord,
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
@@ -194,7 +193,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         polymeshApi: {
           query: { asset },
         },
-        isV5,
       },
     } = this;
     const { ticker } = args;
@@ -204,20 +202,11 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const meshAsset = await asset.tokens(rawTicker);
 
-    if (isV5) {
-      if ((meshAsset as unknown as PalletAssetSecurityToken).ownerDid.isEmpty) {
-        throw new PolymeshError({
-          code: ErrorCode.DataUnavailable,
-          message: `There is no Asset with ticker "${ticker}"`,
-        });
-      }
-    } else {
-      if (meshAsset.isNone) {
-        throw new PolymeshError({
-          code: ErrorCode.DataUnavailable,
-          message: `There is no Asset with ticker "${ticker}"`,
-        });
-      }
+    if (meshAsset.isNone) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: `There is no Asset with ticker "${ticker}"`,
+      });
     }
 
     if (callback) {
@@ -431,7 +420,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         polymeshApi: {
           query: { settlement },
         },
-        isV5,
       },
       did,
       context,
@@ -442,20 +430,12 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const rawDid = stringToIdentityId(did, context);
 
-    if (isV5) {
-      // v6 changes userVenues storage, `any` is needed
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const venueIds = await (settlement as any).userVenues(rawDid);
+    const venueIdsKeys = await settlement.userVenues.keys(rawDid);
+    const venueIds = venueIdsKeys.map(key => {
+      return key.args[1];
+    });
 
-      return assembleResult(venueIds);
-    } else {
-      const venueIdsKeys = await settlement.userVenues.keys(rawDid);
-      const venueIds = venueIdsKeys.map(key => {
-        return key.args[1];
-      });
-
-      return assembleResult(venueIds);
-    }
+    return assembleResult(venueIds);
   }
 
   /**
@@ -496,7 +476,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         polymeshApi: {
           query: { settlement },
         },
-        isV5,
       },
       context,
     } = this;
@@ -511,64 +490,34 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const portfolioIdChunks = chunk(portfolioIds, MAX_CONCURRENT_REQUESTS);
 
-    if (isV5) {
-      await P.each(portfolioIdChunks, async portfolioIdChunk => {
-        const auths = await P.map(portfolioIdChunk, portfolioId =>
-          settlement.userAffirmations.entries(portfolioIdToMeshPortfolioId(portfolioId, context))
-        );
+    await P.each(portfolioIdChunks, async portfolioIdChunk => {
+      const auths = await P.map(portfolioIdChunk, portfolioId =>
+        settlement.userAffirmations.entries(portfolioIdToMeshPortfolioId(portfolioId, context))
+      );
 
-        const uniqueEntries = uniqBy(
-          flatten(auths).map(([key, status]) => ({ id: key.args[1], status })),
-          ({ id, status }) => `${id.toString()}-${status.type}`
-        );
+      const uniqueEntries = uniqBy(
+        flatten(auths).map(([key, status]) => ({ id: key.args[1], status })),
+        ({ id, status }) => `${id.toString()}-${status.type}`
+      );
 
-        const instructions = await settlement.instructionDetails.multi(
-          uniqueEntries.map(({ id }) => id)
-        );
+      const instructionStatuses = await settlement.instructionStatuses.multi(
+        uniqueEntries.map(({ id }) => id)
+      );
 
-        uniqueEntries.forEach(({ id, status }, index) => {
-          const instruction = new Instruction({ id: u64ToBigNumber(id) }, context);
+      uniqueEntries.forEach(({ id, status: affirmationStatus }, index) => {
+        const instruction = new Instruction({ id: u64ToBigNumber(id) }, context);
+        const status = instructionStatuses[index];
 
-          // v6 moves status to dedicated storage, `any` is necessary
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          if ((instructions[index] as any).status.isFailed) {
-            failed.push(instruction);
-          } else if (status.isAffirmed) {
-            affirmed.push(instruction);
-          } else if (status.isPending) {
-            pending.push(instruction);
-          }
-        });
+        if (status.isFailed) {
+          failed.push(instruction);
+        } else if (affirmationStatus.isAffirmed) {
+          affirmed.push(instruction);
+        } else if (status.isPending) {
+          pending.push(instruction);
+        }
       });
-    } else {
-      await P.each(portfolioIdChunks, async portfolioIdChunk => {
-        const auths = await P.map(portfolioIdChunk, portfolioId =>
-          settlement.userAffirmations.entries(portfolioIdToMeshPortfolioId(portfolioId, context))
-        );
+    });
 
-        const uniqueEntries = uniqBy(
-          flatten(auths).map(([key, status]) => ({ id: key.args[1], status })),
-          ({ id, status }) => `${id.toString()}-${status.type}`
-        );
-
-        const instructionStatuses = await settlement.instructionStatuses.multi(
-          uniqueEntries.map(({ id }) => id)
-        );
-
-        uniqueEntries.forEach(({ id, status: affirmationStatus }, index) => {
-          const instruction = new Instruction({ id: u64ToBigNumber(id) }, context);
-          const status = instructionStatuses[index];
-
-          if (status.isFailed) {
-            failed.push(instruction);
-          } else if (affirmationStatus.isAffirmed) {
-            affirmed.push(instruction);
-          } else if (status.isPending) {
-            pending.push(instruction);
-          }
-        });
-      });
-    }
     return {
       affirmed,
       pending,
