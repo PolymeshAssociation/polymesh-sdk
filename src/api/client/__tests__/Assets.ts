@@ -3,12 +3,13 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Assets } from '~/api/client/Assets';
-import { Asset, Context, PolymeshTransaction, TickerReservation } from '~/internal';
+import { Asset, Context, NftCollection, PolymeshTransaction, TickerReservation } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
   GlobalMetadataKey,
   KnownAssetType,
+  KnownNftType,
   SecurityIdentifierType,
   TickerReservationStatus,
 } from '~/types';
@@ -99,6 +100,30 @@ describe('Assets Class', () => {
         .mockResolvedValue(expectedTransaction);
 
       const tx = await assets.createAsset(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: createNftCollection', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const ticker = 'FAKE_TICKER';
+
+      const args = {
+        ticker,
+        name: 'TEST',
+        nftType: KnownNftType.Derivative,
+        collectionKeys: [],
+      };
+
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<NftCollection>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await assets.createNftCollection(args);
 
       expect(tx).toBe(expectedTransaction);
     });

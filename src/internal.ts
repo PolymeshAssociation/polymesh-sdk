@@ -30,6 +30,7 @@ export {
 } from '~/api/procedures/consumeAuthorizationRequests';
 export { createPortfolios } from '~/api/procedures/createPortfolios';
 export { createAsset } from '~/api/procedures/createAsset';
+export { createNftCollection } from '~/api/procedures/createNftCollection';
 export { createVenue } from '~/api/procedures/createVenue';
 export { inviteAccount } from '~/api/procedures/inviteAccount';
 export { subsidizeAccount } from '~/api/procedures/subsidizeAccount';
@@ -95,6 +96,7 @@ export { MultiSig } from '~/api/entities/Account/MultiSig';
 export { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 export { TickerReservation } from '~/api/entities/TickerReservation';
 export { Asset } from '~/api/entities/Asset';
+export { NftCollection } from '~/api/entities/Asset/NonFungible';
 export { MetadataEntry } from '~/api/entities/MetadataEntry';
 export { registerMetadata } from '~/api/procedures/registerMetadata';
 export { setMetadata } from '~/api/procedures/setMetadata';

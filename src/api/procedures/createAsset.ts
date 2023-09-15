@@ -2,7 +2,8 @@ import { Bytes, u32 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
 
-import { Asset, Context, Identity, PolymeshError, Procedure, TickerReservation } from '~/internal';
+import { addManualFees } from '~/api/procedures/utils';
+import { Asset, Identity, PolymeshError, Procedure, TickerReservation } from '~/internal';
 import {
   AssetTx,
   CreateAssetWithTickerParams,
@@ -11,7 +12,6 @@ import {
   RoleType,
   StatisticsTx,
   TickerReservationStatus,
-  TxTag,
   TxTags,
 } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
@@ -55,27 +55,6 @@ export interface Storage {
   status: TickerReservationStatus;
 
   signingIdentity: Identity;
-}
-
-/**
- * Add protocol fees for specific tags to the current accumulated total
- *
- * @returns undefined if fees aren't being calculated manually
- */
-async function addManualFees(
-  currentFee: BigNumber | undefined,
-  tags: TxTag[],
-  context: Context
-): Promise<BigNumber | undefined> {
-  if (!currentFee) {
-    return undefined;
-  }
-
-  const fees = await context.getProtocolFees({
-    tags,
-  });
-
-  return fees.reduce((prev, { fees: nextFees }) => prev.plus(nextFees), currentFee);
 }
 
 /**
@@ -201,7 +180,6 @@ export async function prepareCreateAsset(
       checkTxType({
         transaction: tx.asset.createAsset,
         fee,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
       })
     );

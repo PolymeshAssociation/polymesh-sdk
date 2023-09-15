@@ -1,4 +1,4 @@
-import { bool, Bytes, Option, Text, U8aFixed, u32, u64, u128 } from '@polkadot/types';
+import { bool, Bytes, Option, Text, U8aFixed, u32, u64, u128, Vec } from '@polkadot/types';
 import {
   AccountId,
   Balance,
@@ -22,6 +22,7 @@ import {
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
   PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
   PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
+  PolymeshPrimitivesAssetNonFungibleType,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesCddId,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
@@ -115,6 +116,7 @@ import {
   InputCondition,
   InstructionType,
   KnownAssetType,
+  KnownNftType,
   MetadataLockStatus,
   MetadataType,
   ModuleName,
@@ -181,6 +183,7 @@ import {
   claimToMeshClaim,
   claimTypeToMeshClaimType,
   coerceHexToString,
+  collectionKeysToMetadataKeys,
   complianceConditionsToBtreeSet,
   complianceRequirementResultToRequirementCompliance,
   complianceRequirementToRequirement,
@@ -207,6 +210,7 @@ import {
   inputStatTypeToMeshStatType,
   instructionMemoToString,
   internalAssetTypeToAssetType,
+  internalNftTypeToNftType,
   isCusipValid,
   isFigiValid,
   isIsinValid,
@@ -2532,7 +2536,7 @@ describe('internalSecurityTypeToAssetType and assetTypeToKnownOrId', () => {
     dsMockUtils.cleanup();
   });
 
-  describe('internalSecurityTypeToAssetType', () => {
+  describe('internalAssetTypeToAssetType', () => {
     it('should convert an AssetType to a polkadot PolymeshPrimitivesAssetAssetType object', () => {
       const value = KnownAssetType.Commodity;
       const fakeResult = 'CommodityEnum' as unknown as PolymeshPrimitivesAssetAssetType;
@@ -2548,80 +2552,133 @@ describe('internalSecurityTypeToAssetType and assetTypeToKnownOrId', () => {
     });
   });
 
+  describe('internalNftTypeToNftType', () => {
+    it('should convert an NftType to a polkadot PolymeshPrimitivesAssetAssetType object', () => {
+      const value = KnownNftType.Derivative;
+      const fakeResult = 'DerivativeEnum' as unknown as PolymeshPrimitivesAssetNonFungibleType;
+      const context = dsMockUtils.getContextInstance();
+
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesAssetNonFungibleType', value)
+        .mockReturnValue(fakeResult);
+
+      const result = internalNftTypeToNftType(value, context);
+
+      expect(result).toBe(fakeResult);
+    });
+  });
+
   describe('assetTypeToKnownOrId', () => {
     it('should convert a polkadot PolymeshPrimitivesAssetAssetType object to a string', () => {
       let fakeResult = KnownAssetType.Commodity;
       let assetType = dsMockUtils.createMockAssetType(fakeResult);
 
       let result = assetTypeToKnownOrId(assetType);
-      expect(result).toEqual(fakeResult);
+      expect(result.value).toEqual(fakeResult);
+      expect(result.type).toEqual('Fungible');
 
       fakeResult = KnownAssetType.EquityCommon;
       assetType = dsMockUtils.createMockAssetType(fakeResult);
 
       result = assetTypeToKnownOrId(assetType);
-      expect(result).toEqual(fakeResult);
+      expect(result.value).toEqual(fakeResult);
 
       fakeResult = KnownAssetType.EquityPreferred;
       assetType = dsMockUtils.createMockAssetType(fakeResult);
 
       result = assetTypeToKnownOrId(assetType);
-      expect(result).toEqual(fakeResult);
+      expect(result.value).toEqual(fakeResult);
 
       fakeResult = KnownAssetType.Commodity;
       assetType = dsMockUtils.createMockAssetType(fakeResult);
 
       result = assetTypeToKnownOrId(assetType);
-      expect(result).toEqual(fakeResult);
+      expect(result.value).toEqual(fakeResult);
 
       fakeResult = KnownAssetType.FixedIncome;
       assetType = dsMockUtils.createMockAssetType(fakeResult);
 
       result = assetTypeToKnownOrId(assetType);
-      expect(result).toEqual(fakeResult);
+      expect(result.value).toEqual(fakeResult);
 
       fakeResult = KnownAssetType.Reit;
       assetType = dsMockUtils.createMockAssetType(fakeResult);
 
       result = assetTypeToKnownOrId(assetType);
-      expect(result).toEqual(fakeResult);
+      expect(result.value).toEqual(fakeResult);
 
       fakeResult = KnownAssetType.Fund;
       assetType = dsMockUtils.createMockAssetType(fakeResult);
 
       result = assetTypeToKnownOrId(assetType);
-      expect(result).toEqual(fakeResult);
+      expect(result.value).toEqual(fakeResult);
 
       fakeResult = KnownAssetType.RevenueShareAgreement;
       assetType = dsMockUtils.createMockAssetType(fakeResult);
 
       result = assetTypeToKnownOrId(assetType);
-      expect(result).toEqual(fakeResult);
+      expect(result.value).toEqual(fakeResult);
 
       fakeResult = KnownAssetType.StructuredProduct;
       assetType = dsMockUtils.createMockAssetType(fakeResult);
 
       result = assetTypeToKnownOrId(assetType);
-      expect(result).toEqual(fakeResult);
+      expect(result.value).toEqual(fakeResult);
 
       fakeResult = KnownAssetType.Derivative;
       assetType = dsMockUtils.createMockAssetType(fakeResult);
 
       result = assetTypeToKnownOrId(assetType);
-      expect(result).toEqual(fakeResult);
+      expect(result.value).toEqual(fakeResult);
 
       fakeResult = KnownAssetType.StableCoin;
       assetType = dsMockUtils.createMockAssetType(fakeResult);
 
       result = assetTypeToKnownOrId(assetType);
-      expect(result).toEqual(fakeResult);
+      expect(result.value).toEqual(fakeResult);
 
       assetType = dsMockUtils.createMockAssetType({
         Custom: dsMockUtils.createMockU32(new BigNumber(1)),
       });
 
       result = assetTypeToKnownOrId(assetType);
-      expect(result).toEqual(new BigNumber(1));
+      expect(result.value).toEqual(new BigNumber(1));
+    });
+
+    it('should convert NFT type values', () => {
+      let fakeResult = KnownNftType.Derivative;
+      let assetType = dsMockUtils.createMockAssetType({
+        NonFungible: dsMockUtils.createMockNftType(fakeResult),
+      });
+
+      let result = assetTypeToKnownOrId(assetType);
+      expect(result.value).toEqual(fakeResult);
+      expect(result.type).toEqual('NonFungible');
+
+      fakeResult = KnownNftType.Invoice;
+      assetType = dsMockUtils.createMockAssetType({
+        NonFungible: dsMockUtils.createMockNftType(fakeResult),
+      });
+
+      result = assetTypeToKnownOrId(assetType);
+      expect(result.value).toEqual(fakeResult);
+
+      fakeResult = KnownNftType.FixedIncome;
+      assetType = dsMockUtils.createMockAssetType({
+        NonFungible: dsMockUtils.createMockNftType(fakeResult),
+      });
+
+      result = assetTypeToKnownOrId(assetType);
+      expect(result.value).toEqual(fakeResult);
+
+      assetType = dsMockUtils.createMockAssetType({
+        NonFungible: dsMockUtils.createMockNftType({
+          Custom: dsMockUtils.createMockU32(new BigNumber(2)),
+        }),
+      });
+
+      result = assetTypeToKnownOrId(assetType);
+      expect(result.value).toEqual(new BigNumber(2));
     });
   });
 });
@@ -9218,6 +9275,41 @@ describe('datesToScheduleCheckpoints', () => {
       .mockReturnValue(fakeResult);
 
     const result = datesToScheduleCheckpoints(input, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should create collection keys', () => {
+    const context = dsMockUtils.getContextInstance();
+    const id = new BigNumber(1);
+    const keys = [{ type: MetadataType.Local, id }];
+
+    const fakeResult =
+      'fakeMetadataKeys' as unknown as Vec<PolymeshPrimitivesAssetMetadataAssetMetadataKey>;
+
+    when(context.createType)
+      .calledWith('Vec<PolymeshPrimitivesAssetMetadataAssetMetadataKey>', [
+        {
+          Local: bigNumberToU64(id, context),
+        },
+      ])
+      .mockReturnValue(fakeResult);
+
+    const result = collectionKeysToMetadataKeys(keys, context);
 
     expect(result).toEqual(fakeResult);
   });

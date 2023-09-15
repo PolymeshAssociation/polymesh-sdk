@@ -244,18 +244,19 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       });
 
       const owner = new Identity({ did: identityIdToString(ownerDid) }, context);
-      const type = assetTypeToKnownOrId(rawAssetType);
+      const { value, type } = assetTypeToKnownOrId(rawAssetType);
 
       let assetType: string;
-      if (typeof type === 'string') {
-        assetType = type;
-      } else {
-        const customType = await asset.customTypes(bigNumberToU32(type, context));
+      if (value instanceof BigNumber) {
+        const customType = await asset.customTypes(bigNumberToU32(value, context));
         assetType = bytesToString(customType);
+      } else {
+        assetType = value;
       }
 
       return {
         assetType,
+        nonFungible: type === 'NonFungible',
         isDivisible: boolToBoolean(divisible),
         name: bytesToString(assetName.unwrap()),
         owner,

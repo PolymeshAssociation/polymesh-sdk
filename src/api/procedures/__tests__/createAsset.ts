@@ -39,7 +39,7 @@ import {
   TickerReservationStatus,
   TxTags,
 } from '~/types';
-import { InternalAssetType, PolymeshTx, TickerKey } from '~/types/internal';
+import { InternalAssetType, InternalNftType, PolymeshTx, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -68,7 +68,7 @@ describe('createAsset procedure', () => {
   >;
   let internalAssetTypeToAssetTypeSpy: jest.SpyInstance<
     PolymeshPrimitivesAssetAssetType,
-    [InternalAssetType, Context]
+    [InternalAssetType | { NonFungible: InternalNftType }, Context]
   >;
   let securityIdentifierToAssetIdentifierSpy: jest.SpyInstance<
     PolymeshPrimitivesAssetIdentifier,

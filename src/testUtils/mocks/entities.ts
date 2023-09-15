@@ -169,6 +169,7 @@ interface AssetOptions extends EntityOptions {
   checkpointsGetOne?: EntityGetter<Checkpoint>;
   checkpointsSchedulesGetOne?: EntityGetter<ScheduleWithDetails>;
   investorCount?: EntityGetter<BigNumber>;
+  getNextLocalId?: EntityGetter<BigNumber>;
 }
 
 interface MetadataEntryOptions extends EntityOptions {
@@ -804,6 +805,8 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
       getOne: jest.Mock;
     };
 
+    metadata = {} as { getNextLocalId: jest.Mock };
+
     investorCount!: jest.Mock;
 
     /**
@@ -846,6 +849,7 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
       this.checkpoints.schedules.getOne = createEntityGetterMock(opts.checkpointsSchedulesGetOne);
       this.checkpoints.getOne = createEntityGetterMock(opts.checkpointsGetOne);
       this.investorCount = createEntityGetterMock(opts.investorCount);
+      this.metadata.getNextLocalId = createEntityGetterMock(opts.getNextLocalId);
     }
   },
   () => ({
@@ -904,6 +908,7 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
         nextCheckpointDate: new Date(new Date().getTime() + 1000 * 60 * 60),
       },
     },
+    getNextLocalId: new BigNumber(0),
     toHuman: 'SOME_TICKER',
     investorCount: new BigNumber(0),
   }),
