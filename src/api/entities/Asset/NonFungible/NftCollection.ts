@@ -1,10 +1,10 @@
 import BigNumber from 'bignumber.js';
 
+import { BaseAsset } from '~/api/entities/Asset/BaseAsset';
 import {
   AuthorizationRequest,
   Context,
   controllerTransfer,
-  Entity,
   transferAssetOwnership,
 } from '~/internal';
 import { assetQuery } from '~/middleware/queries';
@@ -13,19 +13,10 @@ import {
   ControllerTransferParams,
   EventIdentifier,
   ProcedureMethod,
-  SecurityIdentifier,
-  SubCallback,
   TransferAssetOwnershipParams,
-  UnsubCallback,
 } from '~/types';
 import { Ensured } from '~/types/utils';
-import {
-  assetIdentifierToSecurityIdentifier,
-  boolToBoolean,
-  middlewareEventDetailsToEventIdentifier,
-  stringToTicker,
-  tickerToDid,
-} from '~/utils/conversion';
+import { middlewareEventDetailsToEventIdentifier, stringToTicker } from '~/utils/conversion';
 import { createProcedureMethod, optionize } from '~/utils/internal';
 
 /**
@@ -41,7 +32,7 @@ export interface UniqueIdentifiers {
 /**
  * Class used to manage Nft functionality
  */
-export class NftCollection extends Entity<UniqueIdentifiers, string> {
+export class NftCollection extends BaseAsset {
   /**
    * @hidden
    * Check if a value is of type {@link UniqueIdentifiers}
@@ -53,25 +44,12 @@ export class NftCollection extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Identity ID of the NftCollection (used for Claims)
-   */
-  public did: string;
-
-  /**
-   * ticker of the NftCollection
-   */
-  public ticker: string;
-
-  /**
    * @hidden
    */
   constructor(identifiers: UniqueIdentifiers, context: Context) {
     super(identifiers, context);
 
     const { ticker } = identifiers;
-
-    this.ticker = ticker;
-    this.did = tickerToDid(ticker);
 
     this.transferOwnership = createProcedureMethod(
       { getProcedureAndArgs: args => [transferAssetOwnership, { ticker, ...args }] },
@@ -92,42 +70,6 @@ export class NftCollection extends Entity<UniqueIdentifiers, string> {
    *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
    */
   public transferOwnership: ProcedureMethod<TransferAssetOwnershipParams, AuthorizationRequest>;
-
-  /**
-   * Retrieve the NftCollection's identifiers list
-   *
-   * @note can be subscribed to
-   */
-  public getIdentifiers(): Promise<SecurityIdentifier[]>;
-  public getIdentifiers(callback?: SubCallback<SecurityIdentifier[]>): Promise<UnsubCallback>;
-
-  // eslint-disable-next-line require-jsdoc
-  public async getIdentifiers(
-    callback?: SubCallback<SecurityIdentifier[]>
-  ): Promise<SecurityIdentifier[] | UnsubCallback> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { asset },
-        },
-      },
-      ticker,
-      context,
-    } = this;
-
-    const rawTicker = stringToTicker(ticker, context);
-
-    if (callback) {
-      return asset.identifiers(rawTicker, identifiers => {
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
-        callback(identifiers.map(assetIdentifierToSecurityIdentifier));
-      });
-    }
-
-    const assetIdentifiers = await asset.identifiers(rawTicker);
-
-    return assetIdentifiers.map(assetIdentifierToSecurityIdentifier);
-  }
 
   /**
    * Retrieve the identifier data (block number, date and event index) of the event that was emitted when the token was created
@@ -151,40 +93,6 @@ export class NftCollection extends Entity<UniqueIdentifiers, string> {
     );
 
     return optionize(middlewareEventDetailsToEventIdentifier)(asset?.createdBlock, asset?.eventIdx);
-  }
-
-  /**
-   * Check whether transfers are frozen for the NftCollection
-   *
-   * @note can be subscribed to
-   */
-  public isFrozen(): Promise<boolean>;
-  public isFrozen(callback: SubCallback<boolean>): Promise<UnsubCallback>;
-
-  // eslint-disable-next-line require-jsdoc
-  public async isFrozen(callback?: SubCallback<boolean>): Promise<boolean | UnsubCallback> {
-    const {
-      ticker,
-      context: {
-        polymeshApi: {
-          query: { asset },
-        },
-      },
-      context,
-    } = this;
-
-    const rawTicker = stringToTicker(ticker, context);
-
-    if (callback) {
-      return asset.frozen(rawTicker, frozen => {
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
-        callback(boolToBoolean(frozen));
-      });
-    }
-
-    const result = await asset.frozen(rawTicker);
-
-    return boolToBoolean(result);
   }
 
   /**
