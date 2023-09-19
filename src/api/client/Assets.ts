@@ -226,6 +226,27 @@ export class Assets {
   }
 
   /**
+   * Retrieve an NftCollection
+   *
+   * @param args.ticker - NftCollection ticker
+   */
+  public async getNftCollection(args: { ticker: string }): Promise<NftCollection> {
+    const { ticker } = args;
+
+    const nftCollection = new NftCollection({ ticker }, this.context);
+    const exists = await nftCollection.exists();
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: `There is no NftCollection with ticker "${ticker}"`,
+      });
+    }
+
+    return nftCollection;
+  }
+
+  /**
    * Retrieve all the Assets on chain
    *
    * @note supports pagination

@@ -35,7 +35,6 @@ import {
   AccountBalance,
   ActiveTransferRestrictions,
   AgentWithGroup,
-  AssetDetails,
   AssetWithGroup,
   Authorization,
   AuthorizationType,
@@ -49,6 +48,7 @@ import {
   DistributionParticipant,
   DividendDistributionDetails,
   ExtrinsicData,
+  FungibleAssetDetails,
   GroupPermissions,
   IdentityBalance,
   InstructionDetails,
@@ -151,7 +151,7 @@ interface TickerReservationOptions extends EntityOptions {
 interface AssetOptions extends EntityOptions {
   ticker?: string;
   did?: string;
-  details?: EntityGetter<AssetDetails>;
+  details?: EntityGetter<FungibleAssetDetails>;
   currentFundingRound?: EntityGetter<string>;
   isFrozen?: EntityGetter<boolean>;
   transfersCanTransfer?: EntityGetter<TransferStatus>;

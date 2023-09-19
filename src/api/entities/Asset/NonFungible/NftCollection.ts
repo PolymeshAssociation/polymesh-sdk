@@ -1,3 +1,5 @@
+import { StorageKey, u64 } from '@polkadot/types';
+import { PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import { BaseAsset, UniqueIdentifiers } from '~/api/entities/Asset/BaseAsset';
@@ -10,14 +12,33 @@ import {
 import { assetQuery } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
+  AssetDetails,
   ControllerTransferParams,
   EventIdentifier,
   ProcedureMethod,
+  SubCallback,
   TransferAssetOwnershipParams,
+  UnsubCallback,
 } from '~/types';
 import { Ensured } from '~/types/utils';
-import { middlewareEventDetailsToEventIdentifier, stringToTicker } from '~/utils/conversion';
+import {
+  middlewareEventDetailsToEventIdentifier,
+  stringToTicker,
+  u64ToBigNumber,
+} from '~/utils/conversion';
 import { createProcedureMethod, optionize } from '~/utils/internal';
+
+const sumNftIssuance = (
+  numberOfNfts: [StorageKey<[PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId]>, u64][]
+): BigNumber => {
+  let numberIssued = new BigNumber(0);
+  numberOfNfts.forEach(([, holderEntry]) => {
+    const holderAmount = u64ToBigNumber(holderEntry);
+    numberIssued = numberIssued.plus(holderAmount);
+  });
+
+  return numberIssued;
+};
 
 /**
  * Class used to manage Nft functionality
@@ -73,6 +94,54 @@ export class NftCollection extends BaseAsset {
     );
 
     return optionize(middlewareEventDetailsToEventIdentifier)(asset?.createdBlock, asset?.eventIdx);
+  }
+
+  /**
+   * Retrieve the NftCollection's data
+   *
+   * @note can be subscribed to
+   */
+  public override details(): Promise<AssetDetails>;
+  public override details(callback: SubCallback<AssetDetails>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public override async details(
+    callback?: SubCallback<AssetDetails>
+  ): Promise<AssetDetails | UnsubCallback> {
+    const {
+      context: {
+        polymeshApi: { query },
+      },
+      ticker,
+      context,
+    } = this;
+
+    const rawTicker = stringToTicker(ticker, context);
+
+    const rawNumberNftsPromise = query.nft.numberOfNFTs.entries(rawTicker);
+
+    if (callback) {
+      const rawNumberNfts = await rawNumberNftsPromise;
+      const numberIssued = sumNftIssuance(rawNumberNfts);
+
+      // currently `asset.tokens` does not track Nft `totalSupply`
+      const wrappedCallback = async (commonDetails: AssetDetails): Promise<void> => {
+        const nftDetails = { ...commonDetails, totalSupply: numberIssued };
+
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        callback(nftDetails);
+      };
+
+      return super.details(wrappedCallback);
+    }
+
+    const [rawNumberNfts, commonDetails] = await Promise.all([
+      rawNumberNftsPromise,
+      super.details(),
+    ]);
+    const numberIssued = sumNftIssuance(rawNumberNfts);
+
+    return { ...commonDetails, totalSupply: numberIssued };
   }
 
   /**

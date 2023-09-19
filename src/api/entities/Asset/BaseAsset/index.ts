@@ -1,9 +1,23 @@
-import { Context, Entity } from '~/internal';
-import { SecurityIdentifier, SubCallback, UnsubCallback } from '~/types';
+import { Bytes, Option, StorageKey } from '@polkadot/types';
+import {
+  PalletAssetSecurityToken,
+  PolymeshPrimitivesAgentAgentGroup,
+  PolymeshPrimitivesIdentityId,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
+import BigNumber from 'bignumber.js';
+
+import { Context, Entity, Identity, PolymeshError } from '~/internal';
+import { AssetDetails, ErrorCode, SecurityIdentifier, SubCallback, UnsubCallback } from '~/types';
 import { tickerToDid } from '~/utils';
 import {
   assetIdentifierToSecurityIdentifier,
+  assetTypeToKnownOrId,
+  balanceToBigNumber,
+  bigNumberToU32,
   boolToBoolean,
+  bytesToString,
+  identityIdToString,
   stringToTicker,
 } from '~/utils/conversion';
 
@@ -121,5 +135,100 @@ export abstract class BaseAsset extends Entity<UniqueIdentifiers, string> {
     const result = await asset.frozen(rawTicker);
 
     return boolToBoolean(result);
+  }
+
+  /**
+   * Retrieve the Asset's data
+   *
+   * @note can be subscribed to
+   */
+  public details(): Promise<AssetDetails>;
+  public details(callback: SubCallback<AssetDetails>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async details(
+    callback?: SubCallback<AssetDetails>
+  ): Promise<AssetDetails | UnsubCallback> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { asset, externalAgents },
+        },
+      },
+      ticker,
+      context,
+    } = this;
+
+    const assembleResult = async (
+      optToken: Option<PalletAssetSecurityToken>,
+      agentGroups: [
+        StorageKey<[PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId]>,
+        Option<PolymeshPrimitivesAgentAgentGroup>
+      ][],
+      assetName: Option<Bytes>
+    ): Promise<AssetDetails> => {
+      const fullAgents: Identity[] = [];
+
+      if (optToken.isNone) {
+        throw new PolymeshError({
+          message: 'Asset detail information not found',
+          code: ErrorCode.DataUnavailable,
+        });
+      }
+
+      const { totalSupply, divisible, ownerDid, assetType: rawAssetType } = optToken.unwrap();
+
+      agentGroups.forEach(([storageKey, agentGroup]) => {
+        const rawAgentGroup = agentGroup.unwrap();
+        if (rawAgentGroup.isFull) {
+          fullAgents.push(new Identity({ did: identityIdToString(storageKey.args[1]) }, context));
+        }
+      });
+
+      const owner = new Identity({ did: identityIdToString(ownerDid) }, context);
+      const { value, type } = assetTypeToKnownOrId(rawAssetType);
+
+      let assetType: string;
+      if (value instanceof BigNumber) {
+        const customType = await asset.customTypes(bigNumberToU32(value, context));
+        assetType = bytesToString(customType);
+      } else {
+        assetType = value;
+      }
+
+      return {
+        assetType,
+        nonFungible: type === 'NonFungible',
+        isDivisible: boolToBoolean(divisible),
+        name: bytesToString(assetName.unwrap()),
+        owner,
+        totalSupply: balanceToBigNumber(totalSupply),
+        fullAgents,
+      };
+    };
+
+    const rawTicker = stringToTicker(ticker, context);
+
+    const groupOfAgentPromise = externalAgents.groupOfAgent.entries(rawTicker);
+    const namePromise = asset.assetNames(rawTicker);
+
+    if (callback) {
+      const groupEntries = await groupOfAgentPromise;
+      const assetName = await namePromise;
+
+      return asset.tokens(rawTicker, async securityToken => {
+        const result = await assembleResult(securityToken, groupEntries, assetName);
+
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
+        callback(result);
+      });
+    }
+
+    const [token, groups, name] = await Promise.all([
+      asset.tokens(rawTicker),
+      groupOfAgentPromise,
+      namePromise,
+    ]);
+    return assembleResult(token, groups, name);
   }
 }
