@@ -61,7 +61,7 @@ describe('Identities Class', () => {
   });
 
   describe('method: getChildIdentity', () => {
-    it('should return an ChildIdentity object with the passed did', async () => {
+    it('should return a ChildIdentity object with the passed did', async () => {
       const params = { did: 'testDid' };
 
       const childIdentity = new ChildIdentity(params, context);

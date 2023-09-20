@@ -73,7 +73,7 @@ export class ChildIdentity extends Identity {
    * Unlinks this child identity from its parent
    *
    * @throws if
-   *  - this identity doesn't has a parent
+   *  - this identity doesn't have a parent
    *  - the transaction signer is not the primary key of the child identity
    */
   public unlinkFromParent: NoArgsProcedureMethod<void>;

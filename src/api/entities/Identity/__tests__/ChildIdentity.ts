@@ -103,16 +103,16 @@ describe('ChildIdentity class', () => {
   });
 
   describe('method: unlinkFromParent', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedTransaction = 'someQueue' as unknown as PolymeshTransaction<void>;
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       when(procedureMockUtils.getPrepareMock())
         .calledWith({ args: { child: childIdentity }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
-      const queue = await childIdentity.unlinkFromParent();
+      const transaction = await childIdentity.unlinkFromParent();
 
-      expect(queue).toBe(expectedTransaction);
+      expect(transaction).toBe(expectedTransaction);
     });
   });
 });

@@ -866,6 +866,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
   /**
    * Returns the list of all child identities
+   *
+   * @note this query can be potentially **SLOW** depending on the number of parent Identities present on the chain
    */
   public async getChildIdentities(): Promise<ChildIdentity[]> {
     const {

@@ -594,8 +594,8 @@ export class Context {
     if (child instanceof ChildIdentity) {
       return child;
     }
-    const id = new ChildIdentity({ did: child }, this);
-    const exists = await id.exists();
+    const childIdentity = new ChildIdentity({ did: child }, this);
+    const exists = await childIdentity.exists();
 
     if (!exists) {
       throw new PolymeshError({
@@ -604,7 +604,7 @@ export class Context {
       });
     }
 
-    return id;
+    return childIdentity;
   }
 
   /**

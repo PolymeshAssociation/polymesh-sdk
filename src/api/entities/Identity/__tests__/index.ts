@@ -1208,7 +1208,7 @@ describe('Identity class', () => {
   });
 
   describe('method: unlinkChild', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
       const expectedTransaction = 'someQueue' as unknown as PolymeshTransaction<void>;
 
       const identity = new Identity({ did: 'someDid' }, context);
@@ -1221,9 +1221,9 @@ describe('Identity class', () => {
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
-      const queue = await identity.unlinkChild(args);
+      const transaction = await identity.unlinkChild(args);
 
-      expect(queue).toBe(expectedTransaction);
+      expect(transaction).toBe(expectedTransaction);
     });
   });
 });
