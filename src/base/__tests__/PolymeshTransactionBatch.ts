@@ -185,7 +185,7 @@ describe('Polymesh Transaction Batch class', () => {
 
       await fakePromise(2);
 
-      dsMockUtils.updateTxStatus(batchMock, dsMockUtils.MockTxStatus.BatchFailed);
+      dsMockUtils.updateTxStatus(batchMock, dsMockUtils.MockTxStatus.BatchInterrupted);
 
       await expect(runPromise).rejects.toThrow('Unknown error');
       expect(tx.status).toBe(TransactionStatus.Failed);

@@ -326,9 +326,9 @@ export enum MockTxStatus {
   Rejected = 'Rejected',
   Intermediate = 'Intermediate',
   InBlock = 'InBlock',
-  BatchFailed = 'BatchFailed',
   FinalizedFailed = 'FinalizedFailed',
   FailedToUnsubscribe = 'FailedToUnsubscribe',
+  BatchInterrupted = 'BatchInterrupted',
 }
 
 const MockApolloClientClass = class {
@@ -493,11 +493,11 @@ const successReceipt: ISubmittableResult = merge({}, defaultReceipt, {
 
 const batchFailedReceipt: ISubmittableResult = merge({}, successReceipt, {
   findRecord: (mod: string, event: string) =>
-    mod === 'utility' && event === 'BatchInterruptedOld'
+    mod === 'utility' && event === 'BatchInterrupted'
       ? { event: { data: [[], [{ toString: (): string => '1' }, 'Some Error']] } }
       : undefined,
   filterRecords: (mod: string, event: string) =>
-    mod === 'utility' && event === 'BatchInterruptedOld'
+    mod === 'utility' && event === 'BatchInterrupted'
       ? [{ event: { data: [[], [{ toString: (): string => '1' }, 'Some Error']] } }]
       : [],
 });
@@ -584,11 +584,11 @@ const statusToReceipt = (status: MockTxStatus, failReason?: TxFailReason): ISubm
   if (status === MockTxStatus.InBlock) {
     return inBlockReceipt;
   }
-  if (status === MockTxStatus.BatchFailed) {
-    return batchFailedReceipt;
-  }
   if (status === MockTxStatus.FinalizedFailed) {
     return finalizedErrorReceipt;
+  }
+  if (status === MockTxStatus.BatchInterrupted) {
+    return batchFailedReceipt;
   }
 
   throw new Error(`There is no receipt associated with status ${status}`);

@@ -322,30 +322,6 @@ function cloneReceipt(receipt: ISubmittableResult, events: EventRecord[]): ISubm
 }
 
 /**
- * @hidden
- *
- * Return a clone of a batch transaction receipt that only contains events for a subset of the
- *   extrinsics in the batch. This is useful when a batch has several extrinsics that emit
- *   the same events and we want `filterEventRecords` to only search among the events emitted by
- *   some of them.
- *
- * A good example of this is when merging similar batches together. If we wish to preserve the return
- *   value of each batch, this is a good way of ensuring that the resolver function of a batch has
- *   access to the events that correspond only to the extrinsics in said batch
- *
- * @param from - index of the first transaction in the subset
- * @param to - end index of the subset (not included)
- *
- * @note this function does not mutate the original receipt
- */
-export function sliceBatchReceipt(receipt: ISubmittableResult): ISubmittableResult {
-  // check for "BatchCompleted" if not will throw an error
-  filterEventRecords(receipt, 'utility', 'BatchCompleted');
-
-  return receipt;
-}
-
-/**
  * Return a clone of the last receipt in the passes array, containing the accumulated events
  *   of all receipts
  */

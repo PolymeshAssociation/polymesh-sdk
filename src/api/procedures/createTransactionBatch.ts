@@ -13,7 +13,7 @@ import {
 } from '~/types/internal';
 import { isPolymeshTransaction } from '~/utils';
 import { transactionToTxTag } from '~/utils/conversion';
-import { sliceBatchReceipt } from '~/utils/internal';
+import { filterEventRecords } from '~/utils/internal';
 
 export interface Storage {
   processedTransactions: TxWithArgs[];
@@ -78,8 +78,6 @@ export function prepareStorage<ReturnValues extends unknown[]>(
   inputTransactions.forEach(transaction => {
     let spec: TransactionSpec<unknown, unknown[]> | BatchTransactionSpec<unknown, unknown[][]>;
 
-    const startIndex = transactions.length;
-
     if (isPolymeshTransaction(transaction)) {
       spec = PolymeshTransaction.toTransactionSpec(transaction);
       const { transaction: tx, args: txArgs, fee, feeMultiplier } = spec;
@@ -110,8 +108,6 @@ export function prepareStorage<ReturnValues extends unknown[]>(
 
     const { transformer = identity, resolver } = spec;
 
-    const endIndex = transactions.length;
-
     /*
      * We pass the subset of events to the resolver that only correspond to the
      * transactions added in this iteration, and pass the result through the transformer, if any
@@ -120,7 +116,10 @@ export function prepareStorage<ReturnValues extends unknown[]>(
       let value;
 
       if (isResolverFunction(resolver)) {
-        value = resolver(sliceBatchReceipt(receipt, startIndex, endIndex));
+        const isCompleted = filterEventRecords(receipt, 'utility', 'BatchCompleted');
+        if (isCompleted) {
+          value = receipt;
+        }
       } else {
         value = resolver;
       }

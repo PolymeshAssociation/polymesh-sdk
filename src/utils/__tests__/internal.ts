@@ -89,7 +89,6 @@ import {
   requestAtBlock,
   requestPaginated,
   serialize,
-  sliceBatchReceipt,
   unserialize,
 } from '../internal';
 
@@ -278,58 +277,6 @@ describe('filterEventRecords', () => {
 
     expect(() => filterEventRecords(mockReceipt, mod, eventName)).toThrow(
       `Event "${mod}.${eventName}" wasn't fired even though the corresponding transaction was completed. Please report this to the Polymesh team`
-    );
-  });
-});
-
-describe('sliceBatchReceipt', () => {
-  const filterRecordsMock = jest.fn();
-  const mockReceipt = {
-    filterRecords: filterRecordsMock,
-    events: ['tx0event0', 'tx0event1', 'tx1event0', 'tx2event0', 'tx2event1', 'tx2event2'],
-    findRecord: jest.fn(),
-    toHuman: jest.fn(),
-  } as unknown as ISubmittableResult;
-
-  beforeEach(() => {
-    when(filterRecordsMock)
-      .calledWith('utility', 'BatchCompletedOld')
-      .mockReturnValue([
-        {
-          event: {
-            data: [
-              [
-                dsMockUtils.createMockU32(new BigNumber(2)),
-                dsMockUtils.createMockU32(new BigNumber(1)),
-                dsMockUtils.createMockU32(new BigNumber(3)),
-              ],
-            ],
-          },
-        },
-      ]);
-  });
-
-  afterEach(() => {
-    filterRecordsMock.mockReset();
-  });
-
-  it('should return the cloned receipt with a subset of events', () => {
-    let slicedReceipt = sliceBatchReceipt(mockReceipt, 1, 3);
-
-    expect(slicedReceipt.events).toEqual(['tx1event0', 'tx2event0', 'tx2event1', 'tx2event2']);
-
-    slicedReceipt = sliceBatchReceipt(mockReceipt, 0, 2);
-
-    expect(slicedReceipt.events).toEqual(['tx0event0', 'tx0event1', 'tx1event0']);
-  });
-
-  it('should throw an error if the transaction indexes are out of bounds', () => {
-    expect(() => sliceBatchReceipt(mockReceipt, -1, 2)).toThrow(
-      'Transaction index range out of bounds. Please report this to the Polymesh team'
-    );
-
-    expect(() => sliceBatchReceipt(mockReceipt, 1, 4)).toThrow(
-      'Transaction index range out of bounds. Please report this to the Polymesh team'
     );
   });
 });
