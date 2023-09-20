@@ -126,7 +126,7 @@ describe('assertInstructionValid', () => {
     entityMockUtils.configureMocks({
       instructionOptions: {
         details: {
-          status: InstructionStatus.Executed,
+          status: InstructionStatus.Success,
         } as InstructionDetails,
       },
     });
@@ -255,7 +255,7 @@ describe('assertInstructionValidForManualExecution', () => {
       assertInstructionValidForManualExecution(
         {
           ...instructionDetails,
-          status: InstructionStatus.Executed,
+          status: InstructionStatus.Success,
         },
         mockContext
       )

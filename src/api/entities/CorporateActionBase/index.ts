@@ -12,7 +12,6 @@ import {
   PolymeshError,
 } from '~/internal';
 import {
-  CalendarUnit,
   ErrorCode,
   InputCaCheckpoint,
   LinkCaDocsParams,
@@ -20,13 +19,7 @@ import {
   ProcedureMethod,
 } from '~/types';
 import { HumanReadableType, Modify } from '~/types/utils';
-import {
-  bigNumberToU32,
-  momentToDate,
-  storedScheduleToCheckpointScheduleParams,
-  stringToTicker,
-  u64ToBigNumber,
-} from '~/utils/conversion';
+import { bigNumberToU32, momentToDate, stringToTicker, u64ToBigNumber } from '~/utils/conversion';
 import { createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
 import { CorporateActionKind, CorporateActionTargets, TaxWithholding } from './types';
@@ -183,7 +176,6 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
     const {
       context: {
         polymeshApi: { query },
-        isV5,
       },
       context,
       asset: { ticker },
@@ -213,60 +205,29 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
 
     const [scheduleId, amount] = checkpoint.asScheduled;
 
-    if (isV5) {
-      const [schedules, schedulePoints] = await Promise.all([
-        query.checkpoint.schedules(rawTicker),
-        query.checkpoint.schedulePoints(rawTicker, scheduleId),
-      ]);
+    const [schedule, rawCheckpointIds] = await Promise.all([
+      query.checkpoint.scheduledCheckpoints(rawTicker, scheduleId),
+      query.checkpoint.schedulePoints(rawTicker, scheduleId),
+    ]);
 
-      const createdCheckpointIndex = u64ToBigNumber(amount).toNumber();
-      if (createdCheckpointIndex >= schedulePoints.length) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const schedule = schedules.find(({ id }) =>
-          u64ToBigNumber(id).eq(u64ToBigNumber(scheduleId))
-        )!;
-
-        return new CheckpointSchedule(
-          { ticker, ...storedScheduleToCheckpointScheduleParams(schedule) },
-          context
-        );
-      }
-
-      return new Checkpoint(
-        { ticker, id: u64ToBigNumber(schedulePoints[createdCheckpointIndex]) },
-        context
-      );
-    } else {
-      const [schedule, rawCheckpointIds] = await Promise.all([
-        query.checkpoint.scheduledCheckpoints(rawTicker, scheduleId),
-        query.checkpoint.schedulePoints(rawTicker, scheduleId),
-      ]);
-
-      const createdCheckpointIndex = u64ToBigNumber(amount).toNumber();
-      if (schedule.isSome) {
-        const id = u64ToBigNumber(scheduleId);
-        const points = [...schedule.unwrap().pending].map(rawPoint => momentToDate(rawPoint));
-        return new CheckpointSchedule(
-          {
-            ticker,
-            id,
-            start: points[0],
-            nextCheckpointDate: points[0],
-            remaining: new BigNumber(points.length),
-            period: {
-              amount: new BigNumber(0),
-              unit: CalendarUnit.Second,
-            },
-          },
-          context
-        );
-      }
-
-      return new Checkpoint(
-        { ticker, id: u64ToBigNumber(rawCheckpointIds[createdCheckpointIndex]) },
+    const createdCheckpointIndex = u64ToBigNumber(amount).toNumber();
+    if (schedule.isSome) {
+      const id = u64ToBigNumber(scheduleId);
+      const points = [...schedule.unwrap().pending].map(rawPoint => momentToDate(rawPoint));
+      return new CheckpointSchedule(
+        {
+          ticker,
+          id,
+          pendingPoints: points,
+        },
         context
       );
     }
+
+    return new Checkpoint(
+      { ticker, id: u64ToBigNumber(rawCheckpointIds[createdCheckpointIndex]) },
+      context
+    );
   }
 
   /**

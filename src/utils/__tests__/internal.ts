@@ -313,21 +313,21 @@ describe('sliceBatchReceipt', () => {
   });
 
   it('should return the cloned receipt with a subset of events', () => {
-    let slicedReceipt = sliceBatchReceipt(mockReceipt, 1, 3, false);
+    let slicedReceipt = sliceBatchReceipt(mockReceipt, 1, 3);
 
     expect(slicedReceipt.events).toEqual(['tx1event0', 'tx2event0', 'tx2event1', 'tx2event2']);
 
-    slicedReceipt = sliceBatchReceipt(mockReceipt, 0, 2, false);
+    slicedReceipt = sliceBatchReceipt(mockReceipt, 0, 2);
 
     expect(slicedReceipt.events).toEqual(['tx0event0', 'tx0event1', 'tx1event0']);
   });
 
   it('should throw an error if the transaction indexes are out of bounds', () => {
-    expect(() => sliceBatchReceipt(mockReceipt, -1, 2, false)).toThrow(
+    expect(() => sliceBatchReceipt(mockReceipt, -1, 2)).toThrow(
       'Transaction index range out of bounds. Please report this to the Polymesh team'
     );
 
-    expect(() => sliceBatchReceipt(mockReceipt, 1, 4, false)).toThrow(
+    expect(() => sliceBatchReceipt(mockReceipt, 1, 4)).toThrow(
       'Transaction index range out of bounds. Please report this to the Polymesh team'
     );
   });

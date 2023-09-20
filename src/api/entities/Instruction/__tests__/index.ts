@@ -227,6 +227,26 @@ describe('Instruction class', () => {
 
       expect(result).toEqual(unsubCallback);
       expect(callback).toBeCalledWith(InstructionStatus.Failed);
+
+      instructionStatusesMock.mockImplementationOnce(async (_, cbFunc) => {
+        cbFunc(dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Success));
+        return unsubCallback;
+      });
+
+      result = await instruction.onStatusChange(callback);
+
+      expect(result).toEqual(unsubCallback);
+      expect(callback).toBeCalledWith(InstructionStatus.Success);
+
+      instructionStatusesMock.mockImplementationOnce(async (_, cbFunc) => {
+        cbFunc(dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Rejected));
+        return unsubCallback;
+      });
+
+      result = await instruction.onStatusChange(callback);
+
+      expect(result).toEqual(unsubCallback);
+      expect(callback).toBeCalledWith(InstructionStatus.Rejected);
     });
 
     it('should error on unknown instruction status', () => {
@@ -902,7 +922,7 @@ describe('Instruction class', () => {
 
       const result = await instruction.getStatus();
       expect(result).toMatchObject({
-        status: InstructionStatus.Executed,
+        status: InstructionStatus.Success,
         eventIdentifier: fakeEventIdentifierResult,
       });
     });

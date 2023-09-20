@@ -212,7 +212,6 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
         polymeshApi: {
           query: { asset, externalAgents },
         },
-        isV5,
       },
       ticker,
       context,
@@ -228,19 +227,14 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
     ): Promise<AssetDetails> => {
       const fullAgents: Identity[] = [];
 
-      if (!isV5 && optToken.isNone) {
+      if (optToken.isNone) {
         throw new PolymeshError({
           message: 'Asset detail information not found',
           code: ErrorCode.DataUnavailable,
         });
       }
 
-      const {
-        totalSupply,
-        divisible,
-        ownerDid,
-        assetType: rawAssetType,
-      } = isV5 ? (optToken as unknown as PalletAssetSecurityToken) : optToken.unwrap();
+      const { totalSupply, divisible, ownerDid, assetType: rawAssetType } = optToken.unwrap();
 
       agentGroups.forEach(([storageKey, agentGroup]) => {
         const rawAgentGroup = agentGroup.unwrap();
@@ -263,7 +257,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       return {
         assetType,
         isDivisible: boolToBoolean(divisible),
-        name: bytesToString(isV5 ? (assetName as unknown as Bytes) : assetName.unwrap()),
+        name: bytesToString(assetName.unwrap()),
         owner,
         totalSupply: balanceToBigNumber(totalSupply),
         fullAgents,

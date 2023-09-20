@@ -19,7 +19,6 @@ import {
   ActiveTransferRestrictions,
   AddCountStatInput,
   AssetDocument,
-  CalendarPeriod,
   ClaimCountStatInput,
   ClaimCountTransferRestriction,
   ClaimPercentageTransferRestriction,
@@ -281,6 +280,10 @@ export interface CreateAssetParams {
    * amount of Asset tokens that will be minted on creation (optional, default doesn't mint)
    */
   initialSupply?: BigNumber;
+  /**
+   * portfolio to which the Asset tokens will be issued on creation (optional, default is the default portfolio)
+   */
+  portfolioId?: BigNumber;
   /**
    * whether a single Asset token can be divided into decimal parts
    */
@@ -608,18 +611,9 @@ export interface TransferAssetOwnershipParams {
 
 export interface CreateCheckpointScheduleParams {
   /**
-   * The date from which to begin creating snapshots. A null value indicates immediately
+   * The points in time in the future for which to create checkpoints for
    */
-  start: Date | null;
-  /**
-   * The cadence with which to make Checkpoints.
-   * @note A null value indicates to create only one Checkpoint, regardless of repetitions specified. This can be used to schedule the creation of a Checkpoint in the future
-   */
-  period: CalendarPeriod | null;
-  /**
-   * The number of snapshots to take. A null value indicates snapshots should be made indefinitely
-   */
-  repetitions: BigNumber | null;
+  points: Date[];
 }
 
 export interface RemoveCheckpointScheduleParams {

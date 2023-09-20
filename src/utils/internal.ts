@@ -42,8 +42,6 @@ import { Query } from '~/middleware/types';
 import { MiddlewareScope } from '~/middleware/typesV1';
 import {
   CaCheckpointType,
-  CalendarPeriod,
-  CalendarUnit,
   Claim,
   ClaimType,
   Condition,
@@ -340,16 +338,13 @@ function cloneReceipt(receipt: ISubmittableResult, events: EventRecord[]): ISubm
 export function sliceBatchReceipt(
   receipt: ISubmittableResult,
   from: number,
-  to: number,
-  isV5: boolean
+  to: number
 ): ISubmittableResult {
   const [
     {
       data: [rawEventsPerExtrinsic],
     },
-  ] = isV5
-    ? filterEventRecords(receipt, 'utility', 'BatchCompleted')
-    : filterEventRecords(receipt, 'utility', 'BatchCompletedOld');
+  ] = filterEventRecords(receipt, 'utility', 'BatchCompletedOld');
 
   if (rawEventsPerExtrinsic.length < to || from < 0) {
     throw new PolymeshError({
@@ -1732,59 +1727,4 @@ export async function getIdentityFromKeyRecord(
     const multiSigKeyRecord = optMultiSigKeyRecord.unwrap();
     return getIdentityFromKeyRecord(multiSigKeyRecord, context);
   }
-}
-
-/**
- * @hidden
- */
-function secondsInUnit(unit: CalendarUnit): BigNumber {
-  const SECOND = new BigNumber(1);
-  const MINUTE = SECOND.multipliedBy(60);
-  const HOUR = MINUTE.multipliedBy(60);
-  const DAY = HOUR.multipliedBy(24);
-  const WEEK = DAY.multipliedBy(7);
-  const MONTH = DAY.multipliedBy(30);
-  const YEAR = DAY.multipliedBy(365);
-
-  switch (unit) {
-    case CalendarUnit.Second: {
-      return SECOND;
-    }
-    case CalendarUnit.Minute: {
-      return MINUTE;
-    }
-    case CalendarUnit.Hour: {
-      return HOUR;
-    }
-    case CalendarUnit.Day: {
-      return DAY;
-    }
-    case CalendarUnit.Week: {
-      return WEEK;
-    }
-    case CalendarUnit.Month: {
-      return MONTH;
-    }
-    case CalendarUnit.Year: {
-      return YEAR;
-    }
-  }
-}
-
-/**
- * @hidden
- * Calculate the numeric complexity of a calendar period
- */
-export function periodComplexity(period: CalendarPeriod): BigNumber {
-  const secsInYear = secondsInUnit(CalendarUnit.Year);
-  const { amount, unit } = period;
-
-  if (amount.isZero()) {
-    return new BigNumber(1);
-  }
-
-  const secsInUnit = secondsInUnit(unit);
-
-  const complexity = secsInYear.dividedBy(secsInUnit.multipliedBy(amount));
-  return BigNumber.maximum(2, complexity.integerValue(BigNumber.ROUND_FLOOR));
 }

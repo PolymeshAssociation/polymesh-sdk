@@ -39,8 +39,6 @@ import {
   AssetWithGroup,
   Authorization,
   AuthorizationType,
-  CalendarPeriod,
-  CalendarUnit,
   CheckPermissionsResult,
   CheckRolesResult,
   ComplianceRequirements,
@@ -116,7 +114,7 @@ interface EntityOptions {
   toHuman?: any;
 }
 
-type EntityGetter<Result> = Partial<Result> | ((...args: any) => any) | jest.Mock;
+export type EntityGetter<Result> = Partial<Result> | ((...args: any) => any) | jest.Mock;
 
 interface IdentityOptions extends EntityOptions {
   did?: string;
@@ -275,9 +273,7 @@ interface CheckpointScheduleOptions extends EntityOptions {
   id?: BigNumber;
   ticker?: string;
   start?: Date;
-  period?: CalendarPeriod | null;
-  expiryDate?: Date | null;
-  complexity?: BigNumber;
+  points?: Date[];
   details?: EntityGetter<ScheduleDetails>;
 }
 
@@ -1423,16 +1419,14 @@ const MockCheckpointScheduleClass = createMockEntityClass<CheckpointScheduleOpti
     uuid!: string;
     id!: BigNumber;
     asset!: Asset;
-    start!: Date;
-    expiryDate!: Date | null;
-    complexity!: BigNumber;
+    points!: Date[];
     details!: jest.Mock;
 
     /**
      * @hidden
      */
     public argsToOpts(...args: ConstructorParameters<typeof CheckpointSchedule>) {
-      return extractFromArgs(args, ['id', 'ticker', 'start', 'period']);
+      return extractFromArgs(args, ['id', 'ticker', 'pendingPoints']);
     }
 
     /**
@@ -1442,9 +1436,7 @@ const MockCheckpointScheduleClass = createMockEntityClass<CheckpointScheduleOpti
       this.uuid = 'checkpointSchedule';
       this.id = opts.id;
       this.asset = getAssetInstance({ ticker: opts.ticker });
-      this.start = opts.start;
-      this.expiryDate = opts.expiryDate;
-      this.complexity = opts.complexity;
+      this.points = opts.points;
       this.details = createEntityGetterMock(opts.details);
     }
   },
@@ -1452,12 +1444,7 @@ const MockCheckpointScheduleClass = createMockEntityClass<CheckpointScheduleOpti
     id: new BigNumber(1),
     ticker: 'SOME_TICKER',
     start: new Date(new Date().getTime() + 24 * 60 * 60 * 1000),
-    period: {
-      unit: CalendarUnit.Month,
-      amount: new BigNumber(1),
-    },
-    expiryDate: new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000),
-    complexity: new BigNumber(2),
+    points: [new Date(new Date().getTime() + 24 * 60 * 60 * 1000)],
     details: {
       remainingCheckpoints: new BigNumber(1),
       nextCheckpointDate: new Date('10/10/2030'),
