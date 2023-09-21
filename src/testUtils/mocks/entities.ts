@@ -625,19 +625,22 @@ const MockChildIdentityClass = createMockEntityClass<ChildIdentityOptions>(
   class {
     uuid!: string;
     did!: string;
-    hasRoles!: jest.Mock;
-    checkRoles!: jest.Mock;
-    hasRole!: jest.Mock;
     hasValidCdd!: jest.Mock;
-    getPrimaryAccount!: jest.Mock;
-    portfolios = {} as {
-      getPortfolio: jest.Mock;
-    };
 
+    getVenues!: jest.Mock;
+    getScopeId!: jest.Mock;
+    getAssetBalance!: jest.Mock;
+    getSecondaryAccounts!: jest.Mock;
+
+    getPrimaryAccount!: jest.Mock;
     authorizations = {} as {
       getReceived: jest.Mock;
       getSent: jest.Mock;
       getOne: jest.Mock;
+    };
+
+    portfolios = {} as {
+      getPortfolio: jest.Mock;
     };
 
     assetPermissions = {} as {
@@ -647,10 +650,10 @@ const MockChildIdentityClass = createMockEntityClass<ChildIdentityOptions>(
       checkPermissions: jest.Mock;
     };
 
-    getVenues!: jest.Mock;
-    getScopeId!: jest.Mock;
-    getAssetBalance!: jest.Mock;
-    getSecondaryAccounts!: jest.Mock;
+    hasRoles!: jest.Mock;
+    checkRoles!: jest.Mock;
+    hasRole!: jest.Mock;
+
     areSecondaryAccountsFrozen!: jest.Mock;
     isCddProvider!: jest.Mock;
 
@@ -670,13 +673,19 @@ const MockChildIdentityClass = createMockEntityClass<ChildIdentityOptions>(
     public configure(opts: Required<ChildIdentityOptions>) {
       this.uuid = 'childIdentity';
       this.did = opts.did;
-      this.hasRoles = createEntityGetterMock(opts.hasRoles);
-      this.checkRoles = createEntityGetterMock(opts.checkRoles);
-      this.hasRole = createEntityGetterMock(opts.hasRole);
       this.hasValidCdd = createEntityGetterMock(opts.hasValidCdd);
       this.getPrimaryAccount = createEntityGetterMock(opts.getPrimaryAccount);
       this.portfolios.getPortfolio = createEntityGetterMock(opts.portfoliosGetPortfolio);
       this.authorizations.getReceived = createEntityGetterMock(opts.authorizationsGetReceived);
+      this.getVenues = createEntityGetterMock(opts.getVenues);
+      this.getScopeId = createEntityGetterMock(opts.getScopeId);
+      this.getAssetBalance = createEntityGetterMock(opts.getAssetBalance);
+      this.getSecondaryAccounts = createEntityGetterMock(opts.getSecondaryAccounts);
+
+      this.hasRoles = createEntityGetterMock(opts.hasRoles);
+      this.checkRoles = createEntityGetterMock(opts.checkRoles);
+      this.hasRole = createEntityGetterMock(opts.hasRole);
+
       this.authorizations.getSent = createEntityGetterMock(opts.authorizationsGetSent);
       this.authorizations.getOne = createEntityGetterMock(opts.authorizationsGetOne);
       this.assetPermissions.get = createEntityGetterMock(opts.assetPermissionsGet);
@@ -687,10 +696,7 @@ const MockChildIdentityClass = createMockEntityClass<ChildIdentityOptions>(
       this.assetPermissions.checkPermissions = createEntityGetterMock(
         opts.assetPermissionsCheckPermissions
       );
-      this.getVenues = createEntityGetterMock(opts.getVenues);
-      this.getScopeId = createEntityGetterMock(opts.getScopeId);
-      this.getAssetBalance = createEntityGetterMock(opts.getAssetBalance);
-      this.getSecondaryAccounts = createEntityGetterMock(opts.getSecondaryAccounts);
+
       this.areSecondaryAccountsFrozen = createEntityGetterMock(opts.areSecondaryAccountsFrozen);
       this.isCddProvider = createEntityGetterMock(opts.isCddProvider);
 
@@ -702,23 +708,10 @@ const MockChildIdentityClass = createMockEntityClass<ChildIdentityOptions>(
     did: 'someChildDid',
     hasValidCdd: true,
     isCddProvider: false,
-    authorizationsGetReceived: [],
-    authorizationsGetSent: { data: [], next: null, count: new BigNumber(0) },
-    authorizationsGetOne: getAuthorizationRequestInstance(),
-    getVenues: [],
     getScopeId: 'someScopeId',
     getAssetBalance: new BigNumber(100),
     getSecondaryAccounts: { data: [], next: null },
     areSecondaryAccountsFrozen: false,
-    getPrimaryAccount: {
-      account: getAccountInstance(),
-      permissions: {
-        assets: null,
-        portfolios: null,
-        transactions: null,
-        transactionGroups: [],
-      },
-    },
     assetPermissionsGet: [],
     assetPermissionsGetGroup: getKnownPermissionGroupInstance(),
     assetPermissionsCheckPermissions: {
@@ -731,6 +724,21 @@ const MockChildIdentityClass = createMockEntityClass<ChildIdentityOptions>(
     checkRoles: {
       result: true,
     },
+    authorizationsGetReceived: [],
+    authorizationsGetSent: { data: [], next: null, count: new BigNumber(0) },
+    authorizationsGetOne: getAuthorizationRequestInstance(),
+    getVenues: [],
+
+    getPrimaryAccount: {
+      account: getAccountInstance(),
+      permissions: {
+        assets: null,
+        portfolios: null,
+        transactions: null,
+        transactionGroups: [],
+      },
+    },
+
     toHuman: 'someChildDid',
     getParentDid: getIdentityInstance(),
   }),
