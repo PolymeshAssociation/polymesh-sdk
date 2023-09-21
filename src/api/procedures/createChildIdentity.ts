@@ -53,7 +53,14 @@ export async function prepareCreateChildIdentity(
 
   const rawIdentity = stringToIdentityId(signingDid, context);
   const rawChildAccount = stringToAccountId(childAccount.address, context);
-  const isSecondaryKey = await query.identity.didKeys(rawIdentity, rawChildAccount);
+
+  const childIdentity = new ChildIdentity({ did: signingDid }, context);
+
+  const [isSecondaryKey, multiSig, parentDid] = await Promise.all([
+    query.identity.didKeys(rawIdentity, rawChildAccount),
+    childAccount.getMultiSig(),
+    childIdentity.getParentDid(),
+  ]);
 
   if (!boolToBoolean(isSecondaryKey)) {
     throw new PolymeshError({
@@ -62,10 +69,8 @@ export async function prepareCreateChildIdentity(
     });
   }
 
-  const multisig = await childAccount.getMultiSig();
-
-  if (multisig) {
-    const { total } = await multisig.getBalance();
+  if (multiSig) {
+    const { total } = await multiSig.getBalance();
 
     if (total.gt(0)) {
       throw new PolymeshError({
@@ -74,10 +79,6 @@ export async function prepareCreateChildIdentity(
       });
     }
   }
-
-  const childIdentity = new ChildIdentity({ did: signingDid }, context);
-
-  const parentDid = await childIdentity.getParentDid();
 
   if (parentDid) {
     throw new PolymeshError({
