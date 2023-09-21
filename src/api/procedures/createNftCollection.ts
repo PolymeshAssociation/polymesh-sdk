@@ -159,7 +159,6 @@ export async function prepareCreateNftCollection(
       asset.details(),
       asset.metadata.getNextLocalId(),
     ]);
-    nextLocalId = nextLocalId.plus(1); // `nextLocalId` returns the last used ID
 
     if (!nonFungible) {
       throw new PolymeshError({

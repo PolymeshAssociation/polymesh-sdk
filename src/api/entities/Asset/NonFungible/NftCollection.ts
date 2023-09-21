@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { BaseAsset } from '~/api/entities/Asset/BaseAsset';
+import { BaseAsset, UniqueIdentifiers } from '~/api/entities/Asset/BaseAsset';
 import {
   AuthorizationRequest,
   Context,
@@ -20,29 +20,9 @@ import { middlewareEventDetailsToEventIdentifier, stringToTicker } from '~/utils
 import { createProcedureMethod, optionize } from '~/utils/internal';
 
 /**
- * Properties that uniquely identify an Asset
- */
-export interface UniqueIdentifiers {
-  /**
-   * ticker of the NftCollection
-   */
-  ticker: string;
-}
-
-/**
  * Class used to manage Nft functionality
  */
 export class NftCollection extends BaseAsset {
-  /**
-   * @hidden
-   * Check if a value is of type {@link UniqueIdentifiers}
-   */
-  public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
-    const { ticker } = identifier as UniqueIdentifiers;
-
-    return typeof ticker === 'string';
-  }
-
   /**
    * @hidden
    */

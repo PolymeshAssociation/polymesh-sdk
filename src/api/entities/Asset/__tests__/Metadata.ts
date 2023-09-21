@@ -229,7 +229,7 @@ describe('Metadata class', () => {
       });
 
       const result = await metadata.getNextLocalId();
-      expect(result).toEqual(new BigNumber(1));
+      expect(result).toEqual(new BigNumber(2));
     });
   });
 });

@@ -6,13 +6,10 @@ import {
   DefaultPortfolio,
   Identity,
   KnownPermissionGroup,
-  NftCollection,
   NumberedPortfolio,
 } from '~/internal';
 import { EventIdEnum } from '~/middleware/enums';
 import { Compliance, EventIdentifier, TransferError, TransferRestriction } from '~/types';
-
-export type TradableAsset = NftCollection | Asset;
 
 export interface AssetDetails {
   assetType: string;

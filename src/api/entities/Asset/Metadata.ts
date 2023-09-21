@@ -126,6 +126,8 @@ export class Metadata extends Namespace<Asset> {
 
   /**
    * Gets the next local metadata ID for the Asset
+   *
+   * @hidden
    */
   public async getNextLocalId(): Promise<BigNumber> {
     const {
@@ -141,6 +143,6 @@ export class Metadata extends Namespace<Asset> {
 
     const rawId = await assetMetadataNextLocalKey(ticker);
 
-    return u64ToBigNumber(rawId);
+    return u64ToBigNumber(rawId).plus(1); // "next" is actually the last used
   }
 }
