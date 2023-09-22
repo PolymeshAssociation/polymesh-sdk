@@ -8,10 +8,12 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, differenceWith, flatten, intersectionWith, uniqBy } from 'lodash';
 
+import { unlinkChildIdentity } from '~/api/procedures/unlinkChildIdentity';
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
   Account,
   Asset,
+  ChildIdentity,
   Context,
   Entity,
   Instruction,
@@ -37,9 +39,11 @@ import {
   NumberedPortfolio,
   PaginationOptions,
   PermissionedAccount,
+  ProcedureMethod,
   ResultSet,
   Role,
   SubCallback,
+  UnlinkChildParams,
   UnsubCallback,
 } from '~/types';
 import { Ensured, tuple } from '~/types/utils';
@@ -69,6 +73,7 @@ import {
 } from '~/utils/conversion';
 import {
   calculateNextKey,
+  createProcedureMethod,
   getSecondaryAccountPermissions,
   requestPaginated,
 } from '~/utils/internal';
@@ -122,6 +127,13 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     this.authorizations = new IdentityAuthorizations(this, context);
     this.portfolios = new Portfolios(this, context);
     this.assetPermissions = new AssetPermissions(this, context);
+
+    this.unlinkChild = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [unlinkChildIdentity, args],
+      },
+      context
+    );
   }
 
   /**
@@ -800,4 +812,42 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       middlewareInstructionToHistoricInstruction(instruction!, context)
     );
   }
+
+  /**
+   * Returns the list of all child identities
+   *
+   * @note this query can be potentially **SLOW** depending on the number of parent Identities present on the chain
+   */
+  public async getChildIdentities(): Promise<ChildIdentity[]> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { identity },
+        },
+      },
+      context,
+      did,
+    } = this;
+
+    const rawEntries = await identity.parentDid.entries();
+
+    return rawEntries
+      .filter(([, rawParentDid]) => identityIdToString(rawParentDid.unwrapOrDefault()) === did)
+      .map(
+        ([
+          {
+            args: [rawChildDid],
+          },
+        ]) => new ChildIdentity({ did: identityIdToString(rawChildDid) }, context)
+      );
+  }
+
+  /**
+   * Unlinks a child identity
+   *
+   * @throws if
+   *  - the `child` is not a child of this identity
+   *  - the transaction signer is not the primary key of the parent identity
+   */
+  public unlinkChild: ProcedureMethod<UnlinkChildParams, void>;
 }

@@ -21,7 +21,15 @@ import P from 'bluebird';
 import { chunk, clone, flatMap, flatten, flattenDeep } from 'lodash';
 
 import { HistoricPolyxTransaction } from '~/api/entities/Account/types';
-import { Account, Asset, DividendDistribution, Identity, PolymeshError, Subsidy } from '~/internal';
+import {
+  Account,
+  Asset,
+  ChildIdentity,
+  DividendDistribution,
+  Identity,
+  PolymeshError,
+  Subsidy,
+} from '~/internal';
 import { ClaimTypeEnum } from '~/middleware/enums';
 import {
   claimsQuery,
@@ -549,6 +557,30 @@ export class Context {
     }
 
     return id;
+  }
+
+  /**
+   * @hidden
+   *
+   * Returns an Child Identity when given a DID string
+   *
+   * @throws if the Child Identity does not exist
+   */
+  public async getChildIdentity(child: ChildIdentity | string): Promise<ChildIdentity> {
+    if (child instanceof ChildIdentity) {
+      return child;
+    }
+    const childIdentity = new ChildIdentity({ did: child }, this);
+    const exists = await childIdentity.exists();
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The passed DID does not correspond to an on-chain child Identity',
+      });
+    }
+
+    return childIdentity;
   }
 
   /**

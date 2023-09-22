@@ -43,6 +43,7 @@ export {
   Params as ModifyAssetTrustedClaimIssuersParams,
 } from '~/api/procedures/modifyAssetTrustedClaimIssuers';
 export { registerIdentity } from '~/api/procedures/registerIdentity';
+export { createChildIdentity } from '~/api/procedures/createChildIdentity';
 export { attestPrimaryKeyRotation } from '~/api/procedures/attestPrimaryKeyRotation';
 export { rotatePrimaryKey } from '~/api/procedures/rotatePrimaryKey';
 export { removeSecondaryAccounts } from '~/api/procedures/removeSecondaryAccounts';
@@ -91,6 +92,7 @@ export { createCheckpoint } from '~/api/procedures/createCheckpoint';
 export { controllerTransfer } from '~/api/procedures/controllerTransfer';
 export { linkCaDocs } from '~/api/procedures/linkCaDocs';
 export { Identity } from '~/api/entities/Identity';
+export { ChildIdentity } from '~/api/entities/Identity/ChildIdentity';
 export { Account } from '~/api/entities/Account';
 export { MultiSig } from '~/api/entities/Account/MultiSig';
 export { MultiSigProposal } from '~/api/entities/MultiSigProposal';
