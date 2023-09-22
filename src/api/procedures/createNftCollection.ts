@@ -282,7 +282,7 @@ export async function prepareStorage(
 ): Promise<Storage> {
   const { context } = this;
 
-  const needsLocalMetadata = collectionKeys.some(({ type }) => type === MetadataType.Local);
+  const needsLocalMetadata = collectionKeys.some(isLocalMetadata);
   const reservation = new TickerReservation({ ticker }, context);
 
   const nft = new NftCollection({ ticker }, context);
@@ -312,7 +312,7 @@ export async function prepareStorage(
         code: ErrorCode.DataUnavailable,
         message:
           'createNftCollection was given a custom type ID that does not have an corresponding value',
-        data: { nftType: nftType.toNumber() },
+        data: { nftType },
       });
     }
 

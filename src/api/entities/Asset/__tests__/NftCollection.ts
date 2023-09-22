@@ -38,7 +38,7 @@ describe('NftCollection class', () => {
   });
 
   it('should extend Entity', () => {
-    expect(NftCollection.prototype instanceof Entity).toBe(true);
+    expect(NftCollection.prototype).toBeInstanceOf(Entity);
   });
 
   describe('constructor', () => {

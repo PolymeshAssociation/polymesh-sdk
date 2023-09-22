@@ -42,7 +42,7 @@ export class NftCollection extends BaseAsset {
   }
 
   /**
-   * Transfer ownership of the Asset to another Identity. This generates an authorization request that must be accepted
+   * Transfer ownership of the NftCollection to another Identity. This generates an authorization request that must be accepted
    *   by the recipient
    *
    * @note this will create {@link api/entities/AuthorizationRequest!AuthorizationRequest | Authorization Request} which has to be accepted by the `target` Identity.
