@@ -144,7 +144,7 @@ import { when } from 'jest-when';
 import { cloneDeep, map, merge, upperFirst } from 'lodash';
 
 import { HistoricPolyxTransaction } from '~/api/entities/Account/types';
-import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
+import { Account, AuthorizationRequest, ChildIdentity, Context, Identity } from '~/internal';
 import { BalanceTypeEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/enums';
 import {
   AssetComplianceResult,
@@ -405,6 +405,7 @@ interface ContextOptions {
   nonce?: BigNumber;
   issuedClaims?: ResultSet<ClaimData>;
   getIdentity?: Identity;
+  getChildIdentity?: ChildIdentity;
   getIdentityClaimsFromChain?: ClaimData[];
   getIdentityClaimsFromMiddleware?: ResultSet<ClaimData>;
   getExternalSigner?: PolkadotSigner;
@@ -851,6 +852,7 @@ function configureContext(opts: ContextOptions): void {
     getSecondaryAccounts: jest.fn().mockReturnValue({ data: opts.secondaryAccounts, next: null }),
     issuedClaims: jest.fn().mockResolvedValue(opts.issuedClaims),
     getIdentity: jest.fn().mockResolvedValue(opts.getIdentity),
+    getChildIdentity: jest.fn().mockResolvedValue(opts.getChildIdentity),
     getIdentityClaimsFromChain: jest.fn().mockResolvedValue(opts.getIdentityClaimsFromChain),
     getIdentityClaimsFromMiddleware: jest
       .fn()

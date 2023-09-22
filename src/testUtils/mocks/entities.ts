@@ -1,5 +1,4 @@
 /* istanbul ignore file */
-
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -13,6 +12,7 @@ import {
   AuthorizationRequest,
   Checkpoint,
   CheckpointSchedule,
+  ChildIdentity,
   CorporateAction,
   CustomPermissionGroup,
   DefaultPortfolio,
@@ -87,6 +87,7 @@ import {
 } from '~/types';
 
 export type MockIdentity = Mocked<Identity>;
+export type MockChildIdentity = Mocked<ChildIdentity>;
 export type MockAccount = Mocked<Account>;
 export type MockSubsidy = Mocked<Subsidy>;
 export type MockTickerReservation = Mocked<TickerReservation>;
@@ -136,6 +137,10 @@ interface IdentityOptions extends EntityOptions {
   areSecondaryAccountsFrozen?: EntityGetter<boolean>;
   assetPermissionsGetGroup?: EntityGetter<CustomPermissionGroup | KnownPermissionGroup>;
   assetPermissionsGet?: EntityGetter<AssetWithGroup[]>;
+}
+
+interface ChildIdentityOptions extends IdentityOptions {
+  getParentDid?: EntityGetter<Identity | null>;
 }
 
 interface TickerReservationOptions extends EntityOptions {
@@ -199,6 +204,7 @@ interface AccountOptions extends EntityOptions {
   checkPermissions?: EntityGetter<CheckPermissionsResult<SignerType.Account>>;
   authorizationsGetReceived?: EntityGetter<AuthorizationRequest[]>;
   authorizationsGetOne?: EntityGetter<AuthorizationRequest>;
+  getMultiSig?: EntityGetter<MultiSig | null>;
 }
 
 interface SubsidyOptions extends EntityOptions {
@@ -315,6 +321,7 @@ interface MultiSigProposalOptions extends EntityOptions {
 
 type MockOptions = {
   identityOptions?: IdentityOptions;
+  childIdentityOptions?: ChildIdentityOptions;
   accountOptions?: AccountOptions;
   subsidyOptions?: SubsidyOptions;
   tickerReservationOptions?: TickerReservationOptions;
@@ -614,6 +621,130 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
   ['Identity']
 );
 
+const MockChildIdentityClass = createMockEntityClass<ChildIdentityOptions>(
+  class {
+    uuid!: string;
+    did!: string;
+    hasValidCdd!: jest.Mock;
+
+    getVenues!: jest.Mock;
+    getScopeId!: jest.Mock;
+    getAssetBalance!: jest.Mock;
+    getSecondaryAccounts!: jest.Mock;
+
+    getPrimaryAccount!: jest.Mock;
+    authorizations = {} as {
+      getReceived: jest.Mock;
+      getSent: jest.Mock;
+      getOne: jest.Mock;
+    };
+
+    portfolios = {} as {
+      getPortfolio: jest.Mock;
+    };
+
+    assetPermissions = {} as {
+      get: jest.Mock;
+      getGroup: jest.Mock;
+      hasPermissions: jest.Mock;
+      checkPermissions: jest.Mock;
+    };
+
+    hasRoles!: jest.Mock;
+    checkRoles!: jest.Mock;
+    hasRole!: jest.Mock;
+
+    areSecondaryAccountsFrozen!: jest.Mock;
+    isCddProvider!: jest.Mock;
+
+    getParentDid!: jest.Mock;
+    getChildIdentities!: Promise<ChildIdentity[]>;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof ChildIdentity>) {
+      return extractFromArgs(args, ['did']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<ChildIdentityOptions>) {
+      this.uuid = 'childIdentity';
+      this.did = opts.did;
+      this.hasValidCdd = createEntityGetterMock(opts.hasValidCdd);
+      this.getPrimaryAccount = createEntityGetterMock(opts.getPrimaryAccount);
+      this.portfolios.getPortfolio = createEntityGetterMock(opts.portfoliosGetPortfolio);
+      this.authorizations.getReceived = createEntityGetterMock(opts.authorizationsGetReceived);
+      this.getVenues = createEntityGetterMock(opts.getVenues);
+      this.getScopeId = createEntityGetterMock(opts.getScopeId);
+      this.getAssetBalance = createEntityGetterMock(opts.getAssetBalance);
+      this.getSecondaryAccounts = createEntityGetterMock(opts.getSecondaryAccounts);
+
+      this.hasRoles = createEntityGetterMock(opts.hasRoles);
+      this.checkRoles = createEntityGetterMock(opts.checkRoles);
+      this.hasRole = createEntityGetterMock(opts.hasRole);
+
+      this.authorizations.getSent = createEntityGetterMock(opts.authorizationsGetSent);
+      this.authorizations.getOne = createEntityGetterMock(opts.authorizationsGetOne);
+      this.assetPermissions.get = createEntityGetterMock(opts.assetPermissionsGet);
+      this.assetPermissions.getGroup = createEntityGetterMock(opts.assetPermissionsGetGroup);
+      this.assetPermissions.hasPermissions = createEntityGetterMock(
+        opts.assetPermissionsHasPermissions
+      );
+      this.assetPermissions.checkPermissions = createEntityGetterMock(
+        opts.assetPermissionsCheckPermissions
+      );
+
+      this.areSecondaryAccountsFrozen = createEntityGetterMock(opts.areSecondaryAccountsFrozen);
+      this.isCddProvider = createEntityGetterMock(opts.isCddProvider);
+
+      this.getParentDid = createEntityGetterMock(opts.getParentDid);
+      this.getChildIdentities = Promise.resolve([]);
+    }
+  },
+  () => ({
+    did: 'someChildDid',
+    hasValidCdd: true,
+    isCddProvider: false,
+    getScopeId: 'someScopeId',
+    getAssetBalance: new BigNumber(100),
+    getSecondaryAccounts: { data: [], next: null },
+    areSecondaryAccountsFrozen: false,
+    assetPermissionsGet: [],
+    assetPermissionsGetGroup: getKnownPermissionGroupInstance(),
+    assetPermissionsCheckPermissions: {
+      result: true,
+    },
+    portfoliosGetPortfolio: getDefaultPortfolioInstance(),
+    assetPermissionsHasPermissions: true,
+    hasRole: true,
+    hasRoles: true,
+    checkRoles: {
+      result: true,
+    },
+    authorizationsGetReceived: [],
+    authorizationsGetSent: { data: [], next: null, count: new BigNumber(0) },
+    authorizationsGetOne: getAuthorizationRequestInstance(),
+    getVenues: [],
+
+    getPrimaryAccount: {
+      account: getAccountInstance(),
+      permissions: {
+        assets: null,
+        portfolios: null,
+        transactions: null,
+        transactionGroups: [],
+      },
+    },
+
+    toHuman: 'someChildDid',
+    getParentDid: getIdentityInstance(),
+  }),
+  ['ChildIdentity', 'Identity']
+);
+
 const MockAccountClass = createMockEntityClass<AccountOptions>(
   class {
     uuid!: string;
@@ -625,6 +756,7 @@ const MockAccountClass = createMockEntityClass<AccountOptions>(
     getTransactionHistory!: jest.Mock;
     hasPermissions!: jest.Mock;
     checkPermissions!: jest.Mock;
+    getMultiSig!: jest.Mock;
     authorizations = {} as {
       getReceived: jest.Mock;
       getOne: jest.Mock;
@@ -652,6 +784,7 @@ const MockAccountClass = createMockEntityClass<AccountOptions>(
       this.checkPermissions = createEntityGetterMock(opts.checkPermissions);
       this.authorizations.getReceived = createEntityGetterMock(opts.authorizationsGetReceived);
       this.authorizations.getOne = createEntityGetterMock(opts.authorizationsGetOne);
+      this.getMultiSig = createEntityGetterMock(opts.getMultiSig);
     }
   },
   () => ({
@@ -671,6 +804,7 @@ const MockAccountClass = createMockEntityClass<AccountOptions>(
     },
     authorizationsGetReceived: [],
     authorizationsGetOne: getAuthorizationRequestInstance(),
+    getMultiSig: null,
   }),
   ['Account']
 );
@@ -1590,6 +1724,7 @@ const MockMultiSigClass = createMockEntityClass<MultiSigOptions>(
     getCreator: getIdentityInstance(),
     authorizationsGetReceived: [],
     authorizationsGetOne: getAuthorizationRequestInstance(),
+    getMultiSig: null,
   }),
   ['MultiSig', 'Account']
 );
@@ -1668,6 +1803,11 @@ const MockKnownPermissionGroupClass = createMockEntityClass<KnownPermissionGroup
 export const mockIdentityModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   Identity: MockIdentityClass,
+});
+
+export const mockChildIdentityModule = (path: string) => (): Record<string, unknown> => ({
+  ...jest.requireActual(path),
+  ChildIdentity: MockChildIdentityClass,
 });
 
 export const mockAccountModule = (path: string) => (): Record<string, unknown> => ({
@@ -1800,6 +1940,7 @@ export const initMocks = function (opts?: MockOptions): void {
  */
 export const configureMocks = function (opts?: MockOptions): void {
   MockIdentityClass.setOptions(opts?.identityOptions);
+  MockChildIdentityClass.setOptions(opts?.childIdentityOptions);
   MockAccountClass.setOptions(opts?.accountOptions);
   MockSubsidyClass.setOptions(opts?.subsidyOptions);
   MockTickerReservationClass.setOptions(opts?.tickerReservationOptions);
@@ -1860,6 +2001,20 @@ export const getIdentityInstance = (opts?: IdentityOptions): MockIdentity => {
   }
 
   return instance as unknown as MockIdentity;
+};
+
+/**
+ * @hidden
+ * Retrieve an Identity instance
+ */
+export const getChildIdentityInstance = (opts?: ChildIdentityOptions): MockChildIdentity => {
+  const instance = new MockChildIdentityClass();
+
+  if (opts) {
+    instance.configure(opts);
+  }
+
+  return instance as unknown as MockChildIdentity;
 };
 
 /**
