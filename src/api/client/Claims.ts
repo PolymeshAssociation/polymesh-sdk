@@ -22,8 +22,12 @@ import {
 import { Ensured } from '~/types/utils';
 import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 import {
+  identityIdToString,
+  meshClaimToClaim,
+  momentToDate,
   scopeToMiddlewareScope,
   signerToString,
+  stringToIdentityId,
   toIdentityWithClaimsArray,
 } from '~/utils/conversion';
 import { calculateNextKey, createProcedureMethod, getDid, removePadding } from '~/utils/internal';
@@ -301,16 +305,49 @@ export class Claims {
       includeExpired?: boolean;
     } = {}
   ): Promise<ClaimData<CddClaim>[]> {
-    const { context } = this;
+    const {
+      context,
+      context: {
+        polymeshApi: {
+          rpc: { identity },
+        },
+      },
+    } = this;
+
     const { target, includeExpired = true } = opts;
 
     const did = await getDid(target, context);
 
-    return context.getIdentityClaimsFromChain({
-      targets: [did],
-      claimTypes: [ClaimType.CustomerDueDiligence],
-      includeExpired,
-    }) as Promise<ClaimData<CddClaim>[]>;
+    const rawDid = stringToIdentityId(did, context);
+
+    const result = await identity.validCDDClaims(rawDid);
+
+    const data: ClaimData<CddClaim>[] = [];
+
+    result.forEach(optClaim => {
+      const {
+        claim_issuer: claimIssuer,
+        issuance_date: issuanceDate,
+        last_update_date: lastUpdateDate,
+        expiry: rawExpiry,
+        claim,
+      } = optClaim;
+
+      const expiry = !rawExpiry.isEmpty ? momentToDate(rawExpiry.unwrap()) : null;
+
+      if ((!includeExpired && (expiry === null || expiry > new Date())) || includeExpired) {
+        data.push({
+          target: new Identity({ did }, context),
+          issuer: new Identity({ did: identityIdToString(claimIssuer) }, context),
+          issuedAt: momentToDate(issuanceDate),
+          lastUpdatedAt: momentToDate(lastUpdateDate),
+          expiry,
+          claim: meshClaimToClaim(claim) as CddClaim,
+        });
+      }
+    });
+
+    return data;
   }
 
   /**
