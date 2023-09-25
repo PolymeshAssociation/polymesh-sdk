@@ -322,6 +322,81 @@ function cloneReceipt(receipt: ISubmittableResult, events: EventRecord[]): ISubm
 }
 
 /**
+ * @hidden
+ *
+ *   Segment a batch transaction receipt's events into arrays, each representing a specific extrinsic's
+ *   associated events. This is useful for scenarios where we need to isolate and process events
+ *   for individual extrinsics in a batch.
+ *
+ *   In a batch transaction receipt, events corresponding to multiple extrinsics are listed sequentially.
+ *   This function identifies boundaries between these event sequences, typically demarcated by
+ *   events like 'utility.ItemCompleted', to segment events into individual arrays.
+ *
+ *   A key use case is when we want to slice or filter events for a subset of the extrinsics. By
+ *   segmenting events this way, it becomes simpler to apply operations or analyses to events
+ *   corresponding to specific extrinsics in the batch.
+ *
+ * @param events - array of events from a batch transaction receipt
+ *
+ * @returns an array of arrays, where each inner array contains events specific to an extrinsic in the batch.
+ *
+ * @note this function does not mutate the input events
+ */
+function segmentEventsByTransaction(events: EventRecord[]): EventRecord[][] {
+  const segments: EventRecord[][] = [];
+  let currentSegment: EventRecord[] = [];
+
+  events.forEach(eventRecord => {
+    currentSegment.push(eventRecord);
+
+    if (eventRecord.event.method === 'ItemCompleted' && eventRecord.event.section === 'utility') {
+      segments.push(currentSegment);
+      currentSegment = [];
+    }
+  });
+
+  if (currentSegment.length) {
+    segments.push(currentSegment);
+  }
+
+  return segments;
+}
+
+/**
+ * @hidden
+ *
+ * Return a clone of a batch transaction receipt that only contains events for a subset of the
+ *   extrinsics in the batch. This is useful when a batch has several extrinsics that emit
+ *   the same events and we want `filterEventRecords` to only search among the events emitted by
+ *   some of them.
+ *
+ * A good example of this is when merging similar batches together. If we wish to preserve the return
+ *   value of each batch, this is a good way of ensuring that the resolver function of a batch has
+ *   access to the events that correspond only to the extrinsics in said batch
+ *
+ * @param from - index of the first transaction in the subset
+ * @param to - end index of the subset (not included)
+ *
+ * @note this function does not mutate the original receipt
+ */
+export function sliceBatchReceipt(
+  receipt: ISubmittableResult,
+  from: number,
+  to: number
+): ISubmittableResult {
+  // checking if the batch was completed (will throw an error if not)
+  filterEventRecords(receipt, 'utility', 'BatchCompleted');
+
+  const { events } = receipt;
+
+  const segmentedEvents = segmentEventsByTransaction(events);
+
+  const slicedEvents = segmentedEvents.slice(from, to).flat();
+
+  return cloneReceipt(receipt, slicedEvents);
+}
+
+/**
  * Return a clone of the last receipt in the passes array, containing the accumulated events
  *   of all receipts
  */
