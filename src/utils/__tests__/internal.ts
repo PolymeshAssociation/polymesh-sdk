@@ -1,5 +1,5 @@
 import { Bytes, u32 } from '@polkadot/types';
-import { AccountId } from '@polkadot/types/interfaces';
+import { AccountId, EventRecord } from '@polkadot/types/interfaces';
 import {
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
@@ -88,7 +88,9 @@ import {
   removePadding,
   requestAtBlock,
   requestPaginated,
+  segmentEventsByTransaction,
   serialize,
+  sliceBatchReceipt,
   unserialize,
 } from '../internal';
 
@@ -277,6 +279,87 @@ describe('filterEventRecords', () => {
 
     expect(() => filterEventRecords(mockReceipt, mod, eventName)).toThrow(
       `Event "${mod}.${eventName}" wasn't fired even though the corresponding transaction was completed. Please report this to the Polymesh team`
+    );
+  });
+});
+
+describe('segmentEventsByTransaction', () => {
+  it('should correctly segment events based on utility.ItemCompleted', () => {
+    // Mock some event data
+    const mockEvent1 = { event: { section: 'asset', method: 'AssetCreated' } };
+    const mockEvent2 = { event: { section: 'protocolFee', method: 'FeeCharged' } };
+    const mockEventItemCompleted = { event: { section: 'utility', method: 'ItemCompleted' } };
+
+    const events = [
+      mockEvent1,
+      mockEvent2,
+      mockEventItemCompleted,
+      mockEvent1,
+      mockEvent2,
+    ] as EventRecord[];
+    const result = segmentEventsByTransaction(events);
+
+    expect(result).toEqual([
+      [mockEvent1, mockEvent2],
+      [mockEvent1, mockEvent2],
+    ]);
+  });
+
+  it('should not include utility.ItemCompleted in the segments', () => {
+    const mockEventItemCompleted = { event: { section: 'utility', method: 'ItemCompleted' } };
+    const events = [mockEventItemCompleted] as EventRecord[];
+    const result = segmentEventsByTransaction(events);
+
+    expect(result).toEqual([]);
+  });
+
+  it('should handle cases where there are no utility.ItemCompleted events', () => {
+    const mockEvent1 = { event: { section: 'asset', method: 'AssetCreated' } };
+    const mockEvent2 = { event: { section: 'protocolFee', method: 'FeeCharged' } };
+
+    const events = [mockEvent1, mockEvent2] as EventRecord[];
+    const result = segmentEventsByTransaction(events);
+
+    expect(result).toEqual([[mockEvent1, mockEvent2]]);
+  });
+});
+
+describe('sliceBatchReceipt', () => {
+  const filterRecordsMock = jest.fn();
+  const events = [
+    { event: { section: 'asset', method: 'AssetCreated' } },
+    { event: { section: 'protocolFee', method: 'FeeCharged' } },
+    { event: { section: 'utility', method: 'ItemCompleted' } },
+    { event: { section: 'asset', method: 'AssetDeleted' } },
+    { event: { section: 'utility', method: 'ItemCompleted' } },
+    { event: { section: 'utility', method: 'BatchCompleted' } },
+  ];
+  const mockReceipt = {
+    filterRecords: filterRecordsMock,
+    events,
+    findRecord: jest.fn(),
+    toHuman: jest.fn(),
+  } as unknown as ISubmittableResult;
+
+  beforeEach(() => {
+    when(filterRecordsMock).calledWith('utility', 'BatchCompleted').mockReturnValue([1]);
+  });
+
+  it('should return the cloned receipt with a subset of events', () => {
+    const slicedReceipt = sliceBatchReceipt(mockReceipt, 0, 1);
+    expect(slicedReceipt.events).toEqual([
+      { event: { section: 'asset', method: 'AssetCreated' } },
+      { event: { section: 'protocolFee', method: 'FeeCharged' } },
+    ]);
+  });
+
+  it('should throw an error if the transaction indexes are out of bounds', () => {
+    expect(() => sliceBatchReceipt(mockReceipt, -1, 2)).toThrow(
+      'Transaction index range out of bounds. Please report this to the Polymesh team'
+    );
+
+    expect(() => sliceBatchReceipt(mockReceipt, 2, 5)).toThrow(
+      'Transaction index range out of bounds. Please report this to the Polymesh team'
     );
   });
 });

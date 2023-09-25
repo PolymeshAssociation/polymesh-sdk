@@ -199,6 +199,8 @@ describe('createTransactionBatch procedure', () => {
         resolvers: [expect.any(Function), expect.any(Function)],
       });
 
+      jest.spyOn(utilsInternalModule, 'sliceBatchReceipt').mockImplementation();
+
       await expect(result.resolvers[0]({} as ISubmittableResult)).resolves.toBe(1);
       await expect(result.resolvers[1]({} as ISubmittableResult)).resolves.toBe(4);
     });

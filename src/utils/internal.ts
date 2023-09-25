@@ -113,7 +113,6 @@ import {
   statsClaimToStatClaimInputType,
   stringToAccountId,
   transferRestrictionTypeToStatOpType,
-  u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { isEntity, isMultiClaimCondition, isSingleClaimCondition } from '~/utils/typeguards';
@@ -342,19 +341,22 @@ function cloneReceipt(receipt: ISubmittableResult, events: EventRecord[]): ISubm
  *
  * @note this function does not mutate the input events
  */
-function segmentEventsByTransaction(events: EventRecord[]): EventRecord[][] {
+export function segmentEventsByTransaction(events: EventRecord[]): EventRecord[][] {
   const segments: EventRecord[][] = [];
   let currentSegment: EventRecord[] = [];
 
   events.forEach(eventRecord => {
-    currentSegment.push(eventRecord);
-
     if (eventRecord.event.method === 'ItemCompleted' && eventRecord.event.section === 'utility') {
-      segments.push(currentSegment);
-      currentSegment = [];
+      if (currentSegment.length) {
+        segments.push(currentSegment);
+        currentSegment = [];
+      }
+    } else {
+      currentSegment.push(eventRecord);
     }
   });
 
+  // If there are events left after processing, add them to a new segment
   if (currentSegment.length) {
     segments.push(currentSegment);
   }
@@ -390,6 +392,17 @@ export function sliceBatchReceipt(
   const { events } = receipt;
 
   const segmentedEvents = segmentEventsByTransaction(events);
+
+  if (from < 0 || to > segmentedEvents.length) {
+    throw new PolymeshError({
+      code: ErrorCode.UnexpectedError,
+      message: 'Transaction index range out of bounds. Please report this to the Polymesh team',
+      data: {
+        to,
+        from,
+      },
+    });
+  }
 
   const slicedEvents = segmentedEvents.slice(from, to).flat();
 
