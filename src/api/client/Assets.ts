@@ -2,13 +2,16 @@ import {
   Asset,
   Context,
   createAsset,
+  createNftCollection,
   Identity,
+  NftCollection,
   PolymeshError,
   reserveTicker,
   TickerReservation,
 } from '~/internal';
 import {
   CreateAssetWithTickerParams,
+  CreateNftCollectionParams,
   ErrorCode,
   GlobalMetadataKey,
   PaginationOptions,
@@ -58,6 +61,13 @@ export class Assets {
       },
       context
     );
+
+    this.createNftCollection = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [createNftCollection, args],
+      },
+      context
+    );
   }
 
   /**
@@ -73,6 +83,14 @@ export class Assets {
    *   - Ticker Owner
    */
   public createAsset: ProcedureMethod<CreateAssetWithTickerParams, Asset>;
+
+  /**
+   * Create an NftCollection
+   *
+   * @note if ticker is already reserved, then required role:
+   *   - Ticker Owner
+   */
+  public createNftCollection: ProcedureMethod<CreateNftCollectionParams, NftCollection>;
 
   /**
    * Check if a ticker hasn't been reserved

@@ -33,7 +33,9 @@ import {
   InputTargets,
   InputTaxWithholding,
   InputTrustedClaimIssuer,
+  KnownNftType,
   MetadataSpec,
+  MetadataType,
   MetadataValueDetails,
   OfferingTier,
   PercentageTransferRestriction,
@@ -321,6 +323,50 @@ export interface CreateAssetParams {
 
 export interface CreateAssetWithTickerParams extends CreateAssetParams {
   ticker: string;
+}
+
+export interface GlobalCollectionKeyInput {
+  type: MetadataType.Global;
+  id: BigNumber;
+}
+
+export interface LocalCollectionKeyInput {
+  type: MetadataType.Local;
+  name: string;
+  spec: MetadataSpec;
+}
+
+/**
+ * Global key must be registered. local keys must provide a specification as they are created with the NftCollection
+ */
+export type CollectionKeyInput = GlobalCollectionKeyInput | LocalCollectionKeyInput;
+
+export interface CreateNftCollectionParams {
+  /**
+   * The primary identifier for the collection. The ticker must either be free, or the signer has appropriate permissions if reserved
+   */
+  ticker: string;
+  /**
+   * The collection name. defaults to `ticker`
+   */
+  name?: string;
+  /**
+   * @throws if provided string that does not have a custom type
+   * @throws if provided a BigNumber that does not correspond to a custom type
+   */
+  nftType: KnownNftType | string | BigNumber;
+  /**
+   * array of domestic or international alphanumeric security identifiers for the Asset (e.g. ISIN, CUSIP, FIGI)
+   */
+  securityIdentifiers?: SecurityIdentifier[];
+  /**
+   * The required metadata values each NFT in the collection will have
+   */
+  collectionKeys: CollectionKeyInput[];
+  /**
+   * Links to off chain documents related to the NftCollection
+   */
+  documents?: AssetDocument[];
 }
 
 export interface ReserveTickerParams {

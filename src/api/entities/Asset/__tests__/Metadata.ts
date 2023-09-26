@@ -209,4 +209,27 @@ describe('Metadata class', () => {
       );
     });
   });
+
+  describe('method: getNextLocalId', () => {
+    let id: BigNumber;
+    let rawId: u64;
+
+    beforeEach(() => {
+      id = new BigNumber(1);
+      rawId = dsMockUtils.createMockU64(id);
+    });
+
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should return the MetadataEntry for requested id and type', async () => {
+      dsMockUtils.createQueryMock('asset', 'assetMetadataNextLocalKey', {
+        returnValue: rawId,
+      });
+
+      const result = await metadata.getNextLocalId();
+      expect(result).toEqual(new BigNumber(2));
+    });
+  });
 });

@@ -138,6 +138,12 @@ export enum KnownAssetType {
   StableCoin = 'StableCoin',
 }
 
+export enum KnownNftType {
+  Derivative = 'Derivative',
+  FixedIncome = 'FixedIncome',
+  Invoice = 'Invoice',
+}
+
 export enum SecurityIdentifierType {
   Isin = 'Isin',
   Cusip = 'Cusip',

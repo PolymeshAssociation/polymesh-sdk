@@ -76,6 +76,7 @@ import {
   PolymeshPrimitivesAssetMetadataAssetMetadataLockStatus,
   PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
   PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
+  PolymeshPrimitivesAssetNonFungibleType,
   PolymeshPrimitivesAuthorization,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesCddId,
@@ -2095,10 +2096,26 @@ export const createMockAssetType = (
     | 'StructuredProduct'
     | 'Derivative'
     | 'StableCoin'
+    | { NonFungible: PolymeshPrimitivesAssetNonFungibleType }
     | { Custom: u32 }
     | PolymeshPrimitivesAssetAssetType
 ): MockCodec<PolymeshPrimitivesAssetAssetType> => {
   return createMockEnum<PolymeshPrimitivesAssetAssetType>(assetType);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockNftType = (
+  assetType?:
+    | 'Derivative'
+    | 'FixedIncome'
+    | 'Invoice'
+    | { Custom: u32 }
+    | PolymeshPrimitivesAssetNonFungibleType
+): MockCodec<PolymeshPrimitivesAssetNonFungibleType> => {
+  return createMockEnum<PolymeshPrimitivesAssetNonFungibleType>(assetType);
 };
 
 /**

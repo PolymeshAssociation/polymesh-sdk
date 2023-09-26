@@ -24,6 +24,7 @@ import {
   ClaimType,
   InputStatClaim,
   KnownAssetType,
+  KnownNftType,
   MortalityProcedureOpt,
   PermissionGroupType,
   Role,
@@ -309,7 +310,8 @@ export enum InstructionStatus {
  */
 export type PermissionGroupIdentifier = PermissionGroupType | { custom: BigNumber };
 
-export type InternalAssetType = KnownAssetType | { Custom: u32 };
+export type InternalNftType = KnownNftType | { Custom: u32 };
+export type InternalAssetType = KnownAssetType | { Custom: u32 } | { NonFungible: InternalNftType };
 
 export interface TickerKey {
   Ticker: PolymeshPrimitivesTicker;

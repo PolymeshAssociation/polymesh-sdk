@@ -39,6 +39,7 @@ import {
   Signer,
   TickerReservationStatus,
   TransactionPermissions,
+  TxTag,
 } from '~/types';
 import { tickerToString, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
@@ -687,3 +688,24 @@ export const createCreateGroupResolver =
       context
     );
   };
+
+/**
+ * Add protocol fees for specific tags to the current accumulated total
+ *
+ * @returns undefined if fees aren't being calculated manually
+ */
+export async function addManualFees(
+  currentFee: BigNumber | undefined,
+  tags: TxTag[],
+  context: Context
+): Promise<BigNumber | undefined> {
+  if (!currentFee) {
+    return undefined;
+  }
+
+  const fees = await context.getProtocolFees({
+    tags,
+  });
+
+  return fees.reduce((prev, { fees: nextFees }) => prev.plus(nextFees), currentFee);
+}

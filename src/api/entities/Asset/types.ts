@@ -13,6 +13,7 @@ import { Compliance, EventIdentifier, TransferError, TransferRestriction } from 
 
 export interface AssetDetails {
   assetType: string;
+  nonFungible: boolean;
   isDivisible: boolean;
   name: string;
   owner: Identity;

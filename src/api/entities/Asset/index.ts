@@ -8,12 +8,12 @@ import {
 import BigNumber from 'bignumber.js';
 import { groupBy, map } from 'lodash';
 
+import { BaseAsset } from '~/api/entities/Asset/BaseAsset';
 import { Metadata } from '~/api/entities/Asset/Metadata';
 import {
   AuthorizationRequest,
   Context,
   controllerTransfer,
-  Entity,
   Identity,
   modifyAsset,
   PolymeshError,
@@ -39,7 +39,6 @@ import {
   ProcedureMethod,
   RedeemTokensParams,
   ResultSet,
-  SecurityIdentifier,
   SetVenueFilteringParams,
   SubCallback,
   TransferAssetOwnershipParams,
@@ -47,7 +46,6 @@ import {
 } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
-  assetIdentifierToSecurityIdentifier,
   assetTypeToKnownOrId,
   balanceToBigNumber,
   bigNumberToU32,
@@ -86,27 +84,7 @@ export interface UniqueIdentifiers {
 /**
  * Class used to manage all Asset functionality
  */
-export class Asset extends Entity<UniqueIdentifiers, string> {
-  /**
-   * @hidden
-   * Check if a value is of type {@link UniqueIdentifiers}
-   */
-  public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
-    const { ticker } = identifier as UniqueIdentifiers;
-
-    return typeof ticker === 'string';
-  }
-
-  /**
-   * Identity ID of the Asset (used for Claims)
-   */
-  public did: string;
-
-  /**
-   * ticker of the Asset
-   */
-  public ticker: string;
-
+export class Asset extends BaseAsset {
   // Namespaces
   public documents: Documents;
   public settlements: Settlements;
@@ -244,18 +222,19 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       });
 
       const owner = new Identity({ did: identityIdToString(ownerDid) }, context);
-      const type = assetTypeToKnownOrId(rawAssetType);
+      const { value, type } = assetTypeToKnownOrId(rawAssetType);
 
       let assetType: string;
-      if (typeof type === 'string') {
-        assetType = type;
-      } else {
-        const customType = await asset.customTypes(bigNumberToU32(type, context));
+      if (value instanceof BigNumber) {
+        const customType = await asset.customTypes(bigNumberToU32(value, context));
         assetType = bytesToString(customType);
+      } else {
+        assetType = value;
       }
 
       return {
         assetType,
+        nonFungible: type === 'NonFungible',
         isDivisible: boolToBoolean(divisible),
         name: bytesToString(assetName.unwrap()),
         owner,
@@ -327,42 +306,6 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieve the Asset's identifiers list
-   *
-   * @note can be subscribed to
-   */
-  public getIdentifiers(): Promise<SecurityIdentifier[]>;
-  public getIdentifiers(callback?: SubCallback<SecurityIdentifier[]>): Promise<UnsubCallback>;
-
-  // eslint-disable-next-line require-jsdoc
-  public async getIdentifiers(
-    callback?: SubCallback<SecurityIdentifier[]>
-  ): Promise<SecurityIdentifier[] | UnsubCallback> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { asset },
-        },
-      },
-      ticker,
-      context,
-    } = this;
-
-    const rawTicker = stringToTicker(ticker, context);
-
-    if (callback) {
-      return asset.identifiers(rawTicker, identifiers => {
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
-        callback(identifiers.map(assetIdentifierToSecurityIdentifier));
-      });
-    }
-
-    const assetIdentifiers = await asset.identifiers(rawTicker);
-
-    return assetIdentifiers.map(assetIdentifierToSecurityIdentifier);
-  }
-
-  /**
    * Retrieve the identifier data (block number, date and event index) of the event that was emitted when the token was created
    *
    * @note uses the middlewareV2
@@ -395,40 +338,6 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
    * Unfreeze transfers of the Asset
    */
   public unfreeze: NoArgsProcedureMethod<Asset>;
-
-  /**
-   * Check whether transfers are frozen for the Asset
-   *
-   * @note can be subscribed to
-   */
-  public isFrozen(): Promise<boolean>;
-  public isFrozen(callback: SubCallback<boolean>): Promise<UnsubCallback>;
-
-  // eslint-disable-next-line require-jsdoc
-  public async isFrozen(callback?: SubCallback<boolean>): Promise<boolean | UnsubCallback> {
-    const {
-      ticker,
-      context: {
-        polymeshApi: {
-          query: { asset },
-        },
-      },
-      context,
-    } = this;
-
-    const rawTicker = stringToTicker(ticker, context);
-
-    if (callback) {
-      return asset.frozen(rawTicker, frozen => {
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
-        callback(boolToBoolean(frozen));
-      });
-    }
-
-    const result = await asset.frozen(rawTicker);
-
-    return boolToBoolean(result);
-  }
 
   /**
    * Redeem (burn) an amount of this Asset's tokens

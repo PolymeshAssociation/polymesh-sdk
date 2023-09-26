@@ -1,4 +1,4 @@
-import { bool, Bytes, Option, Text, u8, U8aFixed, u16, u32, u64, u128 } from '@polkadot/types';
+import { bool, Bytes, Option, Text, u8, U8aFixed, u16, u32, u64, u128, Vec } from '@polkadot/types';
 import { AccountId, Balance, BlockHash, Hash, Permill } from '@polkadot/types/interfaces';
 import {
   PalletCorporateActionsCaId,
@@ -19,6 +19,7 @@ import {
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
   PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
   PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
+  PolymeshPrimitivesAssetNonFungibleType,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesCddId,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
@@ -159,6 +160,7 @@ import {
   InstructionEndCondition,
   InstructionType,
   KnownAssetType,
+  KnownNftType,
   MetadataLockStatus,
   MetadataSpec,
   MetadataType,
@@ -213,6 +215,7 @@ import {
   ExtrinsicIdentifier,
   InstructionStatus,
   InternalAssetType,
+  InternalNftType,
   PalletPermissions,
   PermissionGroupIdentifier,
   PermissionsEnum,
@@ -1567,41 +1570,66 @@ export function internalAssetTypeToAssetType(
 /**
  * @hidden
  */
+export function internalNftTypeToNftType(
+  type: InternalNftType,
+  context: Context
+): PolymeshPrimitivesAssetNonFungibleType {
+  return context.createType('PolymeshPrimitivesAssetNonFungibleType', type);
+}
+
+/**
+ * @hidden
+ */
 export function assetTypeToKnownOrId(
   assetType: PolymeshPrimitivesAssetAssetType
-): KnownAssetType | BigNumber {
+):
+  | { type: 'Fungible'; value: KnownAssetType | BigNumber }
+  | { type: 'NonFungible'; value: KnownNftType | BigNumber } {
+  if (assetType.isNonFungible) {
+    const type = 'NonFungible';
+    const rawNftType = assetType.asNonFungible;
+    if (rawNftType.isDerivative) {
+      return { type, value: KnownNftType.Derivative };
+    } else if (rawNftType.isFixedIncome) {
+      return { type, value: KnownNftType.FixedIncome };
+    } else if (rawNftType.isInvoice) {
+      return { type, value: KnownNftType.Invoice };
+    }
+    return { type, value: u32ToBigNumber(rawNftType.asCustom) };
+  }
+  const type = 'Fungible';
   if (assetType.isEquityCommon) {
-    return KnownAssetType.EquityCommon;
+    return { type, value: KnownAssetType.EquityCommon };
   }
   if (assetType.isEquityPreferred) {
-    return KnownAssetType.EquityPreferred;
+    return { type, value: KnownAssetType.EquityPreferred };
   }
   if (assetType.isCommodity) {
-    return KnownAssetType.Commodity;
+    return { type, value: KnownAssetType.Commodity };
   }
   if (assetType.isFixedIncome) {
-    return KnownAssetType.FixedIncome;
+    return { type, value: KnownAssetType.FixedIncome };
   }
   if (assetType.isReit) {
-    return KnownAssetType.Reit;
+    return { type, value: KnownAssetType.Reit };
   }
   if (assetType.isFund) {
-    return KnownAssetType.Fund;
+    return { type, value: KnownAssetType.Fund };
   }
   if (assetType.isRevenueShareAgreement) {
-    return KnownAssetType.RevenueShareAgreement;
+    return { type, value: KnownAssetType.RevenueShareAgreement };
   }
   if (assetType.isStructuredProduct) {
-    return KnownAssetType.StructuredProduct;
+    return { type, value: KnownAssetType.StructuredProduct };
   }
   if (assetType.isDerivative) {
-    return KnownAssetType.Derivative;
+    return { type, value: KnownAssetType.Derivative };
   }
   if (assetType.isStableCoin) {
-    return KnownAssetType.StableCoin;
+    return { type, value: KnownAssetType.StableCoin };
   }
 
-  return u32ToBigNumber(assetType.asCustom);
+  return { type, value: u32ToBigNumber(assetType.asCustom) };
 }
 
 /**
@@ -4484,3 +4512,17 @@ export function middlewareAuthorizationDataToAuthorization(
 }
 
 /* eslint-enable @typescript-eslint/no-non-null-assertion */
+
+/**
+ * @hidden
+ */
+export function collectionKeysToMetadataKeys(
+  keys: { type: MetadataType; id: BigNumber }[],
+  context: Context
+): Vec<PolymeshPrimitivesAssetMetadataAssetMetadataKey> {
+  const metadataKeys = keys.map(({ type, id }) => {
+    return { [type]: bigNumberToU64(id, context) };
+  });
+
+  return context.createType('Vec<PolymeshPrimitivesAssetMetadataAssetMetadataKey>', metadataKeys);
+}

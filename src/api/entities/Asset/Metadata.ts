@@ -123,4 +123,26 @@ export class Metadata extends Namespace<Asset> {
 
     return new MetadataEntry({ ticker, type, id }, context);
   }
+
+  /**
+   * Gets the next local metadata ID for the Asset
+   *
+   * @hidden
+   */
+  public async getNextLocalId(): Promise<BigNumber> {
+    const {
+      parent: { ticker },
+      context: {
+        polymeshApi: {
+          query: {
+            asset: { assetMetadataNextLocalKey },
+          },
+        },
+      },
+    } = this;
+
+    const rawId = await assetMetadataNextLocalKey(ticker);
+
+    return u64ToBigNumber(rawId).plus(1); // "next" is actually the last used
+  }
 }
