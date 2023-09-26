@@ -6,15 +6,15 @@ import {
   Params,
   prepareToggleFreezeTransfers,
 } from '~/api/procedures/toggleFreezeTransfers';
-import { Asset, Context } from '~/internal';
+import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Base',
+  require('~/testUtils/mocks/entities').mockBaseAssetModule('~/api/entities/Asset/Base')
 );
 
 describe('toggleFreezeTransfers procedure', () => {
@@ -50,12 +50,12 @@ describe('toggleFreezeTransfers procedure', () => {
 
   it('should throw an error if freeze is set to true and the Asset is already frozen', () => {
     entityMockUtils.configureMocks({
-      assetOptions: {
+      baseAssetOptions: {
         isFrozen: true,
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(
       prepareToggleFreezeTransfers.call(proc, {
@@ -66,7 +66,7 @@ describe('toggleFreezeTransfers procedure', () => {
   });
 
   it('should throw an error if freeze is set to false and the Asset is already unfrozen', () => {
-    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(
       prepareToggleFreezeTransfers.call(proc, {
@@ -77,7 +77,7 @@ describe('toggleFreezeTransfers procedure', () => {
   });
 
   it('should return a freeze transaction spec', async () => {
-    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const transaction = dsMockUtils.createTxMock('asset', 'freeze');
 
@@ -89,18 +89,17 @@ describe('toggleFreezeTransfers procedure', () => {
     expect(result).toEqual({
       transaction,
       args: [rawTicker],
-      resolver: expect.objectContaining({ ticker }),
     });
   });
 
   it('should add an unfreeze transaction spec', async () => {
     entityMockUtils.configureMocks({
-      assetOptions: {
+      baseAssetOptions: {
         isFrozen: true,
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const transaction = dsMockUtils.createTxMock('asset', 'unfreeze');
 
@@ -112,13 +111,12 @@ describe('toggleFreezeTransfers procedure', () => {
     expect(result).toEqual({
       transaction,
       args: [rawTicker],
-      resolver: expect.objectContaining({ ticker }),
     });
   });
 
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
       const asset = expect.objectContaining({ ticker });

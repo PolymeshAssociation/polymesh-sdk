@@ -1,5 +1,5 @@
 import { assertGroupDoesNotExist, createCreateGroupResolver } from '~/api/procedures/utils';
-import { Asset, CustomPermissionGroup, Procedure } from '~/internal';
+import { CustomPermissionGroup, FungibleAsset, Procedure } from '~/internal';
 import { CreateGroupParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
@@ -19,7 +19,7 @@ export type Params = CreateGroupParams & {
  * @hidden
  */
 export interface Storage {
-  asset: Asset;
+  asset: FungibleAsset;
 }
 
 /**
@@ -87,7 +87,7 @@ export function prepareStorage(
   const { context } = this;
 
   return {
-    asset: new Asset({ ticker }, context),
+    asset: new FungibleAsset({ ticker }, context),
   };
 }
 

@@ -4,7 +4,7 @@ import { values } from 'lodash';
 
 import { addManualFees } from '~/api/procedures/utils';
 import {
-  Asset,
+  FungibleAsset,
   Identity,
   NftCollection,
   PolymeshError,
@@ -152,7 +152,11 @@ export async function prepareCreateNftCollection(
       })
     );
   } else if (status === TickerReservationStatus.AssetCreated) {
-    const asset = new Asset({ ticker }, context);
+    /**
+     * assets can be created with type Nft, but not have a created collection,
+     * we handle this case to prevent a ticker getting stuck if it was initialized via non SDK methods
+     */
+    const asset = new FungibleAsset({ ticker }, context);
     let nonFungible;
     [fee, { nonFungible }, nextLocalId] = await Promise.all([
       addManualFees(new BigNumber(0), [TxTags.nft.CreateNftCollection], context),
@@ -265,7 +269,7 @@ export async function getAuthorization(
     return {
       permissions: {
         ...permissions,
-        assets: [new Asset({ ticker }, context)],
+        assets: [new FungibleAsset({ ticker }, context)],
       },
     };
   }

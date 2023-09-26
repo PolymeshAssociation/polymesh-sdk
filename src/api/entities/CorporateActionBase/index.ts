@@ -3,11 +3,11 @@ import { PalletCorporateActionsCorporateAction } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import {
-  Asset,
   Checkpoint,
   CheckpointSchedule,
   Context,
   Entity,
+  FungibleAsset,
   linkCaDocs,
   PolymeshError,
 } from '~/internal';
@@ -71,7 +71,7 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
   /**
    * Asset affected by this Corporate Action
    */
-  public asset: Asset;
+  public asset: FungibleAsset;
 
   /**
    * date at which the Corporate Action was created
@@ -124,7 +124,7 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
     const { id, ticker } = identifiers;
 
     this.id = id;
-    this.asset = new Asset({ ticker }, context);
+    this.asset = new FungibleAsset({ ticker }, context);
     this.kind = kind;
     this.declarationDate = declarationDate;
     this.description = description;

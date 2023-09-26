@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { Asset, Offering, PolymeshError, Procedure } from '~/internal';
+import { FungibleAsset, Offering, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, OfferingSaleStatus, OfferingTimingStatus, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { bigNumberToU64, stringToTicker } from '~/utils/conversion';
@@ -93,7 +93,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [freeze ? TxTags.sto.FreezeFundraiser : TxTags.sto.UnfreezeFundraiser],
-      assets: [new Asset({ ticker }, this.context)],
+      assets: [new FungibleAsset({ ticker }, this.context)],
       portfolios: [],
     },
   };

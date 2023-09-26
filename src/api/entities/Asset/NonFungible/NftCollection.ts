@@ -2,22 +2,17 @@ import { StorageKey, u64 } from '@polkadot/types';
 import { PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
-import { BaseAsset, UniqueIdentifiers } from '~/api/entities/Asset/BaseAsset';
-import {
-  AuthorizationRequest,
-  Context,
-  controllerTransfer,
-  transferAssetOwnership,
-} from '~/internal';
+import { BaseAsset } from '~/api/entities/Asset/Base';
+import { AuthorizationRequest, Context, transferAssetOwnership } from '~/internal';
 import { assetQuery } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
   AssetDetails,
-  ControllerTransferParams,
   EventIdentifier,
   ProcedureMethod,
   SubCallback,
   TransferAssetOwnershipParams,
+  UniqueIdentifiers,
   UnsubCallback,
 } from '~/types';
 import { Ensured } from '~/types/utils';
@@ -54,10 +49,6 @@ export class NftCollection extends BaseAsset {
 
     this.transferOwnership = createProcedureMethod(
       { getProcedureAndArgs: args => [transferAssetOwnership, { ticker, ...args }] },
-      context
-    );
-    this.controllerTransfer = createProcedureMethod(
-      { getProcedureAndArgs: args => [controllerTransfer, { ticker, ...args }] },
       context
     );
   }
@@ -124,7 +115,7 @@ export class NftCollection extends BaseAsset {
       const rawNumberNfts = await rawNumberNftsPromise;
       const numberIssued = sumNftIssuance(rawNumberNfts);
 
-      // currently `asset.tokens` does not track Nft `totalSupply`
+      // currently `asset.tokens` does not track Nft `totalSupply', we wrap the callback to provide it
       const wrappedCallback = async (commonDetails: AssetDetails): Promise<void> => {
         const nftDetails = { ...commonDetails, totalSupply: numberIssued };
 
@@ -166,14 +157,9 @@ export class NftCollection extends BaseAsset {
   }
 
   /**
-   * Force a transfer from a given Portfolio to the caller’s default Portfolio
-   */
-  public controllerTransfer: ProcedureMethod<ControllerTransferParams, void>;
-
-  /**
    * Determine whether this NftCollection exists on chain
    */
-  public async exists(): Promise<boolean> {
+  public override async exists(): Promise<boolean> {
     const { ticker, context } = this;
 
     const rawTokenId = await context.polymeshApi.query.nft.collectionTicker(
@@ -181,12 +167,5 @@ export class NftCollection extends BaseAsset {
     );
 
     return !rawTokenId.isZero();
-  }
-
-  /**
-   * Return the NftCollection's ticker
-   */
-  public toHuman(): string {
-    return this.ticker;
   }
 }

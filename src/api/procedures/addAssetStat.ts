@@ -1,4 +1,4 @@
-import { Asset, PolymeshError, Procedure } from '~/internal';
+import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { AddAssetStatParams, ErrorCode, StatType, TxTags } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import {
@@ -92,7 +92,7 @@ export function getAuthorization(
   if (type === StatType.Count || type === StatType.ScopedCount) {
     transactions.push(TxTags.statistics.BatchUpdateAssetStats);
   }
-  const asset = new Asset({ ticker }, this.context);
+  const asset = new FungibleAsset({ ticker }, this.context);
   return {
     permissions: {
       transactions,

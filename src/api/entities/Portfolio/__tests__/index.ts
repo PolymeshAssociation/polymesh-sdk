@@ -7,9 +7,9 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import {
-  Asset,
   Context,
   Entity,
+  FungibleAsset,
   NumberedPortfolio,
   PolymeshTransaction,
   Portfolio,
@@ -260,7 +260,7 @@ describe('Portfolio class', () => {
 
       const otherTicker = 'OTHER_TICKER';
       const result = await portfolio.getAssetBalances({
-        assets: [ticker0, new Asset({ ticker: otherTicker }, context)],
+        assets: [ticker0, new FungibleAsset({ ticker: otherTicker }, context)],
       });
 
       expect(result.length).toBe(2);

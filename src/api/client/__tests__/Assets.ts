@@ -3,7 +3,13 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Assets } from '~/api/client/Assets';
-import { Asset, Context, NftCollection, PolymeshTransaction, TickerReservation } from '~/internal';
+import {
+  Context,
+  FungibleAsset,
+  NftCollection,
+  PolymeshTransaction,
+  TickerReservation,
+} from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -28,8 +34,12 @@ jest.mock(
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
+);
+jest.mock(
+  '~/api/entities/Asset/NonFungible',
+  require('~/testUtils/mocks/entities').mockNftCollectionModule('~/api/entities/Asset/NonFungible')
 );
 
 describe('Assets Class', () => {
@@ -93,7 +103,8 @@ describe('Assets Class', () => {
         reservationRequired: false,
       };
 
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<FungibleAsset>;
 
       when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
@@ -281,20 +292,37 @@ describe('Assets Class', () => {
     });
   });
 
-  describe('method: getAsset', () => {
+  describe('method: getFungibleAsset', () => {
     it('should return a specific Asset', async () => {
       const ticker = 'TEST';
 
-      const asset = await assets.getAsset({ ticker });
+      const asset = await assets.getFungibleAsset({ ticker });
       expect(asset.ticker).toBe(ticker);
     });
 
     it('should throw if the Asset does not exist', async () => {
       const ticker = 'TEST';
-      entityMockUtils.configureMocks({ assetOptions: { exists: false } });
+      entityMockUtils.configureMocks({ fungibleAssetOptions: { exists: false } });
 
-      return expect(assets.getAsset({ ticker })).rejects.toThrow(
+      return expect(assets.getFungibleAsset({ ticker })).rejects.toThrow(
         `There is no Asset with ticker "${ticker}"`
+      );
+    });
+  });
+
+  describe('method: getNftCollection', () => {
+    const ticker = 'NFTTEST';
+
+    it('should return the collection if it exists', async () => {
+      const nftCollection = await assets.getNftCollection({ ticker });
+      expect(nftCollection.ticker).toBe(ticker);
+    });
+
+    it('should throw if the collection does not exist', async () => {
+      entityMockUtils.configureMocks({ nftCollectionOptions: { exists: false } });
+
+      return expect(assets.getNftCollection({ ticker })).rejects.toThrow(
+        `There is no NftCollection with ticker "${ticker}"`
       );
     });
   });
@@ -323,6 +351,19 @@ describe('Assets Class', () => {
         ],
       });
 
+      dsMockUtils.createQueryMock('asset', 'tokens', {
+        multi: [
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockSecurityToken({
+              ownerDid: dsMockUtils.createMockIdentityId('someDid'),
+              assetType: dsMockUtils.createMockAssetType(KnownAssetType.Commodity),
+              divisible: dsMockUtils.createMockBool(false),
+              totalSupply: dsMockUtils.createMockBalance(new BigNumber(0)),
+            })
+          ),
+        ],
+      });
+
       const asset = await assets.getAssets({ owner: 'someDid' });
 
       expect(asset).toHaveLength(1);
@@ -340,6 +381,19 @@ describe('Assets Class', () => {
           tuple(
             [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
             dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
+          ),
+        ],
+      });
+
+      dsMockUtils.createQueryMock('asset', 'tokens', {
+        multi: [
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockSecurityToken({
+              ownerDid: dsMockUtils.createMockIdentityId('someDid'),
+              assetType: dsMockUtils.createMockAssetType(KnownAssetType.Commodity),
+              divisible: dsMockUtils.createMockBool(false),
+              totalSupply: dsMockUtils.createMockBalance(new BigNumber(0)),
+            })
           ),
         ],
       });
@@ -370,6 +424,19 @@ describe('Assets Class', () => {
           tuple(
             [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(unreadableTicker)],
             dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
+          ),
+        ],
+      });
+
+      dsMockUtils.createQueryMock('asset', 'tokens', {
+        multi: [
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockSecurityToken({
+              ownerDid: dsMockUtils.createMockIdentityId(did),
+              assetType: dsMockUtils.createMockAssetType(KnownAssetType.Commodity),
+              divisible: dsMockUtils.createMockBool(false),
+              totalSupply: dsMockUtils.createMockBalance(new BigNumber(0)),
+            })
           ),
         ],
       });
@@ -419,6 +486,29 @@ describe('Assets Class', () => {
         )
       );
 
+      dsMockUtils.createQueryMock('asset', 'tokens', {
+        multi: [
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockSecurityToken({
+              ownerDid: dsMockUtils.createMockIdentityId('someDid'),
+              assetType: dsMockUtils.createMockAssetType(KnownAssetType.Commodity),
+              divisible: dsMockUtils.createMockBool(false),
+              totalSupply: dsMockUtils.createMockBalance(new BigNumber(0)),
+            })
+          ),
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockSecurityToken({
+              ownerDid: dsMockUtils.createMockIdentityId('someDid'),
+              assetType: dsMockUtils.createMockAssetType({
+                NonFungible: dsMockUtils.createMockNftType(KnownAssetType.Derivative),
+              }),
+              divisible: dsMockUtils.createMockBool(false),
+              totalSupply: dsMockUtils.createMockBalance(new BigNumber(0)),
+            })
+          ),
+        ],
+      });
+
       requestPaginatedSpy.mockResolvedValue({ entries, lastKey: null });
 
       const result = await assets.get();
@@ -436,6 +526,19 @@ describe('Assets Class', () => {
           dsMockUtils.createMockBytes(expectedAssets[0].name)
         ),
       ];
+
+      dsMockUtils.createQueryMock('asset', 'tokens', {
+        multi: [
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockSecurityToken({
+              ownerDid: dsMockUtils.createMockIdentityId('someDid'),
+              assetType: dsMockUtils.createMockAssetType(KnownAssetType.Commodity),
+              divisible: dsMockUtils.createMockBool(false),
+              totalSupply: dsMockUtils.createMockBalance(new BigNumber(0)),
+            })
+          ),
+        ],
+      });
 
       requestPaginatedSpy.mockResolvedValue({ entries, lastKey: 'someKey' });
 

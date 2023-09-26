@@ -2,7 +2,6 @@
 
 import {
   Account,
-  Asset,
   AuthorizationRequest,
   Checkpoint,
   CheckpointSchedule,
@@ -151,13 +150,6 @@ export function isKnownPermissionGroup(value: unknown): value is KnownPermission
  */
 export function isNumberedPortfolio(value: unknown): value is NumberedPortfolio {
   return value instanceof NumberedPortfolio;
-}
-
-/**
- * Return whether value is an Asset
- */
-export function isAsset(value: unknown): value is Asset {
-  return value instanceof Asset;
 }
 
 /**

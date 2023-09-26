@@ -7,8 +7,8 @@ import {
 import BigNumber from 'bignumber.js';
 import { entries, flatten, forEach } from 'lodash';
 
-import { SetTransferRestrictionsParams } from '~/api/entities/Asset/TransferRestrictions/TransferRestrictionBase';
-import { Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
+import { SetTransferRestrictionsParams } from '~/api/entities/Asset/Fungible/TransferRestrictions/TransferRestrictionBase';
+import { Context, FungibleAsset, Identity, PolymeshError, Procedure } from '~/internal';
 import {
   ClaimCountRestrictionValue,
   ClaimCountTransferRestriction,
@@ -270,7 +270,7 @@ export function getAuthorization(
 
   return {
     permissions: {
-      assets: [new Asset({ ticker }, this.context)],
+      assets: [new FungibleAsset({ ticker }, this.context)],
       transactions,
       portfolios: [],
     },
@@ -316,7 +316,7 @@ export async function prepareStorage(
 
   const {
     transferRestrictions: { count, percentage, claimCount, claimPercentage },
-  } = new Asset({ ticker }, context);
+  } = new FungibleAsset({ ticker }, context);
 
   const [
     { restrictions: currentCountRestrictions },

@@ -18,7 +18,7 @@ import {
   Storage,
 } from '~/api/procedures/inviteExternalAgent';
 import * as procedureUtilsModule from '~/api/procedures/utils';
-import { Account, Asset, AuthorizationRequest, Context, Identity } from '~/internal';
+import { Account, AuthorizationRequest, Context, FungibleAsset, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, PermissionType, SignerValue, TxTags } from '~/types';
@@ -26,8 +26,8 @@ import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 jest.mock(
   '~/api/entities/CustomPermissionGroup',
@@ -55,7 +55,7 @@ describe('inviteExternalAgent procedure', () => {
   >;
   let stringToIdentityIdSpy: jest.SpyInstance;
   let ticker: string;
-  let asset: Asset;
+  let asset: FungibleAsset;
   let rawTicker: PolymeshPrimitivesTicker;
   let rawAgentGroup: PolymeshPrimitivesAgentAgentGroup;
   let target: string;
@@ -77,7 +77,7 @@ describe('inviteExternalAgent procedure', () => {
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawAgentGroup = dsMockUtils.createMockAgentGroup('Full');
-    asset = entityMockUtils.getAssetInstance({ ticker });
+    asset = entityMockUtils.getFungibleAssetInstance({ ticker });
     target = 'someDid';
     rawSignatory = dsMockUtils.createMockSignatory({
       Identity: dsMockUtils.createMockIdentityId(target),
@@ -90,7 +90,7 @@ describe('inviteExternalAgent procedure', () => {
 
   beforeEach(() => {
     entityMockUtils.configureMocks({
-      assetOptions: {
+      fungibleAssetOptions: {
         corporateActionsGetAgents: [],
       },
     });
@@ -162,7 +162,7 @@ describe('inviteExternalAgent procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
       mockContext,
       {
-        asset: entityMockUtils.getAssetInstance({
+        asset: entityMockUtils.getFungibleAssetInstance({
           permissionsGetAgents: [
             {
               agent: entityMockUtils.getIdentityInstance({ did: target }),
@@ -183,7 +183,7 @@ describe('inviteExternalAgent procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
       mockContext,
       {
-        asset: entityMockUtils.getAssetInstance({
+        asset: entityMockUtils.getFungibleAssetInstance({
           permissionsGetAgents: [
             {
               agent: entityMockUtils.getIdentityInstance({ isEqual: false }),
@@ -233,7 +233,7 @@ describe('inviteExternalAgent procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
       mockContext,
       {
-        asset: entityMockUtils.getAssetInstance({
+        asset: entityMockUtils.getFungibleAssetInstance({
           permissionsGetAgents: [],
         }),
       }
@@ -255,7 +255,7 @@ describe('inviteExternalAgent procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
       mockContext,
       {
-        asset: entityMockUtils.getAssetInstance({
+        asset: entityMockUtils.getFungibleAssetInstance({
           permissionsGetAgents: [
             {
               agent: entityMockUtils.getIdentityInstance({ isEqual: false }),

@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { flatten, map } from 'lodash';
 
 import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
-import { Asset, PolymeshError, Procedure } from '~/internal';
+import { BaseAsset, PolymeshError, Procedure } from '~/internal';
 import { AddAssetRequirementParams, ErrorCode, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { requirementToComplianceRequirement, stringToTicker } from '~/utils/conversion';
@@ -19,10 +19,10 @@ export type Params = AddAssetRequirementParams & {
  * @hidden
  */
 export async function prepareAddAssetRequirement(
-  this: Procedure<Params, Asset>,
+  this: Procedure<Params, void>,
   args: Params
 ): Promise<
-  TransactionSpec<Asset, ExtrinsicParams<'complianceManager', 'addComplianceRequirement'>>
+  TransactionSpec<void, ExtrinsicParams<'complianceManager', 'addComplianceRequirement'>>
 > {
   const {
     context: {
@@ -34,7 +34,7 @@ export async function prepareAddAssetRequirement(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const asset = new Asset({ ticker }, context);
+  const asset = new BaseAsset({ ticker }, context);
 
   const { requirements: currentRequirements, defaultTrustedClaimIssuers } =
     await asset.compliance.requirements.get();
@@ -68,7 +68,7 @@ export async function prepareAddAssetRequirement(
   return {
     transaction: tx.complianceManager.addComplianceRequirement,
     args: [rawTicker, senderConditions, receiverConditions],
-    resolver: asset,
+    resolver: undefined,
   };
 }
 
@@ -76,13 +76,13 @@ export async function prepareAddAssetRequirement(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, Asset>,
+  this: Procedure<Params, void>,
   { ticker }: Params
 ): ProcedureAuthorization {
   return {
     permissions: {
       transactions: [TxTags.complianceManager.AddComplianceRequirement],
-      assets: [new Asset({ ticker }, this.context)],
+      assets: [new BaseAsset({ ticker }, this.context)],
       portfolios: [],
     },
   };
@@ -91,5 +91,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const addAssetRequirement = (): Procedure<Params, Asset> =>
+export const addAssetRequirement = (): Procedure<Params, void> =>
   new Procedure(prepareAddAssetRequirement, getAuthorization);

@@ -11,7 +11,14 @@ import { bool } from '@polkadot/types/primitive';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { Asset, Context, Entity, Identity, PolymeshError, PolymeshTransaction } from '~/internal';
+import {
+  Context,
+  Entity,
+  FungibleAsset,
+  Identity,
+  PolymeshError,
+  PolymeshTransaction,
+} from '~/internal';
 import {
   assetHoldersQuery,
   instructionsByDidQuery,
@@ -46,8 +53,8 @@ jest.mock(
   )
 );
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 jest.mock(
   '~/api/entities/Account',
@@ -933,14 +940,14 @@ describe('Identity class', () => {
   });
 
   describe('method: getPendingDistributions', () => {
-    let assets: Asset[];
+    let assets: FungibleAsset[];
     let distributions: DistributionWithDetails[];
     let expectedDistribution: DistributionWithDetails;
 
     beforeAll(() => {
       assets = [
-        entityMockUtils.getAssetInstance({ ticker: 'TICKER_1' }),
-        entityMockUtils.getAssetInstance({ ticker: 'TICKER_2' }),
+        entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER_1' }),
+        entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER_2' }),
       ];
       const distributionTemplate = {
         expiryDate: null,

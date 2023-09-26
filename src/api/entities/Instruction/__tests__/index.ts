@@ -26,8 +26,8 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 jest.mock(
   '~/api/entities/Venue',
@@ -596,7 +596,7 @@ describe('Instruction class', () => {
       const ticker = 'SOME_TICKER';
       const amount = new BigNumber(1000);
 
-      entityMockUtils.configureMocks({ assetOptions: { ticker } });
+      entityMockUtils.configureMocks({ fungibleAssetOptions: { ticker } });
       instructionStatusMock.mockResolvedValue(
         createMockInstructionStatus(InternalInstructionStatus.Pending)
       );
@@ -644,7 +644,7 @@ describe('Instruction class', () => {
       const toDid = 'toDid';
       const ticker = 'SOME_TICKER';
 
-      entityMockUtils.configureMocks({ assetOptions: { ticker } });
+      entityMockUtils.configureMocks({ fungibleAssetOptions: { ticker } });
       instructionStatusMock.mockResolvedValue(
         createMockInstructionStatus(InternalInstructionStatus.Pending)
       );
@@ -679,7 +679,7 @@ describe('Instruction class', () => {
       const toDid = 'toDid';
       const ticker = 'SOME_TICKER';
 
-      entityMockUtils.configureMocks({ assetOptions: { ticker } });
+      entityMockUtils.configureMocks({ fungibleAssetOptions: { ticker } });
       instructionStatusMock.mockResolvedValue(
         createMockInstructionStatus(InternalInstructionStatus.Pending)
       );
@@ -707,7 +707,7 @@ describe('Instruction class', () => {
     it('should throw an error if a leg in None', () => {
       const ticker = 'SOME_TICKER';
 
-      entityMockUtils.configureMocks({ assetOptions: { ticker } });
+      entityMockUtils.configureMocks({ fungibleAssetOptions: { ticker } });
       instructionStatusMock.mockResolvedValue(
         createMockInstructionStatus(InternalInstructionStatus.Pending)
       );
@@ -1080,7 +1080,7 @@ describe('Instruction class', () => {
         exists: false,
       });
       const amount = new BigNumber(1);
-      const asset = entityMockUtils.getAssetInstance({ ticker: 'SOME_ASSET' });
+      const asset = entityMockUtils.getFungibleAssetInstance({ ticker: 'SOME_ASSET' });
 
       jest.spyOn(instruction, 'getLegs').mockResolvedValue({
         data: [

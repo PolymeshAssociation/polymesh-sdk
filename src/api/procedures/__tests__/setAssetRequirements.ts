@@ -12,7 +12,7 @@ import {
   Params,
   prepareSetAssetRequirements,
 } from '~/api/procedures/setAssetRequirements';
-import { Asset, Context } from '~/internal';
+import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -28,8 +28,8 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 describe('setAssetRequirements procedure', () => {
@@ -118,7 +118,7 @@ describe('setAssetRequirements procedure', () => {
       returnValue: dsMockUtils.createMockU32(new BigNumber(50)),
     });
     entityMockUtils.configureMocks({
-      assetOptions: {
+      fungibleAssetOptions: {
         complianceRequirementsGet: {
           requirements: currentRequirements,
           defaultTrustedClaimIssuers: [],
@@ -164,7 +164,7 @@ describe('setAssetRequirements procedure', () => {
   });
 
   it('should throw an error if the new list is the same as the current one', () => {
-    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(prepareSetAssetRequirements.call(proc, args)).rejects.toThrow(
       'The supplied condition list is equal to the current one'
@@ -172,40 +172,38 @@ describe('setAssetRequirements procedure', () => {
   });
 
   it('should return a reset asset compliance transaction spec if the new requirements are empty', async () => {
-    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const result = await prepareSetAssetRequirements.call(proc, { ...args, requirements: [] });
 
     expect(result).toEqual({
       transaction: resetAssetComplianceTransaction,
       args: [rawTicker],
-      resolver: expect.objectContaining({ ticker }),
     });
   });
 
   it('should return a replace asset compliance transaction spec', async () => {
     entityMockUtils.configureMocks({
-      assetOptions: {
+      fungibleAssetOptions: {
         complianceRequirementsGet: {
           requirements: currentRequirements.slice(0, 1),
           defaultTrustedClaimIssuers: [],
         },
       },
     });
-    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const result = await prepareSetAssetRequirements.call(proc, args);
 
     expect(result).toEqual({
       transaction: replaceAssetComplianceTransaction,
       args: [rawTicker, rawComplianceRequirements],
-      resolver: expect.objectContaining({ ticker }),
     });
   });
 
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const params = {
         ticker,

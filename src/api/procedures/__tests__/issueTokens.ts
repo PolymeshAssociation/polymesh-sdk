@@ -10,7 +10,7 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/issueTokens';
-import { Asset, Context, Portfolio } from '~/internal';
+import { Context, FungibleAsset, Portfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { EntityGetter } from '~/testUtils/mocks/entities';
 import { Mocked } from '~/testUtils/types';
@@ -18,8 +18,8 @@ import { TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 describe('issueTokens procedure', () => {
@@ -63,7 +63,9 @@ describe('issueTokens procedure', () => {
 
   describe('prepareStorage', () => {
     it('should return the Asset', () => {
-      const proc = procedureMockUtils.getInstance<IssueTokensParams, Asset, Storage>(mockContext);
+      const proc = procedureMockUtils.getInstance<IssueTokensParams, FungibleAsset, Storage>(
+        mockContext
+      );
       const boundFunc = prepareStorage.bind(proc);
 
       const result = boundFunc({
@@ -86,16 +88,19 @@ describe('issueTokens procedure', () => {
     const limitTotalSupply = new BigNumber(Math.pow(10, 12));
 
     entityMockUtils.configureMocks({
-      assetOptions: {
+      fungibleAssetOptions: {
         details: {
           totalSupply: limitTotalSupply,
         },
       },
     });
 
-    const proc = procedureMockUtils.getInstance<IssueTokensParams, Asset, Storage>(mockContext, {
-      asset: entityMockUtils.getAssetInstance(),
-    });
+    const proc = procedureMockUtils.getInstance<IssueTokensParams, FungibleAsset, Storage>(
+      mockContext,
+      {
+        asset: entityMockUtils.getFungibleAssetInstance(),
+      }
+    );
 
     let error;
 
@@ -123,7 +128,7 @@ describe('issueTokens procedure', () => {
     mockContext.getSigningIdentity.mockResolvedValue(entityMockUtils.getIdentityInstance());
 
     entityMockUtils.configureMocks({
-      assetOptions: {
+      fungibleAssetOptions: {
         ticker,
         details: {
           isDivisible,
@@ -136,9 +141,12 @@ describe('issueTokens procedure', () => {
       .mockReturnValue(rawAmount);
 
     const transaction = dsMockUtils.createTxMock('asset', 'issue');
-    const proc = procedureMockUtils.getInstance<IssueTokensParams, Asset, Storage>(mockContext, {
-      asset: entityMockUtils.getAssetInstance(),
-    });
+    const proc = procedureMockUtils.getInstance<IssueTokensParams, FungibleAsset, Storage>(
+      mockContext,
+      {
+        asset: entityMockUtils.getFungibleAssetInstance(),
+      }
+    );
 
     const result = await prepareIssueTokens.call(proc, args);
     expect(result).toEqual({
@@ -197,7 +205,7 @@ describe('issueTokens procedure', () => {
         entityMockUtils.getIdentityInstance({ portfoliosGetPortfolio: getPortfolio })
       );
       entityMockUtils.configureMocks({
-        assetOptions: {
+        fungibleAssetOptions: {
           ticker,
           details: {
             isDivisible,
@@ -208,9 +216,12 @@ describe('issueTokens procedure', () => {
         .calledWith(amount, mockContext, isDivisible)
         .mockReturnValue(rawAmount);
       const transaction = dsMockUtils.createTxMock('asset', 'issue');
-      const proc = procedureMockUtils.getInstance<IssueTokensParams, Asset, Storage>(mockContext, {
-        asset: entityMockUtils.getAssetInstance(),
-      });
+      const proc = procedureMockUtils.getInstance<IssueTokensParams, FungibleAsset, Storage>(
+        mockContext,
+        {
+          asset: entityMockUtils.getFungibleAssetInstance(),
+        }
+      );
       const result = await prepareIssueTokens.call(proc, args);
 
       expect(result).toEqual({
@@ -232,7 +243,7 @@ describe('issueTokens procedure', () => {
         entityMockUtils.getIdentityInstance({ portfoliosGetPortfolio: getPortfolio })
       );
       entityMockUtils.configureMocks({
-        assetOptions: {
+        fungibleAssetOptions: {
           ticker,
           details: {
             isDivisible,
@@ -243,9 +254,12 @@ describe('issueTokens procedure', () => {
         .calledWith(amount, mockContext, isDivisible)
         .mockReturnValue(rawAmount);
       const transaction = dsMockUtils.createTxMock('asset', 'issue');
-      const proc = procedureMockUtils.getInstance<IssueTokensParams, Asset, Storage>(mockContext, {
-        asset: entityMockUtils.getAssetInstance(),
-      });
+      const proc = procedureMockUtils.getInstance<IssueTokensParams, FungibleAsset, Storage>(
+        mockContext,
+        {
+          asset: entityMockUtils.getFungibleAssetInstance(),
+        }
+      );
       const result = await prepareIssueTokens.call(proc, args);
 
       expect(result).toEqual({
@@ -267,7 +281,7 @@ describe('issueTokens procedure', () => {
         entityMockUtils.getIdentityInstance({ portfoliosGetPortfolio: getPortfolio })
       );
       entityMockUtils.configureMocks({
-        assetOptions: {
+        fungibleAssetOptions: {
           ticker,
           details: {
             isDivisible,
@@ -278,9 +292,12 @@ describe('issueTokens procedure', () => {
         .calledWith(amount, mockContext, isDivisible)
         .mockReturnValue(rawAmount);
       const transaction = dsMockUtils.createTxMock('asset', 'issue');
-      const proc = procedureMockUtils.getInstance<IssueTokensParams, Asset, Storage>(mockContext, {
-        asset: entityMockUtils.getAssetInstance(),
-      });
+      const proc = procedureMockUtils.getInstance<IssueTokensParams, FungibleAsset, Storage>(
+        mockContext,
+        {
+          asset: entityMockUtils.getFungibleAssetInstance(),
+        }
+      );
       const result = await prepareIssueTokens.call(proc, args);
 
       expect(result).toEqual({
@@ -293,9 +310,12 @@ describe('issueTokens procedure', () => {
 
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<IssueTokensParams, Asset, Storage>(mockContext, {
-        asset: entityMockUtils.getAssetInstance({ ticker }),
-      });
+      const proc = procedureMockUtils.getInstance<IssueTokensParams, FungibleAsset, Storage>(
+        mockContext,
+        {
+          asset: entityMockUtils.getFungibleAssetInstance({ ticker }),
+        }
+      );
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc()).toEqual({

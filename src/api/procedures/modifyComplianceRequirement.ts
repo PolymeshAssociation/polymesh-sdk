@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { flatMap, remove } from 'lodash';
 
 import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
-import { Asset, PolymeshError, Procedure } from '~/internal';
+import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, ModifyComplianceRequirementParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { requirementToComplianceRequirement, stringToTicker } from '~/utils/conversion';
@@ -34,7 +34,7 @@ export async function prepareModifyComplianceRequirement(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const token = new Asset({ ticker }, context);
+  const token = new FungibleAsset({ ticker }, context);
 
   const { requirements: currentRequirements, defaultTrustedClaimIssuers } =
     await token.compliance.requirements.get();
@@ -89,7 +89,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.complianceManager.ChangeComplianceRequirement],
-      assets: [new Asset({ ticker }, this.context)],
+      assets: [new FungibleAsset({ ticker }, this.context)],
       portfolios: [],
     },
   };

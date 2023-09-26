@@ -1,4 +1,4 @@
-import { Asset, Identity, PolymeshError, Procedure } from '~/internal';
+import { BaseAsset, Identity, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RoleType, TxTags, WaivePermissionsParams } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { stringToTicker } from '~/utils/conversion';
@@ -15,7 +15,7 @@ export type Params = WaivePermissionsParams & {
  * @hidden
  */
 export interface Storage {
-  asset: Asset;
+  asset: BaseAsset;
 }
 
 /**

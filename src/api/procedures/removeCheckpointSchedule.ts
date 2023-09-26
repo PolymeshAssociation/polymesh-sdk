@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { Asset, PolymeshError, Procedure } from '~/internal';
+import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RemoveCheckpointScheduleParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { bigNumberToU64, stringToTicker, u32ToBigNumber } from '~/utils/conversion';
@@ -74,7 +74,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.checkpoint.RemoveSchedule],
-      assets: [new Asset({ ticker }, context)],
+      assets: [new FungibleAsset({ ticker }, context)],
       portfolios: [],
     },
   };

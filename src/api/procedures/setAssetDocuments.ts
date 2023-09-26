@@ -1,7 +1,7 @@
 import { u32 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 
-import { Asset, PolymeshError, Procedure } from '~/internal';
+import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { AssetDocument, ErrorCode, SetAssetDocumentsParams, TxTags } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import {
@@ -27,9 +27,9 @@ export type Params = SetAssetDocumentsParams & {
  * @hidden
  */
 export async function prepareSetAssetDocuments(
-  this: Procedure<Params, Asset, Storage>,
+  this: Procedure<Params, void, Storage>,
   args: Params
-): Promise<BatchTransactionSpec<Asset, unknown[][]>> {
+): Promise<BatchTransactionSpec<void, unknown[][]>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -72,14 +72,14 @@ export async function prepareSetAssetDocuments(
     );
   }
 
-  return { transactions, resolver: new Asset({ ticker }, context) };
+  return { transactions, resolver: undefined };
 }
 
 /**
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, Asset, Storage>,
+  this: Procedure<Params, void, Storage>,
   { ticker, documents }: Params
 ): ProcedureAuthorization {
   const {
@@ -97,7 +97,7 @@ export function getAuthorization(
 
   return {
     permissions: {
-      assets: [new Asset({ ticker }, this.context)],
+      assets: [new FungibleAsset({ ticker }, this.context)],
       transactions,
       portfolios: [],
     },
@@ -108,7 +108,7 @@ export function getAuthorization(
  * @hidden
  */
 export async function prepareStorage(
-  this: Procedure<Params, Asset, Storage>,
+  this: Procedure<Params, void, Storage>,
   { ticker }: Params
 ): Promise<Storage> {
   const {
@@ -142,5 +142,5 @@ export async function prepareStorage(
 /**
  * @hidden
  */
-export const setAssetDocuments = (): Procedure<Params, Asset, Storage> =>
+export const setAssetDocuments = (): Procedure<Params, void, Storage> =>
   new Procedure(prepareSetAssetDocuments, getAuthorization, prepareStorage);

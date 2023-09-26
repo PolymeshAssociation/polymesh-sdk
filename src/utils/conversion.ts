@@ -93,12 +93,12 @@ import { assertCaTaxWithholdingsValid, UnreachableCaseError } from '~/api/proced
 import { countryCodeToMeshCountryCode, meshCountryCodeToCountryCode } from '~/generated/utils';
 import {
   Account,
-  Asset,
   Checkpoint,
   CheckpointSchedule,
   Context,
   CustomPermissionGroup,
   DefaultPortfolio,
+  FungibleAsset,
   Identity,
   KnownPermissionGroup,
   NumberedPortfolio,
@@ -1104,7 +1104,7 @@ export function meshPermissionsToPermissions(
 ): Permissions {
   const { asset, extrinsic, portfolio } = permissions;
 
-  let assets: SectionPermissions<Asset> | null = null;
+  let assets: SectionPermissions<FungibleAsset> | null = null;
   let transactions: TransactionPermissions | null = null;
   let portfolios: SectionPermissions<DefaultPortfolio | NumberedPortfolio> | null = null;
 
@@ -1121,7 +1121,7 @@ export function meshPermissionsToPermissions(
   if (assetsPermissions) {
     assets = {
       values: [...assetsPermissions].map(
-        ticker => new Asset({ ticker: tickerToString(ticker) }, context)
+        ticker => new FungibleAsset({ ticker: tickerToString(ticker) }, context)
       ),
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       type: assetsType!,
@@ -3202,7 +3202,7 @@ export function permissionsLikeToPermissions(
   permissionsLike: PermissionsLike,
   context: Context
 ): Permissions {
-  let assetPermissions: SectionPermissions<Asset> | null = {
+  let assetPermissions: SectionPermissions<FungibleAsset> | null = {
     values: [],
     type: PermissionType.Include,
   };
@@ -3235,7 +3235,7 @@ export function permissionsLikeToPermissions(
     assetPermissions = {
       ...assets,
       values: assets.values.map(ticker =>
-        typeof ticker !== 'string' ? ticker : new Asset({ ticker }, context)
+        typeof ticker !== 'string' ? ticker : new FungibleAsset({ ticker }, context)
       ),
     };
   }
@@ -4201,7 +4201,7 @@ export function middlewareInstructionToHistoricInstruction(
     venueId: new BigNumber(venueId),
     createdAt: new Date(datetime),
     legs: legs.map(({ from, to, assetId, amount }) => ({
-      asset: new Asset({ ticker: assetId }, context),
+      asset: new FungibleAsset({ ticker: assetId }, context),
       amount: new BigNumber(amount).shiftedBy(-6),
       from: middlewarePortfolioToPortfolio(from!, context),
       to: middlewarePortfolioToPortfolio(to!, context),
@@ -4369,7 +4369,7 @@ export function middlewarePermissionsDataToPermissions(
 ): Permissions {
   const { asset, extrinsic, portfolio } = JSON.parse(permissionsData);
 
-  let assets: SectionPermissions<Asset> | null = null;
+  let assets: SectionPermissions<FungibleAsset> | null = null;
   let transactions: TransactionPermissions | null = null;
   let portfolios: SectionPermissions<DefaultPortfolio | NumberedPortfolio> | null = null;
 
@@ -4386,7 +4386,7 @@ export function middlewarePermissionsDataToPermissions(
   if (assetsPermissions) {
     assets = {
       values: [...assetsPermissions].map(
-        ticker => new Asset({ ticker: coerceHexToString(ticker) }, context)
+        ticker => new FungibleAsset({ ticker: coerceHexToString(ticker) }, context)
       ),
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       type: assetsType!,

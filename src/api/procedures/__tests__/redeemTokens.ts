@@ -17,8 +17,8 @@ import { PortfolioBalance, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 jest.mock(
   '~/api/entities/DefaultPortfolio',
@@ -62,7 +62,7 @@ describe('redeemTokens procedure', () => {
     when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
     when(bigNumberToBalanceSpy).calledWith(amount, mockContext, true).mockReturnValue(rawAmount);
     entityMockUtils.configureMocks({
-      assetOptions: {
+      fungibleAssetOptions: {
         details: {
           isDivisible: true,
         },
@@ -86,7 +86,7 @@ describe('redeemTokens procedure', () => {
       fromPortfolio: entityMockUtils.getDefaultPortfolioInstance({
         getAssetBalances: [
           {
-            asset: entityMockUtils.getAssetInstance({ ticker }),
+            asset: entityMockUtils.getFungibleAssetInstance({ ticker }),
             free: new BigNumber(500),
           } as unknown as PortfolioBalance,
         ],
@@ -108,7 +108,7 @@ describe('redeemTokens procedure', () => {
       id: new BigNumber(1),
       getAssetBalances: [
         {
-          asset: entityMockUtils.getAssetInstance({ ticker }),
+          asset: entityMockUtils.getFungibleAssetInstance({ ticker }),
           free: new BigNumber(500),
         } as unknown as PortfolioBalance,
       ],
@@ -144,7 +144,7 @@ describe('redeemTokens procedure', () => {
       fromPortfolio: entityMockUtils.getNumberedPortfolioInstance({
         getAssetBalances: [
           {
-            asset: entityMockUtils.getAssetInstance({ ticker }),
+            asset: entityMockUtils.getFungibleAssetInstance({ ticker }),
             free: new BigNumber(0),
           } as unknown as PortfolioBalance,
         ],

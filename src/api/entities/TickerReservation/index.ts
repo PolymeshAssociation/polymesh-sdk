@@ -2,11 +2,11 @@ import { PalletAssetSecurityToken, PalletAssetTickerRegistration } from '@polkad
 import { Option } from '@polkadot/types-codec';
 
 import {
-  Asset,
   AuthorizationRequest,
   Context,
   createAsset,
   Entity,
+  FungibleAsset,
   Identity,
   reserveTicker,
   transferTickerOwnership,
@@ -177,7 +177,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
    * @note required role:
    *   - Ticker Owner
    */
-  public createAsset: ProcedureMethod<CreateAssetParams, Asset>;
+  public createAsset: ProcedureMethod<CreateAssetParams, FungibleAsset>;
 
   /**
    * Transfer ownership of the Ticker Reservation to another Identity. This generates an authorization request that must be accepted

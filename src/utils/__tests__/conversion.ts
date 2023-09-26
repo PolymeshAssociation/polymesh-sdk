@@ -321,8 +321,8 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 jest.mock(
   '~/api/entities/DefaultPortfolio',
@@ -472,7 +472,7 @@ describe('portfolioMovementToPortfolioFund', () => {
     const ticker = 'SOME_ASSET';
     const amount = new BigNumber(100);
     const memo = 'someMessage';
-    const asset = entityMockUtils.getAssetInstance({ ticker });
+    const asset = entityMockUtils.getFungibleAssetInstance({ ticker });
     const rawTicker = dsMockUtils.createMockTicker(ticker);
     const rawAmount = dsMockUtils.createMockBalance(amount);
     const rawMemo = 'memo' as unknown as PolymeshPrimitivesMemo;
@@ -1612,7 +1612,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       const did = 'someDid';
       value = {
         assets: {
-          values: [entityMockUtils.getAssetInstance({ ticker })],
+          values: [entityMockUtils.getFungibleAssetInstance({ ticker })],
           type: PermissionType.Include,
         },
         transactions: {
@@ -1710,7 +1710,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
 
       value = {
         assets: {
-          values: [entityMockUtils.getAssetInstance({ ticker })],
+          values: [entityMockUtils.getFungibleAssetInstance({ ticker })],
           type: PermissionType.Exclude,
         },
         transactions: {
@@ -1762,7 +1762,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
 
       value = {
         assets: {
-          values: tickers.map(t => entityMockUtils.getAssetInstance({ ticker: t })),
+          values: tickers.map(t => entityMockUtils.getFungibleAssetInstance({ ticker: t })),
           type: PermissionType.Include,
         },
         transactions: {
@@ -5993,7 +5993,7 @@ describe('permissionsLikeToPermissions', () => {
     });
 
     const firstTicker = 'TICKER';
-    const firstToken = entityMockUtils.getAssetInstance({ ticker: firstTicker });
+    const firstToken = entityMockUtils.getFungibleAssetInstance({ ticker: firstTicker });
     const secondTicker = 'OTHER_TICKER';
     const did = 'someDid';
     const portfolio = entityMockUtils.getDefaultPortfolioInstance({ did });

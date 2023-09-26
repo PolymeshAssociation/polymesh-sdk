@@ -153,8 +153,8 @@ describe('moveFunds procedure', () => {
     const fromId = new BigNumber(1);
     const toId = new BigNumber(2);
     const did = 'someDid';
-    const asset1 = entityMockUtils.getAssetInstance({ ticker: 'TICKER001' });
-    const asset2 = entityMockUtils.getAssetInstance({ ticker: 'TICKER002' });
+    const asset1 = entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER001' });
+    const asset2 = entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER002' });
     const items: PortfolioMovement[] = [
       {
         asset: asset1.ticker,
@@ -205,7 +205,7 @@ describe('moveFunds procedure', () => {
     const fromId = new BigNumber(1);
     const toId = new BigNumber(2);
     const did = 'someDid';
-    const asset = entityMockUtils.getAssetInstance({ ticker: 'TICKER001' });
+    const asset = entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER001' });
     const items = [
       {
         asset: asset.ticker,

@@ -23,9 +23,9 @@ import { chunk, clone, flatMap, flatten, flattenDeep } from 'lodash';
 import { HistoricPolyxTransaction } from '~/api/entities/Account/types';
 import {
   Account,
-  Asset,
   ChildIdentity,
   DividendDistribution,
+  FungibleAsset,
   Identity,
   PolymeshError,
   Subsidy,
@@ -715,7 +715,7 @@ export class Context {
    * @hidden
    */
   public async getDividendDistributionsForAssets(args: {
-    assets: Asset[];
+    assets: FungibleAsset[];
   }): Promise<DistributionWithDetails[]> {
     const {
       polymeshApi: {

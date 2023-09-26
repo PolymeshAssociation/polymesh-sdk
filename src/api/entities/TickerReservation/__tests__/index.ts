@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { Asset, Context, Entity, PolymeshTransaction, TickerReservation } from '~/internal';
+import { Context, Entity, FungibleAsset, PolymeshTransaction, TickerReservation } from '~/internal';
 import { dsMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { KnownAssetType, SecurityIdentifierType, TickerReservationStatus } from '~/types';
@@ -261,7 +261,8 @@ describe('TickerReservation class', () => {
         reservationRequired: true,
       };
 
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<FungibleAsset>;
 
       when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
@@ -285,7 +286,8 @@ describe('TickerReservation class', () => {
         expiry,
       };
 
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<FungibleAsset>;
 
       when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})

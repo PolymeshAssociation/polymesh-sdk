@@ -7,9 +7,9 @@ import P from 'bluebird';
 
 import { executeManualInstruction } from '~/api/procedures/executeManualInstruction';
 import {
-  Asset,
   Context,
   Entity,
+  FungibleAsset,
   Identity,
   modifyInstructionAffirmation,
   PolymeshError,
@@ -382,7 +382,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
             from: fromPortfolio,
             to: toPortfolio,
             amount: balanceToBigNumber(amount),
-            asset: new Asset({ ticker }, context),
+            asset: new FungibleAsset({ ticker }, context),
           };
         } else if (legValue.isNonFungible) {
           throw new Error('TODO ERROR: NFT legs are not supported yet');

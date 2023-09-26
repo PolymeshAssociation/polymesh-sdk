@@ -16,13 +16,14 @@ import { CreateTransactionBatchParams } from '~/api/procedures/types';
 import { CountryCode, ModuleName, TxTag, TxTags } from '~/generated/types';
 import {
   Account,
-  Asset,
+  BaseAsset,
   Checkpoint,
   CheckpointSchedule,
   CustomPermissionGroup,
   DefaultPortfolio,
   DefaultTrustedClaimIssuer,
   DividendDistribution,
+  FungibleAsset,
   Identity,
   Instruction,
   KnownPermissionGroup,
@@ -984,7 +985,7 @@ export interface Permissions {
   /**
    * Assets over which this key has permissions
    */
-  assets: SectionPermissions<Asset> | null;
+  assets: SectionPermissions<FungibleAsset> | null;
   /**
    * Transactions this key can execute
    */
@@ -1023,7 +1024,7 @@ export interface SimplePermissions {
   /**
    * list of required Asset permissions
    */
-  assets?: Asset[] | null;
+  assets?: BaseAsset[] | null;
   /**
    * list of required Transaction permissions
    */
@@ -1250,7 +1251,7 @@ export type PermissionsLike = {
   /**
    * Assets on which to grant permissions. A null value represents full permissions
    */
-  assets?: SectionPermissions<string | Asset> | null;
+  assets?: SectionPermissions<string | FungibleAsset> | null;
   /**
    * Portfolios on which to grant permissions. A null value represents full permissions
    */
@@ -1268,7 +1269,7 @@ export type PermissionsLike = {
 );
 
 export interface PortfolioMovement {
-  asset: string | Asset;
+  asset: string | FungibleAsset;
   amount: BigNumber;
   /**
    * identifier string to help differentiate transfers
@@ -1578,7 +1579,7 @@ export interface GroupedInvolvedInstructions {
 }
 
 export interface AssetWithGroup {
-  asset: Asset;
+  asset: FungibleAsset;
   group: KnownPermissionGroup | CustomPermissionGroup;
 }
 

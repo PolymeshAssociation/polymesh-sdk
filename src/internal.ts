@@ -8,7 +8,7 @@ export { Procedure } from '~/base/Procedure';
 export { Entity } from '~/api/entities/Entity';
 export { Namespace } from '~/api/entities/Namespace';
 export { Authorizations } from '~/api/entities/common/namespaces/Authorizations';
-export { TransferRestrictionBase } from '~/api/entities/Asset/TransferRestrictions/TransferRestrictionBase';
+export { TransferRestrictionBase } from '~/api/entities/Asset/Fungible/TransferRestrictions/TransferRestrictionBase';
 export {
   consumeAddMultiSigSignerAuthorization,
   ConsumeAddMultiSigSignerAuthorizationParams,
@@ -97,8 +97,7 @@ export { Account } from '~/api/entities/Account';
 export { MultiSig } from '~/api/entities/Account/MultiSig';
 export { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 export { TickerReservation } from '~/api/entities/TickerReservation';
-export { Asset } from '~/api/entities/Asset';
-export { NftCollection } from '~/api/entities/Asset/NonFungible';
+export { BaseAsset, FungibleAsset, NftCollection } from '~/api/entities/Asset';
 export { MetadataEntry } from '~/api/entities/MetadataEntry';
 export { registerMetadata } from '~/api/procedures/registerMetadata';
 export { setMetadata } from '~/api/procedures/setMetadata';
