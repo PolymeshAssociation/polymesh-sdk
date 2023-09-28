@@ -4,7 +4,7 @@ import {
   isFullGroupType,
 } from '~/api/procedures/utils';
 import {
-  Asset,
+  BaseAsset,
   CustomPermissionGroup,
   KnownPermissionGroup,
   PolymeshError,
@@ -39,7 +39,7 @@ export type Params = SetPermissionGroupParams & {
  * @hidden
  */
 export interface Storage {
-  asset: Asset;
+  asset: BaseAsset;
 }
 
 /**

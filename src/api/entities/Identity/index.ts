@@ -12,10 +12,10 @@ import { unlinkChildIdentity } from '~/api/procedures/unlinkChildIdentity';
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
   Account,
-  Asset,
   ChildIdentity,
   Context,
   Entity,
+  FungibleAsset,
   Instruction,
   PolymeshError,
   TickerReservation,
@@ -347,7 +347,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       size?: BigNumber;
       start?: BigNumber;
     } = {}
-  ): Promise<ResultSet<Asset>> {
+  ): Promise<ResultSet<FungibleAsset>> {
     const { context, did } = this;
 
     const { size, start, order } = opts;
@@ -369,7 +369,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const count = new BigNumber(totalCount);
 
-    const data = nodes.map(({ assetId: ticker }) => new Asset({ ticker }, context));
+    const data = nodes.map(({ assetId: ticker }) => new FungibleAsset({ ticker }, context));
 
     const next = calculateNextKey(count, data.length, start);
 
@@ -407,7 +407,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    *
    * @note uses the middlewareV2
    */
-  public async getTrustingAssets(): Promise<Asset[]> {
+  public async getTrustingAssets(): Promise<FungibleAsset[]> {
     const { context, did } = this;
 
     const {
@@ -418,7 +418,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       trustingAssetsQuery({ issuer: did })
     );
 
-    return nodes.map(({ assetId: ticker }) => new Asset({ ticker }, context));
+    return nodes.map(({ assetId: ticker }) => new FungibleAsset({ ticker }, context));
   }
 
   /**
@@ -639,7 +639,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    */
   public async getPendingDistributions(): Promise<DistributionWithDetails[]> {
     const { context, did } = this;
-    let assets: Asset[] = [];
+    let assets: FungibleAsset[] = [];
     let allFetched = false;
     let start: BigNumber | undefined;
 

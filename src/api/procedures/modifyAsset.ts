@@ -1,4 +1,4 @@
-import { Asset, PolymeshError, Procedure } from '~/internal';
+import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, ModifyAssetParams, TxTags } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import {
@@ -18,9 +18,9 @@ export type Params = { ticker: string } & ModifyAssetParams;
  * @hidden
  */
 export async function prepareModifyAsset(
-  this: Procedure<Params, Asset>,
+  this: Procedure<Params, FungibleAsset>,
   args: Params
-): Promise<BatchTransactionSpec<Asset, unknown[][]>> {
+): Promise<BatchTransactionSpec<FungibleAsset, unknown[][]>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -50,7 +50,7 @@ export async function prepareModifyAsset(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const asset = new Asset({ ticker }, context);
+  const asset = new FungibleAsset({ ticker }, context);
 
   const [{ isDivisible, name }, fundingRound, identifiers] = await Promise.all([
     asset.details(),
@@ -139,7 +139,7 @@ export async function prepareModifyAsset(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, Asset>,
+  this: Procedure<Params, FungibleAsset>,
   { ticker, makeDivisible, name, fundingRound, identifiers }: Params
 ): ProcedureAuthorization {
   const transactions = [];
@@ -164,7 +164,7 @@ export function getAuthorization(
     permissions: {
       transactions,
       portfolios: [],
-      assets: [new Asset({ ticker }, this.context)],
+      assets: [new FungibleAsset({ ticker }, this.context)],
     },
   };
 }
@@ -172,5 +172,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const modifyAsset = (): Procedure<Params, Asset> =>
+export const modifyAsset = (): Procedure<Params, FungibleAsset> =>
   new Procedure(prepareModifyAsset, getAuthorization);

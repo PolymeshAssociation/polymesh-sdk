@@ -1,6 +1,6 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 
-import { Asset, Context, MetadataEntry, PolymeshError, Procedure } from '~/internal';
+import { Context, FungibleAsset, MetadataEntry, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, MetadataType, RegisterMetadataParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
@@ -135,7 +135,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions,
-      assets: [new Asset({ ticker }, context)],
+      assets: [new FungibleAsset({ ticker }, context)],
       portfolios: [],
     },
   };

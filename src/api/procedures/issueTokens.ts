@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { Asset, PolymeshError, Procedure } from '~/internal';
+import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { MAX_BALANCE } from '~/utils/constants';
@@ -13,16 +13,16 @@ export interface IssueTokensParams {
 }
 
 export interface Storage {
-  asset: Asset;
+  asset: FungibleAsset;
 }
 
 /**
  * @hidden
  */
 export async function prepareIssueTokens(
-  this: Procedure<IssueTokensParams, Asset, Storage>,
+  this: Procedure<IssueTokensParams, FungibleAsset, Storage>,
   args: IssueTokensParams
-): Promise<TransactionSpec<Asset, ExtrinsicParams<'asset', 'issue'>>> {
+): Promise<TransactionSpec<FungibleAsset, ExtrinsicParams<'asset', 'issue'>>> {
   const {
     context: {
       polymeshApi: {
@@ -51,7 +51,6 @@ export async function prepareIssueTokens(
     });
   }
 
-
   const portfolio = portfolioId
     ? await signingIdentity.portfolios.getPortfolio({ portfolioId })
     : await signingIdentity.portfolios.getPortfolio();
@@ -71,7 +70,7 @@ export async function prepareIssueTokens(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<IssueTokensParams, Asset, Storage>
+  this: Procedure<IssueTokensParams, FungibleAsset, Storage>
 ): ProcedureAuthorization {
   const {
     storage: { asset },
@@ -89,18 +88,18 @@ export function getAuthorization(
  * @hidden
  */
 export function prepareStorage(
-  this: Procedure<IssueTokensParams, Asset, Storage>,
+  this: Procedure<IssueTokensParams, FungibleAsset, Storage>,
   { ticker }: IssueTokensParams
 ): Storage {
   const { context } = this;
 
   return {
-    asset: new Asset({ ticker }, context),
+    asset: new FungibleAsset({ ticker }, context),
   };
 }
 
 /**
  * @hidden
  */
-export const issueTokens = (): Procedure<IssueTokensParams, Asset, Storage> =>
+export const issueTokens = (): Procedure<IssueTokensParams, FungibleAsset, Storage> =>
   new Procedure(prepareIssueTokens, getAuthorization, prepareStorage);

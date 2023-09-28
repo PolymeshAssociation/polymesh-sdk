@@ -44,8 +44,8 @@ jest.mock(
   )
 );
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 describe('createNftCollection procedure', () => {
@@ -322,7 +322,9 @@ describe('createNftCollection procedure', () => {
 
     it('should not have createAsset if Asset is already created', async () => {
       entityMockUtils.configureMocks({
-        assetOptions: { details: { assetType: KnownNftType.Derivative, nonFungible: true } },
+        fungibleAssetOptions: {
+          details: { assetType: KnownNftType.Derivative, nonFungible: true },
+        },
       });
 
       const proc = procedureMockUtils.getInstance<Params, NftCollection, Storage>(mockContext, {

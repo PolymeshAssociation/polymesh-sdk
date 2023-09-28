@@ -3,10 +3,10 @@ import { values } from 'lodash';
 
 import {
   Account,
-  Asset,
   AuthorizationRequest,
   Context,
   Entity,
+  FungibleAsset,
   Identity,
   moveFunds,
   PolymeshError,
@@ -34,7 +34,12 @@ import {
   portfolioIdToMeshPortfolioId,
   tickerToString,
 } from '~/utils/conversion';
-import { asAsset, createProcedureMethod, getIdentity, toHumanReadable } from '~/utils/internal';
+import {
+  asFungibleAsset,
+  createProcedureMethod,
+  getIdentity,
+  toHumanReadable,
+} from '~/utils/internal';
 
 import { HistoricSettlement, PortfolioBalance } from './types';
 
@@ -134,7 +139,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
    * @param args.assets - array of Assets (or tickers) for which to fetch balances (optional, all balances are retrieved if not passed)
    */
   public async getAssetBalances(args?: {
-    assets: (string | Asset)[];
+    assets: (string | FungibleAsset)[];
   }): Promise<PortfolioBalance[]> {
     const {
       owner: { did },
@@ -168,7 +173,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       const total = balanceToBigNumber(balance);
 
       assetBalances[ticker] = {
-        asset: new Asset({ ticker }, context),
+        asset: new FungibleAsset({ ticker }, context),
         total,
         locked: new BigNumber(0),
         free: total,
@@ -191,7 +196,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       total: new BigNumber(0),
       locked: new BigNumber(0),
       free: new BigNumber(0),
-      asset: asAsset(asset, context),
+      asset: asFungibleAsset(asset, context),
     }));
 
     if (mask) {
@@ -362,7 +367,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
             new Account({ address: keyToAddress(accountAddress, context) }, context)
         ),
         legs: legs.map(({ from, to, fromId, toId, assetId, amount }) => ({
-          asset: new Asset({ ticker: assetId }, context),
+          asset: new FungibleAsset({ ticker: assetId }, context),
           amount: new BigNumber(amount).shiftedBy(-6),
           direction: getDirection(fromId, toId),
           from: middlewarePortfolioToPortfolio(from!, context),
@@ -381,7 +386,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
           accounts: [new Account({ address: keyToAddress(accountAddress, context) }, context)],
           legs: [
             {
-              asset: new Asset({ ticker: assetId }, context),
+              asset: new FungibleAsset({ ticker: assetId }, context),
               amount: new BigNumber(amount).shiftedBy(-6),
               direction: getDirection(fromId, toId),
               from: middlewarePortfolioToPortfolio(from!, context),

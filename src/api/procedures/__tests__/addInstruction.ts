@@ -343,7 +343,7 @@ describe('addInstruction procedure', () => {
       from,
       to,
       amount: new BigNumber(0),
-      asset: entityMockUtils.getAssetInstance({ ticker: asset }),
+      asset: entityMockUtils.getFungibleAssetInstance({ ticker: asset }),
     });
     try {
       await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs }] });
@@ -370,7 +370,7 @@ describe('addInstruction procedure', () => {
       from: to,
       to,
       amount: new BigNumber(10),
-      asset: entityMockUtils.getAssetInstance({ ticker: asset }),
+      asset: entityMockUtils.getFungibleAssetInstance({ ticker: asset }),
     });
     try {
       await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs }] });
@@ -421,7 +421,7 @@ describe('addInstruction procedure', () => {
       from,
       to,
       amount,
-      asset: entityMockUtils.getAssetInstance({ ticker: asset }),
+      asset: entityMockUtils.getFungibleAssetInstance({ ticker: asset }),
     });
 
     try {
@@ -463,7 +463,7 @@ describe('addInstruction procedure', () => {
                 from,
                 to,
                 amount,
-                asset: entityMockUtils.getAssetInstance({ ticker: asset }),
+                asset: entityMockUtils.getFungibleAssetInstance({ ticker: asset }),
               },
             ],
             endBlock: new BigNumber(100),
@@ -482,7 +482,7 @@ describe('addInstruction procedure', () => {
                 from,
                 to,
                 amount,
-                asset: entityMockUtils.getAssetInstance({ ticker: asset }),
+                asset: entityMockUtils.getFungibleAssetInstance({ ticker: asset }),
               },
             ],
             endAfterBlock: new BigNumber(100),
@@ -575,7 +575,7 @@ describe('addInstruction procedure', () => {
           from,
           to,
           amount,
-          asset: entityMockUtils.getAssetInstance({ ticker: asset }),
+          asset: entityMockUtils.getFungibleAssetInstance({ ticker: asset }),
         },
       ],
       tradeDate,

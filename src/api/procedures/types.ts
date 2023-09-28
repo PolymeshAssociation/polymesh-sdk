@@ -2,13 +2,13 @@ import BigNumber from 'bignumber.js';
 
 import {
   Account,
-  Asset,
   AuthorizationRequest,
   CheckpointSchedule,
   ChildIdentity,
   CorporateActionBase,
   CustomPermissionGroup,
   DefaultPortfolio,
+  FungibleAsset,
   Identity,
   KnownPermissionGroup,
   MultiSig,
@@ -498,7 +498,7 @@ export type AddInstructionParams = {
     amount: BigNumber;
     from: PortfolioLike;
     to: PortfolioLike;
-    asset: string | Asset;
+    asset: string | FungibleAsset;
   }[];
   /**
    * date at which the trade was agreed upon (optional, for off chain trades)
@@ -993,14 +993,14 @@ export interface RenamePortfolioParams {
 }
 
 export interface WaivePermissionsParams {
-  asset: string | Asset;
+  asset: string | FungibleAsset;
 }
 
 export interface AssetBase {
   /**
    * Asset over which the Identity will be granted permissions
    */
-  asset: string | Asset;
+  asset: string | FungibleAsset;
 }
 
 export interface TransactionsParams extends AssetBase {

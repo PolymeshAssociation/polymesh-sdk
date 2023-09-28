@@ -2,8 +2,8 @@ import { ISubmittableResult } from '@polkadot/types/types';
 
 import { createAuthorizationResolver, getGroupFromPermissions } from '~/api/procedures/utils';
 import {
-  Asset,
   AuthorizationRequest,
+  BaseAsset,
   CustomPermissionGroup,
   Identity,
   KnownPermissionGroup,
@@ -53,7 +53,7 @@ export type Params = InviteExternalAgentParams & {
  * @hidden
  */
 export interface Storage {
-  asset: Asset;
+  asset: BaseAsset;
 }
 
 /**
@@ -186,7 +186,7 @@ export function prepareStorage(
   const { context } = this;
 
   return {
-    asset: new Asset({ ticker }, context),
+    asset: new BaseAsset({ ticker }, context),
   };
 }
 

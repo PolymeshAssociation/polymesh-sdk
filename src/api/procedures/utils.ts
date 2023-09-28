@@ -5,12 +5,13 @@ import { isEqual } from 'lodash';
 
 import {
   Account,
-  Asset,
   AuthorizationRequest,
+  BaseAsset,
   Checkpoint,
   CheckpointSchedule,
   Context,
   CustomPermissionGroup,
+  FungibleAsset,
   Identity,
   Instruction,
   KnownPermissionGroup,
@@ -413,7 +414,7 @@ export async function assertTransferAssetOwnershipAuthorizationValid(
   data: GenericAuthorizationData,
   context: Context
 ): Promise<void> {
-  const asset = new Asset({ ticker: data.value }, context);
+  const asset = new FungibleAsset({ ticker: data.value }, context);
   const exists = await asset.exists();
   if (!exists)
     throw new PolymeshError({
@@ -621,7 +622,7 @@ export async function assertAuthorizationRequestValid(
  *   there is no matching group
  */
 export async function getGroupFromPermissions(
-  asset: Asset,
+  asset: BaseAsset,
   permissions: TransactionPermissions | null
 ): Promise<(CustomPermissionGroup | KnownPermissionGroup) | undefined> {
   const { custom, known } = await asset.permissions.getGroups();
@@ -640,7 +641,7 @@ export async function getGroupFromPermissions(
  * @hidden
  */
 export async function assertGroupDoesNotExist(
-  asset: Asset,
+  asset: FungibleAsset,
   permissions: TransactionPermissions | null
 ): Promise<void> {
   const matchingGroup = await getGroupFromPermissions(asset, permissions);

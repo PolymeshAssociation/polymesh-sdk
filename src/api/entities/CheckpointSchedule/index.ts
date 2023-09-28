@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { Asset, Checkpoint, Context, Entity, PolymeshError } from '~/internal';
+import { Checkpoint, Context, Entity, FungibleAsset, PolymeshError } from '~/internal';
 import { ErrorCode, ScheduleDetails } from '~/types';
 import { bigNumberToU64, momentToDate, stringToTicker, u64ToBigNumber } from '~/utils/conversion';
 import { toHumanReadable } from '~/utils/internal';
@@ -45,7 +45,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
   /**
    * Asset for which Checkpoints are scheduled
    */
-  public asset: Asset;
+  public asset: FungibleAsset;
 
   /**
    * dates in the future where checkpoints are schedule to be created
@@ -71,7 +71,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
     this.pendingPoints = sortedPoints;
     this.expiryDate = sortedPoints[sortedPoints.length - 1];
     this.id = id;
-    this.asset = new Asset({ ticker }, context);
+    this.asset = new FungibleAsset({ ticker }, context);
   }
 
   /**

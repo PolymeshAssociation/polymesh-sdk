@@ -122,7 +122,7 @@ describe('Procedure class', () => {
       authFunc.mockResolvedValue({
         roles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }],
         permissions: {
-          assets: [entityMockUtils.getAssetInstance({ ticker: 'SOME_TICKER' })],
+          assets: [entityMockUtils.getFungibleAssetInstance({ ticker: 'SOME_TICKER' })],
           portfolios: null,
           transactions: [TxTags.asset.Redeem],
         },
@@ -140,7 +140,7 @@ describe('Procedure class', () => {
       authFunc.mockResolvedValue({
         roles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }],
         permissions: {
-          assets: [entityMockUtils.getAssetInstance({ ticker: 'SOME_TICKER' })],
+          assets: [entityMockUtils.getFungibleAssetInstance({ ticker: 'SOME_TICKER' })],
           portfolios: null,
           transactions: [TxTags.asset.Redeem],
         },
@@ -163,12 +163,12 @@ describe('Procedure class', () => {
       authFunc.mockResolvedValue({
         roles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }],
         signerPermissions: {
-          assets: [entityMockUtils.getAssetInstance({ ticker: 'SOME_TICKER' })],
+          assets: [entityMockUtils.getFungibleAssetInstance({ ticker: 'SOME_TICKER' })],
           portfolios: null,
           transactions: [TxTags.asset.Redeem],
         },
         agentPermissions: {
-          assets: [entityMockUtils.getAssetInstance({ ticker: 'SOME_TICKER' })],
+          assets: [entityMockUtils.getFungibleAssetInstance({ ticker: 'SOME_TICKER' })],
           portfolios: null,
           transactions: [TxTags.asset.Redeem],
         },
@@ -186,7 +186,7 @@ describe('Procedure class', () => {
       authFunc.mockResolvedValue({
         roles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }],
         permissions: {
-          assets: [entityMockUtils.getAssetInstance({ ticker: 'SOME_TICKER' })],
+          assets: [entityMockUtils.getFungibleAssetInstance({ ticker: 'SOME_TICKER' })],
           portfolios: null,
         },
       });
@@ -235,8 +235,8 @@ describe('Procedure class', () => {
       authFunc.mockResolvedValue({
         permissions: {
           assets: [
-            entityMockUtils.getAssetInstance({ ticker: 'SOME_TICKER' }),
-            entityMockUtils.getAssetInstance({ ticker: 'OTHER_TICKER' }),
+            entityMockUtils.getFungibleAssetInstance({ ticker: 'SOME_TICKER' }),
+            entityMockUtils.getFungibleAssetInstance({ ticker: 'OTHER_TICKER' }),
           ],
           transactions: [TxTags.asset.Freeze],
         },
@@ -533,7 +533,7 @@ describe('Procedure class', () => {
 
       proc = new Procedure(func, {
         permissions: {
-          assets: [entityMockUtils.getAssetInstance({ ticker: 'SOME_TICKER' })],
+          assets: [entityMockUtils.getFungibleAssetInstance({ ticker: 'SOME_TICKER' })],
           transactions: [TxTags.asset.Freeze],
           portfolios: [],
         },

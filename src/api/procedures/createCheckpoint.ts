@@ -1,6 +1,6 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 
-import { Asset, Checkpoint, Context, Procedure } from '~/internal';
+import { Checkpoint, Context, FungibleAsset, Procedure } from '~/internal';
 import { TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { stringToTicker, u64ToBigNumber } from '~/utils/conversion';
@@ -54,7 +54,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.checkpoint.CreateCheckpoint],
-      assets: [new Asset({ ticker }, this.context)],
+      assets: [new FungibleAsset({ ticker }, this.context)],
       portfolios: [],
     },
   };

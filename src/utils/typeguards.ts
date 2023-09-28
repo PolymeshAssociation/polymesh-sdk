@@ -2,8 +2,8 @@
 
 import {
   Account,
-  Asset,
   AuthorizationRequest,
+  BaseAsset,
   Checkpoint,
   CheckpointSchedule,
   CorporateAction,
@@ -12,6 +12,7 @@ import {
   DefaultTrustedClaimIssuer,
   DividendDistribution,
   Entity,
+  FungibleAsset,
   Identity,
   Instruction,
   KnownPermissionGroup,
@@ -41,6 +42,7 @@ import {
   JurisdictionClaim,
   KycClaim,
   MultiClaimCondition,
+  NftCollection,
   PortfolioCustodianRole,
   ProposalStatus,
   Role,
@@ -151,13 +153,6 @@ export function isKnownPermissionGroup(value: unknown): value is KnownPermission
  */
 export function isNumberedPortfolio(value: unknown): value is NumberedPortfolio {
   return value instanceof NumberedPortfolio;
-}
-
-/**
- * Return whether value is an Asset
- */
-export function isAsset(value: unknown): value is Asset {
-  return value instanceof Asset;
 }
 
 /**
@@ -353,4 +348,18 @@ export function isPolymeshTransactionBatch<
  */
 export function isProposalStatus(status: string): status is ProposalStatus {
   return status in ProposalStatus;
+}
+
+/**
+ * Return whether an asset is a FungibleAsset
+ */
+export function isFungibleAsset(asset: BaseAsset): asset is FungibleAsset {
+  return asset instanceof FungibleAsset;
+}
+
+/**
+ * Return whether an asset is a NftCollection
+ */
+export function isNftCollection(asset: BaseAsset): asset is NftCollection {
+  return asset instanceof FungibleAsset;
 }

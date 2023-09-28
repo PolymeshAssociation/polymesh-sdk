@@ -1,6 +1,6 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 
-import { Asset, CheckpointSchedule, Context, PolymeshError, Procedure } from '~/internal';
+import { CheckpointSchedule, Context, FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { CreateCheckpointScheduleParams, ErrorCode, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
@@ -82,7 +82,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.checkpoint.CreateSchedule],
-      assets: [new Asset({ ticker }, context)],
+      assets: [new FungibleAsset({ ticker }, context)],
       portfolios: [],
     },
   };

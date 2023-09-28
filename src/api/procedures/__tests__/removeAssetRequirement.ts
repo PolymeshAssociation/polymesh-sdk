@@ -11,7 +11,7 @@ import {
   Params,
   prepareRemoveAssetRequirement,
 } from '~/api/procedures/removeAssetRequirement';
-import { Asset, Context } from '~/internal';
+import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { TxTags } from '~/types';
@@ -19,8 +19,8 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 describe('removeAssetRequirement procedure', () => {
@@ -102,7 +102,7 @@ describe('removeAssetRequirement procedure', () => {
   });
 
   it('should throw an error if the supplied id is not present in the current requirements', () => {
-    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
     const complianceRequirementId = new BigNumber(10);
 
     return expect(
@@ -117,20 +117,20 @@ describe('removeAssetRequirement procedure', () => {
     const rawId = dsMockUtils.createMockU32(requirement);
     jest.spyOn(utilsConversionModule, 'bigNumberToU32').mockClear().mockReturnValue(rawId);
 
-    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const result = await prepareRemoveAssetRequirement.call(proc, args);
 
     expect(result).toEqual({
       transaction: removeComplianceRequirementTransaction,
       args: [rawTicker, rawId],
-      resolver: expect.objectContaining({ ticker }),
+      resolver: undefined,
     });
   });
 
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const params = {
         ticker,

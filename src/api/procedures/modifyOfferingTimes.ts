@@ -1,7 +1,7 @@
 import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 
-import { Asset, Offering, PolymeshError, Procedure } from '~/internal';
+import { FungibleAsset, Offering, PolymeshError, Procedure } from '~/internal';
 import {
   ErrorCode,
   ModifyOfferingTimesParams,
@@ -132,7 +132,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.sto.ModifyFundraiserWindow],
-      assets: [new Asset({ ticker }, context)],
+      assets: [new FungibleAsset({ ticker }, context)],
       portfolios: [],
     },
   };

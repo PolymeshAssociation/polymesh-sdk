@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
 
 import { addManualFees } from '~/api/procedures/utils';
-import { Asset, Identity, PolymeshError, Procedure, TickerReservation } from '~/internal';
+import { FungibleAsset, Identity, PolymeshError, Procedure, TickerReservation } from '~/internal';
 import {
   AssetTx,
   CreateAssetWithTickerParams,
@@ -91,9 +91,9 @@ function assertTickerAvailable(
  * @hidden
  */
 export async function prepareCreateAsset(
-  this: Procedure<Params, Asset, Storage>,
+  this: Procedure<Params, FungibleAsset, Storage>,
   args: Params
-): Promise<BatchTransactionSpec<Asset, unknown[][]>> {
+): Promise<BatchTransactionSpec<FungibleAsset, unknown[][]>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -125,7 +125,7 @@ export async function prepareCreateAsset(
   );
   const rawFundingRound = optionize(fundingRoundToAssetFundingRound)(fundingRound, context);
 
-  const newAsset = new Asset({ ticker }, context);
+  const newAsset = new FungibleAsset({ ticker }, context);
 
   const transactions = [];
 
@@ -239,7 +239,7 @@ export async function prepareCreateAsset(
  * @hidden
  */
 export async function getAuthorization(
-  this: Procedure<Params, Asset, Storage>,
+  this: Procedure<Params, FungibleAsset, Storage>,
   { ticker, documents, initialStatistics }: Params
 ): Promise<ProcedureAuthorization> {
   const {
@@ -281,7 +281,7 @@ export async function getAuthorization(
  * @hidden
  */
 export async function prepareStorage(
-  this: Procedure<Params, Asset, Storage>,
+  this: Procedure<Params, FungibleAsset, Storage>,
   { ticker, assetType }: Params
 ): Promise<Storage> {
   const { context } = this;
@@ -320,5 +320,5 @@ export async function prepareStorage(
 /**
  * @hidden
  */
-export const createAsset = (): Procedure<Params, Asset, Storage> =>
+export const createAsset = (): Procedure<Params, FungibleAsset, Storage> =>
   new Procedure(prepareCreateAsset, getAuthorization, prepareStorage);

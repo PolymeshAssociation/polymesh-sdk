@@ -1,4 +1,4 @@
-import { Asset, DefaultPortfolio, PolymeshError, Procedure } from '~/internal';
+import { DefaultPortfolio, FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { ControllerTransferParams, ErrorCode, RoleType, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
@@ -34,7 +34,7 @@ export async function prepareControllerTransfer(
   } = this;
   const { ticker, originPortfolio, amount } = args;
 
-  const asset = new Asset({ ticker }, context);
+  const asset = new FungibleAsset({ ticker }, context);
 
   const originPortfolioId = portfolioLikeToPortfolioId(originPortfolio);
 
@@ -82,7 +82,7 @@ export async function getAuthorization(
     storage: { did },
   } = this;
 
-  const asset = new Asset({ ticker }, context);
+  const asset = new FungibleAsset({ ticker }, context);
 
   const portfolioId = { did };
 

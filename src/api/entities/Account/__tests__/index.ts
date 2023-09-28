@@ -614,7 +614,7 @@ describe('Account class', () => {
         result: true,
       });
 
-      const asset = entityMockUtils.getAssetInstance({ ticker: 'SOME_ASSET' });
+      const asset = entityMockUtils.getFungibleAssetInstance({ ticker: 'SOME_ASSET' });
       permissions = {
         assets: { values: [asset], type: PermissionType.Include },
         transactions: { values: [TxTags.asset.CreateAsset], type: PermissionType.Include },

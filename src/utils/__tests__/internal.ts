@@ -11,7 +11,7 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { Account, Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
+import { Account, Context, FungibleAsset, Identity, PolymeshError, Procedure } from '~/internal';
 import { latestSqVersionQuery } from '~/middleware/queries';
 import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -52,6 +52,7 @@ import { SUPPORTED_NODE_VERSION_RANGE, SUPPORTED_SPEC_VERSION_RANGE } from '../c
 import {
   asAccount,
   asChildIdentity,
+  asFungibleAsset,
   assertAddressValid,
   assertExpectedChainVersion,
   assertExpectedSqVersion,
@@ -93,8 +94,8 @@ import {
 } from '../internal';
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 jest.mock(
   '~/api/entities/Account',
@@ -789,7 +790,7 @@ describe('asTicker', () => {
 
     expect(result).toBe(symbol);
 
-    result = asTicker(new Asset({ ticker: symbol }, dsMockUtils.getContextInstance()));
+    result = asTicker(new FungibleAsset({ ticker: symbol }, dsMockUtils.getContextInstance()));
     expect(result).toBe(symbol);
   });
 });
@@ -846,7 +847,7 @@ describe('getCheckpointValue', () => {
 
   it('should return value as it is for valid params of type Checkpoint, CheckpointSchedule or Date', async () => {
     const mockCheckpointSchedule = entityMockUtils.getCheckpointScheduleInstance();
-    const mockAsset = entityMockUtils.getAssetInstance();
+    const mockAsset = entityMockUtils.getFungibleAssetInstance();
     let result = await getCheckpointValue(mockCheckpointSchedule, mockAsset, context);
     expect(result).toEqual(mockCheckpointSchedule);
 
@@ -865,7 +866,7 @@ describe('getCheckpointValue', () => {
       id: new BigNumber(1),
       type: CaCheckpointType.Existing,
     };
-    const mockAsset = entityMockUtils.getAssetInstance({
+    const mockAsset = entityMockUtils.getFungibleAssetInstance({
       checkpointsGetOne: mockCheckpoint,
     });
 
@@ -879,12 +880,16 @@ describe('getCheckpointValue', () => {
       id: new BigNumber(1),
       type: CaCheckpointType.Schedule,
     };
-    const mockAsset = entityMockUtils.getAssetInstance({
+    const mockAsset = entityMockUtils.getFungibleAssetInstance({
       checkpointsSchedulesGetOne: { schedule: mockCheckpointSchedule },
     });
 
     const result = await getCheckpointValue(mockCaCheckpointTypeParams, mockAsset, context);
-    expect(result).toEqual(mockCheckpointSchedule);
+    expect(result).toMatchObject({
+      ...mockCheckpointSchedule,
+      asset: expect.anything(),
+      points: expect.any(Array),
+    });
   });
 });
 
@@ -2113,5 +2118,35 @@ describe('asChildIdentity', () => {
     result = asChildIdentity(childIdentity, mockContext);
 
     expect(result).toEqual(expect.objectContaining({ did: childDid }));
+  });
+});
+
+describe('asFungibleAsset', () => {
+  it('should return a given FungibleAsset', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+    const input = entityMockUtils.getFungibleAssetInstance();
+
+    const result = asFungibleAsset(input, mockContext);
+
+    expect(result).toEqual(input);
+  });
+
+  it('should create a new FungibleAsset given a ticker', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+    const ticker = 'TICKER';
+
+    const result = asFungibleAsset(ticker, mockContext);
+
+    expect(result).toEqual(expect.objectContaining({ ticker }));
+  });
+
+  it('should create a new FungibleAsset given a BaseAsset', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+    const ticker = 'TICKER';
+    const baseAsset = entityMockUtils.getBaseAssetInstance({ ticker });
+
+    const result = asFungibleAsset(baseAsset, mockContext);
+
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 });

@@ -19,8 +19,8 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 describe('modifyComplianceRequirement procedure', () => {
@@ -75,7 +75,7 @@ describe('modifyComplianceRequirement procedure', () => {
     when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
 
     entityMockUtils.configureMocks({
-      assetOptions: {
+      fungibleAssetOptions: {
         complianceRequirementsGet: {
           requirements: [
             {

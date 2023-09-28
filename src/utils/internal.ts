@@ -11,6 +11,7 @@ import { BTreeSet, Bytes, Option, StorageKey, u32 } from '@polkadot/types';
 import { EventRecord } from '@polkadot/types/interfaces';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import {
+  PalletAssetSecurityToken,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesSecondaryKeyKeyRecord,
   PolymeshPrimitivesStatisticsStatClaim,
@@ -29,12 +30,14 @@ import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
 import {
   Account,
-  Asset,
+  BaseAsset,
   Checkpoint,
   CheckpointSchedule,
   ChildIdentity,
   Context,
+  FungibleAsset,
   Identity,
+  NftCollection,
   PolymeshError,
 } from '~/internal';
 import { latestSqVersionQuery } from '~/middleware/queries';
@@ -894,15 +897,29 @@ export function assertAddressValid(address: string, ss58Format: BigNumber): void
 /**
  * @hidden
  */
-export function asTicker(asset: string | Asset): string {
+export function asTicker(asset: string | BaseAsset): string {
   return typeof asset === 'string' ? asset : asset.ticker;
 }
 
 /**
  * @hidden
  */
-export function asAsset(asset: string | Asset, context: Context): Asset {
-  return typeof asset === 'string' ? new Asset({ ticker: asset }, context) : asset;
+export function asAsset(asset: string | BaseAsset, context: Context): BaseAsset {
+  return typeof asset === 'string' ? new BaseAsset({ ticker: asset }, context) : asset;
+}
+
+/**
+ * @hidden
+ * Transforms asset or ticker into a `FungibleAsset` entity
+ */
+export function asFungibleAsset(asset: string | BaseAsset, context: Context): FungibleAsset {
+  if (asset instanceof FungibleAsset) {
+    return asset;
+  }
+
+  const ticker = typeof asset === 'string' ? asset : asset.ticker;
+
+  return new FungibleAsset({ ticker }, context);
 }
 
 /**
@@ -1042,7 +1059,7 @@ export function conditionsAreEqual(
  */
 export async function getCheckpointValue(
   checkpoint: InputCaCheckpoint,
-  asset: string | Asset,
+  asset: string | FungibleAsset,
   context: Context
 ): Promise<Checkpoint | CheckpointSchedule | Date> {
   if (
@@ -1052,7 +1069,7 @@ export async function getCheckpointValue(
   ) {
     return checkpoint;
   }
-  const assetEntity = asAsset(asset, context);
+  const assetEntity = asFungibleAsset(asset, context);
   const { type, id } = checkpoint;
   if (type === CaCheckpointType.Existing) {
     return assetEntity.checkpoints.getOne({ id });
@@ -1727,4 +1744,28 @@ export async function getIdentityFromKeyRecord(
     const multiSigKeyRecord = optMultiSigKeyRecord.unwrap();
     return getIdentityFromKeyRecord(multiSigKeyRecord, context);
   }
+}
+
+/**
+ * @hidden
+ *
+ * helper to construct proper type asset
+ *
+ * @note `assetDetails` and `tickers` must have the same offset
+ */
+export function assembleAssetQuery(
+  assetDetails: Option<PalletAssetSecurityToken>[],
+  tickers: string[],
+  context: Context
+): (FungibleAsset | NftCollection)[] {
+  return assetDetails.map((rawDetails, index) => {
+    const ticker = tickers[index];
+    const detail = rawDetails.unwrap();
+
+    if (detail.assetType.isNonFungible) {
+      return new NftCollection({ ticker }, context);
+    } else {
+      return new FungibleAsset({ ticker }, context);
+    }
+  });
 }

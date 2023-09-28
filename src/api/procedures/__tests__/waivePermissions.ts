@@ -13,8 +13,8 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 describe('waivePermissions procedure', () => {
@@ -50,7 +50,7 @@ describe('waivePermissions procedure', () => {
   });
 
   it('should throw an error if the Identity is not an Agent for the Asset', async () => {
-    const asset = entityMockUtils.getAssetInstance({
+    const asset = entityMockUtils.getFungibleAssetInstance({
       ticker,
       permissionsGetAgents: [
         {
@@ -91,7 +91,7 @@ describe('waivePermissions procedure', () => {
   });
 
   it('should return an abdicate transaction spec', async () => {
-    const asset = entityMockUtils.getAssetInstance({
+    const asset = entityMockUtils.getFungibleAssetInstance({
       ticker,
       permissionsGetAgents: [
         {
@@ -123,7 +123,7 @@ describe('waivePermissions procedure', () => {
 
   describe('prepareStorage', () => {
     it('should return the Asset', () => {
-      const asset = entityMockUtils.getAssetInstance({
+      const asset = entityMockUtils.getFungibleAssetInstance({
         ticker,
       });
 
@@ -145,7 +145,7 @@ describe('waivePermissions procedure', () => {
 
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
-      const asset = entityMockUtils.getAssetInstance({
+      const asset = entityMockUtils.getFungibleAssetInstance({
         ticker,
       });
 
