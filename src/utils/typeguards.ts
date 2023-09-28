@@ -3,6 +3,7 @@
 import {
   Account,
   AuthorizationRequest,
+  BaseAsset,
   Checkpoint,
   CheckpointSchedule,
   CorporateAction,
@@ -11,6 +12,7 @@ import {
   DefaultTrustedClaimIssuer,
   DividendDistribution,
   Entity,
+  FungibleAsset,
   Identity,
   Instruction,
   KnownPermissionGroup,
@@ -40,6 +42,7 @@ import {
   JurisdictionClaim,
   KycClaim,
   MultiClaimCondition,
+  NftCollection,
   PortfolioCustodianRole,
   ProposalStatus,
   Role,
@@ -345,4 +348,18 @@ export function isPolymeshTransactionBatch<
  */
 export function isProposalStatus(status: string): status is ProposalStatus {
   return status in ProposalStatus;
+}
+
+/**
+ * Return whether an asset is a FungibleAsset
+ */
+export function isFungibleAsset(asset: BaseAsset): asset is FungibleAsset {
+  return asset instanceof FungibleAsset;
+}
+
+/**
+ * Return whether an asset is a NftCollection
+ */
+export function isNftCollection(asset: BaseAsset): asset is NftCollection {
+  return asset instanceof FungibleAsset;
 }

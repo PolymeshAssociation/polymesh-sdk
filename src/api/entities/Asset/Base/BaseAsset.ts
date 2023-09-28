@@ -11,13 +11,23 @@ import { Compliance } from '~/api/entities/Asset/Base/Compliance';
 import { Documents } from '~/api/entities/Asset/Base/Documents';
 import { Metadata } from '~/api/entities/Asset/Base/Metadata';
 import { Permissions } from '~/api/entities/Asset/Base/Permissions';
-import { Context, Entity, Identity, PolymeshError, toggleFreezeTransfers } from '~/internal';
+import {
+  Context,
+  Entity,
+  Identity,
+  PolymeshError,
+  toggleFreezeTransfers,
+  transferAssetOwnership,
+} from '~/internal';
 import {
   AssetDetails,
+  AuthorizationRequest,
   ErrorCode,
   NoArgsProcedureMethod,
+  ProcedureMethod,
   SecurityIdentifier,
   SubCallback,
+  TransferAssetOwnershipParams,
   UniqueIdentifiers,
   UnsubCallback,
 } from '~/types';
@@ -55,6 +65,16 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
    * ticker of the Asset
    */
   public ticker: string;
+
+  /**
+   * Transfer ownership of the Asset to another Identity. This generates an authorization request that must be accepted
+   *   by the recipient
+   *
+   * @note this will create {@link api/entities/AuthorizationRequest!AuthorizationRequest | Authorization Request} which has to be accepted by the `target` Identity.
+   *   An {@link api/entities/Account!Account} or {@link api/entities/Identity!Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
+   */
+  public transferOwnership: ProcedureMethod<TransferAssetOwnershipParams, AuthorizationRequest>;
 
   /**
    * @hidden
@@ -96,6 +116,11 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
         getProcedureAndArgs: () => [toggleFreezeTransfers, { ticker, freeze: false }],
         voidArgs: true,
       },
+      context
+    );
+
+    this.transferOwnership = createProcedureMethod(
+      { getProcedureAndArgs: args => [transferAssetOwnership, { ticker, ...args }] },
       context
     );
   }

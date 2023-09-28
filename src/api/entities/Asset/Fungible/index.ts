@@ -4,14 +4,12 @@ import { groupBy, map } from 'lodash';
 
 import { BaseAsset } from '~/api/entities/Asset/Base';
 import {
-  AuthorizationRequest,
   Context,
   controllerTransfer,
   Identity,
   modifyAsset,
   redeemTokens,
   setVenueFiltering,
-  transferAssetOwnership,
 } from '~/internal';
 import {
   assetQuery,
@@ -30,7 +28,6 @@ import {
   ResultSet,
   SetVenueFilteringParams,
   SubCallback,
-  TransferAssetOwnershipParams,
   UnsubCallback,
 } from '~/types';
 import { Ensured } from '~/types/utils';
@@ -84,10 +81,6 @@ export class FungibleAsset extends BaseAsset {
     this.checkpoints = new Checkpoints(this, context);
     this.corporateActions = new CorporateActions(this, context);
 
-    this.transferOwnership = createProcedureMethod(
-      { getProcedureAndArgs: args => [transferAssetOwnership, { ticker, ...args }] },
-      context
-    );
     this.modify = createProcedureMethod(
       { getProcedureAndArgs: args => [modifyAsset, { ticker, ...args }] },
       context
@@ -107,15 +100,6 @@ export class FungibleAsset extends BaseAsset {
     );
   }
 
-  /**
-   * Transfer ownership of the Asset to another Identity. This generates an authorization request that must be accepted
-   *   by the recipient
-   *
-   * @note this will create {@link api/entities/AuthorizationRequest!AuthorizationRequest | Authorization Request} which has to be accepted by the `target` Identity.
-   *   An {@link api/entities/Account!Account} or {@link api/entities/Identity!Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
-   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
-   */
-  public transferOwnership: ProcedureMethod<TransferAssetOwnershipParams, AuthorizationRequest>;
   /**
    * Modify some properties of the Asset
    *
