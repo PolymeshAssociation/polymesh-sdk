@@ -113,7 +113,6 @@ import {
   statsClaimToStatClaimInputType,
   stringToAccountId,
   transferRestrictionTypeToStatOpType,
-  u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { isEntity, isMultiClaimCondition, isSingleClaimCondition } from '~/utils/typeguards';
@@ -324,6 +323,50 @@ function cloneReceipt(receipt: ISubmittableResult, events: EventRecord[]): ISubm
 /**
  * @hidden
  *
+ *   Segment a batch transaction receipt's events into arrays, each representing a specific extrinsic's
+ *   associated events. This is useful for scenarios where we need to isolate and process events
+ *   for individual extrinsics in a batch.
+ *
+ *   In a batch transaction receipt, events corresponding to multiple extrinsics are listed sequentially.
+ *   This function identifies boundaries between these event sequences, typically demarcated by
+ *   events like 'utility.ItemCompleted', to segment events into individual arrays.
+ *
+ *   A key use case is when we want to slice or filter events for a subset of the extrinsics. By
+ *   segmenting events this way, it becomes simpler to apply operations or analyses to events
+ *   corresponding to specific extrinsics in the batch.
+ *
+ * @param events - array of events from a batch transaction receipt
+ *
+ * @returns an array of arrays, where each inner array contains events specific to an extrinsic in the batch.
+ *
+ * @note this function does not mutate the input events
+ */
+export function segmentEventsByTransaction(events: EventRecord[]): EventRecord[][] {
+  const segments: EventRecord[][] = [];
+  let currentSegment: EventRecord[] = [];
+
+  events.forEach(eventRecord => {
+    if (eventRecord.event.method === 'ItemCompleted' && eventRecord.event.section === 'utility') {
+      if (currentSegment.length) {
+        segments.push(currentSegment);
+        currentSegment = [];
+      }
+    } else {
+      currentSegment.push(eventRecord);
+    }
+  });
+
+  // If there are events left after processing, add them to a new segment
+  if (currentSegment.length) {
+    segments.push(currentSegment);
+  }
+
+  return segments;
+}
+
+/**
+ * @hidden
+ *
  * Return a clone of a batch transaction receipt that only contains events for a subset of the
  *   extrinsics in the batch. This is useful when a batch has several extrinsics that emit
  *   the same events and we want `filterEventRecords` to only search among the events emitted by
@@ -343,13 +386,14 @@ export function sliceBatchReceipt(
   from: number,
   to: number
 ): ISubmittableResult {
-  const [
-    {
-      data: [rawEventsPerExtrinsic],
-    },
-  ] = filterEventRecords(receipt, 'utility', 'BatchCompletedOld');
+  // checking if the batch was completed (will throw an error if not)
+  filterEventRecords(receipt, 'utility', 'BatchCompleted');
 
-  if (rawEventsPerExtrinsic.length < to || from < 0) {
+  const { events } = receipt;
+
+  const segmentedEvents = segmentEventsByTransaction(events);
+
+  if (from < 0 || to > segmentedEvents.length) {
     throw new PolymeshError({
       code: ErrorCode.UnexpectedError,
       message: 'Transaction index range out of bounds. Please report this to the Polymesh team',
@@ -360,28 +404,7 @@ export function sliceBatchReceipt(
     });
   }
 
-  const { events } = receipt;
-
-  const eventsPerExtrinsic = rawEventsPerExtrinsic.map(u32ToBigNumber);
-  const clonedEvents = [...events];
-
-  const slicedEvents: EventRecord[] = [];
-
-  /*
-   * For each extrinsic, we remove the first N events from the original receipt, where N is the amount
-   * of events emitted for that extrinsic according to the `BatchCompleted` event's data. If the extrinsic is in the desired range,
-   * we add the removed events to the cloned receipt. Otherwise we ignore them
-   *
-   * The order of events in the receipt is such that the events of all extrinsics in the batch come first (in the same order
-   * in which the extrinsics were added to the batch), and then come the events related to the batch itself
-   */
-  eventsPerExtrinsic.forEach((n, index) => {
-    const removedEvents = clonedEvents.splice(0, n.toNumber());
-
-    if (index >= from && index < to) {
-      slicedEvents.push(...removedEvents);
-    }
-  });
+  const slicedEvents = segmentedEvents.slice(from, to).flat();
 
   return cloneReceipt(receipt, slicedEvents);
 }
