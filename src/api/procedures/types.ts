@@ -629,6 +629,17 @@ export type ModifyAssetParams =
       identifiers: SecurityIdentifier[];
     };
 
+export type NftMetadataInput = {
+  type: MetadataType;
+  id: BigNumber;
+  value: string;
+};
+
+export type IssueNftParams = {
+  metadata: NftMetadataInput[];
+  portfolio?: PortfolioLike;
+};
+
 export interface ModifyPrimaryIssuanceAgentParams {
   /**
    * Identity to be set as primary issuance agent

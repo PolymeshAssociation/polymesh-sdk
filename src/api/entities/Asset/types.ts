@@ -9,7 +9,13 @@ import {
   NumberedPortfolio,
 } from '~/internal';
 import { EventIdEnum } from '~/middleware/enums';
-import { Compliance, EventIdentifier, TransferError, TransferRestriction } from '~/types';
+import {
+  Compliance,
+  EventIdentifier,
+  MetadataType,
+  TransferError,
+  TransferRestriction,
+} from '~/types';
 
 /**
  * Properties that uniquely identify an Asset
@@ -78,6 +84,22 @@ export interface HistoricAssetTransaction extends EventIdentifier {
   to: DefaultPortfolio | NumberedPortfolio | null;
   event: EventIdEnum;
   extrinsicIndex: BigNumber;
+}
+
+export type MetadataKeyId =
+  | {
+      type: MetadataType.Global;
+      id: BigNumber;
+    }
+  | {
+      type: MetadataType.Local;
+      id: BigNumber;
+      ticker: string;
+    };
+
+export interface NftMetadata {
+  key: MetadataKeyId;
+  value: string;
 }
 
 export * from './Fungible/Checkpoints/types';

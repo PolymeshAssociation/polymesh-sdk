@@ -39,6 +39,7 @@ import {
   PolymeshPrimitivesIdentityIdPortfolioKind,
   PolymeshPrimitivesMemo,
   PolymeshPrimitivesMultisigProposalStatus,
+  PolymeshPrimitivesNftNftMetadataAttribute,
   PolymeshPrimitivesPortfolioFund,
   PolymeshPrimitivesSecondaryKeySignatory,
   PolymeshPrimitivesSettlementLeg,
@@ -224,8 +225,10 @@ import {
   meshClaimTypeToClaimType,
   meshCorporateActionToCorporateActionParams,
   meshInstructionStatusToInstructionStatus,
+  meshMetadataKeyToMetadataKey,
   meshMetadataSpecToMetadataSpec,
   meshMetadataValueToMetadataValue,
+  meshNftToNftId,
   meshPermissionsToPermissions,
   meshProposalStatusToProposalStatus,
   meshScopeToScope,
@@ -248,6 +251,7 @@ import {
   moduleAddressToString,
   momentToDate,
   nameToAssetName,
+  nftInputToNftMetadataVec,
   offeringTierToPriceTier,
   percentageToPermill,
   permillToBigNumber,
@@ -9280,7 +9284,7 @@ describe('datesToScheduleCheckpoints', () => {
   });
 });
 
-describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => {
+describe('collectionKeysToMetadataKeys', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -9298,19 +9302,125 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     const id = new BigNumber(1);
     const keys = [{ type: MetadataType.Local, id }];
 
+    const fakeKey = 'fakeKey' as unknown as PolymeshPrimitivesAssetMetadataAssetMetadataKey;
     const fakeResult =
       'fakeMetadataKeys' as unknown as Vec<PolymeshPrimitivesAssetMetadataAssetMetadataKey>;
 
     when(context.createType)
-      .calledWith('Vec<PolymeshPrimitivesAssetMetadataAssetMetadataKey>', [
-        {
-          Local: bigNumberToU64(id, context),
-        },
-      ])
+      .calledWith('PolymeshPrimitivesAssetMetadataAssetMetadataKey', {
+        Local: bigNumberToU64(id, context),
+      })
+      .mockReturnValue(fakeKey);
+
+    when(context.createType)
+      .calledWith('Vec<PolymeshPrimitivesAssetMetadataAssetMetadataKey>', [fakeKey])
       .mockReturnValue(fakeResult);
 
     const result = collectionKeysToMetadataKeys(keys, context);
 
     expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('meshMetadataKeyToMetadataKey', () => {
+  it('should convert local metadata', () => {
+    const localId = new BigNumber(1);
+    const ticker = 'TICKER';
+    const rawKey = dsMockUtils.createMockAssetMetadataKey({
+      Local: dsMockUtils.createMockU64(localId),
+    });
+
+    const result = meshMetadataKeyToMetadataKey(rawKey, ticker);
+
+    expect(result).toEqual({ type: MetadataType.Local, id: localId, ticker });
+  });
+
+  it('should convert Global metadata', () => {
+    const globalId = new BigNumber(2);
+    const rawKey = dsMockUtils.createMockAssetMetadataKey({
+      Global: dsMockUtils.createMockU64(globalId),
+    });
+
+    const result = meshMetadataKeyToMetadataKey(rawKey, '');
+
+    expect(result).toEqual({ type: MetadataType.Global, id: globalId });
+  });
+});
+
+describe('meshNftToNftId', () => {
+  it('should convert a set of NFTs', () => {
+    const ticker = 'TICKER';
+
+    const mockNft = dsMockUtils.createMockNfts({
+      ticker: dsMockUtils.createMockTicker(ticker),
+      ids: [
+        dsMockUtils.createMockU64(new BigNumber(1)),
+        dsMockUtils.createMockU64(new BigNumber(2)),
+      ],
+    });
+
+    const result = meshNftToNftId(mockNft);
+
+    expect(result).toEqual({
+      ticker,
+      ids: [new BigNumber(1), new BigNumber(2)],
+    });
+  });
+});
+
+describe('nftInputToNftMetadataAttribute', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert NFT input into a raw attribute', () => {
+    const context = dsMockUtils.getContextInstance();
+    const id = new BigNumber(1);
+    const rawId = dsMockUtils.createMockU64(id);
+    const value = 'testValue';
+
+    const mockKey = 'mockKey' as unknown as PolymeshPrimitivesAssetMetadataAssetMetadataKey;
+    const mockValue = 'mockValue' as unknown as Bytes;
+    const mockAttribute = 'mockAttribute' as unknown as PolymeshPrimitivesNftNftMetadataAttribute;
+    const mockResult = 'mockResult' as unknown as Vec<PolymeshPrimitivesNftNftMetadataAttribute>;
+
+    dsMockUtils.setConstMock('asset', 'assetMetadataValueMaxLength', {
+      returnValue: dsMockUtils.createMockU64(new BigNumber(255)),
+    });
+
+    when(context.createType).calledWith('u64', id.toString()).mockReturnValue(rawId);
+
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesAssetMetadataAssetMetadataKey', {
+        Local: rawId,
+      })
+      .mockReturnValue(mockKey);
+
+    when(context.createType).calledWith('Bytes', value).mockReturnValue(mockValue);
+
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesNftNftMetadataAttribute', {
+        key: mockKey,
+        value: mockValue,
+      })
+      .mockReturnValue(mockAttribute);
+
+    when(context.createType)
+      .calledWith('Vec<PolymeshPrimitivesNftNftMetadataAttribute>', [mockAttribute])
+      .mockReturnValue(mockResult);
+
+    const input = [{ type: MetadataType.Local, id, value }];
+
+    const result = nftInputToNftMetadataVec(input, context);
+
+    expect(result).toEqual(mockResult);
   });
 });

@@ -4198,7 +4198,7 @@ export const createMockContractInfo = (contractInfo?: {
  */
 export const createMockNfts = (nfts?: {
   ticker: PolymeshPrimitivesTicker;
-  ids: Vec<u64>;
+  ids: u64[];
 }): MockCodec<PolymeshPrimitivesNftNfTs> => {
   const { ticker, ids } = nfts ?? {
     ticker: createMockTicker(),

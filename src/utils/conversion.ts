@@ -38,6 +38,8 @@ import {
   PolymeshPrimitivesJurisdictionCountryCode,
   PolymeshPrimitivesMemo,
   PolymeshPrimitivesMultisigProposalStatus,
+  PolymeshPrimitivesNftNftMetadataAttribute,
+  PolymeshPrimitivesNftNfTs,
   PolymeshPrimitivesPortfolioFund,
   PolymeshPrimitivesPosRatio,
   PolymeshPrimitivesSecondaryKey,
@@ -161,6 +163,7 @@ import {
   InstructionType,
   KnownAssetType,
   KnownNftType,
+  MetadataKeyId,
   MetadataLockStatus,
   MetadataSpec,
   MetadataType,
@@ -168,6 +171,7 @@ import {
   MetadataValueDetails,
   ModuleName,
   MultiClaimCondition,
+  NftMetadataInput,
   OfferingBalanceStatus,
   OfferingDetails,
   OfferingSaleStatus,
@@ -4521,8 +4525,67 @@ export function collectionKeysToMetadataKeys(
   context: Context
 ): Vec<PolymeshPrimitivesAssetMetadataAssetMetadataKey> {
   const metadataKeys = keys.map(({ type, id }) => {
-    return { [type]: bigNumberToU64(id, context) };
+    return metadataToMeshMetadataKey(type, id, context);
   });
 
   return context.createType('Vec<PolymeshPrimitivesAssetMetadataAssetMetadataKey>', metadataKeys);
+}
+
+/**
+ * @hidden
+ */
+export function meshMetadataKeyToMetadataKey(
+  rawKey: PolymeshPrimitivesAssetMetadataAssetMetadataKey,
+  ticker: string
+): MetadataKeyId {
+  if (rawKey.isGlobal) {
+    return { type: MetadataType.Global, id: u64ToBigNumber(rawKey.asGlobal) };
+  } else {
+    return { type: MetadataType.Local, id: u64ToBigNumber(rawKey.asLocal), ticker };
+  }
+}
+
+/**
+ * @hidden
+ */
+export function meshNftToNftId(rawInfo: PolymeshPrimitivesNftNfTs): {
+  ticker: string;
+  ids: BigNumber[];
+} {
+  const { ticker: rawTicker, ids: rawIds } = rawInfo;
+
+  return {
+    ticker: tickerToString(rawTicker),
+    ids: rawIds.map(rawId => u64ToBigNumber(rawId)),
+  };
+}
+
+/**
+ * @hidden
+ */
+export function nftInputToNftMetadataAttribute(
+  nftInfo: NftMetadataInput,
+  context: Context
+): PolymeshPrimitivesNftNftMetadataAttribute {
+  const { type, id, value } = nftInfo;
+
+  const rawKey = metadataToMeshMetadataKey(type, id, context);
+  const rawValue = metadataValueToMeshMetadataValue(value, context);
+
+  return context.createType('PolymeshPrimitivesNftNftMetadataAttribute', {
+    key: rawKey,
+    value: rawValue,
+  });
+}
+
+/**
+ * @hidden
+ */
+export function nftInputToNftMetadataVec(
+  nftInfo: NftMetadataInput[],
+  context: Context
+): Vec<PolymeshPrimitivesNftNftMetadataAttribute> {
+  const rawItems = nftInfo.map(item => nftInputToNftMetadataAttribute(item, context));
+
+  return context.createType('Vec<PolymeshPrimitivesNftNftMetadataAttribute>', rawItems);
 }

@@ -3,16 +3,30 @@ import { PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker } from '@polkado
 import BigNumber from 'bignumber.js';
 
 import { BaseAsset } from '~/api/entities/Asset/Base';
+import { Nft } from '~/api/entities/Asset/NonFungible/Nft';
+import { issueNft } from '~/api/procedures/issueNft';
+import { Context, transferAssetOwnership } from '~/internal';
 import { assetQuery } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { AssetDetails, EventIdentifier, SubCallback, UnsubCallback } from '~/types';
+import {
+  AssetDetails,
+  EventIdentifier,
+  IssueNftParams,
+  MetadataKeyId,
+  ProcedureMethod,
+  SubCallback,
+  UniqueIdentifiers,
+  UnsubCallback,
+} from '~/types';
 import { Ensured } from '~/types/utils';
 import {
+  bigNumberToU64,
+  meshMetadataKeyToMetadataKey,
   middlewareEventDetailsToEventIdentifier,
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { optionize } from '~/utils/internal';
+import { createProcedureMethod, optionize } from '~/utils/internal';
 
 const sumNftIssuance = (
   numberOfNfts: [StorageKey<[PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId]>, u64][]
@@ -30,6 +44,39 @@ const sumNftIssuance = (
  * Class used to manage Nft functionality
  */
 export class NftCollection extends BaseAsset {
+  /**
+   * Issues a new NFT for the collection
+   */
+  public issue: ProcedureMethod<IssueNftParams, Nft>;
+
+  /**
+   * Caches value for `getCollectionId`
+   *
+   * @hidden
+   */
+  private id?: BigNumber;
+
+  /**
+   * @hidden
+   */
+  constructor(identifiers: UniqueIdentifiers, context: Context) {
+    super(identifiers, context);
+
+    const { ticker } = identifiers;
+
+    this.transferOwnership = createProcedureMethod(
+      { getProcedureAndArgs: args => [transferAssetOwnership, { ticker, ...args }] },
+      context
+    );
+
+    this.issue = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [issueNft, { ticker, ...args }],
+      },
+      context
+    );
+  }
+
   /**
    * Retrieve the identifier data (block number, date and event index) of the event that was emitted when the token was created
    *
@@ -103,6 +150,25 @@ export class NftCollection extends BaseAsset {
   }
 
   /**
+   * Get metadata keys that each NFT in the collection must have
+   */
+  public async collectionMetadataKeys(): Promise<MetadataKeyId[]> {
+    const {
+      context,
+      ticker,
+      context: {
+        polymeshApi: { query },
+      },
+    } = this;
+
+    const id = await this.getCollectionId();
+    const rawId = bigNumberToU64(id, context);
+
+    const rawKeys = await query.nft.collectionKeys(rawId);
+    return [...rawKeys].map(value => meshMetadataKeyToMetadataKey(value, ticker));
+  }
+
+  /**
    * Retrieve the amount of unique investors that hold this Nft
    */
   public async investorCount(): Promise<BigNumber> {
@@ -134,5 +200,29 @@ export class NftCollection extends BaseAsset {
     );
 
     return !rawTokenId.isZero();
+  }
+
+  /**
+   * Returns the collection id
+   */
+  public async getCollectionId(): Promise<BigNumber> {
+    const {
+      ticker,
+      context,
+      context: {
+        polymeshApi: { query },
+      },
+    } = this;
+
+    if (this.id) {
+      return this.id;
+    }
+
+    const rawTicker = stringToTicker(ticker, context);
+    const rawId = await query.nft.collectionTicker(rawTicker);
+
+    this.id = u64ToBigNumber(rawId);
+
+    return this.id;
   }
 }
