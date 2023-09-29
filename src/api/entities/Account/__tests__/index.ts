@@ -270,6 +270,8 @@ describe('Account class', () => {
       const blockNumber2 = new BigNumber(2);
       const blockHash1 = 'someHash';
       const blockHash2 = 'otherHash';
+      const blockDate1 = new Date('2022-12-25T00:00:00Z');
+      const blockDate2 = new Date('2022-12-25T12:00:00Z');
       const addressKey = 'd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d';
       const order = ExtrinsicsOrderBy.CreatedAtAsc;
 
@@ -297,6 +299,7 @@ describe('Account class', () => {
             signedbyAddress: 1,
             block: {
               hash: blockHash1,
+              datetime: blockDate1.toISOString().replace('Z', ''),
             },
           },
           {
@@ -311,7 +314,7 @@ describe('Account class', () => {
             block: {
               hash: blockHash2,
               id: blockNumber2.toNumber(),
-              datetime: '',
+              datetime: blockDate2.toISOString().replace('Z', ''),
             },
           },
         ],
@@ -362,6 +365,8 @@ describe('Account class', () => {
       expect(result.data[1].blockNumber).toEqual(blockNumber2);
       expect(result.data[0].blockHash).toEqual(blockHash1);
       expect(result.data[1].blockHash).toEqual(blockHash2);
+      expect(result.data[0].blockDate).toEqual(blockDate1);
+      expect(result.data[1].blockDate).toEqual(blockDate2);
       expect(result.data[0].address).toEqual(address);
       expect(result.data[1].address).toBeNull();
       expect(result.data[0].nonce).toEqual(new BigNumber(1));
@@ -401,6 +406,8 @@ describe('Account class', () => {
       expect(result.data[1].blockNumber).toEqual(blockNumber2);
       expect(result.data[0].blockHash).toEqual(blockHash1);
       expect(result.data[1].blockHash).toEqual(blockHash2);
+      expect(result.data[0].blockDate).toEqual(blockDate1);
+      expect(result.data[1].blockDate).toEqual(blockDate2);
       expect(result.data[0].address).toEqual(address);
       expect(result.data[1].address).toBeNull();
       expect(result.data[0].success).toBeFalsy();

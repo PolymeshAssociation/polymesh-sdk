@@ -268,6 +268,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       }) => ({
         blockNumber: new BigNumber(blockId),
         blockHash: block!.hash,
+        blockDate: new Date(`${block!.datetime}Z`),
         extrinsicIdx: new BigNumber(extrinsicIdx),
         address: rawAddress ? keyToAddress(rawAddress, context) : null,
         nonce: nonce ? new BigNumber(nonce) : null,
