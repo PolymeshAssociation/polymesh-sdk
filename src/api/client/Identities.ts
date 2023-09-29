@@ -1,3 +1,5 @@
+import BigNumber from 'bignumber.js';
+
 import { createPortfolioTransformer } from '~/api/entities/Venue';
 import {
   attestPrimaryKeyRotation,
@@ -8,6 +10,7 @@ import {
   createPortfolios,
   Identity,
   NumberedPortfolio,
+  registerCustomClaimType,
   registerIdentity,
   rotatePrimaryKey,
 } from '~/internal';
@@ -15,6 +18,7 @@ import {
   AttestPrimaryKeyRotationParams,
   CreateChildIdentityParams,
   ProcedureMethod,
+  RegisterCustomClaimTypeParams,
   RegisterIdentityParams,
   RotatePrimaryKeyParams,
 } from '~/types';
@@ -76,6 +80,11 @@ export class Identities {
       {
         getProcedureAndArgs: args => [createChildIdentity, args],
       },
+      context
+    );
+
+    this.registerCustomClaimType = createProcedureMethod(
+      { getProcedureAndArgs: args => [registerCustomClaimType, args] },
       context
     );
   }
@@ -165,4 +174,6 @@ export class Identities {
    *  - the signing Identity is already a child of some other identity
    */
   public createChild: ProcedureMethod<CreateChildIdentityParams, ChildIdentity>;
+
+  public registerCustomClaimType: ProcedureMethod<RegisterCustomClaimTypeParams, BigNumber>;
 }
