@@ -175,5 +175,12 @@ export class Identities {
    */
   public createChild: ProcedureMethod<CreateChildIdentityParams, ChildIdentity>;
 
+  /**
+   * Creates a custom claim type using the `name` and returns the `id` of the created claim type
+   *
+   * @throws if
+   *  - the `name` is longer than allowed
+   *  - a custom claim type with the same `name` already exists
+   */
   public registerCustomClaimType: ProcedureMethod<RegisterCustomClaimTypeParams, BigNumber>;
 }

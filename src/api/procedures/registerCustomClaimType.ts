@@ -1,11 +1,16 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
-import { Identity, PolymeshError, Procedure } from '~/internal';
+import { PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RegisterCustomClaimTypeParams, TxTags } from '~/types';
 import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import { u32ToBigNumber } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
+
+/**
+ * @hidden
+ */
+export type Params = RegisterCustomClaimTypeParams;
 
 /**
  * @hidden
@@ -30,17 +35,32 @@ export async function prepareRegisterCustomClaimType(
       polymeshApi: {
         tx: { identity },
         query: { identity: identityQuery },
+        consts: {
+          base: { maxLen },
+        },
       },
     },
   } = this;
   const { name } = args;
+
+  const claimTypeMaxLength = u32ToBigNumber(maxLen);
+
+  if (claimTypeMaxLength.lt(name.length)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'CustomClaimType name length exceeded',
+      data: {
+        maxLength: claimTypeMaxLength,
+      },
+    });
+  }
 
   const customClaimTypeIdOpt = await identityQuery.customClaimsInverse(name);
 
   if (customClaimTypeIdOpt.isSome) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'The custom claim type has already been registered.',
+      message: `The CustomClaimType with "${name}" already exists`,
     });
   }
 
