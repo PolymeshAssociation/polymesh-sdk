@@ -7,8 +7,9 @@ import {
   createRegisterCustomClaimTypeResolver,
   Params,
   prepareRegisterCustomClaimType,
+  registerCustomClaimType,
 } from '~/api/procedures/registerCustomClaimType';
-import { Context, PolymeshError } from '~/internal';
+import { Context, PolymeshError, Procedure } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { ErrorCode } from '~/types';
@@ -155,6 +156,14 @@ describe('registerCustomClaimType procedure', () => {
       const result = resolver(fakeSubmittableResult);
 
       expect(result).toEqual(id);
+    });
+  });
+
+  describe('registerCustomClaimType procedure', () => {
+    it('should return a Procedure with the appropriate roles and permissions', () => {
+      const proc = registerCustomClaimType();
+
+      expect(proc).toBeInstanceOf(Procedure);
     });
   });
 });
