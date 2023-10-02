@@ -74,7 +74,7 @@ describe('registerCustomClaimType procedure', () => {
     jest.restoreAllMocks();
   });
 
-  it('should throw an error if attempting to add a CustomClaimType already present', () => {
+  it('should throw an error if attempting to add a CustomClaimType with a name exceeding the max length', () => {
     params = {
       ...params,
       name: 'NAME_EXCEEDING_MAX_LENGTH',
@@ -84,9 +84,6 @@ describe('registerCustomClaimType procedure', () => {
     const expectedError = new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'CustomClaimType name length exceeded',
-      data: {
-        maxLength: customClaimTypeNameMaxLength,
-      },
     });
 
     return expect(prepareRegisterCustomClaimType.call(proc, params)).rejects.toThrowError(
@@ -94,7 +91,7 @@ describe('registerCustomClaimType procedure', () => {
     );
   });
 
-  it('should throw an error if attempting to register a CustomClaimType with duplicate name', async () => {
+  it('should throw an error if attempting to add a CustomClaimType already present', async () => {
     const rawId = dsMockUtils.createMockU32(new BigNumber(1));
 
     const proc = procedureMockUtils.getInstance<Params, BigNumber>(mockContext);

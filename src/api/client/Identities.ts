@@ -1,5 +1,3 @@
-import BigNumber from 'bignumber.js';
-
 import { createPortfolioTransformer } from '~/api/entities/Venue';
 import {
   attestPrimaryKeyRotation,
@@ -10,7 +8,6 @@ import {
   createPortfolios,
   Identity,
   NumberedPortfolio,
-  registerCustomClaimType,
   registerIdentity,
   rotatePrimaryKey,
 } from '~/internal';
@@ -18,7 +15,6 @@ import {
   AttestPrimaryKeyRotationParams,
   CreateChildIdentityParams,
   ProcedureMethod,
-  RegisterCustomClaimTypeParams,
   RegisterIdentityParams,
   RotatePrimaryKeyParams,
 } from '~/types';
@@ -80,11 +76,6 @@ export class Identities {
       {
         getProcedureAndArgs: args => [createChildIdentity, args],
       },
-      context
-    );
-
-    this.registerCustomClaimType = createProcedureMethod(
-      { getProcedureAndArgs: args => [registerCustomClaimType, args] },
       context
     );
   }
@@ -174,13 +165,4 @@ export class Identities {
    *  - the signing Identity is already a child of some other identity
    */
   public createChild: ProcedureMethod<CreateChildIdentityParams, ChildIdentity>;
-
-  /**
-   * Creates a custom claim type using the `name` and returns the `id` of the created claim type
-   *
-   * @throws if
-   *  - the `name` is longer than allowed
-   *  - a custom claim type with the same `name` already exists
-   */
-  public registerCustomClaimType: ProcedureMethod<RegisterCustomClaimTypeParams, BigNumber>;
 }

@@ -1,4 +1,3 @@
-import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Identities } from '~/api/client/Identities';
@@ -204,24 +203,6 @@ describe('Identities Class', () => {
         .mockResolvedValue(expectedTransaction);
 
       const tx = await identities.rotatePrimaryKey(args);
-
-      expect(tx).toBe(expectedTransaction);
-    });
-  });
-
-  describe('method: registerCustomClaimType', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const args = {
-        name: 'someClaimTypeName',
-      };
-
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<BigNumber>;
-
-      when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args, transformer: undefined }, context, {})
-        .mockResolvedValue(expectedTransaction);
-
-      const tx = await identities.registerCustomClaimType(args);
 
       expect(tx).toBe(expectedTransaction);
     });
