@@ -741,4 +741,22 @@ describe('Claims Class', () => {
       expect(result.data.length).toEqual(2);
     });
   });
+
+  describe('method: registerCustomClaimType', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args = {
+        name: 'someClaimTypeName',
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<BigNumber>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await claims.registerCustomClaimType(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
 });

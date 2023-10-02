@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { filter, flatten, isEqual, uniqBy, uniqWith } from 'lodash';
 
-import { Context, Identity, modifyClaims } from '~/internal';
+import { Context, Identity, modifyClaims, registerCustomClaimType } from '~/internal';
 import { ClaimTypeEnum } from '~/middleware/enums';
 import { claimsGroupingQuery, claimsQuery } from '~/middleware/queries';
 import { ClaimsGroupBy, ClaimsOrderBy, Query } from '~/middleware/types';
@@ -14,6 +14,7 @@ import {
   IdentityWithClaims,
   ModifyClaimsParams,
   ProcedureMethod,
+  RegisterCustomClaimTypeParams,
   ResultSet,
   Scope,
   ScopedClaim,
@@ -92,6 +93,11 @@ export class Claims {
           } as ModifyClaimsParams,
         ],
       },
+      context
+    );
+
+    this.registerCustomClaimType = createProcedureMethod(
+      { getProcedureAndArgs: args => [registerCustomClaimType, args] },
       context
     );
   }
@@ -468,4 +474,13 @@ export class Claims {
 
     return this.getClaimsFromChain(context, did, trustedClaimIssuers, includeExpired);
   }
+
+  /**
+   * Creates a custom claim type using the `name` and returns the `id` of the created claim type
+   *
+   * @throws if
+   *  - the `name` is longer than allowed
+   *  - a custom claim type with the same `name` already exists
+   */
+  public registerCustomClaimType: ProcedureMethod<RegisterCustomClaimTypeParams, BigNumber>;
 }

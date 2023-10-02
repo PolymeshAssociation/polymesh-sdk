@@ -1111,3 +1111,7 @@ export interface CreateChildIdentitiesParams {
 export interface UnlinkChildParams {
   child: string | ChildIdentity;
 }
+
+export interface RegisterCustomClaimTypeParams {
+  name: string;
+}
