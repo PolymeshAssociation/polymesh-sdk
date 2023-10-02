@@ -341,6 +341,7 @@ describe('Network Class', () => {
     it('should return a transaction', async () => {
       const blockNumber = new BigNumber(1);
       const blockHash = 'blockHash';
+      const blockDate = new Date('2022-12-25T00:00:00Z');
       const extrinsicIdx = new BigNumber(0);
       const address = 'someAddress';
       const specVersionId = new BigNumber(2006);
@@ -373,6 +374,7 @@ describe('Network Class', () => {
               block: {
                 blockId: blockNumber.toNumber(),
                 hash: blockHash,
+                datetime: blockDate.toISOString().replace('Z', ''),
               },
             },
           ],
@@ -414,6 +416,7 @@ describe('Network Class', () => {
       expect(result).toEqual({
         blockNumber,
         blockHash,
+        blockDate,
         extrinsicIdx,
         address,
         nonce: null,
@@ -444,6 +447,7 @@ describe('Network Class', () => {
               block: {
                 blockId: blockNumber.toNumber(),
                 hash: blockHash,
+                datetime: blockDate.toISOString().replace('Z', ''),
               },
             },
           ],
@@ -454,6 +458,7 @@ describe('Network Class', () => {
       expect(result).toEqual({
         blockNumber,
         blockHash,
+        blockDate,
         extrinsicIdx,
         address: null,
         nonce: new BigNumber(12345),

@@ -349,6 +349,7 @@ export interface IdentityWithClaims {
 export interface ExtrinsicData {
   blockHash: string;
   blockNumber: BigNumber;
+  blockDate: Date;
   extrinsicIdx: BigNumber;
   /**
    * public key of the signer. Unsigned transactions have no signer, in which case this value is null (example: an enacted governance proposal)

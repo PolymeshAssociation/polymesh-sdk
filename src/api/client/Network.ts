@@ -292,7 +292,7 @@ export class Network {
       });
 
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const { hash: blockHash, blockId: blockNumber } = block!;
+      const { hash: blockHash, blockId: blockNumber, datetime } = block!;
 
       const rawBlockHash = stringToBlockHash(blockHash, context);
 
@@ -310,6 +310,7 @@ export class Network {
       return {
         blockNumber: new BigNumber(blockNumber),
         blockHash,
+        blockDate: new Date(`${datetime}Z`),
         extrinsicIdx: new BigNumber(extrinsicIdx),
         address: rawAddress ?? null,
         nonce: nonce ? new BigNumber(nonce) : null,
