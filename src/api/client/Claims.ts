@@ -1,7 +1,13 @@
 import BigNumber from 'bignumber.js';
 import { filter, flatten, isEqual, uniqBy, uniqWith } from 'lodash';
 
-import { Context, Identity, modifyClaims, registerCustomClaimType } from '~/internal';
+import {
+  Context,
+  Identity,
+  modifyClaims,
+  PolymeshError,
+  registerCustomClaimType,
+} from '~/internal';
 import { ClaimTypeEnum } from '~/middleware/enums';
 import { claimsGroupingQuery, claimsQuery } from '~/middleware/queries';
 import { ClaimsGroupBy, ClaimsOrderBy, Query } from '~/middleware/types';
@@ -11,6 +17,7 @@ import {
   ClaimOperation,
   ClaimScope,
   ClaimType,
+  ErrorCode,
   IdentityWithClaims,
   ModifyClaimsParams,
   ProcedureMethod,
@@ -23,6 +30,8 @@ import {
 import { Ensured } from '~/types/utils';
 import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 import {
+  bigNumberToU32,
+  bytesToString,
   identityIdToString,
   meshClaimToClaim,
   momentToDate,
@@ -30,8 +39,19 @@ import {
   signerToString,
   stringToIdentityId,
   toIdentityWithClaimsArray,
+  u32ToBigNumber,
 } from '~/utils/conversion';
 import { calculateNextKey, createProcedureMethod, getDid, removePadding } from '~/utils/internal';
+
+type CustomClaimType = {
+  name: string;
+  id: BigNumber;
+};
+
+type CustomClaimTypeToHuman = {
+  name: string;
+  id: string;
+};
 
 /**
  * Handles all Claims related functionality
@@ -483,4 +503,77 @@ export class Claims {
    *  - a custom claim type with the same `name` already exists
    */
   public registerCustomClaimType: ProcedureMethod<RegisterCustomClaimTypeParams, BigNumber>;
+
+  /** Retrieves a custom claim type based on the provided options.
+   *
+   * @remarks
+   * This method can retrieve a custom claim type using either its `name` or `id`.
+   *
+   * @param opts - The options object used for retrieving the custom claim type.
+   * @param opts.name - The name of the custom claim type to retrieve.
+   * @param opts.id - The ID of the custom claim type to retrieve.
+   *
+   * @throws {PolymeshError}
+   * Throws a PolymeshError if neither `name` nor `id` is provided in the options.
+   *
+   * @returns A promise that resolves to the `CustomClaimTypeToHuman` object if found, or null otherwise.
+   */
+  public async getCustomClaimType(
+    opts: Partial<CustomClaimType>
+  ): Promise<CustomClaimTypeToHuman | null> {
+    if (opts.name) {
+      return this.getCustomClaimTypeByName(opts.name);
+    }
+
+    if (opts.id) {
+      return this.getCustomClaimTypeById(opts.id);
+    }
+
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Either `name` or `id` must be provided',
+    });
+  }
+
+  /**
+   * @hidden
+   */
+  private async getCustomClaimTypeByName(name: string): Promise<CustomClaimTypeToHuman | null> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { identity },
+        },
+      },
+    } = this;
+
+    const customClaimTypeIdOpt = await identity.customClaimsInverse(name);
+
+    if (!customClaimTypeIdOpt.isSome) {
+      return null;
+    }
+
+    return { id: u32ToBigNumber(customClaimTypeIdOpt.value).toString(), name };
+  }
+
+  /**
+   * @hidden
+   */
+  private async getCustomClaimTypeById(id: BigNumber): Promise<CustomClaimTypeToHuman | null> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { identity },
+        },
+      },
+    } = this;
+
+    const customClaimTypeIdOpt = await identity.customClaims(bigNumberToU32(id, this.context));
+
+    if (!customClaimTypeIdOpt.isSome) {
+      return null;
+    }
+
+    return { id: id.toString(), name: bytesToString(customClaimTypeIdOpt.value) };
+  }
 }
