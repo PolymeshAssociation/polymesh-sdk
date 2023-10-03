@@ -97,7 +97,7 @@ export { Account } from '~/api/entities/Account';
 export { MultiSig } from '~/api/entities/Account/MultiSig';
 export { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 export { TickerReservation } from '~/api/entities/TickerReservation';
-export { BaseAsset, FungibleAsset, NftCollection } from '~/api/entities/Asset';
+export { BaseAsset, FungibleAsset, NftCollection, Nft } from '~/api/entities/Asset';
 export { MetadataEntry } from '~/api/entities/MetadataEntry';
 export { registerMetadata } from '~/api/procedures/registerMetadata';
 export { setMetadata } from '~/api/procedures/setMetadata';

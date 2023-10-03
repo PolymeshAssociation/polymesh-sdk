@@ -60,6 +60,7 @@ import {
   KnownNftType,
   Leg,
   MetadataDetails,
+  MetadataKeyId,
   MetadataLockStatus,
   MetadataType,
   MetadataValue,
@@ -196,6 +197,8 @@ interface NftCollectionOptions extends BaseAssetOptions {
   complianceRequirementsGet?: EntityGetter<ComplianceRequirements>;
   investorCount?: EntityGetter<BigNumber>;
   getNextLocalId?: EntityGetter<BigNumber>;
+  collectionMetadataKeys?: EntityGetter<MetadataKeyId[]>;
+  getCollectionId?: EntityGetter<BigNumber>;
 }
 
 interface MetadataEntryOptions extends EntityOptions {
@@ -1099,6 +1102,9 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
 
     metadata = {} as { getNextLocalId: jest.Mock };
 
+    collectionMetadataKeys!: jest.Mock;
+    getCollectionId!: jest.Mock;
+
     investorCount!: jest.Mock;
 
     /**
@@ -1122,10 +1128,12 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
       this.permissions.getAgents = createEntityGetterMock(opts.permissionsGetAgents);
       this.investorCount = createEntityGetterMock(opts.investorCount);
       this.metadata.getNextLocalId = createEntityGetterMock(opts.getNextLocalId);
+      this.collectionMetadataKeys = createEntityGetterMock(opts.collectionMetadataKeys);
+      this.getCollectionId = createEntityGetterMock(opts.getCollectionId);
     }
   },
   () => ({
-    ticker: 'SOME_TICKER',
+    ticker: 'TICKER',
     did: 'assetDid',
     details: {
       owner: getIdentityInstance(),
@@ -1151,6 +1159,8 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
     getNextLocalId: new BigNumber(0),
     toHuman: 'SOME_TICKER',
     investorCount: new BigNumber(0),
+    collectionMetadataKeys: [],
+    getCollectionId: new BigNumber(0),
   }),
   ['NftCollection']
 );

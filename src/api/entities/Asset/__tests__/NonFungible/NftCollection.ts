@@ -6,7 +6,7 @@ import { when } from 'jest-when';
 import { BaseAsset, Context, Entity, NftCollection, PolymeshTransaction } from '~/internal';
 import { assetQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { KnownNftType, SecurityIdentifier, SecurityIdentifierType } from '~/types';
+import { KnownNftType, MetadataType, SecurityIdentifier, SecurityIdentifierType } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -323,6 +323,87 @@ describe('NftCollection class', () => {
 
       expect(result).toBe(fakeUnsubCallback);
       expect(callback).toBeCalledWith({ ...mockDetails, totalSupply: new BigNumber(3) });
+    });
+  });
+
+  describe('method: collectionMetadataKeys', () => {
+    let u64ToBigNumberSpy: jest.SpyInstance;
+    let meshMetadataKeyToMetadataKeySpy: jest.SpyInstance;
+
+    beforeAll(() => {
+      u64ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u64ToBigNumber');
+      meshMetadataKeyToMetadataKeySpy = jest.spyOn(
+        utilsConversionModule,
+        'meshMetadataKeyToMetadataKey'
+      );
+    });
+
+    it('should return required metadata', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const ticker = 'TICKER';
+      const id = new BigNumber(1);
+      const collection = new NftCollection({ ticker }, context);
+      const mockMetadataKey = dsMockUtils.createMockAssetMetadataKey({
+        Global: dsMockUtils.createMockU64(id),
+      });
+
+      jest.spyOn(collection, 'getCollectionId').mockResolvedValue(id);
+
+      when(meshMetadataKeyToMetadataKeySpy)
+        .calledWith(mockMetadataKey, ticker)
+        .mockReturnValue({ type: MetadataType.Global, id });
+
+      u64ToBigNumberSpy.mockReturnValue(id);
+      dsMockUtils.createQueryMock('nft', 'collectionKeys', {
+        returnValue: dsMockUtils.createMockBTreeSet([mockMetadataKey]),
+      });
+
+      const result = await collection.collectionMetadataKeys();
+
+      expect(result).toEqual([{ type: MetadataType.Global, id: new BigNumber(1) }]);
+    });
+  });
+
+  describe('method: getCollectionId', () => {
+    it('should return and cache the collection ID', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const ticker = 'TICKER';
+      const collection = new NftCollection({ ticker }, context);
+      const id = new BigNumber(1);
+      const rawId = dsMockUtils.createMockU64(id);
+
+      const idMock = dsMockUtils.createQueryMock('nft', 'collectionTicker', { returnValue: rawId });
+
+      const result = await collection.getCollectionId();
+
+      expect(result).toEqual(new BigNumber(1));
+
+      await collection.getCollectionId();
+
+      expect(idMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('method: issue', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const ticker = 'TEST';
+      const context = dsMockUtils.getContextInstance();
+      const collection = new NftCollection({ ticker }, context);
+
+      const args = {
+        metadata: [],
+      };
+
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<NftCollection>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { ticker, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await collection.issue(args);
+
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
