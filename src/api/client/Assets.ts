@@ -26,6 +26,7 @@ import {
   bytesToString,
   meshMetadataSpecToMetadataSpec,
   stringToIdentityId,
+  stringToTicker,
   tickerToString,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -197,7 +198,6 @@ export class Assets {
     const ownedTickers = entries.reduce<string[]>((result, [key, relation]) => {
       if (relation.isAssetOwned) {
         const ticker = tickerToString(key.args[1]);
-
         if (isPrintableAscii(ticker)) {
           result.push(ticker);
         }
@@ -206,7 +206,9 @@ export class Assets {
       return result;
     }, []);
 
-    const ownedDetails = await query.asset.tokens.multi(ownedTickers);
+    const ownedDetails = await query.asset.tokens.multi(
+      ownedTickers.map(ticker => stringToTicker(ticker, context))
+    );
 
     return assembleAssetQuery(ownedDetails, ownedTickers, context);
   }
