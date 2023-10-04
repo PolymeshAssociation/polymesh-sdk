@@ -33,7 +33,7 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
    *
    * @returns the total amount of restrictions after the procedure has run
    *
-   * @throws if a count statistic is not enabled for the Asset. {@link api/entities/Asset/TransferRestrictions/Count!Count.enableStat | Count.enableStat } should be called before this method
+   * @throws if a count statistic is not enabled for the Asset. {@link api/entities/Asset/Fungible/TransferRestrictions/Count!Count.enableStat | Count.enableStat } should be called before this method
    */
   public declare addRestriction: ProcedureMethod<
     Omit<AddCountTransferRestrictionParams, 'type'>,
@@ -64,7 +64,7 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
    * Enables an investor count statistic for the Asset, which is required before creating restrictions
    *
    * The counter is only updated automatically with each transfer of tokens after the stat has been enabled.
-   * As such the initial value for the stat should be passed in, which can be fetched with {@link api/entities/Asset/TransferRestrictions/Count!Count.investorCount | Count.investorCount }
+   * As such the initial value for the stat should be passed in, which can be fetched with {@link api/entities/Asset/Fungible/TransferRestrictions/Count!Count.investorCount | Count.investorCount }
    *
    * @note Currently there is a potential race condition if passing in counts values when the Asset is being traded.
    * It is recommended to call this method during the initial configuration of the Asset, before people are trading it.
