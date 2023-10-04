@@ -47,7 +47,6 @@ import { createProcedureMethod } from '~/utils/internal';
 /**
  * Class used to manage functionality common to all assets.
  *
- * @hidden
  */
 export class BaseAsset extends Entity<UniqueIdentifiers, string> {
   // Namespaces
