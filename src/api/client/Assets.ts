@@ -288,7 +288,7 @@ export class Assets {
       }
     );
 
-    const details = await tokens.multi(tickers);
+    const details = await tokens.multi(tickers.map(ticker => stringToTicker(ticker, context)));
 
     const data = assembleAssetQuery(details, tickers, context);
 
