@@ -21,6 +21,10 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 jest.mock(
+  '~/api/entities/Asset/NonFungible',
+  require('~/testUtils/mocks/entities').mockNftCollectionModule('~/api/entities/Asset/NonFungible')
+);
+jest.mock(
   '~/api/entities/DefaultPortfolio',
   require('~/testUtils/mocks/entities').mockDefaultPortfolioModule(
     '~/api/entities/DefaultPortfolio'

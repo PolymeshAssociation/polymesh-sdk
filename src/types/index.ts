@@ -27,6 +27,8 @@ import {
   Identity,
   Instruction,
   KnownPermissionGroup,
+  Nft,
+  NftCollection,
   NumberedPortfolio,
   Offering,
   PolymeshTransaction,
@@ -741,6 +743,21 @@ export interface Balance {
   total: BigNumber;
 }
 
+export interface NftHolding {
+  /**
+   * NFTs available for transferring
+   */
+  free: Nft[];
+  /**
+   * NFTs that are locked, such as being involved in a pending instruction
+   */
+  locked: Nft[];
+  /**
+   * Total number of NFTs held for a collection
+   */
+  total: BigNumber;
+}
+
 export type AccountBalance = Balance;
 
 export interface PaginationOptions {
@@ -1269,7 +1286,7 @@ export type PermissionsLike = {
     }
 );
 
-export interface PortfolioMovement {
+export interface PortfolioMovementFungible {
   asset: string | FungibleAsset;
   amount: BigNumber;
   /**
@@ -1278,6 +1295,16 @@ export interface PortfolioMovement {
   memo?: string;
 }
 
+export type PortfolioMovementNonFungible = {
+  asset: NftCollection | string;
+  nfts: (Nft | BigNumber)[];
+  /**
+   * identifier string to help differentiate transfers
+   */
+  memo?: string;
+};
+
+export type PortfolioMovement = PortfolioMovementFungible | PortfolioMovementNonFungible;
 export interface ProcedureAuthorizationStatus {
   /**
    * whether the Identity complies with all required Agent permissions

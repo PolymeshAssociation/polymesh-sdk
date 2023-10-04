@@ -37,6 +37,7 @@ import {
   Context,
   FungibleAsset,
   Identity,
+  Nft,
   NftCollection,
   PolymeshError,
 } from '~/internal';
@@ -1791,4 +1792,15 @@ export function assembleAssetQuery(
       return new FungibleAsset({ ticker }, context);
     }
   });
+}
+
+/**
+ * @hidden
+ */
+export function asNftId(nft: Nft | BigNumber): BigNumber {
+  if (nft instanceof BigNumber) {
+    return nft;
+  } else {
+    return nft.id;
+  }
 }

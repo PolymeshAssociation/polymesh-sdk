@@ -16,6 +16,7 @@ import {
   Identity,
   Instruction,
   KnownPermissionGroup,
+  NftCollection,
   NumberedPortfolio,
   Offering,
   PolymeshError,
@@ -42,7 +43,6 @@ import {
   JurisdictionClaim,
   KycClaim,
   MultiClaimCondition,
-  NftCollection,
   PortfolioCustodianRole,
   ProposalStatus,
   Role,
@@ -361,5 +361,5 @@ export function isFungibleAsset(asset: BaseAsset): asset is FungibleAsset {
  * Return whether an asset is a NftCollection
  */
 export function isNftCollection(asset: BaseAsset): asset is NftCollection {
-  return asset instanceof FungibleAsset;
+  return asset instanceof NftCollection;
 }

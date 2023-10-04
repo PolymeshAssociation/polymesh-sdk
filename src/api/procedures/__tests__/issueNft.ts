@@ -24,6 +24,10 @@ jest.mock(
   '~/api/entities/Asset/NonFungible',
   require('~/testUtils/mocks/entities').mockNftCollectionModule('~/api/entities/Asset/NonFungible')
 );
+jest.mock(
+  '~/api/entities/Asset/NonFungible',
+  require('~/testUtils/mocks/entities').mockNftModule('~/api/entities/Asset/NonFungible')
+);
 
 describe('issueNft procedure', () => {
   let mockContext: Mocked<Context>;
@@ -318,7 +322,7 @@ describe('issueNft procedure', () => {
       const context = dsMockUtils.getContextInstance();
       const result = issueNftResolver(context)({} as ISubmittableResult);
 
-      expect(result).toEqual(expect.objectContaining({ ticker }));
+      expect(result.collection).toEqual(expect.objectContaining({ ticker }));
     });
   });
 });

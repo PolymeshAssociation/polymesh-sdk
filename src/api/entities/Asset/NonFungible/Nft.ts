@@ -18,8 +18,6 @@ export type NftUniqueIdentifiers = {
  * Class used to manage Nft functionality
  */
 export class Nft extends Entity<NftUniqueIdentifiers, string> {
-  public ticker: string;
-
   public id: BigNumber;
 
   public collection: NftCollection;
@@ -44,7 +42,6 @@ export class Nft extends Entity<NftUniqueIdentifiers, string> {
 
     const { ticker, id } = identifiers;
 
-    this.ticker = ticker;
     this.id = id;
 
     this.collection = new NftCollection({ ticker }, context);
@@ -107,7 +104,10 @@ export class Nft extends Entity<NftUniqueIdentifiers, string> {
    * @hidden
    */
   public toHuman(): string {
-    const { ticker, id } = this;
+    const {
+      collection: { ticker },
+      id,
+    } = this;
 
     return JSON.stringify({
       ticker,

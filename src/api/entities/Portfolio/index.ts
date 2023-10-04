@@ -9,6 +9,8 @@ import {
   FungibleAsset,
   Identity,
   moveFunds,
+  Nft,
+  NftCollection,
   PolymeshError,
   quitCustody,
   setCustodian,
@@ -33,15 +35,17 @@ import {
   middlewarePortfolioToPortfolio,
   portfolioIdToMeshPortfolioId,
   tickerToString,
+  u64ToBigNumber,
 } from '~/utils/conversion';
 import {
   asFungibleAsset,
+  asTicker,
   createProcedureMethod,
   getIdentity,
   toHumanReadable,
 } from '~/utils/internal';
 
-import { HistoricSettlement, PortfolioBalance } from './types';
+import { HistoricSettlement, PortfolioBalance, PortfolioNftHolding } from './types';
 
 export interface UniqueIdentifiers {
   did: string;
@@ -134,9 +138,9 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
   }
 
   /**
-   * Retrieve the balances of all Assets in this Portfolio
+   * Retrieve the balances of all fungible assets in this Portfolio
    *
-   * @param args.assets - array of Assets (or tickers) for which to fetch balances (optional, all balances are retrieved if not passed)
+   * @param args.assets - array of FungibleAssets (or tickers) for which to fetch balances (optional, all balances are retrieved if not passed)
    */
   public async getAssetBalances(args?: {
     assets: (string | FungibleAsset)[];
@@ -210,6 +214,91 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     }
 
     return values(assetBalances);
+  }
+
+  /**
+   * Retrieve the NFTs held in this portfolio
+   *
+   *  @param args.assets - array of NftCollection (or tickers) for which to fetch holdings (optional, all holdings are retrieved if not passed)
+   */
+  public async getNftsHeld(args?: {
+    assets: (string | NftCollection)[];
+  }): Promise<PortfolioNftHolding[]> {
+    const {
+      owner: { did },
+      _id: portfolioId,
+      context: {
+        polymeshApi: {
+          query: { portfolio },
+        },
+      },
+      context,
+    } = this;
+
+    const rawPortfolioId = portfolioIdToMeshPortfolioId({ did, number: portfolioId }, context);
+    const [exists, freeBalanceEntries, lockedBalanceEntries] = await Promise.all([
+      this.exists(),
+      portfolio.portfolioNFT.entries(rawPortfolioId),
+      portfolio.portfolioLockedNFT.entries(rawPortfolioId),
+    ]);
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: notExistsMessage,
+      });
+    }
+
+    const queriedCollections = args?.assets.map(asset => asTicker(asset));
+    const seenTickers = new Set<string>();
+
+    const processBalance = (
+      entry: (typeof freeBalanceEntries)[0],
+      balanceRecord: Record<string, Nft[]>
+    ): void => {
+      const [key] = entry;
+
+      const ticker = tickerToString(key.args[1][0]);
+      const heldId = u64ToBigNumber(key.args[1][1]);
+
+      // ignore assets not specified if the user provided a filter arg
+      if (queriedCollections && !queriedCollections.includes(ticker)) {
+        return;
+      }
+
+      seenTickers.add(ticker);
+
+      if (!balanceRecord[ticker]) {
+        const nft = new Nft({ id: heldId, ticker }, context);
+
+        balanceRecord[ticker] = [nft];
+      } else {
+        const nft = new Nft({ id: heldId, ticker }, context);
+        balanceRecord[ticker].push(nft);
+      }
+    };
+
+    const freeBalances: Record<string, Nft[]> = {};
+    freeBalanceEntries.forEach(entry => processBalance(entry, freeBalances));
+
+    const lockedBalances: Record<string, Nft[]> = {};
+    lockedBalanceEntries.forEach(entry => processBalance(entry, lockedBalances));
+
+    const holdings: PortfolioNftHolding[] = [];
+    seenTickers.forEach(ticker => {
+      const free = freeBalances[ticker] || [];
+      const locked = lockedBalances[ticker] || [];
+      const total = new BigNumber(free.length + locked.length);
+
+      holdings.push({
+        asset: new NftCollection({ ticker }, context),
+        free,
+        locked,
+        total,
+      });
+    });
+
+    return holdings;
   }
 
   /**

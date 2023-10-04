@@ -3,10 +3,14 @@ import BigNumber from 'bignumber.js';
 import { Account, FungibleAsset } from '~/internal';
 import { SettlementResultEnum as SettlementResult } from '~/middleware/enums';
 import { SettlementDirectionEnum as SettlementDirection } from '~/middleware/typesV1';
-import { Balance, Leg } from '~/types';
+import { Balance, Leg, NftCollection, NftHolding } from '~/types';
 
 export interface PortfolioBalance extends Balance {
   asset: FungibleAsset;
+}
+
+export interface PortfolioNftHolding extends NftHolding {
+  asset: NftCollection;
 }
 
 export interface SettlementLeg extends Leg {

@@ -24,6 +24,7 @@ import {
   MetadataEntry,
   MultiSig,
   MultiSigProposal,
+  Nft,
   NftCollection,
   NumberedPortfolio,
   Offering,
@@ -32,6 +33,7 @@ import {
   TickerReservation,
   Venue,
 } from '~/internal';
+import { entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
@@ -65,6 +67,7 @@ import {
   MetadataType,
   MetadataValue,
   MultiSigProposalDetails,
+  NftMetadata,
   OfferingBalanceStatus,
   OfferingDetails,
   OfferingSaleStatus,
@@ -74,6 +77,7 @@ import {
   PermissionGroups,
   PermissionGroupType,
   PortfolioBalance,
+  PortfolioNftHolding,
   ProposalStatus,
   ResultSet,
   ScheduleDetails,
@@ -98,6 +102,7 @@ export type MockTickerReservation = Mocked<TickerReservation>;
 export type MockBaseAsset = Mocked<BaseAsset>;
 export type MockFungibleAsset = Mocked<FungibleAsset>;
 export type MockNftCollection = Mocked<NftCollection>;
+export type MockNft = Mocked<Nft>;
 export type MockMetadataEntry = Mocked<MetadataEntry>;
 export type MockAuthorizationRequest = Mocked<AuthorizationRequest>;
 export type MockVenue = Mocked<Venue>;
@@ -201,6 +206,13 @@ interface NftCollectionOptions extends BaseAssetOptions {
   getCollectionId?: EntityGetter<BigNumber>;
 }
 
+interface NftOptions extends EntityOptions {
+  id?: BigNumber;
+  ticker?: string;
+  collection?: NftCollection;
+  getMetadata?: EntityGetter<NftMetadata[]>;
+}
+
 interface MetadataEntryOptions extends EntityOptions {
   id?: BigNumber;
   ticker?: string;
@@ -248,6 +260,7 @@ interface NumberedPortfolioOptions extends EntityOptions {
   id?: BigNumber;
   isOwnedBy?: EntityGetter<boolean>;
   getAssetBalances?: EntityGetter<PortfolioBalance[]>;
+  getNftsHeld?: EntityGetter<PortfolioNftHolding[]>;
   getCustodian?: EntityGetter<Identity>;
   isCustodiedBy?: EntityGetter<boolean>;
 }
@@ -256,6 +269,7 @@ interface DefaultPortfolioOptions extends EntityOptions {
   did?: string;
   isOwnedBy?: EntityGetter<boolean>;
   getAssetBalances?: EntityGetter<PortfolioBalance[]>;
+  getNftsHeld?: EntityGetter<PortfolioNftHolding[]>;
   getCustodian?: EntityGetter<Identity>;
   isCustodiedBy?: EntityGetter<boolean>;
 }
@@ -352,6 +366,7 @@ type MockOptions = {
   tickerReservationOptions?: TickerReservationOptions;
   fungibleAssetOptions?: FungibleAssetOptions;
   nftCollectionOptions?: NftCollectionOptions;
+  nftOptions?: NftOptions;
   baseAssetOptions?: BaseAssetOptions;
   metadataEntryOptions?: MetadataEntryOptions;
   authorizationRequestOptions?: AuthorizationRequestOptions;
@@ -1165,6 +1180,39 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
   ['NftCollection']
 );
 
+const MockNftClass = createMockEntityClass<NftOptions>(
+  class {
+    uuid!: string;
+    id!: BigNumber;
+    collection!: NftCollection;
+    getMetadata!: jest.Mock;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof Nft>) {
+      return extractFromArgs(args, ['ticker']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<NftOptions>) {
+      this.uuid = 'nft';
+      this.collection = opts.collection;
+      this.getMetadata = createEntityGetterMock(opts.getMetadata);
+    }
+  },
+  () => ({
+    collection: entityMockUtils.getNftCollectionInstance(),
+    did: 'nftDid',
+    id: new BigNumber(1),
+    ticker: 'NFT',
+    getMetadata: [],
+  }),
+  ['Nft']
+);
+
 const MockBaseAssetClass = createMockEntityClass<BaseAssetOptions>(
   class {
     uuid!: string;
@@ -1430,6 +1478,7 @@ const MockNumberedPortfolioClass = createMockEntityClass<NumberedPortfolioOption
     owner!: Identity;
     isOwnedBy!: jest.Mock;
     getAssetBalances!: jest.Mock;
+    getNftsHeld!: jest.Mock;
     getCustodian!: jest.Mock;
     isCustodiedBy!: jest.Mock;
 
@@ -1449,6 +1498,7 @@ const MockNumberedPortfolioClass = createMockEntityClass<NumberedPortfolioOption
       this.owner = getIdentityInstance({ did: opts.did });
       this.isOwnedBy = createEntityGetterMock(opts.isOwnedBy);
       this.getAssetBalances = createEntityGetterMock(opts.getAssetBalances);
+      this.getNftsHeld = createEntityGetterMock(opts.getNftsHeld);
       this.getCustodian = createEntityGetterMock(opts.getCustodian);
       this.isCustodiedBy = createEntityGetterMock(opts.isCustodiedBy);
     }
@@ -1464,6 +1514,7 @@ const MockNumberedPortfolioClass = createMockEntityClass<NumberedPortfolioOption
         free: new BigNumber(1),
       },
     ],
+    getNftsHeld: [],
     did: 'someDid',
     getCustodian: getIdentityInstance(),
     isCustodiedBy: true,
@@ -1481,6 +1532,7 @@ const MockDefaultPortfolioClass = createMockEntityClass<DefaultPortfolioOptions>
     owner!: Identity;
     isOwnedBy!: jest.Mock;
     getAssetBalances!: jest.Mock;
+    getNftsHeld!: jest.Mock;
     getCustodian!: jest.Mock;
     isCustodiedBy!: jest.Mock;
 
@@ -1499,6 +1551,7 @@ const MockDefaultPortfolioClass = createMockEntityClass<DefaultPortfolioOptions>
       this.owner = getIdentityInstance({ did: opts.did });
       this.isOwnedBy = createEntityGetterMock(opts.isOwnedBy);
       this.getAssetBalances = createEntityGetterMock(opts.getAssetBalances);
+      this.getNftsHeld = createEntityGetterMock(opts.getNftsHeld);
       this.getCustodian = createEntityGetterMock(opts.getCustodian);
       this.isCustodiedBy = createEntityGetterMock(opts.isCustodiedBy);
     }
@@ -1513,6 +1566,7 @@ const MockDefaultPortfolioClass = createMockEntityClass<DefaultPortfolioOptions>
         free: new BigNumber(1),
       },
     ],
+    getNftsHeld: [],
     did: 'someDid',
     getCustodian: getIdentityInstance(),
     isCustodiedBy: true,
@@ -2044,6 +2098,11 @@ export const mockNftCollectionModule = (path: string) => (): Record<string, unkn
   NftCollection: MockNftCollectionClass,
 });
 
+export const mockNftModule = (path: string) => (): Record<string, unknown> => ({
+  ...jest.requireActual(path),
+  Nft: MockNftClass,
+});
+
 export const mockBaseAssetModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   BaseAsset: MockBaseAssetClass,
@@ -2136,6 +2195,7 @@ export const initMocks = function (opts?: MockOptions): void {
   MockTickerReservationClass.init(opts?.tickerReservationOptions);
   MockFungibleAssetClass.init(opts?.fungibleAssetOptions);
   MockNftCollectionClass.init(opts?.nftCollectionOptions);
+  MockNftClass.init(opts?.nftOptions);
   MockBaseAssetClass.init(opts?.baseAssetOptions);
   MockMetadataEntryClass.init(opts?.metadataEntryOptions);
   MockAuthorizationRequestClass.init(opts?.authorizationRequestOptions);
@@ -2167,6 +2227,7 @@ export const configureMocks = function (opts?: MockOptions): void {
   MockTickerReservationClass.setOptions(opts?.tickerReservationOptions);
   MockFungibleAssetClass.setOptions(opts?.fungibleAssetOptions);
   MockNftCollectionClass.setOptions(opts?.nftCollectionOptions);
+  MockNftClass.setOptions(opts?.nftOptions);
   MockBaseAssetClass.setOptions(opts?.baseAssetOptions);
   MockMetadataEntryClass.setOptions(opts?.metadataEntryOptions);
   MockAuthorizationRequestClass.setOptions(opts?.authorizationRequestOptions);
@@ -2322,6 +2383,16 @@ export const getNftCollectionInstance = (opts?: NftCollectionOptions): MockNftCo
   }
 
   return instance as unknown as MockNftCollection;
+};
+
+export const getNftInstance = (opts: NftOptions): MockNft => {
+  const instance = new MockNftClass();
+
+  if (opts) {
+    instance.configure(opts);
+  }
+
+  return instance as unknown as MockNft;
 };
 
 /**

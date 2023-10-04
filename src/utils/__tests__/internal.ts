@@ -11,7 +11,15 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { Account, Context, FungibleAsset, Identity, PolymeshError, Procedure } from '~/internal';
+import {
+  Account,
+  Context,
+  FungibleAsset,
+  Identity,
+  Nft,
+  PolymeshError,
+  Procedure,
+} from '~/internal';
 import { latestSqVersionQuery } from '~/middleware/queries';
 import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -53,6 +61,7 @@ import {
   asAccount,
   asChildIdentity,
   asFungibleAsset,
+  asNftId,
   assertAddressValid,
   assertExpectedChainVersion,
   assertExpectedSqVersion,
@@ -2178,5 +2187,26 @@ describe('asFungibleAsset', () => {
     const result = asFungibleAsset(baseAsset, mockContext);
 
     expect(result).toEqual(expect.objectContaining({ ticker }));
+  });
+});
+
+describe('asNftId', () => {
+  it('should return a BigNumber when given an NFT', () => {
+    const context = dsMockUtils.getContextInstance();
+    const id = new BigNumber(1);
+    const ticker = 'TICKER';
+    const nft = new Nft({ id, ticker }, context);
+
+    const result = asNftId(nft);
+
+    expect(result).toEqual(id);
+  });
+
+  it('should return a BigNumber when given a BigNumber', () => {
+    const id = new BigNumber(1);
+
+    const result = asNftId(id);
+
+    expect(result).toEqual(id);
   });
 });
