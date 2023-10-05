@@ -17430,6 +17430,7 @@ export type Claim = Node & {
   /** Reads a single `Block` that is related to this `Claim`. */
   updatedBlock?: Maybe<Block>;
   updatedBlockId: Scalars['String'];
+  customClaimTypeId?: Maybe<Scalars['Int']>;
 };
 
 export type ClaimAggregates = {
@@ -30116,6 +30117,7 @@ export enum PublicEnumEc3243D777 {
   NoData = 'NoData',
   NoType = 'NoType',
   SellLockup = 'SellLockup',
+  Custom = 'Custom',
 }
 
 /** A filter to be used against PublicEnumEc3243D777 fields. All fields are combined with a logical ‘and.’ */

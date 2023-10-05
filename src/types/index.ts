@@ -34,6 +34,7 @@ import {
   PolymeshTransaction,
   PolymeshTransactionBatch,
 } from '~/internal';
+import { CustomClaimTypeId } from '~/polkadot/polymesh/types';
 import { Modify } from '~/types/utils';
 
 export { EventRecord } from '@polkadot/types/interfaces';
@@ -224,6 +225,7 @@ export enum ClaimType {
   Jurisdiction = 'Jurisdiction',
   Exempted = 'Exempted',
   Blocked = 'Blocked',
+  Custom = 'Custom',
 }
 
 export interface AccreditedClaim {
@@ -267,6 +269,12 @@ export interface ExemptedClaim {
   scope: Scope;
 }
 
+export interface CustomClaim {
+  type: ClaimType.Custom;
+  scope: Scope;
+  customClaimTypeId: CustomClaimTypeId;
+}
+
 export interface BlockedClaim {
   type: ClaimType.Blocked;
   scope: Scope;
@@ -280,7 +288,8 @@ export type ScopedClaim =
   | SellLockupClaim
   | KycClaim
   | ExemptedClaim
-  | BlockedClaim;
+  | BlockedClaim
+  | CustomClaim;
 
 export type UnscopedClaim = CddClaim;
 

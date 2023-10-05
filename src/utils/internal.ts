@@ -44,6 +44,7 @@ import {
 import { latestSqVersionQuery } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import { MiddlewareScope } from '~/middleware/typesV1';
+import { CustomClaimTypeId } from '~/polkadot/polymesh/types';
 import {
   CaCheckpointType,
   Claim,
@@ -241,7 +242,8 @@ export function createClaim(
   claimType: string,
   jurisdiction: Falsyable<string>,
   middlewareScope: Falsyable<MiddlewareScope>,
-  cddId: Falsyable<string>
+  cddId: Falsyable<string>,
+  customClaimTypeId: Falsyable<CustomClaimTypeId>
 ): Claim {
   const type = claimType as ClaimType;
   const scope = (middlewareScope ? middlewareScopeToScope(middlewareScope) : {}) as Scope;
@@ -260,6 +262,13 @@ export function createClaim(
       return {
         type,
         id: cddId as string,
+      };
+    }
+    case ClaimType.Custom: {
+      return {
+        type,
+        customClaimTypeId: customClaimTypeId as CustomClaimTypeId,
+        scope,
       };
     }
   }

@@ -2928,6 +2928,7 @@ export function middlewareClaimToClaimData(claim: MiddlewareClaim, context: Cont
     jurisdiction,
     scope,
     cddId,
+    customClaimTypeId,
   } = claim;
   return {
     target: new Identity({ did: targetId }, context),
@@ -2935,7 +2936,13 @@ export function middlewareClaimToClaimData(claim: MiddlewareClaim, context: Cont
     issuedAt: new Date(parseFloat(issuanceDate)),
     lastUpdatedAt: new Date(parseFloat(lastUpdateDate)),
     expiry: expiry ? new Date(parseFloat(expiry)) : null,
-    claim: createClaim(type, jurisdiction, scope, cddId),
+    claim: createClaim(
+      type,
+      jurisdiction,
+      scope,
+      cddId,
+      customClaimTypeId ? bigNumberToU32(new BigNumber(customClaimTypeId), context) : undefined
+    ),
   };
 }
 
