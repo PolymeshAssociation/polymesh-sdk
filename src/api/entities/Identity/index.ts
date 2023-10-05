@@ -850,4 +850,15 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    *  - the transaction signer is not the primary key of the parent identity
    */
   public unlinkChild: ProcedureMethod<UnlinkChildParams, void>;
+
+  /**
+   * Check whether this Identity is a child Identity
+   */
+  public async isChild(): Promise<boolean> {
+    const { did, context } = this;
+
+    const childIdentity = new ChildIdentity({ did }, context);
+
+    return childIdentity.exists();
+  }
 }
