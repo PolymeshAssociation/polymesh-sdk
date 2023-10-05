@@ -1,3 +1,5 @@
+import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+
 import {
   Context,
   createAsset,
@@ -194,19 +196,21 @@ export class Assets {
       stringToIdentityId(did, context)
     );
 
-    const ownedTickers = entries.reduce<string[]>((result, [key, relation]) => {
-      if (relation.isAssetOwned) {
-        const ticker = tickerToString(key.args[1]);
+    const ownedTickers: string[] = [];
+    const rawTickers: PolymeshPrimitivesTicker[] = [];
 
+    entries.forEach(([key, relation]) => {
+      if (relation.isAssetOwned) {
+        const rawTicker = key.args[1];
+        const ticker = tickerToString(rawTicker);
         if (isPrintableAscii(ticker)) {
-          result.push(ticker);
+          ownedTickers.push(ticker);
+          rawTickers.push(rawTicker);
         }
       }
+    });
 
-      return result;
-    }, []);
-
-    const ownedDetails = await query.asset.tokens.multi(ownedTickers);
+    const ownedDetails = await query.asset.tokens.multi(rawTickers);
 
     return assembleAssetQuery(ownedDetails, ownedTickers, context);
   }
@@ -276,17 +280,21 @@ export class Assets {
       paginationOpts,
     });
 
-    const tickers = entries.map(
+    const tickers: string[] = [];
+    const rawTickers: PolymeshPrimitivesTicker[] = [];
+
+    entries.forEach(
       ([
         {
           args: [rawTicker],
         },
       ]) => {
-        return tickerToString(rawTicker);
+        rawTickers.push(rawTicker);
+        tickers.push(tickerToString(rawTicker));
       }
     );
 
-    const details = await tokens.multi(tickers);
+    const details = await tokens.multi(rawTickers);
 
     const data = assembleAssetQuery(details, tickers, context);
 
