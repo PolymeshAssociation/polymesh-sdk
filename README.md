@@ -72,7 +72,7 @@ async function run() {
   const signingManager = await LocalSigningManager.create({
     accounts: [
       {
-        seed: 'YOU_WISH',
+        mnemonic: '//Alice', //A "well known" mnemonic, often with sudo privileges on development chains, most mnemonics are 12 words
       },
     ],
   });
@@ -107,3 +107,46 @@ async function run() {
   // do stuff with the client
 }
 ```
+
+#### Creating transactions
+
+Creating transactions is a two step process. First a procedure is created, which validates the chain is likely to accept the transaction and returns a `Procedure` object. This procedure is then ran
+
+```typescript
+  /**
+   * This step performs validations, and will throw if the transaction isn't expected to proceed, e.g. `ticker` is already used
+   */
+  const createAssetProc = await polyClient.assets.createAsset({
+    name: 'My new asset'
+    ticker: 'TICKER',
+    // ... (args omitted for brevity)
+  })
+
+  /**
+   * The promise will resolve when the transaction is in a finalized block which takes on average 15 seconds. It will throw if the transaction fails to finalize
+   * For example `ticker` was claimed after the procedure was created, but before it was ran, or the signing manager didn't generate a correct signature.
+   */
+  const newAsset = await createAssetProc.run()
+```
+
+#### Reading data
+
+The sdk exposes getters functions that will return entities, that may have their own functions exposed:
+
+```typescript
+  const assetsPage = await polyClient.assets.get({ size: new BigNumber(20) })
+  const asset = assetsPage.data[0]
+
+  const assetDetails = await asset.details()
+  console.log('asset details:', assetDetails)
+```
+
+Note: some getters require "middleware" to be configured, which is chain indexer that aids for historical queries. All such methods will have a comment indicating as such.
+
+### Terminology
+
+The SDK uses the class `Account` as an abstraction for a public/private key pair that is used to sign transactions. Although consistent with [Substrate](https://substrate.io/vision/substrate-and-polkadot/) (the chain's framework) naming conventions, it serves as a frequent source of confusion given the domain. What the SDK calls an account is often referred to as a key. Public keys are often represented in ss58 which is a special encoding that incorporated the intended network the key is supposed to be used on. In this form it is referred to as an address and looks like: `5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY` (mainnet accounts start with `2`, testnet and dev chains start with `5`).
+
+The only thing the `Account` holds in the POLYX utility token. Ownership of any asset on the Polymesh chain requires an `Identity`. This process involves a trusted provider to write a claim to the chain that this person has completed a "customer due diligence" (CDD) procedure. For development chains the mnemonic `//Alice` is able to create CDD claims by default.
+
+Polymesh uses an `Identity` to provide flexibility in managing permissions. Portfolios can be created and secondary keys permissioned in order to control what assets a particular private key can move.
