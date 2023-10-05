@@ -45,7 +45,7 @@ import {
   toHumanReadable,
 } from '~/utils/internal';
 
-import { HistoricSettlement, PortfolioBalance, PortfolioNftHolding } from './types';
+import { HistoricSettlement, PortfolioBalance, PortfolioCollection } from './types';
 
 export interface UniqueIdentifiers {
   did: string;
@@ -221,9 +221,9 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
    *
    *  @param args.assets - array of NftCollection (or tickers) for which to fetch holdings (optional, all holdings are retrieved if not passed)
    */
-  public async getNftsHeld(args?: {
-    assets: (string | NftCollection)[];
-  }): Promise<PortfolioNftHolding[]> {
+  public async getCollections(args?: {
+    collections: (string | NftCollection)[];
+  }): Promise<PortfolioCollection[]> {
     const {
       owner: { did },
       _id: portfolioId,
@@ -236,7 +236,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     } = this;
 
     const rawPortfolioId = portfolioIdToMeshPortfolioId({ did, number: portfolioId }, context);
-    const [exists, freeBalanceEntries, lockedBalanceEntries] = await Promise.all([
+    const [exists, freeCollectionEntries, lockedCollectionEntries] = await Promise.all([
       this.exists(),
       portfolio.portfolioNFT.entries(rawPortfolioId),
       portfolio.portfolioLockedNFT.entries(rawPortfolioId),
@@ -249,56 +249,66 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       });
     }
 
-    const queriedCollections = args?.assets.map(asset => asTicker(asset));
+    const queriedCollections = args?.collections.map(asset => asTicker(asset));
     const seenTickers = new Set<string>();
 
-    const processBalance = (
-      entry: (typeof freeBalanceEntries)[0],
-      balanceRecord: Record<string, Nft[]>
-    ): void => {
-      const [key] = entry;
+    const processCollectionEntry = (
+      collectionRecord: Record<string, Nft[]>,
+      entry: (typeof freeCollectionEntries)[0]
+    ): Record<string, Nft[]> => {
+      const [
+        {
+          args: [, [rawTicker, rawNftId]],
+        },
+      ] = entry;
 
-      const ticker = tickerToString(key.args[1][0]);
-      const heldId = u64ToBigNumber(key.args[1][1]);
+      const ticker = tickerToString(rawTicker);
+      const heldId = u64ToBigNumber(rawNftId);
 
-      // ignore assets not specified if the user provided a filter arg
       if (queriedCollections && !queriedCollections.includes(ticker)) {
-        return;
+        return collectionRecord;
       }
 
-      seenTickers.add(ticker);
-
-      if (!balanceRecord[ticker]) {
+      // if the user provided a filter arg, then ignore any asset not specified
+      if (!queriedCollections || queriedCollections.includes(ticker)) {
+        seenTickers.add(ticker);
         const nft = new Nft({ id: heldId, ticker }, context);
 
-        balanceRecord[ticker] = [nft];
-      } else {
-        const nft = new Nft({ id: heldId, ticker }, context);
-        balanceRecord[ticker].push(nft);
+        if (!collectionRecord[ticker]) {
+          collectionRecord[ticker] = [nft];
+        } else {
+          collectionRecord[ticker].push(nft);
+        }
       }
+
+      return collectionRecord;
     };
 
-    const freeBalances: Record<string, Nft[]> = {};
-    freeBalanceEntries.forEach(entry => processBalance(entry, freeBalances));
+    const freeCollections: Record<string, Nft[]> = freeCollectionEntries.reduce(
+      (collection, entry) => processCollectionEntry(collection, entry),
+      {}
+    );
 
-    const lockedBalances: Record<string, Nft[]> = {};
-    lockedBalanceEntries.forEach(entry => processBalance(entry, lockedBalances));
+    const lockedCollections: Record<string, Nft[]> = lockedCollectionEntries.reduce(
+      (collection, entry) => processCollectionEntry(collection, entry),
+      {}
+    );
 
-    const holdings: PortfolioNftHolding[] = [];
+    const collections: PortfolioCollection[] = [];
     seenTickers.forEach(ticker => {
-      const free = freeBalances[ticker] || [];
-      const locked = lockedBalances[ticker] || [];
+      const free = freeCollections[ticker] || [];
+      const locked = lockedCollections[ticker] || [];
       const total = new BigNumber(free.length + locked.length);
 
-      holdings.push({
-        asset: new NftCollection({ ticker }, context),
+      collections.push({
+        collection: new NftCollection({ ticker }, context),
         free,
         locked,
         total,
       });
     });
 
-    return holdings;
+    return collections;
   }
 
   /**

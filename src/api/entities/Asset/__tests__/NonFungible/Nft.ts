@@ -138,7 +138,7 @@ describe('Nft class', () => {
       const ticker = 'TICKER';
       const nft = new Nft({ ticker, id: new BigNumber(1) }, context);
 
-      expect(nft.toHuman()).toBe('{"ticker":"TICKER","id":"1"}');
+      expect(nft.toHuman()).toEqual({ collection: 'TICKER', id: '1' });
     });
   });
 });

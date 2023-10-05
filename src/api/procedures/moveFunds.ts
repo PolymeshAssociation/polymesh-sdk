@@ -13,11 +13,11 @@ import {
 } from '~/internal';
 import {
   ErrorCode,
+  FungiblePortfolioMovement,
   MoveFundsParams,
+  NonFungiblePortfolioMovement,
   PortfolioId,
   PortfolioMovement,
-  PortfolioMovementFungible,
-  PortfolioMovementNonFungible,
   RoleType,
   TxTags,
 } from '~/types';
@@ -46,35 +46,37 @@ async function segregateItems(
   items: PortfolioMovement[],
   context: Context
 ): Promise<{
-  fungibleMovements: PortfolioMovementFungible[];
-  nftMovements: PortfolioMovementNonFungible[];
+  fungibleMovements: FungiblePortfolioMovement[];
+  nftMovements: NonFungiblePortfolioMovement[];
 }> {
-  const fungibleMovements: PortfolioMovementFungible[] = [];
-  const nftMovements: PortfolioMovementNonFungible[] = [];
+  const fungibleMovements: FungiblePortfolioMovement[] = [];
+  const nftMovements: NonFungiblePortfolioMovement[] = [];
   const tickers: string[] = [];
 
   for (const item of items) {
-    tickers.push(asTicker(item.asset));
-    if (typeof item.asset === 'string') {
-      const ticker = item.asset;
+    const { asset } = item;
+    tickers.push(asTicker(asset));
+
+    if (typeof asset === 'string') {
+      const ticker = asset;
       const fungible = new FungibleAsset({ ticker }, context);
       const collection = new NftCollection({ ticker }, context);
       const [isAsset, isCollection] = await Promise.all([fungible.exists(), collection.exists()]);
 
       if (isCollection) {
-        nftMovements.push(item as PortfolioMovementNonFungible);
+        nftMovements.push(item as NonFungiblePortfolioMovement);
       } else if (isAsset) {
-        fungibleMovements.push(item as PortfolioMovementFungible);
+        fungibleMovements.push(item as FungiblePortfolioMovement);
       } else {
         throw new PolymeshError({
           code: ErrorCode.DataUnavailable,
           message: `No asset with "${ticker}" exists`,
         });
       }
-    } else if (isFungibleAsset(item.asset)) {
-      fungibleMovements.push(item as PortfolioMovementFungible);
-    } else if (typeof item.asset !== 'string' && isNftCollection(item.asset)) {
-      nftMovements.push(item as PortfolioMovementNonFungible);
+    } else if (isFungibleAsset(asset)) {
+      fungibleMovements.push(item as FungiblePortfolioMovement);
+    } else if (isNftCollection(asset)) {
+      nftMovements.push(item as NonFungiblePortfolioMovement);
     }
   }
 
@@ -152,15 +154,13 @@ export async function prepareMoveFunds(
     });
   }
 
-  const [fungibleBalances, nftHoldings] = await Promise.all([
+  const [fungibleBalances, heldCollections] = await Promise.all([
     fromPortfolio.getAssetBalances({
       assets: fungibleMovements.map(({ asset }) => asTicker(asset)),
     }),
-    fromPortfolio.getNftsHeld({ assets: nftMovements.map(({ asset }) => asTicker(asset)) }),
+    fromPortfolio.getCollections({ collections: nftMovements.map(({ asset }) => asTicker(asset)) }),
   ]);
   const balanceExceeded: (PortfolioMovement & { free: BigNumber })[] = [];
-
-  console.log({ fungibleBalances, nftHoldings, items });
 
   fungibleBalances.forEach(({ asset: { ticker }, free }) => {
     const transferItem = fungibleMovements.find(
@@ -182,28 +182,28 @@ export async function prepareMoveFunds(
     });
   }
 
-  const notHeldNfts: Record<string, BigNumber[]> = {};
+  const unavailableNfts: Record<string, BigNumber[]> = {};
 
   nftMovements.forEach(movement => {
     const ticker = asTicker(movement.asset);
-    const heldNfts = nftHoldings.find(({ asset }) => asset.ticker === ticker);
+    const heldNfts = heldCollections.find(({ collection }) => collection.ticker === ticker);
 
     movement.nfts.forEach(nftId => {
       const id = asNftId(nftId);
-      const holdsNft = heldNfts?.free.find(held => held.id.eq(id));
-      if (!holdsNft) {
-        const entry = notHeldNfts[ticker] || [];
+      const hasNft = heldNfts?.free.find(held => held.id.eq(id));
+      if (!hasNft) {
+        const entry = unavailableNfts[ticker] || [];
         entry.push(id);
-        notHeldNfts[ticker] = entry;
+        unavailableNfts[ticker] = entry;
       }
     });
   });
 
-  if (Object.keys(notHeldNfts).length > 0) {
+  if (Object.keys(unavailableNfts).length > 0) {
     throw new PolymeshError({
       code: ErrorCode.InsufficientBalance,
       message: 'Some of the NFTs are not available in the sending portfolio',
-      data: { notHeldNfts },
+      data: { unavailableNfts },
     });
   }
 

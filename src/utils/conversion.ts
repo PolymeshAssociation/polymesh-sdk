@@ -150,6 +150,7 @@ import {
   ErrorCode,
   EventIdentifier,
   ExternalAgentCondition,
+  FungiblePortfolioMovement,
   HistoricInstruction,
   IdentityCondition,
   IdentityWithClaims,
@@ -172,6 +173,7 @@ import {
   ModuleName,
   MultiClaimCondition,
   NftMetadataInput,
+  NonFungiblePortfolioMovement,
   OfferingBalanceStatus,
   OfferingDetails,
   OfferingSaleStatus,
@@ -184,8 +186,6 @@ import {
   PermissionType,
   PortfolioId,
   PortfolioLike,
-  PortfolioMovementFungible,
-  PortfolioMovementNonFungible,
   ProposalStatus,
   Requirement,
   RequirementCompliance,
@@ -2971,7 +2971,7 @@ export function nftToMeshNft(
  * @hidden
  */
 export function fungibleMovementToPortfolioFund(
-  portfolioItem: PortfolioMovementFungible,
+  portfolioItem: FungiblePortfolioMovement,
   context: Context
 ): PolymeshPrimitivesPortfolioFund {
   const { asset, amount, memo } = portfolioItem;
@@ -2991,7 +2991,7 @@ export function fungibleMovementToPortfolioFund(
  * @hidden
  */
 export function nftMovementToPortfolioFund(
-  portfolioItem: PortfolioMovementNonFungible,
+  portfolioItem: NonFungiblePortfolioMovement,
   context: Context
 ): PolymeshPrimitivesPortfolioFund {
   const { asset, nfts, memo } = portfolioItem;

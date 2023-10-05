@@ -743,21 +743,6 @@ export interface Balance {
   total: BigNumber;
 }
 
-export interface NftHolding {
-  /**
-   * NFTs available for transferring
-   */
-  free: Nft[];
-  /**
-   * NFTs that are locked, such as being involved in a pending instruction
-   */
-  locked: Nft[];
-  /**
-   * Total number of NFTs held for a collection
-   */
-  total: BigNumber;
-}
-
 export type AccountBalance = Balance;
 
 export interface PaginationOptions {
@@ -1286,7 +1271,7 @@ export type PermissionsLike = {
     }
 );
 
-export interface PortfolioMovementFungible {
+export interface FungiblePortfolioMovement {
   asset: string | FungibleAsset;
   amount: BigNumber;
   /**
@@ -1295,7 +1280,7 @@ export interface PortfolioMovementFungible {
   memo?: string;
 }
 
-export type PortfolioMovementNonFungible = {
+export type NonFungiblePortfolioMovement = {
   asset: NftCollection | string;
   nfts: (Nft | BigNumber)[];
   /**
@@ -1304,7 +1289,7 @@ export type PortfolioMovementNonFungible = {
   memo?: string;
 };
 
-export type PortfolioMovement = PortfolioMovementFungible | PortfolioMovementNonFungible;
+export type PortfolioMovement = FungiblePortfolioMovement | NonFungiblePortfolioMovement;
 export interface ProcedureAuthorizationStatus {
   /**
    * whether the Identity complies with all required Agent permissions

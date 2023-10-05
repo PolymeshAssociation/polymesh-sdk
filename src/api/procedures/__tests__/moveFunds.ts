@@ -19,11 +19,11 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import {
   ErrorCode,
+  FungiblePortfolioMovement,
+  NonFungiblePortfolioMovement,
   PortfolioBalance,
   PortfolioId,
   PortfolioMovement,
-  PortfolioMovementFungible,
-  PortfolioMovementNonFungible,
   RoleType,
   TxTags,
 } from '~/types';
@@ -61,11 +61,11 @@ describe('moveFunds procedure', () => {
   >;
   let fungiblePortfolioMovementToMovePortfolioFundSpy: jest.SpyInstance<
     PolymeshPrimitivesPortfolioFund,
-    [PortfolioMovementFungible, Context]
+    [FungiblePortfolioMovement, Context]
   >;
   let nftMovementToMovePortfolioFundSpy: jest.SpyInstance<
     PolymeshPrimitivesPortfolioFund,
-    [PortfolioMovementNonFungible, Context]
+    [NonFungiblePortfolioMovement, Context]
   >;
   let portfolioLikeToPortfolioIdSpy: jest.SpyInstance;
   let assertPortfolioExistsSpy: jest.SpyInstance;
@@ -252,12 +252,12 @@ describe('moveFunds procedure', () => {
       numberedPortfolioOptions: {
         did,
         getAssetBalances: [],
-        getNftsHeld: [],
+        getCollections: [],
       },
       defaultPortfolioOptions: {
         did,
         getAssetBalances: [],
-        getNftsHeld: [],
+        getCollections: [],
       },
     });
 
@@ -332,7 +332,7 @@ describe('moveFunds procedure', () => {
       nftCollectionOptions: { exists: false },
     });
 
-    const items: PortfolioMovementFungible[] = [
+    const items: FungiblePortfolioMovement[] = [
       {
         asset: asset.ticker,
         amount: new BigNumber(100),
@@ -343,12 +343,12 @@ describe('moveFunds procedure', () => {
       numberedPortfolioOptions: {
         did,
         getAssetBalances: [{ asset, total: new BigNumber(150) }] as unknown as PortfolioBalance[],
-        getNftsHeld: [],
+        getCollections: [],
       },
       defaultPortfolioOptions: {
         did,
         getAssetBalances: [{ asset, total: new BigNumber(150) }] as unknown as PortfolioBalance[],
-        getNftsHeld: [],
+        getCollections: [],
       },
     });
 
@@ -489,7 +489,7 @@ describe('moveFunds procedure', () => {
     const nftOne = new Nft({ ticker, id: new BigNumber(1) }, context);
     const nftTwo = new Nft({ ticker: assetTwo.ticker, id: new BigNumber(2) }, context);
 
-    const items: PortfolioMovementNonFungible[] = [
+    const items: NonFungiblePortfolioMovement[] = [
       {
         asset: asset.ticker,
         nfts: [nftOne.id],
@@ -504,15 +504,15 @@ describe('moveFunds procedure', () => {
       numberedPortfolioOptions: {
         did,
         getAssetBalances: [],
-        getNftsHeld: [
-          { asset, free: [nftOne], locked: [], total: new BigNumber(1) },
-          { asset: assetTwo, free: [nftTwo], locked: [], total: new BigNumber(1) },
+        getCollections: [
+          { collection: asset, free: [nftOne], locked: [], total: new BigNumber(1) },
+          { collection: assetTwo, free: [nftTwo], locked: [], total: new BigNumber(1) },
         ],
       },
       defaultPortfolioOptions: {
         did,
         getAssetBalances: [],
-        getNftsHeld: [],
+        getCollections: [],
       },
     });
 

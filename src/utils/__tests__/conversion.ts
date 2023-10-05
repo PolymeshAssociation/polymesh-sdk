@@ -122,6 +122,7 @@ import {
   MetadataLockStatus,
   MetadataType,
   ModuleName,
+  NonFungiblePortfolioMovement,
   OfferingBalanceStatus,
   OfferingSaleStatus,
   OfferingTier,
@@ -131,7 +132,6 @@ import {
   PermissionsLike,
   PermissionType,
   PortfolioMovement,
-  PortfolioMovementNonFungible,
   ProposalStatus,
   Scope,
   ScopeType,
@@ -580,7 +580,7 @@ describe('nftMovementToPortfolioFund', () => {
     const fakeResult =
       'PolymeshPrimitivesPortfolioFund' as unknown as PolymeshPrimitivesPortfolioFund;
 
-    let portfolioMovement: PortfolioMovementNonFungible = {
+    let portfolioMovement: NonFungiblePortfolioMovement = {
       asset: ticker,
       nfts: [id],
     };

@@ -77,7 +77,7 @@ import {
   PermissionGroups,
   PermissionGroupType,
   PortfolioBalance,
-  PortfolioNftHolding,
+  PortfolioCollection,
   ProposalStatus,
   ResultSet,
   ScheduleDetails,
@@ -260,7 +260,7 @@ interface NumberedPortfolioOptions extends EntityOptions {
   id?: BigNumber;
   isOwnedBy?: EntityGetter<boolean>;
   getAssetBalances?: EntityGetter<PortfolioBalance[]>;
-  getNftsHeld?: EntityGetter<PortfolioNftHolding[]>;
+  getCollections?: EntityGetter<PortfolioCollection[]>;
   getCustodian?: EntityGetter<Identity>;
   isCustodiedBy?: EntityGetter<boolean>;
 }
@@ -269,7 +269,7 @@ interface DefaultPortfolioOptions extends EntityOptions {
   did?: string;
   isOwnedBy?: EntityGetter<boolean>;
   getAssetBalances?: EntityGetter<PortfolioBalance[]>;
-  getNftsHeld?: EntityGetter<PortfolioNftHolding[]>;
+  getCollections?: EntityGetter<PortfolioCollection[]>;
   getCustodian?: EntityGetter<Identity>;
   isCustodiedBy?: EntityGetter<boolean>;
 }
@@ -1478,7 +1478,7 @@ const MockNumberedPortfolioClass = createMockEntityClass<NumberedPortfolioOption
     owner!: Identity;
     isOwnedBy!: jest.Mock;
     getAssetBalances!: jest.Mock;
-    getNftsHeld!: jest.Mock;
+    getCollections!: jest.Mock;
     getCustodian!: jest.Mock;
     isCustodiedBy!: jest.Mock;
 
@@ -1498,7 +1498,7 @@ const MockNumberedPortfolioClass = createMockEntityClass<NumberedPortfolioOption
       this.owner = getIdentityInstance({ did: opts.did });
       this.isOwnedBy = createEntityGetterMock(opts.isOwnedBy);
       this.getAssetBalances = createEntityGetterMock(opts.getAssetBalances);
-      this.getNftsHeld = createEntityGetterMock(opts.getNftsHeld);
+      this.getCollections = createEntityGetterMock(opts.getCollections);
       this.getCustodian = createEntityGetterMock(opts.getCustodian);
       this.isCustodiedBy = createEntityGetterMock(opts.isCustodiedBy);
     }
@@ -1514,7 +1514,7 @@ const MockNumberedPortfolioClass = createMockEntityClass<NumberedPortfolioOption
         free: new BigNumber(1),
       },
     ],
-    getNftsHeld: [],
+    getCollections: [],
     did: 'someDid',
     getCustodian: getIdentityInstance(),
     isCustodiedBy: true,
@@ -1532,7 +1532,7 @@ const MockDefaultPortfolioClass = createMockEntityClass<DefaultPortfolioOptions>
     owner!: Identity;
     isOwnedBy!: jest.Mock;
     getAssetBalances!: jest.Mock;
-    getNftsHeld!: jest.Mock;
+    getCollections!: jest.Mock;
     getCustodian!: jest.Mock;
     isCustodiedBy!: jest.Mock;
 
@@ -1551,7 +1551,7 @@ const MockDefaultPortfolioClass = createMockEntityClass<DefaultPortfolioOptions>
       this.owner = getIdentityInstance({ did: opts.did });
       this.isOwnedBy = createEntityGetterMock(opts.isOwnedBy);
       this.getAssetBalances = createEntityGetterMock(opts.getAssetBalances);
-      this.getNftsHeld = createEntityGetterMock(opts.getNftsHeld);
+      this.getCollections = createEntityGetterMock(opts.getCollections);
       this.getCustodian = createEntityGetterMock(opts.getCustodian);
       this.isCustodiedBy = createEntityGetterMock(opts.isCustodiedBy);
     }
@@ -1566,7 +1566,7 @@ const MockDefaultPortfolioClass = createMockEntityClass<DefaultPortfolioOptions>
         free: new BigNumber(1),
       },
     ],
-    getNftsHeld: [],
+    getCollections: [],
     did: 'someDid',
     getCustodian: getIdentityInstance(),
     isCustodiedBy: true,

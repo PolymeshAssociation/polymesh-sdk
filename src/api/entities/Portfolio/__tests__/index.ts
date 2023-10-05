@@ -286,7 +286,7 @@ describe('Portfolio class', () => {
     });
   });
 
-  describe('method: getNftsHeld', () => {
+  describe('method: getCollections', () => {
     let did: string;
     let id: BigNumber;
     let secondId: BigNumber;
@@ -351,12 +351,12 @@ describe('Portfolio class', () => {
     it("should return all of the portfolio's NFTs when no args are given", async () => {
       const portfolio = new NonAbstract({ did, id }, context);
 
-      const result = await portfolio.getNftsHeld();
+      const result = await portfolio.getCollections();
 
       expect(result).toEqual(
         expect.arrayContaining([
           {
-            asset: expect.objectContaining({ ticker }),
+            collection: expect.objectContaining({ ticker }),
             free: expect.arrayContaining([
               expect.objectContaining({ id }),
               expect.objectContaining({ id: secondId }),
@@ -365,7 +365,7 @@ describe('Portfolio class', () => {
             total: new BigNumber(2),
           },
           {
-            asset: expect.objectContaining({ ticker: lockedTicker }),
+            collection: expect.objectContaining({ ticker: lockedTicker }),
             free: [],
             locked: [expect.objectContaining({ id: lockedId })],
             total: new BigNumber(1),
@@ -377,12 +377,12 @@ describe('Portfolio class', () => {
     it('should filter assets if any are specified', async () => {
       const portfolio = new NonAbstract({ did, id }, context);
 
-      const result = await portfolio.getNftsHeld({ assets: [ticker] });
+      const result = await portfolio.getCollections({ collections: [ticker] });
 
       expect(result).toEqual(
         expect.arrayContaining([
           {
-            asset: expect.objectContaining({ ticker }),
+            collection: expect.objectContaining({ ticker }),
             free: expect.arrayContaining([
               expect.objectContaining({ id }),
               expect.objectContaining({ id: secondId }),
@@ -398,7 +398,7 @@ describe('Portfolio class', () => {
       const portfolio = new NonAbstract({ did, id }, context);
       exists = false;
 
-      return expect(portfolio.getNftsHeld()).rejects.toThrow(
+      return expect(portfolio.getCollections()).rejects.toThrow(
         "The Portfolio doesn't exist or was removed by its owner"
       );
     });

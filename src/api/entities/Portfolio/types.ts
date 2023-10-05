@@ -1,16 +1,28 @@
 import BigNumber from 'bignumber.js';
 
-import { Account, FungibleAsset } from '~/internal';
+import { Account, FungibleAsset, Nft } from '~/internal';
 import { SettlementResultEnum as SettlementResult } from '~/middleware/enums';
 import { SettlementDirectionEnum as SettlementDirection } from '~/middleware/typesV1';
-import { Balance, Leg, NftCollection, NftHolding } from '~/types';
+import { Balance, Leg, NftCollection } from '~/types';
 
 export interface PortfolioBalance extends Balance {
   asset: FungibleAsset;
 }
 
-export interface PortfolioNftHolding extends NftHolding {
-  asset: NftCollection;
+export interface PortfolioCollection {
+  collection: NftCollection;
+  /**
+   * NFTs available for transferring
+   */
+  free: Nft[];
+  /**
+   * NFTs that are locked, such as being involved in a pending instruction
+   */
+  locked: Nft[];
+  /**
+   * Total number of NFTs held for a collection
+   */
+  total: BigNumber;
 }
 
 export interface SettlementLeg extends Leg {
