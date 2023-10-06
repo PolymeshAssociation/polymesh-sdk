@@ -6,13 +6,14 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import {
   createMockAccountId,
   createMockBool,
+  createMockCall,
   createMockIdentityId,
   createMockOption,
   createMockSignatory,
-  createMockU64,
 } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import { ErrorCode } from '~/types';
+import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -129,8 +130,22 @@ describe('MultiSig class', () => {
   describe('method: getProposals', () => {
     const id = new BigNumber(1);
     it('should get proposals', async () => {
-      dsMockUtils.createQueryMock('multiSig', 'proposalIds', {
-        entries: [[[''], createMockOption(createMockU64(id))]],
+      dsMockUtils.createQueryMock('multiSig', 'proposals', {
+        entries: [
+          [
+            [
+              tuple(
+                dsMockUtils.createMockAccountId('someMultisig'),
+                dsMockUtils.createMockU64(new BigNumber(2))
+              ),
+            ],
+            createMockOption(createMockCall()),
+          ],
+          [
+            [tuple(dsMockUtils.createMockAccountId(address), dsMockUtils.createMockU64(id))],
+            createMockOption(createMockCall()),
+          ],
+        ],
       });
       const result = await multiSig.getProposals();
 
@@ -138,7 +153,7 @@ describe('MultiSig class', () => {
     });
 
     it('should return an empty array if no proposals are pending', async () => {
-      dsMockUtils.createQueryMock('multiSig', 'proposalIds', {
+      dsMockUtils.createQueryMock('multiSig', 'proposals', {
         entries: [],
       });
 
