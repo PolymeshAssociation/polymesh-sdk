@@ -34,13 +34,9 @@ In order to use the Polymath SDK, you must install [node](https://nodejs.org/) \
 
 ### Documentation
 
-Token Studio SDK Walkthrough:
-
-https://developers.polymath.network/token-studio-api-walkthrough/
-
 Polymesh SDK API Reference:
 
-https://github.com/PolymeshAssociation/polymesh-sdk/wiki
+https://developers.polymesh.network/sdk-docs/
 
 ### How to use
 
@@ -148,8 +144,8 @@ Note: Some getters require "middleware" to be configured, which is a chain index
 
 ### Terminology
 
-The SDK uses the class `Account` as an abstraction for a public/private key pair that is used to sign transactions. Although consistent with [Substrate](https://substrate.io/vision/substrate-and-polkadot/) (the chain's framework) naming conventions, it be a source of confusion considering the domain. What the SDK calls an account is often referred to as a key. Public keys are often represented in ss58 which is a special encoding that indicates if the key is intended for mainnet or not. In this form it is referred to as an address and looks like: `5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY` (non-mainnet keys begin with **5**, mainnet addresses will instead begin with **2**).
+The SDK uses the class `Account` as an abstraction for a public/private key pair that is used to sign transactions. Although consistent with [Substrate](https://substrate.io/vision/substrate-and-polkadot/) (the chain's framework) naming conventions, it be a source of confusion considering the domain. What the SDK calls an account is often referred to as a key. Public keys are often represented in SS58 which is a special encoding that indicates if the key is intended for mainnet or not. In this form, it is referred to as an address and looks like: `5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY` (non-mainnet keys begin with **5**, mainnet addresses will instead begin with **2**).
 
-The only thing the `Account` holds is the POLYX utility token. Ownership of any asset on the Polymesh chain requires an `Identity`. This process involves a trusted provider writing a claim to the chain, stating that this person has completed a "customer due diligence" (CDD) process. For development chains, the mnemonic `//Alice` can create CDD claims by default.
+The only thing an `Account` holds is the POLYX utility token. Ownership of any asset on the Polymesh chain requires an `Identity`. This process involves a trusted provider writing a claim to the chain, stating that this person has completed a "customer due diligence" (CDD) process. For development chains, the mnemonic `//Alice` can create CDD claims by default.
 
 Polymesh uses an `Identity` to provide flexibility in managing permissions. Portfolios can be created, and secondary keys can be granted permission to provide fine grained authorization.
