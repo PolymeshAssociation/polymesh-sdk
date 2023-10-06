@@ -27,6 +27,8 @@ import {
   Identity,
   Instruction,
   KnownPermissionGroup,
+  Nft,
+  NftCollection,
   NumberedPortfolio,
   Offering,
   PolymeshTransaction,
@@ -1269,7 +1271,7 @@ export type PermissionsLike = {
     }
 );
 
-export interface PortfolioMovement {
+export interface FungiblePortfolioMovement {
   asset: string | FungibleAsset;
   amount: BigNumber;
   /**
@@ -1278,6 +1280,16 @@ export interface PortfolioMovement {
   memo?: string;
 }
 
+export type NonFungiblePortfolioMovement = {
+  asset: NftCollection | string;
+  nfts: (Nft | BigNumber)[];
+  /**
+   * identifier string to help differentiate transfers
+   */
+  memo?: string;
+};
+
+export type PortfolioMovement = FungiblePortfolioMovement | NonFungiblePortfolioMovement;
 export interface ProcedureAuthorizationStatus {
   /**
    * whether the Identity complies with all required Agent permissions

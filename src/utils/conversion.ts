@@ -150,6 +150,7 @@ import {
   ErrorCode,
   EventIdentifier,
   ExternalAgentCondition,
+  FungiblePortfolioMovement,
   HistoricInstruction,
   IdentityCondition,
   IdentityWithClaims,
@@ -172,6 +173,7 @@ import {
   ModuleName,
   MultiClaimCondition,
   NftMetadataInput,
+  NonFungiblePortfolioMovement,
   OfferingBalanceStatus,
   OfferingDetails,
   OfferingSaleStatus,
@@ -184,7 +186,6 @@ import {
   PermissionType,
   PortfolioId,
   PortfolioLike,
-  PortfolioMovement,
   ProposalStatus,
   Requirement,
   RequirementCompliance,
@@ -239,6 +240,7 @@ import {
 } from '~/utils/constants';
 import {
   asDid,
+  asNftId,
   assertAddressValid,
   assertIsInteger,
   assertIsPositive,
@@ -2954,8 +2956,22 @@ export function toIdentityWithClaimsArray(
 /**
  * @hidden
  */
-export function portfolioMovementToPortfolioFund(
-  portfolioItem: PortfolioMovement,
+export function nftToMeshNft(
+  ticker: string,
+  ids: BigNumber[],
+  context: Context
+): PolymeshPrimitivesNftNfTs {
+  return context.createType('PolymeshPrimitivesNftNfTs', {
+    ticker: stringToTicker(ticker, context),
+    ids: ids.map(id => bigNumberToU64(id, context)),
+  });
+}
+
+/**
+ * @hidden
+ */
+export function fungibleMovementToPortfolioFund(
+  portfolioItem: FungiblePortfolioMovement,
   context: Context
 ): PolymeshPrimitivesPortfolioFund {
   const { asset, amount, memo } = portfolioItem;
@@ -2965,6 +2981,26 @@ export function portfolioMovementToPortfolioFund(
       Fungible: {
         ticker: stringToTicker(asTicker(asset), context),
         amount: bigNumberToBalance(amount, context),
+      },
+    },
+    memo: optionize(stringToMemo)(memo, context),
+  });
+}
+
+/**
+ * @hidden
+ */
+export function nftMovementToPortfolioFund(
+  portfolioItem: NonFungiblePortfolioMovement,
+  context: Context
+): PolymeshPrimitivesPortfolioFund {
+  const { asset, nfts, memo } = portfolioItem;
+
+  return context.createType('PolymeshPrimitivesPortfolioFund', {
+    description: {
+      NonFungible: {
+        ticker: stringToTicker(asTicker(asset), context),
+        ids: nfts.map(nftId => bigNumberToU64(asNftId(nftId), context)),
       },
     },
     memo: optionize(stringToMemo)(memo, context),

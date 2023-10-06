@@ -40,6 +40,7 @@ import {
   PolymeshPrimitivesMemo,
   PolymeshPrimitivesMultisigProposalStatus,
   PolymeshPrimitivesNftNftMetadataAttribute,
+  PolymeshPrimitivesNftNfTs,
   PolymeshPrimitivesPortfolioFund,
   PolymeshPrimitivesSecondaryKeySignatory,
   PolymeshPrimitivesSettlementLeg,
@@ -121,6 +122,7 @@ import {
   MetadataLockStatus,
   MetadataType,
   ModuleName,
+  NonFungiblePortfolioMovement,
   OfferingBalanceStatus,
   OfferingSaleStatus,
   OfferingTier,
@@ -204,6 +206,7 @@ import {
   fundingRoundToAssetFundingRound,
   fundraiserTierToTier,
   fundraiserToOfferingDetails,
+  fungibleMovementToPortfolioFund,
   granularCanTransferResultToTransferBreakdown,
   hashToString,
   identitiesToBtreeSet,
@@ -252,6 +255,8 @@ import {
   momentToDate,
   nameToAssetName,
   nftInputToNftMetadataVec,
+  nftMovementToPortfolioFund,
+  nftToMeshNft,
   offeringTierToPriceTier,
   percentageToPermill,
   permillToBigNumber,
@@ -261,7 +266,6 @@ import {
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
-  portfolioMovementToPortfolioFund,
   portfolioToPortfolioKind,
   posRatioToBigNumber,
   requirementToComplianceRequirement,
@@ -456,7 +460,7 @@ describe('stringToBytes and bytesToString', () => {
   });
 });
 
-describe('portfolioMovementToPortfolioFund', () => {
+describe('fungibleMovementToPortfolioFund', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
@@ -508,7 +512,7 @@ describe('portfolioMovementToPortfolioFund', () => {
       })
       .mockReturnValue(fakeResult);
 
-    let result = portfolioMovementToPortfolioFund(portfolioMovement, context);
+    let result = fungibleMovementToPortfolioFund(portfolioMovement, context);
 
     expect(result).toBe(fakeResult);
 
@@ -517,7 +521,7 @@ describe('portfolioMovementToPortfolioFund', () => {
       amount,
     };
 
-    result = portfolioMovementToPortfolioFund(portfolioMovement, context);
+    result = fungibleMovementToPortfolioFund(portfolioMovement, context);
 
     expect(result).toBe(fakeResult);
 
@@ -543,7 +547,98 @@ describe('portfolioMovementToPortfolioFund', () => {
       memo,
     };
 
-    result = portfolioMovementToPortfolioFund(portfolioMovement, context);
+    result = fungibleMovementToPortfolioFund(portfolioMovement, context);
+
+    expect(result).toBe(fakeResult);
+  });
+});
+
+describe('nftMovementToPortfolioFund', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a portfolio item into a polkadot move portfolio item', () => {
+    const context = dsMockUtils.getContextInstance();
+    const ticker = 'COLLECTION';
+    const id = new BigNumber(1);
+    const memo = 'someMessage';
+    const asset = entityMockUtils.getNftCollectionInstance({ ticker });
+    const rawTicker = dsMockUtils.createMockTicker(ticker);
+    const rawId = dsMockUtils.createMockU64(id);
+    const rawMemo = 'memo' as unknown as PolymeshPrimitivesMemo;
+    const fakeResult =
+      'PolymeshPrimitivesPortfolioFund' as unknown as PolymeshPrimitivesPortfolioFund;
+
+    let portfolioMovement: NonFungiblePortfolioMovement = {
+      asset: ticker,
+      nfts: [id],
+    };
+
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesTicker', padString(ticker, 12))
+      .mockReturnValue(rawTicker);
+
+    when(context.createType).calledWith('u64', id.toString()).mockReturnValue(rawId);
+
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesPortfolioFund', {
+        description: {
+          NonFungible: {
+            ticker: rawTicker,
+            ids: [rawId],
+          },
+        },
+        memo: null,
+      })
+      .mockReturnValue(fakeResult);
+
+    let result = nftMovementToPortfolioFund(portfolioMovement, context);
+
+    expect(result).toBe(fakeResult);
+
+    portfolioMovement = {
+      asset,
+      nfts: [id],
+    };
+
+    result = nftMovementToPortfolioFund(portfolioMovement, context);
+
+    expect(result).toBe(fakeResult);
+
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesMemo', padString(memo, 32))
+      .mockReturnValue(rawMemo);
+
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesPortfolioFund', {
+        description: {
+          NonFungible: {
+            ticker: rawTicker,
+            ids: [rawId],
+          },
+        },
+        memo: rawMemo,
+      })
+      .mockReturnValue(fakeResult);
+
+    portfolioMovement = {
+      asset,
+      nfts: [id],
+      memo,
+    };
+
+    result = nftMovementToPortfolioFund(portfolioMovement, context);
 
     expect(result).toBe(fakeResult);
   });
@@ -9420,6 +9515,45 @@ describe('nftInputToNftMetadataAttribute', () => {
     const input = [{ type: MetadataType.Local, id, value }];
 
     const result = nftInputToNftMetadataVec(input, context);
+
+    expect(result).toEqual(mockResult);
+  });
+});
+
+describe('nftToMeshNft', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should converts Nft input', () => {
+    const ticker = 'TICKER';
+    const rawTicker = dsMockUtils.createMockTicker(ticker);
+    const id = new BigNumber(1);
+    const rawId = dsMockUtils.createMockU64(id);
+    const context = dsMockUtils.getContextInstance();
+
+    const mockResult = 'mockResult' as unknown as PolymeshPrimitivesNftNfTs;
+
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesTicker', padString(ticker, MAX_TICKER_LENGTH))
+      .mockReturnValue(rawTicker);
+    when(context.createType).calledWith('u64', id.toString()).mockReturnValue(rawId);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesNftNfTs', {
+        ticker: rawTicker,
+        ids: [rawId],
+      })
+      .mockReturnValue(mockResult);
+
+    const result = nftToMeshNft(ticker, [id], context);
 
     expect(result).toEqual(mockResult);
   });

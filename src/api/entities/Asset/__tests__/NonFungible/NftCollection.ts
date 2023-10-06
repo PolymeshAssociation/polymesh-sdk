@@ -35,6 +35,7 @@ describe('NftCollection class', () => {
   afterAll(() => {
     dsMockUtils.cleanup();
     procedureMockUtils.cleanup();
+    jest.clearAllMocks();
   });
 
   it('should extend Entity', () => {
