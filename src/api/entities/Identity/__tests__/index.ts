@@ -77,6 +77,12 @@ jest.mock(
   )
 );
 jest.mock(
+  '~/api/entities/Identity/ChildIdentity',
+  require('~/testUtils/mocks/entities').mockChildIdentityModule(
+    '~/api/entities/Identity/ChildIdentity'
+  )
+);
+jest.mock(
   '~/api/entities/Instruction',
   require('~/testUtils/mocks/entities').mockInstructionModule('~/api/entities/Instruction')
 );
@@ -1231,6 +1237,30 @@ describe('Identity class', () => {
       const transaction = await identity.unlinkChild(args);
 
       expect(transaction).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: isChild', () => {
+    it('should return whether the Identity is a child Identity', async () => {
+      entityMockUtils.configureMocks({
+        childIdentityOptions: {
+          exists: true,
+        },
+      });
+      const identity = new Identity({ did: 'someDid' }, context);
+      let result = await identity.isChild();
+
+      expect(result).toBeTruthy();
+
+      entityMockUtils.configureMocks({
+        childIdentityOptions: {
+          exists: false,
+        },
+      });
+
+      result = await identity.isChild();
+
+      expect(result).toBeFalsy();
     });
   });
 });
