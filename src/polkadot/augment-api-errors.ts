@@ -1402,24 +1402,6 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       UserKeyCddMissing: AugmentedError<ApiType>;
     };
-    rewards: {
-      /**
-       * Provided signature was invalid.
-       **/
-      InvalidSignature: AugmentedError<ApiType>;
-      /**
-       * Itn reward was already claimed.
-       **/
-      ItnRewardAlreadyClaimed: AugmentedError<ApiType>;
-      /**
-       * Balance can not be converted to a primitive.
-       **/
-      UnableToCovertBalance: AugmentedError<ApiType>;
-      /**
-       * Address was not found in the list of Itn addresses.
-       **/
-      UnknownItnAddress: AugmentedError<ApiType>;
-    };
     scheduler: {
       /**
        * Failed to schedule a call
@@ -1553,6 +1535,10 @@ declare module '@polkadot/api-base/types/errors' {
        * The given number of nfts being transferred was underestimated.
        **/
       NumberOfTransferredNFTsUnderestimated: AugmentedError<ApiType>;
+      /**
+       * The maximum number of venue signers was exceeded.
+       **/
+      NumberOfVenueSignersExceeded: AugmentedError<ApiType>;
       /**
        * Off-Chain assets cannot be locked.
        **/

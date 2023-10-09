@@ -63,7 +63,6 @@ import type {
   PalletPipsVotingResult,
   PalletPreimageRequestStatus,
   PalletRelayerSubsidy,
-  PalletRewardsItnRewardStatus,
   PalletSchedulerScheduled,
   PalletStakingActiveEraInfo,
   PalletStakingElectionResult,
@@ -1543,15 +1542,16 @@ declare module '@polkadot/api-base/types/storage' {
       >;
       /**
        * Details of a multisig proposal
+       *
+       * multisig -> proposal id => ProposalDetails.
        **/
       proposalDetail: AugmentedQuery<
         ApiType,
         (
-          arg:
-            | ITuple<[AccountId32, u64]>
-            | [AccountId32 | string | Uint8Array, u64 | AnyNumber | Uint8Array]
+          arg1: AccountId32 | string | Uint8Array,
+          arg2: u64 | AnyNumber | Uint8Array
         ) => Observable<PolymeshPrimitivesMultisigProposalDetails>,
-        [ITuple<[AccountId32, u64]>]
+        [AccountId32, u64]
       >;
       /**
        * A mapping of proposals to their IDs.
@@ -1565,16 +1565,17 @@ declare module '@polkadot/api-base/types/storage' {
         [AccountId32, Call]
       >;
       /**
-       * Proposals presented for voting to a multisig (multisig, proposal id) => Option<T::Proposal>.
+       * Proposals presented for voting to a multisig.
+       *
+       * multisig -> proposal id => Option<T::Proposal>.
        **/
       proposals: AugmentedQuery<
         ApiType,
         (
-          arg:
-            | ITuple<[AccountId32, u64]>
-            | [AccountId32 | string | Uint8Array, u64 | AnyNumber | Uint8Array]
+          arg1: AccountId32 | string | Uint8Array,
+          arg2: u64 | AnyNumber | Uint8Array
         ) => Observable<Option<Call>>,
-        [ITuple<[AccountId32, u64]>]
+        [AccountId32, u64]
       >;
       /**
        * Storage version.
@@ -1585,26 +1586,24 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       transactionVersion: AugmentedQuery<ApiType, () => Observable<u32>, []>;
       /**
-       * Individual multisig signer votes. (multi sig, signer, proposal) => vote.
+       * Individual multisig signer votes.
+       *
+       * (multisig, proposal_id) -> signer => vote.
        **/
       votes: AugmentedQuery<
         ApiType,
         (
-          arg:
-            | ITuple<[AccountId32, PolymeshPrimitivesSecondaryKeySignatory, u64]>
-            | [
-                AccountId32 | string | Uint8Array,
-                (
-                  | PolymeshPrimitivesSecondaryKeySignatory
-                  | { Identity: any }
-                  | { Account: any }
-                  | string
-                  | Uint8Array
-                ),
-                u64 | AnyNumber | Uint8Array
-              ]
+          arg1:
+            | ITuple<[AccountId32, u64]>
+            | [AccountId32 | string | Uint8Array, u64 | AnyNumber | Uint8Array],
+          arg2:
+            | PolymeshPrimitivesSecondaryKeySignatory
+            | { Identity: any }
+            | { Account: any }
+            | string
+            | Uint8Array
         ) => Observable<bool>,
-        [ITuple<[AccountId32, PolymeshPrimitivesSecondaryKeySignatory, u64]>]
+        [ITuple<[AccountId32, u64]>, PolymeshPrimitivesSecondaryKeySignatory]
       >;
     };
     nft: {
@@ -1918,6 +1917,10 @@ declare module '@polkadot/api-base/types/storage' {
         (arg: PolymeshContractsChainExtensionExtrinsicId) => Observable<bool>,
         [PolymeshContractsChainExtensionExtrinsicId]
       >;
+      /**
+       * Storage version.
+       **/
+      storageVersion: AugmentedQuery<ApiType, () => Observable<u8>, []>;
     };
     portfolio: {
       /**
@@ -2124,6 +2127,7 @@ declare module '@polkadot/api-base/types/storage' {
             | 'CapitalDistributionDistribute'
             | 'NFTCreateCollection'
             | 'NFTMint'
+            | 'IdentityCreateChildIdentity'
             | number
             | Uint8Array
         ) => Observable<u128>,
@@ -2154,18 +2158,6 @@ declare module '@polkadot/api-base/types/storage' {
       subsidies: AugmentedQuery<
         ApiType,
         (arg: AccountId32 | string | Uint8Array) => Observable<Option<PalletRelayerSubsidy>>,
-        [AccountId32]
-      >;
-    };
-    rewards: {
-      /**
-       * Map of (Itn Address `AccountId`) -> (Reward `ItnRewardStatus`).
-       **/
-      itnRewards: AugmentedQuery<
-        ApiType,
-        (
-          arg: AccountId32 | string | Uint8Array
-        ) => Observable<Option<PalletRewardsItnRewardStatus>>,
         [AccountId32]
       >;
     };
@@ -2328,6 +2320,14 @@ declare module '@polkadot/api-base/types/storage' {
         (
           arg: u64 | AnyNumber | Uint8Array
         ) => Observable<PolymeshPrimitivesSettlementInstructionStatus>,
+        [u64]
+      >;
+      /**
+       * Tracks the number of signers each venue has.
+       **/
+      numberOfVenueSigners: AugmentedQuery<
+        ApiType,
+        (arg: u64 | AnyNumber | Uint8Array) => Observable<u32>,
         [u64]
       >;
       /**

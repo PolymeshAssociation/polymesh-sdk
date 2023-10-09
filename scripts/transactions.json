@@ -380,7 +380,11 @@
     "placeholder_reject_instruction": "placeholder_reject_instruction",
     "placeholder_add_instruction_with_memo": "placeholder_add_instruction_with_memo",
     "placeholder_add_and_affirm_instruction_with_memo": "placeholder_add_and_affirm_instruction_with_memo",
-    "execute_scheduled_instruction_v3": "execute_scheduled_instruction_v3"
+    "execute_scheduled_instruction_v3": "execute_scheduled_instruction_v3",
+    "affirm_with_receipts_with_count": "affirm_with_receipts_with_count",
+    "affirm_instruction_with_count": "affirm_instruction_with_count",
+    "reject_instruction_with_count": "reject_instruction_with_count",
+    "withdraw_affirmation_with_count": "withdraw_affirmation_with_count"
   },
   "Statistics": {
     "add_transfer_manager": "add_transfer_manager",

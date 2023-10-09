@@ -1776,12 +1776,6 @@ declare module '@polkadot/api-base/types/events' {
         [PolymeshPrimitivesEventOnly, AccountId32, AccountId32, u128, u128]
       >;
     };
-    rewards: {
-      /**
-       * Itn reward was claimed.
-       **/
-      ItnRewardClaimed: AugmentedEvent<ApiType, [AccountId32, u128]>;
-    };
     scheduler: {
       /**
        * The call for the provided hash was not found so the task has been aborted.

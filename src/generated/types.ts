@@ -666,6 +666,10 @@ export enum SettlementTx {
   PlaceholderAddInstructionWithMemo = 'settlement.placeholderAddInstructionWithMemo',
   PlaceholderAddAndAffirmInstructionWithMemo = 'settlement.placeholderAddAndAffirmInstructionWithMemo',
   ExecuteScheduledInstructionV3 = 'settlement.executeScheduledInstructionV3',
+  AffirmWithReceiptsWithCount = 'settlement.affirmWithReceiptsWithCount',
+  AffirmInstructionWithCount = 'settlement.affirmInstructionWithCount',
+  RejectInstructionWithCount = 'settlement.rejectInstructionWithCount',
+  WithdrawAffirmationWithCount = 'settlement.withdrawAffirmationWithCount',
 }
 
 export enum StatisticsTx {
