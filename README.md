@@ -34,13 +34,9 @@ In order to use the Polymath SDK, you must install [node](https://nodejs.org/) \
 
 ### Documentation
 
-Token Studio SDK Walkthrough:
-
-https://developers.polymath.network/token-studio-api-walkthrough/
-
 Polymesh SDK API Reference:
 
-https://github.com/PolymeshAssociation/polymesh-sdk/wiki
+https://developers.polymesh.network/sdk-docs/
 
 ### How to use
 
@@ -72,8 +68,11 @@ async function run() {
   const signingManager = await LocalSigningManager.create({
     accounts: [
       {
-        seed: 'YOU_WISH',
+        mnemonic: '//Alice', //A "well known" mnemonic, often with sudo privileges on development chains
       },
+      {
+        mnemonic: 'forest end mail art wish leave truth else ignore royal knife river' // most mnemonics are 12 words
+      }
     ],
   });
   const polyClient = await Polymesh.connect({
@@ -107,3 +106,46 @@ async function run() {
   // do stuff with the client
 }
 ```
+
+#### Creating Transactions
+
+Creating transactions is a two-step process. First a procedure is created, which validates the chain is likely to accept the transaction and returns a Procedure object. This procedure is then executed. This includes having the signing manager generate a signature and waiting for block finalization. Some procedures resolve to a relevant entity, such as `createAsset` resolving to the created asset.
+
+```typescript
+  /**
+   * This step performs validations, and will throw an error if the transaction isn't expected to proceed, e.g., if the `ticker` is already in use
+   */
+  const createAssetProc = await polyClient.assets.createAsset({
+    name: 'My new asset'
+    ticker: 'TICKER',
+    // ... (args omitted for brevity)
+  })
+
+  /**
+   * The promise will resolve when the transaction is in a finalized block which takes on average 15 seconds. It will throw an error if the transaction fails to finalize.
+   * For example, if the `ticker` was claimed after the procedure was created, but before it was executed, or the signing manager didn't generate a correct signature.
+   */
+  const newAsset = await createAssetProc.run()
+```
+
+#### Reading Data
+
+The SDK exposes getter functions that will return entities, which may have their own functions:
+
+```typescript
+  const assetsPage = await polyClient.assets.get({ size: new BigNumber(20) })
+  const asset = assetsPage.data[0]
+
+  const assetDetails = await asset.details()
+  console.log('asset details:', assetDetails)
+```
+
+Note: Some getters require "middleware" to be configured, which is a chain indexer that aids in historical queries. All such methods will have a comment indicating this requirement.
+
+### Terminology
+
+The SDK uses the class `Account` as an abstraction for a public/private key pair that is used to sign transactions. Although consistent with [Substrate](https://substrate.io/vision/substrate-and-polkadot/) (the chain's framework) naming conventions, it can be a source of confusion considering the domain. What the SDK calls an account is often referred to as a key. Public keys are often represented in [SS58 format](https://docs.substrate.io/reference/address-formats/) which is a special encoding that indicates if the key is intended for mainnet or not. In this form, it is referred to as an address and looks like: `5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY` (non-mainnet keys begin with **5**, mainnet addresses will instead begin with **2**).
+
+The only thing an `Account` holds is the POLYX utility token. Ownership of any asset on the Polymesh chain requires an `Identity`. This process involves a trusted provider writing a claim to the chain, stating that this person has completed a "customer due diligence" (CDD) process. For development chains, the mnemonic `//Alice` can create CDD claims by default.
+
+Polymesh uses an `Identity` to provide flexibility in managing permissions. Portfolios can be created, and secondary keys can be granted permission to provide fine grained authorization.
