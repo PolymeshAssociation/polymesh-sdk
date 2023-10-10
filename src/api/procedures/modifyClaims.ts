@@ -3,7 +3,7 @@ import {
   PolymeshPrimitivesIdentityClaimClaim,
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
-import { groupBy, isEqual, uniq } from 'lodash';
+import { groupBy, uniq } from 'lodash';
 
 import { Context, Identity, PolymeshError, Procedure } from '~/internal';
 import { claimsQuery } from '~/middleware/queries';
@@ -14,7 +14,6 @@ import {
   ClaimOperation,
   ClaimTarget,
   ClaimType,
-  ClaimTypeEnum,
   ErrorCode,
   ModifyClaimsParams,
   RoleType,
@@ -26,42 +25,10 @@ import { DEFAULT_CDD_ID } from '~/utils/constants';
 import {
   claimToMeshClaim,
   dateToMoment,
-  middlewareScopeToScope,
   signerToString,
   stringToIdentityId,
 } from '~/utils/conversion';
-import { asIdentity, assembleBatchTransactions } from '~/utils/internal';
-import { isScopedClaim } from '~/utils/typeguards';
-
-const areSameClaims = (
-  claim: Claim,
-  { scope, type, customClaimTypeId }: MiddlewareClaim
-): boolean => {
-  // filter out deprecated claim types
-  if (
-    type === ClaimTypeEnum.NoData ||
-    type === ClaimTypeEnum.NoType ||
-    type === ClaimTypeEnum.InvestorUniqueness ||
-    type === ClaimTypeEnum.InvestorUniquenessV2
-  ) {
-    return false;
-  }
-
-  if (isScopedClaim(claim) && scope && !isEqual(middlewareScopeToScope(scope), claim.scope)) {
-    return false;
-  }
-
-  if (
-    type === ClaimTypeEnum.Custom &&
-    claim.type === ClaimType.Custom &&
-    customClaimTypeId &&
-    !claim.customClaimTypeId.isEqualTo(customClaimTypeId)
-  ) {
-    return false;
-  }
-
-  return ClaimType[type] === claim.type;
-};
+import { areSameClaims, asIdentity, assembleBatchTransactions } from '~/utils/internal';
 
 const findClaimsByOtherIssuers = (
   claims: ClaimTarget[],

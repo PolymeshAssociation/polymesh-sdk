@@ -21,6 +21,7 @@ import {
   Procedure,
 } from '~/internal';
 import { latestSqVersionQuery } from '~/middleware/queries';
+import { Claim as MiddlewareClaim } from '~/middleware/types';
 import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
@@ -42,6 +43,8 @@ import {
   PermissionedAccount,
   ProcedureMethod,
   RemoveAssetStatParams,
+  ScopedClaim,
+  ScopeType,
   StatType,
   SubCallback,
   TransferRestrictionType,
@@ -58,6 +61,7 @@ import * as utilsConversionModule from '~/utils/conversion';
 
 import { SUPPORTED_NODE_VERSION_RANGE, SUPPORTED_SPEC_VERSION_RANGE } from '../constants';
 import {
+  areSameClaims,
   asAccount,
   asChildIdentity,
   asFungibleAsset,
@@ -464,7 +468,7 @@ describe('createClaim', () => {
     const jurisdiction = 'CL';
     let scope = { type: ClaimScopeTypeEnum.Identity, value: 'someScope' };
 
-    let result = createClaim(type, jurisdiction, scope, null);
+    let result = createClaim(type, jurisdiction, scope, null, null);
     expect(result).toEqual({
       type: ClaimType.Jurisdiction,
       code: CountryCode.Cl,
@@ -474,7 +478,7 @@ describe('createClaim', () => {
     type = 'BuyLockup';
     scope = { type: ClaimScopeTypeEnum.Identity, value: 'someScope' };
 
-    result = createClaim(type, null, scope, null);
+    result = createClaim(type, null, scope, null, null);
     expect(result).toEqual({
       type: ClaimType.BuyLockup,
       scope,
@@ -483,10 +487,20 @@ describe('createClaim', () => {
     type = 'CustomerDueDiligence';
     const id = 'someId';
 
-    result = createClaim(type, null, null, id);
+    result = createClaim(type, null, null, id, null);
     expect(result).toEqual({
       type: ClaimType.CustomerDueDiligence,
       id,
+    });
+
+    type = 'Custom';
+    const customClaimTypeId = new BigNumber(1);
+
+    result = createClaim(type, null, scope, id, customClaimTypeId);
+    expect(result).toEqual({
+      type: ClaimType.Custom,
+      customClaimTypeId,
+      scope,
     });
   });
 });
@@ -2212,5 +2226,63 @@ describe('asNftId', () => {
     const result = asNftId(id);
 
     expect(result).toEqual(id);
+  });
+});
+
+describe('areSameClaims', () => {
+  it('should return true if same claims are provided', () => {
+    const firstClaim: ScopedClaim = {
+      type: ClaimType.Custom,
+      customClaimTypeId: new BigNumber(1),
+      scope: {
+        type: ScopeType.Identity,
+        value: '1',
+      },
+    };
+
+    const secondClaim = { ...firstClaim } as unknown as MiddlewareClaim;
+
+    const result = areSameClaims(firstClaim, secondClaim);
+
+    expect(result).toBeTruthy();
+  });
+
+  it('should return a false if different scopes provided for scoped Claim', () => {
+    const firstClaim: ScopedClaim = {
+      type: ClaimType.Accredited,
+      scope: {
+        type: ScopeType.Identity,
+        value: '1',
+      },
+    };
+
+    const secondClaim = {
+      ...firstClaim,
+      scope: { type: ScopeType.Ticker, value: 'TICKER' },
+    } as unknown as MiddlewareClaim;
+
+    const result = areSameClaims(firstClaim, secondClaim);
+
+    expect(result).toBeFalsy();
+  });
+
+  it('should return a false if different customClaimTypeId provided for CustomClaim', () => {
+    const firstClaim: ScopedClaim = {
+      type: ClaimType.Custom,
+      customClaimTypeId: new BigNumber(1),
+      scope: {
+        type: ScopeType.Identity,
+        value: '1',
+      },
+    };
+
+    const secondClaim = {
+      ...firstClaim,
+      customClaimTypeId: new BigNumber(2),
+    } as unknown as MiddlewareClaim;
+
+    const result = areSameClaims(firstClaim, secondClaim);
+
+    expect(result).toBeFalsy();
   });
 });

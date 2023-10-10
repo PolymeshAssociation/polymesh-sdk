@@ -2704,6 +2704,7 @@ export const createMockClaimType = (
     Blocked: 9,
     InvestorUniqueness: 10,
     InvestorUniquenessV2: 11,
+    Custom: 12,
   };
   return createMockEnum<PolymeshPrimitivesIdentityClaimClaimType>(
     claimType,

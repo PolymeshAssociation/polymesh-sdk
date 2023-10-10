@@ -34,7 +34,6 @@ import {
   PolymeshTransaction,
   PolymeshTransactionBatch,
 } from '~/internal';
-import { CustomClaimTypeId } from '~/polkadot/polymesh/types';
 import { Modify } from '~/types/utils';
 
 export { EventRecord } from '@polkadot/types/interfaces';
