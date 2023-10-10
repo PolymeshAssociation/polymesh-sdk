@@ -71,8 +71,8 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
       },
       proposal,
     ] = await Promise.all([
-      multiSig.proposalDetail([rawMultiSignAddress, rawId]),
-      multiSig.proposals([rawMultiSignAddress, rawId]),
+      multiSig.proposalDetail(rawMultiSignAddress, rawId),
+      multiSig.proposals(rawMultiSignAddress, rawId),
     ]);
 
     let args, method, section;
@@ -119,7 +119,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
 
     const rawId = bigNumberToU64(id, context);
     const rawMultiSignAddress = stringToAccountId(multiSigAddress, context);
-    const rawProposal = await multiSig.proposals([rawMultiSignAddress, rawId]);
+    const rawProposal = await multiSig.proposals(rawMultiSignAddress, rawId);
 
     return rawProposal.isSome;
   }

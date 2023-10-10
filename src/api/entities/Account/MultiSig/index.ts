@@ -102,13 +102,15 @@ export class MultiSig extends Account {
 
     const rawAddress = stringToAccountId(address, context);
 
-    const rawProposals = await multiSig.proposalIds.entries(rawAddress);
+    const rawProposalEntries = await multiSig.proposals.entries(rawAddress);
 
-    return rawProposals.map(([, rawId]) => {
-      const id = u64ToBigNumber(rawId.unwrap());
-
-      return new MultiSigProposal({ multiSigAddress: address, id }, context);
-    });
+    return rawProposalEntries.map(
+      ([
+        {
+          args: [, rawId],
+        },
+      ]) => new MultiSigProposal({ multiSigAddress: address, id: u64ToBigNumber(rawId) }, context)
+    );
   }
 
   /**

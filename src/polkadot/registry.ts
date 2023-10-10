@@ -166,10 +166,6 @@ import type {
   PalletRelayerCall,
   PalletRelayerError,
   PalletRelayerSubsidy,
-  PalletRewardsCall,
-  PalletRewardsError,
-  PalletRewardsItnRewardStatus,
-  PalletRewardsRawEvent,
   PalletSchedulerCall,
   PalletSchedulerError,
   PalletSchedulerEvent,
@@ -307,7 +303,9 @@ import type {
   PolymeshPrimitivesSecondaryKeyPalletPermissions,
   PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesSecondaryKeySignatory,
+  PolymeshPrimitivesSettlementAffirmationCount,
   PolymeshPrimitivesSettlementAffirmationStatus,
+  PolymeshPrimitivesSettlementAssetCount,
   PolymeshPrimitivesSettlementInstruction,
   PolymeshPrimitivesSettlementInstructionStatus,
   PolymeshPrimitivesSettlementLeg,
@@ -538,10 +536,6 @@ declare module '@polkadot/types/types/registry' {
     PalletRelayerCall: PalletRelayerCall;
     PalletRelayerError: PalletRelayerError;
     PalletRelayerSubsidy: PalletRelayerSubsidy;
-    PalletRewardsCall: PalletRewardsCall;
-    PalletRewardsError: PalletRewardsError;
-    PalletRewardsItnRewardStatus: PalletRewardsItnRewardStatus;
-    PalletRewardsRawEvent: PalletRewardsRawEvent;
     PalletSchedulerCall: PalletSchedulerCall;
     PalletSchedulerError: PalletSchedulerError;
     PalletSchedulerEvent: PalletSchedulerEvent;
@@ -679,7 +673,9 @@ declare module '@polkadot/types/types/registry' {
     PolymeshPrimitivesSecondaryKeyPalletPermissions: PolymeshPrimitivesSecondaryKeyPalletPermissions;
     PolymeshPrimitivesSecondaryKeyPermissions: PolymeshPrimitivesSecondaryKeyPermissions;
     PolymeshPrimitivesSecondaryKeySignatory: PolymeshPrimitivesSecondaryKeySignatory;
+    PolymeshPrimitivesSettlementAffirmationCount: PolymeshPrimitivesSettlementAffirmationCount;
     PolymeshPrimitivesSettlementAffirmationStatus: PolymeshPrimitivesSettlementAffirmationStatus;
+    PolymeshPrimitivesSettlementAssetCount: PolymeshPrimitivesSettlementAssetCount;
     PolymeshPrimitivesSettlementInstruction: PolymeshPrimitivesSettlementInstruction;
     PolymeshPrimitivesSettlementInstructionStatus: PolymeshPrimitivesSettlementInstructionStatus;
     PolymeshPrimitivesSettlementLeg: PolymeshPrimitivesSettlementLeg;
