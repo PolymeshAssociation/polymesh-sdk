@@ -2150,6 +2150,11 @@ export function claimToMeshClaim(
       value = tuple(code, scopeToMeshScope(scope, context));
       break;
     }
+    case ClaimType.Custom: {
+      const { customClaimTypeId, scope } = claim;
+      value = tuple(bigNumberToU32(customClaimTypeId, context), scopeToMeshScope(scope, context));
+      break;
+    }
     default: {
       value = scopeToMeshScope(claim.scope, context);
     }
@@ -2941,7 +2946,7 @@ export function middlewareClaimToClaimData(claim: MiddlewareClaim, context: Cont
       jurisdiction,
       scope,
       cddId,
-      customClaimTypeId ? bigNumberToU32(new BigNumber(customClaimTypeId), context) : undefined
+      customClaimTypeId ? new BigNumber(customClaimTypeId) : undefined
     ),
   };
 }

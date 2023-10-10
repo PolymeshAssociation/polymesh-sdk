@@ -33,13 +33,10 @@ import {
 import { asIdentity, assembleBatchTransactions } from '~/utils/internal';
 import { isScopedClaim } from '~/utils/typeguards';
 
-const areSameClaims = (claim: Claim, { scope, type }: MiddlewareClaim): boolean => {
-  let isSameScope = true;
-
-  if (isScopedClaim(claim)) {
-    isSameScope = scope ? isEqual(middlewareScopeToScope(scope), claim.scope) : false;
-  }
-
+const areSameClaims = (
+  claim: Claim,
+  { scope, type, customClaimTypeId }: MiddlewareClaim
+): boolean => {
   // filter out deprecated claim types
   if (
     type === ClaimTypeEnum.NoData ||
@@ -50,23 +47,39 @@ const areSameClaims = (claim: Claim, { scope, type }: MiddlewareClaim): boolean 
     return false;
   }
 
-  return isSameScope && ClaimType[type] === claim.type;
+  if (isScopedClaim(claim) && scope && !isEqual(middlewareScopeToScope(scope), claim.scope)) {
+    return false;
+  }
+
+  if (
+    type === ClaimTypeEnum.Custom &&
+    claim.type === ClaimType.Custom &&
+    customClaimTypeId &&
+    !claim.customClaimTypeId.isEqualTo(customClaimTypeId)
+  ) {
+    return false;
+  }
+
+  return ClaimType[type] === claim.type;
 };
 
 const findClaimsByOtherIssuers = (
   claims: ClaimTarget[],
-  claimsByDid: Record<string, MiddlewareClaim[]>
+  claimsByDid: Record<string, MiddlewareClaim[]>,
+  signerDid: string
 ): Claim[] =>
   claims.reduce<Claim[]>((prev, { target, claim }) => {
     const targetClaims = claimsByDid[signerToString(target)] ?? [];
 
-    const claimExists = !!targetClaims.find(targetClaim => areSameClaims(claim, targetClaim));
+    const claimIssuedByOtherDids = targetClaims.some(
+      targetClaim => areSameClaims(claim, targetClaim) && targetClaim.issuerId !== signerDid
+    );
 
-    if (!claimExists) {
+    if (claimIssuedByOtherDids) {
       return [...prev, claim];
     }
 
-    return [...prev];
+    return prev;
   }, []);
 
 /**
@@ -176,11 +189,8 @@ export async function prepareModifyClaims(
   // skip validation if the middleware is unavailable
   if (shouldValidateWithMiddleware) {
     const { did: currentDid } = await context.getSigningIdentity();
-    const {
-      data: {
-        claims: { nodes: claimsData },
-      },
-    } = await context.queryMiddleware<Ensured<Query, 'claims'>>(
+
+    const result = await context.queryMiddleware<Ensured<Query, 'claims'>>(
       claimsQuery({
         dids: allTargets,
         trustedClaimIssuers: [currentDid],
@@ -188,9 +198,15 @@ export async function prepareModifyClaims(
       })
     );
 
+    const {
+      data: {
+        claims: { nodes: claimsData },
+      },
+    } = result;
+
     const claimsByDid = groupBy(claimsData, 'targetId');
 
-    const claimsByOtherIssuers: Claim[] = findClaimsByOtherIssuers(claims, claimsByDid);
+    const claimsByOtherIssuers: Claim[] = findClaimsByOtherIssuers(claims, claimsByDid, currentDid);
 
     if (claimsByOtherIssuers.length) {
       throw new PolymeshError({

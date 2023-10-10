@@ -272,7 +272,7 @@ export interface ExemptedClaim {
 export interface CustomClaim {
   type: ClaimType.Custom;
   scope: Scope;
-  customClaimTypeId: CustomClaimTypeId;
+  customClaimTypeId: BigNumber;
 }
 
 export interface BlockedClaim {

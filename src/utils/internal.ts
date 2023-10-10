@@ -243,7 +243,7 @@ export function createClaim(
   jurisdiction: Falsyable<string>,
   middlewareScope: Falsyable<MiddlewareScope>,
   cddId: Falsyable<string>,
-  customClaimTypeId: Falsyable<CustomClaimTypeId>
+  customClaimTypeId: Falsyable<BigNumber>
 ): Claim {
   const type = claimType as ClaimType;
   const scope = (middlewareScope ? middlewareScopeToScope(middlewareScope) : {}) as Scope;
@@ -267,7 +267,7 @@ export function createClaim(
     case ClaimType.Custom: {
       return {
         type,
-        customClaimTypeId: customClaimTypeId as CustomClaimTypeId,
+        customClaimTypeId: customClaimTypeId as BigNumber,
         scope,
       };
     }
