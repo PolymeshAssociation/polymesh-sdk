@@ -5,6 +5,7 @@ import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 import { Account, Context, Identity, modifyMultiSig, PolymeshError } from '~/internal';
 import { ErrorCode, ModifyMultiSigParams, MultiSigDetails, ProcedureMethod } from '~/types';
 import {
+  accountIdToString,
   addressToKey,
   identityIdToString,
   signatoryToSignerValue,
@@ -100,15 +101,23 @@ export class MultiSig extends Account {
       address,
     } = this;
 
-    const rawAddress = stringToAccountId(address, context);
+    const proposalEntries = await multiSig.proposals.entries();
 
-    const rawProposals = await multiSig.proposalIds.entries(rawAddress);
-
-    return rawProposals.map(([, rawId]) => {
-      const id = u64ToBigNumber(rawId.unwrap());
-
-      return new MultiSigProposal({ multiSigAddress: address, id }, context);
-    });
+    return proposalEntries
+      .filter(
+        ([
+          {
+            args: [[rawAddress]],
+          },
+        ]) => accountIdToString(rawAddress) === address
+      )
+      .map(
+        ([
+          {
+            args: [[, rawId]],
+          },
+        ]) => new MultiSigProposal({ multiSigAddress: address, id: u64ToBigNumber(rawId) }, context)
+      );
   }
 
   /**
