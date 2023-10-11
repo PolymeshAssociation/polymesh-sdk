@@ -4,7 +4,7 @@ import { filter, flatten, isEqual, uniqBy, uniqWith } from 'lodash';
 import { Context, Identity, modifyClaims, registerCustomClaimType } from '~/internal';
 import { ClaimTypeEnum } from '~/middleware/enums';
 import { claimsGroupingQuery, claimsQuery } from '~/middleware/queries';
-import { ClaimsGroupBy, ClaimsOrderBy, Query } from '~/middleware/types';
+import { ClaimsGroupBy, ClaimsOrderBy, CustomClaimType, Query } from '~/middleware/types';
 import {
   CddClaim,
   ClaimData,
@@ -35,11 +35,6 @@ import {
   u32ToBigNumber,
 } from '~/utils/conversion';
 import { calculateNextKey, createProcedureMethod, getDid, removePadding } from '~/utils/internal';
-
-type CustomClaimTypeToHuman = {
-  name: string;
-  id: string;
-};
 
 /**
  * Handles all Claims related functionality
@@ -493,13 +488,11 @@ export class Claims {
   public registerCustomClaimType: ProcedureMethod<RegisterCustomClaimTypeParams, BigNumber>;
 
   /**
-   * Retrieves a custom claim type based on its name.
+   * Retrieves a custom claim type based on its name
    *
-   * @param name - The name of the custom claim type to retrieve.
-   *
-   * @returns A promise that resolves to the `CustomClaimTypeToHuman` object if found, or null otherwise.
+   * @param name - The name of the custom claim type to retrieve
    */
-  public async getCustomClaimTypeByName(name: string): Promise<CustomClaimTypeToHuman | null> {
+  public async getCustomClaimTypeByName(name: string): Promise<CustomClaimType | null> {
     const {
       context: {
         polymeshApi: {
@@ -510,21 +503,19 @@ export class Claims {
 
     const customClaimTypeIdOpt = await identity.customClaimsInverse(name);
 
-    if (!customClaimTypeIdOpt.isSome) {
+    if (customClaimTypeIdOpt.isEmpty) {
       return null;
     }
 
-    return { id: u32ToBigNumber(customClaimTypeIdOpt.value).toString(), name };
+    return { id: u32ToBigNumber(customClaimTypeIdOpt.value), name };
   }
 
   /**
-   * Retrieves a custom claim type based on its ID.
+   * Retrieves a custom claim type based on its ID
    *
-   * @param id - The ID of the custom claim type to retrieve.
-   *
-   * @returns A promise that resolves to the `CustomClaimTypeToHuman` object if found, or null otherwise.
+   * @param id - The ID of the custom claim type to retrieve
    */
-  public async getCustomClaimTypeById(id: BigNumber): Promise<CustomClaimTypeToHuman | null> {
+  public async getCustomClaimTypeById(id: BigNumber): Promise<CustomClaimType | null> {
     const {
       context: {
         polymeshApi: {
@@ -535,10 +526,10 @@ export class Claims {
 
     const customClaimTypeIdOpt = await identity.customClaims(bigNumberToU32(id, this.context));
 
-    if (!customClaimTypeIdOpt.isSome) {
+    if (customClaimTypeIdOpt.isEmpty) {
       return null;
     }
 
-    return { id: id.toString(), name: bytesToString(customClaimTypeIdOpt.value) };
+    return { id, name: bytesToString(customClaimTypeIdOpt.value) };
   }
 }

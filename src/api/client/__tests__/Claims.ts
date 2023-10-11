@@ -780,7 +780,7 @@ describe('Claims Class', () => {
       });
 
       const result = await claims.getCustomClaimTypeByName(name);
-      expect(result).toEqual({ id: id.toString(), name });
+      expect(result).toEqual({ id, name });
     });
 
     it('should return null if custom claim type name does not exist', async () => {
@@ -817,7 +817,7 @@ describe('Claims Class', () => {
       });
 
       const result = await claims.getCustomClaimTypeById(id);
-      expect(result).toEqual({ id: id.toString(), name });
+      expect(result).toEqual({ id, name });
     });
 
     it('should return null if custom claim type id does not exist', async () => {
