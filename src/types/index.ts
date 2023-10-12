@@ -1695,3 +1695,8 @@ export interface SpWeightV2 {
   refTime: BigNumber;
   proofSize: BigNumber;
 }
+
+export type CustomClaimType = {
+  name: string;
+  id: BigNumber;
+};

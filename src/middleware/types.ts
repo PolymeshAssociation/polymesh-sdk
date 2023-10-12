@@ -1,5 +1,3 @@
-import BigNumber from 'bignumber.js';
-
 export type Maybe<T> = T;
 export type InputMaybe<T> = T;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
@@ -34356,9 +34354,4 @@ export type _Metadata = {
   rowCountEstimate?: Maybe<Array<Maybe<TableEstimate>>>;
   specName?: Maybe<Scalars['String']>;
   targetHeight?: Maybe<Scalars['Int']>;
-};
-
-export type CustomClaimType = {
-  name: string;
-  id: BigNumber;
 };

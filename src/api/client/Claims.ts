@@ -4,13 +4,14 @@ import { filter, flatten, isEqual, uniqBy, uniqWith } from 'lodash';
 import { Context, Identity, modifyClaims, registerCustomClaimType } from '~/internal';
 import { ClaimTypeEnum } from '~/middleware/enums';
 import { claimsGroupingQuery, claimsQuery } from '~/middleware/queries';
-import { ClaimsGroupBy, ClaimsOrderBy, CustomClaimType, Query } from '~/middleware/types';
+import { ClaimsGroupBy, ClaimsOrderBy, Query } from '~/middleware/types';
 import {
   CddClaim,
   ClaimData,
   ClaimOperation,
   ClaimScope,
   ClaimType,
+  CustomClaimType,
   IdentityWithClaims,
   ModifyClaimsParams,
   ProcedureMethod,
@@ -516,15 +517,14 @@ export class Claims {
    * @param id - The ID of the custom claim type to retrieve
    */
   public async getCustomClaimTypeById(id: BigNumber): Promise<CustomClaimType | null> {
+    const { context } = this;
     const {
-      context: {
-        polymeshApi: {
-          query: { identity },
-        },
+      polymeshApi: {
+        query: { identity },
       },
-    } = this;
+    } = context;
 
-    const customClaimTypeIdOpt = await identity.customClaims(bigNumberToU32(id, this.context));
+    const customClaimTypeIdOpt = await identity.customClaims(bigNumberToU32(id, context));
 
     if (customClaimTypeIdOpt.isEmpty) {
       return null;
