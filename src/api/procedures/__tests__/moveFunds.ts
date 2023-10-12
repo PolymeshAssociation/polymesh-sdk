@@ -311,7 +311,7 @@ describe('moveFunds procedure', () => {
 
     const expectedError = new PolymeshError({
       code: ErrorCode.DataUnavailable,
-      message: `No asset with "${ticker}" exists`,
+      message: `No asset exists with ticker: "${ticker}"`,
     });
 
     await expect(

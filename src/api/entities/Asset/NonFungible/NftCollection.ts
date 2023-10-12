@@ -3,6 +3,7 @@ import { PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker } from '@polkado
 import BigNumber from 'bignumber.js';
 
 import { BaseAsset } from '~/api/entities/Asset/Base';
+import { NonFungibleSettlements } from '~/api/entities/Asset/Base/Settlements';
 import { Nft } from '~/api/entities/Asset/NonFungible/Nft';
 import { issueNft } from '~/api/procedures/issueNft';
 import { Context, transferAssetOwnership } from '~/internal';
@@ -44,6 +45,7 @@ const sumNftIssuance = (
  * Class used to manage Nft functionality
  */
 export class NftCollection extends BaseAsset {
+  public settlements: NonFungibleSettlements;
   /**
    * Issues a new NFT for the collection
    */
@@ -63,6 +65,7 @@ export class NftCollection extends BaseAsset {
     super(identifiers, context);
 
     const { ticker } = identifiers;
+    this.settlements = new NonFungibleSettlements(this, context);
 
     this.transferOwnership = createProcedureMethod(
       { getProcedureAndArgs: args => [transferAssetOwnership, { ticker, ...args }] },

@@ -1,7 +1,14 @@
 import BigNumber from 'bignumber.js';
 
-import { DefaultPortfolio, FungibleAsset, Identity, NumberedPortfolio, Venue } from '~/internal';
-import { EventIdentifier } from '~/types';
+import {
+  DefaultPortfolio,
+  FungibleAsset,
+  Identity,
+  Nft,
+  NumberedPortfolio,
+  Venue,
+} from '~/internal';
+import { EventIdentifier, NftCollection } from '~/types';
 
 export enum InstructionStatus {
   Pending = 'Pending',
@@ -44,12 +51,21 @@ export type InstructionDetails = {
   memo: string | null;
 } & InstructionEndCondition;
 
-export interface Leg {
+export interface FungibleLeg {
   from: DefaultPortfolio | NumberedPortfolio;
   to: DefaultPortfolio | NumberedPortfolio;
   amount: BigNumber;
   asset: FungibleAsset;
 }
+
+export interface NonFungibleLeg {
+  from: DefaultPortfolio | NumberedPortfolio;
+  to: DefaultPortfolio | NumberedPortfolio;
+  nfts: Nft[];
+  asset: NftCollection;
+}
+
+export type Leg = FungibleLeg | NonFungibleLeg;
 
 export enum AffirmationStatus {
   Unknown = 'Unknown',

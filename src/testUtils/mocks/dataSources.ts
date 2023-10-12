@@ -4,7 +4,7 @@
 
 import { ApolloClient, NormalizedCacheObject, QueryOptions } from '@apollo/client/core';
 import { ApiPromise } from '@polkadot/api';
-import { DecoratedRpc } from '@polkadot/api/types';
+import { DecoratedErrors, DecoratedRpc } from '@polkadot/api/types';
 import { RpcInterface } from '@polkadot/rpc-core/types';
 import {
   bool,
@@ -34,6 +34,9 @@ import {
   Call,
   DispatchError,
   DispatchErrorModule,
+  DispatchErrorModuleU8,
+  DispatchErrorModuleU8a,
+  DispatchResult,
   EventRecord,
   ExtrinsicStatus,
   Hash,
@@ -616,6 +619,7 @@ const txMocksData = new Map<unknown, TxMockData>();
 let txModule = {} as Extrinsics;
 let queryModule = {} as Queries;
 let constsModule = {} as Consts;
+let errorsModule = {} as DecoratedErrors<'promise'>;
 
 let rpcModule = {} as DecoratedRpc<'promise', RpcInterface>;
 
@@ -950,6 +954,16 @@ function updateConsts(mod?: Consts): void {
 /**
  * @hidden
  */
+function updateErrors(mod?: DecoratedErrors<'promise'>): void {
+  const updateTo = mod ?? errorsModule;
+
+  errorsModule = updateTo;
+  mockInstanceContainer.apiInstance.errors = errorsModule;
+}
+
+/**
+ * @hidden
+ */
 function updateQueryMulti(mock?: jest.Mock): void {
   const updateTo = mock ?? queryMultiMock;
 
@@ -994,6 +1008,17 @@ function initConsts(): void {
 /**
  * @hidden
  *
+ * Mock the errors module
+ */
+function initErrors(): void {
+  const mod = {} as DecoratedErrors<'promise'>;
+
+  updateErrors(mod);
+}
+
+/**
+ * @hidden
+ *
  * Mock queryMulti
  */
 function initQueryMulti(): void {
@@ -1012,11 +1037,13 @@ function initApi(): void {
   } as unknown as Registry;
   mockInstanceContainer.apiInstance.createType = jest.fn();
   mockInstanceContainer.apiInstance.runtimeVersion = {} as RuntimeVersion;
+  // mockInstanceContainer.apiInstance.errors = {} as DecoratedErrors<'promise'>;
 
   initTx();
   initQuery();
   initRpc();
   initConsts();
+  initErrors();
   initQueryMulti();
 
   mockInstanceContainer.apiInstance.at = jest
@@ -1413,6 +1440,39 @@ export function setConstMock<
   } else {
     const instance = mockInstanceContainer.apiInstance;
     instance.consts[mod][constName] = returnValue;
+  }
+}
+
+/**
+ * @hidden
+ * Set an error mock
+ *
+ * @param mod - name of the module
+ * @param errorName - name of the constant
+ */
+export function setErrorMock(
+  mod: string,
+  errorName: string,
+  opts: {
+    returnValue: {
+      is: (arg0: DispatchErrorModule | DispatchErrorModuleU8a | DispatchErrorModuleU8) => boolean;
+    };
+  }
+): void {
+  let runtimeModule = errorsModule[mod];
+
+  if (!runtimeModule) {
+    runtimeModule = {};
+    runtimeModule[mod] = runtimeModule as any;
+  }
+
+  const returnValue = opts.returnValue;
+  if (!runtimeModule[errorName]) {
+    runtimeModule[errorName] = returnValue as any;
+    updateErrors();
+  } else {
+    const instance = mockInstanceContainer.apiInstance;
+    instance.errors[mod][errorName] = returnValue as any;
   }
 }
 
@@ -3612,6 +3672,33 @@ export const createMockGranularCanTransferResult = (granularCanTransferResult?: 
     },
     !granularCanTransferResult
   );
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockDispatchResult = (
+  dispatchResult?:
+    | DispatchResult
+    | {
+        Err: {
+          index: u8 | Parameters<typeof createMockU8>[0];
+          module: U8aFixed | Parameters<typeof createMockU8aFixed>[0];
+        };
+      }
+): MockCodec<DispatchResult> => {
+  if (isCodec<DispatchResult>(dispatchResult)) {
+    return dispatchResult as MockCodec<DispatchResult>;
+  }
+
+  if (dispatchResult?.Err) {
+    const mockError = createMockCodec(dispatchResult?.Err, !dispatchResult?.Err);
+    const mockModuleError = createMockEnum({ Module: mockError });
+    return createMockEnum<DispatchResult>({ Err: mockModuleError });
+  }
+
+  return createMockEnum<DispatchResult>();
 };
 
 /**

@@ -1,3 +1,4 @@
+import { DecoratedErrors } from '@polkadot/api/types';
 import { bool, Bytes, Option, Text, U8aFixed, u32, u64, u128, Vec } from '@polkadot/types';
 import {
   AccountId,
@@ -91,9 +92,12 @@ import {
 import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
+  createMockNfts,
   createMockOption,
   createMockPortfolioId,
   createMockTicker,
+  createMockU8,
+  createMockU8aFixed,
   createMockU32,
   createMockU64,
   createMockU128,
@@ -115,6 +119,7 @@ import {
   CountryCode,
   DividendDistributionParams,
   ErrorCode,
+  FungibleLeg,
   InputCondition,
   InstructionType,
   KnownAssetType,
@@ -221,7 +226,8 @@ import {
   isLeiValid,
   keyAndValueToStatUpdate,
   keyToAddress,
-  legToSettlementLeg,
+  legToFungibleLeg,
+  legToNonFungibleLeg,
   meshAffirmationStatusToAffirmationStatus,
   meshClaimToClaim,
   meshClaimToInputStatClaim,
@@ -254,6 +260,7 @@ import {
   moduleAddressToString,
   momentToDate,
   nameToAssetName,
+  nftDispatchErrorToTransferError,
   nftInputToNftMetadataVec,
   nftMovementToPortfolioFund,
   nftToMeshNft,
@@ -3373,6 +3380,18 @@ describe('canTransferResultToTransferStatus', () => {
 });
 
 describe('granularCanTransferResultToTransferBreakdown', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
   it('should convert a polkadot GranularCanTransferResult object to a TransferBreakdown', () => {
     const context = dsMockUtils.getContextInstance();
     let result = granularCanTransferResultToTransferBreakdown(
@@ -3407,9 +3426,10 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
           requirements: [],
           result: false,
         }),
-        result: false,
+        result: true,
         /* eslint-enable @typescript-eslint/naming-convention */
       }),
+      undefined,
       context
     );
 
@@ -3439,7 +3459,7 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
           result: false,
         },
       ],
-      result: false,
+      result: true,
     });
 
     result = granularCanTransferResultToTransferBreakdown(
@@ -3477,6 +3497,7 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
         result: false,
         /* eslint-enable @typescript-eslint/naming-convention */
       }),
+      undefined,
       context
     );
 
@@ -3497,6 +3518,156 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
       ],
       result: false,
     });
+  });
+
+  it('should convert a polkadot GranularCanTransferResult object to a TransferBreakdown with NFT result', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    context.polymeshApi.errors.nft = {
+      BalanceOverflow: { is: jest.fn().mockReturnValue(false) },
+      BalanceUnderflow: { is: jest.fn().mockReturnValue(false) },
+      DuplicatedNFTId: { is: jest.fn().mockReturnValue(true) },
+      InvalidNFTTransferComplianceFailure: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferFrozenAsset: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferInsufficientCount: { is: jest.fn().mockReturnValue(false) },
+      NFTNotFound: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferNFTNotOwned: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferSamePortfolio: { is: jest.fn().mockReturnValue(false) },
+    } as unknown as DecoratedErrors<'promise'>['nft'];
+
+    const result = granularCanTransferResultToTransferBreakdown(
+      dsMockUtils.createMockGranularCanTransferResult({
+        /* eslint-disable @typescript-eslint/naming-convention */
+        invalid_granularity: false,
+        self_transfer: false,
+        invalid_receiver_cdd: false,
+        invalid_sender_cdd: false,
+        missing_scope_claim: false,
+        receiver_custodian_error: false,
+        sender_custodian_error: false,
+        sender_insufficient_balance: false,
+        portfolio_validity_result: {
+          receiver_is_same_portfolio: false,
+          sender_portfolio_does_not_exist: false,
+          receiver_portfolio_does_not_exist: false,
+          sender_insufficient_balance: false,
+          result: false,
+        },
+        asset_frozen: false,
+        transfer_condition_result: [
+          {
+            condition: {
+              MaxInvestorCount: dsMockUtils.createMockU64(new BigNumber(100)),
+            },
+            result: false,
+          },
+        ],
+        compliance_result: dsMockUtils.createMockAssetComplianceResult({
+          paused: false,
+          requirements: [],
+          result: false,
+        }),
+        result: true,
+        /* eslint-enable @typescript-eslint/naming-convention */
+      }),
+      dsMockUtils.createMockDispatchResult({
+        Err: { index: createMockU8(), module: createMockU8aFixed() },
+      }),
+      context
+    );
+
+    expect(result).toEqual({
+      general: [TransferError.InsufficientPortfolioBalance],
+      compliance: {
+        requirements: [],
+        complies: false,
+      },
+      restrictions: [
+        {
+          restriction: {
+            type: TransferRestrictionType.Count,
+            value: new BigNumber(100),
+          },
+          result: false,
+        },
+      ],
+      result: false,
+    });
+  });
+});
+
+describe('nftDispatchErrorToTransferError', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should process errors', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    context.polymeshApi.errors.nft = {
+      BalanceOverflow: { is: jest.fn().mockReturnValue(false) },
+      BalanceUnderflow: { is: jest.fn().mockReturnValue(false) },
+      DuplicatedNFTId: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferComplianceFailure: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferFrozenAsset: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferInsufficientCount: { is: jest.fn().mockReturnValue(false) },
+      NFTNotFound: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferNFTNotOwned: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferSamePortfolio: { is: jest.fn().mockReturnValue(false) },
+    } as unknown as DecoratedErrors<'promise'>['nft'];
+
+    const mockError = dsMockUtils.createMockDispatchResult({
+      Err: { index: createMockU8(), module: createMockU8aFixed() },
+    }).asErr;
+
+    dsMockUtils.setErrorMock('nft', 'InvalidNFTTransferFrozenAsset', {
+      returnValue: { is: jest.fn().mockReturnValue(true) },
+    });
+
+    let result = nftDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.TransfersFrozen);
+
+    dsMockUtils.setErrorMock('nft', 'InvalidNFTTransferFrozenAsset', {
+      returnValue: { is: jest.fn().mockReturnValue(false) },
+    });
+    dsMockUtils.setErrorMock('nft', 'InvalidNFTTransferComplianceFailure', {
+      returnValue: { is: jest.fn().mockReturnValue(true) },
+    });
+
+    result = nftDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.ComplianceFailure);
+
+    dsMockUtils.setErrorMock('nft', 'InvalidNFTTransferComplianceFailure', {
+      returnValue: { is: jest.fn().mockReturnValue(false) },
+    });
+    dsMockUtils.setErrorMock('nft', 'InvalidNFTTransferSamePortfolio', {
+      returnValue: { is: jest.fn().mockReturnValue(true) },
+    });
+
+    result = nftDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.SelfTransfer);
+
+    dsMockUtils.setErrorMock('nft', 'InvalidNFTTransferSamePortfolio', {
+      returnValue: { is: jest.fn().mockReturnValue(false) },
+    });
+
+    return expect(() => nftDispatchErrorToTransferError(mockError, context)).toThrow(
+      new PolymeshError({
+        code: ErrorCode.General,
+        message: 'Received unknown NFT can transfer status',
+      })
+    );
   });
 });
 
@@ -4199,7 +4370,7 @@ describe('middlewareInstructionToHistoricInstruction', () => {
     expect(result.venueId).toEqual(venueId);
     expect(result.createdAt).toEqual(createdAt);
     expect(result.legs[0].asset.ticker).toBe(ticker);
-    expect(result.legs[0].amount).toEqual(amount1);
+    expect((result.legs[0] as FungibleLeg).amount).toEqual(amount1);
     expect(result.legs[0].from.owner.did).toBe(portfolioDid1);
     expect(result.legs[0].to.owner.did).toBe(portfolioDid2);
     expect((result.legs[0].to as NumberedPortfolio).id).toEqual(new BigNumber(portfolioKind2));
@@ -4230,7 +4401,7 @@ describe('middlewareInstructionToHistoricInstruction', () => {
     expect(result.venueId).toEqual(venueId);
     expect(result.createdAt).toEqual(createdAt);
     expect(result.legs[0].asset.ticker).toBe(ticker);
-    expect(result.legs[0].amount).toEqual(amount2);
+    expect((result.legs[0] as FungibleLeg).amount).toEqual(amount2);
     expect(result.legs[0].from.owner.did).toBe(portfolioDid2);
     expect(result.legs[0].to.owner.did).toBe(portfolioDid1);
     expect((result.legs[0].from as NumberedPortfolio).id).toEqual(new BigNumber(portfolioKind2));
@@ -9302,7 +9473,7 @@ describe('middlewareAuthorizationDataToAuthorization', () => {
   });
 });
 
-describe('legToSettlementLeg', () => {
+describe('legToFungibleLeg', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -9314,24 +9485,56 @@ describe('legToSettlementLeg', () => {
   afterAll(() => {
     dsMockUtils.cleanup();
   });
+
   it('should make a fungible leg', () => {
     const context = dsMockUtils.getContextInstance();
     const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesSettlementLeg;
 
     const value = {
-      Fungible: {
-        sender: createMockPortfolioId(),
-        receiver: createMockPortfolioId(),
-        ticker: createMockTicker(),
-        amount: createMockU128(),
-      },
+      sender: createMockPortfolioId(),
+      receiver: createMockPortfolioId(),
+      ticker: createMockTicker(),
+      amount: createMockU128(),
     } as const;
 
     when(context.createType)
-      .calledWith('PolymeshPrimitivesSettlementLeg', value)
+      .calledWith('PolymeshPrimitivesSettlementLeg', { Fungible: value })
       .mockReturnValue(fakeResult);
 
-    const result = legToSettlementLeg(value, context);
+    const result = legToFungibleLeg(value, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('legToNonFungibleLeg', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should make a non-fungible leg', () => {
+    const context = dsMockUtils.getContextInstance();
+    const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesSettlementLeg;
+
+    const value = {
+      sender: createMockPortfolioId(),
+      receiver: createMockPortfolioId(),
+      nfts: createMockNfts(),
+    } as const;
+
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesSettlementLeg', { NonFungible: value })
+      .mockReturnValue(fakeResult);
+
+    const result = legToNonFungibleLeg(value, context);
 
     expect(result).toEqual(fakeResult);
   });

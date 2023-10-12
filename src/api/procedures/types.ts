@@ -12,6 +12,7 @@ import {
   Identity,
   KnownPermissionGroup,
   MultiSig,
+  Nft,
   NumberedPortfolio,
   Venue,
 } from '~/internal';
@@ -38,6 +39,7 @@ import {
   MetadataSpec,
   MetadataType,
   MetadataValueDetails,
+  NftCollection,
   OfferingTier,
   PercentageTransferRestriction,
   PermissionedAccount,
@@ -491,16 +493,27 @@ export interface TransferPolyxParams {
   memo?: string;
 }
 
+export interface InstructionFungibleLeg {
+  amount: BigNumber;
+  from: PortfolioLike;
+  to: PortfolioLike;
+  asset: string | FungibleAsset;
+}
+
+export interface InstructionNonFungibleLeg {
+  nfts: (BigNumber | Nft)[];
+  from: PortfolioLike;
+  to: PortfolioLike;
+  asset: string | NftCollection;
+}
+
+export type InstructionLeg = InstructionFungibleLeg | InstructionNonFungibleLeg;
+
 export type AddInstructionParams = {
   /**
-   * array of Asset movements (amount, from, to, asset)
+   * array of Asset movements
    */
-  legs: {
-    amount: BigNumber;
-    from: PortfolioLike;
-    to: PortfolioLike;
-    asset: string | FungibleAsset;
-  }[];
+  legs: InstructionLeg[];
   /**
    * date at which the trade was agreed upon (optional, for off chain trades)
    */

@@ -2,15 +2,7 @@ import BigNumber from 'bignumber.js';
 import { uniq } from 'lodash';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
-import {
-  Context,
-  DefaultPortfolio,
-  FungibleAsset,
-  NftCollection,
-  NumberedPortfolio,
-  PolymeshError,
-  Procedure,
-} from '~/internal';
+import { Context, DefaultPortfolio, NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
 import {
   ErrorCode,
   FungiblePortfolioMovement,
@@ -22,14 +14,13 @@ import {
   TxTags,
 } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { isFungibleAsset, isNftCollection } from '~/utils';
 import {
   fungibleMovementToPortfolioFund,
   nftMovementToPortfolioFund,
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolioId,
 } from '~/utils/conversion';
-import { asNftId, asTicker } from '~/utils/internal';
+import { asNftId, assetInputToAsset, asTicker } from '~/utils/internal';
 
 /**
  * @hidden
@@ -57,25 +48,10 @@ async function segregateItems(
     const { asset } = item;
     tickers.push(asTicker(asset));
 
-    if (typeof asset === 'string') {
-      const ticker = asset;
-      const fungible = new FungibleAsset({ ticker }, context);
-      const collection = new NftCollection({ ticker }, context);
-      const [isAsset, isCollection] = await Promise.all([fungible.exists(), collection.exists()]);
-
-      if (isCollection) {
-        nftMovements.push(item as NonFungiblePortfolioMovement);
-      } else if (isAsset) {
-        fungibleMovements.push(item as FungiblePortfolioMovement);
-      } else {
-        throw new PolymeshError({
-          code: ErrorCode.DataUnavailable,
-          message: `No asset with "${ticker}" exists`,
-        });
-      }
-    } else if (isFungibleAsset(asset)) {
+    const { type: assetType } = await assetInputToAsset(asset, context);
+    if (assetType === 'fungible') {
       fungibleMovements.push(item as FungiblePortfolioMovement);
-    } else if (isNftCollection(asset)) {
+    } else if (assetType === 'nftCollection') {
       nftMovements.push(item as NonFungiblePortfolioMovement);
     }
   }

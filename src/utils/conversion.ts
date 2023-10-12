@@ -1,5 +1,6 @@
 import { bool, Bytes, Option, Text, u8, U8aFixed, u16, u32, u64, u128, Vec } from '@polkadot/types';
 import { AccountId, Balance, BlockHash, Hash, Permill } from '@polkadot/types/interfaces';
+import { DispatchError, DispatchResult } from '@polkadot/types/interfaces/system';
 import {
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
@@ -103,6 +104,7 @@ import {
   FungibleAsset,
   Identity,
   KnownPermissionGroup,
+  Nft,
   NumberedPortfolio,
   PolymeshError,
   Portfolio,
@@ -2958,12 +2960,12 @@ export function toIdentityWithClaimsArray(
  */
 export function nftToMeshNft(
   ticker: string,
-  ids: BigNumber[],
+  nfts: (Nft | BigNumber)[],
   context: Context
 ): PolymeshPrimitivesNftNfTs {
   return context.createType('PolymeshPrimitivesNftNfTs', {
     ticker: stringToTicker(ticker, context),
-    ids: ids.map(id => bigNumberToU64(id, context)),
+    ids: nfts.map(id => bigNumberToU64(asNftId(id), context)),
   });
 }
 
@@ -3145,8 +3147,45 @@ export function transferConditionToTransferRestriction(
 /**
  * @hidden
  */
+export function nftDispatchErrorToTransferError(
+  error: DispatchError,
+  context: Context
+): TransferError {
+  const {
+    DuplicatedNFTId: duplicateErr,
+    InvalidNFTTransferComplianceFailure: complianceErr,
+    InvalidNFTTransferFrozenAsset: frozenErr,
+    InvalidNFTTransferInsufficientCount: insufficientErr,
+    NFTNotFound: notFoundErr,
+    InvalidNFTTransferNFTNotOwned: notOwnedErr,
+    InvalidNFTTransferSamePortfolio: samePortfolioErr,
+  } = context.polymeshApi.errors.nft;
+
+  if (error.isModule) {
+    const moduleErr = error.asModule;
+    if ([notOwnedErr, notFoundErr, insufficientErr, duplicateErr].some(err => err.is(moduleErr))) {
+      return TransferError.InsufficientPortfolioBalance;
+    } else if (frozenErr.is(moduleErr)) {
+      return TransferError.TransfersFrozen;
+    } else if (complianceErr.is(moduleErr)) {
+      return TransferError.ComplianceFailure;
+    } else if (samePortfolioErr.is(moduleErr)) {
+      return TransferError.SelfTransfer;
+    }
+  }
+
+  throw new PolymeshError({
+    code: ErrorCode.UnexpectedError,
+    message: 'Received unknown NFT can transfer status',
+  });
+}
+
+/**
+ * @hidden
+ */
 export function granularCanTransferResultToTransferBreakdown(
   result: GranularCanTransferResult,
+  validateNftResult: DispatchResult | undefined,
   context: Context
 ): TransferBreakdown {
   const {
@@ -3216,13 +3255,25 @@ export function granularCanTransferResultToTransferBreakdown(
     };
   });
 
+  let canTransfer = boolToBoolean(finalResult);
+
+  if (canTransfer && validateNftResult?.isErr) {
+    const transferError = nftDispatchErrorToTransferError(validateNftResult.asErr, context);
+    general.push(transferError);
+    canTransfer = false;
+  }
+
   return {
     general,
     compliance: assetComplianceResultToCompliance(complianceResult, context),
     restrictions,
-    result: boolToBoolean(finalResult),
+    result: canTransfer,
   };
 }
+
+/**
+ * @hidden
+ */
 
 /**
  * @hidden
@@ -4286,18 +4337,30 @@ export function middlewarePortfolioDataToPortfolio(
 /**
  * @hidden
  */
-export function legToSettlementLeg(
+export function legToFungibleLeg(
   leg: {
-    Fungible: {
-      sender: PolymeshPrimitivesIdentityIdPortfolioId;
-      receiver: PolymeshPrimitivesIdentityIdPortfolioId;
-      ticker: PolymeshPrimitivesTicker;
-      amount: Balance;
-    };
+    sender: PolymeshPrimitivesIdentityIdPortfolioId;
+    receiver: PolymeshPrimitivesIdentityIdPortfolioId;
+    ticker: PolymeshPrimitivesTicker;
+    amount: Balance;
   },
   context: Context
 ): PolymeshPrimitivesSettlementLeg {
-  return context.createType('PolymeshPrimitivesSettlementLeg', leg);
+  return context.createType('PolymeshPrimitivesSettlementLeg', { Fungible: leg });
+}
+
+/**
+ * @hidden
+ */
+export function legToNonFungibleLeg(
+  leg: {
+    sender: PolymeshPrimitivesIdentityIdPortfolioId;
+    receiver: PolymeshPrimitivesIdentityIdPortfolioId;
+    nfts: PolymeshPrimitivesNftNfTs;
+  },
+  context: Context
+): PolymeshPrimitivesSettlementLeg {
+  return context.createType('PolymeshPrimitivesSettlementLeg', { NonFungible: leg });
 }
 
 /**

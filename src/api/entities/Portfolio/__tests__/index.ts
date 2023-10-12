@@ -18,7 +18,12 @@ import {
 } from '~/internal';
 import { portfolioMovementsQuery, settlementsQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { MoveFundsParams, SettlementDirectionEnum, SettlementResultEnum } from '~/types';
+import {
+  FungibleLeg,
+  MoveFundsParams,
+  SettlementDirectionEnum,
+  SettlementResultEnum,
+} from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -659,8 +664,8 @@ describe('Portfolio class', () => {
       expect(result[1].blockHash).toBe(blockHash2);
       expect(result[0].legs[0].asset.ticker).toBe(ticker1);
       expect(result[1].legs[0].asset.ticker).toBe(ticker2);
-      expect(result[0].legs[0].amount).toEqual(amount1.div(Math.pow(10, 6)));
-      expect(result[1].legs[0].amount).toEqual(amount2.div(Math.pow(10, 6)));
+      expect((result[0].legs[0] as FungibleLeg).amount).toEqual(amount1.div(Math.pow(10, 6)));
+      expect((result[1].legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
       expect(result[0].legs[0].from.owner.did).toBe(portfolioDid1);
       expect(result[0].legs[0].to.owner.did).toBe(portfolioDid2);
       expect((result[0].legs[0].to as NumberedPortfolio).id).toEqual(portfolioId2);
@@ -723,7 +728,7 @@ describe('Portfolio class', () => {
       expect(result[0].blockNumber).toEqual(blockNumber1);
       expect(result[0].blockHash).toBe(blockHash1);
       expect(result[0].legs[0].asset.ticker).toBe(ticker2);
-      expect(result[0].legs[0].amount).toEqual(amount2.div(Math.pow(10, 6)));
+      expect((result[0].legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
       expect(result[0].legs[0].from.owner.did).toBe(portfolioDid1);
       expect(result[0].legs[0].to.owner.did).toBe(portfolioDid1);
       expect((result[0].legs[0].to as NumberedPortfolio).id).toEqual(portfolioId2);

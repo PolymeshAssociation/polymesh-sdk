@@ -25,9 +25,9 @@ export interface PortfolioCollection {
   total: BigNumber;
 }
 
-export interface SettlementLeg extends Leg {
+export type SettlementLeg = Leg & {
   direction: SettlementDirection;
-}
+};
 
 export interface HistoricSettlement {
   blockNumber: BigNumber;

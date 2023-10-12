@@ -1804,3 +1804,34 @@ export function asNftId(nft: Nft | BigNumber): BigNumber {
     return nft.id;
   }
 }
+
+/**
+ * @hidden
+ */
+export async function assetInputToAsset(
+  asset: string | FungibleAsset | NftCollection,
+  context: Context
+): Promise<
+  { type: 'fungible'; asset: FungibleAsset } | { type: 'nftCollection'; asset: NftCollection }
+> {
+  if (typeof asset === 'string') {
+    const ticker = asset;
+    const fungible = new FungibleAsset({ ticker }, context);
+    const collection = new NftCollection({ ticker }, context);
+    const [isAsset, isCollection] = await Promise.all([fungible.exists(), collection.exists()]);
+    if (isCollection) {
+      return { type: 'nftCollection', asset: collection };
+    } else if (isAsset) {
+      return { type: 'fungible', asset: fungible };
+    } else {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: `No asset exists with ticker: "${ticker}"`,
+      });
+    }
+  } else if (asset instanceof NftCollection) {
+    return { type: 'nftCollection', asset };
+  } else {
+    return { type: 'fungible', asset };
+  }
+}
