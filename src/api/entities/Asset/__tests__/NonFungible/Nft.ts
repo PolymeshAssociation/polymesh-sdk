@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 
-import { Entity, Nft } from '~/internal';
+import { Entity, Nft, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
 
@@ -129,6 +130,25 @@ describe('Nft class', () => {
       const result = await nft.exists();
 
       expect(result).toBe(false);
+    });
+  });
+
+  describe('method: redeem', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const ticker = 'TEST';
+      const id = new BigNumber(1);
+      const context = dsMockUtils.getContextInstance();
+      const nft = new Nft({ ticker, id }, context);
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { ticker, id }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await nft.redeem();
+
+      expect(tx).toBe(expectedTransaction);
     });
   });
 

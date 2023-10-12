@@ -1199,6 +1199,7 @@ const MockNftClass = createMockEntityClass<NftOptions>(
      */
     public configure(opts: Required<NftOptions>) {
       this.uuid = 'nft';
+      this.id = opts.id;
       this.collection = opts.collection;
       this.getMetadata = createEntityGetterMock(opts.getMetadata);
     }
