@@ -3,6 +3,7 @@ import {
   AuthorizationRequest as AuthorizationRequestClass,
   Checkpoint as CheckpointClass,
   CheckpointSchedule as CheckpointScheduleClass,
+  ChildIdentity as ChildIdentityClass,
   CorporateAction as CorporateActionClass,
   CustomPermissionGroup as CustomPermissionGroupClass,
   DefaultPortfolio as DefaultPortfolioClass,
@@ -33,6 +34,7 @@ export type DefaultPortfolio = DefaultPortfolioClass;
 export type DefaultTrustedClaimIssuer = DefaultTrustedClaimIssuerClass;
 export type DividendDistribution = DividendDistributionClass;
 export type Identity = IdentityClass;
+export type ChildIdentity = ChildIdentityClass;
 export type Instruction = InstructionClass;
 export type KnownPermissionGroup = KnownPermissionGroupClass;
 export type NumberedPortfolio = NumberedPortfolioClass;
