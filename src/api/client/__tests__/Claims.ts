@@ -759,4 +759,76 @@ describe('Claims Class', () => {
       expect(tx).toBe(expectedTransaction);
     });
   });
+
+  describe('method: getCustomClaimTypeByName', () => {
+    const name = 'custom-claim-type';
+    const id = new BigNumber(12);
+    const rawId = dsMockUtils.createMockU32(id);
+
+    beforeEach(() => {
+      jest.spyOn(utilsConversionModule, 'u32ToBigNumber').mockClear().mockReturnValue(id);
+      jest.spyOn(utilsConversionModule, 'bytesToString').mockClear().mockReturnValue(name);
+    });
+
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should fetch custom claim type by name', async () => {
+      dsMockUtils.createQueryMock('identity', 'customClaimsInverse', {
+        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockOption(rawId)),
+      });
+
+      const result = await claims.getCustomClaimTypeByName(name);
+      expect(result).toEqual({ id, name });
+    });
+
+    it('should return null if custom claim type name does not exist', async () => {
+      dsMockUtils.createQueryMock('identity', 'customClaimsInverse', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockOption(dsMockUtils.createMockOption())
+        ),
+      });
+
+      const result = await claims.getCustomClaimTypeByName(name);
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('method: getCustomClaimTypeById', () => {
+    const name = 'custom-claim-type';
+    const id = new BigNumber(12);
+    const rawId = dsMockUtils.createMockU32(id);
+
+    beforeEach(() => {
+      jest.spyOn(utilsConversionModule, 'bigNumberToU32').mockClear().mockReturnValue(rawId);
+      jest.spyOn(utilsConversionModule, 'bytesToString').mockClear().mockReturnValue(name);
+    });
+
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should fetch custom claim type by id', async () => {
+      dsMockUtils.createQueryMock('identity', 'customClaims', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockOption(dsMockUtils.createMockBytes(name))
+        ),
+      });
+
+      const result = await claims.getCustomClaimTypeById(id);
+      expect(result).toEqual({ id, name });
+    });
+
+    it('should return null if custom claim type id does not exist', async () => {
+      dsMockUtils.createQueryMock('identity', 'customClaims', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockOption(dsMockUtils.createMockOption())
+        ),
+      });
+
+      const result = await claims.getCustomClaimTypeById(id);
+      expect(result).toBeNull();
+    });
+  });
 });
