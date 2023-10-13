@@ -25,13 +25,15 @@ import {
   ErrorCode,
   InstructionEndCondition,
   InstructionFungibleLeg,
-  InstructionNonFungibleLeg,
+  InstructionLeg,
+  InstructionNftLeg,
   InstructionType,
   RoleType,
   SettlementTx,
   TxTags,
 } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
+import { isFungibleLegBuilder, isNftLegBuilder } from '~/utils';
 import { MAX_LEGS_LENGTH } from '~/utils/constants';
 import {
   bigNumberToBalance,
@@ -50,7 +52,6 @@ import {
 } from '~/utils/conversion';
 import {
   assembleBatchTransactions,
-  assetInputToAsset,
   asTicker,
   filterEventRecords,
   optionize,
@@ -150,6 +151,32 @@ function getEndCondition(
 /**
  * @hidden
  */
+async function separateLegs(
+  legs: InstructionLeg[],
+  context: Context
+): Promise<{ fungibleLegs: InstructionFungibleLeg[]; nftLegs: InstructionNftLeg[] }> {
+  const fungibleLegs: InstructionFungibleLeg[] = [];
+  const nftLegs: InstructionNftLeg[] = [];
+
+  for (const leg of legs) {
+    const [isFungible, isNft] = await Promise.all([
+      isFungibleLegBuilder(leg, context),
+      isNftLegBuilder(leg, context),
+    ]);
+
+    if (isFungible(leg)) {
+      fungibleLegs.push(leg);
+    } else if (isNft(leg)) {
+      nftLegs.push(leg);
+    }
+  }
+
+  return { fungibleLegs, nftLegs };
+}
+
+/**
+ * @hidden
+ */
 async function getTxArgsAndErrors(
   instructions: AddInstructionParams[],
   portfoliosToAffirm: (DefaultPortfolio | NumberedPortfolio)[][],
@@ -191,18 +218,7 @@ async function getTxArgsAndErrors(
       legLengthErrIndexes.push(i);
     }
 
-    const fungibleLegs: InstructionFungibleLeg[] = [];
-    const nftLegs: InstructionNonFungibleLeg[] = [];
-
-    for (const leg of legs) {
-      const { asset } = leg;
-      const { type: assetType } = await assetInputToAsset(asset, context);
-      if (assetType === 'fungible') {
-        fungibleLegs.push(leg as InstructionFungibleLeg);
-      } else if (assetType === 'nftCollection') {
-        nftLegs.push(leg as InstructionNonFungibleLeg);
-      }
-    }
+    const { fungibleLegs, nftLegs } = await separateLegs(legs, context);
 
     const zeroAmountFungibleLegs = fungibleLegs.filter(leg => leg.amount.isZero());
     if (zeroAmountFungibleLegs.length) {

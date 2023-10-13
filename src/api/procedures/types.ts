@@ -500,14 +500,14 @@ export interface InstructionFungibleLeg {
   asset: string | FungibleAsset;
 }
 
-export interface InstructionNonFungibleLeg {
+export interface InstructionNftLeg {
   nfts: (BigNumber | Nft)[];
   from: PortfolioLike;
   to: PortfolioLike;
   asset: string | NftCollection;
 }
 
-export type InstructionLeg = InstructionFungibleLeg | InstructionNonFungibleLeg;
+export type InstructionLeg = InstructionFungibleLeg | InstructionNftLeg;
 
 export type AddInstructionParams = {
   /**

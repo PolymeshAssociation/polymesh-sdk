@@ -58,14 +58,14 @@ export interface FungibleLeg {
   asset: FungibleAsset;
 }
 
-export interface NonFungibleLeg {
+export interface NftLeg {
   from: DefaultPortfolio | NumberedPortfolio;
   to: DefaultPortfolio | NumberedPortfolio;
   nfts: Nft[];
   asset: NftCollection;
 }
 
-export type Leg = FungibleLeg | NonFungibleLeg;
+export type Leg = FungibleLeg | NftLeg;
 
 export enum AffirmationStatus {
   Unknown = 'Unknown',

@@ -14,13 +14,14 @@ import {
   TxTags,
 } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
+import { isFungibleAsset, isNftCollection } from '~/utils';
 import {
   fungibleMovementToPortfolioFund,
   nftMovementToPortfolioFund,
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolioId,
 } from '~/utils/conversion';
-import { asNftId, assetInputToAsset, asTicker } from '~/utils/internal';
+import { asAsset, asNftId, asTicker } from '~/utils/internal';
 
 /**
  * @hidden
@@ -48,10 +49,10 @@ async function segregateItems(
     const { asset } = item;
     tickers.push(asTicker(asset));
 
-    const { type: assetType } = await assetInputToAsset(asset, context);
-    if (assetType === 'fungible') {
+    const typedAsset = await asAsset(asset, context);
+    if (isFungibleAsset(typedAsset)) {
       fungibleMovements.push(item as FungiblePortfolioMovement);
-    } else if (assetType === 'nftCollection') {
+    } else if (isNftCollection(typedAsset)) {
       nftMovements.push(item as NonFungiblePortfolioMovement);
     }
   }

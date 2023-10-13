@@ -17,7 +17,6 @@ import {
   FungibleAsset,
   Identity,
   Nft,
-  NftCollection,
   PolymeshError,
   Procedure,
 } from '~/internal';
@@ -69,7 +68,6 @@ import {
   assertIsInteger,
   assertIsPositive,
   assertTickerValid,
-  assetInputToAsset,
   asTicker,
   calculateNextKey,
   compareStatsToInput,
@@ -2214,63 +2212,5 @@ describe('asNftId', () => {
     const result = asNftId(id);
 
     expect(result).toEqual(id);
-  });
-});
-
-describe('assetInputToAsset', () => {
-  const ticker = 'TICKER';
-  beforeAll(() => {
-    entityMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    entityMockUtils.reset();
-  });
-
-  it('should return a FungibleAsset', async () => {
-    entityMockUtils.configureMocks({
-      fungibleAssetOptions: {
-        exists: true,
-      },
-      nftCollectionOptions: {
-        exists: false,
-      },
-    });
-
-    const context = dsMockUtils.getContextInstance();
-
-    const result = await assetInputToAsset(ticker, context);
-
-    expect(result).toEqual({ type: 'fungible', asset: expect.objectContaining({ ticker }) });
-  });
-
-  it('should return an NftCollection', async () => {
-    entityMockUtils.configureMocks({
-      fungibleAssetOptions: {
-        exists: false,
-      },
-      nftCollectionOptions: {
-        exists: true,
-      },
-    });
-
-    const context = dsMockUtils.getContextInstance();
-
-    const result = await assetInputToAsset(ticker, context);
-
-    expect(result).toEqual({ type: 'nftCollection', asset: expect.objectContaining({ ticker }) });
-  });
-
-  it('should throw an error if the asset has an unexpected type', () => {
-    const baseAsset = entityMockUtils.getBaseAssetInstance() as unknown as FungibleAsset;
-
-    const context = dsMockUtils.getContextInstance();
-
-    const expectedError = new PolymeshError({
-      code: ErrorCode.UnexpectedError,
-      message: 'Unexpected asset type',
-    });
-
-    return expect(assetInputToAsset(baseAsset, context)).rejects.toThrow(expectedError);
   });
 });

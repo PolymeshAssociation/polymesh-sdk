@@ -20,7 +20,7 @@ import {
   InstructionAffirmationOperation,
   InstructionStatus,
   InstructionType,
-  NonFungibleLeg,
+  NftLeg,
   UnsubCallback,
 } from '~/types';
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
@@ -683,7 +683,7 @@ describe('Instruction class', () => {
 
       const { data: leg } = await instruction.getLegs();
 
-      expect((leg[0] as NonFungibleLeg).nfts).toEqual(
+      expect((leg[0] as NftLeg).nfts).toEqual(
         expect.arrayContaining([expect.objectContaining({ id: new BigNumber(1) })])
       );
       expect(leg[0].asset.ticker).toBe(ticker);

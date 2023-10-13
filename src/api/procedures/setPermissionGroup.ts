@@ -26,7 +26,7 @@ import {
   stringToTicker,
   transactionPermissionsToExtrinsicPermissions,
 } from '~/utils/conversion';
-import { asAsset } from '~/utils/internal';
+import { asBaseAsset } from '~/utils/internal';
 
 /**
  * @hidden
@@ -181,7 +181,7 @@ export function prepareStorage(
   const { context } = this;
 
   return {
-    asset: asAsset(asset, context),
+    asset: asBaseAsset(asset, context),
   };
 }
 
