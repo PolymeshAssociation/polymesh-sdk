@@ -6,14 +6,15 @@ import { BaseAsset } from '~/api/entities/Asset/Base';
 import { NonFungibleSettlements } from '~/api/entities/Asset/Base/Settlements';
 import { Nft } from '~/api/entities/Asset/NonFungible/Nft';
 import { issueNft } from '~/api/procedures/issueNft';
-import { Context, transferAssetOwnership } from '~/internal';
+import { Context, PolymeshError, transferAssetOwnership } from '~/internal';
 import { assetQuery } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
   AssetDetails,
+  CollectionMetadata,
+  ErrorCode,
   EventIdentifier,
   IssueNftParams,
-  MetadataKeyId,
   ProcedureMethod,
   SubCallback,
   UniqueIdentifiers,
@@ -48,6 +49,8 @@ export class NftCollection extends BaseAsset {
   public settlements: NonFungibleSettlements;
   /**
    * Issues a new NFT for the collection
+   *
+   * @note Each NFT requires metadata for each value returned by `collectionMetadata`. The SDK and chain only validate the presence of these fields. Additional validation may be needed to ensure each value is compliant with the expected specification
    */
   public issue: ProcedureMethod<IssueNftParams, Nft>;
 
@@ -153,9 +156,12 @@ export class NftCollection extends BaseAsset {
   }
 
   /**
-   * Get metadata keys that each NFT in the collection must have
+   * Get the metadata that each NFT in the collection must have
+   *
+   * @note Each NFT **must** have an entry for each value, it **should** comply with the spec
+   * the SDK validates only presence of metadata keys, additional validation may be needed for issuers
    */
-  public async collectionMetadataKeys(): Promise<MetadataKeyId[]> {
+  public async collectionMetadata(): Promise<CollectionMetadata[]> {
     const {
       context,
       ticker,
@@ -164,11 +170,28 @@ export class NftCollection extends BaseAsset {
       },
     } = this;
 
-    const id = await this.getCollectionId();
-    const rawId = bigNumberToU64(id, context);
+    const collectionId = await this.getCollectionId();
+    const rawCollectionId = bigNumberToU64(collectionId, context);
 
-    const rawKeys = await query.nft.collectionKeys(rawId);
-    return [...rawKeys].map(value => meshMetadataKeyToMetadataKey(value, ticker));
+    const rawKeys = await query.nft.collectionKeys(rawCollectionId);
+    const neededKeys = [...rawKeys].map(value => meshMetadataKeyToMetadataKey(value, ticker));
+
+    const allMetadata = await this.metadata.get();
+    return Promise.all(
+      neededKeys.map(async ({ type, id }) => {
+        const neededMetadata = allMetadata.find(entry => entry.type === type && entry.id.eq(id));
+        if (!neededMetadata) {
+          throw new PolymeshError({
+            code: ErrorCode.DataUnavailable,
+            message: 'Failed to find metadata details',
+            data: { type, id },
+          });
+        }
+
+        const details = await neededMetadata.details();
+        return { ...details, id, type, ticker };
+      })
+    );
   }
 
   /**
