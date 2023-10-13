@@ -57,11 +57,8 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
       parent,
     } = this;
 
-    let { from, to } = args;
-
-    if (!from) {
-      from = await context.getSigningIdentity();
-    }
+    const { to } = args;
+    const from = args.from ?? (await context.getSigningIdentity());
 
     let isDivisible = false;
     let amount = new BigNumber(0);

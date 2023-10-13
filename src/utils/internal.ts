@@ -116,7 +116,13 @@ import {
   transferRestrictionTypeToStatOpType,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { isEntity, isMultiClaimCondition, isSingleClaimCondition } from '~/utils/typeguards';
+import {
+  isEntity,
+  isFungibleAsset,
+  isMultiClaimCondition,
+  isNftCollection,
+  isSingleClaimCondition,
+} from '~/utils/typeguards';
 
 export * from '~/generated/utils';
 
@@ -1808,30 +1814,48 @@ export function asNftId(nft: Nft | BigNumber): BigNumber {
 /**
  * @hidden
  */
+async function tickerAsAsset(
+  ticker: string,
+  context: Context
+): Promise<FungibleAsset | NftCollection> {
+  const fungible = new FungibleAsset({ ticker }, context);
+  const collection = new NftCollection({ ticker }, context);
+
+  const [isAsset, isCollection] = await Promise.all([fungible.exists(), collection.exists()]);
+
+  if (isCollection) {
+    return collection;
+  }
+  if (isAsset) {
+    return fungible;
+  }
+
+  throw new PolymeshError({
+    code: ErrorCode.DataUnavailable,
+    message: `No asset exists with ticker: "${ticker}"`,
+  });
+}
+
+/**
+ * @hidden
+ */
 export async function assetInputToAsset(
-  asset: string | FungibleAsset | NftCollection,
+  input: string | FungibleAsset | NftCollection,
   context: Context
 ): Promise<
   { type: 'fungible'; asset: FungibleAsset } | { type: 'nftCollection'; asset: NftCollection }
 > {
-  if (typeof asset === 'string') {
-    const ticker = asset;
-    const fungible = new FungibleAsset({ ticker }, context);
-    const collection = new NftCollection({ ticker }, context);
-    const [isAsset, isCollection] = await Promise.all([fungible.exists(), collection.exists()]);
-    if (isCollection) {
-      return { type: 'nftCollection', asset: collection };
-    } else if (isAsset) {
-      return { type: 'fungible', asset: fungible };
-    } else {
-      throw new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message: `No asset exists with ticker: "${ticker}"`,
-      });
-    }
-  } else if (asset instanceof NftCollection) {
-    return { type: 'nftCollection', asset };
-  } else {
+  const asset = typeof input === 'string' ? await tickerAsAsset(input, context) : input;
+
+  if (isFungibleAsset(asset)) {
     return { type: 'fungible', asset };
   }
+  if (isNftCollection(asset)) {
+    return { type: 'nftCollection', asset };
+  }
+
+  throw new PolymeshError({
+    code: ErrorCode.UnexpectedError,
+    message: 'Unexpected asset type',
+  });
 }
