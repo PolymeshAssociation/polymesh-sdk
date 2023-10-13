@@ -92,18 +92,14 @@ export async function prepareStorage(
 
   const { did } = await context.getSigningIdentity();
 
-  let fromPortfolio: NumberedPortfolio | DefaultPortfolio;
-
   if (!from) {
-    fromPortfolio = new DefaultPortfolio({ did }, context);
+    return { fromPortfolio: new DefaultPortfolio({ did }, context) };
   } else if (from instanceof BigNumber) {
-    fromPortfolio = new NumberedPortfolio({ did, id: from }, context);
-  } else {
-    fromPortfolio = from;
+    return { fromPortfolio: new NumberedPortfolio({ did, id: from }, context) };
   }
 
   return {
-    fromPortfolio,
+    fromPortfolio: from,
   };
 }
 
