@@ -14,6 +14,7 @@ import {
   KnownPermissionGroup as KnownPermissionGroupClass,
   MetadataEntry as MetadataEntryClass,
   MultiSig as MultiSigClass,
+  Nft as NftClass,
   NftCollection as NftCollectionClass,
   NumberedPortfolio as NumberedPortfolioClass,
   Offering as OfferingClass,
@@ -37,6 +38,7 @@ export type Instruction = InstructionClass;
 export type KnownPermissionGroup = KnownPermissionGroupClass;
 export type NumberedPortfolio = NumberedPortfolioClass;
 export type FungibleAsset = FungibleAssetClass;
+export type Nft = NftClass;
 export type NftCollection = NftCollectionClass;
 export type MetadataEntry = MetadataEntryClass;
 export type Offering = OfferingClass;
