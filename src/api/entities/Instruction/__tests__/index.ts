@@ -7,13 +7,20 @@ import { Context, Entity, Instruction, PolymeshTransaction } from '~/internal';
 import { InstructionStatusEnum } from '~/middleware/enums';
 import { instructionsQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { createMockInstructionStatus, createMockNfts } from '~/testUtils/mocks/dataSources';
+import {
+  createMockInstructionStatus,
+  createMockNfts,
+  createMockTicker,
+  createMockU64,
+} from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import {
   AffirmationStatus,
+  FungibleLeg,
   InstructionAffirmationOperation,
   InstructionStatus,
   InstructionType,
+  NftLeg,
   UnsubCallback,
 } from '~/types';
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
@@ -626,7 +633,7 @@ describe('Instruction class', () => {
 
       const { data: leg } = await instruction.getLegs();
 
-      expect(leg[0].amount).toEqual(amount);
+      expect((leg[0] as FungibleLeg).amount).toEqual(amount);
       expect(leg[0].asset.ticker).toBe(ticker);
       expect(leg[0].from.owner.did).toBe(fromDid);
       expect(leg[0].to.owner.did).toBe(toDid);
@@ -639,7 +646,7 @@ describe('Instruction class', () => {
       );
     });
 
-    it('should throw an error if a leg is an NFT (to be implemented)', () => {
+    it('should handle NFT legs', async () => {
       const fromDid = 'fromDid';
       const toDid = 'toDid';
       const ticker = 'SOME_TICKER';
@@ -659,7 +666,10 @@ describe('Instruction class', () => {
               did: dsMockUtils.createMockIdentityId(toDid),
               kind: dsMockUtils.createMockPortfolioKind('Default'),
             }),
-            nfts: createMockNfts(),
+            nfts: createMockNfts({
+              ticker: createMockTicker(ticker),
+              ids: [createMockU64(new BigNumber(1))],
+            }),
           },
         })
       );
@@ -671,7 +681,14 @@ describe('Instruction class', () => {
         .mockImplementation()
         .mockResolvedValue({ entries, lastKey: null });
 
-      return expect(instruction.getLegs()).rejects.toThrow();
+      const { data: leg } = await instruction.getLegs();
+
+      expect((leg[0] as NftLeg).nfts).toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: new BigNumber(1) })])
+      );
+      expect(leg[0].asset.ticker).toBe(ticker);
+      expect(leg[0].from.owner.did).toBe(fromDid);
+      expect(leg[0].to.owner.did).toBe(toDid);
     });
 
     it('should throw an error if a leg is a off chain (to be implemented)', () => {

@@ -24,19 +24,25 @@ import {
   AddInstructionsParams,
   ErrorCode,
   InstructionEndCondition,
+  InstructionFungibleLeg,
+  InstructionLeg,
+  InstructionNftLeg,
   InstructionType,
   RoleType,
   SettlementTx,
   TxTags,
 } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
+import { isFungibleLegBuilder, isNftLegBuilder } from '~/utils';
 import { MAX_LEGS_LENGTH } from '~/utils/constants';
 import {
   bigNumberToBalance,
   bigNumberToU64,
   dateToMoment,
   endConditionToSettlementType,
-  legToSettlementLeg,
+  legToFungibleLeg,
+  legToNonFungibleLeg,
+  nftToMeshNft,
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
@@ -145,6 +151,32 @@ function getEndCondition(
 /**
  * @hidden
  */
+async function separateLegs(
+  legs: InstructionLeg[],
+  context: Context
+): Promise<{ fungibleLegs: InstructionFungibleLeg[]; nftLegs: InstructionNftLeg[] }> {
+  const fungibleLegs: InstructionFungibleLeg[] = [];
+  const nftLegs: InstructionNftLeg[] = [];
+
+  for (const leg of legs) {
+    const [isFungible, isNft] = await Promise.all([
+      isFungibleLegBuilder(leg, context),
+      isNftLegBuilder(leg, context),
+    ]);
+
+    if (isFungible(leg)) {
+      fungibleLegs.push(leg);
+    } else if (isNft(leg)) {
+      nftLegs.push(leg);
+    }
+  }
+
+  return { fungibleLegs, nftLegs };
+}
+
+/**
+ * @hidden
+ */
 async function getTxArgsAndErrors(
   instructions: AddInstructionParams[],
   portfoliosToAffirm: (DefaultPortfolio | NumberedPortfolio)[][],
@@ -186,8 +218,15 @@ async function getTxArgsAndErrors(
       legLengthErrIndexes.push(i);
     }
 
-    const zeroAmountLegs = legs.filter(leg => leg.amount.isZero());
-    if (zeroAmountLegs.length) {
+    const { fungibleLegs, nftLegs } = await separateLegs(legs, context);
+
+    const zeroAmountFungibleLegs = fungibleLegs.filter(leg => leg.amount.isZero());
+    if (zeroAmountFungibleLegs.length) {
+      legAmountErrIndexes.push(i);
+    }
+
+    const zeroNftsNonFungible = nftLegs.filter(leg => leg.nfts.length === 0);
+    if (zeroNftsNonFungible.length) {
       legAmountErrIndexes.push(i);
     }
 
@@ -226,8 +265,8 @@ async function getTxArgsAndErrors(
       const rawLegs: PolymeshPrimitivesSettlementLeg[] = [];
       const rawInstructionMemo = optionize(stringToMemo)(memo, context);
 
-      await Promise.all(
-        legs.map(async ({ from, to, amount, asset }) => {
+      await Promise.all([
+        ...fungibleLegs.map(async ({ from, to, amount, asset }) => {
           const fromId = portfolioLikeToPortfolioId(from);
           const toId = portfolioLikeToPortfolioId(to);
 
@@ -239,21 +278,42 @@ async function getTxArgsAndErrors(
           const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromId, context);
           const rawToPortfolio = portfolioIdToMeshPortfolioId(toId, context);
 
-          const rawLeg = legToSettlementLeg(
+          const rawLeg = legToFungibleLeg(
             {
-              Fungible: {
-                sender: rawFromPortfolio,
-                receiver: rawToPortfolio,
-                ticker: stringToTicker(asTicker(asset), context),
-                amount: bigNumberToBalance(amount, context),
-              },
+              sender: rawFromPortfolio,
+              receiver: rawToPortfolio,
+              ticker: stringToTicker(asTicker(asset), context),
+              amount: bigNumberToBalance(amount, context),
             },
             context
           );
 
           rawLegs.push(rawLeg);
-        })
-      );
+        }),
+        ...nftLegs.map(async ({ from, to, nfts, asset }) => {
+          const fromId = portfolioLikeToPortfolioId(from);
+          const toId = portfolioLikeToPortfolioId(to);
+
+          await Promise.all([
+            assertPortfolioExists(fromId, context),
+            assertPortfolioExists(toId, context),
+          ]);
+
+          const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromId, context);
+          const rawToPortfolio = portfolioIdToMeshPortfolioId(toId, context);
+
+          const rawLeg = legToNonFungibleLeg(
+            {
+              sender: rawFromPortfolio,
+              receiver: rawToPortfolio,
+              nfts: nftToMeshNft(asTicker(asset), nfts, context),
+            },
+            context
+          );
+
+          rawLegs.push(rawLeg);
+        }),
+      ]);
 
       if (portfoliosToAffirm[i].length) {
         addAndAffirmInstructionParams.push([

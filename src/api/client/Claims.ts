@@ -11,6 +11,7 @@ import {
   ClaimOperation,
   ClaimScope,
   ClaimType,
+  CustomClaimType,
   IdentityWithClaims,
   ModifyClaimsParams,
   ProcedureMethod,
@@ -23,6 +24,8 @@ import {
 import { Ensured } from '~/types/utils';
 import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 import {
+  bigNumberToU32,
+  bytesToString,
   identityIdToString,
   meshClaimToClaim,
   momentToDate,
@@ -30,6 +33,7 @@ import {
   signerToString,
   stringToIdentityId,
   toIdentityWithClaimsArray,
+  u32ToBigNumber,
 } from '~/utils/conversion';
 import { calculateNextKey, createProcedureMethod, getDid, removePadding } from '~/utils/internal';
 
@@ -483,4 +487,49 @@ export class Claims {
    *  - a custom claim type with the same `name` already exists
    */
   public registerCustomClaimType: ProcedureMethod<RegisterCustomClaimTypeParams, BigNumber>;
+
+  /**
+   * Retrieves a custom claim type based on its name
+   *
+   * @param name - The name of the custom claim type to retrieve
+   */
+  public async getCustomClaimTypeByName(name: string): Promise<CustomClaimType | null> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { identity },
+        },
+      },
+    } = this;
+
+    const customClaimTypeIdOpt = await identity.customClaimsInverse(name);
+
+    if (customClaimTypeIdOpt.isEmpty) {
+      return null;
+    }
+
+    return { id: u32ToBigNumber(customClaimTypeIdOpt.value), name };
+  }
+
+  /**
+   * Retrieves a custom claim type based on its ID
+   *
+   * @param id - The ID of the custom claim type to retrieve
+   */
+  public async getCustomClaimTypeById(id: BigNumber): Promise<CustomClaimType | null> {
+    const { context } = this;
+    const {
+      polymeshApi: {
+        query: { identity },
+      },
+    } = context;
+
+    const customClaimTypeIdOpt = await identity.customClaims(bigNumberToU32(id, context));
+
+    if (customClaimTypeIdOpt.isEmpty) {
+      return null;
+    }
+
+    return { id, name: bytesToString(customClaimTypeIdOpt.value) };
+  }
 }

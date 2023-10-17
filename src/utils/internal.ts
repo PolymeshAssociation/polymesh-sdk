@@ -927,9 +927,42 @@ export function asTicker(asset: string | BaseAsset): string {
 
 /**
  * @hidden
+ *
+ * @note alternatively {@link asAsset} returns a more precise type but is async due to a network call
  */
-export function asAsset(asset: string | BaseAsset, context: Context): BaseAsset {
+export function asBaseAsset(asset: string | BaseAsset, context: Context): BaseAsset {
   return typeof asset === 'string' ? new BaseAsset({ ticker: asset }, context) : asset;
+}
+
+/**
+ * @hidden
+ *
+ * @note alternatively {@link asBaseAsset} returns a generic `BaseAsset`, but is synchronous
+ */
+export async function asAsset(
+  asset: string | FungibleAsset | NftCollection,
+  context: Context
+): Promise<FungibleAsset | NftCollection> {
+  if (typeof asset !== 'string') {
+    return asset;
+  }
+
+  const fungible = new FungibleAsset({ ticker: asset }, context);
+  const collection = new NftCollection({ ticker: asset }, context);
+
+  const [isAsset, isCollection] = await Promise.all([fungible.exists(), collection.exists()]);
+
+  if (isCollection) {
+    return collection;
+  }
+  if (isAsset) {
+    return fungible;
+  }
+
+  throw new PolymeshError({
+    code: ErrorCode.DataUnavailable,
+    message: `No asset exists with ticker: "${asset}"`,
+  });
 }
 
 /**

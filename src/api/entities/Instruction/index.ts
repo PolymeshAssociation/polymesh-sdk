@@ -12,6 +12,8 @@ import {
   FungibleAsset,
   Identity,
   modifyInstructionAffirmation,
+  Nft,
+  NftCollection,
   PolymeshError,
   Venue,
 } from '~/internal';
@@ -42,6 +44,7 @@ import {
   instructionMemoToString,
   meshAffirmationStatusToAffirmationStatus,
   meshInstructionStatusToInstructionStatus,
+  meshNftToNftId,
   meshPortfolioIdToPortfolio,
   meshSettlementTypeToEndCondition,
   middlewareEventDetailsToEventIdentifier,
@@ -385,7 +388,18 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
             asset: new FungibleAsset({ ticker }, context),
           };
         } else if (legValue.isNonFungible) {
-          throw new Error('TODO ERROR: NFT legs are not supported yet');
+          const { sender, receiver, nfts } = legValue.asNonFungible;
+
+          const from = meshPortfolioIdToPortfolio(sender, context);
+          const to = meshPortfolioIdToPortfolio(receiver, context);
+          const { ticker, ids } = meshNftToNftId(nfts);
+
+          return {
+            from,
+            to,
+            nfts: ids.map(nftId => new Nft({ ticker, id: nftId }, context)),
+            asset: new NftCollection({ ticker }, context),
+          };
         } else {
           // assume it is offchain
           throw new Error('TODO ERROR: Offchain legs are not supported yet');

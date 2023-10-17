@@ -3,16 +3,33 @@ import { PolymeshPrimitivesAssetIdentifier } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { BaseAsset, Context, Entity, NftCollection, PolymeshTransaction } from '~/internal';
+import {
+  BaseAsset,
+  Context,
+  Entity,
+  NftCollection,
+  PolymeshError,
+  PolymeshTransaction,
+} from '~/internal';
 import { assetQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { KnownNftType, MetadataType, SecurityIdentifier, SecurityIdentifierType } from '~/types';
+import {
+  ErrorCode,
+  KnownNftType,
+  MetadataType,
+  SecurityIdentifier,
+  SecurityIdentifierType,
+} from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
+jest.mock(
+  '~/api/entities/MetadataEntry',
+  require('~/testUtils/mocks/entities').mockMetadataEntryModule('~/api/entities/MetadataEntry')
 );
 jest.mock(
   '~/base/Procedure',
@@ -359,9 +376,60 @@ describe('NftCollection class', () => {
         returnValue: dsMockUtils.createMockBTreeSet([mockMetadataKey]),
       });
 
-      const result = await collection.collectionMetadataKeys();
+      const mockMetadataEntry = entityMockUtils.getMetadataEntryInstance({
+        id,
+        type: MetadataType.Global,
+      });
+      mockMetadataEntry.details.mockResolvedValue({
+        name: 'Global Example',
+        specs: {},
+      });
+      jest.spyOn(collection.metadata, 'get').mockResolvedValue([mockMetadataEntry]);
+      const result = await collection.collectionMetadata();
 
-      expect(result).toEqual([{ type: MetadataType.Global, id: new BigNumber(1) }]);
+      expect(result).toEqual([
+        {
+          type: MetadataType.Global,
+          id: new BigNumber(1),
+          name: 'Global Example',
+          specs: {},
+          ticker,
+        },
+      ]);
+    });
+
+    it('should throw an error if needed metadata details are not found', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const ticker = 'TICKER';
+      const id = new BigNumber(1);
+      const collection = new NftCollection({ ticker }, context);
+      const mockMetadataKey = dsMockUtils.createMockAssetMetadataKey({
+        Global: dsMockUtils.createMockU64(id),
+      });
+
+      jest.spyOn(collection, 'getCollectionId').mockResolvedValue(id);
+
+      when(meshMetadataKeyToMetadataKeySpy)
+        .calledWith(mockMetadataKey, ticker)
+        .mockReturnValue({ type: MetadataType.Global, id });
+
+      u64ToBigNumberSpy.mockReturnValue(id);
+      dsMockUtils.createQueryMock('nft', 'collectionKeys', {
+        returnValue: dsMockUtils.createMockBTreeSet([mockMetadataKey]),
+      });
+
+      const mockMetadataEntry = entityMockUtils.getMetadataEntryInstance({
+        id: id.plus(1),
+        type: MetadataType.Global,
+      });
+      jest.spyOn(collection.metadata, 'get').mockResolvedValue([mockMetadataEntry]);
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'Failed to find metadata details',
+      });
+
+      await expect(collection.collectionMetadata()).rejects.toThrow(expectedError);
     });
   });
 

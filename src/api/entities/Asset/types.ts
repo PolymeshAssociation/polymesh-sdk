@@ -12,6 +12,7 @@ import { EventIdEnum } from '~/middleware/enums';
 import {
   Compliance,
   EventIdentifier,
+  MetadataDetails,
   MetadataType,
   TransferError,
   TransferRestriction,
@@ -86,6 +87,9 @@ export interface HistoricAssetTransaction extends EventIdentifier {
   extrinsicIndex: BigNumber;
 }
 
+/**
+ * The data needed to uniquely identify a metadata specification
+ */
 export type MetadataKeyId =
   | {
       type: MetadataType.Global;
@@ -98,9 +102,22 @@ export type MetadataKeyId =
     };
 
 export interface NftMetadata {
+  /**
+   * The metadata key this value is intended for
+   */
   key: MetadataKeyId;
+  /**
+   * The value the particular NFT has for the metadata
+   */
   value: string;
 }
+
+/**
+ * A metadata entry for which each NFT in the collection must have an entry for
+ *
+ * @note each NFT **must** have an entry for each metadata value, the entry **should** comply with the relevant spec
+ */
+export type CollectionMetadata = MetadataKeyId & MetadataDetails;
 
 export * from './Fungible/Checkpoints/types';
 export * from './Fungible/CorporateActions/types';

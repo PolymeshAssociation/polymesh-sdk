@@ -41,20 +41,20 @@ import {
 } from '~/utils/conversion';
 import { calculateNextKey, createProcedureMethod, optionize } from '~/utils/internal';
 
+import { FungibleSettlements } from '../Base/Settlements';
 import { UniqueIdentifiers } from '../types';
 import { AssetHolders } from './AssetHolders';
 import { Checkpoints } from './Checkpoints';
 import { CorporateActions } from './CorporateActions';
 import { Issuance } from './Issuance';
 import { Offerings } from './Offerings';
-import { Settlements } from './Settlements';
 import { TransferRestrictions } from './TransferRestrictions';
 
 /**
  * Class used to manage all Fungible Asset functionality
  */
 export class FungibleAsset extends BaseAsset {
-  public settlements: Settlements;
+  public settlements: FungibleSettlements;
   public assetHolders: AssetHolders;
   public issuance: Issuance;
   public transferRestrictions: TransferRestrictions;
@@ -73,7 +73,7 @@ export class FungibleAsset extends BaseAsset {
     this.ticker = ticker;
     this.did = tickerToDid(ticker);
 
-    this.settlements = new Settlements(this, context);
+    this.settlements = new FungibleSettlements(this, context);
     this.assetHolders = new AssetHolders(this, context);
     this.issuance = new Issuance(this, context);
     this.transferRestrictions = new TransferRestrictions(this, context);

@@ -72,6 +72,7 @@ export { renamePortfolio } from '~/api/procedures/renamePortfolio';
 export { moveFunds } from '~/api/procedures/moveFunds';
 export { setCustodian } from '~/api/procedures/setCustodian';
 export { redeemTokens } from '~/api/procedures/redeemTokens';
+export { redeemNft } from '~/api/procedures/redeemNft';
 export {
   addTransferRestriction,
   AddTransferRestrictionParams,

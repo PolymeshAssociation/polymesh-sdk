@@ -53,7 +53,7 @@ export async function prepareIssueNft(
   const { ticker, portfolioId, metadata } = args;
   const rawMetadataValues = nftInputToNftMetadataVec(metadata, context);
 
-  const neededMetadata = await collection.collectionMetadataKeys();
+  const neededMetadata = await collection.collectionMetadata();
 
   // for each input, find and remove a value from needed
   args.metadata.forEach(value => {

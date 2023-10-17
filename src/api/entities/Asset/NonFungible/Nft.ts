@@ -1,13 +1,14 @@
 import BigNumber from 'bignumber.js';
 
-import { Context, Entity, NftCollection } from '~/internal';
-import { NftMetadata } from '~/types';
+import { Context, Entity, NftCollection, redeemNft } from '~/internal';
+import { NftMetadata, OptionalArgsProcedureMethod, RedeemNftParams } from '~/types';
 import {
   bigNumberToU64,
   bytesToString,
   meshMetadataKeyToMetadataKey,
   u64ToBigNumber,
 } from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
 
 export type NftUniqueIdentifiers = {
   ticker: string;
@@ -26,6 +27,11 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
   public id: BigNumber;
 
   public collection: NftCollection;
+
+  /**
+   * Redeem (or "burns") the NFT
+   */
+  public redeem: OptionalArgsProcedureMethod<RedeemNftParams, void>;
 
   /**
    * @hidden
@@ -50,6 +56,11 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
     this.id = id;
 
     this.collection = new NftCollection({ ticker }, context);
+
+    this.redeem = createProcedureMethod(
+      { getProcedureAndArgs: args => [redeemNft, { ticker, id, ...args }], optionalArgs: true },
+      context
+    );
   }
 
   /**

@@ -45,6 +45,7 @@ import {
   AuthorizationType,
   CheckPermissionsResult,
   CheckRolesResult,
+  CollectionMetadata,
   ComplianceRequirements,
   CorporateActionDefaultConfig,
   CorporateActionKind,
@@ -62,7 +63,6 @@ import {
   KnownNftType,
   Leg,
   MetadataDetails,
-  MetadataKeyId,
   MetadataLockStatus,
   MetadataType,
   MetadataValue,
@@ -202,7 +202,7 @@ interface NftCollectionOptions extends BaseAssetOptions {
   complianceRequirementsGet?: EntityGetter<ComplianceRequirements>;
   investorCount?: EntityGetter<BigNumber>;
   getNextLocalId?: EntityGetter<BigNumber>;
-  collectionMetadataKeys?: EntityGetter<MetadataKeyId[]>;
+  collectionMetadata?: EntityGetter<CollectionMetadata[]>;
   getCollectionId?: EntityGetter<BigNumber>;
 }
 
@@ -1117,7 +1117,7 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
 
     metadata = {} as { getNextLocalId: jest.Mock };
 
-    collectionMetadataKeys!: jest.Mock;
+    collectionMetadata!: jest.Mock;
     getCollectionId!: jest.Mock;
 
     investorCount!: jest.Mock;
@@ -1143,7 +1143,7 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
       this.permissions.getAgents = createEntityGetterMock(opts.permissionsGetAgents);
       this.investorCount = createEntityGetterMock(opts.investorCount);
       this.metadata.getNextLocalId = createEntityGetterMock(opts.getNextLocalId);
-      this.collectionMetadataKeys = createEntityGetterMock(opts.collectionMetadataKeys);
+      this.collectionMetadata = createEntityGetterMock(opts.collectionMetadata);
       this.getCollectionId = createEntityGetterMock(opts.getCollectionId);
     }
   },
@@ -1174,7 +1174,7 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
     getNextLocalId: new BigNumber(0),
     toHuman: 'SOME_TICKER',
     investorCount: new BigNumber(0),
-    collectionMetadataKeys: [],
+    collectionMetadata: [],
     getCollectionId: new BigNumber(0),
   }),
   ['NftCollection']
@@ -1199,6 +1199,7 @@ const MockNftClass = createMockEntityClass<NftOptions>(
      */
     public configure(opts: Required<NftOptions>) {
       this.uuid = 'nft';
+      this.id = opts.id;
       this.collection = opts.collection;
       this.getMetadata = createEntityGetterMock(opts.getMetadata);
     }

@@ -670,6 +670,13 @@ export enum TransferError {
    * occurs if the sender Portfolio does not have enough balance to cover the amount
    */
   InsufficientPortfolioBalance = 'InsufficientPortfolioBalance',
+
+  /**
+   * translates to TransferStatus.ComplianceFailure
+   *
+   * occurs if some compliance rule would prevent the transfer
+   */
+  ComplianceFailure = 'ComplianceFailure',
 }
 
 export interface ClaimTarget {
@@ -1695,3 +1702,8 @@ export interface SpWeightV2 {
   refTime: BigNumber;
   proofSize: BigNumber;
 }
+
+export type CustomClaimType = {
+  name: string;
+  id: BigNumber;
+};
