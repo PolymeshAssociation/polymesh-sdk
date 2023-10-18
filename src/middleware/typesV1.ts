@@ -6,7 +6,7 @@ export enum ClaimScopeTypeEnum {
   Custom = 'Custom',
 }
 
-export type MiddlewareScope = Scalars['JSON'];
+export type MiddlewareScope = Scalars['JSON']['input'];
 
 export enum SettlementDirectionEnum {
   None = 'None',
