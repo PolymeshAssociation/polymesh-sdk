@@ -272,7 +272,7 @@ export function createClaim(
     case ClaimType.Custom: {
       return {
         type,
-        customClaimTypeId: customClaimTypeId as BigNumber,
+        customClaimTypeId: customClaimTypeId!,
         scope,
       };
     }
