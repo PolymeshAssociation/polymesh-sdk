@@ -270,9 +270,16 @@ export function createClaim(
       };
     }
     case ClaimType.Custom: {
+      if (!customClaimTypeId) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'Custom claim type ID is required',
+        });
+      }
+
       return {
         type,
-        customClaimTypeId: customClaimTypeId!,
+        customClaimTypeId,
         scope,
       };
     }

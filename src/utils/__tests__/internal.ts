@@ -503,6 +503,16 @@ describe('createClaim', () => {
       scope,
     });
   });
+
+  it('should throw if customClaimTypeId not provided for CustomClaim', () => {
+    const scope = { type: ClaimScopeTypeEnum.Identity, value: 'someScope' };
+    const id = 'someId';
+    const type = 'Custom';
+
+    expect(() => createClaim(type, null, scope, id, null)).toThrow(
+      'Custom claim type ID is required'
+    );
+  });
 });
 
 describe('padString', () => {
