@@ -2,7 +2,6 @@ import { QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
-import { ClaimTypeEnum, middlewareEnumMap } from '~/middleware/enums';
 import {
   Asset,
   AssetHolder,
@@ -14,6 +13,7 @@ import {
   BlocksOrderBy,
   ClaimsGroupBy,
   ClaimsOrderBy,
+  ClaimTypeEnum,
   Distribution,
   DistributionPayment,
   Event,
@@ -325,8 +325,7 @@ function createArgsAndFilters(
   Object.keys(filters).forEach(attribute => {
     if (filters[attribute]) {
       const type = typeMap[attribute] || 'String';
-      const middlewareType = middlewareEnumMap[type] || type;
-      args.push(`$${attribute}: ${middlewareType}!`);
+      args.push(`$${attribute}: ${type}!`);
       gqlFilters.push(`${attribute}: { equalTo: $${attribute} }`);
     }
   });
@@ -602,6 +601,7 @@ export function extrinsicsByArgs(
           extrinsicHash
           block {
             hash
+            datetime
           }
         }
       }
@@ -1311,11 +1311,11 @@ function createAuthorizationFilters(variables: QueryArgs<Authorization, Authoriz
     filters.push('toKey: { equalTo: $toKey }');
   }
   if (type) {
-    args.push(`$type: ${middlewareEnumMap.AuthTypeEnum}!`);
+    args.push('$type: AuthTypeEnum!');
     filters.push('type: { equalTo: $type }');
   }
   if (status) {
-    args.push(`$status: ${middlewareEnumMap.AuthorizationStatusEnum}!`);
+    args.push('$status: AuthorizationStatusEnum!');
     filters.push('status: { equalTo: $status }');
   }
   return {

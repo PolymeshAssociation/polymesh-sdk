@@ -1,12 +1,14 @@
 import { BigNumber } from 'bignumber.js';
 
 import { Context, Entity, MultiSig, PolymeshError } from '~/internal';
-import { ErrorCode, MultiSigProposalDetails, TxTag } from '~/types';
+import { ErrorCode, MultiSigProposalDetails, Signer, TxTag } from '~/types';
 import {
   bigNumberToU64,
   boolToBoolean,
   meshProposalStatusToProposalStatus,
   momentToDate,
+  signatoryToSignerValue,
+  signerValueToSigner,
   stringToAccountId,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -69,21 +71,22 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
         expiry: rawExpiry,
         autoClose: rawAutoClose,
       },
-      proposal,
+      proposalOpt,
     ] = await Promise.all([
-      multiSig.proposalDetail([rawMultiSignAddress, rawId]),
-      multiSig.proposals([rawMultiSignAddress, rawId]),
+      multiSig.proposalDetail(rawMultiSignAddress, rawId),
+      multiSig.proposals(rawMultiSignAddress, rawId),
     ]);
 
-    let args, method, section;
-    if (proposal.isNone) {
+    if (proposalOpt.isNone) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
         message: `Proposal with ID: "${id}" was not found. It may have already been executed`,
       });
-    } else {
-      ({ args, method, section } = proposal.unwrap());
     }
+
+    const proposal = proposalOpt.unwrap();
+    const { method, section } = proposal;
+    const { args } = proposal.toJSON();
 
     const approvalAmount = u64ToBigNumber(rawApprovals);
     const rejectionAmount = u64ToBigNumber(rawRejections);
@@ -97,7 +100,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
       status,
       expiry,
       autoClose,
-      args: args.map(a => a.toString()),
+      args,
       txTag: `${section}.${method}` as TxTag,
     };
   }
@@ -119,7 +122,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
 
     const rawId = bigNumberToU64(id, context);
     const rawMultiSignAddress = stringToAccountId(multiSigAddress, context);
-    const rawProposal = await multiSig.proposals([rawMultiSignAddress, rawId]);
+    const rawProposal = await multiSig.proposals(rawMultiSignAddress, rawId);
 
     return rawProposal.isSome;
   }
@@ -137,5 +140,36 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
       multiSigAddress,
       id: id.toString(),
     };
+  }
+
+  /**
+   * Fetches the individual votes for this MultiSig proposal
+   */
+  public async votes(): Promise<Signer[]> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { multiSig },
+        },
+      },
+      multiSig: { address: multiSigAddress },
+      id,
+      context,
+    } = this;
+
+    const result = await multiSig.votes.entries([
+      stringToAccountId(multiSigAddress, context),
+      bigNumberToU64(id, context),
+    ]);
+
+    return result.map(
+      ([
+        {
+          args: [, signatory],
+        },
+      ]) => {
+        return signerValueToSigner(signatoryToSignerValue(signatory), context);
+      }
+    );
   }
 }

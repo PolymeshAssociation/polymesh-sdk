@@ -1,5 +1,4 @@
 /* istanbul ignore file */
-
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -9,20 +8,24 @@ import { pick } from 'lodash';
 
 import {
   Account,
-  Asset,
   AuthorizationRequest,
+  BaseAsset,
   Checkpoint,
   CheckpointSchedule,
+  ChildIdentity,
   CorporateAction,
   CustomPermissionGroup,
   DefaultPortfolio,
   DividendDistribution,
+  FungibleAsset,
   Identity,
   Instruction,
   KnownPermissionGroup,
   MetadataEntry,
   MultiSig,
   MultiSigProposal,
+  Nft,
+  NftCollection,
   NumberedPortfolio,
   Offering,
   Portfolio,
@@ -30,6 +33,7 @@ import {
   TickerReservation,
   Venue,
 } from '~/internal';
+import { entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
@@ -39,10 +43,9 @@ import {
   AssetWithGroup,
   Authorization,
   AuthorizationType,
-  CalendarPeriod,
-  CalendarUnit,
   CheckPermissionsResult,
   CheckRolesResult,
+  CollectionMetadata,
   ComplianceRequirements,
   CorporateActionDefaultConfig,
   CorporateActionKind,
@@ -57,12 +60,14 @@ import {
   InstructionStatus,
   InstructionType,
   KnownAssetType,
+  KnownNftType,
   Leg,
   MetadataDetails,
   MetadataLockStatus,
   MetadataType,
   MetadataValue,
   MultiSigProposalDetails,
+  NftMetadata,
   OfferingBalanceStatus,
   OfferingDetails,
   OfferingSaleStatus,
@@ -72,6 +77,7 @@ import {
   PermissionGroups,
   PermissionGroupType,
   PortfolioBalance,
+  PortfolioCollection,
   ProposalStatus,
   ResultSet,
   ScheduleDetails,
@@ -89,10 +95,14 @@ import {
 } from '~/types';
 
 export type MockIdentity = Mocked<Identity>;
+export type MockChildIdentity = Mocked<ChildIdentity>;
 export type MockAccount = Mocked<Account>;
 export type MockSubsidy = Mocked<Subsidy>;
 export type MockTickerReservation = Mocked<TickerReservation>;
-export type MockAsset = Mocked<Asset>;
+export type MockBaseAsset = Mocked<BaseAsset>;
+export type MockFungibleAsset = Mocked<FungibleAsset>;
+export type MockNftCollection = Mocked<NftCollection>;
+export type MockNft = Mocked<Nft>;
 export type MockMetadataEntry = Mocked<MetadataEntry>;
 export type MockAuthorizationRequest = Mocked<AuthorizationRequest>;
 export type MockVenue = Mocked<Venue>;
@@ -115,7 +125,7 @@ interface EntityOptions {
   toHuman?: any;
 }
 
-type EntityGetter<Result> = Partial<Result> | ((...args: any) => any) | jest.Mock;
+export type EntityGetter<Result> = Partial<Result> | ((...args: any) => any) | jest.Mock;
 
 interface IdentityOptions extends EntityOptions {
   did?: string;
@@ -140,19 +150,31 @@ interface IdentityOptions extends EntityOptions {
   assetPermissionsGet?: EntityGetter<AssetWithGroup[]>;
 }
 
+interface ChildIdentityOptions extends IdentityOptions {
+  getParentDid?: EntityGetter<Identity | null>;
+}
+
 interface TickerReservationOptions extends EntityOptions {
   ticker?: string;
   details?: EntityGetter<TickerReservationDetails>;
 }
 
-interface AssetOptions extends EntityOptions {
+interface BaseAssetOptions extends EntityOptions {
   ticker?: string;
   did?: string;
   details?: EntityGetter<AssetDetails>;
-  currentFundingRound?: EntityGetter<string>;
   isFrozen?: EntityGetter<boolean>;
   transfersCanTransfer?: EntityGetter<TransferStatus>;
   getIdentifiers?: EntityGetter<SecurityIdentifier[]>;
+  permissionsGetAgents?: EntityGetter<AgentWithGroup[]>;
+  permissionsGetGroups?: EntityGetter<PermissionGroups>;
+  complianceRequirementsGet?: EntityGetter<ComplianceRequirements>;
+  investorCount?: EntityGetter<BigNumber>;
+  getNextLocalId?: EntityGetter<BigNumber>;
+}
+
+interface FungibleAssetOptions extends BaseAssetOptions {
+  currentFundingRound?: EntityGetter<string>;
   transferRestrictionsCountGet?: EntityGetter<ActiveTransferRestrictions<CountTransferRestriction>>;
   transferRestrictionsPercentageGet?: EntityGetter<
     ActiveTransferRestrictions<PercentageTransferRestriction>
@@ -165,12 +187,30 @@ interface AssetOptions extends EntityOptions {
   >;
   corporateActionsGetAgents?: EntityGetter<Identity[]>;
   corporateActionsGetDefaultConfig?: EntityGetter<CorporateActionDefaultConfig>;
+  checkpointsGetOne?: EntityGetter<Checkpoint>;
+  checkpointsSchedulesGetOne?: EntityGetter<ScheduleWithDetails>;
+}
+
+interface NftCollectionOptions extends BaseAssetOptions {
+  ticker?: string;
+  did?: string;
+  details?: EntityGetter<AssetDetails>;
+  isFrozen?: EntityGetter<boolean>;
+  getIdentifiers?: EntityGetter<SecurityIdentifier[]>;
   permissionsGetAgents?: EntityGetter<AgentWithGroup[]>;
   permissionsGetGroups?: EntityGetter<PermissionGroups>;
   complianceRequirementsGet?: EntityGetter<ComplianceRequirements>;
-  checkpointsGetOne?: EntityGetter<Checkpoint>;
-  checkpointsSchedulesGetOne?: EntityGetter<ScheduleWithDetails>;
   investorCount?: EntityGetter<BigNumber>;
+  getNextLocalId?: EntityGetter<BigNumber>;
+  collectionMetadata?: EntityGetter<CollectionMetadata[]>;
+  getCollectionId?: EntityGetter<BigNumber>;
+}
+
+interface NftOptions extends EntityOptions {
+  id?: BigNumber;
+  ticker?: string;
+  collection?: NftCollection;
+  getMetadata?: EntityGetter<NftMetadata[]>;
 }
 
 interface MetadataEntryOptions extends EntityOptions {
@@ -201,6 +241,7 @@ interface AccountOptions extends EntityOptions {
   checkPermissions?: EntityGetter<CheckPermissionsResult<SignerType.Account>>;
   authorizationsGetReceived?: EntityGetter<AuthorizationRequest[]>;
   authorizationsGetOne?: EntityGetter<AuthorizationRequest>;
+  getMultiSig?: EntityGetter<MultiSig | null>;
 }
 
 interface SubsidyOptions extends EntityOptions {
@@ -219,6 +260,7 @@ interface NumberedPortfolioOptions extends EntityOptions {
   id?: BigNumber;
   isOwnedBy?: EntityGetter<boolean>;
   getAssetBalances?: EntityGetter<PortfolioBalance[]>;
+  getCollections?: EntityGetter<PortfolioCollection[]>;
   getCustodian?: EntityGetter<Identity>;
   isCustodiedBy?: EntityGetter<boolean>;
 }
@@ -227,6 +269,7 @@ interface DefaultPortfolioOptions extends EntityOptions {
   did?: string;
   isOwnedBy?: EntityGetter<boolean>;
   getAssetBalances?: EntityGetter<PortfolioBalance[]>;
+  getCollections?: EntityGetter<PortfolioCollection[]>;
   getCustodian?: EntityGetter<Identity>;
   isCustodiedBy?: EntityGetter<boolean>;
 }
@@ -269,9 +312,7 @@ interface CheckpointScheduleOptions extends EntityOptions {
   id?: BigNumber;
   ticker?: string;
   start?: Date;
-  period?: CalendarPeriod | null;
-  expiryDate?: Date | null;
-  complexity?: BigNumber;
+  points?: Date[];
   details?: EntityGetter<ScheduleDetails>;
 }
 
@@ -319,10 +360,14 @@ interface MultiSigProposalOptions extends EntityOptions {
 
 type MockOptions = {
   identityOptions?: IdentityOptions;
+  childIdentityOptions?: ChildIdentityOptions;
   accountOptions?: AccountOptions;
   subsidyOptions?: SubsidyOptions;
   tickerReservationOptions?: TickerReservationOptions;
-  assetOptions?: AssetOptions;
+  fungibleAssetOptions?: FungibleAssetOptions;
+  nftCollectionOptions?: NftCollectionOptions;
+  nftOptions?: NftOptions;
+  baseAssetOptions?: BaseAssetOptions;
   metadataEntryOptions?: MetadataEntryOptions;
   authorizationRequestOptions?: AuthorizationRequestOptions;
   venueOptions?: VenueOptions;
@@ -618,6 +663,130 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
   ['Identity']
 );
 
+const MockChildIdentityClass = createMockEntityClass<ChildIdentityOptions>(
+  class {
+    uuid!: string;
+    did!: string;
+    hasValidCdd!: jest.Mock;
+
+    getVenues!: jest.Mock;
+    getScopeId!: jest.Mock;
+    getAssetBalance!: jest.Mock;
+    getSecondaryAccounts!: jest.Mock;
+
+    getPrimaryAccount!: jest.Mock;
+    authorizations = {} as {
+      getReceived: jest.Mock;
+      getSent: jest.Mock;
+      getOne: jest.Mock;
+    };
+
+    portfolios = {} as {
+      getPortfolio: jest.Mock;
+    };
+
+    assetPermissions = {} as {
+      get: jest.Mock;
+      getGroup: jest.Mock;
+      hasPermissions: jest.Mock;
+      checkPermissions: jest.Mock;
+    };
+
+    hasRoles!: jest.Mock;
+    checkRoles!: jest.Mock;
+    hasRole!: jest.Mock;
+
+    areSecondaryAccountsFrozen!: jest.Mock;
+    isCddProvider!: jest.Mock;
+
+    getParentDid!: jest.Mock;
+    getChildIdentities!: Promise<ChildIdentity[]>;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof ChildIdentity>) {
+      return extractFromArgs(args, ['did']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<ChildIdentityOptions>) {
+      this.uuid = 'childIdentity';
+      this.did = opts.did;
+      this.hasValidCdd = createEntityGetterMock(opts.hasValidCdd);
+      this.getPrimaryAccount = createEntityGetterMock(opts.getPrimaryAccount);
+      this.portfolios.getPortfolio = createEntityGetterMock(opts.portfoliosGetPortfolio);
+      this.authorizations.getReceived = createEntityGetterMock(opts.authorizationsGetReceived);
+      this.getVenues = createEntityGetterMock(opts.getVenues);
+      this.getScopeId = createEntityGetterMock(opts.getScopeId);
+      this.getAssetBalance = createEntityGetterMock(opts.getAssetBalance);
+      this.getSecondaryAccounts = createEntityGetterMock(opts.getSecondaryAccounts);
+
+      this.hasRoles = createEntityGetterMock(opts.hasRoles);
+      this.checkRoles = createEntityGetterMock(opts.checkRoles);
+      this.hasRole = createEntityGetterMock(opts.hasRole);
+
+      this.authorizations.getSent = createEntityGetterMock(opts.authorizationsGetSent);
+      this.authorizations.getOne = createEntityGetterMock(opts.authorizationsGetOne);
+      this.assetPermissions.get = createEntityGetterMock(opts.assetPermissionsGet);
+      this.assetPermissions.getGroup = createEntityGetterMock(opts.assetPermissionsGetGroup);
+      this.assetPermissions.hasPermissions = createEntityGetterMock(
+        opts.assetPermissionsHasPermissions
+      );
+      this.assetPermissions.checkPermissions = createEntityGetterMock(
+        opts.assetPermissionsCheckPermissions
+      );
+
+      this.areSecondaryAccountsFrozen = createEntityGetterMock(opts.areSecondaryAccountsFrozen);
+      this.isCddProvider = createEntityGetterMock(opts.isCddProvider);
+
+      this.getParentDid = createEntityGetterMock(opts.getParentDid);
+      this.getChildIdentities = Promise.resolve([]);
+    }
+  },
+  () => ({
+    did: 'someChildDid',
+    hasValidCdd: true,
+    isCddProvider: false,
+    getScopeId: 'someScopeId',
+    getAssetBalance: new BigNumber(100),
+    getSecondaryAccounts: { data: [], next: null },
+    areSecondaryAccountsFrozen: false,
+    assetPermissionsGet: [],
+    assetPermissionsGetGroup: getKnownPermissionGroupInstance(),
+    assetPermissionsCheckPermissions: {
+      result: true,
+    },
+    portfoliosGetPortfolio: getDefaultPortfolioInstance(),
+    assetPermissionsHasPermissions: true,
+    hasRole: true,
+    hasRoles: true,
+    checkRoles: {
+      result: true,
+    },
+    authorizationsGetReceived: [],
+    authorizationsGetSent: { data: [], next: null, count: new BigNumber(0) },
+    authorizationsGetOne: getAuthorizationRequestInstance(),
+    getVenues: [],
+
+    getPrimaryAccount: {
+      account: getAccountInstance(),
+      permissions: {
+        assets: null,
+        portfolios: null,
+        transactions: null,
+        transactionGroups: [],
+      },
+    },
+
+    toHuman: 'someChildDid',
+    getParentDid: getIdentityInstance(),
+  }),
+  ['ChildIdentity', 'Identity']
+);
+
 const MockAccountClass = createMockEntityClass<AccountOptions>(
   class {
     uuid!: string;
@@ -629,6 +798,7 @@ const MockAccountClass = createMockEntityClass<AccountOptions>(
     getTransactionHistory!: jest.Mock;
     hasPermissions!: jest.Mock;
     checkPermissions!: jest.Mock;
+    getMultiSig!: jest.Mock;
     authorizations = {} as {
       getReceived: jest.Mock;
       getOne: jest.Mock;
@@ -656,6 +826,7 @@ const MockAccountClass = createMockEntityClass<AccountOptions>(
       this.checkPermissions = createEntityGetterMock(opts.checkPermissions);
       this.authorizations.getReceived = createEntityGetterMock(opts.authorizationsGetReceived);
       this.authorizations.getOne = createEntityGetterMock(opts.authorizationsGetOne);
+      this.getMultiSig = createEntityGetterMock(opts.getMultiSig);
     }
   },
   () => ({
@@ -675,6 +846,7 @@ const MockAccountClass = createMockEntityClass<AccountOptions>(
     },
     authorizationsGetReceived: [],
     authorizationsGetOne: getAuthorizationRequestInstance(),
+    getMultiSig: null,
   }),
   ['Account']
 );
@@ -748,7 +920,7 @@ const MockTickerReservationClass = createMockEntityClass<TickerReservationOption
   ['TickerReservation']
 );
 
-const MockAssetClass = createMockEntityClass<AssetOptions>(
+const MockFungibleAssetClass = createMockEntityClass<FungibleAssetOptions>(
   class {
     uuid!: string;
     ticker!: string;
@@ -808,19 +980,21 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
       getOne: jest.Mock;
     };
 
+    metadata = {} as { getNextLocalId: jest.Mock };
+
     investorCount!: jest.Mock;
 
     /**
      * @hidden
      */
-    public argsToOpts(...args: ConstructorParameters<typeof Asset>) {
+    public argsToOpts(...args: ConstructorParameters<typeof FungibleAsset>) {
       return extractFromArgs(args, ['ticker']);
     }
 
     /**
      * @hidden
      */
-    public configure(opts: Required<AssetOptions>) {
+    public configure(opts: Required<FungibleAssetOptions>) {
       this.uuid = 'asset';
       this.ticker = opts.ticker;
       this.details = createEntityGetterMock(opts.details);
@@ -850,6 +1024,7 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
       this.checkpoints.schedules.getOne = createEntityGetterMock(opts.checkpointsSchedulesGetOne);
       this.checkpoints.getOne = createEntityGetterMock(opts.checkpointsGetOne);
       this.investorCount = createEntityGetterMock(opts.investorCount);
+      this.metadata.getNextLocalId = createEntityGetterMock(opts.getNextLocalId);
     }
   },
   () => ({
@@ -863,7 +1038,6 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
       primaryIssuanceAgents: [],
       fullAgents: [],
       assetType: KnownAssetType.EquityCommon,
-      requiresInvestorUniqueness: false,
     },
     currentFundingRound: 'Series A',
     isFrozen: false,
@@ -908,17 +1082,228 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
         nextCheckpointDate: new Date(new Date().getTime() + 1000 * 60 * 60),
       },
     },
+    getNextLocalId: new BigNumber(0),
     toHuman: 'SOME_TICKER',
     investorCount: new BigNumber(0),
   }),
-  ['Asset']
+  ['FungibleAsset']
+);
+
+const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
+  class {
+    uuid!: string;
+    ticker!: string;
+    did!: string;
+    details!: jest.Mock;
+    isFrozen!: jest.Mock;
+    transfers = {} as {
+      canTransfer: jest.Mock;
+    };
+
+    getIdentifiers!: jest.Mock;
+
+    permissions = {} as {
+      getGroups: jest.Mock;
+      getAgents: jest.Mock;
+    };
+
+    compliance = {
+      requirements: {},
+    } as {
+      requirements: {
+        get: jest.Mock;
+      };
+    };
+
+    metadata = {} as { getNextLocalId: jest.Mock };
+
+    collectionMetadata!: jest.Mock;
+    getCollectionId!: jest.Mock;
+
+    investorCount!: jest.Mock;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof FungibleAsset>) {
+      return extractFromArgs(args, ['ticker']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<NftCollectionOptions>) {
+      this.uuid = 'asset';
+      this.ticker = opts.ticker;
+      this.details = createEntityGetterMock(opts.details);
+      this.isFrozen = createEntityGetterMock(opts.isFrozen);
+      this.transfers.canTransfer = createEntityGetterMock(opts.transfersCanTransfer);
+      this.getIdentifiers = createEntityGetterMock(opts.getIdentifiers);
+      this.permissions.getGroups = createEntityGetterMock(opts.permissionsGetGroups);
+      this.permissions.getAgents = createEntityGetterMock(opts.permissionsGetAgents);
+      this.investorCount = createEntityGetterMock(opts.investorCount);
+      this.metadata.getNextLocalId = createEntityGetterMock(opts.getNextLocalId);
+      this.collectionMetadata = createEntityGetterMock(opts.collectionMetadata);
+      this.getCollectionId = createEntityGetterMock(opts.getCollectionId);
+    }
+  },
+  () => ({
+    ticker: 'TICKER',
+    did: 'assetDid',
+    details: {
+      owner: getIdentityInstance(),
+      name: 'ASSET_NAME',
+      totalSupply: new BigNumber(1000000),
+      isDivisible: false,
+      primaryIssuanceAgents: [],
+      fullAgents: [],
+      assetType: KnownNftType.Derivative,
+    },
+    permissionsGetAgents: [],
+    permissionsGetGroups: {
+      known: [],
+      custom: [],
+    },
+    complianceRequirementsGet: {
+      requirements: [],
+      defaultTrustedClaimIssuers: [],
+    },
+    isFrozen: false,
+    transfersCanTransfer: TransferStatus.Success,
+    getIdentifiers: [],
+    getNextLocalId: new BigNumber(0),
+    toHuman: 'SOME_TICKER',
+    investorCount: new BigNumber(0),
+    collectionMetadata: [],
+    getCollectionId: new BigNumber(0),
+  }),
+  ['NftCollection']
+);
+
+const MockNftClass = createMockEntityClass<NftOptions>(
+  class {
+    uuid!: string;
+    id!: BigNumber;
+    collection!: NftCollection;
+    getMetadata!: jest.Mock;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof Nft>) {
+      return extractFromArgs(args, ['ticker']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<NftOptions>) {
+      this.uuid = 'nft';
+      this.id = opts.id;
+      this.collection = opts.collection;
+      this.getMetadata = createEntityGetterMock(opts.getMetadata);
+    }
+  },
+  () => ({
+    collection: entityMockUtils.getNftCollectionInstance(),
+    did: 'nftDid',
+    id: new BigNumber(1),
+    ticker: 'NFT',
+    getMetadata: [],
+  }),
+  ['Nft']
+);
+
+const MockBaseAssetClass = createMockEntityClass<BaseAssetOptions>(
+  class {
+    uuid!: string;
+    ticker!: string;
+    did!: string;
+    details!: jest.Mock;
+    isFrozen!: jest.Mock;
+    transfers = {} as {
+      canTransfer: jest.Mock;
+    };
+
+    permissions = {} as {
+      getGroups: jest.Mock;
+      getAgents: jest.Mock;
+    };
+
+    getIdentifiers!: jest.Mock;
+
+    compliance = {
+      requirements: {},
+    } as {
+      requirements: {
+        get: jest.Mock;
+      };
+    };
+
+    metadata = {} as { getNextLocalId: jest.Mock };
+
+    investorCount!: jest.Mock;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof FungibleAsset>) {
+      return extractFromArgs(args, ['ticker']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<FungibleAssetOptions>) {
+      this.uuid = 'asset';
+      this.ticker = opts.ticker;
+      this.details = createEntityGetterMock(opts.details);
+      this.isFrozen = createEntityGetterMock(opts.isFrozen);
+      this.transfers.canTransfer = createEntityGetterMock(opts.transfersCanTransfer);
+      this.getIdentifiers = createEntityGetterMock(opts.getIdentifiers);
+      this.permissions.getAgents = createEntityGetterMock(opts.permissionsGetAgents);
+      this.permissions.getGroups = createEntityGetterMock(opts.permissionsGetGroups);
+      this.compliance.requirements.get = createEntityGetterMock(opts.complianceRequirementsGet);
+      this.investorCount = createEntityGetterMock(opts.investorCount);
+      this.metadata.getNextLocalId = createEntityGetterMock(opts.getNextLocalId);
+    }
+  },
+  () => ({
+    ticker: 'SOME_TICKER',
+    did: 'assetDid',
+    details: {
+      owner: getIdentityInstance(),
+      name: 'Base Asset Name',
+      totalSupply: new BigNumber(1000000),
+      isDivisible: false,
+      primaryIssuanceAgents: [],
+      fullAgents: [],
+      assetType: KnownAssetType.EquityCommon,
+    },
+    isFrozen: false,
+    transfersCanTransfer: TransferStatus.Success,
+    getIdentifiers: [],
+    permissionsGetAgents: [],
+    permissionsGetGroups: {
+      known: [],
+      custom: [],
+    },
+    complianceRequirementsGet: {
+      requirements: [],
+      defaultTrustedClaimIssuers: [],
+    },
+    getNextLocalId: new BigNumber(0),
+    toHuman: 'SOME_TICKER',
+    investorCount: new BigNumber(0),
+  }),
+  ['BaseAsset']
 );
 
 const MockMetadataEntryClass = createMockEntityClass<MetadataEntryOptions>(
   class {
     uuid!: string;
     id!: BigNumber;
-    asset!: Asset;
+    asset!: FungibleAsset;
     type!: MetadataType;
     details!: jest.SpyInstance;
     value!: jest.SpyInstance;
@@ -936,7 +1321,7 @@ const MockMetadataEntryClass = createMockEntityClass<MetadataEntryOptions>(
     public configure({ id, ticker, type, details, value }: Required<MetadataEntryOptions>) {
       this.uuid = 'metadataEntry';
       this.id = id;
-      this.asset = getAssetInstance({ ticker });
+      this.asset = getFungibleAssetInstance({ ticker });
       this.type = type;
       this.details = createEntityGetterMock(details);
       this.value = createEntityGetterMock(value);
@@ -1076,7 +1461,7 @@ const MockInstructionClass = createMockEntityClass<InstructionOptions>(
         {
           from: getNumberedPortfolioInstance({ did: 'someDid', id: new BigNumber(1) }),
           to: getNumberedPortfolioInstance({ did: 'otherDid', id: new BigNumber(1) }),
-          asset: getAssetInstance(),
+          asset: getFungibleAssetInstance(),
           amount: new BigNumber(100),
         },
       ],
@@ -1094,6 +1479,7 @@ const MockNumberedPortfolioClass = createMockEntityClass<NumberedPortfolioOption
     owner!: Identity;
     isOwnedBy!: jest.Mock;
     getAssetBalances!: jest.Mock;
+    getCollections!: jest.Mock;
     getCustodian!: jest.Mock;
     isCustodiedBy!: jest.Mock;
 
@@ -1113,6 +1499,7 @@ const MockNumberedPortfolioClass = createMockEntityClass<NumberedPortfolioOption
       this.owner = getIdentityInstance({ did: opts.did });
       this.isOwnedBy = createEntityGetterMock(opts.isOwnedBy);
       this.getAssetBalances = createEntityGetterMock(opts.getAssetBalances);
+      this.getCollections = createEntityGetterMock(opts.getCollections);
       this.getCustodian = createEntityGetterMock(opts.getCustodian);
       this.isCustodiedBy = createEntityGetterMock(opts.isCustodiedBy);
     }
@@ -1122,12 +1509,13 @@ const MockNumberedPortfolioClass = createMockEntityClass<NumberedPortfolioOption
     isOwnedBy: true,
     getAssetBalances: [
       {
-        asset: getAssetInstance(),
+        asset: getFungibleAssetInstance(),
         total: new BigNumber(1),
         locked: new BigNumber(0),
         free: new BigNumber(1),
       },
     ],
+    getCollections: [],
     did: 'someDid',
     getCustodian: getIdentityInstance(),
     isCustodiedBy: true,
@@ -1145,6 +1533,7 @@ const MockDefaultPortfolioClass = createMockEntityClass<DefaultPortfolioOptions>
     owner!: Identity;
     isOwnedBy!: jest.Mock;
     getAssetBalances!: jest.Mock;
+    getCollections!: jest.Mock;
     getCustodian!: jest.Mock;
     isCustodiedBy!: jest.Mock;
 
@@ -1163,6 +1552,7 @@ const MockDefaultPortfolioClass = createMockEntityClass<DefaultPortfolioOptions>
       this.owner = getIdentityInstance({ did: opts.did });
       this.isOwnedBy = createEntityGetterMock(opts.isOwnedBy);
       this.getAssetBalances = createEntityGetterMock(opts.getAssetBalances);
+      this.getCollections = createEntityGetterMock(opts.getCollections);
       this.getCustodian = createEntityGetterMock(opts.getCustodian);
       this.isCustodiedBy = createEntityGetterMock(opts.isCustodiedBy);
     }
@@ -1171,12 +1561,13 @@ const MockDefaultPortfolioClass = createMockEntityClass<DefaultPortfolioOptions>
     isOwnedBy: true,
     getAssetBalances: [
       {
-        asset: getAssetInstance(),
+        asset: getFungibleAssetInstance(),
         total: new BigNumber(1),
         locked: new BigNumber(0),
         free: new BigNumber(1),
       },
     ],
+    getCollections: [],
     did: 'someDid',
     getCustodian: getIdentityInstance(),
     isCustodiedBy: true,
@@ -1191,7 +1582,7 @@ const MockOfferingClass = createMockEntityClass<OfferingOptions>(
   class {
     uuid!: string;
     id!: BigNumber;
-    asset!: Asset;
+    asset!: FungibleAsset;
     details!: jest.Mock;
 
     /**
@@ -1207,7 +1598,7 @@ const MockOfferingClass = createMockEntityClass<OfferingOptions>(
     public configure(opts: Required<OfferingOptions>) {
       this.uuid = 'sto';
       this.id = opts.id;
-      this.asset = getAssetInstance({ ticker: opts.ticker });
+      this.asset = getFungibleAssetInstance({ ticker: opts.ticker });
       this.details = createEntityGetterMock(opts.details);
     }
   },
@@ -1247,7 +1638,7 @@ const MockCheckpointClass = createMockEntityClass<CheckpointOptions>(
   class {
     uuid!: string;
     id!: BigNumber;
-    asset!: Asset;
+    asset!: FungibleAsset;
     createdAt!: jest.Mock;
     totalSupply!: jest.Mock;
     allBalances!: jest.Mock;
@@ -1266,7 +1657,7 @@ const MockCheckpointClass = createMockEntityClass<CheckpointOptions>(
     public configure(opts: Required<CheckpointOptions>) {
       this.uuid = 'checkpoint';
       this.id = opts.id;
-      this.asset = getAssetInstance({ ticker: opts.ticker });
+      this.asset = getFungibleAssetInstance({ ticker: opts.ticker });
       this.createdAt = createEntityGetterMock(opts.createdAt);
       this.totalSupply = createEntityGetterMock(opts.totalSupply);
       this.allBalances = createEntityGetterMock(opts.allBalances);
@@ -1296,17 +1687,15 @@ const MockCheckpointScheduleClass = createMockEntityClass<CheckpointScheduleOpti
   class {
     uuid!: string;
     id!: BigNumber;
-    asset!: Asset;
-    start!: Date;
-    expiryDate!: Date | null;
-    complexity!: BigNumber;
+    asset!: FungibleAsset;
+    points!: Date[];
     details!: jest.Mock;
 
     /**
      * @hidden
      */
     public argsToOpts(...args: ConstructorParameters<typeof CheckpointSchedule>) {
-      return extractFromArgs(args, ['id', 'ticker', 'start', 'period']);
+      return extractFromArgs(args, ['id', 'ticker', 'pendingPoints']);
     }
 
     /**
@@ -1315,28 +1704,24 @@ const MockCheckpointScheduleClass = createMockEntityClass<CheckpointScheduleOpti
     public configure(opts: Required<CheckpointScheduleOptions>) {
       this.uuid = 'checkpointSchedule';
       this.id = opts.id;
-      this.asset = getAssetInstance({ ticker: opts.ticker });
-      this.start = opts.start;
-      this.expiryDate = opts.expiryDate;
-      this.complexity = opts.complexity;
+      this.asset = getFungibleAssetInstance({ ticker: opts.ticker });
+      this.points = opts.points;
       this.details = createEntityGetterMock(opts.details);
     }
   },
-  () => ({
-    id: new BigNumber(1),
-    ticker: 'SOME_TICKER',
-    start: new Date(new Date().getTime() + 24 * 60 * 60 * 1000),
-    period: {
-      unit: CalendarUnit.Month,
-      amount: new BigNumber(1),
-    },
-    expiryDate: new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000),
-    complexity: new BigNumber(2),
-    details: {
-      remainingCheckpoints: new BigNumber(1),
-      nextCheckpointDate: new Date('10/10/2030'),
-    },
-  }),
+  () => {
+    const start = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
+    return {
+      id: new BigNumber(1),
+      ticker: 'SOME_TICKER',
+      start,
+      points: [start],
+      details: {
+        remainingCheckpoints: new BigNumber(1),
+        nextCheckpointDate: new Date('10/10/2030'),
+      },
+    };
+  },
   ['CheckpointSchedule']
 );
 
@@ -1344,7 +1729,7 @@ const MockCorporateActionClass = createMockEntityClass<CorporateActionOptions>(
   class {
     uuid!: string;
     id!: BigNumber;
-    asset!: Asset;
+    asset!: FungibleAsset;
     kind!: CorporateActionKind;
     declarationDate!: Date;
     description!: string;
@@ -1374,7 +1759,7 @@ const MockCorporateActionClass = createMockEntityClass<CorporateActionOptions>(
     public configure(opts: Required<CorporateActionOptions>) {
       this.uuid = 'corporateAction';
       this.id = opts.id;
-      this.asset = getAssetInstance({ ticker: opts.ticker });
+      this.asset = getFungibleAssetInstance({ ticker: opts.ticker });
       this.kind = opts.kind;
       this.declarationDate = opts.declarationDate;
       this.description = opts.description;
@@ -1408,7 +1793,7 @@ const MockDividendDistributionClass = createMockEntityClass<DividendDistribution
   class {
     uuid!: string;
     id!: BigNumber;
-    asset!: Asset;
+    asset!: FungibleAsset;
     kind!: CorporateActionKind.PredictableBenefit | CorporateActionKind.UnpredictableBenefit;
     declarationDate!: Date;
     description!: string;
@@ -1453,7 +1838,7 @@ const MockDividendDistributionClass = createMockEntityClass<DividendDistribution
     public configure(opts: Required<DividendDistributionOptions>) {
       this.uuid = 'dividendDistribution';
       this.id = opts.id;
-      this.asset = getAssetInstance({ ticker: opts.ticker });
+      this.asset = getFungibleAssetInstance({ ticker: opts.ticker });
       this.kind = opts.kind;
       this.origin = opts.origin;
       this.declarationDate = opts.declarationDate;
@@ -1512,7 +1897,7 @@ const MockCustomPermissionGroupClass = createMockEntityClass<CustomPermissionGro
   class {
     uuid!: string;
     id!: BigNumber;
-    asset!: Asset;
+    asset!: FungibleAsset;
     getPermissions!: jest.Mock;
 
     /**
@@ -1528,7 +1913,7 @@ const MockCustomPermissionGroupClass = createMockEntityClass<CustomPermissionGro
     public configure(opts: Required<CustomPermissionGroupOptions>) {
       this.uuid = 'customPermissionGroup';
       this.id = opts.id;
-      this.asset = getAssetInstance({ ticker: opts.ticker });
+      this.asset = getFungibleAssetInstance({ ticker: opts.ticker });
       this.getPermissions = createEntityGetterMock(opts.getPermissions);
     }
   },
@@ -1603,6 +1988,7 @@ const MockMultiSigClass = createMockEntityClass<MultiSigOptions>(
     getCreator: getIdentityInstance(),
     authorizationsGetReceived: [],
     authorizationsGetOne: getAuthorizationRequestInstance(),
+    getMultiSig: null,
   }),
   ['MultiSig', 'Account']
 );
@@ -1647,7 +2033,7 @@ const MockKnownPermissionGroupClass = createMockEntityClass<KnownPermissionGroup
   class {
     uuid!: string;
     type!: PermissionGroupType;
-    asset!: Asset;
+    asset!: FungibleAsset;
     getPermissions!: jest.Mock;
 
     /**
@@ -1663,7 +2049,7 @@ const MockKnownPermissionGroupClass = createMockEntityClass<KnownPermissionGroup
     public configure(opts: Required<KnownPermissionGroupOptions>) {
       this.uuid = 'knownPermissionGroup';
       this.type = opts.type;
-      this.asset = getAssetInstance({ ticker: opts.ticker });
+      this.asset = getFungibleAssetInstance({ ticker: opts.ticker });
       this.getPermissions = createEntityGetterMock(opts.getPermissions);
     }
   },
@@ -1683,6 +2069,11 @@ export const mockIdentityModule = (path: string) => (): Record<string, unknown> 
   Identity: MockIdentityClass,
 });
 
+export const mockChildIdentityModule = (path: string) => (): Record<string, unknown> => ({
+  ...jest.requireActual(path),
+  ChildIdentity: MockChildIdentityClass,
+});
+
 export const mockAccountModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   Account: MockAccountClass,
@@ -1698,9 +2089,24 @@ export const mockTickerReservationModule = (path: string) => (): Record<string, 
   TickerReservation: MockTickerReservationClass,
 });
 
-export const mockAssetModule = (path: string) => (): Record<string, unknown> => ({
+export const mockFungibleAssetModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
-  Asset: MockAssetClass,
+  FungibleAsset: MockFungibleAssetClass,
+});
+
+export const mockNftCollectionModule = (path: string) => (): Record<string, unknown> => ({
+  ...jest.requireActual(path),
+  NftCollection: MockNftCollectionClass,
+});
+
+export const mockNftModule = (path: string) => (): Record<string, unknown> => ({
+  ...jest.requireActual(path),
+  Nft: MockNftClass,
+});
+
+export const mockBaseAssetModule = (path: string) => (): Record<string, unknown> => ({
+  ...jest.requireActual(path),
+  BaseAsset: MockBaseAssetClass,
 });
 
 export const mockMetadataEntryModule = (path: string) => (): Record<string, unknown> => ({
@@ -1788,7 +2194,10 @@ export const initMocks = function (opts?: MockOptions): void {
   MockAccountClass.init(opts?.accountOptions);
   MockSubsidyClass.init(opts?.subsidyOptions);
   MockTickerReservationClass.init(opts?.tickerReservationOptions);
-  MockAssetClass.init(opts?.assetOptions);
+  MockFungibleAssetClass.init(opts?.fungibleAssetOptions);
+  MockNftCollectionClass.init(opts?.nftCollectionOptions);
+  MockNftClass.init(opts?.nftOptions);
+  MockBaseAssetClass.init(opts?.baseAssetOptions);
   MockMetadataEntryClass.init(opts?.metadataEntryOptions);
   MockAuthorizationRequestClass.init(opts?.authorizationRequestOptions);
   MockVenueClass.init(opts?.venueOptions);
@@ -1813,10 +2222,14 @@ export const initMocks = function (opts?: MockOptions): void {
  */
 export const configureMocks = function (opts?: MockOptions): void {
   MockIdentityClass.setOptions(opts?.identityOptions);
+  MockChildIdentityClass.setOptions(opts?.childIdentityOptions);
   MockAccountClass.setOptions(opts?.accountOptions);
   MockSubsidyClass.setOptions(opts?.subsidyOptions);
   MockTickerReservationClass.setOptions(opts?.tickerReservationOptions);
-  MockAssetClass.setOptions(opts?.assetOptions);
+  MockFungibleAssetClass.setOptions(opts?.fungibleAssetOptions);
+  MockNftCollectionClass.setOptions(opts?.nftCollectionOptions);
+  MockNftClass.setOptions(opts?.nftOptions);
+  MockBaseAssetClass.setOptions(opts?.baseAssetOptions);
   MockMetadataEntryClass.setOptions(opts?.metadataEntryOptions);
   MockAuthorizationRequestClass.setOptions(opts?.authorizationRequestOptions);
   MockVenueClass.setOptions(opts?.venueOptions);
@@ -1843,7 +2256,9 @@ export const reset = function (): void {
   MockAccountClass.resetOptions();
   MockSubsidyClass.resetOptions();
   MockTickerReservationClass.resetOptions();
-  MockAssetClass.resetOptions();
+  MockFungibleAssetClass.resetOptions();
+  MockNftCollectionClass.resetOptions();
+  MockBaseAssetClass.resetOptions();
   MockMetadataEntryClass.resetOptions();
   MockAuthorizationRequestClass.resetOptions();
   MockVenueClass.resetOptions();
@@ -1873,6 +2288,20 @@ export const getIdentityInstance = (opts?: IdentityOptions): MockIdentity => {
   }
 
   return instance as unknown as MockIdentity;
+};
+
+/**
+ * @hidden
+ * Retrieve an Identity instance
+ */
+export const getChildIdentityInstance = (opts?: ChildIdentityOptions): MockChildIdentity => {
+  const instance = new MockChildIdentityClass();
+
+  if (opts) {
+    instance.configure(opts);
+  }
+
+  return instance as unknown as MockChildIdentity;
 };
 
 /**
@@ -1923,14 +2352,48 @@ export const getTickerReservationInstance = (
  * @hidden
  * Retrieve a Asset instance
  */
-export const getAssetInstance = (opts?: AssetOptions): MockAsset => {
-  const instance = new MockAssetClass();
+export const getBaseAssetInstance = (opts?: BaseAssetOptions): MockBaseAsset => {
+  const instance = new MockBaseAssetClass();
 
   if (opts) {
     instance.configure(opts);
   }
 
-  return instance as unknown as MockAsset;
+  return instance as unknown as MockBaseAsset;
+};
+
+/**
+ * @hidden
+ * Retrieve a Asset instance
+ */
+export const getFungibleAssetInstance = (opts?: FungibleAssetOptions): MockFungibleAsset => {
+  const instance = new MockFungibleAssetClass();
+
+  if (opts) {
+    instance.configure(opts);
+  }
+
+  return instance as unknown as MockFungibleAsset;
+};
+
+export const getNftCollectionInstance = (opts?: NftCollectionOptions): MockNftCollection => {
+  const instance = new MockNftCollectionClass();
+
+  if (opts) {
+    instance.configure(opts);
+  }
+
+  return instance as unknown as MockNftCollection;
+};
+
+export const getNftInstance = (opts: NftOptions): MockNft => {
+  const instance = new MockNftClass();
+
+  if (opts) {
+    instance.configure(opts);
+  }
+
+  return instance as unknown as MockNft;
 };
 
 /**

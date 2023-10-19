@@ -21,8 +21,8 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockCheckpointModule('~/api/entities/Checkpoint')
 );
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 describe('createCheckpoint procedure', () => {

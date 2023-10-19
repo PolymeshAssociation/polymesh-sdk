@@ -1,22 +1,25 @@
+import { u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import {
   PolymeshPrimitivesIdentityIdPortfolioId,
+  PolymeshPrimitivesNftNfTs,
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import {
-  Asset,
   Context,
   Entity,
+  FungibleAsset,
   NumberedPortfolio,
   PolymeshTransaction,
   Portfolio,
 } from '~/internal';
 import { portfolioMovementsQuery, settlementsQuery } from '~/middleware/queries';
+import { SettlementResultEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { SettlementDirectionEnum, SettlementResultEnum } from '~/types';
+import { FungibleLeg, MoveFundsParams, SettlementDirectionEnum } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -260,7 +263,7 @@ describe('Portfolio class', () => {
 
       const otherTicker = 'OTHER_TICKER';
       const result = await portfolio.getAssetBalances({
-        assets: [ticker0, new Asset({ ticker: otherTicker }, context)],
+        assets: [ticker0, new FungibleAsset({ ticker: otherTicker }, context)],
       });
 
       expect(result.length).toBe(2);
@@ -279,6 +282,124 @@ describe('Portfolio class', () => {
       exists = false;
 
       return expect(portfolio.getAssetBalances()).rejects.toThrow(
+        "The Portfolio doesn't exist or was removed by its owner"
+      );
+    });
+  });
+
+  describe('method: getCollections', () => {
+    let did: string;
+    let id: BigNumber;
+    let secondId: BigNumber;
+    let lockedId: BigNumber;
+    let ticker: string;
+    let lockedTicker: string;
+    let rawFree: PolymeshPrimitivesNftNfTs;
+    let rawLocked: PolymeshPrimitivesNftNfTs;
+    let rawTicker: PolymeshPrimitivesTicker;
+    let rawId: u64;
+    let rawSecondId: u64;
+    let rawLockedId: u64;
+    let rawLockedTicker: PolymeshPrimitivesTicker;
+    let rawPortfolioId: PolymeshPrimitivesIdentityIdPortfolioId;
+
+    beforeAll(() => {
+      did = 'someDid';
+      id = new BigNumber(1);
+      secondId = new BigNumber(2);
+      lockedId = new BigNumber(10);
+      ticker = 'TICKER0';
+      lockedTicker = 'LOCKED1';
+      rawTicker = dsMockUtils.createMockTicker(ticker);
+      rawLockedTicker = dsMockUtils.createMockTicker(lockedTicker);
+      rawId = dsMockUtils.createMockU64(id);
+      rawSecondId = dsMockUtils.createMockU64(secondId);
+      rawLockedId = dsMockUtils.createMockU64(lockedId);
+      rawFree = dsMockUtils.createMockNfts({
+        ticker: rawTicker,
+        ids: [rawId, rawSecondId],
+      });
+      rawLocked = dsMockUtils.createMockNfts({
+        ticker: rawLockedTicker,
+        ids: [rawLockedId],
+      });
+      rawPortfolioId = dsMockUtils.createMockPortfolioId({
+        did: dsMockUtils.createMockIdentityId(did),
+        kind: dsMockUtils.createMockPortfolioKind({
+          User: dsMockUtils.createMockU64(id),
+        }),
+      });
+      jest.spyOn(utilsConversionModule, 'portfolioIdToMeshPortfolioId').mockImplementation();
+      dsMockUtils.configureMocks({ contextOptions: { did } });
+    });
+
+    beforeEach(() => {
+      dsMockUtils.createQueryMock('portfolio', 'portfolioNFT', {
+        entries: [
+          tuple([rawPortfolioId, [rawTicker, rawId]], rawFree),
+          tuple([rawPortfolioId, [rawTicker, rawSecondId]], rawFree),
+        ],
+      });
+      dsMockUtils.createQueryMock('portfolio', 'portfolioLockedNFT', {
+        entries: [tuple([rawPortfolioId, [rawLockedTicker, rawLockedId]], rawLocked)],
+      });
+    });
+
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it("should return all of the portfolio's NFTs when no args are given", async () => {
+      const portfolio = new NonAbstract({ did, id }, context);
+
+      const result = await portfolio.getCollections();
+
+      expect(result).toEqual(
+        expect.arrayContaining([
+          {
+            collection: expect.objectContaining({ ticker }),
+            free: expect.arrayContaining([
+              expect.objectContaining({ id }),
+              expect.objectContaining({ id: secondId }),
+            ]),
+            locked: [],
+            total: new BigNumber(2),
+          },
+          {
+            collection: expect.objectContaining({ ticker: lockedTicker }),
+            free: [],
+            locked: [expect.objectContaining({ id: lockedId })],
+            total: new BigNumber(1),
+          },
+        ])
+      );
+    });
+
+    it('should filter assets if any are specified', async () => {
+      const portfolio = new NonAbstract({ did, id }, context);
+
+      const result = await portfolio.getCollections({ collections: [ticker] });
+
+      expect(result).toEqual(
+        expect.arrayContaining([
+          {
+            collection: expect.objectContaining({ ticker }),
+            free: expect.arrayContaining([
+              expect.objectContaining({ id }),
+              expect.objectContaining({ id: secondId }),
+            ]),
+            locked: [],
+            total: new BigNumber(2),
+          },
+        ])
+      );
+    });
+
+    it('should throw an error if the portfolio does not exist', () => {
+      const portfolio = new NonAbstract({ did, id }, context);
+      exists = false;
+
+      return expect(portfolio.getCollections()).rejects.toThrow(
         "The Portfolio doesn't exist or was removed by its owner"
       );
     });
@@ -336,7 +457,7 @@ describe('Portfolio class', () => {
 
   describe('method: moveFunds', () => {
     it('should prepare the procedure and return the resulting transaction', async () => {
-      const args = {
+      const args: MoveFundsParams = {
         to: new NumberedPortfolio({ id: new BigNumber(1), did: 'someDid' }, context),
         items: [{ asset: 'someAsset', amount: new BigNumber(100) }],
       };
@@ -539,8 +660,8 @@ describe('Portfolio class', () => {
       expect(result[1].blockHash).toBe(blockHash2);
       expect(result[0].legs[0].asset.ticker).toBe(ticker1);
       expect(result[1].legs[0].asset.ticker).toBe(ticker2);
-      expect(result[0].legs[0].amount).toEqual(amount1.div(Math.pow(10, 6)));
-      expect(result[1].legs[0].amount).toEqual(amount2.div(Math.pow(10, 6)));
+      expect((result[0].legs[0] as FungibleLeg).amount).toEqual(amount1.div(Math.pow(10, 6)));
+      expect((result[1].legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
       expect(result[0].legs[0].from.owner.did).toBe(portfolioDid1);
       expect(result[0].legs[0].to.owner.did).toBe(portfolioDid2);
       expect((result[0].legs[0].to as NumberedPortfolio).id).toEqual(portfolioId2);
@@ -603,7 +724,7 @@ describe('Portfolio class', () => {
       expect(result[0].blockNumber).toEqual(blockNumber1);
       expect(result[0].blockHash).toBe(blockHash1);
       expect(result[0].legs[0].asset.ticker).toBe(ticker2);
-      expect(result[0].legs[0].amount).toEqual(amount2.div(Math.pow(10, 6)));
+      expect((result[0].legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
       expect(result[0].legs[0].from.owner.did).toBe(portfolioDid1);
       expect(result[0].legs[0].to.owner.did).toBe(portfolioDid1);
       expect((result[0].legs[0].to as NumberedPortfolio).id).toEqual(portfolioId2);

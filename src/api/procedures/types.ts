@@ -2,15 +2,17 @@ import BigNumber from 'bignumber.js';
 
 import {
   Account,
-  Asset,
   AuthorizationRequest,
   CheckpointSchedule,
+  ChildIdentity,
   CorporateActionBase,
   CustomPermissionGroup,
   DefaultPortfolio,
+  FungibleAsset,
   Identity,
   KnownPermissionGroup,
   MultiSig,
+  Nft,
   NumberedPortfolio,
   Venue,
 } from '~/internal';
@@ -18,7 +20,6 @@ import {
   ActiveTransferRestrictions,
   AddCountStatInput,
   AssetDocument,
-  CalendarPeriod,
   ClaimCountStatInput,
   ClaimCountTransferRestriction,
   ClaimPercentageTransferRestriction,
@@ -33,8 +34,12 @@ import {
   InputTargets,
   InputTaxWithholding,
   InputTrustedClaimIssuer,
+  KnownAssetType,
+  KnownNftType,
   MetadataSpec,
+  MetadataType,
   MetadataValueDetails,
+  NftCollection,
   OfferingTier,
   PercentageTransferRestriction,
   PermissionedAccount,
@@ -281,6 +286,10 @@ export interface CreateAssetParams {
    */
   initialSupply?: BigNumber;
   /**
+   * portfolio to which the Asset tokens will be issued on creation (optional, default is the default portfolio)
+   */
+  portfolioId?: BigNumber;
+  /**
    * whether a single Asset token can be divided into decimal parts
    */
   isDivisible: boolean;
@@ -289,7 +298,7 @@ export interface CreateAssetParams {
    *   {@link types!KnownAssetType} enum, but custom values can be used as well. Custom values must be registered on-chain the first time
    *   they're used, requiring an additional transaction. They aren't tied to a specific Asset
    */
-  assetType: string;
+  assetType: KnownAssetType | string;
   /**
    * array of domestic or international alphanumeric security identifiers for the Asset (e.g. ISIN, CUSIP, FIGI)
    */
@@ -309,7 +318,7 @@ export interface CreateAssetParams {
    *
    * These restrictions require a `Count` and `ScopedCount` statistic to be created. Although they an be created after the Asset is made, it is recommended to create statistics
    * before the Asset is circulated. Count statistics made after Asset creation need their initial value set, so it is simpler to create them before investors hold the Asset.
-   * If you do need to create a stat for an Asset after creation, you can use the { @link api/entities/Asset/TransferRestrictions/TransferRestrictionBase!TransferRestrictionBase.enableStat | enableStat } method in
+   * If you do need to create a stat for an Asset after creation, you can use the { @link api/entities/Asset/Fungible/TransferRestrictions/TransferRestrictionBase!TransferRestrictionBase.enableStat | enableStat } method in
    * the appropriate namespace
    */
   initialStatistics?: InputStatType[];
@@ -317,6 +326,50 @@ export interface CreateAssetParams {
 
 export interface CreateAssetWithTickerParams extends CreateAssetParams {
   ticker: string;
+}
+
+export interface GlobalCollectionKeyInput {
+  type: MetadataType.Global;
+  id: BigNumber;
+}
+
+export interface LocalCollectionKeyInput {
+  type: MetadataType.Local;
+  name: string;
+  spec: MetadataSpec;
+}
+
+/**
+ * Global key must be registered. local keys must provide a specification as they are created with the NftCollection
+ */
+export type CollectionKeyInput = GlobalCollectionKeyInput | LocalCollectionKeyInput;
+
+export interface CreateNftCollectionParams {
+  /**
+   * The primary identifier for the collection. The ticker must either be free, or the signer has appropriate permissions if reserved
+   */
+  ticker: string;
+  /**
+   * The collection name. defaults to `ticker`
+   */
+  name?: string;
+  /**
+   * @throws if provided string that does not have a custom type
+   * @throws if provided a BigNumber that does not correspond to a custom type
+   */
+  nftType: KnownNftType | string | BigNumber;
+  /**
+   * array of domestic or international alphanumeric security identifiers for the Asset (e.g. ISIN, CUSIP, FIGI)
+   */
+  securityIdentifiers?: SecurityIdentifier[];
+  /**
+   * The required metadata values each NFT in the collection will have
+   */
+  collectionKeys: CollectionKeyInput[];
+  /**
+   * Links to off chain documents related to the NftCollection
+   */
+  documents?: AssetDocument[];
 }
 
 export interface ReserveTickerParams {
@@ -440,16 +493,27 @@ export interface TransferPolyxParams {
   memo?: string;
 }
 
+export interface InstructionFungibleLeg {
+  amount: BigNumber;
+  from: PortfolioLike;
+  to: PortfolioLike;
+  asset: string | FungibleAsset;
+}
+
+export interface InstructionNftLeg {
+  nfts: (BigNumber | Nft)[];
+  from: PortfolioLike;
+  to: PortfolioLike;
+  asset: string | NftCollection;
+}
+
+export type InstructionLeg = InstructionFungibleLeg | InstructionNftLeg;
+
 export type AddInstructionParams = {
   /**
-   * array of Asset movements (amount, from, to, asset)
+   * array of Asset movements
    */
-  legs: {
-    amount: BigNumber;
-    from: PortfolioLike;
-    to: PortfolioLike;
-    asset: string | Asset;
-  }[];
+  legs: InstructionLeg[];
   /**
    * date at which the trade was agreed upon (optional, for off chain trades)
    */
@@ -578,6 +642,17 @@ export type ModifyAssetParams =
       identifiers: SecurityIdentifier[];
     };
 
+export type NftMetadataInput = {
+  type: MetadataType;
+  id: BigNumber;
+  value: string;
+};
+
+export type IssueNftParams = {
+  metadata: NftMetadataInput[];
+  portfolio?: PortfolioLike;
+};
+
 export interface ModifyPrimaryIssuanceAgentParams {
   /**
    * Identity to be set as primary issuance agent
@@ -597,6 +672,13 @@ export interface RedeemTokensParams {
   from?: BigNumber | DefaultPortfolio | NumberedPortfolio;
 }
 
+export interface RedeemNftParams {
+  /**
+   * portfolio (or portfolio ID) from which Assets will be redeemed (optional, defaults to the default Portfolio)
+   */
+  from?: BigNumber | DefaultPortfolio | NumberedPortfolio;
+}
+
 export interface TransferAssetOwnershipParams {
   target: string | Identity;
   /**
@@ -607,18 +689,9 @@ export interface TransferAssetOwnershipParams {
 
 export interface CreateCheckpointScheduleParams {
   /**
-   * The date from which to begin creating snapshots. A null value indicates immediately
+   * The points in time in the future for which to create checkpoints for
    */
-  start: Date | null;
-  /**
-   * The cadence with which to make Checkpoints.
-   * @note A null value indicates to create only one Checkpoint, regardless of repetitions specified. This can be used to schedule the creation of a Checkpoint in the future
-   */
-  period: CalendarPeriod | null;
-  /**
-   * The number of snapshots to take. A null value indicates snapshots should be made indefinitely
-   */
-  repetitions: BigNumber | null;
+  points: Date[];
 }
 
 export interface RemoveCheckpointScheduleParams {
@@ -952,14 +1025,14 @@ export interface RenamePortfolioParams {
 }
 
 export interface WaivePermissionsParams {
-  asset: string | Asset;
+  asset: string | FungibleAsset;
 }
 
 export interface AssetBase {
   /**
    * Asset over which the Identity will be granted permissions
    */
-  asset: string | Asset;
+  asset: string | FungibleAsset;
 }
 
 export interface TransactionsParams extends AssetBase {
@@ -1047,3 +1120,29 @@ export type SetVenueFilteringParams = {
   allowedVenues?: BigNumber[];
   disallowedVenues?: BigNumber[];
 };
+
+export interface CreateChildIdentityParams {
+  /**
+   * The secondary key that will become the primary key of the new child Identity
+   */
+  secondaryKey: string | Account;
+}
+
+export interface CreateChildIdentitiesParams {
+  /**
+   * The secondary keys that will become the primary keys of the new child Identities
+   */
+  secondaryKeys: (string | Account)[];
+  /**
+   * Expiry date of the signed authorization
+   */
+  expiry: Date;
+}
+
+export interface UnlinkChildParams {
+  child: string | ChildIdentity;
+}
+
+export interface RegisterCustomClaimTypeParams {
+  name: string;
+}

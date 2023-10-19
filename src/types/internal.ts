@@ -19,11 +19,12 @@ import { ISubmittableResult, Signer as PolkadotSigner } from '@polkadot/types/ty
 import BigNumber from 'bignumber.js';
 
 import { Identity, Procedure } from '~/internal';
-import { CallIdEnum, ModuleIdEnum } from '~/middleware/enums';
+import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
 import {
   ClaimType,
   InputStatClaim,
   KnownAssetType,
+  KnownNftType,
   MortalityProcedureOpt,
   PermissionGroupType,
   Role,
@@ -300,7 +301,8 @@ export enum InstructionStatus {
   Pending = 'Pending',
   Unknown = 'Unknown',
   Failed = 'Failed',
-  Executed = 'Executed',
+  Success = 'Success',
+  Rejected = 'Rejected',
 }
 
 /**
@@ -308,7 +310,8 @@ export enum InstructionStatus {
  */
 export type PermissionGroupIdentifier = PermissionGroupType | { custom: BigNumber };
 
-export type InternalAssetType = KnownAssetType | { Custom: u32 };
+export type InternalNftType = KnownNftType | { Custom: u32 };
+export type InternalAssetType = KnownAssetType | { Custom: u32 } | { NonFungible: InternalNftType };
 
 export interface TickerKey {
   Ticker: PolymeshPrimitivesTicker;

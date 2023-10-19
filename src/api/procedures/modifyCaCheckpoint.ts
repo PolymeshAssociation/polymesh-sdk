@@ -1,9 +1,9 @@
 import { assertCaCheckpointValid, assertDistributionDatesValid } from '~/api/procedures/utils';
 import {
-  Asset,
   Checkpoint,
   CorporateActionBase,
   DividendDistribution,
+  FungibleAsset,
   PolymeshError,
   Procedure,
 } from '~/internal';
@@ -87,7 +87,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.corporateAction.ChangeRecordDate],
-      assets: [new Asset({ ticker }, context)],
+      assets: [new FungibleAsset({ ticker }, context)],
       portfolios: [],
     },
   };

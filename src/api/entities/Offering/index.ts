@@ -3,10 +3,10 @@ import { PalletStoFundraiser } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import {
-  Asset,
   closeOffering,
   Context,
   Entity,
+  FungibleAsset,
   Identity,
   investInOffering,
   modifyOfferingTimes,
@@ -61,7 +61,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * Asset being offered
    */
-  public asset: Asset;
+  public asset: FungibleAsset;
 
   /**
    * @hidden
@@ -72,7 +72,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
     const { id, ticker } = identifiers;
 
     this.id = id;
-    this.asset = new Asset({ ticker }, context);
+    this.asset = new FungibleAsset({ ticker }, context);
 
     this.freeze = createProcedureMethod(
       {
@@ -119,7 +119,6 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
         polymeshApi: {
           query: { sto },
         },
-        isV5,
       },
       id,
       asset: { ticker },
@@ -130,15 +129,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
       rawFundraiser: Option<PalletStoFundraiser>,
       rawName: Option<Bytes>
     ): OfferingDetails => {
-      if (isV5) {
-        return fundraiserToOfferingDetails(
-          rawFundraiser.unwrap(),
-          rawName as unknown as Bytes,
-          context
-        );
-      } else {
-        return fundraiserToOfferingDetails(rawFundraiser.unwrap(), rawName.unwrap(), context);
-      }
+      return fundraiserToOfferingDetails(rawFundraiser.unwrap(), rawName.unwrap(), context);
     };
 
     const rawTicker = stringToTicker(ticker, context);

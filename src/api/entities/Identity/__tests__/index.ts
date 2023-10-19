@@ -11,14 +11,21 @@ import { bool } from '@polkadot/types/primitive';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { Asset, Context, Entity, Identity, PolymeshError } from '~/internal';
+import {
+  Context,
+  Entity,
+  FungibleAsset,
+  Identity,
+  PolymeshError,
+  PolymeshTransaction,
+} from '~/internal';
 import {
   assetHoldersQuery,
   instructionsByDidQuery,
   trustingAssetsQuery,
 } from '~/middleware/queries';
 import { AssetHoldersOrderBy } from '~/middleware/types';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import {
   Account,
@@ -46,8 +53,8 @@ jest.mock(
   )
 );
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 jest.mock(
   '~/api/entities/Account',
@@ -70,8 +77,19 @@ jest.mock(
   )
 );
 jest.mock(
+  '~/api/entities/Identity/ChildIdentity',
+  require('~/testUtils/mocks/entities').mockChildIdentityModule(
+    '~/api/entities/Identity/ChildIdentity'
+  )
+);
+jest.mock(
   '~/api/entities/Instruction',
   require('~/testUtils/mocks/entities').mockInstructionModule('~/api/entities/Instruction')
+);
+
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 
 describe('Identity class', () => {
@@ -83,6 +101,7 @@ describe('Identity class', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
+    procedureMockUtils.initMocks();
     stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
     identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
     u64ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u64ToBigNumber');
@@ -97,10 +116,12 @@ describe('Identity class', () => {
   afterEach(() => {
     dsMockUtils.reset();
     entityMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   it('should extend Entity', () => {
@@ -925,14 +946,14 @@ describe('Identity class', () => {
   });
 
   describe('method: getPendingDistributions', () => {
-    let assets: Asset[];
+    let assets: FungibleAsset[];
     let distributions: DistributionWithDetails[];
     let expectedDistribution: DistributionWithDetails;
 
     beforeAll(() => {
       assets = [
-        entityMockUtils.getAssetInstance({ ticker: 'TICKER_1' }),
-        entityMockUtils.getAssetInstance({ ticker: 'TICKER_2' }),
+        entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER_1' }),
+        entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER_2' }),
       ];
       const distributionTemplate = {
         expiryDate: null,
@@ -1166,6 +1187,80 @@ describe('Identity class', () => {
       const result = await identity.getHistoricalInstructions();
 
       expect(result).toEqual([mockHistoricInstruction]);
+    });
+  });
+
+  describe('method: getChildIdentities', () => {
+    it('should return the list of all child identities of which the given Identity is a parent', async () => {
+      const identity = new Identity({ did: 'someDid' }, context);
+
+      const rawIdentity = dsMockUtils.createMockIdentityId(identity.did);
+      when(identityIdToStringSpy).calledWith(rawIdentity).mockReturnValue(identity.did);
+
+      const children = ['someChild', 'someOtherChild'];
+      const rawChildren = children.map(child => dsMockUtils.createMockIdentityId(child));
+
+      when(identityIdToStringSpy).calledWith(rawChildren[0]).mockReturnValue(children[0]);
+      when(identityIdToStringSpy).calledWith(rawChildren[1]).mockReturnValue(children[1]);
+
+      dsMockUtils.createQueryMock('identity', 'parentDid', {
+        entries: rawChildren.map(child =>
+          tuple([child], dsMockUtils.createMockOption(rawIdentity))
+        ),
+      });
+
+      const result = await identity.getChildIdentities();
+
+      expect(result).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ did: children[0] }),
+          expect.objectContaining({ did: children[1] }),
+        ])
+      );
+    });
+  });
+
+  describe('method: unlinkChild', () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction = 'someQueue' as unknown as PolymeshTransaction<void>;
+
+      const identity = new Identity({ did: 'someDid' }, context);
+
+      const args = {
+        child: 'someChild',
+      };
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const transaction = await identity.unlinkChild(args);
+
+      expect(transaction).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: isChild', () => {
+    it('should return whether the Identity is a child Identity', async () => {
+      entityMockUtils.configureMocks({
+        childIdentityOptions: {
+          exists: true,
+        },
+      });
+      const identity = new Identity({ did: 'someDid' }, context);
+      let result = await identity.isChild();
+
+      expect(result).toBeTruthy();
+
+      entityMockUtils.configureMocks({
+        childIdentityOptions: {
+          exists: false,
+        },
+      });
+
+      result = await identity.isChild();
+
+      expect(result).toBeFalsy();
     });
   });
 });

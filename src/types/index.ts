@@ -16,16 +16,19 @@ import { CreateTransactionBatchParams } from '~/api/procedures/types';
 import { CountryCode, ModuleName, TxTag, TxTags } from '~/generated/types';
 import {
   Account,
-  Asset,
+  BaseAsset,
   Checkpoint,
   CheckpointSchedule,
   CustomPermissionGroup,
   DefaultPortfolio,
   DefaultTrustedClaimIssuer,
   DividendDistribution,
+  FungibleAsset,
   Identity,
   Instruction,
   KnownPermissionGroup,
+  Nft,
+  NftCollection,
   NumberedPortfolio,
   Offering,
   PolymeshTransaction,
@@ -39,7 +42,6 @@ export * from '~/api/entities/types';
 export * from '~/api/procedures/types';
 export * from '~/base/types';
 export * from '~/generated/types';
-export * from '~/middleware/enums';
 
 export { AssetHoldersOrderBy, ExtrinsicsOrderBy, Scalars } from '~/middleware/types';
 export { ClaimScopeTypeEnum, MiddlewareScope, SettlementDirectionEnum } from '~/middleware/typesV1';
@@ -138,6 +140,12 @@ export enum KnownAssetType {
   StableCoin = 'StableCoin',
 }
 
+export enum KnownNftType {
+  Derivative = 'Derivative',
+  FixedIncome = 'FixedIncome',
+  Invoice = 'Invoice',
+}
+
 export enum SecurityIdentifierType {
   Isin = 'Isin',
   Cusip = 'Cusip',
@@ -215,6 +223,7 @@ export enum ClaimType {
   Jurisdiction = 'Jurisdiction',
   Exempted = 'Exempted',
   Blocked = 'Blocked',
+  Custom = 'Custom',
 }
 
 export interface AccreditedClaim {
@@ -258,6 +267,12 @@ export interface ExemptedClaim {
   scope: Scope;
 }
 
+export interface CustomClaim {
+  type: ClaimType.Custom;
+  scope: Scope;
+  customClaimTypeId: BigNumber;
+}
+
 export interface BlockedClaim {
   type: ClaimType.Blocked;
   scope: Scope;
@@ -271,7 +286,8 @@ export type ScopedClaim =
   | SellLockupClaim
   | KycClaim
   | ExemptedClaim
-  | BlockedClaim;
+  | BlockedClaim
+  | CustomClaim;
 
 export type UnscopedClaim = CddClaim;
 
@@ -342,6 +358,7 @@ export interface IdentityWithClaims {
 export interface ExtrinsicData {
   blockHash: string;
   blockNumber: BigNumber;
+  blockDate: Date;
   extrinsicIdx: BigNumber;
   /**
    * public key of the signer. Unsigned transactions have no signer, in which case this value is null (example: an enacted governance proposal)
@@ -660,6 +677,13 @@ export enum TransferError {
    * occurs if the sender Portfolio does not have enough balance to cover the amount
    */
   InsufficientPortfolioBalance = 'InsufficientPortfolioBalance',
+
+  /**
+   * translates to TransferStatus.ComplianceFailure
+   *
+   * occurs if some compliance rule would prevent the transfer
+   */
+  ComplianceFailure = 'ComplianceFailure',
 }
 
 export interface ClaimTarget {
@@ -978,7 +1002,7 @@ export interface Permissions {
   /**
    * Assets over which this key has permissions
    */
-  assets: SectionPermissions<Asset> | null;
+  assets: SectionPermissions<FungibleAsset> | null;
   /**
    * Transactions this key can execute
    */
@@ -1017,7 +1041,7 @@ export interface SimplePermissions {
   /**
    * list of required Asset permissions
    */
-  assets?: Asset[] | null;
+  assets?: BaseAsset[] | null;
   /**
    * list of required Transaction permissions
    */
@@ -1244,7 +1268,7 @@ export type PermissionsLike = {
   /**
    * Assets on which to grant permissions. A null value represents full permissions
    */
-  assets?: SectionPermissions<string | Asset> | null;
+  assets?: SectionPermissions<string | FungibleAsset> | null;
   /**
    * Portfolios on which to grant permissions. A null value represents full permissions
    */
@@ -1261,8 +1285,8 @@ export type PermissionsLike = {
     }
 );
 
-export interface PortfolioMovement {
-  asset: string | Asset;
+export interface FungiblePortfolioMovement {
+  asset: string | FungibleAsset;
   amount: BigNumber;
   /**
    * identifier string to help differentiate transfers
@@ -1270,6 +1294,16 @@ export interface PortfolioMovement {
   memo?: string;
 }
 
+export type NonFungiblePortfolioMovement = {
+  asset: NftCollection | string;
+  nfts: (Nft | BigNumber)[];
+  /**
+   * identifier string to help differentiate transfers
+   */
+  memo?: string;
+};
+
+export type PortfolioMovement = FungiblePortfolioMovement | NonFungiblePortfolioMovement;
 export interface ProcedureAuthorizationStatus {
   /**
    * whether the Identity complies with all required Agent permissions
@@ -1572,7 +1606,7 @@ export interface GroupedInvolvedInstructions {
 }
 
 export interface AssetWithGroup {
-  asset: Asset;
+  asset: FungibleAsset;
   group: KnownPermissionGroup | CustomPermissionGroup;
 }
 
@@ -1668,24 +1702,6 @@ export type MapTxData<ArgsArray extends unknown[][]> = {
   [K in keyof ArgsArray]: ArgsArray[K] extends unknown[] ? TxData<ArgsArray[K]> : never;
 };
 
-export enum CalendarUnit {
-  Second = 'second',
-  Minute = 'minute',
-  Hour = 'hour',
-  Day = 'day',
-  Week = 'week',
-  Month = 'month',
-  Year = 'year',
-}
-
-/**
- * Represents a period of time measured in a specific unit (e.g. 20 days)
- */
-export interface CalendarPeriod {
-  unit: CalendarUnit;
-  amount: BigNumber;
-}
-
 /**
  *
  */
@@ -1693,3 +1709,22 @@ export interface SpWeightV2 {
   refTime: BigNumber;
   proofSize: BigNumber;
 }
+
+export type CustomClaimType = {
+  name: string;
+  id: BigNumber;
+};
+
+/**
+ * Represents JSON serializable data. Used for cases when the value can take on many types, like args for a MultiSig proposal.
+ */
+export type AnyJson =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | AnyJson[]
+  | {
+      [index: string]: AnyJson;
+    };

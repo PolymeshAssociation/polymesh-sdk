@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { Asset, PolymeshError, Procedure } from '~/internal';
+import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import {
   AddClaimCountTransferRestrictionParams,
   AddClaimPercentageTransferRestrictionParams,
@@ -164,7 +164,7 @@ export function getAuthorization(
 
   return {
     permissions: {
-      assets: [new Asset({ ticker }, this.context)],
+      assets: [new FungibleAsset({ ticker }, this.context)],
       transactions,
       portfolios: [],
     },

@@ -1,4 +1,4 @@
-import { Asset, MetadataEntry, PolymeshError, Procedure } from '~/internal';
+import { FungibleAsset, MetadataEntry, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, MetadataLockStatus, SetMetadataParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
@@ -127,7 +127,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions,
-      assets: [new Asset({ ticker }, context)],
+      assets: [new FungibleAsset({ ticker }, context)],
       portfolios: [],
     },
   };

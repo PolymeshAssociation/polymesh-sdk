@@ -3,9 +3,8 @@ import { when } from 'jest-when';
 
 import { Claims } from '~/api/client/Claims';
 import { Context, PolymeshTransaction } from '~/internal';
-import { ClaimTypeEnum } from '~/middleware/enums';
 import { claimsGroupingQuery, claimsQuery } from '~/middleware/queries';
-import { Claim, ClaimsGroupBy, ClaimsOrderBy } from '~/middleware/types';
+import { Claim, ClaimsGroupBy, ClaimsOrderBy, ClaimTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -19,6 +18,7 @@ import {
   ScopeType,
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -416,34 +416,77 @@ describe('Claims Class', () => {
   });
 
   describe('method: getCddClaims', () => {
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
     it('should return a list of cdd claims', async () => {
       const target = 'someTarget';
+      jest.spyOn(utilsInternalModule, 'getDid').mockResolvedValue(target);
 
-      const identityClaims: ClaimData[] = [
-        {
-          target: entityMockUtils.getIdentityInstance({ did: target }),
-          issuer: entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
-          issuedAt: new Date(),
-          lastUpdatedAt: new Date(),
-          expiry: null,
-          claim: {
-            type: ClaimType.CustomerDueDiligence,
-            id: 'someId',
-          },
-        },
-      ];
+      const rawTarget = dsMockUtils.createMockIdentityId(target);
+      jest.spyOn(utilsConversionModule, 'stringToIdentityId').mockReturnValue(rawTarget);
 
-      dsMockUtils.configureMocks({
-        contextOptions: {
-          getIdentityClaimsFromChain: identityClaims,
-        },
+      const claimIssuer = 'someClaimIssuer';
+      const issuanceDate = new Date('2023/01/01');
+      const lastUpdateDate = new Date('2023/06/01');
+      const claim = {
+        type: ClaimType.CustomerDueDiligence,
+        id: 'someCddId',
+      };
+
+      /* eslint-disable @typescript-eslint/naming-convention */
+      const rawIdentityClaim = {
+        claim_issuer: dsMockUtils.createMockIdentityId(claimIssuer),
+        issuance_date: dsMockUtils.createMockMoment(new BigNumber(issuanceDate.getTime())),
+        last_update_date: dsMockUtils.createMockMoment(new BigNumber(lastUpdateDate.getTime())),
+        expiry: dsMockUtils.createMockOption(),
+        claim: dsMockUtils.createMockClaim({
+          CustomerDueDiligence: dsMockUtils.createMockCddId(claim.id),
+        }),
+      };
+      /* eslint-enable @typescript-eslint/naming-convention */
+
+      jest.spyOn(utilsConversionModule, 'identityIdToString').mockReturnValue(claimIssuer);
+      dsMockUtils.createRpcMock('identity', 'validCDDClaims', {
+        returnValue: [rawIdentityClaim],
       });
 
-      let result = await claims.getCddClaims({ target });
-      expect(result).toEqual(identityClaims);
+      const mockResult = {
+        target: expect.objectContaining({
+          did: target,
+        }),
+        issuer: expect.objectContaining({
+          did: claimIssuer,
+        }),
+        issuedAt: issuanceDate,
+        lastUpdatedAt: lastUpdateDate,
+        expiry: null,
+        claim,
+      };
+      let result = await claims.getCddClaims();
 
-      result = await claims.getCddClaims();
-      expect(result).toEqual(identityClaims);
+      expect(result).toEqual([mockResult]);
+
+      const expiry = new Date('2030/01/01');
+      dsMockUtils.createRpcMock('identity', 'validCDDClaims', {
+        returnValue: [
+          {
+            ...rawIdentityClaim,
+            expiry: dsMockUtils.createMockOption(
+              dsMockUtils.createMockMoment(new BigNumber(expiry.getTime()))
+            ),
+          },
+        ],
+      });
+
+      result = await claims.getCddClaims({ target, includeExpired: false });
+
+      expect(result).toEqual([
+        {
+          ...mockResult,
+          expiry,
+        },
+      ]);
     });
   });
 
@@ -695,6 +738,96 @@ describe('Claims Class', () => {
       });
 
       expect(result.data.length).toEqual(2);
+    });
+  });
+
+  describe('method: registerCustomClaimType', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args = {
+        name: 'someClaimTypeName',
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<BigNumber>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await claims.registerCustomClaimType(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: getCustomClaimTypeByName', () => {
+    const name = 'custom-claim-type';
+    const id = new BigNumber(12);
+    const rawId = dsMockUtils.createMockU32(id);
+
+    beforeEach(() => {
+      jest.spyOn(utilsConversionModule, 'u32ToBigNumber').mockClear().mockReturnValue(id);
+      jest.spyOn(utilsConversionModule, 'bytesToString').mockClear().mockReturnValue(name);
+    });
+
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should fetch custom claim type by name', async () => {
+      dsMockUtils.createQueryMock('identity', 'customClaimsInverse', {
+        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockOption(rawId)),
+      });
+
+      const result = await claims.getCustomClaimTypeByName(name);
+      expect(result).toEqual({ id, name });
+    });
+
+    it('should return null if custom claim type name does not exist', async () => {
+      dsMockUtils.createQueryMock('identity', 'customClaimsInverse', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockOption(dsMockUtils.createMockOption())
+        ),
+      });
+
+      const result = await claims.getCustomClaimTypeByName(name);
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('method: getCustomClaimTypeById', () => {
+    const name = 'custom-claim-type';
+    const id = new BigNumber(12);
+    const rawId = dsMockUtils.createMockU32(id);
+
+    beforeEach(() => {
+      jest.spyOn(utilsConversionModule, 'bigNumberToU32').mockClear().mockReturnValue(rawId);
+      jest.spyOn(utilsConversionModule, 'bytesToString').mockClear().mockReturnValue(name);
+    });
+
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should fetch custom claim type by id', async () => {
+      dsMockUtils.createQueryMock('identity', 'customClaims', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockOption(dsMockUtils.createMockBytes(name))
+        ),
+      });
+
+      const result = await claims.getCustomClaimTypeById(id);
+      expect(result).toEqual({ id, name });
+    });
+
+    it('should return null if custom claim type id does not exist', async () => {
+      dsMockUtils.createQueryMock('identity', 'customClaims', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockOption(dsMockUtils.createMockOption())
+        ),
+      });
+
+      const result = await claims.getCustomClaimTypeById(id);
+      expect(result).toBeNull();
     });
   });
 });

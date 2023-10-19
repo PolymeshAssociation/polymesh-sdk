@@ -1,8 +1,8 @@
-import { Asset, Identity, PolymeshError, Procedure } from '~/internal';
+import { BaseAsset, Identity, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RoleType, TxTags, WaivePermissionsParams } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { stringToTicker } from '~/utils/conversion';
-import { asAsset } from '~/utils/internal';
+import { asBaseAsset } from '~/utils/internal';
 
 /**
  * @hidden
@@ -15,7 +15,7 @@ export type Params = WaivePermissionsParams & {
  * @hidden
  */
 export interface Storage {
-  asset: Asset;
+  asset: BaseAsset;
 }
 
 /**
@@ -81,7 +81,7 @@ export function prepareStorage(this: Procedure<Params, void, Storage>, { asset }
   const { context } = this;
 
   return {
-    asset: asAsset(asset, context),
+    asset: asBaseAsset(asset, context),
   };
 }
 

@@ -3,7 +3,7 @@ import {
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
 
-import { Asset, PolymeshError, Procedure } from '~/internal';
+import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RemoveAssetStatParams, StatClaimIssuer, StatType, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
@@ -92,7 +92,7 @@ export function getAuthorization(
   { ticker }: RemoveAssetStatParams
 ): ProcedureAuthorization {
   const transactions = [TxTags.statistics.SetActiveAssetStats];
-  const asset = new Asset({ ticker }, this.context);
+  const asset = new FungibleAsset({ ticker }, this.context);
   return {
     permissions: {
       transactions,

@@ -2,11 +2,11 @@ import { PalletAssetSecurityToken, PalletAssetTickerRegistration } from '@polkad
 import { Option } from '@polkadot/types-codec';
 
 import {
-  Asset,
   AuthorizationRequest,
   Context,
   createAsset,
   Entity,
+  FungibleAsset,
   Identity,
   reserveTicker,
   transferTickerOwnership,
@@ -102,7 +102,6 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
         polymeshApi: {
           query: { asset },
         },
-        isV5,
       },
       ticker,
       context,
@@ -118,58 +117,25 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
       let status = TickerReservationStatus.Free;
       let expiryDate: Date | null = null;
 
-      if (isV5) {
-        const { owner: tickerOwner, expiry } =
-          reservationOpt as unknown as PalletAssetTickerRegistration;
-        const tickerOwned = !tickerOwner.isEmpty;
-        const assetOwner = (tokenOpt as unknown as PalletAssetSecurityToken).ownerDid;
-        const assetOwned = !assetOwner.isEmpty;
+      if (tokenOpt.isSome) {
+        status = TickerReservationStatus.AssetCreated;
+        const rawOwnerDid = tokenOpt.unwrap().ownerDid;
+        owner = new Identity({ did: identityIdToString(rawOwnerDid) }, context);
+      } else if (reservationOpt.isSome) {
+        const { owner: rawOwnerDid, expiry } = reservationOpt.unwrap();
+        owner = new Identity({ did: identityIdToString(rawOwnerDid) }, context);
 
-        owner = tickerOwned
-          ? new Identity({ did: identityIdToString(tickerOwner) }, context)
-          : null;
-
-        if (assetOwned) {
-          status = TickerReservationStatus.AssetCreated;
-        } else if (tickerOwned) {
+        expiryDate = expiry.isSome ? momentToDate(expiry.unwrap()) : null;
+        if (!expiryDate || expiryDate > new Date()) {
           status = TickerReservationStatus.Reserved;
-          if (expiry.isSome) {
-            expiryDate = momentToDate(expiry.unwrap());
-
-            if (expiryDate < new Date()) {
-              status = TickerReservationStatus.Free;
-            }
-          }
-        } else {
-          status = TickerReservationStatus.Free;
         }
-
-        return {
-          owner,
-          expiryDate,
-          status,
-        };
-      } else {
-        if (tokenOpt.isSome) {
-          status = TickerReservationStatus.AssetCreated;
-          const rawOwnerDid = tokenOpt.unwrap().ownerDid;
-          owner = new Identity({ did: identityIdToString(rawOwnerDid) }, context);
-        } else if (reservationOpt.isSome) {
-          const { owner: rawOwnerDid, expiry } = reservationOpt.unwrap();
-          owner = new Identity({ did: identityIdToString(rawOwnerDid) }, context);
-
-          expiryDate = expiry.isSome ? momentToDate(expiry.unwrap()) : null;
-          if (!expiryDate || expiryDate > new Date()) {
-            status = TickerReservationStatus.Reserved;
-          }
-        }
-
-        return {
-          owner,
-          expiryDate,
-          status,
-        };
       }
+
+      return {
+        owner,
+        expiryDate,
+        status,
+      };
     };
 
     if (callback) {
@@ -211,7 +177,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
    * @note required role:
    *   - Ticker Owner
    */
-  public createAsset: ProcedureMethod<CreateAssetParams, Asset>;
+  public createAsset: ProcedureMethod<CreateAssetParams, FungibleAsset>;
 
   /**
    * Transfer ownership of the Ticker Reservation to another Identity. This generates an authorization request that must be accepted

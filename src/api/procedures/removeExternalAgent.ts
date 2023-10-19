@@ -1,5 +1,5 @@
 import { isFullGroupType } from '~/api/procedures/utils';
-import { Asset, PolymeshError, Procedure } from '~/internal';
+import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RemoveExternalAgentParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { stringToIdentityId, stringToTicker } from '~/utils/conversion';
@@ -16,7 +16,7 @@ export type Params = RemoveExternalAgentParams & {
  * @hidden
  */
 export interface Storage {
-  asset: Asset;
+  asset: FungibleAsset;
 }
 
 /**
@@ -99,7 +99,7 @@ export function prepareStorage(
   const { context } = this;
 
   return {
-    asset: new Asset({ ticker }, context),
+    asset: new FungibleAsset({ ticker }, context),
   };
 }
 

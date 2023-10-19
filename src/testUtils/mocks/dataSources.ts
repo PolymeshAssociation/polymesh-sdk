@@ -4,7 +4,7 @@
 
 import { ApolloClient, NormalizedCacheObject, QueryOptions } from '@apollo/client/core';
 import { ApiPromise } from '@polkadot/api';
-import { DecoratedRpc } from '@polkadot/api/types';
+import { DecoratedErrors, DecoratedRpc } from '@polkadot/api/types';
 import { RpcInterface } from '@polkadot/rpc-core/types';
 import {
   bool,
@@ -34,6 +34,9 @@ import {
   Call,
   DispatchError,
   DispatchErrorModule,
+  DispatchErrorModuleU8,
+  DispatchErrorModuleU8a,
+  DispatchResult,
   EventRecord,
   ExtrinsicStatus,
   Hash,
@@ -76,6 +79,7 @@ import {
   PolymeshPrimitivesAssetMetadataAssetMetadataLockStatus,
   PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
   PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
+  PolymeshPrimitivesAssetNonFungibleType,
   PolymeshPrimitivesAuthorization,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesCddId,
@@ -144,8 +148,8 @@ import { when } from 'jest-when';
 import { cloneDeep, map, merge, upperFirst } from 'lodash';
 
 import { HistoricPolyxTransaction } from '~/api/entities/Account/types';
-import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
-import { BalanceTypeEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/enums';
+import { Account, AuthorizationRequest, ChildIdentity, Context, Identity } from '~/internal';
+import { BalanceTypeEnum, CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import {
   AssetComplianceResult,
   AuthorizationType as MeshAuthorizationType,
@@ -163,7 +167,6 @@ import { dsMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
-  CallIdEnum,
   CheckPermissionsResult,
   CheckRolesResult,
   ClaimData,
@@ -325,9 +328,9 @@ export enum MockTxStatus {
   Rejected = 'Rejected',
   Intermediate = 'Intermediate',
   InBlock = 'InBlock',
-  BatchFailed = 'BatchFailed',
   FinalizedFailed = 'FinalizedFailed',
   FailedToUnsubscribe = 'FailedToUnsubscribe',
+  BatchInterrupted = 'BatchInterrupted',
 }
 
 const MockApolloClientClass = class {
@@ -405,6 +408,7 @@ interface ContextOptions {
   nonce?: BigNumber;
   issuedClaims?: ResultSet<ClaimData>;
   getIdentity?: Identity;
+  getChildIdentity?: ChildIdentity;
   getIdentityClaimsFromChain?: ClaimData[];
   getIdentityClaimsFromMiddleware?: ResultSet<ClaimData>;
   getExternalSigner?: PolkadotSigner;
@@ -491,11 +495,11 @@ const successReceipt: ISubmittableResult = merge({}, defaultReceipt, {
 
 const batchFailedReceipt: ISubmittableResult = merge({}, successReceipt, {
   findRecord: (mod: string, event: string) =>
-    mod === 'utility' && event === 'BatchInterruptedOld'
+    mod === 'utility' && event === 'BatchInterrupted'
       ? { event: { data: [[], [{ toString: (): string => '1' }, 'Some Error']] } }
       : undefined,
   filterRecords: (mod: string, event: string) =>
-    mod === 'utility' && event === 'BatchInterruptedOld'
+    mod === 'utility' && event === 'BatchInterrupted'
       ? [{ event: { data: [[], [{ toString: (): string => '1' }, 'Some Error']] } }]
       : [],
 });
@@ -582,11 +586,11 @@ const statusToReceipt = (status: MockTxStatus, failReason?: TxFailReason): ISubm
   if (status === MockTxStatus.InBlock) {
     return inBlockReceipt;
   }
-  if (status === MockTxStatus.BatchFailed) {
-    return batchFailedReceipt;
-  }
   if (status === MockTxStatus.FinalizedFailed) {
     return finalizedErrorReceipt;
+  }
+  if (status === MockTxStatus.BatchInterrupted) {
+    return batchFailedReceipt;
   }
 
   throw new Error(`There is no receipt associated with status ${status}`);
@@ -614,6 +618,7 @@ const txMocksData = new Map<unknown, TxMockData>();
 let txModule = {} as Extrinsics;
 let queryModule = {} as Queries;
 let constsModule = {} as Consts;
+let errorsModule = {} as DecoratedErrors<'promise'>;
 
 let rpcModule = {} as DecoratedRpc<'promise', RpcInterface>;
 
@@ -851,6 +856,7 @@ function configureContext(opts: ContextOptions): void {
     getSecondaryAccounts: jest.fn().mockReturnValue({ data: opts.secondaryAccounts, next: null }),
     issuedClaims: jest.fn().mockResolvedValue(opts.issuedClaims),
     getIdentity: jest.fn().mockResolvedValue(opts.getIdentity),
+    getChildIdentity: jest.fn().mockResolvedValue(opts.getChildIdentity),
     getIdentityClaimsFromChain: jest.fn().mockResolvedValue(opts.getIdentityClaimsFromChain),
     getIdentityClaimsFromMiddleware: jest
       .fn()
@@ -947,6 +953,16 @@ function updateConsts(mod?: Consts): void {
 /**
  * @hidden
  */
+function updateErrors(mod?: DecoratedErrors<'promise'>): void {
+  const updateTo = mod ?? errorsModule;
+
+  errorsModule = updateTo;
+  mockInstanceContainer.apiInstance.errors = errorsModule;
+}
+
+/**
+ * @hidden
+ */
 function updateQueryMulti(mock?: jest.Mock): void {
   const updateTo = mock ?? queryMultiMock;
 
@@ -991,6 +1007,17 @@ function initConsts(): void {
 /**
  * @hidden
  *
+ * Mock the errors module
+ */
+function initErrors(): void {
+  const mod = {} as DecoratedErrors<'promise'>;
+
+  updateErrors(mod);
+}
+
+/**
+ * @hidden
+ *
  * Mock queryMulti
  */
 function initQueryMulti(): void {
@@ -1009,11 +1036,13 @@ function initApi(): void {
   } as unknown as Registry;
   mockInstanceContainer.apiInstance.createType = jest.fn();
   mockInstanceContainer.apiInstance.runtimeVersion = {} as RuntimeVersion;
+  // mockInstanceContainer.apiInstance.errors = {} as DecoratedErrors<'promise'>;
 
   initTx();
   initQuery();
   initRpc();
   initConsts();
+  initErrors();
   initQueryMulti();
 
   mockInstanceContainer.apiInstance.at = jest
@@ -1410,6 +1439,39 @@ export function setConstMock<
   } else {
     const instance = mockInstanceContainer.apiInstance;
     instance.consts[mod][constName] = returnValue;
+  }
+}
+
+/**
+ * @hidden
+ * Set an error mock
+ *
+ * @param mod - name of the module
+ * @param errorName - name of the constant
+ */
+export function setErrorMock(
+  mod: string,
+  errorName: string,
+  opts: {
+    returnValue: {
+      is: (arg0: DispatchErrorModule | DispatchErrorModuleU8a | DispatchErrorModuleU8) => boolean;
+    };
+  }
+): void {
+  let runtimeModule = errorsModule[mod];
+
+  if (!runtimeModule) {
+    runtimeModule = {};
+    runtimeModule[mod] = runtimeModule as any;
+  }
+
+  const returnValue = opts.returnValue;
+  if (!runtimeModule[errorName]) {
+    runtimeModule[errorName] = returnValue as any;
+    updateErrors();
+  } else {
+    const instance = mockInstanceContainer.apiInstance;
+    instance.errors[mod][errorName] = returnValue as any;
   }
 }
 
@@ -2093,10 +2155,26 @@ export const createMockAssetType = (
     | 'StructuredProduct'
     | 'Derivative'
     | 'StableCoin'
+    | { NonFungible: PolymeshPrimitivesAssetNonFungibleType }
     | { Custom: u32 }
     | PolymeshPrimitivesAssetAssetType
 ): MockCodec<PolymeshPrimitivesAssetAssetType> => {
   return createMockEnum<PolymeshPrimitivesAssetAssetType>(assetType);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockNftType = (
+  assetType?:
+    | 'Derivative'
+    | 'FixedIncome'
+    | 'Invoice'
+    | { Custom: u32 }
+    | PolymeshPrimitivesAssetNonFungibleType
+): MockCodec<PolymeshPrimitivesAssetNonFungibleType> => {
+  return createMockEnum<PolymeshPrimitivesAssetNonFungibleType>(assetType);
 };
 
 /**
@@ -2625,6 +2703,7 @@ export const createMockClaimType = (
     Blocked: 9,
     InvestorUniqueness: 10,
     InvestorUniquenessV2: 11,
+    Custom: 12,
   };
   return createMockEnum<PolymeshPrimitivesIdentityClaimClaimType>(
     claimType,
@@ -3599,6 +3678,33 @@ export const createMockGranularCanTransferResult = (granularCanTransferResult?: 
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockDispatchResult = (
+  dispatchResult?:
+    | DispatchResult
+    | {
+        Err: {
+          index: u8 | Parameters<typeof createMockU8>[0];
+          module: U8aFixed | Parameters<typeof createMockU8aFixed>[0];
+        };
+      }
+): MockCodec<DispatchResult> => {
+  if (isCodec<DispatchResult>(dispatchResult)) {
+    return dispatchResult as MockCodec<DispatchResult>;
+  }
+
+  if (dispatchResult?.Err) {
+    const mockError = createMockCodec(dispatchResult?.Err, !dispatchResult?.Err);
+    const mockModuleError = createMockEnum({ Module: mockError });
+    return createMockEnum<DispatchResult>({ Err: mockModuleError });
+  }
+
+  return createMockEnum<DispatchResult>();
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockHeader = (
   header?:
     | Header
@@ -4179,7 +4285,7 @@ export const createMockContractInfo = (contractInfo?: {
  */
 export const createMockNfts = (nfts?: {
   ticker: PolymeshPrimitivesTicker;
-  ids: Vec<u64>;
+  ids: u64[];
 }): MockCodec<PolymeshPrimitivesNftNfTs> => {
   const { ticker, ids } = nfts ?? {
     ticker: createMockTicker(),

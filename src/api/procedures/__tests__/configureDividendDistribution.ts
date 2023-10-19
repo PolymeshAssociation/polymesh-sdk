@@ -50,8 +50,8 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 describe('configureDividendDistribution procedure', () => {
@@ -105,7 +105,7 @@ describe('configureDividendDistribution procedure', () => {
       id: new BigNumber(2),
       getAssetBalances: [
         {
-          asset: entityMockUtils.getAssetInstance({ ticker: currency }),
+          asset: entityMockUtils.getFungibleAssetInstance({ ticker: currency }),
           total: new BigNumber(1000001),
           locked: new BigNumber(0),
           free: new BigNumber(1000001),
@@ -431,7 +431,7 @@ describe('configureDividendDistribution procedure', () => {
         portfolio: entityMockUtils.getNumberedPortfolioInstance({
           getAssetBalances: [
             {
-              asset: entityMockUtils.getAssetInstance({ ticker: currency }),
+              asset: entityMockUtils.getFungibleAssetInstance({ ticker: currency }),
               total: new BigNumber(1),
               locked: new BigNumber(0),
               free: new BigNumber(1),
@@ -576,7 +576,7 @@ describe('configureDividendDistribution procedure', () => {
         did: 'someDid',
         getAssetBalances: [
           {
-            asset: entityMockUtils.getAssetInstance({ ticker: currency }),
+            asset: entityMockUtils.getFungibleAssetInstance({ ticker: currency }),
             total: new BigNumber(1000001),
             locked: new BigNumber(0),
             free: new BigNumber(1000001),

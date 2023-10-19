@@ -24,23 +24,28 @@ import {
   AddInstructionsParams,
   ErrorCode,
   InstructionEndCondition,
+  InstructionFungibleLeg,
+  InstructionLeg,
+  InstructionNftLeg,
   InstructionType,
   RoleType,
   SettlementTx,
   TxTags,
 } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
+import { isFungibleLegBuilder, isNftLegBuilder } from '~/utils';
 import { MAX_LEGS_LENGTH } from '~/utils/constants';
 import {
   bigNumberToBalance,
   bigNumberToU64,
   dateToMoment,
   endConditionToSettlementType,
-  legToSettlementLeg,
+  legToFungibleLeg,
+  legToNonFungibleLeg,
+  nftToMeshNft,
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
-  stringToInstructionMemo,
   stringToMemo,
   stringToTicker,
   u64ToBigNumber,
@@ -146,6 +151,32 @@ function getEndCondition(
 /**
  * @hidden
  */
+async function separateLegs(
+  legs: InstructionLeg[],
+  context: Context
+): Promise<{ fungibleLegs: InstructionFungibleLeg[]; nftLegs: InstructionNftLeg[] }> {
+  const fungibleLegs: InstructionFungibleLeg[] = [];
+  const nftLegs: InstructionNftLeg[] = [];
+
+  for (const leg of legs) {
+    const [isFungible, isNft] = await Promise.all([
+      isFungibleLegBuilder(leg, context),
+      isNftLegBuilder(leg, context),
+    ]);
+
+    if (isFungible(leg)) {
+      fungibleLegs.push(leg);
+    } else if (isNft(leg)) {
+      nftLegs.push(leg);
+    }
+  }
+
+  return { fungibleLegs, nftLegs };
+}
+
+/**
+ * @hidden
+ */
 async function getTxArgsAndErrors(
   instructions: AddInstructionParams[],
   portfoliosToAffirm: (DefaultPortfolio | NumberedPortfolio)[][],
@@ -187,8 +218,15 @@ async function getTxArgsAndErrors(
       legLengthErrIndexes.push(i);
     }
 
-    const zeroAmountLegs = legs.filter(leg => leg.amount.isZero());
-    if (zeroAmountLegs.length) {
+    const { fungibleLegs, nftLegs } = await separateLegs(legs, context);
+
+    const zeroAmountFungibleLegs = fungibleLegs.filter(leg => leg.amount.isZero());
+    if (zeroAmountFungibleLegs.length) {
+      legAmountErrIndexes.push(i);
+    }
+
+    const zeroNftsNonFungible = nftLegs.filter(leg => leg.nfts.length === 0);
+    if (zeroNftsNonFungible.length) {
       legAmountErrIndexes.push(i);
     }
 
@@ -225,11 +263,10 @@ async function getTxArgsAndErrors(
       const rawTradeDate = optionize(dateToMoment)(tradeDate, context);
       const rawValueDate = optionize(dateToMoment)(valueDate, context);
       const rawLegs: PolymeshPrimitivesSettlementLeg[] = [];
-      const memoConverter = context.isV5 ? stringToInstructionMemo : stringToMemo;
-      const rawInstructionMemo = optionize(memoConverter)(memo, context);
+      const rawInstructionMemo = optionize(stringToMemo)(memo, context);
 
-      await Promise.all(
-        legs.map(async ({ from, to, amount, asset }) => {
+      await Promise.all([
+        ...fungibleLegs.map(async ({ from, to, amount, asset }) => {
           const fromId = portfolioLikeToPortfolioId(from);
           const toId = portfolioLikeToPortfolioId(to);
 
@@ -241,31 +278,42 @@ async function getTxArgsAndErrors(
           const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromId, context);
           const rawToPortfolio = portfolioIdToMeshPortfolioId(toId, context);
 
-          let rawLeg;
-          if (context.isV5) {
-            rawLeg = {
-              from: rawFromPortfolio,
-              to: rawToPortfolio,
-              asset: stringToTicker(asTicker(asset), context),
+          const rawLeg = legToFungibleLeg(
+            {
+              sender: rawFromPortfolio,
+              receiver: rawToPortfolio,
+              ticker: stringToTicker(asTicker(asset), context),
               amount: bigNumberToBalance(amount, context),
-            } as unknown as PolymeshPrimitivesSettlementLeg;
-          } else {
-            rawLeg = legToSettlementLeg(
-              {
-                Fungible: {
-                  sender: rawFromPortfolio,
-                  receiver: rawToPortfolio,
-                  ticker: stringToTicker(asTicker(asset), context),
-                  amount: bigNumberToBalance(amount, context),
-                },
-              },
-              context
-            );
-          }
+            },
+            context
+          );
 
           rawLegs.push(rawLeg);
-        })
-      );
+        }),
+        ...nftLegs.map(async ({ from, to, nfts, asset }) => {
+          const fromId = portfolioLikeToPortfolioId(from);
+          const toId = portfolioLikeToPortfolioId(to);
+
+          await Promise.all([
+            assertPortfolioExists(fromId, context),
+            assertPortfolioExists(toId, context),
+          ]);
+
+          const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromId, context);
+          const rawToPortfolio = portfolioIdToMeshPortfolioId(toId, context);
+
+          const rawLeg = legToNonFungibleLeg(
+            {
+              sender: rawFromPortfolio,
+              receiver: rawToPortfolio,
+              nfts: nftToMeshNft(asTicker(asset), nfts, context),
+            },
+            context
+          );
+
+          rawLegs.push(rawLeg);
+        }),
+      ]);
 
       if (portfoliosToAffirm[i].length) {
         addAndAffirmInstructionParams.push([
@@ -318,7 +366,6 @@ export async function prepareAddInstruction(
       polymeshApi: {
         tx: { settlement },
       },
-      isV5,
     },
     context,
     storage: { portfoliosToAffirm },
@@ -411,20 +458,13 @@ export async function prepareAddInstruction(
     });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const addTx = isV5 ? (settlement as any).addInstructionWithMemo : settlement.addInstruction;
-  const addAndAffirmTx = isV5
-    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (settlement as any).addAndAffirmInstructionWithMemo
-    : settlement.addAndAffirmInstruction;
-
   const transactions = assembleBatchTransactions([
     {
-      transaction: addTx,
+      transaction: settlement.addInstruction,
       argsArray: addInstructionParams,
     },
     {
-      transaction: addAndAffirmTx,
+      transaction: settlement.addAndAffirmInstruction,
       argsArray: addAndAffirmInstructionParams,
     },
   ] as const);

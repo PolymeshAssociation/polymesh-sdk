@@ -6,7 +6,6 @@ import {
   QueryOptions,
 } from '@apollo/client/core';
 import { ApiPromise } from '@polkadot/api';
-import { UnsubscribePromise } from '@polkadot/api/types';
 import { getTypeDef, Option } from '@polkadot/types';
 import { AccountInfo, Header } from '@polkadot/types/interfaces';
 import {
@@ -14,7 +13,6 @@ import {
   PalletCorporateActionsDistribution,
   PalletRelayerSubsidy,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
-  PolymeshPrimitivesIdentityClaim,
 } from '@polkadot/types/lookup';
 import { CallFunction, Codec, DetectCodec, Signer as PolkadotSigner } from '@polkadot/types/types';
 import { SigningManager } from '@polymeshassociation/signing-manager-types';
@@ -23,15 +21,22 @@ import P from 'bluebird';
 import { chunk, clone, flatMap, flatten, flattenDeep } from 'lodash';
 
 import { HistoricPolyxTransaction } from '~/api/entities/Account/types';
-import { Account, Asset, DividendDistribution, Identity, PolymeshError, Subsidy } from '~/internal';
-import { ClaimTypeEnum } from '~/middleware/enums';
+import {
+  Account,
+  ChildIdentity,
+  DividendDistribution,
+  FungibleAsset,
+  Identity,
+  PolymeshError,
+  Subsidy,
+} from '~/internal';
 import {
   claimsQuery,
   heartbeatQuery,
   metadataQuery,
   polyxTransactionsQuery,
 } from '~/middleware/queries';
-import { Query } from '~/middleware/types';
+import { ClaimTypeEnum, Query } from '~/middleware/types';
 import {
   AccountBalance,
   ClaimData,
@@ -122,10 +127,6 @@ export class Context {
 
   private nonce?: BigNumber;
 
-  public isV5 = false;
-
-  private unsubChainVersion: UnsubscribePromise;
-
   private _isArchiveNodeResult?: boolean;
 
   /**
@@ -138,24 +139,6 @@ export class Context {
     this._polymeshApi = polymeshApi;
     this.polymeshApi = polymeshApi;
     this.ss58Format = ss58Format;
-
-    // `CanTransferGranularReturn` is a 6.0 type. We patch the types here to accommodate the breaking change
-    const registry = polymeshApi.registry;
-    const transferReturnDef = registry.get('CanTransferGranularReturn');
-
-    this.unsubChainVersion = polymeshApi.query.system.lastRuntimeUpgrade(upgrade => {
-      if (upgrade.isSome) {
-        const { specVersion } = upgrade.unwrap();
-        this.isV5 = specVersion.toNumber() < 6000000;
-
-        if (this.isV5) {
-          const transferResultDef = registry.get('GranularCanTransferResult');
-          registry.register('CanTransferGranularReturn', transferResultDef);
-        } else {
-          registry.register('CanTransferGranularReturn', transferReturnDef);
-        }
-      }
-    });
   }
 
   /**
@@ -578,6 +561,30 @@ export class Context {
   /**
    * @hidden
    *
+   * Returns an Child Identity when given a DID string
+   *
+   * @throws if the Child Identity does not exist
+   */
+  public async getChildIdentity(child: ChildIdentity | string): Promise<ChildIdentity> {
+    if (child instanceof ChildIdentity) {
+      return child;
+    }
+    const childIdentity = new ChildIdentity({ did: child }, this);
+    const exists = await childIdentity.exists();
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The passed DID does not correspond to an on-chain child Identity',
+      });
+    }
+
+    return childIdentity;
+  }
+
+  /**
+   * @hidden
+   *
    * Retrieve the protocol fees associated with running specific transactions
    *
    * @param tags - list of transaction tags (e.g. [TxTags.asset.CreateAsset, TxTags.asset.RegisterTicker] or ["asset.createAsset", "asset.registerTicker"])
@@ -707,7 +714,7 @@ export class Context {
    * @hidden
    */
   public async getDividendDistributionsForAssets(args: {
-    assets: Asset[];
+    assets: FungibleAsset[];
   }): Promise<DistributionWithDetails[]> {
     const {
       polymeshApi: {
@@ -824,7 +831,6 @@ export class Context {
       polymeshApi: {
         query: { identity },
       },
-      isV5,
     } = this;
 
     const {
@@ -860,7 +866,7 @@ export class Context {
           lastUpdateDate,
           expiry: rawExpiry,
           claim,
-        } = isV5 ? (optClaim as unknown as PolymeshPrimitivesIdentityClaim) : optClaim.unwrap();
+        } = optClaim.unwrap();
         const expiry = !rawExpiry.isEmpty ? momentToDate(rawExpiry.unwrap()) : null;
         if ((!includeExpired && (expiry === null || expiry > new Date())) || includeExpired) {
           data.push({
@@ -1109,9 +1115,6 @@ export class Context {
   public async disconnect(): Promise<void> {
     const { polymeshApi } = this;
     let middlewareApi;
-
-    const unsub = await this.unsubChainVersion;
-    unsub();
 
     if (this.isMiddlewareEnabled()) {
       ({ middlewareApi } = this);
