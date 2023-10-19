@@ -1707,3 +1707,17 @@ export type CustomClaimType = {
   name: string;
   id: BigNumber;
 };
+
+/**
+ * Represents JSON serializable data. Used for cases when the value can take on many types, like args for a MultiSig proposal.
+ */
+export type AnyJson =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | AnyJson[]
+  | {
+      [index: string]: AnyJson;
+    };
