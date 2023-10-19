@@ -110,11 +110,13 @@ import {
   Portfolio,
   Venue,
 } from '~/internal';
-import { AuthTypeEnum, CallIdEnum, ModuleIdEnum } from '~/middleware/enums';
 import {
+  AuthTypeEnum,
   Block,
+  CallIdEnum,
   Claim as MiddlewareClaim,
   Instruction,
+  ModuleIdEnum,
   Portfolio as MiddlewarePortfolio,
 } from '~/middleware/types';
 import { ClaimScopeTypeEnum, MiddlewareScope } from '~/middleware/typesV1';
@@ -2150,6 +2152,11 @@ export function claimToMeshClaim(
       value = tuple(code, scopeToMeshScope(scope, context));
       break;
     }
+    case ClaimType.Custom: {
+      const { customClaimTypeId, scope } = claim;
+      value = tuple(bigNumberToU32(customClaimTypeId, context), scopeToMeshScope(scope, context));
+      break;
+    }
     default: {
       value = scopeToMeshScope(claim.scope, context);
     }
@@ -2928,6 +2935,7 @@ export function middlewareClaimToClaimData(claim: MiddlewareClaim, context: Cont
     jurisdiction,
     scope,
     cddId,
+    customClaimTypeId,
   } = claim;
   return {
     target: new Identity({ did: targetId }, context),
@@ -2935,7 +2943,13 @@ export function middlewareClaimToClaimData(claim: MiddlewareClaim, context: Cont
     issuedAt: new Date(parseFloat(issuanceDate)),
     lastUpdatedAt: new Date(parseFloat(lastUpdateDate)),
     expiry: expiry ? new Date(parseFloat(expiry)) : null,
-    claim: createClaim(type, jurisdiction, scope, cddId),
+    claim: createClaim(
+      type,
+      jurisdiction,
+      scope,
+      cddId,
+      customClaimTypeId ? new BigNumber(customClaimTypeId) : undefined
+    ),
   };
 }
 

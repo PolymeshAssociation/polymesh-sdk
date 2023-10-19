@@ -1,14 +1,6 @@
 import BigNumber from 'bignumber.js';
 
 import {
-  AuthorizationStatusEnum,
-  AuthTypeEnum,
-  CallIdEnum,
-  ClaimTypeEnum,
-  EventIdEnum,
-  ModuleIdEnum,
-} from '~/middleware/enums';
-import {
   assetHoldersQuery,
   assetQuery,
   assetTransactionQuery,
@@ -37,6 +29,14 @@ import {
   trustedClaimIssuerQuery,
   trustingAssetsQuery,
 } from '~/middleware/queries';
+import {
+  AuthorizationStatusEnum,
+  AuthTypeEnum,
+  CallIdEnum,
+  ClaimTypeEnum,
+  EventIdEnum,
+  ModuleIdEnum,
+} from '~/middleware/types';
 import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
 
 describe('latestBlockQuery', () => {

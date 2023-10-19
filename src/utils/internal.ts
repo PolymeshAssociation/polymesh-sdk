@@ -42,7 +42,7 @@ import {
   PolymeshError,
 } from '~/internal';
 import { latestSqVersionQuery } from '~/middleware/queries';
-import { Query } from '~/middleware/types';
+import { Claim as MiddlewareClaim, ClaimTypeEnum, Query } from '~/middleware/types';
 import { MiddlewareScope } from '~/middleware/typesV1';
 import {
   CaCheckpointType,
@@ -116,7 +116,12 @@ import {
   transferRestrictionTypeToStatOpType,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { isEntity, isMultiClaimCondition, isSingleClaimCondition } from '~/utils/typeguards';
+import {
+  isEntity,
+  isMultiClaimCondition,
+  isScopedClaim,
+  isSingleClaimCondition,
+} from '~/utils/typeguards';
 
 export * from '~/generated/utils';
 
@@ -241,7 +246,8 @@ export function createClaim(
   claimType: string,
   jurisdiction: Falsyable<string>,
   middlewareScope: Falsyable<MiddlewareScope>,
-  cddId: Falsyable<string>
+  cddId: Falsyable<string>,
+  customClaimTypeId: Falsyable<BigNumber>
 ): Claim {
   const type = claimType as ClaimType;
   const scope = (middlewareScope ? middlewareScopeToScope(middlewareScope) : {}) as Scope;
@@ -260,6 +266,20 @@ export function createClaim(
       return {
         type,
         id: cddId as string,
+      };
+    }
+    case ClaimType.Custom: {
+      if (!customClaimTypeId) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'Custom claim type ID is required',
+        });
+      }
+
+      return {
+        type,
+        customClaimTypeId,
+        scope,
       };
     }
   }
@@ -1836,4 +1856,37 @@ export function asNftId(nft: Nft | BigNumber): BigNumber {
   } else {
     return nft.id;
   }
+}
+
+/**
+ * @hidden
+ */
+export function areSameClaims(
+  claim: Claim,
+  { scope, type, customClaimTypeId }: MiddlewareClaim
+): boolean {
+  // filter out deprecated claim types
+  if (
+    type === ClaimTypeEnum.NoData ||
+    type === ClaimTypeEnum.NoType ||
+    type === ClaimTypeEnum.InvestorUniqueness ||
+    type === ClaimTypeEnum.InvestorUniquenessV2
+  ) {
+    return false;
+  }
+
+  if (isScopedClaim(claim) && scope && !isEqual(middlewareScopeToScope(scope), claim.scope)) {
+    return false;
+  }
+
+  if (
+    type === ClaimTypeEnum.Custom &&
+    claim.type === ClaimType.Custom &&
+    customClaimTypeId &&
+    !claim.customClaimTypeId.isEqualTo(customClaimTypeId)
+  ) {
+    return false;
+  }
+
+  return ClaimType[type] === claim.type;
 }

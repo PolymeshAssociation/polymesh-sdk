@@ -19,7 +19,7 @@ import { ISubmittableResult, Signer as PolkadotSigner } from '@polkadot/types/ty
 import BigNumber from 'bignumber.js';
 
 import { Identity, Procedure } from '~/internal';
-import { CallIdEnum, ModuleIdEnum } from '~/middleware/enums';
+import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
 import {
   ClaimType,
   InputStatClaim,

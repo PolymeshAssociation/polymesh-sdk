@@ -17,13 +17,9 @@ import {
   Portfolio,
 } from '~/internal';
 import { portfolioMovementsQuery, settlementsQuery } from '~/middleware/queries';
+import { SettlementResultEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import {
-  FungibleLeg,
-  MoveFundsParams,
-  SettlementDirectionEnum,
-  SettlementResultEnum,
-} from '~/types';
+import { FungibleLeg, MoveFundsParams, SettlementDirectionEnum } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 

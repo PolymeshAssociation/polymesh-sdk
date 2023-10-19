@@ -7,9 +7,8 @@ import {
   HistoricPolyxTransaction,
 } from '~/api/entities/Account/types';
 import { Account, Context, Entity } from '~/internal';
-import { CallIdEnum, ModuleIdEnum } from '~/middleware/enums';
 import { extrinsicsByArgs } from '~/middleware/queries';
-import { ExtrinsicsOrderBy } from '~/middleware/types';
+import { CallIdEnum, ExtrinsicsOrderBy,ModuleIdEnum  } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   createMockAccountId,

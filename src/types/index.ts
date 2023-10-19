@@ -42,7 +42,6 @@ export * from '~/api/entities/types';
 export * from '~/api/procedures/types';
 export * from '~/base/types';
 export * from '~/generated/types';
-export * from '~/middleware/enums';
 
 export { AssetHoldersOrderBy, ExtrinsicsOrderBy, Scalars } from '~/middleware/types';
 export { ClaimScopeTypeEnum, MiddlewareScope, SettlementDirectionEnum } from '~/middleware/typesV1';
@@ -224,6 +223,7 @@ export enum ClaimType {
   Jurisdiction = 'Jurisdiction',
   Exempted = 'Exempted',
   Blocked = 'Blocked',
+  Custom = 'Custom',
 }
 
 export interface AccreditedClaim {
@@ -267,6 +267,12 @@ export interface ExemptedClaim {
   scope: Scope;
 }
 
+export interface CustomClaim {
+  type: ClaimType.Custom;
+  scope: Scope;
+  customClaimTypeId: BigNumber;
+}
+
 export interface BlockedClaim {
   type: ClaimType.Blocked;
   scope: Scope;
@@ -280,7 +286,8 @@ export type ScopedClaim =
   | SellLockupClaim
   | KycClaim
   | ExemptedClaim
-  | BlockedClaim;
+  | BlockedClaim
+  | CustomClaim;
 
 export type UnscopedClaim = CddClaim;
 
