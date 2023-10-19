@@ -33,6 +33,7 @@ import {
 } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
+  accountIdToString,
   addressToKey,
   extrinsicIdentifierToTxTag,
   keyToAddress,
@@ -434,7 +435,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       return null;
     }
 
-    return new MultiSig({ address }, context);
+    return new MultiSig({ address: accountIdToString(rawKeyRecord.asMultiSigSignerKey) }, context);
   }
 
   /**
