@@ -42,13 +42,12 @@ import {
   PolymeshError,
 } from '~/internal';
 import { latestSqVersionQuery } from '~/middleware/queries';
-import { Claim as MiddlewareClaim, Query } from '~/middleware/types';
+import { Claim as MiddlewareClaim, ClaimTypeEnum, Query } from '~/middleware/types';
 import { MiddlewareScope } from '~/middleware/typesV1';
 import {
   CaCheckpointType,
   Claim,
   ClaimType,
-  ClaimTypeEnum,
   Condition,
   ConditionType,
   CountryCode,

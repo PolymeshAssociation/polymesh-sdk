@@ -42,7 +42,6 @@ export * from '~/api/entities/types';
 export * from '~/api/procedures/types';
 export * from '~/base/types';
 export * from '~/generated/types';
-export * from '~/middleware/enums';
 
 export { AssetHoldersOrderBy, ExtrinsicsOrderBy, Scalars } from '~/middleware/types';
 export { ClaimScopeTypeEnum, MiddlewareScope, SettlementDirectionEnum } from '~/middleware/typesV1';

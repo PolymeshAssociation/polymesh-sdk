@@ -3,8 +3,8 @@ import { when } from 'jest-when';
 
 import { Network } from '~/api/client/Network';
 import { Context, PolymeshTransaction } from '~/internal';
-import { CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/enums';
 import { eventsByArgs, extrinsicByHash } from '~/middleware/queries';
+import { CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { AccountBalance, MiddlewareMetadata, TxTags } from '~/types';

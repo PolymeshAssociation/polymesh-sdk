@@ -22,8 +22,9 @@ import {
   assetTransactionQuery,
   tickerExternalAgentHistoryQuery,
 } from '~/middleware/queries';
+import { EventIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { ErrorCode, EventIdEnum, SecurityIdentifier, SecurityIdentifierType } from '~/types';
+import { ErrorCode, SecurityIdentifier, SecurityIdentifierType } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 

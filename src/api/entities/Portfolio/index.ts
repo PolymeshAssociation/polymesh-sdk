@@ -16,7 +16,7 @@ import {
   setCustodian,
 } from '~/internal';
 import { portfolioMovementsQuery, settlementsQuery } from '~/middleware/queries';
-import { Query } from '~/middleware/types';
+import { Query, SettlementResultEnum } from '~/middleware/types';
 import { SettlementDirectionEnum } from '~/middleware/typesV1';
 import {
   ErrorCode,
@@ -24,7 +24,6 @@ import {
   NoArgsProcedureMethod,
   ProcedureMethod,
   SetCustodianParams,
-  SettlementResultEnum,
 } from '~/types';
 import { Ensured } from '~/types/utils';
 import {

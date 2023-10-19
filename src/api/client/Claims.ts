@@ -2,9 +2,8 @@ import BigNumber from 'bignumber.js';
 import { filter, flatten, isEqual, uniqBy, uniqWith } from 'lodash';
 
 import { Context, Identity, modifyClaims, registerCustomClaimType } from '~/internal';
-import { ClaimTypeEnum } from '~/middleware/enums';
 import { claimsGroupingQuery, claimsQuery } from '~/middleware/queries';
-import { ClaimsGroupBy, ClaimsOrderBy, Query } from '~/middleware/types';
+import { ClaimsGroupBy, ClaimsOrderBy, ClaimTypeEnum, Query } from '~/middleware/types';
 import {
   CddClaim,
   ClaimData,

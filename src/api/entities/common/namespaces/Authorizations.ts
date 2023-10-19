@@ -3,17 +3,13 @@ import BigNumber from 'bignumber.js';
 
 import { Account, AuthorizationRequest, Identity, Namespace, PolymeshError } from '~/internal';
 import { AuthorizationArgs, authorizationsQuery } from '~/middleware/queries';
-import { Authorization as MiddlewareAuthorization, Query } from '~/middleware/types';
 import {
+  Authorization as MiddlewareAuthorization,
   AuthorizationStatusEnum,
-  AuthorizationType,
   AuthTypeEnum,
-  ErrorCode,
-  ResultSet,
-  Signer,
-  SignerType,
-  SignerValue,
-} from '~/types';
+  Query,
+} from '~/middleware/types';
+import { AuthorizationType, ErrorCode, ResultSet, Signer, SignerType, SignerValue } from '~/types';
 import { Ensured, QueryArgs } from '~/types/utils';
 import {
   addressToKey,

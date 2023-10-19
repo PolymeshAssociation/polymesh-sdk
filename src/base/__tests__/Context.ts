@@ -6,18 +6,18 @@ import { when } from 'jest-when';
 
 import { Account, Context, PolymeshError } from '~/internal';
 import {
-  BalanceTypeEnum,
-  CallIdEnum,
-  ClaimTypeEnum,
-  EventIdEnum,
-  ModuleIdEnum,
-} from '~/middleware/enums';
-import {
   claimsQuery,
   heartbeatQuery,
   metadataQuery,
   polyxTransactionsQuery,
 } from '~/middleware/queries';
+import {
+  BalanceTypeEnum,
+  CallIdEnum,
+  ClaimTypeEnum,
+  EventIdEnum,
+  ModuleIdEnum,
+} from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId, getAtMock } from '~/testUtils/mocks/dataSources';
 import {

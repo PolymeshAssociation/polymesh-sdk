@@ -149,7 +149,7 @@ import { cloneDeep, map, merge, upperFirst } from 'lodash';
 
 import { HistoricPolyxTransaction } from '~/api/entities/Account/types';
 import { Account, AuthorizationRequest, ChildIdentity, Context, Identity } from '~/internal';
-import { BalanceTypeEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/enums';
+import { BalanceTypeEnum, CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import {
   AssetComplianceResult,
   AuthorizationType as MeshAuthorizationType,
@@ -167,7 +167,6 @@ import { dsMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
-  CallIdEnum,
   CheckPermissionsResult,
   CheckRolesResult,
   ClaimData,

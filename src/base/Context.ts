@@ -30,14 +30,13 @@ import {
   PolymeshError,
   Subsidy,
 } from '~/internal';
-import { ClaimTypeEnum } from '~/middleware/enums';
 import {
   claimsQuery,
   heartbeatQuery,
   metadataQuery,
   polyxTransactionsQuery,
 } from '~/middleware/queries';
-import { Query } from '~/middleware/types';
+import { ClaimTypeEnum, Query } from '~/middleware/types';
 import {
   AccountBalance,
   ClaimData,

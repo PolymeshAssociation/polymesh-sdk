@@ -110,11 +110,13 @@ import {
   Portfolio,
   Venue,
 } from '~/internal';
-import { AuthTypeEnum, CallIdEnum, ModuleIdEnum } from '~/middleware/enums';
 import {
+  AuthTypeEnum,
   Block,
+  CallIdEnum,
   Claim as MiddlewareClaim,
   Instruction,
+  ModuleIdEnum,
   Portfolio as MiddlewarePortfolio,
 } from '~/middleware/types';
 import { ClaimScopeTypeEnum, MiddlewareScope } from '~/middleware/typesV1';

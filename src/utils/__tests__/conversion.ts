@@ -78,17 +78,14 @@ import {
 } from '~/internal';
 import {
   AuthTypeEnum,
+  Block,
   CallIdEnum,
+  Claim as MiddlewareClaim,
   ClaimTypeEnum,
+  Instruction,
   InstructionStatusEnum,
   ModuleIdEnum,
-} from '~/middleware/enums';
-import {
-  Block,
-  Claim as MiddlewareClaim,
-  Instruction,
-  Portfolio as MiddlewarePortfolio,
-} from '~/middleware/types';
+  Portfolio as MiddlewarePortfolio} from '~/middleware/types';
 import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
