@@ -41,3 +41,8 @@ export interface MultiSigProposalDetails {
    */
   args: string[];
 }
+
+export enum MultiSigProposalAction {
+  Approve = 'approve',
+  Reject = 'reject',
+}

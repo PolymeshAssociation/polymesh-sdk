@@ -2,11 +2,11 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
-import { Account, Context, MultiSig, PolymeshError } from '~/internal';
+import { Account, Context, MultiSig, PolymeshError, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { createMockMoment, createMockOption } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode, ProposalStatus, SignerType } from '~/types';
+import { ErrorCode, MultiSigProposalAction, ProposalStatus, SignerType } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -14,6 +14,10 @@ import * as utilsInternalModule from '~/utils/internal';
 jest.mock(
   '~/api/entities/Account/MultiSig',
   require('~/testUtils/mocks/entities').mockMultiSigModule('~/api/entities/Account/MultiSig')
+);
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 
 describe('MultiSigProposal class', () => {
@@ -203,6 +207,48 @@ describe('MultiSigProposal class', () => {
       const result = await proposal.votes();
 
       expect(result).toEqual([mockVoter]);
+    });
+  });
+
+  describe('method: approve', () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          {
+            args: { proposal, action: MultiSigProposalAction.Approve },
+            transformer: undefined,
+          },
+          context,
+          {}
+        )
+        .mockReturnValue(expectedTransaction);
+
+      const tx = await proposal.approve();
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: reject', () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          {
+            args: { proposal, action: MultiSigProposalAction.Reject },
+            transformer: undefined,
+          },
+          context,
+          {}
+        )
+        .mockReturnValue(expectedTransaction);
+
+      const tx = await proposal.reject();
+
+      expect(tx).toBe(expectedTransaction);
     });
   });
 });

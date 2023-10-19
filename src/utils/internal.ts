@@ -1742,6 +1742,18 @@ export async function getSecondaryAccountPermissions(
           permissions: meshPermissionsToPermissions(rawPermissions, context),
         });
       }
+
+      if (record.isMultiSigSignerKey) {
+        result.push({
+          account,
+          permissions: {
+            assets: null,
+            transactions: null,
+            transactionGroups: [],
+            portfolios: null,
+          },
+        });
+      }
       return result;
     }, []);
   };

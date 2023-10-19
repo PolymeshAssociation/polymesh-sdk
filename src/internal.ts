@@ -65,6 +65,7 @@ export {
   togglePauseRequirements,
   TogglePauseRequirementsParams,
 } from '~/api/procedures/togglePauseRequirements';
+export { evaluateMultiSigProposal } from '~/api/procedures/evaluateMultiSigProposal';
 export { transferPolyx } from '~/api/procedures/transferPolyx';
 export { transferAssetOwnership } from '~/api/procedures/transferAssetOwnership';
 export { deletePortfolio } from '~/api/procedures/deletePortfolio';
