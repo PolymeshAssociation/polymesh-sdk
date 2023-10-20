@@ -47,7 +47,7 @@ export async function prepareMultiSigProposalEvaluation(
     action,
   } = args;
 
-  const rawAddress = stringToAccountId(multiSigAddress, context);
+  const rawMultiSigAddress = stringToAccountId(multiSigAddress, context);
   const rawProposalId = bigNumberToU64(id, context);
   const signingAccount = context.getSigningAccount();
 
@@ -57,7 +57,7 @@ export async function prepareMultiSigProposalEvaluation(
     proposal.multiSig.getCreator(),
     proposal.multiSig.details(),
     proposal.details(),
-    votes([rawAddress, rawProposalId], rawSigner),
+    votes([rawMultiSigAddress, rawProposalId], rawSigner),
   ]);
 
   if (
@@ -115,7 +115,7 @@ export async function prepareMultiSigProposalEvaluation(
   return {
     transaction,
     paidForBy: creator,
-    args: [rawAddress, rawProposalId],
+    args: [rawMultiSigAddress, rawProposalId],
     resolver: undefined,
   };
 }
