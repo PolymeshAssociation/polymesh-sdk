@@ -85,7 +85,8 @@ import {
   Instruction,
   InstructionStatusEnum,
   ModuleIdEnum,
-  Portfolio as MiddlewarePortfolio} from '~/middleware/types';
+  Portfolio as MiddlewarePortfolio,
+} from '~/middleware/types';
 import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {

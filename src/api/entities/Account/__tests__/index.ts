@@ -8,7 +8,7 @@ import {
 } from '~/api/entities/Account/types';
 import { Account, Context, Entity } from '~/internal';
 import { extrinsicsByArgs } from '~/middleware/queries';
-import { CallIdEnum, ExtrinsicsOrderBy,ModuleIdEnum  } from '~/middleware/types';
+import { CallIdEnum, ExtrinsicsOrderBy, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   createMockAccountId,
@@ -847,7 +847,7 @@ describe('Account class', () => {
 
       const result = await account.getMultiSig();
 
-      expect(result?.address).toEqual('someAddress');
+      expect(result?.address).toEqual('multiAddress');
     });
   });
 
