@@ -5,19 +5,22 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import {
-  getAuthorization,
   MultiSigProposalVoteParams,
   prepareMultiSigProposalEvaluation,
 } from '~/api/procedures/evaluateMultiSigProposal';
-import { Context, MultiSigProposal, PolymeshError } from '~/internal';
+import { Account, Context, MultiSigProposal, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode, Identity, MultiSigProposalAction, ProposalStatus, TxTags } from '~/types';
+import { ErrorCode, Identity, MultiSigProposalAction, ProposalStatus } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/Asset/Base',
   require('~/testUtils/mocks/entities').mockBaseAssetModule('~/api/entities/Asset/Base')
+);
+jest.mock(
+  '~/api/entities/Account',
+  require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
 );
 
 describe('evaluateMultiSigProposal', () => {
@@ -78,6 +81,13 @@ describe('evaluateMultiSigProposal', () => {
       multiSig: entityMockUtils.getMultiSigInstance({
         address: multiSigAddress,
         getCreator: creator,
+        details: {
+          signers: [
+            new Account({ address: 'someAddress' }, mockContext),
+            new Account({ address: 'someOtherAddress' }, mockContext),
+          ],
+          requiredSignatures: new BigNumber(1),
+        },
       }),
       details: proposalDetails,
     });
@@ -97,6 +107,26 @@ describe('evaluateMultiSigProposal', () => {
   });
 
   describe('prepareMultiSigProposalEvaluation', () => {
+    it('should throw an error if the signing Account is not a part of the MultiSig', async () => {
+      mockContext = dsMockUtils.getContextInstance({
+        signingAccountIsEqual: false,
+      });
+
+      const proc = procedureMockUtils.getInstance<MultiSigProposalVoteParams, void>(mockContext);
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'The signing Account is not a signer of the MultiSig',
+      });
+
+      await expect(
+        prepareMultiSigProposalEvaluation.call(proc, {
+          proposal,
+          action: MultiSigProposalAction.Approve,
+        })
+      ).rejects.toThrow(expectedError);
+    });
+
     it('should throw an error if the signing Account has already voted for the proposal', async () => {
       votesQuery.mockResolvedValueOnce(dsMockUtils.createMockBool(true));
 
@@ -163,6 +193,13 @@ describe('evaluateMultiSigProposal', () => {
           multiSig: entityMockUtils.getMultiSigInstance({
             address: multiSigAddress,
             getCreator: creator,
+            details: {
+              signers: [
+                new Account({ address: 'someAddress' }, mockContext),
+                new Account({ address: 'someOtherAddress' }, mockContext),
+              ],
+              requiredSignatures: new BigNumber(1),
+            },
           }),
           details: {
             status: errorCase[0],
@@ -211,39 +248,6 @@ describe('evaluateMultiSigProposal', () => {
         transaction,
         paidForBy: creator,
         args: [rawMultiSigAccount, rawProposalId],
-      });
-    });
-  });
-
-  describe('getAuthorization', () => {
-    it('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<MultiSigProposalVoteParams, void>(mockContext);
-      const boundFunc = getAuthorization.bind(proc);
-
-      expect(
-        boundFunc({
-          proposal,
-          action: MultiSigProposalAction.Approve,
-        })
-      ).toEqual({
-        permissions: {
-          transactions: [TxTags.multiSig.ApproveAsKey],
-          assets: [],
-          portfolios: [],
-        },
-      });
-
-      expect(
-        boundFunc({
-          proposal,
-          action: MultiSigProposalAction.Reject,
-        })
-      ).toEqual({
-        permissions: {
-          transactions: [TxTags.multiSig.RejectAsKey],
-          assets: [],
-          portfolios: [],
-        },
       });
     });
   });

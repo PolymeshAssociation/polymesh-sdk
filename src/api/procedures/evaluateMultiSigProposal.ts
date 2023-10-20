@@ -1,10 +1,11 @@
 import { MultiSigProposal, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, MultiSigProposalAction, ProposalStatus, TxTags } from '~/types';
-import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
+import { ErrorCode, MultiSigProposalAction, ProposalStatus } from '~/types';
+import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import {
   bigNumberToU64,
   boolToBoolean,
   signerToSignatory,
+  signerToSignerValue,
   stringToAccountId,
 } from '~/utils/conversion';
 
@@ -52,11 +53,23 @@ export async function prepareMultiSigProposalEvaluation(
 
   const rawSigner = signerToSignatory(signingAccount, context);
 
-  const [creator, { status }, hasVoted] = await Promise.all([
+  const [creator, { signers: multiSigSigners }, { status }, hasVoted] = await Promise.all([
     proposal.multiSig.getCreator(),
+    proposal.multiSig.details(),
     proposal.details(),
     votes([rawAddress, rawProposalId], rawSigner),
   ]);
+
+  if (
+    !multiSigSigners.some(
+      multiSigSigner => signerToSignerValue(multiSigSigner).value === signingAccount.address
+    )
+  ) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The signing Account is not a signer of the MultiSig',
+    });
+  }
 
   if (boolToBoolean(hasVoted)) {
     throw new PolymeshError({
@@ -110,25 +123,7 @@ export async function prepareMultiSigProposalEvaluation(
 /**
  * @hidden
  */
-export function getAuthorization(
-  this: Procedure<MultiSigProposalVoteParams, void>,
-  { action }: MultiSigProposalVoteParams
-): ProcedureAuthorization {
-  return {
-    permissions: {
-      transactions: [
-        action === MultiSigProposalAction.Approve
-          ? TxTags.multiSig.ApproveAsKey
-          : TxTags.multiSig.RejectAsKey,
-      ],
-      assets: [],
-      portfolios: [],
-    },
-  };
-}
-
-/**
- * @hidden
- */
 export const evaluateMultiSigProposal = (): Procedure<MultiSigProposalVoteParams, void> =>
-  new Procedure(prepareMultiSigProposalEvaluation, getAuthorization);
+  new Procedure(prepareMultiSigProposalEvaluation, {
+    signerPermissions: true,
+  });

@@ -1743,17 +1743,6 @@ export async function getSecondaryAccountPermissions(
         });
       }
 
-      if (record.isMultiSigSignerKey) {
-        result.push({
-          account,
-          permissions: {
-            assets: null,
-            transactions: null,
-            transactionGroups: [],
-            portfolios: null,
-          },
-        });
-      }
       return result;
     }, []);
   };
