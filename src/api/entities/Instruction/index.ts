@@ -17,9 +17,8 @@ import {
   PolymeshError,
   Venue,
 } from '~/internal';
-import { InstructionStatusEnum } from '~/middleware/enums';
 import { instructionsQuery } from '~/middleware/queries';
-import { Query } from '~/middleware/types';
+import { InstructionStatusEnum, Query } from '~/middleware/types';
 import {
   AffirmOrWithdrawInstructionParams,
   DefaultPortfolio,

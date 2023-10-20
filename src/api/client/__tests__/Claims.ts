@@ -3,9 +3,8 @@ import { when } from 'jest-when';
 
 import { Claims } from '~/api/client/Claims';
 import { Context, PolymeshTransaction } from '~/internal';
-import { ClaimTypeEnum } from '~/middleware/enums';
 import { claimsGroupingQuery, claimsQuery } from '~/middleware/queries';
-import { Claim, ClaimsGroupBy, ClaimsOrderBy } from '~/middleware/types';
+import { Claim, ClaimsGroupBy, ClaimsOrderBy, ClaimTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {

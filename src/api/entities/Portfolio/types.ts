@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { Account, FungibleAsset, Nft } from '~/internal';
-import { SettlementResultEnum as SettlementResult } from '~/middleware/enums';
+import { SettlementResultEnum as SettlementResult } from '~/middleware/types';
 import { SettlementDirectionEnum as SettlementDirection } from '~/middleware/typesV1';
 import { Balance, Leg, NftCollection } from '~/types';
 

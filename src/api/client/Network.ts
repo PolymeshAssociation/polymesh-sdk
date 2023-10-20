@@ -1,9 +1,8 @@
 import BigNumber from 'bignumber.js';
 
 import { Account, Context, transferPolyx } from '~/internal';
-import { EventIdEnum, ModuleIdEnum } from '~/middleware/enums';
 import { eventsByArgs, extrinsicByHash } from '~/middleware/queries';
-import { Query } from '~/middleware/types';
+import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import {
   EventIdentifier,
   ExtrinsicDataWithFees,

@@ -110,21 +110,22 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
         expiry: rawExpiry,
         autoClose: rawAutoClose,
       },
-      proposal,
+      proposalOpt,
     ] = await Promise.all([
       multiSig.proposalDetail(rawMultiSignAddress, rawId),
       multiSig.proposals(rawMultiSignAddress, rawId),
     ]);
 
-    let args, method, section;
-    if (proposal.isNone) {
+    if (proposalOpt.isNone) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
         message: `Proposal with ID: "${id}" was not found. It may have already been executed`,
       });
-    } else {
-      ({ args, method, section } = proposal.unwrap());
     }
+
+    const proposal = proposalOpt.unwrap();
+    const { method, section } = proposal;
+    const { args } = proposal.toJSON();
 
     const approvalAmount = u64ToBigNumber(rawApprovals);
     const rejectionAmount = u64ToBigNumber(rawRejections);
@@ -138,7 +139,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
       status,
       expiry,
       autoClose,
-      args: args.map(a => a.toString()),
+      args,
       txTag: `${section}.${method}` as TxTag,
     };
   }

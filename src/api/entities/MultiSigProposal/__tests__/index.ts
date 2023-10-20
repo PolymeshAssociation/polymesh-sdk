@@ -70,14 +70,14 @@ describe('MultiSigProposal class', () => {
         }),
       });
 
+      const mockProposal = dsMockUtils.createMockCall({
+        args: ['ABC'],
+        method: 'reserveTicker',
+        section: 'asset',
+      });
+      mockProposal.toJSON = jest.fn().mockReturnValue({ args: ['ABC'] });
       dsMockUtils.createQueryMock('multiSig', 'proposals', {
-        returnValue: createMockOption(
-          dsMockUtils.createMockCall({
-            args: ['ABC'],
-            method: 'reserveTicker',
-            section: 'asset',
-          })
-        ),
+        returnValue: createMockOption(mockProposal),
       });
 
       let result = await proposal.details();

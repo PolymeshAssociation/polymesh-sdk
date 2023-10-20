@@ -8,7 +8,7 @@ import {
   KnownPermissionGroup,
   NumberedPortfolio,
 } from '~/internal';
-import { EventIdEnum } from '~/middleware/enums';
+import { EventIdEnum } from '~/middleware/types';
 import {
   Compliance,
   EventIdentifier,

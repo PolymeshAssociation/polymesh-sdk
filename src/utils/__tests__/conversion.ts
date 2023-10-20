@@ -78,15 +78,13 @@ import {
 } from '~/internal';
 import {
   AuthTypeEnum,
+  Block,
   CallIdEnum,
+  Claim as MiddlewareClaim,
   ClaimTypeEnum,
+  Instruction,
   InstructionStatusEnum,
   ModuleIdEnum,
-} from '~/middleware/enums';
-import {
-  Block,
-  Claim as MiddlewareClaim,
-  Instruction,
   Portfolio as MiddlewarePortfolio,
 } from '~/middleware/types';
 import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
@@ -3852,6 +3850,25 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
       result = claimToMeshClaim(value, context);
 
       expect(result).toBe(fakeResult);
+
+      value = {
+        type: ClaimType.Custom,
+        customClaimTypeId: new BigNumber(1),
+        scope: { type: ScopeType.Identity, value: 'SOME_TICKERDid' },
+      };
+
+      when(createTypeMock)
+        .calledWith('PolymeshPrimitivesIdentityClaimClaim', {
+          [value.type]: [
+            bigNumberToU32(value.customClaimTypeId, context),
+            scopeToMeshScope(value.scope, context),
+          ],
+        })
+        .mockReturnValue(fakeResult);
+
+      result = claimToMeshClaim(value, context);
+
+      expect(result).toBe(fakeResult);
     });
   });
 
@@ -4449,6 +4466,54 @@ describe('middlewareClaimToClaimData', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
+  });
+
+  it('should convert CustomClaim to ClaimData', () => {
+    const context = dsMockUtils.getContextInstance();
+    const issuanceDate = new Date('10/14/1987');
+    const lastUpdateDate = new Date('10/14/1987');
+    const expiry = new Date('10/10/1988');
+    const middlewareClaim = {
+      targetId: 'targetId',
+      issuerId: 'issuerId',
+      issuanceDate: issuanceDate.getTime(),
+      lastUpdateDate: lastUpdateDate.getTime(),
+      expiry: null,
+      cddId: 'someCddId',
+      type: 'Custom',
+      customClaimTypeId: 1,
+      nodeId: '1',
+    } as MiddlewareClaim;
+    const claim = {
+      type: ClaimType.Custom,
+      id: 'someCddId',
+      customClaimTypeId: new BigNumber(1),
+    };
+    createClaimSpy.mockReturnValue(claim);
+
+    const fakeResult = {
+      target: expect.objectContaining({ did: 'targetId' }),
+      issuer: expect.objectContaining({ did: 'issuerId' }),
+      issuedAt: issuanceDate,
+      lastUpdatedAt: lastUpdateDate,
+      expiry: null,
+      claim,
+    };
+
+    expect(middlewareClaimToClaimData(middlewareClaim, context)).toEqual(fakeResult);
+
+    expect(
+      middlewareClaimToClaimData(
+        {
+          ...middlewareClaim,
+          expiry: expiry.getTime(),
+        },
+        context
+      )
+    ).toEqual({
+      ...fakeResult,
+      expiry,
+    });
   });
 
   it('should convert middleware Claim to ClaimData', () => {

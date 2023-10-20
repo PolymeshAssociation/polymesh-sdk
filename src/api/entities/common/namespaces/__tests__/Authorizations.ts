@@ -5,15 +5,10 @@ import { when } from 'jest-when';
 
 import { Context, Namespace } from '~/internal';
 import { authorizationsQuery } from '~/middleware/queries';
+import { AuthorizationStatusEnum, AuthTypeEnum } from '~/middleware/types';
 import { AuthorizationType as MeshAuthorizationType } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import {
-  AuthorizationStatusEnum,
-  AuthorizationType,
-  AuthTypeEnum,
-  Identity,
-  SignerValue,
-} from '~/types';
+import { AuthorizationType, Identity, SignerValue } from '~/types';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 
