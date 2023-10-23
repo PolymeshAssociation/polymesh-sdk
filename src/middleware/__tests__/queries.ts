@@ -19,6 +19,7 @@ import {
   latestBlockQuery,
   latestSqVersionQuery,
   metadataQuery,
+  nftHoldersQuery,
   polyxTransactionsQuery,
   portfolioMovementsQuery,
   portfolioQuery,
@@ -382,6 +383,28 @@ describe('assetHoldersQuery', () => {
     };
 
     let result = assetHoldersQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+
+    result = assetHoldersQuery(variables, new BigNumber(1), new BigNumber(0));
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({
+      ...variables,
+      size: 1,
+      start: 0,
+    });
+  });
+});
+
+describe('nftHoldersQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      identityId: 'someDid',
+    };
+
+    let result = nftHoldersQuery(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);

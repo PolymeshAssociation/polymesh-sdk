@@ -1728,3 +1728,11 @@ export type AnyJson =
   | {
       [index: string]: AnyJson;
     };
+
+/**
+ * An nft collection, along with a subset of its NFTs
+ */
+export interface HeldNfts {
+  collection: NftCollection;
+  nfts: Nft[];
+}
