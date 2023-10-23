@@ -1762,6 +1762,7 @@ export async function getSecondaryAccountPermissions(
           permissions: meshPermissionsToPermissions(rawPermissions, context),
         });
       }
+
       return result;
     }, []);
   };

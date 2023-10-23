@@ -41,3 +41,8 @@ export interface MultiSigProposalDetails {
    */
   args: AnyJson;
 }
+
+export enum MultiSigProposalAction {
+  Approve = 'approve',
+  Reject = 'reject',
+}

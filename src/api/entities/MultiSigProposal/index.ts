@@ -1,7 +1,14 @@
 import { BigNumber } from 'bignumber.js';
 
-import { Context, Entity, MultiSig, PolymeshError } from '~/internal';
-import { ErrorCode, MultiSigProposalDetails, Signer, TxTag } from '~/types';
+import { Context, Entity, evaluateMultiSigProposal, MultiSig, PolymeshError } from '~/internal';
+import {
+  ErrorCode,
+  MultiSigProposalAction,
+  MultiSigProposalDetails,
+  NoArgsProcedureMethod,
+  Signer,
+  TxTag,
+} from '~/types';
 import {
   bigNumberToU64,
   boolToBoolean,
@@ -12,7 +19,7 @@ import {
   stringToAccountId,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { assertAddressValid, optionize } from '~/utils/internal';
+import { assertAddressValid, createProcedureMethod, optionize } from '~/utils/internal';
 
 interface UniqueIdentifiers {
   multiSigAddress: string;
@@ -43,7 +50,39 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
 
     this.multiSig = new MultiSig({ address: multiSigAddress }, context);
     this.id = id;
+
+    this.approve = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [
+          evaluateMultiSigProposal,
+          { proposal: this, action: MultiSigProposalAction.Approve },
+        ],
+        voidArgs: true,
+      },
+      context
+    );
+
+    this.reject = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [
+          evaluateMultiSigProposal,
+          { proposal: this, action: MultiSigProposalAction.Reject },
+        ],
+        voidArgs: true,
+      },
+      context
+    );
   }
+
+  /**
+   * Approve this MultiSig proposal
+   */
+  public approve: NoArgsProcedureMethod<void>;
+
+  /**
+   * Reject this MultiSig proposal
+   */
+  public reject: NoArgsProcedureMethod<void>;
 
   /**
    * Fetches the details of the Proposal. This includes the amount of approvals and rejections, the expiry, and details of the wrapped extrinsic
