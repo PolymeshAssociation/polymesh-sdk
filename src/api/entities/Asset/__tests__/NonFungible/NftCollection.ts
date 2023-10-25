@@ -35,6 +35,10 @@ jest.mock(
   '~/base/Procedure',
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
+jest.mock(
+  '~/api/entities/Asset/NonFungible',
+  require('~/testUtils/mocks/entities').mockNftModule('~/api/entities/Asset/NonFungible')
+);
 
 describe('NftCollection class', () => {
   beforeAll(() => {
@@ -473,6 +477,41 @@ describe('NftCollection class', () => {
       const tx = await collection.issue(args);
 
       expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: getNft', () => {
+    it('should return the NFT if it exists', async () => {
+      const ticker = 'TEST';
+      const id = new BigNumber(1);
+      const context = dsMockUtils.getContextInstance();
+      const collection = new NftCollection({ ticker }, context);
+
+      entityMockUtils.configureMocks({
+        nftOptions: { exists: true },
+      });
+
+      const nft = await collection.getNft({ id });
+
+      expect(nft).toEqual(expect.objectContaining({ id }));
+    });
+
+    it('should throw an error if the NFT does not exist', async () => {
+      const ticker = 'TEST';
+      const id = new BigNumber(1);
+      const context = dsMockUtils.getContextInstance();
+      const collection = new NftCollection({ ticker }, context);
+
+      entityMockUtils.configureMocks({
+        nftOptions: { exists: false },
+      });
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The NFT does not exist',
+      });
+
+      await expect(collection.getNft({ id })).rejects.toThrow(expectedError);
     });
   });
 

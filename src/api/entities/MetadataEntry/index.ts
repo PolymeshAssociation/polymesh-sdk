@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { Context, Entity, FungibleAsset, setMetadata } from '~/internal';
+import { BaseAsset, Context, Entity, setMetadata } from '~/internal';
 import { ProcedureMethod, SetMetadataParams } from '~/types';
 import {
   bigNumberToU64,
@@ -33,7 +33,7 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * Asset for which this is the metadata
    */
-  public asset: FungibleAsset;
+  public asset: BaseAsset;
 
   /**
    * Type of metadata represented by this instance
@@ -63,7 +63,7 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
 
     const { ticker, type, id } = identifiers;
 
-    this.asset = new FungibleAsset({ ticker }, context);
+    this.asset = new BaseAsset({ ticker }, context);
     this.type = type;
     this.id = id;
 
