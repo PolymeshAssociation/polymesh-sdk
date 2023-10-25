@@ -1,25 +1,31 @@
 import { BigNumber } from 'bignumber.js';
 
 import { Context, Entity, evaluateMultiSigProposal, MultiSig, PolymeshError } from '~/internal';
+import { multiSigProposalQuery, multiSigProposalVotesQuery } from '~/middleware/queries';
+import { MultiSigProposal as MiddlewareMultiSigProposal, Query } from '~/middleware/types';
 import {
+  Account,
   ErrorCode,
+  EventIdentifier,
   MultiSigProposalAction,
   MultiSigProposalDetails,
+  MultiSigProposalVote,
   NoArgsProcedureMethod,
-  Signer,
+  SignerType,
   TxTag,
 } from '~/types';
+import { Ensured } from '~/types/utils';
 import {
   bigNumberToU64,
   boolToBoolean,
   meshProposalStatusToProposalStatus,
+  middlewareEventDetailsToEventIdentifier,
   momentToDate,
-  signatoryToSignerValue,
   signerValueToSigner,
   stringToAccountId,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { assertAddressValid, createProcedureMethod, optionize } from '~/utils/internal';
+import { asAccount, assertAddressValid, createProcedureMethod, optionize } from '~/utils/internal';
 
 interface UniqueIdentifiers {
   multiSigAddress: string;
@@ -182,33 +188,93 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
   }
 
   /**
-   * Fetches the individual votes for this MultiSig proposal
+   * Fetches the individual votes for this MultiSig proposal and their identifier data (block number, date and event index) of the event that was emitted when this MultiSig Proposal Vote was casted
+   *
+   * @note uses the middlewareV2
    */
-  public async votes(): Promise<Signer[]> {
+  public async votes(): Promise<MultiSigProposalVote[]> {
     const {
-      context: {
-        polymeshApi: {
-          query: { multiSig },
-        },
-      },
-      multiSig: { address: multiSigAddress },
+      multiSig: { address },
       id,
       context,
     } = this;
 
-    const result = await multiSig.votes.entries([
-      stringToAccountId(multiSigAddress, context),
-      bigNumberToU64(id, context),
-    ]);
-
-    return result.map(
-      ([
-        {
-          args: [, signatory],
-        },
-      ]) => {
-        return signerValueToSigner(signatoryToSignerValue(signatory), context);
-      }
+    const {
+      data: {
+        multiSigProposalVotes: { nodes: signerVotes },
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'multiSigProposalVotes'>>(
+      multiSigProposalVotesQuery({
+        proposalId: `${address}/${id.toString()}`,
+      })
     );
+
+    return signerVotes.map(signerVote => {
+      const { signer, action, createdBlock, eventIdx } = signerVote;
+
+      const { signerType, signerValue } = signer!;
+      return {
+        signer: signerValueToSigner(
+          { type: signerType as unknown as SignerType, value: signerValue },
+          context
+        ),
+        action: action!,
+        ...middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx),
+      };
+    });
+  }
+
+  /**
+   * @hidden
+   *
+   * Queries the SQ to get MultiSig Proposal details
+   */
+  private async getProposalDetails(): Promise<MiddlewareMultiSigProposal | null> {
+    const {
+      context,
+      id,
+      multiSig: { address },
+    } = this;
+    const {
+      data: {
+        multiSigProposals: {
+          nodes: [node],
+        },
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'multiSigProposals'>>(
+      multiSigProposalQuery({
+        multisigId: address,
+        proposalId: id.toNumber(),
+      })
+    );
+    return node;
+  }
+
+  /**
+   * Retrieve the identifier data (block number, date and event index) of the event that was emitted when this MultiSig Proposal was created
+   *
+   * @note uses the middlewareV2
+   * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
+   */
+  public async createdAt(): Promise<EventIdentifier | null> {
+    const proposal = await this.getProposalDetails();
+
+    return optionize(middlewareEventDetailsToEventIdentifier)(
+      proposal?.createdBlock,
+      proposal?.eventIdx
+    );
+  }
+
+  /**
+   * Retrieve the account which created this MultiSig Proposal
+   *
+   * @note uses the middlewareV2
+   * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
+   */
+  public async creator(): Promise<Account | null> {
+    const { context } = this;
+    const proposal = await this.getProposalDetails();
+
+    return optionize(asAccount)(proposal?.creatorAccount, context);
   }
 }

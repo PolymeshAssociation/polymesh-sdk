@@ -19,6 +19,8 @@ import {
   latestBlockQuery,
   latestSqVersionQuery,
   metadataQuery,
+  multiSigProposalQuery,
+  multiSigProposalVotesQuery,
   polyxTransactionsQuery,
   portfolioMovementsQuery,
   portfolioQuery,
@@ -510,5 +512,32 @@ describe('authorizationsQuery', () => {
       size: 1,
       start: 0,
     });
+  });
+});
+
+describe('multiSigProposalQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      multisigId: 'multiSigAddress',
+      proposalId: 1,
+    };
+
+    const result = multiSigProposalQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('multiSigProposalVotesQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      proposalId: 'multiSigAddress/1',
+    };
+
+    const result = multiSigProposalVotesQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
   });
 });
