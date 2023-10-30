@@ -29,6 +29,8 @@ import {
   MultiSigProposal,
   MultiSigProposalVote,
   MultiSigProposalVotesOrderBy,
+  NftHolder,
+  NftHoldersOrderBy,
   PolyxTransactionsOrderBy,
   Portfolio,
   PortfolioMovement,
@@ -931,6 +933,40 @@ export function assetHoldersQuery(
         totalCount
         nodes {
           assetId
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get NFTs held by a DID
+ */
+export function nftHoldersQuery(
+  filters: QueryArgs<NftHolder, 'identityId'>,
+  size?: BigNumber,
+  start?: BigNumber,
+  orderBy = NftHoldersOrderBy.AssetIdAsc
+): QueryOptions<PaginatedQueryArgs<QueryArgs<NftHolder, 'identityId'>>> {
+  const query = gql`
+    query NftHolderQuery($identityId: String!, $size: Int, $start: Int) {
+      nftHolders(
+        filter: { identityId: { equalTo: $identityId } }
+        first: $size
+        offset: $start
+        orderBy: [${orderBy}]
+      ) {
+        totalCount
+        nodes {
+          assetId
+          nftIds
         }
       }
     }
