@@ -204,6 +204,7 @@ interface NftCollectionOptions extends BaseAssetOptions {
   getNextLocalId?: EntityGetter<BigNumber>;
   collectionMetadata?: EntityGetter<CollectionMetadata[]>;
   getCollectionId?: EntityGetter<BigNumber>;
+  getBaseImageUrl?: EntityGetter<string | null>;
 }
 
 interface NftOptions extends EntityOptions {
@@ -1121,6 +1122,7 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
     getCollectionId!: jest.Mock;
 
     investorCount!: jest.Mock;
+    getBaseImageUrl!: jest.Mock;
 
     /**
      * @hidden
@@ -1145,6 +1147,7 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
       this.metadata.getNextLocalId = createEntityGetterMock(opts.getNextLocalId);
       this.collectionMetadata = createEntityGetterMock(opts.collectionMetadata);
       this.getCollectionId = createEntityGetterMock(opts.getCollectionId);
+      this.getBaseImageUrl = createEntityGetterMock(opts.getBaseImageUrl);
     }
   },
   () => ({
@@ -1176,6 +1179,7 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
     investorCount: new BigNumber(0),
     collectionMetadata: [],
     getCollectionId: new BigNumber(0),
+    getBaseImageUrl: null,
   }),
   ['NftCollection']
 );
@@ -1243,6 +1247,7 @@ const MockBaseAssetClass = createMockEntityClass<BaseAssetOptions>(
     metadata = {} as { getNextLocalId: jest.Mock };
 
     investorCount!: jest.Mock;
+    getBaseImageUrl!: jest.Mock;
 
     /**
      * @hidden

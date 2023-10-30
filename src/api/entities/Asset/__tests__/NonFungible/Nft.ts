@@ -1,9 +1,15 @@
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { Entity, Nft, PolymeshTransaction } from '~/internal';
+import { Context, Entity, Nft, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
+import {
+  GLOBAL_BASE_IMAGE_URI_NAME,
+  GLOBAL_BASE_TOKEN_URI_NAME,
+  GLOBAL_IMAGE_URI_NAME,
+  GLOBAL_TOKEN_URI_NAME,
+} from '~/utils/constants';
 
 jest.mock(
   '~/api/entities/Asset/NonFungible',
@@ -130,6 +136,256 @@ describe('Nft class', () => {
       const result = await nft.exists();
 
       expect(result).toBe(false);
+    });
+  });
+
+  describe('getImageUrl', () => {
+    const ticker = 'TEST';
+    const id = new BigNumber(1);
+    let context: Context;
+
+    beforeEach(async () => {
+      context = dsMockUtils.getContextInstance();
+      const globalId = new BigNumber(2);
+      const globalBaseId = new BigNumber(3);
+      dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalKeyToName', {
+        entries: [
+          tuple(
+            [dsMockUtils.createMockU64(globalId)],
+            dsMockUtils.createMockOption(dsMockUtils.createMockBytes(GLOBAL_IMAGE_URI_NAME))
+          ),
+          tuple(
+            [dsMockUtils.createMockU64(globalBaseId)],
+            dsMockUtils.createMockOption(dsMockUtils.createMockBytes(GLOBAL_BASE_IMAGE_URI_NAME))
+          ),
+        ],
+      });
+    });
+
+    describe('when image URL is set at the token level', () => {
+      beforeEach(() => {
+        dsMockUtils.createQueryMock('asset', 'assetMetadataValues', {
+          returnValue: dsMockUtils.createMockOption(),
+        });
+      });
+
+      it('should return the NFT image URL when the NFT has a value set', async () => {
+        const imageUrl = 'https://example.com/nfts/{tokenId}/image.png';
+
+        dsMockUtils.createQueryMock('nft', 'metadataValue', {
+          returnValue: dsMockUtils.createMockBytes(imageUrl),
+        });
+
+        const nft = new Nft({ ticker, id }, context);
+
+        const result = await nft.getImageUri();
+
+        expect(result).toEqual('https://example.com/nfts/1/image.png');
+      });
+
+      it('should return null if no image metadata is set', async () => {
+        dsMockUtils.createQueryMock('nft', 'metadataValue', {
+          returnValue: dsMockUtils.createMockBytes(''),
+        });
+
+        dsMockUtils.createQueryMock('asset', 'assetMetadataValues', {
+          returnValue: dsMockUtils.createMockOption(),
+        });
+
+        const nft = new Nft({ ticker, id }, context);
+
+        const result = await nft.getImageUri();
+        expect(result).toBeNull();
+      });
+    });
+
+    describe('when image URL is set at the collection level', () => {
+      beforeEach(() => {
+        dsMockUtils.createQueryMock('nft', 'metadataValue', {
+          returnValue: dsMockUtils.createMockBytes(''),
+        });
+      });
+
+      it('should return image URL', async () => {
+        const testUrl = 'https://example.com/nfts';
+        dsMockUtils.createQueryMock('asset', 'assetMetadataValues', {
+          returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockBytes(testUrl)),
+        });
+
+        const nft = new Nft({ ticker, id }, context);
+
+        const result = await nft.getImageUri();
+
+        expect(result).toEqual(`${testUrl}/1`);
+      });
+
+      it('should template in ID if {tokenId} is present in value', async () => {
+        const testUrl = 'https://example.com/nfts/{tokenId}/image.jpg';
+        dsMockUtils.createQueryMock('asset', 'assetMetadataValues', {
+          returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockBytes(testUrl)),
+        });
+
+        const nft = new Nft({ ticker, id }, context);
+
+        const result = await nft.getImageUri();
+
+        expect(result).toEqual('https://example.com/nfts/1/image.jpg');
+      });
+
+      it('should not double / a path', async () => {
+        const testUrl = 'https://example.com/nfts/';
+
+        dsMockUtils.createQueryMock('asset', 'assetMetadataValues', {
+          returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockBytes(testUrl)),
+        });
+
+        const nft = new Nft({ ticker, id }, context);
+
+        const result = await nft.getImageUri();
+
+        expect(result).toEqual(`${testUrl}1`);
+      });
+
+      it('should return null if no value is set', async () => {
+        dsMockUtils.createQueryMock('asset', 'assetMetadataValues', {
+          returnValue: dsMockUtils.createMockOption(),
+        });
+
+        dsMockUtils.createQueryMock('nft', 'metadataValue', {
+          returnValue: dsMockUtils.createMockBytes(''),
+        });
+
+        const nft = new Nft({ ticker, id }, context);
+
+        const result = await nft.getImageUri();
+        expect(result).toBeNull();
+      });
+    });
+
+    describe('with null storage values', () => {
+      it('should handle null global key name', async () => {
+        dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalKeyToName', {
+          entries: [
+            tuple([dsMockUtils.createMockU64(new BigNumber(5))], dsMockUtils.createMockOption()),
+          ],
+        });
+
+        const nft = new Nft({ ticker, id }, context);
+
+        const result = await nft.getImageUri();
+
+        expect(result).toBeNull();
+      });
+    });
+  });
+
+  describe('getTokenUri', () => {
+    const ticker = 'TEST';
+    const id = new BigNumber(1);
+    let context: Context;
+
+    beforeEach(async () => {
+      context = dsMockUtils.getContextInstance();
+      const globalId = new BigNumber(2);
+      const globalBaseId = new BigNumber(3);
+      dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalKeyToName', {
+        entries: [
+          tuple(
+            [dsMockUtils.createMockU64(globalId)],
+            dsMockUtils.createMockOption(dsMockUtils.createMockBytes(GLOBAL_TOKEN_URI_NAME))
+          ),
+          tuple(
+            [dsMockUtils.createMockU64(globalBaseId)],
+            dsMockUtils.createMockOption(dsMockUtils.createMockBytes(GLOBAL_BASE_TOKEN_URI_NAME))
+          ),
+        ],
+      });
+    });
+
+    describe('when image URL is set at the token level', () => {
+      beforeEach(() => {
+        dsMockUtils.createQueryMock('asset', 'assetMetadataValues', {
+          returnValue: dsMockUtils.createMockOption(),
+        });
+      });
+
+      it('should return the NFT token URI when the NFT has a value set', async () => {
+        const imageUrl = 'https://example.com/nfts/{tokenId}/info.json';
+
+        dsMockUtils.createQueryMock('nft', 'metadataValue', {
+          returnValue: dsMockUtils.createMockBytes(imageUrl),
+        });
+
+        const nft = new Nft({ ticker, id }, context);
+
+        const result = await nft.getTokenUri();
+
+        expect(result).toEqual('https://example.com/nfts/1/info.json');
+      });
+
+      it('should return null if no token URI metadata is set', async () => {
+        dsMockUtils.createQueryMock('nft', 'metadataValue', {
+          returnValue: dsMockUtils.createMockBytes(''),
+        });
+
+        dsMockUtils.createQueryMock('asset', 'assetMetadataValues', {
+          returnValue: dsMockUtils.createMockOption(),
+        });
+
+        const nft = new Nft({ ticker, id }, context);
+
+        const result = await nft.getTokenUri();
+        expect(result).toBeNull();
+      });
+    });
+
+    describe('when image URI is set at the collection level', () => {
+      beforeEach(() => {
+        dsMockUtils.createQueryMock('nft', 'metadataValue', {
+          returnValue: dsMockUtils.createMockBytes(''),
+        });
+      });
+
+      it('should return image URL', async () => {
+        const testUrl = 'https://example.com/nfts';
+        dsMockUtils.createQueryMock('asset', 'assetMetadataValues', {
+          returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockBytes(testUrl)),
+        });
+
+        const nft = new Nft({ ticker, id }, context);
+
+        const result = await nft.getTokenUri();
+
+        expect(result).toEqual(`${testUrl}/1`);
+      });
+
+      it('should template in ID if {tokenId} is present in value', async () => {
+        const testUrl = 'https://example.com/nfts/{tokenId}/info.json';
+        dsMockUtils.createQueryMock('asset', 'assetMetadataValues', {
+          returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockBytes(testUrl)),
+        });
+
+        const nft = new Nft({ ticker, id }, context);
+
+        const result = await nft.getTokenUri();
+
+        expect(result).toEqual('https://example.com/nfts/1/info.json');
+      });
+
+      it('should return null if no value is set', async () => {
+        dsMockUtils.createQueryMock('asset', 'assetMetadataValues', {
+          returnValue: dsMockUtils.createMockOption(),
+        });
+
+        dsMockUtils.createQueryMock('nft', 'metadataValue', {
+          returnValue: dsMockUtils.createMockBytes(''),
+        });
+
+        const nft = new Nft({ ticker, id }, context);
+
+        const result = await nft.getTokenUri();
+        expect(result).toBeNull();
+      });
     });
   });
 

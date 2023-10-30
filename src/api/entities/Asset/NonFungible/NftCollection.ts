@@ -4,9 +4,8 @@ import BigNumber from 'bignumber.js';
 
 import { BaseAsset } from '~/api/entities/Asset/Base';
 import { NonFungibleSettlements } from '~/api/entities/Asset/Base/Settlements';
-import { Nft } from '~/api/entities/Asset/NonFungible/Nft';
 import { issueNft } from '~/api/procedures/issueNft';
-import { Context, PolymeshError, transferAssetOwnership } from '~/internal';
+import { Context, Nft, PolymeshError, transferAssetOwnership } from '~/internal';
 import { assetQuery } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
@@ -43,23 +42,23 @@ const sumNftIssuance = (
 };
 
 /**
- * Class used to manage Nft functionality
+ * Class used to manage NFT functionality
  */
 export class NftCollection extends BaseAsset {
   public settlements: NonFungibleSettlements;
   /**
    * Issues a new NFT for the collection
    *
-   * @note Each NFT requires metadata for each value returned by `collectionMetadata`. The SDK and chain only validate the presence of these fields. Additional validation may be needed to ensure each value is compliant with the expected specification
+   * @note Each NFT requires metadata for each value returned by `collectionMetadata`. The SDK and chain only validate the presence of these fields. Additional validation may be needed to ensure each value complies with the specification.
    */
   public issue: ProcedureMethod<IssueNftParams, Nft>;
 
   /**
-   * Caches value for `getCollectionId`
+   * Local cache for `getCollectionId`
    *
    * @hidden
    */
-  private id?: BigNumber;
+  private _id?: BigNumber;
 
   /**
    * @hidden
@@ -81,30 +80,6 @@ export class NftCollection extends BaseAsset {
       },
       context
     );
-  }
-
-  /**
-   * Retrieve the identifier data (block number, date and event index) of the event that was emitted when the token was created
-   *
-   * @note uses the middlewareV2
-   * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
-   */
-  public async createdAt(): Promise<EventIdentifier | null> {
-    const { ticker, context } = this;
-
-    const {
-      data: {
-        assets: {
-          nodes: [asset],
-        },
-      },
-    } = await context.queryMiddleware<Ensured<Query, 'assets'>>(
-      assetQuery({
-        ticker,
-      })
-    );
-
-    return optionize(middlewareEventDetailsToEventIdentifier)(asset?.createdBlock, asset?.eventIdx);
   }
 
   /**
@@ -156,10 +131,10 @@ export class NftCollection extends BaseAsset {
   }
 
   /**
-   * Get the metadata that each NFT in the collection must have
+   * Retrieve the metadata that defines the NFT collection. Every `issue` call for this collection must provide a value for each element returned
    *
-   * @note Each NFT **must** have an entry for each value, it **should** comply with the spec
-   * the SDK validates only presence of metadata keys, additional validation may be needed for issuers
+   * @note Each NFT **must** have an entry for each value, it **should** comply with the spec.
+   * In other words, the SDK only validates the presence of metadata keys, additional validation should be used when issuing
    */
   public async collectionMetadata(): Promise<CollectionMetadata[]> {
     const {
@@ -216,6 +191,53 @@ export class NftCollection extends BaseAsset {
   }
 
   /**
+   * Get an NFT belonging to this collection
+   *
+   * @throws if the given NFT does not exist
+   */
+  public async getNft(args: { id: BigNumber }): Promise<Nft> {
+    const { context, ticker } = this;
+    const { id } = args;
+
+    const nft = new Nft({ ticker, id }, context);
+
+    const exists = await nft.exists();
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The NFT does not exist',
+        data: { id },
+      });
+    }
+
+    return nft;
+  }
+
+  /**
+   * Retrieve the identifier data (block number, date and event index) of the event that was emitted when the token was created
+   *
+   * @note uses the middlewareV2
+   * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
+   */
+  public async createdAt(): Promise<EventIdentifier | null> {
+    const { ticker, context } = this;
+
+    const {
+      data: {
+        assets: {
+          nodes: [asset],
+        },
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'assets'>>(
+      assetQuery({
+        ticker,
+      })
+    );
+
+    return optionize(middlewareEventDetailsToEventIdentifier)(asset?.createdBlock, asset?.eventIdx);
+  }
+
+  /**
    * Determine whether this NftCollection exists on chain
    */
   public override async exists(): Promise<boolean> {
@@ -229,7 +251,7 @@ export class NftCollection extends BaseAsset {
   }
 
   /**
-   * Returns the collection id
+   * Returns the collection's on chain numeric ID. Used primarily to access NFT specific storage values
    */
   public async getCollectionId(): Promise<BigNumber> {
     const {
@@ -240,15 +262,15 @@ export class NftCollection extends BaseAsset {
       },
     } = this;
 
-    if (this.id) {
-      return this.id;
+    if (this._id) {
+      return this._id;
     }
 
     const rawTicker = stringToTicker(ticker, context);
     const rawId = await query.nft.collectionTicker(rawTicker);
 
-    this.id = u64ToBigNumber(rawId);
+    this._id = u64ToBigNumber(rawId);
 
-    return this.id;
+    return this._id;
   }
 }
