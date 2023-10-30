@@ -17,6 +17,8 @@ import {
   Entity,
   FungibleAsset,
   Instruction,
+  Nft,
+  NftCollection,
   PolymeshError,
   TickerReservation,
   Venue,
@@ -24,9 +26,10 @@ import {
 import {
   assetHoldersQuery,
   instructionsByDidQuery,
+  nftHoldersQuery,
   trustingAssetsQuery,
 } from '~/middleware/queries';
-import { AssetHoldersOrderBy, Query } from '~/middleware/types';
+import { AssetHoldersOrderBy, NftHoldersOrderBy, Query } from '~/middleware/types';
 import {
   CheckRolesResult,
   DefaultPortfolio,
@@ -34,6 +37,7 @@ import {
   ErrorCode,
   GroupedInstructions,
   GroupedInvolvedInstructions,
+  HeldNfts,
   HistoricInstruction,
   InstructionsByStatus,
   NumberedPortfolio,
@@ -370,6 +374,56 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const count = new BigNumber(totalCount);
 
     const data = nodes.map(({ assetId: ticker }) => new FungibleAsset({ ticker }, context));
+
+    const next = calculateNextKey(count, data.length, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
+  }
+
+  /**
+   * Retrieve a list of all NftCollections which were held at one point by this Identity
+   *
+   * @note uses the middlewareV2
+   * @note supports pagination
+   */
+  public async getHeldNfts(
+    opts: {
+      order?: NftHoldersOrderBy;
+      size?: BigNumber;
+      start?: BigNumber;
+    } = {}
+  ): Promise<ResultSet<HeldNfts>> {
+    const { context, did } = this;
+
+    const { size, start, order } = opts;
+
+    const {
+      data: {
+        nftHolders: { nodes, totalCount },
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'nftHolders'>>(
+      nftHoldersQuery(
+        {
+          identityId: did,
+        },
+        size,
+        start,
+        order
+      )
+    );
+
+    const count = new BigNumber(totalCount);
+
+    const data = nodes.map(({ assetId: ticker, nftIds }) => {
+      const collection = new NftCollection({ ticker }, context);
+      const nfts = nftIds.map((id: number) => new Nft({ ticker, id: new BigNumber(id) }, context));
+
+      return { collection, nfts };
+    });
 
     const next = calculateNextKey(count, data.length, start);
 

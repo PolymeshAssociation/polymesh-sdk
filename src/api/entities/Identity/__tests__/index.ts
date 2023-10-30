@@ -22,9 +22,10 @@ import {
 import {
   assetHoldersQuery,
   instructionsByDidQuery,
+  nftHoldersQuery,
   trustingAssetsQuery,
 } from '~/middleware/queries';
-import { AssetHoldersOrderBy } from '~/middleware/types';
+import { AssetHoldersOrderBy, NftHoldersOrderBy } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import {
@@ -607,6 +608,57 @@ describe('Identity class', () => {
 
       expect(result.data[0].ticker).toBe(tickers[0]);
       expect(result.data[1].ticker).toBe(tickers[1]);
+    });
+  });
+
+  describe('method: getHeldNfts', () => {
+    const did = 'someDid';
+    const tickers = ['ASSET1', 'ASSET2'];
+
+    it('should return a list of HeldNfts', async () => {
+      const identity = new Identity({ did }, context);
+
+      dsMockUtils.createApolloQueryMock(nftHoldersQuery({ identityId: did }), {
+        nftHolders: {
+          nodes: tickers.map(ticker => ({ assetId: ticker, nftIds: [] })),
+          totalCount: 2,
+        },
+      });
+
+      let result = await identity.getHeldNfts();
+
+      expect(result.data[0].collection.ticker).toBe(tickers[0]);
+      expect(result.data[1].collection.ticker).toBe(tickers[1]);
+
+      dsMockUtils.createApolloQueryMock(
+        nftHoldersQuery(
+          { identityId: did },
+          new BigNumber(1),
+          new BigNumber(0),
+          NftHoldersOrderBy.CreatedBlockIdAsc
+        ),
+        {
+          nftHolders: {
+            nodes: tickers.map(ticker => ({ assetId: ticker, nftIds: [1, 3] })),
+            totalCount: 2,
+          },
+        }
+      );
+
+      result = await identity.getHeldNfts({
+        start: new BigNumber(0),
+        size: new BigNumber(1),
+        order: NftHoldersOrderBy.CreatedBlockIdAsc,
+      });
+
+      expect(result.data[0].collection.ticker).toBe(tickers[0]);
+      expect(result.data[1].collection.ticker).toBe(tickers[1]);
+      expect(result.data[0].nfts).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: new BigNumber(1) }),
+          expect.objectContaining({ id: new BigNumber(3) }),
+        ])
+      );
     });
   });
 

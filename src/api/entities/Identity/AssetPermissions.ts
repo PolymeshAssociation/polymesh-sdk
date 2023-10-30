@@ -21,6 +21,7 @@ import {
   ErrorCode,
   EventIdentifier,
   ModuleName,
+  NftCollection,
   PermissionType,
   ProcedureMethod,
   ResultSet,
@@ -317,7 +318,7 @@ export class AssetPermissions extends Namespace<Identity> {
   public async enabledAt({
     asset,
   }: {
-    asset: string | FungibleAsset;
+    asset: string | FungibleAsset | NftCollection;
   }): Promise<EventIdentifier | null> {
     const { context } = this;
     const ticker = asTicker(asset);
