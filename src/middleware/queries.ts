@@ -26,6 +26,9 @@ import {
   InvestmentsOrderBy,
   Leg,
   LegsOrderBy,
+  MultiSigProposal,
+  MultiSigProposalVote,
+  MultiSigProposalVotesOrderBy,
   NftHolder,
   NftHoldersOrderBy,
   PolyxTransactionsOrderBy,
@@ -1402,5 +1405,81 @@ export function authorizationsQuery(
   return {
     query,
     variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get MultiSig proposal details for a given MultiSig address and portfolio ID
+ */
+export function multiSigProposalQuery(
+  variables: QueryArgs<MultiSigProposal, 'multisigId' | 'proposalId'>
+): QueryOptions<QueryArgs<MultiSigProposal, 'multisigId' | 'proposalId'>> {
+  const query = gql`
+    query MultiSigProposalQuery($multisigId: String!, $proposalId: Int!) {
+      multiSigProposals(
+        filter: { multisigId: { equalTo: $multisigId }, proposalId: { equalTo: $proposalId } }
+      ) {
+        nodes {
+          eventIdx
+          creatorId
+          creatorAccount
+          createdBlock {
+            blockId
+            hash
+            datetime
+          }
+          updatedBlock {
+            blockId
+            hash
+            datetime
+          }
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get MultiSig proposal votes for a given proposalId ({multiSigAddress}/{proposalId})
+ */
+export function multiSigProposalVotesQuery(
+  variables: QueryArgs<MultiSigProposalVote, 'proposalId'>
+): QueryOptions<QueryArgs<MultiSigProposalVote, 'proposalId'>> {
+  const query = gql`
+    query MultiSigProposalVotesQuery($multisigId: String!, $proposalId: Int!) {
+      multiSigProposalVotes(
+        filter: { proposalId: { equalTo: $proposalId } }
+        orderBy: [${MultiSigProposalVotesOrderBy.CreatedAtAsc}]
+      ) {
+        nodes {
+          signer {
+            signerType
+            signerValue
+          }
+          action
+          eventIdx
+          createdBlockId
+          createdBlock {
+            blockId
+            datetime
+            hash
+          }
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
   };
 }

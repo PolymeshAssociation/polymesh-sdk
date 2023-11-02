@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 
-import { AnyJson, TxTag } from '~/types';
+import { MultiSigProposalVoteActionEnum } from '~/middleware/types';
+import { AnyJson, EventIdentifier, Signer, TxTag } from '~/types';
 
 export enum ProposalStatus {
   Invalid = 'Invalid',
@@ -46,3 +47,8 @@ export enum MultiSigProposalAction {
   Approve = 'approve',
   Reject = 'reject',
 }
+
+export type MultiSigProposalVote = EventIdentifier & {
+  signer: Signer;
+  action: MultiSigProposalVoteActionEnum;
+};
