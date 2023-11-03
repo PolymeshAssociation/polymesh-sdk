@@ -243,7 +243,7 @@ describe('issueNft procedure', () => {
 
       const proc = procedureMockUtils.getInstance<IssueNftParams, Nft, Storage>(mockContext, {
         collection: entityMockUtils.getNftCollectionInstance({
-          collectionMetadata: [
+          collectionKeys: [
             { type: MetadataType.Global, id: new BigNumber(1), specs: {}, name: 'Example Global' },
           ],
         }),
@@ -272,7 +272,7 @@ describe('issueNft procedure', () => {
 
       const proc = procedureMockUtils.getInstance<IssueNftParams, Nft, Storage>(mockContext, {
         collection: entityMockUtils.getNftCollectionInstance({
-          collectionMetadata: [
+          collectionKeys: [
             {
               type: MetadataType.Local,
               id: new BigNumber(1),

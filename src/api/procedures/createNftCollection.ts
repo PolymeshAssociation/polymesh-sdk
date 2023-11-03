@@ -4,6 +4,7 @@ import { values } from 'lodash';
 
 import { addManualFees } from '~/api/procedures/utils';
 import {
+  BaseAsset,
   FungibleAsset,
   Identity,
   NftCollection,
@@ -269,7 +270,7 @@ export async function getAuthorization(
     return {
       permissions: {
         ...permissions,
-        assets: [new FungibleAsset({ ticker }, context)],
+        assets: [new BaseAsset({ ticker }, context)],
       },
     };
   }
