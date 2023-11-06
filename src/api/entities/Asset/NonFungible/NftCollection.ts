@@ -10,10 +10,11 @@ import { assetQuery } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
   AssetDetails,
-  CollectionMetadata,
+  CollectionKey,
   ErrorCode,
   EventIdentifier,
   IssueNftParams,
+  MetadataType,
   ProcedureMethod,
   SubCallback,
   UniqueIdentifiers,
@@ -49,7 +50,7 @@ export class NftCollection extends BaseAsset {
   /**
    * Issues a new NFT for the collection
    *
-   * @note Each NFT requires metadata for each value returned by `collectionMetadata`. The SDK and chain only validate the presence of these fields. Additional validation may be needed to ensure each value complies with the specification.
+   * @note Each NFT requires metadata for each value returned by `collectionKeys`. The SDK and chain only validate the presence of these fields. Additional validation may be needed to ensure each value complies with the specification.
    */
   public issue: ProcedureMethod<IssueNftParams, Nft>;
 
@@ -136,7 +137,7 @@ export class NftCollection extends BaseAsset {
    * @note Each NFT **must** have an entry for each value, it **should** comply with the spec.
    * In other words, the SDK only validates the presence of metadata keys, additional validation should be used when issuing
    */
-  public async collectionMetadata(): Promise<CollectionMetadata[]> {
+  public async collectionKeys(): Promise<CollectionKey[]> {
     const {
       context,
       ticker,
@@ -164,7 +165,12 @@ export class NftCollection extends BaseAsset {
         }
 
         const details = await neededMetadata.details();
-        return { ...details, id, type, ticker };
+
+        if (type === MetadataType.Local) {
+          return { ...details, id, type, ticker };
+        } else {
+          return { ...details, id, type };
+        }
       })
     );
   }

@@ -45,7 +45,7 @@ import {
   AuthorizationType,
   CheckPermissionsResult,
   CheckRolesResult,
-  CollectionMetadata,
+  CollectionKey,
   ComplianceRequirements,
   CorporateActionDefaultConfig,
   CorporateActionKind,
@@ -202,7 +202,7 @@ interface NftCollectionOptions extends BaseAssetOptions {
   complianceRequirementsGet?: EntityGetter<ComplianceRequirements>;
   investorCount?: EntityGetter<BigNumber>;
   getNextLocalId?: EntityGetter<BigNumber>;
-  collectionMetadata?: EntityGetter<CollectionMetadata[]>;
+  collectionKeys?: EntityGetter<CollectionKey[]>;
   getCollectionId?: EntityGetter<BigNumber>;
   getBaseImageUrl?: EntityGetter<string | null>;
 }
@@ -1118,7 +1118,7 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
 
     metadata = {} as { getNextLocalId: jest.Mock };
 
-    collectionMetadata!: jest.Mock;
+    collectionKeys!: jest.Mock;
     getCollectionId!: jest.Mock;
 
     investorCount!: jest.Mock;
@@ -1145,7 +1145,7 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
       this.permissions.getAgents = createEntityGetterMock(opts.permissionsGetAgents);
       this.investorCount = createEntityGetterMock(opts.investorCount);
       this.metadata.getNextLocalId = createEntityGetterMock(opts.getNextLocalId);
-      this.collectionMetadata = createEntityGetterMock(opts.collectionMetadata);
+      this.collectionKeys = createEntityGetterMock(opts.collectionKeys);
       this.getCollectionId = createEntityGetterMock(opts.getCollectionId);
       this.getBaseImageUrl = createEntityGetterMock(opts.getBaseImageUrl);
     }
@@ -1177,7 +1177,7 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
     getNextLocalId: new BigNumber(0),
     toHuman: 'SOME_TICKER',
     investorCount: new BigNumber(0),
-    collectionMetadata: [],
+    collectionKeys: [],
     getCollectionId: new BigNumber(0),
     getBaseImageUrl: null,
   }),

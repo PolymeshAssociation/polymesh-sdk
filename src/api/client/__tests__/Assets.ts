@@ -292,6 +292,32 @@ describe('Assets Class', () => {
     });
   });
 
+  describe('method: getAsset', () => {
+    it('should return a specific Asset', async () => {
+      const ticker = 'TEST';
+
+      entityMockUtils.configureMocks({
+        fungibleAssetOptions: { exists: false },
+        nftCollectionOptions: { exists: true },
+      });
+
+      const asset = await assets.getAsset({ ticker });
+      expect(asset).toBeInstanceOf(NftCollection);
+    });
+
+    it('should throw if the Asset does not exist', async () => {
+      const ticker = 'TEST';
+      entityMockUtils.configureMocks({
+        fungibleAssetOptions: { exists: false },
+        nftCollectionOptions: { exists: false },
+      });
+
+      return expect(assets.getAsset({ ticker })).rejects.toThrow(
+        `No asset exists with ticker: "${ticker}"`
+      );
+    });
+  });
+
   describe('method: getFungibleAsset', () => {
     it('should return a specific Asset', async () => {
       const ticker = 'TEST';

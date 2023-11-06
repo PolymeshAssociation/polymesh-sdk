@@ -12,6 +12,7 @@ import {
   TickerReservation,
 } from '~/internal';
 import {
+  Asset,
   CreateAssetWithTickerParams,
   CreateNftCollectionParams,
   ErrorCode,
@@ -32,6 +33,7 @@ import {
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
+  asAsset,
   assembleAssetQuery,
   createProcedureMethod,
   getDid,
@@ -174,15 +176,25 @@ export class Assets {
   }
 
   /**
+   * Retrieve a FungibleAsset or NftCollection
+   *
+   * @note `getFungibleAsset` and `getNftCollection` are similar to this method, but return a more specific type
+   */
+  public async getAsset(args: { ticker: string }): Promise<Asset> {
+    const { context } = this;
+    const { ticker } = args;
+
+    return asAsset(ticker, context);
+  }
+
+  /**
    * Retrieve all of the Assets owned by an Identity
    *
    * @param args.owner - Identity representation or Identity ID as stored in the blockchain
    *
    * @note Assets with unreadable characters in their tickers will be left out
    */
-  public async getAssets(args?: {
-    owner: string | Identity;
-  }): Promise<(FungibleAsset | NftCollection)[]> {
+  public async getAssets(args?: { owner: string | Identity }): Promise<Asset[]> {
     const {
       context: {
         polymeshApi: { query },

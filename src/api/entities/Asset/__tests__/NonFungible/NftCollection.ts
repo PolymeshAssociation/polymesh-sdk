@@ -348,7 +348,7 @@ describe('NftCollection class', () => {
     });
   });
 
-  describe('method: collectionMetadataKeys', () => {
+  describe('method: collectionKeys', () => {
     let u64ToBigNumberSpy: jest.SpyInstance;
     let meshMetadataKeyToMetadataKeySpy: jest.SpyInstance;
 
@@ -365,41 +365,65 @@ describe('NftCollection class', () => {
       const ticker = 'TICKER';
       const id = new BigNumber(1);
       const collection = new NftCollection({ ticker }, context);
-      const mockMetadataKey = dsMockUtils.createMockAssetMetadataKey({
+      const mockGlobalKey = dsMockUtils.createMockAssetMetadataKey({
         Global: dsMockUtils.createMockU64(id),
+      });
+      const mockLocalKey = dsMockUtils.createMockAssetMetadataKey({
+        Local: dsMockUtils.createMockU64(id),
       });
 
       jest.spyOn(collection, 'getCollectionId').mockResolvedValue(id);
 
       when(meshMetadataKeyToMetadataKeySpy)
-        .calledWith(mockMetadataKey, ticker)
+        .calledWith(mockGlobalKey, ticker)
         .mockReturnValue({ type: MetadataType.Global, id });
+
+      when(meshMetadataKeyToMetadataKeySpy)
+        .calledWith(mockLocalKey, ticker)
+        .mockReturnValue({ type: MetadataType.Local, id });
 
       u64ToBigNumberSpy.mockReturnValue(id);
       dsMockUtils.createQueryMock('nft', 'collectionKeys', {
-        returnValue: dsMockUtils.createMockBTreeSet([mockMetadataKey]),
+        returnValue: dsMockUtils.createMockBTreeSet([mockGlobalKey, mockLocalKey]),
       });
 
-      const mockMetadataEntry = entityMockUtils.getMetadataEntryInstance({
+      const mockGlobalEntry = entityMockUtils.getMetadataEntryInstance({
         id,
         type: MetadataType.Global,
       });
-      mockMetadataEntry.details.mockResolvedValue({
-        name: 'Global Example',
+      const mockLocalEntry = entityMockUtils.getMetadataEntryInstance({
+        id,
+        ticker,
+        type: MetadataType.Local,
+      });
+      mockGlobalEntry.details.mockResolvedValue({
+        name: 'Example Global Name',
         specs: {},
       });
-      jest.spyOn(collection.metadata, 'get').mockResolvedValue([mockMetadataEntry]);
-      const result = await collection.collectionMetadata();
+      mockLocalEntry.details.mockResolvedValue({
+        name: 'Example Local Name',
+        specs: {},
+      });
+      jest.spyOn(collection.metadata, 'get').mockResolvedValue([mockGlobalEntry, mockLocalEntry]);
+      const result = await collection.collectionKeys();
 
-      expect(result).toEqual([
-        {
-          type: MetadataType.Global,
-          id: new BigNumber(1),
-          name: 'Global Example',
-          specs: {},
-          ticker,
-        },
-      ]);
+      expect(result).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            type: MetadataType.Global,
+            id: new BigNumber(1),
+            name: 'Example Global Name',
+            specs: {},
+          }),
+          expect.objectContaining({
+            ticker,
+            type: MetadataType.Local,
+            id: new BigNumber(1),
+            name: 'Example Local Name',
+            specs: {},
+          }),
+        ])
+      );
     });
 
     it('should throw an error if needed metadata details are not found', async () => {
@@ -433,7 +457,7 @@ describe('NftCollection class', () => {
         message: 'Failed to find metadata details',
       });
 
-      await expect(collection.collectionMetadata()).rejects.toThrow(expectedError);
+      await expect(collection.collectionKeys()).rejects.toThrow(expectedError);
     });
   });
 

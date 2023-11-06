@@ -14,9 +14,16 @@ import {
   EventIdentifier,
   MetadataDetails,
   MetadataType,
+  NftCollection,
   TransferError,
   TransferRestriction,
 } from '~/types';
+
+/**
+ * Represents a generic asset on chain. Common functionality (e.g. documents) can be interacted with directly. For type specific functionality (e.g. issue) the type can
+ * be narrowed via `instanceof` operator, or by using a more specific getter
+ */
+export type Asset = FungibleAsset | NftCollection;
 
 /**
  * Properties that uniquely identify an Asset
@@ -117,7 +124,7 @@ export interface NftMetadata {
  *
  * @note each NFT **must** have an entry for each metadata value, the entry **should** comply with the relevant spec
  */
-export type CollectionMetadata = MetadataKeyId & MetadataDetails;
+export type CollectionKey = MetadataKeyId & MetadataDetails;
 
 export * from './Fungible/Checkpoints/types';
 export * from './Fungible/CorporateActions/types';
