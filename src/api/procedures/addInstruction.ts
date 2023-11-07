@@ -159,14 +159,29 @@ async function separateLegs(
   const nftLegs: InstructionNftLeg[] = [];
 
   for (const leg of legs) {
+    const ticker = asTicker(leg.asset);
     const [isFungible, isNft] = await Promise.all([
       isFungibleLegBuilder(leg, context),
       isNftLegBuilder(leg, context),
     ]);
 
     if (isFungible(leg)) {
+      if (!('amount' in leg)) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'The key "amount" should be present in a fungible leg',
+          data: { ticker },
+        });
+      }
       fungibleLegs.push(leg);
     } else if (isNft(leg)) {
+      if (!('nfts' in leg)) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'The key "nfts" should be present in an NFT leg',
+          data: { ticker },
+        });
+      }
       nftLegs.push(leg);
     }
   }

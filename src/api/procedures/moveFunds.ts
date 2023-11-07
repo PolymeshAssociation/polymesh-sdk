@@ -47,12 +47,27 @@ async function segregateItems(
 
   for (const item of items) {
     const { asset } = item;
-    tickers.push(asTicker(asset));
+    const ticker = asTicker(asset);
+    tickers.push(ticker);
 
     const typedAsset = await asAsset(asset, context);
     if (isFungibleAsset(typedAsset)) {
+      if (!('amount' in item)) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'The key "amount" should be present in a fungible portfolio movement',
+          data: { ticker },
+        });
+      }
       fungibleMovements.push(item as FungiblePortfolioMovement);
     } else if (isNftCollection(typedAsset)) {
+      if (!('nfts' in item)) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'The key "nfts" should be present in an NFT portfolio movement',
+          data: { ticker },
+        });
+      }
       nftMovements.push(item as NonFungiblePortfolioMovement);
     }
   }

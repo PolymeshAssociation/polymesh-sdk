@@ -654,6 +654,68 @@ describe('addInstruction procedure', () => {
     });
   });
 
+  it('should throw an error if key "amount" is not in a fungible leg', async () => {
+    dsMockUtils.configureMocks({ contextOptions: { did: fromDid } });
+    entityMockUtils.configureMocks({
+      venueOptions: {
+        exists: true,
+      },
+      fungibleAssetOptions: {
+        exists: true,
+      },
+      nftCollectionOptions: {
+        exists: false,
+      },
+    });
+    getCustodianMock.mockReturnValue({ did: fromDid });
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      portfoliosToAffirm: [[fromPortfolio, toPortfolio]],
+    });
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The key "amount" should be present in a fungible leg',
+    });
+
+    await expect(
+      prepareAddInstruction.call(proc, {
+        venueId: args.venueId,
+        instructions: [{ legs: [{ from, to, asset, nfts: [new BigNumber(1)] }] }],
+      })
+    ).rejects.toThrow(expectedError);
+  });
+
+  it('should throw an error if key "nfts" is not in an NFT leg', async () => {
+    dsMockUtils.configureMocks({ contextOptions: { did: fromDid } });
+    entityMockUtils.configureMocks({
+      venueOptions: {
+        exists: true,
+      },
+      fungibleAssetOptions: {
+        exists: false,
+      },
+      nftCollectionOptions: {
+        exists: true,
+      },
+    });
+    getCustodianMock.mockReturnValue({ did: fromDid });
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      portfoliosToAffirm: [[fromPortfolio, toPortfolio]],
+    });
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The key "nfts" should be present in an NFT leg',
+    });
+
+    await expect(
+      prepareAddInstruction.call(proc, {
+        venueId: args.venueId,
+        instructions: [{ legs: [{ from, to, asset, amount: new BigNumber(1) }] }],
+      })
+    ).rejects.toThrow(expectedError);
+  });
+
   it('should handle NFT legs', async () => {
     dsMockUtils.configureMocks({ contextOptions: { did: fromDid } });
     entityMockUtils.configureMocks({

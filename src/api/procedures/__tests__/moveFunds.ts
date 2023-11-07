@@ -168,6 +168,15 @@ describe('moveFunds procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
     const toPortfolioId = { did, number: id };
 
+    entityMockUtils.configureMocks({
+      fungibleAssetOptions: {
+        exists: true,
+      },
+      nftCollectionOptions: {
+        exists: false,
+      },
+    });
+
     when(portfolioLikeToPortfolioIdSpy).calledWith(toPortfolio).mockReturnValue(toPortfolioId);
     when(portfolioLikeToPortfolioIdSpy).calledWith(toPortfolio).mockReturnValue(fromId);
 
@@ -249,6 +258,12 @@ describe('moveFunds procedure', () => {
     const asset = new NftCollection({ ticker }, context);
 
     entityMockUtils.configureMocks({
+      fungibleAssetOptions: {
+        exists: false,
+      },
+      nftCollectionOptions: {
+        exists: true,
+      },
       numberedPortfolioOptions: {
         did,
         getAssetBalances: [],
@@ -276,6 +291,88 @@ describe('moveFunds procedure', () => {
     const expectedError = new PolymeshError({
       code: ErrorCode.InsufficientBalance,
       message: 'Some of the NFTs are not available in the sending portfolio',
+    });
+
+    await expect(
+      prepareMoveFunds.call(proc, {
+        from,
+        to,
+        items,
+      })
+    ).rejects.toThrow(expectedError);
+  });
+
+  it('should throw an error if "amount" is not given for a fungible asset', async () => {
+    const fromId = new BigNumber(1);
+    const toId = new BigNumber(2);
+    const did = 'someDid';
+    const ticker = 'TICKER';
+
+    entityMockUtils.configureMocks({
+      fungibleAssetOptions: {
+        exists: true,
+      },
+      nftCollectionOptions: {
+        exists: false,
+      },
+    });
+
+    const items: PortfolioMovement[] = [
+      {
+        asset: ticker,
+        nfts: [new BigNumber(100)],
+      },
+    ];
+
+    const from = entityMockUtils.getNumberedPortfolioInstance({ id: fromId, did });
+    const to = entityMockUtils.getNumberedPortfolioInstance({ id: toId, did });
+
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The key "amount" should be present in a fungible portfolio movement',
+    });
+
+    await expect(
+      prepareMoveFunds.call(proc, {
+        from,
+        to,
+        items,
+      })
+    ).rejects.toThrow(expectedError);
+  });
+
+  it('should throw an error if "nfts" is not given for a collection', async () => {
+    const fromId = new BigNumber(1);
+    const toId = new BigNumber(2);
+    const did = 'someDid';
+    const ticker = 'TICKER';
+
+    entityMockUtils.configureMocks({
+      fungibleAssetOptions: {
+        exists: false,
+      },
+      nftCollectionOptions: {
+        exists: true,
+      },
+    });
+
+    const items: PortfolioMovement[] = [
+      {
+        asset: ticker,
+        amount: new BigNumber(100),
+      },
+    ];
+
+    const from = entityMockUtils.getNumberedPortfolioInstance({ id: fromId, did });
+    const to = entityMockUtils.getNumberedPortfolioInstance({ id: toId, did });
+
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The key "nfts" should be present in an NFT portfolio movement',
     });
 
     await expect(
