@@ -6,6 +6,7 @@ import {
   FungibleAsset,
   Identity,
   KnownPermissionGroup,
+  NftCollection,
   NumberedPortfolio,
 } from '~/internal';
 import { EventIdEnum } from '~/middleware/types';
@@ -14,7 +15,6 @@ import {
   EventIdentifier,
   MetadataDetails,
   MetadataType,
-  NftCollection,
   TransferError,
   TransferRestriction,
 } from '~/types';

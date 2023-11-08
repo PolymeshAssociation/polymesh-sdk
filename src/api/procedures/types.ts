@@ -366,7 +366,7 @@ export interface CreateNftCollectionParams {
    * The required metadata values each NFT in the collection will have
    *
    * @note Images — Most Polymesh networks (mainnet, testnet, etc.) have global metadata keys registered to help standardize displaying images
-   * If {@link utils/constants/GLOBAL_IMAGE_URI_NAME | GLOBAL_IMAGE_URI_NAME } is specified, then each NFT as a collection key, then each token will need to be issued with an image URI.
+   * If `imageUri` is specified as a collection key, then each token will need to be issued with an image URI.
    */
   collectionKeys: CollectionKeyInput[];
   /**

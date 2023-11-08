@@ -129,14 +129,14 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
   /**
    * Get the conventional image URI for the NFT
    *
-   * This function will check for a token level value and a collection level value. Local values take precedence base values in case of a conflict.
+   * This function will check for a token level value and a collection level value. Token level values take precedence over base values in case of a conflict.
    *
-   * This method may return `null` if the NFT issuer did not configure the collection to according to the convention.
+   * When creating a collection an issuer can either require per token images by specifying global metadata key `imageUri` as a collection key or by
+   * setting a collection base image URL by setting a value on the collection corresponding to the global metadata key `baseImageUri`.
    *
-   * When creating a collection an issuer can either require per token images by specifying {@link utils/constants!GLOBAL_IMAGE_URI_NAME | global image metadata} as a collection key or by
-   * setting a collection base URL using by setting a metadata value on the collection corresponding to {@link utils/constants!GLOBAL_BASE_TOKEN_URI_NAME}.
+   * This method will return `null` if the NFT issuer did not configure the collection according to the convention.
    *
-   * Per token URIs provide the most flexibility, but require more chain space to store, increasing the POLYX fee to issue each token
+   * Per token URIs provide the most flexibility, but require more chain space to store, increasing the POLYX fee to issue each token.
    *
    * The URI values can include `{tokenId}` that will be replaced with the NFTs ID. If a base URI does not specify this the ID will be appended onto the URL. Examples:
    *  - `https://example.com/nfts/{tokenId}/image.png` becomes `https://example.com/nfts/1/image.png`
@@ -165,14 +165,14 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
   /**
    * Get the conventional token URI for the NFT
    *
-   * This function will check for a token level value and a collection level value. Local values take precedence base values in case of a conflict.
+   * This function will check for a token level value and a collection level value. Token level values take precedence over base values in case of a conflict.
    *
-   * This method may return `null` if the NFT issuer did not configure the collection to according to the convention.
+   * When creating a collection an issuer can either require per token URL by specifying global metadata key `tokenURI` as a collection key or by
+   * setting a collection base URL by setting a value on the collection corresponding to the global metadata key `baseTokenUri` on the collection.
    *
-   * When creating a collection an issuer can either require per token images by specifying {@link utils/constants!GLOBAL_TOKEN_URI_NAME | tokenURI} as a collection key or by
-   * setting an metadata value for {@link utils/constants!GLOBAL_BASE_TOKEN_URI_NAME | baseTokenURI} on the collection.
+   * This method will return `null` if the NFT issuer did not configure the collection according to the convention.
    *
-   * Per token URIs provide the most flexibility, but require more chain space to store, increasing the POLYX fee to issue each token
+   * Per token URIs provide the most flexibility, but require more chain space to store, increasing the POLYX fee to issue each token.
    *
    * The URI values can include `{tokenId}` that will be replaced with the NFTs ID. If a base URI does not specify this the ID will be appended onto the URL. Examples:
    *  - `https://example.com/nfts/{tokenId}/info.json` becomes `https://example.com/nfts/1/info.json`
