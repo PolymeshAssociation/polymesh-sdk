@@ -257,6 +257,7 @@ export function claimsQuery(
             lastUpdateDate
             expiry
             jurisdiction
+            customClaimTypeId
           }
         }
       }
