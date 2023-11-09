@@ -9,6 +9,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { createMockMoment, createMockOption } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import { ErrorCode, MultiSigProposalAction, ProposalStatus } from '~/types';
+import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -80,6 +81,28 @@ describe('MultiSigProposal class', () => {
       dsMockUtils.createQueryMock('multiSig', 'proposals', {
         returnValue: createMockOption(mockProposal),
       });
+      dsMockUtils.createQueryMock('multiSig', 'votes', {
+        entries: [
+          tuple(
+            [
+              [dsMockUtils.createMockAccountId(), dsMockUtils.createMockU64()],
+              dsMockUtils.createMockSignatory({
+                Account: dsMockUtils.createMockAccountId('abc'),
+              }),
+            ],
+            dsMockUtils.createMockBool(true)
+          ),
+          tuple(
+            [
+              [dsMockUtils.createMockAccountId(), dsMockUtils.createMockU64()],
+              dsMockUtils.createMockSignatory({
+                Identity: dsMockUtils.createMockIdentityId('def'),
+              }),
+            ],
+            dsMockUtils.createMockBool(true)
+          ),
+        ],
+      });
 
       let result = await proposal.details();
 
@@ -91,6 +114,7 @@ describe('MultiSigProposal class', () => {
         rejectionAmount: new BigNumber(1),
         status: ProposalStatus.Expired,
         txTag: 'asset.reserveTicker',
+        voted: ['abc'],
       });
 
       dsMockUtils.createQueryMock('multiSig', 'proposalDetail', {
@@ -113,6 +137,7 @@ describe('MultiSigProposal class', () => {
         rejectionAmount: new BigNumber(1),
         status: ProposalStatus.Active,
         txTag: 'asset.reserveTicker',
+        voted: ['abc'],
       });
     });
 
@@ -129,6 +154,10 @@ describe('MultiSigProposal class', () => {
           autoClose: true,
           expiry: null,
         }),
+      });
+
+      dsMockUtils.createQueryMock('multiSig', 'votes', {
+        entries: [],
       });
 
       const expectedError = new PolymeshError({

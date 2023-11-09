@@ -41,6 +41,10 @@ export interface MultiSigProposalDetails {
    * The arguments to be passed to the transaction for this proposal
    */
   args: AnyJson;
+  /**
+   * List of signing keys that have already voted on this proposal
+   */
+  voted: string[];
 }
 
 export enum MultiSigProposalAction {

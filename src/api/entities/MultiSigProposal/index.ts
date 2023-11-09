@@ -117,9 +117,11 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
         autoClose: rawAutoClose,
       },
       proposalOpt,
+      votes,
     ] = await Promise.all([
       multiSig.proposalDetail(rawMultiSignAddress, rawId),
       multiSig.proposals(rawMultiSignAddress, rawId),
+      multiSig.votes.entries([rawMultiSignAddress, rawId]),
     ]);
 
     if (proposalOpt.isNone) {
@@ -138,6 +140,13 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
     const expiry = optionize(momentToDate)(rawExpiry.unwrapOr(null));
     const status = meshProposalStatusToProposalStatus(rawStatus, expiry);
     const autoClose = boolToBoolean(rawAutoClose);
+    const voted: string[] = [];
+    if (votes.length > 0) {
+      votes.forEach(([voteStorageKey, didVote]) => {
+        if (didVote.isTrue && voteStorageKey.args[1].isAccount)
+          voted.push(voteStorageKey.args[1].asAccount.toString());
+      });
+    }
 
     return {
       approvalAmount,
@@ -147,6 +156,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
       autoClose,
       args,
       txTag: `${section}.${method}` as TxTag,
+      voted,
     };
   }
 
