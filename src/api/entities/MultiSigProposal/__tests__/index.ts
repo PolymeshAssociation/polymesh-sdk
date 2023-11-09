@@ -10,6 +10,7 @@ import { createMockMoment, createMockOption } from '~/testUtils/mocks/dataSource
 import { Mocked } from '~/testUtils/types';
 import { ErrorCode, MultiSigProposalAction, ProposalStatus } from '~/types';
 import { tuple } from '~/types/utils';
+import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -87,7 +88,7 @@ describe('MultiSigProposal class', () => {
             [
               [dsMockUtils.createMockAccountId(), dsMockUtils.createMockU64()],
               dsMockUtils.createMockSignatory({
-                Account: dsMockUtils.createMockAccountId('abc'),
+                Account: dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID),
               }),
             ],
             dsMockUtils.createMockBool(true)
@@ -96,7 +97,7 @@ describe('MultiSigProposal class', () => {
             [
               [dsMockUtils.createMockAccountId(), dsMockUtils.createMockU64()],
               dsMockUtils.createMockSignatory({
-                Identity: dsMockUtils.createMockIdentityId('def'),
+                Identity: dsMockUtils.createMockIdentityId('some_did'),
               }),
             ],
             dsMockUtils.createMockBool(true)
@@ -114,7 +115,7 @@ describe('MultiSigProposal class', () => {
         rejectionAmount: new BigNumber(1),
         status: ProposalStatus.Expired,
         txTag: 'asset.reserveTicker',
-        voted: ['abc'],
+        voted: [new Account({ address: DUMMY_ACCOUNT_ID }, dsMockUtils.getContextInstance())],
       });
 
       dsMockUtils.createQueryMock('multiSig', 'proposalDetail', {
@@ -137,7 +138,7 @@ describe('MultiSigProposal class', () => {
         rejectionAmount: new BigNumber(1),
         status: ProposalStatus.Active,
         txTag: 'asset.reserveTicker',
-        voted: ['abc'],
+        voted: [new Account({ address: DUMMY_ACCOUNT_ID }, dsMockUtils.getContextInstance())],
       });
     });
 

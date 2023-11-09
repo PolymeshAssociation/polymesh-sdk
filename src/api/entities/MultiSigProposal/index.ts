@@ -1,10 +1,16 @@
 import { BigNumber } from 'bignumber.js';
 
-import { Context, Entity, evaluateMultiSigProposal, MultiSig, PolymeshError } from '~/internal';
+import {
+  Account,
+  Context,
+  Entity,
+  evaluateMultiSigProposal,
+  MultiSig,
+  PolymeshError,
+} from '~/internal';
 import { multiSigProposalQuery, multiSigProposalVotesQuery } from '~/middleware/queries';
 import { MultiSigProposal as MiddlewareMultiSigProposal, Query } from '~/middleware/types';
 import {
-  Account,
   ErrorCode,
   EventIdentifier,
   MultiSigProposalAction,
@@ -16,6 +22,7 @@ import {
 } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
+  accountIdToString,
   bigNumberToU64,
   boolToBoolean,
   meshProposalStatusToProposalStatus,
@@ -140,11 +147,13 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
     const expiry = optionize(momentToDate)(rawExpiry.unwrapOr(null));
     const status = meshProposalStatusToProposalStatus(rawStatus, expiry);
     const autoClose = boolToBoolean(rawAutoClose);
-    const voted: string[] = [];
+    const voted: Account[] = [];
     if (votes.length > 0) {
       votes.forEach(([voteStorageKey, didVote]) => {
         if (didVote.isTrue && voteStorageKey.args[1].isAccount)
-          voted.push(voteStorageKey.args[1].asAccount.toString());
+          voted.push(
+            new Account({ address: accountIdToString(voteStorageKey.args[1].asAccount) }, context)
+          );
       });
     }
 
