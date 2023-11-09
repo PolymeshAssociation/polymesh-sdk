@@ -43,7 +43,21 @@ export * from '~/api/procedures/types';
 export * from '~/base/types';
 export * from '~/generated/types';
 
-export { AssetHoldersOrderBy, ExtrinsicsOrderBy, Scalars } from '~/middleware/types';
+export {
+  AssetHoldersOrderBy,
+  AuthTypeEnum,
+  AuthorizationStatusEnum,
+  ExtrinsicsOrderBy,
+  NftHoldersOrderBy,
+  InstructionStatusEnum,
+  MultiSigProposalVoteActionEnum,
+  SettlementResultEnum,
+  BalanceTypeEnum,
+  ModuleIdEnum,
+  EventIdEnum,
+  CallIdEnum,
+  Scalars,
+} from '~/middleware/types';
 export { ClaimScopeTypeEnum, MiddlewareScope, SettlementDirectionEnum } from '~/middleware/typesV1';
 export { CountryCode, ModuleName, TxTag, TxTags };
 
