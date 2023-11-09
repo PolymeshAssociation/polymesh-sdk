@@ -4,12 +4,6 @@ import { when } from 'jest-when';
 import { Context, Entity, Nft, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
-import {
-  GLOBAL_BASE_IMAGE_URI_NAME,
-  GLOBAL_BASE_TOKEN_URI_NAME,
-  GLOBAL_IMAGE_URI_NAME,
-  GLOBAL_TOKEN_URI_NAME,
-} from '~/utils/constants';
 
 jest.mock(
   '~/api/entities/Asset/NonFungible',
@@ -147,18 +141,8 @@ describe('Nft class', () => {
     beforeEach(async () => {
       context = dsMockUtils.getContextInstance();
       const globalId = new BigNumber(2);
-      const globalBaseId = new BigNumber(3);
-      dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalKeyToName', {
-        entries: [
-          tuple(
-            [dsMockUtils.createMockU64(globalId)],
-            dsMockUtils.createMockOption(dsMockUtils.createMockBytes(GLOBAL_IMAGE_URI_NAME))
-          ),
-          tuple(
-            [dsMockUtils.createMockU64(globalBaseId)],
-            dsMockUtils.createMockOption(dsMockUtils.createMockBytes(GLOBAL_BASE_IMAGE_URI_NAME))
-          ),
-        ],
+      dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalNameToKey', {
+        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockU64(globalId)),
       });
     });
 
@@ -263,11 +247,9 @@ describe('Nft class', () => {
     });
 
     describe('with null storage values', () => {
-      it('should handle null global key name', async () => {
-        dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalKeyToName', {
-          entries: [
-            tuple([dsMockUtils.createMockU64(new BigNumber(5))], dsMockUtils.createMockOption()),
-          ],
+      it('should handle null global key Id', async () => {
+        dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalNameToKey', {
+          returnValue: dsMockUtils.createMockOption(),
         });
 
         const nft = new Nft({ ticker, id }, context);
@@ -287,18 +269,8 @@ describe('Nft class', () => {
     beforeEach(async () => {
       context = dsMockUtils.getContextInstance();
       const globalId = new BigNumber(2);
-      const globalBaseId = new BigNumber(3);
-      dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalKeyToName', {
-        entries: [
-          tuple(
-            [dsMockUtils.createMockU64(globalId)],
-            dsMockUtils.createMockOption(dsMockUtils.createMockBytes(GLOBAL_TOKEN_URI_NAME))
-          ),
-          tuple(
-            [dsMockUtils.createMockU64(globalBaseId)],
-            dsMockUtils.createMockOption(dsMockUtils.createMockBytes(GLOBAL_BASE_TOKEN_URI_NAME))
-          ),
-        ],
+      dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalNameToKey', {
+        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockU64(globalId)),
       });
     });
 

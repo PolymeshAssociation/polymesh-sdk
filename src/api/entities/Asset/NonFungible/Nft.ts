@@ -143,10 +143,10 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
    *  - `https://example.com/nfts` becomes `https://example.com/nfts/1` if used a base value, but remain unchanged as a local value
    */
   public async getImageUri(): Promise<string | null> {
-    const metadataIds = await this.getGlobalMetadataIds();
-
-    const localId = metadataIds[GLOBAL_IMAGE_URI_NAME];
-    const collectionId = metadataIds[GLOBAL_BASE_IMAGE_URI_NAME];
+    const [localId, collectionId] = await Promise.all([
+      this.getGlobalMetadataId(GLOBAL_IMAGE_URI_NAME),
+      this.getGlobalMetadataId(GLOBAL_BASE_IMAGE_URI_NAME),
+    ]);
 
     const [localImageUrl, collectionBaseImageUrl] = await Promise.all([
       this.getLocalUri(localId),
@@ -179,10 +179,10 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
    *  - `https://example.com/nfts` becomes `https://example.com/nfts/1` if used a base value, but remain unchanged as a local value
    */
   public async getTokenUri(): Promise<string | null> {
-    const metadataIds = await this.getGlobalMetadataIds();
-
-    const localId = metadataIds[GLOBAL_TOKEN_URI_NAME];
-    const baseId = metadataIds[GLOBAL_BASE_TOKEN_URI_NAME];
+    const [localId, baseId] = await Promise.all([
+      this.getGlobalMetadataId(GLOBAL_TOKEN_URI_NAME),
+      this.getGlobalMetadataId(GLOBAL_BASE_TOKEN_URI_NAME),
+    ]);
 
     const [localTokenUri, baseUri] = await Promise.all([
       this.getLocalUri(localId),
@@ -218,7 +218,7 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
    *
    * @hidden
    */
-  private async getLocalUri(metadataId: BigNumber): Promise<string | null> {
+  private async getLocalUri(metadataId: BigNumber | null): Promise<string | null> {
     const {
       id,
       context,
@@ -311,27 +311,18 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
    *
    * @hidden
    */
-  private async getGlobalMetadataIds(): Promise<Record<string, BigNumber>> {
+  private async getGlobalMetadataId(keyName: string): Promise<BigNumber | null> {
     const {
       context: {
         polymeshApi: { query },
       },
     } = this;
 
-    const globalEntries = await query.asset.assetMetadataGlobalKeyToName.entries();
+    const metadataId = await query.asset.assetMetadataGlobalNameToKey(keyName);
 
-    return globalEntries.reduce((record, storageKey) => {
-      const [nameEntry, rawName] = storageKey;
-      if (rawName.isSome) {
-        const entryName = bytesToString(rawName.unwrap());
-        const {
-          args: [rawId],
-        } = nameEntry;
-
-        record[entryName] = u64ToBigNumber(rawId);
-      }
-
-      return record;
-    }, {} as Record<string, BigNumber>);
+    if (metadataId.isSome) {
+      return u64ToBigNumber(metadataId.unwrap());
+    }
+    return null;
   }
 }
