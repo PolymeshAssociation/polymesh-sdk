@@ -1456,7 +1456,7 @@ export function multiSigProposalVotesQuery(
   variables: QueryArgs<MultiSigProposalVote, 'proposalId'>
 ): QueryOptions<QueryArgs<MultiSigProposalVote, 'proposalId'>> {
   const query = gql`
-    query MultiSigProposalVotesQuery($multisigId: String!, $proposalId: Int!) {
+    query MultiSigProposalVotesQuery($proposalId: String!) {
       multiSigProposalVotes(
         filter: { proposalId: { equalTo: $proposalId } }
         orderBy: [${MultiSigProposalVotesOrderBy.CreatedAtAsc}]
