@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { MultiSigProposalVoteActionEnum } from '~/middleware/types';
-import { AnyJson, EventIdentifier, Signer, TxTag } from '~/types';
+import { Account, AnyJson, EventIdentifier, Signer, TxTag } from '~/types';
 
 export enum ProposalStatus {
   Invalid = 'Invalid',
@@ -41,6 +41,10 @@ export interface MultiSigProposalDetails {
    * The arguments to be passed to the transaction for this proposal
    */
   args: AnyJson;
+  /**
+   * Accounts of signing keys that have already voted on this proposal
+   */
+  voted: Account[];
 }
 
 export enum MultiSigProposalAction {
