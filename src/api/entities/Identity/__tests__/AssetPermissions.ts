@@ -12,7 +12,7 @@ import {
 import { tickerExternalAgentActionsQuery, tickerExternalAgentsQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Asset, PermissionGroupType, PermissionType, TxTags } from '~/types';
+import { FungibleAsset, PermissionGroupType, PermissionType, TxTags } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -26,7 +26,7 @@ jest.mock(
 describe('AssetPermissions class', () => {
   const did = 'someDid';
   const ticker = 'SOME_TICKER';
-  let asset: Mocked<Asset>;
+  let asset: Mocked<FungibleAsset>;
 
   let context: Mocked<Context>;
   let assetPermissions: AssetPermissions;
@@ -41,7 +41,7 @@ describe('AssetPermissions class', () => {
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
     identity = entityMockUtils.getIdentityInstance({ did });
-    asset = entityMockUtils.getAssetInstance({ ticker });
+    asset = entityMockUtils.getFungibleAssetInstance({ ticker });
     assetPermissions = new AssetPermissions(identity, context);
   });
 
@@ -404,7 +404,7 @@ describe('AssetPermissions class', () => {
       });
 
       entityMockUtils.configureMocks({
-        assetOptions: {
+        fungibleAssetOptions: {
           ticker,
         },
       });

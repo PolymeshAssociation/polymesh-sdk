@@ -21,8 +21,8 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockOfferingModule('~/api/entities/Offering')
 );
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 describe('createGroup procedure', () => {
@@ -103,7 +103,7 @@ describe('createGroup procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
       mockContext,
       {
-        asset: entityMockUtils.getAssetInstance({
+        asset: entityMockUtils.getFungibleAssetInstance({
           permissionsGetAgents: [
             {
               agent: entityMockUtils.getIdentityInstance({ did: target }),
@@ -123,7 +123,7 @@ describe('createGroup procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
       mockContext,
       {
-        asset: entityMockUtils.getAssetInstance({
+        asset: entityMockUtils.getFungibleAssetInstance({
           ticker,
           permissionsGetGroups: {
             custom: [
@@ -202,7 +202,7 @@ describe('createGroup procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
         mockContext,
         {
-          asset: entityMockUtils.getAssetInstance({
+          asset: entityMockUtils.getFungibleAssetInstance({
             ticker,
           }),
         }

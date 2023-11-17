@@ -1,19 +1,20 @@
 import BigNumber from 'bignumber.js';
 import { filter, flatten, isEqual, uniqBy, uniqWith } from 'lodash';
 
-import { Context, Identity, modifyClaims } from '~/internal';
-import { ClaimTypeEnum } from '~/middleware/enums';
+import { Context, Identity, modifyClaims, registerCustomClaimType } from '~/internal';
 import { claimsGroupingQuery, claimsQuery } from '~/middleware/queries';
-import { ClaimsGroupBy, ClaimsOrderBy, Query } from '~/middleware/types';
+import { ClaimsGroupBy, ClaimsOrderBy, ClaimTypeEnum, Query } from '~/middleware/types';
 import {
   CddClaim,
   ClaimData,
   ClaimOperation,
   ClaimScope,
   ClaimType,
+  CustomClaimType,
   IdentityWithClaims,
   ModifyClaimsParams,
   ProcedureMethod,
+  RegisterCustomClaimTypeParams,
   ResultSet,
   Scope,
   ScopedClaim,
@@ -22,9 +23,16 @@ import {
 import { Ensured } from '~/types/utils';
 import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 import {
+  bigNumberToU32,
+  bytesToString,
+  identityIdToString,
+  meshClaimToClaim,
+  momentToDate,
   scopeToMiddlewareScope,
   signerToString,
+  stringToIdentityId,
   toIdentityWithClaimsArray,
+  u32ToBigNumber,
 } from '~/utils/conversion';
 import { calculateNextKey, createProcedureMethod, getDid, removePadding } from '~/utils/internal';
 
@@ -88,6 +96,11 @@ export class Claims {
           } as ModifyClaimsParams,
         ],
       },
+      context
+    );
+
+    this.registerCustomClaimType = createProcedureMethod(
+      { getProcedureAndArgs: args => [registerCustomClaimType, args] },
       context
     );
   }
@@ -301,16 +314,49 @@ export class Claims {
       includeExpired?: boolean;
     } = {}
   ): Promise<ClaimData<CddClaim>[]> {
-    const { context } = this;
+    const {
+      context,
+      context: {
+        polymeshApi: {
+          rpc: { identity },
+        },
+      },
+    } = this;
+
     const { target, includeExpired = true } = opts;
 
     const did = await getDid(target, context);
 
-    return context.getIdentityClaimsFromChain({
-      targets: [did],
-      claimTypes: [ClaimType.CustomerDueDiligence],
-      includeExpired,
-    }) as Promise<ClaimData<CddClaim>[]>;
+    const rawDid = stringToIdentityId(did, context);
+
+    const result = await identity.validCDDClaims(rawDid);
+
+    const data: ClaimData<CddClaim>[] = [];
+
+    result.forEach(optClaim => {
+      const {
+        claim_issuer: claimIssuer,
+        issuance_date: issuanceDate,
+        last_update_date: lastUpdateDate,
+        expiry: rawExpiry,
+        claim,
+      } = optClaim;
+
+      const expiry = !rawExpiry.isEmpty ? momentToDate(rawExpiry.unwrap()) : null;
+
+      if ((!includeExpired && (expiry === null || expiry > new Date())) || includeExpired) {
+        data.push({
+          target: new Identity({ did }, context),
+          issuer: new Identity({ did: identityIdToString(claimIssuer) }, context),
+          issuedAt: momentToDate(issuanceDate),
+          lastUpdatedAt: momentToDate(lastUpdateDate),
+          expiry,
+          claim: meshClaimToClaim(claim) as CddClaim,
+        });
+      }
+    });
+
+    return data;
   }
 
   /**
@@ -430,5 +476,59 @@ export class Claims {
     }
 
     return this.getClaimsFromChain(context, did, trustedClaimIssuers, includeExpired);
+  }
+
+  /**
+   * Creates a custom claim type using the `name` and returns the `id` of the created claim type
+   *
+   * @throws if
+   *  - the `name` is longer than allowed
+   *  - a custom claim type with the same `name` already exists
+   */
+  public registerCustomClaimType: ProcedureMethod<RegisterCustomClaimTypeParams, BigNumber>;
+
+  /**
+   * Retrieves a custom claim type based on its name
+   *
+   * @param name - The name of the custom claim type to retrieve
+   */
+  public async getCustomClaimTypeByName(name: string): Promise<CustomClaimType | null> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { identity },
+        },
+      },
+    } = this;
+
+    const customClaimTypeIdOpt = await identity.customClaimsInverse(name);
+
+    if (customClaimTypeIdOpt.isEmpty) {
+      return null;
+    }
+
+    return { id: u32ToBigNumber(customClaimTypeIdOpt.value), name };
+  }
+
+  /**
+   * Retrieves a custom claim type based on its ID
+   *
+   * @param id - The ID of the custom claim type to retrieve
+   */
+  public async getCustomClaimTypeById(id: BigNumber): Promise<CustomClaimType | null> {
+    const { context } = this;
+    const {
+      polymeshApi: {
+        query: { identity },
+      },
+    } = context;
+
+    const customClaimTypeIdOpt = await identity.customClaims(bigNumberToU32(id, context));
+
+    if (customClaimTypeIdOpt.isEmpty) {
+      return null;
+    }
+
+    return { id, name: bytesToString(customClaimTypeIdOpt.value) };
   }
 }

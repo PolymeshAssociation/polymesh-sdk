@@ -2,7 +2,6 @@ import { QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
-import { ClaimTypeEnum, middlewareEnumMap } from '~/middleware/enums';
 import {
   Asset,
   AssetHolder,
@@ -14,6 +13,7 @@ import {
   BlocksOrderBy,
   ClaimsGroupBy,
   ClaimsOrderBy,
+  ClaimTypeEnum,
   Distribution,
   DistributionPayment,
   Event,
@@ -26,6 +26,11 @@ import {
   InvestmentsOrderBy,
   Leg,
   LegsOrderBy,
+  MultiSigProposal,
+  MultiSigProposalVote,
+  MultiSigProposalVotesOrderBy,
+  NftHolder,
+  NftHoldersOrderBy,
   PolyxTransactionsOrderBy,
   Portfolio,
   PortfolioMovement,
@@ -252,6 +257,7 @@ export function claimsQuery(
             lastUpdateDate
             expiry
             jurisdiction
+            customClaimTypeId
           }
         }
       }
@@ -325,8 +331,7 @@ function createArgsAndFilters(
   Object.keys(filters).forEach(attribute => {
     if (filters[attribute]) {
       const type = typeMap[attribute] || 'String';
-      const middlewareType = middlewareEnumMap[type] || type;
-      args.push(`$${attribute}: ${middlewareType}!`);
+      args.push(`$${attribute}: ${type}!`);
       gqlFilters.push(`${attribute}: { equalTo: $${attribute} }`);
     }
   });
@@ -602,6 +607,7 @@ export function extrinsicsByArgs(
           extrinsicHash
           block {
             hash
+            datetime
           }
         }
       }
@@ -928,6 +934,40 @@ export function assetHoldersQuery(
         totalCount
         nodes {
           assetId
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get NFTs held by a DID
+ */
+export function nftHoldersQuery(
+  filters: QueryArgs<NftHolder, 'identityId'>,
+  size?: BigNumber,
+  start?: BigNumber,
+  orderBy = NftHoldersOrderBy.AssetIdAsc
+): QueryOptions<PaginatedQueryArgs<QueryArgs<NftHolder, 'identityId'>>> {
+  const query = gql`
+    query NftHolderQuery($identityId: String!, $size: Int, $start: Int) {
+      nftHolders(
+        filter: { identityId: { equalTo: $identityId } }
+        first: $size
+        offset: $start
+        orderBy: [${orderBy}]
+      ) {
+        totalCount
+        nodes {
+          assetId
+          nftIds
         }
       }
     }
@@ -1311,11 +1351,11 @@ function createAuthorizationFilters(variables: QueryArgs<Authorization, Authoriz
     filters.push('toKey: { equalTo: $toKey }');
   }
   if (type) {
-    args.push(`$type: ${middlewareEnumMap.AuthTypeEnum}!`);
+    args.push('$type: AuthTypeEnum!');
     filters.push('type: { equalTo: $type }');
   }
   if (status) {
-    args.push(`$status: ${middlewareEnumMap.AuthorizationStatusEnum}!`);
+    args.push('$status: AuthorizationStatusEnum!');
     filters.push('status: { equalTo: $status }');
   }
   return {
@@ -1366,5 +1406,81 @@ export function authorizationsQuery(
   return {
     query,
     variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get MultiSig proposal details for a given MultiSig address and portfolio ID
+ */
+export function multiSigProposalQuery(
+  variables: QueryArgs<MultiSigProposal, 'multisigId' | 'proposalId'>
+): QueryOptions<QueryArgs<MultiSigProposal, 'multisigId' | 'proposalId'>> {
+  const query = gql`
+    query MultiSigProposalQuery($multisigId: String!, $proposalId: Int!) {
+      multiSigProposals(
+        filter: { multisigId: { equalTo: $multisigId }, proposalId: { equalTo: $proposalId } }
+      ) {
+        nodes {
+          eventIdx
+          creatorId
+          creatorAccount
+          createdBlock {
+            blockId
+            hash
+            datetime
+          }
+          updatedBlock {
+            blockId
+            hash
+            datetime
+          }
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get MultiSig proposal votes for a given proposalId ({multiSigAddress}/{proposalId})
+ */
+export function multiSigProposalVotesQuery(
+  variables: QueryArgs<MultiSigProposalVote, 'proposalId'>
+): QueryOptions<QueryArgs<MultiSigProposalVote, 'proposalId'>> {
+  const query = gql`
+    query MultiSigProposalVotesQuery($proposalId: String!) {
+      multiSigProposalVotes(
+        filter: { proposalId: { equalTo: $proposalId } }
+        orderBy: [${MultiSigProposalVotesOrderBy.CreatedAtAsc}]
+      ) {
+        nodes {
+          signer {
+            signerType
+            signerValue
+          }
+          action
+          eventIdx
+          createdBlockId
+          createdBlock {
+            blockId
+            datetime
+            hash
+          }
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
   };
 }

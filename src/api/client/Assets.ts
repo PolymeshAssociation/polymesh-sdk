@@ -1,14 +1,20 @@
+import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+
 import {
-  Asset,
   Context,
   createAsset,
+  createNftCollection,
+  FungibleAsset,
   Identity,
+  NftCollection,
   PolymeshError,
   reserveTicker,
   TickerReservation,
 } from '~/internal';
 import {
+  Asset,
   CreateAssetWithTickerParams,
+  CreateNftCollectionParams,
   ErrorCode,
   GlobalMetadataKey,
   PaginationOptions,
@@ -27,6 +33,8 @@ import {
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
+  asAsset,
+  assembleAssetQuery,
   createProcedureMethod,
   getDid,
   isPrintableAscii,
@@ -58,6 +66,13 @@ export class Assets {
       },
       context
     );
+
+    this.createNftCollection = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [createNftCollection, args],
+      },
+      context
+    );
   }
 
   /**
@@ -72,7 +87,15 @@ export class Assets {
    * @note if ticker is already reserved, then required role:
    *   - Ticker Owner
    */
-  public createAsset: ProcedureMethod<CreateAssetWithTickerParams, Asset>;
+  public createAsset: ProcedureMethod<CreateAssetWithTickerParams, FungibleAsset>;
+
+  /**
+   * Create an NftCollection
+   *
+   * @note if ticker is already reserved, then required role:
+   *   - Ticker Owner
+   */
+  public createNftCollection: ProcedureMethod<CreateNftCollectionParams, NftCollection>;
 
   /**
    * Check if a ticker hasn't been reserved
@@ -153,6 +176,18 @@ export class Assets {
   }
 
   /**
+   * Retrieve a FungibleAsset or NftCollection
+   *
+   * @note `getFungibleAsset` and `getNftCollection` are similar to this method, but return a more specific type
+   */
+  public async getAsset(args: { ticker: string }): Promise<Asset> {
+    const { context } = this;
+    const { ticker } = args;
+
+    return asAsset(ticker, context);
+  }
+
+  /**
    * Retrieve all of the Assets owned by an Identity
    *
    * @param args.owner - Identity representation or Identity ID as stored in the blockchain
@@ -173,28 +208,34 @@ export class Assets {
       stringToIdentityId(did, context)
     );
 
-    return entries.reduce<Asset[]>((result, [key, relation]) => {
-      if (relation.isAssetOwned) {
-        const ticker = tickerToString(key.args[1]);
+    const ownedTickers: string[] = [];
+    const rawTickers: PolymeshPrimitivesTicker[] = [];
 
+    entries.forEach(([key, relation]) => {
+      if (relation.isAssetOwned) {
+        const rawTicker = key.args[1];
+        const ticker = tickerToString(rawTicker);
         if (isPrintableAscii(ticker)) {
-          return [...result, new Asset({ ticker }, context)];
+          ownedTickers.push(ticker);
+          rawTickers.push(rawTicker);
         }
       }
+    });
 
-      return result;
-    }, []);
+    const ownedDetails = await query.asset.tokens.multi(rawTickers);
+
+    return assembleAssetQuery(ownedDetails, ownedTickers, context);
   }
 
   /**
-   * Retrieve an Asset
+   * Retrieve a FungibleAsset
    *
    * @param args.ticker - Asset ticker
    */
-  public async getAsset(args: { ticker: string }): Promise<Asset> {
+  public async getFungibleAsset(args: { ticker: string }): Promise<FungibleAsset> {
     const { ticker } = args;
 
-    const asset = new Asset({ ticker }, this.context);
+    const asset = new FungibleAsset({ ticker }, this.context);
     const exists = await asset.exists();
 
     if (!exists) {
@@ -208,16 +249,39 @@ export class Assets {
   }
 
   /**
+   * Retrieve an NftCollection
+   *
+   * @param args.ticker - NftCollection ticker
+   */
+  public async getNftCollection(args: { ticker: string }): Promise<NftCollection> {
+    const { ticker } = args;
+
+    const nftCollection = new NftCollection({ ticker }, this.context);
+    const exists = await nftCollection.exists();
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: `There is no NftCollection with ticker "${ticker}"`,
+      });
+    }
+
+    return nftCollection;
+  }
+
+  /**
    * Retrieve all the Assets on chain
    *
    * @note supports pagination
    */
-  public async get(paginationOpts?: PaginationOptions): Promise<ResultSet<Asset>> {
+  public async get(
+    paginationOpts?: PaginationOptions
+  ): Promise<ResultSet<FungibleAsset | NftCollection>> {
     const {
       context: {
         polymeshApi: {
           query: {
-            asset: { assetNames },
+            asset: { assetNames, tokens },
           },
         },
       },
@@ -228,13 +292,23 @@ export class Assets {
       paginationOpts,
     });
 
-    const data: Asset[] = entries.map(
+    const tickers: string[] = [];
+    const rawTickers: PolymeshPrimitivesTicker[] = [];
+
+    entries.forEach(
       ([
         {
           args: [rawTicker],
         },
-      ]) => new Asset({ ticker: tickerToString(rawTicker) }, context)
+      ]) => {
+        rawTickers.push(rawTicker);
+        tickers.push(tickerToString(rawTicker));
+      }
     );
+
+    const details = await tokens.multi(rawTickers);
+
+    const data = assembleAssetQuery(details, tickers, context);
 
     return {
       data,

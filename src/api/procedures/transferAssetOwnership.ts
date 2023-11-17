@@ -1,5 +1,5 @@
 import { createAuthorizationResolver } from '~/api/procedures/utils';
-import { Asset, AuthorizationRequest, Procedure } from '~/internal';
+import { AuthorizationRequest, FungibleAsset, Procedure } from '~/internal';
 import {
   Authorization,
   AuthorizationType,
@@ -66,7 +66,7 @@ export function getAuthorization(
 ): ProcedureAuthorization {
   return {
     permissions: {
-      assets: [new Asset({ ticker }, this.context)],
+      assets: [new FungibleAsset({ ticker }, this.context)],
       transactions: [TxTags.identity.AddAuthorization],
       portfolios: [],
     },

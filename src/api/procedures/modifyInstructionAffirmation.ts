@@ -26,7 +26,6 @@ import {
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
-  bigNumberToU32,
   bigNumberToU64,
   meshAffirmationStatusToAffirmationStatus,
   portfolioIdToMeshPortfolioId,
@@ -57,7 +56,6 @@ export async function prepareModifyInstructionAffirmation(
         tx: { settlement: settlementTx },
         query: { settlement },
       },
-      isV5,
     },
     context,
     storage: { portfolios, portfolioParams, senderLegAmount, totalLegAmount },
@@ -129,32 +127,21 @@ export async function prepareModifyInstructionAffirmation(
     });
   }
 
-  const affirmArgs: unknown[] = [rawInstructionId, validPortfolioIds];
-
-  if (isV5) {
-    affirmArgs.push(bigNumberToU32(senderLegAmount, context));
-  }
   // rejection works a bit different
   if (transaction) {
     return {
       transaction,
       resolver: instruction,
       feeMultiplier: senderLegAmount,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      args: affirmArgs as any,
+      args: [rawInstructionId, validPortfolioIds],
     };
   }
 
-  const rejectArgs: unknown[] = [rawInstructionId, validPortfolioIds[0]];
-
-  if (isV5) {
-    rejectArgs.push(bigNumberToU32(totalLegAmount, context));
-  }
   return {
     transaction: settlementTx.rejectInstruction,
     resolver: instruction,
     feeMultiplier: totalLegAmount,
-    args: rejectArgs,
+    args: [rawInstructionId, validPortfolioIds[0]],
   };
 }
 

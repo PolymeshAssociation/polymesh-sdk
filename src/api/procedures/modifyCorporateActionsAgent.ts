@@ -1,4 +1,4 @@
-import { Asset, KnownPermissionGroup, PolymeshError, Procedure } from '~/internal';
+import { FungibleAsset, KnownPermissionGroup, PolymeshError, Procedure } from '~/internal';
 import {
   AuthorizationType,
   ErrorCode,
@@ -35,7 +35,7 @@ export async function prepareModifyCorporateActionsAgent(
   } = this;
   const { ticker, target, requestExpiry } = args;
 
-  const asset = new Asset({ ticker }, context);
+  const asset = new FungibleAsset({ ticker }, context);
 
   const [invalidDids, agents] = await Promise.all([
     context.getInvalidDids([target]),
@@ -99,7 +99,7 @@ export function getAuthorization(
     permissions: {
       transactions: [TxTags.identity.AddAuthorization],
       portfolios: [],
-      assets: [new Asset({ ticker }, this.context)],
+      assets: [new FungibleAsset({ ticker }, this.context)],
     },
   };
 }

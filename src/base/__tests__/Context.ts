@@ -6,18 +6,18 @@ import { when } from 'jest-when';
 
 import { Account, Context, PolymeshError } from '~/internal';
 import {
-  BalanceTypeEnum,
-  CallIdEnum,
-  ClaimTypeEnum,
-  EventIdEnum,
-  ModuleIdEnum,
-} from '~/middleware/enums';
-import {
   claimsQuery,
   heartbeatQuery,
   metadataQuery,
   polyxTransactionsQuery,
 } from '~/middleware/queries';
+import {
+  BalanceTypeEnum,
+  CallIdEnum,
+  ClaimTypeEnum,
+  EventIdEnum,
+  ModuleIdEnum,
+} from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId, getAtMock } from '~/testUtils/mocks/dataSources';
 import {
@@ -39,6 +39,12 @@ jest.mock(
 jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
+jest.mock(
+  '~/api/entities/Identity/ChildIdentity',
+  require('~/testUtils/mocks/entities').mockChildIdentityModule(
+    '~/api/entities/Identity/ChildIdentity'
+  )
 );
 jest.mock(
   '~/api/entities/Account',
@@ -690,6 +696,76 @@ describe('Context class', () => {
         code: ErrorCode.UnmetPrerequisite,
         message:
           'The passed DID does not correspond to an on-chain user Identity. It may correspond to an Asset Identity',
+      });
+      expect(error).toEqual(expectedError);
+    });
+  });
+
+  describe('method: getChildIdentity', () => {
+    beforeAll(() => {
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
+    });
+
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    const childDid = 'someChild';
+
+    it('should return an ChildIdentity if given an ChildIdentity', async () => {
+      entityMockUtils.configureMocks({
+        childIdentityOptions: {
+          did: childDid,
+        },
+      });
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+      });
+
+      const childIdentity = entityMockUtils.getChildIdentityInstance();
+      const result = await context.getChildIdentity(childIdentity);
+      expect(result).toEqual(expect.objectContaining({ did: childDid }));
+    });
+
+    it('should return an ChildIdentity if given a valid child DID', async () => {
+      entityMockUtils.configureMocks({
+        childIdentityOptions: {
+          did: childDid,
+          exists: true,
+        },
+      });
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+      });
+
+      const result = await context.getChildIdentity(childDid);
+      expect(result).toEqual(expect.objectContaining({ did: childDid }));
+    });
+
+    it('should throw if the ChildIdentity does not exist', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+      });
+
+      entityMockUtils.configureMocks({
+        childIdentityOptions: {
+          did: childDid,
+          exists: false,
+        },
+      });
+
+      let error;
+      try {
+        await context.getChildIdentity(childDid);
+      } catch (err) {
+        error = err;
+      }
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'The passed DID does not correspond to an on-chain child Identity',
       });
       expect(error).toEqual(expectedError);
     });
@@ -1756,7 +1832,7 @@ describe('Context class', () => {
       );
 
       const result = await context.getDividendDistributionsForAssets({
-        assets: tickers.map(ticker => entityMockUtils.getAssetInstance({ ticker })),
+        assets: tickers.map(ticker => entityMockUtils.getFungibleAssetInstance({ ticker })),
       });
 
       expect(result.length).toBe(2);

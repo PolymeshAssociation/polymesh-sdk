@@ -4,16 +4,23 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Context, Entity, Instruction, PolymeshTransaction } from '~/internal';
-import { InstructionStatusEnum } from '~/middleware/enums';
 import { instructionsQuery } from '~/middleware/queries';
+import { InstructionStatusEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { createMockInstructionStatus, createMockNfts } from '~/testUtils/mocks/dataSources';
+import {
+  createMockInstructionStatus,
+  createMockNfts,
+  createMockTicker,
+  createMockU64,
+} from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import {
   AffirmationStatus,
+  FungibleLeg,
   InstructionAffirmationOperation,
   InstructionStatus,
   InstructionType,
+  NftLeg,
   UnsubCallback,
 } from '~/types';
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
@@ -26,8 +33,8 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 jest.mock(
   '~/api/entities/Venue',
@@ -227,6 +234,26 @@ describe('Instruction class', () => {
 
       expect(result).toEqual(unsubCallback);
       expect(callback).toBeCalledWith(InstructionStatus.Failed);
+
+      instructionStatusesMock.mockImplementationOnce(async (_, cbFunc) => {
+        cbFunc(dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Success));
+        return unsubCallback;
+      });
+
+      result = await instruction.onStatusChange(callback);
+
+      expect(result).toEqual(unsubCallback);
+      expect(callback).toBeCalledWith(InstructionStatus.Success);
+
+      instructionStatusesMock.mockImplementationOnce(async (_, cbFunc) => {
+        cbFunc(dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Rejected));
+        return unsubCallback;
+      });
+
+      result = await instruction.onStatusChange(callback);
+
+      expect(result).toEqual(unsubCallback);
+      expect(callback).toBeCalledWith(InstructionStatus.Rejected);
     });
 
     it('should error on unknown instruction status', () => {
@@ -576,7 +603,7 @@ describe('Instruction class', () => {
       const ticker = 'SOME_TICKER';
       const amount = new BigNumber(1000);
 
-      entityMockUtils.configureMocks({ assetOptions: { ticker } });
+      entityMockUtils.configureMocks({ fungibleAssetOptions: { ticker } });
       instructionStatusMock.mockResolvedValue(
         createMockInstructionStatus(InternalInstructionStatus.Pending)
       );
@@ -606,7 +633,7 @@ describe('Instruction class', () => {
 
       const { data: leg } = await instruction.getLegs();
 
-      expect(leg[0].amount).toEqual(amount);
+      expect((leg[0] as FungibleLeg).amount).toEqual(amount);
       expect(leg[0].asset.ticker).toBe(ticker);
       expect(leg[0].from.owner.did).toBe(fromDid);
       expect(leg[0].to.owner.did).toBe(toDid);
@@ -619,12 +646,12 @@ describe('Instruction class', () => {
       );
     });
 
-    it('should throw an error if a leg is an NFT (to be implemented)', () => {
+    it('should handle NFT legs', async () => {
       const fromDid = 'fromDid';
       const toDid = 'toDid';
       const ticker = 'SOME_TICKER';
 
-      entityMockUtils.configureMocks({ assetOptions: { ticker } });
+      entityMockUtils.configureMocks({ fungibleAssetOptions: { ticker } });
       instructionStatusMock.mockResolvedValue(
         createMockInstructionStatus(InternalInstructionStatus.Pending)
       );
@@ -639,7 +666,10 @@ describe('Instruction class', () => {
               did: dsMockUtils.createMockIdentityId(toDid),
               kind: dsMockUtils.createMockPortfolioKind('Default'),
             }),
-            nfts: createMockNfts(),
+            nfts: createMockNfts({
+              ticker: createMockTicker(ticker),
+              ids: [createMockU64(new BigNumber(1))],
+            }),
           },
         })
       );
@@ -651,7 +681,14 @@ describe('Instruction class', () => {
         .mockImplementation()
         .mockResolvedValue({ entries, lastKey: null });
 
-      return expect(instruction.getLegs()).rejects.toThrow();
+      const { data: leg } = await instruction.getLegs();
+
+      expect((leg[0] as NftLeg).nfts).toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: new BigNumber(1) })])
+      );
+      expect(leg[0].asset.ticker).toBe(ticker);
+      expect(leg[0].from.owner.did).toBe(fromDid);
+      expect(leg[0].to.owner.did).toBe(toDid);
     });
 
     it('should throw an error if a leg is a off chain (to be implemented)', () => {
@@ -659,7 +696,7 @@ describe('Instruction class', () => {
       const toDid = 'toDid';
       const ticker = 'SOME_TICKER';
 
-      entityMockUtils.configureMocks({ assetOptions: { ticker } });
+      entityMockUtils.configureMocks({ fungibleAssetOptions: { ticker } });
       instructionStatusMock.mockResolvedValue(
         createMockInstructionStatus(InternalInstructionStatus.Pending)
       );
@@ -687,7 +724,7 @@ describe('Instruction class', () => {
     it('should throw an error if a leg in None', () => {
       const ticker = 'SOME_TICKER';
 
-      entityMockUtils.configureMocks({ assetOptions: { ticker } });
+      entityMockUtils.configureMocks({ fungibleAssetOptions: { ticker } });
       instructionStatusMock.mockResolvedValue(
         createMockInstructionStatus(InternalInstructionStatus.Pending)
       );
@@ -902,7 +939,7 @@ describe('Instruction class', () => {
 
       const result = await instruction.getStatus();
       expect(result).toMatchObject({
-        status: InstructionStatus.Executed,
+        status: InstructionStatus.Success,
         eventIdentifier: fakeEventIdentifierResult,
       });
     });
@@ -1060,7 +1097,7 @@ describe('Instruction class', () => {
         exists: false,
       });
       const amount = new BigNumber(1);
-      const asset = entityMockUtils.getAssetInstance({ ticker: 'SOME_ASSET' });
+      const asset = entityMockUtils.getFungibleAssetInstance({ ticker: 'SOME_ASSET' });
 
       jest.spyOn(instruction, 'getLegs').mockResolvedValue({
         data: [

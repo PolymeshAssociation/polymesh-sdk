@@ -22,8 +22,8 @@ import { Authorization, SignerValue, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 describe('modifyCorporateActionsAgent procedure', () => {
@@ -70,7 +70,7 @@ describe('modifyCorporateActionsAgent procedure', () => {
 
   beforeEach(() => {
     entityMockUtils.configureMocks({
-      assetOptions: {
+      fungibleAssetOptions: {
         corporateActionsGetAgents: [],
       },
     });
@@ -108,7 +108,7 @@ describe('modifyCorporateActionsAgent procedure', () => {
 
   it('should throw an error if the supplied Identity is currently the corporate actions agent', () => {
     entityMockUtils.configureMocks({
-      assetOptions: {
+      fungibleAssetOptions: {
         corporateActionsGetAgents: [entityMockUtils.getIdentityInstance({ did: target })],
       },
     });
@@ -128,7 +128,7 @@ describe('modifyCorporateActionsAgent procedure', () => {
 
   it('should throw an error if the supplied expiry date is not a future date', () => {
     entityMockUtils.configureMocks({
-      assetOptions: {
+      fungibleAssetOptions: {
         corporateActionsGetAgents: [],
       },
     });

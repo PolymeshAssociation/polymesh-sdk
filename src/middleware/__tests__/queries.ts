@@ -1,14 +1,6 @@
 import BigNumber from 'bignumber.js';
 
 import {
-  AuthorizationStatusEnum,
-  AuthTypeEnum,
-  CallIdEnum,
-  ClaimTypeEnum,
-  EventIdEnum,
-  ModuleIdEnum,
-} from '~/middleware/enums';
-import {
   assetHoldersQuery,
   assetQuery,
   assetTransactionQuery,
@@ -27,6 +19,9 @@ import {
   latestBlockQuery,
   latestSqVersionQuery,
   metadataQuery,
+  multiSigProposalQuery,
+  multiSigProposalVotesQuery,
+  nftHoldersQuery,
   polyxTransactionsQuery,
   portfolioMovementsQuery,
   portfolioQuery,
@@ -37,6 +32,14 @@ import {
   trustedClaimIssuerQuery,
   trustingAssetsQuery,
 } from '~/middleware/queries';
+import {
+  AuthorizationStatusEnum,
+  AuthTypeEnum,
+  CallIdEnum,
+  ClaimTypeEnum,
+  EventIdEnum,
+  ModuleIdEnum,
+} from '~/middleware/types';
 import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
 
 describe('latestBlockQuery', () => {
@@ -397,6 +400,28 @@ describe('assetHoldersQuery', () => {
   });
 });
 
+describe('nftHoldersQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      identityId: 'someDid',
+    };
+
+    let result = nftHoldersQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+
+    result = assetHoldersQuery(variables, new BigNumber(1), new BigNumber(0));
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({
+      ...variables,
+      size: 1,
+      start: 0,
+    });
+  });
+});
+
 describe('settlementsQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
     const variables = {
@@ -510,5 +535,32 @@ describe('authorizationsQuery', () => {
       size: 1,
       start: 0,
     });
+  });
+});
+
+describe('multiSigProposalQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      multisigId: 'multiSigAddress',
+      proposalId: 1,
+    };
+
+    const result = multiSigProposalQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('multiSigProposalVotesQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      proposalId: 'multiSigAddress/1',
+    };
+
+    const result = multiSigProposalVotesQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
   });
 });

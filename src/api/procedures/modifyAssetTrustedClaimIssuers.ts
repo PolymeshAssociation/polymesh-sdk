@@ -5,7 +5,7 @@ import {
 } from '@polkadot/types/lookup';
 import { difference, intersection, isEqual, sortBy } from 'lodash';
 
-import { Asset, Context, PolymeshError, Procedure } from '~/internal';
+import { Context, FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import {
   ErrorCode,
   ModifyAssetTrustedClaimIssuersAddSetParams,
@@ -92,9 +92,9 @@ const areSameClaimIssuers = (
  * @hidden
  */
 export async function prepareModifyAssetTrustedClaimIssuers(
-  this: Procedure<Params, Asset>,
+  this: Procedure<Params, void>,
   args: Params
-): Promise<BatchTransactionSpec<Asset, unknown[][]>> {
+): Promise<BatchTransactionSpec<void, unknown[][]>> {
   const {
     context: {
       polymeshApi: { query, tx },
@@ -192,14 +192,14 @@ export async function prepareModifyAssetTrustedClaimIssuers(
     },
   ] as const);
 
-  return { transactions, resolver: new Asset({ ticker }, context) };
+  return { transactions, resolver: undefined };
 }
 
 /**
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, Asset>,
+  this: Procedure<Params, void>,
   { ticker, operation }: Params
 ): ProcedureAuthorization {
   const transactions = [];
@@ -213,7 +213,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions,
-      assets: [new Asset({ ticker }, this.context)],
+      assets: [new FungibleAsset({ ticker }, this.context)],
       portfolios: [],
     },
   };
@@ -222,5 +222,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const modifyAssetTrustedClaimIssuers = (): Procedure<Params, Asset> =>
+export const modifyAssetTrustedClaimIssuers = (): Procedure<Params, void> =>
   new Procedure(prepareModifyAssetTrustedClaimIssuers, getAuthorization);

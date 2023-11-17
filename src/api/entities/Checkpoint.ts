@@ -2,7 +2,7 @@ import { u64 } from '@polkadot/types';
 import { PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
-import { Asset, Context, Entity, Identity } from '~/internal';
+import { Context, Entity, FungibleAsset, Identity } from '~/internal';
 import { IdentityBalance, PaginationOptions, ResultSet } from '~/types';
 import { tuple } from '~/types/utils';
 import {
@@ -49,7 +49,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * Asset whose balances are being recorded in this Checkpoint
    */
-  public asset: Asset;
+  public asset: FungibleAsset;
 
   /**
    * @hidden
@@ -60,7 +60,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
     const { id, ticker } = identifiers;
 
     this.id = id;
-    this.asset = new Asset({ ticker }, context);
+    this.asset = new FungibleAsset({ ticker }, context);
   }
 
   /**

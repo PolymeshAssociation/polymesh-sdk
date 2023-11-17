@@ -3,10 +3,10 @@ import { PalletCorporateActionsCaId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import {
-  Asset,
   Context,
   CorporateActionBase,
   DividendDistribution,
+  FungibleAsset,
   PolymeshError,
   Procedure,
 } from '~/internal';
@@ -121,7 +121,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.corporateAction.RemoveCa],
-      assets: [new Asset({ ticker }, this.context)],
+      assets: [new FungibleAsset({ ticker }, this.context)],
       portfolios: [],
     },
   };

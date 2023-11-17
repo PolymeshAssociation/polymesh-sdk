@@ -1,4 +1,4 @@
-import { Asset, Context, Identity, PolymeshError } from '~/internal';
+import { Context, FungibleAsset, Identity, PolymeshError } from '~/internal';
 import { trustedClaimIssuerQuery } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import { ClaimType, ErrorCode, EventIdentifier } from '~/types';
@@ -32,7 +32,7 @@ export class DefaultTrustedClaimIssuer extends Identity {
   /**
    * Asset for which this Identity is a Default Trusted Claim Issuer
    */
-  public asset: Asset;
+  public asset: FungibleAsset;
 
   /**
    * @hidden
@@ -42,7 +42,7 @@ export class DefaultTrustedClaimIssuer extends Identity {
 
     super(identifiers, context);
 
-    this.asset = new Asset({ ticker }, context);
+    this.asset = new FungibleAsset({ ticker }, context);
   }
 
   /**

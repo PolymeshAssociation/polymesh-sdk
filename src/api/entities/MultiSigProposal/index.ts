@@ -1,16 +1,38 @@
 import { BigNumber } from 'bignumber.js';
 
-import { Context, Entity, MultiSig, PolymeshError } from '~/internal';
-import { ErrorCode, MultiSigProposalDetails, TxTag } from '~/types';
 import {
+  Account,
+  Context,
+  Entity,
+  evaluateMultiSigProposal,
+  MultiSig,
+  PolymeshError,
+} from '~/internal';
+import { multiSigProposalQuery, multiSigProposalVotesQuery } from '~/middleware/queries';
+import { MultiSigProposal as MiddlewareMultiSigProposal, Query } from '~/middleware/types';
+import {
+  ErrorCode,
+  EventIdentifier,
+  MultiSigProposalAction,
+  MultiSigProposalDetails,
+  MultiSigProposalVote,
+  NoArgsProcedureMethod,
+  SignerType,
+  TxTag,
+} from '~/types';
+import { Ensured } from '~/types/utils';
+import {
+  accountIdToString,
   bigNumberToU64,
   boolToBoolean,
   meshProposalStatusToProposalStatus,
+  middlewareEventDetailsToEventIdentifier,
   momentToDate,
+  signerValueToSigner,
   stringToAccountId,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { assertAddressValid, optionize } from '~/utils/internal';
+import { asAccount, assertAddressValid, createProcedureMethod, optionize } from '~/utils/internal';
 
 interface UniqueIdentifiers {
   multiSigAddress: string;
@@ -41,7 +63,39 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
 
     this.multiSig = new MultiSig({ address: multiSigAddress }, context);
     this.id = id;
+
+    this.approve = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [
+          evaluateMultiSigProposal,
+          { proposal: this, action: MultiSigProposalAction.Approve },
+        ],
+        voidArgs: true,
+      },
+      context
+    );
+
+    this.reject = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [
+          evaluateMultiSigProposal,
+          { proposal: this, action: MultiSigProposalAction.Reject },
+        ],
+        voidArgs: true,
+      },
+      context
+    );
   }
+
+  /**
+   * Approve this MultiSig proposal
+   */
+  public approve: NoArgsProcedureMethod<void>;
+
+  /**
+   * Reject this MultiSig proposal
+   */
+  public reject: NoArgsProcedureMethod<void>;
 
   /**
    * Fetches the details of the Proposal. This includes the amount of approvals and rejections, the expiry, and details of the wrapped extrinsic
@@ -69,27 +123,39 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
         expiry: rawExpiry,
         autoClose: rawAutoClose,
       },
-      proposal,
+      proposalOpt,
+      votes,
     ] = await Promise.all([
-      multiSig.proposalDetail([rawMultiSignAddress, rawId]),
-      multiSig.proposals([rawMultiSignAddress, rawId]),
+      multiSig.proposalDetail(rawMultiSignAddress, rawId),
+      multiSig.proposals(rawMultiSignAddress, rawId),
+      multiSig.votes.entries([rawMultiSignAddress, rawId]),
     ]);
 
-    let args, method, section;
-    if (proposal.isNone) {
+    if (proposalOpt.isNone) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
         message: `Proposal with ID: "${id}" was not found. It may have already been executed`,
       });
-    } else {
-      ({ args, method, section } = proposal.unwrap());
     }
+
+    const proposal = proposalOpt.unwrap();
+    const { method, section } = proposal;
+    const { args } = proposal.toJSON();
 
     const approvalAmount = u64ToBigNumber(rawApprovals);
     const rejectionAmount = u64ToBigNumber(rawRejections);
     const expiry = optionize(momentToDate)(rawExpiry.unwrapOr(null));
     const status = meshProposalStatusToProposalStatus(rawStatus, expiry);
     const autoClose = boolToBoolean(rawAutoClose);
+    const voted: Account[] = [];
+    if (votes.length > 0) {
+      votes.forEach(([voteStorageKey, didVote]) => {
+        if (didVote.isTrue && voteStorageKey.args[1].isAccount)
+          voted.push(
+            new Account({ address: accountIdToString(voteStorageKey.args[1].asAccount) }, context)
+          );
+      });
+    }
 
     return {
       approvalAmount,
@@ -97,8 +163,9 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
       status,
       expiry,
       autoClose,
-      args: args.map(a => a.toString()),
+      args,
       txTag: `${section}.${method}` as TxTag,
+      voted,
     };
   }
 
@@ -119,7 +186,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
 
     const rawId = bigNumberToU64(id, context);
     const rawMultiSignAddress = stringToAccountId(multiSigAddress, context);
-    const rawProposal = await multiSig.proposals([rawMultiSignAddress, rawId]);
+    const rawProposal = await multiSig.proposals(rawMultiSignAddress, rawId);
 
     return rawProposal.isSome;
   }
@@ -137,5 +204,96 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
       multiSigAddress,
       id: id.toString(),
     };
+  }
+
+  /**
+   * Fetches the individual votes for this MultiSig proposal and their identifier data (block number, date and event index) of the event that was emitted when this MultiSig Proposal Vote was casted
+   *
+   * @note uses the middlewareV2
+   */
+  public async votes(): Promise<MultiSigProposalVote[]> {
+    const {
+      multiSig: { address },
+      id,
+      context,
+    } = this;
+
+    const {
+      data: {
+        multiSigProposalVotes: { nodes: signerVotes },
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'multiSigProposalVotes'>>(
+      multiSigProposalVotesQuery({
+        proposalId: `${address}/${id.toString()}`,
+      })
+    );
+
+    return signerVotes.map(signerVote => {
+      const { signer, action, createdBlock, eventIdx } = signerVote;
+
+      const { signerType, signerValue } = signer!;
+      return {
+        signer: signerValueToSigner(
+          { type: signerType as unknown as SignerType, value: signerValue },
+          context
+        ),
+        action: action!,
+        ...middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx),
+      };
+    });
+  }
+
+  /**
+   * @hidden
+   *
+   * Queries the SQ to get MultiSig Proposal details
+   */
+  private async getProposalDetails(): Promise<MiddlewareMultiSigProposal | null> {
+    const {
+      context,
+      id,
+      multiSig: { address },
+    } = this;
+    const {
+      data: {
+        multiSigProposals: {
+          nodes: [node],
+        },
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'multiSigProposals'>>(
+      multiSigProposalQuery({
+        multisigId: address,
+        proposalId: id.toNumber(),
+      })
+    );
+    return node;
+  }
+
+  /**
+   * Retrieve the identifier data (block number, date and event index) of the event that was emitted when this MultiSig Proposal was created
+   *
+   * @note uses the middlewareV2
+   * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
+   */
+  public async createdAt(): Promise<EventIdentifier | null> {
+    const proposal = await this.getProposalDetails();
+
+    return optionize(middlewareEventDetailsToEventIdentifier)(
+      proposal?.createdBlock,
+      proposal?.eventIdx
+    );
+  }
+
+  /**
+   * Retrieve the account which created this MultiSig Proposal
+   *
+   * @note uses the middlewareV2
+   * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
+   */
+  public async creator(): Promise<Account | null> {
+    const { context } = this;
+    const proposal = await this.getProposalDetails();
+
+    return optionize(asAccount)(proposal?.creatorAccount, context);
   }
 }

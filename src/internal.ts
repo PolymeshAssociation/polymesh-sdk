@@ -8,7 +8,7 @@ export { Procedure } from '~/base/Procedure';
 export { Entity } from '~/api/entities/Entity';
 export { Namespace } from '~/api/entities/Namespace';
 export { Authorizations } from '~/api/entities/common/namespaces/Authorizations';
-export { TransferRestrictionBase } from '~/api/entities/Asset/TransferRestrictions/TransferRestrictionBase';
+export { TransferRestrictionBase } from '~/api/entities/Asset/Fungible/TransferRestrictions/TransferRestrictionBase';
 export {
   consumeAddMultiSigSignerAuthorization,
   ConsumeAddMultiSigSignerAuthorizationParams,
@@ -30,6 +30,7 @@ export {
 } from '~/api/procedures/consumeAuthorizationRequests';
 export { createPortfolios } from '~/api/procedures/createPortfolios';
 export { createAsset } from '~/api/procedures/createAsset';
+export { createNftCollection } from '~/api/procedures/createNftCollection';
 export { createVenue } from '~/api/procedures/createVenue';
 export { inviteAccount } from '~/api/procedures/inviteAccount';
 export { subsidizeAccount } from '~/api/procedures/subsidizeAccount';
@@ -42,6 +43,7 @@ export {
   Params as ModifyAssetTrustedClaimIssuersParams,
 } from '~/api/procedures/modifyAssetTrustedClaimIssuers';
 export { registerIdentity } from '~/api/procedures/registerIdentity';
+export { createChildIdentity } from '~/api/procedures/createChildIdentity';
 export { attestPrimaryKeyRotation } from '~/api/procedures/attestPrimaryKeyRotation';
 export { rotatePrimaryKey } from '~/api/procedures/rotatePrimaryKey';
 export { removeSecondaryAccounts } from '~/api/procedures/removeSecondaryAccounts';
@@ -63,6 +65,7 @@ export {
   togglePauseRequirements,
   TogglePauseRequirementsParams,
 } from '~/api/procedures/togglePauseRequirements';
+export { evaluateMultiSigProposal } from '~/api/procedures/evaluateMultiSigProposal';
 export { transferPolyx } from '~/api/procedures/transferPolyx';
 export { transferAssetOwnership } from '~/api/procedures/transferAssetOwnership';
 export { deletePortfolio } from '~/api/procedures/deletePortfolio';
@@ -70,6 +73,7 @@ export { renamePortfolio } from '~/api/procedures/renamePortfolio';
 export { moveFunds } from '~/api/procedures/moveFunds';
 export { setCustodian } from '~/api/procedures/setCustodian';
 export { redeemTokens } from '~/api/procedures/redeemTokens';
+export { redeemNft } from '~/api/procedures/redeemNft';
 export {
   addTransferRestriction,
   AddTransferRestrictionParams,
@@ -90,11 +94,12 @@ export { createCheckpoint } from '~/api/procedures/createCheckpoint';
 export { controllerTransfer } from '~/api/procedures/controllerTransfer';
 export { linkCaDocs } from '~/api/procedures/linkCaDocs';
 export { Identity } from '~/api/entities/Identity';
+export { ChildIdentity } from '~/api/entities/Identity/ChildIdentity';
 export { Account } from '~/api/entities/Account';
 export { MultiSig } from '~/api/entities/Account/MultiSig';
 export { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 export { TickerReservation } from '~/api/entities/TickerReservation';
-export { Asset } from '~/api/entities/Asset';
+export { BaseAsset, FungibleAsset, NftCollection, Nft } from '~/api/entities/Asset';
 export { MetadataEntry } from '~/api/entities/MetadataEntry';
 export { registerMetadata } from '~/api/procedures/registerMetadata';
 export { setMetadata } from '~/api/procedures/setMetadata';
@@ -132,7 +137,6 @@ export { leaveIdentity } from '~/api/procedures/leaveIdentity';
 export { createGroup } from '~/api/procedures/createGroup';
 export { quitCustody } from '~/api/procedures/quitCustody';
 export { inviteExternalAgent } from '~/api/procedures/inviteExternalAgent';
-export { rescheduleInstruction } from '~/api/procedures/rescheduleInstruction';
 export { setPermissionGroup } from '~/api/procedures/setPermissionGroup';
 export { setGroupPermissions } from '~/api/procedures/setGroupPermissions';
 export { removeExternalAgent } from '~/api/procedures/removeExternalAgent';
@@ -152,3 +156,4 @@ export {
 export { addAssetStat } from '~/api/procedures/addAssetStat';
 export { removeAssetStat } from '~/api/procedures/removeAssetStat';
 export { setVenueFiltering } from '~/api/procedures/setVenueFiltering';
+export { registerCustomClaimType } from '~/api/procedures/registerCustomClaimType';

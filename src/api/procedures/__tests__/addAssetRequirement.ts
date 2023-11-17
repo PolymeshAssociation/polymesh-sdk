@@ -11,7 +11,7 @@ import {
   Params,
   prepareAddAssetRequirement,
 } from '~/api/procedures/addAssetRequirement';
-import { Asset, Context } from '~/internal';
+import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Condition, ConditionTarget, ConditionType, InputRequirement, TxTags } from '~/types';
@@ -19,8 +19,8 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Base',
+  require('~/testUtils/mocks/entities').mockBaseAssetModule('~/api/entities/Asset/Base')
 );
 
 describe('addAssetRequirement procedure', () => {
@@ -93,7 +93,7 @@ describe('addAssetRequirement procedure', () => {
 
   it('should throw an error if the supplied requirement is already a part of the Asset', () => {
     entityMockUtils.configureMocks({
-      assetOptions: {
+      baseAssetOptions: {
         complianceRequirementsGet: {
           requirements: [
             {
@@ -105,7 +105,7 @@ describe('addAssetRequirement procedure', () => {
         },
       },
     });
-    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(prepareAddAssetRequirement.call(proc, args)).rejects.toThrow(
       'There already exists a Requirement with the same conditions for this Asset'
@@ -127,7 +127,7 @@ describe('addAssetRequirement procedure', () => {
         })
       );
 
-    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const result = await prepareAddAssetRequirement.call(proc, {
       ...args,
@@ -137,13 +137,13 @@ describe('addAssetRequirement procedure', () => {
     expect(result).toEqual({
       transaction: addComplianceRequirementTransaction,
       args: [rawTicker, fakeSenderConditions, fakeReceiverConditions],
-      resolver: expect.objectContaining({ ticker }),
+      resolver: undefined,
     });
   });
 
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const params = {
         ticker,

@@ -9,8 +9,8 @@ import {
   union,
 } from 'lodash';
 
+import { BaseAsset } from '~/internal';
 import {
-  Asset,
   DefaultPortfolio,
   ModuleName,
   NumberedPortfolio,
@@ -80,8 +80,8 @@ export function getMissingPortfolioPermissions(
  * Calculate the difference between the required Asset permissions and the current ones
  */
 export function getMissingAssetPermissions(
-  requiredPermissions: Asset[] | null | undefined,
-  currentPermissions: SectionPermissions<Asset> | null
+  requiredPermissions: BaseAsset[] | null | undefined,
+  currentPermissions: SectionPermissions<BaseAsset> | null
 ): SimplePermissions['assets'] {
   if (currentPermissions === null) {
     return undefined;
@@ -91,7 +91,7 @@ export function getMissingAssetPermissions(
     const { type: permissionType, values: assetValues } = currentPermissions;
 
     if (requiredPermissions.length) {
-      let missingPermissions: Asset[];
+      let missingPermissions: BaseAsset[];
 
       if (permissionType === PermissionType.Include) {
         missingPermissions = differenceBy(requiredPermissions, assetValues, 'ticker');

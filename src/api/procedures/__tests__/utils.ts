@@ -20,11 +20,11 @@ import {
   UnreachableCaseError,
 } from '~/api/procedures/utils';
 import {
-  Asset,
   AuthorizationRequest,
   CheckpointSchedule,
   Context,
   CustomPermissionGroup,
+  FungibleAsset,
   Identity,
   Instruction,
   PolymeshError,
@@ -79,8 +79,8 @@ jest.mock(
 );
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 jest.mock(
@@ -126,7 +126,7 @@ describe('assertInstructionValid', () => {
     entityMockUtils.configureMocks({
       instructionOptions: {
         details: {
-          status: InstructionStatus.Executed,
+          status: InstructionStatus.Success,
         } as InstructionDetails,
       },
     });
@@ -255,7 +255,7 @@ describe('assertInstructionValidForManualExecution', () => {
       assertInstructionValidForManualExecution(
         {
           ...instructionDetails,
-          status: InstructionStatus.Executed,
+          status: InstructionStatus.Success,
         },
         mockContext
       )
@@ -878,7 +878,7 @@ describe('authorization request validations', () => {
 
   describe('assertTransferAssetOwnershipAuthorizationValid', () => {
     it('should not throw with a valid request', () => {
-      entityMockUtils.configureMocks({ assetOptions: { exists: true } });
+      entityMockUtils.configureMocks({ fungibleAssetOptions: { exists: true } });
       const data: Authorization = {
         type: AuthorizationType.TransferAssetOwnership,
         value: 'TICKER',
@@ -898,7 +898,7 @@ describe('authorization request validations', () => {
     });
 
     it('should throw with a Asset that does not exist', () => {
-      entityMockUtils.configureMocks({ assetOptions: { exists: false } });
+      entityMockUtils.configureMocks({ fungibleAssetOptions: { exists: false } });
       const data: Authorization = {
         type: AuthorizationType.TransferAssetOwnership,
         value: 'TICKER',
@@ -1600,7 +1600,7 @@ describe('assertGroupNotExists', () => {
     };
     const customId = new BigNumber(1);
 
-    let asset = entityMockUtils.getAssetInstance({
+    let asset = entityMockUtils.getFungibleAssetInstance({
       ticker,
       permissionsGetGroups: {
         custom: [
@@ -1628,7 +1628,7 @@ describe('assertGroupNotExists', () => {
     expect(error.message).toBe('There already exists a group with the exact same permissions');
     expect(error.data.groupId).toEqual(customId);
 
-    asset = entityMockUtils.getAssetInstance({
+    asset = entityMockUtils.getFungibleAssetInstance({
       ticker,
       permissionsGetGroups: {
         custom: [],
@@ -1680,7 +1680,7 @@ describe('getGroupFromPermissions', () => {
   };
   const customId = new BigNumber(1);
 
-  let asset: Asset;
+  let asset: FungibleAsset;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -1688,7 +1688,7 @@ describe('getGroupFromPermissions', () => {
   });
 
   beforeEach(() => {
-    asset = entityMockUtils.getAssetInstance({
+    asset = entityMockUtils.getFungibleAssetInstance({
       ticker,
       permissionsGetGroups: {
         custom: [

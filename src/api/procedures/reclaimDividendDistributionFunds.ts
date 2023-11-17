@@ -1,4 +1,4 @@
-import { Asset, DividendDistribution, PolymeshError, Procedure } from '~/internal';
+import { DividendDistribution, FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RoleType, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { corporateActionIdentifierToCaId, portfolioToPortfolioId } from '~/utils/conversion';
@@ -79,7 +79,7 @@ export async function getAuthorization(
     roles: [{ type: RoleType.PortfolioCustodian, portfolioId: portfolioToPortfolioId(origin) }],
     permissions: {
       transactions: [TxTags.capitalDistribution.Reclaim],
-      assets: [new Asset({ ticker }, context)],
+      assets: [new FungibleAsset({ ticker }, context)],
       portfolios: [origin],
     },
   };
