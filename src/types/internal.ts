@@ -22,6 +22,7 @@ import { Identity, Procedure } from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
 import {
   ClaimType,
+  CustomClaimType,
   InputStatClaim,
   KnownAssetType,
   KnownNftType,
@@ -335,3 +336,5 @@ export interface StatClaimIssuer {
   issuer: Identity;
   claimType: StatClaimType;
 }
+
+export type CustomClaimTypeWithDid = CustomClaimType & { did?: string };

@@ -115,6 +115,7 @@ import {
   Block,
   CallIdEnum,
   Claim as MiddlewareClaim,
+  CustomClaimType as MiddlewareCustomClaimType,
   Instruction,
   ModuleIdEnum,
   Portfolio as MiddlewarePortfolio,
@@ -220,6 +221,7 @@ import {
 } from '~/types';
 import {
   CorporateActionIdentifier,
+  CustomClaimTypeWithDid,
   ExemptKey,
   ExtrinsicIdentifier,
   InstructionStatus,
@@ -4701,4 +4703,17 @@ export function nftInputToNftMetadataVec(
   const rawItems = nftInfo.map(item => nftInputToNftMetadataAttribute(item, context));
 
   return context.createType('Vec<PolymeshPrimitivesNftNftMetadataAttribute>', rawItems);
+}
+
+/**
+ * @hidden
+ */
+export function toCustomClaimTypeWithIdentity(
+  data: MiddlewareCustomClaimType[]
+): CustomClaimTypeWithDid[] {
+  return data.map(item => ({
+    name: item.name,
+    id: new BigNumber(item.id),
+    did: item.identity?.did,
+  }));
 }

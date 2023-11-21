@@ -1484,3 +1484,68 @@ export function multiSigProposalVotesQuery(
     variables,
   };
 }
+
+/**
+ *  @hidden
+ */
+export function createCustomClaimTypeQueryFilters(variables: CustomClaimTypesQuery): {
+  args: string;
+  filter: string;
+} {
+  const args = ['$size: Int, $start: Int'];
+  const filters = [];
+
+  const { dids } = variables;
+
+  if (dids?.length) {
+    args.push('$dids: [String!]');
+    filters.push('identityId: { in: $dids }');
+  }
+
+  return {
+    args: `(${args.join()})`,
+    filter: filters.length ? `filter: { ${filters.join()} },` : '',
+  };
+}
+
+export interface CustomClaimTypesQuery {
+  dids?: string[];
+}
+/**
+ * @hidden
+ *
+ * Get registered CustomClaimTypes
+ */
+export function customClaimTypeQuery(
+  size?: BigNumber,
+  start?: BigNumber,
+  dids?: string[]
+): QueryOptions<PaginatedQueryArgs<CustomClaimTypesQuery>> {
+  const { args, filter } = createCustomClaimTypeQueryFilters({ dids });
+
+  const query = gql`
+  query CustomClaimTypesQuery
+    ${args}
+    {
+      customClaimTypes(
+        ${filter}
+        first: $size
+        offset: $start
+      ){
+        nodes {
+          id
+          name
+          identity {
+            did
+          }
+        }
+        totalCount
+      }
+    }
+`;
+
+  return {
+    query,
+    variables: { size: size?.toNumber(), start: start?.toNumber(), dids },
+  };
+}

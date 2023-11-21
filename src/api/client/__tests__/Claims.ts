@@ -3,8 +3,14 @@ import { when } from 'jest-when';
 
 import { Claims } from '~/api/client/Claims';
 import { Context, PolymeshTransaction } from '~/internal';
-import { claimsGroupingQuery, claimsQuery } from '~/middleware/queries';
-import { Claim, ClaimsGroupBy, ClaimsOrderBy, ClaimTypeEnum } from '~/middleware/types';
+import { claimsGroupingQuery, claimsQuery, customClaimTypeQuery } from '~/middleware/queries';
+import {
+  Claim,
+  ClaimsGroupBy,
+  ClaimsOrderBy,
+  ClaimTypeEnum,
+  CustomClaimType as MiddlewareCustomClaimType,
+} from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -17,6 +23,7 @@ import {
   Scope,
   ScopeType,
 } from '~/types';
+import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -828,6 +835,114 @@ describe('Claims Class', () => {
 
       const result = await claims.getCustomClaimTypeById(id);
       expect(result).toBeNull();
+    });
+  });
+
+  describe('method: getAllCustomClaimTypes', () => {
+    beforeAll(() => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date(2023, 4, 17));
+    });
+
+    afterAll(() => {
+      jest.useRealTimers();
+      jest.restoreAllMocks();
+    });
+
+    it('should return a list of CustomClaimType(s)', async () => {
+      const did = 'someDid';
+
+      const customClaimsTypeQueryResponse = {
+        nodes: [
+          {
+            id: '1',
+            name: 'Some Claim Type',
+            identity: {
+              did,
+            },
+          },
+        ],
+        totalCount: 1,
+      };
+
+      const customClaimsTypeTransformed = [
+        {
+          id: new BigNumber(1),
+          name: 'Some Claim Type',
+          did,
+        },
+      ];
+
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+
+      when(jest.spyOn(utilsConversionModule, 'toCustomClaimTypeWithIdentity'))
+        .calledWith(customClaimsTypeQueryResponse.nodes as MiddlewareCustomClaimType[])
+        .mockReturnValue(customClaimsTypeTransformed);
+
+      dsMockUtils.createApolloQueryMock(customClaimTypeQuery(new BigNumber(1), new BigNumber(0)), {
+        customClaimTypes: customClaimsTypeQueryResponse,
+      });
+
+      const result = await claims.getAllCustomClaimTypes({
+        size: new BigNumber(1),
+        start: new BigNumber(0),
+      });
+
+      expect(result.data).toEqual(customClaimsTypeTransformed);
+      expect(result.count).toEqual(new BigNumber(1));
+      expect(result.next).toBeNull();
+    });
+
+    it('should return a list of CustomClaimType(s) using default pagination', async () => {
+      const did = 'someDid';
+
+      const customClaimsTypeQueryResponse = {
+        nodes: [
+          {
+            id: '1',
+            name: 'Some Claim Type',
+            identity: {
+              did,
+            },
+          },
+        ],
+        totalCount: 1,
+      };
+
+      const customClaimsTypeTransformed = [
+        {
+          id: new BigNumber(1),
+          name: 'Some Claim Type',
+          did,
+        },
+      ];
+
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+
+      when(jest.spyOn(utilsConversionModule, 'toCustomClaimTypeWithIdentity'))
+        .calledWith(customClaimsTypeQueryResponse.nodes as MiddlewareCustomClaimType[])
+        .mockReturnValue(customClaimsTypeTransformed);
+
+      dsMockUtils.createApolloQueryMock(
+        customClaimTypeQuery(new BigNumber(DEFAULT_GQL_PAGE_SIZE), new BigNumber(0)),
+        {
+          customClaimTypes: customClaimsTypeQueryResponse,
+        }
+      );
+
+      const result = await claims.getAllCustomClaimTypes();
+
+      expect(result.data).toEqual(customClaimsTypeTransformed);
+      expect(result.count).toEqual(new BigNumber(1));
+      expect(result.next).toBeNull();
+    });
+
+    it('should throw an error if Middleware is not available', async () => {
+      dsMockUtils.configureMocks({ contextOptions: { middlewareAvailable: false } });
+
+      await expect(
+        claims.getAllCustomClaimTypes({ size: new BigNumber(1), start: new BigNumber(0) })
+      ).rejects.toThrow('Cannot perform this action without an active middleware V2 connection');
     });
   });
 });
