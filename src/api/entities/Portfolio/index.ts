@@ -235,7 +235,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     } = this;
 
     const rawPortfolioId = portfolioIdToMeshPortfolioId({ did, number: portfolioId }, context);
-    const [exists, freeCollectionEntries, lockedCollectionEntries] = await Promise.all([
+    const [exists, heldCollectionEntries, lockedCollectionEntries] = await Promise.all([
       this.exists(),
       portfolio.portfolioNFT.entries(rawPortfolioId),
       portfolio.portfolioLockedNFT.entries(rawPortfolioId),
@@ -253,7 +253,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
 
     const processCollectionEntry = (
       collectionRecord: Record<string, Nft[]>,
-      entry: (typeof freeCollectionEntries)[0]
+      entry: (typeof heldCollectionEntries)[0]
     ): Record<string, Nft[]> => {
       const [
         {
@@ -283,7 +283,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       return collectionRecord;
     };
 
-    const freeCollections: Record<string, Nft[]> = freeCollectionEntries.reduce(
+    const heldCollections: Record<string, Nft[]> = heldCollectionEntries.reduce(
       (collection, entry) => processCollectionEntry(collection, entry),
       {}
     );
@@ -295,9 +295,12 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
 
     const collections: PortfolioCollection[] = [];
     seenTickers.forEach(ticker => {
-      const free = freeCollections[ticker] || [];
+      const held = heldCollections[ticker];
       const locked = lockedCollections[ticker] || [];
-      const total = new BigNumber(free.length + locked.length);
+      // calculate free NFTs by filtering held NFTs by locked NFT IDs
+      const lockedIds = new Set(locked.map(({ id }) => id.toString()));
+      const free = held.filter(({ id }) => !lockedIds.has(id.toString()));
+      const total = new BigNumber(held.length);
 
       collections.push({
         collection: new NftCollection({ ticker }, context),
