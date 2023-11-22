@@ -541,7 +541,7 @@ export class Claims {
   }
 
   /**
-   * Retrieve all claims issued about an Identity, grouped by claim issuer
+   * Retrieve registered CustomClaimTypes
    *
    * @param opts.dids - Fetch CustomClaimTypes issued by the given `dids`
    *
