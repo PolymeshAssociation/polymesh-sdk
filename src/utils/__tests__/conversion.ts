@@ -82,6 +82,7 @@ import {
   CallIdEnum,
   Claim as MiddlewareClaim,
   ClaimTypeEnum,
+  CustomClaimType as MiddlewareCustomClaimType,
   Instruction,
   InstructionStatusEnum,
   ModuleIdEnum,
@@ -307,6 +308,7 @@ import {
   textToString,
   tickerToDid,
   tickerToString,
+  toCustomClaimTypeWithIdentity,
   toIdentityWithClaimsArray,
   transactionHexToTxTag,
   transactionPermissionsToExtrinsicPermissions,
@@ -4483,7 +4485,7 @@ describe('middlewareClaimToClaimData', () => {
       type: 'Custom',
       customClaimTypeId: 1,
       nodeId: '1',
-    } as MiddlewareClaim;
+    } as unknown as MiddlewareClaim;
     const claim = {
       type: ClaimType.Custom,
       id: 'someCddId',
@@ -9824,5 +9826,25 @@ describe('nftToMeshNft', () => {
     const result = nftToMeshNft(ticker, [id], context);
 
     expect(result).toEqual(mockResult);
+  });
+});
+
+describe('toCustomClaimTypeWithIdentity', () => {
+  it('should correctly convert MiddlewareCustomClaimType array to CustomClaimTypeWithDid array', () => {
+    const middlewareCustomClaimTypeArray = [
+      { name: 'name1', id: '1', identity: { did: 'did1' } },
+      { name: 'name2', id: '2', identity: { did: 'did2' } },
+      { name: 'name3', id: '3', identity: null },
+    ];
+
+    const result = toCustomClaimTypeWithIdentity(
+      middlewareCustomClaimTypeArray as MiddlewareCustomClaimType[]
+    );
+
+    expect(result).toEqual([
+      { name: 'name1', id: new BigNumber(1), did: 'did1' },
+      { name: 'name2', id: new BigNumber(2), did: 'did2' },
+      { name: 'name3', id: new BigNumber(3), did: undefined },
+    ]);
   });
 });

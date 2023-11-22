@@ -1,8 +1,14 @@
 import BigNumber from 'bignumber.js';
 import { filter, flatten, isEqual, uniqBy, uniqWith } from 'lodash';
 
-import { Context, Identity, modifyClaims, registerCustomClaimType } from '~/internal';
-import { claimsGroupingQuery, claimsQuery } from '~/middleware/queries';
+import {
+  Context,
+  Identity,
+  modifyClaims,
+  PolymeshError,
+  registerCustomClaimType,
+} from '~/internal';
+import { claimsGroupingQuery, claimsQuery, customClaimTypeQuery } from '~/middleware/queries';
 import { ClaimsGroupBy, ClaimsOrderBy, ClaimTypeEnum, Query } from '~/middleware/types';
 import {
   CddClaim,
@@ -11,6 +17,7 @@ import {
   ClaimScope,
   ClaimType,
   CustomClaimType,
+  ErrorCode,
   IdentityWithClaims,
   ModifyClaimsParams,
   ProcedureMethod,
@@ -31,6 +38,7 @@ import {
   scopeToMiddlewareScope,
   signerToString,
   stringToIdentityId,
+  toCustomClaimTypeWithIdentity,
   toIdentityWithClaimsArray,
   u32ToBigNumber,
 } from '~/utils/conversion';
@@ -530,5 +538,51 @@ export class Claims {
     }
 
     return { id, name: bytesToString(customClaimTypeIdOpt.value) };
+  }
+
+  /**
+   * Retrieve registered CustomClaimTypes
+   *
+   * @param opts.dids - Fetch CustomClaimTypes issued by the given `dids`
+   *
+   * @note supports pagination
+   * @note uses the middlewareV2 (Required)
+   */
+  public async getAllCustomClaimTypes(
+    opts: {
+      size?: BigNumber;
+      start?: BigNumber;
+      dids?: string[];
+    } = {}
+  ): Promise<ResultSet<CustomClaimType>> {
+    const { context } = this;
+
+    const isMiddlewareAvailable = await context.isMiddlewareAvailable();
+
+    if (!isMiddlewareAvailable) {
+      throw new PolymeshError({
+        code: ErrorCode.MiddlewareError,
+        message: 'Cannot perform this action without an active middleware V2 connection',
+      });
+    }
+
+    const { size = new BigNumber(DEFAULT_GQL_PAGE_SIZE), start = new BigNumber(0), dids } = opts;
+
+    const {
+      data: {
+        customClaimTypes: { nodes, totalCount },
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'customClaimTypes'>>(
+      customClaimTypeQuery(size, start, dids)
+    );
+
+    const count = new BigNumber(totalCount);
+    const next = calculateNextKey(new BigNumber(totalCount), nodes.length, start);
+
+    return {
+      data: toCustomClaimTypeWithIdentity(nodes),
+      next,
+      count,
+    };
   }
 }
