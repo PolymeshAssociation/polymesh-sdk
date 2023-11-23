@@ -151,6 +151,7 @@ import {
   CorporateActionTargets,
   CountryCode,
   CountTransferRestrictionInput,
+  CustomClaimTypeWithDid,
   DividendDistributionParams,
   ErrorCode,
   EventIdentifier,
@@ -221,7 +222,6 @@ import {
 } from '~/types';
 import {
   CorporateActionIdentifier,
-  CustomClaimTypeWithDid,
   ExemptKey,
   ExtrinsicIdentifier,
   InstructionStatus,
