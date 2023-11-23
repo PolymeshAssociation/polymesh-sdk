@@ -1724,6 +1724,9 @@ export interface SpWeightV2 {
   proofSize: BigNumber;
 }
 
+/**
+ * CustomClaimType
+ */
 export type CustomClaimType = {
   name: string;
   id: BigNumber;
@@ -1750,3 +1753,8 @@ export interface HeldNfts {
   collection: NftCollection;
   nfts: Nft[];
 }
+
+/**
+ * CustomClaimType with DID that registered the CustomClaimType
+ */
+export type CustomClaimTypeWithDid = CustomClaimType & { did?: string };

@@ -17,6 +17,7 @@ import {
   ClaimScope,
   ClaimType,
   CustomClaimType,
+  CustomClaimTypeWithDid,
   ErrorCode,
   IdentityWithClaims,
   ModifyClaimsParams,
@@ -27,7 +28,6 @@ import {
   ScopedClaim,
   ScopeType,
 } from '~/types';
-import { CustomClaimTypeWithDid } from '~/types/internal';
 import { Ensured } from '~/types/utils';
 import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 import {
