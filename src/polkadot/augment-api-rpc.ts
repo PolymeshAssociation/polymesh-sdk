@@ -104,6 +104,7 @@ import type {
 } from '@polkadot/types/interfaces/system';
 import type { IExtrinsic, Observable } from '@polkadot/types/types';
 import type {
+  AffirmationCount,
   AssetDidResult,
   AuthorizationType,
   CanTransferGranularReturn,
@@ -1030,6 +1031,9 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
             | 'ContractsPutCode'
             | 'CorporateBallotAttachBallot'
             | 'CapitalDistributionDistribute'
+            | 'NFTCreateCollection'
+            | 'NFTMint'
+            | 'IdentityCreateChildIdentity'
             | number
             | Uint8Array,
           blockHash?: Hash | string | Uint8Array
@@ -1043,6 +1047,18 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
       methods: AugmentedRpc<() => Observable<RpcMethods>>;
     };
     settlement: {
+      /**
+       * Returns an instance of AffirmationCount, which holds the asset count for both the sender and receiver and the number of offchain assets in the instruction
+       **/
+      getAffirmationCount: AugmentedRpc<
+        (
+          instruction_id: InstructionId | AnyNumber | Uint8Array,
+          portfolios:
+            | Vec<PortfolioId>
+            | (PortfolioId | { did?: any; kind?: any } | string | Uint8Array)[],
+          blockHash?: Hash | string | Uint8Array
+        ) => Observable<AffirmationCount>
+      >;
       /**
        * Returns an ExecuteInstructionInfo instance, containing the consumed weight and the number of tokens in the instruction.
        **/
