@@ -27,6 +27,7 @@ import {
   ScopedClaim,
   ScopeType,
 } from '~/types';
+import { CustomClaimTypeWithDid } from '~/types/internal';
 import { Ensured } from '~/types/utils';
 import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 import {
@@ -554,7 +555,7 @@ export class Claims {
       start?: BigNumber;
       dids?: string[];
     } = {}
-  ): Promise<ResultSet<CustomClaimType>> {
+  ): Promise<ResultSet<CustomClaimTypeWithDid>> {
     const { context } = this;
 
     const isMiddlewareAvailable = await context.isMiddlewareAvailable();
