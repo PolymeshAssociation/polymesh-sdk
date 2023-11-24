@@ -2,7 +2,6 @@ import { u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import {
   PolymeshPrimitivesIdentityIdPortfolioId,
-  PolymeshPrimitivesNftNfTs,
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
@@ -288,45 +287,50 @@ describe('Portfolio class', () => {
   });
 
   describe('method: getCollections', () => {
+    let portfolioId: BigNumber;
     let did: string;
-    let id: BigNumber;
-    let secondId: BigNumber;
-    let lockedId: BigNumber;
+    let nftId: BigNumber;
+    let secondNftId: BigNumber;
+    let lockedNftId: BigNumber;
+    let heldOnlyNftId: BigNumber;
+    let lockedOnlyNftId: BigNumber;
     let ticker: string;
-    let lockedTicker: string;
-    let rawFree: PolymeshPrimitivesNftNfTs;
-    let rawLocked: PolymeshPrimitivesNftNfTs;
+    let heldOnlyTicker: string;
+    let lockedOnlyTicker: string;
     let rawTicker: PolymeshPrimitivesTicker;
-    let rawId: u64;
+    let rawHeldOnlyTicker: PolymeshPrimitivesTicker;
+    let rawLockedOnlyTicker: PolymeshPrimitivesTicker;
+    let rawNftId: u64;
     let rawSecondId: u64;
     let rawLockedId: u64;
-    let rawLockedTicker: PolymeshPrimitivesTicker;
+    let rawHeldOnlyId: u64;
+    let rawLockedOnlyId: u64;
     let rawPortfolioId: PolymeshPrimitivesIdentityIdPortfolioId;
+    const rawTrue = dsMockUtils.createMockBool(true);
 
     beforeAll(() => {
       did = 'someDid';
-      id = new BigNumber(1);
-      secondId = new BigNumber(2);
-      lockedId = new BigNumber(10);
-      ticker = 'TICKER0';
-      lockedTicker = 'LOCKED1';
+      portfolioId = new BigNumber(1);
+      nftId = new BigNumber(11);
+      secondNftId = new BigNumber(12);
+      lockedNftId = new BigNumber(13);
+      heldOnlyNftId = new BigNumber(20);
+      lockedOnlyNftId = new BigNumber(30);
+      ticker = 'TICKER';
+      heldOnlyTicker = 'HELD';
+      lockedOnlyTicker = 'LOCKED';
       rawTicker = dsMockUtils.createMockTicker(ticker);
-      rawLockedTicker = dsMockUtils.createMockTicker(lockedTicker);
-      rawId = dsMockUtils.createMockU64(id);
-      rawSecondId = dsMockUtils.createMockU64(secondId);
-      rawLockedId = dsMockUtils.createMockU64(lockedId);
-      rawFree = dsMockUtils.createMockNfts({
-        ticker: rawTicker,
-        ids: [rawId, rawSecondId],
-      });
-      rawLocked = dsMockUtils.createMockNfts({
-        ticker: rawLockedTicker,
-        ids: [rawLockedId],
-      });
+      rawHeldOnlyTicker = dsMockUtils.createMockTicker(heldOnlyTicker);
+      rawLockedOnlyTicker = dsMockUtils.createMockTicker(lockedOnlyTicker);
+      rawNftId = dsMockUtils.createMockU64(nftId);
+      rawSecondId = dsMockUtils.createMockU64(secondNftId);
+      rawLockedId = dsMockUtils.createMockU64(lockedNftId);
+      rawHeldOnlyId = dsMockUtils.createMockU64(heldOnlyNftId);
+      rawLockedOnlyId = dsMockUtils.createMockU64(lockedOnlyNftId);
       rawPortfolioId = dsMockUtils.createMockPortfolioId({
         did: dsMockUtils.createMockIdentityId(did),
         kind: dsMockUtils.createMockPortfolioKind({
-          User: dsMockUtils.createMockU64(id),
+          User: dsMockUtils.createMockU64(portfolioId),
         }),
       });
       jest.spyOn(utilsConversionModule, 'portfolioIdToMeshPortfolioId').mockImplementation();
@@ -336,12 +340,18 @@ describe('Portfolio class', () => {
     beforeEach(() => {
       dsMockUtils.createQueryMock('portfolio', 'portfolioNFT', {
         entries: [
-          tuple([rawPortfolioId, [rawTicker, rawId]], rawFree),
-          tuple([rawPortfolioId, [rawTicker, rawSecondId]], rawFree),
+          tuple([rawPortfolioId, [rawTicker, rawNftId]], rawTrue),
+          tuple([rawPortfolioId, [rawTicker, rawSecondId]], rawTrue),
+          tuple([rawPortfolioId, [rawTicker, rawLockedId]], rawTrue),
+          tuple([rawPortfolioId, [rawHeldOnlyTicker, rawHeldOnlyId]], rawTrue),
+          tuple([rawPortfolioId, [rawLockedOnlyTicker, rawLockedOnlyId]], rawTrue),
         ],
       });
       dsMockUtils.createQueryMock('portfolio', 'portfolioLockedNFT', {
-        entries: [tuple([rawPortfolioId, [rawLockedTicker, rawLockedId]], rawLocked)],
+        entries: [
+          tuple([rawPortfolioId, [rawTicker, rawLockedId]], rawTrue),
+          tuple([rawPortfolioId, [rawLockedOnlyTicker, rawLockedOnlyId]], rawTrue),
+        ],
       });
     });
 
@@ -350,7 +360,7 @@ describe('Portfolio class', () => {
     });
 
     it("should return all of the portfolio's NFTs when no args are given", async () => {
-      const portfolio = new NonAbstract({ did, id }, context);
+      const portfolio = new NonAbstract({ did, id: portfolioId }, context);
 
       const result = await portfolio.getCollections();
 
@@ -359,44 +369,51 @@ describe('Portfolio class', () => {
           {
             collection: expect.objectContaining({ ticker }),
             free: expect.arrayContaining([
-              expect.objectContaining({ id }),
-              expect.objectContaining({ id: secondId }),
+              expect.objectContaining({ id: nftId }),
+              expect.objectContaining({ id: secondNftId }),
             ]),
+            locked: expect.arrayContaining([expect.objectContaining({ id: lockedNftId })]),
+            total: new BigNumber(3),
+          },
+          expect.objectContaining({
+            collection: expect.objectContaining({ ticker: heldOnlyTicker }),
+            free: expect.arrayContaining([expect.objectContaining({ id: heldOnlyNftId })]),
             locked: [],
-            total: new BigNumber(2),
-          },
-          {
-            collection: expect.objectContaining({ ticker: lockedTicker }),
-            free: [],
-            locked: [expect.objectContaining({ id: lockedId })],
             total: new BigNumber(1),
-          },
+          }),
+          expect.objectContaining({
+            collection: expect.objectContaining({ ticker: lockedOnlyTicker }),
+            free: [],
+            locked: expect.arrayContaining([expect.objectContaining({ id: lockedOnlyNftId })]),
+            total: new BigNumber(1),
+          }),
         ])
       );
     });
 
     it('should filter assets if any are specified', async () => {
-      const portfolio = new NonAbstract({ did, id }, context);
+      const portfolio = new NonAbstract({ did, id: portfolioId }, context);
 
       const result = await portfolio.getCollections({ collections: [ticker] });
 
+      expect(result.length).toEqual(1);
       expect(result).toEqual(
         expect.arrayContaining([
           {
             collection: expect.objectContaining({ ticker }),
             free: expect.arrayContaining([
-              expect.objectContaining({ id }),
-              expect.objectContaining({ id: secondId }),
+              expect.objectContaining({ id: nftId }),
+              expect.objectContaining({ id: secondNftId }),
             ]),
-            locked: [],
-            total: new BigNumber(2),
+            locked: expect.arrayContaining([expect.objectContaining({ id: lockedNftId })]),
+            total: new BigNumber(3),
           },
         ])
       );
     });
 
     it('should throw an error if the portfolio does not exist', () => {
-      const portfolio = new NonAbstract({ did, id }, context);
+      const portfolio = new NonAbstract({ did, id: portfolioId }, context);
       exists = false;
 
       return expect(portfolio.getCollections()).rejects.toThrow(
