@@ -152,12 +152,13 @@ export class Polymesh {
     const requiredChecks: Promise<void>[] = [assertExpectedChainVersion(nodeUrl)];
 
     try {
-      const { types, rpc, signedExtensions } = schema;
+      const { types, rpc, signedExtensions, runtime } = schema;
 
       polymeshApi = await ApiPromise.create({
         provider: new WsProvider(nodeUrl),
         types,
         rpc,
+        runtime,
         signedExtensions,
         metadata,
         noInitWarn,
