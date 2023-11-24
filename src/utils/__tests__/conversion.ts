@@ -4477,13 +4477,13 @@ describe('middlewareClaimToClaimData', () => {
       expiry: null,
       cddId: 'someCddId',
       type: 'Custom',
-      customClaimTypeId: 1,
+      customClaimTypeId: '1',
       nodeId: '1',
     } as MiddlewareClaim;
     const claim = {
       type: ClaimType.Custom,
       id: 'someCddId',
-      customClaimTypeId: new BigNumber(1),
+      customClaimTypeId: new BigNumber('1'),
     };
     createClaimSpy.mockReturnValue(claim);
 
