@@ -61,7 +61,9 @@ import type {
   PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth,
   PolymeshCommonUtilitiesMaybeBlock,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
+  PolymeshContractsApi,
   PolymeshContractsChainExtensionExtrinsicId,
+  PolymeshContractsNextUpgrade,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetAssetType,
   PolymeshPrimitivesAssetIdentifier,
@@ -82,6 +84,7 @@ import type {
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesIdentityIdPortfolioKind,
   PolymeshPrimitivesMemo,
+  PolymeshPrimitivesNftNfTs,
   PolymeshPrimitivesNftNftCollectionKeys,
   PolymeshPrimitivesNftNftMetadataAttribute,
   PolymeshPrimitivesPortfolioFund,
@@ -314,7 +317,7 @@ declare module '@polkadot/api-base/types/submittable' {
         [PolymeshPrimitivesTicker]
       >;
       /**
-       * Freezes transfers and minting of a given token.
+       * Freezes transfers of a given token.
        *
        * # Arguments
        * * `origin` - the secondary key of the sender.
@@ -801,7 +804,7 @@ declare module '@polkadot/api-base/types/submittable' {
         [PolymeshPrimitivesTicker, Bytes]
       >;
       /**
-       * Unfreezes transfers and minting of a given token.
+       * Unfreezes transfers of a given token.
        *
        * # Arguments
        * * `origin` - the secondary key of the sender.
@@ -3602,6 +3605,7 @@ declare module '@polkadot/api-base/types/submittable' {
        *
        * # Arguments
        * * `auth_id` - Auth id of the authorization.
+       * #[deprecated(since = "6.1.0", note = "Identity based signers not supported")]
        **/
       acceptMultisigSignerAsIdentity: AugmentedSubmittable<
         (authId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -3939,6 +3943,43 @@ declare module '@polkadot/api-base/types/submittable' {
       >;
     };
     nft: {
+      /**
+       * Forces the transfer of NFTs from a given portfolio to the caller's portfolio.
+       *
+       * # Arguments
+       * * `origin` - is a signer that has permissions to act as an agent of `ticker`.
+       * * `ticker` - the [`Ticker`] of the NFT collection.
+       * * `nft_id` - the [`NFTId`] of the NFT to be transferred.
+       * * `source_portfolio` - the [`PortfolioId`] that currently holds the NFT.
+       * * `callers_portfolio_kind` - the [`PortfolioKind`] of the caller's portfolio.
+       *
+       * # Permissions
+       * * Asset
+       * * Portfolio
+       **/
+      controllerTransfer: AugmentedSubmittable<
+        (
+          ticker: PolymeshPrimitivesTicker | string | Uint8Array,
+          nfts: PolymeshPrimitivesNftNfTs | { ticker?: any; ids?: any } | string | Uint8Array,
+          sourcePortfolio:
+            | PolymeshPrimitivesIdentityIdPortfolioId
+            | { did?: any; kind?: any }
+            | string
+            | Uint8Array,
+          callersPortfolioKind:
+            | PolymeshPrimitivesIdentityIdPortfolioKind
+            | { Default: any }
+            | { User: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [
+          PolymeshPrimitivesTicker,
+          PolymeshPrimitivesNftNfTs,
+          PolymeshPrimitivesIdentityIdPortfolioId,
+          PolymeshPrimitivesIdentityIdPortfolioKind
+        ]
+      >;
       /**
        * Cretes a new `NFTCollection`.
        *
@@ -4396,6 +4437,35 @@ declare module '@polkadot/api-base/types/submittable' {
       /**
        * Instantiates a smart contract defining it with the given `code` and `salt`.
        *
+       * The contract will be attached as a primary key of a newly created child identity of the caller.
+       *
+       * # Arguments
+       * - `endowment`: Amount of POLYX to transfer to the contract.
+       * - `gas_limit`: For how much gas the `deploy` code in the contract may at most consume.
+       * - `storage_deposit_limit`: The maximum amount of balance that can be charged/reserved from the caller to pay for the storage consumed.
+       * - `code`: The WASM binary defining the smart contract.
+       * - `data`: The input data to pass to the contract constructor.
+       * - `salt`: Used for contract address derivation. By varying this, the same `code` can be used under the same identity.
+       *
+       **/
+      instantiateWithCodeAsPrimaryKey: AugmentedSubmittable<
+        (
+          endowment: u128 | AnyNumber | Uint8Array,
+          gasLimit:
+            | SpWeightsWeightV2Weight
+            | { refTime?: any; proofSize?: any }
+            | string
+            | Uint8Array,
+          storageDepositLimit: Option<u128> | null | Uint8Array | u128 | AnyNumber,
+          code: Bytes | string | Uint8Array,
+          data: Bytes | string | Uint8Array,
+          salt: Bytes | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [u128, SpWeightsWeightV2Weight, Option<u128>, Bytes, Bytes, Bytes]
+      >;
+      /**
+       * Instantiates a smart contract defining it with the given `code` and `salt`.
+       *
        * The contract will be attached as a secondary key,
        * with `perms` as its permissions, to `origin`'s identity.
        *
@@ -4446,6 +4516,37 @@ declare module '@polkadot/api-base/types/submittable' {
           Bytes,
           PolymeshPrimitivesSecondaryKeyPermissions
         ]
+      >;
+      /**
+       * Instantiates a smart contract defining using the given `code_hash` and `salt`.
+       *
+       * Unlike `instantiate_with_code`, this assumes that at least one contract with the same WASM code has already been uploaded.
+       *
+       * The contract will be attached as a primary key of a newly created child identity of the caller.
+       *
+       * # Arguments
+       * - `endowment`: amount of POLYX to transfer to the contract.
+       * - `gas_limit`: for how much gas the `deploy` code in the contract may at most consume.
+       * - `storage_deposit_limit`: The maximum amount of balance that can be charged/reserved from the caller to pay for the storage consumed.
+       * - `code_hash`: of an already uploaded WASM binary.
+       * - `data`: The input data to pass to the contract constructor.
+       * - `salt`: used for contract address derivation. By varying this, the same `code` can be used under the same identity.
+       *
+       **/
+      instantiateWithHashAsPrimaryKey: AugmentedSubmittable<
+        (
+          endowment: u128 | AnyNumber | Uint8Array,
+          gasLimit:
+            | SpWeightsWeightV2Weight
+            | { refTime?: any; proofSize?: any }
+            | string
+            | Uint8Array,
+          storageDepositLimit: Option<u128> | null | Uint8Array | u128 | AnyNumber,
+          codeHash: H256 | string | Uint8Array,
+          data: Bytes | string | Uint8Array,
+          salt: Bytes | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [u128, SpWeightsWeightV2Weight, Option<u128>, H256, Bytes, Bytes]
       >;
       /**
        * Instantiates a smart contract defining using the given `code_hash` and `salt`.
@@ -4519,11 +4620,50 @@ declare module '@polkadot/api-base/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>,
         [Vec<ITuple<[PolymeshContractsChainExtensionExtrinsicId, bool]>>]
       >;
+      upgradeApi: AugmentedSubmittable<
+        (
+          api: PolymeshContractsApi | { desc?: any; major?: any } | string | Uint8Array,
+          nextUpgrade:
+            | PolymeshContractsNextUpgrade
+            | { chainVersion?: any; apiHash?: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshContractsApi, PolymeshContractsNextUpgrade]
+      >;
     };
     portfolio: {
       acceptPortfolioCustody: AugmentedSubmittable<
         (authId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [u64]
+      >;
+      /**
+       * Adds an identity that will be allowed to create and take custody of a portfolio under the caller's identity.
+       *
+       * # Arguments
+       * * `trusted_identity` - the [`IdentityId`] that will be allowed to call `create_custody_portfolio`.
+       *
+       **/
+      allowIdentityToCreatePortfolios: AugmentedSubmittable<
+        (
+          trustedIdentity: PolymeshPrimitivesIdentityId | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesIdentityId]
+      >;
+      /**
+       * Creates a portfolio under the `portfolio_owner_id` identity and transfers its custody to the caller's identity.
+       *
+       * # Arguments
+       * * `portfolio_owner_id` - the [`IdentityId`] that will own the new portfolio.
+       * * `portfolio_name` - the [`PortfolioName`] of the new portfolio.
+       *
+       **/
+      createCustodyPortfolio: AugmentedSubmittable<
+        (
+          portfolioOwnerId: PolymeshPrimitivesIdentityId | string | Uint8Array,
+          portfolioName: Bytes | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesIdentityId, Bytes]
       >;
       /**
        * Creates a portfolio with the given `name`.
@@ -4672,6 +4812,19 @@ declare module '@polkadot/api-base/types/submittable' {
           toName: Bytes | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [u64, Bytes]
+      >;
+      /**
+       * Removes permission of an identity to create and take custody of a portfolio under the caller's identity.
+       *
+       * # Arguments
+       * * `identity` - the [`IdentityId`] that will have the permissions to call `create_custody_portfolio` revoked.
+       *
+       **/
+      revokeCreatePortfoliosPermission: AugmentedSubmittable<
+        (
+          identity: PolymeshPrimitivesIdentityId | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesIdentityId]
       >;
     };
     preimage: {

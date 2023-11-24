@@ -3608,7 +3608,6 @@ export const createMockGranularCanTransferResult = (granularCanTransferResult?: 
   self_transfer: bool | Parameters<typeof createMockBool>[0];
   invalid_receiver_cdd: bool | Parameters<typeof createMockBool>[0];
   invalid_sender_cdd: bool | Parameters<typeof createMockBool>[0];
-  missing_scope_claim: bool | Parameters<typeof createMockBool>[0];
   receiver_custodian_error: bool | Parameters<typeof createMockBool>[0];
   sender_custodian_error: bool | Parameters<typeof createMockBool>[0];
   sender_insufficient_balance: bool | Parameters<typeof createMockBool>[0];
@@ -3628,7 +3627,6 @@ export const createMockGranularCanTransferResult = (granularCanTransferResult?: 
     self_transfer,
     invalid_receiver_cdd,
     invalid_sender_cdd,
-    missing_scope_claim,
     receiver_custodian_error,
     sender_custodian_error,
     sender_insufficient_balance,
@@ -3642,7 +3640,6 @@ export const createMockGranularCanTransferResult = (granularCanTransferResult?: 
     self_transfer: createMockBool(),
     invalid_receiver_cdd: createMockBool(),
     invalid_sender_cdd: createMockBool(),
-    missing_scope_claim: createMockBool(),
     receiver_custodian_error: createMockBool(),
     sender_custodian_error: createMockBool(),
     sender_insufficient_balance: createMockBool(),
@@ -3658,7 +3655,6 @@ export const createMockGranularCanTransferResult = (granularCanTransferResult?: 
       self_transfer: createMockBool(self_transfer),
       invalid_receiver_cdd: createMockBool(invalid_receiver_cdd),
       invalid_sender_cdd: createMockBool(invalid_sender_cdd),
-      missing_scope_claim: createMockBool(missing_scope_claim),
       receiver_custodian_error: createMockBool(receiver_custodian_error),
       sender_custodian_error: createMockBool(sender_custodian_error),
       sender_insufficient_balance: createMockBool(sender_insufficient_balance),

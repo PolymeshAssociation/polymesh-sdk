@@ -44,6 +44,9 @@ import type {
   PalletStoFundraiser,
   PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
   PolymeshCommonUtilitiesMaybeBlock,
+  PolymeshContractsApi,
+  PolymeshContractsChainExtensionExtrinsicId,
+  PolymeshContractsChainVersion,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetAssetType,
   PolymeshPrimitivesAssetIdentifier,
@@ -86,6 +89,11 @@ export type __AugmentedEvent<ApiType extends ApiTypes> = AugmentedEvent<ApiType>
 declare module '@polkadot/api-base/types/events' {
   interface AugmentedEvents<ApiType extends ApiTypes> {
     asset: {
+      /**
+       * An asset has been added to the list of pre aprroved receivement (valid for all identities).
+       * Parameters: [`Ticker`] of the pre approved asset.
+       **/
+      AssetAffirmationExemption: AugmentedEvent<ApiType, [PolymeshPrimitivesTicker]>;
       /**
        * Emitted when Tokens were issued, redeemed or transferred.
        * Contains the [`IdentityId`] of the receiver/issuer/redeemer, the [`Ticker`] for the token, the balance that was issued/transferred/redeemed,
@@ -261,6 +269,14 @@ declare module '@polkadot/api-base/types/events' {
         ]
       >;
       /**
+       * An identity has added an asset to the list of pre aprroved receivement.
+       * Parameters: [`IdentityId`] of caller, [`Ticker`] of the pre approved asset.
+       **/
+      PreApprovedAsset: AugmentedEvent<
+        ApiType,
+        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker]
+      >;
+      /**
        * Register asset metadata global type.
        * (Global type name, Global type key, type specs)
        **/
@@ -281,6 +297,19 @@ declare module '@polkadot/api-base/types/events' {
           u64,
           PolymeshPrimitivesAssetMetadataAssetMetadataSpec
         ]
+      >;
+      /**
+       * An asset has been removed from the list of pre aprroved receivement (valid for all identities).
+       * Parameters: [`Ticker`] of the asset.
+       **/
+      RemoveAssetAffirmationExemption: AugmentedEvent<ApiType, [PolymeshPrimitivesTicker]>;
+      /**
+       * An identity has removed an asset to the list of pre aprroved receivement.
+       * Parameters: [`IdentityId`] of caller, [`Ticker`] of the asset.
+       **/
+      RemovePreApprovedAsset: AugmentedEvent<
+        ApiType,
+        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker]
       >;
       /**
        * Set asset metadata value.
@@ -1631,7 +1660,24 @@ declare module '@polkadot/api-base/types/events' {
        **/
       VoteThresholdUpdated: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, u32, u32]>;
     };
-    polymeshContracts: {};
+    polymeshContracts: {
+      /**
+       * Emitted when a contract starts supporting a new API upgrade.
+       * Contains the [`Api`], [`ChainVersion`], and the bytes for the code hash.
+       **/
+      ApiHashUpdated: AugmentedEvent<
+        ApiType,
+        [PolymeshContractsApi, PolymeshContractsChainVersion, H256]
+      >;
+      /**
+       * Emitted when a contract calls into the runtime.
+       * Contains the account id set by the contract owner and the [`ExtrinsicId`].
+       **/
+      SCRuntimeCall: AugmentedEvent<
+        ApiType,
+        [AccountId32, PolymeshContractsChainExtensionExtrinsicId]
+      >;
+    };
     portfolio: {
       /**
        * Funds have moved between portfolios
@@ -1695,6 +1741,38 @@ declare module '@polkadot/api-base/types/events' {
        * * portfolio name
        **/
       PortfolioRenamed: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, u64, Bytes]>;
+      /**
+       * A portfolio has pre approved the receivement of an asset.
+       *
+       * # Parameters
+       * * [`IdentityId`] of the caller.
+       * * [`PortfolioId`] that will receive assets without explicit affirmation.
+       * * [`Ticker`] of the asset that has been exempt from explicit affirmation.
+       **/
+      PreApprovedPortfolio: AugmentedEvent<
+        ApiType,
+        [
+          PolymeshPrimitivesIdentityId,
+          PolymeshPrimitivesIdentityIdPortfolioId,
+          PolymeshPrimitivesTicker
+        ]
+      >;
+      /**
+       * A portfolio has removed the approval of an asset.
+       *
+       * # Parameters
+       * * [`IdentityId`] of the caller.
+       * * [`PortfolioId`] that had its pre approval revoked.
+       * * [`Ticker`] of the asset that had its pre approval revoked.
+       **/
+      RevokePreApprovedPortfolio: AugmentedEvent<
+        ApiType,
+        [
+          PolymeshPrimitivesIdentityId,
+          PolymeshPrimitivesIdentityIdPortfolioId,
+          PolymeshPrimitivesTicker
+        ]
+      >;
       /**
        * All non-default portfolio numbers and names of a DID.
        *
@@ -1849,6 +1927,14 @@ declare module '@polkadot/api-base/types/events' {
        * An instruction has been affirmed (did, portfolio, instruction_id)
        **/
       InstructionAffirmed: AugmentedEvent<
+        ApiType,
+        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesIdentityIdPortfolioId, u64]
+      >;
+      /**
+       * An instruction has been automatically affirmed.
+       * Parameters: [`IdentityId`] of the caller, [`PortfolioId`] of the receiver, and [`InstructionId`] of the instruction.
+       **/
+      InstructionAutomaticallyAffirmed: AugmentedEvent<
         ApiType,
         [PolymeshPrimitivesIdentityId, PolymeshPrimitivesIdentityIdPortfolioId, u64]
       >;

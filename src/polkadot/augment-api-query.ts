@@ -87,7 +87,10 @@ import type {
   PolymeshCommonUtilitiesGroupInactiveMember,
   PolymeshCommonUtilitiesMaybeBlock,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
+  PolymeshContractsApi,
+  PolymeshContractsApiCodeHash,
   PolymeshContractsChainExtensionExtrinsicId,
+  PolymeshContractsNextUpgrade,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
@@ -1662,6 +1665,25 @@ declare module '@polkadot/api-base/types/storage' {
         [u64]
       >;
       /**
+       * Tracks the owner of an NFT
+       **/
+      nftOwner: AugmentedQuery<
+        ApiType,
+        (
+          arg1: PolymeshPrimitivesTicker | string | Uint8Array,
+          arg2: u64 | AnyNumber | Uint8Array
+        ) => Observable<Option<PolymeshPrimitivesIdentityId>>,
+        [PolymeshPrimitivesTicker, u64]
+      >;
+      /**
+       * The total number of NFTs in a collection
+       **/
+      nfTsInCollection: AugmentedQuery<
+        ApiType,
+        (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<u64>,
+        [PolymeshPrimitivesTicker]
+      >;
+      /**
        * The total number of NFTs per identity.
        **/
       numberOfNFTs: AugmentedQuery<
@@ -1672,6 +1694,10 @@ declare module '@polkadot/api-base/types/storage' {
         ) => Observable<u64>,
         [PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId]
       >;
+      /**
+       * Storage version.
+       **/
+      storageVersion: AugmentedQuery<ApiType, () => Observable<u8>, []>;
     };
     offences: {
       /**
@@ -1910,6 +1936,16 @@ declare module '@polkadot/api-base/types/storage' {
     };
     polymeshContracts: {
       /**
+       * Stores the chain version and code hash for the next chain upgrade.
+       **/
+      apiNextUpgrade: AugmentedQuery<
+        ApiType,
+        (
+          arg: PolymeshContractsApi | { desc?: any; major?: any } | string | Uint8Array
+        ) => Observable<Option<PolymeshContractsNextUpgrade>>,
+        [PolymeshContractsApi]
+      >;
+      /**
        * Whitelist of extrinsics allowed to be called from contracts.
        **/
       callRuntimeWhitelist: AugmentedQuery<
@@ -1918,11 +1954,32 @@ declare module '@polkadot/api-base/types/storage' {
         [PolymeshContractsChainExtensionExtrinsicId]
       >;
       /**
+       * Stores the code hash for the current api.
+       **/
+      currentApiHash: AugmentedQuery<
+        ApiType,
+        (
+          arg: PolymeshContractsApi | { desc?: any; major?: any } | string | Uint8Array
+        ) => Observable<Option<PolymeshContractsApiCodeHash>>,
+        [PolymeshContractsApi]
+      >;
+      /**
        * Storage version.
        **/
       storageVersion: AugmentedQuery<ApiType, () => Observable<u8>, []>;
     };
     portfolio: {
+      /**
+       * Custodians allowed to create and take custody of portfolios on an id's behalf.
+       **/
+      allowedCustodians: AugmentedQuery<
+        ApiType,
+        (
+          arg1: PolymeshPrimitivesIdentityId | string | Uint8Array,
+          arg2: PolymeshPrimitivesIdentityId | string | Uint8Array
+        ) => Observable<bool>,
+        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesIdentityId]
+      >;
       /**
        * Inverse map of `Portfolios` used to ensure bijectivitiy,
        * and uniqueness of names in `Portfolios`.

@@ -3399,7 +3399,6 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
         self_transfer: true,
         invalid_receiver_cdd: true,
         invalid_sender_cdd: true,
-        missing_scope_claim: true,
         receiver_custodian_error: true,
         sender_custodian_error: true,
         sender_insufficient_balance: true,
@@ -3437,7 +3436,6 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
         TransferError.SelfTransfer,
         TransferError.InvalidReceiverCdd,
         TransferError.InvalidSenderCdd,
-        TransferError.ScopeClaimMissing,
         TransferError.InsufficientBalance,
         TransferError.TransfersFrozen,
         TransferError.InvalidSenderPortfolio,
@@ -3467,7 +3465,6 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
         self_transfer: false,
         invalid_receiver_cdd: false,
         invalid_sender_cdd: false,
-        missing_scope_claim: false,
         receiver_custodian_error: false,
         sender_custodian_error: false,
         sender_insufficient_balance: false,
@@ -3540,7 +3537,6 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
         self_transfer: false,
         invalid_receiver_cdd: false,
         invalid_sender_cdd: false,
-        missing_scope_claim: false,
         receiver_custodian_error: false,
         sender_custodian_error: false,
         sender_insufficient_balance: false,
@@ -4481,13 +4477,13 @@ describe('middlewareClaimToClaimData', () => {
       expiry: null,
       cddId: 'someCddId',
       type: 'Custom',
-      customClaimTypeId: 1,
+      customClaimTypeId: '1',
       nodeId: '1',
     } as MiddlewareClaim;
     const claim = {
       type: ClaimType.Custom,
       id: 'someCddId',
-      customClaimTypeId: new BigNumber(1),
+      customClaimTypeId: new BigNumber('1'),
     };
     createClaimSpy.mockReturnValue(claim);
 

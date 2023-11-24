@@ -3207,7 +3207,6 @@ export function granularCanTransferResultToTransferBreakdown(
     self_transfer: selfTransfer,
     invalid_receiver_cdd: invalidReceiverCdd,
     invalid_sender_cdd: invalidSenderCdd,
-    missing_scope_claim: missingScopeClaim,
     sender_insufficient_balance: insufficientBalance,
     asset_frozen: assetFrozen,
     portfolio_validity_result: {
@@ -3236,10 +3235,6 @@ export function granularCanTransferResultToTransferBreakdown(
 
   if (boolToBoolean(invalidSenderCdd)) {
     general.push(TransferError.InvalidSenderCdd);
-  }
-
-  if (boolToBoolean(missingScopeClaim)) {
-    general.push(TransferError.ScopeClaimMissing);
   }
 
   if (boolToBoolean(insufficientBalance)) {

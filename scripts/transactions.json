@@ -329,7 +329,10 @@
     "accept_portfolio_custody": "accept_portfolio_custody",
     "move_portfolio_funds_v2": "move_portfolio_funds_v2",
     "pre_approve_portfolio": "pre_approve_portfolio",
-    "remove_portfolio_pre_approval": "remove_portfolio_pre_approval"
+    "remove_portfolio_pre_approval": "remove_portfolio_pre_approval",
+    "allow_identity_to_create_portfolios": "allow_identity_to_create_portfolios",
+    "revoke_create_portfolios_permission": "revoke_create_portfolios_permission",
+    "create_custody_portfolio": "create_custody_portfolio"
   },
   "ProtocolFee": {
     "change_coefficient": "change_coefficient",
@@ -455,7 +458,10 @@
     "remove_code": "remove_code",
     "instantiate_with_code_perms": "instantiate_with_code_perms",
     "instantiate_with_hash_perms": "instantiate_with_hash_perms",
-    "update_call_runtime_whitelist": "update_call_runtime_whitelist"
+    "update_call_runtime_whitelist": "update_call_runtime_whitelist",
+    "instantiate_with_code_as_primary_key": "instantiate_with_code_as_primary_key",
+    "instantiate_with_hash_as_primary_key": "instantiate_with_hash_as_primary_key",
+    "upgrade_api": "upgrade_api"
   },
   "Preimage": {
     "note_preimage": "note_preimage",
@@ -477,6 +483,7 @@
   "Nft": {
     "create_nft_collection": "create_nft_collection",
     "issue_nft": "issue_nft",
-    "redeem_nft": "redeem_nft"
+    "redeem_nft": "redeem_nft",
+    "controller_transfer": "controller_transfer"
   }
 }

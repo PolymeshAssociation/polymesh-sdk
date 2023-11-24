@@ -767,6 +767,9 @@ export default {
         'ContractsPutCode',
         'CorporateBallotAttachBallot',
         'CapitalDistributionDistribute',
+        'NFTCreateCollection',
+        'NFTMint',
+        'IdentityCreateChildIdentity',
       ],
     },
     CddStatus: {
@@ -1110,7 +1113,6 @@ export default {
       self_transfer: 'bool',
       invalid_receiver_cdd: 'bool',
       invalid_sender_cdd: 'bool',
-      missing_scope_claim: 'bool',
       receiver_custodian_error: 'bool',
       sender_custodian_error: 'bool',
       sender_insufficient_balance: 'bool',
@@ -1119,6 +1121,7 @@ export default {
       transfer_condition_result: 'Vec<TransferConditionResult>',
       compliance_result: 'AssetComplianceResult',
       result: 'bool',
+      consumed_weight: 'Option<Weight>',
     },
     PortfolioValidityResult: {
       receiver_is_same_portfolio: 'bool',
@@ -1213,6 +1216,16 @@ export default {
       offChainAssets: 'u32',
       consumedWeight: 'Weight',
       error: 'Option<String>',
+    },
+    AssetCount: {
+      fungible_tokens: 'u32',
+      non_fungible_tokens: 'u32',
+      off_chain_assets: 'u32',
+    },
+    AffirmationCount: {
+      sender_asset_count: 'AssetCount',
+      receiver_asset_count: 'AssetCount',
+      offchain_count: 'u32',
     },
   },
 };
