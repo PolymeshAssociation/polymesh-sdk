@@ -2,7 +2,7 @@ import { Permill } from '@polkadot/types/interfaces';
 import { PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 
 import { assertCaTaxWithholdingsValid } from '~/api/procedures/utils';
-import { Asset, PolymeshError, Procedure } from '~/internal';
+import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import {
   CorporateActionTargets,
   ErrorCode,
@@ -76,7 +76,7 @@ export async function prepareModifyCaDefaultConfig(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const asset = new Asset({ ticker }, context);
+  const asset = new FungibleAsset({ ticker }, context);
 
   const { targets, defaultTaxWithholding, taxWithholdings } =
     await asset.corporateActions.getDefaultConfig();
@@ -176,7 +176,7 @@ export function getAuthorization(
     permissions: {
       transactions,
       portfolios: [],
-      assets: [new Asset({ ticker }, this.context)],
+      assets: [new FungibleAsset({ ticker }, this.context)],
     },
   };
 }

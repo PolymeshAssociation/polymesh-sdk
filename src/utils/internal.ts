@@ -11,6 +11,7 @@ import { BTreeSet, Bytes, Option, StorageKey, u32 } from '@polkadot/types';
 import { EventRecord } from '@polkadot/types/interfaces';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import {
+  PalletAssetSecurityToken,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesSecondaryKeyKeyRecord,
   PolymeshPrimitivesStatisticsStatClaim,
@@ -29,20 +30,22 @@ import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
 import {
   Account,
-  Asset,
+  BaseAsset,
   Checkpoint,
   CheckpointSchedule,
+  ChildIdentity,
   Context,
+  FungibleAsset,
   Identity,
+  Nft,
+  NftCollection,
   PolymeshError,
 } from '~/internal';
 import { latestSqVersionQuery } from '~/middleware/queries';
-import { Query } from '~/middleware/types';
+import { Claim as MiddlewareClaim, ClaimTypeEnum, Query } from '~/middleware/types';
 import { MiddlewareScope } from '~/middleware/typesV1';
 import {
   CaCheckpointType,
-  CalendarPeriod,
-  CalendarUnit,
   Claim,
   ClaimType,
   Condition,
@@ -111,10 +114,14 @@ import {
   statsClaimToStatClaimInputType,
   stringToAccountId,
   transferRestrictionTypeToStatOpType,
-  u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { isEntity, isMultiClaimCondition, isSingleClaimCondition } from '~/utils/typeguards';
+import {
+  isEntity,
+  isMultiClaimCondition,
+  isScopedClaim,
+  isSingleClaimCondition,
+} from '~/utils/typeguards';
 
 export * from '~/generated/utils';
 
@@ -195,6 +202,14 @@ export function asIdentity(value: string | Identity, context: Context): Identity
 
 /**
  * @hidden
+ * Given a DID return the corresponding ChildIdentity, given an ChildIdentity return the ChildIdentity
+ */
+export function asChildIdentity(value: string | ChildIdentity, context: Context): ChildIdentity {
+  return typeof value === 'string' ? new ChildIdentity({ did: value }, context) : value;
+}
+
+/**
+ * @hidden
  * Given an address return the corresponding Account, given an Account return the Account
  */
 export function asAccount(value: string | Account, context: Context): Account {
@@ -231,7 +246,8 @@ export function createClaim(
   claimType: string,
   jurisdiction: Falsyable<string>,
   middlewareScope: Falsyable<MiddlewareScope>,
-  cddId: Falsyable<string>
+  cddId: Falsyable<string>,
+  customClaimTypeId: Falsyable<BigNumber>
 ): Claim {
   const type = claimType as ClaimType;
   const scope = (middlewareScope ? middlewareScopeToScope(middlewareScope) : {}) as Scope;
@@ -250,6 +266,20 @@ export function createClaim(
       return {
         type,
         id: cddId as string,
+      };
+    }
+    case ClaimType.Custom: {
+      if (!customClaimTypeId) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'Custom claim type ID is required',
+        });
+      }
+
+      return {
+        type,
+        customClaimTypeId,
+        scope,
       };
     }
   }
@@ -314,6 +344,50 @@ function cloneReceipt(receipt: ISubmittableResult, events: EventRecord[]): ISubm
 /**
  * @hidden
  *
+ *   Segment a batch transaction receipt's events into arrays, each representing a specific extrinsic's
+ *   associated events. This is useful for scenarios where we need to isolate and process events
+ *   for individual extrinsics in a batch.
+ *
+ *   In a batch transaction receipt, events corresponding to multiple extrinsics are listed sequentially.
+ *   This function identifies boundaries between these event sequences, typically demarcated by
+ *   events like 'utility.ItemCompleted', to segment events into individual arrays.
+ *
+ *   A key use case is when we want to slice or filter events for a subset of the extrinsics. By
+ *   segmenting events this way, it becomes simpler to apply operations or analyses to events
+ *   corresponding to specific extrinsics in the batch.
+ *
+ * @param events - array of events from a batch transaction receipt
+ *
+ * @returns an array of arrays, where each inner array contains events specific to an extrinsic in the batch.
+ *
+ * @note this function does not mutate the input events
+ */
+export function segmentEventsByTransaction(events: EventRecord[]): EventRecord[][] {
+  const segments: EventRecord[][] = [];
+  let currentSegment: EventRecord[] = [];
+
+  events.forEach(eventRecord => {
+    if (eventRecord.event.method === 'ItemCompleted' && eventRecord.event.section === 'utility') {
+      if (currentSegment.length) {
+        segments.push(currentSegment);
+        currentSegment = [];
+      }
+    } else {
+      currentSegment.push(eventRecord);
+    }
+  });
+
+  // If there are events left after processing, add them to a new segment
+  if (currentSegment.length) {
+    segments.push(currentSegment);
+  }
+
+  return segments;
+}
+
+/**
+ * @hidden
+ *
  * Return a clone of a batch transaction receipt that only contains events for a subset of the
  *   extrinsics in the batch. This is useful when a batch has several extrinsics that emit
  *   the same events and we want `filterEventRecords` to only search among the events emitted by
@@ -331,18 +405,16 @@ function cloneReceipt(receipt: ISubmittableResult, events: EventRecord[]): ISubm
 export function sliceBatchReceipt(
   receipt: ISubmittableResult,
   from: number,
-  to: number,
-  isV5: boolean
+  to: number
 ): ISubmittableResult {
-  const [
-    {
-      data: [rawEventsPerExtrinsic],
-    },
-  ] = isV5
-    ? filterEventRecords(receipt, 'utility', 'BatchCompleted')
-    : filterEventRecords(receipt, 'utility', 'BatchCompletedOld');
+  // checking if the batch was completed (will throw an error if not)
+  filterEventRecords(receipt, 'utility', 'BatchCompleted');
 
-  if (rawEventsPerExtrinsic.length < to || from < 0) {
+  const { events } = receipt;
+
+  const segmentedEvents = segmentEventsByTransaction(events);
+
+  if (from < 0 || to > segmentedEvents.length) {
     throw new PolymeshError({
       code: ErrorCode.UnexpectedError,
       message: 'Transaction index range out of bounds. Please report this to the Polymesh team',
@@ -353,28 +425,7 @@ export function sliceBatchReceipt(
     });
   }
 
-  const { events } = receipt;
-
-  const eventsPerExtrinsic = rawEventsPerExtrinsic.map(u32ToBigNumber);
-  const clonedEvents = [...events];
-
-  const slicedEvents: EventRecord[] = [];
-
-  /*
-   * For each extrinsic, we remove the first N events from the original receipt, where N is the amount
-   * of events emitted for that extrinsic according to the `BatchCompleted` event's data. If the extrinsic is in the desired range,
-   * we add the removed events to the cloned receipt. Otherwise we ignore them
-   *
-   * The order of events in the receipt is such that the events of all extrinsics in the batch come first (in the same order
-   * in which the extrinsics were added to the batch), and then come the events related to the batch itself
-   */
-  eventsPerExtrinsic.forEach((n, index) => {
-    const removedEvents = clonedEvents.splice(0, n.toNumber());
-
-    if (index >= from && index < to) {
-      slicedEvents.push(...removedEvents);
-    }
-  });
+  const slicedEvents = segmentedEvents.slice(from, to).flat();
 
   return cloneReceipt(receipt, slicedEvents);
 }
@@ -890,15 +941,62 @@ export function assertAddressValid(address: string, ss58Format: BigNumber): void
 /**
  * @hidden
  */
-export function asTicker(asset: string | Asset): string {
+export function asTicker(asset: string | BaseAsset): string {
   return typeof asset === 'string' ? asset : asset.ticker;
 }
 
 /**
  * @hidden
+ *
+ * @note alternatively {@link asAsset} returns a more precise type but is async due to a network call
  */
-export function asAsset(asset: string | Asset, context: Context): Asset {
-  return typeof asset === 'string' ? new Asset({ ticker: asset }, context) : asset;
+export function asBaseAsset(asset: string | BaseAsset, context: Context): BaseAsset {
+  return typeof asset === 'string' ? new BaseAsset({ ticker: asset }, context) : asset;
+}
+
+/**
+ * @hidden
+ *
+ * @note alternatively {@link asBaseAsset} returns a generic `BaseAsset`, but is synchronous
+ */
+export async function asAsset(
+  asset: string | FungibleAsset | NftCollection,
+  context: Context
+): Promise<FungibleAsset | NftCollection> {
+  if (typeof asset !== 'string') {
+    return asset;
+  }
+
+  const fungible = new FungibleAsset({ ticker: asset }, context);
+  const collection = new NftCollection({ ticker: asset }, context);
+
+  const [isAsset, isCollection] = await Promise.all([fungible.exists(), collection.exists()]);
+
+  if (isCollection) {
+    return collection;
+  }
+  if (isAsset) {
+    return fungible;
+  }
+
+  throw new PolymeshError({
+    code: ErrorCode.DataUnavailable,
+    message: `No asset exists with ticker: "${asset}"`,
+  });
+}
+
+/**
+ * @hidden
+ * Transforms asset or ticker into a `FungibleAsset` entity
+ */
+export function asFungibleAsset(asset: string | BaseAsset, context: Context): FungibleAsset {
+  if (asset instanceof FungibleAsset) {
+    return asset;
+  }
+
+  const ticker = typeof asset === 'string' ? asset : asset.ticker;
+
+  return new FungibleAsset({ ticker }, context);
 }
 
 /**
@@ -1038,7 +1136,7 @@ export function conditionsAreEqual(
  */
 export async function getCheckpointValue(
   checkpoint: InputCaCheckpoint,
-  asset: string | Asset,
+  asset: string | FungibleAsset,
   context: Context
 ): Promise<Checkpoint | CheckpointSchedule | Date> {
   if (
@@ -1048,7 +1146,7 @@ export async function getCheckpointValue(
   ) {
     return checkpoint;
   }
-  const assetEntity = asAsset(asset, context);
+  const assetEntity = asFungibleAsset(asset, context);
   const { type, id } = checkpoint;
   if (type === CaCheckpointType.Existing) {
     return assetEntity.checkpoints.getOne({ id });
@@ -1664,6 +1762,7 @@ export async function getSecondaryAccountPermissions(
           permissions: meshPermissionsToPermissions(rawPermissions, context),
         });
       }
+
       return result;
     }, []);
   };
@@ -1727,55 +1826,68 @@ export async function getIdentityFromKeyRecord(
 
 /**
  * @hidden
+ *
+ * helper to construct proper type asset
+ *
+ * @note `assetDetails` and `tickers` must have the same offset
  */
-function secondsInUnit(unit: CalendarUnit): BigNumber {
-  const SECOND = new BigNumber(1);
-  const MINUTE = SECOND.multipliedBy(60);
-  const HOUR = MINUTE.multipliedBy(60);
-  const DAY = HOUR.multipliedBy(24);
-  const WEEK = DAY.multipliedBy(7);
-  const MONTH = DAY.multipliedBy(30);
-  const YEAR = DAY.multipliedBy(365);
+export function assembleAssetQuery(
+  assetDetails: Option<PalletAssetSecurityToken>[],
+  tickers: string[],
+  context: Context
+): (FungibleAsset | NftCollection)[] {
+  return assetDetails.map((rawDetails, index) => {
+    const ticker = tickers[index];
+    const detail = rawDetails.unwrap();
 
-  switch (unit) {
-    case CalendarUnit.Second: {
-      return SECOND;
+    if (detail.assetType.isNonFungible) {
+      return new NftCollection({ ticker }, context);
+    } else {
+      return new FungibleAsset({ ticker }, context);
     }
-    case CalendarUnit.Minute: {
-      return MINUTE;
-    }
-    case CalendarUnit.Hour: {
-      return HOUR;
-    }
-    case CalendarUnit.Day: {
-      return DAY;
-    }
-    case CalendarUnit.Week: {
-      return WEEK;
-    }
-    case CalendarUnit.Month: {
-      return MONTH;
-    }
-    case CalendarUnit.Year: {
-      return YEAR;
-    }
+  });
+}
+
+/**
+ * @hidden
+ */
+export function asNftId(nft: Nft | BigNumber): BigNumber {
+  if (nft instanceof BigNumber) {
+    return nft;
+  } else {
+    return nft.id;
   }
 }
 
 /**
  * @hidden
- * Calculate the numeric complexity of a calendar period
  */
-export function periodComplexity(period: CalendarPeriod): BigNumber {
-  const secsInYear = secondsInUnit(CalendarUnit.Year);
-  const { amount, unit } = period;
-
-  if (amount.isZero()) {
-    return new BigNumber(1);
+export function areSameClaims(
+  claim: Claim,
+  { scope, type, customClaimTypeId }: MiddlewareClaim
+): boolean {
+  // filter out deprecated claim types
+  if (
+    type === ClaimTypeEnum.NoData ||
+    type === ClaimTypeEnum.NoType ||
+    type === ClaimTypeEnum.InvestorUniqueness ||
+    type === ClaimTypeEnum.InvestorUniquenessV2
+  ) {
+    return false;
   }
 
-  const secsInUnit = secondsInUnit(unit);
+  if (isScopedClaim(claim) && scope && !isEqual(middlewareScopeToScope(scope), claim.scope)) {
+    return false;
+  }
 
-  const complexity = secsInYear.dividedBy(secsInUnit.multipliedBy(amount));
-  return BigNumber.maximum(2, complexity.integerValue(BigNumber.ROUND_FLOOR));
+  if (
+    type === ClaimTypeEnum.Custom &&
+    claim.type === ClaimType.Custom &&
+    customClaimTypeId &&
+    !claim.customClaimTypeId.isEqualTo(customClaimTypeId)
+  ) {
+    return false;
+  }
+
+  return ClaimType[type] === claim.type;
 }

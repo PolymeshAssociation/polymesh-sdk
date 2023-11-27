@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { Asset, PolymeshError, Procedure } from '~/internal';
+import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { MAX_BALANCE } from '~/utils/constants';
@@ -9,30 +9,30 @@ import { bigNumberToBalance, portfolioToPortfolioKind, stringToTicker } from '~/
 export interface IssueTokensParams {
   amount: BigNumber;
   ticker: string;
+  portfolioId?: BigNumber;
 }
 
 export interface Storage {
-  asset: Asset;
+  asset: FungibleAsset;
 }
 
 /**
  * @hidden
  */
 export async function prepareIssueTokens(
-  this: Procedure<IssueTokensParams, Asset, Storage>,
+  this: Procedure<IssueTokensParams, FungibleAsset, Storage>,
   args: IssueTokensParams
-): Promise<TransactionSpec<Asset, ExtrinsicParams<'asset', 'issue'>>> {
+): Promise<TransactionSpec<FungibleAsset, ExtrinsicParams<'asset', 'issue'>>> {
   const {
     context: {
       polymeshApi: {
         tx: { asset },
       },
-      isV5,
     },
     context,
     storage: { asset: assetEntity },
   } = this;
-  const { ticker, amount } = args;
+  const { ticker, amount, portfolioId } = args;
 
   const [{ isDivisible, totalSupply }, signingIdentity] = await Promise.all([
     assetEntity.details(),
@@ -51,22 +51,17 @@ export async function prepareIssueTokens(
     });
   }
 
-  const defaultPortfolio = await signingIdentity.portfolios.getPortfolio();
+  const portfolio = portfolioId
+    ? await signingIdentity.portfolios.getPortfolio({ portfolioId })
+    : await signingIdentity.portfolios.getPortfolio();
 
   const rawTicker = stringToTicker(ticker, context);
   const rawValue = bigNumberToBalance(amount, context, isDivisible);
-  const rawPortfolio = portfolioToPortfolioKind(defaultPortfolio, context);
-
-  const issueArgs: unknown[] = [rawTicker, rawValue];
-
-  if (!isV5) {
-    issueArgs.push(rawPortfolio);
-  }
+  const rawPortfolio = portfolioToPortfolioKind(portfolio, context);
 
   return {
     transaction: asset.issue,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    args: issueArgs as any,
+    args: [rawTicker, rawValue, rawPortfolio],
     resolver: assetEntity,
   };
 }
@@ -75,7 +70,7 @@ export async function prepareIssueTokens(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<IssueTokensParams, Asset, Storage>
+  this: Procedure<IssueTokensParams, FungibleAsset, Storage>
 ): ProcedureAuthorization {
   const {
     storage: { asset },
@@ -93,18 +88,18 @@ export function getAuthorization(
  * @hidden
  */
 export function prepareStorage(
-  this: Procedure<IssueTokensParams, Asset, Storage>,
+  this: Procedure<IssueTokensParams, FungibleAsset, Storage>,
   { ticker }: IssueTokensParams
 ): Storage {
   const { context } = this;
 
   return {
-    asset: new Asset({ ticker }, context),
+    asset: new FungibleAsset({ ticker }, context),
   };
 }
 
 /**
  * @hidden
  */
-export const issueTokens = (): Procedure<IssueTokensParams, Asset, Storage> =>
+export const issueTokens = (): Procedure<IssueTokensParams, FungibleAsset, Storage> =>
   new Procedure(prepareIssueTokens, getAuthorization, prepareStorage);

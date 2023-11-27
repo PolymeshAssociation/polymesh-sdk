@@ -1,19 +1,22 @@
 import {
   Account as AccountClass,
-  Asset as AssetClass,
   AuthorizationRequest as AuthorizationRequestClass,
   Checkpoint as CheckpointClass,
   CheckpointSchedule as CheckpointScheduleClass,
+  ChildIdentity as ChildIdentityClass,
   CorporateAction as CorporateActionClass,
   CustomPermissionGroup as CustomPermissionGroupClass,
   DefaultPortfolio as DefaultPortfolioClass,
   DefaultTrustedClaimIssuer as DefaultTrustedClaimIssuerClass,
   DividendDistribution as DividendDistributionClass,
+  FungibleAsset as FungibleAssetClass,
   Identity as IdentityClass,
   Instruction as InstructionClass,
   KnownPermissionGroup as KnownPermissionGroupClass,
   MetadataEntry as MetadataEntryClass,
   MultiSig as MultiSigClass,
+  Nft as NftClass,
+  NftCollection as NftCollectionClass,
   NumberedPortfolio as NumberedPortfolioClass,
   Offering as OfferingClass,
   Subsidy as SubsidyClass,
@@ -32,10 +35,13 @@ export type DefaultPortfolio = DefaultPortfolioClass;
 export type DefaultTrustedClaimIssuer = DefaultTrustedClaimIssuerClass;
 export type DividendDistribution = DividendDistributionClass;
 export type Identity = IdentityClass;
+export type ChildIdentity = ChildIdentityClass;
 export type Instruction = InstructionClass;
 export type KnownPermissionGroup = KnownPermissionGroupClass;
 export type NumberedPortfolio = NumberedPortfolioClass;
-export type Asset = AssetClass;
+export type FungibleAsset = FungibleAssetClass;
+export type Nft = NftClass;
+export type NftCollection = NftCollectionClass;
 export type MetadataEntry = MetadataEntryClass;
 export type Offering = OfferingClass;
 export type TickerReservation = TickerReservationClass;

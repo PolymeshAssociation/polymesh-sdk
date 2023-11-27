@@ -2,7 +2,7 @@ import { u32 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { isEqual, remove } from 'lodash';
 
-import { Asset, PolymeshError, Procedure } from '~/internal';
+import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, LinkCaDocsParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
@@ -84,7 +84,7 @@ export function getAuthorization(
 ): ProcedureAuthorization {
   return {
     permissions: {
-      assets: [new Asset({ ticker }, this.context)],
+      assets: [new FungibleAsset({ ticker }, this.context)],
       transactions: [TxTags.corporateAction.LinkCaDoc],
       portfolios: [],
     },

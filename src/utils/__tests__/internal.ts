@@ -1,5 +1,5 @@
 import { Bytes, u32 } from '@polkadot/types';
-import { AccountId } from '@polkadot/types/interfaces';
+import { AccountId, EventRecord } from '@polkadot/types/interfaces';
 import {
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
@@ -11,8 +11,17 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { Account, Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
+import {
+  Account,
+  Context,
+  FungibleAsset,
+  Identity,
+  Nft,
+  PolymeshError,
+  Procedure,
+} from '~/internal';
 import { latestSqVersionQuery } from '~/middleware/queries';
+import { Claim as MiddlewareClaim } from '~/middleware/types';
 import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
@@ -34,6 +43,8 @@ import {
   PermissionedAccount,
   ProcedureMethod,
   RemoveAssetStatParams,
+  ScopedClaim,
+  ScopeType,
   StatType,
   SubCallback,
   TransferRestrictionType,
@@ -50,7 +61,11 @@ import * as utilsConversionModule from '~/utils/conversion';
 
 import { SUPPORTED_NODE_VERSION_RANGE, SUPPORTED_SPEC_VERSION_RANGE } from '../constants';
 import {
+  areSameClaims,
   asAccount,
+  asChildIdentity,
+  asFungibleAsset,
+  asNftId,
   assertAddressValid,
   assertExpectedChainVersion,
   assertExpectedSqVersion,
@@ -86,14 +101,19 @@ import {
   removePadding,
   requestAtBlock,
   requestPaginated,
+  segmentEventsByTransaction,
   serialize,
   sliceBatchReceipt,
   unserialize,
 } from '../internal';
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
+);
+jest.mock(
+  '~/api/entities/Asset/NonFungible',
+  require('~/testUtils/mocks/entities').mockNftCollectionModule('~/api/entities/Asset/NonFungible')
 );
 jest.mock(
   '~/api/entities/Account',
@@ -280,53 +300,82 @@ describe('filterEventRecords', () => {
   });
 });
 
+describe('segmentEventsByTransaction', () => {
+  it('should correctly segment events based on utility.ItemCompleted', () => {
+    // Mock some event data
+    const mockEvent1 = { event: { section: 'asset', method: 'AssetCreated' } };
+    const mockEvent2 = { event: { section: 'protocolFee', method: 'FeeCharged' } };
+    const mockEventItemCompleted = { event: { section: 'utility', method: 'ItemCompleted' } };
+
+    const events = [
+      mockEvent1,
+      mockEvent2,
+      mockEventItemCompleted,
+      mockEvent1,
+      mockEvent2,
+    ] as EventRecord[];
+    const result = segmentEventsByTransaction(events);
+
+    expect(result).toEqual([
+      [mockEvent1, mockEvent2],
+      [mockEvent1, mockEvent2],
+    ]);
+  });
+
+  it('should not include utility.ItemCompleted in the segments', () => {
+    const mockEventItemCompleted = { event: { section: 'utility', method: 'ItemCompleted' } };
+    const events = [mockEventItemCompleted] as EventRecord[];
+    const result = segmentEventsByTransaction(events);
+
+    expect(result).toEqual([]);
+  });
+
+  it('should handle cases where there are no utility.ItemCompleted events', () => {
+    const mockEvent1 = { event: { section: 'asset', method: 'AssetCreated' } };
+    const mockEvent2 = { event: { section: 'protocolFee', method: 'FeeCharged' } };
+
+    const events = [mockEvent1, mockEvent2] as EventRecord[];
+    const result = segmentEventsByTransaction(events);
+
+    expect(result).toEqual([[mockEvent1, mockEvent2]]);
+  });
+});
+
 describe('sliceBatchReceipt', () => {
   const filterRecordsMock = jest.fn();
+  const events = [
+    { event: { section: 'asset', method: 'AssetCreated' } },
+    { event: { section: 'protocolFee', method: 'FeeCharged' } },
+    { event: { section: 'utility', method: 'ItemCompleted' } },
+    { event: { section: 'asset', method: 'AssetDeleted' } },
+    { event: { section: 'utility', method: 'ItemCompleted' } },
+    { event: { section: 'utility', method: 'BatchCompleted' } },
+  ];
   const mockReceipt = {
     filterRecords: filterRecordsMock,
-    events: ['tx0event0', 'tx0event1', 'tx1event0', 'tx2event0', 'tx2event1', 'tx2event2'],
+    events,
     findRecord: jest.fn(),
     toHuman: jest.fn(),
   } as unknown as ISubmittableResult;
 
   beforeEach(() => {
-    when(filterRecordsMock)
-      .calledWith('utility', 'BatchCompletedOld')
-      .mockReturnValue([
-        {
-          event: {
-            data: [
-              [
-                dsMockUtils.createMockU32(new BigNumber(2)),
-                dsMockUtils.createMockU32(new BigNumber(1)),
-                dsMockUtils.createMockU32(new BigNumber(3)),
-              ],
-            ],
-          },
-        },
-      ]);
-  });
-
-  afterEach(() => {
-    filterRecordsMock.mockReset();
+    when(filterRecordsMock).calledWith('utility', 'BatchCompleted').mockReturnValue([1]);
   });
 
   it('should return the cloned receipt with a subset of events', () => {
-    let slicedReceipt = sliceBatchReceipt(mockReceipt, 1, 3, false);
-
-    expect(slicedReceipt.events).toEqual(['tx1event0', 'tx2event0', 'tx2event1', 'tx2event2']);
-
-    slicedReceipt = sliceBatchReceipt(mockReceipt, 0, 2, false);
-
-    expect(slicedReceipt.events).toEqual(['tx0event0', 'tx0event1', 'tx1event0']);
+    const slicedReceipt = sliceBatchReceipt(mockReceipt, 0, 1);
+    expect(slicedReceipt.events).toEqual([
+      { event: { section: 'asset', method: 'AssetCreated' } },
+      { event: { section: 'protocolFee', method: 'FeeCharged' } },
+    ]);
   });
 
   it('should throw an error if the transaction indexes are out of bounds', () => {
-    expect(() => sliceBatchReceipt(mockReceipt, -1, 2, false)).toThrow(
+    expect(() => sliceBatchReceipt(mockReceipt, -1, 2)).toThrow(
       'Transaction index range out of bounds. Please report this to the Polymesh team'
     );
 
-    expect(() => sliceBatchReceipt(mockReceipt, 1, 4, false)).toThrow(
+    expect(() => sliceBatchReceipt(mockReceipt, 2, 5)).toThrow(
       'Transaction index range out of bounds. Please report this to the Polymesh team'
     );
   });
@@ -419,7 +468,7 @@ describe('createClaim', () => {
     const jurisdiction = 'CL';
     let scope = { type: ClaimScopeTypeEnum.Identity, value: 'someScope' };
 
-    let result = createClaim(type, jurisdiction, scope, null);
+    let result = createClaim(type, jurisdiction, scope, null, null);
     expect(result).toEqual({
       type: ClaimType.Jurisdiction,
       code: CountryCode.Cl,
@@ -429,7 +478,7 @@ describe('createClaim', () => {
     type = 'BuyLockup';
     scope = { type: ClaimScopeTypeEnum.Identity, value: 'someScope' };
 
-    result = createClaim(type, null, scope, null);
+    result = createClaim(type, null, scope, null, null);
     expect(result).toEqual({
       type: ClaimType.BuyLockup,
       scope,
@@ -438,11 +487,31 @@ describe('createClaim', () => {
     type = 'CustomerDueDiligence';
     const id = 'someId';
 
-    result = createClaim(type, null, null, id);
+    result = createClaim(type, null, null, id, null);
     expect(result).toEqual({
       type: ClaimType.CustomerDueDiligence,
       id,
     });
+
+    type = 'Custom';
+    const customClaimTypeId = new BigNumber(1);
+
+    result = createClaim(type, null, scope, id, customClaimTypeId);
+    expect(result).toEqual({
+      type: ClaimType.Custom,
+      customClaimTypeId,
+      scope,
+    });
+  });
+
+  it('should throw if customClaimTypeId not provided for CustomClaim', () => {
+    const scope = { type: ClaimScopeTypeEnum.Identity, value: 'someScope' };
+    const id = 'someId';
+    const type = 'Custom';
+
+    expect(() => createClaim(type, null, scope, id, null)).toThrow(
+      'Custom claim type ID is required'
+    );
   });
 });
 
@@ -788,7 +857,7 @@ describe('asTicker', () => {
 
     expect(result).toBe(symbol);
 
-    result = asTicker(new Asset({ ticker: symbol }, dsMockUtils.getContextInstance()));
+    result = asTicker(new FungibleAsset({ ticker: symbol }, dsMockUtils.getContextInstance()));
     expect(result).toBe(symbol);
   });
 });
@@ -845,7 +914,7 @@ describe('getCheckpointValue', () => {
 
   it('should return value as it is for valid params of type Checkpoint, CheckpointSchedule or Date', async () => {
     const mockCheckpointSchedule = entityMockUtils.getCheckpointScheduleInstance();
-    const mockAsset = entityMockUtils.getAssetInstance();
+    const mockAsset = entityMockUtils.getFungibleAssetInstance();
     let result = await getCheckpointValue(mockCheckpointSchedule, mockAsset, context);
     expect(result).toEqual(mockCheckpointSchedule);
 
@@ -864,7 +933,7 @@ describe('getCheckpointValue', () => {
       id: new BigNumber(1),
       type: CaCheckpointType.Existing,
     };
-    const mockAsset = entityMockUtils.getAssetInstance({
+    const mockAsset = entityMockUtils.getFungibleAssetInstance({
       checkpointsGetOne: mockCheckpoint,
     });
 
@@ -878,12 +947,16 @@ describe('getCheckpointValue', () => {
       id: new BigNumber(1),
       type: CaCheckpointType.Schedule,
     };
-    const mockAsset = entityMockUtils.getAssetInstance({
+    const mockAsset = entityMockUtils.getFungibleAssetInstance({
       checkpointsSchedulesGetOne: { schedule: mockCheckpointSchedule },
     });
 
     const result = await getCheckpointValue(mockCaCheckpointTypeParams, mockAsset, context);
-    expect(result).toEqual(mockCheckpointSchedule);
+    expect(result).toMatchObject({
+      ...mockCheckpointSchedule,
+      asset: expect.anything(),
+      points: expect.any(Array),
+    });
   });
 });
 
@@ -1080,19 +1153,21 @@ describe('assertExpectedSqVersion', () => {
     warnSpy.mockRestore();
   });
 
-  it('should resolve if SDK is initialized with correct Middleware V2 version', () => {
+  it('should not log a warning if SDK is initialized with the correct Middleware V2 version', async () => {
     dsMockUtils.createApolloQueryMock(latestSqVersionQuery(), {
       subqueryVersions: {
         nodes: [
           {
-            version: '9.7.1',
+            version: '10.1.0',
           },
         ],
       },
     });
     const promise = assertExpectedSqVersion(dsMockUtils.getContextInstance());
 
-    return expect(promise).resolves.not.toThrow();
+    await expect(promise).resolves.not.toThrow();
+
+    expect(warnSpy).not.toHaveBeenCalled();
   });
 
   it('should log a warning for incompatible Subquery version', async () => {
@@ -2093,5 +2168,133 @@ describe('getIdentityFromKeyRecord', () => {
     const result = await getIdentityFromKeyRecord(unassignedKeyRecord, mockContext);
 
     expect(result).toBeNull();
+  });
+});
+
+describe('asChildIdentity', () => {
+  it('should return child identity instance', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+
+    const childDid = 'childDid';
+    const childIdentity = entityMockUtils.getChildIdentityInstance({
+      did: childDid,
+    });
+
+    let result = asChildIdentity(childDid, mockContext);
+
+    expect(result).toEqual(expect.objectContaining({ did: childDid }));
+
+    result = asChildIdentity(childIdentity, mockContext);
+
+    expect(result).toEqual(expect.objectContaining({ did: childDid }));
+  });
+});
+
+describe('asFungibleAsset', () => {
+  it('should return a given FungibleAsset', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+    const input = entityMockUtils.getFungibleAssetInstance();
+
+    const result = asFungibleAsset(input, mockContext);
+
+    expect(result).toEqual(input);
+  });
+
+  it('should create a new FungibleAsset given a ticker', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+    const ticker = 'TICKER';
+
+    const result = asFungibleAsset(ticker, mockContext);
+
+    expect(result).toEqual(expect.objectContaining({ ticker }));
+  });
+
+  it('should create a new FungibleAsset given a BaseAsset', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+    const ticker = 'TICKER';
+    const baseAsset = entityMockUtils.getBaseAssetInstance({ ticker });
+
+    const result = asFungibleAsset(baseAsset, mockContext);
+
+    expect(result).toEqual(expect.objectContaining({ ticker }));
+  });
+});
+
+describe('asNftId', () => {
+  it('should return a BigNumber when given an NFT', () => {
+    const context = dsMockUtils.getContextInstance();
+    const id = new BigNumber(1);
+    const ticker = 'TICKER';
+    const nft = new Nft({ id, ticker }, context);
+
+    const result = asNftId(nft);
+
+    expect(result).toEqual(id);
+  });
+
+  it('should return a BigNumber when given a BigNumber', () => {
+    const id = new BigNumber(1);
+
+    const result = asNftId(id);
+
+    expect(result).toEqual(id);
+  });
+});
+
+describe('areSameClaims', () => {
+  it('should return true if same claims are provided', () => {
+    const firstClaim: ScopedClaim = {
+      type: ClaimType.Custom,
+      customClaimTypeId: new BigNumber(1),
+      scope: {
+        type: ScopeType.Identity,
+        value: '1',
+      },
+    };
+
+    const secondClaim = { ...firstClaim } as unknown as MiddlewareClaim;
+
+    const result = areSameClaims(firstClaim, secondClaim);
+
+    expect(result).toBeTruthy();
+  });
+
+  it('should return a false if different scopes provided for scoped Claim', () => {
+    const firstClaim: ScopedClaim = {
+      type: ClaimType.Accredited,
+      scope: {
+        type: ScopeType.Identity,
+        value: '1',
+      },
+    };
+
+    const secondClaim = {
+      ...firstClaim,
+      scope: { type: ScopeType.Ticker, value: 'TICKER' },
+    } as unknown as MiddlewareClaim;
+
+    const result = areSameClaims(firstClaim, secondClaim);
+
+    expect(result).toBeFalsy();
+  });
+
+  it('should return a false if different customClaimTypeId provided for CustomClaim', () => {
+    const firstClaim: ScopedClaim = {
+      type: ClaimType.Custom,
+      customClaimTypeId: new BigNumber(1),
+      scope: {
+        type: ScopeType.Identity,
+        value: '1',
+      },
+    };
+
+    const secondClaim = {
+      ...firstClaim,
+      customClaimTypeId: new BigNumber(2),
+    } as unknown as MiddlewareClaim;
+
+    const result = areSameClaims(firstClaim, secondClaim);
+
+    expect(result).toBeFalsy();
   });
 });

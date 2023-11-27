@@ -2,9 +2,10 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
 import {
-  Asset,
+  BaseAsset,
   Context,
   CustomPermissionGroup,
+  FungibleAsset,
   Identity,
   KnownPermissionGroup,
   Namespace,
@@ -12,15 +13,15 @@ import {
   setPermissionGroup,
   waivePermissions,
 } from '~/internal';
-import { EventIdEnum, ModuleIdEnum } from '~/middleware/enums';
 import { tickerExternalAgentActionsQuery, tickerExternalAgentsQuery } from '~/middleware/queries';
-import { Query } from '~/middleware/types';
+import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import {
   AssetWithGroup,
   CheckPermissionsResult,
   ErrorCode,
   EventIdentifier,
   ModuleName,
+  NftCollection,
   PermissionType,
   ProcedureMethod,
   ResultSet,
@@ -111,7 +112,7 @@ export class AssetPermissions extends Namespace<Identity> {
 
     return P.map(assetEntries, async ([key]) => {
       const ticker = tickerToString(key.args[1]);
-      const asset = new Asset({ ticker }, context);
+      const asset = new FungibleAsset({ ticker }, context);
       const group = await this.getGroup({ asset });
 
       return {
@@ -125,7 +126,7 @@ export class AssetPermissions extends Namespace<Identity> {
    * Check whether this Identity has specific transaction Permissions over an Asset
    */
   public async checkPermissions(args: {
-    asset: Asset | string;
+    asset: BaseAsset | string;
     transactions: TxTag[] | null;
   }): Promise<CheckPermissionsResult<SignerType.Identity>> {
     const {
@@ -277,7 +278,7 @@ export class AssetPermissions extends Namespace<Identity> {
   public async getGroup({
     asset,
   }: {
-    asset: string | Asset;
+    asset: string | BaseAsset;
   }): Promise<CustomPermissionGroup | KnownPermissionGroup> {
     const {
       context: {
@@ -314,7 +315,11 @@ export class AssetPermissions extends Namespace<Identity> {
    * @note uses the middlewareV2
    * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
    */
-  public async enabledAt({ asset }: { asset: string | Asset }): Promise<EventIdentifier | null> {
+  public async enabledAt({
+    asset,
+  }: {
+    asset: string | FungibleAsset | NftCollection;
+  }): Promise<EventIdentifier | null> {
     const { context } = this;
     const ticker = asTicker(asset);
 
@@ -358,7 +363,7 @@ export class AssetPermissions extends Namespace<Identity> {
    * @note supports pagination
    */
   public async getOperationHistory(opts: {
-    asset: string | Asset;
+    asset: string | FungibleAsset;
     moduleId?: ModuleIdEnum;
     eventId?: EventIdEnum;
     size?: BigNumber;

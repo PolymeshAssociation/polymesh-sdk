@@ -2,19 +2,22 @@
 
 import {
   Account,
-  Asset,
   AuthorizationRequest,
+  BaseAsset,
   Checkpoint,
   CheckpointSchedule,
+  Context,
   CorporateAction,
   CustomPermissionGroup,
   DefaultPortfolio,
   DefaultTrustedClaimIssuer,
   DividendDistribution,
   Entity,
+  FungibleAsset,
   Identity,
   Instruction,
   KnownPermissionGroup,
+  NftCollection,
   NumberedPortfolio,
   Offering,
   PolymeshError,
@@ -34,13 +37,16 @@ import {
   ClaimType,
   ConditionType,
   ExemptedClaim,
+  FungibleLeg,
   IdentityCondition,
   IdentityRole,
   InputCondition,
   InputConditionBase,
+  InstructionLeg,
   JurisdictionClaim,
   KycClaim,
   MultiClaimCondition,
+  NftLeg,
   PortfolioCustodianRole,
   ProposalStatus,
   Role,
@@ -52,6 +58,7 @@ import {
   UnscopedClaim,
   VenueOwnerRole,
 } from '~/types';
+import { asAsset } from '~/utils/internal';
 
 /**
  * Return whether value is an Entity
@@ -151,13 +158,6 @@ export function isKnownPermissionGroup(value: unknown): value is KnownPermission
  */
 export function isNumberedPortfolio(value: unknown): value is NumberedPortfolio {
   return value instanceof NumberedPortfolio;
-}
-
-/**
- * Return whether value is an Asset
- */
-export function isAsset(value: unknown): value is Asset {
-  return value instanceof Asset;
 }
 
 /**
@@ -354,3 +354,62 @@ export function isPolymeshTransactionBatch<
 export function isProposalStatus(status: string): status is ProposalStatus {
   return status in ProposalStatus;
 }
+
+/**
+ * Return whether an asset is a FungibleAsset
+ */
+export function isFungibleAsset(asset: BaseAsset): asset is FungibleAsset {
+  return asset instanceof FungibleAsset;
+}
+
+/**
+ * Return whether an asset is a NftCollection
+ */
+export function isNftCollection(asset: BaseAsset): asset is NftCollection {
+  return asset instanceof NftCollection;
+}
+
+/**
+ * @hidden
+ */
+type IsFungibleLegGuard = (leg: InstructionLeg) => leg is FungibleLeg;
+
+/**
+ * Return whether a leg is for a Fungible asset
+ *
+ * @note Higher order function is a work around for TS not supporting `Promise<leg is FungibleLeg>`
+ *
+ * @example ```ts
+ * const fungibleGuard = await isFungibleLegBuilder(leg, context)
+ */
+export const isFungibleLegBuilder = async (
+  leg: InstructionLeg,
+  context: Context
+): Promise<IsFungibleLegGuard> => {
+  const asset = await asAsset(leg.asset, context);
+
+  return (iLeg: InstructionLeg): iLeg is FungibleLeg => {
+    return asset instanceof FungibleAsset;
+  };
+};
+
+/**
+ * @hidden
+ */
+type IsNftLegGuard = (leg: InstructionLeg) => leg is NftLeg;
+
+/**
+ * Return whether a leg is for an Nft
+ *
+ * @note Higher order function is a work around for TS not supporting `Promise<leg is NftLeg>`
+ */
+export const isNftLegBuilder = async (
+  leg: InstructionLeg,
+  context: Context
+): Promise<IsNftLegGuard> => {
+  const asset = await asAsset(leg.asset, context);
+
+  return (iLeg: InstructionLeg): iLeg is NftLeg => {
+    return asset instanceof NftCollection;
+  };
+};

@@ -1,41 +1,24 @@
 import BigNumber from 'bignumber.js';
-import dayjs from 'dayjs';
 
-import { Asset, Checkpoint, Context, Entity, PolymeshError } from '~/internal';
-import { CalendarPeriod, CalendarUnit, ErrorCode, ScheduleDetails } from '~/types';
-import {
-  bigNumberToU64,
-  momentToDate,
-  stringToTicker,
-  u32ToBigNumber,
-  u64ToBigNumber,
-} from '~/utils/conversion';
-import { periodComplexity, toHumanReadable } from '~/utils/internal';
+import { Checkpoint, Context, Entity, FungibleAsset, PolymeshError } from '~/internal';
+import { ErrorCode, ScheduleDetails } from '~/types';
+import { bigNumberToU64, momentToDate, stringToTicker, u64ToBigNumber } from '~/utils/conversion';
+import { toHumanReadable } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
   ticker: string;
 }
 
-export interface CalendarPeriodHumanReadable {
-  unit: CalendarUnit;
-  amount: string;
-}
-
 export interface HumanReadable {
   id: string;
   ticker: string;
-  period: CalendarPeriodHumanReadable | null;
-  start: string;
+  pendingPoints: string[];
   expiryDate: string | null;
-  complexity: string;
 }
 
 export interface Params {
-  period: CalendarPeriod;
-  start: Date;
-  remaining: BigNumber;
-  nextCheckpointDate: Date;
+  pendingPoints: Date[];
 }
 
 const notExistsMessage = 'Schedule no longer exists. It was either removed or it expired';
@@ -62,59 +45,33 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
   /**
    * Asset for which Checkpoints are scheduled
    */
-  public asset: Asset;
+  public asset: FungibleAsset;
 
   /**
-   * how often this Schedule creates a Checkpoint. A null value means this Schedule
-   *   creates a single Checkpoint and then expires
+   * dates in the future where checkpoints are schedule to be created
    */
-  public period: CalendarPeriod | null;
-
-  /**
-   * first Checkpoint creation date
-   */
-  public start: Date;
+  public pendingPoints: Date[];
 
   /**
    * date at which the last Checkpoint will be created with this Schedule.
-   *   A null value means that this Schedule never expires
    */
-  public expiryDate: Date | null;
-
-  /**
-   * abstract measure of the complexity of this Schedule. Shorter periods translate into more complexity
-   */
-  public complexity: BigNumber;
+  public expiryDate: Date;
 
   /**
    * @hidden
    */
   public constructor(args: UniqueIdentifiers & Params, context: Context) {
-    const { period, start, remaining, nextCheckpointDate, ...identifiers } = args;
+    const { pendingPoints, ...identifiers } = args;
 
     super(identifiers, context);
 
     const { id, ticker } = identifiers;
 
-    const noPeriod = period.amount.isZero();
-
+    const sortedPoints = [...pendingPoints].sort((a, b) => a.getTime() - b.getTime());
+    this.pendingPoints = sortedPoints;
+    this.expiryDate = sortedPoints[sortedPoints.length - 1];
     this.id = id;
-    this.asset = new Asset({ ticker }, context);
-    this.period = noPeriod ? null : period;
-    this.start = start;
-    this.complexity = periodComplexity(period);
-
-    if (remaining.isZero() && !noPeriod) {
-      this.expiryDate = null;
-    } else if (!this.period) {
-      this.expiryDate = start;
-    } else {
-      const { amount, unit } = period;
-
-      this.expiryDate = dayjs(nextCheckpointDate)
-        .add(amount.multipliedBy(remaining.minus(1)).toNumber(), unit)
-        .toDate();
-    }
+    this.asset = new FungibleAsset({ ticker }, context);
   }
 
   /**
@@ -126,54 +83,33 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
         polymeshApi: {
           query: { checkpoint },
         },
-        isV5,
       },
       id,
       context,
       asset: { ticker },
     } = this;
 
-    if (isV5) {
-      const rawSchedules = await checkpoint.schedules(stringToTicker(ticker, context));
+    const rawId = bigNumberToU64(id, context);
 
-      const schedule = rawSchedules.find(({ id: scheduleId }) => u64ToBigNumber(scheduleId).eq(id));
+    const scheduleOpt = await checkpoint.scheduledCheckpoints(
+      stringToTicker(ticker, context),
+      rawId
+    );
 
-      if (!schedule) {
-        throw new PolymeshError({
-          code: ErrorCode.DataUnavailable,
-          message: notExistsMessage,
-        });
-      }
-
-      const { at, remaining } = schedule;
-
-      return {
-        remainingCheckpoints: u32ToBigNumber(remaining),
-        nextCheckpointDate: momentToDate(at),
-      };
-    } else {
-      const rawId = bigNumberToU64(id, context);
-
-      const scheduleOpt = await checkpoint.scheduledCheckpoints(
-        stringToTicker(ticker, context),
-        rawId
-      );
-
-      if (scheduleOpt.isNone) {
-        throw new PolymeshError({
-          code: ErrorCode.DataUnavailable,
-          message: notExistsMessage,
-        });
-      }
-
-      const schedule = scheduleOpt.unwrap();
-      const points = [...schedule.pending].map(point => momentToDate(point));
-
-      return {
-        remainingCheckpoints: new BigNumber(points.length),
-        nextCheckpointDate: points[0],
-      };
+    if (scheduleOpt.isNone) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: notExistsMessage,
+      });
     }
+
+    const schedule = scheduleOpt.unwrap();
+    const points = [...schedule.pending].map(point => momentToDate(point));
+
+    return {
+      remainingCheckpoints: new BigNumber(points.length),
+      nextCheckpointDate: points[0],
+    };
   }
 
   /**
@@ -217,7 +153,6 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
         polymeshApi: {
           query: { checkpoint },
         },
-        isV5,
       },
       context,
       asset: { ticker },
@@ -226,35 +161,25 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
 
     const rawId = bigNumberToU64(id, context);
 
-    if (isV5) {
-      const rawSchedules = await checkpoint.schedules(stringToTicker(ticker, context));
+    const rawSchedule = await checkpoint.scheduledCheckpoints(
+      stringToTicker(ticker, context),
+      rawId
+    );
 
-      const exists = rawSchedules.find(({ id: scheduleId }) => u64ToBigNumber(scheduleId).eq(id));
-
-      return !!exists;
-    } else {
-      const rawSchedule = await checkpoint.scheduledCheckpoints(
-        stringToTicker(ticker, context),
-        rawId
-      );
-
-      return rawSchedule.isSome;
-    }
+    return rawSchedule.isSome;
   }
 
   /**
    * Return the Schedule's static data
    */
   public toHuman(): HumanReadable {
-    const { asset, id, expiryDate, complexity, start, period } = this;
+    const { asset, id, pendingPoints } = this;
 
     return toHumanReadable({
       ticker: asset,
       id,
-      start,
-      expiryDate,
-      period,
-      complexity,
+      pendingPoints,
+      expiryDate: pendingPoints[pendingPoints.length - 1],
     });
   }
 }

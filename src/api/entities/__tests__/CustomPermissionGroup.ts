@@ -6,8 +6,8 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 jest.mock(
   '~/base/Procedure',
@@ -69,7 +69,7 @@ describe('CustomPermissionGroup class', () => {
   describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       entityMockUtils.configureMocks({
-        assetOptions: {
+        fungibleAssetOptions: {
           toHuman: ticker,
         },
       });

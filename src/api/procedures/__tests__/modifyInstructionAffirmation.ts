@@ -427,7 +427,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       exists: false,
     });
     const amount = new BigNumber(1);
-    const asset = entityMockUtils.getAssetInstance({ ticker: 'SOME_ASSET' });
+    const asset = entityMockUtils.getFungibleAssetInstance({ ticker: 'SOME_ASSET' });
 
     it('should return the portfolios for which to modify affirmation status', async () => {
       const proc = procedureMockUtils.getInstance<

@@ -2,15 +2,8 @@ import { Bytes, u32 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
 
-import {
-  Asset,
-  Context,
-  DefaultPortfolio,
-  Identity,
-  PolymeshError,
-  Procedure,
-  TickerReservation,
-} from '~/internal';
+import { addManualFees } from '~/api/procedures/utils';
+import { FungibleAsset, Identity, PolymeshError, Procedure, TickerReservation } from '~/internal';
 import {
   AssetTx,
   CreateAssetWithTickerParams,
@@ -19,7 +12,6 @@ import {
   RoleType,
   StatisticsTx,
   TickerReservationStatus,
-  TxTag,
   TxTags,
 } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
@@ -66,27 +58,6 @@ export interface Storage {
 }
 
 /**
- * Add protocol fees for specific tags to the current accumulated total
- *
- * @returns undefined if fees aren't being calculated manually
- */
-async function addManualFees(
-  currentFee: BigNumber | undefined,
-  tags: TxTag[],
-  context: Context
-): Promise<BigNumber | undefined> {
-  if (!currentFee) {
-    return undefined;
-  }
-
-  const fees = await context.getProtocolFees({
-    tags,
-  });
-
-  return fees.reduce((prev, { fees: nextFees }) => prev.plus(nextFees), currentFee);
-}
-
-/**
  * @throws if the Ticker is not available
  */
 function assertTickerAvailable(
@@ -120,9 +91,9 @@ function assertTickerAvailable(
  * @hidden
  */
 export async function prepareCreateAsset(
-  this: Procedure<Params, Asset, Storage>,
+  this: Procedure<Params, FungibleAsset, Storage>,
   args: Params
-): Promise<BatchTransactionSpec<Asset, unknown[][]>> {
+): Promise<BatchTransactionSpec<FungibleAsset, unknown[][]>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -134,6 +105,7 @@ export async function prepareCreateAsset(
     ticker,
     name,
     initialSupply,
+    portfolioId,
     isDivisible,
     assetType,
     securityIdentifiers = [],
@@ -143,7 +115,6 @@ export async function prepareCreateAsset(
     initialStatistics,
   } = args;
 
-  const { isV5 } = context;
   assertTickerAvailable(ticker, status, reservationRequired);
 
   const rawTicker = stringToTicker(ticker, context);
@@ -154,7 +125,7 @@ export async function prepareCreateAsset(
   );
   const rawFundingRound = optionize(fundingRoundToAssetFundingRound)(fundingRound, context);
 
-  const newAsset = new Asset({ ticker }, context);
+  const newAsset = new FungibleAsset({ ticker }, context);
 
   const transactions = [];
 
@@ -184,76 +155,32 @@ export async function prepareCreateAsset(
     fee = await addManualFees(fee, [TxTags.asset.RegisterCustomAssetType], context);
 
     if (id.isEmpty) {
-      const assetArgs = [
-        rawName,
-        rawTicker,
-        rawIsDivisible,
-        rawValue,
-        rawIdentifiers,
-        rawFundingRound,
-      ];
-
-      if (isV5) {
-        const rawIu = booleanToBool(true, context);
-        assetArgs.push(rawIu);
-      }
       transactions.push(
         checkTxType({
           transaction: tx.asset.createAssetWithCustomType,
           fee,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          args: assetArgs as any,
+          args: [rawName, rawTicker, rawIsDivisible, rawValue, rawIdentifiers, rawFundingRound],
         })
       );
     } else {
       const rawType = internalAssetTypeToAssetType({ Custom: id }, context);
 
-      const assetArgs = [
-        rawName,
-        rawTicker,
-        rawIsDivisible,
-        rawType,
-        rawIdentifiers,
-        rawFundingRound,
-      ];
-
-      if (isV5) {
-        const rawIu = booleanToBool(true, context);
-        assetArgs.push(rawIu);
-      }
-
       transactions.push(
         checkTxType({
           transaction: tx.asset.createAsset,
           fee,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          args: assetArgs as any,
+          args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
         })
       );
     }
   } else {
     const rawType = internalAssetTypeToAssetType(assetType as KnownAssetType, context);
 
-    const assetArgs = [
-      rawName,
-      rawTicker,
-      rawIsDivisible,
-      rawType,
-      rawIdentifiers,
-      rawFundingRound,
-    ];
-
-    if (isV5) {
-      const rawIu = booleanToBool(true, context);
-      assetArgs.push(rawIu);
-    }
-
     transactions.push(
       checkTxType({
         transaction: tx.asset.createAsset,
         fee,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        args: assetArgs as any,
+        args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
       })
     );
   }
@@ -271,22 +198,19 @@ export async function prepareCreateAsset(
     );
   }
 
-  if (initialSupply && initialSupply.gt(0)) {
+  if (initialSupply?.gt(0)) {
     const rawInitialSupply = bigNumberToBalance(initialSupply, context, isDivisible);
-    const defaultPortfolio = new DefaultPortfolio({ did: signingIdentity.did }, context);
-    const rawPortfolioId = portfolioToPortfolioKind(defaultPortfolio, context);
 
-    const issueArgs: unknown[] = [rawTicker, rawInitialSupply];
+    const portfolio = portfolioId
+      ? await signingIdentity.portfolios.getPortfolio({ portfolioId })
+      : await signingIdentity.portfolios.getPortfolio();
 
-    if (!isV5) {
-      issueArgs.push(rawPortfolioId);
-    }
+    const rawPortfolio = portfolioToPortfolioKind(portfolio, context);
 
     transactions.push(
       checkTxType({
         transaction: tx.asset.issue,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        args: issueArgs as any,
+        args: [rawTicker, rawInitialSupply, rawPortfolio],
       })
     );
   }
@@ -315,7 +239,7 @@ export async function prepareCreateAsset(
  * @hidden
  */
 export async function getAuthorization(
-  this: Procedure<Params, Asset, Storage>,
+  this: Procedure<Params, FungibleAsset, Storage>,
   { ticker, documents, initialStatistics }: Params
 ): Promise<ProcedureAuthorization> {
   const {
@@ -357,7 +281,7 @@ export async function getAuthorization(
  * @hidden
  */
 export async function prepareStorage(
-  this: Procedure<Params, Asset, Storage>,
+  this: Procedure<Params, FungibleAsset, Storage>,
   { ticker, assetType }: Params
 ): Promise<Storage> {
   const { context } = this;
@@ -374,11 +298,11 @@ export async function prepareStorage(
     const rawValue = stringToBytes(assetType, context);
     const rawId = await context.polymeshApi.query.asset.customTypesInverse(rawValue);
 
-    const id = context.isV5 ? rawId : rawId.unwrapOrDefault();
+    const id = rawId.unwrapOrDefault();
 
     return {
       customTypeData: {
-        id: id as unknown as u32,
+        id,
         rawValue,
       },
       status,
@@ -396,5 +320,5 @@ export async function prepareStorage(
 /**
  * @hidden
  */
-export const createAsset = (): Procedure<Params, Asset, Storage> =>
+export const createAsset = (): Procedure<Params, FungibleAsset, Storage> =>
   new Procedure(prepareCreateAsset, getAuthorization, prepareStorage);

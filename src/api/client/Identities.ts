@@ -2,7 +2,9 @@ import { createPortfolioTransformer } from '~/api/entities/Venue';
 import {
   attestPrimaryKeyRotation,
   AuthorizationRequest,
+  ChildIdentity,
   Context,
+  createChildIdentity,
   createPortfolios,
   Identity,
   NumberedPortfolio,
@@ -11,6 +13,7 @@ import {
 } from '~/internal';
 import {
   AttestPrimaryKeyRotationParams,
+  CreateChildIdentityParams,
   ProcedureMethod,
   RegisterIdentityParams,
   RotatePrimaryKeyParams,
@@ -65,6 +68,13 @@ export class Identities {
     this.createPortfolios = createProcedureMethod(
       {
         getProcedureAndArgs: args => [createPortfolios, args],
+      },
+      context
+    );
+
+    this.createChild = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [createChildIdentity, args],
       },
       context
     );
@@ -128,9 +138,31 @@ export class Identities {
   }
 
   /**
+   * Create a ChildIdentity instance from a DID
+   *
+   * @throws if there is no ChildIdentity with the passed DID
+   */
+  public getChildIdentity(args: { did: string }): Promise<ChildIdentity> {
+    return this.context.getChildIdentity(args.did);
+  }
+
+  /**
    * Return whether the supplied Identity/DID exists
    */
   public isIdentityValid(args: { identity: Identity | string }): Promise<boolean> {
     return asIdentity(args.identity, this.context).exists();
   }
+
+  /**
+   * Creates a child identity and makes the `secondaryKey` as the primary key of the child identity
+   *
+   * @note the given `secondaryKey` is removed as secondary key from the signing Identity
+   *
+   * @throws if
+   *  - the transaction signer is not the primary account of which the `secondaryKey` is a secondary key
+   *  - the `secondaryKey` can't be unlinked (can happen when it's part of a multisig with some balance)
+   *  - the signing account is not a primary key
+   *  - the signing Identity is already a child of some other identity
+   */
+  public createChild: ProcedureMethod<CreateChildIdentityParams, ChildIdentity>;
 }

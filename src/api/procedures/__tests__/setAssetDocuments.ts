@@ -10,7 +10,7 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/setAssetDocuments';
-import { Asset, Context } from '~/internal';
+import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { AssetDocument, TxTags } from '~/types';
@@ -19,8 +19,8 @@ import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 describe('setAssetDocuments procedure', () => {
@@ -124,7 +124,7 @@ describe('setAssetDocuments procedure', () => {
   });
 
   it('should throw an error if the new list is the same as the current one', () => {
-    const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       currentDocs: documents,
       currentDocIds: [],
     });
@@ -136,7 +136,7 @@ describe('setAssetDocuments procedure', () => {
 
   it('should add a remove documents transaction and an add documents transaction to the batch', async () => {
     const docIds = [documentEntries[0][0][1]];
-    const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       currentDocIds: docIds,
       currentDocs: [],
     });
@@ -156,12 +156,12 @@ describe('setAssetDocuments procedure', () => {
           args: [rawDocuments, rawTicker],
         },
       ],
-      resolver: expect.objectContaining({ ticker }),
+      resolver: undefined,
     });
   });
 
   it('should not add a remove documents transaction if there are no documents linked to the Asset', async () => {
-    const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       currentDocIds: [],
       currentDocs: [],
     });
@@ -176,13 +176,13 @@ describe('setAssetDocuments procedure', () => {
           args: [rawDocuments, rawTicker],
         },
       ],
-      resolver: expect.objectContaining({ ticker }),
+      resolver: undefined,
     });
   });
 
   it('should not add an add documents transaction if there are no documents passed as arguments', async () => {
     const docIds = [documentEntries[0][0][1]];
-    const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       currentDocs: [documents[0]],
       currentDocIds: docIds,
     });
@@ -197,13 +197,13 @@ describe('setAssetDocuments procedure', () => {
           args: [docIds, rawTicker],
         },
       ],
-      resolver: expect.objectContaining({ ticker }),
+      resolver: undefined,
     });
   });
 
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
-      let proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
+      let proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
         currentDocIds: [documentEntries[0][0][1]],
         currentDocs: [],
       });
@@ -217,7 +217,7 @@ describe('setAssetDocuments procedure', () => {
         },
       });
 
-      proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
+      proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
         currentDocIds: [],
         currentDocs: [],
       });
@@ -235,7 +235,7 @@ describe('setAssetDocuments procedure', () => {
 
   describe('prepareStorage', () => {
     it('should return the current documents and their ids', async () => {
-      const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
       dsMockUtils.createQueryMock('asset', 'assetDocuments', {

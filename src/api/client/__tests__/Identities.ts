@@ -2,7 +2,13 @@ import { when } from 'jest-when';
 
 import { Identities } from '~/api/client/Identities';
 import { createPortfolioTransformer } from '~/api/entities/Venue';
-import { Context, Identity, NumberedPortfolio, PolymeshTransaction } from '~/internal';
+import {
+  ChildIdentity,
+  Context,
+  Identity,
+  NumberedPortfolio,
+  PolymeshTransaction,
+} from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 
@@ -51,6 +57,38 @@ describe('Identities Class', () => {
       const result = await identities.getIdentity(params);
 
       expect(result).toMatchObject(identity);
+    });
+  });
+
+  describe('method: getChildIdentity', () => {
+    it('should return a ChildIdentity object with the passed did', async () => {
+      const params = { did: 'testDid' };
+
+      const childIdentity = new ChildIdentity(params, context);
+      context.getChildIdentity.mockResolvedValue(childIdentity);
+
+      const result = await identities.getChildIdentity(params);
+
+      expect(result).toMatchObject(childIdentity);
+    });
+  });
+
+  describe('method: createChild', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args = {
+        secondaryKey: 'someChild',
+      };
+
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<ChildIdentity>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await identities.createChild(args);
+
+      expect(tx).toBe(expectedTransaction);
     });
   });
 

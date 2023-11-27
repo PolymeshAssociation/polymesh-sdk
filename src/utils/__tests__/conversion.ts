@@ -1,4 +1,5 @@
-import { bool, Bytes, Option, Text, U8aFixed, u32, u64, u128 } from '@polkadot/types';
+import { DecoratedErrors } from '@polkadot/api/types';
+import { bool, Bytes, Option, Text, U8aFixed, u32, u64, u128, Vec } from '@polkadot/types';
 import {
   AccountId,
   Balance,
@@ -22,6 +23,7 @@ import {
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
   PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
   PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
+  PolymeshPrimitivesAssetNonFungibleType,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesCddId,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
@@ -38,6 +40,8 @@ import {
   PolymeshPrimitivesIdentityIdPortfolioKind,
   PolymeshPrimitivesMemo,
   PolymeshPrimitivesMultisigProposalStatus,
+  PolymeshPrimitivesNftNftMetadataAttribute,
+  PolymeshPrimitivesNftNfTs,
   PolymeshPrimitivesPortfolioFund,
   PolymeshPrimitivesSecondaryKeySignatory,
   PolymeshPrimitivesSettlementLeg,
@@ -74,23 +78,25 @@ import {
 } from '~/internal';
 import {
   AuthTypeEnum,
+  Block,
   CallIdEnum,
+  Claim as MiddlewareClaim,
   ClaimTypeEnum,
+  CustomClaimType as MiddlewareCustomClaimType,
+  Instruction,
   InstructionStatusEnum,
   ModuleIdEnum,
-} from '~/middleware/enums';
-import {
-  Block,
-  Claim as MiddlewareClaim,
-  Instruction,
   Portfolio as MiddlewarePortfolio,
 } from '~/middleware/types';
 import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
+  createMockNfts,
   createMockOption,
   createMockPortfolioId,
   createMockTicker,
+  createMockU8,
+  createMockU8aFixed,
   createMockU32,
   createMockU64,
   createMockU128,
@@ -101,8 +107,6 @@ import {
   AssetDocument,
   Authorization,
   AuthorizationType,
-  CalendarPeriod,
-  CalendarUnit,
   Claim,
   ClaimType,
   Condition,
@@ -114,12 +118,15 @@ import {
   CountryCode,
   DividendDistributionParams,
   ErrorCode,
+  FungibleLeg,
   InputCondition,
   InstructionType,
   KnownAssetType,
+  KnownNftType,
   MetadataLockStatus,
   MetadataType,
   ModuleName,
+  NonFungiblePortfolioMovement,
   OfferingBalanceStatus,
   OfferingSaleStatus,
   OfferingTier,
@@ -151,7 +158,7 @@ import { InstructionStatus, PermissionGroupIdentifier } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
 import * as internalUtils from '~/utils/internal';
-import { padString, periodComplexity } from '~/utils/internal';
+import { padString } from '~/utils/internal';
 
 import {
   accountIdToString,
@@ -173,7 +180,6 @@ import {
   booleanToBool,
   boolToBoolean,
   bytesToString,
-  calendarPeriodToMeshCalendarPeriod,
   canTransferResultToTransferStatus,
   caTaxWithholdingsToMeshTaxWithholdings,
   cddIdToString,
@@ -184,6 +190,7 @@ import {
   claimToMeshClaim,
   claimTypeToMeshClaimType,
   coerceHexToString,
+  collectionKeysToMetadataKeys,
   complianceConditionsToBtreeSet,
   complianceRequirementResultToRequirementCompliance,
   complianceRequirementToRequirement,
@@ -203,6 +210,7 @@ import {
   fundingRoundToAssetFundingRound,
   fundraiserTierToTier,
   fundraiserToOfferingDetails,
+  fungibleMovementToPortfolioFund,
   granularCanTransferResultToTransferBreakdown,
   hashToString,
   identitiesToBtreeSet,
@@ -210,22 +218,25 @@ import {
   inputStatTypeToMeshStatType,
   instructionMemoToString,
   internalAssetTypeToAssetType,
+  internalNftTypeToNftType,
   isCusipValid,
   isFigiValid,
   isIsinValid,
   isLeiValid,
   keyAndValueToStatUpdate,
   keyToAddress,
-  legToSettlementLeg,
+  legToFungibleLeg,
+  legToNonFungibleLeg,
   meshAffirmationStatusToAffirmationStatus,
-  meshCalendarPeriodToCalendarPeriod,
   meshClaimToClaim,
   meshClaimToInputStatClaim,
   meshClaimTypeToClaimType,
   meshCorporateActionToCorporateActionParams,
   meshInstructionStatusToInstructionStatus,
+  meshMetadataKeyToMetadataKey,
   meshMetadataSpecToMetadataSpec,
   meshMetadataValueToMetadataValue,
+  meshNftToNftId,
   meshPermissionsToPermissions,
   meshProposalStatusToProposalStatus,
   meshScopeToScope,
@@ -248,6 +259,10 @@ import {
   moduleAddressToString,
   momentToDate,
   nameToAssetName,
+  nftDispatchErrorToTransferError,
+  nftInputToNftMetadataVec,
+  nftMovementToPortfolioFund,
+  nftToMeshNft,
   offeringTierToPriceTier,
   percentageToPermill,
   permillToBigNumber,
@@ -257,11 +272,9 @@ import {
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
-  portfolioMovementToPortfolioFund,
   portfolioToPortfolioKind,
   posRatioToBigNumber,
   requirementToComplianceRequirement,
-  scheduleSpecToMeshScheduleSpec,
   scopeToMeshScope,
   scopeToMiddlewareScope,
   secondaryAccountToMeshSecondaryKey,
@@ -295,6 +308,7 @@ import {
   textToString,
   tickerToDid,
   tickerToString,
+  toCustomClaimTypeWithIdentity,
   toIdentityWithClaimsArray,
   transactionHexToTxTag,
   transactionPermissionsToExtrinsicPermissions,
@@ -322,8 +336,8 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 jest.mock(
   '~/api/entities/DefaultPortfolio',
@@ -453,7 +467,7 @@ describe('stringToBytes and bytesToString', () => {
   });
 });
 
-describe('portfolioMovementToPortfolioFund', () => {
+describe('fungibleMovementToPortfolioFund', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
@@ -473,7 +487,7 @@ describe('portfolioMovementToPortfolioFund', () => {
     const ticker = 'SOME_ASSET';
     const amount = new BigNumber(100);
     const memo = 'someMessage';
-    const asset = entityMockUtils.getAssetInstance({ ticker });
+    const asset = entityMockUtils.getFungibleAssetInstance({ ticker });
     const rawTicker = dsMockUtils.createMockTicker(ticker);
     const rawAmount = dsMockUtils.createMockBalance(amount);
     const rawMemo = 'memo' as unknown as PolymeshPrimitivesMemo;
@@ -505,7 +519,7 @@ describe('portfolioMovementToPortfolioFund', () => {
       })
       .mockReturnValue(fakeResult);
 
-    let result = portfolioMovementToPortfolioFund(portfolioMovement, context);
+    let result = fungibleMovementToPortfolioFund(portfolioMovement, context);
 
     expect(result).toBe(fakeResult);
 
@@ -514,7 +528,7 @@ describe('portfolioMovementToPortfolioFund', () => {
       amount,
     };
 
-    result = portfolioMovementToPortfolioFund(portfolioMovement, context);
+    result = fungibleMovementToPortfolioFund(portfolioMovement, context);
 
     expect(result).toBe(fakeResult);
 
@@ -540,7 +554,98 @@ describe('portfolioMovementToPortfolioFund', () => {
       memo,
     };
 
-    result = portfolioMovementToPortfolioFund(portfolioMovement, context);
+    result = fungibleMovementToPortfolioFund(portfolioMovement, context);
+
+    expect(result).toBe(fakeResult);
+  });
+});
+
+describe('nftMovementToPortfolioFund', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a portfolio item into a polkadot move portfolio item', () => {
+    const context = dsMockUtils.getContextInstance();
+    const ticker = 'COLLECTION';
+    const id = new BigNumber(1);
+    const memo = 'someMessage';
+    const asset = entityMockUtils.getNftCollectionInstance({ ticker });
+    const rawTicker = dsMockUtils.createMockTicker(ticker);
+    const rawId = dsMockUtils.createMockU64(id);
+    const rawMemo = 'memo' as unknown as PolymeshPrimitivesMemo;
+    const fakeResult =
+      'PolymeshPrimitivesPortfolioFund' as unknown as PolymeshPrimitivesPortfolioFund;
+
+    let portfolioMovement: NonFungiblePortfolioMovement = {
+      asset: ticker,
+      nfts: [id],
+    };
+
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesTicker', padString(ticker, 12))
+      .mockReturnValue(rawTicker);
+
+    when(context.createType).calledWith('u64', id.toString()).mockReturnValue(rawId);
+
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesPortfolioFund', {
+        description: {
+          NonFungible: {
+            ticker: rawTicker,
+            ids: [rawId],
+          },
+        },
+        memo: null,
+      })
+      .mockReturnValue(fakeResult);
+
+    let result = nftMovementToPortfolioFund(portfolioMovement, context);
+
+    expect(result).toBe(fakeResult);
+
+    portfolioMovement = {
+      asset,
+      nfts: [id],
+    };
+
+    result = nftMovementToPortfolioFund(portfolioMovement, context);
+
+    expect(result).toBe(fakeResult);
+
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesMemo', padString(memo, 32))
+      .mockReturnValue(rawMemo);
+
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesPortfolioFund', {
+        description: {
+          NonFungible: {
+            ticker: rawTicker,
+            ids: [rawId],
+          },
+        },
+        memo: rawMemo,
+      })
+      .mockReturnValue(fakeResult);
+
+    portfolioMovement = {
+      asset,
+      nfts: [id],
+      memo,
+    };
+
+    result = nftMovementToPortfolioFund(portfolioMovement, context);
 
     expect(result).toBe(fakeResult);
   });
@@ -1613,7 +1718,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       const did = 'someDid';
       value = {
         assets: {
-          values: [entityMockUtils.getAssetInstance({ ticker })],
+          values: [entityMockUtils.getFungibleAssetInstance({ ticker })],
           type: PermissionType.Include,
         },
         transactions: {
@@ -1711,7 +1816,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
 
       value = {
         assets: {
-          values: [entityMockUtils.getAssetInstance({ ticker })],
+          values: [entityMockUtils.getFungibleAssetInstance({ ticker })],
           type: PermissionType.Exclude,
         },
         transactions: {
@@ -1763,7 +1868,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
 
       value = {
         assets: {
-          values: tickers.map(t => entityMockUtils.getAssetInstance({ ticker: t })),
+          values: tickers.map(t => entityMockUtils.getFungibleAssetInstance({ ticker: t })),
           type: PermissionType.Include,
         },
         transactions: {
@@ -2261,6 +2366,16 @@ describe('bigNumberToBalance and balanceToBigNumber', () => {
         .mockReturnValue(fakeResult);
 
       expect(result).toBe(fakeResult);
+
+      value = new BigNumber(NaN);
+
+      when(context.createType)
+        .calledWith('Balance', value.multipliedBy(Math.pow(10, 6)).toString())
+        .mockReturnValue(fakeResult);
+
+      result = bigNumberToBalance(value, context);
+
+      expect(result).toBe(fakeResult);
     });
 
     it('should throw an error if the value exceeds the max balance', () => {
@@ -2527,7 +2642,7 @@ describe('internalSecurityTypeToAssetType and assetTypeToKnownOrId', () => {
     dsMockUtils.cleanup();
   });
 
-  describe('internalSecurityTypeToAssetType', () => {
+  describe('internalAssetTypeToAssetType', () => {
     it('should convert an AssetType to a polkadot PolymeshPrimitivesAssetAssetType object', () => {
       const value = KnownAssetType.Commodity;
       const fakeResult = 'CommodityEnum' as unknown as PolymeshPrimitivesAssetAssetType;
@@ -2543,80 +2658,133 @@ describe('internalSecurityTypeToAssetType and assetTypeToKnownOrId', () => {
     });
   });
 
+  describe('internalNftTypeToNftType', () => {
+    it('should convert an NftType to a polkadot PolymeshPrimitivesAssetAssetType object', () => {
+      const value = KnownNftType.Derivative;
+      const fakeResult = 'DerivativeEnum' as unknown as PolymeshPrimitivesAssetNonFungibleType;
+      const context = dsMockUtils.getContextInstance();
+
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesAssetNonFungibleType', value)
+        .mockReturnValue(fakeResult);
+
+      const result = internalNftTypeToNftType(value, context);
+
+      expect(result).toBe(fakeResult);
+    });
+  });
+
   describe('assetTypeToKnownOrId', () => {
     it('should convert a polkadot PolymeshPrimitivesAssetAssetType object to a string', () => {
       let fakeResult = KnownAssetType.Commodity;
       let assetType = dsMockUtils.createMockAssetType(fakeResult);
 
       let result = assetTypeToKnownOrId(assetType);
-      expect(result).toEqual(fakeResult);
+      expect(result.value).toEqual(fakeResult);
+      expect(result.type).toEqual('Fungible');
 
       fakeResult = KnownAssetType.EquityCommon;
       assetType = dsMockUtils.createMockAssetType(fakeResult);
 
       result = assetTypeToKnownOrId(assetType);
-      expect(result).toEqual(fakeResult);
+      expect(result.value).toEqual(fakeResult);
 
       fakeResult = KnownAssetType.EquityPreferred;
       assetType = dsMockUtils.createMockAssetType(fakeResult);
 
       result = assetTypeToKnownOrId(assetType);
-      expect(result).toEqual(fakeResult);
+      expect(result.value).toEqual(fakeResult);
 
       fakeResult = KnownAssetType.Commodity;
       assetType = dsMockUtils.createMockAssetType(fakeResult);
 
       result = assetTypeToKnownOrId(assetType);
-      expect(result).toEqual(fakeResult);
+      expect(result.value).toEqual(fakeResult);
 
       fakeResult = KnownAssetType.FixedIncome;
       assetType = dsMockUtils.createMockAssetType(fakeResult);
 
       result = assetTypeToKnownOrId(assetType);
-      expect(result).toEqual(fakeResult);
+      expect(result.value).toEqual(fakeResult);
 
       fakeResult = KnownAssetType.Reit;
       assetType = dsMockUtils.createMockAssetType(fakeResult);
 
       result = assetTypeToKnownOrId(assetType);
-      expect(result).toEqual(fakeResult);
+      expect(result.value).toEqual(fakeResult);
 
       fakeResult = KnownAssetType.Fund;
       assetType = dsMockUtils.createMockAssetType(fakeResult);
 
       result = assetTypeToKnownOrId(assetType);
-      expect(result).toEqual(fakeResult);
+      expect(result.value).toEqual(fakeResult);
 
       fakeResult = KnownAssetType.RevenueShareAgreement;
       assetType = dsMockUtils.createMockAssetType(fakeResult);
 
       result = assetTypeToKnownOrId(assetType);
-      expect(result).toEqual(fakeResult);
+      expect(result.value).toEqual(fakeResult);
 
       fakeResult = KnownAssetType.StructuredProduct;
       assetType = dsMockUtils.createMockAssetType(fakeResult);
 
       result = assetTypeToKnownOrId(assetType);
-      expect(result).toEqual(fakeResult);
+      expect(result.value).toEqual(fakeResult);
 
       fakeResult = KnownAssetType.Derivative;
       assetType = dsMockUtils.createMockAssetType(fakeResult);
 
       result = assetTypeToKnownOrId(assetType);
-      expect(result).toEqual(fakeResult);
+      expect(result.value).toEqual(fakeResult);
 
       fakeResult = KnownAssetType.StableCoin;
       assetType = dsMockUtils.createMockAssetType(fakeResult);
 
       result = assetTypeToKnownOrId(assetType);
-      expect(result).toEqual(fakeResult);
+      expect(result.value).toEqual(fakeResult);
 
       assetType = dsMockUtils.createMockAssetType({
         Custom: dsMockUtils.createMockU32(new BigNumber(1)),
       });
 
       result = assetTypeToKnownOrId(assetType);
-      expect(result).toEqual(new BigNumber(1));
+      expect(result.value).toEqual(new BigNumber(1));
+    });
+
+    it('should convert NFT type values', () => {
+      let fakeResult = KnownNftType.Derivative;
+      let assetType = dsMockUtils.createMockAssetType({
+        NonFungible: dsMockUtils.createMockNftType(fakeResult),
+      });
+
+      let result = assetTypeToKnownOrId(assetType);
+      expect(result.value).toEqual(fakeResult);
+      expect(result.type).toEqual('NonFungible');
+
+      fakeResult = KnownNftType.Invoice;
+      assetType = dsMockUtils.createMockAssetType({
+        NonFungible: dsMockUtils.createMockNftType(fakeResult),
+      });
+
+      result = assetTypeToKnownOrId(assetType);
+      expect(result.value).toEqual(fakeResult);
+
+      fakeResult = KnownNftType.FixedIncome;
+      assetType = dsMockUtils.createMockAssetType({
+        NonFungible: dsMockUtils.createMockNftType(fakeResult),
+      });
+
+      result = assetTypeToKnownOrId(assetType);
+      expect(result.value).toEqual(fakeResult);
+
+      assetType = dsMockUtils.createMockAssetType({
+        NonFungible: dsMockUtils.createMockNftType({
+          Custom: dsMockUtils.createMockU32(new BigNumber(2)),
+        }),
+      });
+
+      result = assetTypeToKnownOrId(assetType);
+      expect(result.value).toEqual(new BigNumber(2));
     });
   });
 });
@@ -3212,6 +3380,18 @@ describe('canTransferResultToTransferStatus', () => {
 });
 
 describe('granularCanTransferResultToTransferBreakdown', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
   it('should convert a polkadot GranularCanTransferResult object to a TransferBreakdown', () => {
     const context = dsMockUtils.getContextInstance();
     let result = granularCanTransferResultToTransferBreakdown(
@@ -3221,7 +3401,6 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
         self_transfer: true,
         invalid_receiver_cdd: true,
         invalid_sender_cdd: true,
-        missing_scope_claim: true,
         receiver_custodian_error: true,
         sender_custodian_error: true,
         sender_insufficient_balance: true,
@@ -3246,9 +3425,10 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
           requirements: [],
           result: false,
         }),
-        result: false,
+        result: true,
         /* eslint-enable @typescript-eslint/naming-convention */
       }),
+      undefined,
       context
     );
 
@@ -3258,7 +3438,6 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
         TransferError.SelfTransfer,
         TransferError.InvalidReceiverCdd,
         TransferError.InvalidSenderCdd,
-        TransferError.ScopeClaimMissing,
         TransferError.InsufficientBalance,
         TransferError.TransfersFrozen,
         TransferError.InvalidSenderPortfolio,
@@ -3278,7 +3457,7 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
           result: false,
         },
       ],
-      result: false,
+      result: true,
     });
 
     result = granularCanTransferResultToTransferBreakdown(
@@ -3288,7 +3467,6 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
         self_transfer: false,
         invalid_receiver_cdd: false,
         invalid_sender_cdd: false,
-        missing_scope_claim: false,
         receiver_custodian_error: false,
         sender_custodian_error: false,
         sender_insufficient_balance: false,
@@ -3316,6 +3494,7 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
         result: false,
         /* eslint-enable @typescript-eslint/naming-convention */
       }),
+      undefined,
       context
     );
 
@@ -3336,6 +3515,155 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
       ],
       result: false,
     });
+  });
+
+  it('should convert a polkadot GranularCanTransferResult object to a TransferBreakdown with NFT result', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    context.polymeshApi.errors.nft = {
+      BalanceOverflow: { is: jest.fn().mockReturnValue(false) },
+      BalanceUnderflow: { is: jest.fn().mockReturnValue(false) },
+      DuplicatedNFTId: { is: jest.fn().mockReturnValue(true) },
+      InvalidNFTTransferComplianceFailure: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferFrozenAsset: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferInsufficientCount: { is: jest.fn().mockReturnValue(false) },
+      NFTNotFound: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferNFTNotOwned: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferSamePortfolio: { is: jest.fn().mockReturnValue(false) },
+    } as unknown as DecoratedErrors<'promise'>['nft'];
+
+    const result = granularCanTransferResultToTransferBreakdown(
+      dsMockUtils.createMockGranularCanTransferResult({
+        /* eslint-disable @typescript-eslint/naming-convention */
+        invalid_granularity: false,
+        self_transfer: false,
+        invalid_receiver_cdd: false,
+        invalid_sender_cdd: false,
+        receiver_custodian_error: false,
+        sender_custodian_error: false,
+        sender_insufficient_balance: false,
+        portfolio_validity_result: {
+          receiver_is_same_portfolio: false,
+          sender_portfolio_does_not_exist: false,
+          receiver_portfolio_does_not_exist: false,
+          sender_insufficient_balance: false,
+          result: false,
+        },
+        asset_frozen: false,
+        transfer_condition_result: [
+          {
+            condition: {
+              MaxInvestorCount: dsMockUtils.createMockU64(new BigNumber(100)),
+            },
+            result: false,
+          },
+        ],
+        compliance_result: dsMockUtils.createMockAssetComplianceResult({
+          paused: false,
+          requirements: [],
+          result: false,
+        }),
+        result: true,
+        /* eslint-enable @typescript-eslint/naming-convention */
+      }),
+      dsMockUtils.createMockDispatchResult({
+        Err: { index: createMockU8(), module: createMockU8aFixed() },
+      }),
+      context
+    );
+
+    expect(result).toEqual({
+      general: [TransferError.InsufficientPortfolioBalance],
+      compliance: {
+        requirements: [],
+        complies: false,
+      },
+      restrictions: [
+        {
+          restriction: {
+            type: TransferRestrictionType.Count,
+            value: new BigNumber(100),
+          },
+          result: false,
+        },
+      ],
+      result: false,
+    });
+  });
+});
+
+describe('nftDispatchErrorToTransferError', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should process errors', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    context.polymeshApi.errors.nft = {
+      BalanceOverflow: { is: jest.fn().mockReturnValue(false) },
+      BalanceUnderflow: { is: jest.fn().mockReturnValue(false) },
+      DuplicatedNFTId: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferComplianceFailure: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferFrozenAsset: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferInsufficientCount: { is: jest.fn().mockReturnValue(false) },
+      NFTNotFound: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferNFTNotOwned: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferSamePortfolio: { is: jest.fn().mockReturnValue(false) },
+    } as unknown as DecoratedErrors<'promise'>['nft'];
+
+    const mockError = dsMockUtils.createMockDispatchResult({
+      Err: { index: createMockU8(), module: createMockU8aFixed() },
+    }).asErr;
+
+    dsMockUtils.setErrorMock('nft', 'InvalidNFTTransferFrozenAsset', {
+      returnValue: { is: jest.fn().mockReturnValue(true) },
+    });
+
+    let result = nftDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.TransfersFrozen);
+
+    dsMockUtils.setErrorMock('nft', 'InvalidNFTTransferFrozenAsset', {
+      returnValue: { is: jest.fn().mockReturnValue(false) },
+    });
+    dsMockUtils.setErrorMock('nft', 'InvalidNFTTransferComplianceFailure', {
+      returnValue: { is: jest.fn().mockReturnValue(true) },
+    });
+
+    result = nftDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.ComplianceFailure);
+
+    dsMockUtils.setErrorMock('nft', 'InvalidNFTTransferComplianceFailure', {
+      returnValue: { is: jest.fn().mockReturnValue(false) },
+    });
+    dsMockUtils.setErrorMock('nft', 'InvalidNFTTransferSamePortfolio', {
+      returnValue: { is: jest.fn().mockReturnValue(true) },
+    });
+
+    result = nftDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.SelfTransfer);
+
+    dsMockUtils.setErrorMock('nft', 'InvalidNFTTransferSamePortfolio', {
+      returnValue: { is: jest.fn().mockReturnValue(false) },
+    });
+
+    return expect(() => nftDispatchErrorToTransferError(mockError, context)).toThrow(
+      new PolymeshError({
+        code: ErrorCode.General,
+        message: 'Received unknown NFT can transfer status',
+      })
+    );
   });
 });
 
@@ -3514,6 +3842,25 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
       when(createTypeMock)
         .calledWith('PolymeshPrimitivesIdentityClaimClaim', {
           [value.type]: stringToCddId(value.id, context),
+        })
+        .mockReturnValue(fakeResult);
+
+      result = claimToMeshClaim(value, context);
+
+      expect(result).toBe(fakeResult);
+
+      value = {
+        type: ClaimType.Custom,
+        customClaimTypeId: new BigNumber(1),
+        scope: { type: ScopeType.Identity, value: 'SOME_TICKERDid' },
+      };
+
+      when(createTypeMock)
+        .calledWith('PolymeshPrimitivesIdentityClaimClaim', {
+          [value.type]: [
+            bigNumberToU32(value.customClaimTypeId, context),
+            scopeToMeshScope(value.scope, context),
+          ],
         })
         .mockReturnValue(fakeResult);
 
@@ -4038,7 +4385,7 @@ describe('middlewareInstructionToHistoricInstruction', () => {
     expect(result.venueId).toEqual(venueId);
     expect(result.createdAt).toEqual(createdAt);
     expect(result.legs[0].asset.ticker).toBe(ticker);
-    expect(result.legs[0].amount).toEqual(amount1);
+    expect((result.legs[0] as FungibleLeg).amount).toEqual(amount1);
     expect(result.legs[0].from.owner.did).toBe(portfolioDid1);
     expect(result.legs[0].to.owner.did).toBe(portfolioDid2);
     expect((result.legs[0].to as NumberedPortfolio).id).toEqual(new BigNumber(portfolioKind2));
@@ -4069,7 +4416,7 @@ describe('middlewareInstructionToHistoricInstruction', () => {
     expect(result.venueId).toEqual(venueId);
     expect(result.createdAt).toEqual(createdAt);
     expect(result.legs[0].asset.ticker).toBe(ticker);
-    expect(result.legs[0].amount).toEqual(amount2);
+    expect((result.legs[0] as FungibleLeg).amount).toEqual(amount2);
     expect(result.legs[0].from.owner.did).toBe(portfolioDid2);
     expect(result.legs[0].to.owner.did).toBe(portfolioDid1);
     expect((result.legs[0].from as NumberedPortfolio).id).toEqual(new BigNumber(portfolioKind2));
@@ -4117,6 +4464,54 @@ describe('middlewareClaimToClaimData', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
+  });
+
+  it('should convert CustomClaim to ClaimData', () => {
+    const context = dsMockUtils.getContextInstance();
+    const issuanceDate = new Date('10/14/1987');
+    const lastUpdateDate = new Date('10/14/1987');
+    const expiry = new Date('10/10/1988');
+    const middlewareClaim = {
+      targetId: 'targetId',
+      issuerId: 'issuerId',
+      issuanceDate: issuanceDate.getTime(),
+      lastUpdateDate: lastUpdateDate.getTime(),
+      expiry: null,
+      cddId: 'someCddId',
+      type: 'Custom',
+      customClaimTypeId: '1',
+      nodeId: '1',
+    } as unknown as MiddlewareClaim;
+    const claim = {
+      type: ClaimType.Custom,
+      id: 'someCddId',
+      customClaimTypeId: new BigNumber('1'),
+    };
+    createClaimSpy.mockReturnValue(claim);
+
+    const fakeResult = {
+      target: expect.objectContaining({ did: 'targetId' }),
+      issuer: expect.objectContaining({ did: 'issuerId' }),
+      issuedAt: issuanceDate,
+      lastUpdatedAt: lastUpdateDate,
+      expiry: null,
+      claim,
+    };
+
+    expect(middlewareClaimToClaimData(middlewareClaim, context)).toEqual(fakeResult);
+
+    expect(
+      middlewareClaimToClaimData(
+        {
+          ...middlewareClaim,
+          expiry: expiry.getTime(),
+        },
+        context
+      )
+    ).toEqual({
+      ...fakeResult,
+      expiry,
+    });
   });
 
   it('should convert middleware Claim to ClaimData', () => {
@@ -5580,13 +5975,14 @@ describe('meshInstructionStatusToInstructionStatus', () => {
     result = meshInstructionStatusToInstructionStatus(instructionStatus);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = InstructionStatus.Executed;
+    fakeResult = InstructionStatus.Rejected;
     instructionStatus = dsMockUtils.createMockInstructionStatus('Rejected');
 
     result = meshInstructionStatusToInstructionStatus(instructionStatus);
     expect(result).toEqual(fakeResult);
 
     instructionStatus = dsMockUtils.createMockInstructionStatus('Success');
+    fakeResult = InstructionStatus.Success;
 
     result = meshInstructionStatusToInstructionStatus(instructionStatus);
     expect(result).toEqual(fakeResult);
@@ -5930,7 +6326,7 @@ describe('permissionsLikeToPermissions', () => {
     });
 
     const firstTicker = 'TICKER';
-    const firstToken = entityMockUtils.getAssetInstance({ ticker: firstTicker });
+    const firstToken = entityMockUtils.getFungibleAssetInstance({ ticker: firstTicker });
     const secondTicker = 'OTHER_TICKER';
     const did = 'someDid';
     const portfolio = entityMockUtils.getDefaultPortfolioInstance({ did });
@@ -9140,7 +9536,7 @@ describe('middlewareAuthorizationDataToAuthorization', () => {
   });
 });
 
-describe('legToSettlementLeg', () => {
+describe('legToFungibleLeg', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -9152,24 +9548,56 @@ describe('legToSettlementLeg', () => {
   afterAll(() => {
     dsMockUtils.cleanup();
   });
+
   it('should make a fungible leg', () => {
     const context = dsMockUtils.getContextInstance();
     const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesSettlementLeg;
 
     const value = {
-      Fungible: {
-        sender: createMockPortfolioId(),
-        receiver: createMockPortfolioId(),
-        ticker: createMockTicker(),
-        amount: createMockU128(),
-      },
+      sender: createMockPortfolioId(),
+      receiver: createMockPortfolioId(),
+      ticker: createMockTicker(),
+      amount: createMockU128(),
     } as const;
 
     when(context.createType)
-      .calledWith('PolymeshPrimitivesSettlementLeg', value)
+      .calledWith('PolymeshPrimitivesSettlementLeg', { Fungible: value })
       .mockReturnValue(fakeResult);
 
-    const result = legToSettlementLeg(value, context);
+    const result = legToFungibleLeg(value, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('legToNonFungibleLeg', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should make a non-fungible leg', () => {
+    const context = dsMockUtils.getContextInstance();
+    const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesSettlementLeg;
+
+    const value = {
+      sender: createMockPortfolioId(),
+      receiver: createMockPortfolioId(),
+      nfts: createMockNfts(),
+    } as const;
+
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesSettlementLeg', { NonFungible: value })
+      .mockReturnValue(fakeResult);
+
+    const result = legToNonFungibleLeg(value, context);
 
     expect(result).toEqual(fakeResult);
   });
@@ -9217,7 +9645,7 @@ describe('datesToScheduleCheckpoints', () => {
   });
 });
 
-describe('calendarPeriodToMeshCalendarPeriod and meshCalendarPeriodToCalendarPeriod', () => {
+describe('collectionKeysToMetadataKeys', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -9230,111 +9658,78 @@ describe('calendarPeriodToMeshCalendarPeriod and meshCalendarPeriodToCalendarPer
     dsMockUtils.cleanup();
   });
 
-  describe('calendarPeriodToMeshCalendarPeriod', () => {
-    it('should throw an error if amount is negative', () => {
-      const context = dsMockUtils.getContextInstance();
+  it('should create collection keys', () => {
+    const context = dsMockUtils.getContextInstance();
+    const id = new BigNumber(1);
+    const keys = [{ type: MetadataType.Local, id }];
 
-      expect(() =>
-        calendarPeriodToMeshCalendarPeriod(
-          { unit: CalendarUnit.Month, amount: new BigNumber(-3) },
-          context
-        )
-      ).toThrow('Calendar period cannot have a negative amount');
+    const fakeKey = 'fakeKey' as unknown as PolymeshPrimitivesAssetMetadataAssetMetadataKey;
+    const fakeResult =
+      'fakeMetadataKeys' as unknown as Vec<PolymeshPrimitivesAssetMetadataAssetMetadataKey>;
+
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesAssetMetadataAssetMetadataKey', {
+        Local: bigNumberToU64(id, context),
+      })
+      .mockReturnValue(fakeKey);
+
+    when(context.createType)
+      .calledWith('Vec<PolymeshPrimitivesAssetMetadataAssetMetadataKey>', [fakeKey])
+      .mockReturnValue(fakeResult);
+
+    const result = collectionKeysToMetadataKeys(keys, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('meshMetadataKeyToMetadataKey', () => {
+  it('should convert local metadata', () => {
+    const localId = new BigNumber(1);
+    const ticker = 'TICKER';
+    const rawKey = dsMockUtils.createMockAssetMetadataKey({
+      Local: dsMockUtils.createMockU64(localId),
     });
 
-    it('should convert a CalendarPeriod to a polkadot PolymeshPrimitivesCalendarCalendarPeriod object', () => {
-      const amount = new BigNumber(1);
-      const value = { unit: CalendarUnit.Month, amount };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const fakeResult = 'Period' as unknown as any;
-      const context = dsMockUtils.getContextInstance();
+    const result = meshMetadataKeyToMetadataKey(rawKey, ticker);
 
-      const createTypeMock = context.createType;
-      const rawAmount = dsMockUtils.createMockU64(amount);
-
-      when(createTypeMock).calledWith('u64', `${amount}`).mockReturnValue(rawAmount);
-      when(createTypeMock)
-        .calledWith('PolymeshPrimitivesCalendarCalendarPeriod', {
-          unit: 'Month',
-          amount: rawAmount,
-        })
-        .mockReturnValue(fakeResult);
-
-      const result = calendarPeriodToMeshCalendarPeriod(value, context);
-
-      expect(result).toBe(fakeResult);
-    });
+    expect(result).toEqual({ type: MetadataType.Local, id: localId, ticker });
   });
 
-  describe('meshCalendarPeriodToCalendarPeriod', () => {
-    it('should convert a polkadot PolymeshPrimitivesCalendarCalendarPeriod object to a CalendarPeriod', () => {
-      let fakeResult = { unit: CalendarUnit.Second, amount: new BigNumber(1) };
-      let calendarPeriod = dsMockUtils.createMockCalendarPeriod({
-        unit: dsMockUtils.createMockCalendarUnit('Second'),
-        amount: dsMockUtils.createMockU64(fakeResult.amount),
-      });
+  it('should convert Global metadata', () => {
+    const globalId = new BigNumber(2);
+    const rawKey = dsMockUtils.createMockAssetMetadataKey({
+      Global: dsMockUtils.createMockU64(globalId),
+    });
 
-      let result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
-      expect(result).toEqual(fakeResult);
+    const result = meshMetadataKeyToMetadataKey(rawKey, '');
 
-      fakeResult = { unit: CalendarUnit.Minute, amount: new BigNumber(1) };
-      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
-        unit: dsMockUtils.createMockCalendarUnit('Minute'),
-        amount: dsMockUtils.createMockU64(fakeResult.amount),
-      });
+    expect(result).toEqual({ type: MetadataType.Global, id: globalId });
+  });
+});
 
-      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
-      expect(result).toEqual(fakeResult);
+describe('meshNftToNftId', () => {
+  it('should convert a set of NFTs', () => {
+    const ticker = 'TICKER';
 
-      fakeResult = { unit: CalendarUnit.Hour, amount: new BigNumber(1) };
-      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
-        unit: dsMockUtils.createMockCalendarUnit('Hour'),
-        amount: dsMockUtils.createMockU64(fakeResult.amount),
-      });
+    const mockNft = dsMockUtils.createMockNfts({
+      ticker: dsMockUtils.createMockTicker(ticker),
+      ids: [
+        dsMockUtils.createMockU64(new BigNumber(1)),
+        dsMockUtils.createMockU64(new BigNumber(2)),
+      ],
+    });
 
-      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
-      expect(result).toEqual(fakeResult);
+    const result = meshNftToNftId(mockNft);
 
-      fakeResult = { unit: CalendarUnit.Day, amount: new BigNumber(1) };
-      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
-        unit: dsMockUtils.createMockCalendarUnit('Day'),
-        amount: dsMockUtils.createMockU64(fakeResult.amount),
-      });
-
-      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = { unit: CalendarUnit.Week, amount: new BigNumber(1) };
-      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
-        unit: dsMockUtils.createMockCalendarUnit('Week'),
-        amount: dsMockUtils.createMockU64(fakeResult.amount),
-      });
-
-      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = { unit: CalendarUnit.Month, amount: new BigNumber(1) };
-      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
-        unit: dsMockUtils.createMockCalendarUnit('Month'),
-        amount: dsMockUtils.createMockU64(fakeResult.amount),
-      });
-
-      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = { unit: CalendarUnit.Year, amount: new BigNumber(1) };
-      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
-        unit: dsMockUtils.createMockCalendarUnit('Year'),
-        amount: dsMockUtils.createMockU64(fakeResult.amount),
-      });
-
-      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
-      expect(result).toEqual(fakeResult);
+    expect(result).toEqual({
+      ticker,
+      ids: [new BigNumber(1), new BigNumber(2)],
     });
   });
 });
 
-describe('scheduleSpecToMeshScheduleSpec', () => {
+describe('nftInputToNftMetadataAttribute', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -9347,104 +9742,105 @@ describe('scheduleSpecToMeshScheduleSpec', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should convert a ScheduleDetails object to a polkadot PalletAssetCheckpointScheduleSpec object', () => {
-    const start = new Date('10/14/1987');
-    const amount = new BigNumber(1);
-    const period = { unit: CalendarUnit.Month, amount };
-    const repetitions = new BigNumber(10);
+  it('should convert NFT input into a raw attribute', () => {
+    const context = dsMockUtils.getContextInstance();
+    const id = new BigNumber(1);
+    const rawId = dsMockUtils.createMockU64(id);
+    const value = 'testValue';
 
-    const value = { start, period, repetitions };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const fakeResult = 'Spec' as any;
+    const mockKey = 'mockKey' as unknown as PolymeshPrimitivesAssetMetadataAssetMetadataKey;
+    const mockValue = 'mockValue' as unknown as Bytes;
+    const mockAttribute = 'mockAttribute' as unknown as PolymeshPrimitivesNftNftMetadataAttribute;
+    const mockResult = 'mockResult' as unknown as Vec<PolymeshPrimitivesNftNftMetadataAttribute>;
+
+    dsMockUtils.setConstMock('asset', 'assetMetadataValueMaxLength', {
+      returnValue: dsMockUtils.createMockU64(new BigNumber(255)),
+    });
+
+    when(context.createType).calledWith('u64', id.toString()).mockReturnValue(rawId);
+
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesAssetMetadataAssetMetadataKey', {
+        Local: rawId,
+      })
+      .mockReturnValue(mockKey);
+
+    when(context.createType).calledWith('Bytes', value).mockReturnValue(mockValue);
+
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesNftNftMetadataAttribute', {
+        key: mockKey,
+        value: mockValue,
+      })
+      .mockReturnValue(mockAttribute);
+
+    when(context.createType)
+      .calledWith('Vec<PolymeshPrimitivesNftNftMetadataAttribute>', [mockAttribute])
+      .mockReturnValue(mockResult);
+
+    const input = [{ type: MetadataType.Local, id, value }];
+
+    const result = nftInputToNftMetadataVec(input, context);
+
+    expect(result).toEqual(mockResult);
+  });
+});
+
+describe('nftToMeshNft', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should converts Nft input', () => {
+    const ticker = 'TICKER';
+    const rawTicker = dsMockUtils.createMockTicker(ticker);
+    const id = new BigNumber(1);
+    const rawId = dsMockUtils.createMockU64(id);
     const context = dsMockUtils.getContextInstance();
 
-    const createTypeMock = context.createType;
-    const rawStart = dsMockUtils.createMockMoment(new BigNumber(start.getTime()));
-    const rawAmount = dsMockUtils.createMockU64(amount);
-    const rawZero = dsMockUtils.createMockU64(new BigNumber(0));
-    const rawPeriod = dsMockUtils.createMockCalendarPeriod({
-      unit: dsMockUtils.createMockCalendarUnit('Month'),
-      amount: rawAmount,
-    });
-    const rawZeroPeriod = dsMockUtils.createMockCalendarPeriod({
-      unit: dsMockUtils.createMockCalendarUnit('Month'),
-      amount: rawZero,
-    });
-    const rawRepetitions = dsMockUtils.createMockU64(repetitions);
+    const mockResult = 'mockResult' as unknown as PolymeshPrimitivesNftNfTs;
 
-    when(createTypeMock).calledWith('u64', `${amount}`).mockReturnValue(rawAmount);
-    when(createTypeMock).calledWith('u64', '0').mockReturnValue(rawZero);
-    when(createTypeMock).calledWith('u64', `${repetitions}`).mockReturnValue(rawRepetitions);
-    when(createTypeMock).calledWith('u64', start.getTime()).mockReturnValue(rawStart);
-    when(createTypeMock)
-      .calledWith('PolymeshPrimitivesCalendarCalendarPeriod', { unit: 'Month', amount: rawAmount })
-      .mockReturnValue(rawPeriod);
-    when(createTypeMock)
-      .calledWith('PolymeshPrimitivesCalendarCalendarPeriod', { unit: 'Month', amount: rawZero })
-      .mockReturnValue(rawZeroPeriod);
-    when(createTypeMock)
-      .calledWith('PalletAssetCheckpointScheduleSpec', {
-        start: rawStart,
-        period: rawPeriod,
-        remaining: rawRepetitions,
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesTicker', padString(ticker, MAX_TICKER_LENGTH))
+      .mockReturnValue(rawTicker);
+    when(context.createType).calledWith('u64', id.toString()).mockReturnValue(rawId);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesNftNfTs', {
+        ticker: rawTicker,
+        ids: [rawId],
       })
-      .mockReturnValue(fakeResult);
-    when(createTypeMock)
-      .calledWith('PalletAssetCheckpointScheduleSpec', {
-        start: null,
-        period: rawZeroPeriod,
-        remaining: rawZero,
-      })
-      .mockReturnValue(fakeResult);
+      .mockReturnValue(mockResult);
 
-    let result = scheduleSpecToMeshScheduleSpec(value, context);
+    const result = nftToMeshNft(ticker, [id], context);
 
-    expect(result).toBe(fakeResult);
-
-    result = scheduleSpecToMeshScheduleSpec(
-      { start: null, period: null, repetitions: null },
-      context
-    );
-
-    expect(result).toBe(fakeResult);
+    expect(result).toEqual(mockResult);
   });
 });
 
-describe('periodComplexity', () => {
-  it('should calculate complexity for any period', () => {
-    const period: CalendarPeriod = {
-      unit: CalendarUnit.Second,
-      amount: new BigNumber(1),
-    };
-    let result = periodComplexity(period);
-    expect(result).toEqual(new BigNumber(31536000));
+describe('toCustomClaimTypeWithIdentity', () => {
+  it('should correctly convert MiddlewareCustomClaimType array to CustomClaimTypeWithDid array', () => {
+    const middlewareCustomClaimTypeArray = [
+      { name: 'name1', id: '1', identity: { did: 'did1' } },
+      { name: 'name2', id: '2', identity: { did: 'did2' } },
+      { name: 'name3', id: '3', identity: null },
+    ];
 
-    period.unit = CalendarUnit.Minute;
-    result = periodComplexity(period);
-    expect(result).toEqual(new BigNumber(525600));
+    const result = toCustomClaimTypeWithIdentity(
+      middlewareCustomClaimTypeArray as MiddlewareCustomClaimType[]
+    );
 
-    period.unit = CalendarUnit.Hour;
-    result = periodComplexity(period);
-    expect(result).toEqual(new BigNumber(8760));
-
-    period.unit = CalendarUnit.Day;
-    result = periodComplexity(period);
-    expect(result).toEqual(new BigNumber(365));
-
-    period.unit = CalendarUnit.Week;
-    result = periodComplexity(period);
-    expect(result).toEqual(new BigNumber(52));
-
-    period.unit = CalendarUnit.Month;
-    result = periodComplexity(period);
-    expect(result).toEqual(new BigNumber(12));
-
-    period.unit = CalendarUnit.Year;
-    result = periodComplexity(period);
-    expect(result).toEqual(new BigNumber(2));
-
-    period.amount = new BigNumber(0);
-    result = periodComplexity(period);
-    expect(result).toEqual(new BigNumber(1));
+    expect(result).toEqual([
+      { name: 'name1', id: new BigNumber(1), did: 'did1' },
+      { name: 'name2', id: new BigNumber(2), did: 'did2' },
+      { name: 'name3', id: new BigNumber(3), did: undefined },
+    ]);
   });
 });

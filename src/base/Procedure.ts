@@ -1,5 +1,5 @@
 import {
-  Asset,
+  BaseAsset,
   Context,
   PolymeshError,
   PolymeshTransaction,
@@ -26,7 +26,7 @@ import { signerToString } from '~/utils/conversion';
 /**
  * @hidden
  */
-function assertOnlyOneAsset(assets: Asset[]): void {
+function assertOnlyOneAsset(assets: BaseAsset[]): void {
   if (assets.length > 1) {
     throw new PolymeshError({
       code: ErrorCode.FatalError,
@@ -41,7 +41,7 @@ function assertOnlyOneAsset(assets: Asset[]): void {
  */
 async function getAgentPermissionsResult(
   identity: Identity | null,
-  asset: Asset,
+  asset: BaseAsset,
   transactions: TxTag[] | null
 ): Promise<CheckPermissionsResult<SignerType.Identity>> {
   return identity

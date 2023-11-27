@@ -11,7 +11,7 @@ import {
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { SetTransferRestrictionsParams } from '~/api/entities/Asset/TransferRestrictions/TransferRestrictionBase';
+import { SetTransferRestrictionsParams } from '~/api/entities/Asset/Fungible/TransferRestrictions/TransferRestrictionBase';
 import {
   addExemptionIfNotPresent,
   getAuthorization,
@@ -38,8 +38,8 @@ import { PolymeshTx, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 jest.mock(
   '~/api/entities/Identity',
@@ -789,7 +789,7 @@ describe('setTransferRestrictions procedure', () => {
         identityOptions: {
           getScopeId: identityScopeId,
         },
-        assetOptions: {
+        fungibleAssetOptions: {
           transferRestrictionsCountGet: getCountMock,
           transferRestrictionsPercentageGet: getPercentageMock,
           transferRestrictionsClaimCountGet: getClaimCountMock,

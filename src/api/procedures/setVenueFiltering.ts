@@ -1,4 +1,4 @@
-import { Asset, Procedure } from '~/internal';
+import { FungibleAsset, Procedure } from '~/internal';
 import { SetVenueFilteringParams, TxTags } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import { bigNumberToU64, booleanToBool, stringToTicker } from '~/utils/conversion';
@@ -87,7 +87,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions,
-      assets: [new Asset({ ticker }, context)],
+      assets: [new FungibleAsset({ ticker }, context)],
     },
   };
 }

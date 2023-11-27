@@ -1,5 +1,6 @@
-import { bool, Bytes, Option, Text, u8, U8aFixed, u16, u32, u64, u128 } from '@polkadot/types';
+import { bool, Bytes, Option, Text, u8, U8aFixed, u16, u32, u64, u128, Vec } from '@polkadot/types';
 import { AccountId, Balance, BlockHash, Hash, Permill } from '@polkadot/types/interfaces';
+import { DispatchError, DispatchResult } from '@polkadot/types/interfaces/system';
 import {
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
@@ -19,6 +20,7 @@ import {
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
   PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
   PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
+  PolymeshPrimitivesAssetNonFungibleType,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesCddId,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
@@ -37,6 +39,8 @@ import {
   PolymeshPrimitivesJurisdictionCountryCode,
   PolymeshPrimitivesMemo,
   PolymeshPrimitivesMultisigProposalStatus,
+  PolymeshPrimitivesNftNftMetadataAttribute,
+  PolymeshPrimitivesNftNfTs,
   PolymeshPrimitivesPortfolioFund,
   PolymeshPrimitivesPosRatio,
   PolymeshPrimitivesSecondaryKey,
@@ -92,24 +96,28 @@ import { assertCaTaxWithholdingsValid, UnreachableCaseError } from '~/api/proced
 import { countryCodeToMeshCountryCode, meshCountryCodeToCountryCode } from '~/generated/utils';
 import {
   Account,
-  Asset,
   Checkpoint,
   CheckpointSchedule,
   Context,
   CustomPermissionGroup,
   DefaultPortfolio,
+  FungibleAsset,
   Identity,
   KnownPermissionGroup,
+  Nft,
   NumberedPortfolio,
   PolymeshError,
   Portfolio,
   Venue,
 } from '~/internal';
-import { AuthTypeEnum, CallIdEnum, ModuleIdEnum } from '~/middleware/enums';
 import {
+  AuthTypeEnum,
   Block,
+  CallIdEnum,
   Claim as MiddlewareClaim,
+  CustomClaimType as MiddlewareCustomClaimType,
   Instruction,
+  ModuleIdEnum,
   Portfolio as MiddlewarePortfolio,
 } from '~/middleware/types';
 import { ClaimScopeTypeEnum, MiddlewareScope } from '~/middleware/typesV1';
@@ -127,9 +135,6 @@ import {
   AssetDocument,
   Authorization,
   AuthorizationType,
-  CalendarPeriod,
-  CalendarUnit,
-  CheckpointScheduleParams,
   Claim,
   ClaimCountRestrictionValue,
   ClaimCountStatInput,
@@ -146,10 +151,12 @@ import {
   CorporateActionTargets,
   CountryCode,
   CountTransferRestrictionInput,
+  CustomClaimTypeWithDid,
   DividendDistributionParams,
   ErrorCode,
   EventIdentifier,
   ExternalAgentCondition,
+  FungiblePortfolioMovement,
   HistoricInstruction,
   IdentityCondition,
   IdentityWithClaims,
@@ -162,6 +169,8 @@ import {
   InstructionEndCondition,
   InstructionType,
   KnownAssetType,
+  KnownNftType,
+  MetadataKeyId,
   MetadataLockStatus,
   MetadataSpec,
   MetadataType,
@@ -169,6 +178,8 @@ import {
   MetadataValueDetails,
   ModuleName,
   MultiClaimCondition,
+  NftMetadataInput,
+  NonFungiblePortfolioMovement,
   OfferingBalanceStatus,
   OfferingDetails,
   OfferingSaleStatus,
@@ -181,7 +192,6 @@ import {
   PermissionType,
   PortfolioId,
   PortfolioLike,
-  PortfolioMovement,
   ProposalStatus,
   Requirement,
   RequirementCompliance,
@@ -216,6 +226,7 @@ import {
   ExtrinsicIdentifier,
   InstructionStatus,
   InternalAssetType,
+  InternalNftType,
   PalletPermissions,
   PermissionGroupIdentifier,
   PermissionsEnum,
@@ -235,6 +246,7 @@ import {
 } from '~/utils/constants';
 import {
   asDid,
+  asNftId,
   assertAddressValid,
   assertIsInteger,
   assertIsPositive,
@@ -1104,7 +1116,7 @@ export function meshPermissionsToPermissions(
 ): Permissions {
   const { asset, extrinsic, portfolio } = permissions;
 
-  let assets: SectionPermissions<Asset> | null = null;
+  let assets: SectionPermissions<FungibleAsset> | null = null;
   let transactions: TransactionPermissions | null = null;
   let portfolios: SectionPermissions<DefaultPortfolio | NumberedPortfolio> | null = null;
 
@@ -1121,7 +1133,7 @@ export function meshPermissionsToPermissions(
   if (assetsPermissions) {
     assets = {
       values: [...assetsPermissions].map(
-        ticker => new Asset({ ticker: tickerToString(ticker) }, context)
+        ticker => new FungibleAsset({ ticker: tickerToString(ticker) }, context)
       ),
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       type: assetsType!,
@@ -1475,14 +1487,7 @@ function assertMemoValid(value: string): void {
 export function stringToMemo(value: string, context: Context): PolymeshPrimitivesMemo {
   assertMemoValid(value);
 
-  if (context.isV5) {
-    return context.createType(
-      'PolymeshCommonUtilitiesBalancesMemo',
-      padString(value, MAX_MEMO_LENGTH)
-    );
-  } else {
-    return context.createType('PolymeshPrimitivesMemo', padString(value, MAX_MEMO_LENGTH));
-  }
+  return context.createType('PolymeshPrimitivesMemo', padString(value, MAX_MEMO_LENGTH));
 }
 
 /**
@@ -1577,41 +1582,66 @@ export function internalAssetTypeToAssetType(
 /**
  * @hidden
  */
+export function internalNftTypeToNftType(
+  type: InternalNftType,
+  context: Context
+): PolymeshPrimitivesAssetNonFungibleType {
+  return context.createType('PolymeshPrimitivesAssetNonFungibleType', type);
+}
+
+/**
+ * @hidden
+ */
 export function assetTypeToKnownOrId(
   assetType: PolymeshPrimitivesAssetAssetType
-): KnownAssetType | BigNumber {
+):
+  | { type: 'Fungible'; value: KnownAssetType | BigNumber }
+  | { type: 'NonFungible'; value: KnownNftType | BigNumber } {
+  if (assetType.isNonFungible) {
+    const type = 'NonFungible';
+    const rawNftType = assetType.asNonFungible;
+    if (rawNftType.isDerivative) {
+      return { type, value: KnownNftType.Derivative };
+    } else if (rawNftType.isFixedIncome) {
+      return { type, value: KnownNftType.FixedIncome };
+    } else if (rawNftType.isInvoice) {
+      return { type, value: KnownNftType.Invoice };
+    }
+    return { type, value: u32ToBigNumber(rawNftType.asCustom) };
+  }
+  const type = 'Fungible';
   if (assetType.isEquityCommon) {
-    return KnownAssetType.EquityCommon;
+    return { type, value: KnownAssetType.EquityCommon };
   }
   if (assetType.isEquityPreferred) {
-    return KnownAssetType.EquityPreferred;
+    return { type, value: KnownAssetType.EquityPreferred };
   }
   if (assetType.isCommodity) {
-    return KnownAssetType.Commodity;
+    return { type, value: KnownAssetType.Commodity };
   }
   if (assetType.isFixedIncome) {
-    return KnownAssetType.FixedIncome;
+    return { type, value: KnownAssetType.FixedIncome };
   }
   if (assetType.isReit) {
-    return KnownAssetType.Reit;
+    return { type, value: KnownAssetType.Reit };
   }
   if (assetType.isFund) {
-    return KnownAssetType.Fund;
+    return { type, value: KnownAssetType.Fund };
   }
   if (assetType.isRevenueShareAgreement) {
-    return KnownAssetType.RevenueShareAgreement;
+    return { type, value: KnownAssetType.RevenueShareAgreement };
   }
   if (assetType.isStructuredProduct) {
-    return KnownAssetType.StructuredProduct;
+    return { type, value: KnownAssetType.StructuredProduct };
   }
   if (assetType.isDerivative) {
-    return KnownAssetType.Derivative;
+    return { type, value: KnownAssetType.Derivative };
   }
   if (assetType.isStableCoin) {
-    return KnownAssetType.StableCoin;
+    return { type, value: KnownAssetType.StableCoin };
   }
 
-  return u32ToBigNumber(assetType.asCustom);
+  return { type, value: u32ToBigNumber(assetType.asCustom) };
 }
 
 /**
@@ -2122,6 +2152,11 @@ export function claimToMeshClaim(
     case ClaimType.Jurisdiction: {
       const { code, scope } = claim;
       value = tuple(code, scopeToMeshScope(scope, context));
+      break;
+    }
+    case ClaimType.Custom: {
+      const { customClaimTypeId, scope } = claim;
+      value = tuple(bigNumberToU32(customClaimTypeId, context), scopeToMeshScope(scope, context));
       break;
     }
     default: {
@@ -2797,11 +2832,7 @@ export function venueTypeToMeshVenueType(
   type: VenueType,
   context: Context
 ): PolymeshPrimitivesSettlementVenueType {
-  if (context.isV5) {
-    return context.createType('PalletSettlementVenueType', type);
-  } else {
-    return context.createType('PolymeshPrimitivesSettlementVenueType', type);
-  }
+  return context.createType('PolymeshPrimitivesSettlementVenueType', type);
 }
 
 /**
@@ -2819,11 +2850,11 @@ export function meshInstructionStatusToInstructionStatus(
   }
 
   if (instruction.isRejected) {
-    return InstructionStatus.Executed;
+    return InstructionStatus.Rejected;
   }
 
   if (instruction.isSuccess) {
-    return InstructionStatus.Executed;
+    return InstructionStatus.Success;
   }
 
   return InstructionStatus.Unknown;
@@ -2889,11 +2920,7 @@ export function endConditionToSettlementType(
       value = InstructionType.SettleOnAffirmation;
   }
 
-  if (context.isV5) {
-    return context.createType('PalletSettlementSettlementType', value);
-  } else {
-    return context.createType('PolymeshPrimitivesSettlementSettlementType', value);
-  }
+  return context.createType('PolymeshPrimitivesSettlementSettlementType', value);
 }
 
 /**
@@ -2910,6 +2937,7 @@ export function middlewareClaimToClaimData(claim: MiddlewareClaim, context: Cont
     jurisdiction,
     scope,
     cddId,
+    customClaimTypeId,
   } = claim;
   return {
     target: new Identity({ did: targetId }, context),
@@ -2917,7 +2945,13 @@ export function middlewareClaimToClaimData(claim: MiddlewareClaim, context: Cont
     issuedAt: new Date(parseFloat(issuanceDate)),
     lastUpdatedAt: new Date(parseFloat(lastUpdateDate)),
     expiry: expiry ? new Date(parseFloat(expiry)) : null,
-    claim: createClaim(type, jurisdiction, scope, cddId),
+    claim: createClaim(
+      type,
+      jurisdiction,
+      scope,
+      cddId,
+      customClaimTypeId ? new BigNumber(customClaimTypeId) : undefined
+    ),
   };
 }
 
@@ -2940,25 +2974,51 @@ export function toIdentityWithClaimsArray(
 /**
  * @hidden
  */
-export function portfolioMovementToPortfolioFund(
-  portfolioItem: PortfolioMovement,
+export function nftToMeshNft(
+  ticker: string,
+  nfts: (Nft | BigNumber)[],
+  context: Context
+): PolymeshPrimitivesNftNfTs {
+  return context.createType('PolymeshPrimitivesNftNfTs', {
+    ticker: stringToTicker(ticker, context),
+    ids: nfts.map(id => bigNumberToU64(asNftId(id), context)),
+  });
+}
+
+/**
+ * @hidden
+ */
+export function fungibleMovementToPortfolioFund(
+  portfolioItem: FungiblePortfolioMovement,
   context: Context
 ): PolymeshPrimitivesPortfolioFund {
   const { asset, amount, memo } = portfolioItem;
-
-  if (context.isV5) {
-    return context.createType('PalletPortfolioMovePortfolioItem', {
-      ticker: stringToTicker(asTicker(asset), context),
-      amount: bigNumberToBalance(amount, context),
-      memo: optionize(stringToMemo)(memo, context),
-    });
-  }
 
   return context.createType('PolymeshPrimitivesPortfolioFund', {
     description: {
       Fungible: {
         ticker: stringToTicker(asTicker(asset), context),
         amount: bigNumberToBalance(amount, context),
+      },
+    },
+    memo: optionize(stringToMemo)(memo, context),
+  });
+}
+
+/**
+ * @hidden
+ */
+export function nftMovementToPortfolioFund(
+  portfolioItem: NonFungiblePortfolioMovement,
+  context: Context
+): PolymeshPrimitivesPortfolioFund {
+  const { asset, nfts, memo } = portfolioItem;
+
+  return context.createType('PolymeshPrimitivesPortfolioFund', {
+    description: {
+      NonFungible: {
+        ticker: stringToTicker(asTicker(asset), context),
+        ids: nfts.map(nftId => bigNumberToU64(asNftId(nftId), context)),
       },
     },
     memo: optionize(stringToMemo)(memo, context),
@@ -3103,8 +3163,45 @@ export function transferConditionToTransferRestriction(
 /**
  * @hidden
  */
+export function nftDispatchErrorToTransferError(
+  error: DispatchError,
+  context: Context
+): TransferError {
+  const {
+    DuplicatedNFTId: duplicateErr,
+    InvalidNFTTransferComplianceFailure: complianceErr,
+    InvalidNFTTransferFrozenAsset: frozenErr,
+    InvalidNFTTransferInsufficientCount: insufficientErr,
+    NFTNotFound: notFoundErr,
+    InvalidNFTTransferNFTNotOwned: notOwnedErr,
+    InvalidNFTTransferSamePortfolio: samePortfolioErr,
+  } = context.polymeshApi.errors.nft;
+
+  if (error.isModule) {
+    const moduleErr = error.asModule;
+    if ([notOwnedErr, notFoundErr, insufficientErr, duplicateErr].some(err => err.is(moduleErr))) {
+      return TransferError.InsufficientPortfolioBalance;
+    } else if (frozenErr.is(moduleErr)) {
+      return TransferError.TransfersFrozen;
+    } else if (complianceErr.is(moduleErr)) {
+      return TransferError.ComplianceFailure;
+    } else if (samePortfolioErr.is(moduleErr)) {
+      return TransferError.SelfTransfer;
+    }
+  }
+
+  throw new PolymeshError({
+    code: ErrorCode.UnexpectedError,
+    message: 'Received unknown NFT can transfer status',
+  });
+}
+
+/**
+ * @hidden
+ */
 export function granularCanTransferResultToTransferBreakdown(
   result: GranularCanTransferResult,
+  validateNftResult: DispatchResult | undefined,
   context: Context
 ): TransferBreakdown {
   const {
@@ -3112,7 +3209,6 @@ export function granularCanTransferResultToTransferBreakdown(
     self_transfer: selfTransfer,
     invalid_receiver_cdd: invalidReceiverCdd,
     invalid_sender_cdd: invalidSenderCdd,
-    missing_scope_claim: missingScopeClaim,
     sender_insufficient_balance: insufficientBalance,
     asset_frozen: assetFrozen,
     portfolio_validity_result: {
@@ -3143,10 +3239,6 @@ export function granularCanTransferResultToTransferBreakdown(
     general.push(TransferError.InvalidSenderCdd);
   }
 
-  if (boolToBoolean(missingScopeClaim)) {
-    general.push(TransferError.ScopeClaimMissing);
-  }
-
   if (boolToBoolean(insufficientBalance)) {
     general.push(TransferError.InsufficientBalance);
   }
@@ -3174,13 +3266,25 @@ export function granularCanTransferResultToTransferBreakdown(
     };
   });
 
+  let canTransfer = boolToBoolean(finalResult);
+
+  if (canTransfer && validateNftResult?.isErr) {
+    const transferError = nftDispatchErrorToTransferError(validateNftResult.asErr, context);
+    general.push(transferError);
+    canTransfer = false;
+  }
+
   return {
     general,
     compliance: assetComplianceResultToCompliance(complianceResult, context),
     restrictions,
-    result: boolToBoolean(finalResult),
+    result: canTransfer,
   };
 }
+
+/**
+ * @hidden
+ */
 
 /**
  * @hidden
@@ -3200,7 +3304,7 @@ export function permissionsLikeToPermissions(
   permissionsLike: PermissionsLike,
   context: Context
 ): Permissions {
-  let assetPermissions: SectionPermissions<Asset> | null = {
+  let assetPermissions: SectionPermissions<FungibleAsset> | null = {
     values: [],
     type: PermissionType.Include,
   };
@@ -3233,7 +3337,7 @@ export function permissionsLikeToPermissions(
     assetPermissions = {
       ...assets,
       values: assets.values.map(ticker =>
-        typeof ticker !== 'string' ? ticker : new Asset({ ticker }, context)
+        typeof ticker !== 'string' ? ticker : new FungibleAsset({ ticker }, context)
       ),
     };
   }
@@ -4199,7 +4303,7 @@ export function middlewareInstructionToHistoricInstruction(
     venueId: new BigNumber(venueId),
     createdAt: new Date(datetime),
     legs: legs.map(({ from, to, assetId, amount }) => ({
-      asset: new Asset({ ticker: assetId }, context),
+      asset: new FungibleAsset({ ticker: assetId }, context),
       amount: new BigNumber(amount).shiftedBy(-6),
       from: middlewarePortfolioToPortfolio(from!, context),
       to: middlewarePortfolioToPortfolio(to!, context),
@@ -4244,18 +4348,30 @@ export function middlewarePortfolioDataToPortfolio(
 /**
  * @hidden
  */
-export function legToSettlementLeg(
+export function legToFungibleLeg(
   leg: {
-    Fungible: {
-      sender: PolymeshPrimitivesIdentityIdPortfolioId;
-      receiver: PolymeshPrimitivesIdentityIdPortfolioId;
-      ticker: PolymeshPrimitivesTicker;
-      amount: Balance;
-    };
+    sender: PolymeshPrimitivesIdentityIdPortfolioId;
+    receiver: PolymeshPrimitivesIdentityIdPortfolioId;
+    ticker: PolymeshPrimitivesTicker;
+    amount: Balance;
   },
   context: Context
 ): PolymeshPrimitivesSettlementLeg {
-  return context.createType('PolymeshPrimitivesSettlementLeg', leg);
+  return context.createType('PolymeshPrimitivesSettlementLeg', { Fungible: leg });
+}
+
+/**
+ * @hidden
+ */
+export function legToNonFungibleLeg(
+  leg: {
+    sender: PolymeshPrimitivesIdentityIdPortfolioId;
+    receiver: PolymeshPrimitivesIdentityIdPortfolioId;
+    nfts: PolymeshPrimitivesNftNfTs;
+  },
+  context: Context
+): PolymeshPrimitivesSettlementLeg {
+  return context.createType('PolymeshPrimitivesSettlementLeg', { NonFungible: leg });
 }
 
 /**
@@ -4367,7 +4483,7 @@ export function middlewarePermissionsDataToPermissions(
 ): Permissions {
   const { asset, extrinsic, portfolio } = JSON.parse(permissionsData);
 
-  let assets: SectionPermissions<Asset> | null = null;
+  let assets: SectionPermissions<FungibleAsset> | null = null;
   let transactions: TransactionPermissions | null = null;
   let portfolios: SectionPermissions<DefaultPortfolio | NumberedPortfolio> | null = null;
 
@@ -4384,7 +4500,7 @@ export function middlewarePermissionsDataToPermissions(
   if (assetsPermissions) {
     assets = {
       values: [...assetsPermissions].map(
-        ticker => new Asset({ ticker: coerceHexToString(ticker) }, context)
+        ticker => new FungibleAsset({ ticker: coerceHexToString(ticker) }, context)
       ),
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       type: assetsType!,
@@ -4511,111 +4627,88 @@ export function middlewareAuthorizationDataToAuthorization(
 
 /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/**
+ * @hidden
+ */
+export function collectionKeysToMetadataKeys(
+  keys: { type: MetadataType; id: BigNumber }[],
+  context: Context
+): Vec<PolymeshPrimitivesAssetMetadataAssetMetadataKey> {
+  const metadataKeys = keys.map(({ type, id }) => {
+    return metadataToMeshMetadataKey(type, id, context);
+  });
+
+  return context.createType('Vec<PolymeshPrimitivesAssetMetadataAssetMetadataKey>', metadataKeys);
+}
 
 /**
  * @hidden
- *
- * @note legacy, only for v5 chain
  */
-export function calendarPeriodToMeshCalendarPeriod(period: CalendarPeriod, context: Context): any {
-  const { unit, amount } = period;
-
-  if (amount.isNegative()) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Calendar period cannot have a negative amount',
-    });
-  }
-
-  return context.createType('PolymeshPrimitivesCalendarCalendarPeriod', {
-    unit: stringUpperFirst(unit),
-    amount: bigNumberToU64(amount, context),
-  });
-}
-
-/** @hidden
- *
- * @note: legacy, only for < v5 chains
- */
-export function meshCalendarPeriodToCalendarPeriod(period: any): CalendarPeriod {
-  const { unit: rawUnit, amount } = period;
-
-  let unit: CalendarUnit;
-
-  if (rawUnit.isSecond) {
-    unit = CalendarUnit.Second;
-  } else if (rawUnit.isMinute) {
-    unit = CalendarUnit.Minute;
-  } else if (rawUnit.isHour) {
-    unit = CalendarUnit.Hour;
-  } else if (rawUnit.isDay) {
-    unit = CalendarUnit.Day;
-  } else if (rawUnit.isWeek) {
-    unit = CalendarUnit.Week;
-  } else if (rawUnit.isMonth) {
-    unit = CalendarUnit.Month;
+export function meshMetadataKeyToMetadataKey(
+  rawKey: PolymeshPrimitivesAssetMetadataAssetMetadataKey,
+  ticker: string
+): MetadataKeyId {
+  if (rawKey.isGlobal) {
+    return { type: MetadataType.Global, id: u64ToBigNumber(rawKey.asGlobal) };
   } else {
-    unit = CalendarUnit.Year;
+    return { type: MetadataType.Local, id: u64ToBigNumber(rawKey.asLocal), ticker };
   }
+}
+
+/**
+ * @hidden
+ */
+export function meshNftToNftId(rawInfo: PolymeshPrimitivesNftNfTs): {
+  ticker: string;
+  ids: BigNumber[];
+} {
+  const { ticker: rawTicker, ids: rawIds } = rawInfo;
 
   return {
-    unit,
-    amount: u64ToBigNumber(amount),
+    ticker: tickerToString(rawTicker),
+    ids: rawIds.map(rawId => u64ToBigNumber(rawId)),
   };
 }
 
 /**
  * @hidden
- *
- * @note: legacy, only for < v5 chains
  */
-export function storedScheduleToCheckpointScheduleParams(
-  storedSchedule: any
-): CheckpointScheduleParams {
-  const {
-    schedule: { start, period },
-    id,
-    at,
-    remaining,
-  } = storedSchedule;
+export function nftInputToNftMetadataAttribute(
+  nftInfo: NftMetadataInput,
+  context: Context
+): PolymeshPrimitivesNftNftMetadataAttribute {
+  const { type, id, value } = nftInfo;
 
-  return {
-    id: u64ToBigNumber(id),
-    period: meshCalendarPeriodToCalendarPeriod(period),
-    start: momentToDate(start),
-    remaining: u32ToBigNumber(remaining),
-    nextCheckpointDate: momentToDate(at),
-  };
-}
+  const rawKey = metadataToMeshMetadataKey(type, id, context);
+  const rawValue = metadataValueToMeshMetadataValue(value, context);
 
-/**
- * @hidden
- *
- * @note: legacy, only for < v5 chains
- */
-export function scheduleSpecToMeshScheduleSpec(details: any, context: Context): any {
-  const { start, period, repetitions } = details;
-
-  return context.createType('PalletAssetCheckpointScheduleSpec', {
-    start: start && dateToMoment(start, context),
-    period: calendarPeriodToMeshCalendarPeriod(
-      period ?? { unit: CalendarUnit.Month, amount: new BigNumber(0) },
-      context
-    ),
-    remaining: bigNumberToU64(repetitions || new BigNumber(0), context),
+  return context.createType('PolymeshPrimitivesNftNftMetadataAttribute', {
+    key: rawKey,
+    value: rawValue,
   });
 }
 
 /**
  * @hidden
- *
- * @deprecated - v6 unifies memo structure so only `stringToMemo` is needed
  */
-export function stringToInstructionMemo(value: string, context: Context): any {
-  assertMemoValid(value);
+export function nftInputToNftMetadataVec(
+  nftInfo: NftMetadataInput[],
+  context: Context
+): Vec<PolymeshPrimitivesNftNftMetadataAttribute> {
+  const rawItems = nftInfo.map(item => nftInputToNftMetadataAttribute(item, context));
 
-  return context.createType('PalletSettlementInstructionMemo', padString(value, MAX_MEMO_LENGTH));
+  return context.createType('Vec<PolymeshPrimitivesNftNftMetadataAttribute>', rawItems);
 }
 
-/* eslint-enable @typescript-eslint/no-explicit-any */
+/**
+ * @hidden
+ */
+export function toCustomClaimTypeWithIdentity(
+  data: MiddlewareCustomClaimType[]
+): CustomClaimTypeWithDid[] {
+  return data.map(item => ({
+    name: item.name,
+    id: new BigNumber(item.id),
+    did: item.identity?.did,
+  }));
+}

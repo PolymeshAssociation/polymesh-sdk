@@ -3,11 +3,11 @@ import BigNumber from 'bignumber.js';
 
 import { assertDistributionDatesValid } from '~/api/procedures/utils';
 import {
-  Asset,
   Checkpoint,
   Context,
   DefaultPortfolio,
   DividendDistribution,
+  FungibleAsset,
   NumberedPortfolio,
   PolymeshError,
   Procedure,
@@ -236,7 +236,7 @@ export function getAuthorization(
     roles: [{ type: RoleType.PortfolioCustodian, portfolioId: portfolioToPortfolioId(portfolio) }],
     permissions: {
       transactions: [TxTags.capitalDistribution.Distribute],
-      assets: [new Asset({ ticker }, context)],
+      assets: [new FungibleAsset({ ticker }, context)],
       portfolios: [portfolio],
     },
   };

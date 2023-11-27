@@ -10,15 +10,16 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/issueTokens';
-import { Asset, Context } from '~/internal';
+import { Context, FungibleAsset, Portfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { EntityGetter } from '~/testUtils/mocks/entities';
 import { Mocked } from '~/testUtils/types';
 import { TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 describe('issueTokens procedure', () => {
@@ -29,12 +30,14 @@ describe('issueTokens procedure', () => {
   let rawTicker: PolymeshPrimitivesTicker;
   let amount: BigNumber;
   let rawAmount: Balance;
+  let portfolioToPortfolioKindSpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    portfolioToPortfolioKindSpy = jest.spyOn(utilsConversionModule, 'portfolioToPortfolioKind');
     bigNumberToBalance = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
@@ -60,7 +63,9 @@ describe('issueTokens procedure', () => {
 
   describe('prepareStorage', () => {
     it('should return the Asset', () => {
-      const proc = procedureMockUtils.getInstance<IssueTokensParams, Asset, Storage>(mockContext);
+      const proc = procedureMockUtils.getInstance<IssueTokensParams, FungibleAsset, Storage>(
+        mockContext
+      );
       const boundFunc = prepareStorage.bind(proc);
 
       const result = boundFunc({
@@ -83,16 +88,19 @@ describe('issueTokens procedure', () => {
     const limitTotalSupply = new BigNumber(Math.pow(10, 12));
 
     entityMockUtils.configureMocks({
-      assetOptions: {
+      fungibleAssetOptions: {
         details: {
           totalSupply: limitTotalSupply,
         },
       },
     });
 
-    const proc = procedureMockUtils.getInstance<IssueTokensParams, Asset, Storage>(mockContext, {
-      asset: entityMockUtils.getAssetInstance(),
-    });
+    const proc = procedureMockUtils.getInstance<IssueTokensParams, FungibleAsset, Storage>(
+      mockContext,
+      {
+        asset: entityMockUtils.getFungibleAssetInstance(),
+      }
+    );
 
     let error;
 
@@ -120,7 +128,7 @@ describe('issueTokens procedure', () => {
     mockContext.getSigningIdentity.mockResolvedValue(entityMockUtils.getIdentityInstance());
 
     entityMockUtils.configureMocks({
-      assetOptions: {
+      fungibleAssetOptions: {
         ticker,
         details: {
           isDivisible,
@@ -133,9 +141,12 @@ describe('issueTokens procedure', () => {
       .mockReturnValue(rawAmount);
 
     const transaction = dsMockUtils.createTxMock('asset', 'issue');
-    const proc = procedureMockUtils.getInstance<IssueTokensParams, Asset, Storage>(mockContext, {
-      asset: entityMockUtils.getAssetInstance(),
-    });
+    const proc = procedureMockUtils.getInstance<IssueTokensParams, FungibleAsset, Storage>(
+      mockContext,
+      {
+        asset: entityMockUtils.getFungibleAssetInstance(),
+      }
+    );
 
     const result = await prepareIssueTokens.call(proc, args);
     expect(result).toEqual({
@@ -145,11 +156,166 @@ describe('issueTokens procedure', () => {
     });
   });
 
+  describe('issue tokens to portfolio', () => {
+    const defaultPortfolioId = new BigNumber(0);
+    const numberedPortfolioId = new BigNumber(1);
+
+    const defaultPortfolioKind = dsMockUtils.createMockPortfolioKind('Default');
+    const numberedPortfolioKind = dsMockUtils.createMockPortfolioKind({
+      User: dsMockUtils.createMockU64(numberedPortfolioId),
+    });
+
+    const getPortfolio: EntityGetter<Portfolio> = jest.fn();
+    const mockDefaultPortfolio = entityMockUtils.getDefaultPortfolioInstance();
+    const mockNumberedPortfolio = entityMockUtils.getNumberedPortfolioInstance({
+      did: 'did',
+      id: numberedPortfolioId,
+    });
+
+    beforeEach(() => {
+      when(mockContext.createType)
+        .calledWith('PolymeshPrimitivesIdentityIdPortfolioKind', 'Default')
+        .mockReturnValue(defaultPortfolioKind);
+      when(mockContext.createType)
+        .calledWith('PolymeshPrimitivesIdentityIdPortfolioKind', numberedPortfolioKind)
+        .mockReturnValue(numberedPortfolioKind);
+      when(getPortfolio)
+        .calledWith()
+        .mockResolvedValue(mockDefaultPortfolio)
+        .calledWith({ portfolioId: defaultPortfolioId })
+        .mockResolvedValue(mockDefaultPortfolio)
+        .calledWith({ portfolioId: numberedPortfolioId })
+        .mockResolvedValue(mockNumberedPortfolio);
+
+      when(portfolioToPortfolioKindSpy)
+        .calledWith(mockDefaultPortfolio, mockContext)
+        .mockReturnValue(defaultPortfolioKind)
+        .calledWith(mockNumberedPortfolio, mockContext)
+        .mockReturnValue(numberedPortfolioKind);
+    });
+
+    it('should issue tokens to Default portfolio if portfolioId is not specified', async () => {
+      const isDivisible = true;
+
+      const args = {
+        amount,
+        ticker,
+      };
+      mockContext.getSigningIdentity.mockResolvedValue(
+        entityMockUtils.getIdentityInstance({ portfoliosGetPortfolio: getPortfolio })
+      );
+      entityMockUtils.configureMocks({
+        fungibleAssetOptions: {
+          ticker,
+          details: {
+            isDivisible,
+          },
+        },
+      });
+      when(bigNumberToBalance)
+        .calledWith(amount, mockContext, isDivisible)
+        .mockReturnValue(rawAmount);
+      const transaction = dsMockUtils.createTxMock('asset', 'issue');
+      const proc = procedureMockUtils.getInstance<IssueTokensParams, FungibleAsset, Storage>(
+        mockContext,
+        {
+          asset: entityMockUtils.getFungibleAssetInstance(),
+        }
+      );
+      const result = await prepareIssueTokens.call(proc, args);
+
+      expect(result).toEqual({
+        transaction,
+        args: [rawTicker, rawAmount, defaultPortfolioKind],
+        resolver: expect.objectContaining({ ticker }),
+      });
+    });
+
+    it('should issue tokens to Default portfolio if default portfolioId is provided', async () => {
+      const isDivisible = true;
+
+      const args = {
+        amount,
+        ticker,
+        portfolioId: defaultPortfolioId,
+      };
+      mockContext.getSigningIdentity.mockResolvedValue(
+        entityMockUtils.getIdentityInstance({ portfoliosGetPortfolio: getPortfolio })
+      );
+      entityMockUtils.configureMocks({
+        fungibleAssetOptions: {
+          ticker,
+          details: {
+            isDivisible,
+          },
+        },
+      });
+      when(bigNumberToBalance)
+        .calledWith(amount, mockContext, isDivisible)
+        .mockReturnValue(rawAmount);
+      const transaction = dsMockUtils.createTxMock('asset', 'issue');
+      const proc = procedureMockUtils.getInstance<IssueTokensParams, FungibleAsset, Storage>(
+        mockContext,
+        {
+          asset: entityMockUtils.getFungibleAssetInstance(),
+        }
+      );
+      const result = await prepareIssueTokens.call(proc, args);
+
+      expect(result).toEqual({
+        transaction,
+        args: [rawTicker, rawAmount, defaultPortfolioKind],
+        resolver: expect.objectContaining({ ticker }),
+      });
+    });
+
+    it('should issue tokens to the Numbered portfolio that is specified', async () => {
+      const isDivisible = true;
+
+      const args = {
+        amount,
+        ticker,
+        portfolioId: numberedPortfolioId,
+      };
+      mockContext.getSigningIdentity.mockResolvedValue(
+        entityMockUtils.getIdentityInstance({ portfoliosGetPortfolio: getPortfolio })
+      );
+      entityMockUtils.configureMocks({
+        fungibleAssetOptions: {
+          ticker,
+          details: {
+            isDivisible,
+          },
+        },
+      });
+      when(bigNumberToBalance)
+        .calledWith(amount, mockContext, isDivisible)
+        .mockReturnValue(rawAmount);
+      const transaction = dsMockUtils.createTxMock('asset', 'issue');
+      const proc = procedureMockUtils.getInstance<IssueTokensParams, FungibleAsset, Storage>(
+        mockContext,
+        {
+          asset: entityMockUtils.getFungibleAssetInstance(),
+        }
+      );
+      const result = await prepareIssueTokens.call(proc, args);
+
+      expect(result).toEqual({
+        transaction,
+        args: [rawTicker, rawAmount, numberedPortfolioKind],
+        resolver: expect.objectContaining({ ticker }),
+      });
+    });
+  });
+
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<IssueTokensParams, Asset, Storage>(mockContext, {
-        asset: entityMockUtils.getAssetInstance({ ticker }),
-      });
+      const proc = procedureMockUtils.getInstance<IssueTokensParams, FungibleAsset, Storage>(
+        mockContext,
+        {
+          asset: entityMockUtils.getFungibleAssetInstance({ ticker }),
+        }
+      );
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc()).toEqual({

@@ -612,6 +612,9 @@ export enum PortfolioTx {
   MovePortfolioFundsV2 = 'portfolio.movePortfolioFundsV2',
   PreApprovePortfolio = 'portfolio.preApprovePortfolio',
   RemovePortfolioPreApproval = 'portfolio.removePortfolioPreApproval',
+  AllowIdentityToCreatePortfolios = 'portfolio.allowIdentityToCreatePortfolios',
+  RevokeCreatePortfoliosPermission = 'portfolio.revokeCreatePortfoliosPermission',
+  CreateCustodyPortfolio = 'portfolio.createCustodyPortfolio',
 }
 
 export enum ProtocolFeeTx {
@@ -666,6 +669,10 @@ export enum SettlementTx {
   PlaceholderAddInstructionWithMemo = 'settlement.placeholderAddInstructionWithMemo',
   PlaceholderAddAndAffirmInstructionWithMemo = 'settlement.placeholderAddAndAffirmInstructionWithMemo',
   ExecuteScheduledInstructionV3 = 'settlement.executeScheduledInstructionV3',
+  AffirmWithReceiptsWithCount = 'settlement.affirmWithReceiptsWithCount',
+  AffirmInstructionWithCount = 'settlement.affirmInstructionWithCount',
+  RejectInstructionWithCount = 'settlement.rejectInstructionWithCount',
+  WithdrawAffirmationWithCount = 'settlement.withdrawAffirmationWithCount',
 }
 
 export enum StatisticsTx {
@@ -746,6 +753,9 @@ export enum PolymeshContractsTx {
   InstantiateWithCodePerms = 'polymeshContracts.instantiateWithCodePerms',
   InstantiateWithHashPerms = 'polymeshContracts.instantiateWithHashPerms',
   UpdateCallRuntimeWhitelist = 'polymeshContracts.updateCallRuntimeWhitelist',
+  InstantiateWithCodeAsPrimaryKey = 'polymeshContracts.instantiateWithCodeAsPrimaryKey',
+  InstantiateWithHashAsPrimaryKey = 'polymeshContracts.instantiateWithHashAsPrimaryKey',
+  UpgradeApi = 'polymeshContracts.upgradeApi',
 }
 
 export enum PreimageTx {
@@ -771,6 +781,7 @@ export enum NftTx {
   CreateNftCollection = 'nft.createNftCollection',
   IssueNft = 'nft.issueNft',
   RedeemNft = 'nft.redeemNft',
+  ControllerTransfer = 'nft.controllerTransfer',
 }
 
 export enum ModuleName {

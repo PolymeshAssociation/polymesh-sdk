@@ -14,9 +14,8 @@ import {
 } from '~/api/entities/Account/types';
 import { Subsidies } from '~/api/entities/Subsidies';
 import { Authorizations, Context, Entity, Identity, MultiSig, PolymeshError } from '~/internal';
-import { CallIdEnum, ModuleIdEnum } from '~/middleware/enums';
 import { extrinsicsByArgs } from '~/middleware/queries';
-import { ExtrinsicsOrderBy, Query } from '~/middleware/types';
+import { CallIdEnum, ExtrinsicsOrderBy, ModuleIdEnum, Query } from '~/middleware/types';
 import {
   AccountBalance,
   CheckPermissionsResult,
@@ -266,21 +265,25 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         specVersionId,
         extrinsicHash,
         block,
-      }) => ({
-        blockNumber: new BigNumber(blockId),
-        blockHash: block!.hash,
-        extrinsicIdx: new BigNumber(extrinsicIdx),
-        address: rawAddress ? keyToAddress(rawAddress, context) : null,
-        nonce: nonce ? new BigNumber(nonce) : null,
-        txTag: extrinsicIdentifierToTxTag({
-          moduleId: extrinsicModuleId as ModuleIdEnum,
-          callId: extrinsicCallId as CallIdEnum,
-        }),
-        params: JSON.parse(paramsTxt),
-        success: !!txSuccess,
-        specVersionId: new BigNumber(specVersionId),
-        extrinsicHash: extrinsicHash!,
-      })
+      }) => {
+        const { hash, datetime } = block!;
+        return {
+          blockNumber: new BigNumber(blockId),
+          blockHash: hash,
+          blockDate: new Date(`${datetime}Z`),
+          extrinsicIdx: new BigNumber(extrinsicIdx),
+          address: rawAddress ? keyToAddress(rawAddress, context) : null,
+          nonce: nonce ? new BigNumber(nonce) : null,
+          txTag: extrinsicIdentifierToTxTag({
+            moduleId: extrinsicModuleId as ModuleIdEnum,
+            callId: extrinsicCallId as CallIdEnum,
+          }),
+          params: JSON.parse(paramsTxt),
+          success: !!txSuccess,
+          specVersionId: new BigNumber(specVersionId),
+          extrinsicHash: extrinsicHash!,
+        };
+      }
     );
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
 

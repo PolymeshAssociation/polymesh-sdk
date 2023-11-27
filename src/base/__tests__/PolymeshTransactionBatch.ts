@@ -125,7 +125,7 @@ describe('Polymesh Transaction Batch class', () => {
     });
     it('should execute the underlying transaction with the provided arguments, setting the tx and block hash when finished', async () => {
       const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
-      const batchMock = dsMockUtils.createTxMock('utility', 'batchAtomic', { autoResolve: false });
+      const batchMock = dsMockUtils.createTxMock('utility', 'batchAll', { autoResolve: false });
       const args = tuple('A_TICKER');
 
       const tx = new PolymeshTransactionBatch(
@@ -163,7 +163,7 @@ describe('Polymesh Transaction Batch class', () => {
 
     it('should throw an error when one of the transactions in the batch fails', async () => {
       const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
-      const batchMock = dsMockUtils.createTxMock('utility', 'batchAtomic', {
+      const batchMock = dsMockUtils.createTxMock('utility', 'batchAll', {
         autoResolve: false,
       });
       const args = tuple('ANOTHER_TICKER');
@@ -185,7 +185,7 @@ describe('Polymesh Transaction Batch class', () => {
 
       await fakePromise(2);
 
-      dsMockUtils.updateTxStatus(batchMock, dsMockUtils.MockTxStatus.BatchFailed);
+      dsMockUtils.updateTxStatus(batchMock, dsMockUtils.MockTxStatus.BatchInterrupted);
 
       await expect(runPromise).rejects.toThrow('Unknown error');
       expect(tx.status).toBe(TransactionStatus.Failed);

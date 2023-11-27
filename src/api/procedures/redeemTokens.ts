@@ -1,6 +1,12 @@
 import BigNumber from 'bignumber.js';
 
-import { Asset, DefaultPortfolio, NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
+import {
+  DefaultPortfolio,
+  FungibleAsset,
+  NumberedPortfolio,
+  PolymeshError,
+  Procedure,
+} from '~/internal';
 import { ErrorCode, RedeemTokensParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { bigNumberToBalance, portfolioToPortfolioKind, stringToTicker } from '~/utils/conversion';
@@ -34,7 +40,7 @@ export async function prepareRedeemTokens(
 
   const { ticker, amount, from } = args;
 
-  const asset = new Asset({ ticker }, context);
+  const asset = new FungibleAsset({ ticker }, context);
   const rawTicker = stringToTicker(ticker, context);
 
   const [[{ free }], { isDivisible }] = await Promise.all([
@@ -84,7 +90,7 @@ export async function getAuthorization(
   return {
     permissions: {
       transactions: [from ? TxTags.asset.RedeemFromPortfolio : TxTags.asset.Redeem],
-      assets: [new Asset({ ticker }, context)],
+      assets: [new FungibleAsset({ ticker }, context)],
       portfolios: [fromPortfolio],
     },
   };

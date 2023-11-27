@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
-import { Asset, Context, Identity, Offering, PolymeshError, Procedure } from '~/internal';
+import { Context, FungibleAsset, Identity, Offering, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, LaunchOfferingParams, PortfolioId, RoleType, TxTags, VenueType } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
@@ -155,7 +155,7 @@ export function getAuthorization(
     ],
     permissions: {
       transactions: [TxTags.sto.CreateFundraiser],
-      assets: [new Asset({ ticker }, context)],
+      assets: [new FungibleAsset({ ticker }, context)],
       portfolios: [
         portfolioIdToPortfolio(offeringPortfolioId, context),
         portfolioIdToPortfolio(raisingPortfolioId, context),

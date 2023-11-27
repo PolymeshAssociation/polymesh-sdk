@@ -63,7 +63,6 @@ import type {
   PalletPipsVotingResult,
   PalletPreimageRequestStatus,
   PalletRelayerSubsidy,
-  PalletRewardsItnRewardStatus,
   PalletSchedulerScheduled,
   PalletStakingActiveEraInfo,
   PalletStakingElectionResult,
@@ -88,7 +87,10 @@ import type {
   PolymeshCommonUtilitiesGroupInactiveMember,
   PolymeshCommonUtilitiesMaybeBlock,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
+  PolymeshContractsApi,
+  PolymeshContractsApiCodeHash,
   PolymeshContractsChainExtensionExtrinsicId,
+  PolymeshContractsNextUpgrade,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
@@ -1543,15 +1545,16 @@ declare module '@polkadot/api-base/types/storage' {
       >;
       /**
        * Details of a multisig proposal
+       *
+       * multisig -> proposal id => ProposalDetails.
        **/
       proposalDetail: AugmentedQuery<
         ApiType,
         (
-          arg:
-            | ITuple<[AccountId32, u64]>
-            | [AccountId32 | string | Uint8Array, u64 | AnyNumber | Uint8Array]
+          arg1: AccountId32 | string | Uint8Array,
+          arg2: u64 | AnyNumber | Uint8Array
         ) => Observable<PolymeshPrimitivesMultisigProposalDetails>,
-        [ITuple<[AccountId32, u64]>]
+        [AccountId32, u64]
       >;
       /**
        * A mapping of proposals to their IDs.
@@ -1565,16 +1568,17 @@ declare module '@polkadot/api-base/types/storage' {
         [AccountId32, Call]
       >;
       /**
-       * Proposals presented for voting to a multisig (multisig, proposal id) => Option<T::Proposal>.
+       * Proposals presented for voting to a multisig.
+       *
+       * multisig -> proposal id => Option<T::Proposal>.
        **/
       proposals: AugmentedQuery<
         ApiType,
         (
-          arg:
-            | ITuple<[AccountId32, u64]>
-            | [AccountId32 | string | Uint8Array, u64 | AnyNumber | Uint8Array]
+          arg1: AccountId32 | string | Uint8Array,
+          arg2: u64 | AnyNumber | Uint8Array
         ) => Observable<Option<Call>>,
-        [ITuple<[AccountId32, u64]>]
+        [AccountId32, u64]
       >;
       /**
        * Storage version.
@@ -1585,26 +1589,24 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       transactionVersion: AugmentedQuery<ApiType, () => Observable<u32>, []>;
       /**
-       * Individual multisig signer votes. (multi sig, signer, proposal) => vote.
+       * Individual multisig signer votes.
+       *
+       * (multisig, proposal_id) -> signer => vote.
        **/
       votes: AugmentedQuery<
         ApiType,
         (
-          arg:
-            | ITuple<[AccountId32, PolymeshPrimitivesSecondaryKeySignatory, u64]>
-            | [
-                AccountId32 | string | Uint8Array,
-                (
-                  | PolymeshPrimitivesSecondaryKeySignatory
-                  | { Identity: any }
-                  | { Account: any }
-                  | string
-                  | Uint8Array
-                ),
-                u64 | AnyNumber | Uint8Array
-              ]
+          arg1:
+            | ITuple<[AccountId32, u64]>
+            | [AccountId32 | string | Uint8Array, u64 | AnyNumber | Uint8Array],
+          arg2:
+            | PolymeshPrimitivesSecondaryKeySignatory
+            | { Identity: any }
+            | { Account: any }
+            | string
+            | Uint8Array
         ) => Observable<bool>,
-        [ITuple<[AccountId32, PolymeshPrimitivesSecondaryKeySignatory, u64]>]
+        [ITuple<[AccountId32, u64]>, PolymeshPrimitivesSecondaryKeySignatory]
       >;
     };
     nft: {
@@ -1663,6 +1665,25 @@ declare module '@polkadot/api-base/types/storage' {
         [u64]
       >;
       /**
+       * Tracks the owner of an NFT
+       **/
+      nftOwner: AugmentedQuery<
+        ApiType,
+        (
+          arg1: PolymeshPrimitivesTicker | string | Uint8Array,
+          arg2: u64 | AnyNumber | Uint8Array
+        ) => Observable<Option<PolymeshPrimitivesIdentityId>>,
+        [PolymeshPrimitivesTicker, u64]
+      >;
+      /**
+       * The total number of NFTs in a collection
+       **/
+      nfTsInCollection: AugmentedQuery<
+        ApiType,
+        (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<u64>,
+        [PolymeshPrimitivesTicker]
+      >;
+      /**
        * The total number of NFTs per identity.
        **/
       numberOfNFTs: AugmentedQuery<
@@ -1673,6 +1694,10 @@ declare module '@polkadot/api-base/types/storage' {
         ) => Observable<u64>,
         [PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId]
       >;
+      /**
+       * Storage version.
+       **/
+      storageVersion: AugmentedQuery<ApiType, () => Observable<u8>, []>;
     };
     offences: {
       /**
@@ -1911,6 +1936,16 @@ declare module '@polkadot/api-base/types/storage' {
     };
     polymeshContracts: {
       /**
+       * Stores the chain version and code hash for the next chain upgrade.
+       **/
+      apiNextUpgrade: AugmentedQuery<
+        ApiType,
+        (
+          arg: PolymeshContractsApi | { desc?: any; major?: any } | string | Uint8Array
+        ) => Observable<Option<PolymeshContractsNextUpgrade>>,
+        [PolymeshContractsApi]
+      >;
+      /**
        * Whitelist of extrinsics allowed to be called from contracts.
        **/
       callRuntimeWhitelist: AugmentedQuery<
@@ -1918,8 +1953,33 @@ declare module '@polkadot/api-base/types/storage' {
         (arg: PolymeshContractsChainExtensionExtrinsicId) => Observable<bool>,
         [PolymeshContractsChainExtensionExtrinsicId]
       >;
+      /**
+       * Stores the code hash for the current api.
+       **/
+      currentApiHash: AugmentedQuery<
+        ApiType,
+        (
+          arg: PolymeshContractsApi | { desc?: any; major?: any } | string | Uint8Array
+        ) => Observable<Option<PolymeshContractsApiCodeHash>>,
+        [PolymeshContractsApi]
+      >;
+      /**
+       * Storage version.
+       **/
+      storageVersion: AugmentedQuery<ApiType, () => Observable<u8>, []>;
     };
     portfolio: {
+      /**
+       * Custodians allowed to create and take custody of portfolios on an id's behalf.
+       **/
+      allowedCustodians: AugmentedQuery<
+        ApiType,
+        (
+          arg1: PolymeshPrimitivesIdentityId | string | Uint8Array,
+          arg2: PolymeshPrimitivesIdentityId | string | Uint8Array
+        ) => Observable<bool>,
+        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesIdentityId]
+      >;
       /**
        * Inverse map of `Portfolios` used to ensure bijectivitiy,
        * and uniqueness of names in `Portfolios`.
@@ -2124,6 +2184,7 @@ declare module '@polkadot/api-base/types/storage' {
             | 'CapitalDistributionDistribute'
             | 'NFTCreateCollection'
             | 'NFTMint'
+            | 'IdentityCreateChildIdentity'
             | number
             | Uint8Array
         ) => Observable<u128>,
@@ -2154,18 +2215,6 @@ declare module '@polkadot/api-base/types/storage' {
       subsidies: AugmentedQuery<
         ApiType,
         (arg: AccountId32 | string | Uint8Array) => Observable<Option<PalletRelayerSubsidy>>,
-        [AccountId32]
-      >;
-    };
-    rewards: {
-      /**
-       * Map of (Itn Address `AccountId`) -> (Reward `ItnRewardStatus`).
-       **/
-      itnRewards: AugmentedQuery<
-        ApiType,
-        (
-          arg: AccountId32 | string | Uint8Array
-        ) => Observable<Option<PalletRewardsItnRewardStatus>>,
         [AccountId32]
       >;
     };
@@ -2328,6 +2377,14 @@ declare module '@polkadot/api-base/types/storage' {
         (
           arg: u64 | AnyNumber | Uint8Array
         ) => Observable<PolymeshPrimitivesSettlementInstructionStatus>,
+        [u64]
+      >;
+      /**
+       * Tracks the number of signers each venue has.
+       **/
+      numberOfVenueSigners: AugmentedQuery<
+        ApiType,
+        (arg: u64 | AnyNumber | Uint8Array) => Observable<u32>,
         [u64]
       >;
       /**

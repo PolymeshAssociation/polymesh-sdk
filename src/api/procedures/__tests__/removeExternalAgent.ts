@@ -5,15 +5,15 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/removeExternalAgent';
-import { Asset, Context } from '~/internal';
+import { Context, FungibleAsset } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { PermissionGroupType, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 jest.mock(
   '~/api/entities/CustomPermissionGroup',
@@ -31,7 +31,7 @@ jest.mock(
 describe('removeExternalAgent procedure', () => {
   let mockContext: Mocked<Context>;
   let ticker: string;
-  let asset: Asset;
+  let asset: FungibleAsset;
   let target: string;
   let stringToTickerSpy: jest.SpyInstance;
   let stringToIdentityIdSpy: jest.SpyInstance;
@@ -41,7 +41,7 @@ describe('removeExternalAgent procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     ticker = 'SOME_TICKER';
-    asset = entityMockUtils.getAssetInstance({ ticker });
+    asset = entityMockUtils.getFungibleAssetInstance({ ticker });
     target = 'someDid';
     stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
     stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
@@ -103,7 +103,7 @@ describe('removeExternalAgent procedure', () => {
     };
 
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      asset: entityMockUtils.getAssetInstance({
+      asset: entityMockUtils.getFungibleAssetInstance({
         permissionsGetAgents: [],
       }),
     });
@@ -120,7 +120,7 @@ describe('removeExternalAgent procedure', () => {
     };
 
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      asset: entityMockUtils.getAssetInstance({
+      asset: entityMockUtils.getFungibleAssetInstance({
         permissionsGetAgents: [
           {
             agent: entityMockUtils.getIdentityInstance({ isEqual: true }),
@@ -141,7 +141,7 @@ describe('removeExternalAgent procedure', () => {
   it('should return a remove agent transaction spec', async () => {
     const transaction = dsMockUtils.createTxMock('externalAgents', 'removeAgent');
     let proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      asset: entityMockUtils.getAssetInstance({
+      asset: entityMockUtils.getFungibleAssetInstance({
         permissionsGetAgents: [
           {
             agent: entityMockUtils.getIdentityInstance({ isEqual: true }),
@@ -175,7 +175,7 @@ describe('removeExternalAgent procedure', () => {
     expect(result).toEqual({ transaction, args: [rawTicker, rawAgent], resolver: undefined });
 
     proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      asset: entityMockUtils.getAssetInstance({
+      asset: entityMockUtils.getFungibleAssetInstance({
         permissionsGetAgents: [
           {
             agent: entityMockUtils.getIdentityInstance({ isEqual: false }),

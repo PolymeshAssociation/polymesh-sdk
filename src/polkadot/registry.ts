@@ -166,10 +166,6 @@ import type {
   PalletRelayerCall,
   PalletRelayerError,
   PalletRelayerSubsidy,
-  PalletRewardsCall,
-  PalletRewardsError,
-  PalletRewardsItnRewardStatus,
-  PalletRewardsRawEvent,
   PalletSchedulerCall,
   PalletSchedulerError,
   PalletSchedulerEvent,
@@ -255,10 +251,14 @@ import type {
   PolymeshCommonUtilitiesRelayerRawEvent,
   PolymeshCommonUtilitiesSettlementRawEvent,
   PolymeshCommonUtilitiesStatisticsEvent,
+  PolymeshContractsApi,
+  PolymeshContractsApiCodeHash,
   PolymeshContractsCall,
   PolymeshContractsChainExtensionExtrinsicId,
+  PolymeshContractsChainVersion,
   PolymeshContractsError,
-  PolymeshContractsEvent,
+  PolymeshContractsNextUpgrade,
+  PolymeshContractsRawEvent,
   PolymeshExtensionsCheckWeight,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetAssetType,
@@ -307,7 +307,9 @@ import type {
   PolymeshPrimitivesSecondaryKeyPalletPermissions,
   PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesSecondaryKeySignatory,
+  PolymeshPrimitivesSettlementAffirmationCount,
   PolymeshPrimitivesSettlementAffirmationStatus,
+  PolymeshPrimitivesSettlementAssetCount,
   PolymeshPrimitivesSettlementInstruction,
   PolymeshPrimitivesSettlementInstructionStatus,
   PolymeshPrimitivesSettlementLeg,
@@ -538,10 +540,6 @@ declare module '@polkadot/types/types/registry' {
     PalletRelayerCall: PalletRelayerCall;
     PalletRelayerError: PalletRelayerError;
     PalletRelayerSubsidy: PalletRelayerSubsidy;
-    PalletRewardsCall: PalletRewardsCall;
-    PalletRewardsError: PalletRewardsError;
-    PalletRewardsItnRewardStatus: PalletRewardsItnRewardStatus;
-    PalletRewardsRawEvent: PalletRewardsRawEvent;
     PalletSchedulerCall: PalletSchedulerCall;
     PalletSchedulerError: PalletSchedulerError;
     PalletSchedulerEvent: PalletSchedulerEvent;
@@ -627,10 +625,14 @@ declare module '@polkadot/types/types/registry' {
     PolymeshCommonUtilitiesRelayerRawEvent: PolymeshCommonUtilitiesRelayerRawEvent;
     PolymeshCommonUtilitiesSettlementRawEvent: PolymeshCommonUtilitiesSettlementRawEvent;
     PolymeshCommonUtilitiesStatisticsEvent: PolymeshCommonUtilitiesStatisticsEvent;
+    PolymeshContractsApi: PolymeshContractsApi;
+    PolymeshContractsApiCodeHash: PolymeshContractsApiCodeHash;
     PolymeshContractsCall: PolymeshContractsCall;
     PolymeshContractsChainExtensionExtrinsicId: PolymeshContractsChainExtensionExtrinsicId;
+    PolymeshContractsChainVersion: PolymeshContractsChainVersion;
     PolymeshContractsError: PolymeshContractsError;
-    PolymeshContractsEvent: PolymeshContractsEvent;
+    PolymeshContractsNextUpgrade: PolymeshContractsNextUpgrade;
+    PolymeshContractsRawEvent: PolymeshContractsRawEvent;
     PolymeshExtensionsCheckWeight: PolymeshExtensionsCheckWeight;
     PolymeshPrimitivesAgentAgentGroup: PolymeshPrimitivesAgentAgentGroup;
     PolymeshPrimitivesAssetAssetType: PolymeshPrimitivesAssetAssetType;
@@ -679,7 +681,9 @@ declare module '@polkadot/types/types/registry' {
     PolymeshPrimitivesSecondaryKeyPalletPermissions: PolymeshPrimitivesSecondaryKeyPalletPermissions;
     PolymeshPrimitivesSecondaryKeyPermissions: PolymeshPrimitivesSecondaryKeyPermissions;
     PolymeshPrimitivesSecondaryKeySignatory: PolymeshPrimitivesSecondaryKeySignatory;
+    PolymeshPrimitivesSettlementAffirmationCount: PolymeshPrimitivesSettlementAffirmationCount;
     PolymeshPrimitivesSettlementAffirmationStatus: PolymeshPrimitivesSettlementAffirmationStatus;
+    PolymeshPrimitivesSettlementAssetCount: PolymeshPrimitivesSettlementAssetCount;
     PolymeshPrimitivesSettlementInstruction: PolymeshPrimitivesSettlementInstruction;
     PolymeshPrimitivesSettlementInstructionStatus: PolymeshPrimitivesSettlementInstructionStatus;
     PolymeshPrimitivesSettlementLeg: PolymeshPrimitivesSettlementLeg;

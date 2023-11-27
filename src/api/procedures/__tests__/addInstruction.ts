@@ -3,6 +3,7 @@ import { Balance, Moment } from '@polkadot/types/interfaces';
 import {
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesMemo,
+  PolymeshPrimitivesNftNfTs,
   PolymeshPrimitivesSettlementLeg,
   PolymeshPrimitivesSettlementSettlementType,
   PolymeshPrimitivesTicker,
@@ -45,6 +46,14 @@ jest.mock(
   '~/api/entities/Venue',
   require('~/testUtils/mocks/entities').mockVenueModule('~/api/entities/Venue')
 );
+jest.mock(
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
+);
+jest.mock(
+  '~/api/entities/Asset/NonFungible',
+  require('~/testUtils/mocks/entities').mockNftCollectionModule('~/api/entities/Asset/NonFungible')
+);
 
 describe('addInstruction procedure', () => {
   let mockContext: Mocked<Context>;
@@ -64,7 +73,8 @@ describe('addInstruction procedure', () => {
   >;
   let dateToMomentSpy: jest.SpyInstance<Moment, [Date, Context]>;
   let stringToInstructionMemoSpy: jest.SpyInstance;
-  let legToRawLegSpy: jest.SpyInstance;
+  let legToFungibleLegSpy: jest.SpyInstance;
+  let legToNonFungibleLegSpy: jest.SpyInstance;
   let venueId: BigNumber;
   let amount: BigNumber;
   let from: PortfolioLike;
@@ -74,6 +84,7 @@ describe('addInstruction procedure', () => {
   let fromPortfolio: DefaultPortfolio | NumberedPortfolio;
   let toPortfolio: DefaultPortfolio | NumberedPortfolio;
   let asset: string;
+  let nftAsset: string;
   let tradeDate: Date;
   let valueDate: Date;
   let endBlock: BigNumber;
@@ -85,6 +96,7 @@ describe('addInstruction procedure', () => {
   let rawFrom: PolymeshPrimitivesIdentityIdPortfolioId;
   let rawTo: PolymeshPrimitivesIdentityIdPortfolioId;
   let rawTicker: PolymeshPrimitivesTicker;
+  let rawNftTicker: PolymeshPrimitivesTicker;
   let rawTradeDate: Moment;
   let rawValueDate: Moment;
   let rawEndBlock: u32;
@@ -92,7 +104,9 @@ describe('addInstruction procedure', () => {
   let rawAuthSettlementType: PolymeshPrimitivesSettlementSettlementType;
   let rawBlockSettlementType: PolymeshPrimitivesSettlementSettlementType;
   let rawManualSettlementType: PolymeshPrimitivesSettlementSettlementType;
+  let rawNfts: PolymeshPrimitivesNftNfTs;
   let rawLeg: PolymeshPrimitivesSettlementLeg;
+  let rawNftLeg: PolymeshPrimitivesSettlementLeg;
 
   beforeAll(() => {
     dsMockUtils.initMocks({
@@ -122,7 +136,8 @@ describe('addInstruction procedure', () => {
     );
     dateToMomentSpy = jest.spyOn(utilsConversionModule, 'dateToMoment');
     stringToInstructionMemoSpy = jest.spyOn(utilsConversionModule, 'stringToMemo');
-    legToRawLegSpy = jest.spyOn(utilsConversionModule, 'legToSettlementLeg');
+    legToFungibleLegSpy = jest.spyOn(utilsConversionModule, 'legToFungibleLeg');
+    legToNonFungibleLegSpy = jest.spyOn(utilsConversionModule, 'legToNonFungibleLeg');
 
     venueId = new BigNumber(1);
     amount = new BigNumber(100);
@@ -139,6 +154,7 @@ describe('addInstruction procedure', () => {
       id: new BigNumber(2),
     });
     asset = 'SOME_ASSET';
+    nftAsset = 'TEST_NFT';
     const now = new Date();
     tradeDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     valueDate = new Date(now.getTime() + 24 * 60 * 60 * 1000 + 1);
@@ -155,6 +171,7 @@ describe('addInstruction procedure', () => {
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
     rawTicker = dsMockUtils.createMockTicker(asset);
+    rawNftTicker = dsMockUtils.createMockTicker(nftAsset);
     rawTradeDate = dsMockUtils.createMockMoment(new BigNumber(tradeDate.getTime()));
     rawValueDate = dsMockUtils.createMockMoment(new BigNumber(valueDate.getTime()));
     rawEndBlock = dsMockUtils.createMockU32(endBlock);
@@ -162,12 +179,23 @@ describe('addInstruction procedure', () => {
     rawAuthSettlementType = dsMockUtils.createMockSettlementType('SettleOnAffirmation');
     rawBlockSettlementType = dsMockUtils.createMockSettlementType({ SettleOnBlock: rawEndBlock });
     rawManualSettlementType = dsMockUtils.createMockSettlementType({ SettleManual: rawEndBlock });
+    rawNfts = dsMockUtils.createMockNfts({
+      ticker: rawNftTicker,
+      ids: [dsMockUtils.createMockU64()],
+    });
     rawLeg = dsMockUtils.createMockInstructionLeg({
       Fungible: {
         sender: rawFrom,
         receiver: rawTo,
         amount: rawAmount,
         ticker: rawTicker,
+      },
+    });
+    rawNftLeg = dsMockUtils.createMockInstructionLeg({
+      NonFungible: {
+        sender: rawFrom,
+        receiver: rawTo,
+        nfts: rawNfts,
       },
     });
   });
@@ -257,9 +285,13 @@ describe('addInstruction procedure', () => {
       .calledWith(memo, mockContext)
       .mockReturnValue(rawInstructionMemo);
 
-    when(legToRawLegSpy.mockReturnValue(rawLeg))
+    when(legToFungibleLegSpy.mockReturnValue(rawLeg))
       .calledWith({ from, to, asset, amount }, mockContext)
       .mockReturnValue(rawLeg);
+
+    when(legToNonFungibleLegSpy)
+      .calledWith({ from, to, asset, nfts: [] }, mockContext)
+      .mockReturnValue(rawNftLeg);
 
     args = {
       venueId,
@@ -343,7 +375,7 @@ describe('addInstruction procedure', () => {
       from,
       to,
       amount: new BigNumber(0),
-      asset: entityMockUtils.getAssetInstance({ ticker: asset }),
+      asset: entityMockUtils.getFungibleAssetInstance({ ticker: asset }),
     });
     try {
       await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs }] });
@@ -354,6 +386,65 @@ describe('addInstruction procedure', () => {
     expect(error.message).toBe('Instruction legs cannot have zero amount');
     expect(error.code).toBe(ErrorCode.ValidationError);
     expect(error.data.failedInstructionIndexes[0]).toBe(0);
+  });
+
+  it('should throw an error if any instruction contains leg with zero NFTs', async () => {
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      portfoliosToAffirm: [],
+    });
+
+    entityMockUtils.configureMocks({
+      venueOptions: { exists: true },
+    });
+
+    let error;
+    const legs = Array(2).fill({
+      from,
+      to,
+      nfts: [],
+      asset: entityMockUtils.getNftCollectionInstance({ ticker: asset }),
+    });
+    try {
+      await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs }] });
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('Instruction legs cannot have zero amount');
+    expect(error.code).toBe(ErrorCode.ValidationError);
+    expect(error.data.failedInstructionIndexes[0]).toBe(0);
+  });
+
+  it('should throw an error if given an string asset that does not exist', async () => {
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      portfoliosToAffirm: [],
+    });
+
+    entityMockUtils.configureMocks({
+      venueOptions: { exists: true },
+      fungibleAssetOptions: {
+        exists: false,
+      },
+      nftCollectionOptions: {
+        exists: false,
+      },
+    });
+
+    let error;
+    const legs = Array(2).fill({
+      from,
+      to,
+      amount: new BigNumber(0),
+      asset,
+    });
+    try {
+      await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs }] });
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('No asset exists with ticker: "SOME_ASSET"');
+    expect(error.code).toBe(ErrorCode.DataUnavailable);
   });
 
   it('should throw an error if any instruction contains leg with transferring Assets within same Identity portfolios', async () => {
@@ -370,7 +461,7 @@ describe('addInstruction procedure', () => {
       from: to,
       to,
       amount: new BigNumber(10),
-      asset: entityMockUtils.getAssetInstance({ ticker: asset }),
+      asset: entityMockUtils.getFungibleAssetInstance({ ticker: asset }),
     });
     try {
       await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs }] });
@@ -421,7 +512,7 @@ describe('addInstruction procedure', () => {
       from,
       to,
       amount,
-      asset: entityMockUtils.getAssetInstance({ ticker: asset }),
+      asset: entityMockUtils.getFungibleAssetInstance({ ticker: asset }),
     });
 
     try {
@@ -463,7 +554,7 @@ describe('addInstruction procedure', () => {
                 from,
                 to,
                 amount,
-                asset: entityMockUtils.getAssetInstance({ ticker: asset }),
+                asset: entityMockUtils.getFungibleAssetInstance({ ticker: asset }),
               },
             ],
             endBlock: new BigNumber(100),
@@ -482,7 +573,7 @@ describe('addInstruction procedure', () => {
                 from,
                 to,
                 amount,
-                asset: entityMockUtils.getAssetInstance({ ticker: asset }),
+                asset: entityMockUtils.getFungibleAssetInstance({ ticker: asset }),
               },
             ],
             endAfterBlock: new BigNumber(100),
@@ -497,6 +588,9 @@ describe('addInstruction procedure', () => {
     entityMockUtils.configureMocks({
       venueOptions: {
         exists: true,
+      },
+      nftCollectionOptions: {
+        exists: false,
       },
     });
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
@@ -538,6 +632,9 @@ describe('addInstruction procedure', () => {
       venueOptions: {
         exists: true,
       },
+      nftCollectionOptions: {
+        exists: false,
+      },
     });
     getCustodianMock.mockReturnValue({ did: fromDid });
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
@@ -551,6 +648,107 @@ describe('addInstruction procedure', () => {
         {
           transaction: addAndAuthorizeInstructionTransaction,
           args: [rawVenueId, rawAuthSettlementType, null, null, [rawLeg], [rawFrom, rawTo], null],
+        },
+      ],
+      resolver: expect.any(Function),
+    });
+  });
+
+  it('should throw an error if key "amount" is not in a fungible leg', async () => {
+    dsMockUtils.configureMocks({ contextOptions: { did: fromDid } });
+    entityMockUtils.configureMocks({
+      venueOptions: {
+        exists: true,
+      },
+      fungibleAssetOptions: {
+        exists: true,
+      },
+      nftCollectionOptions: {
+        exists: false,
+      },
+    });
+    getCustodianMock.mockReturnValue({ did: fromDid });
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      portfoliosToAffirm: [[fromPortfolio, toPortfolio]],
+    });
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The key "amount" should be present in a fungible leg',
+    });
+
+    await expect(
+      prepareAddInstruction.call(proc, {
+        venueId: args.venueId,
+        instructions: [{ legs: [{ from, to, asset, nfts: [new BigNumber(1)] }] }],
+      })
+    ).rejects.toThrow(expectedError);
+  });
+
+  it('should throw an error if key "nfts" is not in an NFT leg', async () => {
+    dsMockUtils.configureMocks({ contextOptions: { did: fromDid } });
+    entityMockUtils.configureMocks({
+      venueOptions: {
+        exists: true,
+      },
+      fungibleAssetOptions: {
+        exists: false,
+      },
+      nftCollectionOptions: {
+        exists: true,
+      },
+    });
+    getCustodianMock.mockReturnValue({ did: fromDid });
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      portfoliosToAffirm: [[fromPortfolio, toPortfolio]],
+    });
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The key "nfts" should be present in an NFT leg',
+    });
+
+    await expect(
+      prepareAddInstruction.call(proc, {
+        venueId: args.venueId,
+        instructions: [{ legs: [{ from, to, asset, amount: new BigNumber(1) }] }],
+      })
+    ).rejects.toThrow(expectedError);
+  });
+
+  it('should handle NFT legs', async () => {
+    dsMockUtils.configureMocks({ contextOptions: { did: fromDid } });
+    entityMockUtils.configureMocks({
+      venueOptions: {
+        exists: true,
+      },
+      nftCollectionOptions: {
+        exists: true,
+      },
+    });
+    getCustodianMock.mockReturnValue({ did: fromDid });
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      portfoliosToAffirm: [[fromPortfolio, toPortfolio]],
+    });
+
+    const result = await prepareAddInstruction.call(proc, {
+      venueId: args.venueId,
+      instructions: [{ legs: [{ from, to, asset, nfts: [new BigNumber(1)] }] }],
+    });
+
+    expect(result).toEqual({
+      transactions: [
+        {
+          transaction: addAndAuthorizeInstructionTransaction,
+          args: [
+            rawVenueId,
+            rawAuthSettlementType,
+            null,
+            null,
+            [undefined],
+            [rawFrom, rawTo],
+            null,
+          ],
         },
       ],
       resolver: expect.any(Function),
@@ -575,7 +773,7 @@ describe('addInstruction procedure', () => {
           from,
           to,
           amount,
-          asset: entityMockUtils.getAssetInstance({ ticker: asset }),
+          asset: entityMockUtils.getFungibleAssetInstance({ ticker: asset }),
         },
       ],
       tradeDate,

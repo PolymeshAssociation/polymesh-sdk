@@ -1,18 +1,43 @@
 import BigNumber from 'bignumber.js';
 
 import {
-  Asset,
   CustomPermissionGroup,
   DefaultPortfolio,
+  FungibleAsset,
   Identity,
   KnownPermissionGroup,
+  NftCollection,
   NumberedPortfolio,
 } from '~/internal';
-import { EventIdEnum } from '~/middleware/enums';
-import { Compliance, EventIdentifier, TransferError, TransferRestriction } from '~/types';
+import { EventIdEnum } from '~/middleware/types';
+import {
+  Compliance,
+  EventIdentifier,
+  MetadataDetails,
+  MetadataType,
+  TransferError,
+  TransferRestriction,
+} from '~/types';
+
+/**
+ * Represents a generic asset on chain. Common functionality (e.g. documents) can be interacted with directly. For type specific functionality (e.g. issue) the type can
+ * be narrowed via `instanceof` operator, or by using a more specific getter
+ */
+export type Asset = FungibleAsset | NftCollection;
+
+/**
+ * Properties that uniquely identify an Asset
+ */
+export interface UniqueIdentifiers {
+  /**
+   * ticker of the Asset
+   */
+  ticker: string;
+}
 
 export interface AssetDetails {
   assetType: string;
+  nonFungible: boolean;
   isDivisible: boolean;
   name: string;
   owner: Identity;
@@ -61,7 +86,7 @@ export interface AgentWithGroup {
 }
 
 export interface HistoricAssetTransaction extends EventIdentifier {
-  asset: Asset;
+  asset: FungibleAsset;
   amount: BigNumber;
   from: DefaultPortfolio | NumberedPortfolio | null;
   to: DefaultPortfolio | NumberedPortfolio | null;
@@ -69,5 +94,37 @@ export interface HistoricAssetTransaction extends EventIdentifier {
   extrinsicIndex: BigNumber;
 }
 
-export * from './Checkpoints/types';
-export * from './CorporateActions/types';
+/**
+ * The data needed to uniquely identify a metadata specification
+ */
+export type MetadataKeyId =
+  | {
+      type: MetadataType.Global;
+      id: BigNumber;
+    }
+  | {
+      type: MetadataType.Local;
+      id: BigNumber;
+      ticker: string;
+    };
+
+export interface NftMetadata {
+  /**
+   * The metadata key this value is intended for
+   */
+  key: MetadataKeyId;
+  /**
+   * The value the particular NFT has for the metadata
+   */
+  value: string;
+}
+
+/**
+ * A metadata entry for which each NFT in the collection must have an entry for
+ *
+ * @note each NFT **must** have an entry for each metadata value, the entry **should** comply with the relevant spec
+ */
+export type CollectionKey = MetadataKeyId & MetadataDetails;
+
+export * from './Fungible/Checkpoints/types';
+export * from './Fungible/CorporateActions/types';

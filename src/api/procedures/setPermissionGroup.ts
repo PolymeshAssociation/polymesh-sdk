@@ -4,7 +4,7 @@ import {
   isFullGroupType,
 } from '~/api/procedures/utils';
 import {
-  Asset,
+  BaseAsset,
   CustomPermissionGroup,
   KnownPermissionGroup,
   PolymeshError,
@@ -26,7 +26,7 @@ import {
   stringToTicker,
   transactionPermissionsToExtrinsicPermissions,
 } from '~/utils/conversion';
-import { asAsset } from '~/utils/internal';
+import { asBaseAsset } from '~/utils/internal';
 
 /**
  * @hidden
@@ -39,7 +39,7 @@ export type Params = SetPermissionGroupParams & {
  * @hidden
  */
 export interface Storage {
-  asset: Asset;
+  asset: BaseAsset;
 }
 
 /**
@@ -181,7 +181,7 @@ export function prepareStorage(
   const { context } = this;
 
   return {
-    asset: asAsset(asset, context),
+    asset: asBaseAsset(asset, context),
   };
 }
 
