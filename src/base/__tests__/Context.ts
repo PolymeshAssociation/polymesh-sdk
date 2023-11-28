@@ -207,20 +207,6 @@ describe('Context class', () => {
       jest.restoreAllMocks();
     });
 
-    it('should throw error if the passed address does not exist in the Signing Manager', async () => {
-      const context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
-        signingManager: dsMockUtils.getSigningManagerInstance({
-          getAccounts: ['someAddress'],
-        }),
-      });
-
-      return expect(() => context.setSigningAddress('otherAddress')).rejects.toThrow(
-        'The Account is not part of the Signing Manager attached to the SDK'
-      );
-    });
-
     it('should set the passed value as signing address', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -314,6 +300,36 @@ describe('Context class', () => {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(() => (context as any).signingManager).toThrowError(expectedError);
+    });
+  });
+
+  describe('method: assertHasSigningAddress', () => {
+    let context: Context;
+    const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+
+    beforeEach(async () => {
+      const signingManager = dsMockUtils.getSigningManagerInstance({
+        getAccounts: [address],
+      });
+
+      context = await Context.create({
+        signingManager,
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+      });
+    });
+
+    it('should throw an error if the account is not present', async () => {
+      const expectedError = new PolymeshError({
+        code: ErrorCode.General,
+        message: 'The Account is not part of the Signing Manager attached to the SDK',
+      });
+
+      await expect(context.assertHasSigningAddress('otherAddress')).rejects.toThrow(expectedError);
+    });
+
+    it('should not throw an error if the account is present', async () => {
+      await expect(context.assertHasSigningAddress(address)).resolves.not.toThrow();
     });
   });
 

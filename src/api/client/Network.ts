@@ -1,9 +1,12 @@
+import { HexString } from '@polkadot/util/types';
 import BigNumber from 'bignumber.js';
 
-import { Account, Context, transferPolyx } from '~/internal';
+import { handleExtrinsicFailure } from '~/base/utils';
+import { Account, Context, PolymeshError, transferPolyx } from '~/internal';
 import { eventsByArgs, extrinsicByHash } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import {
+  ErrorCode,
   EventIdentifier,
   ExtrinsicDataWithFees,
   MiddlewareMetadata,
@@ -11,6 +14,7 @@ import {
   ProcedureMethod,
   ProtocolFees,
   SubCallback,
+  TransactionPayload,
   TransferPolyxParams,
   TxTag,
   UnsubCallback,
@@ -20,13 +24,14 @@ import { TREASURY_MODULE_ADDRESS } from '~/utils/constants';
 import {
   balanceToBigNumber,
   extrinsicIdentifierToTxTag,
+  hashToString,
   middlewareEventDetailsToEventIdentifier,
   moduleAddressToString,
   stringToBlockHash,
   textToString,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, optionize } from '~/utils/internal';
+import { createProcedureMethod, filterEventRecords, optionize } from '~/utils/internal';
 
 /**
  * Handles all Network related functionality, including querying for historical events from middleware
@@ -181,6 +186,82 @@ export class Network {
     );
 
     return optionize(middlewareEventDetailsToEventIdentifier)(event?.block, event?.eventIdx);
+  }
+
+  /**
+   * Submits a transaction payload with its signature to the chain
+   */
+  public async submitTransaction(
+    txPayload: TransactionPayload,
+    signature: HexString
+  ): Promise<Record<string, unknown>> {
+    const { context } = this;
+    const { method, payload } = txPayload;
+    const transaction = context.polymeshApi.tx(method);
+
+    transaction.addSignature(payload.address, signature, payload);
+
+    const info: Record<string, unknown> = {
+      transactionHash: transaction.hash.toString(),
+    };
+
+    return new Promise((resolve, reject) => {
+      const gettingUnsub = transaction.send(receipt => {
+        const { status } = receipt;
+        let isLastCallback = false;
+        let unsubscribing = Promise.resolve();
+        let extrinsicFailedEvent;
+
+        // isCompleted implies status is one of: isFinalized, isInBlock or isError
+        if (receipt.isCompleted) {
+          if (receipt.isInBlock) {
+            const inBlockHash = status.asInBlock;
+            info.blockHash = hashToString(inBlockHash);
+
+            // we know that the index has to be set by the time the transaction is included in a block
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            info.txIndex = new BigNumber(receipt.txIndex!);
+
+            // if the extrinsic failed due to an on-chain error, we should handle it in a special way
+            [extrinsicFailedEvent] = filterEventRecords(receipt, 'system', 'ExtrinsicFailed', true);
+
+            // extrinsic failed so we can unsubscribe
+            isLastCallback = !!extrinsicFailedEvent;
+          } else {
+            // isFinalized || isError so we know we can unsubscribe
+            isLastCallback = true;
+          }
+
+          if (isLastCallback) {
+            unsubscribing = gettingUnsub.then(unsub => {
+              unsub();
+            });
+          }
+
+          /*
+           * Promise chain that handles all sub-promises in this pass through the signAndSend callback.
+           * Primarily for consistent error handling
+           */
+          let finishing = Promise.resolve();
+
+          if (extrinsicFailedEvent) {
+            const { data } = extrinsicFailedEvent;
+
+            finishing = Promise.all([unsubscribing]).then(() => {
+              handleExtrinsicFailure(reject, data[0]);
+            });
+          } else if (receipt.isFinalized) {
+            finishing = Promise.all([unsubscribing]).then(() => {
+              resolve(info);
+            });
+          } else if (receipt.isError) {
+            reject(new PolymeshError({ code: ErrorCode.TransactionAborted }));
+          }
+
+          finishing.catch((err: Error) => reject(err));
+        }
+      });
+    });
   }
 
   /**

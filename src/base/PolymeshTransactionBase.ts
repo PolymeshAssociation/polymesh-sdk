@@ -1,11 +1,11 @@
 import { SubmittableExtrinsic } from '@polkadot/api/types';
-import { SpRuntimeDispatchError } from '@polkadot/types/lookup';
-import { ISubmittableResult, RegistryError, Signer as PolkadotSigner } from '@polkadot/types/types';
+import { ISubmittableResult, Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { EventEmitter } from 'events';
 import { range } from 'lodash';
 
+import { handleExtrinsicFailure } from '~/base/utils';
 import { Context, Identity, PolymeshError } from '~/internal';
 import { latestBlockQuery } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
@@ -16,6 +16,7 @@ import {
   PayingAccount,
   PayingAccountFees,
   PayingAccountType,
+  TransactionPayload,
   TransactionStatus,
   UnsubCallback,
 } from '~/types';
@@ -262,6 +263,8 @@ export abstract class PolymeshTransactionBase<
   private async internalRun(): Promise<ISubmittableResult> {
     const { signingAddress, signer, mortality, context } = this;
 
+    await context.assertHasSigningAddress(signingAddress);
+
     // era is how many blocks the transaction remains valid for, `undefined` for default
     const era = mortality.immortal ? 0 : mortality.lifetime?.toNumber();
     const nonce = context.getNonce().toNumber();
@@ -332,7 +335,7 @@ export abstract class PolymeshTransactionBase<
               const { data } = extrinsicFailedEvent;
 
               finishing = Promise.all([settingBlockData, unsubscribing]).then(() => {
-                this.handleExtrinsicFailure(resolve, reject, data[0]);
+                handleExtrinsicFailure(reject, data[0]);
               });
             } else if (receipt.isFinalized) {
               finishing = Promise.all([settingBlockData, unsubscribing]).then(() => {
@@ -599,35 +602,6 @@ export abstract class PolymeshTransactionBase<
   /**
    * @hidden
    */
-  protected handleExtrinsicFailure(
-    _resolve: (value: ISubmittableResult | PromiseLike<ISubmittableResult>) => void,
-    reject: (reason?: unknown) => void,
-    error: SpRuntimeDispatchError,
-    data?: Record<string, unknown>
-  ): void {
-    // get revert message from event
-    let message: string;
-
-    if (error.isModule) {
-      // known error
-      const mod = error.asModule;
-
-      const { section, name, docs }: RegistryError = mod.registry.findMetaError(mod);
-      message = `${section}.${name}: ${docs.join(' ')}`;
-    } else if (error.isBadOrigin) {
-      message = 'Bad origin';
-    } else if (error.isCannotLookup) {
-      message = 'Could not lookup information required to validate the transaction';
-    } else {
-      message = 'Unknown error';
-    }
-
-    reject(new PolymeshError({ code: ErrorCode.TransactionReverted, message, data }));
-  }
-
-  /**
-   * @hidden
-   */
   protected handleExtrinsicSuccess(
     resolve: (value: ISubmittableResult | PromiseLike<ISubmittableResult>) => void,
     _reject: (reason?: unknown) => void,
@@ -706,6 +680,68 @@ export abstract class PolymeshTransactionBase<
           'The result of the transaction was checked before it has been completed. property `result` should only be read if transaction `isSuccess` property is true',
       });
     }
+  }
+
+  /**
+   * Returns a representation intended for offline signers.
+   *
+   * @note Usually `.run()` should be preferred due to is simplicity.
+   *
+   * @note When using this method, details like account nonces, and transaction mortality require extra consideration. Generating a payload for offline sign implies asynchronicity. If using this API, be sure each procedure is created with the correct nonce, accounting for in flight transactions, and the lifetime is sufficient.
+   *
+   */
+  public async toSignablePayload(
+    metadata: Record<string, string> = {}
+  ): Promise<TransactionPayload> {
+    const {
+      mortality,
+      signingAddress,
+      context,
+      context: { polymeshApi },
+    } = this;
+    const tx = this.composeTx();
+
+    const [tipHash, latestBlockNumber] = await Promise.all([
+      polymeshApi.rpc.chain.getFinalizedHead(),
+      context.getLatestBlock(),
+    ]);
+
+    let era: ReturnType<typeof context.createType> | string = '0x00';
+    if (!mortality.immortal) {
+      const defaultPeriod = 64;
+
+      era = context.createType('ExtrinsicEra', {
+        current: latestBlockNumber.toNumber(),
+        period: mortality.lifetime?.toNumber() ?? defaultPeriod,
+      });
+    }
+
+    let nonce: number = context.getNonce().toNumber();
+    if (nonce < 0) {
+      const nextIndex = await polymeshApi.rpc.system.accountNextIndex(signingAddress);
+
+      nonce = nextIndex.toNumber();
+    }
+
+    const rawSignerPayload = context.createType('SignerPayload', {
+      address: signingAddress,
+      method: tx,
+      nonce,
+      genesisHash: polymeshApi.genesisHash.toString(),
+      blockHash: tipHash.toString(),
+      specVersion: polymeshApi.runtimeVersion.specVersion,
+      transactionVersion: polymeshApi.runtimeVersion.transactionVersion,
+      runtimeVersion: polymeshApi.runtimeVersion,
+      version: polymeshApi.extrinsicVersion,
+      era,
+    });
+
+    return {
+      payload: rawSignerPayload.toPayload(),
+      rawPayload: rawSignerPayload.toRaw(),
+      method: tx.toHex(),
+      metadata,
+    };
   }
 
   /**

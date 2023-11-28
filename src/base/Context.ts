@@ -249,7 +249,7 @@ export class Context {
   /**
    * @hidden
    */
-  private get signingManager(): SigningManager {
+  public get signingManager(): SigningManager {
     const { _signingManager: manager } = this;
 
     if (!manager) {
@@ -280,29 +280,34 @@ export class Context {
    *
    * Set the signing Account from among the existing ones in the Signing Manager
    *
-   * @throws if the passed address isn't valid, or isn't present in the Signing Manager
+   * @throws if the passed address isn't valid
    */
   public async setSigningAddress(signingAddress: string): Promise<void> {
+    assertAddressValid(signingAddress, this.ss58Format);
+
+    this.signingAddress = signingAddress;
+  }
+
+  /**
+   * @hidden
+   *
+   * @throws if the passed address isn't present in the signing manager
+   */
+  public async assertHasSigningAddress(address: string): Promise<void> {
     const { signingManager } = this;
-
-    const newAddress = signingAddress;
-
-    assertAddressValid(newAddress, this.ss58Format);
-
     const accounts = await signingManager.getAccounts();
 
     const newSigningAddress = accounts.find(account => {
-      return account === newAddress;
+      return account === address;
     });
 
     if (!newSigningAddress) {
       throw new PolymeshError({
         code: ErrorCode.General,
         message: 'The Account is not part of the Signing Manager attached to the SDK',
+        data: { address },
       });
     }
-
-    this.signingAddress = newSigningAddress;
   }
 
   /**
