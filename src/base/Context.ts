@@ -225,9 +225,7 @@ export class Context {
     if (signingManager === null) {
       this._signingManager = undefined;
       this.signingAddress = undefined;
-      // TODO remove cast when polkadot/api >= v10.7.2
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      this._polymeshApi.setSigner(undefined as any);
+      this._polymeshApi.setSigner(undefined);
 
       return;
     }
@@ -249,15 +247,8 @@ export class Context {
   /**
    * @hidden
    */
-  public get signingManager(): SigningManager {
+  public get signingManager(): SigningManager | undefined {
     const { _signingManager: manager } = this;
-
-    if (!manager) {
-      throw new PolymeshError({
-        code: ErrorCode.General,
-        message: 'There is no Signing Manager attached to the SDK',
-      });
-    }
 
     return manager;
   }
@@ -269,6 +260,10 @@ export class Context {
    */
   public async getSigningAccounts(): Promise<Account[]> {
     const { signingManager } = this;
+
+    if (!signingManager) {
+      return [];
+    }
 
     const accounts = await signingManager.getAccounts();
 
@@ -295,6 +290,14 @@ export class Context {
    */
   public async assertHasSigningAddress(address: string): Promise<void> {
     const { signingManager } = this;
+
+    if (!signingManager) {
+      throw new PolymeshError({
+        code: ErrorCode.General,
+        message: 'There is no Signing Manager attached to the SDK',
+      });
+    }
+
     const accounts = await signingManager.getAccounts();
 
     const newSigningAddress = accounts.find(account => {
@@ -505,10 +508,10 @@ export class Context {
    *
    * Retrieve the external signer from the Signing Manager
    */
-  public getExternalSigner(): PolkadotSigner {
+  public getExternalSigner(): PolkadotSigner | undefined {
     const { signingManager } = this;
 
-    return signingManager.getExternalSigner();
+    return signingManager?.getExternalSigner();
   }
 
   /**

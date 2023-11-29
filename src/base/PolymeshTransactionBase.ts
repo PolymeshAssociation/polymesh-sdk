@@ -136,7 +136,7 @@ export abstract class PolymeshTransactionBase<
    *
    * object that performs the payload signing logic
    */
-  protected signer: PolkadotSigner;
+  protected signer?: PolkadotSigner;
 
   /**
    * @hidden
@@ -706,35 +706,42 @@ export abstract class PolymeshTransactionBase<
       context.getLatestBlock(),
     ]);
 
-    let era: ReturnType<typeof context.createType> | string = '0x00';
-    if (!mortality.immortal) {
+    let nonce: number = context.getNonce().toNumber();
+    if (nonce < 0) {
+      const nextIndex = await polymeshApi.rpc.system.accountNextIndex(signingAddress);
+      nonce = nextIndex.toNumber();
+    }
+
+    let era;
+    let blockHash;
+    if (mortality.immortal) {
+      blockHash = polymeshApi.genesisHash.toString();
+      era = '0x00';
+    } else {
       const defaultPeriod = 64;
 
       era = context.createType('ExtrinsicEra', {
         current: latestBlockNumber.toNumber(),
         period: mortality.lifetime?.toNumber() ?? defaultPeriod,
       });
+
+      blockHash = tipHash.toString();
     }
 
-    let nonce: number = context.getNonce().toNumber();
-    if (nonce < 0) {
-      const nextIndex = await polymeshApi.rpc.system.accountNextIndex(signingAddress);
-
-      nonce = nextIndex.toNumber();
-    }
-
-    const rawSignerPayload = context.createType('SignerPayload', {
+    const payloadData = {
       address: signingAddress,
       method: tx,
       nonce,
       genesisHash: polymeshApi.genesisHash.toString(),
-      blockHash: tipHash.toString(),
+      blockHash,
       specVersion: polymeshApi.runtimeVersion.specVersion,
       transactionVersion: polymeshApi.runtimeVersion.transactionVersion,
       runtimeVersion: polymeshApi.runtimeVersion,
       version: polymeshApi.extrinsicVersion,
       era,
-    });
+    };
+
+    const rawSignerPayload = context.createType('SignerPayload', payloadData);
 
     return {
       payload: rawSignerPayload.toPayload(),

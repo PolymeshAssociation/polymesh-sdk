@@ -189,17 +189,27 @@ export class Network {
   }
 
   /**
-   * Submits a transaction payload with its signature to the chain
+   * Submits a transaction payload with its signature to the chain. Signature should be hex encoded
+   *
+   * @throws is signature is not prefixed with "0x"
    */
   public async submitTransaction(
     txPayload: TransactionPayload,
-    signature: HexString
+    signature: string
   ): Promise<Record<string, unknown>> {
     const { context } = this;
     const { method, payload } = txPayload;
     const transaction = context.polymeshApi.tx(method);
 
-    transaction.addSignature(payload.address, signature, payload);
+    if (!signature.startsWith('0x')) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'Signature should be hex encoded string prefixed with "0x"',
+        data: { signature },
+      });
+    }
+
+    transaction.addSignature(payload.address, signature as HexString, payload);
 
     const info: Record<string, unknown> = {
       transactionHash: transaction.hash.toString(),

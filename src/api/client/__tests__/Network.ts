@@ -2,13 +2,13 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Network } from '~/api/client/Network';
-import { Context, PolymeshTransaction } from '~/internal';
+import { Context, PolymeshError, PolymeshTransaction } from '~/internal';
 import { eventsByArgs, extrinsicByHash } from '~/middleware/queries';
 import { CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockTxStatus } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
-import { AccountBalance, MiddlewareMetadata, TransactionPayload, TxTags } from '~/types';
+import { AccountBalance, ErrorCode, MiddlewareMetadata, TransactionPayload, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -570,7 +570,7 @@ describe('Network Class', () => {
       await expect(submitPromise).rejects.toThrow();
     });
 
-    it('should throw an error if there is an error', async () => {
+    it('should throw an error if there is an error submitting', async () => {
       const transaction = dsMockUtils.createTxMock('asset', 'registerTicker', {
         autoResolve: false,
       });
@@ -592,6 +592,33 @@ describe('Network Class', () => {
       dsMockUtils.updateTxStatus(transaction, dsMockUtils.MockTxStatus.Aborted);
 
       await expect(submitPromise).rejects.toThrow();
+    });
+
+    it("should throw an error if signature isn't hex encoded", async () => {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker', {
+        autoResolve: false,
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (context.polymeshApi as any).tx = jest.fn().mockReturnValue(transaction);
+
+      const mockPayload = {
+        payload: {},
+        rawPayload: {},
+        method: '0x01',
+        metadata: {},
+      } as unknown as TransactionPayload;
+
+      const signature = '01';
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'Signature should be hex encoded string prefixed with "0x"',
+      });
+
+      await expect(network.submitTransaction(mockPayload, signature)).rejects.toThrow(
+        expectedError
+      );
     });
   });
 });

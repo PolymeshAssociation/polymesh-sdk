@@ -196,6 +196,16 @@ describe('Context class', () => {
       expect(result[0] instanceof Account).toBe(true);
       expect(result[1] instanceof Account).toBe(true);
     });
+
+    it('should return an empty array if signing manager is not set', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+      });
+
+      const result = await context.getSigningAccounts();
+      expect(result).toEqual([]);
+    });
   });
 
   describe('method: setSigningAddress', () => {
@@ -240,9 +250,7 @@ describe('Context class', () => {
       });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect(() => (context as any).signingManager).toThrow(
-        'There is no Signing Manager attached to the SDK'
-      );
+      expect((context as any).signingManager).toBeUndefined();
 
       const signingManager = dsMockUtils.getSigningManagerInstance({
         getExternalSigner: 'signer' as PolkadotSigner,
@@ -293,13 +301,8 @@ describe('Context class', () => {
 
       await context.setSigningManager(null);
 
-      const expectedError = new PolymeshError({
-        code: ErrorCode.General,
-        message: 'There is no Signing Manager attached to the SDK',
-      });
-
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect(() => (context as any).signingManager).toThrowError(expectedError);
+      expect((context as any).signingManager).toBeUndefined();
     });
   });
 
@@ -326,6 +329,17 @@ describe('Context class', () => {
       });
 
       await expect(context.assertHasSigningAddress('otherAddress')).rejects.toThrow(expectedError);
+    });
+
+    it('should throw an error if there is not a signing manager set', async () => {
+      const expectedError = new PolymeshError({
+        code: ErrorCode.General,
+        message: 'There is no Signing Manager attached to the SDK',
+      });
+
+      await context.setSigningManager(null);
+
+      await expect(context.assertHasSigningAddress(address)).rejects.toThrow(expectedError);
     });
 
     it('should not throw an error if the account is present', async () => {
@@ -844,6 +858,15 @@ describe('Context class', () => {
       });
 
       expect(context.getExternalSigner()).toBe(signer);
+    });
+
+    it('should return undefined when no signer is set', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+      });
+
+      expect(context.getExternalSigner()).toBeUndefined();
     });
   });
 
