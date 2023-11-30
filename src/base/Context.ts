@@ -247,7 +247,7 @@ export class Context {
   /**
    * @hidden
    */
-  public get signingManager(): SigningManager | undefined {
+  private get signingManager(): SigningManager | undefined {
     const { _signingManager: manager } = this;
 
     return manager;

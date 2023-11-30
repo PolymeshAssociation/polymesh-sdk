@@ -539,8 +539,12 @@ describe('Network Class', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (context.polymeshApi as any).tx = jest.fn().mockReturnValue(transaction);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const mockPayload = { payload: {}, rawPayload: {}, method: '0x01', metadata: {} } as any;
+      const mockPayload = {
+        payload: {},
+        rawPayload: {},
+        method: '0x01',
+        metadata: {},
+      } as unknown as TransactionPayload;
 
       const signature = '0x01';
       await network.submitTransaction(mockPayload, signature);
