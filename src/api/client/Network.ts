@@ -1,4 +1,4 @@
-import { HexString } from '@polkadot/util/types';
+import { isHex } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 
 import { handleExtrinsicFailure } from '~/base/utils';
@@ -189,9 +189,9 @@ export class Network {
   }
 
   /**
-   * Submits a transaction payload with its signature to the chain. Signature should be hex encoded
+   * Submits a transaction payload with its signature to the chain. `signature` should be hex encoded
    *
-   * @throws is signature is not prefixed with "0x"
+   * @throws if the signature is not hex encoded
    */
   public async submitTransaction(
     txPayload: TransactionPayload,
@@ -202,14 +202,17 @@ export class Network {
     const transaction = context.polymeshApi.tx(method);
 
     if (!signature.startsWith('0x')) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'Signature should be hex encoded string prefixed with "0x"',
-        data: { signature },
-      });
+      signature = `0x${signature}`;
     }
 
-    transaction.addSignature(payload.address, signature as HexString, payload);
+    if (!isHex(signature))
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: '`signature` should be a hex encoded string',
+        data: { signature },
+      });
+
+    transaction.addSignature(payload.address, signature, payload);
 
     const info: Record<string, unknown> = {
       transactionHash: transaction.hash.toString(),

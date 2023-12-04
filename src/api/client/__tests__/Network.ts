@@ -531,6 +531,13 @@ describe('Network Class', () => {
       dsMockUtils.configureMocks();
     });
 
+    const mockPayload = {
+      payload: {},
+      rawPayload: {},
+      method: '0x01',
+      metadata: {},
+    } as unknown as TransactionPayload;
+
     it('should submit the transaction to the chain', async () => {
       const transaction = dsMockUtils.createTxMock('staking', 'bond', {
         autoResolve: MockTxStatus.Succeeded,
@@ -539,15 +546,21 @@ describe('Network Class', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (context.polymeshApi as any).tx = jest.fn().mockReturnValue(transaction);
 
-      const mockPayload = {
-        payload: {},
-        rawPayload: {},
-        method: '0x01',
-        metadata: {},
-      } as unknown as TransactionPayload;
-
       const signature = '0x01';
       await network.submitTransaction(mockPayload, signature);
+    });
+
+    it('should handle non prefixed hex strings', async () => {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker', {
+        autoResolve: MockTxStatus.Succeeded,
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (context.polymeshApi as any).tx = jest.fn().mockReturnValue(transaction);
+
+      const signature = '01';
+
+      await expect(network.submitTransaction(mockPayload, signature)).resolves.not.toThrow();
     });
 
     it('should throw an error if the status is rejected', async () => {
@@ -557,13 +570,6 @@ describe('Network Class', () => {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (context.polymeshApi as any).tx = jest.fn().mockReturnValue(transaction);
-
-      const mockPayload = {
-        payload: {},
-        rawPayload: {},
-        method: '0x01',
-        metadata: {},
-      } as unknown as TransactionPayload;
 
       const signature = '0x01';
 
@@ -582,13 +588,6 @@ describe('Network Class', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (context.polymeshApi as any).tx = jest.fn().mockReturnValue(transaction);
 
-      const mockPayload = {
-        payload: {},
-        rawPayload: {},
-        method: '0x01',
-        metadata: {},
-      } as unknown as TransactionPayload;
-
       const signature = '0x01';
 
       const submitPromise = network.submitTransaction(mockPayload, signature);
@@ -606,18 +605,11 @@ describe('Network Class', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (context.polymeshApi as any).tx = jest.fn().mockReturnValue(transaction);
 
-      const mockPayload = {
-        payload: {},
-        rawPayload: {},
-        method: '0x01',
-        metadata: {},
-      } as unknown as TransactionPayload;
-
-      const signature = '01';
+      const signature = 'xyz';
 
       const expectedError = new PolymeshError({
         code: ErrorCode.ValidationError,
-        message: 'Signature should be hex encoded string prefixed with "0x"',
+        message: '`signature` should be a hex encoded string',
       });
 
       await expect(network.submitTransaction(mockPayload, signature)).rejects.toThrow(

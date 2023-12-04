@@ -27,6 +27,7 @@ import {
   TransactionConstructionData,
 } from '~/types/internal';
 import { Ensured } from '~/types/utils';
+import { DEFAULT_LIFETIME_PERIOD } from '~/utils/constants';
 import { balanceToBigNumber, hashToString, u32ToBigNumber } from '~/utils/conversion';
 import { defusePromise, delay, filterEventRecords } from '~/utils/internal';
 
@@ -718,11 +719,9 @@ export abstract class PolymeshTransactionBase<
       blockHash = polymeshApi.genesisHash.toString();
       era = '0x00';
     } else {
-      const defaultPeriod = 64;
-
       era = context.createType('ExtrinsicEra', {
         current: latestBlockNumber.toNumber(),
-        period: mortality.lifetime?.toNumber() ?? defaultPeriod,
+        period: mortality.lifetime?.toNumber() ?? DEFAULT_LIFETIME_PERIOD,
       });
 
       blockHash = tipHash.toString();
