@@ -194,9 +194,39 @@ describe('MetadataEntry class', () => {
   });
 
   describe('method: exists', () => {
-    it('should return whether the MetadataEntry exists', async () => {
-      const result = await metadataEntry.exists();
-      expect(result).toBe(true);
+    beforeAll(() => {
+      jest.spyOn(utilsConversionModule, 'bigNumberToU64').mockImplementation();
+    });
+
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should return whether a global Metadata Entry exists', async () => {
+      dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalKeyToName', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      metadataEntry = new MetadataEntry({ id, ticker, type: MetadataType.Global }, context);
+
+      await expect(metadataEntry.exists()).resolves.toBeFalsy();
+
+      dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalKeyToName', {
+        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockBytes('someName')),
+      });
+      await expect(metadataEntry.exists()).resolves.toBeTruthy();
+    });
+
+    it('should return whether a local Metadata Entry exists', async () => {
+      dsMockUtils.createQueryMock('asset', 'assetMetadataLocalKeyToName', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+      await expect(metadataEntry.exists()).resolves.toBeFalsy();
+
+      dsMockUtils.createQueryMock('asset', 'assetMetadataLocalKeyToName', {
+        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockBytes('someName')),
+      });
+      await expect(metadataEntry.exists()).resolves.toBeTruthy();
     });
   });
 
