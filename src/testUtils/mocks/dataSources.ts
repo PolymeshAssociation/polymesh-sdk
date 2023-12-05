@@ -875,6 +875,7 @@ function configureContext(opts: ContextOptions): void {
     supportsSubsidy: jest.fn().mockReturnValue(opts.supportsSubsidy),
     createType: jest.fn() as jest.Mock<unknown, [unknown]>,
     getPolyxTransactions: jest.fn().mockResolvedValue(opts.getPolyxTransactions),
+    assertHasSigningAddress: jest.fn(),
   } as unknown as MockContext;
 
   contextInstance.clone = jest.fn().mockReturnValue(contextInstance);
@@ -1149,6 +1150,53 @@ export function cleanup(): void {
 
 /**
  * @hidden
+ */
+function isCodec<T extends Codec>(codec: any): codec is T {
+  return !!codec?._isCodec;
+}
+
+/**
+ * @hidden
+ */
+const createMockCodec = <T extends Codec>(codec: unknown, isEmpty: boolean): MockCodec<T> => {
+  if (isCodec<T>(codec)) {
+    return codec as MockCodec<T>;
+  }
+  const clone = cloneDeep(codec) as MockCodec<Mutable<T>>;
+
+  (clone as any)._isCodec = true;
+  clone.isEmpty = isEmpty;
+  clone.eq = jest.fn();
+
+  return clone;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+const createMockStringCodec = <T extends Codec>(value?: string | T): MockCodec<T> => {
+  if (isCodec<T>(value)) {
+    return value as MockCodec<T>;
+  }
+
+  return createMockCodec(
+    {
+      toString: () => value,
+    },
+    value === undefined
+  );
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockHash = (value?: string | Hash): MockCodec<Hash> =>
+  createMockStringCodec(value);
+
+/**
+ * @hidden
  * Reinitialize mocks
  */
 export function reset(): void {
@@ -1192,36 +1240,50 @@ export function createTxMock<
     meta = { args: [] },
   } = opts;
 
+  const mockHandleSend = (cb: StatusCallback): Promise<unknown> => {
+    if (autoResolve === MockTxStatus.Rejected) {
+      return Promise.reject(new Error('Cancelled'));
+    }
+
+    const unsubCallback = jest.fn();
+
+    txMocksData.set(runtimeModule[tx], {
+      statusCallback: cb,
+      unsubCallback,
+      resolved: !!autoResolve,
+      status: null as unknown as MockTxStatus,
+    });
+
+    if (autoResolve) {
+      process.nextTick(() => cb(statusToReceipt(autoResolve)));
+    }
+
+    return new Promise(resolve => setImmediate(() => resolve(unsubCallback)));
+  };
+
+  const mockSend = jest.fn().mockImplementation((cb: StatusCallback) => {
+    return mockHandleSend(cb);
+  });
+
+  const mockSignAndSend = jest.fn().mockImplementation((_, __, cb: StatusCallback) => {
+    return mockHandleSend(cb);
+  });
+
   const transaction = jest.fn().mockReturnValue({
     method: tx, // should be a `Call` object, but this is enough for testing
     hash: tx,
-    signAndSend: jest.fn().mockImplementation((_, __, cb: StatusCallback) => {
-      if (autoResolve === MockTxStatus.Rejected) {
-        return Promise.reject(new Error('Cancelled'));
-      }
-
-      const unsubCallback = jest.fn();
-
-      txMocksData.set(runtimeModule[tx], {
-        statusCallback: cb,
-        unsubCallback,
-        resolved: !!autoResolve,
-        status: null as unknown as MockTxStatus,
-      });
-
-      if (autoResolve) {
-        process.nextTick(() => cb(statusToReceipt(autoResolve)));
-      }
-
-      return new Promise(resolve => setImmediate(() => resolve(unsubCallback)));
-    }),
+    signAndSend: mockSignAndSend,
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
     paymentInfo: jest.fn().mockResolvedValue({ partialFee: gas }),
+    toHex: jest.fn().mockReturnValue('0x02'),
   }) as unknown as Extrinsics[ModuleName][TransactionName];
 
   (transaction as any).section = mod;
   (transaction as any).method = tx;
   (transaction as any).meta = meta;
+  (transaction as any).addSignature = jest.fn();
+  (transaction as any).send = mockSend;
+  (transaction as any).hash = createMockHash('0x01');
 
   runtimeModule[tx] = transaction;
 
@@ -1661,34 +1723,11 @@ export const setRuntimeVersion = (args: unknown): void => {
 /**
  * @hidden
  */
-function isCodec<T extends Codec>(codec: any): codec is T {
-  return !!codec?._isCodec;
-}
-
-/**
- * @hidden
- */
 function isOption<T extends Codec>(codec: any): codec is Option<T> {
   return typeof codec?.unwrap === 'function';
 }
 
 export type MockCodec<C extends Codec> = C & { eq: jest.Mock };
-
-/**
- * @hidden
- */
-const createMockCodec = <T extends Codec>(codec: unknown, isEmpty: boolean): MockCodec<T> => {
-  if (isCodec<T>(codec)) {
-    return codec as MockCodec<T>;
-  }
-  const clone = cloneDeep(codec) as MockCodec<Mutable<T>>;
-
-  (clone as any)._isCodec = true;
-  clone.isEmpty = isEmpty;
-  clone.eq = jest.fn();
-
-  return clone;
-};
 
 export const createMockTupleCodec = <T extends [...Codec[]]>(
   tup?: ITuple<T> | Readonly<[...unknown[]]>
@@ -1698,23 +1737,6 @@ export const createMockTupleCodec = <T extends [...Codec[]]>(
   }
 
   return createMockCodec<ITuple<T>>(tup, !tup);
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-const createMockStringCodec = <T extends Codec>(value?: string | T): MockCodec<T> => {
-  if (isCodec<T>(value)) {
-    return value as MockCodec<T>;
-  }
-
-  return createMockCodec(
-    {
-      toString: () => value,
-    },
-    value === undefined
-  );
 };
 
 /**
@@ -2033,13 +2055,6 @@ export const createMockPermill = (value?: BigNumber | Permill): MockCodec<Permil
  */
 export const createMockBytes = (value?: string | Bytes): MockCodec<Bytes> =>
   createMockU8aCodec(value);
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockHash = (value?: string | Hash): MockCodec<Hash> =>
-  createMockStringCodec(value);
 
 /**
  * @hidden
@@ -4361,5 +4376,49 @@ export const createMockScheduleSpec = (scheduleSpec?: {
       remaining: createMockU32(remaining),
     },
     !scheduleSpec
+  );
+};
+
+/**
+ * @hidden
+ *  NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockExtrinsicsEra = (era?: {
+  current: u32 | Parameters<typeof createMockU32>[0];
+  period: u32 | Parameters<typeof createMockU32>[0];
+}): MockCodec<any> => {
+  const { current, period } = era ?? {
+    current: createMockU32(),
+    period: createMockU32(),
+  };
+
+  return createMockCodec(
+    {
+      current,
+      period,
+    },
+    !era
+  );
+};
+
+/**
+ * @hidden
+ *  NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockSigningPayload = (mockGetters?: {
+  toPayload: () => string;
+  toRaw: () => string;
+}): MockCodec<any> => {
+  const { toPayload, toRaw } = mockGetters ?? {
+    toPayload: () => 'fakePayload',
+    toRaw: () => 'fakeRawPayload',
+  };
+
+  return createMockCodec(
+    {
+      toPayload,
+      toRaw,
+    },
+    !mockGetters
   );
 };
