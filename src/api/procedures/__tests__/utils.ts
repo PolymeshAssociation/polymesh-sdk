@@ -11,6 +11,7 @@ import {
   assertGroupDoesNotExist,
   assertInstructionValid,
   assertInstructionValidForManualExecution,
+  assertMetadataValueIsModifiable,
   assertPortfolioExists,
   assertRequirementsNotTooComplex,
   assertSecondaryAccounts,
@@ -43,6 +44,9 @@ import {
   InstructionDetails,
   InstructionStatus,
   InstructionType,
+  MetadataEntry,
+  MetadataLockStatus,
+  MetadataType,
   PermissionGroupType,
   PermissionType,
   Signer,
@@ -1719,5 +1723,94 @@ describe('getGroupFromPermissions', () => {
     });
 
     expect(result).toBeUndefined();
+  });
+});
+
+describe('assertMetadataValueIsModifiable', () => {
+  let ticker: string;
+  let id: BigNumber;
+  let type: MetadataType;
+  let metadataEntry: MetadataEntry;
+
+  beforeAll(() => {
+    entityMockUtils.initMocks();
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    ticker = 'SOME_TICKER';
+    id = new BigNumber(1);
+    type = MetadataType.Local;
+  });
+
+  afterEach(() => {
+    entityMockUtils.reset();
+  });
+
+  it('should not throw any error for valid MetadataEntry', () => {
+    metadataEntry = entityMockUtils.getMetadataEntryInstance({
+      id,
+      type,
+      ticker,
+      exists: true,
+    });
+    return expect(assertMetadataValueIsModifiable(metadataEntry)).resolves.not.toThrow();
+  });
+
+  it('should throw an error if the MetadataEntry does not exists', async () => {
+    metadataEntry = entityMockUtils.getMetadataEntryInstance({
+      id,
+      type,
+      ticker,
+      exists: false,
+    });
+    const error = new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: `${type} Metadata with ID ${id.toString()} does not exists for the Asset - ${ticker}`,
+    });
+    return expect(assertMetadataValueIsModifiable(metadataEntry)).rejects.toThrow(error);
+  });
+
+  it('should throw an error if the MetadataEntry status is Locked', async () => {
+    metadataEntry = entityMockUtils.getMetadataEntryInstance({
+      id,
+      type,
+      ticker,
+      exists: true,
+      value: {
+        value: 'SOME_VALUE',
+        expiry: null,
+        lockStatus: MetadataLockStatus.Locked,
+      },
+    });
+    const error = new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'You cannot modify a locked Metadata',
+    });
+    return expect(assertMetadataValueIsModifiable(metadataEntry)).rejects.toThrow(error);
+  });
+
+  it('should throw an error if the MetadataEntry is still in locked phase', async () => {
+    const lockedUntil = new Date('2099/01/01');
+    metadataEntry = entityMockUtils.getMetadataEntryInstance({
+      id,
+      type,
+      ticker,
+      exists: true,
+      value: {
+        value: 'SOME_VALUE',
+        expiry: null,
+        lockStatus: MetadataLockStatus.LockedUntil,
+        lockedUntil,
+      },
+    });
+    const error = new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Metadata is currently locked',
+      data: {
+        lockedUntil,
+      },
+    });
+    return expect(assertMetadataValueIsModifiable(metadataEntry)).rejects.toThrow(error);
   });
 });

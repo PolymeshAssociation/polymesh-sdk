@@ -93,6 +93,21 @@ describe('MetadataEntry class', () => {
     });
   });
 
+  describe('method: clear', () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<MetadataEntry>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { metadataEntry }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await metadataEntry.clear();
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
   describe('method: details', () => {
     afterAll(() => {
       jest.restoreAllMocks();

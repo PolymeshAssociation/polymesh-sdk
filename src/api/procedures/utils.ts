@@ -34,8 +34,8 @@ import {
   InstructionDetails,
   InstructionStatus,
   InstructionType,
+  MetadataEntry,
   MetadataLockStatus,
-  MetadataValue,
   PermissionedAccount,
   PermissionGroupType,
   PortfolioId,
@@ -714,28 +714,49 @@ export async function addManualFees(
 }
 
 /**
+ * Checks that Metadata exists and that it's value is not locked
  * @hidden
  */
-export function assertMetadataValueIsNotLocked(metadataValue: MetadataValue): void {
-  const { lockStatus } = metadataValue;
+export async function assertMetadataValueIsModifiable(metadataEntry: MetadataEntry): Promise<void> {
+  const {
+    id,
+    type,
+    asset: { ticker },
+  } = metadataEntry;
+  const [exists, metadataValue] = await Promise.all([
+    metadataEntry.exists(),
+    metadataEntry.value(),
+  ]);
 
-  if (lockStatus === MetadataLockStatus.Locked) {
+  if (!exists) {
     throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'You cannot set details of a locked Metadata',
+      code: ErrorCode.DataUnavailable,
+      message: `${type} Metadata with ID ${id.toString()} does not exists for the Asset - ${ticker}`,
     });
   }
 
-  if (lockStatus === MetadataLockStatus.LockedUntil) {
-    const { lockedUntil } = metadataValue;
-    if (new Date() < lockedUntil) {
+  if (metadataValue) {
+    const { lockStatus } = metadataValue;
+
+    if (lockStatus === MetadataLockStatus.Locked) {
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
-        message: 'Metadata is currently locked',
-        data: {
-          lockedUntil,
-        },
+        message: 'You cannot modify a locked Metadata',
       });
+    }
+
+    if (lockStatus === MetadataLockStatus.LockedUntil) {
+      const { lockedUntil } = metadataValue;
+      console.log(lockedUntil);
+      if (new Date() < lockedUntil) {
+        throw new PolymeshError({
+          code: ErrorCode.UnmetPrerequisite,
+          message: 'Metadata is currently locked',
+          data: {
+            lockedUntil,
+          },
+        });
+      }
     }
   }
 }

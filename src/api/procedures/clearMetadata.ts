@@ -1,6 +1,6 @@
-import { assertMetadataValueIsNotLocked } from '~/api/procedures/utils';
-import { FungibleAsset, MetadataEntry, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, TxTags } from '~/types';
+import { assertMetadataValueIsModifiable } from '~/api/procedures/utils';
+import { FungibleAsset, MetadataEntry, Procedure } from '~/internal';
+import { TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { metadataToMeshMetadataKey, stringToTicker } from '~/utils/conversion';
 
@@ -37,18 +37,7 @@ export async function prepareClearMetadata(
   const rawTicker = stringToTicker(ticker, context);
   const rawMetadataKey = metadataToMeshMetadataKey(type, id, context);
 
-  const [exists, currentValue] = await Promise.all([metadataEntry.exists(), metadataEntry.value()]);
-
-  if (!exists) {
-    throw new PolymeshError({
-      code: ErrorCode.DataUnavailable,
-      message: `${type} Metadata with ID ${id.toString()} does not exists for the Asset - ${ticker}`,
-    });
-  }
-
-  if (currentValue) {
-    assertMetadataValueIsNotLocked(currentValue);
-  }
+  await assertMetadataValueIsModifiable(metadataEntry);
 
   return {
     transaction: tx.asset.removeMetadataValue,
