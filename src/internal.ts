@@ -103,6 +103,7 @@ export { BaseAsset, FungibleAsset, NftCollection, Nft } from '~/api/entities/Ass
 export { MetadataEntry } from '~/api/entities/MetadataEntry';
 export { registerMetadata } from '~/api/procedures/registerMetadata';
 export { setMetadata } from '~/api/procedures/setMetadata';
+export { clearMetadata } from '~/api/procedures/clearMetadata';
 export { AuthorizationRequest } from '~/api/entities/AuthorizationRequest';
 export { DefaultTrustedClaimIssuer } from '~/api/entities/DefaultTrustedClaimIssuer';
 export { Offering } from '~/api/entities/Offering';

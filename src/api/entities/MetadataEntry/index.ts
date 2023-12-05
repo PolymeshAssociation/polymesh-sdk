@@ -1,7 +1,8 @@
+import { Bytes, Option } from '@polkadot/types-codec';
 import BigNumber from 'bignumber.js';
 
-import { BaseAsset, Context, Entity, setMetadata } from '~/internal';
-import { ProcedureMethod, SetMetadataParams } from '~/types';
+import { BaseAsset, clearMetadata, Context, Entity, setMetadata } from '~/internal';
+import { NoArgsProcedureMethod, ProcedureMethod, SetMetadataParams } from '~/types';
 import {
   bigNumberToU64,
   bytesToString,
@@ -71,6 +72,10 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
       { getProcedureAndArgs: args => [setMetadata, { ...args, metadataEntry: this }] },
       context
     );
+    this.clear = createProcedureMethod(
+      { getProcedureAndArgs: () => [clearMetadata, { metadataEntry: this }], voidArgs: true },
+      context
+    );
   }
 
   /**
@@ -79,6 +84,15 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
    * @note - Value or the details can only be set if the MetadataEntry is not locked
    */
   public set: ProcedureMethod<SetMetadataParams, MetadataEntry>;
+
+  /**
+   * Removes the asset metadata value
+   *
+   * @throws
+   *   - if the Metadata doesn't exists
+   *   - if the Metadata value is locked
+   */
+  public clear: NoArgsProcedureMethod<void>;
 
   /**
    * Retrieve name and specs for this MetadataEntry
@@ -160,7 +174,32 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
    * Determine whether this MetadataEntry exists on chain
    */
   public async exists(): Promise<boolean> {
-    return true;
+    const {
+      context: {
+        polymeshApi: {
+          query: {
+            asset: { assetMetadataGlobalKeyToName, assetMetadataLocalKeyToName },
+          },
+        },
+      },
+      id,
+      type,
+      asset: { ticker },
+      context,
+    } = this;
+
+    const rawId = bigNumberToU64(id, context);
+
+    let rawName: Option<Bytes>;
+
+    if (type === MetadataType.Global) {
+      rawName = await assetMetadataGlobalKeyToName(rawId);
+    } else {
+      const rawTicker = stringToTicker(ticker, context);
+      rawName = await assetMetadataLocalKeyToName(rawTicker, rawId);
+    }
+
+    return rawName.isSome;
   }
 
   /**

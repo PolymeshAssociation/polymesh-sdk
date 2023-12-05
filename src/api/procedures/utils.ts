@@ -34,6 +34,8 @@ import {
   InstructionDetails,
   InstructionStatus,
   InstructionType,
+  MetadataLockStatus,
+  MetadataValue,
   PermissionedAccount,
   PermissionGroupType,
   PortfolioId,
@@ -709,4 +711,31 @@ export async function addManualFees(
   });
 
   return fees.reduce((prev, { fees: nextFees }) => prev.plus(nextFees), currentFee);
+}
+
+/**
+ * @hidden
+ */
+export function assertMetadataValueIsNotLocked(metadataValue: MetadataValue): void {
+  const { lockStatus } = metadataValue;
+
+  if (lockStatus === MetadataLockStatus.Locked) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'You cannot set details of a locked Metadata',
+    });
+  }
+
+  if (lockStatus === MetadataLockStatus.LockedUntil) {
+    const { lockedUntil } = metadataValue;
+    if (new Date() < lockedUntil) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'Metadata is currently locked',
+        data: {
+          lockedUntil,
+        },
+      });
+    }
+  }
 }
