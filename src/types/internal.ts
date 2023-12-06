@@ -228,7 +228,7 @@ export interface TransactionConstructionData {
   /**
    * object that handles the payload signing logic
    */
-  signer: PolkadotSigner;
+  signer?: PolkadotSigner;
   /**
    * how long the transaction should be valid for
    */

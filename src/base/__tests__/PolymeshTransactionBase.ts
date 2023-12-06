@@ -14,7 +14,7 @@ import {
 import { latestBlockQuery } from '~/middleware/queries';
 import { fakePromise, fakePromises } from '~/testUtils';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { MockTxStatus } from '~/testUtils/mocks/dataSources';
+import { createMockSigningPayload, MockTxStatus } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import { ErrorCode, PayingAccountType, TransactionStatus, TxTags } from '~/types';
 import { tuple } from '~/types/utils';
@@ -556,6 +556,32 @@ describe('Polymesh Transaction Base class', () => {
       expect(tx.status).toBe(TransactionStatus.Failed);
     });
 
+    it('should throw error if the signing address is not available in the Context', async () => {
+      const transaction = dsMockUtils.createTxMock('staking', 'bond', {
+        autoResolve: MockTxStatus.Succeeded,
+      });
+      const args = tuple('JUST_KIDDING');
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.General,
+        message: 'The Account is not part of the Signing Manager attached to the ',
+      });
+      context = dsMockUtils.getContextInstance();
+      context.assertHasSigningAddress.mockRejectedValue(expectedError);
+
+      const tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          transaction,
+          args,
+          resolver: undefined,
+        },
+        context
+      );
+
+      return expect(() => tx.run()).rejects.toThrow(expectedError);
+    });
+
     it('should call signAndSend with era 0 when given an immortal mortality option', async () => {
       const transaction = dsMockUtils.createTxMock('staking', 'bond');
       const args = tuple('FOO');
@@ -1051,6 +1077,115 @@ describe('Polymesh Transaction Base class', () => {
       );
 
       expect(tx.isSuccess).toEqual(false);
+    });
+  });
+
+  describe('toSignablePayload', () => {
+    it('should return the payload', async () => {
+      const mockBlockNumber = dsMockUtils.createMockU32(new BigNumber(1));
+
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          nonce: new BigNumber(3),
+        },
+      });
+
+      dsMockUtils.createRpcMock('chain', 'getFinalizedHead', {
+        returnValue: dsMockUtils.createMockSignedBlock({
+          block: {
+            header: {
+              parentHash: 'hash',
+              number: dsMockUtils.createMockCompact(mockBlockNumber),
+              extrinsicsRoot: 'hash',
+              stateRoot: 'hash',
+            },
+            extrinsics: undefined,
+          },
+        }),
+      });
+
+      const genesisHash = '0x1234';
+      jest.spyOn(context.polymeshApi.genesisHash, 'toString').mockReturnValue(genesisHash);
+
+      const era = dsMockUtils.createMockExtrinsicsEra();
+
+      const mockSignerPayload = createMockSigningPayload();
+
+      when(context.createType)
+        .calledWith('SignerPayload', expect.objectContaining({ genesisHash }))
+        .mockReturnValue(mockSignerPayload);
+
+      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const args = tuple('FOO');
+
+      let tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          transaction,
+          args,
+          resolver: undefined,
+          mortality: { immortal: true },
+        },
+        context
+      );
+
+      const result = await tx.toSignablePayload();
+
+      expect(result).toMatchObject(
+        expect.objectContaining({
+          payload: 'fakePayload',
+          rawPayload: 'fakeRawPayload',
+          method: expect.stringContaining('0x'),
+          metadata: {},
+        })
+      );
+
+      when(context.createType)
+        .calledWith(
+          'ExtrinsicEra',
+          expect.objectContaining({ current: expect.any(Number), period: expect.any(Number) })
+        )
+        .mockReturnValue(era);
+
+      tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          transaction,
+          args,
+          resolver: undefined,
+          mortality: { immortal: false, lifetime: new BigNumber(32) },
+        },
+        context
+      );
+
+      await tx.toSignablePayload();
+
+      expect(context.createType).toHaveBeenCalledWith(
+        'ExtrinsicEra',
+        expect.objectContaining({ current: expect.any(Number), period: expect.any(Number) })
+      );
+
+      tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          transaction,
+          args,
+          resolver: undefined,
+          mortality: { immortal: false },
+        },
+        context
+      );
+
+      context.getNonce.mockReturnValue(new BigNumber(-1));
+      const mockIndex = dsMockUtils.createMockIndex(new BigNumber(3));
+
+      const mockNextIndex = dsMockUtils.createRpcMock('system', 'accountNextIndex', {
+        returnValue: mockIndex,
+      });
+
+      await tx.toSignablePayload();
+
+      expect(mockNextIndex).toHaveBeenCalled();
     });
   });
 });
