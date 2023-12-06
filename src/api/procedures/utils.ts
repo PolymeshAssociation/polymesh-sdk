@@ -747,7 +747,7 @@ export async function assertMetadataValueIsModifiable(metadataEntry: MetadataEnt
 
     if (lockStatus === MetadataLockStatus.LockedUntil) {
       const { lockedUntil } = metadataValue;
-      console.log(lockedUntil);
+
       if (new Date() < lockedUntil) {
         throw new PolymeshError({
           code: ErrorCode.UnmetPrerequisite,

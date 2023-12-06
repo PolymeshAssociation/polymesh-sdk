@@ -1,7 +1,14 @@
 import { Bytes, Option } from '@polkadot/types-codec';
 import BigNumber from 'bignumber.js';
 
-import { BaseAsset, clearMetadata, Context, Entity, setMetadata } from '~/internal';
+import {
+  BaseAsset,
+  clearMetadata,
+  Context,
+  Entity,
+  removeLocalMetadata,
+  setMetadata,
+} from '~/internal';
 import { NoArgsProcedureMethod, ProcedureMethod, SetMetadataParams } from '~/types';
 import {
   bigNumberToU64,
@@ -76,6 +83,10 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
       { getProcedureAndArgs: () => [clearMetadata, { metadataEntry: this }], voidArgs: true },
       context
     );
+    this.remove = createProcedureMethod(
+      { getProcedureAndArgs: () => [removeLocalMetadata, { metadataEntry: this }], voidArgs: true },
+      context
+    );
   }
 
   /**
@@ -93,6 +104,19 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
    *   - if the Metadata value is locked
    */
   public clear: NoArgsProcedureMethod<void>;
+
+  /**
+   * Removes a local Asset Metadata key along with its value
+   *
+   * @note A global Metadata key cannot be deleted
+   *
+   * @throws
+   *   - if the Metadata type is global
+   *   - if the Metadata doesn't exists
+   *   - if the Metadata value is locked
+   *   - if the Metadata is a mandatory key for any NFT Collection
+   */
+  public remove: NoArgsProcedureMethod<void>;
 
   /**
    * Retrieve name and specs for this MetadataEntry
