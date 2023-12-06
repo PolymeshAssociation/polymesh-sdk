@@ -1,4 +1,3 @@
-import { assertMetadataValueIsModifiable } from '~/api/procedures/utils';
 import { FungibleAsset, MetadataEntry, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, MetadataType, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
@@ -49,7 +48,10 @@ export async function prepareRemoveLocalMetadata(
   const rawTicker = stringToTicker(ticker, context);
   const rawKeyId = bigNumberToU64(id, context);
 
-  const collectionKey = await collectionTicker(rawTicker);
+  const [collectionKey, { canModify, reason }] = await Promise.all([
+    collectionTicker(rawTicker),
+    metadataEntry.isModifiable(),
+  ]);
 
   if (!collectionKey.isZero()) {
     const rawKeys = await collectionKeys(collectionKey);
@@ -65,7 +67,9 @@ export async function prepareRemoveLocalMetadata(
     }
   }
 
-  await assertMetadataValueIsModifiable(metadataEntry);
+  if (!canModify) {
+    throw reason;
+  }
 
   return {
     transaction: tx.asset.removeLocalMetadataKey,

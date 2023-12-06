@@ -6,11 +6,10 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { getAuthorization, Params, prepareClearMetadata } from '~/api/procedures/clearMetadata';
-import * as procedureUtilsModule from '~/api/procedures/utils';
-import { Context, MetadataEntry } from '~/internal';
+import { Context, MetadataEntry, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { MetadataType, TxTags } from '~/types';
+import { ErrorCode, MetadataType, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -39,6 +38,8 @@ describe('clearMetadata procedure', () => {
     [PolymeshPrimitivesTicker, PolymeshPrimitivesAssetMetadataAssetMetadataKey]
   >;
 
+  let isModifiableSpy: jest.SpyInstance;
+
   let metadataEntry: MetadataEntry;
 
   beforeAll(() => {
@@ -48,8 +49,6 @@ describe('clearMetadata procedure', () => {
 
     stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
     metadataToMeshMetadataKeySpy = jest.spyOn(utilsConversionModule, 'metadataToMeshMetadataKey');
-
-    jest.spyOn(procedureUtilsModule, 'assertMetadataValueIsModifiable');
   });
 
   beforeEach(() => {
@@ -60,10 +59,11 @@ describe('clearMetadata procedure', () => {
     id = new BigNumber(1);
     type = MetadataType.Local;
 
-    metadataEntry = entityMockUtils.getMetadataEntryInstance({
-      id,
-      type,
-      ticker,
+    metadataEntry = new MetadataEntry({ id, type, ticker }, mockContext);
+
+    isModifiableSpy = jest.spyOn(metadataEntry, 'isModifiable');
+    isModifiableSpy.mockResolvedValue({
+      canModify: true,
     });
 
     params = { metadataEntry };
@@ -102,6 +102,20 @@ describe('clearMetadata procedure', () => {
       args: [rawTicker, rawMetadataKey],
       resolver: undefined,
     });
+  });
+
+  it('should throw an error if MetadataEntry is not modifiable', () => {
+    const mockError = new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'Metadata does not exists',
+    });
+    isModifiableSpy.mockResolvedValue({
+      canModify: false,
+      reason: mockError,
+    });
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+    return expect(prepareClearMetadata.call(proc, params)).rejects.toThrow(mockError);
   });
 
   describe('getAuthorization', () => {

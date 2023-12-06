@@ -1,4 +1,3 @@
-import { assertMetadataValueIsModifiable } from '~/api/procedures/utils';
 import { FungibleAsset, MetadataEntry, Procedure } from '~/internal';
 import { TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
@@ -37,7 +36,11 @@ export async function prepareClearMetadata(
   const rawTicker = stringToTicker(ticker, context);
   const rawMetadataKey = metadataToMeshMetadataKey(type, id, context);
 
-  await assertMetadataValueIsModifiable(metadataEntry);
+  const { canModify, reason } = await metadataEntry.isModifiable();
+
+  if (!canModify) {
+    throw reason;
+  }
 
   return {
     transaction: tx.asset.removeMetadataValue,

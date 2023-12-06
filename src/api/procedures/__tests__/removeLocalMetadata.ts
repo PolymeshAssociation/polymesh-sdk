@@ -11,7 +11,6 @@ import {
   Params,
   prepareRemoveLocalMetadata,
 } from '~/api/procedures/removeLocalMetadata';
-import * as procedureUtilsModule from '~/api/procedures/utils';
 import { Context, MetadataEntry, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -49,6 +48,7 @@ describe('removeLocalMetadata procedure', () => {
   >;
 
   let metadataEntry: MetadataEntry;
+  let isModifiableSpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -57,8 +57,6 @@ describe('removeLocalMetadata procedure', () => {
 
     stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
     bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
-
-    jest.spyOn(procedureUtilsModule, 'assertMetadataValueIsModifiable');
   });
 
   beforeEach(() => {
@@ -69,10 +67,11 @@ describe('removeLocalMetadata procedure', () => {
     id = new BigNumber(1);
     type = MetadataType.Local;
 
-    metadataEntry = entityMockUtils.getMetadataEntryInstance({
-      id,
-      type,
-      ticker,
+    metadataEntry = new MetadataEntry({ id, type, ticker }, mockContext);
+
+    isModifiableSpy = jest.spyOn(metadataEntry, 'isModifiable');
+    isModifiableSpy.mockResolvedValue({
+      canModify: true,
     });
 
     params = { metadataEntry };
@@ -114,6 +113,21 @@ describe('removeLocalMetadata procedure', () => {
       args: [rawTicker, rawKey],
       resolver: undefined,
     });
+  });
+
+  it('should throw an error if MetadataEntry is not modifiable', async () => {
+    const mockError = new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'Metadata does not exists',
+    });
+    isModifiableSpy.mockResolvedValue({
+      canModify: false,
+      reason: mockError,
+    });
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+    await expect(prepareRemoveLocalMetadata.call(proc, params)).rejects.toThrow(mockError);
+    isModifiableSpy.mockRestore();
   });
 
   it('should throw an error if the Metadata entry is mandatory NFT collection key', () => {

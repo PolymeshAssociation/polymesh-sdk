@@ -6,10 +6,11 @@ import {
   clearMetadata,
   Context,
   Entity,
+  PolymeshError,
   removeLocalMetadata,
   setMetadata,
 } from '~/internal';
-import { NoArgsProcedureMethod, ProcedureMethod, SetMetadataParams } from '~/types';
+import { ErrorCode, NoArgsProcedureMethod, ProcedureMethod, SetMetadataParams } from '~/types';
 import {
   bigNumberToU64,
   bytesToString,
@@ -20,7 +21,7 @@ import {
 } from '~/utils/conversion';
 import { createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
-import { MetadataDetails, MetadataType, MetadataValue } from './types';
+import { MetadataDetails, MetadataLockStatus, MetadataType, MetadataValue } from './types';
 
 export interface UniqueIdentifiers {
   ticker: string;
@@ -224,6 +225,70 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
     }
 
     return rawName.isSome;
+  }
+
+  /**
+   * Check if the MetadataEntry can be modified.
+   * A MetadataEntry is modifiable if it exists and is not locked
+   */
+  public async isModifiable(): Promise<{ canModify: boolean; reason?: PolymeshError }> {
+    const {
+      id,
+      type,
+      asset: { ticker },
+    } = this;
+
+    const [exists, metadataValue] = await Promise.all([this.exists(), this.value()]);
+
+    if (!exists) {
+      return {
+        canModify: false,
+        reason: new PolymeshError({
+          code: ErrorCode.DataUnavailable,
+          message: 'Metadata does not exists for the Asset',
+          data: {
+            ticker,
+            type,
+            id,
+          },
+        }),
+      };
+    }
+
+    if (metadataValue) {
+      const { lockStatus } = metadataValue;
+
+      if (lockStatus === MetadataLockStatus.Locked) {
+        return {
+          canModify: false,
+          reason: new PolymeshError({
+            code: ErrorCode.UnmetPrerequisite,
+            message: 'Metadata is locked and cannot be modified',
+          }),
+        };
+      }
+
+      if (lockStatus === MetadataLockStatus.LockedUntil) {
+        const { lockedUntil } = metadataValue;
+
+        if (new Date() < lockedUntil) {
+          return {
+            canModify: false,
+            reason: new PolymeshError({
+              code: ErrorCode.UnmetPrerequisite,
+              message: 'Metadata is currently locked',
+              data: {
+                lockedUntil,
+              },
+            }),
+          };
+        }
+      }
+    }
+
+    return {
+      canModify: true,
+    };
   }
 
   /**

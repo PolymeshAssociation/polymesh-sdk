@@ -34,8 +34,6 @@ import {
   InstructionDetails,
   InstructionStatus,
   InstructionType,
-  MetadataEntry,
-  MetadataLockStatus,
   PermissionedAccount,
   PermissionGroupType,
   PortfolioId,
@@ -711,52 +709,4 @@ export async function addManualFees(
   });
 
   return fees.reduce((prev, { fees: nextFees }) => prev.plus(nextFees), currentFee);
-}
-
-/**
- * Checks that Metadata exists and that it's value is not locked
- * @hidden
- */
-export async function assertMetadataValueIsModifiable(metadataEntry: MetadataEntry): Promise<void> {
-  const {
-    id,
-    type,
-    asset: { ticker },
-  } = metadataEntry;
-  const [exists, metadataValue] = await Promise.all([
-    metadataEntry.exists(),
-    metadataEntry.value(),
-  ]);
-
-  if (!exists) {
-    throw new PolymeshError({
-      code: ErrorCode.DataUnavailable,
-      message: `${type} Metadata with ID ${id.toString()} does not exists for the Asset - ${ticker}`,
-    });
-  }
-
-  if (metadataValue) {
-    const { lockStatus } = metadataValue;
-
-    if (lockStatus === MetadataLockStatus.Locked) {
-      throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message: 'You cannot modify a locked Metadata',
-      });
-    }
-
-    if (lockStatus === MetadataLockStatus.LockedUntil) {
-      const { lockedUntil } = metadataValue;
-
-      if (new Date() < lockedUntil) {
-        throw new PolymeshError({
-          code: ErrorCode.UnmetPrerequisite,
-          message: 'Metadata is currently locked',
-          data: {
-            lockedUntil,
-          },
-        });
-      }
-    }
-  }
 }
