@@ -115,6 +115,25 @@ describe('removeLocalMetadata procedure', () => {
     });
   });
 
+  it('should throw an error if MetadataEntry is of global type', async () => {
+    const mockError = new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Global Metadata keys cannot be deleted',
+    });
+    isModifiableSpy.mockResolvedValue({
+      canModify: false,
+      reason: mockError,
+    });
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+    await expect(
+      prepareRemoveLocalMetadata.call(proc, {
+        metadataEntry: new MetadataEntry({ id, ticker, type: MetadataType.Global }, mockContext),
+      })
+    ).rejects.toThrow(mockError);
+    isModifiableSpy.mockRestore();
+  });
+
   it('should throw an error if MetadataEntry is not modifiable', async () => {
     const mockError = new PolymeshError({
       code: ErrorCode.DataUnavailable,
