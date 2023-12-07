@@ -143,6 +143,9 @@ export const processType = (rawType: TypeDef, name: string): TransactionArgument
   }
 };
 
+/**
+ * @hidden
+ */
 export const handleExtrinsicFailure = (
   reject: (reason?: unknown) => void,
   error: SpRuntimeDispatchError,
