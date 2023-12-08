@@ -4,7 +4,6 @@ module.exports = {
     'master',
     {
       name: 'patch',
-      prerelease: true,
       range: '22.x',
     },
     {
