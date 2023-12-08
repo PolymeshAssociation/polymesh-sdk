@@ -1,4 +1,3 @@
-import { hexStripPrefix } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 
 import {
@@ -36,7 +35,6 @@ import {
   accountIdToString,
   addressToKey,
   extrinsicIdentifierToTxTag,
-  keyToAddress,
   stringToAccountId,
   stringToHash,
   txTagToExtrinsicIdentifier,
@@ -239,7 +237,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       extrinsicsByArgs(
         {
           blockId: blockNumber ? blockNumber.toString() : undefined,
-          address: hexStripPrefix(addressToKey(address, context)),
+          address,
           moduleId,
           callId,
           success: successFilter,
@@ -257,7 +255,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       ({
         blockId,
         extrinsicIdx,
-        address: rawAddress,
+        address: signerAddress,
         nonce,
         moduleId: extrinsicModuleId,
         callId: extrinsicCallId,
@@ -266,21 +264,25 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         specVersionId,
         extrinsicHash,
         block,
-      }) => ({
-        blockNumber: new BigNumber(blockId),
-        blockHash: block!.hash,
-        extrinsicIdx: new BigNumber(extrinsicIdx),
-        address: rawAddress ? keyToAddress(rawAddress, context) : null,
-        nonce: nonce ? new BigNumber(nonce) : null,
-        txTag: extrinsicIdentifierToTxTag({
-          moduleId: extrinsicModuleId as ModuleIdEnum,
-          callId: extrinsicCallId as CallIdEnum,
-        }),
-        params: JSON.parse(paramsTxt),
-        success: !!txSuccess,
-        specVersionId: new BigNumber(specVersionId),
-        extrinsicHash: extrinsicHash!,
-      })
+      }) => {
+        const { hash, datetime } = block!;
+        return {
+          blockNumber: new BigNumber(blockId),
+          blockHash: hash,
+          blockDate: new Date(`${datetime}Z`),
+          extrinsicIdx: new BigNumber(extrinsicIdx),
+          address: signerAddress!,
+          nonce: nonce ? new BigNumber(nonce) : null,
+          txTag: extrinsicIdentifierToTxTag({
+            moduleId: extrinsicModuleId as ModuleIdEnum,
+            callId: extrinsicCallId as CallIdEnum,
+          }),
+          params: JSON.parse(paramsTxt),
+          success: !!txSuccess,
+          specVersionId: new BigNumber(specVersionId),
+          extrinsicHash: extrinsicHash!,
+        };
+      }
     );
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
 

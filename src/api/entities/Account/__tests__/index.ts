@@ -44,9 +44,7 @@ describe('Account class', () => {
   let address: string;
   let account: Account;
   let assertAddressValidSpy: jest.SpyInstance;
-  let addressToKeySpy: jest.SpyInstance;
   let getSecondaryAccountPermissionsSpy: jest.SpyInstance;
-  let keyToAddressSpy: jest.SpyInstance;
   let txTagToExtrinsicIdentifierSpy: jest.SpyInstance;
 
   beforeAll(() => {
@@ -56,12 +54,11 @@ describe('Account class', () => {
     assertAddressValidSpy = jest
       .spyOn(utilsInternalModule, 'assertAddressValid')
       .mockImplementation();
-    addressToKeySpy = jest.spyOn(utilsConversionModule, 'addressToKey').mockImplementation();
+    jest.spyOn(utilsConversionModule, 'addressToKey').mockImplementation();
     getSecondaryAccountPermissionsSpy = jest.spyOn(
       utilsInternalModule,
       'getSecondaryAccountPermissions'
     );
-    keyToAddressSpy = jest.spyOn(utilsConversionModule, 'keyToAddress');
     txTagToExtrinsicIdentifierSpy = jest.spyOn(utilsConversionModule, 'txTagToExtrinsicIdentifier');
 
     address = 'someAddress';
@@ -270,11 +267,7 @@ describe('Account class', () => {
       const blockNumber2 = new BigNumber(2);
       const blockHash1 = 'someHash';
       const blockHash2 = 'otherHash';
-      const addressKey = 'd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d';
       const order = ExtrinsicsOrderBy.CreatedAtAsc;
-
-      addressToKeySpy.mockReturnValue(addressKey);
-      keyToAddressSpy.mockReturnValue(address);
 
       when(txTagToExtrinsicIdentifierSpy).calledWith(tag).mockReturnValue({
         moduleId,
@@ -323,7 +316,7 @@ describe('Account class', () => {
         extrinsicsByArgs(
           {
             blockId: blockNumber1.toString(),
-            address: addressKey,
+            address,
             moduleId,
             callId,
             success: undefined,
@@ -363,7 +356,7 @@ describe('Account class', () => {
       expect(result.data[0].blockHash).toEqual(blockHash1);
       expect(result.data[1].blockHash).toEqual(blockHash2);
       expect(result.data[0].address).toEqual(address);
-      expect(result.data[1].address).toBeNull();
+      expect(result.data[1].address).toBeUndefined();
       expect(result.data[0].nonce).toEqual(new BigNumber(1));
       expect(result.data[1].nonce).toBeNull();
       expect(result.data[0].success).toBeFalsy();
@@ -375,7 +368,7 @@ describe('Account class', () => {
         extrinsicsByArgs(
           {
             blockId: blockNumber1.toString(),
-            address: addressKey,
+            address,
             moduleId,
             callId,
             success: 0,
@@ -402,7 +395,7 @@ describe('Account class', () => {
       expect(result.data[0].blockHash).toEqual(blockHash1);
       expect(result.data[1].blockHash).toEqual(blockHash2);
       expect(result.data[0].address).toEqual(address);
-      expect(result.data[1].address).toBeNull();
+      expect(result.data[1].address).toBeUndefined();
       expect(result.data[0].success).toBeFalsy();
       expect(result.data[1].success).toBeTruthy();
       expect(result.count).toEqual(new BigNumber(20));
@@ -412,7 +405,7 @@ describe('Account class', () => {
         extrinsicsByArgs(
           {
             blockId: undefined,
-            address: addressKey,
+            address,
             moduleId: undefined,
             callId: undefined,
             success: 1,
@@ -441,7 +434,7 @@ describe('Account class', () => {
         extrinsicsByArgs(
           {
             blockId: undefined,
-            address: addressKey,
+            address,
             moduleId: undefined,
             callId: undefined,
             success: undefined,
