@@ -3,8 +3,9 @@ module.exports = {
   branches: [
     'master',
     {
-      name: '22-patch',
+      name: 'patch',
       prerelease: true,
+      range: '22.x',
     },
     {
       name: 'beta',
