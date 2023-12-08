@@ -2,7 +2,10 @@ module.exports = {
   repositoryUrl: 'https://github.com/PolymeshAssociation/polymesh-sdk.git',
   branches: [
     'master',
-    '22-patch',
+    {
+      name: 'patch',
+      range: '22.x',
+    },
     {
       name: 'beta',
       prerelease: true,
