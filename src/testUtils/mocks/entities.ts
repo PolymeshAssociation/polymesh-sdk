@@ -76,6 +76,7 @@ import {
   PermissionedAccount,
   PermissionGroups,
   PermissionGroupType,
+  PolymeshError,
   PortfolioBalance,
   PortfolioCollection,
   ProposalStatus,
@@ -220,6 +221,7 @@ interface MetadataEntryOptions extends EntityOptions {
   type?: MetadataType;
   details?: EntityGetter<MetadataDetails>;
   value?: EntityGetter<MetadataValue | null>;
+  isModifiable?: EntityGetter<{ canModify: boolean; reason?: PolymeshError }>;
 }
 
 interface AuthorizationRequestOptions extends EntityOptions {
@@ -1312,6 +1314,7 @@ const MockMetadataEntryClass = createMockEntityClass<MetadataEntryOptions>(
     type!: MetadataType;
     details!: jest.SpyInstance;
     value!: jest.SpyInstance;
+    isModifiable!: jest.SpyInstance;
 
     /**
      * @hidden
@@ -1323,13 +1326,21 @@ const MockMetadataEntryClass = createMockEntityClass<MetadataEntryOptions>(
     /**
      * @hidden
      */
-    public configure({ id, ticker, type, details, value }: Required<MetadataEntryOptions>) {
+    public configure({
+      id,
+      ticker,
+      type,
+      details,
+      value,
+      isModifiable,
+    }: Required<MetadataEntryOptions>) {
       this.uuid = 'metadataEntry';
       this.id = id;
       this.asset = getFungibleAssetInstance({ ticker });
       this.type = type;
       this.details = createEntityGetterMock(details);
       this.value = createEntityGetterMock(value);
+      this.isModifiable = createEntityGetterMock(isModifiable);
     }
   },
   () => ({
@@ -1347,6 +1358,9 @@ const MockMetadataEntryClass = createMockEntityClass<MetadataEntryOptions>(
     ticker: 'SOME_TICKER',
     id: new BigNumber(1),
     type: MetadataType.Local,
+    isModifiable: {
+      canModify: true,
+    },
   }),
   ['MetadataEntry']
 );
