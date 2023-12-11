@@ -1,11 +1,12 @@
 /* eslint-disable */
-const http = require('http');
 const path = require('path');
 const fs = require('fs');
 const rimraf = require('rimraf');
 const util = require('util');
 const { forEach, camelCase, mapKeys } = require('lodash');
-const { NODE_URL, SCHEMA_PORT } = require('./consts');
+
+const { typesBundle } = require('@polymeshassociation/polymesh-types');
+const types = require('@polymeshassociation/polymesh-types/types/6.1.x.json');
 
 const definitionsDir = path.resolve('src', 'polkadot');
 const typesDir = path.resolve(definitionsDir, 'polymesh');
@@ -111,17 +112,15 @@ function writeDefinitions(schemaObj) {
   fs.writeFileSync(path.resolve(definitionsDir, 'definitions.ts'), defExports);
 }
 
-http.get(`http://${NODE_URL}:${SCHEMA_PORT}/polymesh_schema.json`, res => {
-  const chunks = [];
-  res.on('data', chunk => {
-    chunks.push(chunk);
-  });
+(() => {
+  const { rpc, runtime, signedExtensions } = typesBundle.spec.polymesh_dev;
+  const schema = {
+    types,
+    rpc,
+    runtime,
+    signedExtensions,
+  };
 
-  res.on('end', () => {
-    const schema = Buffer.concat(chunks);
-    const schemaObj = JSON.parse(schema);
-    transformSchema(schemaObj);
-
-    writeDefinitions(schemaObj);
-  });
-});
+  transformSchema(schema);
+  writeDefinitions(schema);
+})();
