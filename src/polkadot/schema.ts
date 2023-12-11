@@ -766,6 +766,9 @@ export default {
         'ContractsPutCode',
         'CorporateBallotAttachBallot',
         'CapitalDistributionDistribute',
+        'NFTCreateCollection',
+        'NFTMint',
+        'IdentityCreateChildIdentity',
       ],
     },
     CddStatus: {
@@ -1109,7 +1112,6 @@ export default {
       self_transfer: 'bool',
       invalid_receiver_cdd: 'bool',
       invalid_sender_cdd: 'bool',
-      missing_scope_claim: 'bool',
       receiver_custodian_error: 'bool',
       sender_custodian_error: 'bool',
       sender_insufficient_balance: 'bool',
@@ -1118,6 +1120,7 @@ export default {
       transfer_condition_result: 'Vec<TransferConditionResult>',
       compliance_result: 'AssetComplianceResult',
       result: 'bool',
+      consumed_weight: 'Option<Weight>',
     },
     PortfolioValidityResult: {
       receiver_is_same_portfolio: 'bool',
@@ -1212,6 +1215,16 @@ export default {
       offChainAssets: 'u32',
       consumedWeight: 'Weight',
       error: 'Option<String>',
+    },
+    AssetCount: {
+      fungible_tokens: 'u32',
+      non_fungible_tokens: 'u32',
+      off_chain_assets: 'u32',
+    },
+    AffirmationCount: {
+      sender_asset_count: 'AssetCount',
+      receiver_asset_count: 'AssetCount',
+      offchain_count: 'u32',
     },
   },
   rpc: {
@@ -1547,6 +1560,28 @@ export default {
         ],
         type: 'ExecuteInstructionInfo',
       },
+      getAffirmationCount: {
+        description:
+          'Returns an instance of AffirmationCount, which holds the asset count for both the sender and receiver and the number of offchain assets in the instruction',
+        params: [
+          {
+            name: 'instruction_id',
+            type: 'InstructionId',
+            isOptional: false,
+          },
+          {
+            name: 'portfolios',
+            type: 'Vec<PortfolioId>',
+            isOptional: false,
+          },
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
+          },
+        ],
+        type: 'AffirmationCount',
+      },
     },
   },
   runtime: {
@@ -1608,7 +1643,7 @@ export default {
     IdentityApi: [
       {
         methods: {
-          is_identity_has_valid_ddd: {
+          is_identity_has_valid_cdd: {
             description: 'use to tell whether the given did has valid cdd claim or not',
             params: [
               {
@@ -1731,7 +1766,7 @@ export default {
         methods: {
           get_execute_instruction_info: {
             description:
-              'Returns an ExecuteInstructionInfo instance, containing the consumed weight and the number of tokens in the instruction.',
+              'Returns an ExecuteInstructionInfo instance containing the consumed weight and the number of tokens in the instruction.',
             params: [
               {
                 name: 'instruction_id',
@@ -1739,6 +1774,21 @@ export default {
               },
             ],
             type: 'ExecuteInstructionInfo',
+          },
+          get_affirmation_count: {
+            description:
+              'Returns an AffirmationCount instance containing the number of assets being sent/received from portfolios, and the number of off-chain assets in the instruction.',
+            params: [
+              {
+                name: 'instruction_id',
+                type: 'InstructionId',
+              },
+              {
+                name: 'portfolios',
+                type: 'Vec<PortfolioId>',
+              },
+            ],
+            type: 'AffirmationCount',
           },
         },
         version: 1,

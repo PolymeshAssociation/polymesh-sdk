@@ -3439,7 +3439,6 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
         TransferError.SelfTransfer,
         TransferError.InvalidReceiverCdd,
         TransferError.InvalidSenderCdd,
-        TransferError.ScopeClaimMissing,
         TransferError.InsufficientBalance,
         TransferError.TransfersFrozen,
         TransferError.InvalidSenderPortfolio,

@@ -1141,10 +1141,12 @@ import type {
 } from '@polkadot/types/interfaces/xcm';
 import type {
   AGId,
+  AffirmationCount,
   AffirmationStatus,
   AgentGroup,
   AssetCompliance,
   AssetComplianceResult,
+  AssetCount,
   AssetDidResult,
   AssetIdentifier,
   AssetMetadataDescription,
@@ -1369,6 +1371,7 @@ declare module '@polkadot/types/types/registry' {
     ActiveIndex: ActiveIndex;
     ActiveRecovery: ActiveRecovery;
     Address: Address;
+    AffirmationCount: AffirmationCount;
     AffirmationStatus: AffirmationStatus;
     AgentGroup: AgentGroup;
     AGId: AGId;
@@ -1386,6 +1389,7 @@ declare module '@polkadot/types/types/registry' {
     AssetBalance: AssetBalance;
     AssetCompliance: AssetCompliance;
     AssetComplianceResult: AssetComplianceResult;
+    AssetCount: AssetCount;
     AssetDestroyWitness: AssetDestroyWitness;
     AssetDetails: AssetDetails;
     AssetDidResult: AssetDidResult;
