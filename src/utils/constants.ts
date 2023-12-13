@@ -34,6 +34,11 @@ export const DEFAULT_GQL_PAGE_SIZE = 25;
  */
 export const MAX_PAGE_SIZE = new BigNumber(1000);
 
+/**
+ * The number of blocks a transaction is valid for by default
+ */
+export const DEFAULT_LIFETIME_PERIOD = 64;
+
 const didTypes = ['PolymeshPrimitivesIdentityId'];
 
 const addressTypes = [

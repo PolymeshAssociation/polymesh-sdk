@@ -3,6 +3,7 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
+import { handleExtrinsicFailure } from '~/base/utils';
 import { Context, PolymeshError, PolymeshTransaction, PolymeshTransactionBase } from '~/internal';
 import { ErrorCode, MapTxData } from '~/types';
 import {
@@ -254,7 +255,7 @@ export class PolymeshTransactionBatch<
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const dispatchError = (failedData as any)[1];
 
-      this.handleExtrinsicFailure(resolve, reject, dispatchError, { failedIndex });
+      handleExtrinsicFailure(reject, dispatchError, { failedIndex });
     } else {
       resolve(receipt);
     }
