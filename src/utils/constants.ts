@@ -100,7 +100,7 @@ export const ROOT_TYPES = rootTypes;
 /**
  * The Polymesh RPC node version range that is compatible with this version of the SDK
  */
-export const SUPPORTED_NODE_VERSION_RANGE = '5.4 || 6.0';
+export const SUPPORTED_NODE_VERSION_RANGE = '6.0 || 6.1';
 
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 export const SUPPORTED_NODE_SEMVER = coerce(SUPPORTED_NODE_VERSION_RANGE)!.version;
@@ -108,7 +108,7 @@ export const SUPPORTED_NODE_SEMVER = coerce(SUPPORTED_NODE_VERSION_RANGE)!.versi
 /**
  * The Polymesh chain spec version range that is compatible with this version of the SDK
  */
-export const SUPPORTED_SPEC_VERSION_RANGE = '5.4 || 6.0';
+export const SUPPORTED_SPEC_VERSION_RANGE = '6.0 || 6.1';
 
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 export const SUPPORTED_SPEC_SEMVER = coerce(SUPPORTED_SPEC_VERSION_RANGE)!.version;
