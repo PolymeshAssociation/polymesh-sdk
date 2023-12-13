@@ -251,10 +251,14 @@ import type {
   PolymeshCommonUtilitiesRelayerRawEvent,
   PolymeshCommonUtilitiesSettlementRawEvent,
   PolymeshCommonUtilitiesStatisticsEvent,
+  PolymeshContractsApi,
+  PolymeshContractsApiCodeHash,
   PolymeshContractsCall,
   PolymeshContractsChainExtensionExtrinsicId,
+  PolymeshContractsChainVersion,
   PolymeshContractsError,
-  PolymeshContractsEvent,
+  PolymeshContractsNextUpgrade,
+  PolymeshContractsRawEvent,
   PolymeshExtensionsCheckWeight,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetAssetType,
@@ -621,10 +625,14 @@ declare module '@polkadot/types/types/registry' {
     PolymeshCommonUtilitiesRelayerRawEvent: PolymeshCommonUtilitiesRelayerRawEvent;
     PolymeshCommonUtilitiesSettlementRawEvent: PolymeshCommonUtilitiesSettlementRawEvent;
     PolymeshCommonUtilitiesStatisticsEvent: PolymeshCommonUtilitiesStatisticsEvent;
+    PolymeshContractsApi: PolymeshContractsApi;
+    PolymeshContractsApiCodeHash: PolymeshContractsApiCodeHash;
     PolymeshContractsCall: PolymeshContractsCall;
     PolymeshContractsChainExtensionExtrinsicId: PolymeshContractsChainExtensionExtrinsicId;
+    PolymeshContractsChainVersion: PolymeshContractsChainVersion;
     PolymeshContractsError: PolymeshContractsError;
-    PolymeshContractsEvent: PolymeshContractsEvent;
+    PolymeshContractsNextUpgrade: PolymeshContractsNextUpgrade;
+    PolymeshContractsRawEvent: PolymeshContractsRawEvent;
     PolymeshExtensionsCheckWeight: PolymeshExtensionsCheckWeight;
     PolymeshPrimitivesAgentAgentGroup: PolymeshPrimitivesAgentAgentGroup;
     PolymeshPrimitivesAssetAssetType: PolymeshPrimitivesAssetAssetType;

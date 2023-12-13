@@ -1099,6 +1099,14 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       NFTNotFound: AugmentedError<ApiType>;
       /**
+       * An overflow while calculating the updated supply.
+       **/
+      SupplyOverflow: AugmentedError<ApiType>;
+      /**
+       * An underflow while calculating the updated supply.
+       **/
+      SupplyUnderflow: AugmentedError<ApiType>;
+      /**
        * At least one of the metadata keys has not been registered.
        **/
       UnregisteredMetadataKey: AugmentedError<ApiType>;
@@ -1233,6 +1241,10 @@ declare module '@polkadot/api-base/types/errors' {
     };
     polymeshContracts: {
       /**
+       * The caller is not a primary key.
+       **/
+      CallerNotAPrimaryKey: AugmentedError<ApiType>;
+      /**
        * Data left in input when decoding arguments of a call.
        **/
       DataLeftAfterDecoding: AugmentedError<ApiType>;
@@ -1246,6 +1258,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InstantiatorWithNoIdentity: AugmentedError<ApiType>;
       /**
+       * Only future chain versions are allowed.
+       **/
+      InvalidChainVersion: AugmentedError<ApiType>;
+      /**
        * Invalid `func_id` provided from contract.
        **/
       InvalidFuncId: AugmentedError<ApiType>;
@@ -1253,6 +1269,14 @@ declare module '@polkadot/api-base/types/errors' {
        * Failed to decode a valid `RuntimeCall`.
        **/
       InvalidRuntimeCall: AugmentedError<ApiType>;
+      /**
+       * Secondary key permissions are missing.
+       **/
+      MissingKeyPermissions: AugmentedError<ApiType>;
+      /**
+       * There are no api upgrades supported for the contract.
+       **/
+      NoUpgradesSupported: AugmentedError<ApiType>;
       /**
        * Output data returned from the ChainExtension was too large.
        **/
@@ -1295,6 +1319,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Only owned NFTs can be moved between portfolios.
        **/
       InvalidTransferNFTNotOwned: AugmentedError<ApiType>;
+      /**
+       * The caller doesn't have permission to create portfolios on the owner's behalf.
+       **/
+      MissingOwnersPermission: AugmentedError<ApiType>;
       /**
        * The NFT is already locked.
        **/
