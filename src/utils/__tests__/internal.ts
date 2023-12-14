@@ -1158,7 +1158,7 @@ describe('assertExpectedSqVersion', () => {
       subqueryVersions: {
         nodes: [
           {
-            version: '10.1.0',
+            version: '12.2.0-alpha.2',
           },
         ],
       },
