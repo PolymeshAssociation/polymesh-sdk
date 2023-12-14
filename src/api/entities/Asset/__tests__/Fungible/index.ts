@@ -781,6 +781,8 @@ describe('Asset class', () => {
               identityId: 'SOME_OTHER_DID',
               number: 1,
             },
+            instructionId: '2',
+            instructionMemo: 'Some memo',
             eventIdx: 1,
             extrinsicIdx: 1,
             createdBlock: {
@@ -821,6 +823,8 @@ describe('Asset class', () => {
       expect(result.data[2].event).toEqual(transactionResponse.nodes[2].eventId);
       expect(result.data[2].from).toBeInstanceOf(DefaultPortfolio);
       expect(result.data[2].to).toBeInstanceOf(NumberedPortfolio);
+      expect(result.data[2].instructionId).toEqual(new BigNumber(2));
+      expect(result.data[2].instructionMemo).toEqual('Some memo');
 
       expect(result.count).toEqual(transactionResponse.totalCount);
       expect(result.next).toEqual(new BigNumber(3));
