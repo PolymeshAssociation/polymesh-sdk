@@ -1254,6 +1254,8 @@ export function assetTransactionQuery(
           eventIdx
           extrinsicIdx
           fundingRound
+          instructionId
+          instructionMemo
           datetime
           createdBlock {
             blockId
