@@ -1,12 +1,10 @@
 import { createAuthorizationResolver } from '~/api/procedures/utils';
-import { PolymeshError, Procedure } from '~/internal';
+import { Procedure } from '~/internal';
 import {
-  AttestPrimaryKeyRotationAuthorizationData,
   AttestPrimaryKeyRotationParams,
   Authorization,
   AuthorizationRequest,
   AuthorizationType,
-  ErrorCode,
   RoleType,
   TxTags,
 } from '~/types';
@@ -16,7 +14,7 @@ import {
   expiryToMoment,
   signerToSignatory,
 } from '~/utils/conversion';
-import { asAccount, asIdentity } from '~/utils/internal';
+import { asAccount, asIdentity, throwIfPendingAuthorizationExists } from '~/utils/internal';
 
 /**
  * @hidden
@@ -47,28 +45,21 @@ export async function prepareAttestPrimaryKeyRotation(
     includeExpired: false,
   });
 
-  const pendingAuthorization = authorizationRequests.find(authorizationRequest => {
-    const { value } = authorizationRequest.data as AttestPrimaryKeyRotationAuthorizationData;
-    return value.did === targetIdentity.did;
-  });
-
-  if (pendingAuthorization) {
-    throw new PolymeshError({
-      code: ErrorCode.NoDataChange,
-      message:
-        'The target Account already has a pending attestation to become the primary key of the target Identity',
-      data: {
-        pendingAuthorization,
-      },
-    });
-  }
-  const rawSignatory = signerToSignatory(target, context);
-
-  const authRequest: Authorization = {
+  const authorization: Authorization = {
     type: AuthorizationType.AttestPrimaryKeyRotation,
     value: targetIdentity,
   };
-  const rawAuthorizationData = authorizationToAuthorizationData(authRequest, context);
+
+  throwIfPendingAuthorizationExists({
+    authorizationRequests,
+    message:
+      'The target Account already has a pending attestation to become the primary key of the target Identity',
+    authorization,
+  });
+
+  const rawSignatory = signerToSignatory(target, context);
+
+  const rawAuthorizationData = authorizationToAuthorizationData(authorization, context);
 
   const rawExpiry = expiryToMoment(expiry, context);
 
@@ -76,7 +67,7 @@ export async function prepareAttestPrimaryKeyRotation(
     transaction: addAuthorization,
     args: [rawSignatory, rawAuthorizationData, rawExpiry],
     resolver: createAuthorizationResolver(
-      authRequest,
+      authorization,
       issuerIdentity,
       target,
       expiry ?? null,

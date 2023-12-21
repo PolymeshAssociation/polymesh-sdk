@@ -1,5 +1,5 @@
 import { createAuthorizationResolver } from '~/api/procedures/utils';
-import { AuthorizationRequest, FungibleAsset, Procedure } from '~/internal';
+import { AuthorizationRequest, FungibleAsset, Identity, Procedure } from '~/internal';
 import {
   Authorization,
   AuthorizationType,
@@ -14,7 +14,7 @@ import {
   signerToString,
   signerValueToSignatory,
 } from '~/utils/conversion';
-import { optionize } from '~/utils/internal';
+import { optionize, throwIfPendingAuthorizationExists } from '~/utils/internal';
 
 /**
  * @hidden
@@ -36,24 +36,38 @@ export async function prepareTransferAssetOwnership(
   } = this;
   const { ticker, target, expiry = null } = args;
   const issuer = await context.getSigningIdentity();
-  const targetIdentity = await context.getIdentity(target);
+  const targetIdentity =
+    typeof target === 'string' ? new Identity({ did: target }, context) : target;
+
+  const authorizationRequests = await targetIdentity.authorizations.getReceived({
+    type: AuthorizationType.TransferAssetOwnership,
+    includeExpired: false,
+  });
 
   const rawSignatory = signerValueToSignatory(
     { type: SignerType.Identity, value: signerToString(target) },
     context
   );
 
-  const authRequest: Authorization = {
+  const authorization: Authorization = {
     type: AuthorizationType.TransferAssetOwnership,
     value: ticker,
   };
-  const rawAuthorizationData = authorizationToAuthorizationData(authRequest, context);
+
+  throwIfPendingAuthorizationExists({
+    authorizationRequests,
+    issuer,
+    message: 'The target Identity already has a pending transfer Asset Ownership request',
+    authorization,
+  });
+
+  const rawAuthorizationData = authorizationToAuthorizationData(authorization, context);
   const rawExpiry = optionize(dateToMoment)(expiry, context);
 
   return {
     transaction: tx.identity.addAuthorization,
     args: [rawSignatory, rawAuthorizationData, rawExpiry],
-    resolver: createAuthorizationResolver(authRequest, issuer, targetIdentity, expiry, context),
+    resolver: createAuthorizationResolver(authorization, issuer, targetIdentity, expiry, context),
   };
 }
 

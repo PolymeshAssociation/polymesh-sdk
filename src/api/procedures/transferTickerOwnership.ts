@@ -1,5 +1,11 @@
 import { createAuthorizationResolver } from '~/api/procedures/utils';
-import { AuthorizationRequest, PolymeshError, Procedure, TickerReservation } from '~/internal';
+import {
+  AuthorizationRequest,
+  Identity,
+  PolymeshError,
+  Procedure,
+  TickerReservation,
+} from '~/internal';
 import {
   Authorization,
   AuthorizationType,
@@ -17,7 +23,7 @@ import {
   signerToString,
   signerValueToSignatory,
 } from '~/utils/conversion';
-import { optionize } from '~/utils/internal';
+import { optionize, throwIfPendingAuthorizationExists } from '~/utils/internal';
 
 /**
  * @hidden
@@ -39,11 +45,29 @@ export async function prepareTransferTickerOwnership(
   } = this;
   const { ticker, target, expiry = null } = args;
   const issuer = await context.getSigningIdentity();
-  const targetIdentity = await context.getIdentity(target);
+  const targetIdentity =
+    typeof target === 'string' ? new Identity({ did: target }, context) : target;
+
+  const authorization: Authorization = {
+    type: AuthorizationType.TransferTicker,
+    value: ticker,
+  };
+
+  const authorizationRequests = await targetIdentity.authorizations.getReceived({
+    type: AuthorizationType.TransferTicker,
+    includeExpired: false,
+  });
 
   const tickerReservation = new TickerReservation({ ticker }, context);
 
   const { status } = await tickerReservation.details();
+
+  throwIfPendingAuthorizationExists({
+    authorizationRequests,
+    issuer,
+    message: 'The target Identity already has a pending Ticker Ownership transfer request',
+    authorization,
+  });
 
   if (status === TickerReservationStatus.AssetCreated) {
     throw new PolymeshError({
@@ -56,17 +80,14 @@ export async function prepareTransferTickerOwnership(
     { type: SignerType.Identity, value: signerToString(target) },
     context
   );
-  const authReq: Authorization = {
-    type: AuthorizationType.TransferTicker,
-    value: ticker,
-  };
-  const rawAuthorizationData = authorizationToAuthorizationData(authReq, context);
+
+  const rawAuthorizationData = authorizationToAuthorizationData(authorization, context);
   const rawExpiry = optionize(dateToMoment)(expiry, context);
 
   return {
     transaction: tx.identity.addAuthorization,
     args: [rawSignatory, rawAuthorizationData, rawExpiry],
-    resolver: createAuthorizationResolver(authReq, issuer, targetIdentity, expiry, context),
+    resolver: createAuthorizationResolver(authorization, issuer, targetIdentity, expiry, context),
   };
 }
 
