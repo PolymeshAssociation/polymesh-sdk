@@ -1902,7 +1902,7 @@ export function areSameClaims(
 /**
  * @hidden
  */
-export function throwIfPendingAuthorizationExists(params: {
+export function assertNoPendingAuthorizationExists(params: {
   authorizationRequests: AuthorizationRequest[];
   message: string;
   authorization: Partial<Authorization>;
@@ -1921,7 +1921,7 @@ export function throwIfPendingAuthorizationExists(params: {
     return;
   }
 
-  const hasPendingAuth = !!authorizationRequests.find(authorizationRequest => {
+  const pendingAuthorization = authorizationRequests.find(authorizationRequest => {
     const { issuer, target, data } = authorizationRequest;
 
     if (authorizationRequest.isExpired()) {
@@ -1963,10 +1963,13 @@ export function throwIfPendingAuthorizationExists(params: {
     return true;
   });
 
-  if (hasPendingAuth) {
+  if (pendingAuthorization) {
+    const { issuer, target, data, authId } = pendingAuthorization;
+    const { type: authorizationType } = data;
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
       message,
+      data: { target, issuer, authorizationType, authId },
     });
   }
 }

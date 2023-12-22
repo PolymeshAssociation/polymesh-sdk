@@ -14,7 +14,7 @@ import {
   expiryToMoment,
   signerToSignatory,
 } from '~/utils/conversion';
-import { asAccount, asIdentity, throwIfPendingAuthorizationExists } from '~/utils/internal';
+import { asAccount, asIdentity, assertNoPendingAuthorizationExists } from '~/utils/internal';
 
 /**
  * @hidden
@@ -50,7 +50,7 @@ export async function prepareAttestPrimaryKeyRotation(
     value: targetIdentity,
   };
 
-  throwIfPendingAuthorizationExists({
+  assertNoPendingAuthorizationExists({
     authorizationRequests,
     message:
       'The target Account already has a pending attestation to become the primary key of the target Identity',

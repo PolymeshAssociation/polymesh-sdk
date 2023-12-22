@@ -19,7 +19,7 @@ import {
   signerToString,
   signerValueToSignatory,
 } from '~/utils/conversion';
-import { optionize, throwIfPendingAuthorizationExists } from '~/utils/internal';
+import { assertNoPendingAuthorizationExists,optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -62,7 +62,7 @@ export async function prepareSetCustodian(
     value: portfolio,
   };
 
-  throwIfPendingAuthorizationExists({
+  assertNoPendingAuthorizationExists({
     authorizationRequests,
     issuer: signingIdentity,
     message: "The target Identity already has a pending invitation to be the Portfolio's custodian",

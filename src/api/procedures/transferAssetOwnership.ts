@@ -1,5 +1,5 @@
 import { createAuthorizationResolver } from '~/api/procedures/utils';
-import { AuthorizationRequest, FungibleAsset, Identity, Procedure } from '~/internal';
+import { AuthorizationRequest, FungibleAsset, Procedure } from '~/internal';
 import {
   Authorization,
   AuthorizationType,
@@ -14,7 +14,7 @@ import {
   signerToString,
   signerValueToSignatory,
 } from '~/utils/conversion';
-import { optionize, throwIfPendingAuthorizationExists } from '~/utils/internal';
+import { asIdentity, assertNoPendingAuthorizationExists,optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -36,8 +36,7 @@ export async function prepareTransferAssetOwnership(
   } = this;
   const { ticker, target, expiry = null } = args;
   const issuer = await context.getSigningIdentity();
-  const targetIdentity =
-    typeof target === 'string' ? new Identity({ did: target }, context) : target;
+  const targetIdentity = asIdentity(target, context);
 
   const authorizationRequests = await targetIdentity.authorizations.getReceived({
     type: AuthorizationType.TransferAssetOwnership,
@@ -54,7 +53,7 @@ export async function prepareTransferAssetOwnership(
     value: ticker,
   };
 
-  throwIfPendingAuthorizationExists({
+  assertNoPendingAuthorizationExists({
     authorizationRequests,
     issuer,
     message: 'The target Identity already has a pending transfer Asset Ownership request',

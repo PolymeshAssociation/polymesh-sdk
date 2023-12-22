@@ -74,6 +74,7 @@ import {
   assertExpectedSqVersion,
   assertIsInteger,
   assertIsPositive,
+  assertNoPendingAuthorizationExists,
   assertTickerValid,
   asTicker,
   calculateNextKey,
@@ -107,7 +108,6 @@ import {
   segmentEventsByTransaction,
   serialize,
   sliceBatchReceipt,
-  throwIfPendingAuthorizationExists,
   unserialize,
 } from '../internal';
 
@@ -2303,7 +2303,7 @@ describe('areSameClaims', () => {
   });
 });
 
-describe('throwIfPendingAuthorizationExists', () => {
+describe('assertNoPendingAuthorizationExists', () => {
   let mockMessage: string;
   let mockAuthorization: Partial<Authorization>;
   let issuer: Identity;
@@ -2316,11 +2316,11 @@ describe('throwIfPendingAuthorizationExists', () => {
   beforeEach(() => {
     // Initialize your mock data here
     mockMessage = 'Test message';
-    mockAuthorization = { type: AuthorizationType.TransferTicker }; // fill this object with mock Authorization data
-    issuer = entityMockUtils.getIdentityInstance({ did: 'issuer' }); // fill this object with mock Identity data
-    target = entityMockUtils.getIdentityInstance({ did: 'target' }); // or a mock Identity object
-    otherIssuer = entityMockUtils.getIdentityInstance({ did: 'otherIssuer' }); // or a mock Identity
-    otherTarget = entityMockUtils.getIdentityInstance({ did: 'otherTarget' }); // or a mock Identity
+    mockAuthorization = { type: AuthorizationType.TransferTicker };
+    issuer = entityMockUtils.getIdentityInstance({ did: 'issuer' });
+    target = entityMockUtils.getIdentityInstance({ did: 'target' });
+    otherIssuer = entityMockUtils.getIdentityInstance({ did: 'otherIssuer' });
+    otherTarget = entityMockUtils.getIdentityInstance({ did: 'otherTarget' });
     authReqBase = {
       issuer,
       target,
@@ -2332,7 +2332,7 @@ describe('throwIfPendingAuthorizationExists', () => {
 
   it('should not throw an error if there are no authorization requests', () => {
     expect(() => {
-      throwIfPendingAuthorizationExists({
+      assertNoPendingAuthorizationExists({
         authorizationRequests: [],
         message: mockMessage,
         authorization: mockAuthorization,
@@ -2343,10 +2343,8 @@ describe('throwIfPendingAuthorizationExists', () => {
   });
 
   it('should not throw an error if there are no pending authorizations', () => {
-    // Fill mockAuthorizationRequests with AuthorizationRequest objects that are not pending
-
     expect(() => {
-      throwIfPendingAuthorizationExists({
+      assertNoPendingAuthorizationExists({
         authorizationRequests: [],
         message: mockMessage,
         authorization: mockAuthorization,
@@ -2355,10 +2353,8 @@ describe('throwIfPendingAuthorizationExists', () => {
   });
 
   it('should not throw an error if the authorization has expired', () => {
-    // Fill mockAuthorizationRequests with AuthorizationRequest objects that are not pending
-
     expect(() => {
-      throwIfPendingAuthorizationExists({
+      assertNoPendingAuthorizationExists({
         authorizationRequests: [
           entityMockUtils.getAuthorizationRequestInstance({ isExpired: true }),
         ],
@@ -2369,10 +2365,8 @@ describe('throwIfPendingAuthorizationExists', () => {
   });
 
   it('should not throw an error if the authorization is for other target', () => {
-    // Fill mockAuthorizationRequests with AuthorizationRequest objects that are not pending
-
     expect(() => {
-      throwIfPendingAuthorizationExists({
+      assertNoPendingAuthorizationExists({
         authorizationRequests: [
           entityMockUtils.getAuthorizationRequestInstance({
             ...authReqBase,
@@ -2387,10 +2381,8 @@ describe('throwIfPendingAuthorizationExists', () => {
   });
 
   it('should not throw an error if the authorization is by other issuer', () => {
-    // Fill mockAuthorizationRequests with AuthorizationRequest objects that are not pending
-
     expect(() => {
-      throwIfPendingAuthorizationExists({
+      assertNoPendingAuthorizationExists({
         authorizationRequests: [entityMockUtils.getAuthorizationRequestInstance(authReqBase)],
         message: mockMessage,
         authorization: mockAuthorization,
@@ -2400,10 +2392,8 @@ describe('throwIfPendingAuthorizationExists', () => {
   });
 
   it('should not throw an error if the authorization of other type', () => {
-    // Fill mockAuthorizationRequests with AuthorizationRequest objects that are not pending
-
     expect(() => {
-      throwIfPendingAuthorizationExists({
+      assertNoPendingAuthorizationExists({
         authorizationRequests: [
           entityMockUtils.getAuthorizationRequestInstance({
             ...authReqBase,
@@ -2417,10 +2407,8 @@ describe('throwIfPendingAuthorizationExists', () => {
   });
 
   it('should not throw an error if the authorization is AuthorizationType.PortfolioCustody and for different Portfolio', () => {
-    // Fill mockAuthorizationRequests with AuthorizationRequest objects that are not pending
-
     expect(() => {
-      throwIfPendingAuthorizationExists({
+      assertNoPendingAuthorizationExists({
         authorizationRequests: [
           entityMockUtils.getAuthorizationRequestInstance({
             ...authReqBase,
@@ -2440,10 +2428,8 @@ describe('throwIfPendingAuthorizationExists', () => {
   });
 
   it('should not throw an error if the authorization is AuthorizationType.AttestPrimaryKeyRotation and for different Portfolio', () => {
-    // Fill mockAuthorizationRequests with AuthorizationRequest objects that are not pending
-
     expect(() => {
-      throwIfPendingAuthorizationExists({
+      assertNoPendingAuthorizationExists({
         authorizationRequests: [
           entityMockUtils.getAuthorizationRequestInstance({
             target,
@@ -2463,10 +2449,8 @@ describe('throwIfPendingAuthorizationExists', () => {
   });
 
   it('should not throw an error if the authorization value is not equal', () => {
-    // Fill mockAuthorizationRequests with AuthorizationRequest objects that are not pending
-
     expect(() => {
-      throwIfPendingAuthorizationExists({
+      assertNoPendingAuthorizationExists({
         authorizationRequests: [
           entityMockUtils.getAuthorizationRequestInstance({
             ...authReqBase,
@@ -2480,10 +2464,8 @@ describe('throwIfPendingAuthorizationExists', () => {
   });
 
   it('should throw a PolymeshError if there is a pending authorization', () => {
-    // Fill mockAuthorizationRequests with at least one AuthorizationRequest object that is pending
-
     expect(() => {
-      throwIfPendingAuthorizationExists({
+      assertNoPendingAuthorizationExists({
         authorizationRequests: [entityMockUtils.getAuthorizationRequestInstance(authReqBase)],
         message: mockMessage,
         authorization: mockAuthorization,
@@ -2494,20 +2476,15 @@ describe('throwIfPendingAuthorizationExists', () => {
   });
 
   it('should throw a PolymeshError with the correct message and error code', () => {
-    // Fill mockAuthorizationRequests with at least one AuthorizationRequest object that is pending
-
-    try {
-      throwIfPendingAuthorizationExists({
+    const expectedError = new PolymeshError({ message: mockMessage, code: ErrorCode.NoDataChange });
+    expect(() =>
+      assertNoPendingAuthorizationExists({
         authorizationRequests: [entityMockUtils.getAuthorizationRequestInstance(authReqBase)],
         message: mockMessage,
         authorization: mockAuthorization,
         issuer,
         target,
-      });
-    } catch (error) {
-      expect(error).toBeInstanceOf(PolymeshError);
-      expect(error.message).toBe(mockMessage);
-      expect(error.code).toBe(ErrorCode.NoDataChange);
-    }
+      })
+    ).toThrow(expectedError);
   });
 });

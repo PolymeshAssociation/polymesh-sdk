@@ -1,11 +1,5 @@
 import { createAuthorizationResolver } from '~/api/procedures/utils';
-import {
-  AuthorizationRequest,
-  Identity,
-  PolymeshError,
-  Procedure,
-  TickerReservation,
-} from '~/internal';
+import { AuthorizationRequest, PolymeshError, Procedure, TickerReservation } from '~/internal';
 import {
   Authorization,
   AuthorizationType,
@@ -23,7 +17,7 @@ import {
   signerToString,
   signerValueToSignatory,
 } from '~/utils/conversion';
-import { optionize, throwIfPendingAuthorizationExists } from '~/utils/internal';
+import { asIdentity, assertNoPendingAuthorizationExists, optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -45,8 +39,7 @@ export async function prepareTransferTickerOwnership(
   } = this;
   const { ticker, target, expiry = null } = args;
   const issuer = await context.getSigningIdentity();
-  const targetIdentity =
-    typeof target === 'string' ? new Identity({ did: target }, context) : target;
+  const targetIdentity = asIdentity(target, context);
 
   const authorization: Authorization = {
     type: AuthorizationType.TransferTicker,
@@ -62,7 +55,7 @@ export async function prepareTransferTickerOwnership(
 
   const { status } = await tickerReservation.details();
 
-  throwIfPendingAuthorizationExists({
+  assertNoPendingAuthorizationExists({
     authorizationRequests,
     issuer,
     message: 'The target Identity already has a pending Ticker Ownership transfer request',

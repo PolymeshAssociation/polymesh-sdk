@@ -18,7 +18,7 @@ import {
   signerToString,
   signerValueToSignatory,
 } from '~/utils/conversion';
-import { asAccount, optionize, throwIfPendingAuthorizationExists } from '~/utils/internal';
+import { asAccount, assertNoPendingAuthorizationExists,optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -54,7 +54,7 @@ export async function prepareInviteAccount(
     });
   }
 
-  throwIfPendingAuthorizationExists({
+  assertNoPendingAuthorizationExists({
     authorizationRequests: authorizationRequests.data,
     target: address,
     message: 'The target Account already has a pending invitation to join this Identity',
