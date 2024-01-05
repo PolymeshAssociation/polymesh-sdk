@@ -1,8 +1,9 @@
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { Context, Entity, Nft, PolymeshTransaction } from '~/internal';
+import { Context, Entity, Nft, PolymeshError, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { ErrorCode } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -425,6 +426,42 @@ describe('Nft class', () => {
       const result = await nft.getOwner();
 
       expect(result).toBe(portfolio);
+    });
+  });
+
+  describe('method: isLocked', () => {
+    const ticker = 'TEST';
+    const id = new BigNumber(1);
+    let context: Context;
+    let nft: Nft;
+    let ownerSpy: jest.SpyInstance;
+
+    beforeEach(async () => {
+      context = dsMockUtils.getContextInstance();
+      nft = new Nft({ ticker, id }, context);
+      ownerSpy = jest.spyOn(nft, 'getOwner');
+    });
+
+    it('should throw an error if NFT has no owner', () => {
+      ownerSpy.mockResolvedValueOnce(null);
+
+      const error = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'No owner was found for the NFT. The token may have been redeemed',
+      });
+      return expect(nft.isLocked()).rejects.toThrow(error);
+    });
+
+    it('should return whether NFT is locked in any settlement', async () => {
+      ownerSpy.mockResolvedValue(entityMockUtils.getDefaultPortfolioInstance());
+
+      dsMockUtils.createQueryMock('portfolio', 'portfolioLockedNFT', {
+        returnValue: dsMockUtils.createMockBool(true),
+      });
+
+      const result = await nft.isLocked();
+
+      expect(result).toBe(true);
     });
   });
 
