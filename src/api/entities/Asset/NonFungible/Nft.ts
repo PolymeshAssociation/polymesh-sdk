@@ -1,7 +1,13 @@
 import BigNumber from 'bignumber.js';
 
 import { Context, Entity, NftCollection, redeemNft } from '~/internal';
-import { NftMetadata, OptionalArgsProcedureMethod, RedeemNftParams } from '~/types';
+import {
+  DefaultPortfolio,
+  NftMetadata,
+  NumberedPortfolio,
+  OptionalArgsProcedureMethod,
+  RedeemNftParams,
+} from '~/types';
 import {
   GLOBAL_BASE_IMAGE_URI_NAME,
   GLOBAL_BASE_TOKEN_URI_NAME,
@@ -12,6 +18,7 @@ import {
   bigNumberToU64,
   bytesToString,
   meshMetadataKeyToMetadataKey,
+  meshPortfolioIdToPortfolio,
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -196,6 +203,35 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
     }
 
     return null;
+  }
+
+  /**
+   * Get owner of the NFT
+   */
+  public async getOwner(): Promise<DefaultPortfolio | NumberedPortfolio | null> {
+    const {
+      collection: { ticker },
+      id,
+      context: {
+        polymeshApi: {
+          query: {
+            nft: { nftOwner },
+          },
+        },
+      },
+      context,
+    } = this;
+
+    const rawTicker = stringToTicker(ticker, context);
+    const rawNftId = bigNumberToU64(id, context);
+
+    const owner = await nftOwner(rawTicker, rawNftId);
+
+    if (owner.isEmpty) {
+      return null;
+    }
+
+    return meshPortfolioIdToPortfolio(owner.unwrap(), context);
   }
 
   /**

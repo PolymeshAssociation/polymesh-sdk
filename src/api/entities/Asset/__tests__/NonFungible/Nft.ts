@@ -4,6 +4,7 @@ import { when } from 'jest-when';
 import { Context, Entity, Nft, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/Asset/NonFungible',
@@ -377,6 +378,53 @@ describe('Nft class', () => {
       const tx = await nft.redeem();
 
       expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: getOwner', () => {
+    const ticker = 'TEST';
+    const id = new BigNumber(1);
+    let context: Context;
+    let nftOwnerMock: jest.Mock;
+    let nft: Nft;
+
+    beforeEach(async () => {
+      context = dsMockUtils.getContextInstance();
+      nftOwnerMock = dsMockUtils.createQueryMock('nft', 'nftOwner');
+      nft = new Nft({ ticker, id }, context);
+    });
+
+    it('should return null if no owner exists', async () => {
+      nftOwnerMock.mockResolvedValueOnce(dsMockUtils.createMockOption());
+
+      const result = await nft.getOwner();
+
+      expect(result).toBeNull();
+    });
+
+    it('should return the owner of the NFT', async () => {
+      const meshPortfolioIdToPortfolioSpy = jest.spyOn(
+        utilsConversionModule,
+        'meshPortfolioIdToPortfolio'
+      );
+
+      const rawPortfolio = dsMockUtils.createMockPortfolioId({
+        did: 'someDid',
+        kind: dsMockUtils.createMockPortfolioKind({
+          User: dsMockUtils.createMockU64(new BigNumber(1)),
+        }),
+      });
+
+      nftOwnerMock.mockResolvedValueOnce(dsMockUtils.createMockOption(rawPortfolio));
+      const portfolio = entityMockUtils.getNumberedPortfolioInstance();
+
+      when(meshPortfolioIdToPortfolioSpy)
+        .calledWith(rawPortfolio, context)
+        .mockReturnValue(portfolio);
+
+      const result = await nft.getOwner();
+
+      expect(result).toBe(portfolio);
     });
   });
 
