@@ -116,6 +116,11 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
       collection,
       id,
     } = this;
+
+    if (id.lte(new BigNumber(0))) {
+      return false;
+    }
+
     const collectionId = await collection.getCollectionId();
     const rawCollectionId = bigNumberToU64(collectionId, context);
 

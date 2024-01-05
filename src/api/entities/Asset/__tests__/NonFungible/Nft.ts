@@ -94,19 +94,24 @@ describe('Nft class', () => {
   });
 
   describe('method: exists', () => {
-    it('should return true when Nft Id is less than or equal to nextId for the collection', async () => {
-      const ticker = 'TICKER';
-      const context = dsMockUtils.getContextInstance();
-      const id = new BigNumber(3);
-      const nft = new Nft({ ticker, id }, context);
+    let ticker: string;
+    let id: BigNumber;
+    let context: Context;
+    let nft: Nft;
+    let nextNftIdMock: jest.Mock;
 
+    beforeEach(() => {
+      ticker = 'TICKER';
+      context = dsMockUtils.getContextInstance();
+      id = new BigNumber(3);
+      nft = new Nft({ ticker, id }, context);
       entityMockUtils.getNftCollectionInstance({
         getCollectionId: id,
       });
-
-      dsMockUtils.createQueryMock('nft', 'nextNFTId', {
-        returnValue: new BigNumber(10),
-      });
+      nextNftIdMock = dsMockUtils.createQueryMock('nft', 'nextNFTId');
+    });
+    it('should return true when Nft Id is less than or equal to nextId for the collection', async () => {
+      nextNftIdMock.mockResolvedValueOnce(new BigNumber(10));
 
       const result = await nft.exists();
 
@@ -114,18 +119,15 @@ describe('Nft class', () => {
     });
 
     it('should return false when Nft Id is greater than nextId for the collection', async () => {
-      const ticker = 'TICKER';
-      const context = dsMockUtils.getContextInstance();
-      const id = new BigNumber(3);
-      const nft = new Nft({ ticker, id }, context);
+      nextNftIdMock.mockResolvedValueOnce(new BigNumber(1));
 
-      entityMockUtils.getNftCollectionInstance({
-        getCollectionId: id,
-      });
+      const result = await nft.exists();
 
-      dsMockUtils.createQueryMock('nft', 'nextNFTId', {
-        returnValue: new BigNumber(1),
-      });
+      expect(result).toBe(false);
+    });
+
+    it('should return false when Nft ID is 0', async () => {
+      nft = new Nft({ ticker, id: new BigNumber(0) }, context);
 
       const result = await nft.exists();
 
