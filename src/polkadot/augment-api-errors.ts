@@ -1893,12 +1893,6 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       Unauthorized: AugmentedError<ApiType>;
     };
-    sudo: {
-      /**
-       * Sender must be the Sudo account
-       **/
-      RequireSudo: AugmentedError<ApiType>;
-    };
     system: {
       /**
        * The origin filter prevent the call to be dispatched.
@@ -2104,6 +2098,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Too many calls batched.
        **/
       TooManyCalls: AugmentedError<ApiType>;
+      /**
+       * Decoding derivative account Id failed.
+       **/
+      UnableToDeriveAccountId: AugmentedError<ApiType>;
     };
   } // AugmentedErrors
 } // declare module

@@ -124,7 +124,7 @@ import type {
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceAssetTransferCompliance,
   PolymeshPrimitivesTransferComplianceTransferConditionExemptKey,
-  PolymeshRuntimeDevelopRuntimeSessionKeys,
+  PolymeshRuntimeTestnetRuntimeSessionKeys,
   SpConsensusBabeAppPublic,
   SpConsensusBabeBabeEpochConfiguration,
   SpConsensusBabeDigestsNextConfigDescriptor,
@@ -1672,7 +1672,7 @@ declare module '@polkadot/api-base/types/storage' {
         (
           arg1: PolymeshPrimitivesTicker | string | Uint8Array,
           arg2: u64 | AnyNumber | Uint8Array
-        ) => Observable<Option<PolymeshPrimitivesIdentityId>>,
+        ) => Observable<Option<PolymeshPrimitivesIdentityIdPortfolioId>>,
         [PolymeshPrimitivesTicker, u64]
       >;
       /**
@@ -2272,7 +2272,7 @@ declare module '@polkadot/api-base/types/storage' {
         ApiType,
         (
           arg: AccountId32 | string | Uint8Array
-        ) => Observable<Option<PolymeshRuntimeDevelopRuntimeSessionKeys>>,
+        ) => Observable<Option<PolymeshRuntimeTestnetRuntimeSessionKeys>>,
         [AccountId32]
       >;
       /**
@@ -2286,7 +2286,7 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       queuedKeys: AugmentedQuery<
         ApiType,
-        () => Observable<Vec<ITuple<[AccountId32, PolymeshRuntimeDevelopRuntimeSessionKeys]>>>,
+        () => Observable<Vec<ITuple<[AccountId32, PolymeshRuntimeTestnetRuntimeSessionKeys]>>>,
         []
       >;
       /**
@@ -2936,12 +2936,6 @@ declare module '@polkadot/api-base/types/storage' {
         ) => Observable<Option<PalletStoFundraiser>>,
         [PolymeshPrimitivesTicker, u64]
       >;
-    };
-    sudo: {
-      /**
-       * The `AccountId` of the sudo key.
-       **/
-      key: AugmentedQuery<ApiType, () => Observable<Option<AccountId32>>, []>;
     };
     system: {
       /**
