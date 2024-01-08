@@ -12,4 +12,5 @@ export enum SettlementDirectionEnum {
   None = 'None',
   Incoming = 'Incoming',
   Outgoing = 'Outgoing',
+  Internal = 'Internal',
 }
