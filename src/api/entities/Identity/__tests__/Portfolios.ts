@@ -222,8 +222,6 @@ describe('Portfolios class', () => {
       const portfolioDid2 = 'someDid';
       const portfolioNumber2 = '1';
 
-      const portfolioDid3 = 'someDid';
-
       const portfolioId2 = new BigNumber(portfolioNumber2);
 
       const legs1 = [
@@ -267,7 +265,7 @@ describe('Portfolios class', () => {
         {
           assetId: ticker2,
           amount: amount2,
-          direction: SettlementDirectionEnum.Internal,
+          direction: SettlementDirectionEnum.None,
           addresses: ['be865155e5b6be843e99117a825e9580bb03e401a9c2ace644fff604fe624917'],
           to: {
             number: portfolioNumber1,
@@ -279,6 +277,25 @@ describe('Portfolios class', () => {
             identityId: did,
           },
           fromId: `${did}/${portfolioNumber2}`,
+        },
+      ];
+
+      const legs4 = [
+        {
+          assetId: ticker2,
+          amount: amount2,
+          direction: SettlementDirectionEnum.None,
+          addresses: ['be865155e5b6be843e99117a825e9580bb03e401a9c2ace644fff604fe624917'],
+          to: {
+            number: portfolioNumber1,
+            identityId: did,
+          },
+          toId: `${did}/${portfolioNumber1}`,
+          from: {
+            number: portfolioNumber1,
+            identityId: did,
+          },
+          fromId: `${did}/${portfolioNumber1}`,
         },
       ];
 
@@ -312,6 +329,16 @@ describe('Portfolios class', () => {
               },
               result: SettlementResultEnum.Executed,
               legs: { nodes: legs3 },
+            },
+          },
+          {
+            settlement: {
+              createdBlock: {
+                blockId: blockNumber2.toNumber(),
+                hash: blockHash3,
+              },
+              result: SettlementResultEnum.Executed,
+              legs: { nodes: legs4 },
             },
           },
         ],
@@ -365,7 +392,8 @@ describe('Portfolios class', () => {
       expect(result[1].legs[0].from.owner.did).toBe(portfolioDid2);
       expect((result[1].legs[0].from as NumberedPortfolio).id).toEqual(portfolioId2);
       expect(result[1].legs[0].to.owner.did).toEqual(portfolioDid1);
-      expect(result[2].legs[0].direction).toEqual(SettlementDirectionEnum.Internal);
+      expect(result[2].legs[0].direction).toEqual(SettlementDirectionEnum.None);
+      expect(result[3].legs[0].direction).toEqual(SettlementDirectionEnum.None);
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
