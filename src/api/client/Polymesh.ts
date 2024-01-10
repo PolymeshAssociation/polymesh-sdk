@@ -27,6 +27,7 @@ import {
 import { AccountManagement } from './AccountManagement';
 import { Assets } from './Assets';
 import { Claims } from './Claims';
+import { ConfidentialAssets } from './ConfidentialAssets';
 import { Identities } from './Identities';
 import { Network } from './Network';
 import { Settlements } from './Settlements';
@@ -109,6 +110,10 @@ export class Polymesh {
    * A set of methods for interacting with Assets
    */
   public assets: Assets;
+  /**
+   * A set of methods for interacting with Confidential Assets
+   */
+  public confidentialAssets: ConfidentialAssets;
 
   /**
    * @hidden
@@ -122,6 +127,7 @@ export class Polymesh {
     this.accountManagement = new AccountManagement(context);
     this.identities = new Identities(context);
     this.assets = new Assets(context);
+    this.confidentialAssets = new ConfidentialAssets(context);
 
     this.createTransactionBatch = createProcedureMethod(
       {
