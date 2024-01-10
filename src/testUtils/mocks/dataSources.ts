@@ -1,7 +1,6 @@
 /* istanbul ignore file */
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { ApolloClient, NormalizedCacheObject, QueryOptions } from '@apollo/client/core';
 import { ApiPromise } from '@polkadot/api';
 import { DecoratedErrors, DecoratedRpc } from '@polkadot/api/types';
@@ -53,6 +52,7 @@ import {
   PalletAssetSecurityToken,
   PalletAssetTickerRegistration,
   PalletAssetTickerRegistrationConfig,
+  PalletConfidentialAssetConfidentialAssetDetails,
   PalletContractsStorageContractInfo,
   PalletCorporateActionsCaCheckpoint,
   PalletCorporateActionsCaId,
@@ -4417,4 +4417,32 @@ export const createMockSigningPayload = (mockGetters?: {
     },
     !mockGetters
   );
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockConfidentialAssetDetails = (
+  details?:
+    | PalletConfidentialAssetConfidentialAssetDetails
+    | {
+        totalSupply: u128 | Parameters<typeof createMockU128>[0];
+        ownerDid: PolymeshPrimitivesIdentityId | Parameters<typeof createMockIdentityId>[0];
+        data: Bytes | Parameters<typeof createMockBytes>[0];
+        ticker: Option<PolymeshPrimitivesTicker>;
+      }
+): MockCodec<PalletConfidentialAssetConfidentialAssetDetails> => {
+  if (isCodec<PalletConfidentialAssetConfidentialAssetDetails>(details)) {
+    return details as MockCodec<PalletConfidentialAssetConfidentialAssetDetails>;
+  }
+
+  const { totalSupply, ownerDid, data, ticker } = details ?? {
+    totalSupply: createMockU128(),
+    ownerDid: createMockIdentityId(),
+    data: createMockBytes(),
+    ticker: createMockOption(),
+  };
+
+  return createMockCodec({ totalSupply, ownerDid, data, ticker }, !details);
 };

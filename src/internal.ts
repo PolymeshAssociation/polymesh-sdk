@@ -100,6 +100,7 @@ export { MultiSig } from '~/api/entities/Account/MultiSig';
 export { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 export { TickerReservation } from '~/api/entities/TickerReservation';
 export { BaseAsset, FungibleAsset, NftCollection, Nft } from '~/api/entities/Asset';
+export { ConfidentialAsset } from '~/api/entities/confidential/ConfidentialAsset';
 export { MetadataEntry } from '~/api/entities/MetadataEntry';
 export { registerMetadata } from '~/api/procedures/registerMetadata';
 export { setMetadata } from '~/api/procedures/setMetadata';

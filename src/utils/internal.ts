@@ -23,6 +23,7 @@ import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/typ
 import { stringUpperFirst } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
+import { Guid } from 'guid-typescript';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
 import { coerce, lt, major, satisfies } from 'semver';
@@ -1890,4 +1891,29 @@ export function areSameClaims(
   }
 
   return ClaimType[type] === claim.type;
+}
+
+/**
+ * @hidden
+ */
+export function assertCaAssetValid(id: string): string {
+  if (id.length >= 32) {
+    let guid = id;
+
+    if (!Guid.isGuid(id)) {
+      guid = `${id.substring(0, 8)}-${id.substring(8, 12)}-${id.substring(12, 16)}-${id.substring(
+        16,
+        20
+      )}-${id.substring(20)}`;
+    }
+
+    if (guid.length === 36) {
+      return guid;
+    }
+  }
+
+  throw new PolymeshError({
+    code: ErrorCode.ValidationError,
+    message: 'The supplied ID is not a valid confidential Asset ID',
+  });
 }

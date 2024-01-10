@@ -13,6 +13,7 @@ import {
   Checkpoint,
   CheckpointSchedule,
   ChildIdentity,
+  ConfidentialAsset,
   CorporateAction,
   CustomPermissionGroup,
   DefaultPortfolio,
@@ -47,6 +48,7 @@ import {
   CheckRolesResult,
   CollectionKey,
   ComplianceRequirements,
+  ConfidentialAssetDetails,
   CorporateActionDefaultConfig,
   CorporateActionKind,
   CorporateActionTargets,
@@ -361,6 +363,11 @@ interface MultiSigProposalOptions extends EntityOptions {
   details?: EntityGetter<MultiSigProposalDetails>;
 }
 
+interface ConfidentialAssetOptions extends EntityOptions {
+  id?: string;
+  details?: EntityGetter<ConfidentialAssetDetails | null>;
+}
+
 type MockOptions = {
   identityOptions?: IdentityOptions;
   childIdentityOptions?: ChildIdentityOptions;
@@ -386,6 +393,7 @@ type MockOptions = {
   knownPermissionGroupOptions?: KnownPermissionGroupOptions;
   multiSigOptions?: MultiSigOptions;
   multiSigProposalOptions?: MultiSigProposalOptions;
+  confidentialAssetOptions?: ConfidentialAssetOptions;
 };
 
 type Class<T = any> = new (...args: any[]) => T;
@@ -2083,6 +2091,40 @@ const MockKnownPermissionGroupClass = createMockEntityClass<KnownPermissionGroup
   ['PermissionGroup', 'KnownPermissionGroup']
 );
 
+const MockConfidentialAssetClass = createMockEntityClass<ConfidentialAssetOptions>(
+  class {
+    uuid!: string;
+    id!: string;
+    details!: jest.Mock;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof ConfidentialAsset>) {
+      return extractFromArgs(args, ['id']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<ConfidentialAssetOptions>) {
+      this.uuid = 'confidentialAsset';
+      this.id = opts.id;
+      this.details = createEntityGetterMock(opts.details);
+    }
+  },
+  () => ({
+    id: '76702175-d8cb-e3a5-5a19-734433351e26',
+    details: {
+      ticker: 'SOME_TICKER',
+      data: 'SOME_DATA',
+      owner: getIdentityInstance(),
+      totalSupply: new BigNumber(0),
+    },
+  }),
+  ['ConfidentialAsset']
+);
+
 export const mockIdentityModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   Identity: MockIdentityClass,
@@ -2203,6 +2245,11 @@ export const mockKnownPermissionGroupModule = (path: string) => (): Record<strin
   KnownPermissionGroup: MockKnownPermissionGroupClass,
 });
 
+export const mockConfidentialAssetModule = (path: string) => (): Record<string, unknown> => ({
+  ...jest.requireActual(path),
+  ConfidentialAsset: MockConfidentialAssetClass,
+});
+
 /**
  * @hidden
  *
@@ -2232,6 +2279,7 @@ export const initMocks = function (opts?: MockOptions): void {
   MockDividendDistributionClass.init(opts?.dividendDistributionOptions);
   MockMultiSigClass.init(opts?.multiSigOptions);
   MockMultiSigProposalClass.init(opts?.multiSigProposalOptions);
+  MockConfidentialAssetClass.init(opts?.confidentialAssetOptions);
 };
 
 /**
@@ -2264,6 +2312,7 @@ export const configureMocks = function (opts?: MockOptions): void {
   MockDividendDistributionClass.setOptions(opts?.dividendDistributionOptions);
   MockMultiSigClass.setOptions(opts?.multiSigOptions);
   MockMultiSigProposalClass.setOptions(opts?.multiSigProposalOptions);
+  MockConfidentialAssetClass.setOptions(opts?.confidentialAssetOptions);
 };
 
 /**
@@ -2293,6 +2342,7 @@ export const reset = function (): void {
   MockDividendDistributionClass.resetOptions();
   MockMultiSigClass.resetOptions();
   MockMultiSigProposalClass.resetOptions();
+  MockConfidentialAssetClass.resetOptions();
 };
 
 /**

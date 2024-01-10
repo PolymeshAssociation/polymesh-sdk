@@ -279,6 +279,7 @@ import {
   scopeToMiddlewareScope,
   secondaryAccountToMeshSecondaryKey,
   securityIdentifierToAssetIdentifier,
+  serializeConfidentialAssetId,
   signatoryToSignerValue,
   signerToSignatory,
   signerToSignerValue,
@@ -7673,6 +7674,26 @@ describe('stringToU8aFixed', () => {
     const result = stringToU8aFixed(value, context);
 
     expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('serializeConfidentialAssetId', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a confidential Asset ID to hex prefixed string', () => {
+    const result = serializeConfidentialAssetId('76702175-d8cb-e3a5-5a19-734433351e25');
+
+    expect(result).toEqual('0x76702175d8cbe3a55a19734433351e25');
   });
 });
 
