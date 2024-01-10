@@ -96,40 +96,23 @@ describe('Nft class', () => {
   });
 
   describe('method: exists', () => {
-    it('should return true when Nft Id is less than or equal to nextId for the collection', async () => {
+    it('should return whether NFT exists or not', async () => {
       const ticker = 'TICKER';
       const context = dsMockUtils.getContextInstance();
       const id = new BigNumber(3);
       const nft = new Nft({ ticker, id }, context);
 
-      entityMockUtils.getNftCollectionInstance({
-        getCollectionId: id,
-      });
+      const getOwnerSpy = jest.spyOn(nft, 'getOwner');
 
-      dsMockUtils.createQueryMock('nft', 'nextNFTId', {
-        returnValue: new BigNumber(10),
-      });
+      getOwnerSpy.mockResolvedValueOnce(entityMockUtils.getDefaultPortfolioInstance());
 
-      const result = await nft.exists();
+      let result = await nft.exists();
 
       expect(result).toBe(true);
-    });
 
-    it('should return false when Nft Id is greater than nextId for the collection', async () => {
-      const ticker = 'TICKER';
-      const context = dsMockUtils.getContextInstance();
-      const id = new BigNumber(3);
-      const nft = new Nft({ ticker, id }, context);
+      getOwnerSpy.mockResolvedValueOnce(null);
 
-      entityMockUtils.getNftCollectionInstance({
-        getCollectionId: id,
-      });
-
-      dsMockUtils.createQueryMock('nft', 'nextNFTId', {
-        returnValue: new BigNumber(1),
-      });
-
-      const result = await nft.exists();
+      result = await nft.exists();
 
       expect(result).toBe(false);
     });
@@ -447,7 +430,7 @@ describe('Nft class', () => {
 
       const error = new PolymeshError({
         code: ErrorCode.DataUnavailable,
-        message: 'No owner was found for the NFT. The token may have been redeemed',
+        message: 'NFT does not exists. The token may have been redeemed',
       });
       return expect(nft.isLocked()).rejects.toThrow(error);
     });

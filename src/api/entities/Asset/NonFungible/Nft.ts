@@ -114,26 +114,11 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
 
   /**
    * Determine if the NFT exists on chain
-   *
-   * @note This method returns true, even if the token has been redeemed/burned
    */
   public async exists(): Promise<boolean> {
-    const {
-      context,
-      context: {
-        polymeshApi: { query },
-      },
-      collection,
-      id,
-    } = this;
-    const collectionId = await collection.getCollectionId();
-    const rawCollectionId = bigNumberToU64(collectionId, context);
+    const owner = await this.getOwner();
 
-    // note: "nextId" is actually the last used id
-    const rawNextId = await query.nft.nextNFTId(rawCollectionId);
-    const nextId = u64ToBigNumber(rawNextId);
-
-    return id.lte(nextId);
+    return owner !== null;
   }
 
   /**
@@ -261,7 +246,7 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
     if (!owner) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
-        message: 'No owner was found for the NFT. The token may have been redeemed',
+        message: 'NFT does not exists. The token may have been redeemed',
       });
     }
 
