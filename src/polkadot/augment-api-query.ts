@@ -9,6 +9,7 @@ import type { ApiTypes, AugmentedQuery, QueryableStorageEntry } from '@polkadot/
 import type {
   BTreeSet,
   Bytes,
+  Compact,
   Null,
   Option,
   U8aFixed,
@@ -24,6 +25,7 @@ import type {
 import type { AnyNumber, IMethod, ITuple } from '@polkadot/types-codec/types';
 import type { AccountId32, Call, H256, Perbill, Permill } from '@polkadot/types/interfaces/runtime';
 import type {
+  ConfidentialAssetsElgamalCipherText,
   FrameSupportDispatchPerDispatchClassWeight,
   FrameSystemAccountInfo,
   FrameSystemEventRecord,
@@ -36,6 +38,16 @@ import type {
   PalletBalancesBalanceLock,
   PalletBridgeBridgeTxDetail,
   PalletCommitteePolymeshVotes,
+  PalletConfidentialAssetConfidentialAccount,
+  PalletConfidentialAssetConfidentialAssetDetails,
+  PalletConfidentialAssetConfidentialAuditors,
+  PalletConfidentialAssetLegParty,
+  PalletConfidentialAssetTransaction,
+  PalletConfidentialAssetTransactionId,
+  PalletConfidentialAssetTransactionLegDetails,
+  PalletConfidentialAssetTransactionLegId,
+  PalletConfidentialAssetTransactionLegState,
+  PalletConfidentialAssetTransactionStatus,
   PalletContractsStorageContractInfo,
   PalletContractsStorageDeletedContract,
   PalletContractsWasmOwnerInfo,
@@ -124,7 +136,7 @@ import type {
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceAssetTransferCompliance,
   PolymeshPrimitivesTransferComplianceTransferConditionExemptKey,
-  PolymeshRuntimeTestnetRuntimeSessionKeys,
+  PolymeshRuntimeDevelopRuntimeSessionKeys,
   SpConsensusBabeAppPublic,
   SpConsensusBabeBabeEpochConfiguration,
   SpConsensusBabeDigestsNextConfigDescriptor,
@@ -900,6 +912,281 @@ declare module '@polkadot/api-base/types/storage' {
         [PolymeshPrimitivesTicker]
       >;
     };
+    confidentialAsset: {
+      /**
+       * Contains the encrypted balance of a confidential account.
+       *
+       * account -> asset id -> Option<CipherText>
+       **/
+      accountBalance: AugmentedQuery<
+        ApiType,
+        (
+          arg1: PalletConfidentialAssetConfidentialAccount | string | Uint8Array,
+          arg2: U8aFixed | string | Uint8Array
+        ) => Observable<Option<ConfidentialAssetsElgamalCipherText>>,
+        [PalletConfidentialAssetConfidentialAccount, U8aFixed]
+      >;
+      /**
+       * Records the did for a confidential account.
+       *
+       * account -> Option<IdentityId>.
+       **/
+      accountDid: AugmentedQuery<
+        ApiType,
+        (
+          arg: PalletConfidentialAssetConfidentialAccount | string | Uint8Array
+        ) => Observable<Option<PolymeshPrimitivesIdentityId>>,
+        [PalletConfidentialAssetConfidentialAccount]
+      >;
+      /**
+       * Confidential asset's auditor/mediators.
+       *
+       * asset id -> Option<ConfidentialAuditors>
+       **/
+      assetAuditors: AugmentedQuery<
+        ApiType,
+        (
+          arg: U8aFixed | string | Uint8Array
+        ) => Observable<Option<PalletConfidentialAssetConfidentialAuditors>>,
+        [U8aFixed]
+      >;
+      /**
+       * Details of the confidential asset.
+       *
+       * asset id -> Option<ConfidentialAssetDetails>
+       **/
+      details: AugmentedQuery<
+        ApiType,
+        (
+          arg: U8aFixed | string | Uint8Array
+        ) => Observable<Option<PalletConfidentialAssetConfidentialAssetDetails>>,
+        [U8aFixed]
+      >;
+      /**
+       * Track venues created by an identity.
+       * Only needed for the UI.
+       *
+       * creator_did -> venue_id -> ()
+       **/
+      identityVenues: AugmentedQuery<
+        ApiType,
+        (
+          arg1: PolymeshPrimitivesIdentityId | string | Uint8Array,
+          arg2: u64 | AnyNumber | Uint8Array
+        ) => Observable<Null>,
+        [PolymeshPrimitivesIdentityId, u64]
+      >;
+      /**
+       * Accumulates the encrypted incoming balance for a confidential account.
+       *
+       * account -> asset id -> Option<CipherText>
+       **/
+      incomingBalance: AugmentedQuery<
+        ApiType,
+        (
+          arg1: PalletConfidentialAssetConfidentialAccount | string | Uint8Array,
+          arg2: U8aFixed | string | Uint8Array
+        ) => Observable<Option<ConfidentialAssetsElgamalCipherText>>,
+        [PalletConfidentialAssetConfidentialAccount, U8aFixed]
+      >;
+      /**
+       * Number of affirmations pending before transaction is executed.
+       *
+       * transaction_id -> Option<affirms_pending>
+       **/
+      pendingAffirms: AugmentedQuery<
+        ApiType,
+        (
+          arg: PalletConfidentialAssetTransactionId | AnyNumber | Uint8Array
+        ) => Observable<Option<u32>>,
+        [PalletConfidentialAssetTransactionId]
+      >;
+      /**
+       * RngNonce - Nonce used as `subject` to `Randomness`.
+       **/
+      rngNonce: AugmentedQuery<ApiType, () => Observable<u64>, []>;
+      /**
+       * Map a ticker to a confidential asset id.
+       *
+       * ticker -> asset id
+       **/
+      tickerToAsset: AugmentedQuery<
+        ApiType,
+        (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<Option<U8aFixed>>,
+        [PolymeshPrimitivesTicker]
+      >;
+      /**
+       * Number of transactions in the system (It's one more than the actual number)
+       **/
+      transactionCounter: AugmentedQuery<ApiType, () => Observable<Compact<u64>>, []>;
+      /**
+       * Legs of a transaction.
+       *
+       * transaction_id -> leg_id -> Option<TransactionLegDetails>
+       **/
+      transactionLegs: AugmentedQuery<
+        ApiType,
+        (
+          arg1: PalletConfidentialAssetTransactionId | AnyNumber | Uint8Array,
+          arg2: PalletConfidentialAssetTransactionLegId | AnyNumber | Uint8Array
+        ) => Observable<Option<PalletConfidentialAssetTransactionLegDetails>>,
+        [PalletConfidentialAssetTransactionId, PalletConfidentialAssetTransactionLegId]
+      >;
+      /**
+       * All parties (identities) of a transaction.
+       *
+       * transaction_id -> identity -> bool
+       **/
+      transactionParties: AugmentedQuery<
+        ApiType,
+        (
+          arg1: PalletConfidentialAssetTransactionId | AnyNumber | Uint8Array,
+          arg2: PolymeshPrimitivesIdentityId | string | Uint8Array
+        ) => Observable<bool>,
+        [PalletConfidentialAssetTransactionId, PolymeshPrimitivesIdentityId]
+      >;
+      /**
+       * Number of parties in a transaction.
+       *
+       * transaction_id -> Option<party_count>
+       **/
+      transactionPartyCount: AugmentedQuery<
+        ApiType,
+        (
+          arg: PalletConfidentialAssetTransactionId | AnyNumber | Uint8Array
+        ) => Observable<Option<u32>>,
+        [PalletConfidentialAssetTransactionId]
+      >;
+      /**
+       * Details about an instruction.
+       *
+       * transaction_id -> transaction_details
+       **/
+      transactions: AugmentedQuery<
+        ApiType,
+        (
+          arg: PalletConfidentialAssetTransactionId | AnyNumber | Uint8Array
+        ) => Observable<Option<PalletConfidentialAssetTransaction>>,
+        [PalletConfidentialAssetTransactionId]
+      >;
+      /**
+       * Transaction statuses.
+       *
+       * transaction_id -> Option<TransactionStatus>
+       **/
+      transactionStatuses: AugmentedQuery<
+        ApiType,
+        (
+          arg: PalletConfidentialAssetTransactionId | AnyNumber | Uint8Array
+        ) => Observable<Option<PalletConfidentialAssetTransactionStatus>>,
+        [PalletConfidentialAssetTransactionId]
+      >;
+      /**
+       * Pending state for each leg of a transaction.
+       *
+       * transaction_id -> leg_id -> Option<TransactionLegState>
+       **/
+      txLegStates: AugmentedQuery<
+        ApiType,
+        (
+          arg1: PalletConfidentialAssetTransactionId | AnyNumber | Uint8Array,
+          arg2: PalletConfidentialAssetTransactionLegId | AnyNumber | Uint8Array
+        ) => Observable<Option<PalletConfidentialAssetTransactionLegState>>,
+        [PalletConfidentialAssetTransactionId, PalletConfidentialAssetTransactionLegId]
+      >;
+      /**
+       * Track pending transaction affirmations.
+       *
+       * identity -> (transaction_id, leg_id, leg_party) -> Option<bool>
+       **/
+      userAffirmations: AugmentedQuery<
+        ApiType,
+        (
+          arg1: PolymeshPrimitivesIdentityId | string | Uint8Array,
+          arg2:
+            | ITuple<
+                [
+                  PalletConfidentialAssetTransactionId,
+                  PalletConfidentialAssetTransactionLegId,
+                  PalletConfidentialAssetLegParty
+                ]
+              >
+            | [
+                PalletConfidentialAssetTransactionId | AnyNumber | Uint8Array,
+                PalletConfidentialAssetTransactionLegId | AnyNumber | Uint8Array,
+                (
+                  | PalletConfidentialAssetLegParty
+                  | 'Sender'
+                  | 'Receiver'
+                  | 'Mediator'
+                  | number
+                  | Uint8Array
+                )
+              ]
+        ) => Observable<Option<bool>>,
+        [
+          PolymeshPrimitivesIdentityId,
+          ITuple<
+            [
+              PalletConfidentialAssetTransactionId,
+              PalletConfidentialAssetTransactionLegId,
+              PalletConfidentialAssetLegParty
+            ]
+          >
+        ]
+      >;
+      /**
+       * Venues that are allowed to create transactions involving a particular asset id.
+       *
+       * asset id -> venue_id -> allowed
+       **/
+      venueAllowList: AugmentedQuery<
+        ApiType,
+        (
+          arg1: U8aFixed | string | Uint8Array,
+          arg2: u64 | AnyNumber | Uint8Array
+        ) => Observable<bool>,
+        [U8aFixed, u64]
+      >;
+      /**
+       * Number of venues in the system (It's one more than the actual number)
+       **/
+      venueCounter: AugmentedQuery<ApiType, () => Observable<u64>, []>;
+      /**
+       * Venue creator.
+       *
+       * venue_id -> Option<IdentityId>
+       **/
+      venueCreator: AugmentedQuery<
+        ApiType,
+        (arg: u64 | AnyNumber | Uint8Array) => Observable<Option<PolymeshPrimitivesIdentityId>>,
+        [u64]
+      >;
+      /**
+       * Venue filtering is enabled for the asset.
+       *
+       * asset id -> filtering_enabled
+       **/
+      venueFiltering: AugmentedQuery<
+        ApiType,
+        (arg: U8aFixed | string | Uint8Array) => Observable<bool>,
+        [U8aFixed]
+      >;
+      /**
+       * Transaction created by a venue.
+       * Only needed for the UI.
+       *
+       * venue_id -> transaction_id -> ()
+       **/
+      venueTransactions: AugmentedQuery<
+        ApiType,
+        (
+          arg1: u64 | AnyNumber | Uint8Array,
+          arg2: PalletConfidentialAssetTransactionId | AnyNumber | Uint8Array
+        ) => Observable<Null>,
+        [u64, PalletConfidentialAssetTransactionId]
+      >;
+    };
     contracts: {
       /**
        * A mapping between an original code hash and instrumented wasm code, ready for execution.
@@ -1317,6 +1604,17 @@ declare module '@polkadot/api-base/types/storage' {
        * change the primary key of an identity.
        **/
       cddAuthForPrimaryKeyRotation: AugmentedQuery<ApiType, () => Observable<bool>, []>;
+      /**
+       * All child identities of a parent (i.e ParentDID, ChildDID, true)
+       **/
+      childDid: AugmentedQuery<
+        ApiType,
+        (
+          arg1: PolymeshPrimitivesIdentityId | string | Uint8Array,
+          arg2: PolymeshPrimitivesIdentityId | string | Uint8Array
+        ) => Observable<bool>,
+        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesIdentityId]
+      >;
       /**
        * (Target ID, claim type) (issuer,scope) -> Associated claims
        **/
@@ -2272,7 +2570,7 @@ declare module '@polkadot/api-base/types/storage' {
         ApiType,
         (
           arg: AccountId32 | string | Uint8Array
-        ) => Observable<Option<PolymeshRuntimeTestnetRuntimeSessionKeys>>,
+        ) => Observable<Option<PolymeshRuntimeDevelopRuntimeSessionKeys>>,
         [AccountId32]
       >;
       /**
@@ -2286,7 +2584,7 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       queuedKeys: AugmentedQuery<
         ApiType,
-        () => Observable<Vec<ITuple<[AccountId32, PolymeshRuntimeTestnetRuntimeSessionKeys]>>>,
+        () => Observable<Vec<ITuple<[AccountId32, PolymeshRuntimeDevelopRuntimeSessionKeys]>>>,
         []
       >;
       /**
@@ -2936,6 +3234,12 @@ declare module '@polkadot/api-base/types/storage' {
         ) => Observable<Option<PalletStoFundraiser>>,
         [PolymeshPrimitivesTicker, u64]
       >;
+    };
+    sudo: {
+      /**
+       * The `AccountId` of the sudo key.
+       **/
+      key: AugmentedQuery<ApiType, () => Observable<Option<AccountId32>>, []>;
     };
     system: {
       /**

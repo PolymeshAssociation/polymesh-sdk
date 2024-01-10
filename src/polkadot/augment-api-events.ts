@@ -22,10 +22,17 @@ import type {
 import type { ITuple } from '@polkadot/types-codec/types';
 import type { AccountId32, H256, Perbill, Permill } from '@polkadot/types/interfaces/runtime';
 import type {
+  ConfidentialAssetsElgamalCipherText,
   FrameSupportDispatchDispatchInfo,
   FrameSupportTokensMiscBalanceStatus,
   PalletBridgeBridgeTx,
   PalletBridgeHandledTxStatus,
+  PalletConfidentialAssetAffirmParty,
+  PalletConfidentialAssetConfidentialAccount,
+  PalletConfidentialAssetConfidentialAuditors,
+  PalletConfidentialAssetTransactionId,
+  PalletConfidentialAssetTransactionLegDetails,
+  PalletConfidentialAssetTransactionLegId,
   PalletCorporateActionsBallotBallotMeta,
   PalletCorporateActionsBallotBallotTimeRange,
   PalletCorporateActionsBallotBallotVote,
@@ -793,6 +800,157 @@ declare module '@polkadot/api-base/types/events' {
         ApiType,
         [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId]
       >;
+    };
+    confidentialAsset: {
+      /**
+       * Event for creation of a Confidential account.
+       *
+       * caller DID, confidential account (public key)
+       **/
+      AccountCreated: AugmentedEvent<
+        ApiType,
+        [PolymeshPrimitivesIdentityId, PalletConfidentialAssetConfidentialAccount]
+      >;
+      /**
+       * Confidential account balance increased.
+       * This happens when the receiver calls `apply_incoming_balance`.
+       *
+       * (confidential account, asset id, encrypted amount, new encrypted balance)
+       **/
+      AccountDeposit: AugmentedEvent<
+        ApiType,
+        [
+          PalletConfidentialAssetConfidentialAccount,
+          U8aFixed,
+          ConfidentialAssetsElgamalCipherText,
+          ConfidentialAssetsElgamalCipherText
+        ]
+      >;
+      /**
+       * Confidential account has an incoming amount.
+       * This happens when a transaction executes.
+       *
+       * (confidential account, asset id, encrypted amount, new encrypted incoming balance)
+       **/
+      AccountDepositIncoming: AugmentedEvent<
+        ApiType,
+        [
+          PalletConfidentialAssetConfidentialAccount,
+          U8aFixed,
+          ConfidentialAssetsElgamalCipherText,
+          ConfidentialAssetsElgamalCipherText
+        ]
+      >;
+      /**
+       * Confidential account balance decreased.
+       * This happens when the sender affirms the transaction.
+       *
+       * (confidential account, asset id, encrypted amount, new encrypted balance)
+       **/
+      AccountWithdraw: AugmentedEvent<
+        ApiType,
+        [
+          PalletConfidentialAssetConfidentialAccount,
+          U8aFixed,
+          ConfidentialAssetsElgamalCipherText,
+          ConfidentialAssetsElgamalCipherText
+        ]
+      >;
+      /**
+       * Event for creation of a confidential asset.
+       *
+       * (caller DID, asset id, auditors and mediators)
+       **/
+      ConfidentialAssetCreated: AugmentedEvent<
+        ApiType,
+        [PolymeshPrimitivesIdentityId, U8aFixed, PalletConfidentialAssetConfidentialAuditors]
+      >;
+      /**
+       * Issued confidential assets.
+       *
+       * (caller DID, asset id, amount issued, total_supply)
+       **/
+      Issued: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, U8aFixed, u128, u128]>;
+      /**
+       * Confidential transaction leg affirmed.
+       *
+       * (caller DID, TransactionId, TransactionLegId, AffirmParty, PendingAffirms)
+       **/
+      TransactionAffirmed: AugmentedEvent<
+        ApiType,
+        [
+          PolymeshPrimitivesIdentityId,
+          PalletConfidentialAssetTransactionId,
+          PalletConfidentialAssetTransactionLegId,
+          PalletConfidentialAssetAffirmParty,
+          u32
+        ]
+      >;
+      /**
+       * A new transaction has been created
+       *
+       * (caller DID, venue_id, transaction_id, legs, memo)
+       **/
+      TransactionCreated: AugmentedEvent<
+        ApiType,
+        [
+          PolymeshPrimitivesIdentityId,
+          u64,
+          PalletConfidentialAssetTransactionId,
+          Vec<PalletConfidentialAssetTransactionLegDetails>,
+          Option<PolymeshPrimitivesMemo>
+        ]
+      >;
+      /**
+       * Confidential transaction executed.
+       *
+       * (caller DID, transaction_id, memo)
+       **/
+      TransactionExecuted: AugmentedEvent<
+        ApiType,
+        [
+          PolymeshPrimitivesIdentityId,
+          PalletConfidentialAssetTransactionId,
+          Option<PolymeshPrimitivesMemo>
+        ]
+      >;
+      /**
+       * Confidential transaction rejected.
+       *
+       * (caller DID, transaction_id, memo)
+       **/
+      TransactionRejected: AugmentedEvent<
+        ApiType,
+        [
+          PolymeshPrimitivesIdentityId,
+          PalletConfidentialAssetTransactionId,
+          Option<PolymeshPrimitivesMemo>
+        ]
+      >;
+      /**
+       * A new venue has been created.
+       *
+       * (caller DID, venue_id)
+       **/
+      VenueCreated: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, u64]>;
+      /**
+       * Venue filtering changed for an asset.
+       *
+       * (caller DID, asset id, enabled)
+       **/
+      VenueFiltering: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, U8aFixed, bool]>;
+      /**
+       * Venues added to allow list.
+       *
+       * (caller DID, asset id, Vec<VenueId>)
+       **/
+      VenuesAllowed: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, U8aFixed, Vec<u64>]>;
+      /**
+       * Venues removed from the allow list.
+       *
+       * (caller DID, asset id, Vec<VenueId>)
+       **/
+      VenuesBlocked: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, U8aFixed, Vec<u64>]>;
     };
     contracts: {
       /**
@@ -2283,6 +2441,20 @@ declare module '@polkadot/api-base/types/events' {
           u128
         ]
       >;
+    };
+    sudo: {
+      /**
+       * The \[sudoer\] just switched identity; the old key is supplied.
+       **/
+      KeyChanged: AugmentedEvent<ApiType, [Option<AccountId32>]>;
+      /**
+       * A sudo just took place. \[result\]
+       **/
+      Sudid: AugmentedEvent<ApiType, [Result<Null, SpRuntimeDispatchError>]>;
+      /**
+       * A sudo just took place. \[result\]
+       **/
+      SudoAsDone: AugmentedEvent<ApiType, [Result<Null, SpRuntimeDispatchError>]>;
     };
     system: {
       /**

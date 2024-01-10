@@ -6,6 +6,8 @@
 import '@polkadot/types/types/registry';
 
 import type {
+  ConfidentialAssetsElgamalCipherText,
+  ConfidentialAssetsElgamalCompressedElgamalPublicKey,
   FinalityGrandpaEquivocationPrecommit,
   FinalityGrandpaEquivocationPrevote,
   FinalityGrandpaPrecommit,
@@ -70,6 +72,27 @@ import type {
   PalletCommitteeRawOriginInstance4,
   PalletComplianceManagerCall,
   PalletComplianceManagerError,
+  PalletConfidentialAssetAffirmLeg,
+  PalletConfidentialAssetAffirmParty,
+  PalletConfidentialAssetAffirmTransaction,
+  PalletConfidentialAssetAffirmTransactions,
+  PalletConfidentialAssetAuditorAccount,
+  PalletConfidentialAssetCall,
+  PalletConfidentialAssetConfidentialAccount,
+  PalletConfidentialAssetConfidentialAssetDetails,
+  PalletConfidentialAssetConfidentialAuditors,
+  PalletConfidentialAssetConfidentialTransfers,
+  PalletConfidentialAssetError,
+  PalletConfidentialAssetEvent,
+  PalletConfidentialAssetLegParty,
+  PalletConfidentialAssetTransaction,
+  PalletConfidentialAssetTransactionId,
+  PalletConfidentialAssetTransactionLeg,
+  PalletConfidentialAssetTransactionLegAssetState,
+  PalletConfidentialAssetTransactionLegDetails,
+  PalletConfidentialAssetTransactionLegId,
+  PalletConfidentialAssetTransactionLegState,
+  PalletConfidentialAssetTransactionStatus,
   PalletContractsCall,
   PalletContractsError,
   PalletContractsEvent,
@@ -208,6 +231,9 @@ import type {
   PalletStoFundraiserTier,
   PalletStoPriceTier,
   PalletStoRawEvent,
+  PalletSudoCall,
+  PalletSudoError,
+  PalletSudoRawEvent,
   PalletTestUtilsCall,
   PalletTestUtilsError,
   PalletTestUtilsRawEvent,
@@ -331,9 +357,9 @@ import type {
   PolymeshPrimitivesTransferComplianceAssetTransferCompliance,
   PolymeshPrimitivesTransferComplianceTransferCondition,
   PolymeshPrimitivesTransferComplianceTransferConditionExemptKey,
-  PolymeshRuntimeTestnetRuntime,
-  PolymeshRuntimeTestnetRuntimeOriginCaller,
-  PolymeshRuntimeTestnetRuntimeSessionKeys,
+  PolymeshRuntimeDevelopRuntime,
+  PolymeshRuntimeDevelopRuntimeOriginCaller,
+  PolymeshRuntimeDevelopRuntimeSessionKeys,
   SpArithmeticArithmeticError,
   SpAuthorityDiscoveryAppPublic,
   SpConsensusBabeAllowedSlots,
@@ -377,6 +403,8 @@ import type {
 
 declare module '@polkadot/types/types/registry' {
   interface InterfaceTypes {
+    ConfidentialAssetsElgamalCipherText: ConfidentialAssetsElgamalCipherText;
+    ConfidentialAssetsElgamalCompressedElgamalPublicKey: ConfidentialAssetsElgamalCompressedElgamalPublicKey;
     FinalityGrandpaEquivocationPrecommit: FinalityGrandpaEquivocationPrecommit;
     FinalityGrandpaEquivocationPrevote: FinalityGrandpaEquivocationPrevote;
     FinalityGrandpaPrecommit: FinalityGrandpaPrecommit;
@@ -441,6 +469,27 @@ declare module '@polkadot/types/types/registry' {
     PalletCommitteeRawOriginInstance4: PalletCommitteeRawOriginInstance4;
     PalletComplianceManagerCall: PalletComplianceManagerCall;
     PalletComplianceManagerError: PalletComplianceManagerError;
+    PalletConfidentialAssetAffirmLeg: PalletConfidentialAssetAffirmLeg;
+    PalletConfidentialAssetAffirmParty: PalletConfidentialAssetAffirmParty;
+    PalletConfidentialAssetAffirmTransaction: PalletConfidentialAssetAffirmTransaction;
+    PalletConfidentialAssetAffirmTransactions: PalletConfidentialAssetAffirmTransactions;
+    PalletConfidentialAssetAuditorAccount: PalletConfidentialAssetAuditorAccount;
+    PalletConfidentialAssetCall: PalletConfidentialAssetCall;
+    PalletConfidentialAssetConfidentialAccount: PalletConfidentialAssetConfidentialAccount;
+    PalletConfidentialAssetConfidentialAssetDetails: PalletConfidentialAssetConfidentialAssetDetails;
+    PalletConfidentialAssetConfidentialAuditors: PalletConfidentialAssetConfidentialAuditors;
+    PalletConfidentialAssetConfidentialTransfers: PalletConfidentialAssetConfidentialTransfers;
+    PalletConfidentialAssetError: PalletConfidentialAssetError;
+    PalletConfidentialAssetEvent: PalletConfidentialAssetEvent;
+    PalletConfidentialAssetLegParty: PalletConfidentialAssetLegParty;
+    PalletConfidentialAssetTransaction: PalletConfidentialAssetTransaction;
+    PalletConfidentialAssetTransactionId: PalletConfidentialAssetTransactionId;
+    PalletConfidentialAssetTransactionLeg: PalletConfidentialAssetTransactionLeg;
+    PalletConfidentialAssetTransactionLegAssetState: PalletConfidentialAssetTransactionLegAssetState;
+    PalletConfidentialAssetTransactionLegDetails: PalletConfidentialAssetTransactionLegDetails;
+    PalletConfidentialAssetTransactionLegId: PalletConfidentialAssetTransactionLegId;
+    PalletConfidentialAssetTransactionLegState: PalletConfidentialAssetTransactionLegState;
+    PalletConfidentialAssetTransactionStatus: PalletConfidentialAssetTransactionStatus;
     PalletContractsCall: PalletContractsCall;
     PalletContractsError: PalletContractsError;
     PalletContractsEvent: PalletContractsEvent;
@@ -579,6 +628,9 @@ declare module '@polkadot/types/types/registry' {
     PalletStoFundraiserTier: PalletStoFundraiserTier;
     PalletStoPriceTier: PalletStoPriceTier;
     PalletStoRawEvent: PalletStoRawEvent;
+    PalletSudoCall: PalletSudoCall;
+    PalletSudoError: PalletSudoError;
+    PalletSudoRawEvent: PalletSudoRawEvent;
     PalletTestUtilsCall: PalletTestUtilsCall;
     PalletTestUtilsError: PalletTestUtilsError;
     PalletTestUtilsRawEvent: PalletTestUtilsRawEvent;
@@ -702,9 +754,9 @@ declare module '@polkadot/types/types/registry' {
     PolymeshPrimitivesTransferComplianceAssetTransferCompliance: PolymeshPrimitivesTransferComplianceAssetTransferCompliance;
     PolymeshPrimitivesTransferComplianceTransferCondition: PolymeshPrimitivesTransferComplianceTransferCondition;
     PolymeshPrimitivesTransferComplianceTransferConditionExemptKey: PolymeshPrimitivesTransferComplianceTransferConditionExemptKey;
-    PolymeshRuntimeTestnetRuntime: PolymeshRuntimeTestnetRuntime;
-    PolymeshRuntimeTestnetRuntimeOriginCaller: PolymeshRuntimeTestnetRuntimeOriginCaller;
-    PolymeshRuntimeTestnetRuntimeSessionKeys: PolymeshRuntimeTestnetRuntimeSessionKeys;
+    PolymeshRuntimeDevelopRuntime: PolymeshRuntimeDevelopRuntime;
+    PolymeshRuntimeDevelopRuntimeOriginCaller: PolymeshRuntimeDevelopRuntimeOriginCaller;
+    PolymeshRuntimeDevelopRuntimeSessionKeys: PolymeshRuntimeDevelopRuntimeSessionKeys;
     SpArithmeticArithmeticError: SpArithmeticArithmeticError;
     SpAuthorityDiscoveryAppPublic: SpAuthorityDiscoveryAppPublic;
     SpConsensusBabeAllowedSlots: SpConsensusBabeAllowedSlots;

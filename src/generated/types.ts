@@ -785,6 +785,21 @@ export enum NftTx {
   ControllerTransfer = 'nft.controllerTransfer',
 }
 
+export enum ConfidentialAssetTx {
+  CreateAccount = 'confidentialAsset.createAccount',
+  CreateConfidentialAsset = 'confidentialAsset.createConfidentialAsset',
+  MintConfidentialAsset = 'confidentialAsset.mintConfidentialAsset',
+  ApplyIncomingBalance = 'confidentialAsset.applyIncomingBalance',
+  CreateVenue = 'confidentialAsset.createVenue',
+  SetVenueFiltering = 'confidentialAsset.setVenueFiltering',
+  AllowVenues = 'confidentialAsset.allowVenues',
+  DisallowVenues = 'confidentialAsset.disallowVenues',
+  AddTransaction = 'confidentialAsset.addTransaction',
+  AffirmTransactions = 'confidentialAsset.affirmTransactions',
+  ExecuteTransaction = 'confidentialAsset.executeTransaction',
+  RejectTransaction = 'confidentialAsset.rejectTransaction',
+}
+
 export enum ModuleName {
   System = 'system',
   Babe = 'babe',
@@ -830,6 +845,7 @@ export enum ModuleName {
   Preimage = 'preimage',
   Contracts = 'contracts',
   Nft = 'nft',
+  ConfidentialAsset = 'confidentialAsset',
 }
 
 export type TxTag =
@@ -876,7 +892,8 @@ export type TxTag =
   | PolymeshContractsTx
   | PreimageTx
   | ContractsTx
-  | NftTx;
+  | NftTx
+  | ConfidentialAssetTx;
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const TxTags = {
@@ -924,4 +941,5 @@ export const TxTags = {
   preimage: PreimageTx,
   contracts: ContractsTx,
   nft: NftTx,
+  confidentialAsset: ConfidentialAssetTx,
 };

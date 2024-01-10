@@ -450,6 +450,116 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       WeightLimitExceeded: AugmentedError<ApiType>;
     };
+    confidentialAsset: {
+      /**
+       * Confidential mediator account already created.
+       **/
+      AuditorAccountAlreadyCreated: AugmentedError<ApiType>;
+      /**
+       * Mediator account hasn't been created yet.
+       **/
+      AuditorAccountMissing: AugmentedError<ApiType>;
+      /**
+       * Confidential account already created.
+       **/
+      ConfidentialAccountAlreadyCreated: AugmentedError<ApiType>;
+      /**
+       * Confidential account's balance already initialized.
+       **/
+      ConfidentialAccountAlreadyInitialized: AugmentedError<ApiType>;
+      /**
+       * Confidential account hasn't been created yet.
+       **/
+      ConfidentialAccountMissing: AugmentedError<ApiType>;
+      /**
+       * The confidential asset has already been created.
+       **/
+      ConfidentialAssetAlreadyCreated: AugmentedError<ApiType>;
+      /**
+       * Mediator account isn't a valid CompressedEncryptionPubKey.
+       **/
+      InvalidAuditorAccount: AugmentedError<ApiType>;
+      /**
+       * Confidential account isn't a valid CompressedEncryptionPubKey.
+       **/
+      InvalidConfidentialAccount: AugmentedError<ApiType>;
+      /**
+       * The confidential transfer sender proof is invalid.
+       **/
+      InvalidSenderProof: AugmentedError<ApiType>;
+      /**
+       * Venue does not exist.
+       **/
+      InvalidVenue: AugmentedError<ApiType>;
+      /**
+       * Legs count should matches with the total number of legs in the transaction.
+       **/
+      LegCountTooSmall: AugmentedError<ApiType>;
+      /**
+       * The number of confidential asset auditors doesn't meet the minimum requirement.
+       **/
+      NotEnoughAssetAuditors: AugmentedError<ApiType>;
+      /**
+       * A required auditor/mediator is missing.
+       **/
+      RequiredAssetAuditorMissing: AugmentedError<ApiType>;
+      /**
+       * Asset or leg has too many auditors.
+       **/
+      TooManyAuditors: AugmentedError<ApiType>;
+      /**
+       * Asset or leg has too many mediators.
+       **/
+      TooManyMediators: AugmentedError<ApiType>;
+      /**
+       * The balance values does not fit a confidential balance.
+       **/
+      TotalSupplyAboveConfidentialBalanceLimit: AugmentedError<ApiType>;
+      /**
+       * A confidential asset's total supply must be positive.
+       **/
+      TotalSupplyMustBePositive: AugmentedError<ApiType>;
+      /**
+       * A confidential asset's total supply can't go above `T::MaxTotalSupply`.
+       **/
+      TotalSupplyOverLimit: AugmentedError<ApiType>;
+      /**
+       * Transaction has already been affirmed.
+       **/
+      TransactionAlreadyAffirmed: AugmentedError<ApiType>;
+      /**
+       * Transaction failed to execute.
+       **/
+      TransactionFailed: AugmentedError<ApiType>;
+      /**
+       * Transaction has no legs.
+       **/
+      TransactionNoLegs: AugmentedError<ApiType>;
+      /**
+       * Transaction has not been affirmed.
+       **/
+      TransactionNotAffirmed: AugmentedError<ApiType>;
+      /**
+       * The user is not authorized.
+       **/
+      Unauthorized: AugmentedError<ApiType>;
+      /**
+       * Venue does not have required permissions.
+       **/
+      UnauthorizedVenue: AugmentedError<ApiType>;
+      /**
+       * The asset id is not a registered confidential asset.
+       **/
+      UnknownConfidentialAsset: AugmentedError<ApiType>;
+      /**
+       * Transaction is unknown.
+       **/
+      UnknownTransaction: AugmentedError<ApiType>;
+      /**
+       * Transaction leg is unknown.
+       **/
+      UnknownTransactionLeg: AugmentedError<ApiType>;
+    };
     contracts: {
       /**
        * Code removal was denied because the code is still in use by at least one contract.
@@ -1892,6 +2002,12 @@ declare module '@polkadot/api-base/types/errors' {
        * Sender does not have required permissions.
        **/
       Unauthorized: AugmentedError<ApiType>;
+    };
+    sudo: {
+      /**
+       * Sender must be the Sudo account
+       **/
+      RequireSudo: AugmentedError<ApiType>;
     };
     system: {
       /**
