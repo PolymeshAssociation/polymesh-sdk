@@ -710,6 +710,7 @@ export enum UtilityTx {
   ForceBatch = 'utility.forceBatch',
   WithWeight = 'utility.withWeight',
   BatchOld = 'utility.batchOld',
+  AsDerivative = 'utility.asDerivative',
 }
 
 export enum ExternalAgentsTx {

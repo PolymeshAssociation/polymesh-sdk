@@ -105,8 +105,8 @@ import type {
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceTransferCondition,
   PolymeshPrimitivesTransferComplianceTransferConditionExemptKey,
-  PolymeshRuntimeDevelopRuntimeOriginCaller,
-  PolymeshRuntimeDevelopRuntimeSessionKeys,
+  PolymeshRuntimeTestnetRuntimeOriginCaller,
+  PolymeshRuntimeTestnetRuntimeSessionKeys,
   SpConsensusBabeDigestsNextConfigDescriptor,
   SpConsensusGrandpaEquivocationProof,
   SpConsensusSlotsEquivocationProof,
@@ -5151,13 +5151,13 @@ declare module '@polkadot/api-base/types/submittable' {
       setKeys: AugmentedSubmittable<
         (
           keys:
-            | PolymeshRuntimeDevelopRuntimeSessionKeys
+            | PolymeshRuntimeTestnetRuntimeSessionKeys
             | { grandpa?: any; babe?: any; imOnline?: any; authorityDiscovery?: any }
             | string
             | Uint8Array,
           proof: Bytes | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [PolymeshRuntimeDevelopRuntimeSessionKeys, Bytes]
+        [PolymeshRuntimeTestnetRuntimeSessionKeys, Bytes]
       >;
     };
     settlement: {
@@ -6870,96 +6870,6 @@ declare module '@polkadot/api-base/types/submittable' {
         [PolymeshPrimitivesTicker, u64]
       >;
     };
-    sudo: {
-      /**
-       * Authenticates the current sudo key and sets the given AccountId (`new`) as the new sudo key.
-       *
-       * The dispatch origin for this call must be _Signed_.
-       *
-       * # <weight>
-       * - O(1).
-       * - Limited storage reads.
-       * - One DB change.
-       * # </weight>
-       **/
-      setKey: AugmentedSubmittable<
-        (
-          updated:
-            | MultiAddress
-            | { Id: any }
-            | { Index: any }
-            | { Raw: any }
-            | { Address32: any }
-            | { Address20: any }
-            | string
-            | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [MultiAddress]
-      >;
-      /**
-       * Authenticates the sudo key and dispatches a function call with `Root` origin.
-       *
-       * The dispatch origin for this call must be _Signed_.
-       *
-       * # <weight>
-       * - O(1).
-       * - Limited storage reads.
-       * - One DB write (event).
-       * - Weight of derivative `call` execution + 10,000.
-       * # </weight>
-       **/
-      sudo: AugmentedSubmittable<
-        (call: Call | IMethod | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [Call]
-      >;
-      /**
-       * Authenticates the sudo key and dispatches a function call with `Signed` origin from
-       * a given account.
-       *
-       * The dispatch origin for this call must be _Signed_.
-       *
-       * # <weight>
-       * - O(1).
-       * - Limited storage reads.
-       * - One DB write (event).
-       * - Weight of derivative `call` execution + 10,000.
-       * # </weight>
-       **/
-      sudoAs: AugmentedSubmittable<
-        (
-          who:
-            | MultiAddress
-            | { Id: any }
-            | { Index: any }
-            | { Raw: any }
-            | { Address32: any }
-            | { Address20: any }
-            | string
-            | Uint8Array,
-          call: Call | IMethod | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [MultiAddress, Call]
-      >;
-      /**
-       * Authenticates the sudo key and dispatches a function call with `Root` origin.
-       * This function does not check the weight of the call, and instead allows the
-       * Sudo user to specify the weight of the call.
-       *
-       * The dispatch origin for this call must be _Signed_.
-       *
-       * # <weight>
-       * - O(1).
-       * - The weight of this call is defined by the caller.
-       * # </weight>
-       **/
-      sudoUncheckedWeight: AugmentedSubmittable<
-        (
-          call: Call | IMethod | string | Uint8Array,
-          weight: SpWeightsWeightV2Weight | { refTime?: any; proofSize?: any } | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Call, SpWeightsWeightV2Weight]
-      >;
-    };
     system: {
       /**
        * Kill all storage items with a key that starts with the given prefix.
@@ -7549,6 +7459,21 @@ declare module '@polkadot/api-base/types/submittable' {
     };
     utility: {
       /**
+       * Send a call through an indexed pseudonym of the sender.
+       *
+       * Filter from origin are passed along. The call will be dispatched with an origin which
+       * use the same filter as the origin of this call.
+       *
+       * The dispatch origin for this call must be _Signed_.
+       **/
+      asDerivative: AugmentedSubmittable<
+        (
+          index: u16 | AnyNumber | Uint8Array,
+          call: Call | IMethod | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [u16, Call]
+      >;
+      /**
        * Send a batch of dispatch calls.
        *
        * May be called from any origin except `None`.
@@ -7694,7 +7619,7 @@ declare module '@polkadot/api-base/types/submittable' {
       dispatchAs: AugmentedSubmittable<
         (
           asOrigin:
-            | PolymeshRuntimeDevelopRuntimeOriginCaller
+            | PolymeshRuntimeTestnetRuntimeOriginCaller
             | { system: any }
             | { Void: any }
             | { PolymeshCommittee: any }
@@ -7704,7 +7629,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | Uint8Array,
           call: Call | IMethod | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [PolymeshRuntimeDevelopRuntimeOriginCaller, Call]
+        [PolymeshRuntimeTestnetRuntimeOriginCaller, Call]
       >;
       /**
        * Send a batch of dispatch calls.

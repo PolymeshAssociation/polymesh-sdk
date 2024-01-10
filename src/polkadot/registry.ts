@@ -208,9 +208,6 @@ import type {
   PalletStoFundraiserTier,
   PalletStoPriceTier,
   PalletStoRawEvent,
-  PalletSudoCall,
-  PalletSudoError,
-  PalletSudoRawEvent,
   PalletTestUtilsCall,
   PalletTestUtilsError,
   PalletTestUtilsRawEvent,
@@ -334,9 +331,9 @@ import type {
   PolymeshPrimitivesTransferComplianceAssetTransferCompliance,
   PolymeshPrimitivesTransferComplianceTransferCondition,
   PolymeshPrimitivesTransferComplianceTransferConditionExemptKey,
-  PolymeshRuntimeDevelopRuntime,
-  PolymeshRuntimeDevelopRuntimeOriginCaller,
-  PolymeshRuntimeDevelopRuntimeSessionKeys,
+  PolymeshRuntimeTestnetRuntime,
+  PolymeshRuntimeTestnetRuntimeOriginCaller,
+  PolymeshRuntimeTestnetRuntimeSessionKeys,
   SpArithmeticArithmeticError,
   SpAuthorityDiscoveryAppPublic,
   SpConsensusBabeAllowedSlots,
@@ -582,9 +579,6 @@ declare module '@polkadot/types/types/registry' {
     PalletStoFundraiserTier: PalletStoFundraiserTier;
     PalletStoPriceTier: PalletStoPriceTier;
     PalletStoRawEvent: PalletStoRawEvent;
-    PalletSudoCall: PalletSudoCall;
-    PalletSudoError: PalletSudoError;
-    PalletSudoRawEvent: PalletSudoRawEvent;
     PalletTestUtilsCall: PalletTestUtilsCall;
     PalletTestUtilsError: PalletTestUtilsError;
     PalletTestUtilsRawEvent: PalletTestUtilsRawEvent;
@@ -708,9 +702,9 @@ declare module '@polkadot/types/types/registry' {
     PolymeshPrimitivesTransferComplianceAssetTransferCompliance: PolymeshPrimitivesTransferComplianceAssetTransferCompliance;
     PolymeshPrimitivesTransferComplianceTransferCondition: PolymeshPrimitivesTransferComplianceTransferCondition;
     PolymeshPrimitivesTransferComplianceTransferConditionExemptKey: PolymeshPrimitivesTransferComplianceTransferConditionExemptKey;
-    PolymeshRuntimeDevelopRuntime: PolymeshRuntimeDevelopRuntime;
-    PolymeshRuntimeDevelopRuntimeOriginCaller: PolymeshRuntimeDevelopRuntimeOriginCaller;
-    PolymeshRuntimeDevelopRuntimeSessionKeys: PolymeshRuntimeDevelopRuntimeSessionKeys;
+    PolymeshRuntimeTestnetRuntime: PolymeshRuntimeTestnetRuntime;
+    PolymeshRuntimeTestnetRuntimeOriginCaller: PolymeshRuntimeTestnetRuntimeOriginCaller;
+    PolymeshRuntimeTestnetRuntimeSessionKeys: PolymeshRuntimeTestnetRuntimeSessionKeys;
     SpArithmeticArithmeticError: SpArithmeticArithmeticError;
     SpAuthorityDiscoveryAppPublic: SpAuthorityDiscoveryAppPublic;
     SpConsensusBabeAllowedSlots: SpConsensusBabeAllowedSlots;
