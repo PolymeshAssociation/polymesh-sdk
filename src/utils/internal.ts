@@ -23,7 +23,6 @@ import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/typ
 import { stringUpperFirst } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
-import { Guid } from 'guid-typescript';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
 import { coerce, lt, major, satisfies } from 'semver';
@@ -1907,7 +1906,9 @@ export function assertCaAssetValid(id: string): string {
       )}-${id.substring(20)}`;
     }
 
-    if (Guid.validator.test(guid)) {
+    const guidRegex =
+      /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/i;
+    if (guidRegex.test(guid)) {
       return guid;
     }
   }

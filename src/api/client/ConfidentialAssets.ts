@@ -25,8 +25,6 @@ export class ConfidentialAssets {
 
     const exists = await confidentialAsset.exists();
 
-    console.log(exists);
-
     if (!exists) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,

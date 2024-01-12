@@ -1,15 +1,22 @@
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { ConfidentialAsset, Context, Entity } from '~/internal';
+import { ConfidentialAsset, Context, Entity, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { ErrorCode } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('ConfidentialAsset class', () => {
+  let assetId: string;
   let id: string;
-  let guid: string;
   let confidentialAsset: ConfidentialAsset;
   let context: Context;
+  const assetDetails = {
+    totalSupply: new BigNumber(100),
+    data: 'SOME_DATA',
+    ownerDid: 'SOME_DID',
+  };
+  let detailsQueryMock: jest.Mock;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -18,10 +25,20 @@ describe('ConfidentialAsset class', () => {
   });
 
   beforeEach(() => {
-    id = '76702175d8cbe3a55a19734433351e25';
-    guid = '76702175-d8cb-e3a5-5a19-734433351e25';
+    assetId = '76702175d8cbe3a55a19734433351e25';
+    id = '76702175-d8cb-e3a5-5a19-734433351e25';
     context = dsMockUtils.getContextInstance();
-    confidentialAsset = new ConfidentialAsset({ id }, context);
+    confidentialAsset = new ConfidentialAsset({ id: assetId }, context);
+    detailsQueryMock = dsMockUtils.createQueryMock('confidentialAsset', 'details');
+
+    detailsQueryMock.mockResolvedValue(
+      dsMockUtils.createMockOption(
+        dsMockUtils.createMockConfidentialAssetDetails({
+          ...assetDetails,
+          ticker: dsMockUtils.createMockOption(),
+        })
+      )
+    );
   });
 
   afterEach(() => {
@@ -39,7 +56,7 @@ describe('ConfidentialAsset class', () => {
 
   describe('constructor', () => {
     it('should assign ID to instance', () => {
-      expect(confidentialAsset.id).toBe(guid);
+      expect(confidentialAsset.id).toBe(id);
     });
   });
 
@@ -54,16 +71,9 @@ describe('ConfidentialAsset class', () => {
   });
 
   describe('method: details', () => {
-    let detailsQueryMock: jest.Mock;
     let u128ToBigNumberSpy: jest.SpyInstance;
     let bytesToStringSpy: jest.SpyInstance;
     let identityIdToStringSpy: jest.SpyInstance;
-
-    const assetDetails = {
-      totalSupply: new BigNumber(100),
-      data: 'SOME_DATA',
-      ownerDid: 'SOME_DID',
-    };
 
     beforeAll(() => {
       u128ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u128ToBigNumber');
@@ -72,7 +82,6 @@ describe('ConfidentialAsset class', () => {
     });
 
     beforeEach(() => {
-      detailsQueryMock = dsMockUtils.createQueryMock('confidentialAsset', 'details');
       when(bytesToStringSpy).calledWith(assetDetails.data).mockReturnValue(assetDetails.data);
       when(u128ToBigNumberSpy)
         .calledWith(assetDetails.totalSupply)
@@ -82,22 +91,7 @@ describe('ConfidentialAsset class', () => {
         .mockReturnValue(assetDetails.ownerDid);
     });
 
-    it('should return null if confidential Asset does not exists', async () => {
-      detailsQueryMock.mockResolvedValueOnce(dsMockUtils.createMockOption());
-      const result = await confidentialAsset.details();
-
-      expect(result).toBe(null);
-    });
-
     it('should return the basic details of the confidential Asset', async () => {
-      detailsQueryMock.mockResolvedValueOnce(
-        dsMockUtils.createMockOption(
-          dsMockUtils.createMockConfidentialAssetDetails({
-            ...assetDetails,
-            ticker: dsMockUtils.createMockOption(),
-          })
-        )
-      );
       const expectedAssetDetails = {
         data: assetDetails.data,
         owner: expect.objectContaining({
@@ -129,24 +123,24 @@ describe('ConfidentialAsset class', () => {
         })
       );
     });
+
+    it('should throw an error if confidential Asset details are not available', async () => {
+      const expectedError = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The Confidential Asset does not exists',
+      });
+      detailsQueryMock.mockResolvedValue(dsMockUtils.createMockOption());
+      await expect(confidentialAsset.details()).rejects.toThrow(expectedError);
+    });
   });
 
   describe('method: exists', () => {
     it('should return if Confidential Asset exists', async () => {
-      const detailsSpy = jest.spyOn(confidentialAsset, 'details');
-
-      detailsSpy.mockResolvedValueOnce({
-        owner: entityMockUtils.getIdentityInstance(),
-        totalSupply: new BigNumber(100),
-        data: 'SOME_DATA',
-        ticker: 'SOME_TICKER',
-      });
-
       let result = await confidentialAsset.exists();
 
       expect(result).toBeTruthy();
 
-      detailsSpy.mockResolvedValueOnce(null);
+      detailsQueryMock.mockResolvedValue(dsMockUtils.createMockOption());
 
       result = await confidentialAsset.exists();
 
@@ -156,7 +150,7 @@ describe('ConfidentialAsset class', () => {
 
   describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
-      expect(confidentialAsset.toHuman()).toBe(guid);
+      expect(confidentialAsset.toHuman()).toBe(id);
     });
   });
 });

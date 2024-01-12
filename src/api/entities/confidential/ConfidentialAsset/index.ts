@@ -1,5 +1,8 @@
-import { Context, Entity, Identity } from '~/internal';
-import { ConfidentialAssetDetails } from '~/types';
+import { PalletConfidentialAssetConfidentialAssetDetails } from '@polkadot/types/lookup';
+import { Option } from '@polkadot/types-codec';
+
+import { Context, Entity, Identity, PolymeshError } from '~/internal';
+import { ConfidentialAssetDetails, ErrorCode } from '~/types';
 import {
   bytesToString,
   identityIdToString,
@@ -52,12 +55,13 @@ export class ConfidentialAsset extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieve confidential Asset's details
+   * @hidden
    */
-  public async details(): Promise<ConfidentialAssetDetails | null> {
+  private async getDetailsFromChain(): Promise<
+    Option<PalletConfidentialAssetConfidentialAssetDetails>
+  > {
     const {
       id,
-      context,
       context: {
         polymeshApi: {
           query: { confidentialAsset },
@@ -66,13 +70,25 @@ export class ConfidentialAsset extends Entity<UniqueIdentifiers, string> {
     } = this;
 
     const rawAssetId = serializeConfidentialAssetId(id);
-    const details = await confidentialAsset.details(rawAssetId);
 
-    if (details.isNone) {
-      return null;
+    return confidentialAsset.details(rawAssetId);
+  }
+
+  /**
+   * Retrieve the confidential Asset's details
+   */
+  public async details(): Promise<ConfidentialAssetDetails | null> {
+    const { context } = this;
+    const assetDetails = await this.getDetailsFromChain();
+
+    if (assetDetails.isNone) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The Confidential Asset does not exists',
+      });
     }
 
-    const { data, ticker, ownerDid, totalSupply } = details.unwrap();
+    const { data, ticker, ownerDid, totalSupply } = assetDetails.unwrap();
 
     return {
       ticker: ticker.isNone ? undefined : tickerToString(ticker.unwrap()),
@@ -86,12 +102,12 @@ export class ConfidentialAsset extends Entity<UniqueIdentifiers, string> {
    * Determine whether this confidential Asset exists on chain
    */
   public async exists(): Promise<boolean> {
-    const details = await this.details();
-    return details !== null;
+    const details = await this.getDetailsFromChain();
+    return details.isSome;
   }
 
   /**
-   * Return the confidential Asset's GUID
+   * Return the confidential Asset's ID
    */
   public toHuman(): string {
     return this.id;
