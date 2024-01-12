@@ -403,6 +403,12 @@ export interface ClaimScope {
   ticker?: string;
 }
 
+export interface SubmissionDetails {
+  blockHash: string;
+  transactionIndex: BigNumber;
+  transactionHash: string;
+}
+
 /**
  * @param IsDefault - whether the Identity is a default trusted claim issuer for an asset or just
  *   for a specific compliance condition. Defaults to false
