@@ -14,6 +14,8 @@ import {
   CheckpointSchedule,
   ChildIdentity,
   ConfidentialAsset,
+  ConfidentialTransaction,
+  ConfidentialVenue,
   CorporateAction,
   CustomPermissionGroup,
   DefaultPortfolio,
@@ -368,6 +370,15 @@ interface ConfidentialAssetOptions extends EntityOptions {
   details?: EntityGetter<ConfidentialAssetDetails | null>;
 }
 
+interface ConfidentialVenueOptions extends EntityOptions {
+  id?: BigNumber;
+  creator?: EntityGetter<Identity>;
+}
+
+interface ConfidentialTransactionOptions extends EntityOptions {
+  id?: BigNumber;
+}
+
 type MockOptions = {
   identityOptions?: IdentityOptions;
   childIdentityOptions?: ChildIdentityOptions;
@@ -394,6 +405,8 @@ type MockOptions = {
   multiSigOptions?: MultiSigOptions;
   multiSigProposalOptions?: MultiSigProposalOptions;
   confidentialAssetOptions?: ConfidentialAssetOptions;
+  confidentialVenueOptions?: ConfidentialVenueOptions;
+  confidentialTransactionOptions?: ConfidentialTransactionOptions;
 };
 
 type Class<T = any> = new (...args: any[]) => T;
@@ -2125,6 +2138,61 @@ const MockConfidentialAssetClass = createMockEntityClass<ConfidentialAssetOption
   ['ConfidentialAsset']
 );
 
+const MockConfidentialVenueClass = createMockEntityClass<ConfidentialVenueOptions>(
+  class {
+    uuid!: string;
+    id!: BigNumber;
+    creator!: jest.Mock;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof ConfidentialVenue>) {
+      return extractFromArgs(args, ['id']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<ConfidentialVenueOptions>) {
+      this.uuid = 'confidentialVenue';
+      this.id = opts.id;
+      this.creator = createEntityGetterMock(opts.creator);
+    }
+  },
+  () => ({
+    id: new BigNumber(1),
+    creator: getIdentityInstance(),
+  }),
+  ['ConfidentialVenue']
+);
+
+const MockConfidentialTransactionClass = createMockEntityClass<ConfidentialTransactionOptions>(
+  class {
+    uuid!: string;
+    id!: BigNumber;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof ConfidentialTransaction>) {
+      return extractFromArgs(args, ['id']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<ConfidentialTransactionOptions>) {
+      this.uuid = 'confidentialTransaction';
+      this.id = opts.id;
+    }
+  },
+  () => ({
+    id: new BigNumber(1),
+  }),
+  ['ConfidentialTransaction']
+);
+
 export const mockIdentityModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   Identity: MockIdentityClass,
@@ -2250,6 +2318,16 @@ export const mockConfidentialAssetModule = (path: string) => (): Record<string, 
   ConfidentialAsset: MockConfidentialAssetClass,
 });
 
+export const mockConfidentialVenueModule = (path: string) => (): Record<string, unknown> => ({
+  ...jest.requireActual(path),
+  ConfidentialVenue: MockConfidentialVenueClass,
+});
+
+export const mockConfidentialTransactionModule = (path: string) => (): Record<string, unknown> => ({
+  ...jest.requireActual(path),
+  ConfidentialTransaction: MockConfidentialTransactionClass,
+});
+
 /**
  * @hidden
  *
@@ -2280,6 +2358,8 @@ export const initMocks = function (opts?: MockOptions): void {
   MockMultiSigClass.init(opts?.multiSigOptions);
   MockMultiSigProposalClass.init(opts?.multiSigProposalOptions);
   MockConfidentialAssetClass.init(opts?.confidentialAssetOptions);
+  MockConfidentialVenueClass.init(opts?.confidentialVenueOptions);
+  MockConfidentialTransactionClass.init(opts?.confidentialTransactionOptions);
 };
 
 /**
@@ -2313,6 +2393,8 @@ export const configureMocks = function (opts?: MockOptions): void {
   MockMultiSigClass.setOptions(opts?.multiSigOptions);
   MockMultiSigProposalClass.setOptions(opts?.multiSigProposalOptions);
   MockConfidentialAssetClass.setOptions(opts?.confidentialAssetOptions);
+  MockConfidentialVenueClass.setOptions(opts?.confidentialVenueOptions);
+  MockConfidentialTransactionClass.setOptions(opts?.confidentialTransactionOptions);
 };
 
 /**
@@ -2343,6 +2425,8 @@ export const reset = function (): void {
   MockMultiSigClass.resetOptions();
   MockMultiSigProposalClass.resetOptions();
   MockConfidentialAssetClass.resetOptions();
+  MockConfidentialVenueClass.resetOptions();
+  MockConfidentialTransactionClass.resetOptions();
 };
 
 /**
