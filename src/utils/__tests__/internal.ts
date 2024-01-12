@@ -67,6 +67,7 @@ import {
   asFungibleAsset,
   asNftId,
   assertAddressValid,
+  assertCaAssetValid,
   assertExpectedChainVersion,
   assertExpectedSqVersion,
   assertIsInteger,
@@ -2296,5 +2297,32 @@ describe('areSameClaims', () => {
     const result = areSameClaims(firstClaim, secondClaim);
 
     expect(result).toBeFalsy();
+  });
+});
+
+describe('assetCaAssetValid', () => {
+  it('should return true for a valid ID', () => {
+    const guid = '76702175-d8cb-e3a5-5a19-734433351e25';
+    const id = '76702175d8cbe3a55a19734433351e25';
+
+    let result = assertCaAssetValid(id);
+
+    expect(result).toEqual(guid);
+
+    result = assertCaAssetValid(guid);
+
+    expect(result).toEqual(guid);
+  });
+
+  it('should throw an error for an invalid ID', async () => {
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The supplied ID is not a valid confidential Asset ID',
+    });
+    expect(() => assertCaAssetValid('small-length-string')).toThrow(expectedError);
+
+    expect(() => assertCaAssetValid('NotMatching32CharactersString$$$')).toThrow(expectedError);
+
+    expect(() => assertCaAssetValid('7670-2175d8cb-e3a55a-1973443-3351e25')).toThrow(expectedError);
   });
 });
