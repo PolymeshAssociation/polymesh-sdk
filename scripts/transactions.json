@@ -486,5 +486,19 @@
     "issue_nft": "issue_nft",
     "redeem_nft": "redeem_nft",
     "controller_transfer": "controller_transfer"
+  },
+  "ConfidentialAsset": {
+    "create_account": "create_account",
+    "create_confidential_asset": "create_confidential_asset",
+    "mint_confidential_asset": "mint_confidential_asset",
+    "apply_incoming_balance": "apply_incoming_balance",
+    "create_venue": "create_venue",
+    "set_venue_filtering": "set_venue_filtering",
+    "allow_venues": "allow_venues",
+    "disallow_venues": "disallow_venues",
+    "add_transaction": "add_transaction",
+    "affirm_transactions": "affirm_transactions",
+    "execute_transaction": "execute_transaction",
+    "reject_transaction": "reject_transaction"
   }
 }

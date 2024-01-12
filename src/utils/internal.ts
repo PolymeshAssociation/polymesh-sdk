@@ -1891,3 +1891,30 @@ export function areSameClaims(
 
   return ClaimType[type] === claim.type;
 }
+
+/**
+ * @hidden
+ */
+export function assertCaAssetValid(id: string): string {
+  if (id.length >= 32) {
+    let assetId = id;
+
+    if (id.length === 32) {
+      assetId = `${id.substring(0, 8)}-${id.substring(8, 12)}-${id.substring(
+        12,
+        16
+      )}-${id.substring(16, 20)}-${id.substring(20)}`;
+    }
+
+    const assetIdRegex =
+      /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/i;
+    if (assetIdRegex.test(assetId)) {
+      return assetId;
+    }
+  }
+
+  throw new PolymeshError({
+    code: ErrorCode.ValidationError,
+    message: 'The supplied ID is not a valid confidential Asset ID',
+  });
+}

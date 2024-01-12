@@ -37,6 +37,11 @@ import type {
 } from '@polkadot/types/interfaces/runtime';
 import type {
   PalletBridgeBridgeTx,
+  PalletConfidentialAssetAffirmTransactions,
+  PalletConfidentialAssetConfidentialAccount,
+  PalletConfidentialAssetConfidentialAuditors,
+  PalletConfidentialAssetTransactionId,
+  PalletConfidentialAssetTransactionLeg,
   PalletContractsWasmDeterminism,
   PalletCorporateActionsBallotBallotMeta,
   PalletCorporateActionsBallotBallotTimeRange,
@@ -105,8 +110,8 @@ import type {
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceTransferCondition,
   PolymeshPrimitivesTransferComplianceTransferConditionExemptKey,
-  PolymeshRuntimeTestnetRuntimeOriginCaller,
-  PolymeshRuntimeTestnetRuntimeSessionKeys,
+  PolymeshRuntimeDevelopRuntimeOriginCaller,
+  PolymeshRuntimeDevelopRuntimeSessionKeys,
   SpConsensusBabeDigestsNextConfigDescriptor,
   SpConsensusGrandpaEquivocationProof,
   SpConsensusSlotsEquivocationProof,
@@ -2013,6 +2018,185 @@ declare module '@polkadot/api-base/types/submittable' {
       resumeAssetCompliance: AugmentedSubmittable<
         (ticker: PolymeshPrimitivesTicker | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [PolymeshPrimitivesTicker]
+      >;
+    };
+    confidentialAsset: {
+      /**
+       * Adds a new transaction.
+       **/
+      addTransaction: AugmentedSubmittable<
+        (
+          venueId: u64 | AnyNumber | Uint8Array,
+          legs:
+            | Vec<PalletConfidentialAssetTransactionLeg>
+            | (
+                | PalletConfidentialAssetTransactionLeg
+                | { assets?: any; sender?: any; receiver?: any; auditors?: any; mediators?: any }
+                | string
+                | Uint8Array
+              )[],
+          memo: Option<PolymeshPrimitivesMemo> | null | Uint8Array | PolymeshPrimitivesMemo | string
+        ) => SubmittableExtrinsic<ApiType>,
+        [u64, Vec<PalletConfidentialAssetTransactionLeg>, Option<PolymeshPrimitivesMemo>]
+      >;
+      /**
+       * Affirm transactions.
+       **/
+      affirmTransactions: AugmentedSubmittable<
+        (transactions: PalletConfidentialAssetAffirmTransactions) => SubmittableExtrinsic<ApiType>,
+        [PalletConfidentialAssetAffirmTransactions]
+      >;
+      /**
+       * Allows additional venues to create instructions involving an asset.
+       *
+       * * `asset_id` - AssetId of the token in question.
+       * * `venues` - Array of venues that are allowed to create instructions for the token in question.
+       **/
+      allowVenues: AugmentedSubmittable<
+        (
+          assetId: U8aFixed | string | Uint8Array,
+          venues: Vec<u64> | (u64 | AnyNumber | Uint8Array)[]
+        ) => SubmittableExtrinsic<ApiType>,
+        [U8aFixed, Vec<u64>]
+      >;
+      /**
+       * Applies any incoming balance to the confidential account balance.
+       *
+       * # Arguments
+       * * `origin` - contains the secondary key of the caller (i.e who signed the transaction to execute this function).
+       * * `account` - the confidential account (Elgamal public key) of the `origin`.
+       * * `asset_id` - AssetId of confidential account.
+       *
+       * # Errors
+       * - `BadOrigin` if not signed.
+       **/
+      applyIncomingBalance: AugmentedSubmittable<
+        (
+          account: PalletConfidentialAssetConfidentialAccount | string | Uint8Array,
+          assetId: U8aFixed | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PalletConfidentialAssetConfidentialAccount, U8aFixed]
+      >;
+      /**
+       * Register a confidential account.
+       *
+       * # Arguments
+       * * `account` the confidential account to register.
+       *
+       * # Errors
+       * * `BadOrigin` if `origin` isn't signed.
+       **/
+      createAccount: AugmentedSubmittable<
+        (
+          account: PalletConfidentialAssetConfidentialAccount | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PalletConfidentialAssetConfidentialAccount]
+      >;
+      /**
+       * Initializes a new confidential security token.
+       * Makes the initiating account the owner of the security token
+       * & the balance of the owner is set to total zero. To set to total supply, `mint_confidential_asset` should
+       * be called after a successful call of this function.
+       *
+       * # Arguments
+       * * `origin` - contains the secondary key of the caller (i.e who signed the transaction to execute this function).
+       *
+       * # Errors
+       * - `TotalSupplyAboveLimit` if `total_supply` exceeds the limit.
+       * - `BadOrigin` if not signed.
+       **/
+      createConfidentialAsset: AugmentedSubmittable<
+        (
+          ticker:
+            | Option<PolymeshPrimitivesTicker>
+            | null
+            | Uint8Array
+            | PolymeshPrimitivesTicker
+            | string,
+          data: Bytes | string | Uint8Array,
+          auditors:
+            | PalletConfidentialAssetConfidentialAuditors
+            | { auditors?: any; mediators?: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Option<PolymeshPrimitivesTicker>, Bytes, PalletConfidentialAssetConfidentialAuditors]
+      >;
+      /**
+       * Registers a new venue.
+       *
+       **/
+      createVenue: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
+      /**
+       * Revokes permission given to venues for creating instructions involving a particular asset.
+       *
+       * * `asset_id` - AssetId of the token in question.
+       * * `venues` - Array of venues that are no longer allowed to create instructions for the token in question.
+       **/
+      disallowVenues: AugmentedSubmittable<
+        (
+          assetId: U8aFixed | string | Uint8Array,
+          venues: Vec<u64> | (u64 | AnyNumber | Uint8Array)[]
+        ) => SubmittableExtrinsic<ApiType>,
+        [U8aFixed, Vec<u64>]
+      >;
+      /**
+       * Execute transaction.
+       **/
+      executeTransaction: AugmentedSubmittable<
+        (
+          transactionId: PalletConfidentialAssetTransactionId | AnyNumber | Uint8Array,
+          legCount: u32 | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PalletConfidentialAssetTransactionId, u32]
+      >;
+      /**
+       * Mint more assets into the asset issuer's `account`.
+       *
+       * # Arguments
+       * * `origin` - contains the secondary key of the caller (i.e who signed the transaction to execute this function).
+       * * `asset_id` - the asset_id symbol of the token.
+       * * `amount` - amount of tokens to mint.
+       * * `account` - the asset isser's confidential account to receive the minted assets.
+       *
+       * # Errors
+       * - `BadOrigin` if not signed.
+       * - `Unauthorized` if origin is not the owner of the asset.
+       * - `TotalSupplyMustBePositive` if `amount` is zero.
+       * - `TotalSupplyAboveConfidentialBalanceLimit` if `total_supply` exceeds the confidential balance limit.
+       * - `UnknownConfidentialAsset` The asset_id is not a confidential asset.
+       **/
+      mintConfidentialAsset: AugmentedSubmittable<
+        (
+          assetId: U8aFixed | string | Uint8Array,
+          amount: u128 | AnyNumber | Uint8Array,
+          account: PalletConfidentialAssetConfidentialAccount | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [U8aFixed, u128, PalletConfidentialAssetConfidentialAccount]
+      >;
+      /**
+       * Reject pending transaction.
+       **/
+      rejectTransaction: AugmentedSubmittable<
+        (
+          transactionId: PalletConfidentialAssetTransactionId | AnyNumber | Uint8Array,
+          legCount: u32 | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PalletConfidentialAssetTransactionId, u32]
+      >;
+      /**
+       * Enables or disabled venue filtering for a token.
+       *
+       * # Arguments
+       * * `asset_id` - AssetId of the token in question.
+       * * `enabled` - Boolean that decides if the filtering should be enabled.
+       **/
+      setVenueFiltering: AugmentedSubmittable<
+        (
+          assetId: U8aFixed | string | Uint8Array,
+          enabled: bool | boolean | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [U8aFixed, bool]
       >;
     };
     contracts: {
@@ -5151,13 +5335,13 @@ declare module '@polkadot/api-base/types/submittable' {
       setKeys: AugmentedSubmittable<
         (
           keys:
-            | PolymeshRuntimeTestnetRuntimeSessionKeys
+            | PolymeshRuntimeDevelopRuntimeSessionKeys
             | { grandpa?: any; babe?: any; imOnline?: any; authorityDiscovery?: any }
             | string
             | Uint8Array,
           proof: Bytes | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [PolymeshRuntimeTestnetRuntimeSessionKeys, Bytes]
+        [PolymeshRuntimeDevelopRuntimeSessionKeys, Bytes]
       >;
     };
     settlement: {
@@ -6870,6 +7054,96 @@ declare module '@polkadot/api-base/types/submittable' {
         [PolymeshPrimitivesTicker, u64]
       >;
     };
+    sudo: {
+      /**
+       * Authenticates the current sudo key and sets the given AccountId (`new`) as the new sudo key.
+       *
+       * The dispatch origin for this call must be _Signed_.
+       *
+       * # <weight>
+       * - O(1).
+       * - Limited storage reads.
+       * - One DB change.
+       * # </weight>
+       **/
+      setKey: AugmentedSubmittable<
+        (
+          updated:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [MultiAddress]
+      >;
+      /**
+       * Authenticates the sudo key and dispatches a function call with `Root` origin.
+       *
+       * The dispatch origin for this call must be _Signed_.
+       *
+       * # <weight>
+       * - O(1).
+       * - Limited storage reads.
+       * - One DB write (event).
+       * - Weight of derivative `call` execution + 10,000.
+       * # </weight>
+       **/
+      sudo: AugmentedSubmittable<
+        (call: Call | IMethod | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [Call]
+      >;
+      /**
+       * Authenticates the sudo key and dispatches a function call with `Signed` origin from
+       * a given account.
+       *
+       * The dispatch origin for this call must be _Signed_.
+       *
+       * # <weight>
+       * - O(1).
+       * - Limited storage reads.
+       * - One DB write (event).
+       * - Weight of derivative `call` execution + 10,000.
+       * # </weight>
+       **/
+      sudoAs: AugmentedSubmittable<
+        (
+          who:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
+          call: Call | IMethod | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [MultiAddress, Call]
+      >;
+      /**
+       * Authenticates the sudo key and dispatches a function call with `Root` origin.
+       * This function does not check the weight of the call, and instead allows the
+       * Sudo user to specify the weight of the call.
+       *
+       * The dispatch origin for this call must be _Signed_.
+       *
+       * # <weight>
+       * - O(1).
+       * - The weight of this call is defined by the caller.
+       * # </weight>
+       **/
+      sudoUncheckedWeight: AugmentedSubmittable<
+        (
+          call: Call | IMethod | string | Uint8Array,
+          weight: SpWeightsWeightV2Weight | { refTime?: any; proofSize?: any } | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Call, SpWeightsWeightV2Weight]
+      >;
+    };
     system: {
       /**
        * Kill all storage items with a key that starts with the given prefix.
@@ -7619,7 +7893,7 @@ declare module '@polkadot/api-base/types/submittable' {
       dispatchAs: AugmentedSubmittable<
         (
           asOrigin:
-            | PolymeshRuntimeTestnetRuntimeOriginCaller
+            | PolymeshRuntimeDevelopRuntimeOriginCaller
             | { system: any }
             | { Void: any }
             | { PolymeshCommittee: any }
@@ -7629,7 +7903,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | Uint8Array,
           call: Call | IMethod | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [PolymeshRuntimeTestnetRuntimeOriginCaller, Call]
+        [PolymeshRuntimeDevelopRuntimeOriginCaller, Call]
       >;
       /**
        * Send a batch of dispatch calls.

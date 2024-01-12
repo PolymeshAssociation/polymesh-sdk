@@ -64,6 +64,7 @@ import {
 import { ITuple } from '@polkadot/types/types';
 import { BTreeSet } from '@polkadot/types-codec';
 import {
+  hexAddPrefix,
   hexHasPrefix,
   hexToString,
   hexToU8a,
@@ -337,6 +338,13 @@ export function tickerToString(ticker: PolymeshPrimitivesTicker): string {
  */
 export function stringToU8aFixed(value: string, context: Context): U8aFixed {
   return context.createType('U8aFixed', value);
+}
+
+/**
+ * @hidden
+ */
+export function serializeConfidentialAssetId(value: string): string {
+  return hexAddPrefix(value.replace(/-/g, ''));
 }
 
 /**
