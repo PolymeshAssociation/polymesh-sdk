@@ -1897,19 +1897,19 @@ export function areSameClaims(
  */
 export function assertCaAssetValid(id: string): string {
   if (id.length >= 32) {
-    let guid = id;
+    let assetId = id;
 
     if (id.length === 32) {
-      guid = `${id.substring(0, 8)}-${id.substring(8, 12)}-${id.substring(12, 16)}-${id.substring(
-        16,
-        20
-      )}-${id.substring(20)}`;
+      assetId = `${id.substring(0, 8)}-${id.substring(8, 12)}-${id.substring(
+        12,
+        16
+      )}-${id.substring(16, 20)}-${id.substring(20)}`;
     }
 
-    const guidRegex =
+    const assetIdRegex =
       /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/i;
-    if (guidRegex.test(guid)) {
-      return guid;
+    if (assetIdRegex.test(assetId)) {
+      return assetId;
     }
   }
 

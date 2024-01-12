@@ -17,9 +17,9 @@ import { assertCaAssetValid } from '~/utils/internal';
  */
 export interface UniqueIdentifiers {
   /**
-   * GUID of the asset
+   * ID of the asset
    *
-   * @note the value can either be a valid guid like `76702175-d8cb-e3a5-5a19-734433351e26` or can be a string representing the guid without the `-` like `76702175d8cbe3a55a19734433351e26`
+   * @note the value can either be a valid asset ID like `76702175-d8cb-e3a5-5a19-734433351e26` or can be a string representing the asset ID without the `-` like `76702175d8cbe3a55a19734433351e26`
    */
   id: string;
 }
@@ -29,7 +29,7 @@ export interface UniqueIdentifiers {
  */
 export class ConfidentialAsset extends Entity<UniqueIdentifiers, string> {
   /**
-   * GUID of the Confidential Asset
+   * ID of the Confidential Asset
    */
   public id: string;
 
