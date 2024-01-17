@@ -1,8 +1,8 @@
 import { PalletConfidentialAssetConfidentialAssetDetails } from '@polkadot/types/lookup';
 import { Option } from '@polkadot/types-codec';
 
-import { Context, Entity, Identity, PolymeshError } from '~/internal';
-import { ConfidentialAssetDetails, ErrorCode } from '~/types';
+import { ConfidentialAccount, Context, Entity, Identity, PolymeshError } from '~/internal';
+import { ConfidentialAssetDetails, ErrorCode, GroupedAuditors } from '~/types';
 import {
   bytesToString,
   identityIdToString,
@@ -95,6 +95,43 @@ export class ConfidentialAsset extends Entity<UniqueIdentifiers, string> {
       data: bytesToString(data),
       totalSupply: u128ToBigNumber(totalSupply),
       owner: new Identity({ did: identityIdToString(ownerDid) }, context),
+    };
+  }
+
+  /**
+   * Retrieve all the auditors for this confidential Asset grouped by their type
+   */
+  public async getAuditors(): Promise<GroupedAuditors> {
+    const {
+      id,
+      context: {
+        polymeshApi: {
+          query: { confidentialAsset },
+        },
+      },
+      context,
+    } = this;
+
+    const rawAssetId = serializeConfidentialAssetId(id);
+
+    const assetAuditors = await confidentialAsset.assetAuditors(rawAssetId);
+
+    if (assetAuditors.isNone) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The Confidential Asset does not exists',
+      });
+    }
+
+    const { auditors, mediators } = assetAuditors.unwrap();
+
+    return {
+      auditors: [...auditors].map(
+        auditor => new ConfidentialAccount({ publicKey: auditor.toString() }, context)
+      ),
+      mediators: [...mediators].map(
+        mediator => new Identity({ did: identityIdToString(mediator) }, context)
+      ),
     };
   }
 

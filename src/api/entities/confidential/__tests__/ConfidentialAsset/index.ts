@@ -6,6 +6,17 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { ErrorCode } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
+jest.mock(
+  '~/api/entities/Identity',
+  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
+jest.mock(
+  '~/api/entities/confidential/ConfidentialAccount',
+  require('~/testUtils/mocks/entities').mockConfidentialAccountModule(
+    '~/api/entities/confidential/ConfidentialAccount'
+  )
+);
+
 describe('ConfidentialAsset class', () => {
   let assetId: string;
   let id: string;
@@ -131,6 +142,46 @@ describe('ConfidentialAsset class', () => {
       });
       detailsQueryMock.mockResolvedValue(dsMockUtils.createMockOption());
       await expect(confidentialAsset.details()).rejects.toThrow(expectedError);
+    });
+  });
+
+  describe('method: getAuditors', () => {
+    it('should throw an error if no auditor info exists', () => {
+      dsMockUtils.createQueryMock('confidentialAsset', 'assetAuditors', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The Confidential Asset does not exists',
+      });
+
+      return expect(confidentialAsset.getAuditors()).rejects.toThrow(expectedError);
+    });
+
+    it('should return all the auditors group by their type', async () => {
+      dsMockUtils.createQueryMock('confidentialAsset', 'assetAuditors', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockConfidentialAuditors({
+            auditors: ['someAuditorPublicKey'],
+            mediators: ['someMediatorDid'],
+          })
+        ),
+      });
+
+      const result = await confidentialAsset.getAuditors();
+
+      expect(result.mediators[0]).toEqual(
+        expect.objectContaining({
+          did: 'someMediatorDid',
+        })
+      );
+
+      expect(result.auditors[0]).toEqual(
+        expect.objectContaining({
+          publicKey: 'someAuditorPublicKey',
+        })
+      );
     });
   });
 
