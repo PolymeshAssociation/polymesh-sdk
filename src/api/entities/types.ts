@@ -5,6 +5,8 @@ import {
   CheckpointSchedule as CheckpointScheduleClass,
   ChildIdentity as ChildIdentityClass,
   ConfidentialAsset as ConfidentialAssetClass,
+  ConfidentialTransaction as ConfidentialTransactionClass,
+  ConfidentialVenue as ConfidentialVenueClass,
   CorporateAction as CorporateActionClass,
   CustomPermissionGroup as CustomPermissionGroupClass,
   DefaultPortfolio as DefaultPortfolioClass,
@@ -41,6 +43,8 @@ export type Instruction = InstructionClass;
 export type KnownPermissionGroup = KnownPermissionGroupClass;
 export type NumberedPortfolio = NumberedPortfolioClass;
 export type ConfidentialAsset = ConfidentialAssetClass;
+export type ConfidentialVenue = ConfidentialVenueClass;
+export type ConfidentialTransaction = ConfidentialTransactionClass;
 export type FungibleAsset = FungibleAssetClass;
 export type Nft = NftClass;
 export type NftCollection = NftCollectionClass;
