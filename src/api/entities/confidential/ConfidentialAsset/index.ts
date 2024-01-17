@@ -78,13 +78,14 @@ export class ConfidentialAsset extends Entity<UniqueIdentifiers, string> {
    * Retrieve the confidential Asset's details
    */
   public async details(): Promise<ConfidentialAssetDetails | null> {
-    const { context } = this;
+    const { context, id } = this;
     const assetDetails = await this.getDetailsFromChain();
 
     if (assetDetails.isNone) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
         message: 'The Confidential Asset does not exists',
+        data: { id },
       });
     }
 
@@ -120,6 +121,7 @@ export class ConfidentialAsset extends Entity<UniqueIdentifiers, string> {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
         message: 'The Confidential Asset does not exists',
+        data: { id },
       });
     }
 

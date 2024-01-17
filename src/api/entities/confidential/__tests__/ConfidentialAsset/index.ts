@@ -139,6 +139,7 @@ describe('ConfidentialAsset class', () => {
       const expectedError = new PolymeshError({
         code: ErrorCode.DataUnavailable,
         message: 'The Confidential Asset does not exists',
+        data: { id },
       });
       detailsQueryMock.mockResolvedValue(dsMockUtils.createMockOption());
       await expect(confidentialAsset.details()).rejects.toThrow(expectedError);
@@ -154,6 +155,7 @@ describe('ConfidentialAsset class', () => {
       const expectedError = new PolymeshError({
         code: ErrorCode.DataUnavailable,
         message: 'The Confidential Asset does not exists',
+        data: { id },
       });
 
       return expect(confidentialAsset.getAuditors()).rejects.toThrow(expectedError);
