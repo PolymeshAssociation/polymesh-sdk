@@ -52,7 +52,9 @@ import {
   PalletAssetSecurityToken,
   PalletAssetTickerRegistration,
   PalletAssetTickerRegistrationConfig,
+  PalletConfidentialAssetAuditorAccount,
   PalletConfidentialAssetConfidentialAssetDetails,
+  PalletConfidentialAssetConfidentialAuditors,
   PalletContractsStorageContractInfo,
   PalletCorporateActionsCaCheckpoint,
   PalletCorporateActionsCaId,
@@ -4445,4 +4447,32 @@ export const createMockConfidentialAssetDetails = (
   };
 
   return createMockCodec({ totalSupply, ownerDid, data, ticker }, !details);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockConfidentialAuditors = (
+  assetAuditors?:
+    | PalletConfidentialAssetConfidentialAuditors
+    | {
+        auditors:
+          | BTreeSet<PalletConfidentialAssetAuditorAccount>
+          | Parameters<typeof createMockBTreeSet>[0];
+        mediators:
+          | BTreeSet<PolymeshPrimitivesIdentityId>
+          | Parameters<typeof createMockBTreeSet>[0];
+      }
+): MockCodec<PalletConfidentialAssetConfidentialAuditors> => {
+  if (isCodec<PalletConfidentialAssetConfidentialAuditors>(assetAuditors)) {
+    return assetAuditors as MockCodec<PalletConfidentialAssetConfidentialAuditors>;
+  }
+
+  const { auditors, mediators } = assetAuditors ?? {
+    auditors: createMockBTreeSet(),
+    mediators: createMockBTreeSet(),
+  };
+
+  return createMockCodec({ auditors, mediators }, !assetAuditors);
 };
