@@ -13,6 +13,11 @@ export interface UniqueIdentifiers {
  */
 export class ConfidentialVenue extends Entity<UniqueIdentifiers, string> {
   /**
+   * identifier number of the confidential Venue
+   */
+  public id: BigNumber;
+
+  /**
    * @hidden
    * Check if a value is of type {@link UniqueIdentifiers}
    */
@@ -23,11 +28,6 @@ export class ConfidentialVenue extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * identifier number of the confidential Venue
-   */
-  public id: BigNumber;
-
-  /**
    * @hidden
    */
   public constructor(identifiers: UniqueIdentifiers, context: Context) {
@@ -36,30 +36,6 @@ export class ConfidentialVenue extends Entity<UniqueIdentifiers, string> {
     const { id } = identifiers;
 
     this.id = id;
-  }
-
-  /**
-   * Determine whether this confidential Venue exists on chain
-   */
-  public async exists(): Promise<boolean> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { confidentialAsset },
-        },
-      },
-      id,
-    } = this;
-
-    if (id.lte(new BigNumber(0))) {
-      return false;
-    }
-
-    const rawCounter = await confidentialAsset.venueCounter();
-
-    const nextVenue = u64ToBigNumber(rawCounter);
-
-    return id.lt(nextVenue);
   }
 
   /**
@@ -87,6 +63,30 @@ export class ConfidentialVenue extends Entity<UniqueIdentifiers, string> {
     }
 
     return new Identity({ did: identityIdToString(creator.unwrap()) }, context);
+  }
+
+  /**
+   * Determine whether this confidential Venue exists on chain
+   */
+  public async exists(): Promise<boolean> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { confidentialAsset },
+        },
+      },
+      id,
+    } = this;
+
+    if (id.lte(new BigNumber(0))) {
+      return false;
+    }
+
+    const rawCounter = await confidentialAsset.venueCounter();
+
+    const nextVenue = u64ToBigNumber(rawCounter);
+
+    return id.lt(nextVenue);
   }
 
   /**
