@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { Identity } from '~/internal';
+import { ConfidentialAccount, Identity } from '~/types';
 
 export interface ConfidentialAssetDetails {
   owner: Identity;
@@ -10,4 +10,9 @@ export interface ConfidentialAssetDetails {
    * optional ticker value if provided while creating the confidential Asset
    */
   ticker?: string;
+}
+
+export interface GroupedAuditors {
+  auditors: ConfidentialAccount[];
+  mediators: Identity[];
 }

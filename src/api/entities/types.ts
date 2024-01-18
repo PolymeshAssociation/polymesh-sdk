@@ -4,6 +4,7 @@ import {
   Checkpoint as CheckpointClass,
   CheckpointSchedule as CheckpointScheduleClass,
   ChildIdentity as ChildIdentityClass,
+  ConfidentialAccount as ConfidentialAccountClass,
   ConfidentialAsset as ConfidentialAssetClass,
   ConfidentialTransaction as ConfidentialTransactionClass,
   ConfidentialVenue as ConfidentialVenueClass,
@@ -42,6 +43,7 @@ export type ChildIdentity = ChildIdentityClass;
 export type Instruction = InstructionClass;
 export type KnownPermissionGroup = KnownPermissionGroupClass;
 export type NumberedPortfolio = NumberedPortfolioClass;
+export type ConfidentialAccount = ConfidentialAccountClass;
 export type ConfidentialAsset = ConfidentialAssetClass;
 export type ConfidentialVenue = ConfidentialVenueClass;
 export type ConfidentialTransaction = ConfidentialTransactionClass;

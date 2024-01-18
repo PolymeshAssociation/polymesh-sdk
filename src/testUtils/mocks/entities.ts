@@ -13,6 +13,7 @@ import {
   Checkpoint,
   CheckpointSchedule,
   ChildIdentity,
+  ConfidentialAccount,
   ConfidentialAsset,
   ConfidentialTransaction,
   ConfidentialVenue,
@@ -379,6 +380,11 @@ interface ConfidentialTransactionOptions extends EntityOptions {
   id?: BigNumber;
 }
 
+interface ConfidentialAccountOptions extends EntityOptions {
+  publicKey?: string;
+  getIdentity?: EntityGetter<Identity | null>;
+}
+
 type MockOptions = {
   identityOptions?: IdentityOptions;
   childIdentityOptions?: ChildIdentityOptions;
@@ -407,6 +413,7 @@ type MockOptions = {
   confidentialAssetOptions?: ConfidentialAssetOptions;
   confidentialVenueOptions?: ConfidentialVenueOptions;
   confidentialTransactionOptions?: ConfidentialTransactionOptions;
+  confidentialAccountOptions?: ConfidentialAccountOptions;
 };
 
 type Class<T = any> = new (...args: any[]) => T;
@@ -2104,6 +2111,35 @@ const MockKnownPermissionGroupClass = createMockEntityClass<KnownPermissionGroup
   ['PermissionGroup', 'KnownPermissionGroup']
 );
 
+const MockConfidentialAccountClass = createMockEntityClass<ConfidentialAccountOptions>(
+  class {
+    uuid!: string;
+    publicKey!: string;
+    getIdentity!: jest.Mock;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof ConfidentialAccount>) {
+      return extractFromArgs(args, ['publicKey']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<ConfidentialAccountOptions>) {
+      this.uuid = 'confidentialAccount';
+      this.publicKey = opts.publicKey;
+      this.getIdentity = createEntityGetterMock(opts.getIdentity);
+    }
+  },
+  () => ({
+    publicKey: 'somePublicKey',
+    getIdentity: getIdentityInstance(),
+  }),
+  ['ConfidentialAccount']
+);
+
 const MockConfidentialAssetClass = createMockEntityClass<ConfidentialAssetOptions>(
   class {
     uuid!: string;
@@ -2313,6 +2349,11 @@ export const mockKnownPermissionGroupModule = (path: string) => (): Record<strin
   KnownPermissionGroup: MockKnownPermissionGroupClass,
 });
 
+export const mockConfidentialAccountModule = (path: string) => (): Record<string, unknown> => ({
+  ...jest.requireActual(path),
+  ConfidentialAccount: MockConfidentialAccountClass,
+});
+
 export const mockConfidentialAssetModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   ConfidentialAsset: MockConfidentialAssetClass,
@@ -2357,6 +2398,7 @@ export const initMocks = function (opts?: MockOptions): void {
   MockDividendDistributionClass.init(opts?.dividendDistributionOptions);
   MockMultiSigClass.init(opts?.multiSigOptions);
   MockMultiSigProposalClass.init(opts?.multiSigProposalOptions);
+  MockConfidentialAccountClass.init(opts?.confidentialAccountOptions);
   MockConfidentialAssetClass.init(opts?.confidentialAssetOptions);
   MockConfidentialVenueClass.init(opts?.confidentialVenueOptions);
   MockConfidentialTransactionClass.init(opts?.confidentialTransactionOptions);
@@ -2392,6 +2434,7 @@ export const configureMocks = function (opts?: MockOptions): void {
   MockDividendDistributionClass.setOptions(opts?.dividendDistributionOptions);
   MockMultiSigClass.setOptions(opts?.multiSigOptions);
   MockMultiSigProposalClass.setOptions(opts?.multiSigProposalOptions);
+  MockConfidentialAccountClass.setOptions(opts?.confidentialAccountOptions);
   MockConfidentialAssetClass.setOptions(opts?.confidentialAssetOptions);
   MockConfidentialVenueClass.setOptions(opts?.confidentialVenueOptions);
   MockConfidentialTransactionClass.setOptions(opts?.confidentialTransactionOptions);
@@ -2424,6 +2467,7 @@ export const reset = function (): void {
   MockDividendDistributionClass.resetOptions();
   MockMultiSigClass.resetOptions();
   MockMultiSigProposalClass.resetOptions();
+  MockConfidentialAccountClass.resetOptions();
   MockConfidentialAssetClass.resetOptions();
   MockConfidentialVenueClass.resetOptions();
   MockConfidentialTransactionClass.resetOptions();
