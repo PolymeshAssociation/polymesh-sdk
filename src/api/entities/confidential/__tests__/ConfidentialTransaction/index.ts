@@ -1,8 +1,13 @@
 import BigNumber from 'bignumber.js';
 
-import { ConfidentialTransaction, Context, Entity } from '~/internal';
+import { ConfidentialTransaction, Context, Entity, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import {
+  createMockConfidentialAssetTransaction,
+  createMockOption,
+} from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
+import { ConfidentialTransactionStatus, ErrorCode } from '~/types';
 
 describe('ConfidentialTransaction class', () => {
   let context: Mocked<Context>;
@@ -68,6 +73,79 @@ describe('ConfidentialTransaction class', () => {
       result = await fakeTransaction.exists();
 
       expect(result).toBe(false);
+    });
+  });
+
+  describe('method: details', () => {
+    const mockCreatedAt = dsMockUtils.createMockU32(new BigNumber(1));
+    const mockVenueId = dsMockUtils.createMockU64(new BigNumber(2));
+    const mockStatus = dsMockUtils.createMockConfidentialTransactionStatus(
+      ConfidentialTransactionStatus.Pending
+    );
+
+    it('should return details', async () => {
+      dsMockUtils.createQueryMock('confidentialAsset', 'transactions').mockResolvedValue(
+        dsMockUtils.createMockOption(
+          createMockConfidentialAssetTransaction({
+            venueId: mockVenueId,
+            createdAt: mockCreatedAt,
+            memo: createMockOption(),
+          })
+        )
+      );
+
+      dsMockUtils
+        .createQueryMock('confidentialAsset', 'transactionStatuses')
+        .mockResolvedValue(dsMockUtils.createMockOption(mockStatus));
+
+      const result = await transaction.details();
+
+      expect(result).toEqual({
+        createdAt: new BigNumber(1),
+        memo: undefined,
+        status: ConfidentialTransactionStatus.Pending,
+        venueId: new BigNumber(2),
+      });
+    });
+
+    it('should throw an error if transaction details are not found', async () => {
+      dsMockUtils
+        .createQueryMock('confidentialAsset', 'transactions')
+        .mockResolvedValue(dsMockUtils.createMockOption());
+
+      dsMockUtils
+        .createQueryMock('confidentialAsset', 'transactionStatuses')
+        .mockResolvedValue(dsMockUtils.createMockOption(mockStatus));
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'Confidential transaction details were not found',
+      });
+
+      return expect(transaction.details()).rejects.toThrow(expectedError);
+    });
+
+    it('should throw an error if transaction status is not found', async () => {
+      dsMockUtils.createQueryMock('confidentialAsset', 'transactions').mockResolvedValue(
+        dsMockUtils.createMockOption(
+          createMockConfidentialAssetTransaction({
+            venueId: mockVenueId,
+            createdAt: mockCreatedAt,
+            memo: createMockOption(),
+          })
+        )
+      );
+
+      dsMockUtils
+        .createQueryMock('confidentialAsset', 'transactionStatuses')
+        .mockResolvedValue(dsMockUtils.createMockOption());
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'Confidential transaction details were not found',
+      });
+
+      return expect(transaction.details()).rejects.toThrow(expectedError);
     });
   });
 

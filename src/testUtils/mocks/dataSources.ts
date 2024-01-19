@@ -1,4 +1,5 @@
 /* istanbul ignore file */
+
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ApolloClient, NormalizedCacheObject, QueryOptions } from '@apollo/client/core';
@@ -55,6 +56,8 @@ import {
   PalletConfidentialAssetAuditorAccount,
   PalletConfidentialAssetConfidentialAssetDetails,
   PalletConfidentialAssetConfidentialAuditors,
+  PalletConfidentialAssetTransaction,
+  PalletConfidentialAssetTransactionStatus,
   PalletContractsStorageContractInfo,
   PalletCorporateActionsCaCheckpoint,
   PalletCorporateActionsCaId,
@@ -4475,4 +4478,51 @@ export const createMockConfidentialAuditors = (
   };
 
   return createMockCodec({ auditors, mediators }, !assetAuditors);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockConfidentialAssetTransaction = (
+  details?:
+    | PalletConfidentialAssetTransaction
+    | {
+        venueId: u64 | Parameters<typeof createMockU64>[0];
+        createdAt: u32 | Parameters<typeof createMockU32>[0];
+        memo: Option<PolymeshPrimitivesMemo> | Parameters<typeof createMockMemo>[0];
+      }
+): MockCodec<PalletConfidentialAssetTransaction> => {
+  if (isCodec<PalletConfidentialAssetTransaction>(details)) {
+    return details as MockCodec<PalletConfidentialAssetTransaction>;
+  }
+
+  const { venueId, createdAt, memo } = details ?? {
+    venueId: createMockU64(),
+    createdAt: createMockU32(),
+    memo: createMockOption(),
+  };
+
+  return createMockCodec<PalletConfidentialAssetTransaction>(
+    {
+      venueId,
+      createdAt,
+      memo,
+    },
+    !details
+  );
+};
+
+/**
+ * @hidden
+ *  * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockConfidentialTransactionStatus = (
+  status?: 'Pending' | 'Executed' | 'Rejected' | PalletConfidentialAssetTransactionStatus
+): MockCodec<PalletConfidentialAssetTransactionStatus> => {
+  if (isCodec<PalletConfidentialAssetTransactionStatus>(status)) {
+    return status as MockCodec<PalletConfidentialAssetTransactionStatus>;
+  }
+
+  return createMockEnum<PalletConfidentialAssetTransactionStatus>(status);
 };

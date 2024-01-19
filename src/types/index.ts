@@ -1758,3 +1758,22 @@ export interface HeldNfts {
  * CustomClaimType with DID that registered the CustomClaimType
  */
 export type CustomClaimTypeWithDid = CustomClaimType & { did?: string };
+
+/**
+ * Status of a confidential transaction
+ */
+export enum ConfidentialTransactionStatus {
+  Pending = 'Pending',
+  Executed = 'Executed',
+  Rejected = 'Rejected',
+}
+
+/**
+ * Details for a confidential transaction
+ */
+export interface ConfidentialTransactionDetails {
+  venueId: BigNumber;
+  createdAt: BigNumber;
+  status: ConfidentialTransactionStatus;
+  memo?: string;
+}

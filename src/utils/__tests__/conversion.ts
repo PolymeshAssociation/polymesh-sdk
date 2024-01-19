@@ -10,6 +10,8 @@ import {
   Permill,
 } from '@polkadot/types/interfaces';
 import {
+  PalletConfidentialAssetTransaction,
+  PalletConfidentialAssetTransactionStatus,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
   PalletCorporateActionsRecordDateSpec,
@@ -91,6 +93,7 @@ import {
 import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
+  createMockConfidentialTransactionStatus,
   createMockNfts,
   createMockOption,
   createMockPortfolioId,
@@ -113,6 +116,7 @@ import {
   ConditionCompliance,
   ConditionTarget,
   ConditionType,
+  ConfidentialTransactionStatus,
   CorporateActionKind,
   CorporateActionParams,
   CountryCode,
@@ -231,6 +235,8 @@ import {
   meshClaimToClaim,
   meshClaimToInputStatClaim,
   meshClaimTypeToClaimType,
+  meshConfidentialTransactionDetailsToDetails,
+  meshConfidentialTransactionStatusToStatus,
   meshCorporateActionToCorporateActionParams,
   meshInstructionStatusToInstructionStatus,
   meshMetadataKeyToMetadataKey,
@@ -9863,5 +9869,56 @@ describe('toCustomClaimTypeWithIdentity', () => {
       { name: 'name2', id: new BigNumber(2), did: 'did2' },
       { name: 'name3', id: new BigNumber(3), did: undefined },
     ]);
+  });
+});
+
+describe('meshConfidentialDetailsToConfidentialDetails', () => {
+  it('should convert PalletConfidentialAssetTransaction to ConfidentialTransactionDetails', () => {
+    const mockDetails = dsMockUtils.createMockConfidentialAssetTransaction({
+      createdAt: dsMockUtils.createMockU32(new BigNumber(1)),
+      memo: dsMockUtils.createMockOption(dsMockUtils.createMockMemo(stringToHex('someMemo'))),
+      venueId: dsMockUtils.createMockU64(new BigNumber(2)),
+    });
+    const result = meshConfidentialTransactionDetailsToDetails(
+      mockDetails as PalletConfidentialAssetTransaction
+    );
+
+    expect(result).toEqual({
+      createdAt: new BigNumber(1),
+      memo: 'someMemo',
+      venueId: new BigNumber(2),
+    });
+  });
+});
+
+describe('meshConfidentialTransactionStatusToStatus', () => {
+  it('should convert PalletConfidentialAssetTransactionStatus to ConfidentialTransactionStatus', () => {
+    let expected = ConfidentialTransactionStatus.Pending;
+    let status = dsMockUtils.createMockConfidentialTransactionStatus(expected);
+
+    let result = meshConfidentialTransactionStatusToStatus(status);
+
+    expect(result).toEqual(expected);
+
+    expected = ConfidentialTransactionStatus.Executed;
+    status = dsMockUtils.createMockConfidentialTransactionStatus(expected);
+    result = meshConfidentialTransactionStatusToStatus(status);
+
+    expect(result).toEqual(expected);
+
+    expected = ConfidentialTransactionStatus.Rejected;
+    status = dsMockUtils.createMockConfidentialTransactionStatus(expected);
+    result = meshConfidentialTransactionStatusToStatus(status);
+
+    expect(result).toEqual(expected);
+  });
+
+  it('should throw an error on unexpected status', () => {
+    const status = createMockConfidentialTransactionStatus(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      'notAStatus' as any
+    ) as PalletConfidentialAssetTransactionStatus;
+
+    expect(() => meshConfidentialTransactionStatusToStatus(status)).toThrow();
   });
 });
