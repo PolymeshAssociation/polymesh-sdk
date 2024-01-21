@@ -3,6 +3,8 @@ import { bool, Bytes, Option, Text, u8, U8aFixed, u16, u32, u64, u128, Vec } fro
 import { AccountId, Balance, BlockHash, Hash, Permill } from '@polkadot/types/interfaces';
 import { DispatchError, DispatchResult } from '@polkadot/types/interfaces/system';
 import {
+  PalletConfidentialAssetTransaction,
+  PalletConfidentialAssetTransactionStatus,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
   PalletCorporateActionsCorporateAction,
@@ -150,6 +152,8 @@ import {
   ConditionCompliance,
   ConditionTarget,
   ConditionType,
+  ConfidentialTransactionDetails,
+  ConfidentialTransactionStatus,
   CorporateActionKind,
   CorporateActionParams,
   CorporateActionTargets,
@@ -4815,4 +4819,42 @@ export function toHistoricalSettlements(
   /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
   return data.sort((a, b) => a.blockNumber.minus(b.blockNumber).toNumber());
+}
+
+/**
+ * @hidden
+ */
+export function meshConfidentialTransactionDetailsToDetails(
+  details: PalletConfidentialAssetTransaction
+): Omit<ConfidentialTransactionDetails, 'status'> {
+  const { venueId: rawVenueId, createdAt: rawCreatedAt, memo: rawMemo } = details;
+
+  const venueId = u64ToBigNumber(rawVenueId);
+  const createdAt = u32ToBigNumber(rawCreatedAt);
+  const memo = rawMemo.isSome ? instructionMemoToString(rawMemo.unwrap()) : undefined;
+
+  return {
+    venueId,
+    createdAt,
+    memo,
+  };
+}
+
+/**
+ * @hidden
+ */
+export function meshConfidentialTransactionStatusToStatus(
+  status: PalletConfidentialAssetTransactionStatus
+): ConfidentialTransactionStatus {
+  switch (status.type) {
+    case 'Pending':
+      return ConfidentialTransactionStatus.Pending;
+    case 'Rejected':
+      return ConfidentialTransactionStatus.Rejected;
+    case 'Executed':
+      return ConfidentialTransactionStatus.Executed;
+    default:
+      /* istanbul ignore next: TS will complain if a new case is added */
+      throw new UnreachableCaseError(status.type);
+  }
 }

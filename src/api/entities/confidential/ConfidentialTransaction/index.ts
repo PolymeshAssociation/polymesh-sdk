@@ -1,7 +1,13 @@
 import BigNumber from 'bignumber.js';
 
-import { Context, Entity } from '~/internal';
-import { u64ToBigNumber } from '~/utils/conversion';
+import { Context, Entity, PolymeshError } from '~/internal';
+import { ConfidentialTransactionDetails, ErrorCode } from '~/types';
+import {
+  bigNumberToU64,
+  meshConfidentialTransactionDetailsToDetails,
+  meshConfidentialTransactionStatusToStatus,
+  u64ToBigNumber,
+} from '~/utils/conversion';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
@@ -35,6 +41,44 @@ export class ConfidentialTransaction extends Entity<UniqueIdentifiers, string> {
     const { id } = identifiers;
 
     this.id = id;
+  }
+
+  /**
+   * Fetch details about this transaction
+   */
+  public async details(): Promise<ConfidentialTransactionDetails> {
+    const {
+      id,
+      context,
+      context: {
+        polymeshApi: {
+          query: { confidentialAsset },
+        },
+      },
+    } = this;
+
+    const rawId = bigNumberToU64(id, context);
+
+    const [rawDetails, rawStatus] = await Promise.all([
+      confidentialAsset.transactions(rawId),
+      confidentialAsset.transactionStatuses(rawId),
+    ]);
+
+    if (rawDetails.isNone || rawStatus.isNone) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'Confidential transaction details were not found',
+        data: { id },
+      });
+    }
+
+    const details = meshConfidentialTransactionDetailsToDetails(rawDetails.unwrap());
+    const status = meshConfidentialTransactionStatusToStatus(rawStatus.unwrap());
+
+    return {
+      ...details,
+      status,
+    };
   }
 
   /**
