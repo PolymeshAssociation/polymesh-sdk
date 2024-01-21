@@ -35,3 +35,7 @@ export interface CreateConfidentialAssetParams {
    */
   mediators?: (Identity | string)[];
 }
+
+export interface CreateConfidentialAccountParams {
+  publicKey: string;
+}

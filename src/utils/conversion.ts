@@ -3,6 +3,7 @@ import { bool, Bytes, Option, Text, u8, U8aFixed, u16, u32, u64, u128, Vec } fro
 import { AccountId, Balance, BlockHash, Hash, Permill } from '@polkadot/types/interfaces';
 import { DispatchError, DispatchResult } from '@polkadot/types/interfaces/system';
 import {
+  PalletConfidentialAssetConfidentialAuditors,
   PalletConfidentialAssetTransaction,
   PalletConfidentialAssetTransactionStatus,
   PalletCorporateActionsCaId,
@@ -152,6 +153,7 @@ import {
   ConditionCompliance,
   ConditionTarget,
   ConditionType,
+  ConfidentialAccount,
   ConfidentialTransactionDetails,
   ConfidentialTransactionStatus,
   CorporateActionKind,
@@ -3136,6 +3138,23 @@ export function identitiesToBtreeSet(
   const rawIds = identities.map(({ did }) => stringToIdentityId(did, context));
 
   return context.createType('BTreeSet<PolymeshPrimitivesIdentityId>', rawIds);
+}
+
+/**
+ * @hidden
+ */
+export function auditorsToConfidentialAuditors(
+  context: Context,
+  auditors: ConfidentialAccount[],
+  mediators: Identity[] = []
+): PalletConfidentialAssetConfidentialAuditors {
+  const rawAccountKeys = auditors.map(({ publicKey }) => publicKey);
+  const rawMediatorIds = mediators.map(({ did }) => stringToIdentityId(did, context));
+
+  return context.createType('PalletConfidentialAssetConfidentialAuditors', {
+    auditors: context.createType('BTreeSet<PalletConfidentialAssetAuditorAccount>', rawAccountKeys),
+    mediators: context.createType('BTreeSet<PolymeshPrimitivesIdentityId>', rawMediatorIds),
+  });
 }
 
 /**

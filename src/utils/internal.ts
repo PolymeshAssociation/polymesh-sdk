@@ -34,6 +34,7 @@ import {
   Checkpoint,
   CheckpointSchedule,
   ChildIdentity,
+  ConfidentialAccount,
   Context,
   FungibleAsset,
   Identity,
@@ -1917,4 +1918,18 @@ export function assertCaAssetValid(id: string): string {
     code: ErrorCode.ValidationError,
     message: 'The supplied ID is not a valid confidential Asset ID',
   });
+}
+
+/**
+ * @hidden
+ */
+export function asConfidentialAccount(
+  account: string | ConfidentialAccount,
+  context: Context
+): ConfidentialAccount {
+  if (account instanceof ConfidentialAccount) {
+    return account;
+  }
+
+  return new ConfidentialAccount({ publicKey: account }, context);
 }
