@@ -1,7 +1,8 @@
 import { ConfidentialAssets } from '~/api/client/ConfidentialAssets';
-import { ConfidentialAsset, Context } from '~/internal';
+import { ConfidentialAsset, Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { ErrorCode } from '~/types';
 
 jest.mock(
   '~/api/entities/confidential/ConfidentialAsset',
@@ -53,8 +54,14 @@ describe('ConfidentialAssets Class', () => {
         confidentialAssetOptions: { exists: false },
       });
 
-      return expect(confidentialAssets.getConfidentialAsset({ id })).rejects.toThrow(
-        `No confidential Asset exists with ID: "${id}"`
+      const expectedError = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'Confidential Asset does not exists',
+        data: { id },
+      });
+
+      return expect(confidentialAssets.getConfidentialAsset({ id })).rejects.toThrowError(
+        expectedError
       );
     });
   });
