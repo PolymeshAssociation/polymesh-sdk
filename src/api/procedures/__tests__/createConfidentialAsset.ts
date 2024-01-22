@@ -104,7 +104,6 @@ describe('createConfidentialAsset procedure', () => {
         ticker,
         data,
         auditors: invalidAuditors,
-        mediators,
       })
     ).rejects.toThrowError(expectedError);
   });

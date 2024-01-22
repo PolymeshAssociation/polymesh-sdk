@@ -10,6 +10,8 @@ import {
   Permill,
 } from '@polkadot/types/interfaces';
 import {
+  PalletConfidentialAssetAuditorAccount,
+  PalletConfidentialAssetConfidentialAuditors,
   PalletConfidentialAssetTransaction,
   PalletConfidentialAssetTransactionStatus,
   PalletCorporateActionsCaId,
@@ -72,6 +74,7 @@ import {
 import { UnreachableCaseError } from '~/api/procedures/utils';
 import {
   Account,
+  ConfidentialAccount,
   Context,
   DefaultPortfolio,
   Identity,
@@ -173,6 +176,7 @@ import {
   assetDocumentToDocument,
   assetIdentifierToSecurityIdentifier,
   assetTypeToKnownOrId,
+  auditorsToConfidentialAuditors,
   authorizationDataToAuthorization,
   authorizationToAuthorizationData,
   authorizationTypeToMeshAuthorizationType,
@@ -7826,6 +7830,44 @@ describe('agentGroupToPermissionGroup', () => {
 
       const result = identitiesToBtreeSet(ids, context);
       expect(result).toEqual(['a', 'b', 'c']);
+    });
+  });
+
+  describe('auditorsToConfidentialAuditors', () => {
+    it('should convert auditors and mediators to PalletConfidentialAssetConfidentialAuditors', () => {
+      const context = dsMockUtils.getContextInstance();
+
+      const auditors = ['auditor'];
+      const mediators = ['mediator1', 'mediator2'];
+      mediators.forEach(did =>
+        when(context.createType)
+          .calledWith('PolymeshPrimitivesIdentityId', did)
+          .mockReturnValue(did as unknown as PolymeshPrimitivesIdentityId)
+      );
+
+      when(context.createType)
+        .calledWith('BTreeSet<PalletConfidentialAssetAuditorAccount>', auditors)
+        .mockReturnValue(auditors as unknown as BTreeSet<PalletConfidentialAssetAuditorAccount>);
+      when(context.createType)
+        .calledWith('BTreeSet<PolymeshPrimitivesIdentityId>', mediators)
+        .mockReturnValue(mediators as unknown as BTreeSet<PolymeshPrimitivesIdentityId>);
+
+      when(context.createType)
+        .calledWith('PalletConfidentialAssetConfidentialAuditors', {
+          auditors,
+          mediators,
+        })
+        .mockReturnValue({
+          auditors,
+          mediators,
+        } as unknown as PalletConfidentialAssetConfidentialAuditors);
+
+      const result = auditorsToConfidentialAuditors(
+        context,
+        auditors.map(auditor => ({ publicKey: auditor })) as unknown as ConfidentialAccount[],
+        mediators.map(mediator => ({ did: mediator })) as unknown as Identity[]
+      );
+      expect(result).toEqual({ auditors, mediators });
     });
   });
 
