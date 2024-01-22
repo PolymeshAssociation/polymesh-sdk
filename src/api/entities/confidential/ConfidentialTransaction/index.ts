@@ -1,7 +1,15 @@
+import { Option } from '@polkadot/types';
+import { PalletConfidentialAssetTransactionStatus } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import { Context, Entity, PolymeshError } from '~/internal';
-import { ConfidentialTransactionDetails, ErrorCode } from '~/types';
+import {
+  ConfidentialTransactionDetails,
+  ConfidentialTransactionStatus,
+  ErrorCode,
+  SubCallback,
+  UnsubCallback,
+} from '~/types';
 import {
   bigNumberToU64,
   meshConfidentialTransactionDetailsToDetails,
@@ -79,6 +87,42 @@ export class ConfidentialTransaction extends Entity<UniqueIdentifiers, string> {
       ...details,
       status,
     };
+  }
+
+  /**
+   * Retrieve current status of the ConfidentialTransaction. This can be subscribed to know if transaction fails
+   *
+   * @note can be subscribed to
+   */
+  public async onStatusChange(
+    callback: SubCallback<ConfidentialTransactionStatus>
+  ): Promise<UnsubCallback> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { confidentialAsset },
+        },
+      },
+      id,
+      context,
+    } = this;
+
+    const assembleResult = (
+      rawStatus: Option<PalletConfidentialAssetTransactionStatus>
+    ): ConfidentialTransactionStatus => {
+      if (rawStatus.isNone) {
+        throw new PolymeshError({
+          code: ErrorCode.DataUnavailable,
+          message: 'The status of the transaction was not found',
+        });
+      }
+
+      return meshConfidentialTransactionStatusToStatus(rawStatus.unwrap());
+    };
+
+    return confidentialAsset.transactionStatuses(bigNumberToU64(id, context), status => {
+      return callback(assembleResult(status));
+    });
   }
 
   /**
