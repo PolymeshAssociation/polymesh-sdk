@@ -7862,12 +7862,31 @@ describe('agentGroupToPermissionGroup', () => {
           mediators,
         } as unknown as PalletConfidentialAssetConfidentialAuditors);
 
-      const result = auditorsToConfidentialAuditors(
+      let result = auditorsToConfidentialAuditors(
         context,
         auditors.map(auditor => ({ publicKey: auditor })) as unknown as ConfidentialAccount[],
         mediators.map(mediator => ({ did: mediator })) as unknown as Identity[]
       );
       expect(result).toEqual({ auditors, mediators });
+
+      when(context.createType)
+        .calledWith('BTreeSet<PolymeshPrimitivesIdentityId>', [])
+        .mockReturnValue([] as unknown as BTreeSet<PolymeshPrimitivesIdentityId>);
+      when(context.createType)
+        .calledWith('PalletConfidentialAssetConfidentialAuditors', {
+          auditors,
+          mediators: [],
+        })
+        .mockReturnValue({
+          auditors,
+          mediators: [],
+        } as unknown as PalletConfidentialAssetConfidentialAuditors);
+
+      result = auditorsToConfidentialAuditors(
+        context,
+        auditors.map(auditor => ({ publicKey: auditor })) as unknown as ConfidentialAccount[]
+      );
+      expect(result).toEqual({ auditors, mediators: [] });
     });
   });
 

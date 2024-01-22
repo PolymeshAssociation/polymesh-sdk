@@ -118,11 +118,28 @@ describe('createConfidentialAsset procedure', () => {
       'createConfidentialAsset'
     );
 
-    const result = await prepareCreateConfidentialAsset.call(proc, {
+    let result = await prepareCreateConfidentialAsset.call(proc, {
       ticker,
       data,
       auditors,
       mediators,
+    });
+
+    expect(result).toEqual({
+      transaction: createConfidentialAssetTransaction,
+      resolver: expect.any(Function),
+      args: [rawTicker, rawData, rawAuditors],
+    });
+
+    when(auditorsToConfidentialAuditorsSpy)
+      .calledWith(mockContext, auditors, undefined)
+      .mockReturnValue(rawAuditors);
+
+    result = await prepareCreateConfidentialAsset.call(proc, {
+      ticker,
+      data,
+      auditors,
+      mediators: [],
     });
 
     expect(result).toEqual({
