@@ -1,5 +1,7 @@
+import { when } from 'jest-when';
+
 import { ConfidentialAssets } from '~/api/client/ConfidentialAssets';
-import { ConfidentialAsset, Context, PolymeshError } from '~/internal';
+import { ConfidentialAsset, Context, PolymeshError, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { ErrorCode } from '~/types';
@@ -9,6 +11,10 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockConfidentialAssetModule(
     '~/api/entities/confidential/ConfidentialAsset'
   )
+);
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 
 describe('ConfidentialAssets Class', () => {
@@ -63,6 +69,28 @@ describe('ConfidentialAssets Class', () => {
       return expect(confidentialAssets.getConfidentialAsset({ id })).rejects.toThrowError(
         expectedError
       );
+    });
+  });
+
+  describe('method: createConfidentialAsset', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args = {
+        ticker: 'FAKE_TICKER',
+        data: 'SOME_DATA',
+        auditors: ['someAuditorKey'],
+        mediators: ['someMediatorDid'],
+      };
+
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<ConfidentialAsset>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await confidentialAssets.createConfidentialAsset(args);
+
+      expect(tx).toBe(expectedTransaction);
     });
   });
 });

@@ -37,6 +37,7 @@ export class ConfidentialAccounts {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
         message: 'No confidential Account exists',
+        data: { publicKey },
       });
     }
 

@@ -27,7 +27,7 @@ export const createConfidentialAssetResolver =
 /**
  * @hidden
  */
-export async function prepareCreateAsset(
+export async function prepareCreateConfidentialAsset(
   this: Procedure<Params, ConfidentialAsset>,
   args: Params
 ): Promise<
@@ -87,7 +87,7 @@ export async function prepareCreateAsset(
  * @hidden
  */
 export const createConfidentialAsset = (): Procedure<Params, ConfidentialAsset> =>
-  new Procedure(prepareCreateAsset, {
+  new Procedure(prepareCreateConfidentialAsset, {
     permissions: {
       transactions: [TxTags.confidentialAsset.CreateConfidentialAsset],
       assets: [],
