@@ -8,6 +8,7 @@ import {
 } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import { ConfidentialTransactionStatus, ErrorCode } from '~/types';
+import { tuple } from '~/types/utils';
 
 describe('ConfidentialTransaction class', () => {
   let context: Mocked<Context>;
@@ -146,6 +147,47 @@ describe('ConfidentialTransaction class', () => {
       });
 
       return expect(transaction.details()).rejects.toThrow(expectedError);
+    });
+  });
+
+  describe('method: getInvolvedParties', () => {
+    it('should get involved parties for the transaction', async () => {
+      const rawId = dsMockUtils.createMockU64(transaction.id);
+      dsMockUtils.createQueryMock('confidentialAsset', 'transactionParties', {
+        entries: [
+          tuple(
+            [rawId, dsMockUtils.createMockIdentityId('0x01')],
+            dsMockUtils.createMockBool(true)
+          ),
+          tuple(
+            [rawId, dsMockUtils.createMockIdentityId('0x02')],
+            dsMockUtils.createMockBool(true)
+          ),
+        ],
+      });
+
+      const result = await transaction.getInvolvedParties();
+
+      expect(result).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ did: '0x01' }),
+          expect.objectContaining({ did: '0x02' }),
+        ])
+      );
+    });
+
+    it('should throw an error if no parties are found', async () => {
+      dsMockUtils.createQueryMock('confidentialAsset', 'transactionParties', {
+        entries: [],
+      });
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message:
+          'No involved parties were found for this transaction. Its likely been completed and the chain storage has been pruned',
+      });
+
+      return expect(transaction.getInvolvedParties()).rejects.toThrow(expectedError);
     });
   });
 
