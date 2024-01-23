@@ -176,7 +176,7 @@ describe('ConfidentialTransaction class', () => {
       );
     });
 
-    it('should throw an error if no parties are found', async () => {
+    it('should throw an error if no parties are found', () => {
       dsMockUtils.createQueryMock('confidentialAsset', 'transactionParties', {
         entries: [],
       });
