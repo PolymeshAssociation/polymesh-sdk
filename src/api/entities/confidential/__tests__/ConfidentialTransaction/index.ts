@@ -1,3 +1,4 @@
+import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -154,8 +155,8 @@ describe('ConfidentialTransaction class', () => {
 
   describe('method: onStatusChange', () => {
     let bigNumberToU64Spy: jest.SpyInstance;
-    let instructionStatusesMock: jest.Mock;
-    const rawId = dsMockUtils.createMockU64(new BigNumber(1));
+    let transactionStatusesMock: jest.Mock;
+    let rawId: u64;
 
     afterAll(() => {
       jest.restoreAllMocks();
@@ -167,10 +168,11 @@ describe('ConfidentialTransaction class', () => {
 
     beforeEach(() => {
       const owner = 'someDid';
+      rawId = dsMockUtils.createMockU64(new BigNumber(1));
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
       when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
 
-      instructionStatusesMock = dsMockUtils.createQueryMock(
+      transactionStatusesMock = dsMockUtils.createQueryMock(
         'confidentialAsset',
         'transactionStatuses'
       );
@@ -186,12 +188,12 @@ describe('ConfidentialTransaction class', () => {
       const mockPending = dsMockUtils.createMockOption(
         createMockConfidentialTransactionStatus(ConfidentialTransactionStatus.Pending)
       );
-      instructionStatusesMock.mockImplementationOnce(async (_, cbFunc) => {
+      transactionStatusesMock.mockImplementationOnce(async (_, cbFunc) => {
         cbFunc(mockPending);
         return unsubCallback;
       });
 
-      when(instructionStatusesMock).calledWith(rawId).mockResolvedValue(mockPendingStatus);
+      when(transactionStatusesMock).calledWith(rawId).mockResolvedValue(mockPendingStatus);
 
       let result = await transaction.onStatusChange(callback);
 
@@ -202,7 +204,7 @@ describe('ConfidentialTransaction class', () => {
         dsMockUtils.createMockInstructionStatus(ConfidentialTransactionStatus.Rejected)
       );
 
-      instructionStatusesMock.mockImplementationOnce(async (_, cbFunc) => {
+      transactionStatusesMock.mockImplementationOnce(async (_, cbFunc) => {
         cbFunc(mockRejectedStatus);
         return unsubCallback;
       });
@@ -217,7 +219,7 @@ describe('ConfidentialTransaction class', () => {
       const unsubCallback = 'unsubCallback' as unknown as Promise<UnsubCallback>;
       const callback = jest.fn();
 
-      instructionStatusesMock.mockImplementationOnce(async (_, cbFunc) => {
+      transactionStatusesMock.mockImplementationOnce(async (_, cbFunc) => {
         cbFunc(dsMockUtils.createMockOption());
         return unsubCallback;
       });
