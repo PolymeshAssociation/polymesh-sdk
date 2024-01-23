@@ -147,6 +147,18 @@ describe('createConfidentialAsset procedure', () => {
       resolver: expect.any(Function),
       args: [rawTicker, rawData, rawAuditors],
     });
+
+    result = await prepareCreateConfidentialAsset.call(proc, {
+      ticker,
+      data,
+      auditors,
+    });
+
+    expect(result).toEqual({
+      transaction: createConfidentialAssetTransaction,
+      resolver: expect.any(Function),
+      args: [rawTicker, rawData, rawAuditors],
+    });
   });
 
   describe('createConfidentialAssetResolver', () => {
