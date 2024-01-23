@@ -19,19 +19,19 @@ export interface GroupedAuditors {
 
 export interface CreateConfidentialAssetParams {
   /**
-   * Custom data to be associated with the confidential Asset
+   * custom data to be associated with the Confidential Asset
    */
   data: string;
   /**
-   * optional ticker to be assigned to the confidential Asset
+   * optional ticker to be assigned to the Confidential Asset
    */
   ticker?: string;
   /**
-   * List of auditors for the confidential Asset
+   * list of auditors for the Confidential Asset
    */
   auditors: (ConfidentialAccount | string)[];
   /**
-   * optional list of mediators for the confidential Asset
+   * optional list of mediators for the Confidential Asset
    */
   mediators?: (Identity | string)[];
 }

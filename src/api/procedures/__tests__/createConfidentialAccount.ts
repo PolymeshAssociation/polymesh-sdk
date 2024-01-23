@@ -45,7 +45,7 @@ describe('createConfidentialAccount procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should throw an error if the public key is already linked to another confidential Account', () => {
+  it('should throw an error if the public key is already linked to another Confidential Account', () => {
     entityMockUtils.configureMocks({
       confidentialAccountOptions: {
         getIdentity: entityMockUtils.getIdentityInstance(),
