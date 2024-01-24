@@ -1,14 +1,18 @@
+import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 
 import { ConfidentialTransaction, Context, Entity, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   createMockConfidentialAssetTransaction,
+  createMockConfidentialTransactionStatus,
   createMockOption,
 } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
-import { ConfidentialTransactionStatus, ErrorCode } from '~/types';
+import { ConfidentialTransactionStatus, ErrorCode, UnsubCallback } from '~/types';
 import { tuple } from '~/types/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 describe('ConfidentialTransaction class', () => {
   let context: Mocked<Context>;
@@ -147,6 +151,86 @@ describe('ConfidentialTransaction class', () => {
       });
 
       return expect(transaction.details()).rejects.toThrow(expectedError);
+    });
+  });
+
+  describe('method: onStatusChange', () => {
+    let bigNumberToU64Spy: jest.SpyInstance;
+    let transactionStatusesMock: jest.Mock;
+    let rawId: u64;
+
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    beforeAll(() => {
+      bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+    });
+
+    beforeEach(() => {
+      const owner = 'someDid';
+      rawId = dsMockUtils.createMockU64(new BigNumber(1));
+      entityMockUtils.configureMocks({ identityOptions: { did: owner } });
+      when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
+
+      transactionStatusesMock = dsMockUtils.createQueryMock(
+        'confidentialAsset',
+        'transactionStatuses'
+      );
+    });
+
+    it('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallback' as unknown as Promise<UnsubCallback>;
+      const callback = jest.fn();
+
+      const mockPendingStatus = dsMockUtils.createMockConfidentialTransactionStatus(
+        ConfidentialTransactionStatus.Pending
+      );
+      const mockPending = dsMockUtils.createMockOption(
+        createMockConfidentialTransactionStatus(ConfidentialTransactionStatus.Pending)
+      );
+      transactionStatusesMock.mockImplementationOnce(async (_, cbFunc) => {
+        cbFunc(mockPending);
+        return unsubCallback;
+      });
+
+      when(transactionStatusesMock).calledWith(rawId).mockResolvedValue(mockPendingStatus);
+
+      let result = await transaction.onStatusChange(callback);
+
+      expect(result).toEqual(unsubCallback);
+      expect(callback).toBeCalledWith(ConfidentialTransactionStatus.Pending);
+
+      const mockRejectedStatus = dsMockUtils.createMockOption(
+        dsMockUtils.createMockInstructionStatus(ConfidentialTransactionStatus.Rejected)
+      );
+
+      transactionStatusesMock.mockImplementationOnce(async (_, cbFunc) => {
+        cbFunc(mockRejectedStatus);
+        return unsubCallback;
+      });
+
+      result = await transaction.onStatusChange(callback);
+
+      expect(result).toEqual(unsubCallback);
+      expect(callback).toBeCalledWith(ConfidentialTransactionStatus.Rejected);
+    });
+
+    it('should error missing transaction status', () => {
+      const unsubCallback = 'unsubCallback' as unknown as Promise<UnsubCallback>;
+      const callback = jest.fn();
+
+      transactionStatusesMock.mockImplementationOnce(async (_, cbFunc) => {
+        cbFunc(dsMockUtils.createMockOption());
+        return unsubCallback;
+      });
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The status of the transaction was not found',
+      });
+
+      return expect(transaction.onStatusChange(callback)).rejects.toThrow(expectedError);
     });
   });
 
