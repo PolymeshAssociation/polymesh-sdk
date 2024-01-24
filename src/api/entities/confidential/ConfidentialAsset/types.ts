@@ -39,3 +39,14 @@ export interface CreateConfidentialAssetParams {
 export interface CreateConfidentialAccountParams {
   publicKey: string;
 }
+
+export interface IssueConfidentialAssetParams {
+  /**
+   * number of confidential Assets to be minted
+   */
+  amount: BigNumber;
+  /**
+   * the asset issuer's Confidential Account to receive the minted Assets
+   */
+  account: ConfidentialAccount | string;
+}

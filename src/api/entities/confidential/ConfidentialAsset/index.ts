@@ -1,8 +1,21 @@
 import { PalletConfidentialAssetConfidentialAssetDetails } from '@polkadot/types/lookup';
 import { Option } from '@polkadot/types-codec';
 
-import { ConfidentialAccount, Context, Entity, Identity, PolymeshError } from '~/internal';
-import { ConfidentialAssetDetails, ErrorCode, GroupedAuditors } from '~/types';
+import {
+  ConfidentialAccount,
+  Context,
+  Entity,
+  Identity,
+  issueConfidentialAssets,
+  PolymeshError,
+} from '~/internal';
+import {
+  ConfidentialAssetDetails,
+  ErrorCode,
+  GroupedAuditors,
+  IssueConfidentialAssetParams,
+  ProcedureMethod,
+} from '~/types';
 import {
   bytesToString,
   identityIdToString,
@@ -10,7 +23,7 @@ import {
   tickerToString,
   u128ToBigNumber,
 } from '~/utils/conversion';
-import { assertCaAssetValid } from '~/utils/internal';
+import { assertCaAssetValid, createProcedureMethod } from '~/utils/internal';
 
 /**
  * Properties that uniquely identify a ConfidentialAsset
@@ -52,7 +65,21 @@ export class ConfidentialAsset extends Entity<UniqueIdentifiers, string> {
     const { id } = identifiers;
 
     this.id = assertCaAssetValid(id);
+
+    this.issue = createProcedureMethod(
+      { getProcedureAndArgs: args => [issueConfidentialAssets, { asset: this, ...args }] },
+      context
+    );
   }
+
+  /**
+   * Issue a certain amount of this Confidential Asset in the given `account`
+   *
+   * @note
+   *  - Only the owner can issue a Confidential Asset
+   *  - Confidential Assets can only be issued in accounts owned by the signer
+   */
+  public issue: ProcedureMethod<IssueConfidentialAssetParams, ConfidentialAsset>;
 
   /**
    * @hidden
@@ -77,7 +104,7 @@ export class ConfidentialAsset extends Entity<UniqueIdentifiers, string> {
   /**
    * Retrieve the confidential Asset's details
    */
-  public async details(): Promise<ConfidentialAssetDetails | null> {
+  public async details(): Promise<ConfidentialAssetDetails> {
     const { context, id } = this;
     const assetDetails = await this.getDetailsFromChain();
 

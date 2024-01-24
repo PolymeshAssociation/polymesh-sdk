@@ -13,6 +13,7 @@ import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
   Account,
   ChildIdentity,
+  ConfidentialAsset,
   Context,
   Entity,
   FungibleAsset,
@@ -53,6 +54,7 @@ import {
 import { Ensured, tuple } from '~/types/utils';
 import {
   isCddProviderRole,
+  isConfidentialAssetOwnerRole,
   isIdentityRole,
   isPortfolioCustodianRole,
   isTickerOwnerRole,
@@ -178,6 +180,13 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       return portfolio.isCustodiedBy();
     } else if (isIdentityRole(role)) {
       return did === role.did;
+    } else if (isConfidentialAssetOwnerRole(role)) {
+      const { assetId } = role;
+
+      const confidentialAsset = new ConfidentialAsset({ id: assetId }, context);
+      const { owner } = await confidentialAsset.details();
+
+      return this.isEqual(owner);
     }
 
     throw new PolymeshError({

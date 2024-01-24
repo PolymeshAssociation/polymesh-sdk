@@ -30,6 +30,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import {
   Account,
+  ConfidentialAssetOwnerRole,
   DistributionWithDetails,
   ErrorCode,
   HistoricInstruction,
@@ -64,6 +65,12 @@ jest.mock(
 jest.mock(
   '~/api/entities/Venue',
   require('~/testUtils/mocks/entities').mockVenueModule('~/api/entities/Venue')
+);
+jest.mock(
+  '~/api/entities/confidential/ConfidentialAsset',
+  require('~/testUtils/mocks/entities').mockConfidentialAssetModule(
+    '~/api/entities/confidential/ConfidentialAsset'
+  )
 );
 jest.mock(
   '~/api/entities/NumberedPortfolio',
@@ -314,6 +321,36 @@ describe('Identity class', () => {
       hasRole = await identity.hasRole(role);
 
       expect(hasRole).toBe(false);
+    });
+
+    it('should check whether the Identity has the Confidential Asset Owner role', async () => {
+      const did = 'someDid';
+      const identity = new Identity({ did }, context);
+      const role: ConfidentialAssetOwnerRole = {
+        type: RoleType.ConfidentialAssetOwner,
+        assetId: 'someAssetId',
+      };
+
+      entityMockUtils.configureMocks({
+        confidentialAssetOptions: {
+          details: {
+            owner: new Identity({ did }, context),
+          },
+        },
+      });
+
+      const spy = jest.spyOn(identity, 'isEqual').mockReturnValue(true);
+      let hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(true);
+
+      identity.did = 'otherDid';
+
+      spy.mockReturnValue(false);
+      hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(false);
+      spy.mockRestore();
     });
 
     it('should throw an error if the role is not recognized', () => {

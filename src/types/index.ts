@@ -103,11 +103,17 @@ export enum RoleType {
   CorporateActionsAgent = 'CorporateActionsAgent',
   // eslint-disable-next-line @typescript-eslint/no-shadow
   Identity = 'Identity',
+  ConfidentialAssetOwner = 'ConfidentialAssetOwner',
 }
 
 export interface TickerOwnerRole {
   type: RoleType.TickerOwner;
   ticker: string;
+}
+
+export interface ConfidentialAssetOwnerRole {
+  type: RoleType.ConfidentialAssetOwner;
+  assetId: string;
 }
 
 export interface CddProviderRole {
@@ -139,7 +145,8 @@ export type Role =
   | CddProviderRole
   | VenueOwnerRole
   | PortfolioCustodianRole
-  | IdentityRole;
+  | IdentityRole
+  | ConfidentialAssetOwnerRole;
 
 export enum KnownAssetType {
   EquityCommon = 'EquityCommon',
