@@ -1,7 +1,14 @@
 import BigNumber from 'bignumber.js';
 
-import { ConfidentialTransaction, ConfidentialVenue, Context, PolymeshError } from '~/internal';
-import { ErrorCode } from '~/types';
+import {
+  ConfidentialTransaction,
+  ConfidentialVenue,
+  Context,
+  createConfidentialVenue,
+  PolymeshError,
+} from '~/internal';
+import { ErrorCode, NoArgsProcedureMethod } from '~/types';
+import { createProcedureMethod } from '~/utils/internal';
 
 /**
  * Handles all functionalities for venues and transactions of confidential Assets
@@ -14,7 +21,17 @@ export class ConfidentialSettlements {
    */
   constructor(context: Context) {
     this.context = context;
+
+    this.createVenue = createProcedureMethod(
+      { getProcedureAndArgs: () => [createConfidentialVenue, undefined], voidArgs: true },
+      context
+    );
   }
+
+  /**
+   * Create a Confidential Venue under the ownership of the signing Identity
+   */
+  public createVenue: NoArgsProcedureMethod<ConfidentialVenue>;
 
   /**
    * Retrieve a confidential Venue by its ID

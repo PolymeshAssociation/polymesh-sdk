@@ -1,9 +1,16 @@
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 
 import { ConfidentialSettlements } from '~/api/client/ConfidentialSettlements';
-import { Context } from '~/internal';
+import { Context, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { ConfidentialVenue } from '~/types';
+
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 jest.mock(
   '~/api/entities/confidential/ConfidentialVenue',
@@ -43,6 +50,21 @@ describe('ConfidentialSettlements Class', () => {
   afterAll(() => {
     dsMockUtils.cleanup();
     procedureMockUtils.cleanup();
+  });
+
+  describe('method: createVenue', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<ConfidentialVenue>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: undefined, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await settlements.createVenue();
+
+      expect(tx).toBe(expectedTransaction);
+    });
   });
 
   describe('method: getVenue', () => {
