@@ -36,6 +36,7 @@ import {
   Claim,
   ClaimType,
   ConditionType,
+  ConfidentialAssetOwnerRole,
   ExemptedClaim,
   FungibleLeg,
   IdentityCondition,
@@ -318,6 +319,13 @@ export function isCddProviderRole(role: Role): role is CddProviderRole {
  */
 export function isTickerOwnerRole(role: Role): role is TickerOwnerRole {
   return role.type === RoleType.TickerOwner;
+}
+
+/**
+ * Return whether Role is ConfidentialAssetOwnerRole
+ */
+export function isConfidentialAssetOwnerRole(role: Role): role is ConfidentialAssetOwnerRole {
+  return role.type === RoleType.ConfidentialAssetOwner;
 }
 
 /**

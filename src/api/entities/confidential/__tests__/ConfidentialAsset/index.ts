@@ -1,11 +1,15 @@
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { ConfidentialAsset, Context, Entity, PolymeshError } from '~/internal';
+import { ConfidentialAsset, Context, Entity, PolymeshError, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { ErrorCode } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
@@ -78,6 +82,30 @@ describe('ConfidentialAsset class', () => {
       ).toBe(true);
       expect(ConfidentialAsset.isUniqueIdentifiers({})).toBe(false);
       expect(ConfidentialAsset.isUniqueIdentifiers({ id: 3 })).toBe(false);
+    });
+  });
+
+  describe('method: issue', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args = {
+        amount: new BigNumber(100),
+        account: 'someAccount',
+      };
+
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<ConfidentialAsset>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          { args: { asset: confidentialAsset, ...args }, transformer: undefined },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await confidentialAsset.issue(args);
+
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
