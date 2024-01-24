@@ -52,7 +52,6 @@ describe('ConfidentialAccount class', () => {
 
     beforeEach(() => {
       accountDidMock = dsMockUtils.createQueryMock('confidentialAsset', 'accountDid');
-      jest.spyOn(utilsConversionModule, 'stringToU8aFixed');
     });
 
     it('should return the Identity associated to the ConfidentialAccount', async () => {

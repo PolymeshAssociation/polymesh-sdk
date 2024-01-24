@@ -1,5 +1,5 @@
 import { Context, Entity, Identity } from '~/internal';
-import { identityIdToString, stringToU8aFixed } from '~/utils/conversion';
+import { identityIdToString } from '~/utils/conversion';
 
 /**
  * @hidden
@@ -52,7 +52,7 @@ export class ConfidentialAccount extends Entity<UniqueIdentifiers, string> {
       publicKey,
     } = this;
 
-    const optIdentityId = await confidentialAsset.accountDid(stringToU8aFixed(publicKey, context));
+    const optIdentityId = await confidentialAsset.accountDid(publicKey);
 
     if (optIdentityId.isNone) {
       return null;

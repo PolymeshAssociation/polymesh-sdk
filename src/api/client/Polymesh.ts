@@ -9,6 +9,7 @@ import { SigningManager } from '@polymeshassociation/signing-manager-types';
 import fetch from 'cross-fetch';
 import schema from 'polymesh-types/schema';
 
+import { ConfidentialAccounts } from '~/api/client/ConfidentialAccounts';
 import { ConfidentialSettlements } from '~/api/client/ConfidentialSettlements';
 import { Account, Context, createTransactionBatch, Identity, PolymeshError } from '~/internal';
 import {
@@ -122,6 +123,11 @@ export class Polymesh {
   public confidentialSettlements: ConfidentialSettlements;
 
   /**
+   * A set of methods for managing confidential Accounts
+   */
+  public confidentialAccounts: ConfidentialAccounts;
+
+  /**
    * @hidden
    */
   private constructor(context: Context) {
@@ -135,6 +141,7 @@ export class Polymesh {
     this.assets = new Assets(context);
     this.confidentialAssets = new ConfidentialAssets(context);
     this.confidentialSettlements = new ConfidentialSettlements(context);
+    this.confidentialAccounts = new ConfidentialAccounts(context);
 
     this.createTransactionBatch = createProcedureMethod(
       {

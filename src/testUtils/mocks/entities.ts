@@ -124,6 +124,7 @@ export type MockCustomPermissionGroup = Mocked<CustomPermissionGroup>;
 export type MockKnownPermissionGroup = Mocked<KnownPermissionGroup>;
 export type MockMultiSig = Mocked<MultiSig>;
 export type MockMultiSigProposal = Mocked<MultiSigProposal>;
+export type MockConfidentialAccount = Mocked<ConfidentialAccount>;
 
 interface EntityOptions {
   exists?: boolean;
@@ -2809,4 +2810,16 @@ export const getMultiSigProposalInstance = (
   }
 
   return instance as unknown as MockMultiSigProposal;
+};
+
+export const getConfidentialAccountInstance = (
+  opts?: ConfidentialAccountOptions
+): MockConfidentialAccount => {
+  const instance = new MockConfidentialAccountClass();
+
+  if (opts) {
+    instance.configure(opts);
+  }
+
+  return instance as unknown as MockConfidentialAccount;
 };

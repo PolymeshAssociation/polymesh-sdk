@@ -13,6 +13,7 @@ import { when } from 'jest-when';
 
 import {
   Account,
+  ConfidentialAccount,
   Context,
   FungibleAsset,
   Identity,
@@ -64,6 +65,7 @@ import {
   areSameClaims,
   asAccount,
   asChildIdentity,
+  asConfidentialAccount,
   asFungibleAsset,
   asNftId,
   assertAddressValid,
@@ -2324,5 +2326,42 @@ describe('assetCaAssetValid', () => {
     expect(() => assertCaAssetValid('NotMatching32CharactersString$$$')).toThrow(expectedError);
 
     expect(() => assertCaAssetValid('7670-2175d8cb-e3a55a-1973443-3351e25')).toThrow(expectedError);
+  });
+});
+
+describe('asConfidentialAccount', () => {
+  let context: Context;
+  let publicKey: string;
+  let confidentialAccount: ConfidentialAccount;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+    publicKey = 'someKey';
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    confidentialAccount = new ConfidentialAccount({ publicKey }, context);
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return ConfidentialAccount for given public key', async () => {
+    const result = asConfidentialAccount(publicKey, context);
+
+    expect(result).toEqual(expect.objectContaining({ publicKey }));
+  });
+
+  it('should return the passed ConfidentialAccount', async () => {
+    const result = asConfidentialAccount(confidentialAccount, context);
+
+    expect(result).toBe(confidentialAccount);
   });
 });
