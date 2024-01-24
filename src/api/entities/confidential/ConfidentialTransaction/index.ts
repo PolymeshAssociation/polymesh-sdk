@@ -2,7 +2,7 @@ import { Option } from '@polkadot/types';
 import { PalletConfidentialAssetTransactionStatus } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
-import { Context, Entity, PolymeshError } from '~/internal';
+import { Context, Entity, Identity, PolymeshError } from '~/internal';
 import {
   ConfidentialTransactionDetails,
   ConfidentialTransactionStatus,
@@ -12,6 +12,7 @@ import {
 } from '~/types';
 import {
   bigNumberToU64,
+  identityIdToString,
   meshConfidentialTransactionDetailsToDetails,
   meshConfidentialTransactionStatusToStatus,
   u64ToBigNumber,
@@ -122,6 +123,43 @@ export class ConfidentialTransaction extends Entity<UniqueIdentifiers, string> {
 
     return confidentialAsset.transactionStatuses(bigNumberToU64(id, context), status => {
       return callback(assembleResult(status));
+    });
+  }
+
+  /**
+   * Returns the identities involved in this transaction
+   *
+   * @throws if the transaction has been completed
+   */
+  public async getInvolvedParties(): Promise<Identity[]> {
+    const {
+      id,
+      context,
+      context: {
+        polymeshApi: {
+          query: { confidentialAsset },
+        },
+      },
+    } = this;
+
+    const rawId = bigNumberToU64(id, context);
+
+    const rawDids = await confidentialAsset.transactionParties.entries(rawId);
+
+    if (rawDids.length === 0) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message:
+          'No involved parties were found for this transaction. Its likely been completed and the chain storage has been pruned',
+        data: { id },
+      });
+    }
+
+    return rawDids.map(([key]) => {
+      const rawDid = key.args[1];
+      const did = identityIdToString(rawDid);
+
+      return new Identity({ did }, context);
     });
   }
 
