@@ -39,8 +39,7 @@ import {
 } from '~/internal';
 import { entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import {
-  AccountBalance,
+import {   AccountBalance,
   ActiveTransferRestrictions,
   AgentWithGroup,
   AssetDetails,
@@ -52,6 +51,7 @@ import {
   CollectionKey,
   ComplianceRequirements,
   ConfidentialAssetDetails,
+ConfidentialTransactionDetails, ConfidentialTransactionStatus ,
   CorporateActionDefaultConfig,
   CorporateActionKind,
   CorporateActionTargets,
@@ -380,6 +380,7 @@ interface ConfidentialVenueOptions extends EntityOptions {
 
 interface ConfidentialTransactionOptions extends EntityOptions {
   id?: BigNumber;
+  details?: EntityGetter<ConfidentialTransactionDetails>;
 }
 
 interface ConfidentialAccountOptions extends EntityOptions {
@@ -2209,6 +2210,7 @@ const MockConfidentialTransactionClass = createMockEntityClass<ConfidentialTrans
   class {
     uuid!: string;
     id!: BigNumber;
+    details!: jest.Mock;
 
     /**
      * @hidden
@@ -2223,10 +2225,17 @@ const MockConfidentialTransactionClass = createMockEntityClass<ConfidentialTrans
     public configure(opts: Required<ConfidentialTransactionOptions>) {
       this.uuid = 'confidentialTransaction';
       this.id = opts.id;
+      this.details = createEntityGetterMock(opts.details);
     }
   },
   () => ({
     id: new BigNumber(1),
+    details: {
+      venueId: new BigNumber(1),
+      createdAt: new BigNumber(new Date('2024/01/01').getTime()),
+      status: ConfidentialTransactionStatus.Pending,
+      memo: 'Sample Memo',
+    },
   }),
   ['ConfidentialTransaction']
 );

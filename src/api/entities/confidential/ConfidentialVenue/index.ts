@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
-import { Context, Entity, Identity, PolymeshError } from '~/internal';
-import { ErrorCode } from '~/types';
+import { ConfidentialTransaction, Context, Entity, Identity, PolymeshError } from '~/internal';
+import { ConfidentialTransactionStatus, ErrorCode, GroupedTransactions } from '~/types';
 import { bigNumberToU64, identityIdToString, u64ToBigNumber } from '~/utils/conversion';
 
 export interface UniqueIdentifiers {
@@ -63,6 +63,59 @@ export class ConfidentialVenue extends Entity<UniqueIdentifiers, string> {
     }
 
     return new Identity({ did: identityIdToString(creator.unwrap()) }, context);
+  }
+
+  /**
+   * Retrieve all transactions in this Confidential Venue.
+   * This groups the transactions based on their status as pending, executed or rejected
+   */
+  public async getTransactions(): Promise<GroupedTransactions> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { confidentialAsset },
+        },
+      },
+      id,
+      context,
+    } = this;
+
+    const transactionEntries = await confidentialAsset.venueTransactions.entries(
+      bigNumberToU64(id, context)
+    );
+
+    const transactions = transactionEntries.map(
+      ([
+        {
+          args: [, transactionId],
+        },
+      ]) => new ConfidentialTransaction({ id: u64ToBigNumber(transactionId.unwrap()) }, context)
+    );
+
+    const details = await Promise.all(transactions.map(transaction => transaction.details()));
+    const pending: ConfidentialTransaction[] = [];
+    const executed: ConfidentialTransaction[] = [];
+    const rejected: ConfidentialTransaction[] = [];
+
+    details.forEach(({ status }, index) => {
+      if (status === ConfidentialTransactionStatus.Pending) {
+        pending.push(transactions[index]);
+      }
+
+      if (status === ConfidentialTransactionStatus.Executed) {
+        executed.push(transactions[index]);
+      }
+
+      if (status === ConfidentialTransactionStatus.Rejected) {
+        rejected.push(transactions[index]);
+      }
+    });
+
+    return {
+      pending,
+      executed,
+      rejected,
+    };
   }
 
   /**
