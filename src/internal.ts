@@ -102,6 +102,7 @@ export { TickerReservation } from '~/api/entities/TickerReservation';
 export { BaseAsset, FungibleAsset, NftCollection, Nft } from '~/api/entities/Asset';
 export { ConfidentialAccount } from '~/api/entities/confidential/ConfidentialAccount';
 export { ConfidentialAsset } from '~/api/entities/confidential/ConfidentialAsset';
+export { createConfidentialVenue } from '~/api/procedures/createConfidentialVenue';
 export { ConfidentialVenue } from '~/api/entities/confidential/ConfidentialVenue';
 export { ConfidentialTransaction } from '~/api/entities/confidential/ConfidentialTransaction';
 export { MetadataEntry } from '~/api/entities/MetadataEntry';
