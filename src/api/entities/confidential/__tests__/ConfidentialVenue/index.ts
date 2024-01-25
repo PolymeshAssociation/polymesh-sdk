@@ -5,8 +5,16 @@ import { when } from 'jest-when';
 import { ConfidentialVenue, Context, Entity, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode } from '~/types';
+import { ConfidentialTransactionStatus, ErrorCode } from '~/types';
+import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
+
+jest.mock(
+  '~/api/entities/confidential/ConfidentialTransaction',
+  require('~/testUtils/mocks/entities').mockConfidentialTransactionModule(
+    '~/api/entities/confidential/ConfidentialTransaction'
+  )
+);
 
 describe('ConfidentialVenue class', () => {
   let context: Mocked<Context>;
@@ -55,6 +63,58 @@ describe('ConfidentialVenue class', () => {
       expect(ConfidentialVenue.isUniqueIdentifiers({ id: new BigNumber(1) })).toBe(true);
       expect(ConfidentialVenue.isUniqueIdentifiers({})).toBe(false);
       expect(ConfidentialVenue.isUniqueIdentifiers({ id: 3 })).toBe(false);
+    });
+  });
+
+  describe('method: getTransactions', () => {
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it("should return the Confidential Venue's pending, executed and rejected transactions", async () => {
+      const id1 = new BigNumber(1);
+      const id2 = new BigNumber(2);
+      const id3 = new BigNumber(3);
+
+      const detailsMock = jest.fn();
+
+      detailsMock
+        .mockResolvedValueOnce({
+          status: ConfidentialTransactionStatus.Pending,
+        })
+        .mockResolvedValueOnce({
+          status: ConfidentialTransactionStatus.Executed,
+        })
+        .mockResolvedValue({
+          status: ConfidentialTransactionStatus.Rejected,
+        });
+
+      entityMockUtils.configureMocks({
+        confidentialTransactionOptions: {
+          details: detailsMock,
+        },
+      });
+
+      when(jest.spyOn(utilsConversionModule, 'bigNumberToU64'))
+        .calledWith(id, context)
+        .mockReturnValue(rawId);
+
+      dsMockUtils.createQueryMock('confidentialAsset', 'venueTransactions', {
+        entries: [
+          [tuple(rawId, dsMockUtils.createMockCompact(dsMockUtils.createMockU64(id1))), []],
+          [tuple(rawId, dsMockUtils.createMockCompact(dsMockUtils.createMockU64(id2))), []],
+          [tuple(rawId, dsMockUtils.createMockCompact(dsMockUtils.createMockU64(id3))), []],
+        ],
+      });
+
+      const result = await venue.getTransactions();
+
+      expect(result.pending[0].id).toEqual(id1);
+      expect(result.executed[0].id).toEqual(id2);
+      expect(result.rejected[0].id).toEqual(id3);
+      expect(result.pending).toHaveLength(1);
+      expect(result.executed).toHaveLength(1);
+      expect(result.rejected).toHaveLength(1);
     });
   });
 
