@@ -14,6 +14,7 @@ import {
   Account,
   ChildIdentity,
   ConfidentialAsset,
+  ConfidentialVenue,
   Context,
   Entity,
   FungibleAsset,
@@ -55,6 +56,7 @@ import { Ensured, tuple } from '~/types/utils';
 import {
   isCddProviderRole,
   isConfidentialAssetOwnerRole,
+  isConfidentialVenueOwnerRole,
   isIdentityRole,
   isPortfolioCustodianRole,
   isTickerOwnerRole,
@@ -170,6 +172,12 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       const venue = new Venue({ id: role.venueId }, context);
 
       const { owner } = await venue.details();
+
+      return this.isEqual(owner);
+    } else if (isConfidentialVenueOwnerRole(role)) {
+      const confidentialVenue = new ConfidentialVenue({ id: role.venueId }, context);
+
+      const owner = await confidentialVenue.creator();
 
       return this.isEqual(owner);
     } else if (isPortfolioCustodianRole(role)) {

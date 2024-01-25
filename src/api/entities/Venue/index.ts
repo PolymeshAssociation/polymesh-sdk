@@ -131,7 +131,6 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
       settlement.venueInfo(venueId),
       settlement.details(venueId),
     ]);
-
     const { creator, venueType: type } = venueInfo.unwrap();
 
     return {

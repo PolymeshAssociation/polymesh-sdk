@@ -80,8 +80,21 @@ describe('ConfidentialAccount class', () => {
   });
 
   describe('method: exists', () => {
-    it('should return true', () => {
+    it('should return true if there is an associated DID', () => {
+      const mockDid = dsMockUtils.createMockIdentityId('someDID');
+      dsMockUtils
+        .createQueryMock('confidentialAsset', 'accountDid')
+        .mockResolvedValue(dsMockUtils.createMockOption(mockDid));
+
       return expect(account.exists()).resolves.toBe(true);
+    });
+
+    it('should return false', () => {
+      dsMockUtils
+        .createQueryMock('confidentialAsset', 'accountDid')
+        .mockResolvedValue(dsMockUtils.createMockOption());
+
+      return expect(account.exists()).resolves.toBe(false);
     });
   });
 });

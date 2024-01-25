@@ -3,8 +3,11 @@ import { bool, Bytes, Option, Text, u8, U8aFixed, u16, u32, u64, u128, Vec } fro
 import { AccountId, Balance, BlockHash, Hash, Permill } from '@polkadot/types/interfaces';
 import { DispatchError, DispatchResult } from '@polkadot/types/interfaces/system';
 import {
+  PalletConfidentialAssetAuditorAccount,
+  PalletConfidentialAssetConfidentialAccount,
   PalletConfidentialAssetConfidentialAuditors,
   PalletConfidentialAssetTransaction,
+  PalletConfidentialAssetTransactionLeg,
   PalletConfidentialAssetTransactionStatus,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
@@ -154,6 +157,7 @@ import {
   ConditionTarget,
   ConditionType,
   ConfidentialAccount,
+  ConfidentialAsset,
   ConfidentialTransactionDetails,
   ConfidentialTransactionStatus,
   CorporateActionKind,
@@ -337,13 +341,6 @@ export function stringToTickerKey(ticker: string, context: Context): TickerKey {
  */
 export function tickerToString(ticker: PolymeshPrimitivesTicker): string {
   return removePadding(u8aToString(ticker));
-}
-
-/**
- * @hidden
- */
-export function stringToU8aFixed(value: string, context: Context): U8aFixed {
-  return context.createType('U8aFixed', value);
 }
 
 /**
@@ -4876,4 +4873,67 @@ export function meshConfidentialTransactionStatusToStatus(
       /* istanbul ignore next: TS will complain if a new case is added */
       throw new UnreachableCaseError(status.type);
   }
+}
+
+/**
+ * @hidden
+ */
+export function confidentialAccountToMeshPublicKey(
+  account: ConfidentialAccount,
+  context: Context
+): PalletConfidentialAssetConfidentialAccount {
+  return context.createType('PalletConfidentialAssetConfidentialAccount', account.publicKey);
+}
+
+/**
+ * @hidden
+ */
+export function confidentialLegToMeshLeg(
+  leg: {
+    sender: PalletConfidentialAssetConfidentialAccount;
+    receiver: PalletConfidentialAssetConfidentialAccount;
+    assets: BTreeSet<Bytes>;
+    auditors: BTreeSet<PalletConfidentialAssetAuditorAccount>;
+    mediators: BTreeSet<PolymeshPrimitivesIdentityId>;
+  },
+  context: Context
+): PalletConfidentialAssetTransactionLeg {
+  return context.createType('PalletConfidentialAssetTransactionLeg', leg);
+}
+
+/**
+ * @hidden
+ */
+export function auditorToMeshAuditor(
+  auditor: ConfidentialAccount,
+  context: Context
+): PalletConfidentialAssetAuditorAccount {
+  return context.createType('PalletConfidentialAssetAuditorAccount', auditor.publicKey);
+}
+
+/**
+ * @hidden
+ */
+export function auditorsToBtreeSet(
+  auditors: ConfidentialAccount[],
+  context: Context
+): BTreeSet<PalletConfidentialAssetAuditorAccount> {
+  const rawAuditors = auditors.map(auditor => auditorToMeshAuditor(auditor, context));
+
+  return context.createType(
+    'BTreeSet<PalletConfidentialAssetAuditorAccount>',
+    rawAuditors
+  ) as BTreeSet<PalletConfidentialAssetAuditorAccount>;
+}
+
+/**
+ * @hidden
+ */
+export function confidentialAssetsToBtreeSet(
+  assets: ConfidentialAsset[],
+  context: Context
+): BTreeSet<U8aFixed> {
+  const assetIds = assets.map(asset => serializeConfidentialAssetId(asset.id));
+
+  return context.createType('BTreeSet<Bytes>', assetIds) as BTreeSet<U8aFixed>;
 }

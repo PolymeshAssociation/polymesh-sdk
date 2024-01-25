@@ -35,6 +35,7 @@ import {
   CheckpointSchedule,
   ChildIdentity,
   ConfidentialAccount,
+  ConfidentialAsset,
   Context,
   FungibleAsset,
   Identity,
@@ -1932,4 +1933,18 @@ export function asConfidentialAccount(
   }
 
   return new ConfidentialAccount({ publicKey: account }, context);
+}
+
+/**
+ * @hidden
+ */
+export function asConfidentialAsset(
+  asset: string | ConfidentialAsset,
+  context: Context
+): ConfidentialAsset {
+  if (asset instanceof ConfidentialAsset) {
+    return asset;
+  }
+
+  return new ConfidentialAsset({ id: asset }, context);
 }

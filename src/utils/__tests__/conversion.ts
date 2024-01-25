@@ -1,5 +1,5 @@
 import { DecoratedErrors } from '@polkadot/api/types';
-import { bool, Bytes, Option, Text, U8aFixed, u32, u64, u128, Vec } from '@polkadot/types';
+import { bool, Bytes, Option, Text, u32, u64, u128, Vec } from '@polkadot/types';
 import {
   AccountId,
   Balance,
@@ -13,6 +13,7 @@ import {
   PalletConfidentialAssetAuditorAccount,
   PalletConfidentialAssetConfidentialAuditors,
   PalletConfidentialAssetTransaction,
+  PalletConfidentialAssetTransactionLeg,
   PalletConfidentialAssetTransactionStatus,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
@@ -75,6 +76,7 @@ import { UnreachableCaseError } from '~/api/procedures/utils';
 import {
   Account,
   ConfidentialAccount,
+  ConfidentialAsset,
   Context,
   DefaultPortfolio,
   Identity,
@@ -96,6 +98,8 @@ import {
 import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
+  createMockBTreeSet,
+  createMockConfidentialAccount,
   createMockConfidentialTransactionStatus,
   createMockNfts,
   createMockOption,
@@ -176,7 +180,9 @@ import {
   assetDocumentToDocument,
   assetIdentifierToSecurityIdentifier,
   assetTypeToKnownOrId,
+  auditorsToBtreeSet,
   auditorsToConfidentialAuditors,
+  auditorToMeshAuditor,
   authorizationDataToAuthorization,
   authorizationToAuthorizationData,
   authorizationTypeToMeshAuthorizationType,
@@ -202,6 +208,8 @@ import {
   complianceConditionsToBtreeSet,
   complianceRequirementResultToRequirementCompliance,
   complianceRequirementToRequirement,
+  confidentialAssetsToBtreeSet,
+  confidentialLegToMeshLeg,
   corporateActionIdentifierToCaId,
   corporateActionKindToCaKind,
   corporateActionParamsToMeshCorporateActionArgs,
@@ -313,7 +321,6 @@ import {
   stringToText,
   stringToTicker,
   stringToTickerKey,
-  stringToU8aFixed,
   targetIdentitiesToCorporateActionTargets,
   targetsToTargetIdentities,
   textToString,
@@ -7661,32 +7668,6 @@ describe('corporateActionIdentifierToCaId', () => {
   });
 });
 
-describe('stringToU8aFixed', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should convert a string to a polkadot U8aFixed object', () => {
-    const value = 'someValue';
-    const fakeResult = 'result' as unknown as U8aFixed;
-    const context = dsMockUtils.getContextInstance();
-
-    when(context.createType).calledWith('U8aFixed', value).mockReturnValue(fakeResult);
-
-    const result = stringToU8aFixed(value, context);
-
-    expect(result).toEqual(fakeResult);
-  });
-});
-
 describe('serializeConfidentialAssetId', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -9981,5 +9962,149 @@ describe('meshConfidentialTransactionStatusToStatus', () => {
     ) as PalletConfidentialAssetTransactionStatus;
 
     expect(() => meshConfidentialTransactionStatusToStatus(status)).toThrow();
+  });
+});
+
+describe('confidentialLegToMeshLeg', () => {
+  const confidentialLeg = {
+    sender: createMockConfidentialAccount('senderKey'),
+    receiver: createMockConfidentialAccount('receiverKey'),
+    assets: dsMockUtils.createMockBTreeSet<Bytes>(),
+    auditors: dsMockUtils.createMockBTreeSet<PalletConfidentialAssetAuditorAccount>(),
+    mediators: dsMockUtils.createMockBTreeSet<PolymeshPrimitivesIdentityId>(['someDid']),
+  };
+  let context: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a confidential leg to PalletConfidentialAssetTransactionLeg', () => {
+    const mockResult = 'mockResult' as unknown as PalletConfidentialAssetTransactionLeg;
+    when(context.createType)
+      .calledWith('PalletConfidentialAssetTransactionLeg', confidentialLeg)
+      .mockReturnValue(mockResult);
+
+    const result = confidentialLegToMeshLeg(confidentialLeg, context);
+
+    expect(result).toEqual(mockResult);
+  });
+});
+
+describe('auditorToMeshAuditor', () => {
+  let account: ConfidentialAccount;
+  let context: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    account = new ConfidentialAccount({ publicKey: 'somePubKey' }, context);
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a ConfidentialAccount to PalletConfidentialAssetAuditorAccount', () => {
+    const mockResult = 'mockResult' as unknown as PalletConfidentialAssetAuditorAccount;
+
+    when(context.createType)
+      .calledWith('PalletConfidentialAssetAuditorAccount', account.publicKey)
+      .mockReturnValue(mockResult);
+
+    const result = auditorToMeshAuditor(account, context);
+
+    expect(result).toEqual(mockResult);
+  });
+});
+
+describe('auditorsToBtreeSet', () => {
+  let account: ConfidentialAccount;
+  let context: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    account = new ConfidentialAccount({ publicKey: 'somePubKey' }, context);
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a ConfidentialAccount to BTreeSetPalletConfidentialAssetAuditorAccount>', () => {
+    const mockResult = createMockBTreeSet<PalletConfidentialAssetAuditorAccount>([]);
+    const mockAuditor = 'somePubKey' as unknown as PalletConfidentialAssetAuditorAccount;
+
+    when(context.createType)
+      .calledWith('PalletConfidentialAssetAuditorAccount', account.publicKey)
+      .mockReturnValue(mockAuditor);
+
+    when(context.createType)
+      .calledWith('BTreeSet<PalletConfidentialAssetAuditorAccount>', [mockAuditor])
+      .mockReturnValue(mockResult);
+
+    const result = auditorsToBtreeSet([account], context);
+
+    expect(result).toEqual(mockResult);
+  });
+});
+
+describe('confidentialAssetsToBtreeSet', () => {
+  let asset: ConfidentialAsset;
+  let context: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    asset = new ConfidentialAsset({ id: '76702175d8cbe3a55a19734433351e25' }, context);
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a ConfidentialAccount to PalletConfidentialAssetAuditorAccount', () => {
+    const mockResult = createMockBTreeSet<Bytes>();
+    when(context.createType)
+      .calledWith('BTreeSet<Bytes>', ['0x76702175d8cbe3a55a19734433351e25'])
+      .mockReturnValue(mockResult);
+
+    const result = confidentialAssetsToBtreeSet([asset], context);
+
+    expect(result).toEqual(mockResult);
   });
 });

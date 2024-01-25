@@ -31,6 +31,7 @@ import { MockContext } from '~/testUtils/mocks/dataSources';
 import {
   Account,
   ConfidentialAssetOwnerRole,
+  ConfidentialVenueOwnerRole,
   DistributionWithDetails,
   ErrorCode,
   HistoricInstruction,
@@ -98,6 +99,13 @@ jest.mock(
 jest.mock(
   '~/base/Procedure',
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
+
+jest.mock(
+  '~/api/entities/confidential/ConfidentialVenue',
+  require('~/testUtils/mocks/entities').mockConfidentialVenueModule(
+    '~/api/entities/confidential/ConfidentialVenue'
+  )
 );
 
 describe('Identity class', () => {
@@ -265,6 +273,34 @@ describe('Identity class', () => {
             type: VenueType.Sto,
             description: 'aVenue',
           },
+        },
+      });
+
+      const spy = jest.spyOn(identity, 'isEqual').mockReturnValue(true);
+      let hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(true);
+
+      identity.did = 'otherDid';
+
+      spy.mockReturnValue(false);
+      hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(false);
+      spy.mockRestore();
+    });
+
+    it('should check whether the Identity has the Confidential Venue Owner role', async () => {
+      const did = 'someDid';
+      const identity = new Identity({ did }, context);
+      const role: ConfidentialVenueOwnerRole = {
+        type: RoleType.ConfidentialVenueOwner,
+        venueId: new BigNumber(10),
+      };
+
+      entityMockUtils.configureMocks({
+        confidentialVenueOptions: {
+          creator: entityMockUtils.getIdentityInstance({ did }),
         },
       });
 

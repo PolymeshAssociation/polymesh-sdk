@@ -9,6 +9,9 @@ import {
   BaseAsset,
   Checkpoint,
   CheckpointSchedule,
+  ConfidentialAccount,
+  ConfidentialAsset,
+  ConfidentialVenue,
   Context,
   CustomPermissionGroup,
   FungibleAsset,
@@ -43,7 +46,7 @@ import {
   TxTag,
 } from '~/types';
 import { tickerToString, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
-import { filterEventRecords } from '~/utils/internal';
+import { asConfidentialAsset, filterEventRecords } from '~/utils/internal';
 
 /**
  * @hidden
@@ -158,6 +161,76 @@ export async function assertVenueExists(venueId: BigNumber, context: Context): P
       data: {
         venueId,
       },
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
+export async function assertIdentityExists(identity: Identity): Promise<void> {
+  const exists = await identity.exists();
+
+  if (!exists) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'The Identity does not exist',
+      data: { did: identity.did },
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
+export async function assertConfidentialVenueExists(
+  venueId: BigNumber,
+  context: Context
+): Promise<void> {
+  const venue = new ConfidentialVenue({ id: venueId }, context);
+  const exists = await venue.exists();
+
+  if (!exists) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: "The Confidential Venue doesn't exist",
+      data: {
+        venueId,
+      },
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
+export async function assertConfidentialAccountExists(account: ConfidentialAccount): Promise<void> {
+  const exists = await account.exists();
+
+  if (!exists) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: "The Confidential Account doesn't exist",
+      data: { publicKey: account.publicKey },
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
+export async function assertConfidentialAssetExists(
+  asset: ConfidentialAsset | string,
+  context: Context
+): Promise<void> {
+  const parsedAsset = asConfidentialAsset(asset, context);
+  const exists = parsedAsset.exists();
+
+  if (!exists) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: "The Confidential Asset doesn't exist",
+      data: { assetId: parsedAsset.id },
     });
   }
 }

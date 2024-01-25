@@ -1,11 +1,35 @@
 import BigNumber from 'bignumber.js';
 
-import { ConfidentialTransaction, Context, Entity, Identity, PolymeshError } from '~/internal';
-import { ConfidentialTransactionStatus, ErrorCode, GroupedTransactions } from '~/types';
+import {
+  addConfidentialTransaction,
+  ConfidentialTransaction,
+  Context,
+  Entity,
+  Identity,
+  PolymeshError,
+} from '~/internal';
+import {
+  AddConfidentialTransactionParams,
+  AddConfidentialTransactionsParams,
+  ConfidentialTransactionStatus,
+  ErrorCode,
+  GroupedTransactions,
+  ProcedureMethod,
+} from '~/types';
 import { bigNumberToU64, identityIdToString, u64ToBigNumber } from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
+}
+
+/**
+ * @hidden
+ */
+export function addTransactionTransformer([
+  transaction,
+]: ConfidentialTransaction[]): ConfidentialTransaction {
+  return transaction;
 }
 
 /**
@@ -36,6 +60,22 @@ export class ConfidentialVenue extends Entity<UniqueIdentifiers, string> {
     const { id } = identifiers;
 
     this.id = id;
+
+    this.addTransaction = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [
+          addConfidentialTransaction,
+          { transactions: [args], venueId: this.id },
+        ],
+        transformer: addTransactionTransformer,
+      },
+      context
+    );
+
+    this.addTransactions = createProcedureMethod(
+      { getProcedureAndArgs: args => [addConfidentialTransaction, { ...args, venueId: this.id }] },
+      context
+    );
   }
 
   /**
@@ -141,6 +181,29 @@ export class ConfidentialVenue extends Entity<UniqueIdentifiers, string> {
 
     return id.lt(nextVenue);
   }
+
+  /**
+   * Creates a Confidential Transaction in this Venue
+   *
+   * @note required role:
+   *   - Venue Owner
+   */
+  public addTransaction: ProcedureMethod<
+    AddConfidentialTransactionParams,
+    ConfidentialTransaction[],
+    ConfidentialTransaction
+  >;
+
+  /**
+   * Creates a batch of Confidential Transactions in this Venue
+   *
+   * @note required role:
+   *   - Venue Owner
+   */
+  public addTransactions: ProcedureMethod<
+    AddConfidentialTransactionsParams,
+    ConfidentialTransaction[]
+  >;
 
   /**
    * Return the confidential Venue's ID

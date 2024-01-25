@@ -39,7 +39,8 @@ import {
 } from '~/internal';
 import { entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import {   AccountBalance,
+import {
+  AccountBalance,
   ActiveTransferRestrictions,
   AgentWithGroup,
   AssetDetails,
@@ -51,7 +52,8 @@ import {   AccountBalance,
   CollectionKey,
   ComplianceRequirements,
   ConfidentialAssetDetails,
-ConfidentialTransactionDetails, ConfidentialTransactionStatus ,
+  ConfidentialTransactionDetails,
+  ConfidentialTransactionStatus,
   CorporateActionDefaultConfig,
   CorporateActionKind,
   CorporateActionTargets,
@@ -126,6 +128,7 @@ export type MockMultiSig = Mocked<MultiSig>;
 export type MockMultiSigProposal = Mocked<MultiSigProposal>;
 export type MockConfidentialAccount = Mocked<ConfidentialAccount>;
 export type MockConfidentialAsset = Mocked<ConfidentialAsset>;
+export type MockConfidentialTransaction = Mocked<ConfidentialTransaction>;
 
 interface EntityOptions {
   exists?: boolean;
@@ -301,6 +304,10 @@ interface InstructionOptions extends EntityOptions {
   details?: EntityGetter<InstructionDetails>;
   getLegs?: EntityGetter<ResultSet<Leg>>;
   isPending?: EntityGetter<boolean>;
+}
+
+interface ConfidentialTransactionOptions extends EntityOptions {
+  id?: BigNumber;
 }
 
 interface OfferingOptions extends EntityOptions {
@@ -2844,4 +2851,20 @@ export const getConfidentialAssetInstance = (
   }
 
   return instance as unknown as MockConfidentialAsset;
+};
+
+/**
+ * @hidden
+ * Retrieve an Instruction instance
+ */
+export const getConfidentialTransactionInstance = (
+  opts?: ConfidentialTransactionOptions
+): MockConfidentialTransaction => {
+  const instance = new MockConfidentialTransactionClass();
+
+  if (opts) {
+    instance.configure(opts);
+  }
+
+  return instance as unknown as MockConfidentialTransaction;
 };

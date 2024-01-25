@@ -104,6 +104,7 @@ export enum RoleType {
   // eslint-disable-next-line @typescript-eslint/no-shadow
   Identity = 'Identity',
   ConfidentialAssetOwner = 'ConfidentialAssetOwner',
+  ConfidentialVenueOwner = 'ConfidentialVenueOwner',
 }
 
 export interface TickerOwnerRole {
@@ -122,6 +123,11 @@ export interface CddProviderRole {
 
 export interface VenueOwnerRole {
   type: RoleType.VenueOwner;
+  venueId: BigNumber;
+}
+
+export interface ConfidentialVenueOwnerRole {
+  type: RoleType.ConfidentialVenueOwner;
   venueId: BigNumber;
 }
 
@@ -146,7 +152,8 @@ export type Role =
   | VenueOwnerRole
   | PortfolioCustodianRole
   | IdentityRole
-  | ConfidentialAssetOwnerRole;
+  | ConfidentialAssetOwnerRole
+  | ConfidentialVenueOwnerRole;
 
 export enum KnownAssetType {
   EquityCommon = 'EquityCommon',

@@ -2,10 +2,11 @@ import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { ConfidentialVenue, Context, Entity, PolymeshError } from '~/internal';
+import { addTransactionTransformer } from '~/api/entities/confidential/ConfidentialVenue';
+import { ConfidentialVenue, Context, Entity, PolymeshError, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ConfidentialTransactionStatus, ErrorCode } from '~/types';
+import { ConfidentialTransaction, ConfidentialTransactionStatus, ErrorCode } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -14,6 +15,11 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockConfidentialTransactionModule(
     '~/api/entities/confidential/ConfidentialTransaction'
   )
+);
+
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 
 describe('ConfidentialVenue class', () => {
@@ -170,6 +176,104 @@ describe('ConfidentialVenue class', () => {
       venueCreatorMock.mockResolvedValue(dsMockUtils.createMockOption());
 
       await expect(venue.creator()).rejects.toThrow(expectedError);
+    });
+  });
+
+  describe('method: addTransaction', () => {
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const legs = [
+        {
+          sender: 'someAccountId',
+          receiver: 'anotherAccountId',
+          assets: ['SOME_ASSET'],
+          auditors: [],
+          mediators: [],
+        },
+        {
+          sender: 'anotherDid',
+          receiver: 'aThirdDid',
+          assets: ['ANOTHER_ASSET'],
+          auditors: [],
+          mediators: [],
+        },
+      ];
+
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<ConfidentialTransaction>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          {
+            args: { transactions: [{ legs }], venueId: venue.id },
+            transformer: addTransactionTransformer,
+          },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await venue.addTransaction({ legs });
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: addTransactions', () => {
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should prepare the procedure and return the resulting transactions', async () => {
+      const legs = [
+        {
+          sender: 'someAccountId',
+          receiver: 'anotherAccountId',
+          assets: ['SOME_ASSET'],
+          auditors: [],
+          mediators: [],
+        },
+        {
+          sender: 'anotherDid',
+          receiver: 'aThirdDid',
+          assets: ['ANOTHER_ASSET'],
+          auditors: [],
+          mediators: [],
+        },
+      ];
+
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<ConfidentialTransaction>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          {
+            args: { transactions: [{ legs }], venueId: venue.id },
+            transformer: undefined,
+          },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
+
+      const transactions = [{ legs }];
+
+      const tx = await venue.addTransactions({ transactions });
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('addInstructionTransformer', () => {
+    it('should return a single Transaction', () => {
+      const result = addTransactionTransformer([
+        entityMockUtils.getConfidentialTransactionInstance({ id }),
+      ]);
+
+      expect(result.id).toEqual(id);
     });
   });
 

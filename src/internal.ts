@@ -21,6 +21,7 @@ export {
   consumeJoinOrRotateAuthorization,
   ConsumeJoinOrRotateAuthorizationParams,
 } from '~/api/procedures/consumeJoinOrRotateAuthorization';
+export { addConfidentialTransaction } from '~/api/procedures/addConfidentialTransaction';
 export { addInstruction } from '~/api/procedures/addInstruction';
 export { executeManualInstruction } from '~/api/procedures/executeManualInstruction';
 export {

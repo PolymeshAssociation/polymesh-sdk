@@ -14,6 +14,7 @@ import { when } from 'jest-when';
 import {
   Account,
   ConfidentialAccount,
+  ConfidentialAsset,
   Context,
   FungibleAsset,
   Identity,
@@ -66,6 +67,7 @@ import {
   asAccount,
   asChildIdentity,
   asConfidentialAccount,
+  asConfidentialAsset,
   asFungibleAsset,
   asNftId,
   assertAddressValid,
@@ -2363,5 +2365,42 @@ describe('asConfidentialAccount', () => {
     const result = asConfidentialAccount(confidentialAccount, context);
 
     expect(result).toBe(confidentialAccount);
+  });
+});
+
+describe('asConfidentialAsset', () => {
+  let context: Context;
+  let assetId: string;
+  let confidentialAsset: ConfidentialAsset;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+    assetId = '76702175-d8cb-e3a5-5a19-734433351e25';
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    confidentialAsset = new ConfidentialAsset({ id: assetId }, context);
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return ConfidentialAsset for the given id', async () => {
+    const result = asConfidentialAsset(assetId, context);
+
+    expect(result).toEqual(expect.objectContaining({ id: assetId }));
+  });
+
+  it('should return the passed ConfidentialAsset', async () => {
+    const result = asConfidentialAsset(confidentialAsset, context);
+
+    expect(result).toBe(confidentialAsset);
   });
 });

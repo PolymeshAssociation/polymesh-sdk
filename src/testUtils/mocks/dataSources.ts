@@ -54,9 +54,11 @@ import {
   PalletAssetTickerRegistration,
   PalletAssetTickerRegistrationConfig,
   PalletConfidentialAssetAuditorAccount,
+  PalletConfidentialAssetConfidentialAccount,
   PalletConfidentialAssetConfidentialAssetDetails,
   PalletConfidentialAssetConfidentialAuditors,
   PalletConfidentialAssetTransaction,
+  PalletConfidentialAssetTransactionLeg,
   PalletConfidentialAssetTransactionStatus,
   PalletContractsStorageContractInfo,
   PalletCorporateActionsCaCheckpoint,
@@ -4525,4 +4527,63 @@ export const createMockConfidentialTransactionStatus = (
   }
 
   return createMockEnum<PalletConfidentialAssetTransactionStatus>(status);
+};
+
+/**
+ * @hidden
+ *  * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockConfidentialAccount = (
+  account?: string | PalletConfidentialAssetConfidentialAccount
+): MockCodec<PalletConfidentialAssetConfidentialAccount> => {
+  if (isCodec<PalletConfidentialAssetConfidentialAccount>(account)) {
+    return account as MockCodec<PalletConfidentialAssetConfidentialAccount>;
+  }
+
+  return createMockStringCodec<PalletConfidentialAssetConfidentialAccount>(account);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockConfidentialLeg = (
+  leg?:
+    | PalletConfidentialAssetTransactionLeg
+    | {
+        assets: BTreeSet<Bytes> | Parameters<typeof createMockBTreeSet>[0];
+        sender:
+          | PalletConfidentialAssetConfidentialAccount
+          | Parameters<typeof createMockConfidentialAccount>[0];
+        receiver:
+          | PalletConfidentialAssetConfidentialAccount
+          | Parameters<typeof createMockConfidentialAccount>[0];
+        auditors:
+          | BTreeSet<PalletConfidentialAssetConfidentialAccount>
+          | Parameters<typeof createMockBTreeSet>[0];
+        mediators: BTreeSet<PolymeshPrimitivesIdentityId> | Parameters<typeof createMockIdentityId>;
+      }
+): MockCodec<PalletConfidentialAssetTransactionLeg> => {
+  if (isCodec<PalletConfidentialAssetTransactionLeg>(leg)) {
+    return leg as MockCodec<PalletConfidentialAssetTransactionLeg>;
+  }
+
+  const { assets, sender, receiver, auditors, mediators } = leg ?? {
+    assets: createMockBTreeSet<Bytes>(),
+    sender: createMockConfidentialAccount(),
+    receiver: createMockConfidentialAccount(),
+    auditors: createMockBTreeSet<PalletConfidentialAssetConfidentialAccount>(),
+    mediators: createMockBTreeSet<PolymeshPrimitivesIdentityId>(),
+  };
+
+  return createMockCodec<PalletConfidentialAssetTransactionLeg>(
+    {
+      assets,
+      sender,
+      receiver,
+      auditors,
+      mediators,
+    },
+    !leg
+  );
 };

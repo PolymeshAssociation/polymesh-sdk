@@ -1,5 +1,5 @@
 import { Context, Entity, Identity } from '~/internal';
-import { identityIdToString } from '~/utils/conversion';
+import { confidentialAccountToMeshPublicKey, identityIdToString } from '~/utils/conversion';
 
 /**
  * @hidden
@@ -67,7 +67,18 @@ export class ConfidentialAccount extends Entity<UniqueIdentifiers, string> {
    * Determine whether this Account exists on chain
    */
   public async exists(): Promise<boolean> {
-    return true;
+    const {
+      context: {
+        polymeshApi: {
+          query: { confidentialAsset },
+        },
+      },
+    } = this;
+
+    const rawPublicKey = confidentialAccountToMeshPublicKey(this, this.context);
+
+    const didRecord = await confidentialAsset.accountDid(rawPublicKey);
+    return didRecord.isSome;
   }
 
   /**
