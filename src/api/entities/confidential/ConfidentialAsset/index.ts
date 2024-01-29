@@ -3,6 +3,7 @@ import { Option } from '@polkadot/types-codec';
 
 import {
   ConfidentialAccount,
+  ConfidentialVenue,
   Context,
   Entity,
   Identity,
@@ -12,6 +13,7 @@ import {
 } from '~/internal';
 import {
   ConfidentialAssetDetails,
+  ConfidentialVenueFilteringDetails,
   ErrorCode,
   GroupedAuditors,
   IssueConfidentialAssetParams,
@@ -19,10 +21,12 @@ import {
   SetVenueFilteringParams,
 } from '~/types';
 import {
+  boolToBoolean,
   bytesToString,
   identityIdToString,
   serializeConfidentialAssetId,
   tickerToString,
+  u64ToBigNumber,
   u128ToBigNumber,
 } from '~/utils/conversion';
 import { assertCaAssetValid, createProcedureMethod } from '~/utils/internal';
@@ -173,6 +177,44 @@ export class ConfidentialAsset extends Entity<UniqueIdentifiers, string> {
       mediators: [...mediators].map(
         mediator => new Identity({ did: identityIdToString(mediator) }, context)
       ),
+    };
+  }
+
+  /**
+   * Retrieve venue filtering details for this Confidential Asset
+   */
+  public async getVenueFilteringDetails(): Promise<ConfidentialVenueFilteringDetails> {
+    const {
+      id,
+      context: {
+        polymeshApi: {
+          query: { confidentialAsset },
+        },
+      },
+      context,
+    } = this;
+
+    const rawAssetId = serializeConfidentialAssetId(id);
+
+    const [rawVenueFiltering, rawVenueAllowList] = await Promise.all([
+      confidentialAsset.venueFiltering(rawAssetId),
+      confidentialAsset.venueAllowList.entries(rawAssetId),
+    ]);
+
+    if (!boolToBoolean(rawVenueFiltering)) {
+      return { enabled: false };
+    }
+
+    const allowedConfidentialVenues: ConfidentialVenue[] = rawVenueAllowList.map(
+      ([
+        {
+          args: [, rawVenueId],
+        },
+      ]) => new ConfidentialVenue({ id: u64ToBigNumber(rawVenueId) }, context)
+    );
+    return {
+      enabled: true,
+      allowedConfidentialVenues,
     };
   }
 

@@ -1,9 +1,11 @@
+import { bool } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { ConfidentialAsset, Context, Entity, PolymeshError, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { ErrorCode } from '~/types';
+import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -264,6 +266,52 @@ describe('ConfidentialAsset class', () => {
           publicKey: 'someAuditorPublicKey',
         })
       );
+    });
+  });
+
+  describe('method: getVenueFilteringDetails', () => {
+    let boolToBooleanSpy: jest.SpyInstance;
+    let rawTrue: bool;
+    let rawFalse: bool;
+
+    beforeAll(() => {
+      boolToBooleanSpy = jest.spyOn(utilsConversionModule, 'boolToBoolean');
+    });
+
+    beforeEach(() => {
+      rawTrue = dsMockUtils.createMockBool(true);
+      rawFalse = dsMockUtils.createMockBool(false);
+      when(boolToBooleanSpy).calledWith(rawTrue).mockReturnValue(true);
+      when(boolToBooleanSpy).calledWith(rawFalse).mockReturnValue(false);
+    });
+
+    it('should return enabled as false when venue filtering is disabled', async () => {
+      dsMockUtils.createQueryMock('confidentialAsset', 'venueFiltering', {
+        returnValue: rawFalse,
+      });
+      dsMockUtils.createQueryMock('confidentialAsset', 'venueAllowList', {
+        entries: [],
+      });
+      const result = await confidentialAsset.getVenueFilteringDetails();
+
+      expect(result).toEqual({
+        enabled: false,
+      });
+    });
+
+    it('should return enabled as true along with allowed venues if venue filtering is enabled', async () => {
+      dsMockUtils.createQueryMock('confidentialAsset', 'venueFiltering', {
+        returnValue: rawTrue,
+      });
+      dsMockUtils.createQueryMock('confidentialAsset', 'venueAllowList', {
+        entries: [tuple([`0x${assetId}`, dsMockUtils.createMockU64(new BigNumber(1))], rawTrue)],
+      });
+      const result = await confidentialAsset.getVenueFilteringDetails();
+
+      expect(result).toEqual({
+        enabled: true,
+        allowedConfidentialVenues: [expect.objectContaining({ id: new BigNumber(1) })],
+      });
     });
   });
 

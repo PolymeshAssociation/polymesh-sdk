@@ -1,5 +1,6 @@
 import BigNumber from 'bignumber.js';
 
+import { ConfidentialVenue } from '~/internal';
 import { ConfidentialAccount, Identity } from '~/types';
 
 export interface ConfidentialAssetDetails {
@@ -50,3 +51,12 @@ export interface IssueConfidentialAssetParams {
    */
   account: ConfidentialAccount | string;
 }
+
+export type ConfidentialVenueFilteringDetails =
+  | {
+      enabled: false;
+    }
+  | {
+      enabled: true;
+      allowedConfidentialVenues: ConfidentialVenue[];
+    };
