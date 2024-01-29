@@ -8,6 +8,7 @@ import {
   Identity,
   issueConfidentialAssets,
   PolymeshError,
+  setConfidentialVenueFiltering,
 } from '~/internal';
 import {
   ConfidentialAssetDetails,
@@ -15,6 +16,7 @@ import {
   GroupedAuditors,
   IssueConfidentialAssetParams,
   ProcedureMethod,
+  SetVenueFilteringParams,
 } from '~/types';
 import {
   bytesToString,
@@ -70,6 +72,11 @@ export class ConfidentialAsset extends Entity<UniqueIdentifiers, string> {
       { getProcedureAndArgs: args => [issueConfidentialAssets, { asset: this, ...args }] },
       context
     );
+
+    this.setVenueFiltering = createProcedureMethod(
+      { getProcedureAndArgs: args => [setConfidentialVenueFiltering, { assetId: id, ...args }] },
+      context
+    );
   }
 
   /**
@@ -80,6 +87,11 @@ export class ConfidentialAsset extends Entity<UniqueIdentifiers, string> {
    *  - Confidential Assets can only be issued in accounts owned by the signer
    */
   public issue: ProcedureMethod<IssueConfidentialAssetParams, ConfidentialAsset>;
+
+  /**
+   * Enable/disable confidential venue filtering for this Confidential Asset and/or set allowed/disallowed Confidential Venues
+   */
+  public setVenueFiltering: ProcedureMethod<SetVenueFilteringParams, void>;
 
   /**
    * @hidden

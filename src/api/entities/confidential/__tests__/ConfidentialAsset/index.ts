@@ -109,6 +109,58 @@ describe('ConfidentialAsset class', () => {
     });
   });
 
+  describe('method: setVenueFiltering', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const enabled = true;
+
+      const args = {
+        enabled,
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { assetId, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await confidentialAsset.setVenueFiltering(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+
+    it('should prepare the procedure and return the resulting transaction for allowingVenues', async () => {
+      const args = {
+        allowedVenues: [new BigNumber(1), new BigNumber(2)],
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { assetId, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await confidentialAsset.setVenueFiltering(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+
+    it('should prepare the procedure and return the resulting transaction for disallowingVenues', async () => {
+      const args = {
+        disallowedVenues: [new BigNumber(1), new BigNumber(2)],
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { assetId, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await confidentialAsset.setVenueFiltering(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
   describe('method: details', () => {
     let u128ToBigNumberSpy: jest.SpyInstance;
     let bytesToStringSpy: jest.SpyInstance;
