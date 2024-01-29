@@ -54,6 +54,7 @@ import {
   ConfidentialAssetDetails,
   ConfidentialTransactionDetails,
   ConfidentialTransactionStatus,
+  ConfidentialVenueFilteringDetails,
   CorporateActionDefaultConfig,
   CorporateActionKind,
   CorporateActionTargets,
@@ -127,6 +128,7 @@ export type MockKnownPermissionGroup = Mocked<KnownPermissionGroup>;
 export type MockMultiSig = Mocked<MultiSig>;
 export type MockMultiSigProposal = Mocked<MultiSigProposal>;
 export type MockConfidentialAccount = Mocked<ConfidentialAccount>;
+export type MockConfidentialVenue = Mocked<ConfidentialVenue>;
 export type MockConfidentialAsset = Mocked<ConfidentialAsset>;
 export type MockConfidentialTransaction = Mocked<ConfidentialTransaction>;
 
@@ -378,6 +380,7 @@ interface MultiSigProposalOptions extends EntityOptions {
 interface ConfidentialAssetOptions extends EntityOptions {
   id?: string;
   details?: EntityGetter<ConfidentialAssetDetails | null>;
+  getVenueFilteringDetails?: EntityGetter<ConfidentialVenueFilteringDetails>;
 }
 
 interface ConfidentialVenueOptions extends EntityOptions {
@@ -2155,6 +2158,7 @@ const MockConfidentialAssetClass = createMockEntityClass<ConfidentialAssetOption
     uuid!: string;
     id!: string;
     details!: jest.Mock;
+    getVenueFilteringDetails!: jest.Mock;
 
     /**
      * @hidden
@@ -2170,6 +2174,7 @@ const MockConfidentialAssetClass = createMockEntityClass<ConfidentialAssetOption
       this.uuid = 'confidentialAsset';
       this.id = opts.id;
       this.details = createEntityGetterMock(opts.details);
+      this.getVenueFilteringDetails = createEntityGetterMock(opts.getVenueFilteringDetails);
     }
   },
   () => ({
@@ -2180,6 +2185,7 @@ const MockConfidentialAssetClass = createMockEntityClass<ConfidentialAssetOption
       owner: getIdentityInstance(),
       totalSupply: new BigNumber(0),
     },
+    getVenueFilteringDetails: { enabled: false },
   }),
   ['ConfidentialAsset']
 );
@@ -2653,6 +2659,22 @@ export const getVenueInstance = (opts?: VenueOptions): MockVenue => {
   }
 
   return instance as unknown as MockVenue;
+};
+
+/**
+ * @hidden
+ * Retrieve a Venue instance
+ */
+export const getConfidentialVenueInstance = (
+  opts?: ConfidentialVenueOptions
+): MockConfidentialVenue => {
+  const instance = new MockConfidentialVenueClass();
+
+  if (opts) {
+    instance.configure(opts);
+  }
+
+  return instance as unknown as MockConfidentialVenue;
 };
 
 /**

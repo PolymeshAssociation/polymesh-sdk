@@ -7,6 +7,7 @@ import {
   PalletConfidentialAssetConfidentialAccount,
   PalletConfidentialAssetConfidentialAuditors,
   PalletConfidentialAssetTransaction,
+  PalletConfidentialAssetTransactionId,
   PalletConfidentialAssetTransactionLeg,
   PalletConfidentialAssetTransactionStatus,
   PalletCorporateActionsCaId,
@@ -4936,4 +4937,13 @@ export function confidentialAssetsToBtreeSet(
   const assetIds = assets.map(asset => serializeConfidentialAssetId(asset.id));
 
   return context.createType('BTreeSet<Bytes>', assetIds) as BTreeSet<U8aFixed>;
+}
+
+/**
+ * @hidden
+ */
+export function confidentialTransactionIdToBigNumber(
+  id: PalletConfidentialAssetTransactionId
+): BigNumber {
+  return new BigNumber(id.toString());
 }

@@ -58,6 +58,7 @@ import {
   PalletConfidentialAssetConfidentialAssetDetails,
   PalletConfidentialAssetConfidentialAuditors,
   PalletConfidentialAssetTransaction,
+  PalletConfidentialAssetTransactionId,
   PalletConfidentialAssetTransactionLeg,
   PalletConfidentialAssetTransactionStatus,
   PalletContractsStorageContractInfo,
@@ -4586,4 +4587,18 @@ export const createMockConfidentialLeg = (
     },
     !leg
   );
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockConfidentialTransactionId = (
+  value?: BigNumber | PalletConfidentialAssetTransactionId
+): MockCodec<PalletConfidentialAssetTransactionId> => {
+  if (isCodec<PalletConfidentialAssetTransactionId>(value)) {
+    return value as MockCodec<PalletConfidentialAssetTransactionId>;
+  }
+
+  return createMockCodec<PalletConfidentialAssetTransactionId>(value, !value);
 };

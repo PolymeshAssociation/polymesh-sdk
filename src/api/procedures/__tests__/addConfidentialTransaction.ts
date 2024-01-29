@@ -243,13 +243,9 @@ describe('addTransaction procedure', () => {
     expect(error.data.failedTransactionIndexes[0]).toBe(0);
   });
 
-  it('should throw an error if any instruction contains no assets', () => {
+  it('should throw an error if any transaction contains no assets', () => {
     const proc = procedureMockUtils.getInstance<Params, ConfidentialTransaction[]>(mockContext, {
       portfoliosToAffirm: [],
-    });
-
-    entityMockUtils.configureMocks({
-      venueOptions: { exists: true },
     });
 
     const expectedError = new PolymeshError({
@@ -277,7 +273,6 @@ describe('addTransaction procedure', () => {
     });
 
     entityMockUtils.configureMocks({
-      venueOptions: { exists: true },
       confidentialAssetOptions: {
         exists: false,
       },
@@ -294,6 +289,41 @@ describe('addTransaction procedure', () => {
       auditors: [auditor],
       mediators: [mediator],
     });
+
+    return expect(
+      prepareAddTransaction.call(proc, { venueId, transactions: [{ legs }] })
+    ).rejects.toThrow(expectedError);
+  });
+
+  it('should throw an error if an asset is not enabled for the venue', async () => {
+    const proc = procedureMockUtils.getInstance<Params, ConfidentialTransaction[]>(mockContext, {
+      portfoliosToAffirm: [],
+    });
+
+    entityMockUtils.configureMocks({
+      confidentialAssetOptions: {
+        getVenueFilteringDetails: {
+          enabled: true,
+          allowedConfidentialVenues: [
+            entityMockUtils.getConfidentialVenueInstance({ id: new BigNumber(7) }),
+          ],
+        },
+      },
+    });
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'A confidential asset is not allowed to be exchanged at the corresponding venue',
+    });
+    const legs = [
+      {
+        sender,
+        receiver,
+        assets: [assetId],
+        auditors: [auditor],
+        mediators: [mediator],
+      },
+    ];
 
     return expect(
       prepareAddTransaction.call(proc, { venueId, transactions: [{ legs }] })
@@ -483,7 +513,7 @@ describe('addTransaction procedure', () => {
   describe('addTransactionResolver', () => {
     const filterEventRecordsSpy = jest.spyOn(utilsInternalModule, 'filterEventRecords');
     const id = new BigNumber(10);
-    const rawId = dsMockUtils.createMockU64(id);
+    const rawId = dsMockUtils.createMockConfidentialTransactionId(id);
 
     beforeAll(() => {
       entityMockUtils.initMocks({
@@ -494,7 +524,9 @@ describe('addTransaction procedure', () => {
     });
 
     beforeEach(() => {
-      filterEventRecordsSpy.mockReturnValue([dsMockUtils.createMockIEvent(['someDid', rawId])]);
+      filterEventRecordsSpy.mockReturnValue([
+        dsMockUtils.createMockIEvent(['someDid', 'someVenueId', rawId]),
+      ]);
     });
 
     afterEach(() => {

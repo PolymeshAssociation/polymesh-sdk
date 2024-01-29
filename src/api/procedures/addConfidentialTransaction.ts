@@ -9,6 +9,7 @@ import BigNumber from 'bignumber.js';
 import {
   assertConfidentialAccountExists,
   assertConfidentialAssetExists,
+  assertConfidentialAssetsEnabledForVenue,
   assertConfidentialVenueExists,
   assertIdentityExists,
 } from '~/api/procedures/utils';
@@ -35,9 +36,9 @@ import {
   confidentialAccountToMeshPublicKey,
   confidentialAssetsToBtreeSet,
   confidentialLegToMeshLeg,
+  confidentialTransactionIdToBigNumber,
   identitiesToBtreeSet,
   stringToMemo,
-  u64ToBigNumber,
 } from '~/utils/conversion';
 import {
   asConfidentialAccount,
@@ -80,7 +81,8 @@ export const createConfidentialTransactionResolver =
     const events = filterEventRecords(receipt, 'confidentialAsset', 'TransactionCreated');
 
     const result = events.map(
-      ({ data }) => new ConfidentialTransaction({ id: u64ToBigNumber(data[1]) }, context)
+      ({ data }) =>
+        new ConfidentialTransaction({ id: confidentialTransactionIdToBigNumber(data[2]) }, context)
     );
 
     return result;
@@ -159,6 +161,7 @@ async function getTxArgsAndErrors(
             const auditors = inputAuditors.map(auditor => asConfidentialAccount(auditor, context));
             const mediators = inputMediators.map(mediator => asIdentity(mediator, context));
             await Promise.all([
+              assertConfidentialAssetsEnabledForVenue(venueId, assets),
               assertConfidentialAccountExists(sender),
               assertConfidentialAccountExists(receiver),
               ...assets.map(asset => assertConfidentialAssetExists(asset, context)),
