@@ -209,6 +209,7 @@ import {
   complianceRequirementResultToRequirementCompliance,
   complianceRequirementToRequirement,
   confidentialAssetsToBtreeSet,
+  confidentialLegIdToId,
   confidentialLegToMeshLeg,
   corporateActionIdentifierToCaId,
   corporateActionKindToCaKind,
@@ -247,6 +248,7 @@ import {
   meshClaimToClaim,
   meshClaimToInputStatClaim,
   meshClaimTypeToClaimType,
+  meshConfidentialAssetTransactionIdToId,
   meshConfidentialTransactionDetailsToDetails,
   meshConfidentialTransactionStatusToStatus,
   meshCorporateActionToCorporateActionParams,
@@ -257,6 +259,7 @@ import {
   meshNftToNftId,
   meshPermissionsToPermissions,
   meshProposalStatusToProposalStatus,
+  meshPublicKeyToKey,
   meshScopeToScope,
   meshSettlementTypeToEndCondition,
   meshStatToStatType,
@@ -10106,5 +10109,36 @@ describe('confidentialAssetsToBtreeSet', () => {
     const result = confidentialAssetsToBtreeSet([asset], context);
 
     expect(result).toEqual(mockResult);
+  });
+});
+
+describe('meshPublicKeyToKey', () => {
+  it('should convert the key', () => {
+    const expectedKey = '0x01';
+    const mockKey = dsMockUtils.createMockConfidentialAccount(expectedKey);
+
+    const result = meshPublicKeyToKey(mockKey);
+
+    expect(result).toEqual(expectedKey);
+  });
+});
+
+describe('confidentialLegIdToId', () => {
+  it('should convert to a BigNumber', () => {
+    const mockLegId = dsMockUtils.createMockConfidentialTransactionLegId(new BigNumber(1));
+
+    const result = confidentialLegIdToId(mockLegId);
+
+    expect(result).toEqual(new BigNumber(1));
+  });
+});
+
+describe('meshConfidentialAssetTransactionIdToId', () => {
+  it('should convert to a BigNumber', () => {
+    const mockAssetId = dsMockUtils.createMockConfidentialAssetTransactionId(new BigNumber(1));
+
+    const result = meshConfidentialAssetTransactionIdToId(mockAssetId);
+
+    expect(result).toEqual(new BigNumber(1));
   });
 });

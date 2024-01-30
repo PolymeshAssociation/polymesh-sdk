@@ -13,14 +13,7 @@ import {
   assertConfidentialVenueExists,
   assertIdentityExists,
 } from '~/api/procedures/utils';
-import {
-  ConfidentialTransaction,
-  Context,
-  DefaultPortfolio,
-  NumberedPortfolio,
-  PolymeshError,
-  Procedure,
-} from '~/internal';
+import { ConfidentialTransaction, Context, PolymeshError, Procedure } from '~/internal';
 import {
   AddConfidentialTransactionParams,
   AddConfidentialTransactionsParams,
@@ -55,13 +48,6 @@ import {
 export type Params = AddConfidentialTransactionsParams & {
   venueId: BigNumber;
 };
-
-/**
- * @hidden
- */
-export interface Storage {
-  portfoliosToAffirm: (DefaultPortfolio | NumberedPortfolio)[][];
-}
 
 /**
  * @hidden
@@ -160,6 +146,7 @@ async function getTxArgsAndErrors(
             const receiver = asConfidentialAccount(inputReceiver, context);
             const auditors = inputAuditors.map(auditor => asConfidentialAccount(auditor, context));
             const mediators = inputMediators.map(mediator => asIdentity(mediator, context));
+
             await Promise.all([
               assertConfidentialAssetsEnabledForVenue(venueId, assets),
               assertConfidentialAccountExists(sender),

@@ -14,6 +14,13 @@ import { ConfidentialTransactionStatus, ErrorCode, UnsubCallback } from '~/types
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
+jest.mock(
+  '~/api/entities/confidential/ConfidentialAsset',
+  require('~/testUtils/mocks/entities').mockConfidentialAssetModule(
+    '~/api/entities/confidential/ConfidentialAsset'
+  )
+);
+
 describe('ConfidentialTransaction class', () => {
   let context: Mocked<Context>;
   let transaction: ConfidentialTransaction;
@@ -272,6 +279,63 @@ describe('ConfidentialTransaction class', () => {
       });
 
       return expect(transaction.getInvolvedParties()).rejects.toThrow(expectedError);
+    });
+  });
+
+  describe('method: getLegs', () => {
+    const legId = new BigNumber(2);
+    const rawTransactionId = dsMockUtils.createMockConfidentialAssetTransactionId(id);
+    const senderKey = '0x01';
+    const receiverKey = '0x02';
+    const mediatorDid = 'someDid';
+    const sender = dsMockUtils.createMockConfidentialAccount(senderKey);
+    const receiver = dsMockUtils.createMockConfidentialAccount(receiverKey);
+    const mediator = dsMockUtils.createMockIdentityId(mediatorDid);
+
+    beforeEach(() => {});
+
+    it('should return the transaction legs', async () => {
+      dsMockUtils.createQueryMock('confidentialAsset', 'transactionLegs', {
+        entries: [
+          tuple(
+            [rawTransactionId, dsMockUtils.createMockConfidentialTransactionLegId(legId)],
+            dsMockUtils.createMockOption(
+              dsMockUtils.createMockConfidentialLegDetails({
+                sender,
+                receiver,
+                auditors: dsMockUtils.createMockBTreeMap(),
+                mediators: [mediator],
+              })
+            )
+          ),
+        ],
+      });
+
+      const result = await transaction.getLegs();
+      expect(result).toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: new BigNumber(2) })])
+      );
+    });
+
+    it('should throw an error if details are None', () => {
+      dsMockUtils.createQueryMock('confidentialAsset', 'transactionLegs', {
+        entries: [
+          tuple(
+            [
+              dsMockUtils.createMockConfidentialAssetTransactionId(id),
+              dsMockUtils.createMockConfidentialTransactionLegId(legId),
+            ],
+            dsMockUtils.createMockOption()
+          ),
+        ],
+      });
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'There were no details for a confidential transaction leg',
+      });
+
+      return expect(transaction.getLegs()).rejects.toThrow(expectedError);
     });
   });
 

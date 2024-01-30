@@ -342,7 +342,11 @@ export interface LocalCollectionKeyInput {
 }
 
 /**
- * Global key must be registered. local keys must provide a specification as they are created with the NftCollection
+ * Global keys are standardized values and are specified by ID. e.g. imageUri for specifying an associated image
+ *
+ * Local keys are unique to the collection, as such `name` and `spec` must be provided
+ *
+ * To use a Local keys must provide a specification as they are created with the NftCollection
  */
 export type CollectionKeyInput = GlobalCollectionKeyInput | LocalCollectionKeyInput;
 
