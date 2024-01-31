@@ -339,6 +339,32 @@ describe('ConfidentialTransaction class', () => {
     });
   });
 
+  describe('method: getPendingAffirmCount', () => {
+    const mockCount = new BigNumber(3);
+    const rawMockCount = dsMockUtils.createMockU32(mockCount);
+    it('should return the number of pending affirmations', async () => {
+      dsMockUtils.createQueryMock('confidentialAsset', 'pendingAffirms', {
+        returnValue: dsMockUtils.createMockOption(rawMockCount),
+      });
+
+      const result = await transaction.getPendingAffirmsCount();
+      expect(result).toEqual(mockCount);
+    });
+
+    it('should throw an error if the count is not found', async () => {
+      dsMockUtils.createQueryMock('confidentialAsset', 'pendingAffirms', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'Affirm count not available. The transaction has likely been completed and pruned',
+      });
+
+      return expect(transaction.getPendingAffirmsCount()).rejects.toThrow(expectedError);
+    });
+  });
+
   describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       expect(transaction.toHuman()).toBe('1');

@@ -12,12 +12,14 @@ import {
   UnsubCallback,
 } from '~/types';
 import {
+  bigNumberToU32,
   bigNumberToU64,
   confidentialLegIdToId,
   identityIdToString,
   meshConfidentialLegDetailsToDetails,
   meshConfidentialTransactionDetailsToDetails,
   meshConfidentialTransactionStatusToStatus,
+  u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
 
@@ -164,6 +166,34 @@ export class ConfidentialTransaction extends Entity<UniqueIdentifiers, string> {
 
       return new Identity({ did }, context);
     });
+  }
+
+  /**
+   * Get number of pending affirmations for this transaction
+   */
+  public async getPendingAffirmsCount(): Promise<BigNumber> {
+    const {
+      id,
+      context,
+      context: {
+        polymeshApi: {
+          query: { confidentialAsset },
+        },
+      },
+    } = this;
+
+    const rawId = bigNumberToU32(id, context);
+    const rawAffirmCount = await confidentialAsset.pendingAffirms(rawId);
+
+    if (rawAffirmCount.isNone) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'Affirm count not available. The transaction has likely been completed and pruned',
+        data: { confidentialTransactionId: id },
+      });
+    }
+
+    return u32ToBigNumber(rawAffirmCount.unwrap());
   }
 
   /**

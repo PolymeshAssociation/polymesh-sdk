@@ -19,6 +19,7 @@ import {
   BaseAsset,
   Checkpoint,
   CheckpointSchedule,
+  ConfidentialTransaction,
   CustomPermissionGroup,
   DefaultPortfolio,
   DefaultTrustedClaimIssuer,
@@ -1791,3 +1792,23 @@ export interface ConfidentialTransactionDetails {
   status: ConfidentialTransactionStatus;
   memo?: string;
 }
+
+export enum ConfidentialAffirmParty {
+  Sender = 'Sender',
+  Receiver = 'Receiver',
+  Mediator = 'Mediator',
+}
+
+export enum ConfidentialLegParty {
+  Sender = 'Sender',
+  Receiver = 'Receiver',
+  Mediator = 'Mediator',
+  Auditor = 'Auditor',
+}
+
+export type ConfidentialAffirmation = {
+  transaction: ConfidentialTransaction;
+  legId: BigNumber;
+  role: ConfidentialLegParty;
+  affirmed: boolean;
+};

@@ -12,8 +12,10 @@ import {
 import {
   PalletConfidentialAssetAuditorAccount,
   PalletConfidentialAssetConfidentialAuditors,
+  PalletConfidentialAssetLegParty,
   PalletConfidentialAssetTransaction,
   PalletConfidentialAssetTransactionLeg,
+  PalletConfidentialAssetTransactionLegId,
   PalletConfidentialAssetTransactionStatus,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
@@ -123,6 +125,7 @@ import {
   ConditionCompliance,
   ConditionTarget,
   ConditionType,
+  ConfidentialLegParty,
   ConfidentialTransactionStatus,
   CorporateActionKind,
   CorporateActionParams,
@@ -210,7 +213,9 @@ import {
   complianceRequirementToRequirement,
   confidentialAssetsToBtreeSet,
   confidentialLegIdToId,
+  confidentialLegPartyToRole,
   confidentialLegToMeshLeg,
+  confidentialTransactionLegIdToBigNumber,
   corporateActionIdentifierToCaId,
   corporateActionKindToCaKind,
   corporateActionParamsToMeshCorporateActionArgs,
@@ -10140,5 +10145,69 @@ describe('meshConfidentialAssetTransactionIdToId', () => {
     const result = meshConfidentialAssetTransactionIdToId(mockAssetId);
 
     expect(result).toEqual(new BigNumber(1));
+  });
+
+  describe('confidentialTransactionLegIdToBigNumber', () => {
+    let id: BigNumber;
+    let rawId: PalletConfidentialAssetTransactionLegId;
+
+    beforeAll(() => {
+      dsMockUtils.initMocks();
+    });
+
+    beforeEach(() => {
+      id = new BigNumber(1);
+      rawId = dsMockUtils.createMockConfidentialTransactionLegId(id);
+    });
+
+    afterEach(() => {
+      dsMockUtils.reset();
+    });
+
+    afterAll(() => {
+      dsMockUtils.cleanup();
+    });
+
+    it('should convert PalletConfidentialAssetTransactionLegId to BigNumber ', () => {
+      const result = confidentialTransactionLegIdToBigNumber(rawId);
+
+      expect(result).toEqual(id);
+    });
+  });
+
+  describe('confidentialTransactionLegIdToBigNumber', () => {
+    beforeAll(() => {
+      dsMockUtils.initMocks();
+    });
+    afterEach(() => {
+      dsMockUtils.reset();
+    });
+
+    afterAll(() => {
+      dsMockUtils.cleanup();
+    });
+
+    it('should convert PalletConfidentialAssetTransactionLegId to BigNumber ', () => {
+      let input = dsMockUtils.createMockConfidentialLegParty('Sender');
+      let expected = ConfidentialLegParty.Sender;
+      let result = confidentialLegPartyToRole(input);
+      expect(result).toEqual(expected);
+
+      input = dsMockUtils.createMockConfidentialLegParty('Receiver');
+      expected = ConfidentialLegParty.Receiver;
+      result = confidentialLegPartyToRole(input);
+      expect(result).toEqual(expected);
+
+      input = dsMockUtils.createMockConfidentialLegParty('Mediator');
+      expected = ConfidentialLegParty.Mediator;
+      result = confidentialLegPartyToRole(input);
+      expect(result).toEqual(expected);
+    });
+
+    it('should throw if an unexpected role is received', () => {
+      const input = 'notSomeRole' as unknown as PalletConfidentialAssetLegParty;
+
+      expect(() => confidentialLegPartyToRole(input)).toThrow(UnreachableCaseError);
+    });
   });
 });

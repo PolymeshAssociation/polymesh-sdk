@@ -19,6 +19,7 @@ import {
   PalletConfidentialAssetAuditorAccount,
   PalletConfidentialAssetConfidentialAccount,
   PalletConfidentialAssetConfidentialAuditors,
+  PalletConfidentialAssetLegParty,
   PalletConfidentialAssetTransaction,
   PalletConfidentialAssetTransactionId,
   PalletConfidentialAssetTransactionLeg,
@@ -175,6 +176,7 @@ import {
   ConditionTarget,
   ConditionType,
   ConfidentialLeg,
+  ConfidentialLegParty,
   ConfidentialTransactionDetails,
   ConfidentialTransactionStatus,
   CorporateActionKind,
@@ -5011,6 +5013,12 @@ export function meshConfidentialAssetTransactionIdToId(
   return new BigNumber(id.toNumber());
 }
 
+export function confidentialTransactionLegIdToBigNumber(
+  id: PalletConfidentialAssetTransactionLegId
+): BigNumber {
+  return new BigNumber(id.toString());
+}
+
 /**
  * @hidden
  */
@@ -5042,4 +5050,22 @@ export function meshConfidentialLegDetailsToDetails(
     assetAuditors,
     mediators,
   };
+}
+
+/**
+ * @hidden
+ */
+export function confidentialLegPartyToRole(
+  role: PalletConfidentialAssetLegParty
+): ConfidentialLegParty {
+  switch (role.type) {
+    case 'Sender':
+      return ConfidentialLegParty.Sender;
+    case 'Receiver':
+      return ConfidentialLegParty.Receiver;
+    case 'Mediator':
+      return ConfidentialLegParty.Mediator;
+    default:
+      throw new UnreachableCaseError(role.type);
+  }
 }

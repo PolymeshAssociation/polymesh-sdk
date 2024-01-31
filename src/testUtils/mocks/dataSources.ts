@@ -58,6 +58,7 @@ import {
   PalletConfidentialAssetConfidentialAccount,
   PalletConfidentialAssetConfidentialAssetDetails,
   PalletConfidentialAssetConfidentialAuditors,
+  PalletConfidentialAssetLegParty,
   PalletConfidentialAssetTransaction,
   PalletConfidentialAssetTransactionId,
   PalletConfidentialAssetTransactionLeg,
@@ -4713,4 +4714,17 @@ export const createMockConfidentialAssetTransactionId = (
   return createMockNumberCodec<u64>(
     txId
   ) as unknown as MockCodec<PalletConfidentialAssetTransactionId>;
+};
+
+/**
+ *  NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockConfidentialLegParty = (
+  role?: 'Sender' | 'Receiver' | 'Mediator' | PalletConfidentialAssetLegParty
+): MockCodec<PalletConfidentialAssetLegParty> => {
+  if (isCodec<PalletConfidentialAssetLegParty>(role)) {
+    return role as MockCodec<PalletConfidentialAssetLegParty>;
+  }
+
+  return createMockEnum<PalletConfidentialAssetLegParty>(role);
 };
