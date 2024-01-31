@@ -4977,24 +4977,22 @@ export function meshPublicKeyToKey(publicKey: PalletConfidentialAssetConfidentia
 export function meshAssetAuditorToAssetAuditors(
   rawAuditors: BTreeMap<U8aFixed, BTreeSet<PalletConfidentialAssetAuditorAccount>>,
   context: Context
-): { assets: ConfidentialAsset[]; auditors: ConfidentialAccount[] } {
-  const auditors: ConfidentialAccount[] = [];
-  const assets: ConfidentialAsset[] = [];
+): { asset: ConfidentialAsset; auditors: ConfidentialAccount[] }[] {
+  const result: ReturnType<typeof meshAssetAuditorToAssetAuditors> = [];
 
   /* istanbul ignore next: nested BTreeMap/BTreeSet is hard to mock */
   for (const [rawAssetId, rawAssetAuditors] of rawAuditors.entries()) {
     const assetId = u8aToHex(rawAssetId).replace('0x', '');
-    assets.push(new ConfidentialAsset({ id: assetId }, context));
+    const asset = new ConfidentialAsset({ id: assetId }, context);
 
-    const auditAccounts = [...rawAssetAuditors].map(rawAuditor => {
+    const auditors = [...rawAssetAuditors].map(rawAuditor => {
       const auditorId = rawAuditor.toString();
       return new ConfidentialAccount({ publicKey: auditorId }, context);
     });
-
-    auditors.push(...auditAccounts);
+    result.push({ asset, auditors });
   }
 
-  return { auditors, assets };
+  return result;
 }
 
 /**
@@ -5029,7 +5027,7 @@ export function meshConfidentialLegDetailsToDetails(
 
   const senderKey = meshPublicKeyToKey(rawSender);
   const receiverKey = meshPublicKeyToKey(rawReceiver);
-  const { assets, auditors } = meshAssetAuditorToAssetAuditors(rawAuditors, context);
+  const assetAuditors = meshAssetAuditorToAssetAuditors(rawAuditors, context);
   const mediators = [...rawMediators].map(mediator => {
     const did = identityIdToString(mediator);
     return new Identity({ did }, context);
@@ -5041,8 +5039,7 @@ export function meshConfidentialLegDetailsToDetails(
   return {
     sender,
     receiver,
-    assets,
-    auditors,
+    assetAuditors,
     mediators,
   };
 }

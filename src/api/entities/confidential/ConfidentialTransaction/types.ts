@@ -13,7 +13,9 @@ export interface ConfidentialLeg {
   id: BigNumber;
   sender: ConfidentialAccount;
   receiver: ConfidentialAccount;
-  assets: ConfidentialAsset[];
-  auditors: ConfidentialAccount[];
+  /**
+   * The auditors for the leg, grouped by asset they are auditors for. Note: the same auditor may appear for multiple assets
+   */
+  assetAuditors: { asset: ConfidentialAsset; auditors: ConfidentialAccount[] }[];
   mediators: Identity[];
 }
