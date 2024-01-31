@@ -186,7 +186,7 @@ export async function assertIdentityExists(identity: Identity): Promise<void> {
 export async function assertConfidentialVenueExists(
   venueId: BigNumber,
   context: Context
-): Promise<void> {
+): Promise<ConfidentialVenue> {
   const venue = new ConfidentialVenue({ id: venueId }, context);
   const exists = await venue.exists();
 
@@ -199,6 +199,8 @@ export async function assertConfidentialVenueExists(
       },
     });
   }
+
+  return venue;
 }
 
 /**
@@ -236,11 +238,11 @@ export async function assertConfidentialAssetsEnabledForVenue(
 
   filterDetails.forEach(({ assetId, details }) => {
     if (details.enabled) {
-      const isVenueAllowed = details.allowedConfidentialVenues
-        .map(({ id }) => id)
-        .includes(venueId);
+      const ids = details.allowedConfidentialVenues.map(({ id }) => id);
 
-      if (!isVenueAllowed) {
+      const isVenueNotAllowed = !ids.find(id => id.eq(venueId));
+
+      if (isVenueNotAllowed) {
         throw new PolymeshError({
           code: ErrorCode.ValidationError,
           message: 'A confidential asset is not allowed to be exchanged at the corresponding venue',

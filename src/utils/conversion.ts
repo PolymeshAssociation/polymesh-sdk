@@ -1,5 +1,18 @@
 import { ApolloQueryResult } from '@apollo/client/core';
-import { bool, Bytes, Option, Text, u8, U8aFixed, u16, u32, u64, u128, Vec } from '@polkadot/types';
+import {
+  bool,
+  BTreeMap,
+  Bytes,
+  Option,
+  Text,
+  u8,
+  U8aFixed,
+  u16,
+  u32,
+  u64,
+  u128,
+  Vec,
+} from '@polkadot/types';
 import { AccountId, Balance, BlockHash, Hash, Permill } from '@polkadot/types/interfaces';
 import { DispatchError, DispatchResult } from '@polkadot/types/interfaces/system';
 import {
@@ -9,6 +22,8 @@ import {
   PalletConfidentialAssetTransaction,
   PalletConfidentialAssetTransactionId,
   PalletConfidentialAssetTransactionLeg,
+  PalletConfidentialAssetTransactionLegDetails,
+  PalletConfidentialAssetTransactionLegId,
   PalletConfidentialAssetTransactionStatus,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
@@ -107,6 +122,8 @@ import {
   Account,
   Checkpoint,
   CheckpointSchedule,
+  ConfidentialAccount,
+  ConfidentialAsset,
   Context,
   CustomPermissionGroup,
   DefaultPortfolio,
@@ -157,8 +174,7 @@ import {
   ConditionCompliance,
   ConditionTarget,
   ConditionType,
-  ConfidentialAccount,
-  ConfidentialAsset,
+  ConfidentialLeg,
   ConfidentialTransactionDetails,
   ConfidentialTransactionStatus,
   CorporateActionKind,
@@ -4946,4 +4962,84 @@ export function confidentialTransactionIdToBigNumber(
   id: PalletConfidentialAssetTransactionId
 ): BigNumber {
   return new BigNumber(id.toString());
+}
+
+/**
+ * @hidden
+ */
+export function meshPublicKeyToKey(publicKey: PalletConfidentialAssetConfidentialAccount): string {
+  return publicKey.toString();
+}
+
+/**
+ * @hidden
+ */
+export function meshAssetAuditorToAssetAuditors(
+  rawAuditors: BTreeMap<U8aFixed, BTreeSet<PalletConfidentialAssetAuditorAccount>>,
+  context: Context
+): { asset: ConfidentialAsset; auditors: ConfidentialAccount[] }[] {
+  const result: ReturnType<typeof meshAssetAuditorToAssetAuditors> = [];
+
+  /* istanbul ignore next: nested BTreeMap/BTreeSet is hard to mock */
+  for (const [rawAssetId, rawAssetAuditors] of rawAuditors.entries()) {
+    const assetId = u8aToHex(rawAssetId).replace('0x', '');
+    const asset = new ConfidentialAsset({ id: assetId }, context);
+
+    const auditors = [...rawAssetAuditors].map(rawAuditor => {
+      const auditorId = rawAuditor.toString();
+      return new ConfidentialAccount({ publicKey: auditorId }, context);
+    });
+    result.push({ asset, auditors });
+  }
+
+  return result;
+}
+
+/**
+ * @hidden
+ */
+export function confidentialLegIdToId(id: PalletConfidentialAssetTransactionLegId): BigNumber {
+  return new BigNumber(id.toNumber());
+}
+
+/**
+ * @hidden
+ */
+export function meshConfidentialAssetTransactionIdToId(
+  id: PalletConfidentialAssetTransactionId
+): BigNumber {
+  return new BigNumber(id.toNumber());
+}
+
+/**
+ * @hidden
+ */
+export function meshConfidentialLegDetailsToDetails(
+  details: PalletConfidentialAssetTransactionLegDetails,
+  context: Context
+): Omit<ConfidentialLeg, 'id'> {
+  const {
+    sender: rawSender,
+    receiver: rawReceiver,
+    auditors: rawAuditors,
+    mediators: rawMediators,
+  } = details;
+
+  const senderKey = meshPublicKeyToKey(rawSender);
+  const receiverKey = meshPublicKeyToKey(rawReceiver);
+  const assetAuditors = meshAssetAuditorToAssetAuditors(rawAuditors, context);
+  const mediators = [...rawMediators].map(mediator => {
+    const did = identityIdToString(mediator);
+    return new Identity({ did }, context);
+  });
+
+  const sender = new ConfidentialAccount({ publicKey: senderKey }, context);
+  const receiver = new ConfidentialAccount({ publicKey: receiverKey }, context);
+
+  return {
+    sender,
+    receiver,
+    assetAuditors,
+    mediators,
+  };
 }

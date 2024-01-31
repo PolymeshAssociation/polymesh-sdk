@@ -4,6 +4,7 @@ import BigNumber from 'bignumber.js';
 
 import { Context, Entity, Identity, PolymeshError } from '~/internal';
 import {
+  ConfidentialLeg,
   ConfidentialTransactionDetails,
   ConfidentialTransactionStatus,
   ErrorCode,
@@ -12,7 +13,9 @@ import {
 } from '~/types';
 import {
   bigNumberToU64,
+  confidentialLegIdToId,
   identityIdToString,
+  meshConfidentialLegDetailsToDetails,
   meshConfidentialTransactionDetailsToDetails,
   meshConfidentialTransactionStatusToStatus,
   u64ToBigNumber,
@@ -183,6 +186,50 @@ export class ConfidentialTransaction extends Entity<UniqueIdentifiers, string> {
     const transactionCounter = await confidentialAsset.transactionCounter();
 
     return id.lte(u64ToBigNumber(transactionCounter.unwrap()));
+  }
+
+  /**
+   * Get the legs of this Confidential Transaction
+   */
+  public async getLegs(): Promise<ConfidentialLeg[]> {
+    const {
+      context,
+      id,
+      context: {
+        polymeshApi: {
+          query: { confidentialAsset },
+        },
+      },
+    } = this;
+
+    const rawId = bigNumberToU64(id, context);
+
+    const rawLegs = await confidentialAsset.transactionLegs.entries(rawId);
+
+    const legs = rawLegs.map(([key, detailsOpt]) => {
+      const rawLegId = key.args[1];
+      const legId = confidentialLegIdToId(rawLegId);
+
+      if (detailsOpt.isNone) {
+        throw new PolymeshError({
+          code: ErrorCode.DataUnavailable,
+          message: 'There were no details for a confidential transaction leg',
+          data: {
+            transactionId: id,
+            legId: rawLegId,
+          },
+        });
+      }
+
+      const legDetails = meshConfidentialLegDetailsToDetails(detailsOpt.unwrap(), context);
+
+      return {
+        id: legId,
+        ...legDetails,
+      };
+    });
+
+    return legs;
   }
 
   /**

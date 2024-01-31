@@ -8,6 +8,7 @@ import { DecoratedErrors, DecoratedRpc } from '@polkadot/api/types';
 import { RpcInterface } from '@polkadot/rpc-core/types';
 import {
   bool,
+  BTreeMap,
   BTreeSet,
   Bytes,
   Compact,
@@ -60,6 +61,8 @@ import {
   PalletConfidentialAssetTransaction,
   PalletConfidentialAssetTransactionId,
   PalletConfidentialAssetTransactionLeg,
+  PalletConfidentialAssetTransactionLegDetails,
+  PalletConfidentialAssetTransactionLegId,
   PalletConfidentialAssetTransactionStatus,
   PalletContractsStorageContractInfo,
   PalletCorporateActionsCaCheckpoint,
@@ -1870,6 +1873,41 @@ export const createMockBTreeSet = <T extends Codec>(
   const res = createMockCodec(new Set(codecItems), !items) as unknown as Mutable<BTreeSet>;
 
   return res as MockCodec<BTreeSet<T>>;
+};
+
+/**
+ * @hidden
+ *  NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockBTreeMap = <K extends Codec, V extends Codec>(
+  items: BTreeMap<K, V> | [unknown, unknown][] = []
+): MockCodec<BTreeMap<K, V>> => {
+  if (isCodec<BTreeMap<K, V>>(items)) {
+    return items as MockCodec<BTreeMap<K, V>>;
+  }
+
+  const codecItems = items.map(([key, value]) => {
+    let codecKey: K;
+    let codecValue: V;
+
+    if (isCodec<K>(key)) {
+      codecKey = key;
+    } else {
+      codecKey = createMockCodec(key, !key) as K;
+    }
+
+    if (isCodec<V>(value)) {
+      codecValue = value;
+    } else {
+      codecValue = createMockCodec(value, !value) as V;
+    }
+
+    return { [codecKey.toString()]: codecValue };
+  });
+
+  const res = createMockCodec<BTreeMap<K, V>>(codecItems, !items) as unknown as Mutable<BTreeMap>;
+
+  return res as MockCodec<BTreeMap<K, V>>;
 };
 
 /**
@@ -4593,6 +4631,48 @@ export const createMockConfidentialLeg = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockConfidentialLegDetails = (
+  leg?:
+    | PalletConfidentialAssetTransactionLegDetails
+    | {
+        sender:
+          | PalletConfidentialAssetConfidentialAccount
+          | Parameters<typeof createMockConfidentialAccount>[0];
+        receiver:
+          | PalletConfidentialAssetConfidentialAccount
+          | Parameters<typeof createMockConfidentialAccount>[0];
+        auditors:
+          | BTreeMap<U8aFixed, BTreeSet<PalletConfidentialAssetAuditorAccount>>
+          | Parameters<typeof createMockBTreeMap>[0];
+        mediators: BTreeSet<PolymeshPrimitivesIdentityId> | Parameters<typeof createMockIdentityId>;
+      }
+): MockCodec<PalletConfidentialAssetTransactionLegDetails> => {
+  if (isCodec<PalletConfidentialAssetTransactionLegDetails>(leg)) {
+    return leg as MockCodec<PalletConfidentialAssetTransactionLegDetails>;
+  }
+
+  const { sender, receiver, auditors, mediators } = leg ?? {
+    sender: createMockConfidentialAccount(),
+    receiver: createMockConfidentialAccount(),
+    auditors: createMockBTreeMap<U8aFixed, PalletConfidentialAssetConfidentialAccount>(),
+    mediators: createMockBTreeSet<PolymeshPrimitivesIdentityId>(),
+  };
+
+  return createMockCodec<PalletConfidentialAssetTransactionLegDetails>(
+    {
+      sender,
+      receiver,
+      auditors,
+      mediators,
+    },
+    !leg
+  );
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockConfidentialTransactionId = (
   value?: BigNumber | PalletConfidentialAssetTransactionId
 ): MockCodec<PalletConfidentialAssetTransactionId> => {
@@ -4601,4 +4681,36 @@ export const createMockConfidentialTransactionId = (
   }
 
   return createMockCodec<PalletConfidentialAssetTransactionId>(value, !value);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockConfidentialTransactionLegId = (
+  legId?: BigNumber | PalletConfidentialAssetTransactionLegId
+): MockCodec<PalletConfidentialAssetTransactionLegId> => {
+  if (isCodec<PalletConfidentialAssetTransactionLegId>(legId)) {
+    return legId as MockCodec<PalletConfidentialAssetTransactionLegId>;
+  }
+
+  return createMockNumberCodec<u32>(
+    legId
+  ) as unknown as MockCodec<PalletConfidentialAssetTransactionLegId>;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockConfidentialAssetTransactionId = (
+  txId?: BigNumber | PalletConfidentialAssetTransactionId
+): MockCodec<PalletConfidentialAssetTransactionId> => {
+  if (isCodec<PalletConfidentialAssetTransactionId>(txId)) {
+    return txId as MockCodec<PalletConfidentialAssetTransactionId>;
+  }
+
+  return createMockNumberCodec<u64>(
+    txId
+  ) as unknown as MockCodec<PalletConfidentialAssetTransactionId>;
 };

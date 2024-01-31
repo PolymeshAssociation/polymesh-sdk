@@ -1918,6 +1918,7 @@ export function assertCaAssetValid(id: string): string {
   throw new PolymeshError({
     code: ErrorCode.ValidationError,
     message: 'The supplied ID is not a valid confidential Asset ID',
+    data: { id },
   });
 }
 
