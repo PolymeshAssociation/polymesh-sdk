@@ -1,10 +1,14 @@
 import { ISubmittableResult } from '@polkadot/types/types';
-import { hexStripPrefix } from '@polkadot/util';
 
 import { ConfidentialAsset, Context, PolymeshError, Procedure } from '~/internal';
 import { CreateConfidentialAssetParams, ErrorCode, TxTags } from '~/types';
 import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
-import { auditorsToConfidentialAuditors, stringToBytes, stringToTicker } from '~/utils/conversion';
+import {
+  auditorsToConfidentialAuditors,
+  meshConfidentialAssetToAssetId,
+  stringToBytes,
+  stringToTicker,
+} from '~/utils/conversion';
 import { asConfidentialAccount, asIdentity, filterEventRecords } from '~/utils/internal';
 
 /**
@@ -19,7 +23,7 @@ export const createConfidentialAssetResolver =
   (context: Context) =>
   (receipt: ISubmittableResult): ConfidentialAsset => {
     const [{ data }] = filterEventRecords(receipt, 'confidentialAsset', 'ConfidentialAssetCreated');
-    const id = hexStripPrefix(data[1].toString());
+    const id = meshConfidentialAssetToAssetId(data[1]);
 
     return new ConfidentialAsset({ id }, context);
   };

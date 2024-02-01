@@ -89,6 +89,7 @@ import { BTreeSet } from '@polkadot/types-codec';
 import {
   hexAddPrefix,
   hexHasPrefix,
+  hexStripPrefix,
   hexToString,
   hexToU8a,
   isHex,
@@ -5013,6 +5014,9 @@ export function meshConfidentialAssetTransactionIdToId(
   return new BigNumber(id.toNumber());
 }
 
+/**
+ * @hidden
+ */
 export function confidentialTransactionLegIdToBigNumber(
   id: PalletConfidentialAssetTransactionLegId
 ): BigNumber {
@@ -5068,4 +5072,11 @@ export function confidentialLegPartyToRole(
     default:
       throw new UnreachableCaseError(role.type);
   }
+}
+
+/**
+ * @hidden
+ */
+export function meshConfidentialAssetToAssetId(value: U8aFixed): string {
+  return hexStripPrefix(value.toString());
 }
