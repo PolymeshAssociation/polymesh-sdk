@@ -2,7 +2,13 @@ import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { ConfidentialTransaction, Context, Entity, PolymeshError } from '~/internal';
+import {
+  ConfidentialTransaction,
+  Context,
+  Entity,
+  PolymeshError,
+  PolymeshTransaction,
+} from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   createMockConfidentialAssetTransaction,
@@ -19,6 +25,11 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockConfidentialAssetModule(
     '~/api/entities/confidential/ConfidentialAsset'
   )
+);
+
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 
 describe('ConfidentialTransaction class', () => {
@@ -339,7 +350,7 @@ describe('ConfidentialTransaction class', () => {
     });
   });
 
-  describe('method: getPendingAffirmCount', () => {
+  describe('method: getPendingAffirmsCount', () => {
     const mockCount = new BigNumber(3);
     const rawMockCount = dsMockUtils.createMockU32(mockCount);
     it('should return the number of pending affirmations', async () => {
@@ -362,6 +373,28 @@ describe('ConfidentialTransaction class', () => {
       });
 
       return expect(transaction.getPendingAffirmsCount()).rejects.toThrow(expectedError);
+    });
+  });
+
+  describe('method: execute', () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<ConfidentialTransaction>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          {
+            args: { transaction },
+            transformer: undefined,
+          },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await transaction.execute();
+
+      expect(tx).toBe(expectedTransaction);
     });
   });
 

@@ -5013,6 +5013,9 @@ export function meshConfidentialAssetTransactionIdToId(
   return new BigNumber(id.toNumber());
 }
 
+/**
+ * @hidden
+ */
 export function confidentialTransactionLegIdToBigNumber(
   id: PalletConfidentialAssetTransactionLegId
 ): BigNumber {
