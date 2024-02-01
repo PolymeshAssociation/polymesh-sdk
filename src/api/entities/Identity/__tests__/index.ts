@@ -1428,4 +1428,46 @@ describe('Identity class', () => {
       });
     });
   });
+
+  describe('method: getConfidentialVenues', () => {
+    let did: string;
+    let confidentialVenueId: BigNumber;
+
+    let rawDid: PolymeshPrimitivesIdentityId;
+    let rawConfidentialVenueId: u64;
+
+    beforeAll(() => {
+      did = 'someDid';
+      confidentialVenueId = new BigNumber(5);
+
+      rawDid = dsMockUtils.createMockIdentityId(did);
+      rawConfidentialVenueId = dsMockUtils.createMockU64(confidentialVenueId);
+    });
+
+    beforeEach(() => {
+      when(stringToIdentityIdSpy).calledWith(did, context).mockReturnValue(rawDid);
+    });
+
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should return a list of Confidential Venues', async () => {
+      when(u64ToBigNumberSpy)
+        .calledWith(rawConfidentialVenueId)
+        .mockReturnValue(confidentialVenueId);
+
+      const mock = dsMockUtils.createQueryMock('confidentialAsset', 'identityVenues');
+      const mockStorageKey = { args: [rawDid, rawConfidentialVenueId] };
+
+      mock.keys = jest.fn().mockResolvedValue([mockStorageKey]);
+
+      const identity = new Identity({ did }, context);
+
+      const result = await identity.getConfidentialVenues();
+      expect(result).toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: confidentialVenueId })])
+      );
+    });
+  });
 });

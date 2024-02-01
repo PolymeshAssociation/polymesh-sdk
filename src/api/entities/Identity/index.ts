@@ -499,8 +499,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
   /**
    * Retrieve all Venues created by this Identity
-   *
-   * @note can be subscribed to
    */
   public async getVenues(): Promise<Venue[]> {
     const {
@@ -984,5 +982,30 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       data,
       next,
     };
+  }
+
+  /**
+   * Retrieve all Confidential Venues created by this Identity
+   */
+  public async getConfidentialVenues(): Promise<ConfidentialVenue[]> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { confidentialAsset },
+        },
+      },
+      did,
+      context,
+    } = this;
+
+    const rawDid = stringToIdentityId(did, context);
+
+    const venueIdsKeys = await confidentialAsset.identityVenues.keys(rawDid);
+
+    return venueIdsKeys.map(key => {
+      const rawVenueId = key.args[1];
+
+      return new ConfidentialVenue({ id: u64ToBigNumber(rawVenueId) }, context);
+    });
   }
 }
