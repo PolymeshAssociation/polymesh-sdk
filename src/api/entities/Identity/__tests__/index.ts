@@ -31,6 +31,7 @@ import { MockContext } from '~/testUtils/mocks/dataSources';
 import {
   Account,
   ConfidentialAssetOwnerRole,
+  ConfidentialLegParty,
   ConfidentialVenueOwnerRole,
   DistributionWithDetails,
   ErrorCode,
@@ -1386,6 +1387,45 @@ describe('Identity class', () => {
       result = await identity.isChild();
 
       expect(result).toBeFalsy();
+    });
+  });
+
+  describe('method: getInvolvedConfidentialTransactions', () => {
+    const transactionId = new BigNumber(1);
+    const legId = new BigNumber(2);
+
+    it('should return the transactions with the identity affirmation status', async () => {
+      dsMockUtils.createQueryMock('confidentialAsset', 'userAffirmations', {
+        entries: [
+          tuple(
+            [
+              dsMockUtils.createMockIdentityId('someDid'),
+              [
+                dsMockUtils.createMockConfidentialTransactionId(transactionId),
+                dsMockUtils.createMockConfidentialTransactionLegId(legId),
+                dsMockUtils.createMockConfidentialLegParty('Sender'),
+              ],
+            ],
+            dsMockUtils.createMockOption(dsMockUtils.createMockBool(false))
+          ),
+        ],
+      });
+
+      const identity = new Identity({ did: 'someDid' }, context);
+
+      const result = await identity.getInvolvedConfidentialTransactions();
+
+      expect(result).toEqual({
+        data: expect.arrayContaining([
+          expect.objectContaining({
+            affirmed: false,
+            legId: new BigNumber(2),
+            role: ConfidentialLegParty.Sender,
+            transaction: expect.objectContaining({ id: transactionId }),
+          }),
+        ]),
+        next: null,
+      });
     });
   });
 });
