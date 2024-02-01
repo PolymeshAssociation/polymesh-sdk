@@ -52,6 +52,7 @@ import {
   CollectionKey,
   ComplianceRequirements,
   ConfidentialAssetDetails,
+  ConfidentialLeg,
   ConfidentialTransactionDetails,
   ConfidentialTransactionStatus,
   ConfidentialVenueFilteringDetails,
@@ -391,6 +392,9 @@ interface ConfidentialVenueOptions extends EntityOptions {
 interface ConfidentialTransactionOptions extends EntityOptions {
   id?: BigNumber;
   details?: EntityGetter<ConfidentialTransactionDetails>;
+  getInvolvedParties?: EntityGetter<Identity[]>;
+  getPendingAffirmsCount?: EntityGetter<BigNumber>;
+  getLegs?: EntityGetter<ConfidentialLeg[]>;
 }
 
 interface ConfidentialAccountOptions extends EntityOptions {
@@ -2224,6 +2228,9 @@ const MockConfidentialTransactionClass = createMockEntityClass<ConfidentialTrans
     uuid!: string;
     id!: BigNumber;
     details!: jest.Mock;
+    getInvolvedParties!: jest.Mock;
+    getLegs!: jest.Mock;
+    getPendingAffirmsCount!: jest.Mock;
 
     /**
      * @hidden
@@ -2239,6 +2246,9 @@ const MockConfidentialTransactionClass = createMockEntityClass<ConfidentialTrans
       this.uuid = 'confidentialTransaction';
       this.id = opts.id;
       this.details = createEntityGetterMock(opts.details);
+      this.getInvolvedParties = createEntityGetterMock(opts.getInvolvedParties);
+      this.getLegs = createEntityGetterMock(opts.getLegs);
+      this.getPendingAffirmsCount = createEntityGetterMock(opts.getPendingAffirmsCount);
     }
   },
   () => ({
@@ -2249,6 +2259,26 @@ const MockConfidentialTransactionClass = createMockEntityClass<ConfidentialTrans
       status: ConfidentialTransactionStatus.Pending,
       memo: 'Sample Memo',
     },
+    getPendingAffirmsCount: new BigNumber(0),
+    getLegs: [
+      {
+        id: new BigNumber(0),
+        sender: getConfidentialAccountInstance({ publicKey: 'sender' }),
+        receiver: getConfidentialAccountInstance({ publicKey: 'receiver' }),
+        assetAuditors: [
+          {
+            asset: getConfidentialAssetInstance(),
+            auditors: [getConfidentialAccountInstance({ publicKey: 'auditor' })],
+          },
+        ],
+        mediators: [],
+      },
+    ],
+    getInvolvedParties: [
+      getIdentityInstance(),
+      getIdentityInstance({ did: 'receiverDid' }),
+      getIdentityInstance({ did: 'auditorDid' }),
+    ],
   }),
   ['ConfidentialTransaction']
 );

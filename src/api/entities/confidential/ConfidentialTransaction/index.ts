@@ -2,12 +2,19 @@ import { Option } from '@polkadot/types';
 import { PalletConfidentialAssetTransactionStatus } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
-import { Context, Entity, Identity, PolymeshError } from '~/internal';
+import {
+  Context,
+  Entity,
+  executeConfidentialTransaction,
+  Identity,
+  PolymeshError,
+} from '~/internal';
 import {
   ConfidentialLeg,
   ConfidentialTransactionDetails,
   ConfidentialTransactionStatus,
   ErrorCode,
+  NoArgsProcedureMethod,
   SubCallback,
   UnsubCallback,
 } from '~/types';
@@ -22,6 +29,7 @@ import {
   u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
@@ -55,6 +63,14 @@ export class ConfidentialTransaction extends Entity<UniqueIdentifiers, string> {
     const { id } = identifiers;
 
     this.id = id;
+
+    this.execute = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [executeConfidentialTransaction, { transaction: this }],
+        optionalArgs: true,
+      },
+      context
+    );
   }
 
   /**
@@ -261,6 +277,13 @@ export class ConfidentialTransaction extends Entity<UniqueIdentifiers, string> {
 
     return legs;
   }
+
+  /**
+   * Executes this transaction
+   *
+   * @note - The transaction can only be executed if all the involved parties have already affirmed the transaction
+   */
+  public execute: NoArgsProcedureMethod<ConfidentialTransaction>;
 
   /**
    * Return the settlement Transaction's ID

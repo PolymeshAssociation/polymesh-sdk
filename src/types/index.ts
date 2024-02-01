@@ -19,7 +19,6 @@ import {
   BaseAsset,
   Checkpoint,
   CheckpointSchedule,
-  ConfidentialTransaction,
   CustomPermissionGroup,
   DefaultPortfolio,
   DefaultTrustedClaimIssuer,
@@ -48,16 +47,16 @@ export {
   AssetHoldersOrderBy,
   AuthTypeEnum,
   AuthorizationStatusEnum,
-  ExtrinsicsOrderBy,
-  NftHoldersOrderBy,
-  InstructionStatusEnum,
-  MultiSigProposalVoteActionEnum,
-  SettlementResultEnum,
   BalanceTypeEnum,
-  ModuleIdEnum,
-  EventIdEnum,
   CallIdEnum,
+  EventIdEnum,
+  ExtrinsicsOrderBy,
+  InstructionStatusEnum,
+  ModuleIdEnum,
+  MultiSigProposalVoteActionEnum,
+  NftHoldersOrderBy,
   Scalars,
+  SettlementResultEnum,
 } from '~/middleware/types';
 export { ClaimScopeTypeEnum, MiddlewareScope, SettlementDirectionEnum } from '~/middleware/typesV1';
 export { CountryCode, ModuleName, TxTag, TxTags };
@@ -1773,42 +1772,3 @@ export interface HeldNfts {
  * CustomClaimType with DID that registered the CustomClaimType
  */
 export type CustomClaimTypeWithDid = CustomClaimType & { did?: string };
-
-/**
- * Status of a confidential transaction
- */
-export enum ConfidentialTransactionStatus {
-  Pending = 'Pending',
-  Executed = 'Executed',
-  Rejected = 'Rejected',
-}
-
-/**
- * Details for a confidential transaction
- */
-export interface ConfidentialTransactionDetails {
-  venueId: BigNumber;
-  createdAt: BigNumber;
-  status: ConfidentialTransactionStatus;
-  memo?: string;
-}
-
-export enum ConfidentialAffirmParty {
-  Sender = 'Sender',
-  Receiver = 'Receiver',
-  Mediator = 'Mediator',
-}
-
-export enum ConfidentialLegParty {
-  Sender = 'Sender',
-  Receiver = 'Receiver',
-  Mediator = 'Mediator',
-  Auditor = 'Auditor',
-}
-
-export type ConfidentialAffirmation = {
-  transaction: ConfidentialTransaction;
-  legId: BigNumber;
-  role: ConfidentialLegParty;
-  affirmed: boolean;
-};
