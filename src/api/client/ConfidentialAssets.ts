@@ -1,5 +1,6 @@
 import { ConfidentialAsset, Context, createConfidentialAsset, PolymeshError } from '~/internal';
 import { CreateConfidentialAssetParams, ErrorCode, ProcedureMethod } from '~/types';
+import { meshConfidentialAssetToAssetId, stringToTicker } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**
@@ -42,6 +43,40 @@ export class ConfidentialAssets {
     }
 
     return confidentialAsset;
+  }
+
+  /**
+   * Retrieves a ConfidentialAsset for a given ticker
+   */
+  public async getConfidentialAssetFromTicker(args: {
+    ticker: string;
+  }): Promise<ConfidentialAsset> {
+    const {
+      context,
+      context: {
+        polymeshApi: {
+          query: { confidentialAsset },
+        },
+      },
+    } = this;
+
+    const { ticker } = args;
+    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = await confidentialAsset.tickerToAsset(rawTicker);
+
+    if (rawAssetId.isNone) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The ticker is not mapped to any Confidential Asset',
+        data: {
+          ticker,
+        },
+      });
+    }
+
+    const assetId = meshConfidentialAssetToAssetId(rawAssetId.unwrap());
+
+    return new ConfidentialAsset({ id: assetId }, context);
   }
 
   /**

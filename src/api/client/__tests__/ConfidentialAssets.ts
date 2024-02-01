@@ -1,3 +1,4 @@
+import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import { when } from 'jest-when';
 
 import { ConfidentialAssets } from '~/api/client/ConfidentialAssets';
@@ -5,6 +6,7 @@ import { ConfidentialAsset, Context, PolymeshError, PolymeshTransaction } from '
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { ErrorCode } from '~/types';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/confidential/ConfidentialAsset',
@@ -91,6 +93,58 @@ describe('ConfidentialAssets Class', () => {
       const tx = await confidentialAssets.createConfidentialAsset(args);
 
       expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: getConfidentialAssetFromTicker', () => {
+    let ticker: string;
+    let rawTicker: PolymeshPrimitivesTicker;
+    let stringToTickerSpy: jest.SpyInstance;
+    let meshConfidentialAssetToAssetIdSpy: jest.SpyInstance;
+    let assetId: string;
+
+    beforeAll(() => {
+      stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+      meshConfidentialAssetToAssetIdSpy = jest.spyOn(
+        utilsConversionModule,
+        'meshConfidentialAssetToAssetId'
+      );
+    });
+
+    beforeEach(() => {
+      ticker = 'SOME_TICKER';
+      assetId = 'SOME_ASSET_ID';
+      rawTicker = dsMockUtils.createMockTicker(ticker);
+      when(stringToTickerSpy).calledWith(ticker, context).mockReturnValue(rawTicker);
+      meshConfidentialAssetToAssetIdSpy.mockReturnValue(assetId);
+    });
+
+    it('should return the number of pending affirmations', async () => {
+      dsMockUtils.createQueryMock('confidentialAsset', 'tickerToAsset', {
+        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockU8aFixed(assetId)),
+      });
+
+      const result = await confidentialAssets.getConfidentialAssetFromTicker({ ticker });
+
+      expect(result).toEqual(expect.objectContaining({ id: assetId }));
+    });
+
+    it('should throw an error if the count is not found', async () => {
+      dsMockUtils.createQueryMock('confidentialAsset', 'tickerToAsset', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The ticker is not mapped to any Confidential Asset',
+        data: {
+          ticker,
+        },
+      });
+
+      return expect(confidentialAssets.getConfidentialAssetFromTicker({ ticker })).rejects.toThrow(
+        expectedError
+      );
     });
   });
 });
