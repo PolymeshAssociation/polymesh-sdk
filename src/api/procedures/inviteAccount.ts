@@ -18,7 +18,7 @@ import {
   signerToString,
   signerValueToSignatory,
 } from '~/utils/conversion';
-import { asAccount, assertNoPendingAuthorizationExists,optionize } from '~/utils/internal';
+import { asAccount, assertNoPendingAuthorizationExists, optionize } from '~/utils/internal';
 
 /**
  * @hidden

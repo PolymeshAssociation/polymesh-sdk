@@ -208,6 +208,9 @@ import type {
   PalletStoFundraiserTier,
   PalletStoPriceTier,
   PalletStoRawEvent,
+  PalletSudoCall,
+  PalletSudoError,
+  PalletSudoRawEvent,
   PalletTestUtilsCall,
   PalletTestUtilsError,
   PalletTestUtilsRawEvent,
@@ -311,6 +314,7 @@ import type {
   PolymeshPrimitivesSettlementInstructionStatus,
   PolymeshPrimitivesSettlementLeg,
   PolymeshPrimitivesSettlementLegStatus,
+  PolymeshPrimitivesSettlementMediatorAffirmationStatus,
   PolymeshPrimitivesSettlementReceiptDetails,
   PolymeshPrimitivesSettlementReceiptMetadata,
   PolymeshPrimitivesSettlementSettlementType,
@@ -331,9 +335,9 @@ import type {
   PolymeshPrimitivesTransferComplianceAssetTransferCompliance,
   PolymeshPrimitivesTransferComplianceTransferCondition,
   PolymeshPrimitivesTransferComplianceTransferConditionExemptKey,
-  PolymeshRuntimeTestnetRuntime,
-  PolymeshRuntimeTestnetRuntimeOriginCaller,
-  PolymeshRuntimeTestnetRuntimeSessionKeys,
+  PolymeshRuntimeDevelopRuntime,
+  PolymeshRuntimeDevelopRuntimeOriginCaller,
+  PolymeshRuntimeDevelopRuntimeSessionKeys,
   SpArithmeticArithmeticError,
   SpAuthorityDiscoveryAppPublic,
   SpConsensusBabeAllowedSlots,
@@ -579,6 +583,9 @@ declare module '@polkadot/types/types/registry' {
     PalletStoFundraiserTier: PalletStoFundraiserTier;
     PalletStoPriceTier: PalletStoPriceTier;
     PalletStoRawEvent: PalletStoRawEvent;
+    PalletSudoCall: PalletSudoCall;
+    PalletSudoError: PalletSudoError;
+    PalletSudoRawEvent: PalletSudoRawEvent;
     PalletTestUtilsCall: PalletTestUtilsCall;
     PalletTestUtilsError: PalletTestUtilsError;
     PalletTestUtilsRawEvent: PalletTestUtilsRawEvent;
@@ -682,6 +689,7 @@ declare module '@polkadot/types/types/registry' {
     PolymeshPrimitivesSettlementInstructionStatus: PolymeshPrimitivesSettlementInstructionStatus;
     PolymeshPrimitivesSettlementLeg: PolymeshPrimitivesSettlementLeg;
     PolymeshPrimitivesSettlementLegStatus: PolymeshPrimitivesSettlementLegStatus;
+    PolymeshPrimitivesSettlementMediatorAffirmationStatus: PolymeshPrimitivesSettlementMediatorAffirmationStatus;
     PolymeshPrimitivesSettlementReceiptDetails: PolymeshPrimitivesSettlementReceiptDetails;
     PolymeshPrimitivesSettlementReceiptMetadata: PolymeshPrimitivesSettlementReceiptMetadata;
     PolymeshPrimitivesSettlementSettlementType: PolymeshPrimitivesSettlementSettlementType;
@@ -702,9 +710,9 @@ declare module '@polkadot/types/types/registry' {
     PolymeshPrimitivesTransferComplianceAssetTransferCompliance: PolymeshPrimitivesTransferComplianceAssetTransferCompliance;
     PolymeshPrimitivesTransferComplianceTransferCondition: PolymeshPrimitivesTransferComplianceTransferCondition;
     PolymeshPrimitivesTransferComplianceTransferConditionExemptKey: PolymeshPrimitivesTransferComplianceTransferConditionExemptKey;
-    PolymeshRuntimeTestnetRuntime: PolymeshRuntimeTestnetRuntime;
-    PolymeshRuntimeTestnetRuntimeOriginCaller: PolymeshRuntimeTestnetRuntimeOriginCaller;
-    PolymeshRuntimeTestnetRuntimeSessionKeys: PolymeshRuntimeTestnetRuntimeSessionKeys;
+    PolymeshRuntimeDevelopRuntime: PolymeshRuntimeDevelopRuntime;
+    PolymeshRuntimeDevelopRuntimeOriginCaller: PolymeshRuntimeDevelopRuntimeOriginCaller;
+    PolymeshRuntimeDevelopRuntimeSessionKeys: PolymeshRuntimeDevelopRuntimeSessionKeys;
     SpArithmeticArithmeticError: SpArithmeticArithmeticError;
     SpAuthorityDiscoveryAppPublic: SpAuthorityDiscoveryAppPublic;
     SpConsensusBabeAllowedSlots: SpConsensusBabeAllowedSlots;
