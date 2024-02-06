@@ -10,12 +10,17 @@ import {
   Permill,
 } from '@polkadot/types/interfaces';
 import {
+  PalletConfidentialAssetAffirmParty,
+  PalletConfidentialAssetAffirmTransaction,
+  PalletConfidentialAssetAffirmTransactions,
   PalletConfidentialAssetAuditorAccount,
   PalletConfidentialAssetConfidentialAuditors,
+  PalletConfidentialAssetConfidentialTransfers,
   PalletConfidentialAssetLegParty,
   PalletConfidentialAssetTransaction,
   PalletConfidentialAssetTransactionLeg,
   PalletConfidentialAssetTransactionLegId,
+  PalletConfidentialAssetTransactionLegState,
   PalletConfidentialAssetTransactionStatus,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
@@ -125,7 +130,9 @@ import {
   ConditionCompliance,
   ConditionTarget,
   ConditionType,
+  ConfidentialAffirmParty,
   ConfidentialLegParty,
+  ConfidentialLegStateBalances,
   ConfidentialTransactionStatus,
   CorporateActionKind,
   CorporateActionParams,
@@ -211,9 +218,12 @@ import {
   complianceConditionsToBtreeSet,
   complianceRequirementResultToRequirementCompliance,
   complianceRequirementToRequirement,
+  confidentialAffirmPartyToRaw,
+  confidentialAffirmsToRaw,
   confidentialAssetsToBtreeSet,
   confidentialLegIdToId,
   confidentialLegPartyToRole,
+  confidentialLegStateToLegState,
   confidentialLegToMeshLeg,
   confidentialTransactionLegIdToBigNumber,
   corporateActionIdentifierToCaId,
@@ -7694,6 +7704,15 @@ describe('serializeConfidentialAssetId', () => {
 
     expect(result).toEqual('0x76702175d8cbe3a55a19734433351e25');
   });
+
+  it('should extract the ID from ConfidentialAsset entity', () => {
+    const context = dsMockUtils.getContextInstance();
+    const asset = new ConfidentialAsset({ id: '76702175-d8cb-e3a5-5a19-734433351e25' }, context);
+
+    const result = serializeConfidentialAssetId(asset);
+
+    expect(result).toEqual('0x76702175d8cbe3a55a19734433351e25');
+  });
 });
 
 describe('transactionPermissionsToExtrinsicPermissions', () => {
@@ -10209,5 +10228,185 @@ describe('meshConfidentialAssetTransactionIdToId', () => {
 
       expect(() => confidentialLegPartyToRole(input)).toThrow(UnreachableCaseError);
     });
+  });
+});
+
+describe('confidentialAffirmPartyToRaw', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return a raw affirm party for a mediator', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+    const party = ConfidentialAffirmParty.Mediator;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mockResult = 'mockResult' as any;
+
+    when(mockContext.createType)
+      .calledWith('PalletConfidentialAssetAffirmParty', {
+        [party]: null,
+      })
+      .mockReturnValue(mockResult);
+
+    const result = confidentialAffirmPartyToRaw({ party }, mockContext);
+
+    expect(result).toEqual(mockResult);
+  });
+
+  it('should return a raw affirm party for a sender', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+    const party = ConfidentialAffirmParty.Sender;
+    const proofs = [{ asset: '1234', proof: '0x01' }];
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    const fmtProofs = { '0x1234': '0x01' };
+
+    const mockResult = 'mockResult' as unknown as PalletConfidentialAssetAffirmParty;
+    const mockRawProofs = dsMockUtils.createMockBTreeMap<Bytes, Bytes>();
+    const mockTransferProof =
+      'mockTransferProof' as unknown as PalletConfidentialAssetConfidentialTransfers;
+
+    when(mockContext.createType)
+      .calledWith('BTreeMap<Bytes, Bytes>', fmtProofs)
+      .mockReturnValue(mockRawProofs);
+
+    when(mockContext.createType)
+      .calledWith('PalletConfidentialAssetConfidentialTransfers', {
+        proofs: mockRawProofs,
+      })
+      .mockReturnValue(mockTransferProof);
+
+    when(mockContext.createType)
+      .calledWith('PalletConfidentialAssetAffirmParty', {
+        [party]: mockTransferProof,
+      })
+      .mockReturnValue(mockResult);
+
+    const result = confidentialAffirmPartyToRaw({ party, proofs }, mockContext);
+
+    expect(result).toEqual(mockResult);
+  });
+});
+
+describe('confidentialAffirmsToRaw', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return a raw affirm transaction', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+
+    const mockAffirm = 'mockAffirm' as unknown as PalletConfidentialAssetAffirmTransaction;
+    const mockResult = 'mockResult' as unknown as PalletConfidentialAssetAffirmTransactions;
+
+    when(mockContext.createType)
+      .calledWith('PalletConfidentialAssetAffirmTransactions', [mockAffirm])
+      .mockReturnValue(mockResult);
+
+    const result = confidentialAffirmsToRaw([mockAffirm], mockContext);
+
+    expect(result).toEqual(mockResult);
+  });
+});
+
+describe('confidentialLegStateToLegState', () => {
+  let mockLegState: dsMockUtils.MockCodec<PalletConfidentialAssetTransactionLegState>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockLegReturn: any;
+
+  const assetId = '76702175-d8cb-e3a5-5a19-734433351e25';
+
+  beforeEach(() => {
+    mockLegState = dsMockUtils.createMockConfidentialLegState({
+      assetState: dsMockUtils.createMockBTreeMap<
+        Bytes,
+        PalletConfidentialAssetTransactionLegState
+      >(),
+    });
+    mockLegReturn = dsMockUtils.createMockOption(mockLegState);
+
+    jest.spyOn(mockLegReturn, 'unwrap').mockReturnValue(mockLegState);
+  });
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return the parsed leg state', () => {
+    const balances = {
+      senderInitBalance: '0x02',
+      senderAmount: '0x03',
+      receiverAmount: '0x04',
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (mockLegState.assetState as any).toJSON = (): Record<string, ConfidentialLegStateBalances> => ({
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      [assetId]: balances,
+    });
+
+    const mockContext = dsMockUtils.getContextInstance();
+
+    const result = confidentialLegStateToLegState(mockLegReturn, mockContext);
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        proved: true,
+        assetState: expect.arrayContaining([
+          expect.objectContaining({
+            asset: expect.objectContaining({ id: assetId }),
+          }),
+        ]),
+      })
+    );
+  });
+
+  it('should return the expected result for unproven legs', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+
+    const result = confidentialLegStateToLegState(dsMockUtils.createMockOption(), mockContext);
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        proved: false,
+      })
+    );
+  });
+
+  it('should throw an error if there is unexpected leg state', () => {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    (mockLegState.assetState as any).toJSON = (): Record<string, ConfidentialLegStateBalances> => ({
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      assetId: {
+        senderInitBalance: undefined,
+      } as any,
+    });
+    /* eslint-enable @typescript-eslint/no-explicit-any */
+
+    const mockContext = dsMockUtils.getContextInstance();
+
+    expect(() => confidentialLegStateToLegState(mockLegReturn, mockContext)).toThrow(
+      'Unexpected data for PalletConfidentialAssetTransactionLegState received from chain'
+    );
   });
 });

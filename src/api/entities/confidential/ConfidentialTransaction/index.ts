@@ -3,25 +3,35 @@ import { PalletConfidentialAssetTransactionStatus } from '@polkadot/types/lookup
 import BigNumber from 'bignumber.js';
 
 import {
+  AffirmConfidentialTransactionParams,
+  affirmConfidentialTransactions,
   Context,
   Entity,
   executeConfidentialTransaction,
   Identity,
   PolymeshError,
+  rejectConfidentialTransaction,
 } from '~/internal';
 import {
   ConfidentialLeg,
+  ConfidentialLegState,
+  ConfidentialLegStateWithId,
   ConfidentialTransactionDetails,
   ConfidentialTransactionStatus,
   ErrorCode,
   NoArgsProcedureMethod,
+  ProcedureMethod,
   SubCallback,
   UnsubCallback,
 } from '~/types';
 import {
+  bigNumberToConfidentialTransactionId,
+  bigNumberToConfidentialTransactionLegId,
   bigNumberToU32,
   bigNumberToU64,
   confidentialLegIdToId,
+  confidentialLegStateToLegState,
+  confidentialTransactionLegIdToBigNumber,
   identityIdToString,
   meshConfidentialLegDetailsToDetails,
   meshConfidentialTransactionDetailsToDetails,
@@ -67,6 +77,24 @@ export class ConfidentialTransaction extends Entity<UniqueIdentifiers, string> {
     this.execute = createProcedureMethod(
       {
         getProcedureAndArgs: () => [executeConfidentialTransaction, { transaction: this }],
+        optionalArgs: true,
+      },
+      context
+    );
+
+    this.affirmLeg = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [
+          affirmConfidentialTransactions,
+          { transaction: this, ...args },
+        ],
+      },
+      context
+    );
+
+    this.reject = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [rejectConfidentialTransaction, { transaction: this }],
         optionalArgs: true,
       },
       context
@@ -279,11 +307,73 @@ export class ConfidentialTransaction extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
+   * Get the leg states for the transaction
+   */
+  public async getLegStates(): Promise<ConfidentialLegStateWithId[]> {
+    const {
+      id,
+      context,
+      context: {
+        polymeshApi: {
+          query: { confidentialAsset },
+        },
+      },
+    } = this;
+
+    const rawId = bigNumberToConfidentialTransactionId(id, context);
+
+    const rawLegStates = await confidentialAsset.txLegStates.entries(rawId);
+
+    return rawLegStates.map(([key, rawLegState]) => {
+      const rawLegId = key.args[1];
+      const legId = confidentialTransactionLegIdToBigNumber(rawLegId);
+      const state = confidentialLegStateToLegState(rawLegState, context);
+
+      return {
+        legId,
+        ...state,
+      };
+    });
+  }
+
+  /**
+   * Get the leg state for the given legId
+   */
+  public async getLegState(legId: BigNumber): Promise<ConfidentialLegState> {
+    const {
+      id,
+      context,
+      context: {
+        polymeshApi: {
+          query: { confidentialAsset },
+        },
+      },
+    } = this;
+
+    const rawId = bigNumberToConfidentialTransactionId(id, context);
+    const rawLegId = bigNumberToConfidentialTransactionLegId(legId, context);
+
+    const rawLegState = await confidentialAsset.txLegStates(rawId, rawLegId);
+
+    return confidentialLegStateToLegState(rawLegState, context);
+  }
+
+  /**
    * Executes this transaction
    *
    * @note - The transaction can only be executed if all the involved parties have already affirmed the transaction
    */
   public execute: NoArgsProcedureMethod<ConfidentialTransaction>;
+
+  /**
+   * Affirms a leg of the transaction
+   */
+  public affirmLeg: ProcedureMethod<AffirmConfidentialTransactionParams, ConfidentialTransaction>;
+
+  /**
+   * Rejects this transaction
+   */
+  public reject: NoArgsProcedureMethod<ConfidentialTransaction>;
 
   /**
    * Return the settlement Transaction's ID

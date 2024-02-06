@@ -53,6 +53,8 @@ import {
   ComplianceRequirements,
   ConfidentialAssetDetails,
   ConfidentialLeg,
+  ConfidentialLegState,
+  ConfidentialLegStateWithId,
   ConfidentialTransactionDetails,
   ConfidentialTransactionStatus,
   ConfidentialVenueFilteringDetails,
@@ -395,6 +397,8 @@ interface ConfidentialTransactionOptions extends EntityOptions {
   getInvolvedParties?: EntityGetter<Identity[]>;
   getPendingAffirmsCount?: EntityGetter<BigNumber>;
   getLegs?: EntityGetter<ConfidentialLeg[]>;
+  getLegState?: EntityGetter<ConfidentialLegState>;
+  getLegStates?: EntityGetter<ConfidentialLegStateWithId[]>;
 }
 
 interface ConfidentialAccountOptions extends EntityOptions {
@@ -2231,6 +2235,8 @@ const MockConfidentialTransactionClass = createMockEntityClass<ConfidentialTrans
     getInvolvedParties!: jest.Mock;
     getLegs!: jest.Mock;
     getPendingAffirmsCount!: jest.Mock;
+    getLegState!: jest.Mock;
+    getLegStates!: jest.Mock;
 
     /**
      * @hidden
@@ -2249,6 +2255,8 @@ const MockConfidentialTransactionClass = createMockEntityClass<ConfidentialTrans
       this.getInvolvedParties = createEntityGetterMock(opts.getInvolvedParties);
       this.getLegs = createEntityGetterMock(opts.getLegs);
       this.getPendingAffirmsCount = createEntityGetterMock(opts.getPendingAffirmsCount);
+      this.getLegState = createEntityGetterMock(opts.getLegState);
+      this.getLegStates = createEntityGetterMock(opts.getLegStates);
     }
   },
   () => ({
@@ -2279,6 +2287,10 @@ const MockConfidentialTransactionClass = createMockEntityClass<ConfidentialTrans
       getIdentityInstance({ did: 'receiverDid' }),
       getIdentityInstance({ did: 'auditorDid' }),
     ],
+    getLegState: {
+      proved: false,
+    },
+    getLegStates: [{ legId: new BigNumber(0), proved: false }],
   }),
   ['ConfidentialTransaction']
 );

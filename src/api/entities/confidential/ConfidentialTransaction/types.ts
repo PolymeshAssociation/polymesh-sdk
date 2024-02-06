@@ -20,6 +20,24 @@ export interface ConfidentialLeg {
   mediators: Identity[];
 }
 
+export interface ConfidentialLegStateBalances {
+  senderInitBalance: string;
+  senderAmount: string;
+  receiverAmount: string;
+}
+
+/**
+ * The confidential state for the leg. When the sender provides proof of funds, this will contain the encrypted balances for the leg
+ */
+export type ConfidentialLegState =
+  | {
+      proved: true;
+      assetState: { asset: ConfidentialAsset; balances: ConfidentialLegStateBalances }[];
+    }
+  | { proved: false };
+
+export type ConfidentialLegStateWithId = { legId: BigNumber } & ConfidentialLegState;
+
 /**
  * Status of a confidential transaction
  */
@@ -63,4 +81,16 @@ export enum TransactionAffirmParty {
   Sender = 'Sender',
   Receiver = 'Receiver',
   Mediator = 'Mediator',
+}
+
+export interface ConfidentialLegProof {
+  asset: string | ConfidentialAsset;
+  proof: string;
+}
+
+export interface ConfidentialAffirmTransaction {
+  transactionId: BigNumber;
+  legId: BigNumber;
+  party: ConfidentialAffirmParty;
+  proofs?: ConfidentialLegProof[];
 }

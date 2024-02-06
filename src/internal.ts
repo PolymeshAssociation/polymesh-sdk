@@ -26,6 +26,11 @@ export { addInstruction } from '~/api/procedures/addInstruction';
 export { executeManualInstruction } from '~/api/procedures/executeManualInstruction';
 export { executeConfidentialTransaction } from '~/api/procedures/executeConfidentialTransaction';
 export {
+  affirmConfidentialTransactions,
+  AffirmConfidentialTransactionParams,
+} from '~/api/procedures/affirmConfidentialTransactions';
+export { rejectConfidentialTransaction } from '~/api/procedures/rejectConfidentialTransaction';
+export {
   consumeAuthorizationRequests,
   ConsumeAuthorizationRequestsParams,
   ConsumeParams,
