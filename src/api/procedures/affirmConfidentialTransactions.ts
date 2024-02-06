@@ -1,9 +1,7 @@
-import BigNumber from 'bignumber.js';
-
 import { PolymeshError, Procedure } from '~/internal';
 import {
+  AffirmConfidentialTransactionParams,
   ConfidentialAffirmParty,
-  ConfidentialLegProof,
   ConfidentialTransaction,
   ConfidentialTransactionStatus,
   ErrorCode,
@@ -14,20 +12,6 @@ import {
   confidentialAffirmsToRaw,
   confidentialAffirmTransactionToMeshTransaction,
 } from '~/utils/conversion';
-
-interface SenderAffirm {
-  party: ConfidentialAffirmParty.Sender;
-  proofs: ConfidentialLegProof[];
-}
-
-interface ObserverAffirm {
-  party: ConfidentialAffirmParty.Mediator | ConfidentialAffirmParty.Receiver;
-}
-
-export type AffirmConfidentialTransactionParams = { legId: BigNumber } & (
-  | SenderAffirm
-  | ObserverAffirm
-);
 
 export type Params = {
   transaction: ConfidentialTransaction;

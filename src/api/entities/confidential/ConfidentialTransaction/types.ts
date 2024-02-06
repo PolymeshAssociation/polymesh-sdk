@@ -94,3 +94,17 @@ export interface ConfidentialAffirmTransaction {
   party: ConfidentialAffirmParty;
   proofs?: ConfidentialLegProof[];
 }
+
+export interface SenderAffirm {
+  party: ConfidentialAffirmParty.Sender;
+  proofs: ConfidentialLegProof[];
+}
+
+export interface ObserverAffirm {
+  party: ConfidentialAffirmParty.Mediator | ConfidentialAffirmParty.Receiver;
+}
+
+export type AffirmConfidentialTransactionParams = { legId: BigNumber } & (
+  | SenderAffirm
+  | ObserverAffirm
+);

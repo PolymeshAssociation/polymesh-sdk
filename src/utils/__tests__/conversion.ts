@@ -10338,8 +10338,6 @@ describe('confidentialLegStateToLegState', () => {
       >(),
     });
     mockLegReturn = dsMockUtils.createMockOption(mockLegState);
-
-    jest.spyOn(mockLegReturn, 'unwrap').mockReturnValue(mockLegState);
   });
   beforeAll(() => {
     dsMockUtils.initMocks();

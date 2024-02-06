@@ -3,7 +3,6 @@ import { PalletConfidentialAssetTransactionStatus } from '@polkadot/types/lookup
 import BigNumber from 'bignumber.js';
 
 import {
-  AffirmConfidentialTransactionParams,
   affirmConfidentialTransactions,
   Context,
   Entity,
@@ -13,6 +12,7 @@ import {
   rejectConfidentialTransaction,
 } from '~/internal';
 import {
+  AffirmConfidentialTransactionParams,
   ConfidentialLeg,
   ConfidentialLegState,
   ConfidentialLegStateWithId,
@@ -366,7 +366,9 @@ export class ConfidentialTransaction extends Entity<UniqueIdentifiers, string> {
   public execute: NoArgsProcedureMethod<ConfidentialTransaction>;
 
   /**
-   * Affirms a leg of the transaction
+   * Affirms a leg of this transaction
+   *
+   * @note - The sender must provide their affirmation before anyone else can. (Sender affirmation is where amounts are specified)
    */
   public affirmLeg: ProcedureMethod<AffirmConfidentialTransactionParams, ConfidentialTransaction>;
 

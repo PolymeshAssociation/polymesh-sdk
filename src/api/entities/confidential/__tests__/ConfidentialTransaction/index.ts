@@ -406,7 +406,7 @@ describe('ConfidentialTransaction class', () => {
     });
   });
 
-  describe('method: affirm', () => {
+  describe('method: affirmLeg', () => {
     it('should prepare the procedure and return the resulting transaction', async () => {
       const expectedTransaction =
         'someTransaction' as unknown as PolymeshTransaction<ConfidentialTransaction>;
@@ -464,8 +464,6 @@ describe('ConfidentialTransaction class', () => {
         PalletConfidentialAssetTransactionLegState
       >(),
     });
-    mockLegReturn = dsMockUtils.createMockOption(mockLegState);
-
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (mockLegState.assetState as any).toJSON = (): Record<string, ConfidentialLegStateBalances> => ({
       // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -476,7 +474,7 @@ describe('ConfidentialTransaction class', () => {
       },
     });
 
-    jest.spyOn(mockLegReturn, 'unwrap').mockReturnValue(mockLegState);
+    mockLegReturn = dsMockUtils.createMockOption(mockLegState);
   });
 
   describe('method: getLegStates', () => {
