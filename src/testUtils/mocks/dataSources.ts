@@ -64,6 +64,7 @@ import {
   PalletConfidentialAssetTransactionLeg,
   PalletConfidentialAssetTransactionLegDetails,
   PalletConfidentialAssetTransactionLegId,
+  PalletConfidentialAssetTransactionLegState,
   PalletConfidentialAssetTransactionStatus,
   PalletContractsStorageContractInfo,
   PalletCorporateActionsCaCheckpoint,
@@ -4727,4 +4728,26 @@ export const createMockConfidentialLegParty = (
   }
 
   return createMockEnum<PalletConfidentialAssetLegParty>(role);
+};
+
+export const createMockConfidentialLegState = (
+  state?:
+    | {
+        assetState: BTreeMap<U8aFixed, PalletConfidentialAssetTransactionLegState>;
+      }
+    | PalletConfidentialAssetTransactionLegState
+): MockCodec<PalletConfidentialAssetTransactionLegState> => {
+  if (isCodec<PalletConfidentialAssetTransactionLegState>(state)) {
+    return state as MockCodec<PalletConfidentialAssetTransactionLegState>;
+  }
+  const mockBTreeSet = dsMockUtils.createMockBTreeMap<
+    Bytes,
+    PalletConfidentialAssetTransactionLegState
+  >();
+
+  const { assetState } = state ?? {
+    assetState: mockBTreeSet,
+  };
+
+  return createMockCodec<PalletConfidentialAssetTransactionLegState>({ assetState }, !state);
 };

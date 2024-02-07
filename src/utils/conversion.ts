@@ -16,15 +16,21 @@ import {
 import { AccountId, Balance, BlockHash, Hash, Permill } from '@polkadot/types/interfaces';
 import { DispatchError, DispatchResult } from '@polkadot/types/interfaces/system';
 import {
+  PalletConfidentialAssetAffirmLeg,
+  PalletConfidentialAssetAffirmParty,
+  PalletConfidentialAssetAffirmTransaction,
+  PalletConfidentialAssetAffirmTransactions,
   PalletConfidentialAssetAuditorAccount,
   PalletConfidentialAssetConfidentialAccount,
   PalletConfidentialAssetConfidentialAuditors,
+  PalletConfidentialAssetConfidentialTransfers,
   PalletConfidentialAssetLegParty,
   PalletConfidentialAssetTransaction,
   PalletConfidentialAssetTransactionId,
   PalletConfidentialAssetTransactionLeg,
   PalletConfidentialAssetTransactionLegDetails,
   PalletConfidentialAssetTransactionLegId,
+  PalletConfidentialAssetTransactionLegState,
   PalletConfidentialAssetTransactionStatus,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
@@ -176,8 +182,12 @@ import {
   ConditionCompliance,
   ConditionTarget,
   ConditionType,
+  ConfidentialAffirmParty,
+  ConfidentialAffirmTransaction,
   ConfidentialLeg,
   ConfidentialLegParty,
+  ConfidentialLegProof,
+  ConfidentialLegState,
   ConfidentialTransactionDetails,
   ConfidentialTransactionStatus,
   CorporateActionKind,
@@ -366,8 +376,10 @@ export function tickerToString(ticker: PolymeshPrimitivesTicker): string {
 /**
  * @hidden
  */
-export function serializeConfidentialAssetId(value: string): string {
-  return hexAddPrefix(value.replace(/-/g, ''));
+export function serializeConfidentialAssetId(value: string | ConfidentialAsset): string {
+  const id = value instanceof ConfidentialAsset ? value.id : value;
+
+  return hexAddPrefix(id.replace(/-/g, ''));
 }
 
 /**
@@ -5079,4 +5091,169 @@ export function confidentialLegPartyToRole(
  */
 export function meshConfidentialAssetToAssetId(value: U8aFixed): string {
   return hexStripPrefix(value.toString());
+}
+
+/**
+ * @hidden
+ */
+export function bigNumberToConfidentialTransactionId(
+  id: BigNumber,
+  context: Context
+): PalletConfidentialAssetTransactionId {
+  const rawId = bigNumberToU64(id, context);
+  return context.createType('PalletConfidentialAssetTransactionId', rawId);
+}
+
+/**
+ * @hidden
+ */
+export function bigNumberToConfidentialTransactionLegId(
+  id: BigNumber,
+  context: Context
+): PalletConfidentialAssetTransactionLegId {
+  const rawId = bigNumberToU32(id, context);
+  return context.createType('PalletConfidentialAssetTransactionLegId', rawId);
+}
+
+/**
+ * @hidden
+ */
+export function proofToTransfer(
+  proofs: BTreeMap<U8aFixed, Bytes>,
+  context: Context
+): PalletConfidentialAssetConfidentialTransfers {
+  return context.createType('PalletConfidentialAssetConfidentialTransfers', { proofs });
+}
+
+/**
+ * @hidden
+ */
+export function confidentialAffirmPartyToRaw(
+  value: {
+    party: ConfidentialAffirmParty;
+    proofs?: ConfidentialLegProof[];
+  },
+  context: Context
+): PalletConfidentialAssetAffirmParty {
+  const { party, proofs } = value;
+
+  let transferProof: PalletConfidentialAssetConfidentialTransfers | null = null;
+  if (proofs) {
+    const fmtProofs = proofs.reduce((acc, { asset, proof }) => {
+      const id = serializeConfidentialAssetId(asset);
+      acc[id] = proof;
+
+      return acc;
+    }, {} as Record<string, string>);
+
+    const rawProofs = context.createType('BTreeMap<Bytes, Bytes>', fmtProofs);
+
+    transferProof = proofToTransfer(rawProofs, context);
+  }
+  return context.createType('PalletConfidentialAssetAffirmParty', {
+    [party]: transferProof,
+  });
+}
+
+/**
+ * @hidden
+ */
+export function legToConfidentialAssetAffirmLeg(
+  value: {
+    legId: BigNumber;
+    party: ConfidentialAffirmParty;
+    proofs?: ConfidentialLegProof[];
+  },
+  context: Context
+): PalletConfidentialAssetAffirmLeg {
+  const { legId, party, proofs } = value;
+
+  const rawLegId = bigNumberToConfidentialTransactionLegId(legId, context);
+  const rawParty = confidentialAffirmPartyToRaw({ party, proofs }, context);
+
+  return context.createType('PalletConfidentialAssetAffirmLeg', {
+    legId: rawLegId,
+    party: rawParty,
+  });
+}
+
+/**
+ * @hidden
+ */
+export function confidentialAffirmTransactionToMeshTransaction(
+  value: ConfidentialAffirmTransaction,
+  context: Context
+): PalletConfidentialAssetAffirmTransaction {
+  const { transactionId, legId, party, proofs } = value;
+
+  const rawId = bigNumberToConfidentialTransactionId(transactionId, context);
+  const rawLeg = legToConfidentialAssetAffirmLeg(
+    {
+      legId,
+      party,
+      proofs,
+    },
+    context
+  );
+
+  return context.createType('PalletConfidentialAssetAffirmTransaction', {
+    id: rawId,
+    leg: rawLeg,
+  });
+}
+
+/**
+ * @hidden
+ */
+export function confidentialAffirmsToRaw(
+  value: PalletConfidentialAssetAffirmTransaction[],
+  context: Context
+): PalletConfidentialAssetAffirmTransactions {
+  return context.createType('PalletConfidentialAssetAffirmTransactions', value);
+}
+
+/**
+ * @hidden
+ */
+export function confidentialLegStateToLegState(
+  value: Option<PalletConfidentialAssetTransactionLegState>,
+  context: Context
+): ConfidentialLegState {
+  if (value.isNone) {
+    return {
+      proved: false,
+    };
+  }
+
+  const rawState = value.unwrap().assetState.toJSON() as Record<
+    string,
+    { senderInitBalance: string; senderAmount: string; receiverAmount: string }
+  >;
+
+  const assetState = Object.entries(rawState).map(([key, stateValue]) => {
+    const { senderInitBalance, senderAmount, receiverAmount } = stateValue;
+    const hasExpectedFields =
+      typeof key === 'string' &&
+      typeof senderInitBalance === 'string' &&
+      typeof senderAmount === 'string' &&
+      typeof receiverAmount === 'string';
+
+    if (!hasExpectedFields) {
+      throw new PolymeshError({
+        code: ErrorCode.General,
+        message:
+          'Unexpected data for PalletConfidentialAssetTransactionLegState received from chain',
+      });
+    }
+
+    return {
+      asset: new ConfidentialAsset({ id: key.replace('0x', '') }, context),
+      balances: { senderInitBalance, senderAmount, receiverAmount },
+    };
+  });
+
+  return {
+    proved: true,
+    assetState,
+  };
 }

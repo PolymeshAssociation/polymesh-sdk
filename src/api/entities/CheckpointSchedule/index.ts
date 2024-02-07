@@ -17,6 +17,9 @@ export interface HumanReadable {
   expiryDate: string | null;
 }
 
+/**
+ * @hidden
+ */
 export interface Params {
   pendingPoints: Date[];
 }

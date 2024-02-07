@@ -943,7 +943,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    */
   public async getInvolvedConfidentialTransactions(
     paginationOpts?: PaginationOptions
-  ): Promise<ResultSet<ConfidentialAffirmation> | UnsubCallback> {
+  ): Promise<ResultSet<ConfidentialAffirmation>> {
     const {
       did,
       context,

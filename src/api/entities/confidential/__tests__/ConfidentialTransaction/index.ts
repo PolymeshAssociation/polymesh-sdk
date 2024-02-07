@@ -1,4 +1,5 @@
-import { u64 } from '@polkadot/types';
+import { Bytes, u64 } from '@polkadot/types';
+import { PalletConfidentialAssetTransactionLegState } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -16,7 +17,13 @@ import {
   createMockOption,
 } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
-import { ConfidentialTransactionStatus, ErrorCode, UnsubCallback } from '~/types';
+import {
+  ConfidentialAffirmParty,
+  ConfidentialLegStateBalances,
+  ConfidentialTransactionStatus,
+  ErrorCode,
+  UnsubCallback,
+} from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -36,6 +43,7 @@ describe('ConfidentialTransaction class', () => {
   let context: Mocked<Context>;
   let transaction: ConfidentialTransaction;
   let id: BigNumber;
+  let legId: BigNumber;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -43,6 +51,7 @@ describe('ConfidentialTransaction class', () => {
     procedureMockUtils.initMocks();
 
     id = new BigNumber(1);
+    legId = new BigNumber(2);
   });
 
   beforeEach(() => {
@@ -294,7 +303,6 @@ describe('ConfidentialTransaction class', () => {
   });
 
   describe('method: getLegs', () => {
-    const legId = new BigNumber(2);
     const rawTransactionId = dsMockUtils.createMockConfidentialAssetTransactionId(id);
     const senderKey = '0x01';
     const receiverKey = '0x02';
@@ -395,6 +403,156 @@ describe('ConfidentialTransaction class', () => {
       const tx = await transaction.execute();
 
       expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: affirmLeg', () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<ConfidentialTransaction>;
+
+      const args = { legId, party: ConfidentialAffirmParty.Mediator } as const;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          {
+            args: { transaction, ...args },
+            transformer: undefined,
+          },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await transaction.affirmLeg(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: reject', () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<ConfidentialTransaction>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          {
+            args: { transaction },
+            transformer: undefined,
+          },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await transaction.reject();
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('leg state methods', () => {});
+  let mockLegState: dsMockUtils.MockCodec<PalletConfidentialAssetTransactionLegState>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockLegReturn: any;
+
+  beforeEach(() => {
+    mockLegState = dsMockUtils.createMockConfidentialLegState({
+      assetState: dsMockUtils.createMockBTreeMap<
+        Bytes,
+        PalletConfidentialAssetTransactionLegState
+      >(),
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (mockLegState.assetState as any).toJSON = (): Record<string, ConfidentialLegStateBalances> => ({
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      '0x01': {
+        senderInitBalance: '0x02',
+        senderAmount: '0x03',
+        receiverAmount: '0x04',
+      },
+    });
+
+    mockLegReturn = dsMockUtils.createMockOption(mockLegState);
+  });
+
+  describe('method: getLegStates', () => {
+    it('should return the leg states for the transaction', async () => {
+      dsMockUtils.createQueryMock('confidentialAsset', 'txLegStates', {
+        entries: [
+          tuple(
+            [
+              dsMockUtils.createMockConfidentialTransactionId(id),
+              dsMockUtils.createMockConfidentialTransactionLegId(legId),
+            ],
+            mockLegReturn
+          ),
+          tuple(
+            [
+              dsMockUtils.createMockConfidentialTransactionId(id),
+              dsMockUtils.createMockConfidentialTransactionLegId(new BigNumber(legId.plus(1))),
+            ],
+            dsMockUtils.createMockOption()
+          ),
+        ],
+      });
+
+      const result = await transaction.getLegStates();
+
+      expect(result).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            proved: true,
+            assetState: expect.arrayContaining([
+              expect.objectContaining({
+                asset: expect.objectContaining({ id: '01' }),
+                balances: expect.objectContaining({
+                  senderInitBalance: '0x02',
+                  senderAmount: '0x03',
+                  receiverAmount: '0x04',
+                }),
+              }),
+            ]),
+          }),
+          expect.objectContaining({
+            proved: false,
+          }),
+        ])
+      );
+    });
+  });
+
+  describe('method: getLegState', () => {
+    it('should return the leg state for the leg when its pending proof', async () => {
+      dsMockUtils.createQueryMock('confidentialAsset', 'txLegStates', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+      const result = await transaction.getLegState(legId);
+
+      expect(result).toEqual({ proved: false });
+    });
+
+    it('should return the leg state for the leg when it has been proved', async () => {
+      dsMockUtils.createQueryMock('confidentialAsset', 'txLegStates', {
+        returnValue: mockLegReturn,
+      });
+
+      const result = await transaction.getLegState(legId);
+
+      expect(result).toEqual({
+        proved: true,
+        assetState: expect.arrayContaining([
+          expect.objectContaining({
+            asset: expect.objectContaining({ id: '01' }),
+            balances: expect.objectContaining({
+              senderInitBalance: '0x02',
+              senderAmount: '0x03',
+              receiverAmount: '0x04',
+            }),
+          }),
+        ]),
+      });
     });
   });
 

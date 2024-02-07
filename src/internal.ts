@@ -25,6 +25,8 @@ export { addConfidentialTransaction } from '~/api/procedures/addConfidentialTran
 export { addInstruction } from '~/api/procedures/addInstruction';
 export { executeManualInstruction } from '~/api/procedures/executeManualInstruction';
 export { executeConfidentialTransaction } from '~/api/procedures/executeConfidentialTransaction';
+export { affirmConfidentialTransactions } from '~/api/procedures/affirmConfidentialTransactions';
+export { rejectConfidentialTransaction } from '~/api/procedures/rejectConfidentialTransaction';
 export {
   consumeAuthorizationRequests,
   ConsumeAuthorizationRequestsParams,
