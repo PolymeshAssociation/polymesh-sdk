@@ -121,6 +121,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       NotFrozen: AugmentedError<ApiType>;
       /**
+       * Number of asset mediators would exceed the maximum allowed.
+       **/
+      NumberOfAssetMediatorsExceeded: AugmentedError<ApiType>;
+      /**
        * Transfers to self are not allowed
        **/
       SenderSameAsReceiver: AugmentedError<ApiType>;
@@ -1476,6 +1480,10 @@ declare module '@polkadot/api-base/types/errors' {
     };
     settlement: {
       /**
+       * The caller is not a mediator in the instruction.
+       **/
+      CallerIsNotAMediator: AugmentedError<ApiType>;
+      /**
        * The caller is not a party of this instruction.
        **/
       CallerIsNotAParty: AugmentedError<ApiType>;
@@ -1512,6 +1520,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InstructionSettleBlockPassed: AugmentedError<ApiType>;
       /**
+       * The mediator's expiry date must be in the future.
+       **/
+      InvalidExpiryDate: AugmentedError<ApiType>;
+      /**
        * Only [`InstructionStatus::Pending`] or [`InstructionStatus::Failed`] instructions can be executed.
        **/
       InvalidInstructionStatusForExecution: AugmentedError<ApiType>;
@@ -1543,6 +1555,10 @@ declare module '@polkadot/api-base/types/errors' {
        * The maximum number of receipts was exceeded.
        **/
       MaxNumberOfReceiptsExceeded: AugmentedError<ApiType>;
+      /**
+       * The expiry date for the mediator's affirmation has passed.
+       **/
+      MediatorAffirmationExpired: AugmentedError<ApiType>;
       /**
        * Multiple receipts for the same leg are not allowed.
        **/
@@ -1892,6 +1908,12 @@ declare module '@polkadot/api-base/types/errors' {
        * Sender does not have required permissions.
        **/
       Unauthorized: AugmentedError<ApiType>;
+    };
+    sudo: {
+      /**
+       * Sender must be the Sudo account
+       **/
+      RequireSudo: AugmentedError<ApiType>;
     };
     system: {
       /**

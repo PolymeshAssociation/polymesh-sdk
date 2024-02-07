@@ -19,7 +19,7 @@ import {
   signerToString,
   signerValueToSignatory,
 } from '~/utils/conversion';
-import { assertNoPendingAuthorizationExists,optionize } from '~/utils/internal';
+import { assertNoPendingAuthorizationExists, optionize } from '~/utils/internal';
 
 /**
  * @hidden
