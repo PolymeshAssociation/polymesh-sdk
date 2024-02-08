@@ -148,6 +148,8 @@ export { modifyAllowance, ModifyAllowanceParams } from '~/api/procedures/modifyA
 export { createTransactionBatch } from '~/api/procedures/createTransactionBatch';
 export { createMultiSigAccount } from '~/api/procedures/createMultiSig';
 export { acceptPrimaryKeyRotation } from '~/api/procedures/acceptPrimaryKeyRotation';
+export { addAssetMediators } from '~/api/procedures/addAssetMediators';
+export { removeAssetMediators } from '~/api/procedures/removeAssetMediators';
 export { Storage as ModifyMultiSigStorage, modifyMultiSig } from '~/api/procedures/modifyMultiSig';
 export {
   SetCountTransferRestrictionsParams,

@@ -12,15 +12,18 @@ import { Documents } from '~/api/entities/Asset/Base/Documents';
 import { Metadata } from '~/api/entities/Asset/Base/Metadata';
 import { Permissions } from '~/api/entities/Asset/Base/Permissions';
 import {
+  addAssetMediators,
   Context,
   Entity,
   Identity,
   PolymeshError,
+  removeAssetMediators,
   toggleFreezeTransfers,
   transferAssetOwnership,
 } from '~/internal';
 import {
   AssetDetails,
+  AssetMediatorParams,
   AuthorizationRequest,
   ErrorCode,
   NoArgsProcedureMethod,
@@ -39,6 +42,7 @@ import {
   bigNumberToU32,
   boolToBoolean,
   bytesToString,
+  identitiesSetToIdentities,
   identityIdToString,
   stringToTicker,
 } from '~/utils/conversion';
@@ -110,6 +114,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
       },
       context
     );
+
     this.unfreeze = createProcedureMethod(
       {
         getProcedureAndArgs: () => [toggleFreezeTransfers, { ticker, freeze: false }],
@@ -120,6 +125,20 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
 
     this.transferOwnership = createProcedureMethod(
       { getProcedureAndArgs: args => [transferAssetOwnership, { ticker, ...args }] },
+      context
+    );
+
+    this.addRequiredMediators = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [addAssetMediators, { asset: this, ...args }],
+      },
+      context
+    );
+
+    this.removeRequiredMediators = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [removeAssetMediators, { asset: this, ...args }],
+      },
       context
     );
   }
@@ -133,6 +152,16 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
    * Unfreeze transfers of the Asset
    */
   public unfreeze: NoArgsProcedureMethod<void>;
+
+  /**
+   * Add required mediators. Mediators must approve any trades involving the asset
+   */
+  public addRequiredMediators: ProcedureMethod<AssetMediatorParams, void>;
+
+  /**
+   * Remove required mediators
+   */
+  public removeRequiredMediators: ProcedureMethod<AssetMediatorParams, void>;
 
   /**
    * Retrieve the Asset's identifiers list
@@ -297,6 +326,25 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
       namePromise,
     ]);
     return assembleResult(token, groups, name);
+  }
+
+  /**
+   * Get required Asset mediators. These Identities must approve any Instruction involving the asset
+   */
+  public async getRequiredMediators(): Promise<Identity[]> {
+    const {
+      context,
+      ticker,
+      context: {
+        polymeshApi: { query },
+      },
+    } = this;
+
+    const rawTicker = stringToTicker(ticker, context);
+
+    const rawMediators = await query.asset.mandatoryMediators(rawTicker);
+
+    return identitiesSetToIdentities(rawMediators, context);
   }
 
   /**

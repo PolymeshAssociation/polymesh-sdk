@@ -213,6 +213,7 @@ import {
   fungibleMovementToPortfolioFund,
   granularCanTransferResultToTransferBreakdown,
   hashToString,
+  identitiesSetToIdentities,
   identitiesToBtreeSet,
   identityIdToString,
   inputStatTypeToMeshStatType,
@@ -7783,8 +7784,22 @@ describe('agentGroupToPermissionGroup', () => {
     );
   });
 
-  describe('identitiesToBtreeSet', () => {
-    it('should convert Identities to a BTreeSetIdentityID', () => {
+  describe('identitiesSetToIdentities', () => {
+    it('should convert Identities to a BTreeSet<IdentityId>', () => {
+      const did = 'someDid';
+      const context = dsMockUtils.getContextInstance();
+      const mockSet = dsMockUtils.createMockBTreeSet<PolymeshPrimitivesIdentityId>([
+        dsMockUtils.createMockIdentityId(did),
+      ]);
+
+      const result = identitiesSetToIdentities(mockSet, context);
+
+      expect(result).toEqual([expect.objectContaining({ did })]);
+    });
+  });
+
+  describe('identitiesSetToIdentities', () => {
+    it('should convert BTreeSet<IdentityId>', () => {
       const context = dsMockUtils.getContextInstance();
       const ids = [{ did: 'b' }, { did: 'a' }, { did: 'c' }] as unknown as Identity[];
       ids.forEach(({ did }) =>

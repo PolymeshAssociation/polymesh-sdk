@@ -261,6 +261,50 @@ describe('Asset class', () => {
     });
   });
 
+  describe('method: addRequiredMediators', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const ticker = 'TEST';
+      const context = dsMockUtils.getContextInstance();
+      const asset = new FungibleAsset({ ticker }, context);
+      const args = {
+        asset,
+        mediators: ['newDid'],
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await asset.addRequiredMediators(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: removeRequiredMediators', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const ticker = 'TEST';
+      const context = dsMockUtils.getContextInstance();
+      const asset = new FungibleAsset({ ticker }, context);
+      const args = {
+        asset,
+        mediators: ['currentDid'],
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await asset.removeRequiredMediators(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
   describe('method: modify', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const ticker = 'TEST';
@@ -947,6 +991,22 @@ describe('Asset class', () => {
       const tx = await asset.setVenueFiltering(args);
 
       expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: getRequiredMediators', () => {
+    it('should return the required mediators', async () => {
+      dsMockUtils.createQueryMock('asset', 'mandatoryMediators', {
+        returnValue: [dsMockUtils.createMockIdentityId('someDid')],
+      });
+
+      const ticker = 'TICKER';
+      const context = dsMockUtils.getContextInstance();
+      const asset = new FungibleAsset({ ticker }, context);
+
+      const result = await asset.getRequiredMediators();
+
+      expect(result).toEqual(expect.arrayContaining([expect.objectContaining({ did: 'someDid' })]));
     });
   });
 });

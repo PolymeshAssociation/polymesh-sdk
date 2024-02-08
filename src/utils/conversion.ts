@@ -3129,6 +3129,16 @@ export function identitiesToBtreeSet(
 /**
  * @hidden
  */
+export function identitiesSetToIdentities(
+  identitySet: BTreeSet<PolymeshPrimitivesIdentityId>,
+  context: Context
+): Identity[] {
+  return [...identitySet].map(rawId => new Identity({ did: identityIdToString(rawId) }, context));
+}
+
+/**
+ * @hidden
+ */
 export function transferConditionToTransferRestriction(
   transferCondition: PolymeshPrimitivesTransferComplianceTransferCondition,
   context: Context
