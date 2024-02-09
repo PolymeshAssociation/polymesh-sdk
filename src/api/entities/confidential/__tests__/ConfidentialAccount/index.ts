@@ -1,4 +1,5 @@
 import { ConfidentialAccount, Context, Entity, PolymeshError } from '~/internal';
+import { confidentialAssetsByHolderQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { ErrorCode } from '~/types';
@@ -226,6 +227,31 @@ describe('ConfidentialAccount class', () => {
         .mockResolvedValue(dsMockUtils.createMockOption());
 
       return expect(account.exists()).resolves.toBe(false);
+    });
+  });
+
+  describe('method: getHeldAssets', () => {
+    it('should return a string array of ids representing held assets by the ConfidentialAccount', async () => {
+      const variables = {
+        accountId: publicKey,
+      };
+      const assetId = 'someId';
+      const fakeResult = [assetId];
+
+      dsMockUtils.createApolloQueryMock(confidentialAssetsByHolderQuery(variables), {
+        confidentialAssetHolders: {
+          nodes: [
+            {
+              assetId,
+              accountId: publicKey,
+            },
+          ],
+        },
+      });
+
+      const result = await account.getHeldAssets();
+
+      expect(result).toEqual(fakeResult);
     });
   });
 });

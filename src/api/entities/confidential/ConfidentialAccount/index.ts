@@ -3,7 +3,10 @@ import { ConfidentialAssetsElgamalCipherText } from '@polkadot/types/lookup';
 import type { Option, U8aFixed } from '@polkadot/types-codec';
 
 import { ConfidentialAsset, Context, Entity, Identity, PolymeshError } from '~/internal';
+import { confidentialAssetsByHolderQuery } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
 import { ConfidentialAssetBalance, ErrorCode } from '~/types';
+import { Ensured } from '~/types/utils';
 import {
   confidentialAccountToMeshPublicKey,
   identityIdToString,
@@ -219,5 +222,25 @@ export class ConfidentialAccount extends Entity<UniqueIdentifiers, string> {
    */
   public toHuman(): string {
     return this.publicKey;
+  }
+
+  /**
+   * Retrieve the ConfidentialAssets associated to this Account
+   *
+   * @note uses the middlewareV2
+   * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
+   */
+  public async getHeldAssets(): Promise<string[]> {
+    const { context, publicKey } = this;
+
+    const {
+      data: {
+        confidentialAssetHolders: { nodes },
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'confidentialAssetHolders'>>(
+      confidentialAssetsByHolderQuery({ accountId: publicKey })
+    );
+
+    return nodes.map(({ assetId }) => assetId);
   }
 }

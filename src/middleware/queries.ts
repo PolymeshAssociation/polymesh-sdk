@@ -14,6 +14,7 @@ import {
   ClaimsGroupBy,
   ClaimsOrderBy,
   ClaimTypeEnum,
+  ConfidentialAssetHolder,
   Distribution,
   DistributionPayment,
   Event,
@@ -1602,5 +1603,35 @@ export function customClaimTypeQuery(
   return {
     query,
     variables: { size: size?.toNumber(), start: start?.toNumber(), dids },
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get Confidential Assets hel by a ConfidentialAccount
+ */
+export function confidentialAssetsByHolderQuery({
+  accountId,
+}: QueryArgs<ConfidentialAssetHolder, 'accountId'>): QueryOptions<
+  QueryArgs<ConfidentialAssetHolder, 'accountId'>
+> {
+  const query = gql`
+    query ConfidentialAssetsByAccount($accountId: String!) {
+      confidentialAssetHolders(
+        filter: { accountId: { equalTo: $accountId } }
+        orderBy: [${TickerExternalAgentHistoriesOrderBy.CreatedAtAsc}, ${TickerExternalAgentHistoriesOrderBy.CreatedBlockIdAsc}]
+      ) {
+        nodes {
+          accountId,
+          assetId
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { accountId },
   };
 }
