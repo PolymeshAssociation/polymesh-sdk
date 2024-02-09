@@ -1,5 +1,6 @@
 import { PalletConfidentialAssetConfidentialAssetDetails } from '@polkadot/types/lookup';
 import { Option } from '@polkadot/types-codec';
+import BigNumber from 'bignumber.js';
 
 import {
   ConfidentialAccount,
@@ -11,25 +12,31 @@ import {
   PolymeshError,
   setConfidentialVenueFiltering,
 } from '~/internal';
+import { transactionHistoryByConfidentialAssetQuery } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
 import {
   ConfidentialAssetDetails,
+  ConfidentialAssetTransactionHistory,
   ConfidentialVenueFilteringDetails,
   ErrorCode,
   GroupedAuditors,
   IssueConfidentialAssetParams,
   ProcedureMethod,
+  ResultSet,
   SetVenueFilteringParams,
 } from '~/types';
+import { Ensured } from '~/types/utils';
 import {
   boolToBoolean,
   bytesToString,
   identityIdToString,
+  middlewareAssetHistoryToTransactionHistory,
   serializeConfidentialAssetId,
   tickerToString,
   u64ToBigNumber,
   u128ToBigNumber,
 } from '~/utils/conversion';
-import { assertCaAssetValid, createProcedureMethod } from '~/utils/internal';
+import { assertCaAssetValid, calculateNextKey, createProcedureMethod } from '~/utils/internal';
 
 /**
  * Properties that uniquely identify a ConfidentialAsset
@@ -231,5 +238,50 @@ export class ConfidentialAsset extends Entity<UniqueIdentifiers, string> {
    */
   public toHuman(): string {
     return this.id;
+  }
+
+  /**
+   * Return transaction history for thee Asset
+   *
+   * @param opts.size - page size
+   * @param opts.start - page offset
+   *
+   * @note uses the middleware V2
+   * @note supports pagination
+   */
+  public async getTransactionHistory(
+    opts: {
+      size?: BigNumber;
+      start?: BigNumber;
+    } = {}
+  ): Promise<ResultSet<ConfidentialAssetTransactionHistory>> {
+    const { context, id } = this;
+    const { size, start } = opts;
+
+    const {
+      data: {
+        confidentialAssetHistories: { nodes: transactionsResult, totalCount },
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'confidentialAssetHistories'>>(
+      transactionHistoryByConfidentialAssetQuery(
+        {
+          assetId: id.toString(),
+        },
+        size,
+        start
+      )
+    );
+
+    const data = transactionsResult.map(entry => middlewareAssetHistoryToTransactionHistory(entry));
+
+    const count = new BigNumber(totalCount);
+
+    const next = calculateNextKey(count, data.length, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
   }
 }

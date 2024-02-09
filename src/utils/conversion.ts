@@ -149,6 +149,7 @@ import {
   Block,
   CallIdEnum,
   Claim as MiddlewareClaim,
+  ConfidentialAssetHistory,
   CustomClaimType as MiddlewareCustomClaimType,
   Instruction,
   ModuleIdEnum,
@@ -184,6 +185,7 @@ import {
   ConditionType,
   ConfidentialAffirmParty,
   ConfidentialAffirmTransaction,
+  ConfidentialAssetTransactionHistory,
   ConfidentialLeg,
   ConfidentialLegParty,
   ConfidentialLegProof,
@@ -5255,5 +5257,31 @@ export function confidentialLegStateToLegState(
   return {
     proved: true,
     assetState,
+  };
+}
+
+/**
+ * @hidden
+ */
+export function middlewareAssetHistoryToTransactionHistory({
+  id,
+  assetId,
+  amount,
+  fromId,
+  toId,
+  createdBlock,
+  eventId,
+  memo,
+}: ConfidentialAssetHistory): ConfidentialAssetTransactionHistory {
+  return {
+    id,
+    assetId,
+    fromId,
+    toId,
+    amount,
+    datetime: createdBlock!.datetime,
+    createdBlockId: new BigNumber(createdBlock!.blockId),
+    eventId,
+    memo,
   };
 }

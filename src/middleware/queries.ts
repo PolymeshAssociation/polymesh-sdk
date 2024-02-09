@@ -14,6 +14,7 @@ import {
   ClaimsGroupBy,
   ClaimsOrderBy,
   ClaimTypeEnum,
+  ConfidentialAssetHistory,
   ConfidentialAssetHolder,
   ConfidentialAssetHoldersOrderBy,
   Distribution,
@@ -1637,5 +1638,68 @@ export function confidentialAssetsByHolderQuery(
   return {
     query,
     variables: { size: size?.toNumber(), start: start?.toNumber(), accountId },
+  };
+}
+
+/**
+ *  @hidden
+ */
+export function createTransactionHistoryByConfidentialAssetQueryFilters(): {
+  args: string;
+  filter: string;
+} {
+  const args = ['$size: Int, $start: Int', '$assetId: [String!]'];
+  const filters = ['assetId: { equalTo: $assetId }'];
+
+  return {
+    args: `(${args.join()})`,
+    filter: `filter: { ${filters.join()} },`,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get Confidential Asset transaction history
+ */
+export function transactionHistoryByConfidentialAssetQuery(
+  { assetId }: Pick<ConfidentialAssetHistory, 'assetId'>,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<QueryArgs<ConfidentialAssetHistory, 'assetId'>>> {
+  const { args, filter } = createTransactionHistoryByConfidentialAssetQueryFilters();
+
+  const query = gql`
+  query TransactionHistoryQuery
+    ${args}
+    {
+      confidentialAssetHistories(
+        ${filter}
+        first: $size
+        offset: $start
+      ){
+        nodes {
+          accountId,
+          fromId,
+          toId,
+          transactionId,
+          assetId,
+          createdBlock {
+            datetime,
+            hash,
+      	    blockId,
+          }
+          amount,
+          eventId,
+          memo,
+        }
+        totalCount
+      }
+    }
+`;
+
+  return {
+    query,
+    variables: { size: size?.toNumber(), start: start?.toNumber(), assetId },
   };
 }
