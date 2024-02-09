@@ -2,12 +2,28 @@ import BigNumber from 'bignumber.js';
 
 import { BaseAsset } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { createMockBTreeSet, MockContext } from '~/testUtils/mocks/dataSources';
 
 describe('BaseAsset class', () => {
+  let ticker: string;
+  let context: MockContext;
+  let mediatorDid: string;
+
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    ticker = 'TICKER';
+
+    mediatorDid = 'someDid';
+
+    dsMockUtils.createQueryMock('asset', 'mandatoryMediators', {
+      returnValue: createMockBTreeSet([dsMockUtils.createMockIdentityId(mediatorDid)]),
+    });
   });
 
   afterEach(() => {
@@ -21,10 +37,7 @@ describe('BaseAsset class', () => {
 
   describe('method: exists', () => {
     it('should return whether the BaseAsset exists', async () => {
-      const ticker = 'TICKER';
-      const context = dsMockUtils.getContextInstance();
       const asset = new BaseAsset({ ticker }, context);
-
       dsMockUtils.createQueryMock('asset', 'tokens', {
         size: new BigNumber(10),
       });

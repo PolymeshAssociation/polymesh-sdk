@@ -172,6 +172,7 @@ interface BaseAssetOptions extends EntityOptions {
   complianceRequirementsGet?: EntityGetter<ComplianceRequirements>;
   investorCount?: EntityGetter<BigNumber>;
   getNextLocalId?: EntityGetter<BigNumber>;
+  getRequiredMediators?: EntityGetter<Identity[]>;
 }
 
 interface FungibleAssetOptions extends BaseAssetOptions {
@@ -202,7 +203,6 @@ interface NftCollectionOptions extends BaseAssetOptions {
   permissionsGetGroups?: EntityGetter<PermissionGroups>;
   complianceRequirementsGet?: EntityGetter<ComplianceRequirements>;
   investorCount?: EntityGetter<BigNumber>;
-  getNextLocalId?: EntityGetter<BigNumber>;
   collectionKeys?: EntityGetter<CollectionKey[]>;
   getCollectionId?: EntityGetter<BigNumber>;
   getBaseImageUrl?: EntityGetter<string | null>;
@@ -1088,6 +1088,7 @@ const MockFungibleAssetClass = createMockEntityClass<FungibleAssetOptions>(
     getNextLocalId: new BigNumber(0),
     toHuman: 'SOME_TICKER',
     investorCount: new BigNumber(0),
+    getRequiredMediators: [],
   }),
   ['FungibleAsset']
 );
@@ -1182,6 +1183,7 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
     collectionKeys: [],
     getCollectionId: new BigNumber(0),
     getBaseImageUrl: null,
+    getRequiredMediators: [],
   }),
   ['NftCollection']
 );
@@ -1250,6 +1252,7 @@ const MockBaseAssetClass = createMockEntityClass<BaseAssetOptions>(
 
     investorCount!: jest.Mock;
     getBaseImageUrl!: jest.Mock;
+    getRequiredMediators!: jest.Mock;
 
     /**
      * @hidden
@@ -1273,6 +1276,7 @@ const MockBaseAssetClass = createMockEntityClass<BaseAssetOptions>(
       this.compliance.requirements.get = createEntityGetterMock(opts.complianceRequirementsGet);
       this.investorCount = createEntityGetterMock(opts.investorCount);
       this.metadata.getNextLocalId = createEntityGetterMock(opts.getNextLocalId);
+      this.getRequiredMediators = createEntityGetterMock(opts.getRequiredMediators);
     }
   },
   () => ({
@@ -1300,6 +1304,7 @@ const MockBaseAssetClass = createMockEntityClass<BaseAssetOptions>(
       defaultTrustedClaimIssuers: [],
     },
     getNextLocalId: new BigNumber(0),
+    getRequiredMediators: [],
     toHuman: 'SOME_TICKER',
     investorCount: new BigNumber(0),
   }),

@@ -11,6 +11,10 @@ export const MAX_TICKER_LENGTH = 12;
 export const MAX_MODULE_LENGTH = 32;
 export const MAX_MEMO_LENGTH = 32;
 /**
+ * Maximum amount of required mediators. See MESH-2156 to see if this is queryable instead
+ */
+export const MAX_ASSET_MEDIATORS = 4;
+/**
  * Biggest possible number for on-chain balances
  */
 export const MAX_BALANCE = new BigNumber(Math.pow(10, 12));

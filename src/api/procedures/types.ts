@@ -1149,3 +1149,7 @@ export interface UnlinkChildParams {
 export interface RegisterCustomClaimTypeParams {
   name: string;
 }
+
+export interface AssetMediatorParams {
+  mediators: (Identity | string)[];
+}
