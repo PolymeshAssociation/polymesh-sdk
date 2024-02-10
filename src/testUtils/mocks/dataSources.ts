@@ -50,6 +50,7 @@ import {
   SignedBlock,
 } from '@polkadot/types/interfaces';
 import {
+  ConfidentialAssetsElgamalCipherText,
   PalletAssetAssetOwnershipRelation,
   PalletAssetSecurityToken,
   PalletAssetTickerRegistration,
@@ -4750,4 +4751,18 @@ export const createMockConfidentialLegState = (
   };
 
   return createMockCodec<PalletConfidentialAssetTransactionLegState>({ assetState }, !state);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockElgamalCipherText = (
+  value?: string | ConfidentialAssetsElgamalCipherText
+): MockCodec<ConfidentialAssetsElgamalCipherText> => {
+  if (isCodec<ConfidentialAssetsElgamalCipherText>(value)) {
+    return value as MockCodec<ConfidentialAssetsElgamalCipherText>;
+  }
+
+  return createMockStringCodec<ConfidentialAssetsElgamalCipherText>(value);
 };

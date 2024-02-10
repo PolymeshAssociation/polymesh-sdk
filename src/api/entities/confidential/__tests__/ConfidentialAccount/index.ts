@@ -1,7 +1,18 @@
-import { ConfidentialAccount, Context, Entity } from '~/internal';
+import { ConfidentialAccount, Context, Entity, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { ErrorCode } from '~/types';
+import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
+
+import { mockConfidentialAssetModule } from './../../../../../testUtils/mocks/entities';
+
+jest.mock(
+  '~/api/entities/confidential/ConfidentialAsset',
+  require('~/testUtils/mocks/entities').mockConfidentialAssetModule(
+    '~/api/entities/confidential/ConfidentialAsset'
+  )
+);
 
 describe('ConfidentialAccount class', () => {
   let context: Mocked<Context>;
@@ -70,6 +81,68 @@ describe('ConfidentialAccount class', () => {
       const result = await account.getIdentity();
 
       expect(result).toBe(null);
+    });
+  });
+
+  describe('method: getIncomingBalances', () => {
+    it('should return all the incoming balances for the ConfidentialAccount', async () => {
+      const assetId = '0xAsset';
+      const encryptedBalance = '0xbalance';
+
+      jest.spyOn(utilsConversionModule, 'meshConfidentialAssetToAssetId').mockReturnValue(assetId);
+
+      dsMockUtils.createQueryMock('confidentialAsset', 'incomingBalance', {
+        entries: [
+          tuple(
+            [publicKey, assetId],
+            dsMockUtils.createMockOption(dsMockUtils.createMockElgamalCipherText(encryptedBalance))
+          ),
+        ],
+      });
+
+      const result = await account.getIncomingBalances();
+
+      expect(result).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            asset: expect.objectContaining({ id: assetId }),
+            balance: encryptedBalance,
+          }),
+        ])
+      );
+    });
+  });
+
+  describe('method: getIncomingBalance', () => {
+    let incomingBalanceMock: jest.Mock;
+    let assetId: string;
+
+    beforeEach(() => {
+      incomingBalanceMock = dsMockUtils.createQueryMock('confidentialAsset', 'incomingBalance');
+      assetId = 'SOME_ASSET_ID';
+    });
+
+    it('should return the incoming balance for the given asset ID', async () => {
+      const balance = '0xbalance';
+      incomingBalanceMock.mockReturnValueOnce(
+        dsMockUtils.createMockOption(dsMockUtils.createMockElgamalCipherText(balance))
+      );
+
+      const result = await account.getIncomingBalance({ asset: assetId });
+      expect(result).toEqual(balance);
+    });
+
+    it('should throw an error if no incoming balance is found for the given ID', () => {
+      incomingBalanceMock.mockReturnValue(dsMockUtils.createMockOption());
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'No incoming balance found for the given asset',
+      });
+
+      return expect(account.getIncomingBalance({ asset: assetId })).rejects.toThrowError(
+        expectedError
+      );
     });
   });
 

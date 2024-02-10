@@ -1,5 +1,15 @@
-import { Context, Entity, Identity } from '~/internal';
-import { confidentialAccountToMeshPublicKey, identityIdToString } from '~/utils/conversion';
+import { ConfidentialAssetsElgamalCipherText } from '@polkadot/types/lookup';
+import type { Option, U8aFixed } from '@polkadot/types-codec';
+
+import { ConfidentialAsset, Context, Entity, Identity, PolymeshError } from '~/internal';
+import { ConfidentialAssetBalance, ErrorCode } from '~/types';
+import {
+  confidentialAccountToMeshPublicKey,
+  identityIdToString,
+  meshConfidentialAssetToAssetId,
+  serializeConfidentialAssetId,
+} from '~/utils/conversion';
+import { asConfidentialAsset } from '~/utils/internal';
 
 /**
  * @hidden
@@ -61,6 +71,80 @@ export class ConfidentialAccount extends Entity<UniqueIdentifiers, string> {
     const did = identityIdToString(optIdentityId.unwrap());
 
     return new Identity({ did }, context);
+  }
+
+  /**
+   * Retrieves all incoming balances for this Confidential Account
+   */
+  public async getIncomingBalances(): Promise<ConfidentialAssetBalance[]> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { confidentialAsset },
+        },
+      },
+      context,
+      publicKey,
+    } = this;
+
+    const rawEntries = await confidentialAsset.incomingBalance.entries(publicKey);
+
+    const assembleResult = (
+      rawAssetId: U8aFixed,
+      rawBalance: Option<ConfidentialAssetsElgamalCipherText>
+    ): ConfidentialAssetBalance => {
+      const assetId = meshConfidentialAssetToAssetId(rawAssetId);
+      const encryptedBalance = rawBalance.unwrap();
+      return {
+        asset: new ConfidentialAsset({ id: assetId }, context),
+        balance: encryptedBalance.toString(),
+      };
+    };
+
+    return rawEntries.map(
+      ([
+        {
+          args: [, rawAssetId],
+        },
+        rawBalance,
+      ]) => assembleResult(rawAssetId, rawBalance)
+    );
+  }
+
+  /**
+   * Retrieves incoming balance for a specific Confidential Asset
+   */
+  public async getIncomingBalance(args: { asset: ConfidentialAsset | string }): Promise<string> {
+    const {
+      context: {
+        polymeshApi: {
+          query: {
+            confidentialAsset: { incomingBalance },
+          },
+        },
+      },
+      context,
+      publicKey,
+    } = this;
+
+    const confidentialAsset = asConfidentialAsset(args.asset, context);
+
+    const rawBalance = await incomingBalance(
+      publicKey,
+      serializeConfidentialAssetId(confidentialAsset)
+    );
+
+    if (rawBalance.isNone) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'No incoming balance found for the given asset',
+        data: {
+          assetId: confidentialAsset.id,
+        },
+      });
+    }
+
+    return rawBalance.unwrap().toString();
   }
 
   /**
