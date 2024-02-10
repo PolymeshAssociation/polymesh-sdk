@@ -1,5 +1,16 @@
-import { ConfidentialAccount, Context, createConfidentialAccount, PolymeshError } from '~/internal';
-import { CreateConfidentialAccountParams, ErrorCode, ProcedureMethod } from '~/types';
+import {
+  applyIncomingAssetBalance,
+  ConfidentialAccount,
+  Context,
+  createConfidentialAccount,
+  PolymeshError,
+} from '~/internal';
+import {
+  ApplyIncomingBalanceParams,
+  CreateConfidentialAccountParams,
+  ErrorCode,
+  ProcedureMethod,
+} from '~/types';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**
@@ -17,6 +28,13 @@ export class ConfidentialAccounts {
     this.createConfidentialAccount = createProcedureMethod(
       {
         getProcedureAndArgs: args => [createConfidentialAccount, { ...args }],
+      },
+      context
+    );
+
+    this.applyIncomingBalance = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [applyIncomingAssetBalance, { ...args }],
       },
       context
     );
@@ -51,4 +69,9 @@ export class ConfidentialAccounts {
     CreateConfidentialAccountParams,
     ConfidentialAccount
   >;
+
+  /**
+   * Applies incoming balance to a Confidnetial Account
+   */
+  public applyIncomingBalance: ProcedureMethod<ApplyIncomingBalanceParams, ConfidentialAccount>;
 }
