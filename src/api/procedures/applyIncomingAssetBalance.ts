@@ -26,7 +26,7 @@ export async function prepareApplyIncomingBalance(
   const account = asConfidentialAccount(accountInput, context);
   const asset = asConfidentialAsset(assetInput, context);
 
-  const [{ did: signingDid }, accountIdentity, _incomingBalance] = await Promise.all([
+  const [{ did: signingDid }, accountIdentity] = await Promise.all([
     context.getSigningIdentity(),
     account.getIdentity(),
     account.getIncomingBalance({ asset }),

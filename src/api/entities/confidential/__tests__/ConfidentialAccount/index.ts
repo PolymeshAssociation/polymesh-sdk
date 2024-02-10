@@ -5,8 +5,6 @@ import { ErrorCode } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
-import { mockConfidentialAssetModule } from './../../../../../testUtils/mocks/entities';
-
 jest.mock(
   '~/api/entities/confidential/ConfidentialAsset',
   require('~/testUtils/mocks/entities').mockConfidentialAssetModule(
