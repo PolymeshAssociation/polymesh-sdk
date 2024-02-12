@@ -228,6 +228,7 @@ import {
   keyToAddress,
   legToFungibleLeg,
   legToNonFungibleLeg,
+  mediatorAffirmationStatusToStatus,
   meshAffirmationStatusToAffirmationStatus,
   meshClaimToClaim,
   meshClaimToInputStatClaim,
@@ -9857,5 +9858,40 @@ describe('toCustomClaimTypeWithIdentity', () => {
       { name: 'name2', id: new BigNumber(2), did: 'did2' },
       { name: 'name3', id: new BigNumber(3), did: undefined },
     ]);
+  });
+});
+
+describe('mediatorAffirmationStatusToStatus', () => {
+  it('should convert mediator affirmation status', () => {
+    let input = dsMockUtils.createMockMediatorAffirmationStatus('Pending');
+    let result = mediatorAffirmationStatusToStatus(input);
+    expect(result).toEqual({ status: AffirmationStatus.Pending });
+
+    input = dsMockUtils.createMockMediatorAffirmationStatus('Unknown');
+    result = mediatorAffirmationStatusToStatus(input);
+    expect(result).toEqual({ status: AffirmationStatus.Unknown });
+
+    input = dsMockUtils.createMockMediatorAffirmationStatus({
+      Affirmed: {
+        expiry: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(new BigNumber(1))),
+      },
+    });
+    result = mediatorAffirmationStatusToStatus(input);
+    expect(result).toEqual({ status: AffirmationStatus.Affirmed, expiry: new Date(1) });
+
+    input = dsMockUtils.createMockMediatorAffirmationStatus({
+      Affirmed: {
+        expiry: dsMockUtils.createMockOption(),
+      },
+    });
+    result = mediatorAffirmationStatusToStatus(input);
+    expect(result).toEqual({ status: AffirmationStatus.Affirmed, expiry: undefined });
+  });
+
+  it('should throw an error if it encounters an unexpected case', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(() => mediatorAffirmationStatusToStatus({ type: 'notAType' } as any)).toThrow(
+      UnreachableCaseError
+    );
   });
 });

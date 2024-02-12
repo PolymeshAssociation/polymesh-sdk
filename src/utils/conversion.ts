@@ -50,6 +50,7 @@ import {
   PolymeshPrimitivesSettlementAffirmationStatus,
   PolymeshPrimitivesSettlementInstructionStatus,
   PolymeshPrimitivesSettlementLeg,
+  PolymeshPrimitivesSettlementMediatorAffirmationStatus,
   PolymeshPrimitivesSettlementSettlementType,
   PolymeshPrimitivesSettlementVenueType,
   PolymeshPrimitivesStatisticsStat2ndKey,
@@ -174,6 +175,7 @@ import {
   InstructionType,
   KnownAssetType,
   KnownNftType,
+  MediatorAffirmation,
   MetadataKeyId,
   MetadataLockStatus,
   MetadataSpec,
@@ -4817,4 +4819,25 @@ export function toHistoricalSettlements(
   /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
   return data.sort((a, b) => a.blockNumber.minus(b.blockNumber).toNumber());
+}
+
+/**
+ * @hidden
+ */
+export function mediatorAffirmationStatusToStatus(
+  rawStatus: PolymeshPrimitivesSettlementMediatorAffirmationStatus
+): Omit<MediatorAffirmation, 'identity'> {
+  switch (rawStatus.type) {
+    case 'Unknown':
+      return { status: AffirmationStatus.Unknown };
+    case 'Pending':
+      return { status: AffirmationStatus.Pending };
+    case 'Affirmed': {
+      const rawExpiry = rawStatus.asAffirmed.expiry;
+      const expiry = rawExpiry.isSome ? momentToDate(rawExpiry.unwrap()) : undefined;
+      return { status: AffirmationStatus.Affirmed, expiry };
+    }
+    default:
+      throw new UnreachableCaseError(rawStatus.type);
+  }
 }

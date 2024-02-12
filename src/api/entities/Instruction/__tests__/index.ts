@@ -1118,4 +1118,29 @@ describe('Instruction class', () => {
       ]);
     });
   });
+
+  describe('method: getMediators', () => {
+    const mediatorDid = 'mediatorDid';
+
+    it('should return the instruction mediators', async () => {
+      dsMockUtils.createQueryMock('settlement', 'instructionMediatorsAffirmations', {
+        entries: [
+          tuple(
+            [rawId, dsMockUtils.createMockIdentityId(mediatorDid)],
+            dsMockUtils.createMockMediatorAffirmationStatus('Pending')
+          ),
+        ],
+      });
+
+      const result = await instruction.getMediators();
+
+      expect(result).toEqual([
+        expect.objectContaining({
+          identity: expect.objectContaining({ did: mediatorDid }),
+          status: AffirmationStatus.Pending,
+          expiry: undefined,
+        }),
+      ]);
+    });
+  });
 });
