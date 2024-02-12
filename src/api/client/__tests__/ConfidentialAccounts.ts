@@ -87,4 +87,24 @@ describe('ConfidentialAccounts Class', () => {
       expect(tx).toBe(expectedTransaction);
     });
   });
+
+  describe('method: applyIncomingBalance', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args = {
+        asset: 'someAsset',
+        account: 'someAccount',
+      };
+
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<ConfidentialAccount>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await confidentialAccounts.applyIncomingBalance(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
 });
