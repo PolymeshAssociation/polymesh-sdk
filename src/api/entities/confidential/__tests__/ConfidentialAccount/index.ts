@@ -82,6 +82,66 @@ describe('ConfidentialAccount class', () => {
     });
   });
 
+  describe('method: getBalances', () => {
+    it('should return existing balances of all Confidential Assets for the current ConfidentialAccount', async () => {
+      const assetId = '0xAsset';
+      const encryptedBalance = '0xbalance';
+
+      jest.spyOn(utilsConversionModule, 'meshConfidentialAssetToAssetId').mockReturnValue(assetId);
+
+      dsMockUtils.createQueryMock('confidentialAsset', 'accountBalance', {
+        entries: [
+          tuple(
+            [publicKey, assetId],
+            dsMockUtils.createMockOption(dsMockUtils.createMockElgamalCipherText(encryptedBalance))
+          ),
+        ],
+      });
+
+      const result = await account.getBalances();
+
+      expect(result).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            asset: expect.objectContaining({ id: assetId }),
+            balance: encryptedBalance,
+          }),
+        ])
+      );
+    });
+  });
+
+  describe('method: getBalance', () => {
+    let accountBalanceMock: jest.Mock;
+    let assetId: string;
+
+    beforeEach(() => {
+      accountBalanceMock = dsMockUtils.createQueryMock('confidentialAsset', 'accountBalance');
+      assetId = 'SOME_ASSET_ID';
+    });
+
+    it('should return the incoming balance for the given asset ID', async () => {
+      const balance = '0xbalance';
+      accountBalanceMock.mockReturnValueOnce(
+        dsMockUtils.createMockOption(dsMockUtils.createMockElgamalCipherText(balance))
+      );
+
+      const result = await account.getBalance({ asset: assetId });
+      expect(result).toEqual(balance);
+    });
+
+    it('should throw an error if no account balance is found for the given ID', () => {
+      accountBalanceMock.mockReturnValue(dsMockUtils.createMockOption());
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'No balance found for the given asset',
+      });
+
+      return expect(account.getBalance({ asset: assetId })).rejects.toThrowError(expectedError);
+    });
+  });
+
   describe('method: getIncomingBalances', () => {
     it('should return all the incoming balances for the ConfidentialAccount', async () => {
       const assetId = '0xAsset';
@@ -135,7 +195,7 @@ describe('ConfidentialAccount class', () => {
 
       const expectedError = new PolymeshError({
         code: ErrorCode.DataUnavailable,
-        message: 'No incoming balance found for the given asset',
+        message: 'No balance found for the given asset',
       });
 
       return expect(account.getIncomingBalance({ asset: assetId })).rejects.toThrowError(

@@ -1,3 +1,4 @@
+import { AugmentedQueries } from '@polkadot/api/types';
 import { ConfidentialAssetsElgamalCipherText } from '@polkadot/types/lookup';
 import type { Option, U8aFixed } from '@polkadot/types-codec';
 
@@ -74,20 +75,16 @@ export class ConfidentialAccount extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieves all incoming balances for this Confidential Account
+   * @hidden
+   *
+   * Populates asset balance (current/incoming) for a confidential Account
    */
-  public async getIncomingBalances(): Promise<ConfidentialAssetBalance[]> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { confidentialAsset },
-        },
-      },
-      context,
-      publicKey,
-    } = this;
+  private async populateAssetBalances(
+    storage: AugmentedQueries<'promise'>['confidentialAsset']['accountBalance' | 'incomingBalance']
+  ): Promise<ConfidentialAssetBalance[]> {
+    const { context, publicKey } = this;
 
-    const rawEntries = await confidentialAsset.incomingBalance.entries(publicKey);
+    const rawEntries = await storage.entries(publicKey);
 
     const assembleResult = (
       rawAssetId: U8aFixed,
@@ -112,32 +109,24 @@ export class ConfidentialAccount extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieves incoming balance for a specific Confidential Asset
+   * @hidden
+   *
+   * Retrieved encrypted balance (current/incoming) for a Confidential Asset
    */
-  public async getIncomingBalance(args: { asset: ConfidentialAsset | string }): Promise<string> {
-    const {
-      context: {
-        polymeshApi: {
-          query: {
-            confidentialAsset: { incomingBalance },
-          },
-        },
-      },
-      context,
-      publicKey,
-    } = this;
+  private async populateAssetBalance(
+    storage: AugmentedQueries<'promise'>['confidentialAsset']['accountBalance' | 'incomingBalance'],
+    asset: string | ConfidentialAsset
+  ): Promise<string> {
+    const { context, publicKey } = this;
 
-    const confidentialAsset = asConfidentialAsset(args.asset, context);
+    const confidentialAsset = asConfidentialAsset(asset, context);
 
-    const rawBalance = await incomingBalance(
-      publicKey,
-      serializeConfidentialAssetId(confidentialAsset)
-    );
+    const rawBalance = await storage(publicKey, serializeConfidentialAssetId(confidentialAsset));
 
     if (rawBalance.isNone) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
-        message: 'No incoming balance found for the given asset',
+        message: 'No balance found for the given asset',
         data: {
           assetId: confidentialAsset.id,
         },
@@ -145,6 +134,66 @@ export class ConfidentialAccount extends Entity<UniqueIdentifiers, string> {
     }
 
     return rawBalance.unwrap().toString();
+  }
+
+  /**
+   * Retrieves current balances of all Confidential Assets for this Confidential Account
+   */
+  public async getBalances(): Promise<ConfidentialAssetBalance[]> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { confidentialAsset },
+        },
+      },
+    } = this;
+
+    return this.populateAssetBalances(confidentialAsset.accountBalance);
+  }
+
+  /**
+   * Retrieves incoming balance for a specific Confidential Asset
+   */
+  public async getBalance(args: { asset: ConfidentialAsset | string }): Promise<string> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { confidentialAsset },
+        },
+      },
+    } = this;
+
+    return this.populateAssetBalance(confidentialAsset.accountBalance, args.asset);
+  }
+
+  /**
+   * Retrieves all incoming balances for this Confidential Account
+   */
+  public async getIncomingBalances(): Promise<ConfidentialAssetBalance[]> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { confidentialAsset },
+        },
+      },
+    } = this;
+
+    return this.populateAssetBalances(confidentialAsset.incomingBalance);
+  }
+
+  /**
+   * Retrieves incoming balance for a specific Confidential Asset
+   */
+  public async getIncomingBalance(args: { asset: ConfidentialAsset | string }): Promise<string> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { confidentialAsset },
+        },
+      },
+    } = this;
+
+    return this.populateAssetBalance(confidentialAsset.incomingBalance, args.asset);
   }
 
   /**
