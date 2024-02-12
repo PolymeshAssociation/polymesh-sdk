@@ -529,6 +529,10 @@ export type AddInstructionParams = {
    * identifier string to help differentiate instructions
    */
   memo?: string;
+  /**
+   * additional identities that must affirm the instruction
+   */
+  mediators?: (string | Identity)[];
 } & (
   | {
       /**

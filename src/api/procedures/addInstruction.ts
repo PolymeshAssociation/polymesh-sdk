@@ -1,5 +1,6 @@
-import { u64 } from '@polkadot/types';
+import { BTreeSet, u64 } from '@polkadot/types';
 import {
+  PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesMemo,
   PolymeshPrimitivesSettlementLeg,
@@ -40,6 +41,7 @@ import {
   bigNumberToU64,
   dateToMoment,
   endConditionToSettlementType,
+  identitiesToBtreeSet,
   legToFungibleLeg,
   legToNonFungibleLeg,
   nftToMeshNft,
@@ -51,6 +53,7 @@ import {
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
+  asIdentity,
   assembleBatchTransactions,
   asTicker,
   filterEventRecords,
@@ -69,6 +72,10 @@ export type Params = AddInstructionsParams & {
  */
 export interface Storage {
   portfoliosToAffirm: (DefaultPortfolio | NumberedPortfolio)[][];
+  /**
+   * TODO: WithMediator variants are expected in v 6.2. This check is to ensure a smooth transition and can be removed
+   */
+  withMediatorsPresent: boolean;
 }
 
 /**
@@ -81,7 +88,8 @@ type InternalAddAndAffirmInstructionParams = [
   u64 | null,
   PolymeshPrimitivesSettlementLeg[],
   PolymeshPrimitivesIdentityIdPortfolioId[],
-  PolymeshPrimitivesMemo | null
+  PolymeshPrimitivesMemo | null,
+  BTreeSet<PolymeshPrimitivesIdentityId>
 ][];
 
 /**
@@ -93,7 +101,8 @@ type InternalAddInstructionParams = [
   u64 | null,
   u64 | null,
   PolymeshPrimitivesSettlementLeg[],
-  PolymeshPrimitivesMemo | null
+  PolymeshPrimitivesMemo | null,
+  BTreeSet<PolymeshPrimitivesIdentityId>
 ][];
 
 /**
@@ -224,7 +233,7 @@ async function getTxArgsAndErrors(
   const datesErrIndexes: number[] = [];
 
   await P.each(instructions, async (instruction, i) => {
-    const { legs, tradeDate, valueDate, memo } = instruction;
+    const { legs, tradeDate, valueDate, memo, mediators } = instruction;
     if (!legs.length) {
       legEmptyErrIndexes.push(i);
     }
@@ -279,6 +288,8 @@ async function getTxArgsAndErrors(
       const rawValueDate = optionize(dateToMoment)(valueDate, context);
       const rawLegs: PolymeshPrimitivesSettlementLeg[] = [];
       const rawInstructionMemo = optionize(stringToMemo)(memo, context);
+      const mediatorIds = mediators?.map(mediator => asIdentity(mediator, context));
+      const rawMediators = identitiesToBtreeSet(mediatorIds ?? [], context);
 
       await Promise.all([
         ...fungibleLegs.map(async ({ from, to, amount, asset }) => {
@@ -341,6 +352,7 @@ async function getTxArgsAndErrors(
             portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
           ),
           rawInstructionMemo,
+          rawMediators,
         ]);
       } else {
         addInstructionParams.push([
@@ -350,6 +362,7 @@ async function getTxArgsAndErrors(
           rawValueDate,
           rawLegs,
           rawInstructionMemo,
+          rawMediators,
         ]);
       }
     }
@@ -383,7 +396,7 @@ export async function prepareAddInstruction(
       },
     },
     context,
-    storage: { portfoliosToAffirm },
+    storage: { portfoliosToAffirm, withMediatorsPresent },
   } = this;
   const { instructions, venueId } = args;
 
@@ -473,16 +486,37 @@ export async function prepareAddInstruction(
     });
   }
 
-  const transactions = assembleBatchTransactions([
-    {
-      transaction: settlement.addInstruction,
+  /**
+   * After the upgrade is out, the "withMediator" variants are safe to use exclusively
+   */
+  let addTx;
+  let addAndAffirmTx;
+  if (withMediatorsPresent) {
+    addTx = {
+      transaction: settlement.addInstructionWithMediators,
       argsArray: addInstructionParams,
-    },
-    {
-      transaction: settlement.addAndAffirmInstruction,
+    };
+    addAndAffirmTx = {
+      transaction: settlement.addAndAffirmWithMediators,
       argsArray: addAndAffirmInstructionParams,
-    },
-  ] as const);
+    };
+  } else {
+    // remove the "mediators" if calling legacy extrinsics
+    addTx = {
+      transaction: settlement.addInstruction,
+      argsArray: addInstructionParams.map(params =>
+        params.slice(0, -1)
+      ) as typeof addInstructionParams,
+    };
+    addAndAffirmTx = {
+      transaction: settlement.addAndAffirmInstruction,
+      argsArray: addAndAffirmInstructionParams.map(params =>
+        params.slice(0, -1)
+      ) as typeof addAndAffirmInstructionParams,
+    };
+  }
+
+  const transactions = assembleBatchTransactions([addTx, addAndAffirmTx] as const);
 
   return {
     transactions,
@@ -498,17 +532,23 @@ export async function getAuthorization(
   { venueId }: Params
 ): Promise<ProcedureAuthorization> {
   const {
-    storage: { portfoliosToAffirm },
+    storage: { portfoliosToAffirm, withMediatorsPresent },
   } = this;
+
+  const addAndAffirmTag = withMediatorsPresent
+    ? TxTags.settlement.AddAndAffirmWithMediators
+    : TxTags.settlement.AddAndAffirmInstructionWithMemo;
+
+  const addInstructionTag = withMediatorsPresent
+    ? TxTags.settlement.AddInstructionWithMediators
+    : TxTags.settlement.AddInstructionWithMemo;
 
   let transactions: SettlementTx[] = [];
   let portfolios: (DefaultPortfolio | NumberedPortfolio)[] = [];
 
   portfoliosToAffirm.forEach(portfoliosList => {
     transactions = union(transactions, [
-      portfoliosList.length
-        ? TxTags.settlement.AddAndAffirmInstructionWithMemo
-        : TxTags.settlement.AddInstructionWithMemo,
+      portfoliosList.length ? addAndAffirmTag : addInstructionTag,
     ]);
     portfolios = unionWith(portfolios, portfoliosList, isEqual);
   });
@@ -530,7 +570,14 @@ export async function prepareStorage(
   this: Procedure<Params, Instruction[], Storage>,
   { instructions }: Params
 ): Promise<Storage> {
-  const { context } = this;
+  const {
+    context,
+    context: {
+      polymeshApi: {
+        tx: { settlement },
+      },
+    },
+  } = this;
 
   const identity = await context.getSigningIdentity();
 
@@ -558,7 +605,10 @@ export async function prepareStorage(
     return flatten(portfolios);
   });
 
+  const withMediatorsPresent =
+    !!settlement.addInstructionWithMediators && !!settlement.addAndAffirmWithMediators;
   return {
+    withMediatorsPresent,
     portfoliosToAffirm,
   };
 }
