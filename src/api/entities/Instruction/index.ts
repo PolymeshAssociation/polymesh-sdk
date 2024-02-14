@@ -20,12 +20,14 @@ import {
 import { instructionsQuery } from '~/middleware/queries';
 import { InstructionStatusEnum, Query } from '~/middleware/types';
 import {
+  AffirmAsMediatorParams,
   AffirmOrWithdrawInstructionParams,
   DefaultPortfolio,
   ErrorCode,
   EventIdentifier,
   ExecuteManualInstructionParams,
   InstructionAffirmationOperation,
+  NoArgsProcedureMethod,
   NumberedPortfolio,
   OptionalArgsProcedureMethod,
   PaginationOptions,
@@ -128,6 +130,39 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
           { id, operation: InstructionAffirmationOperation.Withdraw, ...args },
         ],
         optionalArgs: true,
+      },
+      context
+    );
+
+    this.rejectAsMediator = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [
+          modifyInstructionAffirmation,
+          { id, operation: InstructionAffirmationOperation.RejectAsMediator },
+        ],
+        voidArgs: true,
+      },
+      context
+    );
+
+    this.affirmAsMediator = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [
+          modifyInstructionAffirmation,
+          { id, operation: InstructionAffirmationOperation.AffirmAsMediator, ...args },
+        ],
+        optionalArgs: true,
+      },
+      context
+    );
+
+    this.withdrawAsMediator = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [
+          modifyInstructionAffirmation,
+          { id, operation: InstructionAffirmationOperation.WithdrawAsMediator },
+        ],
+        voidArgs: true,
       },
       context
     );
@@ -464,7 +499,6 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * @note reject on `SettleOnBlock` behaves just like unauthorize
    * @note reject on `SettleManual` behaves just like unauthorize
    */
-
   public reject: OptionalArgsProcedureMethod<RejectInstructionParams, Instruction>;
 
   /**
@@ -476,6 +510,25 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * Withdraw affirmation from this instruction (unauthorize)
    */
   public withdraw: OptionalArgsProcedureMethod<AffirmOrWithdrawInstructionParams, Instruction>;
+
+  /**
+   * Reject this instruction as a mediator
+   *
+   *  @note reject on `SettleOnAffirmation` will execute the settlement and it will fail immediately.
+   * @note reject on `SettleOnBlock` behaves just like unauthorize
+   * @note reject on `SettleManual` behaves just like unauthorize
+   */
+  public rejectAsMediator: NoArgsProcedureMethod<Instruction>;
+
+  /**
+   * Affirm this instruction as a mediator (authorize)
+   */
+  public affirmAsMediator: OptionalArgsProcedureMethod<AffirmAsMediatorParams, Instruction>;
+
+  /**
+   * Withdraw affirmation from this instruction as a mediator (unauthorize)
+   */
+  public withdrawAsMediator: NoArgsProcedureMethod<Instruction>;
 
   /**
    * Executes an Instruction either of type `SettleManual` or a `Failed` instruction

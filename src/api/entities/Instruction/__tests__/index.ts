@@ -815,6 +815,81 @@ describe('Instruction class', () => {
     });
   });
 
+  describe('method: rejectAsMediator', () => {
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Instruction>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          {
+            args: { id, operation: InstructionAffirmationOperation.RejectAsMediator },
+            transformer: undefined,
+          },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await instruction.rejectAsMediator();
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: affirmAsMediator', () => {
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Instruction>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          {
+            args: { id, operation: InstructionAffirmationOperation.AffirmAsMediator },
+            transformer: undefined,
+          },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await instruction.affirmAsMediator();
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: withdrawAsMediator', () => {
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Instruction>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          {
+            args: { id, operation: InstructionAffirmationOperation.WithdrawAsMediator },
+            transformer: undefined,
+          },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await instruction.withdrawAsMediator();
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
   describe('method: executeManually', () => {
     afterAll(() => {
       jest.restoreAllMocks();
