@@ -41,6 +41,7 @@ import {
   bigNumberToU64,
   identityIdToString,
   instructionMemoToString,
+  mediatorAffirmationStatusToStatus,
   meshAffirmationStatusToAffirmationStatus,
   meshInstructionStatusToInstructionStatus,
   meshNftToNftId,
@@ -59,6 +60,7 @@ import {
   InstructionStatus,
   InstructionStatusResult,
   Leg,
+  MediatorAffirmation,
 } from './types';
 
 export interface UniqueIdentifiers {
@@ -562,6 +564,35 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     );
 
     return portfolios;
+  }
+
+  /**
+   * Returns the mediators for the Instruction, along with their affirmation status
+   */
+  public async getMediators(): Promise<MediatorAffirmation[]> {
+    const {
+      id,
+      context,
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+    } = this;
+
+    const rawId = bigNumberToU64(id, context);
+
+    const rawAffirms = await settlement.instructionMediatorsAffirmations.entries(rawId);
+
+    return rawAffirms.map(([key, affirmStatus]) => {
+      const rawDid = key.args[1];
+      const did = identityIdToString(rawDid);
+      const identity = new Identity({ did }, context);
+
+      const { status, expiry } = mediatorAffirmationStatusToStatus(affirmStatus);
+
+      return { identity, status, expiry };
+    });
   }
 
   /**
