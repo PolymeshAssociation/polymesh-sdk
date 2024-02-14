@@ -404,6 +404,7 @@ interface ConfidentialTransactionOptions extends EntityOptions {
 interface ConfidentialAccountOptions extends EntityOptions {
   publicKey?: string;
   getIdentity?: EntityGetter<Identity | null>;
+  getIncomingBalance?: EntityGetter<string>;
 }
 
 type MockOptions = {
@@ -2137,6 +2138,7 @@ const MockConfidentialAccountClass = createMockEntityClass<ConfidentialAccountOp
     uuid!: string;
     publicKey!: string;
     getIdentity!: jest.Mock;
+    getIncomingBalance!: jest.Mock;
 
     /**
      * @hidden
@@ -2152,11 +2154,13 @@ const MockConfidentialAccountClass = createMockEntityClass<ConfidentialAccountOp
       this.uuid = 'confidentialAccount';
       this.publicKey = opts.publicKey;
       this.getIdentity = createEntityGetterMock(opts.getIdentity);
+      this.getIncomingBalance = createEntityGetterMock(opts.getIncomingBalance);
     }
   },
   () => ({
     publicKey: 'somePublicKey',
     getIdentity: getIdentityInstance(),
+    getIncomingBalance: 'someEncryptedBalance',
   }),
   ['ConfidentialAccount']
 );

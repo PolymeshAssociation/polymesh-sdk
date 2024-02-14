@@ -107,6 +107,7 @@ export { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 export { TickerReservation } from '~/api/entities/TickerReservation';
 export { BaseAsset, FungibleAsset, NftCollection, Nft } from '~/api/entities/Asset';
 export { issueConfidentialAssets } from '~/api/procedures/issueConfidentialAssets';
+export { applyIncomingAssetBalance } from '~/api/procedures/applyIncomingAssetBalance';
 export { ConfidentialAccount } from '~/api/entities/confidential/ConfidentialAccount';
 export { ConfidentialAsset } from '~/api/entities/confidential/ConfidentialAsset';
 export { createConfidentialVenue } from '~/api/procedures/createConfidentialVenue';
