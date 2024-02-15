@@ -1,11 +1,12 @@
 import { AugmentedQueries } from '@polkadot/api/types';
 import { ConfidentialAssetsElgamalCipherText } from '@polkadot/types/lookup';
 import type { Option, U8aFixed } from '@polkadot/types-codec';
+import BigNumber from 'bignumber.js';
 
 import { ConfidentialAsset, Context, Entity, Identity, PolymeshError } from '~/internal';
 import { confidentialAssetsByHolderQuery } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { ConfidentialAssetBalance, ErrorCode } from '~/types';
+import { ConfidentialAssetBalance, ErrorCode, ResultSet } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
   confidentialAccountToMeshPublicKey,
@@ -13,7 +14,7 @@ import {
   meshConfidentialAssetToAssetId,
   serializeConfidentialAssetId,
 } from '~/utils/conversion';
-import { asConfidentialAsset } from '~/utils/internal';
+import { asConfidentialAsset,calculateNextKey } from '~/utils/internal';
 
 /**
  * @hidden
@@ -201,6 +202,7 @@ export class ConfidentialAccount extends Entity<UniqueIdentifiers, string> {
 
   /**
    * Determine whether this Account exists on chain
+   *
    */
   public async exists(): Promise<boolean> {
     const {
@@ -228,19 +230,34 @@ export class ConfidentialAccount extends Entity<UniqueIdentifiers, string> {
    * Retrieve the ConfidentialAssets associated to this Account
    *
    * @note uses the middlewareV2
-   * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
+   * @param filters.size - page size
+   * @param filters.start - page offset
    */
-  public async getHeldAssets(): Promise<string[]> {
+  public async getHeldAssets(
+    filters: {
+      size?: BigNumber;
+      start?: BigNumber;
+    } = {}
+  ): Promise<ResultSet<ConfidentialAsset>> {
     const { context, publicKey } = this;
+    const { size, start } = filters;
 
     const {
       data: {
-        confidentialAssetHolders: { nodes },
+        confidentialAssetHolders: { nodes, totalCount },
       },
     } = await context.queryMiddleware<Ensured<Query, 'confidentialAssetHolders'>>(
-      confidentialAssetsByHolderQuery({ accountId: publicKey })
+      confidentialAssetsByHolderQuery(publicKey, size, start)
     );
 
-    return nodes.map(({ assetId }) => assetId);
+    const data = nodes.map(({ assetId: id }) => new ConfidentialAsset({ id }, context));
+    const count = new BigNumber(totalCount);
+    const next = calculateNextKey(count, data.length, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
   }
 }

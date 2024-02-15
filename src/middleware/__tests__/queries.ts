@@ -7,6 +7,7 @@ import {
   authorizationsQuery,
   claimsGroupingQuery,
   claimsQuery,
+  confidentialAssetsByHolderQuery,
   createCustomClaimTypeQueryFilters,
   customClaimTypeQuery,
   distributionPaymentsQuery,
@@ -599,5 +600,25 @@ describe('customClaimTypeQuery', () => {
     const result = customClaimTypeQuery(size, start, dids);
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual({ size: size.toNumber(), start: start.toNumber(), dids });
+  });
+});
+
+describe('confidentialAssetsByHolderQuery', () => {
+  it('should return correct query and variables when size, start  are not provided', () => {
+    const result = confidentialAssetsByHolderQuery('1');
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({ size: undefined, start: undefined, accountId: '1' });
+  });
+
+  it('should return correct query and variables when size, start are provided', () => {
+    const size = new BigNumber(10);
+    const start = new BigNumber(0);
+    const result = confidentialAssetsByHolderQuery('1', size, start);
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({
+      size: size.toNumber(),
+      start: start.toNumber(),
+      accountId: '1',
+    });
   });
 });

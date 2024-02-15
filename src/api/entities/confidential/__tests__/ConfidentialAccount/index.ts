@@ -1,4 +1,4 @@
-import { ConfidentialAccount, Context, Entity, PolymeshError } from '~/internal';
+import { ConfidentialAccount, ConfidentialAsset, Context, Entity, PolymeshError } from '~/internal';
 import { confidentialAssetsByHolderQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -231,14 +231,11 @@ describe('ConfidentialAccount class', () => {
   });
 
   describe('method: getHeldAssets', () => {
-    it('should return a string array of ids representing held assets by the ConfidentialAccount', async () => {
-      const variables = {
-        accountId: publicKey,
-      };
-      const assetId = 'someId';
-      const fakeResult = [assetId];
+    it('should return an array of ConfidentialAssets held by the ConfidentialAccount', async () => {
+      const assetId = '76702175d8cbe3a55a19734433351e25';
+      const asset = new ConfidentialAsset({ id: assetId }, context);
 
-      dsMockUtils.createApolloQueryMock(confidentialAssetsByHolderQuery(variables), {
+      dsMockUtils.createApolloQueryMock(confidentialAssetsByHolderQuery(publicKey), {
         confidentialAssetHolders: {
           nodes: [
             {
@@ -246,12 +243,25 @@ describe('ConfidentialAccount class', () => {
               accountId: publicKey,
             },
           ],
+          totalCount: 1,
         },
       });
 
-      const result = await account.getHeldAssets();
+      let result = await account.getHeldAssets();
 
-      expect(result).toEqual(fakeResult);
+      expect(result.data[0].id).toEqual(asset.id);
+      expect(result.data[0]).toBeInstanceOf(ConfidentialAsset);
+
+      dsMockUtils.createApolloQueryMock(confidentialAssetsByHolderQuery(publicKey), {
+        confidentialAssetHolders: {
+          nodes: [],
+          totalCount: 0,
+        },
+      });
+
+      result = await account.getHeldAssets();
+      expect(result.data).toEqual([]);
+      expect(result.next).toBeNull();
     });
   });
 });

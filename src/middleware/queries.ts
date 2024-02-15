@@ -15,6 +15,7 @@ import {
   ClaimsOrderBy,
   ClaimTypeEnum,
   ConfidentialAssetHolder,
+  ConfidentialAssetHoldersOrderBy,
   Distribution,
   DistributionPayment,
   Event,
@@ -1609,29 +1610,32 @@ export function customClaimTypeQuery(
 /**
  * @hidden
  *
- * Get Confidential Assets hel by a ConfidentialAccount
+ * Get Confidential Assets held by a ConfidentialAccount
  */
-export function confidentialAssetsByHolderQuery({
-  accountId,
-}: QueryArgs<ConfidentialAssetHolder, 'accountId'>): QueryOptions<
-  QueryArgs<ConfidentialAssetHolder, 'accountId'>
-> {
+export function confidentialAssetsByHolderQuery(
+  accountId: string,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<Pick<ConfidentialAssetHolder, 'accountId'>>> {
   const query = gql`
-    query ConfidentialAssetsByAccount($accountId: String!) {
+    query ConfidentialAssetsByAccount($size: Int, $start: Int, $accountId: String!) {
       confidentialAssetHolders(
-        filter: { accountId: { equalTo: $accountId } }
-        orderBy: [${TickerExternalAgentHistoriesOrderBy.CreatedAtAsc}, ${TickerExternalAgentHistoriesOrderBy.CreatedBlockIdAsc}]
+        accountId: { equalTo: $accountId }
+        orderBy: [${ConfidentialAssetHoldersOrderBy.CreatedBlockIdAsc}]
+        first: $size
+        offset: $start
       ) {
         nodes {
           accountId,
           assetId
         }
+        totalCount
       }
     }
   `;
 
   return {
     query,
-    variables: { accountId },
+    variables: { size: size?.toNumber(), start: start?.toNumber(), accountId },
   };
 }
