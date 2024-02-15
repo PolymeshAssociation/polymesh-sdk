@@ -72,6 +72,7 @@ import {
   assertAddressValid,
   assertExpectedChainVersion,
   assertExpectedSqVersion,
+  assertIdentityExists,
   assertIsInteger,
   assertIsPositive,
   assertNoPendingAuthorizationExists,
@@ -2486,5 +2487,24 @@ describe('assertNoPendingAuthorizationExists', () => {
         target,
       })
     ).toThrow(expectedError);
+  });
+});
+
+describe('assertIdentityExists', () => {
+  it('should resolve if the identity exists', () => {
+    const identity = entityMockUtils.getIdentityInstance({ exists: true });
+
+    return expect(assertIdentityExists(identity)).resolves.not.toThrow();
+  });
+
+  it('should throw an error if an identity does not exist', () => {
+    const identity = entityMockUtils.getIdentityInstance({ exists: false });
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'The identity does not exists',
+    });
+
+    return expect(assertIdentityExists(identity)).rejects.toThrow(expectedError);
   });
 });

@@ -1973,3 +1973,18 @@ export function assertNoPendingAuthorizationExists(params: {
     });
   }
 }
+
+/**
+ * @hidden
+ */
+export async function assertIdentityExists(identity: Identity): Promise<void> {
+  const exists = await identity.exists();
+
+  if (!exists) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'The identity does not exists',
+      data: { did: identity.did },
+    });
+  }
+}
