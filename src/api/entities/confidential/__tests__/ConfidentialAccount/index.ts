@@ -233,7 +233,7 @@ describe('ConfidentialAccount class', () => {
   describe('method: getHeldAssets', () => {
     it('should return an array of ConfidentialAssets held by the ConfidentialAccount', async () => {
       const assetId = '76702175d8cbe3a55a19734433351e25';
-      const asset = new ConfidentialAsset({ id: assetId }, context);
+      const asset = entityMockUtils.getConfidentialAssetInstance({ id: assetId });
 
       dsMockUtils.createApolloQueryMock(confidentialAssetsByHolderQuery(publicKey), {
         confidentialAssetHolders: {

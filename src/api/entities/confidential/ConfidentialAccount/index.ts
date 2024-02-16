@@ -14,7 +14,7 @@ import {
   meshConfidentialAssetToAssetId,
   serializeConfidentialAssetId,
 } from '~/utils/conversion';
-import { asConfidentialAsset,calculateNextKey } from '~/utils/internal';
+import { asConfidentialAsset, calculateNextKey } from '~/utils/internal';
 
 /**
  * @hidden
@@ -202,7 +202,6 @@ export class ConfidentialAccount extends Entity<UniqueIdentifiers, string> {
 
   /**
    * Determine whether this Account exists on chain
-   *
    */
   public async exists(): Promise<boolean> {
     const {
