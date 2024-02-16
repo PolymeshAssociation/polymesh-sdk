@@ -1,4 +1,5 @@
-import { ConfidentialAccount, Context, Entity, PolymeshError } from '~/internal';
+import { ConfidentialAccount, ConfidentialAsset, Context, Entity, PolymeshError } from '~/internal';
+import { confidentialAssetsByHolderQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { ErrorCode } from '~/types';
@@ -226,6 +227,41 @@ describe('ConfidentialAccount class', () => {
         .mockResolvedValue(dsMockUtils.createMockOption());
 
       return expect(account.exists()).resolves.toBe(false);
+    });
+  });
+
+  describe('method: getHeldAssets', () => {
+    it('should return an array of ConfidentialAssets held by the ConfidentialAccount', async () => {
+      const assetId = '76702175d8cbe3a55a19734433351e25';
+      const asset = entityMockUtils.getConfidentialAssetInstance({ id: assetId });
+
+      dsMockUtils.createApolloQueryMock(confidentialAssetsByHolderQuery(publicKey), {
+        confidentialAssetHolders: {
+          nodes: [
+            {
+              assetId,
+              accountId: publicKey,
+            },
+          ],
+          totalCount: 1,
+        },
+      });
+
+      let result = await account.getHeldAssets();
+
+      expect(result.data[0].id).toEqual(asset.id);
+      expect(result.data[0]).toBeInstanceOf(ConfidentialAsset);
+
+      dsMockUtils.createApolloQueryMock(confidentialAssetsByHolderQuery(publicKey), {
+        confidentialAssetHolders: {
+          nodes: [],
+          totalCount: 0,
+        },
+      });
+
+      result = await account.getHeldAssets();
+      expect(result.data).toEqual([]);
+      expect(result.next).toBeNull();
     });
   });
 });

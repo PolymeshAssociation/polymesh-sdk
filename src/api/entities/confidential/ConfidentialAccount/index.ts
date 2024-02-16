@@ -1,16 +1,20 @@
 import { AugmentedQueries } from '@polkadot/api/types';
 import { ConfidentialAssetsElgamalCipherText } from '@polkadot/types/lookup';
 import type { Option, U8aFixed } from '@polkadot/types-codec';
+import BigNumber from 'bignumber.js';
 
 import { ConfidentialAsset, Context, Entity, Identity, PolymeshError } from '~/internal';
-import { ConfidentialAssetBalance, ErrorCode } from '~/types';
+import { confidentialAssetsByHolderQuery } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
+import { ConfidentialAssetBalance, ErrorCode, ResultSet } from '~/types';
+import { Ensured } from '~/types/utils';
 import {
   confidentialAccountToMeshPublicKey,
   identityIdToString,
   meshConfidentialAssetToAssetId,
   serializeConfidentialAssetId,
 } from '~/utils/conversion';
-import { asConfidentialAsset } from '~/utils/internal';
+import { asConfidentialAsset, calculateNextKey } from '~/utils/internal';
 
 /**
  * @hidden
@@ -219,5 +223,40 @@ export class ConfidentialAccount extends Entity<UniqueIdentifiers, string> {
    */
   public toHuman(): string {
     return this.publicKey;
+  }
+
+  /**
+   * Retrieve the ConfidentialAssets associated to this Account
+   *
+   * @note uses the middlewareV2
+   * @param filters.size - page size
+   * @param filters.start - page offset
+   */
+  public async getHeldAssets(
+    filters: {
+      size?: BigNumber;
+      start?: BigNumber;
+    } = {}
+  ): Promise<ResultSet<ConfidentialAsset>> {
+    const { context, publicKey } = this;
+    const { size, start } = filters;
+
+    const {
+      data: {
+        confidentialAssetHolders: { nodes, totalCount },
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'confidentialAssetHolders'>>(
+      confidentialAssetsByHolderQuery(publicKey, size, start)
+    );
+
+    const data = nodes.map(({ assetId: id }) => new ConfidentialAsset({ id }, context));
+    const count = new BigNumber(totalCount);
+    const next = calculateNextKey(count, data.length, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
   }
 }
