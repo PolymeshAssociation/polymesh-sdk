@@ -326,7 +326,7 @@ describe('addInstruction procedure', () => {
       venueId,
       instructions: [
         {
-          mediators: [mediatorDid],
+          mediators: [entityMockUtils.getIdentityInstance({ did: mediatorDid })],
           legs: [
             {
               from,

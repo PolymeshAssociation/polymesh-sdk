@@ -55,6 +55,7 @@ import {
 import {
   asIdentity,
   assembleBatchTransactions,
+  assertIdentityExists,
   asTicker,
   filterEventRecords,
   optionize,
@@ -400,9 +401,14 @@ export async function prepareAddInstruction(
   } = this;
   const { instructions, venueId } = args;
 
+  const allMediators = instructions.flatMap(
+    ({ mediators }) => mediators?.map(mediator => asIdentity(mediator, context)) ?? []
+  );
+
   const [latestBlock] = await Promise.all([
     context.getLatestBlock(),
     assertVenueExists(venueId, context),
+    ...allMediators.map(mediator => assertIdentityExists(mediator)),
   ]);
 
   if (!instructions.length) {

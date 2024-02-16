@@ -3,7 +3,7 @@ import { AssetMediatorParams, ErrorCode, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { MAX_ASSET_MEDIATORS } from '~/utils/constants';
 import { identitiesToBtreeSet, stringToTicker } from '~/utils/conversion';
-import { asIdentity } from '~/utils/internal';
+import { asIdentity, assertIdentityExists } from '~/utils/internal';
 /**
  * @hidden
  */
@@ -33,6 +33,9 @@ export async function prepareAddAssetMediators(
 
   const newMediators = mediatorInput.map(mediator => asIdentity(mediator, context));
 
+  const mediatorsExistAsserts = newMediators.map(mediator => assertIdentityExists(mediator));
+  await Promise.all(mediatorsExistAsserts);
+
   newMediators.forEach(({ did: newDid }) => {
     const alreadySetDid = currentMediators.find(({ did: currentDid }) => currentDid === newDid);
 
@@ -40,7 +43,7 @@ export async function prepareAddAssetMediators(
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: 'One of the specified mediators is already set',
-        data: { ticker, alreadySetDid },
+        data: { ticker, did: alreadySetDid.did },
       });
     }
   });

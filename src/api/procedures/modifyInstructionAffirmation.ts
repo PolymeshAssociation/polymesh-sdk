@@ -49,6 +49,37 @@ export interface Storage {
 /**
  * @hidden
  */
+const assertPortfoliosValid = (
+  portfolioParams: PortfolioLike[],
+  portfolios: (DefaultPortfolio | NumberedPortfolio)[],
+  operation: InstructionAffirmationOperation
+): void => {
+  if (
+    operation === InstructionAffirmationOperation.AffirmAsMediator ||
+    operation === InstructionAffirmationOperation.RejectAsMediator ||
+    operation === InstructionAffirmationOperation.WithdrawAsMediator
+  ) {
+    return;
+  }
+
+  if (portfolioParams.length && portfolioParams.length !== portfolios.length) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Some of the portfolios are not a involved in this instruction',
+    });
+  }
+
+  if (!portfolios.length) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The signing Identity is not involved in this Instruction',
+    });
+  }
+};
+
+/**
+ * @hidden
+ */
 export async function prepareModifyInstructionAffirmation(
   this: Procedure<ModifyInstructionAffirmationParams, Instruction, Storage>,
   args: ModifyInstructionAffirmationParams
@@ -75,21 +106,9 @@ export async function prepareModifyInstructionAffirmation(
 
   const instruction = new Instruction({ id }, context);
 
-  await assertInstructionValid(instruction, context);
+  await Promise.all([assertInstructionValid(instruction, context)]);
 
-  if (portfolioParams.length && portfolioParams.length !== portfolios.length) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'Some of the portfolios are not a involved in this instruction',
-    });
-  }
-
-  if (!portfolios.length) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'The signing Identity is not involved in this Instruction',
-    });
-  }
+  assertPortfoliosValid(portfolioParams, portfolios, operation);
 
   const rawInstructionId = bigNumberToU64(id, context);
   const rawPortfolioIds: PolymeshPrimitivesIdentityIdPortfolioId[] = portfolios.map(portfolio =>
