@@ -3,8 +3,9 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { ConfidentialAsset, Context, Entity, PolymeshError, PolymeshTransaction } from '~/internal';
+import { transactionHistoryByConfidentialAssetQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { ErrorCode } from '~/types';
+import { ConfidentialAssetTransactionHistory, ErrorCode } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -332,6 +333,62 @@ describe('ConfidentialAsset class', () => {
   describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       expect(confidentialAsset.toHuman()).toBe(id);
+    });
+  });
+
+  describe('method: getTransactionHistory', () => {
+    it('should return the paginated list of transaction history for the entity', async () => {
+      const middlewareAssetHistoryToTransactionHistorySpy = jest.spyOn(
+        utilsConversionModule,
+        'middlewareAssetHistoryToTransactionHistory'
+      );
+
+      const confidentialAssetHistoriesResponse = {
+        totalCount: 5,
+        nodes: ['instructions'],
+      };
+
+      dsMockUtils.createApolloQueryMock(
+        transactionHistoryByConfidentialAssetQuery(
+          {
+            assetId: confidentialAsset.toHuman(),
+          },
+          new BigNumber(2),
+          new BigNumber(0)
+        ),
+        {
+          confidentialAssetHistories: confidentialAssetHistoriesResponse,
+        }
+      );
+
+      const mockTransactionHistory = 'mockData' as unknown as ConfidentialAssetTransactionHistory;
+
+      middlewareAssetHistoryToTransactionHistorySpy.mockReturnValue(mockTransactionHistory);
+
+      let result = await confidentialAsset.getTransactionHistory({
+        size: new BigNumber(2),
+        start: new BigNumber(0),
+      });
+
+      const { data, next, count } = result;
+
+      expect(next).toEqual(new BigNumber(1));
+      expect(count).toEqual(new BigNumber(5));
+      expect(data).toEqual([mockTransactionHistory]);
+
+      dsMockUtils.createApolloQueryMock(
+        transactionHistoryByConfidentialAssetQuery({
+          assetId: confidentialAsset.toHuman(),
+        }),
+        {
+          confidentialAssetHistories: confidentialAssetHistoriesResponse,
+        }
+      );
+
+      result = await confidentialAsset.getTransactionHistory();
+
+      expect(result.count).toEqual(new BigNumber(5));
+      expect(result.next).toEqual(new BigNumber(result.data.length));
     });
   });
 });

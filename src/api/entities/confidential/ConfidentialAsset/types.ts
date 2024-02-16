@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { ConfidentialVenue } from '~/internal';
+import { EventIdEnum } from '~/middleware/types';
 import { ConfidentialAccount, Identity } from '~/types';
 
 export interface ConfidentialAssetDetails {
@@ -60,3 +61,15 @@ export type ConfidentialVenueFilteringDetails =
       enabled: true;
       allowedConfidentialVenues: ConfidentialVenue[];
     };
+
+export type ConfidentialAssetTransactionHistory = {
+  id: string;
+  assetId: string;
+  amount: string;
+  fromId?: string;
+  toId?: string;
+  memo?: string;
+  eventId: EventIdEnum;
+  datetime: Date;
+  createdBlockId: BigNumber;
+};

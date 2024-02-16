@@ -96,7 +96,9 @@ import {
   CallIdEnum,
   Claim as MiddlewareClaim,
   ClaimTypeEnum,
+  ConfidentialAssetHistory,
   CustomClaimType as MiddlewareCustomClaimType,
+  EventIdEnum,
   Instruction,
   InstructionStatusEnum,
   ModuleIdEnum,
@@ -105,6 +107,7 @@ import {
 import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
+  createMockBlock,
   createMockBTreeSet,
   createMockConfidentialAccount,
   createMockConfidentialTransactionStatus,
@@ -284,6 +287,7 @@ import {
   metadataValueDetailToMeshMetadataValueDetail,
   metadataValueToMeshMetadataValue,
   middlewareAgentGroupDataToPermissionGroup,
+  middlewareAssetHistoryToTransactionHistory,
   middlewareAuthorizationDataToAuthorization,
   middlewareClaimToClaimData,
   middlewareEventDetailsToEventIdentifier,
@@ -10406,5 +10410,48 @@ describe('confidentialLegStateToLegState', () => {
     expect(() => confidentialLegStateToLegState(mockLegReturn, mockContext)).toThrow(
       'Unexpected data for PalletConfidentialAssetTransactionLegState received from chain'
     );
+  });
+});
+
+describe('middlewareAssetHistoryToTransactionHistory', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a middleware AssetHistory to TransactionHistory', () => {
+    const assetHistoryEntry = {
+      id: '1',
+      fromId: 'someString',
+      toId: 'someString',
+      amount: '0x01',
+      createdBlock: createMockBlock() as unknown as Block,
+      assetId: 'assetId',
+      eventId: EventIdEnum.AccountDeposit,
+      memo: '0x02',
+    } as ConfidentialAssetHistory;
+
+    const expectedResult = {
+      id: assetHistoryEntry.id,
+      assetId: assetHistoryEntry.assetId,
+      fromId: assetHistoryEntry.fromId,
+      toId: assetHistoryEntry.toId,
+      amount: assetHistoryEntry.amount,
+      datetime: assetHistoryEntry.createdBlock!.datetime,
+      createdBlockId: new BigNumber(assetHistoryEntry.createdBlock!.id),
+      eventId: assetHistoryEntry.eventId,
+      memo: assetHistoryEntry.memo,
+    };
+
+    const result = middlewareAssetHistoryToTransactionHistory(assetHistoryEntry);
+
+    expect(result).toEqual(expectedResult);
   });
 });
