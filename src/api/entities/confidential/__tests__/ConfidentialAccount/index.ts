@@ -1,5 +1,17 @@
-import { ConfidentialAccount, ConfidentialAsset, Context, Entity, PolymeshError } from '~/internal';
-import { confidentialAssetsByHolderQuery } from '~/middleware/queries';
+import BigNumber from 'bignumber.js';
+
+import {
+  ConfidentialAccount,
+  ConfidentialAsset,
+  ConfidentialTransaction,
+  Context,
+  Entity,
+  PolymeshError,
+} from '~/internal';
+import {
+  confidentialAssetsByHolderQuery,
+  getConfidentialTransactionsByConfidentialAccountQuery,
+} from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { ErrorCode } from '~/types';
@@ -231,7 +243,7 @@ describe('ConfidentialAccount class', () => {
   });
 
   describe('method: getHeldAssets', () => {
-    it('should return an array of ConfidentialAssets held by the ConfidentialAccount', async () => {
+    it('should return a paginated list of ConfidentialAssets held by the ConfidentialAccount', async () => {
       const assetId = '76702175d8cbe3a55a19734433351e25';
       const asset = entityMockUtils.getConfidentialAssetInstance({ id: assetId });
 
@@ -260,6 +272,54 @@ describe('ConfidentialAccount class', () => {
       });
 
       result = await account.getHeldAssets();
+      expect(result.data).toEqual([]);
+      expect(result.next).toBeNull();
+    });
+  });
+
+  describe('method: getTransactions', () => {
+    it('should return a paginated list of ConfidentialTransactions where the ConfidentialAccount is involved', async () => {
+      const txId = '1';
+      const mockTransaction = entityMockUtils.getConfidentialTransactionInstance({
+        id: new BigNumber(txId),
+      });
+
+      dsMockUtils.createApolloQueryMock(
+        getConfidentialTransactionsByConfidentialAccountQuery({
+          accountId: publicKey,
+          direction: 'All',
+        }),
+        {
+          confidentialTransactions: {
+            nodes: [
+              {
+                id: txId,
+              },
+            ],
+            totalCount: 1,
+          },
+        }
+      );
+
+      let result = await account.getTransactions({ direction: 'All' });
+
+      expect(result.data[0].id).toEqual(mockTransaction.id);
+      expect(result.data[0]).toBeInstanceOf(ConfidentialTransaction);
+
+      dsMockUtils.createApolloQueryMock(
+        getConfidentialTransactionsByConfidentialAccountQuery({
+          accountId: publicKey,
+          direction: 'All',
+        }),
+        {
+          confidentialTransactions: {
+            nodes: [],
+            totalCount: 0,
+          },
+        }
+      );
+
+      result = await account.getTransactions({ direction: 'All' });
       expect(result.data).toEqual([]);
       expect(result.next).toBeNull();
     });

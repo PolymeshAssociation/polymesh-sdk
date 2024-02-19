@@ -18,6 +18,7 @@ import {
   ConfidentialAssetHistory,
   ConfidentialAssetHolder,
   ConfidentialAssetHoldersOrderBy,
+  ConfidentialTransactionStatusEnum,
   Distribution,
   DistributionPayment,
   Event,
@@ -1731,5 +1732,67 @@ export function confidentialAssetQuery(
   return {
     query,
     variables,
+  };
+}
+
+export type ConfidentialTransactionsByConfidentialAccountArgs = {
+  accountId: string;
+  direction: 'Incoming' | 'Outgoing' | 'All';
+  status?: ConfidentialTransactionStatusEnum;
+};
+
+/**
+ * @hidden
+ *
+ * Get Confidential Transactions where a ConfidentialAccount is involved
+ */
+export function getConfidentialTransactionsByConfidentialAccountQuery(
+  params: ConfidentialTransactionsByConfidentialAccountArgs,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<
+  PaginatedQueryArgs<Omit<ConfidentialTransactionsByConfidentialAccountArgs, 'direction'>>
+> {
+  const { status, accountId, direction } = params;
+  const filters = [];
+
+  const args = ['$size: Int', '$start: Int', '$accountId: String!']; // Example adjustment
+
+  if (status) {
+    args.push('$status: ConfidentialTransactionStatusEnum!');
+    filters.push('status: { equalTo: $status }');
+  }
+
+  const legsFilters = [];
+
+  if (direction === 'All' || direction === 'Incoming') {
+    legsFilters.push('{ receiverId: { equalTo: $accountId }}');
+  }
+  if (direction === 'All' || direction === 'Outgoing') {
+    legsFilters.push('{ senderId: { equalTo: $accountId }}');
+  }
+
+  filters.push(`legs: { some: { or: [${legsFilters.join()}] } }`);
+
+  const formattedArgs = `${args.join(', ')}`;
+
+  const query = gql`
+  query ConfidentialTransactionsByConfidentialAccount(${formattedArgs}) {
+    confidentialTransactions(
+      filter: { ${filters.join(', ')} },
+      first: $size,
+      offset: $start
+    ) {
+      nodes {
+        id
+      }
+      totalCount
+    }
+  }
+`;
+
+  return {
+    query,
+    variables: { size: size?.toNumber(), start: start?.toNumber(), accountId, status },
   };
 }
