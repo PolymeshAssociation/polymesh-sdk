@@ -14,6 +14,7 @@ import {
   ClaimsGroupBy,
   ClaimsOrderBy,
   ClaimTypeEnum,
+  ConfidentialAsset,
   ConfidentialAssetHistory,
   ConfidentialAssetHolder,
   ConfidentialAssetHoldersOrderBy,
@@ -1701,5 +1702,34 @@ export function transactionHistoryByConfidentialAssetQuery(
   return {
     query,
     variables: { size: size?.toNumber(), start: start?.toNumber(), assetId },
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get ConfidentialAsset details for a given id
+ */
+export function confidentialAssetQuery(
+  variables: QueryArgs<ConfidentialAsset, 'id'>
+): QueryOptions<QueryArgs<ConfidentialAsset, 'id'>> {
+  const query = gql`
+    query ConfidentialAssetQuery($id: String!) {
+      confidentialAssets(filter: { id: { equalTo: $id } }) {
+        nodes {
+          eventIdx
+          createdBlock {
+            blockId
+            datetime
+            hash
+          }
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
   };
 }

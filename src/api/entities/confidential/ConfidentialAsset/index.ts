@@ -12,13 +12,17 @@ import {
   PolymeshError,
   setConfidentialVenueFiltering,
 } from '~/internal';
-import { transactionHistoryByConfidentialAssetQuery } from '~/middleware/queries';
+import {
+  confidentialAssetQuery,
+  transactionHistoryByConfidentialAssetQuery,
+} from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
   ConfidentialAssetDetails,
   ConfidentialAssetTransactionHistory,
   ConfidentialVenueFilteringDetails,
   ErrorCode,
+  EventIdentifier,
   GroupedAuditors,
   IssueConfidentialAssetParams,
   ProcedureMethod,
@@ -31,12 +35,18 @@ import {
   bytesToString,
   identityIdToString,
   middlewareAssetHistoryToTransactionHistory,
+  middlewareEventDetailsToEventIdentifier,
   serializeConfidentialAssetId,
   tickerToString,
   u64ToBigNumber,
   u128ToBigNumber,
 } from '~/utils/conversion';
-import { assertCaAssetValid, calculateNextKey, createProcedureMethod } from '~/utils/internal';
+import {
+  assertCaAssetValid,
+  calculateNextKey,
+  createProcedureMethod,
+  optionize,
+} from '~/utils/internal';
 
 /**
  * Properties that uniquely identify a ConfidentialAsset
@@ -283,5 +293,29 @@ export class ConfidentialAsset extends Entity<UniqueIdentifiers, string> {
       next,
       count,
     };
+  }
+
+  /**
+   * Retrieve the identifier data (block number, date and event index) of the event that was emitted when the ConfidentialAsset was created
+   *
+   * @note uses the middlewareV2
+   * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
+   */
+  public async createdAt(): Promise<EventIdentifier | null> {
+    const { context, id } = this;
+
+    const {
+      data: {
+        confidentialAssets: {
+          nodes: [asset],
+        },
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'confidentialAssets'>>(
+      confidentialAssetQuery({
+        id,
+      })
+    );
+
+    return optionize(middlewareEventDetailsToEventIdentifier)(asset?.createdBlock, asset?.eventIdx);
   }
 }

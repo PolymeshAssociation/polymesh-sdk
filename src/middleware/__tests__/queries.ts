@@ -7,6 +7,7 @@ import {
   authorizationsQuery,
   claimsGroupingQuery,
   claimsQuery,
+  confidentialAssetQuery,
   confidentialAssetsByHolderQuery,
   createCustomClaimTypeQueryFilters,
   customClaimTypeQuery,
@@ -620,5 +621,18 @@ describe('confidentialAssetsByHolderQuery', () => {
       start: start.toNumber(),
       accountId: '1',
     });
+  });
+});
+
+describe('confidentialAssetQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      id: 'assetId',
+    };
+
+    const result = confidentialAssetQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
   });
 });
