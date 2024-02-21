@@ -3,8 +3,19 @@ import { ConfidentialAssetsElgamalCipherText } from '@polkadot/types/lookup';
 import type { Option, U8aFixed } from '@polkadot/types-codec';
 import BigNumber from 'bignumber.js';
 
-import { ConfidentialAsset, Context, Entity, Identity, PolymeshError } from '~/internal';
-import { confidentialAssetsByHolderQuery } from '~/middleware/queries';
+import {
+  ConfidentialAsset,
+  ConfidentialTransaction,
+  Context,
+  Entity,
+  Identity,
+  PolymeshError,
+} from '~/internal';
+import {
+  confidentialAssetsByHolderQuery,
+  ConfidentialTransactionsByConfidentialAccountArgs,
+  getConfidentialTransactionsByConfidentialAccountQuery,
+} from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import { ConfidentialAssetBalance, ErrorCode, ResultSet } from '~/types';
 import { Ensured } from '~/types/utils';
@@ -250,6 +261,49 @@ export class ConfidentialAccount extends Entity<UniqueIdentifiers, string> {
     );
 
     const data = nodes.map(({ assetId: id }) => new ConfidentialAsset({ id }, context));
+    const count = new BigNumber(totalCount);
+    const next = calculateNextKey(count, data.length, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
+  }
+
+  /**
+   * Retrieve the ConfidentialTransactions associated to this Account
+   *
+   * @note uses the middlewareV2
+   * @param filters.direction - the direction of the transaction (Incoming/Outgoing/All)
+   * @param filters.status - the transaction status (Created/Executed/Rejected)
+   * @param filters.size - page size
+   * @param filters.start - page offset
+   */
+  public async getTransactions(
+    filters: Omit<ConfidentialTransactionsByConfidentialAccountArgs, 'accountId'> & {
+      size?: BigNumber;
+      start?: BigNumber;
+    }
+  ): Promise<ResultSet<ConfidentialTransaction>> {
+    const { context, publicKey } = this;
+    const { size, start, status, direction } = filters;
+
+    const {
+      data: {
+        confidentialTransactions: { nodes, totalCount },
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'confidentialTransactions'>>(
+      getConfidentialTransactionsByConfidentialAccountQuery(
+        { accountId: publicKey, status, direction },
+        size,
+        start
+      )
+    );
+
+    const data = nodes.map(
+      ({ id }) => new ConfidentialTransaction({ id: new BigNumber(id) }, context)
+    );
     const count = new BigNumber(totalCount);
     const next = calculateNextKey(count, data.length, start);
 
