@@ -91,8 +91,8 @@ describe('ConfidentialAccounts Class', () => {
   describe('method: applyIncomingBalance', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = {
-        asset: 'someAsset',
-        account: 'someAccount',
+        confidentialAsset: 'someAsset',
+        confidentialAccount: 'someAccount',
       };
 
       const expectedTransaction =

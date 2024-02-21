@@ -1,7 +1,4 @@
-import {
-  PalletConfidentialAssetConfidentialAuditors,
-  PolymeshPrimitivesTicker,
-} from '@polkadot/types/lookup';
+import { PalletConfidentialAssetConfidentialAuditors } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import { Bytes } from '@polkadot/types-codec';
 import { when } from 'jest-when';
@@ -20,14 +17,11 @@ import * as utilsInternalModule from '~/utils/internal';
 describe('createConfidentialAsset procedure', () => {
   let mockContext: Mocked<Context>;
 
-  let ticker: string;
-  let rawTicker: PolymeshPrimitivesTicker;
   let data: string;
   let rawData: Bytes;
   let auditors: ConfidentialAccount[];
   let mediators: Identity[];
   let rawAuditors: PalletConfidentialAssetConfidentialAuditors;
-  let stringToTickerSpy: jest.SpyInstance;
   let stringToBytesSpy: jest.SpyInstance;
   let auditorsToConfidentialAuditorsSpy: jest.SpyInstance;
 
@@ -36,7 +30,6 @@ describe('createConfidentialAsset procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
     stringToBytesSpy = jest.spyOn(utilsConversionModule, 'stringToBytes');
     auditorsToConfidentialAuditorsSpy = jest.spyOn(
       utilsConversionModule,
@@ -58,12 +51,9 @@ describe('createConfidentialAsset procedure', () => {
       mediators: ['someMediatorDid'],
     });
 
-    ticker = 'SOME_TICKER';
-    rawTicker = dsMockUtils.createMockTicker(ticker);
     data = 'SOME_DATA';
     rawData = dsMockUtils.createMockBytes(data);
 
-    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
     when(stringToBytesSpy).calledWith(data, mockContext).mockReturnValue(rawData);
     when(auditorsToConfidentialAuditorsSpy)
       .calledWith(mockContext, auditors, mediators)
@@ -101,7 +91,6 @@ describe('createConfidentialAsset procedure', () => {
     });
     return expect(
       prepareCreateConfidentialAsset.call(proc, {
-        ticker,
         data,
         auditors: invalidAuditors,
       })
@@ -115,11 +104,10 @@ describe('createConfidentialAsset procedure', () => {
 
     const createConfidentialAssetTransaction = dsMockUtils.createTxMock(
       'confidentialAsset',
-      'createConfidentialAsset'
+      'createAsset'
     );
 
     let result = await prepareCreateConfidentialAsset.call(proc, {
-      ticker,
       data,
       auditors,
       mediators,
@@ -128,7 +116,7 @@ describe('createConfidentialAsset procedure', () => {
     expect(result).toEqual({
       transaction: createConfidentialAssetTransaction,
       resolver: expect.any(Function),
-      args: [rawTicker, rawData, rawAuditors],
+      args: [rawData, rawAuditors],
     });
 
     when(auditorsToConfidentialAuditorsSpy)
@@ -136,7 +124,6 @@ describe('createConfidentialAsset procedure', () => {
       .mockReturnValue(rawAuditors);
 
     result = await prepareCreateConfidentialAsset.call(proc, {
-      ticker,
       data,
       auditors,
       mediators: [],
@@ -145,11 +132,10 @@ describe('createConfidentialAsset procedure', () => {
     expect(result).toEqual({
       transaction: createConfidentialAssetTransaction,
       resolver: expect.any(Function),
-      args: [rawTicker, rawData, rawAuditors],
+      args: [rawData, rawAuditors],
     });
 
     result = await prepareCreateConfidentialAsset.call(proc, {
-      ticker,
       data,
       auditors,
     });
@@ -157,7 +143,7 @@ describe('createConfidentialAsset procedure', () => {
     expect(result).toEqual({
       transaction: createConfidentialAssetTransaction,
       resolver: expect.any(Function),
-      args: [rawTicker, rawData, rawAuditors],
+      args: [rawData, rawAuditors],
     });
   });
 

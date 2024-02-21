@@ -104,7 +104,7 @@ describe('ConfidentialAccount class', () => {
       expect(result).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            asset: expect.objectContaining({ id: assetId }),
+            confidentialAsset: expect.objectContaining({ id: assetId }),
             balance: encryptedBalance,
           }),
         ])
@@ -164,7 +164,7 @@ describe('ConfidentialAccount class', () => {
       expect(result).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            asset: expect.objectContaining({ id: assetId }),
+            confidentialAsset: expect.objectContaining({ id: assetId }),
             balance: encryptedBalance,
           }),
         ])

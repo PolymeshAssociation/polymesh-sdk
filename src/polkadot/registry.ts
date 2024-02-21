@@ -6,6 +6,7 @@
 import '@polkadot/types/types/registry';
 
 import type {
+  ConfidentialAssetsBurnConfidentialBurnProof,
   ConfidentialAssetsElgamalCipherText,
   ConfidentialAssetsElgamalCompressedElgamalPublicKey,
   FinalityGrandpaEquivocationPrecommit,
@@ -337,6 +338,7 @@ import type {
   PolymeshPrimitivesSettlementInstructionStatus,
   PolymeshPrimitivesSettlementLeg,
   PolymeshPrimitivesSettlementLegStatus,
+  PolymeshPrimitivesSettlementMediatorAffirmationStatus,
   PolymeshPrimitivesSettlementReceiptDetails,
   PolymeshPrimitivesSettlementReceiptMetadata,
   PolymeshPrimitivesSettlementSettlementType,
@@ -403,6 +405,7 @@ import type {
 
 declare module '@polkadot/types/types/registry' {
   interface InterfaceTypes {
+    ConfidentialAssetsBurnConfidentialBurnProof: ConfidentialAssetsBurnConfidentialBurnProof;
     ConfidentialAssetsElgamalCipherText: ConfidentialAssetsElgamalCipherText;
     ConfidentialAssetsElgamalCompressedElgamalPublicKey: ConfidentialAssetsElgamalCompressedElgamalPublicKey;
     FinalityGrandpaEquivocationPrecommit: FinalityGrandpaEquivocationPrecommit;
@@ -734,6 +737,7 @@ declare module '@polkadot/types/types/registry' {
     PolymeshPrimitivesSettlementInstructionStatus: PolymeshPrimitivesSettlementInstructionStatus;
     PolymeshPrimitivesSettlementLeg: PolymeshPrimitivesSettlementLeg;
     PolymeshPrimitivesSettlementLegStatus: PolymeshPrimitivesSettlementLegStatus;
+    PolymeshPrimitivesSettlementMediatorAffirmationStatus: PolymeshPrimitivesSettlementMediatorAffirmationStatus;
     PolymeshPrimitivesSettlementReceiptDetails: PolymeshPrimitivesSettlementReceiptDetails;
     PolymeshPrimitivesSettlementReceiptMetadata: PolymeshPrimitivesSettlementReceiptMetadata;
     PolymeshPrimitivesSettlementSettlementType: PolymeshPrimitivesSettlementSettlementType;

@@ -71,7 +71,7 @@ export class ConfidentialAccounts {
   >;
 
   /**
-   * Applies incoming balance to a Confidnetial Account
+   * Applies incoming balance to a Confidential Account
    */
   public applyIncomingBalance: ProcedureMethod<ApplyIncomingBalanceParams, ConfidentialAccount>;
 }

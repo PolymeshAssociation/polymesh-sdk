@@ -127,6 +127,7 @@ import type {
   PolymeshPrimitivesSettlementInstructionStatus,
   PolymeshPrimitivesSettlementLeg,
   PolymeshPrimitivesSettlementLegStatus,
+  PolymeshPrimitivesSettlementMediatorAffirmationStatus,
   PolymeshPrimitivesSettlementVenue,
   PolymeshPrimitivesStatisticsAssetScope,
   PolymeshPrimitivesStatisticsStat1stKey,
@@ -373,6 +374,16 @@ declare module '@polkadot/api-base/types/storage' {
             | [PolymeshPrimitivesTicker | string | Uint8Array, Bytes | string | Uint8Array]
         ) => Observable<u128>,
         [ITuple<[PolymeshPrimitivesTicker, Bytes]>]
+      >;
+      /**
+       * The list of mandatory mediators for every ticker.
+       **/
+      mandatoryMediators: AugmentedQuery<
+        ApiType,
+        (
+          arg: PolymeshPrimitivesTicker | string | Uint8Array
+        ) => Observable<BTreeSet<PolymeshPrimitivesIdentityId>>,
+        [PolymeshPrimitivesTicker]
       >;
       /**
        * All tickers that don't need an affirmation to be received by an identity.
@@ -914,6 +925,19 @@ declare module '@polkadot/api-base/types/storage' {
     };
     confidentialAsset: {
       /**
+       * Is the confidential account asset frozen.
+       *
+       * account -> asset id -> bool
+       **/
+      accountAssetFrozen: AugmentedQuery<
+        ApiType,
+        (
+          arg1: PalletConfidentialAssetConfidentialAccount | string | Uint8Array,
+          arg2: U8aFixed | string | Uint8Array
+        ) => Observable<bool>,
+        [PalletConfidentialAssetConfidentialAccount, U8aFixed]
+      >;
+      /**
        * Contains the encrypted balance of a confidential account.
        *
        * account -> asset id -> Option<CipherText>
@@ -948,6 +972,16 @@ declare module '@polkadot/api-base/types/storage' {
         (
           arg: U8aFixed | string | Uint8Array
         ) => Observable<Option<PalletConfidentialAssetConfidentialAuditors>>,
+        [U8aFixed]
+      >;
+      /**
+       * Is the confidential asset frozen.
+       *
+       * asset id -> bool
+       **/
+      assetFrozen: AugmentedQuery<
+        ApiType,
+        (arg: U8aFixed | string | Uint8Array) => Observable<bool>,
         [U8aFixed]
       >;
       /**
@@ -1005,16 +1039,6 @@ declare module '@polkadot/api-base/types/storage' {
        * RngNonce - Nonce used as `subject` to `Randomness`.
        **/
       rngNonce: AugmentedQuery<ApiType, () => Observable<u64>, []>;
-      /**
-       * Map a ticker to a confidential asset id.
-       *
-       * ticker -> asset id
-       **/
-      tickerToAsset: AugmentedQuery<
-        ApiType,
-        (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<Option<U8aFixed>>,
-        [PolymeshPrimitivesTicker]
-      >;
       /**
        * Number of transactions in the system (It's one more than the actual number)
        **/
@@ -2658,6 +2682,17 @@ declare module '@polkadot/api-base/types/storage' {
           arg2: u64 | AnyNumber | Uint8Array
         ) => Observable<PolymeshPrimitivesSettlementLegStatus>,
         [u64, u64]
+      >;
+      /**
+       * The status for the mediators affirmation.
+       **/
+      instructionMediatorsAffirmations: AugmentedQuery<
+        ApiType,
+        (
+          arg1: u64 | AnyNumber | Uint8Array,
+          arg2: PolymeshPrimitivesIdentityId | string | Uint8Array
+        ) => Observable<PolymeshPrimitivesSettlementMediatorAffirmationStatus>,
+        [u64, PolymeshPrimitivesIdentityId]
       >;
       /**
        * Instruction memo

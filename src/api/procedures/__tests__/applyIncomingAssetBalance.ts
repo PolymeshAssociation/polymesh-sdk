@@ -41,8 +41,8 @@ describe('applyIncomingAssetBalance procedure', () => {
     account = entityMockUtils.getConfidentialAccountInstance();
 
     args = {
-      asset,
-      account,
+      confidentialAsset: asset,
+      confidentialAccount: account,
     };
   });
 

@@ -8,7 +8,7 @@ import { bigNumberToU128, serializeConfidentialAssetId } from '~/utils/conversio
 import { asConfidentialAccount } from '~/utils/internal';
 
 export type Params = IssueConfidentialAssetParams & {
-  asset: ConfidentialAsset;
+  confidentialAsset: ConfidentialAsset;
 };
 
 /**
@@ -17,9 +17,7 @@ export type Params = IssueConfidentialAssetParams & {
 export async function prepareConfidentialAssets(
   this: Procedure<Params, ConfidentialAsset>,
   args: Params
-): Promise<
-  TransactionSpec<ConfidentialAsset, ExtrinsicParams<'confidentialAsset', 'mintConfidentialAsset'>>
-> {
+): Promise<TransactionSpec<ConfidentialAsset, ExtrinsicParams<'confidentialAsset', 'mint'>>> {
   const {
     context: {
       polymeshApi: {
@@ -28,7 +26,7 @@ export async function prepareConfidentialAssets(
     },
     context,
   } = this;
-  const { asset, amount, account } = args;
+  const { confidentialAsset: asset, amount, confidentialAccount: account } = args;
 
   const { id: assetId } = asset;
 
@@ -71,7 +69,7 @@ export async function prepareConfidentialAssets(
   }
 
   return {
-    transaction: confidentialAsset.mintConfidentialAsset,
+    transaction: confidentialAsset.mint,
     args: [
       serializeConfidentialAssetId(assetId),
       bigNumberToU128(amount, context),
@@ -89,13 +87,13 @@ export function getAuthorization(
   args: Params
 ): ProcedureAuthorization {
   const {
-    asset: { id: assetId },
+    confidentialAsset: { id: assetId },
   } = args;
 
   return {
     roles: [{ type: RoleType.ConfidentialAssetOwner, assetId }],
     permissions: {
-      transactions: [TxTags.confidentialAsset.MintConfidentialAsset],
+      transactions: [TxTags.confidentialAsset.Mint],
       assets: [],
       portfolios: [],
     },
