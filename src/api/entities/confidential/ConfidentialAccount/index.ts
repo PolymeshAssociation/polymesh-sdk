@@ -12,12 +12,19 @@ import {
   PolymeshError,
 } from '~/internal';
 import {
+  ConfidentialAssetHistoryByConfidentialAccountArgs,
   confidentialAssetsByHolderQuery,
   ConfidentialTransactionsByConfidentialAccountArgs,
+  getConfidentialAssetHistoryByConfidentialAccountQuery,
   getConfidentialTransactionsByConfidentialAccountQuery,
 } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { ConfidentialAssetBalance, ErrorCode, ResultSet } from '~/types';
+import {
+  ConfidentialAssetBalance,
+  ConfidentialAssetHistoryEntry,
+  ErrorCode,
+  ResultSet,
+} from '~/types';
 import { Ensured } from '~/types/utils';
 import {
   confidentialAccountToMeshPublicKey,
@@ -303,6 +310,59 @@ export class ConfidentialAccount extends Entity<UniqueIdentifiers, string> {
 
     const data = nodes.map(
       ({ id }) => new ConfidentialTransaction({ id: new BigNumber(id) }, context)
+    );
+    const count = new BigNumber(totalCount);
+    const next = calculateNextKey(count, data.length, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
+  }
+
+  /**
+   * Retrieve the ConfidentialTransactions associated to this Account
+   *
+   * @note uses the middlewareV2
+   * @param filters.eventId - the type of transaction (AccountDepositIncoming/AccountDeposit/AccountWithdraw)
+   * @param filters.assetId - the assetId for which the transactions were made
+   * @param filters.size - page size
+   * @param filters.start - page offset
+   */
+  public async getTransactionHistory(
+    filters: Omit<ConfidentialAssetHistoryByConfidentialAccountArgs, 'accountId'> & {
+      size?: BigNumber;
+      start?: BigNumber;
+    }
+  ): Promise<ResultSet<ConfidentialAssetHistoryEntry>> {
+    const { context, publicKey } = this;
+    const { size, start, ...rest } = filters;
+
+    const {
+      data: {
+        confidentialAssetHistories: { nodes, totalCount },
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'confidentialAssetHistories'>>(
+      getConfidentialAssetHistoryByConfidentialAccountQuery(
+        { accountId: publicKey, ...rest },
+        size,
+        start
+      )
+    );
+
+    const data: ConfidentialAssetHistoryEntry[] = nodes.map(
+      ({ id, assetId, transactionId, amount, eventId }) => {
+        return {
+          id,
+          asset: new ConfidentialAsset({ id: assetId }, context),
+          ...(transactionId && {
+            transaction: new ConfidentialTransaction({ id: new BigNumber(transactionId) }, context),
+          }),
+          amount,
+          eventId,
+        };
+      }
     );
     const count = new BigNumber(totalCount);
     const next = calculateNextKey(count, data.length, start);

@@ -22,6 +22,7 @@ import {
   Distribution,
   DistributionPayment,
   Event,
+  EventIdEnum,
   EventsOrderBy,
   Extrinsic,
   ExtrinsicsOrderBy,
@@ -1794,5 +1795,92 @@ export function getConfidentialTransactionsByConfidentialAccountQuery(
   return {
     query,
     variables: { size: size?.toNumber(), start: start?.toNumber(), accountId, status },
+  };
+}
+
+export type ConfidentialAssetHistoryByConfidentialAccountArgs = {
+  accountId: string;
+  eventId?:
+    | EventIdEnum.AccountDepositIncoming
+    | EventIdEnum.AccountDeposit
+    | EventIdEnum.AccountWithdraw;
+  assetId?: string;
+};
+
+/**
+ * @hidden
+ */
+function createGetConfidentialAssetHistoryByConfidentialAccountQueryArgs(
+  variables: PaginatedQueryArgs<ConfidentialAssetHistoryByConfidentialAccountArgs>
+): {
+  args: string;
+  filter: string;
+  variables: PaginatedQueryArgs<ConfidentialAssetHistoryByConfidentialAccountArgs>;
+} {
+  const args = ['$size: Int, $start: Int'];
+  const filters = [];
+  const { assetId, eventId } = variables;
+
+  args.push('$accountId: String!');
+  filters.push('accountId: { equalTo: $accountId }');
+
+  if (assetId?.length) {
+    args.push('$assetId: String!');
+    filters.push('assetId: { equalTo: $assetId }');
+  }
+  if (eventId) {
+    args.push('$eventId: EventIdEnum!');
+    filters.push('eventId: { equalTo: $eventId }');
+  }
+
+  return {
+    args: `(${args.join()})`,
+    filter: filters.length ? `filter: { ${filters.join()} }` : '',
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get ConfidentialAssetHistory where a ConfidentialAccount is involved
+ */
+export function getConfidentialAssetHistoryByConfidentialAccountQuery(
+  params: ConfidentialAssetHistoryByConfidentialAccountArgs,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<ConfidentialAssetHistoryByConfidentialAccountArgs>> {
+  const { args, filter, variables } =
+    createGetConfidentialAssetHistoryByConfidentialAccountQueryArgs(params);
+
+  const query = gql`
+  query ConfidentialAssetHistoryByConfidentialAccount${args} {
+    confidentialAssetHistories(
+      ${filter},
+      first: $size,
+      offset: $start
+    ) {
+      nodes {
+        id
+        assetId
+        amount
+        eventId
+        eventIdx
+        memo
+        transactionId
+          createdBlock {
+            blockId
+            datetime
+            hash
+          }
+      }
+      totalCount
+    }
+  }
+`;
+
+  return {
+    query,
+    variables: { ...variables, size: size?.toNumber(), start: start?.toNumber() },
   };
 }
