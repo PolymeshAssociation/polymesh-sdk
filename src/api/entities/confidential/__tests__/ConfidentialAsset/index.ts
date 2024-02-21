@@ -3,7 +3,10 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { ConfidentialAsset, Context, Entity, PolymeshError, PolymeshTransaction } from '~/internal';
-import { transactionHistoryByConfidentialAssetQuery } from '~/middleware/queries';
+import {
+  confidentialAssetQuery,
+  transactionHistoryByConfidentialAssetQuery,
+} from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { ConfidentialAssetTransactionHistory, ErrorCode } from '~/types';
 import { tuple } from '~/types/utils';
@@ -389,6 +392,52 @@ describe('ConfidentialAsset class', () => {
 
       expect(result.count).toEqual(new BigNumber(5));
       expect(result.next).toEqual(new BigNumber(result.data.length));
+    });
+  });
+
+  describe('method: createdAt', () => {
+    it('should return the event identifier object of the ConfidentialAsset creation', async () => {
+      const blockNumber = new BigNumber(1234);
+      const blockDate = new Date('4/14/2020');
+      const blockHash = 'someHash';
+      const eventIdx = new BigNumber(1);
+      const variables = {
+        id,
+      };
+      const fakeResult = { blockNumber, blockHash, blockDate, eventIndex: eventIdx };
+
+      dsMockUtils.createApolloQueryMock(confidentialAssetQuery(variables), {
+        confidentialAssets: {
+          nodes: [
+            {
+              createdBlock: {
+                blockId: blockNumber.toNumber(),
+                datetime: blockDate,
+                hash: blockHash,
+              },
+              eventIdx: eventIdx.toNumber(),
+            },
+          ],
+        },
+      });
+
+      const result = await confidentialAsset.createdAt();
+
+      expect(result).toEqual(fakeResult);
+    });
+
+    it('should return null if the query result is empty', async () => {
+      const variables = {
+        id,
+      };
+
+      dsMockUtils.createApolloQueryMock(confidentialAssetQuery(variables), {
+        confidentialAssets: {
+          nodes: [],
+        },
+      });
+      const result = await confidentialAsset.createdAt();
+      expect(result).toBeNull();
     });
   });
 });
