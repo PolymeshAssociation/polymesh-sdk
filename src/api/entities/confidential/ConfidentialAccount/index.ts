@@ -30,9 +30,10 @@ import {
   confidentialAccountToMeshPublicKey,
   identityIdToString,
   meshConfidentialAssetToAssetId,
+  middlewareEventDetailsToEventIdentifier,
   serializeConfidentialAssetId,
 } from '~/utils/conversion';
-import { asConfidentialAsset, calculateNextKey } from '~/utils/internal';
+import { asConfidentialAsset, calculateNextKey, optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -322,7 +323,7 @@ export class ConfidentialAccount extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieve the ConfidentialTransactions associated to this Account
+   * Retrieve the ConfidentialTransactionHistory associated to this Account
    *
    * @note uses the middlewareV2
    * @param filters.eventId - the type of transaction (AccountDepositIncoming/AccountDeposit/AccountWithdraw)
@@ -331,13 +332,13 @@ export class ConfidentialAccount extends Entity<UniqueIdentifiers, string> {
    * @param filters.start - page offset
    */
   public async getTransactionHistory(
-    filters: Omit<ConfidentialAssetHistoryByConfidentialAccountArgs, 'accountId'> & {
+    filters?: Omit<ConfidentialAssetHistoryByConfidentialAccountArgs, 'accountId'> & {
       size?: BigNumber;
       start?: BigNumber;
     }
   ): Promise<ResultSet<ConfidentialAssetHistoryEntry>> {
     const { context, publicKey } = this;
-    const { size, start, ...rest } = filters;
+    const { size, start, ...rest } = filters ?? {};
 
     const {
       data: {
@@ -352,15 +353,13 @@ export class ConfidentialAccount extends Entity<UniqueIdentifiers, string> {
     );
 
     const data: ConfidentialAssetHistoryEntry[] = nodes.map(
-      ({ id, assetId, transactionId, amount, eventId }) => {
+      ({ id, assetId, amount, eventId, createdBlock, eventIdx }) => {
         return {
           id,
           asset: new ConfidentialAsset({ id: assetId }, context),
-          ...(transactionId && {
-            transaction: new ConfidentialTransaction({ id: new BigNumber(transactionId) }, context),
-          }),
           amount,
           eventId,
+          createdAt: optionize(middlewareEventDetailsToEventIdentifier)(createdBlock, eventIdx),
         };
       }
     );

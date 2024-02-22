@@ -16,6 +16,7 @@ import {
   eventsByArgs,
   extrinsicByHash,
   extrinsicsByArgs,
+  getConfidentialAssetHistoryByConfidentialAccountQuery,
   getConfidentialTransactionsByConfidentialAccountQuery,
   heartbeatQuery,
   instructionsByDidQuery,
@@ -739,6 +740,78 @@ describe('getConfidentialTransactionsByConfidentialAccountQuery', () => {
       size: size.toNumber(),
       start: start.toNumber(),
       accountId: '1',
+    });
+  });
+});
+
+describe('getConfidentialAssetHistoryByConfidentialAccountQuery', () => {
+  const accountId = 'accountId';
+  const assetId = 'assetId';
+  const eventId = EventIdEnum.AccountDeposit;
+
+  it('should return correct query and variables when accountId is provided', () => {
+    const result = getConfidentialAssetHistoryByConfidentialAccountQuery({
+      accountId,
+    });
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({
+      size: undefined,
+      start: undefined,
+      eventId: undefined,
+      assetId: undefined,
+      accountId,
+    });
+  });
+
+  it('should return correct query and variables when eventId is provided', () => {
+    const result = getConfidentialAssetHistoryByConfidentialAccountQuery({
+      accountId,
+      eventId,
+    });
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({
+      size: undefined,
+      start: undefined,
+      eventId,
+      assetId: undefined,
+      accountId,
+    });
+  });
+
+  it('should return correct query and variables when assetId is provided', () => {
+    const result = getConfidentialAssetHistoryByConfidentialAccountQuery({
+      accountId,
+      assetId,
+    });
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({
+      size: undefined,
+      start: undefined,
+      eventId: undefined,
+      assetId,
+      accountId,
+    });
+  });
+
+  it('should return correct query and variables when size, start are provided', () => {
+    const size = new BigNumber(10);
+    const start = new BigNumber(0);
+    const result = getConfidentialAssetHistoryByConfidentialAccountQuery(
+      {
+        accountId,
+      },
+      size,
+      start
+    );
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({
+      size: size.toNumber(),
+      start: start.toNumber(),
+      accountId,
     });
   });
 });

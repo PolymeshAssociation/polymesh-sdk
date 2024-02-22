@@ -1817,12 +1817,10 @@ function createGetConfidentialAssetHistoryByConfidentialAccountQueryArgs(
   filter: string;
   variables: PaginatedQueryArgs<ConfidentialAssetHistoryByConfidentialAccountArgs>;
 } {
-  const args = ['$size: Int, $start: Int'];
-  const filters = [];
-  const { assetId, eventId } = variables;
+  const args = ['$size: Int, $start: Int, $accountId: String!'];
+  const filters = ['accountId: { equalTo: $accountId }'];
 
-  args.push('$accountId: String!');
-  filters.push('accountId: { equalTo: $accountId }');
+  const { assetId, eventId } = variables;
 
   if (assetId?.length) {
     args.push('$assetId: String!');
@@ -1835,7 +1833,7 @@ function createGetConfidentialAssetHistoryByConfidentialAccountQueryArgs(
 
   return {
     args: `(${args.join()})`,
-    filter: filters.length ? `filter: { ${filters.join()} }` : '',
+    filter: `filter: { ${filters.join()} }`,
     variables,
   };
 }
