@@ -21,7 +21,7 @@ export async function prepareApplyIncomingBalance(
     },
     context,
   } = this;
-  const { asset: assetInput, account: accountInput } = args;
+  const { confidentialAsset: assetInput, confidentialAccount: accountInput } = args;
 
   const account = asConfidentialAccount(accountInput, context);
   const asset = asConfidentialAsset(assetInput, context);

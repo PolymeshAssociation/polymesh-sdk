@@ -532,6 +532,8 @@ export enum AssetTx {
   RemoveTickerAffirmationExemption = 'asset.removeTickerAffirmationExemption',
   PreApproveTicker = 'asset.preApproveTicker',
   RemoveTickerPreApproval = 'asset.removeTickerPreApproval',
+  AddMandatoryMediators = 'asset.addMandatoryMediators',
+  RemoveMandatoryMediators = 'asset.removeMandatoryMediators',
 }
 
 export enum CapitalDistributionTx {
@@ -673,6 +675,11 @@ export enum SettlementTx {
   AffirmInstructionWithCount = 'settlement.affirmInstructionWithCount',
   RejectInstructionWithCount = 'settlement.rejectInstructionWithCount',
   WithdrawAffirmationWithCount = 'settlement.withdrawAffirmationWithCount',
+  AddInstructionWithMediators = 'settlement.addInstructionWithMediators',
+  AddAndAffirmWithMediators = 'settlement.addAndAffirmWithMediators',
+  AffirmInstructionAsMediator = 'settlement.affirmInstructionAsMediator',
+  WithdrawAffirmationAsMediator = 'settlement.withdrawAffirmationAsMediator',
+  RejectInstructionAsMediator = 'settlement.rejectInstructionAsMediator',
 }
 
 export enum StatisticsTx {
@@ -798,6 +805,12 @@ export enum ConfidentialAssetTx {
   AffirmTransactions = 'confidentialAsset.affirmTransactions',
   ExecuteTransaction = 'confidentialAsset.executeTransaction',
   RejectTransaction = 'confidentialAsset.rejectTransaction',
+  CreateAsset = 'confidentialAsset.createAsset',
+  Mint = 'confidentialAsset.mint',
+  SetAssetFrozen = 'confidentialAsset.setAssetFrozen',
+  SetAccountAssetFrozen = 'confidentialAsset.setAccountAssetFrozen',
+  ApplyIncomingBalances = 'confidentialAsset.applyIncomingBalances',
+  Burn = 'confidentialAsset.burn',
 }
 
 export enum ModuleName {

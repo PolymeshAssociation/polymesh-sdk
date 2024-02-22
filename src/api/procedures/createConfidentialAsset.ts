@@ -7,7 +7,6 @@ import {
   auditorsToConfidentialAuditors,
   meshConfidentialAssetToAssetId,
   stringToBytes,
-  stringToTicker,
 } from '~/utils/conversion';
 import { asConfidentialAccount, asIdentity, filterEventRecords } from '~/utils/internal';
 
@@ -22,7 +21,7 @@ export type Params = CreateConfidentialAssetParams;
 export const createConfidentialAssetResolver =
   (context: Context) =>
   (receipt: ISubmittableResult): ConfidentialAsset => {
-    const [{ data }] = filterEventRecords(receipt, 'confidentialAsset', 'ConfidentialAssetCreated');
+    const [{ data }] = filterEventRecords(receipt, 'confidentialAsset', 'AssetCreated');
     const id = meshConfidentialAssetToAssetId(data[1]);
 
     return new ConfidentialAsset({ id }, context);
@@ -35,10 +34,7 @@ export async function prepareCreateConfidentialAsset(
   this: Procedure<Params, ConfidentialAsset>,
   args: Params
 ): Promise<
-  TransactionSpec<
-    ConfidentialAsset,
-    ExtrinsicParams<'confidentialAsset', 'createConfidentialAsset'>
-  >
+  TransactionSpec<ConfidentialAsset, ExtrinsicParams<'confidentialAsset', 'createAsset'>>
 > {
   const {
     context: {
@@ -46,12 +42,8 @@ export async function prepareCreateConfidentialAsset(
     },
     context,
   } = this;
-  const { ticker, data, auditors, mediators } = args;
+  const { data, auditors, mediators } = args;
 
-  let rawTicker = null;
-  if (ticker) {
-    rawTicker = stringToTicker(ticker, context);
-  }
   const rawData = stringToBytes(data, context);
 
   const auditorAccounts = auditors.map(auditor => asConfidentialAccount(auditor, context));
@@ -77,12 +69,8 @@ export async function prepareCreateConfidentialAsset(
   }
 
   return {
-    transaction: tx.confidentialAsset.createConfidentialAsset,
-    args: [
-      rawTicker,
-      rawData,
-      auditorsToConfidentialAuditors(context, auditorAccounts, mediatorIdentities),
-    ],
+    transaction: tx.confidentialAsset.createAsset,
+    args: [rawData, auditorsToConfidentialAuditors(context, auditorAccounts, mediatorIdentities)],
     resolver: createConfidentialAssetResolver(context),
   };
 }
@@ -93,7 +81,7 @@ export async function prepareCreateConfidentialAsset(
 export const createConfidentialAsset = (): Procedure<Params, ConfidentialAsset> =>
   new Procedure(prepareCreateConfidentialAsset, {
     permissions: {
-      transactions: [TxTags.confidentialAsset.CreateConfidentialAsset],
+      transactions: [TxTags.confidentialAsset.CreateAsset],
       assets: [],
       portfolios: [],
     },

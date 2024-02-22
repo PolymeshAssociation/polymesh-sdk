@@ -37,7 +37,6 @@ import {
   middlewareAssetHistoryToTransactionHistory,
   middlewareEventDetailsToEventIdentifier,
   serializeConfidentialAssetId,
-  tickerToString,
   u64ToBigNumber,
   u128ToBigNumber,
 } from '~/utils/conversion';
@@ -90,7 +89,12 @@ export class ConfidentialAsset extends Entity<UniqueIdentifiers, string> {
     this.id = assertCaAssetValid(id);
 
     this.issue = createProcedureMethod(
-      { getProcedureAndArgs: args => [issueConfidentialAssets, { asset: this, ...args }] },
+      {
+        getProcedureAndArgs: args => [
+          issueConfidentialAssets,
+          { confidentialAsset: this, ...args },
+        ],
+      },
       context
     );
 
@@ -149,10 +153,9 @@ export class ConfidentialAsset extends Entity<UniqueIdentifiers, string> {
       });
     }
 
-    const { data, ticker, ownerDid, totalSupply } = assetDetails.unwrap();
+    const { data, ownerDid, totalSupply } = assetDetails.unwrap();
 
     return {
-      ticker: ticker.isNone ? undefined : tickerToString(ticker.unwrap()),
       data: bytesToString(data),
       totalSupply: u128ToBigNumber(totalSupply),
       owner: new Identity({ did: identityIdToString(ownerDid) }, context),

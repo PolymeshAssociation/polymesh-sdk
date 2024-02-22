@@ -11,12 +11,21 @@ export interface GroupedTransactions {
 
 export interface ConfidentialLeg {
   id: BigNumber;
+  /**
+   * the sender Confidential Account
+   */
   sender: ConfidentialAccount;
+  /**
+   * the receiver Confidential Account
+   */
   receiver: ConfidentialAccount;
   /**
    * The auditors for the leg, grouped by asset they are auditors for. Note: the same auditor may appear for multiple assets
    */
   assetAuditors: { asset: ConfidentialAsset; auditors: ConfidentialAccount[] }[];
+  /**
+   * List of mediator Identities
+   */
   mediators: Identity[];
 }
 

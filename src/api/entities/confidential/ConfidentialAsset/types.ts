@@ -8,10 +8,6 @@ export interface ConfidentialAssetDetails {
   owner: Identity;
   totalSupply: BigNumber;
   data: string;
-  /**
-   * optional ticker value if provided while creating the confidential Asset
-   */
-  ticker?: string;
 }
 
 export interface GroupedAuditors {
@@ -25,21 +21,13 @@ export interface CreateConfidentialAssetParams {
    */
   data: string;
   /**
-   * optional ticker to be assigned to the Confidential Asset
-   */
-  ticker?: string;
-  /**
-   * list of auditors for the Confidential Asset
+   * list of auditors for the Confidential Asset. This is a list of Confidential Accounts (or the public key of the ElGamal key pairs) of the auditors
    */
   auditors: (ConfidentialAccount | string)[];
   /**
-   * optional list of mediators for the Confidential Asset
+   * optional list of mediators for the Confidential Asset. This is a list of Identities or DIDs of the mediators
    */
   mediators?: (Identity | string)[];
-}
-
-export interface CreateConfidentialAccountParams {
-  publicKey: string;
 }
 
 export interface IssueConfidentialAssetParams {
@@ -50,7 +38,7 @@ export interface IssueConfidentialAssetParams {
   /**
    * the asset issuer's Confidential Account to receive the minted Assets
    */
-  account: ConfidentialAccount | string;
+  confidentialAccount: ConfidentialAccount | string;
 }
 
 export type ConfidentialVenueFilteringDetails =

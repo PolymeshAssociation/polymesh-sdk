@@ -108,7 +108,7 @@ export class ConfidentialAccount extends Entity<UniqueIdentifiers, string> {
       const assetId = meshConfidentialAssetToAssetId(rawAssetId);
       const encryptedBalance = rawBalance.unwrap();
       return {
-        asset: new ConfidentialAsset({ id: assetId }, context),
+        confidentialAsset: new ConfidentialAsset({ id: assetId }, context),
         balance: encryptedBalance.toString(),
       };
     };

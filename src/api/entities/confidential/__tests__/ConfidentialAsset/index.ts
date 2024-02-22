@@ -95,18 +95,14 @@ describe('ConfidentialAsset class', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = {
         amount: new BigNumber(100),
-        account: 'someAccount',
+        confidentialAccount: 'someAccount',
       };
 
       const expectedTransaction =
         'someTransaction' as unknown as PolymeshTransaction<ConfidentialAsset>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith(
-          { args: { asset: confidentialAsset, ...args }, transformer: undefined },
-          context,
-          {}
-        )
+        .calledWith({ args: { confidentialAsset, ...args }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
       const tx = await confidentialAsset.issue(args);
@@ -195,30 +191,11 @@ describe('ConfidentialAsset class', () => {
           did: assetDetails.ownerDid,
         }),
         totalSupply: assetDetails.totalSupply,
-        ticker: undefined,
       };
 
-      let result = await confidentialAsset.details();
+      const result = await confidentialAsset.details();
 
       expect(result).toEqual(expect.objectContaining(expectedAssetDetails));
-
-      detailsQueryMock.mockResolvedValueOnce(
-        dsMockUtils.createMockOption(
-          dsMockUtils.createMockConfidentialAssetDetails({
-            ...assetDetails,
-            ticker: dsMockUtils.createMockOption(dsMockUtils.createMockTicker('SOME_TICKER')),
-          })
-        )
-      );
-
-      result = await confidentialAsset.details();
-
-      expect(result).toEqual(
-        expect.objectContaining({
-          ...expectedAssetDetails,
-          ticker: 'SOME_TICKER',
-        })
-      );
     });
 
     it('should throw an error if confidential Asset details are not available', async () => {

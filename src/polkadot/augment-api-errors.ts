@@ -121,6 +121,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       NotFrozen: AugmentedError<ApiType>;
       /**
+       * Number of asset mediators would exceed the maximum allowed.
+       **/
+      NumberOfAssetMediatorsExceeded: AugmentedError<ApiType>;
+      /**
        * Transfers to self are not allowed
        **/
       SenderSameAsReceiver: AugmentedError<ApiType>;
@@ -452,21 +456,41 @@ declare module '@polkadot/api-base/types/errors' {
     };
     confidentialAsset: {
       /**
-       * Confidential mediator account already created.
+       * Confidential account for the asset is already frozen.
        **/
-      AuditorAccountAlreadyCreated: AugmentedError<ApiType>;
+      AccountAssetAlreadyFrozen: AugmentedError<ApiType>;
       /**
-       * Mediator account hasn't been created yet.
+       * Confidential account is frozen for the asset.
        **/
-      AuditorAccountMissing: AugmentedError<ApiType>;
+      AccountAssetFrozen: AugmentedError<ApiType>;
+      /**
+       * Confidential account for the asset wasn't frozen.
+       **/
+      AccountAssetNotFrozen: AugmentedError<ApiType>;
+      /**
+       * Confidential asset is already frozen.
+       **/
+      AlreadyFrozen: AugmentedError<ApiType>;
+      /**
+       * The amount can't be zero.
+       **/
+      AmountMustBeNonZero: AugmentedError<ApiType>;
+      /**
+       * Confidential asset is frozen.
+       **/
+      AssetFrozen: AugmentedError<ApiType>;
+      /**
+       * Can't burn more then the total supply.
+       **/
+      BurnAmountLargerThenTotalSupply: AugmentedError<ApiType>;
+      /**
+       * The caller is not a party of the transaction.
+       **/
+      CallerNotPartyOfTransaction: AugmentedError<ApiType>;
       /**
        * Confidential account already created.
        **/
       ConfidentialAccountAlreadyCreated: AugmentedError<ApiType>;
-      /**
-       * Confidential account's balance already initialized.
-       **/
-      ConfidentialAccountAlreadyInitialized: AugmentedError<ApiType>;
       /**
        * Confidential account hasn't been created yet.
        **/
@@ -475,14 +499,6 @@ declare module '@polkadot/api-base/types/errors' {
        * The confidential asset has already been created.
        **/
       ConfidentialAssetAlreadyCreated: AugmentedError<ApiType>;
-      /**
-       * Mediator account isn't a valid CompressedEncryptionPubKey.
-       **/
-      InvalidAuditorAccount: AugmentedError<ApiType>;
-      /**
-       * Confidential account isn't a valid CompressedEncryptionPubKey.
-       **/
-      InvalidConfidentialAccount: AugmentedError<ApiType>;
       /**
        * The confidential transfer sender proof is invalid.
        **/
@@ -496,13 +512,33 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       LegCountTooSmall: AugmentedError<ApiType>;
       /**
+       * Mediator identity doesn't exist.
+       **/
+      MediatorIdentityInvalid: AugmentedError<ApiType>;
+      /**
+       * The caller isn't the account owner.
+       **/
+      NotAccountOwner: AugmentedError<ApiType>;
+      /**
+       * The caller isn't the asset owner.
+       **/
+      NotAssetOwner: AugmentedError<ApiType>;
+      /**
        * The number of confidential asset auditors doesn't meet the minimum requirement.
        **/
       NotEnoughAssetAuditors: AugmentedError<ApiType>;
       /**
-       * A required auditor/mediator is missing.
+       * Confidential asset wasn't frozen.
        **/
-      RequiredAssetAuditorMissing: AugmentedError<ApiType>;
+      NotFrozen: AugmentedError<ApiType>;
+      /**
+       * The caller isn't the venue owner.
+       **/
+      NotVenueOwner: AugmentedError<ApiType>;
+      /**
+       * The sender must affirm the leg before the receiver/mediator.
+       **/
+      SenderMustAffirmFirst: AugmentedError<ApiType>;
       /**
        * Asset or leg has too many auditors.
        **/
@@ -516,10 +552,6 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       TotalSupplyAboveConfidentialBalanceLimit: AugmentedError<ApiType>;
       /**
-       * A confidential asset's total supply must be positive.
-       **/
-      TotalSupplyMustBePositive: AugmentedError<ApiType>;
-      /**
        * A confidential asset's total supply can't go above `T::MaxTotalSupply`.
        **/
       TotalSupplyOverLimit: AugmentedError<ApiType>;
@@ -528,10 +560,6 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       TransactionAlreadyAffirmed: AugmentedError<ApiType>;
       /**
-       * Transaction failed to execute.
-       **/
-      TransactionFailed: AugmentedError<ApiType>;
-      /**
        * Transaction has no legs.
        **/
       TransactionNoLegs: AugmentedError<ApiType>;
@@ -539,10 +567,6 @@ declare module '@polkadot/api-base/types/errors' {
        * Transaction has not been affirmed.
        **/
       TransactionNotAffirmed: AugmentedError<ApiType>;
-      /**
-       * The user is not authorized.
-       **/
-      Unauthorized: AugmentedError<ApiType>;
       /**
        * Venue does not have required permissions.
        **/
@@ -1586,6 +1610,10 @@ declare module '@polkadot/api-base/types/errors' {
     };
     settlement: {
       /**
+       * The caller is not a mediator in the instruction.
+       **/
+      CallerIsNotAMediator: AugmentedError<ApiType>;
+      /**
        * The caller is not a party of this instruction.
        **/
       CallerIsNotAParty: AugmentedError<ApiType>;
@@ -1622,6 +1650,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InstructionSettleBlockPassed: AugmentedError<ApiType>;
       /**
+       * The mediator's expiry date must be in the future.
+       **/
+      InvalidExpiryDate: AugmentedError<ApiType>;
+      /**
        * Only [`InstructionStatus::Pending`] or [`InstructionStatus::Failed`] instructions can be executed.
        **/
       InvalidInstructionStatusForExecution: AugmentedError<ApiType>;
@@ -1653,6 +1685,10 @@ declare module '@polkadot/api-base/types/errors' {
        * The maximum number of receipts was exceeded.
        **/
       MaxNumberOfReceiptsExceeded: AugmentedError<ApiType>;
+      /**
+       * The expiry date for the mediator's affirmation has passed.
+       **/
+      MediatorAffirmationExpired: AugmentedError<ApiType>;
       /**
        * Multiple receipts for the same leg are not allowed.
        **/

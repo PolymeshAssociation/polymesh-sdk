@@ -41,8 +41,8 @@ describe('applyIncomingAssetBalance procedure', () => {
     account = entityMockUtils.getConfidentialAccountInstance();
 
     args = {
-      asset,
-      account,
+      confidentialAsset: asset,
+      confidentialAccount: account,
     };
   });
 
@@ -86,7 +86,7 @@ describe('applyIncomingAssetBalance procedure', () => {
     await expect(
       prepareApplyIncomingBalance.call(proc, {
         ...args,
-        account: entityMockUtils.getConfidentialAccountInstance({
+        confidentialAccount: entityMockUtils.getConfidentialAccountInstance({
           getIdentity: null,
         }),
       })
@@ -95,7 +95,7 @@ describe('applyIncomingAssetBalance procedure', () => {
     await expect(
       prepareApplyIncomingBalance.call(proc, {
         ...args,
-        account: entityMockUtils.getConfidentialAccountInstance({
+        confidentialAccount: entityMockUtils.getConfidentialAccountInstance({
           getIdentity: entityMockUtils.getIdentityInstance({
             did: 'someRandomDid',
           }),

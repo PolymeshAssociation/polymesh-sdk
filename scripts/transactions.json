@@ -256,7 +256,9 @@
     "exempt_ticker_affirmation": "exempt_ticker_affirmation",
     "remove_ticker_affirmation_exemption": "remove_ticker_affirmation_exemption",
     "pre_approve_ticker": "pre_approve_ticker",
-    "remove_ticker_pre_approval": "remove_ticker_pre_approval"
+    "remove_ticker_pre_approval": "remove_ticker_pre_approval",
+    "add_mandatory_mediators": "add_mandatory_mediators",
+    "remove_mandatory_mediators": "remove_mandatory_mediators"
   },
   "CapitalDistribution": {
     "distribute": "distribute",
@@ -387,7 +389,12 @@
     "affirm_with_receipts_with_count": "affirm_with_receipts_with_count",
     "affirm_instruction_with_count": "affirm_instruction_with_count",
     "reject_instruction_with_count": "reject_instruction_with_count",
-    "withdraw_affirmation_with_count": "withdraw_affirmation_with_count"
+    "withdraw_affirmation_with_count": "withdraw_affirmation_with_count",
+    "add_instruction_with_mediators": "add_instruction_with_mediators",
+    "add_and_affirm_with_mediators": "add_and_affirm_with_mediators",
+    "affirm_instruction_as_mediator": "affirm_instruction_as_mediator",
+    "withdraw_affirmation_as_mediator": "withdraw_affirmation_as_mediator",
+    "reject_instruction_as_mediator": "reject_instruction_as_mediator"
   },
   "Statistics": {
     "add_transfer_manager": "add_transfer_manager",
@@ -499,6 +506,12 @@
     "add_transaction": "add_transaction",
     "affirm_transactions": "affirm_transactions",
     "execute_transaction": "execute_transaction",
-    "reject_transaction": "reject_transaction"
+    "reject_transaction": "reject_transaction",
+    "create_asset": "create_asset",
+    "mint": "mint",
+    "set_asset_frozen": "set_asset_frozen",
+    "set_account_asset_frozen": "set_account_asset_frozen",
+    "apply_incoming_balances": "apply_incoming_balances",
+    "burn": "burn"
   }
 }

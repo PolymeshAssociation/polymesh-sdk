@@ -36,6 +36,7 @@ import type {
   Permill,
 } from '@polkadot/types/interfaces/runtime';
 import type {
+  ConfidentialAssetsBurnConfidentialBurnProof,
   PalletBridgeBridgeTx,
   PalletConfidentialAssetAffirmTransactions,
   PalletConfidentialAssetConfidentialAccount,
@@ -183,6 +184,24 @@ declare module '@polkadot/api-base/types/submittable' {
           ticker: PolymeshPrimitivesTicker | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [Vec<PolymeshPrimitivesDocument>, PolymeshPrimitivesTicker]
+      >;
+      /**
+       * Sets all identities in the `mediators` set as mandatory mediators for any instruction transfering `ticker`.
+       *
+       * # Arguments
+       * * `origin`: The secondary key of the sender.
+       * * `ticker`: The [`Ticker`] of the asset that will require the mediators.
+       * * `mediators`: A set of [`IdentityId`] of all the mandatory mediators for the given ticker.
+       *
+       * # Permissions
+       * * Asset
+       **/
+      addMandatoryMediators: AugmentedSubmittable<
+        (
+          ticker: PolymeshPrimitivesTicker | string | Uint8Array,
+          mediators: BTreeSet<PolymeshPrimitivesIdentityId>
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesTicker, BTreeSet<PolymeshPrimitivesIdentityId>]
       >;
       /**
        * Forces a transfer of token from `from_portfolio` to the caller's default portfolio.
@@ -624,6 +643,24 @@ declare module '@polkadot/api-base/types/submittable' {
           localKey: u64 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [PolymeshPrimitivesTicker, u64]
+      >;
+      /**
+       * Removes all identities in the `mediators` set from the mandatory mediators list for the given `ticker`.
+       *
+       * # Arguments
+       * * `origin`: The secondary key of the sender.
+       * * `ticker`: The [`Ticker`] of the asset that will have mediators removed.
+       * * `mediators`: A set of [`IdentityId`] of all the mediators that will be removed from the mandatory mediators list.
+       *
+       * # Permissions
+       * * Asset
+       **/
+      removeMandatoryMediators: AugmentedSubmittable<
+        (
+          ticker: PolymeshPrimitivesTicker | string | Uint8Array,
+          mediators: BTreeSet<PolymeshPrimitivesIdentityId>
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesTicker, BTreeSet<PolymeshPrimitivesIdentityId>]
       >;
       /**
        * Removes the asset metadata value of a metadata key.
@@ -2078,6 +2115,59 @@ declare module '@polkadot/api-base/types/submittable' {
         [PalletConfidentialAssetConfidentialAccount, U8aFixed]
       >;
       /**
+       * Applies any incoming balance to the confidential account balance.
+       *
+       * # Arguments
+       * * `origin` - contains the secondary key of the caller (i.e who signed the transaction to execute this function).
+       * * `account` - the confidential account (Elgamal public key) of the `origin`.
+       * * `max_updates` - The maximum number of incoming balances to apply.
+       *
+       * # Errors
+       * - `BadOrigin` if not signed.
+       **/
+      applyIncomingBalances: AugmentedSubmittable<
+        (
+          account: PalletConfidentialAssetConfidentialAccount | string | Uint8Array,
+          maxUpdates: u16 | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PalletConfidentialAssetConfidentialAccount, u16]
+      >;
+      /**
+       * Burn assets from the issuer's `account`.
+       *
+       * # Arguments
+       * * `origin` - contains the secondary key of the caller (i.e who signed the transaction to execute this function).
+       * * `asset_id` - the asset_id symbol of the token.
+       * * `amount` - amount of tokens to mint.
+       * * `account` - the asset isser's confidential account to receive the minted assets.
+       * * `burn_proof` - The burn proof.
+       *
+       * # Errors
+       * - `BadOrigin` if not signed.
+       * - `NotAccountOwner` if origin is not the owner of the `account`.
+       * - `NotAssetOwner` if origin is not the owner of the asset.
+       * - `AmountMustBeNonZero` if `amount` is zero.
+       * - `UnknownConfidentialAsset` The asset_id is not a confidential asset.
+       **/
+      burn: AugmentedSubmittable<
+        (
+          assetId: U8aFixed | string | Uint8Array,
+          amount: u128 | AnyNumber | Uint8Array,
+          account: PalletConfidentialAssetConfidentialAccount | string | Uint8Array,
+          proof:
+            | ConfidentialAssetsBurnConfidentialBurnProof
+            | { encodedInnerProof?: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [
+          U8aFixed,
+          u128,
+          PalletConfidentialAssetConfidentialAccount,
+          ConfidentialAssetsBurnConfidentialBurnProof
+        ]
+      >;
+      /**
        * Register a confidential account.
        *
        * # Arguments
@@ -2095,24 +2185,17 @@ declare module '@polkadot/api-base/types/submittable' {
       /**
        * Initializes a new confidential security token.
        * Makes the initiating account the owner of the security token
-       * & the balance of the owner is set to total zero. To set to total supply, `mint_confidential_asset` should
+       * & the balance of the owner is set to total zero. To set to total supply, `mint` should
        * be called after a successful call of this function.
        *
        * # Arguments
        * * `origin` - contains the secondary key of the caller (i.e who signed the transaction to execute this function).
        *
        * # Errors
-       * - `TotalSupplyAboveLimit` if `total_supply` exceeds the limit.
        * - `BadOrigin` if not signed.
        **/
-      createConfidentialAsset: AugmentedSubmittable<
+      createAsset: AugmentedSubmittable<
         (
-          ticker:
-            | Option<PolymeshPrimitivesTicker>
-            | null
-            | Uint8Array
-            | PolymeshPrimitivesTicker
-            | string,
           data: Bytes | string | Uint8Array,
           auditors:
             | PalletConfidentialAssetConfidentialAuditors
@@ -2120,7 +2203,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [Option<PolymeshPrimitivesTicker>, Bytes, PalletConfidentialAssetConfidentialAuditors]
+        [Bytes, PalletConfidentialAssetConfidentialAuditors]
       >;
       /**
        * Registers a new venue.
@@ -2161,12 +2244,13 @@ declare module '@polkadot/api-base/types/submittable' {
        *
        * # Errors
        * - `BadOrigin` if not signed.
-       * - `Unauthorized` if origin is not the owner of the asset.
-       * - `TotalSupplyMustBePositive` if `amount` is zero.
+       * - `NotAccountOwner` if origin is not the owner of the `account`.
+       * - `NotAssetOwner` if origin is not the owner of the asset.
+       * - `AmountMustBeNonZero` if `amount` is zero.
        * - `TotalSupplyAboveConfidentialBalanceLimit` if `total_supply` exceeds the confidential balance limit.
        * - `UnknownConfidentialAsset` The asset_id is not a confidential asset.
        **/
-      mintConfidentialAsset: AugmentedSubmittable<
+      mint: AugmentedSubmittable<
         (
           assetId: U8aFixed | string | Uint8Array,
           amount: u128 | AnyNumber | Uint8Array,
@@ -2183,6 +2267,44 @@ declare module '@polkadot/api-base/types/submittable' {
           legCount: u32 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [PalletConfidentialAssetTransactionId, u32]
+      >;
+      /**
+       * The confidential asset issuer can freeze/unfreeze accounts.
+       *
+       * # Arguments
+       * * `origin` - Must be the asset issuer.
+       * * `account` - the confidential account to lock/unlock.
+       * * `asset_id` - AssetId of confidential account.
+       * * `freeze` - freeze/unfreeze.
+       *
+       * # Errors
+       * - `BadOrigin` if not signed.
+       **/
+      setAccountAssetFrozen: AugmentedSubmittable<
+        (
+          account: PalletConfidentialAssetConfidentialAccount | string | Uint8Array,
+          assetId: U8aFixed | string | Uint8Array,
+          freeze: bool | boolean | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PalletConfidentialAssetConfidentialAccount, U8aFixed, bool]
+      >;
+      /**
+       * Freeze/unfreeze a confidential asset.
+       *
+       * # Arguments
+       * * `origin` - Must be the asset issuer.
+       * * `asset_id` - confidential asset to freeze/unfreeze.
+       * * `freeze` - freeze/unfreeze.
+       *
+       * # Errors
+       * - `BadOrigin` if not signed.
+       **/
+      setAssetFrozen: AugmentedSubmittable<
+        (
+          assetId: U8aFixed | string | Uint8Array,
+          freeze: bool | boolean | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [U8aFixed, bool]
       >;
       /**
        * Enables or disabled venue filtering for a token.
@@ -5349,14 +5471,13 @@ declare module '@polkadot/api-base/types/submittable' {
        * Adds and affirms a new instruction.
        *
        * # Arguments
-       * * `venue_id` - ID of the venue this instruction belongs to.
-       * * `settlement_type` - Defines if the instruction should be settled in the next block, after receiving all affirmations
-       * or waiting till a specific block.
-       * * `trade_date` - Optional date from which people can interact with this instruction.
-       * * `value_date` - Optional date after which the instruction should be settled (not enforced)
-       * * `legs` - Legs included in this instruction.
-       * * `portfolios` - Portfolios that the sender controls and wants to use in this affirmations.
-       * * `instruction_memo` - Memo field for this instruction.
+       * * `venue_id`: The [`VenueId`] of the venue this instruction belongs to.
+       * * `settlement_type`: The [`SettlementType`] specifying when the instruction should be settled.
+       * * `trade_date`: Optional date from which people can interact with this instruction.
+       * * `value_date`: Optional date after which the instruction should be settled (not enforced).
+       * * `legs`: A vector of all [`Leg`] included in this instruction.
+       * * `portfolios`: A vector of [`PortfolioId`] under the caller's control and intended for affirmation.
+       * * `memo`: An optional [`Memo`] field for this instruction.
        *
        * # Permissions
        * * Portfolio
@@ -5409,19 +5530,80 @@ declare module '@polkadot/api-base/types/submittable' {
         ]
       >;
       /**
+       * Adds and affirms a new instruction with mediators.
+       *
+       * # Arguments
+       * * `venue_id`: The [`VenueId`] of the venue this instruction belongs to.
+       * * `settlement_type`: The [`SettlementType`] specifying when the instruction should be settled.
+       * * `trade_date`: Optional date from which people can interact with this instruction.
+       * * `value_date`: Optional date after which the instruction should be settled (not enforced).
+       * * `legs`: A vector of all [`Leg`] included in this instruction.
+       * * `portfolios`: A vector of [`PortfolioId`] under the caller's control and intended for affirmation.
+       * * `instruction_memo`: An optional [`Memo`] field for this instruction.
+       * * `mediators`: A set of [`IdentityId`] of all the mandatory mediators for the instruction.
+       *
+       * # Permissions
+       * * Portfolio
+       **/
+      addAndAffirmWithMediators: AugmentedSubmittable<
+        (
+          venueId: u64 | AnyNumber | Uint8Array,
+          settlementType:
+            | PolymeshPrimitivesSettlementSettlementType
+            | { SettleOnAffirmation: any }
+            | { SettleOnBlock: any }
+            | { SettleManual: any }
+            | string
+            | Uint8Array,
+          tradeDate: Option<u64> | null | Uint8Array | u64 | AnyNumber,
+          valueDate: Option<u64> | null | Uint8Array | u64 | AnyNumber,
+          legs:
+            | Vec<PolymeshPrimitivesSettlementLeg>
+            | (
+                | PolymeshPrimitivesSettlementLeg
+                | { Fungible: any }
+                | { NonFungible: any }
+                | { OffChain: any }
+                | string
+                | Uint8Array
+              )[],
+          portfolios:
+            | Vec<PolymeshPrimitivesIdentityIdPortfolioId>
+            | (
+                | PolymeshPrimitivesIdentityIdPortfolioId
+                | { did?: any; kind?: any }
+                | string
+                | Uint8Array
+              )[],
+          instructionMemo:
+            | Option<PolymeshPrimitivesMemo>
+            | null
+            | Uint8Array
+            | PolymeshPrimitivesMemo
+            | string,
+          mediators: BTreeSet<PolymeshPrimitivesIdentityId>
+        ) => SubmittableExtrinsic<ApiType>,
+        [
+          u64,
+          PolymeshPrimitivesSettlementSettlementType,
+          Option<u64>,
+          Option<u64>,
+          Vec<PolymeshPrimitivesSettlementLeg>,
+          Vec<PolymeshPrimitivesIdentityIdPortfolioId>,
+          Option<PolymeshPrimitivesMemo>,
+          BTreeSet<PolymeshPrimitivesIdentityId>
+        ]
+      >;
+      /**
        * Adds a new instruction.
        *
        * # Arguments
-       * * `venue_id` - ID of the venue this instruction belongs to.
-       * * `settlement_type` - Defines if the instruction should be settled in the next block, after receiving all affirmations
-       * or waiting till a specific block.
-       * * `trade_date` - Optional date from which people can interact with this instruction.
-       * * `value_date` - Optional date after which the instruction should be settled (not enforced)
-       * * `legs` - Legs included in this instruction.
-       * * `memo` - Memo field for this instruction.
-       *
-       * # Weight
-       * `950_000_000 + 1_000_000 * legs.len()`
+       * * `venue_id`: The [`VenueId`] of the venue this instruction belongs to.
+       * * `settlement_type`: The [`SettlementType`] specifying when the instruction should be settled.
+       * * `trade_date`: Optional date from which people can interact with this instruction.
+       * * `value_date`: Optional date after which the instruction should be settled (not enforced).
+       * * `legs`: A vector of all [`Leg`] included in this instruction.
+       * * `memo`: An optional [`Memo`] field for this instruction.
        **/
       addInstruction: AugmentedSubmittable<
         (
@@ -5462,6 +5644,58 @@ declare module '@polkadot/api-base/types/submittable' {
         ]
       >;
       /**
+       * Adds a new instruction with mediators.
+       *
+       * # Arguments
+       * * `venue_id`: The [`VenueId`] of the venue this instruction belongs to.
+       * * `settlement_type`: The [`SettlementType`] specifying when the instruction should be settled.
+       * * `trade_date`: Optional date from which people can interact with this instruction.
+       * * `value_date`: Optional date after which the instruction should be settled (not enforced).
+       * * `legs`: A vector of all [`Leg`] included in this instruction.
+       * * `instruction_memo`: An optional [`Memo`] field for this instruction.
+       * * `mediators`: A set of [`IdentityId`] of all the mandatory mediators for the instruction.
+       **/
+      addInstructionWithMediators: AugmentedSubmittable<
+        (
+          venueId: u64 | AnyNumber | Uint8Array,
+          settlementType:
+            | PolymeshPrimitivesSettlementSettlementType
+            | { SettleOnAffirmation: any }
+            | { SettleOnBlock: any }
+            | { SettleManual: any }
+            | string
+            | Uint8Array,
+          tradeDate: Option<u64> | null | Uint8Array | u64 | AnyNumber,
+          valueDate: Option<u64> | null | Uint8Array | u64 | AnyNumber,
+          legs:
+            | Vec<PolymeshPrimitivesSettlementLeg>
+            | (
+                | PolymeshPrimitivesSettlementLeg
+                | { Fungible: any }
+                | { NonFungible: any }
+                | { OffChain: any }
+                | string
+                | Uint8Array
+              )[],
+          instructionMemo:
+            | Option<PolymeshPrimitivesMemo>
+            | null
+            | Uint8Array
+            | PolymeshPrimitivesMemo
+            | string,
+          mediators: BTreeSet<PolymeshPrimitivesIdentityId>
+        ) => SubmittableExtrinsic<ApiType>,
+        [
+          u64,
+          PolymeshPrimitivesSettlementSettlementType,
+          Option<u64>,
+          Option<u64>,
+          Vec<PolymeshPrimitivesSettlementLeg>,
+          Option<PolymeshPrimitivesMemo>,
+          BTreeSet<PolymeshPrimitivesIdentityId>
+        ]
+      >;
+      /**
        * Provide affirmation to an existing instruction.
        *
        * # Arguments
@@ -5484,6 +5718,21 @@ declare module '@polkadot/api-base/types/submittable' {
               )[]
         ) => SubmittableExtrinsic<ApiType>,
         [u64, Vec<PolymeshPrimitivesIdentityIdPortfolioId>]
+      >;
+      /**
+       * Affirms the instruction as a mediator - should only be called by mediators, otherwise it will fail.
+       *
+       * # Arguments
+       * * `origin`: The secondary key of the sender.
+       * * `instruction_id`: The [`InstructionId`] that will be affirmed by the mediator.
+       * * `expiry`: An Optional value for defining when the affirmation will expire (None means it will always be valid).
+       **/
+      affirmInstructionAsMediator: AugmentedSubmittable<
+        (
+          instructionId: u64 | AnyNumber | Uint8Array,
+          expiry: Option<u64> | null | Uint8Array | u64 | AnyNumber
+        ) => SubmittableExtrinsic<ApiType>,
+        [u64, Option<u64>]
       >;
       /**
        * Provide affirmation to an existing instruction.
@@ -5763,6 +6012,28 @@ declare module '@polkadot/api-base/types/submittable' {
         [u64, PolymeshPrimitivesIdentityIdPortfolioId]
       >;
       /**
+       * Rejects an existing instruction - should only be called by mediators, otherwise it will fail.
+       *
+       * # Arguments
+       * * `instruction_id` - the [`InstructionId`] of the instruction being rejected.
+       * * `number_of_assets` - an optional [`AssetCount`] that will be used for a precise fee estimation before executing the extrinsic.
+       *
+       * Note: calling the rpc method `get_execute_instruction_info` returns an instance of [`ExecuteInstructionInfo`], which contain the asset count.
+       **/
+      rejectInstructionAsMediator: AugmentedSubmittable<
+        (
+          instructionId: u64 | AnyNumber | Uint8Array,
+          numberOfAssets:
+            | Option<PolymeshPrimitivesSettlementAssetCount>
+            | null
+            | Uint8Array
+            | PolymeshPrimitivesSettlementAssetCount
+            | { fungible?: any; nonFungible?: any; offChain?: any }
+            | string
+        ) => SubmittableExtrinsic<ApiType>,
+        [u64, Option<PolymeshPrimitivesSettlementAssetCount>]
+      >;
+      /**
        * Rejects an existing instruction.
        *
        * # Arguments
@@ -5884,6 +6155,17 @@ declare module '@polkadot/api-base/types/submittable' {
               )[]
         ) => SubmittableExtrinsic<ApiType>,
         [u64, Vec<PolymeshPrimitivesIdentityIdPortfolioId>]
+      >;
+      /**
+       * Removes the mediator's affirmation for the instruction - should only be called by mediators, otherwise it will fail.
+       *
+       * # Arguments
+       * * `origin`: The secondary key of the sender.
+       * * `instruction_id`: The [`InstructionId`] that will have the affirmation removed.
+       **/
+      withdrawAffirmationAsMediator: AugmentedSubmittable<
+        (instructionId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [u64]
       >;
       /**
        * Withdraw an affirmation for a given instruction.

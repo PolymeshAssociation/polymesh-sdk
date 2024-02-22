@@ -58,9 +58,9 @@ describe('issueConfidentialAssets procedure', () => {
     account = entityMockUtils.getConfidentialAccountInstance();
 
     args = {
-      asset,
+      confidentialAsset: asset,
       amount,
-      account,
+      confidentialAccount: account,
     };
   });
 
@@ -102,7 +102,7 @@ describe('issueConfidentialAssets procedure', () => {
     await expect(
       prepareConfidentialAssets.call(proc, {
         ...args,
-        account: entityMockUtils.getConfidentialAccountInstance({
+        confidentialAccount: entityMockUtils.getConfidentialAccountInstance({
           getIdentity: null,
         }),
       })
@@ -111,7 +111,7 @@ describe('issueConfidentialAssets procedure', () => {
     await expect(
       prepareConfidentialAssets.call(proc, {
         ...args,
-        account: entityMockUtils.getConfidentialAccountInstance({
+        confidentialAccount: entityMockUtils.getConfidentialAccountInstance({
           getIdentity: entityMockUtils.getIdentityInstance({
             did: 'someRandomDid',
           }),
@@ -138,7 +138,7 @@ describe('issueConfidentialAssets procedure', () => {
     try {
       await prepareConfidentialAssets.call(proc, {
         ...args,
-        asset: entityMockUtils.getConfidentialAssetInstance(),
+        confidentialAsset: entityMockUtils.getConfidentialAssetInstance(),
       });
     } catch (err) {
       error = err;
@@ -154,7 +154,7 @@ describe('issueConfidentialAssets procedure', () => {
   });
 
   it('should return a mint Confidential Asset transaction spec', async () => {
-    const transaction = dsMockUtils.createTxMock('confidentialAsset', 'mintConfidentialAsset');
+    const transaction = dsMockUtils.createTxMock('confidentialAsset', 'mint');
     const proc = procedureMockUtils.getInstance<Params, ConfidentialAsset>(mockContext);
 
     const result = await prepareConfidentialAssets.call(proc, args);
@@ -173,7 +173,7 @@ describe('issueConfidentialAssets procedure', () => {
       expect(boundFunc(args)).toEqual({
         roles: [{ type: RoleType.ConfidentialAssetOwner, assetId: asset.id }],
         permissions: {
-          transactions: [TxTags.confidentialAsset.MintConfidentialAsset],
+          transactions: [TxTags.confidentialAsset.Mint],
           assets: [],
           portfolios: [],
         },
