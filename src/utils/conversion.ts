@@ -16,6 +16,7 @@ import {
 import { AccountId, Balance, BlockHash, Hash, Permill } from '@polkadot/types/interfaces';
 import { DispatchError, DispatchResult } from '@polkadot/types/interfaces/system';
 import {
+  ConfidentialAssetsBurnConfidentialBurnProof,
   PalletConfidentialAssetAffirmLeg,
   PalletConfidentialAssetAffirmParty,
   PalletConfidentialAssetAffirmTransaction,
@@ -5284,4 +5285,18 @@ export function middlewareAssetHistoryToTransactionHistory({
     eventId,
     memo,
   };
+}
+
+/**
+ * @hidden
+ */
+export function confidentialBurnProofToRaw(
+  proof: string,
+  context: Context
+): ConfidentialAssetsBurnConfidentialBurnProof {
+  const rawProof = stringToBytes(proof, context);
+
+  return context.createType('ConfidentialAssetsBurnConfidentialBurnProof', {
+    encodedInnerProof: rawProof,
+  });
 }

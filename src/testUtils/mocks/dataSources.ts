@@ -50,6 +50,7 @@ import {
   SignedBlock,
 } from '@polkadot/types/interfaces';
 import {
+  ConfidentialAssetsBurnConfidentialBurnProof,
   ConfidentialAssetsElgamalCipherText,
   PalletAssetAssetOwnershipRelation,
   PalletAssetSecurityToken,
@@ -4731,6 +4732,9 @@ export const createMockConfidentialLegParty = (
   return createMockEnum<PalletConfidentialAssetLegParty>(role);
 };
 
+/**
+ *  NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockConfidentialLegState = (
   state?:
     | {
@@ -4765,4 +4769,29 @@ export const createMockElgamalCipherText = (
   }
 
   return createMockStringCodec<ConfidentialAssetsElgamalCipherText>(value);
+};
+
+/**
+ *  NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockConfidentialBurnProof = (
+  proof?:
+    | {
+        encodedInnerProof: Bytes;
+      }
+    | ConfidentialAssetsBurnConfidentialBurnProof
+): MockCodec<ConfidentialAssetsBurnConfidentialBurnProof> => {
+  if (isCodec<ConfidentialAssetsBurnConfidentialBurnProof>(proof)) {
+    return proof as MockCodec<ConfidentialAssetsBurnConfidentialBurnProof>;
+  }
+  const mockBytes = dsMockUtils.createMockBytes();
+
+  const { encodedInnerProof } = proof ?? {
+    encodedInnerProof: mockBytes,
+  };
+
+  return createMockCodec<ConfidentialAssetsBurnConfidentialBurnProof>(
+    { encodedInnerProof },
+    !proof
+  );
 };

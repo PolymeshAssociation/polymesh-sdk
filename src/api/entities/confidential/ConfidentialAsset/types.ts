@@ -41,6 +41,21 @@ export interface IssueConfidentialAssetParams {
   confidentialAccount: ConfidentialAccount | string;
 }
 
+export interface BurnConfidentialAssetParams {
+  /**
+   * number of confidential Assets to be burned
+   */
+  amount: BigNumber;
+  /**
+   * the asset issuer's Confidential Account to burn the assets from
+   */
+  confidentialAccount: ConfidentialAccount | string;
+  /**
+   * proof for the transaction
+   */
+  proof: string;
+}
+
 export type ConfidentialVenueFilteringDetails =
   | {
       enabled: false;

@@ -10,6 +10,7 @@ import {
   Permill,
 } from '@polkadot/types/interfaces';
 import {
+  ConfidentialAssetsBurnConfidentialBurnProof,
   PalletConfidentialAssetAffirmParty,
   PalletConfidentialAssetAffirmTransaction,
   PalletConfidentialAssetAffirmTransactions,
@@ -224,6 +225,7 @@ import {
   confidentialAffirmPartyToRaw,
   confidentialAffirmsToRaw,
   confidentialAssetsToBtreeSet,
+  confidentialBurnProofToRaw,
   confidentialLegIdToId,
   confidentialLegPartyToRole,
   confidentialLegStateToLegState,
@@ -10453,5 +10455,36 @@ describe('middlewareAssetHistoryToTransactionHistory', () => {
     const result = middlewareAssetHistoryToTransactionHistory(assetHistoryEntry);
 
     expect(result).toEqual(expectedResult);
+  });
+});
+
+describe('confidentialBurnProofToRaw', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return a raw burn proof', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+
+    const proof = 'someProof';
+    const rawProof = 'rawSomeProof' as unknown as Bytes;
+    const mockResult = 'mockResult' as unknown as ConfidentialAssetsBurnConfidentialBurnProof;
+
+    when(mockContext.createType).calledWith('Bytes', proof).mockReturnValue(rawProof);
+
+    when(mockContext.createType)
+      .calledWith('ConfidentialAssetsBurnConfidentialBurnProof', { encodedInnerProof: rawProof })
+      .mockReturnValue(mockResult);
+
+    const result = confidentialBurnProofToRaw(proof, mockContext);
+
+    expect(result).toEqual(mockResult);
   });
 });
