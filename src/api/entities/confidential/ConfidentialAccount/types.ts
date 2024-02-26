@@ -1,4 +1,5 @@
 import { ConfidentialAccount, ConfidentialAsset } from '~/internal';
+import { EventIdentifier, EventIdEnum } from '~/types';
 
 export interface CreateConfidentialAccountParams {
   /**
@@ -25,3 +26,11 @@ export interface ApplyIncomingBalanceParams {
    */
   confidentialAsset: string | ConfidentialAsset;
 }
+
+export type ConfidentialAssetHistoryEntry = {
+  id: string;
+  asset: ConfidentialAsset;
+  eventId: EventIdEnum;
+  amount: string;
+  createdAt: EventIdentifier | null;
+};

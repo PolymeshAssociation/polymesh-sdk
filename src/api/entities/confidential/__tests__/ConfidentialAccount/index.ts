@@ -10,11 +10,12 @@ import {
 } from '~/internal';
 import {
   confidentialAssetsByHolderQuery,
+  getConfidentialAssetHistoryByConfidentialAccountQuery,
   getConfidentialTransactionsByConfidentialAccountQuery,
 } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode } from '~/types';
+import { ErrorCode, EventIdEnum } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -320,6 +321,101 @@ describe('ConfidentialAccount class', () => {
       );
 
       result = await account.getTransactions({ direction: 'All' });
+      expect(result.data).toEqual([]);
+      expect(result.next).toBeNull();
+    });
+  });
+
+  describe('method: getTransactionHistory', () => {
+    const mockAsset = entityMockUtils.getConfidentialAssetInstance({ id: '1' });
+    const blockNumber = new BigNumber(1234);
+    const blockDate = new Date('4/14/2020');
+    const blockHash = 'someHash';
+    const eventIdx = new BigNumber(1);
+    const fakeCreatedAt = { blockNumber, blockHash, blockDate, eventIndex: eventIdx };
+    const mockData = {
+      id: 1,
+      assetId: mockAsset.toHuman(),
+      amount: '100000000000000000',
+      eventId: EventIdEnum.AccountDeposit,
+      memo: 'test',
+      createdBlock: {
+        blockId: blockNumber.toNumber(),
+        datetime: blockDate,
+        hash: blockHash,
+      },
+      eventIdx: eventIdx.toNumber(),
+    };
+
+    it('should return a paginated list of transaction history for the ConfidentialAccount', async () => {
+      dsMockUtils.createApolloQueryMock(
+        getConfidentialAssetHistoryByConfidentialAccountQuery({
+          accountId: publicKey,
+        }),
+        {
+          confidentialAssetHistories: {
+            nodes: [mockData],
+            totalCount: 1,
+          },
+        }
+      );
+
+      const {
+        data: [historyEntry],
+      } = await account.getTransactionHistory({});
+
+      expect(historyEntry.id).toEqual(mockData.id);
+      expect(historyEntry.asset).toBeInstanceOf(ConfidentialAsset);
+      expect(historyEntry.amount).toEqual(mockData.amount);
+      expect(historyEntry.amount).toEqual(mockData.amount);
+      expect(historyEntry.createdAt).toEqual(fakeCreatedAt);
+    });
+
+    it('should return a paginated list of transaction history for the ConfidentialAccount when size, start provided', async () => {
+      const size = new BigNumber(1);
+      const start = new BigNumber(0);
+
+      dsMockUtils.createApolloQueryMock(
+        getConfidentialAssetHistoryByConfidentialAccountQuery(
+          {
+            accountId: publicKey,
+          },
+          size,
+          start
+        ),
+        {
+          confidentialAssetHistories: {
+            nodes: [mockData],
+            totalCount: 1,
+          },
+        }
+      );
+
+      const {
+        data: [historyEntry],
+      } = await account.getTransactionHistory({ size, start });
+
+      expect(historyEntry.id).toEqual(mockData.id);
+      expect(historyEntry.asset).toBeInstanceOf(ConfidentialAsset);
+      expect(historyEntry.amount).toEqual(mockData.amount);
+      expect(historyEntry.amount).toEqual(mockData.amount);
+      expect(historyEntry.createdAt).toEqual(fakeCreatedAt);
+    });
+
+    it('should return a paginated list of transaction history where the ConfidentialAccount is involved', async () => {
+      dsMockUtils.createApolloQueryMock(
+        getConfidentialAssetHistoryByConfidentialAccountQuery({
+          accountId: publicKey,
+        }),
+        {
+          confidentialAssetHistories: {
+            nodes: [],
+            totalCount: 0,
+          },
+        }
+      );
+
+      const result = await account.getTransactionHistory();
       expect(result.data).toEqual([]);
       expect(result.next).toBeNull();
     });
