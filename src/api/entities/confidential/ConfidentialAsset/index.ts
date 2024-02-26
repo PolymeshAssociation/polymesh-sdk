@@ -12,6 +12,7 @@ import {
   issueConfidentialAssets,
   PolymeshError,
   setConfidentialVenueFiltering,
+  toggleFreezeConfidentialAsset,
 } from '~/internal';
 import {
   confidentialAssetQuery,
@@ -27,6 +28,7 @@ import {
   EventIdentifier,
   GroupedAuditors,
   IssueConfidentialAssetParams,
+  NoArgsProcedureMethod,
   ProcedureMethod,
   ResultSet,
   SetVenueFilteringParams,
@@ -111,6 +113,28 @@ export class ConfidentialAsset extends Entity<UniqueIdentifiers, string> {
       { getProcedureAndArgs: args => [setConfidentialVenueFiltering, { assetId: id, ...args }] },
       context
     );
+
+    this.freeze = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [
+          toggleFreezeConfidentialAsset,
+          { confidentialAsset: this, freeze: true },
+        ],
+        voidArgs: true,
+      },
+      context
+    );
+
+    this.unfreeze = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [
+          toggleFreezeConfidentialAsset,
+          { confidentialAsset: this, freeze: false },
+        ],
+        voidArgs: true,
+      },
+      context
+    );
   }
 
   /**
@@ -135,6 +159,16 @@ export class ConfidentialAsset extends Entity<UniqueIdentifiers, string> {
    * Enable/disable confidential venue filtering for this Confidential Asset and/or set allowed/disallowed Confidential Venues
    */
   public setVenueFiltering: ProcedureMethod<SetVenueFilteringParams, void>;
+
+  /**
+   * Freezes all trading for the asset
+   */
+  public freeze: NoArgsProcedureMethod<void>;
+
+  /**
+   * Allows trading to resume for the asset
+   */
+  public unfreeze: NoArgsProcedureMethod<void>;
 
   /**
    * @hidden
@@ -338,5 +372,25 @@ export class ConfidentialAsset extends Entity<UniqueIdentifiers, string> {
     );
 
     return optionize(middlewareEventDetailsToEventIdentifier)(asset?.createdBlock, asset?.eventIdx);
+  }
+
+  /**
+   * Returns whether the asset has suspended all trading or not
+   */
+  public async isFrozen(): Promise<boolean> {
+    const {
+      id,
+      context: {
+        polymeshApi: {
+          query: { confidentialAsset },
+        },
+      },
+    } = this;
+
+    const rawAssetId = serializeConfidentialAssetId(id);
+
+    const rawIsFrozen = await confidentialAsset.assetFrozen(rawAssetId);
+
+    return boolToBoolean(rawIsFrozen);
   }
 }

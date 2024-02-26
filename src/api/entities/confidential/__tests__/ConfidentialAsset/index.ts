@@ -38,6 +38,7 @@ describe('ConfidentialAsset class', () => {
     ownerDid: 'SOME_DID',
   };
   let detailsQueryMock: jest.Mock;
+  let assetFrozenMock: jest.Mock;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -51,6 +52,7 @@ describe('ConfidentialAsset class', () => {
     context = dsMockUtils.getContextInstance();
     confidentialAsset = new ConfidentialAsset({ id: assetId }, context);
     detailsQueryMock = dsMockUtils.createQueryMock('confidentialAsset', 'details');
+    assetFrozenMock = dsMockUtils.createQueryMock('confidentialAsset', 'assetFrozen');
 
     detailsQueryMock.mockResolvedValue(
       dsMockUtils.createMockOption(
@@ -60,6 +62,8 @@ describe('ConfidentialAsset class', () => {
         })
       )
     );
+
+    assetFrozenMock.mockResolvedValue(dsMockUtils.createMockBool(false));
   });
 
   afterEach(() => {
@@ -314,6 +318,54 @@ describe('ConfidentialAsset class', () => {
         enabled: true,
         allowedConfidentialVenues: [expect.objectContaining({ id: new BigNumber(1) })],
       });
+    });
+  });
+
+  describe('method: isFrozen', () => {
+    it('should return false if Confidential Asset is not frozen', async () => {
+      const result = await confidentialAsset.isFrozen();
+
+      expect(result).toEqual(false);
+    });
+  });
+
+  describe('method: freeze', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const freeze = true;
+
+      const args = {
+        freeze,
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { confidentialAsset, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await confidentialAsset.freeze();
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: unfreeze', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const freeze = false;
+
+      const args = {
+        freeze,
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { confidentialAsset, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await confidentialAsset.unfreeze();
+
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
