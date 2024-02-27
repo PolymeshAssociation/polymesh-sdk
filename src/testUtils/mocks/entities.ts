@@ -51,6 +51,7 @@ import {
   CheckRolesResult,
   CollectionKey,
   ComplianceRequirements,
+  ConfidentialAssetBalance,
   ConfidentialAssetDetails,
   ConfidentialLeg,
   ConfidentialLegState,
@@ -405,6 +406,7 @@ interface ConfidentialAccountOptions extends EntityOptions {
   publicKey?: string;
   getIdentity?: EntityGetter<Identity | null>;
   getIncomingBalance?: EntityGetter<string>;
+  getIncomingBalances?: EntityGetter<ConfidentialAssetBalance[]>;
 }
 
 type MockOptions = {
@@ -2139,6 +2141,7 @@ const MockConfidentialAccountClass = createMockEntityClass<ConfidentialAccountOp
     publicKey!: string;
     getIdentity!: jest.Mock;
     getIncomingBalance!: jest.Mock;
+    getIncomingBalances!: jest.Mock;
 
     /**
      * @hidden
@@ -2155,12 +2158,14 @@ const MockConfidentialAccountClass = createMockEntityClass<ConfidentialAccountOp
       this.publicKey = opts.publicKey;
       this.getIdentity = createEntityGetterMock(opts.getIdentity);
       this.getIncomingBalance = createEntityGetterMock(opts.getIncomingBalance);
+      this.getIncomingBalances = createEntityGetterMock(opts.getIncomingBalances);
     }
   },
   () => ({
     publicKey: 'somePublicKey',
     getIdentity: getIdentityInstance(),
     getIncomingBalance: 'someEncryptedBalance',
+    getIncomingBalances: [],
   }),
   ['ConfidentialAccount']
 );
