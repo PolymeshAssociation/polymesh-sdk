@@ -1,5 +1,5 @@
 import { DecoratedErrors } from '@polkadot/api/types';
-import { bool, Bytes, Option, Text, u32, u64, u128, Vec } from '@polkadot/types';
+import { bool, Bytes, Option, Text, u16, u32, u64, u128, Vec } from '@polkadot/types';
 import {
   AccountId,
   Balance,
@@ -181,6 +181,7 @@ import {
 import { InstructionStatus, PermissionGroupIdentifier } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
+import { bigNumberToU16 } from '~/utils/conversion';
 import * as internalUtils from '~/utils/internal';
 import { padString } from '~/utils/internal';
 
@@ -2262,7 +2263,7 @@ describe('u128ToBigNumber', () => {
   });
 });
 
-describe('u16ToBigNumber', () => {
+describe('bigNumberToU16 anb u16ToBigNumber', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -2273,6 +2274,34 @@ describe('u16ToBigNumber', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
+  });
+
+  describe('bigNumberToU16', () => {
+    it('should convert a number to a polkadot u16 object', () => {
+      const value = new BigNumber(100);
+      const fakeResult = '100' as unknown as u16;
+      const context = dsMockUtils.getContextInstance();
+
+      when(context.createType).calledWith('u16', value.toString()).mockReturnValue(fakeResult);
+
+      const result = bigNumberToU16(value, context);
+
+      expect(result).toBe(fakeResult);
+    });
+
+    it('should throw an error if the number is negative', () => {
+      const value = new BigNumber(-100);
+      const context = dsMockUtils.getContextInstance();
+
+      expect(() => bigNumberToU16(value, context)).toThrow();
+    });
+
+    it('should throw an error if the number is not an integer', () => {
+      const value = new BigNumber(1.5);
+      const context = dsMockUtils.getContextInstance();
+
+      expect(() => bigNumberToU16(value, context)).toThrow();
+    });
   });
 
   describe('u16ToBigNumber', () => {
