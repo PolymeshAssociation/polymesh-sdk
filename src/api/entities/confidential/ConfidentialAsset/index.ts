@@ -3,6 +3,7 @@ import { Option } from '@polkadot/types-codec';
 import BigNumber from 'bignumber.js';
 
 import {
+  burnConfidentialAssets,
   ConfidentialAccount,
   ConfidentialVenue,
   Context,
@@ -18,6 +19,7 @@ import {
 } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
+  BurnConfidentialAssetParams,
   ConfidentialAssetDetails,
   ConfidentialAssetTransactionHistory,
   ConfidentialVenueFilteringDetails,
@@ -98,6 +100,13 @@ export class ConfidentialAsset extends Entity<UniqueIdentifiers, string> {
       context
     );
 
+    this.burn = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [burnConfidentialAssets, { confidentialAsset: this, ...args }],
+      },
+      context
+    );
+
     this.setVenueFiltering = createProcedureMethod(
       { getProcedureAndArgs: args => [setConfidentialVenueFiltering, { assetId: id, ...args }] },
       context
@@ -112,6 +121,15 @@ export class ConfidentialAsset extends Entity<UniqueIdentifiers, string> {
    *  - Confidential Assets can only be issued in accounts owned by the signer
    */
   public issue: ProcedureMethod<IssueConfidentialAssetParams, ConfidentialAsset>;
+
+  /**
+   * Burn a certain amount of this Confidential Asset in the given `account`
+   *
+   * @note
+   *  - Only the owner can burn a Confidential Asset
+   *  - Confidential Assets can only be burned in accounts owned by the signer
+   */
+  public burn: ProcedureMethod<BurnConfidentialAssetParams, ConfidentialAsset>;
 
   /**
    * Enable/disable confidential venue filtering for this Confidential Asset and/or set allowed/disallowed Confidential Venues

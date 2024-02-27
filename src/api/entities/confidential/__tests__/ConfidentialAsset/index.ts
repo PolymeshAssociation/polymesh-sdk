@@ -111,6 +111,27 @@ describe('ConfidentialAsset class', () => {
     });
   });
 
+  describe('method: burn', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args = {
+        amount: new BigNumber(100),
+        confidentialAccount: 'someAccount',
+        proof: 'someBurnProof',
+      };
+
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<ConfidentialAsset>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { confidentialAsset, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await confidentialAsset.burn(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
   describe('method: setVenueFiltering', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const enabled = true;
