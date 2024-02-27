@@ -87,11 +87,42 @@ export interface AgentWithGroup {
 
 export interface HistoricAssetTransaction extends EventIdentifier {
   asset: FungibleAsset;
-  amount: BigNumber;
+  /**
+   * Origin portfolio involved in the transaction. This value will be null when the `event` value is `Issued`
+   */
   from: DefaultPortfolio | NumberedPortfolio | null;
+  /**
+   * Destination portfolio involved in the transaction . This value will be null when the `event` value is `Redeemed`
+   */
   to: DefaultPortfolio | NumberedPortfolio | null;
+
+  /**
+   * Event identifying the type of transaction
+   */
   event: EventIdEnum;
+
+  /**
+   * Amount of the fungible tokens involved in the transaction
+   */
+  amount: BigNumber;
+
+  /**
+   * Index value of the extrinsic which led to the Asset transaction within the `blockNumber` block
+   */
   extrinsicIndex: BigNumber;
+
+  /**
+   * Name of the funding round (if provided while issuing the Asset). This value is present only when the value of `event` is `Issued`
+   */
+  fundingRound?: string;
+  /**
+   * ID of the instruction being executed. This value is present only when the value of `event` is `Transfer`
+   */
+  instructionId?: BigNumber;
+  /**
+   * Memo provided against the executed instruction. This value is present only when the value of `event` is `Transfer`
+   */
+  instructionMemo?: string;
 }
 
 /**

@@ -9,8 +9,23 @@ import {
   NumberedPortfolio,
   PolymeshError,
 } from '~/internal';
-import { ErrorCode, PaginationOptions, ProcedureMethod, ResultSet } from '~/types';
-import { identityIdToString, stringToIdentityId, u64ToBigNumber } from '~/utils/conversion';
+import { portfoliosMovementsQuery, settlementsForAllPortfoliosQuery } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
+import {
+  ErrorCode,
+  HistoricSettlement,
+  PaginationOptions,
+  ProcedureMethod,
+  ResultSet,
+} from '~/types';
+import { Ensured } from '~/types/utils';
+import {
+  addressToKey,
+  identityIdToString,
+  stringToIdentityId,
+  toHistoricalSettlements,
+  u64ToBigNumber,
+} from '~/utils/conversion';
 import { createProcedureMethod, requestPaginated } from '~/utils/internal';
 
 /**
@@ -157,4 +172,56 @@ export class Portfolios extends Namespace<Identity> {
    *   - Portfolio Custodian
    */
   public delete: ProcedureMethod<{ portfolio: BigNumber | NumberedPortfolio }, void>;
+
+  /**
+   * Retrieve a list of transactions where this identity was involved. Can be filtered using parameters
+   *
+   * @param filters.account - Account involved in the settlement
+   * @param filters.ticker - ticker involved in the transaction
+   *
+   * @note uses the middlewareV2
+   */
+  public async getTransactionHistory(
+    filters: {
+      account?: string;
+      ticker?: string;
+    } = {}
+  ): Promise<HistoricSettlement[]> {
+    const {
+      context,
+      parent: { did: identityId },
+    } = this;
+
+    const { account, ticker } = filters;
+
+    const address = account ? addressToKey(account, context) : undefined;
+
+    const settlementsPromise = context.queryMiddleware<Ensured<Query, 'legs'>>(
+      settlementsForAllPortfoliosQuery({
+        identityId,
+        address,
+        ticker,
+      })
+    );
+
+    const portfolioMovementsPromise = context.queryMiddleware<Ensured<Query, 'portfolioMovements'>>(
+      portfoliosMovementsQuery({
+        identityId,
+        address,
+        ticker,
+      })
+    );
+
+    const [settlementsResult, portfolioMovementsResult] = await Promise.all([
+      settlementsPromise,
+      portfolioMovementsPromise,
+    ]);
+
+    return toHistoricalSettlements(
+      settlementsResult,
+      portfolioMovementsResult,
+      identityId,
+      context
+    );
+  }
 }

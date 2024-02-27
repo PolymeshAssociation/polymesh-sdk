@@ -1,3 +1,4 @@
+import { ApolloQueryResult } from '@apollo/client/core';
 import { bool, Bytes, Option, Text, u8, U8aFixed, u16, u32, u64, u128, Vec } from '@polkadot/types';
 import { AccountId, Balance, BlockHash, Hash, Permill } from '@polkadot/types/interfaces';
 import { DispatchError, DispatchResult } from '@polkadot/types/interfaces/system';
@@ -49,6 +50,7 @@ import {
   PolymeshPrimitivesSettlementAffirmationStatus,
   PolymeshPrimitivesSettlementInstructionStatus,
   PolymeshPrimitivesSettlementLeg,
+  PolymeshPrimitivesSettlementMediatorAffirmationStatus,
   PolymeshPrimitivesSettlementSettlementType,
   PolymeshPrimitivesSettlementVenueType,
   PolymeshPrimitivesStatisticsStat2ndKey,
@@ -119,8 +121,10 @@ import {
   Instruction,
   ModuleIdEnum,
   Portfolio as MiddlewarePortfolio,
+  Query,
+  SettlementResultEnum,
 } from '~/middleware/types';
-import { ClaimScopeTypeEnum, MiddlewareScope } from '~/middleware/typesV1';
+import { ClaimScopeTypeEnum, MiddlewareScope, SettlementDirectionEnum } from '~/middleware/typesV1';
 import {
   AssetComplianceResult,
   AuthorizationType as MeshAuthorizationType,
@@ -158,6 +162,7 @@ import {
   ExternalAgentCondition,
   FungiblePortfolioMovement,
   HistoricInstruction,
+  HistoricSettlement,
   IdentityCondition,
   IdentityWithClaims,
   InputCorporateActionTargets,
@@ -170,6 +175,7 @@ import {
   InstructionType,
   KnownAssetType,
   KnownNftType,
+  MediatorAffirmation,
   MetadataKeyId,
   MetadataLockStatus,
   MetadataSpec,
@@ -235,7 +241,7 @@ import {
   StatClaimIssuer,
   TickerKey,
 } from '~/types/internal';
-import { tuple } from '~/types/utils';
+import { Ensured, tuple } from '~/types/utils';
 import {
   IGNORE_CHECKSUM,
   MAX_BALANCE,
@@ -3125,6 +3131,16 @@ export function identitiesToBtreeSet(
 /**
  * @hidden
  */
+export function identitiesSetToIdentities(
+  identitySet: BTreeSet<PolymeshPrimitivesIdentityId>,
+  context: Context
+): Identity[] {
+  return [...identitySet].map(rawId => new Identity({ did: identityIdToString(rawId) }, context));
+}
+
+/**
+ * @hidden
+ */
 export function transferConditionToTransferRestriction(
   transferCondition: PolymeshPrimitivesTransferComplianceTransferCondition,
   context: Context
@@ -4711,4 +4727,117 @@ export function toCustomClaimTypeWithIdentity(
     id: new BigNumber(item.id),
     did: item.identity?.did,
   }));
+}
+
+/**
+ * @hidden
+ */
+export function toHistoricalSettlements(
+  settlementsResult: ApolloQueryResult<Ensured<Query, 'legs'>>,
+  portfolioMovementsResult: ApolloQueryResult<Ensured<Query, 'portfolioMovements'>>,
+  filter: string,
+  context: Context
+): HistoricSettlement[] {
+  const data: HistoricSettlement[] = [];
+
+  const getDirection = (fromId: string, toId: string): SettlementDirectionEnum => {
+    const [fromDid] = fromId.split('/');
+    const [toDid] = toId.split('/');
+    const [filterDid, filterPortfolioId] = filter.split('/');
+
+    if (fromId === toId) {
+      return SettlementDirectionEnum.None;
+    }
+
+    if (filterPortfolioId && fromId === filter) {
+      return SettlementDirectionEnum.Outgoing;
+    }
+
+    if (filterPortfolioId && toId === filter) {
+      return SettlementDirectionEnum.Incoming;
+    }
+
+    if (fromDid === filterDid && toDid !== filterDid) {
+      return SettlementDirectionEnum.Incoming;
+    }
+
+    if (toDid === filterDid && fromDid !== filterDid) {
+      return SettlementDirectionEnum.Outgoing;
+    }
+
+    return SettlementDirectionEnum.None;
+  };
+
+  /* eslint-disable @typescript-eslint/no-non-null-assertion */
+  settlementsResult.data.legs.nodes.forEach(({ settlement }) => {
+    const {
+      createdBlock,
+      result: settlementResult,
+      legs: { nodes: legs },
+    } = settlement!;
+
+    const { blockId, hash } = createdBlock!;
+
+    data.push({
+      blockNumber: new BigNumber(blockId),
+      blockHash: hash,
+      status: settlementResult as unknown as SettlementResultEnum,
+      accounts: legs[0].addresses.map(
+        (accountAddress: string) =>
+          new Account({ address: keyToAddress(accountAddress, context) }, context)
+      ),
+      legs: legs.map(({ from, to, fromId, toId, assetId, amount }) => ({
+        asset: new FungibleAsset({ ticker: assetId }, context),
+        amount: new BigNumber(amount).shiftedBy(-6),
+        direction: getDirection(fromId, toId),
+        from: middlewarePortfolioToPortfolio(from!, context),
+        to: middlewarePortfolioToPortfolio(to!, context),
+      })),
+    });
+  });
+
+  portfolioMovementsResult.data.portfolioMovements.nodes.forEach(
+    ({ createdBlock, from, to, fromId, toId, assetId, amount, address: accountAddress }) => {
+      const { blockId, hash } = createdBlock!;
+      data.push({
+        blockNumber: new BigNumber(blockId),
+        blockHash: hash,
+        status: SettlementResultEnum.Executed,
+        accounts: [new Account({ address: keyToAddress(accountAddress, context) }, context)],
+        legs: [
+          {
+            asset: new FungibleAsset({ ticker: assetId }, context),
+            amount: new BigNumber(amount).shiftedBy(-6),
+            direction: getDirection(fromId, toId),
+            from: middlewarePortfolioToPortfolio(from!, context),
+            to: middlewarePortfolioToPortfolio(to!, context),
+          },
+        ],
+      });
+    }
+  );
+  /* eslint-enable @typescript-eslint/no-non-null-assertion */
+
+  return data.sort((a, b) => a.blockNumber.minus(b.blockNumber).toNumber());
+}
+
+/**
+ * @hidden
+ */
+export function mediatorAffirmationStatusToStatus(
+  rawStatus: PolymeshPrimitivesSettlementMediatorAffirmationStatus
+): Omit<MediatorAffirmation, 'identity'> {
+  switch (rawStatus.type) {
+    case 'Unknown':
+      return { status: AffirmationStatus.Unknown };
+    case 'Pending':
+      return { status: AffirmationStatus.Pending };
+    case 'Affirmed': {
+      const rawExpiry = rawStatus.asAffirmed.expiry;
+      const expiry = rawExpiry.isSome ? momentToDate(rawExpiry.unwrap()) : undefined;
+      return { status: AffirmationStatus.Affirmed, expiry };
+    }
+    default:
+      throw new UnreachableCaseError(rawStatus.type);
+  }
 }

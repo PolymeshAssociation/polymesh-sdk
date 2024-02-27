@@ -76,6 +76,7 @@ import {
   PermissionedAccount,
   PermissionGroups,
   PermissionGroupType,
+  PolymeshError,
   PortfolioBalance,
   PortfolioCollection,
   ProposalStatus,
@@ -171,6 +172,7 @@ interface BaseAssetOptions extends EntityOptions {
   complianceRequirementsGet?: EntityGetter<ComplianceRequirements>;
   investorCount?: EntityGetter<BigNumber>;
   getNextLocalId?: EntityGetter<BigNumber>;
+  getRequiredMediators?: EntityGetter<Identity[]>;
 }
 
 interface FungibleAssetOptions extends BaseAssetOptions {
@@ -201,7 +203,6 @@ interface NftCollectionOptions extends BaseAssetOptions {
   permissionsGetGroups?: EntityGetter<PermissionGroups>;
   complianceRequirementsGet?: EntityGetter<ComplianceRequirements>;
   investorCount?: EntityGetter<BigNumber>;
-  getNextLocalId?: EntityGetter<BigNumber>;
   collectionKeys?: EntityGetter<CollectionKey[]>;
   getCollectionId?: EntityGetter<BigNumber>;
   getBaseImageUrl?: EntityGetter<string | null>;
@@ -220,6 +221,7 @@ interface MetadataEntryOptions extends EntityOptions {
   type?: MetadataType;
   details?: EntityGetter<MetadataDetails>;
   value?: EntityGetter<MetadataValue | null>;
+  isModifiable?: EntityGetter<{ canModify: boolean; reason?: PolymeshError }>;
 }
 
 interface AuthorizationRequestOptions extends EntityOptions {
@@ -1086,6 +1088,7 @@ const MockFungibleAssetClass = createMockEntityClass<FungibleAssetOptions>(
     getNextLocalId: new BigNumber(0),
     toHuman: 'SOME_TICKER',
     investorCount: new BigNumber(0),
+    getRequiredMediators: [],
   }),
   ['FungibleAsset']
 );
@@ -1180,6 +1183,7 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
     collectionKeys: [],
     getCollectionId: new BigNumber(0),
     getBaseImageUrl: null,
+    getRequiredMediators: [],
   }),
   ['NftCollection']
 );
@@ -1248,6 +1252,7 @@ const MockBaseAssetClass = createMockEntityClass<BaseAssetOptions>(
 
     investorCount!: jest.Mock;
     getBaseImageUrl!: jest.Mock;
+    getRequiredMediators!: jest.Mock;
 
     /**
      * @hidden
@@ -1271,6 +1276,7 @@ const MockBaseAssetClass = createMockEntityClass<BaseAssetOptions>(
       this.compliance.requirements.get = createEntityGetterMock(opts.complianceRequirementsGet);
       this.investorCount = createEntityGetterMock(opts.investorCount);
       this.metadata.getNextLocalId = createEntityGetterMock(opts.getNextLocalId);
+      this.getRequiredMediators = createEntityGetterMock(opts.getRequiredMediators);
     }
   },
   () => ({
@@ -1298,6 +1304,7 @@ const MockBaseAssetClass = createMockEntityClass<BaseAssetOptions>(
       defaultTrustedClaimIssuers: [],
     },
     getNextLocalId: new BigNumber(0),
+    getRequiredMediators: [],
     toHuman: 'SOME_TICKER',
     investorCount: new BigNumber(0),
   }),
@@ -1312,6 +1319,7 @@ const MockMetadataEntryClass = createMockEntityClass<MetadataEntryOptions>(
     type!: MetadataType;
     details!: jest.SpyInstance;
     value!: jest.SpyInstance;
+    isModifiable!: jest.SpyInstance;
 
     /**
      * @hidden
@@ -1323,13 +1331,21 @@ const MockMetadataEntryClass = createMockEntityClass<MetadataEntryOptions>(
     /**
      * @hidden
      */
-    public configure({ id, ticker, type, details, value }: Required<MetadataEntryOptions>) {
+    public configure({
+      id,
+      ticker,
+      type,
+      details,
+      value,
+      isModifiable,
+    }: Required<MetadataEntryOptions>) {
       this.uuid = 'metadataEntry';
       this.id = id;
       this.asset = getFungibleAssetInstance({ ticker });
       this.type = type;
       this.details = createEntityGetterMock(details);
       this.value = createEntityGetterMock(value);
+      this.isModifiable = createEntityGetterMock(isModifiable);
     }
   },
   () => ({
@@ -1347,6 +1363,9 @@ const MockMetadataEntryClass = createMockEntityClass<MetadataEntryOptions>(
     ticker: 'SOME_TICKER',
     id: new BigNumber(1),
     type: MetadataType.Local,
+    isModifiable: {
+      canModify: true,
+    },
   }),
   ['MetadataEntry']
 );

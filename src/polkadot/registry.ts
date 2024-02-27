@@ -314,6 +314,7 @@ import type {
   PolymeshPrimitivesSettlementInstructionStatus,
   PolymeshPrimitivesSettlementLeg,
   PolymeshPrimitivesSettlementLegStatus,
+  PolymeshPrimitivesSettlementMediatorAffirmationStatus,
   PolymeshPrimitivesSettlementReceiptDetails,
   PolymeshPrimitivesSettlementReceiptMetadata,
   PolymeshPrimitivesSettlementSettlementType,
@@ -688,6 +689,7 @@ declare module '@polkadot/types/types/registry' {
     PolymeshPrimitivesSettlementInstructionStatus: PolymeshPrimitivesSettlementInstructionStatus;
     PolymeshPrimitivesSettlementLeg: PolymeshPrimitivesSettlementLeg;
     PolymeshPrimitivesSettlementLegStatus: PolymeshPrimitivesSettlementLegStatus;
+    PolymeshPrimitivesSettlementMediatorAffirmationStatus: PolymeshPrimitivesSettlementMediatorAffirmationStatus;
     PolymeshPrimitivesSettlementReceiptDetails: PolymeshPrimitivesSettlementReceiptDetails;
     PolymeshPrimitivesSettlementReceiptMetadata: PolymeshPrimitivesSettlementReceiptMetadata;
     PolymeshPrimitivesSettlementSettlementType: PolymeshPrimitivesSettlementSettlementType;

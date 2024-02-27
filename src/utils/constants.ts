@@ -11,6 +11,10 @@ export const MAX_TICKER_LENGTH = 12;
 export const MAX_MODULE_LENGTH = 32;
 export const MAX_MEMO_LENGTH = 32;
 /**
+ * Maximum amount of required mediators. See MESH-2156 to see if this is queryable instead
+ */
+export const MAX_ASSET_MEDIATORS = 4;
+/**
  * Biggest possible number for on-chain balances
  */
 export const MAX_BALANCE = new BigNumber(Math.pow(10, 12));
@@ -33,6 +37,11 @@ export const DEFAULT_GQL_PAGE_SIZE = 25;
  * Limit to the page size used when fetching large amounts of data from the chain (same goes for `.multi` calls)
  */
 export const MAX_PAGE_SIZE = new BigNumber(1000);
+
+/**
+ * The number of blocks a transaction is valid for by default
+ */
+export const DEFAULT_LIFETIME_PERIOD = 64;
 
 const didTypes = ['PolymeshPrimitivesIdentityId'];
 
@@ -100,7 +109,7 @@ export const ROOT_TYPES = rootTypes;
 /**
  * The Polymesh RPC node version range that is compatible with this version of the SDK
  */
-export const SUPPORTED_NODE_VERSION_RANGE = '6.0 || 6.1';
+export const SUPPORTED_NODE_VERSION_RANGE = '6.0 || 6.1 || 6.2';
 
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 export const SUPPORTED_NODE_SEMVER = coerce(SUPPORTED_NODE_VERSION_RANGE)!.version;
@@ -108,7 +117,7 @@ export const SUPPORTED_NODE_SEMVER = coerce(SUPPORTED_NODE_VERSION_RANGE)!.versi
 /**
  * The Polymesh chain spec version range that is compatible with this version of the SDK
  */
-export const SUPPORTED_SPEC_VERSION_RANGE = '6.0 || 6.1';
+export const SUPPORTED_SPEC_VERSION_RANGE = '6.0 || 6.1 || 6.2';
 
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 export const SUPPORTED_SPEC_SEMVER = coerce(SUPPORTED_SPEC_VERSION_RANGE)!.version;
@@ -140,7 +149,7 @@ export const DEFAULT_CDD_ID = '0x00000000000000000000000000000000000000000000000
 /**
  * Minimum version of Middleware V2 GraphQL Service (SubQuery) that is compatible with this version of the SDK
  */
-export const MINIMUM_SQ_VERSION = '10.1.0';
+export const MINIMUM_SQ_VERSION = '12.2.0-alpha.2';
 
 /**
  * Global metadata key used to conventionally register an NFT image

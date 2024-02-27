@@ -7,6 +7,7 @@ import '@polkadot/api-base/types/events';
 
 import type { ApiTypes, AugmentedEvent } from '@polkadot/api-base/types';
 import type {
+  BTreeSet,
   Bytes,
   Null,
   Option,
@@ -134,6 +135,30 @@ declare module '@polkadot/api-base/types/events' {
       AssetFrozen: AugmentedEvent<
         ApiType,
         [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker]
+      >;
+      /**
+       * An identity has added mandatory mediators to an asset.
+       * Parameters: [`IdentityId`] of caller, [`Ticker`] of the asset, the identity of all mediators added.
+       **/
+      AssetMediatorsAdded: AugmentedEvent<
+        ApiType,
+        [
+          PolymeshPrimitivesIdentityId,
+          PolymeshPrimitivesTicker,
+          BTreeSet<PolymeshPrimitivesIdentityId>
+        ]
+      >;
+      /**
+       * An identity has removed mediators from an asset.
+       * Parameters: [`IdentityId`] of caller, [`Ticker`] of the asset, the identity of all mediators removed.
+       **/
+      AssetMediatorsRemoved: AugmentedEvent<
+        ApiType,
+        [
+          PolymeshPrimitivesIdentityId,
+          PolymeshPrimitivesTicker,
+          BTreeSet<PolymeshPrimitivesIdentityId>
+        ]
       >;
       /**
        * Emit when token ownership is transferred.
@@ -1976,6 +2001,16 @@ declare module '@polkadot/api-base/types/events' {
        * Execution of a leg failed (did, instruction_id, leg_id)
        **/
       LegFailedExecution: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, u64, u64]>;
+      /**
+       * An instruction has affirmed by a mediator.
+       * Parameters: [`IdentityId`] of the mediator and [`InstructionId`] of the instruction.
+       **/
+      MediatorAffirmationReceived: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, u64]>;
+      /**
+       * An instruction affirmation has been withdrawn by a mediator.
+       * Parameters: [`IdentityId`] of the mediator and [`InstructionId`] of the instruction.
+       **/
+      MediatorAffirmationWithdrawn: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, u64]>;
       /**
        * A receipt has been claimed (did, instruction_id, leg_id, receipt_uid, signer, receipt metadata)
        **/

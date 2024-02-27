@@ -18,7 +18,7 @@ import {
   signerToString,
   signerValueToSignatory,
 } from '~/utils/conversion';
-import { asAccount, optionize } from '~/utils/internal';
+import { asAccount, assertNoPendingAuthorizationExists, optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -54,24 +54,12 @@ export async function prepareInviteAccount(
     });
   }
 
-  const hasPendingAuth = !!authorizationRequests.data.find(authorizationRequest => {
-    const {
-      target,
-      data: { type },
-    } = authorizationRequest;
-    return (
-      signerToString(target) === address &&
-      !authorizationRequest.isExpired() &&
-      type === AuthorizationType.JoinIdentity
-    );
+  assertNoPendingAuthorizationExists({
+    authorizationRequests: authorizationRequests.data,
+    target: address,
+    message: 'The target Account already has a pending invitation to join this Identity',
+    authorization: { type: AuthorizationType.JoinIdentity },
   });
-
-  if (hasPendingAuth) {
-    throw new PolymeshError({
-      code: ErrorCode.NoDataChange,
-      message: 'The target Account already has a pending invitation to join this Identity',
-    });
-  }
 
   const rawSignatory = signerValueToSignatory(
     { type: SignerType.Account, value: address },

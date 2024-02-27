@@ -103,6 +103,8 @@ export { BaseAsset, FungibleAsset, NftCollection, Nft } from '~/api/entities/Ass
 export { MetadataEntry } from '~/api/entities/MetadataEntry';
 export { registerMetadata } from '~/api/procedures/registerMetadata';
 export { setMetadata } from '~/api/procedures/setMetadata';
+export { clearMetadata } from '~/api/procedures/clearMetadata';
+export { removeLocalMetadata } from '~/api/procedures/removeLocalMetadata';
 export { AuthorizationRequest } from '~/api/entities/AuthorizationRequest';
 export { DefaultTrustedClaimIssuer } from '~/api/entities/DefaultTrustedClaimIssuer';
 export { Offering } from '~/api/entities/Offering';
@@ -146,6 +148,8 @@ export { modifyAllowance, ModifyAllowanceParams } from '~/api/procedures/modifyA
 export { createTransactionBatch } from '~/api/procedures/createTransactionBatch';
 export { createMultiSigAccount } from '~/api/procedures/createMultiSig';
 export { acceptPrimaryKeyRotation } from '~/api/procedures/acceptPrimaryKeyRotation';
+export { addAssetMediators } from '~/api/procedures/addAssetMediators';
+export { removeAssetMediators } from '~/api/procedures/removeAssetMediators';
 export { Storage as ModifyMultiSigStorage, modifyMultiSig } from '~/api/procedures/modifyMultiSig';
 export {
   SetCountTransferRestrictionsParams,
