@@ -1,3 +1,5 @@
+import { BigNumber } from 'bignumber.js';
+
 import { PolymeshError, Procedure } from '~/internal';
 import {
   ApplyIncomingConfidentialAssetBalancesParams,
@@ -12,7 +14,7 @@ import { asConfidentialAccount } from '~/utils/internal';
 /**
  * @hidden
  */
-export async function prepareApplyIncomingConfidentialAssetBalance(
+export async function prepareApplyIncomingConfidentialAssetBalances(
   this: Procedure<ApplyIncomingConfidentialAssetBalancesParams, ConfidentialAccount>,
   args: ApplyIncomingConfidentialAssetBalancesParams
 ): Promise<
@@ -29,10 +31,8 @@ export async function prepareApplyIncomingConfidentialAssetBalance(
     },
     context,
   } = this;
-  const { maxUpdates, confidentialAccount: accountInput } = args;
 
-  const account = asConfidentialAccount(accountInput, context);
-  const rawMaxUpdates = bigNumberToU16(maxUpdates, context);
+  const account = asConfidentialAccount(args.confidentialAccount, context);
 
   const [{ did: signingDid }, accountIdentity, incomingBalances] = await Promise.all([
     context.getSigningIdentity(),
@@ -56,6 +56,14 @@ export async function prepareApplyIncomingConfidentialAssetBalance(
       },
     });
   }
+
+  let { maxUpdates } = args;
+
+  if (!maxUpdates) {
+    maxUpdates = new BigNumber(incomingBalances.length);
+  }
+
+  const rawMaxUpdates = bigNumberToU16(maxUpdates, context);
 
   return {
     transaction: confidentialAsset.applyIncomingBalances,
@@ -82,7 +90,7 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const applyIncomingConfidentialAssetBalance = (): Procedure<
+export const applyIncomingConfidentialAssetBalances = (): Procedure<
   ApplyIncomingConfidentialAssetBalancesParams,
   ConfidentialAccount
-> => new Procedure(prepareApplyIncomingConfidentialAssetBalance, getAuthorization);
+> => new Procedure(prepareApplyIncomingConfidentialAssetBalances, getAuthorization);

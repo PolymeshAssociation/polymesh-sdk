@@ -1,6 +1,6 @@
 import {
   applyIncomingAssetBalance,
-  applyIncomingConfidentialAssetBalance,
+  applyIncomingConfidentialAssetBalances,
   ConfidentialAccount,
   Context,
   createConfidentialAccount,
@@ -43,7 +43,7 @@ export class ConfidentialAccounts {
 
     this.applyIncomingBalances = createProcedureMethod(
       {
-        getProcedureAndArgs: args => [applyIncomingConfidentialAssetBalance, { ...args }],
+        getProcedureAndArgs: args => [applyIncomingConfidentialAssetBalances, { ...args }],
       },
       context
     );

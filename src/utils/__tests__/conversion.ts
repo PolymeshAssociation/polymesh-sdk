@@ -2263,7 +2263,7 @@ describe('u128ToBigNumber', () => {
   });
 });
 
-describe('bigNumberToU16 anb u16ToBigNumber', () => {
+describe('bigNumberToU16 and u16ToBigNumber', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });

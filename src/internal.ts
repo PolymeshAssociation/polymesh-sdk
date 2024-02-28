@@ -109,7 +109,7 @@ export { TickerReservation } from '~/api/entities/TickerReservation';
 export { BaseAsset, FungibleAsset, NftCollection, Nft } from '~/api/entities/Asset';
 export { issueConfidentialAssets } from '~/api/procedures/issueConfidentialAssets';
 export { applyIncomingAssetBalance } from '~/api/procedures/applyIncomingAssetBalance';
-export { applyIncomingConfidentialAssetBalance } from '~/api/procedures/applyIncomingConfidentialAssetBalances';
+export { applyIncomingConfidentialAssetBalances } from '~/api/procedures/applyIncomingConfidentialAssetBalances';
 export { ConfidentialAccount } from '~/api/entities/confidential/ConfidentialAccount';
 export { ConfidentialAsset } from '~/api/entities/confidential/ConfidentialAsset';
 export { createConfidentialVenue } from '~/api/procedures/createConfidentialVenue';

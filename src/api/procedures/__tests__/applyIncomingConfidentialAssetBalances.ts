@@ -4,7 +4,7 @@ import { when } from 'jest-when';
 
 import {
   getAuthorization,
-  prepareApplyIncomingConfidentialAssetBalance,
+  prepareApplyIncomingConfidentialAssetBalances,
 } from '~/api/procedures/applyIncomingConfidentialAssetBalances';
 import { Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -17,7 +17,7 @@ import {
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
-describe('applyIncomingConfidentialAssetBalance procedure', () => {
+describe('applyIncomingConfidentialAssetBalances procedure', () => {
   let mockContext: Mocked<Context>;
   let account: ConfidentialAccount;
   let maxUpdates: BigNumber;
@@ -36,7 +36,7 @@ describe('applyIncomingConfidentialAssetBalance procedure', () => {
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
 
-    maxUpdates = new BigNumber(1);
+    maxUpdates = new BigNumber(2);
     account = entityMockUtils.getConfidentialAccountInstance({
       getIncomingBalances: [
         {
@@ -78,7 +78,7 @@ describe('applyIncomingConfidentialAssetBalance procedure', () => {
     });
 
     await expect(
-      prepareApplyIncomingConfidentialAssetBalance.call(proc, {
+      prepareApplyIncomingConfidentialAssetBalances.call(proc, {
         ...args,
         confidentialAccount: entityMockUtils.getConfidentialAccountInstance({
           getIdentity: null,
@@ -87,7 +87,7 @@ describe('applyIncomingConfidentialAssetBalance procedure', () => {
     ).rejects.toThrowError(expectedError);
 
     await expect(
-      prepareApplyIncomingConfidentialAssetBalance.call(proc, {
+      prepareApplyIncomingConfidentialAssetBalances.call(proc, {
         ...args,
         confidentialAccount: entityMockUtils.getConfidentialAccountInstance({
           getIdentity: entityMockUtils.getIdentityInstance({
@@ -110,7 +110,7 @@ describe('applyIncomingConfidentialAssetBalance procedure', () => {
     });
 
     await expect(
-      prepareApplyIncomingConfidentialAssetBalance.call(proc, {
+      prepareApplyIncomingConfidentialAssetBalances.call(proc, {
         ...args,
         confidentialAccount: entityMockUtils.getConfidentialAccountInstance(),
       })
@@ -124,10 +124,27 @@ describe('applyIncomingConfidentialAssetBalance procedure', () => {
       ConfidentialAccount
     >(mockContext);
 
-    const result = await prepareApplyIncomingConfidentialAssetBalance.call(proc, args);
+    let result = await prepareApplyIncomingConfidentialAssetBalances.call(proc, args);
     expect(result).toEqual({
       transaction,
       args: [account.publicKey, rawMaxUpdates],
+      resolver: expect.objectContaining({ publicKey: account.publicKey }),
+    });
+
+    // maxUpdates to equal all incoming balances length
+    const newMaxUpdates = new BigNumber(1);
+    const rawNewMaxUpdates = dsMockUtils.createMockU16(newMaxUpdates);
+    when(bigNumberToU16Spy)
+      .calledWith(newMaxUpdates, mockContext)
+      .mockReturnValue(rawNewMaxUpdates);
+
+    result = await prepareApplyIncomingConfidentialAssetBalances.call(proc, {
+      ...args,
+      maxUpdates: undefined,
+    });
+    expect(result).toEqual({
+      transaction,
+      args: [account.publicKey, rawNewMaxUpdates],
       resolver: expect.objectContaining({ publicKey: account.publicKey }),
     });
   });

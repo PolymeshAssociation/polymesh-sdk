@@ -44,7 +44,7 @@ export interface ApplyIncomingConfidentialAssetBalancesParams {
   confidentialAccount: string | ConfidentialAccount;
 
   /**
-   * The maximum number of incoming balances to apply
+   * The maximum number of incoming balances to apply. Applies all incoming balances if no value is passed
    */
-  maxUpdates: BigNumber;
+  maxUpdates?: BigNumber;
 }
