@@ -1,4 +1,5 @@
 /* istanbul ignore file */
+
 export { PolymeshError } from '~/base/PolymeshError';
 export { Context } from '~/base/Context';
 export { PolymeshTransactionBase } from '~/base/PolymeshTransactionBase';
@@ -175,3 +176,4 @@ export { setVenueFiltering } from '~/api/procedures/setVenueFiltering';
 export { setConfidentialVenueFiltering } from '~/api/procedures/setConfidentialVenueFiltering';
 export { registerCustomClaimType } from '~/api/procedures/registerCustomClaimType';
 export { toggleFreezeConfidentialAsset } from '~/api/procedures/toggleFreezeConfidentialAsset';
+export { toggleFreezeConfidentialAccountAsset } from '~/api/procedures/toggleFreezeConfidentialAccountAsset';
