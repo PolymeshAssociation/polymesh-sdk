@@ -420,7 +420,8 @@
     "dispatch_as": "dispatch_as",
     "force_batch": "force_batch",
     "with_weight": "with_weight",
-    "batch_old": "batch_old"
+    "batch_old": "batch_old",
+    "as_derivative": "as_derivative"
   },
   "ExternalAgents": {
     "create_group": "create_group",

@@ -93,6 +93,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InvalidGranularity: AugmentedError<ApiType>;
       /**
+       * Invalid ticker character - valid set: A`..`Z` `0`..`9` `_` `-` `.` `/`.
+       **/
+      InvalidTickerCharacter: AugmentedError<ApiType>;
+      /**
        * Transfer validation check failed.
        **/
       InvalidTransfer: AugmentedError<ApiType>;
@@ -120,6 +124,10 @@ declare module '@polkadot/api-base/types/errors' {
        * The asset must be frozen.
        **/
       NotFrozen: AugmentedError<ApiType>;
+      /**
+       * Number of asset mediators would exceed the maximum allowed.
+       **/
+      NumberOfAssetMediatorsExceeded: AugmentedError<ApiType>;
       /**
        * Transfers to self are not allowed
        **/
@@ -1079,6 +1087,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InvalidNFTTransferInsufficientCount: AugmentedError<ApiType>;
       /**
+       * Failed to transfer an NFT - nft is locked.
+       **/
+      InvalidNFTTransferNFTIsLocked: AugmentedError<ApiType>;
+      /**
        * Failed to transfer an NFT - NFT not found in portfolio.
        **/
       InvalidNFTTransferNFTNotOwned: AugmentedError<ApiType>;
@@ -1893,12 +1905,6 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       Unauthorized: AugmentedError<ApiType>;
     };
-    sudo: {
-      /**
-       * Sender must be the Sudo account
-       **/
-      RequireSudo: AugmentedError<ApiType>;
-    };
     system: {
       /**
        * The origin filter prevent the call to be dispatched.
@@ -2104,6 +2110,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Too many calls batched.
        **/
       TooManyCalls: AugmentedError<ApiType>;
+      /**
+       * Decoding derivative account Id failed.
+       **/
+      UnableToDeriveAccountId: AugmentedError<ApiType>;
     };
   } // AugmentedErrors
 } // declare module

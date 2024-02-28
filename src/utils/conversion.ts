@@ -3175,11 +3175,16 @@ export function nftDispatchErrorToTransferError(
     NFTNotFound: notFoundErr,
     InvalidNFTTransferNFTNotOwned: notOwnedErr,
     InvalidNFTTransferSamePortfolio: samePortfolioErr,
+    InvalidNFTTransferNFTIsLocked: nftLockedErr,
   } = context.polymeshApi.errors.nft;
 
   if (error.isModule) {
     const moduleErr = error.asModule;
-    if ([notOwnedErr, notFoundErr, insufficientErr, duplicateErr].some(err => err.is(moduleErr))) {
+    if (
+      [notOwnedErr, notFoundErr, insufficientErr, duplicateErr, nftLockedErr].some(err =>
+        err.is(moduleErr)
+      )
+    ) {
       return TransferError.InsufficientPortfolioBalance;
     } else if (frozenErr.is(moduleErr)) {
       return TransferError.TransfersFrozen;
