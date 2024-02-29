@@ -1,5 +1,5 @@
 module.exports = {
-  repositoryUrl: 'https://github.com/PolymeshAssociation/polymesh-sdk.git',
+  repositoryUrl: 'https://github.com/PolymeshAssociation/confidential-polymesh-sdk.git',
   branches: [
     'master',
     {
@@ -8,10 +8,6 @@ module.exports = {
     },
     {
       name: 'alpha',
-      prerelease: true,
-    },
-    {
-      name: 'confidential-assets',
       prerelease: true,
     },
   ],
