@@ -1299,12 +1299,8 @@ function handleNodeVersionResponse(
   reject: (reason?: unknown) => void
 ): boolean {
   const { result: version } = data;
-  const lowMajor = major(SUPPORTED_NODE_SEMVER).toString();
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const high = coerce(SUPPORTED_NODE_VERSION_RANGE.split('||')[1].trim())!.version;
-  const highMajor = major(high).toString();
 
-  if (!satisfies(version, lowMajor) && !satisfies(version, highMajor)) {
+  if (!satisfies(version, major(SUPPORTED_NODE_SEMVER).toString())) {
     const error = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
@@ -1375,12 +1371,7 @@ function handleSpecVersionResponse(
     .map((ver: string) => ver.replace(/^0+(?!$)/g, ''))
     .join('.');
 
-  const lowMajor = major(SUPPORTED_SPEC_SEMVER).toString();
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const high = coerce(SUPPORTED_SPEC_VERSION_RANGE.split('||')[1].trim())!.version;
-  const highMajor = major(high).toString();
-
-  if (!satisfies(specVersionAsSemver, lowMajor) && !satisfies(specVersionAsSemver, highMajor)) {
+  if (!satisfies(specVersionAsSemver, major(SUPPORTED_NODE_SEMVER).toString())) {
     const error = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh chain spec version. Please upgrade the SDK',
