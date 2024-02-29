@@ -24,6 +24,8 @@ import {
   ClaimCountTransferRestriction,
   ClaimPercentageTransferRestriction,
   ClaimTarget,
+  ConfidentialAccount,
+  ConfidentialAsset,
   CountTransferRestriction,
   InputCaCheckpoint,
   InputCondition,
@@ -340,7 +342,11 @@ export interface LocalCollectionKeyInput {
 }
 
 /**
- * Global key must be registered. local keys must provide a specification as they are created with the NftCollection
+ * Global keys are standardized values and are specified by ID. e.g. imageUri for specifying an associated image
+ *
+ * Local keys are unique to the collection, as such `name` and `spec` must be provided
+ *
+ * To use a Local keys must provide a specification as they are created with the NftCollection
  */
 export type CollectionKeyInput = GlobalCollectionKeyInput | LocalCollectionKeyInput;
 
@@ -553,6 +559,44 @@ export interface AddInstructionsParams {
    * array of Instructions to be added in the Venue
    */
   instructions: AddInstructionParams[];
+}
+
+export interface ConfidentialTransactionLeg {
+  /**
+   * The assets (or their IDs) for this leg of the transaction. Amounts are specified in the later proof generation steps
+   */
+  assets: (ConfidentialAsset | string)[];
+  /**
+   * The account from which the assets will be withdrawn from
+   */
+  sender: ConfidentialAccount | string;
+  /**
+   * The account to which the assets will be deposited in
+   */
+  receiver: ConfidentialAccount | string;
+  /**
+   * Auditors for the transaction leg
+   */
+  auditors: (ConfidentialAccount | string)[];
+  /**
+   * Mediators for the transaction leg
+   */
+  mediators: (Identity | string)[];
+}
+
+export interface AddConfidentialTransactionParams {
+  /**
+   * array of Confidential Asset movements
+   */
+  legs: ConfidentialTransactionLeg[];
+  /**
+   * an optional note to help differentiate transactions
+   */
+  memo?: string;
+}
+
+export interface AddConfidentialTransactionsParams {
+  transactions: AddConfidentialTransactionParams[];
 }
 
 export type AddInstructionWithVenueIdParams = AddInstructionParams & {
@@ -1173,4 +1217,8 @@ export interface RegisterCustomClaimTypeParams {
 
 export interface AssetMediatorParams {
   mediators: (Identity | string)[];
+}
+
+export interface FreezeConfidentialAccountAssetParams {
+  confidentialAccount: ConfidentialAccount | string;
 }

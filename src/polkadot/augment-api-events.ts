@@ -23,10 +23,17 @@ import type {
 import type { ITuple } from '@polkadot/types-codec/types';
 import type { AccountId32, H256, Perbill, Permill } from '@polkadot/types/interfaces/runtime';
 import type {
+  ConfidentialAssetsElgamalCipherText,
   FrameSupportDispatchDispatchInfo,
   FrameSupportTokensMiscBalanceStatus,
   PalletBridgeBridgeTx,
   PalletBridgeHandledTxStatus,
+  PalletConfidentialAssetAffirmParty,
+  PalletConfidentialAssetConfidentialAccount,
+  PalletConfidentialAssetConfidentialAuditors,
+  PalletConfidentialAssetTransactionId,
+  PalletConfidentialAssetTransactionLegDetails,
+  PalletConfidentialAssetTransactionLegId,
   PalletCorporateActionsBallotBallotMeta,
   PalletCorporateActionsBallotBallotTimeRange,
   PalletCorporateActionsBallotBallotVote,
@@ -817,6 +824,285 @@ declare module '@polkadot/api-base/types/events' {
       TrustedDefaultClaimIssuerRemoved: AugmentedEvent<
         ApiType,
         [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId]
+      >;
+    };
+    confidentialAsset: {
+      /**
+       * Confidential account asset frozen.
+       **/
+      AccountAssetFrozen: AugmentedEvent<
+        ApiType,
+        [
+          callerDid: PolymeshPrimitivesIdentityId,
+          account: PalletConfidentialAssetConfidentialAccount,
+          assetId: U8aFixed
+        ],
+        {
+          callerDid: PolymeshPrimitivesIdentityId;
+          account: PalletConfidentialAssetConfidentialAccount;
+          assetId: U8aFixed;
+        }
+      >;
+      /**
+       * Confidential account asset unfrozen.
+       **/
+      AccountAssetUnfrozen: AugmentedEvent<
+        ApiType,
+        [
+          callerDid: PolymeshPrimitivesIdentityId,
+          account: PalletConfidentialAssetConfidentialAccount,
+          assetId: U8aFixed
+        ],
+        {
+          callerDid: PolymeshPrimitivesIdentityId;
+          account: PalletConfidentialAssetConfidentialAccount;
+          assetId: U8aFixed;
+        }
+      >;
+      /**
+       * Event for creation of a Confidential account.
+       **/
+      AccountCreated: AugmentedEvent<
+        ApiType,
+        [
+          callerDid: PolymeshPrimitivesIdentityId,
+          account: PalletConfidentialAssetConfidentialAccount
+        ],
+        {
+          callerDid: PolymeshPrimitivesIdentityId;
+          account: PalletConfidentialAssetConfidentialAccount;
+        }
+      >;
+      /**
+       * Confidential account balance increased.
+       * This happens when the receiver calls `apply_incoming_balance`.
+       **/
+      AccountDeposit: AugmentedEvent<
+        ApiType,
+        [
+          account: PalletConfidentialAssetConfidentialAccount,
+          assetId: U8aFixed,
+          amount: ConfidentialAssetsElgamalCipherText,
+          balance: ConfidentialAssetsElgamalCipherText
+        ],
+        {
+          account: PalletConfidentialAssetConfidentialAccount;
+          assetId: U8aFixed;
+          amount: ConfidentialAssetsElgamalCipherText;
+          balance: ConfidentialAssetsElgamalCipherText;
+        }
+      >;
+      /**
+       * Confidential account has an incoming amount.
+       * This happens when a transaction executes.
+       **/
+      AccountDepositIncoming: AugmentedEvent<
+        ApiType,
+        [
+          account: PalletConfidentialAssetConfidentialAccount,
+          assetId: U8aFixed,
+          amount: ConfidentialAssetsElgamalCipherText,
+          incomingBalance: ConfidentialAssetsElgamalCipherText
+        ],
+        {
+          account: PalletConfidentialAssetConfidentialAccount;
+          assetId: U8aFixed;
+          amount: ConfidentialAssetsElgamalCipherText;
+          incomingBalance: ConfidentialAssetsElgamalCipherText;
+        }
+      >;
+      /**
+       * Confidential account balance decreased.
+       * This happens when the sender affirms the transaction.
+       **/
+      AccountWithdraw: AugmentedEvent<
+        ApiType,
+        [
+          account: PalletConfidentialAssetConfidentialAccount,
+          assetId: U8aFixed,
+          amount: ConfidentialAssetsElgamalCipherText,
+          balance: ConfidentialAssetsElgamalCipherText
+        ],
+        {
+          account: PalletConfidentialAssetConfidentialAccount;
+          assetId: U8aFixed;
+          amount: ConfidentialAssetsElgamalCipherText;
+          balance: ConfidentialAssetsElgamalCipherText;
+        }
+      >;
+      /**
+       * Event for creation of a confidential asset.
+       **/
+      AssetCreated: AugmentedEvent<
+        ApiType,
+        [
+          callerDid: PolymeshPrimitivesIdentityId,
+          assetId: U8aFixed,
+          data: Bytes,
+          auditors: PalletConfidentialAssetConfidentialAuditors
+        ],
+        {
+          callerDid: PolymeshPrimitivesIdentityId;
+          assetId: U8aFixed;
+          data: Bytes;
+          auditors: PalletConfidentialAssetConfidentialAuditors;
+        }
+      >;
+      /**
+       * Confidential asset frozen.
+       **/
+      AssetFrozen: AugmentedEvent<
+        ApiType,
+        [callerDid: PolymeshPrimitivesIdentityId, assetId: U8aFixed],
+        { callerDid: PolymeshPrimitivesIdentityId; assetId: U8aFixed }
+      >;
+      /**
+       * Confidential asset unfrozen.
+       **/
+      AssetUnfrozen: AugmentedEvent<
+        ApiType,
+        [callerDid: PolymeshPrimitivesIdentityId, assetId: U8aFixed],
+        { callerDid: PolymeshPrimitivesIdentityId; assetId: U8aFixed }
+      >;
+      /**
+       * Burned confidential assets.
+       **/
+      Burned: AugmentedEvent<
+        ApiType,
+        [
+          callerDid: PolymeshPrimitivesIdentityId,
+          assetId: U8aFixed,
+          amount: u128,
+          totalSupply: u128
+        ],
+        {
+          callerDid: PolymeshPrimitivesIdentityId;
+          assetId: U8aFixed;
+          amount: u128;
+          totalSupply: u128;
+        }
+      >;
+      /**
+       * Issued confidential assets.
+       **/
+      Issued: AugmentedEvent<
+        ApiType,
+        [
+          callerDid: PolymeshPrimitivesIdentityId,
+          assetId: U8aFixed,
+          amount: u128,
+          totalSupply: u128
+        ],
+        {
+          callerDid: PolymeshPrimitivesIdentityId;
+          assetId: U8aFixed;
+          amount: u128;
+          totalSupply: u128;
+        }
+      >;
+      /**
+       * Confidential transaction leg affirmed.
+       **/
+      TransactionAffirmed: AugmentedEvent<
+        ApiType,
+        [
+          callerDid: PolymeshPrimitivesIdentityId,
+          transactionId: PalletConfidentialAssetTransactionId,
+          legId: PalletConfidentialAssetTransactionLegId,
+          party: PalletConfidentialAssetAffirmParty,
+          pendingAffirms: u32
+        ],
+        {
+          callerDid: PolymeshPrimitivesIdentityId;
+          transactionId: PalletConfidentialAssetTransactionId;
+          legId: PalletConfidentialAssetTransactionLegId;
+          party: PalletConfidentialAssetAffirmParty;
+          pendingAffirms: u32;
+        }
+      >;
+      /**
+       * A new transaction has been created
+       **/
+      TransactionCreated: AugmentedEvent<
+        ApiType,
+        [
+          callerDid: PolymeshPrimitivesIdentityId,
+          venueId: u64,
+          transactionId: PalletConfidentialAssetTransactionId,
+          legs: Vec<PalletConfidentialAssetTransactionLegDetails>,
+          memo: Option<PolymeshPrimitivesMemo>
+        ],
+        {
+          callerDid: PolymeshPrimitivesIdentityId;
+          venueId: u64;
+          transactionId: PalletConfidentialAssetTransactionId;
+          legs: Vec<PalletConfidentialAssetTransactionLegDetails>;
+          memo: Option<PolymeshPrimitivesMemo>;
+        }
+      >;
+      /**
+       * Confidential transaction executed.
+       **/
+      TransactionExecuted: AugmentedEvent<
+        ApiType,
+        [
+          callerDid: PolymeshPrimitivesIdentityId,
+          transactionId: PalletConfidentialAssetTransactionId,
+          memo: Option<PolymeshPrimitivesMemo>
+        ],
+        {
+          callerDid: PolymeshPrimitivesIdentityId;
+          transactionId: PalletConfidentialAssetTransactionId;
+          memo: Option<PolymeshPrimitivesMemo>;
+        }
+      >;
+      /**
+       * Confidential transaction rejected.
+       **/
+      TransactionRejected: AugmentedEvent<
+        ApiType,
+        [
+          callerDid: PolymeshPrimitivesIdentityId,
+          transactionId: PalletConfidentialAssetTransactionId,
+          memo: Option<PolymeshPrimitivesMemo>
+        ],
+        {
+          callerDid: PolymeshPrimitivesIdentityId;
+          transactionId: PalletConfidentialAssetTransactionId;
+          memo: Option<PolymeshPrimitivesMemo>;
+        }
+      >;
+      /**
+       * A new venue has been created.
+       **/
+      VenueCreated: AugmentedEvent<
+        ApiType,
+        [callerDid: PolymeshPrimitivesIdentityId, venueId: u64],
+        { callerDid: PolymeshPrimitivesIdentityId; venueId: u64 }
+      >;
+      /**
+       * Venue filtering changed for an asset.
+       **/
+      VenueFiltering: AugmentedEvent<
+        ApiType,
+        [callerDid: PolymeshPrimitivesIdentityId, assetId: U8aFixed, enabled: bool],
+        { callerDid: PolymeshPrimitivesIdentityId; assetId: U8aFixed; enabled: bool }
+      >;
+      /**
+       * Venues added to allow list.
+       **/
+      VenuesAllowed: AugmentedEvent<
+        ApiType,
+        [callerDid: PolymeshPrimitivesIdentityId, assetId: U8aFixed, venues: Vec<u64>],
+        { callerDid: PolymeshPrimitivesIdentityId; assetId: U8aFixed; venues: Vec<u64> }
+      >;
+      /**
+       * Venues removed from the allow list.
+       **/
+      VenuesBlocked: AugmentedEvent<
+        ApiType,
+        [callerDid: PolymeshPrimitivesIdentityId, assetId: U8aFixed, venues: Vec<u64>],
+        { callerDid: PolymeshPrimitivesIdentityId; assetId: U8aFixed; venues: Vec<u64> }
       >;
     };
     contracts: {
@@ -2005,7 +2291,10 @@ declare module '@polkadot/api-base/types/events' {
        * An instruction has affirmed by a mediator.
        * Parameters: [`IdentityId`] of the mediator and [`InstructionId`] of the instruction.
        **/
-      MediatorAffirmationReceived: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, u64]>;
+      MediatorAffirmationReceived: AugmentedEvent<
+        ApiType,
+        [PolymeshPrimitivesIdentityId, u64, Option<u64>]
+      >;
       /**
        * An instruction affirmation has been withdrawn by a mediator.
        * Parameters: [`IdentityId`] of the mediator and [`InstructionId`] of the instruction.

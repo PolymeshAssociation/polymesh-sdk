@@ -30,6 +30,9 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import {
   Account,
+  ConfidentialAssetOwnerRole,
+  ConfidentialLegParty,
+  ConfidentialVenueOwnerRole,
   DistributionWithDetails,
   ErrorCode,
   HistoricInstruction,
@@ -66,6 +69,12 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockVenueModule('~/api/entities/Venue')
 );
 jest.mock(
+  '~/api/entities/confidential/ConfidentialAsset',
+  require('~/testUtils/mocks/entities').mockConfidentialAssetModule(
+    '~/api/entities/confidential/ConfidentialAsset'
+  )
+);
+jest.mock(
   '~/api/entities/NumberedPortfolio',
   require('~/testUtils/mocks/entities').mockNumberedPortfolioModule(
     '~/api/entities/NumberedPortfolio'
@@ -91,6 +100,13 @@ jest.mock(
 jest.mock(
   '~/base/Procedure',
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
+
+jest.mock(
+  '~/api/entities/confidential/ConfidentialVenue',
+  require('~/testUtils/mocks/entities').mockConfidentialVenueModule(
+    '~/api/entities/confidential/ConfidentialVenue'
+  )
 );
 
 describe('Identity class', () => {
@@ -275,6 +291,34 @@ describe('Identity class', () => {
       spy.mockRestore();
     });
 
+    it('should check whether the Identity has the Confidential Venue Owner role', async () => {
+      const did = 'someDid';
+      const identity = new Identity({ did }, context);
+      const role: ConfidentialVenueOwnerRole = {
+        type: RoleType.ConfidentialVenueOwner,
+        venueId: new BigNumber(10),
+      };
+
+      entityMockUtils.configureMocks({
+        confidentialVenueOptions: {
+          creator: entityMockUtils.getIdentityInstance({ did }),
+        },
+      });
+
+      const spy = jest.spyOn(identity, 'isEqual').mockReturnValue(true);
+      let hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(true);
+
+      identity.did = 'otherDid';
+
+      spy.mockReturnValue(false);
+      hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(false);
+      spy.mockRestore();
+    });
+
     it('should check whether the Identity has the Portfolio Custodian role', async () => {
       const did = 'someDid';
       const identity = new Identity({ did }, context);
@@ -314,6 +358,36 @@ describe('Identity class', () => {
       hasRole = await identity.hasRole(role);
 
       expect(hasRole).toBe(false);
+    });
+
+    it('should check whether the Identity has the Confidential Asset Owner role', async () => {
+      const did = 'someDid';
+      const identity = new Identity({ did }, context);
+      const role: ConfidentialAssetOwnerRole = {
+        type: RoleType.ConfidentialAssetOwner,
+        assetId: 'someAssetId',
+      };
+
+      entityMockUtils.configureMocks({
+        confidentialAssetOptions: {
+          details: {
+            owner: new Identity({ did }, context),
+          },
+        },
+      });
+
+      const spy = jest.spyOn(identity, 'isEqual').mockReturnValue(true);
+      let hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(true);
+
+      identity.did = 'otherDid';
+
+      spy.mockReturnValue(false);
+      hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(false);
+      spy.mockRestore();
     });
 
     it('should throw an error if the role is not recognized', () => {
@@ -1313,6 +1387,87 @@ describe('Identity class', () => {
       result = await identity.isChild();
 
       expect(result).toBeFalsy();
+    });
+  });
+
+  describe('method: getInvolvedConfidentialTransactions', () => {
+    const transactionId = new BigNumber(1);
+    const legId = new BigNumber(2);
+
+    it('should return the transactions with the identity affirmation status', async () => {
+      dsMockUtils.createQueryMock('confidentialAsset', 'userAffirmations', {
+        entries: [
+          tuple(
+            [
+              dsMockUtils.createMockIdentityId('someDid'),
+              [
+                dsMockUtils.createMockConfidentialTransactionId(transactionId),
+                dsMockUtils.createMockConfidentialTransactionLegId(legId),
+                dsMockUtils.createMockConfidentialLegParty('Sender'),
+              ],
+            ],
+            dsMockUtils.createMockOption(dsMockUtils.createMockBool(false))
+          ),
+        ],
+      });
+
+      const identity = new Identity({ did: 'someDid' }, context);
+
+      const result = await identity.getInvolvedConfidentialTransactions();
+
+      expect(result).toEqual({
+        data: expect.arrayContaining([
+          expect.objectContaining({
+            affirmed: false,
+            legId: new BigNumber(2),
+            role: ConfidentialLegParty.Sender,
+            transaction: expect.objectContaining({ id: transactionId }),
+          }),
+        ]),
+        next: null,
+      });
+    });
+  });
+
+  describe('method: getConfidentialVenues', () => {
+    let did: string;
+    let confidentialVenueId: BigNumber;
+
+    let rawDid: PolymeshPrimitivesIdentityId;
+    let rawConfidentialVenueId: u64;
+
+    beforeAll(() => {
+      did = 'someDid';
+      confidentialVenueId = new BigNumber(5);
+
+      rawDid = dsMockUtils.createMockIdentityId(did);
+      rawConfidentialVenueId = dsMockUtils.createMockU64(confidentialVenueId);
+    });
+
+    beforeEach(() => {
+      when(stringToIdentityIdSpy).calledWith(did, context).mockReturnValue(rawDid);
+    });
+
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should return a list of Confidential Venues', async () => {
+      when(u64ToBigNumberSpy)
+        .calledWith(rawConfidentialVenueId)
+        .mockReturnValue(confidentialVenueId);
+
+      const mock = dsMockUtils.createQueryMock('confidentialAsset', 'identityVenues');
+      const mockStorageKey = { args: [rawDid, rawConfidentialVenueId] };
+
+      mock.keys = jest.fn().mockResolvedValue([mockStorageKey]);
+
+      const identity = new Identity({ did }, context);
+
+      const result = await identity.getConfidentialVenues();
+      expect(result).toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: confidentialVenueId })])
+      );
     });
   });
 });

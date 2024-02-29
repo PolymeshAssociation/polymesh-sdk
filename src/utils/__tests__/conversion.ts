@@ -1,5 +1,5 @@
 import { DecoratedErrors } from '@polkadot/api/types';
-import { bool, Bytes, Option, Text, U8aFixed, u32, u64, u128, Vec } from '@polkadot/types';
+import { bool, Bytes, Option, Text, u16, u32, u64, u128, Vec } from '@polkadot/types';
 import {
   AccountId,
   Balance,
@@ -10,6 +10,19 @@ import {
   Permill,
 } from '@polkadot/types/interfaces';
 import {
+  ConfidentialAssetsBurnConfidentialBurnProof,
+  PalletConfidentialAssetAffirmParty,
+  PalletConfidentialAssetAffirmTransaction,
+  PalletConfidentialAssetAffirmTransactions,
+  PalletConfidentialAssetAuditorAccount,
+  PalletConfidentialAssetConfidentialAuditors,
+  PalletConfidentialAssetConfidentialTransfers,
+  PalletConfidentialAssetLegParty,
+  PalletConfidentialAssetTransaction,
+  PalletConfidentialAssetTransactionLeg,
+  PalletConfidentialAssetTransactionLegId,
+  PalletConfidentialAssetTransactionLegState,
+  PalletConfidentialAssetTransactionStatus,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
   PalletCorporateActionsRecordDateSpec,
@@ -70,6 +83,8 @@ import {
 import { UnreachableCaseError } from '~/api/procedures/utils';
 import {
   Account,
+  ConfidentialAccount,
+  ConfidentialAsset,
   Context,
   DefaultPortfolio,
   Identity,
@@ -82,7 +97,9 @@ import {
   CallIdEnum,
   Claim as MiddlewareClaim,
   ClaimTypeEnum,
+  ConfidentialAssetHistory,
   CustomClaimType as MiddlewareCustomClaimType,
+  EventIdEnum,
   Instruction,
   InstructionStatusEnum,
   ModuleIdEnum,
@@ -91,6 +108,10 @@ import {
 import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
+  createMockBlock,
+  createMockBTreeSet,
+  createMockConfidentialAccount,
+  createMockConfidentialTransactionStatus,
   createMockNfts,
   createMockOption,
   createMockPortfolioId,
@@ -113,6 +134,10 @@ import {
   ConditionCompliance,
   ConditionTarget,
   ConditionType,
+  ConfidentialAffirmParty,
+  ConfidentialLegParty,
+  ConfidentialLegStateBalances,
+  ConfidentialTransactionStatus,
   CorporateActionKind,
   CorporateActionParams,
   CountryCode,
@@ -157,6 +182,7 @@ import {
 import { InstructionStatus, PermissionGroupIdentifier } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
+import { bigNumberToU16 } from '~/utils/conversion';
 import * as internalUtils from '~/utils/internal';
 import { padString } from '~/utils/internal';
 
@@ -169,6 +195,9 @@ import {
   assetDocumentToDocument,
   assetIdentifierToSecurityIdentifier,
   assetTypeToKnownOrId,
+  auditorsToBtreeSet,
+  auditorsToConfidentialAuditors,
+  auditorToMeshAuditor,
   authorizationDataToAuthorization,
   authorizationToAuthorizationData,
   authorizationTypeToMeshAuthorizationType,
@@ -194,6 +223,15 @@ import {
   complianceConditionsToBtreeSet,
   complianceRequirementResultToRequirementCompliance,
   complianceRequirementToRequirement,
+  confidentialAffirmPartyToRaw,
+  confidentialAffirmsToRaw,
+  confidentialAssetsToBtreeSet,
+  confidentialBurnProofToRaw,
+  confidentialLegIdToId,
+  confidentialLegPartyToRole,
+  confidentialLegStateToLegState,
+  confidentialLegToMeshLeg,
+  confidentialTransactionLegIdToBigNumber,
   corporateActionIdentifierToCaId,
   corporateActionKindToCaKind,
   corporateActionParamsToMeshCorporateActionArgs,
@@ -233,6 +271,9 @@ import {
   meshClaimToClaim,
   meshClaimToInputStatClaim,
   meshClaimTypeToClaimType,
+  meshConfidentialAssetTransactionIdToId,
+  meshConfidentialTransactionDetailsToDetails,
+  meshConfidentialTransactionStatusToStatus,
   meshCorporateActionToCorporateActionParams,
   meshInstructionStatusToInstructionStatus,
   meshMetadataKeyToMetadataKey,
@@ -241,6 +282,7 @@ import {
   meshNftToNftId,
   meshPermissionsToPermissions,
   meshProposalStatusToProposalStatus,
+  meshPublicKeyToKey,
   meshScopeToScope,
   meshSettlementTypeToEndCondition,
   meshStatToStatType,
@@ -250,6 +292,7 @@ import {
   metadataValueDetailToMeshMetadataValueDetail,
   metadataValueToMeshMetadataValue,
   middlewareAgentGroupDataToPermissionGroup,
+  middlewareAssetHistoryToTransactionHistory,
   middlewareAuthorizationDataToAuthorization,
   middlewareClaimToClaimData,
   middlewareEventDetailsToEventIdentifier,
@@ -281,6 +324,7 @@ import {
   scopeToMiddlewareScope,
   secondaryAccountToMeshSecondaryKey,
   securityIdentifierToAssetIdentifier,
+  serializeConfidentialAssetId,
   signatoryToSignerValue,
   signerToSignatory,
   signerToSignerValue,
@@ -304,7 +348,6 @@ import {
   stringToText,
   stringToTicker,
   stringToTickerKey,
-  stringToU8aFixed,
   targetIdentitiesToCorporateActionTargets,
   targetsToTargetIdentities,
   textToString,
@@ -2224,7 +2267,7 @@ describe('u128ToBigNumber', () => {
   });
 });
 
-describe('u16ToBigNumber', () => {
+describe('bigNumberToU16 and u16ToBigNumber', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -2235,6 +2278,34 @@ describe('u16ToBigNumber', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
+  });
+
+  describe('bigNumberToU16', () => {
+    it('should convert a number to a polkadot u16 object', () => {
+      const value = new BigNumber(100);
+      const fakeResult = '100' as unknown as u16;
+      const context = dsMockUtils.getContextInstance();
+
+      when(context.createType).calledWith('u16', value.toString()).mockReturnValue(fakeResult);
+
+      const result = bigNumberToU16(value, context);
+
+      expect(result).toBe(fakeResult);
+    });
+
+    it('should throw an error if the number is negative', () => {
+      const value = new BigNumber(-100);
+      const context = dsMockUtils.getContextInstance();
+
+      expect(() => bigNumberToU16(value, context)).toThrow();
+    });
+
+    it('should throw an error if the number is not an integer', () => {
+      const value = new BigNumber(1.5);
+      const context = dsMockUtils.getContextInstance();
+
+      expect(() => bigNumberToU16(value, context)).toThrow();
+    });
   });
 
   describe('u16ToBigNumber', () => {
@@ -7652,7 +7723,7 @@ describe('corporateActionIdentifierToCaId', () => {
   });
 });
 
-describe('stringToU8aFixed', () => {
+describe('serializeConfidentialAssetId', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -7665,16 +7736,19 @@ describe('stringToU8aFixed', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should convert a string to a polkadot U8aFixed object', () => {
-    const value = 'someValue';
-    const fakeResult = 'result' as unknown as U8aFixed;
+  it('should convert a confidential Asset ID to hex prefixed string', () => {
+    const result = serializeConfidentialAssetId('76702175-d8cb-e3a5-5a19-734433351e25');
+
+    expect(result).toEqual('0x76702175d8cbe3a55a19734433351e25');
+  });
+
+  it('should extract the ID from ConfidentialAsset entity', () => {
     const context = dsMockUtils.getContextInstance();
+    const asset = new ConfidentialAsset({ id: '76702175-d8cb-e3a5-5a19-734433351e25' }, context);
 
-    when(context.createType).calledWith('U8aFixed', value).mockReturnValue(fakeResult);
+    const result = serializeConfidentialAssetId(asset);
 
-    const result = stringToU8aFixed(value, context);
-
-    expect(result).toEqual(fakeResult);
+    expect(result).toEqual('0x76702175d8cbe3a55a19734433351e25');
   });
 });
 
@@ -7815,6 +7889,63 @@ describe('agentGroupToPermissionGroup', () => {
 
       const result = identitiesToBtreeSet(ids, context);
       expect(result).toEqual(['a', 'b', 'c']);
+    });
+  });
+
+  describe('auditorsToConfidentialAuditors', () => {
+    it('should convert auditors and mediators to PalletConfidentialAssetConfidentialAuditors', () => {
+      const context = dsMockUtils.getContextInstance();
+
+      const auditors = ['auditor'];
+      const mediators = ['mediator1', 'mediator2'];
+      mediators.forEach(did =>
+        when(context.createType)
+          .calledWith('PolymeshPrimitivesIdentityId', did)
+          .mockReturnValue(did as unknown as PolymeshPrimitivesIdentityId)
+      );
+
+      when(context.createType)
+        .calledWith('BTreeSet<PalletConfidentialAssetAuditorAccount>', auditors)
+        .mockReturnValue(auditors as unknown as BTreeSet<PalletConfidentialAssetAuditorAccount>);
+      when(context.createType)
+        .calledWith('BTreeSet<PolymeshPrimitivesIdentityId>', mediators)
+        .mockReturnValue(mediators as unknown as BTreeSet<PolymeshPrimitivesIdentityId>);
+
+      when(context.createType)
+        .calledWith('PalletConfidentialAssetConfidentialAuditors', {
+          auditors,
+          mediators,
+        })
+        .mockReturnValue({
+          auditors,
+          mediators,
+        } as unknown as PalletConfidentialAssetConfidentialAuditors);
+
+      let result = auditorsToConfidentialAuditors(
+        context,
+        auditors.map(auditor => ({ publicKey: auditor })) as unknown as ConfidentialAccount[],
+        mediators.map(mediator => ({ did: mediator })) as unknown as Identity[]
+      );
+      expect(result).toEqual({ auditors, mediators });
+
+      when(context.createType)
+        .calledWith('BTreeSet<PolymeshPrimitivesIdentityId>', [])
+        .mockReturnValue([] as unknown as BTreeSet<PolymeshPrimitivesIdentityId>);
+      when(context.createType)
+        .calledWith('PalletConfidentialAssetConfidentialAuditors', {
+          auditors,
+          mediators: [],
+        })
+        .mockReturnValue({
+          auditors,
+          mediators: [],
+        } as unknown as PalletConfidentialAssetConfidentialAuditors);
+
+      result = auditorsToConfidentialAuditors(
+        context,
+        auditors.map(auditor => ({ publicKey: auditor })) as unknown as ConfidentialAccount[]
+      );
+      expect(result).toEqual({ auditors, mediators: [] });
     });
   });
 
@@ -9893,5 +10024,547 @@ describe('mediatorAffirmationStatusToStatus', () => {
     expect(() => mediatorAffirmationStatusToStatus({ type: 'notAType' } as any)).toThrow(
       UnreachableCaseError
     );
+  });
+});
+
+describe('meshConfidentialDetailsToConfidentialDetails', () => {
+  it('should convert PalletConfidentialAssetTransaction to ConfidentialTransactionDetails', () => {
+    const mockDetails = dsMockUtils.createMockConfidentialAssetTransaction({
+      createdAt: dsMockUtils.createMockU32(new BigNumber(1)),
+      memo: dsMockUtils.createMockOption(dsMockUtils.createMockMemo(stringToHex('someMemo'))),
+      venueId: dsMockUtils.createMockU64(new BigNumber(2)),
+    });
+    const result = meshConfidentialTransactionDetailsToDetails(
+      mockDetails as PalletConfidentialAssetTransaction
+    );
+
+    expect(result).toEqual({
+      createdAt: new BigNumber(1),
+      memo: 'someMemo',
+      venueId: new BigNumber(2),
+    });
+  });
+});
+
+describe('meshConfidentialTransactionStatusToStatus', () => {
+  it('should convert PalletConfidentialAssetTransactionStatus to ConfidentialTransactionStatus', () => {
+    let expected = ConfidentialTransactionStatus.Pending;
+    let status = dsMockUtils.createMockConfidentialTransactionStatus(expected);
+
+    let result = meshConfidentialTransactionStatusToStatus(status);
+
+    expect(result).toEqual(expected);
+
+    expected = ConfidentialTransactionStatus.Executed;
+    status = dsMockUtils.createMockConfidentialTransactionStatus(expected);
+    result = meshConfidentialTransactionStatusToStatus(status);
+
+    expect(result).toEqual(expected);
+
+    expected = ConfidentialTransactionStatus.Rejected;
+    status = dsMockUtils.createMockConfidentialTransactionStatus(expected);
+    result = meshConfidentialTransactionStatusToStatus(status);
+
+    expect(result).toEqual(expected);
+  });
+
+  it('should throw an error on unexpected status', () => {
+    const status = createMockConfidentialTransactionStatus(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      'notAStatus' as any
+    ) as PalletConfidentialAssetTransactionStatus;
+
+    expect(() => meshConfidentialTransactionStatusToStatus(status)).toThrow();
+  });
+});
+
+describe('confidentialLegToMeshLeg', () => {
+  const confidentialLeg = {
+    sender: createMockConfidentialAccount('senderKey'),
+    receiver: createMockConfidentialAccount('receiverKey'),
+    assets: dsMockUtils.createMockBTreeSet<Bytes>(),
+    auditors: dsMockUtils.createMockBTreeSet<PalletConfidentialAssetAuditorAccount>(),
+    mediators: dsMockUtils.createMockBTreeSet<PolymeshPrimitivesIdentityId>(['someDid']),
+  };
+  let context: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a confidential leg to PalletConfidentialAssetTransactionLeg', () => {
+    const mockResult = 'mockResult' as unknown as PalletConfidentialAssetTransactionLeg;
+    when(context.createType)
+      .calledWith('PalletConfidentialAssetTransactionLeg', confidentialLeg)
+      .mockReturnValue(mockResult);
+
+    const result = confidentialLegToMeshLeg(confidentialLeg, context);
+
+    expect(result).toEqual(mockResult);
+  });
+});
+
+describe('auditorToMeshAuditor', () => {
+  let account: ConfidentialAccount;
+  let context: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    account = new ConfidentialAccount({ publicKey: 'somePubKey' }, context);
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a ConfidentialAccount to PalletConfidentialAssetAuditorAccount', () => {
+    const mockResult = 'mockResult' as unknown as PalletConfidentialAssetAuditorAccount;
+
+    when(context.createType)
+      .calledWith('PalletConfidentialAssetAuditorAccount', account.publicKey)
+      .mockReturnValue(mockResult);
+
+    const result = auditorToMeshAuditor(account, context);
+
+    expect(result).toEqual(mockResult);
+  });
+});
+
+describe('auditorsToBtreeSet', () => {
+  let account: ConfidentialAccount;
+  let context: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    account = new ConfidentialAccount({ publicKey: 'somePubKey' }, context);
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a ConfidentialAccount to BTreeSetPalletConfidentialAssetAuditorAccount>', () => {
+    const mockResult = createMockBTreeSet<PalletConfidentialAssetAuditorAccount>([]);
+    const mockAuditor = 'somePubKey' as unknown as PalletConfidentialAssetAuditorAccount;
+
+    when(context.createType)
+      .calledWith('PalletConfidentialAssetAuditorAccount', account.publicKey)
+      .mockReturnValue(mockAuditor);
+
+    when(context.createType)
+      .calledWith('BTreeSet<PalletConfidentialAssetAuditorAccount>', [mockAuditor])
+      .mockReturnValue(mockResult);
+
+    const result = auditorsToBtreeSet([account], context);
+
+    expect(result).toEqual(mockResult);
+  });
+});
+
+describe('confidentialAssetsToBtreeSet', () => {
+  let asset: ConfidentialAsset;
+  let context: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    asset = new ConfidentialAsset({ id: '76702175d8cbe3a55a19734433351e25' }, context);
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a ConfidentialAccount to PalletConfidentialAssetAuditorAccount', () => {
+    const mockResult = createMockBTreeSet<Bytes>();
+    when(context.createType)
+      .calledWith('BTreeSet<Bytes>', ['0x76702175d8cbe3a55a19734433351e25'])
+      .mockReturnValue(mockResult);
+
+    const result = confidentialAssetsToBtreeSet([asset], context);
+
+    expect(result).toEqual(mockResult);
+  });
+});
+
+describe('meshPublicKeyToKey', () => {
+  it('should convert the key', () => {
+    const expectedKey = '0x01';
+    const mockKey = dsMockUtils.createMockConfidentialAccount(expectedKey);
+
+    const result = meshPublicKeyToKey(mockKey);
+
+    expect(result).toEqual(expectedKey);
+  });
+});
+
+describe('confidentialLegIdToId', () => {
+  it('should convert to a BigNumber', () => {
+    const mockLegId = dsMockUtils.createMockConfidentialTransactionLegId(new BigNumber(1));
+
+    const result = confidentialLegIdToId(mockLegId);
+
+    expect(result).toEqual(new BigNumber(1));
+  });
+});
+
+describe('meshConfidentialAssetTransactionIdToId', () => {
+  it('should convert to a BigNumber', () => {
+    const mockAssetId = dsMockUtils.createMockConfidentialAssetTransactionId(new BigNumber(1));
+
+    const result = meshConfidentialAssetTransactionIdToId(mockAssetId);
+
+    expect(result).toEqual(new BigNumber(1));
+  });
+
+  describe('confidentialTransactionLegIdToBigNumber', () => {
+    let id: BigNumber;
+    let rawId: PalletConfidentialAssetTransactionLegId;
+
+    beforeAll(() => {
+      dsMockUtils.initMocks();
+    });
+
+    beforeEach(() => {
+      id = new BigNumber(1);
+      rawId = dsMockUtils.createMockConfidentialTransactionLegId(id);
+    });
+
+    afterEach(() => {
+      dsMockUtils.reset();
+    });
+
+    afterAll(() => {
+      dsMockUtils.cleanup();
+    });
+
+    it('should convert PalletConfidentialAssetTransactionLegId to BigNumber ', () => {
+      const result = confidentialTransactionLegIdToBigNumber(rawId);
+
+      expect(result).toEqual(id);
+    });
+  });
+
+  describe('confidentialTransactionLegIdToBigNumber', () => {
+    beforeAll(() => {
+      dsMockUtils.initMocks();
+    });
+    afterEach(() => {
+      dsMockUtils.reset();
+    });
+
+    afterAll(() => {
+      dsMockUtils.cleanup();
+    });
+
+    it('should convert PalletConfidentialAssetTransactionLegId to BigNumber ', () => {
+      let input = dsMockUtils.createMockConfidentialLegParty('Sender');
+      let expected = ConfidentialLegParty.Sender;
+      let result = confidentialLegPartyToRole(input);
+      expect(result).toEqual(expected);
+
+      input = dsMockUtils.createMockConfidentialLegParty('Receiver');
+      expected = ConfidentialLegParty.Receiver;
+      result = confidentialLegPartyToRole(input);
+      expect(result).toEqual(expected);
+
+      input = dsMockUtils.createMockConfidentialLegParty('Mediator');
+      expected = ConfidentialLegParty.Mediator;
+      result = confidentialLegPartyToRole(input);
+      expect(result).toEqual(expected);
+    });
+
+    it('should throw if an unexpected role is received', () => {
+      const input = 'notSomeRole' as unknown as PalletConfidentialAssetLegParty;
+
+      expect(() => confidentialLegPartyToRole(input)).toThrow(UnreachableCaseError);
+    });
+  });
+});
+
+describe('confidentialAffirmPartyToRaw', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return a raw affirm party for a mediator', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+    const party = ConfidentialAffirmParty.Mediator;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mockResult = 'mockResult' as any;
+
+    when(mockContext.createType)
+      .calledWith('PalletConfidentialAssetAffirmParty', {
+        [party]: null,
+      })
+      .mockReturnValue(mockResult);
+
+    const result = confidentialAffirmPartyToRaw({ party }, mockContext);
+
+    expect(result).toEqual(mockResult);
+  });
+
+  it('should return a raw affirm party for a sender', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+    const party = ConfidentialAffirmParty.Sender;
+    const proofs = [{ asset: '1234', proof: '0x01' }];
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    const fmtProofs = { '0x1234': '0x01' };
+
+    const mockResult = 'mockResult' as unknown as PalletConfidentialAssetAffirmParty;
+    const mockRawProofs = dsMockUtils.createMockBTreeMap<Bytes, Bytes>();
+    const mockTransferProof =
+      'mockTransferProof' as unknown as PalletConfidentialAssetConfidentialTransfers;
+
+    when(mockContext.createType)
+      .calledWith('BTreeMap<Bytes, Bytes>', fmtProofs)
+      .mockReturnValue(mockRawProofs);
+
+    when(mockContext.createType)
+      .calledWith('PalletConfidentialAssetConfidentialTransfers', {
+        proofs: mockRawProofs,
+      })
+      .mockReturnValue(mockTransferProof);
+
+    when(mockContext.createType)
+      .calledWith('PalletConfidentialAssetAffirmParty', {
+        [party]: mockTransferProof,
+      })
+      .mockReturnValue(mockResult);
+
+    const result = confidentialAffirmPartyToRaw({ party, proofs }, mockContext);
+
+    expect(result).toEqual(mockResult);
+  });
+});
+
+describe('confidentialAffirmsToRaw', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return a raw affirm transaction', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+
+    const mockAffirm = 'mockAffirm' as unknown as PalletConfidentialAssetAffirmTransaction;
+    const mockResult = 'mockResult' as unknown as PalletConfidentialAssetAffirmTransactions;
+
+    when(mockContext.createType)
+      .calledWith('PalletConfidentialAssetAffirmTransactions', [mockAffirm])
+      .mockReturnValue(mockResult);
+
+    const result = confidentialAffirmsToRaw([mockAffirm], mockContext);
+
+    expect(result).toEqual(mockResult);
+  });
+});
+
+describe('confidentialLegStateToLegState', () => {
+  let mockLegState: dsMockUtils.MockCodec<PalletConfidentialAssetTransactionLegState>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockLegReturn: any;
+
+  const assetId = '76702175-d8cb-e3a5-5a19-734433351e25';
+
+  beforeEach(() => {
+    mockLegState = dsMockUtils.createMockConfidentialLegState({
+      assetState: dsMockUtils.createMockBTreeMap<
+        Bytes,
+        PalletConfidentialAssetTransactionLegState
+      >(),
+    });
+    mockLegReturn = dsMockUtils.createMockOption(mockLegState);
+  });
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return the parsed leg state', () => {
+    const balances = {
+      senderInitBalance: '0x02',
+      senderAmount: '0x03',
+      receiverAmount: '0x04',
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (mockLegState.assetState as any).toJSON = (): Record<string, ConfidentialLegStateBalances> => ({
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      [assetId]: balances,
+    });
+
+    const mockContext = dsMockUtils.getContextInstance();
+
+    const result = confidentialLegStateToLegState(mockLegReturn, mockContext);
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        proved: true,
+        assetState: expect.arrayContaining([
+          expect.objectContaining({
+            asset: expect.objectContaining({ id: assetId }),
+          }),
+        ]),
+      })
+    );
+  });
+
+  it('should return the expected result for unproven legs', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+
+    const result = confidentialLegStateToLegState(dsMockUtils.createMockOption(), mockContext);
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        proved: false,
+      })
+    );
+  });
+
+  it('should throw an error if there is unexpected leg state', () => {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    (mockLegState.assetState as any).toJSON = (): Record<string, ConfidentialLegStateBalances> => ({
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      assetId: {
+        senderInitBalance: undefined,
+      } as any,
+    });
+    /* eslint-enable @typescript-eslint/no-explicit-any */
+
+    const mockContext = dsMockUtils.getContextInstance();
+
+    expect(() => confidentialLegStateToLegState(mockLegReturn, mockContext)).toThrow(
+      'Unexpected data for PalletConfidentialAssetTransactionLegState received from chain'
+    );
+  });
+});
+
+describe('middlewareAssetHistoryToTransactionHistory', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a middleware AssetHistory to TransactionHistory', () => {
+    const assetHistoryEntry = {
+      id: '1',
+      fromId: 'someString',
+      toId: 'someString',
+      amount: '0x01',
+      createdBlock: createMockBlock() as unknown as Block,
+      assetId: 'assetId',
+      eventId: EventIdEnum.AccountDeposit,
+      memo: '0x02',
+    } as ConfidentialAssetHistory;
+
+    const expectedResult = {
+      id: assetHistoryEntry.id,
+      assetId: assetHistoryEntry.assetId,
+      fromId: assetHistoryEntry.fromId,
+      toId: assetHistoryEntry.toId,
+      amount: assetHistoryEntry.amount,
+      datetime: assetHistoryEntry.createdBlock!.datetime,
+      createdBlockId: new BigNumber(assetHistoryEntry.createdBlock!.id),
+      eventId: assetHistoryEntry.eventId,
+      memo: assetHistoryEntry.memo,
+    };
+
+    const result = middlewareAssetHistoryToTransactionHistory(assetHistoryEntry);
+
+    expect(result).toEqual(expectedResult);
+  });
+});
+
+describe('confidentialBurnProofToRaw', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return a raw burn proof', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+
+    const proof = 'someProof';
+    const rawProof = 'rawSomeProof' as unknown as Bytes;
+    const mockResult = 'mockResult' as unknown as ConfidentialAssetsBurnConfidentialBurnProof;
+
+    when(mockContext.createType).calledWith('Bytes', proof).mockReturnValue(rawProof);
+
+    when(mockContext.createType)
+      .calledWith('ConfidentialAssetsBurnConfidentialBurnProof', { encodedInnerProof: rawProof })
+      .mockReturnValue(mockResult);
+
+    const result = confidentialBurnProofToRaw(proof, mockContext);
+
+    expect(result).toEqual(mockResult);
   });
 });

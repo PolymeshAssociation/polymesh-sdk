@@ -36,7 +36,13 @@ import type {
   Permill,
 } from '@polkadot/types/interfaces/runtime';
 import type {
+  ConfidentialAssetsBurnConfidentialBurnProof,
   PalletBridgeBridgeTx,
+  PalletConfidentialAssetAffirmTransactions,
+  PalletConfidentialAssetConfidentialAccount,
+  PalletConfidentialAssetConfidentialAuditors,
+  PalletConfidentialAssetTransactionId,
+  PalletConfidentialAssetTransactionLeg,
   PalletContractsWasmDeterminism,
   PalletCorporateActionsBallotBallotMeta,
   PalletCorporateActionsBallotBallotTimeRange,
@@ -105,8 +111,8 @@ import type {
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceTransferCondition,
   PolymeshPrimitivesTransferComplianceTransferConditionExemptKey,
-  PolymeshRuntimeDevelopRuntimeOriginCaller,
-  PolymeshRuntimeDevelopRuntimeSessionKeys,
+  PolymeshPrivateRuntimeDevelopRuntimeOriginCaller,
+  PolymeshPrivateRuntimeDevelopRuntimeSessionKeys,
   SpConsensusBabeDigestsNextConfigDescriptor,
   SpConsensusGrandpaEquivocationProof,
   SpConsensusSlotsEquivocationProof,
@@ -2049,6 +2055,276 @@ declare module '@polkadot/api-base/types/submittable' {
       resumeAssetCompliance: AugmentedSubmittable<
         (ticker: PolymeshPrimitivesTicker | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [PolymeshPrimitivesTicker]
+      >;
+    };
+    confidentialAsset: {
+      /**
+       * Adds a new transaction.
+       **/
+      addTransaction: AugmentedSubmittable<
+        (
+          venueId: u64 | AnyNumber | Uint8Array,
+          legs:
+            | Vec<PalletConfidentialAssetTransactionLeg>
+            | (
+                | PalletConfidentialAssetTransactionLeg
+                | { assets?: any; sender?: any; receiver?: any; auditors?: any; mediators?: any }
+                | string
+                | Uint8Array
+              )[],
+          memo: Option<PolymeshPrimitivesMemo> | null | Uint8Array | PolymeshPrimitivesMemo | string
+        ) => SubmittableExtrinsic<ApiType>,
+        [u64, Vec<PalletConfidentialAssetTransactionLeg>, Option<PolymeshPrimitivesMemo>]
+      >;
+      /**
+       * Affirm transactions.
+       **/
+      affirmTransactions: AugmentedSubmittable<
+        (transactions: PalletConfidentialAssetAffirmTransactions) => SubmittableExtrinsic<ApiType>,
+        [PalletConfidentialAssetAffirmTransactions]
+      >;
+      /**
+       * Allows additional venues to create instructions involving an asset.
+       *
+       * # Arguments
+       * * `origin` - Must be the asset issuer.
+       * * `asset_id` - AssetId of the token in question.
+       * * `venues` - Array of venues that are allowed to create instructions for the token in question.
+       **/
+      allowVenues: AugmentedSubmittable<
+        (
+          assetId: U8aFixed | string | Uint8Array,
+          venues: Vec<u64> | (u64 | AnyNumber | Uint8Array)[]
+        ) => SubmittableExtrinsic<ApiType>,
+        [U8aFixed, Vec<u64>]
+      >;
+      /**
+       * Applies any incoming balance to the confidential account balance.
+       *
+       * # Arguments
+       * * `account` - the confidential account (Elgamal public key) of the `origin`.
+       * * `asset_id` - AssetId of confidential account.
+       *
+       * # Errors
+       * - `BadOrigin` if not signed.
+       **/
+      applyIncomingBalance: AugmentedSubmittable<
+        (
+          account: PalletConfidentialAssetConfidentialAccount | string | Uint8Array,
+          assetId: U8aFixed | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PalletConfidentialAssetConfidentialAccount, U8aFixed]
+      >;
+      /**
+       * Applies any incoming balance to the confidential account balance.
+       *
+       * # Arguments
+       * * `origin` - contains the secondary key of the caller (i.e who signed the transaction to execute this function).
+       * * `account` - the confidential account (Elgamal public key) of the `origin`.
+       * * `max_updates` - The maximum number of incoming balances to apply.
+       *
+       * # Errors
+       * - `BadOrigin` if not signed.
+       **/
+      applyIncomingBalances: AugmentedSubmittable<
+        (
+          account: PalletConfidentialAssetConfidentialAccount | string | Uint8Array,
+          maxUpdates: u16 | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PalletConfidentialAssetConfidentialAccount, u16]
+      >;
+      /**
+       * Burn assets from the issuer's `account`.
+       *
+       * # Arguments
+       * * `origin` - contains the secondary key of the caller (i.e who signed the transaction to execute this function).
+       * * `asset_id` - the asset_id symbol of the token.
+       * * `amount` - amount of tokens to mint.
+       * * `account` - the asset isser's confidential account to receive the minted assets.
+       * * `burn_proof` - The burn proof.
+       *
+       * # Errors
+       * - `BadOrigin` if not signed.
+       * - `NotAccountOwner` if origin is not the owner of the `account`.
+       * - `NotAssetOwner` if origin is not the owner of the asset.
+       * - `AmountMustBeNonZero` if `amount` is zero.
+       * - `UnknownConfidentialAsset` The asset_id is not a confidential asset.
+       **/
+      burn: AugmentedSubmittable<
+        (
+          assetId: U8aFixed | string | Uint8Array,
+          amount: u128 | AnyNumber | Uint8Array,
+          account: PalletConfidentialAssetConfidentialAccount | string | Uint8Array,
+          proof:
+            | ConfidentialAssetsBurnConfidentialBurnProof
+            | { encodedInnerProof?: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [
+          U8aFixed,
+          u128,
+          PalletConfidentialAssetConfidentialAccount,
+          ConfidentialAssetsBurnConfidentialBurnProof
+        ]
+      >;
+      /**
+       * Register a confidential account.
+       *
+       * # Arguments
+       * * `account` the confidential account to register.
+       *
+       * # Errors
+       * * `BadOrigin` if `origin` isn't signed.
+       **/
+      createAccount: AugmentedSubmittable<
+        (
+          account: PalletConfidentialAssetConfidentialAccount | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PalletConfidentialAssetConfidentialAccount]
+      >;
+      /**
+       * Creates a new confidential asset.
+       * The caller's identity is the issuer of the new confidential asset.
+       *
+       * It is recommended to set at least one asset auditor.
+       *
+       * # Arguments
+       * * `origin` - The asset issuer.
+       * * `data` - On-chain definition of the asset.
+       * * `auditors` - The asset auditors that will have access to transfer amounts of this asset.
+       *
+       * # Errors
+       * - `BadOrigin` if not signed.
+       **/
+      createAsset: AugmentedSubmittable<
+        (
+          data: Bytes | string | Uint8Array,
+          auditors:
+            | PalletConfidentialAssetConfidentialAuditors
+            | { auditors?: any; mediators?: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Bytes, PalletConfidentialAssetConfidentialAuditors]
+      >;
+      /**
+       * Registers a new venue.
+       *
+       **/
+      createVenue: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
+      /**
+       * Revokes permission given to venues for creating instructions involving a particular asset.
+       *
+       * # Arguments
+       * * `origin` - Must be the asset issuer.
+       * * `asset_id` - AssetId of the token in question.
+       * * `venues` - Array of venues that are no longer allowed to create instructions for the token in question.
+       **/
+      disallowVenues: AugmentedSubmittable<
+        (
+          assetId: U8aFixed | string | Uint8Array,
+          venues: Vec<u64> | (u64 | AnyNumber | Uint8Array)[]
+        ) => SubmittableExtrinsic<ApiType>,
+        [U8aFixed, Vec<u64>]
+      >;
+      /**
+       * Execute transaction.
+       **/
+      executeTransaction: AugmentedSubmittable<
+        (
+          transactionId: PalletConfidentialAssetTransactionId | AnyNumber | Uint8Array,
+          legCount: u32 | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PalletConfidentialAssetTransactionId, u32]
+      >;
+      /**
+       * Mint more assets into the asset issuer's `account`.
+       *
+       * # Arguments
+       * * `origin` - Must be the asset issuer.
+       * * `asset_id` - the asset_id symbol of the token.
+       * * `amount` - amount of tokens to mint.
+       * * `account` - the asset isser's confidential account to receive the minted assets.
+       *
+       * # Errors
+       * - `BadOrigin` if not signed.
+       * - `NotAccountOwner` if origin is not the owner of the `account`.
+       * - `NotAssetOwner` if origin is not the owner of the asset.
+       * - `AmountMustBeNonZero` if `amount` is zero.
+       * - `TotalSupplyAboveConfidentialBalanceLimit` if `total_supply` exceeds the confidential balance limit.
+       * - `UnknownConfidentialAsset` The asset_id is not a confidential asset.
+       **/
+      mint: AugmentedSubmittable<
+        (
+          assetId: U8aFixed | string | Uint8Array,
+          amount: u128 | AnyNumber | Uint8Array,
+          account: PalletConfidentialAssetConfidentialAccount | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [U8aFixed, u128, PalletConfidentialAssetConfidentialAccount]
+      >;
+      /**
+       * Reject pending transaction.
+       **/
+      rejectTransaction: AugmentedSubmittable<
+        (
+          transactionId: PalletConfidentialAssetTransactionId | AnyNumber | Uint8Array,
+          legCount: u32 | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PalletConfidentialAssetTransactionId, u32]
+      >;
+      /**
+       * The confidential asset issuer can freeze/unfreeze accounts.
+       *
+       * # Arguments
+       * * `origin` - Must be the asset issuer.
+       * * `account` - the confidential account to lock/unlock.
+       * * `asset_id` - AssetId of confidential account.
+       * * `freeze` - freeze/unfreeze.
+       *
+       * # Errors
+       * - `BadOrigin` if not signed.
+       **/
+      setAccountAssetFrozen: AugmentedSubmittable<
+        (
+          account: PalletConfidentialAssetConfidentialAccount | string | Uint8Array,
+          assetId: U8aFixed | string | Uint8Array,
+          freeze: bool | boolean | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PalletConfidentialAssetConfidentialAccount, U8aFixed, bool]
+      >;
+      /**
+       * Freeze/unfreeze a confidential asset.
+       *
+       * # Arguments
+       * * `origin` - Must be the asset issuer.
+       * * `asset_id` - confidential asset to freeze/unfreeze.
+       * * `freeze` - freeze/unfreeze.
+       *
+       * # Errors
+       * - `BadOrigin` if not signed.
+       **/
+      setAssetFrozen: AugmentedSubmittable<
+        (
+          assetId: U8aFixed | string | Uint8Array,
+          freeze: bool | boolean | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [U8aFixed, bool]
+      >;
+      /**
+       * Enables or disabled venue filtering for a token.
+       *
+       * # Arguments
+       * * `origin` - Must be the asset issuer.
+       * * `asset_id` - AssetId of the token in question.
+       * * `enabled` - Boolean that decides if the filtering should be enabled.
+       **/
+      setVenueFiltering: AugmentedSubmittable<
+        (
+          assetId: U8aFixed | string | Uint8Array,
+          enabled: bool | boolean | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [U8aFixed, bool]
       >;
     };
     contracts: {
@@ -5187,13 +5463,13 @@ declare module '@polkadot/api-base/types/submittable' {
       setKeys: AugmentedSubmittable<
         (
           keys:
-            | PolymeshRuntimeDevelopRuntimeSessionKeys
+            | PolymeshPrivateRuntimeDevelopRuntimeSessionKeys
             | { grandpa?: any; babe?: any; imOnline?: any; authorityDiscovery?: any }
             | string
             | Uint8Array,
           proof: Bytes | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [PolymeshRuntimeDevelopRuntimeSessionKeys, Bytes]
+        [PolymeshPrivateRuntimeDevelopRuntimeSessionKeys, Bytes]
       >;
     };
     settlement: {
@@ -7905,7 +8181,7 @@ declare module '@polkadot/api-base/types/submittable' {
       dispatchAs: AugmentedSubmittable<
         (
           asOrigin:
-            | PolymeshRuntimeDevelopRuntimeOriginCaller
+            | PolymeshPrivateRuntimeDevelopRuntimeOriginCaller
             | { system: any }
             | { Void: any }
             | { PolymeshCommittee: any }
@@ -7915,7 +8191,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | Uint8Array,
           call: Call | IMethod | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [PolymeshRuntimeDevelopRuntimeOriginCaller, Call]
+        [PolymeshPrivateRuntimeDevelopRuntimeOriginCaller, Call]
       >;
       /**
        * Send a batch of dispatch calls.
