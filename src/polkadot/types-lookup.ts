@@ -2793,7 +2793,9 @@ declare module '@polkadot/types/lookup' {
       [PolymeshPrimitivesIdentityId, PolymeshPrimitivesIdentityIdPortfolioId, u64]
     >;
     readonly isMediatorAffirmationReceived: boolean;
-    readonly asMediatorAffirmationReceived: ITuple<[PolymeshPrimitivesIdentityId, u64]>;
+    readonly asMediatorAffirmationReceived: ITuple<
+      [PolymeshPrimitivesIdentityId, u64, Option<u64>]
+    >;
     readonly isMediatorAffirmationWithdrawn: boolean;
     readonly asMediatorAffirmationWithdrawn: ITuple<[PolymeshPrimitivesIdentityId, u64]>;
     readonly type:
@@ -4732,15 +4734,15 @@ declare module '@polkadot/types/lookup' {
   interface PalletSessionCall extends Enum {
     readonly isSetKeys: boolean;
     readonly asSetKeys: {
-      readonly keys_: PolymeshRuntimeDevelopRuntimeSessionKeys;
+      readonly keys_: PolymeshPrivateRuntimeDevelopRuntimeSessionKeys;
       readonly proof: Bytes;
     } & Struct;
     readonly isPurgeKeys: boolean;
     readonly type: 'SetKeys' | 'PurgeKeys';
   }
 
-  /** @name PolymeshRuntimeDevelopRuntimeSessionKeys (486) */
-  interface PolymeshRuntimeDevelopRuntimeSessionKeys extends Struct {
+  /** @name PolymeshPrivateRuntimeDevelopRuntimeSessionKeys (486) */
+  interface PolymeshPrivateRuntimeDevelopRuntimeSessionKeys extends Struct {
     readonly grandpa: SpConsensusGrandpaAppPublic;
     readonly babe: SpConsensusBabeAppPublic;
     readonly imOnline: PalletImOnlineSr25519AppSr25519Public;
@@ -5947,7 +5949,7 @@ declare module '@polkadot/types/lookup' {
     } & Struct;
     readonly isDispatchAs: boolean;
     readonly asDispatchAs: {
-      readonly asOrigin: PolymeshRuntimeDevelopRuntimeOriginCaller;
+      readonly asOrigin: PolymeshPrivateRuntimeDevelopRuntimeOriginCaller;
       readonly call: Call;
     } & Struct;
     readonly isForceBatch: boolean;
@@ -5995,8 +5997,8 @@ declare module '@polkadot/types/lookup' {
     readonly call: Call;
   }
 
-  /** @name PolymeshRuntimeDevelopRuntimeOriginCaller (558) */
-  interface PolymeshRuntimeDevelopRuntimeOriginCaller extends Enum {
+  /** @name PolymeshPrivateRuntimeDevelopRuntimeOriginCaller (558) */
+  interface PolymeshPrivateRuntimeDevelopRuntimeOriginCaller extends Enum {
     readonly isSystem: boolean;
     readonly asSystem: FrameSupportDispatchRawOrigin;
     readonly isVoid: boolean;
@@ -7017,6 +7019,7 @@ declare module '@polkadot/types/lookup' {
     readonly isAssetMetadataKeyBelongsToNFTCollection: boolean;
     readonly isAssetMetadataValueIsEmpty: boolean;
     readonly isNumberOfAssetMediatorsExceeded: boolean;
+    readonly isInvalidTickerCharacter: boolean;
     readonly type:
       | 'Unauthorized'
       | 'AssetAlreadyCreated'
@@ -7055,7 +7058,8 @@ declare module '@polkadot/types/lookup' {
       | 'IncompatibleAssetTypeUpdate'
       | 'AssetMetadataKeyBelongsToNFTCollection'
       | 'AssetMetadataValueIsEmpty'
-      | 'NumberOfAssetMediatorsExceeded';
+      | 'NumberOfAssetMediatorsExceeded'
+      | 'InvalidTickerCharacter';
   }
 
   /** @name PalletCorporateActionsDistributionError (681) */
@@ -7346,7 +7350,7 @@ declare module '@polkadot/types/lookup' {
     readonly priority: u8;
     readonly call: FrameSupportPreimagesBounded;
     readonly maybePeriodic: Option<ITuple<[u32, u32]>>;
-    readonly origin: PolymeshRuntimeDevelopRuntimeOriginCaller;
+    readonly origin: PolymeshPrivateRuntimeDevelopRuntimeOriginCaller;
   }
 
   /** @name FrameSupportPreimagesBounded (722) */
@@ -7985,6 +7989,7 @@ declare module '@polkadot/types/lookup' {
     readonly isZeroCount: boolean;
     readonly isSupplyOverflow: boolean;
     readonly isSupplyUnderflow: boolean;
+    readonly isInvalidNFTTransferNFTIsLocked: boolean;
     readonly type:
       | 'BalanceOverflow'
       | 'BalanceUnderflow'
@@ -8007,7 +8012,8 @@ declare module '@polkadot/types/lookup' {
       | 'UnregisteredMetadataKey'
       | 'ZeroCount'
       | 'SupplyOverflow'
-      | 'SupplyUnderflow';
+      | 'SupplyUnderflow'
+      | 'InvalidNFTTransferNFTIsLocked';
   }
 
   /** @name PalletTestUtilsError (786) */
@@ -8067,7 +8073,6 @@ declare module '@polkadot/types/lookup' {
     readonly isAssetFrozen: boolean;
     readonly isAlreadyFrozen: boolean;
     readonly isNotFrozen: boolean;
-    readonly isNotEnoughAssetAuditors: boolean;
     readonly isTooManyAuditors: boolean;
     readonly isTooManyMediators: boolean;
     readonly isConfidentialAccountAlreadyCreated: boolean;
@@ -8091,6 +8096,7 @@ declare module '@polkadot/types/lookup' {
     readonly isUnknownTransaction: boolean;
     readonly isUnknownTransactionLeg: boolean;
     readonly isTransactionNoLegs: boolean;
+    readonly isTransactionLegHashNoAssets: boolean;
     readonly type:
       | 'MediatorIdentityInvalid'
       | 'ConfidentialAccountMissing'
@@ -8100,7 +8106,6 @@ declare module '@polkadot/types/lookup' {
       | 'AssetFrozen'
       | 'AlreadyFrozen'
       | 'NotFrozen'
-      | 'NotEnoughAssetAuditors'
       | 'TooManyAuditors'
       | 'TooManyMediators'
       | 'ConfidentialAccountAlreadyCreated'
@@ -8123,7 +8128,8 @@ declare module '@polkadot/types/lookup' {
       | 'LegCountTooSmall'
       | 'UnknownTransaction'
       | 'UnknownTransactionLeg'
-      | 'TransactionNoLegs';
+      | 'TransactionNoLegs'
+      | 'TransactionLegHashNoAssets';
   }
 
   /** @name FrameSystemExtensionsCheckSpecVersion (806) */
@@ -8150,6 +8156,6 @@ declare module '@polkadot/types/lookup' {
   /** @name PalletPermissionsStoreCallMetadata (815) */
   type PalletPermissionsStoreCallMetadata = Null;
 
-  /** @name PolymeshRuntimeDevelopRuntime (816) */
-  type PolymeshRuntimeDevelopRuntime = Null;
+  /** @name PolymeshPrivateRuntimeDevelopRuntime (816) */
+  type PolymeshPrivateRuntimeDevelopRuntime = Null;
 } // declare module

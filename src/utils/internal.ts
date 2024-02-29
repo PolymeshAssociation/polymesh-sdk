@@ -47,19 +47,26 @@ import { latestSqVersionQuery } from '~/middleware/queries';
 import { Claim as MiddlewareClaim, ClaimTypeEnum, Query } from '~/middleware/types';
 import { MiddlewareScope } from '~/middleware/typesV1';
 import {
+  AttestPrimaryKeyRotationAuthorizationData,
+  Authorization,
+  AuthorizationRequest,
+  AuthorizationType,
   CaCheckpointType,
   Claim,
   ClaimType,
   Condition,
   ConditionType,
   CountryCode,
+  DefaultPortfolio,
   ErrorCode,
+  GenericAuthorizationData,
   GenericPolymeshTransaction,
   InputCaCheckpoint,
   InputCondition,
   ModuleName,
   NextKey,
   NoArgsProcedureMethod,
+  NumberedPortfolio,
   OptionalArgsProcedureMethod,
   PaginationOptions,
   PermissionedAccount,
@@ -1897,6 +1904,81 @@ export function areSameClaims(
 /**
  * @hidden
  */
+export function assertNoPendingAuthorizationExists(params: {
+  authorizationRequests: AuthorizationRequest[];
+  message: string;
+  authorization: Partial<Authorization>;
+  issuer?: Identity;
+  target?: string | Identity;
+}): void {
+  const {
+    authorizationRequests,
+    message,
+    authorization,
+    target: targetToCheck,
+    issuer: issuerToCheck,
+  } = params;
+
+  if (authorizationRequests.length === 0) {
+    return;
+  }
+
+  const pendingAuthorization = authorizationRequests.find(authorizationRequest => {
+    const { issuer, target, data } = authorizationRequest;
+
+    if (authorizationRequest.isExpired()) {
+      return false;
+    }
+
+    if (targetToCheck && signerToString(target) !== signerToString(targetToCheck)) {
+      return false;
+    }
+
+    if (issuerToCheck && signerToString(issuer) !== signerToString(issuerToCheck)) {
+      return false;
+    }
+
+    if (authorization.type && data.type !== authorization.type) {
+      return false;
+    }
+
+    if (authorization.type === AuthorizationType.PortfolioCustody && authorization.value) {
+      const authorizationData = data as { value: NumberedPortfolio | DefaultPortfolio };
+
+      return authorizationData.value.isEqual(authorization.value);
+    }
+
+    if (authorization.type === AuthorizationType.AttestPrimaryKeyRotation && authorization.value) {
+      const authorizationData = data as AttestPrimaryKeyRotationAuthorizationData;
+
+      return authorizationData.value.isEqual(authorization.value);
+    }
+
+    // last checks for authorizations that have string values
+    const { value } = authorization as GenericAuthorizationData;
+    const { value: authorizationValue } = data as GenericAuthorizationData;
+
+    if (value && value !== authorizationValue) {
+      return false;
+    }
+
+    return true;
+  });
+
+  if (pendingAuthorization) {
+    const { issuer, target, data, authId } = pendingAuthorization;
+    const { type: authorizationType } = data;
+    throw new PolymeshError({
+      code: ErrorCode.NoDataChange,
+      message,
+      data: { target, issuer, authorizationType, authId },
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
 export function assertCaAssetValid(id: string): string {
   if (id.length >= 32) {
     let assetId = id;
@@ -1920,6 +2002,21 @@ export function assertCaAssetValid(id: string): string {
     message: 'The supplied ID is not a valid confidential Asset ID',
     data: { id },
   });
+}
+
+/**
+ * @hidden
+ */
+export async function assertIdentityExists(identity: Identity): Promise<void> {
+  const exists = await identity.exists();
+
+  if (!exists) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'The identity does not exists',
+      data: { did: identity.did },
+    });
+  }
 }
 
 /**

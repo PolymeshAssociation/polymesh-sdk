@@ -137,7 +137,7 @@ import type {
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceAssetTransferCompliance,
   PolymeshPrimitivesTransferComplianceTransferConditionExemptKey,
-  PolymeshRuntimeDevelopRuntimeSessionKeys,
+  PolymeshPrivateRuntimeDevelopRuntimeSessionKeys,
   SpConsensusBabeAppPublic,
   SpConsensusBabeBabeEpochConfiguration,
   SpConsensusBabeDigestsNextConfigDescriptor,
@@ -2594,7 +2594,7 @@ declare module '@polkadot/api-base/types/storage' {
         ApiType,
         (
           arg: AccountId32 | string | Uint8Array
-        ) => Observable<Option<PolymeshRuntimeDevelopRuntimeSessionKeys>>,
+        ) => Observable<Option<PolymeshPrivateRuntimeDevelopRuntimeSessionKeys>>,
         [AccountId32]
       >;
       /**
@@ -2608,7 +2608,9 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       queuedKeys: AugmentedQuery<
         ApiType,
-        () => Observable<Vec<ITuple<[AccountId32, PolymeshRuntimeDevelopRuntimeSessionKeys]>>>,
+        () => Observable<
+          Vec<ITuple<[AccountId32, PolymeshPrivateRuntimeDevelopRuntimeSessionKeys]>>
+        >,
         []
       >;
       /**

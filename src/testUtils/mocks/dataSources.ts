@@ -130,6 +130,7 @@ import {
   PolymeshPrimitivesSettlementInstruction,
   PolymeshPrimitivesSettlementInstructionStatus,
   PolymeshPrimitivesSettlementLeg,
+  PolymeshPrimitivesSettlementMediatorAffirmationStatus,
   PolymeshPrimitivesSettlementSettlementType,
   PolymeshPrimitivesSettlementVenueType,
   PolymeshPrimitivesStatisticsStat2ndKey,
@@ -4473,6 +4474,18 @@ export const createMockSigningPayload = (mockGetters?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockAffirmationExpiry = (
+  affirmExpiry: Option<u64> | Parameters<typeof createMockU64>
+): MockCodec<any> => {
+  const expiry = affirmExpiry ?? dsMockUtils.createMockOption();
+
+  return createMockCodec({ expiry }, !affirmExpiry);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockConfidentialAssetDetails = (
   details?:
     | PalletConfidentialAssetConfidentialAssetDetails
@@ -4495,6 +4508,24 @@ export const createMockConfidentialAssetDetails = (
   };
 
   return createMockCodec({ totalSupply, ownerDid, data, ticker }, !details);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockMediatorAffirmationStatus = (
+  status?:
+    | 'Unknown'
+    | 'Pending'
+    | { Affirmed: MockCodec<any> }
+    | PolymeshPrimitivesSettlementMediatorAffirmationStatus
+): MockCodec<PolymeshPrimitivesSettlementMediatorAffirmationStatus> => {
+  if (isCodec<PolymeshPrimitivesSettlementMediatorAffirmationStatus>(status)) {
+    return status as MockCodec<PolymeshPrimitivesSettlementMediatorAffirmationStatus>;
+  }
+
+  return createMockEnum<PolymeshPrimitivesSettlementMediatorAffirmationStatus>(status);
 };
 
 /**

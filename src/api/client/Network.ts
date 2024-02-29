@@ -14,6 +14,7 @@ import {
   ProcedureMethod,
   ProtocolFees,
   SubCallback,
+  SubmissionDetails,
   TransactionPayload,
   TransferPolyxParams,
   TxTag,
@@ -196,7 +197,7 @@ export class Network {
   public async submitTransaction(
     txPayload: TransactionPayload,
     signature: string
-  ): Promise<Record<string, unknown>> {
+  ): Promise<SubmissionDetails> {
     const { context } = this;
     const { method, payload } = txPayload;
     const transaction = context.polymeshApi.tx(method);
@@ -214,8 +215,10 @@ export class Network {
 
     transaction.addSignature(payload.address, signature, payload);
 
-    const info: Record<string, unknown> = {
+    const submissionDetails: SubmissionDetails = {
+      blockHash: '',
       transactionHash: transaction.hash.toString(),
+      transactionIndex: new BigNumber(0),
     };
 
     return new Promise((resolve, reject) => {
@@ -229,11 +232,11 @@ export class Network {
         if (receipt.isCompleted) {
           if (receipt.isInBlock) {
             const inBlockHash = status.asInBlock;
-            info.blockHash = hashToString(inBlockHash);
+            submissionDetails.blockHash = hashToString(inBlockHash);
 
             // we know that the index has to be set by the time the transaction is included in a block
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            info.txIndex = new BigNumber(receipt.txIndex!);
+            submissionDetails.transactionIndex = new BigNumber(receipt.txIndex!);
 
             // if the extrinsic failed due to an on-chain error, we should handle it in a special way
             [extrinsicFailedEvent] = filterEventRecords(receipt, 'system', 'ExtrinsicFailed', true);
@@ -265,7 +268,7 @@ export class Network {
             });
           } else if (receipt.isFinalized) {
             finishing = Promise.all([unsubscribing]).then(() => {
-              resolve(info);
+              resolve(submissionDetails);
             });
           } else if (receipt.isError) {
             reject(new PolymeshError({ code: ErrorCode.TransactionAborted }));

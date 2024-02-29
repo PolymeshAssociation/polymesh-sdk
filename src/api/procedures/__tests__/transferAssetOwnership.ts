@@ -15,9 +15,22 @@ import {
 import { AuthorizationRequest, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType, SignerType, SignerValue, TxTags } from '~/types';
+import {
+  Account,
+  Authorization,
+  AuthorizationType,
+  Identity,
+  SignerType,
+  SignerValue,
+  TxTags,
+} from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
+
+jest.mock(
+  '~/api/entities/Identity',
+  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
 
 jest.mock(
   '~/api/entities/Asset/Fungible',
@@ -42,6 +55,8 @@ describe('transferAssetOwnership procedure', () => {
   let rawAuthorizationData: PolymeshPrimitivesAuthorizationAuthorizationData;
   let rawMoment: Moment;
   let args: Params;
+  let signerToStringSpy: jest.SpyInstance<string, [string | Identity | Account]>;
+  let target: Identity;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -54,7 +69,7 @@ describe('transferAssetOwnership procedure', () => {
     );
     dateToMomentSpy = jest.spyOn(utilsConversionModule, 'dateToMoment');
     ticker = 'SOME_TICKER';
-    did = 'someOtherDid';
+    did = 'someDid';
     expiry = new Date('10/14/3040');
     rawSignatory = dsMockUtils.createMockSignatory({
       Identity: dsMockUtils.createMockIdentityId(did),
@@ -67,6 +82,8 @@ describe('transferAssetOwnership procedure', () => {
       ticker,
       target: did,
     };
+    signerToStringSpy = jest.spyOn(utilsConversionModule, 'signerToString');
+    target = entityMockUtils.getIdentityInstance({ did: args.target as string });
   });
 
   let transaction: PolymeshTx<
@@ -82,6 +99,12 @@ describe('transferAssetOwnership procedure', () => {
 
     mockContext = dsMockUtils.getContextInstance();
 
+    entityMockUtils.configureMocks({
+      identityOptions: {
+        authorizationsGetReceived: [],
+      },
+    });
+
     when(signerValueToSignatorySpy)
       .calledWith({ type: SignerType.Identity, value: did }, mockContext)
       .mockReturnValue(rawSignatory);
@@ -89,6 +112,12 @@ describe('transferAssetOwnership procedure', () => {
       .calledWith({ type: AuthorizationType.TransferAssetOwnership, value: ticker }, mockContext)
       .mockReturnValue(rawAuthorizationData);
     when(dateToMomentSpy).calledWith(expiry, mockContext).mockReturnValue(rawMoment);
+    when(signerToStringSpy)
+      .calledWith(args.target)
+      .mockReturnValue(args.target as string);
+    when(signerToStringSpy)
+      .calledWith(target)
+      .mockReturnValue(args.target as string);
   });
 
   afterEach(() => {
@@ -100,6 +129,28 @@ describe('transferAssetOwnership procedure', () => {
   afterAll(() => {
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
+  });
+
+  it('should throw an error if has Pending Authorization', async () => {
+    entityMockUtils.configureMocks({
+      identityOptions: {
+        authorizationsGetReceived: [
+          entityMockUtils.getAuthorizationRequestInstance({
+            target,
+            issuer: entityMockUtils.getIdentityInstance({ did }),
+            authId: new BigNumber(1),
+            expiry: null,
+            data: { type: AuthorizationType.TransferAssetOwnership, value: ticker },
+          }),
+        ],
+      },
+    });
+
+    const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
+
+    return expect(prepareTransferAssetOwnership.call(proc, args)).rejects.toThrow(
+      'The target Identity already has a pending transfer Asset Ownership request'
+    );
   });
 
   it('should return an add authorization transaction spec', async () => {

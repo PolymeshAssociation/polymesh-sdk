@@ -93,6 +93,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InvalidGranularity: AugmentedError<ApiType>;
       /**
+       * Invalid ticker character - valid set: A`..`Z` `0`..`9` `_` `-` `.` `/`.
+       **/
+      InvalidTickerCharacter: AugmentedError<ApiType>;
+      /**
        * Transfer validation check failed.
        **/
       InvalidTransfer: AugmentedError<ApiType>;
@@ -524,10 +528,6 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       NotAssetOwner: AugmentedError<ApiType>;
       /**
-       * The number of confidential asset auditors doesn't meet the minimum requirement.
-       **/
-      NotEnoughAssetAuditors: AugmentedError<ApiType>;
-      /**
        * Confidential asset wasn't frozen.
        **/
       NotFrozen: AugmentedError<ApiType>;
@@ -559,6 +559,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Transaction has already been affirmed.
        **/
       TransactionAlreadyAffirmed: AugmentedError<ApiType>;
+      /**
+       * Transaction leg has no assets.
+       **/
+      TransactionLegHashNoAssets: AugmentedError<ApiType>;
       /**
        * Transaction has no legs.
        **/
@@ -1212,6 +1216,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Failed to transfer an NFT - the number of nfts in the identity is insufficient.
        **/
       InvalidNFTTransferInsufficientCount: AugmentedError<ApiType>;
+      /**
+       * Failed to transfer an NFT - nft is locked.
+       **/
+      InvalidNFTTransferNFTIsLocked: AugmentedError<ApiType>;
       /**
        * Failed to transfer an NFT - NFT not found in portfolio.
        **/

@@ -86,3 +86,12 @@ export type InstructionStatusResult =
       status: Exclude<InstructionStatus, InstructionStatus.Pending>;
       eventIdentifier: EventIdentifier;
     };
+
+export type MediatorAffirmation = {
+  identity: Identity;
+  status: AffirmationStatus;
+  /**
+   * Affirmations may have an expiration time
+   */
+  expiry?: Date;
+};

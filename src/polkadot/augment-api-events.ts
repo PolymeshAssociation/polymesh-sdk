@@ -2291,7 +2291,10 @@ declare module '@polkadot/api-base/types/events' {
        * An instruction has affirmed by a mediator.
        * Parameters: [`IdentityId`] of the mediator and [`InstructionId`] of the instruction.
        **/
-      MediatorAffirmationReceived: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, u64]>;
+      MediatorAffirmationReceived: AugmentedEvent<
+        ApiType,
+        [PolymeshPrimitivesIdentityId, u64, Option<u64>]
+      >;
       /**
        * An instruction affirmation has been withdrawn by a mediator.
        * Parameters: [`IdentityId`] of the mediator and [`InstructionId`] of the instruction.

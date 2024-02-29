@@ -111,8 +111,8 @@ import type {
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceTransferCondition,
   PolymeshPrimitivesTransferComplianceTransferConditionExemptKey,
-  PolymeshRuntimeDevelopRuntimeOriginCaller,
-  PolymeshRuntimeDevelopRuntimeSessionKeys,
+  PolymeshPrivateRuntimeDevelopRuntimeOriginCaller,
+  PolymeshPrivateRuntimeDevelopRuntimeSessionKeys,
   SpConsensusBabeDigestsNextConfigDescriptor,
   SpConsensusGrandpaEquivocationProof,
   SpConsensusSlotsEquivocationProof,
@@ -2086,6 +2086,8 @@ declare module '@polkadot/api-base/types/submittable' {
       /**
        * Allows additional venues to create instructions involving an asset.
        *
+       * # Arguments
+       * * `origin` - Must be the asset issuer.
        * * `asset_id` - AssetId of the token in question.
        * * `venues` - Array of venues that are allowed to create instructions for the token in question.
        **/
@@ -2100,7 +2102,6 @@ declare module '@polkadot/api-base/types/submittable' {
        * Applies any incoming balance to the confidential account balance.
        *
        * # Arguments
-       * * `origin` - contains the secondary key of the caller (i.e who signed the transaction to execute this function).
        * * `account` - the confidential account (Elgamal public key) of the `origin`.
        * * `asset_id` - AssetId of confidential account.
        *
@@ -2183,13 +2184,15 @@ declare module '@polkadot/api-base/types/submittable' {
         [PalletConfidentialAssetConfidentialAccount]
       >;
       /**
-       * Initializes a new confidential security token.
-       * Makes the initiating account the owner of the security token
-       * & the balance of the owner is set to total zero. To set to total supply, `mint` should
-       * be called after a successful call of this function.
+       * Creates a new confidential asset.
+       * The caller's identity is the issuer of the new confidential asset.
+       *
+       * It is recommended to set at least one asset auditor.
        *
        * # Arguments
-       * * `origin` - contains the secondary key of the caller (i.e who signed the transaction to execute this function).
+       * * `origin` - The asset issuer.
+       * * `data` - On-chain definition of the asset.
+       * * `auditors` - The asset auditors that will have access to transfer amounts of this asset.
        *
        * # Errors
        * - `BadOrigin` if not signed.
@@ -2213,6 +2216,8 @@ declare module '@polkadot/api-base/types/submittable' {
       /**
        * Revokes permission given to venues for creating instructions involving a particular asset.
        *
+       * # Arguments
+       * * `origin` - Must be the asset issuer.
        * * `asset_id` - AssetId of the token in question.
        * * `venues` - Array of venues that are no longer allowed to create instructions for the token in question.
        **/
@@ -2237,7 +2242,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * Mint more assets into the asset issuer's `account`.
        *
        * # Arguments
-       * * `origin` - contains the secondary key of the caller (i.e who signed the transaction to execute this function).
+       * * `origin` - Must be the asset issuer.
        * * `asset_id` - the asset_id symbol of the token.
        * * `amount` - amount of tokens to mint.
        * * `account` - the asset isser's confidential account to receive the minted assets.
@@ -2310,6 +2315,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * Enables or disabled venue filtering for a token.
        *
        * # Arguments
+       * * `origin` - Must be the asset issuer.
        * * `asset_id` - AssetId of the token in question.
        * * `enabled` - Boolean that decides if the filtering should be enabled.
        **/
@@ -5457,13 +5463,13 @@ declare module '@polkadot/api-base/types/submittable' {
       setKeys: AugmentedSubmittable<
         (
           keys:
-            | PolymeshRuntimeDevelopRuntimeSessionKeys
+            | PolymeshPrivateRuntimeDevelopRuntimeSessionKeys
             | { grandpa?: any; babe?: any; imOnline?: any; authorityDiscovery?: any }
             | string
             | Uint8Array,
           proof: Bytes | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [PolymeshRuntimeDevelopRuntimeSessionKeys, Bytes]
+        [PolymeshPrivateRuntimeDevelopRuntimeSessionKeys, Bytes]
       >;
     };
     settlement: {
@@ -8175,7 +8181,7 @@ declare module '@polkadot/api-base/types/submittable' {
       dispatchAs: AugmentedSubmittable<
         (
           asOrigin:
-            | PolymeshRuntimeDevelopRuntimeOriginCaller
+            | PolymeshPrivateRuntimeDevelopRuntimeOriginCaller
             | { system: any }
             | { Void: any }
             | { PolymeshCommittee: any }
@@ -8185,7 +8191,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | Uint8Array,
           call: Call | IMethod | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [PolymeshRuntimeDevelopRuntimeOriginCaller, Call]
+        [PolymeshPrivateRuntimeDevelopRuntimeOriginCaller, Call]
       >;
       /**
        * Send a batch of dispatch calls.

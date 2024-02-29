@@ -16,8 +16,10 @@ import { AuthorizationRequest, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
+  Account,
   Authorization,
   AuthorizationType,
+  Identity,
   RoleType,
   SignerType,
   SignerValue,
@@ -26,6 +28,11 @@ import {
 } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
+
+jest.mock(
+  '~/api/entities/Identity',
+  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
 
 jest.mock(
   '~/api/entities/TickerReservation',
@@ -52,6 +59,8 @@ describe('transferTickerOwnership procedure', () => {
   let rawAuthorizationData: PolymeshPrimitivesAuthorizationAuthorizationData;
   let rawMoment: Moment;
   let args: Params;
+  let signerToStringSpy: jest.SpyInstance<string, [string | Identity | Account]>;
+  let target: Identity;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -64,7 +73,7 @@ describe('transferTickerOwnership procedure', () => {
     );
     dateToMomentSpy = jest.spyOn(utilsConversionModule, 'dateToMoment');
     ticker = 'SOME_TICKER';
-    did = 'someOtherDid';
+    did = 'someDid';
     expiry = new Date('10/14/3040');
     rawSignatory = dsMockUtils.createMockSignatory({
       Identity: dsMockUtils.createMockIdentityId(did),
@@ -77,6 +86,7 @@ describe('transferTickerOwnership procedure', () => {
       ticker,
       target: did,
     };
+    signerToStringSpy = jest.spyOn(utilsConversionModule, 'signerToString');
   });
 
   let transaction: PolymeshTx<
@@ -89,16 +99,29 @@ describe('transferTickerOwnership procedure', () => {
 
   beforeEach(() => {
     transaction = dsMockUtils.createTxMock('identity', 'addAuthorization');
-
     mockContext = dsMockUtils.getContextInstance();
+    target = entityMockUtils.getIdentityInstance({ did: args.target as string });
+
+    entityMockUtils.configureMocks({
+      identityOptions: {
+        authorizationsGetReceived: [],
+      },
+    });
 
     when(signerValueToSignatorySpy)
       .calledWith({ type: SignerType.Identity, value: did }, mockContext)
       .mockReturnValue(rawSignatory);
+
     when(authorizationToAuthorizationDataSpy)
       .calledWith({ type: AuthorizationType.TransferTicker, value: ticker }, mockContext)
       .mockReturnValue(rawAuthorizationData);
     when(dateToMomentSpy).calledWith(expiry, mockContext).mockReturnValue(rawMoment);
+    when(signerToStringSpy)
+      .calledWith(args.target)
+      .mockReturnValue(args.target as string);
+    when(signerToStringSpy)
+      .calledWith(target)
+      .mockReturnValue(args.target as string);
   });
 
   afterEach(() => {
@@ -112,6 +135,28 @@ describe('transferTickerOwnership procedure', () => {
     dsMockUtils.cleanup();
   });
 
+  it('should throw an error if there is a Pending Authorization', () => {
+    entityMockUtils.configureMocks({
+      identityOptions: {
+        authorizationsGetReceived: [
+          entityMockUtils.getAuthorizationRequestInstance({
+            target,
+            issuer: entityMockUtils.getIdentityInstance({ did }),
+            authId: new BigNumber(1),
+            expiry: null,
+            data: { type: AuthorizationType.TransferTicker, value: ticker },
+          }),
+        ],
+      },
+    });
+
+    const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
+
+    return expect(prepareTransferTickerOwnership.call(proc, args)).rejects.toThrow(
+      'The target Identity already has a pending Ticker Ownership transfer request'
+    );
+  });
+
   it('should throw an error if an Asset with that ticker has already been launched', () => {
     entityMockUtils.configureMocks({
       tickerReservationOptions: {
@@ -121,7 +166,11 @@ describe('transferTickerOwnership procedure', () => {
           status: TickerReservationStatus.AssetCreated,
         },
       },
+      identityOptions: {
+        authorizationsGetReceived: [],
+      },
     });
+
     const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
 
     return expect(prepareTransferTickerOwnership.call(proc, args)).rejects.toThrow(

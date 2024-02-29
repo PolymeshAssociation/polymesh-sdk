@@ -61,7 +61,7 @@ export default {
     },
   },
   /**
-   * Lookup18: frame_system::EventRecord<polymesh_runtime_develop::runtime::RuntimeEvent, primitive_types::H256>
+   * Lookup18: frame_system::EventRecord<polymesh_private_runtime_develop::runtime::RuntimeEvent, primitive_types::H256>
    **/
   FrameSystemEventRecord: {
     phase: 'FrameSystemPhase',
@@ -671,7 +671,7 @@ export default {
     },
   },
   /**
-   * Lookup75: polymesh_common_utilities::traits::group::RawEvent<sp_core::crypto::AccountId32, polymesh_runtime_develop::runtime::RuntimeEvent, pallet_group::Instance2>
+   * Lookup75: polymesh_common_utilities::traits::group::RawEvent<sp_core::crypto::AccountId32, polymesh_private_runtime_develop::runtime::RuntimeEvent, pallet_group::Instance2>
    **/
   PolymeshCommonUtilitiesGroupRawEventInstance2: {
     _enum: {
@@ -722,7 +722,7 @@ export default {
     },
   },
   /**
-   * Lookup83: polymesh_common_utilities::traits::group::RawEvent<sp_core::crypto::AccountId32, polymesh_runtime_develop::runtime::RuntimeEvent, pallet_group::Instance1>
+   * Lookup83: polymesh_common_utilities::traits::group::RawEvent<sp_core::crypto::AccountId32, polymesh_private_runtime_develop::runtime::RuntimeEvent, pallet_group::Instance1>
    **/
   PolymeshCommonUtilitiesGroupRawEventInstance1: {
     _enum: {
@@ -764,7 +764,7 @@ export default {
    **/
   PalletCommitteeInstance3: 'Null',
   /**
-   * Lookup87: polymesh_common_utilities::traits::group::RawEvent<sp_core::crypto::AccountId32, polymesh_runtime_develop::runtime::RuntimeEvent, pallet_group::Instance3>
+   * Lookup87: polymesh_common_utilities::traits::group::RawEvent<sp_core::crypto::AccountId32, polymesh_private_runtime_develop::runtime::RuntimeEvent, pallet_group::Instance3>
    **/
   PolymeshCommonUtilitiesGroupRawEventInstance3: {
     _enum: {
@@ -806,7 +806,7 @@ export default {
    **/
   PalletCommitteeInstance4: 'Null',
   /**
-   * Lookup91: polymesh_common_utilities::traits::group::RawEvent<sp_core::crypto::AccountId32, polymesh_runtime_develop::runtime::RuntimeEvent, pallet_group::Instance4>
+   * Lookup91: polymesh_common_utilities::traits::group::RawEvent<sp_core::crypto::AccountId32, polymesh_private_runtime_develop::runtime::RuntimeEvent, pallet_group::Instance4>
    **/
   PolymeshCommonUtilitiesGroupRawEventInstance4: {
     _enum: {
@@ -1645,7 +1645,7 @@ export default {
       FailedToExecuteInstruction: '(u64,SpRuntimeDispatchError)',
       InstructionAutomaticallyAffirmed:
         '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesIdentityIdPortfolioId,u64)',
-      MediatorAffirmationReceived: '(PolymeshPrimitivesIdentityId,u64)',
+      MediatorAffirmationReceived: '(PolymeshPrimitivesIdentityId,u64,Option<u64>)',
       MediatorAffirmationWithdrawn: '(PolymeshPrimitivesIdentityId,u64)',
     },
   },
@@ -3143,16 +3143,16 @@ export default {
         _alias: {
           keys_: 'keys',
         },
-        keys_: 'PolymeshRuntimeDevelopRuntimeSessionKeys',
+        keys_: 'PolymeshPrivateRuntimeDevelopRuntimeSessionKeys',
         proof: 'Bytes',
       },
       purge_keys: 'Null',
     },
   },
   /**
-   * Lookup486: polymesh_runtime_develop::runtime::SessionKeys
+   * Lookup486: polymesh_private_runtime_develop::runtime::SessionKeys
    **/
-  PolymeshRuntimeDevelopRuntimeSessionKeys: {
+  PolymeshPrivateRuntimeDevelopRuntimeSessionKeys: {
     grandpa: 'SpConsensusGrandpaAppPublic',
     babe: 'SpConsensusBabeAppPublic',
     imOnline: 'PalletImOnlineSr25519AppSr25519Public',
@@ -4125,7 +4125,7 @@ export default {
         calls: 'Vec<Call>',
       },
       dispatch_as: {
-        asOrigin: 'PolymeshRuntimeDevelopRuntimeOriginCaller',
+        asOrigin: 'PolymeshPrivateRuntimeDevelopRuntimeOriginCaller',
         call: 'Call',
       },
       force_batch: {
@@ -4151,16 +4151,16 @@ export default {
     },
   },
   /**
-   * Lookup557: pallet_utility::UniqueCall<polymesh_runtime_develop::runtime::RuntimeCall>
+   * Lookup557: pallet_utility::UniqueCall<polymesh_private_runtime_develop::runtime::RuntimeCall>
    **/
   PalletUtilityUniqueCall: {
     nonce: 'u64',
     call: 'Call',
   },
   /**
-   * Lookup558: polymesh_runtime_develop::runtime::OriginCaller
+   * Lookup558: polymesh_private_runtime_develop::runtime::OriginCaller
    **/
-  PolymeshRuntimeDevelopRuntimeOriginCaller: {
+  PolymeshPrivateRuntimeDevelopRuntimeOriginCaller: {
     _enum: {
       system: 'FrameSupportDispatchRawOrigin',
       __Unused1: 'Null',
@@ -5025,6 +5025,7 @@ export default {
       'AssetMetadataKeyBelongsToNFTCollection',
       'AssetMetadataValueIsEmpty',
       'NumberOfAssetMediatorsExceeded',
+      'InvalidTickerCharacter',
     ],
   },
   /**
@@ -5155,7 +5156,7 @@ export default {
     amount: 'u128',
   },
   /**
-   * Lookup704: pallet_pips::Pip<polymesh_runtime_develop::runtime::RuntimeCall, sp_core::crypto::AccountId32>
+   * Lookup704: pallet_pips::Pip<polymesh_private_runtime_develop::runtime::RuntimeCall, sp_core::crypto::AccountId32>
    **/
   PalletPipsPip: {
     id: 'u32',
@@ -5239,17 +5240,17 @@ export default {
     _enum: ['InsufficientAccountBalance', 'UnHandledImbalances', 'InsufficientSubsidyBalance'],
   },
   /**
-   * Lookup721: pallet_scheduler::Scheduled<Name, frame_support::traits::preimages::Bounded<polymesh_runtime_develop::runtime::RuntimeCall>, BlockNumber, polymesh_runtime_develop::runtime::OriginCaller, sp_core::crypto::AccountId32>
+   * Lookup721: pallet_scheduler::Scheduled<Name, frame_support::traits::preimages::Bounded<polymesh_private_runtime_develop::runtime::RuntimeCall>, BlockNumber, polymesh_private_runtime_develop::runtime::OriginCaller, sp_core::crypto::AccountId32>
    **/
   PalletSchedulerScheduled: {
     maybeId: 'Option<[u8;32]>',
     priority: 'u8',
     call: 'FrameSupportPreimagesBounded',
     maybePeriodic: 'Option<(u32,u32)>',
-    origin: 'PolymeshRuntimeDevelopRuntimeOriginCaller',
+    origin: 'PolymeshPrivateRuntimeDevelopRuntimeOriginCaller',
   },
   /**
-   * Lookup722: frame_support::traits::preimages::Bounded<polymesh_runtime_develop::runtime::RuntimeCall>
+   * Lookup722: frame_support::traits::preimages::Bounded<polymesh_private_runtime_develop::runtime::RuntimeCall>
    **/
   FrameSupportPreimagesBounded: {
     _enum: {
@@ -5792,6 +5793,7 @@ export default {
       'ZeroCount',
       'SupplyOverflow',
       'SupplyUnderflow',
+      'InvalidNFTTransferNFTIsLocked',
     ],
   },
   /**
@@ -5857,7 +5859,6 @@ export default {
       'AssetFrozen',
       'AlreadyFrozen',
       'NotFrozen',
-      'NotEnoughAssetAuditors',
       'TooManyAuditors',
       'TooManyMediators',
       'ConfidentialAccountAlreadyCreated',
@@ -5881,6 +5882,7 @@ export default {
       'UnknownTransaction',
       'UnknownTransactionLeg',
       'TransactionNoLegs',
+      'TransactionLegHashNoAssets',
     ],
   },
   /**
@@ -5916,7 +5918,7 @@ export default {
    **/
   PalletPermissionsStoreCallMetadata: 'Null',
   /**
-   * Lookup816: polymesh_runtime_develop::runtime::Runtime
+   * Lookup816: polymesh_private_runtime_develop::runtime::Runtime
    **/
-  PolymeshRuntimeDevelopRuntime: 'Null',
+  PolymeshPrivateRuntimeDevelopRuntime: 'Null',
 };

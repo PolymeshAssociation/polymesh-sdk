@@ -1,14 +1,16 @@
-import { u64 } from '@polkadot/types';
+import { Option, u64 } from '@polkadot/types';
 import { PolymeshPrimitivesIdentityIdPortfolioId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
 import { assertInstructionValid } from '~/api/procedures/utils';
 import { Instruction, PolymeshError, Procedure } from '~/internal';
+import { Moment } from '~/polkadot';
 import {
   AffirmationStatus,
   DefaultPortfolio,
   ErrorCode,
+  Identity,
   InstructionAffirmationOperation,
   Leg,
   ModifyInstructionAffirmationParams,
@@ -27,45 +29,38 @@ import {
 import { tuple } from '~/types/utils';
 import {
   bigNumberToU64,
+  dateToMoment,
+  mediatorAffirmationStatusToStatus,
   meshAffirmationStatusToAffirmationStatus,
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolioId,
+  stringToIdentityId,
 } from '~/utils/conversion';
+import { optionize } from '~/utils/internal';
 
 export interface Storage {
   portfolios: (DefaultPortfolio | NumberedPortfolio)[];
   portfolioParams: PortfolioLike[];
   senderLegAmount: BigNumber;
   totalLegAmount: BigNumber;
+  signer: Identity;
 }
 
 /**
  * @hidden
  */
-export async function prepareModifyInstructionAffirmation(
-  this: Procedure<ModifyInstructionAffirmationParams, Instruction, Storage>,
-  args: ModifyInstructionAffirmationParams
-): Promise<
-  | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'affirmInstruction'>>
-  | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'withdrawAffirmation'>>
-  | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'rejectInstruction'>>
-> {
-  const {
-    context: {
-      polymeshApi: {
-        tx: { settlement: settlementTx },
-        query: { settlement },
-      },
-    },
-    context,
-    storage: { portfolios, portfolioParams, senderLegAmount, totalLegAmount },
-  } = this;
-
-  const { operation, id } = args;
-
-  const instruction = new Instruction({ id }, context);
-
-  await assertInstructionValid(instruction, context);
+const assertPortfoliosValid = (
+  portfolioParams: PortfolioLike[],
+  portfolios: (DefaultPortfolio | NumberedPortfolio)[],
+  operation: InstructionAffirmationOperation
+): void => {
+  if (
+    operation === InstructionAffirmationOperation.AffirmAsMediator ||
+    operation === InstructionAffirmationOperation.RejectAsMediator ||
+    operation === InstructionAffirmationOperation.WithdrawAsMediator
+  ) {
+    return;
+  }
 
   if (portfolioParams.length && portfolioParams.length !== portfolios.length) {
     throw new PolymeshError({
@@ -80,17 +75,134 @@ export async function prepareModifyInstructionAffirmation(
       message: 'The signing Identity is not involved in this Instruction',
     });
   }
+};
+
+/**
+ * @hidden
+ */
+export async function prepareModifyInstructionAffirmation(
+  this: Procedure<ModifyInstructionAffirmationParams, Instruction, Storage>,
+  args: ModifyInstructionAffirmationParams
+): Promise<
+  | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'affirmInstruction'>>
+  | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'withdrawAffirmation'>>
+  | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'rejectInstruction'>>
+  | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'affirmInstructionAsMediator'>>
+  | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'withdrawAffirmationAsMediator'>>
+  | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'rejectInstructionAsMediator'>>
+> {
+  const {
+    context: {
+      polymeshApi: {
+        tx: { settlement: settlementTx },
+        query: { settlement },
+      },
+    },
+    context,
+    storage: { portfolios, portfolioParams, senderLegAmount, totalLegAmount, signer },
+  } = this;
+
+  const { operation, id } = args;
+
+  const instruction = new Instruction({ id }, context);
+
+  await Promise.all([assertInstructionValid(instruction, context)]);
+
+  assertPortfoliosValid(portfolioParams, portfolios, operation);
 
   const rawInstructionId = bigNumberToU64(id, context);
   const rawPortfolioIds: PolymeshPrimitivesIdentityIdPortfolioId[] = portfolios.map(portfolio =>
     portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
   );
 
+  const rawDid = stringToIdentityId(signer.did, context);
+  const multiArgs = rawPortfolioIds.map(portfolioId => tuple(portfolioId, rawInstructionId));
+
+  const [rawAffirmationStatuses, rawMediatorAffirmation] = await Promise.all([
+    settlement.userAffirmations.multi(multiArgs),
+    settlement.instructionMediatorsAffirmations(rawInstructionId, rawDid),
+  ]);
+
+  const affirmationStatuses = rawAffirmationStatuses.map(meshAffirmationStatusToAffirmationStatus);
+  const { status: mediatorStatus, expiry } =
+    mediatorAffirmationStatusToStatus(rawMediatorAffirmation);
+
   const excludeCriteria: AffirmationStatus[] = [];
   let errorMessage: string;
-  let transaction: PolymeshTx<[u64, PolymeshPrimitivesIdentityIdPortfolioId[]]> | null = null;
+  let transaction:
+    | PolymeshTx<[u64, PolymeshPrimitivesIdentityIdPortfolioId[]]>
+    | PolymeshTx<[u64, Option<Moment>]>
+    | PolymeshTx<[u64]>
+    | null = null;
 
   switch (operation) {
+    case InstructionAffirmationOperation.Reject: {
+      return {
+        transaction: settlementTx.rejectInstruction,
+        resolver: instruction,
+        feeMultiplier: totalLegAmount,
+        args: [rawInstructionId, rawPortfolioIds[0]],
+      };
+    }
+    case InstructionAffirmationOperation.AffirmAsMediator: {
+      if (mediatorStatus === AffirmationStatus.Unknown) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'The signer is not a mediator',
+          data: { signer: signer.did, instructionId: id.toString() },
+        });
+      }
+
+      const givenExpiry = args.expiry;
+      const now = new Date();
+      if (givenExpiry && givenExpiry < now) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'The expiry must be in the future',
+          data: { expiry, now },
+        });
+      }
+
+      const rawExpiry = optionize(dateToMoment)(givenExpiry, context);
+
+      return {
+        transaction: settlementTx.affirmInstructionAsMediator,
+        resolver: instruction,
+        args: [rawInstructionId, rawExpiry],
+      };
+    }
+
+    case InstructionAffirmationOperation.WithdrawAsMediator: {
+      if (mediatorStatus !== AffirmationStatus.Affirmed) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'The signer is not a mediator that has already affirmed the instruction',
+          data: { signer: signer.did, instructionId: id.toString() },
+        });
+      }
+
+      return {
+        transaction: settlementTx.withdrawAffirmationAsMediator,
+        resolver: instruction,
+        args: [rawInstructionId],
+      };
+    }
+
+    case InstructionAffirmationOperation.RejectAsMediator: {
+      if (mediatorStatus === AffirmationStatus.Unknown) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'The signer is not a mediator for the instruction',
+          data: { did: signer.did, instructionId: id.toString() },
+        });
+      }
+
+      return {
+        transaction: settlementTx.rejectInstructionAsMediator,
+        resolver: instruction,
+        args: [rawInstructionId, optionize(bigNumberToU64)(undefined, context)],
+      };
+    }
     case InstructionAffirmationOperation.Affirm: {
       excludeCriteria.push(AffirmationStatus.Affirmed);
       errorMessage = 'The Instruction is already affirmed';
@@ -107,12 +219,6 @@ export async function prepareModifyInstructionAffirmation(
     }
   }
 
-  const multiArgs = rawPortfolioIds.map(portfolioId => tuple(portfolioId, rawInstructionId));
-
-  const rawAffirmationStatuses = await settlement.userAffirmations.multi(multiArgs);
-
-  const affirmationStatuses = rawAffirmationStatuses.map(meshAffirmationStatusToAffirmationStatus);
-
   const validPortfolioIds = rawPortfolioIds.filter(
     (_, index) => !excludeCriteria.includes(affirmationStatuses[index])
   );
@@ -120,28 +226,15 @@ export async function prepareModifyInstructionAffirmation(
   if (!validPortfolioIds.length) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
-      // As InstructionAffirmationOperation.Reject has no excludeCriteria, if this error is thrown
-      // it means that the operation had to be either affirm or withdraw, and so the errorMessage was set
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      message: errorMessage!,
+      message: errorMessage,
     });
   }
 
-  // rejection works a bit different
-  if (transaction) {
-    return {
-      transaction,
-      resolver: instruction,
-      feeMultiplier: senderLegAmount,
-      args: [rawInstructionId, validPortfolioIds],
-    };
-  }
-
   return {
-    transaction: settlementTx.rejectInstruction,
+    transaction,
     resolver: instruction,
-    feeMultiplier: totalLegAmount,
-    args: [rawInstructionId, validPortfolioIds[0]],
+    feeMultiplier: senderLegAmount,
+    args: [rawInstructionId, validPortfolioIds],
   };
 }
 
@@ -174,6 +267,21 @@ export async function getAuthorization(
 
       break;
     }
+    case InstructionAffirmationOperation.AffirmAsMediator: {
+      transactions = [TxTags.settlement.AffirmInstructionAsMediator];
+
+      break;
+    }
+    case InstructionAffirmationOperation.WithdrawAsMediator: {
+      transactions = [TxTags.settlement.WithdrawAffirmationAsMediator];
+
+      break;
+    }
+    case InstructionAffirmationOperation.RejectAsMediator: {
+      transactions = [TxTags.settlement.RejectInstructionAsMediator];
+
+      break;
+    }
   }
 
   return {
@@ -196,7 +304,10 @@ function extractPortfolioParams(params: ModifyInstructionAffirmationParams): Por
     if (portfolio) {
       portfolioParams.push(portfolio);
     }
-  } else {
+  } else if (
+    operation === InstructionAffirmationOperation.Affirm ||
+    operation === InstructionAffirmationOperation.Withdraw
+  ) {
     const { portfolios } = params;
     if (portfolios) {
       portfolioParams = [...portfolioParams, ...portfolios];
@@ -288,7 +399,7 @@ export async function prepareStorage(
   const portfolioIdParams = portfolioParams.map(portfolioLikeToPortfolioId);
 
   const instruction = new Instruction({ id }, context);
-  const [{ data: legs }, { did: signingDid }] = await Promise.all([
+  const [{ data: legs }, signer] = await Promise.all([
     instruction.getLegs(),
     context.getSigningIdentity(),
   ]);
@@ -299,7 +410,7 @@ export async function prepareStorage(
   >(
     legs,
     async (result, { from, to }) =>
-      assemblePortfolios(result, from, to, signingDid, portfolioIdParams),
+      assemblePortfolios(result, from, to, signer.did, portfolioIdParams),
     [[], new BigNumber(0)]
   );
 
@@ -308,6 +419,7 @@ export async function prepareStorage(
     portfolioParams,
     senderLegAmount,
     totalLegAmount: new BigNumber(legs.length),
+    signer,
   };
 }
 

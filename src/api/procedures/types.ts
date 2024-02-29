@@ -535,6 +535,10 @@ export type AddInstructionParams = {
    * identifier string to help differentiate instructions
    */
   memo?: string;
+  /**
+   * additional identities that must affirm the instruction
+   */
+  mediators?: (string | Identity)[];
 } & (
   | {
       /**
@@ -607,6 +611,9 @@ export enum InstructionAffirmationOperation {
   Affirm = 'Affirm',
   Withdraw = 'Withdraw',
   Reject = 'Reject',
+  AffirmAsMediator = 'AffirmAsMediator',
+  WithdrawAsMediator = 'WithdrawAsMediator',
+  RejectAsMediator = 'RejectAsMediator',
 }
 
 export type RejectInstructionParams = {
@@ -625,6 +632,10 @@ export type AffirmOrWithdrawInstructionParams = {
   portfolios?: PortfolioLike[];
 };
 
+export type AffirmAsMediatorParams = {
+  expiry?: Date;
+};
+
 export type ModifyInstructionAffirmationParams = InstructionIdParams &
   (
     | ({
@@ -633,8 +644,18 @@ export type ModifyInstructionAffirmationParams = InstructionIdParams &
           | InstructionAffirmationOperation.Withdraw;
       } & AffirmOrWithdrawInstructionParams)
     | ({
-        operation: InstructionAffirmationOperation.Reject;
+        operation:
+          | InstructionAffirmationOperation.Reject
+          | InstructionAffirmationOperation.RejectAsMediator;
       } & RejectInstructionParams)
+    | ({
+        operation: InstructionAffirmationOperation.AffirmAsMediator;
+      } & AffirmAsMediatorParams)
+    | {
+        operation:
+          | InstructionAffirmationOperation.WithdrawAsMediator
+          | InstructionAffirmationOperation.RejectAsMediator;
+      }
   );
 
 export type ExecuteManualInstructionParams = InstructionIdParams & {
@@ -1192,6 +1213,10 @@ export interface UnlinkChildParams {
 
 export interface RegisterCustomClaimTypeParams {
   name: string;
+}
+
+export interface AssetMediatorParams {
+  mediators: (Identity | string)[];
 }
 
 export interface FreezeConfidentialAccountAssetParams {
