@@ -1,5 +1,6 @@
 import {
   applyIncomingAssetBalance,
+  applyIncomingConfidentialAssetBalances,
   ConfidentialAccount,
   Context,
   createConfidentialAccount,
@@ -7,6 +8,7 @@ import {
 } from '~/internal';
 import {
   ApplyIncomingBalanceParams,
+  ApplyIncomingConfidentialAssetBalancesParams,
   CreateConfidentialAccountParams,
   ErrorCode,
   ProcedureMethod,
@@ -35,6 +37,13 @@ export class ConfidentialAccounts {
     this.applyIncomingBalance = createProcedureMethod(
       {
         getProcedureAndArgs: args => [applyIncomingAssetBalance, { ...args }],
+      },
+      context
+    );
+
+    this.applyIncomingBalances = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [applyIncomingConfidentialAssetBalances, { ...args }],
       },
       context
     );
@@ -74,4 +83,12 @@ export class ConfidentialAccounts {
    * Applies incoming balance to a Confidential Account
    */
   public applyIncomingBalance: ProcedureMethod<ApplyIncomingBalanceParams, ConfidentialAccount>;
+
+  /**
+   * Applies any incoming balance to a Confidential Account
+   */
+  public applyIncomingBalances: ProcedureMethod<
+    ApplyIncomingConfidentialAssetBalancesParams,
+    ConfidentialAccount
+  >;
 }

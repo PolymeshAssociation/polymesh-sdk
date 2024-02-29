@@ -1223,6 +1223,15 @@ export function meshPermissionsToPermissions(
 /**
  * @hidden
  */
+export function bigNumberToU16(value: BigNumber, context: Context): u16 {
+  assertIsInteger(value);
+  assertIsPositive(value);
+  return context.createType('u16', value.toString());
+}
+
+/**
+ * @hidden
+ */
 export function bigNumberToU32(value: BigNumber, context: Context): u32 {
   assertIsInteger(value);
   assertIsPositive(value);

@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { ConfidentialAccounts } from '~/api/client/ConfidentialAccounts';
@@ -103,6 +104,26 @@ describe('ConfidentialAccounts Class', () => {
         .mockResolvedValue(expectedTransaction);
 
       const tx = await confidentialAccounts.applyIncomingBalance(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: applyIncomingBalances', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args = {
+        confidentialAccount: 'someAccount',
+        maxUpdates: new BigNumber(1),
+      };
+
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<ConfidentialAccount>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await confidentialAccounts.applyIncomingBalances(args);
 
       expect(tx).toBe(expectedTransaction);
     });

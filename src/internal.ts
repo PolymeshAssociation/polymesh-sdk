@@ -110,6 +110,7 @@ export { BaseAsset, FungibleAsset, NftCollection, Nft } from '~/api/entities/Ass
 export { issueConfidentialAssets } from '~/api/procedures/issueConfidentialAssets';
 export { burnConfidentialAssets } from '~/api/procedures/burnConfidentialAssets';
 export { applyIncomingAssetBalance } from '~/api/procedures/applyIncomingAssetBalance';
+export { applyIncomingConfidentialAssetBalances } from '~/api/procedures/applyIncomingConfidentialAssetBalances';
 export { ConfidentialAccount } from '~/api/entities/confidential/ConfidentialAccount';
 export { ConfidentialAsset } from '~/api/entities/confidential/ConfidentialAsset';
 export { createConfidentialVenue } from '~/api/procedures/createConfidentialVenue';

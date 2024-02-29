@@ -1,3 +1,5 @@
+import BigNumber from 'bignumber.js';
+
 import { ConfidentialAccount, ConfidentialAsset } from '~/internal';
 import { EventIdentifier, EventIdEnum } from '~/types';
 
@@ -34,3 +36,15 @@ export type ConfidentialAssetHistoryEntry = {
   amount: string;
   createdAt: EventIdentifier | null;
 };
+
+export interface ApplyIncomingConfidentialAssetBalancesParams {
+  /**
+   * Confidential Account (or the public key of the ElGamal key pair) to which any incoming balance is to be applied
+   */
+  confidentialAccount: string | ConfidentialAccount;
+
+  /**
+   * The maximum number of incoming balances to apply. Applies all incoming balances if no value is passed
+   */
+  maxUpdates?: BigNumber;
+}
