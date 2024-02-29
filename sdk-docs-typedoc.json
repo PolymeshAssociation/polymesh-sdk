@@ -7,7 +7,6 @@
     "src/generated/types.ts",
     "src/types/index.ts",
     "src/types/utils",
-    "src/utils/index.ts",
     "src/base"
   ],
   "entryPointStrategy": "expand",
@@ -23,6 +22,7 @@
     "src/api/entities/types.ts",
     "src/api/entities/Namespace.ts",
     "src/types/internal.ts",
+    "src/utils/**",
     "src/index.ts",
     "src-temp/"
   ],
