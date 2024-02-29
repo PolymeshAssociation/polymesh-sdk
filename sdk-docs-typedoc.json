@@ -23,7 +23,6 @@
     "src/api/entities/types.ts",
     "src/api/entities/Namespace.ts",
     "src/types/internal.ts",
-    "src/utils/**",
     "src/index.ts",
     "src-temp/"
   ],
