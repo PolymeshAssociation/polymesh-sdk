@@ -4,6 +4,10 @@ import {
   Checkpoint as CheckpointClass,
   CheckpointSchedule as CheckpointScheduleClass,
   ChildIdentity as ChildIdentityClass,
+  ConfidentialAccount as ConfidentialAccountClass,
+  ConfidentialAsset as ConfidentialAssetClass,
+  ConfidentialTransaction as ConfidentialTransactionClass,
+  ConfidentialVenue as ConfidentialVenueClass,
   CorporateAction as CorporateActionClass,
   CustomPermissionGroup as CustomPermissionGroupClass,
   DefaultPortfolio as DefaultPortfolioClass,
@@ -39,6 +43,10 @@ export type ChildIdentity = ChildIdentityClass;
 export type Instruction = InstructionClass;
 export type KnownPermissionGroup = KnownPermissionGroupClass;
 export type NumberedPortfolio = NumberedPortfolioClass;
+export type ConfidentialAccount = ConfidentialAccountClass;
+export type ConfidentialAsset = ConfidentialAssetClass;
+export type ConfidentialVenue = ConfidentialVenueClass;
+export type ConfidentialTransaction = ConfidentialTransactionClass;
 export type FungibleAsset = FungibleAssetClass;
 export type Nft = NftClass;
 export type NftCollection = NftCollectionClass;
@@ -61,3 +69,4 @@ export * from './Subsidy/types';
 export * from './Account/MultiSig/types';
 export * from './MultiSigProposal/types';
 export * from './MetadataEntry/types';
+export * from './confidential/types';

@@ -9,6 +9,8 @@ import { SigningManager } from '@polymeshassociation/signing-manager-types';
 import fetch from 'cross-fetch';
 import schema from 'polymesh-types/schema';
 
+import { ConfidentialAccounts } from '~/api/client/ConfidentialAccounts';
+import { ConfidentialSettlements } from '~/api/client/ConfidentialSettlements';
 import { Account, Context, createTransactionBatch, Identity, PolymeshError } from '~/internal';
 import {
   CreateTransactionBatchProcedureMethod,
@@ -27,6 +29,7 @@ import {
 import { AccountManagement } from './AccountManagement';
 import { Assets } from './Assets';
 import { Claims } from './Claims';
+import { ConfidentialAssets } from './ConfidentialAssets';
 import { Identities } from './Identities';
 import { Network } from './Network';
 import { Settlements } from './Settlements';
@@ -109,6 +112,20 @@ export class Polymesh {
    * A set of methods for interacting with Assets
    */
   public assets: Assets;
+  /**
+   * A set of methods for interacting with Confidential Assets
+   */
+  public confidentialAssets: ConfidentialAssets;
+
+  /**
+   * A set of methods for exchanging confidential Assets
+   */
+  public confidentialSettlements: ConfidentialSettlements;
+
+  /**
+   * A set of methods for managing confidential Accounts
+   */
+  public confidentialAccounts: ConfidentialAccounts;
 
   /**
    * @hidden
@@ -122,6 +139,9 @@ export class Polymesh {
     this.accountManagement = new AccountManagement(context);
     this.identities = new Identities(context);
     this.assets = new Assets(context);
+    this.confidentialAssets = new ConfidentialAssets(context);
+    this.confidentialSettlements = new ConfidentialSettlements(context);
+    this.confidentialAccounts = new ConfidentialAccounts(context);
 
     this.createTransactionBatch = createProcedureMethod(
       {

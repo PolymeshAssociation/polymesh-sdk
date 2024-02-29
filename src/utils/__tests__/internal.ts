@@ -13,6 +13,8 @@ import { when } from 'jest-when';
 
 import {
   Account,
+  ConfidentialAccount,
+  ConfidentialAsset,
   Context,
   FungibleAsset,
   Identity,
@@ -67,9 +69,12 @@ import {
   areSameClaims,
   asAccount,
   asChildIdentity,
+  asConfidentialAccount,
+  asConfidentialAsset,
   asFungibleAsset,
   asNftId,
   assertAddressValid,
+  assertCaAssetValid,
   assertExpectedChainVersion,
   assertExpectedSqVersion,
   assertIdentityExists,
@@ -2506,5 +2511,106 @@ describe('assertIdentityExists', () => {
     });
 
     return expect(assertIdentityExists(identity)).rejects.toThrow(expectedError);
+  });
+});
+
+describe('assetCaAssetValid', () => {
+  it('should return true for a valid ID', () => {
+    const guid = '76702175-d8cb-e3a5-5a19-734433351e25';
+    const id = '76702175d8cbe3a55a19734433351e25';
+
+    let result = assertCaAssetValid(id);
+
+    expect(result).toEqual(guid);
+
+    result = assertCaAssetValid(guid);
+
+    expect(result).toEqual(guid);
+  });
+
+  it('should throw an error for an invalid ID', async () => {
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The supplied ID is not a valid confidential Asset ID',
+    });
+    expect(() => assertCaAssetValid('small-length-string')).toThrow(expectedError);
+
+    expect(() => assertCaAssetValid('NotMatching32CharactersString$$$')).toThrow(expectedError);
+
+    expect(() => assertCaAssetValid('7670-2175d8cb-e3a55a-1973443-3351e25')).toThrow(expectedError);
+  });
+});
+
+describe('asConfidentialAccount', () => {
+  let context: Context;
+  let publicKey: string;
+  let confidentialAccount: ConfidentialAccount;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+    publicKey = 'someKey';
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    confidentialAccount = new ConfidentialAccount({ publicKey }, context);
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return ConfidentialAccount for given public key', async () => {
+    const result = asConfidentialAccount(publicKey, context);
+
+    expect(result).toEqual(expect.objectContaining({ publicKey }));
+  });
+
+  it('should return the passed ConfidentialAccount', async () => {
+    const result = asConfidentialAccount(confidentialAccount, context);
+
+    expect(result).toBe(confidentialAccount);
+  });
+});
+
+describe('asConfidentialAsset', () => {
+  let context: Context;
+  let assetId: string;
+  let confidentialAsset: ConfidentialAsset;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+    assetId = '76702175-d8cb-e3a5-5a19-734433351e25';
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    confidentialAsset = new ConfidentialAsset({ id: assetId }, context);
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return ConfidentialAsset for the given id', async () => {
+    const result = asConfidentialAsset(assetId, context);
+
+    expect(result).toEqual(expect.objectContaining({ id: assetId }));
+  });
+
+  it('should return the passed ConfidentialAsset', async () => {
+    const result = asConfidentialAsset(confidentialAsset, context);
+
+    expect(result).toBe(confidentialAsset);
   });
 });

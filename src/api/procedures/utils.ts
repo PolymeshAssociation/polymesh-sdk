@@ -9,6 +9,9 @@ import {
   BaseAsset,
   Checkpoint,
   CheckpointSchedule,
+  ConfidentialAccount,
+  ConfidentialAsset,
+  ConfidentialVenue,
   Context,
   CustomPermissionGroup,
   FungibleAsset,
@@ -43,7 +46,7 @@ import {
   TxTag,
 } from '~/types';
 import { tickerToString, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
-import { filterEventRecords } from '~/utils/internal';
+import { asConfidentialAsset, filterEventRecords } from '~/utils/internal';
 
 /**
  * @hidden
@@ -158,6 +161,113 @@ export async function assertVenueExists(venueId: BigNumber, context: Context): P
       data: {
         venueId,
       },
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
+export async function assertIdentityExists(identity: Identity): Promise<void> {
+  const exists = await identity.exists();
+
+  if (!exists) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'The Identity does not exist',
+      data: { did: identity.did },
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
+export async function assertConfidentialVenueExists(
+  venueId: BigNumber,
+  context: Context
+): Promise<ConfidentialVenue> {
+  const venue = new ConfidentialVenue({ id: venueId }, context);
+  const exists = await venue.exists();
+
+  if (!exists) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: "The Confidential Venue doesn't exist",
+      data: {
+        venueId,
+      },
+    });
+  }
+
+  return venue;
+}
+
+/**
+ * @hidden
+ */
+export async function assertConfidentialAccountExists(account: ConfidentialAccount): Promise<void> {
+  const exists = await account.exists();
+
+  if (!exists) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: "The Confidential Account doesn't exist",
+      data: { publicKey: account.publicKey },
+    });
+  }
+}
+
+/**
+ * @hidden
+ * */
+export async function assertConfidentialAssetsEnabledForVenue(
+  venueId: BigNumber,
+  assets: ConfidentialAsset[]
+): Promise<void> {
+  const filterDetails = await Promise.all(
+    assets.map(async asset => {
+      const details = await asset.getVenueFilteringDetails();
+
+      return {
+        details,
+        assetId: asset.id,
+      };
+    })
+  );
+
+  filterDetails.forEach(({ assetId, details }) => {
+    if (details.enabled) {
+      const ids = details.allowedConfidentialVenues.map(({ id }) => id);
+
+      const isVenueNotAllowed = !ids.find(id => id.eq(venueId));
+
+      if (isVenueNotAllowed) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'A confidential asset is not allowed to be exchanged at the corresponding venue',
+          data: { assetId, venueId },
+        });
+      }
+    }
+  });
+}
+
+/**
+ * @hidden
+ */
+export async function assertConfidentialAssetExists(
+  asset: ConfidentialAsset | string,
+  context: Context
+): Promise<void> {
+  const parsedAsset = asConfidentialAsset(asset, context);
+  const exists = await parsedAsset.exists();
+
+  if (!exists) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: "The Confidential Asset doesn't exist",
+      data: { assetId: parsedAsset.id },
     });
   }
 }
