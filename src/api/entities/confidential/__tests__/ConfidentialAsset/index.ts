@@ -8,7 +8,7 @@ import {
   transactionHistoryByConfidentialAssetQuery,
 } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { ConfidentialAssetTransactionHistory, ErrorCode } from '~/types';
+import { ConfidentialAccount, ConfidentialAssetTransactionHistory, ErrorCode } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -31,6 +31,7 @@ describe('ConfidentialAsset class', () => {
   let assetId: string;
   let id: string;
   let confidentialAsset: ConfidentialAsset;
+  let mockConfidentialAccount: ConfidentialAccount;
   let context: Context;
   const assetDetails = {
     totalSupply: new BigNumber(100),
@@ -39,6 +40,7 @@ describe('ConfidentialAsset class', () => {
   };
   let detailsQueryMock: jest.Mock;
   let assetFrozenMock: jest.Mock;
+  let accountAssetFrozenMock: jest.Mock;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -51,8 +53,10 @@ describe('ConfidentialAsset class', () => {
     id = '76702175-d8cb-e3a5-5a19-734433351e25';
     context = dsMockUtils.getContextInstance();
     confidentialAsset = new ConfidentialAsset({ id: assetId }, context);
+    mockConfidentialAccount = entityMockUtils.getConfidentialAccountInstance();
     detailsQueryMock = dsMockUtils.createQueryMock('confidentialAsset', 'details');
     assetFrozenMock = dsMockUtils.createQueryMock('confidentialAsset', 'assetFrozen');
+    accountAssetFrozenMock = dsMockUtils.createQueryMock('confidentialAsset', 'accountAssetFrozen');
 
     detailsQueryMock.mockResolvedValue(
       dsMockUtils.createMockOption(
@@ -64,6 +68,7 @@ describe('ConfidentialAsset class', () => {
     );
 
     assetFrozenMock.mockResolvedValue(dsMockUtils.createMockBool(false));
+    accountAssetFrozenMock.mockResolvedValue(dsMockUtils.createMockBool(false));
   });
 
   afterEach(() => {
@@ -329,6 +334,14 @@ describe('ConfidentialAsset class', () => {
     });
   });
 
+  describe('method: isAccountFrozen', () => {
+    it('should return false if Confidential Account is not frozen for the asset', async () => {
+      const result = await confidentialAsset.isAccountFrozen(mockConfidentialAccount);
+
+      expect(result).toEqual(false);
+    });
+  });
+
   describe('method: freeze', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const freeze = true;
@@ -364,6 +377,52 @@ describe('ConfidentialAsset class', () => {
         .mockResolvedValue(expectedTransaction);
 
       const tx = await confidentialAsset.unfreeze();
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: freezeAccount', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const freeze = true;
+
+      const args = {
+        freeze,
+        confidentialAccount: mockConfidentialAccount,
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { confidentialAsset, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await confidentialAsset.freezeAccount({
+        confidentialAccount: mockConfidentialAccount,
+      });
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: unfreezeAccount', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const freeze = false;
+
+      const args = {
+        freeze,
+        confidentialAccount: mockConfidentialAccount,
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { confidentialAsset, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await confidentialAsset.unfreezeAccount({
+        confidentialAccount: mockConfidentialAccount,
+      });
 
       expect(tx).toBe(expectedTransaction);
     });

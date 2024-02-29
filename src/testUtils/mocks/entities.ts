@@ -385,6 +385,7 @@ interface ConfidentialAssetOptions extends EntityOptions {
   details?: EntityGetter<ConfidentialAssetDetails | null>;
   getVenueFilteringDetails?: EntityGetter<ConfidentialVenueFilteringDetails>;
   isFrozen?: EntityGetter<boolean>;
+  isAccountFrozen?: EntityGetter<boolean>;
 }
 
 interface ConfidentialVenueOptions extends EntityOptions {
@@ -2173,6 +2174,7 @@ const MockConfidentialAssetClass = createMockEntityClass<ConfidentialAssetOption
     details!: jest.Mock;
     getVenueFilteringDetails!: jest.Mock;
     isFrozen!: jest.Mock;
+    isAccountFrozen!: jest.Mock;
 
     /**
      * @hidden
@@ -2190,6 +2192,7 @@ const MockConfidentialAssetClass = createMockEntityClass<ConfidentialAssetOption
       this.details = createEntityGetterMock(opts.details);
       this.getVenueFilteringDetails = createEntityGetterMock(opts.getVenueFilteringDetails);
       this.isFrozen = createEntityGetterMock(opts.isFrozen);
+      this.isAccountFrozen = createEntityGetterMock(opts.isAccountFrozen);
     }
   },
   () => ({
@@ -2202,6 +2205,7 @@ const MockConfidentialAssetClass = createMockEntityClass<ConfidentialAssetOption
     },
     getVenueFilteringDetails: { enabled: false },
     isFrozen: false,
+    isAccountFrozen: false,
   }),
   ['ConfidentialAsset']
 );

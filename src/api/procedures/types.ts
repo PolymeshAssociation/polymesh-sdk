@@ -1193,3 +1193,7 @@ export interface UnlinkChildParams {
 export interface RegisterCustomClaimTypeParams {
   name: string;
 }
+
+export interface FreezeConfidentialAccountAssetParams {
+  confidentialAccount: ConfidentialAccount | string;
+}

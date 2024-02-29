@@ -1,23 +1,27 @@
 import { bool } from '@polkadot/types';
+import { PalletConfidentialAssetConfidentialAccount } from '@polkadot/types/lookup';
 import { when } from 'jest-when';
 
 import {
   getAuthorization,
   Params,
-  prepareToggleFreezeConfidentialAsset,
-} from '~/api/procedures/toggleFreezeConfidentialAsset';
+  prepareToggleFreezeConfidentialAccountAsset,
+} from '~/api/procedures/toggleFreezeConfidentialAccountAsset';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ConfidentialAsset, RoleType, TxTags } from '~/types';
+import { ConfidentialAccount, ConfidentialAsset, RoleType, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
-describe('toggleFreezeConfidentialAsset procedure', () => {
+describe('toggleFreezeConfidentialAccountAsset procedure', () => {
   let mockContext: Mocked<Context>;
   let confidentialAsset: ConfidentialAsset;
-  let rawId: string;
-  let rawTrue: bool;
+  let confidentialAccount: ConfidentialAccount;
+  let rawAssetId: string;
+  let rawPublicKey: PalletConfidentialAssetConfidentialAccount;
   let booleanToBoolSpy: jest.SpyInstance;
+  let confidentialAccountToMeshPublicKeySpy: jest.SpyInstance;
+  let rawTrue: bool;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -28,10 +32,19 @@ describe('toggleFreezeConfidentialAsset procedure', () => {
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
     confidentialAsset = entityMockUtils.getConfidentialAssetInstance();
-    rawId = '0x76702175d8cbe3a55a19734433351e26';
+    confidentialAccount = entityMockUtils.getConfidentialAccountInstance();
+    rawPublicKey = dsMockUtils.createMockConfidentialAccount(confidentialAccount.publicKey);
+    rawAssetId = '0x76702175d8cbe3a55a19734433351e26';
     rawTrue = dsMockUtils.createMockBool(true);
     booleanToBoolSpy = jest.spyOn(utilsConversionModule, 'booleanToBool');
+    confidentialAccountToMeshPublicKeySpy = jest.spyOn(
+      utilsConversionModule,
+      'confidentialAccountToMeshPublicKey'
+    );
     when(booleanToBoolSpy).calledWith(true, mockContext).mockReturnValue(rawTrue);
+    when(confidentialAccountToMeshPublicKeySpy)
+      .calledWith(confidentialAccount, mockContext)
+      .mockReturnValue(rawPublicKey);
   });
 
   afterEach(() => {
@@ -47,43 +60,46 @@ describe('toggleFreezeConfidentialAsset procedure', () => {
 
   it('should throw an error if freeze is set to true and the Asset is already frozen', () => {
     const frozenAsset = entityMockUtils.getConfidentialAssetInstance({
-      isFrozen: true,
+      isAccountFrozen: true,
     });
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(
-      prepareToggleFreezeConfidentialAsset.call(proc, {
+      prepareToggleFreezeConfidentialAccountAsset.call(proc, {
         confidentialAsset: frozenAsset,
+        confidentialAccount,
         freeze: true,
       })
-    ).rejects.toThrow('The Asset is already frozen');
+    ).rejects.toThrow('The account is already frozen');
   });
 
   it('should throw an error if freeze is set to false and the Asset is already unfrozen', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(
-      prepareToggleFreezeConfidentialAsset.call(proc, {
+      prepareToggleFreezeConfidentialAccountAsset.call(proc, {
         confidentialAsset,
+        confidentialAccount,
         freeze: false,
       })
-    ).rejects.toThrow('The Asset is already unfrozen');
+    ).rejects.toThrow('The account is already unfrozen');
   });
 
-  it('should return a freeze transaction spec', async () => {
+  it('should return a freeze account asset transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    const transaction = dsMockUtils.createTxMock('confidentialAsset', 'setAssetFrozen');
+    const transaction = dsMockUtils.createTxMock('confidentialAsset', 'setAccountAssetFrozen');
 
-    const result = await prepareToggleFreezeConfidentialAsset.call(proc, {
+    const result = await prepareToggleFreezeConfidentialAccountAsset.call(proc, {
       confidentialAsset,
+      confidentialAccount,
       freeze: true,
     });
 
     expect(result).toEqual({
       transaction,
-      args: [rawId, rawTrue],
+      args: [rawPublicKey, rawAssetId, rawTrue],
       resolver: undefined,
     });
   });
@@ -93,10 +109,10 @@ describe('toggleFreezeConfidentialAsset procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      expect(boundFunc({ confidentialAsset, freeze: false })).toEqual({
+      expect(boundFunc({ confidentialAsset, confidentialAccount, freeze: false })).toEqual({
         roles: [{ assetId: confidentialAsset.id, type: RoleType.ConfidentialAssetOwner }],
         permissions: {
-          transactions: [TxTags.confidentialAsset.SetAssetFrozen],
+          transactions: [TxTags.confidentialAsset.SetAccountAssetFrozen],
           assets: [],
           portfolios: [],
         },

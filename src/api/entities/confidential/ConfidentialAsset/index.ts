@@ -12,6 +12,7 @@ import {
   issueConfidentialAssets,
   PolymeshError,
   setConfidentialVenueFiltering,
+  toggleFreezeConfidentialAccountAsset,
   toggleFreezeConfidentialAsset,
 } from '~/internal';
 import {
@@ -26,6 +27,7 @@ import {
   ConfidentialVenueFilteringDetails,
   ErrorCode,
   EventIdentifier,
+  FreezeConfidentialAccountAssetParams,
   GroupedAuditors,
   IssueConfidentialAssetParams,
   NoArgsProcedureMethod,
@@ -37,6 +39,7 @@ import { Ensured } from '~/types/utils';
 import {
   boolToBoolean,
   bytesToString,
+  confidentialAccountToMeshPublicKey,
   identityIdToString,
   middlewareAssetHistoryToTransactionHistory,
   middlewareEventDetailsToEventIdentifier,
@@ -45,6 +48,7 @@ import {
   u128ToBigNumber,
 } from '~/utils/conversion';
 import {
+  asConfidentialAccount,
   assertCaAssetValid,
   calculateNextKey,
   createProcedureMethod,
@@ -135,6 +139,26 @@ export class ConfidentialAsset extends Entity<UniqueIdentifiers, string> {
       },
       context
     );
+
+    this.freezeAccount = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [
+          toggleFreezeConfidentialAccountAsset,
+          { confidentialAsset: this, freeze: true, ...args },
+        ],
+      },
+      context
+    );
+
+    this.unfreezeAccount = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [
+          toggleFreezeConfidentialAccountAsset,
+          { confidentialAsset: this, freeze: false, ...args },
+        ],
+      },
+      context
+    );
   }
 
   /**
@@ -169,6 +193,16 @@ export class ConfidentialAsset extends Entity<UniqueIdentifiers, string> {
    * Allows trading to resume for the asset
    */
   public unfreeze: NoArgsProcedureMethod<void>;
+
+  /**
+   * Freezes all trading for the asset for the specified account
+   */
+  public freezeAccount: ProcedureMethod<FreezeConfidentialAccountAssetParams, void>;
+
+  /**
+   * Allows trading to resume for the asset for the specified account
+   */
+  public unfreezeAccount: ProcedureMethod<FreezeConfidentialAccountAssetParams, void>;
 
   /**
    * @hidden
@@ -392,5 +426,30 @@ export class ConfidentialAsset extends Entity<UniqueIdentifiers, string> {
     const rawIsFrozen = await confidentialAsset.assetFrozen(rawAssetId);
 
     return boolToBoolean(rawIsFrozen);
+  }
+
+  /**
+   * Returns whether the confidential account has been suspended from trading the asset or not
+   */
+  public async isAccountFrozen(
+    confidentialAccount: ConfidentialAccount | string
+  ): Promise<boolean> {
+    const {
+      id,
+      context,
+      context: {
+        polymeshApi: {
+          query: { confidentialAsset },
+        },
+      },
+    } = this;
+
+    const account = asConfidentialAccount(confidentialAccount, context);
+    const rawAccountId = confidentialAccountToMeshPublicKey(account, context);
+    const rawAssetId = serializeConfidentialAssetId(id);
+
+    const rawIsAccountFrozen = await confidentialAsset.accountAssetFrozen(rawAccountId, rawAssetId);
+
+    return boolToBoolean(rawIsAccountFrozen);
   }
 }
