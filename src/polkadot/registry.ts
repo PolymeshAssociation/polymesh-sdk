@@ -6,6 +6,9 @@
 import '@polkadot/types/types/registry';
 
 import type {
+  ConfidentialAssetsBurnConfidentialBurnProof,
+  ConfidentialAssetsElgamalCipherText,
+  ConfidentialAssetsElgamalCompressedElgamalPublicKey,
   FinalityGrandpaEquivocationPrecommit,
   FinalityGrandpaEquivocationPrevote,
   FinalityGrandpaPrecommit,
@@ -70,6 +73,27 @@ import type {
   PalletCommitteeRawOriginInstance4,
   PalletComplianceManagerCall,
   PalletComplianceManagerError,
+  PalletConfidentialAssetAffirmLeg,
+  PalletConfidentialAssetAffirmParty,
+  PalletConfidentialAssetAffirmTransaction,
+  PalletConfidentialAssetAffirmTransactions,
+  PalletConfidentialAssetAuditorAccount,
+  PalletConfidentialAssetCall,
+  PalletConfidentialAssetConfidentialAccount,
+  PalletConfidentialAssetConfidentialAssetDetails,
+  PalletConfidentialAssetConfidentialAuditors,
+  PalletConfidentialAssetConfidentialTransfers,
+  PalletConfidentialAssetError,
+  PalletConfidentialAssetEvent,
+  PalletConfidentialAssetLegParty,
+  PalletConfidentialAssetTransaction,
+  PalletConfidentialAssetTransactionId,
+  PalletConfidentialAssetTransactionLeg,
+  PalletConfidentialAssetTransactionLegAssetState,
+  PalletConfidentialAssetTransactionLegDetails,
+  PalletConfidentialAssetTransactionLegId,
+  PalletConfidentialAssetTransactionLegState,
+  PalletConfidentialAssetTransactionStatus,
   PalletContractsCall,
   PalletContractsError,
   PalletContractsEvent,
@@ -335,9 +359,9 @@ import type {
   PolymeshPrimitivesTransferComplianceAssetTransferCompliance,
   PolymeshPrimitivesTransferComplianceTransferCondition,
   PolymeshPrimitivesTransferComplianceTransferConditionExemptKey,
-  PolymeshRuntimeDevelopRuntime,
-  PolymeshRuntimeDevelopRuntimeOriginCaller,
-  PolymeshRuntimeDevelopRuntimeSessionKeys,
+  PolymeshPrivateRuntimeDevelopRuntime,
+  PolymeshPrivateRuntimeDevelopRuntimeOriginCaller,
+  PolymeshPrivateRuntimeDevelopRuntimeSessionKeys,
   SpArithmeticArithmeticError,
   SpAuthorityDiscoveryAppPublic,
   SpConsensusBabeAllowedSlots,
@@ -381,6 +405,9 @@ import type {
 
 declare module '@polkadot/types/types/registry' {
   interface InterfaceTypes {
+    ConfidentialAssetsBurnConfidentialBurnProof: ConfidentialAssetsBurnConfidentialBurnProof;
+    ConfidentialAssetsElgamalCipherText: ConfidentialAssetsElgamalCipherText;
+    ConfidentialAssetsElgamalCompressedElgamalPublicKey: ConfidentialAssetsElgamalCompressedElgamalPublicKey;
     FinalityGrandpaEquivocationPrecommit: FinalityGrandpaEquivocationPrecommit;
     FinalityGrandpaEquivocationPrevote: FinalityGrandpaEquivocationPrevote;
     FinalityGrandpaPrecommit: FinalityGrandpaPrecommit;
@@ -445,6 +472,27 @@ declare module '@polkadot/types/types/registry' {
     PalletCommitteeRawOriginInstance4: PalletCommitteeRawOriginInstance4;
     PalletComplianceManagerCall: PalletComplianceManagerCall;
     PalletComplianceManagerError: PalletComplianceManagerError;
+    PalletConfidentialAssetAffirmLeg: PalletConfidentialAssetAffirmLeg;
+    PalletConfidentialAssetAffirmParty: PalletConfidentialAssetAffirmParty;
+    PalletConfidentialAssetAffirmTransaction: PalletConfidentialAssetAffirmTransaction;
+    PalletConfidentialAssetAffirmTransactions: PalletConfidentialAssetAffirmTransactions;
+    PalletConfidentialAssetAuditorAccount: PalletConfidentialAssetAuditorAccount;
+    PalletConfidentialAssetCall: PalletConfidentialAssetCall;
+    PalletConfidentialAssetConfidentialAccount: PalletConfidentialAssetConfidentialAccount;
+    PalletConfidentialAssetConfidentialAssetDetails: PalletConfidentialAssetConfidentialAssetDetails;
+    PalletConfidentialAssetConfidentialAuditors: PalletConfidentialAssetConfidentialAuditors;
+    PalletConfidentialAssetConfidentialTransfers: PalletConfidentialAssetConfidentialTransfers;
+    PalletConfidentialAssetError: PalletConfidentialAssetError;
+    PalletConfidentialAssetEvent: PalletConfidentialAssetEvent;
+    PalletConfidentialAssetLegParty: PalletConfidentialAssetLegParty;
+    PalletConfidentialAssetTransaction: PalletConfidentialAssetTransaction;
+    PalletConfidentialAssetTransactionId: PalletConfidentialAssetTransactionId;
+    PalletConfidentialAssetTransactionLeg: PalletConfidentialAssetTransactionLeg;
+    PalletConfidentialAssetTransactionLegAssetState: PalletConfidentialAssetTransactionLegAssetState;
+    PalletConfidentialAssetTransactionLegDetails: PalletConfidentialAssetTransactionLegDetails;
+    PalletConfidentialAssetTransactionLegId: PalletConfidentialAssetTransactionLegId;
+    PalletConfidentialAssetTransactionLegState: PalletConfidentialAssetTransactionLegState;
+    PalletConfidentialAssetTransactionStatus: PalletConfidentialAssetTransactionStatus;
     PalletContractsCall: PalletContractsCall;
     PalletContractsError: PalletContractsError;
     PalletContractsEvent: PalletContractsEvent;
@@ -710,9 +758,9 @@ declare module '@polkadot/types/types/registry' {
     PolymeshPrimitivesTransferComplianceAssetTransferCompliance: PolymeshPrimitivesTransferComplianceAssetTransferCompliance;
     PolymeshPrimitivesTransferComplianceTransferCondition: PolymeshPrimitivesTransferComplianceTransferCondition;
     PolymeshPrimitivesTransferComplianceTransferConditionExemptKey: PolymeshPrimitivesTransferComplianceTransferConditionExemptKey;
-    PolymeshRuntimeDevelopRuntime: PolymeshRuntimeDevelopRuntime;
-    PolymeshRuntimeDevelopRuntimeOriginCaller: PolymeshRuntimeDevelopRuntimeOriginCaller;
-    PolymeshRuntimeDevelopRuntimeSessionKeys: PolymeshRuntimeDevelopRuntimeSessionKeys;
+    PolymeshPrivateRuntimeDevelopRuntime: PolymeshPrivateRuntimeDevelopRuntime;
+    PolymeshPrivateRuntimeDevelopRuntimeOriginCaller: PolymeshPrivateRuntimeDevelopRuntimeOriginCaller;
+    PolymeshPrivateRuntimeDevelopRuntimeSessionKeys: PolymeshPrivateRuntimeDevelopRuntimeSessionKeys;
     SpArithmeticArithmeticError: SpArithmeticArithmeticError;
     SpAuthorityDiscoveryAppPublic: SpAuthorityDiscoveryAppPublic;
     SpConsensusBabeAllowedSlots: SpConsensusBabeAllowedSlots;
