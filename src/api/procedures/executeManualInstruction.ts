@@ -1,4 +1,5 @@
 import { PolymeshPrimitivesIdentityIdPortfolioId } from '@polkadot/types/lookup';
+import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
 import { assertInstructionValidForManualExecution } from '~/api/procedures/utils';
@@ -29,9 +30,16 @@ export interface Storage {
 /**
  * @hidden
  */
+export type Params = ExecuteManualInstructionParams & {
+  id: BigNumber;
+};
+
+/**
+ * @hidden
+ */
 export async function prepareExecuteManualInstruction(
-  this: Procedure<ExecuteManualInstructionParams, Instruction, Storage>,
-  args: ExecuteManualInstructionParams
+  this: Procedure<Params, Instruction, Storage>,
+  args: Params
 ): Promise<
   TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'executeManualInstruction'>>
 > {
@@ -105,7 +113,7 @@ export async function prepareExecuteManualInstruction(
  * @hidden
  */
 export async function getAuthorization(
-  this: Procedure<ExecuteManualInstructionParams, Instruction, Storage>
+  this: Procedure<Params, Instruction, Storage>
 ): Promise<ProcedureAuthorization> {
   const {
     storage: { portfolios },
@@ -124,8 +132,8 @@ export async function getAuthorization(
  * @hidden
  */
 export async function prepareStorage(
-  this: Procedure<ExecuteManualInstructionParams, Instruction, Storage>,
-  { id }: ExecuteManualInstructionParams
+  this: Procedure<Params, Instruction, Storage>,
+  { id }: Params
 ): Promise<Storage> {
   const { context } = this;
 
@@ -170,8 +178,5 @@ export async function prepareStorage(
 /**
  * @hidden
  */
-export const executeManualInstruction = (): Procedure<
-  ExecuteManualInstructionParams,
-  Instruction,
-  Storage
-> => new Procedure(prepareExecuteManualInstruction, getAuthorization, prepareStorage);
+export const executeManualInstruction = (): Procedure<Params, Instruction, Storage> =>
+  new Procedure(prepareExecuteManualInstruction, getAuthorization, prepareStorage);

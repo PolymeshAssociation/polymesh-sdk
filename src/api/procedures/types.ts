@@ -614,12 +614,12 @@ export type ModifyInstructionAffirmationParams = InstructionIdParams &
       }
   );
 
-export type ExecuteManualInstructionParams = InstructionIdParams & {
+export interface ExecuteManualInstructionParams {
   /**
    * (optional) Set to `true` to skip affirmation check, useful for batch transactions
    */
   skipAffirmationCheck?: boolean;
-};
+}
 
 export interface CreateVenueParams {
   description: string;
