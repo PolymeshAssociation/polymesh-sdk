@@ -5,6 +5,7 @@ import { when } from 'jest-when';
 
 import {
   getAuthorization,
+  Params,
   prepareExecuteManualInstruction,
   prepareStorage,
   Storage,
@@ -14,7 +15,6 @@ import { Context, DefaultPortfolio, Instruction, Venue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
-  ExecuteManualInstructionParams,
   InstructionAffirmationOperation,
   InstructionDetails,
   InstructionStatus,
@@ -134,11 +134,7 @@ describe('executeManualInstruction procedure', () => {
   });
 
   it('should throw an error if the signing identity is not the custodian of any of the involved portfolios', () => {
-    const proc = procedureMockUtils.getInstance<
-      ExecuteManualInstructionParams,
-      Instruction,
-      Storage
-    >(mockContext, {
+    const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
       portfolios: [],
       instructionDetails,
       signerDid: 'someOtherDid',
@@ -157,11 +153,7 @@ describe('executeManualInstruction procedure', () => {
       returnValue: dsMockUtils.createMockU64(new BigNumber(1)),
     });
 
-    const proc = procedureMockUtils.getInstance<
-      ExecuteManualInstructionParams,
-      Instruction,
-      Storage
-    >(mockContext, {
+    const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
       portfolios: [portfolio, portfolio],
       instructionDetails,
       signerDid: did,
@@ -180,11 +172,7 @@ describe('executeManualInstruction procedure', () => {
       returnValue: dsMockUtils.createMockU64(new BigNumber(1)),
     });
 
-    const proc = procedureMockUtils.getInstance<
-      ExecuteManualInstructionParams,
-      Instruction,
-      Storage
-    >(mockContext, {
+    const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
       portfolios: [portfolio, portfolio],
       instructionDetails,
       signerDid: did,
@@ -205,14 +193,11 @@ describe('executeManualInstruction procedure', () => {
       returnValue: dsMockUtils.createMockU64(new BigNumber(0)),
     });
 
-    let proc = procedureMockUtils.getInstance<ExecuteManualInstructionParams, Instruction, Storage>(
-      mockContext,
-      {
-        portfolios: [portfolio, portfolio],
-        instructionDetails,
-        signerDid: did,
-      }
-    );
+    let proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
+      portfolios: [portfolio, portfolio],
+      instructionDetails,
+      signerDid: did,
+    });
 
     let result = await prepareExecuteManualInstruction.call(proc, {
       id,
@@ -233,14 +218,11 @@ describe('executeManualInstruction procedure', () => {
       resolver: expect.objectContaining({ id }),
     });
 
-    proc = procedureMockUtils.getInstance<ExecuteManualInstructionParams, Instruction, Storage>(
-      mockContext,
-      {
-        portfolios: [],
-        instructionDetails,
-        signerDid: did,
-      }
-    );
+    proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
+      portfolios: [],
+      instructionDetails,
+      signerDid: did,
+    });
 
     result = await prepareExecuteManualInstruction.call(proc, {
       id,
@@ -267,11 +249,7 @@ describe('executeManualInstruction procedure', () => {
       const from = entityMockUtils.getNumberedPortfolioInstance();
       const to = entityMockUtils.getDefaultPortfolioInstance();
 
-      const proc = procedureMockUtils.getInstance<
-        ExecuteManualInstructionParams,
-        Instruction,
-        Storage
-      >(mockContext, {
+      const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
         portfolios: [from, to],
         instructionDetails,
         signerDid: did,
@@ -300,11 +278,7 @@ describe('executeManualInstruction procedure', () => {
     const asset = entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER' });
 
     it('should return the custodied portfolios associated in the instruction legs for the signing identity', async () => {
-      const proc = procedureMockUtils.getInstance<
-        ExecuteManualInstructionParams,
-        Instruction,
-        Storage
-      >(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext);
 
       const boundFunc = prepareStorage.bind(proc);
       entityMockUtils.configureMocks({
@@ -329,11 +303,7 @@ describe('executeManualInstruction procedure', () => {
     });
 
     it('should return no portfolios when signing identity is not part of any legs', async () => {
-      const proc = procedureMockUtils.getInstance<
-        ExecuteManualInstructionParams,
-        Instruction,
-        Storage
-      >(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext);
 
       const boundFunc = prepareStorage.bind(proc);
       from = entityMockUtils.getDefaultPortfolioInstance({ did: fromDid, isCustodiedBy: false });
