@@ -31,7 +31,7 @@ export function confidentialAssetsByHolderQuery(
         offset: $start
       ) {
         nodes {
-          accountId,
+          accountId
           assetId
         }
         totalCount
@@ -52,7 +52,7 @@ export function createTransactionHistoryByConfidentialAssetQueryFilters(): {
   args: string;
   filter: string;
 } {
-  const args = ['$size: Int, $start: Int', '$assetId: [String!]'];
+  const args = ['$size: Int, $start: Int', '$assetId: String!'];
   const filters = ['assetId: { equalTo: $assetId }'];
 
   return {
@@ -73,7 +73,7 @@ export function transactionHistoryByConfidentialAssetQuery(
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<ConfidentialAssetHistory, 'assetId'>>> {
   const { args, filter } = createTransactionHistoryByConfidentialAssetQueryFilters();
 
-  const query = gql`
+  const query = `
   query TransactionHistoryQuery
     ${args}
     {
@@ -83,27 +83,29 @@ export function transactionHistoryByConfidentialAssetQuery(
         offset: $start
       ){
         nodes {
-          accountId,
-          fromId,
-          toId,
-          transactionId,
-          assetId,
+          fromId
+          toId
+          transactionId
+          assetId
           createdBlock {
-            datetime,
-            hash,
-      	    blockId,
+            datetime
+            hash
+      	    blockId
           }
-          amount,
-          eventId,
-          memo,
+          amount
+          eventId
+          memo
         }
         totalCount
       }
     }
 `;
 
+  console.log(query);
   return {
-    query,
+    query: gql`
+      ${query}
+    `,
     variables: { size: size?.toNumber(), start: start?.toNumber(), assetId },
   };
 }

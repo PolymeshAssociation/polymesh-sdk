@@ -356,9 +356,8 @@ export class ConfidentialAccount extends Entity<UniqueIdentifiers, string> {
     );
 
     const data: ConfidentialAssetHistoryEntry[] = nodes.map(
-      ({ id, assetId, amount, eventId, createdBlock, eventIdx }) => {
+      ({ assetId, amount, eventId, createdBlock, eventIdx }) => {
         return {
-          id,
           asset: new ConfidentialAsset({ id: assetId }, context),
           amount,
           eventId,

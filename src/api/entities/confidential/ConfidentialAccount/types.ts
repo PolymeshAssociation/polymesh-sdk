@@ -30,7 +30,6 @@ export interface ApplyIncomingBalanceParams {
 }
 
 export type ConfidentialAssetHistoryEntry = {
-  id: string;
   asset: ConfidentialAsset;
   eventId: EventIdEnum;
   amount: string;
