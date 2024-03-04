@@ -1302,8 +1302,9 @@ function handleNodeVersionResponse(
 ): boolean {
   const { result: version } = data;
   const lowMajor = major(SUPPORTED_NODE_SEMVER).toString();
+  const versions = SUPPORTED_NODE_VERSION_RANGE.split('||');
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const high = coerce(SUPPORTED_NODE_VERSION_RANGE.split('||')[1].trim())!.version;
+  const high = coerce(versions[versions.length - 1].trim())!.version;
   const highMajor = major(high).toString();
 
   if (!satisfies(version, lowMajor) && !satisfies(version, highMajor)) {
@@ -1378,8 +1379,10 @@ function handleSpecVersionResponse(
     .join('.');
 
   const lowMajor = major(SUPPORTED_SPEC_SEMVER).toString();
+  const versions = SUPPORTED_SPEC_VERSION_RANGE.split('||');
+
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const high = coerce(SUPPORTED_SPEC_VERSION_RANGE.split('||')[1].trim())!.version;
+  const high = coerce(versions[versions.length - 1].trim())!.version;
   const highMajor = major(high).toString();
 
   if (!satisfies(specVersionAsSemver, lowMajor) && !satisfies(specVersionAsSemver, highMajor)) {

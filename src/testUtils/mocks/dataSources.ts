@@ -285,10 +285,10 @@ export class MockWebSocket {
     const nodeVersionId = SYSTEM_VERSION_RPC_CALL.id;
 
     if (msg.indexOf(nodeVersionId) >= 0) {
-      response = { data: `{ "result": "6.0.0", "id": "${nodeVersionId}" }` };
+      response = { data: `{ "result": "1.0.0", "id": "${nodeVersionId}" }` };
     } else {
       response = {
-        data: `{ "result": { "specVersion": "6000000"}, "id": "${STATE_RUNTIME_VERSION_CALL.id}" }`,
+        data: `{ "result": { "specVersion": "1000000"}, "id": "${STATE_RUNTIME_VERSION_CALL.id}" }`,
       };
     }
 
