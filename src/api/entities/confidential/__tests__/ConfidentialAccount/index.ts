@@ -334,7 +334,6 @@ describe('ConfidentialAccount class', () => {
     const eventIdx = new BigNumber(1);
     const fakeCreatedAt = { blockNumber, blockHash, blockDate, eventIndex: eventIdx };
     const mockData = {
-      id: 1,
       assetId: mockAsset.toHuman(),
       amount: '100000000000000000',
       eventId: EventIdEnum.AccountDeposit,
@@ -364,7 +363,6 @@ describe('ConfidentialAccount class', () => {
         data: [historyEntry],
       } = await account.getTransactionHistory({});
 
-      expect(historyEntry.id).toEqual(mockData.id);
       expect(historyEntry.asset).toBeInstanceOf(ConfidentialAsset);
       expect(historyEntry.amount).toEqual(mockData.amount);
       expect(historyEntry.amount).toEqual(mockData.amount);
@@ -395,7 +393,6 @@ describe('ConfidentialAccount class', () => {
         data: [historyEntry],
       } = await account.getTransactionHistory({ size, start });
 
-      expect(historyEntry.id).toEqual(mockData.id);
       expect(historyEntry.asset).toBeInstanceOf(ConfidentialAsset);
       expect(historyEntry.amount).toEqual(mockData.amount);
       expect(historyEntry.amount).toEqual(mockData.amount);
