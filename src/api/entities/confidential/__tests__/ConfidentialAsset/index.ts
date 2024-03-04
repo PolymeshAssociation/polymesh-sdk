@@ -463,7 +463,7 @@ describe('ConfidentialAsset class', () => {
       dsMockUtils.createApolloQueryMock(
         transactionHistoryByConfidentialAssetQuery(
           {
-            assetId: confidentialAsset.toHuman(),
+            assetId: `0x${assetId}`,
           },
           new BigNumber(2),
           new BigNumber(0)
@@ -490,7 +490,7 @@ describe('ConfidentialAsset class', () => {
 
       dsMockUtils.createApolloQueryMock(
         transactionHistoryByConfidentialAssetQuery({
-          assetId: confidentialAsset.toHuman(),
+          assetId: `0x${assetId}`,
         }),
         {
           confidentialAssetHistories: confidentialAssetHistoriesResponse,
@@ -511,7 +511,7 @@ describe('ConfidentialAsset class', () => {
       const blockHash = 'someHash';
       const eventIdx = new BigNumber(1);
       const variables = {
-        id,
+        id: `0x${assetId}`,
       };
       const fakeResult = { blockNumber, blockHash, blockDate, eventIndex: eventIdx };
 
@@ -537,7 +537,7 @@ describe('ConfidentialAsset class', () => {
 
     it('should return null if the query result is empty', async () => {
       const variables = {
-        id,
+        id: `0x${assetId}`,
       };
 
       dsMockUtils.createApolloQueryMock(confidentialAssetQuery(variables), {
