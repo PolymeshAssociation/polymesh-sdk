@@ -73,7 +73,7 @@ export function transactionHistoryByConfidentialAssetQuery(
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<ConfidentialAssetHistory, 'assetId'>>> {
   const { args, filter } = createTransactionHistoryByConfidentialAssetQueryFilters();
 
-  const query = `
+  const query = gql`
   query TransactionHistoryQuery
     ${args}
     {
@@ -101,11 +101,8 @@ export function transactionHistoryByConfidentialAssetQuery(
     }
 `;
 
-  console.log(query);
   return {
-    query: gql`
-      ${query}
-    `,
+    query,
     variables: { size: size?.toNumber(), start: start?.toNumber(), assetId },
   };
 }
