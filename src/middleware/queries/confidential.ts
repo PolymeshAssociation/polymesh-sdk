@@ -25,7 +25,7 @@ export function confidentialAssetsByHolderQuery(
   const query = gql`
     query ConfidentialAssetsByAccount($size: Int, $start: Int, $accountId: String!) {
       confidentialAssetHolders(
-        accountId: { equalTo: $accountId }
+        filter: { accountId: { equalTo: $accountId } }
         orderBy: [${ConfidentialAssetHoldersOrderBy.CreatedBlockIdAsc}]
         first: $size
         offset: $start

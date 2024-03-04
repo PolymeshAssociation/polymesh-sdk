@@ -1,6 +1,7 @@
 import { AugmentedQueries } from '@polkadot/api/types';
 import { ConfidentialAssetsElgamalCipherText } from '@polkadot/types/lookup';
 import type { Option, U8aFixed } from '@polkadot/types-codec';
+import { hexStripPrefix } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 
 import {
@@ -268,7 +269,9 @@ export class ConfidentialAccount extends Entity<UniqueIdentifiers, string> {
       confidentialAssetsByHolderQuery(publicKey, size, start)
     );
 
-    const data = nodes.map(({ assetId: id }) => new ConfidentialAsset({ id }, context));
+    const data = nodes.map(
+      ({ assetId: id }) => new ConfidentialAsset({ id: hexStripPrefix(id) }, context)
+    );
     const count = new BigNumber(totalCount);
     const next = calculateNextKey(count, data.length, start);
 

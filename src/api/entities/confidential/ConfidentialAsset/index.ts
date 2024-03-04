@@ -364,7 +364,7 @@ export class ConfidentialAsset extends Entity<UniqueIdentifiers, string> {
     } = await context.queryMiddleware<Ensured<Query, 'confidentialAssetHistories'>>(
       transactionHistoryByConfidentialAssetQuery(
         {
-          assetId: id.toString(),
+          assetId: serializeConfidentialAssetId(id),
         },
         size,
         start
@@ -401,7 +401,7 @@ export class ConfidentialAsset extends Entity<UniqueIdentifiers, string> {
       },
     } = await context.queryMiddleware<Ensured<Query, 'confidentialAssets'>>(
       confidentialAssetQuery({
-        id,
+        id: serializeConfidentialAssetId(id),
       })
     );
 
