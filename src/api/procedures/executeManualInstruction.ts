@@ -96,7 +96,7 @@ export async function prepareExecuteManualInstruction(
       fungibleTokens,
       nonFungibleTokens,
       offChainAssets,
-      consumedWeight,
+      skipAffirmationCheck ? null : consumedWeight,
     ],
   };
 }
