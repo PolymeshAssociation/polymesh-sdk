@@ -117,7 +117,7 @@ const markdownLinks = getMarkdownLinks(hierarchy, 0);
 
 fs.writeFileSync(
   sidebarFilePath,
-  `## @polymeshassociation/confidential-polymesh-sdk
+  `## @polymeshassociation/polymesh-private-sdk
 
 - [Home](../wiki/Home)
 
