@@ -36,6 +36,8 @@ import {
 } from '~/utils/conversion';
 import { asConfidentialAsset, calculateNextKey, optionize } from '~/utils/internal';
 
+import { convertSubQueryAssetIdToUuid } from './helpers';
+
 /**
  * @hidden
  */
@@ -358,7 +360,7 @@ export class ConfidentialAccount extends Entity<UniqueIdentifiers, string> {
     const data: ConfidentialAssetHistoryEntry[] = nodes.map(
       ({ assetId, amount, eventId, createdBlock, eventIdx }) => {
         return {
-          asset: new ConfidentialAsset({ id: assetId }, context),
+          asset: new ConfidentialAsset({ id: convertSubQueryAssetIdToUuid(assetId) }, context),
           amount,
           eventId,
           createdAt: optionize(middlewareEventDetailsToEventIdentifier)(createdBlock, eventIdx),

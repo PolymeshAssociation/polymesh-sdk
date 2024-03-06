@@ -218,7 +218,7 @@ function createGetConfidentialAssetHistoryByConfidentialAccountQueryArgs(
   variables: PaginatedQueryArgs<ConfidentialAssetHistoryByConfidentialAccountArgs>;
 } {
   const args = ['$size: Int, $start: Int, $accountId: String!'];
-  const filters = ['accountId: { equalTo: $accountId }'];
+  const filters = ['or: [{ toId: { equalTo: $accountId }},{ fromId: { equalTo: $accountId }}]'];
 
   const { assetId, eventId } = variables;
 
