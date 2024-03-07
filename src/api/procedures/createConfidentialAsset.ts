@@ -1,14 +1,19 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 
-import { ConfidentialAsset, Context, PolymeshError, Procedure } from '~/internal';
-import { CreateConfidentialAssetParams, ErrorCode, TxTags } from '~/types';
+import { ConfidentialAsset, Context, Procedure } from '~/internal';
+import { CreateConfidentialAssetParams, TxTags } from '~/types';
 import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import {
   auditorsToConfidentialAuditors,
   meshConfidentialAssetToAssetId,
   stringToBytes,
 } from '~/utils/conversion';
-import { asConfidentialAccount, asIdentity, filterEventRecords } from '~/utils/internal';
+import {
+  asConfidentialAccount,
+  asIdentity,
+  assertIdentityExists,
+  filterEventRecords,
+} from '~/utils/internal';
 
 /**
  * @hidden
@@ -48,24 +53,10 @@ export async function prepareCreateConfidentialAsset(
 
   const auditorAccounts = auditors.map(auditor => asConfidentialAccount(auditor, context));
 
-  const auditorIdentities = await Promise.all(
-    auditorAccounts.map(auditor => auditor.getIdentity())
-  );
-
-  const invalidAuditors = auditorIdentities.filter(identity => identity === null);
-  if (invalidAuditors.length) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'One or more auditors do not exists',
-      data: {
-        invalidAuditors,
-      },
-    });
-  }
-
   let mediatorIdentities;
   if (mediators?.length) {
     mediatorIdentities = mediators.map(mediator => asIdentity(mediator, context));
+    await Promise.all(mediatorIdentities.map(identity => assertIdentityExists(identity)));
   }
 
   return {

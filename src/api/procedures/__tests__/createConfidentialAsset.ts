@@ -72,29 +72,23 @@ describe('createConfidentialAsset procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should throw an error if one or more auditors is not linked to an Identity', () => {
+  it('should throw an error if a mediator does not exist', () => {
     const proc = procedureMockUtils.getInstance<CreateConfidentialAssetParams, ConfidentialAsset>(
       mockContext
     );
-    const invalidAuditors = [
-      ...auditors,
-      entityMockUtils.getConfidentialAccountInstance({
-        getIdentity: null,
-      }),
-    ];
+
     const expectedError = new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'One or more auditors do not exists',
-      data: {
-        invalidAuditors,
-      },
+      code: ErrorCode.DataUnavailable,
+      message: 'The identity does not exists',
     });
+
     return expect(
       prepareCreateConfidentialAsset.call(proc, {
         data,
-        auditors: invalidAuditors,
+        auditors,
+        mediators: [entityMockUtils.getIdentityInstance({ exists: false })],
       })
-    ).rejects.toThrowError(expectedError);
+    ).rejects.toThrow(expectedError);
   });
 
   it('should add a create CreateConfidentialAsset transaction to the queue', async () => {

@@ -152,7 +152,6 @@ async function getTxArgsAndErrors(
               assertConfidentialAccountExists(sender),
               assertConfidentialAccountExists(receiver),
               ...assets.map(asset => assertConfidentialAssetExists(asset, context)),
-              ...auditors.map(auditor => assertConfidentialAccountExists(auditor)),
               ...mediators.map(mediator => assertIdentityExists(mediator)),
             ]);
 
