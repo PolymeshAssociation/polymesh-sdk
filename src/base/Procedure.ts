@@ -22,6 +22,7 @@ import {
   ProcedureAuthorization,
 } from '~/types/internal';
 import { signerToString } from '~/utils/conversion';
+import { defusePromise } from '~/utils/internal';
 
 /**
  * @hidden
@@ -283,7 +284,7 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
       const ctx = await this.setup(procArgs, context, opts);
 
       // parallelize the async calls
-      const prepareTransactionsPromise = this.prepareTransactions(procArgs);
+      const prepareTransactionsPromise = defusePromise(this.prepareTransactions(procArgs));
       const { roles, signerPermissions, agentPermissions, accountFrozen, noIdentity } =
         await this._checkAuthorization(procArgs, ctx);
 
