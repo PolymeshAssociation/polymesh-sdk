@@ -327,14 +327,16 @@ describe('ConfidentialAccount class', () => {
   });
 
   describe('method: getTransactionHistory', () => {
-    const mockAsset = entityMockUtils.getConfidentialAssetInstance({ id: '1' });
+    const mockAssetSqId = '0x76702175d8cbe3a55a19734433351e25';
+    const mockAssetId = '76702175-d8cb-e3a5-5a19-734433351e25';
+
     const blockNumber = new BigNumber(1234);
     const blockDate = new Date('4/14/2020');
     const blockHash = 'someHash';
     const eventIdx = new BigNumber(1);
     const fakeCreatedAt = { blockNumber, blockHash, blockDate, eventIndex: eventIdx };
     const mockData = {
-      assetId: mockAsset.toHuman(),
+      assetId: mockAssetSqId,
       amount: '100000000000000000',
       eventId: EventIdEnum.AccountDeposit,
       memo: 'test',
@@ -363,7 +365,7 @@ describe('ConfidentialAccount class', () => {
         data: [historyEntry],
       } = await account.getTransactionHistory({});
 
-      expect(historyEntry.asset).toBeInstanceOf(ConfidentialAsset);
+      expect(historyEntry.asset.id).toEqual(mockAssetId);
       expect(historyEntry.amount).toEqual(mockData.amount);
       expect(historyEntry.amount).toEqual(mockData.amount);
       expect(historyEntry.createdAt).toEqual(fakeCreatedAt);
