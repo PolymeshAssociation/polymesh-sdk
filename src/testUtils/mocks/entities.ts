@@ -13,6 +13,10 @@ import {
   Checkpoint,
   CheckpointSchedule,
   ChildIdentity,
+  ConfidentialAccount,
+  ConfidentialAsset,
+  ConfidentialTransaction,
+  ConfidentialVenue,
   CorporateAction,
   CustomPermissionGroup,
   DefaultPortfolio,
@@ -47,6 +51,14 @@ import {
   CheckRolesResult,
   CollectionKey,
   ComplianceRequirements,
+  ConfidentialAssetBalance,
+  ConfidentialAssetDetails,
+  ConfidentialLeg,
+  ConfidentialLegState,
+  ConfidentialLegStateWithId,
+  ConfidentialTransactionDetails,
+  ConfidentialTransactionStatus,
+  ConfidentialVenueFilteringDetails,
   CorporateActionDefaultConfig,
   CorporateActionKind,
   CorporateActionTargets,
@@ -119,6 +131,10 @@ export type MockCustomPermissionGroup = Mocked<CustomPermissionGroup>;
 export type MockKnownPermissionGroup = Mocked<KnownPermissionGroup>;
 export type MockMultiSig = Mocked<MultiSig>;
 export type MockMultiSigProposal = Mocked<MultiSigProposal>;
+export type MockConfidentialAccount = Mocked<ConfidentialAccount>;
+export type MockConfidentialVenue = Mocked<ConfidentialVenue>;
+export type MockConfidentialAsset = Mocked<ConfidentialAsset>;
+export type MockConfidentialTransaction = Mocked<ConfidentialTransaction>;
 
 interface EntityOptions {
   exists?: boolean;
@@ -296,6 +312,10 @@ interface InstructionOptions extends EntityOptions {
   isPending?: EntityGetter<boolean>;
 }
 
+interface ConfidentialTransactionOptions extends EntityOptions {
+  id?: BigNumber;
+}
+
 interface OfferingOptions extends EntityOptions {
   id?: BigNumber;
   ticker?: string;
@@ -361,6 +381,36 @@ interface MultiSigProposalOptions extends EntityOptions {
   details?: EntityGetter<MultiSigProposalDetails>;
 }
 
+interface ConfidentialAssetOptions extends EntityOptions {
+  id?: string;
+  details?: EntityGetter<ConfidentialAssetDetails | null>;
+  getVenueFilteringDetails?: EntityGetter<ConfidentialVenueFilteringDetails>;
+  isFrozen?: EntityGetter<boolean>;
+  isAccountFrozen?: EntityGetter<boolean>;
+}
+
+interface ConfidentialVenueOptions extends EntityOptions {
+  id?: BigNumber;
+  creator?: EntityGetter<Identity>;
+}
+
+interface ConfidentialTransactionOptions extends EntityOptions {
+  id?: BigNumber;
+  details?: EntityGetter<ConfidentialTransactionDetails>;
+  getInvolvedParties?: EntityGetter<Identity[]>;
+  getPendingAffirmsCount?: EntityGetter<BigNumber>;
+  getLegs?: EntityGetter<ConfidentialLeg[]>;
+  getLegState?: EntityGetter<ConfidentialLegState>;
+  getLegStates?: EntityGetter<ConfidentialLegStateWithId[]>;
+}
+
+interface ConfidentialAccountOptions extends EntityOptions {
+  publicKey?: string;
+  getIdentity?: EntityGetter<Identity | null>;
+  getIncomingBalance?: EntityGetter<string>;
+  getIncomingBalances?: EntityGetter<ConfidentialAssetBalance[]>;
+}
+
 type MockOptions = {
   identityOptions?: IdentityOptions;
   childIdentityOptions?: ChildIdentityOptions;
@@ -386,6 +436,10 @@ type MockOptions = {
   knownPermissionGroupOptions?: KnownPermissionGroupOptions;
   multiSigOptions?: MultiSigOptions;
   multiSigProposalOptions?: MultiSigProposalOptions;
+  confidentialAssetOptions?: ConfidentialAssetOptions;
+  confidentialVenueOptions?: ConfidentialVenueOptions;
+  confidentialTransactionOptions?: ConfidentialTransactionOptions;
+  confidentialAccountOptions?: ConfidentialAccountOptions;
 };
 
 type Class<T = any> = new (...args: any[]) => T;
@@ -2088,6 +2142,181 @@ const MockKnownPermissionGroupClass = createMockEntityClass<KnownPermissionGroup
   ['PermissionGroup', 'KnownPermissionGroup']
 );
 
+const MockConfidentialAccountClass = createMockEntityClass<ConfidentialAccountOptions>(
+  class {
+    uuid!: string;
+    publicKey!: string;
+    getIdentity!: jest.Mock;
+    getIncomingBalance!: jest.Mock;
+    getIncomingBalances!: jest.Mock;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof ConfidentialAccount>) {
+      return extractFromArgs(args, ['publicKey']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<ConfidentialAccountOptions>) {
+      this.uuid = 'confidentialAccount';
+      this.publicKey = opts.publicKey;
+      this.getIdentity = createEntityGetterMock(opts.getIdentity);
+      this.getIncomingBalance = createEntityGetterMock(opts.getIncomingBalance);
+      this.getIncomingBalances = createEntityGetterMock(opts.getIncomingBalances);
+    }
+  },
+  () => ({
+    publicKey: 'somePublicKey',
+    getIdentity: getIdentityInstance(),
+    getIncomingBalance: 'someEncryptedBalance',
+    getIncomingBalances: [],
+  }),
+  ['ConfidentialAccount']
+);
+
+const MockConfidentialAssetClass = createMockEntityClass<ConfidentialAssetOptions>(
+  class {
+    uuid!: string;
+    id!: string;
+    details!: jest.Mock;
+    getVenueFilteringDetails!: jest.Mock;
+    isFrozen!: jest.Mock;
+    isAccountFrozen!: jest.Mock;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof ConfidentialAsset>) {
+      return extractFromArgs(args, ['id']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<ConfidentialAssetOptions>) {
+      this.uuid = 'confidentialAsset';
+      this.id = opts.id;
+      this.details = createEntityGetterMock(opts.details);
+      this.getVenueFilteringDetails = createEntityGetterMock(opts.getVenueFilteringDetails);
+      this.isFrozen = createEntityGetterMock(opts.isFrozen);
+      this.isAccountFrozen = createEntityGetterMock(opts.isAccountFrozen);
+    }
+  },
+  () => ({
+    id: '76702175-d8cb-e3a5-5a19-734433351e26',
+    details: {
+      ticker: 'SOME_TICKER',
+      data: 'SOME_DATA',
+      owner: getIdentityInstance(),
+      totalSupply: new BigNumber(0),
+    },
+    getVenueFilteringDetails: { enabled: false },
+    isFrozen: false,
+    isAccountFrozen: false,
+  }),
+  ['ConfidentialAsset']
+);
+
+const MockConfidentialVenueClass = createMockEntityClass<ConfidentialVenueOptions>(
+  class {
+    uuid!: string;
+    id!: BigNumber;
+    creator!: jest.Mock;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof ConfidentialVenue>) {
+      return extractFromArgs(args, ['id']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<ConfidentialVenueOptions>) {
+      this.uuid = 'confidentialVenue';
+      this.id = opts.id;
+      this.creator = createEntityGetterMock(opts.creator);
+    }
+  },
+  () => ({
+    id: new BigNumber(1),
+    creator: getIdentityInstance(),
+  }),
+  ['ConfidentialVenue']
+);
+
+const MockConfidentialTransactionClass = createMockEntityClass<ConfidentialTransactionOptions>(
+  class {
+    uuid!: string;
+    id!: BigNumber;
+    details!: jest.Mock;
+    getInvolvedParties!: jest.Mock;
+    getLegs!: jest.Mock;
+    getPendingAffirmsCount!: jest.Mock;
+    getLegState!: jest.Mock;
+    getLegStates!: jest.Mock;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof ConfidentialTransaction>) {
+      return extractFromArgs(args, ['id']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<ConfidentialTransactionOptions>) {
+      this.uuid = 'confidentialTransaction';
+      this.id = opts.id;
+      this.details = createEntityGetterMock(opts.details);
+      this.getInvolvedParties = createEntityGetterMock(opts.getInvolvedParties);
+      this.getLegs = createEntityGetterMock(opts.getLegs);
+      this.getPendingAffirmsCount = createEntityGetterMock(opts.getPendingAffirmsCount);
+      this.getLegState = createEntityGetterMock(opts.getLegState);
+      this.getLegStates = createEntityGetterMock(opts.getLegStates);
+    }
+  },
+  () => ({
+    id: new BigNumber(1),
+    details: {
+      venueId: new BigNumber(1),
+      createdAt: new BigNumber(new Date('2024/01/01').getTime()),
+      status: ConfidentialTransactionStatus.Pending,
+      memo: 'Sample Memo',
+    },
+    getPendingAffirmsCount: new BigNumber(0),
+    getLegs: [
+      {
+        id: new BigNumber(0),
+        sender: getConfidentialAccountInstance({ publicKey: 'sender' }),
+        receiver: getConfidentialAccountInstance({ publicKey: 'receiver' }),
+        assetAuditors: [
+          {
+            asset: getConfidentialAssetInstance(),
+            auditors: [getConfidentialAccountInstance({ publicKey: 'auditor' })],
+          },
+        ],
+        mediators: [],
+      },
+    ],
+    getInvolvedParties: [
+      getIdentityInstance(),
+      getIdentityInstance({ did: 'receiverDid' }),
+      getIdentityInstance({ did: 'auditorDid' }),
+    ],
+    getLegState: {
+      proved: false,
+    },
+    getLegStates: [{ legId: new BigNumber(0), proved: false }],
+  }),
+  ['ConfidentialTransaction']
+);
+
 export const mockIdentityModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   Identity: MockIdentityClass,
@@ -2208,6 +2437,26 @@ export const mockKnownPermissionGroupModule = (path: string) => (): Record<strin
   KnownPermissionGroup: MockKnownPermissionGroupClass,
 });
 
+export const mockConfidentialAccountModule = (path: string) => (): Record<string, unknown> => ({
+  ...jest.requireActual(path),
+  ConfidentialAccount: MockConfidentialAccountClass,
+});
+
+export const mockConfidentialAssetModule = (path: string) => (): Record<string, unknown> => ({
+  ...jest.requireActual(path),
+  ConfidentialAsset: MockConfidentialAssetClass,
+});
+
+export const mockConfidentialVenueModule = (path: string) => (): Record<string, unknown> => ({
+  ...jest.requireActual(path),
+  ConfidentialVenue: MockConfidentialVenueClass,
+});
+
+export const mockConfidentialTransactionModule = (path: string) => (): Record<string, unknown> => ({
+  ...jest.requireActual(path),
+  ConfidentialTransaction: MockConfidentialTransactionClass,
+});
+
 /**
  * @hidden
  *
@@ -2237,6 +2486,10 @@ export const initMocks = function (opts?: MockOptions): void {
   MockDividendDistributionClass.init(opts?.dividendDistributionOptions);
   MockMultiSigClass.init(opts?.multiSigOptions);
   MockMultiSigProposalClass.init(opts?.multiSigProposalOptions);
+  MockConfidentialAccountClass.init(opts?.confidentialAccountOptions);
+  MockConfidentialAssetClass.init(opts?.confidentialAssetOptions);
+  MockConfidentialVenueClass.init(opts?.confidentialVenueOptions);
+  MockConfidentialTransactionClass.init(opts?.confidentialTransactionOptions);
 };
 
 /**
@@ -2269,6 +2522,10 @@ export const configureMocks = function (opts?: MockOptions): void {
   MockDividendDistributionClass.setOptions(opts?.dividendDistributionOptions);
   MockMultiSigClass.setOptions(opts?.multiSigOptions);
   MockMultiSigProposalClass.setOptions(opts?.multiSigProposalOptions);
+  MockConfidentialAccountClass.setOptions(opts?.confidentialAccountOptions);
+  MockConfidentialAssetClass.setOptions(opts?.confidentialAssetOptions);
+  MockConfidentialVenueClass.setOptions(opts?.confidentialVenueOptions);
+  MockConfidentialTransactionClass.setOptions(opts?.confidentialTransactionOptions);
 };
 
 /**
@@ -2298,6 +2555,10 @@ export const reset = function (): void {
   MockDividendDistributionClass.resetOptions();
   MockMultiSigClass.resetOptions();
   MockMultiSigProposalClass.resetOptions();
+  MockConfidentialAccountClass.resetOptions();
+  MockConfidentialAssetClass.resetOptions();
+  MockConfidentialVenueClass.resetOptions();
+  MockConfidentialTransactionClass.resetOptions();
 };
 
 /**
@@ -2462,6 +2723,22 @@ export const getVenueInstance = (opts?: VenueOptions): MockVenue => {
   }
 
   return instance as unknown as MockVenue;
+};
+
+/**
+ * @hidden
+ * Retrieve a Venue instance
+ */
+export const getConfidentialVenueInstance = (
+  opts?: ConfidentialVenueOptions
+): MockConfidentialVenue => {
+  const instance = new MockConfidentialVenueClass();
+
+  if (opts) {
+    instance.configure(opts);
+  }
+
+  return instance as unknown as MockConfidentialVenue;
 };
 
 /**
@@ -2636,4 +2913,44 @@ export const getMultiSigProposalInstance = (
   }
 
   return instance as unknown as MockMultiSigProposal;
+};
+
+export const getConfidentialAccountInstance = (
+  opts?: ConfidentialAccountOptions
+): MockConfidentialAccount => {
+  const instance = new MockConfidentialAccountClass();
+
+  if (opts) {
+    instance.configure(opts);
+  }
+
+  return instance as unknown as MockConfidentialAccount;
+};
+
+export const getConfidentialAssetInstance = (
+  opts?: ConfidentialAssetOptions
+): MockConfidentialAsset => {
+  const instance = new MockConfidentialAssetClass();
+
+  if (opts) {
+    instance.configure(opts);
+  }
+
+  return instance as unknown as MockConfidentialAsset;
+};
+
+/**
+ * @hidden
+ * Retrieve an Instruction instance
+ */
+export const getConfidentialTransactionInstance = (
+  opts?: ConfidentialTransactionOptions
+): MockConfidentialTransaction => {
+  const instance = new MockConfidentialTransactionClass();
+
+  if (opts) {
+    instance.configure(opts);
+  }
+
+  return instance as unknown as MockConfidentialTransaction;
 };

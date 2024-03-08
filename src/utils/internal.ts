@@ -34,6 +34,8 @@ import {
   Checkpoint,
   CheckpointSchedule,
   ChildIdentity,
+  ConfidentialAccount,
+  ConfidentialAsset,
   Context,
   FungibleAsset,
   Identity,
@@ -1300,8 +1302,9 @@ function handleNodeVersionResponse(
 ): boolean {
   const { result: version } = data;
   const lowMajor = major(SUPPORTED_NODE_SEMVER).toString();
+  const versions = SUPPORTED_NODE_VERSION_RANGE.split('||');
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const high = coerce(SUPPORTED_NODE_VERSION_RANGE.split('||')[1].trim())!.version;
+  const high = coerce(versions[versions.length - 1].trim())!.version;
   const highMajor = major(high).toString();
 
   if (!satisfies(version, lowMajor) && !satisfies(version, highMajor)) {
@@ -1376,8 +1379,10 @@ function handleSpecVersionResponse(
     .join('.');
 
   const lowMajor = major(SUPPORTED_SPEC_SEMVER).toString();
+  const versions = SUPPORTED_SPEC_VERSION_RANGE.split('||');
+
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const high = coerce(SUPPORTED_SPEC_VERSION_RANGE.split('||')[1].trim())!.version;
+  const high = coerce(versions[versions.length - 1].trim())!.version;
   const highMajor = major(high).toString();
 
   if (!satisfies(specVersionAsSemver, lowMajor) && !satisfies(specVersionAsSemver, highMajor)) {
@@ -1977,6 +1982,34 @@ export function assertNoPendingAuthorizationExists(params: {
 /**
  * @hidden
  */
+export function assertCaAssetValid(id: string): string {
+  if (id.length >= 32) {
+    let assetId = id;
+
+    if (id.length === 32) {
+      assetId = `${id.substring(0, 8)}-${id.substring(8, 12)}-${id.substring(
+        12,
+        16
+      )}-${id.substring(16, 20)}-${id.substring(20)}`;
+    }
+
+    const assetIdRegex =
+      /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/i;
+    if (assetIdRegex.test(assetId)) {
+      return assetId;
+    }
+  }
+
+  throw new PolymeshError({
+    code: ErrorCode.ValidationError,
+    message: 'The supplied ID is not a valid confidential Asset ID',
+    data: { id },
+  });
+}
+
+/**
+ * @hidden
+ */
 export async function assertIdentityExists(identity: Identity): Promise<void> {
   const exists = await identity.exists();
 
@@ -1987,4 +2020,32 @@ export async function assertIdentityExists(identity: Identity): Promise<void> {
       data: { did: identity.did },
     });
   }
+}
+
+/**
+ * @hidden
+ */
+export function asConfidentialAccount(
+  account: string | ConfidentialAccount,
+  context: Context
+): ConfidentialAccount {
+  if (account instanceof ConfidentialAccount) {
+    return account;
+  }
+
+  return new ConfidentialAccount({ publicKey: account }, context);
+}
+
+/**
+ * @hidden
+ */
+export function asConfidentialAsset(
+  asset: string | ConfidentialAsset,
+  context: Context
+): ConfidentialAsset {
+  if (asset instanceof ConfidentialAsset) {
+    return asset;
+  }
+
+  return new ConfidentialAsset({ id: asset }, context);
 }

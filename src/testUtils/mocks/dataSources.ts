@@ -1,13 +1,14 @@
 /* istanbul ignore file */
+
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { ApolloClient, NormalizedCacheObject, QueryOptions } from '@apollo/client/core';
 import { ApiPromise } from '@polkadot/api';
 import { DecoratedErrors, DecoratedRpc } from '@polkadot/api/types';
 import { RpcInterface } from '@polkadot/rpc-core/types';
 import {
   bool,
+  BTreeMap,
   BTreeSet,
   Bytes,
   Compact,
@@ -49,10 +50,24 @@ import {
   SignedBlock,
 } from '@polkadot/types/interfaces';
 import {
+  ConfidentialAssetsBurnConfidentialBurnProof,
+  ConfidentialAssetsElgamalCipherText,
   PalletAssetAssetOwnershipRelation,
   PalletAssetSecurityToken,
   PalletAssetTickerRegistration,
   PalletAssetTickerRegistrationConfig,
+  PalletConfidentialAssetAuditorAccount,
+  PalletConfidentialAssetConfidentialAccount,
+  PalletConfidentialAssetConfidentialAssetDetails,
+  PalletConfidentialAssetConfidentialAuditors,
+  PalletConfidentialAssetLegParty,
+  PalletConfidentialAssetTransaction,
+  PalletConfidentialAssetTransactionId,
+  PalletConfidentialAssetTransactionLeg,
+  PalletConfidentialAssetTransactionLegDetails,
+  PalletConfidentialAssetTransactionLegId,
+  PalletConfidentialAssetTransactionLegState,
+  PalletConfidentialAssetTransactionStatus,
   PalletContractsStorageContractInfo,
   PalletCorporateActionsCaCheckpoint,
   PalletCorporateActionsCaId,
@@ -270,10 +285,10 @@ export class MockWebSocket {
     const nodeVersionId = SYSTEM_VERSION_RPC_CALL.id;
 
     if (msg.indexOf(nodeVersionId) >= 0) {
-      response = { data: `{ "result": "6.0.0", "id": "${nodeVersionId}" }` };
+      response = { data: `{ "result": "1.0.0", "id": "${nodeVersionId}" }` };
     } else {
       response = {
-        data: `{ "result": { "specVersion": "6000000"}, "id": "${STATE_RUNTIME_VERSION_CALL.id}" }`,
+        data: `{ "result": { "specVersion": "1000000"}, "id": "${STATE_RUNTIME_VERSION_CALL.id}" }`,
       };
     }
 
@@ -1863,6 +1878,41 @@ export const createMockBTreeSet = <T extends Codec>(
   const res = createMockCodec(new Set(codecItems), !items) as unknown as Mutable<BTreeSet>;
 
   return res as MockCodec<BTreeSet<T>>;
+};
+
+/**
+ * @hidden
+ *  NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockBTreeMap = <K extends Codec, V extends Codec>(
+  items: BTreeMap<K, V> | [unknown, unknown][] = []
+): MockCodec<BTreeMap<K, V>> => {
+  if (isCodec<BTreeMap<K, V>>(items)) {
+    return items as MockCodec<BTreeMap<K, V>>;
+  }
+
+  const codecItems = items.map(([key, value]) => {
+    let codecKey: K;
+    let codecValue: V;
+
+    if (isCodec<K>(key)) {
+      codecKey = key;
+    } else {
+      codecKey = createMockCodec(key, !key) as K;
+    }
+
+    if (isCodec<V>(value)) {
+      codecValue = value;
+    } else {
+      codecValue = createMockCodec(value, !value) as V;
+    }
+
+    return { [codecKey.toString()]: codecValue };
+  });
+
+  const res = createMockCodec<BTreeMap<K, V>>(codecItems, !items) as unknown as Mutable<BTreeMap>;
+
+  return res as MockCodec<BTreeMap<K, V>>;
 };
 
 /**
@@ -4420,12 +4470,44 @@ export const createMockSigningPayload = (mockGetters?: {
   );
 };
 
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockAffirmationExpiry = (
   affirmExpiry: Option<u64> | Parameters<typeof createMockU64>
 ): MockCodec<any> => {
   const expiry = affirmExpiry ?? dsMockUtils.createMockOption();
 
   return createMockCodec({ expiry }, !affirmExpiry);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockConfidentialAssetDetails = (
+  details?:
+    | PalletConfidentialAssetConfidentialAssetDetails
+    | {
+        totalSupply: u128 | Parameters<typeof createMockU128>[0];
+        ownerDid: PolymeshPrimitivesIdentityId | Parameters<typeof createMockIdentityId>[0];
+        data: Bytes | Parameters<typeof createMockBytes>[0];
+        ticker: Option<PolymeshPrimitivesTicker>;
+      }
+): MockCodec<PalletConfidentialAssetConfidentialAssetDetails> => {
+  if (isCodec<PalletConfidentialAssetConfidentialAssetDetails>(details)) {
+    return details as MockCodec<PalletConfidentialAssetConfidentialAssetDetails>;
+  }
+
+  const { totalSupply, ownerDid, data, ticker } = details ?? {
+    totalSupply: createMockU128(),
+    ownerDid: createMockIdentityId(),
+    data: createMockBytes(),
+    ticker: createMockOption(),
+  };
+
+  return createMockCodec({ totalSupply, ownerDid, data, ticker }, !details);
 };
 
 /**
@@ -4444,4 +4526,303 @@ export const createMockMediatorAffirmationStatus = (
   }
 
   return createMockEnum<PolymeshPrimitivesSettlementMediatorAffirmationStatus>(status);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockConfidentialAuditors = (
+  assetAuditors?:
+    | PalletConfidentialAssetConfidentialAuditors
+    | {
+        auditors:
+          | BTreeSet<PalletConfidentialAssetAuditorAccount>
+          | Parameters<typeof createMockBTreeSet>[0];
+        mediators:
+          | BTreeSet<PolymeshPrimitivesIdentityId>
+          | Parameters<typeof createMockBTreeSet>[0];
+      }
+): MockCodec<PalletConfidentialAssetConfidentialAuditors> => {
+  if (isCodec<PalletConfidentialAssetConfidentialAuditors>(assetAuditors)) {
+    return assetAuditors as MockCodec<PalletConfidentialAssetConfidentialAuditors>;
+  }
+
+  const { auditors, mediators } = assetAuditors ?? {
+    auditors: createMockBTreeSet(),
+    mediators: createMockBTreeSet(),
+  };
+
+  return createMockCodec({ auditors, mediators }, !assetAuditors);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockConfidentialAssetTransaction = (
+  details?:
+    | PalletConfidentialAssetTransaction
+    | {
+        venueId: u64 | Parameters<typeof createMockU64>[0];
+        createdAt: u32 | Parameters<typeof createMockU32>[0];
+        memo: Option<PolymeshPrimitivesMemo> | Parameters<typeof createMockMemo>[0];
+      }
+): MockCodec<PalletConfidentialAssetTransaction> => {
+  if (isCodec<PalletConfidentialAssetTransaction>(details)) {
+    return details as MockCodec<PalletConfidentialAssetTransaction>;
+  }
+
+  const { venueId, createdAt, memo } = details ?? {
+    venueId: createMockU64(),
+    createdAt: createMockU32(),
+    memo: createMockOption(),
+  };
+
+  return createMockCodec<PalletConfidentialAssetTransaction>(
+    {
+      venueId,
+      createdAt,
+      memo,
+    },
+    !details
+  );
+};
+
+/**
+ * @hidden
+ *  * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockConfidentialTransactionStatus = (
+  status?: 'Pending' | 'Executed' | 'Rejected' | PalletConfidentialAssetTransactionStatus
+): MockCodec<PalletConfidentialAssetTransactionStatus> => {
+  if (isCodec<PalletConfidentialAssetTransactionStatus>(status)) {
+    return status as MockCodec<PalletConfidentialAssetTransactionStatus>;
+  }
+
+  return createMockEnum<PalletConfidentialAssetTransactionStatus>(status);
+};
+
+/**
+ * @hidden
+ *  * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockConfidentialAccount = (
+  account?: string | PalletConfidentialAssetConfidentialAccount
+): MockCodec<PalletConfidentialAssetConfidentialAccount> => {
+  if (isCodec<PalletConfidentialAssetConfidentialAccount>(account)) {
+    return account as MockCodec<PalletConfidentialAssetConfidentialAccount>;
+  }
+
+  return createMockStringCodec<PalletConfidentialAssetConfidentialAccount>(account);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockConfidentialLeg = (
+  leg?:
+    | PalletConfidentialAssetTransactionLeg
+    | {
+        assets: BTreeSet<Bytes> | Parameters<typeof createMockBTreeSet>[0];
+        sender:
+          | PalletConfidentialAssetConfidentialAccount
+          | Parameters<typeof createMockConfidentialAccount>[0];
+        receiver:
+          | PalletConfidentialAssetConfidentialAccount
+          | Parameters<typeof createMockConfidentialAccount>[0];
+        auditors:
+          | BTreeSet<PalletConfidentialAssetConfidentialAccount>
+          | Parameters<typeof createMockBTreeSet>[0];
+        mediators: BTreeSet<PolymeshPrimitivesIdentityId> | Parameters<typeof createMockIdentityId>;
+      }
+): MockCodec<PalletConfidentialAssetTransactionLeg> => {
+  if (isCodec<PalletConfidentialAssetTransactionLeg>(leg)) {
+    return leg as MockCodec<PalletConfidentialAssetTransactionLeg>;
+  }
+
+  const { assets, sender, receiver, auditors, mediators } = leg ?? {
+    assets: createMockBTreeSet<Bytes>(),
+    sender: createMockConfidentialAccount(),
+    receiver: createMockConfidentialAccount(),
+    auditors: createMockBTreeSet<PalletConfidentialAssetConfidentialAccount>(),
+    mediators: createMockBTreeSet<PolymeshPrimitivesIdentityId>(),
+  };
+
+  return createMockCodec<PalletConfidentialAssetTransactionLeg>(
+    {
+      assets,
+      sender,
+      receiver,
+      auditors,
+      mediators,
+    },
+    !leg
+  );
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockConfidentialLegDetails = (
+  leg?:
+    | PalletConfidentialAssetTransactionLegDetails
+    | {
+        sender:
+          | PalletConfidentialAssetConfidentialAccount
+          | Parameters<typeof createMockConfidentialAccount>[0];
+        receiver:
+          | PalletConfidentialAssetConfidentialAccount
+          | Parameters<typeof createMockConfidentialAccount>[0];
+        auditors:
+          | BTreeMap<U8aFixed, BTreeSet<PalletConfidentialAssetAuditorAccount>>
+          | Parameters<typeof createMockBTreeMap>[0];
+        mediators: BTreeSet<PolymeshPrimitivesIdentityId> | Parameters<typeof createMockIdentityId>;
+      }
+): MockCodec<PalletConfidentialAssetTransactionLegDetails> => {
+  if (isCodec<PalletConfidentialAssetTransactionLegDetails>(leg)) {
+    return leg as MockCodec<PalletConfidentialAssetTransactionLegDetails>;
+  }
+
+  const { sender, receiver, auditors, mediators } = leg ?? {
+    sender: createMockConfidentialAccount(),
+    receiver: createMockConfidentialAccount(),
+    auditors: createMockBTreeMap<U8aFixed, PalletConfidentialAssetConfidentialAccount>(),
+    mediators: createMockBTreeSet<PolymeshPrimitivesIdentityId>(),
+  };
+
+  return createMockCodec<PalletConfidentialAssetTransactionLegDetails>(
+    {
+      sender,
+      receiver,
+      auditors,
+      mediators,
+    },
+    !leg
+  );
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockConfidentialTransactionId = (
+  value?: BigNumber | PalletConfidentialAssetTransactionId
+): MockCodec<PalletConfidentialAssetTransactionId> => {
+  if (isCodec<PalletConfidentialAssetTransactionId>(value)) {
+    return value as MockCodec<PalletConfidentialAssetTransactionId>;
+  }
+
+  return createMockCodec<PalletConfidentialAssetTransactionId>(value, !value);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockConfidentialTransactionLegId = (
+  legId?: BigNumber | PalletConfidentialAssetTransactionLegId
+): MockCodec<PalletConfidentialAssetTransactionLegId> => {
+  if (isCodec<PalletConfidentialAssetTransactionLegId>(legId)) {
+    return legId as MockCodec<PalletConfidentialAssetTransactionLegId>;
+  }
+
+  return createMockNumberCodec<u32>(
+    legId
+  ) as unknown as MockCodec<PalletConfidentialAssetTransactionLegId>;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockConfidentialAssetTransactionId = (
+  txId?: BigNumber | PalletConfidentialAssetTransactionId
+): MockCodec<PalletConfidentialAssetTransactionId> => {
+  if (isCodec<PalletConfidentialAssetTransactionId>(txId)) {
+    return txId as MockCodec<PalletConfidentialAssetTransactionId>;
+  }
+
+  return createMockNumberCodec<u64>(
+    txId
+  ) as unknown as MockCodec<PalletConfidentialAssetTransactionId>;
+};
+
+/**
+ *  NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockConfidentialLegParty = (
+  role?: 'Sender' | 'Receiver' | 'Mediator' | PalletConfidentialAssetLegParty
+): MockCodec<PalletConfidentialAssetLegParty> => {
+  if (isCodec<PalletConfidentialAssetLegParty>(role)) {
+    return role as MockCodec<PalletConfidentialAssetLegParty>;
+  }
+
+  return createMockEnum<PalletConfidentialAssetLegParty>(role);
+};
+
+/**
+ *  NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockConfidentialLegState = (
+  state?:
+    | {
+        assetState: BTreeMap<U8aFixed, PalletConfidentialAssetTransactionLegState>;
+      }
+    | PalletConfidentialAssetTransactionLegState
+): MockCodec<PalletConfidentialAssetTransactionLegState> => {
+  if (isCodec<PalletConfidentialAssetTransactionLegState>(state)) {
+    return state as MockCodec<PalletConfidentialAssetTransactionLegState>;
+  }
+  const mockBTreeSet = dsMockUtils.createMockBTreeMap<
+    Bytes,
+    PalletConfidentialAssetTransactionLegState
+  >();
+
+  const { assetState } = state ?? {
+    assetState: mockBTreeSet,
+  };
+
+  return createMockCodec<PalletConfidentialAssetTransactionLegState>({ assetState }, !state);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockElgamalCipherText = (
+  value?: string | ConfidentialAssetsElgamalCipherText
+): MockCodec<ConfidentialAssetsElgamalCipherText> => {
+  if (isCodec<ConfidentialAssetsElgamalCipherText>(value)) {
+    return value as MockCodec<ConfidentialAssetsElgamalCipherText>;
+  }
+
+  return createMockStringCodec<ConfidentialAssetsElgamalCipherText>(value);
+};
+
+/**
+ *  NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockConfidentialBurnProof = (
+  proof?:
+    | {
+        encodedInnerProof: Bytes;
+      }
+    | ConfidentialAssetsBurnConfidentialBurnProof
+): MockCodec<ConfidentialAssetsBurnConfidentialBurnProof> => {
+  if (isCodec<ConfidentialAssetsBurnConfidentialBurnProof>(proof)) {
+    return proof as MockCodec<ConfidentialAssetsBurnConfidentialBurnProof>;
+  }
+  const mockBytes = dsMockUtils.createMockBytes();
+
+  const { encodedInnerProof } = proof ?? {
+    encodedInnerProof: mockBytes,
+  };
+
+  return createMockCodec<ConfidentialAssetsBurnConfidentialBurnProof>(
+    { encodedInnerProof },
+    !proof
+  );
 };

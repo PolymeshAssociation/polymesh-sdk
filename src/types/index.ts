@@ -47,16 +47,16 @@ export {
   AssetHoldersOrderBy,
   AuthTypeEnum,
   AuthorizationStatusEnum,
-  ExtrinsicsOrderBy,
-  NftHoldersOrderBy,
-  InstructionStatusEnum,
-  MultiSigProposalVoteActionEnum,
-  SettlementResultEnum,
   BalanceTypeEnum,
-  ModuleIdEnum,
-  EventIdEnum,
   CallIdEnum,
+  EventIdEnum,
+  ExtrinsicsOrderBy,
+  InstructionStatusEnum,
+  ModuleIdEnum,
+  MultiSigProposalVoteActionEnum,
+  NftHoldersOrderBy,
   Scalars,
+  SettlementResultEnum,
 } from '~/middleware/types';
 export { ClaimScopeTypeEnum, MiddlewareScope, SettlementDirectionEnum } from '~/middleware/typesV1';
 export { CountryCode, ModuleName, TxTag, TxTags };
@@ -103,11 +103,18 @@ export enum RoleType {
   CorporateActionsAgent = 'CorporateActionsAgent',
   // eslint-disable-next-line @typescript-eslint/no-shadow
   Identity = 'Identity',
+  ConfidentialAssetOwner = 'ConfidentialAssetOwner',
+  ConfidentialVenueOwner = 'ConfidentialVenueOwner',
 }
 
 export interface TickerOwnerRole {
   type: RoleType.TickerOwner;
   ticker: string;
+}
+
+export interface ConfidentialAssetOwnerRole {
+  type: RoleType.ConfidentialAssetOwner;
+  assetId: string;
 }
 
 export interface CddProviderRole {
@@ -116,6 +123,11 @@ export interface CddProviderRole {
 
 export interface VenueOwnerRole {
   type: RoleType.VenueOwner;
+  venueId: BigNumber;
+}
+
+export interface ConfidentialVenueOwnerRole {
+  type: RoleType.ConfidentialVenueOwner;
   venueId: BigNumber;
 }
 
@@ -139,7 +151,9 @@ export type Role =
   | CddProviderRole
   | VenueOwnerRole
   | PortfolioCustodianRole
-  | IdentityRole;
+  | IdentityRole
+  | ConfidentialAssetOwnerRole
+  | ConfidentialVenueOwnerRole;
 
 export enum KnownAssetType {
   EquityCommon = 'EquityCommon',
