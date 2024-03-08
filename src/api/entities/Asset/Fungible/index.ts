@@ -264,7 +264,7 @@ export class FungibleAsset extends BaseAsset {
       )
     );
 
-    const data = nodes.map(
+    const data: HistoricAssetTransaction[] = nodes.map(
       ({
         assetId,
         amount,
@@ -274,12 +274,18 @@ export class FungibleAsset extends BaseAsset {
         eventId,
         eventIdx,
         extrinsicIdx,
+        fundingRound,
+        instructionId,
+        instructionMemo,
       }) => ({
         asset: new FungibleAsset({ ticker: assetId }, context),
         amount: new BigNumber(amount).shiftedBy(-6),
         event: eventId,
         from: optionize(middlewarePortfolioToPortfolio)(fromPortfolio, context),
         to: optionize(middlewarePortfolioToPortfolio)(toPortfolio, context),
+        fundingRound,
+        instructionId: instructionId ? new BigNumber(instructionId) : undefined,
+        instructionMemo,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         extrinsicIndex: new BigNumber(extrinsicIdx!),
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

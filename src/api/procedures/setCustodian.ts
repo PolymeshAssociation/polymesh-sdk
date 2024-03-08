@@ -1,18 +1,10 @@
 import BigNumber from 'bignumber.js';
 
 import { createAuthorizationResolver } from '~/api/procedures/utils';
-import {
-  AuthorizationRequest,
-  DefaultPortfolio,
-  Identity,
-  NumberedPortfolio,
-  PolymeshError,
-  Procedure,
-} from '~/internal';
+import { AuthorizationRequest, Identity, Procedure } from '~/internal';
 import {
   Authorization,
   AuthorizationType,
-  ErrorCode,
   PortfolioId,
   RoleType,
   SetCustodianParams,
@@ -27,7 +19,7 @@ import {
   signerToString,
   signerValueToSignatory,
 } from '~/utils/conversion';
-import { optionize } from '~/utils/internal';
+import { assertNoPendingAuthorizationExists, optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -65,34 +57,28 @@ export async function prepareSetCustodian(
     context.getSigningIdentity(),
   ]);
 
-  const hasPendingAuth = !!authorizationRequests.find(authorizationRequest => {
-    const { issuer, data } = authorizationRequest;
-    const authorizationData = data as { value: NumberedPortfolio | DefaultPortfolio };
-    return signingIdentity.isEqual(issuer) && authorizationData.value.isEqual(portfolio);
-  });
-
-  if (hasPendingAuth) {
-    throw new PolymeshError({
-      code: ErrorCode.NoDataChange,
-      message:
-        "The target Identity already has a pending invitation to be the Portfolio's custodian",
-    });
-  }
-
-  const rawSignatory = signerValueToSignatory(signerToSignerValue(target), context);
-
-  const authRequest: Authorization = {
+  const authorization: Authorization = {
     type: AuthorizationType.PortfolioCustody,
     value: portfolio,
   };
-  const rawAuthorizationData = authorizationToAuthorizationData(authRequest, context);
+
+  assertNoPendingAuthorizationExists({
+    authorizationRequests,
+    issuer: signingIdentity,
+    message: "The target Identity already has a pending invitation to be the Portfolio's custodian",
+    authorization,
+  });
+
+  const rawSignatory = signerValueToSignatory(signerToSignerValue(target), context);
+
+  const rawAuthorizationData = authorizationToAuthorizationData(authorization, context);
 
   const rawExpiry = optionize(dateToMoment)(expiry, context);
 
   return {
     transaction: identity.addAuthorization,
     resolver: createAuthorizationResolver(
-      authRequest,
+      authorization,
       issuerIdentity,
       target,
       expiry || null,

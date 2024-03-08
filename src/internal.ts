@@ -1,4 +1,5 @@
 /* istanbul ignore file */
+
 export { PolymeshError } from '~/base/PolymeshError';
 export { Context } from '~/base/Context';
 export { PolymeshTransactionBase } from '~/base/PolymeshTransactionBase';
@@ -21,8 +22,12 @@ export {
   consumeJoinOrRotateAuthorization,
   ConsumeJoinOrRotateAuthorizationParams,
 } from '~/api/procedures/consumeJoinOrRotateAuthorization';
+export { addConfidentialTransaction } from '~/api/procedures/addConfidentialTransaction';
 export { addInstruction } from '~/api/procedures/addInstruction';
 export { executeManualInstruction } from '~/api/procedures/executeManualInstruction';
+export { executeConfidentialTransaction } from '~/api/procedures/executeConfidentialTransaction';
+export { affirmConfidentialTransactions } from '~/api/procedures/affirmConfidentialTransactions';
+export { rejectConfidentialTransaction } from '~/api/procedures/rejectConfidentialTransaction';
 export {
   consumeAuthorizationRequests,
   ConsumeAuthorizationRequestsParams,
@@ -93,6 +98,8 @@ export { investInOffering } from '~/api/procedures/investInOffering';
 export { createCheckpoint } from '~/api/procedures/createCheckpoint';
 export { controllerTransfer } from '~/api/procedures/controllerTransfer';
 export { linkCaDocs } from '~/api/procedures/linkCaDocs';
+export { createConfidentialAsset } from '~/api/procedures/createConfidentialAsset';
+export { createConfidentialAccount } from '~/api/procedures/createConfidentialAccount';
 export { Identity } from '~/api/entities/Identity';
 export { ChildIdentity } from '~/api/entities/Identity/ChildIdentity';
 export { Account } from '~/api/entities/Account';
@@ -100,9 +107,20 @@ export { MultiSig } from '~/api/entities/Account/MultiSig';
 export { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 export { TickerReservation } from '~/api/entities/TickerReservation';
 export { BaseAsset, FungibleAsset, NftCollection, Nft } from '~/api/entities/Asset';
+export { issueConfidentialAssets } from '~/api/procedures/issueConfidentialAssets';
+export { burnConfidentialAssets } from '~/api/procedures/burnConfidentialAssets';
+export { applyIncomingAssetBalance } from '~/api/procedures/applyIncomingAssetBalance';
+export { applyIncomingConfidentialAssetBalances } from '~/api/procedures/applyIncomingConfidentialAssetBalances';
+export { ConfidentialAccount } from '~/api/entities/confidential/ConfidentialAccount';
+export { ConfidentialAsset } from '~/api/entities/confidential/ConfidentialAsset';
+export { createConfidentialVenue } from '~/api/procedures/createConfidentialVenue';
+export { ConfidentialVenue } from '~/api/entities/confidential/ConfidentialVenue';
+export { ConfidentialTransaction } from '~/api/entities/confidential/ConfidentialTransaction';
 export { MetadataEntry } from '~/api/entities/MetadataEntry';
 export { registerMetadata } from '~/api/procedures/registerMetadata';
 export { setMetadata } from '~/api/procedures/setMetadata';
+export { clearMetadata } from '~/api/procedures/clearMetadata';
+export { removeLocalMetadata } from '~/api/procedures/removeLocalMetadata';
 export { AuthorizationRequest } from '~/api/entities/AuthorizationRequest';
 export { DefaultTrustedClaimIssuer } from '~/api/entities/DefaultTrustedClaimIssuer';
 export { Offering } from '~/api/entities/Offering';
@@ -146,6 +164,8 @@ export { modifyAllowance, ModifyAllowanceParams } from '~/api/procedures/modifyA
 export { createTransactionBatch } from '~/api/procedures/createTransactionBatch';
 export { createMultiSigAccount } from '~/api/procedures/createMultiSig';
 export { acceptPrimaryKeyRotation } from '~/api/procedures/acceptPrimaryKeyRotation';
+export { addAssetMediators } from '~/api/procedures/addAssetMediators';
+export { removeAssetMediators } from '~/api/procedures/removeAssetMediators';
 export { Storage as ModifyMultiSigStorage, modifyMultiSig } from '~/api/procedures/modifyMultiSig';
 export {
   SetCountTransferRestrictionsParams,
@@ -156,4 +176,7 @@ export {
 export { addAssetStat } from '~/api/procedures/addAssetStat';
 export { removeAssetStat } from '~/api/procedures/removeAssetStat';
 export { setVenueFiltering } from '~/api/procedures/setVenueFiltering';
+export { setConfidentialVenueFiltering } from '~/api/procedures/setConfidentialVenueFiltering';
 export { registerCustomClaimType } from '~/api/procedures/registerCustomClaimType';
+export { toggleFreezeConfidentialAsset } from '~/api/procedures/toggleFreezeConfidentialAsset';
+export { toggleFreezeConfidentialAccountAsset } from '~/api/procedures/toggleFreezeConfidentialAccountAsset';

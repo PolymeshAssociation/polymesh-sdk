@@ -2,12 +2,13 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Network } from '~/api/client/Network';
-import { Context, PolymeshTransaction } from '~/internal';
+import { Context, PolymeshError, PolymeshTransaction } from '~/internal';
 import { eventsByArgs, extrinsicByHash } from '~/middleware/queries';
 import { CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { MockTxStatus } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
-import { AccountBalance, MiddlewareMetadata, TxTags } from '~/types';
+import { AccountBalance, ErrorCode, MiddlewareMetadata, TransactionPayload, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -522,6 +523,98 @@ describe('Network Class', () => {
       });
       result = await network.getMiddlewareLag();
       expect(result).toEqual(new BigNumber(10000));
+    });
+  });
+
+  describe('method: submitTransaction', () => {
+    beforeEach(() => {
+      dsMockUtils.configureMocks();
+    });
+
+    const mockPayload = {
+      payload: {},
+      rawPayload: {},
+      method: '0x01',
+      metadata: {},
+    } as unknown as TransactionPayload;
+
+    it('should submit the transaction to the chain', async () => {
+      const transaction = dsMockUtils.createTxMock('staking', 'bond', {
+        autoResolve: MockTxStatus.Succeeded,
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (context.polymeshApi as any).tx = jest.fn().mockReturnValue(transaction);
+
+      const signature = '0x01';
+      await network.submitTransaction(mockPayload, signature);
+    });
+
+    it('should handle non prefixed hex strings', async () => {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker', {
+        autoResolve: MockTxStatus.Succeeded,
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (context.polymeshApi as any).tx = jest.fn().mockReturnValue(transaction);
+
+      const signature = '01';
+
+      await expect(network.submitTransaction(mockPayload, signature)).resolves.not.toThrow();
+    });
+
+    it('should throw an error if the status is rejected', async () => {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker', {
+        autoResolve: false,
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (context.polymeshApi as any).tx = jest.fn().mockReturnValue(transaction);
+
+      const signature = '0x01';
+
+      const submitPromise = network.submitTransaction(mockPayload, signature);
+
+      dsMockUtils.updateTxStatus(transaction, dsMockUtils.MockTxStatus.Failed);
+
+      await expect(submitPromise).rejects.toThrow();
+    });
+
+    it('should throw an error if there is an error submitting', async () => {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker', {
+        autoResolve: false,
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (context.polymeshApi as any).tx = jest.fn().mockReturnValue(transaction);
+
+      const signature = '0x01';
+
+      const submitPromise = network.submitTransaction(mockPayload, signature);
+
+      dsMockUtils.updateTxStatus(transaction, dsMockUtils.MockTxStatus.Aborted);
+
+      await expect(submitPromise).rejects.toThrow();
+    });
+
+    it("should throw an error if signature isn't hex encoded", async () => {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker', {
+        autoResolve: false,
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (context.polymeshApi as any).tx = jest.fn().mockReturnValue(transaction);
+
+      const signature = 'xyz';
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: '`signature` should be a hex encoded string',
+      });
+
+      await expect(network.submitTransaction(mockPayload, signature)).rejects.toThrow(
+        expectedError
+      );
     });
   });
 });

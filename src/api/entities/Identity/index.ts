@@ -13,6 +13,9 @@ import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
   Account,
   ChildIdentity,
+  ConfidentialAsset,
+  ConfidentialTransaction,
+  ConfidentialVenue,
   Context,
   Entity,
   FungibleAsset,
@@ -32,6 +35,7 @@ import {
 import { AssetHoldersOrderBy, NftHoldersOrderBy, Query } from '~/middleware/types';
 import {
   CheckRolesResult,
+  ConfidentialAffirmation,
   DefaultPortfolio,
   DistributionWithDetails,
   ErrorCode,
@@ -53,6 +57,8 @@ import {
 import { Ensured, tuple } from '~/types/utils';
 import {
   isCddProviderRole,
+  isConfidentialAssetOwnerRole,
+  isConfidentialVenueOwnerRole,
   isIdentityRole,
   isPortfolioCustodianRole,
   isTickerOwnerRole,
@@ -64,6 +70,9 @@ import {
   balanceToBigNumber,
   boolToBoolean,
   cddStatusToBoolean,
+  confidentialLegPartyToRole,
+  confidentialTransactionIdToBigNumber,
+  confidentialTransactionLegIdToBigNumber,
   corporateActionIdentifierToCaId,
   identityIdToString,
   middlewareInstructionToHistoricInstruction,
@@ -170,6 +179,12 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       const { owner } = await venue.details();
 
       return this.isEqual(owner);
+    } else if (isConfidentialVenueOwnerRole(role)) {
+      const confidentialVenue = new ConfidentialVenue({ id: role.venueId }, context);
+
+      const owner = await confidentialVenue.creator();
+
+      return this.isEqual(owner);
     } else if (isPortfolioCustodianRole(role)) {
       const { portfolioId } = role;
 
@@ -178,6 +193,13 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       return portfolio.isCustodiedBy();
     } else if (isIdentityRole(role)) {
       return did === role.did;
+    } else if (isConfidentialAssetOwnerRole(role)) {
+      const { assetId } = role;
+
+      const confidentialAsset = new ConfidentialAsset({ id: assetId }, context);
+      const { owner } = await confidentialAsset.details();
+
+      return this.isEqual(owner);
     }
 
     throw new PolymeshError({
@@ -477,8 +499,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
   /**
    * Retrieve all Venues created by this Identity
-   *
-   * @note can be subscribed to
    */
   public async getVenues(): Promise<Venue[]> {
     const {
@@ -914,5 +934,78 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const childIdentity = new ChildIdentity({ did }, context);
 
     return childIdentity.exists();
+  }
+
+  /**
+   * Get Confidential Transactions affirmations involving this identity
+   *
+   * @note supports pagination
+   */
+  public async getInvolvedConfidentialTransactions(
+    paginationOpts?: PaginationOptions
+  ): Promise<ResultSet<ConfidentialAffirmation>> {
+    const {
+      did,
+      context,
+      context: {
+        polymeshApi: {
+          query: { confidentialAsset },
+        },
+      },
+    } = this;
+
+    const { entries, lastKey: next } = await requestPaginated(confidentialAsset.userAffirmations, {
+      arg: did,
+      paginationOpts,
+    });
+
+    const data = entries.map(entry => {
+      const [key, value] = entry;
+      const affirmed = boolToBoolean(value.unwrap());
+      const [rawTransactionId, rawLegId, rawLegParty] = key.args[1];
+
+      const transactionId = confidentialTransactionIdToBigNumber(rawTransactionId);
+      const legId = confidentialTransactionLegIdToBigNumber(rawLegId);
+      const role = confidentialLegPartyToRole(rawLegParty);
+
+      const transaction = new ConfidentialTransaction({ id: transactionId }, context);
+
+      return {
+        affirmed,
+        legId,
+        transaction,
+        role,
+      };
+    });
+
+    return {
+      data,
+      next,
+    };
+  }
+
+  /**
+   * Retrieve all Confidential Venues created by this Identity
+   */
+  public async getConfidentialVenues(): Promise<ConfidentialVenue[]> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { confidentialAsset },
+        },
+      },
+      did,
+      context,
+    } = this;
+
+    const rawDid = stringToIdentityId(did, context);
+
+    const venueIdsKeys = await confidentialAsset.identityVenues.keys(rawDid);
+
+    return venueIdsKeys.map(key => {
+      const rawVenueId = key.args[1];
+
+      return new ConfidentialVenue({ id: u64ToBigNumber(rawVenueId) }, context);
+    });
   }
 }

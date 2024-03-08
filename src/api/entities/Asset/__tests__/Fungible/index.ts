@@ -261,6 +261,50 @@ describe('Asset class', () => {
     });
   });
 
+  describe('method: addRequiredMediators', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const ticker = 'TEST';
+      const context = dsMockUtils.getContextInstance();
+      const asset = new FungibleAsset({ ticker }, context);
+      const args = {
+        asset,
+        mediators: ['newDid'],
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await asset.addRequiredMediators(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: removeRequiredMediators', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const ticker = 'TEST';
+      const context = dsMockUtils.getContextInstance();
+      const asset = new FungibleAsset({ ticker }, context);
+      const args = {
+        asset,
+        mediators: ['currentDid'],
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await asset.removeRequiredMediators(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
   describe('method: modify', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const ticker = 'TEST';
@@ -781,6 +825,8 @@ describe('Asset class', () => {
               identityId: 'SOME_OTHER_DID',
               number: 1,
             },
+            instructionId: '2',
+            instructionMemo: 'Some memo',
             eventIdx: 1,
             extrinsicIdx: 1,
             createdBlock: {
@@ -821,6 +867,8 @@ describe('Asset class', () => {
       expect(result.data[2].event).toEqual(transactionResponse.nodes[2].eventId);
       expect(result.data[2].from).toBeInstanceOf(DefaultPortfolio);
       expect(result.data[2].to).toBeInstanceOf(NumberedPortfolio);
+      expect(result.data[2].instructionId).toEqual(new BigNumber(2));
+      expect(result.data[2].instructionMemo).toEqual('Some memo');
 
       expect(result.count).toEqual(transactionResponse.totalCount);
       expect(result.next).toEqual(new BigNumber(3));
@@ -943,6 +991,22 @@ describe('Asset class', () => {
       const tx = await asset.setVenueFiltering(args);
 
       expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: getRequiredMediators', () => {
+    it('should return the required mediators', async () => {
+      dsMockUtils.createQueryMock('asset', 'mandatoryMediators', {
+        returnValue: [dsMockUtils.createMockIdentityId('someDid')],
+      });
+
+      const ticker = 'TICKER';
+      const context = dsMockUtils.getContextInstance();
+      const asset = new FungibleAsset({ ticker }, context);
+
+      const result = await asset.getRequiredMediators();
+
+      expect(result).toEqual(expect.arrayContaining([expect.objectContaining({ did: 'someDid' })]));
     });
   });
 });

@@ -1,7 +1,16 @@
+import { Bytes, Option } from '@polkadot/types-codec';
 import BigNumber from 'bignumber.js';
 
-import { BaseAsset, Context, Entity, setMetadata } from '~/internal';
-import { ProcedureMethod, SetMetadataParams } from '~/types';
+import {
+  BaseAsset,
+  clearMetadata,
+  Context,
+  Entity,
+  PolymeshError,
+  removeLocalMetadata,
+  setMetadata,
+} from '~/internal';
+import { ErrorCode, NoArgsProcedureMethod, ProcedureMethod, SetMetadataParams } from '~/types';
 import {
   bigNumberToU64,
   bytesToString,
@@ -12,7 +21,7 @@ import {
 } from '~/utils/conversion';
 import { createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
-import { MetadataDetails, MetadataType, MetadataValue } from './types';
+import { MetadataDetails, MetadataLockStatus, MetadataType, MetadataValue } from './types';
 
 export interface UniqueIdentifiers {
   ticker: string;
@@ -71,6 +80,14 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
       { getProcedureAndArgs: args => [setMetadata, { ...args, metadataEntry: this }] },
       context
     );
+    this.clear = createProcedureMethod(
+      { getProcedureAndArgs: () => [clearMetadata, { metadataEntry: this }], voidArgs: true },
+      context
+    );
+    this.remove = createProcedureMethod(
+      { getProcedureAndArgs: () => [removeLocalMetadata, { metadataEntry: this }], voidArgs: true },
+      context
+    );
   }
 
   /**
@@ -79,6 +96,28 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
    * @note - Value or the details can only be set if the MetadataEntry is not locked
    */
   public set: ProcedureMethod<SetMetadataParams, MetadataEntry>;
+
+  /**
+   * Removes the asset metadata value
+   *
+   * @throws
+   *   - if the Metadata doesn't exists
+   *   - if the Metadata value is locked
+   */
+  public clear: NoArgsProcedureMethod<void>;
+
+  /**
+   * Removes a local Asset Metadata key along with its value
+   *
+   * @note A global Metadata key cannot be deleted
+   *
+   * @throws
+   *   - if the Metadata type is global
+   *   - if the Metadata doesn't exists
+   *   - if the Metadata value is locked
+   *   - if the Metadata is a mandatory key for any NFT Collection
+   */
+  public remove: NoArgsProcedureMethod<void>;
 
   /**
    * Retrieve name and specs for this MetadataEntry
@@ -160,7 +199,96 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
    * Determine whether this MetadataEntry exists on chain
    */
   public async exists(): Promise<boolean> {
-    return true;
+    const {
+      context: {
+        polymeshApi: {
+          query: {
+            asset: { assetMetadataGlobalKeyToName, assetMetadataLocalKeyToName },
+          },
+        },
+      },
+      id,
+      type,
+      asset: { ticker },
+      context,
+    } = this;
+
+    const rawId = bigNumberToU64(id, context);
+
+    let rawName: Option<Bytes>;
+
+    if (type === MetadataType.Global) {
+      rawName = await assetMetadataGlobalKeyToName(rawId);
+    } else {
+      const rawTicker = stringToTicker(ticker, context);
+      rawName = await assetMetadataLocalKeyToName(rawTicker, rawId);
+    }
+
+    return rawName.isSome;
+  }
+
+  /**
+   * Check if the MetadataEntry can be modified.
+   * A MetadataEntry is modifiable if it exists and is not locked
+   */
+  public async isModifiable(): Promise<{ canModify: boolean; reason?: PolymeshError }> {
+    const {
+      id,
+      type,
+      asset: { ticker },
+    } = this;
+
+    const [exists, metadataValue] = await Promise.all([this.exists(), this.value()]);
+
+    if (!exists) {
+      return {
+        canModify: false,
+        reason: new PolymeshError({
+          code: ErrorCode.DataUnavailable,
+          message: 'Metadata does not exists for the Asset',
+          data: {
+            ticker,
+            type,
+            id,
+          },
+        }),
+      };
+    }
+
+    if (metadataValue) {
+      const { lockStatus } = metadataValue;
+
+      if (lockStatus === MetadataLockStatus.Locked) {
+        return {
+          canModify: false,
+          reason: new PolymeshError({
+            code: ErrorCode.UnmetPrerequisite,
+            message: 'Metadata is locked and cannot be modified',
+          }),
+        };
+      }
+
+      if (lockStatus === MetadataLockStatus.LockedUntil) {
+        const { lockedUntil } = metadataValue;
+
+        if (new Date() < lockedUntil) {
+          return {
+            canModify: false,
+            reason: new PolymeshError({
+              code: ErrorCode.UnmetPrerequisite,
+              message: 'Metadata is currently locked',
+              data: {
+                lockedUntil,
+              },
+            }),
+          };
+        }
+      }
+    }
+
+    return {
+      canModify: true,
+    };
   }
 
   /**

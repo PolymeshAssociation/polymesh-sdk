@@ -13,6 +13,8 @@ import { when } from 'jest-when';
 
 import {
   Account,
+  ConfidentialAccount,
+  ConfidentialAsset,
   Context,
   FungibleAsset,
   Identity,
@@ -34,6 +36,9 @@ import {
   MockWebSocket,
 } from '~/testUtils/mocks/dataSources';
 import {
+  Authorization,
+  AuthorizationRequest,
+  AuthorizationType,
   CaCheckpointType,
   ClaimType,
   CountryCode,
@@ -64,13 +69,18 @@ import {
   areSameClaims,
   asAccount,
   asChildIdentity,
+  asConfidentialAccount,
+  asConfidentialAsset,
   asFungibleAsset,
   asNftId,
   assertAddressValid,
+  assertCaAssetValid,
   assertExpectedChainVersion,
   assertExpectedSqVersion,
+  assertIdentityExists,
   assertIsInteger,
   assertIsPositive,
+  assertNoPendingAuthorizationExists,
   assertTickerValid,
   asTicker,
   calculateNextKey,
@@ -1158,7 +1168,7 @@ describe('assertExpectedSqVersion', () => {
       subqueryVersions: {
         nodes: [
           {
-            version: '10.1.0',
+            version: '12.2.0-alpha.2',
           },
         ],
       },
@@ -2296,5 +2306,311 @@ describe('areSameClaims', () => {
     const result = areSameClaims(firstClaim, secondClaim);
 
     expect(result).toBeFalsy();
+  });
+});
+
+describe('assertNoPendingAuthorizationExists', () => {
+  let mockMessage: string;
+  let mockAuthorization: Partial<Authorization>;
+  let issuer: Identity;
+  let target: Identity;
+  let otherIssuer: Identity;
+  let otherTarget: Identity;
+  let authReqBase: Pick<AuthorizationRequest, 'authId' | 'expiry' | 'issuer' | 'target' | 'data'>;
+  const ticker = 'TICKER';
+
+  beforeEach(() => {
+    // Initialize your mock data here
+    mockMessage = 'Test message';
+    mockAuthorization = { type: AuthorizationType.TransferTicker };
+    issuer = entityMockUtils.getIdentityInstance({ did: 'issuer' });
+    target = entityMockUtils.getIdentityInstance({ did: 'target' });
+    otherIssuer = entityMockUtils.getIdentityInstance({ did: 'otherIssuer' });
+    otherTarget = entityMockUtils.getIdentityInstance({ did: 'otherTarget' });
+    authReqBase = {
+      issuer,
+      target,
+      authId: new BigNumber(1),
+      expiry: null,
+      data: { type: AuthorizationType.TransferTicker, value: ticker },
+    };
+  });
+
+  it('should not throw an error if there are no authorization requests', () => {
+    expect(() => {
+      assertNoPendingAuthorizationExists({
+        authorizationRequests: [],
+        message: mockMessage,
+        authorization: mockAuthorization,
+        issuer,
+        target,
+      });
+    }).not.toThrow();
+  });
+
+  it('should not throw an error if there are no pending authorizations', () => {
+    expect(() => {
+      assertNoPendingAuthorizationExists({
+        authorizationRequests: [],
+        message: mockMessage,
+        authorization: mockAuthorization,
+      });
+    }).not.toThrow();
+  });
+
+  it('should not throw an error if the authorization has expired', () => {
+    expect(() => {
+      assertNoPendingAuthorizationExists({
+        authorizationRequests: [
+          entityMockUtils.getAuthorizationRequestInstance({ isExpired: true }),
+        ],
+        message: mockMessage,
+        authorization: mockAuthorization,
+      });
+    }).not.toThrow();
+  });
+
+  it('should not throw an error if the authorization is for other target', () => {
+    expect(() => {
+      assertNoPendingAuthorizationExists({
+        authorizationRequests: [
+          entityMockUtils.getAuthorizationRequestInstance({
+            ...authReqBase,
+            target: otherTarget,
+          }),
+        ],
+        message: mockMessage,
+        authorization: mockAuthorization,
+        target,
+      });
+    }).not.toThrow();
+  });
+
+  it('should not throw an error if the authorization is by other issuer', () => {
+    expect(() => {
+      assertNoPendingAuthorizationExists({
+        authorizationRequests: [entityMockUtils.getAuthorizationRequestInstance(authReqBase)],
+        message: mockMessage,
+        authorization: mockAuthorization,
+        issuer: otherIssuer,
+      });
+    }).not.toThrow();
+  });
+
+  it('should not throw an error if the authorization of other type', () => {
+    expect(() => {
+      assertNoPendingAuthorizationExists({
+        authorizationRequests: [
+          entityMockUtils.getAuthorizationRequestInstance({
+            ...authReqBase,
+            data: { type: AuthorizationType.TransferAssetOwnership, value: ticker },
+          }),
+        ],
+        message: mockMessage,
+        authorization: mockAuthorization,
+      });
+    }).not.toThrow();
+  });
+
+  it('should not throw an error if the authorization is AuthorizationType.PortfolioCustody and for different Portfolio', () => {
+    expect(() => {
+      assertNoPendingAuthorizationExists({
+        authorizationRequests: [
+          entityMockUtils.getAuthorizationRequestInstance({
+            ...authReqBase,
+            data: {
+              type: AuthorizationType.PortfolioCustody,
+              value: entityMockUtils.getDefaultPortfolioInstance({ isEqual: false }),
+            },
+          }),
+        ],
+        message: mockMessage,
+        authorization: {
+          type: AuthorizationType.PortfolioCustody,
+          value: entityMockUtils.getDefaultPortfolioInstance(),
+        },
+      });
+    }).not.toThrow();
+  });
+
+  it('should not throw an error if the authorization is AuthorizationType.AttestPrimaryKeyRotation and for different Portfolio', () => {
+    expect(() => {
+      assertNoPendingAuthorizationExists({
+        authorizationRequests: [
+          entityMockUtils.getAuthorizationRequestInstance({
+            target,
+            issuer,
+            authId: new BigNumber(1),
+            expiry: null,
+            data: {
+              type: AuthorizationType.AttestPrimaryKeyRotation,
+              value: entityMockUtils.getIdentityInstance({ isEqual: false }),
+            },
+          }),
+        ],
+        message: mockMessage,
+        authorization: { type: AuthorizationType.AttestPrimaryKeyRotation, value: target },
+      });
+    }).not.toThrow();
+  });
+
+  it('should not throw an error if the authorization value is not equal', () => {
+    expect(() => {
+      assertNoPendingAuthorizationExists({
+        authorizationRequests: [
+          entityMockUtils.getAuthorizationRequestInstance({
+            ...authReqBase,
+            data: { type: AuthorizationType.TransferTicker, value: 'ticker' },
+          }),
+        ],
+        message: mockMessage,
+        authorization: { type: AuthorizationType.TransferTicker, value: 'otherTicker' },
+      });
+    }).not.toThrow();
+  });
+
+  it('should throw a PolymeshError if there is a pending authorization', () => {
+    expect(() => {
+      assertNoPendingAuthorizationExists({
+        authorizationRequests: [entityMockUtils.getAuthorizationRequestInstance(authReqBase)],
+        message: mockMessage,
+        authorization: mockAuthorization,
+        issuer,
+        target,
+      });
+    }).toThrow(PolymeshError);
+  });
+
+  it('should throw a PolymeshError with the correct message and error code', () => {
+    const expectedError = new PolymeshError({ message: mockMessage, code: ErrorCode.NoDataChange });
+    expect(() =>
+      assertNoPendingAuthorizationExists({
+        authorizationRequests: [entityMockUtils.getAuthorizationRequestInstance(authReqBase)],
+        message: mockMessage,
+        authorization: mockAuthorization,
+        issuer,
+        target,
+      })
+    ).toThrow(expectedError);
+  });
+});
+
+describe('assertIdentityExists', () => {
+  it('should resolve if the identity exists', () => {
+    const identity = entityMockUtils.getIdentityInstance({ exists: true });
+
+    return expect(assertIdentityExists(identity)).resolves.not.toThrow();
+  });
+
+  it('should throw an error if an identity does not exist', () => {
+    const identity = entityMockUtils.getIdentityInstance({ exists: false });
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'The identity does not exists',
+    });
+
+    return expect(assertIdentityExists(identity)).rejects.toThrow(expectedError);
+  });
+});
+
+describe('assetCaAssetValid', () => {
+  it('should return true for a valid ID', () => {
+    const guid = '76702175-d8cb-e3a5-5a19-734433351e25';
+    const id = '76702175d8cbe3a55a19734433351e25';
+
+    let result = assertCaAssetValid(id);
+
+    expect(result).toEqual(guid);
+
+    result = assertCaAssetValid(guid);
+
+    expect(result).toEqual(guid);
+  });
+
+  it('should throw an error for an invalid ID', async () => {
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The supplied ID is not a valid confidential Asset ID',
+    });
+    expect(() => assertCaAssetValid('small-length-string')).toThrow(expectedError);
+
+    expect(() => assertCaAssetValid('NotMatching32CharactersString$$$')).toThrow(expectedError);
+
+    expect(() => assertCaAssetValid('7670-2175d8cb-e3a55a-1973443-3351e25')).toThrow(expectedError);
+  });
+});
+
+describe('asConfidentialAccount', () => {
+  let context: Context;
+  let publicKey: string;
+  let confidentialAccount: ConfidentialAccount;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+    publicKey = 'someKey';
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    confidentialAccount = new ConfidentialAccount({ publicKey }, context);
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return ConfidentialAccount for given public key', async () => {
+    const result = asConfidentialAccount(publicKey, context);
+
+    expect(result).toEqual(expect.objectContaining({ publicKey }));
+  });
+
+  it('should return the passed ConfidentialAccount', async () => {
+    const result = asConfidentialAccount(confidentialAccount, context);
+
+    expect(result).toBe(confidentialAccount);
+  });
+});
+
+describe('asConfidentialAsset', () => {
+  let context: Context;
+  let assetId: string;
+  let confidentialAsset: ConfidentialAsset;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+    assetId = '76702175-d8cb-e3a5-5a19-734433351e25';
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    confidentialAsset = new ConfidentialAsset({ id: assetId }, context);
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return ConfidentialAsset for the given id', async () => {
+    const result = asConfidentialAsset(assetId, context);
+
+    expect(result).toEqual(expect.objectContaining({ id: assetId }));
+  });
+
+  it('should return the passed ConfidentialAsset', async () => {
+    const result = asConfidentialAsset(confidentialAsset, context);
+
+    expect(result).toBe(confidentialAsset);
   });
 });

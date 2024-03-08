@@ -1,5 +1,5 @@
 module.exports = {
-  repositoryUrl: 'https://github.com/PolymeshAssociation/polymesh-sdk.git',
+  repositoryUrl: 'https://github.com/PolymeshAssociation/polymesh-private-sdk.git',
   branches: [
     'master',
     {

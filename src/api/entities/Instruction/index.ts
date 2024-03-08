@@ -20,12 +20,14 @@ import {
 import { instructionsQuery } from '~/middleware/queries';
 import { InstructionStatusEnum, Query } from '~/middleware/types';
 import {
+  AffirmAsMediatorParams,
   AffirmOrWithdrawInstructionParams,
   DefaultPortfolio,
   ErrorCode,
   EventIdentifier,
   ExecuteManualInstructionParams,
   InstructionAffirmationOperation,
+  NoArgsProcedureMethod,
   NumberedPortfolio,
   OptionalArgsProcedureMethod,
   PaginationOptions,
@@ -41,6 +43,7 @@ import {
   bigNumberToU64,
   identityIdToString,
   instructionMemoToString,
+  mediatorAffirmationStatusToStatus,
   meshAffirmationStatusToAffirmationStatus,
   meshInstructionStatusToInstructionStatus,
   meshNftToNftId,
@@ -59,6 +62,7 @@ import {
   InstructionStatus,
   InstructionStatusResult,
   Leg,
+  MediatorAffirmation,
 } from './types';
 
 export interface UniqueIdentifiers {
@@ -126,6 +130,39 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
           { id, operation: InstructionAffirmationOperation.Withdraw, ...args },
         ],
         optionalArgs: true,
+      },
+      context
+    );
+
+    this.rejectAsMediator = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [
+          modifyInstructionAffirmation,
+          { id, operation: InstructionAffirmationOperation.RejectAsMediator },
+        ],
+        voidArgs: true,
+      },
+      context
+    );
+
+    this.affirmAsMediator = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [
+          modifyInstructionAffirmation,
+          { id, operation: InstructionAffirmationOperation.AffirmAsMediator, ...args },
+        ],
+        optionalArgs: true,
+      },
+      context
+    );
+
+    this.withdrawAsMediator = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [
+          modifyInstructionAffirmation,
+          { id, operation: InstructionAffirmationOperation.WithdrawAsMediator },
+        ],
+        voidArgs: true,
       },
       context
     );
@@ -462,7 +499,6 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * @note reject on `SettleOnBlock` behaves just like unauthorize
    * @note reject on `SettleManual` behaves just like unauthorize
    */
-
   public reject: OptionalArgsProcedureMethod<RejectInstructionParams, Instruction>;
 
   /**
@@ -474,6 +510,25 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * Withdraw affirmation from this instruction (unauthorize)
    */
   public withdraw: OptionalArgsProcedureMethod<AffirmOrWithdrawInstructionParams, Instruction>;
+
+  /**
+   * Reject this instruction as a mediator
+   *
+   *  @note reject on `SettleOnAffirmation` will execute the settlement and it will fail immediately.
+   * @note reject on `SettleOnBlock` behaves just like unauthorize
+   * @note reject on `SettleManual` behaves just like unauthorize
+   */
+  public rejectAsMediator: NoArgsProcedureMethod<Instruction>;
+
+  /**
+   * Affirm this instruction as a mediator (authorize)
+   */
+  public affirmAsMediator: OptionalArgsProcedureMethod<AffirmAsMediatorParams, Instruction>;
+
+  /**
+   * Withdraw affirmation from this instruction as a mediator (unauthorize)
+   */
+  public withdrawAsMediator: NoArgsProcedureMethod<Instruction>;
 
   /**
    * Executes an Instruction either of type `SettleManual` or a `Failed` instruction
@@ -562,6 +617,35 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     );
 
     return portfolios;
+  }
+
+  /**
+   * Returns the mediators for the Instruction, along with their affirmation status
+   */
+  public async getMediators(): Promise<MediatorAffirmation[]> {
+    const {
+      id,
+      context,
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+    } = this;
+
+    const rawId = bigNumberToU64(id, context);
+
+    const rawAffirms = await settlement.instructionMediatorsAffirmations.entries(rawId);
+
+    return rawAffirms.map(([key, affirmStatus]) => {
+      const rawDid = key.args[1];
+      const did = identityIdToString(rawDid);
+      const identity = new Identity({ did }, context);
+
+      const { status, expiry } = mediatorAffirmationStatusToStatus(affirmStatus);
+
+      return { identity, status, expiry };
+    });
   }
 
   /**

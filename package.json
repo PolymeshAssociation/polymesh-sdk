@@ -1,18 +1,18 @@
 {
-  "name": "@polymeshassociation/polymesh-sdk",
+  "name": "@polymeshassociation/polymesh-private-sdk",
   "version": "0.0.0",
-  "description": "High-level API to interact with the Polymesh blockchain",
+  "description": "High-level API to interact with the Polymesh Private blockchain",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "author": "Polymesh Association",
   "license": "ISC",
-  "homepage": "https://github.com/PolymeshAssociation/polymesh-sdk/wiki",
+  "homepage": "https://github.com/PolymeshAssociation/polymesh-private-sdk/wiki",
   "bugs": {
-    "url": "https://github.com/PolymeshAssociation/polymesh-sdk/issues"
+    "url": "https://github.com/PolymeshAssociation/polymesh-private-sdk/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/PolymeshAssociation/polymesh-sdk"
+    "url": "https://github.com/PolymeshAssociation/polymesh-private-sdk"
   },
   "keywords": [
     "polymesh",
@@ -55,6 +55,7 @@
     "@polkadot/dev-ts": "^0.76.22",
     "@polkadot/typegen": "10.9.1",
     "@polymeshassociation/local-signing-manager": "^3.0.1",
+    "@polymeshassociation/polymesh-types": "^5.8.0",
     "@polymeshassociation/signing-manager-types": "^3.0.0",
     "@polymeshassociation/typedoc-theme": "^1.1.0",
     "@semantic-release/changelog": "^6.0.1",

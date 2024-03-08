@@ -458,6 +458,136 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       WeightLimitExceeded: AugmentedError<ApiType>;
     };
+    confidentialAsset: {
+      /**
+       * Confidential account for the asset is already frozen.
+       **/
+      AccountAssetAlreadyFrozen: AugmentedError<ApiType>;
+      /**
+       * Confidential account is frozen for the asset.
+       **/
+      AccountAssetFrozen: AugmentedError<ApiType>;
+      /**
+       * Confidential account for the asset wasn't frozen.
+       **/
+      AccountAssetNotFrozen: AugmentedError<ApiType>;
+      /**
+       * Confidential asset is already frozen.
+       **/
+      AlreadyFrozen: AugmentedError<ApiType>;
+      /**
+       * The amount can't be zero.
+       **/
+      AmountMustBeNonZero: AugmentedError<ApiType>;
+      /**
+       * Confidential asset is frozen.
+       **/
+      AssetFrozen: AugmentedError<ApiType>;
+      /**
+       * Can't burn more then the total supply.
+       **/
+      BurnAmountLargerThenTotalSupply: AugmentedError<ApiType>;
+      /**
+       * The caller is not a party of the transaction.
+       **/
+      CallerNotPartyOfTransaction: AugmentedError<ApiType>;
+      /**
+       * Confidential account already created.
+       **/
+      ConfidentialAccountAlreadyCreated: AugmentedError<ApiType>;
+      /**
+       * Confidential account hasn't been created yet.
+       **/
+      ConfidentialAccountMissing: AugmentedError<ApiType>;
+      /**
+       * The confidential asset has already been created.
+       **/
+      ConfidentialAssetAlreadyCreated: AugmentedError<ApiType>;
+      /**
+       * The confidential transfer sender proof is invalid.
+       **/
+      InvalidSenderProof: AugmentedError<ApiType>;
+      /**
+       * Venue does not exist.
+       **/
+      InvalidVenue: AugmentedError<ApiType>;
+      /**
+       * Legs count should matches with the total number of legs in the transaction.
+       **/
+      LegCountTooSmall: AugmentedError<ApiType>;
+      /**
+       * Mediator identity doesn't exist.
+       **/
+      MediatorIdentityInvalid: AugmentedError<ApiType>;
+      /**
+       * The caller isn't the account owner.
+       **/
+      NotAccountOwner: AugmentedError<ApiType>;
+      /**
+       * The caller isn't the asset owner.
+       **/
+      NotAssetOwner: AugmentedError<ApiType>;
+      /**
+       * Confidential asset wasn't frozen.
+       **/
+      NotFrozen: AugmentedError<ApiType>;
+      /**
+       * The caller isn't the venue owner.
+       **/
+      NotVenueOwner: AugmentedError<ApiType>;
+      /**
+       * The sender must affirm the leg before the receiver/mediator.
+       **/
+      SenderMustAffirmFirst: AugmentedError<ApiType>;
+      /**
+       * Asset or leg has too many auditors.
+       **/
+      TooManyAuditors: AugmentedError<ApiType>;
+      /**
+       * Asset or leg has too many mediators.
+       **/
+      TooManyMediators: AugmentedError<ApiType>;
+      /**
+       * The balance values does not fit a confidential balance.
+       **/
+      TotalSupplyAboveConfidentialBalanceLimit: AugmentedError<ApiType>;
+      /**
+       * A confidential asset's total supply can't go above `T::MaxTotalSupply`.
+       **/
+      TotalSupplyOverLimit: AugmentedError<ApiType>;
+      /**
+       * Transaction has already been affirmed.
+       **/
+      TransactionAlreadyAffirmed: AugmentedError<ApiType>;
+      /**
+       * Transaction leg has no assets.
+       **/
+      TransactionLegHashNoAssets: AugmentedError<ApiType>;
+      /**
+       * Transaction has no legs.
+       **/
+      TransactionNoLegs: AugmentedError<ApiType>;
+      /**
+       * Transaction has not been affirmed.
+       **/
+      TransactionNotAffirmed: AugmentedError<ApiType>;
+      /**
+       * Venue does not have required permissions.
+       **/
+      UnauthorizedVenue: AugmentedError<ApiType>;
+      /**
+       * The asset id is not a registered confidential asset.
+       **/
+      UnknownConfidentialAsset: AugmentedError<ApiType>;
+      /**
+       * Transaction is unknown.
+       **/
+      UnknownTransaction: AugmentedError<ApiType>;
+      /**
+       * Transaction leg is unknown.
+       **/
+      UnknownTransactionLeg: AugmentedError<ApiType>;
+    };
     contracts: {
       /**
        * Code removal was denied because the code is still in use by at least one contract.
@@ -1488,6 +1618,10 @@ declare module '@polkadot/api-base/types/errors' {
     };
     settlement: {
       /**
+       * The caller is not a mediator in the instruction.
+       **/
+      CallerIsNotAMediator: AugmentedError<ApiType>;
+      /**
        * The caller is not a party of this instruction.
        **/
       CallerIsNotAParty: AugmentedError<ApiType>;
@@ -1524,6 +1658,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InstructionSettleBlockPassed: AugmentedError<ApiType>;
       /**
+       * The mediator's expiry date must be in the future.
+       **/
+      InvalidExpiryDate: AugmentedError<ApiType>;
+      /**
        * Only [`InstructionStatus::Pending`] or [`InstructionStatus::Failed`] instructions can be executed.
        **/
       InvalidInstructionStatusForExecution: AugmentedError<ApiType>;
@@ -1555,6 +1693,10 @@ declare module '@polkadot/api-base/types/errors' {
        * The maximum number of receipts was exceeded.
        **/
       MaxNumberOfReceiptsExceeded: AugmentedError<ApiType>;
+      /**
+       * The expiry date for the mediator's affirmation has passed.
+       **/
+      MediatorAffirmationExpired: AugmentedError<ApiType>;
       /**
        * Multiple receipts for the same leg are not allowed.
        **/
@@ -1904,6 +2046,12 @@ declare module '@polkadot/api-base/types/errors' {
        * Sender does not have required permissions.
        **/
       Unauthorized: AugmentedError<ApiType>;
+    };
+    sudo: {
+      /**
+       * Sender must be the Sudo account
+       **/
+      RequireSudo: AugmentedError<ApiType>;
     };
     system: {
       /**

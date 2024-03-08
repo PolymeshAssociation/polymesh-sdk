@@ -1,7 +1,38 @@
-import { bool, Bytes, Option, Text, u8, U8aFixed, u16, u32, u64, u128, Vec } from '@polkadot/types';
+import { ApolloQueryResult } from '@apollo/client/core';
+import {
+  bool,
+  BTreeMap,
+  Bytes,
+  Option,
+  Text,
+  u8,
+  U8aFixed,
+  u16,
+  u32,
+  u64,
+  u128,
+  Vec,
+} from '@polkadot/types';
 import { AccountId, Balance, BlockHash, Hash, Permill } from '@polkadot/types/interfaces';
 import { DispatchError, DispatchResult } from '@polkadot/types/interfaces/system';
 import {
+  ConfidentialAssetsBurnConfidentialBurnProof,
+  PalletConfidentialAssetAffirmLeg,
+  PalletConfidentialAssetAffirmParty,
+  PalletConfidentialAssetAffirmTransaction,
+  PalletConfidentialAssetAffirmTransactions,
+  PalletConfidentialAssetAuditorAccount,
+  PalletConfidentialAssetConfidentialAccount,
+  PalletConfidentialAssetConfidentialAuditors,
+  PalletConfidentialAssetConfidentialTransfers,
+  PalletConfidentialAssetLegParty,
+  PalletConfidentialAssetTransaction,
+  PalletConfidentialAssetTransactionId,
+  PalletConfidentialAssetTransactionLeg,
+  PalletConfidentialAssetTransactionLegDetails,
+  PalletConfidentialAssetTransactionLegId,
+  PalletConfidentialAssetTransactionLegState,
+  PalletConfidentialAssetTransactionStatus,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
   PalletCorporateActionsCorporateAction,
@@ -49,6 +80,7 @@ import {
   PolymeshPrimitivesSettlementAffirmationStatus,
   PolymeshPrimitivesSettlementInstructionStatus,
   PolymeshPrimitivesSettlementLeg,
+  PolymeshPrimitivesSettlementMediatorAffirmationStatus,
   PolymeshPrimitivesSettlementSettlementType,
   PolymeshPrimitivesSettlementVenueType,
   PolymeshPrimitivesStatisticsStat2ndKey,
@@ -63,7 +95,9 @@ import {
 import { ITuple } from '@polkadot/types/types';
 import { BTreeSet } from '@polkadot/types-codec';
 import {
+  hexAddPrefix,
   hexHasPrefix,
+  hexStripPrefix,
   hexToString,
   hexToU8a,
   isHex,
@@ -98,6 +132,8 @@ import {
   Account,
   Checkpoint,
   CheckpointSchedule,
+  ConfidentialAccount,
+  ConfidentialAsset,
   Context,
   CustomPermissionGroup,
   DefaultPortfolio,
@@ -115,12 +151,15 @@ import {
   Block,
   CallIdEnum,
   Claim as MiddlewareClaim,
+  ConfidentialAssetHistory,
   CustomClaimType as MiddlewareCustomClaimType,
   Instruction,
   ModuleIdEnum,
   Portfolio as MiddlewarePortfolio,
+  Query,
+  SettlementResultEnum,
 } from '~/middleware/types';
-import { ClaimScopeTypeEnum, MiddlewareScope } from '~/middleware/typesV1';
+import { ClaimScopeTypeEnum, MiddlewareScope, SettlementDirectionEnum } from '~/middleware/typesV1';
 import {
   AssetComplianceResult,
   AuthorizationType as MeshAuthorizationType,
@@ -146,6 +185,15 @@ import {
   ConditionCompliance,
   ConditionTarget,
   ConditionType,
+  ConfidentialAffirmParty,
+  ConfidentialAffirmTransaction,
+  ConfidentialAssetTransactionHistory,
+  ConfidentialLeg,
+  ConfidentialLegParty,
+  ConfidentialLegProof,
+  ConfidentialLegState,
+  ConfidentialTransactionDetails,
+  ConfidentialTransactionStatus,
   CorporateActionKind,
   CorporateActionParams,
   CorporateActionTargets,
@@ -158,6 +206,7 @@ import {
   ExternalAgentCondition,
   FungiblePortfolioMovement,
   HistoricInstruction,
+  HistoricSettlement,
   IdentityCondition,
   IdentityWithClaims,
   InputCorporateActionTargets,
@@ -170,6 +219,7 @@ import {
   InstructionType,
   KnownAssetType,
   KnownNftType,
+  MediatorAffirmation,
   MetadataKeyId,
   MetadataLockStatus,
   MetadataSpec,
@@ -235,7 +285,7 @@ import {
   StatClaimIssuer,
   TickerKey,
 } from '~/types/internal';
-import { tuple } from '~/types/utils';
+import { Ensured, tuple } from '~/types/utils';
 import {
   IGNORE_CHECKSUM,
   MAX_BALANCE,
@@ -331,8 +381,10 @@ export function tickerToString(ticker: PolymeshPrimitivesTicker): string {
 /**
  * @hidden
  */
-export function stringToU8aFixed(value: string, context: Context): U8aFixed {
-  return context.createType('U8aFixed', value);
+export function serializeConfidentialAssetId(value: string | ConfidentialAsset): string {
+  const id = value instanceof ConfidentialAsset ? value.id : value;
+
+  return hexAddPrefix(id.replace(/-/g, ''));
 }
 
 /**
@@ -1168,6 +1220,15 @@ export function meshPermissionsToPermissions(
     transactionGroups: transactions ? transactionPermissionsToTxGroups(transactions) : [],
     portfolios,
   };
+}
+
+/**
+ * @hidden
+ */
+export function bigNumberToU16(value: BigNumber, context: Context): u16 {
+  assertIsInteger(value);
+  assertIsPositive(value);
+  return context.createType('u16', value.toString());
 }
 
 /**
@@ -3125,6 +3186,33 @@ export function identitiesToBtreeSet(
 /**
  * @hidden
  */
+export function identitiesSetToIdentities(
+  identitySet: BTreeSet<PolymeshPrimitivesIdentityId>,
+  context: Context
+): Identity[] {
+  return [...identitySet].map(rawId => new Identity({ did: identityIdToString(rawId) }, context));
+}
+
+/**
+ * @hidden
+ */
+export function auditorsToConfidentialAuditors(
+  context: Context,
+  auditors: ConfidentialAccount[],
+  mediators: Identity[] = []
+): PalletConfidentialAssetConfidentialAuditors {
+  const rawAccountKeys = auditors.map(({ publicKey }) => publicKey);
+  const rawMediatorIds = mediators.map(({ did }) => stringToIdentityId(did, context));
+
+  return context.createType('PalletConfidentialAssetConfidentialAuditors', {
+    auditors: context.createType('BTreeSet<PalletConfidentialAssetAuditorAccount>', rawAccountKeys),
+    mediators: context.createType('BTreeSet<PolymeshPrimitivesIdentityId>', rawMediatorIds),
+  });
+}
+
+/**
+ * @hidden
+ */
 export function transferConditionToTransferRestriction(
   transferCondition: PolymeshPrimitivesTransferComplianceTransferCondition,
   context: Context
@@ -4716,4 +4804,546 @@ export function toCustomClaimTypeWithIdentity(
     id: new BigNumber(item.id),
     did: item.identity?.did,
   }));
+}
+
+/**
+ * @hidden
+ */
+export function toHistoricalSettlements(
+  settlementsResult: ApolloQueryResult<Ensured<Query, 'legs'>>,
+  portfolioMovementsResult: ApolloQueryResult<Ensured<Query, 'portfolioMovements'>>,
+  filter: string,
+  context: Context
+): HistoricSettlement[] {
+  const data: HistoricSettlement[] = [];
+
+  const getDirection = (fromId: string, toId: string): SettlementDirectionEnum => {
+    const [fromDid] = fromId.split('/');
+    const [toDid] = toId.split('/');
+    const [filterDid, filterPortfolioId] = filter.split('/');
+
+    if (fromId === toId) {
+      return SettlementDirectionEnum.None;
+    }
+
+    if (filterPortfolioId && fromId === filter) {
+      return SettlementDirectionEnum.Outgoing;
+    }
+
+    if (filterPortfolioId && toId === filter) {
+      return SettlementDirectionEnum.Incoming;
+    }
+
+    if (fromDid === filterDid && toDid !== filterDid) {
+      return SettlementDirectionEnum.Incoming;
+    }
+
+    if (toDid === filterDid && fromDid !== filterDid) {
+      return SettlementDirectionEnum.Outgoing;
+    }
+
+    return SettlementDirectionEnum.None;
+  };
+
+  /* eslint-disable @typescript-eslint/no-non-null-assertion */
+  settlementsResult.data.legs.nodes.forEach(({ settlement }) => {
+    const {
+      createdBlock,
+      result: settlementResult,
+      legs: { nodes: legs },
+    } = settlement!;
+
+    const { blockId, hash } = createdBlock!;
+
+    data.push({
+      blockNumber: new BigNumber(blockId),
+      blockHash: hash,
+      status: settlementResult as unknown as SettlementResultEnum,
+      accounts: legs[0].addresses.map(
+        (accountAddress: string) =>
+          new Account({ address: keyToAddress(accountAddress, context) }, context)
+      ),
+      legs: legs.map(({ from, to, fromId, toId, assetId, amount }) => ({
+        asset: new FungibleAsset({ ticker: assetId }, context),
+        amount: new BigNumber(amount).shiftedBy(-6),
+        direction: getDirection(fromId, toId),
+        from: middlewarePortfolioToPortfolio(from!, context),
+        to: middlewarePortfolioToPortfolio(to!, context),
+      })),
+    });
+  });
+
+  portfolioMovementsResult.data.portfolioMovements.nodes.forEach(
+    ({ createdBlock, from, to, fromId, toId, assetId, amount, address: accountAddress }) => {
+      const { blockId, hash } = createdBlock!;
+      data.push({
+        blockNumber: new BigNumber(blockId),
+        blockHash: hash,
+        status: SettlementResultEnum.Executed,
+        accounts: [new Account({ address: keyToAddress(accountAddress, context) }, context)],
+        legs: [
+          {
+            asset: new FungibleAsset({ ticker: assetId }, context),
+            amount: new BigNumber(amount).shiftedBy(-6),
+            direction: getDirection(fromId, toId),
+            from: middlewarePortfolioToPortfolio(from!, context),
+            to: middlewarePortfolioToPortfolio(to!, context),
+          },
+        ],
+      });
+    }
+  );
+  /* eslint-enable @typescript-eslint/no-non-null-assertion */
+
+  return data.sort((a, b) => a.blockNumber.minus(b.blockNumber).toNumber());
+}
+
+/**
+ * @hidden
+ */
+export function mediatorAffirmationStatusToStatus(
+  rawStatus: PolymeshPrimitivesSettlementMediatorAffirmationStatus
+): Omit<MediatorAffirmation, 'identity'> {
+  switch (rawStatus.type) {
+    case 'Unknown':
+      return { status: AffirmationStatus.Unknown };
+    case 'Pending':
+      return { status: AffirmationStatus.Pending };
+    case 'Affirmed': {
+      const rawExpiry = rawStatus.asAffirmed.expiry;
+      const expiry = rawExpiry.isSome ? momentToDate(rawExpiry.unwrap()) : undefined;
+      return { status: AffirmationStatus.Affirmed, expiry };
+    }
+    default:
+      throw new UnreachableCaseError(rawStatus.type);
+  }
+}
+
+/**
+ * @hidden
+ */
+export function meshConfidentialTransactionDetailsToDetails(
+  details: PalletConfidentialAssetTransaction
+): Omit<ConfidentialTransactionDetails, 'status'> {
+  const { venueId: rawVenueId, createdAt: rawCreatedAt, memo: rawMemo } = details;
+
+  const venueId = u64ToBigNumber(rawVenueId);
+  const createdAt = u32ToBigNumber(rawCreatedAt);
+  const memo = rawMemo.isSome ? instructionMemoToString(rawMemo.unwrap()) : undefined;
+
+  return {
+    venueId,
+    createdAt,
+    memo,
+  };
+}
+
+/**
+ * @hidden
+ */
+export function meshConfidentialTransactionStatusToStatus(
+  status: PalletConfidentialAssetTransactionStatus
+): ConfidentialTransactionStatus {
+  switch (status.type) {
+    case 'Pending':
+      return ConfidentialTransactionStatus.Pending;
+    case 'Rejected':
+      return ConfidentialTransactionStatus.Rejected;
+    case 'Executed':
+      return ConfidentialTransactionStatus.Executed;
+    default:
+      /* istanbul ignore next: TS will complain if a new case is added */
+      throw new UnreachableCaseError(status.type);
+  }
+}
+
+/**
+ * @hidden
+ */
+export function confidentialAccountToMeshPublicKey(
+  account: ConfidentialAccount,
+  context: Context
+): PalletConfidentialAssetConfidentialAccount {
+  return context.createType('PalletConfidentialAssetConfidentialAccount', account.publicKey);
+}
+
+/**
+ * @hidden
+ */
+export function confidentialLegToMeshLeg(
+  leg: {
+    sender: PalletConfidentialAssetConfidentialAccount;
+    receiver: PalletConfidentialAssetConfidentialAccount;
+    assets: BTreeSet<Bytes>;
+    auditors: BTreeSet<PalletConfidentialAssetAuditorAccount>;
+    mediators: BTreeSet<PolymeshPrimitivesIdentityId>;
+  },
+  context: Context
+): PalletConfidentialAssetTransactionLeg {
+  return context.createType('PalletConfidentialAssetTransactionLeg', leg);
+}
+
+/**
+ * @hidden
+ */
+export function auditorToMeshAuditor(
+  auditor: ConfidentialAccount,
+  context: Context
+): PalletConfidentialAssetAuditorAccount {
+  return context.createType('PalletConfidentialAssetAuditorAccount', auditor.publicKey);
+}
+
+/**
+ * @hidden
+ */
+export function auditorsToBtreeSet(
+  auditors: ConfidentialAccount[],
+  context: Context
+): BTreeSet<PalletConfidentialAssetAuditorAccount> {
+  const rawAuditors = auditors.map(auditor => auditorToMeshAuditor(auditor, context));
+
+  return context.createType(
+    'BTreeSet<PalletConfidentialAssetAuditorAccount>',
+    rawAuditors
+  ) as BTreeSet<PalletConfidentialAssetAuditorAccount>;
+}
+
+/**
+ * @hidden
+ */
+export function confidentialAssetsToBtreeSet(
+  assets: ConfidentialAsset[],
+  context: Context
+): BTreeSet<U8aFixed> {
+  const assetIds = assets.map(asset => serializeConfidentialAssetId(asset.id));
+
+  return context.createType('BTreeSet<Bytes>', assetIds) as BTreeSet<U8aFixed>;
+}
+
+/**
+ * @hidden
+ */
+export function confidentialTransactionIdToBigNumber(
+  id: PalletConfidentialAssetTransactionId
+): BigNumber {
+  return new BigNumber(id.toString());
+}
+
+/**
+ * @hidden
+ */
+export function meshPublicKeyToKey(publicKey: PalletConfidentialAssetConfidentialAccount): string {
+  return publicKey.toString();
+}
+
+/**
+ * @hidden
+ */
+export function meshAssetAuditorToAssetAuditors(
+  rawAuditors: BTreeMap<U8aFixed, BTreeSet<PalletConfidentialAssetAuditorAccount>>,
+  context: Context
+): { asset: ConfidentialAsset; auditors: ConfidentialAccount[] }[] {
+  const result: ReturnType<typeof meshAssetAuditorToAssetAuditors> = [];
+
+  /* istanbul ignore next: nested BTreeMap/BTreeSet is hard to mock */
+  for (const [rawAssetId, rawAssetAuditors] of rawAuditors.entries()) {
+    const assetId = u8aToHex(rawAssetId).replace('0x', '');
+    const asset = new ConfidentialAsset({ id: assetId }, context);
+
+    const auditors = [...rawAssetAuditors].map(rawAuditor => {
+      const auditorId = rawAuditor.toString();
+      return new ConfidentialAccount({ publicKey: auditorId }, context);
+    });
+    result.push({ asset, auditors });
+  }
+
+  return result;
+}
+
+/**
+ * @hidden
+ */
+export function confidentialLegIdToId(id: PalletConfidentialAssetTransactionLegId): BigNumber {
+  return new BigNumber(id.toNumber());
+}
+
+/**
+ * @hidden
+ */
+export function meshConfidentialAssetTransactionIdToId(
+  id: PalletConfidentialAssetTransactionId
+): BigNumber {
+  return new BigNumber(id.toNumber());
+}
+
+/**
+ * @hidden
+ */
+export function confidentialTransactionLegIdToBigNumber(
+  id: PalletConfidentialAssetTransactionLegId
+): BigNumber {
+  return new BigNumber(id.toString());
+}
+
+/**
+ * @hidden
+ */
+export function meshConfidentialLegDetailsToDetails(
+  details: PalletConfidentialAssetTransactionLegDetails,
+  context: Context
+): Omit<ConfidentialLeg, 'id'> {
+  const {
+    sender: rawSender,
+    receiver: rawReceiver,
+    auditors: rawAuditors,
+    mediators: rawMediators,
+  } = details;
+
+  const senderKey = meshPublicKeyToKey(rawSender);
+  const receiverKey = meshPublicKeyToKey(rawReceiver);
+  const assetAuditors = meshAssetAuditorToAssetAuditors(rawAuditors, context);
+  const mediators = [...rawMediators].map(mediator => {
+    const did = identityIdToString(mediator);
+    return new Identity({ did }, context);
+  });
+
+  const sender = new ConfidentialAccount({ publicKey: senderKey }, context);
+  const receiver = new ConfidentialAccount({ publicKey: receiverKey }, context);
+
+  return {
+    sender,
+    receiver,
+    assetAuditors,
+    mediators,
+  };
+}
+
+/**
+ * @hidden
+ */
+export function confidentialLegPartyToRole(
+  role: PalletConfidentialAssetLegParty
+): ConfidentialLegParty {
+  switch (role.type) {
+    case 'Sender':
+      return ConfidentialLegParty.Sender;
+    case 'Receiver':
+      return ConfidentialLegParty.Receiver;
+    case 'Mediator':
+      return ConfidentialLegParty.Mediator;
+    default:
+      throw new UnreachableCaseError(role.type);
+  }
+}
+
+/**
+ * @hidden
+ */
+export function meshConfidentialAssetToAssetId(value: U8aFixed): string {
+  return hexStripPrefix(value.toString());
+}
+
+/**
+ * @hidden
+ */
+export function bigNumberToConfidentialTransactionId(
+  id: BigNumber,
+  context: Context
+): PalletConfidentialAssetTransactionId {
+  const rawId = bigNumberToU64(id, context);
+  return context.createType('PalletConfidentialAssetTransactionId', rawId);
+}
+
+/**
+ * @hidden
+ */
+export function bigNumberToConfidentialTransactionLegId(
+  id: BigNumber,
+  context: Context
+): PalletConfidentialAssetTransactionLegId {
+  const rawId = bigNumberToU32(id, context);
+  return context.createType('PalletConfidentialAssetTransactionLegId', rawId);
+}
+
+/**
+ * @hidden
+ */
+export function proofToTransfer(
+  proofs: BTreeMap<U8aFixed, Bytes>,
+  context: Context
+): PalletConfidentialAssetConfidentialTransfers {
+  return context.createType('PalletConfidentialAssetConfidentialTransfers', { proofs });
+}
+
+/**
+ * @hidden
+ */
+export function confidentialAffirmPartyToRaw(
+  value: {
+    party: ConfidentialAffirmParty;
+    proofs?: ConfidentialLegProof[];
+  },
+  context: Context
+): PalletConfidentialAssetAffirmParty {
+  const { party, proofs } = value;
+
+  let transferProof: PalletConfidentialAssetConfidentialTransfers | null = null;
+  if (proofs) {
+    const fmtProofs = proofs.reduce((acc, { asset, proof }) => {
+      const id = serializeConfidentialAssetId(asset);
+      acc[id] = proof;
+
+      return acc;
+    }, {} as Record<string, string>);
+
+    const rawProofs = context.createType('BTreeMap<Bytes, Bytes>', fmtProofs);
+
+    transferProof = proofToTransfer(rawProofs, context);
+  }
+  return context.createType('PalletConfidentialAssetAffirmParty', {
+    [party]: transferProof,
+  });
+}
+
+/**
+ * @hidden
+ */
+export function legToConfidentialAssetAffirmLeg(
+  value: {
+    legId: BigNumber;
+    party: ConfidentialAffirmParty;
+    proofs?: ConfidentialLegProof[];
+  },
+  context: Context
+): PalletConfidentialAssetAffirmLeg {
+  const { legId, party, proofs } = value;
+
+  const rawLegId = bigNumberToConfidentialTransactionLegId(legId, context);
+  const rawParty = confidentialAffirmPartyToRaw({ party, proofs }, context);
+
+  return context.createType('PalletConfidentialAssetAffirmLeg', {
+    legId: rawLegId,
+    party: rawParty,
+  });
+}
+
+/**
+ * @hidden
+ */
+export function confidentialAffirmTransactionToMeshTransaction(
+  value: ConfidentialAffirmTransaction,
+  context: Context
+): PalletConfidentialAssetAffirmTransaction {
+  const { transactionId, legId, party, proofs } = value;
+
+  const rawId = bigNumberToConfidentialTransactionId(transactionId, context);
+  const rawLeg = legToConfidentialAssetAffirmLeg(
+    {
+      legId,
+      party,
+      proofs,
+    },
+    context
+  );
+
+  return context.createType('PalletConfidentialAssetAffirmTransaction', {
+    id: rawId,
+    leg: rawLeg,
+  });
+}
+
+/**
+ * @hidden
+ */
+export function confidentialAffirmsToRaw(
+  value: PalletConfidentialAssetAffirmTransaction[],
+  context: Context
+): PalletConfidentialAssetAffirmTransactions {
+  return context.createType('PalletConfidentialAssetAffirmTransactions', value);
+}
+
+/**
+ * @hidden
+ */
+export function confidentialLegStateToLegState(
+  value: Option<PalletConfidentialAssetTransactionLegState>,
+  context: Context
+): ConfidentialLegState {
+  if (value.isNone) {
+    return {
+      proved: false,
+    };
+  }
+
+  const rawState = value.unwrap().assetState.toJSON() as Record<
+    string,
+    { senderInitBalance: string; senderAmount: string; receiverAmount: string }
+  >;
+
+  const assetState = Object.entries(rawState).map(([key, stateValue]) => {
+    const { senderInitBalance, senderAmount, receiverAmount } = stateValue;
+    const hasExpectedFields =
+      typeof key === 'string' &&
+      typeof senderInitBalance === 'string' &&
+      typeof senderAmount === 'string' &&
+      typeof receiverAmount === 'string';
+
+    if (!hasExpectedFields) {
+      throw new PolymeshError({
+        code: ErrorCode.General,
+        message:
+          'Unexpected data for PalletConfidentialAssetTransactionLegState received from chain',
+      });
+    }
+
+    return {
+      asset: new ConfidentialAsset({ id: key.replace('0x', '') }, context),
+      balances: { senderInitBalance, senderAmount, receiverAmount },
+    };
+  });
+
+  return {
+    proved: true,
+    assetState,
+  };
+}
+
+/**
+ * @hidden
+ */
+export function middlewareAssetHistoryToTransactionHistory({
+  id,
+  assetId,
+  amount,
+  fromId,
+  toId,
+  createdBlock,
+  eventId,
+  memo,
+}: ConfidentialAssetHistory): ConfidentialAssetTransactionHistory {
+  return {
+    id,
+    assetId,
+    fromId,
+    toId,
+    amount,
+    datetime: createdBlock!.datetime,
+    createdBlockId: new BigNumber(createdBlock!.blockId),
+    eventId,
+    memo,
+  };
+}
+
+/**
+ * @hidden
+ */
+export function confidentialBurnProofToRaw(
+  proof: string,
+  context: Context
+): ConfidentialAssetsBurnConfidentialBurnProof {
+  const rawProof = stringToBytes(proof, context);
+
+  return context.createType('ConfidentialAssetsBurnConfidentialBurnProof', {
+    encodedInnerProof: rawProof,
+  });
 }
