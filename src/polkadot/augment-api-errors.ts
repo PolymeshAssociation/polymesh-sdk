@@ -93,6 +93,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InvalidGranularity: AugmentedError<ApiType>;
       /**
+       * Invalid ticker character - valid set: A`..`Z` `0`..`9` `_` `-` `.` `/`.
+       **/
+      InvalidTickerCharacter: AugmentedError<ApiType>;
+      /**
        * Transfer validation check failed.
        **/
       InvalidTransfer: AugmentedError<ApiType>;
@@ -1082,6 +1086,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Failed to transfer an NFT - the number of nfts in the identity is insufficient.
        **/
       InvalidNFTTransferInsufficientCount: AugmentedError<ApiType>;
+      /**
+       * Failed to transfer an NFT - nft is locked.
+       **/
+      InvalidNFTTransferNFTIsLocked: AugmentedError<ApiType>;
       /**
        * Failed to transfer an NFT - NFT not found in portfolio.
        **/

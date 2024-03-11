@@ -1989,6 +1989,11 @@ declare module '@polkadot/api-base/types/events' {
        **/
       InstructionFailed: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, u64]>;
       /**
+       * An instruction with mediators has been created.
+       * Parameters: [`InstructionId`] of the instruction and the [`IdentityId`] of all mediators.
+       **/
+      InstructionMediators: AugmentedEvent<ApiType, [u64, BTreeSet<PolymeshPrimitivesIdentityId>]>;
+      /**
        * An instruction has been rejected (did, instruction_id)
        **/
       InstructionRejected: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, u64]>;
@@ -2005,7 +2010,10 @@ declare module '@polkadot/api-base/types/events' {
        * An instruction has affirmed by a mediator.
        * Parameters: [`IdentityId`] of the mediator and [`InstructionId`] of the instruction.
        **/
-      MediatorAffirmationReceived: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, u64]>;
+      MediatorAffirmationReceived: AugmentedEvent<
+        ApiType,
+        [PolymeshPrimitivesIdentityId, u64, Option<u64>]
+      >;
       /**
        * An instruction affirmation has been withdrawn by a mediator.
        * Parameters: [`IdentityId`] of the mediator and [`InstructionId`] of the instruction.
