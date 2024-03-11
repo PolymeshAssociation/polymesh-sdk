@@ -1647,6 +1647,7 @@ export default {
         '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesIdentityIdPortfolioId,u64)',
       MediatorAffirmationReceived: '(PolymeshPrimitivesIdentityId,u64,Option<u64>)',
       MediatorAffirmationWithdrawn: '(PolymeshPrimitivesIdentityId,u64)',
+      InstructionMediators: '(u64,BTreeSet<PolymeshPrimitivesIdentityId>)',
     },
   },
   /**
@@ -4954,21 +4955,21 @@ export default {
     _enum: ['RequireSudo'],
   },
   /**
-   * Lookup666: pallet_asset::TickerRegistration<U>
+   * Lookup666: pallet_asset::types::TickerRegistration<T>
    **/
   PalletAssetTickerRegistration: {
     owner: 'PolymeshPrimitivesIdentityId',
     expiry: 'Option<u64>',
   },
   /**
-   * Lookup667: pallet_asset::TickerRegistrationConfig<U>
+   * Lookup667: pallet_asset::types::TickerRegistrationConfig<T>
    **/
   PalletAssetTickerRegistrationConfig: {
     maxTickerLength: 'u8',
     registrationLength: 'Option<u64>',
   },
   /**
-   * Lookup668: pallet_asset::SecurityToken
+   * Lookup668: pallet_asset::types::SecurityToken
    **/
   PalletAssetSecurityToken: {
     totalSupply: 'u128',
@@ -4977,13 +4978,13 @@ export default {
     assetType: 'PolymeshPrimitivesAssetAssetType',
   },
   /**
-   * Lookup672: pallet_asset::AssetOwnershipRelation
+   * Lookup672: pallet_asset::types::AssetOwnershipRelation
    **/
   PalletAssetAssetOwnershipRelation: {
     _enum: ['NotOwned', 'TickerOwned', 'AssetOwned'],
   },
   /**
-   * Lookup678: pallet_asset::Error<T>
+   * Lookup678: pallet_asset::error::Error<T>
    **/
   PalletAssetError: {
     _enum: [

@@ -3691,6 +3691,7 @@ describe('nftDispatchErrorToTransferError', () => {
       NFTNotFound: { is: jest.fn().mockReturnValue(false) },
       InvalidNFTTransferNFTNotOwned: { is: jest.fn().mockReturnValue(false) },
       InvalidNFTTransferSamePortfolio: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferNFTIsLocked: { is: jest.fn().mockReturnValue(false) },
     } as unknown as DecoratedErrors<'promise'>['nft'];
 
     const mockError = dsMockUtils.createMockDispatchResult({

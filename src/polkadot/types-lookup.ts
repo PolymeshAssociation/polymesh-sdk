@@ -2798,6 +2798,8 @@ declare module '@polkadot/types/lookup' {
     >;
     readonly isMediatorAffirmationWithdrawn: boolean;
     readonly asMediatorAffirmationWithdrawn: ITuple<[PolymeshPrimitivesIdentityId, u64]>;
+    readonly isInstructionMediators: boolean;
+    readonly asInstructionMediators: ITuple<[u64, BTreeSet<PolymeshPrimitivesIdentityId>]>;
     readonly type:
       | 'VenueCreated'
       | 'VenueDetailsUpdated'
@@ -2821,7 +2823,8 @@ declare module '@polkadot/types/lookup' {
       | 'FailedToExecuteInstruction'
       | 'InstructionAutomaticallyAffirmed'
       | 'MediatorAffirmationReceived'
-      | 'MediatorAffirmationWithdrawn';
+      | 'MediatorAffirmationWithdrawn'
+      | 'InstructionMediators';
   }
 
   /** @name PolymeshPrimitivesSettlementVenueType (249) */
