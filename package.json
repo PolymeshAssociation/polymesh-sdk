@@ -55,7 +55,7 @@
     "@polkadot/dev-ts": "^0.76.22",
     "@polkadot/typegen": "10.9.1",
     "@polymeshassociation/local-signing-manager": "^3.0.1",
-    "@polymeshassociation/polymesh-types": "^5.8.0",
+    "@polymeshassociation/polymesh-types": "^5.9.1",
     "@polymeshassociation/signing-manager-types": "^3.0.0",
     "@polymeshassociation/typedoc-theme": "^1.2.0",
     "@semantic-release/changelog": "^6.0.1",

@@ -48,6 +48,7 @@ import {
   PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesSecondaryKeySignatory,
   PolymeshPrimitivesSettlementAffirmationStatus,
+  PolymeshPrimitivesSettlementAssetCount,
   PolymeshPrimitivesSettlementInstructionStatus,
   PolymeshPrimitivesSettlementLeg,
   PolymeshPrimitivesSettlementMediatorAffirmationStatus,
@@ -4840,4 +4841,18 @@ export function mediatorAffirmationStatusToStatus(
     default:
       throw new UnreachableCaseError(rawStatus.type);
   }
+}
+
+/**
+ * @hidden
+ */
+export function assetCountToRaw(
+  counts: {
+    fungible: u32;
+    nonFungible: u32;
+    offChain: u32;
+  },
+  context: Context
+): PolymeshPrimitivesSettlementAssetCount {
+  return context.createType('PolymeshPrimitivesSettlementAssetCount', counts);
 }
