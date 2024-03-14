@@ -10,6 +10,7 @@ import {
   PolymeshError,
   PolymeshTransaction,
 } from '~/internal';
+import { getConfidentialTransactionProofsQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   createMockConfidentialAssetTransaction,
@@ -559,6 +560,45 @@ describe('ConfidentialTransaction class', () => {
   describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       expect(transaction.toHuman()).toBe('1');
+    });
+  });
+
+  describe('method: getSenderProofs', () => {
+    it('should return the query results', async () => {
+      const senderProofsResult = {
+        confidentialTransactionAffirmations: {
+          nodes: [
+            {
+              legId: 1,
+              proofs: [
+                {
+                  assetId: '0x08abb6e3550f385721cfd4a35bd5c6fa',
+                  proof: '0xsomeProof',
+                },
+              ],
+            },
+          ],
+        },
+      };
+
+      dsMockUtils.createApolloQueryMock(
+        getConfidentialTransactionProofsQuery(transaction.id),
+        senderProofsResult
+      );
+
+      const result = await transaction.getSenderProofs();
+
+      expect(result).toEqual([
+        {
+          legId: new BigNumber('1'),
+          proofs: [
+            {
+              assetId: '08abb6e3-550f-3857-21cf-d4a35bd5c6fa',
+              proof: '0xsomeProof',
+            },
+          ],
+        },
+      ]);
     });
   });
 });
