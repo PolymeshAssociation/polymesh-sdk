@@ -2,6 +2,7 @@ import { Option } from '@polkadot/types';
 import { PalletConfidentialAssetTransactionStatus } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
+import { convertSubQueryAssetIdToUuid } from '~/api/entities/confidential/ConfidentialAccount/helpers';
 import {
   affirmConfidentialTransactions,
   Context,
@@ -11,6 +12,8 @@ import {
   PolymeshError,
   rejectConfidentialTransaction,
 } from '~/internal';
+import { getConfidentialTransactionProofsQuery } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
 import {
   AffirmConfidentialTransactionParams,
   ConfidentialLeg,
@@ -21,9 +24,11 @@ import {
   ErrorCode,
   NoArgsProcedureMethod,
   ProcedureMethod,
+  SenderProofs,
   SubCallback,
   UnsubCallback,
 } from '~/types';
+import { Ensured } from '~/types/utils';
 import {
   bigNumberToConfidentialTransactionId,
   bigNumberToConfidentialTransactionLegId,
@@ -356,6 +361,36 @@ export class ConfidentialTransaction extends Entity<UniqueIdentifiers, string> {
     const rawLegState = await confidentialAsset.txLegStates(rawId, rawLegId);
 
     return confidentialLegStateToLegState(rawLegState, context);
+  }
+
+  /**
+   * Get all submitted sender proofs for this transaction
+   *
+   * @note uses the middlewareV2
+   */
+  public async getSenderProofs(): Promise<SenderProofs[]> {
+    const { context } = this;
+    const {
+      data: {
+        confidentialTransactionAffirmations: { nodes },
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'confidentialTransactionAffirmations'>>(
+      getConfidentialTransactionProofsQuery(this.id)
+    );
+
+    return nodes.map(({ proofs: sqProofs, legId: sqLegId }) => {
+      const legId = new BigNumber(sqLegId);
+
+      const proofs = sqProofs.map(({ assetId, proof }: { assetId: string; proof: string }) => ({
+        assetId: convertSubQueryAssetIdToUuid(assetId),
+        proof,
+      }));
+
+      return {
+        proofs,
+        legId,
+      };
+    });
   }
 
   /**

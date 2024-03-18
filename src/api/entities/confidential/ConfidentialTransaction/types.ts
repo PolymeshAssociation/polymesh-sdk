@@ -117,3 +117,13 @@ export type AffirmConfidentialTransactionParams = { legId: BigNumber } & (
   | SenderAffirm
   | ObserverAffirm
 );
+
+export interface SenderAssetProof {
+  proof: string;
+  assetId: string;
+}
+
+export type SenderProofs = {
+  legId: BigNumber;
+  proofs: SenderAssetProof[];
+};

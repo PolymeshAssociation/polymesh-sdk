@@ -282,3 +282,55 @@ export function getConfidentialAssetHistoryByConfidentialAccountQuery(
     variables: { ...variables, size: size?.toNumber(), start: start?.toNumber() },
   };
 }
+
+export type ConfidentialTransactionProofsArgs = {
+  transactionId: string;
+};
+
+/**
+ * @hidden
+ */
+function createGetConfidentialTransactionProofArgs(transactionId: BigNumber): {
+  args: string;
+  filter: string;
+  variables: { transactionId: string };
+} {
+  const args = ['$transactionId: String!'];
+  const filter = ['transactionId: { equalTo: $transactionId }'];
+
+  return {
+    args: `(${args.join()})`,
+    filter: `filter: { ${filter.join()} }`,
+    variables: { transactionId: transactionId.toString() },
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get sender proofs for a transaction
+ */
+export function getConfidentialTransactionProofsQuery(
+  transactionId: BigNumber
+): QueryOptions<ConfidentialTransactionProofsArgs> {
+  const { args, filter, variables } = createGetConfidentialTransactionProofArgs(transactionId);
+
+  const query = gql`
+  query ConfidentialTransactionProofs
+  ${args}
+  {
+    confidentialTransactionAffirmations(
+      ${filter}
+  ) {
+    nodes {
+      proofs
+      legId
+    }
+  }
+  }`;
+
+  return {
+    query,
+    variables,
+  };
+}
