@@ -296,7 +296,7 @@ function createGetConfidentialTransactionProofArgs(transactionId: BigNumber): {
   variables: { transactionId: string };
 } {
   const args = ['$transactionId: String!'];
-  const filter = ['transactionId: { equalTo: $transactionId }'];
+  const filter = ['transactionId: { equalTo: $transactionId }, party: { equalTo: Sender }'];
 
   return {
     args: `(${args.join()})`,
