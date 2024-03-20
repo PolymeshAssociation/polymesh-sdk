@@ -7,10 +7,9 @@
     "src/generated/types.ts",
     "src/types/index.ts",
     "src/types/utils",
-    "src/utils/index.ts",
     "src/base"
   ],
-  "entryPointStrategy": "Expand",
+  "entryPointStrategy": "expand",
   "out": "docs",
   "plugin": ["typedoc-github-wiki-theme", "typedoc-plugin-markdown"],
   "theme": "github-wiki",

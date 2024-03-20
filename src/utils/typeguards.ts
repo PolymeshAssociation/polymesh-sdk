@@ -381,6 +381,7 @@ type IsFungibleLegGuard = (leg: InstructionLeg) => leg is FungibleLeg;
  *
  * @example ```ts
  * const fungibleGuard = await isFungibleLegBuilder(leg, context)
+ * ```
  */
 export const isFungibleLegBuilder = async (
   leg: InstructionLeg,
