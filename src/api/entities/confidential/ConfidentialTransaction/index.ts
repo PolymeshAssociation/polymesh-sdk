@@ -308,7 +308,7 @@ export class ConfidentialTransaction extends Entity<UniqueIdentifiers, string> {
       };
     });
 
-    return legs;
+    return legs.sort((a, b) => a.id.minus(b.id).toNumber());
   }
 
   /**
@@ -329,16 +329,18 @@ export class ConfidentialTransaction extends Entity<UniqueIdentifiers, string> {
 
     const rawLegStates = await confidentialAsset.txLegStates.entries(rawId);
 
-    return rawLegStates.map(([key, rawLegState]) => {
-      const rawLegId = key.args[1];
-      const legId = confidentialTransactionLegIdToBigNumber(rawLegId);
-      const state = confidentialLegStateToLegState(rawLegState, context);
+    return rawLegStates
+      .map(([key, rawLegState]) => {
+        const rawLegId = key.args[1];
+        const legId = confidentialTransactionLegIdToBigNumber(rawLegId);
+        const state = confidentialLegStateToLegState(rawLegState, context);
 
-      return {
-        legId,
-        ...state,
-      };
-    });
+        return {
+          legId,
+          ...state,
+        };
+      })
+      .sort((a, b) => a.legId.minus(b.legId).toNumber());
   }
 
   /**

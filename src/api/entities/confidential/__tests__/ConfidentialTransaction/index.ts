@@ -311,6 +311,14 @@ describe('ConfidentialTransaction class', () => {
     const sender = dsMockUtils.createMockConfidentialAccount(senderKey);
     const receiver = dsMockUtils.createMockConfidentialAccount(receiverKey);
     const mediator = dsMockUtils.createMockIdentityId(mediatorDid);
+    const legDetails = dsMockUtils.createMockOption(
+      dsMockUtils.createMockConfidentialLegDetails({
+        sender,
+        receiver,
+        auditors: dsMockUtils.createMockBTreeMap(),
+        mediators: [mediator],
+      })
+    );
 
     beforeEach(() => {});
 
@@ -319,14 +327,7 @@ describe('ConfidentialTransaction class', () => {
         entries: [
           tuple(
             [rawTransactionId, dsMockUtils.createMockConfidentialTransactionLegId(legId)],
-            dsMockUtils.createMockOption(
-              dsMockUtils.createMockConfidentialLegDetails({
-                sender,
-                receiver,
-                auditors: dsMockUtils.createMockBTreeMap(),
-                mediators: [mediator],
-              })
-            )
+            legDetails
           ),
         ],
       });
@@ -335,6 +336,39 @@ describe('ConfidentialTransaction class', () => {
       expect(result).toEqual(
         expect.arrayContaining([expect.objectContaining({ id: new BigNumber(2) })])
       );
+    });
+
+    it('should return the transaction legs in order of their IDs', async () => {
+      dsMockUtils.createQueryMock('confidentialAsset', 'transactionLegs', {
+        entries: [
+          tuple(
+            [
+              rawTransactionId,
+              dsMockUtils.createMockConfidentialTransactionLegId(new BigNumber(2)),
+            ],
+            legDetails
+          ),
+          tuple(
+            [
+              rawTransactionId,
+              dsMockUtils.createMockConfidentialTransactionLegId(new BigNumber(0)),
+            ],
+            legDetails
+          ),
+          tuple(
+            [
+              rawTransactionId,
+              dsMockUtils.createMockConfidentialTransactionLegId(new BigNumber(1)),
+            ],
+            legDetails
+          ),
+        ],
+      });
+
+      const result = await transaction.getLegs();
+      expect(result[0].id).toEqual(new BigNumber(0));
+      expect(result[1].id).toEqual(new BigNumber(1));
+      expect(result[2].id).toEqual(new BigNumber(2));
     });
 
     it('should throw an error if details are None', () => {
@@ -521,6 +555,39 @@ describe('ConfidentialTransaction class', () => {
           }),
         ])
       );
+    });
+
+    it('should return the leg states ordered by their id', async () => {
+      dsMockUtils.createQueryMock('confidentialAsset', 'txLegStates', {
+        entries: [
+          tuple(
+            [
+              dsMockUtils.createMockConfidentialTransactionId(new BigNumber(2)),
+              dsMockUtils.createMockConfidentialTransactionLegId(legId),
+            ],
+            mockLegReturn
+          ),
+          tuple(
+            [
+              dsMockUtils.createMockConfidentialTransactionId(id),
+              dsMockUtils.createMockConfidentialTransactionLegId(new BigNumber(0)),
+            ],
+            dsMockUtils.createMockOption()
+          ),
+          tuple(
+            [
+              dsMockUtils.createMockConfidentialTransactionId(id),
+              dsMockUtils.createMockConfidentialTransactionLegId(new BigNumber(1)),
+            ],
+            dsMockUtils.createMockOption()
+          ),
+        ],
+      });
+
+      const result = await transaction.getLegStates();
+      expect(result[0].legId).toEqual(new BigNumber(0));
+      expect(result[1].legId).toEqual(new BigNumber(1));
+      expect(result[2].legId).toEqual(new BigNumber(2));
     });
   });
 
