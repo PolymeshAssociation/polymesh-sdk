@@ -58,6 +58,11 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 jest.mock(
+  '~/api/entities/Asset/NonFungible',
+  require('~/testUtils/mocks/entities').mockNftCollectionModule('~/api/entities/Asset/NonFungible')
+);
+
+jest.mock(
   '~/api/entities/Account',
   require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
 );
@@ -97,6 +102,8 @@ describe('Identity class', () => {
   let context: MockContext;
   let stringToIdentityIdSpy: jest.SpyInstance<PolymeshPrimitivesIdentityId, [string, Context]>;
   let identityIdToStringSpy: jest.SpyInstance<string, [PolymeshPrimitivesIdentityId]>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let tickerToStringSpy: jest.SpyInstance<string, [PolymeshPrimitivesTicker]>;
   let u64ToBigNumberSpy: jest.SpyInstance<BigNumber, [u64]>;
 
   beforeAll(() => {
@@ -105,6 +112,8 @@ describe('Identity class', () => {
     procedureMockUtils.initMocks();
     stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
     identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    tickerToStringSpy = jest.spyOn(utilsConversionModule, 'tickerToString');
     u64ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u64ToBigNumber');
   });
 
@@ -1313,6 +1322,53 @@ describe('Identity class', () => {
       result = await identity.isChild();
 
       expect(result).toBeFalsy();
+    });
+  });
+
+  describe('method: preApprovedAssets', () => {
+    it('should the list of pre-approved assets for the identity', async () => {
+      const did = 'someDid';
+      const ticker = 'TICKER';
+      const rawTicker = dsMockUtils.createMockTicker(ticker);
+      const rawDid = dsMockUtils.createMockIdentityId(did);
+      const mockContext = dsMockUtils.getContextInstance();
+      const identity = new Identity({ did }, mockContext);
+
+      when(identityIdToStringSpy).calledWith(rawDid).mockReturnValue(did);
+      when(tickerToStringSpy).calledWith(rawTicker).mockReturnValue(ticker);
+
+      dsMockUtils.createQueryMock('asset', 'preApprovedTicker', {
+        entries: [tuple([rawDid, rawTicker], dsMockUtils.createMockBool(true))],
+      });
+
+      const result = await identity.preApprovedAssets();
+
+      expect(result).toEqual({
+        data: [expect.objectContaining({ ticker: 'TICKER' })],
+        next: null,
+      });
+    });
+  });
+
+  describe('method: isAssetPreApproved', () => {
+    it('should return whether the asset is pre-approved or not', async () => {
+      const did = 'someDid';
+      const ticker = 'TICKER';
+      const rawTicker = dsMockUtils.createMockTicker(ticker);
+      const rawDid = dsMockUtils.createMockIdentityId(did);
+      const mockContext = dsMockUtils.getContextInstance();
+      const identity = new Identity({ did }, mockContext);
+
+      when(identityIdToStringSpy).calledWith(rawDid).mockReturnValue(did);
+      when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+
+      dsMockUtils
+        .createQueryMock('asset', 'preApprovedTicker')
+        .mockResolvedValue(dsMockUtils.createMockBool(true));
+
+      const result = await identity.isAssetPreApproved(ticker);
+
+      expect(result).toBeTruthy();
     });
   });
 });

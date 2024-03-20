@@ -149,6 +149,8 @@ interface IdentityOptions extends EntityOptions {
   areSecondaryAccountsFrozen?: EntityGetter<boolean>;
   assetPermissionsGetGroup?: EntityGetter<CustomPermissionGroup | KnownPermissionGroup>;
   assetPermissionsGet?: EntityGetter<AssetWithGroup[]>;
+  isAssetPreApproved?: EntityGetter<boolean>;
+  preApprovedAssets?: EntityGetter<ResultSet<(FungibleAsset | NftCollection)[]>>;
 }
 
 interface ChildIdentityOptions extends IdentityOptions {
@@ -589,6 +591,8 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     getSecondaryAccounts!: jest.Mock;
     areSecondaryAccountsFrozen!: jest.Mock;
     isCddProvider!: jest.Mock;
+    preApprovedAssets!: jest.Mock;
+    isAssetPreApproved!: jest.Mock;
 
     /**
      * @hidden
@@ -626,6 +630,8 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
       this.getSecondaryAccounts = createEntityGetterMock(opts.getSecondaryAccounts);
       this.areSecondaryAccountsFrozen = createEntityGetterMock(opts.areSecondaryAccountsFrozen);
       this.isCddProvider = createEntityGetterMock(opts.isCddProvider);
+      this.preApprovedAssets = createEntityGetterMock(opts.preApprovedAssets);
+      this.isAssetPreApproved = createEntityGetterMock(opts.isAssetPreApproved);
     }
   },
   () => ({
@@ -661,6 +667,8 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     checkRoles: {
       result: true,
     },
+    preApprovedAssets: { data: [], next: null, count: new BigNumber(0) },
+    isAssetPreApproved: false,
     toHuman: 'someDid',
   }),
   ['Identity']
@@ -704,6 +712,8 @@ const MockChildIdentityClass = createMockEntityClass<ChildIdentityOptions>(
 
     getParentDid!: jest.Mock;
     getChildIdentities!: Promise<ChildIdentity[]>;
+    preApproveAssets!: jest.Mock;
+    isAssetPreApproved!: jest.Mock;
 
     /**
      * @hidden
@@ -747,6 +757,8 @@ const MockChildIdentityClass = createMockEntityClass<ChildIdentityOptions>(
 
       this.getParentDid = createEntityGetterMock(opts.getParentDid);
       this.getChildIdentities = Promise.resolve([]);
+      this.preApproveAssets = createEntityGetterMock(opts.preApprovedAssets);
+      this.isAssetPreApproved = createEntityGetterMock(opts.isAssetPreApproved);
     }
   },
   () => ({
@@ -786,6 +798,8 @@ const MockChildIdentityClass = createMockEntityClass<ChildIdentityOptions>(
 
     toHuman: 'someChildDid',
     getParentDid: getIdentityInstance(),
+    preApprovedAssets: { data: [], next: null, count: new BigNumber(0) },
+    isAssetPreApproved: false,
   }),
   ['ChildIdentity', 'Identity']
 );
