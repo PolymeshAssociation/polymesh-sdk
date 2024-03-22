@@ -796,6 +796,7 @@ function configureContext(opts: ContextOptions): void {
       checkPermissions: jest.fn().mockResolvedValue(opts.checkAssetPermissions),
     },
     areSecondaryAccountsFrozen: jest.fn().mockResolvedValue(opts.areSecondaryAccountsFrozen),
+    isTickerPreApproved: jest.fn(),
     isEqual: jest.fn().mockReturnValue(opts.signingIdentityIsEqual),
   };
   opts.withSigningManager
