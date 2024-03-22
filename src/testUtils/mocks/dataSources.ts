@@ -112,6 +112,7 @@ import {
   PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesSecondaryKeySignatory,
   PolymeshPrimitivesSettlementAffirmationStatus,
+  PolymeshPrimitivesSettlementAssetCount,
   PolymeshPrimitivesSettlementInstruction,
   PolymeshPrimitivesSettlementInstructionStatus,
   PolymeshPrimitivesSettlementLeg,
@@ -152,13 +153,16 @@ import { HistoricPolyxTransaction } from '~/api/entities/Account/types';
 import { Account, AuthorizationRequest, ChildIdentity, Context, Identity } from '~/internal';
 import { BalanceTypeEnum, CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import {
+  AffirmationCount,
   AssetComplianceResult,
+  AssetCount,
   AuthorizationType as MeshAuthorizationType,
   CanTransferGranularReturn,
   CanTransferResult,
   CddStatus,
   ComplianceRequirementResult,
   ConditionResult,
+  ExecuteInstructionInfo,
   GranularCanTransferResult,
   Moment,
   PortfolioValidityResult,
@@ -792,6 +796,7 @@ function configureContext(opts: ContextOptions): void {
       checkPermissions: jest.fn().mockResolvedValue(opts.checkAssetPermissions),
     },
     areSecondaryAccountsFrozen: jest.fn().mockResolvedValue(opts.areSecondaryAccountsFrozen),
+    isTickerPreApproved: jest.fn(),
     isEqual: jest.fn().mockReturnValue(opts.signingIdentityIsEqual),
   };
   opts.withSigningManager
@@ -4444,4 +4449,92 @@ export const createMockMediatorAffirmationStatus = (
   }
 
   return createMockEnum<PolymeshPrimitivesSettlementMediatorAffirmationStatus>(status);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockExecuteInstructionInfo = (
+  info:
+    | {
+        fungibleTokens: u32 | Parameters<typeof createMockU32>[0];
+        nonFungibleTokens: u32 | Parameters<typeof createMockU32>[0];
+        offChainAssets: u32 | Parameters<typeof createMockU32>[0];
+      }
+    | ExecuteInstructionInfo
+): MockCodec<ExecuteInstructionInfo> => {
+  const { fungibleTokens, nonFungibleTokens, offChainAssets } = info ?? {
+    fungibleTokens: createMockU32(),
+    nonFungibleToken: createMockU32(),
+    offChainAssets: createMockU32(),
+  };
+
+  return createMockCodec({ fungibleTokens, nonFungibleTokens, offChainAssets }, !info);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAssetCount = (
+  assetCount?:
+    | {
+        fungible: u32 | Parameters<typeof createMockU32>[0];
+        nonFungible: u32 | Parameters<typeof createMockU32>[0];
+        offChain: u32 | Parameters<typeof createMockU32>[0];
+      }
+    | PolymeshPrimitivesSettlementAssetCount
+): MockCodec<PolymeshPrimitivesSettlementAssetCount> => {
+  const { fungible, nonFungible, offChain } = assetCount ?? {
+    fungible: createMockU32(),
+    nonFungible: createMockU32(),
+    offChain: createMockU32(),
+  };
+  return createMockCodec({ fungible, nonFungible, offChain }, !assetCount);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockRpcAssetCount = (
+  assetCount?:
+    | {
+        fungible: u32 | Parameters<typeof createMockU32>[0];
+        non_fungible: u32 | Parameters<typeof createMockU32>[0];
+        off_chain: u32 | Parameters<typeof createMockU32>[0];
+      }
+    | AssetCount
+): MockCodec<AssetCount> => {
+  const { fungible, non_fungible, off_chain } = assetCount ?? {
+    fungible: createMockU32(),
+    non_fungible: createMockU32(),
+    off_chain: createMockU32(),
+  };
+  return createMockCodec({ fungible, non_fungible, off_chain }, !assetCount);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAffirmationCount = (
+  affirmCount?:
+    | {
+        sender_asset_count: AssetCount | Parameters<typeof createMockAssetCount>[0];
+        receiver_asset_count: AssetCount | Parameters<typeof createMockAssetCount>[0];
+        offchain_count: u32 | Parameters<typeof createMockU32>[0];
+      }
+    | AffirmationCount
+): MockCodec<AffirmationCount> => {
+  const { sender_asset_count, receiver_asset_count, offchain_count } = affirmCount ?? {
+    sender_asset_count: createMockAssetCount(),
+    receiver_asset_count: createMockAssetCount(),
+    offchain_count: createMockU32(),
+  };
+  return createMockCodec(
+    { sender_asset_count, receiver_asset_count, offchain_count },
+    !affirmCount
+  );
 };

@@ -1645,8 +1645,9 @@ export default {
       FailedToExecuteInstruction: '(u64,SpRuntimeDispatchError)',
       InstructionAutomaticallyAffirmed:
         '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesIdentityIdPortfolioId,u64)',
-      MediatorAffirmationReceived: '(PolymeshPrimitivesIdentityId,u64)',
+      MediatorAffirmationReceived: '(PolymeshPrimitivesIdentityId,u64,Option<u64>)',
       MediatorAffirmationWithdrawn: '(PolymeshPrimitivesIdentityId,u64)',
+      InstructionMediators: '(u64,BTreeSet<PolymeshPrimitivesIdentityId>)',
     },
   },
   /**
@@ -4684,21 +4685,21 @@ export default {
     _enum: ['RequireSudo'],
   },
   /**
-   * Lookup624: pallet_asset::TickerRegistration<U>
+   * Lookup624: pallet_asset::types::TickerRegistration<T>
    **/
   PalletAssetTickerRegistration: {
     owner: 'PolymeshPrimitivesIdentityId',
     expiry: 'Option<u64>',
   },
   /**
-   * Lookup625: pallet_asset::TickerRegistrationConfig<U>
+   * Lookup625: pallet_asset::types::TickerRegistrationConfig<T>
    **/
   PalletAssetTickerRegistrationConfig: {
     maxTickerLength: 'u8',
     registrationLength: 'Option<u64>',
   },
   /**
-   * Lookup626: pallet_asset::SecurityToken
+   * Lookup626: pallet_asset::types::SecurityToken
    **/
   PalletAssetSecurityToken: {
     totalSupply: 'u128',
@@ -4707,13 +4708,13 @@ export default {
     assetType: 'PolymeshPrimitivesAssetAssetType',
   },
   /**
-   * Lookup630: pallet_asset::AssetOwnershipRelation
+   * Lookup630: pallet_asset::types::AssetOwnershipRelation
    **/
   PalletAssetAssetOwnershipRelation: {
     _enum: ['NotOwned', 'TickerOwned', 'AssetOwned'],
   },
   /**
-   * Lookup636: pallet_asset::Error<T>
+   * Lookup636: pallet_asset::error::Error<T>
    **/
   PalletAssetError: {
     _enum: [
@@ -4755,6 +4756,7 @@ export default {
       'AssetMetadataKeyBelongsToNFTCollection',
       'AssetMetadataValueIsEmpty',
       'NumberOfAssetMediatorsExceeded',
+      'InvalidTickerCharacter',
     ],
   },
   /**
@@ -5522,6 +5524,7 @@ export default {
       'ZeroCount',
       'SupplyOverflow',
       'SupplyUnderflow',
+      'InvalidNFTTransferNFTIsLocked',
     ],
   },
   /**

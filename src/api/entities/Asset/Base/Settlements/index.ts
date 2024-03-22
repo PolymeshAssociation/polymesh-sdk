@@ -1,8 +1,15 @@
 import BigNumber from 'bignumber.js';
 
+import { toggleTickerPreApproval } from '~/api/procedures/toggleTickerPreApproval';
 import { assertPortfolioExists } from '~/api/procedures/utils';
-import { BaseAsset, FungibleAsset, Namespace, Nft, PolymeshError } from '~/internal';
-import { ErrorCode, NftCollection, PortfolioLike, TransferBreakdown } from '~/types';
+import { BaseAsset, Context, FungibleAsset, Namespace, Nft, PolymeshError } from '~/internal';
+import {
+  ErrorCode,
+  NftCollection,
+  NoArgsProcedureMethod,
+  PortfolioLike,
+  TransferBreakdown,
+} from '~/types';
 import { isFungibleAsset } from '~/utils';
 import {
   bigNumberToBalance,
@@ -14,11 +21,51 @@ import {
   stringToIdentityId,
   stringToTicker,
 } from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
 
 /**
  * @hidden
  */
 class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
+  /**
+   * Pre-approves receiving this asset for the signing identity. Receiving this asset in a settlement will not require manual affirmation
+   */
+  public preApprove: NoArgsProcedureMethod<void>;
+
+  /**
+   * Removes pre-approval for this asset
+   */
+  public removePreApproval: NoArgsProcedureMethod<void>;
+
+  /**
+   * @hidden
+   */
+  constructor(parent: T, context: Context) {
+    super(parent, context);
+
+    this.preApprove = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [
+          toggleTickerPreApproval,
+          { ticker: parent.ticker, preApprove: true },
+        ],
+        voidArgs: true,
+      },
+      context
+    );
+
+    this.removePreApproval = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [
+          toggleTickerPreApproval,
+          { ticker: parent.ticker, preApprove: false },
+        ],
+        voidArgs: true,
+      },
+      context
+    );
+  }
+
   /**
    * Check whether it is possible to create a settlement instruction to transfer a certain amount of this asset between two Portfolios. Returns a breakdown of
    *   the transaction containing general errors (such as insufficient balance or invalid receiver), any broken transfer restrictions, and any compliance

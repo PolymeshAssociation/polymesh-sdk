@@ -44,6 +44,7 @@ import {
   PolymeshPrimitivesNftNfTs,
   PolymeshPrimitivesPortfolioFund,
   PolymeshPrimitivesSecondaryKeySignatory,
+  PolymeshPrimitivesSettlementAssetCount,
   PolymeshPrimitivesSettlementLeg,
   PolymeshPrimitivesSettlementSettlementType,
   PolymeshPrimitivesSettlementVenueType,
@@ -166,6 +167,7 @@ import {
   agentGroupToPermissionGroup,
   agentGroupToPermissionGroupIdentifier,
   assetComplianceResultToCompliance,
+  assetCountToRaw,
   assetDocumentToDocument,
   assetIdentifierToSecurityIdentifier,
   assetTypeToKnownOrId,
@@ -3620,6 +3622,7 @@ describe('nftDispatchErrorToTransferError', () => {
       NFTNotFound: { is: jest.fn().mockReturnValue(false) },
       InvalidNFTTransferNFTNotOwned: { is: jest.fn().mockReturnValue(false) },
       InvalidNFTTransferSamePortfolio: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferNFTIsLocked: { is: jest.fn().mockReturnValue(false) },
     } as unknown as DecoratedErrors<'promise'>['nft'];
 
     const mockError = dsMockUtils.createMockDispatchResult({
@@ -9893,5 +9896,39 @@ describe('mediatorAffirmationStatusToStatus', () => {
     expect(() => mediatorAffirmationStatusToStatus({ type: 'notAType' } as any)).toThrow(
       UnreachableCaseError
     );
+  });
+});
+
+describe('assetCountToRaw', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert raw amounts to the raw type', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    const input = {
+      fungible: dsMockUtils.createMockU32(new BigNumber(1)),
+      nonFungible: dsMockUtils.createMockU32(new BigNumber(0)),
+      offChain: dsMockUtils.createMockU32(new BigNumber(0)),
+    };
+
+    const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesSettlementAssetCount;
+
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesSettlementAssetCount', input)
+      .mockReturnValue(fakeResult);
+
+    const result = assetCountToRaw(input, context);
+
+    expect(result).toEqual(fakeResult);
   });
 });

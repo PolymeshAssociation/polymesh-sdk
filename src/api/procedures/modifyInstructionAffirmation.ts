@@ -1,11 +1,15 @@
 import { Option, u64 } from '@polkadot/types';
-import { PolymeshPrimitivesIdentityIdPortfolioId } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesIdentityIdPortfolioId,
+  PolymeshPrimitivesSettlementAffirmationCount,
+  PolymeshPrimitivesSettlementAssetCount,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
 import { assertInstructionValid } from '~/api/procedures/utils';
-import { Instruction, PolymeshError, Procedure } from '~/internal';
-import { Moment } from '~/polkadot';
+import { Context, Instruction, PolymeshError, Procedure } from '~/internal';
+import { Moment } from '~/polkadot/polymesh';
 import {
   AffirmationStatus,
   DefaultPortfolio,
@@ -28,6 +32,7 @@ import {
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
+  assetCountToRaw,
   bigNumberToU64,
   dateToMoment,
   mediatorAffirmationStatusToStatus,
@@ -37,6 +42,26 @@ import {
   stringToIdentityId,
 } from '~/utils/conversion';
 import { optionize } from '~/utils/internal';
+
+/**
+ * @hidden
+ */
+const getAssetCount = async (
+  rawId: u64,
+  context: Context
+): Promise<PolymeshPrimitivesSettlementAssetCount> => {
+  const {
+    polymeshApi: { rpc },
+  } = context;
+
+  const {
+    fungibleTokens: fungible,
+    nonFungibleTokens: nonFungible,
+    offChainAssets: offChain,
+  } = await rpc.settlement.getExecuteInstructionInfo(rawId);
+
+  return assetCountToRaw({ fungible, nonFungible, offChain }, context);
+};
 
 export interface Storage {
   portfolios: (DefaultPortfolio | NumberedPortfolio)[];
@@ -84,9 +109,9 @@ export async function prepareModifyInstructionAffirmation(
   this: Procedure<ModifyInstructionAffirmationParams, Instruction, Storage>,
   args: ModifyInstructionAffirmationParams
 ): Promise<
-  | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'affirmInstruction'>>
-  | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'withdrawAffirmation'>>
-  | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'rejectInstruction'>>
+  | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'affirmInstructionWithCount'>>
+  | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'withdrawAffirmationWithCount'>>
+  | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'rejectInstructionWithCount'>>
   | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'affirmInstructionAsMediator'>>
   | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'withdrawAffirmationAsMediator'>>
   | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'rejectInstructionAsMediator'>>
@@ -96,6 +121,7 @@ export async function prepareModifyInstructionAffirmation(
       polymeshApi: {
         tx: { settlement: settlementTx },
         query: { settlement },
+        rpc,
       },
     },
     context,
@@ -130,20 +156,21 @@ export async function prepareModifyInstructionAffirmation(
   const excludeCriteria: AffirmationStatus[] = [];
   let errorMessage: string;
   let transaction:
-    | PolymeshTx<[u64, PolymeshPrimitivesIdentityIdPortfolioId[]]>
+    | PolymeshTx<
+        [u64, PolymeshPrimitivesIdentityIdPortfolioId[], PolymeshPrimitivesSettlementAssetCount]
+      >
+    | PolymeshTx<
+        [
+          u64,
+          PolymeshPrimitivesIdentityIdPortfolioId[],
+          PolymeshPrimitivesSettlementAffirmationCount
+        ]
+      >
     | PolymeshTx<[u64, Option<Moment>]>
     | PolymeshTx<[u64]>
     | null = null;
 
   switch (operation) {
-    case InstructionAffirmationOperation.Reject: {
-      return {
-        transaction: settlementTx.rejectInstruction,
-        resolver: instruction,
-        feeMultiplier: totalLegAmount,
-        args: [rawInstructionId, rawPortfolioIds[0]],
-      };
-    }
     case InstructionAffirmationOperation.AffirmAsMediator: {
       if (mediatorStatus === AffirmationStatus.Unknown) {
         throw new PolymeshError({
@@ -197,23 +224,38 @@ export async function prepareModifyInstructionAffirmation(
         });
       }
 
+      const rawAssetCount = await getAssetCount(rawInstructionId, context);
+
       return {
         transaction: settlementTx.rejectInstructionAsMediator,
         resolver: instruction,
-        args: [rawInstructionId, optionize(bigNumberToU64)(undefined, context)],
+        args: [rawInstructionId, rawAssetCount],
       };
     }
+
+    case InstructionAffirmationOperation.Reject: {
+      const rawAssetCount = await getAssetCount(rawInstructionId, context);
+
+      return {
+        transaction: settlementTx.rejectInstructionWithCount,
+        resolver: instruction,
+        feeMultiplier: totalLegAmount,
+        args: [rawInstructionId, rawPortfolioIds[0], rawAssetCount],
+      };
+    }
+
     case InstructionAffirmationOperation.Affirm: {
       excludeCriteria.push(AffirmationStatus.Affirmed);
       errorMessage = 'The Instruction is already affirmed';
-      transaction = settlementTx.affirmInstruction;
+      transaction = settlementTx.affirmInstructionWithCount;
 
       break;
     }
+
     case InstructionAffirmationOperation.Withdraw: {
       excludeCriteria.push(AffirmationStatus.Pending);
       errorMessage = 'The instruction is not affirmed';
-      transaction = settlementTx.withdrawAffirmation;
+      transaction = settlementTx.withdrawAffirmationWithCount;
 
       break;
     }
@@ -230,11 +272,16 @@ export async function prepareModifyInstructionAffirmation(
     });
   }
 
+  const rawAffirmCount = await rpc.settlement.getAffirmationCount(
+    rawInstructionId,
+    rawPortfolioIds
+  );
+
   return {
     transaction,
     resolver: instruction,
     feeMultiplier: senderLegAmount,
-    args: [rawInstructionId, validPortfolioIds],
+    args: [rawInstructionId, validPortfolioIds, rawAffirmCount],
   };
 }
 
@@ -391,8 +438,12 @@ export async function prepareStorage(
   this: Procedure<ModifyInstructionAffirmationParams, Instruction, Storage>,
   params: ModifyInstructionAffirmationParams
 ): Promise<Storage> {
-  const { context } = this;
+  const {
+    context,
+    context: { polymeshApi },
+  } = this;
   const { id } = params;
+  const rawId = bigNumberToU64(id, context);
 
   const portfolioParams = extractPortfolioParams(params);
 
@@ -402,6 +453,7 @@ export async function prepareStorage(
   const [{ data: legs }, signer] = await Promise.all([
     instruction.getLegs(),
     context.getSigningIdentity(),
+    polymeshApi.rpc.settlement.getExecuteInstructionInfo(rawId),
   ]);
 
   const [portfolios, senderLegAmount] = await P.reduce<

@@ -161,3 +161,4 @@ export { addAssetStat } from '~/api/procedures/addAssetStat';
 export { removeAssetStat } from '~/api/procedures/removeAssetStat';
 export { setVenueFiltering } from '~/api/procedures/setVenueFiltering';
 export { registerCustomClaimType } from '~/api/procedures/registerCustomClaimType';
+export { toggleTickerPreApproval } from '~/api/procedures/toggleTickerPreApproval';

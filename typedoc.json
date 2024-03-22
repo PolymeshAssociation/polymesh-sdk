@@ -8,10 +8,11 @@
     "src/types/index.ts",
     "src/types/utils",
     "src/utils/index.ts",
-    "src/base",
+    "src/base"
   ],
   "entryPointStrategy": "Expand",
   "out": "docs",
+  "plugin": ["typedoc-github-wiki-theme", "typedoc-plugin-markdown"],
   "theme": "github-wiki",
   "exclude": [
     "src/internal.ts",

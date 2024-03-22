@@ -24,13 +24,9 @@ This release is compatible with Polymesh v6.x.x
 
 The Polymesh SDK's main goal is to provide external developers with a set of tools that will allow them to build powerful applications that interact with the Polymesh protocol. It focuses on abstracting away all the complexities of the Polymesh blockchain and expose a simple but complete interface. The result is a feature-rich, user-friendly node.js library.
 
-### Before moving on
-
-This document assumes you are already familiar with [Security Tokens](https://thesecuritytokenstandard.org/) in general and [Polymath](https://www.polymath.network/) as well as [Polymesh](https://polymath.network/polymesh) in particular.
-
 ### Technical Pre-requisites
 
-In order to use the Polymath SDK, you must install [node](https://nodejs.org/) \(version 16\) and [npm](https://www.npmjs.com/). The library is written in [typescript](https://www.typescriptlang.org/), but can also be used in plain javascript. This document will assume you are using typescript, but the translation to javascript is very simple.
+In order to use the Polymesh SDK, you must install [node](https://nodejs.org/) \(version 16\) and [npm](https://www.npmjs.com/). The library is written in [typescript](https://www.typescriptlang.org/), but can also be used in plain javascript. This document will assume you are using typescript, but the translation to javascript is very simple.
 
 ### Documentation
 
@@ -71,8 +67,8 @@ async function run() {
         mnemonic: '//Alice', //A "well known" mnemonic, often with sudo privileges on development chains
       },
       {
-        mnemonic: 'forest end mail art wish leave truth else ignore royal knife river' // most mnemonics are 12 words
-      }
+        mnemonic: 'forest end mail art wish leave truth else ignore royal knife river', // most mnemonics are 12 words
+      },
     ],
   });
   const polyClient = await Polymesh.connect({
@@ -133,11 +129,11 @@ Creating transactions is a two-step process. First a procedure is created, which
 The SDK exposes getter functions that will return entities, which may have their own functions:
 
 ```typescript
-  const assetsPage = await polyClient.assets.get({ size: new BigNumber(20) })
-  const asset = assetsPage.data[0]
+const assetsPage = await polyClient.assets.get({ size: new BigNumber(20) });
+const asset = assetsPage.data[0];
 
-  const assetDetails = await asset.details()
-  console.log('asset details:', assetDetails)
+const assetDetails = await asset.details();
+console.log('asset details:', assetDetails);
 ```
 
 Note: Some getters require "middleware" to be configured, which is a chain indexer that aids in historical queries. All such methods will have a comment indicating this requirement.

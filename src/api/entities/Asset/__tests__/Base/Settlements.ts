@@ -8,9 +8,9 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { FungibleSettlements, NonFungibleSettlements } from '~/api/entities/Asset/Base/Settlements';
-import { Context, Namespace, PolymeshError } from '~/internal';
+import { Context, Namespace, PolymeshError, PolymeshTransaction } from '~/internal';
 import { GranularCanTransferResult } from '~/polkadot';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { createMockCanTransferGranularReturn } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -26,6 +26,11 @@ import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 
 import { FungibleAsset } from '../../Fungible';
+
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('Settlements class', () => {
   let mockContext: Mocked<Context>;
@@ -63,6 +68,7 @@ describe('Settlements class', () => {
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
+    procedureMockUtils.initMocks();
 
     toDid = 'toDid';
     amount = new BigNumber(100);
@@ -128,10 +134,12 @@ describe('Settlements class', () => {
   afterEach(() => {
     dsMockUtils.reset();
     entityMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   describe('FungibleSettlements', () => {
@@ -259,6 +267,36 @@ describe('Settlements class', () => {
         return expect(
           settlements.canTransfer({ from: fromDid, to: toDid, amount })
         ).rejects.toThrow(expectedError);
+      });
+    });
+
+    describe('method: preApproveTicker', () => {
+      it('should prepare the procedure and return the resulting transaction', async () => {
+        const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+        const args = { ticker, preApprove: true };
+
+        when(procedureMockUtils.getPrepareMock())
+          .calledWith({ args, transformer: undefined }, mockContext, {})
+          .mockResolvedValue(expectedTransaction);
+
+        const tx = await settlements.preApprove();
+
+        expect(tx).toBe(expectedTransaction);
+      });
+    });
+
+    describe('method: removePreApproval', () => {
+      it('should prepare the procedure and return the resulting transaction', async () => {
+        const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+        const args = { ticker, preApprove: false };
+
+        when(procedureMockUtils.getPrepareMock())
+          .calledWith({ args, transformer: undefined }, mockContext, {})
+          .mockResolvedValue(expectedTransaction);
+
+        const tx = await settlements.removePreApproval();
+
+        expect(tx).toBe(expectedTransaction);
       });
     });
   });
