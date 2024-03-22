@@ -2,7 +2,6 @@ import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
 
 import {
-  Account,
   AuthorizationRequest,
   Context,
   Entity,
@@ -16,8 +15,7 @@ import {
   setCustodian,
 } from '~/internal';
 import { portfolioMovementsQuery, settlementsQuery } from '~/middleware/queries';
-import { Query, SettlementResultEnum } from '~/middleware/types';
-import { SettlementDirectionEnum } from '~/middleware/typesV1';
+import { Query } from '~/middleware/types';
 import {
   ErrorCode,
   MoveFundsParams,
@@ -30,10 +28,9 @@ import {
   addressToKey,
   balanceToBigNumber,
   identityIdToString,
-  keyToAddress,
-  middlewarePortfolioToPortfolio,
   portfolioIdToMeshPortfolioId,
   tickerToString,
+  toHistoricalSettlements,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
@@ -435,71 +432,14 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       });
     }
 
-    const data: HistoricSettlement[] = [];
-
     const portfolioFilter = `${identityId}/${new BigNumber(portfolioId || 0).toString()}`;
 
-    const getDirection = (fromId: string, toId: string): SettlementDirectionEnum => {
-      if (fromId === portfolioFilter) {
-        return SettlementDirectionEnum.Outgoing;
-      }
-      if (toId === portfolioFilter) {
-        return SettlementDirectionEnum.Incoming;
-      }
-      return SettlementDirectionEnum.None;
-    };
-
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    settlementsResult.data.legs.nodes.forEach(({ settlement }) => {
-      const {
-        createdBlock,
-        result: settlementResult,
-        legs: { nodes: legs },
-      } = settlement!;
-
-      const { blockId, hash } = createdBlock!;
-
-      data.push({
-        blockNumber: new BigNumber(blockId),
-        blockHash: hash,
-        status: settlementResult as unknown as SettlementResultEnum,
-        accounts: legs[0].addresses.map(
-          (accountAddress: string) =>
-            new Account({ address: keyToAddress(accountAddress, context) }, context)
-        ),
-        legs: legs.map(({ from, to, fromId, toId, assetId, amount }) => ({
-          asset: new FungibleAsset({ ticker: assetId }, context),
-          amount: new BigNumber(amount).shiftedBy(-6),
-          direction: getDirection(fromId, toId),
-          from: middlewarePortfolioToPortfolio(from!, context),
-          to: middlewarePortfolioToPortfolio(to!, context),
-        })),
-      });
-    });
-
-    portfolioMovementsResult.data.portfolioMovements.nodes.forEach(
-      ({ createdBlock, from, to, fromId, toId, assetId, amount, address: accountAddress }) => {
-        const { blockId, hash } = createdBlock!;
-        data.push({
-          blockNumber: new BigNumber(blockId),
-          blockHash: hash,
-          status: SettlementResultEnum.Executed,
-          accounts: [new Account({ address: keyToAddress(accountAddress, context) }, context)],
-          legs: [
-            {
-              asset: new FungibleAsset({ ticker: assetId }, context),
-              amount: new BigNumber(amount).shiftedBy(-6),
-              direction: getDirection(fromId, toId),
-              from: middlewarePortfolioToPortfolio(from!, context),
-              to: middlewarePortfolioToPortfolio(to!, context),
-            },
-          ],
-        });
-      }
+    return toHistoricalSettlements(
+      settlementsResult,
+      portfolioMovementsResult,
+      portfolioFilter,
+      context
     );
-    /* eslint-enable @typescript-eslint/no-non-null-assertion */
-
-    return data;
   }
 
   /**

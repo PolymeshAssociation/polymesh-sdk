@@ -1,10 +1,13 @@
 import { getTypeDef } from '@polkadot/types';
-import { TypeDef, TypeDefInfo } from '@polkadot/types/types';
+import { SpRuntimeDispatchError } from '@polkadot/types/lookup';
+import { RegistryError, TypeDef, TypeDefInfo } from '@polkadot/types/types';
 import { polymesh } from 'polymesh-types/definitions';
 
+import { PolymeshError } from '~/internal';
 import {
   ArrayTransactionArgument,
   ComplexTransactionArgument,
+  ErrorCode,
   PlainTransactionArgument,
   SimpleEnumTransactionArgument,
   TransactionArgument,
@@ -138,4 +141,32 @@ export const processType = (rawType: TypeDef, name: string): TransactionArgument
       };
     }
   }
+};
+
+/**
+ * @hidden
+ */
+export const handleExtrinsicFailure = (
+  reject: (reason?: unknown) => void,
+  error: SpRuntimeDispatchError,
+  data?: Record<string, unknown>
+): void => {
+  // get revert message from event
+  let message: string;
+
+  if (error.isModule) {
+    // known error
+    const mod = error.asModule;
+
+    const { section, name, docs }: RegistryError = mod.registry.findMetaError(mod);
+    message = `${section}.${name}: ${docs.join(' ')}`;
+  } else if (error.isBadOrigin) {
+    message = 'Bad origin';
+  } else if (error.isCannotLookup) {
+    message = 'Could not lookup information required to validate the transaction';
+  } else {
+    message = 'Unknown error';
+  }
+
+  reject(new PolymeshError({ code: ErrorCode.TransactionReverted, message, data }));
 };

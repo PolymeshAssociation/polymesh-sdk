@@ -2,6 +2,7 @@ import { u32, u64 } from '@polkadot/types';
 import {
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesSettlementAffirmationStatus,
+  PolymeshPrimitivesSettlementAssetCount,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -13,11 +14,19 @@ import {
   Storage,
 } from '~/api/procedures/modifyInstructionAffirmation';
 import * as procedureUtilsModule from '~/api/procedures/utils';
-import { Context, DefaultPortfolio, Instruction } from '~/internal';
+import { Context, DefaultPortfolio, Instruction, PolymeshError } from '~/internal';
+import { AffirmationCount, ExecuteInstructionInfo } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import {
+  createMockAssetCount,
+  createMockExecuteInstructionInfo,
+  createMockMediatorAffirmationStatus,
+} from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import {
   AffirmationStatus,
+  ErrorCode,
+  Identity,
   InstructionAffirmationOperation,
   ModifyInstructionAffirmationParams,
   PortfolioId,
@@ -45,6 +54,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     kind: dsMockUtils.createMockPortfolioKind('Default'),
   });
   const did = 'someDid';
+  let signer: Identity;
   let portfolio: DefaultPortfolio;
   let legAmount: BigNumber;
   let rawLegAmount: u32;
@@ -62,6 +72,11 @@ describe('modifyInstructionAffirmation procedure', () => {
     AffirmationStatus,
     [PolymeshPrimitivesSettlementAffirmationStatus]
   >;
+  let assetCountToRawSpy: jest.SpyInstance;
+  let mediatorAffirmationStatusToStatusSpy: jest.SpyInstance;
+  let mockExecuteInfo: ExecuteInstructionInfo;
+  let mockAffirmCount: AffirmationCount;
+  let mockAssetCount: PolymeshPrimitivesSettlementAssetCount;
 
   beforeAll(() => {
     dsMockUtils.initMocks({
@@ -74,6 +89,17 @@ describe('modifyInstructionAffirmation procedure', () => {
 
     portfolio = entityMockUtils.getDefaultPortfolioInstance({ did: 'someDid ' });
     legAmount = new BigNumber(2);
+    mockExecuteInfo = createMockExecuteInstructionInfo({
+      fungibleTokens: dsMockUtils.createMockU32(new BigNumber(3)),
+      nonFungibleTokens: dsMockUtils.createMockU32(new BigNumber(0)),
+      offChainAssets: dsMockUtils.createMockU32(new BigNumber(0)),
+    });
+    mockAffirmCount = dsMockUtils.createMockAffirmationCount();
+    mockAssetCount = createMockAssetCount({
+      fungible: dsMockUtils.createMockU32(new BigNumber(3)),
+      nonFungible: dsMockUtils.createMockU32(new BigNumber(0)),
+      offChain: dsMockUtils.createMockU32(new BigNumber(0)),
+    });
     bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
     bigNumberToU32Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU32');
     portfolioLikeToPortfolioIdSpy = jest.spyOn(utilsConversionModule, 'portfolioLikeToPortfolioId');
@@ -85,22 +111,45 @@ describe('modifyInstructionAffirmation procedure', () => {
       utilsConversionModule,
       'meshAffirmationStatusToAffirmationStatus'
     );
+    assetCountToRawSpy = jest.spyOn(utilsConversionModule, 'assetCountToRaw');
+
+    mediatorAffirmationStatusToStatusSpy = jest.spyOn(
+      utilsConversionModule,
+      'mediatorAffirmationStatusToStatus'
+    );
 
     jest.spyOn(procedureUtilsModule, 'assertInstructionValid').mockImplementation();
   });
 
   beforeEach(() => {
     rawLegAmount = dsMockUtils.createMockU32(new BigNumber(2));
-    dsMockUtils.createTxMock('settlement', 'affirmInstruction');
-    dsMockUtils.createTxMock('settlement', 'withdrawAffirmation');
-    dsMockUtils.createTxMock('settlement', 'rejectInstruction');
-    mockContext = dsMockUtils.getContextInstance();
+    dsMockUtils.createTxMock('settlement', 'affirmInstructionWithCount');
+    dsMockUtils.createTxMock('settlement', 'withdrawAffirmationWithCount');
+    dsMockUtils.createTxMock('settlement', 'rejectInstructionWithCount');
+    dsMockUtils.createTxMock('settlement', 'affirmInstructionAsMediator');
+    dsMockUtils.createTxMock('settlement', 'withdrawAffirmationAsMediator');
+    dsMockUtils.createTxMock('settlement', 'rejectInstructionAsMediator');
+    dsMockUtils.createRpcMock('settlement', 'getExecuteInstructionInfo', {
+      returnValue: mockExecuteInfo,
+    });
+    dsMockUtils.createRpcMock('settlement', 'getAffirmationCount', {
+      returnValue: mockAffirmCount,
+    });
+    mockContext = dsMockUtils.getContextInstance({ getSigningIdentity: signer });
     bigNumberToU64Spy.mockReturnValue(rawInstructionId);
     bigNumberToU32Spy.mockReturnValue(rawLegAmount);
+    assetCountToRawSpy.mockReturnValue(mockAssetCount);
+    signer = entityMockUtils.getIdentityInstance({ did });
     when(portfolioLikeToPortfolioIdSpy).calledWith(portfolio).mockReturnValue(portfolioId);
     when(portfolioIdToMeshPortfolioIdSpy)
       .calledWith(portfolioId, mockContext)
       .mockReturnValue(rawPortfolioId);
+    dsMockUtils.createQueryMock('settlement', 'instructionMediatorsAffirmations', {
+      returnValue: dsMockUtils.createMockAffirmationStatus(AffirmationStatus.Unknown),
+    });
+    dsMockUtils.createQueryMock('settlement', 'userAffirmations', {
+      multi: [],
+    });
   });
 
   afterEach(() => {
@@ -124,6 +173,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       portfolioParams: ['someDid'],
       senderLegAmount: legAmount,
       totalLegAmount: legAmount,
+      signer,
     });
 
     return expect(
@@ -152,6 +202,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       portfolioParams: [],
       senderLegAmount: legAmount,
       totalLegAmount: legAmount,
+      signer,
     });
 
     return expect(
@@ -180,6 +231,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       portfolioParams: [],
       senderLegAmount: legAmount,
       totalLegAmount: legAmount,
+      signer,
     });
 
     return expect(
@@ -208,9 +260,10 @@ describe('modifyInstructionAffirmation procedure', () => {
       portfolioParams: [],
       senderLegAmount: legAmount,
       totalLegAmount: legAmount,
+      signer,
     });
 
-    const transaction = dsMockUtils.createTxMock('settlement', 'affirmInstruction');
+    const transaction = dsMockUtils.createTxMock('settlement', 'affirmInstructionWithCount');
 
     const result = await prepareModifyInstructionAffirmation.call(proc, {
       id,
@@ -220,7 +273,111 @@ describe('modifyInstructionAffirmation procedure', () => {
     expect(result).toEqual({
       transaction,
       feeMultiplier: new BigNumber(2),
-      args: [rawInstructionId, [rawPortfolioId, rawPortfolioId]],
+      args: [rawInstructionId, [rawPortfolioId, rawPortfolioId], mockAffirmCount],
+      resolver: expect.objectContaining({ id }),
+    });
+  });
+
+  it('should throw an error if affirmed by a mediator without a pending affirmation', async () => {
+    const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Unknown');
+    dsMockUtils.createQueryMock('settlement', 'instructionMediatorsAffirmations', {
+      returnValue: rawAffirmationStatus,
+    });
+    when(mediatorAffirmationStatusToStatusSpy)
+      .calledWith(rawAffirmationStatus)
+      .mockReturnValue({ status: AffirmationStatus.Unknown });
+
+    const proc = procedureMockUtils.getInstance<
+      ModifyInstructionAffirmationParams,
+      Instruction,
+      Storage
+    >(mockContext, {
+      portfolios: [portfolio, portfolio],
+      portfolioParams: [],
+      senderLegAmount: legAmount,
+      totalLegAmount: legAmount,
+      signer,
+    });
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The signer is not a mediator',
+    });
+
+    return expect(
+      prepareModifyInstructionAffirmation.call(proc, {
+        id,
+        operation: InstructionAffirmationOperation.AffirmAsMediator,
+      })
+    ).rejects.toThrow(expectedError);
+  });
+
+  it('should throw an error if expiry is set at a point in the future', async () => {
+    const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Pending');
+    dsMockUtils.createQueryMock('settlement', 'instructionMediatorsAffirmations', {
+      returnValue: rawAffirmationStatus,
+    });
+    when(mediatorAffirmationStatusToStatusSpy)
+      .calledWith(rawAffirmationStatus)
+      .mockReturnValue({ status: AffirmationStatus.Pending });
+
+    const proc = procedureMockUtils.getInstance<
+      ModifyInstructionAffirmationParams,
+      Instruction,
+      Storage
+    >(mockContext, {
+      portfolios: [portfolio, portfolio],
+      portfolioParams: [],
+      senderLegAmount: legAmount,
+      totalLegAmount: legAmount,
+      signer,
+    });
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The expiry must be in the future',
+    });
+
+    return expect(
+      prepareModifyInstructionAffirmation.call(proc, {
+        id,
+        operation: InstructionAffirmationOperation.AffirmAsMediator,
+        expiry: new Date(1),
+      })
+    ).rejects.toThrow(expectedError);
+  });
+
+  it('should return an affirm as mediator instruction transaction spec', async () => {
+    const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Pending');
+    dsMockUtils.createQueryMock('settlement', 'instructionMediatorsAffirmations', {
+      returnValue: rawAffirmationStatus,
+    });
+    when(mediatorAffirmationStatusToStatusSpy)
+      .calledWith(rawAffirmationStatus)
+      .mockReturnValue({ status: AffirmationStatus.Pending });
+
+    const proc = procedureMockUtils.getInstance<
+      ModifyInstructionAffirmationParams,
+      Instruction,
+      Storage
+    >(mockContext, {
+      portfolios: [portfolio, portfolio],
+      portfolioParams: [],
+      senderLegAmount: legAmount,
+      totalLegAmount: legAmount,
+      signer,
+    });
+
+    const transaction = dsMockUtils.createTxMock('settlement', 'affirmInstructionAsMediator');
+
+    const result = await prepareModifyInstructionAffirmation.call(proc, {
+      id,
+      operation: InstructionAffirmationOperation.AffirmAsMediator,
+    });
+
+    expect(result).toEqual({
+      transaction,
+      args: [rawInstructionId, null],
       resolver: expect.objectContaining({ id }),
     });
   });
@@ -243,6 +400,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       portfolioParams: [],
       senderLegAmount: legAmount,
       totalLegAmount: legAmount,
+      signer,
     });
 
     return expect(
@@ -271,9 +429,10 @@ describe('modifyInstructionAffirmation procedure', () => {
       portfolioParams: [],
       senderLegAmount: legAmount,
       totalLegAmount: legAmount,
+      signer,
     });
 
-    const transaction = dsMockUtils.createTxMock('settlement', 'withdrawAffirmation');
+    const transaction = dsMockUtils.createTxMock('settlement', 'withdrawAffirmationWithCount');
 
     const result = await prepareModifyInstructionAffirmation.call(proc, {
       id,
@@ -283,7 +442,78 @@ describe('modifyInstructionAffirmation procedure', () => {
     expect(result).toEqual({
       transaction,
       feeMultiplier: new BigNumber(2),
-      args: [rawInstructionId, [rawPortfolioId, rawPortfolioId]],
+      args: [rawInstructionId, [rawPortfolioId, rawPortfolioId], mockAffirmCount],
+      resolver: expect.objectContaining({ id }),
+    });
+  });
+
+  it('should throw an error if a mediator attempts to withdraw a non affirmed transaction', async () => {
+    const rawAffirmationStatus = createMockMediatorAffirmationStatus(AffirmationStatus.Pending);
+    dsMockUtils.createQueryMock('settlement', 'instructionMediatorsAffirmations', {
+      returnValue: rawAffirmationStatus,
+    });
+    when(mediatorAffirmationStatusToStatusSpy)
+      .calledWith(rawAffirmationStatus)
+      .mockReturnValue({ status: AffirmationStatus.Pending });
+
+    const proc = procedureMockUtils.getInstance<
+      ModifyInstructionAffirmationParams,
+      Instruction,
+      Storage
+    >(mockContext, {
+      portfolios: [portfolio, portfolio],
+      portfolioParams: [],
+      senderLegAmount: legAmount,
+      totalLegAmount: legAmount,
+      signer,
+    });
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The signer is not a mediator that has already affirmed the instruction',
+    });
+
+    return expect(
+      prepareModifyInstructionAffirmation.call(proc, {
+        id,
+        operation: InstructionAffirmationOperation.WithdrawAsMediator,
+      })
+    ).rejects.toThrow(expectedError);
+  });
+
+  it('should return a withdraw as mediator instruction transaction spec', async () => {
+    const rawAffirmationStatus = createMockMediatorAffirmationStatus({
+      Affirmed: dsMockUtils.createMockOption(),
+    });
+    dsMockUtils.createQueryMock('settlement', 'instructionMediatorsAffirmations', {
+      returnValue: rawAffirmationStatus,
+    });
+    when(mediatorAffirmationStatusToStatusSpy)
+      .calledWith(rawAffirmationStatus)
+      .mockReturnValue({ status: AffirmationStatus.Affirmed });
+
+    const proc = procedureMockUtils.getInstance<
+      ModifyInstructionAffirmationParams,
+      Instruction,
+      Storage
+    >(mockContext, {
+      portfolios: [portfolio, portfolio],
+      portfolioParams: [],
+      senderLegAmount: legAmount,
+      totalLegAmount: legAmount,
+      signer,
+    });
+
+    const transaction = dsMockUtils.createTxMock('settlement', 'withdrawAffirmationAsMediator');
+
+    const result = await prepareModifyInstructionAffirmation.call(proc, {
+      id,
+      operation: InstructionAffirmationOperation.WithdrawAsMediator,
+    });
+
+    expect(result).toEqual({
+      transaction,
+      args: [rawInstructionId],
       resolver: expect.objectContaining({ id }),
     });
   });
@@ -319,9 +549,10 @@ describe('modifyInstructionAffirmation procedure', () => {
       portfolioParams: [],
       senderLegAmount: legAmount,
       totalLegAmount: legAmount,
+      signer,
     });
 
-    const transaction = dsMockUtils.createTxMock('settlement', 'rejectInstruction');
+    const transaction = dsMockUtils.createTxMock('settlement', 'rejectInstructionWithCount');
 
     const result = await prepareModifyInstructionAffirmation.call(proc, {
       id,
@@ -331,7 +562,76 @@ describe('modifyInstructionAffirmation procedure', () => {
     expect(result).toEqual({
       transaction,
       feeMultiplier: new BigNumber(2),
-      args: [rawInstructionId, rawPortfolioId],
+      args: [rawInstructionId, rawPortfolioId, mockAssetCount],
+      resolver: expect.objectContaining({ id }),
+    });
+  });
+
+  it('should throw an error if a non involved identity attempts to reject the transaction', () => {
+    const rawAffirmationStatus = createMockMediatorAffirmationStatus(AffirmationStatus.Unknown);
+    dsMockUtils.createQueryMock('settlement', 'instructionMediatorsAffirmations', {
+      returnValue: rawAffirmationStatus,
+    });
+    when(mediatorAffirmationStatusToStatusSpy)
+      .calledWith(rawAffirmationStatus)
+      .mockReturnValue({ status: AffirmationStatus.Unknown });
+
+    const proc = procedureMockUtils.getInstance<
+      ModifyInstructionAffirmationParams,
+      Instruction,
+      Storage
+    >(mockContext, {
+      portfolios: [portfolio, portfolio],
+      portfolioParams: [],
+      senderLegAmount: legAmount,
+      totalLegAmount: legAmount,
+      signer: entityMockUtils.getIdentityInstance({ did: 'someOtherDid' }),
+    });
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The signer is not a mediator for the instruction',
+    });
+
+    return expect(
+      prepareModifyInstructionAffirmation.call(proc, {
+        id,
+        operation: InstructionAffirmationOperation.RejectAsMediator,
+      })
+    ).rejects.toThrow(expectedError);
+  });
+
+  it('should return a reject as mediator instruction transaction spec', async () => {
+    const rawAffirmationStatus = createMockMediatorAffirmationStatus(AffirmationStatus.Pending);
+    dsMockUtils.createQueryMock('settlement', 'instructionMediatorsAffirmations', {
+      returnValue: rawAffirmationStatus,
+    });
+    when(mediatorAffirmationStatusToStatusSpy)
+      .calledWith(rawAffirmationStatus)
+      .mockReturnValue({ status: AffirmationStatus.Pending });
+
+    const proc = procedureMockUtils.getInstance<
+      ModifyInstructionAffirmationParams,
+      Instruction,
+      Storage
+    >(mockContext, {
+      portfolios: [portfolio, portfolio],
+      portfolioParams: [],
+      senderLegAmount: legAmount,
+      totalLegAmount: legAmount,
+      signer,
+    });
+
+    const transaction = dsMockUtils.createTxMock('settlement', 'rejectInstructionAsMediator');
+
+    const result = await prepareModifyInstructionAffirmation.call(proc, {
+      id,
+      operation: InstructionAffirmationOperation.RejectAsMediator,
+    });
+
+    expect(result).toEqual({
+      transaction,
+      args: [rawInstructionId, mockAssetCount],
       resolver: expect.objectContaining({ id }),
     });
   });
@@ -354,6 +654,7 @@ describe('modifyInstructionAffirmation procedure', () => {
         portfolioParams: [],
         senderLegAmount: legAmount,
         totalLegAmount: legAmount,
+        signer,
       });
       let boundFunc = getAuthorization.bind(proc);
 
@@ -376,6 +677,7 @@ describe('modifyInstructionAffirmation procedure', () => {
         portfolioParams: [],
         senderLegAmount: legAmount,
         totalLegAmount: legAmount,
+        signer,
       });
 
       boundFunc = getAuthorization.bind(proc);
@@ -397,6 +699,45 @@ describe('modifyInstructionAffirmation procedure', () => {
           assets: [],
           portfolios: [],
           transactions: [TxTags.settlement.WithdrawAffirmation],
+        },
+      });
+
+      result = await boundFunc({
+        ...args,
+        operation: InstructionAffirmationOperation.AffirmAsMediator,
+      });
+
+      expect(result).toEqual({
+        permissions: {
+          assets: [],
+          portfolios: [],
+          transactions: [TxTags.settlement.AffirmInstructionAsMediator],
+        },
+      });
+
+      result = await boundFunc({
+        ...args,
+        operation: InstructionAffirmationOperation.WithdrawAsMediator,
+      });
+
+      expect(result).toEqual({
+        permissions: {
+          assets: [],
+          portfolios: [],
+          transactions: [TxTags.settlement.WithdrawAffirmationAsMediator],
+        },
+      });
+
+      result = await boundFunc({
+        ...args,
+        operation: InstructionAffirmationOperation.RejectAsMediator,
+      });
+
+      expect(result).toEqual({
+        permissions: {
+          assets: [],
+          portfolios: [],
+          transactions: [TxTags.settlement.RejectInstructionAsMediator],
         },
       });
     });
@@ -465,6 +806,7 @@ describe('modifyInstructionAffirmation procedure', () => {
         portfolioParams: [],
         senderLegAmount: new BigNumber(1),
         totalLegAmount: new BigNumber(2),
+        signer: expect.objectContaining({ did: signer.did }),
       });
 
       result = await boundFunc({
@@ -478,6 +820,7 @@ describe('modifyInstructionAffirmation procedure', () => {
         portfolioParams: [fromDid],
         senderLegAmount: new BigNumber(1),
         totalLegAmount: new BigNumber(2),
+        signer: expect.objectContaining({ did: signer.did }),
       });
 
       result = await boundFunc({
@@ -491,6 +834,7 @@ describe('modifyInstructionAffirmation procedure', () => {
         portfolioParams: [fromDid],
         senderLegAmount: new BigNumber(1),
         totalLegAmount: new BigNumber(2),
+        signer: expect.objectContaining({ did: signer.did }),
       });
 
       result = await boundFunc({
@@ -504,6 +848,7 @@ describe('modifyInstructionAffirmation procedure', () => {
         portfolioParams: [fromDid],
         senderLegAmount: new BigNumber(1),
         totalLegAmount: new BigNumber(2),
+        signer: expect.objectContaining({ did: signer.did }),
       });
     });
 
@@ -534,6 +879,7 @@ describe('modifyInstructionAffirmation procedure', () => {
         portfolioParams: [],
         senderLegAmount: new BigNumber(0),
         totalLegAmount: new BigNumber(1),
+        signer: expect.objectContaining({ did: signer.did }),
       });
     });
   });

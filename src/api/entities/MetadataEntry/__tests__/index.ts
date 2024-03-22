@@ -1,9 +1,9 @@
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { Context, Entity, MetadataEntry, PolymeshTransaction } from '~/internal';
+import { Context, Entity, MetadataEntry, PolymeshError, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { MetadataLockStatus, MetadataSpec, MetadataType, MetadataValue } from '~/types';
+import { ErrorCode, MetadataLockStatus, MetadataSpec, MetadataType, MetadataValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -88,6 +88,36 @@ describe('MetadataEntry class', () => {
         .mockResolvedValue(expectedTransaction);
 
       const tx = await metadataEntry.set(params);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: clear', () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<MetadataEntry>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { metadataEntry }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await metadataEntry.clear();
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: remove', () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<MetadataEntry>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { metadataEntry }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await metadataEntry.remove();
 
       expect(tx).toBe(expectedTransaction);
     });
@@ -179,9 +209,126 @@ describe('MetadataEntry class', () => {
   });
 
   describe('method: exists', () => {
-    it('should return whether the MetadataEntry exists', async () => {
-      const result = await metadataEntry.exists();
-      expect(result).toBe(true);
+    beforeAll(() => {
+      jest.spyOn(utilsConversionModule, 'bigNumberToU64').mockImplementation();
+    });
+
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should return whether a global Metadata Entry exists', async () => {
+      dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalKeyToName', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      metadataEntry = new MetadataEntry({ id, ticker, type: MetadataType.Global }, context);
+
+      await expect(metadataEntry.exists()).resolves.toBeFalsy();
+
+      dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalKeyToName', {
+        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockBytes('someName')),
+      });
+      await expect(metadataEntry.exists()).resolves.toBeTruthy();
+    });
+
+    it('should return whether a local Metadata Entry exists', async () => {
+      dsMockUtils.createQueryMock('asset', 'assetMetadataLocalKeyToName', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+      await expect(metadataEntry.exists()).resolves.toBeFalsy();
+
+      dsMockUtils.createQueryMock('asset', 'assetMetadataLocalKeyToName', {
+        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockBytes('someName')),
+      });
+      await expect(metadataEntry.exists()).resolves.toBeTruthy();
+    });
+  });
+
+  describe('method: isModifiable', () => {
+    let existsSpy: jest.SpyInstance;
+    let valueSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      existsSpy = jest.spyOn(metadataEntry, 'exists');
+      valueSpy = jest.spyOn(metadataEntry, 'value');
+    });
+
+    it('should return canModify as true if MetadataEntry exists and can be modified', async () => {
+      existsSpy.mockResolvedValue(true);
+      valueSpy.mockResolvedValue(null);
+      const result = await metadataEntry.isModifiable();
+
+      expect(result).toEqual({
+        canModify: true,
+      });
+    });
+
+    it('should return canModify as false along with the reason if the MetadataEntry does not exists', async () => {
+      existsSpy.mockResolvedValue(false);
+      valueSpy.mockResolvedValue(null);
+      const error = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'Metadata does not exists for the Asset',
+        data: {
+          ticker,
+          type,
+          id,
+        },
+      });
+      const result = await metadataEntry.isModifiable();
+
+      expect(result).toEqual({
+        canModify: false,
+        reason: error,
+      });
+    });
+
+    it('should return canModify as false along with the reason if the MetadataEntry status is Locked', async () => {
+      existsSpy.mockResolvedValue(true);
+      valueSpy.mockResolvedValue({
+        value: 'SOME_VALUE',
+        expiry: null,
+        lockStatus: MetadataLockStatus.Locked,
+      });
+
+      const error = new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'Metadata is locked and cannot be modified',
+      });
+
+      const result = await metadataEntry.isModifiable();
+
+      expect(result).toEqual({
+        canModify: false,
+        reason: error,
+      });
+    });
+
+    it('should return canModify as false along with the reason if the MetadataEntry is still in locked phase', async () => {
+      existsSpy.mockResolvedValue(true);
+      const lockedUntil = new Date('2099/01/01');
+      valueSpy.mockResolvedValue({
+        value: 'SOME_VALUE',
+        expiry: null,
+        lockStatus: MetadataLockStatus.LockedUntil,
+        lockedUntil,
+      });
+
+      const error = new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'Metadata is currently locked',
+        data: {
+          lockedUntil,
+        },
+      });
+
+      const result = await metadataEntry.isModifiable();
+
+      expect(result).toEqual({
+        canModify: false,
+        reason: error,
+      });
     });
   });
 

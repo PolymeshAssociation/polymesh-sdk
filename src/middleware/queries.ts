@@ -1,4 +1,4 @@
-import { QueryOptions } from '@apollo/client/core';
+import { DocumentNode, QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
@@ -991,18 +991,23 @@ type LegArgs = 'fromId' | 'toId' | 'assetId' | 'addresses';
 /**
  *  @hidden
  */
-function createLegFilters({ identityId, portfolioId, ticker, address }: QuerySettlementFilters): {
+function createLegFilters(
+  { identityId, portfolioId, ticker, address }: QuerySettlementFilters,
+  queryAll?: boolean
+): {
   args: string;
   filter: string;
   variables: QueryArgs<Leg, LegArgs>;
 } {
   const args: string[] = ['$fromId: String!, $toId: String!'];
-  const fromIdFilters = ['fromId: { equalTo: $fromId }'];
-  const toIdFilters = ['toId: { equalTo: $toId }'];
+  const fromIdFilters = queryAll
+    ? ['fromId: { startsWith: $fromId }']
+    : ['fromId: { equalTo: $fromId }'];
+  const toIdFilters = queryAll ? ['toId: { startsWith: $toId }'] : ['toId: { equalTo: $toId }'];
   const portfolioNumber = portfolioId ? portfolioId.toNumber() : 0;
   const variables: QueryArgs<Leg, LegArgs> = {
-    fromId: `${identityId}/${portfolioNumber}`,
-    toId: `${identityId}/${portfolioNumber}`,
+    fromId: queryAll ? `${identityId}` : `${identityId}/${portfolioNumber}`,
+    toId: queryAll ? `${identityId}` : `${identityId}/${portfolioNumber}`,
   };
 
   if (ticker) {
@@ -1029,6 +1034,51 @@ function createLegFilters({ identityId, portfolioId, ticker, address }: QuerySet
 }
 
 /**
+ *  @hidden
+ */
+function buildSettlementsQuery(args: string, filter: string): DocumentNode {
+  return gql`
+  query SettlementsQuery
+    ${args}
+   {
+    legs(
+      ${filter}
+      orderBy: [${LegsOrderBy.CreatedAtAsc}, ${LegsOrderBy.InstructionIdAsc}]
+    ) {
+      nodes {
+        settlement {
+          id
+          createdBlock {
+            blockId
+            datetime
+            hash
+          }
+          result
+          legs {
+            nodes {
+              fromId
+              from {
+                identityId
+                number
+              }
+              toId
+              to {
+                identityId
+                number
+              }
+              assetId
+              amount
+              addresses
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+}
+
+/**
  * @hidden
  *
  * Get Settlements where a Portfolio is involved
@@ -1037,45 +1087,24 @@ export function settlementsQuery(
   filters: QuerySettlementFilters
 ): QueryOptions<QueryArgs<Leg, 'fromId' | 'toId' | 'assetId' | 'addresses'>> {
   const { args, filter, variables } = createLegFilters(filters);
-  const query = gql`
-    query SettlementsQuery
-      ${args}
-     {
-      legs(
-        ${filter}
-        orderBy: [${LegsOrderBy.CreatedAtAsc}, ${LegsOrderBy.InstructionIdAsc}]
-      ) {
-        nodes {
-          settlement {
-            id
-            createdBlock {
-              blockId
-              datetime
-              hash
-            }
-            result
-            legs {
-              nodes {
-                fromId
-                from {
-                  identityId
-                  number
-                }
-                toId
-                to {
-                  identityId
-                  number
-                }
-                assetId
-                amount
-                addresses
-              }
-            }
-          }
-        }
-      }
-    }
-  `;
+  const query = buildSettlementsQuery(args, filter);
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get Settlements for all Portfolios
+ */
+export function settlementsForAllPortfoliosQuery(
+  filters: Omit<QuerySettlementFilters, 'portfolioId'>
+): QueryOptions<QueryArgs<Leg, 'fromId' | 'toId' | 'assetId' | 'addresses'>> {
+  const { args, filter, variables } = createLegFilters(filters, true);
+  const query = buildSettlementsQuery(args, filter);
 
   return {
     query,
@@ -1088,23 +1117,23 @@ type PortfolioMovementArgs = 'fromId' | 'toId' | 'assetId' | 'address';
 /**
  *  @hidden
  */
-function createPortfolioMovementFilters({
-  identityId,
-  portfolioId,
-  ticker,
-  address,
-}: QuerySettlementFilters): {
+function createPortfolioMovementFilters(
+  { identityId, portfolioId, ticker, address }: QuerySettlementFilters,
+  queryAll?: boolean
+): {
   args: string;
   filter: string;
   variables: QueryArgs<PortfolioMovement, PortfolioMovementArgs>;
 } {
   const args: string[] = ['$fromId: String!, $toId: String!'];
-  const fromIdFilters = ['fromId: { equalTo: $fromId }'];
-  const toIdFilters = ['toId: { equalTo: $toId }'];
+  const fromIdFilters = queryAll
+    ? ['fromId: { startsWith: $fromId }']
+    : ['fromId: { equalTo: $fromId }'];
+  const toIdFilters = queryAll ? ['toId: { startsWith: $toId }'] : ['toId: { equalTo: $toId }'];
   const portfolioNumber = portfolioId ? portfolioId.toNumber() : 0;
   const variables: QueryArgs<PortfolioMovement, PortfolioMovementArgs> = {
-    fromId: `${identityId}/${portfolioNumber}`,
-    toId: `${identityId}/${portfolioNumber}`,
+    fromId: queryAll ? `${identityId}` : `${identityId}/${portfolioNumber}`,
+    toId: queryAll ? `${identityId}` : `${identityId}/${portfolioNumber}`,
   };
 
   if (ticker) {
@@ -1132,6 +1161,44 @@ function createPortfolioMovementFilters({
 
 /**
  * @hidden
+ */
+function buildPortfolioMovementsQuery(args: string, filter: string): DocumentNode {
+  return gql`
+  query PortfolioMovementsQuery
+    ${args}
+   {
+    portfolioMovements(
+      ${filter}
+      orderBy: [${PortfolioMovementsOrderBy.CreatedAtAsc}, ${PortfolioMovementsOrderBy.IdAsc}]
+    ) {
+      nodes {
+        id
+        fromId
+        from {
+          identityId
+          number
+        }
+        toId
+        to {
+          identityId
+          number
+        }
+        assetId
+        amount
+        address
+        createdBlock {
+          blockId
+          datetime
+          hash
+        }
+      }
+    }
+  }
+`;
+}
+
+/**
+ * @hidden
  *
  * Get Settlements where a Portfolio is involved
  */
@@ -1139,38 +1206,24 @@ export function portfolioMovementsQuery(
   filters: QuerySettlementFilters
 ): QueryOptions<QueryArgs<PortfolioMovement, 'fromId' | 'toId' | 'assetId' | 'address'>> {
   const { args, filter, variables } = createPortfolioMovementFilters(filters);
-  const query = gql`
-    query PortfolioMovementsQuery
-      ${args}
-     {
-      portfolioMovements(
-        ${filter}
-        orderBy: [${PortfolioMovementsOrderBy.CreatedAtAsc}, ${PortfolioMovementsOrderBy.IdAsc}]
-      ) {
-        nodes {
-          id
-          fromId
-          from {
-            identityId
-            number
-          }
-          toId
-          to {
-            identityId
-            number
-          }
-          assetId
-          amount
-          address
-          createdBlock {
-            blockId
-            datetime
-            hash
-          }
-        }
-      }
-    }
-  `;
+  const query = buildPortfolioMovementsQuery(args, filter);
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get Settlements for all portfolios
+ */
+export function portfoliosMovementsQuery(
+  filters: Omit<QuerySettlementFilters, 'portfolioId'>
+): QueryOptions<QueryArgs<PortfolioMovement, 'fromId' | 'toId' | 'assetId' | 'address'>> {
+  const { args, filter, variables } = createPortfolioMovementFilters(filters, true);
+  const query = buildPortfolioMovementsQuery(args, filter);
 
   return {
     query,
@@ -1254,6 +1307,8 @@ export function assetTransactionQuery(
           eventIdx
           extrinsicIdx
           fundingRound
+          instructionId
+          instructionMemo
           datetime
           createdBlock {
             blockId

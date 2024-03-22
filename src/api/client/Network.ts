@@ -1,9 +1,12 @@
+import { isHex } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 
-import { Account, Context, transferPolyx } from '~/internal';
+import { handleExtrinsicFailure } from '~/base/utils';
+import { Account, Context, PolymeshError, transferPolyx } from '~/internal';
 import { eventsByArgs, extrinsicByHash } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import {
+  ErrorCode,
   EventIdentifier,
   ExtrinsicDataWithFees,
   MiddlewareMetadata,
@@ -11,6 +14,8 @@ import {
   ProcedureMethod,
   ProtocolFees,
   SubCallback,
+  SubmissionDetails,
+  TransactionPayload,
   TransferPolyxParams,
   TxTag,
   UnsubCallback,
@@ -20,13 +25,14 @@ import { TREASURY_MODULE_ADDRESS } from '~/utils/constants';
 import {
   balanceToBigNumber,
   extrinsicIdentifierToTxTag,
+  hashToString,
   middlewareEventDetailsToEventIdentifier,
   moduleAddressToString,
   stringToBlockHash,
   textToString,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, optionize } from '~/utils/internal';
+import { createProcedureMethod, filterEventRecords, optionize } from '~/utils/internal';
 
 /**
  * Handles all Network related functionality, including querying for historical events from middleware
@@ -181,6 +187,97 @@ export class Network {
     );
 
     return optionize(middlewareEventDetailsToEventIdentifier)(event?.block, event?.eventIdx);
+  }
+
+  /**
+   * Submits a transaction payload with its signature to the chain. `signature` should be hex encoded
+   *
+   * @throws if the signature is not hex encoded
+   */
+  public async submitTransaction(
+    txPayload: TransactionPayload,
+    signature: string
+  ): Promise<SubmissionDetails> {
+    const { context } = this;
+    const { method, payload } = txPayload;
+    const transaction = context.polymeshApi.tx(method);
+
+    if (!signature.startsWith('0x')) {
+      signature = `0x${signature}`;
+    }
+
+    if (!isHex(signature))
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: '`signature` should be a hex encoded string',
+        data: { signature },
+      });
+
+    transaction.addSignature(payload.address, signature, payload);
+
+    const submissionDetails: SubmissionDetails = {
+      blockHash: '',
+      transactionHash: transaction.hash.toString(),
+      transactionIndex: new BigNumber(0),
+    };
+
+    return new Promise((resolve, reject) => {
+      const gettingUnsub = transaction.send(receipt => {
+        const { status } = receipt;
+        let isLastCallback = false;
+        let unsubscribing = Promise.resolve();
+        let extrinsicFailedEvent;
+
+        // isCompleted implies status is one of: isFinalized, isInBlock or isError
+        if (receipt.isCompleted) {
+          if (receipt.isInBlock) {
+            const inBlockHash = status.asInBlock;
+            submissionDetails.blockHash = hashToString(inBlockHash);
+
+            // we know that the index has to be set by the time the transaction is included in a block
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            submissionDetails.transactionIndex = new BigNumber(receipt.txIndex!);
+
+            // if the extrinsic failed due to an on-chain error, we should handle it in a special way
+            [extrinsicFailedEvent] = filterEventRecords(receipt, 'system', 'ExtrinsicFailed', true);
+
+            // extrinsic failed so we can unsubscribe
+            isLastCallback = !!extrinsicFailedEvent;
+          } else {
+            // isFinalized || isError so we know we can unsubscribe
+            isLastCallback = true;
+          }
+
+          if (isLastCallback) {
+            unsubscribing = gettingUnsub.then(unsub => {
+              unsub();
+            });
+          }
+
+          /*
+           * Promise chain that handles all sub-promises in this pass through the signAndSend callback.
+           * Primarily for consistent error handling
+           */
+          let finishing = Promise.resolve();
+
+          if (extrinsicFailedEvent) {
+            const { data } = extrinsicFailedEvent;
+
+            finishing = Promise.all([unsubscribing]).then(() => {
+              handleExtrinsicFailure(reject, data[0]);
+            });
+          } else if (receipt.isFinalized) {
+            finishing = Promise.all([unsubscribing]).then(() => {
+              resolve(submissionDetails);
+            });
+          } else if (receipt.isError) {
+            reject(new PolymeshError({ code: ErrorCode.TransactionAborted }));
+          }
+
+          finishing.catch((err: Error) => reject(err));
+        }
+      });
+    });
   }
 
   /**
