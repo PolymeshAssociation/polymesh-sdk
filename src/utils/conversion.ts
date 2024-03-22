@@ -48,6 +48,7 @@ import {
   PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesSecondaryKeySignatory,
   PolymeshPrimitivesSettlementAffirmationStatus,
+  PolymeshPrimitivesSettlementAssetCount,
   PolymeshPrimitivesSettlementInstructionStatus,
   PolymeshPrimitivesSettlementLeg,
   PolymeshPrimitivesSettlementMediatorAffirmationStatus,
@@ -3191,11 +3192,16 @@ export function nftDispatchErrorToTransferError(
     NFTNotFound: notFoundErr,
     InvalidNFTTransferNFTNotOwned: notOwnedErr,
     InvalidNFTTransferSamePortfolio: samePortfolioErr,
+    InvalidNFTTransferNFTIsLocked: nftLockedErr,
   } = context.polymeshApi.errors.nft;
 
   if (error.isModule) {
     const moduleErr = error.asModule;
-    if ([notOwnedErr, notFoundErr, insufficientErr, duplicateErr].some(err => err.is(moduleErr))) {
+    if (
+      [notOwnedErr, notFoundErr, insufficientErr, duplicateErr, nftLockedErr].some(err =>
+        err.is(moduleErr)
+      )
+    ) {
       return TransferError.InsufficientPortfolioBalance;
     } else if (frozenErr.is(moduleErr)) {
       return TransferError.TransfersFrozen;
@@ -4840,4 +4846,18 @@ export function mediatorAffirmationStatusToStatus(
     default:
       throw new UnreachableCaseError(rawStatus.type);
   }
+}
+
+/**
+ * @hidden
+ */
+export function assetCountToRaw(
+  counts: {
+    fungible: u32;
+    nonFungible: u32;
+    offChain: u32;
+  },
+  context: Context
+): PolymeshPrimitivesSettlementAssetCount {
+  return context.createType('PolymeshPrimitivesSettlementAssetCount', counts);
 }

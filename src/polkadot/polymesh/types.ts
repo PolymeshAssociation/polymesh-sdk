@@ -84,9 +84,9 @@ export interface AssetComplianceResult extends Struct {
 
 /** @name AssetCount */
 export interface AssetCount extends Struct {
-  readonly fungible_tokens: u32;
-  readonly non_fungible_tokens: u32;
-  readonly off_chain_assets: u32;
+  readonly fungible: u32;
+  readonly non_fungible: u32;
+  readonly off_chain: u32;
 }
 
 /** @name AssetDidResult */

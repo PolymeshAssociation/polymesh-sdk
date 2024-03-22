@@ -2793,9 +2793,13 @@ declare module '@polkadot/types/lookup' {
       [PolymeshPrimitivesIdentityId, PolymeshPrimitivesIdentityIdPortfolioId, u64]
     >;
     readonly isMediatorAffirmationReceived: boolean;
-    readonly asMediatorAffirmationReceived: ITuple<[PolymeshPrimitivesIdentityId, u64]>;
+    readonly asMediatorAffirmationReceived: ITuple<
+      [PolymeshPrimitivesIdentityId, u64, Option<u64>]
+    >;
     readonly isMediatorAffirmationWithdrawn: boolean;
     readonly asMediatorAffirmationWithdrawn: ITuple<[PolymeshPrimitivesIdentityId, u64]>;
+    readonly isInstructionMediators: boolean;
+    readonly asInstructionMediators: ITuple<[u64, BTreeSet<PolymeshPrimitivesIdentityId>]>;
     readonly type:
       | 'VenueCreated'
       | 'VenueDetailsUpdated'
@@ -2819,7 +2823,8 @@ declare module '@polkadot/types/lookup' {
       | 'FailedToExecuteInstruction'
       | 'InstructionAutomaticallyAffirmed'
       | 'MediatorAffirmationReceived'
-      | 'MediatorAffirmationWithdrawn';
+      | 'MediatorAffirmationWithdrawn'
+      | 'InstructionMediators';
   }
 
   /** @name PolymeshPrimitivesSettlementVenueType (249) */
@@ -6695,6 +6700,7 @@ declare module '@polkadot/types/lookup' {
     readonly isAssetMetadataKeyBelongsToNFTCollection: boolean;
     readonly isAssetMetadataValueIsEmpty: boolean;
     readonly isNumberOfAssetMediatorsExceeded: boolean;
+    readonly isInvalidTickerCharacter: boolean;
     readonly type:
       | 'Unauthorized'
       | 'AssetAlreadyCreated'
@@ -6733,7 +6739,8 @@ declare module '@polkadot/types/lookup' {
       | 'IncompatibleAssetTypeUpdate'
       | 'AssetMetadataKeyBelongsToNFTCollection'
       | 'AssetMetadataValueIsEmpty'
-      | 'NumberOfAssetMediatorsExceeded';
+      | 'NumberOfAssetMediatorsExceeded'
+      | 'InvalidTickerCharacter';
   }
 
   /** @name PalletCorporateActionsDistributionError (639) */
@@ -7663,6 +7670,7 @@ declare module '@polkadot/types/lookup' {
     readonly isZeroCount: boolean;
     readonly isSupplyOverflow: boolean;
     readonly isSupplyUnderflow: boolean;
+    readonly isInvalidNFTTransferNFTIsLocked: boolean;
     readonly type:
       | 'BalanceOverflow'
       | 'BalanceUnderflow'
@@ -7685,7 +7693,8 @@ declare module '@polkadot/types/lookup' {
       | 'UnregisteredMetadataKey'
       | 'ZeroCount'
       | 'SupplyOverflow'
-      | 'SupplyUnderflow';
+      | 'SupplyUnderflow'
+      | 'InvalidNFTTransferNFTIsLocked';
   }
 
   /** @name PalletTestUtilsError (744) */

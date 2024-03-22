@@ -12,6 +12,7 @@
   ],
   "entryPointStrategy": "expand",
   "out": "sdk-docs",
+  "plugin": ["@polymeshassociation/typedoc-theme", "typedoc-plugin-markdown"],
   "theme": "polymesh-docs",
   "exclude": [
     "src/internal.ts",

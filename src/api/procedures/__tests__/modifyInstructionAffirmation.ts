@@ -2,6 +2,7 @@ import { u32, u64 } from '@polkadot/types';
 import {
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesSettlementAffirmationStatus,
+  PolymeshPrimitivesSettlementAssetCount,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -14,8 +15,13 @@ import {
 } from '~/api/procedures/modifyInstructionAffirmation';
 import * as procedureUtilsModule from '~/api/procedures/utils';
 import { Context, DefaultPortfolio, Instruction, PolymeshError } from '~/internal';
+import { AffirmationCount, ExecuteInstructionInfo } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { createMockMediatorAffirmationStatus } from '~/testUtils/mocks/dataSources';
+import {
+  createMockAssetCount,
+  createMockExecuteInstructionInfo,
+  createMockMediatorAffirmationStatus,
+} from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import {
   AffirmationStatus,
@@ -66,7 +72,11 @@ describe('modifyInstructionAffirmation procedure', () => {
     AffirmationStatus,
     [PolymeshPrimitivesSettlementAffirmationStatus]
   >;
+  let assetCountToRawSpy: jest.SpyInstance;
   let mediatorAffirmationStatusToStatusSpy: jest.SpyInstance;
+  let mockExecuteInfo: ExecuteInstructionInfo;
+  let mockAffirmCount: AffirmationCount;
+  let mockAssetCount: PolymeshPrimitivesSettlementAssetCount;
 
   beforeAll(() => {
     dsMockUtils.initMocks({
@@ -79,6 +89,17 @@ describe('modifyInstructionAffirmation procedure', () => {
 
     portfolio = entityMockUtils.getDefaultPortfolioInstance({ did: 'someDid ' });
     legAmount = new BigNumber(2);
+    mockExecuteInfo = createMockExecuteInstructionInfo({
+      fungibleTokens: dsMockUtils.createMockU32(new BigNumber(3)),
+      nonFungibleTokens: dsMockUtils.createMockU32(new BigNumber(0)),
+      offChainAssets: dsMockUtils.createMockU32(new BigNumber(0)),
+    });
+    mockAffirmCount = dsMockUtils.createMockAffirmationCount();
+    mockAssetCount = createMockAssetCount({
+      fungible: dsMockUtils.createMockU32(new BigNumber(3)),
+      nonFungible: dsMockUtils.createMockU32(new BigNumber(0)),
+      offChain: dsMockUtils.createMockU32(new BigNumber(0)),
+    });
     bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
     bigNumberToU32Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU32');
     portfolioLikeToPortfolioIdSpy = jest.spyOn(utilsConversionModule, 'portfolioLikeToPortfolioId');
@@ -90,6 +111,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       utilsConversionModule,
       'meshAffirmationStatusToAffirmationStatus'
     );
+    assetCountToRawSpy = jest.spyOn(utilsConversionModule, 'assetCountToRaw');
 
     mediatorAffirmationStatusToStatusSpy = jest.spyOn(
       utilsConversionModule,
@@ -101,15 +123,22 @@ describe('modifyInstructionAffirmation procedure', () => {
 
   beforeEach(() => {
     rawLegAmount = dsMockUtils.createMockU32(new BigNumber(2));
-    dsMockUtils.createTxMock('settlement', 'affirmInstruction');
-    dsMockUtils.createTxMock('settlement', 'withdrawAffirmation');
-    dsMockUtils.createTxMock('settlement', 'rejectInstruction');
+    dsMockUtils.createTxMock('settlement', 'affirmInstructionWithCount');
+    dsMockUtils.createTxMock('settlement', 'withdrawAffirmationWithCount');
+    dsMockUtils.createTxMock('settlement', 'rejectInstructionWithCount');
     dsMockUtils.createTxMock('settlement', 'affirmInstructionAsMediator');
     dsMockUtils.createTxMock('settlement', 'withdrawAffirmationAsMediator');
     dsMockUtils.createTxMock('settlement', 'rejectInstructionAsMediator');
+    dsMockUtils.createRpcMock('settlement', 'getExecuteInstructionInfo', {
+      returnValue: mockExecuteInfo,
+    });
+    dsMockUtils.createRpcMock('settlement', 'getAffirmationCount', {
+      returnValue: mockAffirmCount,
+    });
     mockContext = dsMockUtils.getContextInstance({ getSigningIdentity: signer });
     bigNumberToU64Spy.mockReturnValue(rawInstructionId);
     bigNumberToU32Spy.mockReturnValue(rawLegAmount);
+    assetCountToRawSpy.mockReturnValue(mockAssetCount);
     signer = entityMockUtils.getIdentityInstance({ did });
     when(portfolioLikeToPortfolioIdSpy).calledWith(portfolio).mockReturnValue(portfolioId);
     when(portfolioIdToMeshPortfolioIdSpy)
@@ -234,7 +263,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       signer,
     });
 
-    const transaction = dsMockUtils.createTxMock('settlement', 'affirmInstruction');
+    const transaction = dsMockUtils.createTxMock('settlement', 'affirmInstructionWithCount');
 
     const result = await prepareModifyInstructionAffirmation.call(proc, {
       id,
@@ -244,7 +273,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     expect(result).toEqual({
       transaction,
       feeMultiplier: new BigNumber(2),
-      args: [rawInstructionId, [rawPortfolioId, rawPortfolioId]],
+      args: [rawInstructionId, [rawPortfolioId, rawPortfolioId], mockAffirmCount],
       resolver: expect.objectContaining({ id }),
     });
   });
@@ -403,7 +432,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       signer,
     });
 
-    const transaction = dsMockUtils.createTxMock('settlement', 'withdrawAffirmation');
+    const transaction = dsMockUtils.createTxMock('settlement', 'withdrawAffirmationWithCount');
 
     const result = await prepareModifyInstructionAffirmation.call(proc, {
       id,
@@ -413,7 +442,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     expect(result).toEqual({
       transaction,
       feeMultiplier: new BigNumber(2),
-      args: [rawInstructionId, [rawPortfolioId, rawPortfolioId]],
+      args: [rawInstructionId, [rawPortfolioId, rawPortfolioId], mockAffirmCount],
       resolver: expect.objectContaining({ id }),
     });
   });
@@ -523,7 +552,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       signer,
     });
 
-    const transaction = dsMockUtils.createTxMock('settlement', 'rejectInstruction');
+    const transaction = dsMockUtils.createTxMock('settlement', 'rejectInstructionWithCount');
 
     const result = await prepareModifyInstructionAffirmation.call(proc, {
       id,
@@ -533,7 +562,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     expect(result).toEqual({
       transaction,
       feeMultiplier: new BigNumber(2),
-      args: [rawInstructionId, rawPortfolioId],
+      args: [rawInstructionId, rawPortfolioId, mockAssetCount],
       resolver: expect.objectContaining({ id }),
     });
   });
@@ -602,7 +631,7 @@ describe('modifyInstructionAffirmation procedure', () => {
 
     expect(result).toEqual({
       transaction,
-      args: [rawInstructionId, null],
+      args: [rawInstructionId, mockAssetCount],
       resolver: expect.objectContaining({ id }),
     });
   });
