@@ -1,6 +1,6 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 
-import { Context, Identity, PolymeshError, Procedure } from '~/internal';
+import { Account, Context, Identity, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RegisterIdentityParams, RoleType, TxTags } from '~/types';
 import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import {
@@ -44,6 +44,17 @@ export async function prepareRegisterIdentity(
     context,
   } = this;
   const { targetAccount, secondaryAccounts = [], createCdd = false, expiry } = args;
+
+  const account = new Account({ address: targetAccount.toString() }, context);
+
+  const identityExists = await account.getIdentity();
+
+  if (identityExists) {
+    throw new PolymeshError({
+      code: ErrorCode.NoDataChange,
+      message: 'The target account already has an identity',
+    });
+  }
 
   const rawTargetAccount = stringToAccountId(signerToString(targetAccount), context);
   const rawSecondaryKeys = secondaryAccounts.map(({ permissions, ...rest }) =>
