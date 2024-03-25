@@ -3,14 +3,7 @@ import BigNumber from 'bignumber.js';
 import { groupBy, map } from 'lodash';
 
 import { BaseAsset } from '~/api/entities/Asset/Base';
-import {
-  Context,
-  controllerTransfer,
-  Identity,
-  modifyAsset,
-  redeemTokens,
-  setVenueFiltering,
-} from '~/internal';
+import { Context, controllerTransfer, Identity, modifyAsset, redeemTokens } from '~/internal';
 import {
   assetQuery,
   assetTransactionQuery,
@@ -26,7 +19,6 @@ import {
   ProcedureMethod,
   RedeemTokensParams,
   ResultSet,
-  SetVenueFilteringParams,
   SubCallback,
   UnsubCallback,
 } from '~/types';
@@ -92,10 +84,6 @@ export class FungibleAsset extends BaseAsset {
     );
     this.controllerTransfer = createProcedureMethod(
       { getProcedureAndArgs: args => [controllerTransfer, { ticker, ...args }] },
-      context
-    );
-    this.setVenueFiltering = createProcedureMethod(
-      { getProcedureAndArgs: args => [setVenueFiltering, { ticker, ...args }] },
       context
     );
   }
@@ -323,9 +311,4 @@ export class FungibleAsset extends BaseAsset {
 
     return !tokenSize.isZero() && nftId.isZero();
   }
-
-  /**
-   * Enable/disable venue filtering for this Asset and/or set allowed/disallowed venues
-   */
-  public setVenueFiltering: ProcedureMethod<SetVenueFilteringParams, void>;
 }

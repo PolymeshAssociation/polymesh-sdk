@@ -18,8 +18,10 @@ import {
   Identity,
   PolymeshError,
   removeAssetMediators,
+  setVenueFiltering,
   toggleFreezeTransfers,
   transferAssetOwnership,
+  Venue,
 } from '~/internal';
 import {
   AssetDetails,
@@ -29,10 +31,12 @@ import {
   NoArgsProcedureMethod,
   ProcedureMethod,
   SecurityIdentifier,
+  SetVenueFilteringParams,
   SubCallback,
   TransferAssetOwnershipParams,
   UniqueIdentifiers,
   UnsubCallback,
+  VenueFilteringDetails,
 } from '~/types';
 import { tickerToDid } from '~/utils';
 import {
@@ -45,6 +49,7 @@ import {
   identitiesSetToIdentities,
   identityIdToString,
   stringToTicker,
+  u64ToBigNumber,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
@@ -78,6 +83,11 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
    *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
    */
   public transferOwnership: ProcedureMethod<TransferAssetOwnershipParams, AuthorizationRequest>;
+
+  /**
+   * Enable/disable venue filtering for this Asset and/or set allowed/disallowed venues
+   */
+  public setVenueFiltering: ProcedureMethod<SetVenueFilteringParams, void>;
 
   /**
    * @hidden
@@ -139,6 +149,11 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
       {
         getProcedureAndArgs: args => [removeAssetMediators, { asset: this, ...args }],
       },
+      context
+    );
+
+    this.setVenueFiltering = createProcedureMethod(
+      { getProcedureAndArgs: args => [setVenueFiltering, { ticker, ...args }] },
       context
     );
   }
@@ -345,6 +360,39 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
     const rawMediators = await query.asset.mandatoryMediators(rawTicker);
 
     return identitiesSetToIdentities(rawMediators, context);
+  }
+
+  /**
+   * Get venue filtering details
+   */
+  public async getVenueFilteringDetails(): Promise<VenueFilteringDetails> {
+    const {
+      ticker,
+      context,
+      context: {
+        polymeshApi: { query },
+      },
+    } = this;
+
+    const rawTicker = stringToTicker(ticker, context);
+    const [rawIsEnabled, venueEntries] = await Promise.all([
+      query.settlement.venueFiltering(rawTicker),
+      query.settlement.venueAllowList.entries(rawTicker),
+    ]);
+
+    const allowedVenues = venueEntries.map(([key]) => {
+      const rawId = key.args[1];
+      const id = u64ToBigNumber(rawId);
+
+      return new Venue({ id }, context);
+    });
+
+    const isEnabled = boolToBoolean(rawIsEnabled);
+
+    return {
+      isEnabled,
+      allowedVenues,
+    };
   }
 
   /**
