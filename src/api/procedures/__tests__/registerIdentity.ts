@@ -17,6 +17,11 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
+jest.mock(
+  '~/api/entities/Account',
+  require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
+);
+
 describe('registerIdentity procedure', () => {
   const targetAccount = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
   const secondaryAccounts = [
@@ -80,6 +85,12 @@ describe('registerIdentity procedure', () => {
   describe('with falsy `createCdd` arg', () => {
     beforeEach(() => {
       registerIdentityTransaction = dsMockUtils.createTxMock('identity', 'cddRegisterDid');
+
+      entityMockUtils.configureMocks({
+        accountOptions: {
+          getIdentity: null,
+        },
+      });
     });
 
     it('should return a cddRegisterIdentity transaction spec', async () => {
@@ -132,6 +143,11 @@ describe('registerIdentity procedure', () => {
   describe('with true `createCdd` arg', () => {
     beforeEach(() => {
       registerIdentityTransaction = dsMockUtils.createTxMock('identity', 'cddRegisterDidWithCdd');
+      entityMockUtils.configureMocks({
+        accountOptions: {
+          getIdentity: null,
+        },
+      });
     });
 
     it('should return a cddRegisterIdentityWithCdd transaction spec', async () => {
@@ -175,6 +191,36 @@ describe('registerIdentity procedure', () => {
         args: [rawAccountId, [], mockExpiry],
         resolver: expect.any(Function),
       });
+    });
+  });
+
+  describe('with existing Identity', () => {
+    beforeEach(() => {
+      registerIdentityTransaction = dsMockUtils.createTxMock('identity', 'cddRegisterDid');
+    });
+
+    it('should throw if an Identity is already registered for the Account', () => {
+      const identity = entityMockUtils.getIdentityInstance({
+        getPrimaryAccount: {
+          account: entityMockUtils.getAccountInstance({ address: targetAccount }),
+        },
+      });
+
+      entityMockUtils.getAccountInstance({ address: targetAccount, getIdentity: identity });
+
+      const args = {
+        targetAccount,
+        secondaryAccounts,
+        createCdd: false,
+        expiry: new Date(),
+      };
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.NoDataChange,
+        message: 'The target account already has an identity',
+      });
+
+      return expect(() => prepareRegisterIdentity.call(proc, args)).rejects.toThrow(expectedError);
     });
   });
 });
