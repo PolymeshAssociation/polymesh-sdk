@@ -162,3 +162,11 @@ export { removeAssetStat } from '~/api/procedures/removeAssetStat';
 export { setVenueFiltering } from '~/api/procedures/setVenueFiltering';
 export { registerCustomClaimType } from '~/api/procedures/registerCustomClaimType';
 export { toggleTickerPreApproval } from '~/api/procedures/toggleTickerPreApproval';
+export {
+  allowIdentityToCreatePortfolios,
+  AllowIdentityToCreatePortfoliosParams,
+} from '~/api/procedures/allowIdentityToCreatePortfolios';
+export {
+  revokeIdentityToCreatePortfolios,
+  RevokeIdentityToCreatePortfoliosParams,
+} from '~/api/procedures/revokeIdentityToCreatePortfolios';
