@@ -10,10 +10,12 @@ import {
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { checkTxType, filterEventRecords, getPortfolioIdsByName } from '~/utils/internal';
+
 type PortfolioParams = {
   name: string;
   ownerDid?: string;
 };
+
 /**
  * @hidden
  */
@@ -59,14 +61,17 @@ export async function prepareCreatePortfolios(
     },
     {}
   );
-  const portfolioIdCalls = Object.keys(groupedPortfolioNamesByIdentity).map(identityId => {
+
+  const dids = Object.keys(groupedPortfolioNamesByIdentity);
+
+  const portfolioIdCalls = dids.map(identityId => {
     const rawNames = groupedPortfolioNamesByIdentity[identityId].map(name =>
       stringToBytes(name, context)
     );
     const rawIdentityId = stringToIdentityId(identityId, context);
     return getPortfolioIdsByName(rawIdentityId, rawNames, context);
   });
-  const dids = Object.keys(groupedPortfolioNamesByIdentity);
+
   const foundPortfoliosByDid = await Promise.all(portfolioIdCalls);
   const existingNames: string[] = [];
   foundPortfoliosByDid.forEach((portfolios, index) => {

@@ -1,13 +1,14 @@
 import { PolymeshError, Procedure } from '~/internal';
-import { ErrorCode } from '~/types';
+import { ErrorCode, Identity } from '~/types';
 import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import { stringToIdentityId } from '~/utils/conversion';
+import { asIdentity, assertIdentityExists } from '~/utils/internal';
 
 /**
  * @hidden
  */
 export type RevokeIdentityToCreatePortfoliosParams = {
-  did: string;
+  did: Identity | string;
 };
 
 /**
@@ -29,11 +30,19 @@ export async function prepareRevokeIdentityToCreatePortfolios(
     context,
   } = this;
   const { did } = args;
-  const rawDidToRevoke = stringToIdentityId(did, context);
+
+  const identity = asIdentity(did, this.context);
+
+  await assertIdentityExists(identity);
+
+  const rawDidToRevoke = stringToIdentityId(identity.did, context);
 
   const signingIdentity = await this.context.getSigningIdentity();
 
-  const isInAllowedCustodians = await query.portfolio.allowedCustodians(signingIdentity.did, did);
+  const isInAllowedCustodians = await query.portfolio.allowedCustodians(
+    signingIdentity.did,
+    identity.did
+  );
 
   if (isInAllowedCustodians.isFalse) {
     throw new PolymeshError({

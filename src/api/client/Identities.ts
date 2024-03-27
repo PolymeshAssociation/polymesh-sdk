@@ -22,8 +22,8 @@ import {
   RegisterIdentityParams,
   RotatePrimaryKeyParams,
 } from '~/types';
-import { boolToBoolean, identityIdToString, stringToIdentityId } from '~/utils/conversion';
-import { asIdentity, createProcedureMethod } from '~/utils/internal';
+import { identityIdToString } from '~/utils/conversion';
+import { asIdentity, assertIdentityExists, createProcedureMethod } from '~/utils/internal';
 
 /**
  * Handles all Identity related functionality
@@ -193,6 +193,7 @@ export class Identities {
    *
    * @throws if
    *  - the provided Identity already has permissions to create portfolios for signing Identity
+   *  - the provided Identity does not exist
    */
   public allowIdentityToCreatePortfolios: ProcedureMethod<
     AllowIdentityToCreatePortfoliosParams,
@@ -204,6 +205,7 @@ export class Identities {
    *
    * @throws if
    *  - the provided Identity already does not have permissions to create portfolios for signing Identity
+   *  - the provided Identity does not exist
    */
   public revokeIdentityToCreatePortfolios: ProcedureMethod<
     RevokeIdentityToCreatePortfoliosParams,
@@ -212,6 +214,8 @@ export class Identities {
 
   /**
    * Returns a list of allowed custodian did(s) for Identity
+   * @throws if
+   * - the provided Identity does not exist
    */
   public async getAllowedCustodians(did: string | Identity): Promise<string[]> {
     const {
@@ -219,6 +223,10 @@ export class Identities {
         polymeshApi: { query },
       },
     } = this;
+
+    const identity = asIdentity(did, this.context);
+
+    await assertIdentityExists(identity);
 
     const custodians = await query.portfolio.allowedCustodians.entries(did.toString());
 

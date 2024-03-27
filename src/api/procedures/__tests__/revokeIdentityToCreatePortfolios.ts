@@ -1,3 +1,4 @@
+import { PolymeshPrimitivesIdentityId } from '@polkadot/types/lookup';
 import { when } from 'jest-when';
 
 import {
@@ -7,7 +8,7 @@ import {
 import { Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode } from '~/types';
+import { ErrorCode, Identity } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -15,15 +16,16 @@ describe('revokeIdentityToCreatePortfolios procedure', () => {
   let mockContext: Mocked<Context>;
   let allowIdentityToCreatePortfoliosTransaction: PolymeshTx<unknown[]>;
   let stringToIdentityIdSpy: jest.SpyInstance;
-
-  const did = 'someDid';
-  const identityId = dsMockUtils.createMockIdentityId(did);
+  let identityToSet: Identity;
+  let rawIdentityToSetDid: PolymeshPrimitivesIdentityId;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
     dsMockUtils.initMocks();
     stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
+    identityToSet = entityMockUtils.getIdentityInstance({ did: 'someDid' });
+    rawIdentityToSetDid = dsMockUtils.createMockIdentityId(identityToSet.did);
   });
 
   beforeEach(() => {
@@ -49,12 +51,13 @@ describe('revokeIdentityToCreatePortfolios procedure', () => {
     dsMockUtils.createQueryMock('portfolio', 'allowedCustodians', {
       returnValue: dsMockUtils.createMockBool(true),
     });
+    entityMockUtils.configureMocks({ identityOptions: { exists: true } });
 
     const args = {
-      did,
+      did: identityToSet,
     };
 
-    when(stringToIdentityIdSpy).calledWith(args.did).mockReturnValue(identityId);
+    when(stringToIdentityIdSpy).calledWith(identityToSet).mockReturnValue(rawIdentityToSetDid);
 
     const proc = procedureMockUtils.getInstance<RevokeIdentityToCreatePortfoliosParams, void>(
       mockContext
@@ -73,9 +76,10 @@ describe('revokeIdentityToCreatePortfolios procedure', () => {
     dsMockUtils.createQueryMock('portfolio', 'allowedCustodians', {
       returnValue: dsMockUtils.createMockBool(false),
     });
+    entityMockUtils.configureMocks({ identityOptions: { exists: true } });
 
     const args = {
-      did,
+      did: identityToSet,
     };
 
     const proc = procedureMockUtils.getInstance<RevokeIdentityToCreatePortfoliosParams, void>(

@@ -1,13 +1,14 @@
 import { PolymeshError, Procedure } from '~/internal';
-import { ErrorCode } from '~/types';
+import { ErrorCode, Identity, TxTags } from '~/types';
 import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import { stringToIdentityId } from '~/utils/conversion';
+import { asIdentity, assertIdentityExists } from '~/utils/internal';
 
 /**
  * @hidden
  */
 export type AllowIdentityToCreatePortfoliosParams = {
-  did: string;
+  did: Identity | string;
 };
 
 /**
@@ -30,9 +31,16 @@ export async function prepareAllowIdentityToCreatePortfolios(
   } = this;
   const { did } = args;
 
+  const identity = asIdentity(did, this.context);
+
+  await assertIdentityExists(identity);
+
   const signingIdentity = await this.context.getSigningIdentity();
 
-  const isInAllowedCustodians = await query.portfolio.allowedCustodians(signingIdentity.did, did);
+  const isInAllowedCustodians = await query.portfolio.allowedCustodians(
+    signingIdentity.did,
+    identity.did
+  );
 
   if (isInAllowedCustodians.isTrue) {
     throw new PolymeshError({
@@ -41,7 +49,7 @@ export async function prepareAllowIdentityToCreatePortfolios(
     });
   }
 
-  const rawTrustedDid = stringToIdentityId(did, context);
+  const rawTrustedDid = stringToIdentityId(identity.did, context);
 
   return {
     transaction: allowIdentityToCreatePortfolios,
@@ -61,6 +69,6 @@ export const allowIdentityToCreatePortfolios = (): Procedure<
     permissions: {
       assets: [],
       portfolios: [],
-      transactions: [],
+      transactions: [TxTags.portfolio.AllowIdentityToCreatePortfolios],
     },
   });
