@@ -213,7 +213,7 @@ export class Claims {
       trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
         signerToString(trustedClaimIssuer)
       ),
-      claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
+      claimTypes: Array.isArray(claimTypes) ? claimTypes.map(ct => ClaimTypeEnum[ct]) : undefined,
       includeExpired,
     };
 
