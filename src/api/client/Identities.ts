@@ -22,6 +22,7 @@ import {
   RegisterIdentityParams,
   RotatePrimaryKeyParams,
 } from '~/types';
+import { boolToBoolean, identityIdToString, stringToIdentityId } from '~/utils/conversion';
 import { asIdentity, createProcedureMethod } from '~/utils/internal';
 
 /**
@@ -208,4 +209,25 @@ export class Identities {
     RevokeIdentityToCreatePortfoliosParams,
     void
   >;
+
+  /**
+   * Returns a list of allowed custodian did(s) for Identity
+   */
+  public async getAllowedCustodians(did: string | Identity): Promise<string[]> {
+    const {
+      context: {
+        polymeshApi: { query },
+      },
+    } = this;
+
+    const custodians = await query.portfolio.allowedCustodians.entries(did.toString());
+
+    return custodians.map(([storageKey]) => {
+      const {
+        args: [, custodianIdentityId],
+      } = storageKey;
+
+      return identityIdToString(custodianIdentityId);
+    });
+  }
 }

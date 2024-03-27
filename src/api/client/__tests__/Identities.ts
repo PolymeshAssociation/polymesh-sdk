@@ -11,6 +11,8 @@ import {
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { tuple } from '~/types/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -286,6 +288,31 @@ describe('Identities Class', () => {
       const tx = await identities.revokeIdentityToCreatePortfolios(args);
 
       expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: getAllowedCustodians', () => {
+    it('should return a list of allowed custodian dids', async () => {
+      const did = 'someDid';
+      const otherDid = 'otherDid';
+      const identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
+
+      const rawOtherDid = dsMockUtils.createMockIdentityId(otherDid);
+
+      dsMockUtils.createQueryMock('portfolio', 'allowedCustodians', {
+        entries: [
+          tuple(
+            [dsMockUtils.createMockIdentityId(did), rawOtherDid],
+            dsMockUtils.createMockBool(true)
+          ),
+        ],
+      });
+
+      when(identityIdToStringSpy).calledWith(rawOtherDid).mockReturnValue(otherDid);
+
+      const result = await identities.getAllowedCustodians(did);
+
+      expect(result).toEqual([otherDid]);
     });
   });
 });
