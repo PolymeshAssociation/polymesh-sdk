@@ -32,6 +32,7 @@ import {
   RoleType,
   SettlementTx,
   TxTags,
+  Venue,
 } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import { isFungibleLegBuilder, isNftLegBuilder } from '~/utils';
@@ -53,6 +54,7 @@ import {
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
+  asBaseAsset,
   asIdentity,
   assembleBatchTransactions,
   assertIdentityExists,
@@ -197,6 +199,48 @@ async function separateLegs(
   }
 
   return { fungibleLegs, nftLegs };
+}
+
+/**
+ * @hidden
+ */
+async function assertVenueFiltering(
+  instructions: AddInstructionParams[],
+  venueId: BigNumber,
+  context: Context
+): Promise<void> {
+  const assets = instructions.flatMap(instruction => {
+    return instruction.legs.map(leg => asBaseAsset(leg.asset, context));
+  });
+
+  const venueFiltering = await Promise.all(assets.map(asset => asset.getVenueFilteringDetails()));
+
+  // finds the intersection of possible venues for the given assets
+  const permittedVenues = venueFiltering.reduce<undefined | Venue[]>(
+    (acc, { isEnabled, allowedVenues }) => {
+      if (isEnabled) {
+        if (acc === undefined) {
+          acc = allowedVenues;
+        } else {
+          acc = acc.filter(venue => allowedVenues.some(({ id }) => venue.id.eq(id)));
+        }
+      }
+
+      return acc;
+    },
+    undefined
+  );
+
+  if (permittedVenues !== undefined && !permittedVenues.some(({ id }) => id.eq(venueId))) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'One or more assets are not allowed to be traded at this venue',
+      data: {
+        possibleVenues: permittedVenues.map(venue => venue.id.toString()),
+        venueId: venueId.toString(),
+      },
+    });
+  }
 }
 
 /**
@@ -400,6 +444,8 @@ export async function prepareAddInstruction(
     storage: { portfoliosToAffirm, withMediatorsPresent },
   } = this;
   const { instructions, venueId } = args;
+
+  await assertVenueFiltering(instructions, venueId, context);
 
   const allMediators = instructions.flatMap(
     ({ mediators }) => mediators?.map(mediator => asIdentity(mediator, context)) ?? []

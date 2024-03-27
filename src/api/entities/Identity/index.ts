@@ -959,7 +959,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Returns wether or not this Identity has pre-approved a particular asset
+   * Returns whether or not this Identity has pre-approved a particular asset
    */
   public async isAssetPreApproved(asset: BaseAsset | string): Promise<boolean> {
     const {

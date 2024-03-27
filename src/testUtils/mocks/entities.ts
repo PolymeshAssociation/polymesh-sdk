@@ -92,6 +92,7 @@ import {
   TickerReservationStatus,
   TransferStatus,
   VenueDetails,
+  VenueFilteringDetails,
   VenueType,
 } from '~/types';
 
@@ -175,6 +176,7 @@ interface BaseAssetOptions extends EntityOptions {
   investorCount?: EntityGetter<BigNumber>;
   getNextLocalId?: EntityGetter<BigNumber>;
   getRequiredMediators?: EntityGetter<Identity[]>;
+  getVenueFilteringDetails?: EntityGetter<VenueFilteringDetails>;
 }
 
 interface FungibleAssetOptions extends BaseAssetOptions {
@@ -1000,6 +1002,8 @@ const MockFungibleAssetClass = createMockEntityClass<FungibleAssetOptions>(
     metadata = {} as { getNextLocalId: jest.Mock };
 
     investorCount!: jest.Mock;
+    getRequiredMediators!: jest.Mock;
+    getVenueFilteringDetails!: jest.Mock;
 
     /**
      * @hidden
@@ -1042,6 +1046,8 @@ const MockFungibleAssetClass = createMockEntityClass<FungibleAssetOptions>(
       this.checkpoints.getOne = createEntityGetterMock(opts.checkpointsGetOne);
       this.investorCount = createEntityGetterMock(opts.investorCount);
       this.metadata.getNextLocalId = createEntityGetterMock(opts.getNextLocalId);
+      this.getRequiredMediators = createEntityGetterMock(opts.getRequiredMediators);
+      this.getVenueFilteringDetails = createEntityGetterMock(opts.getVenueFilteringDetails);
     }
   },
   () => ({
@@ -1103,6 +1109,7 @@ const MockFungibleAssetClass = createMockEntityClass<FungibleAssetOptions>(
     toHuman: 'SOME_TICKER',
     investorCount: new BigNumber(0),
     getRequiredMediators: [],
+    getVenueFilteringDetails: { isEnabled: false, allowedVenues: [] },
   }),
   ['FungibleAsset']
 );
@@ -1139,6 +1146,8 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
     getCollectionId!: jest.Mock;
 
     investorCount!: jest.Mock;
+    getRequiredMediators!: jest.Mock;
+    getVenueFilteringDetails!: jest.Mock;
     getBaseImageUrl!: jest.Mock;
 
     /**
@@ -1165,6 +1174,8 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
       this.collectionKeys = createEntityGetterMock(opts.collectionKeys);
       this.getCollectionId = createEntityGetterMock(opts.getCollectionId);
       this.getBaseImageUrl = createEntityGetterMock(opts.getBaseImageUrl);
+      this.getVenueFilteringDetails = createEntityGetterMock(opts.getVenueFilteringDetails);
+      this.getRequiredMediators = createEntityGetterMock(opts.getRequiredMediators);
     }
   },
   () => ({
@@ -1198,6 +1209,7 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
     getCollectionId: new BigNumber(0),
     getBaseImageUrl: null,
     getRequiredMediators: [],
+    getVenueFilteringDetails: { isEnabled: false, allowedVenues: [] },
   }),
   ['NftCollection']
 );
@@ -1267,6 +1279,7 @@ const MockBaseAssetClass = createMockEntityClass<BaseAssetOptions>(
     investorCount!: jest.Mock;
     getBaseImageUrl!: jest.Mock;
     getRequiredMediators!: jest.Mock;
+    getVenueFilteringDetails!: jest.Mock;
 
     /**
      * @hidden
@@ -1289,6 +1302,7 @@ const MockBaseAssetClass = createMockEntityClass<BaseAssetOptions>(
       this.permissions.getGroups = createEntityGetterMock(opts.permissionsGetGroups);
       this.compliance.requirements.get = createEntityGetterMock(opts.complianceRequirementsGet);
       this.investorCount = createEntityGetterMock(opts.investorCount);
+      this.getVenueFilteringDetails = createEntityGetterMock(opts.getVenueFilteringDetails);
       this.metadata.getNextLocalId = createEntityGetterMock(opts.getNextLocalId);
       this.getRequiredMediators = createEntityGetterMock(opts.getRequiredMediators);
     }
@@ -1321,6 +1335,7 @@ const MockBaseAssetClass = createMockEntityClass<BaseAssetOptions>(
     getRequiredMediators: [],
     toHuman: 'SOME_TICKER',
     investorCount: new BigNumber(0),
+    getVenueFilteringDetails: { isEnabled: false, allowedVenues: [] },
   }),
   ['BaseAsset']
 );
