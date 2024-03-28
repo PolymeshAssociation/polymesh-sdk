@@ -504,6 +504,30 @@ describe('NftCollection class', () => {
     });
   });
 
+  describe('method: controllerTransfer', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const ticker = 'TEST';
+      const context = dsMockUtils.getContextInstance();
+      const collection = new NftCollection({ ticker }, context);
+
+      const args = {
+        originPortfolio: entityMockUtils.getDefaultPortfolioInstance(),
+        nfts: [new BigNumber(1)],
+      };
+
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<NftCollection>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { ticker, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await collection.controllerTransfer(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
   describe('method: getNft', () => {
     it('should return the NFT if it exists', async () => {
       const ticker = 'TEST';

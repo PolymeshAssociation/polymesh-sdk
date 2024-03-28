@@ -92,6 +92,7 @@ export { modifyOfferingTimes } from '~/api/procedures/modifyOfferingTimes';
 export { investInOffering } from '~/api/procedures/investInOffering';
 export { createCheckpoint } from '~/api/procedures/createCheckpoint';
 export { controllerTransfer } from '~/api/procedures/controllerTransfer';
+export { nftControllerTransfer } from '~/api/procedures/nftControllerTransfer';
 export { linkCaDocs } from '~/api/procedures/linkCaDocs';
 export { Identity } from '~/api/entities/Identity';
 export { ChildIdentity } from '~/api/entities/Identity/ChildIdentity';
