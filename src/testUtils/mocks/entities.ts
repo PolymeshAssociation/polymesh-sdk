@@ -39,6 +39,7 @@ import {
   AccountBalance,
   ActiveTransferRestrictions,
   AgentWithGroup,
+  Asset,
   AssetDetails,
   AssetWithGroup,
   Authorization,
@@ -151,7 +152,7 @@ interface IdentityOptions extends EntityOptions {
   assetPermissionsGetGroup?: EntityGetter<CustomPermissionGroup | KnownPermissionGroup>;
   assetPermissionsGet?: EntityGetter<AssetWithGroup[]>;
   isAssetPreApproved?: EntityGetter<boolean>;
-  preApprovedAssets?: EntityGetter<ResultSet<(FungibleAsset | NftCollection)[]>>;
+  preApprovedAssets?: EntityGetter<ResultSet<Asset[]>>;
 }
 
 interface ChildIdentityOptions extends IdentityOptions {
@@ -177,10 +178,10 @@ interface BaseAssetOptions extends EntityOptions {
   getNextLocalId?: EntityGetter<BigNumber>;
   getRequiredMediators?: EntityGetter<Identity[]>;
   getVenueFilteringDetails?: EntityGetter<VenueFilteringDetails>;
+  currentFundingRound?: EntityGetter<string>;
 }
 
 interface FungibleAssetOptions extends BaseAssetOptions {
-  currentFundingRound?: EntityGetter<string>;
   transferRestrictionsCountGet?: EntityGetter<ActiveTransferRestrictions<CountTransferRestriction>>;
   transferRestrictionsPercentageGet?: EntityGetter<
     ActiveTransferRestrictions<PercentageTransferRestriction>
@@ -1149,6 +1150,7 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
     getRequiredMediators!: jest.Mock;
     getVenueFilteringDetails!: jest.Mock;
     getBaseImageUrl!: jest.Mock;
+    currentFundingRound!: jest.Mock;
 
     /**
      * @hidden
@@ -1176,6 +1178,7 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
       this.getBaseImageUrl = createEntityGetterMock(opts.getBaseImageUrl);
       this.getVenueFilteringDetails = createEntityGetterMock(opts.getVenueFilteringDetails);
       this.getRequiredMediators = createEntityGetterMock(opts.getRequiredMediators);
+      this.currentFundingRound = createEntityGetterMock(opts.currentFundingRound);
     }
   },
   () => ({
@@ -1210,6 +1213,7 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
     getBaseImageUrl: null,
     getRequiredMediators: [],
     getVenueFilteringDetails: { isEnabled: false, allowedVenues: [] },
+    currentFundingRound: '',
   }),
   ['NftCollection']
 );
@@ -1280,6 +1284,7 @@ const MockBaseAssetClass = createMockEntityClass<BaseAssetOptions>(
     getBaseImageUrl!: jest.Mock;
     getRequiredMediators!: jest.Mock;
     getVenueFilteringDetails!: jest.Mock;
+    currentFundingRound!: jest.Mock;
 
     /**
      * @hidden
@@ -1305,6 +1310,7 @@ const MockBaseAssetClass = createMockEntityClass<BaseAssetOptions>(
       this.getVenueFilteringDetails = createEntityGetterMock(opts.getVenueFilteringDetails);
       this.metadata.getNextLocalId = createEntityGetterMock(opts.getNextLocalId);
       this.getRequiredMediators = createEntityGetterMock(opts.getRequiredMediators);
+      this.currentFundingRound = createEntityGetterMock(opts.currentFundingRound);
     }
   },
   () => ({
@@ -1336,6 +1342,7 @@ const MockBaseAssetClass = createMockEntityClass<BaseAssetOptions>(
     toHuman: 'SOME_TICKER',
     investorCount: new BigNumber(0),
     getVenueFilteringDetails: { isEnabled: false, allowedVenues: [] },
+    currentFundingRound: '',
   }),
   ['BaseAsset']
 );

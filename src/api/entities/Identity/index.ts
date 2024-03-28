@@ -32,6 +32,7 @@ import {
 } from '~/middleware/queries';
 import { AssetHoldersOrderBy, NftHoldersOrderBy, Query } from '~/middleware/types';
 import {
+  Asset,
   CheckRolesResult,
   DefaultPortfolio,
   DistributionWithDetails,
@@ -923,9 +924,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   /**
    * Returns a list of all assets this Identity has pre-approved. These assets will not require affirmation when being received in settlements
    */
-  public async preApprovedAssets(
-    paginationOpts?: PaginationOptions
-  ): Promise<ResultSet<FungibleAsset | NftCollection>> {
+  public async preApprovedAssets(paginationOpts?: PaginationOptions): Promise<ResultSet<Asset>> {
     const {
       context,
       context: {

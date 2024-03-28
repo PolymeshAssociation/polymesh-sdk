@@ -16,6 +16,7 @@ import {
   Context,
   Entity,
   Identity,
+  modifyAsset,
   PolymeshError,
   removeAssetMediators,
   setVenueFiltering,
@@ -24,10 +25,12 @@ import {
   Venue,
 } from '~/internal';
 import {
+  Asset,
   AssetDetails,
   AssetMediatorParams,
   AuthorizationRequest,
   ErrorCode,
+  ModifyAssetParams,
   NoArgsProcedureMethod,
   ProcedureMethod,
   SecurityIdentifier,
@@ -100,6 +103,13 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
+   * Modify some properties of the Asset
+   *
+   * @throws if the passed values result in no changes being made to the Asset
+   */
+  public modify: ProcedureMethod<ModifyAssetParams, Asset>;
+
+  /**
    * @hidden
    *
    * @note It is generally preferable to instantiate `FungibleAsset` or `NftCollection`
@@ -154,6 +164,11 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
 
     this.setVenueFiltering = createProcedureMethod(
       { getProcedureAndArgs: args => [setVenueFiltering, { ticker, ...args }] },
+      context
+    );
+
+    this.modify = createProcedureMethod(
+      { getProcedureAndArgs: args => [modifyAsset, { ticker, ...args }] },
       context
     );
   }
@@ -393,6 +408,43 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
       isEnabled,
       allowedVenues,
     };
+  }
+
+  /**
+   * Retrieve the Asset's funding round
+   *
+   * @note can be subscribed to
+   */
+  public currentFundingRound(): Promise<string | null>;
+  public currentFundingRound(callback: SubCallback<string | null>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async currentFundingRound(
+    callback?: SubCallback<string | null>
+  ): Promise<string | null | UnsubCallback> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { asset },
+        },
+      },
+      ticker,
+      context,
+    } = this;
+
+    const rawTicker = stringToTicker(ticker, context);
+
+    const assembleResult = (roundName: Bytes): string | null => bytesToString(roundName) || null;
+
+    if (callback) {
+      return asset.fundingRound(rawTicker, round => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
+        callback(assembleResult(round));
+      });
+    }
+
+    const fundingRound = await asset.fundingRound(rawTicker);
+    return assembleResult(fundingRound);
   }
 
   /**
