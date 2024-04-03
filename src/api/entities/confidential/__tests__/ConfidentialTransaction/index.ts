@@ -10,7 +10,10 @@ import {
   PolymeshError,
   PolymeshTransaction,
 } from '~/internal';
-import { getConfidentialTransactionProofsQuery } from '~/middleware/queries';
+import {
+  confidentialTransactionQuery,
+  getConfidentialTransactionProofsQuery,
+} from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   createMockConfidentialAssetTransaction,
@@ -666,6 +669,46 @@ describe('ConfidentialTransaction class', () => {
           ],
         },
       ]);
+    });
+  });
+
+  describe('method: createdAt', () => {
+    it('should return the event identifier object of the ConfidentialTransaction creation', async () => {
+      const eventIdx = new BigNumber(1);
+      const blockNumber = new BigNumber(1234);
+      const blockHash = 'someHash';
+      const blockDate = new Date('4/14/2020');
+
+      const fakeResult = { blockNumber, blockHash, blockDate, eventIndex: eventIdx };
+
+      dsMockUtils.createApolloQueryMock(
+        confidentialTransactionQuery({ id: transaction.id.toString() }),
+        {
+          confidentialTransaction: {
+            createdBlock: {
+              blockId: blockNumber.toNumber(),
+              datetime: blockDate,
+              hash: blockHash,
+            },
+            eventIdx: eventIdx.toNumber(),
+          },
+        }
+      );
+
+      const result = await transaction.createdAt();
+
+      expect(result).toEqual(fakeResult);
+    });
+
+    it('should return null if the query result is empty', async () => {
+      dsMockUtils.createApolloQueryMock(
+        confidentialTransactionQuery({ id: transaction.id.toString() }),
+        {
+          confidentialTransaction: null,
+        }
+      );
+      const result = await transaction.createdAt();
+      expect(result).toBeNull();
     });
   });
 });

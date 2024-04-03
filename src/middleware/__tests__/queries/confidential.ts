@@ -3,6 +3,7 @@ import BigNumber from 'bignumber.js';
 import {
   confidentialAssetQuery,
   confidentialAssetsByHolderQuery,
+  confidentialTransactionQuery,
   getConfidentialAssetHistoryByConfidentialAccountQuery,
   getConfidentialTransactionsByConfidentialAccountQuery,
 } from '~/middleware/queries';
@@ -214,5 +215,18 @@ describe('getConfidentialAssetHistoryByConfidentialAccountQuery', () => {
       start: start.toNumber(),
       accountId,
     });
+  });
+});
+
+describe('confidentialTransactionQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      id: '1',
+    };
+
+    const result = confidentialTransactionQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
   });
 });

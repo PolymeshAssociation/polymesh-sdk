@@ -12,7 +12,10 @@ import {
   PolymeshError,
   rejectConfidentialTransaction,
 } from '~/internal';
-import { getConfidentialTransactionProofsQuery } from '~/middleware/queries';
+import {
+  confidentialTransactionQuery,
+  getConfidentialTransactionProofsQuery,
+} from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
   AffirmConfidentialTransactionParams,
@@ -22,6 +25,7 @@ import {
   ConfidentialTransactionDetails,
   ConfidentialTransactionStatus,
   ErrorCode,
+  EventIdentifier,
   NoArgsProcedureMethod,
   ProcedureMethod,
   SenderProofs,
@@ -41,10 +45,11 @@ import {
   meshConfidentialLegDetailsToDetails,
   meshConfidentialTransactionDetailsToDetails,
   meshConfidentialTransactionStatusToStatus,
+  middlewareEventDetailsToEventIdentifier,
   u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { createProcedureMethod, optionize } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
@@ -393,6 +398,29 @@ export class ConfidentialTransaction extends Entity<UniqueIdentifiers, string> {
         legId,
       };
     });
+  }
+
+  /**
+   * Retrieve the identifier data (block number, date and event index) of the event that was emitted when the Confidential Transaction was created
+   *
+   * @note uses the middlewareV2
+   * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
+   */
+  public async createdAt(): Promise<EventIdentifier | null> {
+    const { context, id } = this;
+
+    const {
+      data: { confidentialTransaction },
+    } = await context.queryMiddleware<Ensured<Query, 'confidentialTransaction'>>(
+      confidentialTransactionQuery({
+        id: id.toString(),
+      })
+    );
+
+    return optionize(middlewareEventDetailsToEventIdentifier)(
+      confidentialTransaction?.createdBlock,
+      confidentialTransaction?.eventIdx
+    );
   }
 
   /**
