@@ -2,15 +2,19 @@ import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import { when } from 'jest-when';
 
 import { getAuthorization, Params, prepareModifyAsset } from '~/api/procedures/modifyAsset';
-import { Context, FungibleAsset } from '~/internal';
+import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { SecurityIdentifier, SecurityIdentifierType, TxTags } from '~/types';
+import { Asset, SecurityIdentifier, SecurityIdentifierType, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/Asset/Fungible',
   require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
+);
+jest.mock(
+  '~/api/entities/Asset/NonFungible',
+  require('~/testUtils/mocks/entities').mockNftCollectionModule('~/api/entities/Asset/NonFungible')
 );
 
 describe('modifyAsset procedure', () => {
@@ -38,6 +42,14 @@ describe('modifyAsset procedure', () => {
   });
 
   beforeEach(() => {
+    entityMockUtils.configureMocks({
+      fungibleAssetOptions: {
+        exists: true,
+      },
+      nftCollectionOptions: {
+        exists: false,
+      },
+    });
     mockContext = dsMockUtils.getContextInstance();
     when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
   });
@@ -54,7 +66,7 @@ describe('modifyAsset procedure', () => {
   });
 
   it('should throw an error if the user has not passed any arguments', () => {
-    const proc = procedureMockUtils.getInstance<Params, FungibleAsset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     return expect(prepareModifyAsset.call(proc, {} as unknown as Params)).rejects.toThrow(
       'Nothing to modify'
@@ -68,7 +80,7 @@ describe('modifyAsset procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, FungibleAsset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     return expect(
       prepareModifyAsset.call(proc, {
@@ -78,8 +90,27 @@ describe('modifyAsset procedure', () => {
     ).rejects.toThrow('The Asset is already divisible');
   });
 
+  it('should throw an error if makeDivisible is set to true and the Asset is an NFT Collection', () => {
+    entityMockUtils.configureMocks({
+      fungibleAssetOptions: {
+        exists: false,
+      },
+      nftCollectionOptions: {
+        exists: true,
+      },
+    });
+    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+
+    return expect(
+      prepareModifyAsset.call(proc, {
+        ticker,
+        makeDivisible: true,
+      })
+    ).rejects.toThrow('NFT Collections cannot be made divisible');
+  });
+
   it('should throw an error if newName is the same name currently in the Asset', () => {
-    const proc = procedureMockUtils.getInstance<Params, FungibleAsset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     return expect(
       prepareModifyAsset.call(proc, {
@@ -90,7 +121,7 @@ describe('modifyAsset procedure', () => {
   });
 
   it('should throw an error if newFundingRound is the same funding round name currently in the Asset', () => {
-    const proc = procedureMockUtils.getInstance<Params, FungibleAsset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     return expect(
       prepareModifyAsset.call(proc, {
@@ -107,7 +138,7 @@ describe('modifyAsset procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, FungibleAsset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     return expect(
       prepareModifyAsset.call(proc, {
@@ -118,7 +149,7 @@ describe('modifyAsset procedure', () => {
   });
 
   it('should add a make divisible transaction to the batch', async () => {
-    const proc = procedureMockUtils.getInstance<Params, FungibleAsset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     const transaction = dsMockUtils.createTxMock('asset', 'makeDivisible');
 
@@ -140,7 +171,7 @@ describe('modifyAsset procedure', () => {
       .calledWith(newName, mockContext)
       .mockReturnValue(rawAssetName);
 
-    const proc = procedureMockUtils.getInstance<Params, FungibleAsset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     const transaction = dsMockUtils.createTxMock('asset', 'renameAsset');
 
@@ -167,7 +198,7 @@ describe('modifyAsset procedure', () => {
       .calledWith(newFundingRound, mockContext)
       .mockReturnValue(rawFundingRound);
 
-    const proc = procedureMockUtils.getInstance<Params, FungibleAsset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     const transaction = dsMockUtils.createTxMock('asset', 'setFundingRound');
 
@@ -195,7 +226,7 @@ describe('modifyAsset procedure', () => {
       .spyOn(utilsConversionModule, 'securityIdentifierToAssetIdentifier')
       .mockReturnValue(rawIdentifier);
 
-    const proc = procedureMockUtils.getInstance<Params, FungibleAsset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     const transaction = dsMockUtils.createTxMock('asset', 'updateIdentifiers');
 
@@ -217,7 +248,7 @@ describe('modifyAsset procedure', () => {
 
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, FungibleAsset>(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const name = 'NEW NAME';
       const args = {

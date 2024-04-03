@@ -1,9 +1,8 @@
-import { Bytes } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { groupBy, map } from 'lodash';
 
 import { BaseAsset } from '~/api/entities/Asset/Base';
-import { Context, controllerTransfer, Identity, modifyAsset, redeemTokens } from '~/internal';
+import { Context, controllerTransfer, Identity, redeemTokens } from '~/internal';
 import {
   assetQuery,
   assetTransactionQuery,
@@ -15,17 +14,13 @@ import {
   EventIdentifier,
   HistoricAgentOperation,
   HistoricAssetTransaction,
-  ModifyAssetParams,
   ProcedureMethod,
   RedeemTokensParams,
   ResultSet,
-  SubCallback,
-  UnsubCallback,
 } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
   balanceToBigNumber,
-  bytesToString,
   middlewareEventDetailsToEventIdentifier,
   middlewarePortfolioToPortfolio,
   stringToTicker,
@@ -73,11 +68,6 @@ export class FungibleAsset extends BaseAsset {
     this.checkpoints = new Checkpoints(this, context);
     this.corporateActions = new CorporateActions(this, context);
 
-    this.modify = createProcedureMethod(
-      { getProcedureAndArgs: args => [modifyAsset, { ticker, ...args }] },
-      context
-    );
-
     this.redeem = createProcedureMethod(
       { getProcedureAndArgs: args => [redeemTokens, { ticker, ...args }] },
       context
@@ -86,50 +76,6 @@ export class FungibleAsset extends BaseAsset {
       { getProcedureAndArgs: args => [controllerTransfer, { ticker, ...args }] },
       context
     );
-  }
-
-  /**
-   * Modify some properties of the Asset
-   *
-   * @throws if the passed values result in no changes being made to the Asset
-   */
-  public modify: ProcedureMethod<ModifyAssetParams, FungibleAsset>;
-
-  /**
-   * Retrieve the Asset's funding round
-   *
-   * @note can be subscribed to
-   */
-  public currentFundingRound(): Promise<string | null>;
-  public currentFundingRound(callback: SubCallback<string | null>): Promise<UnsubCallback>;
-
-  // eslint-disable-next-line require-jsdoc
-  public async currentFundingRound(
-    callback?: SubCallback<string | null>
-  ): Promise<string | null | UnsubCallback> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { asset },
-        },
-      },
-      ticker,
-      context,
-    } = this;
-
-    const rawTicker = stringToTicker(ticker, context);
-
-    const assembleResult = (roundName: Bytes): string | null => bytesToString(roundName) || null;
-
-    if (callback) {
-      return asset.fundingRound(rawTicker, round => {
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
-        callback(assembleResult(round));
-      });
-    }
-
-    const fundingRound = await asset.fundingRound(rawTicker);
-    return assembleResult(fundingRound);
   }
 
   /**
