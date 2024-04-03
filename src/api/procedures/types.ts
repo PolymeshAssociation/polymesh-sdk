@@ -637,6 +637,22 @@ export interface ControllerTransferParams {
   amount: BigNumber;
 }
 
+export interface NftControllerTransferParams {
+  /**
+   * portfolio (or portfolio ID) from which NFTs will be transferred from
+   */
+  originPortfolio: PortfolioLike;
+  /**
+   * The NFTs to transfer
+   */
+  nfts: (Nft | BigNumber)[];
+
+  /**
+   * Optional portfolio (or portfolio ID) to which NFTs will be transferred to. Defaults to default. If specified it must be one of the callers own portfolios
+   */
+  destinationPortfolio?: PortfolioLike;
+}
+
 export type ModifyAssetParams =
   | {
       /**
