@@ -7,6 +7,7 @@ import {
   ConfidentialAssetHistory,
   ConfidentialAssetHolder,
   ConfidentialAssetHoldersOrderBy,
+  ConfidentialTransaction,
   ConfidentialTransactionStatusEnum,
   EventIdEnum,
 } from '~/middleware/types';
@@ -328,6 +329,33 @@ export function getConfidentialTransactionProofsQuery(
     }
   }
   }`;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get confidential transaction details by ID
+ */
+export function confidentialTransactionQuery(
+  variables: QueryArgs<ConfidentialTransaction, 'id'>
+): QueryOptions<QueryArgs<ConfidentialTransaction, 'id'>> {
+  const query = gql`
+    query ConfidentialTransaction($id: String!) {
+      confidentialTransaction(id: $id) {
+        eventIdx
+        createdBlock {
+          blockId
+          datetime
+          hash
+        }
+      }
+    }
+  `;
 
   return {
     query,

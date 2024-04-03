@@ -61,6 +61,9 @@ export enum ConfidentialTransactionStatus {
  */
 export interface ConfidentialTransactionDetails {
   venueId: BigNumber;
+  /**
+   * block number at which the Confidential Transaction was created
+   */
   createdAt: BigNumber;
   status: ConfidentialTransactionStatus;
   memo?: string;
