@@ -39,6 +39,7 @@ import {
   AccountBalance,
   ActiveTransferRestrictions,
   AgentWithGroup,
+  Asset,
   AssetDetails,
   AssetWithGroup,
   Authorization,
@@ -92,6 +93,7 @@ import {
   TickerReservationStatus,
   TransferStatus,
   VenueDetails,
+  VenueFilteringDetails,
   VenueType,
 } from '~/types';
 
@@ -150,7 +152,7 @@ interface IdentityOptions extends EntityOptions {
   assetPermissionsGetGroup?: EntityGetter<CustomPermissionGroup | KnownPermissionGroup>;
   assetPermissionsGet?: EntityGetter<AssetWithGroup[]>;
   isAssetPreApproved?: EntityGetter<boolean>;
-  preApprovedAssets?: EntityGetter<ResultSet<(FungibleAsset | NftCollection)[]>>;
+  preApprovedAssets?: EntityGetter<ResultSet<Asset[]>>;
 }
 
 interface ChildIdentityOptions extends IdentityOptions {
@@ -175,10 +177,11 @@ interface BaseAssetOptions extends EntityOptions {
   investorCount?: EntityGetter<BigNumber>;
   getNextLocalId?: EntityGetter<BigNumber>;
   getRequiredMediators?: EntityGetter<Identity[]>;
+  getVenueFilteringDetails?: EntityGetter<VenueFilteringDetails>;
+  currentFundingRound?: EntityGetter<string>;
 }
 
 interface FungibleAssetOptions extends BaseAssetOptions {
-  currentFundingRound?: EntityGetter<string>;
   transferRestrictionsCountGet?: EntityGetter<ActiveTransferRestrictions<CountTransferRestriction>>;
   transferRestrictionsPercentageGet?: EntityGetter<
     ActiveTransferRestrictions<PercentageTransferRestriction>
@@ -1000,6 +1003,8 @@ const MockFungibleAssetClass = createMockEntityClass<FungibleAssetOptions>(
     metadata = {} as { getNextLocalId: jest.Mock };
 
     investorCount!: jest.Mock;
+    getRequiredMediators!: jest.Mock;
+    getVenueFilteringDetails!: jest.Mock;
 
     /**
      * @hidden
@@ -1042,6 +1047,8 @@ const MockFungibleAssetClass = createMockEntityClass<FungibleAssetOptions>(
       this.checkpoints.getOne = createEntityGetterMock(opts.checkpointsGetOne);
       this.investorCount = createEntityGetterMock(opts.investorCount);
       this.metadata.getNextLocalId = createEntityGetterMock(opts.getNextLocalId);
+      this.getRequiredMediators = createEntityGetterMock(opts.getRequiredMediators);
+      this.getVenueFilteringDetails = createEntityGetterMock(opts.getVenueFilteringDetails);
     }
   },
   () => ({
@@ -1103,6 +1110,7 @@ const MockFungibleAssetClass = createMockEntityClass<FungibleAssetOptions>(
     toHuman: 'SOME_TICKER',
     investorCount: new BigNumber(0),
     getRequiredMediators: [],
+    getVenueFilteringDetails: { isEnabled: false, allowedVenues: [] },
   }),
   ['FungibleAsset']
 );
@@ -1139,7 +1147,10 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
     getCollectionId!: jest.Mock;
 
     investorCount!: jest.Mock;
+    getRequiredMediators!: jest.Mock;
+    getVenueFilteringDetails!: jest.Mock;
     getBaseImageUrl!: jest.Mock;
+    currentFundingRound!: jest.Mock;
 
     /**
      * @hidden
@@ -1165,6 +1176,9 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
       this.collectionKeys = createEntityGetterMock(opts.collectionKeys);
       this.getCollectionId = createEntityGetterMock(opts.getCollectionId);
       this.getBaseImageUrl = createEntityGetterMock(opts.getBaseImageUrl);
+      this.getVenueFilteringDetails = createEntityGetterMock(opts.getVenueFilteringDetails);
+      this.getRequiredMediators = createEntityGetterMock(opts.getRequiredMediators);
+      this.currentFundingRound = createEntityGetterMock(opts.currentFundingRound);
     }
   },
   () => ({
@@ -1198,6 +1212,8 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
     getCollectionId: new BigNumber(0),
     getBaseImageUrl: null,
     getRequiredMediators: [],
+    getVenueFilteringDetails: { isEnabled: false, allowedVenues: [] },
+    currentFundingRound: '',
   }),
   ['NftCollection']
 );
@@ -1267,6 +1283,8 @@ const MockBaseAssetClass = createMockEntityClass<BaseAssetOptions>(
     investorCount!: jest.Mock;
     getBaseImageUrl!: jest.Mock;
     getRequiredMediators!: jest.Mock;
+    getVenueFilteringDetails!: jest.Mock;
+    currentFundingRound!: jest.Mock;
 
     /**
      * @hidden
@@ -1289,8 +1307,10 @@ const MockBaseAssetClass = createMockEntityClass<BaseAssetOptions>(
       this.permissions.getGroups = createEntityGetterMock(opts.permissionsGetGroups);
       this.compliance.requirements.get = createEntityGetterMock(opts.complianceRequirementsGet);
       this.investorCount = createEntityGetterMock(opts.investorCount);
+      this.getVenueFilteringDetails = createEntityGetterMock(opts.getVenueFilteringDetails);
       this.metadata.getNextLocalId = createEntityGetterMock(opts.getNextLocalId);
       this.getRequiredMediators = createEntityGetterMock(opts.getRequiredMediators);
+      this.currentFundingRound = createEntityGetterMock(opts.currentFundingRound);
     }
   },
   () => ({
@@ -1321,6 +1341,8 @@ const MockBaseAssetClass = createMockEntityClass<BaseAssetOptions>(
     getRequiredMediators: [],
     toHuman: 'SOME_TICKER',
     investorCount: new BigNumber(0),
+    getVenueFilteringDetails: { isEnabled: false, allowedVenues: [] },
+    currentFundingRound: '',
   }),
   ['BaseAsset']
 );

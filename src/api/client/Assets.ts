@@ -274,9 +274,7 @@ export class Assets {
    *
    * @note supports pagination
    */
-  public async get(
-    paginationOpts?: PaginationOptions
-  ): Promise<ResultSet<FungibleAsset | NftCollection>> {
+  public async get(paginationOpts?: PaginationOptions): Promise<ResultSet<Asset>> {
     const {
       context: {
         polymeshApi: {

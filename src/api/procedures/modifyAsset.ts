@@ -1,13 +1,14 @@
-import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, ModifyAssetParams, TxTags } from '~/types';
+import { BaseAsset, PolymeshError, Procedure } from '~/internal';
+import { Asset, ErrorCode, ModifyAssetParams, TxTags } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
+import { isNftCollection } from '~/utils';
 import {
   fundingRoundToAssetFundingRound,
   nameToAssetName,
   securityIdentifierToAssetIdentifier,
   stringToTicker,
 } from '~/utils/conversion';
-import { checkTxType, hasSameElements } from '~/utils/internal';
+import { asAsset, checkTxType, hasSameElements } from '~/utils/internal';
 
 /**
  * @hidden
@@ -18,9 +19,9 @@ export type Params = { ticker: string } & ModifyAssetParams;
  * @hidden
  */
 export async function prepareModifyAsset(
-  this: Procedure<Params, FungibleAsset>,
+  this: Procedure<Params, Asset>,
   args: Params
-): Promise<BatchTransactionSpec<FungibleAsset, unknown[][]>> {
+): Promise<BatchTransactionSpec<Asset, unknown[][]>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -50,7 +51,7 @@ export async function prepareModifyAsset(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const asset = new FungibleAsset({ ticker }, context);
+  const asset = await asAsset(ticker, context);
 
   const [{ isDivisible, name }, fundingRound, identifiers] = await Promise.all([
     asset.details(),
@@ -60,6 +61,13 @@ export async function prepareModifyAsset(
 
   const transactions = [];
   if (makeDivisible) {
+    if (isNftCollection(asset)) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'NFT Collections cannot be made divisible',
+      });
+    }
+
     if (isDivisible) {
       throw new PolymeshError({
         code: ErrorCode.NoDataChange,
@@ -139,7 +147,7 @@ export async function prepareModifyAsset(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, FungibleAsset>,
+  this: Procedure<Params, Asset>,
   { ticker, makeDivisible, name, fundingRound, identifiers }: Params
 ): ProcedureAuthorization {
   const transactions = [];
@@ -164,7 +172,7 @@ export function getAuthorization(
     permissions: {
       transactions,
       portfolios: [],
-      assets: [new FungibleAsset({ ticker }, this.context)],
+      assets: [new BaseAsset({ ticker }, this.context)],
     },
   };
 }
@@ -172,5 +180,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const modifyAsset = (): Procedure<Params, FungibleAsset> =>
+export const modifyAsset = (): Procedure<Params, Asset> =>
   new Procedure(prepareModifyAsset, getAuthorization);

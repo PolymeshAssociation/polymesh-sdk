@@ -11,6 +11,8 @@ import {
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { tuple } from '~/types/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -119,7 +121,26 @@ describe('Identities Class', () => {
 
       when(procedureMockUtils.getPrepareMock())
         .calledWith(
-          { args: { names: [args.name] }, transformer: createPortfolioTransformer },
+          { args: { portfolios: [{ ...args }] }, transformer: createPortfolioTransformer },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await identities.createPortfolio(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+
+    it('should prepare the procedure and return the resulting transaction for creating custodyPortfolio', async () => {
+      const args = { name: 'someName', ownerDid: 'someDid' };
+
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<NumberedPortfolio>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          { args: { portfolios: [{ ...args }] }, transformer: createPortfolioTransformer },
           context,
           {}
         )
@@ -139,7 +160,33 @@ describe('Identities Class', () => {
         'someTransaction' as unknown as PolymeshTransaction<NumberedPortfolio>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args, transformer: undefined }, context, {})
+        .calledWith(
+          { args: { portfolios: [{ name: args.names[0] }] }, transformer: undefined },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await identities.createPortfolios(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+
+    it('should prepare the procedure and return the resulting transaction for creating custodyPortfolios', async () => {
+      const args = { names: ['someName'], ownerDid: 'someDid' };
+
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<NumberedPortfolio>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          {
+            args: { portfolios: [{ name: args.names[0], ownerDid: args.ownerDid }] },
+            transformer: undefined,
+          },
+          context,
+          {}
+        )
         .mockResolvedValue(expectedTransaction);
 
       const tx = await identities.createPortfolios(args);
@@ -205,6 +252,67 @@ describe('Identities Class', () => {
       const tx = await identities.rotatePrimaryKey(args);
 
       expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: allowIdentityToCreatePortfolios', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args = {
+        did: 'someDid',
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await identities.allowIdentityToCreatePortfolios(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: revokeIdentityToCreatePortfolios', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args = {
+        did: 'someDid',
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await identities.revokeIdentityToCreatePortfolios(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: getAllowedCustodians', () => {
+    it('should return a list of allowed custodian dids', async () => {
+      const did = 'someDid';
+      const otherDid = 'otherDid';
+      const identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
+
+      const rawOtherDid = dsMockUtils.createMockIdentityId(otherDid);
+
+      dsMockUtils.createQueryMock('portfolio', 'allowedCustodians', {
+        entries: [
+          tuple(
+            [dsMockUtils.createMockIdentityId(did), rawOtherDid],
+            dsMockUtils.createMockBool(true)
+          ),
+        ],
+      });
+
+      when(identityIdToStringSpy).calledWith(rawOtherDid).mockReturnValue(otherDid);
+
+      const result = await identities.getAllowedCustodians(did);
+
+      expect(result).toEqual([otherDid]);
     });
   });
 });

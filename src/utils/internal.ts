@@ -45,6 +45,7 @@ import { latestSqVersionQuery } from '~/middleware/queries';
 import { Claim as MiddlewareClaim, ClaimTypeEnum, Query } from '~/middleware/types';
 import { MiddlewareScope } from '~/middleware/typesV1';
 import {
+  Asset,
   AttestPrimaryKeyRotationAuthorizationData,
   Authorization,
   AuthorizationRequest,
@@ -966,10 +967,7 @@ export function asBaseAsset(asset: string | BaseAsset, context: Context): BaseAs
  *
  * @note alternatively {@link asBaseAsset} returns a generic `BaseAsset`, but is synchronous
  */
-export async function asAsset(
-  asset: string | FungibleAsset | NftCollection,
-  context: Context
-): Promise<FungibleAsset | NftCollection> {
+export async function asAsset(asset: string | Asset, context: Context): Promise<Asset> {
   if (typeof asset !== 'string') {
     return asset;
   }
@@ -1842,7 +1840,7 @@ export function assembleAssetQuery(
   assetDetails: Option<PalletAssetSecurityToken>[],
   tickers: string[],
   context: Context
-): (FungibleAsset | NftCollection)[] {
+): Asset[] {
   return assetDetails.map((rawDetails, index) => {
     const ticker = tickers[index];
     const detail = rawDetails.unwrap();

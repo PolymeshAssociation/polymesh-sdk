@@ -5,7 +5,13 @@ import BigNumber from 'bignumber.js';
 import { BaseAsset } from '~/api/entities/Asset/Base';
 import { NonFungibleSettlements } from '~/api/entities/Asset/Base/Settlements';
 import { issueNft } from '~/api/procedures/issueNft';
-import { Context, Nft, PolymeshError, transferAssetOwnership } from '~/internal';
+import {
+  Context,
+  Nft,
+  nftControllerTransfer,
+  PolymeshError,
+  transferAssetOwnership,
+} from '~/internal';
 import { assetQuery } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
@@ -15,6 +21,7 @@ import {
   EventIdentifier,
   IssueNftParams,
   MetadataType,
+  NftControllerTransferParams,
   ProcedureMethod,
   SubCallback,
   UniqueIdentifiers,
@@ -55,6 +62,11 @@ export class NftCollection extends BaseAsset {
   public issue: ProcedureMethod<IssueNftParams, Nft>;
 
   /**
+   * Force a transfer from the origin portfolio to one of the caller's portfolios
+   */
+  public controllerTransfer: ProcedureMethod<NftControllerTransferParams, void>;
+
+  /**
    * Local cache for `getCollectionId`
    *
    * @hidden
@@ -78,6 +90,13 @@ export class NftCollection extends BaseAsset {
     this.issue = createProcedureMethod(
       {
         getProcedureAndArgs: args => [issueNft, { ticker, ...args }],
+      },
+      context
+    );
+
+    this.controllerTransfer = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [nftControllerTransfer, { ticker, ...args }],
       },
       context
     );

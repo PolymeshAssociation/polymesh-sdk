@@ -1,13 +1,21 @@
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 
-import { BaseAsset } from '~/internal';
+import { BaseAsset, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { createMockBTreeSet, MockContext } from '~/testUtils/mocks/dataSources';
+import { tuple } from '~/types/utils';
+
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('BaseAsset class', () => {
   let ticker: string;
   let context: MockContext;
   let mediatorDid: string;
+  let asset: BaseAsset;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -18,6 +26,7 @@ describe('BaseAsset class', () => {
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
     ticker = 'TICKER';
+    asset = new BaseAsset({ ticker }, context);
 
     mediatorDid = 'someDid';
 
@@ -35,9 +44,87 @@ describe('BaseAsset class', () => {
     dsMockUtils.cleanup();
   });
 
+  describe('method: setVenueFiltering', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const enabled = true;
+
+      const args = {
+        enabled,
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<BaseAsset>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { ticker, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await asset.setVenueFiltering(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+
+    it('should prepare the procedure and return the resulting transaction for allowingVenues', async () => {
+      const venues = [new BigNumber(1), new BigNumber(2)];
+
+      const args = {
+        allowedVenues: venues,
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<BaseAsset>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { ticker, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await asset.setVenueFiltering(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+
+    it('should prepare the procedure and return the resulting transaction for disallowingVenues', async () => {
+      const venues = [new BigNumber(1), new BigNumber(2)];
+
+      const args = {
+        disallowedVenues: venues,
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<BaseAsset>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { ticker, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await asset.setVenueFiltering(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: getVenueFilteringDetails', () => {
+    it('should return venue filtering details for the asset', async () => {
+      dsMockUtils.createQueryMock('settlement', 'venueFiltering', {
+        returnValue: dsMockUtils.createMockBool(true),
+      });
+      dsMockUtils.createQueryMock('settlement', 'venueAllowList', {
+        entries: [
+          tuple(
+            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockU64(new BigNumber(1))],
+            dsMockUtils.createMockBool(true)
+          ),
+        ],
+      });
+
+      const result = await asset.getVenueFilteringDetails();
+
+      expect(result).toEqual({
+        isEnabled: true,
+        allowedVenues: expect.arrayContaining([expect.objectContaining({ id: new BigNumber(1) })]),
+      });
+    });
+  });
+
   describe('method: exists', () => {
     it('should return whether the BaseAsset exists', async () => {
-      const asset = new BaseAsset({ ticker }, context);
       dsMockUtils.createQueryMock('asset', 'tokens', {
         size: new BigNumber(10),
       });

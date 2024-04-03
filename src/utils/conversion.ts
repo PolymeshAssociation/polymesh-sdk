@@ -662,7 +662,7 @@ export function portfolioLikeToPortfolioId(value: PortfolioLike): PortfolioId {
     did = asDid(valueIdentity);
   }
 
-  return { did, number };
+  return { did, number: number?.gt(0) ? number : undefined };
 }
 
 /**

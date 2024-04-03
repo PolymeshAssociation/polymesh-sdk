@@ -17,6 +17,7 @@ import {
   MetadataType,
   TransferError,
   TransferRestriction,
+  Venue,
 } from '~/types';
 
 /**
@@ -148,6 +149,17 @@ export interface NftMetadata {
    * The value the particular NFT has for the metadata
    */
   value: string;
+}
+
+export interface VenueFilteringDetails {
+  /**
+   * Whether or not Venue filtering is enabled. If enabled then only allowed the Venues are able to create instructions to trade the asset
+   */
+  isEnabled: boolean;
+  /**
+   * If `isEnabled` is true, then only these venues are allowed to create instructions involving the asset
+   */
+  allowedVenues: Venue[];
 }
 
 /**

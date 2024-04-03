@@ -55,6 +55,10 @@ jest.mock(
   '~/api/entities/Asset/NonFungible',
   require('~/testUtils/mocks/entities').mockNftCollectionModule('~/api/entities/Asset/NonFungible')
 );
+jest.mock(
+  '~/api/entities/Asset/Base',
+  require('~/testUtils/mocks/entities').mockBaseAssetModule('~/api/entities/Asset/Base')
+);
 
 describe('addInstruction procedure', () => {
   let mockContext: Mocked<Context>;
@@ -561,6 +565,54 @@ describe('addInstruction procedure', () => {
 
     expect(error.message).toBe('The legs array exceeds the maximum allowed length');
     expect(error.code).toBe(ErrorCode.LimitExceeded);
+  });
+
+  it('should throw an error if the specified venue is not valid for any asset', () => {
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      withMediatorsPresent: true,
+      portfoliosToAffirm: [],
+    });
+
+    const legOne = {
+      from,
+      to,
+      amount,
+      asset: entityMockUtils.getFungibleAssetInstance({
+        ticker: asset,
+        getVenueFilteringDetails: {
+          isEnabled: true,
+          allowedVenues: [
+            entityMockUtils.getVenueInstance({ id: new BigNumber(1) }),
+            entityMockUtils.getVenueInstance({ id: new BigNumber(2) }),
+          ],
+        },
+      }),
+    };
+
+    const legTwo = {
+      from,
+      to,
+      amount,
+      asset: entityMockUtils.getFungibleAssetInstance({
+        ticker: asset,
+        getVenueFilteringDetails: {
+          isEnabled: true,
+          allowedVenues: [entityMockUtils.getVenueInstance({ id: new BigNumber(2) })],
+        },
+      }),
+    };
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'One or more assets are not allowed to be traded at this venue',
+    });
+
+    return expect(
+      prepareAddInstruction.call(proc, {
+        venueId,
+        instructions: [{ legs: [legOne, legTwo] }],
+      })
+    ).rejects.toThrow(expectedError);
   });
 
   it('should throw an error if the end block is in the past', async () => {
