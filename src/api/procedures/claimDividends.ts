@@ -1,6 +1,7 @@
 import { assertDistributionOpen } from '~/api/procedures/utils';
 import { DividendDistribution, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
+import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import { corporateActionIdentifierToCaId } from '~/utils/conversion';
 
 /**
@@ -16,7 +17,7 @@ export interface Params {
 export async function prepareClaimDividends(
   this: Procedure<Params, void>,
   args: Params
-): Promise<void> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'capitalDistribution', 'claim'>>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -55,10 +56,11 @@ export async function prepareClaimDividends(
 
   const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
 
-  this.addTransaction({
+  return {
     transaction: tx.capitalDistribution.claim,
     args: [rawCaId],
-  });
+    resolver: undefined,
+  };
 }
 
 /**

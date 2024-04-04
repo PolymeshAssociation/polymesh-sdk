@@ -11,10 +11,11 @@ jobs:
     name: Linting
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
-          node-version: '14.21.1'
+          node-version: '18.x'
+          cache: 'yarn'
       - name: install dependencies
         run: yarn --frozen-lockfile
       - name: lint
@@ -23,38 +24,69 @@ jobs:
   test:
     name: Testing
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        shard: [1, 2, 3, 4, 5]
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
-          node-version: '14.21.1'
+          node-version: '18.x'
+          cache: 'yarn'
       - name: install dependencies
         run: yarn --frozen-lockfile
       - name: test
         env:
           NODE_OPTIONS: '--max-old-space-size=8192'
-        run: yarn test
+        run: yarn test --runInBand --shard=${{ matrix.shard }}/${{ strategy.job-total }}
+      - name: Rename coverage to shard coverage
+        run: |
+          mv coverage/clover.xml coverage/clover-${{matrix.shard}}.xml
+          mv coverage/lcov.info coverage/lcov-${{matrix.shard}}.info
+          mv coverage/coverage-final.json coverage/coverage-${{matrix.shard}}.json
+      - uses: actions/upload-artifact@v3
+        with:
+          name: coverage-artifacts
+          path: coverage/
+
+  sonar:
+    name: Merge coverage and SonarCloud scan
+    runs-on: ubuntu-latest
+    needs: [test]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          name: coverage-artifacts
+          path: coverage
+      - name: Process Coverage
+        run: npx nyc report --reporter lcov --reporter text --reporter clover -t coverage
       - name: sonarcloud scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: geekyeggo/delete-artifact@v1
+        with:
+          name: coverage-artifacts
+          failOnError: false
 
   release:
     name: Building and releasing project
     runs-on: ubuntu-latest
-    needs: [lint, test]
+    needs: [lint, sonar]
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
-          node-version: '14.21.1'
+          node-version: '18.x'
+          cache: 'yarn'
       - name: install dependencies
         run: yarn --frozen-lockfile
       - name: build
         run: |
           yarn build:ts
-          cp package.json dist/package.json
+          sed 's/dist\//.\//' package.json > dist/package.json
           cp README.md dist/README.md
           cp -R node_modules dist/node_modules
       - name: release

@@ -1,5 +1,4 @@
-import { AugmentedQuery } from '@polkadot/api/types';
-import type { Observable } from '@polkadot/types/types';
+import { AugmentedQueries, AugmentedQuery } from '@polkadot/api/types';
 import BigNumber from 'bignumber.js';
 
 import { Entity, Procedure } from '~/internal';
@@ -25,7 +24,7 @@ export type UnionOfProcedureFuncs<Args, ReturnValue, Storage> = Args extends unk
   : never;
 
 /**
- * Less strict version of Parameters<T>
+ * Less strict version of `Parameters<T>`
  */
 export type ArgsType<T> = T extends (...args: infer A) => unknown ? A : never;
 
@@ -51,14 +50,24 @@ export type HumanReadableType<T> = T extends Entity<unknown, infer H>
 /**
  * @hidden
  *
- * Extract the return type of a polkadot.js query function
+ * Extract the polkadot.js query function
  *
- * @example `QueryReturnType<typeof identity.authorizations>` returns `Option<Authorization>`
+ * @example `QueryableStorageFunction<'identity', 'authorizations'>` returns
+ * `(
+ *     arg1:
+ *      | PolymeshPrimitivesSecondaryKeySignatory
+ *      | { Identity: any }
+ *      | { Account: any }
+ *      | string
+ *      | Uint8Array,
+ *    arg2: u64 | AnyNumber | Uint8Array
+ *  ) => Observable<Option<PolymeshPrimitivesAuthorization>>`
  */
-export type QueryReturnType<T> = T extends AugmentedQuery<'promise', infer Fun>
-  ? ReturnType<Fun> extends Observable<infer R>
-    ? R
-    : never
+export type QueryFunction<
+  ModuleName extends keyof AugmentedQueries<'promise'>,
+  QueryName extends keyof AugmentedQueries<'promise'>[ModuleName]
+> = AugmentedQueries<'promise'>[ModuleName][QueryName] extends AugmentedQuery<'promise', infer Fun>
+  ? Fun
   : never;
 
 /**
@@ -75,9 +84,7 @@ export type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] };
 /**
  * Pick a single property from T and ensure it is defined
  */
-export type Ensured<T, K extends keyof T> = Required<Pick<T, K>>;
-
-export type EnsuredV2<T, K extends keyof T> = Required<Pick<T, K>> & {
+export type Ensured<T, K extends keyof T> = Required<Pick<T, K>> & {
   [SubKey in K]: NonNullable<T[SubKey]>;
 };
 

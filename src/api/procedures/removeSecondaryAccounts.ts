@@ -3,6 +3,7 @@ import BigNumber from 'bignumber.js';
 import { assertSecondaryAccounts } from '~/api/procedures/utils';
 import { PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RemoveSecondaryAccountsParams, TxTags } from '~/types';
+import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import { stringToAccountId } from '~/utils/conversion';
 import { getSecondaryAccountPermissions } from '~/utils/internal';
 
@@ -12,7 +13,7 @@ import { getSecondaryAccountPermissions } from '~/utils/internal';
 export async function prepareRemoveSecondaryAccounts(
   this: Procedure<RemoveSecondaryAccountsParams>,
   args: RemoveSecondaryAccountsParams
-): Promise<void> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'identity', 'removeSecondaryKeys'>>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -40,11 +41,12 @@ export async function prepareRemoveSecondaryAccounts(
 
   assertSecondaryAccounts(accounts, secondaryAccounts);
 
-  this.addTransaction({
+  return {
     transaction: tx.identity.removeSecondaryKeys,
     feeMultiplier: new BigNumber(accounts.length),
     args: [accounts.map(({ address }) => stringToAccountId(address, context))],
-  });
+    resolver: undefined,
+  };
 }
 
 /**

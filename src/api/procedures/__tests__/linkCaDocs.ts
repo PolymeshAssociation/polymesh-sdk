@@ -1,8 +1,11 @@
-import { Vec } from '@polkadot/types';
-import { PalletCorporateActionsCaId, PolymeshPrimitivesDocument } from '@polkadot/types/lookup';
+import { Option, u32, Vec } from '@polkadot/types';
+import {
+  PalletCorporateActionsCaId,
+  PolymeshPrimitivesDocument,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { Document, DocumentId, Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { getAuthorization, Params, prepareLinkCaDocs } from '~/api/procedures/linkCaDocs';
 import { Context } from '~/internal';
@@ -14,20 +17,20 @@ import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 describe('linkCaDocs procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let ticker: string;
   let id: BigNumber;
   let documents: AssetDocument[];
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
   let rawDocuments: PolymeshPrimitivesDocument[];
-  let rawDocumentIds: DocumentId[];
-  let documentEntries: [[Ticker, DocumentId], PolymeshPrimitivesDocument][];
+  let rawDocumentIds: u32[];
+  let documentEntries: [[PolymeshPrimitivesTicker, u32], Option<PolymeshPrimitivesDocument>][];
   let args: Params;
   let rawCaId: PalletCorporateActionsCaId;
 
@@ -35,7 +38,7 @@ describe('linkCaDocs procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
     ticker = 'SOME_TICKER';
     id = new BigNumber(1);
     documents = [
@@ -68,7 +71,7 @@ describe('linkCaDocs procedure', () => {
     rawDocumentIds = [];
     rawDocuments.forEach((doc, index) => {
       const rawId = dsMockUtils.createMockU32(new BigNumber(index));
-      documentEntries.push(tuple([rawTicker, rawId], doc));
+      documentEntries.push(tuple([rawTicker, rawId], dsMockUtils.createMockOption(doc)));
       rawDocumentIds.push(rawId);
     });
     args = {
@@ -77,24 +80,21 @@ describe('linkCaDocs procedure', () => {
       documents,
     };
     rawCaId = dsMockUtils.createMockCAId({ ticker, localId: id });
-    sinon.stub(utilsConversionModule, 'corporateActionIdentifierToCaId').returns(rawCaId);
+    jest.spyOn(utilsConversionModule, 'corporateActionIdentifierToCaId').mockReturnValue(rawCaId);
   });
 
-  let addTransactionStub: sinon.SinonStub;
-  let linkCaDocTransaction: PolymeshTx<[Vec<Document>, Ticker]>;
+  let linkCaDocTransaction: PolymeshTx<[Vec<PolymeshPrimitivesDocument>, PolymeshPrimitivesTicker]>;
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
-
-    dsMockUtils.createQueryStub('asset', 'assetDocuments', {
+    dsMockUtils.createQueryMock('asset', 'assetDocuments', {
       entries: [documentEntries[0], documentEntries[1]],
     });
 
-    linkCaDocTransaction = dsMockUtils.createTxStub('corporateAction', 'linkCaDoc');
+    linkCaDocTransaction = dsMockUtils.createTxMock('corporateAction', 'linkCaDoc');
 
     mockContext = dsMockUtils.getContextInstance();
 
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
   });
 
   afterEach(() => {
@@ -136,14 +136,15 @@ describe('linkCaDocs procedure', () => {
     expect(error.data.documents[0].name).toEqual(name);
   });
 
-  it('should add a link ca doc transaction to the queue', async () => {
+  it('should return a link ca doc transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await prepareLinkCaDocs.call(proc, args);
+    const result = await prepareLinkCaDocs.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction: linkCaDocTransaction,
       args: [rawCaId, rawDocumentIds],
+      resolver: undefined,
     });
   });
 

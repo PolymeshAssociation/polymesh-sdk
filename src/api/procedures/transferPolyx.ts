@@ -1,12 +1,13 @@
-import { Account, PolymeshError, Procedure } from '~/internal';
+import { PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TransferPolyxParams, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   bigNumberToBalance,
   signerToString,
   stringToAccountId,
   stringToMemo,
 } from '~/utils/conversion';
+import { asAccount } from '~/utils/internal';
 
 /**
  * @hidden
@@ -14,7 +15,10 @@ import {
 export async function prepareTransferPolyx(
   this: Procedure<TransferPolyxParams>,
   args: TransferPolyxParams
-): Promise<void> {
+): Promise<
+  | TransactionSpec<void, ExtrinsicParams<'balances', 'transfer'>>
+  | TransactionSpec<void, ExtrinsicParams<'balances', 'transferWithMemo'>>
+> {
   const {
     context: {
       polymeshApi: { tx },
@@ -24,13 +28,7 @@ export async function prepareTransferPolyx(
 
   const { to, amount, memo } = args;
 
-  let toAccount: Account;
-
-  if (to instanceof Account) {
-    toAccount = to;
-  } else {
-    toAccount = new Account({ address: to }, context);
-  }
+  const toAccount = asAccount(to, context);
 
   const rawAccountId = stringToAccountId(signerToString(to), context);
 
@@ -80,16 +78,18 @@ export async function prepareTransferPolyx(
   const rawAmount = bigNumberToBalance(amount, context);
 
   if (memo) {
-    this.addTransaction({
+    return {
       transaction: tx.balances.transferWithMemo,
       args: [rawAccountId, rawAmount, stringToMemo(memo, context)],
-    });
-  } else {
-    this.addTransaction({
-      transaction: tx.balances.transfer,
-      args: [rawAccountId, rawAmount],
-    });
+      resolver: undefined,
+    };
   }
+
+  return {
+    transaction: tx.balances.transfer,
+    args: [rawAccountId, rawAmount],
+    resolver: undefined,
+  };
 }
 
 /**

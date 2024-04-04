@@ -3,8 +3,8 @@ import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { PermissionGroupType } from '~/types';
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 describe('KnownPermissionGroup class', () => {
@@ -60,7 +60,7 @@ describe('KnownPermissionGroup class', () => {
   describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       entityMockUtils.configureMocks({
-        assetOptions: {
+        fungibleAssetOptions: {
           toHuman: ticker,
         },
       });

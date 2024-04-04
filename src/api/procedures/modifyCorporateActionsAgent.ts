@@ -1,4 +1,4 @@
-import { Asset, KnownPermissionGroup, PolymeshError, Procedure } from '~/internal';
+import { FungibleAsset, KnownPermissionGroup, PolymeshError, Procedure } from '~/internal';
 import {
   AuthorizationType,
   ErrorCode,
@@ -7,7 +7,7 @@ import {
   SignerType,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
@@ -26,7 +26,7 @@ export type Params = { ticker: string } & ModifyCorporateActionsAgentParams;
 export async function prepareModifyCorporateActionsAgent(
   this: Procedure<Params, void>,
   args: Params
-): Promise<void> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'identity', 'addAuthorization'>>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -35,7 +35,7 @@ export async function prepareModifyCorporateActionsAgent(
   } = this;
   const { ticker, target, requestExpiry } = args;
 
-  const asset = new Asset({ ticker }, context);
+  const asset = new FungibleAsset({ ticker }, context);
 
   const [invalidDids, agents] = await Promise.all([
     context.getInvalidDids([target]),
@@ -81,10 +81,11 @@ export async function prepareModifyCorporateActionsAgent(
     rawExpiry = dateToMoment(requestExpiry, context);
   }
 
-  this.addTransaction({
+  return {
     transaction: tx.identity.addAuthorization,
     args: [rawSignatory, rawAuthorizationData, rawExpiry],
-  });
+    resolver: undefined,
+  };
 }
 
 /**
@@ -98,7 +99,7 @@ export function getAuthorization(
     permissions: {
       transactions: [TxTags.identity.AddAuthorization],
       portfolios: [],
-      assets: [new Asset({ ticker }, this.context)],
+      assets: [new FungibleAsset({ ticker }, this.context)],
     },
   };
 }

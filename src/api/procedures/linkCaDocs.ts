@@ -1,10 +1,10 @@
+import { u32 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { isEqual, remove } from 'lodash';
 
-import { Asset, PolymeshError, Procedure } from '~/internal';
-import { DocumentId } from '~/polkadot/polymesh';
+import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, LinkCaDocsParams, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   corporateActionIdentifierToCaId,
   documentToAssetDocument,
@@ -25,7 +25,7 @@ export type Params = LinkCaDocsParams & {
 export async function prepareLinkCaDocs(
   this: Procedure<Params, void>,
   args: Params
-): Promise<void> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'corporateAction', 'linkCaDoc'>>> {
   const {
     context: {
       polymeshApi: {
@@ -41,16 +41,18 @@ export async function prepareLinkCaDocs(
 
   const rawAssetDocuments = await assetDocuments.entries(stringToTicker(ticker, context));
 
-  const docIdsToLink: DocumentId[] = [];
+  const docIdsToLink: u32[] = [];
   const documentsCopy = [...documents]; // avoid mutation
 
   rawAssetDocuments.forEach(([key, doc]) => {
     const [, id] = key.args;
-    const removedList = remove(documentsCopy, document =>
-      isEqual(document, documentToAssetDocument(doc))
-    );
-    if (removedList.length) {
-      docIdsToLink.push(id);
+    if (doc.isSome) {
+      const removedList = remove(documentsCopy, document =>
+        isEqual(document, documentToAssetDocument(doc.unwrap()))
+      );
+      if (removedList.length) {
+        docIdsToLink.push(id);
+      }
     }
   });
 
@@ -66,10 +68,11 @@ export async function prepareLinkCaDocs(
 
   const rawCaId = corporateActionIdentifierToCaId({ ticker, localId: caId }, context);
 
-  this.addTransaction({
+  return {
     transaction: corporateAction.linkCaDoc,
     args: [rawCaId, docIdsToLink],
-  });
+    resolver: undefined,
+  };
 }
 
 /**
@@ -81,7 +84,7 @@ export function getAuthorization(
 ): ProcedureAuthorization {
   return {
     permissions: {
-      assets: [new Asset({ ticker }, this.context)],
+      assets: [new FungibleAsset({ ticker }, this.context)],
       transactions: [TxTags.corporateAction.LinkCaDoc],
       portfolios: [],
     },

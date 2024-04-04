@@ -1,18 +1,40 @@
 import BigNumber from 'bignumber.js';
 
-import { Asset, DefaultPortfolio, Identity, NumberedPortfolio, Venue } from '~/internal';
-import { EventIdentifier } from '~/types';
+import {
+  DefaultPortfolio,
+  FungibleAsset,
+  Identity,
+  Nft,
+  NumberedPortfolio,
+  Venue,
+} from '~/internal';
+import { EventIdentifier, NftCollection } from '~/types';
 
 export enum InstructionStatus {
   Pending = 'Pending',
-  Executed = 'Executed',
   Failed = 'Failed',
+  Success = 'Success',
+  Rejected = 'Rejected',
 }
 
 export enum InstructionType {
   SettleOnAffirmation = 'SettleOnAffirmation',
   SettleOnBlock = 'SettleOnBlock',
+  SettleManual = 'SettleManual',
 }
+
+export type InstructionEndCondition =
+  | {
+      type: InstructionType.SettleOnAffirmation;
+    }
+  | {
+      type: InstructionType.SettleOnBlock;
+      endBlock: BigNumber;
+    }
+  | {
+      type: InstructionType.SettleManual;
+      endAfterBlock: BigNumber;
+    };
 
 export type InstructionDetails = {
   status: InstructionStatus;
@@ -26,22 +48,24 @@ export type InstructionDetails = {
    */
   valueDate: Date | null;
   venue: Venue;
-} & (
-  | {
-      type: InstructionType.SettleOnAffirmation;
-    }
-  | {
-      type: InstructionType.SettleOnBlock;
-      endBlock: BigNumber;
-    }
-);
+  memo: string | null;
+} & InstructionEndCondition;
 
-export interface Leg {
+export interface FungibleLeg {
   from: DefaultPortfolio | NumberedPortfolio;
   to: DefaultPortfolio | NumberedPortfolio;
   amount: BigNumber;
-  asset: Asset;
+  asset: FungibleAsset;
 }
+
+export interface NftLeg {
+  from: DefaultPortfolio | NumberedPortfolio;
+  to: DefaultPortfolio | NumberedPortfolio;
+  nfts: Nft[];
+  asset: NftCollection;
+}
+
+export type Leg = FungibleLeg | NftLeg;
 
 export enum AffirmationStatus {
   Unknown = 'Unknown',

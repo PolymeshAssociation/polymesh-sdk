@@ -2,42 +2,25 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
 import { merge } from 'lodash';
-import sinon, { SinonStub } from 'sinon';
 
-import { Context, Procedure, TransactionQueue } from '~/internal';
+import { Context, Procedure } from '~/internal';
 import { Mocked } from '~/testUtils/types';
 
 type MockProcedure = Mocked<Procedure>;
-type MockTransactionQueue = Mocked<TransactionQueue>;
 
 const mockInstanceContainer = {
   procedure: {} as MockProcedure,
-  transactionQueue: {} as MockTransactionQueue,
 };
 
-let procedureConstructorStub: SinonStub;
-let transactionQueueConstructorStub: SinonStub;
-
-let addTransactionStub: SinonStub;
-let addBatchTransactionStub: SinonStub;
-let addProcedureStub: SinonStub;
-let prepareStub: SinonStub;
+let procedureConstructorMock: jest.Mock;
+let prepareMock: jest.Mock;
 
 export const MockProcedureClass = class {
   /**
    * @hidden
    */
   constructor(...args: unknown[]) {
-    return procedureConstructorStub(...args);
-  }
-};
-
-export const MockTransactionQueueClass = class {
-  /**
-   * @hidden
-   */
-  constructor(...args: unknown[]) {
-    return transactionQueueConstructorStub(...args);
+    return procedureConstructorMock(...args);
   }
 };
 
@@ -46,46 +29,19 @@ export const mockProcedureModule = (path: string) => (): Record<string, unknown>
   Procedure: MockProcedureClass,
 });
 
-export const mockTransactionQueueModule = (path: string) => (): Record<string, unknown> => ({
-  ...jest.requireActual(path),
-  TransactionQueue: MockTransactionQueueClass,
-});
-
-/**
- * @hidden
- * Initialize the transaction queue instance
- */
-function initTransactionQueue(): void {
-  transactionQueueConstructorStub = sinon.stub();
-  const transactionQueue = {} as unknown as MockTransactionQueue;
-
-  Object.assign(mockInstanceContainer.transactionQueue, transactionQueue);
-  transactionQueueConstructorStub.callsFake(args => {
-    const value = merge({}, transactionQueue, args);
-    Object.setPrototypeOf(value, require('~/internal').TransactionQueue.prototype);
-    return value;
-  });
-}
-
 /**
  * @hidden
  * Initialize the procedure instance
  */
 function initProcedure(): void {
-  procedureConstructorStub = sinon.stub();
-  addTransactionStub = sinon.stub();
-  addProcedureStub = sinon.stub();
-  addBatchTransactionStub = sinon.stub();
-  prepareStub = sinon.stub();
+  procedureConstructorMock = jest.fn();
+  prepareMock = jest.fn();
   const procedure = {
-    addTransaction: addTransactionStub.returns([]),
-    addBatchTransaction: addBatchTransactionStub.returns([]),
-    addProcedure: addProcedureStub.returns([]),
-    prepare: prepareStub.returns({}),
+    prepare: prepareMock.mockReturnValue({}),
   } as unknown as MockProcedure;
 
   Object.assign(mockInstanceContainer.procedure, procedure);
-  procedureConstructorStub.callsFake(args => {
+  procedureConstructorMock.mockImplementation(args => {
     const value = merge({}, procedure, args);
     Object.setPrototypeOf(value, require('~/internal').Procedure.prototype);
     return value;
@@ -99,7 +55,6 @@ function initProcedure(): void {
  */
 export function initMocks(): void {
   initProcedure();
-  initTransactionQueue();
 }
 
 /**
@@ -108,7 +63,6 @@ export function initMocks(): void {
  */
 export function cleanup(): void {
   mockInstanceContainer.procedure = {} as MockProcedure;
-  mockInstanceContainer.transactionQueue = {} as MockTransactionQueue;
 }
 
 /**
@@ -137,40 +91,8 @@ export function getInstance<T, U, S = Record<string, unknown>>(
 
 /**
  * @hidden
- * Retrieve the stub of the `addTransaction` method
+ * Retrieve the mock of the `prepare` method
  */
-export function getAddTransactionStub(): SinonStub {
-  return addTransactionStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `addBatchTransaction` method
- */
-export function getAddBatchTransactionStub(): SinonStub {
-  return addBatchTransactionStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `addProcedure` method
- */
-export function getAddProcedureStub(): SinonStub {
-  return addProcedureStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `prepare` method
- */
-export function getPrepareStub(): SinonStub {
-  return prepareStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the TransactionQueue constructor
- */
-export function getTransactionQueueConstructorStub(): SinonStub {
-  return transactionQueueConstructorStub;
+export function getPrepareMock(): jest.Mock {
+  return prepareMock;
 }

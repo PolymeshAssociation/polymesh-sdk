@@ -1,62 +1,62 @@
+import {
+  ApolloClient,
+  ApolloQueryResult,
+  NormalizedCacheObject,
+  OperationVariables,
+  QueryOptions,
+} from '@apollo/client/core';
 import { ApiPromise } from '@polkadot/api';
 import { getTypeDef, Option } from '@polkadot/types';
-import { AccountInfo } from '@polkadot/types/interfaces';
+import { AccountInfo, Header } from '@polkadot/types/interfaces';
 import {
   PalletCorporateActionsCaId,
   PalletCorporateActionsDistribution,
   PalletRelayerSubsidy,
+  PolymeshCommonUtilitiesProtocolFeeProtocolOp,
 } from '@polkadot/types/lookup';
-import {
-  CallFunction,
-  Codec,
-  DetectCodec,
-  Signer as PolkadotSigner,
-  TypeDef,
-  TypeDefInfo,
-} from '@polkadot/types/types';
+import { CallFunction, Codec, DetectCodec, Signer as PolkadotSigner } from '@polkadot/types/types';
 import { SigningManager } from '@polymeshassociation/signing-manager-types';
-import { NormalizedCacheObject } from 'apollo-cache-inmemory';
-import ApolloClient, { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, clone, flatMap, flatten, flattenDeep } from 'lodash';
-import { polymesh } from 'polymesh-types/definitions';
-import { ProtocolOp } from 'polymesh-types/types';
 
-import { Account, Asset, DividendDistribution, Identity, PolymeshError, Subsidy } from '~/internal';
-import { didsWithClaims, heartbeat } from '~/middleware/queries';
-import { claimsQuery, heartbeatQuery } from '~/middleware/queriesV2';
+import { HistoricPolyxTransaction } from '~/api/entities/Account/types';
+import {
+  Account,
+  ChildIdentity,
+  DividendDistribution,
+  FungibleAsset,
+  Identity,
+  PolymeshError,
+  Subsidy,
+} from '~/internal';
+import {
+  claimsQuery,
+  heartbeatQuery,
+  metadataQuery,
+  polyxTransactionsQuery,
+} from '~/middleware/queries';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
-import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   AccountBalance,
-  ArrayTransactionArgument,
   ClaimData,
   ClaimType,
-  ComplexTransactionArgument,
   CorporateActionParams,
   DistributionWithDetails,
   ErrorCode,
+  MiddlewareMetadata,
   ModuleName,
-  PlainTransactionArgument,
+  PolkadotConfig,
   ProtocolFees,
   ResultSet,
-  SimpleEnumTransactionArgument,
   SubCallback,
   SubsidyWithAllowance,
   TransactionArgument,
-  TransactionArgumentType,
   TxTag,
   UnsubCallback,
 } from '~/types';
-import { GraphqlQuery } from '~/types/internal';
-import { Ensured, EnsuredV2, QueryReturnType } from '~/types/utils';
-import {
-  DEFAULT_GQL_PAGE_SIZE,
-  MAX_CONCURRENT_REQUESTS,
-  MAX_PAGE_SIZE,
-  ROOT_TYPES,
-} from '~/utils/constants';
+import { Ensured } from '~/types/utils';
+import { DEFAULT_GQL_PAGE_SIZE, MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   accountIdToString,
   balanceToBigNumber,
@@ -68,7 +68,8 @@ import {
   identityIdToString,
   meshClaimToClaim,
   meshCorporateActionToCorporateActionParams,
-  middlewareV2ClaimToClaimData,
+  middlewareClaimToClaimData,
+  middlewareEventDetailsToEventIdentifier,
   momentToDate,
   posRatioToBigNumber,
   signerToString,
@@ -82,11 +83,18 @@ import {
   u16ToBigNumber,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { assertAddressValid, calculateNextKey, createClaim } from '~/utils/internal';
+import {
+  asDid,
+  assertAddressValid,
+  calculateNextKey,
+  delay,
+  getApiAtBlock,
+} from '~/utils/internal';
+
+import { processType } from './utils';
 
 interface ConstructorParams {
   polymeshApi: ApiPromise;
-  middlewareApi: ApolloClient<NormalizedCacheObject> | null;
   middlewareApiV2: ApolloClient<NormalizedCacheObject> | null;
   ss58Format: BigNumber;
   signingManager?: SigningManager;
@@ -107,16 +115,9 @@ export class Context {
 
   public polymeshApi: ApiPromise;
 
-  /**
-   * Whether the current node is an archive node (contains a full history from genesis onward) or not
-   */
-  public isArchiveNode = false;
-
   public ss58Format: BigNumber;
 
   private _middlewareApi: ApolloClient<NormalizedCacheObject> | null;
-
-  private _middlewareApiV2: ApolloClient<NormalizedCacheObject> | null;
 
   private _polymeshApi: ApiPromise;
 
@@ -124,14 +125,17 @@ export class Context {
 
   private signingAddress?: string;
 
+  private nonce?: BigNumber;
+
+  private _isArchiveNodeResult?: boolean;
+
   /**
    * @hidden
    */
   private constructor(params: ConstructorParams) {
-    const { polymeshApi, middlewareApi, middlewareApiV2, ss58Format } = params;
+    const { polymeshApi, middlewareApiV2, ss58Format } = params;
 
-    this._middlewareApi = middlewareApi;
-    this._middlewareApiV2 = middlewareApiV2;
+    this._middlewareApi = middlewareApiV2;
     this._polymeshApi = polymeshApi;
     this.polymeshApi = polymeshApi;
     this.ss58Format = ss58Format;
@@ -144,29 +148,24 @@ export class Context {
    */
   static async create(params: {
     polymeshApi: ApiPromise;
-    middlewareApi: ApolloClient<NormalizedCacheObject> | null;
     middlewareApiV2: ApolloClient<NormalizedCacheObject> | null;
     signingManager?: SigningManager;
+    polkadot?: PolkadotConfig;
   }): Promise<Context> {
-    const { polymeshApi, middlewareApi, middlewareApiV2, signingManager } = params;
+    const { polymeshApi, middlewareApiV2, signingManager } = params;
 
     const ss58Format: BigNumber = u16ToBigNumber(polymeshApi.consts.system.ss58Prefix);
 
     const context = new Context({
       polymeshApi,
-      middlewareApi,
       middlewareApiV2,
       signingManager,
       ss58Format,
     });
 
-    const isArchiveNodePromise = context.isCurrentNodeArchive();
-
     if (signingManager) {
       await context.setSigningManager(signingManager);
     }
-
-    context.isArchiveNode = await isArchiveNodePromise;
 
     return new Proxy(context, {
       get: (target, prop: keyof Context): Context[keyof Context] => {
@@ -184,18 +183,33 @@ export class Context {
 
   /**
    * @hidden
+   *
+   * checks if current node is archive by querying the balance at genesis block
+   *
+   * @note caches first successful result to avoid repeated network calls
    */
-  private async isCurrentNodeArchive(): Promise<boolean> {
+  public async isCurrentNodeArchive(): Promise<boolean> {
     const {
       polymeshApi: {
-        query: { balances, system },
+        query: { system },
       },
+      polymeshApi,
     } = this;
+
+    if (typeof this._isArchiveNodeResult !== 'undefined') {
+      return this._isArchiveNodeResult;
+    }
 
     try {
       const blockHash = await system.blockHash(bigNumberToU32(new BigNumber(0), this));
-      const balance = await balances.totalIssuance.at(blockHash);
-      return balanceToBigNumber(balance).gt(new BigNumber(0));
+
+      const apiAt = await polymeshApi.at(blockHash);
+
+      const balance = await apiAt.query.balances.totalIssuance();
+
+      this._isArchiveNodeResult = balanceToBigNumber(balance).gt(new BigNumber(0));
+
+      return this._isArchiveNodeResult;
     } catch (e) {
       return false;
     }
@@ -207,8 +221,19 @@ export class Context {
    * @note the signing Account will be set to the Signing Manager's first Account. If the Signing Manager has
    *   no Accounts yet, the signing Account will be left empty
    */
-  public async setSigningManager(signingManager: SigningManager): Promise<void> {
+  public async setSigningManager(signingManager: SigningManager | null): Promise<void> {
+    if (signingManager === null) {
+      this._signingManager = undefined;
+      this.signingAddress = undefined;
+      // TODO remove cast when polkadot/api >= v10.7.2
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      this._polymeshApi.setSigner(undefined as any);
+
+      return;
+    }
+
     this._signingManager = signingManager;
+    this._polymeshApi.setSigner(signingManager.getExternalSigner());
 
     signingManager.setSs58Format(this.ss58Format.toNumber());
 
@@ -495,9 +520,7 @@ export class Context {
 
     const dids = identities.map(signerToString);
     const rawIdentities = dids.map(did => stringToIdentityId(did, this));
-    const records = await identity.didRecords.multi<QueryReturnType<typeof identity.didRecords>>(
-      rawIdentities
-    );
+    const records = await identity.didRecords.multi(rawIdentities);
 
     const invalidDids: string[] = [];
 
@@ -538,9 +561,33 @@ export class Context {
   /**
    * @hidden
    *
+   * Returns an Child Identity when given a DID string
+   *
+   * @throws if the Child Identity does not exist
+   */
+  public async getChildIdentity(child: ChildIdentity | string): Promise<ChildIdentity> {
+    if (child instanceof ChildIdentity) {
+      return child;
+    }
+    const childIdentity = new ChildIdentity({ did: child }, this);
+    const exists = await childIdentity.exists();
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The passed DID does not correspond to an on-chain child Identity',
+      });
+    }
+
+    return childIdentity;
+  }
+
+  /**
+   * @hidden
+   *
    * Retrieve the protocol fees associated with running specific transactions
    *
-   * @param tags - list of transaction tags (i.e. [TxTags.asset.CreateAsset, TxTags.asset.RegisterTicker] or ["asset.createAsset", "asset.registerTicker"])
+   * @param tags - list of transaction tags (e.g. [TxTags.asset.CreateAsset, TxTags.asset.RegisterTicker] or ["asset.createAsset", "asset.registerTicker"])
    * @param blockHash - optional hash of the block to get the protocol fees at that block
    */
   public async getProtocolFees({
@@ -558,7 +605,7 @@ export class Context {
       },
     } = this;
 
-    const tagsMap = new Map<TxTag, ProtocolOp | undefined>();
+    const tagsMap = new Map<TxTag, PolymeshCommonUtilitiesProtocolFeeProtocolOp | undefined>();
 
     tags.forEach(tag => {
       try {
@@ -568,12 +615,25 @@ export class Context {
       }
     });
 
+    let baseFeesQuery;
+    if (blockHash) {
+      ({
+        query: {
+          protocolFee: { baseFees: baseFeesQuery },
+        },
+      } = await getApiAtBlock(this, stringToHash(blockHash, this)));
+    } else {
+      baseFeesQuery = baseFees;
+    }
+
     const [baseFeesEntries, coefficientValue] = await Promise.all([
-      blockHash ? baseFees.entriesAt(stringToHash(blockHash, this)) : baseFees.entries(),
+      baseFeesQuery.entries(),
       coefficient(),
     ]);
 
-    const assembleResult = (rawProtocolOp: ProtocolOp | undefined): BigNumber => {
+    const assembleResult = (
+      rawProtocolOp: PolymeshCommonUtilitiesProtocolFeeProtocolOp | undefined
+    ): BigNumber => {
       const baseFeeEntry = baseFeesEntries.find(
         ([
           {
@@ -638,135 +698,8 @@ export class Context {
        */
       _polymeshApi: { tx },
     } = this;
-    const { types } = polymesh;
 
     const [section, method] = tag.split('.');
-
-    const getRootType = (
-      type: string
-    ):
-      | PlainTransactionArgument
-      | ArrayTransactionArgument
-      | SimpleEnumTransactionArgument
-      | ComplexTransactionArgument => {
-      const rootType = ROOT_TYPES[type];
-
-      if (rootType) {
-        return {
-          type: rootType,
-        };
-      }
-      if (type === 'Null') {
-        return {
-          type: TransactionArgumentType.Null,
-        };
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const definition = (types as any)[type];
-
-      if (!definition) {
-        return {
-          type: TransactionArgumentType.Unknown,
-        };
-      }
-
-      const typeDef = getTypeDef(JSON.stringify(definition));
-
-      if (typeDef.info === TypeDefInfo.Plain) {
-        return getRootType(definition);
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-use-before-define
-      return processType(typeDef, '');
-    };
-
-    const processType = (rawType: TypeDef, name: string): TransactionArgument => {
-      const { type, info, sub } = rawType;
-
-      const arg = {
-        name,
-        optional: false,
-        _rawType: rawType,
-      };
-
-      switch (info) {
-        case TypeDefInfo.Plain: {
-          return {
-            ...getRootType(type),
-            ...arg,
-          };
-        }
-        case TypeDefInfo.Compact: {
-          return {
-            ...processType(sub as TypeDef, name),
-            ...arg,
-          };
-        }
-        case TypeDefInfo.Option: {
-          return {
-            ...processType(sub as TypeDef, name),
-            ...arg,
-            optional: true,
-          };
-        }
-        case TypeDefInfo.Tuple: {
-          return {
-            type: TransactionArgumentType.Tuple,
-            ...arg,
-            internal: (sub as TypeDef[]).map((def, index) => processType(def, `${index}`)),
-          };
-        }
-        case TypeDefInfo.Vec: {
-          return {
-            type: TransactionArgumentType.Array,
-            ...arg,
-            internal: processType(sub as TypeDef, ''),
-          };
-        }
-        case TypeDefInfo.VecFixed: {
-          return {
-            type: TransactionArgumentType.Text,
-            ...arg,
-          };
-        }
-        case TypeDefInfo.Enum: {
-          const subTypes = sub as TypeDef[];
-
-          const isSimple = subTypes.every(({ type: subType }) => subType === 'Null');
-
-          if (isSimple) {
-            return {
-              type: TransactionArgumentType.SimpleEnum,
-              ...arg,
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              internal: subTypes.map(({ name: subName }) => subName!),
-            };
-          }
-
-          return {
-            type: TransactionArgumentType.RichEnum,
-            ...arg,
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            internal: subTypes.map(def => processType(def, def.name!)),
-          };
-        }
-        case TypeDefInfo.Struct: {
-          return {
-            type: TransactionArgumentType.Object,
-            ...arg,
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            internal: (sub as TypeDef[]).map(def => processType(def, def.name!)),
-          };
-        }
-        default: {
-          return {
-            type: TransactionArgumentType.Unknown,
-            ...arg,
-          };
-        }
-      }
-    };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return ((tx as any)[section][method] as CallFunction).meta.args.map(({ name, type }) => {
@@ -781,7 +714,7 @@ export class Context {
    * @hidden
    */
   public async getDividendDistributionsForAssets(args: {
-    assets: Asset[];
+    assets: FungibleAsset[];
   }): Promise<DistributionWithDetails[]> {
     const {
       polymeshApi: {
@@ -846,11 +779,7 @@ export class Context {
     const requestChunks = chunk(paramChunks, MAX_CONCURRENT_REQUESTS);
     const distributions = await P.mapSeries(requestChunks, requestChunk =>
       Promise.all(
-        requestChunk.map(paramChunk =>
-          capitalDistribution.distributions.multi<
-            QueryReturnType<typeof capitalDistribution.distributions>
-          >(paramChunk)
-        )
+        requestChunk.map(paramChunk => capitalDistribution.distributions.multi(paramChunk))
       )
     );
 
@@ -928,14 +857,23 @@ export class Context {
     const claimData = await P.map(claim1stKeys, async claim1stKey => {
       const entries = await identity.claims.entries(claim1stKey);
       const data: ClaimData[] = [];
-      entries.forEach(([key, { claimIssuer, issuanceDate, expiry: rawExpiry, claim }]) => {
+      entries.forEach(([key, optClaim]) => {
         const { target } = key.args[0];
+
+        const {
+          claimIssuer,
+          issuanceDate,
+          lastUpdateDate,
+          expiry: rawExpiry,
+          claim,
+        } = optClaim.unwrap();
         const expiry = !rawExpiry.isEmpty ? momentToDate(rawExpiry.unwrap()) : null;
         if ((!includeExpired && (expiry === null || expiry > new Date())) || includeExpired) {
           data.push({
             target: new Identity({ did: identityIdToString(target) }, this),
             issuer: new Identity({ did: identityIdToString(claimIssuer) }, this),
             issuedAt: momentToDate(issuanceDate),
+            lastUpdatedAt: momentToDate(lastUpdateDate),
             expiry,
             claim: meshClaimToClaim(claim),
           });
@@ -955,75 +893,7 @@ export class Context {
   public async getIdentityClaimsFromMiddleware(args: {
     targets?: (string | Identity)[];
     trustedClaimIssuers?: (string | Identity)[];
-    claimTypes?: Exclude<ClaimType, ClaimType.InvestorUniquenessV2>[];
-    includeExpired?: boolean;
-    size?: BigNumber;
-    start?: BigNumber;
-  }): Promise<ResultSet<ClaimData>> {
-    const { targets, claimTypes, trustedClaimIssuers, includeExpired, size, start } = args;
-
-    const data: ClaimData[] = [];
-
-    const result = await this.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
-      didsWithClaims({
-        dids: targets?.map(target => signerToString(target)),
-        trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
-          signerToString(trustedClaimIssuer)
-        ),
-        claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
-        includeExpired,
-        count: size?.toNumber(),
-        skip: start?.toNumber(),
-      })
-    );
-
-    const {
-      data: {
-        didsWithClaims: { items: didsWithClaimsList, totalCount },
-      },
-    } = result;
-
-    const count = new BigNumber(totalCount);
-
-    didsWithClaimsList.forEach(({ claims }) => {
-      claims.forEach(
-        ({
-          targetDID: target,
-          issuer,
-          issuance_date: issuanceDate,
-          expiry,
-          type,
-          jurisdiction,
-          scope,
-          cdd_id: cddId,
-        }) => {
-          data.push({
-            target: new Identity({ did: target }, this),
-            issuer: new Identity({ did: issuer }, this),
-            issuedAt: new Date(issuanceDate),
-            expiry: expiry ? new Date(expiry) : null,
-            claim: createClaim(type, jurisdiction, scope, cddId, undefined),
-          });
-        }
-      );
-    });
-
-    const next = calculateNextKey(count, size, start);
-
-    return {
-      data,
-      next,
-      count,
-    };
-  }
-
-  /**
-   * @hidden
-   */
-  public async getIdentityClaimsFromMiddlewareV2(args: {
-    targets?: (string | Identity)[];
-    trustedClaimIssuers?: (string | Identity)[];
-    claimTypes?: Exclude<ClaimType, ClaimType.InvestorUniquenessV2>[];
+    claimTypes?: ClaimType[];
     includeExpired?: boolean;
     size?: BigNumber;
     start?: BigNumber;
@@ -1041,7 +911,7 @@ export class Context {
       data: {
         claims: { nodes: claimsList, totalCount },
       },
-    } = await this.queryMiddlewareV2<EnsuredV2<QueryV2, 'claims'>>(
+    } = await this.queryMiddleware<Ensured<Query, 'claims'>>(
       claimsQuery(
         {
           dids: targets?.map(target => signerToString(target)),
@@ -1058,9 +928,9 @@ export class Context {
 
     const count = new BigNumber(totalCount);
 
-    const data = claimsList.map(claim => middlewareV2ClaimToClaimData(claim, this));
+    const data = claimsList.map(claim => middlewareClaimToClaimData(claim, this));
 
-    const next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, data.length, start);
 
     return {
       data,
@@ -1081,13 +951,13 @@ export class Context {
    * @param opts.size - page size
    * @param opts.start - page offset
    *
-   * @note uses the middleware (optional)
+   * @note uses the middleware V2 (optional)
    */
   public async issuedClaims(
     opts: {
       targets?: (string | Identity)[];
       trustedClaimIssuers?: (string | Identity)[];
-      claimTypes?: Exclude<ClaimType, ClaimType.InvestorUniquenessV2>[];
+      claimTypes?: ClaimType[];
       includeExpired?: boolean;
       size?: BigNumber;
       start?: BigNumber;
@@ -1099,66 +969,6 @@ export class Context {
 
     if (isMiddlewareAvailable) {
       return this.getIdentityClaimsFromMiddleware({
-        targets,
-        trustedClaimIssuers,
-        claimTypes,
-        includeExpired,
-        size,
-        start,
-      });
-    }
-
-    if (!targets) {
-      throw new PolymeshError({
-        code: ErrorCode.MiddlewareError,
-        message: 'Cannot perform this action without an active middleware connection',
-      });
-    }
-
-    const identityClaimsFromChain = await this.getIdentityClaimsFromChain({
-      targets,
-      claimTypes,
-      trustedClaimIssuers,
-      includeExpired,
-    });
-
-    return {
-      data: identityClaimsFromChain,
-      next: null,
-      count: undefined,
-    };
-  }
-
-  /**
-   * @hidden
-   *
-   * Retrieve a list of claims. Can be filtered using parameters
-   *
-   * @param opts.targets - Identities (or Identity IDs) for which to fetch claims (targets). Defaults to all targets
-   * @param opts.trustedClaimIssuers - Identity IDs of claim issuers. Defaults to all claim issuers
-   * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
-   * @param opts.includeExpired - whether to include expired claims. Defaults to true
-   * @param opts.size - page size
-   * @param opts.start - page offset
-   *
-   * @note uses the middleware V2 (optional)
-   */
-  public async issuedClaimsV2(
-    opts: {
-      targets?: (string | Identity)[];
-      trustedClaimIssuers?: (string | Identity)[];
-      claimTypes?: Exclude<ClaimType, ClaimType.InvestorUniquenessV2>[];
-      includeExpired?: boolean;
-      size?: BigNumber;
-      start?: BigNumber;
-    } = {}
-  ): Promise<ResultSet<ClaimData>> {
-    const { targets, trustedClaimIssuers, claimTypes, includeExpired = true, size, start } = opts;
-
-    const isMiddlewareV2Available = await this.isMiddlewareV2Available();
-
-    if (isMiddlewareV2Available) {
-      return this.getIdentityClaimsFromMiddlewareV2({
         targets,
         trustedClaimIssuers,
         claimTypes,
@@ -1190,32 +1000,12 @@ export class Context {
   }
 
   /**
-   * @hidden
-   *
    * Retrieve the middleware client
-   *
-   * @throws if the middleware is not enabled
-   */
-  public get middlewareApi(): ApolloClient<NormalizedCacheObject> {
-    const { _middlewareApi: api } = this;
-
-    if (!api) {
-      throw new PolymeshError({
-        code: ErrorCode.MiddlewareError,
-        message: 'Cannot perform this action without an active middleware connection',
-      });
-    }
-
-    return api;
-  }
-
-  /**
-   * Retrieve the middleware v2 client
    *
    * @throws if the middleware V2 is not enabled
    */
-  public get middlewareApiV2(): ApolloClient<NormalizedCacheObject> {
-    const { _middlewareApiV2: api } = this;
+  public get middlewareApi(): ApolloClient<NormalizedCacheObject> {
+    const { _middlewareApi: api } = this;
 
     if (!api) {
       throw new PolymeshError({
@@ -1229,38 +1019,14 @@ export class Context {
   /**
    * @hidden
    *
-   * Make a query to the middleware server using the apollo client
+   * Make a query to the middleware V2 server using the apollo client
    */
   public async queryMiddleware<Result extends Partial<Query>>(
-    query: GraphqlQuery<unknown>
+    query: QueryOptions<OperationVariables, Result>
   ): Promise<ApolloQueryResult<Result>> {
     let result: ApolloQueryResult<Result>;
     try {
       result = await this.middlewareApi.query(query);
-    } catch (err) {
-      const resultMessage = err.networkError?.result?.message;
-      const { message: errorMessage } = err;
-      const message = resultMessage ?? errorMessage;
-      throw new PolymeshError({
-        code: ErrorCode.MiddlewareError,
-        message: `Error in middleware query: ${message}`,
-      });
-    }
-
-    return result;
-  }
-
-  /**
-   * @hidden
-   *
-   * Make a query to the middleware V2 server using the apollo client
-   */
-  public async queryMiddlewareV2<Result extends Partial<QueryV2>>(
-    query: GraphqlQuery<unknown>
-  ): Promise<ApolloQueryResult<Result>> {
-    let result: ApolloQueryResult<Result>;
-    try {
-      result = await this.middlewareApiV2.query(query);
     } catch (err) {
       const resultMessage = err.networkError?.result?.message;
       const { message: errorMessage } = err;
@@ -1277,7 +1043,7 @@ export class Context {
   /**
    * @hidden
    *
-   * Return whether the middleware was enabled at startup
+   * Return whether the middleware V2 was enabled at startup
    */
   public isMiddlewareEnabled(): boolean {
     return !!this._middlewareApi;
@@ -1286,20 +1052,11 @@ export class Context {
   /**
    * @hidden
    *
-   * Return whether the middleware V2 was enabled at startup
-   */
-  public isMiddlewareV2Enabled(): boolean {
-    return !!this._middlewareApiV2;
-  }
-
-  /**
-   * @hidden
-   *
-   * Return whether the middleware is enabled and online
+   * Return whether the middleware V2 is enabled and online
    */
   public async isMiddlewareAvailable(): Promise<boolean> {
     try {
-      await this.middlewareApi.query(heartbeat());
+      await this.middlewareApi.query(heartbeatQuery());
     } catch (err) {
       return false;
     }
@@ -1310,25 +1067,28 @@ export class Context {
   /**
    * @hidden
    *
-   * Return whether the middleware V2 is enabled and online
-   */
-  public async isMiddlewareV2Available(): Promise<boolean> {
-    try {
-      await this.middlewareApiV2.query(heartbeatQuery());
-    } catch (err) {
-      return false;
-    }
-
-    return true;
-  }
-
-  /**
-   * @hidden
-   *
-   * Retrieve the latest block number
+   * Retrieve the number of the latest finalized block
    */
   public async getLatestBlock(): Promise<BigNumber> {
-    const { number } = await this.polymeshApi.rpc.chain.getHeader();
+    const { chain } = this.polymeshApi.rpc;
+
+    /*
+     * This is faster than calling `getFinalizedHead` and then `getHeader`.
+     * We're promisifying a callback subscription to the latest finalized block
+     * and unsubscribing as soon as we get the first result
+     */
+    const gettingHeader = new Promise<Header>((resolve, reject) => {
+      const gettingUnsub = chain.subscribeFinalizedHeads(header => {
+        gettingUnsub
+          .then(unsub => {
+            unsub();
+            resolve(header);
+          })
+          .catch(err => reject(err));
+      });
+    });
+
+    const { number } = await gettingHeader;
 
     return u32ToBigNumber(number.unwrap());
   }
@@ -1352,22 +1112,21 @@ export class Context {
    * @note after disconnecting, trying to access any property in this object will result
    *   in an error
    */
-  public disconnect(): Promise<void> {
+  public async disconnect(): Promise<void> {
     const { polymeshApi } = this;
-    let middlewareApi, middlewareApiV2;
+    let middlewareApi;
 
     if (this.isMiddlewareEnabled()) {
       ({ middlewareApi } = this);
     }
 
-    if (this.isMiddlewareV2Enabled()) {
-      ({ middlewareApiV2 } = this);
-    }
-
     this.isDisconnected = true;
 
-    middlewareApi && middlewareApi.stop();
-    middlewareApiV2 && middlewareApiV2.stop();
+    if (middlewareApi) {
+      middlewareApi.stop();
+    }
+
+    await delay(500); // allow pending requests to complete
 
     return polymeshApi.disconnect();
   }
@@ -1401,5 +1160,144 @@ export class Context {
         data: { type, params, error },
       });
     }
+  }
+
+  /**
+   * @hidden
+   *
+   * Set the nonce value
+   */
+  public setNonce(nonce?: BigNumber): void {
+    this.nonce = nonce;
+  }
+
+  /**
+   * @hidden
+   *
+   * Retrieve the nonce value
+   */
+  public getNonce(): BigNumber {
+    // nonce: -1 takes pending transactions into consideration.
+    // More information can be found at: https://polkadot.js.org/docs/api/cookbook/tx/#how-do-i-take-the-pending-tx-pool-into-account-in-my-nonce
+    return new BigNumber(this.nonce || -1);
+  }
+
+  /**
+   * Retrieve middleware metadata.
+   * Returns null if middleware V2 is disabled
+   *
+   * @note uses the middleware V2
+   */
+  public async getMiddlewareMetadata(): Promise<MiddlewareMetadata | null> {
+    if (!this.isMiddlewareEnabled()) {
+      return null;
+    }
+
+    const {
+      data: {
+        _metadata: {
+          chain,
+          specName,
+          genesisHash,
+          targetHeight,
+          lastProcessedHeight,
+          lastProcessedTimestamp,
+          indexerHealthy,
+        },
+      },
+    } = await this.queryMiddleware<Ensured<Query, '_metadata'>>(metadataQuery());
+
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    return {
+      chain: chain!,
+      specName: specName!,
+      genesisHash: genesisHash!,
+      targetHeight: new BigNumber(targetHeight!),
+      lastProcessedHeight: new BigNumber(lastProcessedHeight!),
+      lastProcessedTimestamp: new Date(parseInt(lastProcessedTimestamp)),
+      indexerHealthy: Boolean(indexerHealthy),
+    };
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
+  }
+
+  /**
+   * @hidden
+   *
+   * Retrieve POLYX transactions for a given identity or list of accounts
+   *
+   * @note uses the middleware V2
+   */
+  public async getPolyxTransactions(args: {
+    identity?: string | Identity;
+    accounts?: (string | Account)[];
+    size?: BigNumber;
+    start?: BigNumber;
+  }): Promise<ResultSet<HistoricPolyxTransaction>> {
+    const {
+      identity,
+      accounts,
+      size = new BigNumber(DEFAULT_GQL_PAGE_SIZE),
+      start = new BigNumber(0),
+    } = args;
+
+    const {
+      data: {
+        polyxTransactions: { nodes: transactions, totalCount },
+      },
+    } = await this.queryMiddleware<Ensured<Query, 'polyxTransactions'>>(
+      polyxTransactionsQuery(
+        {
+          identityId: identity ? asDid(identity) : undefined,
+          addresses: accounts?.map(account => signerToString(account)),
+        },
+        size,
+        start
+      )
+    );
+
+    const count = new BigNumber(totalCount);
+
+    const data: HistoricPolyxTransaction[] = transactions.map(transaction => {
+      const {
+        identityId,
+        address,
+        toId,
+        toAddress,
+        amount,
+        type,
+        memo,
+        createdBlock,
+        callId,
+        eventId,
+        moduleId,
+        extrinsic,
+        eventIdx,
+      } = transaction;
+
+      /* eslint-disable @typescript-eslint/no-non-null-assertion */
+      return {
+        fromIdentity: identityId ? new Identity({ did: identityId }, this) : undefined,
+        fromAccount: address ? new Account({ address }, this) : undefined,
+        toIdentity: toId ? new Identity({ did: toId }, this) : undefined,
+        toAccount: toAddress ? new Account({ address: toAddress }, this) : undefined,
+        amount: new BigNumber(amount).shiftedBy(-6),
+        type,
+        memo,
+        ...middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx),
+        callId,
+        eventId: eventId!,
+        moduleId: moduleId!,
+        extrinsicIdx: extrinsic ? new BigNumber(extrinsic.extrinsicIdx) : undefined,
+      };
+      /* eslint-enable @typescript-eslint/no-non-null-assertion */
+    });
+
+    const next = calculateNextKey(count, data.length, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
   }
 }

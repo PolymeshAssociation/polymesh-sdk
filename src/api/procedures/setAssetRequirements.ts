@@ -2,9 +2,9 @@ import BigNumber from 'bignumber.js';
 import { flatten, map } from 'lodash';
 
 import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
-import { Asset, PolymeshError, Procedure } from '~/internal';
+import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { Condition, ErrorCode, InputCondition, SetAssetRequirementsParams, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { requirementToComplianceRequirement, stringToTicker } from '~/utils/conversion';
 import { conditionsAreEqual, hasSameElements } from '~/utils/internal';
 
@@ -19,9 +19,12 @@ export type Params = SetAssetRequirementsParams & {
  * @hidden
  */
 export async function prepareSetAssetRequirements(
-  this: Procedure<Params, Asset>,
+  this: Procedure<Params, void>,
   args: Params
-): Promise<Asset> {
+): Promise<
+  | TransactionSpec<void, ExtrinsicParams<'complianceManager', 'resetAssetCompliance'>>
+  | TransactionSpec<void, ExtrinsicParams<'complianceManager', 'replaceAssetCompliance'>>
+> {
   const {
     context: {
       polymeshApi: { tx },
@@ -32,7 +35,7 @@ export async function prepareSetAssetRequirements(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const asset = new Asset({ ticker }, context);
+  const asset = new FungibleAsset({ ticker }, context);
 
   const { requirements: currentRequirements, defaultTrustedClaimIssuers } =
     await asset.compliance.requirements.get();
@@ -60,32 +63,31 @@ export async function prepareSetAssetRequirements(
   }
 
   if (!requirements.length) {
-    this.addTransaction({
+    return {
       transaction: tx.complianceManager.resetAssetCompliance,
       args: [rawTicker],
-    });
-  } else {
-    const rawAssetCompliance = requirements.map((requirement, index) =>
-      requirementToComplianceRequirement(
-        { conditions: requirement, id: new BigNumber(index) },
-        context
-      )
-    );
-
-    this.addTransaction({
-      transaction: tx.complianceManager.replaceAssetCompliance,
-      args: [rawTicker, rawAssetCompliance],
-    });
+      resolver: undefined,
+    };
   }
+  const rawAssetCompliance = requirements.map((requirement, index) =>
+    requirementToComplianceRequirement(
+      { conditions: requirement, id: new BigNumber(index) },
+      context
+    )
+  );
 
-  return asset;
+  return {
+    transaction: tx.complianceManager.replaceAssetCompliance,
+    args: [rawTicker, rawAssetCompliance],
+    resolver: undefined,
+  };
 }
 
 /**
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, Asset>,
+  this: Procedure<Params, void>,
   { ticker, requirements }: Params
 ): ProcedureAuthorization {
   return {
@@ -93,7 +95,7 @@ export function getAuthorization(
       transactions: requirements.length
         ? [TxTags.complianceManager.ReplaceAssetCompliance]
         : [TxTags.complianceManager.ResetAssetCompliance],
-      assets: [new Asset({ ticker }, this.context)],
+      assets: [new FungibleAsset({ ticker }, this.context)],
       portfolios: [],
     },
   };
@@ -102,5 +104,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const setAssetRequirements = (): Procedure<Params, Asset> =>
+export const setAssetRequirements = (): Procedure<Params, void> =>
   new Procedure(prepareSetAssetRequirements, getAuthorization);

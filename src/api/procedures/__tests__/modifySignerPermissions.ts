@@ -1,5 +1,4 @@
-import { Signatory } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   getAuthorization,
@@ -14,9 +13,6 @@ import {
   ModifySignerPermissionsParams,
   PermissionedAccount,
   PermissionType,
-  Signer,
-  SignerType,
-  SignerValue,
   TxTags,
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -24,12 +20,10 @@ import * as utilsInternalModule from '~/utils/internal';
 
 describe('modifySignerPermissions procedure', () => {
   let mockContext: Mocked<Context>;
-  let addBatchTransactionStub: sinon.SinonStub;
-  let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
-  let signerToSignerValueStub: sinon.SinonStub<[Signer], SignerValue>;
-  let permissionsToMeshPermissionsStub: sinon.SinonStub;
-  let permissionsLikeToPermissionsStub: sinon.SinonStub;
-  let getSecondaryAccountPermissionsStub: sinon.SinonStub;
+  let stringToAccountIdSpy: jest.SpyInstance;
+  let permissionsToMeshPermissionsSpy: jest.SpyInstance;
+  let permissionsLikeToPermissionsSpy: jest.SpyInstance;
+  let getSecondaryAccountPermissionsSpy: jest.SpyInstance;
   let identity: Identity;
   let account: Account;
 
@@ -37,26 +31,24 @@ describe('modifySignerPermissions procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    signerValueToSignatoryStub = sinon.stub(utilsConversionModule, 'signerValueToSignatory');
-    signerToSignerValueStub = sinon.stub(utilsConversionModule, 'signerToSignerValue');
-    permissionsToMeshPermissionsStub = sinon.stub(
+    stringToAccountIdSpy = jest.spyOn(utilsConversionModule, 'stringToAccountId');
+    permissionsToMeshPermissionsSpy = jest.spyOn(
       utilsConversionModule,
       'permissionsToMeshPermissions'
     );
-    permissionsLikeToPermissionsStub = sinon.stub(
+    permissionsLikeToPermissionsSpy = jest.spyOn(
       utilsConversionModule,
       'permissionsLikeToPermissions'
     );
-    getSecondaryAccountPermissionsStub = sinon.stub(
+    getSecondaryAccountPermissionsSpy = jest.spyOn(
       utilsInternalModule,
       'getSecondaryAccountPermissions'
     );
   });
 
   beforeEach(() => {
-    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
     account = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
-    getSecondaryAccountPermissionsStub.returns([
+    getSecondaryAccountPermissionsSpy.mockReturnValue([
       {
         account,
         permissions: {
@@ -93,7 +85,7 @@ describe('modifySignerPermissions procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should add a batch of Set Permission To Signer transactions to the queue', async () => {
+  it('should return a batch of Set Permission To Signer transactions spec', async () => {
     let secondaryAccounts: PermissionedAccount[] = [
       {
         account,
@@ -111,13 +103,7 @@ describe('modifySignerPermissions procedure', () => {
       portfolio: dsMockUtils.createMockPortfolioPermissions(),
     });
 
-    const signerValue = {
-      type: SignerType.Account,
-      value: secondaryAccounts[0].account.address,
-    };
-    const rawSignatory = dsMockUtils.createMockSignatory({
-      Account: dsMockUtils.createMockAccountId(signerValue.value),
-    });
+    const rawSignatory = dsMockUtils.createMockAccountId(account.address);
 
     dsMockUtils.configureMocks({
       contextOptions: {
@@ -125,9 +111,9 @@ describe('modifySignerPermissions procedure', () => {
       },
     });
 
-    signerToSignerValueStub.returns(signerValue);
-
-    signerValueToSignatoryStub.withArgs(signerValue, mockContext).returns(rawSignatory);
+    when(stringToAccountIdSpy)
+      .calledWith(account.address, mockContext)
+      .mockReturnValue(rawSignatory);
 
     const proc = procedureMockUtils.getInstance<ModifySignerPermissionsParams, void, Storage>(
       mockContext,
@@ -136,16 +122,17 @@ describe('modifySignerPermissions procedure', () => {
       }
     );
 
-    const transaction = dsMockUtils.createTxStub('identity', 'setPermissionToSigner');
+    const transaction = dsMockUtils.createTxMock('identity', 'setSecondaryKeyPermissions');
 
-    permissionsToMeshPermissionsStub.returns(fakeMeshPermissions);
+    permissionsToMeshPermissionsSpy.mockReturnValue(fakeMeshPermissions);
 
     let signersList = [[rawSignatory, fakeMeshPermissions]];
 
-    await prepareModifySignerPermissions.call(proc, { secondaryAccounts });
+    let result = await prepareModifySignerPermissions.call(proc, { secondaryAccounts });
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: signersList.map(signers => ({ transaction, args: signers })),
+      resolver: undefined,
     });
 
     secondaryAccounts = [
@@ -165,16 +152,17 @@ describe('modifySignerPermissions procedure', () => {
       portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
     });
 
-    permissionsToMeshPermissionsStub.returns(fakeMeshPermissions);
+    permissionsToMeshPermissionsSpy.mockReturnValue(fakeMeshPermissions);
 
     signersList = [[rawSignatory, fakeMeshPermissions]];
 
-    permissionsLikeToPermissionsStub.resolves(secondaryAccounts[0].permissions);
+    permissionsLikeToPermissionsSpy.mockResolvedValue(secondaryAccounts[0].permissions);
 
-    await prepareModifySignerPermissions.call(proc, { secondaryAccounts, identity });
+    result = await prepareModifySignerPermissions.call(proc, { secondaryAccounts, identity });
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: signersList.map(signers => ({ transaction, args: signers })),
+      resolver: undefined,
     });
   });
 
@@ -191,7 +179,7 @@ describe('modifySignerPermissions procedure', () => {
       },
     ];
 
-    mockAccount.isEqual.withArgs(account).returns(false);
+    when(mockAccount.isEqual).calledWith(account).mockReturnValue(false);
 
     const proc = procedureMockUtils.getInstance<ModifySignerPermissionsParams, void, Storage>(
       mockContext,

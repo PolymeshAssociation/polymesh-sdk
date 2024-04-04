@@ -1,6 +1,6 @@
 import { AccountId, Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { prepareSubsidizeAccount } from '~/api/procedures/subsidizeAccount';
 import { Account, AuthorizationRequest, Context } from '~/internal';
@@ -16,11 +16,10 @@ jest.mock(
 
 describe('subsidizeAccount procedure', () => {
   let mockContext: Mocked<Context>;
-  let addTransactionStub: sinon.SinonStub;
 
-  let signerToStringStub: sinon.SinonStub<[string | Identity | Account], string>;
-  let stringToAccountIdStub: sinon.SinonStub<[string, Context], AccountId>;
-  let bigNumberToBalanceStub: sinon.SinonStub<[BigNumber, Context, boolean?], Balance>;
+  let signerToStringSpy: jest.SpyInstance<string, [string | Identity | Account]>;
+  let stringToAccountIdSpy: jest.SpyInstance<AccountId, [string, Context]>;
+  let bigNumberToBalanceSpy: jest.SpyInstance<Balance, [BigNumber, Context, boolean?]>;
 
   let args: SubsidizeAccountParams;
   const authId = new BigNumber(1);
@@ -35,13 +34,12 @@ describe('subsidizeAccount procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    signerToStringStub = sinon.stub(utilsConversionModule, 'signerToString');
-    stringToAccountIdStub = sinon.stub(utilsConversionModule, 'stringToAccountId');
-    bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
+    signerToStringSpy = jest.spyOn(utilsConversionModule, 'signerToString');
+    stringToAccountIdSpy = jest.spyOn(utilsConversionModule, 'stringToAccountId');
+    bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
   });
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
     args = { beneficiary: address, allowance };
     beneficiary = entityMockUtils.getAccountInstance({ address });
@@ -89,7 +87,7 @@ describe('subsidizeAccount procedure', () => {
       },
     });
 
-    signerToStringStub.withArgs(beneficiary).returns(address);
+    when(signerToStringSpy).calledWith(beneficiary).mockReturnValue(address);
 
     const proc = procedureMockUtils.getInstance<SubsidizeAccountParams, AuthorizationRequest>(
       mockContext
@@ -100,7 +98,7 @@ describe('subsidizeAccount procedure', () => {
     );
   });
 
-  it('should add an add authorization transaction to the queue', async () => {
+  it('should return an add authorization transaction spec', async () => {
     const mockBeneficiary = entityMockUtils.getAccountInstance({ address: 'mockAddress' });
     const issuer = entityMockUtils.getIdentityInstance();
     const subsidizer = entityMockUtils.getAccountInstance();
@@ -156,25 +154,24 @@ describe('subsidizeAccount procedure', () => {
 
     rawAllowance = dsMockUtils.createMockBalance(allowance);
 
-    stringToAccountIdStub.withArgs(address, mockContext).returns(rawBeneficiaryAccount);
+    when(stringToAccountIdSpy)
+      .calledWith(address, mockContext)
+      .mockReturnValue(rawBeneficiaryAccount);
 
-    bigNumberToBalanceStub.withArgs(allowance, mockContext).returns(rawAllowance);
+    when(bigNumberToBalanceSpy).calledWith(allowance, mockContext).mockReturnValue(rawAllowance);
 
     const proc = procedureMockUtils.getInstance<SubsidizeAccountParams, AuthorizationRequest>(
       mockContext
     );
 
-    const transaction = dsMockUtils.createTxStub('relayer', 'setPayingKey');
+    const transaction = dsMockUtils.createTxMock('relayer', 'setPayingKey');
 
-    await prepareSubsidizeAccount.call(proc, { ...args, beneficiary });
+    const result = await prepareSubsidizeAccount.call(proc, { ...args, beneficiary });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction,
-        resolvers: sinon.match.array,
-        args: [rawBeneficiaryAccount, rawAllowance],
-      })
-    );
+    expect(result).toEqual({
+      transaction,
+      args: [rawBeneficiaryAccount, rawAllowance],
+      resolver: expect.any(Function),
+    });
   });
 });

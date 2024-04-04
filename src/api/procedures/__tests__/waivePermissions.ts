@@ -1,5 +1,3 @@
-import sinon from 'sinon';
-
 import {
   getAuthorization,
   Params,
@@ -15,8 +13,8 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 describe('waivePermissions procedure', () => {
@@ -25,7 +23,6 @@ describe('waivePermissions procedure', () => {
   const rawTicker = dsMockUtils.createMockTicker(ticker);
 
   let mockContext: Mocked<Context>;
-  let addTransactionStub: sinon.SinonStub;
   let externalAgentsAbdicateTransaction: PolymeshTx<unknown[]>;
 
   beforeAll(() => {
@@ -33,12 +30,11 @@ describe('waivePermissions procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    sinon.stub(utilsConversionModule, 'stringToTicker').returns(rawTicker);
+    jest.spyOn(utilsConversionModule, 'stringToTicker').mockReturnValue(rawTicker);
   });
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
-    externalAgentsAbdicateTransaction = dsMockUtils.createTxStub('externalAgents', 'abdicate');
+    externalAgentsAbdicateTransaction = dsMockUtils.createTxMock('externalAgents', 'abdicate');
     mockContext = dsMockUtils.getContextInstance();
   });
 
@@ -54,7 +50,7 @@ describe('waivePermissions procedure', () => {
   });
 
   it('should throw an error if the Identity is not an Agent for the Asset', async () => {
-    const asset = entityMockUtils.getAssetInstance({
+    const asset = entityMockUtils.getFungibleAssetInstance({
       ticker,
       permissionsGetAgents: [
         {
@@ -94,8 +90,8 @@ describe('waivePermissions procedure', () => {
     expect(error.message).toBe('The Identity is not an Agent for the Asset');
   });
 
-  it('should add an abdicate transaction to the queue', async () => {
-    const asset = entityMockUtils.getAssetInstance({
+  it('should return an abdicate transaction spec', async () => {
+    const asset = entityMockUtils.getFungibleAssetInstance({
       ticker,
       permissionsGetAgents: [
         {
@@ -111,22 +107,23 @@ describe('waivePermissions procedure', () => {
       asset,
     });
 
-    await prepareWaivePermissions.call(proc, {
+    const result = await prepareWaivePermissions.call(proc, {
       asset,
       identity: entityMockUtils.getIdentityInstance({
         did,
       }),
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction: externalAgentsAbdicateTransaction,
       args: [rawTicker],
+      resolver: undefined,
     });
   });
 
   describe('prepareStorage', () => {
     it('should return the Asset', () => {
-      const asset = entityMockUtils.getAssetInstance({
+      const asset = entityMockUtils.getFungibleAssetInstance({
         ticker,
       });
 
@@ -148,7 +145,7 @@ describe('waivePermissions procedure', () => {
 
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
-      const asset = entityMockUtils.getAssetInstance({
+      const asset = entityMockUtils.getFungibleAssetInstance({
         ticker,
       });
 

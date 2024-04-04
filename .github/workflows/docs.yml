@@ -14,11 +14,13 @@ jobs:
       - uses: actions/checkout@v1
       - uses: actions/setup-node@v1
         with:
-          node-version: '14.21.1'
+          node-version: '18.x'
       - name: install dependencies
         run: yarn --frozen-lockfile
       - name: generate docs
-        run: yarn build:docs
+        run: |
+          yarn build:docs
+          yarn build:sdk-docs
       - name: determine branch name
         uses: actions/github-script@v3
         id: setBranch
@@ -39,7 +41,7 @@ jobs:
       - name: commit docs and gitignore
         uses: EndBug/add-and-commit@v4
         with:
-          add: '.gitignore docs'
+          add: '.gitignore docs sdk-docs'
           message: 'docs: autogenerate documentation'
           ref: ${{ steps.setBranch.outputs.result }}
         env:
@@ -49,16 +51,17 @@ jobs:
         with:
           path: 'docs'
         env:
-          GH_PERSONAL_ACCESS_TOKEN: ${{ secrets.JERE_RELEASE_TOKEN }}
+          GH_PERSONAL_ACCESS_TOKEN: ${{ secrets.RELEASE_TOKEN }}
 
   readme:
     name: Readme
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
-          node-version: '14.21.1'
+          node-version: '18.x'
+          cache: 'yarn'
       - name: install dependencies
         run: yarn --frozen-lockfile
       - name: update readme

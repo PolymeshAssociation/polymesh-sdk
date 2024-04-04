@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareModifyVenue } from '~/api/procedures/modifyVenue';
 import { Context, Venue } from '~/internal';
@@ -15,7 +14,6 @@ jest.mock(
 
 describe('modifyVenue procedure', () => {
   let mockContext: Mocked<Context>;
-  let addBatchTransactionStub: sinon.SinonStub;
   let venueId: BigNumber;
 
   let venue: Venue;
@@ -30,7 +28,6 @@ describe('modifyVenue procedure', () => {
   beforeEach(() => {
     entityMockUtils.configureMocks();
     mockContext = dsMockUtils.getContextInstance();
-    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
 
     venue = entityMockUtils.getVenueInstance({ id: venueId });
   });
@@ -85,7 +82,7 @@ describe('modifyVenue procedure', () => {
     );
   });
 
-  it('should add an update venue transaction to the queue', async () => {
+  it('should add an update venue transaction to the batch', async () => {
     const description = 'someDetails';
     const type = VenueType.Exchange;
 
@@ -99,20 +96,20 @@ describe('modifyVenue procedure', () => {
       type,
     };
 
-    sinon.stub(utilsConversionModule, 'bigNumberToU64').returns(rawId);
-    sinon.stub(utilsConversionModule, 'stringToBytes').returns(rawDetails);
-    sinon.stub(utilsConversionModule, 'venueTypeToMeshVenueType').returns(rawType);
+    jest.spyOn(utilsConversionModule, 'bigNumberToU64').mockReturnValue(rawId);
+    jest.spyOn(utilsConversionModule, 'stringToBytes').mockReturnValue(rawDetails);
+    jest.spyOn(utilsConversionModule, 'venueTypeToMeshVenueType').mockReturnValue(rawType);
 
-    const updateVenueDetailsTransaction = dsMockUtils.createTxStub(
+    const updateVenueDetailsTransaction = dsMockUtils.createTxMock(
       'settlement',
       'updateVenueDetails'
     );
-    const updateVenueTypeTransaction = dsMockUtils.createTxStub('settlement', 'updateVenueType');
+    const updateVenueTypeTransaction = dsMockUtils.createTxMock('settlement', 'updateVenueType');
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await prepareModifyVenue.call(proc, args);
+    let result = await prepareModifyVenue.call(proc, args);
 
-    sinon.assert.calledWith(addBatchTransactionStub.firstCall, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: updateVenueDetailsTransaction,
@@ -123,34 +120,37 @@ describe('modifyVenue procedure', () => {
           args: [rawId, rawType],
         },
       ],
+      resolver: undefined,
     });
 
-    await prepareModifyVenue.call(proc, {
+    result = await prepareModifyVenue.call(proc, {
       venue,
       type,
     });
 
-    sinon.assert.calledWith(addBatchTransactionStub.secondCall, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: updateVenueTypeTransaction,
           args: [rawId, rawType],
         },
       ],
+      resolver: undefined,
     });
 
-    await prepareModifyVenue.call(proc, {
+    result = await prepareModifyVenue.call(proc, {
       venue,
       description,
     });
 
-    sinon.assert.calledWith(addBatchTransactionStub.thirdCall, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: updateVenueDetailsTransaction,
           args: [rawId, rawDetails],
         },
       ],
+      resolver: undefined,
     });
   });
 

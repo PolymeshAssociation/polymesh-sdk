@@ -7,7 +7,7 @@ import {
   SetAllowanceParams,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { bigNumberToBalance, stringToAccountId } from '~/utils/conversion';
 
 export type ModifyAllowanceParams = (
@@ -24,7 +24,12 @@ export type ModifyAllowanceParams = (
 export async function prepareModifyAllowance(
   this: Procedure<ModifyAllowanceParams, void>,
   args: ModifyAllowanceParams
-): Promise<void> {
+): Promise<
+  TransactionSpec<
+    void,
+    ExtrinsicParams<'relayer', 'updatePolyxLimit' | 'decreasePolyxLimit' | 'increasePolyxLimit'>
+  >
+> {
   const {
     context: {
       polymeshApi: { tx },
@@ -78,10 +83,11 @@ export async function prepareModifyAllowance(
     transaction = tx.relayer.decreasePolyxLimit;
   }
 
-  this.addTransaction({
+  return {
     transaction,
     args: [rawBeneficiaryAccount, rawAllowance],
-  });
+    resolver: undefined,
+  };
 }
 
 /**

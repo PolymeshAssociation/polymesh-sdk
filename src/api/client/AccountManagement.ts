@@ -1,17 +1,23 @@
+import { MultiSig } from '~/api/entities/Account/MultiSig';
 import {
+  acceptPrimaryKeyRotation,
   Account,
   AuthorizationRequest,
   Context,
+  createMultiSigAccount,
   inviteAccount,
   leaveIdentity,
   modifySignerPermissions,
   modifySignerPermissionsStorage,
   removeSecondaryAccounts,
   subsidizeAccount,
+  Subsidy,
   toggleFreezeSecondaryAccounts,
 } from '~/internal';
 import {
+  AcceptPrimaryKeyRotationParams,
   AccountBalance,
+  CreateMultiSigParams,
   InviteAccountParams,
   ModifySignerPermissionsParams,
   NoArgsProcedureMethod,
@@ -22,7 +28,8 @@ import {
   SubsidizeAccountParams,
   UnsubCallback,
 } from '~/types';
-import { createProcedureMethod } from '~/utils/internal';
+import { stringToAccountId } from '~/utils/conversion';
+import { asAccount, assertAddressValid, createProcedureMethod } from '~/utils/internal';
 
 /**
  * Handles functionality related to Account Management
@@ -47,7 +54,7 @@ export class AccountManagement {
       context
     );
     this.revokePermissions = createProcedureMethod<
-      { secondaryAccounts: Account[] },
+      { secondaryAccounts: (string | Account)[] },
       ModifySignerPermissionsParams,
       void,
       modifySignerPermissionsStorage
@@ -96,6 +103,14 @@ export class AccountManagement {
       { getProcedureAndArgs: args => [subsidizeAccount, { ...args }] },
       context
     );
+    this.createMultiSigAccount = createProcedureMethod(
+      { getProcedureAndArgs: args => [createMultiSigAccount, args] },
+      context
+    );
+    this.acceptPrimaryKey = createProcedureMethod(
+      { getProcedureAndArgs: args => [acceptPrimaryKeyRotation, args] },
+      context
+    );
   }
 
   /**
@@ -113,7 +128,7 @@ export class AccountManagement {
    *
    * @throws if the signing Account is not the primary Account of the Identity whose secondary Account permissions are being revoked
    */
-  public revokePermissions: ProcedureMethod<{ secondaryAccounts: Account[] }, void>;
+  public revokePermissions: ProcedureMethod<{ secondaryAccounts: (string | Account)[] }, void>;
 
   /**
    * Modify all permissions of a list of secondary Accounts associated with the signing Identity
@@ -149,6 +164,15 @@ export class AccountManagement {
    *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
    */
   public subsidizeAccount: ProcedureMethod<SubsidizeAccountParams, AuthorizationRequest>;
+
+  /**
+   * Create a MultiSig Account
+   *
+   * @note this will create an {@link api/entities/AuthorizationRequest!AuthorizationRequest | Authorization Request} for each signing Account which will have to be accepted before they can approve transactions. None of the signing Accounts can be associated with an Identity when accepting the Authorization
+   *   An {@link api/entities/Account!Account} or {@link api/entities/Identity!Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
+   */
+  public createMultiSigAccount: ProcedureMethod<CreateMultiSigParams, MultiSig>;
 
   /**
    * Get the free/locked POLYX balance of an Account
@@ -189,8 +213,8 @@ export class AccountManagement {
 
     if (!account) {
       account = context.getSigningAccount();
-    } else if (typeof account === 'string') {
-      account = new Account({ address: account }, context);
+    } else {
+      account = asAccount(account, context);
     }
 
     if (cb) {
@@ -201,10 +225,23 @@ export class AccountManagement {
   }
 
   /**
-   * Return an Account instance from an address
+   * Return an Account instance from an address. If the Account has multiSig signers, the returned value will be a {@link api/entities/Account/MultiSig!MultiSig} instance
    */
-  public getAccount(args: { address: string }): Account {
-    const { context } = this;
+  public async getAccount(args: { address: string }): Promise<Account | MultiSig> {
+    const {
+      context,
+      context: {
+        polymeshApi: {
+          query: { multiSig },
+        },
+      },
+    } = this;
+    const { address } = args;
+    const rawAddress = stringToAccountId(address, context);
+    const rawSigners = await multiSig.multiSigSigners.entries(rawAddress);
+    if (rawSigners.length > 0) {
+      return new MultiSig(args, context);
+    }
 
     return new Account(args, context);
   }
@@ -228,4 +265,44 @@ export class AccountManagement {
   public async getSigningAccounts(): Promise<Account[]> {
     return this.context.getSigningAccounts();
   }
+
+  /**
+   * Return an Subsidy instance for a pair of beneficiary and subsidizer Account
+   */
+  public getSubsidy(args: {
+    beneficiary: string | Account;
+    subsidizer: string | Account;
+  }): Subsidy {
+    const { context } = this;
+
+    const { beneficiary, subsidizer } = args;
+
+    const { address: beneficiaryAddress } = asAccount(beneficiary, context);
+    const { address: subsidizerAddress } = asAccount(subsidizer, context);
+
+    return new Subsidy({ beneficiary: beneficiaryAddress, subsidizer: subsidizerAddress }, context);
+  }
+
+  /**
+   * Returns `true` @param args.address is a valid ss58 address for the connected network
+   */
+  public isValidAddress(args: { address: string }): boolean {
+    try {
+      assertAddressValid(args.address, this.context.ss58Format);
+    } catch (error) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Accepts the authorization to become the new primary key of the issuing identity.
+   *
+   * If a CDD service provider approved this change (or this is not required), primary key of the Identity is updated.
+   *
+   * @note The caller (new primary key) must be either a secondary key of the issuing identity, or
+   * unlinked to any identity.
+   */
+  public acceptPrimaryKey: ProcedureMethod<AcceptPrimaryKeyRotationParams, void>;
 }

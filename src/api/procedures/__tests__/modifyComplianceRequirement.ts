@@ -4,7 +4,7 @@ import {
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   getAuthorization,
@@ -19,16 +19,16 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 describe('modifyComplianceRequirement procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], PolymeshPrimitivesTicker>;
-  let requirementToComplianceRequirementStub: sinon.SinonStub<
-    [InputRequirement, Context],
-    PolymeshPrimitivesComplianceManagerComplianceRequirement
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let requirementToComplianceRequirementSpy: jest.SpyInstance<
+    PolymeshPrimitivesComplianceManagerComplianceRequirement,
+    [InputRequirement, Context]
   >;
   let ticker: string;
   let conditions: Condition[];
@@ -39,8 +39,8 @@ describe('modifyComplianceRequirement procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    requirementToComplianceRequirementStub = sinon.stub(
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    requirementToComplianceRequirementSpy = jest.spyOn(
       utilsConversionModule,
       'requirementToComplianceRequirement'
     );
@@ -58,8 +58,6 @@ describe('modifyComplianceRequirement procedure', () => {
     ];
   });
 
-  let addTransactionStub: sinon.SinonStub;
-
   let modifyComplianceRequirementTransaction: PolymeshTx<[PolymeshPrimitivesTicker]>;
 
   beforeEach(() => {
@@ -67,19 +65,17 @@ describe('modifyComplianceRequirement procedure', () => {
       returnValue: dsMockUtils.createMockU32(new BigNumber(50)),
     });
 
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
-
-    modifyComplianceRequirementTransaction = dsMockUtils.createTxStub(
+    modifyComplianceRequirementTransaction = dsMockUtils.createTxMock(
       'complianceManager',
       'changeComplianceRequirement'
     );
 
     mockContext = dsMockUtils.getContextInstance();
 
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
 
     entityMockUtils.configureMocks({
-      assetOptions: {
+      fungibleAssetOptions: {
         complianceRequirementsGet: {
           requirements: [
             {
@@ -131,7 +127,7 @@ describe('modifyComplianceRequirement procedure', () => {
     );
   });
 
-  it('should add a modify compliance requirement transaction to the queue', async () => {
+  it('should return a modify compliance requirement transaction spec', async () => {
     const fakeConditions = [{ claim: '' }] as unknown as Condition[];
     const fakeSenderConditions = 'senderConditions' as unknown as PolymeshPrimitivesCondition[];
     const fakeReceiverConditions = 'receiverConditions' as unknown as PolymeshPrimitivesCondition[];
@@ -142,9 +138,9 @@ describe('modifyComplianceRequirement procedure', () => {
       id: dsMockUtils.createMockU32(new BigNumber(1)),
     });
 
-    requirementToComplianceRequirementStub
-      .withArgs({ conditions: fakeConditions, id: new BigNumber(1) }, mockContext)
-      .returns(rawComplianceRequirement);
+    when(requirementToComplianceRequirementSpy)
+      .calledWith({ conditions: fakeConditions, id: new BigNumber(1) }, mockContext)
+      .mockReturnValue(rawComplianceRequirement);
 
     args = {
       ticker,
@@ -154,11 +150,12 @@ describe('modifyComplianceRequirement procedure', () => {
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await prepareModifyComplianceRequirement.call(proc, args);
+    const result = await prepareModifyComplianceRequirement.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction: modifyComplianceRequirementTransaction,
       args: [rawTicker, rawComplianceRequirement],
+      resolver: undefined,
     });
   });
 

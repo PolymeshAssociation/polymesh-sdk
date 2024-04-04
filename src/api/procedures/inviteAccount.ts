@@ -1,11 +1,5 @@
 import { createAuthorizationResolver } from '~/api/procedures/utils';
-import {
-  Account,
-  AuthorizationRequest,
-  PolymeshError,
-  PostTransactionValue,
-  Procedure,
-} from '~/internal';
+import { AuthorizationRequest, PolymeshError, Procedure } from '~/internal';
 import {
   Authorization,
   AuthorizationType,
@@ -16,6 +10,7 @@ import {
   SignerType,
   TxTags,
 } from '~/types';
+import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
@@ -23,7 +18,7 @@ import {
   signerToString,
   signerValueToSignatory,
 } from '~/utils/conversion';
-import { optionize } from '~/utils/internal';
+import { asAccount, optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -31,7 +26,7 @@ import { optionize } from '~/utils/internal';
 export async function prepareInviteAccount(
   this: Procedure<InviteAccountParams, AuthorizationRequest>,
   args: InviteAccountParams
-): Promise<PostTransactionValue<AuthorizationRequest>> {
+): Promise<TransactionSpec<AuthorizationRequest, ExtrinsicParams<'identity', 'addAuthorization'>>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -45,13 +40,7 @@ export async function prepareInviteAccount(
 
   const address = signerToString(targetAccount);
 
-  let account: Account;
-
-  if (targetAccount instanceof Account) {
-    account = targetAccount;
-  } else {
-    account = new Account({ address: targetAccount }, context);
-  }
+  const account = asAccount(targetAccount, context);
 
   const [authorizationRequests, existingIdentity] = await Promise.all([
     identity.authorizations.getSent(),
@@ -107,13 +96,11 @@ export async function prepareInviteAccount(
   const rawAuthorizationData = authorizationToAuthorizationData(authRequest, context);
   const rawExpiry = optionize(dateToMoment)(expiry, context);
 
-  const [auth] = this.addTransaction({
+  return {
     transaction: tx.identity.addAuthorization,
-    resolvers: [createAuthorizationResolver(authRequest, identity, account, expiry, context)],
     args: [rawSignatory, rawAuthorizationData, rawExpiry],
-  });
-
-  return auth;
+    resolver: createAuthorizationResolver(authRequest, identity, account, expiry, context),
+  };
 }
 
 /**

@@ -1,9 +1,11 @@
 import { Option } from '@polkadot/types';
 import { Moment } from '@polkadot/types/interfaces';
-import { PolymeshPrimitivesAuthorizationAuthorizationData } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesAuthorizationAuthorizationData,
+  PolymeshPrimitivesSecondaryKeySignatory,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { AuthorizationData, Signatory } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   getAuthorization,
@@ -34,16 +36,19 @@ jest.mock(
 
 describe('transferTickerOwnership procedure', () => {
   let mockContext: Mocked<Context>;
-  let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
-  let authorizationToAuthorizationDataStub: sinon.SinonStub<
-    [Authorization, Context],
-    PolymeshPrimitivesAuthorizationAuthorizationData
+  let signerValueToSignatorySpy: jest.SpyInstance<
+    PolymeshPrimitivesSecondaryKeySignatory,
+    [SignerValue, Context]
   >;
-  let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
+  let authorizationToAuthorizationDataSpy: jest.SpyInstance<
+    PolymeshPrimitivesAuthorizationAuthorizationData,
+    [Authorization, Context]
+  >;
+  let dateToMomentSpy: jest.SpyInstance<Moment, [Date, Context]>;
   let ticker: string;
   let did: string;
   let expiry: Date;
-  let rawSignatory: Signatory;
+  let rawSignatory: PolymeshPrimitivesSecondaryKeySignatory;
   let rawAuthorizationData: PolymeshPrimitivesAuthorizationAuthorizationData;
   let rawMoment: Moment;
   let args: Params;
@@ -52,12 +57,12 @@ describe('transferTickerOwnership procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    signerValueToSignatoryStub = sinon.stub(utilsConversionModule, 'signerValueToSignatory');
-    authorizationToAuthorizationDataStub = sinon.stub(
+    signerValueToSignatorySpy = jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
+    authorizationToAuthorizationDataSpy = jest.spyOn(
       utilsConversionModule,
       'authorizationToAuthorizationData'
     );
-    dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
+    dateToMomentSpy = jest.spyOn(utilsConversionModule, 'dateToMoment');
     ticker = 'SOME_TICKER';
     did = 'someOtherDid';
     expiry = new Date('10/14/3040');
@@ -74,24 +79,26 @@ describe('transferTickerOwnership procedure', () => {
     };
   });
 
-  let addTransactionStub: sinon.SinonStub;
-
-  let transaction: PolymeshTx<[Signatory, AuthorizationData, Option<Moment>]>;
+  let transaction: PolymeshTx<
+    [
+      PolymeshPrimitivesSecondaryKeySignatory,
+      PolymeshPrimitivesAuthorizationAuthorizationData,
+      Option<Moment>
+    ]
+  >;
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
-
-    transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
+    transaction = dsMockUtils.createTxMock('identity', 'addAuthorization');
 
     mockContext = dsMockUtils.getContextInstance();
 
-    signerValueToSignatoryStub
-      .withArgs({ type: SignerType.Identity, value: did }, mockContext)
-      .returns(rawSignatory);
-    authorizationToAuthorizationDataStub
-      .withArgs({ type: AuthorizationType.TransferTicker, value: ticker }, mockContext)
-      .returns(rawAuthorizationData);
-    dateToMomentStub.withArgs(expiry, mockContext).returns(rawMoment);
+    when(signerValueToSignatorySpy)
+      .calledWith({ type: SignerType.Identity, value: did }, mockContext)
+      .mockReturnValue(rawSignatory);
+    when(authorizationToAuthorizationDataSpy)
+      .calledWith({ type: AuthorizationType.TransferTicker, value: ticker }, mockContext)
+      .mockReturnValue(rawAuthorizationData);
+    when(dateToMomentSpy).calledWith(expiry, mockContext).mockReturnValue(rawMoment);
   });
 
   afterEach(() => {
@@ -122,34 +129,28 @@ describe('transferTickerOwnership procedure', () => {
     );
   });
 
-  it('should add an add authorization transaction to the queue', async () => {
+  it('should return an add authorization transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
 
-    await prepareTransferTickerOwnership.call(proc, args);
+    const result = await prepareTransferTickerOwnership.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction,
-        resolvers: sinon.match.array,
-        args: [rawSignatory, rawAuthorizationData, null],
-      })
-    );
+    expect(result).toEqual({
+      transaction,
+      args: [rawSignatory, rawAuthorizationData, null],
+      resolver: expect.any(Function),
+    });
   });
 
-  it('should add an add authorization transaction with expiry to the queue if an expiry date was passed', async () => {
+  it('should return an add authorization transaction with expiry spec if an expiry date was passed', async () => {
     const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
 
-    await prepareTransferTickerOwnership.call(proc, { ...args, expiry });
+    const result = await prepareTransferTickerOwnership.call(proc, { ...args, expiry });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction,
-        resolvers: sinon.match.array,
-        args: [rawSignatory, rawAuthorizationData, rawMoment],
-      })
-    );
+    expect(result).toEqual({
+      transaction,
+      args: [rawSignatory, rawAuthorizationData, rawMoment],
+      resolver: expect.any(Function),
+    });
   });
 
   describe('getAuthorization', () => {

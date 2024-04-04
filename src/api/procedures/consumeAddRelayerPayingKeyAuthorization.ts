@@ -1,7 +1,7 @@
 import { assertAuthorizationRequestValid } from '~/api/procedures/utils';
 import { Account, AuthorizationRequest, Identity, PolymeshError, Procedure } from '~/internal';
 import { AuthorizationType, ErrorCode, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   bigNumberToU64,
   booleanToBool,
@@ -30,7 +30,10 @@ export interface Storage {
 export async function prepareConsumeAddRelayerPayingKeyAuthorization(
   this: Procedure<ConsumeAddRelayerPayingKeyAuthorizationParams, void, Storage>,
   args: ConsumeAddRelayerPayingKeyAuthorizationParams
-): Promise<void> {
+): Promise<
+  | TransactionSpec<void, ExtrinsicParams<'identity', 'removeAuthorization'>>
+  | TransactionSpec<void, ExtrinsicParams<'relayer', 'acceptPayingKey'>>
+> {
   const {
     context: {
       polymeshApi: {
@@ -65,7 +68,7 @@ export async function prepareConsumeAddRelayerPayingKeyAuthorization(
       baseArgs.paidForBy = issuer;
     }
 
-    this.addTransaction({
+    return {
       transaction: identity.removeAuthorization,
       ...baseArgs,
       args: [
@@ -73,18 +76,18 @@ export async function prepareConsumeAddRelayerPayingKeyAuthorization(
         rawAuthId,
         booleanToBool(calledByTarget, context),
       ],
-    });
-
-    return;
+      resolver: undefined,
+    };
   }
 
   await assertAuthorizationRequestValid(authRequest, context);
 
-  this.addTransaction({
+  return {
     transaction: relayer.acceptPayingKey,
     paidForBy: issuer,
     args: [rawAuthId],
-  });
+    resolver: undefined,
+  };
 }
 
 /**

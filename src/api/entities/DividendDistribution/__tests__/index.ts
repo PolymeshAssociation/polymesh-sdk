@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import sinon, { SinonStub } from 'sinon';
+import { when } from 'jest-when';
 
 import {
   Checkpoint,
@@ -7,10 +7,9 @@ import {
   CorporateActionBase,
   DefaultPortfolio,
   DividendDistribution,
-  TransactionQueue,
+  PolymeshTransaction,
 } from '~/internal';
-import { getHistoryOfPaymentEventsForCa, getWithholdingTaxesOfCa } from '~/middleware/queries';
-import { distributionPaymentsQuery, distributionQuery } from '~/middleware/queriesV2';
+import { distributionPaymentsQuery, distributionQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   CorporateActionKind,
@@ -30,8 +29,8 @@ jest.mock(
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 describe('DividendDistribution class', () => {
@@ -106,7 +105,7 @@ describe('DividendDistribution class', () => {
       context
     );
 
-    dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
+    dsMockUtils.createQueryMock('capitalDistribution', 'distributions', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockDistribution({
           from: {
@@ -118,7 +117,7 @@ describe('DividendDistribution class', () => {
           amount: new BigNumber(50000000000),
           remaining: new BigNumber(40000000000),
           paymentAt: new BigNumber(new Date(new Date().getTime() + 60 * 60 * 1000).getTime()),
-          expiresAt: null,
+          expiresAt: dsMockUtils.createMockOption(),
           reclaimed: false,
         })
       ),
@@ -155,7 +154,7 @@ describe('DividendDistribution class', () => {
   describe('method: checkpoint', () => {
     it('should just pass the call down the line', async () => {
       const fakeResult = 'checkpoint' as unknown as Checkpoint;
-      sinon.stub(CorporateActionBase.prototype, 'checkpoint').resolves(fakeResult);
+      jest.spyOn(CorporateActionBase.prototype, 'checkpoint').mockResolvedValue(fakeResult);
 
       const result = await dividendDistribution.checkpoint();
 
@@ -163,7 +162,7 @@ describe('DividendDistribution class', () => {
     });
 
     it('should throw an error if the Dividend Distribution does not exist', () => {
-      dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
+      dsMockUtils.createQueryMock('capitalDistribution', 'distributions', {
         returnValue: dsMockUtils.createMockOption(),
       });
 
@@ -179,7 +178,7 @@ describe('DividendDistribution class', () => {
 
       expect(result).toBe(true);
 
-      dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
+      dsMockUtils.createQueryMock('capitalDistribution', 'distributions', {
         returnValue: dsMockUtils.createMockOption(),
       });
 
@@ -190,39 +189,42 @@ describe('DividendDistribution class', () => {
   });
 
   describe('method: claim', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { distribution: dividendDistribution }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          { args: { distribution: dividendDistribution }, transformer: undefined },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
 
-      const queue = await dividendDistribution.claim();
+      const tx = await dividendDistribution.claim();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: pay', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
       const identityTargets = ['identityDid'];
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: { targets: identityTargets, distribution: dividendDistribution },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedQueue);
+        .mockResolvedValue(expectedTransaction);
 
-      const queue = await dividendDistribution.pay({ targets: identityTargets });
+      const tx = await dividendDistribution.pay({ targets: identityTargets });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -237,7 +239,7 @@ describe('DividendDistribution class', () => {
     });
 
     it('should throw an error if the Dividend Distribution does not exist', async () => {
-      dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
+      dsMockUtils.createQueryMock('capitalDistribution', 'distributions', {
         returnValue: dsMockUtils.createMockOption(),
       });
 
@@ -253,36 +255,36 @@ describe('DividendDistribution class', () => {
   });
 
   describe('method: modifyCheckpoint', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
       const args = {
         checkpoint: new Date(),
       };
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
-          { args: { distribution: dividendDistribution, ...args }, transformer: undefined },
-          context
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          { args: { corporateAction: dividendDistribution, ...args }, transformer: undefined },
+          context,
+          {}
         )
-        .resolves(expectedQueue);
+        .mockResolvedValue(expectedTransaction);
 
-      const queue = await dividendDistribution.modifyCheckpoint(args);
+      const tx = await dividendDistribution.modifyCheckpoint(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: getWithheldTax', () => {
     it('should return the amount of the withheld tax', async () => {
-      const fakeTax = new BigNumber(100);
+      const fakeTax = new BigNumber(1000000);
 
-      dsMockUtils.createApolloQueryStub(
-        getWithholdingTaxesOfCa({
-          CAId: { ticker, localId: id.toNumber() },
+      dsMockUtils.createApolloQueryMock(
+        distributionQuery({
+          id: `${ticker}/${id.toString()}`,
         }),
         {
-          getWithholdingTaxesOfCA: {
+          distribution: {
             taxes: fakeTax.toNumber(),
           },
         }
@@ -290,68 +292,26 @@ describe('DividendDistribution class', () => {
 
       const result = await dividendDistribution.getWithheldTax();
 
-      expect(result).toEqual(fakeTax);
+      expect(result).toEqual(new BigNumber(1));
     });
 
     it('should throw an error if the Dividend Distribution does not exist', () => {
-      dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
+      dsMockUtils.createQueryMock('capitalDistribution', 'distributions', {
         returnValue: dsMockUtils.createMockOption(),
       });
 
-      dsMockUtils.createApolloQueryStub(
-        getWithholdingTaxesOfCa({
-          CAId: { ticker, localId: id.toNumber() },
+      dsMockUtils.createApolloQueryMock(
+        distributionQuery({
+          id: `${ticker}/${id.toString()}`,
         }),
         {
-          getWithholdingTaxesOfCA: {
+          distribution: {
             taxes: 0,
           },
         }
       );
 
       return expect(dividendDistribution.getWithheldTax()).rejects.toThrow(
-        'The Dividend Distribution no longer exists'
-      );
-    });
-  });
-
-  describe('method: getWithheldTaxV2', () => {
-    it('should return the amount of the withheld tax', async () => {
-      const fakeTax = new BigNumber(1000000);
-
-      dsMockUtils.createApolloV2QueryStub(
-        distributionQuery({
-          id: `${ticker}/${id.toString()}`,
-        }),
-        {
-          distribution: {
-            taxes: fakeTax.toNumber(),
-          },
-        }
-      );
-
-      const result = await dividendDistribution.getWithheldTaxV2();
-
-      expect(result).toEqual(new BigNumber(1));
-    });
-
-    it('should throw an error if the Dividend Distribution does not exist', () => {
-      dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
-        returnValue: dsMockUtils.createMockOption(),
-      });
-
-      dsMockUtils.createApolloV2QueryStub(
-        distributionQuery({
-          id: `${ticker}/${id.toString()}`,
-        }),
-        {
-          distribution: {
-            taxes: 0,
-          },
-        }
-      );
-
-      return expect(dividendDistribution.getWithheldTaxV2()).rejects.toThrow(
         'The Dividend Distribution no longer exists'
       );
     });
@@ -376,14 +336,15 @@ describe('DividendDistribution class', () => {
         },
       ];
 
-      const allBalancesStub = sinon.stub();
+      const allBalancesMock = jest.fn();
 
-      allBalancesStub.onFirstCall().resolves({ data: balances, next: 'notNull' });
-      allBalancesStub.onSecondCall().resolves({ data: [], next: null });
+      allBalancesMock
+        .mockResolvedValueOnce({ data: balances, next: 'notNull' })
+        .mockResolvedValueOnce({ data: [], next: null });
 
       entityMockUtils.configureMocks({
         checkpointOptions: {
-          allBalances: allBalancesStub,
+          allBalances: allBalancesMock,
         },
       });
 
@@ -391,11 +352,11 @@ describe('DividendDistribution class', () => {
         identities: [excluded],
         treatment: TargetTreatment.Exclude,
       };
-      sinon
-        .stub(dividendDistribution, 'checkpoint')
-        .resolves(entityMockUtils.getCheckpointInstance());
+      jest
+        .spyOn(dividendDistribution, 'checkpoint')
+        .mockResolvedValue(entityMockUtils.getCheckpointInstance());
 
-      dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid', {
+      dsMockUtils.createQueryMock('capitalDistribution', 'holderPaid', {
         multi: [dsMockUtils.createMockBool(true)],
       });
 
@@ -426,9 +387,9 @@ describe('DividendDistribution class', () => {
         did: 'targetDid',
         isEqual: false,
       });
-      balances[0].identity.isEqual.onSecondCall().returns(true);
+      balances[0].identity.isEqual.mockReturnValueOnce(false).mockReturnValue(true);
 
-      allBalancesStub.onThirdCall().resolves({ data: balances, next: null });
+      allBalancesMock.mockResolvedValue({ data: balances, next: null });
 
       result = await dividendDistribution.getParticipants();
 
@@ -444,9 +405,9 @@ describe('DividendDistribution class', () => {
     });
 
     it("should return an empty array if the distribution checkpoint hasn't been created yet", async () => {
-      sinon
-        .stub(dividendDistribution, 'checkpoint')
-        .resolves(entityMockUtils.getCheckpointScheduleInstance());
+      jest
+        .spyOn(dividendDistribution, 'checkpoint')
+        .mockResolvedValue(entityMockUtils.getCheckpointScheduleInstance());
 
       const result = await dividendDistribution.getParticipants();
 
@@ -464,22 +425,22 @@ describe('DividendDistribution class', () => {
         identities: [excluded],
         treatment: TargetTreatment.Exclude,
       };
-      sinon.stub(dividendDistribution, 'checkpoint').resolves(
+      jest.spyOn(dividendDistribution, 'checkpoint').mockResolvedValue(
         entityMockUtils.getCheckpointInstance({
           balance,
         })
       );
 
-      sinon
-        .stub(utilsConversionModule, 'stringToIdentityId')
-        .returns(dsMockUtils.createMockIdentityId(did));
+      jest
+        .spyOn(utilsConversionModule, 'stringToIdentityId')
+        .mockReturnValue(dsMockUtils.createMockIdentityId(did));
 
-      sinon
-        .stub(utilsConversionModule, 'corporateActionIdentifierToCaId')
-        .returns(dsMockUtils.createMockCAId({ ticker, localId: id }));
-      sinon.stub(utilsConversionModule, 'boolToBoolean').returns(false);
+      jest
+        .spyOn(utilsConversionModule, 'corporateActionIdentifierToCaId')
+        .mockReturnValue(dsMockUtils.createMockCAId({ ticker, localId: id }));
+      jest.spyOn(utilsConversionModule, 'boolToBoolean').mockReturnValue(false);
 
-      dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid', {
+      dsMockUtils.createQueryMock('capitalDistribution', 'holderPaid', {
         returnValue: false,
       });
 
@@ -499,7 +460,7 @@ describe('DividendDistribution class', () => {
         isEqual: false,
         did: 'targetDid',
       });
-      targetIdentity.isEqual.onSecondCall().returns(true);
+      targetIdentity.isEqual.mockReturnValueOnce(false).mockReturnValue(true);
 
       result = await dividendDistribution.getParticipant({
         identity: targetIdentity,
@@ -511,9 +472,9 @@ describe('DividendDistribution class', () => {
       expect(result?.taxWithholdingPercentage).toEqual(new BigNumber(5));
       expect(result?.amountAfterTax.decimalPlaces()).toBeLessThanOrEqual(MAX_DECIMALS);
 
-      (context.getSigningIdentity as SinonStub).resolves(
-        entityMockUtils.getIdentityInstance({ did, isEqual: false })
-      );
+      context.getSigningIdentity = jest
+        .fn()
+        .mockResolvedValue(entityMockUtils.getIdentityInstance({ did, isEqual: false }));
 
       result = await dividendDistribution.getParticipant();
 
@@ -525,9 +486,9 @@ describe('DividendDistribution class', () => {
     });
 
     it("should return null if the distribution checkpoint hasn't been created yet", async () => {
-      sinon
-        .stub(dividendDistribution, 'checkpoint')
-        .resolves(entityMockUtils.getCheckpointScheduleInstance());
+      jest
+        .spyOn(dividendDistribution, 'checkpoint')
+        .mockResolvedValue(entityMockUtils.getCheckpointScheduleInstance());
 
       const result = await dividendDistribution.getParticipant({
         identity: 'someDid',
@@ -543,7 +504,7 @@ describe('DividendDistribution class', () => {
         identities: [excluded],
         treatment: TargetTreatment.Exclude,
       };
-      sinon.stub(dividendDistribution, 'checkpoint').resolves(
+      jest.spyOn(dividendDistribution, 'checkpoint').mockResolvedValue(
         entityMockUtils.getCheckpointInstance({
           balance: new BigNumber(10),
         })
@@ -558,17 +519,20 @@ describe('DividendDistribution class', () => {
   });
 
   describe('method: reclaimFunds', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { distribution: dividendDistribution }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          { args: { distribution: dividendDistribution }, transformer: undefined },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
 
-      const queue = await dividendDistribution.reclaimFunds();
+      const tx = await dividendDistribution.reclaimFunds();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -581,111 +545,10 @@ describe('DividendDistribution class', () => {
       const eventDid = 'eventDid';
       const balance = new BigNumber(100);
       const tax = new BigNumber(10);
-
-      dsMockUtils.createQueryStub('system', 'blockHash', {
-        multi: [dsMockUtils.createMockHash(blockHash)],
-      });
-      dsMockUtils.createApolloQueryStub(
-        getHistoryOfPaymentEventsForCa({
-          CAId: { ticker, localId: id.toNumber() },
-          fromDate: null,
-          toDate: null,
-          count: 1,
-          skip: 0,
-        }),
-        {
-          getHistoryOfPaymentEventsForCA: {
-            totalCount: 1,
-            items: [
-              {
-                blockId: blockId.toNumber(),
-                eventId,
-                datetime,
-                eventDid,
-                balance: balance.toNumber(),
-                tax: tax.toNumber(),
-              },
-            ],
-          },
-        }
-      );
-
-      const {
-        data: [result],
-      } = await dividendDistribution.getPaymentHistory({
-        size: new BigNumber(1),
-        start: new BigNumber(0),
-      });
-
-      expect(result.blockNumber).toEqual(blockId);
-      expect(result.blockHash).toEqual(blockHash);
-      expect(result.date).toEqual(new Date(`${datetime}Z`));
-      expect(result.target.did).toBe(eventDid);
-      expect(result.amount).toEqual(balance.shiftedBy(-6));
-      expect(result.withheldTax).toEqual(tax.shiftedBy(-4));
-    });
-
-    it('should return null if the query result is empty', async () => {
-      dsMockUtils.createApolloQueryStub(
-        getHistoryOfPaymentEventsForCa({
-          CAId: { ticker, localId: id.toNumber() },
-          fromDate: null,
-          toDate: null,
-          count: undefined,
-          skip: undefined,
-        }),
-        {
-          getHistoryOfPaymentEventsForCA: {
-            totalCount: 0,
-            items: [],
-          },
-        }
-      );
-      const result = await dividendDistribution.getPaymentHistory();
-      expect(result.data).toEqual([]);
-      expect(result.next).toBeNull();
-    });
-
-    it('should throw an error if the Dividend Distribution does not exist', () => {
-      dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
-        returnValue: dsMockUtils.createMockOption(),
-      });
-
-      dsMockUtils.createApolloQueryStub(
-        getHistoryOfPaymentEventsForCa({
-          CAId: { ticker, localId: id.toNumber() },
-          fromDate: null,
-          toDate: null,
-          count: undefined,
-          skip: undefined,
-        }),
-        {
-          getHistoryOfPaymentEventsForCA: {
-            totalCount: 0,
-            items: [],
-          },
-        }
-      );
-
-      return expect(dividendDistribution.getPaymentHistory()).rejects.toThrow(
-        'The Dividend Distribution no longer exists'
-      );
-    });
-  });
-
-  describe('method: getPaymentHistoryV2', () => {
-    it('should return the amount of the withheld tax', async () => {
-      const blockId = new BigNumber(1);
-      const blockHash = 'someHash';
-      const eventId = 'eventId';
-      const datetime = '2020-10-10';
-      const eventDid = 'eventDid';
-      const balance = new BigNumber(100);
-      const tax = new BigNumber(10);
       const size = new BigNumber(1);
       const start = new BigNumber(0);
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloQueryMock(
         distributionPaymentsQuery(
           {
             distributionId: `${ticker}/${id.toString()}`,
@@ -716,7 +579,7 @@ describe('DividendDistribution class', () => {
 
       const {
         data: [result],
-      } = await dividendDistribution.getPaymentHistoryV2({
+      } = await dividendDistribution.getPaymentHistory({
         size,
         start,
       });
@@ -730,7 +593,7 @@ describe('DividendDistribution class', () => {
     });
 
     it('should return null if the query result is empty', async () => {
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloQueryMock(
         distributionPaymentsQuery({
           distributionId: `${ticker}/${id.toString()}`,
         }),
@@ -741,17 +604,17 @@ describe('DividendDistribution class', () => {
           },
         }
       );
-      const result = await dividendDistribution.getPaymentHistoryV2();
+      const result = await dividendDistribution.getPaymentHistory();
       expect(result.data).toEqual([]);
       expect(result.next).toBeNull();
     });
 
     it('should throw an error if the Dividend Distribution does not exist', () => {
-      dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
+      dsMockUtils.createQueryMock('capitalDistribution', 'distributions', {
         returnValue: dsMockUtils.createMockOption(),
       });
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloQueryMock(
         distributionPaymentsQuery({
           distributionId: `${ticker}/${id.toString()}`,
         }),
@@ -763,7 +626,7 @@ describe('DividendDistribution class', () => {
         }
       );
 
-      return expect(dividendDistribution.getPaymentHistoryV2()).rejects.toThrow(
+      return expect(dividendDistribution.getPaymentHistory()).rejects.toThrow(
         'The Dividend Distribution no longer exists'
       );
     });

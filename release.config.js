@@ -12,7 +12,7 @@ module.exports = {
     },
     {
       name: 'lts',
-      range: '15.x',
+      range: '23.x',
     },
   ],
   /*

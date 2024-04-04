@@ -1,15 +1,17 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 
-import { Context, Identity, PostTransactionValue, Procedure } from '~/internal';
-import { RegisterIdentityParams, RoleType, TxTags } from '~/types';
+import { Context, Identity, PolymeshError, Procedure } from '~/internal';
+import { ErrorCode, RegisterIdentityParams, RoleType, TxTags } from '~/types';
+import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import {
+  dateToMoment,
   identityIdToString,
   permissionsLikeToPermissions,
   secondaryAccountToMeshSecondaryKey,
   signerToString,
   stringToAccountId,
 } from '~/utils/conversion';
-import { filterEventRecords } from '~/utils/internal';
+import { filterEventRecords, optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -29,7 +31,10 @@ export const createRegisterIdentityResolver =
 export async function prepareRegisterIdentity(
   this: Procedure<RegisterIdentityParams, Identity>,
   args: RegisterIdentityParams
-): Promise<PostTransactionValue<Identity>> {
+): Promise<
+  | TransactionSpec<Identity, ExtrinsicParams<'identity', 'cddRegisterDid'>>
+  | TransactionSpec<Identity, ExtrinsicParams<'identity', 'cddRegisterDidWithCdd'>>
+> {
   const {
     context: {
       polymeshApi: {
@@ -38,7 +43,7 @@ export async function prepareRegisterIdentity(
     },
     context,
   } = this;
-  const { targetAccount, secondaryAccounts = [] } = args;
+  const { targetAccount, secondaryAccounts = [], createCdd = false, expiry } = args;
 
   const rawTargetAccount = stringToAccountId(signerToString(targetAccount), context);
   const rawSecondaryKeys = secondaryAccounts.map(({ permissions, ...rest }) =>
@@ -48,13 +53,27 @@ export async function prepareRegisterIdentity(
     )
   );
 
-  const [newIdentity] = this.addTransaction({
-    transaction: identity.cddRegisterDid,
-    resolvers: [createRegisterIdentityResolver(context)],
-    args: [rawTargetAccount, rawSecondaryKeys],
-  });
+  if (createCdd) {
+    const cddExpiry = optionize(dateToMoment)(expiry, context);
+    return {
+      transaction: identity.cddRegisterDidWithCdd,
+      args: [rawTargetAccount, rawSecondaryKeys, cddExpiry],
+      resolver: createRegisterIdentityResolver(context),
+    };
+  } else {
+    if (expiry) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'Expiry cannot be set unless a CDD claim is being created',
+      });
+    }
 
-  return newIdentity;
+    return {
+      transaction: identity.cddRegisterDid,
+      args: [rawTargetAccount, rawSecondaryKeys],
+      resolver: createRegisterIdentityResolver(context),
+    };
+  }
 }
 
 /**

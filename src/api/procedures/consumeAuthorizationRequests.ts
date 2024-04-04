@@ -5,7 +5,7 @@ import { forEach, mapValues } from 'lodash';
 import { assertAuthorizationRequestValid } from '~/api/procedures/utils';
 import { Account, AuthorizationRequest, Identity, Procedure } from '~/internal';
 import { AuthorizationType, TxTag, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { BatchTransactionSpec, ProcedureAuthorization, TxWithArgs } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
   bigNumberToU64,
@@ -32,7 +32,7 @@ export type ConsumeAuthorizationRequestsParams = ConsumeParams & {
 export async function prepareConsumeAuthorizationRequests(
   this: Procedure<ConsumeAuthorizationRequestsParams>,
   args: ConsumeAuthorizationRequestsParams
-): Promise<void> {
+): Promise<BatchTransactionSpec<void, unknown[][]>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -69,18 +69,25 @@ export async function prepareConsumeAuthorizationRequests(
     });
     await Promise.all(validations);
 
+    const transactions: TxWithArgs<unknown[]>[] = [];
+
     forEach(idsPerType, (ids, key) => {
       const type = key as AllowedAuthType;
 
-      const transactions = assembleBatchTransactions(
-        tuple({
-          transaction: typesToExtrinsics[type],
-          argsArray: ids,
-        })
+      transactions.push(
+        ...assembleBatchTransactions([
+          {
+            transaction: typesToExtrinsics[type],
+            argsArray: ids,
+          },
+        ])
       );
-
-      this.addBatchTransaction({ transactions });
     });
+
+    return {
+      transactions,
+      resolver: undefined,
+    };
   } else {
     const falseBool = booleanToBool(false, context);
     const authIdentifiers = liveRequests.map(({ authId, target }) =>
@@ -90,14 +97,14 @@ export async function prepareConsumeAuthorizationRequests(
         falseBool
       )
     );
-    const transactions = assembleBatchTransactions(
-      tuple({
+    const transactions = assembleBatchTransactions([
+      {
         transaction: tx.identity.removeAuthorization,
         argsArray: authIdentifiers,
-      })
-    );
+      },
+    ]);
 
-    this.addBatchTransaction({ transactions });
+    return { transactions, resolver: undefined };
   }
 }
 

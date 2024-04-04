@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   getAuthorization,
@@ -21,8 +21,8 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockOfferingModule('~/api/entities/Offering')
 );
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 describe('createGroup procedure', () => {
@@ -45,21 +45,20 @@ describe('createGroup procedure', () => {
   });
 
   let mockContext: Mocked<Context>;
-  let addTransactionStub: sinon.SinonStub;
   let externalAgentsCreateGroupTransaction: PolymeshTx<unknown[]>;
-  let permissionsLikeToPermissionsStub: sinon.SinonStub;
+  let permissionsLikeToPermissionsSpy: jest.SpyInstance;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    sinon.stub(utilsConversionModule, 'stringToTicker').returns(rawTicker);
-    sinon
-      .stub(utilsConversionModule, 'transactionPermissionsToExtrinsicPermissions')
-      .returns(rawExtrinsicPermissions);
+    jest.spyOn(utilsConversionModule, 'stringToTicker').mockReturnValue(rawTicker);
+    jest
+      .spyOn(utilsConversionModule, 'transactionPermissionsToExtrinsicPermissions')
+      .mockReturnValue(rawExtrinsicPermissions);
 
-    permissionsLikeToPermissionsStub = sinon.stub(
+    permissionsLikeToPermissionsSpy = jest.spyOn(
       utilsConversionModule,
       'permissionsLikeToPermissions'
     );
@@ -67,8 +66,7 @@ describe('createGroup procedure', () => {
   });
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
-    externalAgentsCreateGroupTransaction = dsMockUtils.createTxStub(
+    externalAgentsCreateGroupTransaction = dsMockUtils.createTxMock(
       'externalAgents',
       'createGroup'
     );
@@ -88,22 +86,24 @@ describe('createGroup procedure', () => {
 
   it('should throw an error if there already exists a group with exactly the same permissions', async () => {
     const errorMsg = 'ERROR';
-    const assertGroupDoesNotExistStub = sinon.stub(procedureUtilsModule, 'assertGroupDoesNotExist');
-    assertGroupDoesNotExistStub.rejects(new Error(errorMsg));
+    const assertGroupDoesNotExistSpy = jest.spyOn(procedureUtilsModule, 'assertGroupDoesNotExist');
+    assertGroupDoesNotExistSpy.mockImplementation(() => {
+      throw new Error(errorMsg);
+    });
 
     const args = {
       ticker,
       permissions: { transactions },
     };
 
-    permissionsLikeToPermissionsStub
-      .withArgs({ transactions }, mockContext)
-      .returns({ transactions });
+    when(permissionsLikeToPermissionsSpy)
+      .calledWith({ transactions }, mockContext)
+      .mockReturnValue({ transactions });
 
     const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
       mockContext,
       {
-        asset: entityMockUtils.getAssetInstance({
+        asset: entityMockUtils.getFungibleAssetInstance({
           permissionsGetAgents: [
             {
               agent: entityMockUtils.getIdentityInstance({ did: target }),
@@ -116,14 +116,14 @@ describe('createGroup procedure', () => {
 
     await expect(prepareCreateGroup.call(proc, args)).rejects.toThrow(errorMsg);
 
-    assertGroupDoesNotExistStub.restore();
+    assertGroupDoesNotExistSpy.mockRestore();
   });
 
-  it('should add a create group transaction to the queue', async () => {
+  it('should return a create group transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
       mockContext,
       {
-        asset: entityMockUtils.getAssetInstance({
+        asset: entityMockUtils.getFungibleAssetInstance({
           ticker,
           permissionsGetGroups: {
             custom: [
@@ -143,26 +143,23 @@ describe('createGroup procedure', () => {
     );
 
     const fakePermissions = { transactions };
-    permissionsLikeToPermissionsStub
-      .withArgs(fakePermissions, mockContext)
-      .returns({ transactions });
+    when(permissionsLikeToPermissionsSpy)
+      .calledWith(fakePermissions, mockContext)
+      .mockReturnValue({ transactions });
 
-    await prepareCreateGroup.call(proc, {
+    let result = await prepareCreateGroup.call(proc, {
       ticker,
       permissions: fakePermissions,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction: externalAgentsCreateGroupTransaction,
-        resolvers: sinon.match.array,
-        args: [rawTicker, rawExtrinsicPermissions],
-      })
-    );
+    expect(result).toEqual({
+      transaction: externalAgentsCreateGroupTransaction,
+      args: [rawTicker, rawExtrinsicPermissions],
+      resolver: expect.any(Function),
+    });
 
-    permissionsLikeToPermissionsStub
-      .withArgs(
+    when(permissionsLikeToPermissionsSpy)
+      .calledWith(
         {
           transactions: {
             type: PermissionType.Include,
@@ -171,21 +168,18 @@ describe('createGroup procedure', () => {
         },
         mockContext
       )
-      .returns({ transactions: null });
+      .mockReturnValue({ transactions: null });
 
-    await prepareCreateGroup.call(proc, {
+    result = await prepareCreateGroup.call(proc, {
       ticker,
       permissions: { transactions },
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction: externalAgentsCreateGroupTransaction,
-        resolvers: sinon.match.array,
-        args: [rawTicker, rawExtrinsicPermissions],
-      })
-    );
+    expect(result).toEqual({
+      transaction: externalAgentsCreateGroupTransaction,
+      args: [rawTicker, rawExtrinsicPermissions],
+      resolver: expect.any(Function),
+    });
   });
 
   describe('prepareStorage', () => {
@@ -208,7 +202,7 @@ describe('createGroup procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
         mockContext,
         {
-          asset: entityMockUtils.getAssetInstance({
+          asset: entityMockUtils.getFungibleAssetInstance({
             ticker,
           }),
         }

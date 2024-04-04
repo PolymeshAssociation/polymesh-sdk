@@ -1,6 +1,6 @@
 import { bool, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   ConsumeJoinOrRotateAuthorizationParams,
@@ -25,8 +25,8 @@ import * as utilsConversionModule from '~/utils/conversion';
 describe('consumeJoinOrRotateAuthorization procedure', () => {
   let mockContext: Mocked<Context>;
   let targetAddress: string;
-  let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
-  let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
+  let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
+  let booleanToBoolSpy: jest.SpyInstance<bool, [boolean, Context]>;
   let rawTrue: bool;
   let rawFalse: bool;
   let authId: BigNumber;
@@ -43,20 +43,18 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
-    booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
+    bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+    booleanToBoolSpy = jest.spyOn(utilsConversionModule, 'booleanToBool');
     authId = new BigNumber(1);
     rawAuthId = dsMockUtils.createMockU64(authId);
     rawTrue = dsMockUtils.createMockBool(true);
     rawFalse = dsMockUtils.createMockBool(false);
 
-    sinon.stub(utilsConversionModule, 'addressToKey');
+    jest.spyOn(utilsConversionModule, 'addressToKey').mockImplementation();
   });
 
-  let addTransactionStub: sinon.SinonStub;
-
   beforeEach(() => {
-    dsMockUtils.createQueryStub('identity', 'authorizations', {
+    dsMockUtils.createQueryMock('identity', 'authorizations', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockAuthorization({
           authorizationData: dsMockUtils.createMockAuthorizationData('RotatePrimaryKey'),
@@ -66,11 +64,10 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
         })
       ),
     });
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
-    bigNumberToU64Stub.withArgs(authId, mockContext).returns(rawAuthId);
-    booleanToBoolStub.withArgs(true, mockContext).returns(rawTrue);
-    booleanToBoolStub.withArgs(false, mockContext).returns(rawFalse);
+    when(bigNumberToU64Spy).calledWith(authId, mockContext).mockReturnValue(rawAuthId);
+    when(booleanToBoolSpy).calledWith(true, mockContext).mockReturnValue(rawTrue);
+    when(booleanToBoolSpy).calledWith(false, mockContext).mockReturnValue(rawFalse);
 
     targetAccount = entityMockUtils.getAccountInstance({ address: targetAddress });
   });
@@ -160,7 +157,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
     ).rejects.toThrow('The target Account already has an associated Identity');
   });
 
-  it('should add a joinIdentityAsKey transaction to the queue if the target is an Account', async () => {
+  it('should return a joinIdentityAsKey transaction spec if the target is an Account', async () => {
     const proc = procedureMockUtils.getInstance<
       ConsumeJoinOrRotateAuthorizationParams,
       void,
@@ -170,7 +167,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       calledByTarget: true,
     });
 
-    const transaction = dsMockUtils.createTxStub('identity', 'joinIdentityAsKey');
+    const transaction = dsMockUtils.createTxMock('identity', 'joinIdentityAsKey');
 
     const issuer = entityMockUtils.getIdentityInstance();
     const target = entityMockUtils.getAccountInstance({
@@ -178,7 +175,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       getIdentity: null,
     });
 
-    await prepareConsumeJoinOrRotateAuthorization.call(proc, {
+    const result = await prepareConsumeJoinOrRotateAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
         {
           target,
@@ -200,14 +197,15 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       accept: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       paidForBy: issuer,
       args: [rawAuthId],
+      resolver: undefined,
     });
   });
 
-  it('should add a rotatePrimaryKeyToSecondary transaction to the queue if the target is an Account', async () => {
+  it('should return a rotatePrimaryKeyToSecondary transaction spec if the target is an Account', async () => {
     const proc = procedureMockUtils.getInstance<
       ConsumeJoinOrRotateAuthorizationParams,
       void,
@@ -217,7 +215,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       calledByTarget: true,
     });
 
-    const transaction = dsMockUtils.createTxStub('identity', 'rotatePrimaryKeyToSecondary');
+    const transaction = dsMockUtils.createTxMock('identity', 'rotatePrimaryKeyToSecondary');
 
     const issuer = entityMockUtils.getIdentityInstance();
     const target = entityMockUtils.getAccountInstance({
@@ -225,7 +223,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       getIdentity: null,
     });
 
-    await prepareConsumeJoinOrRotateAuthorization.call(proc, {
+    const result = await prepareConsumeJoinOrRotateAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
         {
           target,
@@ -247,14 +245,15 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       accept: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       paidForBy: issuer,
       args: [rawAuthId, null],
+      resolver: undefined,
     });
   });
 
-  it('should add an acceptPrimaryKey transaction to the queue if called with RotatePrimaryKey', async () => {
+  it('should return an acceptPrimaryKey transaction spec if called with RotatePrimaryKey', async () => {
     const proc = procedureMockUtils.getInstance<
       ConsumeJoinOrRotateAuthorizationParams,
       void,
@@ -264,7 +263,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       calledByTarget: true,
     });
 
-    const transaction = dsMockUtils.createTxStub('identity', 'acceptPrimaryKey');
+    const transaction = dsMockUtils.createTxMock('identity', 'acceptPrimaryKey');
 
     const issuer = entityMockUtils.getIdentityInstance();
     const target = entityMockUtils.getAccountInstance({
@@ -272,7 +271,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       getIdentity: null,
     });
 
-    await prepareConsumeJoinOrRotateAuthorization.call(proc, {
+    const result = await prepareConsumeJoinOrRotateAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
         {
           target,
@@ -288,10 +287,11 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       accept: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       paidForBy: issuer,
       args: [rawAuthId, null],
+      resolver: undefined,
     });
   });
 
@@ -339,7 +339,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
     expect(error).toEqual(expectedError);
   });
 
-  it('should add a removeAuthorization transaction to the queue if accept is set to false', async () => {
+  it('should return a removeAuthorization transaction spec if accept is set to false', async () => {
     let proc = procedureMockUtils.getInstance<
       ConsumeJoinOrRotateAuthorizationParams,
       void,
@@ -349,7 +349,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       calledByTarget: false,
     });
 
-    const transaction = dsMockUtils.createTxStub('identity', 'removeAuthorization');
+    const transaction = dsMockUtils.createTxMock('identity', 'removeAuthorization');
 
     const issuer = entityMockUtils.getIdentityInstance();
     let target: Signer = new Identity({ did: 'someOtherDid' }, mockContext);
@@ -358,9 +358,9 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       Identity: dsMockUtils.createMockIdentityId(target.did),
     });
 
-    sinon.stub(utilsConversionModule, 'signerValueToSignatory').returns(rawSignatory);
+    jest.spyOn(utilsConversionModule, 'signerValueToSignatory').mockReturnValue(rawSignatory);
 
-    await prepareConsumeJoinOrRotateAuthorization.call(proc, {
+    let result = await prepareConsumeJoinOrRotateAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
         {
           target,
@@ -382,9 +382,10 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       accept: false,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       args: [rawSignatory, rawAuthId, rawFalse],
+      resolver: undefined,
     });
 
     target = targetAccount;
@@ -396,7 +397,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       }
     );
 
-    await prepareConsumeJoinOrRotateAuthorization.call(proc, {
+    result = await prepareConsumeJoinOrRotateAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
         {
           target,
@@ -418,10 +419,11 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       accept: false,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       paidForBy: issuer,
       args: [rawSignatory, rawAuthId, rawTrue],
+      resolve: undefined,
     });
   });
 
@@ -495,7 +497,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       });
 
       targetAccount = entityMockUtils.getAccountInstance({ address, getIdentity: null });
-      mockContext.getSigningAccount.returns(targetAccount);
+      mockContext.getSigningAccount.mockReturnValue(targetAccount);
 
       proc = procedureMockUtils.getInstance<ConsumeJoinOrRotateAuthorizationParams, void, Storage>(
         mockContext,

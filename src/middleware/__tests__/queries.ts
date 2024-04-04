@@ -1,309 +1,603 @@
+import BigNumber from 'bignumber.js';
+
 import {
-  ClaimScopeTypeEnum,
+  assetHoldersQuery,
+  assetQuery,
+  assetTransactionQuery,
+  authorizationsQuery,
+  claimsGroupingQuery,
+  claimsQuery,
+  createCustomClaimTypeQueryFilters,
+  customClaimTypeQuery,
+  distributionPaymentsQuery,
+  distributionQuery,
+  eventsByArgs,
+  extrinsicByHash,
+  extrinsicsByArgs,
+  heartbeatQuery,
+  instructionsByDidQuery,
+  instructionsQuery,
+  investmentsQuery,
+  latestBlockQuery,
+  latestSqVersionQuery,
+  metadataQuery,
+  multiSigProposalQuery,
+  multiSigProposalVotesQuery,
+  nftHoldersQuery,
+  polyxTransactionsQuery,
+  portfolioMovementsQuery,
+  portfolioQuery,
+  settlementsQuery,
+  tickerExternalAgentActionsQuery,
+  tickerExternalAgentHistoryQuery,
+  tickerExternalAgentsQuery,
+  trustedClaimIssuerQuery,
+  trustingAssetsQuery,
+} from '~/middleware/queries';
+import {
+  AuthorizationStatusEnum,
+  AuthTypeEnum,
+  CallIdEnum,
   ClaimTypeEnum,
   EventIdEnum,
   ModuleIdEnum,
-  Order,
-  ProposalOrderFields,
-  ProposalStateEnum,
-  ProposalVotesOrderFields,
 } from '~/middleware/types';
+import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
 
-import {
-  didsWithClaims,
-  eventByAddedTrustedClaimIssuer,
-  eventByIndexedArgs,
-  eventsByIndexedArgs,
-  getHistoryOfPaymentEventsForCa,
-  getWithholdingTaxesOfCa,
-  investments,
-  issuerDidsWithClaimsByTarget,
-  proposal,
-  proposals,
-  proposalVotes,
-  scopesByIdentity,
-  settlements,
-  tickerExternalAgentActions,
-  tickerExternalAgentHistory,
-  tokensByTrustedClaimIssuer,
-  tokensHeldByDid,
-  transactionByHash,
-  transactions,
-} from '../queries';
-
-describe('proposalVotes', () => {
+describe('latestBlockQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
-    const variables = {
-      pipId: 10,
-      vote: false,
-      count: 50,
-      skip: 0,
-      orderBy: {
-        field: ProposalVotesOrderFields.Vote,
-        order: Order.Desc,
-      },
-    };
-
-    const result = proposalVotes(variables);
+    const result = latestBlockQuery();
 
     expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
+    expect(result.variables).toBeUndefined();
   });
 });
 
-describe('didsWithClaims', () => {
+describe('heartbeat', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const result = heartbeatQuery();
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toBeUndefined();
+  });
+});
+
+describe('metadataQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const result = metadataQuery();
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toBeUndefined();
+  });
+});
+
+describe('latestSqVersionQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const result = latestSqVersionQuery();
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toBeUndefined();
+  });
+});
+
+describe('claimsGroupingQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
     const variables = {
       dids: ['someDid', 'otherDid'],
       scope: { type: ClaimScopeTypeEnum.Ticker, value: 'someScope' },
       trustedClaimIssuers: ['someTrustedClaim'],
       claimTypes: [ClaimTypeEnum.Accredited],
-      count: 100,
-      skip: 0,
+      includeExpired: true,
     };
 
-    const result = didsWithClaims(variables);
+    const result = claimsGroupingQuery(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
   });
 });
 
-describe('eventByIndexedArgs', () => {
+describe('claimsQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
     const variables = {
-      moduleId: ModuleIdEnum.Asset,
-      eventId: EventIdEnum.AssetFrozen,
-      eventArg0: 'someData',
+      dids: ['someDid', 'otherDid'],
+      scope: { type: ClaimScopeTypeEnum.Ticker, value: 'someScope' },
+      trustedClaimIssuers: ['someTrustedClaim'],
+      claimTypes: [ClaimTypeEnum.Accredited],
+      includeExpired: true,
     };
 
-    const result = eventByIndexedArgs(variables);
+    let result = claimsQuery(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
+
+    result = claimsQuery(
+      { ...variables, includeExpired: false },
+      new BigNumber(1),
+      new BigNumber(0)
+    );
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({
+      ...variables,
+      includeExpired: false,
+      expiryTimestamp: expect.any(Number),
+      size: 1,
+      start: 0,
+    });
   });
 });
 
-describe('eventsByIndexedArgs', () => {
-  it('should pass the variables to the grapqhl query', () => {
-    const variables = {
-      moduleId: ModuleIdEnum.Asset,
-      eventId: EventIdEnum.AssetFrozen,
-      eventArg0: 'someData',
-    };
-
-    const result = eventsByIndexedArgs(variables);
-
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
-  });
-});
-
-describe('transactionByHash', () => {
-  it('should pass the variables to the grapqhl query', () => {
-    const variables = {
-      transactionHash: 'someTransactionHash',
-    };
-
-    const result = transactionByHash(variables);
-
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
-  });
-});
-
-describe('proposals', () => {
-  it('should pass the variables to the grapqhl query', () => {
-    const variables = {
-      proposers: ['someProposer'],
-      states: [ProposalStateEnum.Scheduled],
-      orderBy: {
-        field: ProposalOrderFields.VotesCount,
-        order: Order.Desc,
-      },
-    };
-
-    const result = proposals(variables);
-
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
-  });
-});
-
-describe('assetsByTrustedClaimIssuer', () => {
-  it('should pass the variables to the grapqhl query', () => {
-    const variables = {
-      claimIssuerDid: 'someDid',
-    };
-
-    const result = tokensByTrustedClaimIssuer(variables);
-
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
-  });
-});
-
-describe('assetsHeldByDid', () => {
-  it('should pass the variables to the grapqhl query', () => {
-    const variables = {
-      did: 'someDid',
-    };
-
-    const result = tokensHeldByDid(variables);
-
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
-  });
-});
-
-describe('transactions', () => {
-  it('should pass the variables to the grapqhl query', () => {
-    let result = transactions();
-
-    expect(result.query).toBeDefined();
-    expect(result.variables).toBeUndefined();
-
-    const variables = {
-      address: 'someAddress',
-    };
-    result = transactions(variables);
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
-  });
-});
-
-describe('scopesByIdentity', () => {
-  it('should pass the variables to the grapqhl query', () => {
-    const variables = {
-      did: 'someDid',
-    };
-
-    const result = scopesByIdentity(variables);
-
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
-  });
-});
-
-describe('issuerDidsWithClaimsByTarget', () => {
-  it('should pass the variables to the grapqhl query', () => {
-    const variables = {
-      target: 'someDid',
-      scope: { type: ClaimScopeTypeEnum.Identity, value: 'someScope' },
-      trustedClaimIssuers: ['aTrustedClaimIssuer'],
-    };
-
-    const result = issuerDidsWithClaimsByTarget(variables);
-
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
-  });
-});
-
-describe('proposal', () => {
-  it('should pass the variables to the grapqhl query', () => {
-    const variables = {
-      pipId: 1,
-    };
-
-    const result = proposal(variables);
-
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
-  });
-});
-
-describe('eventByAddedTrustedClaimIssuer', () => {
-  it('should pass the variables to the grapqhl query', () => {
-    const variables = {
-      ticker: 'SOME_TICKER',
-      identityId: 'someDid',
-    };
-
-    const result = eventByAddedTrustedClaimIssuer(variables);
-
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
-  });
-});
-
-describe('settlements', () => {
-  it('should pass the variables to the grapqhl query', () => {
-    const variables = {
-      identityId: 'someIdentityId',
-    };
-
-    const result = settlements(variables);
-
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
-  });
-});
-
-describe('investments', () => {
+describe('investmentsQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
     const variables = {
       stoId: 1,
+      offeringToken: 'SOME_TICKER',
+    };
+
+    const result = investmentsQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('instructionsQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      eventId: EventIdEnum.InstructionExecuted,
+      id: '1',
+    };
+
+    let result = instructionsQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+
+    result = instructionsQuery(
+      {
+        venueId: '2',
+      },
+      new BigNumber(10),
+      new BigNumber(2)
+    );
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({
+      venueId: '2',
+      size: 10,
+      start: 2,
+    });
+  });
+});
+
+describe('instructionsByDidQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const result = instructionsByDidQuery('someDid');
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({ fromId: 'someDid/', toId: 'someDid/' });
+  });
+});
+
+describe('eventsByArgs', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    let result = eventsByArgs({});
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({});
+
+    const variables = {
+      moduleId: ModuleIdEnum.Asset,
+      eventId: EventIdEnum.AssetCreated,
+      eventArg0: 'TICKER',
+    };
+
+    result = eventsByArgs(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+
+    result = eventsByArgs(variables, new BigNumber(1), new BigNumber(0));
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({
+      ...variables,
+      size: 1,
+      start: 0,
+    });
+  });
+});
+
+describe('extrinsicByHash', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      extrinsicHash: 'someHash',
+    };
+
+    const result = extrinsicByHash(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('extrinsicsByArgs', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    let result = extrinsicsByArgs({});
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({});
+
+    const variables = {
+      blockId: '123',
+      address: 'someAddress',
+      moduleId: ModuleIdEnum.Asset,
+      callId: CallIdEnum.CreateAsset,
+      success: 1,
+    };
+
+    result = extrinsicsByArgs(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('trustedClaimIssuerQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      issuer: 'someDid',
+      assetId: 'SOME_TICKER',
+    };
+
+    const result = trustedClaimIssuerQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('trustingAssetsQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      issuer: 'someDid',
+    };
+
+    const result = trustingAssetsQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('portfolioQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      identityId: 'someDid',
+      number: 1,
+    };
+
+    const result = portfolioQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('assetQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const variables = {
       ticker: 'SOME_TICKER',
     };
 
-    const result = investments(variables);
+    const result = assetQuery(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
   });
 });
 
-describe('getWithholdingTaxesOfCa', () => {
+describe('tickerExternalAgentsQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
     const variables = {
-      CAId: { ticker: 'SOME_TICKER', localId: 1 },
+      assetId: 'SOME_TICKER',
     };
 
-    const result = getWithholdingTaxesOfCa(variables);
+    const result = tickerExternalAgentsQuery(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
   });
 });
 
-describe('getHistoryOfPaymentEventsForCa', () => {
+describe('tickerExternalAgentHistoryQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
     const variables = {
-      CAId: { ticker: 'SOME_TICKER', localId: 1 },
+      assetId: 'SOME_TICKER',
     };
 
-    const result = getHistoryOfPaymentEventsForCa(variables);
+    const result = tickerExternalAgentHistoryQuery(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
   });
 });
 
-describe('tickerExternalAgentHistory', () => {
+describe('tickerExternalAgentActionsQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    let result = tickerExternalAgentActionsQuery({});
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({});
+
+    const variables = {
+      assetId: 'SOME_TICKER',
+      callerId: 'someDid',
+      palletName: 'asset',
+      eventId: EventIdEnum.ControllerTransfer,
+    };
+
+    result = tickerExternalAgentActionsQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+
+    result = tickerExternalAgentActionsQuery(variables, new BigNumber(1), new BigNumber(0));
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({
+      ...variables,
+      size: 1,
+      start: 0,
+    });
+  });
+});
+
+describe('distributionQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
     const variables = {
+      id: '123',
+    };
+
+    const result = distributionQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('distributionPaymentsQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      distributionId: 'SOME_TICKER/1',
+    };
+
+    const result = distributionPaymentsQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('assetHoldersQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      identityId: 'someDid',
+    };
+
+    let result = assetHoldersQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+
+    result = assetHoldersQuery(variables, new BigNumber(1), new BigNumber(0));
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({
+      ...variables,
+      size: 1,
+      start: 0,
+    });
+  });
+});
+
+describe('nftHoldersQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      identityId: 'someDid',
+    };
+
+    let result = nftHoldersQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+
+    result = assetHoldersQuery(variables, new BigNumber(1), new BigNumber(0));
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({
+      ...variables,
+      size: 1,
+      start: 0,
+    });
+  });
+});
+
+describe('settlementsQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      identityId: 'someDid',
+      portfolioId: new BigNumber(1),
       ticker: 'SOME_TICKER',
+      address: 'someAddress',
     };
 
-    const result = tickerExternalAgentHistory(variables);
+    const result = settlementsQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({
+      addresses: ['someAddress'],
+      assetId: 'SOME_TICKER',
+      fromId: 'someDid/1',
+      toId: 'someDid/1',
+    });
+  });
+});
+
+describe('portfolioMovementsQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      identityId: 'someDid',
+      portfolioId: new BigNumber(1),
+      ticker: 'SOME_TICKER',
+      address: 'someAddress',
+    };
+
+    const result = portfolioMovementsQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({
+      address: 'someAddress',
+      assetId: 'SOME_TICKER',
+      fromId: 'someDid/1',
+      toId: 'someDid/1',
+    });
+  });
+});
+
+describe('assetTransactionQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      assetId: 'SOME_TICKER',
+    };
+
+    let result = assetTransactionQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+
+    result = assetTransactionQuery(variables, new BigNumber(1), new BigNumber(0));
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({
+      ...variables,
+      size: 1,
+      start: 0,
+    });
+  });
+});
+
+describe('polyxTransactionsQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      addresses: ['someAddress'],
+      identityId: 'someDid',
+    };
+
+    let result = polyxTransactionsQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+
+    result = polyxTransactionsQuery({}, new BigNumber(10), new BigNumber(2));
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({
+      size: 10,
+      start: 2,
+    });
+  });
+});
+
+describe('authorizationsQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    let result = authorizationsQuery({});
+
+    expect(result.query).toBeDefined();
+
+    const variables = {
+      fromId: 'someId',
+      toId: 'someOtherId',
+      toKey: 'someKey',
+      type: AuthTypeEnum.RotatePrimaryKey,
+      status: AuthorizationStatusEnum.Consumed,
+    };
+
+    result = authorizationsQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+
+    result = authorizationsQuery(variables, new BigNumber(1), new BigNumber(0));
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({
+      ...variables,
+      size: 1,
+      start: 0,
+    });
+  });
+});
+
+describe('multiSigProposalQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      multisigId: 'multiSigAddress',
+      proposalId: 1,
+    };
+
+    const result = multiSigProposalQuery(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
   });
 });
 
-describe('tickerExternalAgentActions', () => {
+describe('multiSigProposalVotesQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
     const variables = {
-      ticker: 'SOME_TICKER',
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      caller_did: 'someDid',
+      proposalId: 'multiSigAddress/1',
     };
 
-    const result = tickerExternalAgentActions(variables);
+    const result = multiSigProposalVotesQuery(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('createCustomClaimTypeQueryFilters', () => {
+  it('should return correct args and filter when dids is not provided', () => {
+    const result = createCustomClaimTypeQueryFilters({});
+    expect(result).toEqual({
+      args: '($size: Int, $start: Int)',
+      filter: '',
+    });
+  });
+
+  it('should return correct args and filter when dids is provided', () => {
+    const result = createCustomClaimTypeQueryFilters({ dids: ['did1', 'did2'] });
+    expect(result).toEqual({
+      args: '($size: Int, $start: Int,$dids: [String!])',
+      filter: 'filter: { identityId: { in: $dids } },',
+    });
+  });
+});
+
+describe('customClaimTypeQuery', () => {
+  it('should return correct query and variables when size, start, and dids are not provided', () => {
+    const result = customClaimTypeQuery();
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({ size: undefined, start: undefined, dids: undefined });
+  });
+
+  it('should return correct query and variables when size, start, and dids are provided', () => {
+    const size = new BigNumber(10);
+    const start = new BigNumber(0);
+    const dids = ['did1', 'did2'];
+    const result = customClaimTypeQuery(size, start, dids);
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({ size: size.toNumber(), start: start.toNumber(), dids });
   });
 });

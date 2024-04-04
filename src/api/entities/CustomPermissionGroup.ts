@@ -98,12 +98,12 @@ export class CustomPermissionGroup extends PermissionGroup {
       context,
     } = this;
 
-    const nextId = await context.polymeshApi.query.externalAgents.aGIdSequence(
+    const currentId = await context.polymeshApi.query.externalAgents.agIdSequence(
       stringToTicker(ticker, context)
     );
 
-    // 1 < id < next
-    return u32ToBigNumber(nextId).gt(id) && id.gte(1);
+    // 1 <= id <= currentId
+    return u32ToBigNumber(currentId).gte(id) && id.gte(1);
   }
 
   /**

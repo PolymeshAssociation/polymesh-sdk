@@ -1,14 +1,34 @@
+import {
+  PolymeshPrimitivesIdentityIdPortfolioId,
+  PolymeshPrimitivesPortfolioFund,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { MovePortfolioItem, PortfolioId as MeshPortfolioId } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { getAuthorization, Params, prepareMoveFunds } from '~/api/procedures/moveFunds';
 import * as procedureUtilsModule from '~/api/procedures/utils';
-import { Context, DefaultPortfolio, NumberedPortfolio } from '~/internal';
+import {
+  Context,
+  DefaultPortfolio,
+  Nft,
+  NftCollection,
+  NumberedPortfolio,
+  PolymeshError,
+} from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PortfolioBalance, PortfolioId, PortfolioMovement, RoleType, TxTags } from '~/types';
+import {
+  ErrorCode,
+  FungiblePortfolioMovement,
+  NonFungiblePortfolioMovement,
+  PortfolioBalance,
+  PortfolioId,
+  PortfolioMovement,
+  RoleType,
+  TxTags,
+} from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
+import { asTicker } from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/NumberedPortfolio',
@@ -24,33 +44,50 @@ jest.mock(
   )
 );
 
+jest.mock(
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
+);
+jest.mock(
+  '~/api/entities/Asset/NonFungible',
+  require('~/testUtils/mocks/entities').mockNftCollectionModule('~/api/entities/Asset/NonFungible')
+);
+
 describe('moveFunds procedure', () => {
   let mockContext: Mocked<Context>;
-  let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub<[PortfolioId, Context], MeshPortfolioId>;
-  let portfolioMovementToMovePortfolioItemStub: sinon.SinonStub<
-    [PortfolioMovement, Context],
-    MovePortfolioItem
+  let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance<
+    PolymeshPrimitivesIdentityIdPortfolioId,
+    [PortfolioId, Context]
   >;
-  let portfolioLikeToPortfolioIdStub: sinon.SinonStub;
-  let assertPortfolioExistsStub: sinon.SinonStub;
+  let fungiblePortfolioMovementToMovePortfolioFundSpy: jest.SpyInstance<
+    PolymeshPrimitivesPortfolioFund,
+    [FungiblePortfolioMovement, Context]
+  >;
+  let nftMovementToMovePortfolioFundSpy: jest.SpyInstance<
+    PolymeshPrimitivesPortfolioFund,
+    [NonFungiblePortfolioMovement, Context]
+  >;
+  let portfolioLikeToPortfolioIdSpy: jest.SpyInstance;
+  let assertPortfolioExistsSpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    portfolioIdToMeshPortfolioIdStub = sinon.stub(
+    portfolioIdToMeshPortfolioIdSpy = jest.spyOn(
       utilsConversionModule,
       'portfolioIdToMeshPortfolioId'
     );
-    portfolioMovementToMovePortfolioItemStub = sinon.stub(
+    fungiblePortfolioMovementToMovePortfolioFundSpy = jest.spyOn(
       utilsConversionModule,
-      'portfolioMovementToMovePortfolioItem'
+      'fungibleMovementToPortfolioFund'
     );
-    portfolioLikeToPortfolioIdStub = sinon.stub(
+    nftMovementToMovePortfolioFundSpy = jest.spyOn(
       utilsConversionModule,
-      'portfolioLikeToPortfolioId'
+      'nftMovementToPortfolioFund'
     );
-    assertPortfolioExistsStub = sinon.stub(procedureUtilsModule, 'assertPortfolioExists');
+    portfolioLikeToPortfolioIdSpy = jest.spyOn(utilsConversionModule, 'portfolioLikeToPortfolioId');
+    assertPortfolioExistsSpy = jest.spyOn(procedureUtilsModule, 'assertPortfolioExists');
   });
 
   beforeEach(() => {
@@ -60,7 +97,7 @@ describe('moveFunds procedure', () => {
         isOwnedBy: true,
       },
     });
-    assertPortfolioExistsStub.returns(true);
+    assertPortfolioExistsSpy.mockReturnValue(true);
   });
 
   afterEach(() => {
@@ -86,8 +123,12 @@ describe('moveFunds procedure', () => {
     });
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    portfolioLikeToPortfolioIdStub.withArgs(fromPortfolio).returns({ did: fromDid, number: toId });
-    portfolioLikeToPortfolioIdStub.withArgs(toPortfolio).returns({ did: toDid, number: toId });
+    when(portfolioLikeToPortfolioIdSpy)
+      .calledWith(fromPortfolio)
+      .mockReturnValue({ did: fromDid, number: toId });
+    when(portfolioLikeToPortfolioIdSpy)
+      .calledWith(toPortfolio)
+      .mockReturnValue({ did: toDid, number: toId });
 
     return expect(
       prepareMoveFunds.call(proc, {
@@ -105,8 +146,8 @@ describe('moveFunds procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
     const fakePortfolioId = { did, number: id };
 
-    portfolioLikeToPortfolioIdStub.withArgs(samePortfolio).returns(fakePortfolioId);
-    portfolioLikeToPortfolioIdStub.withArgs(samePortfolio).returns(fakePortfolioId);
+    when(portfolioLikeToPortfolioIdSpy).calledWith(samePortfolio).mockReturnValue(fakePortfolioId);
+    when(portfolioLikeToPortfolioIdSpy).calledWith(samePortfolio).mockReturnValue(fakePortfolioId);
 
     return expect(
       prepareMoveFunds.call(proc, {
@@ -117,12 +158,50 @@ describe('moveFunds procedure', () => {
     ).rejects.toThrow('Origin and destination should be different Portfolios');
   });
 
+  it('should throw an error if an Asset is specified more than once', () => {
+    const fromId = new BigNumber(1);
+    const fromDid = 'someDid';
+    const id = new BigNumber(1);
+    const did = 'someDid';
+    const toPortfolio = new NumberedPortfolio({ id, did }, mockContext);
+    const fromPortfolio = new NumberedPortfolio({ id: fromId, did: fromDid }, mockContext);
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+    const toPortfolioId = { did, number: id };
+
+    entityMockUtils.configureMocks({
+      fungibleAssetOptions: {
+        exists: true,
+      },
+      nftCollectionOptions: {
+        exists: false,
+      },
+    });
+
+    when(portfolioLikeToPortfolioIdSpy).calledWith(toPortfolio).mockReturnValue(toPortfolioId);
+    when(portfolioLikeToPortfolioIdSpy).calledWith(toPortfolio).mockReturnValue(fromId);
+
+    return expect(
+      prepareMoveFunds.call(proc, {
+        from: fromPortfolio,
+        to: toPortfolio,
+        items: [
+          { asset: 'TICKER', amount: new BigNumber(10) },
+          { asset: 'TICKER', amount: new BigNumber(20) },
+        ],
+      })
+    ).rejects.toThrow('Portfolio movements cannot contain any Asset more than once');
+  });
+
   it('should throw an error if some of the amount Asset to move exceeds its balance', async () => {
     const fromId = new BigNumber(1);
     const toId = new BigNumber(2);
     const did = 'someDid';
-    const asset1 = entityMockUtils.getAssetInstance({ ticker: 'TICKER001' });
-    const asset2 = entityMockUtils.getAssetInstance({ ticker: 'TICKER002' });
+    const asset1 = entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER001' });
+    const asset2 = entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER002' });
+
+    entityMockUtils.configureMocks({
+      nftCollectionOptions: { exists: false },
+    });
     const items: PortfolioMovement[] = [
       {
         asset: asset1.ticker,
@@ -146,8 +225,8 @@ describe('moveFunds procedure', () => {
     const from = entityMockUtils.getNumberedPortfolioInstance({ id: fromId, did });
     const to = entityMockUtils.getNumberedPortfolioInstance({ id: toId, did });
 
-    portfolioLikeToPortfolioIdStub.withArgs(from).returns({ did, number: fromId });
-    portfolioLikeToPortfolioIdStub.withArgs(to).returns({ did, number: toId });
+    when(portfolioLikeToPortfolioIdSpy).calledWith(from).mockReturnValue({ did, number: fromId });
+    when(portfolioLikeToPortfolioIdSpy).calledWith(to).mockReturnValue({ did, number: toId });
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
@@ -169,12 +248,188 @@ describe('moveFunds procedure', () => {
     expect(error.data.balanceExceeded).toMatchObject(items);
   });
 
-  it('should add a move portfolio funds transaction to the queue', async () => {
+  it('should throw if the NFT is not owned', async () => {
     const fromId = new BigNumber(1);
     const toId = new BigNumber(2);
     const did = 'someDid';
-    const asset = entityMockUtils.getAssetInstance({ ticker: 'TICKER001' });
-    const items = [
+    const ticker = 'TICKER';
+    const context = dsMockUtils.getContextInstance();
+
+    const asset = new NftCollection({ ticker }, context);
+
+    entityMockUtils.configureMocks({
+      fungibleAssetOptions: {
+        exists: false,
+      },
+      nftCollectionOptions: {
+        exists: true,
+      },
+      numberedPortfolioOptions: {
+        did,
+        getAssetBalances: [],
+        getCollections: [],
+      },
+      defaultPortfolioOptions: {
+        did,
+        getAssetBalances: [],
+        getCollections: [],
+      },
+    });
+
+    const items: PortfolioMovement[] = [
+      {
+        asset,
+        nfts: [new BigNumber(100)],
+      },
+    ];
+
+    const from = entityMockUtils.getNumberedPortfolioInstance({ id: fromId, did });
+    const to = entityMockUtils.getNumberedPortfolioInstance({ id: toId, did });
+
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.InsufficientBalance,
+      message: 'Some of the NFTs are not available in the sending portfolio',
+    });
+
+    await expect(
+      prepareMoveFunds.call(proc, {
+        from,
+        to,
+        items,
+      })
+    ).rejects.toThrow(expectedError);
+  });
+
+  it('should throw an error if "amount" is not given for a fungible asset', async () => {
+    const fromId = new BigNumber(1);
+    const toId = new BigNumber(2);
+    const did = 'someDid';
+    const ticker = 'TICKER';
+
+    entityMockUtils.configureMocks({
+      fungibleAssetOptions: {
+        exists: true,
+      },
+      nftCollectionOptions: {
+        exists: false,
+      },
+    });
+
+    const items: PortfolioMovement[] = [
+      {
+        asset: ticker,
+        nfts: [new BigNumber(100)],
+      },
+    ];
+
+    const from = entityMockUtils.getNumberedPortfolioInstance({ id: fromId, did });
+    const to = entityMockUtils.getNumberedPortfolioInstance({ id: toId, did });
+
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The key "amount" should be present in a fungible portfolio movement',
+    });
+
+    await expect(
+      prepareMoveFunds.call(proc, {
+        from,
+        to,
+        items,
+      })
+    ).rejects.toThrow(expectedError);
+  });
+
+  it('should throw an error if "nfts" is not given for a collection', async () => {
+    const fromId = new BigNumber(1);
+    const toId = new BigNumber(2);
+    const did = 'someDid';
+    const ticker = 'TICKER';
+
+    entityMockUtils.configureMocks({
+      fungibleAssetOptions: {
+        exists: false,
+      },
+      nftCollectionOptions: {
+        exists: true,
+      },
+    });
+
+    const items: PortfolioMovement[] = [
+      {
+        asset: ticker,
+        amount: new BigNumber(100),
+      },
+    ];
+
+    const from = entityMockUtils.getNumberedPortfolioInstance({ id: fromId, did });
+    const to = entityMockUtils.getNumberedPortfolioInstance({ id: toId, did });
+
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The key "nfts" should be present in an NFT portfolio movement',
+    });
+
+    await expect(
+      prepareMoveFunds.call(proc, {
+        from,
+        to,
+        items,
+      })
+    ).rejects.toThrow(expectedError);
+  });
+
+  it('should throw if given an asset that does not exist', async () => {
+    const fromId = new BigNumber(1);
+    const toId = new BigNumber(2);
+    const did = 'someDid';
+    const ticker = 'TICKER';
+
+    entityMockUtils.configureMocks({
+      fungibleAssetOptions: { exists: false },
+      nftCollectionOptions: { exists: false },
+    });
+    const items: PortfolioMovement[] = [
+      {
+        asset: ticker,
+        amount: new BigNumber(100),
+      },
+    ];
+
+    const from = entityMockUtils.getNumberedPortfolioInstance({ id: fromId, did });
+    const to = entityMockUtils.getNumberedPortfolioInstance({ id: toId, did });
+
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: `No asset exists with ticker: "${ticker}"`,
+    });
+
+    await expect(
+      prepareMoveFunds.call(proc, {
+        from,
+        to,
+        items,
+      })
+    ).rejects.toThrow(expectedError);
+  });
+
+  it('should return a move portfolio funds transaction spec', async () => {
+    const fromId = new BigNumber(1);
+    const toId = new BigNumber(2);
+    const did = 'someDid';
+    const asset = entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER001' });
+    entityMockUtils.configureMocks({
+      nftCollectionOptions: { exists: false },
+    });
+
+    const items: FungiblePortfolioMovement[] = [
       {
         asset: asset.ticker,
         amount: new BigNumber(100),
@@ -185,10 +440,12 @@ describe('moveFunds procedure', () => {
       numberedPortfolioOptions: {
         did,
         getAssetBalances: [{ asset, total: new BigNumber(150) }] as unknown as PortfolioBalance[],
+        getCollections: [],
       },
       defaultPortfolioOptions: {
         did,
         getAssetBalances: [{ asset, total: new BigNumber(150) }] as unknown as PortfolioBalance[],
+        getCollections: [],
       },
     });
 
@@ -198,11 +455,11 @@ describe('moveFunds procedure', () => {
     let fromPortfolioId: { did: string; number?: BigNumber } = { did, number: fromId };
     let toPortfolioId: { did: string; number?: BigNumber } = { did, number: toId };
 
-    portfolioLikeToPortfolioIdStub.withArgs(from).returns(fromPortfolioId);
-    portfolioLikeToPortfolioIdStub.withArgs(to).returns(toPortfolioId);
-    portfolioLikeToPortfolioIdStub
-      .withArgs(sinon.match({ owner: sinon.match({ did }), id: toId }))
-      .returns(toPortfolioId);
+    when(portfolioLikeToPortfolioIdSpy).calledWith(from).mockReturnValue(fromPortfolioId);
+    when(portfolioLikeToPortfolioIdSpy).calledWith(to).mockReturnValue(toPortfolioId);
+    when(portfolioLikeToPortfolioIdSpy)
+      .calledWith(expect.objectContaining({ owner: expect.objectContaining({ did }), id: toId }))
+      .mockReturnValue(toPortfolioId);
 
     let rawFromMeshPortfolioId = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(did),
@@ -210,9 +467,9 @@ describe('moveFunds procedure', () => {
         User: dsMockUtils.createMockU64(fromId),
       }),
     });
-    portfolioIdToMeshPortfolioIdStub
-      .withArgs(fromPortfolioId, mockContext)
-      .returns(rawFromMeshPortfolioId);
+    when(portfolioIdToMeshPortfolioIdSpy)
+      .calledWith(fromPortfolioId, mockContext)
+      .mockReturnValue(rawFromMeshPortfolioId);
 
     let rawToMeshPortfolioId = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(did),
@@ -220,59 +477,59 @@ describe('moveFunds procedure', () => {
         User: dsMockUtils.createMockU64(toId),
       }),
     });
-    portfolioIdToMeshPortfolioIdStub
-      .withArgs(toPortfolioId, mockContext)
-      .returns(rawToMeshPortfolioId);
+    when(portfolioIdToMeshPortfolioIdSpy)
+      .calledWith(toPortfolioId, mockContext)
+      .mockReturnValue(rawToMeshPortfolioId);
 
     const rawMovePortfolioItem = dsMockUtils.createMockMovePortfolioItem({
-      ticker: dsMockUtils.createMockTicker(items[0].asset),
+      ticker: dsMockUtils.createMockTicker(asTicker(items[0].asset)),
       amount: dsMockUtils.createMockBalance(items[0].amount),
     });
-    portfolioMovementToMovePortfolioItemStub
-      .withArgs(items[0], mockContext)
-      .returns(rawMovePortfolioItem);
+    when(fungiblePortfolioMovementToMovePortfolioFundSpy)
+      .calledWith(items[0], mockContext)
+      .mockReturnValue(rawMovePortfolioItem);
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('portfolio', 'movePortfolioFunds');
+    const transaction = dsMockUtils.createTxMock('portfolio', 'movePortfolioFunds');
 
-    await prepareMoveFunds.call(proc, {
+    let result = await prepareMoveFunds.call(proc, {
       from,
       to: toId,
       items,
     });
 
-    let addTransactionStub = procedureMockUtils.getAddTransactionStub();
-
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       args: [rawFromMeshPortfolioId, rawToMeshPortfolioId, [rawMovePortfolioItem]],
+      resolver: undefined,
     });
 
     toPortfolioId = { did };
 
-    portfolioLikeToPortfolioIdStub
-      .withArgs(sinon.match({ owner: sinon.match({ did }), id: undefined }))
-      .returns(toPortfolioId);
+    when(portfolioLikeToPortfolioIdSpy)
+      .calledWith(
+        expect.objectContaining({ owner: expect.objectContaining({ did }), id: undefined })
+      )
+      .mockReturnValue(toPortfolioId);
 
     rawToMeshPortfolioId = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(did),
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
-    portfolioIdToMeshPortfolioIdStub
-      .withArgs(toPortfolioId, mockContext)
-      .returns(rawToMeshPortfolioId);
+    when(portfolioIdToMeshPortfolioIdSpy)
+      .calledWith(toPortfolioId, mockContext)
+      .mockReturnValue(rawToMeshPortfolioId);
 
-    await prepareMoveFunds.call(proc, {
+    result = await prepareMoveFunds.call(proc, {
       from,
       items,
     });
 
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
-
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       args: [rawFromMeshPortfolioId, rawToMeshPortfolioId, [rawMovePortfolioItem]],
+      resolver: undefined,
     });
 
     const defaultFrom = entityMockUtils.getDefaultPortfolioInstance({ did });
@@ -280,16 +537,16 @@ describe('moveFunds procedure', () => {
     fromPortfolioId = { did };
     toPortfolioId = { did, number: toId };
 
-    portfolioLikeToPortfolioIdStub.withArgs(defaultFrom).returns(fromPortfolioId);
-    portfolioLikeToPortfolioIdStub.withArgs(to).returns(toPortfolioId);
+    when(portfolioLikeToPortfolioIdSpy).calledWith(defaultFrom).mockReturnValue(fromPortfolioId);
+    when(portfolioLikeToPortfolioIdSpy).calledWith(to).mockReturnValue(toPortfolioId);
 
     rawFromMeshPortfolioId = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(did),
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
-    portfolioIdToMeshPortfolioIdStub
-      .withArgs(fromPortfolioId, mockContext)
-      .returns(rawFromMeshPortfolioId);
+    when(portfolioIdToMeshPortfolioIdSpy)
+      .calledWith(fromPortfolioId, mockContext)
+      .mockReturnValue(rawFromMeshPortfolioId);
 
     rawToMeshPortfolioId = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(did),
@@ -297,21 +554,116 @@ describe('moveFunds procedure', () => {
         User: dsMockUtils.createMockU64(toId),
       }),
     });
-    portfolioIdToMeshPortfolioIdStub
-      .withArgs(toPortfolioId, mockContext)
-      .returns(rawToMeshPortfolioId);
+    when(portfolioIdToMeshPortfolioIdSpy)
+      .calledWith(toPortfolioId, mockContext)
+      .mockReturnValue(rawToMeshPortfolioId);
 
-    await prepareMoveFunds.call(proc, {
+    result = await prepareMoveFunds.call(proc, {
       from: defaultFrom,
       to,
       items,
     });
 
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
-
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       args: [rawFromMeshPortfolioId, rawToMeshPortfolioId, [rawMovePortfolioItem]],
+      resolver: undefined,
+    });
+  });
+
+  it('should handle NFT movements', async () => {
+    const fromId = new BigNumber(1);
+    const toId = new BigNumber(2);
+    const did = 'someDid';
+    const ticker = 'TICKER';
+    const context = dsMockUtils.getContextInstance();
+    const asset = entityMockUtils.getNftCollectionInstance({ ticker: 'TICKER001' });
+    const assetTwo = entityMockUtils.getNftCollectionInstance({ ticker: 'TICKER002' });
+    entityMockUtils.configureMocks({
+      nftCollectionOptions: { exists: true },
+    });
+
+    const nftOne = new Nft({ ticker, id: new BigNumber(1) }, context);
+    const nftTwo = new Nft({ ticker: assetTwo.ticker, id: new BigNumber(2) }, context);
+
+    const items: NonFungiblePortfolioMovement[] = [
+      {
+        asset: asset.ticker,
+        nfts: [nftOne.id],
+      },
+      {
+        asset: assetTwo,
+        nfts: [nftTwo],
+      },
+    ];
+
+    entityMockUtils.configureMocks({
+      numberedPortfolioOptions: {
+        did,
+        getAssetBalances: [],
+        getCollections: [
+          { collection: asset, free: [nftOne], locked: [], total: new BigNumber(1) },
+          { collection: assetTwo, free: [nftTwo], locked: [], total: new BigNumber(1) },
+        ],
+      },
+      defaultPortfolioOptions: {
+        did,
+        getAssetBalances: [],
+        getCollections: [],
+      },
+    });
+
+    const from = entityMockUtils.getNumberedPortfolioInstance({ id: fromId, did });
+    const to = entityMockUtils.getNumberedPortfolioInstance({ id: toId, did });
+
+    const fromPortfolioId: { did: string; number?: BigNumber } = { did, number: fromId };
+    const toPortfolioId: { did: string; number?: BigNumber } = { did, number: toId };
+
+    when(portfolioLikeToPortfolioIdSpy).calledWith(from).mockReturnValue(fromPortfolioId);
+    when(portfolioLikeToPortfolioIdSpy).calledWith(to).mockReturnValue(toPortfolioId);
+    when(portfolioLikeToPortfolioIdSpy)
+      .calledWith(expect.objectContaining({ owner: expect.objectContaining({ did }), id: toId }))
+      .mockReturnValue(toPortfolioId);
+
+    const rawFromMeshPortfolioId = dsMockUtils.createMockPortfolioId({
+      did: dsMockUtils.createMockIdentityId(did),
+      kind: dsMockUtils.createMockPortfolioKind({
+        User: dsMockUtils.createMockU64(fromId),
+      }),
+    });
+    when(portfolioIdToMeshPortfolioIdSpy)
+      .calledWith(fromPortfolioId, mockContext)
+      .mockReturnValue(rawFromMeshPortfolioId);
+
+    const rawToMeshPortfolioId = dsMockUtils.createMockPortfolioId({
+      did: dsMockUtils.createMockIdentityId(did),
+      kind: dsMockUtils.createMockPortfolioKind({
+        User: dsMockUtils.createMockU64(toId),
+      }),
+    });
+    when(portfolioIdToMeshPortfolioIdSpy)
+      .calledWith(toPortfolioId, mockContext)
+      .mockReturnValue(rawToMeshPortfolioId);
+
+    const rawMovePortfolioItem = 'mockItem' as unknown as PolymeshPrimitivesPortfolioFund;
+    when(nftMovementToMovePortfolioFundSpy)
+      .calledWith(items[0], mockContext)
+      .mockReturnValue(rawMovePortfolioItem);
+
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+    const transaction = dsMockUtils.createTxMock('portfolio', 'movePortfolioFunds');
+
+    const result = await prepareMoveFunds.call(proc, {
+      from,
+      to: toId,
+      items,
+    });
+
+    expect(result).toEqual({
+      transaction,
+      args: [rawFromMeshPortfolioId, rawToMeshPortfolioId, [rawMovePortfolioItem]],
+      resolver: undefined,
     });
   });
 

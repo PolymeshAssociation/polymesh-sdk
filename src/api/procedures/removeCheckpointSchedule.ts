@@ -1,9 +1,9 @@
 import BigNumber from 'bignumber.js';
 
-import { Asset, PolymeshError, Procedure } from '~/internal';
+import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RemoveCheckpointScheduleParams, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
-import { bigNumberToU64, stringToTicker, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
+import { bigNumberToU64, stringToTicker, u32ToBigNumber } from '~/utils/conversion';
 
 /**
  * @hidden
@@ -18,7 +18,7 @@ export type Params = RemoveCheckpointScheduleParams & {
 export async function prepareRemoveCheckpointSchedule(
   this: Procedure<Params, void>,
   args: Params
-): Promise<void> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'checkpoint', 'removeSchedule'>>> {
   const {
     context,
     context: {
@@ -29,9 +29,10 @@ export async function prepareRemoveCheckpointSchedule(
 
   const id = schedule instanceof BigNumber ? schedule : schedule.id;
   const rawTicker = stringToTicker(ticker, context);
+  const rawId = bigNumberToU64(id, context);
 
-  const rawSchedules = await query.checkpoint.schedules(rawTicker);
-  const exists = rawSchedules.find(({ id: scheduleId }) => u64ToBigNumber(scheduleId).eq(id));
+  const rawSchedule = await query.checkpoint.scheduledCheckpoints(rawTicker, rawId);
+  const exists = rawSchedule.isSome;
 
   if (!exists) {
     throw new PolymeshError({
@@ -55,10 +56,11 @@ export async function prepareRemoveCheckpointSchedule(
     });
   }
 
-  this.addTransaction({
+  return {
     transaction: tx.checkpoint.removeSchedule,
     args: [rawTicker, rawScheduleId],
-  });
+    resolver: undefined,
+  };
 }
 
 /**
@@ -72,7 +74,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.checkpoint.RemoveSchedule],
-      assets: [new Asset({ ticker }, context)],
+      assets: [new FungibleAsset({ ticker }, context)],
       portfolios: [],
     },
   };

@@ -1,15 +1,14 @@
 import { assertSecondaryAccounts } from '~/api/procedures/utils';
 import { Identity, Procedure } from '~/internal';
 import { ModifySignerPermissionsParams, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { BatchTransactionSpec, ExtrinsicParams, ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
   permissionsLikeToPermissions,
   permissionsToMeshPermissions,
-  signerToSignerValue,
-  signerValueToSignatory,
+  stringToAccountId,
 } from '~/utils/conversion';
-import { getSecondaryAccountPermissions } from '~/utils/internal';
+import { asAccount, getSecondaryAccountPermissions } from '~/utils/internal';
 
 /**
  * @hidden
@@ -24,7 +23,9 @@ export interface Storage {
 export async function prepareModifySignerPermissions(
   this: Procedure<ModifySignerPermissionsParams, void, Storage>,
   args: ModifySignerPermissionsParams
-): Promise<void> {
+): Promise<
+  BatchTransactionSpec<void, ExtrinsicParams<'identity', 'setSecondaryKeyPermissions'>[]>
+> {
   const {
     context: {
       polymeshApi: { tx },
@@ -34,7 +35,7 @@ export async function prepareModifySignerPermissions(
   } = this;
 
   const { secondaryAccounts } = args;
-  const accounts = secondaryAccounts.map(({ account }) => account);
+  const accounts = secondaryAccounts.map(({ account }) => asAccount(account, context));
   const existingSecondaryAccounts = await getSecondaryAccountPermissions(
     { accounts, identity },
     context
@@ -46,17 +47,21 @@ export async function prepareModifySignerPermissions(
 
     const rawPermissions = permissionsToMeshPermissions(permissions, context);
 
-    return tuple(signerValueToSignatory(signerToSignerValue(account), context), rawPermissions);
+    const { address } = asAccount(account, context);
+    const rawSignatory = stringToAccountId(address, context);
+
+    return tuple(rawSignatory, rawPermissions);
   });
 
-  const transaction = tx.identity.setPermissionToSigner;
+  const transaction = tx.identity.setSecondaryKeyPermissions;
 
-  this.addBatchTransaction({
+  return {
     transactions: signersList.map(params => ({
       transaction,
       args: params,
     })),
-  });
+    resolver: undefined,
+  };
 }
 
 /**

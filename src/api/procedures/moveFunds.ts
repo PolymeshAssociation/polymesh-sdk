@@ -1,22 +1,27 @@
 import BigNumber from 'bignumber.js';
+import { uniq } from 'lodash';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
-import { DefaultPortfolio, NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
+import { Context, DefaultPortfolio, NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
 import {
   ErrorCode,
+  FungiblePortfolioMovement,
   MoveFundsParams,
+  NonFungiblePortfolioMovement,
   PortfolioId,
   PortfolioMovement,
   RoleType,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
+import { isFungibleAsset, isNftCollection } from '~/utils';
 import {
+  fungibleMovementToPortfolioFund,
+  nftMovementToPortfolioFund,
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolioId,
-  portfolioMovementToMovePortfolioItem,
 } from '~/utils/conversion';
-import { asTicker } from '~/utils/internal';
+import { asAsset, asNftId, asTicker } from '~/utils/internal';
 
 /**
  * @hidden
@@ -27,8 +32,68 @@ export type Params = MoveFundsParams & {
 
 /**
  * @hidden
+ * separates user input into fungible and nft movements
  */
-export async function prepareMoveFunds(this: Procedure<Params, void>, args: Params): Promise<void> {
+async function segregateItems(
+  items: PortfolioMovement[],
+  context: Context
+): Promise<{
+  fungibleMovements: FungiblePortfolioMovement[];
+  nftMovements: NonFungiblePortfolioMovement[];
+}> {
+  const fungibleMovements: FungiblePortfolioMovement[] = [];
+  const nftMovements: NonFungiblePortfolioMovement[] = [];
+  const tickers: string[] = [];
+
+  for (const item of items) {
+    const { asset } = item;
+    const ticker = asTicker(asset);
+    tickers.push(ticker);
+
+    const typedAsset = await asAsset(asset, context);
+    if (isFungibleAsset(typedAsset)) {
+      if (!('amount' in item)) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'The key "amount" should be present in a fungible portfolio movement',
+          data: { ticker },
+        });
+      }
+      fungibleMovements.push(item as FungiblePortfolioMovement);
+    } else if (isNftCollection(typedAsset)) {
+      if (!('nfts' in item)) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'The key "nfts" should be present in an NFT portfolio movement',
+          data: { ticker },
+        });
+      }
+      nftMovements.push(item as NonFungiblePortfolioMovement);
+    }
+  }
+
+  const hasDuplicates = uniq(tickers).length !== tickers.length;
+
+  if (hasDuplicates) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Portfolio movements cannot contain any Asset more than once',
+    });
+  }
+
+  return {
+    fungibleMovements,
+    nftMovements,
+  };
+}
+
+/**
+ * @hidden
+ */
+export async function prepareMoveFunds(
+  this: Procedure<Params, void>,
+  args: Params
+): Promise<TransactionSpec<void, ExtrinsicParams<'portfolio', 'movePortfolioFunds'>>> {
   const {
     context: {
       polymeshApi: {
@@ -39,6 +104,8 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
   } = this;
 
   const { from: fromPortfolio, to, items } = args;
+
+  const { fungibleMovements, nftMovements } = await segregateItems(items, context);
 
   const {
     owner: { did: fromDid },
@@ -79,14 +146,18 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
     });
   }
 
-  const portfolioBalances = await fromPortfolio.getAssetBalances({
-    assets: items.map(({ asset }) => asset),
-  });
+  const [fungibleBalances, heldCollections] = await Promise.all([
+    fromPortfolio.getAssetBalances({
+      assets: fungibleMovements.map(({ asset }) => asTicker(asset)),
+    }),
+    fromPortfolio.getCollections({ collections: nftMovements.map(({ asset }) => asTicker(asset)) }),
+  ]);
   const balanceExceeded: (PortfolioMovement & { free: BigNumber })[] = [];
 
-  portfolioBalances.forEach(({ asset: { ticker }, free }) => {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const transferItem = items.find(({ asset: itemAsset }) => asTicker(itemAsset) === ticker)!;
+  fungibleBalances.forEach(({ asset: { ticker }, free }) => {
+    const transferItem = fungibleMovements.find(
+      ({ asset: itemAsset }) => asTicker(itemAsset) === ticker
+    )!;
 
     if (transferItem.amount.gt(free)) {
       balanceExceeded.push({ ...transferItem, free });
@@ -103,17 +174,45 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
     });
   }
 
+  const unavailableNfts: Record<string, BigNumber[]> = {};
+
+  nftMovements.forEach(movement => {
+    const ticker = asTicker(movement.asset);
+    const heldNfts = heldCollections.find(({ collection }) => collection.ticker === ticker);
+
+    movement.nfts.forEach(nftId => {
+      const id = asNftId(nftId);
+      const hasNft = heldNfts?.free.find(held => held.id.eq(id));
+      if (!hasNft) {
+        const entry = unavailableNfts[ticker] || [];
+        entry.push(id);
+        unavailableNfts[ticker] = entry;
+      }
+    });
+  });
+
+  if (Object.keys(unavailableNfts).length > 0) {
+    throw new PolymeshError({
+      code: ErrorCode.InsufficientBalance,
+      message: 'Some of the NFTs are not available in the sending portfolio',
+      data: { unavailableNfts },
+    });
+  }
+
   const rawFrom = portfolioIdToMeshPortfolioId(fromPortfolioId, context);
   const rawTo = portfolioIdToMeshPortfolioId(toPortfolioId, context);
 
-  const rawMovePortfolioItems = items.map(item =>
-    portfolioMovementToMovePortfolioItem(item, context)
+  const rawFungibleMovements = fungibleMovements.map(item =>
+    fungibleMovementToPortfolioFund(item, context)
   );
 
-  this.addTransaction({
+  const rawNftMovements = nftMovements.map(item => nftMovementToPortfolioFund(item, context));
+
+  return {
     transaction: portfolio.movePortfolioFunds,
-    args: [rawFrom, rawTo, rawMovePortfolioItems],
-  });
+    args: [rawFrom, rawTo, [...rawFungibleMovements, ...rawNftMovements]],
+    resolver: undefined,
+  };
 }
 
 /**

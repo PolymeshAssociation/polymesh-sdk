@@ -1,19 +1,13 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 
-import {
-  Asset,
-  CheckpointSchedule,
-  Context,
-  PolymeshError,
-  PostTransactionValue,
-  Procedure,
-} from '~/internal';
+import { CheckpointSchedule, Context, FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { CreateCheckpointScheduleParams, ErrorCode, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
-  scheduleSpecToMeshScheduleSpec,
-  storedScheduleToCheckpointScheduleParams,
+  datesToScheduleCheckpoints,
+  momentToDate,
   stringToTicker,
+  u64ToBigNumber,
 } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
 
@@ -31,13 +25,17 @@ export const createCheckpointScheduleResolver =
   (ticker: string, context: Context) =>
   (receipt: ISubmittableResult): CheckpointSchedule => {
     const [{ data }] = filterEventRecords(receipt, 'checkpoint', 'ScheduleCreated');
+    const rawId = data[2];
+    const id = u64ToBigNumber(rawId);
 
-    const scheduleParams = storedScheduleToCheckpointScheduleParams(data[2]);
+    const rawPoints = data[3];
+    const points = [...rawPoints.pending].map(rawPoint => momentToDate(rawPoint));
 
     return new CheckpointSchedule(
       {
+        id,
         ticker,
-        ...scheduleParams,
+        pendingPoints: points,
       },
       context
     );
@@ -49,28 +47,28 @@ export const createCheckpointScheduleResolver =
 export async function prepareCreateCheckpointSchedule(
   this: Procedure<Params, CheckpointSchedule>,
   args: Params
-): Promise<PostTransactionValue<CheckpointSchedule>> {
+): Promise<TransactionSpec<CheckpointSchedule, ExtrinsicParams<'checkpoint', 'createSchedule'>>> {
   const { context } = this;
-  const { ticker, start, period, repetitions } = args;
+  const { ticker, points } = args;
 
   const now = new Date();
-  if (start && start < now) {
+
+  const anyInPast = points.some(point => point < now);
+  if (anyInPast) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Schedule start date must be in the future',
+      message: 'Schedule points must be in the future',
     });
   }
 
   const rawTicker = stringToTicker(ticker, context);
-  const rawSchedule = scheduleSpecToMeshScheduleSpec({ start, period, repetitions }, context);
+  const checkpointSchedule = datesToScheduleCheckpoints(points, context);
 
-  const [schedule] = this.addTransaction({
+  return {
     transaction: context.polymeshApi.tx.checkpoint.createSchedule,
-    resolvers: [createCheckpointScheduleResolver(ticker, context)],
-    args: [rawTicker, rawSchedule],
-  });
-
-  return schedule;
+    args: [rawTicker, checkpointSchedule],
+    resolver: createCheckpointScheduleResolver(ticker, context),
+  };
 }
 
 /**
@@ -84,7 +82,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.checkpoint.CreateSchedule],
-      assets: [new Asset({ ticker }, context)],
+      assets: [new FungibleAsset({ ticker }, context)],
       portfolios: [],
     },
   };

@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
 
 import {
   getAuthorization,
@@ -13,8 +12,8 @@ import { DefaultPortfolio, RoleType, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 describe('reclaimDividendDistributionFunds procedure', () => {
@@ -35,7 +34,7 @@ describe('reclaimDividendDistributionFunds procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    sinon.stub(utilsConversionModule, 'corporateActionIdentifierToCaId').returns(rawCaId);
+    jest.spyOn(utilsConversionModule, 'corporateActionIdentifierToCaId').mockReturnValue(rawCaId);
   });
 
   beforeEach(() => {
@@ -101,12 +100,12 @@ describe('reclaimDividendDistributionFunds procedure', () => {
     expect(err.message).toBe('Distribution funds have already been reclaimed');
   });
 
-  it('should add a reclaim transaction to the queue', async () => {
+  it('should return a reclaim transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('capitalDistribution', 'reclaim');
+    const transaction = dsMockUtils.createTxMock('capitalDistribution', 'reclaim');
 
-    await prepareReclaimDividendDistributionFunds.call(proc, {
+    const result = await prepareReclaimDividendDistributionFunds.call(proc, {
       distribution: entityMockUtils.getDividendDistributionInstance({
         origin,
         ticker,
@@ -114,9 +113,10 @@ describe('reclaimDividendDistributionFunds procedure', () => {
       }),
     });
 
-    sinon.assert.calledWith(procedureMockUtils.getAddTransactionStub(), {
+    expect(result).toEqual({
       transaction,
       args: [rawCaId],
+      resolver: undefined,
     });
   });
 

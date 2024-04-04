@@ -2,6 +2,8 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
 import { addInstruction, Context, Entity, Identity, Instruction, modifyVenue } from '~/internal';
+import { instructionsQuery } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
 import {
   AddInstructionParams,
   AddInstructionsParams,
@@ -10,17 +12,20 @@ import {
   ModifyVenueParams,
   NumberedPortfolio,
   ProcedureMethod,
+  ResultSet,
 } from '~/types';
+import { Ensured } from '~/types/utils';
 import {
   bigNumberToU64,
   bytesToString,
   identityIdToString,
   meshVenueTypeToVenueType,
+  middlewareInstructionToHistoricInstruction,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod } from '~/utils/internal';
 
-import { VenueDetails } from './types';
+import { HistoricInstruction, VenueDetails } from './types';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
@@ -164,21 +169,6 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieve all pending Instructions in this Venue
-   *
-   * @deprecated in favor of `getInstructions`
-   */
-  public async getPendingInstructions(): Promise<Instruction[]> {
-    const instructions = await this.fetchInstructions();
-
-    return P.filter(instructions, async instruction => {
-      const { status } = await instruction.details();
-
-      return status === InstructionStatus.Pending;
-    });
-  }
-
-  /**
    * Fetch instructions from the chain
    */
   private async fetchInstructions(): Promise<Instruction[]> {
@@ -203,6 +193,54 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
         },
       ]) => new Instruction({ id: u64ToBigNumber(instructionId) }, context)
     );
+  }
+
+  /**
+   * Retrieve all Instructions that have been associated with this Venue instance
+   *
+   * @param opts.size - page size
+   * @param opts.start - page offset
+   *
+   * @note uses the middleware V2
+   * @note supports pagination
+   */
+  public async getHistoricalInstructions(
+    opts: {
+      size?: BigNumber;
+      start?: BigNumber;
+    } = {}
+  ): Promise<ResultSet<HistoricInstruction>> {
+    const { context, id } = this;
+
+    const { size, start } = opts;
+
+    const {
+      data: {
+        instructions: { nodes: instructionsResult, totalCount },
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(
+      instructionsQuery(
+        {
+          venueId: id.toString(),
+        },
+        size,
+        start
+      )
+    );
+
+    const data = instructionsResult.map(middlewareInstruction =>
+      middlewareInstructionToHistoricInstruction(middlewareInstruction, context)
+    );
+
+    const count = new BigNumber(totalCount);
+
+    const next = calculateNextKey(count, data.length, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
   }
 
   /**

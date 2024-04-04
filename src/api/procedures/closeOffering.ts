@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
 
-import { Asset, Offering, PolymeshError, Procedure } from '~/internal';
+import { FungibleAsset, Offering, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, OfferingSaleStatus, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { bigNumberToU64, stringToTicker } from '~/utils/conversion';
 
 /**
@@ -19,7 +19,7 @@ export interface Params {
 export async function prepareCloseOffering(
   this: Procedure<Params, void>,
   args: Params
-): Promise<void> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'sto', 'stop'>>> {
   const {
     context: {
       polymeshApi: {
@@ -46,10 +46,11 @@ export async function prepareCloseOffering(
   const rawTicker = stringToTicker(ticker, context);
   const rawId = bigNumberToU64(id, context);
 
-  this.addTransaction({
+  return {
     transaction: txSto.stop,
     args: [rawTicker, rawId],
-  });
+    resolver: undefined,
+  };
 }
 
 /**
@@ -63,7 +64,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.sto.Stop],
-      assets: [new Asset({ ticker }, context)],
+      assets: [new FungibleAsset({ ticker }, context)],
       portfolios: [],
     },
   };

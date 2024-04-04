@@ -1,41 +1,45 @@
 /* istanbul ignore file */
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import BigNumber from 'bignumber.js';
 import { merge } from 'lodash';
-import sinon, { SinonStub } from 'sinon';
 
 import { PolymeshTransaction } from '~/internal';
 import { Mocked } from '~/testUtils/types';
-import { PayingAccount, TransactionStatus } from '~/types';
+import { PayingAccountFees, TransactionStatus } from '~/types';
 
-type MockTransaction = Mocked<PolymeshTransaction<unknown[]>>;
+type MockTransaction = Mocked<PolymeshTransaction<unknown>>;
 
 interface MockTransactionSpec {
   isCritical: boolean;
   autoResolve: TransactionStatus.Failed | TransactionStatus.Succeeded | false;
-  fees?: {
-    protocol: BigNumber;
-    gas: BigNumber;
-  };
-  payingAccount?: PayingAccount;
+  fees?: PayingAccountFees;
   supportsSubsidy?: boolean;
 }
 
 interface TransactionMockData {
-  updateStatusStub: MockTransaction['updateStatus'];
+  updateStatusMock: MockTransaction['updateStatus'];
   statusChangeListener: (transaction: MockTransaction) => void;
   resolved: boolean;
 }
 
-let polymeshTransactionConstructorStub: SinonStub;
+let polymeshTransactionConstructorMock: jest.Mock;
+let polymeshTransactionBatchConstructorMock: jest.Mock;
 
 const MockPolymeshTransactionClass = class {
   /**
    * @hidden
    */
   constructor(...args: unknown[]) {
-    return polymeshTransactionConstructorStub(...args);
+    return polymeshTransactionConstructorMock(...args);
+  }
+};
+
+const MockPolymeshTransactionBatchClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return polymeshTransactionBatchConstructorMock(...args);
   }
 };
 
@@ -43,6 +47,11 @@ export const mockPolymeshTransactionModule = (path: string) => (): Record<string
   ...jest.requireActual(path),
   PolymeshTransaction: MockPolymeshTransactionClass,
 });
+export const mockPolymeshTransactionBatchModule =
+  (path: string) => (): Record<string, unknown> => ({
+    ...jest.requireActual(path),
+    PolymeshTransactionBatch: MockPolymeshTransactionBatchClass,
+  });
 
 const transactionMocksData = new Map<MockTransaction, TransactionMockData>();
 
@@ -53,10 +62,16 @@ const transactionMocksData = new Map<MockTransaction, TransactionMockData>();
  */
 export function initMocks(): void {
   transactionMocksData.clear();
-  polymeshTransactionConstructorStub = sinon.stub();
-  polymeshTransactionConstructorStub.callsFake(args => {
+  polymeshTransactionConstructorMock = jest.fn();
+  polymeshTransactionBatchConstructorMock = jest.fn();
+  polymeshTransactionConstructorMock.mockImplementation(args => {
     const value = merge({}, args);
     Object.setPrototypeOf(value, require('~/internal').PolymeshTransaction.prototype);
+    return value;
+  });
+  polymeshTransactionBatchConstructorMock.mockImplementation(args => {
+    const value = merge({}, args);
+    Object.setPrototypeOf(value, require('~/internal').PolymeshTransactionBatch.prototype);
     return value;
   });
 }
@@ -65,7 +80,7 @@ export function initMocks(): void {
  * @hidden
  * Reinitialize mocks
  */
-export function reset(): void {
+export function mockReset(): void {
   initMocks();
 }
 
@@ -79,76 +94,76 @@ export function reset(): void {
 export function setupNextTransactions(specs: MockTransactionSpec[]): MockTransaction[] {
   const receipt = 'someReceipt';
   const error = 'Transaction Error';
-  const updateStatusStub = sinon.stub();
+  const updateStatusMock = jest.fn();
 
-  const instances = specs.map(
-    ({ isCritical, autoResolve, fees = null, payingAccount = null, supportsSubsidy = true }) => {
-      const instance = {} as MockTransaction;
-      if (autoResolve === TransactionStatus.Failed) {
-        instance.run = sinon.stub().rejects(new Error(error)) as unknown as MockTransaction['run'];
-      } else if (autoResolve === TransactionStatus.Succeeded) {
-        instance.run = sinon.stub().resolves(receipt) as unknown as MockTransaction['run'];
-      } else {
-        const runStub = sinon.stub().returns(
-          new Promise((resolve, reject) => {
-            updateStatusStub.callsFake((newStatus: TransactionStatus) => {
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              const { statusChangeListener } = transactionMocksData.get(instance)!;
+  const instances = specs.map(({ autoResolve, fees = null, supportsSubsidy = true }) => {
+    const instance = {} as MockTransaction;
+    if (autoResolve === TransactionStatus.Failed) {
+      instance.run = jest.fn().mockImplementation(() => {
+        throw new Error(error);
+      });
+    } else if (autoResolve === TransactionStatus.Succeeded) {
+      instance.run = jest.fn().mockResolvedValue(receipt) as unknown as MockTransaction['run'];
+    } else {
+      const runMock = jest.fn().mockReturnValue(
+        new Promise((resolve, reject) => {
+          updateStatusMock.mockImplementation((newStatus: TransactionStatus) => {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const { statusChangeListener } = transactionMocksData.get(instance)!;
 
-              statusChangeListener(instance);
+            statusChangeListener(instance);
 
-              if (newStatus === TransactionStatus.Succeeded) {
-                resolve(receipt);
-              }
-              if (
-                [
-                  TransactionStatus.Aborted,
-                  TransactionStatus.Failed,
-                  TransactionStatus.Rejected,
-                ].includes(newStatus)
-              ) {
-                reject(new Error(error));
-              }
-            });
-          })
-        );
-        instance.run = runStub as unknown as MockTransaction['run'];
-      }
+            if (newStatus === TransactionStatus.Succeeded) {
+              resolve(receipt);
+            }
+            if (
+              [
+                TransactionStatus.Aborted,
+                TransactionStatus.Failed,
+                TransactionStatus.Rejected,
+              ].includes(newStatus)
+            ) {
+              reject(new Error(error));
+            }
+          });
+        })
+      );
+      instance.run = runMock as unknown as MockTransaction['run'];
+    }
 
-      instance.isCritical = isCritical;
-      instance.onStatusChange = sinon.stub().callsFake(listener => {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const mockData = transactionMocksData.get(instance)!;
-
-        transactionMocksData.set(instance, {
-          ...mockData,
-          statusChangeListener: listener,
-        });
-      }) as unknown as MockTransaction['onStatusChange'];
-
-      instance.status = autoResolve || TransactionStatus.Idle;
-      instance.getPayingAccount = sinon
-        .stub()
-        .resolves(payingAccount) as MockTransaction['getPayingAccount'];
-      instance.getFees = sinon.stub().resolves(fees) as MockTransaction['getFees'];
-      instance.supportsSubsidy = sinon
-        .stub()
-        .returns(supportsSubsidy) as MockTransaction['supportsSubsidy'];
+    instance.onStatusChange = jest.fn().mockImplementation(listener => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const mockData = transactionMocksData.get(instance)!;
 
       transactionMocksData.set(instance, {
-        updateStatusStub,
-        resolved: !!autoResolve,
-        statusChangeListener: sinon.stub(),
+        ...mockData,
+        statusChangeListener: listener,
       });
+    }) as unknown as MockTransaction['onStatusChange'];
 
-      return instance;
-    }
-  );
+    instance.status = autoResolve || TransactionStatus.Idle;
+    instance.getTotalFees = jest.fn().mockResolvedValue(fees) as MockTransaction['getTotalFees'];
+    instance.supportsSubsidy = jest
+      .fn()
+      .mockReturnValue(supportsSubsidy) as MockTransaction['supportsSubsidy'];
 
-  polymeshTransactionConstructorStub = sinon.stub();
+    transactionMocksData.set(instance, {
+      updateStatusMock,
+      resolved: !!autoResolve,
+      statusChangeListener: jest.fn(),
+    });
+
+    return instance;
+  });
+
+  polymeshTransactionConstructorMock = jest.fn();
 
   instances.forEach((instance, index) => {
-    polymeshTransactionConstructorStub.onCall(index).returns(instance);
+    polymeshTransactionConstructorMock.mockImplementation(() => {
+      if (polymeshTransactionConstructorMock.mock.calls.length === index) {
+        return instance;
+      }
+    });
   });
 
   return instances;
@@ -192,5 +207,19 @@ export function updateTransactionStatus(
 
   transaction.status = status;
 
-  transactionMockData.updateStatusStub(status);
+  transactionMockData.updateStatusMock(status);
+}
+
+/**
+ * @hidden
+ */
+export function getTransactionConstructorMock(): jest.Mock {
+  return polymeshTransactionConstructorMock;
+}
+
+/**
+ * @hidden
+ */
+export function getTransactionBatchConstructorMock(): jest.Mock {
+  return polymeshTransactionBatchConstructorMock;
 }

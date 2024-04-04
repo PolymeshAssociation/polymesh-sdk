@@ -7,7 +7,6 @@ import {
   Identity,
   NumberedPortfolio,
   PolymeshError,
-  PostTransactionValue,
   Procedure,
 } from '~/internal';
 import {
@@ -19,7 +18,7 @@ import {
   SetCustodianParams,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
@@ -41,7 +40,7 @@ export type Params = { did: string; id?: BigNumber } & SetCustodianParams;
 export async function prepareSetCustodian(
   this: Procedure<Params, AuthorizationRequest>,
   args: Params
-): Promise<PostTransactionValue<AuthorizationRequest>> {
+): Promise<TransactionSpec<AuthorizationRequest, ExtrinsicParams<'identity', 'addAuthorization'>>> {
   const {
     context: {
       polymeshApi: {
@@ -90,15 +89,17 @@ export async function prepareSetCustodian(
 
   const rawExpiry = optionize(dateToMoment)(expiry, context);
 
-  const [auth] = this.addTransaction({
+  return {
     transaction: identity.addAuthorization,
-    resolvers: [
-      createAuthorizationResolver(authRequest, issuerIdentity, target, expiry || null, context),
-    ],
+    resolver: createAuthorizationResolver(
+      authRequest,
+      issuerIdentity,
+      target,
+      expiry || null,
+      context
+    ),
     args: [rawSignatory, rawAuthorizationData, rawExpiry],
-  });
-
-  return auth;
+  };
 }
 
 /**

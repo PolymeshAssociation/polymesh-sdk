@@ -1,56 +1,64 @@
 import {
+  ApiDecoration,
   AugmentedEvent,
+  AugmentedQueries,
   AugmentedQuery,
   AugmentedQueryDoubleMap,
   DropLast,
   ObsInnerType,
 } from '@polkadot/api/types';
-import { BTreeSet, Bytes, Option, StorageKey } from '@polkadot/types';
+import { BTreeSet, Bytes, Option, StorageKey, u32 } from '@polkadot/types';
+import { EventRecord } from '@polkadot/types/interfaces';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import {
+  PalletAssetSecurityToken,
+  PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesSecondaryKeyKeyRecord,
   PolymeshPrimitivesStatisticsStatClaim,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
+import type { Callback, Codec, Observable } from '@polkadot/types/types';
 import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { stringUpperFirst } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
-import P from 'bluebird';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
-import { IdentityId, PortfolioNumber } from 'polymesh-types/types';
-import { major, satisfies } from 'semver';
+import { coerce, lt, major, satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
 import {
-  Asset,
+  Account,
+  BaseAsset,
   Checkpoint,
   CheckpointSchedule,
+  ChildIdentity,
   Context,
+  FungibleAsset,
   Identity,
+  Nft,
+  NftCollection,
   PolymeshError,
-  PostTransactionValue,
-  TransactionQueue,
 } from '~/internal';
-import { Scope as MiddlewareScope } from '~/middleware/types';
+import { latestSqVersionQuery } from '~/middleware/queries';
+import { Claim as MiddlewareClaim, ClaimTypeEnum, Query } from '~/middleware/types';
+import { MiddlewareScope } from '~/middleware/typesV1';
 import {
-  Account,
   CaCheckpointType,
-  CalendarPeriod,
-  CalendarUnit,
   Claim,
   ClaimType,
   Condition,
   ConditionType,
   CountryCode,
   ErrorCode,
+  GenericPolymeshTransaction,
   InputCaCheckpoint,
   InputCondition,
   ModuleName,
   NextKey,
   NoArgsProcedureMethod,
+  OptionalArgsProcedureMethod,
   PaginationOptions,
   PermissionedAccount,
   ProcedureAuthorizationStatus,
@@ -68,40 +76,52 @@ import {
 import {
   Events,
   Falsyable,
-  MapMaybePostTransactionValue,
   MapTxWithArgs,
-  MaybePostTransactionValue,
   PolymeshTx,
+  Queries,
   StatClaimIssuer,
-  StatisticsOpType,
   TxWithArgs,
 } from '~/types/internal';
-import { HumanReadableType, ProcedureFunc, UnionOfProcedureFuncs } from '~/types/utils';
 import {
-  DEFAULT_GQL_PAGE_SIZE,
+  Ensured,
+  HumanReadableType,
+  ProcedureFunc,
+  QueryFunction,
+  UnionOfProcedureFuncs,
+} from '~/types/utils';
+import {
   MAX_TICKER_LENGTH,
+  MINIMUM_SQ_VERSION,
   STATE_RUNTIME_VERSION_CALL,
+  SUPPORTED_NODE_SEMVER,
   SUPPORTED_NODE_VERSION_RANGE,
+  SUPPORTED_SPEC_SEMVER,
   SUPPORTED_SPEC_VERSION_RANGE,
   SYSTEM_VERSION_RPC_CALL,
 } from '~/utils/constants';
 import {
-  bigNumberToU64,
+  bigNumberToU32,
   claimIssuerToMeshClaimIssuer,
+  identitiesToBtreeSet,
   identityIdToString,
   meshClaimTypeToClaimType,
   meshPermissionsToPermissions,
-  meshStatToStatisticsOpType,
+  meshStatToStatType,
   middlewareScopeToScope,
   permillToBigNumber,
   signerToString,
-  statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
   statsClaimToStatClaimInputType,
   stringToAccountId,
+  transferRestrictionTypeToStatOpType,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { isEntity, isMultiClaimCondition, isSingleClaimCondition } from '~/utils/typeguards';
+import {
+  isEntity,
+  isMultiClaimCondition,
+  isScopedClaim,
+  isSingleClaimCondition,
+} from '~/utils/typeguards';
 
 export * from '~/generated/utils';
 
@@ -182,6 +202,22 @@ export function asIdentity(value: string | Identity, context: Context): Identity
 
 /**
  * @hidden
+ * Given a DID return the corresponding ChildIdentity, given an ChildIdentity return the ChildIdentity
+ */
+export function asChildIdentity(value: string | ChildIdentity, context: Context): ChildIdentity {
+  return typeof value === 'string' ? new ChildIdentity({ did: value }, context) : value;
+}
+
+/**
+ * @hidden
+ * Given an address return the corresponding Account, given an Account return the Account
+ */
+export function asAccount(value: string | Account, context: Context): Account {
+  return typeof value === 'string' ? new Account({ address: value }, context) : value;
+}
+
+/**
+ * @hidden
  * DID | Identity -> DID
  */
 export function asDid(value: string | Identity): string {
@@ -211,7 +247,7 @@ export function createClaim(
   jurisdiction: Falsyable<string>,
   middlewareScope: Falsyable<MiddlewareScope>,
   cddId: Falsyable<string>,
-  scopeId: Falsyable<string>
+  customClaimTypeId: Falsyable<BigNumber>
 ): Claim {
   const type = claimType as ClaimType;
   const scope = (middlewareScope ? middlewareScopeToScope(middlewareScope) : {}) as Scope;
@@ -226,56 +262,29 @@ export function createClaim(
         scope,
       };
     }
-    case ClaimType.NoData: {
-      return {
-        type,
-      };
-    }
     case ClaimType.CustomerDueDiligence: {
       return {
         type,
         id: cddId as string,
       };
     }
-    case ClaimType.InvestorUniqueness: {
+    case ClaimType.Custom: {
+      if (!customClaimTypeId) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'Custom claim type ID is required',
+        });
+      }
+
       return {
         type,
+        customClaimTypeId,
         scope,
-        scopeId: scopeId as string,
-        cddId: cddId as string,
-      };
-    }
-    case ClaimType.InvestorUniquenessV2: {
-      return {
-        type,
-        cddId: cddId as string,
       };
     }
   }
 
   return { type, scope };
-}
-
-/**
- * @hidden
- *
- * Unwrap a Post Transaction Value
- */
-export function unwrapValue<T>(value: MaybePostTransactionValue<T>): T {
-  if (value instanceof PostTransactionValue) {
-    return value.value;
-  }
-
-  return value;
-}
-
-/**
- * @hidden
- *
- * Unwrap all Post Transaction Values present in a tuple
- */
-export function unwrapValues<T extends unknown[]>(values: MapMaybePostTransactionValue<T>): T {
-  return values.map(unwrapValue) as T;
 }
 
 /**
@@ -287,7 +296,8 @@ type EventData<Event> = Event extends AugmentedEvent<'promise', infer Data> ? Da
  * @hidden
  * Find every occurrence of a specific event inside a receipt
  *
- * @throws If the event is not found
+ * @param skipError - optional. If true, no error will be thrown if the event is not found,
+ *   and the function will return an empty array
  */
 export function filterEventRecords<
   ModuleName extends keyof Events,
@@ -295,10 +305,11 @@ export function filterEventRecords<
 >(
   receipt: ISubmittableResult,
   mod: ModuleName,
-  eventName: EventName
+  eventName: EventName,
+  skipError?: true
 ): IEvent<EventData<Events[ModuleName][EventName]>>[] {
   const eventRecords = receipt.filterRecords(mod, eventName as string);
-  if (!eventRecords.length) {
+  if (!eventRecords.length && !skipError) {
     throw new PolymeshError({
       code: ErrorCode.UnexpectedError,
       message: `Event "${mod}.${String(
@@ -310,6 +321,154 @@ export function filterEventRecords<
   return eventRecords.map(
     eventRecord => eventRecord.event as unknown as IEvent<EventData<Events[ModuleName][EventName]>>
   );
+}
+
+/**
+ * Return a clone of a transaction receipt with the passed events
+ */
+function cloneReceipt(receipt: ISubmittableResult, events: EventRecord[]): ISubmittableResult {
+  const { filterRecords, findRecord, toHuman } = receipt;
+
+  const clone: ISubmittableResult = {
+    ...receipt,
+    events,
+  };
+
+  clone.filterRecords = filterRecords;
+  clone.findRecord = findRecord;
+  clone.toHuman = toHuman;
+
+  return clone;
+}
+
+/**
+ * @hidden
+ *
+ *   Segment a batch transaction receipt's events into arrays, each representing a specific extrinsic's
+ *   associated events. This is useful for scenarios where we need to isolate and process events
+ *   for individual extrinsics in a batch.
+ *
+ *   In a batch transaction receipt, events corresponding to multiple extrinsics are listed sequentially.
+ *   This function identifies boundaries between these event sequences, typically demarcated by
+ *   events like 'utility.ItemCompleted', to segment events into individual arrays.
+ *
+ *   A key use case is when we want to slice or filter events for a subset of the extrinsics. By
+ *   segmenting events this way, it becomes simpler to apply operations or analyses to events
+ *   corresponding to specific extrinsics in the batch.
+ *
+ * @param events - array of events from a batch transaction receipt
+ *
+ * @returns an array of arrays, where each inner array contains events specific to an extrinsic in the batch.
+ *
+ * @note this function does not mutate the input events
+ */
+export function segmentEventsByTransaction(events: EventRecord[]): EventRecord[][] {
+  const segments: EventRecord[][] = [];
+  let currentSegment: EventRecord[] = [];
+
+  events.forEach(eventRecord => {
+    if (eventRecord.event.method === 'ItemCompleted' && eventRecord.event.section === 'utility') {
+      if (currentSegment.length) {
+        segments.push(currentSegment);
+        currentSegment = [];
+      }
+    } else {
+      currentSegment.push(eventRecord);
+    }
+  });
+
+  // If there are events left after processing, add them to a new segment
+  if (currentSegment.length) {
+    segments.push(currentSegment);
+  }
+
+  return segments;
+}
+
+/**
+ * @hidden
+ *
+ * Return a clone of a batch transaction receipt that only contains events for a subset of the
+ *   extrinsics in the batch. This is useful when a batch has several extrinsics that emit
+ *   the same events and we want `filterEventRecords` to only search among the events emitted by
+ *   some of them.
+ *
+ * A good example of this is when merging similar batches together. If we wish to preserve the return
+ *   value of each batch, this is a good way of ensuring that the resolver function of a batch has
+ *   access to the events that correspond only to the extrinsics in said batch
+ *
+ * @param from - index of the first transaction in the subset
+ * @param to - end index of the subset (not included)
+ *
+ * @note this function does not mutate the original receipt
+ */
+export function sliceBatchReceipt(
+  receipt: ISubmittableResult,
+  from: number,
+  to: number
+): ISubmittableResult {
+  // checking if the batch was completed (will throw an error if not)
+  filterEventRecords(receipt, 'utility', 'BatchCompleted');
+
+  const { events } = receipt;
+
+  const segmentedEvents = segmentEventsByTransaction(events);
+
+  if (from < 0 || to > segmentedEvents.length) {
+    throw new PolymeshError({
+      code: ErrorCode.UnexpectedError,
+      message: 'Transaction index range out of bounds. Please report this to the Polymesh team',
+      data: {
+        to,
+        from,
+      },
+    });
+  }
+
+  const slicedEvents = segmentedEvents.slice(from, to).flat();
+
+  return cloneReceipt(receipt, slicedEvents);
+}
+
+/**
+ * Return a clone of the last receipt in the passes array, containing the accumulated events
+ *   of all receipts
+ */
+export function mergeReceipts(
+  receipts: ISubmittableResult[],
+  context: Context
+): ISubmittableResult {
+  const eventsPerTransaction: u32[] = [];
+  const allEvents: EventRecord[] = [];
+
+  receipts.forEach(({ events }) => {
+    eventsPerTransaction.push(bigNumberToU32(new BigNumber(events.length), context));
+    allEvents.push(...events);
+  });
+
+  const lastReceipt = receipts[receipts.length - 1];
+
+  /*
+   * Here we simulate a `BatchCompleted` event with the amount of events of
+   * each transaction. That way, if some psychopath user decides to merge a bunch of transactions
+   * into a batch and then split it again, we won't lose track of which events correspond to which
+   * transaction
+   *
+   * NOTE: this is a bit fragile since we might want to use more functionalities of the event object in the future,
+   * but attempting to instantiate a real polkadot `GenericEvent` would be way more messy. It might come to that
+   * in the future though. It's also worth considering that this is an extreme edge case, since (hopefully) no one
+   * in their right mind would create a batch only to split it back up again
+   */
+  return cloneReceipt(lastReceipt, [
+    ...allEvents,
+    {
+      event: {
+        section: 'utility',
+        method: 'BatchCompleted',
+        data: [eventsPerTransaction],
+      },
+    } as unknown as EventRecord,
+  ]);
 }
 
 /**
@@ -335,6 +494,15 @@ export function removePadding(value: string): string {
 export function isPrintableAscii(value: string): boolean {
   // eslint-disable-next-line no-control-regex
   return /^[\x00-\x7F]*$/.test(value);
+}
+
+/**
+ * @hidden
+ *
+ * Return whether the string is fully alphanumeric
+ */
+export function isAlphanumeric(value: string): boolean {
+  return /^[0-9a-zA-Z]*$/.test(value);
 }
 
 /**
@@ -387,30 +555,106 @@ export async function requestPaginated<F extends AnyFunction, T extends AnyTuple
 /**
  * @hidden
  *
+ * Gets Polymesh API instance at a particular block
+ */
+export async function getApiAtBlock(
+  context: Context,
+  blockHash: string | BlockHash
+): Promise<ApiDecoration<'promise'>> {
+  const { polymeshApi } = context;
+
+  const isArchiveNode = await context.isCurrentNodeArchive();
+
+  if (!isArchiveNode) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'Cannot query previous blocks in a non-archive node',
+    });
+  }
+
+  return polymeshApi.at(blockHash);
+}
+
+type QueryMultiParam<T extends AugmentedQuery<'promise', AnyFunction>[]> = {
+  [index in keyof T]: T[index] extends AugmentedQuery<'promise', infer Fun>
+    ? Fun extends (firstArg: infer First, ...restArg: infer Rest) => ReturnType<Fun>
+      ? Rest extends never[]
+        ? [T[index], First]
+        : [T[index], Parameters<Fun>]
+      : never
+    : never;
+};
+
+type QueryMultiReturnType<T extends AugmentedQuery<'promise', AnyFunction>[]> = {
+  [index in keyof T]: T[index] extends AugmentedQuery<'promise', infer Fun>
+    ? ReturnType<Fun> extends Observable<infer R>
+      ? R
+      : never
+    : never;
+};
+
+/**
+ * @hidden
+ *
+ * Makes an multi request to the chain
+ */
+export async function requestMulti<T extends AugmentedQuery<'promise', AnyFunction>[]>(
+  context: Context,
+  queries: QueryMultiParam<T>
+): Promise<QueryMultiReturnType<T>>;
+export async function requestMulti<T extends AugmentedQuery<'promise', AnyFunction>[]>(
+  context: Context,
+  queries: QueryMultiParam<T>,
+  callback: Callback<QueryMultiReturnType<T>>
+): Promise<UnsubCallback>;
+// eslint-disable-next-line require-jsdoc
+export async function requestMulti<T extends AugmentedQuery<'promise', AnyFunction>[]>(
+  context: Context,
+  queries: QueryMultiParam<T>,
+  callback?: Callback<QueryMultiReturnType<T>>
+): Promise<QueryMultiReturnType<T> | UnsubCallback> {
+  const {
+    polymeshApi: { queryMulti },
+  } = context;
+
+  if (callback) {
+    return queryMulti(queries, callback as unknown as Callback<Codec[]>);
+  }
+  return queryMulti(queries) as unknown as QueryMultiReturnType<T>;
+}
+
+/**
+ * @hidden
+ *
  * Makes a request to the chain. If a block hash is supplied,
  *   the request will be made at that block. Otherwise, the most recent block will be queried
  */
-export async function requestAtBlock<F extends AnyFunction>(
-  query: AugmentedQuery<'promise', F> | AugmentedQueryDoubleMap<'promise', F>,
+export async function requestAtBlock<
+  ModuleName extends keyof AugmentedQueries<'promise'>,
+  QueryName extends keyof AugmentedQueries<'promise'>[ModuleName]
+>(
+  moduleName: ModuleName,
+  queryName: QueryName,
   opts: {
     blockHash?: string | BlockHash;
-    args: Parameters<F>;
+    args: Parameters<QueryFunction<ModuleName, QueryName>>;
   },
   context: Context
-): Promise<ObsInnerType<ReturnType<F>>> {
+): Promise<ObsInnerType<ReturnType<QueryFunction<ModuleName, QueryName>>>> {
   const { blockHash, args } = opts;
 
+  let query: Queries;
   if (blockHash) {
-    if (!context.isArchiveNode) {
-      throw new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message: 'Cannot query previous blocks in a non-archive node',
-      });
-    }
-    return query.at(blockHash, ...args);
+    ({ query } = await getApiAtBlock(context, blockHash));
+  } else {
+    ({ query } = context.polymeshApi);
   }
 
-  return query(...args);
+  const queryMethod = query[moduleName][queryName] as unknown as QueryFunction<
+    typeof moduleName,
+    typeof queryName
+  >;
+  return queryMethod(...args);
 }
 
 /**
@@ -426,12 +670,8 @@ export async function requestAtBlock<F extends AnyFunction>(
  * @hidden
  *
  */
-export function calculateNextKey(
-  totalCount: BigNumber,
-  size?: BigNumber,
-  start?: BigNumber
-): NextKey {
-  const next = (start ?? new BigNumber(0)).plus(size ?? DEFAULT_GQL_PAGE_SIZE);
+export function calculateNextKey(totalCount: BigNumber, size: number, start?: BigNumber): NextKey {
+  const next = (start ?? new BigNumber(0)).plus(size);
   return totalCount.gt(next) ? next : null;
 }
 
@@ -474,6 +714,50 @@ export function createProcedureMethod<
   },
   context: Context
 ): NoArgsProcedureMethod<ProcedureReturnValue, ReturnValue>;
+export function createProcedureMethod<
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  MethodArgs,
+  ProcedureArgs,
+  ProcedureReturnValue,
+  Storage = Record<string, unknown>
+>(
+  args: {
+    getProcedureAndArgs: (
+      methodArgs?: MethodArgs
+    ) => [
+      (
+        | UnionOfProcedureFuncs<ProcedureArgs, ProcedureReturnValue, Storage>
+        | ProcedureFunc<ProcedureArgs, ProcedureReturnValue, Storage>
+      ),
+      ProcedureArgs
+    ];
+    optionalArgs: true;
+  },
+  context: Context
+): OptionalArgsProcedureMethod<MethodArgs, ProcedureReturnValue, ProcedureReturnValue>;
+export function createProcedureMethod<
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  MethodArgs,
+  ProcedureArgs,
+  ProcedureReturnValue,
+  ReturnValue,
+  Storage = Record<string, unknown>
+>(
+  args: {
+    getProcedureAndArgs: (
+      methodArgs: MethodArgs
+    ) => [
+      (
+        | UnionOfProcedureFuncs<ProcedureArgs, ProcedureReturnValue, Storage>
+        | ProcedureFunc<ProcedureArgs, ProcedureReturnValue, Storage>
+      ),
+      ProcedureArgs
+    ];
+    optionalArgs: true;
+    transformer: (value: ProcedureReturnValue) => ReturnValue | Promise<ReturnValue>;
+  },
+  context: Context
+): OptionalArgsProcedureMethod<MethodArgs, ProcedureReturnValue, ReturnValue>;
 export function createProcedureMethod<
   // eslint-disable-next-line @typescript-eslint/ban-types
   MethodArgs extends {},
@@ -536,17 +820,19 @@ export function createProcedureMethod<
     ];
     transformer?: (value: ProcedureReturnValue) => ReturnValue | Promise<ReturnValue>;
     voidArgs?: true;
+    optionalArgs?: true;
   },
   context: Context
 ):
   | ProcedureMethod<MethodArgs, ProcedureReturnValue, ReturnValue>
+  | OptionalArgsProcedureMethod<MethodArgs, ProcedureReturnValue, ReturnValue>
   | NoArgsProcedureMethod<ProcedureReturnValue, ReturnValue> {
-  const { getProcedureAndArgs, transformer, voidArgs } = args;
+  const { getProcedureAndArgs, transformer, voidArgs, optionalArgs } = args;
 
   if (voidArgs) {
     const voidMethod = (
       opts: ProcedureOpts = {}
-    ): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>> => {
+    ): Promise<GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue>> => {
       const [proc, procArgs] = getProcedureAndArgs();
       return proc().prepare({ args: procArgs, transformer }, context, opts);
     };
@@ -562,10 +848,31 @@ export function createProcedureMethod<
     return voidMethod;
   }
 
+  if (optionalArgs) {
+    const methodWithOptionalArgs = (
+      methodArgs?: MethodArgs,
+      opts: ProcedureOpts = {}
+    ): Promise<GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue>> => {
+      const [proc, procArgs] = getProcedureAndArgs(methodArgs);
+      return proc().prepare({ args: procArgs, transformer }, context, opts);
+    };
+
+    methodWithOptionalArgs.checkAuthorization = async (
+      methodArgs?: MethodArgs,
+      opts: ProcedureOpts = {}
+    ): Promise<ProcedureAuthorizationStatus> => {
+      const [proc, procArgs] = getProcedureAndArgs(methodArgs);
+
+      return proc().checkAuthorization(procArgs, context, opts);
+    };
+
+    return methodWithOptionalArgs;
+  }
+
   const method = (
     methodArgs: MethodArgs,
     opts: ProcedureOpts = {}
-  ): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>> => {
+  ): Promise<GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue>> => {
     const [proc, procArgs] = getProcedureAndArgs(methodArgs);
     return proc().prepare({ args: procArgs, transformer }, context, opts);
   };
@@ -634,15 +941,62 @@ export function assertAddressValid(address: string, ss58Format: BigNumber): void
 /**
  * @hidden
  */
-export function asTicker(asset: string | Asset): string {
+export function asTicker(asset: string | BaseAsset): string {
   return typeof asset === 'string' ? asset : asset.ticker;
 }
 
 /**
  * @hidden
+ *
+ * @note alternatively {@link asAsset} returns a more precise type but is async due to a network call
  */
-export function asAsset(asset: string | Asset, context: Context): Asset {
-  return typeof asset === 'string' ? new Asset({ ticker: asset }, context) : asset;
+export function asBaseAsset(asset: string | BaseAsset, context: Context): BaseAsset {
+  return typeof asset === 'string' ? new BaseAsset({ ticker: asset }, context) : asset;
+}
+
+/**
+ * @hidden
+ *
+ * @note alternatively {@link asBaseAsset} returns a generic `BaseAsset`, but is synchronous
+ */
+export async function asAsset(
+  asset: string | FungibleAsset | NftCollection,
+  context: Context
+): Promise<FungibleAsset | NftCollection> {
+  if (typeof asset !== 'string') {
+    return asset;
+  }
+
+  const fungible = new FungibleAsset({ ticker: asset }, context);
+  const collection = new NftCollection({ ticker: asset }, context);
+
+  const [isAsset, isCollection] = await Promise.all([fungible.exists(), collection.exists()]);
+
+  if (isCollection) {
+    return collection;
+  }
+  if (isAsset) {
+    return fungible;
+  }
+
+  throw new PolymeshError({
+    code: ErrorCode.DataUnavailable,
+    message: `No asset exists with ticker: "${asset}"`,
+  });
+}
+
+/**
+ * @hidden
+ * Transforms asset or ticker into a `FungibleAsset` entity
+ */
+export function asFungibleAsset(asset: string | BaseAsset, context: Context): FungibleAsset {
+  if (asset instanceof FungibleAsset) {
+    return asset;
+  }
+
+  const ticker = typeof asset === 'string' ? asset : asset.ticker;
+
+  return new FungibleAsset({ ticker }, context);
 }
 
 /**
@@ -650,61 +1004,6 @@ export function asAsset(asset: string | Asset, context: Context): Asset {
  */
 export function xor(a: boolean, b: boolean): boolean {
   return a !== b;
-}
-
-/**
- * @hidden
- */
-function secondsInUnit(unit: CalendarUnit): BigNumber {
-  const SECOND = new BigNumber(1);
-  const MINUTE = SECOND.multipliedBy(60);
-  const HOUR = MINUTE.multipliedBy(60);
-  const DAY = HOUR.multipliedBy(24);
-  const WEEK = DAY.multipliedBy(7);
-  const MONTH = DAY.multipliedBy(30);
-  const YEAR = DAY.multipliedBy(365);
-
-  switch (unit) {
-    case CalendarUnit.Second: {
-      return SECOND;
-    }
-    case CalendarUnit.Minute: {
-      return MINUTE;
-    }
-    case CalendarUnit.Hour: {
-      return HOUR;
-    }
-    case CalendarUnit.Day: {
-      return DAY;
-    }
-    case CalendarUnit.Week: {
-      return WEEK;
-    }
-    case CalendarUnit.Month: {
-      return MONTH;
-    }
-    case CalendarUnit.Year: {
-      return YEAR;
-    }
-  }
-}
-
-/**
- * @hidden
- * Calculate the numeric complexity of a calendar period
- */
-export function periodComplexity(period: CalendarPeriod): BigNumber {
-  const secsInYear = secondsInUnit(CalendarUnit.Year);
-  const { amount, unit } = period;
-
-  if (amount.isZero()) {
-    return new BigNumber(1);
-  }
-
-  const secsInUnit = secondsInUnit(unit);
-
-  const complexity = secsInYear.dividedBy(secsInUnit.multipliedBy(amount));
-  return BigNumber.maximum(2, complexity.integerValue(BigNumber.ROUND_FLOOR));
 }
 
 /**
@@ -837,7 +1136,7 @@ export function conditionsAreEqual(
  */
 export async function getCheckpointValue(
   checkpoint: InputCaCheckpoint,
-  asset: string | Asset,
+  asset: string | FungibleAsset,
   context: Context
 ): Promise<Checkpoint | CheckpointSchedule | Date> {
   if (
@@ -847,7 +1146,7 @@ export async function getCheckpointValue(
   ) {
     return checkpoint;
   }
-  const assetEntity = asAsset(asset, context);
+  const assetEntity = asFungibleAsset(asset, context);
   const { type, id } = checkpoint;
   if (type === CaCheckpointType.Existing) {
     return assetEntity.checkpoints.getOne({ id });
@@ -860,16 +1159,15 @@ export async function getCheckpointValue(
   }
 }
 
-interface TxAndArgsArray<Args extends unknown[] = unknown[]> {
+interface TxAndArgsArray<Args extends Readonly<unknown[]> = Readonly<unknown[]>> {
   transaction: PolymeshTx<Args>;
   argsArray: Args[];
 }
 
-type MapTxAndArgsArray<Args extends unknown[][]> = {
+type MapTxAndArgsArray<Args extends Readonly<unknown[][]>> = {
   [K in keyof Args]: Args[K] extends unknown[] ? TxAndArgsArray<Args[K]> : never;
 };
 
-// * TODO @monitz87: delete this function when we eliminate `addBatchTransaction`
 /**
  * @hidden
  */
@@ -883,12 +1181,13 @@ function mapArgs<Args extends unknown[] | []>({
   })) as unknown as MapTxWithArgs<Args[]>;
 }
 
-// * TODO @monitz87: delete this function when we eliminate `addBatchTransaction`
 /**
- * Assemble the `transactions` array that has to be passed to `addBatchTransaction` from a set of parameter arrays with their
+ * Assemble the `transactions` array that is expected in a `BatchTransactionSpec` from a set of parameter arrays with their
  *   respective transaction
+ *
+ * @note This method ensures type safety for batches with a variable amount of transactions
  */
-export function assembleBatchTransactions<ArgsArray extends unknown[][]>(
+export function assembleBatchTransactions<ArgsArray extends Readonly<unknown[][]>>(
   txsAndArgs: MapTxAndArgsArray<ArgsArray>
 ): MapTxWithArgs<unknown[][]> {
   return flatMap(txsAndArgs, mapArgs) as unknown as MapTxWithArgs<unknown[][]>;
@@ -900,7 +1199,7 @@ export function assembleBatchTransactions<ArgsArray extends unknown[][]>(
  * Returns portfolio numbers for a set of portfolio names
  */
 export async function getPortfolioIdsByName(
-  rawIdentityId: IdentityId,
+  rawIdentityId: PolymeshPrimitivesIdentityId,
   rawNames: Bytes[],
   context: Context
 ): Promise<(BigNumber | null)[]> {
@@ -910,41 +1209,13 @@ export async function getPortfolioIdsByName(
     },
   } = context;
 
-  const rawPortfolioNumbers = await portfolio.nameToNumber.multi<PortfolioNumber>(
-    rawNames.map<[IdentityId, Bytes]>(name => [rawIdentityId, name])
+  const rawPortfolioNumbers = await portfolio.nameToNumber.multi(
+    rawNames.map<[PolymeshPrimitivesIdentityId, Bytes]>(name => [rawIdentityId, name])
   );
 
-  const portfolioIds = rawPortfolioNumbers
-    .filter(rawPortfolioNumber => !rawPortfolioNumber.isEmpty) // since 5.2.0 chain, nameToNumber return Option<u64>
-    .map(number => u64ToBigNumber(number));
-
-  // TODO @prashantasdeveloper remove this logic once nameToNumber returns Option<PortfolioNumber>
-  /**
-   * since nameToNumber returns 1 for non-existing portfolios, if a name maps to number 1,
-   *  we need to check if the given name actually matches the first portfolio
-   */
-  let firstPortfolioName: Bytes;
-
-  /*
-   * even though we make this call without knowing if we will need
-   *  the result, we only await for it if necessary, so it's still
-   *  performant
-   */
-  const gettingFirstPortfolioName = portfolio.portfolios(
-    rawIdentityId,
-    bigNumberToU64(new BigNumber(1), context)
-  );
-
-  return P.map(portfolioIds, async (id, index) => {
-    if (id.eq(1)) {
-      firstPortfolioName = await gettingFirstPortfolioName;
-
-      if (!firstPortfolioName.eq(rawNames[index])) {
-        return null;
-      }
-    }
-
-    return id;
+  return rawPortfolioNumbers.map(number => {
+    const rawPortfolioId = number.unwrapOr(null);
+    return optionize(u64ToBigNumber)(rawPortfolioId);
   });
 }
 
@@ -952,7 +1223,7 @@ export async function getPortfolioIdsByName(
  * @hidden
  *
  * Check if a transaction matches the type of its args. Returns the same value but stripped of the types. This function has no logic, it's strictly
- *   for type safety around `addBatchTransaction`
+ *   for type safety when returning a `BatchTransactionSpec` with a variable amount of transactions
  */
 export function checkTxType<Args extends unknown[]>(tx: TxWithArgs<Args>): TxWithArgs<unknown[]> {
   return tx as unknown as TxWithArgs<unknown[]>;
@@ -980,57 +1251,24 @@ export function defusePromise<T>(promise: Promise<T>): Promise<T> {
 /**
  * @hidden
  *
- * Transform an array of Identities into exempted IDs for Transfer Managers. If the asset requires
- *   investor uniqueness, Scope IDs are fetched and returned. Otherwise, we use Identity IDs
+ * Transform an array of Identities into exempted IDs for Transfer Managers.
  *
- * @note fetches missing scope IDs from the chain
  * @note even though the signature for `addExemptedEntities` requires `ScopeId`s as parameters,
- *   it accepts and handles `IdentityId` parameters as well. Nothing special has to be done typing-wise since they're both aliases
+ *   it accepts and handles `PolymeshPrimitivesIdentityId` parameters as well. Nothing special has to be done typing-wise since they're both aliases
  *   for `U8aFixed`
  *
  * @throws
- *   - if the Asset requires Investor Uniqueness and one or more of the passed Identities don't have Scope IDs
  *   - if there are duplicated Identities/ScopeIDs
  */
 export async function getExemptedIds(
   identities: (string | Identity)[],
-  context: Context,
-  ticker: string
+  context: Context
 ): Promise<string[]> {
-  const asset = new Asset({ ticker }, context);
-  const { requiresInvestorUniqueness } = await asset.details();
-
-  const didsWithNoScopeId: string[] = [];
-
   const exemptedIds: string[] = [];
 
   const identityEntities = identities.map(identity => asIdentity(identity, context));
 
-  if (requiresInvestorUniqueness) {
-    const scopeIds = await P.map(identityEntities, async identity =>
-      identity.getScopeId({ asset: ticker })
-    );
-
-    scopeIds.forEach((scopeId, index) => {
-      if (!scopeId) {
-        didsWithNoScopeId.push(identityEntities[index].did);
-      } else {
-        exemptedIds.push(scopeId);
-      }
-    });
-
-    if (didsWithNoScopeId.length) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: `Identities must have an Investor Uniqueness claim Scope ID in order to be exempted from Transfer Restrictions for Asset "${ticker}"`,
-        data: {
-          didsWithNoScopeId,
-        },
-      });
-    }
-  } else {
-    exemptedIds.push(...identityEntities.map(identity => asDid(identity), context));
-  }
+  exemptedIds.push(...identityEntities.map(identity => asDid(identity), context));
   const hasDuplicates = uniq(exemptedIds).length !== exemptedIds.length;
 
   if (hasDuplicates) {
@@ -1054,8 +1292,12 @@ function handleNodeVersionResponse(
   reject: (reason?: unknown) => void
 ): boolean {
   const { result: version } = data;
+  const lowMajor = major(SUPPORTED_NODE_SEMVER).toString();
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const high = coerce(SUPPORTED_NODE_VERSION_RANGE.split('||')[1].trim())!.version;
+  const highMajor = major(high).toString();
 
-  if (!satisfies(version, major(SUPPORTED_NODE_VERSION_RANGE).toString())) {
+  if (!satisfies(version, lowMajor) && !satisfies(version, highMajor)) {
     const error = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
@@ -1116,7 +1358,7 @@ function handleSpecVersionResponse(
   } = data;
 
   /*
-   * the spec version number comes as a single number (i.e. 5000000). It should be parsed as xxx_yyy_zzz
+   * the spec version number comes as a single number (e.g. 5000000). It should be parsed as xxx_yyy_zzz
    * where xxx is the major version, yyy is the minor version, and zzz is the patch version. So for example, 5001023
    * would be version 5.1.23
    */
@@ -1126,7 +1368,12 @@ function handleSpecVersionResponse(
     .map((ver: string) => ver.replace(/^0+(?!$)/g, ''))
     .join('.');
 
-  if (!satisfies(specVersionAsSemver, major(SUPPORTED_SPEC_VERSION_RANGE).toString())) {
+  const lowMajor = major(SUPPORTED_SPEC_SEMVER).toString();
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const high = coerce(SUPPORTED_SPEC_VERSION_RANGE.split('||')[1].trim())!.version;
+  const highMajor = major(high).toString();
+
+  if (!satisfies(specVersionAsSemver, lowMajor) && !satisfies(specVersionAsSemver, highMajor)) {
     const error = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh chain spec version. Please upgrade the SDK',
@@ -1140,7 +1387,6 @@ function handleSpecVersionResponse(
 
     return false;
   }
-
   if (!satisfies(specVersionAsSemver, SUPPORTED_SPEC_VERSION_RANGE)) {
     console.warn(
       `This version of the SDK supports Polymesh chain spec version ${SUPPORTED_SPEC_VERSION_RANGE}. The chain spec is at version ${specVersionAsSemver}. Please upgrade the SDK`
@@ -1148,6 +1394,27 @@ function handleSpecVersionResponse(
   }
 
   return true;
+}
+
+/**
+ * @hidden
+ *
+ * Checks SQ version compatibility with the SDK
+ */
+export async function assertExpectedSqVersion(context: Context): Promise<void> {
+  const {
+    data: {
+      subqueryVersions: {
+        nodes: [sqVersion],
+      },
+    },
+  } = await context.queryMiddleware<Ensured<Query, 'subqueryVersions'>>(latestSqVersionQuery());
+
+  if (!sqVersion || lt(sqVersion.version, MINIMUM_SQ_VERSION)) {
+    console.warn(
+      `This version of the SDK supports Polymesh Subquery version ${MINIMUM_SQ_VERSION} or higher. Please upgrade the MiddlewareV2`
+    );
+  }
 }
 
 /**
@@ -1236,7 +1503,7 @@ export function compareStatsToInput(
   let claimIssuer;
   const { type } = args;
 
-  if (type === StatType.ScopedCount || type === StatType.ScopedPercentage) {
+  if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
     claimIssuer = { issuer: args.issuer, claimType: args.claimType };
   }
 
@@ -1262,19 +1529,9 @@ export function compareStatsToInput(
     }
   }
 
-  const stat = meshStatToStatisticsOpType(rawStatType);
-  let cmpStat;
-  if (stat === StatisticsOpType.Count) {
-    cmpStat = StatType.Count;
-  } else if (stat === StatisticsOpType.Balance) {
-    cmpStat = StatType.Percentage;
-  } else if (stat === StatisticsOpType.ClaimCount) {
-    cmpStat = StatType.ScopedCount;
-  } else {
-    cmpStat = StatType.ScopedPercentage;
-  }
+  const stat = meshStatToStatType(rawStatType);
 
-  return cmpStat === type;
+  return stat === type;
 }
 
 /**
@@ -1288,7 +1545,7 @@ export function compareTransferRestrictionToStat(
 ): boolean {
   if (
     (type === StatType.Count && transferCondition.isMaxInvestorCount) ||
-    (type === StatType.Percentage && transferCondition.isMaxInvestorOwnership)
+    (type === StatType.Balance && transferCondition.isMaxInvestorOwnership)
   ) {
     return true;
   }
@@ -1397,12 +1654,12 @@ export function compareStatTypeToTransferRestrictionType(
   statType: PolymeshPrimitivesStatisticsStatType,
   transferRestrictionType: TransferRestrictionType
 ): boolean {
-  const opType = meshStatToStatisticsOpType(statType);
-  if (opType === StatisticsOpType.Count) {
+  const opType = meshStatToStatType(statType);
+  if (opType === StatType.Count) {
     return transferRestrictionType === TransferRestrictionType.Count;
-  } else if (opType === StatisticsOpType.Balance) {
+  } else if (opType === StatType.Balance) {
     return transferRestrictionType === TransferRestrictionType.Percentage;
-  } else if (opType === StatisticsOpType.ClaimCount) {
+  } else if (opType === StatType.ScopedCount) {
     return transferRestrictionType === TransferRestrictionType.ClaimCount;
   } else {
     return transferRestrictionType === TransferRestrictionType.ClaimPercentage;
@@ -1422,12 +1679,7 @@ export function neededStatTypeForRestrictionInput(
 ): PolymeshPrimitivesStatisticsStatType {
   const { type, claimIssuer } = args;
 
-  let rawOp;
-  if (type === TransferRestrictionType.Count || type === TransferRestrictionType.ClaimCount) {
-    rawOp = statisticsOpTypeToStatOpType(StatisticsOpType.Count, context);
-  } else {
-    rawOp = statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
-  }
+  const rawOp = transferRestrictionTypeToStatOpType(type, context);
 
   const rawIssuer = claimIssuer ? claimIssuerToMeshClaimIssuer(claimIssuer, context) : undefined;
   return statisticsOpTypeToStatType({ op: rawOp, claimIssuer: rawIssuer }, context);
@@ -1494,6 +1746,9 @@ export async function getSecondaryAccountPermissions(
   ): PermissionedAccount[] => {
     return optKeyRecords.reduce((result: PermissionedAccount[], optKeyRecord, index) => {
       const account = accounts[index];
+      if (optKeyRecord.isNone) {
+        return result;
+      }
       const record = optKeyRecord.unwrap();
 
       if (record.isSecondaryKey) {
@@ -1507,6 +1762,7 @@ export async function getSecondaryAccountPermissions(
           permissions: meshPermissionsToPermissions(rawPermissions, context),
         });
       }
+
       return result;
     }, []);
   };
@@ -1520,4 +1776,118 @@ export async function getSecondaryAccountPermissions(
   const rawResults = await identityQuery.keyRecords.multi(identityKeys);
 
   return assembleResult(rawResults);
+}
+
+/**
+ * @hidden
+ */
+export async function getExemptedBtreeSet(
+  identities: (string | Identity)[],
+  ticker: string,
+  context: Context
+): Promise<BTreeSet<PolymeshPrimitivesIdentityId>> {
+  const exemptedIds = await getExemptedIds(identities, context);
+  const mapped = exemptedIds.map(exemptedId => asIdentity(exemptedId, context));
+
+  return identitiesToBtreeSet(mapped, context);
+}
+
+/**
+ * @hidden
+ */
+export async function getIdentityFromKeyRecord(
+  keyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord,
+  context: Context
+): Promise<Identity | null> {
+  const {
+    polymeshApi: {
+      query: { identity },
+    },
+  } = context;
+
+  if (keyRecord.isPrimaryKey) {
+    const did = identityIdToString(keyRecord.asPrimaryKey);
+    return new Identity({ did }, context);
+  } else if (keyRecord.isSecondaryKey) {
+    const did = identityIdToString(keyRecord.asSecondaryKey[0]);
+    return new Identity({ did }, context);
+  } else {
+    const multiSigAddress = keyRecord.asMultiSigSignerKey;
+    const optMultiSigKeyRecord = await identity.keyRecords(multiSigAddress);
+
+    if (optMultiSigKeyRecord.isNone) {
+      return null;
+    }
+
+    const multiSigKeyRecord = optMultiSigKeyRecord.unwrap();
+    return getIdentityFromKeyRecord(multiSigKeyRecord, context);
+  }
+}
+
+/**
+ * @hidden
+ *
+ * helper to construct proper type asset
+ *
+ * @note `assetDetails` and `tickers` must have the same offset
+ */
+export function assembleAssetQuery(
+  assetDetails: Option<PalletAssetSecurityToken>[],
+  tickers: string[],
+  context: Context
+): (FungibleAsset | NftCollection)[] {
+  return assetDetails.map((rawDetails, index) => {
+    const ticker = tickers[index];
+    const detail = rawDetails.unwrap();
+
+    if (detail.assetType.isNonFungible) {
+      return new NftCollection({ ticker }, context);
+    } else {
+      return new FungibleAsset({ ticker }, context);
+    }
+  });
+}
+
+/**
+ * @hidden
+ */
+export function asNftId(nft: Nft | BigNumber): BigNumber {
+  if (nft instanceof BigNumber) {
+    return nft;
+  } else {
+    return nft.id;
+  }
+}
+
+/**
+ * @hidden
+ */
+export function areSameClaims(
+  claim: Claim,
+  { scope, type, customClaimTypeId }: MiddlewareClaim
+): boolean {
+  // filter out deprecated claim types
+  if (
+    type === ClaimTypeEnum.NoData ||
+    type === ClaimTypeEnum.NoType ||
+    type === ClaimTypeEnum.InvestorUniqueness ||
+    type === ClaimTypeEnum.InvestorUniquenessV2
+  ) {
+    return false;
+  }
+
+  if (isScopedClaim(claim) && scope && !isEqual(middlewareScopeToScope(scope), claim.scope)) {
+    return false;
+  }
+
+  if (
+    type === ClaimTypeEnum.Custom &&
+    claim.type === ClaimType.Custom &&
+    customClaimTypeId &&
+    !claim.customClaimTypeId.isEqualTo(customClaimTypeId)
+  ) {
+    return false;
+  }
+
+  return ClaimType[type] === claim.type;
 }

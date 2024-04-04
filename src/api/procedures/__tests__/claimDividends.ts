@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
 
 import { Params, prepareClaimDividends } from '~/api/procedures/claimDividends';
 import { Context, DividendDistribution } from '~/internal';
@@ -22,7 +21,6 @@ describe('claimDividends procedure', () => {
   let distribution: DividendDistribution;
 
   let mockContext: Mocked<Context>;
-  let addTransactionStub: sinon.SinonStub;
   let claimDividendsTransaction: PolymeshTx<unknown[]>;
 
   beforeAll(() => {
@@ -30,13 +28,12 @@ describe('claimDividends procedure', () => {
     dsMockUtils.initMocks({ contextOptions: { did } });
     procedureMockUtils.initMocks();
 
-    sinon.stub(utilsConversionModule, 'corporateActionIdentifierToCaId').returns(rawCaId);
-    sinon.stub(utilsConversionModule, 'stringToIdentityId').returns(rawDid);
+    jest.spyOn(utilsConversionModule, 'corporateActionIdentifierToCaId').mockReturnValue(rawCaId);
+    jest.spyOn(utilsConversionModule, 'stringToIdentityId').mockReturnValue(rawDid);
   });
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
-    claimDividendsTransaction = dsMockUtils.createTxStub('capitalDistribution', 'claim');
+    claimDividendsTransaction = dsMockUtils.createTxMock('capitalDistribution', 'claim');
     mockContext = dsMockUtils.getContextInstance();
   });
 
@@ -147,7 +144,7 @@ describe('claimDividends procedure', () => {
     expect(err.message).toBe('The signing Identity has already claimed dividends');
   });
 
-  it('should add a claim dividends transaction to the queue', async () => {
+  it('should return a claim dividends transaction spec', async () => {
     distribution = entityMockUtils.getDividendDistributionInstance({
       paymentDate,
       getParticipant: {
@@ -159,13 +156,14 @@ describe('claimDividends procedure', () => {
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await prepareClaimDividends.call(proc, {
+    const result = await prepareClaimDividends.call(proc, {
       distribution,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction: claimDividendsTransaction,
       args: [rawCaId],
+      resolver: undefined,
     });
   });
 });

@@ -1,18 +1,28 @@
 import { Balance } from '@polkadot/types/interfaces';
+import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
-import { getAuthorization, Params, prepareRedeemTokens } from '~/api/procedures/redeemTokens';
-import { Context } from '~/internal';
+import {
+  getAuthorization,
+  Params,
+  prepareRedeemTokens,
+  prepareStorage,
+  Storage,
+} from '~/api/procedures/redeemTokens';
+import { Context, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { PortfolioBalance, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
+);
+jest.mock(
+  '~/api/entities/Asset/NonFungible',
+  require('~/testUtils/mocks/entities').mockNftCollectionModule('~/api/entities/Asset/NonFungible')
 );
 jest.mock(
   '~/api/entities/DefaultPortfolio',
@@ -20,18 +30,23 @@ jest.mock(
     '~/api/entities/DefaultPortfolio'
   )
 );
+jest.mock(
+  '~/api/entities/NumberedPortfolio',
+  require('~/testUtils/mocks/entities').mockNumberedPortfolioModule(
+    '~/api/entities/NumberedPortfolio'
+  )
+);
 
 describe('redeemTokens procedure', () => {
   let mockContext: Mocked<Context>;
-  let addTransactionStub: sinon.SinonStub;
   let ticker: string;
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
   let amount: BigNumber;
   let rawAmount: Balance;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let bigNumberToBalanceStub: sinon.SinonStub<
-    [BigNumber, Context, (boolean | undefined)?],
-    Balance
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let bigNumberToBalanceSpy: jest.SpyInstance<
+    Balance,
+    [BigNumber, Context, (boolean | undefined)?]
   >;
 
   beforeAll(() => {
@@ -42,15 +57,21 @@ describe('redeemTokens procedure', () => {
     rawTicker = dsMockUtils.createMockTicker(ticker);
     amount = new BigNumber(100);
     rawAmount = dsMockUtils.createMockBalance(amount);
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    bigNumberToBalanceStub.withArgs(amount, mockContext).returns(rawAmount);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(bigNumberToBalanceSpy).calledWith(amount, mockContext, true).mockReturnValue(rawAmount);
+    entityMockUtils.configureMocks({
+      fungibleAssetOptions: {
+        details: {
+          isDivisible: true,
+        },
+      },
+    });
   });
 
   afterEach(() => {
@@ -64,53 +85,75 @@ describe('redeemTokens procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should add a redeem transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-
-    const transaction = dsMockUtils.createTxStub('asset', 'redeem');
-
-    entityMockUtils.configureMocks({
-      assetOptions: {
-        details: {
-          isDivisible: true,
-        },
-      },
-      defaultPortfolioOptions: {
+  it('should return a redeem transaction spec', async () => {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      fromPortfolio: entityMockUtils.getDefaultPortfolioInstance({
         getAssetBalances: [
           {
-            asset: entityMockUtils.getAssetInstance({ ticker }),
+            asset: entityMockUtils.getFungibleAssetInstance({ ticker }),
             free: new BigNumber(500),
           } as unknown as PortfolioBalance,
         ],
-      },
+      }),
     });
 
-    await prepareRedeemTokens.call(proc, {
+    const transaction = dsMockUtils.createTxMock('asset', 'redeem');
+
+    const result = await prepareRedeemTokens.call(proc, {
       ticker,
       amount,
     });
 
-    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawAmount] });
+    expect(result).toEqual({ transaction, args: [rawTicker, rawAmount], resolver: undefined });
+  });
+
+  it('should return a redeemFromPortfolio transaction spec', async () => {
+    const from = entityMockUtils.getNumberedPortfolioInstance({
+      id: new BigNumber(1),
+      getAssetBalances: [
+        {
+          asset: entityMockUtils.getFungibleAssetInstance({ ticker }),
+          free: new BigNumber(500),
+        } as unknown as PortfolioBalance,
+      ],
+    });
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      fromPortfolio: from,
+    });
+
+    const transaction = dsMockUtils.createTxMock('asset', 'redeemFromPortfolio');
+
+    const rawPortfolioKind = dsMockUtils.createMockPortfolioKind({
+      User: dsMockUtils.createMockU64(new BigNumber(1)),
+    });
+
+    when(jest.spyOn(utilsConversionModule, 'portfolioToPortfolioKind'))
+      .calledWith(from, mockContext)
+      .mockReturnValue(rawPortfolioKind);
+
+    const result = await prepareRedeemTokens.call(proc, {
+      ticker,
+      amount,
+      from,
+    });
+    expect(result).toEqual({
+      transaction,
+      args: [rawTicker, rawAmount, rawPortfolioKind],
+      resolver: undefined,
+    });
   });
 
   it('should throw an error if the portfolio has not sufficient balance to redeem', () => {
-    entityMockUtils.configureMocks({
-      assetOptions: {
-        details: {
-          isDivisible: true,
-        },
-      },
-      defaultPortfolioOptions: {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      fromPortfolio: entityMockUtils.getNumberedPortfolioInstance({
         getAssetBalances: [
           {
-            asset: entityMockUtils.getAssetInstance({ ticker }),
+            asset: entityMockUtils.getFungibleAssetInstance({ ticker }),
             free: new BigNumber(0),
           } as unknown as PortfolioBalance,
         ],
-      },
+      }),
     });
-
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(
       prepareRedeemTokens.call(proc, {
@@ -122,27 +165,88 @@ describe('redeemTokens procedure', () => {
 
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', async () => {
-      const params = {
-        ticker,
-        amount,
-      };
       const someDid = 'someDid';
 
       dsMockUtils.getContextInstance({ did: someDid });
 
-      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-      const boundFunc = getAuthorization.bind(proc);
+      let fromPortfolio = entityMockUtils.getDefaultPortfolioInstance({
+        did: someDid,
+      });
 
-      const result = await boundFunc(params);
+      let proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+        fromPortfolio,
+      });
+
+      const params = {
+        ticker,
+        amount,
+      };
+      let boundFunc = getAuthorization.bind(proc);
+
+      let result = await boundFunc(params);
 
       expect(result).toEqual({
         permissions: {
           transactions: [TxTags.asset.Redeem],
           assets: [expect.objectContaining({ ticker })],
-          portfolios: [
-            expect.objectContaining({ owner: expect.objectContaining({ did: someDid }) }),
-          ],
+          portfolios: [fromPortfolio],
         },
+      });
+
+      fromPortfolio = entityMockUtils.getNumberedPortfolioInstance();
+
+      proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+        fromPortfolio,
+      });
+
+      boundFunc = getAuthorization.bind(proc);
+
+      result = await boundFunc({ ...params, from: fromPortfolio });
+
+      expect(result).toEqual({
+        permissions: {
+          transactions: [TxTags.asset.RedeemFromPortfolio],
+          assets: [expect.objectContaining({ ticker })],
+          portfolios: [fromPortfolio],
+        },
+      });
+    });
+  });
+
+  describe('prepareStorage', () => {
+    it('should return the Portfolio from which the Assets will be redeemed', async () => {
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
+      const boundFunc = prepareStorage.bind(proc);
+      let result = await boundFunc({} as Params);
+
+      expect(result).toEqual({
+        fromPortfolio: expect.objectContaining({
+          owner: expect.objectContaining({
+            did: 'someDid',
+          }),
+        }),
+      });
+
+      result = await boundFunc({
+        from: new BigNumber(1),
+      } as Params);
+
+      expect(result).toEqual({
+        fromPortfolio: expect.objectContaining({
+          id: new BigNumber(1),
+          owner: expect.objectContaining({
+            did: 'someDid',
+          }),
+        }),
+      });
+
+      const from = new NumberedPortfolio({ did: 'someDid', id: new BigNumber(1) }, mockContext);
+      result = await boundFunc({
+        from,
+      } as Params);
+
+      expect(result).toEqual({
+        fromPortfolio: from,
       });
     });
   });

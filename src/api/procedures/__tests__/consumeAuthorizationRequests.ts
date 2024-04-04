@@ -1,7 +1,7 @@
 import { bool, u64 } from '@polkadot/types';
+import { PolymeshPrimitivesSecondaryKeySignatory } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { Signatory } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   ConsumeAuthorizationRequestsParams,
@@ -15,8 +15,8 @@ import { Authorization, AuthorizationType, SignerValue, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 jest.mock(
@@ -28,9 +28,12 @@ jest.mock(
 
 describe('consumeAuthorizationRequests procedure', () => {
   let mockContext: Mocked<Context>;
-  let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
-  let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
-  let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
+  let signerValueToSignatorySpy: jest.SpyInstance<
+    PolymeshPrimitivesSecondaryKeySignatory,
+    [SignerValue, Context]
+  >;
+  let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
+  let booleanToBoolSpy: jest.SpyInstance<bool, [boolean, Context]>;
   let authParams: {
     authId: BigNumber;
     expiry: Date | null;
@@ -39,24 +42,24 @@ describe('consumeAuthorizationRequests procedure', () => {
     data: Authorization;
   }[];
   let auths: AuthorizationRequest[];
-  let rawAuthIdentifiers: [Signatory, u64, bool][];
+  let rawAuthIdentifiers: [PolymeshPrimitivesSecondaryKeySignatory, u64, bool][];
   let rawAuthIds: [u64][];
   let rawFalseBool: bool;
 
-  let acceptAssetOwnershipTransferTransaction: sinon.SinonStub;
-  let acceptBecomeAgentTransaction: sinon.SinonStub;
-  let acceptPortfolioCustodyTransaction: sinon.SinonStub;
-  let acceptTickerTransferTransaction: sinon.SinonStub;
+  let acceptAssetOwnershipTransferTransaction: jest.Mock;
+  let acceptBecomeAgentTransaction: jest.Mock;
+  let acceptPortfolioCustodyTransaction: jest.Mock;
+  let acceptTickerTransferTransaction: jest.Mock;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    signerValueToSignatoryStub = sinon.stub(utilsConversionModule, 'signerValueToSignatory');
-    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
-    booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
-    sinon.stub(utilsConversionModule, 'addressToKey');
-    dsMockUtils.createQueryStub('identity', 'authorizations', {
+    signerValueToSignatorySpy = jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
+    bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+    booleanToBoolSpy = jest.spyOn(utilsConversionModule, 'booleanToBool');
+    jest.spyOn(utilsConversionModule, 'addressToKey').mockImplementation();
+    dsMockUtils.createQueryMock('identity', 'authorizations', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockAuthorization({
           authorizationData: dsMockUtils.createMockAuthorizationData({
@@ -70,10 +73,7 @@ describe('consumeAuthorizationRequests procedure', () => {
     });
   });
 
-  let addBatchTransactionStub: sinon.SinonStub;
-
   beforeEach(() => {
-    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
     rawFalseBool = dsMockUtils.createMockBool(false);
     authParams = [
@@ -140,26 +140,28 @@ describe('consumeAuthorizationRequests procedure', () => {
 
       const rawAuthId = dsMockUtils.createMockU64(authId);
       rawAuthIds.push([rawAuthId]);
-      bigNumberToU64Stub.withArgs(authId, mockContext).returns(rawAuthId);
+      when(bigNumberToU64Spy).calledWith(authId, mockContext).mockReturnValue(rawAuthId);
       const rawSignatory = dsMockUtils.createMockSignatory({
         Identity: dsMockUtils.createMockIdentityId(signerValue.value),
       });
 
       rawAuthIdentifiers.push([rawSignatory, rawAuthId, rawFalseBool]);
-      signerValueToSignatoryStub.withArgs(signerValue, mockContext).returns(rawSignatory);
+      when(signerValueToSignatorySpy)
+        .calledWith(signerValue, mockContext)
+        .mockReturnValue(rawSignatory);
     });
-    booleanToBoolStub.withArgs(false, mockContext).returns(rawFalseBool);
+    when(booleanToBoolSpy).calledWith(false, mockContext).mockReturnValue(rawFalseBool);
 
-    acceptAssetOwnershipTransferTransaction = dsMockUtils.createTxStub(
+    acceptAssetOwnershipTransferTransaction = dsMockUtils.createTxMock(
       'asset',
       'acceptAssetOwnershipTransfer'
     );
-    acceptBecomeAgentTransaction = dsMockUtils.createTxStub('externalAgents', 'acceptBecomeAgent');
-    acceptPortfolioCustodyTransaction = dsMockUtils.createTxStub(
+    acceptBecomeAgentTransaction = dsMockUtils.createTxMock('externalAgents', 'acceptBecomeAgent');
+    acceptPortfolioCustodyTransaction = dsMockUtils.createTxMock(
       'portfolio',
       'acceptPortfolioCustody'
     );
-    acceptTickerTransferTransaction = dsMockUtils.createTxStub('asset', 'acceptTickerTransfer');
+    acceptTickerTransferTransaction = dsMockUtils.createTxMock('asset', 'acceptTickerTransfer');
   });
 
   afterEach(() => {
@@ -173,67 +175,56 @@ describe('consumeAuthorizationRequests procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should add a batch of accept authorization transactions (dependent on the type of auth) to the queue and ignore expired requests', async () => {
+  it('should return a batch spec of accept authorization transactions (dependent on the type of auth) and ignore expired requests', async () => {
     const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
       mockContext
     );
 
-    await prepareConsumeAuthorizationRequests.call(proc, {
+    const result = await prepareConsumeAuthorizationRequests.call(proc, {
       accept: true,
       authRequests: auths,
     });
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
-      transactions: [
-        {
-          transaction: acceptAssetOwnershipTransferTransaction,
-          args: rawAuthIds[0],
-        },
-      ],
-    });
-
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: acceptBecomeAgentTransaction,
           args: rawAuthIds[1],
         },
-      ],
-    });
-    sinon.assert.calledWith(addBatchTransactionStub, {
-      transactions: [
         {
           transaction: acceptPortfolioCustodyTransaction,
           args: rawAuthIds[2],
         },
-      ],
-    });
-    sinon.assert.calledWith(addBatchTransactionStub, {
-      transactions: [
+        {
+          transaction: acceptAssetOwnershipTransferTransaction,
+          args: rawAuthIds[0],
+        },
         {
           transaction: acceptTickerTransferTransaction,
           args: rawAuthIds[3],
         },
       ],
+      resolver: undefined,
     });
   });
 
-  it('should add a batch of remove authorization transactions to the queue and ignore expired requests', async () => {
+  it('should return a batch of remove authorization transactions spec and ignore expired requests', async () => {
     const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
       mockContext
     );
 
-    const transaction = dsMockUtils.createTxStub('identity', 'removeAuthorization');
+    const transaction = dsMockUtils.createTxMock('identity', 'removeAuthorization');
 
-    await prepareConsumeAuthorizationRequests.call(proc, {
+    const result = await prepareConsumeAuthorizationRequests.call(proc, {
       accept: false,
       authRequests: auths,
     });
 
     const authIds = rawAuthIdentifiers.slice(0, -1);
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: authIds.map(authId => ({ transaction, args: authId })),
+      resolver: undefined,
     });
   });
 

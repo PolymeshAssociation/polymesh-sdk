@@ -1,6 +1,6 @@
 import { PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 
 export interface ToggleFreezeSecondaryAccountsParams {
   freeze: boolean;
@@ -12,7 +12,10 @@ export interface ToggleFreezeSecondaryAccountsParams {
 export async function prepareToggleFreezeSecondaryAccounts(
   this: Procedure<ToggleFreezeSecondaryAccountsParams, void>,
   args: ToggleFreezeSecondaryAccountsParams
-): Promise<void> {
+): Promise<
+  | TransactionSpec<void, ExtrinsicParams<'identity', 'freezeSecondaryKeys'>>
+  | TransactionSpec<void, ExtrinsicParams<'identity', 'unfreezeSecondaryKeys'>>
+> {
   const {
     context: {
       polymeshApi: {
@@ -35,17 +38,17 @@ export async function prepareToggleFreezeSecondaryAccounts(
       });
     }
 
-    this.addTransaction({ transaction: identityTx.freezeSecondaryKeys });
-  } else {
-    if (!areSecondaryAccountsFrozen) {
-      throw new PolymeshError({
-        code: ErrorCode.NoDataChange,
-        message: 'The secondary Accounts are already unfrozen',
-      });
-    }
-
-    this.addTransaction({ transaction: identityTx.unfreezeSecondaryKeys });
+    return { transaction: identityTx.freezeSecondaryKeys, resolver: undefined };
   }
+
+  if (!areSecondaryAccountsFrozen) {
+    throw new PolymeshError({
+      code: ErrorCode.NoDataChange,
+      message: 'The secondary Accounts are already unfrozen',
+    });
+  }
+
+  return { transaction: identityTx.unfreezeSecondaryKeys, resolver: undefined };
 }
 
 /**

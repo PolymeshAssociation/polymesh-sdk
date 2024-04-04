@@ -1,18 +1,28 @@
+import {
+  ApolloClient,
+  createHttpLink,
+  InMemoryCache,
+  NormalizedCacheObject,
+} from '@apollo/client/core';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { SigningManager } from '@polymeshassociation/signing-manager-types';
-import { InMemoryCache, NormalizedCacheObject } from 'apollo-cache-inmemory';
-import { ApolloClient } from 'apollo-client';
-import { ApolloLink } from 'apollo-link';
-import { setContext } from 'apollo-link-context';
-import { HttpLink } from 'apollo-link-http';
 import fetch from 'cross-fetch';
 import schema from 'polymesh-types/schema';
 
-import { Account, Context, Identity, PolymeshError } from '~/internal';
-import { heartbeat } from '~/middleware/queries';
-import { ErrorCode, MiddlewareConfig } from '~/types';
+import { Account, Context, createTransactionBatch, Identity, PolymeshError } from '~/internal';
+import {
+  CreateTransactionBatchProcedureMethod,
+  ErrorCode,
+  MiddlewareConfig,
+  PolkadotConfig,
+  UnsubCallback,
+} from '~/types';
 import { signerToString } from '~/utils/conversion';
-import { assertExpectedChainVersion } from '~/utils/internal';
+import {
+  assertExpectedChainVersion,
+  assertExpectedSqVersion,
+  createProcedureMethod,
+} from '~/utils/internal';
 
 import { AccountManagement } from './AccountManagement';
 import { Assets } from './Assets';
@@ -22,10 +32,22 @@ import { Network } from './Network';
 import { Settlements } from './Settlements';
 
 export interface ConnectParams {
+  /**
+   * The websocket URL for the Polymesh node to connect to
+   */
   nodeUrl: string;
+  /**
+   * Handles signing of transactions. Required to be set before submitting transactions
+   */
   signingManager?: SigningManager;
-  middleware?: MiddlewareConfig;
+  /**
+   * Allows for historical data to be queried. Required for some methods to work
+   */
   middlewareV2?: MiddlewareConfig;
+  /**
+   * Advanced options that will be used with the underling polkadot.js instance
+   */
+  polkadot?: PolkadotConfig;
 }
 
 /**
@@ -36,22 +58,12 @@ function createMiddlewareApi(
 ): ApolloClient<NormalizedCacheObject> | null {
   return middleware
     ? new ApolloClient({
-        link: setContext((_, { headers }) => {
-          return {
-            headers: {
-              ...headers,
-              // eslint-disable-next-line @typescript-eslint/naming-convention
-              'x-api-key': middleware.key,
-            },
-          };
-        }).concat(
-          ApolloLink.from([
-            new HttpLink({
-              uri: middleware.link,
-              fetch,
-            }),
-          ])
-        ),
+        link: createHttpLink({
+          uri: middleware.link,
+          fetch,
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          headers: { 'x-api-key': middleware.key },
+        }),
         cache: new InMemoryCache(),
         defaultOptions: {
           watchQuery: {
@@ -110,6 +122,13 @@ export class Polymesh {
     this.accountManagement = new AccountManagement(context);
     this.identities = new Identities(context);
     this.assets = new Assets(context);
+
+    this.createTransactionBatch = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [createTransactionBatch, { ...args }],
+      },
+      context
+    ) as CreateTransactionBatchProcedureMethod;
   }
 
   /**
@@ -119,26 +138,34 @@ export class Polymesh {
    * @param params.signingManager - object in charge of managing keys and signing transactions
    *   (optional, if not passed the SDK will not be able to submit transactions). Can be set later with
    *   `setSigningManager`
-   * @param params.middleware - middleware API URL and key (optional, used for historic queries)
+   * @param params.middlewareV2 - middleware V2 API URL (optional, used for historic queries)
+   * @param params.polkadot - optional config for polkadot `ApiPromise`
    */
   static async connect(params: ConnectParams): Promise<Polymesh> {
-    const { nodeUrl, signingManager, middleware, middlewareV2 } = params;
+    const { nodeUrl, signingManager, middlewareV2, polkadot } = params;
     let context: Context;
+    let polymeshApi: ApiPromise;
 
-    await assertExpectedChainVersion(nodeUrl);
+    const { metadata, noInitWarn, typesBundle } = polkadot ?? {};
+
+    // Defer `await` on any checks to minimize total startup time
+    const requiredChecks: Promise<void>[] = [assertExpectedChainVersion(nodeUrl)];
 
     try {
-      const { types, rpc } = schema;
+      const { types, rpc, signedExtensions, runtime } = schema;
 
-      const polymeshApi = await ApiPromise.create({
+      polymeshApi = await ApiPromise.create({
         provider: new WsProvider(nodeUrl),
         types,
         rpc,
+        runtime,
+        signedExtensions,
+        metadata,
+        noInitWarn,
+        typesBundle,
       });
-
       context = await Context.create({
         polymeshApi,
-        middlewareApi: createMiddlewareApi(middleware),
         middlewareApiV2: createMiddlewareApi(middlewareV2),
         signingManager,
       });
@@ -152,21 +179,34 @@ export class Polymesh {
       });
     }
 
-    if (middleware) {
-      try {
-        await context.queryMiddleware(heartbeat());
-      } catch (err) {
+    if (middlewareV2) {
+      let middlewareMetadata = null;
+
+      const checkMiddleware = async (): Promise<void> => {
+        try {
+          middlewareMetadata = await context.getMiddlewareMetadata();
+        } catch (err) {
+          throw new PolymeshError({
+            code: ErrorCode.FatalError,
+            message: 'Could not query for middleware V2 metadata',
+          });
+        }
+
         if (
-          err.message.indexOf('Forbidden') > -1 ||
-          err.message.indexOf('Missing Authentication Token') > -1
+          !middlewareMetadata ||
+          middlewareMetadata.genesisHash !== polymeshApi.genesisHash.toString()
         ) {
           throw new PolymeshError({
             code: ErrorCode.FatalError,
-            message: 'Incorrect middleware URL or API key',
+            message: 'Middleware V2 URL is for a different chain than the given node URL',
           });
         }
-      }
+      };
+
+      requiredChecks.push(checkMiddleware(), assertExpectedSqVersion(context));
     }
+
+    await Promise.all(requiredChecks);
 
     return new Polymesh(context);
   }
@@ -185,7 +225,7 @@ export class Polymesh {
    *
    * @returns an unsubscribe callback
    */
-  public onConnectionError(callback: (...args: unknown[]) => unknown): () => void {
+  public onConnectionError(callback: (...args: unknown[]) => unknown): UnsubCallback {
     const {
       context: { polymeshApi },
     } = this;
@@ -202,7 +242,7 @@ export class Polymesh {
    *
    * @returns an unsubscribe callback
    */
-  public onDisconnect(callback: (...args: unknown[]) => unknown): () => void {
+  public onDisconnect(callback: (...args: unknown[]) => unknown): UnsubCallback {
     const {
       context: { polymeshApi },
     } = this;
@@ -230,16 +270,53 @@ export class Polymesh {
    *
    * @throws if the passed Account is not present in the Signing Manager (or there is no Signing Manager)
    */
-  public async setSigningAccount(signer: string | Account): Promise<void> {
+  public setSigningAccount(signer: string | Account): Promise<void> {
     return this.context.setSigningAddress(signerToString(signer));
   }
 
   /**
-   * Set the SDK's Signing Manager to the provided one
+   * Set the SDK's Signing Manager to the provided one.
+   *
+   * @note Pass `null` to unset the current signing manager
    */
-  public setSigningManager(signingManager: SigningManager): Promise<void> {
+  public setSigningManager(signingManager: SigningManager | null): Promise<void> {
     return this.context.setSigningManager(signingManager);
   }
+
+  /**
+   * Create a batch transaction from a list of separate transactions. The list can contain batch transactions as well.
+   *   The result of running this transaction will be an array of the results of each transaction in the list, in the same order.
+   *   Transactions with no return value will produce `undefined` in the resulting array
+   *
+   * @param args.transactions - list of {@link base/PolymeshTransaction!PolymeshTransaction} or {@link base/PolymeshTransactionBatch!PolymeshTransactionBatch}
+   *
+   * @example Batching 3 ticker reservation transactions
+   *
+   * ```typescript
+   * const tx1 = await sdk.assets.reserveTicker({ ticker: 'FOO' });
+   * const tx2 = await sdk.assets.reserveTicker({ ticker: 'BAR' });
+   * const tx3 = await sdk.assets.reserveTicker({ ticker: 'BAZ' });
+   *
+   * const batch = sdk.createTransactionBatch({ transactions: [tx1, tx2, tx3] as const });
+   *
+   * const [res1, res2, res3] = await batch.run();
+   * ```
+   *
+   * @example Specifying the signer account for the whole batch
+   *
+   * ```typescript
+   * const batch = sdk.createTransactionBatch({ transactions: [tx1, tx2, tx3] as const }, { signingAccount: 'someAddress' });
+   *
+   * const [res1, res2, res3] = await batch.run();
+   * ```
+   *
+   * @note it is mandatory to use the `as const` type assertion when passing in the transaction array to the method in order to get the correct types
+   *   for the results of running the batch
+   * @note if a signing Account is not specified, the default one will be used (the one returned by `sdk.accountManagement.getSigningAccount()`)
+   * @note all fees in the resulting batch must be paid by the calling Account, regardless of any exceptions that would normally be made for
+   *   the individual transactions (such as subsidies or accepting invitations to join an Identity)
+   */
+  public createTransactionBatch: CreateTransactionBatchProcedureMethod;
 
   /* eslint-disable @typescript-eslint/naming-convention */
   /* istanbul ignore next: not part of the official public API */
@@ -260,9 +337,9 @@ export class Polymesh {
 
   /* istanbul ignore next: not part of the official public API */
   /**
-   * Middleware client
+   * MiddlewareV2 client
    */
-  public get _middlewareApi(): ApolloClient<NormalizedCacheObject> {
+  public get _middlewareApiV2(): ApolloClient<NormalizedCacheObject> {
     return this.context.middlewareApi;
   }
   /* eslint-enable @typescript-eslint/naming-convention */

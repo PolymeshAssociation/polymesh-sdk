@@ -2,19 +2,22 @@
 
 import {
   Account,
-  Asset,
   AuthorizationRequest,
+  BaseAsset,
   Checkpoint,
   CheckpointSchedule,
+  Context,
   CorporateAction,
   CustomPermissionGroup,
   DefaultPortfolio,
   DefaultTrustedClaimIssuer,
   DividendDistribution,
   Entity,
+  FungibleAsset,
   Identity,
   Instruction,
   KnownPermissionGroup,
+  NftCollection,
   NumberedPortfolio,
   Offering,
   PolymeshError,
@@ -34,17 +37,18 @@ import {
   ClaimType,
   ConditionType,
   ExemptedClaim,
+  FungibleLeg,
   IdentityCondition,
   IdentityRole,
   InputCondition,
   InputConditionBase,
-  InvestorUniquenessClaim,
-  InvestorUniquenessV2Claim,
+  InstructionLeg,
   JurisdictionClaim,
   KycClaim,
   MultiClaimCondition,
-  NoDataClaim,
+  NftLeg,
   PortfolioCustodianRole,
+  ProposalStatus,
   Role,
   RoleType,
   ScopedClaim,
@@ -54,6 +58,7 @@ import {
   UnscopedClaim,
   VenueOwnerRole,
 } from '~/types';
+import { asAsset } from '~/utils/internal';
 
 /**
  * Return whether value is an Entity
@@ -156,13 +161,6 @@ export function isNumberedPortfolio(value: unknown): value is NumberedPortfolio 
 }
 
 /**
- * Return whether value is an Asset
- */
-export function isAsset(value: unknown): value is Asset {
-  return value instanceof Asset;
-}
-
-/**
  * Return whether value is an Offering
  */
 export function isOffering(value: unknown): value is Offering {
@@ -194,12 +192,7 @@ export function isPolymeshError(value: unknown): value is PolymeshError {
  * Return whether a Claim is an UnscopedClaim
  */
 export function isUnscopedClaim(claim: Claim): claim is UnscopedClaim {
-  return [
-    ClaimType.NoData,
-    ClaimType.NoType,
-    ClaimType.CustomerDueDiligence,
-    ClaimType.InvestorUniquenessV2,
-  ].includes(claim.type);
+  return [ClaimType.CustomerDueDiligence].includes(claim.type);
 }
 
 /**
@@ -273,27 +266,6 @@ export function isBlockedClaim(claim: Claim): claim is BlockedClaim {
 }
 
 /**
- * Return whether a Claim is an InvestorUniquenessClaim
- */
-export function isInvestorUniquenessClaim(claim: Claim): claim is InvestorUniquenessClaim {
-  return claim.type === ClaimType.InvestorUniqueness;
-}
-
-/**
- * Return whether Claim is a NoDataClaim
- */
-export function isNoDataClaim(claim: Claim): claim is NoDataClaim {
-  return claim.type === ClaimType.NoData;
-}
-
-/**
- * Return whether a Claim is an InvestorUniquenessV2Claim
- */
-export function isInvestorUniquenessV2Claim(claim: Claim): claim is InvestorUniquenessV2Claim {
-  return claim.type === ClaimType.InvestorUniquenessV2;
-}
-
-/**
  * Return whether Condition has a single Claim
  */
 export function isSingleClaimCondition(
@@ -357,13 +329,87 @@ export function isIdentityRole(role: Role): role is IdentityRole {
 /**
  * Return whether value is a PolymeshTransaction
  */
-export function isPolymeshTransaction(value: unknown): value is PolymeshTransaction {
+export function isPolymeshTransaction<
+  ReturnValue,
+  TransformedReturnValue = ReturnValue,
+  Args extends unknown[] = unknown[]
+>(value: unknown): value is PolymeshTransaction<ReturnValue, TransformedReturnValue, Args> {
   return value instanceof PolymeshTransaction;
 }
 
 /**
  * Return whether value is a PolymeshTransactionBatch
  */
-export function isPolymeshTransactionBatch(value: unknown): value is PolymeshTransactionBatch {
+export function isPolymeshTransactionBatch<
+  ReturnValue,
+  TransformedReturnValue = ReturnValue,
+  Args extends unknown[][] = unknown[][]
+>(value: unknown): value is PolymeshTransactionBatch<ReturnValue, TransformedReturnValue, Args> {
   return value instanceof PolymeshTransactionBatch;
 }
+
+/**
+ * @hidden
+ */
+export function isProposalStatus(status: string): status is ProposalStatus {
+  return status in ProposalStatus;
+}
+
+/**
+ * Return whether an asset is a FungibleAsset
+ */
+export function isFungibleAsset(asset: BaseAsset): asset is FungibleAsset {
+  return asset instanceof FungibleAsset;
+}
+
+/**
+ * Return whether an asset is a NftCollection
+ */
+export function isNftCollection(asset: BaseAsset): asset is NftCollection {
+  return asset instanceof NftCollection;
+}
+
+/**
+ * @hidden
+ */
+type IsFungibleLegGuard = (leg: InstructionLeg) => leg is FungibleLeg;
+
+/**
+ * Return whether a leg is for a Fungible asset
+ *
+ * @note Higher order function is a work around for TS not supporting `Promise<leg is FungibleLeg>`
+ *
+ * @example ```ts
+ * const fungibleGuard = await isFungibleLegBuilder(leg, context)
+ */
+export const isFungibleLegBuilder = async (
+  leg: InstructionLeg,
+  context: Context
+): Promise<IsFungibleLegGuard> => {
+  const asset = await asAsset(leg.asset, context);
+
+  return (iLeg: InstructionLeg): iLeg is FungibleLeg => {
+    return asset instanceof FungibleAsset;
+  };
+};
+
+/**
+ * @hidden
+ */
+type IsNftLegGuard = (leg: InstructionLeg) => leg is NftLeg;
+
+/**
+ * Return whether a leg is for an Nft
+ *
+ * @note Higher order function is a work around for TS not supporting `Promise<leg is NftLeg>`
+ */
+export const isNftLegBuilder = async (
+  leg: InstructionLeg,
+  context: Context
+): Promise<IsNftLegGuard> => {
+  const asset = await asAsset(leg.asset, context);
+
+  return (iLeg: InstructionLeg): iLeg is NftLeg => {
+    return asset instanceof NftCollection;
+  };
+};

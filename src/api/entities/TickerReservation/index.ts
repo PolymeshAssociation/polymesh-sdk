@@ -1,12 +1,12 @@
-import { QueryableStorageEntry } from '@polkadot/api/types';
 import { PalletAssetSecurityToken, PalletAssetTickerRegistration } from '@polkadot/types/lookup';
+import { Option } from '@polkadot/types-codec';
 
 import {
-  Asset,
   AuthorizationRequest,
   Context,
   createAsset,
   Entity,
+  FungibleAsset,
   Identity,
   reserveTicker,
   transferTickerOwnership,
@@ -19,9 +19,8 @@ import {
   TransferTickerOwnershipParams,
   UnsubCallback,
 } from '~/types';
-import { QueryReturnType } from '~/types/utils';
 import { identityIdToString, momentToDate, stringToTicker } from '~/utils/conversion';
-import { assertTickerValid, createProcedureMethod } from '~/utils/internal';
+import { assertTickerValid, createProcedureMethod, requestMulti } from '~/utils/internal';
 
 import { TickerReservationDetails, TickerReservationStatus } from './types';
 
@@ -102,7 +101,6 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
       context: {
         polymeshApi: {
           query: { asset },
-          queryMulti,
         },
       },
       ticker,
@@ -112,31 +110,25 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
     const rawTicker = stringToTicker(ticker, context);
 
     const assembleResult = (
-      { owner: tickerOwner, expiry }: PalletAssetTickerRegistration,
-      { ownerDid: assetOwner }: PalletAssetSecurityToken
+      reservationOpt: Option<PalletAssetTickerRegistration>,
+      tokenOpt: Option<PalletAssetSecurityToken>
     ): TickerReservationDetails => {
-      const tickerOwned = !tickerOwner.isEmpty;
-      const assetOwned = !assetOwner.isEmpty;
-
-      let status: TickerReservationStatus;
+      let owner: Identity | null = null;
+      let status = TickerReservationStatus.Free;
       let expiryDate: Date | null = null;
-      const owner = tickerOwned
-        ? new Identity({ did: identityIdToString(tickerOwner) }, context)
-        : null;
 
-      if (assetOwned) {
+      if (tokenOpt.isSome) {
         status = TickerReservationStatus.AssetCreated;
-      } else if (tickerOwned) {
-        status = TickerReservationStatus.Reserved;
-        if (expiry.isSome) {
-          expiryDate = momentToDate(expiry.unwrap());
+        const rawOwnerDid = tokenOpt.unwrap().ownerDid;
+        owner = new Identity({ did: identityIdToString(rawOwnerDid) }, context);
+      } else if (reservationOpt.isSome) {
+        const { owner: rawOwnerDid, expiry } = reservationOpt.unwrap();
+        owner = new Identity({ did: identityIdToString(rawOwnerDid) }, context);
 
-          if (expiryDate < new Date()) {
-            status = TickerReservationStatus.Free;
-          }
+        expiryDate = expiry.isSome ? momentToDate(expiry.unwrap()) : null;
+        if (!expiryDate || expiryDate > new Date()) {
+          status = TickerReservationStatus.Reserved;
         }
-      } else {
-        status = TickerReservationStatus.Free;
       }
 
       return {
@@ -147,13 +139,11 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
     };
 
     if (callback) {
-      // NOTE @monitz87: the type assertions are necessary because queryMulti doesn't play nice with strict types
-      return queryMulti<
-        [QueryReturnType<typeof asset.tickers>, QueryReturnType<typeof asset.tokens>]
-      >(
+      return requestMulti<[typeof asset.tickers, typeof asset.tokens]>(
+        context,
         [
-          [asset.tickers as unknown as QueryableStorageEntry<'promise'>, rawTicker],
-          [asset.tokens as unknown as QueryableStorageEntry<'promise'>, rawTicker],
+          [asset.tickers, rawTicker],
+          [asset.tokens, rawTicker],
         ],
         ([registration, token]) => {
           // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
@@ -162,12 +152,11 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
       );
     }
 
-    // NOTE @monitz87: the type assertions are necessary because queryMulti doesn't play nice with strict types
-    const [tickerRegistration, meshAsset] = await queryMulti<
-      [QueryReturnType<typeof asset.tickers>, QueryReturnType<typeof asset.tokens>]
-    >([
-      [asset.tickers as unknown as QueryableStorageEntry<'promise'>, rawTicker],
-      [asset.tokens as unknown as QueryableStorageEntry<'promise'>, rawTicker],
+    const [tickerRegistration, meshAsset] = await requestMulti<
+      [typeof asset.tickers, typeof asset.tokens]
+    >(context, [
+      [asset.tickers, rawTicker],
+      [asset.tokens, rawTicker],
     ]);
 
     return assembleResult(tickerRegistration, meshAsset);
@@ -188,7 +177,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
    * @note required role:
    *   - Ticker Owner
    */
-  public createAsset: ProcedureMethod<CreateAssetParams, Asset>;
+  public createAsset: ProcedureMethod<CreateAssetParams, FungibleAsset>;
 
   /**
    * Transfer ownership of the Ticker Reservation to another Identity. This generates an authorization request that must be accepted

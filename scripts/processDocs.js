@@ -1,5 +1,6 @@
 /* eslint-disable */
 const path = require('path');
+const replace = require('replace-in-file');
 const fs = require('fs');
 const { camelCase, startCase } = require('lodash');
 
@@ -40,7 +41,8 @@ const convertModulesToHierarchy = function (modules) {
 
 /**
  * Returns a single markdown formatted link shifted by depth * 2 spaces
- * For example - `  - [Asset](../wiki/api.entities.Asset)`
+ *
+ * @example `  - [Asset](../wiki/api.entities.Asset)`
  */
 const getLink = function (label, link, depth) {
   const spaces = ' '.repeat(depth * 2);
@@ -49,7 +51,10 @@ const getLink = function (label, link, depth) {
 
 /**
  * Returns a dropdown formatted markdown string with a specific heading and description
- * For example -
+ *
+ * @example
+ *
+ * ```markdown
  * <details>
  *   <summary>
  *     <b>Client</b>
@@ -57,6 +62,7 @@ const getLink = function (label, link, depth) {
  *
  *   ....Nested links....
  * </details>
+ * ```
  *
  * Note that the blank line after the </summary> tag is must for correct formatting of dropdown content
  */
@@ -119,3 +125,11 @@ fs.writeFileSync(
 ${markdownLinks}
 `
 );
+
+// this is required for markdown to interpret code snippets in comments correctly
+replace.sync({
+  files: 'docs/**/*.md',
+  from: /^ ```.*/gs,
+  // remove the first character (space)
+  to: ([, ...tail]) => tail.join(''),
+});

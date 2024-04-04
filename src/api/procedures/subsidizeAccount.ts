@@ -1,11 +1,5 @@
 import { createAuthorizationResolver } from '~/api/procedures/utils';
-import {
-  Account,
-  AuthorizationRequest,
-  PolymeshError,
-  PostTransactionValue,
-  Procedure,
-} from '~/internal';
+import { AuthorizationRequest, PolymeshError, Procedure } from '~/internal';
 import {
   AddRelayerPayingKeyAuthorizationData,
   AuthorizationType,
@@ -13,7 +7,9 @@ import {
   SubsidizeAccountParams,
   TxTags,
 } from '~/types';
+import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import { bigNumberToBalance, signerToString, stringToAccountId } from '~/utils/conversion';
+import { asAccount } from '~/utils/internal';
 
 /**
  * @hidden
@@ -21,7 +17,7 @@ import { bigNumberToBalance, signerToString, stringToAccountId } from '~/utils/c
 export async function prepareSubsidizeAccount(
   this: Procedure<SubsidizeAccountParams, AuthorizationRequest>,
   args: SubsidizeAccountParams
-): Promise<PostTransactionValue<AuthorizationRequest>> {
+): Promise<TransactionSpec<AuthorizationRequest, ExtrinsicParams<'relayer', 'setPayingKey'>>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -31,13 +27,7 @@ export async function prepareSubsidizeAccount(
 
   const { beneficiary, allowance } = args;
 
-  let account: Account;
-
-  if (beneficiary instanceof Account) {
-    account = beneficiary;
-  } else {
-    account = new Account({ address: beneficiary }, context);
-  }
+  const account = asAccount(beneficiary, context);
 
   const { address: beneficiaryAddress } = account;
 
@@ -77,13 +67,11 @@ export async function prepareSubsidizeAccount(
     },
   };
 
-  const [auth] = this.addTransaction({
+  return {
     transaction: tx.relayer.setPayingKey,
-    resolvers: [createAuthorizationResolver(authRequest, identity, account, null, context)],
+    resolver: createAuthorizationResolver(authRequest, identity, account, null, context),
     args: [rawBeneficiary, rawAllowance],
-  });
-
-  return auth;
+  };
 }
 
 /**

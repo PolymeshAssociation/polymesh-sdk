@@ -1,9 +1,10 @@
-import { Asset, PolymeshError, Procedure } from '~/internal';
+import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, ModifyAssetParams, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import {
+  fundingRoundToAssetFundingRound,
+  nameToAssetName,
   securityIdentifierToAssetIdentifier,
-  stringToBytes,
   stringToTicker,
 } from '~/utils/conversion';
 import { checkTxType, hasSameElements } from '~/utils/internal';
@@ -17,9 +18,9 @@ export type Params = { ticker: string } & ModifyAssetParams;
  * @hidden
  */
 export async function prepareModifyAsset(
-  this: Procedure<Params, Asset>,
+  this: Procedure<Params, FungibleAsset>,
   args: Params
-): Promise<Asset> {
+): Promise<BatchTransactionSpec<FungibleAsset, unknown[][]>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -49,7 +50,7 @@ export async function prepareModifyAsset(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const asset = new Asset({ ticker }, context);
+  const asset = new FungibleAsset({ ticker }, context);
 
   const [{ isDivisible, name }, fundingRound, identifiers] = await Promise.all([
     asset.details(),
@@ -82,7 +83,7 @@ export async function prepareModifyAsset(
       });
     }
 
-    const nameBytes = stringToBytes(newName, context);
+    const nameBytes = nameToAssetName(newName, context);
     transactions.push(
       checkTxType({
         transaction: tx.asset.renameAsset,
@@ -99,7 +100,7 @@ export async function prepareModifyAsset(
       });
     }
 
-    const fundingBytes = stringToBytes(newFundingRound, context);
+    const fundingBytes = fundingRoundToAssetFundingRound(newFundingRound, context);
     transactions.push(
       checkTxType({
         transaction: tx.asset.setFundingRound,
@@ -131,16 +132,14 @@ export async function prepareModifyAsset(
     );
   }
 
-  this.addBatchTransaction({ transactions });
-
-  return asset;
+  return { transactions, resolver: asset };
 }
 
 /**
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, Asset>,
+  this: Procedure<Params, FungibleAsset>,
   { ticker, makeDivisible, name, fundingRound, identifiers }: Params
 ): ProcedureAuthorization {
   const transactions = [];
@@ -165,7 +164,7 @@ export function getAuthorization(
     permissions: {
       transactions,
       portfolios: [],
-      assets: [new Asset({ ticker }, this.context)],
+      assets: [new FungibleAsset({ ticker }, this.context)],
     },
   };
 }
@@ -173,5 +172,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const modifyAsset = (): Procedure<Params, Asset> =>
+export const modifyAsset = (): Procedure<Params, FungibleAsset> =>
   new Procedure(prepareModifyAsset, getAuthorization);

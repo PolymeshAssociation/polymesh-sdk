@@ -6,38 +6,51 @@ import {
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import { chunk, flatten, uniqBy } from 'lodash';
+import { chunk, differenceWith, flatten, intersectionWith, uniqBy } from 'lodash';
 
+import { unlinkChildIdentity } from '~/api/procedures/unlinkChildIdentity';
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
   Account,
-  Asset,
+  ChildIdentity,
   Context,
   Entity,
+  FungibleAsset,
   Instruction,
+  Nft,
+  NftCollection,
   PolymeshError,
   TickerReservation,
   Venue,
 } from '~/internal';
-import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
-import { assetHoldersQuery, trustingAssetsQuery } from '~/middleware/queriesV2';
-import { Query } from '~/middleware/types';
-import { AssetHoldersOrderBy, Query as QueryV2 } from '~/middleware/typesV2';
-import { CddStatus } from '~/polkadot/polymesh';
+import {
+  assetHoldersQuery,
+  instructionsByDidQuery,
+  nftHoldersQuery,
+  trustingAssetsQuery,
+} from '~/middleware/queries';
+import { AssetHoldersOrderBy, NftHoldersOrderBy, Query } from '~/middleware/types';
 import {
   CheckRolesResult,
+  DefaultPortfolio,
   DistributionWithDetails,
   ErrorCode,
   GroupedInstructions,
-  Order,
+  GroupedInvolvedInstructions,
+  HeldNfts,
+  HistoricInstruction,
+  InstructionsByStatus,
+  NumberedPortfolio,
   PaginationOptions,
   PermissionedAccount,
+  ProcedureMethod,
   ResultSet,
   Role,
   SubCallback,
+  UnlinkChildParams,
   UnsubCallback,
 } from '~/types';
-import { Ensured, EnsuredV2, QueryReturnType, tuple } from '~/types/utils';
+import { Ensured, tuple } from '~/types/utils';
 import {
   isCddProviderRole,
   isIdentityRole,
@@ -53,20 +66,19 @@ import {
   cddStatusToBoolean,
   corporateActionIdentifierToCaId,
   identityIdToString,
+  middlewareInstructionToHistoricInstruction,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
-  scopeIdToString,
   stringToIdentityId,
   stringToTicker,
   transactionPermissionsToTxGroups,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
-  asTicker,
   calculateNextKey,
+  createProcedureMethod,
   getSecondaryAccountPermissions,
-  removePadding,
   requestPaginated,
 } from '~/utils/internal';
 
@@ -119,6 +131,13 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     this.authorizations = new IdentityAuthorizations(this, context);
     this.portfolios = new Portfolios(this, context);
     this.assetPermissions = new AssetPermissions(this, context);
+
+    this.unlinkChild = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [unlinkChildIdentity, args],
+      },
+      context
+    );
   }
 
   /**
@@ -199,7 +218,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const meshAsset = await asset.tokens(rawTicker);
 
-    if (meshAsset.ownerDid.isEmpty) {
+    if (meshAsset.isNone) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
         message: `There is no Asset with ticker "${ticker}"`,
@@ -230,7 +249,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       },
     } = this;
     const identityId = stringToIdentityId(did, context);
-    const result: CddStatus = await rpc.identity.isIdentityHasValidCdd(identityId);
+    const result = await rpc.identity.isIdentityHasValidCdd(identityId);
     return cddStatusToBoolean(result);
   }
 
@@ -323,61 +342,16 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   /**
    * Retrieve a list of all Assets which were held at one point by this Identity
    *
-   * @note uses the middleware
-   * @note supports pagination
-   */
-  public async getHeldAssets(
-    opts: {
-      order?: Order;
-      size?: BigNumber;
-      start?: BigNumber;
-    } = { order: Order.Asc }
-  ): Promise<ResultSet<Asset>> {
-    const { context, did } = this;
-
-    const { size, start, order } = opts;
-
-    const result = await context.queryMiddleware<Ensured<Query, 'tokensHeldByDid'>>(
-      tokensHeldByDid({
-        did,
-        count: size?.toNumber(),
-        skip: start?.toNumber(),
-        order,
-      })
-    );
-
-    const {
-      data: {
-        tokensHeldByDid: { items: assetsHeldByDidList, totalCount },
-      },
-    } = result;
-
-    const count = new BigNumber(totalCount);
-
-    const data = assetsHeldByDidList.map(ticker => new Asset({ ticker }, context));
-
-    const next = calculateNextKey(count, size, start);
-
-    return {
-      data,
-      next,
-      count,
-    };
-  }
-
-  /**
-   * Retrieve a list of all Assets which were held at one point by this Identity
-   *
    * @note uses the middlewareV2
    * @note supports pagination
    */
-  public async getHeldAssetsV2(
+  public async getHeldAssets(
     opts: {
       order?: AssetHoldersOrderBy;
       size?: BigNumber;
       start?: BigNumber;
     } = {}
-  ): Promise<ResultSet<Asset>> {
+  ): Promise<ResultSet<FungibleAsset>> {
     const { context, did } = this;
 
     const { size, start, order } = opts;
@@ -386,7 +360,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       data: {
         assetHolders: { nodes, totalCount },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'assetHolders'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'assetHolders'>>(
       assetHoldersQuery(
         {
           identityId: did,
@@ -399,9 +373,59 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const count = new BigNumber(totalCount);
 
-    const data = nodes.map(({ assetId: ticker }) => new Asset({ ticker }, context));
+    const data = nodes.map(({ assetId: ticker }) => new FungibleAsset({ ticker }, context));
 
-    const next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, data.length, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
+  }
+
+  /**
+   * Retrieve a list of all NftCollections which were held at one point by this Identity
+   *
+   * @note uses the middlewareV2
+   * @note supports pagination
+   */
+  public async getHeldNfts(
+    opts: {
+      order?: NftHoldersOrderBy;
+      size?: BigNumber;
+      start?: BigNumber;
+    } = {}
+  ): Promise<ResultSet<HeldNfts>> {
+    const { context, did } = this;
+
+    const { size, start, order } = opts;
+
+    const {
+      data: {
+        nftHolders: { nodes, totalCount },
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'nftHolders'>>(
+      nftHoldersQuery(
+        {
+          identityId: did,
+        },
+        size,
+        start,
+        order
+      )
+    );
+
+    const count = new BigNumber(totalCount);
+
+    const data = nodes.map(({ assetId: ticker, nftIds }) => {
+      const collection = new NftCollection({ ticker }, context);
+      const nfts = nftIds.map((id: number) => new Nft({ ticker, id: new BigNumber(id) }, context));
+
+      return { collection, nfts };
+    });
+
+    const next = calculateNextKey(count, data.length, start);
 
     return {
       data,
@@ -433,50 +457,22 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Check whether this Identity possesses all specified roles
-   *
-   * @deprecated in favor of `checkRoles`
-   */
-  public async hasRoles(roles: Role[]): Promise<boolean> {
-    const checkedRoles = await Promise.all(roles.map(this.hasRole.bind(this)));
-
-    return checkedRoles.every(hasRole => hasRole);
-  }
-
-  /**
-   * Get the list of Assets for which this Identity is a trusted claim issuer
-   *
-   * @note uses the middleware
-   */
-  public async getTrustingAssets(): Promise<Asset[]> {
-    const { context, did } = this;
-
-    const {
-      data: { tokensByTrustedClaimIssuer: tickers },
-    } = await context.queryMiddleware<Ensured<Query, 'tokensByTrustedClaimIssuer'>>(
-      tokensByTrustedClaimIssuer({ claimIssuerDid: did })
-    );
-
-    return tickers.map(ticker => new Asset({ ticker: removePadding(ticker) }, context));
-  }
-
-  /**
    * Get the list of Assets for which this Identity is a trusted claim issuer
    *
    * @note uses the middlewareV2
    */
-  public async getTrustingAssetsV2(): Promise<Asset[]> {
+  public async getTrustingAssets(): Promise<FungibleAsset[]> {
     const { context, did } = this;
 
     const {
       data: {
         trustedClaimIssuers: { nodes },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'trustedClaimIssuers'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'trustedClaimIssuers'>>(
       trustingAssetsQuery({ issuer: did })
     );
 
-    return nodes.map(({ assetId: ticker }) => new Asset({ ticker }, context));
+    return nodes.map(({ assetId: ticker }) => new FungibleAsset({ ticker }, context));
   }
 
   /**
@@ -484,11 +480,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    *
    * @note can be subscribed to
    */
-  public async getVenues(): Promise<Venue[]>;
-  public async getVenues(callback: SubCallback<Venue[]>): Promise<UnsubCallback>;
-
-  // eslint-disable-next-line require-jsdoc
-  public async getVenues(callback?: SubCallback<Venue[]>): Promise<Venue[] | UnsubCallback> {
+  public async getVenues(): Promise<Venue[]> {
     const {
       context: {
         polymeshApi: {
@@ -504,55 +496,20 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const rawDid = stringToIdentityId(did, context);
 
-    if (callback) {
-      return settlement.userVenues(rawDid, ids => callback(assembleResult(ids)));
-    }
-
-    const venueIds = await settlement.userVenues(rawDid);
+    const venueIdsKeys = await settlement.userVenues.keys(rawDid);
+    const venueIds = venueIdsKeys.map(key => {
+      return key.args[1];
+    });
 
     return assembleResult(venueIds);
   }
 
   /**
-   * Retrieve the Scope ID associated to this Identity's Investor Uniqueness Claim for a specific Asset, or null
-   *   if there is none
-   *
-   * @note more on Investor Uniqueness [here](https://developers.polymesh.network/introduction/identity#polymesh-unique-identity-system-puis) and
-   *   [here](https://developers.polymesh.network/polymesh-docs/primitives/confidential-identity)
-   */
-  public async getScopeId(args: { asset: Asset | string }): Promise<string | null> {
-    const { context, did } = this;
-    const { asset } = args;
-
-    const ticker = asTicker(asset);
-
-    const scopeId = await context.polymeshApi.query.asset.scopeIdOf(
-      stringToTicker(ticker, context),
-      stringToIdentityId(did, context)
-    );
-
-    if (scopeId.isEmpty) {
-      return null;
-    }
-
-    return scopeIdToString(scopeId);
-  }
-
-  /**
-   * Retrieve all Instructions where this Identity is a participant,
+   * Retrieve all Instructions where this Identity is a custodian of one or more portfolios in the legs,
    *   grouped by status
    */
   public async getInstructions(): Promise<GroupedInstructions> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { settlement },
-        },
-      },
-      did,
-      portfolios,
-      context,
-    } = this;
+    const { did, portfolios } = this;
 
     const ownedPortfolios = await portfolios.getPortfolios();
 
@@ -563,15 +520,41 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const allPortfolios = [...ownedCustodiedPortfolios, ...custodiedPortfolios];
 
-    const portfolioIds = allPortfolios.map(portfolioLikeToPortfolioId);
+    const { affirmed, pending, failed } = await this.assembleGroupedInstructions(allPortfolios);
 
-    await P.map(portfolioIds, portfolioId => assertPortfolioExists(portfolioId, context));
+    return {
+      affirmed: differenceWith(affirmed, pending, (obj1, obj2) => obj1.id.eq(obj2.id)),
+      pending,
+      failed,
+    };
+  }
 
-    const portfolioIdChunks = chunk(portfolioIds, MAX_CONCURRENT_REQUESTS);
+  /**
+   * Get all the instructions grouped by status, where given portfolios are involved
+   *
+   * @hidden
+   */
+  private async assembleGroupedInstructions(
+    portfolios: (DefaultPortfolio | NumberedPortfolio)[]
+  ): Promise<GroupedInstructions> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+      context,
+    } = this;
 
     const affirmed: Instruction[] = [];
     const pending: Instruction[] = [];
     const failed: Instruction[] = [];
+
+    const portfolioIds = portfolios.map(portfolioLikeToPortfolioId);
+
+    await P.map(portfolioIds, portfolioId => assertPortfolioExists(portfolioId, context));
+
+    const portfolioIdChunks = chunk(portfolioIds, MAX_CONCURRENT_REQUESTS);
 
     await P.each(portfolioIdChunks, async portfolioIdChunk => {
       const auths = await P.map(portfolioIdChunk, portfolioId =>
@@ -580,18 +563,20 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
       const uniqueEntries = uniqBy(
         flatten(auths).map(([key, status]) => ({ id: key.args[1], status })),
-        ({ id }) => id.toNumber()
+        ({ id, status }) => `${id.toString()}-${status.type}`
       );
-      const instructions = await settlement.instructionDetails.multi<
-        QueryReturnType<typeof settlement.instructionDetails>
-      >(uniqueEntries.map(({ id }) => id));
 
-      uniqueEntries.forEach(({ id, status }, index) => {
+      const instructionStatuses = await settlement.instructionStatuses.multi(
+        uniqueEntries.map(({ id }) => id)
+      );
+
+      uniqueEntries.forEach(({ id, status: affirmationStatus }, index) => {
         const instruction = new Instruction({ id: u64ToBigNumber(id) }, context);
+        const status = instructionStatuses[index];
 
-        if (instructions[index].status.isFailed) {
+        if (status.isFailed) {
           failed.push(instruction);
-        } else if (status.isAffirmed) {
+        } else if (affirmationStatus.isAffirmed) {
           affirmed.push(instruction);
         } else if (status.isPending) {
           pending.push(instruction);
@@ -607,56 +592,61 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieve all pending Instructions involving this Identity
-   *
-   * @deprecated in favor of `getInstructions`
+   * Retrieve all Instructions where this Identity is a participant (owner/custodian),
+   *   grouped by the role of the Identity and Instruction status
    */
-  public async getPendingInstructions(): Promise<Instruction[]> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { settlement },
-        },
-      },
-      did,
-      portfolios,
-      context,
-    } = this;
+  public async getInvolvedInstructions(): Promise<GroupedInvolvedInstructions> {
+    const { portfolios, did } = this;
 
-    const ownedPortfolios = await portfolios.getPortfolios();
-
-    const [ownedCustodiedPortfolios, { data: custodiedPortfolios }] = await Promise.all([
-      P.filter(ownedPortfolios, portfolio => portfolio.isCustodiedBy({ identity: did })),
-      this.portfolios.getCustodiedPortfolios(),
+    const [allPortfolios, { data: custodiedPortfolios }] = await Promise.all([
+      portfolios.getPortfolios(),
+      portfolios.getCustodiedPortfolios(),
     ]);
 
-    const allPortfolios = [...ownedCustodiedPortfolios, ...custodiedPortfolios];
+    const ownedPortfolios: (DefaultPortfolio | NumberedPortfolio)[] = [];
+    const ownedCustodiedPortfolios: (DefaultPortfolio | NumberedPortfolio)[] = [];
+    const custodies = await Promise.all(
+      allPortfolios.map(portfolio => portfolio.isCustodiedBy({ identity: did }))
+    );
 
-    const portfolioIds = allPortfolios.map(portfolioLikeToPortfolioId);
-
-    await P.map(portfolioIds, portfolioId => assertPortfolioExists(portfolioId, context));
-
-    const portfolioIdChunks = chunk(portfolioIds, MAX_CONCURRENT_REQUESTS);
-
-    const chunkedInstructions = await P.mapSeries(portfolioIdChunks, async portfolioIdChunk => {
-      const auths = await P.map(portfolioIdChunk, portfolioId =>
-        settlement.userAffirmations.entries(portfolioIdToMeshPortfolioId(portfolioId, context))
-      );
-
-      const instructionIds = uniqBy(
-        flatten(auths).map(([key]) => key.args[1]),
-        id => id.toNumber()
-      );
-      return settlement.instructionDetails.multi<
-        QueryReturnType<typeof settlement.instructionDetails>
-      >(instructionIds);
+    custodies.forEach((custody, index) => {
+      if (custody) {
+        ownedCustodiedPortfolios.push(allPortfolios[index]);
+      } else {
+        ownedPortfolios.push(allPortfolios[index]);
+      }
     });
 
-    const rawInstructions = flatten(chunkedInstructions);
+    /**
+     * This gathers all the partiallyAffirmed Instructions as the intersection of pending + affirmed.
+     * These partiallyAffirmed ones, are then removed from the affirmed and pending to get the unique sets.
+     */
+    const assembleResult = ({
+      affirmed,
+      pending,
+      failed,
+    }: GroupedInstructions): InstructionsByStatus => {
+      const partiallyAffirmed = intersectionWith(affirmed, pending, (obj1, obj2) =>
+        obj1.id.eq(obj2.id)
+      );
 
-    return rawInstructions
-      .filter(({ status }) => status.isPending)
-      .map(({ instructionId: id }) => new Instruction({ id: u64ToBigNumber(id) }, context));
+      return {
+        affirmed: differenceWith(affirmed, partiallyAffirmed, (obj1, obj2) => obj1.id.eq(obj2.id)),
+        pending: differenceWith(pending, partiallyAffirmed, (obj1, obj2) => obj1.id.eq(obj2.id)),
+        partiallyAffirmed,
+        failed,
+      };
+    };
+
+    const [owned, custodied] = await Promise.all([
+      this.assembleGroupedInstructions(ownedPortfolios),
+      this.assembleGroupedInstructions([...ownedCustodiedPortfolios, ...custodiedPortfolios]),
+    ]);
+
+    return {
+      owned: assembleResult(owned),
+      custodied: assembleResult(custodied),
+    };
   }
 
   /**
@@ -703,7 +693,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    */
   public async getPendingDistributions(): Promise<DistributionWithDetails[]> {
     const { context, did } = this;
-    let assets: Asset[] = [];
+    let assets: FungibleAsset[] = [];
     let allFetched = false;
     let start: BigNumber | undefined;
 
@@ -714,7 +704,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       assets = [...assets, ...data];
     }
 
-    const distributions = await this.context.getDividendDistributionsForAssets({ assets: assets });
+    const distributions = await this.context.getDividendDistributionsForAssets({ assets });
 
     const now = new Date();
 
@@ -855,5 +845,74 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    */
   public toHuman(): string {
     return this.did;
+  }
+
+  /**
+   * Retrieve all Instructions that have been associated with this Identity's DID
+   *
+   * @note uses the middleware V2
+   */
+  public async getHistoricalInstructions(): Promise<HistoricInstruction[]> {
+    const { context, did } = this;
+
+    const {
+      data: {
+        legs: { nodes: instructionsResult },
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'legs'>>(instructionsByDidQuery(did));
+
+    return instructionsResult.map(({ instruction }) =>
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      middlewareInstructionToHistoricInstruction(instruction!, context)
+    );
+  }
+
+  /**
+   * Returns the list of all child identities
+   *
+   * @note this query can be potentially **SLOW** depending on the number of parent Identities present on the chain
+   */
+  public async getChildIdentities(): Promise<ChildIdentity[]> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { identity },
+        },
+      },
+      context,
+      did,
+    } = this;
+
+    const rawEntries = await identity.parentDid.entries();
+
+    return rawEntries
+      .filter(([, rawParentDid]) => identityIdToString(rawParentDid.unwrapOrDefault()) === did)
+      .map(
+        ([
+          {
+            args: [rawChildDid],
+          },
+        ]) => new ChildIdentity({ did: identityIdToString(rawChildDid) }, context)
+      );
+  }
+
+  /**
+   * Unlinks a child identity
+   *
+   * @throws if
+   *  - the `child` is not a child of this identity
+   *  - the transaction signer is not the primary key of the parent identity
+   */
+  public unlinkChild: ProcedureMethod<UnlinkChildParams, void>;
+
+  /**
+   * Check whether this Identity is a child Identity
+   */
+  public async isChild(): Promise<boolean> {
+    const { did, context } = this;
+
+    const childIdentity = new ChildIdentity({ did }, context);
+
+    return childIdentity.exists();
   }
 }

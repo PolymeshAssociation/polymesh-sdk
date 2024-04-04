@@ -5,18 +5,18 @@ import { isEqual } from 'lodash';
 
 import {
   Account,
-  Asset,
   AuthorizationRequest,
+  BaseAsset,
   Checkpoint,
   CheckpointSchedule,
   Context,
   CustomPermissionGroup,
+  FungibleAsset,
   Identity,
   Instruction,
   KnownPermissionGroup,
   NumberedPortfolio,
   PolymeshError,
-  PostTransactionValue,
   TickerReservation,
   Venue,
 } from '~/internal';
@@ -31,6 +31,7 @@ import {
   GenericAuthorizationData,
   InputCondition,
   InputTaxWithholding,
+  InstructionDetails,
   InstructionStatus,
   InstructionType,
   PermissionedAccount,
@@ -39,8 +40,8 @@ import {
   Signer,
   TickerReservationStatus,
   TransactionPermissions,
+  TxTag,
 } from '~/types';
-import { MaybePostTransactionValue } from '~/types/internal';
 import { tickerToString, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
 
@@ -54,10 +55,10 @@ export async function assertInstructionValid(
   const details = await instruction.details();
   const { status, type } = details;
 
-  if (status !== InstructionStatus.Pending) {
+  if (status !== InstructionStatus.Pending && status !== InstructionStatus.Failed) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'The Instruction must be in pending state',
+      message: 'The Instruction must be in pending or failed state',
     });
   }
 
@@ -72,6 +73,45 @@ export async function assertInstructionValid(
         data: {
           currentBlock: latestBlock,
           endBlock,
+        },
+      });
+    }
+  }
+}
+
+/**
+ * @hidden
+ */
+export async function assertInstructionValidForManualExecution(
+  details: InstructionDetails,
+  context: Context
+): Promise<void> {
+  const { status, type } = details;
+
+  if (status === InstructionStatus.Success || status === InstructionStatus.Rejected) {
+    throw new PolymeshError({
+      code: ErrorCode.NoDataChange,
+      message: 'The Instruction has already been executed',
+    });
+  }
+
+  if (type !== InstructionType.SettleManual && status !== InstructionStatus.Failed) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: `You cannot manually execute settlement of type '${type}'`,
+    });
+  }
+
+  if (type === InstructionType.SettleManual) {
+    const latestBlock = await context.getLatestBlock();
+    const { endAfterBlock } = details;
+    if (latestBlock.lte(endAfterBlock)) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'The Instruction cannot be executed until the specified end after block',
+        data: {
+          currentBlock: latestBlock,
+          endAfterBlock,
         },
       });
     }
@@ -374,7 +414,7 @@ export async function assertTransferAssetOwnershipAuthorizationValid(
   data: GenericAuthorizationData,
   context: Context
 ): Promise<void> {
-  const asset = new Asset({ ticker: data.value }, context);
+  const asset = new FungibleAsset({ ticker: data.value }, context);
   const exists = await asset.exists();
   if (!exists)
     throw new PolymeshError({
@@ -582,7 +622,7 @@ export async function assertAuthorizationRequestValid(
  *   there is no matching group
  */
 export async function getGroupFromPermissions(
-  asset: Asset,
+  asset: BaseAsset,
   permissions: TransactionPermissions | null
 ): Promise<(CustomPermissionGroup | KnownPermissionGroup) | undefined> {
   const { custom, known } = await asset.permissions.getGroups();
@@ -601,7 +641,7 @@ export async function getGroupFromPermissions(
  * @hidden
  */
 export async function assertGroupDoesNotExist(
-  asset: Asset,
+  asset: FungibleAsset,
   permissions: TransactionPermissions | null
 ): Promise<void> {
   const matchingGroup = await getGroupFromPermissions(asset, permissions);
@@ -623,7 +663,7 @@ export async function assertGroupDoesNotExist(
  */
 export const createAuthorizationResolver =
   (
-    auth: MaybePostTransactionValue<Authorization>,
+    auth: Authorization,
     issuer: Identity,
     target: Identity | Account,
     expiry: Date | null,
@@ -631,15 +671,9 @@ export const createAuthorizationResolver =
   ) =>
   (receipt: ISubmittableResult): AuthorizationRequest => {
     const [{ data }] = filterEventRecords(receipt, 'identity', 'AuthorizationAdded');
-    let rawAuth;
-    if (auth instanceof PostTransactionValue) {
-      rawAuth = auth.value;
-    } else {
-      rawAuth = auth;
-    }
 
     const authId = u64ToBigNumber(data[3]);
-    return new AuthorizationRequest({ authId, expiry, issuer, target, data: rawAuth }, context);
+    return new AuthorizationRequest({ authId, expiry, issuer, target, data: auth }, context);
   };
 
 /**
@@ -655,3 +689,24 @@ export const createCreateGroupResolver =
       context
     );
   };
+
+/**
+ * Add protocol fees for specific tags to the current accumulated total
+ *
+ * @returns undefined if fees aren't being calculated manually
+ */
+export async function addManualFees(
+  currentFee: BigNumber | undefined,
+  tags: TxTag[],
+  context: Context
+): Promise<BigNumber | undefined> {
+  if (!currentFee) {
+    return undefined;
+  }
+
+  const fees = await context.getProtocolFees({
+    tags,
+  });
+
+  return fees.reduce((prev, { fees: nextFees }) => prev.plus(nextFees), currentFee);
+}
