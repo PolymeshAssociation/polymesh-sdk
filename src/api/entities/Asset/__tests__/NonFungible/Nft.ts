@@ -1,9 +1,11 @@
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { Context, Entity, Nft, PolymeshTransaction } from '~/internal';
+import { Context, Entity, Nft, PolymeshError, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { ErrorCode } from '~/types';
 import { tuple } from '~/types/utils';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/Asset/NonFungible',
@@ -94,40 +96,23 @@ describe('Nft class', () => {
   });
 
   describe('method: exists', () => {
-    it('should return true when Nft Id is less than or equal to nextId for the collection', async () => {
+    it('should return whether NFT exists or not', async () => {
       const ticker = 'TICKER';
       const context = dsMockUtils.getContextInstance();
       const id = new BigNumber(3);
       const nft = new Nft({ ticker, id }, context);
 
-      entityMockUtils.getNftCollectionInstance({
-        getCollectionId: id,
-      });
+      const getOwnerSpy = jest.spyOn(nft, 'getOwner');
 
-      dsMockUtils.createQueryMock('nft', 'nextNFTId', {
-        returnValue: new BigNumber(10),
-      });
+      getOwnerSpy.mockResolvedValueOnce(entityMockUtils.getDefaultPortfolioInstance());
 
-      const result = await nft.exists();
+      let result = await nft.exists();
 
       expect(result).toBe(true);
-    });
 
-    it('should return false when Nft Id is greater than nextId for the collection', async () => {
-      const ticker = 'TICKER';
-      const context = dsMockUtils.getContextInstance();
-      const id = new BigNumber(3);
-      const nft = new Nft({ ticker, id }, context);
+      getOwnerSpy.mockResolvedValueOnce(null);
 
-      entityMockUtils.getNftCollectionInstance({
-        getCollectionId: id,
-      });
-
-      dsMockUtils.createQueryMock('nft', 'nextNFTId', {
-        returnValue: new BigNumber(1),
-      });
-
-      const result = await nft.exists();
+      result = await nft.exists();
 
       expect(result).toBe(false);
     });
@@ -377,6 +362,89 @@ describe('Nft class', () => {
       const tx = await nft.redeem();
 
       expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: getOwner', () => {
+    const ticker = 'TEST';
+    const id = new BigNumber(1);
+    let context: Context;
+    let nftOwnerMock: jest.Mock;
+    let nft: Nft;
+
+    beforeEach(async () => {
+      context = dsMockUtils.getContextInstance();
+      nftOwnerMock = dsMockUtils.createQueryMock('nft', 'nftOwner');
+      nft = new Nft({ ticker, id }, context);
+    });
+
+    it('should return null if no owner exists', async () => {
+      nftOwnerMock.mockResolvedValueOnce(dsMockUtils.createMockOption());
+
+      const result = await nft.getOwner();
+
+      expect(result).toBeNull();
+    });
+
+    it('should return the owner of the NFT', async () => {
+      const meshPortfolioIdToPortfolioSpy = jest.spyOn(
+        utilsConversionModule,
+        'meshPortfolioIdToPortfolio'
+      );
+
+      const rawPortfolio = dsMockUtils.createMockPortfolioId({
+        did: 'someDid',
+        kind: dsMockUtils.createMockPortfolioKind({
+          User: dsMockUtils.createMockU64(new BigNumber(1)),
+        }),
+      });
+
+      nftOwnerMock.mockResolvedValueOnce(dsMockUtils.createMockOption(rawPortfolio));
+      const portfolio = entityMockUtils.getNumberedPortfolioInstance();
+
+      when(meshPortfolioIdToPortfolioSpy)
+        .calledWith(rawPortfolio, context)
+        .mockReturnValue(portfolio);
+
+      const result = await nft.getOwner();
+
+      expect(result).toBe(portfolio);
+    });
+  });
+
+  describe('method: isLocked', () => {
+    const ticker = 'TEST';
+    const id = new BigNumber(1);
+    let context: Context;
+    let nft: Nft;
+    let ownerSpy: jest.SpyInstance;
+
+    beforeEach(async () => {
+      context = dsMockUtils.getContextInstance();
+      nft = new Nft({ ticker, id }, context);
+      ownerSpy = jest.spyOn(nft, 'getOwner');
+    });
+
+    it('should throw an error if NFT has no owner', () => {
+      ownerSpy.mockResolvedValueOnce(null);
+
+      const error = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'NFT does not exists. The token may have been redeemed',
+      });
+      return expect(nft.isLocked()).rejects.toThrow(error);
+    });
+
+    it('should return whether NFT is locked in any settlement', async () => {
+      ownerSpy.mockResolvedValue(entityMockUtils.getDefaultPortfolioInstance());
+
+      dsMockUtils.createQueryMock('portfolio', 'portfolioLockedNFT', {
+        returnValue: dsMockUtils.createMockBool(true),
+      });
+
+      const result = await nft.isLocked();
+
+      expect(result).toBe(true);
     });
   });
 

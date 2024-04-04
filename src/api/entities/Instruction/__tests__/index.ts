@@ -834,7 +834,7 @@ describe('Instruction class', () => {
         )
         .mockResolvedValue(expectedTransaction);
 
-      const tx = await instruction.executeManually({ id, skipAffirmationCheck: false });
+      const tx = await instruction.executeManually({ skipAffirmationCheck: false });
 
       expect(tx).toBe(expectedTransaction);
     });

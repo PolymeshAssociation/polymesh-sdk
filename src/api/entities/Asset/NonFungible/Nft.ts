@@ -1,7 +1,14 @@
 import BigNumber from 'bignumber.js';
 
-import { Context, Entity, NftCollection, redeemNft } from '~/internal';
-import { NftMetadata, OptionalArgsProcedureMethod, RedeemNftParams } from '~/types';
+import { Context, Entity, NftCollection, PolymeshError, redeemNft } from '~/internal';
+import {
+  DefaultPortfolio,
+  ErrorCode,
+  NftMetadata,
+  NumberedPortfolio,
+  OptionalArgsProcedureMethod,
+  RedeemNftParams,
+} from '~/types';
 import {
   GLOBAL_BASE_IMAGE_URI_NAME,
   GLOBAL_BASE_TOKEN_URI_NAME,
@@ -10,8 +17,11 @@ import {
 } from '~/utils/constants';
 import {
   bigNumberToU64,
+  boolToBoolean,
   bytesToString,
   meshMetadataKeyToMetadataKey,
+  meshPortfolioIdToPortfolio,
+  portfolioToPortfolioId,
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -104,26 +114,11 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
 
   /**
    * Determine if the NFT exists on chain
-   *
-   * @note This method returns true, even if the token has been redeemed/burned
    */
   public async exists(): Promise<boolean> {
-    const {
-      context,
-      context: {
-        polymeshApi: { query },
-      },
-      collection,
-      id,
-    } = this;
-    const collectionId = await collection.getCollectionId();
-    const rawCollectionId = bigNumberToU64(collectionId, context);
+    const owner = await this.getOwner();
 
-    // note: "nextId" is actually the last used id
-    const rawNextId = await query.nft.nextNFTId(rawCollectionId);
-    const nextId = u64ToBigNumber(rawNextId);
-
-    return id.lte(nextId);
+    return owner !== null;
   }
 
   /**
@@ -196,6 +191,71 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
     }
 
     return null;
+  }
+
+  /**
+   * Get owner of the NFT
+   *
+   * @note This method returns `null` if there is no existing holder for the token. This may happen even if the token has been redeemed/burned
+   */
+  public async getOwner(): Promise<DefaultPortfolio | NumberedPortfolio | null> {
+    const {
+      collection: { ticker },
+      id,
+      context: {
+        polymeshApi: {
+          query: {
+            nft: { nftOwner },
+          },
+        },
+      },
+      context,
+    } = this;
+
+    const rawTicker = stringToTicker(ticker, context);
+    const rawNftId = bigNumberToU64(id, context);
+
+    const owner = await nftOwner(rawTicker, rawNftId);
+
+    if (owner.isEmpty) {
+      return null;
+    }
+
+    return meshPortfolioIdToPortfolio(owner.unwrap(), context);
+  }
+
+  /**
+   * Check if the NFT is locked in any settlement instruction
+   *
+   * @throws if NFT has no owner (has been redeemed)
+   */
+  public async isLocked(): Promise<boolean> {
+    const {
+      collection: { ticker },
+      id,
+      context: {
+        polymeshApi: {
+          query: { portfolio },
+        },
+      },
+      context,
+    } = this;
+
+    const owner = await this.getOwner();
+
+    if (!owner) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'NFT does not exists. The token may have been redeemed',
+      });
+    }
+
+    const rawLocked = await portfolio.portfolioLockedNFT(portfolioToPortfolioId(owner), [
+      stringToTicker(ticker, context),
+      bigNumberToU64(id, context),
+    ]);
+
+    return boolToBoolean(rawLocked);
   }
 
   /**
