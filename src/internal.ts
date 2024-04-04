@@ -92,6 +92,7 @@ export { modifyOfferingTimes } from '~/api/procedures/modifyOfferingTimes';
 export { investInOffering } from '~/api/procedures/investInOffering';
 export { createCheckpoint } from '~/api/procedures/createCheckpoint';
 export { controllerTransfer } from '~/api/procedures/controllerTransfer';
+export { nftControllerTransfer } from '~/api/procedures/nftControllerTransfer';
 export { linkCaDocs } from '~/api/procedures/linkCaDocs';
 export { Identity } from '~/api/entities/Identity';
 export { ChildIdentity } from '~/api/entities/Identity/ChildIdentity';
@@ -103,6 +104,8 @@ export { BaseAsset, FungibleAsset, NftCollection, Nft } from '~/api/entities/Ass
 export { MetadataEntry } from '~/api/entities/MetadataEntry';
 export { registerMetadata } from '~/api/procedures/registerMetadata';
 export { setMetadata } from '~/api/procedures/setMetadata';
+export { clearMetadata } from '~/api/procedures/clearMetadata';
+export { removeLocalMetadata } from '~/api/procedures/removeLocalMetadata';
 export { AuthorizationRequest } from '~/api/entities/AuthorizationRequest';
 export { DefaultTrustedClaimIssuer } from '~/api/entities/DefaultTrustedClaimIssuer';
 export { Offering } from '~/api/entities/Offering';
@@ -146,6 +149,8 @@ export { modifyAllowance, ModifyAllowanceParams } from '~/api/procedures/modifyA
 export { createTransactionBatch } from '~/api/procedures/createTransactionBatch';
 export { createMultiSigAccount } from '~/api/procedures/createMultiSig';
 export { acceptPrimaryKeyRotation } from '~/api/procedures/acceptPrimaryKeyRotation';
+export { addAssetMediators } from '~/api/procedures/addAssetMediators';
+export { removeAssetMediators } from '~/api/procedures/removeAssetMediators';
 export { Storage as ModifyMultiSigStorage, modifyMultiSig } from '~/api/procedures/modifyMultiSig';
 export {
   SetCountTransferRestrictionsParams,
@@ -157,3 +162,12 @@ export { addAssetStat } from '~/api/procedures/addAssetStat';
 export { removeAssetStat } from '~/api/procedures/removeAssetStat';
 export { setVenueFiltering } from '~/api/procedures/setVenueFiltering';
 export { registerCustomClaimType } from '~/api/procedures/registerCustomClaimType';
+export { toggleTickerPreApproval } from '~/api/procedures/toggleTickerPreApproval';
+export {
+  allowIdentityToCreatePortfolios,
+  AllowIdentityToCreatePortfoliosParams,
+} from '~/api/procedures/allowIdentityToCreatePortfolios';
+export {
+  revokeIdentityToCreatePortfolios,
+  RevokeIdentityToCreatePortfoliosParams,
+} from '~/api/procedures/revokeIdentityToCreatePortfolios';

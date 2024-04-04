@@ -67,28 +67,12 @@ describe('attestPrimaryKeyRotation procedure', () => {
   it('should return an add authorization transaction spec', async () => {
     const expiry = new Date('1/1/2040');
 
-    const receivedAuthorizations: AuthorizationRequest[] = [
-      new AuthorizationRequest(
-        {
-          target: targetAccount,
-          issuer: entityMockUtils.getIdentityInstance(),
-          authId: new BigNumber(2),
-          expiry: null,
-          data: {
-            type: AuthorizationType.AttestPrimaryKeyRotation,
-            value: entityMockUtils.getIdentityInstance({ did: 'someOtherDid' }),
-          },
-        },
-        mockContext
-      ),
-    ];
-
     when(getReceivedMock)
       .calledWith({
         type: AuthorizationType.AttestPrimaryKeyRotation,
         includeExpired: false,
       })
-      .mockResolvedValue(receivedAuthorizations);
+      .mockResolvedValue([]);
 
     const rawSignatory = dsMockUtils.createMockSignatory({
       Account: dsMockUtils.createMockAccountId('someAccountId'),

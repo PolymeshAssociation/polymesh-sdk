@@ -39,6 +39,7 @@ import {
   AccountBalance,
   ActiveTransferRestrictions,
   AgentWithGroup,
+  Asset,
   AssetDetails,
   AssetWithGroup,
   Authorization,
@@ -76,6 +77,7 @@ import {
   PermissionedAccount,
   PermissionGroups,
   PermissionGroupType,
+  PolymeshError,
   PortfolioBalance,
   PortfolioCollection,
   ProposalStatus,
@@ -91,6 +93,7 @@ import {
   TickerReservationStatus,
   TransferStatus,
   VenueDetails,
+  VenueFilteringDetails,
   VenueType,
 } from '~/types';
 
@@ -148,6 +151,8 @@ interface IdentityOptions extends EntityOptions {
   areSecondaryAccountsFrozen?: EntityGetter<boolean>;
   assetPermissionsGetGroup?: EntityGetter<CustomPermissionGroup | KnownPermissionGroup>;
   assetPermissionsGet?: EntityGetter<AssetWithGroup[]>;
+  isAssetPreApproved?: EntityGetter<boolean>;
+  preApprovedAssets?: EntityGetter<ResultSet<Asset[]>>;
 }
 
 interface ChildIdentityOptions extends IdentityOptions {
@@ -171,10 +176,12 @@ interface BaseAssetOptions extends EntityOptions {
   complianceRequirementsGet?: EntityGetter<ComplianceRequirements>;
   investorCount?: EntityGetter<BigNumber>;
   getNextLocalId?: EntityGetter<BigNumber>;
+  getRequiredMediators?: EntityGetter<Identity[]>;
+  getVenueFilteringDetails?: EntityGetter<VenueFilteringDetails>;
+  currentFundingRound?: EntityGetter<string>;
 }
 
 interface FungibleAssetOptions extends BaseAssetOptions {
-  currentFundingRound?: EntityGetter<string>;
   transferRestrictionsCountGet?: EntityGetter<ActiveTransferRestrictions<CountTransferRestriction>>;
   transferRestrictionsPercentageGet?: EntityGetter<
     ActiveTransferRestrictions<PercentageTransferRestriction>
@@ -201,7 +208,6 @@ interface NftCollectionOptions extends BaseAssetOptions {
   permissionsGetGroups?: EntityGetter<PermissionGroups>;
   complianceRequirementsGet?: EntityGetter<ComplianceRequirements>;
   investorCount?: EntityGetter<BigNumber>;
-  getNextLocalId?: EntityGetter<BigNumber>;
   collectionKeys?: EntityGetter<CollectionKey[]>;
   getCollectionId?: EntityGetter<BigNumber>;
   getBaseImageUrl?: EntityGetter<string | null>;
@@ -220,6 +226,7 @@ interface MetadataEntryOptions extends EntityOptions {
   type?: MetadataType;
   details?: EntityGetter<MetadataDetails>;
   value?: EntityGetter<MetadataValue | null>;
+  isModifiable?: EntityGetter<{ canModify: boolean; reason?: PolymeshError }>;
 }
 
 interface AuthorizationRequestOptions extends EntityOptions {
@@ -587,6 +594,8 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     getSecondaryAccounts!: jest.Mock;
     areSecondaryAccountsFrozen!: jest.Mock;
     isCddProvider!: jest.Mock;
+    preApprovedAssets!: jest.Mock;
+    isAssetPreApproved!: jest.Mock;
 
     /**
      * @hidden
@@ -624,6 +633,8 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
       this.getSecondaryAccounts = createEntityGetterMock(opts.getSecondaryAccounts);
       this.areSecondaryAccountsFrozen = createEntityGetterMock(opts.areSecondaryAccountsFrozen);
       this.isCddProvider = createEntityGetterMock(opts.isCddProvider);
+      this.preApprovedAssets = createEntityGetterMock(opts.preApprovedAssets);
+      this.isAssetPreApproved = createEntityGetterMock(opts.isAssetPreApproved);
     }
   },
   () => ({
@@ -659,6 +670,8 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     checkRoles: {
       result: true,
     },
+    preApprovedAssets: { data: [], next: null, count: new BigNumber(0) },
+    isAssetPreApproved: false,
     toHuman: 'someDid',
   }),
   ['Identity']
@@ -702,6 +715,8 @@ const MockChildIdentityClass = createMockEntityClass<ChildIdentityOptions>(
 
     getParentDid!: jest.Mock;
     getChildIdentities!: Promise<ChildIdentity[]>;
+    preApproveAssets!: jest.Mock;
+    isAssetPreApproved!: jest.Mock;
 
     /**
      * @hidden
@@ -745,6 +760,8 @@ const MockChildIdentityClass = createMockEntityClass<ChildIdentityOptions>(
 
       this.getParentDid = createEntityGetterMock(opts.getParentDid);
       this.getChildIdentities = Promise.resolve([]);
+      this.preApproveAssets = createEntityGetterMock(opts.preApprovedAssets);
+      this.isAssetPreApproved = createEntityGetterMock(opts.isAssetPreApproved);
     }
   },
   () => ({
@@ -784,6 +801,8 @@ const MockChildIdentityClass = createMockEntityClass<ChildIdentityOptions>(
 
     toHuman: 'someChildDid',
     getParentDid: getIdentityInstance(),
+    preApprovedAssets: { data: [], next: null, count: new BigNumber(0) },
+    isAssetPreApproved: false,
   }),
   ['ChildIdentity', 'Identity']
 );
@@ -984,6 +1003,8 @@ const MockFungibleAssetClass = createMockEntityClass<FungibleAssetOptions>(
     metadata = {} as { getNextLocalId: jest.Mock };
 
     investorCount!: jest.Mock;
+    getRequiredMediators!: jest.Mock;
+    getVenueFilteringDetails!: jest.Mock;
 
     /**
      * @hidden
@@ -1026,6 +1047,8 @@ const MockFungibleAssetClass = createMockEntityClass<FungibleAssetOptions>(
       this.checkpoints.getOne = createEntityGetterMock(opts.checkpointsGetOne);
       this.investorCount = createEntityGetterMock(opts.investorCount);
       this.metadata.getNextLocalId = createEntityGetterMock(opts.getNextLocalId);
+      this.getRequiredMediators = createEntityGetterMock(opts.getRequiredMediators);
+      this.getVenueFilteringDetails = createEntityGetterMock(opts.getVenueFilteringDetails);
     }
   },
   () => ({
@@ -1086,6 +1109,8 @@ const MockFungibleAssetClass = createMockEntityClass<FungibleAssetOptions>(
     getNextLocalId: new BigNumber(0),
     toHuman: 'SOME_TICKER',
     investorCount: new BigNumber(0),
+    getRequiredMediators: [],
+    getVenueFilteringDetails: { isEnabled: false, allowedVenues: [] },
   }),
   ['FungibleAsset']
 );
@@ -1122,7 +1147,10 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
     getCollectionId!: jest.Mock;
 
     investorCount!: jest.Mock;
+    getRequiredMediators!: jest.Mock;
+    getVenueFilteringDetails!: jest.Mock;
     getBaseImageUrl!: jest.Mock;
+    currentFundingRound!: jest.Mock;
 
     /**
      * @hidden
@@ -1148,6 +1176,9 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
       this.collectionKeys = createEntityGetterMock(opts.collectionKeys);
       this.getCollectionId = createEntityGetterMock(opts.getCollectionId);
       this.getBaseImageUrl = createEntityGetterMock(opts.getBaseImageUrl);
+      this.getVenueFilteringDetails = createEntityGetterMock(opts.getVenueFilteringDetails);
+      this.getRequiredMediators = createEntityGetterMock(opts.getRequiredMediators);
+      this.currentFundingRound = createEntityGetterMock(opts.currentFundingRound);
     }
   },
   () => ({
@@ -1180,6 +1211,9 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
     collectionKeys: [],
     getCollectionId: new BigNumber(0),
     getBaseImageUrl: null,
+    getRequiredMediators: [],
+    getVenueFilteringDetails: { isEnabled: false, allowedVenues: [] },
+    currentFundingRound: '',
   }),
   ['NftCollection']
 );
@@ -1248,6 +1282,9 @@ const MockBaseAssetClass = createMockEntityClass<BaseAssetOptions>(
 
     investorCount!: jest.Mock;
     getBaseImageUrl!: jest.Mock;
+    getRequiredMediators!: jest.Mock;
+    getVenueFilteringDetails!: jest.Mock;
+    currentFundingRound!: jest.Mock;
 
     /**
      * @hidden
@@ -1270,7 +1307,10 @@ const MockBaseAssetClass = createMockEntityClass<BaseAssetOptions>(
       this.permissions.getGroups = createEntityGetterMock(opts.permissionsGetGroups);
       this.compliance.requirements.get = createEntityGetterMock(opts.complianceRequirementsGet);
       this.investorCount = createEntityGetterMock(opts.investorCount);
+      this.getVenueFilteringDetails = createEntityGetterMock(opts.getVenueFilteringDetails);
       this.metadata.getNextLocalId = createEntityGetterMock(opts.getNextLocalId);
+      this.getRequiredMediators = createEntityGetterMock(opts.getRequiredMediators);
+      this.currentFundingRound = createEntityGetterMock(opts.currentFundingRound);
     }
   },
   () => ({
@@ -1298,8 +1338,11 @@ const MockBaseAssetClass = createMockEntityClass<BaseAssetOptions>(
       defaultTrustedClaimIssuers: [],
     },
     getNextLocalId: new BigNumber(0),
+    getRequiredMediators: [],
     toHuman: 'SOME_TICKER',
     investorCount: new BigNumber(0),
+    getVenueFilteringDetails: { isEnabled: false, allowedVenues: [] },
+    currentFundingRound: '',
   }),
   ['BaseAsset']
 );
@@ -1312,6 +1355,7 @@ const MockMetadataEntryClass = createMockEntityClass<MetadataEntryOptions>(
     type!: MetadataType;
     details!: jest.SpyInstance;
     value!: jest.SpyInstance;
+    isModifiable!: jest.SpyInstance;
 
     /**
      * @hidden
@@ -1323,13 +1367,21 @@ const MockMetadataEntryClass = createMockEntityClass<MetadataEntryOptions>(
     /**
      * @hidden
      */
-    public configure({ id, ticker, type, details, value }: Required<MetadataEntryOptions>) {
+    public configure({
+      id,
+      ticker,
+      type,
+      details,
+      value,
+      isModifiable,
+    }: Required<MetadataEntryOptions>) {
       this.uuid = 'metadataEntry';
       this.id = id;
       this.asset = getFungibleAssetInstance({ ticker });
       this.type = type;
       this.details = createEntityGetterMock(details);
       this.value = createEntityGetterMock(value);
+      this.isModifiable = createEntityGetterMock(isModifiable);
     }
   },
   () => ({
@@ -1347,6 +1399,9 @@ const MockMetadataEntryClass = createMockEntityClass<MetadataEntryOptions>(
     ticker: 'SOME_TICKER',
     id: new BigNumber(1),
     type: MetadataType.Local,
+    isModifiable: {
+      canModify: true,
+    },
   }),
   ['MetadataEntry']
 );

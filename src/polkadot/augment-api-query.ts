@@ -115,6 +115,7 @@ import type {
   PolymeshPrimitivesSettlementInstructionStatus,
   PolymeshPrimitivesSettlementLeg,
   PolymeshPrimitivesSettlementLegStatus,
+  PolymeshPrimitivesSettlementMediatorAffirmationStatus,
   PolymeshPrimitivesSettlementVenue,
   PolymeshPrimitivesStatisticsAssetScope,
   PolymeshPrimitivesStatisticsStat1stKey,
@@ -124,7 +125,7 @@ import type {
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceAssetTransferCompliance,
   PolymeshPrimitivesTransferComplianceTransferConditionExemptKey,
-  PolymeshRuntimeTestnetRuntimeSessionKeys,
+  PolymeshRuntimeDevelopRuntimeSessionKeys,
   SpConsensusBabeAppPublic,
   SpConsensusBabeBabeEpochConfiguration,
   SpConsensusBabeDigestsNextConfigDescriptor,
@@ -361,6 +362,16 @@ declare module '@polkadot/api-base/types/storage' {
             | [PolymeshPrimitivesTicker | string | Uint8Array, Bytes | string | Uint8Array]
         ) => Observable<u128>,
         [ITuple<[PolymeshPrimitivesTicker, Bytes]>]
+      >;
+      /**
+       * The list of mandatory mediators for every ticker.
+       **/
+      mandatoryMediators: AugmentedQuery<
+        ApiType,
+        (
+          arg: PolymeshPrimitivesTicker | string | Uint8Array
+        ) => Observable<BTreeSet<PolymeshPrimitivesIdentityId>>,
+        [PolymeshPrimitivesTicker]
       >;
       /**
        * All tickers that don't need an affirmation to be received by an identity.
@@ -1318,6 +1329,17 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       cddAuthForPrimaryKeyRotation: AugmentedQuery<ApiType, () => Observable<bool>, []>;
       /**
+       * All child identities of a parent (i.e ParentDID, ChildDID, true)
+       **/
+      childDid: AugmentedQuery<
+        ApiType,
+        (
+          arg1: PolymeshPrimitivesIdentityId | string | Uint8Array,
+          arg2: PolymeshPrimitivesIdentityId | string | Uint8Array
+        ) => Observable<bool>,
+        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesIdentityId]
+      >;
+      /**
        * (Target ID, claim type) (issuer,scope) -> Associated claims
        **/
       claims: AugmentedQuery<
@@ -2272,7 +2294,7 @@ declare module '@polkadot/api-base/types/storage' {
         ApiType,
         (
           arg: AccountId32 | string | Uint8Array
-        ) => Observable<Option<PolymeshRuntimeTestnetRuntimeSessionKeys>>,
+        ) => Observable<Option<PolymeshRuntimeDevelopRuntimeSessionKeys>>,
         [AccountId32]
       >;
       /**
@@ -2286,7 +2308,7 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       queuedKeys: AugmentedQuery<
         ApiType,
-        () => Observable<Vec<ITuple<[AccountId32, PolymeshRuntimeTestnetRuntimeSessionKeys]>>>,
+        () => Observable<Vec<ITuple<[AccountId32, PolymeshRuntimeDevelopRuntimeSessionKeys]>>>,
         []
       >;
       /**
@@ -2360,6 +2382,17 @@ declare module '@polkadot/api-base/types/storage' {
           arg2: u64 | AnyNumber | Uint8Array
         ) => Observable<PolymeshPrimitivesSettlementLegStatus>,
         [u64, u64]
+      >;
+      /**
+       * The status for the mediators affirmation.
+       **/
+      instructionMediatorsAffirmations: AugmentedQuery<
+        ApiType,
+        (
+          arg1: u64 | AnyNumber | Uint8Array,
+          arg2: PolymeshPrimitivesIdentityId | string | Uint8Array
+        ) => Observable<PolymeshPrimitivesSettlementMediatorAffirmationStatus>,
+        [u64, PolymeshPrimitivesIdentityId]
       >;
       /**
        * Instruction memo
@@ -2936,6 +2969,12 @@ declare module '@polkadot/api-base/types/storage' {
         ) => Observable<Option<PalletStoFundraiser>>,
         [PolymeshPrimitivesTicker, u64]
       >;
+    };
+    sudo: {
+      /**
+       * The `AccountId` of the sudo key.
+       **/
+      key: AugmentedQuery<ApiType, () => Observable<Option<AccountId32>>, []>;
     };
     system: {
       /**

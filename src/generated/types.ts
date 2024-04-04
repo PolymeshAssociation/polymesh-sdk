@@ -532,6 +532,8 @@ export enum AssetTx {
   RemoveTickerAffirmationExemption = 'asset.removeTickerAffirmationExemption',
   PreApproveTicker = 'asset.preApproveTicker',
   RemoveTickerPreApproval = 'asset.removeTickerPreApproval',
+  AddMandatoryMediators = 'asset.addMandatoryMediators',
+  RemoveMandatoryMediators = 'asset.removeMandatoryMediators',
 }
 
 export enum CapitalDistributionTx {
@@ -673,6 +675,11 @@ export enum SettlementTx {
   AffirmInstructionWithCount = 'settlement.affirmInstructionWithCount',
   RejectInstructionWithCount = 'settlement.rejectInstructionWithCount',
   WithdrawAffirmationWithCount = 'settlement.withdrawAffirmationWithCount',
+  AddInstructionWithMediators = 'settlement.addInstructionWithMediators',
+  AddAndAffirmWithMediators = 'settlement.addAndAffirmWithMediators',
+  AffirmInstructionAsMediator = 'settlement.affirmInstructionAsMediator',
+  WithdrawAffirmationAsMediator = 'settlement.withdrawAffirmationAsMediator',
+  RejectInstructionAsMediator = 'settlement.rejectInstructionAsMediator',
 }
 
 export enum StatisticsTx {

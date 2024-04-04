@@ -529,6 +529,10 @@ export type AddInstructionParams = {
    * identifier string to help differentiate instructions
    */
   memo?: string;
+  /**
+   * additional identities that must affirm the instruction
+   */
+  mediators?: (string | Identity)[];
 } & (
   | {
       /**
@@ -563,6 +567,9 @@ export enum InstructionAffirmationOperation {
   Affirm = 'Affirm',
   Withdraw = 'Withdraw',
   Reject = 'Reject',
+  AffirmAsMediator = 'AffirmAsMediator',
+  WithdrawAsMediator = 'WithdrawAsMediator',
+  RejectAsMediator = 'RejectAsMediator',
 }
 
 export type RejectInstructionParams = {
@@ -581,6 +588,10 @@ export type AffirmOrWithdrawInstructionParams = {
   portfolios?: PortfolioLike[];
 };
 
+export type AffirmAsMediatorParams = {
+  expiry?: Date;
+};
+
 export type ModifyInstructionAffirmationParams = InstructionIdParams &
   (
     | ({
@@ -589,16 +600,26 @@ export type ModifyInstructionAffirmationParams = InstructionIdParams &
           | InstructionAffirmationOperation.Withdraw;
       } & AffirmOrWithdrawInstructionParams)
     | ({
-        operation: InstructionAffirmationOperation.Reject;
+        operation:
+          | InstructionAffirmationOperation.Reject
+          | InstructionAffirmationOperation.RejectAsMediator;
       } & RejectInstructionParams)
+    | ({
+        operation: InstructionAffirmationOperation.AffirmAsMediator;
+      } & AffirmAsMediatorParams)
+    | {
+        operation:
+          | InstructionAffirmationOperation.WithdrawAsMediator
+          | InstructionAffirmationOperation.RejectAsMediator;
+      }
   );
 
-export type ExecuteManualInstructionParams = InstructionIdParams & {
+export interface ExecuteManualInstructionParams {
   /**
    * (optional) Set to `true` to skip affirmation check, useful for batch transactions
    */
   skipAffirmationCheck?: boolean;
-};
+}
 
 export interface CreateVenueParams {
   description: string;
@@ -614,6 +635,22 @@ export interface ControllerTransferParams {
    * amount of Asset tokens to transfer
    */
   amount: BigNumber;
+}
+
+export interface NftControllerTransferParams {
+  /**
+   * portfolio (or portfolio ID) from which NFTs will be transferred from
+   */
+  originPortfolio: PortfolioLike;
+  /**
+   * The NFTs to transfer
+   */
+  nfts: (Nft | BigNumber)[];
+
+  /**
+   * Optional portfolio (or portfolio ID) to which NFTs will be transferred to. Defaults to default. If specified it must be one of the callers own portfolios
+   */
+  destinationPortfolio?: PortfolioLike;
 }
 
 export type ModifyAssetParams =
@@ -1148,4 +1185,8 @@ export interface UnlinkChildParams {
 
 export interface RegisterCustomClaimTypeParams {
   name: string;
+}
+
+export interface AssetMediatorParams {
+  mediators: (Identity | string)[];
 }

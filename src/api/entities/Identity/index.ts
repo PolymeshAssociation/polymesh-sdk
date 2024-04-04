@@ -12,6 +12,7 @@ import { unlinkChildIdentity } from '~/api/procedures/unlinkChildIdentity';
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
   Account,
+  BaseAsset,
   ChildIdentity,
   Context,
   Entity,
@@ -31,6 +32,7 @@ import {
 } from '~/middleware/queries';
 import { AssetHoldersOrderBy, NftHoldersOrderBy, Query } from '~/middleware/types';
 import {
+  Asset,
   CheckRolesResult,
   DefaultPortfolio,
   DistributionWithDetails,
@@ -72,10 +74,13 @@ import {
   portfolioLikeToPortfolioId,
   stringToIdentityId,
   stringToTicker,
+  tickerToString,
   transactionPermissionsToTxGroups,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
+  asAsset,
+  asTicker,
   calculateNextKey,
   createProcedureMethod,
   getSecondaryAccountPermissions,
@@ -914,5 +919,66 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const childIdentity = new ChildIdentity({ did }, context);
 
     return childIdentity.exists();
+  }
+
+  /**
+   * Returns a list of all assets this Identity has pre-approved. These assets will not require affirmation when being received in settlements
+   */
+  public async preApprovedAssets(paginationOpts?: PaginationOptions): Promise<ResultSet<Asset>> {
+    const {
+      context,
+      context: {
+        polymeshApi: {
+          query: {
+            asset: { preApprovedTicker },
+          },
+        },
+      },
+    } = this;
+
+    const rawDid = stringToIdentityId(this.did, context);
+
+    const { entries, lastKey: next } = await requestPaginated(preApprovedTicker, {
+      arg: rawDid,
+      paginationOpts,
+    });
+
+    const data = await Promise.all(
+      entries.map(([storageKey]) => {
+        const {
+          args: [, rawTicker],
+        } = storageKey;
+        const ticker = tickerToString(rawTicker);
+
+        return asAsset(ticker, context);
+      })
+    );
+
+    return { data, next };
+  }
+
+  /**
+   * Returns whether or not this Identity has pre-approved a particular asset
+   */
+  public async isAssetPreApproved(asset: BaseAsset | string): Promise<boolean> {
+    const {
+      context,
+      context: {
+        polymeshApi: {
+          query: {
+            asset: { preApprovedTicker },
+          },
+        },
+      },
+    } = this;
+
+    const ticker = asTicker(asset);
+    const rawTicker = stringToTicker(ticker, context);
+
+    const rawDid = stringToIdentityId(this.did, context);
+
+    const rawIsApproved = await preApprovedTicker(rawDid, rawTicker);
+
+    return boolToBoolean(rawIsApproved);
   }
 }

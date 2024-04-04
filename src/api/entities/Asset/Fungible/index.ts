@@ -1,16 +1,8 @@
-import { Bytes } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { groupBy, map } from 'lodash';
 
 import { BaseAsset } from '~/api/entities/Asset/Base';
-import {
-  Context,
-  controllerTransfer,
-  Identity,
-  modifyAsset,
-  redeemTokens,
-  setVenueFiltering,
-} from '~/internal';
+import { Context, controllerTransfer, Identity, redeemTokens } from '~/internal';
 import {
   assetQuery,
   assetTransactionQuery,
@@ -22,18 +14,13 @@ import {
   EventIdentifier,
   HistoricAgentOperation,
   HistoricAssetTransaction,
-  ModifyAssetParams,
   ProcedureMethod,
   RedeemTokensParams,
   ResultSet,
-  SetVenueFilteringParams,
-  SubCallback,
-  UnsubCallback,
 } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
   balanceToBigNumber,
-  bytesToString,
   middlewareEventDetailsToEventIdentifier,
   middlewarePortfolioToPortfolio,
   stringToTicker,
@@ -81,11 +68,6 @@ export class FungibleAsset extends BaseAsset {
     this.checkpoints = new Checkpoints(this, context);
     this.corporateActions = new CorporateActions(this, context);
 
-    this.modify = createProcedureMethod(
-      { getProcedureAndArgs: args => [modifyAsset, { ticker, ...args }] },
-      context
-    );
-
     this.redeem = createProcedureMethod(
       { getProcedureAndArgs: args => [redeemTokens, { ticker, ...args }] },
       context
@@ -94,54 +76,6 @@ export class FungibleAsset extends BaseAsset {
       { getProcedureAndArgs: args => [controllerTransfer, { ticker, ...args }] },
       context
     );
-    this.setVenueFiltering = createProcedureMethod(
-      { getProcedureAndArgs: args => [setVenueFiltering, { ticker, ...args }] },
-      context
-    );
-  }
-
-  /**
-   * Modify some properties of the Asset
-   *
-   * @throws if the passed values result in no changes being made to the Asset
-   */
-  public modify: ProcedureMethod<ModifyAssetParams, FungibleAsset>;
-
-  /**
-   * Retrieve the Asset's funding round
-   *
-   * @note can be subscribed to
-   */
-  public currentFundingRound(): Promise<string | null>;
-  public currentFundingRound(callback: SubCallback<string | null>): Promise<UnsubCallback>;
-
-  // eslint-disable-next-line require-jsdoc
-  public async currentFundingRound(
-    callback?: SubCallback<string | null>
-  ): Promise<string | null | UnsubCallback> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { asset },
-        },
-      },
-      ticker,
-      context,
-    } = this;
-
-    const rawTicker = stringToTicker(ticker, context);
-
-    const assembleResult = (roundName: Bytes): string | null => bytesToString(roundName) || null;
-
-    if (callback) {
-      return asset.fundingRound(rawTicker, round => {
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
-        callback(assembleResult(round));
-      });
-    }
-
-    const fundingRound = await asset.fundingRound(rawTicker);
-    return assembleResult(fundingRound);
   }
 
   /**
@@ -264,7 +198,7 @@ export class FungibleAsset extends BaseAsset {
       )
     );
 
-    const data = nodes.map(
+    const data: HistoricAssetTransaction[] = nodes.map(
       ({
         assetId,
         amount,
@@ -274,12 +208,18 @@ export class FungibleAsset extends BaseAsset {
         eventId,
         eventIdx,
         extrinsicIdx,
+        fundingRound,
+        instructionId,
+        instructionMemo,
       }) => ({
         asset: new FungibleAsset({ ticker: assetId }, context),
         amount: new BigNumber(amount).shiftedBy(-6),
         event: eventId,
         from: optionize(middlewarePortfolioToPortfolio)(fromPortfolio, context),
         to: optionize(middlewarePortfolioToPortfolio)(toPortfolio, context),
+        fundingRound,
+        instructionId: instructionId ? new BigNumber(instructionId) : undefined,
+        instructionMemo,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         extrinsicIndex: new BigNumber(extrinsicIdx!),
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -317,9 +257,4 @@ export class FungibleAsset extends BaseAsset {
 
     return !tokenSize.isZero() && nftId.isZero();
   }
-
-  /**
-   * Enable/disable venue filtering for this Asset and/or set allowed/disallowed venues
-   */
-  public setVenueFiltering: ProcedureMethod<SetVenueFilteringParams, void>;
 }

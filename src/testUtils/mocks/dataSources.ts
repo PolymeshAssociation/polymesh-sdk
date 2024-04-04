@@ -112,9 +112,11 @@ import {
   PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesSecondaryKeySignatory,
   PolymeshPrimitivesSettlementAffirmationStatus,
+  PolymeshPrimitivesSettlementAssetCount,
   PolymeshPrimitivesSettlementInstruction,
   PolymeshPrimitivesSettlementInstructionStatus,
   PolymeshPrimitivesSettlementLeg,
+  PolymeshPrimitivesSettlementMediatorAffirmationStatus,
   PolymeshPrimitivesSettlementSettlementType,
   PolymeshPrimitivesSettlementVenueType,
   PolymeshPrimitivesStatisticsStat2ndKey,
@@ -151,13 +153,16 @@ import { HistoricPolyxTransaction } from '~/api/entities/Account/types';
 import { Account, AuthorizationRequest, ChildIdentity, Context, Identity } from '~/internal';
 import { BalanceTypeEnum, CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import {
+  AffirmationCount,
   AssetComplianceResult,
+  AssetCount,
   AuthorizationType as MeshAuthorizationType,
   CanTransferGranularReturn,
   CanTransferResult,
   CddStatus,
   ComplianceRequirementResult,
   ConditionResult,
+  ExecuteInstructionInfo,
   GranularCanTransferResult,
   Moment,
   PortfolioValidityResult,
@@ -791,6 +796,7 @@ function configureContext(opts: ContextOptions): void {
       checkPermissions: jest.fn().mockResolvedValue(opts.checkAssetPermissions),
     },
     areSecondaryAccountsFrozen: jest.fn().mockResolvedValue(opts.areSecondaryAccountsFrozen),
+    isTickerPreApproved: jest.fn(),
     isEqual: jest.fn().mockReturnValue(opts.signingIdentityIsEqual),
   };
   opts.withSigningManager
@@ -875,6 +881,7 @@ function configureContext(opts: ContextOptions): void {
     supportsSubsidy: jest.fn().mockReturnValue(opts.supportsSubsidy),
     createType: jest.fn() as jest.Mock<unknown, [unknown]>,
     getPolyxTransactions: jest.fn().mockResolvedValue(opts.getPolyxTransactions),
+    assertHasSigningAddress: jest.fn(),
   } as unknown as MockContext;
 
   contextInstance.clone = jest.fn().mockReturnValue(contextInstance);
@@ -1149,6 +1156,53 @@ export function cleanup(): void {
 
 /**
  * @hidden
+ */
+function isCodec<T extends Codec>(codec: any): codec is T {
+  return !!codec?._isCodec;
+}
+
+/**
+ * @hidden
+ */
+const createMockCodec = <T extends Codec>(codec: unknown, isEmpty: boolean): MockCodec<T> => {
+  if (isCodec<T>(codec)) {
+    return codec as MockCodec<T>;
+  }
+  const clone = cloneDeep(codec) as MockCodec<Mutable<T>>;
+
+  (clone as any)._isCodec = true;
+  clone.isEmpty = isEmpty;
+  clone.eq = jest.fn();
+
+  return clone;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+const createMockStringCodec = <T extends Codec>(value?: string | T): MockCodec<T> => {
+  if (isCodec<T>(value)) {
+    return value as MockCodec<T>;
+  }
+
+  return createMockCodec(
+    {
+      toString: () => value,
+    },
+    value === undefined
+  );
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockHash = (value?: string | Hash): MockCodec<Hash> =>
+  createMockStringCodec(value);
+
+/**
+ * @hidden
  * Reinitialize mocks
  */
 export function reset(): void {
@@ -1192,36 +1246,50 @@ export function createTxMock<
     meta = { args: [] },
   } = opts;
 
+  const mockHandleSend = (cb: StatusCallback): Promise<unknown> => {
+    if (autoResolve === MockTxStatus.Rejected) {
+      return Promise.reject(new Error('Cancelled'));
+    }
+
+    const unsubCallback = jest.fn();
+
+    txMocksData.set(runtimeModule[tx], {
+      statusCallback: cb,
+      unsubCallback,
+      resolved: !!autoResolve,
+      status: null as unknown as MockTxStatus,
+    });
+
+    if (autoResolve) {
+      process.nextTick(() => cb(statusToReceipt(autoResolve)));
+    }
+
+    return new Promise(resolve => setImmediate(() => resolve(unsubCallback)));
+  };
+
+  const mockSend = jest.fn().mockImplementation((cb: StatusCallback) => {
+    return mockHandleSend(cb);
+  });
+
+  const mockSignAndSend = jest.fn().mockImplementation((_, __, cb: StatusCallback) => {
+    return mockHandleSend(cb);
+  });
+
   const transaction = jest.fn().mockReturnValue({
     method: tx, // should be a `Call` object, but this is enough for testing
     hash: tx,
-    signAndSend: jest.fn().mockImplementation((_, __, cb: StatusCallback) => {
-      if (autoResolve === MockTxStatus.Rejected) {
-        return Promise.reject(new Error('Cancelled'));
-      }
-
-      const unsubCallback = jest.fn();
-
-      txMocksData.set(runtimeModule[tx], {
-        statusCallback: cb,
-        unsubCallback,
-        resolved: !!autoResolve,
-        status: null as unknown as MockTxStatus,
-      });
-
-      if (autoResolve) {
-        process.nextTick(() => cb(statusToReceipt(autoResolve)));
-      }
-
-      return new Promise(resolve => setImmediate(() => resolve(unsubCallback)));
-    }),
+    signAndSend: mockSignAndSend,
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
     paymentInfo: jest.fn().mockResolvedValue({ partialFee: gas }),
+    toHex: jest.fn().mockReturnValue('0x02'),
   }) as unknown as Extrinsics[ModuleName][TransactionName];
 
   (transaction as any).section = mod;
   (transaction as any).method = tx;
   (transaction as any).meta = meta;
+  (transaction as any).addSignature = jest.fn();
+  (transaction as any).send = mockSend;
+  (transaction as any).hash = createMockHash('0x01');
 
   runtimeModule[tx] = transaction;
 
@@ -1661,34 +1729,11 @@ export const setRuntimeVersion = (args: unknown): void => {
 /**
  * @hidden
  */
-function isCodec<T extends Codec>(codec: any): codec is T {
-  return !!codec?._isCodec;
-}
-
-/**
- * @hidden
- */
 function isOption<T extends Codec>(codec: any): codec is Option<T> {
   return typeof codec?.unwrap === 'function';
 }
 
 export type MockCodec<C extends Codec> = C & { eq: jest.Mock };
-
-/**
- * @hidden
- */
-const createMockCodec = <T extends Codec>(codec: unknown, isEmpty: boolean): MockCodec<T> => {
-  if (isCodec<T>(codec)) {
-    return codec as MockCodec<T>;
-  }
-  const clone = cloneDeep(codec) as MockCodec<Mutable<T>>;
-
-  (clone as any)._isCodec = true;
-  clone.isEmpty = isEmpty;
-  clone.eq = jest.fn();
-
-  return clone;
-};
 
 export const createMockTupleCodec = <T extends [...Codec[]]>(
   tup?: ITuple<T> | Readonly<[...unknown[]]>
@@ -1698,23 +1743,6 @@ export const createMockTupleCodec = <T extends [...Codec[]]>(
   }
 
   return createMockCodec<ITuple<T>>(tup, !tup);
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-const createMockStringCodec = <T extends Codec>(value?: string | T): MockCodec<T> => {
-  if (isCodec<T>(value)) {
-    return value as MockCodec<T>;
-  }
-
-  return createMockCodec(
-    {
-      toString: () => value,
-    },
-    value === undefined
-  );
 };
 
 /**
@@ -2033,13 +2061,6 @@ export const createMockPermill = (value?: BigNumber | Permill): MockCodec<Permil
  */
 export const createMockBytes = (value?: string | Bytes): MockCodec<Bytes> =>
   createMockU8aCodec(value);
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockHash = (value?: string | Hash): MockCodec<Hash> =>
-  createMockStringCodec(value);
 
 /**
  * @hidden
@@ -4357,5 +4378,163 @@ export const createMockScheduleSpec = (scheduleSpec?: {
       remaining: createMockU32(remaining),
     },
     !scheduleSpec
+  );
+};
+
+/**
+ * @hidden
+ *  NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockExtrinsicsEra = (era?: {
+  current: u32 | Parameters<typeof createMockU32>[0];
+  period: u32 | Parameters<typeof createMockU32>[0];
+}): MockCodec<any> => {
+  const { current, period } = era ?? {
+    current: createMockU32(),
+    period: createMockU32(),
+  };
+
+  return createMockCodec(
+    {
+      current,
+      period,
+    },
+    !era
+  );
+};
+
+/**
+ * @hidden
+ *  NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockSigningPayload = (mockGetters?: {
+  toPayload: () => string;
+  toRaw: () => string;
+}): MockCodec<any> => {
+  const { toPayload, toRaw } = mockGetters ?? {
+    toPayload: () => 'fakePayload',
+    toRaw: () => 'fakeRawPayload',
+  };
+
+  return createMockCodec(
+    {
+      toPayload,
+      toRaw,
+    },
+    !mockGetters
+  );
+};
+
+export const createMockAffirmationExpiry = (
+  affirmExpiry: Option<u64> | Parameters<typeof createMockU64>
+): MockCodec<any> => {
+  const expiry = affirmExpiry ?? dsMockUtils.createMockOption();
+
+  return createMockCodec({ expiry }, !affirmExpiry);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockMediatorAffirmationStatus = (
+  status?:
+    | 'Unknown'
+    | 'Pending'
+    | { Affirmed: MockCodec<any> }
+    | PolymeshPrimitivesSettlementMediatorAffirmationStatus
+): MockCodec<PolymeshPrimitivesSettlementMediatorAffirmationStatus> => {
+  if (isCodec<PolymeshPrimitivesSettlementMediatorAffirmationStatus>(status)) {
+    return status as MockCodec<PolymeshPrimitivesSettlementMediatorAffirmationStatus>;
+  }
+
+  return createMockEnum<PolymeshPrimitivesSettlementMediatorAffirmationStatus>(status);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockExecuteInstructionInfo = (
+  info:
+    | {
+        fungibleTokens: u32 | Parameters<typeof createMockU32>[0];
+        nonFungibleTokens: u32 | Parameters<typeof createMockU32>[0];
+        offChainAssets: u32 | Parameters<typeof createMockU32>[0];
+      }
+    | ExecuteInstructionInfo
+): MockCodec<ExecuteInstructionInfo> => {
+  const { fungibleTokens, nonFungibleTokens, offChainAssets } = info ?? {
+    fungibleTokens: createMockU32(),
+    nonFungibleToken: createMockU32(),
+    offChainAssets: createMockU32(),
+  };
+
+  return createMockCodec({ fungibleTokens, nonFungibleTokens, offChainAssets }, !info);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAssetCount = (
+  assetCount?:
+    | {
+        fungible: u32 | Parameters<typeof createMockU32>[0];
+        nonFungible: u32 | Parameters<typeof createMockU32>[0];
+        offChain: u32 | Parameters<typeof createMockU32>[0];
+      }
+    | PolymeshPrimitivesSettlementAssetCount
+): MockCodec<PolymeshPrimitivesSettlementAssetCount> => {
+  const { fungible, nonFungible, offChain } = assetCount ?? {
+    fungible: createMockU32(),
+    nonFungible: createMockU32(),
+    offChain: createMockU32(),
+  };
+  return createMockCodec({ fungible, nonFungible, offChain }, !assetCount);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockRpcAssetCount = (
+  assetCount?:
+    | {
+        fungible: u32 | Parameters<typeof createMockU32>[0];
+        non_fungible: u32 | Parameters<typeof createMockU32>[0];
+        off_chain: u32 | Parameters<typeof createMockU32>[0];
+      }
+    | AssetCount
+): MockCodec<AssetCount> => {
+  const { fungible, non_fungible, off_chain } = assetCount ?? {
+    fungible: createMockU32(),
+    non_fungible: createMockU32(),
+    off_chain: createMockU32(),
+  };
+  return createMockCodec({ fungible, non_fungible, off_chain }, !assetCount);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAffirmationCount = (
+  affirmCount?:
+    | {
+        sender_asset_count: AssetCount | Parameters<typeof createMockAssetCount>[0];
+        receiver_asset_count: AssetCount | Parameters<typeof createMockAssetCount>[0];
+        offchain_count: u32 | Parameters<typeof createMockU32>[0];
+      }
+    | AffirmationCount
+): MockCodec<AffirmationCount> => {
+  const { sender_asset_count, receiver_asset_count, offchain_count } = affirmCount ?? {
+    sender_asset_count: createMockAssetCount(),
+    receiver_asset_count: createMockAssetCount(),
+    offchain_count: createMockU32(),
+  };
+  return createMockCodec(
+    { sender_asset_count, receiver_asset_count, offchain_count },
+    !affirmCount
   );
 };

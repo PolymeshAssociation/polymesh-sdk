@@ -12,24 +12,34 @@ import { Documents } from '~/api/entities/Asset/Base/Documents';
 import { Metadata } from '~/api/entities/Asset/Base/Metadata';
 import { Permissions } from '~/api/entities/Asset/Base/Permissions';
 import {
+  addAssetMediators,
   Context,
   Entity,
   Identity,
+  modifyAsset,
   PolymeshError,
+  removeAssetMediators,
+  setVenueFiltering,
   toggleFreezeTransfers,
   transferAssetOwnership,
+  Venue,
 } from '~/internal';
 import {
+  Asset,
   AssetDetails,
+  AssetMediatorParams,
   AuthorizationRequest,
   ErrorCode,
+  ModifyAssetParams,
   NoArgsProcedureMethod,
   ProcedureMethod,
   SecurityIdentifier,
+  SetVenueFilteringParams,
   SubCallback,
   TransferAssetOwnershipParams,
   UniqueIdentifiers,
   UnsubCallback,
+  VenueFilteringDetails,
 } from '~/types';
 import { tickerToDid } from '~/utils';
 import {
@@ -39,8 +49,10 @@ import {
   bigNumberToU32,
   boolToBoolean,
   bytesToString,
+  identitiesSetToIdentities,
   identityIdToString,
   stringToTicker,
+  u64ToBigNumber,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
@@ -76,6 +88,11 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
   public transferOwnership: ProcedureMethod<TransferAssetOwnershipParams, AuthorizationRequest>;
 
   /**
+   * Enable/disable venue filtering for this Asset and/or set allowed/disallowed venues
+   */
+  public setVenueFiltering: ProcedureMethod<SetVenueFilteringParams, void>;
+
+  /**
    * @hidden
    * Check if a value is of type {@link UniqueIdentifiers}
    */
@@ -84,6 +101,13 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
 
     return typeof ticker === 'string';
   }
+
+  /**
+   * Modify some properties of the Asset
+   *
+   * @throws if the passed values result in no changes being made to the Asset
+   */
+  public modify: ProcedureMethod<ModifyAssetParams, Asset>;
 
   /**
    * @hidden
@@ -110,6 +134,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
       },
       context
     );
+
     this.unfreeze = createProcedureMethod(
       {
         getProcedureAndArgs: () => [toggleFreezeTransfers, { ticker, freeze: false }],
@@ -120,6 +145,30 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
 
     this.transferOwnership = createProcedureMethod(
       { getProcedureAndArgs: args => [transferAssetOwnership, { ticker, ...args }] },
+      context
+    );
+
+    this.addRequiredMediators = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [addAssetMediators, { asset: this, ...args }],
+      },
+      context
+    );
+
+    this.removeRequiredMediators = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [removeAssetMediators, { asset: this, ...args }],
+      },
+      context
+    );
+
+    this.setVenueFiltering = createProcedureMethod(
+      { getProcedureAndArgs: args => [setVenueFiltering, { ticker, ...args }] },
+      context
+    );
+
+    this.modify = createProcedureMethod(
+      { getProcedureAndArgs: args => [modifyAsset, { ticker, ...args }] },
       context
     );
   }
@@ -133,6 +182,16 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
    * Unfreeze transfers of the Asset
    */
   public unfreeze: NoArgsProcedureMethod<void>;
+
+  /**
+   * Add required mediators. Mediators must approve any trades involving the asset
+   */
+  public addRequiredMediators: ProcedureMethod<AssetMediatorParams, void>;
+
+  /**
+   * Remove required mediators
+   */
+  public removeRequiredMediators: ProcedureMethod<AssetMediatorParams, void>;
 
   /**
    * Retrieve the Asset's identifiers list
@@ -297,6 +356,95 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
       namePromise,
     ]);
     return assembleResult(token, groups, name);
+  }
+
+  /**
+   * Get required Asset mediators. These Identities must approve any Instruction involving the asset
+   */
+  public async getRequiredMediators(): Promise<Identity[]> {
+    const {
+      context,
+      ticker,
+      context: {
+        polymeshApi: { query },
+      },
+    } = this;
+
+    const rawTicker = stringToTicker(ticker, context);
+
+    const rawMediators = await query.asset.mandatoryMediators(rawTicker);
+
+    return identitiesSetToIdentities(rawMediators, context);
+  }
+
+  /**
+   * Get venue filtering details
+   */
+  public async getVenueFilteringDetails(): Promise<VenueFilteringDetails> {
+    const {
+      ticker,
+      context,
+      context: {
+        polymeshApi: { query },
+      },
+    } = this;
+
+    const rawTicker = stringToTicker(ticker, context);
+    const [rawIsEnabled, venueEntries] = await Promise.all([
+      query.settlement.venueFiltering(rawTicker),
+      query.settlement.venueAllowList.entries(rawTicker),
+    ]);
+
+    const allowedVenues = venueEntries.map(([key]) => {
+      const rawId = key.args[1];
+      const id = u64ToBigNumber(rawId);
+
+      return new Venue({ id }, context);
+    });
+
+    const isEnabled = boolToBoolean(rawIsEnabled);
+
+    return {
+      isEnabled,
+      allowedVenues,
+    };
+  }
+
+  /**
+   * Retrieve the Asset's funding round
+   *
+   * @note can be subscribed to
+   */
+  public currentFundingRound(): Promise<string | null>;
+  public currentFundingRound(callback: SubCallback<string | null>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async currentFundingRound(
+    callback?: SubCallback<string | null>
+  ): Promise<string | null | UnsubCallback> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { asset },
+        },
+      },
+      ticker,
+      context,
+    } = this;
+
+    const rawTicker = stringToTicker(ticker, context);
+
+    const assembleResult = (roundName: Bytes): string | null => bytesToString(roundName) || null;
+
+    if (callback) {
+      return asset.fundingRound(rawTicker, round => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
+        callback(assembleResult(round));
+      });
+    }
+
+    const fundingRound = await asset.fundingRound(rawTicker);
+    return assembleResult(fundingRound);
   }
 
   /**

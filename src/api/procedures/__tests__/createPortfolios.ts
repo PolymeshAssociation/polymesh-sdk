@@ -6,21 +6,27 @@ import { when } from 'jest-when';
 
 import {
   createPortfoliosResolver,
+  getAuthorization,
   Params,
   prepareCreatePortfolios,
 } from '~/api/procedures/createPortfolios';
 import { Context, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
 describe('createPortfolios procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToBytesSpy: jest.SpyInstance<Bytes, [string, Context]>;
+  let stringToIdentityIdSpy: jest.SpyInstance<PolymeshPrimitivesIdentityId, [string, Context]>;
+  let rawOwnerDid: PolymeshPrimitivesIdentityId;
   let getPortfolioIdsByNameSpy: jest.SpyInstance;
   let newPortfolioName: string;
   let rawNewPortfolioName: Bytes;
+
+  const ownerDid = 'someDid';
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -32,13 +38,17 @@ describe('createPortfolios procedure', () => {
 
     newPortfolioName = 'newPortfolioName';
     rawNewPortfolioName = dsMockUtils.createMockBytes(newPortfolioName);
+    stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
+    rawOwnerDid = dsMockUtils.createMockIdentityId(ownerDid);
     when(stringToBytesSpy)
       .calledWith(newPortfolioName, mockContext)
       .mockReturnValue(rawNewPortfolioName);
+
+    when(stringToIdentityIdSpy).calledWith(ownerDid, mockContext).mockReturnValue(rawOwnerDid);
   });
 
   afterEach(() => {
@@ -57,7 +67,7 @@ describe('createPortfolios procedure', () => {
     getPortfolioIdsByNameSpy.mockResolvedValue([new BigNumber(1)]);
 
     return expect(
-      prepareCreatePortfolios.call(proc, { names: [newPortfolioName] })
+      prepareCreatePortfolios.call(proc, { portfolios: [{ name: newPortfolioName }] })
     ).rejects.toThrow('There already exist Portfolios with some of the given names');
   });
 
@@ -66,7 +76,9 @@ describe('createPortfolios procedure', () => {
     const createPortfolioTransaction = dsMockUtils.createTxMock('portfolio', 'createPortfolio');
     getPortfolioIdsByNameSpy.mockResolvedValue([null]);
 
-    const result = await prepareCreatePortfolios.call(proc, { names: [newPortfolioName] });
+    const result = await prepareCreatePortfolios.call(proc, {
+      portfolios: [{ name: newPortfolioName }],
+    });
 
     expect(result).toEqual({
       transactions: [
@@ -76,6 +88,54 @@ describe('createPortfolios procedure', () => {
         },
       ],
       resolver: expect.any(Function),
+    });
+  });
+
+  it('should return a create portfolio transaction spec for createCustodyPortfolio', async () => {
+    const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio[]>(mockContext);
+    const createCustodyPortfolioTransaction = dsMockUtils.createTxMock(
+      'portfolio',
+      'createCustodyPortfolio'
+    );
+    getPortfolioIdsByNameSpy.mockResolvedValue([null]);
+
+    const result = await prepareCreatePortfolios.call(proc, {
+      portfolios: [{ name: newPortfolioName, ownerDid }],
+    });
+
+    expect(result).toEqual({
+      transactions: [
+        {
+          transaction: createCustodyPortfolioTransaction,
+          args: [rawOwnerDid, rawNewPortfolioName],
+        },
+      ],
+      resolver: expect.any(Function),
+    });
+  });
+
+  describe('getAuthorization', () => {
+    it('should return the appropriate roles and permissions', () => {
+      const args: Params = { portfolios: [{ name: newPortfolioName }] };
+
+      const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio[]>(mockContext);
+      const boundFunc = getAuthorization.bind(proc);
+
+      expect(boundFunc(args)).toEqual({
+        permissions: {
+          assets: [],
+          transactions: [TxTags.portfolio.CreatePortfolio],
+          portfolios: [],
+        },
+      });
+
+      expect(boundFunc({ portfolios: [{ name: newPortfolioName, ownerDid }] })).toEqual({
+        permissions: {
+          assets: [],
+          transactions: [TxTags.portfolio.CreateCustodyPortfolio],
+          portfolios: [],
+        },
+      });
     });
   });
 });

@@ -16,12 +16,12 @@ import {
 import { tickerExternalAgentActionsQuery, tickerExternalAgentsQuery } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import {
+  Asset,
   AssetWithGroup,
   CheckPermissionsResult,
   ErrorCode,
   EventIdentifier,
   ModuleName,
-  NftCollection,
   PermissionType,
   ProcedureMethod,
   ResultSet,
@@ -315,11 +315,7 @@ export class AssetPermissions extends Namespace<Identity> {
    * @note uses the middlewareV2
    * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
    */
-  public async enabledAt({
-    asset,
-  }: {
-    asset: string | FungibleAsset | NftCollection;
-  }): Promise<EventIdentifier | null> {
+  public async enabledAt({ asset }: { asset: string | Asset }): Promise<EventIdentifier | null> {
     const { context } = this;
     const ticker = asTicker(asset);
 

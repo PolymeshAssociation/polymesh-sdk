@@ -1,5 +1,7 @@
 import { createPortfolioTransformer } from '~/api/entities/Venue';
 import {
+  allowIdentityToCreatePortfolios,
+  AllowIdentityToCreatePortfoliosParams,
   attestPrimaryKeyRotation,
   AuthorizationRequest,
   ChildIdentity,
@@ -9,6 +11,8 @@ import {
   Identity,
   NumberedPortfolio,
   registerIdentity,
+  revokeIdentityToCreatePortfolios,
+  RevokeIdentityToCreatePortfoliosParams,
   rotatePrimaryKey,
 } from '~/internal';
 import {
@@ -18,7 +22,8 @@ import {
   RegisterIdentityParams,
   RotatePrimaryKeyParams,
 } from '~/types';
-import { asIdentity, createProcedureMethod } from '~/utils/internal';
+import { identityIdToString } from '~/utils/conversion';
+import { asIdentity, assertIdentityExists, createProcedureMethod } from '~/utils/internal';
 
 /**
  * Handles all Identity related functionality
@@ -47,17 +52,12 @@ export class Identities {
       context
     );
 
-    this.createPortfolio = createProcedureMethod<
-      { name: string },
-      { names: string[] },
-      NumberedPortfolio[],
-      NumberedPortfolio
-    >(
+    this.createPortfolio = createProcedureMethod(
       {
         getProcedureAndArgs: args => [
           createPortfolios,
           {
-            names: [args.name],
+            portfolios: [{ name: args.name, ownerDid: args.ownerDid }],
           },
         ],
         transformer: createPortfolioTransformer,
@@ -67,7 +67,10 @@ export class Identities {
 
     this.createPortfolios = createProcedureMethod(
       {
-        getProcedureAndArgs: args => [createPortfolios, args],
+        getProcedureAndArgs: args => [
+          createPortfolios,
+          { portfolios: args.names.map(name => ({ name, ownerDid: args.ownerDid })) },
+        ],
       },
       context
     );
@@ -76,6 +79,16 @@ export class Identities {
       {
         getProcedureAndArgs: args => [createChildIdentity, args],
       },
+      context
+    );
+
+    this.allowIdentityToCreatePortfolios = createProcedureMethod(
+      { getProcedureAndArgs: args => [allowIdentityToCreatePortfolios, args] },
+      context
+    );
+
+    this.revokeIdentityToCreatePortfolios = createProcedureMethod(
+      { getProcedureAndArgs: args => [revokeIdentityToCreatePortfolios, args] },
       context
     );
   }
@@ -120,13 +133,22 @@ export class Identities {
 
   /**
    * Create a new Portfolio under the ownership of the signing Identity
+   * @note the `ownerDid` is optional. If provided portfolios will be created as Custody Portfolios under the `ownerDid`
    */
-  public createPortfolio: ProcedureMethod<{ name: string }, NumberedPortfolio[], NumberedPortfolio>;
+  public createPortfolio: ProcedureMethod<
+    { name: string; ownerDid?: string },
+    NumberedPortfolio[],
+    NumberedPortfolio
+  >;
 
   /**
    * Creates a set of new Portfolios under the ownership of the signing Identity
+   * @note the `ownerDid` is optional. If provided portfolios will be created as Custody Portfolios under the `ownerDid`
    */
-  public createPortfolios: ProcedureMethod<{ names: string[] }, NumberedPortfolio[]>;
+  public createPortfolios: ProcedureMethod<
+    { names: string[]; ownerDid?: string },
+    NumberedPortfolio[]
+  >;
 
   /**
    * Create an Identity instance from a DID
@@ -165,4 +187,55 @@ export class Identities {
    *  - the signing Identity is already a child of some other identity
    */
   public createChild: ProcedureMethod<CreateChildIdentityParams, ChildIdentity>;
+
+  /**
+   * Gives permission to the Identity to create Portfolios on behalf of the signing Identity
+   *
+   * @throws if
+   *  - the provided Identity already has permissions to create portfolios for signing Identity
+   *  - the provided Identity does not exist
+   */
+  public allowIdentityToCreatePortfolios: ProcedureMethod<
+    AllowIdentityToCreatePortfoliosParams,
+    void
+  >;
+
+  /**
+   * Revokes permission from the Identity to create Portfolios on behalf of the signing Identity
+   *
+   * @throws if
+   *  - the provided Identity already does not have permissions to create portfolios for signing Identity
+   *  - the provided Identity does not exist
+   */
+  public revokeIdentityToCreatePortfolios: ProcedureMethod<
+    RevokeIdentityToCreatePortfoliosParams,
+    void
+  >;
+
+  /**
+   * Returns a list of allowed custodian did(s) for Identity
+   * @throws if
+   * - the provided Identity does not exist
+   */
+  public async getAllowedCustodians(did: string | Identity): Promise<string[]> {
+    const {
+      context: {
+        polymeshApi: { query },
+      },
+    } = this;
+
+    const identity = asIdentity(did, this.context);
+
+    await assertIdentityExists(identity);
+
+    const custodians = await query.portfolio.allowedCustodians.entries(did.toString());
+
+    return custodians.map(([storageKey]) => {
+      const {
+        args: [, custodianIdentityId],
+      } = storageKey;
+
+      return identityIdToString(custodianIdentityId);
+    });
+  }
 }
