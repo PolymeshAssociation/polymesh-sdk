@@ -5,9 +5,9 @@ import { Mocked } from '~/testUtils/types';
 import { CreateConfidentialAccountParams } from '~/types';
 
 jest.mock(
-  '~/api/entities/confidential/ConfidentialAccount',
+  '~/api/entities/ConfidentialAccount',
   require('~/testUtils/mocks/entities').mockConfidentialAccountModule(
-    '~/api/entities/confidential/ConfidentialAccount'
+    '~/api/entities/ConfidentialAccount'
   )
 );
 

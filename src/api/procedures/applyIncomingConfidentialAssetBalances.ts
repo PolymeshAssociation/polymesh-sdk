@@ -1,13 +1,16 @@
+import { ErrorCode } from '@polymeshassociation/polymesh-sdk/types';
+import { TransactionSpec } from '@polymeshassociation/polymesh-sdk/types/internal';
 import { BigNumber } from 'bignumber.js';
 
-import { PolymeshError, Procedure } from '~/internal';
+import { ConfidentialProcedure } from '~/base/ConfidentialProcedure';
+import { PolymeshError } from '~/internal';
 import {
   ApplyIncomingConfidentialAssetBalancesParams,
   ConfidentialAccount,
-  ErrorCode,
+  ConfidentialProcedureAuthorization,
   TxTags,
 } from '~/types';
-import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
+import { ExtrinsicParams } from '~/types/internal';
 import { bigNumberToU16 } from '~/utils/conversion';
 import { asConfidentialAccount } from '~/utils/internal';
 
@@ -15,7 +18,7 @@ import { asConfidentialAccount } from '~/utils/internal';
  * @hidden
  */
 export async function prepareApplyIncomingConfidentialAssetBalances(
-  this: Procedure<ApplyIncomingConfidentialAssetBalancesParams, ConfidentialAccount>,
+  this: ConfidentialProcedure<ApplyIncomingConfidentialAssetBalancesParams, ConfidentialAccount>,
   args: ApplyIncomingConfidentialAssetBalancesParams
 ): Promise<
   TransactionSpec<
@@ -76,8 +79,8 @@ export async function prepareApplyIncomingConfidentialAssetBalances(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<ApplyIncomingConfidentialAssetBalancesParams, ConfidentialAccount>
-): ProcedureAuthorization {
+  this: ConfidentialProcedure<ApplyIncomingConfidentialAssetBalancesParams, ConfidentialAccount>
+): ConfidentialProcedureAuthorization {
   return {
     permissions: {
       transactions: [TxTags.confidentialAsset.ApplyIncomingBalances],
@@ -90,7 +93,7 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const applyIncomingConfidentialAssetBalances = (): Procedure<
+export const applyIncomingConfidentialAssetBalances = (): ConfidentialProcedure<
   ApplyIncomingConfidentialAssetBalancesParams,
   ConfidentialAccount
-> => new Procedure(prepareApplyIncomingConfidentialAssetBalances, getAuthorization);
+> => new ConfidentialProcedure(prepareApplyIncomingConfidentialAssetBalances, getAuthorization);

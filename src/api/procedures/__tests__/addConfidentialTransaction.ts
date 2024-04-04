@@ -9,6 +9,10 @@ import {
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
+import { ErrorCode, TickerReservationStatus } from '@polymeshassociation/polymesh-sdk/types';
+import { PolymeshTx } from '@polymeshassociation/polymesh-sdk/types/internal';
+import * as utilsPublicConversionModule from '@polymeshassociation/polymesh-sdk/utils/conversion';
+import * as utilsInternalModule from '@polymeshassociation/polymesh-sdk/utils/internal';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -21,44 +25,38 @@ import {
 import { Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import {
-  ConfidentialTransaction,
-  ErrorCode,
-  RoleType,
-  TickerReservationStatus,
-  TxTags,
-} from '~/types';
-import { PolymeshTx } from '~/types/internal';
+import { ConfidentialTransaction, RoleType, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
-import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
-  '~/api/entities/confidential/ConfidentialVenue',
+  '~/api/entities/ConfidentialVenue',
   require('~/testUtils/mocks/entities').mockConfidentialVenueModule(
-    '~/api/entities/confidential/ConfidentialVenue'
+    '~/api/entities/ConfidentialVenue'
   )
 );
 
 jest.mock(
-  '~/api/entities/confidential/ConfidentialAsset',
+  '~/api/entities/ConfidentialAsset',
   require('~/testUtils/mocks/entities').mockConfidentialAssetModule(
-    '~/api/entities/confidential/ConfidentialAsset'
+    '~/api/entities/ConfidentialAsset'
   )
 );
 
 jest.mock(
-  '~/api/entities/confidential/ConfidentialAccount',
+  '~/api/entities/ConfidentialAccount',
   require('~/testUtils/mocks/entities').mockConfidentialAccountModule(
-    '~/api/entities/confidential/ConfidentialAccount'
+    '~/api/entities/ConfidentialAccount'
   )
 );
 
 jest.mock(
-  '~/api/entities/Identity',
-  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+  '@polymeshassociation/polymesh-sdk/api/entities/Identity',
+  require('~/testUtils/mocks/entities').mockIdentityModule(
+    '@polymeshassociation/polymesh-sdk/api/entities/Identity'
+  )
 );
 
-describe('addTransaction procedure', () => {
+describe('addConfidentialTransaction procedure', () => {
   let mockContext: Mocked<Context>;
   let getCustodianMock: jest.Mock;
   let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
@@ -114,9 +112,9 @@ describe('addTransaction procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     getCustodianMock = jest.fn();
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
-    stringToInstructionMemoSpy = jest.spyOn(utilsConversionModule, 'stringToMemo');
+    stringToTickerSpy = jest.spyOn(utilsPublicConversionModule, 'stringToTicker');
+    bigNumberToU64Spy = jest.spyOn(utilsPublicConversionModule, 'bigNumberToU64');
+    stringToInstructionMemoSpy = jest.spyOn(utilsPublicConversionModule, 'stringToMemo');
     confidentialLegToMeshLegSpy = jest.spyOn(utilsConversionModule, 'confidentialLegToMeshLeg');
 
     venueId = new BigNumber(1);
@@ -373,7 +371,7 @@ describe('addTransaction procedure', () => {
 
     const expectedError = new PolymeshError({
       code: ErrorCode.DataUnavailable,
-      message: 'The Identity does not exist',
+      message: 'The identity does not exists',
     });
     const legs = Array(2).fill({
       sender,

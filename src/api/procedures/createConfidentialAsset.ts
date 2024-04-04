@@ -1,19 +1,21 @@
 import { ISubmittableResult } from '@polkadot/types/types';
+import { TransactionSpec } from '@polymeshassociation/polymesh-sdk/types/internal';
+import {
+  asIdentity,
+  assertIdentityExists,
+  filterEventRecords,
+} from '@polymeshassociation/polymesh-sdk/utils/internal';
 
-import { ConfidentialAsset, Context, Procedure } from '~/internal';
+import { ConfidentialProcedure } from '~/base/ConfidentialProcedure';
+import { ConfidentialAsset, Context } from '~/internal';
 import { CreateConfidentialAssetParams, TxTags } from '~/types';
-import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
+import { ExtrinsicParams } from '~/types/internal';
 import {
   auditorsToConfidentialAuditors,
   meshConfidentialAssetToAssetId,
   stringToBytes,
 } from '~/utils/conversion';
-import {
-  asConfidentialAccount,
-  asIdentity,
-  assertIdentityExists,
-  filterEventRecords,
-} from '~/utils/internal';
+import { asConfidentialAccount } from '~/utils/internal';
 
 /**
  * @hidden
@@ -36,7 +38,7 @@ export const createConfidentialAssetResolver =
  * @hidden
  */
 export async function prepareCreateConfidentialAsset(
-  this: Procedure<Params, ConfidentialAsset>,
+  this: ConfidentialProcedure<Params, ConfidentialAsset>,
   args: Params
 ): Promise<
   TransactionSpec<ConfidentialAsset, ExtrinsicParams<'confidentialAsset', 'createAsset'>>
@@ -69,8 +71,8 @@ export async function prepareCreateConfidentialAsset(
 /**
  * @hidden
  */
-export const createConfidentialAsset = (): Procedure<Params, ConfidentialAsset> =>
-  new Procedure(prepareCreateConfidentialAsset, {
+export const createConfidentialAsset = (): ConfidentialProcedure<Params, ConfidentialAsset> =>
+  new ConfidentialProcedure(prepareCreateConfidentialAsset, {
     permissions: {
       transactions: [TxTags.confidentialAsset.CreateAsset],
       assets: [],

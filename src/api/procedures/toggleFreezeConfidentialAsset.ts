@@ -1,7 +1,12 @@
-import { ConfidentialAsset, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, RoleType, TxTags } from '~/types';
-import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { booleanToBool, serializeConfidentialAssetId } from '~/utils/conversion';
+import { ErrorCode } from '@polymeshassociation/polymesh-sdk/types';
+import { TransactionSpec } from '@polymeshassociation/polymesh-sdk/types/internal';
+import { booleanToBool } from '@polymeshassociation/polymesh-sdk/utils/conversion';
+
+import { ConfidentialProcedure } from '~/base/ConfidentialProcedure';
+import { ConfidentialAsset, PolymeshError } from '~/internal';
+import { ConfidentialProcedureAuthorization, RoleType, TxTags } from '~/types';
+import { ExtrinsicParams } from '~/types/internal';
+import { serializeConfidentialAssetId } from '~/utils/conversion';
 
 /**
  * @hidden
@@ -15,7 +20,7 @@ export type Params = {
  * @hidden
  */
 export async function prepareToggleFreezeConfidentialAsset(
-  this: Procedure<Params, void>,
+  this: ConfidentialProcedure<Params, void>,
   args: Params
 ): Promise<TransactionSpec<void, ExtrinsicParams<'confidentialAsset', 'setAssetFrozen'>>> {
   const {
@@ -48,10 +53,10 @@ export async function prepareToggleFreezeConfidentialAsset(
 /**
  * @hidden
  */
-export function getAuthorization(
-  this: Procedure<Params, void>,
+export async function getAuthorization(
+  this: ConfidentialProcedure<Params, void>,
   { confidentialAsset: asset }: Params
-): ProcedureAuthorization {
+): Promise<ConfidentialProcedureAuthorization> {
   return {
     roles: [{ type: RoleType.ConfidentialAssetOwner, assetId: asset.id }],
     permissions: {
@@ -65,5 +70,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const toggleFreezeConfidentialAsset = (): Procedure<Params, void> =>
-  new Procedure(prepareToggleFreezeConfidentialAsset, getAuthorization);
+export const toggleFreezeConfidentialAsset = (): ConfidentialProcedure<Params, void> =>
+  new ConfidentialProcedure(prepareToggleFreezeConfidentialAsset, getAuthorization);

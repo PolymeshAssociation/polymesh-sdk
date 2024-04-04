@@ -1,6 +1,10 @@
-import { ConfidentialAccount, PolymeshError, Procedure } from '~/internal';
-import { CreateConfidentialAccountParams, ErrorCode, TxTags } from '~/types';
-import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
+import { ErrorCode } from '@polymeshassociation/polymesh-sdk/types';
+import { TransactionSpec } from '@polymeshassociation/polymesh-sdk/types/internal';
+
+import { ConfidentialProcedure } from '~/base/ConfidentialProcedure';
+import { ConfidentialAccount, PolymeshError } from '~/internal';
+import { CreateConfidentialAccountParams, TxTags } from '~/types';
+import { ExtrinsicParams } from '~/types/internal';
 
 /**
  * @hidden
@@ -11,7 +15,7 @@ export type Params = CreateConfidentialAccountParams;
  * @hidden
  */
 export async function prepareCreateAccount(
-  this: Procedure<Params, ConfidentialAccount>,
+  this: ConfidentialProcedure<Params, ConfidentialAccount>,
   args: Params
 ): Promise<
   TransactionSpec<ConfidentialAccount, ExtrinsicParams<'confidentialAsset', 'createAccount'>>
@@ -49,8 +53,8 @@ export async function prepareCreateAccount(
 /**
  * @hidden
  */
-export const createConfidentialAccount = (): Procedure<Params, ConfidentialAccount> =>
-  new Procedure(prepareCreateAccount, {
+export const createConfidentialAccount = (): ConfidentialProcedure<Params, ConfidentialAccount> =>
+  new ConfidentialProcedure(prepareCreateAccount, {
     permissions: {
       transactions: [TxTags.confidentialAsset.CreateAccount],
       assets: [],

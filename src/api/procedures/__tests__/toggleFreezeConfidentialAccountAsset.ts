@@ -1,5 +1,6 @@
 import { bool } from '@polkadot/types';
 import { PalletConfidentialAssetConfidentialAccount } from '@polkadot/types/lookup';
+import * as utilsPublicConversionModule from '@polymeshassociation/polymesh-sdk/utils/conversion';
 import { when } from 'jest-when';
 
 import {
@@ -36,7 +37,7 @@ describe('toggleFreezeConfidentialAccountAsset procedure', () => {
     rawPublicKey = dsMockUtils.createMockConfidentialAccount(confidentialAccount.publicKey);
     rawAssetId = '0x76702175d8cbe3a55a19734433351e26';
     rawTrue = dsMockUtils.createMockBool(true);
-    booleanToBoolSpy = jest.spyOn(utilsConversionModule, 'booleanToBool');
+    booleanToBoolSpy = jest.spyOn(utilsPublicConversionModule, 'booleanToBool');
     confidentialAccountToMeshPublicKeySpy = jest.spyOn(
       utilsConversionModule,
       'confidentialAccountToMeshPublicKey'

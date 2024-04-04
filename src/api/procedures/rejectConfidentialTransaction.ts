@@ -1,9 +1,17 @@
+import { ErrorCode } from '@polymeshassociation/polymesh-sdk/types';
+import { TransactionSpec } from '@polymeshassociation/polymesh-sdk/types/internal';
+import { bigNumberToU32, bigNumberToU64 } from '@polymeshassociation/polymesh-sdk/utils/conversion';
 import BigNumber from 'bignumber.js';
 
-import { PolymeshError, Procedure } from '~/internal';
-import { ConfidentialTransaction, ConfidentialTransactionStatus, ErrorCode, TxTags } from '~/types';
-import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { bigNumberToU32, bigNumberToU64 } from '~/utils/conversion';
+import { ConfidentialProcedure } from '~/base/ConfidentialProcedure';
+import { PolymeshError } from '~/internal';
+import {
+  ConfidentialProcedureAuthorization,
+  ConfidentialTransaction,
+  ConfidentialTransactionStatus,
+  TxTags,
+} from '~/types';
+import { ExtrinsicParams } from '~/types/internal';
 
 /**
  * @hidden
@@ -16,7 +24,7 @@ export interface Params {
  * @hidden
  */
 export async function prepareRejectConfidentialTransaction(
-  this: Procedure<Params, ConfidentialTransaction>,
+  this: ConfidentialProcedure<Params, ConfidentialTransaction>,
   args: Params
 ): Promise<
   TransactionSpec<
@@ -72,8 +80,8 @@ export async function prepareRejectConfidentialTransaction(
  * @hidden
  */
 export async function getAuthorization(
-  this: Procedure<Params, ConfidentialTransaction>
-): Promise<ProcedureAuthorization> {
+  this: ConfidentialProcedure<Params, ConfidentialTransaction>
+): Promise<ConfidentialProcedureAuthorization> {
   return {
     permissions: {
       assets: [],
@@ -86,5 +94,7 @@ export async function getAuthorization(
 /**
  * @hidden
  */
-export const rejectConfidentialTransaction = (): Procedure<Params, ConfidentialTransaction> =>
-  new Procedure(prepareRejectConfidentialTransaction, getAuthorization);
+export const rejectConfidentialTransaction = (): ConfidentialProcedure<
+  Params,
+  ConfidentialTransaction
+> => new ConfidentialProcedure(prepareRejectConfidentialTransaction, getAuthorization);

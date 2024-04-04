@@ -1,4 +1,5 @@
 import { u32, u64 } from '@polkadot/types';
+import * as utilsPublicConversionModule from '@polymeshassociation/polymesh-sdk/utils/conversion';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -19,9 +20,9 @@ import {
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/confidential/ConfidentialTransaction',
+  '~/api/entities/ConfidentialTransaction',
   require('~/testUtils/mocks/entities').mockConfidentialTransactionModule(
-    '~/api/entities/confidential/ConfidentialTransaction'
+    '~/api/entities/ConfidentialTransaction'
   )
 );
 
@@ -41,8 +42,8 @@ describe('affirmConfidentialTransactions procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
-    bigNumberToU32Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU32');
+    bigNumberToU64Spy = jest.spyOn(utilsPublicConversionModule, 'bigNumberToU64');
+    bigNumberToU32Spy = jest.spyOn(utilsPublicConversionModule, 'bigNumberToU32');
     confidentialAffirmsToRawSpy = jest.spyOn(utilsConversionModule, 'confidentialAffirmsToRaw');
     legId = new BigNumber(1);
   });

@@ -1,16 +1,18 @@
 import { QueryOptions } from '@apollo/client/core';
-import BigNumber from 'bignumber.js';
-import gql from 'graphql-tag';
-
 import {
   ConfidentialAsset,
   ConfidentialAssetHistory,
   ConfidentialAssetHolder,
   ConfidentialAssetHoldersOrderBy,
   ConfidentialTransaction,
-  ConfidentialTransactionStatusEnum,
-  EventIdEnum,
-} from '~/middleware/types';
+} from '@polymeshassociation/polymesh-sdk/middleware/types';
+import BigNumber from 'bignumber.js';
+import gql from 'graphql-tag';
+
+import {
+  ConfidentialAssetHistoryByConfidentialAccountArgs,
+  ConfidentialTransactionsByConfidentialAccountArgs,
+} from '~/types';
 import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
 
 /**
@@ -137,12 +139,6 @@ export function confidentialAssetQuery(
   };
 }
 
-export type ConfidentialTransactionsByConfidentialAccountArgs = {
-  accountId: string;
-  direction: 'Incoming' | 'Outgoing' | 'All';
-  status?: ConfidentialTransactionStatusEnum;
-};
-
 /**
  * @hidden
  *
@@ -198,15 +194,6 @@ export function getConfidentialTransactionsByConfidentialAccountQuery(
     variables: { size: size?.toNumber(), start: start?.toNumber(), accountId, status },
   };
 }
-
-export type ConfidentialAssetHistoryByConfidentialAccountArgs = {
-  accountId: string;
-  eventId?:
-    | EventIdEnum.AccountDepositIncoming
-    | EventIdEnum.AccountDeposit
-    | EventIdEnum.AccountWithdraw;
-  assetId?: string;
-};
 
 /**
  * @hidden
