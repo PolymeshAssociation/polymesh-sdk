@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
 
-import { Asset, PolymeshError, Procedure } from '~/internal';
+import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RemoveAssetRequirementParams, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { bigNumberToU32, stringToTicker, u32ToBigNumber } from '~/utils/conversion';
 
 /**
@@ -16,9 +16,11 @@ export type Params = RemoveAssetRequirementParams & {
  * @hidden
  */
 export async function prepareRemoveAssetRequirement(
-  this: Procedure<Params, Asset>,
+  this: Procedure<Params, void>,
   args: Params
-): Promise<Asset> {
+): Promise<
+  TransactionSpec<void, ExtrinsicParams<'complianceManager', 'removeComplianceRequirement'>>
+> {
   const {
     context: {
       polymeshApi: { query, tx },
@@ -40,25 +42,24 @@ export async function prepareRemoveAssetRequirement(
     });
   }
 
-  this.addTransaction({
+  return {
     transaction: tx.complianceManager.removeComplianceRequirement,
     args: [rawTicker, bigNumberToU32(reqId, context)],
-  });
-
-  return new Asset({ ticker }, context);
+    resolver: undefined,
+  };
 }
 
 /**
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, Asset>,
+  this: Procedure<Params, void>,
   { ticker }: Params
 ): ProcedureAuthorization {
   return {
     permissions: {
       transactions: [TxTags.complianceManager.RemoveComplianceRequirement],
-      assets: [new Asset({ ticker }, this.context)],
+      assets: [new FungibleAsset({ ticker }, this.context)],
       portfolios: [],
     },
   };
@@ -67,5 +68,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const removeAssetRequirement = (): Procedure<Params, Asset> =>
+export const removeAssetRequirement = (): Procedure<Params, void> =>
   new Procedure(prepareRemoveAssetRequirement, getAuthorization);

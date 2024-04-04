@@ -1,7 +1,14 @@
-import { assertCaCheckpointValid } from '~/api/procedures/utils';
-import { Asset, CorporateActionBase, Procedure } from '~/internal';
-import { ModifyCaCheckpointParams, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { assertCaCheckpointValid, assertDistributionDatesValid } from '~/api/procedures/utils';
+import {
+  Checkpoint,
+  CorporateActionBase,
+  DividendDistribution,
+  FungibleAsset,
+  PolymeshError,
+  Procedure,
+} from '~/internal';
+import { ErrorCode, ModifyCaCheckpointParams, TxTags } from '~/types';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { checkpointToRecordDateSpec, corporateActionIdentifierToCaId } from '~/utils/conversion';
 import { getCheckpointValue, optionize } from '~/utils/internal';
 
@@ -15,33 +22,53 @@ export type Params = ModifyCaCheckpointParams & {
 export async function prepareModifyCaCheckpoint(
   this: Procedure<Params, void>,
   args: Params
-): Promise<void> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'corporateAction', 'changeRecordDate'>>> {
   const {
     context: {
       polymeshApi: { tx },
     },
     context,
   } = this;
+  const { checkpoint, corporateAction } = args;
+
   const {
-    checkpoint,
-    corporateAction: {
-      id: localId,
-      asset: { ticker },
-    },
-  } = args;
+    id: localId,
+    asset: { ticker },
+  } = corporateAction;
+
   let checkpointValue;
+
   if (checkpoint) {
     checkpointValue = await getCheckpointValue(checkpoint, ticker, context);
     await assertCaCheckpointValid(checkpointValue);
   }
 
+  // extra validation if the CA is a Dividend Distribution
+  if (corporateAction instanceof DividendDistribution) {
+    const { paymentDate, expiryDate } = corporateAction;
+
+    const now = new Date();
+
+    if (paymentDate <= now) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'Cannot modify a Distribution checkpoint after the payment date',
+      });
+    }
+
+    if (checkpointValue && !(checkpointValue instanceof Checkpoint)) {
+      await assertDistributionDatesValid(checkpointValue, paymentDate, expiryDate);
+    }
+  }
+
   const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
   const rawRecordDateSpec = optionize(checkpointToRecordDateSpec)(checkpointValue, context);
 
-  this.addTransaction({
+  return {
     transaction: tx.corporateAction.changeRecordDate,
     args: [rawCaId, rawRecordDateSpec],
-  });
+    resolver: undefined,
+  };
 }
 
 /**
@@ -60,7 +87,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.corporateAction.ChangeRecordDate],
-      assets: [new Asset({ ticker }, context)],
+      assets: [new FungibleAsset({ ticker }, context)],
       portfolios: [],
     },
   };

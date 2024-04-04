@@ -1,13 +1,13 @@
-import { Asset, PolymeshError, Procedure } from '~/internal';
+import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { AddAssetStatParams, ErrorCode, StatType, TxTags } from '~/types';
-import { ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
+import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import {
   claimCountStatInputToStatUpdates,
   claimIssuerToMeshClaimIssuer,
   countStatInputToStatUpdates,
-  statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
   statisticStatTypesToBtreeStatType,
+  statTypeToStatOpType,
   stringToTickerKey,
 } from '~/utils/conversion';
 import { checkTxType, compareStatsToInput } from '~/utils/internal';
@@ -18,7 +18,7 @@ import { checkTxType, compareStatsToInput } from '~/utils/internal';
 export async function prepareAddAssetStat(
   this: Procedure<AddAssetStatParams, void>,
   args: AddAssetStatParams
-): Promise<void> {
+): Promise<BatchTransactionSpec<void, unknown[][]>> {
   const {
     context: {
       polymeshApi: {
@@ -41,15 +41,12 @@ export async function prepareAddAssetStat(
     });
   }
 
-  const op =
-    type === StatType.Count || type === StatType.ScopedCount
-      ? statisticsOpTypeToStatOpType(StatisticsOpType.Count, context)
-      : statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
+  const op = statTypeToStatOpType(type, context);
 
   const transactions = [];
 
   let rawClaimIssuer;
-  if (type === StatType.ScopedCount || type === StatType.ScopedPercentage) {
+  if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
     rawClaimIssuer = claimIssuerToMeshClaimIssuer(args, context);
   }
 
@@ -81,7 +78,7 @@ export async function prepareAddAssetStat(
       })
     );
   }
-  this.addBatchTransaction({ transactions });
+  return { transactions, resolver: undefined };
 }
 
 /**
@@ -95,7 +92,7 @@ export function getAuthorization(
   if (type === StatType.Count || type === StatType.ScopedCount) {
     transactions.push(TxTags.statistics.BatchUpdateAssetStats);
   }
-  const asset = new Asset({ ticker }, this.context);
+  const asset = new FungibleAsset({ ticker }, this.context);
   return {
     permissions: {
       transactions,

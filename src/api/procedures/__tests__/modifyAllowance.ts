@@ -1,6 +1,6 @@
 import { AccountId, Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { getAuthorization, prepareModifyAllowance } from '~/api/procedures/modifyAllowance';
 import { Context, ModifyAllowanceParams, Procedure, Subsidy } from '~/internal';
@@ -22,17 +22,17 @@ jest.mock(
 describe('modifyAllowance procedure', () => {
   let mockContext: Mocked<Context>;
   let subsidy: Subsidy;
-  let stringToAccountIdStub: sinon.SinonStub<[string, Context], AccountId>;
-  let bigNumberToBalanceStub: sinon.SinonStub<
-    [BigNumber, Context, (boolean | undefined)?],
-    Balance
+  let stringToAccountIdSpy: jest.SpyInstance<AccountId, [string, Context]>;
+  let bigNumberToBalanceSpy: jest.SpyInstance<
+    Balance,
+    [BigNumber, Context, (boolean | undefined)?]
   >;
   let args: ModifyAllowanceParams;
   let allowance: BigNumber;
   let rawBeneficiaryAccountId: AccountId;
   let rawAllowance: Balance;
 
-  let increasePolyxLimitTransaction: sinon.SinonStub;
+  let increasePolyxLimitTransaction: jest.Mock;
 
   let proc: Procedure<ModifyAllowanceParams, void>;
 
@@ -45,8 +45,8 @@ describe('modifyAllowance procedure', () => {
       },
     });
 
-    stringToAccountIdStub = sinon.stub(utilsConversionModule, 'stringToAccountId');
-    bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
+    stringToAccountIdSpy = jest.spyOn(utilsConversionModule, 'stringToAccountId');
+    bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
   });
 
   beforeEach(() => {
@@ -57,12 +57,14 @@ describe('modifyAllowance procedure', () => {
     args = { subsidy, operation: AllowanceOperation.Set, allowance };
 
     rawBeneficiaryAccountId = dsMockUtils.createMockAccountId('beneficiary');
-    stringToAccountIdStub.withArgs('beneficiary', mockContext).returns(rawBeneficiaryAccountId);
+    when(stringToAccountIdSpy)
+      .calledWith('beneficiary', mockContext)
+      .mockReturnValue(rawBeneficiaryAccountId);
 
     rawAllowance = dsMockUtils.createMockBalance(allowance);
-    bigNumberToBalanceStub.withArgs(allowance, mockContext).returns(rawAllowance);
+    when(bigNumberToBalanceSpy).calledWith(allowance, mockContext).mockReturnValue(rawAllowance);
 
-    increasePolyxLimitTransaction = dsMockUtils.createTxStub('relayer', 'increasePolyxLimit');
+    increasePolyxLimitTransaction = dsMockUtils.createTxMock('relayer', 'increasePolyxLimit');
 
     proc = procedureMockUtils.getInstance<ModifyAllowanceParams, void>(mockContext);
   });
@@ -105,39 +107,40 @@ describe('modifyAllowance procedure', () => {
       'Amount of allowance to decrease cannot be more than the current allowance'
     ));
 
-  it('should add a transaction to the queue', async () => {
-    const addTransactionStub = procedureMockUtils.getAddTransactionStub();
+  it('should return a transaction spec', async () => {
+    const updatePolyxLimitTransaction = dsMockUtils.createTxMock('relayer', 'updatePolyxLimit');
 
-    const updatePolyxLimitTransaction = dsMockUtils.createTxStub('relayer', 'updatePolyxLimit');
+    let result = await prepareModifyAllowance.call(proc, args);
 
-    await prepareModifyAllowance.call(proc, args);
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction: updatePolyxLimitTransaction,
-        args: [rawBeneficiaryAccountId, rawAllowance],
-      })
-    );
+    expect(result).toEqual({
+      transaction: updatePolyxLimitTransaction,
+      args: [rawBeneficiaryAccountId, rawAllowance],
+      resolver: undefined,
+    });
 
-    await prepareModifyAllowance.call(proc, { ...args, operation: AllowanceOperation.Increase });
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction: increasePolyxLimitTransaction,
-        args: [rawBeneficiaryAccountId, rawAllowance],
-      })
-    );
+    result = await prepareModifyAllowance.call(proc, {
+      ...args,
+      operation: AllowanceOperation.Increase,
+    });
 
-    const decreasePolyxLimitTransaction = dsMockUtils.createTxStub('relayer', 'decreasePolyxLimit');
+    expect(result).toEqual({
+      transaction: increasePolyxLimitTransaction,
+      args: [rawBeneficiaryAccountId, rawAllowance],
+      resolver: undefined,
+    });
 
-    await prepareModifyAllowance.call(proc, { ...args, operation: AllowanceOperation.Decrease });
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction: decreasePolyxLimitTransaction,
-        args: [rawBeneficiaryAccountId, rawAllowance],
-      })
-    );
+    const decreasePolyxLimitTransaction = dsMockUtils.createTxMock('relayer', 'decreasePolyxLimit');
+
+    result = await prepareModifyAllowance.call(proc, {
+      ...args,
+      operation: AllowanceOperation.Decrease,
+    });
+
+    expect(result).toEqual({
+      transaction: decreasePolyxLimitTransaction,
+      args: [rawBeneficiaryAccountId, rawAllowance],
+      resolver: undefined,
+    });
   });
 
   describe('getAuthorization', () => {
@@ -168,7 +171,7 @@ describe('modifyAllowance procedure', () => {
         },
       });
 
-      subsidy.subsidizer.isEqual = sinon.stub().returns(false);
+      subsidy.subsidizer.isEqual = jest.fn().mockReturnValue(false);
 
       result = boundFunc(args);
       expect(result).toEqual({

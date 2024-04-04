@@ -3,15 +3,15 @@ import { PalletCorporateActionsCaId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import {
-  Asset,
   Context,
   CorporateActionBase,
   DividendDistribution,
+  FungibleAsset,
   PolymeshError,
   Procedure,
 } from '~/internal';
 import { ErrorCode, RemoveCorporateActionParams, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   bigNumberToU32,
   corporateActionIdentifierToCaId,
@@ -78,7 +78,7 @@ const assertCaIsRemovable = async (
 export async function prepareRemoveCorporateAction(
   this: Procedure<Params, void>,
   args: Params
-): Promise<void> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'corporateAction', 'removeCa'>>> {
   const {
     context,
     context: {
@@ -104,10 +104,11 @@ export async function prepareRemoveCorporateAction(
     }
   }
 
-  this.addTransaction({
+  return {
     transaction: tx.corporateAction.removeCa,
     args: [rawCaId],
-  });
+    resolver: undefined,
+  };
 }
 
 /**
@@ -120,7 +121,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.corporateAction.RemoveCa],
-      assets: [new Asset({ ticker }, this.context)],
+      assets: [new FungibleAsset({ ticker }, this.context)],
       portfolios: [],
     },
   };

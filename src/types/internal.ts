@@ -1,42 +1,54 @@
+/* istanbul ignore file */
+
 import {
   AugmentedEvents,
   AugmentedSubmittable,
+  DecoratedRpc,
   QueryableConsts,
   QueryableStorage,
   SubmittableExtrinsic,
   SubmittableExtrinsics,
 } from '@polkadot/api/types';
+import { RpcInterface } from '@polkadot/rpc-core/types';
+import { u32 } from '@polkadot/types';
 import {
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import { ISubmittableResult, Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { DocumentNode } from 'graphql';
 
-import { Identity, PostTransactionValue } from '~/internal';
+import { Identity, Procedure } from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
 import {
-  CallIdEnum as MiddlewareV2CallId,
-  ModuleIdEnum as MiddlewareV2ModuleId,
-} from '~/middleware/typesV2';
-import { CustomAssetTypeId } from '~/polkadot';
-import {
-  CalendarPeriod,
+  ClaimType,
   InputStatClaim,
   KnownAssetType,
+  KnownNftType,
+  MortalityProcedureOpt,
   PermissionGroupType,
   Role,
   SignerValue,
   SimplePermissions,
   StatClaimType,
-  TxTag,
+  TxData,
 } from '~/types';
 
 /**
  * Polkadot's `tx` submodule
  */
 export type Extrinsics = SubmittableExtrinsics<'promise'>;
+
+/**
+ * Parameter list for a specific extrinsic
+ *
+ * @param ModuleName - pallet name (e.g. 'asset')
+ * @param TransactionName - extrinsic name (e.g. 'registerTicker')
+ */
+export type ExtrinsicParams<
+  ModuleName extends keyof Extrinsics,
+  TransactionName extends keyof Extrinsics[ModuleName]
+> = Parameters<Extrinsics[ModuleName][TransactionName]>;
 
 /**
  * Polkadot's events
@@ -53,36 +65,15 @@ export type Queries = QueryableStorage<'promise'>;
  */
 export type Consts = QueryableConsts<'promise'>;
 
-/**
- * Transform a tuple of types into an array of {@link PostTransactionValue}.
- * For each type in the tuple, the corresponding {@link PostTransactionValue} resolves to that type
- *
- * @param Values - types of the values to be wrapped
- */
-export type PostTransactionValueArray<Values extends unknown[]> = {
-  [P in keyof Values]: PostTransactionValue<Values[P]>;
-};
-
-/**
- * Either a specific type or a {@link PostTransactionValue} that wraps a value of that type
- */
-export type MaybePostTransactionValue<T> = PostTransactionValue<T> | T;
-
-/**
- * Apply the {@link MaybePostTransactionValue} type to all members of a tuple
- */
-export type MapMaybePostTransactionValue<T extends unknown[]> = {
-  [K in keyof T]: MaybePostTransactionValue<T[K]>;
-};
+export type Rpcs = DecoratedRpc<'promise', RpcInterface>;
 
 /**
  * Low level transaction method in the polkadot API
  *
  * @param Args - arguments of the transaction
  */
-export type PolymeshTx<Args extends unknown[] = unknown[]> = AugmentedSubmittable<
-  (...args: Args) => SubmittableExtrinsic<'promise'>
->;
+export type PolymeshTx<Args extends Readonly<unknown[]> = Readonly<unknown[]>> =
+  AugmentedSubmittable<(...args: Args) => SubmittableExtrinsic<'promise'>>;
 
 interface BaseTx<Args extends unknown[] = unknown[]> {
   /**
@@ -93,6 +84,11 @@ interface BaseTx<Args extends unknown[] = unknown[]> {
    * amount by which the protocol fees should be multiplied (only applicable to transactions where the input size impacts the total fees)
    */
   feeMultiplier?: BigNumber;
+  /**
+   * protocol fees associated with running the transaction (not gas). If not passed, they will be fetched from the chain. This is used for
+   *   special cases where the fees aren't trivially derived from the extrinsic type
+   */
+  fee?: BigNumber;
 }
 
 /**
@@ -104,25 +100,8 @@ export type TxWithArgs<Args extends unknown[] = unknown[]> = BaseTx<Args> &
         args?: undefined; // this ugly hack is so that tx args don't have to be passed for transactions that don't take args
       }
     : {
-        /**
-         * arguments that the transaction will receive (some of them can be {@link PostTransactionValue} from an earlier transaction)
-         */
-        args: MapMaybePostTransactionValue<Args>;
+        args: Args;
       });
-
-/**
- * Transaction data for display purposes
- */
-export interface TxData<Args extends unknown[] = unknown[]> {
-  /**
-   * transaction string identifier
-   */
-  tag: TxTag;
-  /**
-   * arguments with which the transaction will be called
-   */
-  args: Args;
-}
 
 export type TxDataWithFees<Args extends unknown[] = unknown[]> = TxData<Args> &
   Omit<TxWithArgs<Args>, 'args'>;
@@ -142,13 +121,6 @@ export type MapTxWithArgs<ArgsArray extends unknown[][]> = {
 };
 
 /**
- * Apply the {@link TxData} type to all args in an array
- */
-export type MapTxData<ArgsArray extends unknown[][]> = {
-  [K in keyof ArgsArray]: ArgsArray[K] extends unknown[] ? TxData<ArgsArray[K]> : never;
-};
-
-/**
  * Apply the {@link TxDataWithFees} type to all args in an array
  */
 export type MapTxDataWithFees<ArgsArray extends unknown[][]> = {
@@ -163,50 +135,64 @@ export type ResolverFunctionArray<Values extends unknown[]> = {
 };
 
 /**
- * Base Transaction Schema
- *
- * @param Args - arguments of the transaction
- * @param Values - values that will be returned wrapped in {@link PostTransactionValue} after the transaction runs
+ * Function that returns a value (or promise that resolves to a value) from a transaction receipt
  */
-export interface BaseTransactionSpec<Values extends unknown[] = unknown[]> {
-  /**
-   * wrapped values that will be returned after this transaction is run
-   */
-  postTransactionValues?: PostTransactionValueArray<Values>;
-  /**
-   * Account that will sign the transaction
-   */
-  signingAddress: string;
-  /**
-   * object that handles the payload signing logic
-   */
-  signer: PolkadotSigner;
-  /**
-   * whether this tx failing makes the entire tx queue fail or not
-   */
-  isCritical: boolean;
-  /**
-   * any protocol fees associated with running the transaction (not gas)
-   */
-  fee?: BigNumber;
+export type ResolverFunction<ReturnValue> = (
+  receipt: ISubmittableResult
+) => Promise<ReturnValue> | ReturnValue;
+
+/**
+ * Representation of the value that will be returned by a Procedure after it is run
+ *
+ * It can be:
+ *   - a plain value
+ *   - a resolver function that returns either a value or a promise that resolves to a value
+ */
+export type MaybeResolverFunction<ReturnValue> = ResolverFunction<ReturnValue> | ReturnValue;
+
+/**
+ * @hidden
+ */
+export function isResolverFunction<ReturnValue>(
+  value: MaybeResolverFunction<ReturnValue>
+): value is ResolverFunction<ReturnValue> {
+  return typeof value === 'function';
+}
+
+/**
+ * Base Transaction Schema
+ */
+export interface BaseTransactionSpec<ReturnValue, TransformedReturnValue = ReturnValue> {
   /**
    * third party Identity that will pay for the transaction (for example when joining an Identity/multisig as a secondary key).
    *   This is separate from a subsidy, and takes precedence over it. If the signing Account is being subsidized and
    *   they try to execute a transaction with `paidForBy` set, the fees will be paid for by the `paidForBy` Identity
    */
   paidForBy?: Identity;
+  /**
+   * value that the transaction will return once it has run, or a function that returns that value
+   */
+  resolver: MaybeResolverFunction<ReturnValue>;
+  /**
+   * function that transforms the transaction's return value before returning it after it is run
+   */
+  transformer?: (result: ReturnValue) => Promise<TransformedReturnValue> | TransformedReturnValue;
 }
 
 /**
  * Schema of a transaction batch
  *
- * @param Args - arguments of the transaction
- * @param Values - values that will be returned wrapped in {@link PostTransactionValue} after the transaction runs
+ * @param Args - tuple where each value represents the type of the arguments of one of the transactions
+ *   in the batch. There are cases where it is impossible to know this type beforehand. For example, if
+ *   the amount (or type) of transactions in the batch depends on an argument or the chain state. For those cases,
+ *   `unknown[][]` should be used, and extra care must be taken to ensure the correct transactions (and arguments)
+ *   are being returned
  */
 export interface BatchTransactionSpec<
+  ReturnValue,
   ArgsArray extends unknown[][],
-  Values extends unknown[] = unknown[]
-> extends BaseTransactionSpec<Values> {
+  TransformedReturnValue = ReturnValue
+> extends BaseTransactionSpec<ReturnValue, TransformedReturnValue> {
   /**
    * transactions in the batch with their respective arguments
    */
@@ -217,65 +203,41 @@ export interface BatchTransactionSpec<
  * Schema of a specific transaction
  *
  * @param Args - arguments of the transaction
- * @param Values - values that will be returned wrapped in {@link PostTransactionValue} after the transaction runs
  */
 export type TransactionSpec<
+  ReturnValue,
   Args extends unknown[],
-  Values extends unknown[] = unknown[]
-> = BaseTransactionSpec<Values> & TxWithArgs<Args>;
+  TransformedReturnValue = ReturnValue
+> = BaseTransactionSpec<ReturnValue, TransformedReturnValue> & TxWithArgs<Args>;
 
 /**
- * Common args for `addTransaction` and `addBatchTransaction`
+ * Helper type that represents either type of transaction spec
  */
-export interface AddTransactionArgsBase<Values extends unknown[]> {
+export type GenericTransactionSpec<ReturnValue> =
+  | BatchTransactionSpec<ReturnValue, unknown[][]>
+  | TransactionSpec<ReturnValue, unknown[]>;
+
+/**
+ * Additional information for constructing the final transaction
+ */
+export interface TransactionConstructionData {
   /**
-   * value in POLYX of the transaction (should only be set manually in special cases,
-   *   otherwise it is fetched automatically from the chain). Fee multipliers have no effect on this value
+   * address of the key that will sign the transaction
    */
-  fee?: BigNumber;
+  signingAddress: string;
   /**
-   * asynchronous callbacks used to return runtime data after the transaction has finished successfully
+   * object that handles the payload signing logic
    */
-  resolvers?: ResolverFunctionArray<Values>;
+  signer: PolkadotSigner;
   /**
-   * whether this transaction failing should make the entire queue fail or not. Defaults to true
+   * how long the transaction should be valid for
    */
-  isCritical?: boolean;
-  /**
-   * third party Identity that will pay for the transaction fees. No value means that the caller pays
-   */
-  paidForBy?: Identity;
+  mortality: MortalityProcedureOpt;
 }
-
-/**
- * Args for `addBatchTransaction`
- */
-export interface AddBatchTransactionArgs<
-  Values extends unknown[],
-  ArgsArray extends (unknown[] | [])[]
-> extends AddTransactionArgsBase<Values> {
-  /**
-   * list of transactions to be added to the batch, with their respective arguments and fee multipliers
-   */
-  transactions: MapTxWithArgs<[...ArgsArray]>;
-}
-
-/**
- * Args for `addTransaction`
- */
-export type AddTransactionArgs<
-  TxArgs extends unknown[] | [],
-  Values extends unknown[]
-> = AddTransactionArgsBase<Values> & TxWithArgs<TxArgs>;
 
 export interface AuthTarget {
   target: SignerValue;
   authId: BigNumber;
-}
-
-export interface GraphqlQuery<Variables = undefined> {
-  query: DocumentNode;
-  variables: Variables;
 }
 
 export enum TrustedClaimIssuerOperation {
@@ -287,17 +249,6 @@ export enum TrustedClaimIssuerOperation {
 export interface ExtrinsicIdentifier {
   moduleId: ModuleIdEnum;
   callId: CallIdEnum;
-}
-
-export interface ExtrinsicIdentifierV2 {
-  moduleId: MiddlewareV2ModuleId;
-  callId: MiddlewareV2CallId;
-}
-
-export interface ScheduleSpec {
-  start: Date | null;
-  period: CalendarPeriod | null;
-  repetitions: BigNumber | null;
 }
 
 export interface CorporateActionIdentifier {
@@ -350,6 +301,8 @@ export enum InstructionStatus {
   Pending = 'Pending',
   Unknown = 'Unknown',
   Failed = 'Failed',
+  Success = 'Success',
+  Rejected = 'Rejected',
 }
 
 /**
@@ -357,22 +310,23 @@ export enum InstructionStatus {
  */
 export type PermissionGroupIdentifier = PermissionGroupType | { custom: BigNumber };
 
-export type InternalAssetType = KnownAssetType | { Custom: CustomAssetTypeId };
-
-export enum StatisticsOpType {
-  Count = 'Count',
-  Balance = 'Balance',
-  ClaimCount = 'ClaimCount',
-  ClaimPercentage = 'ClaimPercentage',
-}
+export type InternalNftType = KnownNftType | { Custom: u32 };
+export type InternalAssetType = KnownAssetType | { Custom: u32 } | { NonFungible: InternalNftType };
 
 export interface TickerKey {
   Ticker: PolymeshPrimitivesTicker;
 }
 
+/**
+ * Infer Procedure parameters parameters from a Procedure function
+ */
+export type ProcedureParams<ProcedureFunction extends (...args: unknown[]) => unknown> =
+  ReturnType<ProcedureFunction> extends Procedure<infer Params> ? Params : never;
+
 export interface ExemptKey {
   asset: TickerKey;
   op: PolymeshPrimitivesStatisticsStatOpType;
+  claimType?: ClaimType;
 }
 
 export type StatClaimInputType = Omit<InputStatClaim, 'affiliate' | 'accredited'>;

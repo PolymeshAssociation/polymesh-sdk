@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
 
 import {
   getAuthorization,
@@ -13,8 +12,8 @@ import { TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 jest.mock(
   '~/api/entities/CorporateAction',
@@ -23,8 +22,7 @@ jest.mock(
 
 describe('removeCorporateAction procedure', () => {
   let mockContext: Mocked<Context>;
-  let addTransactionStub: sinon.SinonStub;
-  let corporateActionsQueryStub: sinon.SinonStub;
+  let corporateActionsQueryMock: jest.Mock;
 
   const ticker = 'SOME_TICKER';
   const id = new BigNumber(1);
@@ -35,13 +33,12 @@ describe('removeCorporateAction procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    sinon.stub(utilsConversionModule, 'corporateActionIdentifierToCaId').returns(rawCaId);
+    jest.spyOn(utilsConversionModule, 'corporateActionIdentifierToCaId').mockReturnValue(rawCaId);
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
-    corporateActionsQueryStub = dsMockUtils.createQueryStub('corporateAction', 'corporateActions');
+    corporateActionsQueryMock = dsMockUtils.createQueryMock('corporateAction', 'corporateActions');
   });
 
   afterEach(() => {
@@ -56,7 +53,7 @@ describe('removeCorporateAction procedure', () => {
   });
 
   it("should throw an error if the Corporate Action is a Distribution and it doesn't exist", () => {
-    dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
+    dsMockUtils.createQueryMock('capitalDistribution', 'distributions', {
       returnValue: dsMockUtils.createMockOption(),
     });
 
@@ -71,11 +68,11 @@ describe('removeCorporateAction procedure', () => {
   });
 
   it("should throw an error if the Corporate Action is not a Distribution and the Corporate Action doesn't exist", () => {
-    dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
+    dsMockUtils.createQueryMock('capitalDistribution', 'distributions', {
       returnValue: dsMockUtils.createMockOption(),
     });
 
-    corporateActionsQueryStub.returns(dsMockUtils.createMockOption());
+    corporateActionsQueryMock.mockReturnValue(dsMockUtils.createMockOption());
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
@@ -88,7 +85,7 @@ describe('removeCorporateAction procedure', () => {
   });
 
   it('should throw an error if the distribution has already started', () => {
-    dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
+    dsMockUtils.createQueryMock('capitalDistribution', 'distributions', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockDistribution({
           from: {
@@ -100,7 +97,7 @@ describe('removeCorporateAction procedure', () => {
           amount: new BigNumber(50000000000),
           remaining: new BigNumber(40000000000),
           paymentAt: new BigNumber(new Date('1/1/2020').getTime()),
-          expiresAt: null,
+          expiresAt: dsMockUtils.createMockOption(),
           reclaimed: false,
         })
       ),
@@ -129,20 +126,20 @@ describe('removeCorporateAction procedure', () => {
     ).rejects.toThrow("The Corporate Action doesn't exist");
   });
 
-  it('should add a remove corporate agent transaction to the queue', async () => {
-    const transaction = dsMockUtils.createTxStub('corporateAction', 'removeCa');
+  it('should return a remove corporate agent transaction spec', async () => {
+    const transaction = dsMockUtils.createTxMock('corporateAction', 'removeCa');
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await prepareRemoveCorporateAction.call(proc, {
+    let result = await prepareRemoveCorporateAction.call(proc, {
       corporateAction: entityMockUtils.getCorporateActionInstance({
         exists: true,
       }),
       ticker,
     });
 
-    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawCaId] });
+    expect(result).toEqual({ transaction, args: [rawCaId], resolver: undefined });
 
-    dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
+    dsMockUtils.createQueryMock('capitalDistribution', 'distributions', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockDistribution({
           from: {
@@ -154,29 +151,29 @@ describe('removeCorporateAction procedure', () => {
           amount: new BigNumber(50000000000),
           remaining: new BigNumber(40000000000),
           paymentAt: new BigNumber(new Date('10/10/2030').getTime()),
-          expiresAt: null,
+          expiresAt: dsMockUtils.createMockOption(),
           reclaimed: false,
         })
       ),
     });
 
-    await prepareRemoveCorporateAction.call(proc, {
+    result = await prepareRemoveCorporateAction.call(proc, {
       corporateAction: entityMockUtils.getDividendDistributionInstance(),
       ticker,
     });
 
-    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawCaId] });
+    expect(result).toEqual({ transaction, args: [rawCaId], resolver: undefined });
 
-    corporateActionsQueryStub.returns(
+    corporateActionsQueryMock.mockReturnValue(
       dsMockUtils.createMockOption(dsMockUtils.createMockCorporateAction())
     );
 
-    await prepareRemoveCorporateAction.call(proc, {
+    result = await prepareRemoveCorporateAction.call(proc, {
       corporateAction: new BigNumber(1),
       ticker,
     });
 
-    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawCaId] });
+    expect(result).toEqual({ transaction, args: [rawCaId], resolver: undefined });
   });
 
   describe('getAuthorization', () => {

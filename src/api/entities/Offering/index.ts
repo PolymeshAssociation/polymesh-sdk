@@ -3,19 +3,17 @@ import { PalletStoFundraiser } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import {
-  Asset,
   closeOffering,
   Context,
   Entity,
+  FungibleAsset,
   Identity,
   investInOffering,
   modifyOfferingTimes,
   toggleFreezeOffering,
 } from '~/internal';
-import { investments } from '~/middleware/queries';
-import { investmentsQuery } from '~/middleware/queriesV2';
+import { investmentsQuery } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   InvestInOfferingParams,
   ModifyOfferingTimesParams,
@@ -25,7 +23,7 @@ import {
   SubCallback,
   UnsubCallback,
 } from '~/types';
-import { Ensured, EnsuredV2 } from '~/types/utils';
+import { Ensured } from '~/types/utils';
 import { bigNumberToU64, fundraiserToOfferingDetails, stringToTicker } from '~/utils/conversion';
 import { calculateNextKey, createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
@@ -63,7 +61,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * Asset being offered
    */
-  public asset: Asset;
+  public asset: FungibleAsset;
 
   /**
    * @hidden
@@ -74,7 +72,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
     const { id, ticker } = identifiers;
 
     this.id = id;
-    this.asset = new Asset({ ticker }, context);
+    this.asset = new FungibleAsset({ ticker }, context);
 
     this.freeze = createProcedureMethod(
       {
@@ -129,13 +127,15 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
 
     const assembleResult = (
       rawFundraiser: Option<PalletStoFundraiser>,
-      rawName: Bytes
-    ): OfferingDetails => fundraiserToOfferingDetails(rawFundraiser.unwrap(), rawName, context);
+      rawName: Option<Bytes>
+    ): OfferingDetails => {
+      return fundraiserToOfferingDetails(rawFundraiser.unwrap(), rawName.unwrap(), context);
+    };
 
     const rawTicker = stringToTicker(ticker, context);
     const rawU64 = bigNumberToU64(id, context);
 
-    const fetchName = (): Promise<Bytes> => sto.fundraiserNames(rawTicker, rawU64);
+    const fetchName = (): Promise<Option<Bytes>> => sto.fundraiserNames(rawTicker, rawU64);
 
     if (callback) {
       const fundraiserName = await fetchName();
@@ -191,72 +191,9 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
    * @param opts.start - page offset
    *
    * @note supports pagination
-   * @note uses the middleware
-   */
-  public async getInvestments(
-    opts: {
-      size?: BigNumber;
-      start?: BigNumber;
-    } = {}
-  ): Promise<ResultSet<Investment>> {
-    const {
-      context,
-      id,
-      asset: { ticker },
-    } = this;
-
-    const { size, start } = opts;
-
-    const result = await context.queryMiddleware<Ensured<Query, 'investments'>>(
-      investments({
-        stoId: id.toNumber(),
-        ticker: ticker,
-        count: size?.toNumber(),
-        skip: start?.toNumber(),
-      })
-    );
-
-    const {
-      data: { investments: investmentsResult },
-    } = result;
-
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    const { items, totalCount } = investmentsResult!;
-
-    const count = new BigNumber(totalCount);
-
-    const data: Investment[] = [];
-
-    items!.forEach(item => {
-      const { investor: did, offeringTokenAmount, raiseTokenAmount } = item!;
-
-      data.push({
-        investor: new Identity({ did }, context),
-        soldAmount: new BigNumber(offeringTokenAmount).shiftedBy(-6),
-        investedAmount: new BigNumber(raiseTokenAmount).shiftedBy(-6),
-      });
-    });
-    /* eslint-enable @typescript-eslint/no-non-null-assertion */
-
-    const next = calculateNextKey(count, size, start);
-
-    return {
-      data,
-      next,
-      count,
-    };
-  }
-
-  /**
-   * Retrieve all investments made on this Offering
-   *
-   * @param opts.size - page size
-   * @param opts.start - page offset
-   *
-   * @note supports pagination
    * @note uses the middleware V2
    */
-  public async getInvestmentsV2(
+  public async getInvestments(
     opts: {
       size?: BigNumber;
       start?: BigNumber;
@@ -274,7 +211,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
       data: {
         investments: { nodes, totalCount },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'investments'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'investments'>>(
       investmentsQuery(
         {
           stoId: id.toNumber(),
@@ -293,7 +230,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
       investedAmount: new BigNumber(raiseTokenAmount).shiftedBy(-6),
     }));
 
-    const next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, data.length, start);
 
     return {
       data,

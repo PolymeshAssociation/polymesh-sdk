@@ -1,7 +1,7 @@
+import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 
-import { Asset, Offering, PolymeshError, Procedure } from '~/internal';
-import { Moment } from '~/polkadot/polymesh';
+import { FungibleAsset, Offering, PolymeshError, Procedure } from '~/internal';
 import {
   ErrorCode,
   ModifyOfferingTimesParams,
@@ -9,7 +9,7 @@ import {
   OfferingTimingStatus,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { bigNumberToU64, dateToMoment, stringToTicker } from '~/utils/conversion';
 
 /**
@@ -80,7 +80,7 @@ export type Params = ModifyOfferingTimesParams & {
 export async function prepareModifyOfferingTimes(
   this: Procedure<Params, void>,
   args: Params
-): Promise<void> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'sto', 'modifyFundraiserWindow'>>> {
   const {
     context: {
       polymeshApi: {
@@ -104,7 +104,7 @@ export async function prepareModifyOfferingTimes(
   const rawTicker = stringToTicker(ticker, context);
   const rawId = bigNumberToU64(id, context);
   const rawStart = newStart ? dateToMoment(newStart, context) : dateToMoment(start, context);
-  let rawEnd: Moment | null;
+  let rawEnd: u64 | null;
 
   if (newEnd === null) {
     rawEnd = null;
@@ -114,10 +114,11 @@ export async function prepareModifyOfferingTimes(
     rawEnd = dateToMoment(newEnd, context);
   }
 
-  this.addTransaction({
+  return {
     transaction: txSto.modifyFundraiserWindow,
     args: [rawTicker, rawId, rawStart, rawEnd],
-  });
+    resolver: undefined,
+  };
 }
 
 /**
@@ -131,7 +132,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.sto.ModifyFundraiserWindow],
-      assets: [new Asset({ ticker }, context)],
+      assets: [new FungibleAsset({ ticker }, context)],
       portfolios: [],
     },
   };

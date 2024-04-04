@@ -1,14 +1,14 @@
+import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   createTickerReservationResolver,
   getAuthorization,
   prepareReserveTicker,
 } from '~/api/procedures/reserveTicker';
-import { Context, PostTransactionValue, TickerReservation } from '~/internal';
+import { Context, TickerReservation } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { ReserveTickerParams, RoleType, TickerReservationStatus, TxTags } from '~/types';
@@ -25,11 +25,10 @@ jest.mock(
 
 describe('reserveTicker procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let ticker: string;
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
   let args: ReserveTickerParams;
-  let reservation: PostTransactionValue<TickerReservation>;
 
   beforeAll(() => {
     dsMockUtils.initMocks({
@@ -43,22 +42,17 @@ describe('reserveTicker procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    ticker = 'SOME_TICKER';
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    ticker = 'TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     args = {
       ticker,
     };
-    reservation = 'reservation' as unknown as PostTransactionValue<TickerReservation>;
   });
 
-  let addTransactionStub: sinon.SinonStub;
-
-  let transaction: PolymeshTx<[Ticker]>;
+  let transaction: PolymeshTx<[PolymeshPrimitivesTicker]>;
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([reservation]);
-
     entityMockUtils.configureMocks({
       tickerReservationOptions: {
         details: {
@@ -69,15 +63,15 @@ describe('reserveTicker procedure', () => {
       },
     });
 
-    dsMockUtils.createQueryStub('asset', 'tickerConfig', {
+    dsMockUtils.createQueryMock('asset', 'tickerConfig', {
       returnValue: dsMockUtils.createMockTickerRegistrationConfig(),
     });
 
-    transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
+    transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
 
     mockContext = dsMockUtils.getContextInstance();
 
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
   });
 
   afterEach(() => {
@@ -183,22 +177,28 @@ describe('reserveTicker procedure', () => {
     );
   });
 
-  it('should add a register ticker transaction to the queue', async () => {
+  it('should throw an error if the ticker contains non alphanumeric components', () => {
+    const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>(
+      mockContext
+    );
+
+    return expect(
+      prepareReserveTicker.call(proc, { ...args, ticker: 'TICKER-()_+=' })
+    ).rejects.toThrow('New Tickers can only contain alphanumeric values');
+  });
+
+  it('should return a register ticker transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>(
       mockContext
     );
 
     let result = await prepareReserveTicker.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction,
-        resolvers: sinon.match.array,
-        args: [rawTicker],
-      })
-    );
-    expect(result).toBe(reservation);
+    expect(result).toEqual({
+      transaction,
+      args: [rawTicker],
+      resolver: expect.any(Function),
+    });
 
     entityMockUtils.configureMocks({
       tickerReservationOptions: {
@@ -212,17 +212,13 @@ describe('reserveTicker procedure', () => {
 
     result = await prepareReserveTicker.call(proc, { ...args, extendPeriod: true });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({ transaction, resolvers: sinon.match.array, args: [rawTicker] })
-    );
-    expect(result).toBe(reservation);
+    expect(result).toEqual({ transaction, resolver: expect.any(Function), args: [rawTicker] });
   });
 });
 
 describe('tickerReservationResolver', () => {
-  const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
-  const tickerString = 'SOME_TICKER';
+  const filterEventRecordsSpy = jest.spyOn(utilsInternalModule, 'filterEventRecords');
+  const tickerString = 'TICKER';
   const ticker = dsMockUtils.createMockTicker(tickerString);
 
   beforeAll(() => {
@@ -230,14 +226,14 @@ describe('tickerReservationResolver', () => {
   });
 
   beforeEach(() => {
-    filterEventRecordsStub.returns([dsMockUtils.createMockIEvent(['someDid', ticker])]);
+    filterEventRecordsSpy.mockReturnValue([dsMockUtils.createMockIEvent(['someDid', ticker])]);
   });
 
   afterEach(() => {
-    filterEventRecordsStub.reset();
+    filterEventRecordsSpy.mockReset();
   });
 
-  it('should return the new Ticker Reservation', () => {
+  it('should return the new PolymeshPrimitivesTicker Reservation', () => {
     const fakeContext = {} as Context;
 
     const result = createTickerReservationResolver(fakeContext)({} as ISubmittableResult);
@@ -248,7 +244,7 @@ describe('tickerReservationResolver', () => {
 
 describe('getAuthorization', () => {
   it('should return the appropriate roles and permissions', () => {
-    const ticker = 'SOME_TICKER';
+    const ticker = 'TICKER';
     const args = {
       ticker,
       extendPeriod: true,

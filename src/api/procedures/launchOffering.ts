@@ -3,17 +3,9 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
-import {
-  Asset,
-  Context,
-  Identity,
-  Offering,
-  PolymeshError,
-  PostTransactionValue,
-  Procedure,
-} from '~/internal';
+import { Context, FungibleAsset, Identity, Offering, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, LaunchOfferingParams, PortfolioId, RoleType, TxTags, VenueType } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   bigNumberToBalance,
   bigNumberToU64,
@@ -61,7 +53,7 @@ export const createOfferingResolver =
 export async function prepareLaunchOffering(
   this: Procedure<Params, Offering, Storage>,
   args: Params
-): Promise<PostTransactionValue<Offering>> {
+): Promise<TransactionSpec<Offering, ExtrinsicParams<'sto', 'createFundraiser'>>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -126,9 +118,8 @@ export async function prepareLaunchOffering(
     });
   }
 
-  const [offering] = this.addTransaction({
+  return {
     transaction: tx.sto.createFundraiser,
-    resolvers: [createOfferingResolver(ticker, context)],
     args: [
       portfolioIdToMeshPortfolioId(offeringPortfolioId, context),
       stringToTicker(ticker, context),
@@ -141,9 +132,8 @@ export async function prepareLaunchOffering(
       bigNumberToBalance(minInvestment, context),
       stringToBytes(name, context),
     ],
-  });
-
-  return offering;
+    resolver: createOfferingResolver(ticker, context),
+  };
 }
 
 /**
@@ -165,7 +155,7 @@ export function getAuthorization(
     ],
     permissions: {
       transactions: [TxTags.sto.CreateFundraiser],
-      assets: [new Asset({ ticker }, context)],
+      assets: [new FungibleAsset({ ticker }, context)],
       portfolios: [
         portfolioIdToPortfolio(offeringPortfolioId, context),
         portfolioIdToPortfolio(raisingPortfolioId, context),

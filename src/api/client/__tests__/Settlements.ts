@@ -1,7 +1,8 @@
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 
 import { Settlements } from '~/api/client/Settlements';
-import { addInstructionTransformer, Context, TransactionQueue, Venue } from '~/internal';
+import { addInstructionTransformer, Context, PolymeshTransaction, Venue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Instruction, InstructionAffirmationOperation, VenueType } from '~/types';
@@ -100,27 +101,26 @@ describe('Settlements Class', () => {
   });
 
   describe('method: createVenue', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = {
         description: 'description',
         type: VenueType.Distribution,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Venue>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Venue>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
-      const queue = await settlements.createVenue(args);
+      const tx = await settlements.createVenue(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: addInstruction', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
       const venueId = new BigNumber(1);
       const legs = [
         {
@@ -140,44 +140,44 @@ describe('Settlements Class', () => {
       const tradeDate = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
       const endBlock = new BigNumber(10000);
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Instruction>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Instruction>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: { instructions: [{ legs, tradeDate, endBlock }], venueId },
             transformer: addInstructionTransformer,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedQueue);
+        .mockResolvedValue(expectedTransaction);
 
-      const queue = await settlements.addInstruction({ venueId, legs, tradeDate, endBlock });
-      expect(queue).toBe(expectedQueue);
+      const tx = await settlements.addInstruction({ venueId, legs, tradeDate, endBlock });
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: affirmInstruction', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const instructionId = new BigNumber(1);
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Venue>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Venue>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: { id: instructionId, operation: InstructionAffirmationOperation.Affirm },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedQueue);
+        .mockResolvedValue(expectedTransaction);
 
-      const queue = await settlements.affirmInstruction({ id: instructionId });
+      const tx = await settlements.affirmInstruction({ id: instructionId });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 });

@@ -1,12 +1,24 @@
 import { StorageKey } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Assets } from '~/api/client/Assets';
-import { Asset, Context, TickerReservation, TransactionQueue } from '~/internal';
+import {
+  Context,
+  FungibleAsset,
+  NftCollection,
+  PolymeshTransaction,
+  TickerReservation,
+} from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { KnownAssetType, SecurityIdentifierType, TickerReservationStatus } from '~/types';
+import {
+  GlobalMetadataKey,
+  KnownAssetType,
+  KnownNftType,
+  SecurityIdentifierType,
+  TickerReservationStatus,
+} from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -22,8 +34,12 @@ jest.mock(
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
+);
+jest.mock(
+  '~/api/entities/Asset/NonFungible',
+  require('~/testUtils/mocks/entities').mockNftCollectionModule('~/api/entities/Asset/NonFungible')
 );
 
 describe('Assets Class', () => {
@@ -53,26 +69,26 @@ describe('Assets Class', () => {
   });
 
   describe('method: reserveTicker', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = {
         ticker: 'SOME_TICKER',
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<TickerReservation>;
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<TickerReservation>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
-      const queue = await assets.reserveTicker(args);
+      const tx = await assets.reserveTicker(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: createAsset', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const ticker = 'FAKE_TICKER';
 
       const args = {
@@ -87,36 +103,40 @@ describe('Assets Class', () => {
         reservationRequired: false,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<FungibleAsset>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
-      const queue = await assets.createAsset(args);
+      const tx = await assets.createAsset(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
-  describe('method: claimClassicTicker', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+  describe('method: createNftCollection', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const ticker = 'FAKE_TICKER';
+
       const args = {
-        ticker: 'SOME_TICKER',
-        ethereumSignature: 'someSig',
+        ticker,
+        name: 'TEST',
+        nftType: KnownNftType.Derivative,
+        collectionKeys: [],
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<TickerReservation>;
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<NftCollection>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
-      const queue = await assets.claimClassicTicker(args);
+      const tx = await assets.createNftCollection(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -174,21 +194,21 @@ describe('Assets Class', () => {
         },
       });
 
-      const callback = sinon.stub();
+      const callback = jest.fn();
       const result = await assets.isTickerAvailable({ ticker: 'SOME_TICKER' }, callback);
 
       expect(result).toBe(unsubCallback);
-      sinon.assert.calledWithExactly(callback, true);
+      expect(callback).toBeCalledWith(true);
     });
   });
 
   describe('method: getTickerReservations', () => {
     beforeAll(() => {
-      sinon.stub(utilsConversionModule, 'signerValueToSignatory');
+      jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return a list of ticker reservations if did parameter is set', async () => {
@@ -197,7 +217,7 @@ describe('Assets Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
+      dsMockUtils.createQueryMock('asset', 'assetOwnershipRelations', {
         entries: [
           tuple(
             [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
@@ -218,7 +238,7 @@ describe('Assets Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
+      dsMockUtils.createQueryMock('asset', 'assetOwnershipRelations', {
         entries: [
           tuple(
             [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
@@ -240,7 +260,7 @@ describe('Assets Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
+      dsMockUtils.createQueryMock('asset', 'assetOwnershipRelations', {
         entries: [
           tuple(
             [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
@@ -276,27 +296,70 @@ describe('Assets Class', () => {
     it('should return a specific Asset', async () => {
       const ticker = 'TEST';
 
+      entityMockUtils.configureMocks({
+        fungibleAssetOptions: { exists: false },
+        nftCollectionOptions: { exists: true },
+      });
+
       const asset = await assets.getAsset({ ticker });
+      expect(asset).toBeInstanceOf(NftCollection);
+    });
+
+    it('should throw if the Asset does not exist', async () => {
+      const ticker = 'TEST';
+      entityMockUtils.configureMocks({
+        fungibleAssetOptions: { exists: false },
+        nftCollectionOptions: { exists: false },
+      });
+
+      return expect(assets.getAsset({ ticker })).rejects.toThrow(
+        `No asset exists with ticker: "${ticker}"`
+      );
+    });
+  });
+
+  describe('method: getFungibleAsset', () => {
+    it('should return a specific Asset', async () => {
+      const ticker = 'TEST';
+
+      const asset = await assets.getFungibleAsset({ ticker });
       expect(asset.ticker).toBe(ticker);
     });
 
     it('should throw if the Asset does not exist', async () => {
       const ticker = 'TEST';
-      entityMockUtils.configureMocks({ assetOptions: { exists: false } });
+      entityMockUtils.configureMocks({ fungibleAssetOptions: { exists: false } });
 
-      return expect(assets.getAsset({ ticker })).rejects.toThrow(
+      return expect(assets.getFungibleAsset({ ticker })).rejects.toThrow(
         `There is no Asset with ticker "${ticker}"`
+      );
+    });
+  });
+
+  describe('method: getNftCollection', () => {
+    const ticker = 'NFTTEST';
+
+    it('should return the collection if it exists', async () => {
+      const nftCollection = await assets.getNftCollection({ ticker });
+      expect(nftCollection.ticker).toBe(ticker);
+    });
+
+    it('should throw if the collection does not exist', async () => {
+      entityMockUtils.configureMocks({ nftCollectionOptions: { exists: false } });
+
+      return expect(assets.getNftCollection({ ticker })).rejects.toThrow(
+        `There is no NftCollection with ticker "${ticker}"`
       );
     });
   });
 
   describe('method: getAssets', () => {
     beforeAll(() => {
-      sinon.stub(utilsConversionModule, 'signerValueToSignatory');
+      jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return a list of Assets owned by the supplied did', async () => {
@@ -305,11 +368,24 @@ describe('Assets Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
+      dsMockUtils.createQueryMock('asset', 'assetOwnershipRelations', {
         entries: [
           tuple(
             [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
             dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
+          ),
+        ],
+      });
+
+      dsMockUtils.createQueryMock('asset', 'tokens', {
+        multi: [
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockSecurityToken({
+              ownerDid: dsMockUtils.createMockIdentityId('someDid'),
+              assetType: dsMockUtils.createMockAssetType(KnownAssetType.Commodity),
+              divisible: dsMockUtils.createMockBool(false),
+              totalSupply: dsMockUtils.createMockBalance(new BigNumber(0)),
+            })
           ),
         ],
       });
@@ -326,11 +402,24 @@ describe('Assets Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
+      dsMockUtils.createQueryMock('asset', 'assetOwnershipRelations', {
         entries: [
           tuple(
             [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
             dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
+          ),
+        ],
+      });
+
+      dsMockUtils.createQueryMock('asset', 'tokens', {
+        multi: [
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockSecurityToken({
+              ownerDid: dsMockUtils.createMockIdentityId('someDid'),
+              assetType: dsMockUtils.createMockAssetType(KnownAssetType.Commodity),
+              divisible: dsMockUtils.createMockBool(false),
+              totalSupply: dsMockUtils.createMockBalance(new BigNumber(0)),
+            })
           ),
         ],
       });
@@ -348,7 +437,7 @@ describe('Assets Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
+      dsMockUtils.createQueryMock('asset', 'assetOwnershipRelations', {
         entries: [
           tuple(
             [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
@@ -365,6 +454,19 @@ describe('Assets Class', () => {
         ],
       });
 
+      dsMockUtils.createQueryMock('asset', 'tokens', {
+        multi: [
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockSecurityToken({
+              ownerDid: dsMockUtils.createMockIdentityId(did),
+              assetType: dsMockUtils.createMockAssetType(KnownAssetType.Commodity),
+              divisible: dsMockUtils.createMockBool(false),
+              totalSupply: dsMockUtils.createMockBalance(new BigNumber(0)),
+            })
+          ),
+        ],
+      });
+
       const assetResults = await assets.getAssets();
 
       expect(assetResults).toHaveLength(1);
@@ -373,7 +475,7 @@ describe('Assets Class', () => {
   });
 
   describe('method: get', () => {
-    let requestPaginatedStub: sinon.SinonStub;
+    let requestPaginatedSpy: jest.SpyInstance;
     const expectedAssets = [
       {
         name: 'someAsset',
@@ -386,15 +488,18 @@ describe('Assets Class', () => {
     ];
 
     beforeAll(() => {
-      requestPaginatedStub = sinon.stub(utilsInternalModule, 'requestPaginated');
+      requestPaginatedSpy = jest
+        .spyOn(utilsInternalModule, 'requestPaginated')
+        .mockClear()
+        .mockImplementation();
     });
 
     beforeEach(() => {
-      dsMockUtils.createQueryStub('asset', 'assetNames');
+      dsMockUtils.createQueryMock('asset', 'assetNames');
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should retrieve all Assets on the chain', async () => {
@@ -407,7 +512,30 @@ describe('Assets Class', () => {
         )
       );
 
-      requestPaginatedStub.resolves({ entries, lastKey: null });
+      dsMockUtils.createQueryMock('asset', 'tokens', {
+        multi: [
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockSecurityToken({
+              ownerDid: dsMockUtils.createMockIdentityId('someDid'),
+              assetType: dsMockUtils.createMockAssetType(KnownAssetType.Commodity),
+              divisible: dsMockUtils.createMockBool(false),
+              totalSupply: dsMockUtils.createMockBalance(new BigNumber(0)),
+            })
+          ),
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockSecurityToken({
+              ownerDid: dsMockUtils.createMockIdentityId('someDid'),
+              assetType: dsMockUtils.createMockAssetType({
+                NonFungible: dsMockUtils.createMockNftType(KnownAssetType.Derivative),
+              }),
+              divisible: dsMockUtils.createMockBool(false),
+              totalSupply: dsMockUtils.createMockBalance(new BigNumber(0)),
+            })
+          ),
+        ],
+      });
+
+      requestPaginatedSpy.mockResolvedValue({ entries, lastKey: null });
 
       const result = await assets.get();
 
@@ -425,7 +553,20 @@ describe('Assets Class', () => {
         ),
       ];
 
-      requestPaginatedStub.resolves({ entries, lastKey: 'someKey' });
+      dsMockUtils.createQueryMock('asset', 'tokens', {
+        multi: [
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockSecurityToken({
+              ownerDid: dsMockUtils.createMockIdentityId('someDid'),
+              assetType: dsMockUtils.createMockAssetType(KnownAssetType.Commodity),
+              divisible: dsMockUtils.createMockBool(false),
+              totalSupply: dsMockUtils.createMockBalance(new BigNumber(0)),
+            })
+          ),
+        ],
+      });
+
+      requestPaginatedSpy.mockResolvedValue({ entries, lastKey: 'someKey' });
 
       const result = await assets.get({ size: new BigNumber(1) });
 
@@ -433,6 +574,95 @@ describe('Assets Class', () => {
         data: [expect.objectContaining({ ticker: expectedAssets[0].ticker })],
         next: 'someKey',
       });
+    });
+  });
+
+  describe('method: getGlobalMetadataKeys', () => {
+    let bytesToStringSpy: jest.SpyInstance;
+    let u64ToBigNumberSpy: jest.SpyInstance;
+    let meshMetadataSpecToMetadataSpecSpy: jest.SpyInstance;
+
+    const rawIds = [
+      dsMockUtils.createMockU64(new BigNumber(1)),
+      dsMockUtils.createMockU64(new BigNumber(2)),
+    ];
+    const globalMetadata: GlobalMetadataKey[] = [
+      {
+        id: new BigNumber(1),
+        name: 'SOME_NAME1',
+        specs: {
+          url: 'SOME_URL1',
+          description: 'SOME_DESCRIPTION1',
+          typeDef: 'SOME_TYPEDEF1',
+        },
+      },
+      {
+        id: new BigNumber(2),
+        name: 'SOME_NAME2',
+        specs: {},
+      },
+    ];
+    let rawGlobalMetadata;
+
+    beforeAll(() => {
+      u64ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u64ToBigNumber');
+      bytesToStringSpy = jest.spyOn(utilsConversionModule, 'bytesToString');
+      meshMetadataSpecToMetadataSpecSpy = jest.spyOn(
+        utilsConversionModule,
+        'meshMetadataSpecToMetadataSpec'
+      );
+    });
+
+    beforeEach(() => {
+      rawIds.forEach(rawId => {
+        when(rawId.eq).calledWith(rawId).mockReturnValue(true);
+      });
+      rawGlobalMetadata = globalMetadata.map(({ id, name, specs }, index) => {
+        const rawId = rawIds[index];
+        const rawName = dsMockUtils.createMockBytes(name);
+        const { url, description, typeDef } = specs;
+        const rawUrl = dsMockUtils.createMockBytes(url);
+        const rawDescription = dsMockUtils.createMockBytes(description);
+        const rawTypeDef = dsMockUtils.createMockBytes(typeDef);
+        const rawSpecs = {
+          url: dsMockUtils.createMockOption(rawUrl),
+          description: dsMockUtils.createMockOption(rawDescription),
+          typeDef: dsMockUtils.createMockOption(rawTypeDef),
+        };
+        when(bytesToStringSpy).calledWith(rawUrl).mockReturnValue(url);
+        when(bytesToStringSpy).calledWith(rawDescription).mockReturnValue(description);
+        when(bytesToStringSpy).calledWith(rawTypeDef).mockReturnValue(typeDef);
+        when(bytesToStringSpy).calledWith(rawName).mockReturnValue(name);
+        when(u64ToBigNumberSpy).calledWith(rawId).mockReturnValue(id);
+
+        const rawMetadataSpecs = dsMockUtils.createMockOption(
+          dsMockUtils.createMockAssetMetadataSpec(rawSpecs)
+        );
+        when(meshMetadataSpecToMetadataSpecSpy).calledWith(rawMetadataSpecs).mockReturnValue(specs);
+
+        return {
+          rawId,
+          rawName: dsMockUtils.createMockOption(rawName),
+          rawSpecs: rawMetadataSpecs,
+        };
+      });
+
+      dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalKeyToName', {
+        entries: rawGlobalMetadata.map(({ rawId, rawName }) => tuple([rawId], rawName)),
+      });
+
+      dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalSpecs', {
+        entries: rawGlobalMetadata.map(({ rawId, rawSpecs }) => tuple([rawId], rawSpecs)),
+      });
+    });
+
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should retrieve all Asset Global Metadata on the chain', async () => {
+      const result = await assets.getGlobalMetadataKeys();
+      expect(result).toEqual(globalMetadata);
     });
   });
 });

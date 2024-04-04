@@ -1,21 +1,13 @@
 import { SigningManager } from '@polymeshassociation/signing-manager-types';
-import { ApolloLink, GraphQLRequest } from 'apollo-link';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Polymesh } from '~/api/client/Polymesh';
-import { PolymeshError } from '~/internal';
-import { heartbeat } from '~/middleware/queries';
+import { PolymeshError, PolymeshTransactionBatch } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { ErrorCode } from '~/types';
+import { ErrorCode, TransactionArray } from '~/types';
 import { SUPPORTED_NODE_VERSION_RANGE } from '~/utils/constants';
 import * as internalUtils from '~/utils/internal';
 
-jest.mock('apollo-link-context', () => ({
-  ...jest.requireActual('apollo-link-context'),
-  setContext: sinon.stub().callsFake(cbFunc => {
-    return new ApolloLink(cbFunc({} as GraphQLRequest, {}));
-  }),
-}));
 jest.mock(
   '@polkadot/api',
   require('~/testUtils/mocks/dataSources').mockPolkadotModule('@polkadot/api')
@@ -25,8 +17,8 @@ jest.mock(
   require('~/testUtils/mocks/dataSources').mockContextModule('~/base/Context')
 );
 jest.mock(
-  'apollo-client',
-  require('~/testUtils/mocks/dataSources').mockApolloModule('apollo-client')
+  '@apollo/client/core',
+  require('~/testUtils/mocks/dataSources').mockApolloModule('@apollo/client/core')
 );
 jest.mock(
   '~/api/entities/TickerReservation',
@@ -47,14 +39,20 @@ jest.mock(
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 describe('Polymesh Class', () => {
-  let versionStub: sinon.SinonStub;
+  let versionSpy: jest.SpyInstance;
   beforeEach(() => {
-    versionStub = sinon.stub(internalUtils, 'assertExpectedChainVersion').resolves(undefined);
+    versionSpy = jest
+      .spyOn(internalUtils, 'assertExpectedChainVersion')
+      .mockClear()
+      .mockImplementation()
+      .mockResolvedValue(undefined);
+    jest.spyOn(internalUtils, 'assertExpectedSqVersion').mockImplementation();
+    dsMockUtils.configureMocks({ contextOptions: undefined });
   });
 
   beforeAll(() => {
@@ -64,7 +62,7 @@ describe('Polymesh Class', () => {
   });
 
   afterEach(() => {
-    sinon.restore();
+    jest.restoreAllMocks();
     dsMockUtils.reset();
     entityMockUtils.reset();
     procedureMockUtils.reset();
@@ -86,43 +84,54 @@ describe('Polymesh Class', () => {
 
     it('should instantiate Context with a Signing Manager and return a Polymesh instance', async () => {
       const signingManager = 'signingManager' as unknown as SigningManager;
-      const createStub = dsMockUtils.getContextCreateStub();
+      const createMock = dsMockUtils.getContextCreateMock();
 
       await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         signingManager,
       });
 
-      sinon.assert.calledOnce(createStub);
-      sinon.assert.calledWith(createStub, {
+      expect(createMock).toHaveBeenCalledTimes(1);
+      expect(createMock).toHaveBeenCalledWith({
         polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: null,
         middlewareApiV2: null,
         signingManager,
       });
     });
 
-    it('should instantiate Context with middleware credentials and return a Polymesh instance', async () => {
-      const createStub = dsMockUtils.getContextCreateStub();
-      const middleware = {
-        link: 'someLink',
-        key: 'someKey',
-      };
+    it('should instantiate Context with middleware V2 URL and return a Polymesh instance', async () => {
+      const createMock = dsMockUtils.getContextCreateMock();
 
-      dsMockUtils.createApolloQueryStub(heartbeat(), true);
+      const middlewareV2 = {
+        link: 'someLink',
+        key: '',
+      };
 
       await Polymesh.connect({
         nodeUrl: 'wss://some.url',
-        middleware,
+        middlewareV2,
       });
 
-      sinon.assert.calledOnce(createStub);
-      sinon.assert.calledWith(createStub, {
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: dsMockUtils.getMiddlewareApi(),
-        middlewareApiV2: null,
-        signingManager: undefined,
+      expect(createMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('should instantiate Context with Polkadot config and return  Polymesh instance', async () => {
+      const createMock = dsMockUtils.getContextCreateMock();
+
+      const metadata = {
+        someHashAndVersion: '0x00',
+      } as const;
+
+      const polkadot = {
+        metadata,
+      };
+
+      await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        polkadot,
       });
+
+      expect(createMock).toHaveBeenCalledTimes(1);
     });
 
     it('should throw if the Polymesh version does not satisfy the supported version range', async () => {
@@ -131,7 +140,9 @@ describe('Polymesh Class', () => {
         message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
         data: { supportedVersionRange: SUPPORTED_NODE_VERSION_RANGE },
       });
-      versionStub.rejects(error);
+      versionSpy.mockImplementation(() => {
+        throw error;
+      });
 
       await expect(
         Polymesh.connect({
@@ -145,7 +156,9 @@ describe('Polymesh Class', () => {
         code: ErrorCode.FatalError,
         message: 'Unable to connect',
       });
-      versionStub.rejects(error);
+      versionSpy.mockImplementation(() => {
+        throw error;
+      });
 
       return expect(
         Polymesh.connect({
@@ -154,54 +167,53 @@ describe('Polymesh Class', () => {
       ).rejects.toThrowError(error);
     });
 
-    it('should throw an error if the middleware credentials are incorrect', async () => {
-      const middleware = {
+    it('should throw an error if the middleware V2 URL is incorrect', () => {
+      const middlewareV2 = {
         link: 'wrong',
-        key: 'alsoWrong',
+        key: '',
       };
 
-      dsMockUtils.throwOnMiddlewareQuery(new Error('Forbidden'));
+      const context = dsMockUtils.getContextInstance();
 
-      let err;
-      try {
-        await Polymesh.connect({
+      context.getMiddlewareMetadata = jest.fn().mockImplementation(() => {
+        throw new Error('Network error');
+      });
+
+      dsMockUtils.getContextCreateMock().mockResolvedValue(context);
+
+      return expect(
+        Polymesh.connect({
           nodeUrl: 'wss://some.url',
-          middleware,
-        });
-      } catch (e) {
-        err = e;
-      }
+          middlewareV2,
+        })
+      ).rejects.toThrow('Could not query for middleware V2 metadata');
+    });
 
-      expect(err.message).toBe('Incorrect middleware URL or API key');
+    it('should throw an error if the middleware V2 URL is incompatible with given node URl', async () => {
+      const genesisHash = 'someOtherHash';
 
-      dsMockUtils.throwOnMiddlewareQuery(new Error('Missing Authentication Token'));
-      err = undefined;
+      const context = dsMockUtils.getContextInstance();
+      jest.spyOn(context.polymeshApi.genesisHash, 'toString').mockReturnValue(genesisHash);
+      dsMockUtils.getContextCreateMock().mockResolvedValue(context);
 
-      try {
-        await Polymesh.connect({
-          nodeUrl: 'wss://some.url',
-          middleware,
-        });
-      } catch (e) {
-        err = e;
-      }
+      const connection = Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        middlewareV2: {
+          link: 'someLink',
+          key: '',
+        },
+      });
+      await expect(connection).rejects.toThrow(
+        'Middleware V2 URL is for a different chain than the given node URL'
+      );
 
-      expect(err.message).toBe('Incorrect middleware URL or API key');
+      dsMockUtils.configureMocks({
+        contextOptions: { getMiddlewareMetadata: undefined },
+      });
 
-      // other errors are caught when performing queries later on
-      dsMockUtils.throwOnMiddlewareQuery(new Error('Anything else'));
-      err = undefined;
-
-      try {
-        await Polymesh.connect({
-          nodeUrl: 'wss://some.url',
-          middleware,
-        });
-      } catch (e) {
-        err = e;
-      }
-
-      expect(err).toBeUndefined();
+      await expect(connection).rejects.toThrow(
+        'Middleware V2 URL is for a different chain than the given node URL'
+      );
     });
 
     it('should throw if Context fails in the connection process', async () => {
@@ -267,7 +279,7 @@ describe('Polymesh Class', () => {
         nodeUrl: 'wss://some.url',
       });
 
-      const callback = sinon.stub();
+      const callback = jest.fn();
 
       const unsub = polymesh.onConnectionError(callback);
 
@@ -278,7 +290,7 @@ describe('Polymesh Class', () => {
 
       polkadot.emit('error');
 
-      sinon.assert.calledOnce(callback);
+      expect(callback).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -290,7 +302,7 @@ describe('Polymesh Class', () => {
         nodeUrl: 'wss://some.url',
       });
 
-      const callback = sinon.stub();
+      const callback = jest.fn();
 
       const unsub = polymesh.onDisconnect(callback);
 
@@ -301,7 +313,7 @@ describe('Polymesh Class', () => {
 
       polkadot.emit('disconnected');
 
-      sinon.assert.calledOnce(callback);
+      expect(callback).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -309,14 +321,14 @@ describe('Polymesh Class', () => {
     it('should call the underlying disconnect function', async () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
-        middleware: {
+        middlewareV2: {
           link: 'someLink',
-          key: 'someKey',
+          key: '',
         },
       });
 
       await polymesh.disconnect();
-      sinon.assert.calledOnce(dsMockUtils.getContextInstance().disconnect);
+      expect(dsMockUtils.getContextInstance().disconnect).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -325,16 +337,16 @@ describe('Polymesh Class', () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         signingManager: 'signingManager' as unknown as SigningManager,
-        middleware: {
+        middlewareV2: {
           link: 'someLink',
-          key: 'someKey',
+          key: '',
         },
       });
 
       const address = 'address';
 
       await polymesh.setSigningAccount(address);
-      sinon.assert.calledWith(dsMockUtils.getContextInstance().setSigningAddress, address);
+      expect(dsMockUtils.getContextInstance().setSigningAddress).toHaveBeenCalledWith(address);
     });
   });
 
@@ -343,16 +355,47 @@ describe('Polymesh Class', () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         signingManager: 'signingManager' as unknown as SigningManager,
-        middleware: {
+        middlewareV2: {
           link: 'someLink',
-          key: 'someKey',
+          key: '',
         },
       });
 
       const signingManager = 'manager' as unknown as SigningManager;
 
       await polymesh.setSigningManager(signingManager);
-      sinon.assert.calledWith(dsMockUtils.getContextInstance().setSigningManager, signingManager);
+      expect(dsMockUtils.getContextInstance().setSigningManager).toHaveBeenCalledWith(
+        signingManager
+      );
+    });
+  });
+
+  describe('method: createTransactionBatch', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        signingManager: 'signingManager' as unknown as SigningManager,
+        middlewareV2: {
+          link: 'someLink',
+          key: '',
+        },
+      });
+      const context = dsMockUtils.getContextInstance();
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransactionBatch<
+        [void, void]
+      >;
+      const transactions = ['foo', 'bar', 'baz'] as unknown as TransactionArray<[void, void]>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { transactions }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await polymesh.createTransactionBatch({
+        transactions,
+      });
+
+      expect(tx).toBe(expectedTransaction);
     });
   });
 });

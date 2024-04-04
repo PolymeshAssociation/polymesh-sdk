@@ -1,17 +1,17 @@
 import {
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesCondition,
+  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   getAuthorization,
   Params,
   prepareAddAssetRequirement,
 } from '~/api/procedures/addAssetRequirement';
-import { Asset, Context } from '~/internal';
+import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Condition, ConditionTarget, ConditionType, InputRequirement, TxTags } from '~/types';
@@ -19,28 +19,28 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Base',
+  require('~/testUtils/mocks/entities').mockBaseAssetModule('~/api/entities/Asset/Base')
 );
 
 describe('addAssetRequirement procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let requirementToComplianceRequirementStub: sinon.SinonStub<
-    [InputRequirement, Context],
-    PolymeshPrimitivesComplianceManagerComplianceRequirement
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let requirementToComplianceRequirementSpy: jest.SpyInstance<
+    PolymeshPrimitivesComplianceManagerComplianceRequirement,
+    [InputRequirement, Context]
   >;
   let ticker: string;
   let conditions: Condition[];
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
   let args: Params;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    requirementToComplianceRequirementStub = sinon.stub(
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    requirementToComplianceRequirementSpy = jest.spyOn(
       utilsConversionModule,
       'requirementToComplianceRequirement'
     );
@@ -63,25 +63,21 @@ describe('addAssetRequirement procedure', () => {
     };
   });
 
-  let addTransactionStub: sinon.SinonStub;
-
-  let addComplianceRequirementTransaction: PolymeshTx<[Ticker]>;
+  let addComplianceRequirementTransaction: PolymeshTx<[PolymeshPrimitivesTicker]>;
 
   beforeEach(() => {
     dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {
       returnValue: dsMockUtils.createMockU32(new BigNumber(50)),
     });
 
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
-
-    addComplianceRequirementTransaction = dsMockUtils.createTxStub(
+    addComplianceRequirementTransaction = dsMockUtils.createTxMock(
       'complianceManager',
       'addComplianceRequirement'
     );
 
     mockContext = dsMockUtils.getContextInstance();
 
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
   });
 
   afterEach(() => {
@@ -97,7 +93,7 @@ describe('addAssetRequirement procedure', () => {
 
   it('should throw an error if the supplied requirement is already a part of the Asset', () => {
     entityMockUtils.configureMocks({
-      assetOptions: {
+      baseAssetOptions: {
         complianceRequirementsGet: {
           requirements: [
             {
@@ -109,21 +105,21 @@ describe('addAssetRequirement procedure', () => {
         },
       },
     });
-    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(prepareAddAssetRequirement.call(proc, args)).rejects.toThrow(
       'There already exists a Requirement with the same conditions for this Asset'
     );
   });
 
-  it('should add an add compliance requirement transaction to the queue', async () => {
+  it('should return an add compliance requirement transaction spec', async () => {
     const fakeConditions = ['condition'] as unknown as Condition[];
     const fakeSenderConditions = 'senderConditions' as unknown as PolymeshPrimitivesCondition[];
     const fakeReceiverConditions = 'receiverConditions' as unknown as PolymeshPrimitivesCondition[];
 
-    requirementToComplianceRequirementStub
-      .withArgs({ conditions: fakeConditions, id: new BigNumber(1) }, mockContext)
-      .returns(
+    when(requirementToComplianceRequirementSpy)
+      .calledWith({ conditions: fakeConditions, id: new BigNumber(1) }, mockContext)
+      .mockReturnValue(
         dsMockUtils.createMockComplianceRequirement({
           senderConditions: fakeSenderConditions,
           receiverConditions: fakeReceiverConditions,
@@ -131,24 +127,23 @@ describe('addAssetRequirement procedure', () => {
         })
       );
 
-    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const result = await prepareAddAssetRequirement.call(proc, {
       ...args,
       conditions: fakeConditions,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction: addComplianceRequirementTransaction,
       args: [rawTicker, fakeSenderConditions, fakeReceiverConditions],
+      resolver: undefined,
     });
-
-    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const params = {
         ticker,

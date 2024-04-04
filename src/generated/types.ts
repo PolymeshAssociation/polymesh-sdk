@@ -327,6 +327,9 @@ export enum IdentityTx {
   SetSecondaryKeyPermissions = 'identity.setSecondaryKeyPermissions',
   RegisterCustomClaimType = 'identity.registerCustomClaimType',
   CddRegisterDidWithCdd = 'identity.cddRegisterDidWithCdd',
+  CreateChildIdentity = 'identity.createChildIdentity',
+  CreateChildIdentities = 'identity.createChildIdentities',
+  UnlinkChildIdentity = 'identity.unlinkChildIdentity',
 }
 
 export enum CddServiceProvidersTx {
@@ -414,6 +417,8 @@ export enum MultiSigTx {
   MakeMultisigPrimary = 'multiSig.makeMultisigPrimary',
   ExecuteScheduledProposal = 'multiSig.executeScheduledProposal',
   MakeMultisigSecondary = 'multiSig.makeMultisigSecondary',
+  ChangeSigsRequiredViaCreator = 'multiSig.changeSigsRequiredViaCreator',
+  RemoveCreatorControls = 'multiSig.removeCreatorControls',
 }
 
 export enum BridgeTx {
@@ -523,6 +528,10 @@ export enum AssetTx {
   UpdateAssetType = 'asset.updateAssetType',
   RemoveLocalMetadataKey = 'asset.removeLocalMetadataKey',
   RemoveMetadataValue = 'asset.removeMetadataValue',
+  ExemptTickerAffirmation = 'asset.exemptTickerAffirmation',
+  RemoveTickerAffirmationExemption = 'asset.removeTickerAffirmationExemption',
+  PreApproveTicker = 'asset.preApproveTicker',
+  RemoveTickerPreApproval = 'asset.removeTickerPreApproval',
 }
 
 export enum CapitalDistributionTx {
@@ -601,6 +610,11 @@ export enum PortfolioTx {
   QuitPortfolioCustody = 'portfolio.quitPortfolioCustody',
   AcceptPortfolioCustody = 'portfolio.acceptPortfolioCustody',
   MovePortfolioFundsV2 = 'portfolio.movePortfolioFundsV2',
+  PreApprovePortfolio = 'portfolio.preApprovePortfolio',
+  RemovePortfolioPreApproval = 'portfolio.removePortfolioPreApproval',
+  AllowIdentityToCreatePortfolios = 'portfolio.allowIdentityToCreatePortfolios',
+  RevokeCreatePortfoliosPermission = 'portfolio.revokeCreatePortfoliosPermission',
+  CreateCustodyPortfolio = 'portfolio.createCustodyPortfolio',
 }
 
 export enum ProtocolFeeTx {
@@ -635,18 +649,30 @@ export enum SettlementTx {
   ChangeReceiptValidity = 'settlement.changeReceiptValidity',
   ExecuteScheduledInstruction = 'settlement.executeScheduledInstruction',
   RescheduleInstruction = 'settlement.rescheduleInstruction',
-  PlaceholderClaimReceipt = 'settlement.placeholderClaimReceipt',
-  PlaceholderUnclaimReceipt = 'settlement.placeholderUnclaimReceipt',
   UpdateVenueSigners = 'settlement.updateVenueSigners',
   AddInstructionWithMemo = 'settlement.addInstructionWithMemo',
   AddAndAffirmInstructionWithMemo = 'settlement.addAndAffirmInstructionWithMemo',
   ExecuteManualInstruction = 'settlement.executeManualInstruction',
+  PlaceholderClaimReceipt = 'settlement.placeholderClaimReceipt',
+  PlaceholderUnclaimReceipt = 'settlement.placeholderUnclaimReceipt',
   AddInstructionWithMemoV2 = 'settlement.addInstructionWithMemoV2',
   AddAndAffirmInstructionWithMemoV2 = 'settlement.addAndAffirmInstructionWithMemoV2',
   AffirmInstructionV2 = 'settlement.affirmInstructionV2',
   WithdrawAffirmationV2 = 'settlement.withdrawAffirmationV2',
   RejectInstructionV2 = 'settlement.rejectInstructionV2',
   ExecuteScheduledInstructionV2 = 'settlement.executeScheduledInstructionV2',
+  PlaceholderAddInstruction = 'settlement.placeholderAddInstruction',
+  PlaceholderAddAndAffirmInstruction = 'settlement.placeholderAddAndAffirmInstruction',
+  PlaceholderAffirmInstruction = 'settlement.placeholderAffirmInstruction',
+  PlaceholderWithdrawAffirmation = 'settlement.placeholderWithdrawAffirmation',
+  PlaceholderRejectInstruction = 'settlement.placeholderRejectInstruction',
+  PlaceholderAddInstructionWithMemo = 'settlement.placeholderAddInstructionWithMemo',
+  PlaceholderAddAndAffirmInstructionWithMemo = 'settlement.placeholderAddAndAffirmInstructionWithMemo',
+  ExecuteScheduledInstructionV3 = 'settlement.executeScheduledInstructionV3',
+  AffirmWithReceiptsWithCount = 'settlement.affirmWithReceiptsWithCount',
+  AffirmInstructionWithCount = 'settlement.affirmInstructionWithCount',
+  RejectInstructionWithCount = 'settlement.rejectInstructionWithCount',
+  WithdrawAffirmationWithCount = 'settlement.withdrawAffirmationWithCount',
 }
 
 export enum StatisticsTx {
@@ -679,6 +705,12 @@ export enum UtilityTx {
   BatchAtomic = 'utility.batchAtomic',
   BatchOptimistic = 'utility.batchOptimistic',
   RelayTx = 'utility.relayTx',
+  BatchAll = 'utility.batchAll',
+  DispatchAs = 'utility.dispatchAs',
+  ForceBatch = 'utility.forceBatch',
+  WithWeight = 'utility.withWeight',
+  BatchOld = 'utility.batchOld',
+  AsDerivative = 'utility.asDerivative',
 }
 
 export enum ExternalAgentsTx {
@@ -722,6 +754,9 @@ export enum PolymeshContractsTx {
   InstantiateWithCodePerms = 'polymeshContracts.instantiateWithCodePerms',
   InstantiateWithHashPerms = 'polymeshContracts.instantiateWithHashPerms',
   UpdateCallRuntimeWhitelist = 'polymeshContracts.updateCallRuntimeWhitelist',
+  InstantiateWithCodeAsPrimaryKey = 'polymeshContracts.instantiateWithCodeAsPrimaryKey',
+  InstantiateWithHashAsPrimaryKey = 'polymeshContracts.instantiateWithHashAsPrimaryKey',
+  UpgradeApi = 'polymeshContracts.upgradeApi',
 }
 
 export enum PreimageTx {
@@ -747,6 +782,7 @@ export enum NftTx {
   CreateNftCollection = 'nft.createNftCollection',
   IssueNft = 'nft.issueNft',
   RedeemNft = 'nft.redeemNft',
+  ControllerTransfer = 'nft.controllerTransfer',
 }
 
 export enum ModuleName {

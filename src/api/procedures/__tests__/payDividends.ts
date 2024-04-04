@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { getAuthorization, Params, preparePayDividends } from '~/api/procedures/payDividends';
 import { Context, DividendDistribution } from '~/internal';
@@ -21,8 +21,7 @@ describe('payDividends procedure', () => {
   let distribution: DividendDistribution;
 
   let mockContext: Mocked<Context>;
-  let stringToIdentityIdStub: sinon.SinonStub;
-  let addBatchTransactionStub: sinon.SinonStub;
+  let stringToIdentityIdSpy: jest.SpyInstance;
   let payDividendsTransaction: PolymeshTx<unknown[]>;
 
   beforeAll(() => {
@@ -37,13 +36,12 @@ describe('payDividends procedure', () => {
     dsMockUtils.initMocks({ contextOptions: { did } });
     procedureMockUtils.initMocks();
 
-    sinon.stub(utilsConversionModule, 'corporateActionIdentifierToCaId').returns(rawCaId);
-    stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
+    jest.spyOn(utilsConversionModule, 'corporateActionIdentifierToCaId').mockReturnValue(rawCaId);
+    stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
   });
 
   beforeEach(() => {
-    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
-    payDividendsTransaction = dsMockUtils.createTxStub('capitalDistribution', 'pushBenefit');
+    payDividendsTransaction = dsMockUtils.createTxMock('capitalDistribution', 'pushBenefit');
     mockContext = dsMockUtils.getContextInstance();
   });
 
@@ -58,11 +56,11 @@ describe('payDividends procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should add a stop Offering transaction to the queue', async () => {
+  it('should return a stop Offering transaction spec', async () => {
     const targets = ['someDid'];
     const identityId = dsMockUtils.createMockIdentityId(targets[0]);
 
-    dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid', {
+    dsMockUtils.createQueryMock('capitalDistribution', 'holderPaid', {
       multi: [dsMockUtils.createMockBool(false)],
     });
 
@@ -79,13 +77,15 @@ describe('payDividends procedure', () => {
       expiryDate,
     });
 
-    stringToIdentityIdStub.returns(identityId);
+    stringToIdentityIdSpy.mockReturnValue(identityId);
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await preparePayDividends.call(proc, { targets, distribution });
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    const result = await preparePayDividends.call(proc, { targets, distribution });
+
+    expect(result).toEqual({
       transactions: [{ transaction: payDividendsTransaction, args: [rawCaId, identityId] }],
+      resolver: undefined,
     });
   });
 
@@ -140,7 +140,7 @@ describe('payDividends procedure', () => {
   it('should throw an error if some of the supplied targets are not included in the Distribution', async () => {
     const excludedDid = 'someDid';
 
-    dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid', {
+    dsMockUtils.createQueryMock('capitalDistribution', 'holderPaid', {
       multi: [dsMockUtils.createMockBool(true)],
     });
 
@@ -173,14 +173,14 @@ describe('payDividends procedure', () => {
     const dids = ['someDid', 'otherDid'];
     const targets = [dids[0], entityMockUtils.getIdentityInstance({ isEqual: true, did: dids[1] })];
 
-    dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid', {
+    dsMockUtils.createQueryMock('capitalDistribution', 'holderPaid', {
       multi: [dsMockUtils.createMockBool(true)],
     });
 
     dids.forEach(targetDid =>
-      stringToIdentityIdStub
-        .withArgs(targetDid)
-        .returns(dsMockUtils.createMockIdentityId(targetDid))
+      when(stringToIdentityIdSpy)
+        .calledWith(targetDid)
+        .mockReturnValue(dsMockUtils.createMockIdentityId(targetDid))
     );
 
     distribution = entityMockUtils.getDividendDistributionInstance({

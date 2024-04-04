@@ -1,105 +1,177 @@
-import { PolymeshPrimitivesTransferComplianceTransferCondition } from '@polkadot/types/lookup';
+import { bool, StorageKey } from '@polkadot/types';
+import {
+  PolymeshPrimitivesIdentityId,
+  PolymeshPrimitivesTransferComplianceTransferCondition,
+  PolymeshPrimitivesTransferComplianceTransferConditionExemptKey,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { TransferCondition } from 'polymesh-types/types';
+import { entries, flatten, forEach } from 'lodash';
 
-import { SetTransferRestrictionsParams } from '~/api/entities/Asset/TransferRestrictions/TransferRestrictionBase';
-import { Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
+import { SetTransferRestrictionsParams } from '~/api/entities/Asset/Fungible/TransferRestrictions/TransferRestrictionBase';
+import { Context, FungibleAsset, Identity, PolymeshError, Procedure } from '~/internal';
 import {
   ClaimCountRestrictionValue,
   ClaimCountTransferRestriction,
   ClaimCountTransferRestrictionInput,
   ClaimPercentageTransferRestriction,
   ClaimPercentageTransferRestrictionInput,
+  ClaimType,
   CountTransferRestrictionInput,
   ErrorCode,
   PercentageTransferRestrictionInput,
+  StatClaimType,
   TransferRestriction,
   TransferRestrictionType,
   TxTag,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
+import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import {
+  booleanToBool,
   complianceConditionsToBtreeSet,
-  scopeIdsToBtreeSetIdentityId,
-  statisticsOpTypeToStatOpType,
-  stringToIdentityId,
+  identitiesToBtreeSet,
+  identityIdToString,
+  meshClaimTypeToClaimType,
   stringToTickerKey,
   toExemptKey,
   transferRestrictionToPolymeshTransferCondition,
+  transferRestrictionTypeToStatOpType,
   u32ToBigNumber,
 } from '~/utils/conversion';
 import {
+  asIdentity,
   assertStatIsSet,
   checkTxType,
   compareTransferRestrictionToInput,
-  getExemptedIds,
   neededStatTypeForRestrictionInput,
 } from '~/utils/internal';
 
 /**
  * @hidden
  */
-export interface Storage {
-  currentRestrictions: TransferCondition[];
-  occupiedSlots: BigNumber;
-}
+
+type ClaimKey = StatClaimType | 'None';
+export type ExemptionRecords = Record<ClaimKey, Identity[]>;
+export const newExemptionRecord = (): ExemptionRecords => ({
+  Accredited: [],
+  Affiliate: [],
+  Jurisdiction: [],
+  None: [],
+});
 
 /**
  * @hidden
+ * @param toInsertId - Identity to insert into the exemption records
+ * @param exemptionRecords - records that will be mutated if the Identity should be added
+ * @param claimType - type of Claim the Identity is exempt from
+ * @param filterSet - set of Identities that should not be added into exemption records if given
  */
-function transformRestrictions(
-  restrictions:
+export const addExemptionIfNotPresent = (
+  toInsertId: Identity,
+  exemptionRecords: ExemptionRecords,
+  claimType: ClaimKey,
+  filterSet: Identity[] = []
+): void => {
+  const found = filterSet.some(currentId => currentId.did === toInsertId.did);
+  if (!found) {
+    exemptionRecords[claimType].push(toInsertId);
+  }
+};
+
+export interface Storage {
+  currentRestrictions: PolymeshPrimitivesTransferComplianceTransferCondition[];
+  currentExemptions: ExemptionRecords;
+  occupiedSlots: BigNumber;
+}
+/**
+ * @hidden
+ *
+ * Calculates the smallest change needed to get to the requested state from the current state.
+ * While clearing and building the restrictions would be simpler, it would be inefficient use of gas fees
+ */
+function transformInput(
+  inputRestrictions:
     | CountTransferRestrictionInput[]
     | PercentageTransferRestrictionInput[]
     | ClaimCountTransferRestrictionInput[]
     | ClaimPercentageTransferRestrictionInput[],
-  currentRestrictions: TransferCondition[],
+  currentRestrictions: PolymeshPrimitivesTransferComplianceTransferCondition[],
+  currentExemptions: ExemptionRecords,
   type: TransferRestrictionType,
   context: Context
-): [PolymeshPrimitivesTransferComplianceTransferCondition[], (string | Identity)[]] {
-  const exemptions: (string | Identity)[] = [];
+): {
+  conditions: PolymeshPrimitivesTransferComplianceTransferCondition[];
+  toSetExemptions: ExemptionRecords;
+  toRemoveExemptions: ExemptionRecords;
+} {
+  const toSetExemptions = newExemptionRecord();
+  const toRemoveExemptions = newExemptionRecord();
 
-  let someDifference = restrictions.length !== currentRestrictions.length;
+  let needDifferentConditions = inputRestrictions.length !== currentRestrictions.length;
   const conditions: PolymeshPrimitivesTransferComplianceTransferCondition[] = [];
-  restrictions.forEach(r => {
+  const inputExemptions = newExemptionRecord();
+
+  // for each restriction check if we need to make a condition and track all exemptions
+  inputRestrictions.forEach(restriction => {
     let value: BigNumber | ClaimCountRestrictionValue | ClaimPercentageTransferRestriction;
-    if ('count' in r) {
-      value = r.count;
-    } else if ('percentage' in r) {
-      value = r.percentage;
+    let claimType: StatClaimType | undefined;
+    if ('count' in restriction) {
+      value = restriction.count;
+    } else if ('percentage' in restriction) {
+      value = restriction.percentage;
     } else {
-      value = r;
+      value = restriction;
+      claimType = restriction.claim.type;
     }
 
     const condition = { type, value } as TransferRestriction;
 
-    const compareConditions = (transferCondition: TransferCondition): boolean =>
-      compareTransferRestrictionToInput(transferCondition, condition);
-    if (!someDifference) {
-      someDifference = ![...currentRestrictions].find(compareConditions);
+    const compareConditions = (
+      transferCondition: PolymeshPrimitivesTransferComplianceTransferCondition
+    ): boolean => compareTransferRestrictionToInput(transferCondition, condition);
+    if (!needDifferentConditions) {
+      needDifferentConditions = ![...currentRestrictions].find(compareConditions);
     }
     const rawCondition = transferRestrictionToPolymeshTransferCondition(condition, context);
-
-    if (r.exemptedIdentities) {
-      r.exemptedIdentities.forEach(e => {
-        exemptions.push(e);
-      });
-    }
-
     conditions.push(rawCondition);
+
+    restriction.exemptedIdentities?.forEach(exemption => {
+      const key = claimType || 'None';
+      const id = asIdentity(exemption, context);
+      addExemptionIfNotPresent(id, inputExemptions, key);
+    });
   });
 
-  if (!someDifference) {
+  // calculate exemptions to add — for each input exemption check if it already exists
+  forEach(inputExemptions, (toAddIds, cType) => {
+    const key = cType as ClaimKey;
+    const currentIds = currentExemptions[key];
+    toAddIds.forEach(id => {
+      addExemptionIfNotPresent(id, toSetExemptions, key, currentIds);
+    });
+  });
+
+  // calculate exemptions to remove — for each current exemption check if it was in the input
+  forEach(currentExemptions, (currentIds, cType) => {
+    const key = cType as ClaimKey;
+    const given = inputExemptions[key];
+    currentIds.forEach(id => {
+      addExemptionIfNotPresent(id, toRemoveExemptions, key, given);
+    });
+  });
+
+  const sizeOf = (obj: Record<string, unknown>): number =>
+    flatten(entries(obj).map(([, identities]) => identities)).length;
+
+  const needDifferentExemptions = sizeOf(toSetExemptions) > 0 || sizeOf(toRemoveExemptions) > 0;
+  if (!needDifferentConditions && !needDifferentExemptions) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
-      message: restrictions.length
-        ? 'The supplied restrictions are already in place'
-        : 'There are no restrictions to remove',
+      message: 'The restrictions and exemptions are already in place',
     });
   }
 
-  return [conditions, exemptions];
+  return { conditions, toSetExemptions, toRemoveExemptions };
 }
 
 /**
@@ -108,7 +180,7 @@ function transformRestrictions(
 export async function prepareSetTransferRestrictions(
   this: Procedure<SetTransferRestrictionsParams, BigNumber, Storage>,
   args: SetTransferRestrictionsParams
-): Promise<BigNumber> {
+): Promise<BatchTransactionSpec<BigNumber, unknown[][]>> {
   const {
     context: {
       polymeshApi: {
@@ -116,7 +188,7 @@ export async function prepareSetTransferRestrictions(
         consts,
       },
     },
-    storage: { currentRestrictions, occupiedSlots },
+    storage: { currentRestrictions, occupiedSlots, currentExemptions },
     context,
   } = this;
   const {
@@ -127,9 +199,10 @@ export async function prepareSetTransferRestrictions(
   } = args;
   const tickerKey = stringToTickerKey(ticker, context);
 
-  const [conditions, exemptions] = transformRestrictions(
+  const { conditions, toSetExemptions, toRemoveExemptions } = transformInput(
     restrictions,
     currentRestrictions,
+    currentExemptions,
     type,
     context
   );
@@ -147,11 +220,8 @@ export async function prepareSetTransferRestrictions(
   }
 
   const transactions = [];
+  const op = transferRestrictionTypeToStatOpType(type, context);
 
-  const op =
-    type === TransferRestrictionType.Count
-      ? statisticsOpTypeToStatOpType(StatisticsOpType.Count, context)
-      : statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
   transactions.push(
     checkTxType({
       transaction: statistics.setAssetTransferCompliance,
@@ -159,21 +229,29 @@ export async function prepareSetTransferRestrictions(
     })
   );
 
-  if (exemptions.length) {
-    const exemptedIds = await getExemptedIds(exemptions, context, ticker);
-    const exemptedScopeIds = exemptedIds.map(entityId => stringToIdentityId(entityId, context));
-    const btreeIds = scopeIdsToBtreeSetIdentityId(exemptedScopeIds, context);
-    const exemptKey = toExemptKey(tickerKey, op);
-    transactions.push(
-      checkTxType({
-        transaction: statistics.setEntitiesExempt,
-        feeMultiplier: new BigNumber(exemptions.length),
-        args: [true, exemptKey, btreeIds],
-      })
-    );
-  }
-  this.addBatchTransaction({ transactions });
-  return finalCount;
+  const pushExemptions = (exemptions: ExemptionRecords, exempt: boolean): void => {
+    forEach(exemptions, (exempted, claimType) => {
+      if (exempted.length === 0) {
+        return;
+      }
+      const rawClaimType = claimType === 'None' ? undefined : (claimType as ClaimType);
+      const exemptKey = toExemptKey(tickerKey, op, rawClaimType);
+      const exemptedBtreeSet = identitiesToBtreeSet(exempted, context);
+      const rawExempt = booleanToBool(exempt, context);
+      transactions.push(
+        checkTxType({
+          transaction: statistics.setEntitiesExempt,
+          feeMultiplier: new BigNumber(exemptedBtreeSet.size),
+          args: [rawExempt, exemptKey, exemptedBtreeSet],
+        })
+      );
+    });
+  };
+
+  pushExemptions(toSetExemptions, true);
+  pushExemptions(toRemoveExemptions, false);
+
+  return { transactions, resolver: finalCount };
 }
 
 /**
@@ -192,7 +270,7 @@ export function getAuthorization(
 
   return {
     permissions: {
-      assets: [new Asset({ ticker }, this.context)],
+      assets: [new FungibleAsset({ ticker }, this.context)],
       transactions,
       portfolios: [],
     },
@@ -238,7 +316,7 @@ export async function prepareStorage(
 
   const {
     transferRestrictions: { count, percentage, claimCount, claimPercentage },
-  } = new Asset({ ticker }, context);
+  } = new FungibleAsset({ ticker }, context);
 
   const [
     { restrictions: currentCountRestrictions },
@@ -286,14 +364,62 @@ export async function prepareStorage(
     });
   }
 
+  const op = transferRestrictionTypeToStatOpType(type, context);
+
+  const claimTypes =
+    type === TransferRestrictionType.Count || type === TransferRestrictionType.Percentage
+      ? [undefined]
+      : [ClaimType.Accredited, ClaimType.Affiliate, ClaimType.Jurisdiction];
+  const exemptionFetchers: Promise<
+    [
+      StorageKey<
+        [
+          PolymeshPrimitivesTransferComplianceTransferConditionExemptKey,
+          PolymeshPrimitivesIdentityId
+        ]
+      >,
+      bool
+    ][]
+  >[] = [];
+
+  claimTypes.forEach(claimType => {
+    exemptionFetchers.push(
+      statistics.transferConditionExemptEntities.entries({
+        asset: tickerKey,
+        op,
+        claimType,
+      })
+    );
+  });
+  const rawCurrentExemptions = flatten(await Promise.all(exemptionFetchers));
+  const currentExemptions = newExemptionRecord();
+
+  rawCurrentExemptions.forEach(
+    ([
+      {
+        args: [{ claimType: rawClaimType }, rawDid],
+      },
+    ]) => {
+      const did = identityIdToString(rawDid);
+      let claimType: ClaimKey = 'None';
+      if (rawClaimType.isSome) {
+        claimType = meshClaimTypeToClaimType(rawClaimType.unwrap()) as ClaimKey;
+      }
+      const identity = new Identity({ did }, context);
+      addExemptionIfNotPresent(identity, currentExemptions, claimType);
+    }
+  );
+
   const transformRestriction = (
     restriction: TransferRestriction
   ): PolymeshPrimitivesTransferComplianceTransferCondition => {
     return transferRestrictionToPolymeshTransferCondition(restriction, context);
   };
+
   return {
     occupiedSlots: new BigNumber(occupiedSlots),
     currentRestrictions: currentRestrictions.map(transformRestriction),
+    currentExemptions,
   };
 }
 

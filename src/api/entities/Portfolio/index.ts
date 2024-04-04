@@ -1,53 +1,50 @@
-import { BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
 
 import {
   Account,
-  Asset,
   AuthorizationRequest,
   Context,
   Entity,
+  FungibleAsset,
   Identity,
   moveFunds,
+  Nft,
+  NftCollection,
   PolymeshError,
   quitCustody,
   setCustodian,
 } from '~/internal';
-import { settlements } from '~/middleware/queries';
-import { portfolioMovementsQuery, settlementsQuery } from '~/middleware/queriesV2';
-import { Query, SettlementDirectionEnum, SettlementResultEnum } from '~/middleware/types';
-import { Query as QueryV2 } from '~/middleware/typesV2';
+import { portfolioMovementsQuery, settlementsQuery } from '~/middleware/queries';
+import { Query, SettlementResultEnum } from '~/middleware/types';
+import { SettlementDirectionEnum } from '~/middleware/typesV1';
 import {
   ErrorCode,
   MoveFundsParams,
   NoArgsProcedureMethod,
   ProcedureMethod,
-  ResultSet,
   SetCustodianParams,
 } from '~/types';
-import { Ensured, EnsuredV2, QueryReturnType } from '~/types/utils';
+import { Ensured } from '~/types/utils';
 import {
   addressToKey,
   balanceToBigNumber,
-  bigNumberToU32,
-  hashToString,
   identityIdToString,
   keyToAddress,
   middlewarePortfolioToPortfolio,
-  middlewareV2PortfolioToPortfolio,
   portfolioIdToMeshPortfolioId,
   tickerToString,
+  u64ToBigNumber,
 } from '~/utils/conversion';
 import {
-  asAsset,
-  calculateNextKey,
+  asFungibleAsset,
+  asTicker,
   createProcedureMethod,
   getIdentity,
   toHumanReadable,
 } from '~/utils/internal';
 
-import { HistoricSettlement, PortfolioBalance } from './types';
+import { HistoricSettlement, PortfolioBalance, PortfolioCollection } from './types';
 
 export interface UniqueIdentifiers {
   did: string;
@@ -140,12 +137,12 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
   }
 
   /**
-   * Retrieve the balances of all Assets in this Portfolio
+   * Retrieve the balances of all fungible assets in this Portfolio
    *
-   * @param args.assets - array of Assets (or tickers) for which to fetch balances (optional, all balances are retrieved if not passed)
+   * @param args.assets - array of FungibleAssets (or tickers) for which to fetch balances (optional, all balances are retrieved if not passed)
    */
   public async getAssetBalances(args?: {
-    assets: (string | Asset)[];
+    assets: (string | FungibleAsset)[];
   }): Promise<PortfolioBalance[]> {
     const {
       owner: { did },
@@ -179,7 +176,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       const total = balanceToBigNumber(balance);
 
       assetBalances[ticker] = {
-        asset: new Asset({ ticker }, context),
+        asset: new FungibleAsset({ ticker }, context),
         total,
         locked: new BigNumber(0),
         free: total,
@@ -190,27 +187,19 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       const ticker = tickerToString(key.args[1]);
       const locked = balanceToBigNumber(balance);
 
-      const tickerBalance = assetBalances[ticker];
+      if (!locked.isZero()) {
+        const tickerBalance = assetBalances[ticker];
 
-      /*
-       * this avoids the edge case where an asset holder creates an instruction with a leg
-       *   that transfers 0 tokens, while not holding any tokens. This causes the portfolio to list
-       *   a locked balance of 0, while not listing any unlocked balance. This will be addressed by a
-       *   chain update, but until then this is necessary
-       */
-      if (!tickerBalance) {
-        return;
+        tickerBalance.locked = locked;
+        tickerBalance.free = assetBalances[ticker].total.minus(locked);
       }
-
-      tickerBalance.locked = locked;
-      tickerBalance.free = assetBalances[ticker].total.minus(locked);
     });
 
     const mask: PortfolioBalance[] | undefined = args?.assets.map(asset => ({
       total: new BigNumber(0),
       locked: new BigNumber(0),
       free: new BigNumber(0),
-      asset: asAsset(asset, context),
+      asset: asFungibleAsset(asset, context),
     }));
 
     if (mask) {
@@ -224,6 +213,104 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     }
 
     return values(assetBalances);
+  }
+
+  /**
+   * Retrieve the NFTs held in this portfolio
+   *
+   *  @param args.assets - array of NftCollection (or tickers) for which to fetch holdings (optional, all holdings are retrieved if not passed)
+   */
+  public async getCollections(args?: {
+    collections: (string | NftCollection)[];
+  }): Promise<PortfolioCollection[]> {
+    const {
+      owner: { did },
+      _id: portfolioId,
+      context: {
+        polymeshApi: {
+          query: { portfolio },
+        },
+      },
+      context,
+    } = this;
+
+    const rawPortfolioId = portfolioIdToMeshPortfolioId({ did, number: portfolioId }, context);
+    const [exists, heldCollectionEntries, lockedCollectionEntries] = await Promise.all([
+      this.exists(),
+      portfolio.portfolioNFT.entries(rawPortfolioId),
+      portfolio.portfolioLockedNFT.entries(rawPortfolioId),
+    ]);
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: notExistsMessage,
+      });
+    }
+
+    const queriedCollections = args?.collections.map(asset => asTicker(asset));
+    const seenTickers = new Set<string>();
+
+    const processCollectionEntry = (
+      collectionRecord: Record<string, Nft[]>,
+      entry: (typeof heldCollectionEntries)[0]
+    ): Record<string, Nft[]> => {
+      const [
+        {
+          args: [, [rawTicker, rawNftId]],
+        },
+      ] = entry;
+
+      const ticker = tickerToString(rawTicker);
+      const heldId = u64ToBigNumber(rawNftId);
+
+      if (queriedCollections && !queriedCollections.includes(ticker)) {
+        return collectionRecord;
+      }
+
+      // if the user provided a filter arg, then ignore any asset not specified
+      if (!queriedCollections || queriedCollections.includes(ticker)) {
+        seenTickers.add(ticker);
+        const nft = new Nft({ id: heldId, ticker }, context);
+
+        if (!collectionRecord[ticker]) {
+          collectionRecord[ticker] = [nft];
+        } else {
+          collectionRecord[ticker].push(nft);
+        }
+      }
+
+      return collectionRecord;
+    };
+
+    const heldCollections: Record<string, Nft[]> = heldCollectionEntries.reduce(
+      (collection, entry) => processCollectionEntry(collection, entry),
+      {}
+    );
+
+    const lockedCollections: Record<string, Nft[]> = lockedCollectionEntries.reduce(
+      (collection, entry) => processCollectionEntry(collection, entry),
+      {}
+    );
+
+    const collections: PortfolioCollection[] = [];
+    seenTickers.forEach(ticker => {
+      const held = heldCollections[ticker];
+      const locked = lockedCollections[ticker] || [];
+      // calculate free NFTs by filtering held NFTs by locked NFT IDs
+      const lockedIds = new Set(locked.map(({ id }) => id.toString()));
+      const free = held.filter(({ id }) => !lockedIds.has(id.toString()));
+      const total = new BigNumber(held.length);
+
+      collections.push({
+        collection: new NftCollection({ ticker }, context),
+        free,
+        locked,
+        total,
+      });
+    });
+
+    return collections;
   }
 
   /**
@@ -298,115 +385,10 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
    *
    * @param filters.account - Account involved in the settlement
    * @param filters.ticker - ticker involved in the transaction
-   * @param filters.size - page size
-   * @param filters.start - page offset
-   *
-   * @note supports pagination
-   * @note uses the middleware
-   */
-  public async getTransactionHistory(
-    filters: {
-      account?: string;
-      ticker?: string;
-      size?: BigNumber;
-      start?: BigNumber;
-    } = {}
-  ): Promise<ResultSet<HistoricSettlement>> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { system },
-        },
-      },
-      context,
-      owner: { did },
-      _id: portfolioId,
-    } = this;
-
-    const { account, ticker, size, start } = filters;
-
-    const settlementsPromise = context.queryMiddleware<Ensured<Query, 'settlements'>>(
-      settlements({
-        identityId: did,
-        portfolioNumber: portfolioId ? portfolioId.toString() : null,
-        addressFilter: account ? addressToKey(account, context) : undefined,
-        tickerFilter: ticker,
-        count: size?.toNumber(),
-        skip: start?.toNumber(),
-      })
-    );
-
-    const [result, exists] = await Promise.all([settlementsPromise, this.exists()]);
-
-    if (!exists) {
-      throw new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message: notExistsMessage,
-      });
-    }
-
-    const {
-      data: { settlements: settlementsResult },
-    } = result;
-
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    const { items, totalCount } = settlementsResult!;
-
-    const multiParams: BlockNumber[] = [];
-    const data: Omit<HistoricSettlement, 'blockHash'>[] = [];
-
-    items!.forEach(item => {
-      const { block_id: blockId, result: status, addresses, legs: settlementLegs } = item!;
-
-      const blockNumber = new BigNumber(blockId);
-      multiParams.push(bigNumberToU32(blockNumber, context));
-      data.push({
-        blockNumber,
-        status,
-        accounts: addresses!.map(
-          address => new Account({ address: keyToAddress(address, context) }, context)
-        ),
-        legs: settlementLegs.map(leg => {
-          return {
-            asset: new Asset({ ticker: leg!.ticker }, context),
-            amount: new BigNumber(leg!.amount).shiftedBy(-6),
-            direction: leg!.direction,
-            from: middlewarePortfolioToPortfolio(leg!.from, context),
-            to: middlewarePortfolioToPortfolio(leg!.to, context),
-          };
-        }),
-      });
-    });
-    const count = new BigNumber(totalCount);
-    /* eslint-enable @typescript-eslint/no-non-null-assertion */
-
-    const next = calculateNextKey(count, size, start);
-
-    let hashes: Hash[] = [];
-
-    if (multiParams.length) {
-      hashes = await system.blockHash.multi<QueryReturnType<typeof system.blockHash>>(multiParams);
-    }
-
-    return {
-      data: data.map((settlement, index) => ({
-        ...settlement,
-        blockHash: hashToString(hashes[index]),
-      })),
-      next,
-      count,
-    };
-  }
-
-  /**
-   * Retrieve a list of transactions where this portfolio was involved. Can be filtered using parameters
-   *
-   * @param filters.account - Account involved in the settlement
-   * @param filters.ticker - ticker involved in the transaction
    *
    * @note uses the middlewareV2
    */
-  public async getTransactionHistoryV2(
+  public async getTransactionHistory(
     filters: {
       account?: string;
       ticker?: string;
@@ -422,7 +404,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
 
     const address = account ? addressToKey(account, context) : undefined;
 
-    const settlementsPromise = context.queryMiddlewareV2<EnsuredV2<QueryV2, 'legs'>>(
+    const settlementsPromise = context.queryMiddleware<Ensured<Query, 'legs'>>(
       settlementsQuery({
         identityId,
         portfolioId,
@@ -431,9 +413,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       })
     );
 
-    const portfolioMovementsPromise = context.queryMiddlewareV2<
-      EnsuredV2<QueryV2, 'portfolioMovements'>
-    >(
+    const portfolioMovementsPromise = context.queryMiddleware<Ensured<Query, 'portfolioMovements'>>(
       portfolioMovementsQuery({
         identityId,
         portfolioId,
@@ -482,17 +462,17 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       data.push({
         blockNumber: new BigNumber(blockId),
         blockHash: hash,
-        status: settlementResult as SettlementResultEnum,
+        status: settlementResult as unknown as SettlementResultEnum,
         accounts: legs[0].addresses.map(
           (accountAddress: string) =>
             new Account({ address: keyToAddress(accountAddress, context) }, context)
         ),
         legs: legs.map(({ from, to, fromId, toId, assetId, amount }) => ({
-          asset: new Asset({ ticker: assetId }, context),
+          asset: new FungibleAsset({ ticker: assetId }, context),
           amount: new BigNumber(amount).shiftedBy(-6),
           direction: getDirection(fromId, toId),
-          from: middlewareV2PortfolioToPortfolio(from!, context),
-          to: middlewareV2PortfolioToPortfolio(to!, context),
+          from: middlewarePortfolioToPortfolio(from!, context),
+          to: middlewarePortfolioToPortfolio(to!, context),
         })),
       });
     });
@@ -507,11 +487,11 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
           accounts: [new Account({ address: keyToAddress(accountAddress, context) }, context)],
           legs: [
             {
-              asset: new Asset({ ticker: assetId }, context),
+              asset: new FungibleAsset({ ticker: assetId }, context),
               amount: new BigNumber(amount).shiftedBy(-6),
               direction: getDirection(fromId, toId),
-              from: middlewareV2PortfolioToPortfolio(from!, context),
-              to: middlewareV2PortfolioToPortfolio(to!, context),
+              from: middlewarePortfolioToPortfolio(from!, context),
+              to: middlewarePortfolioToPortfolio(to!, context),
             },
           ],
         });

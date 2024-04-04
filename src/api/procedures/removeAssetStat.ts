@@ -1,13 +1,11 @@
-import { QueryableStorageEntry } from '@polkadot/api/types';
 import {
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
 
-import { Asset, PolymeshError, Procedure } from '~/internal';
+import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RemoveAssetStatParams, StatClaimIssuer, StatType, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
-import { QueryReturnType } from '~/types/utils';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   claimIssuerToMeshClaimIssuer,
   statisticsOpTypeToStatType,
@@ -15,7 +13,7 @@ import {
   statTypeToStatOpType,
   stringToTickerKey,
 } from '~/utils/conversion';
-import { checkTxType, compareTransferRestrictionToStat } from '~/utils/internal';
+import { compareTransferRestrictionToStat, requestMulti } from '~/utils/internal';
 
 /**
  * @hidden
@@ -23,13 +21,12 @@ import { checkTxType, compareTransferRestrictionToStat } from '~/utils/internal'
 export async function prepareRemoveAssetStat(
   this: Procedure<RemoveAssetStatParams, void>,
   args: RemoveAssetStatParams
-): Promise<void> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'statistics', 'setActiveAssetStats'>>> {
   const {
     context: {
       polymeshApi: {
         tx: { statistics },
         query: { statistics: statisticsQuery },
-        queryMulti,
       },
     },
     context,
@@ -37,24 +34,19 @@ export async function prepareRemoveAssetStat(
   const { ticker, type } = args;
   const tickerKey = stringToTickerKey(ticker, context);
 
-  const [currentStats, { requirements }] = await queryMulti<
-    [
-      QueryReturnType<typeof statisticsQuery.activeAssetStats>,
-      QueryReturnType<typeof statisticsQuery.assetTransferCompliances>
-    ]
-  >([
-    [statisticsQuery.activeAssetStats as unknown as QueryableStorageEntry<'promise'>, tickerKey],
-    [
-      statisticsQuery.assetTransferCompliances as unknown as QueryableStorageEntry<'promise'>,
-      tickerKey,
-    ],
+  const [currentStats, { requirements }] = await requestMulti<
+    [typeof statisticsQuery.activeAssetStats, typeof statisticsQuery.assetTransferCompliances]
+  >(context, [
+    [statisticsQuery.activeAssetStats, tickerKey],
+    [statisticsQuery.assetTransferCompliances, tickerKey],
   ]);
 
   let claimIssuer: StatClaimIssuer;
   let rawClaimIssuer:
     | [PolymeshPrimitivesIdentityClaimClaimType, PolymeshPrimitivesIdentityId]
     | undefined;
-  if (type === StatType.ScopedCount || type === StatType.ScopedPercentage) {
+
+  if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
     claimIssuer = { issuer: args.issuer, claimType: args.claimType };
     rawClaimIssuer = claimIssuerToMeshClaimIssuer(claimIssuer, context);
   }
@@ -85,12 +77,11 @@ export async function prepareRemoveAssetStat(
   }
   const newStats = statisticStatTypesToBtreeStatType(statsArr, context);
 
-  this.addTransaction(
-    checkTxType({
-      transaction: statistics.setActiveAssetStats,
-      args: [tickerKey, newStats],
-    })
-  );
+  return {
+    transaction: statistics.setActiveAssetStats,
+    args: [tickerKey, newStats],
+    resolver: undefined,
+  };
 }
 
 /**
@@ -101,7 +92,7 @@ export function getAuthorization(
   { ticker }: RemoveAssetStatParams
 ): ProcedureAuthorization {
   const transactions = [TxTags.statistics.SetActiveAssetStats];
-  const asset = new Asset({ ticker }, this.context);
+  const asset = new FungibleAsset({ ticker }, this.context);
   return {
     permissions: {
       transactions,

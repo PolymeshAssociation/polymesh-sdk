@@ -1,7 +1,7 @@
 import { StorageKey, u64 } from '@polkadot/types';
 import { PolymeshPrimitivesIdentityId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   Context,
@@ -9,7 +9,7 @@ import {
   Identity,
   Namespace,
   NumberedPortfolio,
-  TransactionQueue,
+  PolymeshTransaction,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -36,8 +36,8 @@ describe('Portfolios class', () => {
   const numberedPortfolioId = new BigNumber(1);
   const rawNumberedPortfolioId = dsMockUtils.createMockU64(numberedPortfolioId);
   let mockContext: Mocked<Context>;
-  let stringToIdentityIdStub: sinon.SinonStub<[string, Context], PolymeshPrimitivesIdentityId>;
-  let u64ToBigNumberStub: sinon.SinonStub<[u64], BigNumber>;
+  let stringToIdentityIdSpy: jest.SpyInstance<PolymeshPrimitivesIdentityId, [string, Context]>;
+  let u64ToBigNumberSpy: jest.SpyInstance<BigNumber, [u64]>;
   let portfolios: Portfolios;
   let identity: Identity;
 
@@ -45,8 +45,8 @@ describe('Portfolios class', () => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
-    u64ToBigNumberStub = sinon.stub(utilsConversionModule, 'u64ToBigNumber');
+    stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
+    u64ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u64ToBigNumber');
   });
 
   beforeEach(() => {
@@ -72,7 +72,7 @@ describe('Portfolios class', () => {
 
   describe('method: getPortfolios', () => {
     it('should retrieve all the portfolios for the Identity', async () => {
-      dsMockUtils.createQueryStub('portfolio', 'portfolios', {
+      dsMockUtils.createQueryMock('portfolio', 'portfolios', {
         entries: [
           tuple(
             [dsMockUtils.createMockIdentityId(did), rawNumberedPortfolioId],
@@ -81,8 +81,8 @@ describe('Portfolios class', () => {
         ],
       });
 
-      stringToIdentityIdStub.withArgs(did, mockContext).returns(rawIdentityId);
-      u64ToBigNumberStub.returns(numberedPortfolioId);
+      when(stringToIdentityIdSpy).calledWith(did, mockContext).mockReturnValue(rawIdentityId);
+      u64ToBigNumberSpy.mockReturnValue(numberedPortfolioId);
 
       const result = await portfolios.getPortfolios();
       expect(result).toHaveLength(2);
@@ -95,7 +95,7 @@ describe('Portfolios class', () => {
 
   describe('method: getCustodiedPortfolios', () => {
     it('should retrieve all the Portfolios custodied by the Identity', async () => {
-      dsMockUtils.createQueryStub('portfolio', 'portfoliosInCustody');
+      dsMockUtils.createQueryMock('portfolio', 'portfoliosInCustody');
 
       const entries = [
         tuple(
@@ -124,10 +124,12 @@ describe('Portfolios class', () => {
         ),
       ];
 
-      sinon.stub(utilsInternalModule, 'requestPaginated').resolves({ entries, lastKey: null });
+      jest
+        .spyOn(utilsInternalModule, 'requestPaginated')
+        .mockResolvedValue({ entries, lastKey: null });
 
-      stringToIdentityIdStub.withArgs(did, mockContext).returns(rawIdentityId);
-      u64ToBigNumberStub.returns(numberedPortfolioId);
+      when(stringToIdentityIdSpy).calledWith(did, mockContext).mockReturnValue(rawIdentityId);
+      u64ToBigNumberSpy.mockReturnValue(numberedPortfolioId);
 
       const { data } = await portfolios.getCustodiedPortfolios();
       expect(data).toHaveLength(2);
@@ -170,24 +172,23 @@ describe('Portfolios class', () => {
   });
 
   describe('method: delete', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
       const portfolioId = new BigNumber(5);
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { id: portfolioId, did }, transformer: undefined }, mockContext)
-        .resolves(expectedQueue);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { id: portfolioId, did }, transformer: undefined }, mockContext, {})
+        .mockResolvedValue(expectedTransaction);
 
-      let queue = await portfolios.delete({ portfolio: portfolioId });
+      let tx = await portfolios.delete({ portfolio: portfolioId });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
 
-      queue = await portfolios.delete({
+      tx = await portfolios.delete({
         portfolio: new NumberedPortfolio({ id: portfolioId, did }, mockContext),
       });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 });

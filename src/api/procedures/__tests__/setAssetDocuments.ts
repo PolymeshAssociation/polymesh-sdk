@@ -1,8 +1,7 @@
-import { Vec } from '@polkadot/types';
-import { PolymeshPrimitivesDocument } from '@polkadot/types/lookup';
+import { Option, u32, Vec } from '@polkadot/types';
+import { PolymeshPrimitivesDocument, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { Document, DocumentId, Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   getAuthorization,
@@ -11,7 +10,7 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/setAssetDocuments';
-import { Asset, Context } from '~/internal';
+import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { AssetDocument, TxTags } from '~/types';
@@ -20,22 +19,22 @@ import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 describe('setAssetDocuments procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let assetDocumentToDocumentStub: sinon.SinonStub<
-    [AssetDocument, Context],
-    PolymeshPrimitivesDocument
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let assetDocumentToDocumentSpy: jest.SpyInstance<
+    PolymeshPrimitivesDocument,
+    [AssetDocument, Context]
   >;
   let ticker: string;
   let documents: AssetDocument[];
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
   let rawDocuments: PolymeshPrimitivesDocument[];
-  let documentEntries: [[Ticker, DocumentId], PolymeshPrimitivesDocument][];
+  let documentEntries: [[PolymeshPrimitivesTicker, u32], Option<PolymeshPrimitivesDocument>][];
   let args: Params;
 
   beforeAll(() => {
@@ -50,9 +49,9 @@ describe('setAssetDocuments procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    sinon.stub(utilsConversionModule, 'signerValueToSignatory');
-    assetDocumentToDocumentStub = sinon.stub(utilsConversionModule, 'assetDocumentToDocument');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
+    assetDocumentToDocumentSpy = jest.spyOn(utilsConversionModule, 'assetDocumentToDocument');
     ticker = 'SOME_TICKER';
     documents = [
       {
@@ -81,7 +80,10 @@ describe('setAssetDocuments procedure', () => {
       })
     );
     documentEntries = rawDocuments.map((doc, index) =>
-      tuple([rawTicker, dsMockUtils.createMockU32(new BigNumber(index))], doc)
+      tuple(
+        [rawTicker, dsMockUtils.createMockU32(new BigNumber(index))],
+        dsMockUtils.createMockOption(doc)
+      )
     );
     args = {
       ticker,
@@ -89,26 +91,24 @@ describe('setAssetDocuments procedure', () => {
     };
   });
 
-  let addBatchTransactionStub: sinon.SinonStub;
-
-  let removeDocumentsTransaction: PolymeshTx<[Vec<DocumentId>, Ticker]>;
-  let addDocumentsTransaction: PolymeshTx<[Vec<Document>, Ticker]>;
+  let removeDocumentsTransaction: PolymeshTx<[Vec<u32>, PolymeshPrimitivesTicker]>;
+  let addDocumentsTransaction: PolymeshTx<[Vec<u32>, PolymeshPrimitivesTicker]>;
 
   beforeEach(() => {
-    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
-
-    dsMockUtils.createQueryStub('asset', 'assetDocuments', {
+    dsMockUtils.createQueryMock('asset', 'assetDocuments', {
       entries: [documentEntries[0]],
     });
 
-    removeDocumentsTransaction = dsMockUtils.createTxStub('asset', 'removeDocuments');
-    addDocumentsTransaction = dsMockUtils.createTxStub('asset', 'addDocuments');
+    removeDocumentsTransaction = dsMockUtils.createTxMock('asset', 'removeDocuments');
+    addDocumentsTransaction = dsMockUtils.createTxMock('asset', 'addDocuments');
 
     mockContext = dsMockUtils.getContextInstance();
 
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
     documents.forEach((doc, index) => {
-      assetDocumentToDocumentStub.withArgs(doc, mockContext).returns(rawDocuments[index]);
+      when(assetDocumentToDocumentSpy)
+        .calledWith(doc, mockContext)
+        .mockReturnValue(rawDocuments[index]);
     });
   });
 
@@ -124,7 +124,7 @@ describe('setAssetDocuments procedure', () => {
   });
 
   it('should throw an error if the new list is the same as the current one', () => {
-    const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       currentDocs: documents,
       currentDocIds: [],
     });
@@ -134,16 +134,16 @@ describe('setAssetDocuments procedure', () => {
     );
   });
 
-  it('should add a remove documents transaction and an add documents transaction to the queue', async () => {
+  it('should add a remove documents transaction and an add documents transaction to the batch', async () => {
     const docIds = [documentEntries[0][0][1]];
-    const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       currentDocIds: docIds,
       currentDocs: [],
     });
 
     const result = await prepareSetAssetDocuments.call(proc, args);
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: removeDocumentsTransaction,
@@ -156,19 +156,19 @@ describe('setAssetDocuments procedure', () => {
           args: [rawDocuments, rawTicker],
         },
       ],
+      resolver: undefined,
     });
-    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   it('should not add a remove documents transaction if there are no documents linked to the Asset', async () => {
-    const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       currentDocIds: [],
       currentDocs: [],
     });
 
     const result = await prepareSetAssetDocuments.call(proc, args);
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: addDocumentsTransaction,
@@ -176,20 +176,20 @@ describe('setAssetDocuments procedure', () => {
           args: [rawDocuments, rawTicker],
         },
       ],
+      resolver: undefined,
     });
-    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   it('should not add an add documents transaction if there are no documents passed as arguments', async () => {
     const docIds = [documentEntries[0][0][1]];
-    const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       currentDocs: [documents[0]],
       currentDocIds: docIds,
     });
 
     const result = await prepareSetAssetDocuments.call(proc, { ...args, documents: [] });
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: removeDocumentsTransaction,
@@ -197,13 +197,13 @@ describe('setAssetDocuments procedure', () => {
           args: [docIds, rawTicker],
         },
       ],
+      resolver: undefined,
     });
-    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
-      let proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
+      let proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
         currentDocIds: [documentEntries[0][0][1]],
         currentDocs: [],
       });
@@ -217,7 +217,7 @@ describe('setAssetDocuments procedure', () => {
         },
       });
 
-      proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
+      proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
         currentDocIds: [],
         currentDocs: [],
       });
@@ -235,10 +235,10 @@ describe('setAssetDocuments procedure', () => {
 
   describe('prepareStorage', () => {
     it('should return the current documents and their ids', async () => {
-      const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
-      dsMockUtils.createQueryStub('asset', 'assetDocuments', {
+      dsMockUtils.createQueryMock('asset', 'assetDocuments', {
         entries: documentEntries,
       });
 

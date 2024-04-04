@@ -2,9 +2,9 @@ import BigNumber from 'bignumber.js';
 import { flatMap, remove } from 'lodash';
 
 import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
-import { Asset, PolymeshError, Procedure } from '~/internal';
+import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, ModifyComplianceRequirementParams, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { requirementToComplianceRequirement, stringToTicker } from '~/utils/conversion';
 import { conditionsAreEqual, hasSameElements } from '~/utils/internal';
 
@@ -21,7 +21,9 @@ export type Params = ModifyComplianceRequirementParams & {
 export async function prepareModifyComplianceRequirement(
   this: Procedure<Params, void>,
   args: Params
-): Promise<void> {
+): Promise<
+  TransactionSpec<void, ExtrinsicParams<'complianceManager', 'changeComplianceRequirement'>>
+> {
   const {
     context: {
       polymeshApi: { tx },
@@ -32,7 +34,7 @@ export async function prepareModifyComplianceRequirement(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const token = new Asset({ ticker }, context);
+  const token = new FungibleAsset({ ticker }, context);
 
   const { requirements: currentRequirements, defaultTrustedClaimIssuers } =
     await token.compliance.requirements.get();
@@ -70,10 +72,11 @@ export async function prepareModifyComplianceRequirement(
     context
   );
 
-  this.addTransaction({
+  return {
     transaction: tx.complianceManager.changeComplianceRequirement,
     args: [rawTicker, rawComplianceRequirement],
-  });
+    resolver: undefined,
+  };
 }
 
 /**
@@ -86,7 +89,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.complianceManager.ChangeComplianceRequirement],
-      assets: [new Asset({ ticker }, this.context)],
+      assets: [new FungibleAsset({ ticker }, this.context)],
       portfolios: [],
     },
   };

@@ -1,7 +1,11 @@
 // Auto-generated via `yarn polkadot-types-from-chain`, do not edit
 /* eslint-disable */
 
-import type { ApiTypes } from '@polkadot/api-base/types';
+// import type lookup before we augment - in some environments
+// this is required to allow for ambient/previous definitions
+import '@polkadot/api-base/types/consts';
+
+import type { ApiTypes, AugmentedConst } from '@polkadot/api-base/types';
 import type { Vec, bool, u128, u16, u32, u64, u8 } from '@polkadot/types-codec';
 import type { Perbill, Permill } from '@polkadot/types/interfaces/runtime';
 import type {
@@ -14,22 +18,16 @@ import type {
   SpWeightsWeightV2Weight,
 } from '@polkadot/types/lookup';
 
+export type __AugmentedConst<ApiType extends ApiTypes> = AugmentedConst<ApiType>;
+
 declare module '@polkadot/api-base/types/consts' {
-  export interface AugmentedConsts<ApiType extends ApiTypes> {
+  interface AugmentedConsts<ApiType extends ApiTypes> {
     asset: {
       assetMetadataNameMaxLength: u32 & AugmentedConst<ApiType>;
       assetMetadataTypeDefMaxLength: u32 & AugmentedConst<ApiType>;
       assetMetadataValueMaxLength: u32 & AugmentedConst<ApiType>;
       assetNameMaxLength: u32 & AugmentedConst<ApiType>;
       fundingRoundNameMaxLength: u32 & AugmentedConst<ApiType>;
-    };
-    authorship: {
-      /**
-       * The number of blocks back we should accept uncles.
-       * This means that we will deal with uncle-parents that are
-       * `UncleGenerations + 1` before `now`.
-       **/
-      uncleGenerations: u32 & AugmentedConst<ApiType>;
     };
     babe: {
       /**
@@ -111,8 +109,16 @@ declare module '@polkadot/api-base/types/consts' {
        * The maximum length of a contract code in bytes. This limit applies to the instrumented
        * version of the code. Therefore `instantiate_with_code` can fail even when supplying
        * a wasm binary below this maximum size.
+       *
+       * The value should be chosen carefully taking into the account the overall memory limit
+       * your runtime has, as well as the [maximum allowed callstack
+       * depth](#associatedtype.CallStack). Look into the `integrity_test()` for some insights.
        **/
       maxCodeLen: u32 & AugmentedConst<ApiType>;
+      /**
+       * The maximum length of the debug buffer in bytes.
+       **/
+      maxDebugBufferLen: u32 & AugmentedConst<ApiType>;
       /**
        * The maximum allowable length in bytes for storage keys.
        **/
@@ -143,6 +149,15 @@ declare module '@polkadot/api-base/types/consts' {
        * Max Authorities in use
        **/
       maxAuthorities: u32 & AugmentedConst<ApiType>;
+      /**
+       * The maximum number of entries to keep in the set id to session index mapping.
+       *
+       * Since the `SetIdSession` map is only used for validating equivocations this
+       * value should relate to the bonding duration of whatever staking system is
+       * being used (if any). If equivocation handling is not enabled then this value
+       * can be zero.
+       **/
+      maxSetIdSessionEntries: u64 & AugmentedConst<ApiType>;
     };
     identity: {
       initialPOLYX: u128 & AugmentedConst<ApiType>;
@@ -291,6 +306,12 @@ declare module '@polkadot/api-base/types/consts' {
        * The polynomial that is applied in order to derive fee from weight.
        **/
       weightToFee: Vec<SpWeightsWeightToFeeCoefficient> & AugmentedConst<ApiType>;
+    };
+    utility: {
+      /**
+       * The limit on the number of batched calls.
+       **/
+      batchedCallsLimit: u32 & AugmentedConst<ApiType>;
     };
   } // AugmentedConsts
 } // declare module

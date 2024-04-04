@@ -1,9 +1,9 @@
-import { Bytes } from '@polkadot/types';
+import { Bytes, u32 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
 
-import { Asset, Context, PolymeshError, Procedure, TickerReservation } from '~/internal';
-import { CustomAssetTypeId } from '~/polkadot/polymesh';
+import { addManualFees } from '~/api/procedures/utils';
+import { FungibleAsset, Identity, PolymeshError, Procedure, TickerReservation } from '~/internal';
 import {
   AssetTx,
   CreateAssetWithTickerParams,
@@ -12,24 +12,25 @@ import {
   RoleType,
   StatisticsTx,
   TickerReservationStatus,
-  TxTag,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import {
   assetDocumentToDocument,
   bigNumberToBalance,
   booleanToBool,
-  boolToBoolean,
+  fundingRoundToAssetFundingRound,
   inputStatTypeToMeshStatType,
   internalAssetTypeToAssetType,
+  nameToAssetName,
+  portfolioToPortfolioKind,
   securityIdentifierToAssetIdentifier,
   statisticStatTypesToBtreeStatType,
   stringToBytes,
   stringToTicker,
   stringToTickerKey,
 } from '~/utils/conversion';
-import { checkTxType, optionize } from '~/utils/internal';
+import { checkTxType, isAlphanumeric, optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -47,39 +48,13 @@ export interface Storage {
    *   null value means the type is not custom
    */
   customTypeData: {
-    id: CustomAssetTypeId;
+    id: u32;
     rawValue: Bytes;
   } | null;
 
   status: TickerReservationStatus;
-}
 
-/**
- * Add protocol fees for specific tags to the current accumulated total
- *
- * @returns undefined if fees aren't being calculated manually
- */
-async function calculateManualFees(
-  tags: ({ tag: TxTag; feeMultiplier: BigNumber } | TxTag)[],
-  context: Context
-): Promise<BigNumber> {
-  if (tags.length === 0) {
-    return new BigNumber(0);
-  }
-  const fees = await context.getProtocolFees({
-    tags: tags.map(tagData => (typeof tagData !== 'string' ? tagData.tag : tagData)),
-  });
-
-  return fees.reduce((prev, { fees: nextFees }, index) => {
-    const tagData = tags[index];
-    let feeMultiplier = new BigNumber(1);
-
-    if (typeof tagData !== 'string') {
-      ({ feeMultiplier } = tagData);
-    }
-
-    return prev.plus(nextFees.times(feeMultiplier));
-  }, new BigNumber(0));
+  signingIdentity: Identity;
 }
 
 /**
@@ -103,35 +78,39 @@ function assertTickerAvailable(
       message: `You must first reserve ticker "${ticker}" in order to create an Asset with it`,
     });
   }
+
+  if (!isAlphanumeric(ticker)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'New Tickers can only contain alphanumeric values',
+    });
+  }
 }
 
 /**
  * @hidden
  */
 export async function prepareCreateAsset(
-  this: Procedure<Params, Asset, Storage>,
+  this: Procedure<Params, FungibleAsset, Storage>,
   args: Params
-): Promise<Asset> {
+): Promise<BatchTransactionSpec<FungibleAsset, unknown[][]>> {
   const {
     context: {
-      polymeshApi: {
-        tx,
-        query: { asset },
-      },
+      polymeshApi: { tx },
     },
     context,
-    storage: { customTypeData, status },
+    storage: { customTypeData, status, signingIdentity },
   } = this;
   const {
     ticker,
     name,
     initialSupply,
+    portfolioId,
     isDivisible,
     assetType,
     securityIdentifiers = [],
     fundingRound,
     documents,
-    requireInvestorUniqueness,
     reservationRequired,
     initialStatistics,
   } = args;
@@ -139,36 +118,24 @@ export async function prepareCreateAsset(
   assertTickerAvailable(ticker, status, reservationRequired);
 
   const rawTicker = stringToTicker(ticker, context);
-  const rawName = stringToBytes(name, context);
+  const rawName = nameToAssetName(name, context);
   const rawIsDivisible = booleanToBool(isDivisible, context);
   const rawIdentifiers = securityIdentifiers.map(identifier =>
     securityIdentifierToAssetIdentifier(identifier, context)
   );
-  const rawFundingRound = optionize(stringToBytes)(fundingRound, context);
-  const rawDisableIu = booleanToBool(!requireInvestorUniqueness, context);
+  const rawFundingRound = optionize(fundingRoundToAssetFundingRound)(fundingRound, context);
 
-  const newAsset = new Asset({ ticker }, context);
+  const newAsset = new FungibleAsset({ ticker }, context);
 
   const transactions = [];
-  const txTags = [];
 
-  /*
-   * we waive any protocol fees if the Asset is created in Ethereum. If not created and ticker is not yet reserved,
-   *   we set the fee to the sum of protocol fees for ticker registration and Asset creation.
-   *
-   * To do this, we keep track of transaction tags, and if manual fee calculations are needed, perform the fee calculation
-   * before adding the batch transaction.
-   */
-  const classicTicker = await asset.classicTickers(rawTicker);
-  const assetCreatedInEthereum =
-    classicTicker.isSome && boolToBoolean(classicTicker.unwrap().isCreated);
-
-  let manualFees = false;
-  if (assetCreatedInEthereum) {
-    manualFees = true;
-  } else if (status === TickerReservationStatus.Free) {
-    manualFees = true;
-    txTags.push(TxTags.asset.RegisterTicker, TxTags.asset.CreateAsset);
+  let fee: BigNumber | undefined;
+  if (status === TickerReservationStatus.Free) {
+    fee = await addManualFees(
+      new BigNumber(0),
+      [TxTags.asset.RegisterTicker, TxTags.asset.CreateAsset],
+      context
+    );
   }
 
   /*
@@ -181,24 +148,18 @@ export async function prepareCreateAsset(
   if (customTypeData) {
     const { rawValue, id } = customTypeData;
 
-    if (id.isEmpty) {
-      /*
-       * store RegisterCustomAssetType fees txTag in case manual fees are being used
-       */
-      txTags.push(TxTags.asset.RegisterCustomAssetType);
+    /*
+     * We add the fee for registering a custom asset type in case we're calculating
+     * the Asset creation fees manually
+     */
+    fee = await addManualFees(fee, [TxTags.asset.RegisterCustomAssetType], context);
 
+    if (id.isEmpty) {
       transactions.push(
         checkTxType({
           transaction: tx.asset.createAssetWithCustomType,
-          args: [
-            rawName,
-            rawTicker,
-            rawIsDivisible,
-            rawValue,
-            rawIdentifiers,
-            rawFundingRound,
-            rawDisableIu,
-          ],
+          fee,
+          args: [rawName, rawTicker, rawIsDivisible, rawValue, rawIdentifiers, rawFundingRound],
         })
       );
     } else {
@@ -207,15 +168,8 @@ export async function prepareCreateAsset(
       transactions.push(
         checkTxType({
           transaction: tx.asset.createAsset,
-          args: [
-            rawName,
-            rawTicker,
-            rawIsDivisible,
-            rawType,
-            rawIdentifiers,
-            rawFundingRound,
-            rawDisableIu,
-          ],
+          fee,
+          args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
         })
       );
     }
@@ -225,15 +179,8 @@ export async function prepareCreateAsset(
     transactions.push(
       checkTxType({
         transaction: tx.asset.createAsset,
-        args: [
-          rawName,
-          rawTicker,
-          rawIsDivisible,
-          rawType,
-          rawIdentifiers,
-          rawFundingRound,
-          rawDisableIu,
-        ],
+        fee,
+        args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
       })
     );
   }
@@ -242,10 +189,7 @@ export async function prepareCreateAsset(
     const tickerKey = stringToTickerKey(ticker, context);
     const rawStats = initialStatistics.map(i => inputStatTypeToMeshStatType(i, context));
     const bTreeStats = statisticStatTypesToBtreeStatType(rawStats, context);
-    /*
-     * store set asset stat fees in case manual fees are being used
-     */
-    txTags.push(TxTags.statistics.SetActiveAssetStats);
+
     transactions.push(
       checkTxType({
         transaction: tx.statistics.setActiveAssetStats,
@@ -254,18 +198,19 @@ export async function prepareCreateAsset(
     );
   }
 
-  if (initialSupply && initialSupply.gt(0)) {
+  if (initialSupply?.gt(0)) {
     const rawInitialSupply = bigNumberToBalance(initialSupply, context, isDivisible);
 
-    /*
-     * store issuing fees txTags in case manual fees are being used
-     */
-    txTags.push(TxTags.asset.Issue);
+    const portfolio = portfolioId
+      ? await signingIdentity.portfolios.getPortfolio({ portfolioId })
+      : await signingIdentity.portfolios.getPortfolio();
+
+    const rawPortfolio = portfolioToPortfolioKind(portfolio, context);
 
     transactions.push(
       checkTxType({
         transaction: tx.asset.issue,
-        args: [rawTicker, rawInitialSupply],
+        args: [rawTicker, rawInitialSupply, rawPortfolio],
       })
     );
   }
@@ -275,36 +220,26 @@ export async function prepareCreateAsset(
 
     const feeMultiplier = new BigNumber(rawDocuments.length);
 
-    /*
-     * store addDocuments txTag in case manual fees are being used
-     */
-    txTags.push({ tag: TxTags.asset.AddDocuments, feeMultiplier });
-
     transactions.push(
       checkTxType({
         transaction: tx.asset.addDocuments,
-        // this will be ignored if manual fees are passed
         feeMultiplier,
         args: [rawDocuments, rawTicker],
       })
     );
   }
 
-  const fee = manualFees ? await calculateManualFees(txTags, context) : undefined;
-
-  this.addBatchTransaction({
+  return {
     transactions,
-    fee,
-  });
-
-  return newAsset;
+    resolver: newAsset,
+  };
 }
 
 /**
  * @hidden
  */
 export async function getAuthorization(
-  this: Procedure<Params, Asset, Storage>,
+  this: Procedure<Params, FungibleAsset, Storage>,
   { ticker, documents, initialStatistics }: Params
 ): Promise<ProcedureAuthorization> {
   const {
@@ -346,19 +281,24 @@ export async function getAuthorization(
  * @hidden
  */
 export async function prepareStorage(
-  this: Procedure<Params, Asset, Storage>,
+  this: Procedure<Params, FungibleAsset, Storage>,
   { ticker, assetType }: Params
 ): Promise<Storage> {
   const { context } = this;
 
   const reservation = new TickerReservation({ ticker }, context);
-  const { status } = await reservation.details();
+  const [{ status }, signingIdentity] = await Promise.all([
+    reservation.details(),
+    context.getSigningIdentity(),
+  ]);
 
   const isCustomType = !values<string>(KnownAssetType).includes(assetType);
 
   if (isCustomType) {
     const rawValue = stringToBytes(assetType, context);
-    const id = await context.polymeshApi.query.asset.customTypesInverse(rawValue);
+    const rawId = await context.polymeshApi.query.asset.customTypesInverse(rawValue);
+
+    const id = rawId.unwrapOrDefault();
 
     return {
       customTypeData: {
@@ -366,17 +306,19 @@ export async function prepareStorage(
         rawValue,
       },
       status,
+      signingIdentity,
     };
   }
 
   return {
     customTypeData: null,
     status,
+    signingIdentity,
   };
 }
 
 /**
  * @hidden
  */
-export const createAsset = (): Procedure<Params, Asset, Storage> =>
+export const createAsset = (): Procedure<Params, FungibleAsset, Storage> =>
   new Procedure(prepareCreateAsset, getAuthorization, prepareStorage);

@@ -1,11 +1,11 @@
-import { BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
 import {
-  Asset,
+  BaseAsset,
   Context,
   CustomPermissionGroup,
+  FungibleAsset,
   Identity,
   KnownPermissionGroup,
   Namespace,
@@ -13,20 +13,15 @@ import {
   setPermissionGroup,
   waivePermissions,
 } from '~/internal';
-import { eventByIndexedArgs, tickerExternalAgentActions } from '~/middleware/queries';
-import { tickerExternalAgentActionsQuery, tickerExternalAgentsQuery } from '~/middleware/queriesV2';
-import { EventIdEnum as EventId, ModuleIdEnum as ModuleId, Query } from '~/middleware/types';
-import {
-  EventIdEnum as MiddlewareV2EventId,
-  ModuleIdEnum as MiddlewareV2ModuleId,
-  Query as QueryV2,
-} from '~/middleware/typesV2';
+import { tickerExternalAgentActionsQuery, tickerExternalAgentsQuery } from '~/middleware/queries';
+import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import {
   AssetWithGroup,
   CheckPermissionsResult,
   ErrorCode,
   EventIdentifier,
   ModuleName,
+  NftCollection,
   PermissionType,
   ProcedureMethod,
   ResultSet,
@@ -36,15 +31,11 @@ import {
   TxTags,
   WaivePermissionsParams,
 } from '~/types';
-import { Ensured, EnsuredV2, QueryReturnType } from '~/types/utils';
-import { MAX_TICKER_LENGTH } from '~/utils/constants';
+import { Ensured } from '~/types/utils';
 import {
   agentGroupToPermissionGroup,
-  bigNumberToU32,
   extrinsicPermissionsToTransactionPermissions,
-  hashToString,
-  middlewareEventToEventIdentifier,
-  middlewareV2EventDetailsToEventIdentifier,
+  middlewareEventDetailsToEventIdentifier,
   stringToIdentityId,
   stringToTicker,
   tickerToString,
@@ -55,7 +46,6 @@ import {
   createProcedureMethod,
   isModuleOrTagMatch,
   optionize,
-  padString,
 } from '~/utils/internal';
 
 /**
@@ -122,7 +112,7 @@ export class AssetPermissions extends Namespace<Identity> {
 
     return P.map(assetEntries, async ([key]) => {
       const ticker = tickerToString(key.args[1]);
-      const asset = new Asset({ ticker }, context);
+      const asset = new FungibleAsset({ ticker }, context);
       const group = await this.getGroup({ asset });
 
       return {
@@ -136,7 +126,7 @@ export class AssetPermissions extends Namespace<Identity> {
    * Check whether this Identity has specific transaction Permissions over an Asset
    */
   public async checkPermissions(args: {
-    asset: Asset | string;
+    asset: BaseAsset | string;
     transactions: TxTag[] | null;
   }): Promise<CheckPermissionsResult<SignerType.Identity>> {
     const {
@@ -283,26 +273,12 @@ export class AssetPermissions extends Namespace<Identity> {
   }
 
   /**
-   * Check whether this Identity has specific transaction Permissions over an Asset
-   *
-   * @deprecated in favor of `checkPermissions`
-   */
-  public async hasPermissions(args: {
-    asset: Asset | string;
-    transactions: TxTag[] | null;
-  }): Promise<boolean> {
-    const { result } = await this.checkPermissions(args);
-
-    return result;
-  }
-
-  /**
    * Retrieve this Identity's Permission Group for a specific Asset
    */
   public async getGroup({
     asset,
   }: {
-    asset: string | Asset;
+    asset: string | BaseAsset;
   }): Promise<CustomPermissionGroup | KnownPermissionGroup> {
     const {
       context: {
@@ -336,35 +312,14 @@ export class AssetPermissions extends Namespace<Identity> {
    * Retrieve the identifier data (block number, date and event index) of the event that was emitted when this Identity was enabled/added as
    *   an Agent with permissions over a specific Asset
    *
-   * @note uses the middleware
-   * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
-   */
-  public async enabledAt({ asset }: { asset: string | Asset }): Promise<EventIdentifier | null> {
-    const { context } = this;
-    const ticker = asTicker(asset);
-
-    const {
-      data: { eventByIndexedArgs: event },
-    } = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
-      eventByIndexedArgs({
-        // cSpell: disable-next-line
-        moduleId: ModuleId.Externalagents,
-        eventId: EventId.AgentAdded,
-        eventArg1: padString(ticker, MAX_TICKER_LENGTH),
-      })
-    );
-
-    return optionize(middlewareEventToEventIdentifier)(event);
-  }
-
-  /**
-   * Retrieve the identifier data (block number, date and event index) of the event that was emitted when this Identity was enabled/added as
-   *   an Agent with permissions over a specific Asset
-   *
    * @note uses the middlewareV2
    * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
    */
-  public async enabledAtV2({ asset }: { asset: string | Asset }): Promise<EventIdentifier | null> {
+  public async enabledAt({
+    asset,
+  }: {
+    asset: string | FungibleAsset | NftCollection;
+  }): Promise<EventIdentifier | null> {
     const { context } = this;
     const ticker = asTicker(asset);
 
@@ -374,13 +329,13 @@ export class AssetPermissions extends Namespace<Identity> {
           nodes: [node],
         },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'tickerExternalAgents'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgents'>>(
       tickerExternalAgentsQuery({
         assetId: ticker,
       })
     );
 
-    return optionize(middlewareV2EventDetailsToEventIdentifier)(node?.createdBlock, node?.eventIdx);
+    return optionize(middlewareEventDetailsToEventIdentifier)(node?.createdBlock, node?.eventIdx);
   }
 
   /**
@@ -404,98 +359,13 @@ export class AssetPermissions extends Namespace<Identity> {
    * @param opts.size - page size
    * @param opts.start - page offset
    *
-   * @note uses the middleware
-   * @note supports pagination
-   */
-  public async getOperationHistory(opts: {
-    asset: string | Asset;
-    moduleId?: ModuleId;
-    eventId?: EventId;
-    size?: BigNumber;
-    start?: BigNumber;
-  }): Promise<ResultSet<EventIdentifier>> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { system },
-        },
-      },
-      context,
-      parent: { did },
-    } = this;
-
-    /* eslint-disable @typescript-eslint/naming-convention */
-    const { asset, moduleId: pallet_name, eventId: event_id, size, start } = opts;
-
-    const ticker = asTicker(asset);
-
-    const result = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgentActions'>>(
-      tickerExternalAgentActions({
-        ticker,
-        caller_did: did,
-        pallet_name,
-        event_id,
-        count: size?.toNumber(),
-        skip: start?.toNumber(),
-      })
-    );
-    /* eslint-enable @typescript-eslint/naming-convention */
-
-    const {
-      data: { tickerExternalAgentActions: tickerExternalAgentActionsResult },
-    } = result;
-
-    const { items, totalCount } = tickerExternalAgentActionsResult;
-
-    const multiParams: BlockNumber[] = [];
-    const data: Omit<EventIdentifier, 'blockHash'>[] = [];
-
-    items.forEach(item => {
-      const { block_id: blockId, datetime, event_idx: eventIndex } = item;
-
-      const blockNumber = new BigNumber(blockId);
-      multiParams.push(bigNumberToU32(blockNumber, context));
-      data.push({
-        blockNumber,
-        blockDate: new Date(`${datetime}`),
-        eventIndex: new BigNumber(eventIndex),
-      });
-    });
-
-    let hashes: Hash[] = [];
-
-    if (multiParams.length) {
-      hashes = await system.blockHash.multi<QueryReturnType<typeof system.blockHash>>(multiParams);
-    }
-
-    const count = new BigNumber(totalCount);
-    const next = calculateNextKey(count, size, start);
-
-    return {
-      data: data.map((event, index) => ({
-        ...event,
-        blockHash: hashToString(hashes[index]),
-      })),
-      next,
-      count,
-    };
-  }
-
-  /**
-   * Retrieve all Events triggered by Operations this Identity has performed on a specific Asset
-   *
-   * @param opts.moduleId - filters results by module
-   * @param opts.eventId - filters results by event
-   * @param opts.size - page size
-   * @param opts.start - page offset
-   *
    * @note uses the middlewareV2
    * @note supports pagination
    */
-  public async getOperationHistoryV2(opts: {
-    asset: string | Asset;
-    moduleId?: MiddlewareV2ModuleId;
-    eventId?: MiddlewareV2EventId;
+  public async getOperationHistory(opts: {
+    asset: string | FungibleAsset;
+    moduleId?: ModuleIdEnum;
+    eventId?: EventIdEnum;
     size?: BigNumber;
     start?: BigNumber;
   }): Promise<ResultSet<EventIdentifier>> {
@@ -512,7 +382,7 @@ export class AssetPermissions extends Namespace<Identity> {
       data: {
         tickerExternalAgentActions: { nodes, totalCount },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'tickerExternalAgentActions'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgentActions'>>(
       tickerExternalAgentActionsQuery(
         {
           assetId: ticker,
@@ -527,11 +397,11 @@ export class AssetPermissions extends Namespace<Identity> {
 
     const data = nodes.map(({ createdBlock, eventIdx }) =>
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      middlewareV2EventDetailsToEventIdentifier(createdBlock!, eventIdx)
+      middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx)
     );
 
     const count = new BigNumber(totalCount);
-    const next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, data.length, start);
 
     return {
       data,

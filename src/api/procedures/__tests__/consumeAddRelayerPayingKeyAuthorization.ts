@@ -1,6 +1,6 @@
 import { bool, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   ConsumeAddRelayerPayingKeyAuthorizationParams,
@@ -19,8 +19,8 @@ import * as utilsConversionModule from '~/utils/conversion';
 describe('consumeAddRelayerPayingKeyAuthorization procedure', () => {
   let mockContext: Mocked<Context>;
   let targetAddress: string;
-  let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
-  let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
+  let booleanToBoolSpy: jest.SpyInstance<bool, [boolean, Context]>;
+  let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
 
   let rawTrue: bool;
   let rawFalse: bool;
@@ -29,7 +29,6 @@ describe('consumeAddRelayerPayingKeyAuthorization procedure', () => {
 
   let targetAccount: Account;
   let issuerIdentity: Identity;
-  let addTransactionStub: sinon.SinonStub;
 
   beforeAll(() => {
     targetAddress = 'someAddress';
@@ -40,10 +39,11 @@ describe('consumeAddRelayerPayingKeyAuthorization procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
+
     jest.spyOn(utilsProcedureModule, 'assertAuthorizationRequestValid').mockImplementation();
 
-    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
-    booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
+    bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+    booleanToBoolSpy = jest.spyOn(utilsConversionModule, 'booleanToBool');
 
     authId = new BigNumber(1);
     rawAuthId = dsMockUtils.createMockU64(authId);
@@ -56,11 +56,11 @@ describe('consumeAddRelayerPayingKeyAuthorization procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    bigNumberToU64Stub.withArgs(authId, mockContext).returns(rawAuthId);
-    booleanToBoolStub.withArgs(true, mockContext).returns(rawTrue);
-    booleanToBoolStub.withArgs(false, mockContext).returns(rawFalse);
+    when(bigNumberToU64Spy).calledWith(authId, mockContext).mockReturnValue(rawAuthId);
+
+    when(booleanToBoolSpy).calledWith(false, mockContext).mockReturnValue(rawFalse);
+    when(booleanToBoolSpy).calledWith(true, mockContext).mockReturnValue(rawTrue);
 
     targetAccount = entityMockUtils.getAccountInstance({ address: targetAddress });
 
@@ -120,9 +120,9 @@ describe('consumeAddRelayerPayingKeyAuthorization procedure', () => {
       calledByTarget: true,
     });
 
-    const transaction = dsMockUtils.createTxStub('relayer', 'acceptPayingKey');
+    const transaction = dsMockUtils.createTxMock('relayer', 'acceptPayingKey');
 
-    await prepareConsumeAddRelayerPayingKeyAuthorization.call(proc, {
+    const result = await prepareConsumeAddRelayerPayingKeyAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
         {
           target: targetAccount,
@@ -143,10 +143,11 @@ describe('consumeAddRelayerPayingKeyAuthorization procedure', () => {
       accept: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       paidForBy: issuerIdentity,
       args: [rawAuthId],
+      resolver: undefined,
     });
   });
 
@@ -160,13 +161,13 @@ describe('consumeAddRelayerPayingKeyAuthorization procedure', () => {
       calledByTarget: false,
     });
 
-    const transaction = dsMockUtils.createTxStub('identity', 'removeAuthorization');
+    const transaction = dsMockUtils.createTxMock('identity', 'removeAuthorization');
 
     const rawSignatory = dsMockUtils.createMockSignatory({
       Account: dsMockUtils.createMockAccountId(targetAccount.address),
     });
 
-    sinon.stub(utilsConversionModule, 'signerValueToSignatory').returns(rawSignatory);
+    jest.spyOn(utilsConversionModule, 'signerValueToSignatory').mockReturnValue(rawSignatory);
 
     const params = {
       authRequest: new AuthorizationRequest(
@@ -189,11 +190,12 @@ describe('consumeAddRelayerPayingKeyAuthorization procedure', () => {
       accept: false,
     };
 
-    await prepareConsumeAddRelayerPayingKeyAuthorization.call(proc, params);
+    let result = await prepareConsumeAddRelayerPayingKeyAuthorization.call(proc, params);
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       args: [rawSignatory, rawAuthId, rawFalse],
+      resolver: undefined,
     });
 
     proc = procedureMockUtils.getInstance<
@@ -205,12 +207,13 @@ describe('consumeAddRelayerPayingKeyAuthorization procedure', () => {
       calledByTarget: true,
     });
 
-    await prepareConsumeAddRelayerPayingKeyAuthorization.call(proc, params);
+    result = await prepareConsumeAddRelayerPayingKeyAuthorization.call(proc, params);
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       paidForBy: issuerIdentity,
       args: [rawSignatory, rawAuthId, rawTrue],
+      resolve: undefined,
     });
   });
 

@@ -1,5 +1,3 @@
-import sinon from 'sinon';
-
 import {
   getAuthorization,
   prepareToggleFreezeSecondaryAccounts,
@@ -19,10 +17,7 @@ describe('toggleFreezeSecondaryAccounts procedure', () => {
     entityMockUtils.initMocks();
   });
 
-  let addTransactionStub: sinon.SinonStub;
-
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance({
       areSecondaryAccountsFrozen: true,
     });
@@ -72,7 +67,7 @@ describe('toggleFreezeSecondaryAccounts procedure', () => {
     ).rejects.toThrow('The secondary Accounts are already unfrozen');
   });
 
-  it('should add a freeze secondary Accounts transaction to the queue', async () => {
+  it('should return a freeze secondary Accounts transaction spec', async () => {
     dsMockUtils.configureMocks({
       contextOptions: {
         areSecondaryAccountsFrozen: false,
@@ -83,16 +78,16 @@ describe('toggleFreezeSecondaryAccounts procedure', () => {
       mockContext
     );
 
-    const transaction = dsMockUtils.createTxStub('identity', 'freezeSecondaryKeys');
+    const transaction = dsMockUtils.createTxMock('identity', 'freezeSecondaryKeys');
 
-    await prepareToggleFreezeSecondaryAccounts.call(proc, {
+    const result = await prepareToggleFreezeSecondaryAccounts.call(proc, {
       freeze: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, { transaction });
+    expect(result).toEqual({ transaction, resolver: undefined });
   });
 
-  it('should add a unfreeze secondary Accounts transaction to the queue', async () => {
+  it('should return an unfreeze secondary Accounts transaction spec', async () => {
     dsMockUtils.configureMocks({
       contextOptions: {
         areSecondaryAccountsFrozen: true,
@@ -103,13 +98,13 @@ describe('toggleFreezeSecondaryAccounts procedure', () => {
       mockContext
     );
 
-    const transaction = dsMockUtils.createTxStub('identity', 'unfreezeSecondaryKeys');
+    const transaction = dsMockUtils.createTxMock('identity', 'unfreezeSecondaryKeys');
 
-    await prepareToggleFreezeSecondaryAccounts.call(proc, {
+    const result = await prepareToggleFreezeSecondaryAccounts.call(proc, {
       freeze: false,
     });
 
-    sinon.assert.calledWith(addTransactionStub, { transaction });
+    expect(result).toEqual({ transaction, resolver: undefined });
   });
 
   describe('getAuthorization', () => {

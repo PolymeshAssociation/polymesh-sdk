@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
 
 import { NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, RenamePortfolioParams, RoleType, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ErrorCode, RenamePortfolioParams, TxTags } from '~/types';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { bigNumberToU64, stringToBytes, stringToIdentityId } from '~/utils/conversion';
 import { getPortfolioIdsByName } from '~/utils/internal';
 
@@ -17,7 +17,7 @@ export type Params = { did: string; id: BigNumber } & RenamePortfolioParams;
 export async function prepareRenamePortfolio(
   this: Procedure<Params, NumberedPortfolio>,
   args: Params
-): Promise<NumberedPortfolio> {
+): Promise<TransactionSpec<NumberedPortfolio, ExtrinsicParams<'portfolio', 'renamePortfolio'>>> {
   const {
     context: {
       polymeshApi: {
@@ -48,24 +48,28 @@ export async function prepareRenamePortfolio(
       });
     }
   }
-  this.addTransaction({
+  return {
     transaction: portfolio.renamePortfolio,
     args: [bigNumberToU64(id, context), rawNewName],
-  });
-
-  return new NumberedPortfolio({ did, id }, context);
+    resolver: new NumberedPortfolio({ did, id }, context),
+  };
 }
 
 /**
  * @hidden
  */
-export function getAuthorization(
+export async function getAuthorization(
   this: Procedure<Params, NumberedPortfolio>,
   { did, id }: Params
-): ProcedureAuthorization {
-  const portfolioId = { did, number: id };
+): Promise<ProcedureAuthorization> {
+  const { context } = this;
+
+  const { did: signingDid } = await context.getSigningIdentity();
+
+  const hasRoles = signingDid === did;
+
   return {
-    roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+    roles: hasRoles || 'Only the owner is allowed to modify the name of a Portfolio',
     permissions: {
       transactions: [TxTags.portfolio.RenamePortfolio],
       portfolios: [new NumberedPortfolio({ did, id }, this.context)],

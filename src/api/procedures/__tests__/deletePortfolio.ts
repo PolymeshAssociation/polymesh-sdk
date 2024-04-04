@@ -1,7 +1,7 @@
 import { u64 } from '@polkadot/types';
+import { PolymeshPrimitivesIdentityId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { IdentityId } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   DeletePortfolioParams,
@@ -28,24 +28,24 @@ describe('deletePortfolio procedure', () => {
   const portfolioNumber = dsMockUtils.createMockU64(id);
   const zeroBalance = { total: new BigNumber(0) } as PortfolioBalance;
   let mockContext: Mocked<Context>;
-  let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
-  let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
+  let stringToIdentityIdSpy: jest.SpyInstance<PolymeshPrimitivesIdentityId, [string, Context]>;
+  let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
-    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
+    stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
+    bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    stringToIdentityIdStub.withArgs(did, mockContext).returns(identityId);
-    bigNumberToU64Stub.withArgs(id, mockContext).returns(portfolioNumber);
+    when(stringToIdentityIdSpy).calledWith(did, mockContext).mockReturnValue(identityId);
+    when(bigNumberToU64Spy).calledWith(id, mockContext).mockReturnValue(portfolioNumber);
     dsMockUtils
-      .createQueryStub('portfolio', 'portfolios')
-      .returns(dsMockUtils.createMockBytes('someName'));
+      .createQueryMock('portfolio', 'portfolios')
+      .mockReturnValue(dsMockUtils.createMockBytes('someName'));
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
         isOwnedBy: true,
@@ -102,19 +102,17 @@ describe('deletePortfolio procedure', () => {
     ).rejects.toThrow("The Portfolio doesn't exist");
   });
 
-  it('should add a delete portfolio transaction to the queue', async () => {
+  it('should return a delete portfolio transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<DeletePortfolioParams, void>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('portfolio', 'deletePortfolio');
+    const transaction = dsMockUtils.createTxMock('portfolio', 'deletePortfolio');
 
-    await prepareDeletePortfolio.call(proc, {
+    let result = await prepareDeletePortfolio.call(proc, {
       id,
       did,
     });
 
-    let addTransactionStub = procedureMockUtils.getAddTransactionStub();
-
-    sinon.assert.calledWith(addTransactionStub, { transaction, args: [portfolioNumber] });
+    expect(result).toEqual({ transaction, args: [portfolioNumber] });
 
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
@@ -122,14 +120,12 @@ describe('deletePortfolio procedure', () => {
       },
     });
 
-    await prepareDeletePortfolio.call(proc, {
+    result = await prepareDeletePortfolio.call(proc, {
       id,
       did,
     });
 
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
-
-    sinon.assert.calledWith(addTransactionStub, { transaction, args: [portfolioNumber] });
+    expect(result).toEqual({ transaction, args: [portfolioNumber] });
   });
 
   describe('getAuthorization', () => {
@@ -144,10 +140,9 @@ describe('deletePortfolio procedure', () => {
       const portfolioId = { did: args.did, number: args.id };
       const portfolio = entityMockUtils.getNumberedPortfolioInstance(args);
 
-      sinon
-        .stub(utilsConversionModule, 'portfolioLikeToPortfolio')
-        .withArgs({ identity: args.did, id: args.id }, mockContext)
-        .returns(portfolio);
+      when(jest.spyOn(utilsConversionModule, 'portfolioLikeToPortfolio'))
+        .calledWith({ identity: args.did, id: args.id }, mockContext)
+        .mockReturnValue(portfolio);
 
       expect(boundFunc(args)).toEqual({
         roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],

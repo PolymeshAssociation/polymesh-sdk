@@ -1,6 +1,6 @@
+import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { Moment } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   getAuthorization,
@@ -19,8 +19,8 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockOfferingModule('~/api/entities/Offering')
 );
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 describe('modifyStoTimes procedure', () => {
@@ -40,10 +40,9 @@ describe('modifyStoTimes procedure', () => {
   const rawEnd = dsMockUtils.createMockMoment(new BigNumber(end.getTime()));
 
   let mockContext: Mocked<Context>;
-  let addTransactionStub: sinon.SinonStub;
   let modifyFundraiserWindowTransaction: PolymeshTx<unknown[]>;
 
-  let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
+  let dateToMomentSpy: jest.SpyInstance<u64, [Date, Context]>;
 
   const args = {
     ticker,
@@ -57,9 +56,9 @@ describe('modifyStoTimes procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    sinon.stub(utilsConversionModule, 'stringToTicker').returns(rawTicker);
-    sinon.stub(utilsConversionModule, 'bigNumberToU64').returns(rawId);
-    dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
+    jest.spyOn(utilsConversionModule, 'stringToTicker').mockReturnValue(rawTicker);
+    jest.spyOn(utilsConversionModule, 'bigNumberToU64').mockReturnValue(rawId);
+    dateToMomentSpy = jest.spyOn(utilsConversionModule, 'dateToMoment');
   });
 
   beforeEach(() => {
@@ -76,13 +75,12 @@ describe('modifyStoTimes procedure', () => {
         },
       },
     });
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
 
-    dateToMomentStub.withArgs(newStart, mockContext).returns(rawNewStart);
-    dateToMomentStub.withArgs(newEnd, mockContext).returns(rawNewEnd);
-    dateToMomentStub.withArgs(start, mockContext).returns(rawStart);
-    dateToMomentStub.withArgs(end, mockContext).returns(rawEnd);
+    when(dateToMomentSpy).calledWith(newStart, mockContext).mockReturnValue(rawNewStart);
+    when(dateToMomentSpy).calledWith(newEnd, mockContext).mockReturnValue(rawNewEnd);
+    when(dateToMomentSpy).calledWith(start, mockContext).mockReturnValue(rawStart);
+    when(dateToMomentSpy).calledWith(end, mockContext).mockReturnValue(rawEnd);
   });
 
   afterEach(() => {
@@ -96,36 +94,40 @@ describe('modifyStoTimes procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should add a modify fundraiser window transaction to the queue', async () => {
+  it('should return a modify fundraiser window transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-    modifyFundraiserWindowTransaction = dsMockUtils.createTxStub('sto', 'modifyFundraiserWindow');
+    modifyFundraiserWindowTransaction = dsMockUtils.createTxMock('sto', 'modifyFundraiserWindow');
 
-    await prepareModifyOfferingTimes.call(proc, args);
+    let result = await prepareModifyOfferingTimes.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction: modifyFundraiserWindowTransaction,
       args: [rawTicker, rawId, rawNewStart, rawNewEnd],
+      resolver: undefined,
     });
 
-    await prepareModifyOfferingTimes.call(proc, { ...args, start: undefined });
+    result = await prepareModifyOfferingTimes.call(proc, { ...args, start: undefined });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction: modifyFundraiserWindowTransaction,
       args: [rawTicker, rawId, rawStart, rawNewEnd],
+      resolver: undefined,
     });
 
-    await prepareModifyOfferingTimes.call(proc, { ...args, end: null });
+    result = await prepareModifyOfferingTimes.call(proc, { ...args, end: null });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction: modifyFundraiserWindowTransaction,
       args: [rawTicker, rawId, rawNewStart, null],
+      resolver: undefined,
     });
 
-    await prepareModifyOfferingTimes.call(proc, { ...args, end: undefined });
+    result = await prepareModifyOfferingTimes.call(proc, { ...args, end: undefined });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction: modifyFundraiserWindowTransaction,
       args: [rawTicker, rawId, rawNewStart, rawEnd],
+      resolver: undefined,
     });
 
     entityMockUtils.configureMocks({
@@ -142,11 +144,12 @@ describe('modifyStoTimes procedure', () => {
       },
     });
 
-    await prepareModifyOfferingTimes.call(proc, { ...args, end: undefined });
+    result = await prepareModifyOfferingTimes.call(proc, { ...args, end: undefined });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction: modifyFundraiserWindowTransaction,
       args: [rawTicker, rawId, rawNewStart, null],
+      resolver: undefined,
     });
   });
 

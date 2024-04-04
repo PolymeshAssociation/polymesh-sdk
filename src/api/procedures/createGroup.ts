@@ -1,7 +1,7 @@
 import { assertGroupDoesNotExist, createCreateGroupResolver } from '~/api/procedures/utils';
-import { Asset, CustomPermissionGroup, PostTransactionValue, Procedure } from '~/internal';
+import { CustomPermissionGroup, FungibleAsset, Procedure } from '~/internal';
 import { CreateGroupParams, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   permissionsLikeToPermissions,
   stringToTicker,
@@ -19,7 +19,7 @@ export type Params = CreateGroupParams & {
  * @hidden
  */
 export interface Storage {
-  asset: Asset;
+  asset: FungibleAsset;
 }
 
 /**
@@ -28,7 +28,9 @@ export interface Storage {
 export async function prepareCreateGroup(
   this: Procedure<Params, CustomPermissionGroup, Storage>,
   args: Params
-): Promise<PostTransactionValue<CustomPermissionGroup>> {
+): Promise<
+  TransactionSpec<CustomPermissionGroup, ExtrinsicParams<'externalAgents', 'createGroup'>>
+> {
   const {
     context: {
       polymeshApi: {
@@ -50,13 +52,11 @@ export async function prepareCreateGroup(
     context
   );
 
-  const [customPermissionGroup] = this.addTransaction({
+  return {
     transaction: externalAgents.createGroup,
-    resolvers: [createCreateGroupResolver(context)],
     args: [rawTicker, rawExtrinsicPermissions],
-  });
-
-  return customPermissionGroup;
+    resolver: createCreateGroupResolver(context),
+  };
 }
 
 /**
@@ -87,7 +87,7 @@ export function prepareStorage(
   const { context } = this;
 
   return {
-    asset: new Asset({ ticker }, context),
+    asset: new FungibleAsset({ ticker }, context),
   };
 }
 

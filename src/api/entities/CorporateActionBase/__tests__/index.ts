@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   Checkpoint,
@@ -7,11 +7,11 @@ import {
   Context,
   CorporateActionBase,
   Entity,
-  TransactionQueue,
+  PolymeshTransaction,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { createMockBTreeSet, createMockU64 } from '~/testUtils/mocks/dataSources';
 import {
-  CalendarUnit,
   CorporateActionKind,
   CorporateActionTargets,
   TargetTreatment,
@@ -29,8 +29,8 @@ jest.mock(
   )
 );
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 jest.mock(
   '~/base/Procedure',
@@ -50,7 +50,7 @@ describe('CorporateAction class', () => {
 
   let corporateAction: CorporateActionBase;
 
-  let corporateActionsQueryStub: sinon.SinonStub;
+  let corporateActionsQueryMock: jest.Mock;
 
   // eslint-disable-next-line require-jsdoc
   class NonAbstract extends CorporateActionBase {
@@ -79,7 +79,7 @@ describe('CorporateAction class', () => {
     defaultTaxWithholding = new BigNumber(10);
     taxWithholdings = [];
 
-    corporateActionsQueryStub = dsMockUtils.createQueryStub('corporateAction', 'corporateActions', {
+    corporateActionsQueryMock = dsMockUtils.createQueryMock('corporateAction', 'corporateActions', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockCorporateAction({
           kind,
@@ -159,7 +159,7 @@ describe('CorporateAction class', () => {
   });
 
   describe('method: linkDocuments', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = {
         documents: [
           {
@@ -170,16 +170,15 @@ describe('CorporateAction class', () => {
         ],
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { id, ticker, ...args }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { id, ticker, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
-      const queue = await corporateAction.linkDocuments(args);
+      const tx = await corporateAction.linkDocuments(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -189,7 +188,7 @@ describe('CorporateAction class', () => {
 
       expect(result).toBe(true);
 
-      corporateActionsQueryStub.resolves(dsMockUtils.createMockOption());
+      corporateActionsQueryMock.mockResolvedValue(dsMockUtils.createMockOption());
 
       result = await corporateAction.exists();
 
@@ -198,60 +197,50 @@ describe('CorporateAction class', () => {
   });
 
   describe('method: checkpoint', () => {
-    let schedulePointsQueryStub: sinon.SinonStub;
+    let schedulePointsQueryMock: jest.Mock;
 
     beforeEach(() => {
-      dsMockUtils.createQueryStub('checkpoint', 'schedules', {
-        returnValue: [
-          dsMockUtils.createMockStoredSchedule({
-            schedule: {
-              start: new BigNumber(new Date('10/14/1987').getTime()),
-              period: {
-                unit: 'Month',
-                amount: new BigNumber(2),
-              },
-            },
-            id: new BigNumber(1),
-            at: new BigNumber(new Date('10/14/1987').getTime()),
-            remaining: new BigNumber(2),
-          }),
-        ],
+      dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
+        returnValue: dsMockUtils.createMockOption(),
       });
 
-      schedulePointsQueryStub = dsMockUtils.createQueryStub('checkpoint', 'schedulePoints', {
-        returnValue: [],
+      schedulePointsQueryMock = dsMockUtils.createQueryMock('checkpoint', 'schedulePoints', {
+        returnValue: [
+          dsMockUtils.createMockU64(new BigNumber(1)),
+          dsMockUtils.createMockU64(new BigNumber(2)),
+        ],
       });
     });
 
-    it('should throw an error if the Corporate Action does not exist', async () => {
-      corporateActionsQueryStub.resolves(dsMockUtils.createMockOption());
+    it('should throw an error if the Corporate Action does not exist', () => {
+      corporateActionsQueryMock.mockResolvedValue(dsMockUtils.createMockOption());
 
-      let err;
-      try {
-        await corporateAction.checkpoint();
-      } catch (error) {
-        err = error;
-      }
-
-      expect(err.message).toBe('The Corporate Action no longer exists');
+      return expect(corporateAction.checkpoint()).rejects.toThrow(
+        'The Corporate Action no longer exists'
+      );
     });
 
     it('should return the Checkpoint Schedule associated to the Corporate Action', async () => {
+      dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockCheckpointSchedule({
+            pending: createMockBTreeSet([createMockU64(new BigNumber(1))]),
+          })
+        ),
+      });
       const result = (await corporateAction.checkpoint()) as CheckpointSchedule;
 
       expect(result.id).toEqual(new BigNumber(1));
-      expect(result.period).toEqual({ unit: CalendarUnit.Month, amount: new BigNumber(2) });
-      expect(result.start).toEqual(new Date('10/14/1987'));
     });
 
     it('should return null if the CA does not have a record date', async () => {
-      corporateActionsQueryStub.resolves(
+      corporateActionsQueryMock.mockResolvedValue(
         dsMockUtils.createMockOption(
           dsMockUtils.createMockCorporateAction({
             kind,
             /* eslint-disable @typescript-eslint/naming-convention */
             decl_date: new BigNumber(declarationDate.getTime()),
-            record_date: null,
+            record_date: dsMockUtils.createMockOption(),
             targets: {
               identities: [],
               treatment: TargetTreatment.Exclude,
@@ -267,26 +256,28 @@ describe('CorporateAction class', () => {
       expect(result).toBeNull();
     });
 
-    it('should return null if the CA does not have a record date', async () => {
-      schedulePointsQueryStub.resolves([
-        'someCheckpoint',
-        dsMockUtils.createMockU64(new BigNumber(1)),
+    it('should return a Checkpoint if the CA has a record date', async () => {
+      schedulePointsQueryMock.mockResolvedValue([
+        dsMockUtils.createMockU64(new BigNumber(new Date().getTime())),
+        [dsMockUtils.createMockU64(new BigNumber(1))],
       ]);
       let result = (await corporateAction.checkpoint()) as Checkpoint;
 
       expect(result.id).toEqual(new BigNumber(1));
       expect(result instanceof Checkpoint);
 
-      corporateActionsQueryStub.resolves(
+      corporateActionsQueryMock.mockResolvedValue(
         dsMockUtils.createMockOption(
           dsMockUtils.createMockCorporateAction({
             kind,
             /* eslint-disable @typescript-eslint/naming-convention */
             decl_date: new BigNumber(declarationDate.getTime()),
-            record_date: dsMockUtils.createMockRecordDate({
-              date: new BigNumber(new Date('10/14/1987').getTime()),
-              checkpoint: { Existing: dsMockUtils.createMockU64(new BigNumber(1)) },
-            }),
+            record_date: dsMockUtils.createMockOption(
+              dsMockUtils.createMockRecordDate({
+                date: createMockU64(new BigNumber(new Date('10/14/1987').getTime())),
+                checkpoint: { Existing: dsMockUtils.createMockU64(new BigNumber(1)) },
+              })
+            ),
             targets: {
               identities: [],
               treatment: TargetTreatment.Exclude,
@@ -301,7 +292,7 @@ describe('CorporateAction class', () => {
       result = (await corporateAction.checkpoint()) as Checkpoint;
 
       expect(result.id).toEqual(new BigNumber(1));
-      expect(result instanceof Checkpoint);
+      expect(result).toBeInstanceOf(Checkpoint);
     });
   });
 

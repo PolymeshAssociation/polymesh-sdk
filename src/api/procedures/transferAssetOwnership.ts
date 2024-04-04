@@ -1,5 +1,5 @@
 import { createAuthorizationResolver } from '~/api/procedures/utils';
-import { Asset, AuthorizationRequest, PostTransactionValue, Procedure } from '~/internal';
+import { AuthorizationRequest, FungibleAsset, Procedure } from '~/internal';
 import {
   Authorization,
   AuthorizationType,
@@ -7,7 +7,7 @@ import {
   TransferAssetOwnershipParams,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
@@ -27,7 +27,7 @@ export type Params = { ticker: string } & TransferAssetOwnershipParams;
 export async function prepareTransferAssetOwnership(
   this: Procedure<Params, AuthorizationRequest>,
   args: Params
-): Promise<PostTransactionValue<AuthorizationRequest>> {
+): Promise<TransactionSpec<AuthorizationRequest, ExtrinsicParams<'identity', 'addAuthorization'>>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -50,13 +50,11 @@ export async function prepareTransferAssetOwnership(
   const rawAuthorizationData = authorizationToAuthorizationData(authRequest, context);
   const rawExpiry = optionize(dateToMoment)(expiry, context);
 
-  const [auth] = this.addTransaction({
+  return {
     transaction: tx.identity.addAuthorization,
-    resolvers: [createAuthorizationResolver(authRequest, issuer, targetIdentity, expiry, context)],
     args: [rawSignatory, rawAuthorizationData, rawExpiry],
-  });
-
-  return auth;
+    resolver: createAuthorizationResolver(authRequest, issuer, targetIdentity, expiry, context),
+  };
 }
 
 /**
@@ -68,7 +66,7 @@ export function getAuthorization(
 ): ProcedureAuthorization {
   return {
     permissions: {
-      assets: [new Asset({ ticker }, this.context)],
+      assets: [new FungibleAsset({ ticker }, this.context)],
       transactions: [TxTags.identity.AddAuthorization],
       portfolios: [],
     },

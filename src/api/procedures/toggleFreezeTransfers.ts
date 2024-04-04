@@ -1,6 +1,6 @@
-import { Asset, PolymeshError, Procedure } from '~/internal';
+import { BaseAsset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { stringToTicker } from '~/utils/conversion';
 
 export interface ToggleFreezeTransfersParams {
@@ -18,9 +18,9 @@ export type Params = ToggleFreezeTransfersParams & {
  * @hidden
  */
 export async function prepareToggleFreezeTransfers(
-  this: Procedure<Params, Asset>,
+  this: Procedure<Params, void>,
   args: Params
-): Promise<Asset> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'asset', 'freeze'>>> {
   const {
     context: {
       polymeshApi: {
@@ -33,7 +33,7 @@ export async function prepareToggleFreezeTransfers(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const assetEntity = new Asset({ ticker }, context);
+  const assetEntity = new BaseAsset({ ticker }, context);
 
   const isFrozen = await assetEntity.isFrozen();
 
@@ -45,38 +45,37 @@ export async function prepareToggleFreezeTransfers(
       });
     }
 
-    this.addTransaction({
+    return {
       transaction: asset.freeze,
       args: [rawTicker],
-    });
-  } else {
-    if (!isFrozen) {
-      throw new PolymeshError({
-        code: ErrorCode.NoDataChange,
-        message: 'The Asset is already unfrozen',
-      });
-    }
-
-    this.addTransaction({
-      transaction: asset.unfreeze,
-      args: [rawTicker],
+      resolver: undefined,
+    };
+  }
+  if (!isFrozen) {
+    throw new PolymeshError({
+      code: ErrorCode.NoDataChange,
+      message: 'The Asset is already unfrozen',
     });
   }
 
-  return assetEntity;
+  return {
+    transaction: asset.unfreeze,
+    args: [rawTicker],
+    resolver: undefined,
+  };
 }
 
 /**
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, Asset>,
+  this: Procedure<Params, void>,
   { ticker, freeze }: Params
 ): ProcedureAuthorization {
   return {
     permissions: {
       transactions: [freeze ? TxTags.asset.Freeze : TxTags.asset.Unfreeze],
-      assets: [new Asset({ ticker }, this.context)],
+      assets: [new BaseAsset({ ticker }, this.context)],
       portfolios: [],
     },
   };
@@ -85,5 +84,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const toggleFreezeTransfers = (): Procedure<Params, Asset> =>
+export const toggleFreezeTransfers = (): Procedure<Params, void> =>
   new Procedure(prepareToggleFreezeTransfers, getAuthorization);

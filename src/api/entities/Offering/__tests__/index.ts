@@ -1,10 +1,8 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
-import { Context, Entity, Offering, TransactionQueue } from '~/internal';
-import { heartbeat, investments } from '~/middleware/queries';
-import { investmentsQuery } from '~/middleware/queriesV2';
-import { InvestmentResult } from '~/middleware/types';
+import { Context, Entity, Offering, PolymeshTransaction } from '~/internal';
+import { investmentsQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   OfferingBalanceStatus,
@@ -19,8 +17,8 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 jest.mock(
   '~/api/entities/DefaultPortfolio',
@@ -92,7 +90,7 @@ describe('Offering class', () => {
   });
 
   describe('method: details', () => {
-    const ticker = 'FAKETICKER';
+    const ticker = 'FAKE_TICKER';
     const id = new BigNumber(1);
     const someDid = 'someDid';
     const name = 'someSto';
@@ -136,7 +134,7 @@ describe('Offering class', () => {
       })
     );
 
-    const rawName = dsMockUtils.createMockBytes(name);
+    const rawName = dsMockUtils.createMockOption(dsMockUtils.createMockBytes(name));
 
     let offering: Offering;
 
@@ -177,11 +175,11 @@ describe('Offering class', () => {
         totalRemaining: remaining.shiftedBy(-6),
       };
 
-      dsMockUtils.createQueryStub('sto', 'fundraisers', {
+      dsMockUtils.createQueryMock('sto', 'fundraisers', {
         returnValue: rawFundraiser,
       });
 
-      dsMockUtils.createQueryStub('sto', 'fundraiserNames', {
+      dsMockUtils.createQueryMock('sto', 'fundraiserNames', {
         returnValue: rawName,
       });
 
@@ -192,29 +190,31 @@ describe('Offering class', () => {
     it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
 
-      dsMockUtils.createQueryStub('sto', 'fundraiserNames', {
+      dsMockUtils.createQueryMock('sto', 'fundraiserNames', {
         returnValue: rawName,
       });
 
-      dsMockUtils.createQueryStub('sto', 'fundraisers').callsFake(async (_a, _b, cbFunc) => {
-        cbFunc(rawFundraiser, rawName);
-        return unsubCallback;
-      });
+      dsMockUtils
+        .createQueryMock('sto', 'fundraisers')
+        .mockImplementation(async (_a, _b, cbFunc) => {
+          cbFunc(rawFundraiser, rawName);
+          return unsubCallback;
+        });
 
-      const callback = sinon.stub();
+      const callback = jest.fn();
       const result = await offering.details(callback);
 
-      sinon
-        .stub(utilsConversionModule, 'fundraiserToOfferingDetails')
-        .returns({} as OfferingDetails);
+      jest
+        .spyOn(utilsConversionModule, 'fundraiserToOfferingDetails')
+        .mockReturnValue({} as OfferingDetails);
 
       expect(result).toBe(unsubCallback);
-      sinon.assert.calledWithExactly(callback, sinon.match({}));
+      expect(callback).toBeCalledWith(expect.objectContaining({}));
     });
   });
 
   describe('method: close', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
       const offering = new Offering({ id, ticker }, context);
@@ -224,21 +224,20 @@ describe('Offering class', () => {
         id,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
-      const queue = await offering.close();
+      const tx = await offering.close();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: modifyTimes', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
       const offering = new Offering({ id, ticker }, context);
@@ -254,98 +253,22 @@ describe('Offering class', () => {
         end,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
-      const queue = await offering.modifyTimes({
+      const tx = await offering.modifyTimes({
         start,
         end,
       });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: getInvestments', () => {
-    it('should return a list of investors', async () => {
-      const ticker = 'SOME_TICKER';
-      const id = new BigNumber(1);
-      const offering = new Offering({ id, ticker }, context);
-      const did = 'someDid';
-      const offeringToken = 'TICKER';
-      const raiseToken = 'USD';
-      const offeringTokenAmount = new BigNumber(10000);
-      const raiseTokenAmount = new BigNumber(1000);
-
-      const items = [
-        {
-          investor: did,
-          offeringToken,
-          raiseToken,
-          offeringTokenAmount: offeringTokenAmount.toNumber(),
-          raiseTokenAmount: raiseTokenAmount.toNumber(),
-          datetime: '2020-10-10',
-        },
-      ];
-
-      /* eslint-disable @typescript-eslint/naming-convention */
-      const investmentQueryResponse: InvestmentResult = {
-        totalCount: 1,
-        items,
-      };
-      /* eslint-enable @typescript-eslint/naming-convention */
-
-      dsMockUtils.createApolloQueryStub(heartbeat(), true);
-
-      dsMockUtils.createApolloQueryStub(
-        investments({
-          stoId: id.toNumber(),
-          ticker,
-          count: 5,
-          skip: 0,
-        }),
-        {
-          investments: investmentQueryResponse,
-        }
-      );
-
-      let result = await offering.getInvestments({
-        size: new BigNumber(5),
-        start: new BigNumber(0),
-      });
-
-      const { data } = result;
-
-      expect(data[0].investor.did).toBe(did);
-      expect(data[0].soldAmount).toEqual(offeringTokenAmount.div(Math.pow(10, 6)));
-      expect(data[0].investedAmount).toEqual(raiseTokenAmount.div(Math.pow(10, 6)));
-
-      dsMockUtils.createApolloQueryStub(
-        investments({
-          stoId: id.toNumber(),
-          ticker,
-          count: undefined,
-          skip: undefined,
-        }),
-        {
-          investments: {
-            totalCount: 0,
-            items: [],
-          },
-        }
-      );
-
-      result = await offering.getInvestments();
-      expect(result.data).toEqual([]);
-      expect(result.next).toBeNull();
-    });
-  });
-
-  describe('method: getInvestmentsV2', () => {
     it('should return a list of investors', async () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
@@ -371,7 +294,7 @@ describe('Offering class', () => {
         nodes,
       };
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloQueryMock(
         investmentsQuery(
           {
             stoId: id.toNumber(),
@@ -385,7 +308,7 @@ describe('Offering class', () => {
         }
       );
 
-      let result = await offering.getInvestmentsV2({
+      let result = await offering.getInvestments({
         size: new BigNumber(5),
         start: new BigNumber(0),
       });
@@ -396,7 +319,7 @@ describe('Offering class', () => {
       expect(data[0].soldAmount).toEqual(offeringTokenAmount.div(Math.pow(10, 6)));
       expect(data[0].investedAmount).toEqual(raiseTokenAmount.div(Math.pow(10, 6)));
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloQueryMock(
         investmentsQuery({
           stoId: id.toNumber(),
           offeringToken: ticker,
@@ -409,52 +332,50 @@ describe('Offering class', () => {
         }
       );
 
-      result = await offering.getInvestmentsV2();
+      result = await offering.getInvestments();
       expect(result.data).toEqual([]);
       expect(result.next).toBeNull();
     });
   });
 
   describe('method: freeze', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
       const offering = new Offering({ id, ticker }, context);
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Offering>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Offering>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker, id, freeze: true }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { ticker, id, freeze: true }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
-      const queue = await offering.freeze();
+      const tx = await offering.freeze();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: unfreeze', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
       const offering = new Offering({ id, ticker }, context);
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Offering>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Offering>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker, id, freeze: false }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { ticker, id, freeze: false }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
-      const queue = await offering.unfreeze();
+      const tx = await offering.unfreeze();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: invest', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
       const offering = new Offering({ id, ticker }, context);
@@ -472,20 +393,19 @@ describe('Offering class', () => {
         purchaseAmount,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
-      const queue = await offering.invest({
+      const tx = await offering.invest({
         purchasePortfolio,
         fundingPortfolio,
         purchaseAmount,
       });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -493,14 +413,14 @@ describe('Offering class', () => {
     it('should return whether the Offering exists', async () => {
       const offering = new Offering({ ticker: 'SOME_TICKER', id: new BigNumber(1) }, context);
 
-      dsMockUtils.createQueryStub('sto', 'fundraisers', {
+      dsMockUtils.createQueryMock('sto', 'fundraisers', {
         returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockFundraiser()),
       });
 
       let result = await offering.exists();
       expect(result).toBe(true);
 
-      dsMockUtils.createQueryStub('sto', 'fundraisers', {
+      dsMockUtils.createQueryMock('sto', 'fundraisers', {
         returnValue: dsMockUtils.createMockOption(),
       });
 

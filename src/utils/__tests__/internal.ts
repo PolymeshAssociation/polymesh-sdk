@@ -1,56 +1,74 @@
-import { Bytes } from '@polkadot/types';
-import { AccountId } from '@polkadot/types/interfaces';
+import { Bytes, u32 } from '@polkadot/types';
+import { AccountId, EventRecord } from '@polkadot/types/interfaces';
 import {
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesSecondaryKeyKeyRecord,
+  PolymeshPrimitivesStatisticsStatOpType,
+  PolymeshPrimitivesStatisticsStatType,
 } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { IdentityId } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
-  Asset,
+  Account,
   Context,
+  FungibleAsset,
   Identity,
+  Nft,
   PolymeshError,
-  PostTransactionValue,
   Procedure,
 } from '~/internal';
-import { ClaimScopeTypeEnum } from '~/middleware/types';
+import { latestSqVersionQuery } from '~/middleware/queries';
+import { Claim as MiddlewareClaim } from '~/middleware/types';
+import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   createMockStatisticsStatClaim,
+  getApiInstance,
+  getAtMock,
   getWebSocketInstance,
   MockCodec,
+  MockContext,
   MockWebSocket,
 } from '~/testUtils/mocks/dataSources';
 import {
-  Account,
   CaCheckpointType,
-  CalendarPeriod,
-  CalendarUnit,
   ClaimType,
   CountryCode,
   ErrorCode,
   ModuleName,
+  OptionalArgsProcedureMethod,
   PermissionedAccount,
   ProcedureMethod,
   RemoveAssetStatParams,
+  ScopedClaim,
+  ScopeType,
   StatType,
   SubCallback,
   TransferRestrictionType,
   TxTags,
 } from '~/types';
-import { StatisticsOpType } from '~/types/internal';
 import { tuple } from '~/types/utils';
-import { MAX_TICKER_LENGTH } from '~/utils/constants';
+import {
+  MAX_TICKER_LENGTH,
+  MINIMUM_SQ_VERSION,
+  SUPPORTED_NODE_SEMVER,
+  SUPPORTED_SPEC_SEMVER,
+} from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 
+import { SUPPORTED_NODE_VERSION_RANGE, SUPPORTED_SPEC_VERSION_RANGE } from '../constants';
 import {
+  areSameClaims,
+  asAccount,
+  asChildIdentity,
+  asFungibleAsset,
+  asNftId,
   assertAddressValid,
   assertExpectedChainVersion,
+  assertExpectedSqVersion,
   assertIsInteger,
   assertIsPositive,
   assertTickerValid,
@@ -64,48 +82,62 @@ import {
   createProcedureMethod,
   delay,
   filterEventRecords,
+  getApiAtBlock,
   getCheckpointValue,
   getDid,
   getExemptedIds,
   getIdentity,
+  getIdentityFromKeyRecord,
   getPortfolioIdsByName,
   getSecondaryAccountPermissions,
   hasSameElements,
+  isAlphanumeric,
   isModuleOrTagMatch,
   isPrintableAscii,
+  mergeReceipts,
   neededStatTypeForRestrictionInput,
   optionize,
   padString,
-  periodComplexity,
   removePadding,
   requestAtBlock,
   requestPaginated,
+  segmentEventsByTransaction,
   serialize,
+  sliceBatchReceipt,
   unserialize,
-  unwrapValue,
-  unwrapValues,
 } from '../internal';
+
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
+);
+jest.mock(
+  '~/api/entities/Asset/NonFungible',
+  require('~/testUtils/mocks/entities').mockNftCollectionModule('~/api/entities/Asset/NonFungible')
+);
+jest.mock(
+  '~/api/entities/Account',
+  require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
 );
 jest.mock('websocket', require('~/testUtils/mocks/dataSources').mockWebSocketModule());
 
 describe('delay', () => {
   beforeAll(() => {
-    jest.useFakeTimers('legacy');
+    jest.useFakeTimers({
+      legacyFakeTimers: true,
+    });
   });
 
   afterAll(() => {
     jest.useRealTimers();
   });
 
-  it('should resolve after the supplied timeout', () => {
+  it('should resolve after the supplied timeout', async () => {
     const delayPromise = delay(5000);
 
     jest.advanceTimersByTime(5000);
 
-    return expect(delayPromise).resolves.toBeUndefined();
+    expect(await delayPromise).toBeUndefined();
   });
 });
 
@@ -197,48 +229,60 @@ describe('getDid', () => {
   });
 });
 
-describe('unwrapValue', () => {
-  it('should unwrap a Post Transaction Value', async () => {
-    const wrapped = new PostTransactionValue(async () => 1);
-    await wrapped.run({} as ISubmittableResult);
+describe('asAccount', () => {
+  let context: Context;
+  let address: string;
+  let account: Account;
 
-    const unwrapped = unwrapValue(wrapped);
-
-    expect(unwrapped).toEqual(1);
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+    address = 'someAddress';
   });
 
-  it('should return a non Post Transaction Value as is', () => {
-    expect(unwrapValue(1)).toBe(1);
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    account = new Account({ address }, context);
   });
-});
 
-describe('unwrapValues', () => {
-  it('should unwrap all Post Transaction Values in the array', async () => {
-    const values = [1, 2, 3, 4, 5];
-    const wrapped = values.map(value => new PostTransactionValue(async () => value));
-    await Promise.all(wrapped.map(postValue => postValue.run({} as ISubmittableResult)));
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
 
-    const unwrapped = unwrapValues(wrapped);
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
 
-    expect(unwrapped).toEqual(values);
+  it('should return Account for given address', async () => {
+    const result = asAccount(address, context);
+
+    expect(result).toEqual(expect.objectContaining({ address }));
+  });
+
+  it('should return the passed Account', async () => {
+    const result = asAccount(account, context);
+
+    expect(result).toBe(account);
   });
 });
 
 describe('filterEventRecords', () => {
-  const filterRecordsStub = sinon.stub();
+  const filterRecordsMock = jest.fn();
   const mockReceipt = {
-    filterRecords: filterRecordsStub,
+    filterRecords: filterRecordsMock,
   } as unknown as ISubmittableResult;
 
   afterEach(() => {
-    filterRecordsStub.reset();
+    filterRecordsMock.mockReset();
   });
 
   it('should return the corresponding Event Record', () => {
     const mod = 'asset';
     const eventName = 'TickerRegistered';
     const fakeResult = 'event';
-    filterRecordsStub.withArgs(mod, eventName).returns([{ event: fakeResult }]);
+    when(filterRecordsMock)
+      .calledWith(mod, eventName)
+      .mockReturnValue([{ event: fakeResult }]);
 
     const eventRecord = filterEventRecords(mockReceipt, mod, eventName);
 
@@ -248,11 +292,173 @@ describe('filterEventRecords', () => {
   it("should throw an error if the Event wasn't fired", () => {
     const mod = 'asset';
     const eventName = 'TickerRegistered';
-    filterRecordsStub.withArgs(mod, eventName).returns([]);
+    when(filterRecordsMock).calledWith(mod, eventName).mockReturnValue([]);
 
     expect(() => filterEventRecords(mockReceipt, mod, eventName)).toThrow(
       `Event "${mod}.${eventName}" wasn't fired even though the corresponding transaction was completed. Please report this to the Polymesh team`
     );
+  });
+});
+
+describe('segmentEventsByTransaction', () => {
+  it('should correctly segment events based on utility.ItemCompleted', () => {
+    // Mock some event data
+    const mockEvent1 = { event: { section: 'asset', method: 'AssetCreated' } };
+    const mockEvent2 = { event: { section: 'protocolFee', method: 'FeeCharged' } };
+    const mockEventItemCompleted = { event: { section: 'utility', method: 'ItemCompleted' } };
+
+    const events = [
+      mockEvent1,
+      mockEvent2,
+      mockEventItemCompleted,
+      mockEvent1,
+      mockEvent2,
+    ] as EventRecord[];
+    const result = segmentEventsByTransaction(events);
+
+    expect(result).toEqual([
+      [mockEvent1, mockEvent2],
+      [mockEvent1, mockEvent2],
+    ]);
+  });
+
+  it('should not include utility.ItemCompleted in the segments', () => {
+    const mockEventItemCompleted = { event: { section: 'utility', method: 'ItemCompleted' } };
+    const events = [mockEventItemCompleted] as EventRecord[];
+    const result = segmentEventsByTransaction(events);
+
+    expect(result).toEqual([]);
+  });
+
+  it('should handle cases where there are no utility.ItemCompleted events', () => {
+    const mockEvent1 = { event: { section: 'asset', method: 'AssetCreated' } };
+    const mockEvent2 = { event: { section: 'protocolFee', method: 'FeeCharged' } };
+
+    const events = [mockEvent1, mockEvent2] as EventRecord[];
+    const result = segmentEventsByTransaction(events);
+
+    expect(result).toEqual([[mockEvent1, mockEvent2]]);
+  });
+});
+
+describe('sliceBatchReceipt', () => {
+  const filterRecordsMock = jest.fn();
+  const events = [
+    { event: { section: 'asset', method: 'AssetCreated' } },
+    { event: { section: 'protocolFee', method: 'FeeCharged' } },
+    { event: { section: 'utility', method: 'ItemCompleted' } },
+    { event: { section: 'asset', method: 'AssetDeleted' } },
+    { event: { section: 'utility', method: 'ItemCompleted' } },
+    { event: { section: 'utility', method: 'BatchCompleted' } },
+  ];
+  const mockReceipt = {
+    filterRecords: filterRecordsMock,
+    events,
+    findRecord: jest.fn(),
+    toHuman: jest.fn(),
+  } as unknown as ISubmittableResult;
+
+  beforeEach(() => {
+    when(filterRecordsMock).calledWith('utility', 'BatchCompleted').mockReturnValue([1]);
+  });
+
+  it('should return the cloned receipt with a subset of events', () => {
+    const slicedReceipt = sliceBatchReceipt(mockReceipt, 0, 1);
+    expect(slicedReceipt.events).toEqual([
+      { event: { section: 'asset', method: 'AssetCreated' } },
+      { event: { section: 'protocolFee', method: 'FeeCharged' } },
+    ]);
+  });
+
+  it('should throw an error if the transaction indexes are out of bounds', () => {
+    expect(() => sliceBatchReceipt(mockReceipt, -1, 2)).toThrow(
+      'Transaction index range out of bounds. Please report this to the Polymesh team'
+    );
+
+    expect(() => sliceBatchReceipt(mockReceipt, 2, 5)).toThrow(
+      'Transaction index range out of bounds. Please report this to the Polymesh team'
+    );
+  });
+});
+
+describe('mergeReceipts', () => {
+  let bigNumberToU32Spy: jest.SpyInstance;
+  let receipts: ISubmittableResult[];
+  let context: Context;
+
+  let eventsPerTransaction: u32[];
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    eventsPerTransaction = [
+      dsMockUtils.createMockU32(new BigNumber(2)),
+      dsMockUtils.createMockU32(new BigNumber(1)),
+      dsMockUtils.createMockU32(new BigNumber(3)),
+    ];
+    bigNumberToU32Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU32');
+    when(bigNumberToU32Spy)
+      .calledWith(new BigNumber(2), context)
+      .mockReturnValue(eventsPerTransaction[0]);
+    when(bigNumberToU32Spy)
+      .calledWith(new BigNumber(1), context)
+      .mockReturnValue(eventsPerTransaction[1]);
+    when(bigNumberToU32Spy)
+      .calledWith(new BigNumber(3), context)
+      .mockReturnValue(eventsPerTransaction[2]);
+
+    receipts = [
+      {
+        filterRecords: jest.fn(),
+        events: ['tx0event0', 'tx0event1'],
+        findRecord: jest.fn(),
+        toHuman: jest.fn(),
+      },
+      {
+        filterRecords: jest.fn(),
+        events: ['tx1event0'],
+        findRecord: jest.fn(),
+        toHuman: jest.fn(),
+      },
+      {
+        filterRecords: jest.fn(),
+        events: ['tx2event0', 'tx2event1', 'tx2event2'],
+        findRecord: jest.fn(),
+        toHuman: jest.fn(),
+      },
+    ] as unknown as ISubmittableResult[];
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    jest.restoreAllMocks();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return a receipt with all the combined events in order', () => {
+    const result = mergeReceipts(receipts, context);
+
+    expect(result.events).toEqual([
+      'tx0event0',
+      'tx0event1',
+      'tx1event0',
+      'tx2event0',
+      'tx2event1',
+      'tx2event2',
+      {
+        event: {
+          section: 'utility',
+          method: 'BatchCompleted',
+          data: [eventsPerTransaction],
+        },
+      },
+    ]);
   });
 });
 
@@ -262,7 +468,7 @@ describe('createClaim', () => {
     const jurisdiction = 'CL';
     let scope = { type: ClaimScopeTypeEnum.Identity, value: 'someScope' };
 
-    let result = createClaim(type, jurisdiction, scope, null, undefined);
+    let result = createClaim(type, jurisdiction, scope, null, null);
     expect(result).toEqual({
       type: ClaimType.Jurisdiction,
       code: CountryCode.Cl,
@@ -272,45 +478,40 @@ describe('createClaim', () => {
     type = 'BuyLockup';
     scope = { type: ClaimScopeTypeEnum.Identity, value: 'someScope' };
 
-    result = createClaim(type, null, scope, null, undefined);
+    result = createClaim(type, null, scope, null, null);
     expect(result).toEqual({
       type: ClaimType.BuyLockup,
       scope,
     });
 
-    type = 'NoData';
-
-    result = createClaim(type, null, null, null, undefined);
-    expect(result).toEqual({
-      type: ClaimType.NoData,
-    });
-
     type = 'CustomerDueDiligence';
     const id = 'someId';
 
-    result = createClaim(type, null, null, id, undefined);
+    result = createClaim(type, null, null, id, null);
     expect(result).toEqual({
       type: ClaimType.CustomerDueDiligence,
       id,
     });
 
-    type = 'InvestorUniqueness';
-    scope = { type: ClaimScopeTypeEnum.Ticker, value: 'SOME_TICKER' };
+    type = 'Custom';
+    const customClaimTypeId = new BigNumber(1);
 
-    result = createClaim(type, null, scope, id, undefined);
+    result = createClaim(type, null, scope, id, customClaimTypeId);
     expect(result).toEqual({
-      type: ClaimType.InvestorUniqueness,
-      scope: scope,
-      cddId: id,
+      type: ClaimType.Custom,
+      customClaimTypeId,
+      scope,
     });
+  });
 
-    type = 'InvestorUniquenessV2';
+  it('should throw if customClaimTypeId not provided for CustomClaim', () => {
+    const scope = { type: ClaimScopeTypeEnum.Identity, value: 'someScope' };
+    const id = 'someId';
+    const type = 'Custom';
 
-    result = createClaim(type, null, null, id, undefined);
-    expect(result).toEqual({
-      type: ClaimType.InvestorUniquenessV2,
-      cddId: id,
-    });
+    expect(() => createClaim(type, null, scope, id, null)).toThrow(
+      'Custom claim type ID is required'
+    );
   });
 });
 
@@ -337,57 +538,105 @@ describe('removePadding', () => {
 
 describe('requestPaginated', () => {
   it('should fetch and return entries and the hex value of the last key', async () => {
-    const queryStub = dsMockUtils.createQueryStub('asset', 'tickers', {
-      entries: [
-        tuple(['ticker0'], dsMockUtils.createMockU32(new BigNumber(0))),
-        tuple(['ticker1'], dsMockUtils.createMockU32(new BigNumber(1))),
-        tuple(['ticker2'], dsMockUtils.createMockU32(new BigNumber(2))),
-      ],
+    const entries = [
+      tuple(['ticker0'], dsMockUtils.createMockU32(new BigNumber(0))),
+      tuple(['ticker1'], dsMockUtils.createMockU32(new BigNumber(1))),
+      tuple(['ticker2'], dsMockUtils.createMockU32(new BigNumber(2))),
+    ];
+    const queryMock = dsMockUtils.createQueryMock('asset', 'tickers', {
+      entries,
     });
 
-    let res = await requestPaginated(queryStub, {
+    let res = await requestPaginated(queryMock, {
       paginationOpts: undefined,
     });
 
     expect(res.lastKey).toBeNull();
-    sinon.assert.calledOnce(queryStub.entries);
+    expect(queryMock.entries).toHaveBeenCalledTimes(1);
 
-    sinon.resetHistory();
+    jest.clearAllMocks();
 
-    res = await requestPaginated(queryStub, {
+    res = await requestPaginated(queryMock, {
       paginationOpts: { size: new BigNumber(3) },
     });
 
     expect(typeof res.lastKey).toBe('string');
-    sinon.assert.calledOnce(queryStub.entriesPaged);
+    expect(queryMock.entriesPaged).toHaveBeenCalledTimes(1);
 
-    sinon.resetHistory();
+    jest.clearAllMocks();
 
-    res = await requestPaginated(queryStub, {
+    res = await requestPaginated(queryMock, {
       paginationOpts: { size: new BigNumber(4) },
       arg: 'something',
     });
 
     expect(res.lastKey).toBeNull();
-    sinon.assert.calledOnce(queryStub.entriesPaged);
+    expect(queryMock.entriesPaged).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('getApiAtBlock', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should throw an error if the node is not archive', () => {
+    const context = dsMockUtils.getContextInstance({
+      isCurrentNodeArchive: false,
+    });
+
+    return expect(getApiAtBlock(context, 'blockHash')).rejects.toThrow(
+      'Cannot query previous blocks in a non-archive node'
+    );
+  });
+
+  it('should return corresponding API state at given block', async () => {
+    const context = dsMockUtils.getContextInstance();
+
+    const result = await getApiAtBlock(context, 'blockHash');
+
+    expect(result).toEqual(getApiInstance());
+    expect(getAtMock()).toHaveBeenCalledTimes(1);
   });
 });
 
 describe('requestAtBlock', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
   it('should fetch and return the value at a certain block (current if left empty)', async () => {
     const context = dsMockUtils.getContextInstance({
-      isArchiveNode: true,
+      isCurrentNodeArchive: true,
     });
     const returnValue = dsMockUtils.createMockU32(new BigNumber(5));
-    const queryStub = dsMockUtils.createQueryStub('asset', 'tickers', {
+    const queryMock = dsMockUtils.createQueryMock('asset', 'tickers', {
       returnValue,
     });
+    const apiAtMock = getAtMock();
 
     const blockHash = 'someBlockHash';
     const ticker = 'ticker';
 
     let res = await requestAtBlock(
-      queryStub,
+      'asset',
+      'tickers',
       {
         blockHash,
         args: [ticker],
@@ -395,65 +644,49 @@ describe('requestAtBlock', () => {
       context
     );
 
-    sinon.assert.calledWith(queryStub.at, blockHash, ticker);
+    expect(apiAtMock).toHaveBeenCalledTimes(1);
+    expect(queryMock).toHaveBeenCalledWith(ticker);
     expect(res).toBe(returnValue);
 
+    apiAtMock.mockClear();
+
     res = await requestAtBlock(
-      queryStub,
+      'asset',
+      'tickers',
       {
         args: [ticker],
       },
       context
     );
 
-    sinon.assert.calledWith(queryStub, ticker);
+    expect(apiAtMock).toHaveBeenCalledTimes(0);
+    expect(queryMock).toHaveBeenCalledWith(ticker);
     expect(res).toBe(returnValue);
-  });
-
-  it('should throw an error if the node is not archive', () => {
-    const context = dsMockUtils.getContextInstance({
-      isArchiveNode: false,
-    });
-
-    const queryStub = dsMockUtils.createQueryStub('asset', 'tickers', {
-      returnValue: dsMockUtils.createMockU32(new BigNumber(5)),
-    });
-
-    return expect(
-      requestAtBlock(
-        queryStub,
-        {
-          blockHash: 'someBlockHash',
-          args: ['ticker'],
-        },
-        context
-      )
-    ).rejects.toThrow('Cannot query previous blocks in a non-archive node');
   });
 });
 
 describe('calculateNextKey', () => {
-  it('should return NextKey null as there are less elements than the default page size', () => {
+  it('should return NextKey as null when all elements are returned', () => {
     const totalCount = new BigNumber(20);
-    const nextKey = calculateNextKey(totalCount);
+    const nextKey = calculateNextKey(totalCount, 20);
 
     expect(nextKey).toBeNull();
   });
 
   it('should return NextKey null as it is the last page', () => {
     const totalCount = new BigNumber(50);
-    const currentPageSize = new BigNumber(30);
+    const resultSize = 30;
     const currentStart = new BigNumber(31);
-    const nextKey = calculateNextKey(totalCount, currentPageSize, currentStart);
+    const nextKey = calculateNextKey(totalCount, resultSize, currentStart);
 
     expect(nextKey).toBeNull();
   });
 
   it('should return NextKey', () => {
     const totalCount = new BigNumber(50);
-    const currentPageSize = new BigNumber(30);
+    const resultSize = 30;
     const currentStart = new BigNumber(0);
-    const nextKey = calculateNextKey(totalCount, currentPageSize, currentStart);
+    const nextKey = calculateNextKey(totalCount, resultSize, currentStart);
 
     expect(nextKey).toEqual(new BigNumber(30));
   });
@@ -471,6 +704,10 @@ describe('isPrintableAscii', () => {
 
 describe('createProcedureMethod', () => {
   let context: Context;
+  let prepare: jest.Mock;
+  let checkAuthorization: jest.Mock;
+  let transformer: jest.Mock;
+  let fakeProcedure: () => Procedure<number, void>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -478,6 +715,14 @@ describe('createProcedureMethod', () => {
 
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
+    prepare = jest.fn();
+    checkAuthorization = jest.fn();
+    transformer = jest.fn();
+    fakeProcedure = (): Procedure<number, void> =>
+      ({
+        prepare,
+        checkAuthorization,
+      } as unknown as Procedure<number, void>);
   });
 
   afterEach(() => {
@@ -489,15 +734,6 @@ describe('createProcedureMethod', () => {
   });
 
   it('should return a ProcedureMethod object', async () => {
-    const prepare = sinon.stub();
-    const checkAuthorization = sinon.stub();
-    const transformer = sinon.stub();
-    const fakeProcedure = (): Procedure<number, void> =>
-      ({
-        prepare,
-        checkAuthorization,
-      } as unknown as Procedure<number, void>);
-
     const method: ProcedureMethod<number, void> = createProcedureMethod(
       { getProcedureAndArgs: args => [fakeProcedure, args], transformer },
       context
@@ -506,35 +742,60 @@ describe('createProcedureMethod', () => {
     const procArgs = 1;
     await method(procArgs);
 
-    sinon.assert.calledWithExactly(prepare, { args: procArgs, transformer }, context, {});
+    expect(prepare).toHaveBeenCalledWith({ args: procArgs, transformer }, context, {});
 
     await method.checkAuthorization(procArgs);
 
-    sinon.assert.calledWithExactly(checkAuthorization, procArgs, context, {});
+    expect(checkAuthorization).toHaveBeenCalledWith(procArgs, context, {});
+  });
+
+  it('should return a OptionalArgsProcedureMethod object', async () => {
+    const method: OptionalArgsProcedureMethod<number, void> = createProcedureMethod(
+      {
+        getProcedureAndArgs: (args?: number) => [fakeProcedure, args],
+        transformer,
+        optionalArgs: true,
+      },
+      context
+    );
+
+    await method();
+
+    expect(prepare).toHaveBeenCalledWith({ args: undefined, transformer }, context, {});
+
+    await method.checkAuthorization(undefined);
+
+    expect(checkAuthorization).toHaveBeenCalledWith(undefined, context, {});
+
+    const procArgs = 1;
+    await method(procArgs);
+
+    expect(prepare).toHaveBeenCalledWith({ args: procArgs, transformer }, context, {});
+
+    await method.checkAuthorization(procArgs);
+
+    expect(checkAuthorization).toHaveBeenCalledWith(procArgs, context, {});
   });
 
   it('should return a NoArgsProcedureMethod object', async () => {
-    const prepare = sinon.stub();
-    const checkAuthorization = sinon.stub();
-    const transformer = sinon.stub();
-    const fakeProcedure = (): Procedure<void, void> =>
+    const noArgsFakeProcedure = (): Procedure<void, void> =>
       ({
         prepare,
         checkAuthorization,
       } as unknown as Procedure<void, void>);
 
     const method = createProcedureMethod(
-      { getProcedureAndArgs: () => [fakeProcedure, undefined], transformer, voidArgs: true },
+      { getProcedureAndArgs: () => [noArgsFakeProcedure, undefined], transformer, voidArgs: true },
       context
     );
 
     await method();
 
-    sinon.assert.calledWithExactly(prepare, { transformer, args: undefined }, context, {});
+    expect(prepare).toHaveBeenCalledWith({ transformer, args: undefined }, context, {});
 
     await method.checkAuthorization();
 
-    sinon.assert.calledWithExactly(checkAuthorization, undefined, context, {});
+    expect(checkAuthorization).toHaveBeenCalledWith(undefined, context, {});
   });
 });
 
@@ -596,47 +857,8 @@ describe('asTicker', () => {
 
     expect(result).toBe(symbol);
 
-    result = asTicker(new Asset({ ticker: symbol }, dsMockUtils.getContextInstance()));
+    result = asTicker(new FungibleAsset({ ticker: symbol }, dsMockUtils.getContextInstance()));
     expect(result).toBe(symbol);
-  });
-});
-
-describe('periodComplexity', () => {
-  it('should calculate complexity for any period', () => {
-    const period: CalendarPeriod = {
-      unit: CalendarUnit.Second,
-      amount: new BigNumber(1),
-    };
-    let result = periodComplexity(period);
-    expect(result).toEqual(new BigNumber(31536000));
-
-    period.unit = CalendarUnit.Minute;
-    result = periodComplexity(period);
-    expect(result).toEqual(new BigNumber(525600));
-
-    period.unit = CalendarUnit.Hour;
-    result = periodComplexity(period);
-    expect(result).toEqual(new BigNumber(8760));
-
-    period.unit = CalendarUnit.Day;
-    result = periodComplexity(period);
-    expect(result).toEqual(new BigNumber(365));
-
-    period.unit = CalendarUnit.Week;
-    result = periodComplexity(period);
-    expect(result).toEqual(new BigNumber(52));
-
-    period.unit = CalendarUnit.Month;
-    result = periodComplexity(period);
-    expect(result).toEqual(new BigNumber(12));
-
-    period.unit = CalendarUnit.Year;
-    result = periodComplexity(period);
-    expect(result).toEqual(new BigNumber(2));
-
-    period.amount = new BigNumber(0);
-    result = periodComplexity(period);
-    expect(result).toEqual(new BigNumber(1));
   });
 });
 
@@ -692,7 +914,7 @@ describe('getCheckpointValue', () => {
 
   it('should return value as it is for valid params of type Checkpoint, CheckpointSchedule or Date', async () => {
     const mockCheckpointSchedule = entityMockUtils.getCheckpointScheduleInstance();
-    const mockAsset = entityMockUtils.getAssetInstance();
+    const mockAsset = entityMockUtils.getFungibleAssetInstance();
     let result = await getCheckpointValue(mockCheckpointSchedule, mockAsset, context);
     expect(result).toEqual(mockCheckpointSchedule);
 
@@ -711,7 +933,7 @@ describe('getCheckpointValue', () => {
       id: new BigNumber(1),
       type: CaCheckpointType.Existing,
     };
-    const mockAsset = entityMockUtils.getAssetInstance({
+    const mockAsset = entityMockUtils.getFungibleAssetInstance({
       checkpointsGetOne: mockCheckpoint,
     });
 
@@ -725,12 +947,16 @@ describe('getCheckpointValue', () => {
       id: new BigNumber(1),
       type: CaCheckpointType.Schedule,
     };
-    const mockAsset = entityMockUtils.getAssetInstance({
+    const mockAsset = entityMockUtils.getFungibleAssetInstance({
       checkpointsSchedulesGetOne: { schedule: mockCheckpointSchedule },
     });
 
     const result = await getCheckpointValue(mockCaCheckpointTypeParams, mockAsset, context);
-    expect(result).toEqual(mockCheckpointSchedule);
+    expect(result).toMatchObject({
+      ...mockCheckpointSchedule,
+      asset: expect.anything(),
+      points: expect.any(Array),
+    });
   });
 });
 
@@ -774,10 +1000,10 @@ describe('hasSameElements', () => {
 
 describe('getPortfolioIdsByName', () => {
   let context: Context;
-  let portfoliosStub: sinon.SinonStub;
+  let portfoliosMock: jest.Mock;
   let firstPortfolioName: MockCodec<Bytes>;
   let rawNames: Bytes[];
-  let identityId: IdentityId;
+  let identityId: PolymeshPrimitivesIdentityId;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -789,16 +1015,15 @@ describe('getPortfolioIdsByName', () => {
     firstPortfolioName = dsMockUtils.createMockBytes('someName');
     rawNames = [firstPortfolioName, dsMockUtils.createMockBytes('otherName')];
     identityId = dsMockUtils.createMockIdentityId('someDid');
-    dsMockUtils.createQueryStub('portfolio', 'nameToNumber', {
+    dsMockUtils.createQueryMock('portfolio', 'nameToNumber', {
       multi: [
-        dsMockUtils.createMockU64(new BigNumber(1)),
-        dsMockUtils.createMockU64(new BigNumber(2)),
-        dsMockUtils.createMockU64(new BigNumber(1)),
-        dsMockUtils.createMockU64(new BigNumber(1)), // Use case for backward compatibility where non existing portfolios were returned with 1
-        dsMockUtils.createMockU64(), // 5.2.0 returns Option<u64>
+        dsMockUtils.createMockOption(dsMockUtils.createMockU64(new BigNumber(1))),
+        dsMockUtils.createMockOption(dsMockUtils.createMockU64(new BigNumber(2))),
+        dsMockUtils.createMockOption(),
+        dsMockUtils.createMockOption(),
       ],
     });
-    portfoliosStub = dsMockUtils.createQueryStub('portfolio', 'portfolios');
+    portfoliosMock = dsMockUtils.createQueryMock('portfolio', 'portfolios');
   });
 
   afterEach(() => {
@@ -811,9 +1036,9 @@ describe('getPortfolioIdsByName', () => {
   });
 
   it('should return portfolio numbers for given portfolio name, and null for names that do not exist', async () => {
-    portfoliosStub.resolves(firstPortfolioName);
-    firstPortfolioName.eq = sinon.stub();
-    firstPortfolioName.eq.withArgs(rawNames[0]).returns(true);
+    portfoliosMock.mockResolvedValue(firstPortfolioName);
+    firstPortfolioName.eq = jest.fn();
+    when(firstPortfolioName.eq).calledWith(rawNames[0]).mockReturnValue(true);
     const result = await getPortfolioIdsByName(
       identityId,
       [
@@ -891,83 +1116,123 @@ describe('getExemptedIds', () => {
   });
 
   it('should return a list of DIDs if the Asset does not support PUIS', async () => {
-    const asset = entityMockUtils.getAssetInstance({
-      details: { requiresInvestorUniqueness: false },
-    });
     const dids = ['someDid', 'otherDid'];
 
-    const result = await getExemptedIds(dids, context, asset.ticker);
+    const result = await getExemptedIds(dids, context);
 
     expect(result).toEqual(dids);
   });
 
-  it('should return a list of Scope IDs if the Asset supports PUIS', async () => {
-    entityMockUtils.configureMocks({
-      assetOptions: {
-        details: {
-          requiresInvestorUniqueness: true,
-        },
-      },
-    });
-    const scopeIds = ['someScopeId', 'otherScopeId'];
-    const identities = scopeIds.map(scopeId =>
-      entityMockUtils.getIdentityInstance({ getScopeId: scopeId })
-    );
-
-    const result = await getExemptedIds(identities, context, 'SOME_TICKER');
-
-    expect(result).toEqual(scopeIds);
-  });
-
-  it('should throw an error if one or more of the passed Identities have no Scope ID for the Asset', () => {
-    entityMockUtils.configureMocks({
-      assetOptions: {
-        details: {
-          requiresInvestorUniqueness: true,
-        },
-      },
-    });
-    const scopeIds = ['someScopeId', null];
-    const identities = scopeIds.map(scopeId =>
-      entityMockUtils.getIdentityInstance({ getScopeId: scopeId })
-    );
-
-    return expect(getExemptedIds(identities, context, 'SOME_TICKER')).rejects.toThrow(
-      'Identities must have an Investor Uniqueness claim Scope ID in order to be exempted from Transfer Restrictions for Asset "SOME_TICKER"'
-    );
-  });
-
   it('should throw an error if the exempted IDs have duplicates', () => {
-    const asset = entityMockUtils.getAssetInstance({
-      details: { requiresInvestorUniqueness: false },
-    });
     const dids = ['someDid', 'someDid'];
 
-    return expect(getExemptedIds(dids, context, asset.ticker)).rejects.toThrow(
+    return expect(getExemptedIds(dids, context)).rejects.toThrow(
       'One or more of the passed exempted Identities are repeated or have the same Scope ID'
     );
   });
 });
 
-describe('assertExpectedChainVersion', () => {
-  let client: MockWebSocket;
-  let warnStub: sinon.SinonStub;
+describe('assertExpectedSqVersion', () => {
+  let warnSpy: jest.SpyInstance;
+  let context: MockContext;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
-    warnStub = sinon.stub(console, 'warn');
   });
 
   beforeEach(() => {
-    client = getWebSocketInstance();
+    context = dsMockUtils.getContextInstance();
+    warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
   });
 
   afterEach(() => {
+    warnSpy.mockClear();
     dsMockUtils.reset();
   });
 
   afterAll(() => {
-    warnStub.restore();
+    warnSpy.mockRestore();
+  });
+
+  it('should not log a warning if SDK is initialized with the correct Middleware V2 version', async () => {
+    dsMockUtils.createApolloQueryMock(latestSqVersionQuery(), {
+      subqueryVersions: {
+        nodes: [
+          {
+            version: '10.1.0',
+          },
+        ],
+      },
+    });
+    const promise = assertExpectedSqVersion(dsMockUtils.getContextInstance());
+
+    await expect(promise).resolves.not.toThrow();
+
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it('should log a warning for incompatible Subquery version', async () => {
+    dsMockUtils.createApolloQueryMock(latestSqVersionQuery(), {
+      subqueryVersions: {
+        nodes: [
+          {
+            version: '9.6.0',
+          },
+        ],
+      },
+    });
+    await assertExpectedSqVersion(context);
+
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy).toHaveBeenCalledWith(
+      `This version of the SDK supports Polymesh Subquery version ${MINIMUM_SQ_VERSION} or higher. Please upgrade the MiddlewareV2`
+    );
+
+    warnSpy.mockReset();
+
+    dsMockUtils.createApolloQueryMock(latestSqVersionQuery(), {
+      subqueryVersions: {
+        nodes: [],
+      },
+    });
+    await assertExpectedSqVersion(context);
+
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('assertExpectedChainVersion', () => {
+  let client: MockWebSocket;
+  let warnSpy: jest.SpyInstance;
+
+  const getSpecVersion = (version: string): string =>
+    `${version
+      .split('.')
+      .map(number => `00${number}`.slice(-3))
+      .join('')}`;
+
+  const getMismatchedVersion = (version: string, versionIndex = 1): string =>
+    version
+      .split('.')
+      .map((number, index) => (index === versionIndex ? +number + 4 : number))
+      .join('.');
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    client = getWebSocketInstance();
+    warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    warnSpy.mockClear();
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    warnSpy.mockRestore();
   });
 
   it('should resolve if it receives both expected RPC node and chain spec version', () => {
@@ -979,7 +1244,8 @@ describe('assertExpectedChainVersion', () => {
 
   it('should throw an error given a major RPC node version mismatch', () => {
     const signal = assertExpectedChainVersion('ws://example.com');
-    client.sendRpcVersion('3.0.0');
+    const mismatchedVersion = getMismatchedVersion(SUPPORTED_NODE_SEMVER, 0);
+    client.sendRpcVersion(mismatchedVersion);
     const expectedError = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
@@ -989,18 +1255,23 @@ describe('assertExpectedChainVersion', () => {
 
   it('should log a warning given a minor or patch RPC node version mismatch', async () => {
     const signal = assertExpectedChainVersion('ws://example.com');
-    client.sendSpecVersion('5000002');
-    client.sendRpcVersion('5.1.0');
+
+    client.sendSpecVersion(getSpecVersion(SUPPORTED_SPEC_SEMVER));
+
+    const mockRpcVersion = getMismatchedVersion(SUPPORTED_NODE_SEMVER);
+    client.sendRpcVersion(mockRpcVersion);
+
     await signal;
-    sinon.assert.calledWith(
-      warnStub,
-      'This version of the SDK supports Polymesh RPC node version 5.0.2. The node is at version 5.1.0. Please upgrade the SDK'
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy).toHaveBeenCalledWith(
+      `This version of the SDK supports Polymesh RPC node version ${SUPPORTED_NODE_VERSION_RANGE}. The node is at version ${mockRpcVersion}. Please upgrade the SDK`
     );
   });
 
   it('should throw an error given a major chain spec version mismatch', () => {
     const signal = assertExpectedChainVersion('ws://example.com');
-    client.sendSpecVersion('3000000');
+    const mismatchedSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_SEMVER, 0);
+    client.sendSpecVersion(getSpecVersion(mismatchedSpecVersion));
     const expectedError = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh chain spec version. Please upgrade the SDK',
@@ -1008,15 +1279,25 @@ describe('assertExpectedChainVersion', () => {
     return expect(signal).rejects.toThrowError(expectedError);
   });
 
-  it('should log a warning given a minor or patch chain spec version mismatch', async () => {
+  it('should log a warning given a minor chain spec version mismatch', async () => {
     const signal = assertExpectedChainVersion('ws://example.com');
-    client.sendSpecVersion('5001000');
-    client.sendRpcVersion('5.0.2');
+    const mockSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_SEMVER);
+    client.sendSpecVersion(getSpecVersion(mockSpecVersion));
+    client.sendRpcVersion(SUPPORTED_NODE_SEMVER);
     await signal;
-    sinon.assert.calledWith(
-      warnStub,
-      'This version of the SDK supports Polymesh chain spec version 5.0.2. The chain spec is at version 5.1.0. Please upgrade the SDK'
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy).toHaveBeenCalledWith(
+      `This version of the SDK supports Polymesh chain spec version ${SUPPORTED_SPEC_VERSION_RANGE}. The chain spec is at version ${mockSpecVersion}. Please upgrade the SDK`
     );
+  });
+
+  it('should resolve even with a patch chain spec version mismatch', async () => {
+    const signal = assertExpectedChainVersion('ws://example.com');
+    const mockSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_SEMVER, 2);
+    client.sendSpecVersion(getSpecVersion(mockSpecVersion));
+    client.sendRpcVersion(SUPPORTED_NODE_SEMVER);
+    await signal;
+    expect(warnSpy).toHaveBeenCalledTimes(0);
   });
 
   it('should throw an error if the node cannot be reached', () => {
@@ -1061,6 +1342,14 @@ describe('assertTickerValid', () => {
     expect(() => assertTickerValid(ticker)).toThrow('Ticker cannot contain lower case letters');
   });
 
+  it('should throw an error if the ticker contains a emoji', () => {
+    const ticker = '💎';
+
+    expect(() => assertTickerValid(ticker)).toThrow(
+      'Only printable ASCII is allowed as ticker name'
+    );
+  });
+
   it('should not throw an error', () => {
     const ticker = 'FAKE_TICKER';
 
@@ -1088,27 +1377,29 @@ describe('neededStatTypeForRestrictionInput', () => {
       PolymeshPrimitivesIdentityId
     ] = [dsMockUtils.createMockClaimType(), dsMockUtils.createMockIdentityId()];
 
-    sinon.stub(utilsConversionModule, 'claimIssuerToMeshClaimIssuer').returns(mockClaimIssuer);
+    jest
+      .spyOn(utilsConversionModule, 'claimIssuerToMeshClaimIssuer')
+      .mockReturnValue(mockClaimIssuer);
 
-    context.createType
-      .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatisticsOpType.Count)
-      .returns('Count');
-    context.createType
-      .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatisticsOpType.Balance)
-      .returns('Balance');
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStatisticsStatOpType', StatType.Count)
+      .mockReturnValue('Count' as unknown as PolymeshPrimitivesStatisticsStatOpType);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStatisticsStatOpType', StatType.Balance)
+      .mockReturnValue('Balance' as unknown as PolymeshPrimitivesStatisticsStatOpType);
 
-    context.createType
-      .withArgs('PolymeshPrimitivesStatisticsStatType', { op: 'Count', claimIssuer: undefined })
-      .returns('CountStat');
-    context.createType
-      .withArgs('PolymeshPrimitivesStatisticsStatType', { op: 'Balance', claimIssuer: undefined })
-      .returns('BalanceStat');
-    context.createType
-      .withArgs('PolymeshPrimitivesStatisticsStatType', {
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStatisticsStatType', { op: 'Count', claimIssuer: undefined })
+      .mockReturnValue('CountStat' as unknown as PolymeshPrimitivesStatisticsStatType);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStatisticsStatType', { op: 'Balance', claimIssuer: undefined })
+      .mockReturnValue('BalanceStat' as unknown as PolymeshPrimitivesStatisticsStatType);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStatisticsStatType', {
         op: 'Balance',
         claimIssuer: mockClaimIssuer,
       })
-      .returns('ScopedBalanceStat');
+      .mockReturnValue('ScopedBalanceStat' as unknown as PolymeshPrimitivesStatisticsStatType);
 
     let result = neededStatTypeForRestrictionInput(
       { type: TransferRestrictionType.Count },
@@ -1337,19 +1628,27 @@ describe('compareStatTypeToTransferRestrictionType', () => {
   const issuerId = dsMockUtils.createMockIdentityId(did);
 
   const countStatType = dsMockUtils.createMockStatisticsStatType({
-    op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count),
+    op: dsMockUtils.createMockStatisticsOpType(StatType.Count),
+    claimIssuer: dsMockUtils.createMockOption(),
   });
   const percentStatType = dsMockUtils.createMockStatisticsStatType({
-    op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance),
+    op: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
+    claimIssuer: dsMockUtils.createMockOption(),
   });
 
   const claimCountStat = dsMockUtils.createMockStatisticsStatType({
-    op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count),
-    claimIssuer: [dsMockUtils.createMockClaimType(ClaimType.Affiliate), issuerId],
+    op: dsMockUtils.createMockStatisticsOpType(StatType.Count),
+    claimIssuer: dsMockUtils.createMockOption([
+      dsMockUtils.createMockClaimType(ClaimType.Affiliate),
+      issuerId,
+    ]),
   });
   const claimPercentageStat = dsMockUtils.createMockStatisticsStatType({
-    op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance),
-    claimIssuer: [dsMockUtils.createMockClaimType(ClaimType.Affiliate), issuerId],
+    op: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
+    claimIssuer: dsMockUtils.createMockOption([
+      dsMockUtils.createMockClaimType(ClaimType.Affiliate),
+      issuerId,
+    ]),
   });
 
   it('should return true if the PolymeshPrimitivesStatisticsStatType matches the given TransferRestriction', () => {
@@ -1425,7 +1724,8 @@ describe('compareStatsToInput', () => {
 
   it('should return true if input matches stat', () => {
     const countStat = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count),
+      op: dsMockUtils.createMockStatisticsOpType(StatType.Count),
+      claimIssuer: dsMockUtils.createMockOption(),
     });
 
     let args: RemoveAssetStatParams = {
@@ -1437,15 +1737,19 @@ describe('compareStatsToInput', () => {
     expect(result).toEqual(true);
 
     const percentStat = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance),
+      op: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
+      claimIssuer: dsMockUtils.createMockOption(),
     });
-    args = { type: StatType.Percentage, ticker };
+    args = { type: StatType.Balance, ticker };
     result = compareStatsToInput(percentStat, args);
     expect(result).toEqual(true);
 
     const claimCountStat = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count),
-      claimIssuer: [dsMockUtils.createMockClaimType(ClaimType.Affiliate), issuerId],
+      op: dsMockUtils.createMockStatisticsOpType(StatType.Count),
+      claimIssuer: dsMockUtils.createMockOption([
+        dsMockUtils.createMockClaimType(ClaimType.Affiliate),
+        issuerId,
+      ]),
     });
     args = {
       type: StatType.ScopedCount,
@@ -1457,11 +1761,14 @@ describe('compareStatsToInput', () => {
     expect(result).toEqual(true);
 
     const claimPercentageStat = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance),
-      claimIssuer: [dsMockUtils.createMockClaimType(ClaimType.Affiliate), issuerId],
+      op: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
+      claimIssuer: dsMockUtils.createMockOption([
+        dsMockUtils.createMockClaimType(ClaimType.Affiliate),
+        issuerId,
+      ]),
     });
     args = {
-      type: StatType.ScopedPercentage,
+      type: StatType.ScopedBalance,
       issuer,
       claimType: ClaimType.Affiliate,
       ticker,
@@ -1472,21 +1779,23 @@ describe('compareStatsToInput', () => {
 
   it('should return false if input does not match the stat', () => {
     const countStat = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count),
+      op: dsMockUtils.createMockStatisticsOpType(StatType.Count),
+      claimIssuer: dsMockUtils.createMockOption(),
     });
 
     let args: RemoveAssetStatParams = {
-      type: StatType.Percentage,
+      type: StatType.Balance,
       ticker,
     };
     let result = compareStatsToInput(countStat, args);
     expect(result).toEqual(false);
 
     const percentStat = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance),
+      op: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
+      claimIssuer: dsMockUtils.createMockOption(),
     });
     args = {
-      type: StatType.ScopedPercentage,
+      type: StatType.ScopedBalance,
       issuer,
       claimType: ClaimType.Accredited,
       ticker,
@@ -1495,8 +1804,11 @@ describe('compareStatsToInput', () => {
     expect(result).toEqual(false);
 
     const claimCountStat = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count),
-      claimIssuer: [dsMockUtils.createMockClaimType(ClaimType.Jurisdiction), issuerId],
+      op: dsMockUtils.createMockStatisticsOpType(StatType.Count),
+      claimIssuer: dsMockUtils.createMockOption([
+        dsMockUtils.createMockClaimType(ClaimType.Jurisdiction),
+        issuerId,
+      ]),
     });
     args = {
       type: StatType.ScopedCount,
@@ -1559,7 +1871,7 @@ describe('compareTransferRestrictionToStat', () => {
     const percentCondition = dsMockUtils.createMockTransferCondition({
       MaxInvestorOwnership: rawMax,
     });
-    result = compareTransferRestrictionToStat(percentCondition, StatType.Percentage);
+    result = compareTransferRestrictionToStat(percentCondition, StatType.Balance);
     expect(result).toEqual(true);
 
     const claimCountCondition = dsMockUtils.createMockTransferCondition({
@@ -1574,7 +1886,7 @@ describe('compareTransferRestrictionToStat', () => {
     const claimPercentageCondition = dsMockUtils.createMockTransferCondition({
       ClaimOwnership: [rawClaim, rawIssuerId, rawMin, rawMax],
     });
-    result = compareTransferRestrictionToStat(claimPercentageCondition, StatType.ScopedPercentage, {
+    result = compareTransferRestrictionToStat(claimPercentageCondition, StatType.ScopedBalance, {
       claimType: ClaimType.Accredited,
       issuer,
     });
@@ -1583,7 +1895,7 @@ describe('compareTransferRestrictionToStat', () => {
 
   it('should return false when a transfer restriction does not match the given stat', () => {
     const countCondition = dsMockUtils.createMockTransferCondition({ MaxInvestorCount: rawMax });
-    let result = compareTransferRestrictionToStat(countCondition, StatType.Percentage);
+    let result = compareTransferRestrictionToStat(countCondition, StatType.Balance);
     expect(result).toEqual(false);
 
     const percentCondition = dsMockUtils.createMockTransferCondition({
@@ -1604,7 +1916,7 @@ describe('compareTransferRestrictionToStat', () => {
     const claimPercentageCondition = dsMockUtils.createMockTransferCondition({
       ClaimOwnership: [rawClaim, rawIssuerId, rawMin, rawMax],
     });
-    result = compareTransferRestrictionToStat(claimPercentageCondition, StatType.ScopedPercentage, {
+    result = compareTransferRestrictionToStat(claimPercentageCondition, StatType.ScopedBalance, {
       claimType: ClaimType.Accredited,
       issuer: entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
     });
@@ -1622,19 +1934,19 @@ describe('method: getSecondaryAccountPermissions', () => {
   let rawPrimaryKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
   let rawSecondaryKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
   let rawMultiSigKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
-  let identityIdToStringStub: sinon.SinonStub<[PolymeshPrimitivesIdentityId], string>;
-  let stringToAccountIdStub: sinon.SinonStub<[string, Context], AccountId>;
-  let meshPermissionsToPermissionsStub: sinon.SinonStub;
+  let identityIdToStringSpy: jest.SpyInstance<string, [PolymeshPrimitivesIdentityId]>;
+  let stringToAccountIdSpy: jest.SpyInstance<AccountId, [string, Context]>;
+  let meshPermissionsToPermissionsSpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     account = entityMockUtils.getAccountInstance({ address: accountId });
-    meshPermissionsToPermissionsStub = sinon.stub(
+    meshPermissionsToPermissionsSpy = jest.spyOn(
       utilsConversionModule,
       'meshPermissionsToPermissions'
     );
-    stringToAccountIdStub = sinon.stub(utilsConversionModule, 'stringToAccountId');
-    identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
+    stringToAccountIdSpy = jest.spyOn(utilsConversionModule, 'stringToAccountId');
+    identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
     account = entityMockUtils.getAccountInstance();
     fakeResult = [
       {
@@ -1650,8 +1962,8 @@ describe('method: getSecondaryAccountPermissions', () => {
   });
 
   afterAll(() => {
-    sinon.restore();
     dsMockUtils.cleanup();
+    jest.restoreAllMocks();
   });
 
   beforeEach(() => {
@@ -1665,13 +1977,13 @@ describe('method: getSecondaryAccountPermissions', () => {
       MultiSigSignerKey: dsMockUtils.createMockAccountId('someAddress'),
     });
 
-    meshPermissionsToPermissionsStub.returns({
+    meshPermissionsToPermissionsSpy.mockReturnValue({
       assets: null,
       portfolios: null,
       transactions: null,
       transactionGroups: [],
     });
-    stringToAccountIdStub.returns(dsMockUtils.createMockAccountId(accountId));
+    stringToAccountIdSpy.mockReturnValue(dsMockUtils.createMockAccountId(accountId));
   });
 
   afterEach(() => {
@@ -1680,14 +1992,14 @@ describe('method: getSecondaryAccountPermissions', () => {
 
   it('should return a list of Accounts', async () => {
     const context = dsMockUtils.getContextInstance();
-    dsMockUtils.createQueryStub('identity', 'keyRecords', {
+    dsMockUtils.createQueryMock('identity', 'keyRecords', {
       multi: [
         dsMockUtils.createMockOption(rawPrimaryKeyRecord),
         dsMockUtils.createMockOption(rawSecondaryKeyRecord),
         dsMockUtils.createMockOption(rawMultiSigKeyRecord),
       ],
     });
-    identityIdToStringStub.returns('someDid');
+    identityIdToStringSpy.mockReturnValue('someDid');
     const identity = new Identity({ did: 'someDid' }, context);
 
     const result = await getSecondaryAccountPermissions(
@@ -1705,50 +2017,52 @@ describe('method: getSecondaryAccountPermissions', () => {
     expect(result).toEqual(fakeResult);
   });
 
-  it('should filter out Accounts if they do not belong to the given identity', () => {
+  it('should filter out Accounts if they do not belong to the given identity', async () => {
     const mockContext = dsMockUtils.getContextInstance();
     const otherSecondaryKey = dsMockUtils.createMockKeyRecord({
       SecondaryKey: [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockPermissions()],
     });
-    dsMockUtils.createQueryStub('identity', 'keyRecords', {
+    dsMockUtils.createQueryMock('identity', 'keyRecords', {
       multi: [
         dsMockUtils.createMockOption(rawPrimaryKeyRecord),
         dsMockUtils.createMockOption(otherSecondaryKey),
+        dsMockUtils.createMockOption(),
         dsMockUtils.createMockOption(rawMultiSigKeyRecord),
       ],
     });
-    identityIdToStringStub.returns('someDid');
+    identityIdToStringSpy.mockReturnValue('someDid');
     const identity = new Identity({ did: 'otherDid' }, mockContext);
 
-    return expect(
-      getSecondaryAccountPermissions(
-        {
-          accounts: [
-            entityMockUtils.getAccountInstance(),
-            account,
-            entityMockUtils.getAccountInstance(),
-          ],
-          identity,
-        },
-        mockContext
-      )
-    ).resolves.toEqual([]);
+    const result = await getSecondaryAccountPermissions(
+      {
+        accounts: [
+          entityMockUtils.getAccountInstance(),
+          account,
+          entityMockUtils.getAccountInstance(),
+        ],
+        identity,
+      },
+      mockContext
+    );
+    expect(result).toEqual([]);
   });
 
   it('should allow for subscription', async () => {
     const mockContext = dsMockUtils.getContextInstance();
-    const callback: SubCallback<PermissionedAccount[]> = sinon.stub();
+    const callback: SubCallback<PermissionedAccount[]> = jest.fn().mockImplementation();
     const unsubCallback = 'unsubCallBack';
 
-    const keyRecordsStub = dsMockUtils.createQueryStub('identity', 'keyRecords');
-    keyRecordsStub.multi.yields([
-      dsMockUtils.createMockOption(rawPrimaryKeyRecord),
-      dsMockUtils.createMockOption(rawSecondaryKeyRecord),
-      dsMockUtils.createMockOption(rawMultiSigKeyRecord),
-    ]);
-    keyRecordsStub.multi.returns(unsubCallback);
+    const keyRecordsMock = dsMockUtils.createQueryMock('identity', 'keyRecords');
+    keyRecordsMock.multi.mockImplementation((_, cbFunc) => {
+      cbFunc([
+        dsMockUtils.createMockOption(rawPrimaryKeyRecord),
+        dsMockUtils.createMockOption(rawSecondaryKeyRecord),
+        dsMockUtils.createMockOption(rawMultiSigKeyRecord),
+      ]);
+      return unsubCallback;
+    });
 
-    identityIdToStringStub.returns('someDid');
+    identityIdToStringSpy.mockReturnValue('someDid');
     const identity = new Identity({ did }, mockContext);
 
     const result = await getSecondaryAccountPermissions(
@@ -1764,7 +2078,224 @@ describe('method: getSecondaryAccountPermissions', () => {
       callback
     );
 
-    sinon.assert.calledWithExactly(callback as sinon.SinonStub, fakeResult);
+    expect(callback).toHaveBeenCalledWith(fakeResult);
     expect(result).toEqual(unsubCallback);
+  });
+});
+
+describe('isAlphaNumeric', () => {
+  it('should return true for alphanumeric strings', () => {
+    const alphaNumericStrings = ['abc', 'TICKER', '123XYZ99'];
+
+    expect(alphaNumericStrings.every(input => isAlphanumeric(input))).toBe(true);
+  });
+
+  it('should return false for non alphanumeric strings', () => {
+    const alphaNumericStrings = ['**abc**', 'TICKER-Z', '💎'];
+
+    expect(alphaNumericStrings.some(input => isAlphanumeric(input))).toBe(false);
+  });
+});
+
+describe('getIdentityFromKeyRecord', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return the associated Identity', async () => {
+    const did = 'someDid';
+    const secondaryDid = 'secondaryDid';
+    const multiDid = 'multiDid';
+
+    const mockContext = dsMockUtils.getContextInstance();
+
+    const primaryKeyRecord = dsMockUtils.createMockKeyRecord({
+      PrimaryKey: dsMockUtils.createMockIdentityId(did),
+    });
+
+    let identity = await getIdentityFromKeyRecord(primaryKeyRecord, mockContext);
+
+    expect(identity?.did).toEqual(did);
+
+    const secondaryKeyRecord = dsMockUtils.createMockKeyRecord({
+      SecondaryKey: [
+        dsMockUtils.createMockIdentityId(secondaryDid),
+        dsMockUtils.createMockPermissions(),
+      ],
+    });
+
+    identity = await getIdentityFromKeyRecord(secondaryKeyRecord, mockContext);
+
+    expect(identity?.did).toEqual(secondaryDid);
+
+    const multiSigKeyRecord = dsMockUtils.createMockKeyRecord({
+      MultiSigSignerKey: dsMockUtils.createMockAccountId(
+        dsMockUtils.createMockAccountId('someAddress')
+      ),
+    });
+
+    const multiKeyRecord = dsMockUtils.createMockKeyRecord({
+      PrimaryKey: dsMockUtils.createMockIdentityId(multiDid),
+    });
+
+    const mockKeyRecords = dsMockUtils.createQueryMock('identity', 'keyRecords');
+    mockKeyRecords.mockResolvedValue(dsMockUtils.createMockOption(multiKeyRecord));
+
+    identity = await getIdentityFromKeyRecord(multiSigKeyRecord, mockContext);
+
+    expect(identity?.did).toEqual(multiDid);
+  });
+
+  it('should return null if the record is unassigned', async () => {
+    const mockContext = dsMockUtils.getContextInstance();
+
+    const unassignedKeyRecord = dsMockUtils.createMockKeyRecord({
+      MultiSigSignerKey: dsMockUtils.createMockAccountId(
+        dsMockUtils.createMockAccountId('someAddress')
+      ),
+    });
+
+    const mockKeyRecords = dsMockUtils.createQueryMock('identity', 'keyRecords');
+    mockKeyRecords.mockResolvedValue(dsMockUtils.createMockOption());
+
+    const result = await getIdentityFromKeyRecord(unassignedKeyRecord, mockContext);
+
+    expect(result).toBeNull();
+  });
+});
+
+describe('asChildIdentity', () => {
+  it('should return child identity instance', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+
+    const childDid = 'childDid';
+    const childIdentity = entityMockUtils.getChildIdentityInstance({
+      did: childDid,
+    });
+
+    let result = asChildIdentity(childDid, mockContext);
+
+    expect(result).toEqual(expect.objectContaining({ did: childDid }));
+
+    result = asChildIdentity(childIdentity, mockContext);
+
+    expect(result).toEqual(expect.objectContaining({ did: childDid }));
+  });
+});
+
+describe('asFungibleAsset', () => {
+  it('should return a given FungibleAsset', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+    const input = entityMockUtils.getFungibleAssetInstance();
+
+    const result = asFungibleAsset(input, mockContext);
+
+    expect(result).toEqual(input);
+  });
+
+  it('should create a new FungibleAsset given a ticker', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+    const ticker = 'TICKER';
+
+    const result = asFungibleAsset(ticker, mockContext);
+
+    expect(result).toEqual(expect.objectContaining({ ticker }));
+  });
+
+  it('should create a new FungibleAsset given a BaseAsset', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+    const ticker = 'TICKER';
+    const baseAsset = entityMockUtils.getBaseAssetInstance({ ticker });
+
+    const result = asFungibleAsset(baseAsset, mockContext);
+
+    expect(result).toEqual(expect.objectContaining({ ticker }));
+  });
+});
+
+describe('asNftId', () => {
+  it('should return a BigNumber when given an NFT', () => {
+    const context = dsMockUtils.getContextInstance();
+    const id = new BigNumber(1);
+    const ticker = 'TICKER';
+    const nft = new Nft({ id, ticker }, context);
+
+    const result = asNftId(nft);
+
+    expect(result).toEqual(id);
+  });
+
+  it('should return a BigNumber when given a BigNumber', () => {
+    const id = new BigNumber(1);
+
+    const result = asNftId(id);
+
+    expect(result).toEqual(id);
+  });
+});
+
+describe('areSameClaims', () => {
+  it('should return true if same claims are provided', () => {
+    const firstClaim: ScopedClaim = {
+      type: ClaimType.Custom,
+      customClaimTypeId: new BigNumber(1),
+      scope: {
+        type: ScopeType.Identity,
+        value: '1',
+      },
+    };
+
+    const secondClaim = { ...firstClaim } as unknown as MiddlewareClaim;
+
+    const result = areSameClaims(firstClaim, secondClaim);
+
+    expect(result).toBeTruthy();
+  });
+
+  it('should return a false if different scopes provided for scoped Claim', () => {
+    const firstClaim: ScopedClaim = {
+      type: ClaimType.Accredited,
+      scope: {
+        type: ScopeType.Identity,
+        value: '1',
+      },
+    };
+
+    const secondClaim = {
+      ...firstClaim,
+      scope: { type: ScopeType.Ticker, value: 'TICKER' },
+    } as unknown as MiddlewareClaim;
+
+    const result = areSameClaims(firstClaim, secondClaim);
+
+    expect(result).toBeFalsy();
+  });
+
+  it('should return a false if different customClaimTypeId provided for CustomClaim', () => {
+    const firstClaim: ScopedClaim = {
+      type: ClaimType.Custom,
+      customClaimTypeId: new BigNumber(1),
+      scope: {
+        type: ScopeType.Identity,
+        value: '1',
+      },
+    };
+
+    const secondClaim = {
+      ...firstClaim,
+      customClaimTypeId: new BigNumber(2),
+    } as unknown as MiddlewareClaim;
+
+    const result = areSameClaims(firstClaim, secondClaim);
+
+    expect(result).toBeFalsy();
   });
 });

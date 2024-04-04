@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
 
-import { Asset, Offering, PolymeshError, Procedure } from '~/internal';
+import { FungibleAsset, Offering, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, OfferingSaleStatus, OfferingTimingStatus, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { bigNumberToU64, stringToTicker } from '~/utils/conversion';
 
 export interface ToggleFreezeOfferingParams {
@@ -17,7 +17,10 @@ export interface ToggleFreezeOfferingParams {
 export async function prepareToggleFreezeOffering(
   this: Procedure<ToggleFreezeOfferingParams, Offering>,
   args: ToggleFreezeOfferingParams
-): Promise<Offering> {
+): Promise<
+  | TransactionSpec<Offering, ExtrinsicParams<'sto', 'freezeFundraiser'>>
+  | TransactionSpec<Offering, ExtrinsicParams<'sto', 'unfreezeFundraiser'>>
+> {
   const {
     context: {
       polymeshApi: {
@@ -52,32 +55,32 @@ export async function prepareToggleFreezeOffering(
       });
     }
 
-    this.addTransaction({
+    return {
       transaction: txSto.freezeFundraiser,
       args: [rawTicker, rawId],
-    });
-  } else {
-    if ([OfferingSaleStatus.Closed, OfferingSaleStatus.ClosedEarly].includes(sale)) {
-      throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message: 'The Offering is already closed',
-      });
-    }
+      resolver: offering,
+    };
+  }
 
-    if (sale !== OfferingSaleStatus.Frozen) {
-      throw new PolymeshError({
-        code: ErrorCode.NoDataChange,
-        message: 'The Offering is already unfrozen',
-      });
-    }
-
-    this.addTransaction({
-      transaction: txSto.unfreezeFundraiser,
-      args: [rawTicker, rawId],
+  if ([OfferingSaleStatus.Closed, OfferingSaleStatus.ClosedEarly].includes(sale)) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The Offering is already closed',
     });
   }
 
-  return offering;
+  if (sale !== OfferingSaleStatus.Frozen) {
+    throw new PolymeshError({
+      code: ErrorCode.NoDataChange,
+      message: 'The Offering is already unfrozen',
+    });
+  }
+
+  return {
+    transaction: txSto.unfreezeFundraiser,
+    args: [rawTicker, rawId],
+    resolver: offering,
+  };
 }
 
 /**
@@ -90,7 +93,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [freeze ? TxTags.sto.FreezeFundraiser : TxTags.sto.UnfreezeFundraiser],
-      assets: [new Asset({ ticker }, this.context)],
+      assets: [new FungibleAsset({ ticker }, this.context)],
       portfolios: [],
     },
   };

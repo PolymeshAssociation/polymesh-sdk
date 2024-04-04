@@ -1,6 +1,6 @@
+import { PolymeshPrimitivesIdentityIdPortfolioId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { PortfolioId as MeshPortfolioId } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   getAuthorization,
@@ -28,23 +28,23 @@ describe('quitCustody procedure', () => {
   const did = 'someDid';
 
   let mockContext: Mocked<Context>;
-  let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub<[PortfolioId, Context], MeshPortfolioId>;
-  let portfolioLikeToPortfolioIdStub: sinon.SinonStub;
-  let assertPortfolioExistsStub: sinon.SinonStub;
+  let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance<
+    PolymeshPrimitivesIdentityIdPortfolioId,
+    [PortfolioId, Context]
+  >;
+  let portfolioLikeToPortfolioIdSpy: jest.SpyInstance;
+  let assertPortfolioExistsSpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    portfolioIdToMeshPortfolioIdStub = sinon.stub(
+    portfolioIdToMeshPortfolioIdSpy = jest.spyOn(
       utilsConversionModule,
       'portfolioIdToMeshPortfolioId'
     );
-    portfolioLikeToPortfolioIdStub = sinon.stub(
-      utilsConversionModule,
-      'portfolioLikeToPortfolioId'
-    );
-    assertPortfolioExistsStub = sinon.stub(procedureUtilsModule, 'assertPortfolioExists');
+    portfolioLikeToPortfolioIdSpy = jest.spyOn(utilsConversionModule, 'portfolioLikeToPortfolioId');
+    assertPortfolioExistsSpy = jest.spyOn(procedureUtilsModule, 'assertPortfolioExists');
   });
 
   beforeEach(() => {
@@ -54,7 +54,7 @@ describe('quitCustody procedure', () => {
         isOwnedBy: true,
       },
     });
-    assertPortfolioExistsStub.returns(true);
+    assertPortfolioExistsSpy.mockReturnValue(true);
   });
 
   afterEach(() => {
@@ -70,6 +70,7 @@ describe('quitCustody procedure', () => {
 
   it('should throw an error if the signing Identity is the Portfolio owner', async () => {
     const portfolio = new NumberedPortfolio({ id, did }, mockContext);
+    const identity = await mockContext.getSigningIdentity();
 
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       portfolioId: { did, number: id },
@@ -86,9 +87,10 @@ describe('quitCustody procedure', () => {
     }
 
     expect(error.message).toBe('The Portfolio owner cannot quit custody');
+    expect(portfolio.isOwnedBy).toHaveBeenCalledWith({ identity });
   });
 
-  it('should add a quit portfolio custody transaction to the queue', async () => {
+  it('should return a quit portfolio custody transaction spec', async () => {
     const portfolio = entityMockUtils.getNumberedPortfolioInstance({
       id,
       did,
@@ -104,21 +106,21 @@ describe('quitCustody procedure', () => {
 
     const portfolioId: { did: string; number?: BigNumber } = { did, number: id };
 
-    portfolioIdToMeshPortfolioIdStub.withArgs(portfolioId, mockContext).returns(rawMeshPortfolioId);
+    when(portfolioIdToMeshPortfolioIdSpy)
+      .calledWith(portfolioId, mockContext)
+      .mockReturnValue(rawMeshPortfolioId);
 
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       portfolioId,
     });
 
-    const transaction = dsMockUtils.createTxStub('portfolio', 'quitPortfolioCustody');
+    const transaction = dsMockUtils.createTxMock('portfolio', 'quitPortfolioCustody');
 
-    await prepareQuitCustody.call(proc, {
+    const result = await prepareQuitCustody.call(proc, {
       portfolio,
     });
 
-    const addTransactionStub = procedureMockUtils.getAddTransactionStub();
-
-    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawMeshPortfolioId] });
+    expect(result).toEqual({ transaction, args: [rawMeshPortfolioId], resolver: undefined });
   });
 
   describe('getAuthorization', () => {
@@ -179,7 +181,7 @@ describe('quitCustody procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
-      portfolioLikeToPortfolioIdStub.withArgs(portfolio).returns(portfolioId);
+      when(portfolioLikeToPortfolioIdSpy).calledWith(portfolio).mockReturnValue(portfolioId);
 
       const result = await boundFunc({ portfolio });
 

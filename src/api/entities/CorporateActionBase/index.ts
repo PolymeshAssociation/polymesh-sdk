@@ -3,11 +3,11 @@ import { PalletCorporateActionsCorporateAction } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import {
-  Asset,
   Checkpoint,
   CheckpointSchedule,
   Context,
   Entity,
+  FungibleAsset,
   linkCaDocs,
   PolymeshError,
 } from '~/internal';
@@ -19,12 +19,7 @@ import {
   ProcedureMethod,
 } from '~/types';
 import { HumanReadableType, Modify } from '~/types/utils';
-import {
-  bigNumberToU32,
-  storedScheduleToCheckpointScheduleParams,
-  stringToTicker,
-  u64ToBigNumber,
-} from '~/utils/conversion';
+import { bigNumberToU32, momentToDate, stringToTicker, u64ToBigNumber } from '~/utils/conversion';
 import { createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
 import { CorporateActionKind, CorporateActionTargets, TaxWithholding } from './types';
@@ -76,7 +71,7 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
   /**
    * Asset affected by this Corporate Action
    */
-  public asset: Asset;
+  public asset: FungibleAsset;
 
   /**
    * date at which the Corporate Action was created
@@ -129,7 +124,7 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
     const { id, ticker } = identifiers;
 
     this.id = id;
-    this.asset = new Asset({ ticker }, context);
+    this.asset = new FungibleAsset({ ticker }, context);
     this.kind = kind;
     this.declarationDate = declarationDate;
     this.description = description;
@@ -189,7 +184,6 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
     const rawTicker = stringToTicker(ticker, context);
 
     const corporateAction = await this.fetchCorporateAction();
-
     if (corporateAction.isNone) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
@@ -211,26 +205,27 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
 
     const [scheduleId, amount] = checkpoint.asScheduled;
 
-    const [schedules, schedulePoints] = await Promise.all([
-      query.checkpoint.schedules(rawTicker),
+    const [schedule, rawCheckpointIds] = await Promise.all([
+      query.checkpoint.scheduledCheckpoints(rawTicker, scheduleId),
       query.checkpoint.schedulePoints(rawTicker, scheduleId),
     ]);
 
     const createdCheckpointIndex = u64ToBigNumber(amount).toNumber();
-    if (createdCheckpointIndex >= schedulePoints.length) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const schedule = schedules.find(({ id }) =>
-        u64ToBigNumber(id).eq(u64ToBigNumber(scheduleId))
-      )!;
-
+    if (schedule.isSome) {
+      const id = u64ToBigNumber(scheduleId);
+      const points = [...schedule.unwrap().pending].map(rawPoint => momentToDate(rawPoint));
       return new CheckpointSchedule(
-        { ticker, ...storedScheduleToCheckpointScheduleParams(schedule) },
+        {
+          ticker,
+          id,
+          pendingPoints: points,
+        },
         context
       );
     }
 
     return new Checkpoint(
-      { ticker, id: u64ToBigNumber(schedulePoints[createdCheckpointIndex]) },
+      { ticker, id: u64ToBigNumber(rawCheckpointIds[createdCheckpointIndex]) },
       context
     );
   }

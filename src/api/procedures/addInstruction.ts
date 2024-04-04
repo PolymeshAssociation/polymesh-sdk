@@ -1,10 +1,14 @@
 import { u64 } from '@polkadot/types';
-import { Balance } from '@polkadot/types/interfaces';
+import {
+  PolymeshPrimitivesIdentityIdPortfolioId,
+  PolymeshPrimitivesMemo,
+  PolymeshPrimitivesSettlementLeg,
+  PolymeshPrimitivesSettlementSettlementType,
+} from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { flatten, isEqual, union, unionWith } from 'lodash';
-import { Moment, PortfolioId, SettlementType, Ticker } from 'polymesh-types/types';
 
 import { assertPortfolioExists, assertVenueExists } from '~/api/procedures/utils';
 import {
@@ -13,29 +17,36 @@ import {
   Instruction,
   NumberedPortfolio,
   PolymeshError,
-  PostTransactionValue,
   Procedure,
 } from '~/internal';
 import {
   AddInstructionParams,
   AddInstructionsParams,
   ErrorCode,
+  InstructionEndCondition,
+  InstructionFungibleLeg,
+  InstructionLeg,
+  InstructionNftLeg,
   InstructionType,
   RoleType,
   SettlementTx,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
-import { tuple } from '~/types/utils';
+import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
+import { isFungibleLegBuilder, isNftLegBuilder } from '~/utils';
 import { MAX_LEGS_LENGTH } from '~/utils/constants';
 import {
   bigNumberToBalance,
   bigNumberToU64,
   dateToMoment,
   endConditionToSettlementType,
+  legToFungibleLeg,
+  legToNonFungibleLeg,
+  nftToMeshNft,
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
+  stringToMemo,
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -65,16 +76,12 @@ export interface Storage {
  */
 type InternalAddAndAffirmInstructionParams = [
   u64,
-  SettlementType,
-  Moment | null,
-  Moment | null,
-  {
-    from: PortfolioId;
-    to: PortfolioId;
-    asset: Ticker;
-    amount: Balance;
-  }[],
-  PortfolioId[]
+  PolymeshPrimitivesSettlementSettlementType,
+  u64 | null,
+  u64 | null,
+  PolymeshPrimitivesSettlementLeg[],
+  PolymeshPrimitivesIdentityIdPortfolioId[],
+  PolymeshPrimitivesMemo | null
 ][];
 
 /**
@@ -82,22 +89,18 @@ type InternalAddAndAffirmInstructionParams = [
  */
 type InternalAddInstructionParams = [
   u64,
-  SettlementType,
-  Moment | null,
-  Moment | null,
-  {
-    from: PortfolioId;
-    to: PortfolioId;
-    asset: Ticker;
-    amount: Balance;
-  }[]
+  PolymeshPrimitivesSettlementSettlementType,
+  u64 | null,
+  u64 | null,
+  PolymeshPrimitivesSettlementLeg[],
+  PolymeshPrimitivesMemo | null
 ][];
 
 /**
  * @hidden
  */
 export const createAddInstructionResolver =
-  (context: Context, previousInstructions?: PostTransactionValue<Instruction[]>) =>
+  (context: Context) =>
   (receipt: ISubmittableResult): Instruction[] => {
     const events = filterEventRecords(receipt, 'settlement', 'InstructionCreated');
 
@@ -105,12 +108,86 @@ export const createAddInstructionResolver =
       ({ data }) => new Instruction({ id: u64ToBigNumber(data[2]) }, context)
     );
 
-    if (previousInstructions) {
-      return previousInstructions.value.concat(result);
-    }
-
     return result;
   };
+
+/**
+ * @hidden
+ */
+function getEndCondition(
+  instruction: AddInstructionParams,
+  latestBlock: BigNumber,
+  index: number
+): { endCondition: InstructionEndCondition; errorIndex: number | null } {
+  let endCondition: InstructionEndCondition;
+  let errorIndex = null;
+
+  if ('endBlock' in instruction && instruction.endBlock) {
+    const { endBlock } = instruction;
+
+    if (endBlock.lte(latestBlock)) {
+      errorIndex = index;
+    }
+
+    endCondition = { type: InstructionType.SettleOnBlock, endBlock };
+  } else if ('endAfterBlock' in instruction && instruction.endAfterBlock) {
+    const { endAfterBlock } = instruction;
+
+    if (endAfterBlock.lte(latestBlock)) {
+      errorIndex = index;
+    }
+
+    endCondition = { type: InstructionType.SettleManual, endAfterBlock };
+  } else {
+    endCondition = { type: InstructionType.SettleOnAffirmation };
+  }
+
+  return {
+    endCondition,
+    errorIndex,
+  };
+}
+
+/**
+ * @hidden
+ */
+async function separateLegs(
+  legs: InstructionLeg[],
+  context: Context
+): Promise<{ fungibleLegs: InstructionFungibleLeg[]; nftLegs: InstructionNftLeg[] }> {
+  const fungibleLegs: InstructionFungibleLeg[] = [];
+  const nftLegs: InstructionNftLeg[] = [];
+
+  for (const leg of legs) {
+    const ticker = asTicker(leg.asset);
+    const [isFungible, isNft] = await Promise.all([
+      isFungibleLegBuilder(leg, context),
+      isNftLegBuilder(leg, context),
+    ]);
+
+    if (isFungible(leg)) {
+      if (!('amount' in leg)) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'The key "amount" should be present in a fungible leg',
+          data: { ticker },
+        });
+      }
+      fungibleLegs.push(leg);
+    } else if (isNft(leg)) {
+      if (!('nfts' in leg)) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'The key "nfts" should be present in an NFT leg',
+          data: { ticker },
+        });
+      }
+      nftLegs.push(leg);
+    }
+  }
+
+  return { fungibleLegs, nftLegs };
+}
 
 /**
  * @hidden
@@ -125,8 +202,10 @@ async function getTxArgsAndErrors(
   errIndexes: {
     legEmptyErrIndexes: number[];
     legLengthErrIndexes: number[];
+    legAmountErrIndexes: number[];
     endBlockErrIndexes: number[];
     datesErrIndexes: number[];
+    sameIdentityErrIndexes: number[];
   };
   addAndAffirmInstructionParams: InternalAddAndAffirmInstructionParams;
   addInstructionParams: InternalAddInstructionParams;
@@ -136,13 +215,16 @@ async function getTxArgsAndErrors(
 
   const legEmptyErrIndexes: number[] = [];
   const legLengthErrIndexes: number[] = [];
+  const legAmountErrIndexes: number[] = [];
   const endBlockErrIndexes: number[] = [];
+  const sameIdentityErrIndexes: number[] = [];
   /**
    * array of indexes of Instructions where the value date is before the trade date
    */
   const datesErrIndexes: number[] = [];
 
-  await P.each(instructions, async ({ legs, endBlock, tradeDate, valueDate }, i) => {
+  await P.each(instructions, async (instruction, i) => {
+    const { legs, tradeDate, valueDate, memo } = instruction;
     if (!legs.length) {
       legEmptyErrIndexes.push(i);
     }
@@ -151,16 +233,32 @@ async function getTxArgsAndErrors(
       legLengthErrIndexes.push(i);
     }
 
-    let endCondition;
+    const { fungibleLegs, nftLegs } = await separateLegs(legs, context);
 
-    if (endBlock) {
-      if (endBlock.lte(latestBlock)) {
-        endBlockErrIndexes.push(i);
-      }
+    const zeroAmountFungibleLegs = fungibleLegs.filter(leg => leg.amount.isZero());
+    if (zeroAmountFungibleLegs.length) {
+      legAmountErrIndexes.push(i);
+    }
 
-      endCondition = { type: InstructionType.SettleOnBlock, value: endBlock } as const;
-    } else {
-      endCondition = { type: InstructionType.SettleOnAffirmation } as const;
+    const zeroNftsNonFungible = nftLegs.filter(leg => leg.nfts.length === 0);
+    if (zeroNftsNonFungible.length) {
+      legAmountErrIndexes.push(i);
+    }
+
+    const sameIdentityLegs = legs.filter(({ from, to }) => {
+      const fromId = portfolioLikeToPortfolioId(from);
+      const toId = portfolioLikeToPortfolioId(to);
+      return fromId.did === toId.did;
+    });
+
+    if (sameIdentityLegs.length) {
+      sameIdentityErrIndexes.push(i);
+    }
+
+    const { endCondition, errorIndex } = getEndCondition(instruction, latestBlock, i);
+
+    if (errorIndex !== null) {
+      endBlockErrIndexes.push(errorIndex);
     }
 
     if (tradeDate && valueDate && tradeDate > valueDate) {
@@ -170,22 +268,20 @@ async function getTxArgsAndErrors(
     if (
       !legEmptyErrIndexes.length &&
       !legLengthErrIndexes.length &&
+      !legAmountErrIndexes.length &&
       !endBlockErrIndexes.length &&
-      !datesErrIndexes.length
+      !datesErrIndexes.length &&
+      !sameIdentityErrIndexes.length
     ) {
       const rawVenueId = bigNumberToU64(venueId, context);
       const rawSettlementType = endConditionToSettlementType(endCondition, context);
       const rawTradeDate = optionize(dateToMoment)(tradeDate, context);
       const rawValueDate = optionize(dateToMoment)(valueDate, context);
-      const rawLegs: {
-        from: PortfolioId;
-        to: PortfolioId;
-        asset: Ticker;
-        amount: Balance;
-      }[] = [];
+      const rawLegs: PolymeshPrimitivesSettlementLeg[] = [];
+      const rawInstructionMemo = optionize(stringToMemo)(memo, context);
 
-      await Promise.all(
-        legs.map(async ({ from, to, amount, asset }) => {
+      await Promise.all([
+        ...fungibleLegs.map(async ({ from, to, amount, asset }) => {
           const fromId = portfolioLikeToPortfolioId(from);
           const toId = portfolioLikeToPortfolioId(to);
 
@@ -197,14 +293,42 @@ async function getTxArgsAndErrors(
           const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromId, context);
           const rawToPortfolio = portfolioIdToMeshPortfolioId(toId, context);
 
-          rawLegs.push({
-            from: rawFromPortfolio,
-            to: rawToPortfolio,
-            asset: stringToTicker(asTicker(asset), context),
-            amount: bigNumberToBalance(amount, context),
-          });
-        })
-      );
+          const rawLeg = legToFungibleLeg(
+            {
+              sender: rawFromPortfolio,
+              receiver: rawToPortfolio,
+              ticker: stringToTicker(asTicker(asset), context),
+              amount: bigNumberToBalance(amount, context),
+            },
+            context
+          );
+
+          rawLegs.push(rawLeg);
+        }),
+        ...nftLegs.map(async ({ from, to, nfts, asset }) => {
+          const fromId = portfolioLikeToPortfolioId(from);
+          const toId = portfolioLikeToPortfolioId(to);
+
+          await Promise.all([
+            assertPortfolioExists(fromId, context),
+            assertPortfolioExists(toId, context),
+          ]);
+
+          const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromId, context);
+          const rawToPortfolio = portfolioIdToMeshPortfolioId(toId, context);
+
+          const rawLeg = legToNonFungibleLeg(
+            {
+              sender: rawFromPortfolio,
+              receiver: rawToPortfolio,
+              nfts: nftToMeshNft(asTicker(asset), nfts, context),
+            },
+            context
+          );
+
+          rawLegs.push(rawLeg);
+        }),
+      ]);
 
       if (portfoliosToAffirm[i].length) {
         addAndAffirmInstructionParams.push([
@@ -216,6 +340,7 @@ async function getTxArgsAndErrors(
           portfoliosToAffirm[i].map(portfolio =>
             portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
           ),
+          rawInstructionMemo,
         ]);
       } else {
         addInstructionParams.push([
@@ -224,6 +349,7 @@ async function getTxArgsAndErrors(
           rawTradeDate,
           rawValueDate,
           rawLegs,
+          rawInstructionMemo,
         ]);
       }
     }
@@ -233,8 +359,10 @@ async function getTxArgsAndErrors(
     errIndexes: {
       legEmptyErrIndexes,
       legLengthErrIndexes,
+      legAmountErrIndexes,
       endBlockErrIndexes,
       datesErrIndexes,
+      sameIdentityErrIndexes,
     },
     addAndAffirmInstructionParams,
     addInstructionParams,
@@ -247,7 +375,7 @@ async function getTxArgsAndErrors(
 export async function prepareAddInstruction(
   this: Procedure<Params, Instruction[], Storage>,
   args: Params
-): Promise<PostTransactionValue<Instruction[]>> {
+): Promise<BatchTransactionSpec<Instruction[], unknown[][]>> {
   const {
     context: {
       polymeshApi: {
@@ -272,7 +400,14 @@ export async function prepareAddInstruction(
   }
 
   const {
-    errIndexes: { legEmptyErrIndexes, legLengthErrIndexes, endBlockErrIndexes, datesErrIndexes },
+    errIndexes: {
+      legEmptyErrIndexes,
+      legLengthErrIndexes,
+      legAmountErrIndexes,
+      endBlockErrIndexes,
+      datesErrIndexes,
+      sameIdentityErrIndexes,
+    },
     addAndAffirmInstructionParams,
     addInstructionParams,
   } = await getTxArgsAndErrors(instructions, portfoliosToAffirm, latestBlock, venueId, context);
@@ -283,6 +418,16 @@ export async function prepareAddInstruction(
       message: "The legs array can't be empty",
       data: {
         failedInstructionIndexes: legEmptyErrIndexes,
+      },
+    });
+  }
+
+  if (legAmountErrIndexes.length) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Instruction legs cannot have zero amount',
+      data: {
+        failedInstructionIndexes: legAmountErrIndexes,
       },
     });
   }
@@ -318,28 +463,31 @@ export async function prepareAddInstruction(
     });
   }
 
-  const addAndAffirmTx = settlement.addAndAffirmInstruction;
-  const addTx = settlement.addInstruction;
-
-  const transactions = assembleBatchTransactions(
-    tuple(
-      {
-        transaction: addTx,
-        argsArray: addInstructionParams,
+  if (sameIdentityErrIndexes.length) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Instruction leg cannot transfer Assets between same identity',
+      data: {
+        failedInstructionIndexes: sameIdentityErrIndexes,
       },
-      {
-        transaction: addAndAffirmTx,
-        argsArray: addAndAffirmInstructionParams,
-      }
-    )
-  );
+    });
+  }
 
-  const [resultInstructions] = this.addBatchTransaction({
+  const transactions = assembleBatchTransactions([
+    {
+      transaction: settlement.addInstruction,
+      argsArray: addInstructionParams,
+    },
+    {
+      transaction: settlement.addAndAffirmInstruction,
+      argsArray: addAndAffirmInstructionParams,
+    },
+  ] as const);
+
+  return {
     transactions,
-    resolvers: [createAddInstructionResolver(context)],
-  });
-
-  return resultInstructions;
+    resolver: createAddInstructionResolver(context),
+  };
 }
 
 /**
@@ -359,8 +507,8 @@ export async function getAuthorization(
   portfoliosToAffirm.forEach(portfoliosList => {
     transactions = union(transactions, [
       portfoliosList.length
-        ? TxTags.settlement.AddAndAffirmInstruction
-        : TxTags.settlement.AddInstruction,
+        ? TxTags.settlement.AddAndAffirmInstructionWithMemo
+        : TxTags.settlement.AddInstructionWithMemo,
     ]);
     portfolios = unionWith(portfolios, portfoliosList, isEqual);
   });

@@ -1,6 +1,6 @@
-import { Asset, DefaultPortfolio, PolymeshError, Procedure } from '~/internal';
+import { DefaultPortfolio, FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { ControllerTransferParams, ErrorCode, RoleType, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   bigNumberToBalance,
   portfolioIdToMeshPortfolioId,
@@ -24,7 +24,7 @@ export type Params = { ticker: string } & ControllerTransferParams;
 export async function prepareControllerTransfer(
   this: Procedure<Params, void, Storage>,
   args: Params
-): Promise<void> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'asset', 'controllerTransfer'>>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -34,7 +34,7 @@ export async function prepareControllerTransfer(
   } = this;
   const { ticker, originPortfolio, amount } = args;
 
-  const asset = new Asset({ ticker }, context);
+  const asset = new FungibleAsset({ ticker }, context);
 
   const originPortfolioId = portfolioLikeToPortfolioId(originPortfolio);
 
@@ -59,14 +59,15 @@ export async function prepareControllerTransfer(
     });
   }
 
-  this.addTransaction({
+  return {
     transaction: tx.asset.controllerTransfer,
     args: [
       stringToTicker(ticker, context),
       bigNumberToBalance(amount, context),
       portfolioIdToMeshPortfolioId(originPortfolioId, context),
     ],
-  });
+    resolver: undefined,
+  };
 }
 
 /**
@@ -81,7 +82,7 @@ export async function getAuthorization(
     storage: { did },
   } = this;
 
-  const asset = new Asset({ ticker }, context);
+  const asset = new FungibleAsset({ ticker }, context);
 
   const portfolioId = { did };
 

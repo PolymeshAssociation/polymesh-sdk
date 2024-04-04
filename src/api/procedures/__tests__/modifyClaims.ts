@@ -1,12 +1,16 @@
 import { Option } from '@polkadot/types';
 import { Balance, Moment } from '@polkadot/types/interfaces';
+import {
+  PolymeshPrimitivesIdentityClaimClaim,
+  PolymeshPrimitivesIdentityId,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { Claim as MeshClaim, IdentityId } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { getAuthorization, prepareModifyClaims } from '~/api/procedures/modifyClaims';
 import { Context, Identity } from '~/internal';
-import { didsWithClaims } from '~/middleware/queries';
+import { claimsQuery } from '~/middleware/queries';
+import { Claim as MiddlewareClaim, ClaimTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -24,14 +28,13 @@ import * as utilsConversionModule from '~/utils/conversion';
 
 describe('modifyClaims procedure', () => {
   let mockContext: Mocked<Context>;
-  let claimToMeshClaimStub: sinon.SinonStub<[Claim, Context], MeshClaim>;
-  let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
-  let identityIdToStringStub: sinon.SinonStub<[IdentityId], string>;
-  let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
-  let addBatchTransactionStub: sinon.SinonStub;
-  let addClaimTransaction: PolymeshTx<[IdentityId, Claim, Option<Moment>]>;
-  let revokeClaimTransaction: PolymeshTx<[IdentityId, Claim]>;
-  let balanceToBigNumberStub: sinon.SinonStub<[Balance], BigNumber>;
+  let claimToMeshClaimSpy: jest.SpyInstance<PolymeshPrimitivesIdentityClaimClaim, [Claim, Context]>;
+  let dateToMomentSpy: jest.SpyInstance<Moment, [Date, Context]>;
+  let identityIdToStringSpy: jest.SpyInstance<string, [PolymeshPrimitivesIdentityId]>;
+  let stringToIdentityIdSpy: jest.SpyInstance<PolymeshPrimitivesIdentityId, [string, Context]>;
+  let addClaimTransaction: PolymeshTx<[PolymeshPrimitivesIdentityId, Claim, Option<Moment>]>;
+  let revokeClaimTransaction: PolymeshTx<[PolymeshPrimitivesIdentityId, Claim]>;
+  let balanceToBigNumberSpy: jest.SpyInstance<BigNumber, [Balance]>;
 
   let someDid: string;
   let otherDid: string;
@@ -39,17 +42,19 @@ describe('modifyClaims procedure', () => {
   let defaultCddClaim: Claim;
   let cddClaim: Claim;
   let buyLockupClaim: Claim;
-  let iuClaim: Claim;
   let expiry: Date;
   let args: ModifyClaimsParams;
+  let otherIssuerClaims: Partial<MiddlewareClaim>[];
 
-  let rawCddClaim: MeshClaim;
-  let rawBuyLockupClaim: MeshClaim;
-  let rawIuClaim: MeshClaim;
-  let rawDefaultCddClaim: MeshClaim;
-  let rawSomeDid: IdentityId;
-  let rawOtherDid: IdentityId;
+  let rawCddClaim: PolymeshPrimitivesIdentityClaimClaim;
+  let rawBuyLockupClaim: PolymeshPrimitivesIdentityClaimClaim;
+  let rawDefaultCddClaim: PolymeshPrimitivesIdentityClaimClaim;
+  let rawSomeDid: PolymeshPrimitivesIdentityId;
+  let rawOtherDid: PolymeshPrimitivesIdentityId;
   let rawExpiry: Moment;
+
+  let issuer: Identity;
+  let otherIssuerDid: string;
 
   const includeExpired = true;
 
@@ -58,29 +63,19 @@ describe('modifyClaims procedure', () => {
     procedureMockUtils.initMocks();
     dsMockUtils.initMocks();
 
-    claimToMeshClaimStub = sinon.stub(utilsConversionModule, 'claimToMeshClaim');
-    dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
-    identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
-    stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
-    balanceToBigNumberStub = sinon.stub(utilsConversionModule, 'balanceToBigNumber');
+    claimToMeshClaimSpy = jest.spyOn(utilsConversionModule, 'claimToMeshClaim');
+    dateToMomentSpy = jest.spyOn(utilsConversionModule, 'dateToMoment');
+    identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
+    stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
+    balanceToBigNumberSpy = jest.spyOn(utilsConversionModule, 'balanceToBigNumber');
 
-    sinon.stub(utilsConversionModule, 'stringToTicker');
-    sinon.stub(utilsConversionModule, 'stringToScopeId');
+    jest.spyOn(utilsConversionModule, 'stringToTicker').mockImplementation();
 
     someDid = 'someDid';
     otherDid = 'otherDid';
     cddId = 'cddId';
     cddClaim = { type: ClaimType.CustomerDueDiligence, id: cddId };
     defaultCddClaim = { type: ClaimType.CustomerDueDiligence, id: DEFAULT_CDD_ID };
-    iuClaim = {
-      type: ClaimType.InvestorUniqueness,
-      scope: {
-        type: ScopeType.Ticker,
-        value: 'SOME_TICKER',
-      },
-      cddId: 'someCddId',
-      scopeId: 'someScopeId',
-    };
     buyLockupClaim = {
       type: ClaimType.BuyLockup,
       scope: { type: ScopeType.Identity, value: 'someIdentityId' },
@@ -101,10 +96,6 @@ describe('modifyClaims procedure', () => {
           claim: buyLockupClaim,
           expiry,
         },
-        {
-          target: someDid,
-          claim: iuClaim,
-        },
       ],
       operation: ClaimOperation.Add,
     };
@@ -120,31 +111,39 @@ describe('modifyClaims procedure', () => {
     rawBuyLockupClaim = dsMockUtils.createMockClaim({
       BuyLockup: dsMockUtils.createMockScope(),
     });
-    rawIuClaim = dsMockUtils.createMockClaim({
-      InvestorUniqueness: [
-        dsMockUtils.createMockScope(),
-        dsMockUtils.createMockScopeId(),
-        dsMockUtils.createMockCddId(),
-      ],
-    });
     rawSomeDid = dsMockUtils.createMockIdentityId(someDid);
     rawOtherDid = dsMockUtils.createMockIdentityId(otherDid);
     rawExpiry = dsMockUtils.createMockMoment(new BigNumber(expiry.getTime()));
+
+    otherIssuerDid = 'otherSignerDid';
+
+    otherIssuerClaims = [
+      {
+        targetId: otherDid,
+        issuerId: otherIssuerDid,
+        type: cddClaim.type as unknown as ClaimTypeEnum,
+        cddId,
+      },
+    ];
   });
 
-  beforeEach(() => {
-    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
+  beforeEach(async () => {
     mockContext = dsMockUtils.getContextInstance();
-    addClaimTransaction = dsMockUtils.createTxStub('identity', 'addClaim');
-    revokeClaimTransaction = dsMockUtils.createTxStub('identity', 'revokeClaim');
-    claimToMeshClaimStub.withArgs(cddClaim, mockContext).returns(rawCddClaim);
-    claimToMeshClaimStub.withArgs(buyLockupClaim, mockContext).returns(rawBuyLockupClaim);
-    claimToMeshClaimStub.withArgs(iuClaim, mockContext).returns(rawIuClaim);
-    claimToMeshClaimStub.withArgs(defaultCddClaim, mockContext).returns(rawDefaultCddClaim);
-    stringToIdentityIdStub.withArgs(someDid, mockContext).returns(rawSomeDid);
-    stringToIdentityIdStub.withArgs(otherDid, mockContext).returns(rawOtherDid);
-    dateToMomentStub.withArgs(expiry, mockContext).returns(rawExpiry);
-    identityIdToStringStub.withArgs(rawOtherDid).returns(otherDid);
+    addClaimTransaction = dsMockUtils.createTxMock('identity', 'addClaim');
+    revokeClaimTransaction = dsMockUtils.createTxMock('identity', 'revokeClaim');
+    when(claimToMeshClaimSpy).calledWith(cddClaim, mockContext).mockReturnValue(rawCddClaim);
+    when(claimToMeshClaimSpy)
+      .calledWith(buyLockupClaim, mockContext)
+      .mockReturnValue(rawBuyLockupClaim);
+    when(claimToMeshClaimSpy)
+      .calledWith(defaultCddClaim, mockContext)
+      .mockReturnValue(rawDefaultCddClaim);
+    when(stringToIdentityIdSpy).calledWith(someDid, mockContext).mockReturnValue(rawSomeDid);
+    when(stringToIdentityIdSpy).calledWith(otherDid, mockContext).mockReturnValue(rawOtherDid);
+    when(dateToMomentSpy).calledWith(expiry, mockContext).mockReturnValue(rawExpiry);
+    when(identityIdToStringSpy).calledWith(rawOtherDid).mockReturnValue(otherDid);
+
+    issuer = await mockContext.getSigningIdentity();
   });
 
   afterEach(() => {
@@ -175,15 +174,16 @@ describe('modifyClaims procedure', () => {
     expect(error.data).toMatchObject({ nonExistentDids: [otherDid] });
   });
 
-  it('should add a batch of add claim transactions to the queue', async () => {
+  it('should return a batch of add claim transactions spec', async () => {
     dsMockUtils.configureMocks({
       contextOptions: {
         issuedClaims: {
           data: [
             {
               target: new Identity({ did: someDid }, mockContext),
-              issuer: 'issuerIdentity' as unknown as Identity,
+              issuer,
               issuedAt: new Date(),
+              lastUpdatedAt: new Date(),
               expiry: null,
               claim: defaultCddClaim,
             },
@@ -194,9 +194,8 @@ describe('modifyClaims procedure', () => {
       },
     });
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
-    const { did } = await mockContext.getSigningIdentity();
 
-    await prepareModifyClaims.call(proc, {
+    let result = await prepareModifyClaims.call(proc, {
       claims: [
         {
           target: someDid,
@@ -207,64 +206,80 @@ describe('modifyClaims procedure', () => {
       operation: ClaimOperation.Add,
     });
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: addClaimTransaction,
           args: [rawSomeDid, rawBuyLockupClaim, rawExpiry],
         },
       ],
+      resolver: undefined,
     });
 
-    await prepareModifyClaims.call(proc, args);
+    result = await prepareModifyClaims.call(proc, args);
 
     const rawAddClaimItems = [
       [rawSomeDid, rawCddClaim, null],
       [rawOtherDid, rawCddClaim, null],
       [rawSomeDid, rawBuyLockupClaim, rawExpiry],
-      [rawSomeDid, rawIuClaim, null],
     ] as const;
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: rawAddClaimItems.map(item => ({
         transaction: addClaimTransaction,
         args: item,
       })),
+      resolver: undefined,
     });
 
-    sinon.resetHistory();
+    jest.clearAllMocks();
 
-    dsMockUtils.createApolloQueryStub(
-      didsWithClaims({
-        trustedClaimIssuers: [did],
+    dsMockUtils.createApolloQueryMock(
+      claimsQuery({
         dids: [someDid, otherDid],
+        trustedClaimIssuers: [issuer.did],
         includeExpired,
-        count: 2,
       }),
       {
-        didsWithClaims: {
-          totalCount: 2,
-          items: [
+        claims: {
+          nodes: [
             {
-              did: someDid,
-              claims: [cddClaim, buyLockupClaim, iuClaim],
+              targetId: otherDid,
+              issuer,
+              issuerId: issuer.did,
+              type: ClaimTypeEnum.NoData,
             },
             {
-              did: otherDid,
-              claims: [cddClaim],
+              targetId: otherDid,
+              issuer,
+              issuerId: issuer.did,
+              type: ClaimTypeEnum.NoType,
+            },
+            {
+              targetId: otherDid,
+              issuer,
+              issuerId: issuer.did,
+              type: ClaimTypeEnum.InvestorUniqueness,
+            },
+            {
+              targetId: otherDid,
+              issuer,
+              issuerId: issuer.did,
+              type: ClaimTypeEnum.InvestorUniquenessV2,
             },
           ],
         },
       }
     );
 
-    await prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Edit });
+    result = await prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Edit });
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: rawAddClaimItems.map(item => ({
         transaction: addClaimTransaction,
         args: item,
       })),
+      resolver: undefined,
     });
 
     dsMockUtils.configureMocks({
@@ -275,6 +290,7 @@ describe('modifyClaims procedure', () => {
               target: new Identity({ did: someDid }, mockContext),
               issuer: 'issuerIdentity' as unknown as Identity,
               issuedAt: new Date(),
+              lastUpdatedAt: new Date(),
               expiry: null,
               claim: cddClaim,
             },
@@ -285,7 +301,7 @@ describe('modifyClaims procedure', () => {
       },
     });
 
-    await prepareModifyClaims.call(proc, {
+    result = await prepareModifyClaims.call(proc, {
       claims: [
         {
           target: someDid,
@@ -296,13 +312,14 @@ describe('modifyClaims procedure', () => {
       operation: ClaimOperation.Add,
     });
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: addClaimTransaction,
           args: [rawSomeDid, rawDefaultCddClaim, rawExpiry],
         },
       ],
+      resolver: undefined,
     });
   });
 
@@ -316,6 +333,7 @@ describe('modifyClaims procedure', () => {
               target: new Identity({ did: someDid }, mockContext),
               issuer: 'issuerIdentity' as unknown as Identity,
               issuedAt: new Date(),
+              lastUpdatedAt: new Date(),
               expiry: null,
               claim: { type: ClaimType.CustomerDueDiligence, id: otherId },
             },
@@ -328,25 +346,40 @@ describe('modifyClaims procedure', () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
     const { did } = await mockContext.getSigningIdentity();
 
-    dsMockUtils.createApolloQueryStub(
-      didsWithClaims({
+    dsMockUtils.createApolloQueryMock(
+      claimsQuery({
         trustedClaimIssuers: [did],
         dids: [someDid, otherDid],
         includeExpired,
-        count: 2,
       }),
       {
-        didsWithClaims: {
-          totalCount: 2,
-          items: [
+        claims: {
+          nodes: [
             {
-              did: someDid,
-              claims: [cddClaim, buyLockupClaim],
+              targetId: otherDid,
+              issuer,
+              issuerId: issuer.did,
+              type: ClaimTypeEnum.NoData,
             },
             {
-              did: otherDid,
-              claims: [cddClaim],
+              targetId: otherDid,
+              issuer,
+              issuerId: issuer.did,
+              type: ClaimTypeEnum.NoType,
             },
+            {
+              targetId: otherDid,
+              issuer,
+              issuerId: issuer.did,
+              type: ClaimTypeEnum.InvestorUniqueness,
+            },
+            {
+              targetId: otherDid,
+              issuer,
+              issuerId: issuer.did,
+              type: ClaimTypeEnum.InvestorUniquenessV2,
+            },
+            ...otherIssuerClaims,
           ],
         },
       }
@@ -390,19 +423,55 @@ describe('modifyClaims procedure', () => {
 
   it("should throw an error if any of the claims that will be modified weren't issued by the signing Identity", async () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
-    const { did } = await mockContext.getSigningIdentity();
 
-    dsMockUtils.createApolloQueryStub(
-      didsWithClaims({
-        trustedClaimIssuers: [did],
+    dsMockUtils.createApolloQueryMock(
+      claimsQuery({
+        trustedClaimIssuers: [issuer.did],
         dids: [someDid, otherDid],
         includeExpired,
-        count: 2,
       }),
       {
-        didsWithClaims: {
-          totalCount: 0,
-          items: [],
+        claims: {
+          nodes: [],
+        },
+      }
+    );
+
+    dsMockUtils.createApolloQueryMock(
+      claimsQuery({
+        dids: [someDid, otherDid],
+        trustedClaimIssuers: [issuer.did],
+        includeExpired,
+      }),
+      {
+        claims: {
+          nodes: [
+            {
+              targetId: otherDid,
+              issuer,
+              issuerId: issuer.did,
+              type: ClaimTypeEnum.NoData,
+            },
+            {
+              targetId: otherDid,
+              issuer,
+              issuerId: issuer.did,
+              type: ClaimTypeEnum.NoType,
+            },
+            {
+              targetId: otherDid,
+              issuer,
+              issuerId: issuer.did,
+              type: ClaimTypeEnum.InvestorUniqueness,
+            },
+            {
+              targetId: otherDid,
+              issuer,
+              issuerId: issuer.did,
+              type: ClaimTypeEnum.InvestorUniquenessV2,
+            },
+            ...otherIssuerClaims,
+          ],
         },
       }
     );
@@ -416,89 +485,67 @@ describe('modifyClaims procedure', () => {
     ).rejects.toThrow("Attempt to revoke claims that weren't issued by the signing Identity");
   });
 
-  it('should throw an error if any Investor Uniqueness claim has balance in a revoke operation', async () => {
+  it('should return a batch of revoke claim transactions spec', async () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
     const { did } = await mockContext.getSigningIdentity();
 
-    dsMockUtils.createApolloQueryStub(
-      didsWithClaims({
+    dsMockUtils.createApolloQueryMock(
+      claimsQuery({
         trustedClaimIssuers: [did],
         dids: [someDid, otherDid],
         includeExpired,
-        count: 2,
       }),
       {
-        didsWithClaims: {
-          totalCount: 2,
-          items: [
+        claims: {
+          nodes: [
             {
-              did: someDid,
-              claims: [cddClaim, buyLockupClaim, iuClaim],
+              targetId: otherDid,
+              issuer,
+              issuerId: issuer.did,
+              type: ClaimTypeEnum.NoData,
             },
             {
-              did: otherDid,
-              claims: [cddClaim],
+              targetId: otherDid,
+              issuer,
+              issuerId: issuer.did,
+              type: ClaimTypeEnum.NoType,
+            },
+            {
+              targetId: otherDid,
+              issuer,
+              issuerId: issuer.did,
+              type: ClaimTypeEnum.InvestorUniqueness,
+            },
+            {
+              targetId: otherDid,
+              issuer,
+              issuerId: issuer.did,
+              type: ClaimTypeEnum.InvestorUniquenessV2,
             },
           ],
         },
       }
     );
 
-    dsMockUtils.createQueryStub('asset', 'aggregateBalance');
-    balanceToBigNumberStub.returns(new BigNumber(1));
+    balanceToBigNumberSpy.mockReturnValue(new BigNumber(0));
 
-    return expect(
-      prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Revoke })
-    ).rejects.toThrow(
-      'Attempt to revoke Investor Uniqueness claims from investors with positive balance'
-    );
-  });
-
-  it('should add a batch of revoke claim transactions to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
-    const { did } = await mockContext.getSigningIdentity();
-
-    dsMockUtils.createApolloQueryStub(
-      didsWithClaims({
-        trustedClaimIssuers: [did],
-        dids: [someDid, otherDid],
-        includeExpired,
-        count: 2,
-      }),
-      {
-        didsWithClaims: {
-          totalCount: 2,
-          items: [
-            {
-              did: someDid,
-              claims: [cddClaim, buyLockupClaim, iuClaim],
-            },
-            {
-              did: otherDid,
-              claims: [cddClaim],
-            },
-          ],
-        },
-      }
-    );
-
-    dsMockUtils.createQueryStub('asset', 'aggregateBalance');
-    balanceToBigNumberStub.returns(new BigNumber(0));
-
-    await prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Revoke });
+    const result = await prepareModifyClaims.call(proc, {
+      ...args,
+      operation: ClaimOperation.Revoke,
+    });
 
     const rawRevokeClaimItems = [
       [rawSomeDid, rawCddClaim],
       [rawOtherDid, rawCddClaim],
       [rawSomeDid, rawBuyLockupClaim],
-      [rawSomeDid, rawIuClaim],
     ];
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: rawRevokeClaimItems.map(item => ({
         transaction: revokeClaimTransaction,
         args: item,
       })),
+      resolver: undefined,
     });
   });
 });

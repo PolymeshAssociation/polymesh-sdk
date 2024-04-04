@@ -1,5 +1,5 @@
 import { AccountId } from '@polkadot/types/interfaces';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { getAuthorization, prepareQuitSubsidy } from '~/api/procedures/quitSubsidy';
 import { Account, Context, QuitSubsidyParams, Subsidy } from '~/internal';
@@ -18,7 +18,7 @@ describe('quitSubsidy procedure', () => {
   let beneficiary: Account;
   let subsidizer: Account;
   let subsidy: Subsidy;
-  let stringToAccountIdStub: sinon.SinonStub<[string, Context], AccountId>;
+  let stringToAccountIdSpy: jest.SpyInstance<AccountId, [string, Context]>;
   let args: QuitSubsidyParams;
 
   beforeAll(() => {
@@ -26,7 +26,7 @@ describe('quitSubsidy procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    stringToAccountIdStub = sinon.stub(utilsConversionModule, 'stringToAccountId');
+    stringToAccountIdSpy = jest.spyOn(utilsConversionModule, 'stringToAccountId');
   });
 
   beforeEach(() => {
@@ -66,26 +66,27 @@ describe('quitSubsidy procedure', () => {
     expect(error.message).toBe('The Subsidy no longer exists');
   });
 
-  it('should add a transaction to the queue', async () => {
-    const addTransactionStub = procedureMockUtils.getAddTransactionStub();
-    const removePayingKeyTransaction = dsMockUtils.createTxStub('relayer', 'removePayingKey');
+  it('should return a transaction spec', async () => {
+    const removePayingKeyTransaction = dsMockUtils.createTxMock('relayer', 'removePayingKey');
 
     const rawBeneficiaryAccountId = dsMockUtils.createMockAccountId('beneficiary');
     const rawSubsidizerAccountId = dsMockUtils.createMockAccountId('subsidizer');
-    stringToAccountIdStub.withArgs('beneficiary', mockContext).returns(rawBeneficiaryAccountId);
-    stringToAccountIdStub.withArgs('subsidizer', mockContext).returns(rawSubsidizerAccountId);
+    when(stringToAccountIdSpy)
+      .calledWith('beneficiary', mockContext)
+      .mockReturnValue(rawBeneficiaryAccountId);
+    when(stringToAccountIdSpy)
+      .calledWith('subsidizer', mockContext)
+      .mockReturnValue(rawSubsidizerAccountId);
 
     const proc = procedureMockUtils.getInstance<QuitSubsidyParams, void>(mockContext);
 
-    await prepareQuitSubsidy.call(proc, args);
+    const result = await prepareQuitSubsidy.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction: removePayingKeyTransaction,
-        args: [rawBeneficiaryAccountId, rawSubsidizerAccountId],
-      })
-    );
+    expect(result).toEqual({
+      transaction: removePayingKeyTransaction,
+      args: [rawBeneficiaryAccountId, rawSubsidizerAccountId],
+      resolver: undefined,
+    });
   });
 
   describe('getAuthorization', () => {
@@ -102,7 +103,7 @@ describe('quitSubsidy procedure', () => {
         },
       });
 
-      mockContext.getSigningAccount.onSecondCall().returns(subsidizer);
+      mockContext.getSigningAccount.mockReturnValue(subsidizer);
 
       result = await boundFunc(args);
       expect(result).toEqual({
@@ -112,7 +113,7 @@ describe('quitSubsidy procedure', () => {
         },
       });
 
-      mockContext.getSigningAccount.onThirdCall().returns(beneficiary);
+      mockContext.getSigningAccount.mockReturnValue(beneficiary);
 
       result = await boundFunc(args);
       expect(result).toEqual({

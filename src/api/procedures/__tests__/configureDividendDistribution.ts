@@ -1,13 +1,14 @@
+import { u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import {
   PalletCorporateActionsCorporateAction,
   PalletCorporateActionsDistribution,
   PalletCorporateActionsInitiateCorporateActionArgs,
+  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { CAId, Moment, PortfolioNumber, Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   createDividendDistributionResolver,
@@ -17,7 +18,7 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/configureDividendDistribution';
-import { Context, DividendDistribution, NumberedPortfolio, PostTransactionValue } from '~/internal';
+import { Context, DividendDistribution, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { CorporateActionKind, InputCaCheckpoint, RoleType, TargetTreatment, TxTags } from '~/types';
@@ -49,8 +50,8 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 describe('configureDividendDistribution procedure', () => {
@@ -68,26 +69,22 @@ describe('configureDividendDistribution procedure', () => {
   let paymentDate: Date;
   let expiryDate: Date;
 
-  let rawPortfolioNumber: PortfolioNumber;
-  let rawCurrency: Ticker;
+  let rawPortfolioNumber: u64;
+  let rawCurrency: PolymeshPrimitivesTicker;
   let rawPerShare: Balance;
   let rawAmount: Balance;
-  let rawPaymentAt: Moment;
-  let rawExpiresAt: Moment;
+  let rawPaymentAt: u64;
+  let rawExpiresAt: u64;
   let rawCorporateActionArgs: PalletCorporateActionsInitiateCorporateActionArgs;
 
-  let rawCaId: PostTransactionValue<CAId>;
-  let distribution: PostTransactionValue<DividendDistribution>;
-
   let mockContext: Mocked<Context>;
-  let addTransactionStub: sinon.SinonStub;
   let initiateCorporateActionAndDistributeTransaction: PolymeshTx<unknown[]>;
 
-  let stringToTickerStub: sinon.SinonStub;
-  let bigNumberToU64Stub: sinon.SinonStub;
-  let dateToMomentStub: sinon.SinonStub;
-  let bigNumberToBalanceStub: sinon.SinonStub;
-  let corporateActionParamsToMeshCorporateActionArgsStub: sinon.SinonStub;
+  let stringToTickerSpy: jest.SpyInstance;
+  let bigNumberToU64Spy: jest.SpyInstance;
+  let dateToMomentSpy: jest.SpyInstance;
+  let bigNumberToBalanceSpy: jest.SpyInstance;
+  let corporateActionParamsToMeshCorporateActionArgsSpy: jest.SpyInstance;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -108,7 +105,7 @@ describe('configureDividendDistribution procedure', () => {
       id: new BigNumber(2),
       getAssetBalances: [
         {
-          asset: entityMockUtils.getAssetInstance({ ticker: currency }),
+          asset: entityMockUtils.getFungibleAssetInstance({ ticker: currency }),
           total: new BigNumber(1000001),
           locked: new BigNumber(0),
           free: new BigNumber(1000001),
@@ -144,37 +141,34 @@ describe('configureDividendDistribution procedure', () => {
       withholdingTax: [[taxWithholdings[0].identity, taxWithholdings[0].percentage]],
     });
 
-    rawCaId = 'caId' as unknown as PostTransactionValue<CAId>;
-    distribution = 'distribution' as unknown as PostTransactionValue<DividendDistribution>;
-
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
-    dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
-    bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
-    corporateActionParamsToMeshCorporateActionArgsStub = sinon.stub(
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+    dateToMomentSpy = jest.spyOn(utilsConversionModule, 'dateToMoment');
+    bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
+    corporateActionParamsToMeshCorporateActionArgsSpy = jest.spyOn(
       utilsConversionModule,
       'corporateActionParamsToMeshCorporateActionArgs'
     );
   });
 
   beforeEach(() => {
-    procedureMockUtils.getAddProcedureStub().returns(rawCaId);
-    addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([distribution]);
-    initiateCorporateActionAndDistributeTransaction = dsMockUtils.createTxStub(
+    initiateCorporateActionAndDistributeTransaction = dsMockUtils.createTxMock(
       'corporateAction',
       'initiateCorporateActionAndDistribute'
     );
 
     mockContext = dsMockUtils.getContextInstance();
 
-    stringToTickerStub.withArgs(currency, mockContext).returns(rawCurrency);
-    bigNumberToU64Stub.withArgs(originPortfolio.id, mockContext).returns(rawPortfolioNumber);
-    dateToMomentStub.withArgs(paymentDate, mockContext).returns(rawPaymentAt);
-    dateToMomentStub.withArgs(expiryDate, mockContext).returns(rawExpiresAt);
-    bigNumberToBalanceStub.withArgs(perShare, mockContext).returns(rawPerShare);
-    bigNumberToBalanceStub.withArgs(maxAmount, mockContext).returns(rawAmount);
-    corporateActionParamsToMeshCorporateActionArgsStub
-      .withArgs(
+    when(stringToTickerSpy).calledWith(currency, mockContext).mockReturnValue(rawCurrency);
+    when(bigNumberToU64Spy)
+      .calledWith(originPortfolio.id, mockContext)
+      .mockReturnValue(rawPortfolioNumber);
+    when(dateToMomentSpy).calledWith(paymentDate, mockContext).mockReturnValue(rawPaymentAt);
+    when(dateToMomentSpy).calledWith(expiryDate, mockContext).mockReturnValue(rawExpiresAt);
+    when(bigNumberToBalanceSpy).calledWith(perShare, mockContext).mockReturnValue(rawPerShare);
+    when(bigNumberToBalanceSpy).calledWith(maxAmount, mockContext).mockReturnValue(rawAmount);
+    when(corporateActionParamsToMeshCorporateActionArgsSpy)
+      .calledWith(
         {
           ticker,
           kind: CorporateActionKind.UnpredictableBenefit,
@@ -187,13 +181,13 @@ describe('configureDividendDistribution procedure', () => {
         },
         mockContext
       )
-      .returns(rawCorporateActionArgs);
-    corporateActionParamsToMeshCorporateActionArgsStub
-      .withArgs(
+      .mockReturnValue(rawCorporateActionArgs);
+    when(corporateActionParamsToMeshCorporateActionArgsSpy)
+      .calledWith(
         {
           ticker,
           kind: CorporateActionKind.UnpredictableBenefit,
-          declarationDate: sinon.match.date,
+          declarationDate: expect.any(Date),
           checkpoint,
           description,
           targets: null,
@@ -202,9 +196,9 @@ describe('configureDividendDistribution procedure', () => {
         },
         mockContext
       )
-      .returns(rawCorporateActionArgs);
+      .mockReturnValue(rawCorporateActionArgs);
 
-    dsMockUtils.createQueryStub('corporateAction', 'maxDetailsLength', {
+    dsMockUtils.createQueryMock('corporateAction', 'maxDetailsLength', {
       returnValue: dsMockUtils.createMockU32(new BigNumber(100)),
     });
   });
@@ -347,11 +341,7 @@ describe('configureDividendDistribution procedure', () => {
       await prepareConfigureDividendDistribution.call(proc, {
         ticker,
         declarationDate,
-        checkpoint: entityMockUtils.getCheckpointScheduleInstance({
-          details: {
-            nextCheckpointDate: new Date(new Date(new Date().getTime() + 1000 * 60 * 30)),
-          },
-        }),
+        checkpoint: entityMockUtils.getCheckpointScheduleInstance(),
         description,
         targets,
         defaultTaxWithholding,
@@ -376,7 +366,7 @@ describe('configureDividendDistribution procedure', () => {
       { portfolio: originPortfolio }
     );
 
-    dsMockUtils.createQueryStub('corporateAction', 'maxDetailsLength', {
+    dsMockUtils.createQueryMock('corporateAction', 'maxDetailsLength', {
       returnValue: dsMockUtils.createMockU32(new BigNumber(1)),
     });
 
@@ -441,7 +431,7 @@ describe('configureDividendDistribution procedure', () => {
         portfolio: entityMockUtils.getNumberedPortfolioInstance({
           getAssetBalances: [
             {
-              asset: entityMockUtils.getAssetInstance({ ticker: currency }),
+              asset: entityMockUtils.getFungibleAssetInstance({ ticker: currency }),
               total: new BigNumber(1),
               locked: new BigNumber(0),
               free: new BigNumber(1),
@@ -516,12 +506,12 @@ describe('configureDividendDistribution procedure', () => {
     expect(err.message).toBe("The origin Portfolio doesn't exist");
   });
 
-  it('should add an initiate corporate action and distribute transaction to the queue', async () => {
+  it('should return an initiate corporate action and distribute transaction spec', async () => {
     let proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(mockContext, {
       portfolio: originPortfolio,
     });
 
-    const result = await prepareConfigureDividendDistribution.call(proc, {
+    let result = await prepareConfigureDividendDistribution.call(proc, {
       ticker,
       declarationDate,
       checkpoint,
@@ -537,26 +527,21 @@ describe('configureDividendDistribution procedure', () => {
       expiryDate,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction: initiateCorporateActionAndDistributeTransaction,
-        resolvers: sinon.match.array,
-        args: [
-          rawCorporateActionArgs,
-          rawPortfolioNumber,
-          rawCurrency,
-          rawPerShare,
-          rawAmount,
-          rawPaymentAt,
-          rawExpiresAt,
-        ],
-      })
-    );
+    expect(result).toEqual({
+      transaction: initiateCorporateActionAndDistributeTransaction,
+      resolver: expect.any(Function),
+      args: [
+        rawCorporateActionArgs,
+        rawPortfolioNumber,
+        rawCurrency,
+        rawPerShare,
+        rawAmount,
+        rawPaymentAt,
+        rawExpiresAt,
+      ],
+    });
 
-    expect(result).toEqual(distribution);
-
-    await prepareConfigureDividendDistribution.call(proc, {
+    result = await prepareConfigureDividendDistribution.call(proc, {
       ticker,
       declarationDate,
       checkpoint,
@@ -572,29 +557,26 @@ describe('configureDividendDistribution procedure', () => {
       expiryDate,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction: initiateCorporateActionAndDistributeTransaction,
-        resolvers: sinon.match.array,
-        args: [
-          rawCorporateActionArgs,
-          rawPortfolioNumber,
-          rawCurrency,
-          rawPerShare,
-          rawAmount,
-          rawPaymentAt,
-          rawExpiresAt,
-        ],
-      })
-    );
+    expect(result).toEqual({
+      transaction: initiateCorporateActionAndDistributeTransaction,
+      resolver: expect.any(Function),
+      args: [
+        rawCorporateActionArgs,
+        rawPortfolioNumber,
+        rawCurrency,
+        rawPerShare,
+        rawAmount,
+        rawPaymentAt,
+        rawExpiresAt,
+      ],
+    });
 
     proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(mockContext, {
       portfolio: entityMockUtils.getDefaultPortfolioInstance({
         did: 'someDid',
         getAssetBalances: [
           {
-            asset: entityMockUtils.getAssetInstance({ ticker: currency }),
+            asset: entityMockUtils.getFungibleAssetInstance({ ticker: currency }),
             total: new BigNumber(1000001),
             locked: new BigNumber(0),
             free: new BigNumber(1000001),
@@ -603,7 +585,7 @@ describe('configureDividendDistribution procedure', () => {
       }),
     });
 
-    await prepareConfigureDividendDistribution.call(proc, {
+    result = await prepareConfigureDividendDistribution.call(proc, {
       ticker,
       checkpoint,
       description,
@@ -613,26 +595,15 @@ describe('configureDividendDistribution procedure', () => {
       paymentDate,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction: initiateCorporateActionAndDistributeTransaction,
-        resolvers: sinon.match.array,
-        args: [
-          rawCorporateActionArgs,
-          null,
-          rawCurrency,
-          rawPerShare,
-          rawAmount,
-          rawPaymentAt,
-          null,
-        ],
-      })
-    );
+    expect(result).toEqual({
+      transaction: initiateCorporateActionAndDistributeTransaction,
+      resolver: expect.any(Function),
+      args: [rawCorporateActionArgs, null, rawCurrency, rawPerShare, rawAmount, rawPaymentAt, null],
+    });
   });
 
   describe('dividendDistributionResolver', () => {
-    const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
+    const filterEventRecordsSpy = jest.spyOn(utilsInternalModule, 'filterEventRecords');
     const id = new BigNumber(1);
     const portfolioNumber = new BigNumber(3);
     const did = 'someDid';
@@ -676,16 +647,16 @@ describe('configureDividendDistribution procedure', () => {
       });
       /* eslint-enable @typescript-eslint/naming-convention */
 
-      dsMockUtils.createQueryStub('corporateAction', 'corporateActions', {
+      dsMockUtils.createQueryMock('corporateAction', 'corporateActions', {
         returnValue: dsMockUtils.createMockOption(rawCorporateAction),
       });
-      dsMockUtils.createQueryStub('corporateAction', 'details', {
+      dsMockUtils.createQueryMock('corporateAction', 'details', {
         returnValue: dsMockUtils.createMockBytes(description),
       });
     });
 
     beforeEach(() => {
-      filterEventRecordsStub.returns([
+      filterEventRecordsSpy.mockReturnValue([
         dsMockUtils.createMockIEvent([
           'data',
           dsMockUtils.createMockCAId({
@@ -698,7 +669,7 @@ describe('configureDividendDistribution procedure', () => {
     });
 
     afterEach(() => {
-      filterEventRecordsStub.reset();
+      filterEventRecordsSpy.mockReset();
     });
 
     it('should return the new DividendDistribution', async () => {

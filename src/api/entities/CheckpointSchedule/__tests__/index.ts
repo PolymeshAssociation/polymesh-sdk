@@ -1,10 +1,8 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { CheckpointSchedule, Context, Entity } from '~/internal';
-import { StoredSchedule } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { CalendarPeriod, CalendarUnit } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -12,8 +10,8 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 describe('CheckpointSchedule class', () => {
@@ -21,12 +19,10 @@ describe('CheckpointSchedule class', () => {
 
   let id: BigNumber;
   let ticker: string;
-  let period: CalendarPeriod;
   let start: Date;
-  let remaining: BigNumber;
   let nextCheckpointDate: Date;
-  let stringToTickerStub: sinon.SinonStub;
-  let bigNumberToU64Stub: sinon.SinonStub;
+  let stringToTickerSpy: jest.SpyInstance;
+  let bigNumberToU64Spy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -34,15 +30,10 @@ describe('CheckpointSchedule class', () => {
 
     id = new BigNumber(1);
     ticker = 'SOME_TICKER';
-    period = {
-      unit: CalendarUnit.Month,
-      amount: new BigNumber(1),
-    };
     start = new Date('10/14/1987 UTC');
-    remaining = new BigNumber(11);
     nextCheckpointDate = new Date(new Date().getTime() + 60 * 60 * 1000 * 24 * 365 * 60);
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
   });
 
   beforeEach(() => {
@@ -64,48 +55,34 @@ describe('CheckpointSchedule class', () => {
 
   describe('constructor', () => {
     it('should assign ticker and id to instance', () => {
-      let schedule = new CheckpointSchedule(
-        { id, ticker, start, period, remaining: new BigNumber(0), nextCheckpointDate },
-        context
-      );
+      let schedule = new CheckpointSchedule({ id, ticker, pendingPoints: [start] }, context);
 
       expect(schedule.asset.ticker).toBe(ticker);
       expect(schedule.id).toEqual(id);
-      expect(schedule.period).toEqual(period);
-      expect(schedule.start).toEqual(start);
-      expect(schedule.expiryDate).toBeNull();
 
       schedule = new CheckpointSchedule(
         {
           id,
           ticker,
-          start,
-          period: { unit: CalendarUnit.Month, amount: new BigNumber(0) },
-          remaining,
-          nextCheckpointDate,
+          pendingPoints: [start],
         },
         context
       );
 
       expect(schedule.asset.ticker).toBe(ticker);
       expect(schedule.id).toEqual(id);
-      expect(schedule.period).toEqual(null);
-      expect(schedule.start).toEqual(start);
       expect(schedule.expiryDate).toEqual(start);
 
       schedule = new CheckpointSchedule(
         {
           id,
           ticker,
-          start,
-          period: { unit: CalendarUnit.Year, amount: new BigNumber(1) },
-          remaining: new BigNumber(2),
-          nextCheckpointDate: start,
+          pendingPoints: [start],
         },
         context
       );
 
-      expect(schedule.expiryDate).toEqual(new Date('10/14/1988 UTC'));
+      expect(schedule.expiryDate).toEqual(new Date('10/14/1987 UTC'));
     });
   });
 
@@ -123,19 +100,13 @@ describe('CheckpointSchedule class', () => {
   describe('method: details', () => {
     it('should throw an error if Schedule does not exists', async () => {
       const checkpointSchedule = new CheckpointSchedule(
-        { id: new BigNumber(2), ticker, period, start, remaining, nextCheckpointDate },
+        { id: new BigNumber(2), ticker, pendingPoints: [start] },
         context
       );
-      const rawScheduleId = dsMockUtils.createMockU64(id);
 
-      stringToTickerStub.returns(dsMockUtils.createMockTicker(ticker));
-
-      dsMockUtils.createQueryStub('checkpoint', 'schedules', {
-        returnValue: [
-          dsMockUtils.createMockStoredSchedule({
-            id: rawScheduleId,
-          } as unknown as StoredSchedule),
-        ],
+      stringToTickerSpy.mockReturnValue(dsMockUtils.createMockTicker(ticker));
+      dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
+        returnValue: dsMockUtils.createMockOption(),
       });
 
       let error;
@@ -150,32 +121,20 @@ describe('CheckpointSchedule class', () => {
     });
 
     it('should return the Schedule details ', async () => {
-      const rawRemaining = new BigNumber(2);
+      const rawRemaining = new BigNumber(1);
       const checkpointSchedule = new CheckpointSchedule(
-        { id, ticker, period, start, remaining, nextCheckpointDate },
+        { id, ticker, pendingPoints: [start] },
         context
       );
-      const rawScheduleId = dsMockUtils.createMockU64(id);
 
-      stringToTickerStub.returns(dsMockUtils.createMockTicker(ticker));
-      sinon.stub(utilsConversionModule, 'u32ToBigNumber').returns(rawRemaining);
-      sinon.stub(utilsConversionModule, 'momentToDate').returns(nextCheckpointDate);
+      stringToTickerSpy.mockReturnValue(dsMockUtils.createMockTicker(ticker));
+      jest.spyOn(utilsConversionModule, 'u32ToBigNumber').mockClear().mockReturnValue(rawRemaining);
+      jest.spyOn(utilsConversionModule, 'momentToDate').mockReturnValue(nextCheckpointDate);
 
-      dsMockUtils.createQueryStub('checkpoint', 'schedules', {
-        returnValue: [
-          dsMockUtils.createMockStoredSchedule({
-            schedule: dsMockUtils.createMockCheckpointSchedule({
-              start: dsMockUtils.createMockMoment(new BigNumber(start.getTime())),
-              period: dsMockUtils.createMockCalendarPeriod({
-                unit: dsMockUtils.createMockCalendarUnit('Month'),
-                amount: dsMockUtils.createMockU64(new BigNumber(1)),
-              }),
-            }),
-            id: rawScheduleId,
-            at: dsMockUtils.createMockMoment(new BigNumber(nextCheckpointDate.getTime())),
-            remaining: dsMockUtils.createMockU32(rawRemaining),
-          }),
-        ],
+      dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockCheckpointSchedule({ pending: [start] })
+        ),
       });
 
       const result = await checkpointSchedule.details();
@@ -188,16 +147,17 @@ describe('CheckpointSchedule class', () => {
   describe('method: getCheckpoints', () => {
     it("should throw an error if the schedule doesn't exist", async () => {
       const schedule = new CheckpointSchedule(
-        { id: new BigNumber(2), ticker, start, period, remaining, nextCheckpointDate },
+        { id: new BigNumber(2), ticker, pendingPoints: [start] },
         context
       );
-      const rawScheduleId = dsMockUtils.createMockU64(id);
 
-      dsMockUtils.createQueryStub('checkpoint', 'schedules', {
+      dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
         returnValue: [
-          dsMockUtils.createMockStoredSchedule({
-            id: rawScheduleId,
-          } as unknown as StoredSchedule),
+          {
+            pending: dsMockUtils.createMockBTreeSet([
+              dsMockUtils.createMockMoment(new BigNumber(start.getTime())),
+            ]),
+          },
         ],
       });
 
@@ -214,29 +174,30 @@ describe('CheckpointSchedule class', () => {
 
     it('should return all the checkpoints created by the schedule', async () => {
       const schedule = new CheckpointSchedule(
-        { id, ticker, start, period, remaining, nextCheckpointDate },
+        {
+          id: new BigNumber(2),
+          ticker,
+          pendingPoints: [start],
+        },
         context
       );
       const firstId = new BigNumber(1);
       const secondId = new BigNumber(2);
       const rawFirstId = dsMockUtils.createMockU64(firstId);
       const rawSecondId = dsMockUtils.createMockU64(secondId);
-      const rawScheduleId = dsMockUtils.createMockU64(id);
 
-      dsMockUtils.createQueryStub('checkpoint', 'schedules', {
-        returnValue: [
-          dsMockUtils.createMockStoredSchedule({
-            id: rawScheduleId,
-          } as unknown as StoredSchedule),
-        ],
+      dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockCheckpointSchedule({ pending: [start] })
+        ),
       });
 
-      dsMockUtils.createQueryStub('checkpoint', 'schedulePoints', {
+      dsMockUtils.createQueryMock('checkpoint', 'schedulePoints', {
         returnValue: [rawFirstId, rawSecondId],
       });
 
-      bigNumberToU64Stub.withArgs(firstId).returns(rawFirstId);
-      bigNumberToU64Stub.withArgs(secondId).returns(rawSecondId);
+      when(bigNumberToU64Spy).calledWith(firstId).mockReturnValue(rawFirstId);
+      when(bigNumberToU64Spy).calledWith(secondId).mockReturnValue(rawSecondId);
 
       const result = await schedule.getCheckpoints();
 
@@ -247,25 +208,25 @@ describe('CheckpointSchedule class', () => {
 
   describe('method: exists', () => {
     it('should return whether the schedule exists', async () => {
-      let schedule = new CheckpointSchedule(
-        { id, ticker, start, period, remaining, nextCheckpointDate },
-        context
-      );
+      let schedule = new CheckpointSchedule({ id, ticker, pendingPoints: [start] }, context);
 
-      dsMockUtils.createQueryStub('checkpoint', 'schedules', {
-        returnValue: [
-          dsMockUtils.createMockStoredSchedule({
-            id: dsMockUtils.createMockU64(id),
-          } as unknown as StoredSchedule),
-        ],
+      dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockCheckpointSchedule({
+            pending: dsMockUtils.createMockBTreeSet([start]),
+          })
+        ),
       });
-
       let result = await schedule.exists();
 
       expect(result).toBe(true);
 
+      dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
       schedule = new CheckpointSchedule(
-        { id: new BigNumber(2), ticker, start, period, remaining, nextCheckpointDate },
+        { id: new BigNumber(2), ticker, pendingPoints: [start] },
         context
       );
 
@@ -281,22 +242,14 @@ describe('CheckpointSchedule class', () => {
         {
           id: new BigNumber(1),
           ticker: 'SOME_TICKER',
-          start,
-          period,
-          remaining,
-          nextCheckpointDate,
+          pendingPoints: [start],
         },
         context
       );
       expect(schedule.toHuman()).toEqual({
         id: '1',
         ticker: 'SOME_TICKER',
-        period: {
-          unit: 'month',
-          amount: '1',
-        },
-        start: '1987-10-14T00:00:00.000Z',
-        complexity: '12',
+        pendingPoints: ['1987-10-14T00:00:00.000Z'],
         expiryDate: schedule.expiryDate?.toISOString(),
       });
     });

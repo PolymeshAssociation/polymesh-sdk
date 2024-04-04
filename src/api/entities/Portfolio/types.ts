@@ -1,19 +1,33 @@
 import BigNumber from 'bignumber.js';
 
-import { Account, Asset } from '~/internal';
-import {
-  SettlementDirectionEnum as SettlementDirection,
-  SettlementResultEnum as SettlementResult,
-} from '~/middleware/types';
-import { Balance, Leg } from '~/types';
+import { Account, FungibleAsset, Nft } from '~/internal';
+import { SettlementResultEnum as SettlementResult } from '~/middleware/types';
+import { SettlementDirectionEnum as SettlementDirection } from '~/middleware/typesV1';
+import { Balance, Leg, NftCollection } from '~/types';
 
 export interface PortfolioBalance extends Balance {
-  asset: Asset;
+  asset: FungibleAsset;
 }
 
-export interface SettlementLeg extends Leg {
-  direction: SettlementDirection;
+export interface PortfolioCollection {
+  collection: NftCollection;
+  /**
+   * NFTs available for transferring
+   */
+  free: Nft[];
+  /**
+   * NFTs that are locked, such as being involved in a pending instruction
+   */
+  locked: Nft[];
+  /**
+   * Total number of NFTs held for a collection
+   */
+  total: BigNumber;
 }
+
+export type SettlementLeg = Leg & {
+  direction: SettlementDirection;
+};
 
 export interface HistoricSettlement {
   blockNumber: BigNumber;

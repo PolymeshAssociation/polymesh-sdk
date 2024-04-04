@@ -1,7 +1,14 @@
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Identities } from '~/api/client/Identities';
-import { Context, Identity, NumberedPortfolio, TransactionQueue } from '~/internal';
+import { createPortfolioTransformer } from '~/api/entities/Venue';
+import {
+  ChildIdentity,
+  Context,
+  Identity,
+  NumberedPortfolio,
+  PolymeshTransaction,
+} from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 
@@ -45,7 +52,7 @@ describe('Identities Class', () => {
       const params = { did: 'testDid' };
 
       const identity = new Identity(params, context);
-      context.getIdentity.onFirstCall().resolves(identity);
+      context.getIdentity.mockResolvedValue(identity);
 
       const result = await identities.getIdentity(params);
 
@@ -53,56 +60,91 @@ describe('Identities Class', () => {
     });
   });
 
+  describe('method: getChildIdentity', () => {
+    it('should return a ChildIdentity object with the passed did', async () => {
+      const params = { did: 'testDid' };
+
+      const childIdentity = new ChildIdentity(params, context);
+      context.getChildIdentity.mockResolvedValue(childIdentity);
+
+      const result = await identities.getChildIdentity(params);
+
+      expect(result).toMatchObject(childIdentity);
+    });
+  });
+
+  describe('method: createChild', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args = {
+        secondaryKey: 'someChild',
+      };
+
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<ChildIdentity>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await identities.createChild(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
   describe('method: registerIdentity', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = {
         targetAccount: 'someTarget',
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Identity>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Identity>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
-      const queue = await identities.registerIdentity(args);
+      const tx = await identities.registerIdentity(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: createPortfolio', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
-      const args = { names: ['someName'] };
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const args = { name: 'someName' };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<NumberedPortfolio>;
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<NumberedPortfolio>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(sinon.match({ args, transformer: sinon.match.func }), context)
-        .resolves(expectedQueue);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          { args: { names: [args.name] }, transformer: createPortfolioTransformer },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
 
-      const queue = await identities.createPortfolio({ name: 'someName' });
+      const tx = await identities.createPortfolio(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: createPortfolios', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
       const args = { names: ['someName'] };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<NumberedPortfolio>;
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<NumberedPortfolio>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
-      const queue = await identities.createPortfolios(args);
+      const tx = await identities.createPortfolios(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -124,6 +166,45 @@ describe('Identities Class', () => {
       const result = await identities.isIdentityValid({ identity: did });
 
       expect(result).toBe(false);
+    });
+  });
+
+  describe('method: attestPrimaryKeyRotation', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args = {
+        targetAccount: 'someAccount',
+        identity: 'someDid',
+        expiry: new Date('01/01/2040'),
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await identities.attestPrimaryKeyRotation(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: rotatePrimaryKey', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args = {
+        targetAccount: 'someAccount',
+        expiry: new Date('01/01/2050'),
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await identities.rotatePrimaryKey(args);
+
+      expect(tx).toBe(expectedTransaction);
     });
   });
 });

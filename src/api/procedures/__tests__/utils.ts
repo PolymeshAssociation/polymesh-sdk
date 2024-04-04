@@ -2,7 +2,6 @@ import { u64 } from '@polkadot/types';
 import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
 
 import {
   assertAuthorizationRequestValid,
@@ -11,6 +10,7 @@ import {
   assertDistributionDatesValid,
   assertGroupDoesNotExist,
   assertInstructionValid,
+  assertInstructionValidForManualExecution,
   assertPortfolioExists,
   assertRequirementsNotTooComplex,
   assertSecondaryAccounts,
@@ -20,15 +20,14 @@ import {
   UnreachableCaseError,
 } from '~/api/procedures/utils';
 import {
-  Asset,
   AuthorizationRequest,
   CheckpointSchedule,
   Context,
   CustomPermissionGroup,
+  FungibleAsset,
   Identity,
   Instruction,
   PolymeshError,
-  PostTransactionValue,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId, createMockIdentityId } from '~/testUtils/mocks/dataSources';
@@ -80,8 +79,8 @@ jest.mock(
 );
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 jest.mock(
@@ -89,6 +88,11 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockTickerReservationModule(
     '~/api/entities/TickerReservation'
   )
+);
+
+jest.mock(
+  '~/api/entities/Venue',
+  require('~/testUtils/mocks/entities').mockVenueModule('~/api/entities/Venue')
 );
 
 describe('assertInstructionValid', () => {
@@ -118,11 +122,11 @@ describe('assertInstructionValid', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should throw an error if instruction is not in pending state', () => {
+  it('should throw an error if instruction is not in pending or failed state', () => {
     entityMockUtils.configureMocks({
       instructionOptions: {
         details: {
-          status: InstructionStatus.Executed,
+          status: InstructionStatus.Success,
         } as InstructionDetails,
       },
     });
@@ -130,7 +134,7 @@ describe('assertInstructionValid', () => {
     instruction = entityMockUtils.getInstructionInstance();
 
     return expect(assertInstructionValid(instruction, mockContext)).rejects.toThrow(
-      'The Instruction must be in pending state'
+      'The Instruction must be in pending or failed state'
     );
   });
 
@@ -184,6 +188,21 @@ describe('assertInstructionValid', () => {
     entityMockUtils.configureMocks({
       instructionOptions: {
         details: {
+          status: InstructionStatus.Failed,
+          type: InstructionType.SettleOnAffirmation,
+        } as InstructionDetails,
+      },
+    });
+
+    instruction = entityMockUtils.getInstructionInstance();
+
+    result = await assertInstructionValid(instruction, mockContext);
+
+    expect(result).toBeUndefined();
+
+    entityMockUtils.configureMocks({
+      instructionOptions: {
+        details: {
           status: InstructionStatus.Pending,
           type: InstructionType.SettleOnBlock,
           endBlock: new BigNumber(1000000),
@@ -196,6 +215,104 @@ describe('assertInstructionValid', () => {
     result = await assertInstructionValid(instruction, mockContext);
 
     expect(result).toBeUndefined();
+  });
+});
+
+describe('assertInstructionValidForManualExecution', () => {
+  const latestBlock = new BigNumber(200);
+  let mockContext: Mocked<Context>;
+  let instructionDetails: InstructionDetails;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks({
+      contextOptions: {
+        latestBlock,
+      },
+    });
+    entityMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockContext = dsMockUtils.getContextInstance();
+    instructionDetails = {
+      status: InstructionStatus.Pending,
+      type: InstructionType.SettleManual,
+      endAfterBlock: new BigNumber(100),
+    } as InstructionDetails;
+  });
+
+  afterEach(() => {
+    entityMockUtils.reset();
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should throw an error if instruction is already Executed', () => {
+    return expect(
+      assertInstructionValidForManualExecution(
+        {
+          ...instructionDetails,
+          status: InstructionStatus.Success,
+        },
+        mockContext
+      )
+    ).rejects.toThrow('The Instruction has already been executed');
+  });
+
+  it('should throw an error if the instruction is not of type SettleManual', async () => {
+    return expect(
+      assertInstructionValidForManualExecution(
+        {
+          ...instructionDetails,
+          type: InstructionType.SettleOnAffirmation,
+        },
+        mockContext
+      )
+    ).rejects.toThrow("You cannot manually execute settlement of type 'SettleOnAffirmation'");
+  });
+
+  it('should throw an error if the instruction is being executed before endAfterBlock', async () => {
+    const endAfterBlock = new BigNumber(1000);
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The Instruction cannot be executed until the specified end after block',
+      data: {
+        currentBlock: latestBlock,
+        endAfterBlock,
+      },
+    });
+    return expect(
+      assertInstructionValidForManualExecution(
+        {
+          ...instructionDetails,
+          endAfterBlock,
+        } as InstructionDetails,
+        mockContext
+      )
+    ).rejects.toThrowError(expectedError);
+  });
+
+  it('should not throw an error', async () => {
+    // executing instruction of type SettleManual
+    await expect(
+      assertInstructionValidForManualExecution(instructionDetails, mockContext)
+    ).resolves.not.toThrow();
+
+    // executing failed instruction
+    await expect(
+      assertInstructionValidForManualExecution(
+        {
+          ...instructionDetails,
+          status: InstructionStatus.Failed,
+          type: InstructionType.SettleOnAffirmation,
+        },
+        mockContext
+      )
+    ).resolves.not.toThrow();
   });
 });
 
@@ -233,10 +350,10 @@ describe('assertPortfolioExists', () => {
 });
 
 describe('assertSecondaryAccounts', () => {
-  let signerToSignerValueStub: sinon.SinonStub<[Signer], SignerValue>;
+  let signerToSignerValueSpy: jest.SpyInstance<SignerValue, [Signer]>;
 
   beforeAll(() => {
-    signerToSignerValueStub = sinon.stub(utilsConversionModule, 'signerToSignerValue');
+    signerToSignerValueSpy = jest.spyOn(utilsConversionModule, 'signerToSignerValue');
   });
 
   it('should not throw an error if all signers are secondary Accounts', async () => {
@@ -275,7 +392,7 @@ describe('assertSecondaryAccounts', () => {
       entityMockUtils.getAccountInstance({ address: 'otherAddress', isEqual: false }),
     ];
 
-    signerToSignerValueStub.returns({ type: SignerType.Account, value: address });
+    signerToSignerValueSpy.mockReturnValue({ type: SignerType.Account, value: address });
 
     let error;
 
@@ -553,7 +670,7 @@ describe('authorization request validations', () => {
     mockContext = dsMockUtils.getContextInstance();
     issuer = entityMockUtils.getIdentityInstance();
     target = entityMockUtils.getIdentityInstance();
-    dsMockUtils.createQueryStub('identity', 'authorizations', {
+    dsMockUtils.createQueryMock('identity', 'authorizations', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockAuthorization({
           authorizationData: dsMockUtils.createMockAuthorizationData('RotatePrimaryKey'),
@@ -635,7 +752,7 @@ describe('authorization request validations', () => {
   describe('assertAttestPrimaryKeyAuthorizationValid', () => {
     const data: Authorization = {
       type: AuthorizationType.AttestPrimaryKeyRotation,
-      value: '',
+      value: entityMockUtils.getIdentityInstance(),
     };
 
     it('should not throw with a valid request', () => {
@@ -761,7 +878,7 @@ describe('authorization request validations', () => {
 
   describe('assertTransferAssetOwnershipAuthorizationValid', () => {
     it('should not throw with a valid request', () => {
-      entityMockUtils.configureMocks({ assetOptions: { exists: true } });
+      entityMockUtils.configureMocks({ fungibleAssetOptions: { exists: true } });
       const data: Authorization = {
         type: AuthorizationType.TransferAssetOwnership,
         value: 'TICKER',
@@ -781,7 +898,7 @@ describe('authorization request validations', () => {
     });
 
     it('should throw with a Asset that does not exist', () => {
-      entityMockUtils.configureMocks({ assetOptions: { exists: false } });
+      entityMockUtils.configureMocks({ fungibleAssetOptions: { exists: false } });
       const data: Authorization = {
         type: AuthorizationType.TransferAssetOwnership,
         value: 'TICKER',
@@ -1195,8 +1312,8 @@ describe('authorization request validations', () => {
       );
 
       dsMockUtils
-        .createQueryStub('identity', 'keyRecords')
-        .resolves(
+        .createQueryMock('identity', 'keyRecords')
+        .mockResolvedValue(
           dsMockUtils.createMockOption(
             dsMockUtils.createMockKeyRecord({ PrimaryKey: createMockIdentityId('someDid') })
           )
@@ -1227,7 +1344,7 @@ describe('authorization request validations', () => {
         mockContext
       );
 
-      dsMockUtils.createQueryStub('identity', 'keyRecords').returns(
+      dsMockUtils.createQueryMock('identity', 'keyRecords').mockReturnValue(
         dsMockUtils.createMockOption(
           dsMockUtils.createMockKeyRecord({
             MultiSigSignerKey: createMockAccountId('someAddress'),
@@ -1423,28 +1540,6 @@ describe('createAuthorizationResolver', () => {
     } as unknown as ISubmittableResult);
     expect(authRequest.authId).toEqual(new BigNumber(3));
   });
-
-  it('should return a function that creates an AuthorizationRequest with a PostTransaction Authorization', async () => {
-    const authData: Authorization = {
-      type: AuthorizationType.RotatePrimaryKey,
-    };
-
-    const postTransaction = new PostTransactionValue(() => authData);
-    await postTransaction.run({} as ISubmittableResult);
-
-    const resolver = createAuthorizationResolver(
-      postTransaction,
-      entityMockUtils.getIdentityInstance(),
-      entityMockUtils.getIdentityInstance(),
-      null,
-      mockContext
-    );
-
-    const authRequest = resolver({
-      filterRecords: filterRecords,
-    } as unknown as ISubmittableResult);
-    expect(authRequest.authId).toEqual(new BigNumber(3));
-  });
 });
 
 describe('createCreateGroupResolver', () => {
@@ -1482,7 +1577,7 @@ describe('createCreateGroupResolver', () => {
 
     const resolver = createCreateGroupResolver(mockContext);
     const result = resolver({
-      filterRecords: filterRecords,
+      filterRecords,
     } as unknown as ISubmittableResult);
 
     expect(result.id).toEqual(agId);
@@ -1505,7 +1600,7 @@ describe('assertGroupNotExists', () => {
     };
     const customId = new BigNumber(1);
 
-    let asset = entityMockUtils.getAssetInstance({
+    let asset = entityMockUtils.getFungibleAssetInstance({
       ticker,
       permissionsGetGroups: {
         custom: [
@@ -1533,7 +1628,7 @@ describe('assertGroupNotExists', () => {
     expect(error.message).toBe('There already exists a group with the exact same permissions');
     expect(error.data.groupId).toEqual(customId);
 
-    asset = entityMockUtils.getAssetInstance({
+    asset = entityMockUtils.getFungibleAssetInstance({
       ticker,
       permissionsGetGroups: {
         custom: [],
@@ -1585,7 +1680,7 @@ describe('getGroupFromPermissions', () => {
   };
   const customId = new BigNumber(1);
 
-  let asset: Asset;
+  let asset: FungibleAsset;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -1593,7 +1688,7 @@ describe('getGroupFromPermissions', () => {
   });
 
   beforeEach(() => {
-    asset = entityMockUtils.getAssetInstance({
+    asset = entityMockUtils.getFungibleAssetInstance({
       ticker,
       permissionsGetGroups: {
         custom: [

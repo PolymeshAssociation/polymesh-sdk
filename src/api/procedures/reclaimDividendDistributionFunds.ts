@@ -1,6 +1,6 @@
-import { Asset, DividendDistribution, PolymeshError, Procedure } from '~/internal';
+import { DividendDistribution, FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RoleType, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { corporateActionIdentifierToCaId, portfolioToPortfolioId } from '~/utils/conversion';
 
 /**
@@ -16,7 +16,7 @@ export interface Params {
 export async function prepareReclaimDividendDistributionFunds(
   this: Procedure<Params, void>,
   args: Params
-): Promise<void> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'capitalDistribution', 'reclaim'>>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -54,10 +54,11 @@ export async function prepareReclaimDividendDistributionFunds(
 
   const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
 
-  this.addTransaction({
+  return {
     transaction: tx.capitalDistribution.reclaim,
     args: [rawCaId],
-  });
+    resolver: undefined,
+  };
 }
 
 /**
@@ -78,7 +79,7 @@ export async function getAuthorization(
     roles: [{ type: RoleType.PortfolioCustodian, portfolioId: portfolioToPortfolioId(origin) }],
     permissions: {
       transactions: [TxTags.capitalDistribution.Reclaim],
-      assets: [new Asset({ ticker }, context)],
+      assets: [new FungibleAsset({ ticker }, context)],
       portfolios: [origin],
     },
   };

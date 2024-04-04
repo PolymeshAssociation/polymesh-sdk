@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareCloseOffering } from '~/api/procedures/closeOffering';
 import { Context } from '~/internal';
@@ -14,8 +13,8 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockOfferingModule('~/api/entities/Offering')
 );
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 describe('closeOffering procedure', () => {
@@ -26,7 +25,6 @@ describe('closeOffering procedure', () => {
   const rawId = dsMockUtils.createMockU64(id);
 
   let mockContext: Mocked<Context>;
-  let addTransactionStub: sinon.SinonStub;
   let stopStoTransaction: PolymeshTx<unknown[]>;
 
   beforeAll(() => {
@@ -44,13 +42,12 @@ describe('closeOffering procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    sinon.stub(utilsConversionModule, 'stringToTicker').returns(rawTicker);
-    sinon.stub(utilsConversionModule, 'bigNumberToU64').returns(rawId);
+    jest.spyOn(utilsConversionModule, 'stringToTicker').mockReturnValue(rawTicker);
+    jest.spyOn(utilsConversionModule, 'bigNumberToU64').mockReturnValue(rawId);
   });
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
-    stopStoTransaction = dsMockUtils.createTxStub('sto', 'stop');
+    stopStoTransaction = dsMockUtils.createTxMock('sto', 'stop');
     mockContext = dsMockUtils.getContextInstance();
   });
 
@@ -65,14 +62,15 @@ describe('closeOffering procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should add a stop sto transaction to the queue', async () => {
+  it('should return a stop sto transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await prepareCloseOffering.call(proc, { ticker, id });
+    const result = await prepareCloseOffering.call(proc, { ticker, id });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction: stopStoTransaction,
       args: [rawTicker, rawId],
+      resolver: undefined,
     });
   });
 

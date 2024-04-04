@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
-import { Context, Entity, Subsidy, TransactionQueue } from '~/internal';
+import { Context, Entity, PolymeshTransaction, Subsidy } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { AllowanceOperation } from '~/types';
@@ -70,106 +70,105 @@ describe('Subsidy class', () => {
 
   describe('method: quit', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
-    it('should prepare the quit procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the quit procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = { subsidy };
 
-      const expectedQueue = 'mockQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'mockTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
-      const queue = await subsidy.quit();
+      const tx = await subsidy.quit();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: setAllowance', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
-    it('should prepare the setAllowance procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the setAllowance procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = { allowance: new BigNumber(50) };
 
-      const expectedQueue = 'mockQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'mockTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           { args: { ...args, subsidy, operation: AllowanceOperation.Set }, transformer: undefined },
-          context
+          context,
+          {}
         )
-        .resolves(expectedQueue);
+        .mockResolvedValue(expectedTransaction);
 
-      const queue = await subsidy.setAllowance(args);
+      const tx = await subsidy.setAllowance(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: increaseAllowance', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
-    it('should prepare the increaseAllowance procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the increaseAllowance procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = { allowance: new BigNumber(50) };
 
-      const expectedQueue = 'mockQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'mockTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: { ...args, subsidy, operation: AllowanceOperation.Increase },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedQueue);
+        .mockResolvedValue(expectedTransaction);
 
-      const queue = await subsidy.increaseAllowance(args);
+      const tx = await subsidy.increaseAllowance(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: decreaseAllowance', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
-    it('should prepare the decreaseAllowance procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the decreaseAllowance procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = { allowance: new BigNumber(50) };
 
-      const expectedQueue = 'mockQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'mockTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: { ...args, subsidy, operation: AllowanceOperation.Decrease },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedQueue);
+        .mockResolvedValue(expectedTransaction);
 
-      const queue = await subsidy.decreaseAllowance(args);
+      const tx = await subsidy.decreaseAllowance(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: exists', () => {
     it('should return whether the Subsidy exists', async () => {
-      context.accountSubsidy.onFirstCall().returns(null);
+      context.accountSubsidy = jest.fn().mockReturnValue(null);
       await expect(subsidy.exists()).resolves.toBe(false);
 
       entityMockUtils.configureMocks({
@@ -177,7 +176,7 @@ describe('Subsidy class', () => {
           isEqual: false,
         },
       });
-      context.accountSubsidy.onSecondCall().returns({
+      context.accountSubsidy = jest.fn().mockReturnValue({
         subsidy: entityMockUtils.getSubsidyInstance({ subsidizer: 'mockSubsidizer' }),
         allowance: new BigNumber(1),
       });
@@ -188,7 +187,7 @@ describe('Subsidy class', () => {
           isEqual: true,
         },
       });
-      context.accountSubsidy.onThirdCall().returns({
+      context.accountSubsidy = jest.fn().mockReturnValue({
         subsidy: entityMockUtils.getSubsidyInstance(),
         allowance: new BigNumber(1),
       });
@@ -198,7 +197,7 @@ describe('Subsidy class', () => {
 
   describe('method: getAllowance', () => {
     it('should throw an error if the Subsidy relationship does not exist', async () => {
-      context.accountSubsidy.onFirstCall().returns(null);
+      context.accountSubsidy = jest.fn().mockReturnValue(null);
 
       let error;
 
@@ -210,7 +209,7 @@ describe('Subsidy class', () => {
 
       expect(error.message).toBe('The Subsidy no longer exists');
 
-      context.accountSubsidy.onSecondCall().returns({
+      context.accountSubsidy = jest.fn().mockReturnValue({
         subsidy: entityMockUtils.getSubsidyInstance({ subsidizer: 'otherAddress' }),
         allowance: new BigNumber(1),
       });
@@ -231,7 +230,7 @@ describe('Subsidy class', () => {
 
     it('should return allowance of the Subsidy relationship', async () => {
       const allowance = new BigNumber(100);
-      context.accountSubsidy.returns({
+      context.accountSubsidy = jest.fn().mockReturnValue({
         subsidy: entityMockUtils.getSubsidyInstance(),
         allowance,
       });
@@ -241,8 +240,8 @@ describe('Subsidy class', () => {
 
   describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
-      subsidy.beneficiary.toHuman = sinon.stub().returns(beneficiary);
-      subsidy.subsidizer.toHuman = sinon.stub().returns(subsidizer);
+      subsidy.beneficiary.toHuman = jest.fn().mockReturnValue(beneficiary);
+      subsidy.subsidizer.toHuman = jest.fn().mockReturnValue(subsidizer);
       expect(subsidy.toHuman()).toEqual({ beneficiary, subsidizer });
     });
   });

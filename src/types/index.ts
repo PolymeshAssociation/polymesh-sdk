@@ -1,3 +1,6 @@
+/* istanbul ignore file */
+
+import { ApiOptions } from '@polkadot/api/types';
 import { TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
@@ -9,27 +12,54 @@ import {
   SubsidyData,
   TaxWithholding,
 } from '~/api/entities/types';
-import { StatType } from '~/api/procedures/types';
+import { CreateTransactionBatchParams } from '~/api/procedures/types';
 import { CountryCode, ModuleName, TxTag, TxTags } from '~/generated/types';
 import {
   Account,
-  Asset,
+  BaseAsset,
   Checkpoint,
   CheckpointSchedule,
   CustomPermissionGroup,
   DefaultPortfolio,
   DefaultTrustedClaimIssuer,
   DividendDistribution,
+  FungibleAsset,
   Identity,
   Instruction,
   KnownPermissionGroup,
+  Nft,
+  NftCollection,
   NumberedPortfolio,
   Offering,
-  TransactionQueue,
+  PolymeshTransaction,
+  PolymeshTransactionBatch,
 } from '~/internal';
 import { Modify } from '~/types/utils';
 
+export { EventRecord } from '@polkadot/types/interfaces';
+export { ConnectParams } from '~/api/client/Polymesh';
+export * from '~/api/entities/types';
+export * from '~/api/procedures/types';
+export * from '~/base/types';
 export * from '~/generated/types';
+
+export {
+  AssetHoldersOrderBy,
+  AuthTypeEnum,
+  AuthorizationStatusEnum,
+  ExtrinsicsOrderBy,
+  NftHoldersOrderBy,
+  InstructionStatusEnum,
+  MultiSigProposalVoteActionEnum,
+  SettlementResultEnum,
+  BalanceTypeEnum,
+  ModuleIdEnum,
+  EventIdEnum,
+  CallIdEnum,
+  Scalars,
+} from '~/middleware/types';
+export { ClaimScopeTypeEnum, MiddlewareScope, SettlementDirectionEnum } from '~/middleware/typesV1';
+export { CountryCode, ModuleName, TxTag, TxTags };
 
 export enum TransactionStatus {
   /**
@@ -53,7 +83,7 @@ export enum TransactionStatus {
    */
   Succeeded = 'Succeeded',
   /**
-   * the transaction's execution failed due to a revert
+   * the transaction's execution failed due to a an on-chain validation error, insufficient balance for fees, or other such reasons
    */
   Failed = 'Failed',
   /**
@@ -61,28 +91,6 @@ export enum TransactionStatus {
    * see https://github.com/paritytech/substrate/blob/master/primitives/transaction-pool/src/pool.rs#L58-L110
    */
   Aborted = 'Aborted',
-}
-
-export enum TransactionQueueStatus {
-  /**
-   * the queue is prepped to run
-   */
-  Idle = 'Idle',
-  /**
-   * transactions in the queue are being executed
-   */
-  Running = 'Running',
-  /**
-   * a critical transaction's execution failed.
-   * This might mean the transaction was rejected,
-   * failed due to a revert or never entered a block
-   */
-  Failed = 'Failed',
-  /**
-   * the queue finished running all of its transactions. Non-critical transactions
-   * might still have failed
-   */
-  Succeeded = 'Succeeded',
 }
 
 // Roles
@@ -144,6 +152,12 @@ export enum KnownAssetType {
   StructuredProduct = 'StructuredProduct',
   Derivative = 'Derivative',
   StableCoin = 'StableCoin',
+}
+
+export enum KnownNftType {
+  Derivative = 'Derivative',
+  FixedIncome = 'FixedIncome',
+  Invoice = 'Invoice',
 }
 
 export enum SecurityIdentifierType {
@@ -223,10 +237,7 @@ export enum ClaimType {
   Jurisdiction = 'Jurisdiction',
   Exempted = 'Exempted',
   Blocked = 'Blocked',
-  InvestorUniqueness = 'InvestorUniqueness',
-  NoType = 'NoType',
-  NoData = 'NoData',
-  InvestorUniquenessV2 = 'InvestorUniquenessV2',
+  Custom = 'Custom',
 }
 
 export interface AccreditedClaim {
@@ -270,43 +281,29 @@ export interface ExemptedClaim {
   scope: Scope;
 }
 
+export interface CustomClaim {
+  type: ClaimType.Custom;
+  scope: Scope;
+  customClaimTypeId: BigNumber;
+}
+
 export interface BlockedClaim {
   type: ClaimType.Blocked;
   scope: Scope;
 }
 
-export interface InvestorUniquenessClaim {
-  type: ClaimType.InvestorUniqueness;
-  scope: Scope;
-  cddId: string;
-  scopeId: string;
-}
-
-export interface NoTypeClaim {
-  type: ClaimType.NoType;
-}
-
-export interface NoDataClaim {
-  type: ClaimType.NoData;
-}
-
-export interface InvestorUniquenessV2Claim {
-  type: ClaimType.InvestorUniquenessV2;
-  cddId: string;
-}
-
 export type ScopedClaim =
   | JurisdictionClaim
-  | InvestorUniquenessClaim
   | AccreditedClaim
   | AffiliateClaim
   | BuyLockupClaim
   | SellLockupClaim
   | KycClaim
   | ExemptedClaim
-  | BlockedClaim;
+  | BlockedClaim
+  | CustomClaim;
 
-export type UnscopedClaim = NoDataClaim | NoTypeClaim | CddClaim | InvestorUniquenessV2Claim;
+export type UnscopedClaim = CddClaim;
 
 export type Claim = ScopedClaim | UnscopedClaim;
 
@@ -314,6 +311,7 @@ export interface ClaimData<ClaimType = Claim> {
   target: Identity;
   issuer: Identity;
   issuedAt: Date;
+  lastUpdatedAt: Date;
   expiry: Date | null;
   claim: ClaimType;
 }
@@ -342,13 +340,30 @@ export type InputStatClaim =
 
 export type InputStatType =
   | {
-      type: StatType.Count | StatType.Percentage;
+      type: StatType.Count | StatType.Balance;
     }
   | {
-      type: StatType.ScopedCount | StatType.ScopedPercentage;
+      type: StatType.ScopedCount | StatType.ScopedBalance;
       claimIssuer: StatClaimIssuer;
     };
 
+/**
+ * Represents the StatType from the `statistics` module.
+ *
+ * @note the chain doesn't use "Scoped" types, but they are needed here to discriminate the input instead of having an optional input
+ */
+export enum StatType {
+  Count = 'Count',
+  Balance = 'Balance',
+  /**
+   * ScopedCount is an SDK only type, on chain it is `Count` with a claimType option present
+   */
+  ScopedCount = 'ScopedCount',
+  /**
+   * ScopedPercentage is an SDK only type, on chain it is `Balance` with a claimType option present
+   */
+  ScopedBalance = 'ScopedBalance',
+}
 export interface IdentityWithClaims {
   identity: Identity;
   claims: ClaimData[];
@@ -357,6 +372,7 @@ export interface IdentityWithClaims {
 export interface ExtrinsicData {
   blockHash: string;
   blockNumber: BigNumber;
+  blockDate: Date;
   extrinsicIdx: BigNumber;
   /**
    * public key of the signer. Unsigned transactions have no signer, in which case this value is null (example: an enacted governance proposal)
@@ -675,6 +691,13 @@ export enum TransferError {
    * occurs if the sender Portfolio does not have enough balance to cover the amount
    */
   InsufficientPortfolioBalance = 'InsufficientPortfolioBalance',
+
+  /**
+   * translates to TransferStatus.ComplianceFailure
+   *
+   * occurs if some compliance rule would prevent the transfer
+   */
+  ComplianceFailure = 'ComplianceFailure',
 }
 
 export interface ClaimTarget {
@@ -690,6 +713,40 @@ export type UnsubCallback = () => void;
 export interface MiddlewareConfig {
   link: string;
   key: string;
+}
+
+export interface PolkadotConfig {
+  /**
+   * provide a locally saved metadata file for a modestly fast startup time (e.g. 1 second when provided, 1.5 seconds without).
+   *
+   * @note if not provided the SDK will read the needed data from chain during startup
+   *
+   * @note format is key as genesis hash and spec version and the value hex encoded chain metadata
+   *
+   * @example creating valid metadata
+   * ```ts
+   const meta = _polkadotApi.runtimeMetadata.toHex();
+   const genesisHash = _polkadotApi.genesisHash;
+   const specVersion = _polkadotApi.runtimeVersion.specVersion;
+
+  const metadata = {
+    [`${genesisHash}-${specVersion}`]: meta,
+  };
+  ```
+   */
+  metadata?: ApiOptions['metadata'];
+
+  /**
+   * set to `true` to disable polkadot start up warnings
+   */
+  noInitWarn?: boolean;
+
+  /**
+   * allows for types to be provided for multiple chain specs at once
+   *
+   * @note shouldn't be needed for most use cases
+   */
+  typesBundle?: ApiOptions['typesBundle'];
 }
 
 export interface EventIdentifier {
@@ -726,6 +783,9 @@ export type NextKey = string | BigNumber | null;
 export interface ResultSet<T> {
   data: T[];
   next: NextKey;
+  /**
+   * @note methods will have `count` defined when middleware is configured, but be undefined otherwise. This happens when the chain node is queried directly
+   */
   count?: BigNumber;
 }
 
@@ -743,6 +803,10 @@ export interface Fees {
    * regular network fee
    */
   gas: BigNumber;
+  /**
+   * sum of the protocol and gas fees
+   */
+  total: BigNumber;
 }
 
 /**
@@ -755,63 +819,54 @@ export enum PayingAccountType {
   Subsidy = 'Subsidy',
   /**
    * the paying Account is paying for a specific transaction because of
-   *   chain-specific constraints (i.e. the caller is accepting an invitation to an Identity
+   *   chain-specific constraints (e.g. the caller is accepting an invitation to an Identity
    *   and cannot have any funds to pay for it by definition)
    */
   Other = 'Other',
+  /**
+   * the caller Account is responsible of paying the fees
+   */
+  Caller = 'Caller',
 }
 
 /**
- * Represents a relationship in which a third party Account
- *   is paying for a transaction on behalf of the caller
+ * Data representing the Account responsible for paying fees for a transaction
  */
-export interface PayingAccount {
-  type: PayingAccountType;
-  /**
-   * Account that pays for the transaction
-   */
-  account: Account;
-  /**
-   * total amount that will be paid for
-   */
-  allowance: BigNumber | null;
-}
+export type PayingAccount =
+  | {
+      type: PayingAccountType.Subsidy;
+      /**
+       * Account that pays for the transaction
+       */
+      account: Account;
+      /**
+       * total amount that can be paid for
+       */
+      allowance: BigNumber;
+    }
+  | {
+      type: PayingAccountType.Caller | PayingAccountType.Other;
+      account: Account;
+    };
 
 /**
- * Breakdown of the fees that will be paid by a specific third party in a Transaction Queue
+ * Breakdown of the fees that will be paid by a specific Account for a transaction, along
+ *   with data associated to the Paying account
  */
-export interface ThirdPartyFees extends PayingAccount {
+export interface PayingAccountFees {
   /**
-   * fees that will be paid by the third party Account
+   * fees that will be paid by the Account
    */
   fees: Fees;
   /**
-   * free balance of the third party Account
+   * data related to the Account responsible of paying for the transaction
    */
-  balance: BigNumber;
-}
-
-/**
- * Breakdown of transaction fees for a Transaction Queue. In most cases, the entirety of the Queue's fees
- *   will be paid by either the signing Account or a third party. In some rare cases,
- *   fees can be split between them (for example, if the signing Account is being subsidized, but one of the
- *   transactions in the queue terminates the subsidy, leaving the signing Account with the responsibility of
- *   paying for the rest of the transactions)
- */
-export interface FeesBreakdown {
-  /**
-   * fees that will be paid by third parties. Each element in the array represents
-   *   a different third party Account, their corresponding fees, allowances and balance
-   */
-  thirdPartyFees: ThirdPartyFees[];
-  /**
-   * fees that must be paid by the caller Account
-   */
-  accountFees: Fees;
-  /**
-   * free balance of the caller Account
-   */
-  accountBalance: BigNumber;
+  payingAccountData: PayingAccount & {
+    /**
+     * free balance of the Account
+     */
+    balance: BigNumber;
+  };
 }
 
 export enum SignerType {
@@ -840,7 +895,9 @@ export enum TxGroup {
    * - TxTags.identity.AddInvestorUniquenessClaim
    * - TxTags.portfolio.MovePortfolioFunds
    * - TxTags.settlement.AddInstruction
+   * - TxTags.settlement.AddInstructionWithMemo
    * - TxTags.settlement.AddAndAffirmInstruction
+   * - TxTags.settlement.AddAndAffirmInstructionWithMemo
    * - TxTags.settlement.AffirmInstruction
    * - TxTags.settlement.RejectInstruction
    * - TxTags.settlement.CreateVenue
@@ -865,7 +922,9 @@ export enum TxGroup {
    * - TxTags.identity.AddInvestorUniquenessClaim
    * - TxTags.settlement.CreateVenue
    * - TxTags.settlement.AddInstruction
+   * - TxTags.settlement.AddInstructionWithMemo
    * - TxTags.settlement.AddAndAffirmInstruction
+   * - TxTags.settlement.AddAndAffirmInstructionWithMemo
    */
   Distribution = 'Distribution',
   /**
@@ -950,14 +1009,14 @@ export interface TransactionPermissions extends SectionPermissions<TxTag | Modul
 
 /**
  * Permissions a Secondary Key has over the Identity. A null value means the key has
- *   all permissions of that type (i.e. if `assets` is null, the key has permissions over all
+ *   all permissions of that type (e.g. if `assets` is null, the key has permissions over all
  *   of the Identity's Assets)
  */
 export interface Permissions {
   /**
    * Assets over which this key has permissions
    */
-  assets: SectionPermissions<Asset> | null;
+  assets: SectionPermissions<FungibleAsset> | null;
   /**
    * Transactions this key can execute
    */
@@ -996,7 +1055,7 @@ export interface SimplePermissions {
   /**
    * list of required Asset permissions
    */
-  assets?: Asset[] | null;
+  assets?: BaseAsset[] | null;
   /**
    * list of required Transaction permissions
    */
@@ -1070,6 +1129,11 @@ export enum PermissionGroupType {
   PolymeshV1Pia = 'PolymeshV1Pia',
 }
 
+export type AttestPrimaryKeyRotationAuthorizationData = {
+  type: AuthorizationType.AttestPrimaryKeyRotation;
+  value: Identity;
+};
+
 export type RotatePrimaryKeyAuthorizationData = {
   type: AuthorizationType.RotatePrimaryKey;
 };
@@ -1108,6 +1172,7 @@ export type GenericAuthorizationData = {
     | AuthorizationType.BecomeAgent
     | AuthorizationType.AddRelayerPayingKey
     | AuthorizationType.RotatePrimaryKeyToSecondary
+    | AuthorizationType.AttestPrimaryKeyRotation
   >;
   value: string;
 };
@@ -1115,6 +1180,7 @@ export type GenericAuthorizationData = {
  * Authorization request data corresponding to type
  */
 export type Authorization =
+  | AttestPrimaryKeyRotationAuthorizationData
   | RotatePrimaryKeyAuthorizationData
   | JoinIdentityAuthorizationData
   | PortfolioCustodyAuthorizationData
@@ -1216,7 +1282,7 @@ export type PermissionsLike = {
   /**
    * Assets on which to grant permissions. A null value represents full permissions
    */
-  assets?: SectionPermissions<string | Asset> | null;
+  assets?: SectionPermissions<string | FungibleAsset> | null;
   /**
    * Portfolios on which to grant permissions. A null value represents full permissions
    */
@@ -1233,8 +1299,8 @@ export type PermissionsLike = {
     }
 );
 
-export interface PortfolioMovement {
-  asset: string | Asset;
+export interface FungiblePortfolioMovement {
+  asset: string | FungibleAsset;
   amount: BigNumber;
   /**
    * identifier string to help differentiate transfers
@@ -1242,6 +1308,16 @@ export interface PortfolioMovement {
   memo?: string;
 }
 
+export type NonFungiblePortfolioMovement = {
+  asset: NftCollection | string;
+  nfts: (Nft | BigNumber)[];
+  /**
+   * identifier string to help differentiate transfers
+   */
+  memo?: string;
+};
+
+export type PortfolioMovement = FungiblePortfolioMovement | NonFungiblePortfolioMovement;
 export interface ProcedureAuthorizationStatus {
   /**
    * whether the Identity complies with all required Agent permissions
@@ -1396,24 +1472,6 @@ export type ClaimCountStatInput =
       value: { countryCode: CountryCode; count: BigNumber }[];
     };
 
-export enum CalendarUnit {
-  Second = 'second',
-  Minute = 'minute',
-  Hour = 'hour',
-  Day = 'day',
-  Week = 'week',
-  Month = 'month',
-  Year = 'year',
-}
-
-/**
- * Represents a period of time measured in a specific unit (i.e. 20 days)
- */
-export interface CalendarPeriod {
-  unit: CalendarUnit;
-  amount: BigNumber;
-}
-
 export interface ScheduleWithDetails {
   schedule: CheckpointSchedule;
   details: ScheduleDetails;
@@ -1441,6 +1499,56 @@ export interface ProcedureOpts {
    * Account or address of a signing key to replace the current one (for this procedure only)
    */
   signingAccount?: string | Account;
+
+  /**
+   * nonce value for signing the transaction
+   *
+   * An {@link api/entities/Account!Account} can directly fetch its current nonce by calling {@link api/entities/Account!Account.getCurrentNonce | account.getCurrentNonce}. More information can be found at: https://polkadot.js.org/docs/api/cookbook/tx/#how-do-i-take-the-pending-tx-pool-into-account-in-my-nonce
+   *
+   * @note the passed value can be either the nonce itself or a function that returns the nonce. This allows, for example, passing a closure that increases the returned value every time it's called, or a function that fetches the nonce from the chain or a different source
+   */
+  nonce?: BigNumber | Promise<BigNumber> | (() => BigNumber | Promise<BigNumber>);
+
+  /**
+   * This option allows for transactions that never expire, aka "immortal". By default, a transaction is only valid for approximately 5 minutes (250 blocks) after its construction. Allows for transaction construction to be decoupled from its submission, such as requiring manual approval for the signing or providing "at least once" guarantees.
+   *
+   * More information can be found [here](https://wiki.polkadot.network/docs/build-protocol-info#transaction-mortality). Note the Polymesh chain will **never** reap Accounts, so the risk of a replay attack is mitigated.
+   */
+  mortality?: MortalityProcedureOpt;
+}
+
+/**
+ * This transaction will never expire
+ */
+export interface ImmortalProcedureOptValue {
+  readonly immortal: true;
+}
+
+/**
+ * This transaction will be rejected if not included in a block after a while (default: ~5 minutes)
+ */
+export interface MortalProcedureOptValue {
+  readonly immortal: false;
+  /**
+   * The number of blocks the for which the transaction remains valid. Target block time is 6 seconds. The default should suffice for most use cases
+   *
+   * @note this value will get rounded up to the closest power of 2, e.g. `65` rounds up to `128`
+   * @note this value should not exceed 4096, which is the chain's `BlockHashCount` as the lesser of the two will be used.
+   */
+  readonly lifetime?: BigNumber;
+}
+
+export type MortalityProcedureOpt = ImmortalProcedureOptValue | MortalProcedureOptValue;
+
+export interface CreateTransactionBatchProcedureMethod {
+  <ReturnValues extends readonly [...unknown[]]>(
+    args: CreateTransactionBatchParams<ReturnValues>,
+    opts?: ProcedureOpts
+  ): Promise<PolymeshTransactionBatch<ReturnValues, ReturnValues>>;
+  checkAuthorization: <ReturnValues extends [...unknown[]]>(
+    args: CreateTransactionBatchParams<ReturnValues>,
+    opts?: ProcedureOpts
+  ) => Promise<ProcedureAuthorizationStatus>;
 }
 
 export interface ProcedureMethod<
@@ -1449,7 +1557,7 @@ export interface ProcedureMethod<
   ReturnValue = ProcedureReturnValue
 > {
   (args: MethodArgs, opts?: ProcedureOpts): Promise<
-    TransactionQueue<ProcedureReturnValue, ReturnValue>
+    GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue>
   >;
   checkAuthorization: (
     args: MethodArgs,
@@ -1457,8 +1565,22 @@ export interface ProcedureMethod<
   ) => Promise<ProcedureAuthorizationStatus>;
 }
 
+export interface OptionalArgsProcedureMethod<
+  MethodArgs,
+  ProcedureReturnValue,
+  ReturnValue = ProcedureReturnValue
+> {
+  (args?: MethodArgs, opts?: ProcedureOpts): Promise<
+    GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue>
+  >;
+  checkAuthorization: (
+    args?: MethodArgs,
+    opts?: ProcedureOpts
+  ) => Promise<ProcedureAuthorizationStatus>;
+}
+
 export interface NoArgsProcedureMethod<ProcedureReturnValue, ReturnValue = ProcedureReturnValue> {
-  (opts?: ProcedureOpts): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>>;
+  (opts?: ProcedureOpts): Promise<GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue>>;
   checkAuthorization: (opts?: ProcedureOpts) => Promise<ProcedureAuthorizationStatus>;
 }
 
@@ -1479,8 +1601,26 @@ export interface GroupedInstructions {
   failed: Instruction[];
 }
 
+export type InstructionsByStatus = GroupedInstructions & {
+  /**
+   * Instructions that have one or more legs already affirmed, but still need to be one or more legs to be affirmed/rejected by the Identity
+   */
+  partiallyAffirmed: Instruction[];
+};
+
+export interface GroupedInvolvedInstructions {
+  /**
+   * Instructions where the Identity is the custodian of the leg portfolios
+   */
+  custodied: GroupedInstructions;
+  /**
+   * Instructions where the Identity is the owner of the leg portfolios
+   */
+  owned: Omit<GroupedInstructions, 'affirmed'>;
+}
+
 export interface AssetWithGroup {
-  asset: Asset;
+  asset: FungibleAsset;
   group: KnownPermissionGroup | CustomPermissionGroup;
 }
 
@@ -1535,18 +1675,86 @@ export type InputCorporateActionTaxWithholdings = Modify<
   }
 >[];
 
-export { TxTags, TxTag, ModuleName, CountryCode };
-export { EventRecord } from '@polkadot/types/interfaces';
-export { ConnectParams } from '~/api/client/Polymesh';
-export * from '~/api/entities/types';
-export * from '~/base/types';
-export {
-  Order,
-  EventIdEnum,
-  ModuleIdEnum,
-  TransactionOrderByInput,
-  TransactionOrderFields,
-  SettlementResultEnum,
-  SettlementDirectionEnum,
-} from '~/middleware/types';
-export * from '~/api/procedures/types';
+export type GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue> =
+  | PolymeshTransaction<ProcedureReturnValue, ReturnValue>
+  | PolymeshTransactionBatch<ProcedureReturnValue, ReturnValue>;
+
+export type TransactionArray<ReturnValues extends readonly [...unknown[]]> = {
+  // The type has to be any here to account for procedures with transformed return values
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [K in keyof ReturnValues]: GenericPolymeshTransaction<any, ReturnValues[K]>;
+};
+
+/**
+ * Transaction data for display purposes
+ */
+export interface TxData<Args extends unknown[] = unknown[]> {
+  /**
+   * transaction string identifier
+   */
+  tag: TxTag;
+  /**
+   * arguments with which the transaction will be called
+   */
+  args: Args;
+}
+
+export interface MiddlewareMetadata {
+  chain: string;
+  genesisHash: string;
+  indexerHealthy: boolean;
+  lastProcessedHeight: BigNumber;
+  lastProcessedTimestamp: Date;
+  specName: string;
+  targetHeight: BigNumber;
+}
+
+/**
+ * Apply the {@link TxData} type to all args in an array
+ */
+export type MapTxData<ArgsArray extends unknown[][]> = {
+  [K in keyof ArgsArray]: ArgsArray[K] extends unknown[] ? TxData<ArgsArray[K]> : never;
+};
+
+/**
+ *
+ */
+export interface SpWeightV2 {
+  refTime: BigNumber;
+  proofSize: BigNumber;
+}
+
+/**
+ * CustomClaimType
+ */
+export type CustomClaimType = {
+  name: string;
+  id: BigNumber;
+};
+
+/**
+ * Represents JSON serializable data. Used for cases when the value can take on many types, like args for a MultiSig proposal.
+ */
+export type AnyJson =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | AnyJson[]
+  | {
+      [index: string]: AnyJson;
+    };
+
+/**
+ * An nft collection, along with a subset of its NFTs
+ */
+export interface HeldNfts {
+  collection: NftCollection;
+  nfts: Nft[];
+}
+
+/**
+ * CustomClaimType with DID that registered the CustomClaimType
+ */
+export type CustomClaimTypeWithDid = CustomClaimType & { did?: string };

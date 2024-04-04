@@ -1,17 +1,24 @@
+import { u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
-import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
-
-import { Asset, Context, Entity, NumberedPortfolio, Portfolio, TransactionQueue } from '~/internal';
-import { heartbeat, settlements } from '~/middleware/queries';
-import { portfolioMovementsQuery, settlementsQuery } from '~/middleware/queriesV2';
 import {
-  SettlementDirectionEnum,
-  SettlementResult,
-  SettlementResultEnum,
-} from '~/middleware/types';
-import { PortfolioId, Ticker } from '~/polkadot/polymesh';
+  PolymeshPrimitivesIdentityIdPortfolioId,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
+import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
+
+import {
+  Context,
+  Entity,
+  FungibleAsset,
+  NumberedPortfolio,
+  PolymeshTransaction,
+  Portfolio,
+} from '~/internal';
+import { portfolioMovementsQuery, settlementsQuery } from '~/middleware/queries';
+import { SettlementResultEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { FungibleLeg, MoveFundsParams, SettlementDirectionEnum } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -129,20 +136,20 @@ describe('Portfolio class', () => {
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return the custodian of the portfolio', async () => {
       const portfolio = new NonAbstract({ did, id }, context);
       const custodianDid = 'custodianDid';
       const signingIdentityDid = 'signingIdentity';
-      const identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
-      const portfolioCustodianStub = dsMockUtils.createQueryStub('portfolio', 'portfolioCustodian');
+      const identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
+      const portfolioCustodianMock = dsMockUtils.createQueryMock('portfolio', 'portfolioCustodian');
 
-      portfolioCustodianStub.returns(
+      portfolioCustodianMock.mockReturnValue(
         dsMockUtils.createMockOption(dsMockUtils.createMockIdentityId(custodianDid))
       );
-      identityIdToStringStub.returns(custodianDid);
+      identityIdToStringSpy.mockReturnValue(custodianDid);
 
       const spy = jest
         .spyOn(portfolio, 'getCustodian')
@@ -151,10 +158,10 @@ describe('Portfolio class', () => {
       let result = await portfolio.isCustodiedBy();
       expect(result).toEqual(false);
 
-      portfolioCustodianStub.returns(
+      portfolioCustodianMock.mockReturnValue(
         dsMockUtils.createMockOption(dsMockUtils.createMockIdentityId(signingIdentityDid))
       );
-      identityIdToStringStub.returns(signingIdentityDid);
+      identityIdToStringSpy.mockReturnValue(signingIdentityDid);
       spy.mockResolvedValue(entityMockUtils.getIdentityInstance({ isEqual: true }));
 
       result = await portfolio.isCustodiedBy({
@@ -175,14 +182,16 @@ describe('Portfolio class', () => {
     let total1: BigNumber;
     let locked0: BigNumber;
     let locked1: BigNumber;
-    let rawTicker0: Ticker;
-    let rawTicker1: Ticker;
-    let rawTicker2: Ticker;
+    let locked2: BigNumber;
+    let rawTicker0: PolymeshPrimitivesTicker;
+    let rawTicker1: PolymeshPrimitivesTicker;
+    let rawTicker2: PolymeshPrimitivesTicker;
     let rawTotal0: Balance;
     let rawTotal1: Balance;
     let rawLocked0: Balance;
     let rawLocked1: Balance;
-    let rawPortfolioId: PortfolioId;
+    let rawLocked2: Balance;
+    let rawPortfolioId: PolymeshPrimitivesIdentityIdPortfolioId;
 
     beforeAll(() => {
       did = 'someDid';
@@ -194,6 +203,7 @@ describe('Portfolio class', () => {
       total1 = new BigNumber(200);
       locked0 = new BigNumber(50);
       locked1 = new BigNumber(25);
+      locked2 = new BigNumber(0);
       rawTicker0 = dsMockUtils.createMockTicker(ticker0);
       rawTicker1 = dsMockUtils.createMockTicker(ticker1);
       rawTicker2 = dsMockUtils.createMockTicker(ticker2);
@@ -201,34 +211,35 @@ describe('Portfolio class', () => {
       rawTotal1 = dsMockUtils.createMockBalance(total1.shiftedBy(6));
       rawLocked0 = dsMockUtils.createMockBalance(locked0.shiftedBy(6));
       rawLocked1 = dsMockUtils.createMockBalance(locked1.shiftedBy(6));
+      rawLocked2 = dsMockUtils.createMockBalance(locked2.shiftedBy(6));
       rawPortfolioId = dsMockUtils.createMockPortfolioId({
         did: dsMockUtils.createMockIdentityId(did),
         kind: dsMockUtils.createMockPortfolioKind({
           User: dsMockUtils.createMockU64(id),
         }),
       });
-      sinon.stub(utilsConversionModule, 'portfolioIdToMeshPortfolioId');
+      jest.spyOn(utilsConversionModule, 'portfolioIdToMeshPortfolioId').mockImplementation();
       dsMockUtils.configureMocks({ contextOptions: { did } });
     });
 
     beforeEach(() => {
-      dsMockUtils.createQueryStub('portfolio', 'portfolioAssetBalances', {
+      dsMockUtils.createQueryMock('portfolio', 'portfolioAssetBalances', {
         entries: [
           tuple([rawPortfolioId, rawTicker0], rawTotal0),
           tuple([rawPortfolioId, rawTicker1], rawTotal1),
         ],
       });
-      dsMockUtils.createQueryStub('portfolio', 'portfolioLockedAssets', {
+      dsMockUtils.createQueryMock('portfolio', 'portfolioLockedAssets', {
         entries: [
           tuple([rawPortfolioId, rawTicker0], rawLocked0),
           tuple([rawPortfolioId, rawTicker1], rawLocked1),
-          tuple([rawPortfolioId, rawTicker2], dsMockUtils.createMockBalance(new BigNumber(0))),
+          tuple([rawPortfolioId, rawTicker2], rawLocked2),
         ],
       });
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it("should return all of the portfolio's assets and their balances", async () => {
@@ -251,7 +262,7 @@ describe('Portfolio class', () => {
 
       const otherTicker = 'OTHER_TICKER';
       const result = await portfolio.getAssetBalances({
-        assets: [ticker0, new Asset({ ticker: otherTicker }, context)],
+        assets: [ticker0, new FungibleAsset({ ticker: otherTicker }, context)],
       });
 
       expect(result.length).toBe(2);
@@ -275,6 +286,142 @@ describe('Portfolio class', () => {
     });
   });
 
+  describe('method: getCollections', () => {
+    let portfolioId: BigNumber;
+    let did: string;
+    let nftId: BigNumber;
+    let secondNftId: BigNumber;
+    let lockedNftId: BigNumber;
+    let heldOnlyNftId: BigNumber;
+    let lockedOnlyNftId: BigNumber;
+    let ticker: string;
+    let heldOnlyTicker: string;
+    let lockedOnlyTicker: string;
+    let rawTicker: PolymeshPrimitivesTicker;
+    let rawHeldOnlyTicker: PolymeshPrimitivesTicker;
+    let rawLockedOnlyTicker: PolymeshPrimitivesTicker;
+    let rawNftId: u64;
+    let rawSecondId: u64;
+    let rawLockedId: u64;
+    let rawHeldOnlyId: u64;
+    let rawLockedOnlyId: u64;
+    let rawPortfolioId: PolymeshPrimitivesIdentityIdPortfolioId;
+    const rawTrue = dsMockUtils.createMockBool(true);
+
+    beforeAll(() => {
+      did = 'someDid';
+      portfolioId = new BigNumber(1);
+      nftId = new BigNumber(11);
+      secondNftId = new BigNumber(12);
+      lockedNftId = new BigNumber(13);
+      heldOnlyNftId = new BigNumber(20);
+      lockedOnlyNftId = new BigNumber(30);
+      ticker = 'TICKER';
+      heldOnlyTicker = 'HELD';
+      lockedOnlyTicker = 'LOCKED';
+      rawTicker = dsMockUtils.createMockTicker(ticker);
+      rawHeldOnlyTicker = dsMockUtils.createMockTicker(heldOnlyTicker);
+      rawLockedOnlyTicker = dsMockUtils.createMockTicker(lockedOnlyTicker);
+      rawNftId = dsMockUtils.createMockU64(nftId);
+      rawSecondId = dsMockUtils.createMockU64(secondNftId);
+      rawLockedId = dsMockUtils.createMockU64(lockedNftId);
+      rawHeldOnlyId = dsMockUtils.createMockU64(heldOnlyNftId);
+      rawLockedOnlyId = dsMockUtils.createMockU64(lockedOnlyNftId);
+      rawPortfolioId = dsMockUtils.createMockPortfolioId({
+        did: dsMockUtils.createMockIdentityId(did),
+        kind: dsMockUtils.createMockPortfolioKind({
+          User: dsMockUtils.createMockU64(portfolioId),
+        }),
+      });
+      jest.spyOn(utilsConversionModule, 'portfolioIdToMeshPortfolioId').mockImplementation();
+      dsMockUtils.configureMocks({ contextOptions: { did } });
+    });
+
+    beforeEach(() => {
+      dsMockUtils.createQueryMock('portfolio', 'portfolioNFT', {
+        entries: [
+          tuple([rawPortfolioId, [rawTicker, rawNftId]], rawTrue),
+          tuple([rawPortfolioId, [rawTicker, rawSecondId]], rawTrue),
+          tuple([rawPortfolioId, [rawTicker, rawLockedId]], rawTrue),
+          tuple([rawPortfolioId, [rawHeldOnlyTicker, rawHeldOnlyId]], rawTrue),
+          tuple([rawPortfolioId, [rawLockedOnlyTicker, rawLockedOnlyId]], rawTrue),
+        ],
+      });
+      dsMockUtils.createQueryMock('portfolio', 'portfolioLockedNFT', {
+        entries: [
+          tuple([rawPortfolioId, [rawTicker, rawLockedId]], rawTrue),
+          tuple([rawPortfolioId, [rawLockedOnlyTicker, rawLockedOnlyId]], rawTrue),
+        ],
+      });
+    });
+
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it("should return all of the portfolio's NFTs when no args are given", async () => {
+      const portfolio = new NonAbstract({ did, id: portfolioId }, context);
+
+      const result = await portfolio.getCollections();
+
+      expect(result).toEqual(
+        expect.arrayContaining([
+          {
+            collection: expect.objectContaining({ ticker }),
+            free: expect.arrayContaining([
+              expect.objectContaining({ id: nftId }),
+              expect.objectContaining({ id: secondNftId }),
+            ]),
+            locked: expect.arrayContaining([expect.objectContaining({ id: lockedNftId })]),
+            total: new BigNumber(3),
+          },
+          expect.objectContaining({
+            collection: expect.objectContaining({ ticker: heldOnlyTicker }),
+            free: expect.arrayContaining([expect.objectContaining({ id: heldOnlyNftId })]),
+            locked: [],
+            total: new BigNumber(1),
+          }),
+          expect.objectContaining({
+            collection: expect.objectContaining({ ticker: lockedOnlyTicker }),
+            free: [],
+            locked: expect.arrayContaining([expect.objectContaining({ id: lockedOnlyNftId })]),
+            total: new BigNumber(1),
+          }),
+        ])
+      );
+    });
+
+    it('should filter assets if any are specified', async () => {
+      const portfolio = new NonAbstract({ did, id: portfolioId }, context);
+
+      const result = await portfolio.getCollections({ collections: [ticker] });
+
+      expect(result.length).toEqual(1);
+      expect(result).toEqual(
+        expect.arrayContaining([
+          {
+            collection: expect.objectContaining({ ticker }),
+            free: expect.arrayContaining([
+              expect.objectContaining({ id: nftId }),
+              expect.objectContaining({ id: secondNftId }),
+            ]),
+            locked: expect.arrayContaining([expect.objectContaining({ id: lockedNftId })]),
+            total: new BigNumber(3),
+          },
+        ])
+      );
+    });
+
+    it('should throw an error if the portfolio does not exist', () => {
+      const portfolio = new NonAbstract({ did, id: portfolioId }, context);
+      exists = false;
+
+      return expect(portfolio.getCollections()).rejects.toThrow(
+        "The Portfolio doesn't exist or was removed by its owner"
+      );
+    });
+  });
+
   describe('method: getCustodian', () => {
     let did: string;
     let id: BigNumber;
@@ -282,31 +429,33 @@ describe('Portfolio class', () => {
     beforeAll(() => {
       did = 'someDid';
       id = new BigNumber(1);
-      sinon.stub(utilsConversionModule, 'portfolioIdToMeshPortfolioId');
+      jest.spyOn(utilsConversionModule, 'portfolioIdToMeshPortfolioId').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return the custodian of the portfolio', async () => {
       const custodianDid = 'custodianDid';
-      const identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
+      const identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
 
       dsMockUtils
-        .createQueryStub('portfolio', 'portfolioCustodian')
-        .returns(dsMockUtils.createMockOption(dsMockUtils.createMockIdentityId(custodianDid)));
+        .createQueryMock('portfolio', 'portfolioCustodian')
+        .mockReturnValue(
+          dsMockUtils.createMockOption(dsMockUtils.createMockIdentityId(custodianDid))
+        );
 
-      identityIdToStringStub.returns(custodianDid);
+      identityIdToStringSpy.mockReturnValue(custodianDid);
 
       const portfolio = new NonAbstract({ did, id }, context);
 
       let result = await portfolio.getCustodian();
       expect(result.did).toEqual(custodianDid);
 
-      dsMockUtils.createQueryStub('portfolio', 'portfolioCustodian').returns({});
+      dsMockUtils.createQueryMock('portfolio', 'portfolioCustodian').mockReturnValue({});
 
-      identityIdToStringStub.returns(did);
+      identityIdToStringSpy.mockReturnValue(did);
 
       result = await portfolio.getCustodian();
       expect(result.did).toEqual(did);
@@ -315,7 +464,7 @@ describe('Portfolio class', () => {
     it('should throw an error if the portfolio does not exist', () => {
       const portfolio = new NonAbstract({ did, id }, context);
       exists = false;
-      dsMockUtils.createQueryStub('portfolio', 'portfolioCustodian');
+      dsMockUtils.createQueryMock('portfolio', 'portfolioCustodian');
 
       return expect(portfolio.getCustodian()).rejects.toThrow(
         "The Portfolio doesn't exist or was removed by its owner"
@@ -324,38 +473,36 @@ describe('Portfolio class', () => {
   });
 
   describe('method: moveFunds', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
-      const args = {
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const args: MoveFundsParams = {
         to: new NumberedPortfolio({ id: new BigNumber(1), did: 'someDid' }, context),
         items: [{ asset: 'someAsset', amount: new BigNumber(100) }],
       };
       const portfolio = new NonAbstract({ did: 'someDid' }, context);
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ...args, from: portfolio }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { ...args, from: portfolio }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
-      const queue = await portfolio.moveFunds(args);
+      const tx = await portfolio.moveFunds(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: quitCustody', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
       const portfolio = new NonAbstract({ did: 'someDid' }, context);
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { portfolio }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { portfolio }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
-      const queue = await portfolio.quitCustody();
+      const tx = await portfolio.quitCustody();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -369,22 +516,21 @@ describe('Portfolio class', () => {
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
       const portfolio = new NonAbstract({ id, did }, context);
       const targetIdentity = 'someTarget';
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { id, did, targetIdentity }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { id, did, targetIdentity }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
-      const queue = await portfolio.setCustodian({ targetIdentity });
+      const tx = await portfolio.setCustodian({ targetIdentity });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -398,194 +544,7 @@ describe('Portfolio class', () => {
     });
 
     afterAll(() => {
-      sinon.restore();
-    });
-
-    it('should return a list of transactions', async () => {
-      let portfolio = new NonAbstract({ id, did }, context);
-
-      const account = 'someAccount';
-      const key = 'someKey';
-
-      const blockNumber1 = new BigNumber(1);
-      const blockNumber2 = new BigNumber(2);
-
-      const blockHash1 = 'someHash';
-      const blockHash2 = 'otherHash';
-
-      const ticker1 = 'TICKER_1';
-      const ticker2 = 'TICKER_2';
-
-      const amount1 = new BigNumber(1000);
-      const amount2 = new BigNumber(2000);
-
-      const portfolioDid1 = 'portfolioDid1';
-      const portfolioKind1 = 'Default';
-
-      const portfolioDid2 = 'portfolioDid2';
-      const portfolioKind2 = '10';
-
-      const portfolioId2 = new BigNumber(portfolioKind2);
-
-      const legs1 = [
-        {
-          ticker: ticker1,
-          amount: amount1.toString(),
-          direction: SettlementDirectionEnum.Incoming,
-          from: {
-            kind: portfolioKind1,
-            did: portfolioDid1,
-          },
-          to: {
-            kind: portfolioKind2,
-            did: portfolioDid2,
-          },
-        },
-      ];
-      const legs2 = [
-        {
-          ticker: ticker2,
-          amount: amount2.toString(),
-          direction: SettlementDirectionEnum.Outgoing,
-          from: {
-            kind: portfolioKind2,
-            did: portfolioDid2,
-          },
-          to: {
-            kind: portfolioKind1,
-            did: portfolioDid1,
-          },
-        },
-      ];
-
-      /* eslint-disable @typescript-eslint/naming-convention */
-      const transactionsQueryResponse: SettlementResult = {
-        totalCount: 20,
-        items: [
-          {
-            block_id: blockNumber1.toNumber(),
-            addresses: ['be865155e5b6be843e99117a825e9580bb03e401a9c2ace644fff604fe624917'],
-            result: SettlementResultEnum.Executed,
-            legs: legs1,
-          },
-          {
-            block_id: blockNumber2.toNumber(),
-            addresses: ['be865155e5b6be843e99117a825e9580bb03e401a9c2ace644fff604fe624917'],
-            result: SettlementResultEnum.Executed,
-            legs: legs2,
-          },
-        ],
-      };
-      /* eslint-enable @typescript-eslint/naming-convention */
-
-      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
-      dsMockUtils.createApolloQueryStub(heartbeat(), true);
-      sinon.stub(utilsConversionModule, 'addressToKey').withArgs(account, context).returns(key);
-
-      dsMockUtils.createQueryStub('system', 'blockHash', {
-        multi: [dsMockUtils.createMockHash(blockHash1), dsMockUtils.createMockHash(blockHash2)],
-      });
-
-      dsMockUtils.createApolloQueryStub(
-        settlements({
-          identityId: did,
-          portfolioNumber: id.toString(),
-          addressFilter: key,
-          tickerFilter: undefined,
-          count: 5,
-          skip: 0,
-        }),
-        {
-          settlements: transactionsQueryResponse,
-        }
-      );
-
-      let result = await portfolio.getTransactionHistory({
-        account,
-        size: new BigNumber(5),
-        start: new BigNumber(0),
-      });
-
-      expect(result.data[0].blockNumber).toEqual(blockNumber1);
-      expect(result.data[1].blockNumber).toEqual(blockNumber2);
-      expect(result.data[0].blockHash).toBe(blockHash1);
-      expect(result.data[1].blockHash).toBe(blockHash2);
-      expect(result.data[0].legs[0].asset.ticker).toBe(ticker1);
-      expect(result.data[1].legs[0].asset.ticker).toBe(ticker2);
-      expect(result.data[0].legs[0].amount).toEqual(amount1.div(Math.pow(10, 6)));
-      expect(result.data[1].legs[0].amount).toEqual(amount2.div(Math.pow(10, 6)));
-      expect(result.data[0].legs[0].from.owner.did).toBe(portfolioDid1);
-      expect(result.data[0].legs[0].to.owner.did).toBe(portfolioDid2);
-      expect((result.data[0].legs[0].to as NumberedPortfolio).id).toEqual(portfolioId2);
-      expect(result.data[1].legs[0].from.owner.did).toBe(portfolioDid2);
-      expect((result.data[1].legs[0].from as NumberedPortfolio).id).toEqual(portfolioId2);
-      expect(result.data[1].legs[0].to.owner.did).toEqual(portfolioDid1);
-      expect(result.count).toEqual(new BigNumber(20));
-      expect(result.next).toEqual(new BigNumber(5));
-
-      dsMockUtils.createApolloQueryStub(
-        settlements({
-          identityId: did,
-          portfolioNumber: null,
-          addressFilter: undefined,
-          tickerFilter: undefined,
-          count: undefined,
-          skip: undefined,
-        }),
-        {
-          settlements: {
-            totalCount: 0,
-            items: [],
-          },
-        }
-      );
-
-      portfolio = new NonAbstract({ did }, context);
-      result = await portfolio.getTransactionHistory();
-
-      expect(result.data).toEqual([]);
-      expect(result.next).toBeNull();
-    });
-
-    it('should throw an error if the portfolio does not exist', () => {
-      const portfolio = new NonAbstract({ did, id }, context);
-      exists = false;
-
-      dsMockUtils.createApolloQueryStub(heartbeat(), true);
-      dsMockUtils.createApolloQueryStub(
-        settlements({
-          identityId: did,
-          portfolioNumber: null,
-          addressFilter: undefined,
-          tickerFilter: undefined,
-          count: undefined,
-          skip: undefined,
-        }),
-        {
-          settlements: {
-            totalCount: 0,
-            items: null,
-          },
-        }
-      );
-
-      return expect(portfolio.getTransactionHistory()).rejects.toThrow(
-        "The Portfolio doesn't exist or was removed by its owner"
-      );
-    });
-  });
-
-  describe('method: getTransactionHistoryV2', () => {
-    let did: string;
-    let id: BigNumber;
-
-    beforeAll(() => {
-      did = 'someDid';
-      id = new BigNumber(1);
-    });
-
-    afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return a list of transactions', async () => {
@@ -677,10 +636,11 @@ describe('Portfolio class', () => {
       };
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
-      dsMockUtils.createApolloQueryStub(heartbeat(), true);
-      sinon.stub(utilsConversionModule, 'addressToKey').withArgs(account, context).returns(key);
+      when(jest.spyOn(utilsConversionModule, 'addressToKey'))
+        .calledWith(account, context)
+        .mockReturnValue(key);
 
-      dsMockUtils.createApolloMultipleV2QueriesStub([
+      dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: settlementsQuery({
             identityId: did,
@@ -707,7 +667,7 @@ describe('Portfolio class', () => {
         },
       ]);
 
-      let result = await portfolio.getTransactionHistoryV2({
+      let result = await portfolio.getTransactionHistory({
         account,
       });
 
@@ -717,8 +677,8 @@ describe('Portfolio class', () => {
       expect(result[1].blockHash).toBe(blockHash2);
       expect(result[0].legs[0].asset.ticker).toBe(ticker1);
       expect(result[1].legs[0].asset.ticker).toBe(ticker2);
-      expect(result[0].legs[0].amount).toEqual(amount1.div(Math.pow(10, 6)));
-      expect(result[1].legs[0].amount).toEqual(amount2.div(Math.pow(10, 6)));
+      expect((result[0].legs[0] as FungibleLeg).amount).toEqual(amount1.div(Math.pow(10, 6)));
+      expect((result[1].legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
       expect(result[0].legs[0].from.owner.did).toBe(portfolioDid1);
       expect(result[0].legs[0].to.owner.did).toBe(portfolioDid2);
       expect((result[0].legs[0].to as NumberedPortfolio).id).toEqual(portfolioId2);
@@ -726,7 +686,7 @@ describe('Portfolio class', () => {
       expect((result[1].legs[0].from as NumberedPortfolio).id).toEqual(portfolioId2);
       expect(result[1].legs[0].to.owner.did).toEqual(portfolioDid1);
 
-      dsMockUtils.createApolloMultipleV2QueriesStub([
+      dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: settlementsQuery({
             identityId: did,
@@ -776,12 +736,12 @@ describe('Portfolio class', () => {
       ]);
 
       portfolio = new NonAbstract({ did }, context);
-      result = await portfolio.getTransactionHistoryV2();
+      result = await portfolio.getTransactionHistory();
 
       expect(result[0].blockNumber).toEqual(blockNumber1);
       expect(result[0].blockHash).toBe(blockHash1);
       expect(result[0].legs[0].asset.ticker).toBe(ticker2);
-      expect(result[0].legs[0].amount).toEqual(amount2.div(Math.pow(10, 6)));
+      expect((result[0].legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
       expect(result[0].legs[0].from.owner.did).toBe(portfolioDid1);
       expect(result[0].legs[0].to.owner.did).toBe(portfolioDid1);
       expect((result[0].legs[0].to as NumberedPortfolio).id).toEqual(portfolioId2);
@@ -791,25 +751,36 @@ describe('Portfolio class', () => {
       const portfolio = new NonAbstract({ did, id }, context);
       exists = false;
 
-      dsMockUtils.createApolloQueryStub(heartbeat(), true);
-      dsMockUtils.createApolloQueryStub(
-        settlements({
-          identityId: did,
-          portfolioNumber: null,
-          addressFilter: undefined,
-          tickerFilter: undefined,
-          count: undefined,
-          skip: undefined,
-        }),
+      dsMockUtils.createApolloMultipleQueriesMock([
         {
-          settlements: {
-            totalCount: 0,
-            nodes: [],
+          query: settlementsQuery({
+            identityId: did,
+            portfolioId: undefined,
+            address: undefined,
+            ticker: undefined,
+          }),
+          returnData: {
+            legs: {
+              nodes: [],
+            },
           },
-        }
-      );
+        },
+        {
+          query: portfolioMovementsQuery({
+            identityId: did,
+            portfolioId: undefined,
+            address: undefined,
+            ticker: undefined,
+          }),
+          returnData: {
+            portfolioMovements: {
+              nodes: [],
+            },
+          },
+        },
+      ]);
 
-      return expect(portfolio.getTransactionHistoryV2()).rejects.toThrow(
+      return expect(portfolio.getTransactionHistory()).rejects.toThrow(
         "The Portfolio doesn't exist or was removed by its owner"
       );
     });

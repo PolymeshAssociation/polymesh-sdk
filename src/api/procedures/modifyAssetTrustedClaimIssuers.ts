@@ -5,7 +5,7 @@ import {
 } from '@polkadot/types/lookup';
 import { difference, intersection, isEqual, sortBy } from 'lodash';
 
-import { Asset, Context, PolymeshError, Procedure } from '~/internal';
+import { Context, FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import {
   ErrorCode,
   ModifyAssetTrustedClaimIssuersAddSetParams,
@@ -13,7 +13,11 @@ import {
   TrustedClaimIssuer,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization, TrustedClaimIssuerOperation } from '~/types/internal';
+import {
+  BatchTransactionSpec,
+  ProcedureAuthorization,
+  TrustedClaimIssuerOperation,
+} from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
   signerToString,
@@ -88,9 +92,9 @@ const areSameClaimIssuers = (
  * @hidden
  */
 export async function prepareModifyAssetTrustedClaimIssuers(
-  this: Procedure<Params, Asset>,
+  this: Procedure<Params, void>,
   args: Params
-): Promise<Asset> {
+): Promise<BatchTransactionSpec<void, unknown[][]>> {
   const {
     context: {
       polymeshApi: { query, tx },
@@ -177,29 +181,25 @@ export async function prepareModifyAssetTrustedClaimIssuers(
     });
   }
 
-  const transactions = assembleBatchTransactions(
-    tuple(
-      {
-        transaction: tx.complianceManager.removeDefaultTrustedClaimIssuer,
-        argsArray: claimIssuersToDelete,
-      },
-      {
-        transaction: tx.complianceManager.addDefaultTrustedClaimIssuer,
-        argsArray: claimIssuersToAdd,
-      }
-    )
-  );
+  const transactions = assembleBatchTransactions([
+    {
+      transaction: tx.complianceManager.removeDefaultTrustedClaimIssuer,
+      argsArray: claimIssuersToDelete,
+    },
+    {
+      transaction: tx.complianceManager.addDefaultTrustedClaimIssuer,
+      argsArray: claimIssuersToAdd,
+    },
+  ] as const);
 
-  this.addBatchTransaction({ transactions });
-
-  return new Asset({ ticker }, context);
+  return { transactions, resolver: undefined };
 }
 
 /**
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, Asset>,
+  this: Procedure<Params, void>,
   { ticker, operation }: Params
 ): ProcedureAuthorization {
   const transactions = [];
@@ -213,7 +213,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions,
-      assets: [new Asset({ ticker }, this.context)],
+      assets: [new FungibleAsset({ ticker }, this.context)],
       portfolios: [],
     },
   };
@@ -222,5 +222,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const modifyAssetTrustedClaimIssuers = (): Procedure<Params, Asset> =>
+export const modifyAssetTrustedClaimIssuers = (): Procedure<Params, void> =>
   new Procedure(prepareModifyAssetTrustedClaimIssuers, getAuthorization);

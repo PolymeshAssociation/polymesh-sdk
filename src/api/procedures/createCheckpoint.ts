@@ -1,8 +1,8 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 
-import { Asset, Checkpoint, Context, PostTransactionValue, Procedure } from '~/internal';
+import { Checkpoint, Context, FungibleAsset, Procedure } from '~/internal';
 import { TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { stringToTicker, u64ToBigNumber } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
 
@@ -31,19 +31,17 @@ export const createCheckpointResolver =
 export async function prepareCreateCheckpoint(
   this: Procedure<Params, Checkpoint>,
   args: Params
-): Promise<PostTransactionValue<Checkpoint>> {
+): Promise<TransactionSpec<Checkpoint, ExtrinsicParams<'checkpoint', 'createCheckpoint'>>> {
   const { context } = this;
   const { ticker } = args;
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const [checkpoint] = this.addTransaction({
+  return {
     transaction: context.polymeshApi.tx.checkpoint.createCheckpoint,
-    resolvers: [createCheckpointResolver(ticker, context)],
     args: [rawTicker],
-  });
-
-  return checkpoint;
+    resolver: createCheckpointResolver(ticker, context),
+  };
 }
 
 /**
@@ -56,7 +54,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.checkpoint.CreateCheckpoint],
-      assets: [new Asset({ ticker }, this.context)],
+      assets: [new FungibleAsset({ ticker }, this.context)],
       portfolios: [],
     },
   };

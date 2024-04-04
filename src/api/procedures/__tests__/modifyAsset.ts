@@ -1,35 +1,31 @@
-import { Bytes } from '@polkadot/types';
 import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { getAuthorization, Params, prepareModifyAsset } from '~/api/procedures/modifyAsset';
-import { Asset, Context } from '~/internal';
+import { Context, FungibleAsset } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { SecurityIdentifier, SecurityIdentifierType, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/Asset',
-  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+  '~/api/entities/Asset/Fungible',
+  require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
 describe('modifyAsset procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], PolymeshPrimitivesTicker>;
-  let stringToBytesStub: sinon.SinonStub<[string, Context], Bytes>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let ticker: string;
   let rawTicker: PolymeshPrimitivesTicker;
   let fundingRound: string;
   let identifiers: SecurityIdentifier[];
-  let addBatchTransactionStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    stringToBytesStub = sinon.stub(utilsConversionModule, 'stringToBytes');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     fundingRound = 'Series A';
@@ -42,9 +38,8 @@ describe('modifyAsset procedure', () => {
   });
 
   beforeEach(() => {
-    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
   });
 
   afterEach(() => {
@@ -59,7 +54,7 @@ describe('modifyAsset procedure', () => {
   });
 
   it('should throw an error if the user has not passed any arguments', () => {
-    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, FungibleAsset>(mockContext);
 
     return expect(prepareModifyAsset.call(proc, {} as unknown as Params)).rejects.toThrow(
       'Nothing to modify'
@@ -68,12 +63,12 @@ describe('modifyAsset procedure', () => {
 
   it('should throw an error if makeDivisible is set to true and the Asset is already divisible', () => {
     entityMockUtils.configureMocks({
-      assetOptions: {
+      fungibleAssetOptions: {
         details: { isDivisible: true },
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, FungibleAsset>(mockContext);
 
     return expect(
       prepareModifyAsset.call(proc, {
@@ -84,7 +79,7 @@ describe('modifyAsset procedure', () => {
   });
 
   it('should throw an error if newName is the same name currently in the Asset', () => {
-    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, FungibleAsset>(mockContext);
 
     return expect(
       prepareModifyAsset.call(proc, {
@@ -95,7 +90,7 @@ describe('modifyAsset procedure', () => {
   });
 
   it('should throw an error if newFundingRound is the same funding round name currently in the Asset', () => {
-    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, FungibleAsset>(mockContext);
 
     return expect(
       prepareModifyAsset.call(proc, {
@@ -107,12 +102,12 @@ describe('modifyAsset procedure', () => {
 
   it('should throw an error if newIdentifiers are the same identifiers currently in the Asset', () => {
     entityMockUtils.configureMocks({
-      assetOptions: {
+      fungibleAssetOptions: {
         getIdentifiers: identifiers,
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, FungibleAsset>(mockContext);
 
     return expect(
       prepareModifyAsset.call(proc, {
@@ -122,102 +117,107 @@ describe('modifyAsset procedure', () => {
     ).rejects.toThrow('New identifiers are the same as current identifiers');
   });
 
-  it('should add a make divisible transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+  it('should add a make divisible transaction to the batch', async () => {
+    const proc = procedureMockUtils.getInstance<Params, FungibleAsset>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('asset', 'makeDivisible');
+    const transaction = dsMockUtils.createTxMock('asset', 'makeDivisible');
 
     const result = await prepareModifyAsset.call(proc, {
       ticker,
       makeDivisible: true,
     });
 
-    sinon.assert.calledWith(
-      addBatchTransactionStub,
-      sinon.match({ transactions: [{ transaction, args: [rawTicker] }] })
-    );
-    expect(result.ticker).toBe(ticker);
+    expect(result).toEqual({
+      transactions: [{ transaction, args: [rawTicker] }],
+      resolver: expect.objectContaining({ ticker }),
+    });
   });
 
-  it('should add a rename Asset transaction to the queue', async () => {
+  it('should add a rename Asset transaction to the batch', async () => {
     const newName = 'NEW_NAME';
     const rawAssetName = dsMockUtils.createMockBytes(newName);
-    stringToBytesStub.withArgs(newName, mockContext).returns(rawAssetName);
+    when(jest.spyOn(utilsConversionModule, 'nameToAssetName'))
+      .calledWith(newName, mockContext)
+      .mockReturnValue(rawAssetName);
 
-    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, FungibleAsset>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('asset', 'renameAsset');
+    const transaction = dsMockUtils.createTxMock('asset', 'renameAsset');
 
     const result = await prepareModifyAsset.call(proc, {
       ticker,
       name: newName,
     });
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction,
           args: [rawTicker, rawAssetName],
         },
       ],
+      resolver: expect.objectContaining({ ticker }),
     });
-    expect(result.ticker).toBe(ticker);
   });
 
-  it('should add a set funding round transaction to the queue', async () => {
+  it('should add a set funding round transaction to the batch', async () => {
     const newFundingRound = 'Series B';
     const rawFundingRound = dsMockUtils.createMockBytes(newFundingRound);
-    stringToBytesStub.withArgs(newFundingRound, mockContext).returns(rawFundingRound);
+    when(jest.spyOn(utilsConversionModule, 'fundingRoundToAssetFundingRound'))
+      .calledWith(newFundingRound, mockContext)
+      .mockReturnValue(rawFundingRound);
 
-    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, FungibleAsset>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('asset', 'setFundingRound');
+    const transaction = dsMockUtils.createTxMock('asset', 'setFundingRound');
 
     const result = await prepareModifyAsset.call(proc, {
       ticker,
       fundingRound: newFundingRound,
     });
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction,
           args: [rawTicker, rawFundingRound],
         },
       ],
+      resolver: expect.objectContaining({ ticker }),
     });
-    expect(result.ticker).toBe(ticker);
   });
 
-  it('should add a update identifiers transaction to the queue', async () => {
+  it('should add a update identifiers transaction to the batch', async () => {
     const rawIdentifier = dsMockUtils.createMockAssetIdentifier({
       Isin: dsMockUtils.createMockU8aFixed(identifiers[0].value),
     });
-    sinon.stub(utilsConversionModule, 'securityIdentifierToAssetIdentifier').returns(rawIdentifier);
+    jest
+      .spyOn(utilsConversionModule, 'securityIdentifierToAssetIdentifier')
+      .mockReturnValue(rawIdentifier);
 
-    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, FungibleAsset>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('asset', 'updateIdentifiers');
+    const transaction = dsMockUtils.createTxMock('asset', 'updateIdentifiers');
 
     const result = await prepareModifyAsset.call(proc, {
       ticker,
       identifiers,
     });
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction,
           args: [rawTicker, [rawIdentifier]],
         },
       ],
+      resolver: expect.objectContaining({ ticker }),
     });
-    expect(result.ticker).toBe(ticker);
   });
 
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, FungibleAsset>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const name = 'NEW NAME';
       const args = {

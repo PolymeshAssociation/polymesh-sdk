@@ -1,16 +1,15 @@
 import {
-  Asset,
+  BaseAsset,
   Context,
   PolymeshError,
   PolymeshTransaction,
   PolymeshTransactionBatch,
-  PostTransactionValue,
-  TransactionQueue,
 } from '~/internal';
 import {
   CheckPermissionsResult,
   CheckRolesResult,
   ErrorCode,
+  GenericPolymeshTransaction,
   Identity,
   ProcedureAuthorizationStatus,
   ProcedureOpts,
@@ -18,20 +17,16 @@ import {
   TxTag,
 } from '~/types';
 import {
-  AddBatchTransactionArgs,
-  AddTransactionArgs,
-  MaybePostTransactionValue,
-  PolymeshTx,
-  PostTransactionValueArray,
+  BaseTransactionSpec,
+  GenericTransactionSpec,
   ProcedureAuthorization,
-  ResolverFunctionArray,
 } from '~/types/internal';
 import { signerToString } from '~/utils/conversion';
 
 /**
  * @hidden
  */
-function assertOnlyOneAsset(assets: Asset[]): void {
+function assertOnlyOneAsset(assets: BaseAsset[]): void {
   if (assets.length > 1) {
     throw new PolymeshError({
       code: ErrorCode.FatalError,
@@ -46,7 +41,7 @@ function assertOnlyOneAsset(assets: Asset[]): void {
  */
 async function getAgentPermissionsResult(
   identity: Identity | null,
-  asset: Asset,
+  asset: BaseAsset,
   transactions: TxTag[] | null
 ): Promise<CheckPermissionsResult<SignerType.Identity>> {
   return identity
@@ -61,13 +56,14 @@ async function getAgentPermissionsResult(
  * @hidden
  *
  * Represents an operation performed on the Polymesh blockchain.
- * A Procedure can be prepared to yield a {@link TransactionQueue} that can be run
+ * A Procedure can be prepared to return a promise that resolves
+ * to a {@link PolymeshTransaction} (or {@link PolymeshTransactionBatch}) that can be run
  */
 export class Procedure<Args = void, ReturnValue = void, Storage = Record<string, unknown>> {
   private prepareTransactions: (
     this: Procedure<Args, ReturnValue, Storage>,
     args: Args
-  ) => Promise<MaybePostTransactionValue<ReturnValue>>;
+  ) => Promise<GenericTransactionSpec<ReturnValue>>;
 
   private getAuthorization: (
     this: Procedure<Args, ReturnValue, Storage>,
@@ -78,9 +74,6 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
     this: Procedure<Args, ReturnValue, Storage>,
     args: Args
   ) => Promise<Storage> | Storage;
-
-  private transactions: (PolymeshTransaction<unknown[]> | PolymeshTransactionBatch<unknown[][]>)[] =
-    [];
 
   private _storage: null | Storage = null;
   private _context: null | Context = null;
@@ -95,7 +88,7 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
     prepareTransactions: (
       this: Procedure<Args, ReturnValue, Storage>,
       args: Args
-    ) => Promise<MaybePostTransactionValue<ReturnValue>>,
+    ) => Promise<BaseTransactionSpec<ReturnValue>>,
     getAuthorization:
       | ProcedureAuthorization
       | ((
@@ -109,7 +102,7 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
       args: Args
     ) => Promise<Storage> | Storage = async (): Promise<Storage> => ({} as Storage)
   ) {
-    this.prepareTransactions = prepareTransactions;
+    this.prepareTransactions = prepareTransactions as typeof this.prepareTransactions;
 
     if (typeof getAuthorization !== 'function') {
       this.getAuthorization = (): ProcedureAuthorization => getAuthorization;
@@ -127,7 +120,13 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
   private async setup(args: Args, context: Context, opts: ProcedureOpts = {}): Promise<Context> {
     if (!this._context) {
       const ctx = context.clone();
-      const { signingAccount } = opts;
+      const { signingAccount, nonce } = opts;
+
+      if (typeof nonce === 'function') {
+        ctx.setNonce(await nonce());
+      } else {
+        ctx.setNonce(await nonce);
+      }
 
       if (signingAccount) {
         await ctx.setSigningAddress(signerToString(signingAccount));
@@ -148,7 +147,6 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
    * Reset the procedure
    */
   private cleanup(): void {
-    this.transactions = [];
     this._context = null;
     this._storage = null;
   }
@@ -258,23 +256,30 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
   }
 
   /**
-   * Build a {@link TransactionQueue} that can be run
+   * Build a {@link PolymeshTransaction} or {@link PolymeshTransactionBatch} that can be run
    *
    * @param args.args - arguments required to prepare the queue
    * @param args.transformer - optional function that transforms the Procedure result
    * @param context - context in which the resulting queue will run
    * @param opts.signer - address that will be used as a signer for this procedure
    */
-  public async prepare<QueueReturnType>(
+  public async prepare<TransformedReturnValue>(
     args: {
       args: Args;
-      transformer?: (value: ReturnValue) => QueueReturnType | Promise<QueueReturnType>;
+      transformer?: (
+        value: ReturnValue
+      ) => TransformedReturnValue | Promise<TransformedReturnValue>;
     },
     context: Context,
     opts?: ProcedureOpts
-  ): Promise<TransactionQueue<ReturnValue, QueueReturnType>> {
+  ): Promise<GenericPolymeshTransaction<ReturnValue, TransformedReturnValue>> {
     try {
       const { args: procArgs, transformer } = args;
+
+      const mortality = opts?.mortality || {
+        immortal: false,
+      };
+
       const ctx = await this.setup(procArgs, context, opts);
 
       // parallelize the async calls
@@ -338,160 +343,38 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
       }
 
       const procedureResult = await prepareTransactionsPromise;
-      return new TransactionQueue(
-        { transactions: this.transactions, procedureResult, transformer },
-        ctx
-      );
+
+      const signingAddress = ctx.getSigningAddress();
+      const signer = ctx.getExternalSigner();
+
+      const spec = {
+        ...procedureResult,
+        signer,
+        signingAddress,
+        mortality,
+        transformer,
+      };
+
+      if (!('transactions' in spec)) {
+        return new PolymeshTransaction<ReturnValue, TransformedReturnValue>(spec, ctx);
+      } else if (spec.transactions.length === 1) {
+        const [{ transaction, args: txArgs, fee, feeMultiplier }] = spec.transactions;
+        return new PolymeshTransaction<ReturnValue, TransformedReturnValue>(
+          {
+            ...spec,
+            transaction,
+            fee,
+            feeMultiplier,
+            args: txArgs,
+          },
+          ctx
+        );
+      } else {
+        return new PolymeshTransactionBatch<ReturnValue, TransformedReturnValue>(spec, ctx);
+      }
     } finally {
       this.cleanup();
     }
-  }
-
-  /**
-   * Appends a transaction into this Procedure's queue. This defines
-   *   what will be run by the TransactionQueue when it is started
-   *
-   * @returns an array of {@link PostTransactionValue}. Each element corresponds to whatever is returned by one of the resolver functions passed as options
-   */
-  public addTransaction<TxArgs extends unknown[] | [], Values extends unknown[] = []>(
-    args: AddTransactionArgs<TxArgs, Values>
-  ): PostTransactionValueArray<Values> {
-    const {
-      transaction,
-      args: txArgs,
-      fee,
-      resolvers = [] as unknown as ResolverFunctionArray<Values>,
-      isCritical = true,
-      paidForBy,
-      feeMultiplier,
-    } = args;
-    const { context } = this;
-    const postTransactionValues = resolvers.map(
-      resolver => new PostTransactionValue(resolver)
-    ) as PostTransactionValueArray<Values>;
-
-    const signingAddress = context.getSigningAddress();
-    const signer = context.getExternalSigner();
-
-    this.transactions.push(
-      new PolymeshTransaction<unknown[] | []>(
-        {
-          transaction: transaction as PolymeshTx<unknown[] | []>,
-          args: txArgs,
-          postTransactionValues,
-          isCritical,
-          signingAddress,
-          signer,
-          fee,
-          feeMultiplier,
-          paidForBy,
-        },
-        context
-      )
-    );
-
-    return postTransactionValues;
-  }
-
-  /**
-   * Appends a Procedure into this Procedure's queue. This defines
-   *   what will be run by the TransactionQueue when it is started
-   *
-   * @param proc - a Procedure that will be run as part of this Procedure's Transaction Queue
-   * @param args - arguments to be passed to the procedure
-   *
-   * @returns whichever value is returned by the passed Procedure
-   */
-  public async addProcedure<ProcArgs, R, S>(
-    procedure: Procedure<ProcArgs, R, S>,
-    args: ProcArgs
-  ): Promise<MaybePostTransactionValue<R>>;
-
-  public async addProcedure<R, S>(
-    procedure: Procedure<void, R, S>
-  ): Promise<MaybePostTransactionValue<R>>;
-
-  // eslint-disable-next-line require-jsdoc
-  public async addProcedure<ProcArgs, R, S>(
-    procedure: Procedure<void | ProcArgs, R, S>,
-    args: ProcArgs = {} as ProcArgs
-  ): Promise<MaybePostTransactionValue<R>> {
-    try {
-      procedure._context = this.context;
-      const returnValue = await procedure.prepareTransactions(args);
-
-      const { transactions } = procedure;
-      this.transactions = [...this.transactions, ...transactions];
-
-      return returnValue;
-    } catch (err) {
-      throw new PolymeshError({
-        code: err.code || ErrorCode.UnexpectedError,
-        message: err.message,
-      });
-    } finally {
-      procedure.cleanup();
-    }
-  }
-
-  /**
-   * Appends a batch of transactions into this Procedure's queue. This defines
-   *   what will be run by the TransactionQueue when it is started
-   *
-   * @returns an array of {@link PostTransactionValue}. Each element corresponds to whatever is returned by one of the resolver functions passed as options
-   */
-  public addBatchTransaction<ArgsArray extends (unknown[] | [])[], Values extends unknown[] = []>(
-    args: AddBatchTransactionArgs<Values, ArgsArray>
-  ): PostTransactionValueArray<Values> {
-    const {
-      transactions,
-      fee,
-      resolvers = [] as unknown as ResolverFunctionArray<Values>,
-      isCritical = true,
-      paidForBy,
-    } = args;
-    const { context } = this;
-    const postTransactionValues = resolvers.map(
-      resolver => new PostTransactionValue(resolver)
-    ) as PostTransactionValueArray<Values>;
-
-    // if only a single transaction is added to the batch, we don't use a batch
-    if (transactions.length === 1) {
-      const [{ transaction, args: txArgs, feeMultiplier }] = transactions;
-      return this.addTransaction({
-        transaction: transaction as PolymeshTx<unknown[] | []>,
-        args: txArgs,
-        feeMultiplier,
-        fee,
-        resolvers,
-        isCritical,
-        paidForBy,
-      });
-    }
-
-    const signingAddress = context.getSigningAddress();
-    const signer = context.getExternalSigner();
-
-    this.transactions.push(
-      new PolymeshTransactionBatch<(unknown[] | [])[]>(
-        {
-          transactions: transactions.map(({ transaction, args: txArgs, feeMultiplier }) => ({
-            transaction,
-            args: txArgs,
-            feeMultiplier,
-          })),
-          postTransactionValues,
-          isCritical,
-          signingAddress,
-          signer,
-          fee,
-          paidForBy,
-        },
-        context
-      )
-    );
-
-    return postTransactionValues;
   }
 
   /**

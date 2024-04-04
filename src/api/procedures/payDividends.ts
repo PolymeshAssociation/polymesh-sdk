@@ -1,8 +1,8 @@
 import { assertDistributionOpen } from '~/api/procedures/utils';
 import { DividendDistribution, Identity, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, PayDividendsParams, TargetTreatment, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
-import { QueryReturnType, tuple } from '~/types/utils';
+import { BatchTransactionSpec, ExtrinsicParams, ProcedureAuthorization } from '~/types/internal';
+import { tuple } from '~/types/utils';
 import {
   boolToBoolean,
   corporateActionIdentifierToCaId,
@@ -22,7 +22,7 @@ export type Params = { distribution: DividendDistribution } & PayDividendsParams
 export async function preparePayDividends(
   this: Procedure<Params, void>,
   args: Params
-): Promise<void> {
+): Promise<BatchTransactionSpec<void, ExtrinsicParams<'capitalDistribution', 'pushBenefit'>[]>> {
   const {
     context: {
       polymeshApi: {
@@ -68,9 +68,7 @@ export async function preparePayDividends(
     tuple(rawCaId, stringToIdentityId(signerToString(target), context))
   );
 
-  const holderPaidList = await capitalDistribution.holderPaid.multi<
-    QueryReturnType<typeof capitalDistribution.holderPaid>
-  >(rawArgs);
+  const holderPaidList = await capitalDistribution.holderPaid.multi(rawArgs);
 
   const alreadyClaimedList: Identity[] = [];
   holderPaidList.forEach((holderPaid, i) => {
@@ -92,12 +90,13 @@ export async function preparePayDividends(
 
   const transaction = tx.capitalDistribution.pushBenefit;
 
-  this.addBatchTransaction({
+  return {
     transactions: rawArgs.map(txArgs => ({
       transaction,
       args: txArgs,
     })),
-  });
+    resolver: undefined,
+  };
 }
 
 /**

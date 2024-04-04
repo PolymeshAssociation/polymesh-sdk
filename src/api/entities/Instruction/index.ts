@@ -1,51 +1,63 @@
-import BigNumber from 'bignumber.js';
-
 import {
-  Asset,
+  PolymeshPrimitivesSettlementInstructionStatus,
+  PolymeshPrimitivesSettlementLeg,
+} from '@polkadot/types/lookup';
+import BigNumber from 'bignumber.js';
+import P from 'bluebird';
+
+import { executeManualInstruction } from '~/api/procedures/executeManualInstruction';
+import {
   Context,
   Entity,
+  FungibleAsset,
   Identity,
   modifyInstructionAffirmation,
+  Nft,
+  NftCollection,
   PolymeshError,
-  rescheduleInstruction,
   Venue,
 } from '~/internal';
-import { eventByIndexedArgs } from '~/middleware/queries';
-import { instructionsQuery } from '~/middleware/queriesV2';
-import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
-import { EventIdEnum as MiddlewareV2Event, Query as QueryV2 } from '~/middleware/typesV2';
+import { instructionsQuery } from '~/middleware/queries';
+import { InstructionStatusEnum, Query } from '~/middleware/types';
 import {
+  AffirmOrWithdrawInstructionParams,
+  DefaultPortfolio,
   ErrorCode,
   EventIdentifier,
+  ExecuteManualInstructionParams,
   InstructionAffirmationOperation,
-  NoArgsProcedureMethod,
+  NumberedPortfolio,
+  OptionalArgsProcedureMethod,
   PaginationOptions,
+  RejectInstructionParams,
   ResultSet,
+  SubCallback,
+  UnsubCallback,
 } from '~/types';
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
-import { Ensured, EnsuredV2 } from '~/types/utils';
+import { Ensured } from '~/types/utils';
 import {
   balanceToBigNumber,
   bigNumberToU64,
   identityIdToString,
+  instructionMemoToString,
   meshAffirmationStatusToAffirmationStatus,
   meshInstructionStatusToInstructionStatus,
+  meshNftToNftId,
   meshPortfolioIdToPortfolio,
-  middlewareEventToEventIdentifier,
-  middlewareV2EventDetailsToEventIdentifier,
+  meshSettlementTypeToEndCondition,
+  middlewareEventDetailsToEventIdentifier,
   momentToDate,
   tickerToString,
-  u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, optionize, requestPaginated } from '~/utils/internal';
+import { createProcedureMethod, optionize, requestMulti, requestPaginated } from '~/utils/internal';
 
 import {
   InstructionAffirmation,
   InstructionDetails,
   InstructionStatus,
   InstructionStatusResult,
-  InstructionType,
   Leg,
 } from './types';
 
@@ -71,7 +83,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Identifier number of the venue
+   * Unique identifier number of the instruction
    */
   public id: BigNumber;
 
@@ -87,41 +99,41 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     this.reject = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [
+        getProcedureAndArgs: args => [
           modifyInstructionAffirmation,
-          { id, operation: InstructionAffirmationOperation.Reject },
+          { id, operation: InstructionAffirmationOperation.Reject, ...args },
         ],
-        voidArgs: true,
+        optionalArgs: true,
       },
       context
     );
 
     this.affirm = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [
+        getProcedureAndArgs: args => [
           modifyInstructionAffirmation,
-          { id, operation: InstructionAffirmationOperation.Affirm },
+          { id, operation: InstructionAffirmationOperation.Affirm, ...args },
         ],
-        voidArgs: true,
+        optionalArgs: true,
       },
       context
     );
 
     this.withdraw = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [
+        getProcedureAndArgs: args => [
           modifyInstructionAffirmation,
-          { id, operation: InstructionAffirmationOperation.Withdraw },
+          { id, operation: InstructionAffirmationOperation.Withdraw, ...args },
         ],
-        voidArgs: true,
+        optionalArgs: true,
       },
       context
     );
 
-    this.reschedule = createProcedureMethod(
+    this.executeManually = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [rescheduleInstruction, { id }],
-        voidArgs: true,
+        getProcedureAndArgs: args => [executeManualInstruction, { id, ...args }],
+        optionalArgs: true,
       },
       context
     );
@@ -142,14 +154,19 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const [{ status }, exists] = await Promise.all([
-      settlement.instructionDetails(bigNumberToU64(id, context)),
+    const [status, exists] = await Promise.all([
+      settlement.instructionStatuses(bigNumberToU64(id, context)),
       this.exists(),
     ]);
 
     const statusResult = meshInstructionStatusToInstructionStatus(status);
 
-    return statusResult === InternalInstructionStatus.Unknown && exists;
+    return (
+      (statusResult === InternalInstructionStatus.Unknown ||
+        statusResult === InternalInstructionStatus.Success ||
+        statusResult === InternalInstructionStatus.Rejected) &&
+      exists
+    );
   }
 
   /**
@@ -166,11 +183,47 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const { status } = await settlement.instructionDetails(bigNumberToU64(id, context));
+    const status = await settlement.instructionStatuses(bigNumberToU64(id, context));
 
     const statusResult = meshInstructionStatusToInstructionStatus(status);
 
     return statusResult === InternalInstructionStatus.Pending;
+  }
+
+  /**
+   * Retrieve current status of the Instruction. This can be subscribed to know if instruction fails
+   *
+   * @note can be subscribed to
+   * @note current status as `Executed` means that the Instruction has been executed/rejected and pruned from
+   *   the chain.
+   */
+  public async onStatusChange(callback: SubCallback<InstructionStatus>): Promise<UnsubCallback> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+      id,
+      context,
+    } = this;
+
+    const assembleResult = (
+      rawStatus: PolymeshPrimitivesSettlementInstructionStatus
+    ): InstructionStatus => {
+      const internalStatus = meshInstructionStatusToInstructionStatus(rawStatus);
+      const status = this.internalToExternalStatus(internalStatus);
+
+      if (!status) {
+        throw new Error('Unknown instruction status');
+      }
+
+      return status;
+    };
+
+    return settlement.instructionStatuses(bigNumberToU64(id, context), status => {
+      return callback(assembleResult(status));
+    });
   }
 
   /**
@@ -205,46 +258,39 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const {
-      status: rawStatus,
-      createdAt,
-      tradeDate,
-      valueDate,
-      settlementType: type,
-      venueId,
-    } = await settlement.instructionDetails(bigNumberToU64(id, context));
+    const rawId = bigNumberToU64(id, context);
 
-    const status = meshInstructionStatusToInstructionStatus(rawStatus);
+    const [{ createdAt, tradeDate, valueDate, settlementType: type, venueId }, rawStatus, memo] =
+      await requestMulti<
+        [
+          typeof settlement.instructionDetails,
+          typeof settlement.instructionStatuses,
+          typeof settlement.instructionMemos
+        ]
+      >(context, [
+        [settlement.instructionDetails, rawId],
+        [settlement.instructionStatuses, rawId],
+        [settlement.instructionMemos, rawId],
+      ]);
 
-    if (status === InternalInstructionStatus.Unknown) {
+    const internalStatus = meshInstructionStatusToInstructionStatus(rawStatus);
+
+    const status = this.internalToExternalStatus(internalStatus);
+    if (!status) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
         message: executedMessage,
       });
     }
 
-    const details = {
-      status:
-        status === InternalInstructionStatus.Pending
-          ? InstructionStatus.Pending
-          : InstructionStatus.Failed,
+    return {
+      status,
       createdAt: momentToDate(createdAt.unwrap()),
       tradeDate: tradeDate.isSome ? momentToDate(tradeDate.unwrap()) : null,
       valueDate: valueDate.isSome ? momentToDate(valueDate.unwrap()) : null,
       venue: new Venue({ id: u64ToBigNumber(venueId) }, context),
-    };
-
-    if (type.isSettleOnAffirmation) {
-      return {
-        ...details,
-        type: InstructionType.SettleOnAffirmation,
-      };
-    }
-
-    return {
-      ...details,
-      type: InstructionType.SettleOnBlock,
-      endBlock: u32ToBigNumber(type.asSettleOnBlock),
+      memo: memo.isSome ? instructionMemoToString(memo.unwrap()) : null,
+      ...meshSettlementTypeToEndCondition(type),
     };
   }
 
@@ -325,18 +371,43 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     });
 
     const data = legs.map(([, leg]) => {
-      const { from, to, amount, asset } = leg;
+      if (leg.isSome) {
+        const legValue: PolymeshPrimitivesSettlementLeg = leg.unwrap();
+        if (legValue.isFungible) {
+          const { sender, receiver, amount, ticker: rawTicker } = legValue.asFungible;
 
-      const ticker = tickerToString(asset);
-      const fromPortfolio = meshPortfolioIdToPortfolio(from, context);
-      const toPortfolio = meshPortfolioIdToPortfolio(to, context);
+          const ticker = tickerToString(rawTicker);
+          const fromPortfolio = meshPortfolioIdToPortfolio(sender, context);
+          const toPortfolio = meshPortfolioIdToPortfolio(receiver, context);
 
-      return {
-        from: fromPortfolio,
-        to: toPortfolio,
-        amount: balanceToBigNumber(amount),
-        asset: new Asset({ ticker }, context),
-      };
+          return {
+            from: fromPortfolio,
+            to: toPortfolio,
+            amount: balanceToBigNumber(amount),
+            asset: new FungibleAsset({ ticker }, context),
+          };
+        } else if (legValue.isNonFungible) {
+          const { sender, receiver, nfts } = legValue.asNonFungible;
+
+          const from = meshPortfolioIdToPortfolio(sender, context);
+          const to = meshPortfolioIdToPortfolio(receiver, context);
+          const { ticker, ids } = meshNftToNftId(nfts);
+
+          return {
+            from,
+            to,
+            nfts: ids.map(nftId => new Nft({ ticker, id: nftId }, context)),
+            asset: new NftCollection({ ticker }, context),
+          };
+        } else {
+          // assume it is offchain
+          throw new Error('TODO ERROR: Offchain legs are not supported yet');
+        }
+      } else {
+        throw new Error(
+          'Instruction has already been executed/rejected and it was purged from chain'
+        );
+      }
     });
 
     return {
@@ -348,7 +419,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   /**
    * Retrieve current status of this Instruction
    *
-   * @note uses the middleware
+   * @note uses the middlewareV2
    */
   public async getStatus(): Promise<InstructionStatusResult> {
     const isPending = await this.isPending();
@@ -359,52 +430,14 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       };
     }
 
-    let eventIdentifier = await this.getInstructionEventFromMiddleware(
-      EventIdEnum.InstructionExecuted
-    );
-    if (eventIdentifier) {
-      return {
-        status: InstructionStatus.Executed,
-        eventIdentifier,
-      };
-    }
-
-    eventIdentifier = await this.getInstructionEventFromMiddleware(EventIdEnum.InstructionFailed);
-    if (eventIdentifier) {
-      return {
-        status: InstructionStatus.Failed,
-        eventIdentifier,
-      };
-    }
-
-    throw new PolymeshError({
-      code: ErrorCode.DataUnavailable,
-      message: "It isn't possible to determine the current status of this Instruction",
-    });
-  }
-
-  /**
-   * Retrieve current status of this Instruction
-   *
-   * @note uses the middlewareV2
-   */
-  public async getStatusV2(): Promise<InstructionStatusResult> {
-    const isPending = await this.isPending();
-
-    if (isPending) {
-      return {
-        status: InstructionStatus.Pending,
-      };
-    }
-
     const [executedEventIdentifier, failedEventIdentifier] = await Promise.all([
-      this.getInstructionEventFromMiddlewareV2(MiddlewareV2Event.InstructionExecuted),
-      this.getInstructionEventFromMiddlewareV2(MiddlewareV2Event.InstructionFailed),
+      this.getInstructionEventFromMiddleware(InstructionStatusEnum.Executed),
+      this.getInstructionEventFromMiddleware(InstructionStatusEnum.Failed),
     ]);
 
     if (executedEventIdentifier) {
       return {
-        status: InstructionStatus.Executed,
+        status: InstructionStatus.Success,
         eventIdentifier: executedEventIdentifier,
       };
     }
@@ -427,56 +460,32 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    *
    * @note reject on `SettleOnAffirmation` will execute the settlement and it will fail immediately.
    * @note reject on `SettleOnBlock` behaves just like unauthorize
+   * @note reject on `SettleManual` behaves just like unauthorize
    */
 
-  public reject: NoArgsProcedureMethod<Instruction>;
+  public reject: OptionalArgsProcedureMethod<RejectInstructionParams, Instruction>;
 
   /**
    * Affirm this instruction (authorize)
    */
-
-  public affirm: NoArgsProcedureMethod<Instruction>;
+  public affirm: OptionalArgsProcedureMethod<AffirmOrWithdrawInstructionParams, Instruction>;
 
   /**
    * Withdraw affirmation from this instruction (unauthorize)
    */
-  public withdraw: NoArgsProcedureMethod<Instruction>;
+  public withdraw: OptionalArgsProcedureMethod<AffirmOrWithdrawInstructionParams, Instruction>;
 
   /**
-   * Reschedules a failed Instruction to be tried again
-   *
-   * @throws if the Instruction status is not `InstructionStatus.Failed`
+   * Executes an Instruction either of type `SettleManual` or a `Failed` instruction
    */
-  public reschedule: NoArgsProcedureMethod<Instruction>;
-
-  /**
-   * @hidden
-   * Retrieve Instruction status event from middleware
-   */
-  private async getInstructionEventFromMiddleware(
-    eventId: EventIdEnum
-  ): Promise<EventIdentifier | null> {
-    const { id, context } = this;
-
-    const {
-      data: { eventByIndexedArgs: event },
-    } = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
-      eventByIndexedArgs({
-        moduleId: ModuleIdEnum.Settlement,
-        eventId: eventId,
-        eventArg1: id.toString(),
-      })
-    );
-
-    return optionize(middlewareEventToEventIdentifier)(event);
-  }
+  public executeManually: OptionalArgsProcedureMethod<ExecuteManualInstructionParams, Instruction>;
 
   /**
    * @hidden
    * Retrieve Instruction status event from middleware V2
    */
-  private async getInstructionEventFromMiddlewareV2(
-    eventId: MiddlewareV2Event
+  private async getInstructionEventFromMiddleware(
+    status: InstructionStatusEnum
   ): Promise<EventIdentifier | null> {
     const { id, context } = this;
 
@@ -486,14 +495,18 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
           nodes: [details],
         },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'instructions'>>(
-      instructionsQuery({
-        eventId,
-        id: id.toString(),
-      })
+    } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(
+      instructionsQuery(
+        {
+          status,
+          id: id.toString(),
+        },
+        new BigNumber(1),
+        new BigNumber(0)
+      )
     );
 
-    return optionize(middlewareV2EventDetailsToEventIdentifier)(
+    return optionize(middlewareEventDetailsToEventIdentifier)(
       details?.updatedBlock,
       details?.eventIdx
     );
@@ -504,5 +517,68 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    */
   public toHuman(): string {
     return this.id.toString();
+  }
+
+  /**
+   * Retrieve all the involved portfolios in this Instruction where the given identity is a custodian of
+   */
+  public async getInvolvedPortfolios(args: {
+    did: string;
+  }): Promise<(DefaultPortfolio | NumberedPortfolio)[]> {
+    const { did } = args;
+
+    const { data: legs } = await this.getLegs();
+
+    const assemblePortfolios = async (
+      involvedPortfolios: (DefaultPortfolio | NumberedPortfolio)[],
+      from: DefaultPortfolio | NumberedPortfolio,
+      to: DefaultPortfolio | NumberedPortfolio
+    ): Promise<(DefaultPortfolio | NumberedPortfolio)[]> => {
+      const [fromExists, toExists] = await Promise.all([from.exists(), to.exists()]);
+
+      const checkCustody = async (
+        legPortfolio: DefaultPortfolio | NumberedPortfolio,
+        exists: boolean
+      ): Promise<void> => {
+        if (exists) {
+          const isCustodied = await legPortfolio.isCustodiedBy({ identity: did });
+          if (isCustodied) {
+            involvedPortfolios.push(legPortfolio);
+          }
+        } else if (legPortfolio.owner.did === did) {
+          involvedPortfolios.push(legPortfolio);
+        }
+      };
+
+      await Promise.all([checkCustody(from, fromExists), checkCustody(to, toExists)]);
+
+      return involvedPortfolios;
+    };
+
+    const portfolios = await P.reduce<Leg, (DefaultPortfolio | NumberedPortfolio)[]>(
+      legs,
+      async (result, { from, to }) => assemblePortfolios(result, from, to),
+      []
+    );
+
+    return portfolios;
+  }
+
+  /**
+   * @hidden
+   */
+  private internalToExternalStatus(status: InternalInstructionStatus): InstructionStatus | null {
+    switch (status) {
+      case InternalInstructionStatus.Pending:
+        return InstructionStatus.Pending;
+      case InternalInstructionStatus.Failed:
+        return InstructionStatus.Failed;
+      case InternalInstructionStatus.Success:
+        return InstructionStatus.Success;
+      case InternalInstructionStatus.Rejected:
+        return InstructionStatus.Rejected;
+    }
+
+    return null;
   }
 }

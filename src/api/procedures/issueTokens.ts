@@ -1,27 +1,28 @@
 import BigNumber from 'bignumber.js';
 
-import { Asset, PolymeshError, Procedure } from '~/internal';
+import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { MAX_BALANCE } from '~/utils/constants';
-import { bigNumberToBalance, stringToTicker } from '~/utils/conversion';
+import { bigNumberToBalance, portfolioToPortfolioKind, stringToTicker } from '~/utils/conversion';
 
 export interface IssueTokensParams {
   amount: BigNumber;
   ticker: string;
+  portfolioId?: BigNumber;
 }
 
 export interface Storage {
-  asset: Asset;
+  asset: FungibleAsset;
 }
 
 /**
  * @hidden
  */
 export async function prepareIssueTokens(
-  this: Procedure<IssueTokensParams, Asset, Storage>,
+  this: Procedure<IssueTokensParams, FungibleAsset, Storage>,
   args: IssueTokensParams
-): Promise<Asset> {
+): Promise<TransactionSpec<FungibleAsset, ExtrinsicParams<'asset', 'issue'>>> {
   const {
     context: {
       polymeshApi: {
@@ -31,10 +32,12 @@ export async function prepareIssueTokens(
     context,
     storage: { asset: assetEntity },
   } = this;
-  const { ticker, amount } = args;
+  const { ticker, amount, portfolioId } = args;
 
-  const { isDivisible, totalSupply } = await assetEntity.details();
-
+  const [{ isDivisible, totalSupply }, signingIdentity] = await Promise.all([
+    assetEntity.details(),
+    context.getSigningIdentity(),
+  ]);
   const supplyAfterMint = amount.plus(totalSupply);
 
   if (supplyAfterMint.isGreaterThan(MAX_BALANCE)) {
@@ -48,22 +51,26 @@ export async function prepareIssueTokens(
     });
   }
 
+  const portfolio = portfolioId
+    ? await signingIdentity.portfolios.getPortfolio({ portfolioId })
+    : await signingIdentity.portfolios.getPortfolio();
+
   const rawTicker = stringToTicker(ticker, context);
   const rawValue = bigNumberToBalance(amount, context, isDivisible);
+  const rawPortfolio = portfolioToPortfolioKind(portfolio, context);
 
-  this.addTransaction({
+  return {
     transaction: asset.issue,
-    args: [rawTicker, rawValue],
-  });
-
-  return assetEntity;
+    args: [rawTicker, rawValue, rawPortfolio],
+    resolver: assetEntity,
+  };
 }
 
 /**
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<IssueTokensParams, Asset, Storage>
+  this: Procedure<IssueTokensParams, FungibleAsset, Storage>
 ): ProcedureAuthorization {
   const {
     storage: { asset },
@@ -81,18 +88,18 @@ export function getAuthorization(
  * @hidden
  */
 export function prepareStorage(
-  this: Procedure<IssueTokensParams, Asset, Storage>,
+  this: Procedure<IssueTokensParams, FungibleAsset, Storage>,
   { ticker }: IssueTokensParams
 ): Storage {
   const { context } = this;
 
   return {
-    asset: new Asset({ ticker }, context),
+    asset: new FungibleAsset({ ticker }, context),
   };
 }
 
 /**
  * @hidden
  */
-export const issueTokens = (): Procedure<IssueTokensParams, Asset, Storage> =>
+export const issueTokens = (): Procedure<IssueTokensParams, FungibleAsset, Storage> =>
   new Procedure(prepareIssueTokens, getAuthorization, prepareStorage);
