@@ -171,3 +171,4 @@ export {
   revokeIdentityToCreatePortfolios,
   RevokeIdentityToCreatePortfoliosParams,
 } from '~/api/procedures/revokeIdentityToCreatePortfolios';
+export { rotatePrimaryKeyToSecondary } from '~/api/procedures/rotatePrimaryKeyToSecondary';

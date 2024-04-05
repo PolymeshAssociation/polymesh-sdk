@@ -481,6 +481,18 @@ export interface RotatePrimaryKeyParams {
   expiry?: Date;
 }
 
+export type RotatePrimaryKeyToSecondaryParams = {
+  permissions: PermissionsLike;
+  /**
+   * The Account that should function as the primary key of the newly created Identity. Can be ss58 encoded address or an instance of Account
+   */
+  targetAccount: string;
+  /**
+   * (optional) when the generated authorization should expire
+   */
+  expiry?: Date;
+};
+
 export interface TransferPolyxParams {
   /**
    * Account that will receive the POLYX
