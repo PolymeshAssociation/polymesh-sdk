@@ -486,7 +486,7 @@ export type RotatePrimaryKeyToSecondaryParams = {
   /**
    * The Account that should function as the primary key of the newly created Identity. Can be ss58 encoded address or an instance of Account
    */
-  targetAccount: string;
+  targetAccount: string | Account;
   /**
    * (optional) when the generated authorization should expire
    */

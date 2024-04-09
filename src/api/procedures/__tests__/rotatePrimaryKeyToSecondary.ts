@@ -192,6 +192,7 @@ describe('rotatePrimaryKeyToSecondary procedure', () => {
   it('should throw an error if the passed Account is linked to another Identity', () => {
     const target = entityMockUtils.getAccountInstance({
       address,
+      isEqual: true,
     });
     dsMockUtils.configureMocks({
       contextOptions: {
@@ -200,10 +201,9 @@ describe('rotatePrimaryKeyToSecondary procedure', () => {
       },
     });
     dsMockUtils.createTxMock('identity', 'addAuthorization');
-    const identity = entityMockUtils.getIdentityInstance({ did: 'someDid' });
+    const identity = entityMockUtils.getIdentityInstance({ did: 'someDid', isEqual: false });
     mockAccount = entityMockUtils.getAccountInstance({
-      address: 'someOtherAddress',
-      isEqual: false,
+      address,
       getIdentity: identity,
     });
 

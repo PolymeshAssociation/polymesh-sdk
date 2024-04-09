@@ -47,7 +47,7 @@ export async function prepareRotatePrimaryKeyToSecondary(
     issuerIdentity.getPrimaryAccount(),
   ]);
 
-  const pendingAuthorization = authorizationRequests.data.some(authorizationRequest => {
+  const pendingAuthorization = authorizationRequests.data.find(authorizationRequest => {
     const {
       target: targetSigner,
       data: { type },
@@ -70,12 +70,12 @@ export async function prepareRotatePrimaryKeyToSecondary(
     });
   }
 
-  if (targetIdentity && issuerIdentity.isEqual(targetIdentity)) {
+  if (targetIdentity && !targetIdentity.isEqual(issuerIdentity)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The target Account is assigned to another Identity',
       data: {
-        pendingAuthorization,
+        targetIdentity,
       },
     });
   }
@@ -85,7 +85,7 @@ export async function prepareRotatePrimaryKeyToSecondary(
       code: ErrorCode.NoDataChange,
       message: 'The target Account is already the primary key of the given Identity',
       data: {
-        pendingAuthorization,
+        target: targetAccount,
       },
     });
   }
