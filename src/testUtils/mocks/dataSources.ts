@@ -192,7 +192,11 @@ import {
 } from '~/types';
 import { Consts, Extrinsics, PolymeshTx, Queries, Rpcs } from '~/types/internal';
 import { ArgsType, Mutable, tuple } from '~/types/utils';
-import { STATE_RUNTIME_VERSION_CALL, SYSTEM_VERSION_RPC_CALL } from '~/utils/constants';
+import {
+  CONFIDENTIAL_ASSETS_SUPPORTED_CALL,
+  STATE_RUNTIME_VERSION_CALL,
+  SYSTEM_VERSION_RPC_CALL,
+} from '~/utils/constants';
 
 let apiEmitter: EventEmitter;
 
@@ -311,6 +315,23 @@ export class MockWebSocket {
       data: `{ "result": { "specVersion": "${version}" }, "id": "${STATE_RUNTIME_VERSION_CALL.id}" }`,
     };
     this.onmessage(response);
+  }
+
+  /**
+   * @hidden
+   */
+  sendIsPrivateSupported(supported: boolean): void {
+    if (supported) {
+      const response = {
+        data: `{ "result": "0x0500", "id": "${CONFIDENTIAL_ASSETS_SUPPORTED_CALL.id}" }`,
+      };
+      this.onmessage(response);
+    } else {
+      const response = {
+        data: `{ "result": null, "id": "${CONFIDENTIAL_ASSETS_SUPPORTED_CALL.id}" }`,
+      };
+      this.onmessage(response);
+    }
   }
 }
 
