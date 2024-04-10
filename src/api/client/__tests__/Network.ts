@@ -617,4 +617,19 @@ describe('Network Class', () => {
       );
     });
   });
+
+  describe('method: supportsConfidentialAssets', () => {
+    it('should return false if confidentialAsset storage is not defined', () => {
+      const result = network.supportsConfidentialAssets();
+
+      expect(result).toEqual(false);
+    });
+
+    it('should return true if confidentialAsset storage is defined', () => {
+      dsMockUtils.createQueryMock('confidentialAsset', 'someQuery');
+      const result = network.supportsConfidentialAssets();
+
+      expect(result).toEqual(true);
+    });
+  });
 });
