@@ -123,6 +123,7 @@
   },
   "dependencies": {
     "@apollo/client": "^3.8.1",
+    "@noble/curves": "^1.4.0",
     "@polkadot/api": "10.9.1",
     "@polkadot/util": "12.4.2",
     "@polkadot/util-crypto": "12.4.2",

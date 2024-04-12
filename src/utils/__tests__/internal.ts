@@ -1,3 +1,6 @@
+/* eslint-disable import/first */
+const mockRistrettoPointFromHex = jest.fn();
+
 import {
   ErrorCode,
   PermissionType,
@@ -23,11 +26,13 @@ import {
   RoleType,
   TxTags,
 } from '~/types';
+import * as utilsInternalModule from '~/utils/internal';
 
 import {
   asConfidentialAccount,
   asConfidentialAsset,
   assertCaAssetValid,
+  assertElgamalPubKeyValid,
   checkConfidentialPermissions,
   checkConfidentialRoles,
   createConfidentialProcedureMethod,
@@ -37,6 +42,15 @@ import {
 } from '../internal';
 
 jest.mock('websocket', require('~/testUtils/mocks/dataSources').mockWebSocketModule());
+
+jest.mock('@noble/curves/ed25519', () => {
+  return {
+    ...jest.requireActual('@noble/curves/ed25519'),
+    RistrettoPoint: {
+      fromHex: mockRistrettoPointFromHex,
+    },
+  };
+});
 
 jest.mock(
   '~/api/entities/ConfidentialAsset',
@@ -191,6 +205,23 @@ describe('assetCaAssetValid', () => {
   });
 });
 
+describe('assertElgamalPubKeyValid', () => {
+  it('should throw an error if the public key is not a valid ElGamal public key', async () => {
+    mockRistrettoPointFromHex.mockImplementationOnce(() => {
+      throw new Error('RistrettoPoint.fromHex: the hex is not valid encoding of RistrettoPoint');
+    });
+    expect(() =>
+      assertElgamalPubKeyValid('0xc8d4b6d94730b17c5efdd6ee1119aaf1fa79c7fe1f9db031bf87713e94000000')
+    ).toThrow('The supplied public key is not a valid ElGamal public key');
+  });
+
+  it('should not throw if the public key is valid', async () => {
+    expect(() =>
+      assertElgamalPubKeyValid('0xc8d4b6d94730b17c5efdd6ee1119aaf1fa79c7fe1f9db031bf87713e94145831')
+    ).not.toThrow();
+  });
+});
+
 describe('asConfidentialAccount', () => {
   let context: Context;
   let publicKey: string;
@@ -199,6 +230,7 @@ describe('asConfidentialAccount', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
+    jest.spyOn(utilsInternalModule, 'assertElgamalPubKeyValid').mockImplementation();
     publicKey = 'someKey';
   });
 

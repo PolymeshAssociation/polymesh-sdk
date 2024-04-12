@@ -34,6 +34,7 @@ import {
   ConfidentialLegStateBalances,
   ConfidentialTransactionStatus,
 } from '~/types';
+import * as utilsInternalModule from '~/utils/internal';
 
 import {
   auditorsToBtreeSet,
@@ -115,6 +116,7 @@ describe('auditorToMeshAuditor', () => {
 
   beforeAll(() => {
     dsMockUtils.initMocks();
+    jest.spyOn(utilsInternalModule, 'assertElgamalPubKeyValid').mockImplementation();
   });
 
   beforeEach(() => {
@@ -149,6 +151,7 @@ describe('auditorsToBtreeSet', () => {
 
   beforeAll(() => {
     dsMockUtils.initMocks();
+    jest.spyOn(utilsInternalModule, 'assertElgamalPubKeyValid').mockImplementation();
   });
 
   beforeEach(() => {

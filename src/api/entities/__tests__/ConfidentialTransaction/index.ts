@@ -38,6 +38,13 @@ jest.mock(
 );
 
 jest.mock(
+  '~/api/entities/ConfidentialAccount',
+  require('~/testUtils/mocks/entities').mockConfidentialAccountModule(
+    '~/api/entities/ConfidentialAccount'
+  )
+);
+
+jest.mock(
   '~/base/ConfidentialProcedure',
   require('~/testUtils/mocks/procedure').mockConfidentialProcedureModule(
     '~/base/ConfidentialProcedure'
