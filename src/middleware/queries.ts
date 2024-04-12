@@ -1657,3 +1657,36 @@ export function customClaimTypeQuery(
     variables: { size: size?.toNumber(), start: start?.toNumber(), dids },
   };
 }
+
+/**
+ * @hidden
+ *
+ * Get holders on an NFT Collection
+ */
+export function nftCollectionHolders(
+  assetId: string,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<QueryArgs<NftHolder, 'assetId'>>> {
+  const query = gql`
+    query NftCollectionHolders($assetId: String!, $size: Int, $start: Int) {
+      nftHolders(
+        first: $size
+        offset: $start
+        filter: { assetId: { equalTo: $assetId }, nftIds: { notEqualTo: [] } }
+        orderBy: IDENTITY_ID_DESC
+      ) {
+        nodes {
+          identityId
+          nftIds
+        }
+        totalCount
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { size: size?.toNumber(), start: start?.toNumber(), assetId },
+  };
+}

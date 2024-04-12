@@ -4,6 +4,7 @@ import BigNumber from 'bignumber.js';
 
 import { BaseAsset } from '~/api/entities/Asset/Base';
 import { NonFungibleSettlements } from '~/api/entities/Asset/Base/Settlements';
+import { AssetHolders } from '~/api/entities/Asset/NonFungible/AssetHolders';
 import { issueNft } from '~/api/procedures/issueNft';
 import {
   Context,
@@ -56,6 +57,7 @@ const sumNftIssuance = (
  * Class used to manage NFT functionality
  */
 export class NftCollection extends BaseAsset {
+  public assetHolders: AssetHolders;
   public settlements: NonFungibleSettlements;
   /**
    * Issues a new NFT for the collection
@@ -83,6 +85,7 @@ export class NftCollection extends BaseAsset {
     super(identifiers, context);
 
     const { ticker } = identifiers;
+    this.assetHolders = new AssetHolders(this, context);
     this.settlements = new NonFungibleSettlements(this, context);
 
     this.transferOwnership = createProcedureMethod(
