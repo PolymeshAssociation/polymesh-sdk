@@ -66,6 +66,7 @@ export function assertElgamalPubKeyValid(publicKey: string): void {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The supplied public key is not a valid ElGamal public key',
+      data: { publicKey },
     });
   }
 }
