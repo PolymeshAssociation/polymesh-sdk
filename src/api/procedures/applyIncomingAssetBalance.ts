@@ -1,6 +1,15 @@
-import { PolymeshError, Procedure } from '~/internal';
-import { ApplyIncomingBalanceParams, ConfidentialAccount, ErrorCode, TxTags } from '~/types';
-import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
+import { ErrorCode } from '@polymeshassociation/polymesh-sdk/types';
+import { TransactionSpec } from '@polymeshassociation/polymesh-sdk/types/internal';
+
+import { ConfidentialProcedure } from '~/base/ConfidentialProcedure';
+import { PolymeshError } from '~/internal';
+import {
+  ApplyIncomingBalanceParams,
+  ConfidentialAccount,
+  ConfidentialProcedureAuthorization,
+  TxTags,
+} from '~/types';
+import { ExtrinsicParams } from '~/types/internal';
 import { serializeConfidentialAssetId } from '~/utils/conversion';
 import { asConfidentialAccount, asConfidentialAsset } from '~/utils/internal';
 
@@ -8,7 +17,7 @@ import { asConfidentialAccount, asConfidentialAsset } from '~/utils/internal';
  * @hidden
  */
 export async function prepareApplyIncomingBalance(
-  this: Procedure<ApplyIncomingBalanceParams, ConfidentialAccount>,
+  this: ConfidentialProcedure<ApplyIncomingBalanceParams, ConfidentialAccount>,
   args: ApplyIncomingBalanceParams
 ): Promise<
   TransactionSpec<ConfidentialAccount, ExtrinsicParams<'confidentialAsset', 'applyIncomingBalance'>>
@@ -51,8 +60,8 @@ export async function prepareApplyIncomingBalance(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<ApplyIncomingBalanceParams, ConfidentialAccount>
-): ProcedureAuthorization {
+  this: ConfidentialProcedure<ApplyIncomingBalanceParams, ConfidentialAccount>
+): ConfidentialProcedureAuthorization {
   return {
     permissions: {
       transactions: [TxTags.confidentialAsset.ApplyIncomingBalance],
@@ -65,7 +74,7 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const applyIncomingAssetBalance = (): Procedure<
+export const applyIncomingAssetBalance = (): ConfidentialProcedure<
   ApplyIncomingBalanceParams,
   ConfidentialAccount
-> => new Procedure(prepareApplyIncomingBalance, getAuthorization);
+> => new ConfidentialProcedure(prepareApplyIncomingBalance, getAuthorization);

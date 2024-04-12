@@ -1,9 +1,12 @@
+import { ErrorCode } from '@polymeshassociation/polymesh-sdk/types';
+import { TransactionSpec } from '@polymeshassociation/polymesh-sdk/types/internal';
+import { bigNumberToU32, bigNumberToU64 } from '@polymeshassociation/polymesh-sdk/utils/conversion';
 import BigNumber from 'bignumber.js';
 
-import { ConfidentialTransaction, PolymeshError, Procedure } from '~/internal';
-import { ConfidentialTransactionStatus, ErrorCode, TxTags } from '~/types';
-import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { bigNumberToU32, bigNumberToU64 } from '~/utils/conversion';
+import { ConfidentialProcedure } from '~/base/ConfidentialProcedure';
+import { ConfidentialTransaction, PolymeshError } from '~/internal';
+import { ConfidentialProcedureAuthorization, ConfidentialTransactionStatus, TxTags } from '~/types';
+import { ExtrinsicParams } from '~/types/internal';
 
 export interface ExecuteConfidentialTransactionParams {
   transaction: ConfidentialTransaction;
@@ -13,7 +16,7 @@ export interface ExecuteConfidentialTransactionParams {
  * @hidden
  */
 export async function prepareExecuteConfidentialTransaction(
-  this: Procedure<ExecuteConfidentialTransactionParams, ConfidentialTransaction>,
+  this: ConfidentialProcedure<ExecuteConfidentialTransactionParams, ConfidentialTransaction>,
   args: ExecuteConfidentialTransactionParams
 ): Promise<
   TransactionSpec<
@@ -83,8 +86,8 @@ export async function prepareExecuteConfidentialTransaction(
  * @hidden
  */
 export async function getAuthorization(
-  this: Procedure<ExecuteConfidentialTransactionParams, ConfidentialTransaction>
-): Promise<ProcedureAuthorization> {
+  this: ConfidentialProcedure<ExecuteConfidentialTransactionParams, ConfidentialTransaction>
+): Promise<ConfidentialProcedureAuthorization> {
   return {
     permissions: {
       transactions: [TxTags.confidentialAsset.ExecuteTransaction],
@@ -97,7 +100,7 @@ export async function getAuthorization(
 /**
  * @hidden
  */
-export const executeConfidentialTransaction = (): Procedure<
+export const executeConfidentialTransaction = (): ConfidentialProcedure<
   ExecuteConfidentialTransactionParams,
   ConfidentialTransaction
-> => new Procedure(prepareExecuteConfidentialTransaction, getAuthorization);
+> => new ConfidentialProcedure(prepareExecuteConfidentialTransaction, getAuthorization);

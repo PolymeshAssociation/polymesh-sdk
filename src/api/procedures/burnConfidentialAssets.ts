@@ -1,13 +1,18 @@
+import { ErrorCode } from '@polymeshassociation/polymesh-sdk/types';
+import { TransactionSpec } from '@polymeshassociation/polymesh-sdk/types/internal';
+import { bigNumberToU128 } from '@polymeshassociation/polymesh-sdk/utils/conversion';
 import BigNumber from 'bignumber.js';
 
-import { ConfidentialAsset, PolymeshError, Procedure } from '~/internal';
-import { BurnConfidentialAssetParams, ErrorCode, RoleType, TxTags } from '~/types';
-import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
+import { ConfidentialProcedure } from '~/base/ConfidentialProcedure';
+import { ConfidentialAsset, PolymeshError } from '~/internal';
 import {
-  bigNumberToU128,
-  confidentialBurnProofToRaw,
-  serializeConfidentialAssetId,
-} from '~/utils/conversion';
+  BurnConfidentialAssetParams,
+  ConfidentialProcedureAuthorization,
+  RoleType,
+  TxTags,
+} from '~/types';
+import { ExtrinsicParams } from '~/types/internal';
+import { confidentialBurnProofToRaw, serializeConfidentialAssetId } from '~/utils/conversion';
 import { asConfidentialAccount } from '~/utils/internal';
 
 export type Params = BurnConfidentialAssetParams & {
@@ -18,7 +23,7 @@ export type Params = BurnConfidentialAssetParams & {
  * @hidden
  */
 export async function prepareBurnConfidentialAsset(
-  this: Procedure<Params, ConfidentialAsset>,
+  this: ConfidentialProcedure<Params, ConfidentialAsset>,
   args: Params
 ): Promise<TransactionSpec<ConfidentialAsset, ExtrinsicParams<'confidentialAsset', 'burn'>>> {
   const {
@@ -88,9 +93,9 @@ export async function prepareBurnConfidentialAsset(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, ConfidentialAsset>,
+  this: ConfidentialProcedure<Params, ConfidentialAsset>,
   args: Params
-): ProcedureAuthorization {
+): ConfidentialProcedureAuthorization {
   const {
     confidentialAsset: { id: assetId },
   } = args;
@@ -108,5 +113,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const burnConfidentialAssets = (): Procedure<Params, ConfidentialAsset> =>
-  new Procedure(prepareBurnConfidentialAsset, getAuthorization);
+export const burnConfidentialAssets = (): ConfidentialProcedure<Params, ConfidentialAsset> =>
+  new ConfidentialProcedure(prepareBurnConfidentialAsset, getAuthorization);

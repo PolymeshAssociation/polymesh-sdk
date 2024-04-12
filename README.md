@@ -14,27 +14,29 @@
 
 ## Polymesh version
 
-This release is compatible with Polymesh v6.x.x
+This release is compatible with Polymesh v6.x.x and Polymesh Private v1.x.x
 
 <!--- End of section --->
 
 ## Getting Started
 
+This package provides confidential asset support (aka [Polymesh Private](https://polymesh.network/private)) and is an extension of the [public SDK](https://github.com/PolymeshAssociation/polymesh-sdk).
+
+Unless you specifically need confidential asset support, then you should use the public version. If you are adding confidential support then upgrading from public version should be a matter of updating the import from `@polymeshassociation/polymesh-sdk` to `@polymeshassociation/private-polymesh-sdk`, and updating the version. The public API should remain unchanged.
+
+Note, the SDK does not contain any logic around generating confidential proofs. To generate zero knowledge proofs a [confidential proof server](https://github.com/PolymeshAssociation/polymesh-private-proof-api) needs to be available, and integrating code will need to call the right endpoints when appropriate.
+
 ### Purpose
 
-The Polymesh SDK's main goal is to provide external developers with a set of tools that will allow them to build powerful applications that interact with the Polymesh protocol. It focuses on abstracting away all the complexities of the Polymesh blockchain and expose a simple but complete interface. The result is a feature-rich, user-friendly node.js library.
-
-### Before moving on
-
-This document assumes you are already familiar with [Security Tokens](https://thesecuritytokenstandard.org/) in general and [Polymath](https://www.polymath.network/) as well as [Polymesh](https://polymath.network/polymesh) in particular.
+The Polymesh Private SDK's provides additional functions to the Polymesh SDK to provide support for confidential assets.
 
 ### Technical Pre-requisites
 
-In order to use the Polymath SDK, you must install [node](https://nodejs.org/) \(version 16\) and [npm](https://www.npmjs.com/). The library is written in [typescript](https://www.typescriptlang.org/), but can also be used in plain javascript. This document will assume you are using typescript, but the translation to javascript is very simple.
+In order to use the Polymesh Private SDK, you must install [node](https://nodejs.org/) \(version 16\) and [npm](https://www.npmjs.com/). The library is written in [typescript](https://www.typescriptlang.org/), but can also be used in plain javascript. This document will assume you are using typescript, but the translation to javascript is very simple.
 
 ### Documentation
 
-Polymesh SDK API Reference:
+Polymesh Public SDK API Reference:
 
 https://developers.polymesh.network/sdk-docs/
 

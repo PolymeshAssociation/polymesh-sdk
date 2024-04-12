@@ -1,3 +1,7 @@
+import {
+  ConfidentialTransactionStatusEnum,
+  EventIdEnum,
+} from '@polymeshassociation/polymesh-sdk/middleware/types';
 import BigNumber from 'bignumber.js';
 
 import {
@@ -7,7 +11,6 @@ import {
   getConfidentialAssetHistoryByConfidentialAccountQuery,
   getConfidentialTransactionsByConfidentialAccountQuery,
 } from '~/middleware/queries';
-import { ConfidentialTransactionStatusEnum, EventIdEnum } from '~/middleware/types';
 
 describe('confidentialAssetsByHolderQuery', () => {
   it('should return correct query and variables when size, start  are not provided', () => {

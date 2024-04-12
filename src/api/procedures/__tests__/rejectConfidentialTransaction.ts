@@ -1,4 +1,5 @@
 import { u32, u64 } from '@polkadot/types';
+import * as utilsConversionModule from '@polymeshassociation/polymesh-sdk/utils/conversion';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -11,7 +12,6 @@ import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { ConfidentialTransaction, ConfidentialTransactionStatus, TxTags } from '~/types';
-import * as utilsConversionModule from '~/utils/conversion';
 
 describe('rejectConfidentialTransaction procedure', () => {
   let mockContext: Mocked<Context>;

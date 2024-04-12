@@ -1,8 +1,11 @@
-import { Procedure } from '~/internal';
-import { RoleType, SetVenueFilteringParams, TxTags } from '~/types';
-import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
-import { bigNumberToU64, booleanToBool, serializeConfidentialAssetId } from '~/utils/conversion';
-import { checkTxType } from '~/utils/internal';
+import { SetVenueFilteringParams } from '@polymeshassociation/polymesh-sdk/types';
+import { BatchTransactionSpec } from '@polymeshassociation/polymesh-sdk/types/internal';
+import { bigNumberToU64, booleanToBool } from '@polymeshassociation/polymesh-sdk/utils/conversion';
+import { checkTxType } from '@polymeshassociation/polymesh-sdk/utils/internal';
+
+import { ConfidentialProcedure } from '~/base/ConfidentialProcedure';
+import { ConfidentialProcedureAuthorization, RoleType, TxTags } from '~/types';
+import { serializeConfidentialAssetId } from '~/utils/conversion';
 
 /**
  * @hidden
@@ -15,7 +18,7 @@ export type Params = {
  * @hidden
  */
 export async function prepareConfidentialVenueFiltering(
-  this: Procedure<Params, void>,
+  this: ConfidentialProcedure<Params, void>,
   args: Params
 ): Promise<BatchTransactionSpec<void, unknown[][]>> {
   const {
@@ -65,9 +68,9 @@ export async function prepareConfidentialVenueFiltering(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, void>,
+  this: ConfidentialProcedure<Params, void>,
   { assetId, enabled, disallowedVenues, allowedVenues }: Params
-): ProcedureAuthorization {
+): ConfidentialProcedureAuthorization {
   const transactions = [];
 
   if (enabled !== undefined) {
@@ -95,5 +98,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const setConfidentialVenueFiltering = (): Procedure<Params, void> =>
-  new Procedure(prepareConfidentialVenueFiltering, getAuthorization);
+export const setConfidentialVenueFiltering = (): ConfidentialProcedure<Params, void> =>
+  new ConfidentialProcedure(prepareConfidentialVenueFiltering, getAuthorization);
