@@ -15,6 +15,7 @@ import {
   EventIdentifier,
   MetadataDetails,
   MetadataType,
+  Nft,
   TransferError,
   TransferRestriction,
   Venue,
@@ -86,8 +87,7 @@ export interface AgentWithGroup {
   group: KnownPermissionGroup | CustomPermissionGroup;
 }
 
-export interface HistoricAssetTransaction extends EventIdentifier {
-  asset: FungibleAsset;
+export interface BaseHistoricAssetTransaction extends EventIdentifier {
   /**
    * Origin portfolio involved in the transaction. This value will be null when the `event` value is `Issued`
    */
@@ -101,11 +101,6 @@ export interface HistoricAssetTransaction extends EventIdentifier {
    * Event identifying the type of transaction
    */
   event: EventIdEnum;
-
-  /**
-   * Amount of the fungible tokens involved in the transaction
-   */
-  amount: BigNumber;
 
   /**
    * Index value of the extrinsic which led to the Asset transaction within the `blockNumber` block
@@ -124,6 +119,24 @@ export interface HistoricAssetTransaction extends EventIdentifier {
    * Memo provided against the executed instruction. This value is present only when the value of `event` is `Transfer`
    */
   instructionMemo?: string;
+}
+
+export interface HistoricAssetTransaction extends BaseHistoricAssetTransaction {
+  asset: FungibleAsset;
+
+  /**
+   * Amount of the fungible tokens involved in the transaction
+   */
+  amount: BigNumber;
+}
+
+export interface HistoricNftTransaction extends BaseHistoricAssetTransaction {
+  asset: NftCollection;
+
+  /**
+   * The specific NFTs involved in the transaction
+   */
+  nfts: Nft[];
 }
 
 /**

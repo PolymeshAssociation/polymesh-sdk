@@ -12,17 +12,19 @@ import {
   PolymeshError,
   transferAssetOwnership,
 } from '~/internal';
-import { assetQuery } from '~/middleware/queries';
+import { assetQuery, nftTransactionQuery } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
   AssetDetails,
   CollectionKey,
   ErrorCode,
   EventIdentifier,
+  HistoricNftTransaction,
   IssueNftParams,
   MetadataType,
   NftControllerTransferParams,
   ProcedureMethod,
+  ResultSet,
   SubCallback,
   UniqueIdentifiers,
   UnsubCallback,
@@ -32,10 +34,11 @@ import {
   bigNumberToU64,
   meshMetadataKeyToMetadataKey,
   middlewareEventDetailsToEventIdentifier,
+  middlewarePortfolioToPortfolio,
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, optionize } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod, optionize } from '~/utils/internal';
 
 const sumNftIssuance = (
   numberOfNfts: [StorageKey<[PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId]>, u64][]
@@ -297,5 +300,72 @@ export class NftCollection extends BaseAsset {
     this._id = u64ToBigNumber(rawId);
 
     return this._id;
+  }
+
+  /**
+   * Retrieve this Collection's transaction history
+   *
+   * @note uses the middlewareV2
+   */
+  public async getTransactionHistory(opts: {
+    size?: BigNumber;
+    start?: BigNumber;
+  }): Promise<ResultSet<HistoricNftTransaction>> {
+    const { context, ticker } = this;
+    const { size, start } = opts;
+
+    const {
+      data: {
+        assetTransactions: { nodes, totalCount },
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'assetTransactions'>>(
+      nftTransactionQuery(
+        {
+          assetId: ticker,
+        },
+        size,
+        start
+      )
+    );
+
+    const data: HistoricNftTransaction[] = nodes.map(
+      ({
+        assetId,
+        nftIds,
+        fromPortfolio,
+        toPortfolio,
+        createdBlock,
+        eventId,
+        eventIdx,
+        extrinsicIdx,
+        fundingRound,
+        instructionId,
+        instructionMemo,
+      }) => ({
+        asset: new NftCollection({ ticker: assetId }, context),
+        nfts: nftIds.map(
+          (id: string) => new Nft({ ticker: assetId, id: new BigNumber(id) }, context)
+        ),
+        event: eventId,
+        to: optionize(middlewarePortfolioToPortfolio)(toPortfolio, context),
+        from: optionize(middlewarePortfolioToPortfolio)(fromPortfolio, context),
+        fundingRound,
+        instructionMemo,
+        instructionId: instructionId ? new BigNumber(instructionId) : undefined,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        extrinsicIndex: new BigNumber(extrinsicIdx!),
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        ...middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx),
+      })
+    );
+
+    const count = new BigNumber(totalCount);
+    const next = calculateNextKey(count, data.length, start);
+
+    return {
+      data,
+      count,
+      next,
+    };
   }
 }
