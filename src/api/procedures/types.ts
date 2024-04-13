@@ -373,6 +373,11 @@ export interface CreateNftCollectionParams {
    * Links to off chain documents related to the NftCollection
    */
   documents?: AssetDocument[];
+
+  /**
+   * A optional field that can be used to provide information about the funding state of the asset
+   */
+  fundingRound?: string;
 }
 
 export interface ReserveTickerParams {
