@@ -34,7 +34,7 @@ import {
   middlewareEventDetailsToEventIdentifier,
   serializeConfidentialAssetId,
 } from '~/utils/conversion';
-import { asConfidentialAsset } from '~/utils/internal';
+import { asConfidentialAsset, assertElgamalPubKeyValid } from '~/utils/internal';
 
 import { convertSubQueryAssetIdToUuid } from './helpers';
 
@@ -71,6 +71,8 @@ export class ConfidentialAccount extends Entity<UniqueIdentifiers, string> {
     super(identifiers, context);
 
     const { publicKey } = identifiers;
+
+    assertElgamalPubKeyValid(publicKey);
 
     this.publicKey = publicKey;
   }

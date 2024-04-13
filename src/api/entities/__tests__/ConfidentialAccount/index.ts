@@ -1,5 +1,4 @@
 import { ErrorCode } from '@polymeshassociation/polymesh-sdk/types';
-import * as utilsPublicConversionModule from '@polymeshassociation/polymesh-sdk/utils/conversion';
 import BigNumber from 'bignumber.js';
 
 import {
@@ -38,7 +37,6 @@ describe('ConfidentialAccount class', () => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    jest.spyOn(utilsPublicConversionModule, 'addressToKey').mockImplementation();
 
     publicKey = '0xb8bb6107ef0dacb727199b329e2d09141ea6f36774818797e843df800c746d19';
   });

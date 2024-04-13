@@ -1,3 +1,5 @@
+import { RistrettoPoint } from '@noble/curves/ed25519';
+import { hexStripPrefix } from '@polkadot/util';
 import { getMissingAssetPermissions } from '@polymeshassociation/polymesh-sdk/api/entities/Account/helpers';
 import {
   Account,
@@ -53,6 +55,21 @@ import { ConfidentialProcedureFunc } from '~/types/utils';
 import { isConfidentialAssetOwnerRole, isConfidentialVenueOwnerRole } from '~/utils';
 
 export * from '~/generated/utils';
+
+/**
+ * @hidden
+ */
+export function assertElgamalPubKeyValid(publicKey: string): void {
+  try {
+    RistrettoPoint.fromHex(hexStripPrefix(publicKey));
+  } catch (err) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The supplied public key is not a valid ElGamal public key',
+      data: { publicKey },
+    });
+  }
+}
 
 /**
  * @hidden
