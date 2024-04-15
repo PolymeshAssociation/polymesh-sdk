@@ -55,6 +55,14 @@ export interface IdentityBalance {
   balance: BigNumber;
 }
 
+/**
+ * Represents the holdings of an NFT holder
+ */
+export interface IdentityHeldNfts {
+  identity: Identity;
+  nfts: Nft[];
+}
+
 export interface TransferRestrictionResult {
   restriction: TransferRestriction;
   result: boolean;
