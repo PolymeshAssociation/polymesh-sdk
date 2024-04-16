@@ -457,4 +457,18 @@ export class Network {
 
     return latestBlockFromChain.minus(lastProcessedBlockFromMiddleware);
   }
+
+  /**
+   * Returns whether or not the connected chain node as support for confidential assets
+   */
+  public supportsConfidentialAssets(): boolean {
+    const {
+      context: {
+        polymeshApi: { query },
+      },
+    } = this;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return !!(query as any).confidentialAsset;
+  }
 }

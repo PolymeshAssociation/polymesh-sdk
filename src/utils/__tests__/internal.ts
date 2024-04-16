@@ -57,6 +57,8 @@ import { tuple } from '~/types/utils';
 import {
   MAX_TICKER_LENGTH,
   MINIMUM_SQ_VERSION,
+  PRIVATE_SUPPORTED_NODE_SEMVER,
+  PRIVATE_SUPPORTED_SPEC_SEMVER,
   SUPPORTED_NODE_SEMVER,
   SUPPORTED_SPEC_SEMVER,
 } from '~/utils/constants';
@@ -1242,6 +1244,19 @@ describe('assertExpectedChainVersion', () => {
   it('should resolve if it receives both expected RPC node and chain spec version', () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     client.onopen();
+    client.sendRpcVersion(SUPPORTED_NODE_SEMVER);
+    client.sendSpecVersion(getSpecVersion(SUPPORTED_SPEC_SEMVER));
+    client.sendIsPrivateSupported(false);
+
+    return expect(signal).resolves.not.toThrow();
+  });
+
+  it('should resolve if it receives both expected RPC node and chain spec version for a private node', () => {
+    const signal = assertExpectedChainVersion('ws://example.com');
+    client.onopen();
+    client.sendRpcVersion(PRIVATE_SUPPORTED_NODE_SEMVER);
+    client.sendSpecVersion(getSpecVersion(PRIVATE_SUPPORTED_SPEC_SEMVER));
+    client.sendIsPrivateSupported(true);
 
     return expect(signal).resolves.not.toThrow();
   });
@@ -1250,6 +1265,8 @@ describe('assertExpectedChainVersion', () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     const mismatchedVersion = getMismatchedVersion(SUPPORTED_NODE_SEMVER, 0);
     client.sendRpcVersion(mismatchedVersion);
+    client.sendSpecVersion(getSpecVersion(SUPPORTED_SPEC_SEMVER));
+    client.sendIsPrivateSupported(false);
     const expectedError = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
@@ -1264,11 +1281,12 @@ describe('assertExpectedChainVersion', () => {
 
     const mockRpcVersion = getMismatchedVersion(SUPPORTED_NODE_SEMVER);
     client.sendRpcVersion(mockRpcVersion);
+    client.sendIsPrivateSupported(false);
 
     await signal;
     expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(warnSpy).toHaveBeenCalledWith(
-      `This version of the SDK supports Polymesh RPC node version ${SUPPORTED_NODE_VERSION_RANGE}. The node is at version ${mockRpcVersion}. Please upgrade the SDK`
+      `This version of the SDK supports Polymesh RPC node version "${SUPPORTED_NODE_VERSION_RANGE}". The node is at version ${mockRpcVersion}. Please upgrade the SDK`
     );
   });
 
@@ -1276,6 +1294,8 @@ describe('assertExpectedChainVersion', () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     const mismatchedSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_SEMVER, 0);
     client.sendSpecVersion(getSpecVersion(mismatchedSpecVersion));
+    client.sendRpcVersion(SUPPORTED_NODE_SEMVER);
+    client.sendIsPrivateSupported(false);
     const expectedError = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh chain spec version. Please upgrade the SDK',
@@ -1288,10 +1308,11 @@ describe('assertExpectedChainVersion', () => {
     const mockSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_SEMVER);
     client.sendSpecVersion(getSpecVersion(mockSpecVersion));
     client.sendRpcVersion(SUPPORTED_NODE_SEMVER);
+    client.sendIsPrivateSupported(false);
     await signal;
     expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(warnSpy).toHaveBeenCalledWith(
-      `This version of the SDK supports Polymesh chain spec version ${SUPPORTED_SPEC_VERSION_RANGE}. The chain spec is at version ${mockSpecVersion}. Please upgrade the SDK`
+      `This version of the SDK supports Polymesh chain spec version "${SUPPORTED_SPEC_VERSION_RANGE}". The chain spec is at version ${mockSpecVersion}. Please upgrade the SDK`
     );
   });
 
@@ -1300,6 +1321,7 @@ describe('assertExpectedChainVersion', () => {
     const mockSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_SEMVER, 2);
     client.sendSpecVersion(getSpecVersion(mockSpecVersion));
     client.sendRpcVersion(SUPPORTED_NODE_SEMVER);
+    client.sendIsPrivateSupported(false);
     await signal;
     expect(warnSpy).toHaveBeenCalledTimes(0);
   });
