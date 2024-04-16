@@ -1,12 +1,12 @@
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
 [![js-semistandard-style](https://img.shields.io/badge/code%20style-semistandard-brightgreen.svg?style=flat-square)](https://github.com/standard/semistandard)
-[![Types](https://img.shields.io/npm/types/@polymeshassociation/polymesh-sdk)](https://)
-[![npm](https://img.shields.io/npm/v/@polymeshassociation/polymesh-sdk)](https://www.npmjs.com/package/@polymeshassociation/polymesh-sdk)
+[![Types](https://img.shields.io/npm/types/@polymeshassociation/polymesh-private-sdk)](https://)
+[![npm](https://img.shields.io/npm/v/@polymeshassociation/polymesh-private-sdk)](https://www.npmjs.com/package/@polymeshassociation/polymesh-private-sdk)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=PolymeshAssociation_polymesh-sdk&metric=coverage)](https://sonarcloud.io/summary/new_code?id=PolymeshAssociation_polymesh-sdk)
-[![Github Actions Workflow](https://github.com/PolymeshAssociation/polymesh-sdk/actions/workflows/main.yml/badge.svg)](https://github.com/PolymeshAssociation/polymesh-sdk/actions)
-[![Sonar Status](https://sonarcloud.io/api/project_badges/measure?project=PolymeshAssociation_polymesh-sdk&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=PolymeshAssociation_polymesh-sdk)
-[![Issues](https://img.shields.io/github/issues/PolymeshAssociation/polymesh-sdk)](https://github.com/PolymeshAssociation/polymesh-sdk/issues)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=PolymeshAssociation_polymesh-private-sdk&metric=coverage)](https://sonarcloud.io/summary/new_code?id=PolymeshAssociation_polymesh-sdk)
+[![Github Actions Workflow](https://github.com/PolymeshAssociation/polymesh-private-sdk/actions/workflows/main.yml/badge.svg)](https://github.com/PolymeshAssociation/polymesh-private-sdk/actions)
+[![Sonar Status](https://sonarcloud.io/api/project_badges/measure?project=PolymeshAssociation_polymesh-private-sdk&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=PolymeshAssociation_polymesh-private-sdk)
+[![Issues](https://img.shields.io/github/issues/PolymeshAssociation/polymesh-private-sdk)](https://github.com/PolymeshAssociation/polymesh-private-sdk/issues)
 
 ## \@polymeshassociation/polymesh-sdk
 
@@ -14,27 +14,29 @@
 
 ## Polymesh version
 
-This release is compatible with Polymesh v6.x.x
+This release is compatible with Polymesh v6.x.x and Polymesh Private v1.x.x
 
 <!--- End of section --->
 
 ## Getting Started
 
+This package provides confidential asset support (aka [Polymesh Private](https://polymesh.network/private)) and is an extension of the [public SDK](https://github.com/PolymeshAssociation/polymesh-sdk).
+
+Unless you specifically need confidential asset support, then you should use the public version. If you are adding confidential support then upgrading from public version should be a matter of updating the import from `@polymeshassociation/polymesh-sdk` to `@polymeshassociation/private-polymesh-sdk`, and updating the version. The public API should remain unchanged.
+
+Note, the SDK does not contain any logic around generating confidential proofs. To generate zero knowledge proofs a [confidential proof server](https://github.com/PolymeshAssociation/polymesh-private-proof-api) needs to be available, and integrating code will need to call the right endpoints when appropriate.
+
 ### Purpose
 
-The Polymesh SDK's main goal is to provide external developers with a set of tools that will allow them to build powerful applications that interact with the Polymesh protocol. It focuses on abstracting away all the complexities of the Polymesh blockchain and expose a simple but complete interface. The result is a feature-rich, user-friendly node.js library.
-
-### Before moving on
-
-This document assumes you are already familiar with [Security Tokens](https://thesecuritytokenstandard.org/) in general and [Polymath](https://www.polymath.network/) as well as [Polymesh](https://polymath.network/polymesh) in particular.
+The Polymesh Private SDK's provides additional functions to the Polymesh SDK to provide support for confidential assets.
 
 ### Technical Pre-requisites
 
-In order to use the Polymath SDK, you must install [node](https://nodejs.org/) \(version 16\) and [npm](https://www.npmjs.com/). The library is written in [typescript](https://www.typescriptlang.org/), but can also be used in plain javascript. This document will assume you are using typescript, but the translation to javascript is very simple.
+In order to use the Polymesh Private SDK, you must install [node](https://nodejs.org/) \(version 16\) and [npm](https://www.npmjs.com/). The library is written in [typescript](https://www.typescriptlang.org/), but can also be used in plain javascript. This document will assume you are using typescript, but the translation to javascript is very simple.
 
 ### Documentation
 
-Polymesh SDK API Reference:
+Polymesh Public SDK API Reference:
 
 https://developers.polymesh.network/sdk-docs/
 
@@ -42,15 +44,15 @@ https://developers.polymesh.network/sdk-docs/
 
 #### Installation
 
-`npm i @polymeshassociation/polymesh-sdk --save`
+`npm i @polymeshassociation/polymesh-private-sdk --save`
 
 Or, if you're using yarn
 
-`yarn add @polymeshassociation/polymesh-sdk`
+`yarn add @polymeshassociation/polymesh-private-sdk`
 
 Or, if using pnpm
 
-`pnpm add @polymeshassociation/polymesh-sdk`
+`pnpm add @polymeshassociation/polymesh-private-sdk`
 
 **NOTE** it is _highly_ recommended that you use one of these three package managers. This project uses package resolutions/overrides to pin certain problematic dependencies, and these are only supported by the aforementioned package managers. Using a different package manager may result in unexpected behavior
 
@@ -61,7 +63,7 @@ Or, if using pnpm
 Before you can start registering Tickers and creating Assets, you have to connect the Polymesh SDK client to a Polymesh node. This is a pretty straightforward process:
 
 ```typescript
-import { Polymesh } from '@polymeshassociation/polymesh-sdk';
+import { Polymesh } from '@polymeshassociation/polymesh-private-sdk';
 import { LocalSigningManager } from '@polymeshassociation/local-signing-manager';
 
 async function run() {
@@ -92,7 +94,7 @@ Here is an overview of the parameters passed to the `connect` function:
 **NOTE:** if using the SDK on a browser environment \(i.e. with the Polymesh wallet browser extension\), you would use the `BrowserExtensionSigningManager` provided by `@polymeshassociation/browser-extension-signing-manager`
 
 ```typescript
-import { Polymesh } from '@polymeshassociation/polymesh-sdk';
+import { Polymesh } from '@polymeshassociation/polymesh-private-sdk';
 import { BrowserExtensionSigningManager } from '@polymeshassociation/browser-extension-signing-manager';
 
 async function run() {

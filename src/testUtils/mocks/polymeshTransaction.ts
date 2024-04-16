@@ -1,11 +1,11 @@
 /* istanbul ignore file */
 /* eslint-disable @typescript-eslint/naming-convention */
 
+import { PayingAccountFees, TransactionStatus } from '@polymeshassociation/polymesh-sdk/types';
 import { merge } from 'lodash';
 
 import { PolymeshTransaction } from '~/internal';
 import { Mocked } from '~/testUtils/types';
-import { PayingAccountFees, TransactionStatus } from '~/types';
 
 type MockTransaction = Mocked<PolymeshTransaction<unknown>>;
 

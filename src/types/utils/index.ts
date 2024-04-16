@@ -1,6 +1,7 @@
 import { AugmentedQueries, AugmentedQuery } from '@polkadot/api/types';
 import BigNumber from 'bignumber.js';
 
+import { ConfidentialProcedure } from '~/base/ConfidentialProcedure';
 import { Entity, Procedure } from '~/internal';
 
 /**
@@ -80,6 +81,12 @@ export type Modify<T, R> = Omit<T, keyof R> & R;
  * Ensure a specific property of T is defined
  */
 export type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] };
+
+/**
+ * @hidden
+ */
+export declare type ConfidentialProcedureFunc<Args, ReturnValue, Storage> =
+  () => ConfidentialProcedure<Args, ReturnValue, Storage>;
 
 /**
  * Pick a single property from T and ensure it is defined
