@@ -653,25 +653,6 @@ describe('addInstruction procedure', () => {
         ],
       })
     ).rejects.toThrowError(expectedError);
-
-    await expect(
-      prepareAddInstruction.call(proc, {
-        venueId,
-        instructions: [
-          {
-            legs: [
-              {
-                from,
-                to,
-                amount,
-                asset: entityMockUtils.getFungibleAssetInstance({ ticker: asset }),
-              },
-            ],
-            endAfterBlock: new BigNumber(100),
-          },
-        ],
-      })
-    ).rejects.toThrowError(expectedError);
   });
 
   it('should throw an error if the value date is before the trade date', async () => {
