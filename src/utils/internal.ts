@@ -25,7 +25,7 @@ import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
-import { coerce, lt, major, satisfies } from 'semver';
+import { lt, major, satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
 import {
@@ -98,8 +98,13 @@ import {
   UnionOfProcedureFuncs,
 } from '~/types/utils';
 import {
+  CONFIDENTIAL_ASSETS_SUPPORTED_CALL,
   MAX_TICKER_LENGTH,
   MINIMUM_SQ_VERSION,
+  PRIVATE_SUPPORTED_NODE_SEMVER,
+  PRIVATE_SUPPORTED_NODE_VERSION_RANGE,
+  PRIVATE_SUPPORTED_SPEC_SEMVER,
+  PRIVATE_SUPPORTED_SPEC_VERSION_RANGE,
   STATE_RUNTIME_VERSION_CALL,
   SUPPORTED_NODE_SEMVER,
   SUPPORTED_NODE_VERSION_RANGE,
@@ -1289,41 +1294,40 @@ export async function getExemptedIds(
 
 /**
  * @hidden
- *
- * @returns true if the node version is within the accepted range
  */
-function handleNodeVersionResponse(
+function assertExpectedNodeVersion(
   data: { result: string },
-  reject: (reason?: unknown) => void
-): boolean {
+  reject: (reason?: unknown) => void,
+  isPrivateSupported: boolean
+): void {
   const { result: version } = data;
-  const lowMajor = major(SUPPORTED_NODE_SEMVER).toString();
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const high = coerce(SUPPORTED_NODE_VERSION_RANGE.split('||')[1].trim())!.version;
-  const highMajor = major(high).toString();
 
-  if (!satisfies(version, lowMajor) && !satisfies(version, highMajor)) {
+  const neededMajor = isPrivateSupported
+    ? major(PRIVATE_SUPPORTED_NODE_SEMVER).toString()
+    : major(SUPPORTED_NODE_SEMVER).toString();
+
+  const neededSemver = isPrivateSupported
+    ? PRIVATE_SUPPORTED_NODE_VERSION_RANGE
+    : SUPPORTED_NODE_VERSION_RANGE;
+
+  if (!satisfies(version, neededMajor)) {
     const error = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
       data: {
         rpcNodeVersion: version,
-        supportedVersionRange: SUPPORTED_NODE_VERSION_RANGE,
+        supportedVersionRange: neededSemver,
       },
     });
 
     reject(error);
-
-    return false;
   }
 
-  if (!satisfies(version, SUPPORTED_NODE_VERSION_RANGE)) {
+  if (!satisfies(version, neededSemver)) {
     console.warn(
-      `This version of the SDK supports Polymesh RPC node version ${SUPPORTED_NODE_VERSION_RANGE}. The node is at version ${version}. Please upgrade the SDK`
+      `This version of the SDK supports Polymesh RPC node version "${neededSemver}". The node is at version ${version}. Please upgrade the SDK`
     );
   }
-
-  return true;
 }
 
 /**
@@ -1351,13 +1355,12 @@ function addDotSeparator(value: number): string {
 
 /**
  * @hidden
- *
- * @returns true if the spec version is within the accepted range
  */
-function handleSpecVersionResponse(
+function assertExpectedSpecVersion(
   data: { result: { specVersion: number } },
-  reject: (reason?: unknown) => void
-): boolean {
+  reject: (reason?: unknown) => void,
+  isPrivateSupported: boolean
+): void {
   const {
     result: { specVersion },
   } = data;
@@ -1373,32 +1376,32 @@ function handleSpecVersionResponse(
     .map((ver: string) => ver.replace(/^0+(?!$)/g, ''))
     .join('.');
 
-  const lowMajor = major(SUPPORTED_SPEC_SEMVER).toString();
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const high = coerce(SUPPORTED_SPEC_VERSION_RANGE.split('||')[1].trim())!.version;
-  const highMajor = major(high).toString();
+  const neededMajor = isPrivateSupported
+    ? major(PRIVATE_SUPPORTED_SPEC_SEMVER).toString()
+    : major(SUPPORTED_SPEC_SEMVER).toString();
 
-  if (!satisfies(specVersionAsSemver, lowMajor) && !satisfies(specVersionAsSemver, highMajor)) {
+  const neededSemver = isPrivateSupported
+    ? PRIVATE_SUPPORTED_SPEC_VERSION_RANGE
+    : SUPPORTED_SPEC_VERSION_RANGE;
+
+  if (!satisfies(specVersionAsSemver, neededMajor)) {
     const error = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh chain spec version. Please upgrade the SDK',
       data: {
         specVersion: specVersionAsSemver,
-        supportedVersionRange: SUPPORTED_SPEC_VERSION_RANGE,
+        supportedVersionRange: neededSemver,
       },
     });
 
     reject(error);
-
-    return false;
   }
-  if (!satisfies(specVersionAsSemver, SUPPORTED_SPEC_VERSION_RANGE)) {
+
+  if (!satisfies(specVersionAsSemver, neededSemver)) {
     console.warn(
-      `This version of the SDK supports Polymesh chain spec version ${SUPPORTED_SPEC_VERSION_RANGE}. The chain spec is at version ${specVersionAsSemver}. Please upgrade the SDK`
+      `This version of the SDK supports Polymesh chain spec version "${neededSemver}". The chain spec is at version ${specVersionAsSemver}. Please upgrade the SDK`
     );
   }
-
-  return true;
 }
 
 /**
@@ -1434,24 +1437,33 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
     const client = new W3CWebSocket(nodeUrl);
 
     client.onopen = (): void => {
+      client.send(JSON.stringify(CONFIDENTIAL_ASSETS_SUPPORTED_CALL));
       client.send(JSON.stringify(SYSTEM_VERSION_RPC_CALL));
       client.send(JSON.stringify(STATE_RUNTIME_VERSION_CALL));
     };
 
-    let nodeVersionFetched: boolean;
-    let specVersionFetched: boolean;
+    let confidentialAssetsSupported: boolean;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let nodeResponse: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let specResponse: any;
 
     client.onmessage = (msg): void => {
       const data = JSON.parse(msg.data.toString());
       const { id } = data;
 
       if (id === SYSTEM_VERSION_RPC_CALL.id) {
-        nodeVersionFetched = handleNodeVersionResponse(data, reject);
+        nodeResponse = data;
+      } else if (id === CONFIDENTIAL_ASSETS_SUPPORTED_CALL.id) {
+        confidentialAssetsSupported = !!data.result;
       } else {
-        specVersionFetched = handleSpecVersionResponse(data, reject);
+        specResponse = data;
       }
 
-      if (nodeVersionFetched && specVersionFetched) {
+      if (specResponse && nodeResponse && typeof confidentialAssetsSupported !== 'undefined') {
+        assertExpectedSpecVersion(specResponse, reject, confidentialAssetsSupported);
+        assertExpectedNodeVersion(nodeResponse, reject, confidentialAssetsSupported);
+
         client.close();
         resolve();
       }

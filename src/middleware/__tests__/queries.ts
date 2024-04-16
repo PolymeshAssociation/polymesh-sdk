@@ -23,7 +23,9 @@ import {
   metadataQuery,
   multiSigProposalQuery,
   multiSigProposalVotesQuery,
+  nftCollectionHolders,
   nftHoldersQuery,
+  nftTransactionQuery,
   polyxTransactionsQuery,
   portfolioMovementsQuery,
   portfolioQuery,
@@ -488,6 +490,28 @@ describe('assetTransactionQuery', () => {
   });
 });
 
+describe('nftTransactionQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      assetId: 'SOME_TICKER',
+    };
+
+    let result = nftTransactionQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+
+    result = nftTransactionQuery(variables, new BigNumber(1), new BigNumber(0));
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({
+      ...variables,
+      size: 1,
+      start: 0,
+    });
+  });
+});
+
 describe('polyxTransactionsQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
     const variables = {
@@ -599,5 +623,24 @@ describe('customClaimTypeQuery', () => {
     const result = customClaimTypeQuery(size, start, dids);
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual({ size: size.toNumber(), start: start.toNumber(), dids });
+  });
+});
+
+describe('nftCollectionHoldersQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const ticker = 'TICKER';
+    let result = nftCollectionHolders('TICKER');
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({ assetId: 'TICKER' });
+
+    result = nftCollectionHolders(ticker, new BigNumber(1), new BigNumber(0));
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({
+      assetId: ticker,
+      size: 1,
+      start: 0,
+    });
   });
 });

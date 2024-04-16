@@ -6,15 +6,17 @@ import { when } from 'jest-when';
 import {
   BaseAsset,
   Context,
+  DefaultPortfolio,
   Entity,
   NftCollection,
   PolymeshError,
   PolymeshTransaction,
 } from '~/internal';
-import { assetQuery } from '~/middleware/queries';
+import { assetQuery, nftTransactionQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   ErrorCode,
+  EventIdEnum,
   KnownNftType,
   MetadataType,
   SecurityIdentifier,
@@ -560,6 +562,91 @@ describe('NftCollection class', () => {
       });
 
       await expect(collection.getNft({ id })).rejects.toThrow(expectedError);
+    });
+  });
+
+  describe('method: getTransactionHistory', () => {
+    it('should return the list of the collection transactions', async () => {
+      const ticker = 'TICKER';
+      const context = dsMockUtils.getContextInstance();
+      const asset = new NftCollection({ ticker }, context);
+      const transactionResponse = {
+        totalCount: new BigNumber(5),
+        nodes: [
+          {
+            assetId: ticker,
+            nftIds: ['1'],
+            eventId: EventIdEnum.Issued,
+            toPortfolio: {
+              identityId: 'SOME_DID',
+              number: 0,
+            },
+            fromPortfolio: null,
+            extrinsicIdx: 1,
+            eventIdx: 1,
+            createdBlock: {
+              blockId: new BigNumber(123),
+              hash: 'SOME_HASH',
+              datetime: new Date('2022/12/31'),
+            },
+          },
+          {
+            assetId: ticker,
+            nftIds: ['1'],
+            eventId: EventIdEnum.Transfer,
+            toPortfolio: {
+              identityId: 'OTHER_DID',
+              number: 0,
+            },
+            fromPortfolio: {
+              identityId: 'SOME_DID',
+              number: 0,
+            },
+            instructionId: 1,
+            instructionMemo: 'some memo',
+            extrinsicIdx: 1,
+            eventIdx: 1,
+            createdBlock: {
+              blockId: new BigNumber(123),
+              hash: 'SOME_HASH',
+              datetime: new Date('2022/12/31'),
+            },
+          },
+        ],
+      };
+
+      dsMockUtils.createApolloQueryMock(
+        nftTransactionQuery({ assetId: ticker }, new BigNumber(3), new BigNumber(0)),
+        {
+          assetTransactions: transactionResponse,
+        }
+      );
+
+      const result = await asset.getTransactionHistory({
+        start: new BigNumber(0),
+        size: new BigNumber(3),
+      });
+
+      expect(result.data[0].asset.ticker).toEqual(ticker);
+      expect(result.data[0].nfts).toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: new BigNumber(1) })])
+      );
+      expect(result.data[0].event).toEqual(transactionResponse.nodes[0].eventId);
+      expect(result.data[0].from).toBeNull();
+      expect(result.data[0].to instanceof DefaultPortfolio).toBe(true);
+
+      expect(result.data[1].asset.ticker).toEqual(ticker);
+      expect(result.data[1].nfts).toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: new BigNumber(1) })])
+      );
+      expect(result.data[1].event).toEqual(transactionResponse.nodes[1].eventId);
+      expect(result.data[1].to instanceof DefaultPortfolio).toBe(true);
+      expect(result.data[1].from instanceof DefaultPortfolio).toBe(true);
+      expect(result.data[1].instructionId).toEqual(new BigNumber(1));
+      expect(result.data[1].instructionMemo).toEqual('some memo');
+
+      expect(result.count).toEqual(transactionResponse.totalCount);
+      expect(result.next).toEqual(new BigNumber(2));
     });
   });
 

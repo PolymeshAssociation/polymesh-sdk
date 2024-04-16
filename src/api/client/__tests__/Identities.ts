@@ -11,6 +11,7 @@ import {
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { RotatePrimaryKeyToSecondaryParams } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -250,6 +251,31 @@ describe('Identities Class', () => {
         .mockResolvedValue(expectedTransaction);
 
       const tx = await identities.rotatePrimaryKey(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: rotatePrimaryKeyToSecondary', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args: RotatePrimaryKeyToSecondaryParams = {
+        targetAccount: 'someAccount',
+        expiry: new Date('01/01/2050'),
+        permissions: {
+          assets: null,
+          transactions: null,
+          transactionGroups: [],
+          portfolios: null,
+        },
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await identities.rotatePrimaryKeyToSecondary(args);
 
       expect(tx).toBe(expectedTransaction);
     });

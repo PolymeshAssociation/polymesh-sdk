@@ -39,7 +39,7 @@ import {
   stringToBytes,
   stringToTicker,
 } from '~/utils/conversion';
-import { checkTxType, isAlphanumeric } from '~/utils/internal';
+import { checkTxType, isAlphanumeric, optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -106,7 +106,15 @@ export async function prepareCreateNftCollection(
     context,
     storage: { customTypeData, status },
   } = this;
-  const { ticker, nftType, name, securityIdentifiers = [], collectionKeys, documents } = args;
+  const {
+    ticker,
+    nftType,
+    name,
+    securityIdentifiers = [],
+    collectionKeys,
+    documents,
+    fundingRound,
+  } = args;
   const internalNftType = customTypeData
     ? { Custom: customTypeData.rawId }
     : (nftType as KnownNftType);
@@ -121,7 +129,7 @@ export async function prepareCreateNftCollection(
   const rawIdentifiers = securityIdentifiers.map(identifier =>
     securityIdentifierToAssetIdentifier(identifier, context)
   );
-  const rawFundingRound = null;
+  const rawFundingRound = optionize(stringToBytes)(fundingRound, context);
 
   let nextLocalId = new BigNumber(1);
   let fee: BigNumber | undefined;

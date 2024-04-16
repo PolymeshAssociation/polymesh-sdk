@@ -111,16 +111,32 @@ export const ROOT_TYPES = rootTypes;
  */
 export const SUPPORTED_NODE_VERSION_RANGE = '6.0 || 6.1 || 6.2';
 
+/**
+ * The Polymesh Private RPC node version range that is compatible with this version of the SDK
+ */
+export const PRIVATE_SUPPORTED_NODE_VERSION_RANGE = '1.0';
+
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 export const SUPPORTED_NODE_SEMVER = coerce(SUPPORTED_NODE_VERSION_RANGE)!.version;
+
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+export const PRIVATE_SUPPORTED_NODE_SEMVER = coerce(PRIVATE_SUPPORTED_NODE_VERSION_RANGE)!.version;
 
 /**
  * The Polymesh chain spec version range that is compatible with this version of the SDK
  */
 export const SUPPORTED_SPEC_VERSION_RANGE = '6.0 || 6.1 || 6.2';
 
+/**
+ * The Polymesh private chain spec version range that is compatible with this version of the SDK
+ */
+export const PRIVATE_SUPPORTED_SPEC_VERSION_RANGE = '1.0';
+
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 export const SUPPORTED_SPEC_SEMVER = coerce(SUPPORTED_SPEC_VERSION_RANGE)!.version;
+
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+export const PRIVATE_SUPPORTED_SPEC_SEMVER = coerce(PRIVATE_SUPPORTED_SPEC_VERSION_RANGE)!.version;
 
 export const SYSTEM_VERSION_RPC_CALL = {
   jsonrpc: '2.0',
@@ -136,6 +152,12 @@ export const STATE_RUNTIME_VERSION_CALL = {
   id: 'specVersion',
 };
 
+export const CONFIDENTIAL_ASSETS_SUPPORTED_CALL = {
+  jsonrpc: '2.0',
+  method: 'state_getStorage',
+  params: ['0xf6afad37710306d11e7d6ebd45ca59f8751e9d00f07967cf7f57d464b264066c'],
+  id: 'confidentialAssetsSupported',
+};
 /**
  * Maximum amount of legs allowed in a single instruction
  */
