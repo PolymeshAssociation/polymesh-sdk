@@ -1,12 +1,21 @@
-/* eslint-disable @typescript-eslint/naming-convention */
-const W3CWebSocket = require('websocket').w3cwebsocket;
-const WebSocketAsPromised = require('websocket-as-promised');
-/* eslint-enable @typescript-eslint/naming-convention */
+/* eslint-disable */
 
+const fs = require('fs');
+const path = require('path');
 const replace = require('replace-in-file');
-const { NODE_URL, WS_PORT } = require('./consts');
+const versionRegex = /This release is compatible with Polymesh v(.*)/;
 
-const versionRegex = /This release is compatible with Polymesh v(\d+\.\d+\.\d+)/;
+const getSupportedNodeVersion = () => {
+  const constantsFile = fs.readFileSync(path.resolve('src', 'utils', 'constants.ts'), {
+    encoding: 'utf8',
+  });
+
+  const regex = /export const SUPPORTED_NODE_VERSION_RANGE = '([^']+)';/g;
+
+  const match = regex.exec(constantsFile);
+
+  return match[1];
+};
 
 /**
  * Replace the version number in the README
@@ -15,29 +24,15 @@ const createReplacementVersion = newVersion => (text, prevVersion) => {
   return text.replace(prevVersion, newVersion);
 };
 
-// eslint-disable-next-line @typescript-eslint/no-floating-promises
-(async () => {
-  const wsp = new WebSocketAsPromised(`ws://${NODE_URL}:${WS_PORT}`, {
-    createWebSocket: url => new W3CWebSocket(url),
-    packMessage: data => JSON.stringify(data),
-    unpackMessage: data => JSON.parse(data.toString()),
-    attachRequestId: (data, requestId) => Object.assign({ id: requestId }, data),
-    extractRequestId: data => data && data.id,
-  });
+const supportedNodeVersion = getSupportedNodeVersion();
 
-  await wsp.open();
+const supportedNodeVersionString = supportedNodeVersion
+  .split('||')
+  .map(version => version.trim())
+  .join(', v');
 
-  const { result: version } = await wsp.sendRequest({
-    jsonrpc: '2.0',
-    method: 'system_version',
-    params: [],
-  });
-
-  replace.sync({
-    files: 'README.md',
-    from: versionRegex,
-    to: createReplacementVersion(version),
-  });
-
-  process.exit(0);
-})();
+replace.sync({
+  files: 'README.md',
+  from: versionRegex,
+  to: createReplacementVersion(supportedNodeVersionString),
+});
