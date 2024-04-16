@@ -1,4 +1,6 @@
 import { ISubmittableResult } from '@polkadot/types/types';
+import { PolymeshTx } from '@polymeshassociation/polymesh-sdk/types/internal';
+import * as utilsPublicInternalModule from '@polymeshassociation/polymesh-sdk/utils/internal';
 import BigNumber from 'bignumber.js';
 
 import {
@@ -10,8 +12,6 @@ import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { ConfidentialVenue, TxTags } from '~/types';
-import { PolymeshTx } from '~/types/internal';
-import * as utilsInternalModule from '~/utils/internal';
 
 describe('createConfidentialVenue procedure', () => {
   let mockContext: Mocked<Context>;
@@ -66,7 +66,7 @@ describe('createConfidentialVenue procedure', () => {
 });
 
 describe('createCreateConfidentialVenueResolver', () => {
-  const filterEventRecordsSpy = jest.spyOn(utilsInternalModule, 'filterEventRecords');
+  const filterEventRecordsSpy = jest.spyOn(utilsPublicInternalModule, 'filterEventRecords');
   const id = new BigNumber(10);
   const rawId = dsMockUtils.createMockU64(id);
 

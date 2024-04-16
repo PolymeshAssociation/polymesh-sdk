@@ -1,10 +1,19 @@
+import { ErrorCode } from '@polymeshassociation/polymesh-sdk/types';
+import { TransactionSpec } from '@polymeshassociation/polymesh-sdk/types/internal';
+import { bigNumberToU128 } from '@polymeshassociation/polymesh-sdk/utils/conversion';
 import BigNumber from 'bignumber.js';
 
-import { ConfidentialAsset, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, IssueConfidentialAssetParams, RoleType, TxTags } from '~/types';
-import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
+import { ConfidentialProcedure } from '~/base/ConfidentialProcedure';
+import { ConfidentialAsset, PolymeshError } from '~/internal';
+import {
+  ConfidentialProcedureAuthorization,
+  IssueConfidentialAssetParams,
+  RoleType,
+  TxTags,
+} from '~/types';
+import { ExtrinsicParams } from '~/types/internal';
 import { MAX_BALANCE } from '~/utils/constants';
-import { bigNumberToU128, serializeConfidentialAssetId } from '~/utils/conversion';
+import { serializeConfidentialAssetId } from '~/utils/conversion';
 import { asConfidentialAccount } from '~/utils/internal';
 
 export type Params = IssueConfidentialAssetParams & {
@@ -15,7 +24,7 @@ export type Params = IssueConfidentialAssetParams & {
  * @hidden
  */
 export async function prepareConfidentialAssets(
-  this: Procedure<Params, ConfidentialAsset>,
+  this: ConfidentialProcedure<Params, ConfidentialAsset>,
   args: Params
 ): Promise<TransactionSpec<ConfidentialAsset, ExtrinsicParams<'confidentialAsset', 'mint'>>> {
   const {
@@ -83,9 +92,9 @@ export async function prepareConfidentialAssets(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, ConfidentialAsset>,
+  this: ConfidentialProcedure<Params, ConfidentialAsset>,
   args: Params
-): ProcedureAuthorization {
+): ConfidentialProcedureAuthorization {
   const {
     confidentialAsset: { id: assetId },
   } = args;
@@ -103,5 +112,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const issueConfidentialAssets = (): Procedure<Params, ConfidentialAsset> =>
-  new Procedure(prepareConfidentialAssets, getAuthorization);
+export const issueConfidentialAssets = (): ConfidentialProcedure<Params, ConfidentialAsset> =>
+  new ConfidentialProcedure(prepareConfidentialAssets, getAuthorization);

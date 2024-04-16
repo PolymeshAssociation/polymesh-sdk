@@ -3,6 +3,7 @@
 
 import { merge } from 'lodash';
 
+import { ConfidentialProcedure } from '~/base/ConfidentialProcedure';
 import { Context, Procedure } from '~/internal';
 import { Mocked } from '~/testUtils/types';
 
@@ -15,7 +16,7 @@ const mockInstanceContainer = {
 let procedureConstructorMock: jest.Mock;
 let prepareMock: jest.Mock;
 
-export const MockProcedureClass = class {
+export const MockConfidentialProcedureClass = class {
   /**
    * @hidden
    */
@@ -24,9 +25,9 @@ export const MockProcedureClass = class {
   }
 };
 
-export const mockProcedureModule = (path: string) => (): Record<string, unknown> => ({
+export const mockConfidentialProcedureModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
-  Procedure: MockProcedureClass,
+  ConfidentialProcedure: MockConfidentialProcedureClass,
 });
 
 /**
@@ -43,7 +44,7 @@ function initProcedure(): void {
   Object.assign(mockInstanceContainer.procedure, procedure);
   procedureConstructorMock.mockImplementation(args => {
     const value = merge({}, procedure, args);
-    Object.setPrototypeOf(value, require('~/internal').Procedure.prototype);
+    Object.setPrototypeOf(value, require('~/internal').ConfidentialProcedure.prototype);
     return value;
   });
 }
@@ -81,12 +82,12 @@ export function reset(): void {
 export function getInstance<T, U, S = Record<string, unknown>>(
   context: Context,
   storage?: S
-): Procedure<T, U, S> {
+): ConfidentialProcedure<T, U, S> {
   const { procedure } = mockInstanceContainer;
   const value = merge({ context, storage }, procedure);
   Object.setPrototypeOf(value, require('~/internal').Procedure.prototype);
 
-  return value as unknown as Procedure<T, U, S>;
+  return value as unknown as ConfidentialProcedure<T, U, S>;
 }
 
 /**

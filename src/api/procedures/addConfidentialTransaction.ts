@@ -4,6 +4,20 @@ import {
   PolymeshPrimitivesMemo,
 } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
+import { ErrorCode } from '@polymeshassociation/polymesh-sdk/types';
+import { BatchTransactionSpec } from '@polymeshassociation/polymesh-sdk/types/internal';
+import {
+  bigNumberToU64,
+  identitiesToBtreeSet,
+  stringToMemo,
+} from '@polymeshassociation/polymesh-sdk/utils/conversion';
+import {
+  asIdentity,
+  assembleBatchTransactions,
+  assertIdentityExists,
+  filterEventRecords,
+  optionize,
+} from '@polymeshassociation/polymesh-sdk/utils/internal';
 import BigNumber from 'bignumber.js';
 
 import {
@@ -11,36 +25,25 @@ import {
   assertConfidentialAssetExists,
   assertConfidentialAssetsEnabledForVenue,
   assertConfidentialVenueExists,
-  assertIdentityExists,
 } from '~/api/procedures/utils';
-import { ConfidentialTransaction, Context, PolymeshError, Procedure } from '~/internal';
+import { ConfidentialProcedure } from '~/base/ConfidentialProcedure';
+import { ConfidentialTransaction, Context, PolymeshError } from '~/internal';
 import {
   AddConfidentialTransactionParams,
   AddConfidentialTransactionsParams,
   ConfidentialAssetTx,
-  ErrorCode,
+  ConfidentialProcedureAuthorization,
   RoleType,
 } from '~/types';
-import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import { MAX_LEGS_LENGTH } from '~/utils/constants';
 import {
   auditorsToBtreeSet,
-  bigNumberToU64,
   confidentialAccountToMeshPublicKey,
   confidentialAssetsToBtreeSet,
   confidentialLegToMeshLeg,
   confidentialTransactionIdToBigNumber,
-  identitiesToBtreeSet,
-  stringToMemo,
 } from '~/utils/conversion';
-import {
-  asConfidentialAccount,
-  asConfidentialAsset,
-  asIdentity,
-  assembleBatchTransactions,
-  filterEventRecords,
-  optionize,
-} from '~/utils/internal';
+import { asConfidentialAccount, asConfidentialAsset } from '~/utils/internal';
 
 /**
  * @hidden
@@ -196,7 +199,7 @@ async function getTxArgsAndErrors(
  * @hidden
  */
 export async function prepareAddTransaction(
-  this: Procedure<Params, ConfidentialTransaction[]>,
+  this: ConfidentialProcedure<Params, ConfidentialTransaction[]>,
   args: Params
 ): Promise<BatchTransactionSpec<ConfidentialTransaction[], unknown[][]>> {
   const {
@@ -286,9 +289,9 @@ export async function prepareAddTransaction(
  * @hidden
  */
 export async function getAuthorization(
-  this: Procedure<Params, ConfidentialTransaction[]>,
+  this: ConfidentialProcedure<Params, ConfidentialTransaction[]>,
   { venueId }: Params
-): Promise<ProcedureAuthorization> {
+): Promise<ConfidentialProcedureAuthorization> {
   return {
     roles: [{ type: RoleType.ConfidentialVenueOwner, venueId }],
     permissions: {
@@ -302,5 +305,7 @@ export async function getAuthorization(
 /**
  * @hidden
  */
-export const addConfidentialTransaction = (): Procedure<Params, ConfidentialTransaction[]> =>
-  new Procedure(prepareAddTransaction, getAuthorization);
+export const addConfidentialTransaction = (): ConfidentialProcedure<
+  Params,
+  ConfidentialTransaction[]
+> => new ConfidentialProcedure(prepareAddTransaction, getAuthorization);

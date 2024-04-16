@@ -1,3 +1,4 @@
+import { ErrorCode } from '@polymeshassociation/polymesh-sdk/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -5,17 +6,18 @@ import { ConfidentialAccounts } from '~/api/client/ConfidentialAccounts';
 import { ConfidentialAccount, Context, PolymeshError, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode } from '~/types';
 
 jest.mock(
-  '~/api/entities/confidential/ConfidentialAccount',
+  '~/api/entities/ConfidentialAccount',
   require('~/testUtils/mocks/entities').mockConfidentialAccountModule(
-    '~/api/entities/confidential/ConfidentialAccount'
+    '~/api/entities/ConfidentialAccount'
   )
 );
 jest.mock(
-  '~/base/Procedure',
-  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+  '~/base/ConfidentialProcedure',
+  require('~/testUtils/mocks/procedure').mockConfidentialProcedureModule(
+    '~/base/ConfidentialProcedure'
+  )
 );
 
 describe('ConfidentialAccounts Class', () => {

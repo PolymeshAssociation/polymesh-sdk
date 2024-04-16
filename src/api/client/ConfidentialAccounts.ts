@@ -1,19 +1,19 @@
+import { Context, PolymeshError } from '@polymeshassociation/polymesh-sdk/internal';
+import { ErrorCode } from '@polymeshassociation/polymesh-sdk/types';
+
 import {
   applyIncomingAssetBalance,
   applyIncomingConfidentialAssetBalances,
   ConfidentialAccount,
-  Context,
   createConfidentialAccount,
-  PolymeshError,
 } from '~/internal';
 import {
   ApplyIncomingBalanceParams,
   ApplyIncomingConfidentialAssetBalancesParams,
+  ConfidentialProcedureMethod,
   CreateConfidentialAccountParams,
-  ErrorCode,
-  ProcedureMethod,
 } from '~/types';
-import { createProcedureMethod } from '~/utils/internal';
+import { createConfidentialProcedureMethod } from '~/utils/internal';
 
 /**
  * Handles all Confidential Account related functionality
@@ -27,21 +27,21 @@ export class ConfidentialAccounts {
   constructor(context: Context) {
     this.context = context;
 
-    this.createConfidentialAccount = createProcedureMethod(
+    this.createConfidentialAccount = createConfidentialProcedureMethod(
       {
         getProcedureAndArgs: args => [createConfidentialAccount, { ...args }],
       },
       context
     );
 
-    this.applyIncomingBalance = createProcedureMethod(
+    this.applyIncomingBalance = createConfidentialProcedureMethod(
       {
         getProcedureAndArgs: args => [applyIncomingAssetBalance, { ...args }],
       },
       context
     );
 
-    this.applyIncomingBalances = createProcedureMethod(
+    this.applyIncomingBalances = createConfidentialProcedureMethod(
       {
         getProcedureAndArgs: args => [applyIncomingConfidentialAssetBalances, { ...args }],
       },
@@ -74,7 +74,7 @@ export class ConfidentialAccounts {
   /**
    * Create a confidential Account
    */
-  public createConfidentialAccount: ProcedureMethod<
+  public createConfidentialAccount: ConfidentialProcedureMethod<
     CreateConfidentialAccountParams,
     ConfidentialAccount
   >;
@@ -82,12 +82,15 @@ export class ConfidentialAccounts {
   /**
    * Applies incoming balance to a Confidential Account
    */
-  public applyIncomingBalance: ProcedureMethod<ApplyIncomingBalanceParams, ConfidentialAccount>;
+  public applyIncomingBalance: ConfidentialProcedureMethod<
+    ApplyIncomingBalanceParams,
+    ConfidentialAccount
+  >;
 
   /**
    * Applies any incoming balance to a Confidential Account
    */
-  public applyIncomingBalances: ProcedureMethod<
+  public applyIncomingBalances: ConfidentialProcedureMethod<
     ApplyIncomingConfidentialAssetBalancesParams,
     ConfidentialAccount
   >;

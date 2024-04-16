@@ -8,21 +8,23 @@ import { Mocked } from '~/testUtils/types';
 import { ConfidentialVenue } from '~/types';
 
 jest.mock(
-  '~/base/Procedure',
-  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
-);
-
-jest.mock(
-  '~/api/entities/confidential/ConfidentialVenue',
-  require('~/testUtils/mocks/entities').mockConfidentialVenueModule(
-    '~/api/entities/confidential/ConfidentialVenue'
+  '~/base/ConfidentialProcedure',
+  require('~/testUtils/mocks/procedure').mockConfidentialProcedureModule(
+    '~/base/ConfidentialProcedure'
   )
 );
 
 jest.mock(
-  '~/api/entities/confidential/ConfidentialTransaction',
+  '~/api/entities/ConfidentialVenue',
+  require('~/testUtils/mocks/entities').mockConfidentialVenueModule(
+    '~/api/entities/ConfidentialVenue'
+  )
+);
+
+jest.mock(
+  '~/api/entities/ConfidentialTransaction',
   require('~/testUtils/mocks/entities').mockConfidentialTransactionModule(
-    '~/api/entities/confidential/ConfidentialTransaction'
+    '~/api/entities/ConfidentialTransaction'
   )
 );
 

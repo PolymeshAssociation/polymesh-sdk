@@ -1,4 +1,5 @@
 import { u16 } from '@polkadot/types';
+import { ErrorCode } from '@polymeshassociation/polymesh-sdk/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -9,12 +10,7 @@ import {
 import { Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import {
-  ApplyIncomingConfidentialAssetBalancesParams,
-  ConfidentialAccount,
-  ErrorCode,
-  TxTags,
-} from '~/types';
+import { ApplyIncomingConfidentialAssetBalancesParams, ConfidentialAccount, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('applyIncomingConfidentialAssetBalances procedure', () => {

@@ -3,6 +3,66 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-use-before-define */
+import {
+  AccountBalance,
+  ActiveTransferRestrictions,
+  AgentWithGroup,
+  AssetDetails,
+  AssetWithGroup,
+  Authorization,
+  AuthorizationType,
+  CheckPermissionsResult,
+  CheckRolesResult,
+  CollectionKey,
+  ComplianceRequirements,
+  CorporateActionDefaultConfig,
+  CorporateActionKind,
+  CorporateActionTargets,
+  CountTransferRestriction,
+  DistributionParticipant,
+  DividendDistributionDetails,
+  ExtrinsicData,
+  GroupPermissions,
+  IdentityBalance,
+  InstructionDetails,
+  InstructionStatus,
+  InstructionType,
+  KnownAssetType,
+  KnownNftType,
+  Leg,
+  MetadataDetails,
+  MetadataLockStatus,
+  MetadataType,
+  MetadataValue,
+  MultiSigProposalDetails,
+  NftMetadata,
+  OfferingBalanceStatus,
+  OfferingDetails,
+  OfferingSaleStatus,
+  OfferingTimingStatus,
+  PercentageTransferRestriction,
+  PermissionedAccount,
+  PermissionGroups,
+  PermissionGroupType,
+  Permissions,
+  PolymeshError,
+  PortfolioBalance,
+  PortfolioCollection,
+  ProposalStatus,
+  ResultSet,
+  ScheduleDetails,
+  ScheduleWithDetails,
+  SecurityIdentifier,
+  Signer,
+  SignerType,
+  TargetTreatment,
+  TaxWithholding,
+  TickerReservationDetails,
+  TickerReservationStatus,
+  TransferStatus,
+  VenueDetails,
+  VenueType,
+} from '@polymeshassociation/polymesh-sdk/types';
 import BigNumber from 'bignumber.js';
 import { pick } from 'lodash';
 
@@ -40,17 +100,6 @@ import {
 import { entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
-  AccountBalance,
-  ActiveTransferRestrictions,
-  AgentWithGroup,
-  AssetDetails,
-  AssetWithGroup,
-  Authorization,
-  AuthorizationType,
-  CheckPermissionsResult,
-  CheckRolesResult,
-  CollectionKey,
-  ComplianceRequirements,
   ConfidentialAssetBalance,
   ConfidentialAssetDetails,
   ConfidentialLeg,
@@ -59,52 +108,6 @@ import {
   ConfidentialTransactionDetails,
   ConfidentialTransactionStatus,
   ConfidentialVenueFilteringDetails,
-  CorporateActionDefaultConfig,
-  CorporateActionKind,
-  CorporateActionTargets,
-  CountTransferRestriction,
-  DistributionParticipant,
-  DividendDistributionDetails,
-  ExtrinsicData,
-  GroupPermissions,
-  IdentityBalance,
-  InstructionDetails,
-  InstructionStatus,
-  InstructionType,
-  KnownAssetType,
-  KnownNftType,
-  Leg,
-  MetadataDetails,
-  MetadataLockStatus,
-  MetadataType,
-  MetadataValue,
-  MultiSigProposalDetails,
-  NftMetadata,
-  OfferingBalanceStatus,
-  OfferingDetails,
-  OfferingSaleStatus,
-  OfferingTimingStatus,
-  PercentageTransferRestriction,
-  PermissionedAccount,
-  PermissionGroups,
-  PermissionGroupType,
-  PolymeshError,
-  PortfolioBalance,
-  PortfolioCollection,
-  ProposalStatus,
-  ResultSet,
-  ScheduleDetails,
-  ScheduleWithDetails,
-  SecurityIdentifier,
-  Signer,
-  SignerType,
-  TargetTreatment,
-  TaxWithholding,
-  TickerReservationDetails,
-  TickerReservationStatus,
-  TransferStatus,
-  VenueDetails,
-  VenueType,
 } from '~/types';
 
 export type MockIdentity = Mocked<Identity>;
@@ -256,6 +259,7 @@ interface AccountOptions extends EntityOptions {
   getBalance?: EntityGetter<AccountBalance>;
   getIdentity?: EntityGetter<Identity | null>;
   getTransactionHistory?: EntityGetter<ExtrinsicData[]>;
+  getPermissions?: EntityGetter<Permissions>;
   hasPermissions?: EntityGetter<boolean>;
   checkPermissions?: EntityGetter<CheckPermissionsResult<SignerType.Account>>;
   authorizationsGetReceived?: EntityGetter<AuthorizationRequest[]>;
@@ -855,6 +859,7 @@ const MockAccountClass = createMockEntityClass<AccountOptions>(
     getTransactionHistory!: jest.Mock;
     hasPermissions!: jest.Mock;
     checkPermissions!: jest.Mock;
+    getPermissions!: jest.Mock;
     getMultiSig!: jest.Mock;
     authorizations = {} as {
       getReceived: jest.Mock;
@@ -879,6 +884,7 @@ const MockAccountClass = createMockEntityClass<AccountOptions>(
       this.getBalance = createEntityGetterMock(opts.getBalance);
       this.getIdentity = createEntityGetterMock(opts.getIdentity);
       this.getTransactionHistory = createEntityGetterMock(opts.getTransactionHistory);
+      this.getPermissions = createEntityGetterMock(opts.getPermissions);
       this.hasPermissions = createEntityGetterMock(opts.hasPermissions);
       this.checkPermissions = createEntityGetterMock(opts.checkPermissions);
       this.authorizations.getReceived = createEntityGetterMock(opts.authorizationsGetReceived);
@@ -897,6 +903,7 @@ const MockAccountClass = createMockEntityClass<AccountOptions>(
     getTransactionHistory: [],
     getIdentity: getIdentityInstance(),
     isFrozen: false,
+    getPermissions: { assets: null, transactions: null, portfolios: null, transactionGroups: [] },
     hasPermissions: true,
     checkPermissions: {
       result: true,
@@ -2015,6 +2022,7 @@ const MockMultiSigClass = createMockEntityClass<MultiSigOptions>(
     getBalance!: jest.Mock;
     getIdentity!: jest.Mock;
     getTransactionHistory!: jest.Mock;
+    getPermissions!: jest.Mock;
     hasPermissions!: jest.Mock;
     checkPermissions!: jest.Mock;
     details!: jest.Mock;
@@ -2039,6 +2047,7 @@ const MockMultiSigClass = createMockEntityClass<MultiSigOptions>(
       this.getIdentity = createEntityGetterMock(opts.getIdentity);
       this.getTransactionHistory = createEntityGetterMock(opts.getTransactionHistory);
       this.hasPermissions = createEntityGetterMock(opts.hasPermissions);
+      this.getPermissions = createEntityGetterMock(opts.getPermissions);
       this.checkPermissions = createEntityGetterMock(opts.checkPermissions);
       this.details = createEntityGetterMock(opts.details);
       this.getCreator = createEntityGetterMock(opts.getCreator);
@@ -2056,6 +2065,7 @@ const MockMultiSigClass = createMockEntityClass<MultiSigOptions>(
     getIdentity: getIdentityInstance(),
     isFrozen: false,
     hasPermissions: true,
+    getPermissions: { assets: null, transactions: null, portfolios: null, transactionGroups: [] },
     checkPermissions: {
       result: true,
     },
