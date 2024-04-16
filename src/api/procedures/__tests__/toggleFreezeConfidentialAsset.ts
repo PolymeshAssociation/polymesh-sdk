@@ -1,4 +1,5 @@
 import { bool } from '@polkadot/types';
+import * as utilsPublicConversionModule from '@polymeshassociation/polymesh-sdk/utils/conversion';
 import { when } from 'jest-when';
 
 import {
@@ -10,7 +11,6 @@ import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { ConfidentialAsset, RoleType, TxTags } from '~/types';
-import * as utilsConversionModule from '~/utils/conversion';
 
 describe('toggleFreezeConfidentialAsset procedure', () => {
   let mockContext: Mocked<Context>;
@@ -30,7 +30,7 @@ describe('toggleFreezeConfidentialAsset procedure', () => {
     confidentialAsset = entityMockUtils.getConfidentialAssetInstance();
     rawId = '0x76702175d8cbe3a55a19734433351e26';
     rawTrue = dsMockUtils.createMockBool(true);
-    booleanToBoolSpy = jest.spyOn(utilsConversionModule, 'booleanToBool');
+    booleanToBoolSpy = jest.spyOn(utilsPublicConversionModule, 'booleanToBool');
     when(booleanToBoolSpy).calledWith(true, mockContext).mockReturnValue(rawTrue);
   });
 
@@ -93,7 +93,7 @@ describe('toggleFreezeConfidentialAsset procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      expect(boundFunc({ confidentialAsset, freeze: false })).toEqual({
+      return expect(boundFunc({ confidentialAsset, freeze: false })).resolves.toEqual({
         roles: [{ assetId: confidentialAsset.id, type: RoleType.ConfidentialAssetOwner }],
         permissions: {
           transactions: [TxTags.confidentialAsset.SetAssetFrozen],

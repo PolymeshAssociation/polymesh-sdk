@@ -1,6 +1,8 @@
 import { PalletConfidentialAssetConfidentialAuditors } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import { Bytes } from '@polkadot/types-codec';
+import { ErrorCode } from '@polymeshassociation/polymesh-sdk/types';
+import * as utilsPublicInternalModule from '@polymeshassociation/polymesh-sdk/utils/internal';
 import { when } from 'jest-when';
 
 import {
@@ -10,9 +12,8 @@ import {
 import { ConfidentialAsset, Context, Identity, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ConfidentialAccount, CreateConfidentialAssetParams, ErrorCode } from '~/types';
+import { ConfidentialAccount, CreateConfidentialAssetParams } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
-import * as utilsInternalModule from '~/utils/internal';
 
 describe('createConfidentialAsset procedure', () => {
   let mockContext: Mocked<Context>;
@@ -142,7 +143,7 @@ describe('createConfidentialAsset procedure', () => {
   });
 
   describe('createConfidentialAssetResolver', () => {
-    const filterEventRecordsSpy = jest.spyOn(utilsInternalModule, 'filterEventRecords');
+    const filterEventRecordsSpy = jest.spyOn(utilsPublicInternalModule, 'filterEventRecords');
     const did = 'someDid';
     const rawIdentityId = dsMockUtils.createMockIdentityId(did);
     const rawConfidentialAsset = '0x76702175d8cbe3a55a19734433351e25';

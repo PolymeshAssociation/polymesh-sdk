@@ -1,12 +1,16 @@
+import {
+  ConfidentialTransactionStatusEnum,
+  EventIdEnum,
+} from '@polymeshassociation/polymesh-sdk/middleware/types';
 import BigNumber from 'bignumber.js';
 
 import {
   confidentialAssetQuery,
   confidentialAssetsByHolderQuery,
+  confidentialTransactionQuery,
   getConfidentialAssetHistoryByConfidentialAccountQuery,
   getConfidentialTransactionsByConfidentialAccountQuery,
 } from '~/middleware/queries';
-import { ConfidentialTransactionStatusEnum, EventIdEnum } from '~/middleware/types';
 
 describe('confidentialAssetsByHolderQuery', () => {
   it('should return correct query and variables when size, start  are not provided', () => {
@@ -214,5 +218,18 @@ describe('getConfidentialAssetHistoryByConfidentialAccountQuery', () => {
       start: start.toNumber(),
       accountId,
     });
+  });
+});
+
+describe('confidentialTransactionQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      id: '1',
+    };
+
+    const result = confidentialTransactionQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
   });
 });

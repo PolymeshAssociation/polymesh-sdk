@@ -1,20 +1,22 @@
+import { ErrorCode } from '@polymeshassociation/polymesh-sdk/types';
 import { when } from 'jest-when';
 
 import { ConfidentialAssets } from '~/api/client/ConfidentialAssets';
 import { ConfidentialAsset, Context, PolymeshError, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode } from '~/types';
 
 jest.mock(
-  '~/api/entities/confidential/ConfidentialAsset',
+  '~/api/entities/ConfidentialAsset',
   require('~/testUtils/mocks/entities').mockConfidentialAssetModule(
-    '~/api/entities/confidential/ConfidentialAsset'
+    '~/api/entities/ConfidentialAsset'
   )
 );
 jest.mock(
-  '~/base/Procedure',
-  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+  '~/base/ConfidentialProcedure',
+  require('~/testUtils/mocks/procedure').mockConfidentialProcedureModule(
+    '~/base/ConfidentialProcedure'
+  )
 );
 
 describe('ConfidentialAssets Class', () => {

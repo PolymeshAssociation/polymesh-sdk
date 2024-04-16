@@ -1,10 +1,12 @@
 import { ISubmittableResult } from '@polkadot/types/types';
+import { TransactionSpec } from '@polymeshassociation/polymesh-sdk/types/internal';
+import { u64ToBigNumber } from '@polymeshassociation/polymesh-sdk/utils/conversion';
+import { filterEventRecords } from '@polymeshassociation/polymesh-sdk/utils/internal';
 
-import { ConfidentialVenue, Context, Procedure } from '~/internal';
-import { TxTags } from '~/types';
-import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { u64ToBigNumber } from '~/utils/conversion';
-import { filterEventRecords } from '~/utils/internal';
+import { ConfidentialProcedure } from '~/base/ConfidentialProcedure';
+import { ConfidentialVenue, Context } from '~/internal';
+import { ConfidentialProcedureAuthorization, TxTags } from '~/types';
+import { ExtrinsicParams } from '~/types/internal';
 
 /**
  * @hidden
@@ -23,7 +25,7 @@ export const createConfidentialVenueResolver =
  * @hidden
  */
 export async function prepareCreateConfidentialVenue(
-  this: Procedure<void, ConfidentialVenue>
+  this: ConfidentialProcedure<void, ConfidentialVenue>
 ): Promise<
   TransactionSpec<ConfidentialVenue, ExtrinsicParams<'confidentialAsset', 'createVenue'>>
 > {
@@ -45,7 +47,9 @@ export async function prepareCreateConfidentialVenue(
 /**
  * @hidden
  */
-export function getAuthorization(this: Procedure<void, ConfidentialVenue>): ProcedureAuthorization {
+export function getAuthorization(
+  this: ConfidentialProcedure<void, ConfidentialVenue>
+): ConfidentialProcedureAuthorization {
   return {
     permissions: {
       transactions: [TxTags.confidentialAsset.CreateVenue],
@@ -58,5 +62,5 @@ export function getAuthorization(this: Procedure<void, ConfidentialVenue>): Proc
 /**
  * @hidden
  */
-export const createConfidentialVenue = (): Procedure<void, ConfidentialVenue> =>
-  new Procedure(prepareCreateConfidentialVenue, getAuthorization);
+export const createConfidentialVenue = (): ConfidentialProcedure<void, ConfidentialVenue> =>
+  new ConfidentialProcedure(prepareCreateConfidentialVenue, getAuthorization);

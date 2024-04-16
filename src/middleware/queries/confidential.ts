@@ -1,15 +1,18 @@
 import { QueryOptions } from '@apollo/client/core';
-import BigNumber from 'bignumber.js';
-import gql from 'graphql-tag';
-
 import {
   ConfidentialAsset,
   ConfidentialAssetHistory,
   ConfidentialAssetHolder,
   ConfidentialAssetHoldersOrderBy,
-  ConfidentialTransactionStatusEnum,
-  EventIdEnum,
-} from '~/middleware/types';
+  ConfidentialTransaction,
+} from '@polymeshassociation/polymesh-sdk/middleware/types';
+import BigNumber from 'bignumber.js';
+import gql from 'graphql-tag';
+
+import {
+  ConfidentialAssetHistoryByConfidentialAccountArgs,
+  ConfidentialTransactionsByConfidentialAccountArgs,
+} from '~/types';
 import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
 
 /**
@@ -136,12 +139,6 @@ export function confidentialAssetQuery(
   };
 }
 
-export type ConfidentialTransactionsByConfidentialAccountArgs = {
-  accountId: string;
-  direction: 'Incoming' | 'Outgoing' | 'All';
-  status?: ConfidentialTransactionStatusEnum;
-};
-
 /**
  * @hidden
  *
@@ -197,15 +194,6 @@ export function getConfidentialTransactionsByConfidentialAccountQuery(
     variables: { size: size?.toNumber(), start: start?.toNumber(), accountId, status },
   };
 }
-
-export type ConfidentialAssetHistoryByConfidentialAccountArgs = {
-  accountId: string;
-  eventId?:
-    | EventIdEnum.AccountDepositIncoming
-    | EventIdEnum.AccountDeposit
-    | EventIdEnum.AccountWithdraw;
-  assetId?: string;
-};
 
 /**
  * @hidden
@@ -280,5 +268,84 @@ export function getConfidentialAssetHistoryByConfidentialAccountQuery(
   return {
     query,
     variables: { ...variables, size: size?.toNumber(), start: start?.toNumber() },
+  };
+}
+
+export type ConfidentialTransactionProofsArgs = {
+  transactionId: string;
+};
+
+/**
+ * @hidden
+ */
+function createGetConfidentialTransactionProofArgs(transactionId: BigNumber): {
+  args: string;
+  filter: string;
+  variables: { transactionId: string };
+} {
+  const args = ['$transactionId: String!'];
+  const filter = ['transactionId: { equalTo: $transactionId }, party: { equalTo: Sender }'];
+
+  return {
+    args: `(${args.join()})`,
+    filter: `filter: { ${filter.join()} }`,
+    variables: { transactionId: transactionId.toString() },
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get sender proofs for a transaction
+ */
+export function getConfidentialTransactionProofsQuery(
+  transactionId: BigNumber
+): QueryOptions<ConfidentialTransactionProofsArgs> {
+  const { args, filter, variables } = createGetConfidentialTransactionProofArgs(transactionId);
+
+  const query = gql`
+  query ConfidentialTransactionProofs
+  ${args}
+  {
+    confidentialTransactionAffirmations(
+      ${filter}
+  ) {
+    nodes {
+      proofs
+      legId
+    }
+  }
+  }`;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get confidential transaction details by ID
+ */
+export function confidentialTransactionQuery(
+  variables: QueryArgs<ConfidentialTransaction, 'id'>
+): QueryOptions<QueryArgs<ConfidentialTransaction, 'id'>> {
+  const query = gql`
+    query ConfidentialTransaction($id: String!) {
+      confidentialTransaction(id: $id) {
+        eventIdx
+        createdBlock {
+          blockId
+          datetime
+          hash
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
   };
 }

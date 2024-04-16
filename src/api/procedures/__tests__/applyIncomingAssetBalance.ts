@@ -1,3 +1,4 @@
+import { ErrorCode } from '@polymeshassociation/polymesh-sdk/types';
 import { when } from 'jest-when';
 
 import {
@@ -7,7 +8,7 @@ import {
 import { Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ApplyIncomingBalanceParams, ConfidentialAsset, ErrorCode, TxTags } from '~/types';
+import { ApplyIncomingBalanceParams, ConfidentialAsset, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 import { ConfidentialAccount } from './../../entities/types';

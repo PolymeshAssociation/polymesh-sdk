@@ -1,6 +1,9 @@
-import { ConfidentialAsset, Context, createConfidentialAsset, PolymeshError } from '~/internal';
-import { CreateConfidentialAssetParams, ErrorCode, ProcedureMethod } from '~/types';
-import { createProcedureMethod } from '~/utils/internal';
+import { Context, PolymeshError } from '@polymeshassociation/polymesh-sdk/internal';
+import { ErrorCode } from '@polymeshassociation/polymesh-sdk/types';
+
+import { ConfidentialAsset, createConfidentialAsset } from '~/internal';
+import { ConfidentialProcedureMethod, CreateConfidentialAssetParams } from '~/types';
+import { createConfidentialProcedureMethod } from '~/utils/internal';
 
 /**
  * Handles all Confidential Asset related functionality
@@ -14,7 +17,7 @@ export class ConfidentialAssets {
   constructor(context: Context) {
     this.context = context;
 
-    this.createConfidentialAsset = createProcedureMethod(
+    this.createConfidentialAsset = createConfidentialProcedureMethod(
       {
         getProcedureAndArgs: args => [createConfidentialAsset, { ...args }],
       },
@@ -47,5 +50,8 @@ export class ConfidentialAssets {
   /**
    * Create a confidential Asset
    */
-  public createConfidentialAsset: ProcedureMethod<CreateConfidentialAssetParams, ConfidentialAsset>;
+  public createConfidentialAsset: ConfidentialProcedureMethod<
+    CreateConfidentialAssetParams,
+    ConfidentialAsset
+  >;
 }

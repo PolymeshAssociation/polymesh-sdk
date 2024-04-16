@@ -1,8 +1,17 @@
-import { ConfidentialAsset, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, FreezeConfidentialAccountAssetParams, RoleType, TxTags } from '~/types';
-import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
+import { ErrorCode } from '@polymeshassociation/polymesh-sdk/types';
+import { TransactionSpec } from '@polymeshassociation/polymesh-sdk/types/internal';
+import { booleanToBool } from '@polymeshassociation/polymesh-sdk/utils/conversion';
+
+import { ConfidentialProcedure } from '~/base/ConfidentialProcedure';
+import { ConfidentialAsset, PolymeshError } from '~/internal';
 import {
-  booleanToBool,
+  ConfidentialProcedureAuthorization,
+  FreezeConfidentialAccountAssetParams,
+  RoleType,
+  TxTags,
+} from '~/types';
+import { ExtrinsicParams } from '~/types/internal';
+import {
   confidentialAccountToMeshPublicKey,
   serializeConfidentialAssetId,
 } from '~/utils/conversion';
@@ -20,7 +29,7 @@ export type Params = {
  * @hidden
  */
 export async function prepareToggleFreezeConfidentialAccountAsset(
-  this: Procedure<Params, void>,
+  this: ConfidentialProcedure<Params, void>,
   args: Params
 ): Promise<TransactionSpec<void, ExtrinsicParams<'confidentialAsset', 'setAccountAssetFrozen'>>> {
   const {
@@ -61,9 +70,9 @@ export async function prepareToggleFreezeConfidentialAccountAsset(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, void>,
+  this: ConfidentialProcedure<Params, void>,
   { confidentialAsset: asset }: Params
-): ProcedureAuthorization {
+): ConfidentialProcedureAuthorization {
   return {
     roles: [{ type: RoleType.ConfidentialAssetOwner, assetId: asset.id }],
     permissions: {
@@ -77,5 +86,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const toggleFreezeConfidentialAccountAsset = (): Procedure<Params, void> =>
-  new Procedure(prepareToggleFreezeConfidentialAccountAsset, getAuthorization);
+export const toggleFreezeConfidentialAccountAsset = (): ConfidentialProcedure<Params, void> =>
+  new ConfidentialProcedure(prepareToggleFreezeConfidentialAccountAsset, getAuthorization);

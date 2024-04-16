@@ -1,13 +1,17 @@
-import { PolymeshError, Procedure } from '~/internal';
+import { ErrorCode } from '@polymeshassociation/polymesh-sdk/types';
+import { TransactionSpec } from '@polymeshassociation/polymesh-sdk/types/internal';
+
+import { ConfidentialProcedure } from '~/base/ConfidentialProcedure';
+import { PolymeshError } from '~/internal';
 import {
   AffirmConfidentialTransactionParams,
   ConfidentialAffirmParty,
+  ConfidentialProcedureAuthorization,
   ConfidentialTransaction,
   ConfidentialTransactionStatus,
-  ErrorCode,
   TxTags,
 } from '~/types';
-import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
+import { ExtrinsicParams } from '~/types/internal';
 import {
   confidentialAffirmsToRaw,
   confidentialAffirmTransactionToMeshTransaction,
@@ -21,7 +25,7 @@ export type Params = {
  * @hidden
  */
 export async function prepareAffirmConfidentialTransactions(
-  this: Procedure<Params, ConfidentialTransaction>,
+  this: ConfidentialProcedure<Params, ConfidentialTransaction>,
   args: Params
 ): Promise<
   TransactionSpec<
@@ -104,8 +108,8 @@ export async function prepareAffirmConfidentialTransactions(
  * @hidden
  */
 export async function getAuthorization(
-  this: Procedure<Params, ConfidentialTransaction>
-): Promise<ProcedureAuthorization> {
+  this: ConfidentialProcedure<Params, ConfidentialTransaction>
+): Promise<ConfidentialProcedureAuthorization> {
   return {
     permissions: {
       assets: [],
@@ -118,5 +122,7 @@ export async function getAuthorization(
 /**
  * @hidden
  */
-export const affirmConfidentialTransactions = (): Procedure<Params, ConfidentialTransaction> =>
-  new Procedure(prepareAffirmConfidentialTransactions, getAuthorization);
+export const affirmConfidentialTransactions = (): ConfidentialProcedure<
+  Params,
+  ConfidentialTransaction
+> => new ConfidentialProcedure(prepareAffirmConfidentialTransactions, getAuthorization);
