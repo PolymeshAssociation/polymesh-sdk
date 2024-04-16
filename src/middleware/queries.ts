@@ -1329,6 +1329,59 @@ export function assetTransactionQuery(
 /**
  * @hidden
  *
+ * Get the transaction history for an NFT Collection
+ */
+export function nftTransactionQuery(
+  filters: QueryArgs<AssetTransaction, 'assetId'>,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<QueryArgs<AssetTransaction, 'assetId'>>> {
+  const query = gql`
+    query AssetTransactionQuery($assetId: String!) {
+      assetTransactions(
+        filter: { assetId: { equalTo: $assetId } }
+        orderBy: [${AssetTransactionsOrderBy.CreatedAtAsc}, ${AssetTransactionsOrderBy.CreatedBlockIdAsc}]
+      ) {
+        totalCount
+        nodes {
+          assetId
+          nftIds
+          fromPortfolioId
+          fromPortfolio {
+            identityId
+            number
+          }
+          toPortfolioId
+          toPortfolio {
+            identityId
+            number
+          }
+          eventId
+          eventIdx
+          extrinsicIdx
+          fundingRound
+          instructionId
+          instructionMemo
+          datetime
+          createdBlock {
+            blockId
+            hash
+            datetime
+          }
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+  };
+}
+
+/**
+ * @hidden
+ *
  * Get POLYX transactions where an Account or an Identity is involved
  */
 export function polyxTransactionsQuery(
@@ -1602,5 +1655,38 @@ export function customClaimTypeQuery(
   return {
     query,
     variables: { size: size?.toNumber(), start: start?.toNumber(), dids },
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get holders on an NFT Collection
+ */
+export function nftCollectionHolders(
+  assetId: string,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<QueryArgs<NftHolder, 'assetId'>>> {
+  const query = gql`
+    query NftCollectionHolders($assetId: String!, $size: Int, $start: Int) {
+      nftHolders(
+        first: $size
+        offset: $start
+        filter: { assetId: { equalTo: $assetId }, nftIds: { notEqualTo: [] } }
+        orderBy: IDENTITY_ID_DESC
+      ) {
+        nodes {
+          identityId
+          nftIds
+        }
+        totalCount
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { size: size?.toNumber(), start: start?.toNumber(), assetId },
   };
 }

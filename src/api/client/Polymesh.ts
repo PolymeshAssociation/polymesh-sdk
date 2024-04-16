@@ -81,7 +81,7 @@ function createMiddlewareApi(
  * Main entry point of the Polymesh SDK
  */
 export class Polymesh {
-  private context: Context = {} as Context;
+  protected context: Context = {} as Context;
 
   // Namespaces
 
@@ -113,7 +113,7 @@ export class Polymesh {
   /**
    * @hidden
    */
-  private constructor(context: Context) {
+  protected constructor(context: Context) {
     this.context = context;
 
     this.claims = new Claims(context);

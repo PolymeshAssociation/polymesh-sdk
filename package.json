@@ -58,7 +58,7 @@
     "@polymeshassociation/polymesh-types": "^5.9.1",
     "@polymeshassociation/signing-manager-types": "^3.0.0",
     "@polymeshassociation/typedoc-theme": "^1.2.0",
-    "@semantic-release/changelog": "^6.0.1",
+    "@semantic-release/changelog": "^6.0.3",
     "@types/bluebird": "^3.5.38",
     "@types/jest": "29.5.4",
     "@types/jest-when": "^3.5.2",
@@ -95,7 +95,7 @@
     "prettier-eslint": "15.0.1",
     "prettier-eslint-cli": "7.1.0",
     "replace-in-file": "^7.0.1",
-    "semantic-release": "^19.0.2",
+    "semantic-release": "^22.0.0",
     "stream-browserify": "^3.0.0",
     "ts-jest": "29.1.1",
     "ts-loader": "9.4.4",
@@ -109,7 +109,7 @@
     "typescript": "4.6.2",
     "webpack": "^5.88.2",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^4.15.1",
+    "webpack-dev-server": "^5.0.4",
     "websocket-as-promised": "^2.0.1"
   },
   "config": {
