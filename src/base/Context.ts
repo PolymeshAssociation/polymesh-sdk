@@ -119,8 +119,6 @@ export class Context {
 
   private _middlewareApi: ApolloClient<NormalizedCacheObject> | null;
 
-  private _polymeshApi: ApiPromise;
-
   private _signingManager?: SigningManager;
 
   private signingAddress?: string;
@@ -136,7 +134,6 @@ export class Context {
     const { polymeshApi, middlewareApiV2, ss58Format } = params;
 
     this._middlewareApi = middlewareApiV2;
-    this._polymeshApi = polymeshApi;
     this.polymeshApi = polymeshApi;
     this.ss58Format = ss58Format;
   }
@@ -225,13 +222,13 @@ export class Context {
     if (signingManager === null) {
       this._signingManager = undefined;
       this.signingAddress = undefined;
-      this._polymeshApi.setSigner(undefined);
+      this.polymeshApi.setSigner(undefined);
 
       return;
     }
 
     this._signingManager = signingManager;
-    this._polymeshApi.setSigner(signingManager.getExternalSigner());
+    this.polymeshApi.setSigner(signingManager.getExternalSigner());
 
     signingManager.setSs58Format(this.ss58Format.toNumber());
 
@@ -480,7 +477,7 @@ export class Context {
    * Retrieve the polkadot.js promise client
    */
   public getPolymeshApi(): ApiPromise {
-    return this._polymeshApi;
+    return this.polymeshApi;
   }
 
   /**
@@ -700,11 +697,7 @@ export class Context {
    */
   public getTransactionArguments({ tag }: { tag: TxTag }): TransactionArgument[] {
     const {
-      /*
-       * we use the non-proxy polkadot instance since we shouldn't need to
-       * have a signer Account for this method
-       */
-      _polymeshApi: { tx },
+      polymeshApi: { tx },
     } = this;
 
     const [section, method] = tag.split('.');
