@@ -23,6 +23,7 @@ import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/typ
 import { stringUpperFirst } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
+import fetch from 'cross-fetch';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
 import { lt, major, satisfies } from 'semver';
@@ -1428,19 +1429,34 @@ export async function assertExpectedSqVersion(context: Context): Promise<void> {
 /**
  * @hidden
  *
- * Checks chain version. This function uses a websocket as it's intended to be called during initialization
+ * @returns protocol present in `url`, or `undefined` if one is not found
+ */
+export function extractProtocol(url: string): string | undefined {
+  const matcher = /^(https?|wss?):\/\//;
+
+  return matcher.exec(url)?.[1];
+}
+
+/**
+ * @hidden
+ *
+ * Checks chain version. This function uses a websocket/fetch as it's intended to be called during initialization
  * @param nodeUrl - URL for the chain node
  * @returns A promise that resolves if the version is in the expected range, otherwise it will reject
  */
 export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
   return new Promise<void>((resolve, reject) => {
-    const client = new W3CWebSocket(nodeUrl);
+    const protocol = extractProtocol(nodeUrl);
 
-    client.onopen = (): void => {
-      client.send(JSON.stringify(CONFIDENTIAL_ASSETS_SUPPORTED_CALL));
-      client.send(JSON.stringify(SYSTEM_VERSION_RPC_CALL));
-      client.send(JSON.stringify(STATE_RUNTIME_VERSION_CALL));
-    };
+    if (!protocol) {
+      const err = new PolymeshError({
+        code: ErrorCode.General,
+        message: 'nodeUrl must start with protocol. http(s) and ws(s) are supported',
+        data: { nodeUrl, protocol },
+      });
+      reject(err);
+      return;
+    }
 
     let confidentialAssetsSupported: boolean;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1448,29 +1464,20 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let specResponse: any;
 
-    client.onmessage = (msg): void => {
-      const data = JSON.parse(msg.data.toString());
-      const { id } = data;
-
-      if (id === SYSTEM_VERSION_RPC_CALL.id) {
-        nodeResponse = data;
-      } else if (id === CONFIDENTIAL_ASSETS_SUPPORTED_CALL.id) {
-        confidentialAssetsSupported = !!data.result;
-      } else {
-        specResponse = data;
-      }
-
+    const checkResponses = (cleanup?: () => void): void => {
       if (specResponse && nodeResponse && typeof confidentialAssetsSupported !== 'undefined') {
         assertExpectedSpecVersion(specResponse, reject, confidentialAssetsSupported);
         assertExpectedNodeVersion(nodeResponse, reject, confidentialAssetsSupported);
 
-        client.close();
+        if (cleanup) {
+          cleanup();
+        }
+
         resolve();
       }
     };
 
-    client.onerror = (error: Error): void => {
-      client.close();
+    const handleError = (error: Error): void => {
       const err = new PolymeshError({
         code: ErrorCode.FatalError,
         message: `Could not connect to the Polymesh node at ${nodeUrl}`,
@@ -1478,6 +1485,76 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
       });
       reject(err);
     };
+
+    if (protocol.startsWith('ws')) {
+      const client = new W3CWebSocket(nodeUrl);
+      client.onopen = (): void => {
+        client.send(JSON.stringify(CONFIDENTIAL_ASSETS_SUPPORTED_CALL));
+        client.send(JSON.stringify(SYSTEM_VERSION_RPC_CALL));
+        client.send(JSON.stringify(STATE_RUNTIME_VERSION_CALL));
+      };
+
+      client.onmessage = (msg): void => {
+        const data = JSON.parse(msg.data.toString());
+        const { id } = data;
+
+        if (id === SYSTEM_VERSION_RPC_CALL.id) {
+          nodeResponse = data;
+        } else if (id === CONFIDENTIAL_ASSETS_SUPPORTED_CALL.id) {
+          confidentialAssetsSupported = !!data.result;
+        } else {
+          specResponse = data;
+        }
+
+        checkResponses(() => client.close());
+      };
+
+      client.onerror = (error: Error): void => {
+        client.close();
+        handleError(error);
+      };
+    } else {
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      const headers = { 'Content-Type': 'application/json' };
+      fetch(nodeUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(CONFIDENTIAL_ASSETS_SUPPORTED_CALL),
+      })
+        .then(response => response.json())
+        .then(data => {
+          confidentialAssetsSupported = !!data.result;
+
+          checkResponses();
+        })
+        .catch(error => handleError(error));
+
+      fetch(nodeUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(SYSTEM_VERSION_RPC_CALL),
+      })
+        .then(response => response.json())
+        .then(data => {
+          nodeResponse = data;
+
+          checkResponses();
+        })
+        .catch(error => handleError(error));
+
+      fetch(nodeUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(STATE_RUNTIME_VERSION_CALL),
+      })
+        .then(response => response.json())
+        .then(data => {
+          specResponse = data;
+
+          checkResponses();
+        })
+        .catch(error => handleError(error));
+    }
   });
 }
 

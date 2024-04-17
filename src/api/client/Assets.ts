@@ -100,7 +100,7 @@ export class Assets {
   /**
    * Check if a ticker hasn't been reserved
    *
-   * @note can be subscribed to
+   * @note can be subscribed to, if connected to node using a web socket
    */
   public isTickerAvailable(args: { ticker: string }): Promise<boolean>;
   public isTickerAvailable(
@@ -113,9 +113,12 @@ export class Assets {
     args: { ticker: string },
     callback?: SubCallback<boolean>
   ): Promise<boolean | UnsubCallback> {
-    const reservation = new TickerReservation(args, this.context);
+    const { context } = this;
+
+    const reservation = new TickerReservation(args, context);
 
     if (callback) {
+      context.assertSupportsSubscription();
       return reservation.details(({ status: reservationStatus }) => {
         // eslint-disable-next-line n/no-callback-literal, @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(reservationStatus === TickerReservationStatus.Free);

@@ -118,7 +118,7 @@ export class Network {
   /**
    * Get the Treasury POLYX balance
    *
-   * @note can be subscribed to
+   * @note can be subscribed to, if connected to node using a web socket
    */
   public getTreasuryBalance(): Promise<BigNumber>;
   public getTreasuryBalance(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
@@ -130,6 +130,7 @@ export class Network {
     const account = this.getTreasuryAccount();
 
     if (callback) {
+      this.context.assertSupportsSubscription();
       return account.getBalance(({ free: freeBalance }) => {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(freeBalance);
@@ -470,5 +471,16 @@ export class Network {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return !!(query as any).confidentialAsset;
+  }
+
+  /**
+   * Returns if functions can be subscribed.
+   *
+   * @return `true` if connected over ws(s)://, otherwise `false`
+   */
+  public supportsSubscription(): boolean {
+    const { context } = this;
+
+    return context.supportsSubscription();
   }
 }

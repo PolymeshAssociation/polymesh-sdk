@@ -88,7 +88,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
   /**
    * Retrieve the Reservation's owner, expiry date and status
    *
-   * @note can be subscribed to
+   * @note can be subscribed to, if connected to node using a web socket
    */
   public details(): Promise<TickerReservationDetails>;
   public details(callback: SubCallback<TickerReservationDetails>): Promise<UnsubCallback>;
@@ -139,6 +139,8 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
     };
 
     if (callback) {
+      context.assertSupportsSubscription();
+
       return requestMulti<[typeof asset.tickers, typeof asset.tokens]>(
         context,
         [

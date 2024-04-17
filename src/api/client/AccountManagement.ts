@@ -179,7 +179,7 @@ export class AccountManagement {
    *
    * @param args.account - defaults to the signing Account
    *
-   * @note can be subscribed to
+   * @note can be subscribed to, if connected to node using a web socket
    */
   public getAccountBalance(args?: { account: string | Account }): Promise<AccountBalance>;
   public getAccountBalance(callback: SubCallback<AccountBalance>): Promise<UnsubCallback>;
@@ -218,6 +218,8 @@ export class AccountManagement {
     }
 
     if (cb) {
+      context.assertSupportsSubscription();
+
       return account.getBalance(cb);
     }
 

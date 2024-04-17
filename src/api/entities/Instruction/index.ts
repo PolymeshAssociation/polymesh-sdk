@@ -230,7 +230,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   /**
    * Retrieve current status of the Instruction. This can be subscribed to know if instruction fails
    *
-   * @note can be subscribed to
+   * @note can be subscribed to, if connected to node using a web socket
    * @note current status as `Executed` means that the Instruction has been executed/rejected and pruned from
    *   the chain.
    */
@@ -244,6 +244,8 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       id,
       context,
     } = this;
+
+    context.assertSupportsSubscription();
 
     const assembleResult = (
       rawStatus: PolymeshPrimitivesSettlementInstructionStatus

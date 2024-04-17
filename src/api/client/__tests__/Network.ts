@@ -632,4 +632,12 @@ describe('Network Class', () => {
       expect(result).toEqual(true);
     });
   });
+
+  describe('method: supportsSubscription', () => {
+    it('should return if subscription is supported', () => {
+      const result = network.supportsSubscription();
+
+      expect(result).toEqual(true);
+    });
+  });
 });

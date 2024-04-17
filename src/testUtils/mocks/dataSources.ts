@@ -459,6 +459,7 @@ interface ContextOptions {
   signingAccountAuthorizationsGetOne?: AuthorizationRequest;
   networkVersion?: string;
   supportsSubsidy?: boolean;
+  supportsSubscription?: boolean;
 }
 
 interface SigningManagerOptions {
@@ -778,6 +779,7 @@ const defaultContextOptions: ContextOptions = {
   signingAccountAuthorizationsGetOne: {} as AuthorizationRequest,
   networkVersion: '1.0.0',
   supportsSubsidy: true,
+  supportsSubscription: true,
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultSigningManagerOptions: SigningManagerOptions = {
@@ -900,9 +902,11 @@ function configureContext(opts: ContextOptions): void {
       .mockResolvedValue(opts.getDividendDistributionsForAssets),
     getNetworkVersion: jest.fn().mockResolvedValue(opts.networkVersion),
     supportsSubsidy: jest.fn().mockReturnValue(opts.supportsSubsidy),
+    supportsSubscription: jest.fn().mockReturnValue(opts.supportsSubscription),
     createType: jest.fn() as jest.Mock<unknown, [unknown]>,
     getPolyxTransactions: jest.fn().mockResolvedValue(opts.getPolyxTransactions),
     assertHasSigningAddress: jest.fn(),
+    assertSupportsSubscription: jest.fn(),
   } as unknown as MockContext;
 
   contextInstance.clone = jest.fn().mockReturnValue(contextInstance);

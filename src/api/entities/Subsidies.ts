@@ -56,7 +56,7 @@ export class Subsidies extends Namespace<Account> {
    * Get the Subsidy relationship along with the subsidized amount for this Account is the beneficiary.
    * If this Account isn't being subsidized, return null
    *
-   * @note can be subscribed to
+   * @note can be subscribed to, if connected to node using a web socket
    */
   public getSubsidizer(): Promise<SubsidyWithAllowance | null>;
   public getSubsidizer(callback: SubCallback<SubsidyWithAllowance | null>): Promise<UnsubCallback>;
@@ -71,6 +71,7 @@ export class Subsidies extends Namespace<Account> {
     } = this;
 
     if (callback) {
+      context.assertSupportsSubscription();
       return context.accountSubsidy(address, callback);
     }
 

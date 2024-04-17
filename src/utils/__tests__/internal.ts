@@ -9,6 +9,7 @@ import {
 } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
+import crossFetch from 'cross-fetch';
 import { when } from 'jest-when';
 
 import {
@@ -55,12 +56,15 @@ import {
 } from '~/types';
 import { tuple } from '~/types/utils';
 import {
+  CONFIDENTIAL_ASSETS_SUPPORTED_CALL,
   MAX_TICKER_LENGTH,
   MINIMUM_SQ_VERSION,
   PRIVATE_SUPPORTED_NODE_SEMVER,
   PRIVATE_SUPPORTED_SPEC_SEMVER,
+  STATE_RUNTIME_VERSION_CALL,
   SUPPORTED_NODE_SEMVER,
   SUPPORTED_SPEC_SEMVER,
+  SYSTEM_VERSION_RPC_CALL,
 } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -88,6 +92,7 @@ import {
   createClaim,
   createProcedureMethod,
   delay,
+  extractProtocol,
   filterEventRecords,
   getApiAtBlock,
   getCheckpointValue,
@@ -127,6 +132,14 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
 );
 jest.mock('websocket', require('~/testUtils/mocks/dataSources').mockWebSocketModule());
+
+jest.mock('cross-fetch', () => {
+  return {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    __esModule: true,
+    default: jest.fn(),
+  };
+});
 
 describe('delay', () => {
   beforeAll(() => {
@@ -1241,6 +1254,120 @@ describe('assertExpectedChainVersion', () => {
     warnSpy.mockRestore();
   });
 
+  describe('with http:// connection', () => {
+    const originalFetch = global.fetch;
+    beforeAll(() => {
+      global.fetch = jest.fn();
+    });
+
+    afterAll(() => {
+      global.fetch = originalFetch;
+    });
+
+    it('should resolve if the versions are correct', () => {
+      const url = 'http://example.com';
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      const requestBase = { headers: { 'Content-Type': 'application/json' }, method: 'POST' };
+
+      when(crossFetch)
+        .calledWith(url, {
+          ...requestBase,
+          body: JSON.stringify(CONFIDENTIAL_ASSETS_SUPPORTED_CALL),
+        })
+        .mockResolvedValue({
+          status: 200,
+          json: async () => ({
+            result: null,
+          }),
+        } as Response);
+
+      when(crossFetch)
+        .calledWith(url, {
+          ...requestBase,
+          body: JSON.stringify(STATE_RUNTIME_VERSION_CALL),
+        })
+        .mockResolvedValue({
+          status: 200,
+          json: async () => ({
+            result: { specVersion: getSpecVersion(SUPPORTED_SPEC_SEMVER) },
+          }),
+        } as Response);
+
+      when(crossFetch)
+        .calledWith(url, {
+          ...requestBase,
+          body: JSON.stringify(SYSTEM_VERSION_RPC_CALL),
+        })
+        .mockResolvedValue({
+          status: 200,
+          json: async () => ({
+            result: SUPPORTED_NODE_SEMVER,
+          }),
+        } as Response);
+
+      const signal = assertExpectedChainVersion('http://example.com');
+
+      return expect(signal).resolves.not.toThrow();
+    });
+
+    it('should return rejected if there is an error in confidential asset call', () => {
+      const url = 'http://example.com';
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      const requestBase = { headers: { 'Content-Type': 'application/json' }, method: 'POST' };
+
+      when(crossFetch)
+        .calledWith(url, {
+          ...requestBase,
+          body: JSON.stringify(CONFIDENTIAL_ASSETS_SUPPORTED_CALL),
+        })
+        .mockRejectedValueOnce({
+          msg: 'some error',
+        });
+
+      const signal = assertExpectedChainVersion('http://example.com');
+
+      return expect(signal).rejects.toThrow();
+    });
+
+    it('should be rejected if there is an error in node version call', () => {
+      const url = 'http://example.com';
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      const requestBase = { headers: { 'Content-Type': 'application/json' }, method: 'POST' };
+
+      when(crossFetch)
+        .calledWith(url, {
+          ...requestBase,
+          body: JSON.stringify(SYSTEM_VERSION_RPC_CALL),
+        })
+        .mockRejectedValueOnce({
+          msg: 'some error',
+        });
+
+      const signal = assertExpectedChainVersion('http://example.com');
+
+      return expect(signal).rejects.toThrow();
+    });
+
+    it('should be rejected if there is an error in spec version call', () => {
+      const url = 'http://example.com';
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      const requestBase = { headers: { 'Content-Type': 'application/json' }, method: 'POST' };
+
+      when(crossFetch)
+        .calledWith(url, {
+          ...requestBase,
+          body: JSON.stringify(STATE_RUNTIME_VERSION_CALL),
+        })
+        .mockRejectedValueOnce({
+          msg: 'some error',
+        });
+
+      const signal = assertExpectedChainVersion('http://example.com');
+
+      return expect(signal).rejects.toThrow();
+    });
+  });
+
   it('should resolve if it receives both expected RPC node and chain spec version', () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     client.onopen();
@@ -1259,6 +1386,17 @@ describe('assertExpectedChainVersion', () => {
     client.sendIsPrivateSupported(true);
 
     return expect(signal).resolves.not.toThrow();
+  });
+
+  it('should throw an error if protocol is not provided in the connection string', () => {
+    const signal = assertExpectedChainVersion('example');
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.General,
+      message: 'nodeUrl must start with protocol. http(s) and ws(s) are supported',
+    });
+
+    return expect(signal).rejects.toThrow(expectedError);
   });
 
   it('should throw an error given a major RPC node version mismatch', () => {
@@ -2528,5 +2666,27 @@ describe('assertIdentityExists', () => {
     });
 
     return expect(assertIdentityExists(identity)).rejects.toThrow(expectedError);
+  });
+});
+
+describe('extractProtocol', () => {
+  it('should return the protocol from a URL string', () => {
+    let result = extractProtocol('http://example.com');
+    expect(result).toEqual('http');
+
+    result = extractProtocol('https://example.com');
+    expect(result).toEqual('https');
+
+    result = extractProtocol('ws://example.com');
+    expect(result).toEqual('ws');
+
+    result = extractProtocol('wss://example.com');
+    expect(result).toEqual('wss');
+  });
+
+  it('should return undefined if no protocol is present', () => {
+    const result = extractProtocol('someString');
+
+    expect(result).toBeUndefined();
   });
 });
