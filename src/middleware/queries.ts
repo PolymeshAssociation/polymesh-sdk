@@ -1690,3 +1690,72 @@ export function nftCollectionHolders(
     variables: { size: size?.toNumber(), start: start?.toNumber(), assetId },
   };
 }
+
+type MultiSigProposalQueryParameters = {
+  multisigId: string;
+};
+
+/**
+ *  @hidden
+ */
+export function createmultiSigProposalsQueryFilters(): {
+  args: string;
+  filter: string;
+} {
+  const args = ['$size: Int, $start: Int'];
+  const filters = [];
+
+  args.push('$multisigId: [String!]');
+  filters.push('multisigId: { eq: $multisigId }');
+
+  return {
+    args: `(${args.join()})`,
+    filter: `filter: { ${filters.join()} },`,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get MultiSig Proposals history for a given MultiSig address
+ */
+export function multiSigProposalsQuery(
+  multisigId: string,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<MultiSigProposalQueryParameters>> {
+  const { args, filter } = createmultiSigProposalsQueryFilters();
+
+  const query = gql`
+  query MultiSigProposalsQuery
+    ${args}
+    {
+      multiSigProposals(
+        ${filter}
+        first: $size
+        offset: $start
+      ){
+        nodes {
+      id,
+      proposalId,
+      multisigId,
+      approvalCount,
+      status,
+      creator {
+        did,
+      }
+      rejectionCount,
+      createdBlockId,
+      updatedBlockId,
+      datetime,
+    }
+    totalCount
+      }
+    }
+`;
+
+  return {
+    query,
+    variables: { size: size?.toNumber(), start: start?.toNumber(), multisigId },
+  };
+}

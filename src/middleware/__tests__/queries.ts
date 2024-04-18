@@ -22,6 +22,7 @@ import {
   latestSqVersionQuery,
   metadataQuery,
   multiSigProposalQuery,
+  multiSigProposalsQuery,
   multiSigProposalVotesQuery,
   nftCollectionHolders,
   nftHoldersQuery,
@@ -641,6 +642,28 @@ describe('nftCollectionHoldersQuery', () => {
       assetId: ticker,
       size: 1,
       start: 0,
+    });
+  });
+});
+
+describe('multiSigProposalsQuery', () => {
+  const multisigId = 'someId';
+
+  it('should return correct query and variables when size, start are not provided', () => {
+    const result = multiSigProposalsQuery(multisigId);
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({ size: undefined, start: undefined, multisigId });
+  });
+
+  it('should return correct query and variables when size, start are provided', () => {
+    const size = new BigNumber(10);
+    const start = new BigNumber(0);
+    const result = multiSigProposalsQuery(multisigId, size, start);
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({
+      size: size.toNumber(),
+      start: start.toNumber(),
+      multisigId,
     });
   });
 });

@@ -1,15 +1,20 @@
 import BigNumber from 'bignumber.js';
 
 import { UniqueIdentifiers } from '~/api/entities/Account';
+import { HistoricalMultiSigProposal } from '~/api/entities/HistoricalMultiSigProposal';
 import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 import { Account, Context, Identity, modifyMultiSig, PolymeshError } from '~/internal';
+import { multiSigProposalsQuery } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
 import {
   ErrorCode,
   ModifyMultiSigParams,
   MultiSigDetails,
   ProcedureMethod,
   ProposalStatus,
+  ResultSet,
 } from '~/types';
+import { Ensured } from '~/types/utils';
 import {
   addressToKey,
   identityIdToString,
@@ -20,7 +25,7 @@ import {
   stringToAccountId,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, optionize } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod, optionize } from '~/utils/internal';
 
 /**
  * Represents a MultiSig Account. A MultiSig Account is composed of one or more signing Accounts. In order to submit a transaction, a specific amount of those signing Accounts must approve it first
@@ -141,6 +146,43 @@ export class MultiSig extends Account {
     });
 
     return proposals.filter((_, index) => statuses[index] === ProposalStatus.Active);
+  }
+
+  /**
+   * Return all { @link api/entities/HistoricalMultiSigProposal!HistoricalMultiSigProposal } for this MultiSig Account
+   */
+  public async getHistoricalProposals(opts: {
+    size?: BigNumber;
+    start?: BigNumber;
+  }): Promise<ResultSet<HistoricalMultiSigProposal>> {
+    const {
+      context: { queryMiddleware },
+      context,
+      address,
+    } = this;
+    const { size, start } = opts;
+
+    const {
+      data: {
+        multiSigProposals: { nodes, totalCount },
+      },
+    } = await queryMiddleware<Ensured<Query, 'multiSigProposals'>>(
+      multiSigProposalsQuery(address, size, start)
+    );
+
+    const data = nodes.map(
+      proposal => new HistoricalMultiSigProposal({ id: proposal.id }, proposal, context)
+    );
+
+    const count = new BigNumber(totalCount);
+
+    const next = calculateNextKey(count, data.length, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
   }
 
   /**
