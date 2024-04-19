@@ -6,12 +6,13 @@ import {
   AccountKeyType,
   HistoricPolyxTransaction,
 } from '~/api/entities/Account/types';
-import { Account, Context, Entity } from '~/internal';
+import { Account, Context, Entity, PolymeshError } from '~/internal';
 import { extrinsicsByArgs } from '~/middleware/queries';
 import { CallIdEnum, ExtrinsicsOrderBy, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   createMockAccountId,
+  createMockCall,
   createMockIdentityId,
   createMockOption,
   createMockPermissions,
@@ -21,6 +22,7 @@ import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
   Balance,
+  ErrorCode,
   ModuleName,
   Permissions,
   PermissionType,
@@ -944,6 +946,56 @@ describe('Account class', () => {
       const result = await account.getPolyxTransactions({});
 
       expect(result).toEqual(fakeResult);
+    });
+  });
+
+  describe('method: getPendingProposals', () => {
+    it('should return the MultiSig the Account is a signer for', async () => {
+      dsMockUtils.createQueryMock('identity', 'keyRecords', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockKeyRecord({
+            MultiSigSignerKey: dsMockUtils.createMockAccountId('multiAddress'),
+          })
+        ),
+      });
+
+      account = new Account({ address }, context);
+
+      const id = new BigNumber(0);
+
+      dsMockUtils.createQueryMock('multiSig', 'proposals', {
+        entries: [
+          [
+            [dsMockUtils.createMockAccountId(address), dsMockUtils.createMockU64(id)],
+            createMockOption(createMockCall()),
+          ],
+        ],
+      });
+
+      const result = await account.getPendingProposals();
+
+      expect(result).toMatchObject([
+        { multiSig: expect.objectContaining({ address: 'multiAddress' }), id },
+      ]);
+    });
+
+    it('should throw an error if Account is not part of MultiSig', async () => {
+      dsMockUtils.createQueryMock('identity', 'keyRecords', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockKeyRecord({
+            PrimaryKey: dsMockUtils.createMockAccountId(),
+          })
+        ),
+      });
+
+      account = new Account({ address }, context);
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'This Account is not a signer on any MultiSig',
+      });
+
+      return expect(account.getPendingProposals()).rejects.toThrow(expectedError);
     });
   });
 });
