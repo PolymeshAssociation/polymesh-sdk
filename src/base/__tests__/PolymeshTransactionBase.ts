@@ -1,9 +1,11 @@
+import { SubmittableResult } from '@polkadot/api';
 import { Balance } from '@polkadot/types/interfaces';
 import { Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 import { noop } from 'lodash';
 
+import * as baseUtils from '~/base/utils';
 import {
   Context,
   PolymeshError,
@@ -628,6 +630,113 @@ describe('Polymesh Transaction Base class', () => {
         expect.objectContaining({ era: 7 }),
         expect.any(Function)
       );
+    });
+
+    it('should use polling when subscription is not enabled', async () => {
+      const transaction = dsMockUtils.createTxMock('staking', 'bond', { autoResolve: false });
+      context.supportsSubscription.mockReturnValue(false);
+
+      const fakeReceipt = new SubmittableResult({
+        blockNumber: dsMockUtils.createMockU32(new BigNumber(101)),
+        status: dsMockUtils.createMockExtrinsicStatus({
+          Finalized: dsMockUtils.createMockHash('blockHash'),
+        }),
+        txHash: dsMockUtils.createMockHash('bond'),
+        txIndex: 1,
+      });
+
+      jest.spyOn(baseUtils, 'pollForTransactionFinalization').mockResolvedValue(fakeReceipt);
+
+      const args = tuple('FOO');
+      const txWithArgsMock = transaction(...args);
+
+      const tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          transaction,
+          args,
+          resolver: 'pollingResult',
+        },
+        context
+      );
+
+      const result = await tx.run();
+      expect(txWithArgsMock.signAndSend).toHaveBeenCalledWith(
+        txSpec.signingAddress,
+        expect.objectContaining({ era: undefined, nonce: -1, signer: 'signer' })
+      );
+
+      expect(tx.blockHash).toEqual('blockHash');
+      expect(tx.blockNumber).toEqual(new BigNumber(101));
+      expect(tx.txHash).toEqual('bond');
+      expect(tx.txIndex).toEqual(new BigNumber(1));
+      expect(tx.status).toBe(TransactionStatus.Succeeded);
+      expect(tx.receipt).toBeDefined();
+
+      expect(result).toBe('pollingResult');
+    });
+
+    it('should throw an error when polling if there is an extrinsic failure', async () => {
+      const transaction = dsMockUtils.createTxMock('staking', 'bond', { autoResolve: false });
+      context.supportsSubscription.mockReturnValue(false);
+
+      const fakeReceipt = new SubmittableResult({
+        blockNumber: dsMockUtils.createMockU32(new BigNumber(101)),
+        status: dsMockUtils.createMockExtrinsicStatus({
+          Finalized: dsMockUtils.createMockHash('blockHash'),
+        }),
+        txHash: dsMockUtils.createMockHash('bond'),
+        txIndex: 1,
+      });
+      fakeReceipt.filterRecords = jest.fn().mockReturnValue([{ event: { data: ['some error'] } }]);
+
+      jest.spyOn(baseUtils, 'pollForTransactionFinalization').mockResolvedValue(fakeReceipt);
+
+      const args = tuple('FOO');
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnexpectedError,
+        message: 'Unknown error',
+      });
+
+      const tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          transaction,
+          args,
+          resolver: undefined,
+        },
+        context
+      );
+
+      return expect(tx.run()).rejects.toThrow(expectedError);
+    });
+
+    it('should throw an error when polling if there is an error submitting the transaction', async () => {
+      const transaction = dsMockUtils.createTxMock('staking', 'bond', { autoResolve: false });
+      context.supportsSubscription.mockReturnValue(false);
+
+      const args = tuple('FOO');
+      const txWithArgsMock = transaction(...args);
+
+      txWithArgsMock.signAndSend.mockRejectedValue(new Error('some error'));
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnexpectedError,
+        message: 'some error',
+      });
+
+      const tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          transaction,
+          args,
+          resolver: 'pollingResult',
+        },
+        context
+      );
+
+      return expect(tx.run()).rejects.toThrow(expectedError);
     });
   });
 

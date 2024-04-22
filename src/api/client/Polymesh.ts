@@ -34,7 +34,9 @@ import { Settlements } from './Settlements';
 
 export interface ConnectParams {
   /**
-   * The websocket URL for the Polymesh node to connect to
+   * The websocket or http URL for the Polymesh node to connect to
+   *
+   * @note subscription features are not available if an http URL is provided
    */
   nodeUrl: string;
   /**

@@ -1,7 +1,9 @@
+import { SubmittableResult } from '@polkadot/api';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Network } from '~/api/client/Network';
+import * as baseUtils from '~/base/utils';
 import { Context, PolymeshError, PolymeshTransaction } from '~/internal';
 import { eventsByArgs, extrinsicByHash } from '~/middleware/queries';
 import { CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
@@ -395,6 +397,7 @@ describe('Network Class', () => {
               extrinsics: [
                 {
                   toHex: jest.fn().mockImplementation(() => 'hex'),
+                  hash: dsMockUtils.createMockHash(),
                 },
               ],
             },
@@ -615,6 +618,31 @@ describe('Network Class', () => {
       await expect(network.submitTransaction(mockPayload, signature)).rejects.toThrow(
         expectedError
       );
+    });
+
+    it('should use polling when subscription is not enabled', async () => {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker', {
+        autoResolve: false,
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (context.polymeshApi as any).tx = jest.fn().mockReturnValue(transaction);
+
+      context.supportsSubscription.mockReturnValue(false);
+
+      const fakeReceipt = new SubmittableResult({
+        blockNumber: dsMockUtils.createMockU32(new BigNumber(101)),
+        status: dsMockUtils.createMockExtrinsicStatus({
+          Finalized: dsMockUtils.createMockHash('blockHash'),
+        }),
+        txHash: dsMockUtils.createMockHash('bond'),
+        txIndex: 1,
+      });
+
+      jest.spyOn(baseUtils, 'pollForTransactionFinalization').mockResolvedValue(fakeReceipt);
+
+      const signature = '0x01';
+      await network.submitTransaction(mockPayload, signature);
     });
   });
 

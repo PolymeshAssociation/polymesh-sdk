@@ -39,6 +39,7 @@ import {
   DispatchResult,
   EventRecord,
   ExtrinsicStatus,
+  H256,
   Hash,
   Header,
   Index,
@@ -49,6 +50,7 @@ import {
   SignedBlock,
 } from '@polkadot/types/interfaces';
 import {
+  FrameSystemPhase,
   PalletAssetAssetOwnershipRelation,
   PalletAssetSecurityToken,
   PalletAssetTickerRegistration,
@@ -215,6 +217,7 @@ function createApi(): Mutable<ApiPromise> & EventEmitter {
     disconnect: jest.fn() as () => Promise<void>,
     setSigner: jest.fn() as (signer: PolkadotSigner) => void,
     genesisHash: { toString: jest.fn().mockReturnValue('someGenesisHash') } as unknown as Hash,
+    hasSubscriptions: true,
   } as Mutable<ApiPromise> & EventEmitter;
 }
 
@@ -2591,12 +2594,38 @@ export const createMockAuthorization = (authorization?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockEventRecord = (data: unknown[]): EventRecord =>
-  ({
-    event: {
-      data,
+export const createMockSystemPhase = (
+  phase?: { ApplyExtrinsic: u32 } | { Finalization: bool } | { Initialization: bool }
+): FrameSystemPhase => {
+  return createMockEnum<FrameSystemPhase>(phase);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockEventRecord = (record?: {
+  phase: FrameSystemPhase | Parameters<typeof createMockSystemPhase>;
+  data: unknown[];
+  topics?: Vec<H256>;
+}): EventRecord => {
+  const { phase, data, topics } = record ?? {
+    phase: createMockSystemPhase(),
+    data: [],
+    topics: [],
+  };
+
+  return createMockCodec(
+    {
+      phase,
+      event: {
+        data,
+      },
+      topics: topics ?? [],
     },
-  } as unknown as EventRecord);
+    !record
+  ) as unknown as EventRecord;
+};
 
 /**
  * @hidden
@@ -3784,17 +3813,20 @@ export const createMockExtrinsics = (
     | Vec<GenericExtrinsic>
     | {
         toHex: () => string;
+        hash: Hash;
       }[]
 ): MockCodec<Vec<GenericExtrinsic>> => {
-  const [{ toHex }] = extrinsics ?? [
+  const [{ toHex, hash }] = extrinsics ?? [
     {
       toHex: () => createMockStringCodec(),
+      hash: createMockHash(),
     },
   ];
   return createMockCodec(
     [
       {
         toHex,
+        hash,
       },
     ],
     !extrinsics
@@ -4563,3 +4595,21 @@ export const createMockAffirmationCount = (
     !affirmCount
   );
 };
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockExtrinsicStatus = (
+  status?:
+    | { Future: bool }
+    | { Ready: bool }
+    | { Broadcast: Vec<Text> }
+    | { InBlock: Hash }
+    | { Retracted: Hash }
+    | { FinalityTimeout: Hash }
+    | { Finalized: Hash }
+    | { Usurped: Hash }
+    | { Dropped: bool }
+    | { Invalid: bool }
+): MockCodec<ExtrinsicStatus> => createMockEnum<ExtrinsicStatus>(status);

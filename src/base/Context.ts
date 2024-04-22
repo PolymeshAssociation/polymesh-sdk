@@ -1077,25 +1077,35 @@ export class Context {
   public async getLatestBlock(): Promise<BigNumber> {
     const { chain } = this.polymeshApi.rpc;
 
-    /*
-     * This is faster than calling `getFinalizedHead` and then `getHeader`.
-     * We're promisifying a callback subscription to the latest finalized block
-     * and unsubscribing as soon as we get the first result
-     */
-    const gettingHeader = new Promise<Header>((resolve, reject) => {
-      const gettingUnsub = chain.subscribeFinalizedHeads(header => {
-        gettingUnsub
-          .then(unsub => {
-            unsub();
-            resolve(header);
-          })
-          .catch(err => reject(err));
+    if (this.supportsSubscription()) {
+      /*
+       * This is faster than calling `getFinalizedHead` and then `getHeader`.
+       * We're promisifying a callback subscription to the latest finalized block
+       * and unsubscribing as soon as we get the first result
+       */
+      const gettingHeader = new Promise<Header>((resolve, reject) => {
+        const gettingUnsub = chain.subscribeFinalizedHeads(header => {
+          gettingUnsub
+            .then(unsub => {
+              unsub();
+              resolve(header);
+            })
+            .catch(err => reject(err));
+        });
       });
-    });
 
-    const { number } = await gettingHeader;
+      const { number } = await gettingHeader;
 
-    return u32ToBigNumber(number.unwrap());
+      return u32ToBigNumber(number.unwrap());
+    } else {
+      /**
+       * Without subscriptions we need to resort to the slower method
+       */
+      const finalizedHead = await chain.getFinalizedHead();
+      const { number } = await chain.getHeader(finalizedHead);
+
+      return u32ToBigNumber(number.unwrap());
+    }
   }
 
   /**

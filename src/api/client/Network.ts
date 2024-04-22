@@ -1,7 +1,7 @@
 import { isHex } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 
-import { handleExtrinsicFailure } from '~/base/utils';
+import { handleExtrinsicFailure, pollForTransactionFinalization } from '~/base/utils';
 import { Account, Context, PolymeshError, transferPolyx } from '~/internal';
 import { eventsByArgs, extrinsicByHash } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
@@ -216,69 +216,89 @@ export class Network {
 
     transaction.addSignature(payload.address, signature, payload);
 
-    const submissionDetails: SubmissionDetails = {
-      blockHash: '',
-      transactionHash: transaction.hash.toString(),
-      transactionIndex: new BigNumber(0),
-    };
+    if (context.supportsSubscription()) {
+      const submissionDetails: SubmissionDetails = {
+        blockHash: '',
+        transactionHash: transaction.hash.toString(),
+        transactionIndex: new BigNumber(0),
+      };
 
-    return new Promise((resolve, reject) => {
-      const gettingUnsub = transaction.send(receipt => {
-        const { status } = receipt;
-        let isLastCallback = false;
-        let unsubscribing = Promise.resolve();
-        let extrinsicFailedEvent;
+      return new Promise((resolve, reject) => {
+        const gettingUnsub = transaction.send(receipt => {
+          const { status } = receipt;
+          let isLastCallback = false;
+          let unsubscribing = Promise.resolve();
+          let extrinsicFailedEvent;
 
-        // isCompleted implies status is one of: isFinalized, isInBlock or isError
-        if (receipt.isCompleted) {
-          if (receipt.isInBlock) {
-            const inBlockHash = status.asInBlock;
-            submissionDetails.blockHash = hashToString(inBlockHash);
+          // isCompleted implies status is one of: isFinalized, isInBlock or isError
+          if (receipt.isCompleted) {
+            if (receipt.isInBlock) {
+              const inBlockHash = status.asInBlock;
+              submissionDetails.blockHash = hashToString(inBlockHash);
 
-            // we know that the index has to be set by the time the transaction is included in a block
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            submissionDetails.transactionIndex = new BigNumber(receipt.txIndex!);
+              // we know that the index has to be set by the time the transaction is included in a block
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              submissionDetails.transactionIndex = new BigNumber(receipt.txIndex!);
 
-            // if the extrinsic failed due to an on-chain error, we should handle it in a special way
-            [extrinsicFailedEvent] = filterEventRecords(receipt, 'system', 'ExtrinsicFailed', true);
+              // if the extrinsic failed due to an on-chain error, we should handle it in a special way
+              [extrinsicFailedEvent] = filterEventRecords(
+                receipt,
+                'system',
+                'ExtrinsicFailed',
+                true
+              );
 
-            // extrinsic failed so we can unsubscribe
-            isLastCallback = !!extrinsicFailedEvent;
-          } else {
-            // isFinalized || isError so we know we can unsubscribe
-            isLastCallback = true;
+              // extrinsic failed so we can unsubscribe
+              isLastCallback = !!extrinsicFailedEvent;
+            } else {
+              // isFinalized || isError so we know we can unsubscribe
+              isLastCallback = true;
+            }
+
+            if (isLastCallback) {
+              unsubscribing = gettingUnsub.then(unsub => {
+                unsub();
+              });
+            }
+
+            /*
+             * Promise chain that handles all sub-promises in this pass through the signAndSend callback.
+             * Primarily for consistent error handling
+             */
+            let finishing = Promise.resolve();
+
+            if (extrinsicFailedEvent) {
+              const { data } = extrinsicFailedEvent;
+
+              finishing = Promise.all([unsubscribing]).then(() => {
+                const error = handleExtrinsicFailure(data[0]);
+                reject(error);
+              });
+            } else if (receipt.isFinalized) {
+              finishing = Promise.all([unsubscribing]).then(() => {
+                resolve(submissionDetails);
+              });
+            } else if (receipt.isError) {
+              reject(new PolymeshError({ code: ErrorCode.TransactionAborted }));
+            }
+
+            finishing.catch((err: Error) => reject(err));
           }
-
-          if (isLastCallback) {
-            unsubscribing = gettingUnsub.then(unsub => {
-              unsub();
-            });
-          }
-
-          /*
-           * Promise chain that handles all sub-promises in this pass through the signAndSend callback.
-           * Primarily for consistent error handling
-           */
-          let finishing = Promise.resolve();
-
-          if (extrinsicFailedEvent) {
-            const { data } = extrinsicFailedEvent;
-
-            finishing = Promise.all([unsubscribing]).then(() => {
-              handleExtrinsicFailure(reject, data[0]);
-            });
-          } else if (receipt.isFinalized) {
-            finishing = Promise.all([unsubscribing]).then(() => {
-              resolve(submissionDetails);
-            });
-          } else if (receipt.isError) {
-            reject(new PolymeshError({ code: ErrorCode.TransactionAborted }));
-          }
-
-          finishing.catch((err: Error) => reject(err));
-        }
+        });
       });
-    });
+    } else {
+      const startingBlock = await context.getLatestBlock();
+
+      await transaction.send();
+
+      const result = await pollForTransactionFinalization(transaction.hash, startingBlock, context);
+
+      return {
+        blockHash: hashToString(result.status.asFinalized),
+        transactionHash: hashToString(transaction.hash),
+        transactionIndex: new BigNumber(result.txIndex!),
+      };
+    }
   }
 
   /**

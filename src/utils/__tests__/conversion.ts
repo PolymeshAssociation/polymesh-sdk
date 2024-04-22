@@ -5,6 +5,7 @@ import {
   Balance,
   BlockHash,
   Call,
+  ExtrinsicStatus,
   Hash,
   Moment,
   Permill,
@@ -200,6 +201,7 @@ import {
   corporateActionKindToCaKind,
   corporateActionParamsToMeshCorporateActionArgs,
   countStatInputToStatUpdates,
+  createRawExtrinsicStatus,
   createStat2ndKey,
   datesToScheduleCheckpoints,
   dateToMoment,
@@ -9928,6 +9930,34 @@ describe('assetCountToRaw', () => {
       .mockReturnValue(fakeResult);
 
     const result = assetCountToRaw(input, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('extrinsicStatus', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return a raw extrinsic status', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    const fakeResult = 'fakeResult' as unknown as ExtrinsicStatus;
+
+    when(context.createType)
+      .calledWith('ExtrinsicStatus', { Finalized: 'someHash' })
+      .mockReturnValue(fakeResult);
+
+    const result = createRawExtrinsicStatus('Finalized', 'someHash' as unknown as Hash, context);
 
     expect(result).toEqual(fakeResult);
   });

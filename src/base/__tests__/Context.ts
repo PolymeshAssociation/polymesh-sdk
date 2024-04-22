@@ -1567,6 +1567,29 @@ describe('Context class', () => {
       expect(result).toEqual(blockNumber);
     });
 
+    it('should fallback when subscription is not supported', async () => {
+      const blockNumber = new BigNumber(100);
+
+      dsMockUtils.createRpcMock('chain', 'getFinalizedHead', {
+        returnValue: 'someHash',
+      });
+      dsMockUtils.createRpcMock('chain', 'getHeader', {
+        returnValue: {
+          number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(blockNumber)),
+        },
+      });
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+      });
+      jest.spyOn(context, 'supportsSubscription').mockReturnValue(false);
+
+      const result = await context.getLatestBlock();
+
+      expect(result).toEqual(blockNumber);
+    });
+
     it('should throw any errors encountered while fetching', async () => {
       const mock = dsMockUtils.createRpcMock('chain', 'subscribeFinalizedHeads');
       const err = new Error('Foo');
