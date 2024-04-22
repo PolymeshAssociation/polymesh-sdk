@@ -4,6 +4,7 @@ import {
   DefaultPortfolio,
   FungibleAsset,
   Identity,
+  Instruction,
   Nft,
   NumberedPortfolio,
   Venue,
@@ -95,3 +96,38 @@ export type MediatorAffirmation = {
    */
   expiry?: Date;
 };
+
+export interface GroupedInstructions {
+  /**
+   * Instructions that have already been affirmed by the Identity
+   */
+  affirmed: Instruction[];
+  /**
+   * Instructions that still need to be affirmed/rejected by the Identity
+   */
+  pending: Instruction[];
+  /**
+   * Instructions that failed in their execution (can be rescheduled).
+   *   This group supersedes the other three, so for example, a failed Instruction
+   *   might also belong in the `affirmed` group, but it will only be included in this one
+   */
+  failed: Instruction[];
+}
+
+export type InstructionsByStatus = GroupedInstructions & {
+  /**
+   * Instructions that have one or more legs already affirmed, but still need to be one or more legs to be affirmed/rejected by the Identity
+   */
+  partiallyAffirmed: Instruction[];
+};
+
+export interface GroupedInvolvedInstructions {
+  /**
+   * Instructions where the Identity is the custodian of the leg portfolios
+   */
+  custodied: GroupedInstructions;
+  /**
+   * Instructions where the Identity is the owner of the leg portfolios
+   */
+  owned: Omit<GroupedInstructions, 'affirmed'>;
+}

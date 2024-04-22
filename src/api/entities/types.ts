@@ -58,6 +58,8 @@ export * from './Offering/types';
 export * from './TickerReservation/types';
 export * from './Venue/types';
 export * from './Subsidy/types';
+export * from './Account/types';
 export * from './Account/MultiSig/types';
 export * from './MultiSigProposal/types';
 export * from './MetadataEntry/types';
+export * from './entityTypes';
