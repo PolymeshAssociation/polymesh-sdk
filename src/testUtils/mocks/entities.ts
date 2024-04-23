@@ -1,8 +1,10 @@
 /* istanbul ignore file */
+
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-use-before-define */
+import { Identity } from '@polymeshassociation/polymesh-sdk/internal';
 import {
   AccountBalance,
   ActiveTransferRestrictions,
@@ -82,7 +84,7 @@ import {
   DefaultPortfolio,
   DividendDistribution,
   FungibleAsset,
-  Identity,
+  Identity as PrivateIdentity,
   Instruction,
   KnownPermissionGroup,
   MetadataEntry,
@@ -110,7 +112,7 @@ import {
   ConfidentialVenueFilteringDetails,
 } from '~/types';
 
-export type MockIdentity = Mocked<Identity>;
+export type MockIdentity = Mocked<PrivateIdentity>;
 export type MockChildIdentity = Mocked<ChildIdentity>;
 export type MockAccount = Mocked<Account>;
 export type MockSubsidy = Mocked<Subsidy>;

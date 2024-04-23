@@ -1,7 +1,6 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import { TransactionSpec } from '@polymeshassociation/polymesh-sdk/types/internal';
 import {
-  asIdentity,
   assertIdentityExists,
   filterEventRecords,
 } from '@polymeshassociation/polymesh-sdk/utils/internal';
@@ -15,7 +14,7 @@ import {
   meshConfidentialAssetToAssetId,
   stringToBytes,
 } from '~/utils/conversion';
-import { asConfidentialAccount } from '~/utils/internal';
+import { asConfidentialAccount, asIdentity } from '~/utils/internal';
 
 /**
  * @hidden

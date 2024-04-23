@@ -5,13 +5,11 @@ import {
   getAuthorization,
   prepareApplyIncomingBalance,
 } from '~/api/procedures/applyIncomingAssetBalance';
-import { Context, PolymeshError } from '~/internal';
+import { ConfidentialAccount, Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { ApplyIncomingBalanceParams, ConfidentialAsset, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
-
-import { ConfidentialAccount } from './../../entities/types';
 
 describe('applyIncomingAssetBalance procedure', () => {
   let mockContext: Mocked<Context>;

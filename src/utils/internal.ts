@@ -6,7 +6,6 @@ import {
   DefaultPortfolio,
   ErrorCode,
   GenericPolymeshTransaction,
-  Identity,
   NumberedPortfolio,
   PermissionType,
   ProcedureOpts,
@@ -34,6 +33,7 @@ import {
   ConfidentialAsset,
   ConfidentialVenue,
   Context,
+  Identity,
   PolymeshError,
   TickerReservation,
   Venue,
@@ -55,6 +55,14 @@ import { ConfidentialProcedureFunc } from '~/types/utils';
 import { isConfidentialAssetOwnerRole, isConfidentialVenueOwnerRole } from '~/utils';
 
 export * from '~/generated/utils';
+
+/**
+ * @hidden
+ * Given a DID return the corresponding Identity, given an Identity return the Identity
+ */
+export function asIdentity(value: string | Identity, context: Context): Identity {
+  return typeof value === 'string' ? new Identity({ did: value }, context) : value;
+}
 
 /**
  * @hidden
@@ -565,7 +573,11 @@ export const checkConfidentialPermissions = async (
 /**
  * Check whether an Identity possesses the specified Role
  */
-const hasRole = async (identity: Identity, role: Role, context: Context): Promise<boolean> => {
+const hasRole = async <T extends Identity>(
+  identity: T,
+  role: Role,
+  context: Context
+): Promise<boolean> => {
   const { did } = identity;
 
   if (isConfidentialAssetOwnerRole(role)) {
@@ -625,8 +637,8 @@ const hasRole = async (identity: Identity, role: Role, context: Context): Promis
 /**
  * Check whether this Identity possesses all specified roles
  */
-export const checkConfidentialRoles = async (
-  identity: Identity,
+export const checkConfidentialRoles = async <T extends Identity>(
+  identity: T,
   roles: Role[],
   context: Context
 ): Promise<ConfidentialCheckRolesResult> => {

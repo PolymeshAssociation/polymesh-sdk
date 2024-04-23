@@ -24,6 +24,7 @@ import { CheckPermissionsResult } from '~/types/internal';
 
 export { EventRecord } from '@polkadot/types/interfaces';
 export { ConnectParams } from '~/api/client/Polymesh';
+export * from '@polymeshassociation/polymesh-sdk/api/client/types';
 export * from '~/api/entities/types';
 export * from '~/api/procedures/types';
 export * from '@polymeshassociation/polymesh-sdk/base/types';
@@ -52,7 +53,6 @@ export {
 export { CountryCode, ModuleName, TxTag, TxTags };
 
 // Roles
-
 export enum RoleType {
   TickerOwner = 'TickerOwner',
   CddProvider = 'CddProvider',

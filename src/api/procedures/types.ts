@@ -1,5 +1,7 @@
 import { Identity } from '~/internal';
 import { ConfidentialAccount, ConfidentialAsset } from '~/types';
+
+export * from '@polymeshassociation/polymesh-sdk/api/procedures/types';
 export interface ConfidentialTransactionLeg {
   /**
    * The assets (or their IDs) for this leg of the transaction. Amounts are specified in the later proof generation steps
