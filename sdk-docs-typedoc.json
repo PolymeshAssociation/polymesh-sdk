@@ -20,7 +20,6 @@
     "src/base/Context.ts",
     "src/base/Procedure.ts",
     "**/sandbox.ts",
-    "src/api/entities/types.ts",
     "src/api/entities/Namespace.ts",
     "src/types/internal.ts",
     "src/utils/**",
