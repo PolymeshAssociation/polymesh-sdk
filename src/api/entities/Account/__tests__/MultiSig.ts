@@ -8,6 +8,7 @@ import {
   createMockBool,
   createMockCall,
   createMockIdentityId,
+  createMockMoment,
   createMockOption,
   createMockSignatory,
 } from '~/testUtils/mocks/dataSources';
@@ -128,6 +129,13 @@ describe('MultiSig class', () => {
 
   describe('method: getProposals', () => {
     const id = new BigNumber(1);
+    const proposalDetails = {
+      approvals: new BigNumber(1),
+      rejections: new BigNumber(1),
+      status: dsMockUtils.createMockProposalStatus('ActiveOrExpired'),
+      autoClose: true,
+    };
+
     it('should get proposals', async () => {
       dsMockUtils.createQueryMock('multiSig', 'proposals', {
         entries: [
@@ -137,6 +145,16 @@ describe('MultiSig class', () => {
           ],
         ],
       });
+
+      dsMockUtils.createQueryMock('multiSig', 'proposalDetail', {
+        multi: [
+          dsMockUtils.createMockProposalDetails({
+            ...proposalDetails,
+            expiry: createMockOption(createMockMoment(new BigNumber(new Date().getTime() + 10000))),
+          }),
+        ],
+      });
+
       const result = await multiSig.getProposals();
 
       expect(result).toMatchObject([{ multiSig: expect.objectContaining({ address }), id }]);
@@ -150,6 +168,30 @@ describe('MultiSig class', () => {
       const result = await multiSig.getProposals();
 
       expect(result).toEqual([]);
+    });
+
+    it('should filter out non pending proposals', async () => {
+      dsMockUtils.createQueryMock('multiSig', 'proposals', {
+        entries: [
+          [
+            [dsMockUtils.createMockAccountId(address), dsMockUtils.createMockU64(id)],
+            createMockOption(createMockCall()),
+          ],
+        ],
+      });
+
+      dsMockUtils.createQueryMock('multiSig', 'proposalDetail', {
+        multi: [
+          dsMockUtils.createMockProposalDetails({
+            ...proposalDetails,
+            expiry: createMockOption(createMockMoment(new BigNumber(3))),
+          }),
+        ],
+      });
+
+      const result = await multiSig.getProposals();
+
+      expect(result).toMatchObject([]);
     });
   });
 

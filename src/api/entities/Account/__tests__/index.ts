@@ -14,6 +14,7 @@ import {
   createMockAccountId,
   createMockCall,
   createMockIdentityId,
+  createMockMoment,
   createMockOption,
   createMockPermissions,
   createMockU64,
@@ -969,6 +970,17 @@ describe('Account class', () => {
             [dsMockUtils.createMockAccountId(address), dsMockUtils.createMockU64(id)],
             createMockOption(createMockCall()),
           ],
+        ],
+      });
+      dsMockUtils.createQueryMock('multiSig', 'proposalDetail', {
+        multi: [
+          dsMockUtils.createMockProposalDetails({
+            approvals: new BigNumber(1),
+            rejections: new BigNumber(1),
+            status: dsMockUtils.createMockProposalStatus('ActiveOrExpired'),
+            autoClose: true,
+            expiry: createMockOption(createMockMoment(new BigNumber(new Date().getTime() + 10000))),
+          }),
         ],
       });
 
