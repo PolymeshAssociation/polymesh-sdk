@@ -39,6 +39,7 @@ import {
   Venue,
 } from '~/internal';
 import {
+  CheckPermissionsResult,
   ConfidentialCheckRolesResult,
   ConfidentialNoArgsProcedureMethod,
   ConfidentialOptionalArgsProcedureMethod,
@@ -46,11 +47,11 @@ import {
   ConfidentialProcedureMethod,
   ModuleName,
   Role,
+  SimplePermissions,
   TransactionPermissions,
   TxTag,
   TxTags,
 } from '~/types';
-import { CheckPermissionsResult, SimplePermissions } from '~/types/internal';
 import { ConfidentialProcedureFunc } from '~/types/utils';
 import { isConfidentialAssetOwnerRole, isConfidentialVenueOwnerRole } from '~/utils';
 

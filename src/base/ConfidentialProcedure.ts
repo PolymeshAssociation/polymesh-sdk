@@ -21,12 +21,12 @@ import { signerToString } from '@polymeshassociation/polymesh-sdk/utils/conversi
 
 import { Identity } from '~/internal';
 import {
+  CheckPermissionsResult,
   ConfidentialCheckRolesResult,
   ConfidentialProcedureAuthorization,
   ConfidentialProcedureAuthorizationStatus,
   TxTag,
 } from '~/types';
-import { CheckPermissionsResult } from '~/types/internal';
 import { checkConfidentialPermissions, checkConfidentialRoles } from '~/utils/internal';
 
 /**

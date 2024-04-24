@@ -13,7 +13,6 @@ import {
   AssetWithGroup,
   Authorization,
   AuthorizationType,
-  CheckPermissionsResult,
   CheckRolesResult,
   CollectionKey,
   ComplianceRequirements,
@@ -102,6 +101,7 @@ import {
 import { entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
+  CheckPermissionsResult,
   ConfidentialAssetBalance,
   ConfidentialAssetDetails,
   ConfidentialLeg,
