@@ -1,7 +1,6 @@
 import { createPortfolioTransformer } from '~/api/entities/Venue';
 import {
   allowIdentityToCreatePortfolios,
-  AllowIdentityToCreatePortfoliosParams,
   attestPrimaryKeyRotation,
   AuthorizationRequest,
   ChildIdentity,
@@ -12,15 +11,16 @@ import {
   NumberedPortfolio,
   registerIdentity,
   revokeIdentityToCreatePortfolios,
-  RevokeIdentityToCreatePortfoliosParams,
   rotatePrimaryKey,
   rotatePrimaryKeyToSecondary,
 } from '~/internal';
 import {
+  AllowIdentityToCreatePortfoliosParams,
   AttestPrimaryKeyRotationParams,
   CreateChildIdentityParams,
   ProcedureMethod,
   RegisterIdentityParams,
+  RevokeIdentityToCreatePortfoliosParams,
   RotatePrimaryKeyParams,
   RotatePrimaryKeyToSecondaryParams,
 } from '~/types';
