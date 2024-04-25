@@ -12,6 +12,7 @@
  *
  * Steps 1, 5 and 6 are handled outside this script
  */
+/* eslint-disable */
 const ts = require('typescript');
 const replace = require('replace-in-file');
 const path = require('path');
