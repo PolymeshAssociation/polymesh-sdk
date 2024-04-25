@@ -1,14 +1,11 @@
 import { PolymeshPrimitivesIdentityId } from '@polkadot/types/lookup';
 import { when } from 'jest-when';
 
-import {
-  AllowIdentityToCreatePortfoliosParams,
-  prepareAllowIdentityToCreatePortfolios,
-} from '~/api/procedures/allowIdentityToCreatePortfolios';
+import { prepareAllowIdentityToCreatePortfolios } from '~/api/procedures/allowIdentityToCreatePortfolios';
 import { Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode, Identity } from '~/types';
+import { AllowIdentityToCreatePortfoliosParams, ErrorCode, Identity } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
