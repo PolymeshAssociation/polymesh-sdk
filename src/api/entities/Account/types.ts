@@ -2,11 +2,24 @@ import BigNumber from 'bignumber.js';
 
 import { Account, Identity } from '~/internal';
 import { BalanceTypeEnum, CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { EventIdentifier, Signer } from '~/types';
-export interface MultiSigDetails {
-  signers: Signer[];
-  requiredSignatures: BigNumber;
+import { EventIdentifier } from '~/types';
+
+export interface Balance {
+  /**
+   * balance available for transferring and paying fees
+   */
+  free: BigNumber;
+  /**
+   * unavailable balance, either bonded for staking or locked for some other purpose
+   */
+  locked: BigNumber;
+  /**
+   * free + locked
+   */
+  total: BigNumber;
 }
+
+export type AccountBalance = Balance;
 
 /**
  * Distinguishes MultiSig and Smart Contract accounts

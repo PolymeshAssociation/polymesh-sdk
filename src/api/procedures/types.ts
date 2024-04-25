@@ -14,21 +14,24 @@ import {
   MultiSig,
   Nft,
   NumberedPortfolio,
+  PolymeshTransaction,
+  PolymeshTransactionBatch,
   Venue,
 } from '~/internal';
 import {
   ActiveTransferRestrictions,
   AddCountStatInput,
   AssetDocument,
+  CheckPermissionsResult,
+  CheckRolesResult,
   ClaimCountStatInput,
   ClaimCountTransferRestriction,
   ClaimPercentageTransferRestriction,
   ClaimTarget,
+  CorporateActionTargets,
   CountTransferRestriction,
   InputCaCheckpoint,
   InputCondition,
-  InputCorporateActionTargets,
-  InputCorporateActionTaxWithholdings,
   InputStatClaim,
   InputStatType,
   InputTargets,
@@ -50,14 +53,307 @@ import {
   Scope,
   SecurityIdentifier,
   Signer,
+  SignerType,
   StatClaimIssuer,
   StatType,
-  TransactionArray,
+  TaxWithholding,
   TransactionPermissions,
-  TxGroup,
+  TxTag,
   VenueType,
 } from '~/types';
 import { Modify } from '~/types/utils';
+
+export interface ProcedureAuthorizationStatus {
+  /**
+   * whether the Identity complies with all required Agent permissions
+   */
+  agentPermissions: CheckPermissionsResult<SignerType.Identity>;
+  /**
+   * whether the Account complies with all required Signer permissions
+   */
+  signerPermissions: CheckPermissionsResult<SignerType.Account>;
+  /**
+   * whether the Identity complies with all required Roles
+   */
+  roles: CheckRolesResult;
+  /**
+   * whether the Account is frozen (i.e. can't perform any transactions)
+   */
+  accountFrozen: boolean;
+  /**
+   * true only if the Procedure requires an Identity but the signing Account
+   *   doesn't have one associated
+   */
+  noIdentity: boolean;
+}
+
+export interface ProcedureOpts {
+  /**
+   * Account or address of a signing key to replace the current one (for this procedure only)
+   */
+  signingAccount?: string | Account;
+
+  /**
+   * nonce value for signing the transaction
+   *
+   * An {@link api/entities/Account!Account} can directly fetch its current nonce by calling {@link api/entities/Account!Account.getCurrentNonce | account.getCurrentNonce}. More information can be found at: https://polkadot.js.org/docs/api/cookbook/tx/#how-do-i-take-the-pending-tx-pool-into-account-in-my-nonce
+   *
+   * @note the passed value can be either the nonce itself or a function that returns the nonce. This allows, for example, passing a closure that increases the returned value every time it's called, or a function that fetches the nonce from the chain or a different source
+   */
+  nonce?: BigNumber | Promise<BigNumber> | (() => BigNumber | Promise<BigNumber>);
+
+  /**
+   * This option allows for transactions that never expire, aka "immortal". By default, a transaction is only valid for approximately 5 minutes (250 blocks) after its construction. Allows for transaction construction to be decoupled from its submission, such as requiring manual approval for the signing or providing "at least once" guarantees.
+   *
+   * More information can be found [here](https://wiki.polkadot.network/docs/build-protocol-info#transaction-mortality). Note the Polymesh chain will **never** reap Accounts, so the risk of a replay attack is mitigated.
+   */
+  mortality?: MortalityProcedureOpt;
+}
+
+/**
+ * This transaction will never expire
+ */
+export interface ImmortalProcedureOptValue {
+  readonly immortal: true;
+}
+
+/**
+ * This transaction will be rejected if not included in a block after a while (default: ~5 minutes)
+ */
+export interface MortalProcedureOptValue {
+  readonly immortal: false;
+  /**
+   * The number of blocks the for which the transaction remains valid. Target block time is 6 seconds. The default should suffice for most use cases
+   *
+   * @note this value will get rounded up to the closest power of 2, e.g. `65` rounds up to `128`
+   * @note this value should not exceed 4096, which is the chain's `BlockHashCount` as the lesser of the two will be used.
+   */
+  readonly lifetime?: BigNumber;
+}
+
+export type MortalityProcedureOpt = ImmortalProcedureOptValue | MortalProcedureOptValue;
+
+export interface CreateTransactionBatchProcedureMethod {
+  <ReturnValues extends readonly [...unknown[]]>(
+    args: CreateTransactionBatchParams<ReturnValues>,
+    opts?: ProcedureOpts
+  ): Promise<PolymeshTransactionBatch<ReturnValues, ReturnValues>>;
+  checkAuthorization: <ReturnValues extends [...unknown[]]>(
+    args: CreateTransactionBatchParams<ReturnValues>,
+    opts?: ProcedureOpts
+  ) => Promise<ProcedureAuthorizationStatus>;
+}
+
+export interface ProcedureMethod<
+  MethodArgs,
+  ProcedureReturnValue,
+  ReturnValue = ProcedureReturnValue
+> {
+  (args: MethodArgs, opts?: ProcedureOpts): Promise<
+    GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue>
+  >;
+  checkAuthorization: (
+    args: MethodArgs,
+    opts?: ProcedureOpts
+  ) => Promise<ProcedureAuthorizationStatus>;
+}
+
+export interface OptionalArgsProcedureMethod<
+  MethodArgs,
+  ProcedureReturnValue,
+  ReturnValue = ProcedureReturnValue
+> {
+  (args?: MethodArgs, opts?: ProcedureOpts): Promise<
+    GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue>
+  >;
+  checkAuthorization: (
+    args?: MethodArgs,
+    opts?: ProcedureOpts
+  ) => Promise<ProcedureAuthorizationStatus>;
+}
+
+export interface NoArgsProcedureMethod<ProcedureReturnValue, ReturnValue = ProcedureReturnValue> {
+  (opts?: ProcedureOpts): Promise<GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue>>;
+  checkAuthorization: (opts?: ProcedureOpts) => Promise<ProcedureAuthorizationStatus>;
+}
+
+/**
+ * Targets of a corporate action in a flexible structure for input purposes
+ */
+export type InputCorporateActionTargets = Modify<
+  CorporateActionTargets,
+  {
+    identities: (string | Identity)[];
+  }
+>;
+
+/**
+ * Per-Identity tax withholdings of a corporate action in a flexible structure for input purposes
+ */
+export type InputCorporateActionTaxWithholdings = Modify<
+  TaxWithholding,
+  {
+    identity: string | Identity;
+  }
+>[];
+
+export type GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue> =
+  | PolymeshTransaction<ProcedureReturnValue, ReturnValue>
+  | PolymeshTransactionBatch<ProcedureReturnValue, ReturnValue>;
+
+export type TransactionArray<ReturnValues extends readonly [...unknown[]]> = {
+  // The type has to be any here to account for procedures with transformed return values
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [K in keyof ReturnValues]: GenericPolymeshTransaction<any, ReturnValues[K]>;
+};
+
+/**
+ * Transaction data for display purposes
+ */
+export interface TxData<Args extends unknown[] = unknown[]> {
+  /**
+   * transaction string identifier
+   */
+  tag: TxTag;
+  /**
+   * arguments with which the transaction will be called
+   */
+  args: Args;
+}
+
+// Roles
+
+export enum RoleType {
+  TickerOwner = 'TickerOwner',
+  CddProvider = 'CddProvider',
+  VenueOwner = 'VenueOwner',
+  PortfolioCustodian = 'PortfolioCustodian',
+  CorporateActionsAgent = 'CorporateActionsAgent',
+  // eslint-disable-next-line @typescript-eslint/no-shadow
+  Identity = 'Identity',
+}
+
+export interface TickerOwnerRole {
+  type: RoleType.TickerOwner;
+  ticker: string;
+}
+
+export interface CddProviderRole {
+  type: RoleType.CddProvider;
+}
+
+export interface VenueOwnerRole {
+  type: RoleType.VenueOwner;
+  venueId: BigNumber;
+}
+
+export interface PortfolioId {
+  did: string;
+  number?: BigNumber;
+}
+
+export interface PortfolioCustodianRole {
+  type: RoleType.PortfolioCustodian;
+  portfolioId: PortfolioId;
+}
+
+export interface IdentityRole {
+  type: RoleType.Identity;
+  did: string;
+}
+
+export type Role =
+  | TickerOwnerRole
+  | CddProviderRole
+  | VenueOwnerRole
+  | PortfolioCustodianRole
+  | IdentityRole;
+
+/**
+ * Transaction Groups (for permissions purposes)
+ */
+export enum TxGroup {
+  /**
+   * - TxTags.identity.AddInvestorUniquenessClaim
+   * - TxTags.portfolio.MovePortfolioFunds
+   * - TxTags.settlement.AddInstruction
+   * - TxTags.settlement.AddInstructionWithMemo
+   * - TxTags.settlement.AddAndAffirmInstruction
+   * - TxTags.settlement.AddAndAffirmInstructionWithMemo
+   * - TxTags.settlement.AffirmInstruction
+   * - TxTags.settlement.RejectInstruction
+   * - TxTags.settlement.CreateVenue
+   */
+  PortfolioManagement = 'PortfolioManagement',
+  /**
+   * - TxTags.asset.MakeDivisible
+   * - TxTags.asset.RenameAsset
+   * - TxTags.asset.SetFundingRound
+   * - TxTags.asset.AddDocuments
+   * - TxTags.asset.RemoveDocuments
+   */
+  AssetManagement = 'AssetManagement',
+  /**
+   * - TxTags.asset.Freeze
+   * - TxTags.asset.Unfreeze
+   * - TxTags.identity.AddAuthorization
+   * - TxTags.identity.RemoveAuthorization
+   */
+  AdvancedAssetManagement = 'AdvancedAssetManagement',
+  /**
+   * - TxTags.identity.AddInvestorUniquenessClaim
+   * - TxTags.settlement.CreateVenue
+   * - TxTags.settlement.AddInstruction
+   * - TxTags.settlement.AddInstructionWithMemo
+   * - TxTags.settlement.AddAndAffirmInstruction
+   * - TxTags.settlement.AddAndAffirmInstructionWithMemo
+   */
+  Distribution = 'Distribution',
+  /**
+   * - TxTags.asset.Issue
+   */
+  Issuance = 'Issuance',
+  /**
+   * - TxTags.complianceManager.AddDefaultTrustedClaimIssuer
+   * - TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer
+   */
+  TrustedClaimIssuersManagement = 'TrustedClaimIssuersManagement',
+  /**
+   * - TxTags.identity.AddClaim
+   * - TxTags.identity.RevokeClaim
+   */
+  ClaimsManagement = 'ClaimsManagement',
+  /**
+   * - TxTags.complianceManager.AddComplianceRequirement
+   * - TxTags.complianceManager.RemoveComplianceRequirement
+   * - TxTags.complianceManager.PauseAssetCompliance
+   * - TxTags.complianceManager.ResumeAssetCompliance
+   * - TxTags.complianceManager.ResetAssetCompliance
+   */
+  ComplianceRequirementsManagement = 'ComplianceRequirementsManagement',
+  /**
+   * - TxTags.checkpoint.CreateSchedule,
+   * - TxTags.checkpoint.RemoveSchedule,
+   * - TxTags.checkpoint.CreateCheckpoint,
+   * - TxTags.corporateAction.InitiateCorporateAction,
+   * - TxTags.capitalDistribution.Distribute,
+   * - TxTags.capitalDistribution.Claim,
+   * - TxTags.identity.AddInvestorUniquenessClaim,
+   */
+  CorporateActionsManagement = 'CorporateActionsManagement',
+  /**
+   * - TxTags.sto.CreateFundraiser,
+   * - TxTags.sto.FreezeFundraiser,
+   * - TxTags.sto.Invest,
+   * - TxTags.sto.ModifyFundraiserWindow,
+   * - TxTags.sto.Stop,
+   * - TxTags.sto.UnfreezeFundraiser,
+   * - TxTags.identity.AddInvestorUniquenessClaim,
+   * - TxTags.asset.Issue,
+   * - TxTags.settlement.CreateVenue
+   */
+  StoManagement = 'StoManagement',
+}
 
 export type AddRestrictionParams<T> = Omit<
   T extends TransferRestrictionType.Count
@@ -155,10 +451,34 @@ export enum TransferRestrictionType {
   ClaimPercentage = 'ClaimPercentage',
 }
 
-export interface TransferRestriction {
-  type: TransferRestrictionType;
-  value: BigNumber;
+export interface ClaimCountRestrictionValue {
+  min: BigNumber;
+  max?: BigNumber;
+  issuer: Identity;
+  claim: InputStatClaim;
 }
+
+export interface ClaimPercentageRestrictionValue {
+  min: BigNumber;
+  max: BigNumber;
+  issuer: Identity;
+  claim: InputStatClaim;
+}
+
+export type TransferRestriction =
+  | {
+      type: TransferRestrictionType.Count;
+      value: BigNumber;
+    }
+  | { type: TransferRestrictionType.Percentage; value: BigNumber }
+  | {
+      type: TransferRestrictionType.ClaimCount;
+      value: ClaimCountRestrictionValue;
+    }
+  | {
+      type: TransferRestrictionType.ClaimPercentage;
+      value: ClaimPercentageRestrictionValue;
+    };
 
 interface TransferRestrictionInputBase {
   /**
@@ -1207,3 +1527,11 @@ export interface RegisterCustomClaimTypeParams {
 export interface AssetMediatorParams {
   mediators: (Identity | string)[];
 }
+
+export type AllowIdentityToCreatePortfoliosParams = {
+  did: Identity | string;
+};
+
+export type RevokeIdentityToCreatePortfoliosParams = {
+  did: Identity | string;
+};

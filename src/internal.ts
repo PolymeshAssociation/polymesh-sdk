@@ -1,4 +1,5 @@
 /* istanbul ignore file */
+
 export { PolymeshError } from '~/base/PolymeshError';
 export { Context } from '~/base/Context';
 export { PolymeshTransactionBase } from '~/base/PolymeshTransactionBase';
@@ -163,12 +164,6 @@ export { removeAssetStat } from '~/api/procedures/removeAssetStat';
 export { setVenueFiltering } from '~/api/procedures/setVenueFiltering';
 export { registerCustomClaimType } from '~/api/procedures/registerCustomClaimType';
 export { toggleTickerPreApproval } from '~/api/procedures/toggleTickerPreApproval';
-export {
-  allowIdentityToCreatePortfolios,
-  AllowIdentityToCreatePortfoliosParams,
-} from '~/api/procedures/allowIdentityToCreatePortfolios';
-export {
-  revokeIdentityToCreatePortfolios,
-  RevokeIdentityToCreatePortfoliosParams,
-} from '~/api/procedures/revokeIdentityToCreatePortfolios';
+export { allowIdentityToCreatePortfolios } from '~/api/procedures/allowIdentityToCreatePortfolios';
+export { revokeIdentityToCreatePortfolios } from '~/api/procedures/revokeIdentityToCreatePortfolios';
 export { rotatePrimaryKeyToSecondary } from '~/api/procedures/rotatePrimaryKeyToSecondary';

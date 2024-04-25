@@ -1,15 +1,8 @@
 import { PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, Identity } from '~/types';
+import { ErrorCode, RevokeIdentityToCreatePortfoliosParams } from '~/types';
 import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import { stringToIdentityId } from '~/utils/conversion';
 import { asIdentity, assertIdentityExists } from '~/utils/internal';
-
-/**
- * @hidden
- */
-export type RevokeIdentityToCreatePortfoliosParams = {
-  did: Identity | string;
-};
 
 /**
  * @hidden
