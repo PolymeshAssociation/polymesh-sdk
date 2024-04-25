@@ -18,6 +18,7 @@ import {
   Entity,
   FungibleAsset,
   Instruction,
+  MultiSig,
   Nft,
   NftCollection,
   PolymeshError,
@@ -42,12 +43,14 @@ import {
   HeldNfts,
   HistoricInstruction,
   InstructionsByStatus,
+  MultiSigSigner,
   NumberedPortfolio,
   PaginationOptions,
   PermissionedAccount,
   ProcedureMethod,
   ResultSet,
   Role,
+  Signer,
   SubCallback,
   UnlinkChildParams,
   UnsubCallback,
@@ -72,6 +75,8 @@ import {
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
+  signatoryToSignerValue,
+  signerValueToSigner,
   stringToIdentityId,
   stringToTicker,
   tickerToString,
@@ -980,5 +985,65 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const rawIsApproved = await preApprovedTicker(rawDid, rawTicker);
 
     return boolToBoolean(rawIsApproved);
+  }
+
+  /**
+   * Returns the list of MultiSig accounts linked with this Identity along with the signatories for whom the MultiSig acts as the signer
+   *
+   * @note this query can be potentially **SLOW** depending on the number of MultiSigs present on the chain
+   */
+  public async getMultiSigSigners(): Promise<MultiSigSigner[]> {
+    const {
+      context,
+      context: {
+        polymeshApi: {
+          query: {
+            multiSig: { multiSigToIdentity, multiSigSigners },
+          },
+        },
+      },
+      did,
+    } = this;
+
+    const entries = await multiSigToIdentity.entries();
+
+    const multiSigs: Record<string, Signer[]> = {};
+
+    const rawSigners = await Promise.all(
+      entries
+        .filter(([, rawIdentityId]) => {
+          const identity = identityIdToString(rawIdentityId);
+          return identity === did;
+        })
+        .map(
+          ([
+            {
+              args: [rawMultiSigAccount],
+            },
+          ]) => {
+            multiSigs[accountIdToString(rawMultiSigAccount)] = [];
+            return multiSigSigners.entries(rawMultiSigAccount);
+          }
+        )
+    );
+
+    rawSigners.forEach(rawSigner => {
+      rawSigner.forEach(
+        ([
+          {
+            args: [rawMultiSigAccount, signatory],
+          },
+        ]) => {
+          multiSigs[accountIdToString(rawMultiSigAccount)].push(
+            signerValueToSigner(signatoryToSignerValue(signatory), context)
+          );
+        }
+      );
+    });
+
+    return Object.keys(multiSigs).map(multiSig => ({
+      signerFor: new MultiSig({ address: multiSig }, context),
+      signers: multiSigs[multiSig],
+    }));
   }
 }
