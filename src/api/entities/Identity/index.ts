@@ -43,7 +43,7 @@ import {
   HeldNfts,
   HistoricInstruction,
   InstructionsByStatus,
-  MultiSigSigner,
+  MultiSigSigners,
   NumberedPortfolio,
   PaginationOptions,
   PermissionedAccount,
@@ -988,11 +988,11 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Returns the list of MultiSig accounts linked with this Identity along with the signatories for whom the MultiSig acts as the signer
+   * Returns the list of MultiSig accounts linked with this Identity along with the signatories
    *
    * @note this query can be potentially **SLOW** depending on the number of MultiSigs present on the chain
    */
-  public async getMultiSigSigners(): Promise<MultiSigSigner[]> {
+  public async getMultiSigSigners(): Promise<MultiSigSigners[]> {
     const {
       context,
       context: {
@@ -1021,7 +1021,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
               args: [rawMultiSigAccount],
             },
           ]) => {
-            multiSigs[accountIdToString(rawMultiSigAccount)] = [];
+            const multiSigAccount = accountIdToString(rawMultiSigAccount);
+            multiSigs[multiSigAccount] = [];
             return multiSigSigners.entries(rawMultiSigAccount);
           }
         )
@@ -1034,7 +1035,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
             args: [rawMultiSigAccount, signatory],
           },
         ]) => {
-          multiSigs[accountIdToString(rawMultiSigAccount)].push(
+          const multiSigAccount = accountIdToString(rawMultiSigAccount);
+          multiSigs[multiSigAccount].push(
             signerValueToSigner(signatoryToSignerValue(signatory), context)
           );
         }

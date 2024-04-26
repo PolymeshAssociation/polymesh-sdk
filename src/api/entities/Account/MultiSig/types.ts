@@ -8,7 +8,7 @@ export interface MultiSigDetails {
   requiredSignatures: BigNumber;
 }
 
-export interface MultiSigSigner {
+export interface MultiSigSigners {
   signerFor: MultiSig;
   signers: Signer[];
 }
