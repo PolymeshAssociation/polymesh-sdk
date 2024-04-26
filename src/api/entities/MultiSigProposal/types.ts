@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { MultiSigProposalVoteActionEnum } from '~/middleware/types';
-import { Account, AnyJson, EventIdentifier, Signer, TxTag } from '~/types';
+import { Account, EventIdentifier, Signer, TxTag } from '~/types';
 
 export enum ProposalStatus {
   Invalid = 'Invalid',
@@ -11,6 +11,20 @@ export enum ProposalStatus {
   Failed = 'ExecutionFailed',
   Rejected = 'Rejected',
 }
+
+/**
+ * Represents JSON serializable data. Used for cases when the value can take on many types, like args for a MultiSig proposal.
+ */
+export type AnyJson =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | AnyJson[]
+  | {
+      [index: string]: AnyJson;
+    };
 
 export interface MultiSigProposalDetails {
   /**
