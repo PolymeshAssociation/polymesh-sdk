@@ -1,160 +1,78 @@
 import BigNumber from 'bignumber.js';
 
-import { Context, Entity } from '~/internal';
-import { multiSigProposalVotesQuery } from '~/middleware/queries';
-import { Query } from '~/middleware/types';
-import { MultiSigProposalVote, SignerType } from '~/types';
-import { Ensured } from '~/types/utils';
-import { middlewareEventDetailsToEventIdentifier, signerValueToSigner } from '~/utils/conversion';
+import { Context, MultiSig, MultiSigProposal } from '~/internal';
+import { Account, EventIdentifier, MultiSigProposalVote } from '~/types';
 
-export type MiddlewareMultiSigProposal = {
-  id: string;
+interface HumanReadable {
+  multiSigAddress: string;
   proposalId: number;
-  multisigId: string;
-  approvalCount: number;
-  rejectionCount: number;
-  creator?: {
-    did: string;
-  };
-  status: string;
-  createdBlockId: string;
-  updatedBlockId: string;
-  datetime: Date;
-};
-
-type MiddlewareMultiSigProposalUniqueIdentifiers = Pick<MiddlewareMultiSigProposal, 'id'>;
-
-export interface HumanReadable {
-  id: string;
-  proposalId: number;
-  multisigId: string;
-  approvalCount: number;
-  rejectionCount: number;
-  creatorDid?: string;
-  status: string;
-  createdBlockId: string;
-  updatedBlockId: string;
-  datetime: string;
-}
-
-enum MultiSigStatusEnum {
-  Pending = 'Pending',
-  Success = 'Success',
-  Failed = 'Failed',
 }
 
 /**
- * Represents historical MultiSigProposal that no longer exists on chain
+ * Represents a historical MultiSigProposal
  */
-export class HistoricalMultiSigProposal extends Entity<
-  MiddlewareMultiSigProposalUniqueIdentifiers,
-  HumanReadable
-> {
-  public id: string;
+export class HistoricalMultiSigProposal {
   public proposalId: BigNumber;
-  public multisigId: string;
-  public approvalCount: BigNumber;
-  public rejectionCount: BigNumber;
-  public creatorDid?: string;
-  public status: MultiSigStatusEnum;
-  public createdBlockId: string;
-  public updatedBlockId: string;
-  public datetime: Date;
+  public multiSig: MultiSig;
+
+  protected context: Context;
 
   /**
    * @hidden
    */
-  public constructor(
-    identifiers: MiddlewareMultiSigProposalUniqueIdentifiers,
-    proposal: MiddlewareMultiSigProposal,
-    context: Context
-  ) {
-    const { id } = identifiers;
+  public constructor(identifiers: HumanReadable, context: Context) {
+    const { proposalId, multiSigAddress } = identifiers;
 
-    const {
-      proposalId,
-      multisigId,
-      approvalCount,
-      rejectionCount,
-      creator,
-      status,
-      createdBlockId,
-      updatedBlockId,
-      datetime,
-    } = proposal;
-    super({ id }, context);
+    this.context = context;
 
-    this.id = id;
     this.proposalId = new BigNumber(proposalId);
-    this.multisigId = multisigId;
-    this.approvalCount = new BigNumber(approvalCount);
-    this.rejectionCount = new BigNumber(rejectionCount);
-    this.creatorDid = creator?.did;
-    this.status = status as MultiSigStatusEnum;
-    this.createdBlockId = createdBlockId;
-    this.updatedBlockId = updatedBlockId;
-    this.datetime = datetime;
-  }
-
-  /**
-   * @hidden
-   * Check if a value is of type {@link MiddlewareMultiSigProposalUniqueIdentifiers}
-   */
-  public static override isUniqueIdentifiers(
-    identifier: unknown
-  ): identifier is MiddlewareMultiSigProposalUniqueIdentifiers {
-    const { id } = identifier as MiddlewareMultiSigProposalUniqueIdentifiers;
-
-    return typeof id === 'string';
-  }
-
-  /**
-   * @hidden
-   */
-  public exists(): Promise<boolean> {
-    return Promise.resolve(false);
-  }
-
-  /**
-   * Determine whether this Entity is the same as another one
-   */
-  public override isEqual(entity: HistoricalMultiSigProposal): boolean {
-    return entity.id === this.id;
+    this.multiSig = new MultiSig({ address: multiSigAddress }, context);
   }
 
   /**
    * Get the MultiSigProposalVotes associated with this MultiSigProposal
    */
-  public async getVotes(): Promise<MultiSigProposalVote[]> {
-    const {
-      context: { queryMiddleware },
-      id: proposalId,
-      context,
-    } = this;
+  public async votes(): Promise<MultiSigProposalVote[]> {
+    const { multiSig, proposalId, context } = this;
 
-    const {
-      data: {
-        multiSigProposalVotes: { nodes: signerVotes },
-      },
-    } = await queryMiddleware<Ensured<Query, 'multiSigProposalVotes'>>(
-      multiSigProposalVotesQuery({
-        proposalId,
-      })
+    const multiSigProposal = new MultiSigProposal(
+      { multiSigAddress: multiSig.address, id: proposalId },
+      context
     );
 
-    return signerVotes.map(signerVote => {
-      const { signer, action, createdBlock, eventIdx } = signerVote;
+    return multiSigProposal.votes();
+  }
 
-      const { signerType, signerValue } = signer!;
-      return {
-        signer: signerValueToSigner(
-          { type: signerType as unknown as SignerType, value: signerValue },
-          context
-        ),
-        action: action!,
-        ...middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx),
-      };
-    });
+  /**
+   * Retrieve the identifier data (block number, date and event index) of the event that was emitted when this MultiSig Proposal was created
+   *
+   * @note uses the middlewareV2
+   */
+  public async createdAt(): Promise<EventIdentifier | null> {
+    const { multiSig, proposalId, context } = this;
+
+    const multiSigProposal = new MultiSigProposal(
+      { multiSigAddress: multiSig.address, id: proposalId },
+      context
+    );
+
+    return multiSigProposal.createdAt();
+  }
+
+  /**
+   * Retrieve the account which created this MultiSig Proposal
+   *
+   * @note uses the middlewareV2
+   */
+  public async creator(): Promise<Account | null> {
+    const { multiSig, proposalId, context } = this;
+
+    const multiSigProposal = new MultiSigProposal(
+      { multiSigAddress: multiSig.address, id: proposalId },
+      context
+    );
+
+    return multiSigProposal.creator();
   }
 
   /**
@@ -162,16 +80,8 @@ export class HistoricalMultiSigProposal extends Entity<
    */
   public toHuman(): HumanReadable {
     return {
-      id: this.id,
+      multiSigAddress: this.multiSig.address,
       proposalId: this.proposalId.toNumber(),
-      multisigId: this.multisigId,
-      approvalCount: this.approvalCount.toNumber(),
-      rejectionCount: this.rejectionCount.toNumber(),
-      creatorDid: this.creatorDid,
-      status: this.status,
-      createdBlockId: this.createdBlockId,
-      updatedBlockId: this.updatedBlockId,
-      datetime: this.datetime.toISOString(),
     };
   }
 }

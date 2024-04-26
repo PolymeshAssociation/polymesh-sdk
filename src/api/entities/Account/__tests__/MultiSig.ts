@@ -235,7 +235,6 @@ describe('MultiSig class', () => {
       expect(next).toEqual(new BigNumber(1));
       expect(count).toEqual(new BigNumber(2));
       expect(data.length).toEqual(1);
-      expect(data[0].creatorDid).toEqual(mockHistoricalMultisig.creator.did);
     });
 
     it('should return an empty array if no proposals are pending', async () => {

@@ -171,7 +171,8 @@ export class MultiSig extends Account {
     );
 
     const data = nodes.map(
-      proposal => new HistoricalMultiSigProposal({ id: proposal.id }, proposal, context)
+      ({ proposalId }) =>
+        new HistoricalMultiSigProposal({ proposalId, multiSigAddress: address }, context)
     );
 
     const count = new BigNumber(totalCount);

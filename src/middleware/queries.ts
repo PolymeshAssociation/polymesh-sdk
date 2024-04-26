@@ -1539,6 +1539,15 @@ export function multiSigProposalQuery(
             hash
             datetime
           }
+          votes {
+            nodes {
+              action
+              signer {
+                signerType
+                signerValue
+              }
+            }
+          }
           updatedBlock {
             blockId
             hash
@@ -1696,25 +1705,6 @@ type MultiSigProposalQueryParameters = {
 };
 
 /**
- *  @hidden
- */
-export function createmultiSigProposalsQueryFilters(): {
-  args: string;
-  filter: string;
-} {
-  const args = ['$size: Int, $start: Int'];
-  const filters = [];
-
-  args.push('$multisigId: [String!]');
-  filters.push('multisigId: { eq: $multisigId }');
-
-  return {
-    args: `(${args.join()})`,
-    filter: `filter: { ${filters.join()} },`,
-  };
-}
-
-/**
  * @hidden
  *
  * Get MultiSig Proposals history for a given MultiSig address
@@ -1724,35 +1714,18 @@ export function multiSigProposalsQuery(
   size?: BigNumber,
   start?: BigNumber
 ): QueryOptions<PaginatedQueryArgs<MultiSigProposalQueryParameters>> {
-  const { args, filter } = createmultiSigProposalsQueryFilters();
-
   const query = gql`
-  query MultiSigProposalsQuery
-    ${args}
-    {
-      multiSigProposals(
-        ${filter}
-        first: $size
-        offset: $start
-      ){
+    query MultiSigProposalsQuery($size: Int, $start: Int, $multisigId: String!) {
+      multiSigProposals(filter: { multisigId: { eq: $multisigId } }, first: $size, offset: $start) {
         nodes {
-      id,
-      proposalId,
-      multisigId,
-      approvalCount,
-      status,
-      creator {
-        did,
-      }
-      rejectionCount,
-      createdBlockId,
-      updatedBlockId,
-      datetime,
-    }
-    totalCount
+          id
+          proposalId
+          multisigId
+        }
+        totalCount
       }
     }
-`;
+  `;
 
   return {
     query,
