@@ -16,7 +16,6 @@ import {
   MetadataDetails,
   MetadataType,
   Nft,
-  TransferError,
   TransferRestriction,
   Venue,
 } from '~/types';
@@ -26,6 +25,58 @@ import {
  * be narrowed via `instanceof` operator, or by using a more specific getter
  */
 export type Asset = FungibleAsset | NftCollection;
+
+export enum KnownAssetType {
+  EquityCommon = 'EquityCommon',
+  EquityPreferred = 'EquityPreferred',
+  Commodity = 'Commodity',
+  FixedIncome = 'FixedIncome',
+  Reit = 'Reit',
+  Fund = 'Fund',
+  RevenueShareAgreement = 'RevenueShareAgreement',
+  StructuredProduct = 'StructuredProduct',
+  Derivative = 'Derivative',
+  StableCoin = 'StableCoin',
+}
+
+export enum KnownNftType {
+  Derivative = 'Derivative',
+  FixedIncome = 'FixedIncome',
+  Invoice = 'Invoice',
+}
+
+export enum SecurityIdentifierType {
+  Isin = 'Isin',
+  Cusip = 'Cusip',
+  Cins = 'Cins',
+  Lei = 'Lei',
+  Figi = 'Figi',
+}
+
+// NOTE: query.asset.identifiers doesn’t support custom identifier types properly for now
+// export type TokenIdentifierType = KnownTokenIdentifierType | { custom: string };
+
+/**
+ * Alphanumeric standardized security identifier
+ */
+export interface SecurityIdentifier {
+  type: SecurityIdentifierType;
+  value: string;
+}
+
+/**
+ * Document attached to a token
+ */
+export interface AssetDocument {
+  name: string;
+  uri: string;
+  /**
+   * hex representation of the document (must be prefixed by "0x")
+   */
+  contentHash?: string;
+  type?: string;
+  filedAt?: Date;
+}
 
 /**
  * Properties that uniquely identify an Asset
@@ -192,3 +243,136 @@ export type CollectionKey = MetadataKeyId & MetadataDetails;
 
 export * from './Fungible/Checkpoints/types';
 export * from './Fungible/CorporateActions/types';
+
+/**
+ * ERC1400 compliant transfer status
+ */
+export enum TransferStatus {
+  Failure = 'Failure', // 80
+  Success = 'Success', // 81
+  InsufficientBalance = 'InsufficientBalance', // 82
+  InsufficientAllowance = 'InsufficientAllowance', // 83
+  TransfersHalted = 'TransfersHalted', // 84
+  FundsLocked = 'FundsLocked', // 85
+  InvalidSenderAddress = 'InvalidSenderAddress', // 86
+  InvalidReceiverAddress = 'InvalidReceiverAddress', // 87
+  InvalidOperator = 'InvalidOperator', // 88
+  InvalidSenderIdentity = 'InvalidSenderIdentity', // 160
+  InvalidReceiverIdentity = 'InvalidReceiverIdentity', // 161
+  ComplianceFailure = 'ComplianceFailure', // 162
+  SmartExtensionFailure = 'SmartExtensionFailure', // 163
+  InvalidGranularity = 'InvalidGranularity', // 164
+  VolumeLimitReached = 'VolumeLimitReached', // 165
+  BlockedTransaction = 'BlockedTransaction', // 166
+  FundsLimitReached = 'FundsLimitReached', // 168
+  PortfolioFailure = 'PortfolioFailure', // 169
+  CustodianError = 'CustodianError', // 170
+  ScopeClaimMissing = 'ScopeClaimMissing', // 171
+  TransferRestrictionFailure = 'TransferRestrictionFailure', // 172
+}
+
+/**
+ * Akin to TransferStatus, these are a bit more granular and specific. Every TransferError translates to
+ *   a {@link TransferStatus}, but two or more TransferErrors can represent the same TransferStatus, and
+ *   not all Transfer Statuses are represented by a TransferError
+ */
+export enum TransferError {
+  /**
+   * translates to TransferStatus.InvalidGranularity
+   *
+   * occurs if attempting to transfer decimal amounts of a non-divisible token
+   */
+  InvalidGranularity = 'InvalidGranularity',
+  /**
+   * translates to TransferStatus.InvalidReceiverIdentity
+   *
+   * occurs if the origin and destination Identities are the same
+   */
+  SelfTransfer = 'SelfTransfer',
+  /**
+   * translates to TransferStatus.InvalidReceiverIdentity
+   *
+   * occurs if the receiver Identity doesn't have a valid CDD claim
+   */
+  InvalidReceiverCdd = 'InvalidReceiverCdd',
+  /**
+   * translates to TransferStatus.InvalidSenderIdentity
+   *
+   * occurs if the receiver Identity doesn't have a valid CDD claim
+   */
+  InvalidSenderCdd = 'InvalidSenderCdd',
+  /**
+   * translates to TransferStatus.ScopeClaimMissing
+   *
+   * occurs if one of the participants doesn't have a valid Investor Uniqueness Claim for
+   *   the Asset
+   */
+  ScopeClaimMissing = 'ScopeClaimMissing',
+  /**
+   * translates to TransferStatus.InsufficientBalance
+   *
+   * occurs if the sender Identity does not have enough balance to cover the amount
+   */
+  InsufficientBalance = 'InsufficientBalance',
+  /**
+   * translates to TransferStatus.TransfersHalted
+   *
+   * occurs if the Asset's transfers are frozen
+   */
+  TransfersFrozen = 'TransfersFrozen',
+  /**
+   * translates to TransferStatus.PortfolioFailure
+   *
+   * occurs if the sender Portfolio doesn't exist
+   */
+  InvalidSenderPortfolio = 'InvalidSenderPortfolio',
+  /**
+   * translates to TransferStatus.PortfolioFailure
+   *
+   * occurs if the receiver Portfolio doesn't exist
+   */
+  InvalidReceiverPortfolio = 'InvalidReceiverPortfolio',
+  /**
+   * translates to TransferStatus.PortfolioFailure
+   *
+   * occurs if the sender Portfolio does not have enough balance to cover the amount
+   */
+  InsufficientPortfolioBalance = 'InsufficientPortfolioBalance',
+
+  /**
+   * translates to TransferStatus.ComplianceFailure
+   *
+   * occurs if some compliance rule would prevent the transfer
+   */
+  ComplianceFailure = 'ComplianceFailure',
+}
+
+export interface AssetWithGroup {
+  asset: FungibleAsset;
+  group: KnownPermissionGroup | CustomPermissionGroup;
+}
+
+/**
+ * Events triggered by transactions performed by an Agent Identity, related to the Token's configuration
+ *   For example: changing compliance requirements, inviting/removing agent Identities, freezing/unfreezing transfers
+ *
+ * Token transfers (settlements or movements between Portfolios) do not count as Operations
+ */
+export interface HistoricAgentOperation {
+  /**
+   * Agent Identity that performed the operations
+   */
+  identity: Identity;
+  /**
+   * list of Token Operation Events that were triggered by the Agent Identity
+   */
+  history: EventIdentifier[];
+}
+
+/**
+ * An nft collection, along with a subset of its NFTs
+ */
+export interface HeldNfts {
+  collection: NftCollection;
+  nfts: Nft[];
+}

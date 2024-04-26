@@ -143,13 +143,7 @@ function getEndCondition(
 
     endCondition = { type: InstructionType.SettleOnBlock, endBlock };
   } else if ('endAfterBlock' in instruction && instruction.endAfterBlock) {
-    const { endAfterBlock } = instruction;
-
-    if (endAfterBlock.lte(latestBlock)) {
-      errorIndex = index;
-    }
-
-    endCondition = { type: InstructionType.SettleManual, endAfterBlock };
+    endCondition = { type: InstructionType.SettleManual, endAfterBlock: instruction.endAfterBlock };
   } else {
     endCondition = { type: InstructionType.SettleOnAffirmation };
   }

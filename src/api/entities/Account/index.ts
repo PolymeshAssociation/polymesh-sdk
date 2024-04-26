@@ -12,7 +12,15 @@ import {
   HistoricPolyxTransaction,
 } from '~/api/entities/Account/types';
 import { Subsidies } from '~/api/entities/Subsidies';
-import { Authorizations, Context, Entity, Identity, MultiSig, PolymeshError } from '~/internal';
+import {
+  Authorizations,
+  Context,
+  Entity,
+  Identity,
+  MultiSig,
+  MultiSigProposal,
+  PolymeshError,
+} from '~/internal';
 import { extrinsicsByArgs } from '~/middleware/queries';
 import { CallIdEnum, ExtrinsicsOrderBy, ModuleIdEnum, Query } from '~/middleware/types';
 import {
@@ -550,5 +558,24 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       accounts: [this],
       ...filters,
     });
+  }
+
+  /**
+   * Returns pending MultiSig proposals for this Account
+   *
+   * @note uses the middleware
+   * @throws if the Account is not a signer on any MultiSig
+   */
+  public async getPendingProposals(): Promise<MultiSigProposal[]> {
+    const multiSig = await this.getMultiSig();
+
+    if (!multiSig) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'This Account is not a signer on any MultiSig',
+      });
+    }
+
+    return multiSig.getProposals();
   }
 }
