@@ -8,7 +8,7 @@ import {
 import {
   ErrorCode,
   GenericPolymeshTransaction,
-  Identity,
+  Identity as PublicIdentity,
   ProcedureOpts,
   SignerType,
   TxTag as PublicTxTag,
@@ -19,13 +19,14 @@ import {
 } from '@polymeshassociation/polymesh-sdk/types/internal';
 import { signerToString } from '@polymeshassociation/polymesh-sdk/utils/conversion';
 
+import { Identity } from '~/internal';
 import {
+  CheckPermissionsResult,
   ConfidentialCheckRolesResult,
   ConfidentialProcedureAuthorization,
   ConfidentialProcedureAuthorizationStatus,
   TxTag,
 } from '~/types';
-import { CheckPermissionsResult } from '~/types/internal';
 import { checkConfidentialPermissions, checkConfidentialRoles } from '~/utils/internal';
 
 /**
@@ -54,7 +55,7 @@ async function getAgentPermissionsResult(
         asset,
         transactions: transactions as PublicTxTag[],
       })
-    : { result: false, missingPermissions: transactions as PublicTxTag[] };
+    : { result: false, missingPermissions: transactions };
 }
 
 /**
@@ -183,7 +184,7 @@ export class ConfidentialProcedure<
 
     const account = ctx.getSigningAccount();
 
-    const fetchIdentity = async (): Promise<Identity | null> => {
+    const fetchIdentity = async (): Promise<PublicIdentity | null> => {
       if (identity) return identity;
 
       return account.getIdentity();
@@ -194,7 +195,7 @@ export class ConfidentialProcedure<
     } else if (typeof roles === 'string') {
       rolesResult = { result: false, message: roles };
     } else {
-      identity = await fetchIdentity();
+      identity = (await fetchIdentity()) as unknown as Identity;
       noIdentity = !identity;
       rolesResult = { result: false, missingRoles: roles };
 
@@ -230,7 +231,7 @@ export class ConfidentialProcedure<
       if (assets?.length && transactions?.length) {
         assertOnlyOneAsset(assets);
 
-        identity = await fetchIdentity();
+        identity = (await fetchIdentity()) as unknown as Identity;
 
         noIdentity = !identity;
 

@@ -127,7 +127,7 @@
     "@polkadot/api": "10.9.1",
     "@polkadot/util": "12.4.2",
     "@polkadot/util-crypto": "12.4.2",
-    "@polymeshassociation/polymesh-sdk": "24.1.0",
+    "@polymeshassociation/polymesh-sdk": "24.2.1",
     "bignumber.js": "9.0.1",
     "bluebird": "^3.7.2",
     "cross-fetch": "^4.0.0",

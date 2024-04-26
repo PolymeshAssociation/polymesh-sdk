@@ -2,6 +2,8 @@
 
 import { ConfidentialAssetOwnerRole, ConfidentialVenueOwnerRole, Role, RoleType } from '~/types';
 
+export * from '@polymeshassociation/polymesh-sdk/utils';
+
 /**
  * Return whether Role is VenueOwnerRole
  */

@@ -1,8 +1,10 @@
 /* istanbul ignore file */
+
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-use-before-define */
+import { Identity } from '@polymeshassociation/polymesh-sdk/internal';
 import {
   AccountBalance,
   ActiveTransferRestrictions,
@@ -11,7 +13,6 @@ import {
   AssetWithGroup,
   Authorization,
   AuthorizationType,
-  CheckPermissionsResult,
   CheckRolesResult,
   CollectionKey,
   ComplianceRequirements,
@@ -82,7 +83,7 @@ import {
   DefaultPortfolio,
   DividendDistribution,
   FungibleAsset,
-  Identity,
+  Identity as PrivateIdentity,
   Instruction,
   KnownPermissionGroup,
   MetadataEntry,
@@ -100,6 +101,7 @@ import {
 import { entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
+  CheckPermissionsResult,
   ConfidentialAssetBalance,
   ConfidentialAssetDetails,
   ConfidentialLeg,
@@ -110,7 +112,7 @@ import {
   ConfidentialVenueFilteringDetails,
 } from '~/types';
 
-export type MockIdentity = Mocked<Identity>;
+export type MockIdentity = Mocked<PrivateIdentity>;
 export type MockChildIdentity = Mocked<ChildIdentity>;
 export type MockAccount = Mocked<Account>;
 export type MockSubsidy = Mocked<Subsidy>;

@@ -1,9 +1,7 @@
 import { EventIdEnum } from '@polymeshassociation/polymesh-sdk/middleware/types';
-import { Identity } from '@polymeshassociation/polymesh-sdk/types';
 import BigNumber from 'bignumber.js';
 
-import { ConfidentialVenue } from '~/internal';
-import { ConfidentialAccount } from '~/types';
+import { ConfidentialAccount, ConfidentialVenue, Identity } from '~/internal';
 
 export interface ConfidentialAssetDetails {
   owner: Identity;
