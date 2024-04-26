@@ -4,7 +4,7 @@ import {
   InMemoryCache,
   NormalizedCacheObject,
 } from '@apollo/client/core';
-import { ApiPromise, WsProvider } from '@polkadot/api';
+import { ApiPromise, HttpProvider, WsProvider } from '@polkadot/api';
 import { SigningManager } from '@polymeshassociation/signing-manager-types';
 import fetch from 'cross-fetch';
 import schema from 'polymesh-types/schema';
@@ -22,6 +22,7 @@ import {
   assertExpectedChainVersion,
   assertExpectedSqVersion,
   createProcedureMethod,
+  extractProtocol,
 } from '~/utils/internal';
 
 import { AccountManagement } from './AccountManagement';
@@ -33,7 +34,9 @@ import { Settlements } from './Settlements';
 
 export interface ConnectParams {
   /**
-   * The websocket URL for the Polymesh node to connect to
+   * The websocket or http URL for the Polymesh node to connect to
+   *
+   * @note subscription features are not available if an http URL is provided
    */
   nodeUrl: string;
   /**
@@ -154,8 +157,14 @@ export class Polymesh {
     try {
       const { types, rpc, signedExtensions, runtime } = schema;
 
+      const connectionProtocol = extractProtocol(nodeUrl)!;
+
+      const provider = connectionProtocol.startsWith('http')
+        ? new HttpProvider(nodeUrl)
+        : new WsProvider(nodeUrl);
+
       polymeshApi = await ApiPromise.create({
-        provider: new WsProvider(nodeUrl),
+        provider,
         types,
         rpc,
         runtime,

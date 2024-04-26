@@ -1,6 +1,13 @@
 import { ApolloQueryResult } from '@apollo/client/core';
 import { bool, Bytes, Option, Text, u8, U8aFixed, u16, u32, u64, u128, Vec } from '@polkadot/types';
-import { AccountId, Balance, BlockHash, Hash, Permill } from '@polkadot/types/interfaces';
+import {
+  AccountId,
+  Balance,
+  BlockHash,
+  ExtrinsicStatus,
+  Hash,
+  Permill,
+} from '@polkadot/types/interfaces';
 import { DispatchError, DispatchResult } from '@polkadot/types/interfaces/system';
 import {
   PalletCorporateActionsCaId,
@@ -4860,4 +4867,15 @@ export function assetCountToRaw(
   context: Context
 ): PolymeshPrimitivesSettlementAssetCount {
   return context.createType('PolymeshPrimitivesSettlementAssetCount', counts);
+}
+
+/**
+ * @hidden
+ */
+export function createRawExtrinsicStatus(
+  status: ExtrinsicStatus['type'],
+  value: Hash,
+  context: Context
+): ExtrinsicStatus {
+  return context.createType('ExtrinsicStatus', { [status]: value });
 }

@@ -196,7 +196,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
   /**
    * Retrieve the Asset's identifiers list
    *
-   * @note can be subscribed to
+   * @note can be subscribed to, if connected to node using a web socket
    */
   public getIdentifiers(): Promise<SecurityIdentifier[]>;
   public getIdentifiers(callback?: SubCallback<SecurityIdentifier[]>): Promise<UnsubCallback>;
@@ -218,6 +218,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
     const rawTicker = stringToTicker(ticker, context);
 
     if (callback) {
+      context.assertSupportsSubscription();
       return asset.identifiers(rawTicker, identifiers => {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(identifiers.map(assetIdentifierToSecurityIdentifier));
@@ -232,7 +233,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
   /**
    * Check whether transfers are frozen for the Asset
    *
-   * @note can be subscribed to
+   * @note can be subscribed to, if connected to node using a web socket
    */
   public isFrozen(): Promise<boolean>;
   public isFrozen(callback: SubCallback<boolean>): Promise<UnsubCallback>;
@@ -252,6 +253,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
     const rawTicker = stringToTicker(ticker, context);
 
     if (callback) {
+      context.assertSupportsSubscription();
       return asset.frozen(rawTicker, frozen => {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(boolToBoolean(frozen));
@@ -266,7 +268,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
   /**
    * Retrieve the Asset's data
    *
-   * @note can be subscribed to
+   * @note can be subscribed to, if connected to node using a web socket
    */
   public details(): Promise<AssetDetails>;
   public details(callback: SubCallback<AssetDetails>): Promise<UnsubCallback>;
@@ -339,6 +341,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
     const namePromise = asset.assetNames(rawTicker);
 
     if (callback) {
+      context.assertSupportsSubscription();
       const groupEntries = await groupOfAgentPromise;
       const assetName = await namePromise;
 
@@ -413,7 +416,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
   /**
    * Retrieve the Asset's funding round
    *
-   * @note can be subscribed to
+   * @note can be subscribed to, if connected to node using a web socket
    */
   public currentFundingRound(): Promise<string | null>;
   public currentFundingRound(callback: SubCallback<string | null>): Promise<UnsubCallback>;
@@ -437,6 +440,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
     const assembleResult = (roundName: Bytes): string | null => bytesToString(roundName) || null;
 
     if (callback) {
+      context.assertSupportsSubscription();
       return asset.fundingRound(rawTicker, round => {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(assembleResult(round));

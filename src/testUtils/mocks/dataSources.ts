@@ -39,6 +39,7 @@ import {
   DispatchResult,
   EventRecord,
   ExtrinsicStatus,
+  H256,
   Hash,
   Header,
   Index,
@@ -49,6 +50,7 @@ import {
   SignedBlock,
 } from '@polkadot/types/interfaces';
 import {
+  FrameSystemPhase,
   PalletAssetAssetOwnershipRelation,
   PalletAssetSecurityToken,
   PalletAssetTickerRegistration,
@@ -215,6 +217,7 @@ function createApi(): Mutable<ApiPromise> & EventEmitter {
     disconnect: jest.fn() as () => Promise<void>,
     setSigner: jest.fn() as (signer: PolkadotSigner) => void,
     genesisHash: { toString: jest.fn().mockReturnValue('someGenesisHash') } as unknown as Hash,
+    hasSubscriptions: true,
   } as Mutable<ApiPromise> & EventEmitter;
 }
 
@@ -459,6 +462,7 @@ interface ContextOptions {
   signingAccountAuthorizationsGetOne?: AuthorizationRequest;
   networkVersion?: string;
   supportsSubsidy?: boolean;
+  supportsSubscription?: boolean;
 }
 
 interface SigningManagerOptions {
@@ -778,6 +782,7 @@ const defaultContextOptions: ContextOptions = {
   signingAccountAuthorizationsGetOne: {} as AuthorizationRequest,
   networkVersion: '1.0.0',
   supportsSubsidy: true,
+  supportsSubscription: true,
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultSigningManagerOptions: SigningManagerOptions = {
@@ -900,9 +905,11 @@ function configureContext(opts: ContextOptions): void {
       .mockResolvedValue(opts.getDividendDistributionsForAssets),
     getNetworkVersion: jest.fn().mockResolvedValue(opts.networkVersion),
     supportsSubsidy: jest.fn().mockReturnValue(opts.supportsSubsidy),
+    supportsSubscription: jest.fn().mockReturnValue(opts.supportsSubscription),
     createType: jest.fn() as jest.Mock<unknown, [unknown]>,
     getPolyxTransactions: jest.fn().mockResolvedValue(opts.getPolyxTransactions),
     assertHasSigningAddress: jest.fn(),
+    assertSupportsSubscription: jest.fn(),
   } as unknown as MockContext;
 
   contextInstance.clone = jest.fn().mockReturnValue(contextInstance);
@@ -2587,12 +2594,38 @@ export const createMockAuthorization = (authorization?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockEventRecord = (data: unknown[]): EventRecord =>
-  ({
-    event: {
-      data,
+export const createMockSystemPhase = (
+  phase?: { ApplyExtrinsic: u32 } | { Finalization: bool } | { Initialization: bool }
+): FrameSystemPhase => {
+  return createMockEnum<FrameSystemPhase>(phase);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockEventRecord = (record?: {
+  phase: FrameSystemPhase | Parameters<typeof createMockSystemPhase>;
+  data: unknown[];
+  topics?: Vec<H256>;
+}): EventRecord => {
+  const { phase, data, topics } = record ?? {
+    phase: createMockSystemPhase(),
+    data: [],
+    topics: [],
+  };
+
+  return createMockCodec(
+    {
+      phase,
+      event: {
+        data,
+      },
+      topics: topics ?? [],
     },
-  } as unknown as EventRecord);
+    !record
+  ) as unknown as EventRecord;
+};
 
 /**
  * @hidden
@@ -3780,17 +3813,20 @@ export const createMockExtrinsics = (
     | Vec<GenericExtrinsic>
     | {
         toHex: () => string;
+        hash: Hash;
       }[]
 ): MockCodec<Vec<GenericExtrinsic>> => {
-  const [{ toHex }] = extrinsics ?? [
+  const [{ toHex, hash }] = extrinsics ?? [
     {
       toHex: () => createMockStringCodec(),
+      hash: createMockHash(),
     },
   ];
   return createMockCodec(
     [
       {
         toHex,
+        hash,
       },
     ],
     !extrinsics
@@ -4559,3 +4595,21 @@ export const createMockAffirmationCount = (
     !affirmCount
   );
 };
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockExtrinsicStatus = (
+  status?:
+    | { Future: bool }
+    | { Ready: bool }
+    | { Broadcast: Vec<Text> }
+    | { InBlock: Hash }
+    | { Retracted: Hash }
+    | { FinalityTimeout: Hash }
+    | { Finalized: Hash }
+    | { Usurped: Hash }
+    | { Dropped: bool }
+    | { Invalid: bool }
+): MockCodec<ExtrinsicStatus> => createMockEnum<ExtrinsicStatus>(status);

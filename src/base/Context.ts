@@ -315,7 +315,7 @@ export class Context {
    *
    * Retrieve the Account POLYX balance
    *
-   * @note can be subscribed to
+   * @note can be subscribed to, if connected to node using a web socket
    */
   public accountBalance(account?: string | Account): Promise<AccountBalance>;
   public accountBalance(
@@ -361,6 +361,8 @@ export class Context {
     };
 
     if (callback) {
+      this.assertSupportsSubscription();
+
       return system.account(rawAddress, info => {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(assembleResult(info));
@@ -377,7 +379,7 @@ export class Context {
    *
    * Retrieve the Account subsidizer relationship. If there is no such relationship, return null
    *
-   * @note can be subscribed to
+   * @note can be subscribed to, if connected to node using a web socket
    */
   public accountSubsidy(account?: string | Account): Promise<SubsidyWithAllowance | null>;
   public accountSubsidy(
@@ -425,6 +427,8 @@ export class Context {
     };
 
     if (callback) {
+      this.assertSupportsSubscription();
+
       return relayer.subsidies(rawAddress, subsidy => {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(assembleResult(subsidy));
@@ -1073,25 +1077,35 @@ export class Context {
   public async getLatestBlock(): Promise<BigNumber> {
     const { chain } = this.polymeshApi.rpc;
 
-    /*
-     * This is faster than calling `getFinalizedHead` and then `getHeader`.
-     * We're promisifying a callback subscription to the latest finalized block
-     * and unsubscribing as soon as we get the first result
-     */
-    const gettingHeader = new Promise<Header>((resolve, reject) => {
-      const gettingUnsub = chain.subscribeFinalizedHeads(header => {
-        gettingUnsub
-          .then(unsub => {
-            unsub();
-            resolve(header);
-          })
-          .catch(err => reject(err));
+    if (this.supportsSubscription()) {
+      /*
+       * This is faster than calling `getFinalizedHead` and then `getHeader`.
+       * We're promisifying a callback subscription to the latest finalized block
+       * and unsubscribing as soon as we get the first result
+       */
+      const gettingHeader = new Promise<Header>((resolve, reject) => {
+        const gettingUnsub = chain.subscribeFinalizedHeads(header => {
+          gettingUnsub
+            .then(unsub => {
+              unsub();
+              resolve(header);
+            })
+            .catch(err => reject(err));
+        });
       });
-    });
 
-    const { number } = await gettingHeader;
+      const { number } = await gettingHeader;
 
-    return u32ToBigNumber(number.unwrap());
+      return u32ToBigNumber(number.unwrap());
+    } else {
+      /**
+       * Without subscriptions we need to resort to the slower method
+       */
+      const finalizedHead = await chain.getFinalizedHead();
+      const { number } = await chain.getHeader(finalizedHead);
+
+      return u32ToBigNumber(number.unwrap());
+    }
   }
 
   /**
@@ -1300,5 +1314,25 @@ export class Context {
       next,
       count,
     };
+  }
+
+  /**
+   * @hidden
+   */
+  public supportsSubscription(): boolean {
+    return this.polymeshApi.hasSubscriptions;
+  }
+
+  /**
+   * @hidden
+   */
+  public assertSupportsSubscription(): void {
+    if (!this.supportsSubscription()) {
+      throw new PolymeshError({
+        code: ErrorCode.General,
+        message:
+          'Subscriptions are not supported over http. SDK must be initialized with a ws connection in order to subscribe',
+      });
+    }
   }
 }

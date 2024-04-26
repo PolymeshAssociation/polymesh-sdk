@@ -105,7 +105,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * Retrieve the Offering's details
    *
-   * @note can be subscribed to
+   * @note can be subscribed to, if connected to node using a web socket
    */
   public details(): Promise<OfferingDetails>;
   public details(callback: SubCallback<OfferingDetails>): Promise<UnsubCallback>;
@@ -138,6 +138,8 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
     const fetchName = (): Promise<Option<Bytes>> => sto.fundraiserNames(rawTicker, rawU64);
 
     if (callback) {
+      context.assertSupportsSubscription();
+
       const fundraiserName = await fetchName();
       return sto.fundraisers(rawTicker, rawU64, fundraiserData => {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
