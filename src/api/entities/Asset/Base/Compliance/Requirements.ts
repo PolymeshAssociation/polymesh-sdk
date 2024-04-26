@@ -105,7 +105,7 @@ export class Requirements extends Namespace<BaseAsset> {
   /**
    * Retrieve all of the Asset's compliance requirements, together with the Default Trusted Claim Issuers
    *
-   * @note can be subscribed to
+   * @note can be subscribed to, if connected to node using a web socket
    */
   public get(): Promise<ComplianceRequirements>;
   public get(callback: SubCallback<ComplianceRequirements>): Promise<UnsubCallback>;
@@ -142,6 +142,8 @@ export class Requirements extends Namespace<BaseAsset> {
     };
 
     if (callback) {
+      context.assertSupportsSubscription();
+
       return requestMulti<
         [typeof complianceManager.assetCompliances, typeof complianceManager.trustedClaimIssuer]
       >(

@@ -1,4 +1,5 @@
 import { QueryOptions } from '@apollo/client/core';
+import { ApiPromise } from '@polkadot/api';
 import { Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
@@ -450,6 +451,7 @@ describe('Context class', () => {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApiV2: dsMockUtils.getMiddlewareApi(),
       });
+      jest.spyOn(context, 'supportsSubscription').mockReturnValue(true);
 
       const callback = jest.fn();
       const result = await context.accountBalance('someAddress', callback);
@@ -561,6 +563,7 @@ describe('Context class', () => {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApiV2: dsMockUtils.getMiddlewareApi(),
       });
+      jest.spyOn(context, 'supportsSubscription').mockReturnValue(true);
 
       const callback = jest.fn();
       const result = await context.accountSubsidy('accountId', callback);
@@ -1564,6 +1567,29 @@ describe('Context class', () => {
       expect(result).toEqual(blockNumber);
     });
 
+    it('should fallback when subscription is not supported', async () => {
+      const blockNumber = new BigNumber(100);
+
+      dsMockUtils.createRpcMock('chain', 'getFinalizedHead', {
+        returnValue: 'someHash',
+      });
+      dsMockUtils.createRpcMock('chain', 'getHeader', {
+        returnValue: {
+          number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(blockNumber)),
+        },
+      });
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+      });
+      jest.spyOn(context, 'supportsSubscription').mockReturnValue(false);
+
+      const result = await context.getLatestBlock();
+
+      expect(result).toEqual(blockNumber);
+    });
+
     it('should throw any errors encountered while fetching', async () => {
       const mock = dsMockUtils.createRpcMock('chain', 'subscribeFinalizedHeads');
       const err = new Error('Foo');
@@ -2294,6 +2320,44 @@ describe('Context class', () => {
       const result = await context.isCurrentNodeArchive();
 
       expect(result).toEqual(false);
+    });
+  });
+
+  describe('method: assertSupportsSubscription', () => {
+    let polymeshApi: ApiPromise;
+
+    beforeEach(() => {
+      polymeshApi = dsMockUtils.getApiInstance();
+    });
+
+    it('should return true if subscription is supported', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (polymeshApi as any).hasSubscriptions = true;
+
+      const context = await Context.create({
+        polymeshApi,
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+      });
+
+      expect(() => context.assertSupportsSubscription()).not.toThrow();
+    });
+
+    it('should throw an error if subscription is not supported', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (polymeshApi as any).hasSubscriptions = false;
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+      });
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.General,
+        message:
+          'Subscriptions are not supported over http. SDK must be initialized with a ws connection in order to subscribe',
+      });
+
+      expect(() => context.assertSupportsSubscription()).toThrow(expectedError);
     });
   });
 });

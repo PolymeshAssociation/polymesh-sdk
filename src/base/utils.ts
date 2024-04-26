@@ -1,9 +1,12 @@
-import { getTypeDef } from '@polkadot/types';
+import { SubmittableResult } from '@polkadot/api';
+import { getTypeDef, u32 } from '@polkadot/types';
+import { Hash, SignedBlock } from '@polkadot/types/interfaces';
 import { SpRuntimeDispatchError } from '@polkadot/types/lookup';
 import { RegistryError, TypeDef, TypeDefInfo } from '@polkadot/types/types';
+import { BigNumber } from 'bignumber.js';
 import { polymesh } from 'polymesh-types/definitions';
 
-import { PolymeshError } from '~/internal';
+import { Context, PolymeshError } from '~/internal';
 import {
   ArrayTransactionArgument,
   ComplexTransactionArgument,
@@ -14,6 +17,8 @@ import {
   TransactionArgumentType,
 } from '~/types';
 import { ROOT_TYPES } from '~/utils/constants';
+import { bigNumberToU32, createRawExtrinsicStatus } from '~/utils/conversion';
+import { delay } from '~/utils/internal';
 
 const { types } = polymesh;
 
@@ -147,10 +152,9 @@ export const processType = (rawType: TypeDef, name: string): TransactionArgument
  * @hidden
  */
 export const handleExtrinsicFailure = (
-  reject: (reason?: unknown) => void,
   error: SpRuntimeDispatchError,
   data?: Record<string, unknown>
-): void => {
+): PolymeshError => {
   // get revert message from event
   let message: string;
 
@@ -168,5 +172,112 @@ export const handleExtrinsicFailure = (
     message = 'Unknown error';
   }
 
-  reject(new PolymeshError({ code: ErrorCode.TransactionReverted, message, data }));
+  return new PolymeshError({ code: ErrorCode.TransactionReverted, message, data });
+};
+
+export const handleTransactionSubmissionError = (err: Error): PolymeshError => {
+  let error;
+  /* istanbul ignore else */
+  if (err.message.indexOf('Cancelled') > -1) {
+    // tx rejected by signer
+    error = { code: ErrorCode.TransactionRejectedByUser };
+  } else {
+    // unexpected error
+    error = { code: ErrorCode.UnexpectedError, message: err.message };
+  }
+
+  return new PolymeshError(error);
+};
+
+/**
+ * @hidden
+ *
+ * given a transaction hash this will poll the chain until it is included in a finalized block
+ *
+ * @note this method should only be used when there is no subscription support for efficiency
+ *
+ * @throws if transaction is not found after a certain amount of time
+ *
+ * @param txHash The hash of the transaction
+ * @param startingBlock The block number from before the transaction was submitted
+ * @param context
+ * @param pollOptions Controls max time to poll, defaults should be OK (finalization takes ~15 seconds)
+ * @returns
+ */
+export const pollForTransactionFinalization = async (
+  txHash: Hash,
+  startingBlock: BigNumber,
+  context: Context,
+  pollOptions = { delayMs: 3000, maxAttempts: 10 }
+): Promise<SubmittableResult> => {
+  let lastCheckedBlock = startingBlock;
+  let locationInfo: { block: SignedBlock; txIndex: number } | undefined;
+  let txIndex: number;
+
+  // Finalization is expected to take ~15 seconds
+  const { delayMs, maxAttempts } = pollOptions;
+
+  let attemptCounter = 0;
+  while (!locationInfo && attemptCounter < maxAttempts) {
+    attemptCounter += 1;
+    await delay(delayMs);
+
+    const latestBlockNumber = await context.getLatestBlock();
+    if (!latestBlockNumber.eq(lastCheckedBlock)) {
+      const blocksToCheck: u32[] = [];
+      const numberOfCandidateBlocks = latestBlockNumber.minus(lastCheckedBlock).toNumber();
+
+      for (let i = 1; i <= numberOfCandidateBlocks; i++) {
+        const blockNumber = lastCheckedBlock.plus(i);
+        blocksToCheck.push(bigNumberToU32(blockNumber, context));
+      }
+
+      const blockHashesToCheck = await context.polymeshApi.query.system.blockHash.multi(
+        blocksToCheck
+      );
+
+      const newBlocks = await Promise.all(
+        blockHashesToCheck.map(hash => context.polymeshApi.rpc.chain.getBlock(hash))
+      );
+
+      for (const newBlock of newBlocks) {
+        txIndex = newBlock.block.extrinsics.findIndex(value => txHash.eq(value.hash));
+        if (txIndex >= 0) {
+          locationInfo = { txIndex, block: newBlock };
+          break;
+        }
+      }
+
+      lastCheckedBlock = latestBlockNumber;
+    }
+  }
+
+  if (!locationInfo) {
+    throw new PolymeshError({
+      code: ErrorCode.UnexpectedError,
+      message: 'The block containing the transaction was not found',
+    });
+  }
+
+  const queryAt = await context.polymeshApi.at(locationInfo.block.block.header.hash);
+  const allEvents = await queryAt.query.system.events();
+
+  const relatedEvents = allEvents.filter(event => {
+    if (event.phase.isApplyExtrinsic) {
+      return event.phase.asApplyExtrinsic.eq(locationInfo!.txIndex);
+    }
+
+    return false;
+  });
+
+  const blockHash = locationInfo.block.block.header.hash;
+  const rawStatus = createRawExtrinsicStatus('Finalized', blockHash, context);
+
+  return new SubmittableResult({
+    blockNumber: locationInfo.block.block.header.number.unwrap(),
+    txIndex: locationInfo.txIndex,
+    txHash,
+    status: rawStatus,
+    events: relatedEvents,
+  });
 };

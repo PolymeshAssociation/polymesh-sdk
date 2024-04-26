@@ -99,6 +99,23 @@ describe('Polymesh Class', () => {
       });
     });
 
+    it('should instantiate Context with an HTTP provider and return a Polymesh instance', async () => {
+      const signingManager = 'signingManager' as unknown as SigningManager;
+      const createMock = dsMockUtils.getContextCreateMock();
+
+      await Polymesh.connect({
+        nodeUrl: 'https://some.url',
+        signingManager,
+      });
+
+      expect(createMock).toHaveBeenCalledTimes(1);
+      expect(createMock).toHaveBeenCalledWith({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApiV2: null,
+        signingManager,
+      });
+    });
+
     it('should instantiate Context with middleware V2 URL and return a Polymesh instance', async () => {
       const createMock = dsMockUtils.getContextCreateMock();
 

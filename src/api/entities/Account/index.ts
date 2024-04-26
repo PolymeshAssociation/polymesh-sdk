@@ -110,7 +110,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   /**
    * Get the free/locked POLYX balance of the Account
    *
-   * @note can be subscribed to
+   * @note can be subscribed to, if connected to node using a web socket
    */
   public getBalance(): Promise<AccountBalance>;
   public getBalance(callback: SubCallback<AccountBalance>): Promise<UnsubCallback>;
@@ -122,6 +122,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     const { context, address } = this;
 
     if (callback) {
+      context.assertSupportsSubscription();
       return context.accountBalance(address, callback);
     }
 
@@ -132,7 +133,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
    * Get the subsidized balance of this Account and the subsidizer Account. If
    *   this Account isn't being subsidized, return null
    *
-   * @note can be subscribed to
+   * @note can be subscribed to, if connected to node using a web socket
    *
    * @deprecated in favour of {@link api/entities/Subsidies!Subsidies.getSubsidizer | subsidies.getSubsidizer}
    */
@@ -146,6 +147,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     const { context, address } = this;
 
     if (callback) {
+      context.assertSupportsSubscription();
       return context.accountSubsidy(address, callback);
     }
 

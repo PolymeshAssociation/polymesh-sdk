@@ -199,7 +199,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   /**
    * Retrieve the balance of a particular Asset
    *
-   * @note can be subscribed to
+   * @note can be subscribed to, if connected to node using a web socket
    */
   public getAssetBalance(args: { ticker: string }): Promise<BigNumber>;
   public getAssetBalance(
@@ -236,6 +236,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     }
 
     if (callback) {
+      context.assertSupportsSubscription();
+
       return asset.balanceOf(rawTicker, rawIdentityId, res => {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(balanceToBigNumber(res));
@@ -300,7 +302,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   /**
    * Retrieve the primary Account associated with the Identity
    *
-   * @note can be subscribed to
+   * @note can be subscribed to, if connected to node using a web socket
    */
   public async getPrimaryAccount(): Promise<PermissionedAccount>;
   public async getPrimaryAccount(
@@ -342,6 +344,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const rawDid = stringToIdentityId(did, context);
 
     if (callback) {
+      context.assertSupportsSubscription();
+
       return identity.didRecords(rawDid, records => callback(assembleResult(records)));
     }
 
@@ -487,8 +491,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
   /**
    * Retrieve all Venues created by this Identity
-   *
-   * @note can be subscribed to
    */
   public async getVenues(): Promise<Venue[]> {
     const {
@@ -662,7 +664,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   /**
    * Check whether secondary Accounts are frozen
    *
-   * @note can be subscribed to
+   * @note can be subscribed to, if connected to node using a web socket
    */
   public areSecondaryAccountsFrozen(): Promise<boolean>;
   public areSecondaryAccountsFrozen(callback: SubCallback<boolean>): Promise<UnsubCallback>;
@@ -684,6 +686,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const rawIdentityId = stringToIdentityId(did, context);
 
     if (callback) {
+      context.assertSupportsSubscription();
+
       return identity.isDidFrozen(rawIdentityId, frozen => {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(boolToBoolean(frozen));
@@ -754,7 +758,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    * Get the list of secondary Accounts related to the Identity
    *
    * @note supports pagination
-   * @note can be subscribed to
+   * @note can be subscribed to, if connected to node using a web socket
    */
   public async getSecondaryAccounts(
     paginationOpts?: PaginationOptions
@@ -815,6 +819,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const accounts = keys.map(([key]) => keyToAccount(key));
 
     if (cb) {
+      context.assertSupportsSubscription();
+
       return getSecondaryAccountPermissions({ accounts }, context, cb);
     }
 

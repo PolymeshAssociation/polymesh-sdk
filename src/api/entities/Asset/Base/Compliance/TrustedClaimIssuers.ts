@@ -93,7 +93,7 @@ export class TrustedClaimIssuers extends Namespace<BaseAsset> {
   /**
    * Retrieve the current Default Trusted Claim Issuers of the Asset
    *
-   * @note can be subscribed to
+   * @note can be subscribed to, if connected to node using a web socket
    */
   public get(): Promise<TrustedClaimIssuer<true>[]>;
   public get(callback: SubCallback<TrustedClaimIssuer<true>[]>): Promise<UnsubCallback>;
@@ -129,6 +129,8 @@ export class TrustedClaimIssuers extends Namespace<BaseAsset> {
       });
 
     if (callback) {
+      context.assertSupportsSubscription();
+
       return complianceManager.trustedClaimIssuer(rawTicker, issuers => {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(assembleResult(issuers));

@@ -255,7 +255,8 @@ export class PolymeshTransactionBatch<
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const dispatchError = (failedData as any)[1];
 
-      handleExtrinsicFailure(reject, dispatchError, { failedIndex });
+      const error = handleExtrinsicFailure(dispatchError, { failedIndex });
+      reject(error);
     } else {
       resolve(receipt);
     }

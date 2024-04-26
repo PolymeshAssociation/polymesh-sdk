@@ -111,7 +111,7 @@ export class NftCollection extends BaseAsset {
   /**
    * Retrieve the NftCollection's data
    *
-   * @note can be subscribed to
+   * @note can be subscribed to, if connected to node using a web socket
    */
   public override details(): Promise<AssetDetails>;
   public override details(callback: SubCallback<AssetDetails>): Promise<UnsubCallback>;
@@ -133,6 +133,8 @@ export class NftCollection extends BaseAsset {
     const rawNumberNftsPromise = query.nft.numberOfNFTs.entries(rawTicker);
 
     if (callback) {
+      context.assertSupportsSubscription();
+
       const rawNumberNfts = await rawNumberNftsPromise;
       const numberIssued = sumNftIssuance(rawNumberNfts);
 
