@@ -3,16 +3,24 @@ import BigNumber from 'bignumber.js';
 import { UniqueIdentifiers } from '~/api/entities/Account';
 import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 import { Account, Context, Identity, modifyMultiSig, PolymeshError } from '~/internal';
-import { ErrorCode, ModifyMultiSigParams, MultiSigDetails, ProcedureMethod } from '~/types';
+import {
+  ErrorCode,
+  ModifyMultiSigParams,
+  MultiSigDetails,
+  ProcedureMethod,
+  ProposalStatus,
+} from '~/types';
 import {
   addressToKey,
   identityIdToString,
+  meshProposalStatusToProposalStatus,
+  momentToDate,
   signatoryToSignerValue,
   signerValueToSigner,
   stringToAccountId,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { createProcedureMethod, optionize } from '~/utils/internal';
 
 /**
  * Represents a MultiSig Account. A MultiSig Account is composed of one or more signing Accounts. In order to submit a transaction, a specific amount of those signing Accounts must approve it first
@@ -87,7 +95,7 @@ export class MultiSig extends Account {
   }
 
   /**
-   * Return all { @link api/entities/MultiSigProposal!MultiSigProposal } for this MultiSig Account
+   * Return all active { @link api/entities/MultiSigProposal!MultiSigProposal } for this MultiSig Account
    */
   public async getProposals(): Promise<MultiSigProposal[]> {
     const {
@@ -104,13 +112,35 @@ export class MultiSig extends Account {
 
     const rawProposalEntries = await multiSig.proposals.entries(rawAddress);
 
-    return rawProposalEntries.map(
+    const proposals: MultiSigProposal[] = [];
+
+    if (!rawProposalEntries.length) {
+      return [];
+    }
+
+    const queries = rawProposalEntries.map(
       ([
         {
-          args: [, rawId],
+          args: [rawKey, rawId],
         },
-      ]) => new MultiSigProposal({ multiSigAddress: address, id: u64ToBigNumber(rawId) }, context)
+      ]) => {
+        proposals.push(
+          new MultiSigProposal({ multiSigAddress: address, id: u64ToBigNumber(rawId) }, context)
+        );
+
+        return [rawKey, rawId];
+      }
     );
+
+    const details = await multiSig.proposalDetail.multi(queries);
+
+    const statuses = details.map(({ status: rawStatus, expiry: rawExpiry }) => {
+      const expiry = optionize(momentToDate)(rawExpiry.unwrapOr(null));
+
+      return meshProposalStatusToProposalStatus(rawStatus, expiry);
+    });
+
+    return proposals.filter((_, index) => statuses[index] === ProposalStatus.Active);
   }
 
   /**
