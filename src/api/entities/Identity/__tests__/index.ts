@@ -12,6 +12,7 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import {
+  Account,
   Context,
   Entity,
   FungibleAsset,
@@ -29,7 +30,6 @@ import { AssetHoldersOrderBy, NftHoldersOrderBy } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import {
-  Account,
   DistributionWithDetails,
   ErrorCode,
   HistoricInstruction,
@@ -1369,6 +1369,60 @@ describe('Identity class', () => {
       const result = await identity.isAssetPreApproved(ticker);
 
       expect(result).toBeTruthy();
+    });
+  });
+
+  describe('method: getMultiSigSigners', () => {
+    it('should return the MultiSig signers associated with an Identity', async () => {
+      dsMockUtils.createQueryMock('multiSig', 'multiSigToIdentity', {
+        entries: [
+          tuple(
+            [dsMockUtils.createMockAccountId('multiSig')],
+            dsMockUtils.createMockIdentityId('someDid')
+          ),
+          tuple(
+            [dsMockUtils.createMockAccountId('multiSig2')],
+            dsMockUtils.createMockIdentityId('randomDid')
+          ),
+        ],
+      });
+
+      dsMockUtils.createQueryMock('multiSig', 'multiSigSigners', {
+        entries: [
+          tuple(
+            [
+              dsMockUtils.createMockAccountId('multiSig'),
+              dsMockUtils.createMockSignatory({
+                Account: dsMockUtils.createMockAccountId('signer'),
+              }),
+            ],
+            dsMockUtils.createMockBool(true)
+          ),
+        ],
+      });
+
+      const did = 'someDid';
+      const mockContext = dsMockUtils.getContextInstance();
+      const identity = new Identity({ did }, mockContext);
+
+      dsMockUtils
+        .createQueryMock('asset', 'preApprovedTicker')
+        .mockResolvedValue(dsMockUtils.createMockBool(true));
+
+      const result = await identity.getMultiSigSigners();
+
+      expect(result).toEqual([
+        {
+          signerFor: expect.objectContaining({
+            address: 'multiSig',
+          }),
+          signers: [
+            expect.objectContaining({
+              address: 'signer',
+            }),
+          ],
+        },
+      ]);
     });
   });
 });
