@@ -1,7 +1,6 @@
 import BigNumber from 'bignumber.js';
 
 import { UniqueIdentifiers } from '~/api/entities/Account';
-import { HistoricalMultiSigProposal } from '~/api/entities/HistoricalMultiSigProposal';
 import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 import { Account, Context, Identity, modifyMultiSig, PolymeshError } from '~/internal';
 import { multiSigProposalsQuery } from '~/middleware/queries';
@@ -154,7 +153,7 @@ export class MultiSig extends Account {
   public async getHistoricalProposals(opts: {
     size?: BigNumber;
     start?: BigNumber;
-  }): Promise<ResultSet<HistoricalMultiSigProposal>> {
+  }): Promise<ResultSet<MultiSigProposal>> {
     const {
       context: { queryMiddleware },
       context,
@@ -172,7 +171,7 @@ export class MultiSig extends Account {
 
     const data = nodes.map(
       ({ proposalId }) =>
-        new HistoricalMultiSigProposal({ proposalId, multiSigAddress: address }, context)
+        new MultiSigProposal({ id: new BigNumber(proposalId), multiSigAddress: address }, context)
     );
 
     const count = new BigNumber(totalCount);
