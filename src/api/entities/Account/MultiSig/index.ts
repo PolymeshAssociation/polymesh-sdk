@@ -3,13 +3,17 @@ import BigNumber from 'bignumber.js';
 import { UniqueIdentifiers } from '~/api/entities/Account';
 import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 import { Account, Context, Identity, modifyMultiSig, PolymeshError } from '~/internal';
+import { multiSigProposalsQuery } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
 import {
   ErrorCode,
   ModifyMultiSigParams,
   MultiSigDetails,
   ProcedureMethod,
   ProposalStatus,
+  ResultSet,
 } from '~/types';
+import { Ensured } from '~/types/utils';
 import {
   addressToKey,
   identityIdToString,
@@ -20,7 +24,7 @@ import {
   stringToAccountId,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, optionize } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod, optionize } from '~/utils/internal';
 
 /**
  * Represents a MultiSig Account. A MultiSig Account is composed of one or more signing Accounts. In order to submit a transaction, a specific amount of those signing Accounts must approve it first
@@ -141,6 +145,46 @@ export class MultiSig extends Account {
     });
 
     return proposals.filter((_, index) => statuses[index] === ProposalStatus.Active);
+  }
+
+  /**
+   * Return all { @link api/entities/MultiSigProposal!MultiSigProposal } for this MultiSig Account
+   *
+   * @note uses the middlewareV2
+   */
+  public async getHistoricalProposals(opts: {
+    size?: BigNumber;
+    start?: BigNumber;
+  }): Promise<ResultSet<MultiSigProposal>> {
+    const {
+      context: { queryMiddleware },
+      context,
+      address,
+    } = this;
+    const { size, start } = opts;
+
+    const {
+      data: {
+        multiSigProposals: { nodes, totalCount },
+      },
+    } = await queryMiddleware<Ensured<Query, 'multiSigProposals'>>(
+      multiSigProposalsQuery(address, size, start)
+    );
+
+    const data = nodes.map(
+      ({ proposalId }) =>
+        new MultiSigProposal({ id: new BigNumber(proposalId), multiSigAddress: address }, context)
+    );
+
+    const count = new BigNumber(totalCount);
+
+    const next = calculateNextKey(count, data.length, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
   }
 
   /**

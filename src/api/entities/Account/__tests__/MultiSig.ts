@@ -2,6 +2,7 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Account, Context, MultiSig, PolymeshError, PolymeshTransaction } from '~/internal';
+import { multiSigProposalsQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   createMockAccountId,
@@ -192,6 +193,58 @@ describe('MultiSig class', () => {
       const result = await multiSig.getProposals();
 
       expect(result).toMatchObject([]);
+    });
+  });
+
+  describe('method: getHistoricalProposals', () => {
+    const mockHistoricalMultisig = {
+      id: 'someId',
+      proposalId: 1,
+      multisigId: address,
+      approvalCount: 1,
+      rejectionCount: 1,
+      creator: {
+        did: 'somedid',
+      },
+      status: 'Pending',
+      createdBlockId: '1',
+      updatedBlockId: '1',
+      datetime: new Date().toISOString(),
+    };
+
+    const multiSigProposalsResponse = {
+      totalCount: 2,
+      nodes: [mockHistoricalMultisig],
+    };
+
+    it('should get proposals', async () => {
+      dsMockUtils.createApolloQueryMock(
+        multiSigProposalsQuery(address, new BigNumber(1), new BigNumber(0)),
+        {
+          multiSigProposals: multiSigProposalsResponse,
+        }
+      );
+
+      const result = await multiSig.getHistoricalProposals({
+        size: new BigNumber(1),
+        start: new BigNumber(0),
+      });
+
+      const { data, next, count } = result;
+
+      expect(next).toEqual(new BigNumber(1));
+      expect(count).toEqual(new BigNumber(2));
+      expect(data.length).toEqual(1);
+    });
+
+    it('should return an empty array if no proposals are pending', async () => {
+      dsMockUtils.createQueryMock('multiSig', 'proposals', {
+        entries: [],
+      });
+
+      const result = await multiSig.getProposals();
+
+      expect(result).toEqual([]);
     });
   });
 

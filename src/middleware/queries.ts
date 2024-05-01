@@ -1539,6 +1539,15 @@ export function multiSigProposalQuery(
             hash
             datetime
           }
+          votes {
+            nodes {
+              action
+              signer {
+                signerType
+                signerValue
+              }
+            }
+          }
           updatedBlock {
             blockId
             hash
@@ -1688,5 +1697,38 @@ export function nftCollectionHolders(
   return {
     query,
     variables: { size: size?.toNumber(), start: start?.toNumber(), assetId },
+  };
+}
+
+type MultiSigProposalQueryParameters = {
+  multisigId: string;
+};
+
+/**
+ * @hidden
+ *
+ * Get MultiSig Proposals history for a given MultiSig address
+ */
+export function multiSigProposalsQuery(
+  multisigId: string,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<MultiSigProposalQueryParameters>> {
+  const query = gql`
+    query MultiSigProposalsQuery($size: Int, $start: Int, $multisigId: String!) {
+      multiSigProposals(filter: { multisigId: { eq: $multisigId } }, first: $size, offset: $start) {
+        nodes {
+          id
+          proposalId
+          multisigId
+        }
+        totalCount
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { size: size?.toNumber(), start: start?.toNumber(), multisigId },
   };
 }
