@@ -20,6 +20,7 @@ import BigNumber from 'bignumber.js';
 import { convertSubQueryAssetIdToUuid } from '~/api/entities/ConfidentialAccount/helpers';
 import {
   affirmConfidentialTransactions,
+  ConfidentialAccount,
   Context,
   Entity,
   executeConfidentialTransaction,
@@ -40,7 +41,10 @@ import {
   ConfidentialProcedureMethod,
   ConfidentialTransactionDetails,
   ConfidentialTransactionStatus,
+  PendingProof,
+  SenderAssetProof,
   SenderProofs,
+  TransactionProofDetails,
 } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
@@ -376,33 +380,110 @@ export class ConfidentialTransaction extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
+   * Get information for the each of the legs proof status
+   *
+   * The results are divided between `proved` and `pending`, depending if the sender has already submitted a proof or not. Proved results contain a proof for each asset involved in the leg which can be verified by the receiver or specified auditors.
+   *
+   * @note uses the middlewareV2
+   */
+  public async getProofDetails(): Promise<TransactionProofDetails> {
+    const { context } = this;
+    const {
+      data: {
+        confidentialTransaction: { affirmations, legs },
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'confidentialTransaction'>>(
+      getConfidentialTransactionProofsQuery({ id: this.id.toString() })
+    );
+
+    const legIdToParties = legs.nodes.reduce<
+      Record<
+        string,
+        {
+          sender: ConfidentialAccount;
+          receiver: ConfidentialAccount;
+          assetAuditors: Record<string, ConfidentialAccount[]>;
+        }
+      >
+    >((result, { senderId, receiverId, id: sqLegId, assetAuditors: sqAssetAuditors }) => {
+      const legId = sqLegId.split('/')[1];
+      const sender = new ConfidentialAccount({ publicKey: senderId }, context);
+      const receiver = new ConfidentialAccount({ publicKey: receiverId }, context);
+
+      const typed = sqAssetAuditors as { assetId: string; auditors: string[] }[];
+
+      const assetAuditors = typed.reduce((record, { assetId, auditors }) => {
+        record[assetId] = auditors.map(
+          auditorId => new ConfidentialAccount({ publicKey: auditorId }, context)
+        );
+
+        return record;
+      }, {} as Record<string, ConfidentialAccount[]>);
+
+      result[legId] = { sender, receiver, assetAuditors };
+
+      return result;
+    }, {});
+
+    const proved = affirmations.nodes.map(({ proofs: sqProofs, legId: sqLegId }) => {
+      const legId = new BigNumber(sqLegId);
+      const { sender, receiver, assetAuditors } = legIdToParties[sqLegId];
+
+      const proofs: SenderAssetProof[] = sqProofs.map(
+        ({ assetId, proof }: { assetId: string; proof: string }) => {
+          const auditors = assetAuditors[assetId];
+
+          return {
+            assetId: convertSubQueryAssetIdToUuid(assetId),
+            proof,
+            auditors,
+          };
+        }
+      );
+
+      return {
+        proofs,
+        legId,
+        sender,
+        receiver,
+      };
+    });
+
+    const pending: PendingProof[] = [];
+    for (let i = 0; i < legs.nodes.length; i++) {
+      const legId = i.toString();
+      const provenLeg = proved.find(leg => leg.legId.toString() === legId);
+
+      if (provenLeg) {
+        continue;
+      }
+
+      const { sender, receiver, assetAuditors } = legIdToParties[legId];
+      const neededProofs = Object.entries(assetAuditors).map(([assetId, auditors]) => ({
+        assetId: convertSubQueryAssetIdToUuid(assetId),
+        auditors,
+      }));
+
+      pending.push({
+        proofs: neededProofs,
+        sender,
+        receiver,
+        legId: new BigNumber(legId),
+      });
+    }
+
+    return { proved, pending };
+  }
+
+  /**
    * Get all submitted sender proofs for this transaction
    *
    * @note uses the middlewareV2
    */
   public async getSenderProofs(): Promise<SenderProofs[]> {
-    const { context } = this;
-    const {
-      data: {
-        confidentialTransactionAffirmations: { nodes },
-      },
-    } = await context.queryMiddleware<Ensured<Query, 'confidentialTransactionAffirmations'>>(
-      getConfidentialTransactionProofsQuery(this.id)
-    );
+    const { proved } = await this.getProofDetails();
 
-    return nodes.map(({ proofs: sqProofs, legId: sqLegId }) => {
-      const legId = new BigNumber(sqLegId);
-
-      const proofs = sqProofs.map(({ assetId, proof }: { assetId: string; proof: string }) => ({
-        assetId: convertSubQueryAssetIdToUuid(assetId),
-        proof,
-      }));
-
-      return {
-        proofs,
-        legId,
-      };
-    });
+    return proved;
   }
 
   /**
