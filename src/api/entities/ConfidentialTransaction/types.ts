@@ -125,9 +125,36 @@ export type AffirmConfidentialTransactionParams = { legId: BigNumber } & (
 export interface SenderAssetProof {
   proof: string;
   assetId: string;
+  auditors: ConfidentialAccount[];
 }
 
 export type SenderProofs = {
   legId: BigNumber;
+  sender: ConfidentialAccount;
+  receiver: ConfidentialAccount;
   proofs: SenderAssetProof[];
 };
+
+export interface PendingAssetProof {
+  assetId: string;
+  auditors: ConfidentialAccount[];
+}
+
+export type PendingProof = {
+  legId: BigNumber;
+  sender: ConfidentialAccount;
+  receiver: ConfidentialAccount;
+  proofs: PendingAssetProof[];
+};
+
+export interface TransactionProofDetails {
+  /**
+   * The legs referenced in `proved` will contain a proof for each asset. The receiver is able to decrypt all amounts with their private key. Auditors are able to decrypt the proof for the associated asset.
+   */
+  proved: SenderProofs[];
+
+  /**
+   * The legs in `pending` have not yet received a proof from the sender. For these the sender has yet to commit amounts on chain, so there is no proof to decrypt
+   */
+  pending: PendingProof[];
+}

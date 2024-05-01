@@ -271,58 +271,6 @@ export function getConfidentialAssetHistoryByConfidentialAccountQuery(
   };
 }
 
-export type ConfidentialTransactionProofsArgs = {
-  transactionId: string;
-};
-
-/**
- * @hidden
- */
-function createGetConfidentialTransactionProofArgs(transactionId: BigNumber): {
-  args: string;
-  filter: string;
-  variables: { transactionId: string };
-} {
-  const args = ['$transactionId: String!'];
-  const filter = ['transactionId: { equalTo: $transactionId }, party: { equalTo: Sender }'];
-
-  return {
-    args: `(${args.join()})`,
-    filter: `filter: { ${filter.join()} }`,
-    variables: { transactionId: transactionId.toString() },
-  };
-}
-
-/**
- * @hidden
- *
- * Get sender proofs for a transaction
- */
-export function getConfidentialTransactionProofsQuery(
-  transactionId: BigNumber
-): QueryOptions<ConfidentialTransactionProofsArgs> {
-  const { args, filter, variables } = createGetConfidentialTransactionProofArgs(transactionId);
-
-  const query = gql`
-  query ConfidentialTransactionProofs
-  ${args}
-  {
-    confidentialTransactionAffirmations(
-      ${filter}
-  ) {
-    nodes {
-      proofs
-      legId
-    }
-  }
-  }`;
-
-  return {
-    query,
-    variables,
-  };
-}
-
 /**
  * @hidden
  *
@@ -339,6 +287,42 @@ export function confidentialTransactionQuery(
           blockId
           datetime
           hash
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get confidential transaction details by ID
+ */
+export function getConfidentialTransactionProofsQuery(
+  variables: QueryArgs<ConfidentialTransaction, 'id'>
+): QueryOptions<QueryArgs<ConfidentialTransaction, 'id'>> {
+  const query = gql`
+    query ConfidentialTransaction($id: String!) {
+      confidentialTransaction(id: $id) {
+        eventIdx
+        affirmations(filter: { party: { equalTo: Sender } }) {
+          nodes {
+            proofs
+            legId
+          }
+        }
+        legs {
+          nodes {
+            id
+            senderId
+            receiverId
+            assetAuditors
+          }
         }
       }
     }

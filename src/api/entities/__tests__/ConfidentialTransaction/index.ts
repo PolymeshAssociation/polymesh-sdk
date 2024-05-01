@@ -641,42 +641,146 @@ describe('ConfidentialTransaction class', () => {
     });
   });
 
-  describe('method: getSenderProofs', () => {
+  describe('method: getLegProofDetails', () => {
     it('should return the query results', async () => {
-      const senderProofsResult = {
-        confidentialTransactionAffirmations: {
-          nodes: [
-            {
-              legId: 1,
-              proofs: [
-                {
-                  assetId: '0x08abb6e3550f385721cfd4a35bd5c6fa',
-                  proof: '0xsomeProof',
-                },
-              ],
-            },
-          ],
+      const legProofResult = {
+        confidentialTransaction: {
+          affirmations: {
+            nodes: [
+              {
+                legId: 0,
+                proofs: [
+                  {
+                    assetId: '0x08abb6e3550f385721cfd4a35bd5c6fa',
+                    proof: '0xsomeProof',
+                  },
+                ],
+              },
+            ],
+          },
+          legs: {
+            nodes: [
+              {
+                id: '1/0',
+                senderId: 'someSender',
+                receiverId: 'someReceiver',
+                assetAuditors: [
+                  { assetId: '0x08abb6e3550f385721cfd4a35bd5c6fa', auditors: ['someAuditor'] },
+                ],
+              },
+            ],
+          },
         },
       };
 
       dsMockUtils.createApolloQueryMock(
-        getConfidentialTransactionProofsQuery(transaction.id),
-        senderProofsResult
+        getConfidentialTransactionProofsQuery({ id: transaction.id.toString() }),
+        legProofResult
       );
 
       const result = await transaction.getSenderProofs();
 
-      expect(result).toEqual([
-        {
-          legId: new BigNumber('1'),
-          proofs: [
-            {
-              assetId: '08abb6e3-550f-3857-21cf-d4a35bd5c6fa',
-              proof: '0xsomeProof',
-            },
-          ],
+      expect(result).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            legId: new BigNumber('0'),
+            receiver: expect.objectContaining({ publicKey: 'someReceiver' }),
+            sender: expect.objectContaining({ publicKey: 'someSender' }),
+            proofs: expect.arrayContaining([
+              {
+                assetId: '08abb6e3-550f-3857-21cf-d4a35bd5c6fa',
+                proof: '0xsomeProof',
+                auditors: expect.arrayContaining([
+                  expect.objectContaining({ publicKey: 'someAuditor' }),
+                ]),
+              },
+            ]),
+          }),
+        ])
+      );
+    });
+  });
+
+  describe('method: getLegProofDetails', () => {
+    it('should return the query results', async () => {
+      const legProofResult = {
+        confidentialTransaction: {
+          affirmations: {
+            nodes: [
+              {
+                legId: 0,
+                proofs: [
+                  {
+                    assetId: '0x08abb6e3550f385721cfd4a35bd5c6fa',
+                    proof: '0xsomeProof',
+                  },
+                ],
+              },
+            ],
+          },
+          legs: {
+            nodes: [
+              {
+                id: '1/0',
+                senderId: 'someSender',
+                receiverId: 'someReceiver',
+                assetAuditors: [
+                  { assetId: '0x08abb6e3550f385721cfd4a35bd5c6fa', auditors: ['someAuditor'] },
+                ],
+              },
+              {
+                id: '1/1',
+                senderId: 'someSender',
+                receiverId: 'someReceiver',
+                assetAuditors: [
+                  { assetId: '0x08abb6e3550f385721cfd4a35bd5c6fa', auditors: ['someAuditor'] },
+                ],
+              },
+            ],
+          },
         },
-      ]);
+      };
+
+      dsMockUtils.createApolloQueryMock(
+        getConfidentialTransactionProofsQuery({ id: transaction.id.toString() }),
+        legProofResult
+      );
+
+      const result = await transaction.getProofDetails();
+
+      expect(result).toEqual({
+        proved: expect.arrayContaining([
+          expect.objectContaining({
+            legId: new BigNumber('0'),
+            receiver: expect.objectContaining({ publicKey: 'someReceiver' }),
+            sender: expect.objectContaining({ publicKey: 'someSender' }),
+            proofs: expect.arrayContaining([
+              {
+                assetId: '08abb6e3-550f-3857-21cf-d4a35bd5c6fa',
+                proof: '0xsomeProof',
+                auditors: expect.arrayContaining([
+                  expect.objectContaining({ publicKey: 'someAuditor' }),
+                ]),
+              },
+            ]),
+          }),
+        ]),
+        pending: expect.arrayContaining([
+          expect.objectContaining({
+            legId: new BigNumber('1'),
+            receiver: expect.objectContaining({ publicKey: 'someReceiver' }),
+            sender: expect.objectContaining({ publicKey: 'someSender' }),
+            proofs: expect.arrayContaining([
+              {
+                assetId: '08abb6e3-550f-3857-21cf-d4a35bd5c6fa',
+                auditors: expect.arrayContaining([
+                  expect.objectContaining({ publicKey: 'someAuditor' }),
+                ]),
+              },
+            ]),
+          }),
+        ]),
+      });
     });
   });
 
