@@ -148,7 +148,9 @@ export class MultiSig extends Account {
   }
 
   /**
-   * Return all { @link api/entities/HistoricalMultiSigProposal!HistoricalMultiSigProposal } for this MultiSig Account
+   * Return all { @link api/entities/MultiSigProposal!MultiSigProposal } for this MultiSig Account
+   *
+   * @note uses the middlewareV2
    */
   public async getHistoricalProposals(opts: {
     size?: BigNumber;
