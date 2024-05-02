@@ -31,6 +31,7 @@ import * as utilsInternalModule from '~/utils/internal';
 import {
   asConfidentialAccount,
   asConfidentialAsset,
+  asIdentity,
   assertCaAssetValid,
   assertElgamalPubKeyValid,
   checkConfidentialPermissions,
@@ -79,6 +80,25 @@ jest.mock(
     '@polymeshassociation/polymesh-sdk//api/entities/Venue'
   )
 );
+
+describe('asIdentity', () => {
+  it('should return identity instance', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+
+    const did = 'did';
+    const identity = entityMockUtils.getIdentityInstance({
+      did,
+    });
+
+    let result = asIdentity(did, mockContext);
+
+    expect(result).toEqual(expect.objectContaining({ did }));
+
+    result = asIdentity(identity, mockContext);
+
+    expect(result).toEqual(expect.objectContaining({ did }));
+  });
+});
 
 describe('createProcedureMethod', () => {
   let context: Context;

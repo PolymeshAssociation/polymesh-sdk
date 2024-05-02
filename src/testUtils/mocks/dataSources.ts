@@ -172,8 +172,12 @@ import {
 } from '~/polkadot/polymesh';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ConfidentialCheckRolesResult, CountryCode as CountryCodeEnum } from '~/types';
-import { CheckPermissionsResult, Consts, Extrinsics, Queries, Rpcs } from '~/types/internal';
+import {
+  CheckPermissionsResult,
+  ConfidentialCheckRolesResult,
+  CountryCode as CountryCodeEnum,
+} from '~/types';
+import { Consts, Extrinsics, Queries, Rpcs } from '~/types/internal';
 import { ArgsType, Mutable, tuple } from '~/types/utils';
 import { STATE_RUNTIME_VERSION_CALL, SYSTEM_VERSION_RPC_CALL } from '~/utils/constants';
 

@@ -2,6 +2,7 @@
 
 export * from '@polymeshassociation/polymesh-sdk/internal';
 
+export { Identity } from '~/api/entities/Identity';
 export { ConfidentialProcedure } from '~/base/ConfidentialProcedure';
 export { addConfidentialTransaction } from '~/api/procedures/addConfidentialTransaction';
 export { executeConfidentialTransaction } from '~/api/procedures/executeConfidentialTransaction';

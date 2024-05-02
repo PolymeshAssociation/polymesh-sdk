@@ -63,6 +63,11 @@ import {
 
 export * from '~/generated/utils';
 
+export {
+  stringToIdentityId,
+  u64ToBigNumber,
+} from '@polymeshassociation/polymesh-sdk/utils/conversion';
+
 /**
  * @hidden
  */

@@ -19,10 +19,9 @@ import {
 import { SigningManager } from '@polymeshassociation/signing-manager-types';
 
 import { ConfidentialAccounts } from '~/api/client/ConfidentialAccounts';
+import { ConfidentialAssets } from '~/api/client/ConfidentialAssets';
 import { ConfidentialSettlements } from '~/api/client/ConfidentialSettlements';
 import schema from '~/polkadot/schema';
-
-import { ConfidentialAssets } from './ConfidentialAssets';
 
 export interface ConnectParams {
   /**
