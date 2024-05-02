@@ -1,4 +1,8 @@
 import { Bytes, Option, u64 } from '@polkadot/types';
+import {
+  PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
+  PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import {
@@ -9,8 +13,22 @@ import {
   PolymeshError,
   registerMetadata,
 } from '~/internal';
-import { ErrorCode, MetadataType, ProcedureMethod, RegisterMetadataParams } from '~/types';
-import { bigNumberToU64, stringToTicker, u64ToBigNumber } from '~/utils/conversion';
+import {
+  ErrorCode,
+  MetadataType,
+  MetadataWithValue,
+  ProcedureMethod,
+  RegisterMetadataParams,
+} from '~/types';
+import {
+  bigNumberToU64,
+  bytesToString,
+  meshMetadataKeyToMetadataKey,
+  meshMetadataSpecToMetadataSpec,
+  meshMetadataValueToMetadataValue,
+  stringToTicker,
+  u64ToBigNumber,
+} from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**
@@ -40,7 +58,9 @@ export class Metadata extends Namespace<BaseAsset> {
   public register: ProcedureMethod<RegisterMetadataParams, MetadataEntry>;
 
   /**
-   * Retrieve all the MetadataEntry for this Asset
+   * Retrieve all (global + local) the MetadataEntry for this Asset
+   *
+   * @note this returns all available metadata entries for this Asset, with or without any value being associated with the metadata
    */
   public async get(): Promise<MetadataEntry[]> {
     const {
@@ -144,5 +164,83 @@ export class Metadata extends Namespace<BaseAsset> {
     const rawId = await assetMetadataNextLocalKey(ticker);
 
     return u64ToBigNumber(rawId).plus(1); // "next" is actually the last used
+  }
+
+  /**
+   * Retrieve all (local + global) the MetadataEntry details whose value is set for this Asset
+   */
+  public async getDetails(): Promise<MetadataWithValue[]> {
+    const {
+      context: {
+        polymeshApi: {
+          query: {
+            asset: {
+              assetMetadataValues,
+              assetMetadataValueDetails,
+              assetMetadataLocalKeyToName,
+              assetMetadataGlobalKeyToName,
+              assetMetadataGlobalSpecs,
+              assetMetadataLocalSpecs,
+            },
+          },
+        },
+      },
+      context,
+      parent: { ticker },
+    } = this;
+
+    const rawTicker = stringToTicker(ticker, context);
+
+    const [rawValueEntries] = await Promise.all([assetMetadataValues.entries(rawTicker)]);
+
+    const namePromises: Promise<Option<Bytes>>[] = [];
+    const specPromises: Promise<Option<PolymeshPrimitivesAssetMetadataAssetMetadataSpec>>[] = [];
+    const valueDetailsPromises: Promise<
+      Option<PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail>
+    >[] = [];
+
+    rawValueEntries.forEach(
+      ([
+        {
+          args: [, rawMetadataKey],
+        },
+      ]) => {
+        valueDetailsPromises.push(assetMetadataValueDetails(rawTicker, rawMetadataKey));
+
+        if (rawMetadataKey.isLocal) {
+          namePromises.push(assetMetadataLocalKeyToName(rawTicker, rawMetadataKey.asLocal));
+          specPromises.push(assetMetadataLocalSpecs(rawTicker, rawMetadataKey.asLocal));
+        } else {
+          namePromises.push(assetMetadataGlobalKeyToName(rawMetadataKey.asGlobal));
+          specPromises.push(assetMetadataGlobalSpecs(rawMetadataKey.asGlobal));
+        }
+      }
+    );
+
+    const nameValues = await Promise.all(namePromises);
+    const specValues = await Promise.all(specPromises);
+    const valueDetails = await Promise.all(valueDetailsPromises);
+
+    return rawValueEntries.map((rawValueEntry, index) => {
+      const [
+        {
+          args: [, rawMetadataKey],
+        },
+        rawValue,
+      ] = rawValueEntry;
+
+      return {
+        metadataEntry: new MetadataEntry(
+          {
+            ...meshMetadataKeyToMetadataKey(rawMetadataKey, ticker),
+            ticker,
+          },
+          context
+        ),
+        name: bytesToString(nameValues[index].unwrap()),
+        specs: meshMetadataSpecToMetadataSpec(specValues[index]),
+        ...meshMetadataValueToMetadataValue(rawValue, valueDetails[index])!,
+      };
+    });
   }
 }

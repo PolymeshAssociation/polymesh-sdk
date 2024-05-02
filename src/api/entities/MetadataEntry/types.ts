@@ -1,5 +1,7 @@
 import BigNumber from 'bignumber.js';
 
+import { MetadataEntry } from '~/internal';
+
 export enum MetadataType {
   Local = 'Local',
   Global = 'Global',
@@ -53,3 +55,8 @@ export type MetadataValue = {
 export type GlobalMetadataKey = MetadataDetails & {
   id: BigNumber;
 };
+
+export type MetadataWithValue = {
+  metadataEntry: MetadataEntry;
+} & MetadataDetails &
+  MetadataValue;
