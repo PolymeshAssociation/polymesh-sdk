@@ -6,7 +6,7 @@ import { when } from 'jest-when';
 import { Metadata } from '~/api/entities/Asset/Base/Metadata';
 import { Context, FungibleAsset, MetadataEntry, Namespace, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { MetadataType } from '~/types';
+import { MetadataLockStatus, MetadataType, MetadataValue } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -230,6 +230,187 @@ describe('Metadata class', () => {
 
       const result = await metadata.getNextLocalId();
       expect(result).toEqual(new BigNumber(2));
+    });
+  });
+
+  describe('method: getDetails', () => {
+    it('should return all the metadata details associated with an Asset', async () => {
+      const meshMetadataValueToMetadataValueSpy = jest.spyOn(
+        utilsConversionModule,
+        'meshMetadataValueToMetadataValue'
+      );
+
+      const meshMetadataSpecToMetadataSpecSpy = jest.spyOn(
+        utilsConversionModule,
+        'meshMetadataSpecToMetadataSpec'
+      );
+
+      const assetMetadataValueDetailsMock = dsMockUtils.createQueryMock(
+        'asset',
+        'assetMetadataValueDetails'
+      );
+
+      const localName = 'LOCAL_METADATA';
+
+      const rawLocalName = dsMockUtils.createMockBytes(localName);
+      dsMockUtils.createQueryMock('asset', 'assetMetadataLocalKeyToName', {
+        returnValue: dsMockUtils.createMockOption(rawLocalName),
+      });
+      const localSpecs = {
+        description: 'some description for local metadata',
+      };
+
+      const rawLocalSpecs = dsMockUtils.createMockOption(
+        dsMockUtils.createMockAssetMetadataSpec({
+          url: dsMockUtils.createMockOption(),
+          description: dsMockUtils.createMockOption(
+            dsMockUtils.createMockBytes(localSpecs.description)
+          ),
+          typeDef: dsMockUtils.createMockOption(),
+        })
+      );
+
+      dsMockUtils.createQueryMock('asset', 'assetMetadataLocalSpecs', {
+        returnValue: rawLocalSpecs,
+      });
+
+      when(meshMetadataSpecToMetadataSpecSpy).calledWith(rawLocalSpecs).mockReturnValue(localSpecs);
+
+      const localValue = '1234';
+      const rawLocalValue = dsMockUtils.createMockOption(dsMockUtils.createMockBytes(localValue));
+
+      const localValueDetails = {
+        expiry: null,
+        lockStatus: MetadataLockStatus.Locked,
+      };
+
+      const rawLocalValueDetails = dsMockUtils.createMockOption(
+        dsMockUtils.createMockAssetMetadataValueDetail({
+          expire: dsMockUtils.createMockOption(),
+          lockStatus: dsMockUtils.createMockAssetMetadataLockStatus({ lockStatus: 'Locked' }),
+        })
+      );
+
+      when(meshMetadataValueToMetadataValueSpy)
+        .calledWith(rawLocalValue, rawLocalValueDetails)
+        .mockReturnValue({
+          value: localValue,
+          ...localValueDetails,
+        } as MetadataValue);
+
+      const globalName = 'GLOBAL_METADATA';
+      const rawGlobalName = dsMockUtils.createMockBytes(globalName);
+
+      dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalKeyToName', {
+        returnValue: dsMockUtils.createMockOption(rawGlobalName),
+      });
+
+      const globalSpecs = {
+        description: 'some description for local metadata',
+      };
+      const rawGlobalSpecs = dsMockUtils.createMockOption(
+        dsMockUtils.createMockAssetMetadataSpec({
+          url: dsMockUtils.createMockOption(),
+          description: dsMockUtils.createMockOption(
+            dsMockUtils.createMockBytes(globalSpecs.description)
+          ),
+          typeDef: dsMockUtils.createMockOption(),
+        })
+      );
+
+      dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalSpecs', {
+        returnValue: rawGlobalSpecs,
+      });
+
+      when(meshMetadataSpecToMetadataSpecSpy)
+        .calledWith(rawGlobalSpecs)
+        .mockReturnValue(globalSpecs);
+
+      const globalValue = 'random value';
+      const rawGlobalValue = dsMockUtils.createMockOption(dsMockUtils.createMockBytes(globalValue));
+
+      const globalValueDetails = {
+        expiry: null,
+        lockStatus: MetadataLockStatus.Unlocked,
+      };
+
+      const rawGlobalValueDetails = dsMockUtils.createMockOption(
+        dsMockUtils.createMockAssetMetadataValueDetail({
+          expire: dsMockUtils.createMockOption(),
+          lockStatus: dsMockUtils.createMockAssetMetadataLockStatus({ lockStatus: 'Unlocked' }),
+        })
+      );
+
+      when(meshMetadataValueToMetadataValueSpy)
+        .calledWith(rawGlobalValue, rawGlobalValueDetails)
+        .mockReturnValue({
+          value: globalValue,
+          ...globalValueDetails,
+        } as MetadataValue);
+
+      assetMetadataValueDetailsMock
+        .mockReturnValueOnce(rawGlobalValueDetails)
+        .mockReturnValueOnce(rawLocalValueDetails);
+
+      dsMockUtils.createQueryMock('asset', 'assetMetadataValues', {
+        entries: [
+          tuple(
+            [
+              rawTicker,
+              dsMockUtils.createMockAssetMetadataKey({
+                Global: dsMockUtils.createMockU64(new BigNumber(1)),
+              }),
+            ],
+            rawGlobalValue
+          ),
+          tuple(
+            [
+              rawTicker,
+              dsMockUtils.createMockAssetMetadataKey({
+                Local: dsMockUtils.createMockU64(new BigNumber(1)),
+              }),
+            ],
+            rawLocalValue
+          ),
+        ],
+      });
+
+      const mockResult = [
+        {
+          metadataEntry: new MetadataEntry(
+            {
+              id: new BigNumber(1),
+              type: MetadataType.Global,
+              ticker,
+            },
+            context
+          ),
+          name: globalName,
+          specs: globalSpecs,
+          value: globalValue,
+          expiry: null,
+          lockStatus: MetadataLockStatus.Unlocked,
+        },
+        {
+          metadataEntry: new MetadataEntry(
+            {
+              id: new BigNumber(1),
+              type: MetadataType.Local,
+              ticker,
+            },
+            context
+          ),
+          name: localName,
+          specs: localSpecs,
+          value: localValue,
+          expiry: null,
+          lockStatus: MetadataLockStatus.Locked,
+        },
+      ];
+
+      const result = await metadata.getDetails();
+
+      expect(JSON.stringify(result)).toEqual(JSON.stringify(mockResult));
     });
   });
 });
