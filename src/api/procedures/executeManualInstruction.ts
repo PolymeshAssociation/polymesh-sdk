@@ -4,6 +4,7 @@ import P from 'bluebird';
 
 import { assertInstructionValidForManualExecution } from '~/api/procedures/utils';
 import { Instruction, PolymeshError, Procedure } from '~/internal';
+import { ExecuteInstructionInfo } from '~/polkadot/polymesh';
 import {
   DefaultPortfolio,
   ErrorCode,
@@ -48,7 +49,7 @@ export async function prepareExecuteManualInstruction(
       polymeshApi: {
         tx: { settlement: settlementTx },
         query: { settlement },
-        rpc,
+        call,
       },
     },
     context,
@@ -93,7 +94,7 @@ export async function prepareExecuteManualInstruction(
   }
 
   const { fungibleTokens, nonFungibleTokens, offChainAssets, consumedWeight } =
-    await rpc.settlement.getExecuteInstructionInfo(rawInstructionId);
+    await call.settlementApi.getExecuteInstructionInfo<ExecuteInstructionInfo>(rawInstructionId);
 
   return {
     transaction: settlementTx.executeManualInstruction,

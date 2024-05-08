@@ -1594,7 +1594,7 @@ export default {
             params: [
               {
                 name: 'from_custodian',
-                type: 'Option<IdentityId>',
+                type: 'Option<PolymeshPrimitivesIdentityId>',
               },
               {
                 name: 'from_portfolio',
@@ -1602,7 +1602,7 @@ export default {
               },
               {
                 name: 'to_custodian',
-                type: 'Option<IdentityId>',
+                type: 'Option<PolymeshPrimitivesIdentityId>',
               },
               {
                 name: 'to_portfolio',
@@ -1693,7 +1693,7 @@ export default {
             params: [
               {
                 name: 'signatory',
-                type: 'Signatory',
+                type: 'PolymeshPrimitivesSecondaryKeySignatory',
               },
               {
                 name: 'allow_expired',
@@ -1704,7 +1704,7 @@ export default {
                 type: 'Option<AuthorizationType>',
               },
             ],
-            type: 'Vec<Authorization>',
+            type: 'Vec<PolymeshPrimitivesAuthorization>',
           },
           get_key_identity_data: {
             description: 'Query relation between a signing key and a DID',

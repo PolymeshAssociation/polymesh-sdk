@@ -26,10 +26,15 @@ fs.mkdirSync(generatedDir);
 function transformSchema(schemaObj) {
   let {
     rpc: { identity, asset, settlement },
+    runtime,
   } = schemaObj;
 
   camelCaseParamNames(identity.getFilteredAuthorizations);
   identity.getFilteredAuthorizations.type = 'Vec<PolymeshPrimitivesAuthorization>';
+  runtime.IdentityApi[0].methods.get_filtered_authorizations.params[0].type =
+    'PolymeshPrimitivesSecondaryKeySignatory';
+  runtime.IdentityApi[0].methods.get_filtered_authorizations.type =
+    'Vec<PolymeshPrimitivesAuthorization>';
 
   camelCaseKeys(schemaObj, 'types', 'ComplianceRequirementResult');
 
@@ -41,6 +46,11 @@ function transformSchema(schemaObj) {
   camelCaseParamNames(asset.canTransferGranular);
   asset.canTransferGranular.params[0].type = 'Option<PolymeshPrimitivesIdentityId>';
   asset.canTransferGranular.params[2].type = 'Option<PolymeshPrimitivesIdentityId>';
+
+  runtime.AssetApi[0].methods.can_transfer_granular.params[0].type =
+    'Option<PolymeshPrimitivesIdentityId>';
+  runtime.AssetApi[0].methods.can_transfer_granular.params[2].type =
+    'Option<PolymeshPrimitivesIdentityId>';
 
   camelCaseParamNames(settlement.getExecuteInstructionInfo);
   camelCaseKeys(schemaObj, 'types', 'ExecuteInstructionInfo');

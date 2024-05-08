@@ -754,7 +754,7 @@ export abstract class PolymeshTransactionBase<
 
     let nonce: number = context.getNonce().toNumber();
     if (nonce < 0) {
-      const nextIndex = await polymeshApi.rpc.system.accountNextIndex(signingAddress);
+      const nextIndex = await polymeshApi.call.accountNonceApi.accountNonce(signingAddress);
       nonce = nextIndex.toNumber();
     }
 

@@ -9,7 +9,7 @@ import P from 'bluebird';
 
 import { assertInstructionValid } from '~/api/procedures/utils';
 import { Context, Instruction, PolymeshError, Procedure } from '~/internal';
-import { Moment } from '~/polkadot/polymesh';
+import { AffirmationCount, ExecuteInstructionInfo, Moment } from '~/polkadot/polymesh';
 import {
   AffirmationStatus,
   DefaultPortfolio,
@@ -51,14 +51,14 @@ const getAssetCount = async (
   context: Context
 ): Promise<PolymeshPrimitivesSettlementAssetCount> => {
   const {
-    polymeshApi: { rpc },
+    polymeshApi: { call },
   } = context;
 
   const {
     fungibleTokens: fungible,
     nonFungibleTokens: nonFungible,
     offChainAssets: offChain,
-  } = await rpc.settlement.getExecuteInstructionInfo(rawId);
+  } = await call.settlementApi.getExecuteInstructionInfo<ExecuteInstructionInfo>(rawId);
 
   return assetCountToRaw({ fungible, nonFungible, offChain }, context);
 };
@@ -121,7 +121,7 @@ export async function prepareModifyInstructionAffirmation(
       polymeshApi: {
         tx: { settlement: settlementTx },
         query: { settlement },
-        rpc,
+        call,
       },
     },
     context,
@@ -272,7 +272,7 @@ export async function prepareModifyInstructionAffirmation(
     });
   }
 
-  const rawAffirmCount = await rpc.settlement.getAffirmationCount(
+  const rawAffirmCount = await call.settlementApi.getAffirmationCount<AffirmationCount>(
     rawInstructionId,
     rawPortfolioIds
   );
@@ -453,7 +453,7 @@ export async function prepareStorage(
   const [{ data: legs }, signer] = await Promise.all([
     instruction.getLegs(),
     context.getSigningIdentity(),
-    polymeshApi.rpc.settlement.getExecuteInstructionInfo(rawId),
+    polymeshApi.call.settlement.getExecuteInstructionInfo<ExecuteInstructionInfo>(rawId),
   ]);
 
   const [portfolios, senderLegAmount] = await P.reduce<

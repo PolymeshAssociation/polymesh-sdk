@@ -1,8 +1,10 @@
+import { DispatchResult } from '@polkadot/types/interfaces/system';
 import BigNumber from 'bignumber.js';
 
 import { toggleTickerPreApproval } from '~/api/procedures/toggleTickerPreApproval';
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import { BaseAsset, Context, FungibleAsset, Namespace, Nft, PolymeshError } from '~/internal';
+import { CanTransferGranularReturn } from '~/polkadot';
 import {
   ErrorCode,
   NftCollection,
@@ -98,11 +100,13 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
     const {
       parent: { ticker },
       context: {
-        polymeshApi: { rpc },
+        polymeshApi: { call },
       },
       context,
       parent,
     } = this;
+
+    const { assetApi, nftApi } = call;
 
     const { to } = args;
     const from = args.from ?? (await context.getSigningIdentity());
@@ -128,13 +132,13 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
     const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromPortfolioId, context);
     const rawToPortfolio = portfolioIdToMeshPortfolioId(toPortfolioId, context);
 
-    let granularResult;
+    let granularResult: CanTransferGranularReturn;
     let nftResult;
 
     if ('amount' in args) {
       amount = args.amount;
       ({ isDivisible } = await parent.details());
-      granularResult = await rpc.asset.canTransferGranular(
+      granularResult = await assetApi.canTransferGranular<CanTransferGranularReturn>(
         stringToIdentityId(fromCustodian.did, context),
         rawFromPortfolio,
         stringToIdentityId(toCustodian.did, context),
@@ -145,7 +149,7 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
     } else {
       const rawNfts = nftToMeshNft(ticker, args.nfts, context);
       [granularResult, nftResult] = await Promise.all([
-        rpc.asset.canTransferGranular(
+        assetApi.canTransferGranular<CanTransferGranularReturn>(
           stringToIdentityId(fromCustodian.did, context),
           rawFromPortfolio,
           stringToIdentityId(toCustodian.did, context),
@@ -153,7 +157,7 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
           stringToTicker(ticker, context),
           bigNumberToBalance(amount, context, isDivisible)
         ),
-        rpc.nft.validateNFTTransfer(rawFromPortfolio, rawToPortfolio, rawNfts),
+        nftApi.validateNftTransfer<DispatchResult>(rawFromPortfolio, rawToPortfolio, rawNfts),
       ]);
     }
 
