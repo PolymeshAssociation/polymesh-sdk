@@ -377,8 +377,6 @@ export class Network {
       context,
     } = this;
 
-    const { transactionPaymentApi } = call;
-
     const {
       data: {
         extrinsics: {
@@ -420,7 +418,7 @@ export class Network {
       } = await getBlock(rawBlockHash);
 
       const [{ partialFee }, [{ fees: protocol }]] = await Promise.all([
-        transactionPaymentApi.queryInfo(blockExtrinsics[extrinsicIdx].toHex(), rawBlockHash),
+        call.transactionPaymentApi.queryInfo(blockExtrinsics[extrinsicIdx].toHex(), rawBlockHash),
         context.getProtocolFees({ tags: [txTag], blockHash }),
       ]);
 

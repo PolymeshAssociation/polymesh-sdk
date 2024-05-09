@@ -799,7 +799,7 @@ describe('Account class', () => {
       const nonce = new BigNumber(123);
       jest.spyOn(utilsConversionModule, 'stringToAccountId').mockImplementation();
       dsMockUtils
-        .createRpcMock('system', 'accountNextIndex')
+        .createCallMock('accountNonceApi', 'accountNonce')
         .mockResolvedValue(dsMockUtils.createMockU32(nonce));
 
       const result = await account.getCurrentNonce();

@@ -119,7 +119,7 @@ describe('Authorizations class', () => {
       );
 
       dsMockUtils
-        .createRpcMock('identity', 'getFilteredAuthorizations')
+        .createCallMock('identityApi', 'getFilteredAuthorizations')
         .mockResolvedValue(fakeRpcAuthorizations);
 
       const expectedAuthorizations = authParams.map(({ authId, target, issuer, expiry, data }) =>

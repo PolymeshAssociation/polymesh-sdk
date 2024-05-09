@@ -453,7 +453,7 @@ export async function prepareStorage(
   const [{ data: legs }, signer] = await Promise.all([
     instruction.getLegs(),
     context.getSigningIdentity(),
-    polymeshApi.call.settlement.getExecuteInstructionInfo<ExecuteInstructionInfo>(rawId),
+    polymeshApi.call.settlementApi.getExecuteInstructionInfo<ExecuteInstructionInfo>(rawId),
   ]);
 
   const [portfolios, senderLegAmount] = await P.reduce<

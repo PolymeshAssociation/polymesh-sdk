@@ -454,7 +454,7 @@ describe('Claims Class', () => {
       /* eslint-enable @typescript-eslint/naming-convention */
 
       jest.spyOn(utilsConversionModule, 'identityIdToString').mockReturnValue(claimIssuer);
-      dsMockUtils.createRpcMock('identity', 'validCDDClaims', {
+      dsMockUtils.createCallMock('identityApi', 'validCddClaims', {
         returnValue: [rawIdentityClaim],
       });
 
@@ -475,7 +475,7 @@ describe('Claims Class', () => {
       expect(result).toEqual([mockResult]);
 
       const expiry = new Date('2030/01/01');
-      dsMockUtils.createRpcMock('identity', 'validCDDClaims', {
+      dsMockUtils.createCallMock('identityApi', 'validCddClaims', {
         returnValue: [
           {
             ...rawIdentityClaim,

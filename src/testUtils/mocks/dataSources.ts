@@ -192,7 +192,7 @@ import {
   TxTags,
   UnsubCallback,
 } from '~/types';
-import { Consts, Extrinsics, PolymeshTx, Queries, Rpcs } from '~/types/internal';
+import { Calls, Consts, Extrinsics, PolymeshTx, Queries, Rpcs } from '~/types/internal';
 import { ArgsType, Mutable, tuple } from '~/types/utils';
 import {
   CONFIDENTIAL_ASSETS_SUPPORTED_CALL,
@@ -649,6 +649,7 @@ let txModule = {} as Extrinsics;
 let queryModule = {} as Queries;
 let constsModule = {} as Consts;
 let errorsModule = {} as DecoratedErrors<'promise'>;
+let callModule = {} as Calls;
 
 let rpcModule = {} as DecoratedRpc<'promise', RpcInterface>;
 
@@ -943,6 +944,17 @@ function updateQuery(mod?: Queries): void {
 
 /**
  * @hidden
+ */
+function updateCall(mod?: Calls): void {
+  const updateTo = mod ?? callModule;
+
+  callModule = updateTo;
+
+  mockInstanceContainer.apiInstance.call = callModule;
+}
+
+/**
+ * @hidden
  *
  * Mock the query module
  */
@@ -1031,6 +1043,17 @@ function initRpc(): void {
 /**
  * @hidden
  *
+ * Mock the rpc module
+ */
+function initCall(): void {
+  const mod = {} as any;
+
+  updateCall(mod);
+}
+
+/**
+ * @hidden
+ *
  * Mock the consts module
  */
 function initConsts(): void {
@@ -1076,6 +1099,7 @@ function initApi(): void {
   initTx();
   initQuery();
   initRpc();
+  initCall();
   initConsts();
   initErrors();
   initQueryMulti();
@@ -1450,6 +1474,51 @@ export function createQueryMock<
   if (opts?.returnValue) {
     mock.mockResolvedValue(opts.returnValue);
     mock.at.mockResolvedValue(opts.returnValue);
+  }
+
+  return mock;
+}
+
+/**
+ * @hidden
+ * Create and return a query mock
+ *
+ * @param mod - name of the module
+ * @param query - name of the query function
+ */
+export function createCallMock<
+  ModuleName extends keyof Calls,
+  CallName extends keyof Calls[ModuleName]
+>(
+  mod: ModuleName,
+  query: CallName,
+  opts?: {
+    returnValue?: unknown;
+  }
+): Calls[ModuleName][CallName] & jest.Mock {
+  let runtimeModule = callModule[mod];
+
+  if (!runtimeModule) {
+    runtimeModule = {} as Calls[ModuleName];
+    callModule[mod] = runtimeModule;
+  }
+
+  type CallMock = Calls[ModuleName][CallName] & jest.Mock;
+
+  let mock: CallMock;
+
+  if (!runtimeModule[query]) {
+    mock = jest.fn() as unknown as CallMock;
+    runtimeModule[query] = mock;
+
+    updateCall();
+  } else {
+    const instance = mockInstanceContainer.apiInstance;
+    mock = instance.call[mod][query] as CallMock;
+  }
+
+  if (opts?.returnValue) {
+    mock.mockResolvedValue(opts.returnValue);
   }
 
   return mock;
