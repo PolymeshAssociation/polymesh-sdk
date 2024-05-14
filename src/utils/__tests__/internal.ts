@@ -103,7 +103,7 @@ import {
   getPortfolioIdsByName,
   getSecondaryAccountPermissions,
   hasSameElements,
-  isAlphanumeric,
+  isAllowedCharacters,
   isModuleOrTagMatch,
   isPrintableAscii,
   mergeReceipts,
@@ -2247,17 +2247,17 @@ describe('method: getSecondaryAccountPermissions', () => {
   });
 });
 
-describe('isAlphaNumeric', () => {
+describe('isAllowedCharacters', () => {
   it('should return true for alphanumeric strings', () => {
-    const alphaNumericStrings = ['abc', 'TICKER', '123XYZ99'];
+    const alphaNumericStrings = ['abc', 'TICKER', '123XYZ99', 'T-A/z.1'];
 
-    expect(alphaNumericStrings.every(input => isAlphanumeric(input))).toBe(true);
+    expect(alphaNumericStrings.every(input => isAllowedCharacters(input))).toBe(true);
   });
 
   it('should return false for non alphanumeric strings', () => {
-    const alphaNumericStrings = ['**abc**', 'TICKER-Z', '💎'];
+    const alphaNumericStrings = ['**abc**', 'TICKER$Z', '💎'];
 
-    expect(alphaNumericStrings.some(input => isAlphanumeric(input))).toBe(false);
+    expect(alphaNumericStrings.some(input => isAllowedCharacters(input))).toBe(false);
   });
 });
 

@@ -336,8 +336,8 @@ describe('createAsset procedure', () => {
     });
 
     return expect(
-      prepareCreateAsset.call(proc, { ...args, ticker: 'SOME_TICKER' })
-    ).rejects.toThrow('New Tickers can only contain alphanumeric values');
+      prepareCreateAsset.call(proc, { ...args, ticker: 'SOME_TICKER!' })
+    ).rejects.toThrow('New Tickers can only contain alphanumeric values "_", "-", ".", and "/"');
   });
 
   it('should add an Asset creation transaction to the batch', async () => {
