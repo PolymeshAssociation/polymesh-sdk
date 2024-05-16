@@ -75,6 +75,43 @@ export function prepareStorage<ReturnValues extends unknown[]>(
    *   building the individual transactions, since some transactions can be run individually without having an Identity, but these special rules are ignored
    *   when running them as part of a batch
    */
+
+  const [firstTx] = inputTransactions;
+
+  if (inputTransactions.length === 1 && isPolymeshTransaction(firstTx)) {
+    const spec = PolymeshTransaction.toTransactionSpec(firstTx);
+    const { transaction: tx, args: txArgs, fee, feeMultiplier } = spec;
+
+    transactions.push({
+      transaction: tx,
+      args: txArgs,
+      fee,
+      feeMultiplier,
+    });
+
+    tags.push(transactionToTxTag(tx));
+
+    const { transformer = identity, resolver } = spec;
+
+    resolvers.push(async (receipt: ISubmittableResult) => {
+      let value;
+
+      if (isResolverFunction(resolver)) {
+        value = resolver(receipt);
+      } else {
+        value = resolver;
+      }
+
+      return transformer(value);
+    });
+
+    return {
+      processedTransactions: transactions,
+      resolvers,
+      tags,
+    };
+  }
+
   inputTransactions.forEach(transaction => {
     let spec: TransactionSpec<unknown, unknown[]> | BatchTransactionSpec<unknown, unknown[][]>;
 
