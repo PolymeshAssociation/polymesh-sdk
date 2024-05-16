@@ -29,7 +29,7 @@ import type {
 import type { AnyNumber, Codec, ITuple } from '@polkadot/types-codec/types';
 import type { ExtrinsicOrHash, ExtrinsicStatus } from '@polkadot/types/interfaces/author';
 import type { EpochAuthorship } from '@polkadot/types/interfaces/babe';
-import type { BeefySignedCommitment } from '@polkadot/types/interfaces/beefy';
+import type { BeefyVersionedFinalityProof } from '@polkadot/types/interfaces/beefy';
 import type { BlockHash } from '@polkadot/types/interfaces/chain';
 import type { PrefixedStorageKey } from '@polkadot/types/interfaces/childstate';
 import type { AuthorityId } from '@polkadot/types/interfaces/consensus';
@@ -95,6 +95,7 @@ import type {
   ApplyExtrinsicResult,
   ChainProperties,
   ChainType,
+  DispatchError,
   DispatchResult,
   Health,
   NetworkState,
@@ -116,6 +117,7 @@ import type {
   IdentityId,
   InstructionId,
   KeyIdentityData,
+  Leg,
   Member,
   NFTs,
   PipId,
@@ -219,9 +221,9 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
        **/
       getFinalizedHead: AugmentedRpc<() => Observable<H256>>;
       /**
-       * Returns the block most recently finalized by BEEFY, alongside side its justification.
+       * Returns the block most recently finalized by BEEFY, alongside its justification.
        **/
-      subscribeJustifications: AugmentedRpc<() => Observable<BeefySignedCommitment>>;
+      subscribeJustifications: AugmentedRpc<() => Observable<BeefyVersionedFinalityProof>>;
     };
     chain: {
       /**
@@ -1067,6 +1069,27 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
           instructionId: InstructionId | AnyNumber | Uint8Array,
           blockHash?: Hash | string | Uint8Array
         ) => Observable<ExecuteInstructionInfo>
+      >;
+      /**
+       * Returns a vector containing all errors for the execution. An empty vec means there's no error.
+       **/
+      getExecuteInstructionReport: AugmentedRpc<
+        (instruction_id: InstructionId | AnyNumber | Uint8Array) => Observable<Vec<DispatchError>>
+      >;
+      /**
+       * Returns a vector containing all errors for the transfer. An empty vec means there's no error.
+       **/
+      getTransferReport: AugmentedRpc<
+        (
+          leg:
+            | Leg
+            | { Fungible: any }
+            | { NonFungible: any }
+            | { OffChain: any }
+            | string
+            | Uint8Array,
+          skip_locked_check: bool | boolean | Uint8Array
+        ) => Observable<Vec<DispatchError>>
       >;
     };
     staking: {

@@ -176,21 +176,20 @@ import type {
   PalletSettlementCall,
   PalletSettlementError,
   PalletStakingActiveEraInfo,
-  PalletStakingCall,
   PalletStakingCompactAssignments,
   PalletStakingElectionCompute,
   PalletStakingElectionResult,
   PalletStakingElectionSize,
   PalletStakingElectionStatus,
   PalletStakingEraRewardPoints,
-  PalletStakingError,
   PalletStakingExposure,
   PalletStakingForcing,
   PalletStakingIndividualExposure,
   PalletStakingNominations,
+  PalletStakingPalletCall,
+  PalletStakingPalletError,
+  PalletStakingPalletEvent,
   PalletStakingPermissionedIdentityPrefs,
-  PalletStakingRawEvent,
-  PalletStakingReleases,
   PalletStakingRewardDestination,
   PalletStakingSlashingSlashingSpans,
   PalletStakingSlashingSpanRecord,
@@ -199,6 +198,13 @@ import type {
   PalletStakingUnappliedSlash,
   PalletStakingUnlockChunk,
   PalletStakingValidatorPrefs,
+  PalletStateTrieMigrationCall,
+  PalletStateTrieMigrationError,
+  PalletStateTrieMigrationEvent,
+  PalletStateTrieMigrationMigrationCompute,
+  PalletStateTrieMigrationMigrationLimits,
+  PalletStateTrieMigrationMigrationTask,
+  PalletStateTrieMigrationProgress,
   PalletStatisticsCall,
   PalletStatisticsError,
   PalletStoCall,
@@ -551,21 +557,20 @@ declare module '@polkadot/types/types/registry' {
     PalletSettlementCall: PalletSettlementCall;
     PalletSettlementError: PalletSettlementError;
     PalletStakingActiveEraInfo: PalletStakingActiveEraInfo;
-    PalletStakingCall: PalletStakingCall;
     PalletStakingCompactAssignments: PalletStakingCompactAssignments;
     PalletStakingElectionCompute: PalletStakingElectionCompute;
     PalletStakingElectionResult: PalletStakingElectionResult;
     PalletStakingElectionSize: PalletStakingElectionSize;
     PalletStakingElectionStatus: PalletStakingElectionStatus;
     PalletStakingEraRewardPoints: PalletStakingEraRewardPoints;
-    PalletStakingError: PalletStakingError;
     PalletStakingExposure: PalletStakingExposure;
     PalletStakingForcing: PalletStakingForcing;
     PalletStakingIndividualExposure: PalletStakingIndividualExposure;
     PalletStakingNominations: PalletStakingNominations;
+    PalletStakingPalletCall: PalletStakingPalletCall;
+    PalletStakingPalletError: PalletStakingPalletError;
+    PalletStakingPalletEvent: PalletStakingPalletEvent;
     PalletStakingPermissionedIdentityPrefs: PalletStakingPermissionedIdentityPrefs;
-    PalletStakingRawEvent: PalletStakingRawEvent;
-    PalletStakingReleases: PalletStakingReleases;
     PalletStakingRewardDestination: PalletStakingRewardDestination;
     PalletStakingSlashingSlashingSpans: PalletStakingSlashingSlashingSpans;
     PalletStakingSlashingSpanRecord: PalletStakingSlashingSpanRecord;
@@ -574,6 +579,13 @@ declare module '@polkadot/types/types/registry' {
     PalletStakingUnappliedSlash: PalletStakingUnappliedSlash;
     PalletStakingUnlockChunk: PalletStakingUnlockChunk;
     PalletStakingValidatorPrefs: PalletStakingValidatorPrefs;
+    PalletStateTrieMigrationCall: PalletStateTrieMigrationCall;
+    PalletStateTrieMigrationError: PalletStateTrieMigrationError;
+    PalletStateTrieMigrationEvent: PalletStateTrieMigrationEvent;
+    PalletStateTrieMigrationMigrationCompute: PalletStateTrieMigrationMigrationCompute;
+    PalletStateTrieMigrationMigrationLimits: PalletStateTrieMigrationMigrationLimits;
+    PalletStateTrieMigrationMigrationTask: PalletStateTrieMigrationMigrationTask;
+    PalletStateTrieMigrationProgress: PalletStateTrieMigrationProgress;
     PalletStatisticsCall: PalletStatisticsCall;
     PalletStatisticsError: PalletStatisticsError;
     PalletStoCall: PalletStoCall;

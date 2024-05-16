@@ -40,6 +40,32 @@ export default {
       ],
       type: 'AffirmationCount',
     },
+    getTransferReport: {
+      description:
+        "Returns a vector containing all errors for the transfer. An empty vec means there's no error.",
+      params: [
+        {
+          name: 'leg',
+          type: 'Leg',
+        },
+        {
+          name: 'skip_locked_check',
+          type: 'bool',
+        },
+      ],
+      type: 'Vec<DispatchError>',
+    },
+    getExecuteInstructionReport: {
+      description:
+        "Returns a vector containing all errors for the execution. An empty vec means there's no error.",
+      params: [
+        {
+          name: 'instruction_id',
+          type: 'InstructionId',
+        },
+      ],
+      type: 'Vec<DispatchError>',
+    },
   },
   types: {},
 };

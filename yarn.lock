@@ -2316,10 +2316,10 @@
   dependencies:
     "@polymeshassociation/signing-manager-types" "^3.2.0"
 
-"@polymeshassociation/polymesh-types@^5.9.1":
-  version "5.9.1"
-  resolved "https://registry.yarnpkg.com/@polymeshassociation/polymesh-types/-/polymesh-types-5.9.1.tgz#18428f47aa46ca68a0b54b7904ce9107059d4670"
-  integrity sha512-ls3+dvv/X6Agj1zpbqcuFTUYawa++qf3diAdkIXmX28GstHWCtvdhXu4IyRc5yzjrLRMEDShpTj5M0UGqCBkcw==
+"@polymeshassociation/polymesh-types@^5.11.0":
+  version "5.11.0"
+  resolved "https://registry.yarnpkg.com/@polymeshassociation/polymesh-types/-/polymesh-types-5.11.0.tgz#5bf390866dec762c9e2d298197fa2c21e7923a7f"
+  integrity sha512-eQ4i27GAH9BrXHNElXu2vZUFKyy36Gjrh9+HjxEWK2cYhRkdJ+bJPMCBLdJpu4ZksRUgT261hX1NVstezG2Jig==
 
 "@polymeshassociation/signing-manager-types@^3.0.0", "@polymeshassociation/signing-manager-types@^3.2.0":
   version "3.2.0"
