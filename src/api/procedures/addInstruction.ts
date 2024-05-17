@@ -11,7 +11,7 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { flatten, isEqual, union, unionWith } from 'lodash';
 
-import { assertPortfolioExists, assertVenueExists } from '~/api/procedures/utils';
+import { assertPortfolioExists, assertValidCdd, assertVenueExists } from '~/api/procedures/utils';
 import {
   Context,
   DefaultPortfolio,
@@ -334,6 +334,8 @@ async function getTxArgsAndErrors(
           await Promise.all([
             assertPortfolioExists(fromId, context),
             assertPortfolioExists(toId, context),
+            assertValidCdd(fromId.did, context),
+            assertValidCdd(toId.did, context),
           ]);
 
           const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromId, context);
@@ -358,6 +360,8 @@ async function getTxArgsAndErrors(
           await Promise.all([
             assertPortfolioExists(fromId, context),
             assertPortfolioExists(toId, context),
+            assertValidCdd(fromId.did, context),
+            assertValidCdd(toId.did, context),
           ]);
 
           const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromId, context);

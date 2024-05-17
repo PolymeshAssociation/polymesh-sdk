@@ -59,6 +59,10 @@ jest.mock(
   '~/api/entities/Asset/Base',
   require('~/testUtils/mocks/entities').mockBaseAssetModule('~/api/entities/Asset/Base')
 );
+jest.mock(
+  '~/api/entities/Identity',
+  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
 
 describe('addInstruction procedure', () => {
   let mockContext: Mocked<Context>;
