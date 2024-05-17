@@ -38,6 +38,7 @@ import {
   Context,
   FungibleAsset,
   Identity,
+  MultiSig,
   Nft,
   NftCollection,
   PolymeshError,
@@ -1809,19 +1810,19 @@ export function assertStatIsSet(
  * @param args.identity optional. If passed, Accounts that are not part of the given Identity will be filtered out
  */
 export async function getSecondaryAccountPermissions(
-  args: { accounts: Account[]; identity?: Identity },
+  args: { accounts: (Account | MultiSig)[]; identity?: Identity },
   context: Context,
   callback: SubCallback<PermissionedAccount[]>
 ): Promise<UnsubCallback>;
 
 export async function getSecondaryAccountPermissions(
-  args: { accounts: Account[]; identity?: Identity },
+  args: { accounts: (Account | MultiSig)[]; identity?: Identity },
   context: Context
 ): Promise<PermissionedAccount[]>;
 // eslint-disable-next-line require-jsdoc
 export async function getSecondaryAccountPermissions(
   args: {
-    accounts: Account[];
+    accounts: (Account | MultiSig)[];
     identity?: Identity;
   },
   context: Context,

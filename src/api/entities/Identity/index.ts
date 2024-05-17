@@ -8,6 +8,7 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, differenceWith, flatten, intersectionWith, uniqBy } from 'lodash';
 
+import { AccountManagement } from '~/api/client/AccountManagement';
 import { unlinkChildIdentity } from '~/api/procedures/unlinkChildIdentity';
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
@@ -324,15 +325,19 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const assembleResult = (
+    const assembleResult = async (
       record: Option<PolymeshPrimitivesIdentityDidRecord>
-    ): PermissionedAccount => {
-      // we know the record exists because otherwise the Identity couldn't have been fetched
+    ): Promise<PermissionedAccount> => {
       const { primaryKey } = record.unwrap();
 
+      const accountManagement = new AccountManagement(context);
+
+      const account = await accountManagement.getAccount({
+        address: accountIdToString(primaryKey.unwrap()),
+      });
+
       return {
-        // we know the primary key exists because Asset Identities aren't considered Identities by the SDK for now
-        account: new Account({ address: accountIdToString(primaryKey.unwrap()) }, context),
+        account,
         permissions: {
           assets: null,
           portfolios: null,
@@ -347,7 +352,11 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     if (callback) {
       context.assertSupportsSubscription();
 
-      return identity.didRecords(rawDid, records => callback(assembleResult(records)));
+      return identity.didRecords(rawDid, async records => {
+        const result = await assembleResult(records);
+
+        await callback(result);
+      });
     }
 
     const didRecords = await identity.didRecords(rawDid);
@@ -805,9 +814,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       }
     }
 
-    const keyToAccount = (
+    const keyToAccount = async (
       key: StorageKey<[PolymeshPrimitivesIdentityId, AccountId32]>
-    ): Account => {
+    ): Promise<Account | MultiSig> => {
       const [, value] = key.args;
       const address = accountIdToString(value);
       return new Account({ address }, context);
@@ -817,7 +826,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       arg: did,
       paginationOpts: opts,
     });
-    const accounts = keys.map(([key]) => keyToAccount(key));
+    const accounts = await Promise.all(keys.map(([key]) => keyToAccount(key)));
 
     if (cb) {
       context.assertSupportsSubscription();

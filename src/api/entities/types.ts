@@ -762,7 +762,7 @@ export interface CheckpointWithData {
 }
 
 export interface PermissionedAccount {
-  account: Account;
+  account: Account | MultiSig;
   permissions: Permissions;
 }
 
