@@ -109,7 +109,7 @@ export const ROOT_TYPES = rootTypes;
 /**
  * The Polymesh RPC node version range that is compatible with this version of the SDK
  */
-export const SUPPORTED_NODE_VERSION_RANGE = '6.0 || 6.1 || 6.2';
+export const SUPPORTED_NODE_VERSION_RANGE = '6.2 || 6.3';
 
 /**
  * The Polymesh Private RPC node version range that is compatible with this version of the SDK
@@ -125,7 +125,7 @@ export const PRIVATE_SUPPORTED_NODE_SEMVER = coerce(PRIVATE_SUPPORTED_NODE_VERSI
 /**
  * The Polymesh chain spec version range that is compatible with this version of the SDK
  */
-export const SUPPORTED_SPEC_VERSION_RANGE = '6.0 || 6.1 || 6.2';
+export const SUPPORTED_SPEC_VERSION_RANGE = '6.2 || 6.3';
 
 /**
  * The Polymesh private chain spec version range that is compatible with this version of the SDK

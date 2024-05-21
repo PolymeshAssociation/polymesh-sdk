@@ -4,6 +4,7 @@ import {
   AugmentedEvents,
   AugmentedSubmittable,
   DecoratedRpc,
+  QueryableCalls,
   QueryableConsts,
   QueryableStorage,
   SubmittableExtrinsic,
@@ -59,6 +60,11 @@ export type Events = AugmentedEvents<'promise'>;
  * Polkadot's `query` submodule
  */
 export type Queries = QueryableStorage<'promise'>;
+
+/**
+ * Polkadot's `call` submodule
+ */
+export type Calls = QueryableCalls<'promise'>;
 
 /**
  * Polkadot's `consts` submodule

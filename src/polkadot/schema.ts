@@ -1582,6 +1582,32 @@ export default {
         ],
         type: 'AffirmationCount',
       },
+      getTransferReport: {
+        description:
+          "Returns a vector containing all errors for the transfer. An empty vec means there's no error.",
+        params: [
+          {
+            name: 'leg',
+            type: 'Leg',
+          },
+          {
+            name: 'skip_locked_check',
+            type: 'bool',
+          },
+        ],
+        type: 'Vec<DispatchError>',
+      },
+      getExecuteInstructionReport: {
+        description:
+          "Returns a vector containing all errors for the execution. An empty vec means there's no error.",
+        params: [
+          {
+            name: 'instruction_id',
+            type: 'InstructionId',
+          },
+        ],
+        type: 'Vec<DispatchError>',
+      },
     },
   },
   runtime: {
@@ -1594,7 +1620,7 @@ export default {
             params: [
               {
                 name: 'from_custodian',
-                type: 'Option<IdentityId>',
+                type: 'Option<PolymeshPrimitivesIdentityId>',
               },
               {
                 name: 'from_portfolio',
@@ -1602,7 +1628,7 @@ export default {
               },
               {
                 name: 'to_custodian',
-                type: 'Option<IdentityId>',
+                type: 'Option<PolymeshPrimitivesIdentityId>',
               },
               {
                 name: 'to_portfolio',
@@ -1693,7 +1719,7 @@ export default {
             params: [
               {
                 name: 'signatory',
-                type: 'Signatory',
+                type: 'PolymeshPrimitivesSecondaryKeySignatory',
               },
               {
                 name: 'allow_expired',
@@ -1704,7 +1730,7 @@ export default {
                 type: 'Option<AuthorizationType>',
               },
             ],
-            type: 'Vec<Authorization>',
+            type: 'Vec<PolymeshPrimitivesAuthorization>',
           },
           get_key_identity_data: {
             description: 'Query relation between a signing key and a DID',
@@ -1790,6 +1816,32 @@ export default {
             ],
             type: 'AffirmationCount',
           },
+          get_transfer_report: {
+            description:
+              "Returns a vector containing all errors for the transfer. An empty vec means there's no error.",
+            params: [
+              {
+                name: 'leg',
+                type: 'Leg',
+              },
+              {
+                name: 'skip_locked_check',
+                type: 'bool',
+              },
+            ],
+            type: 'Vec<DispatchError>',
+          },
+          get_execute_instruction_report: {
+            description:
+              "Returns a vector containing all errors for the execution. An empty vec means there's no error.",
+            params: [
+              {
+                name: 'instruction_id',
+                type: 'InstructionId',
+              },
+            ],
+            type: 'Vec<DispatchError>',
+          },
         },
         version: 1,
       },
@@ -1855,6 +1907,31 @@ export default {
             description: 'Retrieves curves parameters',
             params: [],
             type: 'Vec<(Perbill, Perbill)>',
+          },
+        },
+        version: 1,
+      },
+    ],
+    ComplianceApi: [
+      {
+        methods: {
+          compliance_report: {
+            description: 'Checks all compliance requirements for the given ticker.',
+            params: [
+              {
+                name: 'ticker',
+                type: 'Ticker',
+              },
+              {
+                name: 'sender_identity',
+                type: 'IdentityId',
+              },
+              {
+                name: 'receiver_identity',
+                type: 'IdentityId',
+              },
+            ],
+            type: 'Result<ComplianceReport, DispatchError>',
           },
         },
         version: 1,

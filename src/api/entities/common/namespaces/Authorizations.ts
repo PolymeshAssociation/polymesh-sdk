@@ -1,3 +1,4 @@
+import { Vec } from '@polkadot/types/codec';
 import { PolymeshPrimitivesAuthorization } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
@@ -46,24 +47,26 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
       context,
       parent,
       context: {
-        polymeshApi: { rpc },
+        polymeshApi: { call },
       },
     } = this;
+
+    const { identityApi } = call;
 
     const signerValue = signerToSignerValue(parent);
     const signatory = signerValueToSignatory(signerValue, context);
     const rawBoolean = booleanToBool(opts?.includeExpired ?? true, context);
 
-    let result: PolymeshPrimitivesAuthorization[];
+    let result: Vec<PolymeshPrimitivesAuthorization>;
 
     if (opts?.type) {
-      result = await rpc.identity.getFilteredAuthorizations(
+      result = await identityApi.getFilteredAuthorizations(
         signatory,
         rawBoolean,
         authorizationTypeToMeshAuthorizationType(opts.type, context)
       );
     } else {
-      result = await rpc.identity.getFilteredAuthorizations(signatory, rawBoolean);
+      result = await identityApi.getFilteredAuthorizations(signatory, rawBoolean, null);
     }
 
     return this.createAuthorizationRequests(result.map(auth => ({ auth, target: signerValue })));

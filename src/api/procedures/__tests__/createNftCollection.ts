@@ -253,8 +253,8 @@ describe('createNftCollection procedure', () => {
     });
 
     return expect(
-      prepareCreateNftCollection.call(proc, { ...args, ticker: 'SOME_TICKER' })
-    ).rejects.toThrow('New Tickers can only contain alphanumeric values');
+      prepareCreateNftCollection.call(proc, { ...args, ticker: 'SOME_TICKER!' })
+    ).rejects.toThrow('New Tickers can only contain alphanumeric values "_", "-", ".", and "/"');
   });
 
   describe('prepareCreateNftCollection', () => {

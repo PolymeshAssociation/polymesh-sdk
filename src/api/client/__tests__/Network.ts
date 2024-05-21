@@ -338,7 +338,6 @@ describe('Network Class', () => {
 
     beforeEach(() => {
       getBlockMock = dsMockUtils.createRpcMock('chain', 'getBlock');
-      queryInfoMock = dsMockUtils.createRpcMock('payment', 'queryInfo');
     });
 
     it('should return a transaction', async () => {
@@ -408,6 +407,7 @@ describe('Network Class', () => {
 
       when(balanceToBigNumberSpy).calledWith(rawGasFees).mockReturnValue(gasFees);
 
+      queryInfoMock = dsMockUtils.createCallMock('transactionPaymentApi', 'queryInfo');
       when(queryInfoMock)
         .calledWith('hex', rawBlockHash)
         .mockResolvedValue(

@@ -1288,7 +1288,7 @@ describe('Polymesh Transaction Base class', () => {
       context.getNonce.mockReturnValue(new BigNumber(-1));
       const mockIndex = dsMockUtils.createMockIndex(new BigNumber(3));
 
-      const mockNextIndex = dsMockUtils.createRpcMock('system', 'accountNextIndex', {
+      const mockNextIndex = dsMockUtils.createCallMock('accountNonceApi', 'accountNonce', {
         returnValue: mockIndex,
       });
 

@@ -43,7 +43,7 @@ import {
   TxTag,
 } from '~/types';
 import { tickerToString, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
-import { filterEventRecords } from '~/utils/internal';
+import { asIdentity, filterEventRecords } from '~/utils/internal';
 
 /**
  * @hidden
@@ -612,6 +612,22 @@ export async function assertAuthorizationRequestValid(
       return assertJoinOrRotateAuthorizationValid(authRequest);
     default:
       throw new UnreachableCaseError(data); // ensures switch statement covers all values
+  }
+}
+
+/**
+ * @hidden
+ */
+export async function assertValidCdd(identity: string | Identity, context: Context): Promise<void> {
+  const id = asIdentity(identity, context);
+  const validCdd = await id.hasValidCdd();
+
+  if (!validCdd) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The identity does not have a valid CDD claim',
+      data: { did: id.did },
+    });
   }
 }
 

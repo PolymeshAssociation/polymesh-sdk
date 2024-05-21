@@ -20,6 +20,7 @@ import { BatchTransactionSpec, PolymeshTx, ProcedureAuthorization } from '~/type
 import * as utilsInternalModule from '~/utils/internal';
 
 type ReturnValues = [number, number];
+type SingleReturnValues = [number];
 
 describe('createTransactionBatch procedure', () => {
   let mockContext: Mocked<Context>;
@@ -204,5 +205,139 @@ describe('createTransactionBatch procedure', () => {
       await expect(result.resolvers[0]({} as ISubmittableResult)).resolves.toBe(1);
       await expect(result.resolvers[1]({} as ISubmittableResult)).resolves.toBe(4);
     });
+  });
+
+  it('should handle a single transaction in batch', async () => {
+    const transactions = [
+      new PolymeshTransaction(
+        {
+          transaction: tx3,
+          args: ['baz'] as unknown[],
+          resolver: (): number => 2,
+          transformer: (val): number => val * 2,
+          signingAddress: 'someAddress',
+          signer: {} as PolkadotSigner,
+          mortality: { immortal: false },
+        },
+        mockContext
+      ),
+    ] as const;
+    const proc = procedureMockUtils.getInstance<
+      CreateTransactionBatchParams<SingleReturnValues>,
+      SingleReturnValues,
+      Storage
+    >(mockContext);
+    const boundFunc = prepareStorage.bind<
+      typeof proc,
+      CreateTransactionBatchParams<SingleReturnValues>,
+      Storage
+    >(proc);
+    const result = boundFunc({ transactions });
+
+    expect(result).toEqual({
+      processedTransactions: [
+        {
+          transaction: tx3,
+          args: ['baz'],
+          fee: undefined,
+          feeMultiplier: undefined,
+        },
+      ],
+      tags: [TxTags.portfolio.CreatePortfolio],
+      resolvers: [expect.any(Function)],
+    });
+
+    jest.spyOn(utilsInternalModule, 'sliceBatchReceipt').mockImplementation();
+
+    await expect(result.resolvers[0]({} as ISubmittableResult)).resolves.toBe(4);
+  });
+
+  it('should handle a single transaction in batch without resolver function', async () => {
+    const transactions = [
+      new PolymeshTransaction(
+        {
+          transaction: tx3,
+          args: ['baz'] as unknown[],
+          resolver: 5,
+          signingAddress: 'someAddress',
+          signer: {} as PolkadotSigner,
+          mortality: { immortal: false },
+        },
+        mockContext
+      ),
+    ] as const;
+    const proc = procedureMockUtils.getInstance<
+      CreateTransactionBatchParams<SingleReturnValues>,
+      SingleReturnValues,
+      Storage
+    >(mockContext);
+    const boundFunc = prepareStorage.bind<
+      typeof proc,
+      CreateTransactionBatchParams<SingleReturnValues>,
+      Storage
+    >(proc);
+    const result = boundFunc({ transactions });
+
+    expect(result).toEqual({
+      processedTransactions: [
+        {
+          transaction: tx3,
+          args: ['baz'],
+          fee: undefined,
+          feeMultiplier: undefined,
+        },
+      ],
+      tags: [TxTags.portfolio.CreatePortfolio],
+      resolvers: [expect.any(Function)],
+    });
+
+    jest.spyOn(utilsInternalModule, 'sliceBatchReceipt').mockImplementation();
+
+    await expect(result.resolvers[0]({} as ISubmittableResult)).resolves.toBe(5);
+  });
+
+  it('should handle a single transaction in batch with identity transformer', async () => {
+    const transactions = [
+      new PolymeshTransaction(
+        {
+          transaction: tx3,
+          args: ['baz'] as unknown[],
+          resolver: (): number => 3,
+          transformer: undefined,
+          signingAddress: 'someAddress',
+          signer: {} as PolkadotSigner,
+          mortality: { immortal: false },
+        },
+        mockContext
+      ),
+    ] as const;
+    const proc = procedureMockUtils.getInstance<
+      CreateTransactionBatchParams<SingleReturnValues>,
+      SingleReturnValues,
+      Storage
+    >(mockContext);
+    const boundFunc = prepareStorage.bind<
+      typeof proc,
+      CreateTransactionBatchParams<SingleReturnValues>,
+      Storage
+    >(proc);
+    const result = boundFunc({ transactions });
+
+    expect(result).toEqual({
+      processedTransactions: [
+        {
+          transaction: tx3,
+          args: ['baz'],
+          fee: undefined,
+          feeMultiplier: undefined,
+        },
+      ],
+      tags: [TxTags.portfolio.CreatePortfolio],
+      resolvers: [expect.any(Function)],
+    });
+
+    jest.spyOn(utilsInternalModule, 'sliceBatchReceipt').mockImplementation();
+
+    await expect(result.resolvers[0]({} as ISubmittableResult)).resolves.toBe(3);
   });
 });

@@ -112,7 +112,7 @@ describe('executeManualInstruction procedure', () => {
       endAfterBlock: new BigNumber(1000),
     };
 
-    dsMockUtils.createRpcMock('settlement', 'getExecuteInstructionInfo', {
+    dsMockUtils.createCallMock('settlementApi', 'getExecuteInstructionInfo', {
       returnValue: {
         fungibleTokens,
         nonFungibleTokens,

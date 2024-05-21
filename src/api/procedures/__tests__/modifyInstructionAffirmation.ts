@@ -129,10 +129,10 @@ describe('modifyInstructionAffirmation procedure', () => {
     dsMockUtils.createTxMock('settlement', 'affirmInstructionAsMediator');
     dsMockUtils.createTxMock('settlement', 'withdrawAffirmationAsMediator');
     dsMockUtils.createTxMock('settlement', 'rejectInstructionAsMediator');
-    dsMockUtils.createRpcMock('settlement', 'getExecuteInstructionInfo', {
+    dsMockUtils.createCallMock('settlementApi', 'getExecuteInstructionInfo', {
       returnValue: mockExecuteInfo,
     });
-    dsMockUtils.createRpcMock('settlement', 'getAffirmationCount', {
+    dsMockUtils.createCallMock('settlementApi', 'getAffirmationCount', {
       returnValue: mockAffirmCount,
     });
     mockContext = dsMockUtils.getContextInstance({ getSigningIdentity: signer });

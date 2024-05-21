@@ -1,3 +1,4 @@
+import { Vec } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { filter, flatten, isEqual, uniqBy, uniqWith } from 'lodash';
 
@@ -10,6 +11,7 @@ import {
 } from '~/internal';
 import { claimsGroupingQuery, claimsQuery, customClaimTypeQuery } from '~/middleware/queries';
 import { ClaimsGroupBy, ClaimsOrderBy, ClaimTypeEnum, Query } from '~/middleware/types';
+import { IdentityClaim } from '~/polkadot/polymesh';
 import {
   CddClaim,
   ClaimData,
@@ -326,11 +328,11 @@ export class Claims {
     const {
       context,
       context: {
-        polymeshApi: {
-          rpc: { identity },
-        },
+        polymeshApi: { call },
       },
     } = this;
+
+    const { identityApi: identity } = call;
 
     const { target, includeExpired = true } = opts;
 
@@ -338,7 +340,7 @@ export class Claims {
 
     const rawDid = stringToIdentityId(did, context);
 
-    const result = await identity.validCDDClaims(rawDid);
+    const result: Vec<IdentityClaim> = await identity.validCddClaims(rawDid, null);
 
     const data: ClaimData<CddClaim>[] = [];
 

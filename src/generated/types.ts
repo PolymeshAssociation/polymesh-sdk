@@ -792,6 +792,15 @@ export enum NftTx {
   ControllerTransfer = 'nft.controllerTransfer',
 }
 
+export enum StateTrieMigrationTx {
+  ControlAutoMigration = 'stateTrieMigration.controlAutoMigration',
+  ContinueMigrate = 'stateTrieMigration.continueMigrate',
+  MigrateCustomTop = 'stateTrieMigration.migrateCustomTop',
+  MigrateCustomChild = 'stateTrieMigration.migrateCustomChild',
+  SetSignedMaxLimits = 'stateTrieMigration.setSignedMaxLimits',
+  ForceSetProgress = 'stateTrieMigration.forceSetProgress',
+}
+
 export enum ModuleName {
   System = 'system',
   Babe = 'babe',
@@ -837,6 +846,7 @@ export enum ModuleName {
   Preimage = 'preimage',
   Contracts = 'contracts',
   Nft = 'nft',
+  StateTrieMigration = 'stateTrieMigration',
 }
 
 export type TxTag =
@@ -883,7 +893,8 @@ export type TxTag =
   | PolymeshContractsTx
   | PreimageTx
   | ContractsTx
-  | NftTx;
+  | NftTx
+  | StateTrieMigrationTx;
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const TxTags = {
@@ -931,4 +942,5 @@ export const TxTags = {
   preimage: PreimageTx,
   contracts: ContractsTx,
   nft: NftTx,
+  stateTrieMigration: StateTrieMigrationTx,
 };

@@ -470,8 +470,8 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     const {
       context: {
         polymeshApi: {
-          rpc: {
-            system: { accountNextIndex },
+          call: {
+            accountNonceApi: { accountNonce },
           },
         },
       },
@@ -479,7 +479,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const index = await accountNextIndex(stringToAccountId(address, context));
+    const index = await accountNonce(stringToAccountId(address, context));
 
     return u32ToBigNumber(index);
   }

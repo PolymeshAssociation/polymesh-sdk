@@ -493,5 +493,13 @@
     "issue_nft": "issue_nft",
     "redeem_nft": "redeem_nft",
     "controller_transfer": "controller_transfer"
+  },
+  "StateTrieMigration": {
+    "control_auto_migration": "control_auto_migration",
+    "continue_migrate": "continue_migrate",
+    "migrate_custom_top": "migrate_custom_top",
+    "migrate_custom_child": "migrate_custom_child",
+    "set_signed_max_limits": "set_signed_max_limits",
+    "force_set_progress": "force_set_progress"
   }
 }

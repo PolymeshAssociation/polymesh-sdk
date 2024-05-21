@@ -1,4 +1,4 @@
-import { BaseAsset, PolymeshError, Procedure } from '~/internal';
+import { PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { stringToTicker } from '~/utils/conversion';
@@ -56,15 +56,14 @@ export async function prepareToggleTickerPreApproval(
  */
 export function getAuthorization(
   this: Procedure<Params, void>,
-  { ticker, preApprove }: Params
+  { preApprove }: Params
 ): ProcedureAuthorization {
-  const { context } = this;
   return {
     permissions: {
       transactions: [
         preApprove ? TxTags.asset.PreApproveTicker : TxTags.asset.RemoveTickerPreApproval,
       ],
-      assets: [new BaseAsset({ ticker }, context)],
+      assets: [],
       portfolios: [],
     },
   };

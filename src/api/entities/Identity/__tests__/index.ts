@@ -435,8 +435,8 @@ describe('Identity class', () => {
 
       when(stringToIdentityIdSpy).calledWith(did, mockContext).mockReturnValue(rawIdentityId);
 
-      when(dsMockUtils.createRpcMock('identity', 'isIdentityHasValidCdd'))
-        .calledWith(rawIdentityId)
+      when(dsMockUtils.createCallMock('identityApi', 'isIdentityHasValidCdd'))
+        .calledWith(rawIdentityId, null)
         .mockResolvedValue(fakeHasValidCdd);
 
       when(jest.spyOn(utilsConversionModule, 'cddStatusToBoolean'))

@@ -59,6 +59,10 @@ jest.mock(
   '~/api/entities/Asset/Base',
   require('~/testUtils/mocks/entities').mockBaseAssetModule('~/api/entities/Asset/Base')
 );
+jest.mock(
+  '~/api/entities/Identity',
+  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
 
 describe('addInstruction procedure', () => {
   let mockContext: Mocked<Context>;
@@ -215,8 +219,6 @@ describe('addInstruction procedure', () => {
     });
   });
 
-  let addAndAffirmTransaction: PolymeshTx;
-  let addTransaction: PolymeshTx;
   let addAndAffirmWithMediatorsTransaction: PolymeshTx<
     [
       u64,
@@ -257,8 +259,6 @@ describe('addInstruction procedure', () => {
       status: TickerReservationStatus.Free,
     });
 
-    addAndAffirmTransaction = dsMockUtils.createTxMock('settlement', 'addAndAffirmInstruction');
-    addTransaction = dsMockUtils.createTxMock('settlement', 'addInstruction');
     addAndAffirmWithMediatorsTransaction = dsMockUtils.createTxMock(
       'settlement',
       'addAndAffirmWithMediators'
@@ -358,7 +358,6 @@ describe('addInstruction procedure', () => {
 
   it('should throw an error if the instructions array is empty', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      withMediatorsPresent: true,
       portfoliosToAffirm: [],
     });
 
@@ -376,7 +375,6 @@ describe('addInstruction procedure', () => {
 
   it('should throw an error if the legs array is empty', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      withMediatorsPresent: true,
       portfoliosToAffirm: [],
     });
 
@@ -399,7 +397,6 @@ describe('addInstruction procedure', () => {
 
   it('should throw an error if any instruction contains leg with zero amount', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      withMediatorsPresent: true,
       portfoliosToAffirm: [],
     });
 
@@ -427,7 +424,6 @@ describe('addInstruction procedure', () => {
 
   it('should throw an error if any instruction contains leg with zero NFTs', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      withMediatorsPresent: true,
       portfoliosToAffirm: [],
     });
 
@@ -455,7 +451,6 @@ describe('addInstruction procedure', () => {
 
   it('should throw an error if given an string asset that does not exist', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      withMediatorsPresent: true,
       portfoliosToAffirm: [],
     });
 
@@ -488,7 +483,6 @@ describe('addInstruction procedure', () => {
 
   it('should throw an error if any instruction contains leg with transferring Assets within same Identity portfolios', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      withMediatorsPresent: true,
       portfoliosToAffirm: [],
     });
 
@@ -516,7 +510,6 @@ describe('addInstruction procedure', () => {
 
   it("should throw an error if the Venue doesn't exist", async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      withMediatorsPresent: true,
       portfoliosToAffirm: [],
     });
 
@@ -538,7 +531,6 @@ describe('addInstruction procedure', () => {
 
   it('should throw an error if the legs array exceeds limit', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      withMediatorsPresent: true,
       portfoliosToAffirm: [],
     });
 
@@ -569,7 +561,6 @@ describe('addInstruction procedure', () => {
 
   it('should throw an error if the specified venue is not valid for any asset', () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      withMediatorsPresent: true,
       portfoliosToAffirm: [],
     });
 
@@ -625,7 +616,6 @@ describe('addInstruction procedure', () => {
     });
 
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      withMediatorsPresent: true,
       portfoliosToAffirm: [],
     });
 
@@ -666,7 +656,6 @@ describe('addInstruction procedure', () => {
       },
     });
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      withMediatorsPresent: true,
       portfoliosToAffirm: [],
     });
 
@@ -711,7 +700,6 @@ describe('addInstruction procedure', () => {
     });
     getCustodianMock.mockReturnValue({ did: fromDid });
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      withMediatorsPresent: true,
       portfoliosToAffirm: [[fromPortfolio, toPortfolio]],
     });
 
@@ -752,7 +740,6 @@ describe('addInstruction procedure', () => {
     });
     getCustodianMock.mockReturnValue({ did: fromDid });
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      withMediatorsPresent: true,
       portfoliosToAffirm: [[fromPortfolio, toPortfolio]],
     });
 
@@ -784,7 +771,6 @@ describe('addInstruction procedure', () => {
     });
     getCustodianMock.mockReturnValue({ did: fromDid });
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      withMediatorsPresent: true,
       portfoliosToAffirm: [[fromPortfolio, toPortfolio]],
     });
 
@@ -813,7 +799,6 @@ describe('addInstruction procedure', () => {
     });
     getCustodianMock.mockReturnValue({ did: fromDid });
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      withMediatorsPresent: true,
       portfoliosToAffirm: [[fromPortfolio, toPortfolio]],
     });
 
@@ -851,7 +836,6 @@ describe('addInstruction procedure', () => {
     });
     getCustodianMock.mockReturnValue({ did: toDid });
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      withMediatorsPresent: true,
       portfoliosToAffirm: [[]],
     });
 
@@ -926,144 +910,9 @@ describe('addInstruction procedure', () => {
     });
   });
 
-  it('should instruction transaction spec when mediator tx are not present', async () => {
-    dsMockUtils.configureMocks({ contextOptions: { did: fromDid } });
-    entityMockUtils.configureMocks({
-      venueOptions: {
-        exists: true,
-      },
-    });
-    getCustodianMock.mockReturnValue({ did: toDid });
-    let proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      withMediatorsPresent: false,
-      portfoliosToAffirm: [[]],
-    });
-
-    const instructionDetails = {
-      legs: [
-        {
-          from,
-          to,
-          amount,
-          asset: entityMockUtils.getFungibleAssetInstance({ ticker: asset }),
-        },
-      ],
-      tradeDate,
-      valueDate,
-      memo,
-    };
-
-    let result = await prepareAddInstruction.call(proc, {
-      venueId,
-      instructions: [
-        {
-          ...instructionDetails,
-          endBlock,
-        },
-      ],
-    });
-
-    expect(result).toEqual({
-      transactions: [
-        {
-          transaction: addTransaction,
-          args: [
-            rawVenueId,
-            rawBlockSettlementType,
-            rawTradeDate,
-            rawValueDate,
-            [rawLeg],
-            rawInstructionMemo,
-          ],
-        },
-      ],
-      resolver: expect.any(Function),
-    });
-
-    proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      withMediatorsPresent: false,
-      portfoliosToAffirm: [[fromPortfolio, toPortfolio]],
-    });
-
-    result = await prepareAddInstruction.call(proc, {
-      venueId,
-      instructions: [
-        {
-          ...instructionDetails,
-          endBlock,
-        },
-      ],
-    });
-
-    expect(result).toEqual({
-      transactions: [
-        {
-          transaction: addAndAffirmTransaction,
-          args: [
-            rawVenueId,
-            rawBlockSettlementType,
-            rawTradeDate,
-            rawValueDate,
-            [rawLeg],
-            [rawFrom, rawTo],
-            rawInstructionMemo,
-          ],
-        },
-      ],
-      resolver: expect.any(Function),
-    });
-  });
-
   describe('getAuthorization', () => {
-    it('should return the appropriate roles and permissions when "withMediators" are not present', async () => {
-      let proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-        withMediatorsPresent: false,
-        portfoliosToAffirm: [[fromPortfolio, toPortfolio]],
-      });
-      let boundFunc = getAuthorization.bind(proc);
-
-      let result = await boundFunc({
-        venueId,
-        instructions: [
-          { legs: [{ from: fromPortfolio, to: toPortfolio, amount, asset: 'SOME_ASSET' }] },
-        ],
-      });
-
-      expect(result).toEqual({
-        roles: [{ type: RoleType.VenueOwner, venueId }],
-        permissions: {
-          assets: [],
-          portfolios: [fromPortfolio, toPortfolio],
-          transactions: [TxTags.settlement.AddAndAffirmInstructionWithMemo],
-        },
-      });
-
-      proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-        withMediatorsPresent: false,
-        portfoliosToAffirm: [[]],
-      });
-      boundFunc = getAuthorization.bind(proc);
-
-      result = await boundFunc({
-        venueId,
-        instructions: [
-          { legs: [{ from: fromPortfolio, to: toPortfolio, amount, asset: 'SOME_ASSET' }] },
-        ],
-      });
-
-      expect(result).toEqual({
-        roles: [{ type: RoleType.VenueOwner, venueId }],
-        permissions: {
-          assets: [],
-          portfolios: [],
-          transactions: [TxTags.settlement.AddInstructionWithMemo],
-        },
-      });
-    });
-
     it('should return the appropriate roles and permissions', async () => {
       let proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-        withMediatorsPresent: true,
         portfoliosToAffirm: [[fromPortfolio, toPortfolio]],
       });
       let boundFunc = getAuthorization.bind(proc);
@@ -1088,7 +937,6 @@ describe('addInstruction procedure', () => {
       });
 
       proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-        withMediatorsPresent: true,
         portfoliosToAffirm: [[]],
       });
       boundFunc = getAuthorization.bind(proc);
@@ -1130,7 +978,6 @@ describe('addInstruction procedure', () => {
       let result = await boundFunc(args);
 
       expect(result).toEqual({
-        withMediatorsPresent: true,
         portfoliosToAffirm: [[fromPortfolio, toPortfolio]],
       });
 
@@ -1145,7 +992,6 @@ describe('addInstruction procedure', () => {
       result = await boundFunc(args);
 
       expect(result).toEqual({
-        withMediatorsPresent: true,
         portfoliosToAffirm: [[]],
       });
     });

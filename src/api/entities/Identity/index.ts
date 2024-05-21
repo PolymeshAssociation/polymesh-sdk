@@ -32,6 +32,7 @@ import {
   trustingAssetsQuery,
 } from '~/middleware/queries';
 import { AssetHoldersOrderBy, NftHoldersOrderBy, Query } from '~/middleware/types';
+import { CddStatus } from '~/polkadot/polymesh';
 import {
   Asset,
   CheckRolesResult,
@@ -257,11 +258,11 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       context,
       did,
       context: {
-        polymeshApi: { rpc },
+        polymeshApi: { call },
       },
     } = this;
     const identityId = stringToIdentityId(did, context);
-    const result = await rpc.identity.isIdentityHasValidCdd(identityId);
+    const result = await call.identityApi.isIdentityHasValidCdd<CddStatus>(identityId, null);
     return cddStatusToBoolean(result);
   }
 

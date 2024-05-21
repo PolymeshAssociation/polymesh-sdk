@@ -370,8 +370,8 @@ export class Network {
         polymeshApi: {
           rpc: {
             chain: { getBlock },
-            payment: { queryInfo },
           },
+          call,
         },
       },
       context,
@@ -418,7 +418,7 @@ export class Network {
       } = await getBlock(rawBlockHash);
 
       const [{ partialFee }, [{ fees: protocol }]] = await Promise.all([
-        queryInfo(blockExtrinsics[extrinsicIdx].toHex(), rawBlockHash),
+        call.transactionPaymentApi.queryInfo(blockExtrinsics[extrinsicIdx].toHex(), rawBlockHash),
         context.getProtocolFees({ tags: [txTag], blockHash }),
       ]);
 

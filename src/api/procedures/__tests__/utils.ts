@@ -14,6 +14,7 @@ import {
   assertPortfolioExists,
   assertRequirementsNotTooComplex,
   assertSecondaryAccounts,
+  assertValidCdd,
   createAuthorizationResolver,
   createCreateGroupResolver,
   getGroupFromPermissions,
@@ -1487,6 +1488,27 @@ describe('authorization request validations', () => {
         )
       ).rejects.toThrowError(expectedError);
     });
+  });
+});
+
+describe('assertValidCdd', () => {
+  it('should resolve if the identity has a valid CDD claim', () => {
+    const context = dsMockUtils.getContextInstance();
+    const identity = entityMockUtils.getIdentityInstance({ hasValidCdd: true });
+
+    return expect(assertValidCdd(identity, context)).resolves.not.toThrow();
+  });
+
+  it('should throw an error if the identity does not have a valid CDD claim', () => {
+    const context = dsMockUtils.getContextInstance();
+    const identity = entityMockUtils.getIdentityInstance({ hasValidCdd: false });
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The identity does not have a valid CDD claim',
+    });
+
+    return expect(assertValidCdd(identity, context)).rejects.toThrow(expectedError);
   });
 });
 

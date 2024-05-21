@@ -185,7 +185,7 @@ describe('Settlements class', () => {
           Ok: okResponse,
         });
 
-        when(dsMockUtils.createRpcMock('asset', 'canTransferGranular'))
+        when(dsMockUtils.createCallMock('assetApi', 'canTransferGranular'))
           .calledWith(
             rawSigningDid,
             rawFromPortfolio,
@@ -223,7 +223,7 @@ describe('Settlements class', () => {
         toPortfolio.getCustodian.mockResolvedValue(
           entityMockUtils.getIdentityInstance({ did: toDid })
         );
-        when(dsMockUtils.createRpcMock('asset', 'canTransferGranular'))
+        when(dsMockUtils.createCallMock('assetApi', 'canTransferGranular'))
           .calledWith(rawFromDid, rawFromPortfolio, rawToDid, rawToPortfolio, rawTicker, rawAmount)
           .mockReturnValue(response);
 
@@ -254,7 +254,7 @@ describe('Settlements class', () => {
         toPortfolio.getCustodian.mockResolvedValue(
           entityMockUtils.getIdentityInstance({ did: toDid })
         );
-        when(dsMockUtils.createRpcMock('asset', 'canTransferGranular'))
+        when(dsMockUtils.createCallMock('assetApi', 'canTransferGranular'))
           .calledWith(rawFromDid, rawFromPortfolio, rawToDid, rawToPortfolio, rawTicker, rawAmount)
           .mockReturnValue(response);
 
@@ -330,10 +330,10 @@ describe('Settlements class', () => {
       toPortfolio.getCustodian.mockResolvedValue(
         entityMockUtils.getIdentityInstance({ did: toDid })
       );
-      dsMockUtils.createRpcMock('asset', 'canTransferGranular').mockReturnValue(response);
+      dsMockUtils.createCallMock('assetApi', 'canTransferGranular').mockReturnValue(response);
 
       const mockDispatch = dsMockUtils.createMockDispatchResult();
-      dsMockUtils.createRpcMock('nft', 'validateNFTTransfer', {
+      dsMockUtils.createCallMock('nftApi', 'validateNftTransfer', {
         returnValue: mockDispatch,
       });
 

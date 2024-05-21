@@ -72,7 +72,6 @@ import type {
   PalletStakingForcing,
   PalletStakingNominations,
   PalletStakingPermissionedIdentityPrefs,
-  PalletStakingReleases,
   PalletStakingRewardDestination,
   PalletStakingSlashingSlashingSpans,
   PalletStakingSlashingSpanRecord,
@@ -80,6 +79,8 @@ import type {
   PalletStakingStakingLedger,
   PalletStakingUnappliedSlash,
   PalletStakingValidatorPrefs,
+  PalletStateTrieMigrationMigrationLimits,
+  PalletStateTrieMigrationMigrationTask,
   PalletStoFundraiser,
   PalletTransactionPaymentReleases,
   PolymeshCommonUtilitiesCheckpointNextCheckpoints,
@@ -299,6 +300,18 @@ declare module '@polkadot/api-base/types/storage' {
           arg2: PolymeshPrimitivesIdentityId | string | Uint8Array
         ) => Observable<u128>,
         [PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId]
+      >;
+      /**
+       * The last [`AssetMetadataGlobalKey`] used for a global key.
+       **/
+      currentAssetMetadataGlobalKey: AugmentedQuery<ApiType, () => Observable<Option<u64>>, []>;
+      /**
+       * The last [`AssetMetadataLocalKey`] used for [`Ticker`].
+       **/
+      currentAssetMetadataLocalKey: AugmentedQuery<
+        ApiType,
+        (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<Option<u64>>,
+        [PolymeshPrimitivesTicker]
       >;
       /**
        * The next `AssetType::Custom` ID in the sequence.
@@ -1351,6 +1364,10 @@ declare module '@polkadot/api-base/types/storage' {
         [PalletIdentityClaim1stKey, PalletIdentityClaim2ndKey]
       >;
       /**
+       * Controls the authorization id.
+       **/
+      currentAuthId: AugmentedQuery<ApiType, () => Observable<u64>, []>;
+      /**
        * It stores the current identity for current transaction.
        **/
       currentDid: AugmentedQuery<ApiType, () => Observable<Option<U8aFixed>>, []>;
@@ -1422,12 +1439,35 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       multiPurposeNonce: AugmentedQuery<ApiType, () => Observable<u64>, []>;
       /**
+       * Track the number of authorizations given by each identity.
+       **/
+      numberOfGivenAuths: AugmentedQuery<
+        ApiType,
+        (arg: PolymeshPrimitivesIdentityId | string | Uint8Array) => Observable<u32>,
+        [PolymeshPrimitivesIdentityId]
+      >;
+      /**
        * Authorization nonce per Identity. Initially is 0.
        **/
       offChainAuthorizationNonce: AugmentedQuery<
         ApiType,
         (arg: PolymeshPrimitivesIdentityId | string | Uint8Array) => Observable<u64>,
         [PolymeshPrimitivesIdentityId]
+      >;
+      /**
+       * Tracks all authorizations that must be deleted
+       **/
+      outdatedAuthorizations: AugmentedQuery<
+        ApiType,
+        (
+          arg:
+            | PolymeshPrimitivesSecondaryKeySignatory
+            | { Identity: any }
+            | { Account: any }
+            | string
+            | Uint8Array
+        ) => Observable<Option<u64>>,
+        [PolymeshPrimitivesSecondaryKeySignatory]
       >;
       /**
        * Parent identity if the DID is a child Identity.
@@ -1657,6 +1697,18 @@ declare module '@polkadot/api-base/types/storage' {
         ApiType,
         (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<u64>,
         [PolymeshPrimitivesTicker]
+      >;
+      /**
+       * The last `NFTCollectionId` used for a collection.
+       **/
+      currentCollectionId: AugmentedQuery<ApiType, () => Observable<Option<u64>>, []>;
+      /**
+       * The last `NFTId` used for an NFT.
+       **/
+      currentNFTId: AugmentedQuery<
+        ApiType,
+        (arg: u64 | AnyNumber | Uint8Array) => Observable<Option<u64>>,
+        [u64]
       >;
       /**
        * The metadata value of an nft given its collection id, token id and metadata key.
@@ -2547,6 +2599,8 @@ declare module '@polkadot/api-base/types/storage' {
       activeEra: AugmentedQuery<ApiType, () => Observable<Option<PalletStakingActiveEraInfo>>, []>;
       /**
        * Map from all locked "stash" accounts to the controller account.
+       *
+       * TWOX-NOTE: SAFE since `AccountId` is a secure hash.
        **/
       bonded: AugmentedQuery<
         ApiType,
@@ -2577,8 +2631,8 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       earliestUnappliedSlash: AugmentedQuery<ApiType, () => Observable<Option<u32>>, []>;
       /**
-       * Flag to control the execution of the offchain election. When `Open(_)`, we accept
-       * solutions to be submitted.
+       * Flag to control the execution of the offchain election. When `Open(_)`, we accept solutions
+       * to be submitted.
        **/
       eraElectionStatus: AugmentedQuery<ApiType, () => Observable<PalletStakingElectionStatus>, []>;
       /**
@@ -2714,7 +2768,24 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       minimumValidatorCount: AugmentedQuery<ApiType, () => Observable<u32>, []>;
       /**
-       * The map from nominator stash key to the set of stash keys of all validators to nominate.
+       * The map from nominator stash key to their nomination preferences, namely the validators that
+       * they wish to support.
+       *
+       * Note that the keys of this storage map might become non-decodable in case the
+       * [`Config::MaxNominations`] configuration is decreased. In this rare case, these nominators
+       * are still existent in storage, their key is correct and retrievable (i.e. `contains_key`
+       * indicates that they exist), but their value cannot be decoded. Therefore, the non-decodable
+       * nominators will effectively not-exist, until they re-submit their preferences such that it
+       * is within the bounds of the newly set `Config::MaxNominations`.
+       *
+       * This implies that `::iter_keys().count()` and `::iter().count()` might return different
+       * values for this map. Moreover, the main `::count()` is aligned with the former, namely the
+       * number of keys that exist.
+       *
+       * Lastly, if any of the nominators become non-decodable, they can be chilled immediately via
+       * [`Call::chill_other`] dispatchable by anyone.
+       *
+       * TWOX-NOTE: SAFE since `AccountId` is a secure hash.
        **/
       nominators: AugmentedQuery<
         ApiType,
@@ -2746,6 +2817,8 @@ declare module '@polkadot/api-base/types/storage' {
       offendingValidators: AugmentedQuery<ApiType, () => Observable<Vec<ITuple<[u32, bool]>>>, []>;
       /**
        * Where the reward payment should be made. Keyed by stash.
+       *
+       * TWOX-NOTE: SAFE since `AccountId` is a secure hash.
        **/
       payee: AugmentedQuery<
         ApiType,
@@ -2762,9 +2835,6 @@ declare module '@polkadot/api-base/types/storage' {
         ) => Observable<Option<PalletStakingPermissionedIdentityPrefs>>,
         [PolymeshPrimitivesIdentityId]
       >;
-      /**
-       * Polymesh Storage version.
-       **/
       polymeshStorageVersion: AugmentedQuery<ApiType, () => Observable<u8>, []>;
       /**
        * The next validator set. At the end of an era, if this is available (potentially from the
@@ -2829,13 +2899,6 @@ declare module '@polkadot/api-base/types/storage' {
         [ITuple<[AccountId32, u32]>]
       >;
       /**
-       * True if network has been upgraded to this version.
-       * Storage version of the pallet.
-       *
-       * This is set to v6.0.1 for new networks.
-       **/
-      storageVersion: AugmentedQuery<ApiType, () => Observable<PalletStakingReleases>, []>;
-      /**
        * All unapplied slashes that are queued for later.
        **/
       unappliedSlashes: AugmentedQuery<
@@ -2844,15 +2907,18 @@ declare module '@polkadot/api-base/types/storage' {
         [u32]
       >;
       /**
-       * Every validator has commission that should be in the range [0, Cap].
+       * Allows flexibility in commission. Every validator has commission that should be in the
+       * range [0, Cap].
        **/
       validatorCommissionCap: AugmentedQuery<ApiType, () => Observable<Perbill>, []>;
       /**
-       * The ideal number of staking participants.
+       * The ideal number of active validators.
        **/
       validatorCount: AugmentedQuery<ApiType, () => Observable<u32>, []>;
       /**
        * The map from (wannabe) validator stash key to the preferences of that validator.
+       *
+       * TWOX-NOTE: SAFE since `AccountId` is a secure hash.
        **/
       validators: AugmentedQuery<
         ApiType,
@@ -2870,6 +2936,39 @@ declare module '@polkadot/api-base/types/storage' {
           arg2: AccountId32 | string | Uint8Array
         ) => Observable<Option<ITuple<[Perbill, u128]>>>,
         [u32, AccountId32]
+      >;
+    };
+    stateTrieMigration: {
+      /**
+       * The limits that are imposed on automatic migrations.
+       *
+       * If set to None, then no automatic migration happens.
+       **/
+      autoLimits: AugmentedQuery<
+        ApiType,
+        () => Observable<Option<PalletStateTrieMigrationMigrationLimits>>,
+        []
+      >;
+      /**
+       * Migration progress.
+       *
+       * This stores the snapshot of the last migrated keys. It can be set into motion and move
+       * forward by any of the means provided by this pallet.
+       **/
+      migrationProcess: AugmentedQuery<
+        ApiType,
+        () => Observable<PalletStateTrieMigrationMigrationTask>,
+        []
+      >;
+      /**
+       * The maximum limits that the signed migration could use.
+       *
+       * If not set, no signed submission is allowed.
+       **/
+      signedMigrationMaxLimits: AugmentedQuery<
+        ApiType,
+        () => Observable<Option<PalletStateTrieMigrationMigrationLimits>>,
+        []
       >;
     };
     statistics: {

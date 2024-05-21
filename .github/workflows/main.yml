@@ -75,6 +75,7 @@ jobs:
     name: Building and releasing project
     runs-on: ubuntu-latest
     needs: [lint, sonar]
+    if: github.event_name == 'push'
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3

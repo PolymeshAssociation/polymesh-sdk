@@ -513,10 +513,10 @@ export function isPrintableAscii(value: string): boolean {
 /**
  * @hidden
  *
- * Return whether the string is fully alphanumeric
+ * Return whether the string contains alphanumeric values or _ - . /
  */
-export function isAlphanumeric(value: string): boolean {
-  return /^[0-9a-zA-Z]*$/.test(value);
+export function isAllowedCharacters(value: string): boolean {
+  return /^[0-9a-zA-Z_\-./]*$/.test(value);
 }
 
 /**

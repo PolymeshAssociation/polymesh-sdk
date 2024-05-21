@@ -11,7 +11,7 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { flatten, isEqual, union, unionWith } from 'lodash';
 
-import { assertPortfolioExists, assertVenueExists } from '~/api/procedures/utils';
+import { assertPortfolioExists, assertValidCdd, assertVenueExists } from '~/api/procedures/utils';
 import {
   Context,
   DefaultPortfolio,
@@ -75,10 +75,6 @@ export type Params = AddInstructionsParams & {
  */
 export interface Storage {
   portfoliosToAffirm: (DefaultPortfolio | NumberedPortfolio)[][];
-  /**
-   * TODO: WithMediator variants are expected in v 6.2. This check is to ensure a smooth transition and can be removed
-   */
-  withMediatorsPresent: boolean;
 }
 
 /**
@@ -338,6 +334,8 @@ async function getTxArgsAndErrors(
           await Promise.all([
             assertPortfolioExists(fromId, context),
             assertPortfolioExists(toId, context),
+            assertValidCdd(fromId.did, context),
+            assertValidCdd(toId.did, context),
           ]);
 
           const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromId, context);
@@ -362,6 +360,8 @@ async function getTxArgsAndErrors(
           await Promise.all([
             assertPortfolioExists(fromId, context),
             assertPortfolioExists(toId, context),
+            assertValidCdd(fromId.did, context),
+            assertValidCdd(toId.did, context),
           ]);
 
           const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromId, context);
@@ -435,7 +435,7 @@ export async function prepareAddInstruction(
       },
     },
     context,
-    storage: { portfoliosToAffirm, withMediatorsPresent },
+    storage: { portfoliosToAffirm },
   } = this;
   const { instructions, venueId } = args;
 
@@ -535,32 +535,14 @@ export async function prepareAddInstruction(
   /**
    * After the upgrade is out, the "withMediator" variants are safe to use exclusively
    */
-  let addTx;
-  let addAndAffirmTx;
-  if (withMediatorsPresent) {
-    addTx = {
-      transaction: settlement.addInstructionWithMediators,
-      argsArray: addInstructionParams,
-    };
-    addAndAffirmTx = {
-      transaction: settlement.addAndAffirmWithMediators,
-      argsArray: addAndAffirmInstructionParams,
-    };
-  } else {
-    // remove the "mediators" if calling legacy extrinsics
-    addTx = {
-      transaction: settlement.addInstruction,
-      argsArray: addInstructionParams.map(params =>
-        params.slice(0, -1)
-      ) as typeof addInstructionParams,
-    };
-    addAndAffirmTx = {
-      transaction: settlement.addAndAffirmInstruction,
-      argsArray: addAndAffirmInstructionParams.map(params =>
-        params.slice(0, -1)
-      ) as typeof addAndAffirmInstructionParams,
-    };
-  }
+  const addTx = {
+    transaction: settlement.addInstructionWithMediators,
+    argsArray: addInstructionParams,
+  };
+  const addAndAffirmTx = {
+    transaction: settlement.addAndAffirmWithMediators,
+    argsArray: addAndAffirmInstructionParams,
+  };
 
   const transactions = assembleBatchTransactions([addTx, addAndAffirmTx] as const);
 
@@ -578,16 +560,12 @@ export async function getAuthorization(
   { venueId }: Params
 ): Promise<ProcedureAuthorization> {
   const {
-    storage: { portfoliosToAffirm, withMediatorsPresent },
+    storage: { portfoliosToAffirm },
   } = this;
 
-  const addAndAffirmTag = withMediatorsPresent
-    ? TxTags.settlement.AddAndAffirmWithMediators
-    : TxTags.settlement.AddAndAffirmInstructionWithMemo;
+  const addAndAffirmTag = TxTags.settlement.AddAndAffirmWithMediators;
 
-  const addInstructionTag = withMediatorsPresent
-    ? TxTags.settlement.AddInstructionWithMediators
-    : TxTags.settlement.AddInstructionWithMemo;
+  const addInstructionTag = TxTags.settlement.AddInstructionWithMediators;
 
   let transactions: SettlementTx[] = [];
   let portfolios: (DefaultPortfolio | NumberedPortfolio)[] = [];
@@ -616,14 +594,7 @@ export async function prepareStorage(
   this: Procedure<Params, Instruction[], Storage>,
   { instructions }: Params
 ): Promise<Storage> {
-  const {
-    context,
-    context: {
-      polymeshApi: {
-        tx: { settlement },
-      },
-    },
-  } = this;
+  const { context } = this;
 
   const identity = await context.getSigningIdentity();
 
@@ -651,10 +622,7 @@ export async function prepareStorage(
     return flatten(portfolios);
   });
 
-  const withMediatorsPresent =
-    !!settlement.addInstructionWithMediators && !!settlement.addAndAffirmWithMediators;
   return {
-    withMediatorsPresent,
     portfoliosToAffirm,
   };
 }
