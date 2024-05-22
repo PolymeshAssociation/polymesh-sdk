@@ -1,16 +1,12 @@
-import BigNumber from 'bignumber.js';
-
 import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, TxTags } from '~/types';
+import { ErrorCode, IssueTokensParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { MAX_BALANCE } from '~/utils/constants';
 import { bigNumberToBalance, portfolioToPortfolioKind, stringToTicker } from '~/utils/conversion';
 
-export interface IssueTokensParams {
-  amount: BigNumber;
+export type Params = IssueTokensParams & {
   ticker: string;
-  portfolioId?: BigNumber;
-}
+};
 
 export interface Storage {
   asset: FungibleAsset;
@@ -20,8 +16,8 @@ export interface Storage {
  * @hidden
  */
 export async function prepareIssueTokens(
-  this: Procedure<IssueTokensParams, FungibleAsset, Storage>,
-  args: IssueTokensParams
+  this: Procedure<Params, FungibleAsset, Storage>,
+  args: Params
 ): Promise<TransactionSpec<FungibleAsset, ExtrinsicParams<'asset', 'issue'>>> {
   const {
     context: {
@@ -70,7 +66,7 @@ export async function prepareIssueTokens(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<IssueTokensParams, FungibleAsset, Storage>
+  this: Procedure<Params, FungibleAsset, Storage>
 ): ProcedureAuthorization {
   const {
     storage: { asset },
@@ -88,8 +84,8 @@ export function getAuthorization(
  * @hidden
  */
 export function prepareStorage(
-  this: Procedure<IssueTokensParams, FungibleAsset, Storage>,
-  { ticker }: IssueTokensParams
+  this: Procedure<Params, FungibleAsset, Storage>,
+  { ticker }: Params
 ): Storage {
   const { context } = this;
 
@@ -101,5 +97,5 @@ export function prepareStorage(
 /**
  * @hidden
  */
-export const issueTokens = (): Procedure<IssueTokensParams, FungibleAsset, Storage> =>
+export const issueTokens = (): Procedure<Params, FungibleAsset, Storage> =>
   new Procedure(prepareIssueTokens, getAuthorization, prepareStorage);

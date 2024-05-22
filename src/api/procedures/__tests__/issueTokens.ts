@@ -5,7 +5,7 @@ import { when } from 'jest-when';
 
 import {
   getAuthorization,
-  IssueTokensParams,
+  Params,
   prepareIssueTokens,
   prepareStorage,
   Storage,
@@ -63,9 +63,7 @@ describe('issueTokens procedure', () => {
 
   describe('prepareStorage', () => {
     it('should return the Asset', () => {
-      const proc = procedureMockUtils.getInstance<IssueTokensParams, FungibleAsset, Storage>(
-        mockContext
-      );
+      const proc = procedureMockUtils.getInstance<Params, FungibleAsset, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
       const result = boundFunc({
@@ -95,12 +93,9 @@ describe('issueTokens procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<IssueTokensParams, FungibleAsset, Storage>(
-      mockContext,
-      {
-        asset: entityMockUtils.getFungibleAssetInstance(),
-      }
-    );
+    const proc = procedureMockUtils.getInstance<Params, FungibleAsset, Storage>(mockContext, {
+      asset: entityMockUtils.getFungibleAssetInstance(),
+    });
 
     let error;
 
@@ -141,12 +136,9 @@ describe('issueTokens procedure', () => {
       .mockReturnValue(rawAmount);
 
     const transaction = dsMockUtils.createTxMock('asset', 'issue');
-    const proc = procedureMockUtils.getInstance<IssueTokensParams, FungibleAsset, Storage>(
-      mockContext,
-      {
-        asset: entityMockUtils.getFungibleAssetInstance(),
-      }
-    );
+    const proc = procedureMockUtils.getInstance<Params, FungibleAsset, Storage>(mockContext, {
+      asset: entityMockUtils.getFungibleAssetInstance(),
+    });
 
     const result = await prepareIssueTokens.call(proc, args);
     expect(result).toEqual({
@@ -216,12 +208,9 @@ describe('issueTokens procedure', () => {
         .calledWith(amount, mockContext, isDivisible)
         .mockReturnValue(rawAmount);
       const transaction = dsMockUtils.createTxMock('asset', 'issue');
-      const proc = procedureMockUtils.getInstance<IssueTokensParams, FungibleAsset, Storage>(
-        mockContext,
-        {
-          asset: entityMockUtils.getFungibleAssetInstance(),
-        }
-      );
+      const proc = procedureMockUtils.getInstance<Params, FungibleAsset, Storage>(mockContext, {
+        asset: entityMockUtils.getFungibleAssetInstance(),
+      });
       const result = await prepareIssueTokens.call(proc, args);
 
       expect(result).toEqual({
@@ -254,12 +243,9 @@ describe('issueTokens procedure', () => {
         .calledWith(amount, mockContext, isDivisible)
         .mockReturnValue(rawAmount);
       const transaction = dsMockUtils.createTxMock('asset', 'issue');
-      const proc = procedureMockUtils.getInstance<IssueTokensParams, FungibleAsset, Storage>(
-        mockContext,
-        {
-          asset: entityMockUtils.getFungibleAssetInstance(),
-        }
-      );
+      const proc = procedureMockUtils.getInstance<Params, FungibleAsset, Storage>(mockContext, {
+        asset: entityMockUtils.getFungibleAssetInstance(),
+      });
       const result = await prepareIssueTokens.call(proc, args);
 
       expect(result).toEqual({
@@ -292,12 +278,9 @@ describe('issueTokens procedure', () => {
         .calledWith(amount, mockContext, isDivisible)
         .mockReturnValue(rawAmount);
       const transaction = dsMockUtils.createTxMock('asset', 'issue');
-      const proc = procedureMockUtils.getInstance<IssueTokensParams, FungibleAsset, Storage>(
-        mockContext,
-        {
-          asset: entityMockUtils.getFungibleAssetInstance(),
-        }
-      );
+      const proc = procedureMockUtils.getInstance<Params, FungibleAsset, Storage>(mockContext, {
+        asset: entityMockUtils.getFungibleAssetInstance(),
+      });
       const result = await prepareIssueTokens.call(proc, args);
 
       expect(result).toEqual({
@@ -310,12 +293,9 @@ describe('issueTokens procedure', () => {
 
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<IssueTokensParams, FungibleAsset, Storage>(
-        mockContext,
-        {
-          asset: entityMockUtils.getFungibleAssetInstance({ ticker }),
-        }
-      );
+      const proc = procedureMockUtils.getInstance<Params, FungibleAsset, Storage>(mockContext, {
+        asset: entityMockUtils.getFungibleAssetInstance({ ticker }),
+      });
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc()).toEqual({
