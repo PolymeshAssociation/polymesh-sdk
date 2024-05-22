@@ -6,8 +6,8 @@ import { when } from 'jest-when';
 import { Nft } from '~/api/entities/Asset/NonFungible/Nft';
 import {
   getAuthorization,
-  IssueNftParams,
   issueNftResolver,
+  Params,
   prepareIssueNft,
   prepareStorage,
   Storage,
@@ -66,7 +66,7 @@ describe('issueNft procedure', () => {
 
   describe('prepareStorage', () => {
     it('should return the NftCollection', () => {
-      const proc = procedureMockUtils.getInstance<IssueNftParams, Nft, Storage>(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, Nft, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
       const result = boundFunc({
@@ -127,7 +127,7 @@ describe('issueNft procedure', () => {
       mockContext.getSigningIdentity.mockResolvedValue(entityMockUtils.getIdentityInstance());
 
       const transaction = dsMockUtils.createTxMock('nft', 'issueNft');
-      const proc = procedureMockUtils.getInstance<IssueNftParams, Nft, Storage>(mockContext, {
+      const proc = procedureMockUtils.getInstance<Params, Nft, Storage>(mockContext, {
         collection: entityMockUtils.getNftCollectionInstance(),
       });
 
@@ -149,7 +149,7 @@ describe('issueNft procedure', () => {
       );
       nftInputToMetadataValueSpy.mockReturnValue([]);
       const transaction = dsMockUtils.createTxMock('nft', 'issueNft');
-      const proc = procedureMockUtils.getInstance<IssueNftParams, Nft, Storage>(mockContext, {
+      const proc = procedureMockUtils.getInstance<Params, Nft, Storage>(mockContext, {
         collection: entityMockUtils.getNftCollectionInstance(),
       });
       const result = await prepareIssueNft.call(proc, args);
@@ -172,7 +172,7 @@ describe('issueNft procedure', () => {
       );
       nftInputToMetadataValueSpy.mockReturnValue([]);
       const transaction = dsMockUtils.createTxMock('nft', 'issueNft');
-      const proc = procedureMockUtils.getInstance<IssueNftParams, Nft, Storage>(mockContext, {
+      const proc = procedureMockUtils.getInstance<Params, Nft, Storage>(mockContext, {
         collection: entityMockUtils.getNftCollectionInstance(),
       });
       const result = await prepareIssueNft.call(proc, args);
@@ -197,7 +197,7 @@ describe('issueNft procedure', () => {
       nftInputToMetadataValueSpy.mockReturnValue([]);
 
       const transaction = dsMockUtils.createTxMock('nft', 'issueNft');
-      const proc = procedureMockUtils.getInstance<IssueNftParams, Nft, Storage>(mockContext, {
+      const proc = procedureMockUtils.getInstance<Params, Nft, Storage>(mockContext, {
         collection: entityMockUtils.getNftCollectionInstance(),
       });
       const result = await prepareIssueNft.call(proc, args);
@@ -219,7 +219,7 @@ describe('issueNft procedure', () => {
 
       dsMockUtils.createTxMock('nft', 'issueNft');
 
-      const proc = procedureMockUtils.getInstance<IssueNftParams, Nft, Storage>(mockContext, {
+      const proc = procedureMockUtils.getInstance<Params, Nft, Storage>(mockContext, {
         collection: entityMockUtils.getNftCollectionInstance(),
       });
 
@@ -241,7 +241,7 @@ describe('issueNft procedure', () => {
 
       dsMockUtils.createTxMock('nft', 'issueNft');
 
-      const proc = procedureMockUtils.getInstance<IssueNftParams, Nft, Storage>(mockContext, {
+      const proc = procedureMockUtils.getInstance<Params, Nft, Storage>(mockContext, {
         collection: entityMockUtils.getNftCollectionInstance({
           collectionKeys: [
             { type: MetadataType.Global, id: new BigNumber(1), specs: {}, name: 'Example Global' },
@@ -270,7 +270,7 @@ describe('issueNft procedure', () => {
 
       dsMockUtils.createTxMock('nft', 'issueNft');
 
-      const proc = procedureMockUtils.getInstance<IssueNftParams, Nft, Storage>(mockContext, {
+      const proc = procedureMockUtils.getInstance<Params, Nft, Storage>(mockContext, {
         collection: entityMockUtils.getNftCollectionInstance({
           collectionKeys: [
             {
@@ -291,7 +291,7 @@ describe('issueNft procedure', () => {
 
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<IssueNftParams, Nft, Storage>(mockContext, {
+      const proc = procedureMockUtils.getInstance<Params, Nft, Storage>(mockContext, {
         collection: entityMockUtils.getNftCollectionInstance({ ticker }),
       });
       const boundFunc = getAuthorization.bind(proc);

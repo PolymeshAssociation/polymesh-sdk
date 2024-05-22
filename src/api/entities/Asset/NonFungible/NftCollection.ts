@@ -5,9 +5,9 @@ import BigNumber from 'bignumber.js';
 import { BaseAsset } from '~/api/entities/Asset/Base';
 import { NonFungibleSettlements } from '~/api/entities/Asset/Base/Settlements';
 import { AssetHolders } from '~/api/entities/Asset/NonFungible/AssetHolders';
-import { issueNft } from '~/api/procedures/issueNft';
 import {
   Context,
+  issueNft,
   Nft,
   nftControllerTransfer,
   PolymeshError,

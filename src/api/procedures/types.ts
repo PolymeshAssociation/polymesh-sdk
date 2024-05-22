@@ -1035,7 +1035,10 @@ export type NftMetadataInput = {
 
 export type IssueNftParams = {
   metadata: NftMetadataInput[];
-  portfolio?: PortfolioLike;
+  /**
+   * portfolio to which the NFTCollection will be issued (optional, default is the default portfolio)
+   */
+  portfolioId?: BigNumber;
 };
 
 export interface ModifyPrimaryIssuanceAgentParams {
