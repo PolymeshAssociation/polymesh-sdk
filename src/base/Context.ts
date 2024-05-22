@@ -686,6 +686,7 @@ export class Context {
       ModuleName.ComplianceManager,
       ModuleName.CorporateAction,
       ModuleName.ExternalAgents,
+      ModuleName.Identity,
       ModuleName.Portfolio,
       ModuleName.Settlement,
       ModuleName.Statistics,
