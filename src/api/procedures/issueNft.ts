@@ -1,9 +1,8 @@
 import { ISubmittableResult } from '@polkadot/types/types';
-import BigNumber from 'bignumber.js';
 
 import { Nft } from '~/api/entities/Asset/NonFungible/Nft';
 import { Context, NftCollection, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, NftMetadataInput, TxTags } from '~/types';
+import { ErrorCode, IssueNftParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   meshNftToNftId,
@@ -13,11 +12,9 @@ import {
 } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
 
-export interface IssueNftParams {
+export type Params = IssueNftParams & {
   ticker: string;
-  portfolioId?: BigNumber;
-  metadata: NftMetadataInput[];
-}
+};
 
 export interface Storage {
   collection: NftCollection;
@@ -40,8 +37,8 @@ export const issueNftResolver =
  * @hidden
  */
 export async function prepareIssueNft(
-  this: Procedure<IssueNftParams, Nft, Storage>,
-  args: IssueNftParams
+  this: Procedure<Params, Nft, Storage>,
+  args: Params
 ): Promise<TransactionSpec<Nft, ExtrinsicParams<'nft', 'issueNft'>>> {
   const {
     context: {
@@ -99,9 +96,7 @@ export async function prepareIssueNft(
 /**
  * @hidden
  */
-export function getAuthorization(
-  this: Procedure<IssueNftParams, Nft, Storage>
-): ProcedureAuthorization {
+export function getAuthorization(this: Procedure<Params, Nft, Storage>): ProcedureAuthorization {
   const {
     storage: { collection },
   } = this;
@@ -117,10 +112,7 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export function prepareStorage(
-  this: Procedure<IssueNftParams, Nft, Storage>,
-  { ticker }: IssueNftParams
-): Storage {
+export function prepareStorage(this: Procedure<Params, Nft, Storage>, { ticker }: Params): Storage {
   const { context } = this;
 
   return {
@@ -131,5 +123,5 @@ export function prepareStorage(
 /**
  * @hidden
  */
-export const issueNft = (): Procedure<IssueNftParams, Nft, Storage> =>
+export const issueNft = (): Procedure<Params, Nft, Storage> =>
   new Procedure(prepareIssueNft, getAuthorization, prepareStorage);

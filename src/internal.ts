@@ -35,6 +35,7 @@ export { createVenue } from '~/api/procedures/createVenue';
 export { inviteAccount } from '~/api/procedures/inviteAccount';
 export { subsidizeAccount } from '~/api/procedures/subsidizeAccount';
 export { issueTokens, IssueTokensParams } from '~/api/procedures/issueTokens';
+export { issueNft } from '~/api/procedures/issueNft';
 export { modifyClaims } from '~/api/procedures/modifyClaims';
 export { modifyInstructionAffirmation } from '~/api/procedures/modifyInstructionAffirmation';
 export { modifyAsset } from '~/api/procedures/modifyAsset';

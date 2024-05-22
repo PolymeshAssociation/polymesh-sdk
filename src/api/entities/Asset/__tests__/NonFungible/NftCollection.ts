@@ -489,6 +489,7 @@ describe('NftCollection class', () => {
 
       const args = {
         metadata: [],
+        portfolioId: new BigNumber(1),
       };
 
       const expectedTransaction =
