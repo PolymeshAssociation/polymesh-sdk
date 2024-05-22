@@ -105,6 +105,7 @@ describe('Identity class', () => {
   let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let tickerToStringSpy: jest.SpyInstance<string, [PolymeshPrimitivesTicker]>;
   let u64ToBigNumberSpy: jest.SpyInstance<BigNumber, [u64]>;
+  let getAccountSpy: jest.SpyInstance<Promise<Account>, [{ address: string }, Context]>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -500,6 +501,7 @@ describe('Identity class', () => {
     beforeAll(() => {
       accountIdToStringSpy = jest.spyOn(utilsConversionModule, 'accountIdToString');
       accountIdToStringSpy.mockReturnValue(accountId);
+      getAccountSpy = jest.spyOn(utilsInternalModule, 'getAccount');
     });
 
     beforeEach(() => {
@@ -507,6 +509,10 @@ describe('Identity class', () => {
       rawDidRecord = dsMockUtils.createMockIdentityDidRecord({
         primaryKey: dsMockUtils.createMockOption(dsMockUtils.createMockAccountId(accountId)),
       });
+      when(getAccountSpy)
+        .calledWith({ address: accountId }, context)
+        // @ts-expect-error "Account not defined"
+        .mockResolvedValue({ address: accountId });
 
       const account = expect.objectContaining({ address: accountId });
 
@@ -1118,6 +1124,7 @@ describe('Identity class', () => {
       [PolymeshPrimitivesSecondaryKeyPermissions, Context]
     >;
     let getSecondaryAccountPermissionsSpy: jest.SpyInstance;
+    let accountIdToStringSpy: jest.SpyInstance<string, [AccountId]>;
 
     beforeAll(() => {
       account = entityMockUtils.getAccountInstance({ address: accountId });
@@ -1140,6 +1147,9 @@ describe('Identity class', () => {
           },
         },
       ];
+      accountIdToStringSpy = jest.spyOn(utilsConversionModule, 'accountIdToString');
+      accountIdToStringSpy.mockReturnValue(accountId);
+      getAccountSpy = jest.spyOn(utilsInternalModule, 'getAccount');
     });
 
     afterAll(() => {
@@ -1164,6 +1174,7 @@ describe('Identity class', () => {
       dsMockUtils.createQueryMock('identity', 'didKeys', {
         entries: [[rawDidRecord.args, true]],
       });
+      when(getAccountSpy).calledWith({ address: accountId }, context).mockResolvedValue(account);
 
       meshPermissionsToPermissionsSpy.mockReturnValue({
         assets: null,

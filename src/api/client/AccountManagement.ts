@@ -28,8 +28,7 @@ import {
   SubsidizeAccountParams,
   UnsubCallback,
 } from '~/types';
-import { stringToAccountId } from '~/utils/conversion';
-import { asAccount, assertAddressValid, createProcedureMethod } from '~/utils/internal';
+import { asAccount, assertAddressValid, createProcedureMethod, getAccount } from '~/utils/internal';
 
 /**
  * Handles functionality related to Account Management
@@ -230,22 +229,7 @@ export class AccountManagement {
    * Return an Account instance from an address. If the Account has multiSig signers, the returned value will be a {@link api/entities/Account/MultiSig!MultiSig} instance
    */
   public async getAccount(args: { address: string }): Promise<Account | MultiSig> {
-    const {
-      context,
-      context: {
-        polymeshApi: {
-          query: { multiSig },
-        },
-      },
-    } = this;
-    const { address } = args;
-    const rawAddress = stringToAccountId(address, context);
-    const rawSigners = await multiSig.multiSigSigners.entries(rawAddress);
-    if (rawSigners.length > 0) {
-      return new MultiSig(args, context);
-    }
-
-    return new Account(args, context);
+    return getAccount(args, this.context);
   }
 
   /**

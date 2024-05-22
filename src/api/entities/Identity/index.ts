@@ -8,7 +8,6 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, differenceWith, flatten, intersectionWith, uniqBy } from 'lodash';
 
-import { AccountManagement } from '~/api/client/AccountManagement';
 import { unlinkChildIdentity } from '~/api/procedures/unlinkChildIdentity';
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
@@ -90,6 +89,7 @@ import {
   asTicker,
   calculateNextKey,
   createProcedureMethod,
+  getAccount,
   getSecondaryAccountPermissions,
   requestPaginated,
 } from '~/utils/internal';
@@ -330,11 +330,12 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     ): Promise<PermissionedAccount> => {
       const { primaryKey } = record.unwrap();
 
-      const accountManagement = new AccountManagement(context);
-
-      const account = await accountManagement.getAccount({
-        address: accountIdToString(primaryKey.unwrap()),
-      });
+      const account = await getAccount(
+        {
+          address: accountIdToString(primaryKey.unwrap()),
+        },
+        this.context
+      );
 
       return {
         account,
@@ -818,8 +819,17 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       key: StorageKey<[PolymeshPrimitivesIdentityId, AccountId32]>
     ): Promise<Account | MultiSig> => {
       const [, value] = key.args;
-      const address = accountIdToString(value);
-      return new Account({ address }, context);
+      console.log(key);
+      console.log(value.toString());
+
+      const account = await getAccount(
+        {
+          address: accountIdToString(value),
+        },
+        this.context
+      );
+
+      return account;
     };
 
     const { entries: keys, lastKey: next } = await requestPaginated(identity.didKeys, {

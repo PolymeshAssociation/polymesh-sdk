@@ -1810,7 +1810,7 @@ export function assertStatIsSet(
  * @param args.identity optional. If passed, Accounts that are not part of the given Identity will be filtered out
  */
 export async function getSecondaryAccountPermissions(
-  args: { accounts: (Account | MultiSig)[]; identity?: Identity },
+  args: { accounts: Account[]; identity?: Identity },
   context: Context,
   callback: SubCallback<PermissionedAccount[]>
 ): Promise<UnsubCallback>;
@@ -2075,4 +2075,27 @@ export async function assertIdentityExists(identity: Identity): Promise<void> {
       data: { did: identity.did },
     });
   }
+}
+
+/**
+ * @hidden
+ */
+export async function getAccount(
+  args: { address: string },
+  context: Context
+): Promise<Account | MultiSig> {
+  const {
+    polymeshApi: {
+      query: { multiSig },
+    },
+  } = context;
+  const { address } = args;
+
+  const rawAddress = stringToAccountId(address, context);
+  const rawSigners = await multiSig.multiSigSigners.entries(rawAddress);
+  if (rawSigners.length > 0) {
+    return new MultiSig(args, context);
+  }
+
+  return new Account(args, context);
 }

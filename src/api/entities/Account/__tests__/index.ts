@@ -464,6 +464,12 @@ describe('Account class', () => {
   });
 
   describe('method: isFrozen', () => {
+    beforeAll(() => {
+      dsMockUtils.createQueryMock('multiSig', 'multiSigSigners', {
+        returnValue: [],
+      });
+    });
+
     it('should return if the Account is frozen or not', async () => {
       const didRecordsMock = dsMockUtils.createQueryMock('identity', 'didRecords');
 
