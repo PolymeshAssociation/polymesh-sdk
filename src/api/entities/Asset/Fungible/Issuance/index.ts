@@ -1,7 +1,5 @@
-import BigNumber from 'bignumber.js';
-
 import { Context, FungibleAsset, issueTokens, Namespace } from '~/internal';
-import { ProcedureMethod } from '~/types';
+import { IssueTokensParams, ProcedureMethod } from '~/types';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**
@@ -27,5 +25,5 @@ export class Issuance extends Namespace<FungibleAsset> {
    *
    * @param args.amount - amount of Asset tokens to be issued
    */
-  public issue: ProcedureMethod<{ amount: BigNumber }, FungibleAsset>;
+  public issue: ProcedureMethod<IssueTokensParams, FungibleAsset>;
 }

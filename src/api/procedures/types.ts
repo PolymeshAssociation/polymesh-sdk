@@ -644,6 +644,14 @@ export interface CreateAssetParams {
   initialStatistics?: InputStatType[];
 }
 
+export interface IssueTokensParams {
+  amount: BigNumber;
+  /**
+   * portfolio to which the Asset tokens will be issued (optional, default is the default portfolio)
+   */
+  portfolioId?: BigNumber;
+}
+
 export interface CreateAssetWithTickerParams extends CreateAssetParams {
   ticker: string;
 }
