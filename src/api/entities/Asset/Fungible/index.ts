@@ -104,8 +104,6 @@ export class FungibleAsset extends BaseAsset {
 
   /**
    * Redeem (burn) an amount of this Asset's tokens
-   *
-   * @note tokens are removed from the caller's Default Portfolio
    */
   public redeem: ProcedureMethod<RedeemTokensParams, void>;
 

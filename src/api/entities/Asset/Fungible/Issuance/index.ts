@@ -22,8 +22,6 @@ export class Issuance extends Namespace<FungibleAsset> {
 
   /**
    * Issue a certain amount of Asset tokens to the caller's default portfolio
-   *
-   * @param args.amount - amount of Asset tokens to be issued
    */
   public issue: ProcedureMethod<IssueTokensParams, FungibleAsset>;
 }

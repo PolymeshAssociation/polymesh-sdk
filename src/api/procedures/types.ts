@@ -645,6 +645,9 @@ export interface CreateAssetParams {
 }
 
 export interface IssueTokensParams {
+  /**
+   * amount of Asset tokens to be issued
+   */
   amount: BigNumber;
   /**
    * portfolio to which the Asset tokens will be issued (optional, default is the default portfolio)
@@ -1053,6 +1056,9 @@ export interface ModifyPrimaryIssuanceAgentParams {
 }
 
 export interface RedeemTokensParams {
+  /**
+   * amount of Asset tokens to be redeemed
+   */
   amount: BigNumber;
   /**
    * portfolio (or portfolio ID) from which Assets will be redeemed (optional, defaults to the default Portfolio)
