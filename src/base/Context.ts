@@ -683,6 +683,7 @@ export class Context {
 
     return [
       ModuleName.Asset,
+      ModuleName.Balances,
       ModuleName.ComplianceManager,
       ModuleName.CorporateAction,
       ModuleName.ExternalAgents,
