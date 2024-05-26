@@ -819,8 +819,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       key: StorageKey<[PolymeshPrimitivesIdentityId, AccountId32]>
     ): Promise<Account | MultiSig> => {
       const [, value] = key.args;
-      console.log(key);
-      console.log(value.toString());
 
       const account = await getAccount(
         {
