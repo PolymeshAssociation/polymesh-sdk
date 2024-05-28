@@ -76,9 +76,11 @@ export function latestBlockQuery(): QueryOptions {
  */
 export function heartbeatQuery(): QueryOptions {
   const query = gql`
-    query {
-      block(id: "1") {
-        id
+    query heartbeat {
+      blocks(filter: { blockId: { equalTo: 1 } }) {
+        nodes {
+          blockId
+        }
       }
     }
   `;
@@ -857,12 +859,14 @@ export function tickerExternalAgentActionsQuery(
  * Get distribution details for a CAId
  */
 export function distributionQuery(
-  variables: QueryArgs<Distribution, 'id'>
-): QueryOptions<QueryArgs<Distribution, 'id'>> {
+  variables: QueryArgs<Distribution, 'assetId' | 'localId'>
+): QueryOptions<QueryArgs<Distribution, 'assetId' | 'localId'>> {
   const query = gql`
-    query DistributionQuery($id: String!) {
-      distribution(id: $id) {
-        taxes
+    query DistributionQuery($assetId: String!, $localId: Int!) {
+      distributions(filter: { assetId: { equalTo: $assetId }, localId: { equalTo: $localId } }) {
+        nodes {
+          taxes
+        }
       }
     }
   `;

@@ -357,7 +357,8 @@ describe('tickerExternalAgentActionsQuery', () => {
 describe('distributionQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
     const variables = {
-      id: '123',
+      assetId: 'TICKER',
+      localId: 1,
     };
 
     const result = distributionQuery(variables);

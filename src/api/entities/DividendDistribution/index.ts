@@ -449,9 +449,10 @@ export class DividendDistribution extends CorporateActionBase {
       context,
     } = this;
 
-    const taxPromise = context.queryMiddleware<Ensured<Query, 'distribution'>>(
+    const taxPromise = context.queryMiddleware<Ensured<Query, 'distributions'>>(
       distributionQuery({
-        id: `${ticker}/${id.toString()}`,
+        assetId: ticker,
+        localId: id.toNumber(),
       })
     );
 
@@ -459,7 +460,7 @@ export class DividendDistribution extends CorporateActionBase {
       exists,
       {
         data: {
-          distribution: { taxes },
+          distributions: { nodes },
         },
       },
     ] = await Promise.all([this.exists(), taxPromise]);
@@ -471,7 +472,7 @@ export class DividendDistribution extends CorporateActionBase {
       });
     }
 
-    return new BigNumber(taxes).shiftedBy(-6);
+    return new BigNumber(nodes[0].taxes).shiftedBy(-6);
   }
 
   /**

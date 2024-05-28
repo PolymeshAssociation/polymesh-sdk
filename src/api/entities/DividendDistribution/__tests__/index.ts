@@ -281,11 +281,16 @@ describe('DividendDistribution class', () => {
 
       dsMockUtils.createApolloQueryMock(
         distributionQuery({
-          id: `${ticker}/${id.toString()}`,
+          assetId: ticker,
+          localId: id.toNumber(),
         }),
         {
-          distribution: {
-            taxes: fakeTax.toNumber(),
+          distributions: {
+            nodes: [
+              {
+                taxes: fakeTax.toNumber(),
+              },
+            ],
           },
         }
       );
@@ -302,11 +307,16 @@ describe('DividendDistribution class', () => {
 
       dsMockUtils.createApolloQueryMock(
         distributionQuery({
-          id: `${ticker}/${id.toString()}`,
+          assetId: ticker,
+          localId: id.toNumber(),
         }),
         {
-          distribution: {
-            taxes: 0,
+          distributions: {
+            nodes: [
+              {
+                taxes: 0,
+              },
+            ],
           },
         }
       );
