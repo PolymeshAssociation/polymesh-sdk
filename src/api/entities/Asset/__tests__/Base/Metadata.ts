@@ -223,13 +223,22 @@ describe('Metadata class', () => {
       jest.restoreAllMocks();
     });
 
-    it('should return the MetadataEntry for requested id and type', async () => {
-      dsMockUtils.createQueryMock('asset', 'assetMetadataNextLocalKey', {
-        returnValue: rawId,
+    it('should return the next local Metadata ID', async () => {
+      dsMockUtils.createQueryMock('asset', 'currentAssetMetadataLocalKey', {
+        returnValue: dsMockUtils.createMockOption(rawId),
       });
 
       const result = await metadata.getNextLocalId();
       expect(result).toEqual(new BigNumber(2));
+    });
+
+    it('should return the next local Metadata ID as 1 for assets with no existing local metadata', async () => {
+      dsMockUtils.createQueryMock('asset', 'currentAssetMetadataLocalKey', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      const result = await metadata.getNextLocalId();
+      expect(result).toEqual(new BigNumber(1));
     });
   });
 
