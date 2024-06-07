@@ -13,7 +13,7 @@ jobs:
 
       - name: Import allowed SSH keys
         env:
-          ALLOWED_SIGNERS: ${{ secrets.ALLOWED_SIGNERS }}
+          ALLOWED_SIGNERS: ${{ secrets.MIDDLEWARE_ALLOWED_SIGNERS }}
         run: |
           mkdir -p ~/.ssh
           echo $ALLOWED_SIGNERS > ~/.ssh/allowed_signers
