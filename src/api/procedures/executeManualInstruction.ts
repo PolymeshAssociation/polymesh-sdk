@@ -3,18 +3,24 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
 import { assertInstructionValidForManualExecution } from '~/api/procedures/utils';
-import { Instruction, PolymeshError, Procedure } from '~/internal';
-import { ExecuteInstructionInfo } from '~/polkadot/polymesh';
 import {
   DefaultPortfolio,
+  Instruction,
+  NumberedPortfolio,
+  PolymeshError,
+  Procedure,
+} from '~/internal';
+import { ExecuteInstructionInfo } from '~/polkadot/polymesh';
+import {
   ErrorCode,
   ExecuteManualInstructionParams,
   InstructionDetails,
   Leg,
-  NumberedPortfolio,
   TxTags,
 } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
+import { tuple } from '~/types/utils';
+import { isOffChainLeg } from '~/utils';
 import {
   bigNumberToU64,
   portfolioIdToMeshPortfolioId,
@@ -24,6 +30,7 @@ import {
 
 export interface Storage {
   portfolios: (DefaultPortfolio | NumberedPortfolio)[];
+  offChainParties: Set<string>;
   instructionDetails: InstructionDetails;
   signerDid: string;
 }
@@ -53,7 +60,7 @@ export async function prepareExecuteManualInstruction(
       },
     },
     context,
-    storage: { portfolios, instructionDetails, signerDid },
+    storage: { portfolios, instructionDetails, signerDid, offChainParties },
   } = this;
 
   const { id, skipAffirmationCheck } = args;
@@ -67,7 +74,7 @@ export async function prepareExecuteManualInstruction(
       owner: { did: venueOwner },
     } = await instructionDetails.venue.details();
 
-    if (venueOwner !== signerDid) {
+    if (venueOwner !== signerDid && !offChainParties.has(signerDid)) {
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'The signing identity is not involved in this Instruction',
@@ -146,33 +153,46 @@ export async function prepareStorage(
     instruction.details(),
   ]);
 
-  const portfolios = await P.reduce<Leg, (DefaultPortfolio | NumberedPortfolio)[]>(
+  const [portfolios, offChainParties] = await P.reduce<
+    Leg,
+    [(DefaultPortfolio | NumberedPortfolio)[], Set<string>]
+  >(
     legs,
-    async (custodiedPortfolios, { from, to }) => {
-      const [fromIsCustodied, toIsCustodied] = await Promise.all([
-        from.isCustodiedBy({ identity: did }),
-        to.isCustodiedBy({ identity: did }),
-      ]);
+    async (data, leg) => {
+      const [custodiedPortfolios, offChainDids] = data;
 
-      const result = [...custodiedPortfolios];
+      if (isOffChainLeg(leg)) {
+        const { from, to } = leg;
+        offChainDids.add(from.did);
+        offChainDids.add(to.did);
+      } else {
+        const { from, to } = leg;
+        const [fromIsCustodied, toIsCustodied] = await Promise.all([
+          from.isCustodiedBy({ identity: did }),
+          to.isCustodiedBy({ identity: did }),
+        ]);
 
-      if (fromIsCustodied) {
-        result.push(from);
+        const result = [...custodiedPortfolios];
+
+        if (fromIsCustodied) {
+          result.push(from);
+        }
+
+        if (toIsCustodied) {
+          result.push(to);
+        }
       }
 
-      if (toIsCustodied) {
-        result.push(to);
-      }
-
-      return result;
+      return tuple(custodiedPortfolios, offChainDids);
     },
-    []
+    [[], new Set<string>()]
   );
 
   return {
     portfolios,
     instructionDetails: details,
     signerDid: did,
+    offChainParties,
   };
 }
 

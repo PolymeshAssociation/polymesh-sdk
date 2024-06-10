@@ -1,7 +1,15 @@
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
-import { addInstruction, Context, Entity, Identity, Instruction, modifyVenue } from '~/internal';
+import {
+  Account,
+  addInstruction,
+  Context,
+  Entity,
+  Identity,
+  Instruction,
+  modifyVenue,
+} from '~/internal';
 import { instructionsQuery } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
@@ -16,6 +24,7 @@ import {
 } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
+  accountIdToString,
   bigNumberToU64,
   bytesToString,
   identityIdToString,
@@ -241,6 +250,31 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
       next,
       count,
     };
+  }
+
+  /**
+   * Get all signers allowed by this Venue
+   */
+  public async getAllowedSigners(): Promise<Account[]> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+      id,
+      context,
+    } = this;
+
+    const signerEntries = await settlement.venueSigners.entries(bigNumberToU64(id, context));
+
+    return signerEntries.map(
+      ([
+        {
+          args: [, rawAccountId],
+        },
+      ]) => new Account({ address: accountIdToString(rawAccountId) }, context)
+    );
   }
 
   /**

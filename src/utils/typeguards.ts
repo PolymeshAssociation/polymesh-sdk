@@ -47,6 +47,7 @@ import {
   KycClaim,
   MultiClaimCondition,
   NftLeg,
+  OffChainLeg,
   PortfolioCustodianRole,
   ProposalStatus,
   Role,
@@ -413,4 +414,11 @@ export const isNftLegBuilder = async (
   return (iLeg: InstructionLeg): iLeg is NftLeg => {
     return asset instanceof NftCollection;
   };
+};
+
+/**
+ * Return whether a leg is for an off-chain asset
+ */
+export const isOffChainLeg = (leg: InstructionLeg): leg is OffChainLeg => {
+  return typeof leg.asset === 'string' && 'offChainAmount' in leg;
 };

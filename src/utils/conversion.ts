@@ -59,6 +59,8 @@ import {
   PolymeshPrimitivesSettlementInstructionStatus,
   PolymeshPrimitivesSettlementLeg,
   PolymeshPrimitivesSettlementMediatorAffirmationStatus,
+  PolymeshPrimitivesSettlementReceiptDetails,
+  PolymeshPrimitivesSettlementReceiptMetadata,
   PolymeshPrimitivesSettlementSettlementType,
   PolymeshPrimitivesSettlementVenueType,
   PolymeshPrimitivesStatisticsStat2ndKey,
@@ -69,6 +71,7 @@ import {
   PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceTransferCondition,
+  SpRuntimeMultiSignature,
 } from '@polkadot/types/lookup';
 import { ITuple } from '@polkadot/types/types';
 import { BTreeSet } from '@polkadot/types-codec';
@@ -194,6 +197,8 @@ import {
   MultiClaimCondition,
   NftMetadataInput,
   NonFungiblePortfolioMovement,
+  OffChainAffirmationReceiptDetails,
+  OffChainSignatureType,
   OfferingBalanceStatus,
   OfferingDetails,
   OfferingSaleStatus,
@@ -256,9 +261,11 @@ import {
   MAX_DECIMALS,
   MAX_MEMO_LENGTH,
   MAX_MODULE_LENGTH,
+  MAX_OFF_CHAIN_METADATA_LENGTH,
   MAX_TICKER_LENGTH,
 } from '~/utils/constants';
 import {
+  asAccount,
   asDid,
   asNftId,
   assertAddressValid,
@@ -4406,6 +4413,21 @@ export function legToNonFungibleLeg(
 /**
  * @hidden
  */
+export function legToOffChainLeg(
+  leg: {
+    senderIdentity: PolymeshPrimitivesIdentityId;
+    receiverIdentity: PolymeshPrimitivesIdentityId;
+    ticker: PolymeshPrimitivesTicker;
+    amount: Balance;
+  },
+  context: Context
+): PolymeshPrimitivesSettlementLeg {
+  return context.createType('PolymeshPrimitivesSettlementLeg', { OffChain: leg });
+}
+
+/**
+ * @hidden
+ */
 export function middlewareAgentGroupDataToPermissionGroup(
   agentGroupData: Record<string, Record<string, null | number>>,
   context: Context
@@ -4878,4 +4900,69 @@ export function createRawExtrinsicStatus(
   context: Context
 ): ExtrinsicStatus {
   return context.createType('ExtrinsicStatus', { [status]: value });
+}
+
+/**
+ * @hidden
+ */
+export function signatureToMeshRuntimeMultiSignature(
+  type: OffChainSignatureType,
+  value: string,
+  context: Context
+): SpRuntimeMultiSignature {
+  let data;
+  if (type === OffChainSignatureType.Ecdsa) {
+    data = {
+      Ecdsa: context.createType('SpCoreEcdsaSignature', value),
+    };
+  } else if (type === OffChainSignatureType.Ed25519) {
+    data = {
+      Ed25519: context.createType('SpCoreEd25519Signature', value),
+    };
+  } else {
+    // assume sr 25519
+    data = {
+      Sr25519: context.createType('SpCoreSr25519Signature', value),
+    };
+  }
+
+  return context.createType('SpRuntimeMultiSignature', data);
+}
+
+/**
+ * @hidden
+ */
+export function offChainMetadataToMeshReceiptMetadata(
+  metadata: string,
+  context: Context
+): PolymeshPrimitivesSettlementReceiptMetadata {
+  return context.createType(
+    'PolymeshPrimitivesSettlementReceiptMetadata',
+    padString(metadata, MAX_OFF_CHAIN_METADATA_LENGTH)
+  );
+}
+
+/**
+ * @hidden
+ */
+export function receiptDetailsToMeshReceiptDetails(
+  receiptDetails: OffChainAffirmationReceiptDetails[],
+  instructionId: BigNumber,
+  context: Context
+): Vec<PolymeshPrimitivesSettlementReceiptDetails> {
+  const rawInstructionId = bigNumberToU64(instructionId, context);
+  const rawReceiptDetails = receiptDetails.map(({ legId, uid, signer, signature, metadata }) => {
+    const { address: signerAddress } = asAccount(signer, context);
+
+    return context.createType('PolymeshPrimitivesSettlementReceiptDetails', {
+      uid: bigNumberToU64(uid, context),
+      instructionId: rawInstructionId,
+      legId: bigNumberToU64(legId, context),
+      signer: stringToAccountId(signerAddress, context),
+      signature: signatureToMeshRuntimeMultiSignature(signature.type, signature.value, context),
+      metadata: optionize(offChainMetadataToMeshReceiptMetadata)(metadata, context),
+    });
+  });
+
+  return context.createType('Vec<PolymeshPrimitivesSettlementReceiptDetails>', rawReceiptDetails);
 }

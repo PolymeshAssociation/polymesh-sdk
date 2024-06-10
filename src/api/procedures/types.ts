@@ -858,7 +858,17 @@ export interface InstructionNftLeg {
   asset: string | NftCollection;
 }
 
-export type InstructionLeg = InstructionFungibleLeg | InstructionNftLeg;
+export interface InstructionOffChainLeg {
+  from: string | Identity;
+  to: string | Identity;
+  /**
+   * the ticker of the off chain asset
+   */
+  asset: string;
+  offChainAmount: BigNumber;
+}
+
+export type InstructionLeg = InstructionFungibleLeg | InstructionNftLeg | InstructionOffChainLeg;
 
 export type AddInstructionParams = {
   /**
@@ -927,13 +937,58 @@ export type RejectInstructionParams = {
   portfolio?: PortfolioLike;
 };
 
-export type AffirmOrWithdrawInstructionParams = {
+export type WithdrawInstructionParams = {
   /**
    * (optional) Portfolios that the signer controls and wants to affirm the instruction or withdraw affirmation
    *
    * @note if empty, all the legs containing any custodied Portfolios of the signer will be affirmed/affirmation will be withdrawn, based on the operation.
    */
   portfolios?: PortfolioLike[];
+};
+
+export enum OffChainSignatureType {
+  Ed25519 = 'Ed25519',
+  Sr25519 = 'Sr25519',
+  Ecdsa = 'Ecdsa',
+}
+
+export interface OffChainSignature {
+  type: OffChainSignatureType;
+  value: string;
+}
+
+export interface OffChainAffirmationReceiptDetails {
+  /**
+   * Unique receipt number set by the signer for their receipts
+   */
+  uid: BigNumber;
+  /**
+   * Index of the off chain leg within the instruction to be affirmed
+   */
+  legId: BigNumber;
+  /**
+   * Signer of this receipt
+   */
+  signer: string | Account;
+  /**
+   * Signature confirming the receipt details
+   */
+  signature: OffChainSignature;
+  /**
+   * (optional) Metadata value that can be used to attach messages to the receipt
+   */
+  metadata?: string;
+}
+
+export type AffirmInstructionParams = {
+  /**
+   * (optional) Portfolios that the signer controls and wants to affirm the instruction
+   *
+   * @note if empty, all the legs containing any custodied Portfolios of the signer will be affirmed
+   */
+  portfolios?: PortfolioLike[];
+
+  receipts?: OffChainAffirmationReceiptDetails[];
 };
 
 export type AffirmAsMediatorParams = {
@@ -943,10 +998,11 @@ export type AffirmAsMediatorParams = {
 export type ModifyInstructionAffirmationParams = InstructionIdParams &
   (
     | ({
-        operation:
-          | InstructionAffirmationOperation.Affirm
-          | InstructionAffirmationOperation.Withdraw;
-      } & AffirmOrWithdrawInstructionParams)
+        operation: InstructionAffirmationOperation.Affirm;
+      } & AffirmInstructionParams)
+    | ({
+        operation: InstructionAffirmationOperation.Withdraw;
+      } & WithdrawInstructionParams)
     | ({
         operation:
           | InstructionAffirmationOperation.Reject

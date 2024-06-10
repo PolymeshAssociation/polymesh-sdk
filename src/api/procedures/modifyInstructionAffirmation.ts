@@ -1,8 +1,10 @@
-import { Option, u64 } from '@polkadot/types';
+import { Option, u64, Vec } from '@polkadot/types';
 import {
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesSettlementAffirmationCount,
+  PolymeshPrimitivesSettlementAffirmationStatus,
   PolymeshPrimitivesSettlementAssetCount,
+  PolymeshPrimitivesSettlementReceiptDetails,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
@@ -12,6 +14,7 @@ import { Context, Instruction, PolymeshError, Procedure } from '~/internal';
 import { AffirmationCount, ExecuteInstructionInfo, Moment } from '~/polkadot/polymesh';
 import {
   AffirmationStatus,
+  AffirmInstructionParams,
   DefaultPortfolio,
   ErrorCode,
   Identity,
@@ -19,6 +22,7 @@ import {
   Leg,
   ModifyInstructionAffirmationParams,
   NumberedPortfolio,
+  OffChainAffirmationReceiptDetails,
   PortfolioId,
   PortfolioLike,
   TxTag,
@@ -31,34 +35,34 @@ import {
   TransactionSpec,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
+import { isOffChainLeg } from '~/utils';
 import {
   assetCountToRaw,
   bigNumberToU64,
+  boolToBoolean,
   dateToMoment,
   mediatorAffirmationStatusToStatus,
   meshAffirmationStatusToAffirmationStatus,
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolioId,
+  receiptDetailsToMeshReceiptDetails,
+  stringToAccountId,
   stringToIdentityId,
 } from '~/utils/conversion';
-import { optionize } from '~/utils/internal';
+import { asAccount, optionize } from '~/utils/internal';
 
 /**
  * @hidden
  */
-const getAssetCount = async (
-  rawId: u64,
-  context: Context
-): Promise<PolymeshPrimitivesSettlementAssetCount> => {
-  const {
-    polymeshApi: { call },
-  } = context;
-
+const getAssetCount = (
+  context: Context,
+  instructionInfo: ExecuteInstructionInfo
+): PolymeshPrimitivesSettlementAssetCount => {
   const {
     fungibleTokens: fungible,
     nonFungibleTokens: nonFungible,
     offChainAssets: offChain,
-  } = await call.settlementApi.getExecuteInstructionInfo<ExecuteInstructionInfo>(rawId);
+  } = instructionInfo;
 
   return assetCountToRaw({ fungible, nonFungible, offChain }, context);
 };
@@ -69,6 +73,9 @@ export interface Storage {
   senderLegAmount: BigNumber;
   totalLegAmount: BigNumber;
   signer: Identity;
+  offChainParties: Set<string>;
+  offChainLegIndices: number[];
+  instructionInfo: ExecuteInstructionInfo;
 }
 
 /**
@@ -102,6 +109,119 @@ const assertPortfoliosValid = (
   }
 };
 
+const assertReceipts = async (
+  receipts: OffChainAffirmationReceiptDetails[],
+  offChainIndices: number[],
+  instructionId: BigNumber,
+  context: Context
+): Promise<Vec<PolymeshPrimitivesSettlementReceiptDetails>> => {
+  const {
+    polymeshApi: {
+      query: { settlement },
+    },
+  } = context;
+
+  const instruction = new Instruction({ id: instructionId }, context);
+
+  const { venue } = await instruction.details();
+  const allowedSigners = await venue.getAllowedSigners();
+
+  const invalidReceipts: OffChainAffirmationReceiptDetails[] = [];
+  const invalidSignerReceipts: OffChainAffirmationReceiptDetails[] = [];
+  const uniqueLegs: number[] = [];
+  const uniqueUid: number[] = [];
+
+  const offchainAffirmationPromises: Promise<PolymeshPrimitivesSettlementAffirmationStatus>[] = [];
+
+  receipts.forEach(receipt => {
+    const { legId, uid, signer } = receipt;
+
+    if (
+      !offChainIndices.includes(legId.toNumber()) ||
+      uniqueLegs.includes(legId.toNumber()) ||
+      uniqueUid.includes(uid.toNumber())
+    ) {
+      invalidReceipts.push(receipt);
+    }
+
+    const { address: signerAddress } = asAccount(signer, context);
+
+    const isAllowedSigner = allowedSigners.some(({ address }) => signerAddress === address);
+
+    if (!isAllowedSigner) {
+      invalidSignerReceipts.push(receipt);
+    }
+
+    uniqueLegs.push(legId.toNumber());
+    uniqueUid.push(uid.toNumber());
+
+    offchainAffirmationPromises.push(
+      settlement.offChainAffirmations(
+        bigNumberToU64(instructionId, context),
+        bigNumberToU64(legId, context)
+      )
+    );
+  });
+
+  if (invalidReceipts.length) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message:
+        'Incorrect receipt details. Note, each leg in the receipt should be mapped to unique uid',
+      data: {
+        invalidReceipts: JSON.stringify(invalidReceipts),
+      },
+    });
+  }
+
+  if (invalidSignerReceipts.length) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Signers of some receipts are not allowed to sign the receipt',
+      data: {
+        invalidSignerReceipts,
+      },
+    });
+  }
+
+  const offChainAffirmationStatuses = await Promise.all(offchainAffirmationPromises);
+
+  const alreadyAffirmedLegs = [];
+  offChainAffirmationStatuses.forEach((status, index) => {
+    if (meshAffirmationStatusToAffirmationStatus(status) !== AffirmationStatus.Pending) {
+      alreadyAffirmedLegs.push(receipts[index].legId);
+    }
+  });
+
+  const receiptsUsedPromises = receipts.map(({ signer, uid }) => {
+    const { address } = asAccount(signer, context);
+    return settlement.receiptsUsed(
+      stringToAccountId(address, context),
+      bigNumberToU64(uid, context)
+    );
+  });
+
+  const receiptsUsed = await Promise.all(receiptsUsedPromises);
+
+  receiptsUsed.forEach((rawBool, index) => {
+    if (boolToBoolean(rawBool)) {
+      invalidReceipts.push(receipts[index]);
+    }
+  });
+
+  if (invalidReceipts.length) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Some of the receipts have already been used by the receipts signers',
+      data: {
+        invalidReceipts,
+      },
+    });
+  }
+
+  return receiptDetailsToMeshReceiptDetails(receipts, instructionId, context);
+};
+
 /**
  * @hidden
  */
@@ -110,6 +230,7 @@ export async function prepareModifyInstructionAffirmation(
   args: ModifyInstructionAffirmationParams
 ): Promise<
   | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'affirmInstructionWithCount'>>
+  | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'affirmWithReceiptsWithCount'>>
   | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'withdrawAffirmationWithCount'>>
   | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'rejectInstructionWithCount'>>
   | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'affirmInstructionAsMediator'>>
@@ -125,23 +246,35 @@ export async function prepareModifyInstructionAffirmation(
       },
     },
     context,
-    storage: { portfolios, portfolioParams, senderLegAmount, totalLegAmount, signer },
+    storage: {
+      portfolios,
+      portfolioParams,
+      senderLegAmount,
+      totalLegAmount,
+      signer,
+      instructionInfo,
+      offChainLegIndices,
+    },
   } = this;
 
-  const { operation, id } = args;
+  const { operation, id, ...rest } = args;
 
   const instruction = new Instruction({ id }, context);
 
   await Promise.all([assertInstructionValid(instruction, context)]);
 
-  assertPortfoliosValid(portfolioParams, portfolios, operation);
+  if (!('receipts' in args)) {
+    assertPortfoliosValid(portfolioParams, portfolios, operation);
+  }
 
   const rawInstructionId = bigNumberToU64(id, context);
+
   const rawPortfolioIds: PolymeshPrimitivesIdentityIdPortfolioId[] = portfolios.map(portfolio =>
     portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
   );
 
   const rawDid = stringToIdentityId(signer.did, context);
+
   const multiArgs = rawPortfolioIds.map(portfolioId => tuple(portfolioId, rawInstructionId));
 
   const [rawAffirmationStatuses, rawMediatorAffirmation] = await Promise.all([
@@ -168,8 +301,17 @@ export async function prepareModifyInstructionAffirmation(
       >
     | PolymeshTx<[u64, Option<Moment>]>
     | PolymeshTx<[u64]>
+    | PolymeshTx<
+        [
+          u64,
+          Vec<PolymeshPrimitivesSettlementReceiptDetails>,
+          Vec<PolymeshPrimitivesIdentityIdPortfolioId>,
+          Option<PolymeshPrimitivesSettlementAffirmationCount>
+        ]
+      >
     | null = null;
 
+  let rawReceiptDetails: Vec<PolymeshPrimitivesSettlementReceiptDetails> | null = null;
   switch (operation) {
     case InstructionAffirmationOperation.AffirmAsMediator: {
       if (mediatorStatus === AffirmationStatus.Unknown) {
@@ -224,7 +366,7 @@ export async function prepareModifyInstructionAffirmation(
         });
       }
 
-      const rawAssetCount = await getAssetCount(rawInstructionId, context);
+      const rawAssetCount = getAssetCount(context, instructionInfo);
 
       return {
         transaction: settlementTx.rejectInstructionAsMediator,
@@ -234,7 +376,7 @@ export async function prepareModifyInstructionAffirmation(
     }
 
     case InstructionAffirmationOperation.Reject: {
-      const rawAssetCount = await getAssetCount(rawInstructionId, context);
+      const rawAssetCount = getAssetCount(context, instructionInfo);
 
       return {
         transaction: settlementTx.rejectInstructionWithCount,
@@ -247,8 +389,13 @@ export async function prepareModifyInstructionAffirmation(
     case InstructionAffirmationOperation.Affirm: {
       excludeCriteria.push(AffirmationStatus.Affirmed);
       errorMessage = 'The Instruction is already affirmed';
-      transaction = settlementTx.affirmInstructionWithCount;
-
+      const { receipts } = rest as AffirmInstructionParams;
+      if (receipts?.length) {
+        transaction = settlementTx.affirmWithReceiptsWithCount;
+        rawReceiptDetails = await assertReceipts(receipts, offChainLegIndices, id, context);
+      } else {
+        transaction = settlementTx.affirmInstructionWithCount;
+      }
       break;
     }
 
@@ -259,13 +406,19 @@ export async function prepareModifyInstructionAffirmation(
 
       break;
     }
+
+    default:
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'Invalid operation',
+      });
   }
 
   const validPortfolioIds = rawPortfolioIds.filter(
     (_, index) => !excludeCriteria.includes(affirmationStatuses[index])
   );
 
-  if (!validPortfolioIds.length) {
+  if (!validPortfolioIds.length && !rawReceiptDetails) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
       message: errorMessage,
@@ -276,6 +429,15 @@ export async function prepareModifyInstructionAffirmation(
     rawInstructionId,
     rawPortfolioIds
   );
+
+  if (transaction === settlementTx.affirmWithReceiptsWithCount) {
+    return {
+      transaction,
+      resolver: instruction,
+      // feeMultiplier: senderLegAmount,
+      args: [rawInstructionId, rawReceiptDetails, validPortfolioIds, rawAffirmCount],
+    };
+  }
 
   return {
     transaction,
@@ -290,7 +452,7 @@ export async function prepareModifyInstructionAffirmation(
  */
 export async function getAuthorization(
   this: Procedure<ModifyInstructionAffirmationParams, Instruction, Storage>,
-  { operation }: ModifyInstructionAffirmationParams
+  args: ModifyInstructionAffirmationParams
 ): Promise<ProcedureAuthorization> {
   const {
     storage: { portfolios },
@@ -298,19 +460,25 @@ export async function getAuthorization(
 
   let transactions: TxTag[];
 
+  const { operation } = args;
   switch (operation) {
     case InstructionAffirmationOperation.Affirm: {
-      transactions = [TxTags.settlement.AffirmInstruction];
+      const { receipts } = args;
+      if (receipts?.length) {
+        transactions = [TxTags.settlement.AffirmWithReceiptsWithCount];
+      } else {
+        transactions = [TxTags.settlement.AffirmInstructionWithCount];
+      }
 
       break;
     }
     case InstructionAffirmationOperation.Withdraw: {
-      transactions = [TxTags.settlement.WithdrawAffirmation];
+      transactions = [TxTags.settlement.WithdrawAffirmationWithCount];
 
       break;
     }
     case InstructionAffirmationOperation.Reject: {
-      transactions = [TxTags.settlement.RejectInstruction];
+      transactions = [TxTags.settlement.RejectInstructionWithCount];
 
       break;
     }
@@ -450,20 +618,38 @@ export async function prepareStorage(
   const portfolioIdParams = portfolioParams.map(portfolioLikeToPortfolioId);
 
   const instruction = new Instruction({ id }, context);
-  const [{ data: legs }, signer] = await Promise.all([
+  const [{ data: legs }, signer, instructionInfo] = await Promise.all([
     instruction.getLegs(),
     context.getSigningIdentity(),
     polymeshApi.call.settlementApi.getExecuteInstructionInfo<ExecuteInstructionInfo>(rawId),
   ]);
 
-  const [portfolios, senderLegAmount] = await P.reduce<
+  const [portfolios, senderLegAmount, offChainParties, offChainLegIndices] = await P.reduce<
     Leg,
-    [(DefaultPortfolio | NumberedPortfolio)[], BigNumber]
+    [(DefaultPortfolio | NumberedPortfolio)[], BigNumber, Set<string>, number[]]
   >(
     legs,
-    async (result, { from, to }) =>
-      assemblePortfolios(result, from, to, signer.did, portfolioIdParams),
-    [[], new BigNumber(0)]
+    async (result, leg, index) => {
+      let [custodiedPortfolios, legAmount, offChainDids, offChainLegs] = result;
+      if (isOffChainLeg(leg)) {
+        const { from, to } = leg;
+        offChainDids.add(from.did);
+        offChainDids.add(to.did);
+
+        offChainLegs.push(index);
+      } else {
+        const { from, to } = leg;
+        [custodiedPortfolios, legAmount] = await assemblePortfolios(
+          tuple(custodiedPortfolios, legAmount),
+          from,
+          to,
+          signer.did,
+          portfolioIdParams
+        );
+      }
+      return tuple(custodiedPortfolios, legAmount, offChainDids, offChainLegs);
+    },
+    [[], new BigNumber(0), new Set<string>(), []]
   );
 
   return {
@@ -472,6 +658,9 @@ export async function prepareStorage(
     senderLegAmount,
     totalLegAmount: new BigNumber(legs.length),
     signer,
+    offChainParties,
+    offChainLegIndices,
+    instructionInfo,
   };
 }
 

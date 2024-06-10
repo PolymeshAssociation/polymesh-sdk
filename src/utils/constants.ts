@@ -10,6 +10,7 @@ export const MAX_DECIMALS = 6;
 export const MAX_TICKER_LENGTH = 12;
 export const MAX_MODULE_LENGTH = 32;
 export const MAX_MEMO_LENGTH = 32;
+export const MAX_OFF_CHAIN_METADATA_LENGTH = 32;
 /**
  * Maximum amount of required mediators. See MESH-2156 to see if this is queryable instead
  */

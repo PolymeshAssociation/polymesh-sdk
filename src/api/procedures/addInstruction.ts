@@ -13,6 +13,7 @@ import { flatten, isEqual, union, unionWith } from 'lodash';
 
 import { assertPortfolioExists, assertValidCdd, assertVenueExists } from '~/api/procedures/utils';
 import {
+  BaseAsset,
   Context,
   DefaultPortfolio,
   Instruction,
@@ -28,6 +29,7 @@ import {
   InstructionFungibleLeg,
   InstructionLeg,
   InstructionNftLeg,
+  InstructionOffChainLeg,
   InstructionType,
   RoleType,
   SettlementTx,
@@ -35,7 +37,7 @@ import {
   Venue,
 } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
-import { isFungibleLegBuilder, isNftLegBuilder } from '~/utils';
+import { isFungibleLegBuilder, isNftLegBuilder, isOffChainLeg } from '~/utils';
 import { MAX_LEGS_LENGTH } from '~/utils/constants';
 import {
   bigNumberToBalance,
@@ -45,16 +47,19 @@ import {
   identitiesToBtreeSet,
   legToFungibleLeg,
   legToNonFungibleLeg,
+  legToOffChainLeg,
   nftToMeshNft,
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
+  stringToIdentityId,
   stringToMemo,
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
   asBaseAsset,
+  asDid,
   asIdentity,
   assembleBatchTransactions,
   assertIdentityExists,
@@ -156,39 +161,49 @@ function getEndCondition(
 async function separateLegs(
   legs: InstructionLeg[],
   context: Context
-): Promise<{ fungibleLegs: InstructionFungibleLeg[]; nftLegs: InstructionNftLeg[] }> {
+): Promise<{
+  fungibleLegs: InstructionFungibleLeg[];
+  nftLegs: InstructionNftLeg[];
+  offChainLegs: InstructionOffChainLeg[];
+}> {
   const fungibleLegs: InstructionFungibleLeg[] = [];
   const nftLegs: InstructionNftLeg[] = [];
+  const offChainLegs: InstructionOffChainLeg[] = [];
 
   for (const leg of legs) {
     const ticker = asTicker(leg.asset);
-    const [isFungible, isNft] = await Promise.all([
-      isFungibleLegBuilder(leg, context),
-      isNftLegBuilder(leg, context),
-    ]);
 
-    if (isFungible(leg)) {
-      if (!('amount' in leg)) {
-        throw new PolymeshError({
-          code: ErrorCode.ValidationError,
-          message: 'The key "amount" should be present in a fungible leg',
-          data: { ticker },
-        });
+    if (isOffChainLeg(leg)) {
+      offChainLegs.push(leg);
+    } else {
+      const [isFungible, isNft] = await Promise.all([
+        isFungibleLegBuilder(leg, context),
+        isNftLegBuilder(leg, context),
+      ]);
+
+      if (isFungible(leg)) {
+        if (!('amount' in leg)) {
+          throw new PolymeshError({
+            code: ErrorCode.ValidationError,
+            message: 'The key "amount" should be present in a fungible leg',
+            data: { ticker },
+          });
+        }
+        fungibleLegs.push(leg);
+      } else if (isNft(leg)) {
+        if (!('nfts' in leg)) {
+          throw new PolymeshError({
+            code: ErrorCode.ValidationError,
+            message: 'The key "nfts" should be present in an NFT leg',
+            data: { ticker },
+          });
+        }
+        nftLegs.push(leg);
       }
-      fungibleLegs.push(leg);
-    } else if (isNft(leg)) {
-      if (!('nfts' in leg)) {
-        throw new PolymeshError({
-          code: ErrorCode.ValidationError,
-          message: 'The key "nfts" should be present in an NFT leg',
-          data: { ticker },
-        });
-      }
-      nftLegs.push(leg);
     }
   }
 
-  return { fungibleLegs, nftLegs };
+  return { fungibleLegs, nftLegs, offChainLegs };
 }
 
 /**
@@ -200,7 +215,13 @@ async function assertVenueFiltering(
   context: Context
 ): Promise<void> {
   const assets = instructions.flatMap(instruction => {
-    return instruction.legs.map(leg => asBaseAsset(leg.asset, context));
+    const result: BaseAsset[] = [];
+    instruction.legs.forEach(leg => {
+      if (typeof leg.asset !== 'string') {
+        result.push(asBaseAsset(leg.asset, context));
+      }
+    });
+    return result;
   });
 
   const venueFiltering = await Promise.all(assets.map(asset => asset.getVenueFilteringDetails()));
@@ -277,7 +298,7 @@ async function getTxArgsAndErrors(
       legLengthErrIndexes.push(i);
     }
 
-    const { fungibleLegs, nftLegs } = await separateLegs(legs, context);
+    const { fungibleLegs, nftLegs, offChainLegs } = await separateLegs(legs, context);
 
     const zeroAmountFungibleLegs = fungibleLegs.filter(leg => leg.amount.isZero());
     if (zeroAmountFungibleLegs.length) {
@@ -286,6 +307,11 @@ async function getTxArgsAndErrors(
 
     const zeroNftsNonFungible = nftLegs.filter(leg => leg.nfts.length === 0);
     if (zeroNftsNonFungible.length) {
+      legAmountErrIndexes.push(i);
+    }
+
+    const zeroAmountOffChainLegs = offChainLegs.filter(leg => leg.offChainAmount.isZero());
+    if (zeroAmountOffChainLegs.length) {
       legAmountErrIndexes.push(i);
     }
 
@@ -372,6 +398,25 @@ async function getTxArgsAndErrors(
               sender: rawFromPortfolio,
               receiver: rawToPortfolio,
               nfts: nftToMeshNft(asTicker(asset), nfts, context),
+            },
+            context
+          );
+
+          rawLegs.push(rawLeg);
+        }),
+        ...offChainLegs.map(async ({ from, to, offChainAmount, asset }) => {
+          const fromId = asDid(from);
+          const toId = asDid(to);
+
+          const rawFromIdentityId = stringToIdentityId(fromId, context);
+          const rawToIdentityId = stringToIdentityId(toId, context);
+
+          const rawLeg = legToOffChainLeg(
+            {
+              senderIdentity: rawFromIdentityId,
+              receiverIdentity: rawToIdentityId,
+              ticker: stringToTicker(asset, context),
+              amount: bigNumberToBalance(offChainAmount, context),
             },
             context
           );
@@ -599,24 +644,26 @@ export async function prepareStorage(
   const identity = await context.getSigningIdentity();
 
   const portfoliosToAffirm = await P.map(instructions, async ({ legs }) => {
-    const portfolios = await P.map(legs, async ({ from, to }) => {
-      const fromPortfolio = portfolioLikeToPortfolio(from, context);
-      const toPortfolio = portfolioLikeToPortfolio(to, context);
-
+    const portfolios = await P.map(legs, async leg => {
       const result = [];
-      const [fromCustodied, toCustodied] = await Promise.all([
-        fromPortfolio.isCustodiedBy({ identity }),
-        toPortfolio.isCustodiedBy({ identity }),
-      ]);
+      if (!('offChainAmount' in leg)) {
+        const { from, to } = leg;
+        const fromPortfolio = portfolioLikeToPortfolio(from, context);
+        const toPortfolio = portfolioLikeToPortfolio(to, context);
 
-      if (fromCustodied) {
-        result.push(fromPortfolio);
+        const [fromCustodied, toCustodied] = await Promise.all([
+          fromPortfolio.isCustodiedBy({ identity }),
+          toPortfolio.isCustodiedBy({ identity }),
+        ]);
+
+        if (fromCustodied) {
+          result.push(fromPortfolio);
+        }
+
+        if (toCustodied) {
+          result.push(toPortfolio);
+        }
       }
-
-      if (toCustodied) {
-        result.push(toPortfolio);
-      }
-
       return result;
     });
     return flatten(portfolios);

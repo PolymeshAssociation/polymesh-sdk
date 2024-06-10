@@ -21,7 +21,7 @@ import { instructionsQuery } from '~/middleware/queries';
 import { InstructionStatusEnum, Query } from '~/middleware/types';
 import {
   AffirmAsMediatorParams,
-  AffirmOrWithdrawInstructionParams,
+  AffirmInstructionParams,
   DefaultPortfolio,
   ErrorCode,
   EventIdentifier,
@@ -35,6 +35,7 @@ import {
   ResultSet,
   SubCallback,
   UnsubCallback,
+  WithdrawInstructionParams,
 } from '~/types';
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
 import { Ensured } from '~/types/utils';
@@ -409,45 +410,64 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       paginationOpts,
     });
 
-    const data = legs.map(([, leg]) => {
-      if (leg.isSome) {
-        const legValue: PolymeshPrimitivesSettlementLeg = leg.unwrap();
-        if (legValue.isFungible) {
-          const { sender, receiver, amount, ticker: rawTicker } = legValue.asFungible;
+    const data = legs
+      .sort((a, b) => u64ToBigNumber(a[0].args[1]).minus(u64ToBigNumber(b[0].args[1])).toNumber())
+      .map(([, leg]) => {
+        if (leg.isSome) {
+          const legValue: PolymeshPrimitivesSettlementLeg = leg.unwrap();
+          if (legValue.isFungible) {
+            const { sender, receiver, amount, ticker: rawTicker } = legValue.asFungible;
 
-          const ticker = tickerToString(rawTicker);
-          const fromPortfolio = meshPortfolioIdToPortfolio(sender, context);
-          const toPortfolio = meshPortfolioIdToPortfolio(receiver, context);
+            const ticker = tickerToString(rawTicker);
+            const fromPortfolio = meshPortfolioIdToPortfolio(sender, context);
+            const toPortfolio = meshPortfolioIdToPortfolio(receiver, context);
 
-          return {
-            from: fromPortfolio,
-            to: toPortfolio,
-            amount: balanceToBigNumber(amount),
-            asset: new FungibleAsset({ ticker }, context),
-          };
-        } else if (legValue.isNonFungible) {
-          const { sender, receiver, nfts } = legValue.asNonFungible;
+            return {
+              from: fromPortfolio,
+              to: toPortfolio,
+              amount: balanceToBigNumber(amount),
+              asset: new FungibleAsset({ ticker }, context),
+            };
+          } else if (legValue.isNonFungible) {
+            const { sender, receiver, nfts } = legValue.asNonFungible;
 
-          const from = meshPortfolioIdToPortfolio(sender, context);
-          const to = meshPortfolioIdToPortfolio(receiver, context);
-          const { ticker, ids } = meshNftToNftId(nfts);
+            const from = meshPortfolioIdToPortfolio(sender, context);
+            const to = meshPortfolioIdToPortfolio(receiver, context);
+            const { ticker, ids } = meshNftToNftId(nfts);
 
-          return {
-            from,
-            to,
-            nfts: ids.map(nftId => new Nft({ ticker, id: nftId }, context)),
-            asset: new NftCollection({ ticker }, context),
-          };
+            return {
+              from,
+              to,
+              nfts: ids.map(nftId => new Nft({ ticker, id: nftId }, context)),
+              asset: new NftCollection({ ticker }, context),
+            };
+          } else if (legValue.isOffChain) {
+            const {
+              senderIdentity,
+              receiverIdentity,
+              amount,
+              ticker: rawTicker,
+            } = legValue.asOffChain;
+
+            const ticker = tickerToString(rawTicker);
+            const from = identityIdToString(senderIdentity);
+            const to = identityIdToString(receiverIdentity);
+
+            return {
+              from: new Identity({ did: from }, context),
+              to: new Identity({ did: to }, context),
+              offChainAmount: balanceToBigNumber(amount),
+              asset: ticker,
+            };
+          } else {
+            throw new Error('TODO ERROR: Unsupported leg type. Please contact Polymesh team.');
+          }
         } else {
-          // assume it is offchain
-          throw new Error('TODO ERROR: Offchain legs are not supported yet');
+          throw new Error(
+            'Instruction has already been executed/rejected and it was purged from chain'
+          );
         }
-      } else {
-        throw new Error(
-          'Instruction has already been executed/rejected and it was purged from chain'
-        );
-      }
-    });
+      });
 
     return {
       data,
@@ -506,17 +526,17 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   /**
    * Affirm this instruction (authorize)
    */
-  public affirm: OptionalArgsProcedureMethod<AffirmOrWithdrawInstructionParams, Instruction>;
+  public affirm: OptionalArgsProcedureMethod<AffirmInstructionParams, Instruction>;
 
   /**
    * Withdraw affirmation from this instruction (unauthorize)
    */
-  public withdraw: OptionalArgsProcedureMethod<AffirmOrWithdrawInstructionParams, Instruction>;
+  public withdraw: OptionalArgsProcedureMethod<WithdrawInstructionParams, Instruction>;
 
   /**
    * Reject this instruction as a mediator
    *
-   *  @note reject on `SettleOnAffirmation` will execute the settlement and it will fail immediately.
+   * @note reject on `SettleOnAffirmation` will execute the settlement and it will fail immediately.
    * @note reject on `SettleOnBlock` behaves just like unauthorize
    * @note reject on `SettleManual` behaves just like unauthorize
    */
@@ -614,7 +634,12 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     const portfolios = await P.reduce<Leg, (DefaultPortfolio | NumberedPortfolio)[]>(
       legs,
-      async (result, { from, to }) => assemblePortfolios(result, from, to),
+      async (result, { from, to }) =>
+        assemblePortfolios(
+          result,
+          from as unknown as DefaultPortfolio,
+          to as unknown as DefaultPortfolio
+        ),
       []
     );
 
