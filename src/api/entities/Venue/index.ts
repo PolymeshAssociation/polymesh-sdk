@@ -253,7 +253,8 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Get all signers allowed by this Venue
+   * Get all signers allowed by this Venue.
+   * Only these signers are allowed to affirm off-chain instructions
    */
   public async getAllowedSigners(): Promise<Account[]> {
     const {
