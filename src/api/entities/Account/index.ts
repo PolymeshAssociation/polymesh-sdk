@@ -46,6 +46,7 @@ import {
   stringToHash,
   txTagToExtrinsicIdentifier,
   u32ToBigNumber,
+  u64ToBigNumber,
 } from '~/utils/conversion';
 import {
   assertAddressValid,
@@ -579,5 +580,32 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     }
 
     return multiSig.getProposals();
+  }
+
+  /**
+   * Returns all off chain receipts used by this Account
+   */
+  public async getOffChainReceipts(): Promise<BigNumber[]> {
+    const {
+      context: {
+        polymeshApi: {
+          query: {
+            settlement: { receiptsUsed },
+          },
+        },
+      },
+      address,
+      context,
+    } = this;
+
+    const rawReceiptEntries = await receiptsUsed.entries(stringToAccountId(address, context));
+
+    return rawReceiptEntries.map(
+      ([
+        {
+          args: [, rawReceiptUid],
+        },
+      ]) => u64ToBigNumber(rawReceiptUid)
+    );
   }
 }
