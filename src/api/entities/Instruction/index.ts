@@ -58,12 +58,14 @@ import {
 import { createProcedureMethod, optionize, requestMulti, requestPaginated } from '~/utils/internal';
 
 import {
+  AffirmationStatus,
   InstructionAffirmation,
   InstructionDetails,
   InstructionStatus,
   InstructionStatusResult,
   Leg,
   MediatorAffirmation,
+  OffChainAffirmation,
 } from './types';
 
 export interface UniqueIdentifiers {
@@ -673,6 +675,78 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
       return { identity, status, expiry };
     });
+  }
+
+  /**
+   * Returns affirmation statuses for offchain legs in this Instruction
+   */
+  public async getOffChainAffirmations(): Promise<OffChainAffirmation[]> {
+    const {
+      id,
+      context,
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+    } = this;
+
+    const rawId = bigNumberToU64(id, context);
+
+    const rawAffirms = await settlement.offChainAffirmations.entries(rawId);
+
+    return rawAffirms.map(
+      ([
+        {
+          args: [, rawLegId],
+        },
+        affirmStatus,
+      ]) => {
+        const legId = u64ToBigNumber(rawLegId);
+        const status = meshAffirmationStatusToAffirmationStatus(affirmStatus);
+
+        return { legId, status };
+      }
+    );
+  }
+
+  /**
+   * Returns affirmation status for a specific offchain leg in this Instruction
+   *
+   * @param args.legId index of the leg whose affirmation status is to be fetched
+   */
+  public async getOffChainAffirmationForLeg(args: {
+    legId: BigNumber;
+  }): Promise<AffirmationStatus> {
+    const {
+      id,
+      context,
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+    } = this;
+
+    const { legId } = args;
+
+    const rawId = bigNumberToU64(id, context);
+
+    const rawLegId = bigNumberToU64(legId, context);
+
+    const rawAffirmStatus = await settlement.offChainAffirmations(rawId, rawLegId);
+
+    if (rawAffirmStatus.isEmpty) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'Given legId is not a off-chain leg',
+        data: {
+          legId,
+        },
+      });
+    }
+
+    return meshAffirmationStatusToAffirmationStatus(rawAffirmStatus);
   }
 
   /**

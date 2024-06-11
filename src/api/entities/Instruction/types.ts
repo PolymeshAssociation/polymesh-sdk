@@ -86,6 +86,11 @@ export interface InstructionAffirmation {
   status: AffirmationStatus;
 }
 
+export interface OffChainAffirmation {
+  legId: BigNumber;
+  status: AffirmationStatus;
+}
+
 export type InstructionStatusResult =
   | {
       status: InstructionStatus.Pending;
