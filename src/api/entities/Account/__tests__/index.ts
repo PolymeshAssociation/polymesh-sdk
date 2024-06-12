@@ -32,6 +32,7 @@ import {
   TxTags,
   UnsubCallback,
 } from '~/types';
+import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -1014,6 +1015,29 @@ describe('Account class', () => {
       });
 
       return expect(account.getPendingProposals()).rejects.toThrow(expectedError);
+    });
+  });
+
+  describe('method: getOffChainReceipts', () => {
+    it('should return the list of off chain receipts redeemed by the Account', async () => {
+      const mockResult = [new BigNumber(1), new BigNumber(2)];
+
+      const accountId = dsMockUtils.createMockAccountId(address);
+      jest.spyOn(utilsConversionModule, 'stringToAccountId').mockReturnValue(accountId);
+
+      const u64ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u64ToBigNumber');
+      mockResult.forEach(uid => {
+        when(u64ToBigNumberSpy).calledWith(dsMockUtils.createMockU64(uid)).mockReturnValue(uid);
+      });
+
+      dsMockUtils.createQueryMock('settlement', 'receiptsUsed', {
+        entries: mockResult.map(uid =>
+          tuple([accountId, dsMockUtils.createMockU64(uid)], dsMockUtils.createMockBool(true))
+        ),
+      });
+
+      const result = await account.getOffChainReceipts();
+      expect(result).toEqual(mockResult);
     });
   });
 });
