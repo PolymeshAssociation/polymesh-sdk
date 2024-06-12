@@ -217,7 +217,7 @@ async function assertVenueFiltering(
   const assets = instructions.flatMap(instruction => {
     const result: BaseAsset[] = [];
     instruction.legs.forEach(leg => {
-      if (typeof leg.asset !== 'string') {
+      if (!isOffChainLeg(leg)) {
         result.push(asBaseAsset(leg.asset, context));
       }
     });
@@ -315,10 +315,15 @@ async function getTxArgsAndErrors(
       legAmountErrIndexes.push(i);
     }
 
-    const sameIdentityLegs = legs.filter(({ from, to }) => {
-      const fromId = portfolioLikeToPortfolioId(from);
-      const toId = portfolioLikeToPortfolioId(to);
-      return fromId.did === toId.did;
+    const sameIdentityLegs = legs.filter(leg => {
+      if (isOffChainLeg(leg)) {
+        return leg.from.did === leg.to.did;
+      } else {
+        const { from, to } = leg;
+        const fromId = portfolioLikeToPortfolioId(from);
+        const toId = portfolioLikeToPortfolioId(to);
+        return fromId.did === toId.did;
+      }
     });
 
     if (sameIdentityLegs.length) {
@@ -584,6 +589,7 @@ export async function prepareAddInstruction(
     transaction: settlement.addInstructionWithMediators,
     argsArray: addInstructionParams,
   };
+
   const addAndAffirmTx = {
     transaction: settlement.addAndAffirmWithMediators,
     argsArray: addAndAffirmInstructionParams,
@@ -646,7 +652,7 @@ export async function prepareStorage(
   const portfoliosToAffirm = await P.map(instructions, async ({ legs }) => {
     const portfolios = await P.map(legs, async leg => {
       const result = [];
-      if (!('offChainAmount' in leg)) {
+      if (!isOffChainLeg(leg)) {
         const { from, to } = leg;
         const fromPortfolio = portfolioLikeToPortfolio(from, context);
         const toPortfolio = portfolioLikeToPortfolio(to, context);
