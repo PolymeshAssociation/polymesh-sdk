@@ -73,7 +73,6 @@ export interface Storage {
   senderLegAmount: BigNumber;
   totalLegAmount: BigNumber;
   signer: Identity;
-  offChainParties: Set<string>;
   offChainLegIndices: number[];
   instructionInfo: ExecuteInstructionInfo;
 }
@@ -177,7 +176,7 @@ const assertReceipts = async (
   if (invalidSignerReceipts.length) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'Signers of some receipts are not allowed to sign the receipt',
+      message: 'Some signers are not allowed to sign the receipt for this Instruction',
       data: {
         invalidSignerReceipts,
       },
@@ -186,12 +185,22 @@ const assertReceipts = async (
 
   const offChainAffirmationStatuses = await Promise.all(offchainAffirmationPromises);
 
-  const alreadyAffirmedLegs = [];
+  const alreadyAffirmedLegs: BigNumber[] = [];
   offChainAffirmationStatuses.forEach((status, index) => {
     if (meshAffirmationStatusToAffirmationStatus(status) !== AffirmationStatus.Pending) {
       alreadyAffirmedLegs.push(receipts[index].legId);
     }
   });
+
+  if (alreadyAffirmedLegs.length) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Some of the legs have already been affirmed',
+      data: {
+        alreadyAffirmedLegs,
+      },
+    });
+  }
 
   const receiptsUsedPromises = receipts.map(({ signer, uid }) => {
     const { address } = asAccount(signer, context);
@@ -406,12 +415,6 @@ export async function prepareModifyInstructionAffirmation(
 
       break;
     }
-
-    default:
-      throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message: 'Invalid operation',
-      });
   }
 
   const validPortfolioIds = rawPortfolioIds.filter(
@@ -624,18 +627,14 @@ export async function prepareStorage(
     polymeshApi.call.settlementApi.getExecuteInstructionInfo<ExecuteInstructionInfo>(rawId),
   ]);
 
-  const [portfolios, senderLegAmount, offChainParties, offChainLegIndices] = await P.reduce<
+  const [portfolios, senderLegAmount, offChainLegIndices] = await P.reduce<
     Leg,
-    [(DefaultPortfolio | NumberedPortfolio)[], BigNumber, Set<string>, number[]]
+    [(DefaultPortfolio | NumberedPortfolio)[], BigNumber, number[]]
   >(
     legs,
     async (result, leg, index) => {
-      let [custodiedPortfolios, legAmount, offChainDids, offChainLegs] = result;
+      let [custodiedPortfolios, legAmount, offChainLegs] = result;
       if (isOffChainLeg(leg)) {
-        const { from, to } = leg;
-        offChainDids.add(from.did);
-        offChainDids.add(to.did);
-
         offChainLegs.push(index);
       } else {
         const { from, to } = leg;
@@ -647,9 +646,9 @@ export async function prepareStorage(
           portfolioIdParams
         );
       }
-      return tuple(custodiedPortfolios, legAmount, offChainDids, offChainLegs);
+      return tuple(custodiedPortfolios, legAmount, offChainLegs);
     },
-    [[], new BigNumber(0), new Set<string>(), []]
+    [[], new BigNumber(0), []]
   );
 
   return {
@@ -658,7 +657,6 @@ export async function prepareStorage(
     senderLegAmount,
     totalLegAmount: new BigNumber(legs.length),
     signer,
-    offChainParties,
     offChainLegIndices,
     instructionInfo,
   };

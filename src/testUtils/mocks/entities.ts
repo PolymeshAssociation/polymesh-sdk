@@ -261,6 +261,7 @@ interface SubsidyOptions extends EntityOptions {
 interface VenueOptions extends EntityOptions {
   id?: BigNumber;
   details?: EntityGetter<VenueDetails>;
+  getAllowedSigners?: EntityGetter<Account[]>;
 }
 
 interface NumberedPortfolioOptions extends EntityOptions {
@@ -1452,6 +1453,7 @@ const MockVenueClass = createMockEntityClass<VenueOptions>(
     uuid!: string;
     id!: BigNumber;
     details!: jest.Mock;
+    getAllowedSigners!: jest.Mock;
 
     /**
      * @hidden
@@ -1467,6 +1469,7 @@ const MockVenueClass = createMockEntityClass<VenueOptions>(
       this.uuid = 'venue';
       this.id = opts.id;
       this.details = createEntityGetterMock(opts.details);
+      this.getAllowedSigners = createEntityGetterMock(opts.getAllowedSigners);
     }
   },
   () => ({
@@ -1476,6 +1479,7 @@ const MockVenueClass = createMockEntityClass<VenueOptions>(
       type: VenueType.Distribution,
       description: 'someDescription',
     },
+    getAllowedSigners: [getAccountInstance({ address: 'allowedSigner' })],
   }),
   ['Venue']
 );

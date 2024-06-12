@@ -29,11 +29,19 @@ import {
   Identity,
   InstructionAffirmationOperation,
   ModifyInstructionAffirmationParams,
+  OffChainAffirmationReceiptDetails,
+  OffChainSignatureType,
   PortfolioId,
   PortfolioLike,
   TxTags,
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
+
+jest.mock(
+  '~/api/entities/Account',
+  require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
+);
 
 jest.mock(
   '~/api/entities/Instruction',
@@ -92,7 +100,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     mockExecuteInfo = createMockExecuteInstructionInfo({
       fungibleTokens: dsMockUtils.createMockU32(new BigNumber(3)),
       nonFungibleTokens: dsMockUtils.createMockU32(new BigNumber(0)),
-      offChainAssets: dsMockUtils.createMockU32(new BigNumber(0)),
+      offChainAssets: dsMockUtils.createMockU32(new BigNumber(1)),
     });
     mockAffirmCount = dsMockUtils.createMockAffirmationCount();
     mockAssetCount = createMockAssetCount({
@@ -174,6 +182,8 @@ describe('modifyInstructionAffirmation procedure', () => {
       senderLegAmount: legAmount,
       totalLegAmount: legAmount,
       signer,
+      offChainLegIndices: [],
+      instructionInfo: mockExecuteInfo,
     });
 
     return expect(
@@ -203,6 +213,8 @@ describe('modifyInstructionAffirmation procedure', () => {
       senderLegAmount: legAmount,
       totalLegAmount: legAmount,
       signer,
+      offChainLegIndices: [],
+      instructionInfo: mockExecuteInfo,
     });
 
     return expect(
@@ -232,6 +244,8 @@ describe('modifyInstructionAffirmation procedure', () => {
       senderLegAmount: legAmount,
       totalLegAmount: legAmount,
       signer,
+      offChainLegIndices: [],
+      instructionInfo: mockExecuteInfo,
     });
 
     return expect(
@@ -261,6 +275,8 @@ describe('modifyInstructionAffirmation procedure', () => {
       senderLegAmount: legAmount,
       totalLegAmount: legAmount,
       signer,
+      offChainLegIndices: [],
+      instructionInfo: mockExecuteInfo,
     });
 
     const transaction = dsMockUtils.createTxMock('settlement', 'affirmInstructionWithCount');
@@ -275,6 +291,210 @@ describe('modifyInstructionAffirmation procedure', () => {
       feeMultiplier: new BigNumber(2),
       args: [rawInstructionId, [rawPortfolioId, rawPortfolioId], mockAffirmCount],
       resolver: expect.objectContaining({ id }),
+    });
+  });
+
+  describe('offchain settlement affirmation', () => {
+    let receipt: OffChainAffirmationReceiptDetails;
+    let transaction: jest.Mock;
+    let storage: Storage;
+    let offChainAffirmationsQueryMock: jest.Mock;
+    let receiptsUsedQueryMock: jest.Mock;
+
+    beforeAll(() => {
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
+    });
+
+    beforeEach(() => {
+      offChainAffirmationsQueryMock = dsMockUtils.createQueryMock(
+        'settlement',
+        'offChainAffirmations'
+      );
+
+      receiptsUsedQueryMock = dsMockUtils.createQueryMock('settlement', 'receiptsUsed');
+
+      transaction = dsMockUtils.createTxMock('settlement', 'affirmWithReceiptsWithCount');
+
+      storage = {
+        portfolios: [],
+        portfolioParams: [],
+        senderLegAmount: new BigNumber(0),
+        totalLegAmount: legAmount,
+        signer,
+        offChainLegIndices: [0],
+        instructionInfo: mockExecuteInfo,
+      };
+      receipt = {
+        legId: new BigNumber(0),
+        uid: new BigNumber(1),
+        signer: 'allowedSigner',
+        signature: {
+          type: OffChainSignatureType.Sr25519,
+          value: '0xsignature',
+        },
+        metadata: 'Optional metadata',
+      };
+
+      offChainAffirmationsQueryMock.mockResolvedValue(
+        dsMockUtils.createMockAffirmationStatus('Pending')
+      );
+
+      receiptsUsedQueryMock.mockResolvedValue(dsMockUtils.createMockBool(false));
+    });
+
+    it('should throw an error if receipts contains duplicate uid/legId', async () => {
+      const proc = procedureMockUtils.getInstance<
+        ModifyInstructionAffirmationParams,
+        Instruction,
+        Storage
+      >(mockContext, { ...storage, offChainLegIndices: [0, 1] });
+
+      await expect(
+        prepareModifyInstructionAffirmation.call(proc, {
+          id,
+          operation: InstructionAffirmationOperation.Affirm,
+          receipts: [
+            receipt,
+            {
+              ...receipt,
+              legId: new BigNumber(1),
+            },
+          ],
+        })
+      ).rejects.toThrow(
+        'Incorrect receipt details. Note, each leg in the receipt should be mapped to unique uid'
+      );
+
+      await expect(
+        prepareModifyInstructionAffirmation.call(proc, {
+          id,
+          operation: InstructionAffirmationOperation.Affirm,
+          receipts: [
+            receipt,
+            {
+              ...receipt,
+              uid: new BigNumber(2),
+            },
+          ],
+        })
+      ).rejects.toThrow(
+        'Incorrect receipt details. Note, each leg in the receipt should be mapped to unique uid'
+      );
+    });
+
+    it('should throw an error if receipts contains invalid offchain legId', async () => {
+      const proc = procedureMockUtils.getInstance<
+        ModifyInstructionAffirmationParams,
+        Instruction,
+        Storage
+      >(mockContext, storage);
+
+      await expect(
+        prepareModifyInstructionAffirmation.call(proc, {
+          id,
+          operation: InstructionAffirmationOperation.Affirm,
+          receipts: [
+            receipt,
+            {
+              ...receipt,
+              legId: new BigNumber(1),
+            },
+          ],
+        })
+      ).rejects.toThrow(
+        'Incorrect receipt details. Note, each leg in the receipt should be mapped to unique uid'
+      );
+    });
+
+    it('should throw an error if signer is not an allowed signer', async () => {
+      const proc = procedureMockUtils.getInstance<
+        ModifyInstructionAffirmationParams,
+        Instruction,
+        Storage
+      >(mockContext, storage);
+
+      await expect(
+        prepareModifyInstructionAffirmation.call(proc, {
+          id,
+          operation: InstructionAffirmationOperation.Affirm,
+          receipts: [
+            {
+              ...receipt,
+              signer: 'notAllowedSigner',
+            },
+          ],
+        })
+      ).rejects.toThrow('Some signers are not allowed to sign the receipt for this Instruction');
+    });
+
+    it('should throw an error if offchain leg is already affirmed', async () => {
+      const rawAffirmStatus = dsMockUtils.createMockAffirmationStatus('Affirmed');
+
+      offChainAffirmationsQueryMock.mockResolvedValue(
+        dsMockUtils.createMockAffirmationStatus('Affirmed')
+      );
+
+      when(meshAffirmationStatusToAffirmationStatusSpy)
+        .calledWith(rawAffirmStatus)
+        .mockReturnValue(AffirmationStatus.Affirmed);
+
+      const proc = procedureMockUtils.getInstance<
+        ModifyInstructionAffirmationParams,
+        Instruction,
+        Storage
+      >(mockContext, storage);
+
+      await expect(
+        prepareModifyInstructionAffirmation.call(proc, {
+          id,
+          operation: InstructionAffirmationOperation.Affirm,
+          receipts: [receipt],
+        })
+      ).rejects.toThrow('Some of the legs have already been affirmed');
+    });
+
+    it('should throw an error if receipt is already used by the signer', async () => {
+      receiptsUsedQueryMock.mockResolvedValue(dsMockUtils.createMockBool(true));
+
+      const proc = procedureMockUtils.getInstance<
+        ModifyInstructionAffirmationParams,
+        Instruction,
+        Storage
+      >(mockContext, storage);
+
+      await expect(
+        prepareModifyInstructionAffirmation.call(proc, {
+          id,
+          operation: InstructionAffirmationOperation.Affirm,
+          receipts: [receipt],
+        })
+      ).rejects.toThrow('Some of the receipts have already been used by the receipts signers');
+    });
+
+    it('should return an affirm instruction with receipts transaction spec', async () => {
+      const receiptDetailsToMeshReceiptDetailsSpy: jest.SpyInstance = jest.spyOn(
+        utilsConversionModule,
+        'receiptDetailsToMeshReceiptDetails'
+      );
+      receiptDetailsToMeshReceiptDetailsSpy.mockReturnValue([]);
+
+      const proc = procedureMockUtils.getInstance<
+        ModifyInstructionAffirmationParams,
+        Instruction,
+        Storage
+      >(mockContext, storage);
+
+      const result = await prepareModifyInstructionAffirmation.call(proc, {
+        id,
+        operation: InstructionAffirmationOperation.Affirm,
+        receipts: [receipt],
+      });
+
+      expect(result).toEqual({
+        transaction,
+        args: [rawInstructionId, [], [], mockAffirmCount],
+        resolver: expect.objectContaining({ id }),
+      });
     });
   });
 
@@ -297,6 +517,8 @@ describe('modifyInstructionAffirmation procedure', () => {
       senderLegAmount: legAmount,
       totalLegAmount: legAmount,
       signer,
+      offChainLegIndices: [],
+      instructionInfo: mockExecuteInfo,
     });
 
     const expectedError = new PolymeshError({
@@ -331,6 +553,8 @@ describe('modifyInstructionAffirmation procedure', () => {
       senderLegAmount: legAmount,
       totalLegAmount: legAmount,
       signer,
+      offChainLegIndices: [],
+      instructionInfo: mockExecuteInfo,
     });
 
     const expectedError = new PolymeshError({
@@ -366,6 +590,8 @@ describe('modifyInstructionAffirmation procedure', () => {
       senderLegAmount: legAmount,
       totalLegAmount: legAmount,
       signer,
+      offChainLegIndices: [],
+      instructionInfo: mockExecuteInfo,
     });
 
     const transaction = dsMockUtils.createTxMock('settlement', 'affirmInstructionAsMediator');
@@ -401,6 +627,8 @@ describe('modifyInstructionAffirmation procedure', () => {
       senderLegAmount: legAmount,
       totalLegAmount: legAmount,
       signer,
+      offChainLegIndices: [],
+      instructionInfo: mockExecuteInfo,
     });
 
     return expect(
@@ -430,6 +658,8 @@ describe('modifyInstructionAffirmation procedure', () => {
       senderLegAmount: legAmount,
       totalLegAmount: legAmount,
       signer,
+      offChainLegIndices: [],
+      instructionInfo: mockExecuteInfo,
     });
 
     const transaction = dsMockUtils.createTxMock('settlement', 'withdrawAffirmationWithCount');
@@ -466,6 +696,8 @@ describe('modifyInstructionAffirmation procedure', () => {
       senderLegAmount: legAmount,
       totalLegAmount: legAmount,
       signer,
+      offChainLegIndices: [],
+      instructionInfo: mockExecuteInfo,
     });
 
     const expectedError = new PolymeshError({
@@ -502,6 +734,8 @@ describe('modifyInstructionAffirmation procedure', () => {
       senderLegAmount: legAmount,
       totalLegAmount: legAmount,
       signer,
+      offChainLegIndices: [],
+      instructionInfo: mockExecuteInfo,
     });
 
     const transaction = dsMockUtils.createTxMock('settlement', 'withdrawAffirmationAsMediator');
@@ -550,6 +784,8 @@ describe('modifyInstructionAffirmation procedure', () => {
       senderLegAmount: legAmount,
       totalLegAmount: legAmount,
       signer,
+      offChainLegIndices: [],
+      instructionInfo: mockExecuteInfo,
     });
 
     const transaction = dsMockUtils.createTxMock('settlement', 'rejectInstructionWithCount');
@@ -586,6 +822,8 @@ describe('modifyInstructionAffirmation procedure', () => {
       senderLegAmount: legAmount,
       totalLegAmount: legAmount,
       signer: entityMockUtils.getIdentityInstance({ did: 'someOtherDid' }),
+      offChainLegIndices: [],
+      instructionInfo: mockExecuteInfo,
     });
 
     const expectedError = new PolymeshError({
@@ -620,6 +858,8 @@ describe('modifyInstructionAffirmation procedure', () => {
       senderLegAmount: legAmount,
       totalLegAmount: legAmount,
       signer,
+      offChainLegIndices: [],
+      instructionInfo: mockExecuteInfo,
     });
 
     const transaction = dsMockUtils.createTxMock('settlement', 'rejectInstructionAsMediator');
@@ -655,6 +895,8 @@ describe('modifyInstructionAffirmation procedure', () => {
         senderLegAmount: legAmount,
         totalLegAmount: legAmount,
         signer,
+        offChainLegIndices: [],
+        instructionInfo: mockExecuteInfo,
       });
       let boundFunc = getAuthorization.bind(proc);
 
@@ -664,7 +906,7 @@ describe('modifyInstructionAffirmation procedure', () => {
         permissions: {
           assets: [],
           portfolios: [from, to],
-          transactions: [TxTags.settlement.AffirmInstruction],
+          transactions: [TxTags.settlement.AffirmInstructionWithCount],
         },
       });
 
@@ -678,6 +920,38 @@ describe('modifyInstructionAffirmation procedure', () => {
         senderLegAmount: legAmount,
         totalLegAmount: legAmount,
         signer,
+        offChainLegIndices: [2],
+        instructionInfo: mockExecuteInfo,
+      });
+
+      boundFunc = getAuthorization.bind(proc);
+
+      result = await boundFunc({
+        ...args,
+        operation: InstructionAffirmationOperation.Affirm,
+        receipts: ['receipts' as unknown as OffChainAffirmationReceiptDetails],
+      });
+
+      expect(result).toEqual({
+        permissions: {
+          assets: [],
+          portfolios: [],
+          transactions: [TxTags.settlement.AffirmWithReceiptsWithCount],
+        },
+      });
+
+      proc = procedureMockUtils.getInstance<
+        ModifyInstructionAffirmationParams,
+        Instruction,
+        Storage
+      >(mockContext, {
+        portfolios: [],
+        portfolioParams: [],
+        senderLegAmount: legAmount,
+        totalLegAmount: legAmount,
+        signer,
+        offChainLegIndices: [],
+        instructionInfo: mockExecuteInfo,
       });
 
       boundFunc = getAuthorization.bind(proc);
@@ -688,7 +962,7 @@ describe('modifyInstructionAffirmation procedure', () => {
         permissions: {
           assets: [],
           portfolios: [],
-          transactions: [TxTags.settlement.RejectInstruction],
+          transactions: [TxTags.settlement.RejectInstructionWithCount],
         },
       });
 
@@ -698,7 +972,7 @@ describe('modifyInstructionAffirmation procedure', () => {
         permissions: {
           assets: [],
           portfolios: [],
-          transactions: [TxTags.settlement.WithdrawAffirmation],
+          transactions: [TxTags.settlement.WithdrawAffirmationWithCount],
         },
       });
 
@@ -767,6 +1041,9 @@ describe('modifyInstructionAffirmation procedure', () => {
       id: new BigNumber(1),
       exists: false,
     });
+    const sender = entityMockUtils.getIdentityInstance({ did: 'offChainSenderDid' });
+    const receiver = entityMockUtils.getIdentityInstance({ did: 'offChainReceiverDid' });
+    const offChainAsset = 'OFFCHAIN_ASSET';
     const amount = new BigNumber(1);
     const asset = entityMockUtils.getFungibleAssetInstance({ ticker: 'SOME_ASSET' });
 
@@ -784,11 +1061,13 @@ describe('modifyInstructionAffirmation procedure', () => {
             data: [
               { from: from1, to: to1, amount, asset },
               { from: from2, to: to2, amount, asset },
+              { from: sender, to: receiver, offChainAmount: amount, asset: offChainAsset },
             ],
             next: null,
           },
         },
       });
+
       let result = await boundFunc({
         id: new BigNumber(1),
         operation: InstructionAffirmationOperation.Affirm,
@@ -805,8 +1084,10 @@ describe('modifyInstructionAffirmation procedure', () => {
         ],
         portfolioParams: [],
         senderLegAmount: new BigNumber(1),
-        totalLegAmount: new BigNumber(2),
+        totalLegAmount: new BigNumber(3),
         signer: expect.objectContaining({ did: signer.did }),
+        offChainLegIndices: [2],
+        instructionInfo: mockExecuteInfo,
       });
 
       result = await boundFunc({
@@ -819,8 +1100,10 @@ describe('modifyInstructionAffirmation procedure', () => {
         portfolios: [expect.objectContaining({ owner: expect.objectContaining({ did: fromDid }) })],
         portfolioParams: [fromDid],
         senderLegAmount: new BigNumber(1),
-        totalLegAmount: new BigNumber(2),
+        totalLegAmount: new BigNumber(3),
         signer: expect.objectContaining({ did: signer.did }),
+        offChainLegIndices: [2],
+        instructionInfo: mockExecuteInfo,
       });
 
       result = await boundFunc({
@@ -833,8 +1116,10 @@ describe('modifyInstructionAffirmation procedure', () => {
         portfolios: [expect.objectContaining({ owner: expect.objectContaining({ did: fromDid }) })],
         portfolioParams: [fromDid],
         senderLegAmount: new BigNumber(1),
-        totalLegAmount: new BigNumber(2),
+        totalLegAmount: new BigNumber(3),
         signer: expect.objectContaining({ did: signer.did }),
+        offChainLegIndices: [2],
+        instructionInfo: mockExecuteInfo,
       });
 
       result = await boundFunc({
@@ -847,8 +1132,10 @@ describe('modifyInstructionAffirmation procedure', () => {
         portfolios: [expect.objectContaining({ owner: expect.objectContaining({ did: fromDid }) })],
         portfolioParams: [fromDid],
         senderLegAmount: new BigNumber(1),
-        totalLegAmount: new BigNumber(2),
+        totalLegAmount: new BigNumber(3),
         signer: expect.objectContaining({ did: signer.did }),
+        offChainLegIndices: [2],
+        instructionInfo: mockExecuteInfo,
       });
     });
 
@@ -880,6 +1167,8 @@ describe('modifyInstructionAffirmation procedure', () => {
         senderLegAmount: new BigNumber(0),
         totalLegAmount: new BigNumber(1),
         signer: expect.objectContaining({ did: signer.did }),
+        offChainLegIndices: [],
+        instructionInfo: mockExecuteInfo,
       });
     });
   });

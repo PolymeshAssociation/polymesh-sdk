@@ -413,8 +413,6 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       paginationOpts,
     });
 
-    console.log(legs[0]);
-
     const data = legs
       .sort((a, b) => u64ToBigNumber(a[0].args[1]).minus(u64ToBigNumber(b[0].args[1])).toNumber())
       .map(([, leg]) => {
