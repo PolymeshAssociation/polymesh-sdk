@@ -1002,7 +1002,6 @@ describe('addInstruction procedure', () => {
         exists: true,
       },
     });
-    // getCustodianMock.mockReturnValue({ did: toDid });
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
       portfoliosToAffirm: [[]],
     });

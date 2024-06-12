@@ -99,6 +99,7 @@ import {
 import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
+  createMockIdentityId,
   createMockNfts,
   createMockOption,
   createMockPortfolioId,
@@ -239,6 +240,7 @@ import {
   keyToAddress,
   legToFungibleLeg,
   legToNonFungibleLeg,
+  legToOffChainLeg,
   mediatorAffirmationStatusToStatus,
   meshAffirmationStatusToAffirmationStatus,
   meshClaimToClaim,
@@ -9631,6 +9633,40 @@ describe('legToNonFungibleLeg', () => {
       .mockReturnValue(fakeResult);
 
     const result = legToNonFungibleLeg(value, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('legToOffChainLeg', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should make a offchain leg', () => {
+    const context = dsMockUtils.getContextInstance();
+    const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesSettlementLeg;
+
+    const value = {
+      senderIdentity: createMockIdentityId(),
+      receiverIdentity: createMockIdentityId(),
+      ticker: createMockTicker(),
+      amount: createMockU128(),
+    } as const;
+
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesSettlementLeg', { OffChain: value })
+      .mockReturnValue(fakeResult);
+
+    const result = legToOffChainLeg(value, context);
 
     expect(result).toEqual(fakeResult);
   });

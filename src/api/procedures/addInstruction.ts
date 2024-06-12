@@ -25,12 +25,14 @@ import {
   AddInstructionParams,
   AddInstructionsParams,
   ErrorCode,
+  FungibleLeg,
   InstructionEndCondition,
   InstructionFungibleLeg,
   InstructionLeg,
   InstructionNftLeg,
   InstructionOffChainLeg,
   InstructionType,
+  NftLeg,
   RoleType,
   SettlementTx,
   TxTags,
@@ -158,6 +160,32 @@ function getEndCondition(
 /**
  * @hidden
  */
+function validateFungibleLeg(leg: FungibleLeg, ticker: string): void {
+  if (!('amount' in leg)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The key "amount" should be present in a fungible leg',
+      data: { ticker },
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
+function validateNonFungibleLeg(leg: NftLeg, ticker: string): void {
+  if (!('nfts' in leg)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The key "nfts" should be present in an NFT leg',
+      data: { ticker },
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
 async function separateLegs(
   legs: InstructionLeg[],
   context: Context
@@ -182,22 +210,10 @@ async function separateLegs(
       ]);
 
       if (isFungible(leg)) {
-        if (!('amount' in leg)) {
-          throw new PolymeshError({
-            code: ErrorCode.ValidationError,
-            message: 'The key "amount" should be present in a fungible leg',
-            data: { ticker },
-          });
-        }
+        validateFungibleLeg(leg, ticker);
         fungibleLegs.push(leg);
       } else if (isNft(leg)) {
-        if (!('nfts' in leg)) {
-          throw new PolymeshError({
-            code: ErrorCode.ValidationError,
-            message: 'The key "nfts" should be present in an NFT leg',
-            data: { ticker },
-          });
-        }
+        validateNonFungibleLeg(leg, ticker);
         nftLegs.push(leg);
       }
     }

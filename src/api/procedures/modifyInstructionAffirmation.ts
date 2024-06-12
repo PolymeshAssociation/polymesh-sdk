@@ -10,14 +10,13 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
 import { assertInstructionValid } from '~/api/procedures/utils';
-import { Context, Instruction, PolymeshError, Procedure } from '~/internal';
+import { Context, Identity, Instruction, PolymeshError, Procedure } from '~/internal';
 import { AffirmationCount, ExecuteInstructionInfo, Moment } from '~/polkadot/polymesh';
 import {
   AffirmationStatus,
   AffirmInstructionParams,
   DefaultPortfolio,
   ErrorCode,
-  Identity,
   InstructionAffirmationOperation,
   Leg,
   ModifyInstructionAffirmationParams,
@@ -234,6 +233,40 @@ const assertReceipts = async (
 /**
  * @hidden
  */
+function validateMediatorStatusForAffirmation(
+  mediatorStatus: AffirmationStatus,
+  signer: Identity,
+  id: BigNumber
+): void {
+  if (mediatorStatus === AffirmationStatus.Unknown) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The signer is not a mediator',
+      data: { signer: signer.did, instructionId: id.toString() },
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
+function validateMediatorStatusForWithdrawl(
+  mediatorStatus: AffirmationStatus,
+  signer: Identity,
+  id: BigNumber
+): void {
+  if (mediatorStatus !== AffirmationStatus.Affirmed) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The signer is not a mediator that has already affirmed the instruction',
+      data: { signer: signer.did, instructionId: id.toString() },
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
 export async function prepareModifyInstructionAffirmation(
   this: Procedure<ModifyInstructionAffirmationParams, Instruction, Storage>,
   args: ModifyInstructionAffirmationParams
@@ -323,13 +356,7 @@ export async function prepareModifyInstructionAffirmation(
   let rawReceiptDetails: Vec<PolymeshPrimitivesSettlementReceiptDetails> | null = null;
   switch (operation) {
     case InstructionAffirmationOperation.AffirmAsMediator: {
-      if (mediatorStatus === AffirmationStatus.Unknown) {
-        throw new PolymeshError({
-          code: ErrorCode.ValidationError,
-          message: 'The signer is not a mediator',
-          data: { signer: signer.did, instructionId: id.toString() },
-        });
-      }
+      validateMediatorStatusForAffirmation(mediatorStatus, signer, id);
 
       const givenExpiry = args.expiry;
       const now = new Date();
@@ -351,13 +378,7 @@ export async function prepareModifyInstructionAffirmation(
     }
 
     case InstructionAffirmationOperation.WithdrawAsMediator: {
-      if (mediatorStatus !== AffirmationStatus.Affirmed) {
-        throw new PolymeshError({
-          code: ErrorCode.ValidationError,
-          message: 'The signer is not a mediator that has already affirmed the instruction',
-          data: { signer: signer.did, instructionId: id.toString() },
-        });
-      }
+      validateMediatorStatusForWithdrawl(mediatorStatus, signer, id);
 
       return {
         transaction: settlementTx.withdrawAffirmationAsMediator,
@@ -437,7 +458,6 @@ export async function prepareModifyInstructionAffirmation(
     return {
       transaction,
       resolver: instruction,
-      // feeMultiplier: senderLegAmount,
       args: [rawInstructionId, rawReceiptDetails, validPortfolioIds, rawAffirmCount],
     };
   }
