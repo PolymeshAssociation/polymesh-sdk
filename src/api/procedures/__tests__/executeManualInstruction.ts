@@ -136,6 +136,7 @@ describe('executeManualInstruction procedure', () => {
   it('should throw an error if the signing identity is not the custodian of any of the involved portfolios', () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
       portfolios: [],
+      offChainParties: new Set<string>(['offChainSender', 'offChainReceiver']),
       instructionDetails,
       signerDid: 'someOtherDid',
     });
@@ -155,6 +156,7 @@ describe('executeManualInstruction procedure', () => {
 
     const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
       portfolios: [portfolio, portfolio],
+      offChainParties: new Set<string>(),
       instructionDetails,
       signerDid: did,
     });
@@ -174,6 +176,7 @@ describe('executeManualInstruction procedure', () => {
 
     const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
       portfolios: [portfolio, portfolio],
+      offChainParties: new Set<string>(),
       instructionDetails,
       signerDid: did,
     });
@@ -195,6 +198,7 @@ describe('executeManualInstruction procedure', () => {
 
     let proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
       portfolios: [portfolio, portfolio],
+      offChainParties: new Set<string>(),
       instructionDetails,
       signerDid: did,
     });
@@ -220,8 +224,36 @@ describe('executeManualInstruction procedure', () => {
 
     proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
       portfolios: [],
+      offChainParties: new Set<string>(),
       instructionDetails,
       signerDid: did,
+    });
+
+    result = await prepareExecuteManualInstruction.call(proc, {
+      id,
+      skipAffirmationCheck: false,
+      operation: InstructionAffirmationOperation.Affirm,
+    });
+
+    expect(result).toEqual({
+      transaction,
+      args: [
+        rawInstructionId,
+        null,
+        fungibleTokens,
+        nonFungibleTokens,
+        offChainAssets,
+        'someWeight',
+      ],
+      resolver: expect.objectContaining({ id }),
+    });
+
+    // one of the off chain parties is executing the settlement manually
+    proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
+      portfolios: [],
+      offChainParties: new Set<string>(['offChainSender', 'offChainReceiver']),
+      instructionDetails,
+      signerDid: 'offChainSender',
     });
 
     result = await prepareExecuteManualInstruction.call(proc, {
@@ -251,6 +283,7 @@ describe('executeManualInstruction procedure', () => {
 
       const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
         portfolios: [from, to],
+        offChainParties: new Set<string>(),
         instructionDetails,
         signerDid: did,
       });
@@ -271,19 +304,29 @@ describe('executeManualInstruction procedure', () => {
   describe('prepareStorage', () => {
     const fromDid = 'fromDid';
     const toDid = 'toDid';
+    const senderDid = 'senderDid';
+    const receiverDid = 'receiverDid';
 
     let from = entityMockUtils.getDefaultPortfolioInstance({ did: fromDid, isCustodiedBy: true });
     let to = entityMockUtils.getDefaultPortfolioInstance({ did: toDid, isCustodiedBy: true });
+    const sender = entityMockUtils.getIdentityInstance({ did: senderDid });
+    const receiver = entityMockUtils.getIdentityInstance({ did: receiverDid });
     const amount = new BigNumber(1);
     const asset = entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER' });
 
-    it('should return the custodied portfolios associated in the instruction legs for the signing identity', async () => {
+    it('should return the custodied portfolios and offChain parties associated in the instruction legs for the signing identity', async () => {
       const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext);
 
       const boundFunc = prepareStorage.bind(proc);
       entityMockUtils.configureMocks({
         instructionOptions: {
-          getLegs: { data: [{ from, to, amount, asset }], next: null },
+          getLegs: {
+            data: [
+              { from, to, amount, asset },
+              { from: sender, to: receiver, offChainAmount: amount, asset: 'OFF_CHAIN_ASSET' },
+            ],
+            next: null,
+          },
           details: instructionDetails,
         },
       });
@@ -299,6 +342,7 @@ describe('executeManualInstruction procedure', () => {
         ],
         instructionDetails,
         signerDid: did,
+        offChainParties: new Set<string>([senderDid, receiverDid]),
       });
     });
 
@@ -325,6 +369,7 @@ describe('executeManualInstruction procedure', () => {
         portfolios: [],
         instructionDetails,
         signerDid: did,
+        offChainParties: new Set<string>(),
       });
     });
   });

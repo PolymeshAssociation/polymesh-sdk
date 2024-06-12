@@ -172,14 +172,12 @@ export async function prepareStorage(
           to.isCustodiedBy({ identity: did }),
         ]);
 
-        const result = [...custodiedPortfolios];
-
         if (fromIsCustodied) {
-          result.push(from);
+          custodiedPortfolios.push(from);
         }
 
         if (toIsCustodied) {
-          result.push(to);
+          custodiedPortfolios.push(to);
         }
       }
 
