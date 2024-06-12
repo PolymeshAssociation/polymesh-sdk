@@ -19,6 +19,10 @@ import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
+  '~/api/entities/Account',
+  require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
+);
+jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
@@ -384,6 +388,23 @@ describe('Venue class', () => {
       const tx = await venue.modify({ description, type });
 
       expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: getAllowedSigners', () => {
+    it('should return the list of signers allowed by the Venue', async () => {
+      const mockSigner = 'some_signer';
+
+      const rawSigner = dsMockUtils.createMockAccountId(mockSigner);
+
+      dsMockUtils.createQueryMock('settlement', 'venueSigners', {
+        entries: [tuple([rawId, rawSigner], dsMockUtils.createMockBool(true))],
+      });
+
+      const result = await venue.getAllowedSigners();
+      expect(result).toEqual(
+        expect.arrayContaining([expect.objectContaining({ address: mockSigner })])
+      );
     });
   });
 
