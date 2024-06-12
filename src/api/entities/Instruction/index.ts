@@ -39,6 +39,7 @@ import {
 } from '~/types';
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
 import { Ensured } from '~/types/utils';
+import { isOffChainLeg } from '~/utils';
 import {
   balanceToBigNumber,
   bigNumberToU64,
@@ -412,6 +413,8 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       paginationOpts,
     });
 
+    console.log(legs[0]);
+
     const data = legs
       .sort((a, b) => u64ToBigNumber(a[0].args[1]).minus(u64ToBigNumber(b[0].args[1])).toNumber())
       .map(([, leg]) => {
@@ -443,7 +446,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
               nfts: ids.map(nftId => new Nft({ ticker, id: nftId }, context)),
               asset: new NftCollection({ ticker }, context),
             };
-          } else if (legValue.isOffChain) {
+          } else {
             const {
               senderIdentity,
               receiverIdentity,
@@ -461,8 +464,6 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
               offChainAmount: balanceToBigNumber(amount),
               asset: ticker,
             };
-          } else {
-            throw new Error('TODO ERROR: Unsupported leg type. Please contact Polymesh team.');
           }
         } else {
           throw new Error(
@@ -610,38 +611,35 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     const assemblePortfolios = async (
       involvedPortfolios: (DefaultPortfolio | NumberedPortfolio)[],
-      from: DefaultPortfolio | NumberedPortfolio,
-      to: DefaultPortfolio | NumberedPortfolio
+      leg: Leg
     ): Promise<(DefaultPortfolio | NumberedPortfolio)[]> => {
-      const [fromExists, toExists] = await Promise.all([from.exists(), to.exists()]);
+      if (!isOffChainLeg(leg)) {
+        const { from, to } = leg;
+        const [fromExists, toExists] = await Promise.all([from.exists(), to.exists()]);
 
-      const checkCustody = async (
-        legPortfolio: DefaultPortfolio | NumberedPortfolio,
-        exists: boolean
-      ): Promise<void> => {
-        if (exists) {
-          const isCustodied = await legPortfolio.isCustodiedBy({ identity: did });
-          if (isCustodied) {
+        const checkCustody = async (
+          legPortfolio: DefaultPortfolio | NumberedPortfolio,
+          exists: boolean
+        ): Promise<void> => {
+          if (exists) {
+            const isCustodied = await legPortfolio.isCustodiedBy({ identity: did });
+            if (isCustodied) {
+              involvedPortfolios.push(legPortfolio);
+            }
+          } else if (legPortfolio.owner.did === did) {
             involvedPortfolios.push(legPortfolio);
           }
-        } else if (legPortfolio.owner.did === did) {
-          involvedPortfolios.push(legPortfolio);
-        }
-      };
+        };
 
-      await Promise.all([checkCustody(from, fromExists), checkCustody(to, toExists)]);
+        await Promise.all([checkCustody(from, fromExists), checkCustody(to, toExists)]);
+      }
 
       return involvedPortfolios;
     };
 
     const portfolios = await P.reduce<Leg, (DefaultPortfolio | NumberedPortfolio)[]>(
       legs,
-      async (result, { from, to }) =>
-        assemblePortfolios(
-          result,
-          from as unknown as DefaultPortfolio,
-          to as unknown as DefaultPortfolio
-        ),
+      async (result, leg) => assemblePortfolios(result, leg),
       []
     );
 
@@ -735,16 +733,6 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     const rawLegId = bigNumberToU64(legId, context);
 
     const rawAffirmStatus = await settlement.offChainAffirmations(rawId, rawLegId);
-
-    if (rawAffirmStatus.isEmpty) {
-      throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message: 'Given legId is not a off-chain leg',
-        data: {
-          legId,
-        },
-      });
-    }
 
     return meshAffirmationStatusToAffirmationStatus(rawAffirmStatus);
   }

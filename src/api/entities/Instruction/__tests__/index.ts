@@ -1,5 +1,8 @@
-import { StorageKey, u64 } from '@polkadot/types';
-import { PolymeshPrimitivesIdentityIdPortfolioId } from '@polkadot/types/lookup';
+import { Option, StorageKey, u64 } from '@polkadot/types';
+import {
+  PolymeshPrimitivesIdentityIdPortfolioId,
+  PolymeshPrimitivesSettlementLeg,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -21,6 +24,7 @@ import {
   InstructionStatus,
   InstructionType,
   NftLeg,
+  OffChainLeg,
   UnsubCallback,
 } from '~/types';
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
@@ -601,13 +605,14 @@ describe('Instruction class', () => {
       const fromDid = 'fromDid';
       const toDid = 'toDid';
       const ticker = 'SOME_TICKER';
+      const ticker2 = 'SOME_TICKER2';
       const amount = new BigNumber(1000);
 
       entityMockUtils.configureMocks({ fungibleAssetOptions: { ticker } });
       instructionStatusMock.mockResolvedValue(
         createMockInstructionStatus(InternalInstructionStatus.Pending)
       );
-      const mockLeg = dsMockUtils.createMockOption(
+      const mockLeg1 = dsMockUtils.createMockOption(
         dsMockUtils.createMockInstructionLeg({
           Fungible: {
             sender: dsMockUtils.createMockPortfolioId({
@@ -623,7 +628,37 @@ describe('Instruction class', () => {
           },
         })
       );
-      const entries = [tuple(['instructionId', 'legId'] as unknown as StorageKey, mockLeg)];
+
+      const mockLeg2 = dsMockUtils.createMockOption(
+        dsMockUtils.createMockInstructionLeg({
+          Fungible: {
+            sender: dsMockUtils.createMockPortfolioId({
+              did: dsMockUtils.createMockIdentityId(fromDid),
+              kind: dsMockUtils.createMockPortfolioKind('Default'),
+            }),
+            receiver: dsMockUtils.createMockPortfolioId({
+              did: dsMockUtils.createMockIdentityId(toDid),
+              kind: dsMockUtils.createMockPortfolioKind('Default'),
+            }),
+            ticker: dsMockUtils.createMockTicker(ticker2),
+            amount: dsMockUtils.createMockU128(amount.shiftedBy(6)),
+          },
+        })
+      );
+      const entries: [StorageKey<[u64, u64]>, Option<PolymeshPrimitivesSettlementLeg>][] = [
+        tuple(
+          {
+            args: [rawId, dsMockUtils.createMockU64(new BigNumber(1))],
+          } as unknown as StorageKey<[u64, u64]>,
+          mockLeg1
+        ),
+        tuple(
+          {
+            args: [rawId, dsMockUtils.createMockU64(new BigNumber(0))],
+          } as unknown as StorageKey<[u64, u64]>,
+          mockLeg2
+        ),
+      ];
 
       jest
         .spyOn(utilsInternalModule, 'requestPaginated')
@@ -633,10 +668,17 @@ describe('Instruction class', () => {
 
       const { data: leg } = await instruction.getLegs();
 
-      expect((leg[0] as FungibleLeg).amount).toEqual(amount);
-      expect(leg[0].asset.ticker).toBe(ticker);
-      expect(leg[0].from.owner.did).toBe(fromDid);
-      expect(leg[0].to.owner.did).toBe(toDid);
+      const resultLeg1 = leg[0] as FungibleLeg;
+      expect(resultLeg1.amount).toEqual(amount);
+      expect(resultLeg1.asset.ticker).toBe(ticker2);
+      expect(resultLeg1.from.owner.did).toBe(fromDid);
+      expect(resultLeg1.to.owner.did).toBe(toDid);
+
+      const resultLeg2 = leg[1] as FungibleLeg;
+      expect(resultLeg2.amount).toEqual(amount);
+      expect(resultLeg2.asset.ticker).toBe(ticker);
+      expect(resultLeg2.from.owner.did).toBe(fromDid);
+      expect(resultLeg2.to.owner.did).toBe(toDid);
     });
 
     it('should throw an error if the instruction is not pending', () => {
@@ -673,7 +715,9 @@ describe('Instruction class', () => {
           },
         })
       );
-      const entries = [tuple(['instructionId', 'legId'] as unknown as StorageKey, mockLeg)];
+      const entries = [
+        tuple({ args: ['instructionId', 'legId'] } as unknown as StorageKey, mockLeg),
+      ];
 
       jest
         .spyOn(utilsInternalModule, 'requestPaginated')
@@ -683,34 +727,45 @@ describe('Instruction class', () => {
 
       const { data: leg } = await instruction.getLegs();
 
-      expect((leg[0] as NftLeg).nfts).toEqual(
+      const resultLeg = leg[0] as NftLeg;
+      expect(resultLeg.nfts).toEqual(
         expect.arrayContaining([expect.objectContaining({ id: new BigNumber(1) })])
       );
-      expect(leg[0].asset.ticker).toBe(ticker);
-      expect(leg[0].from.owner.did).toBe(fromDid);
-      expect(leg[0].to.owner.did).toBe(toDid);
+      expect(resultLeg.asset.ticker).toBe(ticker);
+      expect(resultLeg.from.owner.did).toBe(fromDid);
+      expect(resultLeg.to.owner.did).toBe(toDid);
     });
 
-    it('should throw an error if a leg is a off chain (to be implemented)', () => {
+    it('should handle off chain legs', async () => {
       const fromDid = 'fromDid';
+      const rawFromId = dsMockUtils.createMockIdentityId(fromDid);
       const toDid = 'toDid';
+      const rawToId = dsMockUtils.createMockIdentityId(toDid);
       const ticker = 'SOME_TICKER';
+      const amount = new BigNumber(10);
 
       entityMockUtils.configureMocks({ fungibleAssetOptions: { ticker } });
       instructionStatusMock.mockResolvedValue(
         createMockInstructionStatus(InternalInstructionStatus.Pending)
       );
+
+      const identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
+
+      when(identityIdToStringSpy).calledWith(rawFromId).mockReturnValue(fromDid);
+      when(identityIdToStringSpy).calledWith(rawToId).mockReturnValue(toDid);
       const mockLeg = dsMockUtils.createMockOption(
         dsMockUtils.createMockInstructionLeg({
           OffChain: {
-            senderIdentity: dsMockUtils.createMockIdentityId(fromDid),
-            receiverIdentity: dsMockUtils.createMockIdentityId(toDid),
+            senderIdentity: rawFromId,
+            receiverIdentity: rawToId,
             ticker: dsMockUtils.createMockTicker(ticker),
-            amount: dsMockUtils.createMockU128(new BigNumber(1)),
+            amount: dsMockUtils.createMockU128(amount.shiftedBy(6)),
           },
         })
       );
-      const entries = [tuple(['instructionId', 'legId'] as unknown as StorageKey, mockLeg)];
+      const entries = [
+        tuple({ args: ['instructionId', 'legId'] } as unknown as StorageKey, mockLeg),
+      ];
 
       jest
         .spyOn(utilsInternalModule, 'requestPaginated')
@@ -718,7 +773,13 @@ describe('Instruction class', () => {
         .mockImplementation()
         .mockResolvedValue({ entries, lastKey: null });
 
-      return expect(instruction.getLegs()).rejects.toThrow();
+      const { data: leg } = await instruction.getLegs();
+
+      const resultLeg = leg[0] as OffChainLeg;
+      expect(resultLeg.offChainAmount).toEqual(amount);
+      expect(resultLeg.asset).toBe(ticker);
+      expect(resultLeg.from.did).toBe(fromDid);
+      expect(resultLeg.to.did).toBe(toDid);
     });
 
     it('should throw an error if a leg in None', () => {
@@ -1178,6 +1239,12 @@ describe('Instruction class', () => {
         data: [
           { from: from1, to: to1, amount, asset },
           { from: from2, to: to2, amount, asset },
+          {
+            from: entityMockUtils.getIdentityInstance({ did: 'offChainDid1' }),
+            to: entityMockUtils.getIdentityInstance({ did: 'offChainDid2' }),
+            asset: 'SOME_OFF_CHAIN_ASSET',
+            offChainAmount: new BigNumber(10),
+          },
         ],
         next: null,
       });
@@ -1216,6 +1283,44 @@ describe('Instruction class', () => {
           expiry: undefined,
         }),
       ]);
+    });
+  });
+
+  describe('method: getOffChainAffirmations', () => {
+    const legId = new BigNumber(2);
+
+    it('should return the affirmation status of offchain legs', async () => {
+      dsMockUtils.createQueryMock('settlement', 'offChainAffirmations', {
+        entries: [
+          tuple(
+            [rawId, dsMockUtils.createMockU64(legId)],
+            dsMockUtils.createMockAffirmationStatus('Pending')
+          ),
+        ],
+      });
+
+      const result = await instruction.getOffChainAffirmations();
+
+      expect(result).toEqual([
+        expect.objectContaining({
+          legId,
+          status: AffirmationStatus.Pending,
+        }),
+      ]);
+    });
+  });
+
+  describe('method: getOffChainAffirmationForLeg', () => {
+    const legId = new BigNumber(2);
+
+    it('should return the affirmation status for a specific leg', async () => {
+      dsMockUtils.createQueryMock('settlement', 'offChainAffirmations', {
+        returnValue: dsMockUtils.createMockAffirmationStatus('Pending'),
+      });
+
+      const result = await instruction.getOffChainAffirmationForLeg({ legId });
+
+      expect(result).toEqual(AffirmationStatus.Pending);
     });
   });
 });
