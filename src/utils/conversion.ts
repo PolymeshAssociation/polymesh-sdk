@@ -4910,23 +4910,19 @@ export function signatureToMeshRuntimeMultiSignature(
   value: string,
   context: Context
 ): SpRuntimeMultiSignature {
-  let data;
+  let rawValue;
   if (type === OffChainSignatureType.Ecdsa) {
-    data = {
-      Ecdsa: context.createType('SpCoreEcdsaSignature', value),
-    };
+    rawValue = context.createType('SpCoreEcdsaSignature', value);
   } else if (type === OffChainSignatureType.Ed25519) {
-    data = {
-      Ed25519: context.createType('SpCoreEd25519Signature', value),
-    };
+    rawValue = context.createType('SpCoreEd25519Signature', value);
   } else {
     // assume sr 25519
-    data = {
-      Sr25519: context.createType('SpCoreSr25519Signature', value),
-    };
+    rawValue = context.createType('SpCoreSr25519Signature', value);
   }
 
-  return context.createType('SpRuntimeMultiSignature', data);
+  return context.createType('SpRuntimeMultiSignature', {
+    [type]: rawValue,
+  });
 }
 
 /**
@@ -4936,6 +4932,16 @@ export function offChainMetadataToMeshReceiptMetadata(
   metadata: string,
   context: Context
 ): PolymeshPrimitivesSettlementReceiptMetadata {
+  if (metadata.length > MAX_OFF_CHAIN_METADATA_LENGTH) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Max metadata length exceeded',
+      data: {
+        maxLength: MAX_OFF_CHAIN_METADATA_LENGTH,
+      },
+    });
+  }
+
   return context.createType(
     'PolymeshPrimitivesSettlementReceiptMetadata',
     padString(metadata, MAX_OFF_CHAIN_METADATA_LENGTH)

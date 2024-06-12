@@ -47,6 +47,8 @@ import {
   PolymeshPrimitivesSecondaryKeySignatory,
   PolymeshPrimitivesSettlementAssetCount,
   PolymeshPrimitivesSettlementLeg,
+  PolymeshPrimitivesSettlementReceiptDetails,
+  PolymeshPrimitivesSettlementReceiptMetadata,
   PolymeshPrimitivesSettlementSettlementType,
   PolymeshPrimitivesSettlementVenueType,
   PolymeshPrimitivesStatisticsStat2ndKey,
@@ -57,6 +59,10 @@ import {
   PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceTransferCondition,
+  SpCoreEcdsaSignature,
+  SpCoreEd25519Signature,
+  SpCoreSr25519Signature,
+  SpRuntimeMultiSignature,
 } from '@polkadot/types/lookup';
 import { BTreeSet } from '@polkadot/types-codec';
 import type { ITuple } from '@polkadot/types-codec/types';
@@ -129,6 +135,7 @@ import {
   MetadataType,
   ModuleName,
   NonFungiblePortfolioMovement,
+  OffChainSignatureType,
   OfferingBalanceStatus,
   OfferingSaleStatus,
   OfferingTier,
@@ -269,6 +276,7 @@ import {
   nftInputToNftMetadataVec,
   nftMovementToPortfolioFund,
   nftToMeshNft,
+  offChainMetadataToMeshReceiptMetadata,
   offeringTierToPriceTier,
   percentageToPermill,
   permillToBigNumber,
@@ -280,12 +288,14 @@ import {
   portfolioLikeToPortfolioId,
   portfolioToPortfolioKind,
   posRatioToBigNumber,
+  receiptDetailsToMeshReceiptDetails,
   requirementToComplianceRequirement,
   scopeToMeshScope,
   scopeToMiddlewareScope,
   secondaryAccountToMeshSecondaryKey,
   securityIdentifierToAssetIdentifier,
   signatoryToSignerValue,
+  signatureToMeshRuntimeMultiSignature,
   signerToSignatory,
   signerToSignerValue,
   signerToString,
@@ -4391,10 +4401,11 @@ describe('middlewareInstructionToHistoricInstruction', () => {
     expect(result.type).toEqual(InstructionType.SettleOnAffirmation);
     expect(result.venueId).toEqual(venueId);
     expect(result.createdAt).toEqual(createdAt);
-    expect(result.legs[0].asset.ticker).toBe(ticker);
-    expect((result.legs[0] as FungibleLeg).amount).toEqual(amount1);
-    expect(result.legs[0].from.owner.did).toBe(portfolioDid1);
-    expect(result.legs[0].to.owner.did).toBe(portfolioDid2);
+    let resultLeg = result.legs[0] as FungibleLeg;
+    expect(resultLeg.asset.ticker).toBe(ticker);
+    expect(resultLeg.amount).toEqual(amount1);
+    expect(resultLeg.from.owner.did).toBe(portfolioDid1);
+    expect(resultLeg.to.owner.did).toBe(portfolioDid2);
     expect((result.legs[0].to as NumberedPortfolio).id).toEqual(new BigNumber(portfolioKind2));
 
     instruction = {
@@ -4422,10 +4433,11 @@ describe('middlewareInstructionToHistoricInstruction', () => {
     expect((result as any).endBlock).toEqual(endBlock);
     expect(result.venueId).toEqual(venueId);
     expect(result.createdAt).toEqual(createdAt);
-    expect(result.legs[0].asset.ticker).toBe(ticker);
-    expect((result.legs[0] as FungibleLeg).amount).toEqual(amount2);
-    expect(result.legs[0].from.owner.did).toBe(portfolioDid2);
-    expect(result.legs[0].to.owner.did).toBe(portfolioDid1);
+    resultLeg = result.legs[0] as FungibleLeg;
+    expect(resultLeg.asset.ticker).toBe(ticker);
+    expect(resultLeg.amount).toEqual(amount2);
+    expect(resultLeg.from.owner.did).toBe(portfolioDid2);
+    expect(resultLeg.to.owner.did).toBe(portfolioDid1);
     expect((result.legs[0].from as NumberedPortfolio).id).toEqual(new BigNumber(portfolioKind2));
   });
 });
@@ -9958,6 +9970,174 @@ describe('extrinsicStatus', () => {
       .mockReturnValue(fakeResult);
 
     const result = createRawExtrinsicStatus('Finalized', 'someHash' as unknown as Hash, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('signatureToMeshRuntimeMultiSignature', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return a SpRuntimeMultiSignature', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    const fakeResult = 'SpCoreEcdsaSignature' as unknown as SpRuntimeMultiSignature;
+
+    const signature = 'someSignature';
+
+    let fakeSignature = 'fakeSignature' as unknown as SpCoreEcdsaSignature;
+
+    when(context.createType)
+      .calledWith('SpCoreEcdsaSignature', signature)
+      .mockReturnValue(fakeSignature as unknown as SpCoreEcdsaSignature);
+
+    when(context.createType)
+      .calledWith('SpRuntimeMultiSignature', { Ecdsa: fakeSignature })
+      .mockReturnValue(fakeResult);
+
+    let result = signatureToMeshRuntimeMultiSignature(
+      OffChainSignatureType.Ecdsa,
+      signature,
+      context
+    );
+
+    expect(result).toEqual(fakeResult);
+
+    fakeSignature = 'fakeSignature' as unknown as SpCoreEd25519Signature;
+
+    when(context.createType)
+      .calledWith('SpCoreEd25519Signature', signature)
+      .mockReturnValue(fakeSignature);
+
+    when(context.createType)
+      .calledWith('SpRuntimeMultiSignature', { Ed25519: fakeSignature })
+      .mockReturnValue(fakeResult);
+
+    result = signatureToMeshRuntimeMultiSignature(
+      OffChainSignatureType.Ed25519,
+      signature,
+      context
+    );
+
+    expect(result).toEqual(fakeResult);
+
+    fakeSignature = 'fakeSignature' as unknown as SpCoreSr25519Signature;
+
+    when(context.createType)
+      .calledWith('SpCoreSr25519Signature', signature)
+      .mockReturnValue(fakeSignature);
+
+    when(context.createType)
+      .calledWith('SpRuntimeMultiSignature', { Sr25519: fakeSignature })
+      .mockReturnValue(fakeResult);
+
+    result = signatureToMeshRuntimeMultiSignature(
+      OffChainSignatureType.Sr25519,
+      signature,
+      context
+    );
+
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('offChainMetadataToMeshReceiptMetadata', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a string to a polkadot PolymeshPrimitivesSettlementReceiptMetadata object', () => {
+    const value = 'someMetadata';
+    const fakeResult = 'fakeMetadata' as unknown as PolymeshPrimitivesSettlementReceiptMetadata;
+    const context = dsMockUtils.getContextInstance();
+
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesSettlementReceiptMetadata', padString(value, 32))
+      .mockReturnValue(fakeResult);
+
+    const result = offChainMetadataToMeshReceiptMetadata(value, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+
+  it('should throw an error if the value exceeds the maximum length', () => {
+    const value = 'someVeryLongDescriptionThatIsDefinitelyLongerThanTheMaxLength';
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => offChainMetadataToMeshReceiptMetadata(value, context)).toThrow(
+      'Max metadata length exceeded'
+    );
+  });
+});
+
+describe('receiptDetailsToMeshReceiptDetails', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should create receipt details', () => {
+    const context = dsMockUtils.getContextInstance();
+    const instructionId = new BigNumber(1);
+    const receipt = {
+      uid: new BigNumber(1),
+      legId: new BigNumber(0),
+      signer: '5EYCAe5ijAx5xEfZdpCna3grUpY1M9M5vLUH5vpmwV1EnaYR',
+      signature: {
+        type: OffChainSignatureType.Sr25519,
+        value: '0xsomevalue',
+      },
+      metadata: 'Random metadata',
+    };
+    const fakeKey = 'fakeKey' as unknown as PolymeshPrimitivesSettlementReceiptDetails;
+    const fakeResult =
+      'fakeMetadataKeys' as unknown as Vec<PolymeshPrimitivesSettlementReceiptDetails>;
+
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesSettlementReceiptDetails', {
+        uid: bigNumberToU64(receipt.uid, context),
+        instructionId: bigNumberToU64(instructionId, context),
+        legId: bigNumberToU64(receipt.legId, context),
+        signer: stringToAccountId(receipt.signer, context),
+        signature: signatureToMeshRuntimeMultiSignature(
+          receipt.signature.type,
+          receipt.signature.value,
+          context
+        ),
+        metadata: offChainMetadataToMeshReceiptMetadata(receipt.metadata, context),
+      })
+      .mockReturnValue(fakeKey);
+
+    when(context.createType)
+      .calledWith('Vec<PolymeshPrimitivesSettlementReceiptDetails>', [fakeKey])
+      .mockReturnValue(fakeResult);
+
+    const result = receiptDetailsToMeshReceiptDetails([receipt], instructionId, context);
 
     expect(result).toEqual(fakeResult);
   });
