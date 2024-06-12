@@ -675,16 +675,16 @@ describe('Portfolio class', () => {
       expect(result[1].blockNumber).toEqual(blockNumber2);
       expect(result[0].blockHash).toBe(blockHash1);
       expect(result[1].blockHash).toBe(blockHash2);
-      expect(result[0].legs[0].asset.ticker).toBe(ticker1);
-      expect(result[1].legs[0].asset.ticker).toBe(ticker2);
+      expect((result[0].legs[0] as FungibleLeg).asset.ticker).toBe(ticker1);
+      expect((result[1].legs[0] as FungibleLeg).asset.ticker).toBe(ticker2);
       expect((result[0].legs[0] as FungibleLeg).amount).toEqual(amount1.div(Math.pow(10, 6)));
       expect((result[1].legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
-      expect(result[0].legs[0].from.owner.did).toBe(portfolioDid1);
-      expect(result[0].legs[0].to.owner.did).toBe(portfolioDid2);
+      expect((result[0].legs[0] as FungibleLeg).from.owner.did).toBe(portfolioDid1);
+      expect((result[0].legs[0] as FungibleLeg).to.owner.did).toBe(portfolioDid2);
       expect((result[0].legs[0].to as NumberedPortfolio).id).toEqual(portfolioId2);
-      expect(result[1].legs[0].from.owner.did).toBe(portfolioDid2);
+      expect((result[1].legs[0] as FungibleLeg).from.owner.did).toBe(portfolioDid2);
       expect((result[1].legs[0].from as NumberedPortfolio).id).toEqual(portfolioId2);
-      expect(result[1].legs[0].to.owner.did).toEqual(portfolioDid1);
+      expect((result[1].legs[0] as FungibleLeg).to.owner.did).toEqual(portfolioDid1);
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
@@ -740,10 +740,10 @@ describe('Portfolio class', () => {
 
       expect(result[0].blockNumber).toEqual(blockNumber1);
       expect(result[0].blockHash).toBe(blockHash1);
-      expect(result[0].legs[0].asset.ticker).toBe(ticker2);
+      expect((result[0].legs[0] as FungibleLeg).asset.ticker).toBe(ticker2);
       expect((result[0].legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
-      expect(result[0].legs[0].from.owner.did).toBe(portfolioDid1);
-      expect(result[0].legs[0].to.owner.did).toBe(portfolioDid1);
+      expect((result[0].legs[0] as FungibleLeg).from.owner.did).toBe(portfolioDid1);
+      expect((result[0].legs[0] as FungibleLeg).to.owner.did).toBe(portfolioDid1);
       expect((result[0].legs[0].to as NumberedPortfolio).id).toEqual(portfolioId2);
     });
 
