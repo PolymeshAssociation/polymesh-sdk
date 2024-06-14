@@ -2362,8 +2362,12 @@ describe('Context class', () => {
   });
 
   describe('method: getSignature', () => {
-    beforeEach(() => {
+    beforeAll(() => {
       jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
+    });
+
+    afterAll(() => {
+      jest.restoreAllMocks();
     });
 
     it('should throw an error when no signer is set or signer has not signRaw method', async () => {
@@ -2399,56 +2403,53 @@ describe('Context class', () => {
         })
       ).rejects.toThrow(expectedError);
     });
-  });
 
-  it('should return the signature after signing the payload', async () => {
-    const signer = {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      signRaw: jest.fn(raw => {
-        return new Promise(resolve =>
-          resolve({
+    it('should return the signature after signing the payload', async () => {
+      const signer = {
+        signRaw: jest.fn(() => {
+          return Promise.resolve({
             id: 1,
             signature: '0xsignature',
-          })
-        );
-      }),
-    } as PolkadotSigner;
+          });
+        }),
+      } as PolkadotSigner;
 
-    const address = 'someAddress';
+      const address = 'someAddress';
 
-    const context = await Context.create({
-      polymeshApi: dsMockUtils.getApiInstance(),
-      middlewareApiV2: dsMockUtils.getMiddlewareApi(),
-      signingManager: dsMockUtils.getSigningManagerInstance({
-        getExternalSigner: signer,
-        getAccounts: [address],
-      }),
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+        signingManager: dsMockUtils.getSigningManagerInstance({
+          getExternalSigner: signer,
+          getAccounts: [address],
+        }),
+      });
+
+      const rawPayload = '0xRawPayload';
+
+      let result = await context.getSignature({ rawPayload });
+
+      expect(signer.signRaw).toHaveBeenCalledWith({
+        address,
+        data: rawPayload,
+        type: 'bytes',
+      });
+
+      expect(signer.signRaw).toHaveBeenCalledTimes(1);
+
+      expect(result).toEqual('0xsignature');
+
+      result = await context.getSignature({ rawPayload, signer: 'someOtherSigner' });
+
+      expect(signer.signRaw).toHaveBeenCalledWith({
+        address: 'someOtherSigner',
+        data: rawPayload,
+        type: 'bytes',
+      });
+
+      expect(signer.signRaw).toHaveBeenCalledTimes(2);
+
+      expect(result).toEqual('0xsignature');
     });
-
-    const rawPayload = '0xRawPayload';
-
-    let result = await context.getSignature({ rawPayload });
-
-    expect(signer.signRaw).toHaveBeenCalledWith({
-      address,
-      data: rawPayload,
-      type: 'bytes',
-    });
-
-    expect(signer.signRaw).toHaveBeenCalledTimes(1);
-
-    expect(result).toEqual('0xsignature');
-
-    result = await context.getSignature({ rawPayload, signer: 'someOtherSigner' });
-
-    expect(signer.signRaw).toHaveBeenCalledWith({
-      address: 'someOtherSigner',
-      data: rawPayload,
-      type: 'bytes',
-    });
-
-    expect(signer.signRaw).toHaveBeenCalledTimes(2);
-
-    expect(result).toEqual('0xsignature');
   });
 });
