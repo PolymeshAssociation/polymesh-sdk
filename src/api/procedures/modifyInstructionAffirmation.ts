@@ -21,7 +21,7 @@ import {
   Leg,
   ModifyInstructionAffirmationParams,
   NumberedPortfolio,
-  OffChainAffirmationReceiptDetails,
+  OffChainAffirmationReceipt,
   PortfolioId,
   PortfolioLike,
   TxTag,
@@ -108,7 +108,7 @@ const assertPortfoliosValid = (
 };
 
 const assertReceipts = async (
-  receipts: OffChainAffirmationReceiptDetails[],
+  receipts: OffChainAffirmationReceipt[],
   offChainIndices: number[],
   instructionId: BigNumber,
   context: Context
@@ -124,8 +124,8 @@ const assertReceipts = async (
   const { venue } = await instruction.details();
   const allowedSigners = await venue.getAllowedSigners();
 
-  const invalidReceipts: OffChainAffirmationReceiptDetails[] = [];
-  const invalidSignerReceipts: OffChainAffirmationReceiptDetails[] = [];
+  const invalidReceipts: OffChainAffirmationReceipt[] = [];
+  const invalidSignerReceipts: OffChainAffirmationReceipt[] = [];
   const uniqueLegs: number[] = [];
   const uniqueUid: number[] = [];
 

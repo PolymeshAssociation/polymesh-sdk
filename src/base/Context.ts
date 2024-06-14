@@ -84,6 +84,7 @@ import {
   u32ToBigNumber,
 } from '~/utils/conversion';
 import {
+  asAccount,
   asDid,
   assertAddressValid,
   calculateNextKey,
@@ -1336,5 +1337,40 @@ export class Context {
           'Subscriptions are not supported over http. SDK must be initialized with a ws connection in order to subscribe',
       });
     }
+  }
+
+  /**
+   * Get signature for a raw payload string
+   */
+  public async getSignature(args: {
+    rawPayload: `0x${string}`;
+    signer?: string | Account;
+  }): Promise<`0x${string}`> {
+    const { rawPayload, signer } = args;
+
+    const externalSigner = this.getExternalSigner();
+
+    if (!externalSigner?.signRaw) {
+      throw new PolymeshError({
+        code: ErrorCode.General,
+        message:
+          'There is no signer associated with the SDK instance or the signer does not supporting raw payload',
+      });
+    }
+
+    let account: string | Account;
+    if (signer) {
+      account = signer;
+    } else {
+      account = this.getSigningAddress();
+    }
+
+    const result = await externalSigner.signRaw({
+      address: asAccount(account, this).address,
+      data: rawPayload,
+      type: 'bytes',
+    });
+
+    return result.signature;
   }
 }

@@ -25,6 +25,7 @@ import {
   InstructionType,
   NftLeg,
   OffChainLeg,
+  SignerKeyRingType,
   UnsubCallback,
 } from '~/types';
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
@@ -1321,6 +1322,138 @@ describe('Instruction class', () => {
       const result = await instruction.getOffChainAffirmationForLeg({ legId });
 
       expect(result).toEqual(AffirmationStatus.Pending);
+    });
+  });
+
+  describe('method: generateOffChainAffirmationReceipt', () => {
+    let legId: BigNumber;
+    let uid: BigNumber;
+    let rawUid: u64;
+    let rawLegId: u64;
+    let bigNumberToU64Spy: jest.SpyInstance;
+
+    beforeAll(() => {
+      bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+    });
+
+    beforeEach(() => {
+      rawUid = dsMockUtils.createMockU64(uid);
+      rawLegId = dsMockUtils.createMockU64(legId);
+
+      when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
+      when(bigNumberToU64Spy).calledWith(uid, context).mockReturnValue(rawUid);
+      when(bigNumberToU64Spy).calledWith(legId, context).mockReturnValue(rawLegId);
+    });
+
+    it('should throw an error for an invalid leg ID', async () => {
+      dsMockUtils.createQueryMock('settlement', 'instructionLegs', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      return expect(
+        instruction.generateOffChainAffirmationReceipt({
+          legId,
+          uid,
+        })
+      ).rejects.toThrow('Leg does not exist');
+    });
+
+    it('should throw an error for a non-offchain leg ID', async () => {
+      dsMockUtils.createQueryMock('settlement', 'instructionLegs', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockInstructionLeg({
+            Fungible: {
+              sender: dsMockUtils.createMockPortfolioId({
+                did: dsMockUtils.createMockIdentityId('fromDid'),
+                kind: dsMockUtils.createMockPortfolioKind('Default'),
+              }),
+              receiver: dsMockUtils.createMockPortfolioId({
+                did: dsMockUtils.createMockIdentityId('toDid'),
+                kind: dsMockUtils.createMockPortfolioKind('Default'),
+              }),
+              ticker: dsMockUtils.createMockTicker('ticker'),
+              amount: dsMockUtils.createMockU128(new BigNumber(10)),
+            },
+          })
+        ),
+      });
+
+      return expect(
+        instruction.generateOffChainAffirmationReceipt({
+          legId,
+          uid,
+        })
+      ).rejects.toThrow('Receipt payload can only be generated for offchain legs');
+    });
+
+    it('should return the affirmation receipt for offchain leg', async () => {
+      const senderIdentity = 'senderDid';
+      const rawSenderIdentity = dsMockUtils.createMockIdentityId(senderIdentity);
+      const receiverIdentity = 'receiverDid';
+      const rawReceiverIdentity = dsMockUtils.createMockIdentityId(receiverIdentity);
+
+      const ticker = 'ABCDEF';
+
+      const rawTicker = dsMockUtils.createMockTicker(ticker);
+      rawTicker.toHex = jest.fn();
+      rawTicker.toHex.mockReturnValue('0xABCDEF0000');
+
+      const amount = new BigNumber(10);
+
+      const rawAmount = dsMockUtils.createMockU128(amount.shiftedBy(6));
+
+      dsMockUtils.createQueryMock('settlement', 'instructionLegs', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockInstructionLeg({
+            OffChain: {
+              senderIdentity: rawSenderIdentity,
+              receiverIdentity: rawReceiverIdentity,
+              amount: rawAmount,
+              ticker: rawTicker,
+            },
+          })
+        ),
+      });
+
+      let result = await instruction.generateOffChainAffirmationReceipt({
+        legId,
+        uid,
+      });
+
+      expect(result).toEqual({
+        uid,
+        legId,
+        signer: expect.objectContaining({
+          address: '0xdummy',
+        }),
+        signature: {
+          type: SignerKeyRingType.Sr25519,
+          value: '0xsignature',
+        },
+        metadata: undefined,
+      });
+
+      const signer = 'someSigner';
+      const metadata = 'some metadata';
+
+      result = await instruction.generateOffChainAffirmationReceipt({
+        legId,
+        uid,
+        signer,
+        signerKeyRingType: SignerKeyRingType.Ed25519,
+        metadata,
+      });
+
+      expect(result).toEqual({
+        uid,
+        legId,
+        signer,
+        signature: {
+          type: SignerKeyRingType.Ed25519,
+          value: '0xsignature',
+        },
+        metadata,
+      });
     });
   });
 });

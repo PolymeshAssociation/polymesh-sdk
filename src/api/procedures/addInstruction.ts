@@ -333,7 +333,7 @@ async function getTxArgsAndErrors(
 
     const sameIdentityLegs = legs.filter(leg => {
       if (isOffChainLeg(leg)) {
-        return leg.from.did === leg.to.did;
+        return asDid(leg.from) === asDid(leg.to);
       } else {
         const { from, to } = leg;
         const fromId = portfolioLikeToPortfolioId(from);

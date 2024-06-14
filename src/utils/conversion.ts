@@ -197,8 +197,7 @@ import {
   MultiClaimCondition,
   NftMetadataInput,
   NonFungiblePortfolioMovement,
-  OffChainAffirmationReceiptDetails,
-  OffChainSignatureType,
+  OffChainAffirmationReceipt,
   OfferingBalanceStatus,
   OfferingDetails,
   OfferingSaleStatus,
@@ -220,6 +219,7 @@ import {
   SecurityIdentifier,
   SecurityIdentifierType,
   Signer,
+  SignerKeyRingType,
   SignerType,
   SignerValue,
   SingleClaimCondition,
@@ -4906,14 +4906,14 @@ export function createRawExtrinsicStatus(
  * @hidden
  */
 export function signatureToMeshRuntimeMultiSignature(
-  type: OffChainSignatureType,
+  type: SignerKeyRingType,
   value: string,
   context: Context
 ): SpRuntimeMultiSignature {
   let rawValue;
-  if (type === OffChainSignatureType.Ecdsa) {
+  if (type === SignerKeyRingType.Ecdsa) {
     rawValue = context.createType('SpCoreEcdsaSignature', value);
-  } else if (type === OffChainSignatureType.Ed25519) {
+  } else if (type === SignerKeyRingType.Ed25519) {
     rawValue = context.createType('SpCoreEd25519Signature', value);
   } else {
     // assume sr 25519
@@ -4952,7 +4952,7 @@ export function offChainMetadataToMeshReceiptMetadata(
  * @hidden
  */
 export function receiptDetailsToMeshReceiptDetails(
-  receiptDetails: OffChainAffirmationReceiptDetails[],
+  receiptDetails: OffChainAffirmationReceipt[],
   instructionId: BigNumber,
   context: Context
 ): Vec<PolymeshPrimitivesSettlementReceiptDetails> {

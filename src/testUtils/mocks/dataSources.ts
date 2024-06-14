@@ -463,6 +463,7 @@ interface ContextOptions {
   networkVersion?: string;
   supportsSubsidy?: boolean;
   supportsSubscription?: boolean;
+  getSignature?: `0x${string}`;
 }
 
 interface SigningManagerOptions {
@@ -784,6 +785,7 @@ const defaultContextOptions: ContextOptions = {
   networkVersion: '1.0.0',
   supportsSubsidy: true,
   supportsSubscription: true,
+  getSignature: '0xsignature',
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultSigningManagerOptions: SigningManagerOptions = {
@@ -911,6 +913,7 @@ function configureContext(opts: ContextOptions): void {
     getPolyxTransactions: jest.fn().mockResolvedValue(opts.getPolyxTransactions),
     assertHasSigningAddress: jest.fn(),
     assertSupportsSubscription: jest.fn(),
+    getSignature: jest.fn().mockReturnValue(opts.getSignature),
   } as unknown as MockContext;
 
   contextInstance.clone = jest.fn().mockReturnValue(contextInstance);
@@ -1225,6 +1228,7 @@ const createMockCodec = <T extends Codec>(codec: unknown, isEmpty: boolean): Moc
   (clone as any)._isCodec = true;
   clone.isEmpty = isEmpty;
   clone.eq = jest.fn();
+  clone.toHex = jest.fn();
 
   return clone;
 };
@@ -1241,6 +1245,7 @@ const createMockStringCodec = <T extends Codec>(value?: string | T): MockCodec<T
   return createMockCodec(
     {
       toString: () => value,
+      toHex: () => `0x${value}`,
     },
     value === undefined
   );
@@ -1830,7 +1835,7 @@ function isOption<T extends Codec>(codec: any): codec is Option<T> {
   return typeof codec?.unwrap === 'function';
 }
 
-export type MockCodec<C extends Codec> = C & { eq: jest.Mock };
+export type MockCodec<C extends Codec> = C & { eq: jest.Mock; toHex: jest.Mock };
 
 export const createMockTupleCodec = <T extends [...Codec[]]>(
   tup?: ITuple<T> | Readonly<[...unknown[]]>
@@ -1868,6 +1873,7 @@ const createMockNumberCodec = <T extends UInt>(value?: BigNumber | T): MockCodec
       toNumber: () => value?.toNumber(),
       toString: () => value?.toString(),
       isZero: () => value?.isZero(),
+      toHex: () => (value ? `0x${value.toNumber()}` : undefined),
     },
     value === undefined
   );

@@ -136,7 +136,7 @@ import {
   MetadataType,
   ModuleName,
   NonFungiblePortfolioMovement,
-  OffChainSignatureType,
+  OffChainAffirmationReceipt,
   OfferingBalanceStatus,
   OfferingSaleStatus,
   OfferingTier,
@@ -151,6 +151,7 @@ import {
   ScopeType,
   SecurityIdentifierType,
   Signer,
+  SignerKeyRingType,
   SignerType,
   SignerValue,
   StatType,
@@ -10041,11 +10042,7 @@ describe('signatureToMeshRuntimeMultiSignature', () => {
       .calledWith('SpRuntimeMultiSignature', { Ecdsa: fakeSignature })
       .mockReturnValue(fakeResult);
 
-    let result = signatureToMeshRuntimeMultiSignature(
-      OffChainSignatureType.Ecdsa,
-      signature,
-      context
-    );
+    let result = signatureToMeshRuntimeMultiSignature(SignerKeyRingType.Ecdsa, signature, context);
 
     expect(result).toEqual(fakeResult);
 
@@ -10059,11 +10056,7 @@ describe('signatureToMeshRuntimeMultiSignature', () => {
       .calledWith('SpRuntimeMultiSignature', { Ed25519: fakeSignature })
       .mockReturnValue(fakeResult);
 
-    result = signatureToMeshRuntimeMultiSignature(
-      OffChainSignatureType.Ed25519,
-      signature,
-      context
-    );
+    result = signatureToMeshRuntimeMultiSignature(SignerKeyRingType.Ed25519, signature, context);
 
     expect(result).toEqual(fakeResult);
 
@@ -10077,11 +10070,7 @@ describe('signatureToMeshRuntimeMultiSignature', () => {
       .calledWith('SpRuntimeMultiSignature', { Sr25519: fakeSignature })
       .mockReturnValue(fakeResult);
 
-    result = signatureToMeshRuntimeMultiSignature(
-      OffChainSignatureType.Sr25519,
-      signature,
-      context
-    );
+    result = signatureToMeshRuntimeMultiSignature(SignerKeyRingType.Sr25519, signature, context);
 
     expect(result).toEqual(fakeResult);
   });
@@ -10140,12 +10129,12 @@ describe('receiptDetailsToMeshReceiptDetails', () => {
   it('should create receipt details', () => {
     const context = dsMockUtils.getContextInstance();
     const instructionId = new BigNumber(1);
-    const receipt = {
+    const receipt: OffChainAffirmationReceipt = {
       uid: new BigNumber(1),
       legId: new BigNumber(0),
       signer: '5EYCAe5ijAx5xEfZdpCna3grUpY1M9M5vLUH5vpmwV1EnaYR',
       signature: {
-        type: OffChainSignatureType.Sr25519,
+        type: SignerKeyRingType.Sr25519,
         value: '0xsomevalue',
       },
       metadata: 'Random metadata',
@@ -10159,13 +10148,13 @@ describe('receiptDetailsToMeshReceiptDetails', () => {
         uid: bigNumberToU64(receipt.uid, context),
         instructionId: bigNumberToU64(instructionId, context),
         legId: bigNumberToU64(receipt.legId, context),
-        signer: stringToAccountId(receipt.signer, context),
+        signer: stringToAccountId(receipt.signer as string, context),
         signature: signatureToMeshRuntimeMultiSignature(
           receipt.signature.type,
           receipt.signature.value,
           context
         ),
-        metadata: offChainMetadataToMeshReceiptMetadata(receipt.metadata, context),
+        metadata: offChainMetadataToMeshReceiptMetadata(receipt.metadata as string, context),
       })
       .mockReturnValue(fakeKey);
 

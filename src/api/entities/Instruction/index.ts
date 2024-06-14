@@ -2,11 +2,13 @@ import {
   PolymeshPrimitivesSettlementInstructionStatus,
   PolymeshPrimitivesSettlementLeg,
 } from '@polkadot/types/lookup';
+import { hexAddPrefix, hexStripPrefix } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
 import { executeManualInstruction } from '~/api/procedures/executeManualInstruction';
 import {
+  Account,
   Context,
   Entity,
   FungibleAsset,
@@ -29,10 +31,12 @@ import {
   InstructionAffirmationOperation,
   NoArgsProcedureMethod,
   NumberedPortfolio,
+  OffChainAffirmationReceipt,
   OptionalArgsProcedureMethod,
   PaginationOptions,
   RejectInstructionParams,
   ResultSet,
+  SignerKeyRingType,
   SubCallback,
   UnsubCallback,
   WithdrawInstructionParams,
@@ -751,5 +755,84 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     }
 
     return null;
+  }
+
+  /**
+   * Generate an offchain affirmation receipt for a specific leg and UID
+   *
+   * @param args.legId index of the offchain leg in this instruction
+   * @param args.uid UID of the receipt
+   * @param args.metadata (optional) metadata to be associated with the receipt
+   * @param args.signer (optional) Signer to be used to generate receipt signature. Defaults to signing Account associated with the SDK
+   * @param args.signerKeyRingType (optional) keyring type of the signer. Defaults to 'Sr25519'
+   */
+  public async generateOffChainAffirmationReceipt(args: {
+    legId: BigNumber;
+    uid: BigNumber;
+    metadata?: string;
+    signer?: string | Account;
+    signerKeyRingType?: SignerKeyRingType;
+  }): Promise<OffChainAffirmationReceipt> {
+    const {
+      id,
+      context,
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+    } = this;
+
+    const { legId, uid, metadata, signer, signerKeyRingType = SignerKeyRingType.Sr25519 } = args;
+
+    const rawId = bigNumberToU64(id, context);
+    const rawLegId = bigNumberToU64(legId, context);
+
+    const rawOptionalLeg = await settlement.instructionLegs(rawId, rawLegId);
+
+    if (rawOptionalLeg.isNone) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'Leg does not exist',
+      });
+    }
+
+    const rawLeg = rawOptionalLeg.unwrap();
+
+    if (!rawLeg.isOffChain) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'Receipt payload can only be generated for offchain legs',
+      });
+    }
+
+    const { senderIdentity, receiverIdentity, ticker, amount } = rawLeg.asOffChain;
+
+    const rawUid = bigNumberToU64(uid, context);
+
+    const payloadStrings = [
+      rawUid.toHex(true),
+      rawId.toHex(true),
+      rawLegId.toHex(true),
+      senderIdentity.toHex(),
+      receiverIdentity.toHex(),
+      ticker.toHex(),
+      amount.toHex(true),
+    ];
+
+    const rawPayload = hexAddPrefix(payloadStrings.map(e => hexStripPrefix(e)).join(''));
+
+    const signatureValue = await context.getSignature({ rawPayload, signer });
+
+    return {
+      uid,
+      legId,
+      signer: signer || context.getSigningAccount(),
+      signature: {
+        type: signerKeyRingType,
+        value: signatureValue,
+      },
+      metadata,
+    };
   }
 }

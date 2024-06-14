@@ -946,18 +946,18 @@ export type WithdrawInstructionParams = {
   portfolios?: PortfolioLike[];
 };
 
-export enum OffChainSignatureType {
+export enum SignerKeyRingType {
   Ed25519 = 'Ed25519',
   Sr25519 = 'Sr25519',
   Ecdsa = 'Ecdsa',
 }
 
 export interface OffChainSignature {
-  type: OffChainSignatureType;
-  value: string;
+  type: SignerKeyRingType;
+  value: `0x${string}`;
 }
 
-export interface OffChainAffirmationReceiptDetails {
+export interface OffChainAffirmationReceipt {
   /**
    * Unique receipt number set by the signer for their receipts
    */
@@ -988,7 +988,12 @@ export type AffirmInstructionParams = {
    */
   portfolios?: PortfolioLike[];
 
-  receipts?: OffChainAffirmationReceiptDetails[];
+  /**
+   * (optional) list of offchain receipts required for affirming offchain legs(if any) in the instruction
+   *
+   * Receipt can be generated using {@link api/entities/Instruction!Instruction.generateOffChainAffirmationReceipt | generateOffChainAffirmationReceipt} method
+   */
+  receipts?: OffChainAffirmationReceipt[];
 };
 
 export type AffirmAsMediatorParams = {

@@ -29,10 +29,10 @@ import {
   Identity,
   InstructionAffirmationOperation,
   ModifyInstructionAffirmationParams,
-  OffChainAffirmationReceiptDetails,
-  OffChainSignatureType,
+  OffChainAffirmationReceipt,
   PortfolioId,
   PortfolioLike,
+  SignerKeyRingType,
   TxTags,
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -295,7 +295,7 @@ describe('modifyInstructionAffirmation procedure', () => {
   });
 
   describe('offchain settlement affirmation', () => {
-    let receipt: OffChainAffirmationReceiptDetails;
+    let receipt: OffChainAffirmationReceipt;
     let transaction: jest.Mock;
     let storage: Storage;
     let offChainAffirmationsQueryMock: jest.Mock;
@@ -329,7 +329,7 @@ describe('modifyInstructionAffirmation procedure', () => {
         uid: new BigNumber(1),
         signer: 'allowedSigner',
         signature: {
-          type: OffChainSignatureType.Sr25519,
+          type: SignerKeyRingType.Sr25519,
           value: '0xsignature',
         },
         metadata: 'Optional metadata',
@@ -929,7 +929,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       result = await boundFunc({
         ...args,
         operation: InstructionAffirmationOperation.Affirm,
-        receipts: ['receipts' as unknown as OffChainAffirmationReceiptDetails],
+        receipts: ['receipts' as unknown as OffChainAffirmationReceipt],
       });
 
       expect(result).toEqual({
