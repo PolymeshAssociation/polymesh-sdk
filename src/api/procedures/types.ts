@@ -1033,6 +1033,14 @@ export interface ExecuteManualInstructionParams {
 export interface CreateVenueParams {
   description: string;
   type: VenueType;
+  /**
+   * (optional) list of signers that are allowed to sign receipts for this venue
+   */
+  signers?: (string | Account)[];
+}
+
+export interface UpdateVenueSignersParams {
+  signers: (string | Account)[];
 }
 
 export interface ControllerTransferParams {

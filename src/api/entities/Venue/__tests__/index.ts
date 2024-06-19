@@ -408,6 +408,58 @@ describe('Venue class', () => {
     });
   });
 
+  describe('method: addSigners', () => {
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+      const signers = ['newSigner'];
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          {
+            args: { venue, signers, addSigners: true },
+            transformer: undefined,
+          },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await venue.addSigners({ signers });
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: removeSigners', () => {
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+      const signers = ['removeSigner'];
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          {
+            args: { venue, signers, addSigners: false },
+            transformer: undefined,
+          },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await venue.removeSigners({ signers });
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
   describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       const venueEntity = new Venue({ id: new BigNumber(1) }, context);

@@ -9,6 +9,7 @@ import {
   Identity,
   Instruction,
   modifyVenue,
+  updateVenueSigners,
 } from '~/internal';
 import { instructionsQuery } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
@@ -21,6 +22,7 @@ import {
   NumberedPortfolio,
   ProcedureMethod,
   ResultSet,
+  UpdateVenueSignersParams,
 } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
@@ -98,6 +100,26 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
 
     this.modify = createProcedureMethod(
       { getProcedureAndArgs: args => [modifyVenue, { ...args, venue: this }] },
+      context
+    );
+
+    this.addSigners = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [
+          updateVenueSigners,
+          { ...args, addSigners: true, venue: this },
+        ],
+      },
+      context
+    );
+
+    this.removeSigners = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [
+          updateVenueSigners,
+          { ...args, addSigners: false, venue: this },
+        ],
+      },
       context
     );
   }
@@ -301,6 +323,26 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
    *   - Venue Owner
    */
   public modify: ProcedureMethod<ModifyVenueParams, void>;
+
+  /**
+   * Adds a list of signers allowed to sign receipts for this Venue
+   *
+   * @note required role:
+   *   - Venue Owner
+   *
+   * @throws if one or more specified signers are already added to the Venue
+   */
+  public addSigners: ProcedureMethod<UpdateVenueSignersParams, void>;
+
+  /**
+   * Adds a list of signers allowed to sign receipts for this Venue
+   *
+   * @note required role:
+   *   - Venue Owner
+   *
+   * @throws if one or more specified signers are already added to the Venue
+   */
+  public removeSigners: ProcedureMethod<UpdateVenueSignersParams, void>;
 
   /**
    * Return the Venue's ID
