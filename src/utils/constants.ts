@@ -126,7 +126,7 @@ export const PRIVATE_SUPPORTED_NODE_SEMVER = coerce(PRIVATE_SUPPORTED_NODE_VERSI
 /**
  * The Polymesh chain spec version range that is compatible with this version of the SDK
  */
-export const SUPPORTED_SPEC_VERSION_RANGE = '6.2 || 6.3';
+export const SUPPORTED_SPEC_VERSION_RANGE = '6.3';
 
 /**
  * The Polymesh private chain spec version range that is compatible with this version of the SDK
