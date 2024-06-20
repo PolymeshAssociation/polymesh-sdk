@@ -286,6 +286,7 @@ import {
   permissionGroupIdentifierToAgentGroup,
   permissionsLikeToPermissions,
   permissionsToMeshPermissions,
+  portfolioIdStringToPortfolio,
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
@@ -10165,5 +10166,22 @@ describe('receiptDetailsToMeshReceiptDetails', () => {
     const result = receiptDetailsToMeshReceiptDetails([receipt], instructionId, context);
 
     expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('portfolioIdStringToPortfolio', () => {
+  test('should convert a valid id string to MiddlewarePortfolio object', () => {
+    const id = '12345/678';
+    const expectedOutput = { identityId: '12345', number: 678 };
+
+    expect(portfolioIdStringToPortfolio(id)).toEqual(expectedOutput);
+  });
+
+  test('should return NaN for invalid number part', () => {
+    const id = '12345/abc';
+    const result = portfolioIdStringToPortfolio(id);
+
+    expect(result.identityId).toBe('12345');
+    expect(result.number).toBeNaN();
   });
 });

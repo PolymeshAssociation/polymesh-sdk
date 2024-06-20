@@ -4767,6 +4767,15 @@ export function toCustomClaimTypeWithIdentity(
 /**
  * @hidden
  */
+export function portfolioIdStringToPortfolio(id: string): MiddlewarePortfolio {
+  const [identityId, number] = id.split('/');
+
+  return { identityId, number: parseInt(number, 10) } as MiddlewarePortfolio;
+}
+
+/**
+ * @hidden
+ */
 export function toHistoricalSettlements(
   settlementsResult: ApolloQueryResult<Ensured<Query, 'legs'>>,
   portfolioMovementsResult: ApolloQueryResult<Ensured<Query, 'portfolioMovements'>>,
@@ -4832,7 +4841,7 @@ export function toHistoricalSettlements(
   });
 
   portfolioMovementsResult.data.portfolioMovements.nodes.forEach(
-    ({ createdBlock, from, to, fromId, toId, assetId, amount, address: accountAddress }) => {
+    ({ createdBlock, fromId, toId, assetId, amount, address: accountAddress }) => {
       const { blockId, hash } = createdBlock!;
       data.push({
         blockNumber: new BigNumber(blockId),
@@ -4844,8 +4853,8 @@ export function toHistoricalSettlements(
             asset: new FungibleAsset({ ticker: assetId }, context),
             amount: new BigNumber(amount).shiftedBy(-6),
             direction: getDirection(fromId, toId),
-            from: middlewarePortfolioToPortfolio(from!, context),
-            to: middlewarePortfolioToPortfolio(to!, context),
+            from: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(fromId), context),
+            to: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(toId), context),
           },
         ],
       });
