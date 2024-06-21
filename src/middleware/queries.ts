@@ -128,12 +128,11 @@ export function metadataQuery(): QueryOptions {
 export function latestSqVersionQuery(): QueryOptions {
   const query = gql`
     query SubqueryVersions {
-      subqueryVersions(orderBy: [${SubqueryVersionsOrderBy.UpdatedAtDesc}], first: 1) {
+      subqueryVersions(orderBy: [${SubqueryVersionsOrderBy.CreatedAtDesc}], first: 1) {
         nodes {
           id
           version
           createdAt
-          updatedAt
         }
       }
     }
