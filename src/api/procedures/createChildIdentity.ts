@@ -1,7 +1,7 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 
 import { ChildIdentity, Context, Identity, PolymeshError, Procedure } from '~/internal';
-import { CreateChildIdentityParams, ErrorCode, TxTags } from '~/types';
+import { Account, CreateChildIdentityParams, ErrorCode, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   boolToBoolean,
@@ -16,6 +16,7 @@ import { asAccount, filterEventRecords } from '~/utils/internal';
  */
 export interface Storage {
   identity: Identity;
+  actingAccount: Account;
 }
 
 /**
@@ -105,15 +106,12 @@ export async function getAuthorization(
   this: Procedure<CreateChildIdentityParams, ChildIdentity, Storage>
 ): Promise<ProcedureAuthorization> {
   const {
-    context,
-    storage: { identity },
+    storage: { identity, actingAccount },
   } = this;
-
-  const signingAccount = context.getSigningAccount();
 
   const { account: primaryAccount } = await identity.getPrimaryAccount();
 
-  if (!signingAccount.isEqual(primaryAccount)) {
+  if (!actingAccount.isEqual(primaryAccount)) {
     return {
       signerPermissions: "A child Identity can only be created by an Identity's primary Account",
     };
@@ -136,8 +134,14 @@ export async function prepareStorage(
 ): Promise<Storage> {
   const { context } = this;
 
+  const [identity, actingAccount] = await Promise.all([
+    context.getSigningIdentity(),
+    context.getActingAccount(),
+  ]);
+
   return {
-    identity: await context.getSigningIdentity(),
+    identity,
+    actingAccount,
   };
 }
 

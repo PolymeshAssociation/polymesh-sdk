@@ -125,6 +125,10 @@ export enum PayingAccountType {
    * the caller Account is responsible of paying the fees
    */
   Caller = 'Caller',
+  /**
+   * The creator of the MultiSig is responsible for paying the fees
+   */
+  MultiSigCreator = 'MultiSigCreator',
 }
 
 /**
@@ -143,7 +147,7 @@ export type PayingAccount =
       allowance: BigNumber;
     }
   | {
-      type: PayingAccountType.Caller | PayingAccountType.Other;
+      type: PayingAccountType.Caller | PayingAccountType.Other | PayingAccountType.MultiSigCreator;
       account: Account;
     };
 

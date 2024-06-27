@@ -939,6 +939,7 @@ export function assertAddressValid(address: string, ss58Format: BigNumber): void
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The supplied address is not a valid SS58 address',
+      data: { address, expectedFormat: ss58Format.toString() },
     });
   }
 
@@ -947,7 +948,7 @@ export function assertAddressValid(address: string, ss58Format: BigNumber): void
       code: ErrorCode.ValidationError,
       message: "The supplied address is not encoded with the chain's SS58 format",
       data: {
-        ss58Format,
+        ss58Format: ss58Format.toString(),
       },
     });
   }

@@ -848,10 +848,12 @@ function configureContext(opts: ContextOptions): void {
         checkPermissions: jest.fn().mockResolvedValue(opts.checkPermissions),
         isFrozen: jest.fn().mockResolvedValue(opts.isFrozen),
         isEqual: jest.fn().mockReturnValue(opts.signingAccountIsEqual),
+        getMultiSig: jest.fn().mockResolvedValue(null),
       })
     : getSigningAccount.mockImplementation(() => {
         throw new Error('There is no Account associated with the SDK');
       });
+  const getActingAccount = getSigningAccount;
   const signingAddress = opts.withSigningManager ? opts.signingAddress : undefined;
   const getSigningAddress = jest.fn();
   opts.withSigningManager
@@ -869,6 +871,7 @@ function configureContext(opts: ContextOptions): void {
     nonce,
     getSigningIdentity,
     getSigningAccount,
+    getActingAccount,
     getSigningAddress,
     accountBalance: jest.fn().mockResolvedValue(opts.balance),
     accountSubsidy: jest.fn().mockResolvedValue(opts.subsidy),

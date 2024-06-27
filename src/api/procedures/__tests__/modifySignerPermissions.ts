@@ -119,6 +119,7 @@ describe('modifySignerPermissions procedure', () => {
       mockContext,
       {
         identity,
+        actingAccount: account,
       }
     );
 
@@ -183,7 +184,7 @@ describe('modifySignerPermissions procedure', () => {
 
     const proc = procedureMockUtils.getInstance<ModifySignerPermissionsParams, void, Storage>(
       mockContext,
-      { identity }
+      { identity, actingAccount: account }
     );
 
     return expect(
@@ -197,7 +198,7 @@ describe('modifySignerPermissions procedure', () => {
     it('should return the appropriate roles and permissions', async () => {
       let proc = procedureMockUtils.getInstance<ModifySignerPermissionsParams, void, Storage>(
         mockContext,
-        { identity }
+        { identity, actingAccount: account }
       );
       let boundFunc = getAuthorization.bind(proc);
 
@@ -210,11 +211,12 @@ describe('modifySignerPermissions procedure', () => {
         },
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (account.isEqual as any).mockReturnValue(false);
+
       proc = procedureMockUtils.getInstance<ModifySignerPermissionsParams, void, Storage>(
-        dsMockUtils.getContextInstance({
-          signingAccountIsEqual: false,
-        }),
-        { identity }
+        dsMockUtils.getContextInstance(),
+        { identity, actingAccount: account }
       );
 
       boundFunc = getAuthorization.bind(proc);
@@ -239,6 +241,9 @@ describe('modifySignerPermissions procedure', () => {
       expect(result).toEqual({
         identity: expect.objectContaining({
           did: 'someDid',
+        }),
+        actingAccount: expect.objectContaining({
+          address: '0xdummy',
         }),
       });
     });

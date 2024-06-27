@@ -302,7 +302,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
         ConsumeAddMultiSigSignerAuthorizationParams,
         void
       >(mockContext);
-      const { address } = mockContext.getSigningAccount();
+      const { address } = await mockContext.getActingAccount();
       const constructorParams = {
         authId,
         expiry: null,

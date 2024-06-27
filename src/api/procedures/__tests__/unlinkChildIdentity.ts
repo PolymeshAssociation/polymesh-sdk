@@ -11,7 +11,7 @@ import {
 import { Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { TxTags, UnlinkChildParams } from '~/types';
+import { Account, TxTags, UnlinkChildParams } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -24,6 +24,7 @@ jest.mock(
 describe('unlinkChildIdentity procedure', () => {
   let mockContext: Mocked<Context>;
   let identity: Identity;
+  let actingAccount: Account;
   let childIdentity: ChildIdentity;
   let rawChildIdentity: PolymeshPrimitivesIdentityId;
   let stringToIdentityIdSpy: jest.SpyInstance;
@@ -38,6 +39,7 @@ describe('unlinkChildIdentity procedure', () => {
 
   beforeEach(() => {
     identity = entityMockUtils.getIdentityInstance();
+    actingAccount = entityMockUtils.getAccountInstance();
 
     childIdentity = entityMockUtils.getChildIdentityInstance({
       did: 'someChild',
@@ -74,6 +76,7 @@ describe('unlinkChildIdentity procedure', () => {
 
     const proc = procedureMockUtils.getInstance<UnlinkChildParams, void, Storage>(mockContext, {
       identity,
+      actingAccount,
     });
 
     return expect(
@@ -91,6 +94,7 @@ describe('unlinkChildIdentity procedure', () => {
 
     const proc = procedureMockUtils.getInstance<UnlinkChildParams, void, Storage>(mockContext, {
       identity,
+      actingAccount,
     });
 
     return expect(
@@ -105,6 +109,7 @@ describe('unlinkChildIdentity procedure', () => {
   it('should add a create unlinkChildIdentity transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<UnlinkChildParams, void, Storage>(mockContext, {
       identity,
+      actingAccount,
     });
 
     const unlinkChildIdentityTransaction = dsMockUtils.createTxMock(
@@ -127,6 +132,7 @@ describe('unlinkChildIdentity procedure', () => {
     it('should return the appropriate roles and permissions', async () => {
       let proc = procedureMockUtils.getInstance<UnlinkChildParams, void, Storage>(mockContext, {
         identity,
+        actingAccount,
       });
       let boundFunc = getAuthorization.bind(proc);
 
@@ -139,11 +145,12 @@ describe('unlinkChildIdentity procedure', () => {
         },
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (actingAccount.isEqual as any).mockReturnValue(false);
+
       proc = procedureMockUtils.getInstance<UnlinkChildParams, void, Storage>(
-        dsMockUtils.getContextInstance({
-          signingAccountIsEqual: false,
-        }),
-        { identity }
+        dsMockUtils.getContextInstance(),
+        { identity, actingAccount }
       );
 
       boundFunc = getAuthorization.bind(proc);
@@ -166,6 +173,9 @@ describe('unlinkChildIdentity procedure', () => {
       expect(result).toEqual({
         identity: expect.objectContaining({
           did: 'someDid',
+        }),
+        actingAccount: expect.objectContaining({
+          address: '0xdummy',
         }),
       });
     });

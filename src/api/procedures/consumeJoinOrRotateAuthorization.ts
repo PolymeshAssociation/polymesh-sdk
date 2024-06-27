@@ -18,7 +18,7 @@ export interface ConsumeJoinOrRotateAuthorizationParams {
 }
 
 export interface Storage {
-  signingAccount: Account;
+  actingAccount: Account;
   calledByTarget: boolean;
 }
 
@@ -124,7 +124,7 @@ export async function getAuthorization(
 ): Promise<ProcedureAuthorization> {
   const { issuer } = authRequest;
   const {
-    storage: { signingAccount, calledByTarget },
+    storage: { actingAccount, calledByTarget },
   } = this;
   let hasRoles = calledByTarget;
 
@@ -142,7 +142,7 @@ export async function getAuthorization(
     };
   }
 
-  const identity = await signingAccount.getIdentity();
+  const identity = await actingAccount.getIdentity();
 
   /*
    * if the target is removing the auth request and they don't have an Identity,
@@ -178,11 +178,11 @@ export async function prepareStorage(
 
   // JoinIdentity Authorizations always target an Account
   const targetAccount = target as Account;
-  const signingAccount = context.getSigningAccount();
-  const calledByTarget = targetAccount.isEqual(signingAccount);
+  const actingAccount = await context.getActingAccount();
+  const calledByTarget = targetAccount.isEqual(actingAccount);
 
   return {
-    signingAccount,
+    actingAccount,
     calledByTarget,
   };
 }

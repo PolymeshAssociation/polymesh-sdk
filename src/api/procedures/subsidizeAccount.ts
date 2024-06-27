@@ -31,7 +31,10 @@ export async function prepareSubsidizeAccount(
 
   const { address: beneficiaryAddress } = account;
 
-  const identity = await context.getSigningIdentity();
+  const [identity, subsidizer] = await Promise.all([
+    context.getSigningIdentity(),
+    context.getActingAccount(),
+  ]);
 
   const authorizationRequests = await identity.authorizations.getSent();
 
@@ -62,7 +65,7 @@ export async function prepareSubsidizeAccount(
     type: AuthorizationType.AddRelayerPayingKey,
     value: {
       beneficiary: account,
-      subsidizer: context.getSigningAccount(),
+      subsidizer,
       allowance,
     },
   };

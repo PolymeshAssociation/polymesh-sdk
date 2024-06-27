@@ -126,7 +126,7 @@ export async function getAuthorization(
     let condition;
 
     if (target instanceof Account) {
-      const account = context.getSigningAccount();
+      const account = await context.getActingAccount();
       condition = target.isEqual(account);
     } else {
       identity = await fetchIdentity();

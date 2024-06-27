@@ -27,6 +27,8 @@ import {
   KnownAssetType,
   KnownNftType,
   MortalityProcedureOpt,
+  MultiSig,
+  MultiSigProcedureOpt,
   PermissionGroupType,
   Role,
   SignerValue,
@@ -175,6 +177,14 @@ export interface BaseTransactionSpec<ReturnValue, TransformedReturnValue = Retur
    *   they try to execute a transaction with `paidForBy` set, the fees will be paid for by the `paidForBy` Identity
    */
   paidForBy?: Identity;
+
+  /**
+   * If present that means the current transaction is a MultiSigProposal and the `signingAccount` is a signer for this MultiSig
+   *
+   * The proposal will be executed on chain after enough signers have approved the transaction
+   */
+  multiSig?: MultiSig;
+
   /**
    * value that the transaction will return once it has run, or a function that returns that value
    */
@@ -239,6 +249,10 @@ export interface TransactionConstructionData {
    * how long the transaction should be valid for
    */
   mortality: MortalityProcedureOpt;
+  /**
+   * options that specify details for MultiSig proposals
+   */
+  multiSigOpts?: MultiSigProcedureOpt;
 }
 
 export interface AuthTarget {

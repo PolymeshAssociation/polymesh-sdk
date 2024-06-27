@@ -108,6 +108,11 @@ export interface ProcedureOpts {
    * More information can be found [here](https://wiki.polkadot.network/docs/build-protocol-info#transaction-mortality). Note the Polymesh chain will **never** reap Accounts, so the risk of a replay attack is mitigated.
    */
   mortality?: MortalityProcedureOpt;
+
+  /**
+   * These options will only apply when the `signingAccount` is a MultiSig signer and the transaction is being wrapped as a proposal
+   */
+  multiSigOpts?: MultiSigProcedureOpt;
 }
 
 /**
@@ -129,6 +134,13 @@ export interface MortalProcedureOptValue {
    * @note this value should not exceed 4096, which is the chain's `BlockHashCount` as the lesser of the two will be used.
    */
   readonly lifetime?: BigNumber;
+}
+
+export interface MultiSigProcedureOpt {
+  /**
+   * The block number for which the proposal expires
+   */
+  expiry?: Date;
 }
 
 export type MortalityProcedureOpt = ImmortalProcedureOptValue | MortalProcedureOptValue;

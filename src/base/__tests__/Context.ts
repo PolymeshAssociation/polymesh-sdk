@@ -663,6 +663,62 @@ describe('Context class', () => {
     });
   });
 
+  describe('method: getActingAccount', () => {
+    beforeAll(() => {
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
+    });
+
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should return the signing Account if its not a MultiSig signer', async () => {
+      const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+        signingManager: dsMockUtils.getSigningManagerInstance({
+          getAccounts: [address],
+        }),
+      });
+
+      const result = await context.getActingAccount();
+      expect(result).toEqual(expect.objectContaining({ address }));
+    });
+
+    it('should return the acting Account if the signer is a MultiSig signer', async () => {
+      const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+        signingManager: dsMockUtils.getSigningManagerInstance({
+          getAccounts: [address],
+        }),
+      });
+      entityMockUtils.configureMocks({
+        accountOptions: {
+          getMultiSig: entityMockUtils.getMultiSigInstance({ address: 'someMultiAddress' }),
+        },
+      });
+
+      const result = await context.getActingAccount();
+      expect(result).toEqual(expect.objectContaining({ address: 'someMultiAddress' }));
+    });
+
+    it('should throw an error if there is no Account associated with the SDK', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+      });
+
+      expect(() => context.getSigningAccount()).toThrow(
+        'There is no signing Account associated with the SDK instance'
+      );
+    });
+  });
+
   describe('method: getIdentity', () => {
     beforeAll(() => {
       jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();

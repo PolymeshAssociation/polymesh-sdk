@@ -124,6 +124,29 @@ Creating transactions is a two-step process. First a procedure is created, which
   const newAsset = await createAssetProc.run()
 ```
 
+#### Creating MultiSig Proposals
+
+If the signingAccount is a MultiSig signer, then the transaction will need to be ran with `.runAsProposal()` instead of the usual `.run()`.
+The underlying transaction will be wrapped with `multiSig.createProposalAsKey` extrinsic and will resolve to the MultiSig proposal created.
+
+Approving and rejecting existing proposals are an exception and should be submitted with `.run()`. If your application supports
+MultiSig signers, then the procedure's `multiSig` param can be checked to ensure the correct method is called.
+
+```typescript
+  const createAssetProc = await polyClient.assets.createAsset(
+    args,
+    {
+      signingAccount: multiSigSigner
+    }
+  )
+  createAssetProc.multiSig // indicates the acting MultiSig. If set `runAsProposal` must be used
+  const proposal = await createAssetProc.runAsProposal()
+
+  const rejectProc = await proposal.reject({ signingAccount: multiSigSigner })
+  rejectProc.multiSig // returns `null`. Rejecting a proposal does not get wrapped
+  await rejectProc.run()
+```
+
 #### Reading Data
 
 The SDK exposes getter functions that will return entities, which may have their own functions:

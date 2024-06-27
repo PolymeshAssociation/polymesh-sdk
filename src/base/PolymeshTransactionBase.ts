@@ -10,13 +10,15 @@ import {
   handleTransactionSubmissionError,
   pollForTransactionFinalization,
 } from '~/base/utils';
-import { Context, Identity, PolymeshError } from '~/internal';
+import { Context, Identity, MultiSigProposal, PolymeshError } from '~/internal';
 import { latestBlockQuery } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
   ErrorCode,
   GenericPolymeshTransaction,
   MortalityProcedureOpt,
+  MultiSig,
+  MultiSigProcedureOpt,
   PayingAccount,
   PayingAccountFees,
   PayingAccountType,
@@ -32,8 +34,15 @@ import {
 } from '~/types/internal';
 import { Ensured } from '~/types/utils';
 import { DEFAULT_LIFETIME_PERIOD } from '~/utils/constants';
-import { balanceToBigNumber, hashToString, u32ToBigNumber } from '~/utils/conversion';
-import { defusePromise, delay, filterEventRecords } from '~/utils/internal';
+import {
+  balanceToBigNumber,
+  dateToMoment,
+  hashToString,
+  stringToAccountId,
+  u32ToBigNumber,
+  u64ToBigNumber,
+} from '~/utils/conversion';
+import { defusePromise, delay, filterEventRecords, optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -56,12 +65,13 @@ export abstract class PolymeshTransactionBase<
   public static toTransactionSpec<R, T>(
     transaction: PolymeshTransactionBase<R, T>
   ): BaseTransactionSpec<R, T> {
-    const { resolver, transformer, paidForBy } = transaction;
+    const { resolver, transformer, paidForBy, multiSig } = transaction;
 
     return {
       resolver,
       transformer,
       paidForBy,
+      multiSig: multiSig ?? undefined,
     };
   }
 
@@ -103,6 +113,13 @@ export abstract class PolymeshTransactionBase<
   /**
    * @hidden
    *
+   * This will be set if the signingAddress is a MultiSig signer
+   */
+  public multiSig: null | MultiSig;
+
+  /**
+   * @hidden
+   *
    * Identity that will pay for this transaction's fees. This value overrides any subsidy,
    *   and is seen as having infinite allowance (but still constrained by its current balance)
    */
@@ -135,6 +152,13 @@ export abstract class PolymeshTransactionBase<
    * Mortality of the transactions
    */
   protected mortality: MortalityProcedureOpt;
+
+  /**
+   * @hidden
+   *
+   * MultiSig proposal options
+   */
+  protected multiSigOpts: MultiSigProcedureOpt;
 
   /**
    * @hidden
@@ -175,15 +199,65 @@ export abstract class PolymeshTransactionBase<
       TransactionConstructionData,
     context: Context
   ) {
-    const { resolver, transformer, signingAddress, signer, paidForBy, mortality } = transactionSpec;
+    const {
+      resolver,
+      transformer,
+      signingAddress,
+      signer,
+      paidForBy,
+      mortality,
+      multiSig,
+      multiSigOpts,
+    } = transactionSpec;
 
     this.signingAddress = signingAddress;
+    this.multiSig = multiSig ?? null;
     this.mortality = mortality;
+    this.multiSigOpts = multiSigOpts ?? {};
     this.signer = signer;
     this.context = context;
     this.paidForBy = paidForBy;
     this.transformer = transformer;
     this.resolver = resolver;
+  }
+
+  /**
+   * Run the transaction as a multiSig proposal
+   */
+  public async runAsProposal(): Promise<MultiSigProposal> {
+    if (this.hasRun) {
+      throw new PolymeshError({
+        code: ErrorCode.General,
+        message: 'Cannot re-run a Transaction',
+      });
+    }
+
+    if (!this.multiSig) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message:
+          '`.run` should be used instead. Either the signing account is not a MultiSig signer, or the transaction is to approve or reject a MultiSig proposal',
+        data: { signingAddress: this.signingAddress },
+      });
+    }
+
+    try {
+      await this.assertFeesCovered();
+
+      const receipt = await this.internalRun();
+      this.receipt = receipt;
+    } catch (err) {
+      this.handleRunError(err);
+    } finally {
+      this.markAsRan();
+    }
+
+    const [proposalAddedEvent] = filterEventRecords(this.receipt, 'multiSig', 'ProposalAdded');
+    const id = u64ToBigNumber(proposalAddedEvent.data[2]);
+
+    this.updateStatus(TransactionStatus.Succeeded);
+
+    return new MultiSigProposal({ multiSigAddress: this.multiSig.address, id }, this.context);
   }
 
   /**
@@ -197,6 +271,15 @@ export abstract class PolymeshTransactionBase<
       throw new PolymeshError({
         code: ErrorCode.General,
         message: 'Cannot re-run a Transaction',
+      });
+    }
+
+    if (this.multiSig) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message:
+          '`.run` cannot be used with a MultiSig signer. `.runAsProposal` should be called instead',
+        data: { signingAddress: this.signingAddress, multiSigAddress: this.multiSig.address },
       });
     }
 
@@ -225,38 +308,53 @@ export abstract class PolymeshTransactionBase<
 
       return this._result;
     } catch (err) {
-      const error: PolymeshError = err;
-
-      this.error = err;
-
-      switch (error.code) {
-        case ErrorCode.TransactionAborted: {
-          this.updateStatus(TransactionStatus.Aborted);
-          break;
-        }
-        case ErrorCode.TransactionRejectedByUser: {
-          this.updateStatus(TransactionStatus.Rejected);
-          break;
-        }
-        case ErrorCode.TransactionReverted:
-        case ErrorCode.FatalError:
-        default: {
-          this.updateStatus(TransactionStatus.Failed);
-          break;
-        }
-      }
-
-      throw error;
+      this.handleRunError(err);
     } finally {
-      this.hasRun = true;
-      /*
-       * We do not await this promise because it is supposed to run in the background, and
-       * any errors encountered are emitted. If the user isn't listening, they shouldn't
-       * care about middleware (or other) errors anyway
-       */
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      this.emitWhenMiddlewareIsSynced();
+      this.markAsRan();
     }
+  }
+
+  /**
+   * @hidden
+   */
+  private handleRunError(err: PolymeshError): never {
+    const error: PolymeshError = err;
+
+    this.error = err;
+
+    switch (error.code) {
+      case ErrorCode.TransactionAborted: {
+        this.updateStatus(TransactionStatus.Aborted);
+        break;
+      }
+      case ErrorCode.TransactionRejectedByUser: {
+        this.updateStatus(TransactionStatus.Rejected);
+        break;
+      }
+      case ErrorCode.TransactionReverted:
+      case ErrorCode.FatalError:
+      default: {
+        this.updateStatus(TransactionStatus.Failed);
+        break;
+      }
+    }
+
+    throw error;
+  }
+
+  /**
+   * @hidden
+   */
+  private markAsRan(): void {
+    this.hasRun = true;
+
+    /*
+     * We do not await this promise because it is supposed to run in the background, and
+     * any errors encountered are emitted. If the user isn't listening, they shouldn't
+     * care about middleware (or other) errors anyway
+     */
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    this.emitWhenMiddlewareIsSynced();
   }
 
   /**
@@ -695,6 +793,7 @@ export abstract class PolymeshTransactionBase<
       [PayingAccountType.Caller]: 'caller',
       [PayingAccountType.Other]: 'paying third party',
       [PayingAccountType.Subsidy]: 'subsidizer',
+      [PayingAccountType.MultiSigCreator]: "MultiSig creator's primary",
     };
 
     if (balance.lt(total)) {
@@ -702,8 +801,9 @@ export abstract class PolymeshTransactionBase<
         code: ErrorCode.InsufficientBalance,
         message: `The ${accountDescriptions[type]} Account does not have enough POLYX balance to pay this transaction's fees`,
         data: {
-          balance,
-          fees: total,
+          balance: balance.toString(),
+          fees: total.toString(),
+          address: payingAccountData.account.address,
         },
       });
     }
@@ -716,7 +816,7 @@ export abstract class PolymeshTransactionBase<
    * @throws if the { @link base/PolymeshTransactionBase!PolymeshTransactionBase.isSuccess | transaction.isSuccess } property is false — be sure to check that before accessing!
    */
   get result(): TransformedReturnValue {
-    if (this.isSuccess) {
+    if (this.isSuccess && !this.multiSig) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       return this._result!;
     } else {
@@ -813,7 +913,7 @@ export abstract class PolymeshTransactionBase<
    *   this method is called and the time the transaction is run
    */
   private async getPayingAccount(): Promise<PayingAccount> {
-    const { paidForBy, context } = this;
+    const { paidForBy, multiSig, context } = this;
 
     if (paidForBy) {
       const { account: primaryAccount } = await paidForBy.getPrimaryAccount();
@@ -826,24 +926,63 @@ export abstract class PolymeshTransactionBase<
 
     const subsidyWithAllowance = await context.accountSubsidy();
 
-    if (!subsidyWithAllowance || this.ignoresSubsidy()) {
-      const caller = context.getSigningAccount();
+    if (subsidyWithAllowance && !this.ignoresSubsidy()) {
+      const {
+        subsidy: { subsidizer: account },
+        allowance,
+      } = subsidyWithAllowance;
 
       return {
-        account: caller,
-        type: PayingAccountType.Caller,
+        type: PayingAccountType.Subsidy,
+        account,
+        allowance,
       };
     }
 
-    const {
-      subsidy: { subsidizer: account },
-      allowance,
-    } = subsidyWithAllowance;
+    // For MultiSig the fees come from the creator's primary key
+    if (multiSig) {
+      const multiId = await multiSig.getCreator();
+
+      const { account } = await multiId.getPrimaryAccount();
+
+      return {
+        account,
+        type: PayingAccountType.MultiSigCreator,
+      };
+    }
+
+    const caller = context.getSigningAccount();
 
     return {
-      type: PayingAccountType.Subsidy,
-      account,
-      allowance,
+      account: caller,
+      type: PayingAccountType.Caller,
     };
+  }
+
+  /**
+   * Wrap a transaction with a multiSig proposal if the signer is a multiSig signer
+   */
+  protected wrapProposalIfNeeded(
+    tx: SubmittableExtrinsic<'promise', ISubmittableResult>
+  ): SubmittableExtrinsic<'promise', ISubmittableResult> {
+    const {
+      context,
+      context: {
+        polymeshApi: {
+          tx: { multiSig },
+        },
+      },
+      multiSig: actingMultiSig,
+      multiSigOpts,
+    } = this;
+
+    if (actingMultiSig) {
+      const rawMultiSigId = stringToAccountId(actingMultiSig.address, context);
+      const rawExpiry = optionize(dateToMoment)(multiSigOpts.expiry, context);
+
+      return multiSig.createProposalAsKey(rawMultiSigId, tx, rawExpiry, true);
+    }
+
+    return tx;
   }
 }

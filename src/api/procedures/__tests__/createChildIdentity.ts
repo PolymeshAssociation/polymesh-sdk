@@ -29,6 +29,7 @@ jest.mock(
 describe('createChildIdentity procedure', () => {
   let mockContext: Mocked<Context>;
   let identity: Identity;
+  let actingAccount: Account;
   let rawIdentity: PolymeshPrimitivesIdentityId;
   let childAccount: Account;
   let rawChildAccount: AccountId;
@@ -58,6 +59,7 @@ describe('createChildIdentity procedure', () => {
     rawChildAccount = dsMockUtils.createMockAccountId(childAccount.address);
 
     identity = entityMockUtils.getIdentityInstance();
+    actingAccount = entityMockUtils.getAccountInstance();
     rawIdentity = dsMockUtils.createMockIdentityId(identity.did);
 
     mockContext = dsMockUtils.getContextInstance({
@@ -103,7 +105,7 @@ describe('createChildIdentity procedure', () => {
 
     const proc = procedureMockUtils.getInstance<CreateChildIdentityParams, ChildIdentity, Storage>(
       mockContext,
-      { identity }
+      { identity, actingAccount }
     );
 
     return expect(
@@ -124,7 +126,7 @@ describe('createChildIdentity procedure', () => {
 
     const proc = procedureMockUtils.getInstance<CreateChildIdentityParams, ChildIdentity, Storage>(
       mockContext,
-      { identity }
+      { identity, actingAccount }
     );
 
     return expect(
@@ -143,7 +145,7 @@ describe('createChildIdentity procedure', () => {
 
     const proc = procedureMockUtils.getInstance<CreateChildIdentityParams, ChildIdentity, Storage>(
       mockContext,
-      { identity }
+      { identity, actingAccount }
     );
 
     return expect(
@@ -158,7 +160,7 @@ describe('createChildIdentity procedure', () => {
   it('should add a create ChildIdentity transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<CreateChildIdentityParams, ChildIdentity, Storage>(
       mockContext,
-      { identity }
+      { identity, actingAccount }
     );
 
     const createChildIdentityTransaction = dsMockUtils.createTxMock(
@@ -181,7 +183,7 @@ describe('createChildIdentity procedure', () => {
     it('should return the appropriate roles and permissions', async () => {
       let proc = procedureMockUtils.getInstance<CreateChildIdentityParams, ChildIdentity, Storage>(
         mockContext,
-        { identity }
+        { identity, actingAccount }
       );
       let boundFunc = getAuthorization.bind(proc);
 
@@ -194,11 +196,14 @@ describe('createChildIdentity procedure', () => {
         },
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (actingAccount.isEqual as any).mockReturnValue(false);
+
       proc = procedureMockUtils.getInstance<CreateChildIdentityParams, ChildIdentity, Storage>(
         dsMockUtils.getContextInstance({
           signingAccountIsEqual: false,
         }),
-        { identity }
+        { identity, actingAccount }
       );
 
       boundFunc = getAuthorization.bind(proc);
@@ -224,6 +229,9 @@ describe('createChildIdentity procedure', () => {
       expect(result).toEqual({
         identity: expect.objectContaining({
           did: 'someDid',
+        }),
+        actingAccount: expect.objectContaining({
+          address: '0xdummy',
         }),
       });
     });

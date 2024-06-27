@@ -444,7 +444,7 @@ export class Context {
   /**
    * @hidden
    *
-   * Retrieve the signing Account
+   * Retrieve the account that will sign the transaction
    *
    * @throws if there is no signing Account associated to the SDK instance
    */
@@ -452,6 +452,24 @@ export class Context {
     const address = this.getSigningAddress();
 
     return new Account({ address }, this);
+  }
+
+  /**
+   * @hidden
+   *
+   * Retrieve the account that is acting. Like `getSigningAccount`, except this method will consider MultiSig signers
+   * and return the acting MultiSig account instead. This should be used when the account is involved in the extrinsic,
+   * such as accepting a "join identity" authorization.
+   *
+   * @throws if there is no signing Account associated to the SDK instance
+   */
+  public async getActingAccount(): Promise<Account> {
+    const signingAccount = this.getSigningAccount();
+
+    const multiSig = await signingAccount.getMultiSig();
+
+    // Return as Account to ensure consistent comparison via uuid
+    return multiSig ? new Account({ address: multiSig.address }, this) : signingAccount;
   }
 
   /**

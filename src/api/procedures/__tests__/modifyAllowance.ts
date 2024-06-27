@@ -144,10 +144,10 @@ describe('modifyAllowance procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    it('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', async () => {
       const boundFunc = getAuthorization.bind(proc);
 
-      let result = boundFunc(args);
+      let result = await boundFunc(args);
       expect(result).toEqual({
         roles: true,
         permissions: {
@@ -155,7 +155,7 @@ describe('modifyAllowance procedure', () => {
         },
       });
 
-      result = boundFunc({ ...args, operation: AllowanceOperation.Increase });
+      result = await boundFunc({ ...args, operation: AllowanceOperation.Increase });
       expect(result).toEqual({
         roles: true,
         permissions: {
@@ -163,7 +163,7 @@ describe('modifyAllowance procedure', () => {
         },
       });
 
-      result = boundFunc({ ...args, operation: AllowanceOperation.Decrease });
+      result = await boundFunc({ ...args, operation: AllowanceOperation.Decrease });
       expect(result).toEqual({
         roles: true,
         permissions: {
@@ -173,7 +173,7 @@ describe('modifyAllowance procedure', () => {
 
       subsidy.subsidizer.isEqual = jest.fn().mockReturnValue(false);
 
-      result = boundFunc(args);
+      result = await boundFunc(args);
       expect(result).toEqual({
         roles: 'Only the subsidizer is allowed to modify the allowance of a Subsidy',
         permissions: {

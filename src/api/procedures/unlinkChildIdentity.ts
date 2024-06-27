@@ -1,5 +1,5 @@
 import { Identity, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, TxTags, UnlinkChildParams } from '~/types';
+import { Account, ErrorCode, TxTags, UnlinkChildParams } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { stringToIdentityId } from '~/utils/conversion';
 import { asChildIdentity } from '~/utils/internal';
@@ -9,6 +9,7 @@ import { asChildIdentity } from '~/utils/internal';
  */
 export interface Storage {
   identity: Identity;
+  actingAccount: Account;
 }
 
 /**
@@ -65,15 +66,12 @@ export async function getAuthorization(
   this: Procedure<UnlinkChildParams, void, Storage>
 ): Promise<ProcedureAuthorization> {
   const {
-    context,
-    storage: { identity },
+    storage: { identity, actingAccount },
   } = this;
-
-  const signingAccount = context.getSigningAccount();
 
   const { account: primaryAccount } = await identity.getPrimaryAccount();
 
-  if (!signingAccount.isEqual(primaryAccount)) {
+  if (!actingAccount.isEqual(primaryAccount)) {
     return {
       signerPermissions:
         'Child identity can only be unlinked by primary key of either the child Identity or parent Identity',
@@ -97,8 +95,14 @@ export async function prepareStorage(
 ): Promise<Storage> {
   const { context } = this;
 
+  const [identity, actingAccount] = await Promise.all([
+    context.getSigningIdentity(),
+    context.getActingAccount(),
+  ]);
+
   return {
-    identity: await context.getSigningIdentity(),
+    identity,
+    actingAccount,
   };
 }
 

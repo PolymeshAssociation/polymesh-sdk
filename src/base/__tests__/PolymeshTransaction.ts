@@ -31,13 +31,14 @@ describe('Polymesh Transaction class', () => {
   });
 
   describe('method: toTransactionSpec', () => {
-    it('should return the tx spec of a transaction', () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
-      const args = tuple('FOO');
-      const resolver = (): number => 1;
-      const transformer = (): number => 2;
-      const paidForBy = entityMockUtils.getIdentityInstance();
+    const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
+    const args = tuple('FOO');
+    const resolver = (): number => 1;
+    const transformer = (): number => 2;
+    const paidForBy = entityMockUtils.getIdentityInstance();
+    const multiSig = entityMockUtils.getMultiSigInstance();
 
+    it('should return the tx spec of a transaction', () => {
       const tx = new PolymeshTransaction(
         {
           ...txSpec,
@@ -59,6 +60,33 @@ describe('Polymesh Transaction class', () => {
         args,
         fee: txSpec.fee,
         feeMultiplier: new BigNumber(10),
+      });
+    });
+
+    it('should include multiSig if present', () => {
+      const tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          transaction,
+          args,
+          resolver,
+          transformer,
+          feeMultiplier: new BigNumber(10),
+          paidForBy,
+          multiSig,
+        },
+        context
+      );
+
+      expect(PolymeshTransaction.toTransactionSpec(tx)).toEqual({
+        resolver,
+        transformer,
+        paidForBy,
+        transaction,
+        args,
+        fee: txSpec.fee,
+        feeMultiplier: new BigNumber(10),
+        multiSig,
       });
     });
   });
