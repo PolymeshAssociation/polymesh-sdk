@@ -11,6 +11,7 @@ import {
   ErrorCode,
   GenericPolymeshTransaction,
   Identity,
+  MultiSig,
   ProcedureAuthorizationStatus,
   ProcedureOpts,
   SignerType,
@@ -22,7 +23,7 @@ import {
   ProcedureAuthorization,
 } from '~/types/internal';
 import { signerToString } from '~/utils/conversion';
-import { defusePromise } from '~/utils/internal';
+import { asAccount, defusePromise } from '~/utils/internal';
 
 /**
  * @hidden
@@ -78,6 +79,7 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
 
   private _storage: null | Storage = null;
   private _context: null | Context = null;
+  private _forMultiSig?: MultiSig;
 
   /**
    * @hidden
@@ -130,7 +132,17 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
       }
 
       if (signingAccount) {
-        await ctx.setSigningAddress(signerToString(signingAccount));
+        const account = asAccount(signingAccount, context);
+        const [multiSig] = await Promise.all([
+          account.getMultiSig(),
+          ctx.setSigningAddress(signerToString(signingAccount)),
+        ]);
+
+        this._forMultiSig = multiSig ?? undefined;
+      } else {
+        const multiSig = await ctx.getSigningAccount().getMultiSig();
+
+        this._forMultiSig = multiSig ?? undefined;
       }
 
       this._context = ctx;
@@ -173,7 +185,7 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
     let rolesResult: CheckRolesResult;
     let noIdentity = false;
 
-    const account = ctx.getSigningAccount();
+    const account = this._forMultiSig || ctx.getSigningAccount();
 
     const fetchIdentity = async (): Promise<Identity | null> => identity || account.getIdentity();
 
@@ -354,6 +366,7 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
         signingAddress,
         mortality,
         transformer,
+        forMultiSig: this._forMultiSig,
       };
 
       if (!('transactions' in spec)) {

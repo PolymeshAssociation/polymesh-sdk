@@ -340,6 +340,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
         message: 'There is no Identity associated with this Account',
+        data: { address },
       });
     }
 

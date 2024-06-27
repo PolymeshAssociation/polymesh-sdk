@@ -93,7 +93,9 @@ export class PolymeshTransaction<
   protected composeTx(): SubmittableExtrinsic<'promise', ISubmittableResult> {
     const { transaction, args } = this;
 
-    return transaction(...args);
+    const tx = transaction(...args);
+
+    return this.wrapProposalIfNeeded(tx);
   }
 
   // eslint-disable-next-line require-jsdoc
