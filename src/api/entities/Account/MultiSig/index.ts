@@ -2,13 +2,15 @@ import BigNumber from 'bignumber.js';
 
 import { UniqueIdentifiers } from '~/api/entities/Account';
 import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
-import { Account, Context, Identity, modifyMultiSig, PolymeshError } from '~/internal';
+import { Account, Context, Identity, joinCreator, modifyMultiSig, PolymeshError } from '~/internal';
 import { multiSigProposalsQuery } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
   ErrorCode,
+  JoinCreatorParams,
   ModifyMultiSigParams,
   MultiSigDetails,
+  OptionalArgsProcedureMethod,
   ProcedureMethod,
   ProposalStatus,
   ResultSet,
@@ -38,6 +40,13 @@ export class MultiSig extends Account {
     this.modify = createProcedureMethod(
       {
         getProcedureAndArgs: modifyArgs => [modifyMultiSig, { multiSig: this, ...modifyArgs }],
+      },
+      context
+    );
+    this.joinCreator = createProcedureMethod(
+      {
+        getProcedureAndArgs: joinArgs => [joinCreator, { multiSig: this, ...joinArgs }],
+        optionalArgs: true,
       },
       context
     );
@@ -219,4 +228,13 @@ export class MultiSig extends Account {
    * Modify the signers for the MultiSig. The signing Account must belong to the Identity of the creator of the MultiSig
    */
   public modify: ProcedureMethod<Pick<ModifyMultiSigParams, 'signers'>, void>;
+
+  /**
+   * Attach a MultiSig directly to the creator's identity. This method bypasses the usual authorization step to join an identity
+   *
+   * @note the caller should be the MultiSig creator's primary key
+   *
+   * @note To attach the MultiSig to an identity other than the creator's, {@link api/client/AccountManagement!AccountManagement.inviteAccount | inviteAccount} can be used instead. The MultiSig will then need to accept the created authorization
+   */
+  public joinCreator: OptionalArgsProcedureMethod<JoinCreatorParams, void>;
 }

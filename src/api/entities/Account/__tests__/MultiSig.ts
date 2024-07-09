@@ -274,7 +274,7 @@ describe('MultiSig class', () => {
 
   describe('method: modify', () => {
     const account = entityMockUtils.getAccountInstance({ address });
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting procedure', async () => {
       const expectedTransaction = 'someQueue' as unknown as PolymeshTransaction<void>;
       const args = {
         signers: [account],
@@ -284,9 +284,26 @@ describe('MultiSig class', () => {
         .calledWith({ args: { multiSig, ...args }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
-      const queue = await multiSig.modify(args);
+      const procedure = await multiSig.modify(args);
 
-      expect(queue).toBe(expectedTransaction);
+      expect(procedure).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: joinCreator', () => {
+    it('should prepare the procedure and return the resulting procedure', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+      const args = {
+        asPrimary: true,
+      };
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { multiSig, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const procedure = await multiSig.joinCreator(args);
+
+      expect(procedure).toBe(expectedTransaction);
     });
   });
 });

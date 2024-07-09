@@ -1574,6 +1574,21 @@ export interface ModifyMultiSigParams {
   signers: Signer[];
 }
 
+interface JoinCreatorAsPrimary {
+  asPrimary: true;
+  cddAuthId?: BigNumber;
+}
+
+interface JoinCreatorAsSecondary {
+  asPrimary?: false;
+  /**
+   * (optional) Permissions to grant the MultiSig. Defaults to none
+   */
+  permissions?: PermissionsLike;
+}
+
+export type JoinCreatorParams = JoinCreatorAsPrimary | JoinCreatorAsSecondary;
+
 export type SetMetadataParams =
   | { value: string; details?: MetadataValueDetails }
   | { details: MetadataValueDetails };
