@@ -217,7 +217,7 @@ describe('MultiSig class', () => {
       nodes: [mockHistoricalMultisig],
     };
 
-    it('should get proposals', async () => {
+    it('should get historical proposals', async () => {
       dsMockUtils.createApolloQueryMock(
         multiSigProposalsQuery(address, new BigNumber(1), new BigNumber(0)),
         {
@@ -237,14 +237,17 @@ describe('MultiSig class', () => {
       expect(data.length).toEqual(1);
     });
 
-    it('should return an empty array if no proposals are pending', async () => {
-      dsMockUtils.createQueryMock('multiSig', 'proposals', {
-        entries: [],
+    it('should work with optional pagination params', async () => {
+      dsMockUtils.createApolloQueryMock(multiSigProposalsQuery(address), {
+        multiSigProposals: multiSigProposalsResponse,
       });
+      const result = await multiSig.getHistoricalProposals();
 
-      const result = await multiSig.getProposals();
+      const { data, next, count } = result;
 
-      expect(result).toEqual([]);
+      expect(next).toEqual(new BigNumber(1));
+      expect(count).toEqual(new BigNumber(2));
+      expect(data.length).toEqual(1);
     });
   });
 

@@ -1711,7 +1711,11 @@ export function multiSigProposalsQuery(
 ): QueryOptions<PaginatedQueryArgs<MultiSigProposalQueryParameters>> {
   const query = gql`
     query MultiSigProposalsQuery($size: Int, $start: Int, $multisigId: String!) {
-      multiSigProposals(filter: { multisigId: { eq: $multisigId } }, first: $size, offset: $start) {
+      multiSigProposals(
+        filter: { multisigId: { equalTo: $multisigId } }
+        first: $size
+        offset: $start
+      ) {
         nodes {
           id
           proposalId

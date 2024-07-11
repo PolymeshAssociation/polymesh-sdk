@@ -157,26 +157,22 @@ export class MultiSig extends Account {
   }
 
   /**
-   * Return all { @link api/entities/MultiSigProposal!MultiSigProposal } for this MultiSig Account
+   * Return a set of { @link api/entities/MultiSigProposal!MultiSigProposal | MultiSigProposal } for this MultiSig Account
    *
    * @note uses the middlewareV2
    */
-  public async getHistoricalProposals(opts: {
+  public async getHistoricalProposals(opts?: {
     size?: BigNumber;
     start?: BigNumber;
   }): Promise<ResultSet<MultiSigProposal>> {
-    const {
-      context: { queryMiddleware },
-      context,
-      address,
-    } = this;
-    const { size, start } = opts;
+    const { context, address } = this;
+    const { size, start } = opts ?? {};
 
     const {
       data: {
         multiSigProposals: { nodes, totalCount },
       },
-    } = await queryMiddleware<Ensured<Query, 'multiSigProposals'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'multiSigProposals'>>(
       multiSigProposalsQuery(address, size, start)
     );
 

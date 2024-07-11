@@ -1055,11 +1055,12 @@ export class Context {
       result = await this.middlewareApi.query(query);
     } catch (err) {
       const resultMessage = err.networkError?.result?.message;
-      const { message: errorMessage } = err;
+      const { message: errorMessage, stack } = err;
       const message = resultMessage ?? errorMessage;
       throw new PolymeshError({
         code: ErrorCode.MiddlewareError,
         message: `Error in middleware V2 query: ${message}`,
+        stack,
       });
     }
 
