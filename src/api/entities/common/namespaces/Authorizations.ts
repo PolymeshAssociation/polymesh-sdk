@@ -3,7 +3,7 @@ import { PolymeshPrimitivesAuthorization } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import { Account, AuthorizationRequest, Identity, Namespace, PolymeshError } from '~/internal';
-import { AuthorizationArgs, authorizationsQuery } from '~/middleware/queries';
+import { AuthorizationArgs, authorizationsQuery } from '~/middleware/queries/authorizations';
 import {
   Authorization as MiddlewareAuthorization,
   AuthorizationStatusEnum,

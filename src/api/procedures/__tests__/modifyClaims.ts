@@ -9,7 +9,7 @@ import { when } from 'jest-when';
 
 import { getAuthorization, prepareModifyClaims } from '~/api/procedures/modifyClaims';
 import { Context, Identity } from '~/internal';
-import { claimsQuery } from '~/middleware/queries';
+import { claimsQuery } from '~/middleware/queries/claims';
 import { Claim as MiddlewareClaim, ClaimTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';

@@ -6,7 +6,7 @@ import {
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import { chunk, differenceWith, flatten, intersectionWith, uniqBy } from 'lodash';
+import { chunk, differenceWith, flatten, intersectionWith, lt, uniqBy } from 'lodash';
 
 import { unlinkChildIdentity } from '~/api/procedures/unlinkChildIdentity';
 import { assertPortfolioExists } from '~/api/procedures/utils';
@@ -25,13 +25,12 @@ import {
   TickerReservation,
   Venue,
 } from '~/internal';
-import {
-  assetHoldersQuery,
-  instructionsByDidQuery,
-  nftHoldersQuery,
-  trustingAssetsQuery,
-} from '~/middleware/queries';
+import { assetHoldersQuery, nftHoldersQuery } from '~/middleware/queries/assets';
+import { trustingAssetsQuery } from '~/middleware/queries/claims';
+import { instructionPartiesQuery } from '~/middleware/queries/settlements';
+import { instructionsByDidQuery } from '~/middleware/queries/settlementsOld';
 import { AssetHoldersOrderBy, NftHoldersOrderBy, Query } from '~/middleware/types';
+import { Query as QueryOld } from '~/middleware/typesV6';
 import { CddStatus } from '~/polkadot/polymesh';
 import {
   Asset,
@@ -64,7 +63,11 @@ import {
   isTickerOwnerRole,
   isVenueOwnerRole,
 } from '~/utils';
-import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
+import {
+  MAX_CONCURRENT_REQUESTS,
+  MAX_PAGE_SIZE,
+  SETTLEMENTS_V2_SQ_VERSION,
+} from '~/utils/constants';
 import {
   accountIdToString,
   balanceToBigNumber,
@@ -73,6 +76,7 @@ import {
   corporateActionIdentifierToCaId,
   identityIdToString,
   middlewareInstructionToHistoricInstruction,
+  oldMiddlewareInstructionToHistoricInstruction,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
@@ -90,6 +94,7 @@ import {
   calculateNextKey,
   createProcedureMethod,
   getAccount,
+  getLatestSqVersion,
   getSecondaryAccountPermissions,
   requestPaginated,
 } from '~/utils/internal';
@@ -889,11 +894,30 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   public async getHistoricalInstructions(): Promise<HistoricInstruction[]> {
     const { context, did } = this;
 
+    // TODO @prashantasdeveloper Remove after SQ dual version support
+    const sqVersion = await getLatestSqVersion(context);
+
+    if (lt(sqVersion, SETTLEMENTS_V2_SQ_VERSION)) {
+      const {
+        data: {
+          legs: { nodes: instructionsResult },
+        },
+      } = await context.queryMiddleware<Ensured<QueryOld, 'legs'>>(instructionsByDidQuery(did));
+
+      return instructionsResult.map(({ instruction }) =>
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        oldMiddlewareInstructionToHistoricInstruction(instruction!, context)
+      );
+    }
+    // Dual version support end
+
     const {
       data: {
-        legs: { nodes: instructionsResult },
+        instructionParties: { nodes: instructionsResult },
       },
-    } = await context.queryMiddleware<Ensured<Query, 'legs'>>(instructionsByDidQuery(did));
+    } = await context.queryMiddleware<Ensured<Query, 'instructionParties'>>(
+      instructionPartiesQuery(did)
+    );
 
     return instructionsResult.map(({ instruction }) =>
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

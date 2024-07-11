@@ -11,7 +11,7 @@ import {
   pollForTransactionFinalization,
 } from '~/base/utils';
 import { Context, Identity, MultiSigProposal, PolymeshError } from '~/internal';
-import { latestBlockQuery } from '~/middleware/queries';
+import { latestBlockQuery } from '~/middleware/queries/common';
 import { Query } from '~/middleware/types';
 import {
   ErrorCode,

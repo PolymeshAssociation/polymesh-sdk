@@ -1,11 +1,10 @@
 import BigNumber from 'bignumber.js';
 
+import { AssetHolders } from '~/api/entities/Asset/NonFungible/AssetHolders';
 import { Context, Namespace } from '~/internal';
-import { nftCollectionHolders } from '~/middleware/queries';
+import { nftCollectionHolders } from '~/middleware/queries/assets';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { NftCollection } from '~/types';
-
-import { AssetHolders } from '../../NonFungible/AssetHolders';
 
 jest.mock(
   '~/api/entities/Asset/NonFungible',

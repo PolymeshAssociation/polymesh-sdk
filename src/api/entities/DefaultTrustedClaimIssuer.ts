@@ -1,5 +1,5 @@
 import { Context, FungibleAsset, Identity, PolymeshError } from '~/internal';
-import { trustedClaimIssuerQuery } from '~/middleware/queries';
+import { trustedClaimIssuerQuery } from '~/middleware/queries/claims';
 import { Query } from '~/middleware/types';
 import { ClaimType, ErrorCode, EventIdentifier } from '~/types';
 import { Ensured } from '~/types/utils';

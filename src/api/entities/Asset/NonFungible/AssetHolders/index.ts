@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { Identity, Namespace, Nft } from '~/internal';
-import { nftCollectionHolders } from '~/middleware/queries';
+import { nftCollectionHolders } from '~/middleware/queries/assets';
 import { Query } from '~/middleware/types';
 import { IdentityHeldNfts, NftCollection, ResultSet } from '~/types';
 import { Ensured } from '~/types/utils';

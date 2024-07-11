@@ -9,7 +9,7 @@ import {
   DividendDistribution,
   PolymeshTransaction,
 } from '~/internal';
-import { distributionPaymentsQuery, distributionQuery } from '~/middleware/queries';
+import { distributionPaymentsQuery, distributionQuery } from '~/middleware/queries/distributions';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   CorporateActionKind,

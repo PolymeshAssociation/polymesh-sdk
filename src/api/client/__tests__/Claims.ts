@@ -3,7 +3,11 @@ import { when } from 'jest-when';
 
 import { Claims } from '~/api/client/Claims';
 import { Context, PolymeshTransaction } from '~/internal';
-import { claimsGroupingQuery, claimsQuery, customClaimTypeQuery } from '~/middleware/queries';
+import {
+  claimsGroupingQuery,
+  claimsQuery,
+  customClaimTypeQuery,
+} from '~/middleware/queries/claims';
 import {
   Claim,
   ClaimsGroupBy,

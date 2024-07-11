@@ -6,12 +6,9 @@ import P from 'bluebird';
 import { when } from 'jest-when';
 
 import { Account, Context, PolymeshError } from '~/internal';
-import {
-  claimsQuery,
-  heartbeatQuery,
-  metadataQuery,
-  polyxTransactionsQuery,
-} from '~/middleware/queries';
+import { claimsQuery } from '~/middleware/queries/claims';
+import { heartbeatQuery, metadataQuery } from '~/middleware/queries/common';
+import { polyxTransactionsQuery } from '~/middleware/queries/polyxTransactions';
 import {
   BalanceTypeEnum,
   CallIdEnum,

@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { lt } from 'lodash';
 
 import {
   Context,
@@ -9,8 +10,11 @@ import {
   NumberedPortfolio,
   PolymeshError,
 } from '~/internal';
-import { portfoliosMovementsQuery, settlementsForAllPortfoliosQuery } from '~/middleware/queries';
+import { portfoliosMovementsQuery } from '~/middleware/queries/portfolios';
+import { settlementsForAllPortfoliosQuery } from '~/middleware/queries/settlements';
+import { settlementsForAllPortfoliosQuery as oldSettlementsForAllPortfoliosQuery } from '~/middleware/queries/settlementsOld';
 import { Query } from '~/middleware/types';
+import { Query as QueryOld } from '~/middleware/typesV6';
 import {
   ErrorCode,
   HistoricSettlement,
@@ -19,14 +23,16 @@ import {
   ResultSet,
 } from '~/types';
 import { Ensured } from '~/types/utils';
+import { SETTLEMENTS_V2_SQ_VERSION } from '~/utils/constants';
 import {
   addressToKey,
   identityIdToString,
+  oldMiddlewareDataToHistoricalSettlements,
   stringToIdentityId,
   toHistoricalSettlements,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, requestPaginated } from '~/utils/internal';
+import { createProcedureMethod, getLatestSqVersion, requestPaginated } from '~/utils/internal';
 
 /**
  * Handles all Portfolio related functionality on the Identity side
@@ -194,12 +200,56 @@ export class Portfolios extends Namespace<Identity> {
 
     const { account, ticker } = filters;
 
-    const address = account ? addressToKey(account, context) : undefined;
+    // TODO @prashantasdeveloper Remove after SQ dual version support
+    const sqVersion = await getLatestSqVersion(context);
+
+    if (lt(sqVersion, SETTLEMENTS_V2_SQ_VERSION)) {
+      const address = account ? addressToKey(account, context) : undefined;
+
+      const settlementsPromise = context.queryMiddleware<Ensured<QueryOld, 'legs'>>(
+        oldSettlementsForAllPortfoliosQuery({
+          identityId,
+          address,
+          ticker,
+        })
+      );
+
+      const portfolioMovementsPromise = context.queryMiddleware<
+        Ensured<Query, 'portfolioMovements'>
+      >(
+        portfoliosMovementsQuery({
+          identityId,
+          address,
+          ticker,
+        })
+      );
+
+      const [
+        {
+          data: {
+            legs: { nodes: settlements },
+          },
+        },
+        {
+          data: {
+            portfolioMovements: { nodes: portfolioMovements },
+          },
+        },
+      ] = await Promise.all([settlementsPromise, portfolioMovementsPromise]);
+
+      return oldMiddlewareDataToHistoricalSettlements(
+        settlements,
+        portfolioMovements,
+        identityId,
+        context
+      );
+    }
+    // Dual version support end
 
     const settlementsPromise = context.queryMiddleware<Ensured<Query, 'legs'>>(
       settlementsForAllPortfoliosQuery({
         identityId,
-        address,
+        address: account,
         ticker,
       })
     );
@@ -207,21 +257,24 @@ export class Portfolios extends Namespace<Identity> {
     const portfolioMovementsPromise = context.queryMiddleware<Ensured<Query, 'portfolioMovements'>>(
       portfoliosMovementsQuery({
         identityId,
-        address,
+        address: account,
         ticker,
       })
     );
 
-    const [settlementsResult, portfolioMovementsResult] = await Promise.all([
-      settlementsPromise,
-      portfolioMovementsPromise,
-    ]);
+    const [
+      {
+        data: {
+          legs: { nodes: settlements },
+        },
+      },
+      {
+        data: {
+          portfolioMovements: { nodes: portfolioMovements },
+        },
+      },
+    ] = await Promise.all([settlementsPromise, portfolioMovementsPromise]);
 
-    return toHistoricalSettlements(
-      settlementsResult,
-      portfolioMovementsResult,
-      identityId,
-      context
-    );
+    return toHistoricalSettlements(settlements, portfolioMovements, { identityId }, context);
   }
 }

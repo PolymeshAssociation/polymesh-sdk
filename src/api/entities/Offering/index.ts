@@ -12,7 +12,7 @@ import {
   modifyOfferingTimes,
   toggleFreezeOffering,
 } from '~/internal';
-import { investmentsQuery } from '~/middleware/queries';
+import { investmentsQuery } from '~/middleware/queries/stos';
 import { Query } from '~/middleware/types';
 import {
   InvestInOfferingParams,

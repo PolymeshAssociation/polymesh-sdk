@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Account, Context, MultiSig, PolymeshError, PolymeshTransaction } from '~/internal';
-import { multiSigProposalsQuery } from '~/middleware/queries';
+import { multiSigProposalsQuery } from '~/middleware/queries/multisigs';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   createMockAccountId,

@@ -1,4 +1,3 @@
-import { ApolloQueryResult } from '@apollo/client/core';
 import { bool, Bytes, Option, Text, u8, U8aFixed, u16, u32, u64, u128, Vec } from '@polkadot/types';
 import {
   AccountId,
@@ -119,8 +118,10 @@ import {
   DefaultPortfolio,
   FungibleAsset,
   Identity,
+  Instruction,
   KnownPermissionGroup,
   Nft,
+  NftCollection,
   NumberedPortfolio,
   PolymeshError,
   Portfolio,
@@ -132,13 +133,20 @@ import {
   CallIdEnum,
   Claim as MiddlewareClaim,
   CustomClaimType as MiddlewareCustomClaimType,
-  Instruction,
+  Instruction as MiddlewareInstruction,
+  InstructionTypeEnum,
+  Leg as MiddlewareLeg,
+  LegTypeEnum,
   ModuleIdEnum,
   Portfolio as MiddlewarePortfolio,
-  Query,
-  SettlementResultEnum,
+  PortfolioMovement as MiddlewarePortfolioMovement,
 } from '~/middleware/types';
 import { ClaimScopeTypeEnum, MiddlewareScope, SettlementDirectionEnum } from '~/middleware/typesV1';
+import {
+  Instruction as InstructionOld,
+  Leg as MiddlewareLegOld,
+  SettlementResultEnum,
+} from '~/middleware/typesV6';
 import {
   AssetComplianceResult,
   AuthorizationType as MeshAuthorizationType,
@@ -191,6 +199,7 @@ import {
   InstructionType,
   KnownAssetType,
   KnownNftType,
+  Leg,
   MediatorAffirmation,
   MetadataKeyId,
   MetadataLockStatus,
@@ -259,7 +268,7 @@ import {
   StatClaimIssuer,
   TickerKey,
 } from '~/types/internal';
-import { Ensured, tuple } from '~/types/utils';
+import { tuple } from '~/types/utils';
 import {
   IGNORE_CHECKSUM,
   MAX_BALANCE,
@@ -4307,11 +4316,12 @@ export function instructionMemoToString(value: U8aFixed): string {
   return removePadding(hexToString(value.toString()));
 }
 
+// TODO @prashantasdeveloper Remove after SQ dual version support
 /**
  * @hidden
  */
-export function middlewareInstructionToHistoricInstruction(
-  instruction: Instruction,
+export function oldMiddlewareInstructionToHistoricInstruction(
+  instruction: InstructionOld,
   context: Context
 ): HistoricInstruction {
   /* eslint-disable @typescript-eslint/no-non-null-assertion */
@@ -4356,13 +4366,117 @@ export function middlewareInstructionToHistoricInstruction(
     legs: legs.map(({ from, to, assetId, amount }) => ({
       asset: new FungibleAsset({ ticker: assetId }, context),
       amount: new BigNumber(amount).shiftedBy(-6),
-      from: middlewarePortfolioToPortfolio(from!, context),
-      to: middlewarePortfolioToPortfolio(to!, context),
+      from: middlewarePortfolioToPortfolio(from! as unknown as MiddlewarePortfolio, context),
+      to: middlewarePortfolioToPortfolio(to! as unknown as MiddlewarePortfolio, context),
     })),
   };
   /* eslint-enable @typescript-eslint/no-non-null-assertion */
 }
+// Dual version support end
 
+/**
+ * @hidden
+ */
+export function middlewareLegToLeg(leg: MiddlewareLeg, context: Context): Leg {
+  const { legType, from, fromPortfolio, to, toPortfolio, assetId, nftIds, amount } = leg;
+
+  if (legType === LegTypeEnum.Fungible) {
+    return {
+      asset: new FungibleAsset({ ticker: assetId }, context),
+      amount: new BigNumber(amount).shiftedBy(-6),
+      from: middlewarePortfolioToPortfolio(
+        { identityId: from, number: fromPortfolio! } as MiddlewarePortfolio,
+        context
+      ),
+      to: middlewarePortfolioToPortfolio(
+        { identityId: to, number: toPortfolio! } as MiddlewarePortfolio,
+        context
+      ),
+    };
+  }
+
+  if (legType === LegTypeEnum.NonFungible) {
+    return {
+      from: middlewarePortfolioToPortfolio(
+        { identityId: from, number: fromPortfolio! } as MiddlewarePortfolio,
+        context
+      ),
+      to: middlewarePortfolioToPortfolio(
+        { identityId: to, number: toPortfolio! } as MiddlewarePortfolio,
+        context
+      ),
+      nfts: nftIds.map(
+        (nftId: number) => new Nft({ ticker: assetId, id: new BigNumber(nftId) }, context)
+      ),
+      asset: new NftCollection({ ticker: assetId }, context),
+    };
+  }
+
+  // presume off chain
+  return {
+    from: new Identity({ did: from }, context),
+    to: new Identity({ did: to }, context),
+    asset: assetId,
+    offChainAmount: new BigNumber(amount).shiftedBy(-6),
+  };
+}
+
+/**
+ * @hidden
+ */
+export function middlewareInstructionToHistoricInstruction(
+  instruction: MiddlewareInstruction,
+  context: Context
+): HistoricInstruction {
+  /* eslint-disable @typescript-eslint/no-non-null-assertion */
+  const {
+    id: instructionId,
+    status,
+    type,
+    endBlock,
+    endAfterBlock,
+    tradeDate,
+    valueDate,
+    legs: { nodes: legs },
+    memo,
+    createdBlock,
+    venueId,
+  } = instruction;
+  const { blockId, hash, datetime } = createdBlock!;
+
+  let typeDetails;
+
+  if (type === InstructionTypeEnum.SettleManual) {
+    typeDetails = {
+      type: InstructionType.SettleManual,
+      endAfterBlock: new BigNumber(endAfterBlock!),
+    };
+  } else if (type === InstructionTypeEnum.SettleOnBlock) {
+    typeDetails = {
+      type: InstructionType.SettleOnBlock,
+      endBlock: new BigNumber(endBlock!),
+    };
+  } else {
+    typeDetails = {
+      type: InstructionType.SettleOnAffirmation,
+    };
+  }
+
+  return {
+    id: new BigNumber(instructionId),
+    blockNumber: new BigNumber(blockId),
+    blockHash: hash,
+    status,
+    tradeDate,
+    valueDate,
+    ...typeDetails,
+    memo: memo ?? null,
+    venueId: new BigNumber(venueId),
+    createdAt: new Date(datetime),
+    legs: legs.map(leg => middlewareLegToLeg(leg, context)),
+  };
+  /* eslint-enable @typescript-eslint/no-non-null-assertion */
+}
 /**
  * @hidden
  */
@@ -4791,13 +4905,45 @@ export function portfolioIdStringToPortfolio(id: string): MiddlewarePortfolio {
 /**
  * @hidden
  */
-export function toHistoricalSettlements(
-  settlementsResult: ApolloQueryResult<Ensured<Query, 'legs'>>,
-  portfolioMovementsResult: ApolloQueryResult<Ensured<Query, 'portfolioMovements'>>,
+function portfolioMovementsToHistoricSettlements(
+  portfolioMovements: MiddlewarePortfolioMovement[],
+  context: Context,
+  handleMiddlewareAddress: (address: string, context: Context) => Account
+): HistoricSettlement[] {
+  return portfolioMovements.map(
+    ({ createdBlock, fromId, toId, assetId, amount, address: accountAddress }) => {
+      const { blockId, hash } = createdBlock!;
+      return {
+        blockNumber: new BigNumber(blockId),
+        blockHash: hash,
+        status: SettlementResultEnum.Executed,
+        // accounts: [new Account({ address: keyToAddress(accountAddress, context) }, context)],
+        accounts: [handleMiddlewareAddress(accountAddress, context)],
+        legs: [
+          {
+            asset: new FungibleAsset({ ticker: assetId }, context),
+            amount: new BigNumber(amount).shiftedBy(-6),
+            direction: SettlementDirectionEnum.None,
+            from: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(fromId), context),
+            to: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(toId), context),
+          },
+        ],
+      };
+    }
+  );
+}
+
+// TODO @prashantasdeveloper Remove after SQ dual version support
+/**
+ * @hidden
+ */
+export function oldMiddlewareDataToHistoricalSettlements(
+  settlementsResult: MiddlewareLegOld[],
+  portfolioMovements: MiddlewarePortfolioMovement[],
   filter: string,
   context: Context
 ): HistoricSettlement[] {
-  const data: HistoricSettlement[] = [];
+  let data: HistoricSettlement[] = [];
 
   const getDirection = (fromId: string, toId: string): SettlementDirectionEnum => {
     const [fromDid] = fromId.split('/');
@@ -4828,12 +4974,17 @@ export function toHistoricalSettlements(
   };
 
   /* eslint-disable @typescript-eslint/no-non-null-assertion */
-  settlementsResult.data.legs.nodes.forEach(({ settlement }) => {
+  settlementsResult.forEach(({ settlement }) => {
     const {
       createdBlock,
       result: settlementResult,
       legs: { nodes: legs },
+      instructionsByLegSettlementIdAndInstructionId: {
+        nodes: [instruction],
+      },
     } = settlement!;
+
+    const { id: instructionId } = instruction!;
 
     const { blockId, hash } = createdBlock!;
 
@@ -4845,36 +4996,97 @@ export function toHistoricalSettlements(
         (accountAddress: string) =>
           new Account({ address: keyToAddress(accountAddress, context) }, context)
       ),
+      instruction: new Instruction({ id: new BigNumber(instructionId) }, context),
       legs: legs.map(({ from, to, fromId, toId, assetId, amount }) => ({
         asset: new FungibleAsset({ ticker: assetId }, context),
         amount: new BigNumber(amount).shiftedBy(-6),
         direction: getDirection(fromId, toId),
-        from: middlewarePortfolioToPortfolio(from!, context),
-        to: middlewarePortfolioToPortfolio(to!, context),
+        from: middlewarePortfolioToPortfolio(from! as unknown as MiddlewarePortfolio, context),
+        to: middlewarePortfolioToPortfolio(to! as unknown as MiddlewarePortfolio, context),
       })),
     });
   });
 
-  portfolioMovementsResult.data.portfolioMovements.nodes.forEach(
-    ({ createdBlock, fromId, toId, assetId, amount, address: accountAddress }) => {
-      const { blockId, hash } = createdBlock!;
-      data.push({
-        blockNumber: new BigNumber(blockId),
-        blockHash: hash,
-        status: SettlementResultEnum.Executed,
-        accounts: [new Account({ address: keyToAddress(accountAddress, context) }, context)],
-        legs: [
-          {
-            asset: new FungibleAsset({ ticker: assetId }, context),
-            amount: new BigNumber(amount).shiftedBy(-6),
-            direction: getDirection(fromId, toId),
-            from: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(fromId), context),
-            to: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(toId), context),
-          },
-        ],
-      });
+  data = [
+    ...data,
+    ...portfolioMovementsToHistoricSettlements(
+      portfolioMovements,
+      context,
+      (accountAddress: string) =>
+        new Account({ address: keyToAddress(accountAddress, context) }, context)
+    ),
+  ];
+  /* eslint-enable @typescript-eslint/no-non-null-assertion */
+
+  return data.sort((a, b) => a.blockNumber.minus(b.blockNumber).toNumber());
+}
+
+/**
+ * @hidden
+ */
+export function toHistoricalSettlements(
+  settlementsResult: MiddlewareLeg[],
+  portfolioMovements: MiddlewarePortfolioMovement[],
+  filter: {
+    identityId: string;
+    portfolio?: number;
+  },
+  context: Context
+): HistoricSettlement[] {
+  let data: HistoricSettlement[] = [];
+
+  const getDirection = (leg: MiddlewareLeg): SettlementDirectionEnum => {
+    const { from, fromPortfolio, to, toPortfolio } = leg;
+    const { identityId, portfolio } = filter;
+
+    let result = SettlementDirectionEnum.None;
+
+    if (from === to) {
+      result = SettlementDirectionEnum.None;
+    } else if (from === identityId) {
+      if (!portfolio || fromPortfolio === portfolio) {
+        result = SettlementDirectionEnum.Incoming;
+      }
+    } else if (to === identityId) {
+      if (!portfolio || toPortfolio === portfolio) {
+        result = SettlementDirectionEnum.Outgoing;
+      }
     }
-  );
+    return result;
+  };
+
+  /* eslint-disable @typescript-eslint/no-non-null-assertion */
+  settlementsResult.forEach(({ instruction }) => {
+    const {
+      id,
+      createdBlock,
+      status,
+      legs: { nodes: legs },
+    } = instruction!;
+
+    const { blockId, hash } = createdBlock!;
+
+    data.push({
+      blockNumber: new BigNumber(blockId),
+      blockHash: hash,
+      status: status as unknown as SettlementResultEnum,
+      accounts: legs[0].addresses.map((address: string) => new Account({ address }, context)),
+      instruction: new Instruction({ id: new BigNumber(id) }, context),
+      legs: legs.map(leg => ({
+        ...middlewareLegToLeg(leg, context),
+        direction: getDirection(leg),
+      })),
+    });
+  });
+
+  data = [
+    ...data,
+    ...portfolioMovementsToHistoricSettlements(
+      portfolioMovements,
+      context,
+      (accountAddress: string) => new Account({ address: accountAddress }, context)
+    ),
+  ];
   /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
   return data.sort((a, b) => a.blockNumber.minus(b.blockNumber).toNumber());

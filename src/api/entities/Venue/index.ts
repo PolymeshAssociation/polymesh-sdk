@@ -1,5 +1,6 @@
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
+import { lt } from 'lodash';
 
 import {
   Account,
@@ -11,8 +12,10 @@ import {
   modifyVenue,
   updateVenueSigners,
 } from '~/internal';
-import { instructionsQuery } from '~/middleware/queries';
+import { instructionsQuery } from '~/middleware/queries/settlements';
+import { instructionsQuery as oldInstructionsQuery } from '~/middleware/queries/settlementsOld';
 import { Query } from '~/middleware/types';
+import { Query as QueryOld } from '~/middleware/typesV6';
 import {
   AddInstructionParams,
   AddInstructionsParams,
@@ -25,6 +28,7 @@ import {
   UpdateVenueSignersParams,
 } from '~/types';
 import { Ensured } from '~/types/utils';
+import { SETTLEMENTS_V2_SQ_VERSION } from '~/utils/constants';
 import {
   accountIdToString,
   bigNumberToU64,
@@ -32,9 +36,10 @@ import {
   identityIdToString,
   meshVenueTypeToVenueType,
   middlewareInstructionToHistoricInstruction,
+  oldMiddlewareInstructionToHistoricInstruction,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { calculateNextKey, createProcedureMethod } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod, getLatestSqVersion } from '~/utils/internal';
 
 import { HistoricInstruction, VenueDetails } from './types';
 
@@ -245,23 +250,48 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
 
     const { size, start } = opts;
 
-    const {
-      data: {
-        instructions: { nodes: instructionsResult, totalCount },
-      },
-    } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(
-      instructionsQuery(
-        {
-          venueId: id.toString(),
-        },
-        size,
-        start
-      )
-    );
+    let data: HistoricInstruction[];
+    // TODO @prashantasdeveloper Remove after SQ dual version support
+    const sqVersion = await getLatestSqVersion(context);
+    let instructionsResult, totalCount;
 
-    const data = instructionsResult.map(middlewareInstruction =>
-      middlewareInstructionToHistoricInstruction(middlewareInstruction, context)
-    );
+    if (lt(sqVersion, SETTLEMENTS_V2_SQ_VERSION)) {
+      ({
+        data: {
+          instructions: { nodes: instructionsResult, totalCount },
+        },
+      } = await context.queryMiddleware<Ensured<QueryOld, 'instructions'>>(
+        oldInstructionsQuery(
+          {
+            venueId: id.toString(),
+          },
+          size,
+          start
+        )
+      ));
+
+      data = instructionsResult.map(middlewareInstruction =>
+        oldMiddlewareInstructionToHistoricInstruction(middlewareInstruction, context)
+      );
+    } else {
+      ({
+        data: {
+          instructions: { nodes: instructionsResult, totalCount },
+        },
+      } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(
+        instructionsQuery(
+          {
+            venueId: id.toString(),
+          },
+          size,
+          start
+        )
+      ));
+
+      data = instructionsResult.map(middlewareInstruction =>
+        middlewareInstructionToHistoricInstruction(middlewareInstruction, context)
+      );
+    }
 
     const count = new BigNumber(totalCount);
 

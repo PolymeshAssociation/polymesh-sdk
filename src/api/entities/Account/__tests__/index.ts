@@ -7,7 +7,7 @@ import {
   HistoricPolyxTransaction,
 } from '~/api/entities/Account/types';
 import { Account, Context, Entity, PolymeshError } from '~/internal';
-import { extrinsicsByArgs } from '~/middleware/queries';
+import { extrinsicsByArgs } from '~/middleware/queries/extrinsics';
 import { CallIdEnum, ExtrinsicsOrderBy, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {

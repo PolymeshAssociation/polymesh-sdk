@@ -13,7 +13,7 @@ import {
   PolymeshError,
   transferAssetOwnership,
 } from '~/internal';
-import { assetQuery, nftTransactionQuery } from '~/middleware/queries';
+import { assetQuery, nftTransactionQuery } from '~/middleware/queries/assets';
 import { Query } from '~/middleware/types';
 import {
   AssetDetails,

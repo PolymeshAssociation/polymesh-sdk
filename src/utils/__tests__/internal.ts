@@ -21,7 +21,7 @@ import {
   PolymeshError,
   Procedure,
 } from '~/internal';
-import { latestSqVersionQuery } from '~/middleware/queries';
+import { latestSqVersionQuery } from '~/middleware/queries/common';
 import { Claim as MiddlewareClaim } from '~/middleware/types';
 import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -1190,7 +1190,7 @@ describe('warnUnexpectedSqVersion', () => {
     expect(warnSpy).not.toHaveBeenCalled();
   });
 
-  it('should log a warning for incompatible Subquery version', async () => {
+  it('should log a warning for incompatible SubQuery version', async () => {
     dsMockUtils.createApolloQueryMock(latestSqVersionQuery(), {
       subqueryVersions: {
         nodes: [
@@ -1204,7 +1204,7 @@ describe('warnUnexpectedSqVersion', () => {
 
     expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(warnSpy).toHaveBeenCalledWith(
-      `This version of the SDK supports Polymesh Subquery version ${MINIMUM_SQ_VERSION} or higher. Please upgrade the MiddlewareV2`
+      `This version of the SDK supports Polymesh SubQuery version ${MINIMUM_SQ_VERSION} or higher. Please upgrade the MiddlewareV2`
     );
 
     warnSpy.mockReset();

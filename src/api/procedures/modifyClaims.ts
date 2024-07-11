@@ -6,7 +6,7 @@ import {
 import { groupBy, uniq } from 'lodash';
 
 import { Context, Identity, PolymeshError, Procedure } from '~/internal';
-import { claimsQuery } from '~/middleware/queries';
+import { claimsQuery } from '~/middleware/queries/claims';
 import { Claim as MiddlewareClaim, Query } from '~/middleware/types';
 import {
   CddClaim,

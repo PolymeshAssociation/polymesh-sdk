@@ -1,4 +1,3 @@
-
 {
   "parser": "@typescript-eslint/parser",
   "env": {
@@ -101,5 +100,11 @@
     "project": "./tsconfig.json"
   },
   "extends": ["standard", "semistandard", "plugin:@typescript-eslint/recommended", "prettier"],
-  "ignorePatterns": ["src/polkadot/", "src/middleware/types.ts", "docs/*", "src/sandbox.ts"]
+  "ignorePatterns": [
+    "src/polkadot/",
+    "src/middleware/types.ts",
+    "src/middleware/typesV6.ts",
+    "docs/*",
+    "src/sandbox.ts"
+  ]
 }

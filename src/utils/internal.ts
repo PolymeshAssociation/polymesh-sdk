@@ -43,7 +43,7 @@ import {
   NftCollection,
   PolymeshError,
 } from '~/internal';
-import { latestSqVersionQuery } from '~/middleware/queries';
+import { latestSqVersionQuery } from '~/middleware/queries/common';
 import { Claim as MiddlewareClaim, ClaimTypeEnum, Query } from '~/middleware/types';
 import { MiddlewareScope } from '~/middleware/typesV1';
 import {
@@ -1410,9 +1410,9 @@ function assertExpectedSpecVersion(
 /**
  * @hidden
  *
- * Checks SQ version compatibility with the SDK
+ * Get latest SQ version
  */
-export async function warnUnexpectedSqVersion(context: Context): Promise<void> {
+export async function getLatestSqVersion(context: Context): Promise<string> {
   const {
     data: {
       subqueryVersions: {
@@ -1421,9 +1421,19 @@ export async function warnUnexpectedSqVersion(context: Context): Promise<void> {
     },
   } = await context.queryMiddleware<Ensured<Query, 'subqueryVersions'>>(latestSqVersionQuery());
 
-  if (!sqVersion || lt(sqVersion.version, MINIMUM_SQ_VERSION)) {
+  return sqVersion?.version || '1.0.0';
+}
+
+/**
+ * @hidden
+ *
+ * Checks SQ version compatibility with the SDK
+ */
+export async function warnUnexpectedSqVersion(context: Context): Promise<void> {
+  const sqVersion = await getLatestSqVersion(context);
+  if (lt(sqVersion, MINIMUM_SQ_VERSION)) {
     console.warn(
-      `This version of the SDK supports Polymesh Subquery version ${MINIMUM_SQ_VERSION} or higher. Please upgrade the MiddlewareV2`
+      `This version of the SDK supports Polymesh SubQuery version ${MINIMUM_SQ_VERSION} or higher. Please upgrade the MiddlewareV2`
     );
   }
 }

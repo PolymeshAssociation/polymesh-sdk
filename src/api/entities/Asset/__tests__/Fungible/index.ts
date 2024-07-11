@@ -17,11 +17,8 @@ import {
   PolymeshError,
   PolymeshTransaction,
 } from '~/internal';
-import {
-  assetQuery,
-  assetTransactionQuery,
-  tickerExternalAgentHistoryQuery,
-} from '~/middleware/queries';
+import { assetQuery, assetTransactionQuery } from '~/middleware/queries/assets';
+import { tickerExternalAgentHistoryQuery } from '~/middleware/queries/externalAgents';
 import { EventIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { ErrorCode, SecurityIdentifier, SecurityIdentifierType } from '~/types';

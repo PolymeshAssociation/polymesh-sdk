@@ -3,11 +3,8 @@ import { groupBy, map } from 'lodash';
 
 import { BaseAsset } from '~/api/entities/Asset/Base';
 import { Context, controllerTransfer, Identity, redeemTokens } from '~/internal';
-import {
-  assetQuery,
-  assetTransactionQuery,
-  tickerExternalAgentHistoryQuery,
-} from '~/middleware/queries';
+import { assetQuery, assetTransactionQuery } from '~/middleware/queries/assets';
+import { tickerExternalAgentHistoryQuery } from '~/middleware/queries/externalAgents';
 import { Query } from '~/middleware/types';
 import {
   ControllerTransferParams,

@@ -21,7 +21,7 @@ import {
   MultiSigProposal,
   PolymeshError,
 } from '~/internal';
-import { extrinsicsByArgs } from '~/middleware/queries';
+import { extrinsicsByArgs } from '~/middleware/queries/extrinsics';
 import { CallIdEnum, ExtrinsicsOrderBy, ModuleIdEnum, Query } from '~/middleware/types';
 import {
   AccountBalance,

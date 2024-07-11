@@ -9,7 +9,11 @@ import {
   PolymeshError,
   registerCustomClaimType,
 } from '~/internal';
-import { claimsGroupingQuery, claimsQuery, customClaimTypeQuery } from '~/middleware/queries';
+import {
+  claimsGroupingQuery,
+  claimsQuery,
+  customClaimTypeQuery,
+} from '~/middleware/queries/claims';
 import { ClaimsGroupBy, ClaimsOrderBy, ClaimTypeEnum, Query } from '~/middleware/types';
 import { IdentityClaim } from '~/polkadot/polymesh';
 import {

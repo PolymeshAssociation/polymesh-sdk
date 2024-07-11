@@ -3,7 +3,8 @@ import BigNumber from 'bignumber.js';
 
 import { handleExtrinsicFailure, pollForTransactionFinalization } from '~/base/utils';
 import { Account, Context, PolymeshError, transferPolyx } from '~/internal';
-import { eventsByArgs, extrinsicByHash } from '~/middleware/queries';
+import { eventsByArgs } from '~/middleware/queries/events';
+import { extrinsicByHash } from '~/middleware/queries/extrinsics';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import {
   ErrorCode,

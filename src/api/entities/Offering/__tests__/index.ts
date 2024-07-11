@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Context, Entity, Offering, PolymeshTransaction } from '~/internal';
-import { investmentsQuery } from '~/middleware/queries';
+import { investmentsQuery } from '~/middleware/queries/stos';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   OfferingBalanceStatus,

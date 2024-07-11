@@ -13,7 +13,10 @@ import {
   setPermissionGroup,
   waivePermissions,
 } from '~/internal';
-import { tickerExternalAgentActionsQuery, tickerExternalAgentsQuery } from '~/middleware/queries';
+import {
+  tickerExternalAgentActionsQuery,
+  tickerExternalAgentsQuery,
+} from '~/middleware/queries/externalAgents';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import {
   Asset,

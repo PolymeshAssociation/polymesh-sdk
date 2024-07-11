@@ -12,7 +12,7 @@ import {
   PolymeshError,
   PolymeshTransaction,
 } from '~/internal';
-import { assetQuery, nftTransactionQuery } from '~/middleware/queries';
+import { assetQuery, nftTransactionQuery } from '~/middleware/queries/assets';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   ErrorCode,

@@ -96,10 +96,12 @@ import {
   CustomClaimType as MiddlewareCustomClaimType,
   Instruction,
   InstructionStatusEnum,
+  LegTypeEnum,
   ModuleIdEnum,
   Portfolio as MiddlewarePortfolio,
 } from '~/middleware/types';
 import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
+import { Instruction as MiddlewareInstructionOld } from '~/middleware/typesV6';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   createMockIdentityId,
@@ -137,11 +139,14 @@ import {
   InstructionType,
   KnownAssetType,
   KnownNftType,
+  Leg,
   MetadataLockStatus,
   MetadataType,
   ModuleName,
+  NftLeg,
   NonFungiblePortfolioMovement,
   OffChainAffirmationReceipt,
+  OffChainLeg,
   OfferingBalanceStatus,
   OfferingSaleStatus,
   OfferingTier,
@@ -287,6 +292,7 @@ import {
   nftToMeshNft,
   offChainMetadataToMeshReceiptMetadata,
   offeringTierToPriceTier,
+  oldMiddlewareInstructionToHistoricInstruction,
   percentageToPermill,
   permillToBigNumber,
   permissionGroupIdentifierToAgentGroup,
@@ -4333,8 +4339,8 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
   });
 });
 
-describe('middlewareInstructionToHistoricInstruction', () => {
-  it('should convert a middleware Instruction object to a HistoricInstruction', () => {
+describe('oldMiddlewareInstructionToHistoricInstruction', () => {
+  it('should convert a old middleware Instruction object to a HistoricInstruction', () => {
     const instructionId1 = new BigNumber(1);
     const instructionId2 = new BigNumber(2);
     const blockNumber = new BigNumber(1234);
@@ -4400,9 +4406,9 @@ describe('middlewareInstructionToHistoricInstruction', () => {
       legs: {
         nodes: legs1,
       },
-    } as unknown as Instruction;
+    } as unknown as MiddlewareInstructionOld;
 
-    let result = middlewareInstructionToHistoricInstruction(instruction, context);
+    let result = oldMiddlewareInstructionToHistoricInstruction(instruction, context);
 
     expect(result.id).toEqual(instructionId1);
     expect(result.blockHash).toEqual(blockHash);
@@ -4433,9 +4439,9 @@ describe('middlewareInstructionToHistoricInstruction', () => {
       legs: {
         nodes: legs2,
       },
-    } as unknown as Instruction;
+    } as unknown as MiddlewareInstructionOld;
 
-    result = middlewareInstructionToHistoricInstruction(instruction, context);
+    result = oldMiddlewareInstructionToHistoricInstruction(instruction, context);
 
     expect(result.id).toEqual(instructionId2);
     expect(result.memo).toBeNull();
@@ -4450,6 +4456,169 @@ describe('middlewareInstructionToHistoricInstruction', () => {
     expect(resultLeg.from.owner.did).toBe(portfolioDid2);
     expect(resultLeg.to.owner.did).toBe(portfolioDid1);
     expect((result.legs[0].from as NumberedPortfolio).id).toEqual(new BigNumber(portfolioKind2));
+  });
+});
+
+describe('middlewareInstructionToHistoricInstruction', () => {
+  it('should convert a middleware Instruction object to a HistoricInstruction', () => {
+    const instructionId1 = new BigNumber(1);
+    const instructionId2 = new BigNumber(2);
+    const instructionId3 = new BigNumber(3);
+    const blockNumber = new BigNumber(1234);
+    const blockHash = 'someHash';
+    const memo = 'memo';
+    const ticker = 'SOME_TICKER';
+    const amount1 = new BigNumber(10);
+    const nftId = new BigNumber(5);
+    const amount3 = new BigNumber(100);
+    const venueId = new BigNumber(1);
+    const createdAt = new Date('2022/01/01');
+    const status = InstructionStatusEnum.Executed;
+    const portfolioDid1 = 'portfolioDid1';
+    const portfolioKind1 = 'Default';
+
+    const portfolioDid2 = 'portfolioDid2';
+    const portfolioKind2 = '10';
+    const type1 = InstructionType.SettleOnAffirmation;
+    const type2 = InstructionType.SettleOnBlock;
+    const endBlock = new BigNumber(1238);
+    const type3 = InstructionType.SettleManual;
+    const endAfterBlock = new BigNumber(10);
+
+    const legs1 = [
+      {
+        legType: LegTypeEnum.Fungible,
+        assetId: ticker,
+        amount: amount1.shiftedBy(6).toString(),
+        fromPortfolio: portfolioKind1,
+        from: portfolioDid1,
+        toPortfolio: portfolioKind2,
+        to: portfolioDid2,
+      },
+    ];
+    const legs2 = [
+      {
+        legType: LegTypeEnum.NonFungible,
+        assetId: ticker,
+        nftIds: [nftId.toString()],
+        fromPortfolio: portfolioKind2,
+        from: portfolioDid2,
+        toPortfolio: portfolioKind1,
+        to: portfolioDid1,
+      },
+    ];
+    const legs3 = [
+      {
+        legType: LegTypeEnum.OffChain,
+        assetId: ticker,
+        amount: amount3.shiftedBy(6).toString(),
+        from: portfolioDid2,
+        to: portfolioDid1,
+      },
+    ];
+
+    const context = dsMockUtils.getContextInstance();
+
+    let instruction = {
+      id: instructionId1.toString(),
+      createdBlock: {
+        blockId: blockNumber.toNumber(),
+        hash: blockHash,
+        datetime: createdAt,
+      },
+      status,
+      memo,
+      venueId: venueId.toString(),
+      settlementType: type1,
+      legs: {
+        nodes: legs1,
+      },
+    } as unknown as Instruction;
+
+    let resultLeg: Leg;
+    let result = middlewareInstructionToHistoricInstruction(instruction, context);
+
+    expect(result.id).toEqual(instructionId1);
+    expect(result.blockHash).toEqual(blockHash);
+    expect(result.blockNumber).toEqual(blockNumber);
+    expect(result.status).toEqual(status);
+    expect(result.memo).toEqual(memo);
+    expect(result.type).toEqual(InstructionType.SettleOnAffirmation);
+    expect(result.venueId).toEqual(venueId);
+    expect(result.createdAt).toEqual(createdAt);
+    resultLeg = result.legs[0] as FungibleLeg;
+    expect(resultLeg.asset.ticker).toBe(ticker);
+    expect(resultLeg.amount).toEqual(amount1);
+    expect(resultLeg.from.owner.did).toBe(portfolioDid1);
+    expect(resultLeg.to.owner.did).toBe(portfolioDid2);
+    expect((result.legs[0].to as NumberedPortfolio).id).toEqual(new BigNumber(portfolioKind2));
+
+    instruction = {
+      id: instructionId2.toString(),
+      createdBlock: {
+        blockId: blockNumber.toNumber(),
+        hash: blockHash,
+        datetime: createdAt,
+      },
+      status,
+      type: type2,
+      endBlock: endBlock.toString(),
+      venueId: venueId.toString(),
+      legs: {
+        nodes: legs2,
+      },
+    } as unknown as Instruction;
+
+    result = middlewareInstructionToHistoricInstruction(instruction, context);
+
+    expect(result.id).toEqual(instructionId2);
+    expect(result.memo).toBeNull();
+    expect(result.type).toEqual(InstructionType.SettleOnBlock);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((result as any).endBlock).toEqual(endBlock);
+    expect(result.venueId).toEqual(venueId);
+    expect(result.createdAt).toEqual(createdAt);
+    resultLeg = result.legs[0] as NftLeg;
+    expect(resultLeg.asset.ticker).toBe(ticker);
+    expect(resultLeg.nfts).toEqual([
+      expect.objectContaining({
+        id: nftId,
+      }),
+    ]);
+    expect(resultLeg.from.owner.did).toBe(portfolioDid2);
+    expect(resultLeg.to.owner.did).toBe(portfolioDid1);
+    expect((result.legs[0].from as NumberedPortfolio).id).toEqual(new BigNumber(portfolioKind2));
+
+    instruction = {
+      id: instructionId3.toString(),
+      createdBlock: {
+        blockId: blockNumber.toNumber(),
+        hash: blockHash,
+        datetime: createdAt,
+      },
+      status,
+      type: type3,
+      endAfterBlock: endAfterBlock.toString(),
+      venueId: venueId.toString(),
+      legs: {
+        nodes: legs3,
+      },
+    } as unknown as Instruction;
+
+    result = middlewareInstructionToHistoricInstruction(instruction, context);
+
+    expect(result.id).toEqual(instructionId3);
+    expect(result.memo).toBeNull();
+    expect(result.type).toEqual(InstructionType.SettleManual);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((result as any).endAfterBlock).toEqual(endAfterBlock);
+    expect(result.venueId).toEqual(venueId);
+    expect(result.createdAt).toEqual(createdAt);
+    resultLeg = result.legs[0] as OffChainLeg;
+    expect(resultLeg.asset).toEqual(ticker);
+    expect(resultLeg.offChainAmount).toEqual(amount3);
+    expect(resultLeg.from.did).toBe(portfolioDid2);
+    expect(resultLeg.to.did).toBe(portfolioDid1);
   });
 });
 

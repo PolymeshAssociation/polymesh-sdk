@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { UniqueIdentifiers } from '~/api/entities/Account';
 import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 import { Account, Context, Identity, joinCreator, modifyMultiSig, PolymeshError } from '~/internal';
-import { multiSigProposalsQuery } from '~/middleware/queries';
+import { multiSigProposalsQuery } from '~/middleware/queries/multisigs';
 import { Query } from '~/middleware/types';
 import {
   ErrorCode,

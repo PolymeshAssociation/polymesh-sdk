@@ -23,7 +23,7 @@ import {
   PolymeshError,
   reclaimDividendDistributionFunds,
 } from '~/internal';
-import { distributionPaymentsQuery, distributionQuery } from '~/middleware/queries';
+import { distributionPaymentsQuery, distributionQuery } from '~/middleware/queries/distributions';
 import { Query } from '~/middleware/types';
 import {
   CorporateActionKind,

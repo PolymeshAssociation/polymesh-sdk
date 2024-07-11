@@ -23,7 +23,7 @@ export {
   MultiSigProposalVoteActionEnum,
   NftHoldersOrderBy,
   Scalars,
-  SettlementResultEnum,
 } from '~/middleware/types';
+export { SettlementResultEnum } from '~/middleware/typesV6';
 export { ClaimScopeTypeEnum, MiddlewareScope, SettlementDirectionEnum } from '~/middleware/typesV1';
 export { CountryCode, ModuleName, TxTag, TxTags };

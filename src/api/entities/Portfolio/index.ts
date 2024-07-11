@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { values } from 'lodash';
+import { lt, values } from 'lodash';
 
 import {
   AuthorizationRequest,
@@ -14,8 +14,11 @@ import {
   quitCustody,
   setCustodian,
 } from '~/internal';
-import { portfolioMovementsQuery, settlementsQuery } from '~/middleware/queries';
+import { portfolioMovementsQuery } from '~/middleware/queries/portfolios';
+import { settlementsQuery } from '~/middleware/queries/settlements';
+import { settlementsQuery as oldSettlementsQuery } from '~/middleware/queries/settlementsOld';
 import { Query } from '~/middleware/types';
+import { Query as QueryOld } from '~/middleware/typesV6';
 import {
   ErrorCode,
   MoveFundsParams,
@@ -24,10 +27,12 @@ import {
   SetCustodianParams,
 } from '~/types';
 import { Ensured } from '~/types/utils';
+import { SETTLEMENTS_V2_SQ_VERSION } from '~/utils/constants';
 import {
   addressToKey,
   balanceToBigNumber,
   identityIdToString,
+  oldMiddlewareDataToHistoricalSettlements,
   portfolioIdToMeshPortfolioId,
   tickerToString,
   toHistoricalSettlements,
@@ -38,6 +43,7 @@ import {
   asTicker,
   createProcedureMethod,
   getIdentity,
+  getLatestSqVersion,
   toHumanReadable,
 } from '~/utils/internal';
 
@@ -399,13 +405,69 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
 
     const { account, ticker } = filters;
 
-    const address = account ? addressToKey(account, context) : undefined;
+    // TODO @prashantasdeveloper Remove after SQ dual version support
+    const sqVersion = await getLatestSqVersion(context);
+
+    if (lt(sqVersion, SETTLEMENTS_V2_SQ_VERSION)) {
+      const address = account ? addressToKey(account, context) : undefined;
+
+      const settlementsPromise = context.queryMiddleware<Ensured<QueryOld, 'legs'>>(
+        oldSettlementsQuery({
+          identityId,
+          portfolioId,
+          address,
+          ticker,
+        })
+      );
+
+      const portfolioMovementsPromise = context.queryMiddleware<
+        Ensured<Query, 'portfolioMovements'>
+      >(
+        portfolioMovementsQuery({
+          identityId,
+          portfolioId,
+          address,
+          ticker,
+        })
+      );
+
+      const [
+        {
+          data: {
+            legs: { nodes: settlements },
+          },
+        },
+        {
+          data: {
+            portfolioMovements: { nodes: portfolioMovements },
+          },
+        },
+        exists,
+      ] = await Promise.all([settlementsPromise, portfolioMovementsPromise, this.exists()]);
+
+      if (!exists) {
+        throw new PolymeshError({
+          code: ErrorCode.DataUnavailable,
+          message: notExistsMessage,
+        });
+      }
+
+      const portfolioFilter = `${identityId}/${new BigNumber(portfolioId || 0).toString()}`;
+
+      return oldMiddlewareDataToHistoricalSettlements(
+        settlements,
+        portfolioMovements,
+        portfolioFilter,
+        context
+      );
+    }
+    // Dual version support end
 
     const settlementsPromise = context.queryMiddleware<Ensured<Query, 'legs'>>(
       settlementsQuery({
         identityId,
         portfolioId,
-        address,
+        address: account,
         ticker,
       })
     );
@@ -414,16 +476,24 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       portfolioMovementsQuery({
         identityId,
         portfolioId,
-        address,
+        address: account,
         ticker,
       })
     );
 
-    const [settlementsResult, portfolioMovementsResult, exists] = await Promise.all([
-      settlementsPromise,
-      portfolioMovementsPromise,
-      this.exists(),
-    ]);
+    const [
+      {
+        data: {
+          legs: { nodes: settlements },
+        },
+      },
+      {
+        data: {
+          portfolioMovements: { nodes: portfolioMovements },
+        },
+      },
+      exists,
+    ] = await Promise.all([settlementsPromise, portfolioMovementsPromise, this.exists()]);
 
     if (!exists) {
       throw new PolymeshError({
@@ -432,12 +502,13 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       });
     }
 
-    const portfolioFilter = `${identityId}/${new BigNumber(portfolioId || 0).toString()}`;
-
     return toHistoricalSettlements(
-      settlementsResult,
-      portfolioMovementsResult,
-      portfolioFilter,
+      settlements,
+      portfolioMovements,
+      {
+        identityId,
+        portfolio: new BigNumber(portfolioId || 0).toNumber(),
+      },
       context
     );
   }
