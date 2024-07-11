@@ -111,9 +111,10 @@ export abstract class PolymeshTransactionBase<
   public blockNumber?: BigNumber;
 
   /**
-   * @hidden
+   * This will be set if the signingAddress is a MultiSig signer, otherwise `null`
    *
-   * This will be set if the signingAddress is a MultiSig signer
+   * When set it indicates the transaction will be wrapped as a proposal for the MultiSig,
+   * meaning `.runAsProposal` should be used instead of `.run`
    */
   public multiSig: null | MultiSig;
 
