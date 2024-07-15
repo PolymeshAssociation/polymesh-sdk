@@ -51,7 +51,7 @@ describe('Polymesh Class', () => {
       .mockClear()
       .mockImplementation()
       .mockResolvedValue(undefined);
-    jest.spyOn(internalUtils, 'assertExpectedSqVersion').mockImplementation();
+    jest.spyOn(internalUtils, 'warnUnexpectedSqVersion').mockImplementation();
     dsMockUtils.configureMocks({ contextOptions: undefined });
   });
 

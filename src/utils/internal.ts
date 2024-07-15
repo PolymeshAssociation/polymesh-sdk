@@ -1412,7 +1412,7 @@ function assertExpectedSpecVersion(
  *
  * Checks SQ version compatibility with the SDK
  */
-export async function assertExpectedSqVersion(context: Context): Promise<void> {
+export async function warnUnexpectedSqVersion(context: Context): Promise<void> {
   const {
     data: {
       subqueryVersions: {

@@ -77,7 +77,6 @@ import {
   asNftId,
   assertAddressValid,
   assertExpectedChainVersion,
-  assertExpectedSqVersion,
   assertIdentityExists,
   assertIsInteger,
   assertIsPositive,
@@ -117,6 +116,7 @@ import {
   serialize,
   sliceBatchReceipt,
   unserialize,
+  warnUnexpectedSqVersion,
 } from '../internal';
 
 jest.mock(
@@ -1151,7 +1151,7 @@ describe('getExemptedIds', () => {
   });
 });
 
-describe('assertExpectedSqVersion', () => {
+describe('warnUnexpectedSqVersion', () => {
   let warnSpy: jest.SpyInstance;
   let context: MockContext;
 
@@ -1183,7 +1183,7 @@ describe('assertExpectedSqVersion', () => {
         ],
       },
     });
-    const promise = assertExpectedSqVersion(dsMockUtils.getContextInstance());
+    const promise = warnUnexpectedSqVersion(dsMockUtils.getContextInstance());
 
     await expect(promise).resolves.not.toThrow();
 
@@ -1200,7 +1200,7 @@ describe('assertExpectedSqVersion', () => {
         ],
       },
     });
-    await assertExpectedSqVersion(context);
+    await warnUnexpectedSqVersion(context);
 
     expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(warnSpy).toHaveBeenCalledWith(
@@ -1214,7 +1214,7 @@ describe('assertExpectedSqVersion', () => {
         nodes: [],
       },
     });
-    await assertExpectedSqVersion(context);
+    await warnUnexpectedSqVersion(context);
 
     expect(warnSpy).toHaveBeenCalledTimes(1);
   });
