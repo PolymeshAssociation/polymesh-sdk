@@ -600,6 +600,16 @@ export interface RemoveSecondaryAccountsParams {
   accounts: Account[];
 }
 
+export interface AccountWithSignature {
+  secondaryAccount: PermissionedAccount;
+  authSignature: string;
+}
+
+export interface AddSecondaryAccountsParams {
+  accounts: AccountWithSignature[];
+  expiresAt: Date;
+}
+
 export interface SubsidizeAccountParams {
   /**
    * Account to subsidize

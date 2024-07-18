@@ -17,6 +17,7 @@ import {
   PalletCorporateActionsTargetIdentities,
   PalletStoPriceTier,
   PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
+  PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetAssetType,
@@ -112,6 +113,7 @@ import {
 } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import {
+  AccountWithSignature,
   AffirmationStatus,
   AssetDocument,
   Authorization,
@@ -297,6 +299,7 @@ import {
   scopeToMeshScope,
   scopeToMiddlewareScope,
   secondaryAccountToMeshSecondaryKey,
+  secondaryAccountWithAuthToSecondaryKeyWithAuth,
   securityIdentifierToAssetIdentifier,
   signatoryToSignerValue,
   signatureToMeshRuntimeMultiSignature,
@@ -10183,5 +10186,52 @@ describe('portfolioIdStringToPortfolio', () => {
 
     expect(result.identityId).toBe('12345');
     expect(result.number).toBeNaN();
+  });
+});
+
+describe('secondaryAccountWithAuthToSecondaryKeyWithAuth', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should create additional keys', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    const accounts = [
+      {
+        secondaryAccount: {
+          account: entityMockUtils.getAccountInstance({
+            address: 'secondaryAccount',
+            getIdentity: null,
+          }),
+          permissions: {
+            assets: null,
+            portfolios: null,
+            transactions: null,
+            transactionGroups: [],
+          },
+        },
+        authSignature: '0xSignature',
+      },
+    ] as unknown as AccountWithSignature[];
+
+    const fakeResult =
+      'fakeSecondaryKeysWithAuth' as unknown as Vec<PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth>;
+
+    when(context.createType)
+      .calledWith('Vec<PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth>', expect.any(Object))
+      .mockReturnValue(fakeResult);
+
+    const result = secondaryAccountWithAuthToSecondaryKeyWithAuth(accounts, context);
+
+    expect(result).toEqual(fakeResult);
   });
 });

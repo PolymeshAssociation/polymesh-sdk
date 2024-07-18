@@ -49,6 +49,7 @@ export { registerIdentity } from '~/api/procedures/registerIdentity';
 export { createChildIdentity } from '~/api/procedures/createChildIdentity';
 export { attestPrimaryKeyRotation } from '~/api/procedures/attestPrimaryKeyRotation';
 export { rotatePrimaryKey } from '~/api/procedures/rotatePrimaryKey';
+export { addSecondaryAccounts } from '~/api/procedures/addSecondaryAccountsWithAuth';
 export { removeSecondaryAccounts } from '~/api/procedures/removeSecondaryAccounts';
 export {
   modifySignerPermissions,

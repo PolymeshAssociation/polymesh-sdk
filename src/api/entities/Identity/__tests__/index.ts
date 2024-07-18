@@ -1436,4 +1436,29 @@ describe('Identity class', () => {
       ]);
     });
   });
+
+  describe('method: getOffChainAuthorizationNonce', () => {
+    it('should return the off chain authorization nonce for an Identity', async () => {
+      const did = 'someDid';
+      const rawIdentityId = dsMockUtils.createMockIdentityId(did);
+      const mockContext = dsMockUtils.getContextInstance();
+
+      stringToIdentityIdSpy.mockReturnValue(rawIdentityId);
+
+      const nonce = new BigNumber(2);
+      const rawNonce = dsMockUtils.createMockU64(nonce);
+
+      dsMockUtils
+        .createQueryMock('identity', 'offChainAuthorizationNonce')
+        .mockResolvedValue(rawNonce);
+
+      when(u64ToBigNumberSpy).calledWith(rawNonce).mockReturnValue(nonce);
+
+      const identity = new Identity({ did }, mockContext);
+
+      const result = await identity.getOffChainAuthorizationNonce();
+
+      expect(result).toEqual(nonce);
+    });
+  });
 });

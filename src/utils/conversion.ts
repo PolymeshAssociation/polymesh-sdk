@@ -21,6 +21,7 @@ import {
   PalletStoFundraiserTier,
   PalletStoPriceTier,
   PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
+  PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetAssetType,
@@ -146,6 +147,7 @@ import {
   Moment,
 } from '~/polkadot/polymesh';
 import {
+  AccountWithSignature,
   AffirmationStatus,
   AssetDocument,
   Authorization,
@@ -4980,4 +4982,22 @@ export function receiptDetailsToMeshReceiptDetails(
   });
 
   return context.createType('Vec<PolymeshPrimitivesSettlementReceiptDetails>', rawReceiptDetails);
+}
+
+/**
+ * @hidden
+ */
+export function secondaryAccountWithAuthToSecondaryKeyWithAuth(
+  accounts: AccountWithSignature[],
+  context: Context
+): Vec<PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth> {
+  const keyWithAuths = accounts.map(({ secondaryAccount, authSignature }) => ({
+    secondaryKey: secondaryAccountToMeshSecondaryKey(secondaryAccount, context),
+    authSignature: stringToU8aFixed(authSignature, context),
+  }));
+
+  return context.createType(
+    'Vec<PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth>',
+    keyWithAuths
+  );
 }

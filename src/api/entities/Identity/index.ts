@@ -1072,4 +1072,27 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       signers: multiSigs[multiSig],
     }));
   }
+
+  /**
+   * Returns the off chain authorization nonce for this Identity
+   */
+  public async getOffChainAuthorizationNonce(): Promise<BigNumber> {
+    const {
+      context,
+      context: {
+        polymeshApi: {
+          query: {
+            identity: { offChainAuthorizationNonce },
+          },
+        },
+      },
+      did,
+    } = this;
+
+    const rawDid = stringToIdentityId(did, context);
+
+    const rawNonce = await offChainAuthorizationNonce(rawDid);
+
+    return u64ToBigNumber(rawNonce);
+  }
 }
