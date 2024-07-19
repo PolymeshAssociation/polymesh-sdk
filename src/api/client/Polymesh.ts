@@ -23,6 +23,8 @@ import { ConfidentialAssets } from '~/api/client/ConfidentialAssets';
 import { ConfidentialSettlements } from '~/api/client/ConfidentialSettlements';
 import schema from '~/polkadot/schema';
 
+import { ExtendedIdentities } from './ExtendedIdentities';
+
 export interface ConnectParams {
   /**
    * The websocket URL for the Polymesh node to connect to
@@ -91,6 +93,11 @@ export class ConfidentialPolymesh extends PublicPolymesh {
   public confidentialAccounts: ConfidentialAccounts;
 
   /**
+   * A set of methods for interacting with Polymesh Identities, with confidential extensions
+   */
+  override identities: ExtendedIdentities;
+
+  /**
    * @hidden
    */
   protected constructor(context: Context) {
@@ -98,6 +105,7 @@ export class ConfidentialPolymesh extends PublicPolymesh {
     this.confidentialAssets = new ConfidentialAssets(context);
     this.confidentialSettlements = new ConfidentialSettlements(context);
     this.confidentialAccounts = new ConfidentialAccounts(context);
+    this.identities = new ExtendedIdentities(context);
   }
 
   /**
