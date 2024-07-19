@@ -49,15 +49,7 @@ export function instructionsQuery(
           legs {
             nodes {
               fromId
-              from {
-                identityId
-                number
-              }
               toId
-              to {
-                identityId
-                number
-              }
               assetId
               amount
               addresses
@@ -114,15 +106,7 @@ export function instructionsByDidQuery(
             legs {
               nodes {
                 fromId
-                from {
-                  identityId
-                  number
-                }
                 toId
-                to {
-                  identityId
-                  number
-                }
                 assetId
                 amount
                 addresses
@@ -234,15 +218,7 @@ function buildSettlementsQuery(args: string, filter: string): DocumentNode {
           legs {
             nodes {
               fromId
-              from {
-                identityId
-                number
-              }
               toId
-              to {
-                identityId
-                number
-              }
               assetId
               amount
               addresses

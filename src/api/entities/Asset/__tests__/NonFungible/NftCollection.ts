@@ -12,7 +12,7 @@ import {
   PolymeshError,
   PolymeshTransaction,
 } from '~/internal';
-import { assetQuery, nftTransactionQuery } from '~/middleware/queries/assets';
+import { assetQuery, assetTransactionQuery } from '~/middleware/queries/assets';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   ErrorCode,
@@ -578,11 +578,8 @@ describe('NftCollection class', () => {
             assetId: ticker,
             nftIds: ['1'],
             eventId: EventIdEnum.Issued,
-            toPortfolio: {
-              identityId: 'SOME_DID',
-              number: 0,
-            },
-            fromPortfolio: null,
+            toPortfolioId: 'SOME_DID/0',
+            fromPortfolioId: null,
             extrinsicIdx: 1,
             eventIdx: 1,
             createdBlock: {
@@ -595,14 +592,8 @@ describe('NftCollection class', () => {
             assetId: ticker,
             nftIds: ['1'],
             eventId: EventIdEnum.Transfer,
-            toPortfolio: {
-              identityId: 'OTHER_DID',
-              number: 0,
-            },
-            fromPortfolio: {
-              identityId: 'SOME_DID',
-              number: 0,
-            },
+            toPortfolioId: 'OTHER_DID/0',
+            fromPortfolioId: 'SOME_DID/0',
             instructionId: 1,
             instructionMemo: 'some memo',
             extrinsicIdx: 1,
@@ -617,7 +608,7 @@ describe('NftCollection class', () => {
       };
 
       dsMockUtils.createApolloQueryMock(
-        nftTransactionQuery({ assetId: ticker }, new BigNumber(3), new BigNumber(0)),
+        assetTransactionQuery({ assetId: ticker }, new BigNumber(3), new BigNumber(0)),
         {
           assetTransactions: transactionResponse,
         }

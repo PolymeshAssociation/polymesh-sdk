@@ -4316,6 +4316,15 @@ export function instructionMemoToString(value: U8aFixed): string {
   return removePadding(hexToString(value.toString()));
 }
 
+/**
+ * @hidden
+ */
+export function portfolioIdStringToPortfolio(id: string): MiddlewarePortfolio {
+  const [identityId, number] = id.split('/');
+
+  return { identityId, number: parseInt(number, 10) } as MiddlewarePortfolio;
+}
+
 // TODO @prashantasdeveloper Remove after SQ dual version support
 /**
  * @hidden
@@ -4363,11 +4372,11 @@ export function oldMiddlewareInstructionToHistoricInstruction(
     memo: memo ?? null,
     venueId: new BigNumber(venueId),
     createdAt: new Date(datetime),
-    legs: legs.map(({ from, to, assetId, amount }) => ({
+    legs: legs.map(({ fromId, toId, assetId, amount }) => ({
       asset: new FungibleAsset({ ticker: assetId }, context),
       amount: new BigNumber(amount).shiftedBy(-6),
-      from: middlewarePortfolioToPortfolio(from! as unknown as MiddlewarePortfolio, context),
-      to: middlewarePortfolioToPortfolio(to! as unknown as MiddlewarePortfolio, context),
+      from: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(fromId), context),
+      to: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(toId), context),
     })),
   };
   /* eslint-enable @typescript-eslint/no-non-null-assertion */
@@ -4886,20 +4895,11 @@ export function nftInputToNftMetadataVec(
 export function toCustomClaimTypeWithIdentity(
   data: MiddlewareCustomClaimType[]
 ): CustomClaimTypeWithDid[] {
-  return data.map(item => ({
-    name: item.name,
-    id: new BigNumber(item.id),
-    did: item.identity?.did,
+  return data.map(({ id, name, identityId: did }) => ({
+    id: new BigNumber(id),
+    name,
+    did,
   }));
-}
-
-/**
- * @hidden
- */
-export function portfolioIdStringToPortfolio(id: string): MiddlewarePortfolio {
-  const [identityId, number] = id.split('/');
-
-  return { identityId, number: parseInt(number, 10) } as MiddlewarePortfolio;
 }
 
 /**
@@ -4917,7 +4917,6 @@ function portfolioMovementsToHistoricSettlements(
         blockNumber: new BigNumber(blockId),
         blockHash: hash,
         status: SettlementResultEnum.Executed,
-        // accounts: [new Account({ address: keyToAddress(accountAddress, context) }, context)],
         accounts: [handleMiddlewareAddress(accountAddress, context)],
         legs: [
           {
@@ -4997,12 +4996,12 @@ export function oldMiddlewareDataToHistoricalSettlements(
           new Account({ address: keyToAddress(accountAddress, context) }, context)
       ),
       instruction: new Instruction({ id: new BigNumber(instructionId) }, context),
-      legs: legs.map(({ from, to, fromId, toId, assetId, amount }) => ({
+      legs: legs.map(({ fromId, toId, assetId, amount }) => ({
         asset: new FungibleAsset({ ticker: assetId }, context),
         amount: new BigNumber(amount).shiftedBy(-6),
         direction: getDirection(fromId, toId),
-        from: middlewarePortfolioToPortfolio(from! as unknown as MiddlewarePortfolio, context),
-        to: middlewarePortfolioToPortfolio(to! as unknown as MiddlewarePortfolio, context),
+        from: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(fromId), context),
+        to: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(toId), context),
       })),
     });
   });

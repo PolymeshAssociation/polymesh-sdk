@@ -130,69 +130,9 @@ export function assetTransactionQuery(
         nodes {
           assetId
           amount
-          fromPortfolioId
-          fromPortfolio {
-            identityId
-            number
-          }
-          toPortfolioId
-          toPortfolio {
-            identityId
-            number
-          }
-          eventId
-          eventIdx
-          extrinsicIdx
-          fundingRound
-          instructionId
-          instructionMemo
-          datetime
-          createdBlock {
-            blockId
-            hash
-            datetime
-          }
-        }
-      }
-    }
-  `;
-
-  return {
-    query,
-    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
-  };
-}
-
-/**
- * @hidden
- *
- * Get the transaction history for an NFT Collection
- */
-export function nftTransactionQuery(
-  filters: QueryArgs<AssetTransaction, 'assetId'>,
-  size?: BigNumber,
-  start?: BigNumber
-): QueryOptions<PaginatedQueryArgs<QueryArgs<AssetTransaction, 'assetId'>>> {
-  const query = gql`
-    query AssetTransactionQuery($assetId: String!) {
-      assetTransactions(
-        filter: { assetId: { equalTo: $assetId } }
-        orderBy: [${AssetTransactionsOrderBy.CreatedAtAsc}, ${AssetTransactionsOrderBy.CreatedBlockIdAsc}]
-      ) {
-        totalCount
-        nodes {
-          assetId
           nftIds
           fromPortfolioId
-          fromPortfolio {
-            identityId
-            number
-          }
           toPortfolioId
-          toPortfolio {
-            identityId
-            number
-          }
           eventId
           eventIdx
           extrinsicIdx

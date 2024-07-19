@@ -13,7 +13,7 @@ import {
   PolymeshError,
   transferAssetOwnership,
 } from '~/internal';
-import { assetQuery, nftTransactionQuery } from '~/middleware/queries/assets';
+import { assetQuery, assetTransactionQuery } from '~/middleware/queries/assets';
 import { Query } from '~/middleware/types';
 import {
   AssetDetails,
@@ -36,6 +36,7 @@ import {
   meshMetadataKeyToMetadataKey,
   middlewareEventDetailsToEventIdentifier,
   middlewarePortfolioToPortfolio,
+  portfolioIdStringToPortfolio,
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -324,7 +325,7 @@ export class NftCollection extends BaseAsset {
         assetTransactions: { nodes, totalCount },
       },
     } = await context.queryMiddleware<Ensured<Query, 'assetTransactions'>>(
-      nftTransactionQuery(
+      assetTransactionQuery(
         {
           assetId: ticker,
         },
@@ -337,8 +338,8 @@ export class NftCollection extends BaseAsset {
       ({
         assetId,
         nftIds,
-        fromPortfolio,
-        toPortfolio,
+        fromPortfolioId,
+        toPortfolioId,
         createdBlock,
         eventId,
         eventIdx,
@@ -346,22 +347,27 @@ export class NftCollection extends BaseAsset {
         fundingRound,
         instructionId,
         instructionMemo,
-      }) => ({
-        asset: new NftCollection({ ticker: assetId }, context),
-        nfts: nftIds.map(
-          (id: string) => new Nft({ ticker: assetId, id: new BigNumber(id) }, context)
-        ),
-        event: eventId,
-        to: optionize(middlewarePortfolioToPortfolio)(toPortfolio, context),
-        from: optionize(middlewarePortfolioToPortfolio)(fromPortfolio, context),
-        fundingRound,
-        instructionMemo,
-        instructionId: instructionId ? new BigNumber(instructionId) : undefined,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        extrinsicIndex: new BigNumber(extrinsicIdx!),
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        ...middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx),
-      })
+      }) => {
+        const fromPortfolio = optionize(portfolioIdStringToPortfolio)(fromPortfolioId);
+        const toPortfolio = optionize(portfolioIdStringToPortfolio)(toPortfolioId);
+
+        return {
+          asset: new NftCollection({ ticker: assetId }, context),
+          nfts: nftIds.map(
+            (id: string) => new Nft({ ticker: assetId, id: new BigNumber(id) }, context)
+          ),
+          event: eventId,
+          to: optionize(middlewarePortfolioToPortfolio)(toPortfolio, context),
+          from: optionize(middlewarePortfolioToPortfolio)(fromPortfolio, context),
+          fundingRound,
+          instructionMemo,
+          instructionId: instructionId ? new BigNumber(instructionId) : undefined,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          extrinsicIndex: new BigNumber(extrinsicIdx!),
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          ...middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx),
+        };
+      }
     );
 
     const count = new BigNumber(totalCount);

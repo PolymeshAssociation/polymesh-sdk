@@ -251,9 +251,7 @@ export function customClaimTypeQuery(
         nodes {
           id
           name
-          identity {
-            did
-          }
+          identityId
         }
         totalCount
       }

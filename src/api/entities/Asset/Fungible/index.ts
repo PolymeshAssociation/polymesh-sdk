@@ -20,6 +20,7 @@ import {
   balanceToBigNumber,
   middlewareEventDetailsToEventIdentifier,
   middlewarePortfolioToPortfolio,
+  portfolioIdStringToPortfolio,
   stringToTicker,
   tickerToDid,
 } from '~/utils/conversion';
@@ -197,8 +198,8 @@ export class FungibleAsset extends BaseAsset {
       ({
         assetId,
         amount,
-        fromPortfolio,
-        toPortfolio,
+        fromPortfolioId,
+        toPortfolioId,
         createdBlock,
         eventId,
         eventIdx,
@@ -206,20 +207,25 @@ export class FungibleAsset extends BaseAsset {
         fundingRound,
         instructionId,
         instructionMemo,
-      }) => ({
-        asset: new FungibleAsset({ ticker: assetId }, context),
-        amount: new BigNumber(amount).shiftedBy(-6),
-        event: eventId,
-        from: optionize(middlewarePortfolioToPortfolio)(fromPortfolio, context),
-        to: optionize(middlewarePortfolioToPortfolio)(toPortfolio, context),
-        fundingRound,
-        instructionId: instructionId ? new BigNumber(instructionId) : undefined,
-        instructionMemo,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        extrinsicIndex: new BigNumber(extrinsicIdx!),
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        ...middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx),
-      })
+      }) => {
+        const fromPortfolio = optionize(portfolioIdStringToPortfolio)(fromPortfolioId);
+        const toPortfolio = optionize(portfolioIdStringToPortfolio)(toPortfolioId);
+
+        return {
+          asset: new FungibleAsset({ ticker: assetId }, context),
+          amount: new BigNumber(amount).shiftedBy(-6),
+          event: eventId,
+          from: optionize(middlewarePortfolioToPortfolio)(fromPortfolio, context),
+          to: optionize(middlewarePortfolioToPortfolio)(toPortfolio, context),
+          fundingRound,
+          instructionId: instructionId ? new BigNumber(instructionId) : undefined,
+          instructionMemo,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          extrinsicIndex: new BigNumber(extrinsicIdx!),
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          ...middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx),
+        };
+      }
     );
 
     const count = new BigNumber(totalCount);

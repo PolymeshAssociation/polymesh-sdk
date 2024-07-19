@@ -861,9 +861,7 @@ describe('Claims Class', () => {
           {
             id: '1',
             name: 'Some Claim Type',
-            identity: {
-              did,
-            },
+            identityId: did,
           },
         ],
         totalCount: 1,
@@ -905,9 +903,7 @@ describe('Claims Class', () => {
           {
             id: '1',
             name: 'Some Claim Type',
-            identity: {
-              did,
-            },
+            identityId: did,
           },
         ],
         totalCount: 1,

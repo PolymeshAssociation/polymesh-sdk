@@ -780,11 +780,8 @@ describe('Asset class', () => {
             assetId: ticker,
             amount: new BigNumber(100).shiftedBy(6),
             eventId: EventIdEnum.Issued,
-            toPortfolio: {
-              identityId: 'SOME_DID',
-              number: 0,
-            },
-            fromPortfolio: null,
+            toPortfolioId: 'SOME_DID/0',
+            fromPortfolioId: null,
             eventIdx: 1,
             extrinsicIdx: 1,
             createdBlock: {
@@ -797,11 +794,8 @@ describe('Asset class', () => {
             assetId: ticker,
             amount: new BigNumber(1).shiftedBy(6),
             eventId: EventIdEnum.Redeemed,
-            fromPortfolio: {
-              identityId: 'SOME_DID',
-              number: 0,
-            },
-            toPortfolio: null,
+            fromPortfolioId: 'SOME_DID/0',
+            toPortfolioId: null,
             eventIdx: 1,
             extrinsicIdx: 1,
             createdBlock: {
@@ -814,14 +808,8 @@ describe('Asset class', () => {
             assetId: ticker,
             amount: new BigNumber(10).shiftedBy(6),
             eventId: EventIdEnum.Transfer,
-            fromPortfolio: {
-              identityId: 'SOME_DID',
-              number: 0,
-            },
-            toPortfolio: {
-              identityId: 'SOME_OTHER_DID',
-              number: 1,
-            },
+            fromPortfolioId: 'SOME_DID/0',
+            toPortfolioId: 'SOME_OTHER_DID/1',
             instructionId: '2',
             instructionMemo: 'Some memo',
             eventIdx: 1,

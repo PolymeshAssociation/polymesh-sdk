@@ -4365,28 +4365,16 @@ describe('oldMiddlewareInstructionToHistoricInstruction', () => {
       {
         assetId: ticker,
         amount: amount1.shiftedBy(6).toString(),
-        from: {
-          number: portfolioKind1,
-          identityId: portfolioDid1,
-        },
-        to: {
-          number: portfolioKind2,
-          identityId: portfolioDid2,
-        },
+        fromId: `${portfolioDid1}/${portfolioKind1}`,
+        toId: `${portfolioDid2}/${portfolioKind2}`,
       },
     ];
     const legs2 = [
       {
         assetId: ticker,
         amount: amount2.shiftedBy(6).toString(),
-        from: {
-          number: portfolioKind2,
-          identityId: portfolioDid2,
-        },
-        to: {
-          number: portfolioKind1,
-          identityId: portfolioDid1,
-        },
+        fromId: `${portfolioDid2}/${portfolioKind2}`,
+        toId: `${portfolioDid1}/${portfolioKind1}`,
       },
     ];
 
@@ -10076,9 +10064,9 @@ describe('nftToMeshNft', () => {
 describe('toCustomClaimTypeWithIdentity', () => {
   it('should correctly convert MiddlewareCustomClaimType array to CustomClaimTypeWithDid array', () => {
     const middlewareCustomClaimTypeArray = [
-      { name: 'name1', id: '1', identity: { did: 'did1' } },
-      { name: 'name2', id: '2', identity: { did: 'did2' } },
-      { name: 'name3', id: '3', identity: null },
+      { name: 'name1', id: '1', identityId: 'did1' },
+      { name: 'name2', id: '2', identityId: 'did2' },
+      { name: 'name3', id: '3', identityId: undefined },
     ];
 
     const result = toCustomClaimTypeWithIdentity(

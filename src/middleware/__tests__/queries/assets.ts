@@ -6,7 +6,6 @@ import {
   assetTransactionQuery,
   nftCollectionHolders,
   nftHoldersQuery,
-  nftTransactionQuery,
 } from '~/middleware/queries/assets';
 
 describe('assetQuery', () => {
@@ -78,28 +77,6 @@ describe('assetTransactionQuery', () => {
     expect(result.variables).toEqual(variables);
 
     result = assetTransactionQuery(variables, new BigNumber(1), new BigNumber(0));
-
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual({
-      ...variables,
-      size: 1,
-      start: 0,
-    });
-  });
-});
-
-describe('nftTransactionQuery', () => {
-  it('should pass the variables to the grapqhl query', () => {
-    const variables = {
-      assetId: 'SOME_TICKER',
-    };
-
-    let result = nftTransactionQuery(variables);
-
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
-
-    result = nftTransactionQuery(variables, new BigNumber(1), new BigNumber(0));
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual({

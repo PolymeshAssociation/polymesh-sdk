@@ -31,7 +31,7 @@ export function multiSigProposalQuery(
             hash
             datetime
           }
-          votes {
+          votes(orderBy: [${MultiSigProposalVotesOrderBy.CreatedAtAsc}, ${MultiSigProposalVotesOrderBy.CreatedBlockIdAsc}, ${MultiSigProposalVotesOrderBy.EventIdxAsc}]) {
             nodes {
               action
               signer {
@@ -68,7 +68,7 @@ export function multiSigProposalVotesQuery(
     query MultiSigProposalVotesQuery($proposalId: String!) {
       multiSigProposalVotes(
         filter: { proposalId: { equalTo: $proposalId } }
-        orderBy: [${MultiSigProposalVotesOrderBy.CreatedAtAsc}]
+        orderBy: [${MultiSigProposalVotesOrderBy.CreatedAtAsc}, ${MultiSigProposalVotesOrderBy.CreatedBlockIdAsc}, ${MultiSigProposalVotesOrderBy.EventIdxAsc}]
       ) {
         nodes {
           signer {

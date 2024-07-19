@@ -96,15 +96,7 @@ function buildPortfolioMovementsQuery(args: string, filter: string): DocumentNod
       nodes {
         id
         fromId
-        from {
-          identityId
-          number
-        }
         toId
-        to {
-          identityId
-          number
-        }
         assetId
         amount
         address
