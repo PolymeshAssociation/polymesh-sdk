@@ -10,6 +10,7 @@ import {
   Moment,
   Permill,
 } from '@polkadot/types/interfaces';
+import { H512 } from '@polkadot/types/interfaces/runtime';
 import {
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
@@ -17,6 +18,7 @@ import {
   PalletCorporateActionsTargetIdentities,
   PalletStoPriceTier,
   PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
+  PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth,
   PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
   PolymeshPrimitivesAgentAgentGroup,
@@ -118,6 +120,7 @@ import {
   AssetDocument,
   Authorization,
   AuthorizationType,
+  ChildKeyWithAuth,
   Claim,
   ClaimType,
   Condition,
@@ -170,7 +173,7 @@ import {
 import { InstructionStatus, PermissionGroupIdentifier } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
-import * as internalUtils from '~/utils/internal';
+import * as utilsInternalModule from '~/utils/internal';
 import { padString } from '~/utils/internal';
 
 import {
@@ -199,6 +202,7 @@ import {
   cddIdToString,
   cddStatusToBoolean,
   checkpointToRecordDateSpec,
+  childKeysWithAuthToCreateChildIdentitiesWithAuth,
   claimCountStatInputToStatUpdates,
   claimCountToClaimCountRestrictionValue,
   claimToMeshClaim,
@@ -4480,7 +4484,7 @@ describe('middlewareClaimToClaimData', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
-    createClaimSpy = jest.spyOn(internalUtils, 'createClaim');
+    createClaimSpy = jest.spyOn(utilsInternalModule, 'createClaim');
   });
 
   afterEach(() => {
@@ -5881,6 +5885,7 @@ describe('secondaryAccountToMeshSecondaryKey', () => {
   });
 
   it('should convert a SecondaryAccount to a polkadot SecondaryKey', () => {
+    jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     const address = 'someAccount';
     const context = dsMockUtils.getContextInstance();
     const secondaryAccount = {
@@ -5906,7 +5911,7 @@ describe('secondaryAccountToMeshSecondaryKey', () => {
 
     when(context.createType)
       .calledWith('PolymeshPrimitivesSecondaryKey', {
-        signer: signerValueToSignatory({ type: SignerType.Account, value: address }, context),
+        key: stringToAccountId(address, context),
         permissions: permissionsToMeshPermissions(secondaryAccount.permissions, context),
       })
       .mockReturnValue(fakeResult);
@@ -10203,6 +10208,7 @@ describe('secondaryAccountWithAuthToSecondaryKeyWithAuth', () => {
   });
 
   it('should create additional keys', () => {
+    jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     const context = dsMockUtils.getContextInstance();
 
     const accounts = [
@@ -10216,7 +10222,6 @@ describe('secondaryAccountWithAuthToSecondaryKeyWithAuth', () => {
             assets: null,
             portfolios: null,
             transactions: null,
-            transactionGroups: [],
           },
         },
         authSignature: '0xSignature',
@@ -10231,6 +10236,55 @@ describe('secondaryAccountWithAuthToSecondaryKeyWithAuth', () => {
       .mockReturnValue(fakeResult);
 
     const result = secondaryAccountWithAuthToSecondaryKeyWithAuth(accounts, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('childKeysWithAuthToCreateChildIdentitiesWithAuth', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should create child identities with auth', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    const childKey = '5EYCAe5ijAx5xEfZdpCna3grUpY1M9M5vLUH5vpmwV1EnaYR';
+    const childKeyAuths: ChildKeyWithAuth[] = [
+      {
+        key: childKey,
+        authSignature: '0xSignature',
+      },
+    ];
+
+    const childAccountId = 'childKey' as unknown as AccountId;
+
+    when(context.createType).calledWith('AccountId', childKey).mockReturnValue(childAccountId);
+
+    const h512Signature = '0xSignature' as unknown as H512;
+    when(context.createType).calledWith('H512', '0xSignature').mockReturnValue(h512Signature);
+
+    const fakeResult =
+      'fakeSecondaryKeysWithAuth' as unknown as Vec<PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth>;
+
+    when(context.createType)
+      .calledWith('Vec<PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth>', [
+        {
+          key: childAccountId,
+          authSignature: h512Signature,
+        },
+      ])
+      .mockReturnValue(fakeResult);
+
+    const result = childKeysWithAuthToCreateChildIdentitiesWithAuth(childKeyAuths, context);
 
     expect(result).toEqual(fakeResult);
   });

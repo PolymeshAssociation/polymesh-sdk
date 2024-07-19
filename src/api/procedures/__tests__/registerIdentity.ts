@@ -69,6 +69,7 @@ describe('registerIdentity procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
     registerIdentityTransaction = dsMockUtils.createTxMock('identity', 'cddRegisterDid');
     proc = procedureMockUtils.getInstance<RegisterIdentityParams, Identity>(mockContext);
+    jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
   });
 
   afterEach(() => {

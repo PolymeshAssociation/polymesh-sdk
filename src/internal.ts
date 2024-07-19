@@ -47,6 +47,7 @@ export {
 } from '~/api/procedures/modifyAssetTrustedClaimIssuers';
 export { registerIdentity } from '~/api/procedures/registerIdentity';
 export { createChildIdentity } from '~/api/procedures/createChildIdentity';
+export { createChildIdentities } from '~/api/procedures/createChildIdentities';
 export { attestPrimaryKeyRotation } from '~/api/procedures/attestPrimaryKeyRotation';
 export { rotatePrimaryKey } from '~/api/procedures/rotatePrimaryKey';
 export { addSecondaryAccounts } from '~/api/procedures/addSecondaryAccountsWithAuth';

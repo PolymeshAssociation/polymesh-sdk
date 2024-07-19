@@ -40,6 +40,7 @@ describe('addSecondaryAccounts procedure', () => {
   });
 
   beforeEach(() => {
+    // jest.spyOn()
     identity = entityMockUtils.getIdentityInstance();
     actingAccount = entityMockUtils.getAccountInstance();
 
@@ -61,7 +62,6 @@ describe('addSecondaryAccounts procedure', () => {
               assets: null,
               portfolios: null,
               transactions: null,
-              transactionGroups: [],
             },
           },
           authSignature: '0xSignature',
@@ -92,6 +92,23 @@ describe('addSecondaryAccounts procedure', () => {
     jest.resetAllMocks();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
+  });
+
+  it('should throw an error if the expiry date is not valid', () => {
+    const proc = procedureMockUtils.getInstance<AddSecondaryAccountsParams, Identity, Storage>(
+      mockContext,
+      {
+        identity,
+        actingAccount,
+      }
+    );
+
+    return expect(
+      prepareAddSecondaryKeysWithAuth.call(proc, {
+        ...params,
+        expiresAt: new Date('2020/01/01'),
+      })
+    ).rejects.toThrow('Expiry date must be in the future');
   });
 
   it('should throw an error if the one or more accounts are already linked to an Identity', () => {

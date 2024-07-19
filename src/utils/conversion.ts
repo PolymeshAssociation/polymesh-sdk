@@ -8,6 +8,7 @@ import {
   Hash,
   Permill,
 } from '@polkadot/types/interfaces';
+import { H512 } from '@polkadot/types/interfaces/runtime';
 import { DispatchError, DispatchResult } from '@polkadot/types/interfaces/system';
 import {
   PalletCorporateActionsCaId,
@@ -21,6 +22,7 @@ import {
   PalletStoFundraiserTier,
   PalletStoPriceTier,
   PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
+  PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth,
   PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
   PolymeshPrimitivesAgentAgentGroup,
@@ -152,6 +154,7 @@ import {
   AssetDocument,
   Authorization,
   AuthorizationType,
+  ChildKeyWithAuth,
   Claim,
   ClaimCountRestrictionValue,
   ClaimCountStatInput,
@@ -356,6 +359,13 @@ export function tickerToString(ticker: PolymeshPrimitivesTicker): string {
  */
 export function stringToU8aFixed(value: string, context: Context): U8aFixed {
   return context.createType('U8aFixed', value);
+}
+
+/**
+ * @hidden
+ */
+export function stringToH512(value: string, context: Context): H512 {
+  return context.createType('H512', value);
 }
 
 /**
@@ -2821,10 +2831,13 @@ export function secondaryAccountToMeshSecondaryKey(
   secondaryKey: PermissionedAccount,
   context: Context
 ): PolymeshPrimitivesSecondaryKey {
-  const { account, permissions } = secondaryKey;
+  const {
+    account: { address },
+    permissions,
+  } = secondaryKey;
 
   return context.createType('PolymeshPrimitivesSecondaryKey', {
-    signer: signerValueToSignatory(signerToSignerValue(account), context),
+    key: stringToAccountId(address, context),
     permissions: permissionsToMeshPermissions(permissions, context),
   });
 }
@@ -4991,13 +5004,40 @@ export function secondaryAccountWithAuthToSecondaryKeyWithAuth(
   accounts: AccountWithSignature[],
   context: Context
 ): Vec<PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth> {
-  const keyWithAuths = accounts.map(({ secondaryAccount, authSignature }) => ({
-    secondaryKey: secondaryAccountToMeshSecondaryKey(secondaryAccount, context),
-    authSignature: stringToU8aFixed(authSignature, context),
-  }));
+  const keyWithAuths = accounts.map(({ secondaryAccount, authSignature }) => {
+    const { account, permissions } = secondaryAccount;
+    return {
+      secondaryKey: secondaryAccountToMeshSecondaryKey(
+        {
+          account: asAccount(account, context),
+          permissions: permissionsLikeToPermissions(permissions, context),
+        },
+        context
+      ),
+      authSignature: stringToH512(authSignature, context),
+    };
+  });
 
   return context.createType(
     'Vec<PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth>',
+    keyWithAuths
+  );
+}
+
+/**
+ * @hidden
+ */
+export function childKeysWithAuthToCreateChildIdentitiesWithAuth(
+  childKeyAuths: ChildKeyWithAuth[],
+  context: Context
+): Vec<PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth> {
+  const keyWithAuths = childKeyAuths.map(({ key, authSignature }) => ({
+    key: stringToAccountId(asAccount(key, context).address, context),
+    authSignature: stringToH512(authSignature, context),
+  }));
+
+  return context.createType(
+    'Vec<PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth>',
     keyWithAuths
   );
 }

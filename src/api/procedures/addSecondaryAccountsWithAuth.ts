@@ -4,6 +4,7 @@ import { PolymeshError, Procedure } from '~/internal';
 import { Account, AddSecondaryAccountsParams, ErrorCode, Identity, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { dateToMoment, secondaryAccountWithAuthToSecondaryKeyWithAuth } from '~/utils/conversion';
+import { asAccount } from '~/utils/internal';
 
 /**
  * @hidden
@@ -32,8 +33,15 @@ export async function prepareAddSecondaryKeysWithAuth(
 
   const { accounts, expiresAt } = args;
 
+  if (expiresAt <= new Date()) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Expiry date must be in the future',
+    });
+  }
+
   const identities = await Promise.all(
-    accounts.map(({ secondaryAccount: { account } }) => account.getIdentity())
+    accounts.map(({ secondaryAccount: { account } }) => asAccount(account, context).getIdentity())
   );
 
   if (identities.some(identityValue => identityValue !== null)) {

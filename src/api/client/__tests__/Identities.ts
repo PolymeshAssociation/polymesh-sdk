@@ -11,7 +11,7 @@ import {
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RotatePrimaryKeyToSecondaryParams } from '~/types';
+import { CreateChildIdentitiesParams, RotatePrimaryKeyToSecondaryParams } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -90,6 +90,32 @@ describe('Identities Class', () => {
         .mockResolvedValue(expectedTransaction);
 
       const tx = await identities.createChild(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: createChildren', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args: CreateChildIdentitiesParams = {
+        childKeyAuths: [
+          {
+            key: 'someKey',
+            authSignature: '0xsignature',
+          },
+        ],
+        expiresAt: new Date('2050/01/01'),
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<
+        ChildIdentity[]
+      >;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await identities.createChildren(args);
 
       expect(tx).toBe(expectedTransaction);
     });
