@@ -1,12 +1,15 @@
+import { ISubmittableResult } from '@polkadot/types/types';
 import { ErrorCode } from '@polymeshassociation/polymesh-sdk/types';
 import { TransactionSpec } from '@polymeshassociation/polymesh-sdk/types/internal';
+import { filterEventRecords } from '@polymeshassociation/polymesh-sdk/utils/internal';
 
+import { meshAccountDepositEventDataToIncomingAssetBalance } from '~/api/procedures/applyIncomingConfidentialAssetBalances';
 import { ConfidentialProcedure } from '~/base/ConfidentialProcedure';
-import { PolymeshError } from '~/internal';
+import { Context, PolymeshError } from '~/internal';
 import {
   ApplyIncomingBalanceParams,
-  ConfidentialAccount,
   ConfidentialProcedureAuthorization,
+  IncomingConfidentialAssetBalance,
   TxTags,
 } from '~/types';
 import { ExtrinsicParams } from '~/types/internal';
@@ -16,11 +19,24 @@ import { asConfidentialAccount, asConfidentialAsset } from '~/utils/internal';
 /**
  * @hidden
  */
+export const createIncomingAssetBalanceResolver =
+  (context: Context) =>
+  (receipt: ISubmittableResult): IncomingConfidentialAssetBalance => {
+    const [{ data }] = filterEventRecords(receipt, 'confidentialAsset', 'AccountDeposit');
+    return meshAccountDepositEventDataToIncomingAssetBalance(data, context);
+  };
+
+/**
+ * @hidden
+ */
 export async function prepareApplyIncomingBalance(
-  this: ConfidentialProcedure<ApplyIncomingBalanceParams, ConfidentialAccount>,
+  this: ConfidentialProcedure<ApplyIncomingBalanceParams, IncomingConfidentialAssetBalance>,
   args: ApplyIncomingBalanceParams
 ): Promise<
-  TransactionSpec<ConfidentialAccount, ExtrinsicParams<'confidentialAsset', 'applyIncomingBalance'>>
+  TransactionSpec<
+    IncomingConfidentialAssetBalance,
+    ExtrinsicParams<'confidentialAsset', 'applyIncomingBalance'>
+  >
 > {
   const {
     context: {
@@ -52,7 +68,7 @@ export async function prepareApplyIncomingBalance(
   return {
     transaction: confidentialAsset.applyIncomingBalance,
     args: [account.publicKey, serializeConfidentialAssetId(asset.id)],
-    resolver: account,
+    resolver: createIncomingAssetBalanceResolver(context),
   };
 }
 
@@ -60,7 +76,7 @@ export async function prepareApplyIncomingBalance(
  * @hidden
  */
 export function getAuthorization(
-  this: ConfidentialProcedure<ApplyIncomingBalanceParams, ConfidentialAccount>
+  this: ConfidentialProcedure<ApplyIncomingBalanceParams, IncomingConfidentialAssetBalance>
 ): ConfidentialProcedureAuthorization {
   return {
     permissions: {
@@ -76,5 +92,5 @@ export function getAuthorization(
  */
 export const applyIncomingAssetBalance = (): ConfidentialProcedure<
   ApplyIncomingBalanceParams,
-  ConfidentialAccount
+  IncomingConfidentialAssetBalance
 > => new ConfidentialProcedure(prepareApplyIncomingBalance, getAuthorization);

@@ -1,28 +1,71 @@
+import {
+  ConfidentialAssetsElgamalCipherText,
+  PalletConfidentialAssetConfidentialAccount,
+} from '@polkadot/types/lookup';
+import { ISubmittableResult } from '@polkadot/types/types';
+import { U8aFixed } from '@polkadot/types-codec';
 import { ErrorCode } from '@polymeshassociation/polymesh-sdk/types';
 import { TransactionSpec } from '@polymeshassociation/polymesh-sdk/types/internal';
+import { filterEventRecords } from '@polymeshassociation/polymesh-sdk/utils/internal';
 import { BigNumber } from 'bignumber.js';
 
 import { ConfidentialProcedure } from '~/base/ConfidentialProcedure';
-import { PolymeshError } from '~/internal';
+import { ConfidentialAsset, Context, PolymeshError } from '~/internal';
 import {
   ApplyIncomingConfidentialAssetBalancesParams,
-  ConfidentialAccount,
   ConfidentialProcedureAuthorization,
+  IncomingConfidentialAssetBalance,
   TxTags,
 } from '~/types';
 import { ExtrinsicParams } from '~/types/internal';
-import { bigNumberToU16 } from '~/utils/conversion';
+import { bigNumberToU16, meshConfidentialAssetToAssetId } from '~/utils/conversion';
 import { asConfidentialAccount } from '~/utils/internal';
 
 /**
  * @hidden
  */
+export const meshAccountDepositEventDataToIncomingAssetBalance = (
+  data: [
+    PalletConfidentialAssetConfidentialAccount,
+    U8aFixed,
+    ConfidentialAssetsElgamalCipherText,
+    ConfidentialAssetsElgamalCipherText
+  ],
+  context: Context
+): IncomingConfidentialAssetBalance => {
+  const [, rawAssetId, rawAmount, rawBalance] = data;
+  const id = meshConfidentialAssetToAssetId(rawAssetId);
+  return {
+    asset: new ConfidentialAsset({ id }, context),
+    amount: rawAmount.toString(),
+    balance: rawBalance.toString(),
+  };
+};
+
+/**
+ * @hidden
+ */
+export const createIncomingAssetBalancesResolver =
+  (context: Context) =>
+  (receipt: ISubmittableResult): IncomingConfidentialAssetBalance[] => {
+    const accountDeposits = filterEventRecords(receipt, 'confidentialAsset', 'AccountDeposit');
+    return accountDeposits.map(({ data }) =>
+      meshAccountDepositEventDataToIncomingAssetBalance(data, context)
+    );
+  };
+
+/**
+ * @hidden
+ */
 export async function prepareApplyIncomingConfidentialAssetBalances(
-  this: ConfidentialProcedure<ApplyIncomingConfidentialAssetBalancesParams, ConfidentialAccount>,
+  this: ConfidentialProcedure<
+    ApplyIncomingConfidentialAssetBalancesParams,
+    IncomingConfidentialAssetBalance[]
+  >,
   args: ApplyIncomingConfidentialAssetBalancesParams
 ): Promise<
   TransactionSpec<
-    ConfidentialAccount,
+    IncomingConfidentialAssetBalance[],
     ExtrinsicParams<'confidentialAsset', 'applyIncomingBalances'>
   >
 > {
@@ -71,7 +114,7 @@ export async function prepareApplyIncomingConfidentialAssetBalances(
   return {
     transaction: confidentialAsset.applyIncomingBalances,
     args: [account.publicKey, rawMaxUpdates],
-    resolver: account,
+    resolver: createIncomingAssetBalancesResolver(context),
   };
 }
 
@@ -79,7 +122,10 @@ export async function prepareApplyIncomingConfidentialAssetBalances(
  * @hidden
  */
 export function getAuthorization(
-  this: ConfidentialProcedure<ApplyIncomingConfidentialAssetBalancesParams, ConfidentialAccount>
+  this: ConfidentialProcedure<
+    ApplyIncomingConfidentialAssetBalancesParams,
+    IncomingConfidentialAssetBalance[]
+  >
 ): ConfidentialProcedureAuthorization {
   return {
     permissions: {
@@ -95,5 +141,5 @@ export function getAuthorization(
  */
 export const applyIncomingConfidentialAssetBalances = (): ConfidentialProcedure<
   ApplyIncomingConfidentialAssetBalancesParams,
-  ConfidentialAccount
+  IncomingConfidentialAssetBalance[]
 > => new ConfidentialProcedure(prepareApplyIncomingConfidentialAssetBalances, getAuthorization);

@@ -12,6 +12,7 @@ import {
   ApplyIncomingConfidentialAssetBalancesParams,
   ConfidentialProcedureMethod,
   CreateConfidentialAccountParams,
+  IncomingConfidentialAssetBalance,
 } from '~/types';
 import { createConfidentialProcedureMethod } from '~/utils/internal';
 
@@ -84,7 +85,7 @@ export class ConfidentialAccounts {
    */
   public applyIncomingBalance: ConfidentialProcedureMethod<
     ApplyIncomingBalanceParams,
-    ConfidentialAccount
+    IncomingConfidentialAssetBalance
   >;
 
   /**
@@ -92,6 +93,6 @@ export class ConfidentialAccounts {
    */
   public applyIncomingBalances: ConfidentialProcedureMethod<
     ApplyIncomingConfidentialAssetBalancesParams,
-    ConfidentialAccount
+    IncomingConfidentialAssetBalance[]
   >;
 }

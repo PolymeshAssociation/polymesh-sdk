@@ -48,3 +48,18 @@ export interface ApplyIncomingConfidentialAssetBalancesParams {
    */
   maxUpdates?: BigNumber;
 }
+
+export interface IncomingConfidentialAssetBalance {
+  /**
+   * Confidential Asset whose balance has been applied
+   */
+  asset: ConfidentialAsset;
+  /**
+   * Encrypted amount that was applied
+   */
+  amount: string;
+  /**
+   * Encrypted balance after the `amount` was applied
+   */
+  balance: string;
+}

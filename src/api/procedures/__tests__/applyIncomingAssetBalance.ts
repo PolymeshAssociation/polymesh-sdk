@@ -1,14 +1,22 @@
+import { ISubmittableResult } from '@polkadot/types/types';
 import { ErrorCode } from '@polymeshassociation/polymesh-sdk/types';
+import * as utilsInternalModule from '@polymeshassociation/polymesh-sdk/utils/internal';
 import { when } from 'jest-when';
 
 import {
+  createIncomingAssetBalanceResolver,
   getAuthorization,
   prepareApplyIncomingBalance,
 } from '~/api/procedures/applyIncomingAssetBalance';
 import { ConfidentialAccount, Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ApplyIncomingBalanceParams, ConfidentialAsset, TxTags } from '~/types';
+import {
+  ApplyIncomingBalanceParams,
+  ConfidentialAsset,
+  IncomingConfidentialAssetBalance,
+  TxTags,
+} from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('applyIncomingAssetBalance procedure', () => {
@@ -57,9 +65,10 @@ describe('applyIncomingAssetBalance procedure', () => {
   });
 
   it('should throw an error if no incoming balance is present', async () => {
-    const proc = procedureMockUtils.getInstance<ApplyIncomingBalanceParams, ConfidentialAccount>(
-      mockContext
-    );
+    const proc = procedureMockUtils.getInstance<
+      ApplyIncomingBalanceParams,
+      IncomingConfidentialAssetBalance
+    >(mockContext);
 
     const expectedError = new PolymeshError({
       code: ErrorCode.DataUnavailable,
@@ -72,9 +81,10 @@ describe('applyIncomingAssetBalance procedure', () => {
   });
 
   it('should throw an error if account is not owned by the signer', async () => {
-    const proc = procedureMockUtils.getInstance<ApplyIncomingBalanceParams, ConfidentialAccount>(
-      mockContext
-    );
+    const proc = procedureMockUtils.getInstance<
+      ApplyIncomingBalanceParams,
+      IncomingConfidentialAssetBalance
+    >(mockContext);
 
     const expectedError = new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
@@ -105,23 +115,25 @@ describe('applyIncomingAssetBalance procedure', () => {
 
   it('should return a apply incoming balance transaction spec', async () => {
     const transaction = dsMockUtils.createTxMock('confidentialAsset', 'applyIncomingBalance');
-    const proc = procedureMockUtils.getInstance<ApplyIncomingBalanceParams, ConfidentialAccount>(
-      mockContext
-    );
+    const proc = procedureMockUtils.getInstance<
+      ApplyIncomingBalanceParams,
+      IncomingConfidentialAssetBalance
+    >(mockContext);
 
     const result = await prepareApplyIncomingBalance.call(proc, args);
     expect(result).toEqual({
       transaction,
       args: [account.publicKey, rawAssetId],
-      resolver: expect.objectContaining({ publicKey: account.publicKey }),
+      resolver: expect.any(Function),
     });
   });
 
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<ApplyIncomingBalanceParams, ConfidentialAccount>(
-        mockContext
-      );
+      const proc = procedureMockUtils.getInstance<
+        ApplyIncomingBalanceParams,
+        IncomingConfidentialAssetBalance
+      >(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc()).toEqual({
@@ -131,6 +143,41 @@ describe('applyIncomingAssetBalance procedure', () => {
           portfolios: [],
         },
       });
+    });
+  });
+
+  describe('createIncomingAssetBalanceResolver', () => {
+    const filterEventRecordsSpy = jest.spyOn(utilsInternalModule, 'filterEventRecords');
+    const rawBalance = dsMockUtils.createMockElgamalCipherText('0xbalance');
+    const rawAmount = dsMockUtils.createMockElgamalCipherText('0xamount');
+
+    afterEach(() => {
+      filterEventRecordsSpy.mockReset();
+    });
+
+    beforeEach(() => {
+      filterEventRecordsSpy.mockReturnValue([
+        dsMockUtils.createMockIEvent([
+          '0xPublicKey',
+          '0x76702175d8cbe3a55a19734433351e25',
+          rawAmount,
+          rawBalance,
+        ]),
+      ]);
+    });
+
+    it('should return the new Confidential Transaction', () => {
+      const fakeContext = {} as Context;
+
+      const result = createIncomingAssetBalanceResolver(fakeContext)({} as ISubmittableResult);
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          asset: expect.objectContaining({ id: '76702175-d8cb-e3a5-5a19-734433351e25' }),
+          amount: '0xamount',
+          balance: '0xbalance',
+        })
+      );
     });
   });
 });
