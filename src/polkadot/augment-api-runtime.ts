@@ -330,16 +330,6 @@ declare module '@polkadot/api-base/types/calls' {
         (seed: Option<Bytes> | null | Uint8Array | Bytes | string) => Observable<Bytes>
       >;
     };
-    /** 0x18ef58a3b67ba770/1 */
-    stakingApi: {
-      /**
-       * Returns the nominations quota for a nominator with a given balance.
-       **/
-      nominationsQuota: AugmentedCall<
-        ApiType,
-        (balance: Balance | AnyNumber | Uint8Array) => Observable<u32>
-      >;
-    };
     /** 0xd2bc9897eed08f15/3 */
     taggedTransactionQueue: {
       /**

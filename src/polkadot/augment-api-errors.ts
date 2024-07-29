@@ -101,6 +101,22 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InvalidTransfer: AugmentedError<ApiType>;
       /**
+       * Failed to transfer an NFT - compliance failed.
+       **/
+      InvalidTransferComplianceFailure: AugmentedError<ApiType>;
+      /**
+       * Failed to transfer the asset - asset is frozen.
+       **/
+      InvalidTransferFrozenAsset: AugmentedError<ApiType>;
+      /**
+       * Failed to transfer the asset - receiver cdd is not valid.
+       **/
+      InvalidTransferInvalidReceiverCDD: AugmentedError<ApiType>;
+      /**
+       * Failed to transfer the asset - sender cdd is not valid.
+       **/
+      InvalidTransferInvalidSenderCDD: AugmentedError<ApiType>;
+      /**
        * Investor Uniqueness claims are not allowed for this asset.
        **/
       InvestorUniquenessClaimNotAllowed: AugmentedError<ApiType>;
@@ -224,60 +240,6 @@ declare module '@polkadot/api-base/types/errors' {
        * The limit could be for any sort of lists of things, including a string.
        **/
       TooLong: AugmentedError<ApiType>;
-    };
-    bridge: {
-      /**
-       * The origin is not the admin address.
-       **/
-      BadAdmin: AugmentedError<ApiType>;
-      /**
-       * The origin is not the controller or the admin address.
-       **/
-      BadCaller: AugmentedError<ApiType>;
-      /**
-       * The identity's minted total has reached the bridge limit.
-       **/
-      BridgeLimitReached: AugmentedError<ApiType>;
-      /**
-       * The bridge controller address is not set.
-       **/
-      ControllerNotSet: AugmentedError<ApiType>;
-      /**
-       * The block interval duration is zero. Cannot divide.
-       **/
-      DivisionByZero: AugmentedError<ApiType>;
-      /**
-       * The bridge is already frozen.
-       **/
-      Frozen: AugmentedError<ApiType>;
-      /**
-       * The transaction is frozen.
-       **/
-      FrozenTx: AugmentedError<ApiType>;
-      /**
-       * The bridge is not frozen.
-       **/
-      NotFrozen: AugmentedError<ApiType>;
-      /**
-       * The recipient DID has no valid CDD.
-       **/
-      NoValidCdd: AugmentedError<ApiType>;
-      /**
-       * The identity's minted total has overflowed.
-       **/
-      Overflow: AugmentedError<ApiType>;
-      /**
-       * The bridge transaction proposal has already been handled and the funds minted.
-       **/
-      ProposalAlreadyHandled: AugmentedError<ApiType>;
-      /**
-       * The transaction is timelocked.
-       **/
-      TimelockedTx: AugmentedError<ApiType>;
-      /**
-       * Unauthorized to perform an operation.
-       **/
-      Unauthorized: AugmentedError<ApiType>;
     };
     capitalDistribution: {
       /**
@@ -949,6 +911,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       DuplicateKey: AugmentedError<ApiType>;
       /**
+       * Maximum number of given authorizations was exceeded.
+       **/
+      ExceededNumberOfGivenAuths: AugmentedError<ApiType>;
+      /**
        * Cannot use Except when specifying extrinsic permissions.
        **/
       ExceptNotAllowedForExtrinsics: AugmentedError<ApiType>;
@@ -1217,6 +1183,14 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InvalidNFTTransferInsufficientCount: AugmentedError<ApiType>;
       /**
+       * The receiver has an invalid CDD.
+       **/
+      InvalidNFTTransferInvalidReceiverCDD: AugmentedError<ApiType>;
+      /**
+       * The sender has an invalid CDD.
+       **/
+      InvalidNFTTransferInvalidSenderCDD: AugmentedError<ApiType>;
+      /**
        * Failed to transfer an NFT - nft is locked.
        **/
       InvalidNFTTransferNFTIsLocked: AugmentedError<ApiType>;
@@ -1228,6 +1202,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Failed to transfer an NFT - attempt to move to the same portfolio.
        **/
       InvalidNFTTransferSamePortfolio: AugmentedError<ApiType>;
+      /**
+       * The sender identity can't be the same as the receiver identity.
+       **/
+      InvalidNFTTransferSenderIdMatchesReceiverId: AugmentedError<ApiType>;
       /**
        * The maximum number of metadata keys was exceeded.
        **/
@@ -1461,6 +1439,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Only owned NFTs can be moved between portfolios.
        **/
       InvalidTransferNFTNotOwned: AugmentedError<ApiType>;
+      /**
+       * The sender identity can't be the same as the receiver identity.
+       **/
+      InvalidTransferSenderIdMatchesReceiverId: AugmentedError<ApiType>;
       /**
        * The caller doesn't have permission to create portfolios on the owner's behalf.
        **/
@@ -1790,183 +1772,6 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       ZeroAmount: AugmentedError<ApiType>;
     };
-    staking: {
-      /**
-       * Stash is already bonded.
-       **/
-      AlreadyBonded: AugmentedError<ApiType>;
-      /**
-       * Rewards for this era have already been claimed for this validator.
-       **/
-      AlreadyClaimed: AugmentedError<ApiType>;
-      /**
-       * Permissioned validator already exists.
-       **/
-      AlreadyExists: AugmentedError<ApiType>;
-      /**
-       * Controller is already paired.
-       **/
-      AlreadyPaired: AugmentedError<ApiType>;
-      /**
-       * Internal state has become somehow corrupted and the operation cannot continue.
-       **/
-      BadState: AugmentedError<ApiType>;
-      /**
-       * A nomination target was supplied that was blocked or otherwise not a validator.
-       **/
-      BadTarget: AugmentedError<ApiType>;
-      /**
-       * When the amount to be bonded is less than `MinimumBond`
-       **/
-      BondTooSmall: AugmentedError<ApiType>;
-      /**
-       * The call is not allowed at the given time due to restrictions of election period.
-       **/
-      CallNotAllowed: AugmentedError<ApiType>;
-      /**
-       * Targets cannot be empty.
-       **/
-      EmptyTargets: AugmentedError<ApiType>;
-      /**
-       * Attempting to target a stash that still has funds.
-       **/
-      FundedTarget: AugmentedError<ApiType>;
-      /**
-       * Running validator count hit the intended count.
-       **/
-      HitIntendedValidatorCount: AugmentedError<ApiType>;
-      /**
-       * Incorrect number of slashing spans provided.
-       **/
-      IncorrectSlashingSpans: AugmentedError<ApiType>;
-      /**
-       * Can not bond with value less than minimum balance.
-       **/
-      InsufficientValue: AugmentedError<ApiType>;
-      /**
-       * When the intended number of validators to run is >= 2/3 of `validator_count`.
-       **/
-      IntendedCountIsExceedingConsensusLimit: AugmentedError<ApiType>;
-      /**
-       * Invalid era to reward.
-       **/
-      InvalidEraToReward: AugmentedError<ApiType>;
-      /**
-       * Slash record index out of bounds.
-       **/
-      InvalidSlashIndex: AugmentedError<ApiType>;
-      /**
-       * Validator prefs are not in valid range.
-       **/
-      InvalidValidatorCommission: AugmentedError<ApiType>;
-      /**
-       * Given potential validator identity is invalid.
-       **/
-      InvalidValidatorIdentity: AugmentedError<ApiType>;
-      /**
-       * Validator should have minimum 50k POLYX bonded.
-       **/
-      InvalidValidatorUnbondAmount: AugmentedError<ApiType>;
-      /**
-       * Updates with same value.
-       **/
-      NoChange: AugmentedError<ApiType>;
-      /**
-       * Can not schedule more unlock chunks.
-       **/
-      NoMoreChunks: AugmentedError<ApiType>;
-      /**
-       * Not a controller account.
-       **/
-      NotController: AugmentedError<ApiType>;
-      /**
-       * Permissioned validator not exists.
-       **/
-      NotExists: AugmentedError<ApiType>;
-      /**
-       * Items are not sorted and unique.
-       **/
-      NotSortedAndUnique: AugmentedError<ApiType>;
-      /**
-       * Not a stash account.
-       **/
-      NotStash: AugmentedError<ApiType>;
-      /**
-       * Can not rebond without unlocking chunks.
-       **/
-      NoUnlockChunk: AugmentedError<ApiType>;
-      /**
-       * Error while building the assignment type from the compact. This can happen if an index
-       * is invalid, or if the weights _overflow_.
-       **/
-      OffchainElectionBogusCompact: AugmentedError<ApiType>;
-      /**
-       * The submitted result has unknown edges that are not among the presented winners.
-       **/
-      OffchainElectionBogusEdge: AugmentedError<ApiType>;
-      /**
-       * The election size is invalid.
-       **/
-      OffchainElectionBogusElectionSize: AugmentedError<ApiType>;
-      /**
-       * One of the submitted nominators has an edge to which they have not voted on chain.
-       **/
-      OffchainElectionBogusNomination: AugmentedError<ApiType>;
-      /**
-       * One of the submitted nominators is not an active nominator on chain.
-       **/
-      OffchainElectionBogusNominator: AugmentedError<ApiType>;
-      /**
-       * The claimed score does not match with the one computed from the data.
-       **/
-      OffchainElectionBogusScore: AugmentedError<ApiType>;
-      /**
-       * A self vote must only be originated from a validator to ONLY themselves.
-       **/
-      OffchainElectionBogusSelfVote: AugmentedError<ApiType>;
-      /**
-       * One of the submitted winners is not an active candidate on chain (index is out of range
-       * in snapshot).
-       **/
-      OffchainElectionBogusWinner: AugmentedError<ApiType>;
-      /**
-       * Incorrect number of winners were presented.
-       **/
-      OffchainElectionBogusWinnerCount: AugmentedError<ApiType>;
-      /**
-       * The submitted result is received out of the open window.
-       **/
-      OffchainElectionEarlySubmission: AugmentedError<ApiType>;
-      /**
-       * One of the submitted nominators has an edge which is submitted before the last non-zero
-       * slash of the target.
-       **/
-      OffchainElectionSlashedNomination: AugmentedError<ApiType>;
-      /**
-       * The submitted result is not as good as the one stored on chain.
-       **/
-      OffchainElectionWeakSubmission: AugmentedError<ApiType>;
-      /**
-       * The snapshot data of the current window is missing.
-       **/
-      SnapshotUnavailable: AugmentedError<ApiType>;
-      /**
-       * Validator or nominator stash identity does not exist.
-       **/
-      StashIdentityDoesNotExist: AugmentedError<ApiType>;
-      /**
-       * Nominator stash was not CDDed.
-       **/
-      StashIdentityNotCDDed: AugmentedError<ApiType>;
-      /**
-       * Validator stash identity was not permissioned.
-       **/
-      StashIdentityNotPermissioned: AugmentedError<ApiType>;
-      /**
-       * Too many nomination targets supplied.
-       **/
-      TooManyTargets: AugmentedError<ApiType>;
-    };
     statistics: {
       /**
        * A Stattype is in use and can't be removed.
@@ -2262,6 +2067,16 @@ declare module '@polkadot/api-base/types/errors' {
        * Decoding derivative account Id failed.
        **/
       UnableToDeriveAccountId: AugmentedError<ApiType>;
+    };
+    validatorSet: {
+      /**
+       * Validator is already in the validator set.
+       **/
+      Duplicate: AugmentedError<ApiType>;
+      /**
+       * Target (post-removal) validator count is below the minimum.
+       **/
+      TooLowValidatorCount: AugmentedError<ApiType>;
     };
   } // AugmentedErrors
 } // declare module

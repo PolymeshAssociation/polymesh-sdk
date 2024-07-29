@@ -1,5 +1,5 @@
 import { AugmentedQueries } from '@polkadot/api/types';
-import { ConfidentialAssetsElgamalCipherText } from '@polkadot/types/lookup';
+import { PolymeshHostFunctionsElgamalHostCipherText } from '@polkadot/types/lookup';
 import type { Option, U8aFixed } from '@polkadot/types-codec';
 import { hexStripPrefix } from '@polkadot/util';
 import { Query } from '@polymeshassociation/polymesh-sdk/middleware/types';
@@ -116,7 +116,7 @@ export class ConfidentialAccount extends Entity<UniqueIdentifiers, string> {
 
     const assembleResult = (
       rawAssetId: U8aFixed,
-      rawBalance: Option<ConfidentialAssetsElgamalCipherText>
+      rawBalance: Option<PolymeshHostFunctionsElgamalHostCipherText>
     ): ConfidentialAssetBalance => {
       const assetId = meshConfidentialAssetToAssetId(rawAssetId);
       const encryptedBalance = rawBalance.unwrap();

@@ -512,6 +512,11 @@
     "set_asset_frozen": "set_asset_frozen",
     "set_account_asset_frozen": "set_account_asset_frozen",
     "apply_incoming_balances": "apply_incoming_balances",
-    "burn": "burn"
+    "burn": "burn",
+    "move_assets": "move_assets"
+  },
+  "ValidatorSet": {
+    "add_validator": "add_validator",
+    "remove_validator": "remove_validator"
   }
 }

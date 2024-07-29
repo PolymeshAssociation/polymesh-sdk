@@ -1,10 +1,11 @@
-import { BTreeSet, Bytes, u16 } from '@polkadot/types';
+import { BTreeMap, BTreeSet, Bytes, U8aFixed, u16 } from '@polkadot/types';
 import {
   ConfidentialAssetsBurnConfidentialBurnProof,
   PalletConfidentialAssetAffirmParty,
   PalletConfidentialAssetAffirmTransaction,
   PalletConfidentialAssetAffirmTransactions,
   PalletConfidentialAssetAuditorAccount,
+  PalletConfidentialAssetConfidentialAccount,
   PalletConfidentialAssetConfidentialAuditors,
   PalletConfidentialAssetConfidentialTransfers,
   PalletConfidentialAssetLegParty,
@@ -53,9 +54,11 @@ import {
   meshConfidentialAssetTransactionIdToId,
   meshConfidentialTransactionDetailsToDetails,
   meshConfidentialTransactionStatusToStatus,
+  meshProofsToConfidentialLegProof,
   meshPublicKeyToKey,
   middlewareAssetHistoryToTransactionHistory,
   middlewareEventDetailsToEventIdentifier,
+  serializeAssetMoves,
   serializeConfidentialAssetId,
 } from '../conversion';
 
@@ -761,5 +764,79 @@ describe('meshConfidentialDetailsToConfidentialDetails', () => {
       memo: 'someMemo',
       venueId: new BigNumber(2),
     });
+  });
+});
+
+describe('serializeAssetMoves', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert moves to PalletConfidentialAssetConfidentialMoveFunds', () => {
+    const assetId = 'someAsset';
+    const account = new ConfidentialAccount(
+      { publicKey: 'somePubKey' },
+      dsMockUtils.getContextInstance()
+    );
+    const proof = 'someProof';
+    const mockAccountId = 'someAccountId';
+
+    const context = dsMockUtils.getContextInstance();
+
+    when(context.createType)
+      .calledWith('PalletConfidentialAssetConfidentialAccount', account.publicKey)
+      .mockReturnValue(mockAccountId as unknown as PalletConfidentialAssetConfidentialAccount);
+
+    when(context.createType)
+      .calledWith('PalletConfidentialAssetConfidentialMoveFunds', {
+        from: mockAccountId,
+        to: mockAccountId,
+        proofs: { [`0x0${assetId}`]: proof },
+      })
+      .mockReturnValue({
+        from: mockAccountId,
+        to: mockAccountId,
+        proofs: { [`0x0${assetId}`]: proof },
+      } as unknown as PalletConfidentialAssetConfidentialAccount);
+
+    const result = serializeAssetMoves(account, account, [{ asset: assetId, proof }], context);
+
+    expect(result).toEqual({
+      from: mockAccountId,
+      to: mockAccountId,
+      proofs: { [`0x0${assetId}`]: proof },
+    });
+  });
+});
+
+describe('meshProofsToConfidentialLegProof', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert meshProofs to ConfidentialLegProof[]', () => {
+    const context = dsMockUtils.getContextInstance();
+    const rawProofs = dsMockUtils.createMockBTreeMap() as unknown as BTreeMap<U8aFixed, Bytes>;
+    jest.spyOn(utilsInternalModule, 'assertElgamalPubKeyValid').mockImplementation();
+
+    const result = meshProofsToConfidentialLegProof(rawProofs, context);
+
+    expect(result).toEqual([]);
   });
 });

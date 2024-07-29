@@ -7,7 +7,6 @@ import '@polkadot/types/types/registry';
 
 import type {
   ConfidentialAssetsBurnConfidentialBurnProof,
-  ConfidentialAssetsElgamalCipherText,
   ConfidentialAssetsElgamalCompressedElgamalPublicKey,
   FinalityGrandpaEquivocationPrecommit,
   FinalityGrandpaEquivocationPrevote,
@@ -52,13 +51,6 @@ import type {
   PalletBalancesError,
   PalletBaseCall,
   PalletBaseError,
-  PalletBridgeBridgeTx,
-  PalletBridgeBridgeTxDetail,
-  PalletBridgeBridgeTxStatus,
-  PalletBridgeCall,
-  PalletBridgeError,
-  PalletBridgeHandledTxStatus,
-  PalletBridgeRawEvent,
   PalletCommitteeCall,
   PalletCommitteeError,
   PalletCommitteeInstance1,
@@ -82,6 +74,7 @@ import type {
   PalletConfidentialAssetConfidentialAccount,
   PalletConfidentialAssetConfidentialAssetDetails,
   PalletConfidentialAssetConfidentialAuditors,
+  PalletConfidentialAssetConfidentialMoveFunds,
   PalletConfidentialAssetConfidentialTransfers,
   PalletConfidentialAssetError,
   PalletConfidentialAssetEvent,
@@ -199,30 +192,6 @@ import type {
   PalletSessionEvent,
   PalletSettlementCall,
   PalletSettlementError,
-  PalletStakingActiveEraInfo,
-  PalletStakingCall,
-  PalletStakingCompactAssignments,
-  PalletStakingElectionCompute,
-  PalletStakingElectionResult,
-  PalletStakingElectionSize,
-  PalletStakingElectionStatus,
-  PalletStakingEraRewardPoints,
-  PalletStakingError,
-  PalletStakingExposure,
-  PalletStakingForcing,
-  PalletStakingIndividualExposure,
-  PalletStakingNominations,
-  PalletStakingPermissionedIdentityPrefs,
-  PalletStakingRawEvent,
-  PalletStakingReleases,
-  PalletStakingRewardDestination,
-  PalletStakingSlashingSlashingSpans,
-  PalletStakingSlashingSpanRecord,
-  PalletStakingSlashingSwitch,
-  PalletStakingStakingLedger,
-  PalletStakingUnappliedSlash,
-  PalletStakingUnlockChunk,
-  PalletStakingValidatorPrefs,
   PalletStatisticsCall,
   PalletStatisticsError,
   PalletStoCall,
@@ -284,6 +253,7 @@ import type {
   PolymeshContractsNextUpgrade,
   PolymeshContractsRawEvent,
   PolymeshExtensionsCheckWeight,
+  PolymeshHostFunctionsElgamalHostCipherText,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetAssetType,
   PolymeshPrimitivesAssetIdentifier,
@@ -385,7 +355,6 @@ import type {
   SpCoreSr25519Public,
   SpCoreSr25519Signature,
   SpCoreVoid,
-  SpNposElectionsElectionScore,
   SpRuntimeBlakeTwo256,
   SpRuntimeDigest,
   SpRuntimeDigestDigestItem,
@@ -401,12 +370,14 @@ import type {
   SpWeightsRuntimeDbWeight,
   SpWeightsWeightToFeeCoefficient,
   SpWeightsWeightV2Weight,
+  SubstrateValidatorSetCall,
+  SubstrateValidatorSetError,
+  SubstrateValidatorSetEvent,
 } from '@polkadot/types/lookup';
 
 declare module '@polkadot/types/types/registry' {
   interface InterfaceTypes {
     ConfidentialAssetsBurnConfidentialBurnProof: ConfidentialAssetsBurnConfidentialBurnProof;
-    ConfidentialAssetsElgamalCipherText: ConfidentialAssetsElgamalCipherText;
     ConfidentialAssetsElgamalCompressedElgamalPublicKey: ConfidentialAssetsElgamalCompressedElgamalPublicKey;
     FinalityGrandpaEquivocationPrecommit: FinalityGrandpaEquivocationPrecommit;
     FinalityGrandpaEquivocationPrevote: FinalityGrandpaEquivocationPrevote;
@@ -451,13 +422,6 @@ declare module '@polkadot/types/types/registry' {
     PalletBalancesError: PalletBalancesError;
     PalletBaseCall: PalletBaseCall;
     PalletBaseError: PalletBaseError;
-    PalletBridgeBridgeTx: PalletBridgeBridgeTx;
-    PalletBridgeBridgeTxDetail: PalletBridgeBridgeTxDetail;
-    PalletBridgeBridgeTxStatus: PalletBridgeBridgeTxStatus;
-    PalletBridgeCall: PalletBridgeCall;
-    PalletBridgeError: PalletBridgeError;
-    PalletBridgeHandledTxStatus: PalletBridgeHandledTxStatus;
-    PalletBridgeRawEvent: PalletBridgeRawEvent;
     PalletCommitteeCall: PalletCommitteeCall;
     PalletCommitteeError: PalletCommitteeError;
     PalletCommitteeInstance1: PalletCommitteeInstance1;
@@ -481,6 +445,7 @@ declare module '@polkadot/types/types/registry' {
     PalletConfidentialAssetConfidentialAccount: PalletConfidentialAssetConfidentialAccount;
     PalletConfidentialAssetConfidentialAssetDetails: PalletConfidentialAssetConfidentialAssetDetails;
     PalletConfidentialAssetConfidentialAuditors: PalletConfidentialAssetConfidentialAuditors;
+    PalletConfidentialAssetConfidentialMoveFunds: PalletConfidentialAssetConfidentialMoveFunds;
     PalletConfidentialAssetConfidentialTransfers: PalletConfidentialAssetConfidentialTransfers;
     PalletConfidentialAssetError: PalletConfidentialAssetError;
     PalletConfidentialAssetEvent: PalletConfidentialAssetEvent;
@@ -598,30 +563,6 @@ declare module '@polkadot/types/types/registry' {
     PalletSessionEvent: PalletSessionEvent;
     PalletSettlementCall: PalletSettlementCall;
     PalletSettlementError: PalletSettlementError;
-    PalletStakingActiveEraInfo: PalletStakingActiveEraInfo;
-    PalletStakingCall: PalletStakingCall;
-    PalletStakingCompactAssignments: PalletStakingCompactAssignments;
-    PalletStakingElectionCompute: PalletStakingElectionCompute;
-    PalletStakingElectionResult: PalletStakingElectionResult;
-    PalletStakingElectionSize: PalletStakingElectionSize;
-    PalletStakingElectionStatus: PalletStakingElectionStatus;
-    PalletStakingEraRewardPoints: PalletStakingEraRewardPoints;
-    PalletStakingError: PalletStakingError;
-    PalletStakingExposure: PalletStakingExposure;
-    PalletStakingForcing: PalletStakingForcing;
-    PalletStakingIndividualExposure: PalletStakingIndividualExposure;
-    PalletStakingNominations: PalletStakingNominations;
-    PalletStakingPermissionedIdentityPrefs: PalletStakingPermissionedIdentityPrefs;
-    PalletStakingRawEvent: PalletStakingRawEvent;
-    PalletStakingReleases: PalletStakingReleases;
-    PalletStakingRewardDestination: PalletStakingRewardDestination;
-    PalletStakingSlashingSlashingSpans: PalletStakingSlashingSlashingSpans;
-    PalletStakingSlashingSpanRecord: PalletStakingSlashingSpanRecord;
-    PalletStakingSlashingSwitch: PalletStakingSlashingSwitch;
-    PalletStakingStakingLedger: PalletStakingStakingLedger;
-    PalletStakingUnappliedSlash: PalletStakingUnappliedSlash;
-    PalletStakingUnlockChunk: PalletStakingUnlockChunk;
-    PalletStakingValidatorPrefs: PalletStakingValidatorPrefs;
     PalletStatisticsCall: PalletStatisticsCall;
     PalletStatisticsError: PalletStatisticsError;
     PalletStoCall: PalletStoCall;
@@ -683,6 +624,7 @@ declare module '@polkadot/types/types/registry' {
     PolymeshContractsNextUpgrade: PolymeshContractsNextUpgrade;
     PolymeshContractsRawEvent: PolymeshContractsRawEvent;
     PolymeshExtensionsCheckWeight: PolymeshExtensionsCheckWeight;
+    PolymeshHostFunctionsElgamalHostCipherText: PolymeshHostFunctionsElgamalHostCipherText;
     PolymeshPrimitivesAgentAgentGroup: PolymeshPrimitivesAgentAgentGroup;
     PolymeshPrimitivesAssetAssetType: PolymeshPrimitivesAssetAssetType;
     PolymeshPrimitivesAssetIdentifier: PolymeshPrimitivesAssetIdentifier;
@@ -784,7 +726,6 @@ declare module '@polkadot/types/types/registry' {
     SpCoreSr25519Public: SpCoreSr25519Public;
     SpCoreSr25519Signature: SpCoreSr25519Signature;
     SpCoreVoid: SpCoreVoid;
-    SpNposElectionsElectionScore: SpNposElectionsElectionScore;
     SpRuntimeBlakeTwo256: SpRuntimeBlakeTwo256;
     SpRuntimeDigest: SpRuntimeDigest;
     SpRuntimeDigestDigestItem: SpRuntimeDigestDigestItem;
@@ -800,5 +741,8 @@ declare module '@polkadot/types/types/registry' {
     SpWeightsRuntimeDbWeight: SpWeightsRuntimeDbWeight;
     SpWeightsWeightToFeeCoefficient: SpWeightsWeightToFeeCoefficient;
     SpWeightsWeightV2Weight: SpWeightsWeightV2Weight;
+    SubstrateValidatorSetCall: SubstrateValidatorSetCall;
+    SubstrateValidatorSetError: SubstrateValidatorSetError;
+    SubstrateValidatorSetEvent: SubstrateValidatorSetEvent;
   } // InterfaceTypes
 } // declare module

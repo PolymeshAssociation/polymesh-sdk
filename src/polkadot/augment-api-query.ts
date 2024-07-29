@@ -23,9 +23,8 @@ import type {
   u8,
 } from '@polkadot/types-codec';
 import type { AnyNumber, IMethod, ITuple } from '@polkadot/types-codec/types';
-import type { AccountId32, Call, H256, Perbill, Permill } from '@polkadot/types/interfaces/runtime';
+import type { AccountId32, Call, H256, Permill } from '@polkadot/types/interfaces/runtime';
 import type {
-  ConfidentialAssetsElgamalCipherText,
   FrameSupportDispatchPerDispatchClassWeight,
   FrameSystemAccountInfo,
   FrameSystemEventRecord,
@@ -36,7 +35,6 @@ import type {
   PalletAssetTickerRegistration,
   PalletAssetTickerRegistrationConfig,
   PalletBalancesBalanceLock,
-  PalletBridgeBridgeTxDetail,
   PalletCommitteePolymeshVotes,
   PalletConfidentialAssetConfidentialAccount,
   PalletConfidentialAssetConfidentialAssetDetails,
@@ -76,22 +74,6 @@ import type {
   PalletPreimageRequestStatus,
   PalletRelayerSubsidy,
   PalletSchedulerScheduled,
-  PalletStakingActiveEraInfo,
-  PalletStakingElectionResult,
-  PalletStakingElectionStatus,
-  PalletStakingEraRewardPoints,
-  PalletStakingExposure,
-  PalletStakingForcing,
-  PalletStakingNominations,
-  PalletStakingPermissionedIdentityPrefs,
-  PalletStakingReleases,
-  PalletStakingRewardDestination,
-  PalletStakingSlashingSlashingSpans,
-  PalletStakingSlashingSpanRecord,
-  PalletStakingSlashingSwitch,
-  PalletStakingStakingLedger,
-  PalletStakingUnappliedSlash,
-  PalletStakingValidatorPrefs,
   PalletStoFundraiser,
   PalletTransactionPaymentReleases,
   PolymeshCommonUtilitiesCheckpointNextCheckpoints,
@@ -103,6 +85,7 @@ import type {
   PolymeshContractsApiCodeHash,
   PolymeshContractsChainExtensionExtrinsicId,
   PolymeshContractsNextUpgrade,
+  PolymeshHostFunctionsElgamalHostCipherText,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
@@ -143,7 +126,6 @@ import type {
   SpConsensusBabeDigestsNextConfigDescriptor,
   SpConsensusBabeDigestsPreDigest,
   SpCoreCryptoKeyTypeId,
-  SpNposElectionsElectionScore,
   SpRuntimeDigest,
   SpStakingOffenceOffenceDetails,
 } from '@polkadot/types/lookup';
@@ -311,6 +293,18 @@ declare module '@polkadot/api-base/types/storage' {
           arg2: PolymeshPrimitivesIdentityId | string | Uint8Array
         ) => Observable<u128>,
         [PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId]
+      >;
+      /**
+       * The last [`AssetMetadataGlobalKey`] used for a global key.
+       **/
+      currentAssetMetadataGlobalKey: AugmentedQuery<ApiType, () => Observable<Option<u64>>, []>;
+      /**
+       * The last [`AssetMetadataLocalKey`] used for [`Ticker`].
+       **/
+      currentAssetMetadataLocalKey: AugmentedQuery<
+        ApiType,
+        (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<Option<u64>>,
+        [PolymeshPrimitivesTicker]
       >;
       /**
        * The next `AssetType::Custom` ID in the sequence.
@@ -598,75 +592,6 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       totalIssuance: AugmentedQuery<ApiType, () => Observable<u128>, []>;
     };
-    bridge: {
-      /**
-       * The admin key.
-       **/
-      admin: AugmentedQuery<ApiType, () => Observable<Option<AccountId32>>, []>;
-      /**
-       * The maximum number of bridged POLYX per identity within a set interval of
-       * blocks. Fields: POLYX amount and the block interval duration.
-       **/
-      bridgeLimit: AugmentedQuery<ApiType, () => Observable<ITuple<[u128, u32]>>, []>;
-      /**
-       * Identities not constrained by the bridge limit.
-       **/
-      bridgeLimitExempted: AugmentedQuery<
-        ApiType,
-        (arg: PolymeshPrimitivesIdentityId | string | Uint8Array) => Observable<bool>,
-        [PolymeshPrimitivesIdentityId]
-      >;
-      /**
-       * Details of bridge transactions identified with pairs of the recipient account and the
-       * bridge transaction nonce.
-       **/
-      bridgeTxDetails: AugmentedQuery<
-        ApiType,
-        (
-          arg1: AccountId32 | string | Uint8Array,
-          arg2: u32 | AnyNumber | Uint8Array
-        ) => Observable<PalletBridgeBridgeTxDetail>,
-        [AccountId32, u32]
-      >;
-      /**
-       * The multisig account of the bridge controller. The genesis signers accept their
-       * authorizations and are able to get their proposals delivered. The bridge creator
-       * transfers some POLY to their identity.
-       **/
-      controller: AugmentedQuery<ApiType, () => Observable<Option<AccountId32>>, []>;
-      /**
-       * Freeze bridge admins.  These accounts can only freeze the bridge.
-       **/
-      freezeAdmins: AugmentedQuery<
-        ApiType,
-        (arg: AccountId32 | string | Uint8Array) => Observable<bool>,
-        [AccountId32]
-      >;
-      /**
-       * Whether or not the bridge operation is frozen.
-       **/
-      frozen: AugmentedQuery<ApiType, () => Observable<bool>, []>;
-      /**
-       * Amount of POLYX bridged by the identity in last block interval. Fields: the bridged
-       * amount and the last interval number.
-       **/
-      polyxBridged: AugmentedQuery<
-        ApiType,
-        (
-          arg: PolymeshPrimitivesIdentityId | string | Uint8Array
-        ) => Observable<ITuple<[u128, u32]>>,
-        [PolymeshPrimitivesIdentityId]
-      >;
-      /**
-       * Storage version.
-       **/
-      storageVersion: AugmentedQuery<ApiType, () => Observable<u8>, []>;
-      /**
-       * The bridge transaction timelock period, in blocks, since the acceptance of the
-       * transaction proposal during which the admin key can freeze the transaction.
-       **/
-      timelock: AugmentedQuery<ApiType, () => Observable<u32>, []>;
-    };
     capitalDistribution: {
       /**
        * All capital distributions, tied to their respective corporate actions (CAs).
@@ -940,14 +865,14 @@ declare module '@polkadot/api-base/types/storage' {
       /**
        * Contains the encrypted balance of a confidential account.
        *
-       * account -> asset id -> Option<CipherText>
+       * account -> asset id -> Option<HostCipherText>
        **/
       accountBalance: AugmentedQuery<
         ApiType,
         (
           arg1: PalletConfidentialAssetConfidentialAccount | string | Uint8Array,
           arg2: U8aFixed | string | Uint8Array
-        ) => Observable<Option<ConfidentialAssetsElgamalCipherText>>,
+        ) => Observable<Option<PolymeshHostFunctionsElgamalHostCipherText>>,
         [PalletConfidentialAssetConfidentialAccount, U8aFixed]
       >;
       /**
@@ -1013,14 +938,14 @@ declare module '@polkadot/api-base/types/storage' {
       /**
        * Accumulates the encrypted incoming balance for a confidential account.
        *
-       * account -> asset id -> Option<CipherText>
+       * account -> asset id -> Option<HostCipherText>
        **/
       incomingBalance: AugmentedQuery<
         ApiType,
         (
           arg1: PalletConfidentialAssetConfidentialAccount | string | Uint8Array,
           arg2: U8aFixed | string | Uint8Array
-        ) => Observable<Option<ConfidentialAssetsElgamalCipherText>>,
+        ) => Observable<Option<PolymeshHostFunctionsElgamalHostCipherText>>,
         [PalletConfidentialAssetConfidentialAccount, U8aFixed]
       >;
       /**
@@ -1651,6 +1576,10 @@ declare module '@polkadot/api-base/types/storage' {
         [PalletIdentityClaim1stKey, PalletIdentityClaim2ndKey]
       >;
       /**
+       * Controls the authorization id.
+       **/
+      currentAuthId: AugmentedQuery<ApiType, () => Observable<u64>, []>;
+      /**
        * It stores the current identity for current transaction.
        **/
       currentDid: AugmentedQuery<ApiType, () => Observable<Option<U8aFixed>>, []>;
@@ -1722,12 +1651,35 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       multiPurposeNonce: AugmentedQuery<ApiType, () => Observable<u64>, []>;
       /**
+       * Track the number of authorizations given by each identity.
+       **/
+      numberOfGivenAuths: AugmentedQuery<
+        ApiType,
+        (arg: PolymeshPrimitivesIdentityId | string | Uint8Array) => Observable<u32>,
+        [PolymeshPrimitivesIdentityId]
+      >;
+      /**
        * Authorization nonce per Identity. Initially is 0.
        **/
       offChainAuthorizationNonce: AugmentedQuery<
         ApiType,
         (arg: PolymeshPrimitivesIdentityId | string | Uint8Array) => Observable<u64>,
         [PolymeshPrimitivesIdentityId]
+      >;
+      /**
+       * Tracks all authorizations that must be deleted
+       **/
+      outdatedAuthorizations: AugmentedQuery<
+        ApiType,
+        (
+          arg:
+            | PolymeshPrimitivesSecondaryKeySignatory
+            | { Identity: any }
+            | { Account: any }
+            | string
+            | Uint8Array
+        ) => Observable<Option<u64>>,
+        [PolymeshPrimitivesSecondaryKeySignatory]
       >;
       /**
        * Parent identity if the DID is a child Identity.
@@ -1957,6 +1909,18 @@ declare module '@polkadot/api-base/types/storage' {
         ApiType,
         (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<u64>,
         [PolymeshPrimitivesTicker]
+      >;
+      /**
+       * The last `NFTCollectionId` used for a collection.
+       **/
+      currentCollectionId: AugmentedQuery<ApiType, () => Observable<Option<u64>>, []>;
+      /**
+       * The last `NFTId` used for an NFT.
+       **/
+      currentNFTId: AugmentedQuery<
+        ApiType,
+        (arg: u64 | AnyNumber | Uint8Array) => Observable<Option<u64>>,
+        [u64]
       >;
       /**
        * The metadata value of an nft given its collection id, token id and metadata key.
@@ -2839,341 +2803,6 @@ declare module '@polkadot/api-base/types/storage' {
         [u64, AccountId32]
       >;
     };
-    staking: {
-      /**
-       * The active era information, it holds index and start.
-       *
-       * The active era is the era being currently rewarded. Validator set of this era must be
-       * equal to [`SessionInterface::validators`].
-       **/
-      activeEra: AugmentedQuery<ApiType, () => Observable<Option<PalletStakingActiveEraInfo>>, []>;
-      /**
-       * Map from all locked "stash" accounts to the controller account.
-       **/
-      bonded: AugmentedQuery<
-        ApiType,
-        (arg: AccountId32 | string | Uint8Array) => Observable<Option<AccountId32>>,
-        [AccountId32]
-      >;
-      /**
-       * A mapping from still-bonded eras to the first session index of that era.
-       *
-       * Must contains information for eras for the range:
-       * `[active_era - bounding_duration; active_era]`
-       **/
-      bondedEras: AugmentedQuery<ApiType, () => Observable<Vec<ITuple<[u32, u32]>>>, []>;
-      /**
-       * The amount of currency given to reporters of a slash event which was
-       * canceled by extraordinary circumstances (e.g. governance).
-       **/
-      canceledSlashPayout: AugmentedQuery<ApiType, () => Observable<u128>, []>;
-      /**
-       * The current era index.
-       *
-       * This is the latest planned era, depending on how the Session pallet queues the validator
-       * set, it might be active or not.
-       **/
-      currentEra: AugmentedQuery<ApiType, () => Observable<Option<u32>>, []>;
-      /**
-       * The earliest era for which we have a pending, unapplied slash.
-       **/
-      earliestUnappliedSlash: AugmentedQuery<ApiType, () => Observable<Option<u32>>, []>;
-      /**
-       * Flag to control the execution of the offchain election. When `Open(_)`, we accept
-       * solutions to be submitted.
-       **/
-      eraElectionStatus: AugmentedQuery<ApiType, () => Observable<PalletStakingElectionStatus>, []>;
-      /**
-       * Rewards for the last `HISTORY_DEPTH` eras.
-       * If reward hasn't been set or has been removed then 0 reward is returned.
-       **/
-      erasRewardPoints: AugmentedQuery<
-        ApiType,
-        (arg: u32 | AnyNumber | Uint8Array) => Observable<PalletStakingEraRewardPoints>,
-        [u32]
-      >;
-      /**
-       * Exposure of validator at era.
-       *
-       * This is keyed first by the era index to allow bulk deletion and then the stash account.
-       *
-       * Is it removed after `HISTORY_DEPTH` eras.
-       * If stakers hasn't been set or has been removed then empty exposure is returned.
-       **/
-      erasStakers: AugmentedQuery<
-        ApiType,
-        (
-          arg1: u32 | AnyNumber | Uint8Array,
-          arg2: AccountId32 | string | Uint8Array
-        ) => Observable<PalletStakingExposure>,
-        [u32, AccountId32]
-      >;
-      /**
-       * Clipped Exposure of validator at era.
-       *
-       * This is similar to [`ErasStakers`] but number of nominators exposed is reduced to the
-       * `T::MaxNominatorRewardedPerValidator` biggest stakers.
-       * (Note: the field `total` and `own` of the exposure remains unchanged).
-       * This is used to limit the i/o cost for the nominator payout.
-       *
-       * This is keyed fist by the era index to allow bulk deletion and then the stash account.
-       *
-       * Is it removed after `HISTORY_DEPTH` eras.
-       * If stakers hasn't been set or has been removed then empty exposure is returned.
-       **/
-      erasStakersClipped: AugmentedQuery<
-        ApiType,
-        (
-          arg1: u32 | AnyNumber | Uint8Array,
-          arg2: AccountId32 | string | Uint8Array
-        ) => Observable<PalletStakingExposure>,
-        [u32, AccountId32]
-      >;
-      /**
-       * The session index at which the era start for the last `HISTORY_DEPTH` eras.
-       *
-       * Note: This tracks the starting session (i.e. session index when era start being active)
-       * for the eras in `[CurrentEra - HISTORY_DEPTH, CurrentEra]`.
-       **/
-      erasStartSessionIndex: AugmentedQuery<
-        ApiType,
-        (arg: u32 | AnyNumber | Uint8Array) => Observable<Option<u32>>,
-        [u32]
-      >;
-      /**
-       * The total amount staked for the last `HISTORY_DEPTH` eras.
-       * If total hasn't been set or has been removed then 0 stake is returned.
-       **/
-      erasTotalStake: AugmentedQuery<
-        ApiType,
-        (arg: u32 | AnyNumber | Uint8Array) => Observable<u128>,
-        [u32]
-      >;
-      /**
-       * Similar to `ErasStakers`, this holds the preferences of validators.
-       *
-       * This is keyed first by the era index to allow bulk deletion and then the stash account.
-       *
-       * Is it removed after `HISTORY_DEPTH` eras.
-       **/
-      erasValidatorPrefs: AugmentedQuery<
-        ApiType,
-        (
-          arg1: u32 | AnyNumber | Uint8Array,
-          arg2: AccountId32 | string | Uint8Array
-        ) => Observable<PalletStakingValidatorPrefs>,
-        [u32, AccountId32]
-      >;
-      /**
-       * The total validator era payout for the last `HISTORY_DEPTH` eras.
-       *
-       * Eras that haven't finished yet or has been removed doesn't have reward.
-       **/
-      erasValidatorReward: AugmentedQuery<
-        ApiType,
-        (arg: u32 | AnyNumber | Uint8Array) => Observable<Option<u128>>,
-        [u32]
-      >;
-      /**
-       * Mode of era forcing.
-       **/
-      forceEra: AugmentedQuery<ApiType, () => Observable<PalletStakingForcing>, []>;
-      /**
-       * Number of eras to keep in history.
-       *
-       * Information is kept for eras in `[current_era - history_depth; current_era]`.
-       *
-       * Must be more than the number of eras delayed by session otherwise. I.e. active era must
-       * always be in history. I.e. `active_era > current_era - history_depth` must be
-       * guaranteed.
-       **/
-      historyDepth: AugmentedQuery<ApiType, () => Observable<u32>, []>;
-      /**
-       * Any validators that may never be slashed or forcibly kicked. It's a Vec since they're
-       * easy to initialize and the performance hit is minimal (we expect no more than four
-       * invulnerables) and restricted to testnets.
-       **/
-      invulnerables: AugmentedQuery<ApiType, () => Observable<Vec<AccountId32>>, []>;
-      /**
-       * True if the current **planned** session is final. Note that this does not take era
-       * forcing into account.
-       **/
-      isCurrentSessionFinal: AugmentedQuery<ApiType, () => Observable<bool>, []>;
-      /**
-       * Map from all (unlocked) "controller" accounts to the info regarding the staking.
-       **/
-      ledger: AugmentedQuery<
-        ApiType,
-        (arg: AccountId32 | string | Uint8Array) => Observable<Option<PalletStakingStakingLedger>>,
-        [AccountId32]
-      >;
-      /**
-       * The minimum amount with which a validator can bond.
-       **/
-      minimumBondThreshold: AugmentedQuery<ApiType, () => Observable<u128>, []>;
-      /**
-       * Minimum number of staking participants before emergency conditions are imposed.
-       **/
-      minimumValidatorCount: AugmentedQuery<ApiType, () => Observable<u32>, []>;
-      /**
-       * The map from nominator stash key to the set of stash keys of all validators to nominate.
-       **/
-      nominators: AugmentedQuery<
-        ApiType,
-        (arg: AccountId32 | string | Uint8Array) => Observable<Option<PalletStakingNominations>>,
-        [AccountId32]
-      >;
-      /**
-       * All slashing events on nominators, mapped by era to the highest slash value of the era.
-       **/
-      nominatorSlashInEra: AugmentedQuery<
-        ApiType,
-        (
-          arg1: u32 | AnyNumber | Uint8Array,
-          arg2: AccountId32 | string | Uint8Array
-        ) => Observable<Option<u128>>,
-        [u32, AccountId32]
-      >;
-      /**
-       * Indices of validators that have offended in the active era and whether they are currently
-       * disabled.
-       *
-       * This value should be a superset of disabled validators since not all offences lead to the
-       * validator being disabled (if there was no slash). This is needed to track the percentage of
-       * validators that have offended in the current era, ensuring a new era is forced if
-       * `OffendingValidatorsThreshold` is reached. The vec is always kept sorted so that we can find
-       * whether a given validator has previously offended using binary search. It gets cleared when
-       * the era ends.
-       **/
-      offendingValidators: AugmentedQuery<ApiType, () => Observable<Vec<ITuple<[u32, bool]>>>, []>;
-      /**
-       * Where the reward payment should be made. Keyed by stash.
-       **/
-      payee: AugmentedQuery<
-        ApiType,
-        (arg: AccountId32 | string | Uint8Array) => Observable<PalletStakingRewardDestination>,
-        [AccountId32]
-      >;
-      /**
-       * Entities that are allowed to run operator/validator nodes.
-       **/
-      permissionedIdentity: AugmentedQuery<
-        ApiType,
-        (
-          arg: PolymeshPrimitivesIdentityId | string | Uint8Array
-        ) => Observable<Option<PalletStakingPermissionedIdentityPrefs>>,
-        [PolymeshPrimitivesIdentityId]
-      >;
-      /**
-       * Polymesh Storage version.
-       **/
-      polymeshStorageVersion: AugmentedQuery<ApiType, () => Observable<u8>, []>;
-      /**
-       * The next validator set. At the end of an era, if this is available (potentially from the
-       * result of an offchain worker), it is immediately used. Otherwise, the on-chain election
-       * is executed.
-       **/
-      queuedElected: AugmentedQuery<
-        ApiType,
-        () => Observable<Option<PalletStakingElectionResult>>,
-        []
-      >;
-      /**
-       * The score of the current [`QueuedElected`].
-       **/
-      queuedScore: AugmentedQuery<
-        ApiType,
-        () => Observable<Option<SpNposElectionsElectionScore>>,
-        []
-      >;
-      slashingAllowedFor: AugmentedQuery<
-        ApiType,
-        () => Observable<PalletStakingSlashingSwitch>,
-        []
-      >;
-      /**
-       * Slashing spans for stash accounts.
-       **/
-      slashingSpans: AugmentedQuery<
-        ApiType,
-        (
-          arg: AccountId32 | string | Uint8Array
-        ) => Observable<Option<PalletStakingSlashingSlashingSpans>>,
-        [AccountId32]
-      >;
-      /**
-       * The percentage of the slash that is distributed to reporters.
-       *
-       * The rest of the slashed value is handled by the `Slash`.
-       **/
-      slashRewardFraction: AugmentedQuery<ApiType, () => Observable<Perbill>, []>;
-      /**
-       * Snapshot of nominators at the beginning of the current election window. This should only
-       * have a value when [`EraElectionStatus`] == `ElectionStatus::Open(_)`.
-       **/
-      snapshotNominators: AugmentedQuery<ApiType, () => Observable<Option<Vec<AccountId32>>>, []>;
-      /**
-       * Snapshot of validators at the beginning of the current election window. This should only
-       * have a value when [`EraElectionStatus`] == `ElectionStatus::Open(_)`.
-       **/
-      snapshotValidators: AugmentedQuery<ApiType, () => Observable<Option<Vec<AccountId32>>>, []>;
-      /**
-       * Records information about the maximum slash of a stash within a slashing span,
-       * as well as how much reward has been paid out.
-       **/
-      spanSlash: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[AccountId32, u32]>
-            | [AccountId32 | string | Uint8Array, u32 | AnyNumber | Uint8Array]
-        ) => Observable<PalletStakingSlashingSpanRecord>,
-        [ITuple<[AccountId32, u32]>]
-      >;
-      /**
-       * True if network has been upgraded to this version.
-       * Storage version of the pallet.
-       *
-       * This is set to v6.0.1 for new networks.
-       **/
-      storageVersion: AugmentedQuery<ApiType, () => Observable<PalletStakingReleases>, []>;
-      /**
-       * All unapplied slashes that are queued for later.
-       **/
-      unappliedSlashes: AugmentedQuery<
-        ApiType,
-        (arg: u32 | AnyNumber | Uint8Array) => Observable<Vec<PalletStakingUnappliedSlash>>,
-        [u32]
-      >;
-      /**
-       * Every validator has commission that should be in the range [0, Cap].
-       **/
-      validatorCommissionCap: AugmentedQuery<ApiType, () => Observable<Perbill>, []>;
-      /**
-       * The ideal number of staking participants.
-       **/
-      validatorCount: AugmentedQuery<ApiType, () => Observable<u32>, []>;
-      /**
-       * The map from (wannabe) validator stash key to the preferences of that validator.
-       **/
-      validators: AugmentedQuery<
-        ApiType,
-        (arg: AccountId32 | string | Uint8Array) => Observable<PalletStakingValidatorPrefs>,
-        [AccountId32]
-      >;
-      /**
-       * All slashing events on validators, mapped by era to the highest slash proportion
-       * and slash value of the era.
-       **/
-      validatorSlashInEra: AugmentedQuery<
-        ApiType,
-        (
-          arg1: u32 | AnyNumber | Uint8Array,
-          arg2: AccountId32 | string | Uint8Array
-        ) => Observable<Option<ITuple<[Perbill, u128]>>>,
-        [u32, AccountId32]
-      >;
-    };
     statistics: {
       /**
        * Active stats for a ticker/company.  There should be a max limit on the number of active stats for a ticker/company.
@@ -3557,6 +3186,10 @@ declare module '@polkadot/api-base/types/storage' {
         (arg: AccountId32 | string | Uint8Array) => Observable<u64>,
         [AccountId32]
       >;
+    };
+    validatorSet: {
+      offlineValidators: AugmentedQuery<ApiType, () => Observable<Vec<AccountId32>>, []>;
+      validators: AugmentedQuery<ApiType, () => Observable<Vec<AccountId32>>, []>;
     };
   } // AugmentedQueries
 } // declare module
