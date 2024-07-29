@@ -3,6 +3,7 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { ConfidentialAccounts } from '~/api/client/ConfidentialAccounts';
+import { MoveFundsResolverResult } from '~/api/procedures/moveFunds';
 import { ConfidentialAccount, Context, PolymeshError, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -126,6 +127,27 @@ describe('ConfidentialAccounts Class', () => {
         .mockResolvedValue(expectedTransaction);
 
       const tx = await confidentialAccounts.applyIncomingBalances(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: moveFunds', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args = {
+        from: dsMockUtils.createMockConfidentialAccount() as unknown as ConfidentialAccount,
+        to: dsMockUtils.createMockConfidentialAccount() as unknown as ConfidentialAccount,
+        proofs: [{ asset: 'someAsset', proof: 'someProof' }],
+      };
+
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<MoveFundsResolverResult>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await confidentialAccounts.moveFunds(args);
 
       expect(tx).toBe(expectedTransaction);
     });

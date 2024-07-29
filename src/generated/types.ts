@@ -811,6 +811,12 @@ export enum ConfidentialAssetTx {
   SetAccountAssetFrozen = 'confidentialAsset.setAccountAssetFrozen',
   ApplyIncomingBalances = 'confidentialAsset.applyIncomingBalances',
   Burn = 'confidentialAsset.burn',
+  MoveAssets = 'confidentialAsset.moveAssets',
+}
+
+export enum ValidatorSetTx {
+  AddValidator = 'validatorSet.addValidator',
+  RemoveValidator = 'validatorSet.removeValidator',
 }
 
 export enum ModuleName {
@@ -859,6 +865,7 @@ export enum ModuleName {
   Contracts = 'contracts',
   Nft = 'nft',
   ConfidentialAsset = 'confidentialAsset',
+  ValidatorSet = 'validatorSet',
 }
 
 export type TxTag =
@@ -906,7 +913,8 @@ export type TxTag =
   | PreimageTx
   | ContractsTx
   | NftTx
-  | ConfidentialAssetTx;
+  | ConfidentialAssetTx
+  | ValidatorSetTx;
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const TxTags = {
@@ -955,4 +963,5 @@ export const TxTags = {
   contracts: ContractsTx,
   nft: NftTx,
   confidentialAsset: ConfidentialAssetTx,
+  validatorSet: ValidatorSetTx,
 };

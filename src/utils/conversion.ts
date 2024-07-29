@@ -8,6 +8,7 @@ import {
   PalletConfidentialAssetAuditorAccount,
   PalletConfidentialAssetConfidentialAccount,
   PalletConfidentialAssetConfidentialAuditors,
+  PalletConfidentialAssetConfidentialMoveFunds,
   PalletConfidentialAssetConfidentialTransfers,
   PalletConfidentialAssetLegParty,
   PalletConfidentialAssetTransaction,
@@ -30,6 +31,7 @@ import { ErrorCode, EventIdentifier } from '@polymeshassociation/polymesh-sdk/ty
 import {
   bigNumberToU32,
   bigNumberToU64,
+  bytesToString,
   identityIdToString,
   instructionMemoToString,
   stringToIdentityId,
@@ -553,4 +555,55 @@ export function confidentialBurnProofToRaw(
   return context.createType('ConfidentialAssetsBurnConfidentialBurnProof', {
     encodedInnerProof: rawProof,
   });
+}
+
+/**
+ * @hidden
+ */
+export function serializeAssetMoves(
+  from: ConfidentialAccount,
+  to: ConfidentialAccount,
+  proofs: ConfidentialLegProof[],
+  context: Context
+): PalletConfidentialAssetConfidentialMoveFunds {
+  const fmtProofs = proofs.reduce((acc, { asset, proof }) => {
+    const id = serializeConfidentialAssetId(asset);
+    acc[id] = proof;
+
+    return acc;
+  }, {} as Record<string, string>);
+
+  const rawPalletConfidentialAssetConfidentialMoveFunds = context.createType(
+    'PalletConfidentialAssetConfidentialMoveFunds',
+    {
+      from: confidentialAccountToMeshPublicKey(from, context),
+      to: confidentialAccountToMeshPublicKey(to, context),
+      proofs: fmtProofs,
+    }
+  );
+
+  return rawPalletConfidentialAssetConfidentialMoveFunds;
+}
+
+/**
+ * @hidden
+ */
+export function meshProofsToConfidentialLegProof(
+  rawProofs: BTreeMap<U8aFixed, Bytes>,
+  context: Context
+): ConfidentialLegProof[] {
+  const result: ReturnType<typeof meshProofsToConfidentialLegProof> = [];
+
+  /* istanbul ignore next: nested BTreeMap/BTreeSet is hard to mock */
+  for (const [rawAssetId, rawProof] of rawProofs.entries()) {
+    console.log(rawAssetId, rawProof);
+    const assetId = u8aToHex(rawAssetId).replace('0x', '');
+
+    console.log(assetId);
+    const asset = new ConfidentialAsset({ id: assetId }, context);
+
+    result.push({ asset, proof: bytesToString(rawProof) });
+  }
+
+  return result;
 }

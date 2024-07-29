@@ -50,7 +50,6 @@ import {
 } from '@polkadot/types/interfaces';
 import {
   ConfidentialAssetsBurnConfidentialBurnProof,
-  ConfidentialAssetsElgamalCipherText,
   PalletAssetAssetOwnershipRelation,
   PalletAssetSecurityToken,
   PalletAssetTickerRegistration,
@@ -84,6 +83,7 @@ import {
   PalletStoPriceTier,
   PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
+  PolymeshHostFunctionsElgamalHostCipherText,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetAssetType,
   PolymeshPrimitivesAssetIdentifier,
@@ -4103,13 +4103,13 @@ export const createMockConfidentialLegState = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockElgamalCipherText = (
-  value?: string | ConfidentialAssetsElgamalCipherText
-): MockCodec<ConfidentialAssetsElgamalCipherText> => {
-  if (isCodec<ConfidentialAssetsElgamalCipherText>(value)) {
-    return value as MockCodec<ConfidentialAssetsElgamalCipherText>;
+  value?: string | PolymeshHostFunctionsElgamalHostCipherText
+): MockCodec<PolymeshHostFunctionsElgamalHostCipherText> => {
+  if (isCodec<PolymeshHostFunctionsElgamalHostCipherText>(value)) {
+    return value as MockCodec<PolymeshHostFunctionsElgamalHostCipherText>;
   }
 
-  return createMockStringCodec<ConfidentialAssetsElgamalCipherText>(value);
+  return createMockStringCodec<PolymeshHostFunctionsElgamalHostCipherText>(value);
 };
 
 /**

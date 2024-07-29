@@ -7,6 +7,7 @@ import '@polkadot/api-base/types/events';
 
 import type { ApiTypes, AugmentedEvent } from '@polkadot/api-base/types';
 import type {
+  BTreeMap,
   BTreeSet,
   Bytes,
   Null,
@@ -21,13 +22,10 @@ import type {
   u8,
 } from '@polkadot/types-codec';
 import type { ITuple } from '@polkadot/types-codec/types';
-import type { AccountId32, H256, Perbill, Permill } from '@polkadot/types/interfaces/runtime';
+import type { AccountId32, H256, Permill } from '@polkadot/types/interfaces/runtime';
 import type {
-  ConfidentialAssetsElgamalCipherText,
   FrameSupportDispatchDispatchInfo,
   FrameSupportTokensMiscBalanceStatus,
-  PalletBridgeBridgeTx,
-  PalletBridgeHandledTxStatus,
   PalletConfidentialAssetAffirmParty,
   PalletConfidentialAssetConfidentialAccount,
   PalletConfidentialAssetConfidentialAuditors,
@@ -46,15 +44,13 @@ import type {
   PalletPipsProposalState,
   PalletPipsProposer,
   PalletPipsSnapshottedPip,
-  PalletStakingElectionCompute,
-  PalletStakingExposure,
-  PalletStakingSlashingSwitch,
   PalletStoFundraiser,
   PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
   PolymeshCommonUtilitiesMaybeBlock,
   PolymeshContractsApi,
   PolymeshContractsChainExtensionExtrinsicId,
   PolymeshContractsChainVersion,
+  PolymeshHostFunctionsElgamalHostCipherText,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetAssetType,
   PolymeshPrimitivesAssetIdentifier,
@@ -455,92 +451,6 @@ declare module '@polkadot/api-base/types/events' {
        **/
       UnexpectedError: AugmentedEvent<ApiType, [Option<SpRuntimeDispatchError>]>;
     };
-    bridge: {
-      /**
-       * Confirmation of Admin change.
-       **/
-      AdminChanged: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, AccountId32]>;
-      /**
-       * Confirmation of POLYX upgrade on Polymesh from POLY tokens on Ethereum.
-       **/
-      Bridged: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, PalletBridgeBridgeTx]>;
-      /**
-       * Bridge limit has been updated.
-       **/
-      BridgeLimitUpdated: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, u128, u32]>;
-      /**
-       * Bridge Tx failed.  Recipient missing CDD or limit reached.
-       **/
-      BridgeTxFailed: AugmentedEvent<
-        ApiType,
-        [PolymeshPrimitivesIdentityId, PalletBridgeBridgeTx, SpRuntimeDispatchError]
-      >;
-      /**
-       * Bridge Tx Scheduled.
-       **/
-      BridgeTxScheduled: AugmentedEvent<
-        ApiType,
-        [PolymeshPrimitivesIdentityId, PalletBridgeBridgeTx, u32]
-      >;
-      /**
-       * Failed to schedule Bridge Tx.
-       **/
-      BridgeTxScheduleFailed: AugmentedEvent<
-        ApiType,
-        [PolymeshPrimitivesIdentityId, PalletBridgeBridgeTx, Bytes]
-      >;
-      /**
-       * Confirmation of a signer set change.
-       **/
-      ControllerChanged: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, AccountId32]>;
-      /**
-       * Exemption status of an identity has been updated.
-       **/
-      ExemptedUpdated: AugmentedEvent<
-        ApiType,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesIdentityId, bool]
-      >;
-      /**
-       * A new freeze admin has been added.
-       **/
-      FreezeAdminAdded: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, AccountId32]>;
-      /**
-       * A freeze admin has been removed.
-       **/
-      FreezeAdminRemoved: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, AccountId32]>;
-      /**
-       * Notification of freezing the bridge.
-       **/
-      Frozen: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId]>;
-      /**
-       * Notification of freezing a transaction.
-       **/
-      FrozenTx: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, PalletBridgeBridgeTx]>;
-      /**
-       * Confirmation of default timelock change.
-       **/
-      TimelockChanged: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, u32]>;
-      /**
-       * Notification of removing a transaction.
-       **/
-      TxRemoved: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, PalletBridgeBridgeTx]>;
-      /**
-       * An event emitted after a vector of transactions is handled. The parameter is a vector of
-       * tuples of recipient account, its nonce, and the status of the processed transaction.
-       **/
-      TxsHandled: AugmentedEvent<
-        ApiType,
-        [Vec<ITuple<[AccountId32, u32, PalletBridgeHandledTxStatus]>>]
-      >;
-      /**
-       * Notification of unfreezing the bridge.
-       **/
-      Unfrozen: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId]>;
-      /**
-       * Notification of unfreezing a transaction.
-       **/
-      UnfrozenTx: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, PalletBridgeBridgeTx]>;
-    };
     capitalDistribution: {
       /**
        * A token holder's benefit of a capital distribution for the given `CAId` was claimed.
@@ -882,14 +792,14 @@ declare module '@polkadot/api-base/types/events' {
         [
           account: PalletConfidentialAssetConfidentialAccount,
           assetId: U8aFixed,
-          amount: ConfidentialAssetsElgamalCipherText,
-          balance: ConfidentialAssetsElgamalCipherText
+          amount: PolymeshHostFunctionsElgamalHostCipherText,
+          balance: PolymeshHostFunctionsElgamalHostCipherText
         ],
         {
           account: PalletConfidentialAssetConfidentialAccount;
           assetId: U8aFixed;
-          amount: ConfidentialAssetsElgamalCipherText;
-          balance: ConfidentialAssetsElgamalCipherText;
+          amount: PolymeshHostFunctionsElgamalHostCipherText;
+          balance: PolymeshHostFunctionsElgamalHostCipherText;
         }
       >;
       /**
@@ -901,14 +811,14 @@ declare module '@polkadot/api-base/types/events' {
         [
           account: PalletConfidentialAssetConfidentialAccount,
           assetId: U8aFixed,
-          amount: ConfidentialAssetsElgamalCipherText,
-          incomingBalance: ConfidentialAssetsElgamalCipherText
+          amount: PolymeshHostFunctionsElgamalHostCipherText,
+          incomingBalance: PolymeshHostFunctionsElgamalHostCipherText
         ],
         {
           account: PalletConfidentialAssetConfidentialAccount;
           assetId: U8aFixed;
-          amount: ConfidentialAssetsElgamalCipherText;
-          incomingBalance: ConfidentialAssetsElgamalCipherText;
+          amount: PolymeshHostFunctionsElgamalHostCipherText;
+          incomingBalance: PolymeshHostFunctionsElgamalHostCipherText;
         }
       >;
       /**
@@ -920,14 +830,14 @@ declare module '@polkadot/api-base/types/events' {
         [
           account: PalletConfidentialAssetConfidentialAccount,
           assetId: U8aFixed,
-          amount: ConfidentialAssetsElgamalCipherText,
-          balance: ConfidentialAssetsElgamalCipherText
+          amount: PolymeshHostFunctionsElgamalHostCipherText,
+          balance: PolymeshHostFunctionsElgamalHostCipherText
         ],
         {
           account: PalletConfidentialAssetConfidentialAccount;
           assetId: U8aFixed;
-          amount: ConfidentialAssetsElgamalCipherText;
-          balance: ConfidentialAssetsElgamalCipherText;
+          amount: PolymeshHostFunctionsElgamalHostCipherText;
+          balance: PolymeshHostFunctionsElgamalHostCipherText;
         }
       >;
       /**
@@ -980,6 +890,24 @@ declare module '@polkadot/api-base/types/events' {
           assetId: U8aFixed;
           amount: u128;
           totalSupply: u128;
+        }
+      >;
+      /**
+       * Confidential asset moved between accounts.
+       **/
+      FundsMoved: AugmentedEvent<
+        ApiType,
+        [
+          callerDid: PolymeshPrimitivesIdentityId,
+          from: PalletConfidentialAssetConfidentialAccount,
+          to: PalletConfidentialAssetConfidentialAccount,
+          proofs: BTreeMap<U8aFixed, Bytes>
+        ],
+        {
+          callerDid: PolymeshPrimitivesIdentityId;
+          from: PalletConfidentialAssetConfidentialAccount;
+          to: PalletConfidentialAssetConfidentialAccount;
+          proofs: BTreeMap<U8aFixed, Bytes>;
         }
       >;
       /**
@@ -1615,8 +1543,8 @@ declare module '@polkadot/api-base/types/events' {
        **/
       SomeOffline: AugmentedEvent<
         ApiType,
-        [offline: Vec<ITuple<[AccountId32, PalletStakingExposure]>>],
-        { offline: Vec<ITuple<[AccountId32, PalletStakingExposure]>> }
+        [offline: Vec<ITuple<[AccountId32, Null]>>],
+        { offline: Vec<ITuple<[AccountId32, Null]>> }
       >;
     };
     indices: {
@@ -1713,6 +1641,14 @@ declare module '@polkadot/api-base/types/events' {
        * Event emitted when there's an error in proposal execution
        **/
       ProposalExecutionFailed: AugmentedEvent<ApiType, [SpRuntimeDispatchError]>;
+      /**
+       * Event emitted when a proposal failed to execute.
+       * Arguments: caller DID, multisig, proposal ID, error.
+       **/
+      ProposalFailedToExecute: AugmentedEvent<
+        ApiType,
+        [PolymeshPrimitivesIdentityId, AccountId32, u64, SpRuntimeDispatchError]
+      >;
       /**
        * Event emitted when a proposal is rejected.
        * Arguments: caller DID, multisig, proposal ID.
@@ -2381,109 +2317,6 @@ declare module '@polkadot/api-base/types/events' {
         [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, u64]
       >;
     };
-    staking: {
-      /**
-       * An account has bonded this amount. \[did, stash, amount\]
-       *
-       * NOTE: This event is only emitted when funds are bonded via a dispatchable. Notably,
-       * it will not be emitted for staking rewards when they are added to stake.
-       **/
-      Bonded: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, AccountId32, u128]>;
-      /**
-       * When commission cap get updated.
-       * (old value, new value)
-       **/
-      CommissionCapUpdated: AugmentedEvent<
-        ApiType,
-        [PolymeshPrimitivesIdentityId, Perbill, Perbill]
-      >;
-      /**
-       * The era payout has been set; the first balance is the validator-payout; the second is
-       * the remainder from the maximum amount of reward.
-       * \[era_index, validator_payout, remainder\]
-       **/
-      EraPayout: AugmentedEvent<ApiType, [u32, u128, u128]>;
-      /**
-       * Remove the nominators from the valid nominators when there CDD expired.
-       * Caller, Stash accountId of nominators
-       **/
-      InvalidatedNominators: AugmentedEvent<
-        ApiType,
-        [PolymeshPrimitivesIdentityId, AccountId32, Vec<AccountId32>]
-      >;
-      /**
-       * Min bond threshold was updated (new value).
-       **/
-      MinimumBondThresholdUpdated: AugmentedEvent<
-        ApiType,
-        [Option<PolymeshPrimitivesIdentityId>, u128]
-      >;
-      /**
-       * User has updated their nominations
-       **/
-      Nominated: AugmentedEvent<
-        ApiType,
-        [PolymeshPrimitivesIdentityId, AccountId32, Vec<AccountId32>]
-      >;
-      /**
-       * An old slashing report from a prior era was discarded because it could
-       * not be processed. \[session_index\]
-       **/
-      OldSlashingReportDiscarded: AugmentedEvent<ApiType, [u32]>;
-      /**
-       * An DID has issued a candidacy. See the transaction for who.
-       * GC identity , Validator's identity.
-       **/
-      PermissionedIdentityAdded: AugmentedEvent<
-        ApiType,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesIdentityId]
-      >;
-      /**
-       * The given member was removed. See the transaction for who.
-       * GC identity , Validator's identity.
-       **/
-      PermissionedIdentityRemoved: AugmentedEvent<
-        ApiType,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesIdentityId]
-      >;
-      /**
-       * The staker has been rewarded by this amount. \[stash_identity, stash, amount\]
-       **/
-      Reward: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, AccountId32, u128]>;
-      /**
-       * When scheduling of reward payments get interrupted.
-       **/
-      RewardPaymentSchedulingInterrupted: AugmentedEvent<
-        ApiType,
-        [AccountId32, u32, SpRuntimeDispatchError]
-      >;
-      /**
-       * One validator (and its nominators) has been slashed by the given amount.
-       * \[validator, amount\]
-       **/
-      Slash: AugmentedEvent<ApiType, [AccountId32, u128]>;
-      /**
-       * Update for whom balance get slashed.
-       **/
-      SlashingAllowedForChanged: AugmentedEvent<ApiType, [PalletStakingSlashingSwitch]>;
-      /**
-       * A new solution for the upcoming election has been stored. \[compute\]
-       **/
-      SolutionStored: AugmentedEvent<ApiType, [PalletStakingElectionCompute]>;
-      /**
-       * A new set of stakers was elected with the given \[compute\].
-       **/
-      StakingElection: AugmentedEvent<ApiType, [PalletStakingElectionCompute]>;
-      /**
-       * An account has unbonded this amount. \[did, stash, amount\]
-       **/
-      Unbonded: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, AccountId32, u128]>;
-      /**
-       * An account has called `withdraw_unbonded` and removed unbonding chunks worth `Balance`
-       * from the unlocking queue. \[stash, amount\]
-       **/
-      Withdrawn: AugmentedEvent<ApiType, [AccountId32, u128]>;
-    };
     statistics: {
       /**
        * Asset stats updated.
@@ -3048,6 +2881,16 @@ declare module '@polkadot/api-base/types/events' {
           result: Result<Null, SpRuntimeDispatchError>;
         }
       >;
+    };
+    validatorSet: {
+      /**
+       * New validator addition initiated. Effective in ~2 sessions.
+       **/
+      ValidatorAdditionInitiated: AugmentedEvent<ApiType, [AccountId32]>;
+      /**
+       * Validator removal initiated. Effective in ~2 sessions.
+       **/
+      ValidatorRemovalInitiated: AugmentedEvent<ApiType, [AccountId32]>;
     };
   } // AugmentedEvents
 } // declare module
