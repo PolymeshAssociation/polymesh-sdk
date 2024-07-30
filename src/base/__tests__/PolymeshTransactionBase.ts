@@ -1452,6 +1452,7 @@ describe('Polymesh Transaction Base class', () => {
           rawPayload: 'fakeRawPayload',
           method: expect.stringContaining('0x'),
           metadata: {},
+          multiSig: null,
         })
       );
 
@@ -1462,6 +1463,8 @@ describe('Polymesh Transaction Base class', () => {
         )
         .mockReturnValue(era);
 
+      dsMockUtils.createTxMock('multiSig', 'createProposalAsKey');
+
       tx = new PolymeshTransaction(
         {
           ...txSpec,
@@ -1469,11 +1472,14 @@ describe('Polymesh Transaction Base class', () => {
           args,
           resolver: undefined,
           mortality: { immortal: false, lifetime: new BigNumber(32) },
+          multiSig: entityMockUtils.getMultiSigInstance({ address: DUMMY_ACCOUNT_ID }),
         },
         context
       );
 
-      await tx.toSignablePayload();
+      const { multiSig } = await tx.toSignablePayload();
+
+      expect(multiSig).toEqual(DUMMY_ACCOUNT_ID);
 
       expect(context.createType).toHaveBeenCalledWith(
         'ExtrinsicEra',

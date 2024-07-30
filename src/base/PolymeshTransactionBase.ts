@@ -893,6 +893,7 @@ export abstract class PolymeshTransactionBase<
       rawPayload: rawSignerPayload.toRaw(),
       method: tx.toHex(),
       metadata,
+      multiSig: this.multiSig?.address ?? null,
     };
   }
 
