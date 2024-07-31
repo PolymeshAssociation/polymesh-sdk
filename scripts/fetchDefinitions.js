@@ -6,7 +6,7 @@ const util = require('util');
 const { forEach, camelCase, mapKeys } = require('lodash');
 
 const { typesBundle } = require('@polymeshassociation/polymesh-types');
-const types = require('@polymeshassociation/polymesh-types/types/6.1.x.json');
+const types = require('@polymeshassociation/polymesh-types/types/6.3.x.json');
 
 const definitionsDir = path.resolve('src', 'polkadot');
 const typesDir = path.resolve(definitionsDir, 'polymesh');
