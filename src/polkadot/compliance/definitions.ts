@@ -1,32 +1,23 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 export default {
   rpc: {
-    canTransfer: {
-      description:
-        'Checks whether a transaction with given parameters is compliant to the compliance manager conditions',
+    complianceReport: {
+      description: 'Checks all compliance requirements for the given ticker.',
       params: [
         {
-          name: 'ticker',
-          type: 'Ticker',
-          isOptional: false,
+          name: 'assetId',
+          type: 'AssetId',
         },
         {
-          name: 'fromDid',
-          type: 'Option<IdentityId>',
-          isOptional: false,
+          name: 'sender_identity',
+          type: 'IdentityId',
         },
         {
-          name: 'toDid',
-          type: 'Option<IdentityId>',
-          isOptional: false,
-        },
-        {
-          name: 'blockHash',
-          type: 'Hash',
-          isOptional: true,
+          name: 'receiver_identity',
+          type: 'IdentityId',
         },
       ],
-      type: 'AssetComplianceResult',
+      type: 'Result<ComplianceReport, DispatchError>',
     },
   },
   types: {},

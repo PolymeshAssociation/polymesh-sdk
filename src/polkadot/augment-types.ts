@@ -1232,9 +1232,11 @@ import type {
   Claim2ndKey,
   ClaimType,
   Committee,
+  ComplianceReport,
   ComplianceRequirement,
   ComplianceRequirementResult,
   Condition,
+  ConditionReport,
   ConditionResult,
   ConditionType,
   CorporateAction,
@@ -1329,6 +1331,7 @@ import type {
   ReceiptMetadata,
   RecordDate,
   RecordDateSpec,
+  RequirementReport,
   RestrictionResult,
   RpcDidRecords,
   RpcDidRecordsSuccess,
@@ -1603,9 +1606,11 @@ declare module '@polkadot/types/types/registry' {
     CollectiveOrigin: CollectiveOrigin;
     CommittedCandidateReceipt: CommittedCandidateReceipt;
     Committee: Committee;
+    ComplianceReport: ComplianceReport;
     ComplianceRequirement: ComplianceRequirement;
     ComplianceRequirementResult: ComplianceRequirementResult;
     Condition: Condition;
+    ConditionReport: ConditionReport;
     ConditionResult: ConditionResult;
     ConditionType: ConditionType;
     ConfigData: ConfigData;
@@ -2323,6 +2328,7 @@ declare module '@polkadot/types/types/registry' {
     ReportedRoundStates: ReportedRoundStates;
     Reporter: Reporter;
     ReportIdOf: ReportIdOf;
+    RequirementReport: RequirementReport;
     ReserveData: ReserveData;
     ReserveIdentifier: ReserveIdentifier;
     Response: Response;
