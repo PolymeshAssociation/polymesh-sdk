@@ -29,7 +29,6 @@ import type {
   FrameSystemEventRecord,
   FrameSystemLastRuntimeUpgradeInfo,
   FrameSystemPhase,
-  PalletAssetAssetOwnershipRelation,
   PalletAssetSecurityToken,
   PalletAssetTickerRegistration,
   PalletAssetTickerRegistrationConfig,
@@ -118,7 +117,6 @@ import type {
   PolymeshPrimitivesSettlementLegStatus,
   PolymeshPrimitivesSettlementMediatorAffirmationStatus,
   PolymeshPrimitivesSettlementVenue,
-  PolymeshPrimitivesStatisticsAssetScope,
   PolymeshPrimitivesStatisticsStat1stKey,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatType,
@@ -145,25 +143,39 @@ declare module '@polkadot/api-base/types/storage' {
   interface AugmentedQueries<ApiType extends ApiTypes> {
     asset: {
       /**
-       * Documents attached to an Asset
-       * (ticker, doc_id) -> document
+       * All [`Document`] attached to an asset.
        **/
       assetDocuments: AugmentedQuery<
         ApiType,
         (
-          arg1: PolymeshPrimitivesTicker | string | Uint8Array,
+          arg1: U8aFixed | string | Uint8Array,
           arg2: u32 | AnyNumber | Uint8Array
         ) => Observable<Option<PolymeshPrimitivesDocument>>,
-        [PolymeshPrimitivesTicker, u32]
+        [U8aFixed, u32]
       >;
       /**
-       * Per-ticker document ID counter.
-       * (ticker) -> doc_id
+       * [`DocumentId`] counter per [`AssetID`].
        **/
       assetDocumentsIdSequence: AugmentedQuery<
         ApiType,
-        (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<u32>,
-        [PolymeshPrimitivesTicker]
+        (arg: U8aFixed | string | Uint8Array) => Observable<u32>,
+        [U8aFixed]
+      >;
+      /**
+       * Maps each [`AssetID`] to its asset identifiers ([`AssetIdentifier`]).
+       **/
+      assetIdentifiers: AugmentedQuery<
+        ApiType,
+        (arg: U8aFixed | string | Uint8Array) => Observable<Vec<PolymeshPrimitivesAssetIdentifier>>,
+        [U8aFixed]
+      >;
+      /**
+       * Maps all [`AssetID`] that are mapped to a [`Ticker`].
+       **/
+      assetIDTicker: AugmentedQuery<
+        ApiType,
+        (arg: U8aFixed | string | Uint8Array) => Observable<Option<PolymeshPrimitivesTicker>>,
+        [U8aFixed]
       >;
       /**
        * Asset Metadata Global Key -> Name.
@@ -197,10 +209,10 @@ declare module '@polkadot/api-base/types/storage' {
       assetMetadataLocalKeyToName: AugmentedQuery<
         ApiType,
         (
-          arg1: PolymeshPrimitivesTicker | string | Uint8Array,
+          arg1: U8aFixed | string | Uint8Array,
           arg2: u64 | AnyNumber | Uint8Array
         ) => Observable<Option<Bytes>>,
-        [PolymeshPrimitivesTicker, u64]
+        [U8aFixed, u64]
       >;
       /**
        * Asset Metadata Local Name -> Key.
@@ -208,10 +220,10 @@ declare module '@polkadot/api-base/types/storage' {
       assetMetadataLocalNameToKey: AugmentedQuery<
         ApiType,
         (
-          arg1: PolymeshPrimitivesTicker | string | Uint8Array,
+          arg1: U8aFixed | string | Uint8Array,
           arg2: Bytes | string | Uint8Array
         ) => Observable<Option<u64>>,
-        [PolymeshPrimitivesTicker, Bytes]
+        [U8aFixed, Bytes]
       >;
       /**
        * Asset Metadata Local Key specs.
@@ -219,10 +231,10 @@ declare module '@polkadot/api-base/types/storage' {
       assetMetadataLocalSpecs: AugmentedQuery<
         ApiType,
         (
-          arg1: PolymeshPrimitivesTicker | string | Uint8Array,
+          arg1: U8aFixed | string | Uint8Array,
           arg2: u64 | AnyNumber | Uint8Array
         ) => Observable<Option<PolymeshPrimitivesAssetMetadataAssetMetadataSpec>>,
-        [PolymeshPrimitivesTicker, u64]
+        [U8aFixed, u64]
       >;
       /**
        * Next Asset Metadata Global Key.
@@ -233,8 +245,8 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       assetMetadataNextLocalKey: AugmentedQuery<
         ApiType,
-        (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<u64>,
-        [PolymeshPrimitivesTicker]
+        (arg: U8aFixed | string | Uint8Array) => Observable<u64>,
+        [U8aFixed]
       >;
       /**
        * Details for an asset's Metadata values.
@@ -242,7 +254,7 @@ declare module '@polkadot/api-base/types/storage' {
       assetMetadataValueDetails: AugmentedQuery<
         ApiType,
         (
-          arg1: PolymeshPrimitivesTicker | string | Uint8Array,
+          arg1: U8aFixed | string | Uint8Array,
           arg2:
             | PolymeshPrimitivesAssetMetadataAssetMetadataKey
             | { Global: any }
@@ -250,7 +262,7 @@ declare module '@polkadot/api-base/types/storage' {
             | string
             | Uint8Array
         ) => Observable<Option<PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail>>,
-        [PolymeshPrimitivesTicker, PolymeshPrimitivesAssetMetadataAssetMetadataKey]
+        [U8aFixed, PolymeshPrimitivesAssetMetadataAssetMetadataKey]
       >;
       /**
        * Metatdata values for an asset.
@@ -258,7 +270,7 @@ declare module '@polkadot/api-base/types/storage' {
       assetMetadataValues: AugmentedQuery<
         ApiType,
         (
-          arg1: PolymeshPrimitivesTicker | string | Uint8Array,
+          arg1: U8aFixed | string | Uint8Array,
           arg2:
             | PolymeshPrimitivesAssetMetadataAssetMetadataKey
             | { Global: any }
@@ -266,52 +278,46 @@ declare module '@polkadot/api-base/types/storage' {
             | string
             | Uint8Array
         ) => Observable<Option<Bytes>>,
-        [PolymeshPrimitivesTicker, PolymeshPrimitivesAssetMetadataAssetMetadataKey]
+        [U8aFixed, PolymeshPrimitivesAssetMetadataAssetMetadataKey]
       >;
       /**
-       * Asset name of the token corresponding to the token ticker.
-       * (ticker) -> `AssetName`
+       * Maps each [`AssetID`] to its underling [`AssetName`].
        **/
       assetNames: AugmentedQuery<
         ApiType,
-        (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<Option<Bytes>>,
-        [PolymeshPrimitivesTicker]
+        (arg: U8aFixed | string | Uint8Array) => Observable<Option<Bytes>>,
+        [U8aFixed]
       >;
       /**
-       * Tickers and token owned by a user
-       * (user, ticker) -> AssetOwnership
+       * A list of assets that exempt all users from affirming its receivement.
        **/
-      assetOwnershipRelations: AugmentedQuery<
+      assetsExemptFromAffirmation: AugmentedQuery<
         ApiType,
-        (
-          arg1: PolymeshPrimitivesIdentityId | string | Uint8Array,
-          arg2: PolymeshPrimitivesTicker | string | Uint8Array
-        ) => Observable<PalletAssetAssetOwnershipRelation>,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker]
+        (arg: U8aFixed | string | Uint8Array) => Observable<bool>,
+        [U8aFixed]
       >;
       /**
-       * The total asset ticker balance per identity.
-       * (ticker, DID) -> Balance
+       * Tracks the total [`Balance`] for each [`AssetID`] per [`IdentityId`].
        **/
       balanceOf: AugmentedQuery<
         ApiType,
         (
-          arg1: PolymeshPrimitivesTicker | string | Uint8Array,
+          arg1: U8aFixed | string | Uint8Array,
           arg2: PolymeshPrimitivesIdentityId | string | Uint8Array
         ) => Observable<u128>,
-        [PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId]
+        [U8aFixed, PolymeshPrimitivesIdentityId]
       >;
       /**
        * The last [`AssetMetadataGlobalKey`] used for a global key.
        **/
       currentAssetMetadataGlobalKey: AugmentedQuery<ApiType, () => Observable<Option<u64>>, []>;
       /**
-       * The last [`AssetMetadataLocalKey`] used for [`Ticker`].
+       * The last [`AssetMetadataLocalKey`] used for [`AssetID`].
        **/
       currentAssetMetadataLocalKey: AugmentedQuery<
         ApiType,
-        (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<Option<u64>>,
-        [PolymeshPrimitivesTicker]
+        (arg: U8aFixed | string | Uint8Array) => Observable<Option<u64>>,
+        [U8aFixed]
       >;
       /**
        * The next `AssetType::Custom` ID in the sequence.
@@ -336,60 +342,96 @@ declare module '@polkadot/api-base/types/storage' {
         [Bytes]
       >;
       /**
-       * The set of frozen assets implemented as a membership map.
-       * ticker -> bool
+       * Returns `true` if transfers for the token associated to [`AssetID`] are frozen. Otherwise, returns `false`.
        **/
       frozen: AugmentedQuery<
         ApiType,
-        (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<bool>,
-        [PolymeshPrimitivesTicker]
+        (arg: U8aFixed | string | Uint8Array) => Observable<bool>,
+        [U8aFixed]
       >;
       /**
-       * The name of the current funding round.
-       * ticker -> funding round
+       * Maps each [`AssetID`] to the name of its founding round ([`FundingRoundName`]).
        **/
       fundingRound: AugmentedQuery<
         ApiType,
-        (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<Bytes>,
-        [PolymeshPrimitivesTicker]
+        (arg: U8aFixed | string | Uint8Array) => Observable<Bytes>,
+        [U8aFixed]
       >;
       /**
-       * A map of a ticker name and asset identifiers.
-       **/
-      identifiers: AugmentedQuery<
-        ApiType,
-        (
-          arg: PolymeshPrimitivesTicker | string | Uint8Array
-        ) => Observable<Vec<PolymeshPrimitivesAssetIdentifier>>,
-        [PolymeshPrimitivesTicker]
-      >;
-      /**
-       * The total balances of tokens issued in all recorded funding rounds.
-       * (ticker, funding round) -> balance
+       * The total [`Balance`] of tokens issued in all recorded funding rounds ([`FundingRoundName`]).
        **/
       issuedInFundingRound: AugmentedQuery<
         ApiType,
         (
           arg:
-            | ITuple<[PolymeshPrimitivesTicker, Bytes]>
-            | [PolymeshPrimitivesTicker | string | Uint8Array, Bytes | string | Uint8Array]
+            | ITuple<[U8aFixed, Bytes]>
+            | [U8aFixed | string | Uint8Array, Bytes | string | Uint8Array]
         ) => Observable<u128>,
-        [ITuple<[PolymeshPrimitivesTicker, Bytes]>]
+        [ITuple<[U8aFixed, Bytes]>]
       >;
       /**
        * The list of mandatory mediators for every ticker.
        **/
       mandatoryMediators: AugmentedQuery<
         ApiType,
+        (arg: U8aFixed | string | Uint8Array) => Observable<BTreeSet<PolymeshPrimitivesIdentityId>>,
+        [U8aFixed]
+      >;
+      /**
+       * All assets that don't need an affirmation to be received by an identity.
+       **/
+      preApprovedAsset: AugmentedQuery<
+        ApiType,
         (
-          arg: PolymeshPrimitivesTicker | string | Uint8Array
-        ) => Observable<BTreeSet<PolymeshPrimitivesIdentityId>>,
+          arg1: PolymeshPrimitivesIdentityId | string | Uint8Array,
+          arg2: U8aFixed | string | Uint8Array
+        ) => Observable<bool>,
+        [PolymeshPrimitivesIdentityId, U8aFixed]
+      >;
+      rngNonce: AugmentedQuery<ApiType, () => Observable<u64>, []>;
+      /**
+       * Maps each [`AssetID`] to its underling [`SecurityToken`].
+       **/
+      securityTokens: AugmentedQuery<
+        ApiType,
+        (arg: U8aFixed | string | Uint8Array) => Observable<Option<PalletAssetSecurityToken>>,
+        [U8aFixed]
+      >;
+      /**
+       * All security tokens owned by a user.
+       **/
+      securityTokensOwnedByuser: AugmentedQuery<
+        ApiType,
+        (
+          arg1: PolymeshPrimitivesIdentityId | string | Uint8Array,
+          arg2: U8aFixed | string | Uint8Array
+        ) => Observable<bool>,
+        [PolymeshPrimitivesIdentityId, U8aFixed]
+      >;
+      /**
+       * Storage version.
+       **/
+      storageVersion: AugmentedQuery<ApiType, () => Observable<u8>, []>;
+      /**
+       * Maps all [`Ticker`] that are linked to an [`AssetID`].
+       **/
+      tickerAssetID: AugmentedQuery<
+        ApiType,
+        (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<Option<U8aFixed>>,
         [PolymeshPrimitivesTicker]
       >;
       /**
-       * All tickers that don't need an affirmation to be received by an identity.
+       * Returns [`TickerRegistrationConfig`] for assessing if a ticker is valid.
        **/
-      preApprovedTicker: AugmentedQuery<
+      tickerConfig: AugmentedQuery<
+        ApiType,
+        () => Observable<PalletAssetTickerRegistrationConfig>,
+        []
+      >;
+      /**
+       * All tickers owned by a user.
+       **/
+      tickersOwnedByUser: AugmentedQuery<
         ApiType,
         (
           arg1: PolymeshPrimitivesIdentityId | string | Uint8Array,
@@ -398,46 +440,13 @@ declare module '@polkadot/api-base/types/storage' {
         [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker]
       >;
       /**
-       * Storage version.
+       * Maps each [`Ticker`] to its registration details ([`TickerRegistration`]).
        **/
-      storageVersion: AugmentedQuery<ApiType, () => Observable<u8>, []>;
-      /**
-       * Ticker registration config.
-       * (ticker) -> TickerRegistrationConfig
-       **/
-      tickerConfig: AugmentedQuery<
-        ApiType,
-        () => Observable<PalletAssetTickerRegistrationConfig>,
-        []
-      >;
-      /**
-       * Ticker registration details.
-       * (ticker) -> TickerRegistration
-       **/
-      tickers: AugmentedQuery<
+      uniqueTickerRegistration: AugmentedQuery<
         ApiType,
         (
           arg: PolymeshPrimitivesTicker | string | Uint8Array
         ) => Observable<Option<PalletAssetTickerRegistration>>,
-        [PolymeshPrimitivesTicker]
-      >;
-      /**
-       * A list of tickers that exempt all users from affirming the receivement of the asset.
-       **/
-      tickersExemptFromAffirmation: AugmentedQuery<
-        ApiType,
-        (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<bool>,
-        [PolymeshPrimitivesTicker]
-      >;
-      /**
-       * Details of the token corresponding to the token ticker.
-       * (ticker) -> SecurityToken details [returns SecurityToken struct]
-       **/
-      tokens: AugmentedQuery<
-        ApiType,
-        (
-          arg: PolymeshPrimitivesTicker | string | Uint8Array
-        ) => Observable<Option<PalletAssetSecurityToken>>,
         [PolymeshPrimitivesTicker]
       >;
     };
@@ -677,7 +686,7 @@ declare module '@polkadot/api-base/types/storage' {
       distributions: AugmentedQuery<
         ApiType,
         (
-          arg: PalletCorporateActionsCaId | { ticker?: any; localId?: any } | string | Uint8Array
+          arg: PalletCorporateActionsCaId | { assetId?: any; localId?: any } | string | Uint8Array
         ) => Observable<Option<PalletCorporateActionsDistribution>>,
         [PalletCorporateActionsCaId]
       >;
@@ -692,7 +701,7 @@ declare module '@polkadot/api-base/types/storage' {
           arg:
             | ITuple<[PalletCorporateActionsCaId, PolymeshPrimitivesIdentityId]>
             | [
-                PalletCorporateActionsCaId | { ticker?: any; localId?: any } | string | Uint8Array,
+                PalletCorporateActionsCaId | { assetId?: any; localId?: any } | string | Uint8Array,
                 PolymeshPrimitivesIdentityId | string | Uint8Array
               ]
         ) => Observable<bool>,
@@ -729,90 +738,90 @@ declare module '@polkadot/api-base/types/storage' {
       /**
        * Balance of a DID at a checkpoint.
        *
-       * (ticker, did, checkpoint ID) -> Balance of a DID at a checkpoint
+       * ([`AssetID`], did, checkpoint ID) -> Balance of a DID at a checkpoint
        **/
       balance: AugmentedQuery<
         ApiType,
         (
           arg1:
-            | ITuple<[PolymeshPrimitivesTicker, u64]>
-            | [PolymeshPrimitivesTicker | string | Uint8Array, u64 | AnyNumber | Uint8Array],
+            | ITuple<[U8aFixed, u64]>
+            | [U8aFixed | string | Uint8Array, u64 | AnyNumber | Uint8Array],
           arg2: PolymeshPrimitivesIdentityId | string | Uint8Array
         ) => Observable<u128>,
-        [ITuple<[PolymeshPrimitivesTicker, u64]>, PolymeshPrimitivesIdentityId]
+        [ITuple<[U8aFixed, u64]>, PolymeshPrimitivesIdentityId]
       >;
       /**
        * Checkpoints where a DID's balance was updated.
-       * (ticker, did) -> [checkpoint ID where user balance changed]
+       * ([`AssetID`], did) -> [checkpoint ID where user balance changed]
        **/
       balanceUpdates: AugmentedQuery<
         ApiType,
         (
-          arg1: PolymeshPrimitivesTicker | string | Uint8Array,
+          arg1: U8aFixed | string | Uint8Array,
           arg2: PolymeshPrimitivesIdentityId | string | Uint8Array
         ) => Observable<Vec<u64>>,
-        [PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId]
+        [U8aFixed, PolymeshPrimitivesIdentityId]
       >;
       /**
        * Cached next checkpoint for each schedule.
        *
-       * This is used to quickly find the next checkpoint from a ticker's schedules.
+       * This is used to quickly find the next checkpoint from a asset's schedules.
        *
-       * (ticker) -> next checkpoints
+       * ([`AssetID`]) -> next checkpoints
        **/
       cachedNextCheckpoints: AugmentedQuery<
         ApiType,
         (
-          arg: PolymeshPrimitivesTicker | string | Uint8Array
+          arg: U8aFixed | string | Uint8Array
         ) => Observable<Option<PolymeshCommonUtilitiesCheckpointNextCheckpoints>>,
-        [PolymeshPrimitivesTicker]
+        [U8aFixed]
       >;
       /**
        * Checkpoints ID generator sequence.
        * ID of first checkpoint is 1 instead of 0.
        *
-       * (ticker) -> no. of checkpoints
+       * ([`AssetID`]) -> no. of checkpoints
        **/
       checkpointIdSequence: AugmentedQuery<
         ApiType,
-        (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<u64>,
-        [PolymeshPrimitivesTicker]
+        (arg: U8aFixed | string | Uint8Array) => Observable<u64>,
+        [U8aFixed]
       >;
       /**
        * Scheduled checkpoints.
        *
-       * (ticker, schedule ID) -> schedule checkpoints
+       * ([`AssetID`], schedule ID) -> schedule checkpoints
        **/
       scheduledCheckpoints: AugmentedQuery<
         ApiType,
         (
-          arg1: PolymeshPrimitivesTicker | string | Uint8Array,
+          arg1: U8aFixed | string | Uint8Array,
           arg2: u64 | AnyNumber | Uint8Array
         ) => Observable<Option<PolymeshCommonUtilitiesCheckpointScheduleCheckpoints>>,
-        [PolymeshPrimitivesTicker, u64]
+        [U8aFixed, u64]
       >;
       /**
-       * Checkpoint schedule ID sequence for tickers.
+       * Checkpoint schedule ID sequence for assets.
        *
-       * (ticker) -> schedule ID
+       * ([`AssetID`]) -> schedule ID
        **/
       scheduleIdSequence: AugmentedQuery<
         ApiType,
-        (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<u64>,
-        [PolymeshPrimitivesTicker]
+        (arg: U8aFixed | string | Uint8Array) => Observable<u64>,
+        [U8aFixed]
       >;
       /**
        * All the checkpoints a given schedule originated.
        *
-       * (ticker, schedule ID) -> [checkpoint ID]
+       * ([`AssetID`], schedule ID) -> [checkpoint ID]
        **/
       schedulePoints: AugmentedQuery<
         ApiType,
         (
-          arg1: PolymeshPrimitivesTicker | string | Uint8Array,
+          arg1: U8aFixed | string | Uint8Array,
           arg2: u64 | AnyNumber | Uint8Array
         ) => Observable<Vec<u64>>,
-        [PolymeshPrimitivesTicker, u64]
+        [U8aFixed, u64]
       >;
       /**
        * How many "strong" references are there to a given `ScheduleId`?
@@ -822,18 +831,18 @@ declare module '@polkadot/api-base/types/storage' {
        * Thus, as long as `strong_ref_count(schedule_id) > 0`,
        * `remove_schedule(schedule_id)` will error.
        *
-       * (ticker, schedule ID) -> strong ref count
+       * ([`AssetID`], schedule ID) -> strong ref count
        **/
       scheduleRefCount: AugmentedQuery<
         ApiType,
         (
-          arg1: PolymeshPrimitivesTicker | string | Uint8Array,
+          arg1: U8aFixed | string | Uint8Array,
           arg2: u64 | AnyNumber | Uint8Array
         ) => Observable<u32>,
-        [PolymeshPrimitivesTicker, u64]
+        [U8aFixed, u64]
       >;
       /**
-       * The maximum complexity allowed for a ticker's schedules.
+       * The maximum complexity allowed for an asset's schedules.
        **/
       schedulesMaxComplexity: AugmentedQuery<ApiType, () => Observable<u64>, []>;
       /**
@@ -846,34 +855,28 @@ declare module '@polkadot/api-base/types/storage' {
        * Every schedule-originated checkpoint maps its ID to its due time.
        * Every checkpoint manually created maps its ID to the time of recording.
        *
-       * (ticker) -> (checkpoint ID) -> checkpoint timestamp
+       * ([`AssetID`]) -> (checkpoint ID) -> checkpoint timestamp
        **/
       timestamps: AugmentedQuery<
         ApiType,
         (
-          arg1: PolymeshPrimitivesTicker | string | Uint8Array,
+          arg1: U8aFixed | string | Uint8Array,
           arg2: u64 | AnyNumber | Uint8Array
         ) => Observable<u64>,
-        [PolymeshPrimitivesTicker, u64]
+        [U8aFixed, u64]
       >;
       /**
        * Total supply of the token at the checkpoint.
        *
-       * (ticker, checkpointId) -> total supply at given checkpoint
+       * ([`AssetID`], checkpointId) -> total supply at given checkpoint
        **/
       totalSupply: AugmentedQuery<
         ApiType,
         (
-          arg1: PolymeshPrimitivesTicker | string | Uint8Array,
+          arg1: U8aFixed | string | Uint8Array,
           arg2: u64 | AnyNumber | Uint8Array
         ) => Observable<u128>,
-        [PolymeshPrimitivesTicker, u64]
-      >;
-      //removed in v6
-      schedules: AugmentedQuery<
-        ApiType,
-        (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<Vec<any>>,
-        [PolymeshPrimitivesTicker]
+        [U8aFixed, u64]
       >;
     };
     committeeMembership: {
@@ -900,28 +903,28 @@ declare module '@polkadot/api-base/types/storage' {
     };
     complianceManager: {
       /**
-       * Asset compliance for a ticker (Ticker -> AssetCompliance)
+       * Compliance for an asset ([`AssetID`] -> [`AssetCompliance`])
        **/
       assetCompliances: AugmentedQuery<
         ApiType,
         (
-          arg: PolymeshPrimitivesTicker | string | Uint8Array
+          arg: U8aFixed | string | Uint8Array
         ) => Observable<PolymeshPrimitivesComplianceManagerAssetCompliance>,
-        [PolymeshPrimitivesTicker]
+        [U8aFixed]
       >;
       /**
        * Storage version.
        **/
       storageVersion: AugmentedQuery<ApiType, () => Observable<u8>, []>;
       /**
-       * List of trusted claim issuer Ticker -> Issuer Identity
+       * List of trusted claim issuer [`AssetID`] -> Issuer Identity
        **/
       trustedClaimIssuer: AugmentedQuery<
         ApiType,
         (
-          arg: PolymeshPrimitivesTicker | string | Uint8Array
+          arg: U8aFixed | string | Uint8Array
         ) => Observable<Vec<PolymeshPrimitivesConditionTrustedIssuer>>,
-        [PolymeshPrimitivesTicker]
+        [U8aFixed]
       >;
     };
     contracts: {
@@ -1005,67 +1008,65 @@ declare module '@polkadot/api-base/types/storage' {
        * Associations from CAs to `Document`s via their IDs.
        * (CAId => [DocumentId])
        *
-       * The `CorporateActions` map stores `Ticker => LocalId => The CA`,
-       * so we can infer `Ticker => CAId`. Therefore, we don't need a double map.
+       * The `CorporateActions` map stores `AssetID => LocalId => The CA`,
+       * so we can infer `AssetID => CAId`. Therefore, we don't need a double map.
        **/
       caDocLink: AugmentedQuery<
         ApiType,
         (
-          arg: PalletCorporateActionsCaId | { ticker?: any; localId?: any } | string | Uint8Array
+          arg: PalletCorporateActionsCaId | { assetId?: any; localId?: any } | string | Uint8Array
         ) => Observable<Vec<u32>>,
         [PalletCorporateActionsCaId]
       >;
       /**
-       * The next per-`Ticker` CA ID in the sequence.
-       * The full ID is defined as a combination of `Ticker` and a number in this sequence.
+       * The next per-`AssetID` CA ID in the sequence.
+       * The full ID is defined as a combination of `AssetID` and a number in this sequence.
        **/
       caIdSequence: AugmentedQuery<
         ApiType,
-        (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<u32>,
-        [PolymeshPrimitivesTicker]
+        (arg: U8aFixed | string | Uint8Array) => Observable<u32>,
+        [U8aFixed]
       >;
       /**
        * All recorded CAs thus far.
        * Only generic information is stored here.
        * Specific `CAKind`s, e.g., benefits and corporate ballots, may use additional on-chain storage.
        *
-       * (ticker => local ID => the corporate action)
+       * (AssetID => local ID => the corporate action)
        **/
       corporateActions: AugmentedQuery<
         ApiType,
         (
-          arg1: PolymeshPrimitivesTicker | string | Uint8Array,
+          arg1: U8aFixed | string | Uint8Array,
           arg2: u32 | AnyNumber | Uint8Array
         ) => Observable<Option<PalletCorporateActionsCorporateAction>>,
-        [PolymeshPrimitivesTicker, u32]
+        [U8aFixed, u32]
       >;
       /**
-       * The identities targeted by default for CAs for this ticker,
+       * The identities targeted by default for CAs for this asset,
        * either to be excluded or included.
        *
-       * (ticker => target identities)
+       * (AssetID => target identities)
        **/
       defaultTargetIdentities: AugmentedQuery<
         ApiType,
-        (
-          arg: PolymeshPrimitivesTicker | string | Uint8Array
-        ) => Observable<PalletCorporateActionsTargetIdentities>,
-        [PolymeshPrimitivesTicker]
+        (arg: U8aFixed | string | Uint8Array) => Observable<PalletCorporateActionsTargetIdentities>,
+        [U8aFixed]
       >;
       /**
-       * The default amount of tax to withhold ("withholding tax", WT) for this ticker when distributing dividends.
+       * The default amount of tax to withhold ("withholding tax", WT) for this asset when distributing dividends.
        *
        * To understand withholding tax, e.g., let's assume that you hold ACME shares.
        * ACME now decides to distribute 100 SEK to Alice.
        * Alice lives in Sweden, so Skatteverket (the Swedish tax authority) wants 30% of that.
        * Then those 100 * 30% are withheld from Alice, and ACME will send them to Skatteverket.
        *
-       * (ticker => % to withhold)
+       * (AssetID => % to withhold)
        **/
       defaultWithholdingTax: AugmentedQuery<
         ApiType,
-        (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<Permill>,
-        [PolymeshPrimitivesTicker]
+        (arg: U8aFixed | string | Uint8Array) => Observable<Permill>,
+        [U8aFixed]
       >;
       /**
        * Associates details in free-form text with a CA by its ID.
@@ -1074,22 +1075,22 @@ declare module '@polkadot/api-base/types/storage' {
       details: AugmentedQuery<
         ApiType,
         (
-          arg: PalletCorporateActionsCaId | { ticker?: any; localId?: any } | string | Uint8Array
+          arg: PalletCorporateActionsCaId | { assetId?: any; localId?: any } | string | Uint8Array
         ) => Observable<Bytes>,
         [PalletCorporateActionsCaId]
       >;
       /**
-       * The amount of tax to withhold ("withholding tax", WT) for a certain ticker x DID.
+       * The amount of tax to withhold ("withholding tax", WT) for a certain AssetID x DID.
        * If an entry exists for a certain DID, it overrides the default in `DefaultWithholdingTax`.
        *
-       * (ticker => [(did, % to withhold)]
+       * (AssetID => [(did, % to withhold)]
        **/
       didWithholdingTax: AugmentedQuery<
         ApiType,
         (
-          arg: PolymeshPrimitivesTicker | string | Uint8Array
+          arg: U8aFixed | string | Uint8Array
         ) => Observable<Vec<ITuple<[PolymeshPrimitivesIdentityId, Permill]>>>,
-        [PolymeshPrimitivesTicker]
+        [U8aFixed]
       >;
       /**
        * Determines the maximum number of bytes that the free-form `details` of a CA can store.
@@ -1115,7 +1116,7 @@ declare module '@polkadot/api-base/types/storage' {
       metas: AugmentedQuery<
         ApiType,
         (
-          arg: PalletCorporateActionsCaId | { ticker?: any; localId?: any } | string | Uint8Array
+          arg: PalletCorporateActionsCaId | { assetId?: any; localId?: any } | string | Uint8Array
         ) => Observable<Option<PalletCorporateActionsBallotBallotMeta>>,
         [PalletCorporateActionsCaId]
       >;
@@ -1133,7 +1134,7 @@ declare module '@polkadot/api-base/types/storage' {
       motionNumChoices: AugmentedQuery<
         ApiType,
         (
-          arg: PalletCorporateActionsCaId | { ticker?: any; localId?: any } | string | Uint8Array
+          arg: PalletCorporateActionsCaId | { assetId?: any; localId?: any } | string | Uint8Array
         ) => Observable<Vec<u16>>,
         [PalletCorporateActionsCaId]
       >;
@@ -1146,7 +1147,7 @@ declare module '@polkadot/api-base/types/storage' {
       rcv: AugmentedQuery<
         ApiType,
         (
-          arg: PalletCorporateActionsCaId | { ticker?: any; localId?: any } | string | Uint8Array
+          arg: PalletCorporateActionsCaId | { assetId?: any; localId?: any } | string | Uint8Array
         ) => Observable<bool>,
         [PalletCorporateActionsCaId]
       >;
@@ -1162,7 +1163,7 @@ declare module '@polkadot/api-base/types/storage' {
       results: AugmentedQuery<
         ApiType,
         (
-          arg: PalletCorporateActionsCaId | { ticker?: any; localId?: any } | string | Uint8Array
+          arg: PalletCorporateActionsCaId | { assetId?: any; localId?: any } | string | Uint8Array
         ) => Observable<Vec<u128>>,
         [PalletCorporateActionsCaId]
       >;
@@ -1175,7 +1176,7 @@ declare module '@polkadot/api-base/types/storage' {
       timeRanges: AugmentedQuery<
         ApiType,
         (
-          arg: PalletCorporateActionsCaId | { ticker?: any; localId?: any } | string | Uint8Array
+          arg: PalletCorporateActionsCaId | { assetId?: any; localId?: any } | string | Uint8Array
         ) => Observable<Option<PalletCorporateActionsBallotBallotTimeRange>>,
         [PalletCorporateActionsCaId]
       >;
@@ -1190,7 +1191,7 @@ declare module '@polkadot/api-base/types/storage' {
       votes: AugmentedQuery<
         ApiType,
         (
-          arg1: PalletCorporateActionsCaId | { ticker?: any; localId?: any } | string | Uint8Array,
+          arg1: PalletCorporateActionsCaId | { assetId?: any; localId?: any } | string | Uint8Array,
           arg2: PolymeshPrimitivesIdentityId | string | Uint8Array
         ) => Observable<Vec<PalletCorporateActionsBallotBallotVote>>,
         [PalletCorporateActionsCaId, PolymeshPrimitivesIdentityId]
@@ -1198,56 +1199,56 @@ declare module '@polkadot/api-base/types/storage' {
     };
     externalAgents: {
       /**
-       * Maps an agent (`IdentityId`) to all all `Ticker`s they belong to, if any.
+       * Maps an agent (`IdentityId`) to all assets they belong to, if any.
        **/
       agentOf: AugmentedQuery<
         ApiType,
         (
           arg1: PolymeshPrimitivesIdentityId | string | Uint8Array,
-          arg2: PolymeshPrimitivesTicker | string | Uint8Array
+          arg2: U8aFixed | string | Uint8Array
         ) => Observable<Null>,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker]
+        [PolymeshPrimitivesIdentityId, U8aFixed]
       >;
       /**
-       * The next per-`Ticker` AG ID in the sequence.
+       * The next per-asset AG ID in the sequence.
        *
-       * The full ID is defined as a combination of `Ticker` and a number in this sequence,
+       * The full ID is defined as a combination of `AssetID` and a number in this sequence,
        * which starts from 1, rather than 0.
        **/
       agIdSequence: AugmentedQuery<
         ApiType,
-        (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<u32>,
-        [PolymeshPrimitivesTicker]
+        (arg: U8aFixed | string | Uint8Array) => Observable<u32>,
+        [U8aFixed]
       >;
       /**
-       * Maps agents (`IdentityId`) for a `Ticker` to what AG they belong to, if any.
+       * Maps agents (`IdentityId`) for an `AssetID` to what AG they belong to, if any.
        **/
       groupOfAgent: AugmentedQuery<
         ApiType,
         (
-          arg1: PolymeshPrimitivesTicker | string | Uint8Array,
+          arg1: U8aFixed | string | Uint8Array,
           arg2: PolymeshPrimitivesIdentityId | string | Uint8Array
         ) => Observable<Option<PolymeshPrimitivesAgentAgentGroup>>,
-        [PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId]
+        [U8aFixed, PolymeshPrimitivesIdentityId]
       >;
       /**
-       * For custom AGs of a `Ticker`, maps to what permissions an agent in that AG would have.
+       * For custom AGs of an `AssetID`, maps to what permissions an agent in that AG would have.
        **/
       groupPermissions: AugmentedQuery<
         ApiType,
         (
-          arg1: PolymeshPrimitivesTicker | string | Uint8Array,
+          arg1: U8aFixed | string | Uint8Array,
           arg2: u32 | AnyNumber | Uint8Array
         ) => Observable<Option<PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions>>,
-        [PolymeshPrimitivesTicker, u32]
+        [U8aFixed, u32]
       >;
       /**
-       * Maps a `Ticker` to the number of `Full` agents for it.
+       * Maps an `AssetID` to the number of `Full` agents for it.
        **/
       numFullAgents: AugmentedQuery<
         ApiType,
-        (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<u32>,
-        [PolymeshPrimitivesTicker]
+        (arg: U8aFixed | string | Uint8Array) => Observable<u32>,
+        [U8aFixed]
       >;
     };
     grandpa: {
@@ -1681,6 +1682,14 @@ declare module '@polkadot/api-base/types/storage' {
         [u64]
       >;
       /**
+       * The collection id corresponding to each asset.
+       **/
+      collectionAsset: AugmentedQuery<
+        ApiType,
+        (arg: U8aFixed | string | Uint8Array) => Observable<u64>,
+        [U8aFixed]
+      >;
+      /**
        * All mandatory metadata keys for a given collection.
        **/
       collectionKeys: AugmentedQuery<
@@ -1689,14 +1698,6 @@ declare module '@polkadot/api-base/types/storage' {
           arg: u64 | AnyNumber | Uint8Array
         ) => Observable<BTreeSet<PolymeshPrimitivesAssetMetadataAssetMetadataKey>>,
         [u64]
-      >;
-      /**
-       * The collection id corresponding to each ticker.
-       **/
-      collectionTicker: AugmentedQuery<
-        ApiType,
-        (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<u64>,
-        [PolymeshPrimitivesTicker]
       >;
       /**
        * The last `NFTCollectionId` used for a collection.
@@ -1744,18 +1745,18 @@ declare module '@polkadot/api-base/types/storage' {
       nftOwner: AugmentedQuery<
         ApiType,
         (
-          arg1: PolymeshPrimitivesTicker | string | Uint8Array,
+          arg1: U8aFixed | string | Uint8Array,
           arg2: u64 | AnyNumber | Uint8Array
         ) => Observable<Option<PolymeshPrimitivesIdentityIdPortfolioId>>,
-        [PolymeshPrimitivesTicker, u64]
+        [U8aFixed, u64]
       >;
       /**
        * The total number of NFTs in a collection
        **/
       nfTsInCollection: AugmentedQuery<
         ApiType,
-        (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<u64>,
-        [PolymeshPrimitivesTicker]
+        (arg: U8aFixed | string | Uint8Array) => Observable<u64>,
+        [U8aFixed]
       >;
       /**
        * The total number of NFTs per identity.
@@ -1763,10 +1764,10 @@ declare module '@polkadot/api-base/types/storage' {
       numberOfNFTs: AugmentedQuery<
         ApiType,
         (
-          arg1: PolymeshPrimitivesTicker | string | Uint8Array,
+          arg1: U8aFixed | string | Uint8Array,
           arg2: PolymeshPrimitivesIdentityId | string | Uint8Array
         ) => Observable<u64>,
-        [PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId]
+        [U8aFixed, PolymeshPrimitivesIdentityId]
       >;
       /**
        * Storage version.
@@ -2085,9 +2086,9 @@ declare module '@polkadot/api-base/types/storage' {
             | { did?: any; kind?: any }
             | string
             | Uint8Array,
-          arg2: PolymeshPrimitivesTicker | string | Uint8Array
+          arg2: U8aFixed | string | Uint8Array
         ) => Observable<u128>,
-        [PolymeshPrimitivesIdentityIdPortfolioId, PolymeshPrimitivesTicker]
+        [PolymeshPrimitivesIdentityIdPortfolioId, U8aFixed]
       >;
       /**
        * How many assets with non-zero balance this portfolio contains.
@@ -2129,9 +2130,9 @@ declare module '@polkadot/api-base/types/storage' {
             | { did?: any; kind?: any }
             | string
             | Uint8Array,
-          arg2: PolymeshPrimitivesTicker | string | Uint8Array
+          arg2: U8aFixed | string | Uint8Array
         ) => Observable<u128>,
-        [PolymeshPrimitivesIdentityIdPortfolioId, PolymeshPrimitivesTicker]
+        [PolymeshPrimitivesIdentityIdPortfolioId, U8aFixed]
       >;
       /**
        * All locked nft for a given portfolio.
@@ -2145,10 +2146,10 @@ declare module '@polkadot/api-base/types/storage' {
             | string
             | Uint8Array,
           arg2:
-            | ITuple<[PolymeshPrimitivesTicker, u64]>
-            | [PolymeshPrimitivesTicker | string | Uint8Array, u64 | AnyNumber | Uint8Array]
+            | ITuple<[U8aFixed, u64]>
+            | [U8aFixed | string | Uint8Array, u64 | AnyNumber | Uint8Array]
         ) => Observable<bool>,
-        [PolymeshPrimitivesIdentityIdPortfolioId, ITuple<[PolymeshPrimitivesTicker, u64]>]
+        [PolymeshPrimitivesIdentityIdPortfolioId, ITuple<[U8aFixed, u64]>]
       >;
       /**
        * The nft associated to the portfolio.
@@ -2162,10 +2163,10 @@ declare module '@polkadot/api-base/types/storage' {
             | string
             | Uint8Array,
           arg2:
-            | ITuple<[PolymeshPrimitivesTicker, u64]>
-            | [PolymeshPrimitivesTicker | string | Uint8Array, u64 | AnyNumber | Uint8Array]
+            | ITuple<[U8aFixed, u64]>
+            | [U8aFixed | string | Uint8Array, u64 | AnyNumber | Uint8Array]
         ) => Observable<bool>,
-        [PolymeshPrimitivesIdentityIdPortfolioId, ITuple<[PolymeshPrimitivesTicker, u64]>]
+        [PolymeshPrimitivesIdentityIdPortfolioId, ITuple<[U8aFixed, u64]>]
       >;
       /**
        * The set of existing portfolios with their names. If a certain pair of a DID and
@@ -2198,7 +2199,7 @@ declare module '@polkadot/api-base/types/storage' {
         [PolymeshPrimitivesIdentityId, PolymeshPrimitivesIdentityIdPortfolioId]
       >;
       /**
-       * All portfolios that don't need to affirm the receivement of a given ticker.
+       * All portfolios that don't need to affirm the receivement of a given [`AssetID`].
        **/
       preApprovedPortfolios: AugmentedQuery<
         ApiType,
@@ -2208,9 +2209,9 @@ declare module '@polkadot/api-base/types/storage' {
             | { did?: any; kind?: any }
             | string
             | Uint8Array,
-          arg2: PolymeshPrimitivesTicker | string | Uint8Array
+          arg2: U8aFixed | string | Uint8Array
         ) => Observable<bool>,
-        [PolymeshPrimitivesIdentityIdPortfolioId, PolymeshPrimitivesTicker]
+        [PolymeshPrimitivesIdentityIdPortfolioId, U8aFixed]
       >;
       /**
        * Storage version.
@@ -2530,28 +2531,28 @@ declare module '@polkadot/api-base/types/storage' {
         [PolymeshPrimitivesIdentityId, u64]
       >;
       /**
-       * Venues that are allowed to create instructions involving a particular ticker. Only used if filtering is enabled.
-       * (ticker, venue_id) -> allowed
+       * Venues that are allowed to create instructions involving a particular asset. Only used if filtering is enabled.
+       * ([`AssetID`], venue_id) -> allowed
        **/
       venueAllowList: AugmentedQuery<
         ApiType,
         (
-          arg1: PolymeshPrimitivesTicker | string | Uint8Array,
+          arg1: U8aFixed | string | Uint8Array,
           arg2: u64 | AnyNumber | Uint8Array
         ) => Observable<bool>,
-        [PolymeshPrimitivesTicker, u64]
+        [U8aFixed, u64]
       >;
       /**
        * Number of venues in the system (It's one more than the actual number)
        **/
       venueCounter: AugmentedQuery<ApiType, () => Observable<u64>, []>;
       /**
-       * Tracks if a token has enabled filtering venues that can create instructions involving their token. Ticker -> filtering_enabled
+       * Tracks if a token has enabled filtering venues that can create instructions involving their token. AssetID -> filtering_enabled
        **/
       venueFiltering: AugmentedQuery<
         ApiType,
-        (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<bool>,
-        [PolymeshPrimitivesTicker]
+        (arg: U8aFixed | string | Uint8Array) => Observable<bool>,
+        [U8aFixed]
       >;
       /**
        * Info about a venue. venue_id -> venue
@@ -2973,14 +2974,14 @@ declare module '@polkadot/api-base/types/storage' {
     };
     statistics: {
       /**
-       * Active stats for a ticker/company.  There should be a max limit on the number of active stats for a ticker/company.
+       * Maps a set of [`StatType`] for each [`AssetID`].
        **/
       activeAssetStats: AugmentedQuery<
         ApiType,
         (
-          arg: PolymeshPrimitivesStatisticsAssetScope | { Ticker: any } | string | Uint8Array
+          arg: U8aFixed | string | Uint8Array
         ) => Observable<BTreeSet<PolymeshPrimitivesStatisticsStatType>>,
-        [PolymeshPrimitivesStatisticsAssetScope]
+        [U8aFixed]
       >;
       /**
        * Asset stats.
@@ -2990,7 +2991,7 @@ declare module '@polkadot/api-base/types/storage' {
         (
           arg1:
             | PolymeshPrimitivesStatisticsStat1stKey
-            | { asset?: any; statType?: any }
+            | { assetId?: any; statType?: any }
             | string
             | Uint8Array,
           arg2:
@@ -3003,14 +3004,14 @@ declare module '@polkadot/api-base/types/storage' {
         [PolymeshPrimitivesStatisticsStat1stKey, PolymeshPrimitivesStatisticsStat2ndKey]
       >;
       /**
-       * Asset transfer compliance for a ticker (AssetScope -> AssetTransferCompliance)
+       * The [`AssetTransferCompliance`] for each [`AssetID`].
        **/
       assetTransferCompliances: AugmentedQuery<
         ApiType,
         (
-          arg: PolymeshPrimitivesStatisticsAssetScope | { Ticker: any } | string | Uint8Array
+          arg: U8aFixed | string | Uint8Array
         ) => Observable<PolymeshPrimitivesTransferComplianceAssetTransferCompliance>,
-        [PolymeshPrimitivesStatisticsAssetScope]
+        [U8aFixed]
       >;
       /**
        * Storage migration version.
@@ -3024,7 +3025,7 @@ declare module '@polkadot/api-base/types/storage' {
         (
           arg1:
             | PolymeshPrimitivesTransferComplianceTransferConditionExemptKey
-            | { asset?: any; op?: any; claimType?: any }
+            | { assetId?: any; op?: any; claimType?: any }
             | string
             | Uint8Array,
           arg2: PolymeshPrimitivesIdentityId | string | Uint8Array
@@ -3041,32 +3042,32 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       fundraiserCount: AugmentedQuery<
         ApiType,
-        (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<u64>,
-        [PolymeshPrimitivesTicker]
+        (arg: U8aFixed | string | Uint8Array) => Observable<u64>,
+        [U8aFixed]
       >;
       /**
        * Name for the Fundraiser. Only used offchain.
-       * (ticker, fundraiser_id) -> Fundraiser name
+       * (AssetID, fundraiser_id) -> Fundraiser name
        **/
       fundraiserNames: AugmentedQuery<
         ApiType,
         (
-          arg1: PolymeshPrimitivesTicker | string | Uint8Array,
+          arg1: U8aFixed | string | Uint8Array,
           arg2: u64 | AnyNumber | Uint8Array
         ) => Observable<Option<Bytes>>,
-        [PolymeshPrimitivesTicker, u64]
+        [U8aFixed, u64]
       >;
       /**
        * All fundraisers that are currently running.
-       * (ticker, fundraiser_id) -> Fundraiser
+       * (AssetID, fundraiser_id) -> Fundraiser
        **/
       fundraisers: AugmentedQuery<
         ApiType,
         (
-          arg1: PolymeshPrimitivesTicker | string | Uint8Array,
+          arg1: U8aFixed | string | Uint8Array,
           arg2: u64 | AnyNumber | Uint8Array
         ) => Observable<Option<PalletStoFundraiser>>,
-        [PolymeshPrimitivesTicker, u64]
+        [U8aFixed, u64]
       >;
     };
     sudo: {

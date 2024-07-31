@@ -76,7 +76,6 @@ import type {
   PolymeshPrimitivesSettlementReceiptMetadata,
   PolymeshPrimitivesSettlementSettlementType,
   PolymeshPrimitivesSettlementVenueType,
-  PolymeshPrimitivesStatisticsAssetScope,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesStatisticsStatUpdate,
   PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
@@ -94,19 +93,19 @@ declare module '@polkadot/api-base/types/events' {
     asset: {
       /**
        * An asset has been added to the list of pre aprroved receivement (valid for all identities).
-       * Parameters: [`Ticker`] of the pre approved asset.
+       * Parameters: [`AssetID`] of the pre approved asset.
        **/
-      AssetAffirmationExemption: AugmentedEvent<ApiType, [PolymeshPrimitivesTicker]>;
+      AssetAffirmationExemption: AugmentedEvent<ApiType, [U8aFixed]>;
       /**
        * Emitted when Tokens were issued, redeemed or transferred.
-       * Contains the [`IdentityId`] of the receiver/issuer/redeemer, the [`Ticker`] for the token, the balance that was issued/transferred/redeemed,
+       * Contains the [`IdentityId`] of the receiver/issuer/redeemer, the [`AssetID`] for the token, the balance that was issued/transferred/redeemed,
        * the [`PortfolioId`] of the source, the [`PortfolioId`] of the destination and the [`PortfolioUpdateReason`].
        **/
       AssetBalanceUpdated: AugmentedEvent<
         ApiType,
         [
           PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesTicker,
+          U8aFixed,
           u128,
           Option<PolymeshPrimitivesIdentityIdPortfolioId>,
           Option<PolymeshPrimitivesIdentityIdPortfolioId>,
@@ -115,13 +114,13 @@ declare module '@polkadot/api-base/types/events' {
       >;
       /**
        * Event for creation of the asset.
-       * caller DID/ owner DID, ticker, divisibility, asset type, beneficiary DID, asset name, identifiers, funding round
+       * caller DID/ owner DID, AssetID, divisibility, asset type, beneficiary DID, asset name, identifiers, funding round
        **/
       AssetCreated: AugmentedEvent<
         ApiType,
         [
           PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesTicker,
+          U8aFixed,
           bool,
           PolymeshPrimitivesAssetAssetType,
           PolymeshPrimitivesIdentityId,
@@ -132,80 +131,58 @@ declare module '@polkadot/api-base/types/events' {
       >;
       /**
        * An event emitted when an asset is frozen.
-       * Parameter: caller DID, ticker.
+       * Parameter: caller DID, AssetID.
        **/
-      AssetFrozen: AugmentedEvent<
-        ApiType,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker]
-      >;
+      AssetFrozen: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, U8aFixed]>;
       /**
        * An identity has added mandatory mediators to an asset.
-       * Parameters: [`IdentityId`] of caller, [`Ticker`] of the asset, the identity of all mediators added.
+       * Parameters: [`IdentityId`] of caller, [`AssetID`] of the asset, the identity of all mediators added.
        **/
       AssetMediatorsAdded: AugmentedEvent<
         ApiType,
-        [
-          PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesTicker,
-          BTreeSet<PolymeshPrimitivesIdentityId>
-        ]
+        [PolymeshPrimitivesIdentityId, U8aFixed, BTreeSet<PolymeshPrimitivesIdentityId>]
       >;
       /**
        * An identity has removed mediators from an asset.
-       * Parameters: [`IdentityId`] of caller, [`Ticker`] of the asset, the identity of all mediators removed.
+       * Parameters: [`IdentityId`] of caller, [`AssetID`] of the asset, the identity of all mediators removed.
        **/
       AssetMediatorsRemoved: AugmentedEvent<
         ApiType,
-        [
-          PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesTicker,
-          BTreeSet<PolymeshPrimitivesIdentityId>
-        ]
+        [PolymeshPrimitivesIdentityId, U8aFixed, BTreeSet<PolymeshPrimitivesIdentityId>]
       >;
       /**
        * Emit when token ownership is transferred.
-       * caller DID / token ownership transferred to DID, ticker, from
+       * caller DID / token ownership transferred to DID, AssetID, from
        **/
       AssetOwnershipTransferred: AugmentedEvent<
         ApiType,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId]
+        [PolymeshPrimitivesIdentityId, U8aFixed, PolymeshPrimitivesIdentityId]
       >;
       /**
        * An event emitted when a token is renamed.
-       * Parameters: caller DID, ticker, new token name.
+       * Parameters: caller DID, AssetID, new token name.
        **/
-      AssetRenamed: AugmentedEvent<
-        ApiType,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, Bytes]
-      >;
+      AssetRenamed: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, U8aFixed, Bytes]>;
       /**
        * An event emitted when the type of an asset changed.
-       * Parameters: caller DID, ticker, new token type.
+       * Parameters: caller DID, AssetID, new token type.
        **/
       AssetTypeChanged: AugmentedEvent<
         ApiType,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, PolymeshPrimitivesAssetAssetType]
+        [PolymeshPrimitivesIdentityId, U8aFixed, PolymeshPrimitivesAssetAssetType]
       >;
       /**
        * An event emitted when an asset is unfrozen.
-       * Parameter: caller DID, ticker.
+       * Parameter: caller DID, AssetID.
        **/
-      AssetUnfrozen: AugmentedEvent<
-        ApiType,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker]
-      >;
+      AssetUnfrozen: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, U8aFixed]>;
       /**
        * Event for when a forced transfer takes place.
-       * caller DID/ controller DID, ticker, Portfolio of token holder, value.
+       * caller DID/ controller DID, ExtensionRemoved, Portfolio of token holder, value.
        **/
       ControllerTransfer: AugmentedEvent<
         ApiType,
-        [
-          PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesTicker,
-          PolymeshPrimitivesIdentityIdPortfolioId,
-          u128
-        ]
+        [PolymeshPrimitivesIdentityId, U8aFixed, PolymeshPrimitivesIdentityIdPortfolioId, u128]
       >;
       /**
        * A custom asset type already exists on-chain.
@@ -222,87 +199,54 @@ declare module '@polkadot/api-base/types/events' {
       >;
       /**
        * Event for change in divisibility.
-       * caller DID, ticker, divisibility
+       * caller DID, AssetID, divisibility
        **/
-      DivisibilityChanged: AugmentedEvent<
-        ApiType,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, bool]
-      >;
+      DivisibilityChanged: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, U8aFixed, bool]>;
       /**
        * A new document attached to an asset
        **/
       DocumentAdded: AugmentedEvent<
         ApiType,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, u32, PolymeshPrimitivesDocument]
+        [PolymeshPrimitivesIdentityId, U8aFixed, u32, PolymeshPrimitivesDocument]
       >;
       /**
        * A document removed from an asset
        **/
-      DocumentRemoved: AugmentedEvent<
-        ApiType,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, u32]
-      >;
+      DocumentRemoved: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, U8aFixed, u32]>;
       /**
-       * A extension got removed.
-       * caller DID, ticker, AccountId
+       * An event carrying the name of the current funding round of an asset.
+       * Parameters: caller DID, AssetID, funding round name.
        **/
-      ExtensionRemoved: AugmentedEvent<
-        ApiType,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, AccountId32]
-      >;
-      /**
-       * An event carrying the name of the current funding round of a ticker.
-       * Parameters: caller DID, ticker, funding round name.
-       **/
-      FundingRoundSet: AugmentedEvent<
-        ApiType,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, Bytes]
-      >;
+      FundingRoundSet: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, U8aFixed, Bytes]>;
       /**
        * Event emitted when any token identifiers are updated.
-       * caller DID, ticker, a vector of (identifier type, identifier value)
+       * caller DID, AssetID, a vector of (identifier type, identifier value)
        **/
       IdentifiersUpdated: AugmentedEvent<
         ApiType,
-        [
-          PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesTicker,
-          Vec<PolymeshPrimitivesAssetIdentifier>
-        ]
+        [PolymeshPrimitivesIdentityId, U8aFixed, Vec<PolymeshPrimitivesAssetIdentifier>]
       >;
       /**
-       * is_issuable() output
-       * ticker, return value (true if issuable)
-       **/
-      IsIssuable: AugmentedEvent<ApiType, [PolymeshPrimitivesTicker, bool]>;
-      /**
        * An event emitted when a local metadata key has been removed.
-       * Parameters: caller ticker, Local type name
+       * Parameters: caller AssetID, Local type name
        **/
       LocalMetadataKeyDeleted: AugmentedEvent<
         ApiType,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, u64]
+        [PolymeshPrimitivesIdentityId, U8aFixed, u64]
       >;
       /**
        * An event emitted when a local metadata value has been removed.
-       * Parameters: caller ticker, Local type name
+       * Parameters: caller AssetID, Local type name
        **/
       MetadataValueDeleted: AugmentedEvent<
         ApiType,
-        [
-          PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesTicker,
-          PolymeshPrimitivesAssetMetadataAssetMetadataKey
-        ]
+        [PolymeshPrimitivesIdentityId, U8aFixed, PolymeshPrimitivesAssetMetadataAssetMetadataKey]
       >;
       /**
        * An identity has added an asset to the list of pre aprroved receivement.
-       * Parameters: [`IdentityId`] of caller, [`Ticker`] of the pre approved asset.
+       * Parameters: [`IdentityId`] of caller, [`AssetID`] of the pre approved asset.
        **/
-      PreApprovedAsset: AugmentedEvent<
-        ApiType,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker]
-      >;
+      PreApprovedAsset: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, U8aFixed]>;
       /**
        * Register asset metadata global type.
        * (Global type name, Global type key, type specs)
@@ -313,13 +257,13 @@ declare module '@polkadot/api-base/types/events' {
       >;
       /**
        * Register asset metadata local type.
-       * (Caller DID, ticker, Local type name, Local type key, type specs)
+       * (Caller DID, AssetID, Local type name, Local type key, type specs)
        **/
       RegisterAssetMetadataLocalType: AugmentedEvent<
         ApiType,
         [
           PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesTicker,
+          U8aFixed,
           Bytes,
           u64,
           PolymeshPrimitivesAssetMetadataAssetMetadataSpec
@@ -327,41 +271,46 @@ declare module '@polkadot/api-base/types/events' {
       >;
       /**
        * An asset has been removed from the list of pre aprroved receivement (valid for all identities).
-       * Parameters: [`Ticker`] of the asset.
+       * Parameters: [`AssetID`] of the asset.
        **/
-      RemoveAssetAffirmationExemption: AugmentedEvent<ApiType, [PolymeshPrimitivesTicker]>;
+      RemoveAssetAffirmationExemption: AugmentedEvent<ApiType, [U8aFixed]>;
       /**
        * An identity has removed an asset to the list of pre aprroved receivement.
-       * Parameters: [`IdentityId`] of caller, [`Ticker`] of the asset.
+       * Parameters: [`IdentityId`] of caller, [`AssetID`] of the asset.
        **/
-      RemovePreApprovedAsset: AugmentedEvent<
-        ApiType,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker]
-      >;
+      RemovePreApprovedAsset: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, U8aFixed]>;
       /**
        * Set asset metadata value.
-       * (Caller DID, ticker, metadata value, optional value details)
+       * (Caller DID, AssetID, metadata value, optional value details)
        **/
       SetAssetMetadataValue: AugmentedEvent<
         ApiType,
         [
           PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesTicker,
+          U8aFixed,
           Bytes,
           Option<PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail>
         ]
       >;
       /**
        * Set asset metadata value details (expire, lock status).
-       * (Caller DID, ticker, value details)
+       * (Caller DID, AssetID, value details)
        **/
       SetAssetMetadataValueDetails: AugmentedEvent<
         ApiType,
         [
           PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesTicker,
+          U8aFixed,
           PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail
         ]
+      >;
+      /**
+       * An identity has linked a ticker to an asset.
+       * Parameters: [`IdentityId`] of caller, [`Ticker`] of the asset, the asset identifier [`AssetID`].
+       **/
+      TickerLinkedToAsset: AugmentedEvent<
+        ApiType,
+        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, U8aFixed]
       >;
       /**
        * Emit when ticker is registered.
@@ -378,21 +327,6 @@ declare module '@polkadot/api-base/types/events' {
       TickerTransferred: AugmentedEvent<
         ApiType,
         [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId]
-      >;
-      /**
-       * An additional event to Transfer; emitted when `transfer_with_data` is called.
-       * caller DID , ticker, from DID, to DID, value, data
-       **/
-      TransferWithData: AugmentedEvent<
-        ApiType,
-        [
-          PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesTicker,
-          PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesIdentityId,
-          u128,
-          Bytes
-        ]
       >;
     };
     balances: {
@@ -637,14 +571,14 @@ declare module '@polkadot/api-base/types/events' {
       /**
        * A checkpoint was created.
        *
-       * (caller DID, ticker, checkpoint ID, total supply, checkpoint timestamp)
+       * (caller DID, AssetID, checkpoint ID, total supply, checkpoint timestamp)
        **/
       CheckpointCreated: AugmentedEvent<
         ApiType,
-        [Option<PolymeshPrimitivesIdentityId>, PolymeshPrimitivesTicker, u64, u128, u64]
+        [Option<PolymeshPrimitivesIdentityId>, U8aFixed, u64, u128, u64]
       >;
       /**
-       * The maximum complexity for an arbitrary ticker's schedule set was changed.
+       * The maximum complexity for an arbitrary asset's schedule set was changed.
        *
        * (GC DID, the new maximum)
        **/
@@ -655,13 +589,13 @@ declare module '@polkadot/api-base/types/events' {
       /**
        * A checkpoint schedule was created.
        *
-       * (caller DID, ticker, schedule id, schedule)
+       * (caller DID, AssetID, schedule id, schedule)
        **/
       ScheduleCreated: AugmentedEvent<
         ApiType,
         [
           PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesTicker,
+          U8aFixed,
           u64,
           PolymeshCommonUtilitiesCheckpointScheduleCheckpoints
         ]
@@ -669,13 +603,13 @@ declare module '@polkadot/api-base/types/events' {
       /**
        * A checkpoint schedule was removed.
        *
-       * (caller DID, ticker, schedule id, schedule)
+       * (caller DID, AssetID, schedule id, schedule)
        **/
       ScheduleRemoved: AugmentedEvent<
         ApiType,
         [
           PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesTicker,
+          U8aFixed,
           u64,
           PolymeshCommonUtilitiesCheckpointScheduleCheckpoints
         ]
@@ -733,92 +667,79 @@ declare module '@polkadot/api-base/types/events' {
     };
     complianceManager: {
       /**
-       * Emitted when an asset compliance for a given ticker gets paused.
-       * (caller DID, Ticker).
+       * Emitted when an asset compliance for a given asset_id gets paused.
+       * (caller DID, AssetID).
        **/
-      AssetCompliancePaused: AugmentedEvent<
-        ApiType,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker]
-      >;
+      AssetCompliancePaused: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, U8aFixed]>;
       /**
        * Emitted when an asset compliance is replaced.
-       * Parameters: caller DID, ticker, new asset compliance.
+       * Parameters: caller DID, AssetID, new asset compliance.
        **/
       AssetComplianceReplaced: AugmentedEvent<
         ApiType,
         [
           PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesTicker,
+          U8aFixed,
           Vec<PolymeshPrimitivesComplianceManagerComplianceRequirement>
         ]
       >;
       /**
-       * Emitted when an asset compliance of a ticker is reset.
-       * (caller DID, Ticker).
+       * Emitted when an asset compliance of a asset_id is reset.
+       * (caller DID, AssetID).
        **/
-      AssetComplianceReset: AugmentedEvent<
-        ApiType,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker]
-      >;
+      AssetComplianceReset: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, U8aFixed]>;
       /**
-       * Emitted when an asset compliance for a given ticker gets resume.
-       * (caller DID, Ticker).
+       * Emitted when an asset compliance for a given asset_id gets resume.
+       * (caller DID, AssetID).
        **/
-      AssetComplianceResumed: AugmentedEvent<
-        ApiType,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker]
-      >;
+      AssetComplianceResumed: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, U8aFixed]>;
       /**
        * Emitted when compliance requirement get modified/change.
-       * (caller DID, Ticker, ComplianceRequirement).
+       * (caller DID, AssetID, ComplianceRequirement).
        **/
       ComplianceRequirementChanged: AugmentedEvent<
         ApiType,
         [
           PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesTicker,
+          U8aFixed,
           PolymeshPrimitivesComplianceManagerComplianceRequirement
         ]
       >;
       /**
        * Emitted when new compliance requirement is created.
-       * (caller DID, Ticker, ComplianceRequirement).
+       * (caller DID, AssetID, ComplianceRequirement).
        **/
       ComplianceRequirementCreated: AugmentedEvent<
         ApiType,
         [
           PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesTicker,
+          U8aFixed,
           PolymeshPrimitivesComplianceManagerComplianceRequirement
         ]
       >;
       /**
        * Emitted when a compliance requirement is removed.
-       * (caller DID, Ticker, requirement_id).
+       * (caller DID, AssetID, requirement_id).
        **/
       ComplianceRequirementRemoved: AugmentedEvent<
         ApiType,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, u32]
+        [PolymeshPrimitivesIdentityId, U8aFixed, u32]
       >;
       /**
-       * Emitted when default claim issuer list for a given ticker gets added.
-       * (caller DID, Ticker, Added TrustedIssuer).
+       * Emitted when default claim issuer list for a given asset_id gets added.
+       * (caller DID, AssetID, Added TrustedIssuer).
        **/
       TrustedDefaultClaimIssuerAdded: AugmentedEvent<
         ApiType,
-        [
-          PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesTicker,
-          PolymeshPrimitivesConditionTrustedIssuer
-        ]
+        [PolymeshPrimitivesIdentityId, U8aFixed, PolymeshPrimitivesConditionTrustedIssuer]
       >;
       /**
-       * Emitted when default claim issuer list for a given ticker get removed.
-       * (caller DID, Ticker, Removed TrustedIssuer).
+       * Emitted when default claim issuer list for a given asset_id get removed.
+       * (caller DID, AssetID, Removed TrustedIssuer).
        **/
       TrustedDefaultClaimIssuerRemoved: AugmentedEvent<
         ApiType,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId]
+        [PolymeshPrimitivesIdentityId, U8aFixed, PolymeshPrimitivesIdentityId]
       >;
     };
     contracts: {
@@ -924,37 +845,28 @@ declare module '@polkadot/api-base/types/events' {
        **/
       CARemoved: AugmentedEvent<ApiType, [PolymeshPrimitivesEventOnly, PalletCorporateActionsCaId]>;
       /**
-       * The set of default `TargetIdentities` for a ticker changed.
-       * (Agent DID, Ticker, New TargetIdentities)
+       * The set of default `TargetIdentities` for the asset changed.
+       * (Agent DID, AssetID, New TargetIdentities)
        **/
       DefaultTargetIdentitiesChanged: AugmentedEvent<
         ApiType,
-        [
-          PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesTicker,
-          PalletCorporateActionsTargetIdentities
-        ]
+        [PolymeshPrimitivesIdentityId, U8aFixed, PalletCorporateActionsTargetIdentities]
       >;
       /**
-       * The default withholding tax for a ticker changed.
-       * (Agent DID, Ticker, New Tax).
+       * The default withholding tax for the asset changed.
+       * (Agent DID, AssetID, New Tax).
        **/
       DefaultWithholdingTaxChanged: AugmentedEvent<
         ApiType,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, Permill]
+        [PolymeshPrimitivesIdentityId, U8aFixed, Permill]
       >;
       /**
-       * The withholding tax specific to a DID for a ticker changed.
-       * (Agent DID, Ticker, Taxed DID, New Tax).
+       * The withholding tax specific to a DID for the asset changed.
+       * (Agent DID, AssetID, Taxed DID, New Tax).
        **/
       DidWithholdingTaxChanged: AugmentedEvent<
         ApiType,
-        [
-          PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesTicker,
-          PolymeshPrimitivesIdentityId,
-          Option<Permill>
-        ]
+        [PolymeshPrimitivesIdentityId, U8aFixed, PolymeshPrimitivesIdentityId, Option<Permill>]
       >;
       /**
        * The maximum length of `details` in bytes was changed.
@@ -1048,31 +960,31 @@ declare module '@polkadot/api-base/types/events' {
       /**
        * An agent was added.
        *
-       * (Caller/Agent DID, Agent's ticker, Agent's group)
+       * (Caller/Agent DID, Agent's AssetID, Agent's group)
        **/
       AgentAdded: AugmentedEvent<
         ApiType,
-        [PolymeshPrimitivesEventOnly, PolymeshPrimitivesTicker, PolymeshPrimitivesAgentAgentGroup]
+        [PolymeshPrimitivesEventOnly, U8aFixed, PolymeshPrimitivesAgentAgentGroup]
       >;
       /**
        * An agent was removed.
        *
-       * (Caller DID, Agent's ticker, Agent's DID)
+       * (Caller DID, Agent's AssetID, Agent's DID)
        **/
       AgentRemoved: AugmentedEvent<
         ApiType,
-        [PolymeshPrimitivesEventOnly, PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId]
+        [PolymeshPrimitivesEventOnly, U8aFixed, PolymeshPrimitivesIdentityId]
       >;
       /**
        * An agent's group was changed.
        *
-       * (Caller DID, Agent's ticker, Agent's DID, The new group of the agent)
+       * (Caller DID, Agent's AssetID, Agent's DID, The new group of the agent)
        **/
       GroupChanged: AugmentedEvent<
         ApiType,
         [
           PolymeshPrimitivesEventOnly,
-          PolymeshPrimitivesTicker,
+          U8aFixed,
           PolymeshPrimitivesIdentityId,
           PolymeshPrimitivesAgentAgentGroup
         ]
@@ -1080,13 +992,13 @@ declare module '@polkadot/api-base/types/events' {
       /**
        * An Agent Group was created.
        *
-       * (Caller DID, AG's ticker, AG's ID, AG's permissions)
+       * (Caller DID, AG's AssetID, AG's ID, AG's permissions)
        **/
       GroupCreated: AugmentedEvent<
         ApiType,
         [
           PolymeshPrimitivesEventOnly,
-          PolymeshPrimitivesTicker,
+          U8aFixed,
           u32,
           PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions
         ]
@@ -1094,13 +1006,13 @@ declare module '@polkadot/api-base/types/events' {
       /**
        * An Agent Group's permissions was updated.
        *
-       * (Caller DID, AG's ticker, AG's ID, AG's new permissions)
+       * (Caller DID, AG's AssetID, AG's ID, AG's new permissions)
        **/
       GroupPermissionsUpdated: AugmentedEvent<
         ApiType,
         [
           PolymeshPrimitivesEventOnly,
-          PolymeshPrimitivesTicker,
+          U8aFixed,
           u32,
           PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions
         ]
@@ -1459,10 +1371,7 @@ declare module '@polkadot/api-base/types/events' {
       /**
        * Emitted when a new nft collection is created.
        **/
-      NftCollectionCreated: AugmentedEvent<
-        ApiType,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, u64]
-      >;
+      NftCollectionCreated: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, U8aFixed, u64]>;
       /**
        * Emitted when NFTs were issued, redeemed or transferred.
        * Contains the [`IdentityId`] of the receiver/issuer/redeemer, the [`NFTs`], the [`PortfolioId`] of the source, the [`PortfolioId`]
@@ -1782,15 +1691,11 @@ declare module '@polkadot/api-base/types/events' {
        * # Parameters
        * * [`IdentityId`] of the caller.
        * * [`PortfolioId`] that will receive assets without explicit affirmation.
-       * * [`Ticker`] of the asset that has been exempt from explicit affirmation.
+       * * [`AssetID`] of the asset that has been exempt from explicit affirmation.
        **/
       PreApprovedPortfolio: AugmentedEvent<
         ApiType,
-        [
-          PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesIdentityIdPortfolioId,
-          PolymeshPrimitivesTicker
-        ]
+        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesIdentityIdPortfolioId, U8aFixed]
       >;
       /**
        * A portfolio has removed the approval of an asset.
@@ -1798,15 +1703,11 @@ declare module '@polkadot/api-base/types/events' {
        * # Parameters
        * * [`IdentityId`] of the caller.
        * * [`PortfolioId`] that had its pre approval revoked.
-       * * [`Ticker`] of the asset that had its pre approval revoked.
+       * * [`AssetID`] of the asset that had its pre approval revoked.
        **/
       RevokePreApprovedPortfolio: AugmentedEvent<
         ApiType,
-        [
-          PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesIdentityIdPortfolioId,
-          PolymeshPrimitivesTicker
-        ]
+        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesIdentityIdPortfolioId, U8aFixed]
       >;
       /**
        * All non-default portfolio numbers and names of a DID.
@@ -2063,26 +1964,17 @@ declare module '@polkadot/api-base/types/events' {
        **/
       VenueDetailsUpdated: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, u64, Bytes]>;
       /**
-       * Venue filtering has been enabled or disabled for a ticker (did, ticker, filtering_enabled)
+       * Venue filtering has been enabled or disabled for an asset (did, AssetID, filtering_enabled)
        **/
-      VenueFiltering: AugmentedEvent<
-        ApiType,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, bool]
-      >;
+      VenueFiltering: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, U8aFixed, bool]>;
       /**
-       * Venues added to allow list (did, ticker, vec<venue_id>)
+       * Venues added to allow list (did, AssetID, vec<venue_id>)
        **/
-      VenuesAllowed: AugmentedEvent<
-        ApiType,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, Vec<u64>]
-      >;
+      VenuesAllowed: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, U8aFixed, Vec<u64>]>;
       /**
-       * Venues added to block list (did, ticker, vec<venue_id>)
+       * Venues added to block list (did, AssetID, vec<venue_id>)
        **/
-      VenuesBlocked: AugmentedEvent<
-        ApiType,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, Vec<u64>]
-      >;
+      VenuesBlocked: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, U8aFixed, Vec<u64>]>;
       /**
        * An existing venue's signers has been updated (did, venue_id, signers, update_type)
        **/
@@ -2098,12 +1990,9 @@ declare module '@polkadot/api-base/types/events' {
         [PolymeshPrimitivesIdentityId, u64, PolymeshPrimitivesSettlementVenueType]
       >;
       /**
-       * Venue not part of the token's allow list (did, Ticker, venue_id)
+       * Venue not part of the token's allow list (did, AssetID, venue_id)
        **/
-      VenueUnauthorized: AugmentedEvent<
-        ApiType,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, u64]
-      >;
+      VenueUnauthorized: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, U8aFixed, u64]>;
     };
     staking: {
       /**
@@ -2241,13 +2130,13 @@ declare module '@polkadot/api-base/types/events' {
       /**
        * Asset stats updated.
        *
-       * (Caller DID, Asset, Stat type, Updates)
+       * (Caller DID, AssetID, Stat type, Updates)
        **/
       AssetStatsUpdated: AugmentedEvent<
         ApiType,
         [
           PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesStatisticsAssetScope,
+          U8aFixed,
           PolymeshPrimitivesStatisticsStatType,
           Vec<PolymeshPrimitivesStatisticsStatUpdate>
         ]
@@ -2255,41 +2144,33 @@ declare module '@polkadot/api-base/types/events' {
       /**
        * Set Transfer compliance rules for asset.
        *
-       * (Caller DID, Asset, Transfer conditions)
+       * (Caller DID, AssetID, Transfer conditions)
        **/
       SetAssetTransferCompliance: AugmentedEvent<
         ApiType,
         [
           PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesStatisticsAssetScope,
+          U8aFixed,
           Vec<PolymeshPrimitivesTransferComplianceTransferCondition>
         ]
       >;
       /**
        * Stat types added to asset.
        *
-       * (Caller DID, Asset, Stat types)
+       * (Caller DID, AssetID, Stat types)
        **/
       StatTypesAdded: AugmentedEvent<
         ApiType,
-        [
-          PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesStatisticsAssetScope,
-          Vec<PolymeshPrimitivesStatisticsStatType>
-        ]
+        [PolymeshPrimitivesIdentityId, U8aFixed, Vec<PolymeshPrimitivesStatisticsStatType>]
       >;
       /**
        * Stat types removed from asset.
        *
-       * (Caller DID, Asset, Stat types)
+       * (Caller DID, AssetID, Stat types)
        **/
       StatTypesRemoved: AugmentedEvent<
         ApiType,
-        [
-          PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesStatisticsAssetScope,
-          Vec<PolymeshPrimitivesStatisticsStatType>
-        ]
+        [PolymeshPrimitivesIdentityId, U8aFixed, Vec<PolymeshPrimitivesStatisticsStatType>]
       >;
       /**
        * Add `IdentityId`s exempt for transfer conditions matching exempt key.
@@ -2356,14 +2237,7 @@ declare module '@polkadot/api-base/types/events' {
        **/
       Invested: AugmentedEvent<
         ApiType,
-        [
-          PolymeshPrimitivesIdentityId,
-          u64,
-          PolymeshPrimitivesTicker,
-          PolymeshPrimitivesTicker,
-          u128,
-          u128
-        ]
+        [PolymeshPrimitivesIdentityId, u64, U8aFixed, U8aFixed, u128, u128]
       >;
     };
     sudo: {
