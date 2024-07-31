@@ -31,7 +31,6 @@ import { ErrorCode, EventIdentifier } from '@polymeshassociation/polymesh-sdk/ty
 import {
   bigNumberToU32,
   bigNumberToU64,
-  bytesToString,
   identityIdToString,
   instructionMemoToString,
   stringToIdentityId,
@@ -560,7 +559,7 @@ export function confidentialBurnProofToRaw(
 /**
  * @hidden
  */
-export function serializeAssetMoves(
+export function serializeConfidentialAssetMoves(
   from: ConfidentialAccount,
   to: ConfidentialAccount,
   proofs: ConfidentialLegProof[],
@@ -583,27 +582,4 @@ export function serializeAssetMoves(
   );
 
   return rawPalletConfidentialAssetConfidentialMoveFunds;
-}
-
-/**
- * @hidden
- */
-export function meshProofsToConfidentialLegProof(
-  rawProofs: BTreeMap<U8aFixed, Bytes>,
-  context: Context
-): ConfidentialLegProof[] {
-  const result: ReturnType<typeof meshProofsToConfidentialLegProof> = [];
-
-  /* istanbul ignore next: nested BTreeMap/BTreeSet is hard to mock */
-  for (const [rawAssetId, rawProof] of rawProofs.entries()) {
-    console.log(rawAssetId, rawProof);
-    const assetId = u8aToHex(rawAssetId).replace('0x', '');
-
-    console.log(assetId);
-    const asset = new ConfidentialAsset({ id: assetId }, context);
-
-    result.push({ asset, proof: bytesToString(rawProof) });
-  }
-
-  return result;
 }

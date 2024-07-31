@@ -1,7 +1,7 @@
 import { Context, PolymeshError } from '@polymeshassociation/polymesh-sdk/internal';
 import { ErrorCode } from '@polymeshassociation/polymesh-sdk/types';
 
-import { moveFunds, MoveFundsArgs, MoveFundsResolverResult } from '~/api/procedures/moveFunds';
+import { moveFunds } from '~/api/procedures/moveFunds';
 import {
   applyIncomingAssetBalance,
   applyIncomingConfidentialAssetBalances,
@@ -14,6 +14,7 @@ import {
   ConfidentialProcedureMethod,
   CreateConfidentialAccountParams,
   IncomingConfidentialAssetBalance,
+  MoveFundsArgs,
 } from '~/types';
 import { createConfidentialProcedureMethod } from '~/utils/internal';
 
@@ -105,5 +106,5 @@ export class ConfidentialAccounts {
   /**
    * Moves funds from one Confidential Account to another Confidential Account belonging to the same signing Identity
    */
-  public moveFunds: ConfidentialProcedureMethod<MoveFundsArgs, MoveFundsResolverResult>;
+  public moveFunds: ConfidentialProcedureMethod<MoveFundsArgs, void>;
 }

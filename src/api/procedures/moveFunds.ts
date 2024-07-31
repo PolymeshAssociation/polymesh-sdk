@@ -1,53 +1,18 @@
 import { PalletConfidentialAssetConfidentialMoveFunds } from '@polkadot/types/lookup';
-import { ISubmittableResult } from '@polkadot/types/types';
-import { Identity } from '@polymeshassociation/polymesh-sdk/api/entities/Identity';
 import { ErrorCode } from '@polymeshassociation/polymesh-sdk/types';
 import { TransactionSpec } from '@polymeshassociation/polymesh-sdk/types/internal';
-import { identityIdToString } from '@polymeshassociation/polymesh-sdk/utils/conversion';
-import { filterEventRecords } from '@polymeshassociation/polymesh-sdk/utils/internal';
 
 import { ConfidentialProcedure } from '~/base/ConfidentialProcedure';
-import { ConfidentialAccount, Context, PolymeshError } from '~/internal';
-import { ConfidentialLegProof, ConfidentialProcedureAuthorization, TxTags } from '~/types';
-import { ExtrinsicParams } from '~/types/internal';
+import { Context, PolymeshError } from '~/internal';
 import {
-  meshProofsToConfidentialLegProof,
-  meshPublicKeyToKey,
-  serializeAssetMoves,
-} from '~/utils/conversion';
-
-export type MoveFundsParams = {
-  from: ConfidentialAccount;
-  to: ConfidentialAccount;
-  proofs: ConfidentialLegProof[];
-};
-
-export type MoveFundsArgs = MoveFundsParams | MoveFundsParams[];
-
-export type MoveFundsResolverResult = {
-  callerDid: Identity;
-  from: ConfidentialAccount;
-  to: ConfidentialAccount;
-  proofs: ConfidentialLegProof[];
-}[];
-
-/**
- * @hidden
- */
-export const createMoveFundsResolver =
-  (context: Context) =>
-  (receipt: ISubmittableResult): MoveFundsResolverResult => {
-    const events = filterEventRecords(receipt, 'confidentialAsset', 'FundsMoved');
-
-    const result = events.map(({ data }) => ({
-      callerDid: new Identity({ did: identityIdToString(data[0]) }, context),
-      from: new ConfidentialAccount({ publicKey: meshPublicKeyToKey(data[1]) }, context),
-      to: new ConfidentialAccount({ publicKey: meshPublicKeyToKey(data[2]) }, context),
-      proofs: meshProofsToConfidentialLegProof(data[3], context),
-    }));
-
-    return result;
-  };
+  ConfidentialProcedureAuthorization,
+  MoveFundsArgs,
+  MoveFundsParams,
+  TxTags,
+} from '~/types';
+import { ExtrinsicParams } from '~/types/internal';
+import { serializeConfidentialAssetMoves } from '~/utils/conversion';
+import { asConfidentialAccount, asConfidentialAsset } from '~/utils/internal';
 
 /**
  * @hidden
@@ -58,15 +23,26 @@ export async function checkArgs(
 ): Promise<PalletConfidentialAssetConfidentialMoveFunds> {
   const { from, to, proofs } = args;
 
-  const [senderIdentity, receiverIdentity] = await Promise.all([
-    from.getIdentity(),
-    to.getIdentity(),
+  const sendingAccount = asConfidentialAccount(from, context);
+  const receivingAccount = asConfidentialAccount(to, context);
+
+  const [signingIdentity, senderIdentity, receiverIdentity] = await Promise.all([
+    context.getSigningIdentity(),
+    sendingAccount.getIdentity(),
+    receivingAccount.getIdentity(),
   ]);
 
-  if (!senderIdentity?.exists || !receiverIdentity?.exists) {
+  if (!senderIdentity?.exists() || !receiverIdentity?.exists()) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'The provided accounts must have identities associated with them',
+    });
+  }
+
+  if (!signingIdentity.isEqual(senderIdentity)) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Only the of the owner of the sender account can move funds',
     });
   }
 
@@ -77,20 +53,61 @@ export async function checkArgs(
     });
   }
 
-  return serializeAssetMoves(from, to, proofs, context);
+  const checkIsAssetFrozenPromises = proofs.map(({ asset }) => {
+    const confidentialAsset = asConfidentialAsset(asset, context);
+
+    return confidentialAsset.isFrozen();
+  });
+
+  const isFrozenResult = await Promise.all(checkIsAssetFrozenPromises);
+
+  if (isFrozenResult.some(v => v)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The asset is frozen',
+    });
+  }
+
+  const checkIsSenderAccountFrozenPromises = proofs.map(({ asset }) => {
+    const confidentialAsset = asConfidentialAsset(asset, context);
+
+    return confidentialAsset.isAccountFrozen(from);
+  });
+
+  const isSenderFrozen = await Promise.all(checkIsSenderAccountFrozenPromises);
+
+  if (isSenderFrozen.some(v => v)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The sender account is frozen for trading specified asset',
+    });
+  }
+
+  const checkIsReceiverAccountFrozenPromises = proofs.map(({ asset }) => {
+    const confidentialAsset = asConfidentialAsset(asset, context);
+
+    return confidentialAsset.isAccountFrozen(to);
+  });
+
+  const isReceiverFrozen = await Promise.all(checkIsReceiverAccountFrozenPromises);
+
+  if (isReceiverFrozen.some(v => v)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The receiver account is frozen for trading specified asset',
+    });
+  }
+
+  return serializeConfidentialAssetMoves(sendingAccount, receivingAccount, proofs, context);
 }
 
 /**
  * @hidden
  */
 export async function prepareMoveFunds(
-  this: ConfidentialProcedure<MoveFundsArgs, MoveFundsResolverResult>,
-  args: MoveFundsParams | MoveFundsParams[]
-): Promise<
-  TransactionSpec<MoveFundsResolverResult, ExtrinsicParams<'confidentialAsset', 'moveAssets'>>
-> {
-  const params: PalletConfidentialAssetConfidentialMoveFunds[] = [];
-
+  this: ConfidentialProcedure<MoveFundsArgs, void>,
+  args: MoveFundsArgs
+): Promise<TransactionSpec<void, ExtrinsicParams<'confidentialAsset', 'moveAssets'>>> {
   const {
     context: {
       polymeshApi: {
@@ -99,20 +116,13 @@ export async function prepareMoveFunds(
     },
     context,
   } = this;
-  if (Array.isArray(args)) {
-    const resolvedArgs = await Promise.all(args.map(arg => checkArgs(arg, context)));
 
-    params.push(...resolvedArgs);
-  } else {
-    const resolvedArgs = await checkArgs(args, context);
-
-    params.push(resolvedArgs);
-  }
+  const verifiedArgs = await Promise.all(args.map(arg => checkArgs(arg, context)));
 
   return {
     transaction: confidentialAsset.moveAssets,
-    args: [params],
-    resolver: createMoveFundsResolver(context),
+    args: [verifiedArgs],
+    resolver: undefined,
   };
 }
 
@@ -120,7 +130,7 @@ export async function prepareMoveFunds(
  * @hidden
  */
 export function getAuthorization(
-  this: ConfidentialProcedure<MoveFundsArgs, MoveFundsResolverResult>
+  this: ConfidentialProcedure<MoveFundsArgs, void>
 ): ConfidentialProcedureAuthorization {
   return {
     permissions: {
@@ -134,5 +144,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const moveFunds = (): ConfidentialProcedure<MoveFundsArgs, MoveFundsResolverResult> =>
+export const moveFunds = (): ConfidentialProcedure<MoveFundsArgs, void> =>
   new ConfidentialProcedure(prepareMoveFunds, getAuthorization);

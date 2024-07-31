@@ -1,5 +1,5 @@
 import { Identity } from '~/internal';
-import { ConfidentialAccount, ConfidentialAsset } from '~/types';
+import { ConfidentialAccount, ConfidentialAsset, ConfidentialLegProof } from '~/types';
 
 export * from '@polymeshassociation/polymesh-sdk/api/procedures/types';
 export interface ConfidentialTransactionLeg {
@@ -43,3 +43,11 @@ export interface AddConfidentialTransactionsParams {
 export interface FreezeConfidentialAccountAssetParams {
   confidentialAccount: ConfidentialAccount | string;
 }
+
+export interface MoveFundsParams {
+  from: string | ConfidentialAccount;
+  to: string | ConfidentialAccount;
+  proofs: ConfidentialLegProof[];
+}
+
+export interface MoveFundsArgs extends Array<MoveFundsParams> {}

@@ -1,4 +1,4 @@
-import { BTreeMap, BTreeSet, Bytes, U8aFixed, u16 } from '@polkadot/types';
+import { BTreeSet, Bytes, u16 } from '@polkadot/types';
 import {
   ConfidentialAssetsBurnConfidentialBurnProof,
   PalletConfidentialAssetAffirmParty,
@@ -54,12 +54,11 @@ import {
   meshConfidentialAssetTransactionIdToId,
   meshConfidentialTransactionDetailsToDetails,
   meshConfidentialTransactionStatusToStatus,
-  meshProofsToConfidentialLegProof,
   meshPublicKeyToKey,
   middlewareAssetHistoryToTransactionHistory,
   middlewareEventDetailsToEventIdentifier,
-  serializeAssetMoves,
   serializeConfidentialAssetId,
+  serializeConfidentialAssetMoves,
 } from '../conversion';
 
 describe('serializeConfidentialAssetId', () => {
@@ -767,7 +766,7 @@ describe('meshConfidentialDetailsToConfidentialDetails', () => {
   });
 });
 
-describe('serializeAssetMoves', () => {
+describe('serializeConfidentialAssetMoves', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -807,36 +806,17 @@ describe('serializeAssetMoves', () => {
         proofs: { [`0x0${assetId}`]: proof },
       } as unknown as PalletConfidentialAssetConfidentialAccount);
 
-    const result = serializeAssetMoves(account, account, [{ asset: assetId, proof }], context);
+    const result = serializeConfidentialAssetMoves(
+      account,
+      account,
+      [{ asset: assetId, proof }],
+      context
+    );
 
     expect(result).toEqual({
       from: mockAccountId,
       to: mockAccountId,
       proofs: { [`0x0${assetId}`]: proof },
     });
-  });
-});
-
-describe('meshProofsToConfidentialLegProof', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should convert meshProofs to ConfidentialLegProof[]', () => {
-    const context = dsMockUtils.getContextInstance();
-    const rawProofs = dsMockUtils.createMockBTreeMap() as unknown as BTreeMap<U8aFixed, Bytes>;
-    jest.spyOn(utilsInternalModule, 'assertElgamalPubKeyValid').mockImplementation();
-
-    const result = meshProofsToConfidentialLegProof(rawProofs, context);
-
-    expect(result).toEqual([]);
   });
 });

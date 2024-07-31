@@ -1,6 +1,6 @@
 import {
-  ConfidentialAssetsElgamalCipherText,
   PalletConfidentialAssetConfidentialAccount,
+  PolymeshHostFunctionsElgamalHostCipherText,
 } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import { U8aFixed } from '@polkadot/types-codec';
@@ -28,8 +28,8 @@ export const meshAccountDepositEventDataToIncomingAssetBalance = (
   data: [
     PalletConfidentialAssetConfidentialAccount,
     U8aFixed,
-    ConfidentialAssetsElgamalCipherText,
-    ConfidentialAssetsElgamalCipherText
+    PolymeshHostFunctionsElgamalHostCipherText,
+    PolymeshHostFunctionsElgamalHostCipherText
   ],
   context: Context
 ): IncomingConfidentialAssetBalance => {
