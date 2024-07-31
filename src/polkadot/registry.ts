@@ -34,7 +34,6 @@ import type {
   FrameSystemLimitsBlockWeights,
   FrameSystemLimitsWeightsPerClass,
   FrameSystemPhase,
-  PalletAssetAssetOwnershipRelation,
   PalletAssetCall,
   PalletAssetCheckpointCall,
   PalletAssetCheckpointError,
@@ -326,7 +325,6 @@ import type {
   PolymeshPrimitivesSettlementSettlementType,
   PolymeshPrimitivesSettlementVenue,
   PolymeshPrimitivesSettlementVenueType,
-  PolymeshPrimitivesStatisticsAssetScope,
   PolymeshPrimitivesStatisticsStat1stKey,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatClaim,
@@ -336,7 +334,6 @@ import type {
   PolymeshPrimitivesSubsetSubsetRestrictionDispatchableName,
   PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
   PolymeshPrimitivesSubsetSubsetRestrictionPortfolioId,
-  PolymeshPrimitivesSubsetSubsetRestrictionTicker,
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceAssetTransferCompliance,
   PolymeshPrimitivesTransferComplianceTransferCondition,
@@ -415,7 +412,6 @@ declare module '@polkadot/types/types/registry' {
     FrameSystemLimitsBlockWeights: FrameSystemLimitsBlockWeights;
     FrameSystemLimitsWeightsPerClass: FrameSystemLimitsWeightsPerClass;
     FrameSystemPhase: FrameSystemPhase;
-    PalletAssetAssetOwnershipRelation: PalletAssetAssetOwnershipRelation;
     PalletAssetCall: PalletAssetCall;
     PalletAssetCheckpointCall: PalletAssetCheckpointCall;
     PalletAssetCheckpointError: PalletAssetCheckpointError;
@@ -707,7 +703,6 @@ declare module '@polkadot/types/types/registry' {
     PolymeshPrimitivesSettlementSettlementType: PolymeshPrimitivesSettlementSettlementType;
     PolymeshPrimitivesSettlementVenue: PolymeshPrimitivesSettlementVenue;
     PolymeshPrimitivesSettlementVenueType: PolymeshPrimitivesSettlementVenueType;
-    PolymeshPrimitivesStatisticsAssetScope: PolymeshPrimitivesStatisticsAssetScope;
     PolymeshPrimitivesStatisticsStat1stKey: PolymeshPrimitivesStatisticsStat1stKey;
     PolymeshPrimitivesStatisticsStat2ndKey: PolymeshPrimitivesStatisticsStat2ndKey;
     PolymeshPrimitivesStatisticsStatClaim: PolymeshPrimitivesStatisticsStatClaim;
@@ -717,7 +712,6 @@ declare module '@polkadot/types/types/registry' {
     PolymeshPrimitivesSubsetSubsetRestrictionDispatchableName: PolymeshPrimitivesSubsetSubsetRestrictionDispatchableName;
     PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions: PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions;
     PolymeshPrimitivesSubsetSubsetRestrictionPortfolioId: PolymeshPrimitivesSubsetSubsetRestrictionPortfolioId;
-    PolymeshPrimitivesSubsetSubsetRestrictionTicker: PolymeshPrimitivesSubsetSubsetRestrictionTicker;
     PolymeshPrimitivesTicker: PolymeshPrimitivesTicker;
     PolymeshPrimitivesTransferComplianceAssetTransferCompliance: PolymeshPrimitivesTransferComplianceAssetTransferCompliance;
     PolymeshPrimitivesTransferComplianceTransferCondition: PolymeshPrimitivesTransferComplianceTransferCondition;

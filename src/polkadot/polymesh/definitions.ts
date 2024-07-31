@@ -1770,9 +1770,9 @@ export default {
       error: 'Option<String>',
     },
     AssetCount: {
-      fungibleTokens: 'u32',
-      nonFungibleTokens: 'u32',
-      offChainAssets: 'u32',
+      fungible_tokens: 'u32',
+      non_fungible_tokens: 'u32',
+      off_chain_assets: 'u32',
     },
     AffirmationCount: {
       senderAssetCount: 'AssetCount',

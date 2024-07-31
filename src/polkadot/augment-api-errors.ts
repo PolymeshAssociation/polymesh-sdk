@@ -25,6 +25,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       AssetAlreadyDivisible: AugmentedError<ApiType>;
       /**
+       * An unexpected error when generating a new asset ID.
+       **/
+      AssetIDGenerationError: AugmentedError<ApiType>;
+      /**
        * Asset Metadata Global type already exists.
        **/
       AssetMetadataGlobalKeyAlreadyExists: AugmentedError<ApiType>;
@@ -125,7 +129,7 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       MaxLengthOfAssetNameExceeded: AugmentedError<ApiType>;
       /**
-       * No such token.
+       * No security token associated to the given asset ID.
        **/
       NoSuchAsset: AugmentedError<ApiType>;
       /**
@@ -157,13 +161,25 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       TickerFirstByteNotValid: AugmentedError<ApiType>;
       /**
+       * The given ticker is already linked to an asset.
+       **/
+      TickerIsAlreadyLinkedToAnAsset: AugmentedError<ApiType>;
+      /**
        * The ticker has non-alphanumeric parts.
        **/
       TickerNotAlphanumeric: AugmentedError<ApiType>;
       /**
+       * The ticker doesn't belong to the caller.
+       **/
+      TickerNotRegisteredToCaller: AugmentedError<ApiType>;
+      /**
        * Registration of ticker has expired.
        **/
       TickerRegistrationExpired: AugmentedError<ApiType>;
+      /**
+       * The ticker registration associated to the ticker was not found.
+       **/
+      TickerRegistrationNotFound: AugmentedError<ApiType>;
       /**
        * The ticker length is over the limit.
        **/
@@ -410,7 +426,7 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       ScheduleNotRemovable: AugmentedError<ApiType>;
       /**
-       * The new schedule would put the ticker over the maximum complexity allowed.
+       * The new schedule would put the asset over the maximum complexity allowed.
        **/
       SchedulesOverMaxComplexity: AugmentedError<ApiType>;
     };
@@ -719,15 +735,15 @@ declare module '@polkadot/api-base/types/errors' {
     };
     externalAgents: {
       /**
-       * The provided `agent` is already an agent for the `Ticker`.
+       * The provided `agent` is already an agent for the `AssetID`.
        **/
       AlreadyAnAgent: AugmentedError<ApiType>;
       /**
-       * An AG with the given `AGId` did not exist for the `Ticker`.
+       * An AG with the given `AGId` did not exist for the `AssetID`.
        **/
       NoSuchAG: AugmentedError<ApiType>;
       /**
-       * The provided `agent` is not an agent for the `Ticker`.
+       * The provided `agent` is not an agent for the `AssetID`.
        **/
       NotAnAgent: AugmentedError<ApiType>;
       /**
@@ -1063,7 +1079,7 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       BalanceUnderflow: AugmentedError<ApiType>;
       /**
-       * The ticker is already associated to an NFT collection.
+       * The asset_id is already associated to an NFT collection.
        **/
       CollectionAlredyRegistered: AugmentedError<ApiType>;
       /**
@@ -1078,6 +1094,10 @@ declare module '@polkadot/api-base/types/errors' {
        * A duplicate metadata key has been passed as parameter.
        **/
       DuplicateMetadataKey: AugmentedError<ApiType>;
+      /**
+       * There's no asset associated to the given asset_id.
+       **/
+      InvalidAssetID: AugmentedError<ApiType>;
       /**
        * The asset must be of type non-fungible.
        **/
@@ -1688,7 +1708,7 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       UnexpectedLegStatus: AugmentedError<ApiType>;
       /**
-       * Ticker could not be found on chain.
+       * AssetID could not be found on chain.
        **/
       UnexpectedOFFChainAsset: AugmentedError<ApiType>;
       /**

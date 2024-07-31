@@ -84,9 +84,9 @@ export interface AssetComplianceResult extends Struct {
 
 /** @name AssetCount */
 export interface AssetCount extends Struct {
-  readonly fungibleTokens: u32;
-  readonly nonFungibleTokens: u32;
-  readonly offChainAssets: u32;
+  readonly fungible_tokens: u32;
+  readonly non_fungible_tokens: u32;
+  readonly off_chain_assets: u32;
 }
 
 /** @name AssetDidResult */
@@ -1772,10 +1772,10 @@ export interface RecordDateSpec extends Enum {
 
 /** @name RequirementReport */
 export interface RequirementReport extends Struct {
-  readonly requirementSatisfied: bool;
+  readonly requirement_satisfied: bool;
   readonly id: u32;
-  readonly senderConditions: Vec<ConditionReport>;
-  readonly receiverConditions: Vec<ConditionReport>;
+  readonly sender_conditions: Vec<ConditionReport>;
+  readonly receiver_conditions: Vec<ConditionReport>;
 }
 
 /** @name RestrictionResult */
