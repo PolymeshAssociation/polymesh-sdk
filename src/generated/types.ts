@@ -534,6 +534,12 @@ export enum AssetTx {
   RemoveTickerPreApproval = 'asset.removeTickerPreApproval',
   AddMandatoryMediators = 'asset.addMandatoryMediators',
   RemoveMandatoryMediators = 'asset.removeMandatoryMediators',
+  RegisterUniqueTicker = 'asset.registerUniqueTicker',
+  ExemptAssetAffirmation = 'asset.exemptAssetAffirmation',
+  RemoveAssetAffirmationExemption = 'asset.removeAssetAffirmationExemption',
+  PreApproveAsset = 'asset.preApproveAsset',
+  RemoveAssetPreApproval = 'asset.removeAssetPreApproval',
+  LinkTickerToAssetId = 'asset.linkTickerToAssetId',
 }
 
 export enum CapitalDistributionTx {

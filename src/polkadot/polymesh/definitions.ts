@@ -1218,14 +1218,29 @@ export default {
       error: 'Option<String>',
     },
     AssetCount: {
-      fungible: 'u32',
-      non_fungible: 'u32',
-      off_chain: 'u32',
+      fungible_tokens: 'u32',
+      non_fungible_tokens: 'u32',
+      off_chain_assets: 'u32',
     },
     AffirmationCount: {
       sender_asset_count: 'AssetCount',
       receiver_asset_count: 'AssetCount',
       offchain_count: 'u32',
+    },
+    ComplianceReport: {
+      any_requirement_satistifed: 'bool',
+      paused_compliance: 'bool',
+      requirements: 'Vec<RequirementReport>',
+    },
+    RequirementReport: {
+      requirement_satisfied: 'bool',
+      id: 'u32',
+      sender_conditions: 'Vec<ConditionReport>',
+      receiver_conditions: 'Vec<ConditionReport>',
+    },
+    ConditionReport: {
+      satisfied: 'bool',
+      condition: 'Condition',
     },
   },
 };

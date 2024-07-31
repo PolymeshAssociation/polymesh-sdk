@@ -258,7 +258,13 @@
     "pre_approve_ticker": "pre_approve_ticker",
     "remove_ticker_pre_approval": "remove_ticker_pre_approval",
     "add_mandatory_mediators": "add_mandatory_mediators",
-    "remove_mandatory_mediators": "remove_mandatory_mediators"
+    "remove_mandatory_mediators": "remove_mandatory_mediators",
+    "register_unique_ticker": "register_unique_ticker",
+    "exempt_asset_affirmation": "exempt_asset_affirmation",
+    "remove_asset_affirmation_exemption": "remove_asset_affirmation_exemption",
+    "pre_approve_asset": "pre_approve_asset",
+    "remove_asset_pre_approval": "remove_asset_pre_approval",
+    "link_ticker_to_asset_id": "link_ticker_to_asset_id"
   },
   "CapitalDistribution": {
     "distribute": "distribute",
