@@ -215,7 +215,7 @@ export class Claims {
     let targetIssuers;
 
     const filters = {
-      scope: scope ? await scopeToMiddlewareScope(scope, context) : undefined,
+      scope: scope ? scopeToMiddlewareScope(scope) : undefined,
       trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
         signerToString(trustedClaimIssuer)
       ),
@@ -360,7 +360,7 @@ export class Claims {
           issuedAt: momentToDate(issuanceDate),
           lastUpdatedAt: momentToDate(lastUpdateDate),
           expiry,
-          claim: meshClaimToClaim(claim) as CddClaim,
+          claim: meshClaimToClaim(claim, context) as CddClaim,
         });
       }
     });
@@ -437,7 +437,7 @@ export class Claims {
     if (isMiddlewareAvailable) {
       const filters = {
         dids: [did],
-        scope: scope ? await scopeToMiddlewareScope(scope, context) : undefined,
+        scope: scope ? scopeToMiddlewareScope(scope) : undefined,
         includeExpired,
       };
 

@@ -20,10 +20,10 @@ import {
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { isEntity } from '~/utils';
 import {
+  assetToMeshAssetId,
   permissionGroupIdentifierToAgentGroup,
   permissionsLikeToPermissions,
   stringToIdentityId,
-  stringToTicker,
   transactionPermissionsToExtrinsicPermissions,
 } from '~/utils/conversion';
 import { asBaseAsset } from '~/utils/internal';
@@ -69,7 +69,6 @@ export async function prepareSetPermissionGroup(
   } = this;
 
   const { identity, group } = args;
-  const { ticker } = asset;
 
   const [currentGroup, currentAgents] = await Promise.all([
     identity.assetPermissions.getGroup({ asset }),
@@ -96,7 +95,7 @@ export async function prepareSetPermissionGroup(
     });
   }
 
-  const rawTicker = stringToTicker(ticker, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
   const rawIdentityId = stringToIdentityId(identity.did, context);
 
   let existingGroup: KnownPermissionGroup | CustomPermissionGroup | undefined;
@@ -119,7 +118,7 @@ export async function prepareSetPermissionGroup(
       return {
         transaction: externalAgents.createAndChangeCustomGroup,
         args: [
-          rawTicker,
+          rawAssetId,
           transactionPermissionsToExtrinsicPermissions(transactions, context),
           rawIdentityId,
         ],
@@ -140,7 +139,7 @@ export async function prepareSetPermissionGroup(
   return {
     transaction: externalAgents.changeGroup,
     args: [
-      rawTicker,
+      rawAssetId,
       rawIdentityId,
       permissionGroupIdentifierToAgentGroup(
         existingGroup instanceof CustomPermissionGroup

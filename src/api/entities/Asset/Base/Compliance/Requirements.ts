@@ -26,9 +26,9 @@ import {
   UnsubCallback,
 } from '~/types';
 import {
+  assetToMeshAssetId,
   boolToBoolean,
   complianceRequirementToRequirement,
-  stringToTicker,
   trustedIssuerToTrustedClaimIssuer,
 } from '~/utils/conversion';
 import { createProcedureMethod, requestMulti } from '~/utils/internal';
@@ -43,43 +43,41 @@ export class Requirements extends Namespace<BaseAsset> {
   constructor(parent: BaseAsset, context: Context) {
     super(parent, context);
 
-    const { ticker } = parent;
-
     this.add = createProcedureMethod(
-      { getProcedureAndArgs: args => [addAssetRequirement, { ticker, ...args }] },
+      { getProcedureAndArgs: args => [addAssetRequirement, { asset: parent, ...args }] },
       context
     );
     this.remove = createProcedureMethod(
-      { getProcedureAndArgs: args => [removeAssetRequirement, { ticker, ...args }] },
+      { getProcedureAndArgs: args => [removeAssetRequirement, { asset: parent, ...args }] },
       context
     );
     this.set = createProcedureMethod(
-      { getProcedureAndArgs: args => [setAssetRequirements, { ticker, ...args }] },
+      { getProcedureAndArgs: args => [setAssetRequirements, { asset: parent, ...args }] },
       context
     );
     this.reset = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [setAssetRequirements, { ticker, requirements: [] }],
+        getProcedureAndArgs: () => [setAssetRequirements, { asset: parent, requirements: [] }],
         voidArgs: true,
       },
       context
     );
     this.pause = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [togglePauseRequirements, { ticker, pause: true }],
+        getProcedureAndArgs: () => [togglePauseRequirements, { asset: parent, pause: true }],
         voidArgs: true,
       },
       context
     );
     this.unpause = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [togglePauseRequirements, { ticker, pause: false }],
+        getProcedureAndArgs: () => [togglePauseRequirements, { asset: parent, pause: false }],
         voidArgs: true,
       },
       context
     );
     this.modify = createProcedureMethod(
-      { getProcedureAndArgs: args => [modifyComplianceRequirement, { ticker, ...args }] },
+      { getProcedureAndArgs: args => [modifyComplianceRequirement, { asset: parent, ...args }] },
       context
     );
   }
@@ -115,7 +113,7 @@ export class Requirements extends Namespace<BaseAsset> {
     callback?: SubCallback<ComplianceRequirements>
   ): Promise<ComplianceRequirements | UnsubCallback> {
     const {
-      parent: { ticker },
+      parent,
       context: {
         polymeshApi: {
           query: { complianceManager },
@@ -124,7 +122,7 @@ export class Requirements extends Namespace<BaseAsset> {
       context,
     } = this;
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(parent, context);
 
     const assembleResult = ([assetCompliance, claimIssuers]: [
       PolymeshPrimitivesComplianceManagerAssetCompliance,
@@ -149,8 +147,8 @@ export class Requirements extends Namespace<BaseAsset> {
       >(
         context,
         [
-          [complianceManager.assetCompliances, rawTicker],
-          [complianceManager.trustedClaimIssuer, rawTicker],
+          [complianceManager.assetCompliances, rawAssetId],
+          [complianceManager.trustedClaimIssuer, rawAssetId],
         ],
         res => {
           // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
@@ -162,8 +160,8 @@ export class Requirements extends Namespace<BaseAsset> {
     const result = await requestMulti<
       [typeof complianceManager.assetCompliances, typeof complianceManager.trustedClaimIssuer]
     >(context, [
-      [complianceManager.assetCompliances, rawTicker],
-      [complianceManager.trustedClaimIssuer, rawTicker],
+      [complianceManager.assetCompliances, rawAssetId],
+      [complianceManager.trustedClaimIssuer, rawAssetId],
     ]);
 
     return assembleResult(result);
@@ -189,7 +187,7 @@ export class Requirements extends Namespace<BaseAsset> {
    */
   public async arePaused(): Promise<boolean> {
     const {
-      parent: { ticker },
+      parent,
       context: {
         polymeshApi: {
           query: { complianceManager },
@@ -198,9 +196,9 @@ export class Requirements extends Namespace<BaseAsset> {
       context,
     } = this;
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(parent, context);
 
-    const { paused } = await complianceManager.assetCompliances(rawTicker);
+    const { paused } = await complianceManager.assetCompliances(rawAssetId);
 
     return boolToBoolean(paused);
   }

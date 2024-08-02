@@ -2,7 +2,7 @@ import { BaseAsset, PolymeshError, Procedure } from '~/internal';
 import { AssetMediatorParams, ErrorCode, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { MAX_ASSET_MEDIATORS } from '~/utils/constants';
-import { identitiesToBtreeSet, stringToTicker } from '~/utils/conversion';
+import { assetToMeshAssetId, identitiesToBtreeSet } from '~/utils/conversion';
 import { asIdentity, assertIdentityExists } from '~/utils/internal';
 /**
  * @hidden
@@ -23,11 +23,7 @@ export async function prepareAddAssetMediators(
     context,
   } = this;
 
-  const {
-    asset,
-    asset: { ticker },
-    mediators: mediatorInput,
-  } = args;
+  const { asset, mediators: mediatorInput } = args;
 
   const currentMediators = await asset.getRequiredMediators();
 
@@ -43,7 +39,7 @@ export async function prepareAddAssetMediators(
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: 'One of the specified mediators is already set',
-        data: { ticker, did: alreadySetDid.did },
+        data: { asset, did: alreadySetDid.did },
       });
     }
   });
@@ -59,11 +55,11 @@ export async function prepareAddAssetMediators(
   }
 
   const rawNewMediators = identitiesToBtreeSet(newMediators, context);
-  const rawTicker = stringToTicker(ticker, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
 
   return {
     transaction: tx.asset.addMandatoryMediators,
-    args: [rawTicker, rawNewMediators],
+    args: [rawAssetId, rawNewMediators],
     resolver: undefined,
   };
 }

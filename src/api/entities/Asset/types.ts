@@ -83,9 +83,9 @@ export interface AssetDocument {
  */
 export interface UniqueIdentifiers {
   /**
-   * ticker of the Asset
+   * id of the Asset
    */
-  ticker: string;
+  assetId: string;
 }
 
 export interface AssetDetails {
@@ -209,7 +209,15 @@ export type MetadataKeyId =
   | {
       type: MetadataType.Local;
       id: BigNumber;
+      /**
+       * @deprecated in favour of `assetId`
+       */
       ticker: string;
+    }
+  | {
+      type: MetadataType.Local;
+      id: BigNumber;
+      assetId: string;
     };
 
 export interface NftMetadata {

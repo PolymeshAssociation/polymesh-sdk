@@ -16,7 +16,11 @@ import {
   OfferingWithDetails,
   ProcedureMethod,
 } from '~/types';
-import { fundraiserToOfferingDetails, stringToTicker, u64ToBigNumber } from '~/utils/conversion';
+import {
+  assetToMeshAssetId,
+  fundraiserToOfferingDetails,
+  u64ToBigNumber,
+} from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**
@@ -29,10 +33,8 @@ export class Offerings extends Namespace<FungibleAsset> {
   constructor(parent: FungibleAsset, context: Context) {
     super(parent, context);
 
-    const { ticker } = parent;
-
     this.launch = createProcedureMethod(
-      { getProcedureAndArgs: args => [launchOffering, { ticker, ...args }] },
+      { getProcedureAndArgs: args => [launchOffering, { asset: parent, ...args }] },
       context
     );
   }
@@ -52,12 +54,9 @@ export class Offerings extends Namespace<FungibleAsset> {
    * @throws if there is no Offering with the passed ID
    */
   public async getOne(args: { id: BigNumber }): Promise<Offering> {
-    const {
-      parent: { ticker },
-      context,
-    } = this;
+    const { parent, context } = this;
     const { id } = args;
-    const offering = new Offering({ ticker, id }, context);
+    const offering = new Offering({ assetId: parent.id, id }, context);
 
     const exists = await offering.exists();
 
@@ -80,7 +79,7 @@ export class Offerings extends Namespace<FungibleAsset> {
     opts: { status?: Partial<OfferingStatus> } = {}
   ): Promise<OfferingWithDetails[]> {
     const {
-      parent: { ticker },
+      parent,
       context: {
         polymeshApi: {
           query: { sto },
@@ -92,11 +91,11 @@ export class Offerings extends Namespace<FungibleAsset> {
     const { status: { timing: timingFilter, balance: balanceFilter, sale: saleFilter } = {} } =
       opts;
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(parent, context);
 
     const [fundraiserEntries, nameEntries] = await Promise.all([
-      sto.fundraisers.entries(rawTicker),
-      sto.fundraiserNames.entries(rawTicker),
+      sto.fundraisers.entries(rawAssetId),
+      sto.fundraiserNames.entries(rawAssetId),
     ]);
 
     const offerings = fundraiserEntries.map(
@@ -116,7 +115,7 @@ export class Offerings extends Namespace<FungibleAsset> {
           ]) => u64ToBigNumber(rawId).eq(id)
         );
         return {
-          offering: new Offering({ id, ticker }, context),
+          offering: new Offering({ id, assetId: parent.id }, context),
           details: fundraiserToOfferingDetails(fundraiser.unwrap(), name.unwrap(), context),
         };
       }

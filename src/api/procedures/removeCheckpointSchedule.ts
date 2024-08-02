@@ -3,13 +3,13 @@ import BigNumber from 'bignumber.js';
 import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RemoveCheckpointScheduleParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { bigNumberToU64, stringToTicker, u32ToBigNumber } from '~/utils/conversion';
+import { assetToMeshAssetId, bigNumberToU64, u32ToBigNumber } from '~/utils/conversion';
 
 /**
  * @hidden
  */
 export type Params = RemoveCheckpointScheduleParams & {
-  ticker: string;
+  asset: FungibleAsset;
 };
 
 /**
@@ -25,25 +25,23 @@ export async function prepareRemoveCheckpointSchedule(
       polymeshApi: { tx, query },
     },
   } = this;
-  const { ticker, schedule } = args;
+  const { asset, schedule } = args;
 
-  const id = schedule instanceof BigNumber ? schedule : schedule.id;
-  const rawTicker = stringToTicker(ticker, context);
-  const rawId = bigNumberToU64(id, context);
+  const scheduleId = schedule instanceof BigNumber ? schedule : schedule.id;
+  const rawAssetId = assetToMeshAssetId(asset, context);
 
-  const rawSchedule = await query.checkpoint.scheduledCheckpoints(rawTicker, rawId);
-  const exists = rawSchedule.isSome;
+  const rawScheduleId = bigNumberToU64(scheduleId, context);
 
-  if (!exists) {
+  const rawSchedule = await query.checkpoint.scheduledCheckpoints(rawAssetId, rawScheduleId);
+
+  if (!rawSchedule.isSome) {
     throw new PolymeshError({
       code: ErrorCode.DataUnavailable,
       message: 'Schedule was not found. It may have been removed or expired',
     });
   }
 
-  const rawScheduleId = bigNumberToU64(id, context);
-
-  const scheduleRefCount = await query.checkpoint.scheduleRefCount(rawTicker, rawScheduleId);
+  const scheduleRefCount = await query.checkpoint.scheduleRefCount(rawAssetId, rawScheduleId);
   const referenceCount = u32ToBigNumber(scheduleRefCount);
 
   if (referenceCount.gt(0)) {
@@ -58,7 +56,7 @@ export async function prepareRemoveCheckpointSchedule(
 
   return {
     transaction: tx.checkpoint.removeSchedule,
-    args: [rawTicker, rawScheduleId],
+    args: [rawAssetId, rawScheduleId],
     resolver: undefined,
   };
 }
@@ -68,13 +66,12 @@ export async function prepareRemoveCheckpointSchedule(
  */
 export function getAuthorization(
   this: Procedure<Params, void>,
-  { ticker }: Params
+  { asset }: Params
 ): ProcedureAuthorization {
-  const { context } = this;
   return {
     permissions: {
       transactions: [TxTags.checkpoint.RemoveSchedule],
-      assets: [new FungibleAsset({ ticker }, context)],
+      assets: [asset],
       portfolios: [],
     },
   };

@@ -3,7 +3,7 @@ import {
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
 
-import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
+import { PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RemoveAssetStatParams, StatClaimIssuer, StatType, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
@@ -11,9 +11,12 @@ import {
   statisticsOpTypeToStatType,
   statisticStatTypesToBtreeStatType,
   statTypeToStatOpType,
-  stringToTickerKey,
 } from '~/utils/conversion';
-import { compareTransferRestrictionToStat, requestMulti } from '~/utils/internal';
+import {
+  compareTransferRestrictionToStat,
+  getAssetIdForStats,
+  requestMulti,
+} from '~/utils/internal';
 
 /**
  * @hidden
@@ -31,14 +34,16 @@ export async function prepareRemoveAssetStat(
     },
     context,
   } = this;
-  const { ticker, type } = args;
-  const tickerKey = stringToTickerKey(ticker, context);
+  const { asset, type } = args;
+  const rawAssetId = getAssetIdForStats(asset, context);
 
   const [currentStats, { requirements }] = await requestMulti<
     [typeof statisticsQuery.activeAssetStats, typeof statisticsQuery.assetTransferCompliances]
   >(context, [
-    [statisticsQuery.activeAssetStats, tickerKey],
-    [statisticsQuery.assetTransferCompliances, tickerKey],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [statisticsQuery.activeAssetStats, rawAssetId as any],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [statisticsQuery.assetTransferCompliances, rawAssetId as any],
   ]);
 
   let claimIssuer: StatClaimIssuer;
@@ -79,7 +84,8 @@ export async function prepareRemoveAssetStat(
 
   return {
     transaction: statistics.setActiveAssetStats,
-    args: [tickerKey, newStats],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    args: [rawAssetId as any, newStats],
     resolver: undefined,
   };
 }
@@ -89,10 +95,9 @@ export async function prepareRemoveAssetStat(
  */
 export function getAuthorization(
   this: Procedure<RemoveAssetStatParams, void>,
-  { ticker }: RemoveAssetStatParams
+  { asset }: RemoveAssetStatParams
 ): ProcedureAuthorization {
   const transactions = [TxTags.statistics.SetActiveAssetStats];
-  const asset = new FungibleAsset({ ticker }, this.context);
   return {
     permissions: {
       transactions,

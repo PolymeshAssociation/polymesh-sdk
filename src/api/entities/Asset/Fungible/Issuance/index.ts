@@ -12,10 +12,8 @@ export class Issuance extends Namespace<FungibleAsset> {
   constructor(parent: FungibleAsset, context: Context) {
     super(parent, context);
 
-    const { ticker } = parent;
-
     this.issue = createProcedureMethod(
-      { getProcedureAndArgs: args => [issueTokens, { ticker, ...args }] },
+      { getProcedureAndArgs: args => [issueTokens, { asset: parent, ...args }] },
       context
     );
   }

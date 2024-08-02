@@ -21,15 +21,15 @@ import {
 } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
+  assetToMeshAssetId,
   bigNumberToBalance,
   bigNumberToU64,
   corporateActionParamsToMeshCorporateActionArgs,
   dateToMoment,
   distributionToDividendDistributionParams,
+  meshAssetToAssetId,
   meshCorporateActionToCorporateActionParams,
   portfolioToPortfolioId,
-  stringToTicker,
-  tickerToString,
   u32ToBigNumber,
 } from '~/utils/conversion';
 import { filterEventRecords, getCheckpointValue, optionize } from '~/utils/internal';
@@ -42,18 +42,18 @@ export const createDividendDistributionResolver =
   async (receipt: ISubmittableResult): Promise<DividendDistribution> => {
     const [{ data }] = filterEventRecords(receipt, 'capitalDistribution', 'Created');
     const [, caId, distribution] = data;
-    const { ticker, localId } = caId;
+    const { assetId, localId } = caId;
 
     const { corporateAction } = context.polymeshApi.query;
 
     const [corpAction, details] = await Promise.all([
-      corporateAction.corporateActions(ticker, localId),
+      corporateAction.corporateActions(assetId, localId),
       corporateAction.details(caId),
     ]);
 
     return new DividendDistribution(
       {
-        ticker: tickerToString(ticker),
+        assetId: meshAssetToAssetId(assetId, context),
         id: u32ToBigNumber(localId),
         ...meshCorporateActionToCorporateActionParams(corpAction.unwrap(), details, context),
         ...distributionToDividendDistributionParams(distribution, context),
@@ -66,7 +66,7 @@ export const createDividendDistributionResolver =
  * @hidden
  */
 export type Params = ConfigureDividendDistributionParams & {
-  ticker: string;
+  asset: FungibleAsset;
 };
 
 /**
@@ -96,7 +96,7 @@ export async function prepareConfigureDividendDistribution(
     storage: { portfolio },
   } = this;
   const {
-    ticker,
+    asset,
     originPortfolio = null,
     currency,
     perShare,
@@ -111,7 +111,7 @@ export async function prepareConfigureDividendDistribution(
     taxWithholdings = null,
   } = args;
 
-  if (currency === ticker) {
+  if (currency === asset.id) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Cannot distribute Dividends using the Asset as currency',
@@ -152,7 +152,7 @@ export async function prepareConfigureDividendDistribution(
     });
   }
 
-  const checkpointValue = await getCheckpointValue(checkpoint, ticker, context);
+  const checkpointValue = await getCheckpointValue(checkpoint, asset, context);
 
   if (!(checkpointValue instanceof Checkpoint)) {
     await assertDistributionDatesValid(checkpointValue, paymentDate, expiryDate);
@@ -187,7 +187,8 @@ export async function prepareConfigureDividendDistribution(
       originPortfolio instanceof BigNumber ? originPortfolio : originPortfolio.id,
       context
     );
-  const rawCurrency = stringToTicker(currency, context);
+  const rawCurrency = assetToMeshAssetId(asset, context);
+
   const rawPerShare = bigNumberToBalance(perShare, context);
   const rawAmount = bigNumberToBalance(maxAmount, context);
   const rawPaymentAt = dateToMoment(paymentDate, context);
@@ -199,7 +200,7 @@ export async function prepareConfigureDividendDistribution(
     args: [
       corporateActionParamsToMeshCorporateActionArgs(
         {
-          ticker,
+          asset,
           kind: CorporateActionKind.UnpredictableBenefit,
           declarationDate,
           checkpoint: checkpointValue,
@@ -225,18 +226,17 @@ export async function prepareConfigureDividendDistribution(
  */
 export function getAuthorization(
   this: Procedure<Params, DividendDistribution, Storage>,
-  { ticker }: Params
+  { asset }: Params
 ): ProcedureAuthorization {
   const {
     storage: { portfolio },
-    context,
   } = this;
 
   return {
     roles: [{ type: RoleType.PortfolioCustodian, portfolioId: portfolioToPortfolioId(portfolio) }],
     permissions: {
       transactions: [TxTags.capitalDistribution.Distribute],
-      assets: [new FungibleAsset({ ticker }, context)],
+      assets: [asset],
       portfolios: [portfolio],
     },
   };

@@ -13,17 +13,17 @@ import {
 import { ErrorCode, RemoveCorporateActionParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
+  assetToMeshAssetId,
   bigNumberToU32,
   corporateActionIdentifierToCaId,
   momentToDate,
-  stringToTicker,
 } from '~/utils/conversion';
 
 /**
  * @hidden
  */
 export type Params = RemoveCorporateActionParams & {
-  ticker: string;
+  asset: FungibleAsset;
 };
 
 const caNotExistsMessage = "The Corporate Action doesn't exist";
@@ -34,7 +34,7 @@ const caNotExistsMessage = "The Corporate Action doesn't exist";
 const assertCaIsRemovable = async (
   rawCaId: PalletCorporateActionsCaId,
   query: QueryableStorage<'promise'>,
-  ticker: string,
+  asset: FungibleAsset,
   context: Context,
   corporateAction: CorporateActionBase | BigNumber
 ): Promise<void> => {
@@ -50,7 +50,7 @@ const assertCaIsRemovable = async (
 
   if (corporateAction instanceof BigNumber) {
     const CA = await query.corporateAction.corporateActions(
-      stringToTicker(ticker, context),
+      assetToMeshAssetId(asset, context),
       bigNumberToU32(corporateAction, context)
     );
 
@@ -85,14 +85,14 @@ export async function prepareRemoveCorporateAction(
       polymeshApi: { tx, query },
     },
   } = this;
-  const { ticker, corporateAction } = args;
+  const { asset, corporateAction } = args;
 
   const localId =
     corporateAction instanceof CorporateActionBase ? corporateAction.id : corporateAction;
-  const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
+  const rawCaId = corporateActionIdentifierToCaId({ asset, localId }, context);
 
   if (corporateAction instanceof DividendDistribution || corporateAction instanceof BigNumber) {
-    await assertCaIsRemovable(rawCaId, query, ticker, context, corporateAction);
+    await assertCaIsRemovable(rawCaId, query, asset, context, corporateAction);
   } else {
     const exists = await corporateAction.exists();
 
@@ -116,12 +116,12 @@ export async function prepareRemoveCorporateAction(
  */
 export function getAuthorization(
   this: Procedure<Params, void>,
-  { ticker }: Params
+  { asset }: Params
 ): ProcedureAuthorization {
   return {
     permissions: {
       transactions: [TxTags.corporateAction.RemoveCa],
-      assets: [new FungibleAsset({ ticker }, this.context)],
+      assets: [asset],
       portfolios: [],
     },
   };

@@ -5,7 +5,7 @@ import {
 } from '@polkadot/types/lookup';
 import { difference, intersection, isEqual, sortBy } from 'lodash';
 
-import { Context, FungibleAsset, PolymeshError, Procedure } from '~/internal';
+import { BaseAsset, Context, PolymeshError, Procedure } from '~/internal';
 import {
   ErrorCode,
   ModifyAssetTrustedClaimIssuersAddSetParams,
@@ -20,9 +20,9 @@ import {
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
+  assetToMeshAssetId,
   signerToString,
   stringToIdentityId,
-  stringToTicker,
   trustedClaimIssuerToTrustedIssuer,
   trustedIssuerToTrustedClaimIssuer,
 } from '~/utils/conversion';
@@ -31,7 +31,7 @@ import { asIdentity, assembleBatchTransactions, hasSameElements } from '~/utils/
 /**
  * @hidden
  */
-export type Params = { ticker: string } & (
+export type Params = { asset: BaseAsset } & (
   | (ModifyAssetTrustedClaimIssuersAddSetParams & {
       operation: TrustedClaimIssuerOperation.Add | TrustedClaimIssuerOperation.Set;
     })
@@ -101,9 +101,9 @@ export async function prepareModifyAssetTrustedClaimIssuers(
     },
     context,
   } = this;
-  const { ticker } = args;
+  const { asset } = args;
 
-  const rawTicker = stringToTicker(ticker, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
 
   let claimIssuersToDelete: [PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId][] = [];
   let claimIssuersToAdd: [PolymeshPrimitivesTicker, PolymeshPrimitivesConditionTrustedIssuer][] =
@@ -111,7 +111,7 @@ export async function prepareModifyAssetTrustedClaimIssuers(
 
   let inputDids: string[];
 
-  const rawCurrentClaimIssuers = await query.complianceManager.trustedClaimIssuer(rawTicker);
+  const rawCurrentClaimIssuers = await query.complianceManager.trustedClaimIssuer(rawAssetId);
 
   const currentClaimIssuers = rawCurrentClaimIssuers.map(issuer =>
     trustedIssuerToTrustedClaimIssuer(issuer, context)
@@ -138,14 +138,14 @@ export async function prepareModifyAssetTrustedClaimIssuers(
     claimIssuersToDelete = currentClaimIssuers
       .filter(({ identity }) => inputDids.includes(signerToString(identity)))
       .map(({ identity }) =>
-        tuple(rawTicker, stringToIdentityId(signerToString(identity), context))
+        tuple(rawAssetId, stringToIdentityId(signerToString(identity), context))
       );
   } else {
-    ({ claimIssuersToAdd, inputDids } = convertArgsToRaw(args.claimIssuers, rawTicker, context));
+    ({ claimIssuersToAdd, inputDids } = convertArgsToRaw(args.claimIssuers, rawAssetId, context));
   }
 
   if (args.operation === TrustedClaimIssuerOperation.Set) {
-    claimIssuersToDelete = rawCurrentClaimIssuers.map(({ issuer }) => [rawTicker, issuer]);
+    claimIssuersToDelete = rawCurrentClaimIssuers.map(({ issuer }) => [rawAssetId, issuer]);
 
     if (areSameClaimIssuers(currentClaimIssuers, args.claimIssuers)) {
       throw new PolymeshError({
@@ -200,7 +200,7 @@ export async function prepareModifyAssetTrustedClaimIssuers(
  */
 export function getAuthorization(
   this: Procedure<Params, void>,
-  { ticker, operation }: Params
+  { asset, operation }: Params
 ): ProcedureAuthorization {
   const transactions = [];
   if (operation !== TrustedClaimIssuerOperation.Add) {
@@ -213,7 +213,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions,
-      assets: [new FungibleAsset({ ticker }, this.context)],
+      assets: [asset],
       portfolios: [],
     },
   };

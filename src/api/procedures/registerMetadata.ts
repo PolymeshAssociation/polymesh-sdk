@@ -1,14 +1,14 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 
-import { Context, FungibleAsset, MetadataEntry, PolymeshError, Procedure } from '~/internal';
+import { BaseAsset, Context, MetadataEntry, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, MetadataType, RegisterMetadataParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
+  assetToMeshAssetId,
   metadataSpecToMeshMetadataSpec,
   metadataValueDetailToMeshMetadataValueDetail,
   metadataValueToMeshMetadataValue,
   stringToBytes,
-  stringToTicker,
   u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -18,20 +18,20 @@ import { filterEventRecords, optionize, requestMulti } from '~/utils/internal';
  * @hidden
  */
 export type Params = RegisterMetadataParams & {
-  ticker: string;
+  asset: BaseAsset;
 };
 
 /**
  * @hidden
  */
 export const createMetadataResolver =
-  (ticker: string, context: Context) =>
+  (assetId: string, context: Context) =>
   (receipt: ISubmittableResult): MetadataEntry => {
     const [{ data }] = filterEventRecords(receipt, 'asset', 'RegisterAssetMetadataLocalType');
 
     const id = u64ToBigNumber(data[3]);
 
-    return new MetadataEntry({ id, ticker, type: MetadataType.Local }, context);
+    return new MetadataEntry({ id, assetId, type: MetadataType.Local }, context);
   };
 
 /**
@@ -58,9 +58,9 @@ export async function prepareRegisterMetadata(
     },
     context,
   } = this;
-  const { name, ticker, specs } = params;
+  const { name, asset, specs } = params;
 
-  const rawTicker = stringToTicker(ticker, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
 
   const metadataNameMaxLength = u32ToBigNumber(assetMetadataNameMaxLength);
   if (metadataNameMaxLength.lt(name.length)) {
@@ -79,7 +79,7 @@ export async function prepareRegisterMetadata(
     [typeof assetMetadataGlobalNameToKey, typeof assetMetadataLocalNameToKey]
   >(context, [
     [assetMetadataGlobalNameToKey, rawName],
-    [assetMetadataLocalNameToKey, [rawTicker, rawName]],
+    [assetMetadataLocalNameToKey, [rawAssetId, rawName]],
   ]);
 
   if (rawGlobalId.isSome || rawLocalId.isSome) {
@@ -89,7 +89,7 @@ export async function prepareRegisterMetadata(
     });
   }
 
-  const args = [rawTicker, rawName, metadataSpecToMeshMetadataSpec(specs, context)];
+  const args = [rawAssetId, rawName, metadataSpecToMeshMetadataSpec(specs, context)];
 
   if ('value' in params) {
     // eslint-disable-next-line @typescript-eslint/no-shadow, @typescript-eslint/no-unused-vars
@@ -102,14 +102,14 @@ export async function prepareRegisterMetadata(
         metadataValueToMeshMetadataValue(value, context),
         optionize(metadataValueDetailToMeshMetadataValueDetail)(details, context),
       ],
-      resolver: createMetadataResolver(ticker, context),
+      resolver: createMetadataResolver(asset.id, context),
     };
   }
 
   return {
     transaction: tx.asset.registerAssetMetadataLocalType,
     args,
-    resolver: createMetadataResolver(ticker, context),
+    resolver: createMetadataResolver(asset.id, context),
   };
 }
 
@@ -120,10 +120,6 @@ export function getAuthorization(
   this: Procedure<Params, MetadataEntry>,
   params: Params
 ): ProcedureAuthorization {
-  const { context } = this;
-
-  const { ticker } = params;
-
   const transactions = [];
 
   if ('value' in params) {
@@ -135,7 +131,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions,
-      assets: [new FungibleAsset({ ticker }, context)],
+      assets: [params.asset],
       portfolios: [],
     },
   };

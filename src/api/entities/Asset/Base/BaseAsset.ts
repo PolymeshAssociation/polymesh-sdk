@@ -44,6 +44,7 @@ import {
 import { tickerToDid } from '~/utils';
 import {
   assetIdentifierToSecurityIdentifier,
+  assetToMeshAssetId,
   assetTypeToKnownOrId,
   balanceToBigNumber,
   bigNumberToU32,
@@ -51,7 +52,6 @@ import {
   bytesToString,
   identitiesSetToIdentities,
   identityIdToString,
-  stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
@@ -70,12 +70,19 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
   /**
    * Identity ID of the Asset (used for Claims)
    */
-  public did: string;
+
+  public did?: string;
 
   /**
    * ticker of the Asset
    */
-  public ticker: string;
+  // TODO @prashantasdeveloper add comment
+  public ticker?: string;
+
+  /**
+   * Unique ID of the Asset
+   */
+  public id: string;
 
   /**
    * Transfer ownership of the Asset to another Identity. This generates an authorization request that must be accepted
@@ -97,9 +104,9 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
    * Check if a value is of type {@link UniqueIdentifiers}
    */
   public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
-    const { ticker } = identifier as UniqueIdentifiers;
+    const { assetId } = identifier as UniqueIdentifiers;
 
-    return typeof ticker === 'string';
+    return typeof assetId === 'string';
   }
 
   /**
@@ -117,10 +124,15 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
   constructor(identifiers: UniqueIdentifiers, context: Context) {
     super(identifiers, context);
 
-    const { ticker } = identifiers;
-
-    this.ticker = ticker;
-    this.did = tickerToDid(ticker);
+    const { assetId } = identifiers;
+    const { isV6 } = context;
+    if (isV6) {
+      this.ticker = assetId;
+      this.id = assetId;
+      this.did = tickerToDid(assetId);
+    } else {
+      this.id = assetId;
+    }
 
     this.compliance = new Compliance(this, context);
     this.documents = new Documents(this, context);
@@ -129,7 +141,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
 
     this.freeze = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [toggleFreezeTransfers, { ticker, freeze: true }],
+        getProcedureAndArgs: () => [toggleFreezeTransfers, { asset: this, freeze: true }],
         voidArgs: true,
       },
       context
@@ -137,14 +149,14 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
 
     this.unfreeze = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [toggleFreezeTransfers, { ticker, freeze: false }],
+        getProcedureAndArgs: () => [toggleFreezeTransfers, { asset: this, freeze: false }],
         voidArgs: true,
       },
       context
     );
 
     this.transferOwnership = createProcedureMethod(
-      { getProcedureAndArgs: args => [transferAssetOwnership, { ticker, ...args }] },
+      { getProcedureAndArgs: args => [transferAssetOwnership, { asset: this, ...args }] },
       context
     );
 
@@ -163,12 +175,12 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
     );
 
     this.setVenueFiltering = createProcedureMethod(
-      { getProcedureAndArgs: args => [setVenueFiltering, { ticker, ...args }] },
+      { getProcedureAndArgs: args => [setVenueFiltering, { asset: this, ...args }] },
       context
     );
 
     this.modify = createProcedureMethod(
-      { getProcedureAndArgs: args => [modifyAsset, { ticker, ...args }] },
+      { getProcedureAndArgs: args => [modifyAsset, { asset: this, ...args }] },
       context
     );
   }
@@ -210,22 +222,28 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
         polymeshApi: {
           query: { asset },
         },
+        isV6,
       },
-      ticker,
       context,
     } = this;
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(this, context);
+
+    let identifiersStorage = asset.assetIdentifiers;
+    if (isV6) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      identifiersStorage = (asset as any).identifiers;
+    }
 
     if (callback) {
       context.assertSupportsSubscription();
-      return asset.identifiers(rawTicker, identifiers => {
+      return identifiersStorage(rawAssetId, identifiers => {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(identifiers.map(assetIdentifierToSecurityIdentifier));
       });
     }
 
-    const assetIdentifiers = await asset.identifiers(rawTicker);
+    const assetIdentifiers = await identifiersStorage(rawAssetId);
 
     return assetIdentifiers.map(assetIdentifierToSecurityIdentifier);
   }
@@ -241,7 +259,6 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
   // eslint-disable-next-line require-jsdoc
   public async isFrozen(callback?: SubCallback<boolean>): Promise<boolean | UnsubCallback> {
     const {
-      ticker,
       context: {
         polymeshApi: {
           query: { asset },
@@ -250,17 +267,17 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(this, context);
 
     if (callback) {
       context.assertSupportsSubscription();
-      return asset.frozen(rawTicker, frozen => {
+      return asset.frozen(rawAssetId, frozen => {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(boolToBoolean(frozen));
       });
     }
 
-    const result = await asset.frozen(rawTicker);
+    const result = await asset.frozen(rawAssetId);
 
     return boolToBoolean(result);
   }
@@ -282,8 +299,8 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
         polymeshApi: {
           query: { asset, externalAgents },
         },
+        isV6,
       },
-      ticker,
       context,
     } = this;
 
@@ -335,17 +352,23 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
       };
     };
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(this, context);
 
-    const groupOfAgentPromise = externalAgents.groupOfAgent.entries(rawTicker);
-    const namePromise = asset.assetNames(rawTicker);
+    const groupOfAgentPromise = externalAgents.groupOfAgent.entries(rawAssetId);
+    const namePromise = asset.assetNames(rawAssetId);
+
+    let tokensStorage = asset.securityTokens;
+    if (isV6) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tokensStorage = (asset as any).tokens;
+    }
 
     if (callback) {
       context.assertSupportsSubscription();
       const groupEntries = await groupOfAgentPromise;
       const assetName = await namePromise;
 
-      return asset.tokens(rawTicker, async securityToken => {
+      return tokensStorage(rawAssetId, async securityToken => {
         const result = await assembleResult(securityToken, groupEntries, assetName);
 
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
@@ -354,7 +377,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
     }
 
     const [token, groups, name] = await Promise.all([
-      asset.tokens(rawTicker),
+      tokensStorage(rawAssetId),
       groupOfAgentPromise,
       namePromise,
     ]);
@@ -367,15 +390,16 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
   public async getRequiredMediators(): Promise<Identity[]> {
     const {
       context,
-      ticker,
       context: {
-        polymeshApi: { query },
+        polymeshApi: {
+          query: { asset },
+        },
       },
     } = this;
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(this, context);
 
-    const rawMediators = await query.asset.mandatoryMediators(rawTicker);
+    const rawMediators = await asset.mandatoryMediators(rawAssetId);
 
     return identitiesSetToIdentities(rawMediators, context);
   }
@@ -385,24 +409,24 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
    */
   public async getVenueFilteringDetails(): Promise<VenueFilteringDetails> {
     const {
-      ticker,
       context,
       context: {
         polymeshApi: { query },
       },
     } = this;
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(this, context);
+
     const [rawIsEnabled, venueEntries] = await Promise.all([
-      query.settlement.venueFiltering(rawTicker),
-      query.settlement.venueAllowList.entries(rawTicker),
+      query.settlement.venueFiltering(rawAssetId),
+      query.settlement.venueAllowList.entries(rawAssetId),
     ]);
 
     const allowedVenues = venueEntries.map(([key]) => {
       const rawId = key.args[1];
-      const id = u64ToBigNumber(rawId);
+      const venueId = u64ToBigNumber(rawId);
 
-      return new Venue({ id }, context);
+      return new Venue({ id: venueId }, context);
     });
 
     const isEnabled = boolToBoolean(rawIsEnabled);
@@ -431,23 +455,22 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
           query: { asset },
         },
       },
-      ticker,
       context,
     } = this;
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(this, context);
 
     const assembleResult = (roundName: Bytes): string | null => bytesToString(roundName) || null;
 
     if (callback) {
       context.assertSupportsSubscription();
-      return asset.fundingRound(rawTicker, round => {
+      return asset.fundingRound(rawAssetId, round => {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(assembleResult(round));
       });
     }
 
-    const fundingRound = await asset.fundingRound(rawTicker);
+    const fundingRound = await asset.fundingRound(rawAssetId);
     return assembleResult(fundingRound);
   }
 
@@ -456,26 +479,37 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
    */
   public async exists(): Promise<boolean> {
     const {
-      ticker,
       context,
       context: {
-        polymeshApi: { query },
+        polymeshApi: {
+          query: { asset, nft },
+        },
+        isV6,
       },
     } = this;
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(this, context);
+    let tokensStorage = asset.securityTokens;
+    let collectionsStorage = nft.collectionAsset;
+    if (isV6) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tokensStorage = (asset as any).tokens;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      collectionsStorage = (nft as any).collectionTicker;
+    }
 
     const [tokenSize, nftId] = await Promise.all([
-      query.asset.tokens.size(rawTicker),
-      query.nft.collectionTicker(rawTicker),
+      tokensStorage.size(rawAssetId),
+      collectionsStorage(rawAssetId),
     ]);
 
     return !tokenSize.isZero() && nftId.isZero();
   }
 
+  // TODO @prashantasdeveloper add comments
   /**
-   * Return the NftCollection's ticker
+   * Return the BaseAsset's ID
    */
   public toHuman(): string {
-    return this.ticker;
+    return this.id;
   }
 }

@@ -8,9 +8,9 @@ import {
 } from '~/internal';
 import { ModifyCaDefaultConfigParams, ProcedureMethod, RemoveCorporateActionParams } from '~/types';
 import {
+  assetToMeshAssetId,
   identityIdToString,
   permillToBigNumber,
-  stringToTicker,
   targetIdentitiesToCorporateActionTargets,
 } from '~/utils/conversion';
 import { createProcedureMethod, requestMulti } from '~/utils/internal';
@@ -30,17 +30,15 @@ export class CorporateActions extends Namespace<FungibleAsset> {
   constructor(parent: FungibleAsset, context: Context) {
     super(parent, context);
 
-    const { ticker } = parent;
-
     this.distributions = new Distributions(parent, context);
 
     this.setDefaultConfig = createProcedureMethod(
-      { getProcedureAndArgs: args => [modifyCaDefaultConfig, { ticker, ...args }] },
+      { getProcedureAndArgs: args => [modifyCaDefaultConfig, { asset: parent, ...args }] },
       context
     );
 
     this.remove = createProcedureMethod(
-      { getProcedureAndArgs: args => [removeCorporateAction, { ticker, ...args }] },
+      { getProcedureAndArgs: args => [removeCorporateAction, { asset: parent, ...args }] },
       context
     );
   }
@@ -69,11 +67,12 @@ export class CorporateActions extends Namespace<FungibleAsset> {
           query: { externalAgents },
         },
       },
-      parent: { ticker },
+      parent,
       context,
     } = this;
 
-    const groupOfAgent = await externalAgents.groupOfAgent.entries(stringToTicker(ticker, context));
+    const rawAssetId = assetToMeshAssetId(parent, context);
+    const groupOfAgent = await externalAgents.groupOfAgent.entries(rawAssetId);
 
     const agentIdentities: Identity[] = [];
 
@@ -99,7 +98,7 @@ export class CorporateActions extends Namespace<FungibleAsset> {
    */
   public async getDefaultConfig(): Promise<CorporateActionDefaultConfig> {
     const {
-      parent: { ticker },
+      parent,
       context: {
         polymeshApi: {
           query: { corporateAction },
@@ -108,7 +107,7 @@ export class CorporateActions extends Namespace<FungibleAsset> {
       context,
     } = this;
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(parent, context);
 
     const [targets, defaultTaxWithholding, taxWithholdings] = await requestMulti<
       [
@@ -117,9 +116,9 @@ export class CorporateActions extends Namespace<FungibleAsset> {
         typeof corporateAction.didWithholdingTax
       ]
     >(context, [
-      [corporateAction.defaultTargetIdentities, rawTicker],
-      [corporateAction.defaultWithholdingTax, rawTicker],
-      [corporateAction.didWithholdingTax, rawTicker],
+      [corporateAction.defaultTargetIdentities, rawAssetId],
+      [corporateAction.defaultWithholdingTax, rawAssetId],
+      [corporateAction.didWithholdingTax, rawAssetId],
     ]);
 
     return {

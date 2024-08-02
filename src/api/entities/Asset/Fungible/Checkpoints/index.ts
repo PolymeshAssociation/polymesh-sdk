@@ -19,9 +19,9 @@ import {
 } from '~/types';
 import { tuple } from '~/types/utils';
 import {
+  assetToMeshAssetId,
   balanceToBigNumber,
   momentToDate,
-  stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { createProcedureMethod, requestPaginated } from '~/utils/internal';
@@ -40,10 +40,8 @@ export class Checkpoints extends Namespace<FungibleAsset> {
   constructor(parent: FungibleAsset, context: Context) {
     super(parent, context);
 
-    const { ticker } = parent;
-
     this.create = createProcedureMethod(
-      { getProcedureAndArgs: () => [createCheckpoint, { ticker }], voidArgs: true },
+      { getProcedureAndArgs: () => [createCheckpoint, { asset: parent }], voidArgs: true },
       context
     );
 
@@ -62,11 +60,11 @@ export class Checkpoints extends Namespace<FungibleAsset> {
    */
   public async getOne(args: { id: BigNumber }): Promise<Checkpoint> {
     const {
-      parent: { ticker },
+      parent: { id: assetId },
       context,
     } = this;
 
-    const checkpoint = new Checkpoint({ id: args.id, ticker }, context);
+    const checkpoint = new Checkpoint({ id: args.id, assetId }, context);
 
     const exists = await checkpoint.exists();
 
@@ -87,7 +85,8 @@ export class Checkpoints extends Namespace<FungibleAsset> {
    */
   public async get(paginationOpts?: PaginationOptions): Promise<ResultSet<CheckpointWithData>> {
     const {
-      parent: { ticker },
+      parent,
+      parent: { id: assetId },
       context,
       context: {
         polymeshApi: {
@@ -96,10 +95,10 @@ export class Checkpoints extends Namespace<FungibleAsset> {
       },
     } = this;
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(parent, context);
 
     const { entries, lastKey: next } = await requestPaginated(checkpointQuery.totalSupply, {
-      arg: rawTicker,
+      arg: rawAssetId,
       paginationOpts,
     });
 
@@ -113,9 +112,9 @@ export class Checkpoints extends Namespace<FungibleAsset> {
         },
         balance,
       ]) => {
-        checkpointsMultiParams.push(tuple(rawTicker, id));
+        checkpointsMultiParams.push(tuple(rawAssetId, id));
         checkpoints.push({
-          checkpoint: new Checkpoint({ id: u64ToBigNumber(id), ticker }, context),
+          checkpoint: new Checkpoint({ id: u64ToBigNumber(id), assetId }, context),
           totalSupply: balanceToBigNumber(balance),
         });
       }

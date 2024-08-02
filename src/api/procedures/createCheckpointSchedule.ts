@@ -4,9 +4,9 @@ import { CheckpointSchedule, Context, FungibleAsset, PolymeshError, Procedure } 
 import { CreateCheckpointScheduleParams, ErrorCode, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
+  assetToMeshAssetId,
   datesToScheduleCheckpoints,
   momentToDate,
-  stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
@@ -15,14 +15,14 @@ import { filterEventRecords } from '~/utils/internal';
  * @hidden
  */
 export type Params = CreateCheckpointScheduleParams & {
-  ticker: string;
+  asset: FungibleAsset;
 };
 
 /**
  * @hidden
  */
 export const createCheckpointScheduleResolver =
-  (ticker: string, context: Context) =>
+  (assetId: string, context: Context) =>
   (receipt: ISubmittableResult): CheckpointSchedule => {
     const [{ data }] = filterEventRecords(receipt, 'checkpoint', 'ScheduleCreated');
     const rawId = data[2];
@@ -34,7 +34,7 @@ export const createCheckpointScheduleResolver =
     return new CheckpointSchedule(
       {
         id,
-        ticker,
+        assetId,
         pendingPoints: points,
       },
       context
@@ -49,7 +49,7 @@ export async function prepareCreateCheckpointSchedule(
   args: Params
 ): Promise<TransactionSpec<CheckpointSchedule, ExtrinsicParams<'checkpoint', 'createSchedule'>>> {
   const { context } = this;
-  const { ticker, points } = args;
+  const { asset, points } = args;
 
   const now = new Date();
 
@@ -61,13 +61,14 @@ export async function prepareCreateCheckpointSchedule(
     });
   }
 
-  const rawTicker = stringToTicker(ticker, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
+
   const checkpointSchedule = datesToScheduleCheckpoints(points, context);
 
   return {
     transaction: context.polymeshApi.tx.checkpoint.createSchedule,
-    args: [rawTicker, checkpointSchedule],
-    resolver: createCheckpointScheduleResolver(ticker, context),
+    args: [rawAssetId, checkpointSchedule],
+    resolver: createCheckpointScheduleResolver(asset.id, context),
   };
 }
 
@@ -76,13 +77,12 @@ export async function prepareCreateCheckpointSchedule(
  */
 export function getAuthorization(
   this: Procedure<Params, CheckpointSchedule>,
-  { ticker }: Params
+  { asset }: Params
 ): ProcedureAuthorization {
-  const { context } = this;
   return {
     permissions: {
       transactions: [TxTags.checkpoint.CreateSchedule],
-      assets: [new FungibleAsset({ ticker }, context)],
+      assets: [asset],
       portfolios: [],
     },
   };

@@ -1,9 +1,17 @@
 import { Bytes, u32 } from '@polkadot/types';
+import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
 
 import { addManualFees } from '~/api/procedures/utils';
-import { FungibleAsset, Identity, PolymeshError, Procedure, TickerReservation } from '~/internal';
+import {
+  Context,
+  FungibleAsset,
+  Identity,
+  PolymeshError,
+  Procedure,
+  TickerReservation,
+} from '~/internal';
 import {
   AssetTx,
   CreateAssetWithTickerParams,
@@ -20,17 +28,15 @@ import {
   bigNumberToBalance,
   booleanToBool,
   fundingRoundToAssetFundingRound,
-  inputStatTypeToMeshStatType,
   internalAssetTypeToAssetType,
+  meshAssetToAssetId,
   nameToAssetName,
   portfolioToPortfolioKind,
   securityIdentifierToAssetIdentifier,
-  statisticStatTypesToBtreeStatType,
   stringToBytes,
   stringToTicker,
-  stringToTickerKey,
 } from '~/utils/conversion';
-import { checkTxType, isAllowedCharacters, optionize } from '~/utils/internal';
+import { checkTxType, filterEventRecords, isAllowedCharacters, optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -90,6 +96,18 @@ function assertTickerAvailable(
 /**
  * @hidden
  */
+export const createAssetResolver =
+  (context: Context) =>
+  (receipt: ISubmittableResult): FungibleAsset => {
+    const [{ data }] = filterEventRecords(receipt, 'asset', 'AssetCreated');
+    const assetId = meshAssetToAssetId(data[1], context);
+
+    return new FungibleAsset({ assetId }, context);
+  };
+
+/**
+ * @hidden
+ */
 export async function prepareCreateAsset(
   this: Procedure<Params, FungibleAsset, Storage>,
   args: Params
@@ -97,6 +115,7 @@ export async function prepareCreateAsset(
   const {
     context: {
       polymeshApi: { tx },
+      isV6,
     },
     context,
     storage: { customTypeData, status, signingIdentity },
@@ -112,20 +131,20 @@ export async function prepareCreateAsset(
     fundingRound,
     documents,
     reservationRequired,
-    initialStatistics,
+    // initialStatistics,
   } = args;
 
   assertTickerAvailable(ticker, status, reservationRequired);
 
   const rawTicker = stringToTicker(ticker, context);
   const rawName = nameToAssetName(name, context);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rawNameTickerArgs: any[] = isV6 ? [rawName, rawTicker] : [rawName];
   const rawIsDivisible = booleanToBool(isDivisible, context);
   const rawIdentifiers = securityIdentifiers.map(identifier =>
     securityIdentifierToAssetIdentifier(identifier, context)
   );
   const rawFundingRound = optionize(fundingRoundToAssetFundingRound)(fundingRound, context);
-
-  const newAsset = new FungibleAsset({ ticker }, context);
 
   const transactions = [];
 
@@ -157,9 +176,10 @@ export async function prepareCreateAsset(
     if (id.isEmpty) {
       transactions.push(
         checkTxType({
-          transaction: tx.asset.createAssetWithCustomType,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          transaction: tx.asset.createAssetWithCustomType as any,
           fee,
-          args: [rawName, rawTicker, rawIsDivisible, rawValue, rawIdentifiers, rawFundingRound],
+          args: [...rawNameTickerArgs, rawIsDivisible, rawValue, rawIdentifiers, rawFundingRound],
         })
       );
     } else {
@@ -167,9 +187,10 @@ export async function prepareCreateAsset(
 
       transactions.push(
         checkTxType({
-          transaction: tx.asset.createAsset,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          transaction: tx.asset.createAsset as any,
           fee,
-          args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+          args: [...rawNameTickerArgs, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
         })
       );
     }
@@ -178,25 +199,26 @@ export async function prepareCreateAsset(
 
     transactions.push(
       checkTxType({
-        transaction: tx.asset.createAsset,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        transaction: tx.asset.createAsset as any,
         fee,
-        args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+        args: [...rawNameTickerArgs, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
       })
     );
   }
 
-  if (initialStatistics?.length) {
-    const tickerKey = stringToTickerKey(ticker, context);
-    const rawStats = initialStatistics.map(i => inputStatTypeToMeshStatType(i, context));
-    const bTreeStats = statisticStatTypesToBtreeStatType(rawStats, context);
+  // if (initialStatistics?.length) {
+  //   const tickerKey = stringToAssetIdKey(ticker, context);
+  //   const rawStats = initialStatistics.map(i => inputStatTypeToMeshStatType(i, context));
+  //   const bTreeStats = statisticStatTypesToBtreeStatType(rawStats, context);
 
-    transactions.push(
-      checkTxType({
-        transaction: tx.statistics.setActiveAssetStats,
-        args: [tickerKey, bTreeStats],
-      })
-    );
-  }
+  //   transactions.push(
+  //     checkTxType({
+  //       transaction: tx.statistics.setActiveAssetStats,
+  //       args: [tickerKey, bTreeStats],
+  //     })
+  //   );
+  // }
 
   if (initialSupply?.gt(0)) {
     const rawInitialSupply = bigNumberToBalance(initialSupply, context, isDivisible);
@@ -231,7 +253,7 @@ export async function prepareCreateAsset(
 
   return {
     transactions,
-    resolver: newAsset,
+    resolver: createAssetResolver(context),
   };
 }
 

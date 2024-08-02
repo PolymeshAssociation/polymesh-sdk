@@ -14,13 +14,13 @@ import {
 } from '~/types';
 import { isFungibleAsset } from '~/utils';
 import {
+  assetToMeshAssetId,
   bigNumberToBalance,
   granularCanTransferResultToTransferBreakdown,
   nftToMeshNft,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
-  stringToTicker,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
@@ -46,10 +46,7 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
 
     this.preApprove = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [
-          toggleTickerPreApproval,
-          { ticker: parent.ticker, preApprove: true },
-        ],
+        getProcedureAndArgs: () => [toggleTickerPreApproval, { asset: parent, preApprove: true }],
         voidArgs: true,
       },
       context
@@ -57,10 +54,7 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
 
     this.removePreApproval = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [
-          toggleTickerPreApproval,
-          { ticker: parent.ticker, preApprove: false },
-        ],
+        getProcedureAndArgs: () => [toggleTickerPreApproval, { asset: parent, preApprove: false }],
         voidArgs: true,
       },
       context
@@ -97,12 +91,11 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
         }
   ): Promise<TransferBreakdown> {
     const {
-      parent: { ticker },
+      parent,
       context: {
         polymeshApi: { call },
       },
       context,
-      parent,
     } = this;
 
     const { assetApi, nftApi } = call;
@@ -134,6 +127,8 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
     let granularResult: CanTransferGranularReturn;
     let nftResult;
 
+    const rawAssetId = assetToMeshAssetId(parent, context);
+
     if ('amount' in args) {
       amount = args.amount;
       ({ isDivisible } = await parent.details());
@@ -142,18 +137,18 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
         rawFromPortfolio,
         toCustodian.did,
         rawToPortfolio,
-        stringToTicker(ticker, context),
+        rawAssetId,
         bigNumberToBalance(amount, context, isDivisible)
       );
     } else {
-      const rawNfts = nftToMeshNft(ticker, args.nfts, context);
+      const rawNfts = nftToMeshNft(parent, args.nfts, context);
       [granularResult, nftResult] = await Promise.all([
         assetApi.canTransferGranular<CanTransferGranularReturn>(
           fromCustodian.did,
           rawFromPortfolio,
           toCustodian.did,
           rawToPortfolio,
-          stringToTicker(ticker, context),
+          rawAssetId,
           bigNumberToBalance(amount, context, isDivisible)
         ),
         nftApi.validateNftTransfer<DispatchResult>(rawFromPortfolio, rawToPortfolio, rawNfts),
