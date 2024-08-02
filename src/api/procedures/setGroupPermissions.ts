@@ -4,9 +4,9 @@ import { CustomPermissionGroup, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, SetGroupPermissionsParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
+  assetToMeshAssetId,
   bigNumberToU32,
   permissionsLikeToPermissions,
-  stringToTicker,
   transactionPermissionsToExtrinsicPermissions,
 } from '~/utils/conversion';
 
@@ -43,11 +43,8 @@ export async function prepareSetGroupPermissions(
     });
   }
 
-  const {
-    asset: { ticker },
-    id,
-  } = group;
-  const rawTicker = stringToTicker(ticker, context);
+  const { asset, id } = group;
+  const rawAssetId = assetToMeshAssetId(asset, context);
   const rawAgId = bigNumberToU32(id, context);
   const rawExtrinsicPermissions = transactionPermissionsToExtrinsicPermissions(
     transactions,
@@ -56,7 +53,7 @@ export async function prepareSetGroupPermissions(
 
   return {
     transaction: externalAgents.setGroupPermissions,
-    args: [rawTicker, rawAgId, rawExtrinsicPermissions],
+    args: [rawAssetId, rawAgId, rawExtrinsicPermissions],
     resolver: undefined,
   };
 }

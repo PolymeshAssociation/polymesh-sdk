@@ -42,7 +42,7 @@ import {
   TransactionPermissions,
   TxTag,
 } from '~/types';
-import { tickerToString, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
+import { meshAssetToAssetId, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
 import { asIdentity, filterEventRecords } from '~/utils/internal';
 
 /**
@@ -414,7 +414,7 @@ export async function assertTransferAssetOwnershipAuthorizationValid(
   data: GenericAuthorizationData,
   context: Context
 ): Promise<void> {
-  const asset = new FungibleAsset({ ticker: data.value }, context);
+  const asset = new FungibleAsset({ assetId: data.value }, context);
   const exists = await asset.exists();
   if (!exists)
     throw new PolymeshError({
@@ -657,7 +657,7 @@ export async function getGroupFromPermissions(
  * @hidden
  */
 export async function assertGroupDoesNotExist(
-  asset: FungibleAsset,
+  asset: BaseAsset,
   permissions: TransactionPermissions | null
 ): Promise<void> {
   const matchingGroup = await getGroupFromPermissions(asset, permissions);
@@ -701,7 +701,7 @@ export const createCreateGroupResolver =
     const [{ data }] = filterEventRecords(receipt, 'externalAgents', 'GroupCreated');
 
     return new CustomPermissionGroup(
-      { id: u32ToBigNumber(data[2]), ticker: tickerToString(data[1]) },
+      { id: u32ToBigNumber(data[2]), assetId: meshAssetToAssetId(data[1], context) },
       context
     );
   };

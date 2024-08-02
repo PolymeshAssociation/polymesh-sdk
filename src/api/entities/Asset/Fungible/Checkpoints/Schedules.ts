@@ -16,7 +16,7 @@ import {
   RemoveCheckpointScheduleParams,
   ScheduleWithDetails,
 } from '~/types';
-import { momentToDate, stringToTicker, u64ToBigNumber } from '~/utils/conversion';
+import { assetToMeshAssetId, momentToDate, u64ToBigNumber } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**
@@ -29,14 +29,12 @@ export class Schedules extends Namespace<FungibleAsset> {
   constructor(parent: FungibleAsset, context: Context) {
     super(parent, context);
 
-    const { ticker } = parent;
-
     this.create = createProcedureMethod(
-      { getProcedureAndArgs: args => [createCheckpointSchedule, { ticker, ...args }] },
+      { getProcedureAndArgs: args => [createCheckpointSchedule, { asset: parent, ...args }] },
       context
     );
     this.remove = createProcedureMethod(
-      { getProcedureAndArgs: args => [removeCheckpointSchedule, { ticker, ...args }] },
+      { getProcedureAndArgs: args => [removeCheckpointSchedule, { asset: parent, ...args }] },
       context
     );
   }
@@ -82,7 +80,7 @@ export class Schedules extends Namespace<FungibleAsset> {
    */
   public async get(): Promise<ScheduleWithDetails[]> {
     const {
-      parent: { ticker },
+      parent,
       context: {
         polymeshApi: {
           query: { checkpoint },
@@ -91,20 +89,20 @@ export class Schedules extends Namespace<FungibleAsset> {
       context,
     } = this;
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(parent, context);
 
-    const rawSchedulesEntries = await checkpoint.scheduledCheckpoints.entries(rawTicker);
+    const rawSchedulesEntries = await checkpoint.scheduledCheckpoints.entries(rawAssetId);
 
     return rawSchedulesEntries.map(([key, rawScheduleOpt]) => {
       const rawSchedule = rawScheduleOpt.unwrap();
       const rawId = key.args[1];
-      const id = u64ToBigNumber(rawId);
+      const checkpointId = u64ToBigNumber(rawId);
       const points = [...rawSchedule.pending].map(rawPoint => momentToDate(rawPoint));
       const schedule = new CheckpointSchedule(
         {
-          ticker,
-          id,
+          id: checkpointId,
           pendingPoints: points,
+          assetId: parent.id,
         },
         context
       );

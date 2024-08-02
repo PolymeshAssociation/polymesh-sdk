@@ -399,7 +399,7 @@ export type GetTransferRestrictionReturnType<T> = ActiveTransferRestrictions<
     : ClaimPercentageTransferRestriction
 >;
 
-export type RemoveAssetStatParams = { ticker: string } & (
+export type RemoveAssetStatParams = { asset: FungibleAsset } & (
   | RemoveCountStatParams
   | RemoveBalanceStatParams
   | RemoveScopedCountParams
@@ -422,7 +422,7 @@ export type AddClaimPercentageStatParams = StatClaimIssuer & {
   type: StatType.ScopedBalance;
 };
 
-export type AddAssetStatParams = { ticker: string } & (
+export type AddAssetStatParams = { asset: FungibleAsset } & (
   | AddCountStatParams
   | AddPercentageStatParams
   | AddClaimCountStatParams

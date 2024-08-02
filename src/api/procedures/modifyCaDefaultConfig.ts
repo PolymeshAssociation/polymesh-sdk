@@ -12,10 +12,10 @@ import {
 } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import {
+  assetToMeshAssetId,
   percentageToPermill,
   signerToString,
   stringToIdentityId,
-  stringToTicker,
   targetsToTargetIdentities,
 } from '~/utils/conversion';
 import { assembleBatchTransactions, checkTxType, hasSameElements } from '~/utils/internal';
@@ -23,7 +23,7 @@ import { assembleBatchTransactions, checkTxType, hasSameElements } from '~/utils
 /**
  * @hidden
  */
-export type Params = { ticker: string } & ModifyCaDefaultConfigParams;
+export type Params = { asset: FungibleAsset } & ModifyCaDefaultConfigParams;
 
 const areSameTargets = (targets: CorporateActionTargets, newTargets: InputTargets): boolean => {
   const { identities: newIdentities, treatment: newTreatment } = newTargets;
@@ -52,7 +52,7 @@ export async function prepareModifyCaDefaultConfig(
     context,
   } = this;
   const {
-    ticker,
+    asset,
     targets: newTargets,
     defaultTaxWithholding: newDefaultTaxWithholding,
     taxWithholdings: newTaxWithholdings,
@@ -74,9 +74,7 @@ export async function prepareModifyCaDefaultConfig(
     assertCaTaxWithholdingsValid(newTaxWithholdings, context);
   }
 
-  const rawTicker = stringToTicker(ticker, context);
-
-  const asset = new FungibleAsset({ ticker }, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
 
   const { targets, defaultTaxWithholding, taxWithholdings } =
     await asset.corporateActions.getDefaultConfig();
@@ -94,7 +92,7 @@ export async function prepareModifyCaDefaultConfig(
     transactions.push(
       checkTxType({
         transaction: tx.corporateAction.setDefaultTargets,
-        args: [rawTicker, targetsToTargetIdentities(newTargets, context)],
+        args: [rawAssetId, targetsToTargetIdentities(newTargets, context)],
       })
     );
   }
@@ -110,7 +108,7 @@ export async function prepareModifyCaDefaultConfig(
     transactions.push(
       checkTxType({
         transaction: tx.corporateAction.setDefaultWithholdingTax,
-        args: [rawTicker, percentageToPermill(newDefaultTaxWithholding, context)],
+        args: [rawAssetId, percentageToPermill(newDefaultTaxWithholding, context)],
       })
     );
   }
@@ -133,7 +131,7 @@ export async function prepareModifyCaDefaultConfig(
     const transaction = tx.corporateAction.setDidWithholdingTax;
     const argsArray: [PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId, Permill][] =
       newTaxWithholdings.map(({ identity, percentage }) => [
-        rawTicker,
+        rawAssetId,
         stringToIdentityId(signerToString(identity), context),
         percentageToPermill(percentage, context),
       ]);
@@ -156,7 +154,7 @@ export async function prepareModifyCaDefaultConfig(
  */
 export function getAuthorization(
   this: Procedure<Params, void>,
-  { ticker, targets, defaultTaxWithholding, taxWithholdings }: Params
+  { asset, targets, defaultTaxWithholding, taxWithholdings }: Params
 ): ProcedureAuthorization {
   const transactions = [];
 
@@ -176,7 +174,7 @@ export function getAuthorization(
     permissions: {
       transactions,
       portfolios: [],
-      assets: [new FungibleAsset({ ticker }, this.context)],
+      assets: [asset],
     },
   };
 }

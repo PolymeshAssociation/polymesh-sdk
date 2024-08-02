@@ -1,3 +1,5 @@
+// TODO @prashantasdeveloper fix the logic here
+
 import { Bytes, u32 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
@@ -5,7 +7,6 @@ import { values } from 'lodash';
 import { addManualFees } from '~/api/procedures/utils';
 import {
   BaseAsset,
-  FungibleAsset,
   Identity,
   NftCollection,
   PolymeshError,
@@ -32,7 +33,6 @@ import {
   booleanToBool,
   collectionKeysToMetadataKeys,
   internalAssetTypeToAssetType,
-  internalNftTypeToNftType,
   metadataSpecToMeshMetadataSpec,
   nameToAssetName,
   securityIdentifierToAssetIdentifier,
@@ -102,6 +102,7 @@ export async function prepareCreateNftCollection(
   const {
     context: {
       polymeshApi: { tx },
+      isV6,
     },
     context,
     storage: { customTypeData, status },
@@ -124,14 +125,15 @@ export async function prepareCreateNftCollection(
 
   const rawTicker = stringToTicker(ticker, context);
   const rawName = nameToAssetName(name ?? ticker, context);
-  const rawType = internalNftTypeToNftType(internalNftType, context);
+  const rawNameTickerArgs = isV6 ? [rawName, rawTicker] : [rawName];
+  // const rawType = internalNftTypeToNftType(internalNftType, context);
   const rawDivisibility = booleanToBool(false, context);
   const rawIdentifiers = securityIdentifiers.map(identifier =>
     securityIdentifierToAssetIdentifier(identifier, context)
   );
   const rawFundingRound = optionize(stringToBytes)(fundingRound, context);
 
-  let nextLocalId = new BigNumber(1);
+  const nextLocalId = new BigNumber(1);
   let fee: BigNumber | undefined;
   if (status === TickerReservationStatus.Free) {
     const rawAssetType = internalAssetTypeToAssetType({ NonFungible: internalNftType }, context);
@@ -143,8 +145,15 @@ export async function prepareCreateNftCollection(
 
     transactions.push(
       checkTxType({
-        transaction: tx.asset.createAsset,
-        args: [rawName, rawTicker, rawDivisibility, rawAssetType, rawIdentifiers, rawFundingRound],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        transaction: tx.asset.createAsset as any,
+        args: [
+          ...rawNameTickerArgs,
+          rawDivisibility,
+          rawAssetType,
+          rawIdentifiers,
+          rawFundingRound,
+        ],
       })
     );
   } else if (status === TickerReservationStatus.Reserved) {
@@ -156,8 +165,15 @@ export async function prepareCreateNftCollection(
     );
     transactions.push(
       checkTxType({
-        transaction: tx.asset.createAsset,
-        args: [rawName, rawTicker, rawDivisibility, rawAssetType, rawIdentifiers, rawFundingRound],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        transaction: tx.asset.createAsset as any,
+        args: [
+          ...rawNameTickerArgs,
+          rawDivisibility,
+          rawAssetType,
+          rawIdentifiers,
+          rawFundingRound,
+        ],
       })
     );
   } else if (status === TickerReservationStatus.AssetCreated) {
@@ -165,20 +181,19 @@ export async function prepareCreateNftCollection(
      * assets can be created with type Nft, but not have a created collection,
      * we handle this case to prevent a ticker getting stuck if it was initialized via non SDK methods
      */
-    const asset = new FungibleAsset({ ticker }, context);
-    let nonFungible;
-    [fee, { nonFungible }, nextLocalId] = await Promise.all([
-      addManualFees(new BigNumber(0), [TxTags.nft.CreateNftCollection], context),
-      asset.details(),
-      asset.metadata.getNextLocalId(),
-    ]);
-
-    if (!nonFungible) {
-      throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message: 'Only assets with type NFT can be turned into NFT collections',
-      });
-    }
+    // const asset = new FungibleAsset({ ticker }, context);
+    // let nonFungible;
+    // [fee, { nonFungible }, nextLocalId] = await Promise.all([
+    //   addManualFees(new BigNumber(0), [TxTags.nft.CreateNftCollection], context),
+    //   asset.details(),
+    //   asset.metadata.getNextLocalId(),
+    // ]);
+    // if (!nonFungible) {
+    //   throw new PolymeshError({
+    //     code: ErrorCode.UnmetPrerequisite,
+    //     message: 'Only assets with type NFT can be turned into NFT collections',
+    //   });
+    // }
   }
 
   const globalMetadataKeys = collectionKeys.filter(isGlobalMetadata);
@@ -227,13 +242,17 @@ export async function prepareCreateNftCollection(
     checkTxType({
       transaction: tx.nft.createNftCollection,
       fee,
-      args: [rawTicker, rawType, rawCollectionKeys],
+      args: [
+        rawTicker,
+        // rawType,
+        rawCollectionKeys,
+      ],
     })
   );
 
   return {
     transactions,
-    resolver: new NftCollection({ ticker }, context),
+    resolver: new NftCollection({ assetId: ticker }, context),
   };
 }
 
@@ -278,7 +297,7 @@ export async function getAuthorization(
     return {
       permissions: {
         ...permissions,
-        assets: [new BaseAsset({ ticker }, context)],
+        assets: [new BaseAsset({ assetId: ticker }, context)],
       },
     };
   }
@@ -298,21 +317,25 @@ export async function prepareStorage(
   const needsLocalMetadata = collectionKeys.some(isLocalMetadata);
   const reservation = new TickerReservation({ ticker }, context);
 
-  const nft = new NftCollection({ ticker }, context);
+  // const nft = new NftCollection({ ticker }, context);
 
-  const [{ status }, signingIdentity, collectionExists] = await Promise.all([
+  const [
+    { status },
+    signingIdentity,
+    // collectionExists
+  ] = await Promise.all([
     reservation.details(),
     context.getSigningIdentity(),
-    nft.exists(),
+    // nft.exists(),
   ]);
 
-  if (collectionExists) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'An NFT collection already exists with the ticker',
-      data: { ticker },
-    });
-  }
+  // if (collectionExists) {
+  //   throw new PolymeshError({
+  //     code: ErrorCode.UnmetPrerequisite,
+  //     message: 'An NFT collection already exists with the ticker',
+  //     data: { ticker },
+  //   });
+  // }
 
   let customTypeData: Storage['customTypeData'];
 

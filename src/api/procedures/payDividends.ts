@@ -36,7 +36,7 @@ export async function preparePayDividends(
     distribution: {
       targets: { identities, treatment },
       id: localId,
-      asset: { ticker },
+      asset,
       paymentDate,
       expiryDate,
     },
@@ -62,7 +62,7 @@ export async function preparePayDividends(
     });
   }
 
-  const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
+  const rawCaId = corporateActionIdentifierToCaId({ asset, localId }, context);
 
   const rawArgs = targets.map(target =>
     tuple(rawCaId, stringToIdentityId(signerToString(target), context))

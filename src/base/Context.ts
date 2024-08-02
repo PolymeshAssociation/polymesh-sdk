@@ -6,6 +6,7 @@ import {
   QueryOptions,
 } from '@apollo/client/core';
 import { ApiPromise } from '@polkadot/api';
+import { UnsubscribePromise } from '@polkadot/api/types';
 import { getTypeDef, Option } from '@polkadot/types';
 import { AccountInfo, Header } from '@polkadot/types/interfaces';
 import {
@@ -57,6 +58,7 @@ import { Ensured } from '~/types/utils';
 import { DEFAULT_GQL_PAGE_SIZE, MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   accountIdToString,
+  assetToMeshAssetId,
   balanceToBigNumber,
   bigNumberToU32,
   boolToBoolean,
@@ -64,6 +66,7 @@ import {
   corporateActionIdentifierToCaId,
   distributionToDividendDistributionParams,
   identityIdToString,
+  meshAssetToAssetId,
   meshClaimToClaim,
   meshCorporateActionToCorporateActionParams,
   middlewareClaimToClaimData,
@@ -74,9 +77,7 @@ import {
   stringToAccountId,
   stringToHash,
   stringToIdentityId,
-  stringToTicker,
   textToString,
-  tickerToString,
   txTagToProtocolOp,
   u16ToBigNumber,
   u32ToBigNumber,
@@ -126,6 +127,10 @@ export class Context {
 
   private _isArchiveNodeResult?: boolean;
 
+  public isV6 = false;
+
+  private unsubChainVersion: UnsubscribePromise;
+
   /**
    * @hidden
    */
@@ -135,6 +140,13 @@ export class Context {
     this._middlewareApi = middlewareApiV2;
     this.polymeshApi = polymeshApi;
     this.ss58Format = ss58Format;
+
+    this.unsubChainVersion = polymeshApi.query.system.lastRuntimeUpgrade(upgrade => {
+      if (upgrade.isSome) {
+        const { specVersion } = upgrade.unwrap();
+        this.isV6 = specVersion.toNumber() < 7000000;
+      }
+    });
   }
 
   /**
@@ -749,14 +761,14 @@ export class Context {
     const distributionsMultiParams: PalletCorporateActionsCaId[] = [];
     const corporateActionParams: CorporateActionParams[] = [];
     const corporateActionIds: BigNumber[] = [];
-    const tickers: string[] = [];
+    const assetIds: string[] = [];
 
     const assetChunks = chunk(assets, MAX_CONCURRENT_REQUESTS);
 
     await P.each(assetChunks, async assetChunk => {
       const corporateActions = await Promise.all(
-        assetChunk.map(({ ticker }) =>
-          corporateActionQuery.corporateActions.entries(stringToTicker(ticker, this))
+        assetChunk.map(assetValue =>
+          corporateActionQuery.corporateActions.entries(assetToMeshAssetId(assetValue, this))
         )
       );
       const eligibleCas = flatten(corporateActions).filter(([, action]) => {
@@ -769,18 +781,21 @@ export class Context {
         eligibleCas,
         async ([
           {
-            args: [rawTicker, rawId],
+            args: [rawAssetId, rawId],
           },
           corporateAction,
         ]) => {
           const localId = u32ToBigNumber(rawId);
-          const ticker = tickerToString(rawTicker);
-          const caId = corporateActionIdentifierToCaId({ ticker, localId }, this);
+          const assetId = meshAssetToAssetId(rawAssetId, this);
+          const caId = corporateActionIdentifierToCaId(
+            { asset: new FungibleAsset({ assetId }, this), localId },
+            this
+          );
           const details = await corporateActionQuery.details(caId);
           const action = corporateAction.unwrap();
 
           return {
-            ticker,
+            assetId,
             localId,
             caId,
             corporateAction: meshCorporateActionToCorporateActionParams(action, details, this),
@@ -788,8 +803,8 @@ export class Context {
         }
       );
 
-      corporateActionData.forEach(({ ticker, localId, caId, corporateAction }) => {
-        tickers.push(ticker);
+      corporateActionData.forEach(({ assetId, localId, caId, corporateAction }) => {
+        assetIds.push(assetId);
         corporateActionIds.push(localId);
         distributionsMultiParams.push(caId);
         corporateActionParams.push(corporateAction);
@@ -822,7 +837,7 @@ export class Context {
         result.push({
           distribution: new DividendDistribution(
             {
-              ticker: tickers[index],
+              assetId: assetIds[index],
               id: corporateActionIds[index],
               ...corporateActionParams[index],
               ...distributionToDividendDistributionParams(dist, this),
@@ -899,7 +914,7 @@ export class Context {
             issuedAt: momentToDate(issuanceDate),
             lastUpdatedAt: momentToDate(lastUpdateDate),
             expiry,
-            claim: meshClaimToClaim(claim),
+            claim: meshClaimToClaim(claim, this),
           });
         }
       });
@@ -1157,6 +1172,9 @@ export class Context {
     }
 
     this.isDisconnected = true;
+
+    const unsub = await this.unsubChainVersion;
+    unsub();
 
     if (middlewareApi) {
       middlewareApi.stop();

@@ -40,14 +40,13 @@ import {
   identityIdToString,
   meshClaimTypeToClaimType,
   meshStatToStatType,
-  stringToTickerKey,
   transferConditionToTransferRestriction,
   transferRestrictionTypeToStatOpType,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { createProcedureMethod, getAssetIdForStats } from '~/utils/internal';
 
-export type SetTransferRestrictionsParams = { ticker: string } & (
+export type SetTransferRestrictionsParams = { asset: FungibleAsset } & (
   | SetCountTransferRestrictionsParams
   | SetPercentageTransferRestrictionsParams
   | SetClaimCountTransferRestrictionsParams
@@ -86,8 +85,6 @@ export abstract class TransferRestrictionBase<
   constructor(parent: FungibleAsset, context: Context) {
     super(parent, context);
 
-    const { ticker } = parent;
-
     this.addRestriction = createProcedureMethod<
       AddRestrictionParams<T>,
       AddTransferRestrictionParams,
@@ -96,7 +93,7 @@ export abstract class TransferRestrictionBase<
       {
         getProcedureAndArgs: args => [
           addTransferRestriction,
-          { ...args, type: this.type, ticker } as unknown as AddTransferRestrictionParams,
+          { ...args, type: this.type, asset: parent } as unknown as AddTransferRestrictionParams,
         ],
       },
       context
@@ -111,7 +108,7 @@ export abstract class TransferRestrictionBase<
       {
         getProcedureAndArgs: args => [
           setTransferRestrictions,
-          { ...args, type: this.type, ticker } as SetTransferRestrictionsParams,
+          { ...args, type: this.type, asset: parent } as SetTransferRestrictionsParams,
         ],
       },
       context
@@ -128,7 +125,7 @@ export abstract class TransferRestrictionBase<
           {
             restrictions: [],
             type: this.type,
-            ticker,
+            asset: parent,
           } as SetTransferRestrictionsParams,
         ],
         voidArgs: true,
@@ -143,7 +140,7 @@ export abstract class TransferRestrictionBase<
           {
             ...args,
             type: restrictionTypeToStatType[this.type],
-            ticker,
+            asset: parent,
           } as AddAssetStatParams,
         ],
       },
@@ -161,7 +158,7 @@ export abstract class TransferRestrictionBase<
           {
             ...args,
             type: restrictionTypeToStatType[this.type],
-            ticker,
+            asset: parent,
           } as RemoveAssetStatParams,
         ],
       },
@@ -211,18 +208,21 @@ export abstract class TransferRestrictionBase<
    */
   public async get(): Promise<GetTransferRestrictionReturnType<T>> {
     const {
-      parent: { ticker },
+      parent,
       context: {
         polymeshApi: {
           query: { statistics },
           consts,
         },
+        isV6,
       },
       context,
       type,
     } = this;
-    const tickerKey = stringToTickerKey(ticker, context);
-    const { requirements } = await statistics.assetTransferCompliances(tickerKey);
+
+    const rawAssetId = getAssetIdForStats(parent, context);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { requirements } = await (statistics.assetTransferCompliances as any)(rawAssetId);
 
     const existingRequirementCount = [...requirements].length;
 
@@ -237,6 +237,8 @@ export abstract class TransferRestrictionBase<
         return requirement.isClaimOwnership;
       }
     });
+
+    const rawAssetKey = isV6 ? { asset: rawAssetId } : { assetId: rawAssetId };
     const rawExemptedLists = await Promise.all(
       filteredRequirements.map(req => {
         const { value } = transferConditionToTransferRestriction(req, context);
@@ -244,14 +246,14 @@ export abstract class TransferRestrictionBase<
         if (req.isClaimCount) {
           const { claim } = value as ClaimCountRestrictionValue;
           return statistics.transferConditionExemptEntities.entries({
-            asset: tickerKey,
+            ...rawAssetKey,
             op: transferRestrictionTypeToStatOpType(TransferRestrictionType.ClaimCount, context),
             claimType: claim.type,
           });
         } else if (req.isClaimOwnership) {
           const { claim } = value as ClaimPercentageRestrictionValue;
           return statistics.transferConditionExemptEntities.entries({
-            asset: tickerKey,
+            ...rawAssetKey,
             op: transferRestrictionTypeToStatOpType(
               TransferRestrictionType.ClaimPercentage,
               context
@@ -260,14 +262,15 @@ export abstract class TransferRestrictionBase<
           });
         } else {
           return statistics.transferConditionExemptEntities.entries({
-            asset: tickerKey,
+            ...rawAssetKey,
             op: transferRestrictionTypeToStatOpType(type, context),
           });
         }
       })
     );
 
-    const restrictions = rawExemptedLists.map((list, index) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const restrictions = (rawExemptedLists as any[][]).map((list, index) => {
       const exemptedIds = list.map(
         ([
           {
@@ -325,7 +328,7 @@ export abstract class TransferRestrictionBase<
    */
   public async getStat(): Promise<ActiveStats> {
     const {
-      parent: { ticker },
+      parent,
       context,
       context: {
         polymeshApi: {
@@ -334,8 +337,10 @@ export abstract class TransferRestrictionBase<
       },
       type,
     } = this;
-    const tickerKey = stringToTickerKey(ticker, context);
-    const currentStats = await statistics.activeAssetStats(tickerKey);
+
+    const rawAssetId = getAssetIdForStats(parent, context);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const currentStats = await (statistics.activeAssetStats as any)(rawAssetId);
 
     let isSet = false;
     const claims: ActiveStats['claims'] = [];
@@ -349,7 +354,7 @@ export abstract class TransferRestrictionBase<
     };
 
     [...currentStats].forEach(stat => {
-      const statType = meshStatToStatType(stat);
+      const statType = meshStatToStatType(stat, context);
 
       if (type === TransferRestrictionType.ClaimCount && statType === StatType.ScopedCount) {
         isSet = true;

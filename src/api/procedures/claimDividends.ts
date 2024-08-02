@@ -26,12 +26,7 @@ export async function prepareClaimDividends(
   } = this;
   const {
     distribution,
-    distribution: {
-      id: localId,
-      asset: { ticker },
-      paymentDate,
-      expiryDate,
-    },
+    distribution: { id: localId, asset, paymentDate, expiryDate },
   } = args;
 
   assertDistributionOpen(paymentDate, expiryDate);
@@ -54,7 +49,7 @@ export async function prepareClaimDividends(
     });
   }
 
-  const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
+  const rawCaId = corporateActionIdentifierToCaId({ asset, localId }, context);
 
   return {
     transaction: tx.capitalDistribution.claim,

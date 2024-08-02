@@ -5,12 +5,16 @@ import { toHumanReadable } from '~/utils/internal';
 
 export interface HumanReadable {
   type: PermissionGroupType;
+  /**
+   * @deprecated in favour of `assetId`
+   */
   ticker: string;
+  assetId: string;
 }
 
 export interface UniqueIdentifiers {
   type: PermissionGroupType;
-  ticker: string;
+  assetId: string;
 }
 
 /**
@@ -22,9 +26,9 @@ export class KnownPermissionGroup extends PermissionGroup {
    * Check if a value is of type {@link UniqueIdentifiers}
    */
   public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
-    const { type, ticker } = identifier as UniqueIdentifiers;
+    const { type, assetId } = identifier as UniqueIdentifiers;
 
-    return type in PermissionGroupType && typeof ticker === 'string';
+    return type in PermissionGroupType && typeof assetId === 'string';
   }
 
   public type: PermissionGroupType;
@@ -100,6 +104,7 @@ export class KnownPermissionGroup extends PermissionGroup {
     return toHumanReadable({
       type,
       ticker: asset,
+      assetId: asset,
     });
   }
 }

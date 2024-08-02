@@ -102,6 +102,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
         polymeshApi: {
           query: { asset },
         },
+        isV6,
       },
       ticker,
       context,
@@ -138,14 +139,24 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
       };
     };
 
+    let tickerRegistrationStorage = asset.uniqueTickerRegistration;
+    let tokensStorage = asset.securityTokens;
+
+    if (isV6) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tickerRegistrationStorage = (asset as any).tickers;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tokensStorage = (asset as any).tokens;
+    }
+
     if (callback) {
       context.assertSupportsSubscription();
 
-      return requestMulti<[typeof asset.tickers, typeof asset.tokens]>(
+      return requestMulti<[typeof tickerRegistrationStorage, typeof tokensStorage]>(
         context,
         [
-          [asset.tickers, rawTicker],
-          [asset.tokens, rawTicker],
+          [tickerRegistrationStorage, rawTicker],
+          [tokensStorage, rawTicker],
         ],
         ([registration, token]) => {
           // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
@@ -155,10 +166,10 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
     }
 
     const [tickerRegistration, meshAsset] = await requestMulti<
-      [typeof asset.tickers, typeof asset.tokens]
+      [typeof tickerRegistrationStorage, typeof tokensStorage]
     >(context, [
-      [asset.tickers, rawTicker],
-      [asset.tokens, rawTicker],
+      [tickerRegistrationStorage, rawTicker],
+      [tokensStorage, rawTicker],
     ]);
 
     return assembleResult(tickerRegistration, meshAsset);
@@ -198,11 +209,24 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
    * Determine whether this Ticker Reservation exists on chain
    */
   public async exists(): Promise<boolean> {
-    const { ticker, context } = this;
+    const {
+      ticker,
+      context: {
+        polymeshApi: {
+          query: { asset },
+        },
+        isV6,
+      },
+      context,
+    } = this;
 
-    const tickerSize = await context.polymeshApi.query.asset.tickers.size(
-      stringToTicker(ticker, context)
-    );
+    let tickerRegistrationStorage = asset.uniqueTickerRegistration;
+
+    if (isV6) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tickerRegistrationStorage = (asset as any).tickers;
+    }
+    const tickerSize = await tickerRegistrationStorage.size(stringToTicker(ticker, context));
 
     return !tickerSize.isZero();
   }

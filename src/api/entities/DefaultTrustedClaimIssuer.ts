@@ -4,15 +4,15 @@ import { Query } from '~/middleware/types';
 import { ClaimType, ErrorCode, EventIdentifier } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
+  assetToMeshAssetId,
   middlewareEventDetailsToEventIdentifier,
-  stringToTicker,
   trustedIssuerToTrustedClaimIssuer,
 } from '~/utils/conversion';
 import { getAssetIdForMiddleware, optionize } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   did: string;
-  ticker: string;
+  assetId: string;
 }
 
 /**
@@ -24,9 +24,9 @@ export class DefaultTrustedClaimIssuer extends Identity {
    * Check if a value is of type {@link UniqueIdentifiers}
    */
   public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
-    const { did, ticker } = identifier as UniqueIdentifiers;
+    const { did, assetId } = identifier as UniqueIdentifiers;
 
-    return typeof did === 'string' && typeof ticker === 'string';
+    return typeof did === 'string' && typeof assetId === 'string';
   }
 
   /**
@@ -38,11 +38,11 @@ export class DefaultTrustedClaimIssuer extends Identity {
    * @hidden
    */
   public constructor(args: UniqueIdentifiers, context: Context) {
-    const { ticker, ...identifiers } = args;
+    const { assetId, ...identifiers } = args;
 
     super(identifiers, context);
 
-    this.asset = new FungibleAsset({ ticker }, context);
+    this.asset = new FungibleAsset({ assetId }, context);
   }
 
   /**
@@ -86,13 +86,13 @@ export class DefaultTrustedClaimIssuer extends Identity {
         },
       },
       context,
-      asset: { ticker },
+      asset,
       did,
     } = this;
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(asset, context);
 
-    const claimIssuers = await complianceManager.trustedClaimIssuer(rawTicker);
+    const claimIssuers = await complianceManager.trustedClaimIssuer(rawAssetId);
 
     const claimIssuer = claimIssuers
       .map(issuer => trustedIssuerToTrustedClaimIssuer(issuer, context))
@@ -101,7 +101,7 @@ export class DefaultTrustedClaimIssuer extends Identity {
     if (!claimIssuer) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
-        message: `The Identity with DID "${did}" is no longer a trusted issuer for "${ticker}"`,
+        message: `The Identity with DID "${did}" is no longer a trusted issuer for "${asset.ticker}"`,
       });
     }
 

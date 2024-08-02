@@ -14,7 +14,6 @@ import {
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import {
   complianceConditionsToBtreeSet,
-  stringToTickerKey,
   toExemptKey,
   transferRestrictionToPolymeshTransferCondition,
   transferRestrictionTypeToStatOpType,
@@ -23,6 +22,7 @@ import {
 import {
   assertStatIsSet,
   checkTxType,
+  getAssetIdForStats,
   getExemptedBtreeSet,
   neededStatTypeForRestrictionInput,
   requestMulti,
@@ -31,7 +31,7 @@ import {
 /**
  * @hidden
  */
-export type AddTransferRestrictionParams = { ticker: string } & (
+export type AddTransferRestrictionParams = { asset: FungibleAsset } & (
   | AddCountTransferRestrictionParams
   | AddPercentageTransferRestrictionParams
   | AddClaimCountTransferRestrictionParams
@@ -55,8 +55,8 @@ export async function prepareAddTransferRestriction(
     },
     context,
   } = this;
-  const { ticker, exemptedIdentities = [], type } = args;
-  const tickerKey = stringToTickerKey(ticker, context);
+  const { asset, exemptedIdentities = [], type } = args;
+  const rawAssetId = getAssetIdForStats(asset, context);
 
   let claimIssuer;
   if (
@@ -73,8 +73,10 @@ export async function prepareAddTransferRestriction(
   const [currentStats, { requirements: currentRestrictions }] = await requestMulti<
     [typeof statisticsQuery.activeAssetStats, typeof statisticsQuery.assetTransferCompliances]
   >(context, [
-    [statisticsQuery.activeAssetStats, tickerKey],
-    [statisticsQuery.assetTransferCompliances, tickerKey],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [statisticsQuery.activeAssetStats, rawAssetId as any],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [statisticsQuery.assetTransferCompliances, rawAssetId as any],
   ]);
 
   const neededStat = neededStatTypeForRestrictionInput({ type, claimIssuer }, context);
@@ -129,14 +131,15 @@ export async function prepareAddTransferRestriction(
   transactions.push(
     checkTxType({
       transaction: statistics.setAssetTransferCompliance,
-      args: [tickerKey, conditions],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      args: [rawAssetId as any, conditions],
     })
   );
 
   if (exemptedIdentities.length) {
     const op = transferRestrictionTypeToStatOpType(type, context);
-    const exemptedIdBtreeSet = await getExemptedBtreeSet(exemptedIdentities, ticker, context);
-    const exemptKey = toExemptKey(tickerKey, op, claimType);
+    const exemptedIdBtreeSet = await getExemptedBtreeSet(exemptedIdentities, context);
+    const exemptKey = toExemptKey(context, rawAssetId, op, claimType);
     transactions.push(
       checkTxType({
         transaction: statistics.setEntitiesExempt,
@@ -154,7 +157,7 @@ export async function prepareAddTransferRestriction(
  */
 export function getAuthorization(
   this: Procedure<AddTransferRestrictionParams, BigNumber>,
-  { ticker, exemptedIdentities = [] }: AddTransferRestrictionParams
+  { asset, exemptedIdentities = [] }: AddTransferRestrictionParams
 ): ProcedureAuthorization {
   const transactions = [TxTags.statistics.SetAssetTransferCompliance];
 
@@ -164,7 +167,7 @@ export function getAuthorization(
 
   return {
     permissions: {
-      assets: [new FungibleAsset({ ticker }, this.context)],
+      assets: [asset],
       transactions,
       portfolios: [],
     },

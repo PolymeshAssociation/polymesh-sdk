@@ -10,7 +10,7 @@ import {
   TxTags,
 } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { bigNumberToU64, dateToMoment, stringToTicker } from '~/utils/conversion';
+import { assetToMeshAssetId, bigNumberToU64, dateToMoment } from '~/utils/conversion';
 
 /**
  * @hidden
@@ -71,7 +71,7 @@ function validateInput(
  */
 export type Params = ModifyOfferingTimesParams & {
   id: BigNumber;
-  ticker: string;
+  asset: FungibleAsset;
 };
 
 /**
@@ -89,9 +89,9 @@ export async function prepareModifyOfferingTimes(
     },
     context,
   } = this;
-  const { ticker, id, start: newStart, end: newEnd } = args;
+  const { asset, id, start: newStart, end: newEnd } = args;
 
-  const offering = new Offering({ ticker, id }, context);
+  const offering = new Offering({ id, assetId: asset.id }, context);
 
   const {
     status: { sale, timing },
@@ -101,7 +101,8 @@ export async function prepareModifyOfferingTimes(
 
   validateInput(sale, newStart, start, newEnd, end, timing);
 
-  const rawTicker = stringToTicker(ticker, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
+
   const rawId = bigNumberToU64(id, context);
   const rawStart = newStart ? dateToMoment(newStart, context) : dateToMoment(start, context);
   let rawEnd: u64 | null;
@@ -116,7 +117,7 @@ export async function prepareModifyOfferingTimes(
 
   return {
     transaction: txSto.modifyFundraiserWindow,
-    args: [rawTicker, rawId, rawStart, rawEnd],
+    args: [rawAssetId, rawId, rawStart, rawEnd],
     resolver: undefined,
   };
 }
@@ -126,13 +127,12 @@ export async function prepareModifyOfferingTimes(
  */
 export function getAuthorization(
   this: Procedure<Params, void>,
-  { ticker }: Params
+  { asset }: Params
 ): ProcedureAuthorization {
-  const { context } = this;
   return {
     permissions: {
       transactions: [TxTags.sto.ModifyFundraiserWindow],
-      assets: [new FungibleAsset({ ticker }, context)],
+      assets: [asset],
       portfolios: [],
     },
   };

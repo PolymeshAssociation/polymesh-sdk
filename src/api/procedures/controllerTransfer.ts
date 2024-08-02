@@ -2,11 +2,11 @@ import { DefaultPortfolio, FungibleAsset, PolymeshError, Procedure } from '~/int
 import { ControllerTransferParams, ErrorCode, RoleType, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
+  assetToMeshAssetId,
   bigNumberToBalance,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
-  stringToTicker,
 } from '~/utils/conversion';
 
 export interface Storage {
@@ -16,7 +16,7 @@ export interface Storage {
 /**
  * @hidden
  */
-export type Params = { ticker: string } & ControllerTransferParams;
+export type Params = { asset: FungibleAsset } & ControllerTransferParams;
 
 /**
  * @hidden
@@ -32,9 +32,7 @@ export async function prepareControllerTransfer(
     storage: { did },
     context,
   } = this;
-  const { ticker, originPortfolio, amount } = args;
-
-  const asset = new FungibleAsset({ ticker }, context);
+  const { asset, originPortfolio, amount } = args;
 
   const originPortfolioId = portfolioLikeToPortfolioId(originPortfolio);
 
@@ -59,10 +57,12 @@ export async function prepareControllerTransfer(
     });
   }
 
+  const rawAssetId = assetToMeshAssetId(asset, context);
+
   return {
     transaction: tx.asset.controllerTransfer,
     args: [
-      stringToTicker(ticker, context),
+      rawAssetId,
       bigNumberToBalance(amount, context),
       portfolioIdToMeshPortfolioId(originPortfolioId, context),
     ],
@@ -75,14 +75,12 @@ export async function prepareControllerTransfer(
  */
 export async function getAuthorization(
   this: Procedure<Params, void, Storage>,
-  { ticker }: Params
+  { asset }: Params
 ): Promise<ProcedureAuthorization> {
   const {
     context,
     storage: { did },
   } = this;
-
-  const asset = new FungibleAsset({ ticker }, context);
 
   const portfolioId = { did };
 

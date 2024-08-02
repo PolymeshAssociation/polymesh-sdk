@@ -1,4 +1,4 @@
-import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
+import { PolymeshError, Procedure } from '~/internal';
 import { AddAssetStatParams, ErrorCode, StatType, TxTags } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import {
@@ -8,9 +8,8 @@ import {
   statisticsOpTypeToStatType,
   statisticStatTypesToBtreeStatType,
   statTypeToStatOpType,
-  stringToTickerKey,
 } from '~/utils/conversion';
-import { checkTxType, compareStatsToInput } from '~/utils/internal';
+import { checkTxType, compareStatsToInput, getAssetIdForStats } from '~/utils/internal';
 
 /**
  * @hidden
@@ -28,11 +27,12 @@ export async function prepareAddAssetStat(
     },
     context,
   } = this;
-  const { ticker, type } = args;
+  const { asset, type } = args;
 
-  const tickerKey = stringToTickerKey(ticker, context);
-  const currentStats = await statisticsQuery.activeAssetStats(tickerKey);
-  const needStat = ![...currentStats].find(s => compareStatsToInput(s, args));
+  const rawAssetId = getAssetIdForStats(asset, context);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const currentStats = await statisticsQuery.activeAssetStats(rawAssetId as any);
+  const needStat = ![...currentStats].find(s => compareStatsToInput(s, args, context));
 
   if (!needStat) {
     throw new PolymeshError({
@@ -55,7 +55,8 @@ export async function prepareAddAssetStat(
   transactions.push(
     checkTxType({
       transaction: statistics.setActiveAssetStats,
-      args: [tickerKey, newStats],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      args: [rawAssetId as any, newStats],
     })
   );
 
@@ -66,7 +67,8 @@ export async function prepareAddAssetStat(
     transactions.push(
       checkTxType({
         transaction: statistics.batchUpdateAssetStats,
-        args: [tickerKey, newStat, statValue],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        args: [rawAssetId as any, newStat, statValue],
       })
     );
   } else if (args.type === StatType.ScopedCount) {
@@ -74,7 +76,8 @@ export async function prepareAddAssetStat(
     transactions.push(
       checkTxType({
         transaction: statistics.batchUpdateAssetStats,
-        args: [tickerKey, newStat, statValue],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        args: [rawAssetId as any, newStat, statValue],
       })
     );
   }
@@ -86,13 +89,12 @@ export async function prepareAddAssetStat(
  */
 export function getAuthorization(
   this: Procedure<AddAssetStatParams, void>,
-  { type, ticker }: AddAssetStatParams
+  { type, asset }: AddAssetStatParams
 ): ProcedureAuthorization {
   const transactions = [TxTags.statistics.SetActiveAssetStats];
   if (type === StatType.Count || type === StatType.ScopedCount) {
     transactions.push(TxTags.statistics.BatchUpdateAssetStats);
   }
-  const asset = new FungibleAsset({ ticker }, this.context);
   return {
     permissions: {
       transactions,

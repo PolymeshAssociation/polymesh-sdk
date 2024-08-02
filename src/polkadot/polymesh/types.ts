@@ -1814,11 +1814,11 @@ export interface ScheduleSpec extends Struct {
 export interface Scope extends Enum {
   readonly isIdentity: boolean;
   readonly asIdentity: IdentityId;
-  readonly isTicker: boolean;
-  readonly asTicker: Ticker;
+  readonly isAsset: boolean;
+  readonly asAsset: Ticker;
   readonly isCustom: boolean;
   readonly asCustom: Bytes;
-  readonly type: 'Identity' | 'Ticker' | 'Custom';
+  readonly type: 'Identity' | 'Asset' | 'Custom';
 }
 
 /** @name SecondaryKey */

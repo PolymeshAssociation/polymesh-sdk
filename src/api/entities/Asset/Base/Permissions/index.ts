@@ -25,8 +25,8 @@ import {
 } from '~/types';
 import {
   agentGroupToPermissionGroup,
+  assetToMeshAssetId,
   identityIdToString,
-  stringToTicker,
   u32ToBigNumber,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
@@ -41,20 +41,18 @@ export class Permissions extends Namespace<BaseAsset> {
   constructor(parent: BaseAsset, context: Context) {
     super(parent, context);
 
-    const { ticker } = parent;
-
     this.createGroup = createProcedureMethod(
-      { getProcedureAndArgs: args => [createGroup, { ticker, ...args }] },
+      { getProcedureAndArgs: args => [createGroup, { asset: parent, ...args }] },
       context
     );
 
     this.inviteAgent = createProcedureMethod(
-      { getProcedureAndArgs: args => [inviteExternalAgent, { ticker, ...args }] },
+      { getProcedureAndArgs: args => [inviteExternalAgent, { asset: parent, ...args }] },
       context
     );
 
     this.removeAgent = createProcedureMethod(
-      { getProcedureAndArgs: args => [removeExternalAgent, { ticker, ...args }] },
+      { getProcedureAndArgs: args => [removeExternalAgent, { asset: parent, ...args }] },
       context
     );
   }
@@ -91,16 +89,13 @@ export class Permissions extends Namespace<BaseAsset> {
   public async getGroup(
     args: { id: BigNumber } | { type: PermissionGroupType }
   ): Promise<CustomPermissionGroup | KnownPermissionGroup> {
-    const {
-      parent: { ticker },
-      context,
-    } = this;
+    const { parent, context } = this;
 
     if ('type' in args) {
-      return new KnownPermissionGroup({ ticker, type: args.type }, context);
+      return new KnownPermissionGroup({ assetId: parent.id, type: args.type }, context);
     }
 
-    const customGroup = new CustomPermissionGroup({ ticker, id: args.id }, context);
+    const customGroup = new CustomPermissionGroup({ assetId: parent.id, id: args.id }, context);
 
     const exists = await customGroup.exists();
 
@@ -125,20 +120,23 @@ export class Permissions extends Namespace<BaseAsset> {
         },
       },
       context,
-      parent: { ticker },
+      parent,
     } = this;
 
     const known = Object.values(PermissionGroupType).map(
-      type => new KnownPermissionGroup({ type, ticker }, context)
+      type => new KnownPermissionGroup({ type, assetId: parent.id }, context)
     );
 
-    const rawCustomPermissionGroups = await externalAgents.groupPermissions.entries(
-      stringToTicker(ticker, context)
-    );
+    const rawAssetId = assetToMeshAssetId(parent, context);
+
+    const rawCustomPermissionGroups = await externalAgents.groupPermissions.entries(rawAssetId);
 
     const custom: CustomPermissionGroup[] = rawCustomPermissionGroups.map(
       ([storageKey]) =>
-        new CustomPermissionGroup({ ticker, id: u32ToBigNumber(storageKey.args[1]) }, context)
+        new CustomPermissionGroup(
+          { assetId: parent.id, id: u32ToBigNumber(storageKey.args[1]) },
+          context
+        )
     );
 
     return {
@@ -158,17 +156,19 @@ export class Permissions extends Namespace<BaseAsset> {
           query: { externalAgents },
         },
       },
-      parent: { ticker },
+      parent,
       context,
     } = this;
 
-    const groups = await externalAgents.groupOfAgent.entries(stringToTicker(ticker, context));
+    const rawAssetId = assetToMeshAssetId(parent, context);
+
+    const groups = await externalAgents.groupOfAgent.entries(rawAssetId);
 
     return groups.map(([storageKey, agentGroup]) => {
       const rawAgentGroup = agentGroup.unwrap();
       return {
         agent: new Identity({ did: identityIdToString(storageKey.args[1]) }, context),
-        group: agentGroupToPermissionGroup(rawAgentGroup, ticker, context),
+        group: agentGroupToPermissionGroup(rawAgentGroup, parent.id, context),
       };
     });
   }

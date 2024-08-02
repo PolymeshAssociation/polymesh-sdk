@@ -42,6 +42,7 @@ import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import { isFungibleLegBuilder, isNftLegBuilder, isOffChainLeg } from '~/utils';
 import { MAX_LEGS_LENGTH } from '~/utils/constants';
 import {
+  assetToMeshAssetInputParam,
   bigNumberToBalance,
   bigNumberToU64,
   dateToMoment,
@@ -56,16 +57,16 @@ import {
   portfolioLikeToPortfolioId,
   stringToIdentityId,
   stringToMemo,
-  stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
+  asAssetId,
   asBaseAsset,
+  asBaseAssetV2,
   asDid,
   asIdentity,
   assembleBatchTransactions,
   assertIdentityExists,
-  asTicker,
   filterEventRecords,
   optionize,
 } from '~/utils/internal';
@@ -160,12 +161,12 @@ function getEndCondition(
 /**
  * @hidden
  */
-function validateFungibleLeg(leg: FungibleLeg, ticker: string): void {
+function validateFungibleLeg(leg: FungibleLeg, assetId: string): void {
   if (!('amount' in leg)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The key "amount" should be present in a fungible leg',
-      data: { ticker },
+      data: { assetId },
     });
   }
 }
@@ -173,12 +174,12 @@ function validateFungibleLeg(leg: FungibleLeg, ticker: string): void {
 /**
  * @hidden
  */
-function validateNonFungibleLeg(leg: NftLeg, ticker: string): void {
+function validateNonFungibleLeg(leg: NftLeg, assetId: string): void {
   if (!('nfts' in leg)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The key "nfts" should be present in an NFT leg',
-      data: { ticker },
+      data: { assetId },
     });
   }
 }
@@ -199,7 +200,7 @@ async function separateLegs(
   const offChainLegs: InstructionOffChainLeg[] = [];
 
   for (const leg of legs) {
-    const ticker = asTicker(leg.asset);
+    const assetId = await asAssetId(leg.asset, context);
 
     if (isOffChainLeg(leg)) {
       offChainLegs.push(leg);
@@ -210,10 +211,10 @@ async function separateLegs(
       ]);
 
       if (isFungible(leg)) {
-        validateFungibleLeg(leg, ticker);
+        validateFungibleLeg(leg, assetId);
         fungibleLegs.push(leg);
       } else if (isNft(leg)) {
-        validateNonFungibleLeg(leg, ticker);
+        validateNonFungibleLeg(leg, assetId);
         nftLegs.push(leg);
       }
     }
@@ -388,11 +389,12 @@ async function getTxArgsAndErrors(
           const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromId, context);
           const rawToPortfolio = portfolioIdToMeshPortfolioId(toId, context);
 
+          const baseAsset = await asBaseAssetV2(asset, context);
           const rawLeg = legToFungibleLeg(
             {
               sender: rawFromPortfolio,
               receiver: rawToPortfolio,
-              ticker: stringToTicker(asTicker(asset), context),
+              ...assetToMeshAssetInputParam(baseAsset, context),
               amount: bigNumberToBalance(amount, context),
             },
             context
@@ -411,6 +413,8 @@ async function getTxArgsAndErrors(
             assertValidCdd(toId.did, context),
           ]);
 
+          const baseAsset = await asBaseAssetV2(asset, context);
+
           const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromId, context);
           const rawToPortfolio = portfolioIdToMeshPortfolioId(toId, context);
 
@@ -418,7 +422,7 @@ async function getTxArgsAndErrors(
             {
               sender: rawFromPortfolio,
               receiver: rawToPortfolio,
-              nfts: nftToMeshNft(asTicker(asset), nfts, context),
+              nfts: nftToMeshNft(baseAsset, nfts, context),
             },
             context
           );
@@ -436,7 +440,7 @@ async function getTxArgsAndErrors(
             {
               senderIdentity: rawFromIdentityId,
               receiverIdentity: rawToIdentityId,
-              ticker: stringToTicker(asset, context),
+              ...assetToMeshAssetInputParam(new BaseAsset({ assetId: asset }, context), context),
               amount: bigNumberToBalance(offChainAmount, context),
             },
             context
