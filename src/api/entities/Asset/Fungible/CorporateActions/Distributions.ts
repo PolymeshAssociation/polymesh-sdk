@@ -15,13 +15,13 @@ import {
   ProcedureMethod,
 } from '~/types';
 import {
+  assetToMeshAssetId,
   balanceToBigNumber,
   bigNumberToU32,
   boolToBoolean,
   corporateActionIdentifierToCaId,
   distributionToDividendDistributionParams,
   meshCorporateActionToCorporateActionParams,
-  stringToTicker,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
@@ -46,10 +46,8 @@ export class Distributions extends Namespace<FungibleAsset> {
   constructor(parent: FungibleAsset, context: Context) {
     super(parent, context);
 
-    const { ticker } = parent;
-
     this.configureDividendDistribution = createProcedureMethod(
-      { getProcedureAndArgs: args => [configureDividendDistribution, { ticker, ...args }] },
+      { getProcedureAndArgs: args => [configureDividendDistribution, { asset: parent, ...args }] },
       context
     );
   }
@@ -61,7 +59,7 @@ export class Distributions extends Namespace<FungibleAsset> {
    */
   public async getOne(args: { id: BigNumber }): Promise<DistributionWithDetails> {
     const {
-      parent: { ticker },
+      parent,
       context: {
         polymeshApi: { query },
       },
@@ -69,11 +67,12 @@ export class Distributions extends Namespace<FungibleAsset> {
     } = this;
     const { id } = args;
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(parent, context);
+
     const rawLocalId = bigNumberToU32(id, context);
-    const rawCaId = corporateActionIdentifierToCaId({ ticker, localId: id }, context);
+    const rawCaId = corporateActionIdentifierToCaId({ asset: parent, localId: id }, context);
     const [corporateAction, capitalDistribution, details] = await Promise.all([
-      query.corporateAction.corporateActions(rawTicker, rawLocalId),
+      query.corporateAction.corporateActions(rawAssetId, rawLocalId),
       query.capitalDistribution.distributions(rawCaId),
       query.corporateAction.details(rawCaId),
     ]);
@@ -90,7 +89,7 @@ export class Distributions extends Namespace<FungibleAsset> {
     const distribution = new DividendDistribution(
       {
         id,
-        ticker,
+        assetId: parent.id,
         ...meshCorporateActionToCorporateActionParams(corporateAction.unwrap(), details, context),
         ...distributionToDividendDistributionParams(dist, context),
       },

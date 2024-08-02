@@ -1,10 +1,10 @@
 import { assertGroupDoesNotExist, createCreateGroupResolver } from '~/api/procedures/utils';
-import { CustomPermissionGroup, FungibleAsset, Procedure } from '~/internal';
+import { BaseAsset, CustomPermissionGroup, FungibleAsset, Procedure } from '~/internal';
 import { CreateGroupParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
+  assetToMeshAssetId,
   permissionsLikeToPermissions,
-  stringToTicker,
   transactionPermissionsToExtrinsicPermissions,
 } from '~/utils/conversion';
 
@@ -12,7 +12,7 @@ import {
  * @hidden
  */
 export type Params = CreateGroupParams & {
-  ticker: string;
+  asset: BaseAsset;
 };
 
 /**
@@ -26,7 +26,7 @@ export interface Storage {
  * @hidden
  */
 export async function prepareCreateGroup(
-  this: Procedure<Params, CustomPermissionGroup, Storage>,
+  this: Procedure<Params, CustomPermissionGroup>,
   args: Params
 ): Promise<
   TransactionSpec<CustomPermissionGroup, ExtrinsicParams<'externalAgents', 'createGroup'>>
@@ -38,11 +38,10 @@ export async function prepareCreateGroup(
       },
     },
     context,
-    storage: { asset },
   } = this;
-  const { ticker, permissions } = args;
+  const { asset, permissions } = args;
 
-  const rawTicker = stringToTicker(ticker, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
   const { transactions } = permissionsLikeToPermissions(permissions, context);
 
   await assertGroupDoesNotExist(asset, transactions);
@@ -54,7 +53,7 @@ export async function prepareCreateGroup(
 
   return {
     transaction: externalAgents.createGroup,
-    args: [rawTicker, rawExtrinsicPermissions],
+    args: [rawAssetId, rawExtrinsicPermissions],
     resolver: createCreateGroupResolver(context),
   };
 }
@@ -63,11 +62,9 @@ export async function prepareCreateGroup(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, CustomPermissionGroup, Storage>
+  this: Procedure<Params, CustomPermissionGroup>,
+  { asset }: Params
 ): ProcedureAuthorization {
-  const {
-    storage: { asset },
-  } = this;
   return {
     permissions: {
       transactions: [TxTags.externalAgents.CreateGroup],
@@ -80,19 +77,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export function prepareStorage(
-  this: Procedure<Params, CustomPermissionGroup, Storage>,
-  { ticker }: Params
-): Storage {
-  const { context } = this;
-
-  return {
-    asset: new FungibleAsset({ ticker }, context),
-  };
-}
-
-/**
- * @hidden
- */
-export const createGroup = (): Procedure<Params, CustomPermissionGroup, Storage> =>
-  new Procedure(prepareCreateGroup, getAuthorization, prepareStorage);
+export const createGroup = (): Procedure<Params, CustomPermissionGroup> =>
+  new Procedure(prepareCreateGroup, getAuthorization);

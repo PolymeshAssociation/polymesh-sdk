@@ -18,7 +18,7 @@ import {
 /**
  * @hidden
  */
-export type Params = { ticker: string } & ModifyCorporateActionsAgentParams;
+export type Params = { asset: FungibleAsset } & ModifyCorporateActionsAgentParams;
 
 /**
  * @hidden
@@ -33,9 +33,7 @@ export async function prepareModifyCorporateActionsAgent(
     },
     context,
   } = this;
-  const { ticker, target, requestExpiry } = args;
-
-  const asset = new FungibleAsset({ ticker }, context);
+  const { asset, target, requestExpiry } = args;
 
   const [invalidDids, agents] = await Promise.all([
     context.getInvalidDids([target]),
@@ -64,7 +62,10 @@ export async function prepareModifyCorporateActionsAgent(
   const rawAuthorizationData = authorizationToAuthorizationData(
     {
       type: AuthorizationType.BecomeAgent,
-      value: new KnownPermissionGroup({ type: PermissionGroupType.PolymeshV1Caa, ticker }, context),
+      value: new KnownPermissionGroup(
+        { type: PermissionGroupType.PolymeshV1Caa, assetId: asset.id },
+        context
+      ),
     },
     context
   );
@@ -93,13 +94,13 @@ export async function prepareModifyCorporateActionsAgent(
  */
 export function getAuthorization(
   this: Procedure<Params>,
-  { ticker }: Params
+  { asset }: Params
 ): ProcedureAuthorization {
   return {
     permissions: {
       transactions: [TxTags.identity.AddAuthorization],
       portfolios: [],
-      assets: [new FungibleAsset({ ticker }, this.context)],
+      assets: [asset],
     },
   };
 }

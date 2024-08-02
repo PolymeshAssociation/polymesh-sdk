@@ -1,7 +1,11 @@
-import { FungibleAsset, MetadataEntry, PolymeshError, Procedure } from '~/internal';
+import { MetadataEntry, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, MetadataType, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { bigNumberToU64, meshMetadataKeyToMetadataKey, stringToTicker } from '~/utils/conversion';
+import {
+  assetToMeshAssetId,
+  bigNumberToU64,
+  meshMetadataKeyToMetadataKey,
+} from '~/utils/conversion';
 
 /**
  * @hidden
@@ -21,20 +25,15 @@ export async function prepareRemoveLocalMetadata(
     context: {
       polymeshApi: {
         tx,
-        query: {
-          nft: { collectionKeys, collectionTicker },
-        },
+        query: { nft },
       },
+      isV6,
     },
     context,
   } = this;
 
   const {
-    metadataEntry: {
-      id,
-      type,
-      asset: { ticker },
-    },
+    metadataEntry: { id, type, asset },
     metadataEntry,
   } = params;
 
@@ -45,18 +44,23 @@ export async function prepareRemoveLocalMetadata(
     });
   }
 
-  const rawTicker = stringToTicker(ticker, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
   const rawKeyId = bigNumberToU64(id, context);
 
+  let collectionAssetStorage = nft.collectionAsset;
+  if (isV6) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    collectionAssetStorage = (nft as any).collectionTicker;
+  }
   const [collectionKey, { canModify, reason }] = await Promise.all([
-    collectionTicker(rawTicker),
+    collectionAssetStorage(rawAssetId),
     metadataEntry.isModifiable(),
   ]);
 
   if (!collectionKey.isZero()) {
-    const rawKeys = await collectionKeys(collectionKey);
+    const rawKeys = await nft.collectionKeys(collectionKey);
     const isRequired = [...rawKeys].some(value =>
-      meshMetadataKeyToMetadataKey(value, ticker).id.eq(id)
+      meshMetadataKeyToMetadataKey(value, asset, context).id.eq(id)
     );
 
     if (isRequired) {
@@ -73,7 +77,7 @@ export async function prepareRemoveLocalMetadata(
 
   return {
     transaction: tx.asset.removeLocalMetadataKey,
-    args: [rawTicker, rawKeyId],
+    args: [rawAssetId, rawKeyId],
     resolver: undefined,
   };
 }
@@ -85,18 +89,14 @@ export function getAuthorization(
   this: Procedure<Params, void>,
   params: Params
 ): ProcedureAuthorization {
-  const { context } = this;
-
   const {
-    metadataEntry: {
-      asset: { ticker },
-    },
+    metadataEntry: { asset },
   } = params;
 
   return {
     permissions: {
       transactions: [TxTags.asset.RemoveLocalMetadataKey],
-      assets: [new FungibleAsset({ ticker }, context)],
+      assets: [asset],
       portfolios: [],
     },
   };

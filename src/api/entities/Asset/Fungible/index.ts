@@ -17,12 +17,11 @@ import {
 } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
+  assetToMeshAssetId,
   balanceToBigNumber,
   middlewareEventDetailsToEventIdentifier,
   middlewarePortfolioToPortfolio,
   portfolioIdStringToPortfolio,
-  stringToTicker,
-  tickerToDid,
 } from '~/utils/conversion';
 import {
   calculateNextKey,
@@ -59,11 +58,6 @@ export class FungibleAsset extends BaseAsset {
   constructor(identifiers: UniqueIdentifiers, context: Context) {
     super(identifiers, context);
 
-    const { ticker } = identifiers;
-
-    this.ticker = ticker;
-    this.did = tickerToDid(ticker);
-
     this.settlements = new FungibleSettlements(this, context);
     this.assetHolders = new AssetHolders(this, context);
     this.issuance = new Issuance(this, context);
@@ -73,11 +67,11 @@ export class FungibleAsset extends BaseAsset {
     this.corporateActions = new CorporateActions(this, context);
 
     this.redeem = createProcedureMethod(
-      { getProcedureAndArgs: args => [redeemTokens, { ticker, ...args }] },
+      { getProcedureAndArgs: args => [redeemTokens, { asset: this, ...args }] },
       context
     );
     this.controllerTransfer = createProcedureMethod(
-      { getProcedureAndArgs: args => [controllerTransfer, { ticker, ...args }] },
+      { getProcedureAndArgs: args => [controllerTransfer, { asset: this, ...args }] },
       context
     );
   }
@@ -124,12 +118,11 @@ export class FungibleAsset extends BaseAsset {
         },
       },
       context,
-      ticker,
     } = this;
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(this, context);
 
-    const balanceEntries = await balanceOf.entries(rawTicker);
+    const balanceEntries = await balanceOf.entries(rawAssetId);
 
     const assetBalances = balanceEntries.filter(
       ([, balance]) => !balanceToBigNumber(balance).isZero()
@@ -224,7 +217,7 @@ export class FungibleAsset extends BaseAsset {
         const assetId = getAssetIdFromMiddleware(asset);
 
         return {
-          asset: new FungibleAsset({ ticker: assetId }, context),
+          asset: new FungibleAsset({ assetId }, context),
           amount: new BigNumber(amount).shiftedBy(-6),
           event: eventId,
           from: optionize(middlewarePortfolioToPortfolio)(fromPortfolio, context),
@@ -255,17 +248,28 @@ export class FungibleAsset extends BaseAsset {
    */
   public override async exists(): Promise<boolean> {
     const {
-      ticker,
       context,
       context: {
-        polymeshApi: { query },
+        polymeshApi: {
+          query: { asset, nft },
+        },
+        isV6,
       },
     } = this;
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(this, context);
+
+    let tokensStorage = asset.securityTokens;
+    let collectionsStorage = nft.collectionAsset;
+    if (isV6) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tokensStorage = (asset as any).tokens;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      collectionsStorage = (nft as any).collectionTicker;
+    }
 
     const [tokenSize, nftId] = await Promise.all([
-      query.asset.tokens.size(rawTicker),
-      query.nft.collectionTicker(rawTicker),
+      tokensStorage.size(rawAssetId),
+      collectionsStorage(rawAssetId),
     ]);
 
     return !tokenSize.isZero() && nftId.isZero();

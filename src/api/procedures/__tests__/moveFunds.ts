@@ -19,6 +19,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import {
   ErrorCode,
+  FungibleAsset,
   FungiblePortfolioMovement,
   NonFungiblePortfolioMovement,
   PortfolioBalance,
@@ -28,7 +29,6 @@ import {
   TxTags,
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
-import { asTicker } from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/NumberedPortfolio',
@@ -482,7 +482,7 @@ describe('moveFunds procedure', () => {
       .mockReturnValue(rawToMeshPortfolioId);
 
     const rawMovePortfolioItem = dsMockUtils.createMockMovePortfolioItem({
-      ticker: dsMockUtils.createMockTicker(asTicker(items[0].asset)),
+      ticker: dsMockUtils.createMockTicker((items[0].asset as FungibleAsset).ticker),
       amount: dsMockUtils.createMockBalance(items[0].amount),
     });
     when(fungiblePortfolioMovementToMovePortfolioFundSpy)

@@ -3,26 +3,26 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import { Checkpoint, Context, FungibleAsset, Procedure } from '~/internal';
 import { TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { stringToTicker, u64ToBigNumber } from '~/utils/conversion';
+import { assetToMeshAssetId, u64ToBigNumber } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
 
 /**
  * @hidden
  */
 export interface Params {
-  ticker: string;
+  asset: FungibleAsset;
 }
 
 /**
  * @hidden
  */
 export const createCheckpointResolver =
-  (ticker: string, context: Context) =>
+  (assetId: string, context: Context) =>
   (receipt: ISubmittableResult): Checkpoint => {
     const [{ data }] = filterEventRecords(receipt, 'checkpoint', 'CheckpointCreated');
     const id = u64ToBigNumber(data[2]);
 
-    return new Checkpoint({ ticker, id }, context);
+    return new Checkpoint({ id, assetId }, context);
   };
 
 /**
@@ -33,14 +33,14 @@ export async function prepareCreateCheckpoint(
   args: Params
 ): Promise<TransactionSpec<Checkpoint, ExtrinsicParams<'checkpoint', 'createCheckpoint'>>> {
   const { context } = this;
-  const { ticker } = args;
+  const { asset } = args;
 
-  const rawTicker = stringToTicker(ticker, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
 
   return {
     transaction: context.polymeshApi.tx.checkpoint.createCheckpoint,
-    args: [rawTicker],
-    resolver: createCheckpointResolver(ticker, context),
+    args: [rawAssetId],
+    resolver: createCheckpointResolver(asset.id, context),
   };
 }
 
@@ -49,12 +49,12 @@ export async function prepareCreateCheckpoint(
  */
 export function getAuthorization(
   this: Procedure<Params, Checkpoint>,
-  { ticker }: Params
+  { asset }: Params
 ): ProcedureAuthorization {
   return {
     permissions: {
       transactions: [TxTags.checkpoint.CreateCheckpoint],
-      assets: [new FungibleAsset({ ticker }, this.context)],
+      assets: [asset],
       portfolios: [],
     },
   };

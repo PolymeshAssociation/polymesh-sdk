@@ -1,15 +1,15 @@
 import BigNumber from 'bignumber.js';
 
-import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
+import { BaseAsset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RemoveAssetRequirementParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { bigNumberToU32, stringToTicker, u32ToBigNumber } from '~/utils/conversion';
+import { assetToMeshAssetId, bigNumberToU32, u32ToBigNumber } from '~/utils/conversion';
 
 /**
  * @hidden
  */
 export type Params = RemoveAssetRequirementParams & {
-  ticker: string;
+  asset: BaseAsset;
 };
 
 /**
@@ -27,13 +27,13 @@ export async function prepareRemoveAssetRequirement(
     },
     context,
   } = this;
-  const { ticker, requirement } = args;
+  const { asset, requirement } = args;
 
-  const rawTicker = stringToTicker(ticker, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
 
   const reqId = requirement instanceof BigNumber ? requirement : requirement.id;
 
-  const { requirements } = await query.complianceManager.assetCompliances(rawTicker);
+  const { requirements } = await query.complianceManager.assetCompliances(rawAssetId);
 
   if (!requirements.some(({ id: rawId }) => u32ToBigNumber(rawId).eq(reqId))) {
     throw new PolymeshError({
@@ -44,7 +44,7 @@ export async function prepareRemoveAssetRequirement(
 
   return {
     transaction: tx.complianceManager.removeComplianceRequirement,
-    args: [rawTicker, bigNumberToU32(reqId, context)],
+    args: [rawAssetId, bigNumberToU32(reqId, context)],
     resolver: undefined,
   };
 }
@@ -54,12 +54,12 @@ export async function prepareRemoveAssetRequirement(
  */
 export function getAuthorization(
   this: Procedure<Params, void>,
-  { ticker }: Params
+  { asset }: Params
 ): ProcedureAuthorization {
   return {
     permissions: {
       transactions: [TxTags.complianceManager.RemoveComplianceRequirement],
-      assets: [new FungibleAsset({ ticker }, this.context)],
+      assets: [asset],
       portfolios: [],
     },
   };
