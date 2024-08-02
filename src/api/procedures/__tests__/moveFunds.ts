@@ -100,6 +100,32 @@ describe('moveFunds procedure', () => {
     });
   });
 
+  it('should throw an error if sending ConfidentialAccount does not exist', async () => {
+    const proc = procedureMockUtils.getInstance<MoveFundsArgs, void>(mockContext);
+
+    from.exists = jest.fn().mockResolvedValue(false);
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'The sending Confidential Account does not exist',
+    });
+
+    return expect(prepareMoveFunds.call(proc, args)).rejects.toThrowError(expectedError);
+  });
+
+  it('should throw an error if receiving ConfidentialAccount does not exist', async () => {
+    const proc = procedureMockUtils.getInstance<MoveFundsArgs, void>(mockContext);
+
+    to.exists = jest.fn().mockResolvedValue(false);
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'The receiving Confidential Account does not exist',
+    });
+
+    return expect(prepareMoveFunds.call(proc, args)).rejects.toThrowError(expectedError);
+  });
+
   it('should throw an error if sending ConfidentialAccount getIdentity resolves to null', async () => {
     const proc = procedureMockUtils.getInstance<MoveFundsArgs, void>(mockContext);
 
@@ -166,7 +192,7 @@ describe('moveFunds procedure', () => {
 
     const expectedError = new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'Only the of the owner of the sender account can move funds',
+      message: 'Only the owner of the sender account can move funds',
     });
 
     return expect(prepareMoveFunds.call(proc, args)).rejects.toThrowError(expectedError);
@@ -185,6 +211,19 @@ describe('moveFunds procedure', () => {
     const expectedError = new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'The provided accounts must have the same identity',
+    });
+
+    return expect(prepareMoveFunds.call(proc, args)).rejects.toThrowError(expectedError);
+  });
+
+  it('should throw an error if the ConfidentialAsset does not exist', async () => {
+    const proc = procedureMockUtils.getInstance<MoveFundsArgs, void>(mockContext);
+
+    asset.exists = jest.fn().mockResolvedValue(false);
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'One or more of the specified Confidential Assets do not exist',
     });
 
     return expect(prepareMoveFunds.call(proc, args)).rejects.toThrowError(expectedError);

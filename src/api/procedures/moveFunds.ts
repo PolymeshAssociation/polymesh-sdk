@@ -26,6 +26,25 @@ export async function checkArgs(
   const sendingAccount = asConfidentialAccount(from, context);
   const receivingAccount = asConfidentialAccount(to, context);
 
+  const [sendingAccountExists, receivingAccountExists] = await Promise.all([
+    sendingAccount.exists(),
+    receivingAccount.exists(),
+  ]);
+
+  if (!sendingAccountExists) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'The sending Confidential Account does not exist',
+    });
+  }
+
+  if (!receivingAccountExists) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'The receiving Confidential Account does not exist',
+    });
+  }
+
   const [signingIdentity, senderIdentity, receiverIdentity] = await Promise.all([
     context.getSigningIdentity(),
     sendingAccount.getIdentity(),
@@ -42,7 +61,7 @@ export async function checkArgs(
   if (!signingIdentity.isEqual(senderIdentity)) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'Only the of the owner of the sender account can move funds',
+      message: 'Only the owner of the sender account can move funds',
     });
   }
 
@@ -50,6 +69,21 @@ export async function checkArgs(
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'The provided accounts must have the same identity',
+    });
+  }
+
+  const checkAssetExists = proofs.map(({ asset }) => {
+    const confidentialAsset = asConfidentialAsset(asset, context);
+
+    return confidentialAsset.exists();
+  });
+
+  const assetExists = await Promise.all(checkAssetExists);
+
+  if (!assetExists.every(v => v)) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'One or more of the specified Confidential Assets do not exist',
     });
   }
 
