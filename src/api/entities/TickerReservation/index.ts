@@ -1,4 +1,4 @@
-import { PalletAssetSecurityToken, PalletAssetTickerRegistration } from '@polkadot/types/lookup';
+import { PalletAssetAssetDetails, PalletAssetTickerRegistration } from '@polkadot/types/lookup';
 import { Option } from '@polkadot/types-codec';
 
 import {
@@ -16,13 +16,18 @@ import {
   NoArgsProcedureMethod,
   ProcedureMethod,
   SubCallback,
+  TickerReservationDetails,
+  TickerReservationStatus,
   TransferTickerOwnershipParams,
   UnsubCallback,
 } from '~/types';
-import { identityIdToString, momentToDate, stringToTicker } from '~/utils/conversion';
+import {
+  identityIdToString,
+  meshAssetToAssetId,
+  momentToDate,
+  stringToTicker,
+} from '~/utils/conversion';
 import { assertTickerValid, createProcedureMethod, requestMulti } from '~/utils/internal';
-
-import { TickerReservationDetails, TickerReservationStatus } from './types';
 
 /**
  * Properties that uniquely identify a TickerReservation
@@ -102,6 +107,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
         polymeshApi: {
           query: { asset },
         },
+        isV6,
       },
       ticker,
       context,
@@ -111,7 +117,8 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
 
     const assembleResult = (
       reservationOpt: Option<PalletAssetTickerRegistration>,
-      tokenOpt: Option<PalletAssetSecurityToken>
+      tokenOpt: Option<PalletAssetAssetDetails>,
+      assetId?: string
     ): TickerReservationDetails => {
       let owner: Identity | null = null;
       let status = TickerReservationStatus.Free;
@@ -121,7 +128,15 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
         status = TickerReservationStatus.AssetCreated;
         const rawOwnerDid = tokenOpt.unwrap().ownerDid;
         owner = new Identity({ did: identityIdToString(rawOwnerDid) }, context);
-      } else if (reservationOpt.isSome) {
+        return {
+          owner,
+          expiryDate,
+          status,
+          assetId: assetId!,
+        };
+      }
+
+      if (reservationOpt.isSome) {
         const { owner: rawOwnerDid, expiry } = reservationOpt.unwrap();
         owner = new Identity({ did: identityIdToString(rawOwnerDid) }, context);
 
@@ -138,30 +153,50 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
       };
     };
 
+    let tokensStorage = asset.assets;
+    let tickerRegistrationStorage = asset.uniqueTickerRegistration;
+    let rawAssetId = rawTicker;
+    let assetId: string | undefined;
+
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
+    if (isV6) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tickerRegistrationStorage = (asset as any).tickers; // NOSONAR
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tokensStorage = (asset as any).tokens; // NOSONAR
+      assetId = ticker;
+    } else {
+      const meshAssetId = await asset.tickerAssetID(rawTicker);
+      rawAssetId = meshAssetId.unwrapOrDefault();
+      if (meshAssetId.isSome) {
+        assetId = meshAssetToAssetId(meshAssetId.unwrap(), context);
+      }
+    }
+
     if (callback) {
       context.assertSupportsSubscription();
 
-      return requestMulti<[typeof asset.tickers, typeof asset.tokens]>(
+      return requestMulti<[typeof tickerRegistrationStorage, typeof tokensStorage]>(
         context,
         [
-          [asset.tickers, rawTicker],
-          [asset.tokens, rawTicker],
+          [tickerRegistrationStorage, rawTicker],
+          [tokensStorage, rawAssetId],
         ],
         ([registration, token]) => {
           // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
-          callback(assembleResult(registration, token));
+          callback(assembleResult(registration, token, assetId));
         }
       );
     }
 
     const [tickerRegistration, meshAsset] = await requestMulti<
-      [typeof asset.tickers, typeof asset.tokens]
+      [typeof tickerRegistrationStorage, typeof tokensStorage]
     >(context, [
-      [asset.tickers, rawTicker],
-      [asset.tokens, rawTicker],
+      [tickerRegistrationStorage, rawTicker],
+      [tokensStorage, rawAssetId],
     ]);
 
-    return assembleResult(tickerRegistration, meshAsset);
+    return assembleResult(tickerRegistration, meshAsset, assetId);
   }
 
   /**
@@ -198,11 +233,25 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
    * Determine whether this Ticker Reservation exists on chain
    */
   public async exists(): Promise<boolean> {
-    const { ticker, context } = this;
+    const {
+      ticker,
+      context: {
+        polymeshApi: {
+          query: { asset },
+        },
+        isV6,
+      },
+      context,
+    } = this;
 
-    const tickerSize = await context.polymeshApi.query.asset.tickers.size(
-      stringToTicker(ticker, context)
-    );
+    let tickerRegistrationStorage = asset.uniqueTickerRegistration;
+
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
+    if (isV6) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tickerRegistrationStorage = (asset as any).tickers; // NOSONAR
+    }
+    const tickerSize = await tickerRegistrationStorage.size(stringToTicker(ticker, context));
 
     return !tickerSize.isZero();
   }

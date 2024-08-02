@@ -1,8 +1,8 @@
 import { Bytes, Option } from '@polkadot/types';
 import {
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
   PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
-  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -26,19 +26,19 @@ jest.mock(
 
 describe('setMetadata procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
   let metadataToMeshMetadataKeySpy: jest.SpyInstance;
   let metadataValueDetailToMeshMetadataValueDetailSpy: jest.SpyInstance;
 
-  let ticker: string;
+  let assetId: string;
   let id: BigNumber;
   let type: MetadataType;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let rawMetadataKey: PolymeshPrimitivesAssetMetadataAssetMetadataKey;
   let params: Params;
   let setAssetMetadataMock: PolymeshTx<
     [
-      PolymeshPrimitivesTicker,
+      PolymeshPrimitivesAssetAssetID,
       PolymeshPrimitivesAssetMetadataAssetMetadataKey,
       Bytes,
       Option<PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail>
@@ -47,7 +47,7 @@ describe('setMetadata procedure', () => {
 
   let setAssetMetadataDetailsMock: PolymeshTx<
     [
-      PolymeshPrimitivesTicker,
+      PolymeshPrimitivesAssetAssetID,
       PolymeshPrimitivesAssetMetadataAssetMetadataKey,
       PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail
     ]
@@ -61,7 +61,7 @@ describe('setMetadata procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     metadataToMeshMetadataKeySpy = jest.spyOn(utilsConversionModule, 'metadataToMeshMetadataKey');
     metadataValueDetailToMeshMetadataValueDetailSpy = jest.spyOn(
       utilsConversionModule,
@@ -71,8 +71,8 @@ describe('setMetadata procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    ticker = 'SOME_TICKER';
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    assetId = '0x1234';
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
 
     id = new BigNumber(1);
     type = MetadataType.Local;
@@ -80,7 +80,7 @@ describe('setMetadata procedure', () => {
     metadataEntry = entityMockUtils.getMetadataEntryInstance({
       id,
       type,
-      ticker,
+      assetId,
       value: {
         value: 'OLD_VALUE',
         expiry: null,
@@ -89,7 +89,9 @@ describe('setMetadata procedure', () => {
       },
     });
 
-    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(assetToMeshAssetIdSpy)
+      .calledWith(expect.objectContaining({ id: assetId }), mockContext)
+      .mockReturnValue(rawAssetId);
 
     rawMetadataKey = dsMockUtils.createMockAssetMetadataKey({
       Local: dsMockUtils.createMockU64(id),
@@ -129,7 +131,7 @@ describe('setMetadata procedure', () => {
       metadataEntry: entityMockUtils.getMetadataEntryInstance({
         id,
         type,
-        ticker,
+        assetId,
         value: {
           lockStatus: MetadataLockStatus.Locked,
         },
@@ -151,7 +153,7 @@ describe('setMetadata procedure', () => {
       metadataEntry: entityMockUtils.getMetadataEntryInstance({
         id,
         type,
-        ticker,
+        assetId,
         value: {
           lockStatus: MetadataLockStatus.LockedUntil,
           lockedUntil,
@@ -174,7 +176,7 @@ describe('setMetadata procedure', () => {
 
   it('should throw an error if MetadataEntry value details are being set without specifying the value', () => {
     params = {
-      metadataEntry: entityMockUtils.getMetadataEntryInstance({ id, type, ticker, value: null }),
+      metadataEntry: entityMockUtils.getMetadataEntryInstance({ id, type, assetId, value: null }),
       details: {
         expiry: null,
         lockStatus: MetadataLockStatus.Unlocked,
@@ -210,12 +212,12 @@ describe('setMetadata procedure', () => {
     const fakeResult = expect.objectContaining({
       id,
       type,
-      asset: expect.objectContaining({ ticker }),
+      asset: expect.objectContaining({ id: assetId }),
     });
 
     expect(result).toEqual({
       transaction: setAssetMetadataMock,
-      args: [rawTicker, rawMetadataKey, rawValue, null],
+      args: [rawAssetId, rawMetadataKey, rawValue, null],
       resolver: fakeResult,
     });
 
@@ -230,7 +232,7 @@ describe('setMetadata procedure', () => {
 
     expect(result).toEqual({
       transaction: setAssetMetadataMock,
-      args: [rawTicker, rawMetadataKey, rawValue, rawValueDetail],
+      args: [rawAssetId, rawMetadataKey, rawValue, rawValueDetail],
       resolver: fakeResult,
     });
   });
@@ -252,12 +254,12 @@ describe('setMetadata procedure', () => {
     const fakeResult = expect.objectContaining({
       id,
       type,
-      asset: expect.objectContaining({ ticker }),
+      asset: expect.objectContaining({ id: assetId }),
     });
 
     expect(result).toEqual({
       transaction: setAssetMetadataDetailsMock,
-      args: [rawTicker, rawMetadataKey, rawValueDetail],
+      args: [rawAssetId, rawMetadataKey, rawValueDetail],
       resolver: fakeResult,
     });
   });
@@ -276,7 +278,7 @@ describe('setMetadata procedure', () => {
       expect(boundFunc(params)).toEqual({
         permissions: {
           transactions: [TxTags.asset.SetAssetMetadataDetails],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
           portfolios: [],
         },
       });
@@ -284,7 +286,7 @@ describe('setMetadata procedure', () => {
       expect(boundFunc({ ...params, value: 'SOME_VALUE' })).toEqual({
         permissions: {
           transactions: [TxTags.asset.SetAssetMetadata],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
           portfolios: [],
         },
       });

@@ -7,6 +7,7 @@ import { Context, FungibleAsset, Identity, Offering, PolymeshError, Procedure } 
 import { ErrorCode, LaunchOfferingParams, PortfolioId, RoleType, TxTags, VenueType } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
+  assetToMeshAssetId,
   bigNumberToBalance,
   bigNumberToU64,
   dateToMoment,
@@ -15,16 +16,15 @@ import {
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
   stringToBytes,
-  stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { filterEventRecords, optionize } from '~/utils/internal';
+import { asBaseAsset, filterEventRecords, optionize } from '~/utils/internal';
 
 /**
  * @hidden
  */
 export type Params = LaunchOfferingParams & {
-  ticker: string;
+  asset: FungibleAsset;
 };
 
 /**
@@ -39,12 +39,12 @@ export interface Storage {
  * @hidden
  */
 export const createOfferingResolver =
-  (ticker: string, context: Context) =>
+  (assetId: string, context: Context) =>
   (receipt: ISubmittableResult): Offering => {
     const [{ data }] = filterEventRecords(receipt, 'sto', 'FundraiserCreated');
     const newFundraiserId = u64ToBigNumber(data[1]);
 
-    return new Offering({ id: newFundraiserId, ticker }, context);
+    return new Offering({ id: newFundraiserId, assetId }, context);
   };
 
 /**
@@ -61,7 +61,7 @@ export async function prepareLaunchOffering(
     context,
     storage: { offeringPortfolioId, raisingPortfolioId },
   } = this;
-  const { ticker, raisingCurrency, venue, name, tiers, start, end, minInvestment } = args;
+  const { asset, raisingCurrency, venue, name, tiers, start, end, minInvestment } = args;
 
   const portfolio = portfolioIdToPortfolio(offeringPortfolioId, context);
 
@@ -69,7 +69,7 @@ export async function prepareLaunchOffering(
     assertPortfolioExists(offeringPortfolioId, context),
     assertPortfolioExists(raisingPortfolioId, context),
     portfolio.getAssetBalances({
-      assets: [ticker],
+      assets: [asset],
     }),
   ]);
 
@@ -118,13 +118,16 @@ export async function prepareLaunchOffering(
     });
   }
 
+  const rawAssetId = assetToMeshAssetId(asset, context);
+  const raisingAsset = await asBaseAsset(raisingCurrency, context);
+
   return {
     transaction: tx.sto.createFundraiser,
     args: [
       portfolioIdToMeshPortfolioId(offeringPortfolioId, context),
-      stringToTicker(ticker, context),
+      rawAssetId,
       portfolioIdToMeshPortfolioId(raisingPortfolioId, context),
-      stringToTicker(raisingCurrency, context),
+      assetToMeshAssetId(raisingAsset, context),
       tiers.map(tier => offeringTierToPriceTier(tier, context)),
       bigNumberToU64(venueId, context),
       optionize(dateToMoment)(start, context),
@@ -132,7 +135,7 @@ export async function prepareLaunchOffering(
       bigNumberToBalance(minInvestment, context),
       stringToBytes(name, context),
     ],
-    resolver: createOfferingResolver(ticker, context),
+    resolver: createOfferingResolver(asset.id, context),
   };
 }
 
@@ -141,7 +144,7 @@ export async function prepareLaunchOffering(
  */
 export function getAuthorization(
   this: Procedure<Params, Offering, Storage>,
-  { ticker }: Params
+  { asset }: Params
 ): ProcedureAuthorization {
   const {
     storage: { offeringPortfolioId, raisingPortfolioId },
@@ -155,7 +158,7 @@ export function getAuthorization(
     ],
     permissions: {
       transactions: [TxTags.sto.CreateFundraiser],
-      assets: [new FungibleAsset({ ticker }, context)],
+      assets: [asset],
       portfolios: [
         portfolioIdToPortfolio(offeringPortfolioId, context),
         portfolioIdToPortfolio(raisingPortfolioId, context),

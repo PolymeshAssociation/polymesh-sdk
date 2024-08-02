@@ -17,12 +17,11 @@ import {
 } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
+  assetToMeshAssetId,
   balanceToBigNumber,
   middlewareEventDetailsToEventIdentifier,
   middlewarePortfolioToPortfolio,
   portfolioIdStringToPortfolio,
-  stringToTicker,
-  tickerToDid,
 } from '~/utils/conversion';
 import {
   calculateNextKey,
@@ -59,11 +58,6 @@ export class FungibleAsset extends BaseAsset {
   constructor(identifiers: UniqueIdentifiers, context: Context) {
     super(identifiers, context);
 
-    const { ticker } = identifiers;
-
-    this.ticker = ticker;
-    this.did = tickerToDid(ticker);
-
     this.settlements = new FungibleSettlements(this, context);
     this.assetHolders = new AssetHolders(this, context);
     this.issuance = new Issuance(this, context);
@@ -73,11 +67,11 @@ export class FungibleAsset extends BaseAsset {
     this.corporateActions = new CorporateActions(this, context);
 
     this.redeem = createProcedureMethod(
-      { getProcedureAndArgs: args => [redeemTokens, { ticker, ...args }] },
+      { getProcedureAndArgs: args => [redeemTokens, { asset: this, ...args }] },
       context
     );
     this.controllerTransfer = createProcedureMethod(
-      { getProcedureAndArgs: args => [controllerTransfer, { ticker, ...args }] },
+      { getProcedureAndArgs: args => [controllerTransfer, { asset: this, ...args }] },
       context
     );
   }
@@ -89,7 +83,9 @@ export class FungibleAsset extends BaseAsset {
    * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
    */
   public async createdAt(): Promise<EventIdentifier | null> {
-    const { ticker, context } = this;
+    const { id, context } = this;
+
+    const middlewareAssetId = await getAssetIdForMiddleware(id, context);
 
     const {
       data: {
@@ -99,7 +95,7 @@ export class FungibleAsset extends BaseAsset {
       },
     } = await context.queryMiddleware<Ensured<Query, 'assets'>>(
       assetQuery({
-        ticker,
+        id: middlewareAssetId,
       })
     );
 
@@ -124,12 +120,11 @@ export class FungibleAsset extends BaseAsset {
         },
       },
       context,
-      ticker,
     } = this;
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(this, context);
 
-    const balanceEntries = await balanceOf.entries(rawTicker);
+    const balanceEntries = await balanceOf.entries(rawAssetId);
 
     const assetBalances = balanceEntries.filter(
       ([, balance]) => !balanceToBigNumber(balance).isZero()
@@ -151,7 +146,7 @@ export class FungibleAsset extends BaseAsset {
    * @note uses the middlewareV2
    */
   public async getOperationHistory(): Promise<HistoricAgentOperation[]> {
-    const { context, ticker: assetId } = this;
+    const { context, id: assetId } = this;
 
     const middlewareAssetId = await getAssetIdForMiddleware(assetId, context);
 
@@ -185,10 +180,10 @@ export class FungibleAsset extends BaseAsset {
     size?: BigNumber;
     start?: BigNumber;
   }): Promise<ResultSet<HistoricAssetTransaction>> {
-    const { context, ticker } = this;
+    const { context, id } = this;
     const { size, start } = opts;
 
-    const middlewareAssetId = await getAssetIdForMiddleware(ticker, context);
+    const middlewareAssetId = await getAssetIdForMiddleware(id, context);
 
     const {
       data: {
@@ -204,41 +199,41 @@ export class FungibleAsset extends BaseAsset {
       )
     );
 
-    const data: HistoricAssetTransaction[] = nodes.map(
-      ({
-        asset,
-        amount,
-        fromPortfolioId,
-        toPortfolioId,
-        createdBlock,
-        eventId,
-        eventIdx,
-        extrinsicIdx,
+    const data: HistoricAssetTransaction[] = [];
+
+    for (const {
+      asset,
+      amount,
+      fromPortfolioId,
+      toPortfolioId,
+      createdBlock,
+      eventId,
+      eventIdx,
+      extrinsicIdx,
+      fundingRound,
+      instructionId,
+      instructionMemo,
+    } of nodes) {
+      const fromPortfolio = optionize(portfolioIdStringToPortfolio)(fromPortfolioId);
+      const toPortfolio = optionize(portfolioIdStringToPortfolio)(toPortfolioId);
+
+      const assetId = getAssetIdFromMiddleware(asset, context);
+
+      data.push({
+        asset: new FungibleAsset({ assetId }, context),
+        amount: new BigNumber(amount).shiftedBy(-6),
+        event: eventId,
+        from: optionize(middlewarePortfolioToPortfolio)(fromPortfolio, context),
+        to: optionize(middlewarePortfolioToPortfolio)(toPortfolio, context),
         fundingRound,
-        instructionId,
+        instructionId: instructionId ? new BigNumber(instructionId) : undefined,
         instructionMemo,
-      }) => {
-        const fromPortfolio = optionize(portfolioIdStringToPortfolio)(fromPortfolioId);
-        const toPortfolio = optionize(portfolioIdStringToPortfolio)(toPortfolioId);
-
-        const assetId = getAssetIdFromMiddleware(asset);
-
-        return {
-          asset: new FungibleAsset({ ticker: assetId }, context),
-          amount: new BigNumber(amount).shiftedBy(-6),
-          event: eventId,
-          from: optionize(middlewarePortfolioToPortfolio)(fromPortfolio, context),
-          to: optionize(middlewarePortfolioToPortfolio)(toPortfolio, context),
-          fundingRound,
-          instructionId: instructionId ? new BigNumber(instructionId) : undefined,
-          instructionMemo,
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          extrinsicIndex: new BigNumber(extrinsicIdx!),
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          ...middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx),
-        };
-      }
-    );
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        extrinsicIndex: new BigNumber(extrinsicIdx!),
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        ...middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx),
+      });
+    }
 
     const count = new BigNumber(totalCount);
     const next = calculateNextKey(count, data.length, start);
@@ -255,17 +250,30 @@ export class FungibleAsset extends BaseAsset {
    */
   public override async exists(): Promise<boolean> {
     const {
-      ticker,
       context,
       context: {
-        polymeshApi: { query },
+        polymeshApi: {
+          query: { asset, nft },
+        },
+        isV6,
       },
     } = this;
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(this, context);
+
+    let collectionsStorage = nft.collectionAsset;
+    let tokensStorage = asset.assets;
+
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
+    if (isV6) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      collectionsStorage = (nft as any).collectionTicker; // NOSONAR
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tokensStorage = (asset as any).tokens; // NOSONAR
+    }
 
     const [tokenSize, nftId] = await Promise.all([
-      query.asset.tokens.size(rawTicker),
-      query.nft.collectionTicker(rawTicker),
+      tokensStorage.size(rawAssetId),
+      collectionsStorage(rawAssetId),
     ]);
 
     return !tokenSize.isZero() && nftId.isZero();

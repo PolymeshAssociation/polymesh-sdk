@@ -30,16 +30,18 @@ import {
 } from '~/utils/conversion';
 import { areSameClaims, asIdentity, assembleBatchTransactions } from '~/utils/internal';
 
-const findClaimsByOtherIssuers = (
+const findClaimsByOtherIssuers = async (
   claims: ClaimTarget[],
   claimsByDid: Record<string, MiddlewareClaim[]>,
-  signerDid: string
-): Claim[] =>
-  claims.reduce<Claim[]>((prev, { target, claim }) => {
+  signerDid: string,
+  context: Context
+): Promise<Claim[]> => {
+  return claims.reduce<Claim[]>((prev, { target, claim }) => {
     const targetClaims = claimsByDid[signerToString(target)] ?? [];
 
     const claimIssuedByOtherDids = targetClaims.some(
-      targetClaim => areSameClaims(claim, targetClaim) && targetClaim.issuerId !== signerDid
+      targetClaim =>
+        areSameClaims(claim, targetClaim, context) && targetClaim.issuerId !== signerDid
     );
 
     if (claimIssuedByOtherDids) {
@@ -48,6 +50,7 @@ const findClaimsByOtherIssuers = (
 
     return prev;
   }, []);
+};
 
 /**
  * @hidden
@@ -121,18 +124,19 @@ export async function prepareModifyClaims(
   ][] = [];
   let allTargets: string[] = [];
 
-  claims.forEach(({ target, expiry, claim }: ClaimTarget) => {
+  for (const claimValue of claims) {
+    const { target, expiry, claim } = claimValue as ClaimTarget;
     const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
 
     allTargets.push(signerToString(target));
     modifyClaimArgs.push(
       tuple(
         stringToIdentityId(signerToString(target), context),
-        claimToMeshClaim(claim, context),
+        await claimToMeshClaim(claim, context),
         rawExpiry
       )
     );
-  });
+  }
 
   allTargets = uniq(allTargets);
 
@@ -173,7 +177,12 @@ export async function prepareModifyClaims(
 
     const claimsByDid = groupBy(claimsData, 'targetId');
 
-    const claimsByOtherIssuers: Claim[] = findClaimsByOtherIssuers(claims, claimsByDid, currentDid);
+    const claimsByOtherIssuers: Claim[] = await findClaimsByOtherIssuers(
+      claims,
+      claimsByDid,
+      currentDid,
+      context
+    );
 
     if (claimsByOtherIssuers.length) {
       throw new PolymeshError({

@@ -7,7 +7,7 @@ import {
   ResultSet,
   SetAssetDocumentsParams,
 } from '~/types';
-import { documentToAssetDocument, stringToTicker } from '~/utils/conversion';
+import { assetToMeshAssetId, documentToAssetDocument } from '~/utils/conversion';
 import { createProcedureMethod, requestPaginated } from '~/utils/internal';
 
 /**
@@ -20,10 +20,8 @@ export class Documents extends Namespace<BaseAsset> {
   constructor(parent: BaseAsset, context: Context) {
     super(parent, context);
 
-    const { ticker } = parent;
-
     this.set = createProcedureMethod(
-      { getProcedureAndArgs: args => [setAssetDocuments, { ticker, ...args }] },
+      { getProcedureAndArgs: args => [setAssetDocuments, { asset: parent, ...args }] },
       context
     );
   }
@@ -44,11 +42,12 @@ export class Documents extends Namespace<BaseAsset> {
         polymeshApi: { query },
       },
       context,
-      parent: { ticker },
+      parent,
     } = this;
 
+    const rawAssetId = assetToMeshAssetId(parent, context);
     const { entries, lastKey: next } = await requestPaginated(query.asset.assetDocuments, {
-      arg: stringToTicker(ticker, context),
+      arg: rawAssetId,
       paginationOpts,
     });
 

@@ -122,7 +122,7 @@ const assertReceipts = async (
   const instruction = new Instruction({ id: instructionId }, context);
 
   const { venue } = await instruction.details();
-  const allowedSigners = await venue.getAllowedSigners();
+  const allowedSigners = await venue?.getAllowedSigners();
 
   const invalidReceipts: OffChainAffirmationReceipt[] = [];
   const invalidSignerReceipts: OffChainAffirmationReceipt[] = [];
@@ -144,7 +144,9 @@ const assertReceipts = async (
 
     const { address: signerAddress } = asAccount(signer, context);
 
-    const isAllowedSigner = allowedSigners.some(({ address }) => signerAddress === address);
+    const isAllowedSigner = allowedSigners
+      ? allowedSigners.some(({ address }) => signerAddress === address)
+      : false;
 
     if (!isAllowedSigner) {
       invalidSignerReceipts.push(receipt);
@@ -641,10 +643,11 @@ export async function prepareStorage(
   const portfolioIdParams = portfolioParams.map(portfolioLikeToPortfolioId);
 
   const instruction = new Instruction({ id }, context);
-  const [{ data: legs }, signer, instructionInfo] = await Promise.all([
+
+  const [{ data: legs }, signer, executeInstructionInfo] = await Promise.all([
     instruction.getLegs(),
     context.getSigningIdentity(),
-    polymeshApi.call.settlementApi.getExecuteInstructionInfo<ExecuteInstructionInfo>(rawId),
+    polymeshApi.call.settlementApi.getExecuteInstructionInfo(rawId),
   ]);
 
   const [portfolios, senderLegAmount, offChainLegIndices] = await P.reduce<
@@ -670,6 +673,15 @@ export async function prepareStorage(
     },
     [[], new BigNumber(0), []]
   );
+
+  let instructionInfo: ExecuteInstructionInfo;
+  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
+  if (context.isV6) {
+    instructionInfo = executeInstructionInfo as ExecuteInstructionInfo;
+  } else {
+    const rawInfo = executeInstructionInfo as Option<ExecuteInstructionInfo>;
+    instructionInfo = rawInfo.unwrapOrDefault();
+  }
 
   return {
     portfolios,

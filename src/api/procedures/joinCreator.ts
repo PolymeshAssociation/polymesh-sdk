@@ -1,14 +1,18 @@
-import { AccountId } from '@polkadot/types/interfaces';
+import {
+  ApiTypes,
+  AugmentedSubmittable,
+  SubmittableExtrinsic,
+  SubmittableModuleExtrinsics,
+} from '@polkadot/api/types';
+import { AccountId, Call, Extrinsic } from '@polkadot/types/interfaces';
+import type { AccountId32 } from '@polkadot/types/interfaces/runtime';
 import { PolymeshPrimitivesSecondaryKeyPermissions } from '@polkadot/types/lookup';
+import type { Option, u64 } from '@polkadot/types-codec';
+import type { AnyNumber } from '@polkadot/types-codec/types';
 
 import { PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, JoinCreatorParams, MultiSig, TxTags } from '~/types';
-import {
-  BatchTransactionSpec,
-  ExtrinsicParams,
-  ProcedureAuthorization,
-  TransactionSpec,
-} from '~/types/internal';
+import { BatchTransactionSpec, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   bigNumberToU64,
   permissionsLikeToPermissions,
@@ -19,6 +23,49 @@ import { assembleBatchTransactions, optionize } from '~/utils/internal';
 
 export type Params = { multiSig: MultiSig } & JoinCreatorParams;
 
+interface AugmentedSubmittables<ApiType extends ApiTypes> {
+  multisig: {
+    /**
+     * Adds a multisig as the primary key.
+     *
+     * # Arguments
+     * * `multisig` - multisig address
+     * * `optionalCddAuthId` - optional authentication ID
+     **/
+    makeMultisigPrimary: AugmentedSubmittable<
+      (
+        multisig: AccountId32 | string | Uint8Array,
+        optionalCddAuthId: Option<u64> | null | Uint8Array | u64 | AnyNumber
+      ) => SubmittableExtrinsic<ApiType>,
+      [AccountId32, Option<u64>]
+    >;
+
+    /**
+     * Adds a multisig as a secondary key of current DID if the current DID is the creator of the multisig.
+     *
+     * # Arguments
+     * * `multisig` - multisig address
+     **/
+    makeMultisigSecondary: AugmentedSubmittable<
+      (multisig: AccountId32 | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
+      [AccountId32]
+    >;
+  };
+}
+
+export type MakeMultisigPrimaryExtrinsicParams = [
+  multisig: AccountId32 | string | Uint8Array,
+  optionalCddAuthId: Option<u64> | null | Uint8Array | u64 | AnyNumber
+];
+
+export type MakeMultisigSecondaryExtrinsicParams = [multisig: AccountId32 | string | Uint8Array];
+
+export interface LocalSubmittableExtrinsics<ApiType extends ApiTypes>
+  extends AugmentedSubmittables<ApiType> {
+  (extrinsic: Call | Extrinsic | Uint8Array | string): SubmittableExtrinsic<ApiType>;
+  [key: string]: SubmittableModuleExtrinsics<ApiType>;
+}
+
 /**
  * @hidden
  */
@@ -26,17 +73,16 @@ export async function prepareJoinCreator(
   this: Procedure<Params, void>,
   args: Params
 ): Promise<
-  | TransactionSpec<void, ExtrinsicParams<'multiSig', 'makeMultisigPrimary'>>
-  | TransactionSpec<void, ExtrinsicParams<'multiSig', 'makeMultisigSecondary'>>
+  | TransactionSpec<void, MakeMultisigPrimaryExtrinsicParams>
+  | TransactionSpec<void, MakeMultisigSecondaryExtrinsicParams>
   | BatchTransactionSpec<void, unknown[][]>
 > {
   const {
     context,
-    context: {
-      polymeshApi: { tx },
-    },
+    context: { polymeshApi },
   } = this;
   const { multiSig, asPrimary } = args;
+  const tx = polymeshApi.tx as unknown as LocalSubmittableExtrinsics<ApiTypes>;
 
   const [signingIdentity, creator] = await Promise.all([
     context.getSigningIdentity(),
@@ -108,6 +154,19 @@ export function getAuthorization(
   args: Params
 ): ProcedureAuthorization {
   const { asPrimary } = args;
+  const {
+    context: { isV6 },
+  } = this;
+
+  if (!isV6) {
+    throw new PolymeshError({
+      code: ErrorCode.NoDataChange,
+      message: asPrimary
+        ? 'This method is deprecated. Use `identities.rotatePrimaryKey` instead.'
+        : 'This method is deprecated. MultiSig automatically is attached as secondary key to the creators identity.',
+    });
+  }
+
   const transactions = [];
   if (asPrimary) {
     transactions.push(TxTags.multiSig.MakeMultisigPrimary);

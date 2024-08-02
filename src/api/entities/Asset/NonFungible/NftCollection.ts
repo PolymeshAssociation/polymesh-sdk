@@ -5,14 +5,7 @@ import BigNumber from 'bignumber.js';
 import { BaseAsset } from '~/api/entities/Asset/Base';
 import { NonFungibleSettlements } from '~/api/entities/Asset/Base/Settlements';
 import { AssetHolders } from '~/api/entities/Asset/NonFungible/AssetHolders';
-import {
-  Context,
-  issueNft,
-  Nft,
-  nftControllerTransfer,
-  PolymeshError,
-  transferAssetOwnership,
-} from '~/internal';
+import { Context, issueNft, Nft, nftControllerTransfer, PolymeshError } from '~/internal';
 import { assetQuery, assetTransactionQuery } from '~/middleware/queries/assets';
 import { Query } from '~/middleware/types';
 import {
@@ -32,17 +25,19 @@ import {
 } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
+  assetToMeshAssetId,
   bigNumberToU64,
   meshMetadataKeyToMetadataKey,
   middlewareEventDetailsToEventIdentifier,
   middlewarePortfolioToPortfolio,
   portfolioIdStringToPortfolio,
-  stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
   calculateNextKey,
   createProcedureMethod,
+  getAssetIdAndTicker,
+  getAssetIdForMiddleware,
   getAssetIdFromMiddleware,
   optionize,
 } from '~/utils/internal';
@@ -90,25 +85,19 @@ export class NftCollection extends BaseAsset {
   constructor(identifiers: UniqueIdentifiers, context: Context) {
     super(identifiers, context);
 
-    const { ticker } = identifiers;
     this.assetHolders = new AssetHolders(this, context);
     this.settlements = new NonFungibleSettlements(this, context);
 
-    this.transferOwnership = createProcedureMethod(
-      { getProcedureAndArgs: args => [transferAssetOwnership, { ticker, ...args }] },
-      context
-    );
-
     this.issue = createProcedureMethod(
       {
-        getProcedureAndArgs: args => [issueNft, { ticker, ...args }],
+        getProcedureAndArgs: args => [issueNft, { collection: this, ...args }],
       },
       context
     );
 
     this.controllerTransfer = createProcedureMethod(
       {
-        getProcedureAndArgs: args => [nftControllerTransfer, { ticker, ...args }],
+        getProcedureAndArgs: args => [nftControllerTransfer, { collection: this, ...args }],
       },
       context
     );
@@ -130,13 +119,12 @@ export class NftCollection extends BaseAsset {
       context: {
         polymeshApi: { query },
       },
-      ticker,
       context,
     } = this;
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(this, context);
 
-    const rawNumberNftsPromise = query.nft.numberOfNFTs.entries(rawTicker);
+    const rawNumberNftsPromise = query.nft.numberOfNFTs.entries(rawAssetId);
 
     if (callback) {
       context.assertSupportsSubscription();
@@ -173,7 +161,7 @@ export class NftCollection extends BaseAsset {
   public async collectionKeys(): Promise<CollectionKey[]> {
     const {
       context,
-      ticker,
+      id: assetId,
       context: {
         polymeshApi: { query },
       },
@@ -183,7 +171,9 @@ export class NftCollection extends BaseAsset {
     const rawCollectionId = bigNumberToU64(collectionId, context);
 
     const rawKeys = await query.nft.collectionKeys(rawCollectionId);
-    const neededKeys = [...rawKeys].map(value => meshMetadataKeyToMetadataKey(value, ticker));
+    const neededKeys = await Promise.all(
+      [...rawKeys].map(value => meshMetadataKeyToMetadataKey(value, this, context))
+    );
 
     const allMetadata = await this.metadata.get();
     return Promise.all(
@@ -200,7 +190,7 @@ export class NftCollection extends BaseAsset {
         const details = await neededMetadata.details();
 
         if (type === MetadataType.Local) {
-          return { ...details, id, type, ticker };
+          return { ...details, id, type, ...(await getAssetIdAndTicker(assetId, context)) };
         } else {
           return { ...details, id, type };
         }
@@ -217,12 +207,11 @@ export class NftCollection extends BaseAsset {
         polymeshApi: { query },
       },
       context,
-      ticker,
     } = this;
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(this, context);
 
-    const holderEntries = await query.nft.numberOfNFTs.entries(rawTicker);
+    const holderEntries = await query.nft.numberOfNFTs.entries(rawAssetId);
 
     const assetBalances = holderEntries.filter(([, balance]) => !balance.isZero());
 
@@ -235,10 +224,10 @@ export class NftCollection extends BaseAsset {
    * @throws if the given NFT does not exist
    */
   public async getNft(args: { id: BigNumber }): Promise<Nft> {
-    const { context, ticker } = this;
+    const { context, id: assetId } = this;
     const { id } = args;
 
-    const nft = new Nft({ ticker, id }, context);
+    const nft = new Nft({ assetId, id }, context);
 
     const exists = await nft.exists();
     if (!exists) {
@@ -259,7 +248,9 @@ export class NftCollection extends BaseAsset {
    * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
    */
   public async createdAt(): Promise<EventIdentifier | null> {
-    const { ticker, context } = this;
+    const { id, context } = this;
+
+    const middlewareAssetId = await getAssetIdForMiddleware(id, context);
 
     const {
       data: {
@@ -269,7 +260,7 @@ export class NftCollection extends BaseAsset {
       },
     } = await context.queryMiddleware<Ensured<Query, 'assets'>>(
       assetQuery({
-        ticker,
+        id: middlewareAssetId,
       })
     );
 
@@ -280,11 +271,25 @@ export class NftCollection extends BaseAsset {
    * Determine whether this NftCollection exists on chain
    */
   public override async exists(): Promise<boolean> {
-    const { ticker, context } = this;
+    const {
+      context,
+      context: {
+        polymeshApi: {
+          query: { nft },
+        },
+        isV6,
+      },
+    } = this;
 
-    const rawTokenId = await context.polymeshApi.query.nft.collectionTicker(
-      stringToTicker(ticker, context)
-    );
+    let collectionStorage = nft.collectionAsset;
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
+    if (isV6) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      collectionStorage = (nft as any).collectionTicker; // NOSONAR
+    }
+
+    const rawAssetId = assetToMeshAssetId(this, context);
+    const rawTokenId = await collectionStorage(rawAssetId);
 
     return !rawTokenId.isZero();
   }
@@ -294,10 +299,12 @@ export class NftCollection extends BaseAsset {
    */
   public async getCollectionId(): Promise<BigNumber> {
     const {
-      ticker,
       context,
       context: {
-        polymeshApi: { query },
+        polymeshApi: {
+          query: { nft },
+        },
+        isV6,
       },
     } = this;
 
@@ -305,8 +312,15 @@ export class NftCollection extends BaseAsset {
       return this._id;
     }
 
-    const rawTicker = stringToTicker(ticker, context);
-    const rawId = await query.nft.collectionTicker(rawTicker);
+    let collectionStorage = nft.collectionAsset;
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
+    if (isV6) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      collectionStorage = (nft as any).collectionTicker; // NOSONAR
+    }
+
+    const rawAssetId = assetToMeshAssetId(this, context);
+    const rawId = await collectionStorage(rawAssetId);
 
     this._id = u64ToBigNumber(rawId);
 
@@ -322,7 +336,7 @@ export class NftCollection extends BaseAsset {
     size?: BigNumber;
     start?: BigNumber;
   }): Promise<ResultSet<HistoricNftTransaction>> {
-    const { context, ticker } = this;
+    const { context, id } = this;
     const { size, start } = opts;
 
     const {
@@ -332,51 +346,50 @@ export class NftCollection extends BaseAsset {
     } = await context.queryMiddleware<Ensured<Query, 'assetTransactions'>>(
       assetTransactionQuery(
         {
-          assetId: ticker,
+          assetId: id,
         },
         size,
         start
       )
     );
 
-    const data: HistoricNftTransaction[] = nodes.map(
-      ({
-        asset,
-        nftIds,
-        fromPortfolioId,
-        toPortfolioId,
-        createdBlock,
-        eventId,
-        eventIdx,
-        extrinsicIdx,
+    const data: HistoricNftTransaction[] = [];
+
+    for (const {
+      asset,
+      nftIds,
+      fromPortfolioId,
+      toPortfolioId,
+      createdBlock,
+      eventId,
+      eventIdx,
+      extrinsicIdx,
+      fundingRound,
+      instructionId,
+      instructionMemo,
+    } of nodes) {
+      const fromPortfolio = optionize(portfolioIdStringToPortfolio)(fromPortfolioId);
+      const toPortfolio = optionize(portfolioIdStringToPortfolio)(toPortfolioId);
+
+      const assetId = getAssetIdFromMiddleware(asset, context);
+      const collection = new NftCollection({ assetId }, context);
+      data.push({
+        asset: collection,
+        nfts: nftIds.map(
+          (nftId: string) => new Nft({ assetId, id: new BigNumber(nftId) }, context)
+        ),
+        event: eventId,
+        to: optionize(middlewarePortfolioToPortfolio)(toPortfolio, context),
+        from: optionize(middlewarePortfolioToPortfolio)(fromPortfolio, context),
         fundingRound,
-        instructionId,
         instructionMemo,
-      }) => {
-        const fromPortfolio = optionize(portfolioIdStringToPortfolio)(fromPortfolioId);
-        const toPortfolio = optionize(portfolioIdStringToPortfolio)(toPortfolioId);
-
-        const assetId = getAssetIdFromMiddleware(asset);
-        const collection = new NftCollection({ ticker: assetId }, context);
-
-        return {
-          asset: collection,
-          nfts: nftIds.map(
-            (id: string) => new Nft({ ticker: assetId, id: new BigNumber(id) }, context)
-          ),
-          event: eventId,
-          to: optionize(middlewarePortfolioToPortfolio)(toPortfolio, context),
-          from: optionize(middlewarePortfolioToPortfolio)(fromPortfolio, context),
-          fundingRound,
-          instructionMemo,
-          instructionId: instructionId ? new BigNumber(instructionId) : undefined,
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          extrinsicIndex: new BigNumber(extrinsicIdx!),
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          ...middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx),
-        };
-      }
-    );
+        instructionId: instructionId ? new BigNumber(instructionId) : undefined,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        extrinsicIndex: new BigNumber(extrinsicIdx!),
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        ...middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx),
+      });
+    }
 
     const count = new BigNumber(totalCount);
     const next = calculateNextKey(count, data.length, start);

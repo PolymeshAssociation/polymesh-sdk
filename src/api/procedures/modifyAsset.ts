@@ -3,17 +3,17 @@ import { Asset, ErrorCode, ModifyAssetParams, TxTags } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import { isNftCollection } from '~/utils';
 import {
+  assetToMeshAssetId,
   fundingRoundToAssetFundingRound,
   nameToAssetName,
   securityIdentifierToAssetIdentifier,
-  stringToTicker,
 } from '~/utils/conversion';
 import { asAsset, checkTxType, hasSameElements } from '~/utils/internal';
 
 /**
  * @hidden
  */
-export type Params = { ticker: string } & ModifyAssetParams;
+export type Params = { asset: BaseAsset } & ModifyAssetParams;
 
 /**
  * @hidden
@@ -29,7 +29,7 @@ export async function prepareModifyAsset(
     context,
   } = this;
   const {
-    ticker,
+    asset,
     makeDivisible,
     name: newName,
     fundingRound: newFundingRound,
@@ -49,9 +49,7 @@ export async function prepareModifyAsset(
     });
   }
 
-  const rawTicker = stringToTicker(ticker, context);
-
-  const asset = await asAsset(ticker, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
 
   const [{ isDivisible, name }, fundingRound, identifiers] = await Promise.all([
     asset.details(),
@@ -78,7 +76,7 @@ export async function prepareModifyAsset(
     transactions.push(
       checkTxType({
         transaction: tx.asset.makeDivisible,
-        args: [rawTicker],
+        args: [rawAssetId],
       })
     );
   }
@@ -95,7 +93,7 @@ export async function prepareModifyAsset(
     transactions.push(
       checkTxType({
         transaction: tx.asset.renameAsset,
-        args: [rawTicker, nameBytes],
+        args: [rawAssetId, nameBytes],
       })
     );
   }
@@ -112,7 +110,7 @@ export async function prepareModifyAsset(
     transactions.push(
       checkTxType({
         transaction: tx.asset.setFundingRound,
-        args: [rawTicker, fundingBytes],
+        args: [rawAssetId, fundingBytes],
       })
     );
   }
@@ -131,7 +129,7 @@ export async function prepareModifyAsset(
       checkTxType({
         transaction: tx.asset.updateIdentifiers,
         args: [
-          rawTicker,
+          rawAssetId,
           newIdentifiers.map(newIdentifier =>
             securityIdentifierToAssetIdentifier(newIdentifier, context)
           ),
@@ -140,7 +138,7 @@ export async function prepareModifyAsset(
     );
   }
 
-  return { transactions, resolver: asset };
+  return { transactions, resolver: await asAsset(asset.id, context) };
 }
 
 /**
@@ -148,7 +146,7 @@ export async function prepareModifyAsset(
  */
 export function getAuthorization(
   this: Procedure<Params, Asset>,
-  { ticker, makeDivisible, name, fundingRound, identifiers }: Params
+  { asset, makeDivisible, name, fundingRound, identifiers }: Params
 ): ProcedureAuthorization {
   const transactions = [];
 
@@ -172,7 +170,7 @@ export function getAuthorization(
     permissions: {
       transactions,
       portfolios: [],
-      assets: [new BaseAsset({ ticker }, this.context)],
+      assets: [asset],
     },
   };
 }

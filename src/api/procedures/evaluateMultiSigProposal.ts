@@ -24,15 +24,17 @@ export async function prepareMultiSigProposalEvaluation(
   this: Procedure<MultiSigProposalVoteParams, void>,
   args: MultiSigProposalVoteParams
 ): Promise<
-  | TransactionSpec<void, ExtrinsicParams<'multiSig', 'approveAsKey'>>
-  | TransactionSpec<void, ExtrinsicParams<'multiSig', 'rejectAsKey'>>
+  | TransactionSpec<void, ExtrinsicParams<'multiSig', 'approve'>>
+  | TransactionSpec<void, ExtrinsicParams<'multiSig', 'reject'>>
 > {
   const {
     context: {
+      isV6,
       polymeshApi: {
+        call,
         tx: { multiSig },
         query: {
-          multiSig: { votes },
+          multiSig: { votes, proposals },
         },
       },
     },
@@ -51,18 +53,22 @@ export async function prepareMultiSigProposalEvaluation(
   const rawProposalId = bigNumberToU64(id, context);
   const signingAccount = context.getSigningAccount();
 
-  const rawSigner = signerToSignatory(signingAccount, context);
+  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
+  const rawSigner = isV6
+    ? signerToSignatory(signingAccount, context)
+    : stringToAccountId(signingAccount.address, context);
 
   const [
-    creator,
+    payer,
     { signers: multiSigSigners },
     { status, approvalAmount, rejectionAmount },
     hasVoted,
   ] = await Promise.all([
-    proposal.multiSig.getCreator(),
+    proposal.multiSig.getPayer(),
     proposal.multiSig.details(),
     proposal.details(),
-    votes([rawMultiSigAddress, rawProposalId], rawSigner),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    votes([rawMultiSigAddress, rawProposalId], rawSigner as any), // NOSONAR
   ]);
 
   if (
@@ -112,19 +118,54 @@ export async function prepareMultiSigProposalEvaluation(
     });
   }
 
-  let transaction;
-  if (action === MultiSigProposalAction.Approve) {
-    transaction = multiSig.approveAsKey;
-  } else {
-    transaction = multiSig.rejectAsKey;
-  }
+  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
+  if (isV6) {
+    const transaction =
+      action === MultiSigProposalAction.Approve
+        ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (multiSig as any).approveAsKey // NOSONAR
+        : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (multiSig as any).rejectAsKey; // NOSONAR
 
-  return {
-    transaction,
-    paidForBy: creator,
-    args: [rawMultiSigAddress, rawProposalId],
-    resolver: undefined,
-  };
+    return {
+      transaction,
+      paidForBy: payer ?? undefined,
+      args: [rawMultiSigAddress, rawProposalId],
+      resolver: undefined,
+    };
+  } else {
+    const paidForBy = payer ?? undefined;
+
+    if (action === MultiSigProposalAction.Approve) {
+      const rawProposal = await proposals(rawMultiSigAddress, rawProposalId);
+      if (!rawProposal || rawProposal.isNone) {
+        throw new PolymeshError({
+          code: ErrorCode.DataUnavailable,
+          message: 'The proposal data was not found on chain',
+          data: { multiSig: multiSigAddress, proposalId: proposal.id.toString() },
+        });
+      }
+
+      const runtimeInfo = await call.transactionPaymentCallApi.queryCallInfo(
+        rawProposal.unwrap(),
+        rawProposal.encodedLength
+      );
+
+      return {
+        transaction: multiSig.approve,
+        paidForBy,
+        args: [rawMultiSigAddress, rawProposalId, runtimeInfo.weight],
+        resolver: undefined,
+      };
+    } else {
+      return {
+        transaction: multiSig.reject,
+        paidForBy,
+        args: [rawMultiSigAddress, rawProposalId],
+        resolver: undefined,
+      };
+    }
+  }
 }
 
 /**

@@ -1,5 +1,5 @@
 import { u64 } from '@polkadot/types';
-import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
@@ -803,7 +803,7 @@ describe('authorization request validations', () => {
       });
       const data: Authorization = {
         type: AuthorizationType.TransferTicker,
-        value: 'TICKER',
+        value: '0x1234',
       };
       const auth = new AuthorizationRequest(
         {
@@ -819,13 +819,13 @@ describe('authorization request validations', () => {
       return expect(assertAuthorizationRequestValid(auth, mockContext)).resolves.not.toThrow();
     });
 
-    it('should throw with an unreserved ticker', () => {
+    it('should throw with an unreserved assetId', () => {
       entityMockUtils.configureMocks({
         tickerReservationOptions: { details: { status: TickerReservationStatus.Free } },
       });
       const data: Authorization = {
         type: AuthorizationType.TransferTicker,
-        value: 'TICKER',
+        value: '0x1234',
       };
       const auth = new AuthorizationRequest(
         {
@@ -847,13 +847,13 @@ describe('authorization request validations', () => {
       );
     });
 
-    it('should throw with an already used ticker', () => {
+    it('should throw with an already used assetId', () => {
       entityMockUtils.configureMocks({
         tickerReservationOptions: { details: { status: TickerReservationStatus.AssetCreated } },
       });
       const data: Authorization = {
         type: AuthorizationType.TransferTicker,
-        value: 'TICKER',
+        value: '0x1234',
       };
       const auth = new AuthorizationRequest(
         {
@@ -882,7 +882,7 @@ describe('authorization request validations', () => {
       entityMockUtils.configureMocks({ fungibleAssetOptions: { exists: true } });
       const data: Authorization = {
         type: AuthorizationType.TransferAssetOwnership,
-        value: 'TICKER',
+        value: '0x1234',
       };
       const auth = new AuthorizationRequest(
         {
@@ -902,7 +902,7 @@ describe('authorization request validations', () => {
       entityMockUtils.configureMocks({ fungibleAssetOptions: { exists: false } });
       const data: Authorization = {
         type: AuthorizationType.TransferAssetOwnership,
-        value: 'TICKER',
+        value: '0x1234',
       };
       const auth = new AuthorizationRequest(
         {
@@ -1585,10 +1585,10 @@ describe('createAuthorizationResolver', () => {
 
 describe('createCreateGroupResolver', () => {
   const agId = new BigNumber(1);
-  const ticker = 'SOME_TICKER';
+  const assetId = '0x1234';
 
   let rawAgId: u64;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
 
   let mockContext: Mocked<Context>;
 
@@ -1601,7 +1601,7 @@ describe('createCreateGroupResolver', () => {
     mockContext = dsMockUtils.getContextInstance();
 
     rawAgId = dsMockUtils.createMockU64(agId);
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
   });
 
   afterEach(() => {
@@ -1614,7 +1614,7 @@ describe('createCreateGroupResolver', () => {
   });
 
   it('should return the new CustomPermissionGroup', () => {
-    const filterRecords = (): unknown => [{ event: { data: ['someDid', rawTicker, rawAgId] } }];
+    const filterRecords = (): unknown => [{ event: { data: ['someDid', rawAssetId, rawAgId] } }];
 
     const resolver = createCreateGroupResolver(mockContext);
     const result = resolver({
@@ -1622,7 +1622,7 @@ describe('createCreateGroupResolver', () => {
     } as unknown as ISubmittableResult);
 
     expect(result.id).toEqual(agId);
-    expect(result.asset.ticker).toEqual(ticker);
+    expect(result.asset.id).toEqual(assetId);
   });
 });
 
@@ -1633,7 +1633,7 @@ describe('assertGroupNotExists', () => {
   });
 
   it('should throw an error if there already exists a group for the asset with exactly the same permissions as the ones passed', async () => {
-    const ticker = 'SOME_TICKER';
+    const assetId = '0x1234';
 
     const transactions = {
       type: PermissionType.Include,
@@ -1642,11 +1642,11 @@ describe('assertGroupNotExists', () => {
     const customId = new BigNumber(1);
 
     let asset = entityMockUtils.getFungibleAssetInstance({
-      ticker,
+      assetId,
       permissionsGetGroups: {
         custom: [
           entityMockUtils.getCustomPermissionGroupInstance({
-            ticker,
+            assetId,
             id: customId,
             getPermissions: {
               transactions,
@@ -1670,12 +1670,12 @@ describe('assertGroupNotExists', () => {
     expect(error.data.groupId).toEqual(customId);
 
     asset = entityMockUtils.getFungibleAssetInstance({
-      ticker,
+      assetId,
       permissionsGetGroups: {
         custom: [],
         known: [
           entityMockUtils.getKnownPermissionGroupInstance({
-            ticker,
+            assetId,
             type: PermissionGroupType.Full,
             getPermissions: {
               transactions: null,
@@ -1713,7 +1713,7 @@ describe('assertGroupNotExists', () => {
 });
 
 describe('getGroupFromPermissions', () => {
-  const ticker = 'SOME_TICKER';
+  const assetId = '0x1234';
 
   const transactions = {
     type: PermissionType.Include,
@@ -1730,11 +1730,11 @@ describe('getGroupFromPermissions', () => {
 
   beforeEach(() => {
     asset = entityMockUtils.getFungibleAssetInstance({
-      ticker,
+      assetId,
       permissionsGetGroups: {
         custom: [
           entityMockUtils.getCustomPermissionGroupInstance({
-            ticker,
+            assetId,
             id: customId,
             getPermissions: {
               transactions,

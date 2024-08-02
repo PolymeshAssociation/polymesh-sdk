@@ -2,13 +2,13 @@ import { StorageKey } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
+import { Checkpoints } from '~/api/entities/Asset/Fungible/Checkpoints';
 import { Checkpoint, Context, Namespace, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { FungibleAsset } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
-
-import { Checkpoints } from '..';
 
 jest.mock(
   '~/api/entities/Checkpoint',
@@ -26,11 +26,12 @@ jest.mock(
 );
 
 describe('Checkpoints class', () => {
-  const ticker = 'SOME_TICKER';
-  const rawTicker = dsMockUtils.createMockTicker(ticker);
+  const assetId = '0x1234';
+  const rawAssetId = dsMockUtils.createMockAssetId(assetId);
 
   let checkpoints: Checkpoints;
   let context: Context;
+  let asset: FungibleAsset;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -44,7 +45,7 @@ describe('Checkpoints class', () => {
     procedureMockUtils.reset();
 
     context = dsMockUtils.getContextInstance();
-    const asset = entityMockUtils.getFungibleAssetInstance({ ticker });
+    asset = entityMockUtils.getFungibleAssetInstance({ assetId });
     checkpoints = new Checkpoints(asset, context);
   });
 
@@ -66,7 +67,7 @@ describe('Checkpoints class', () => {
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Checkpoint>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: { ticker }, transformer: undefined }, context, {})
+        .calledWith({ args: { asset }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
       const tx = await checkpoints.create();
@@ -86,7 +87,7 @@ describe('Checkpoints class', () => {
       const result = await checkpoints.getOne({ id });
 
       expect(result.id).toEqual(id);
-      expect(result.asset.ticker).toBe(ticker);
+      expect(result.asset.id).toBe(assetId);
     });
 
     it('should throw an error if the Checkpoint does not exist', async () => {
@@ -104,7 +105,7 @@ describe('Checkpoints class', () => {
     });
 
     it('should return all created checkpoints with their timestamps and total supply', async () => {
-      const stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+      const stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
 
       dsMockUtils.createQueryMock('checkpoint', 'totalSupply');
 
@@ -123,7 +124,7 @@ describe('Checkpoints class', () => {
         },
       ];
 
-      when(stringToTickerSpy).calledWith(ticker, context).mockReturnValue(rawTicker);
+      when(stringToAssetIdSpy).calledWith(assetId, context).mockReturnValue(rawAssetId);
 
       const rawTotalSupply = totalSupply.map(({ checkpointId, balance }) => ({
         checkpointId: dsMockUtils.createMockU64(checkpointId),
@@ -131,7 +132,7 @@ describe('Checkpoints class', () => {
       }));
 
       const totalSupplyEntries = rawTotalSupply.map(({ checkpointId, balance }) =>
-        tuple({ args: [rawTicker, checkpointId] } as unknown as StorageKey, balance)
+        tuple({ args: [rawAssetId, checkpointId] } as unknown as StorageKey, balance)
       );
 
       requestPaginatedSpy.mockResolvedValue({ entries: totalSupplyEntries, lastKey: null });
@@ -153,7 +154,7 @@ describe('Checkpoints class', () => {
         } = totalSupply[index];
 
         expect(checkpoint.id).toEqual(expectedCheckpointId);
-        expect(checkpoint.asset.ticker).toBe(ticker);
+        expect(checkpoint.asset.id).toBe(assetId);
         expect(ts).toEqual(expectedBalance.shiftedBy(-6));
         expect(createdAt).toEqual(expectedMoment);
       });

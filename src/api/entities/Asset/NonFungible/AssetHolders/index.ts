@@ -22,12 +22,12 @@ export class AssetHolders extends Namespace<NftCollection> {
   }): Promise<ResultSet<IdentityHeldNfts>> {
     const {
       context,
-      parent: { ticker },
+      parent: { id: assetId },
     } = this;
 
     const { size, start } = opts;
 
-    const middlewareAssetId = await getAssetIdForMiddleware(ticker, context);
+    const middlewareAssetId = await getAssetIdForMiddleware(assetId, context);
 
     const {
       data: {
@@ -39,7 +39,7 @@ export class AssetHolders extends Namespace<NftCollection> {
 
     const data = nodes.map(({ nftIds, identityId }) => ({
       identity: new Identity({ did: identityId }, context),
-      nfts: nftIds.map((id: string) => new Nft({ id: new BigNumber(id), ticker }, context)),
+      nfts: nftIds.map((id: string) => new Nft({ id: new BigNumber(id), assetId }, context)),
     }));
 
     const next = calculateNextKey(new BigNumber(totalCount), nodes.length, start);

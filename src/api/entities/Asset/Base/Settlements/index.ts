@@ -1,10 +1,18 @@
-import { DispatchResult } from '@polkadot/types/interfaces/system';
+import { DispatchError, DispatchResult } from '@polkadot/types/interfaces/system';
+import { Result, Vec } from '@polkadot/types-codec';
 import BigNumber from 'bignumber.js';
 
-import { toggleTickerPreApproval } from '~/api/procedures/toggleTickerPreApproval';
 import { assertPortfolioExists } from '~/api/procedures/utils';
-import { BaseAsset, Context, FungibleAsset, Namespace, Nft, PolymeshError } from '~/internal';
-import { CanTransferGranularReturn } from '~/polkadot';
+import {
+  BaseAsset,
+  Context,
+  FungibleAsset,
+  Namespace,
+  Nft,
+  PolymeshError,
+  toggleAssetPreApproval,
+} from '~/internal';
+import { CanTransferGranularReturn, ComplianceReport } from '~/polkadot/polymesh';
 import {
   ErrorCode,
   NftCollection,
@@ -14,13 +22,16 @@ import {
 } from '~/types';
 import { isFungibleAsset } from '~/utils';
 import {
+  assetToMeshAssetId,
   bigNumberToBalance,
+  booleanToBool,
   granularCanTransferResultToTransferBreakdown,
   nftToMeshNft,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
-  stringToTicker,
+  stringToIdentityId,
+  transferReportToTransferBreakdown,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
@@ -46,10 +57,7 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
 
     this.preApprove = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [
-          toggleTickerPreApproval,
-          { ticker: parent.ticker, preApprove: true },
-        ],
+        getProcedureAndArgs: () => [toggleAssetPreApproval, { asset: parent, preApprove: true }],
         voidArgs: true,
       },
       context
@@ -57,10 +65,7 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
 
     this.removePreApproval = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [
-          toggleTickerPreApproval,
-          { ticker: parent.ticker, preApprove: false },
-        ],
+        getProcedureAndArgs: () => [toggleAssetPreApproval, { asset: parent, preApprove: false }],
         voidArgs: true,
       },
       context
@@ -97,15 +102,15 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
         }
   ): Promise<TransferBreakdown> {
     const {
-      parent: { ticker },
+      parent,
       context: {
         polymeshApi: { call },
+        isV6,
       },
       context,
-      parent,
     } = this;
 
-    const { assetApi, nftApi } = call;
+    const { assetApi, nftApi, complianceApi } = call;
 
     const { to } = args;
     const from = args.from ?? (await context.getSigningIdentity());
@@ -131,44 +136,97 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
     const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromPortfolioId, context);
     const rawToPortfolio = portfolioIdToMeshPortfolioId(toPortfolioId, context);
 
-    let granularResult: CanTransferGranularReturn;
-    let nftResult;
+    const rawAssetId = assetToMeshAssetId(parent, context);
 
-    if ('amount' in args) {
-      amount = args.amount;
-      ({ isDivisible } = await parent.details());
-      granularResult = await assetApi.canTransferGranular<CanTransferGranularReturn>(
-        fromCustodian.did,
-        rawFromPortfolio,
-        toCustodian.did,
-        rawToPortfolio,
-        stringToTicker(ticker, context),
-        bigNumberToBalance(amount, context, isDivisible)
-      );
-    } else {
-      const rawNfts = nftToMeshNft(ticker, args.nfts, context);
-      [granularResult, nftResult] = await Promise.all([
-        assetApi.canTransferGranular<CanTransferGranularReturn>(
-          fromCustodian.did,
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
+    if (isV6) {
+      let granularResult: CanTransferGranularReturn;
+      let nftResult: DispatchResult | undefined;
+
+      if ('amount' in args) {
+        amount = args.amount;
+        ({ isDivisible } = await parent.details());
+        granularResult = await assetApi.canTransferGranular<CanTransferGranularReturn>(
+          stringToIdentityId(fromCustodian.did, context),
           rawFromPortfolio,
           toCustodian.did,
           rawToPortfolio,
-          stringToTicker(ticker, context),
+          rawAssetId,
           bigNumberToBalance(amount, context, isDivisible)
+        );
+      } else {
+        const rawNfts = nftToMeshNft(parent, args.nfts, context);
+        [granularResult, nftResult] = await Promise.all([
+          assetApi.canTransferGranular<CanTransferGranularReturn>(
+            stringToIdentityId(fromCustodian.did, context),
+            rawFromPortfolio,
+            stringToIdentityId(toCustodian.did, context),
+            rawToPortfolio,
+            rawAssetId,
+            bigNumberToBalance(amount, context, isDivisible)
+          ),
+          nftApi.validateNftTransfer<DispatchResult>(rawFromPortfolio, rawToPortfolio, rawNfts),
+        ]);
+      }
+
+      if (!granularResult.isOk) {
+        throw new PolymeshError({
+          code: ErrorCode.LimitExceeded,
+          message:
+            'RPC result from "asset.canTransferGranular" was not OK. Execution meter was likely exceeded',
+        });
+      }
+
+      return granularCanTransferResultToTransferBreakdown(granularResult.asOk, nftResult, context);
+    }
+
+    let granularResult: Vec<DispatchError>;
+    let nftResult: Vec<DispatchError> | undefined;
+    let complianceResult: Result<ComplianceReport, DispatchError>;
+    const rawFromDid = stringToIdentityId(fromPortfolioId.did, context);
+    const rawToDid = stringToIdentityId(toPortfolioId.did, context);
+    if ('amount' in args) {
+      amount = args.amount;
+      ({ isDivisible } = await parent.details());
+      [granularResult, complianceResult] = await Promise.all([
+        assetApi.transferReport<Vec<DispatchError>>(
+          rawFromPortfolio,
+          rawToPortfolio,
+          rawAssetId,
+          bigNumberToBalance(amount, context, isDivisible),
+          booleanToBool(false, context)
         ),
-        nftApi.validateNftTransfer<DispatchResult>(rawFromPortfolio, rawToPortfolio, rawNfts),
+        complianceApi.complianceReport<Result<ComplianceReport, DispatchError>>(
+          rawAssetId,
+          rawFromDid,
+          rawToDid
+        ),
+      ]);
+    } else {
+      const rawNfts = nftToMeshNft(parent, args.nfts, context);
+      [granularResult, nftResult, complianceResult] = await Promise.all([
+        assetApi.transferReport<Vec<DispatchError>>(
+          rawFromPortfolio,
+          rawToPortfolio,
+          rawAssetId,
+          bigNumberToBalance(amount, context, isDivisible),
+          booleanToBool(false, context)
+        ),
+        nftApi.transferReport<Vec<DispatchError>>(
+          rawFromPortfolio,
+          rawToPortfolio,
+          rawNfts,
+          booleanToBool(false, context)
+        ),
+        complianceApi.complianceReport<Result<ComplianceReport, DispatchError>>(
+          rawAssetId,
+          rawFromDid,
+          rawToDid
+        ),
       ]);
     }
 
-    if (!granularResult.isOk) {
-      throw new PolymeshError({
-        code: ErrorCode.LimitExceeded,
-        message:
-          'RPC result from "asset.canTransferGranular" was not OK. Execution meter was likely exceeded',
-      });
-    }
-
-    return granularCanTransferResultToTransferBreakdown(granularResult.asOk, nftResult, context);
+    return transferReportToTransferBreakdown(granularResult, nftResult, complianceResult, context);
   }
 }
 

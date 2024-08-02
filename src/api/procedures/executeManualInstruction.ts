@@ -1,4 +1,5 @@
 import { PolymeshPrimitivesIdentityIdPortfolioId } from '@polkadot/types/lookup';
+import { Option } from '@polkadot/types-codec';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
@@ -70,11 +71,9 @@ export async function prepareExecuteManualInstruction(
   await assertInstructionValidForManualExecution(instructionDetails, context);
 
   if (!portfolios.length) {
-    const {
-      owner: { did: venueOwner },
-    } = await instructionDetails.venue.details();
+    const details = await instructionDetails.venue?.details();
 
-    if (venueOwner !== signerDid && !offChainParties.has(signerDid)) {
+    if (details?.owner.did !== signerDid && !offChainParties.has(signerDid)) {
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'The signing identity is not involved in this Instruction',
@@ -100,8 +99,21 @@ export async function prepareExecuteManualInstruction(
     }
   }
 
+  let executeInstructionInfo: ExecuteInstructionInfo;
+
+  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
+  if (context.isV6) {
+    executeInstructionInfo =
+      await call.settlementApi.getExecuteInstructionInfo<ExecuteInstructionInfo>(rawInstructionId);
+  } else {
+    const rawInfo = await call.settlementApi.getExecuteInstructionInfo<
+      Option<ExecuteInstructionInfo>
+    >(rawInstructionId);
+
+    executeInstructionInfo = rawInfo.unwrapOrDefault();
+  }
   const { fungibleTokens, nonFungibleTokens, offChainAssets, consumedWeight } =
-    await call.settlementApi.getExecuteInstructionInfo<ExecuteInstructionInfo>(rawInstructionId);
+    executeInstructionInfo;
 
   return {
     transaction: settlementTx.executeManualInstruction,

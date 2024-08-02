@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import { lt } from 'lodash';
 
 import {
   Context,
@@ -12,9 +11,7 @@ import {
 } from '~/internal';
 import { portfoliosMovementsQuery } from '~/middleware/queries/portfolios';
 import { settlementsForAllPortfoliosQuery } from '~/middleware/queries/settlements';
-import { settlementsForAllPortfoliosQuery as oldSettlementsForAllPortfoliosQuery } from '~/middleware/queries/settlementsOld';
 import { Query } from '~/middleware/types';
-import { Query as QueryOld } from '~/middleware/typesV6';
 import {
   ErrorCode,
   HistoricSettlement,
@@ -23,21 +20,13 @@ import {
   ResultSet,
 } from '~/types';
 import { Ensured } from '~/types/utils';
-import { SETTLEMENTS_V2_SQ_VERSION } from '~/utils/constants';
 import {
-  addressToKey,
   identityIdToString,
-  oldMiddlewareDataToHistoricalSettlements,
   stringToIdentityId,
   toHistoricalSettlements,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import {
-  createProcedureMethod,
-  getAssetIdForMiddleware,
-  getLatestSqVersion,
-  requestPaginated,
-} from '~/utils/internal';
+import { createProcedureMethod, getAssetIdForMiddleware, requestPaginated } from '~/utils/internal';
 
 /**
  * Handles all Portfolio related functionality on the Identity side
@@ -195,7 +184,11 @@ export class Portfolios extends Namespace<Identity> {
   public async getTransactionHistory(
     filters: {
       account?: string;
+      /**
+       * @deprecated in favour of assetId
+       */
       ticker?: string;
+      assetId?: string;
     } = {}
   ): Promise<HistoricSettlement[]> {
     const {
@@ -203,58 +196,14 @@ export class Portfolios extends Namespace<Identity> {
       parent: { did: identityId },
     } = this;
 
-    const { account, ticker } = filters;
+    const { account, ticker, assetId } = filters; // NOSONAR
 
     let middlewareAssetId;
-    if (ticker) {
-      middlewareAssetId = await getAssetIdForMiddleware(ticker, context);
+    const assetIdValue = assetId ?? ticker;
+
+    if (assetIdValue) {
+      middlewareAssetId = await getAssetIdForMiddleware(assetIdValue, context);
     }
-
-    // TODO @prashantasdeveloper Remove after SQ dual version support
-    const sqVersion = await getLatestSqVersion(context);
-
-    if (lt(sqVersion, SETTLEMENTS_V2_SQ_VERSION)) {
-      const address = account ? addressToKey(account, context) : undefined;
-
-      const settlementsPromise = context.queryMiddleware<Ensured<QueryOld, 'legs'>>(
-        oldSettlementsForAllPortfoliosQuery({
-          identityId,
-          address,
-          assetId: ticker,
-        })
-      );
-
-      const portfolioMovementsPromise = context.queryMiddleware<
-        Ensured<Query, 'portfolioMovements'>
-      >(
-        portfoliosMovementsQuery({
-          identityId,
-          address,
-          assetId: middlewareAssetId,
-        })
-      );
-
-      const [
-        {
-          data: {
-            legs: { nodes: settlements },
-          },
-        },
-        {
-          data: {
-            portfolioMovements: { nodes: portfolioMovements },
-          },
-        },
-      ] = await Promise.all([settlementsPromise, portfolioMovementsPromise]);
-
-      return oldMiddlewareDataToHistoricalSettlements(
-        settlements,
-        portfolioMovements,
-        identityId,
-        context
-      );
-    }
-    // Dual version support end
 
     const settlementsPromise = context.queryMiddleware<Ensured<Query, 'legs'>>(
       settlementsForAllPortfoliosQuery({

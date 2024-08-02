@@ -8,6 +8,7 @@ import { when } from 'jest-when';
 import { getAuthorization, Params, prepareMoveFunds } from '~/api/procedures/moveFunds';
 import * as procedureUtilsModule from '~/api/procedures/utils';
 import {
+  BaseAsset,
   Context,
   DefaultPortfolio,
   Nft,
@@ -19,6 +20,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import {
   ErrorCode,
+  FungibleAsset,
   FungiblePortfolioMovement,
   NonFungiblePortfolioMovement,
   PortfolioBalance,
@@ -28,7 +30,7 @@ import {
   TxTags,
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
-import { asTicker } from '~/utils/internal';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/NumberedPortfolio',
@@ -60,11 +62,11 @@ describe('moveFunds procedure', () => {
     [PortfolioId, Context]
   >;
   let fungiblePortfolioMovementToMovePortfolioFundSpy: jest.SpyInstance<
-    PolymeshPrimitivesPortfolioFund,
+    Promise<PolymeshPrimitivesPortfolioFund>,
     [FungiblePortfolioMovement, Context]
   >;
   let nftMovementToMovePortfolioFundSpy: jest.SpyInstance<
-    PolymeshPrimitivesPortfolioFund,
+    Promise<PolymeshPrimitivesPortfolioFund>,
     [NonFungiblePortfolioMovement, Context]
   >;
   let portfolioLikeToPortfolioIdSpy: jest.SpyInstance;
@@ -98,6 +100,14 @@ describe('moveFunds procedure', () => {
       },
     });
     assertPortfolioExistsSpy.mockReturnValue(true);
+    jest.spyOn(utilsInternalModule, 'asBaseAsset').mockImplementation((a): Promise<BaseAsset> => {
+      return Promise.resolve(
+        typeof a === 'string' ? entityMockUtils.getBaseAssetInstance({ assetId: a }) : a
+      );
+    });
+    jest.spyOn(utilsInternalModule, 'asAssetId').mockImplementation((a): Promise<string> => {
+      return Promise.resolve(typeof a === 'string' ? a : a.id);
+    });
   });
 
   afterEach(() => {
@@ -185,8 +195,8 @@ describe('moveFunds procedure', () => {
         from: fromPortfolio,
         to: toPortfolio,
         items: [
-          { asset: 'TICKER', amount: new BigNumber(10) },
-          { asset: 'TICKER', amount: new BigNumber(20) },
+          { asset: '0x1234', amount: new BigNumber(10) },
+          { asset: '0x1234', amount: new BigNumber(20) },
         ],
       })
     ).rejects.toThrow('Portfolio movements cannot contain any Asset more than once');
@@ -196,15 +206,15 @@ describe('moveFunds procedure', () => {
     const fromId = new BigNumber(1);
     const toId = new BigNumber(2);
     const did = 'someDid';
-    const asset1 = entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER001' });
-    const asset2 = entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER002' });
+    const asset1 = entityMockUtils.getFungibleAssetInstance({ assetId: '0x1111' });
+    const asset2 = entityMockUtils.getFungibleAssetInstance({ assetId: '0x2222' });
 
     entityMockUtils.configureMocks({
       nftCollectionOptions: { exists: false },
     });
     const items: PortfolioMovement[] = [
       {
-        asset: asset1.ticker,
+        asset: asset1.id,
         amount: new BigNumber(100),
       },
       {
@@ -252,10 +262,10 @@ describe('moveFunds procedure', () => {
     const fromId = new BigNumber(1);
     const toId = new BigNumber(2);
     const did = 'someDid';
-    const ticker = 'TICKER';
+    const assetId = '0x1234';
     const context = dsMockUtils.getContextInstance();
 
-    const asset = new NftCollection({ ticker }, context);
+    const asset = new NftCollection({ assetId }, context);
 
     entityMockUtils.configureMocks({
       fungibleAssetOptions: {
@@ -306,7 +316,7 @@ describe('moveFunds procedure', () => {
     const fromId = new BigNumber(1);
     const toId = new BigNumber(2);
     const did = 'someDid';
-    const ticker = 'TICKER';
+    const assetId = '0x1234';
 
     entityMockUtils.configureMocks({
       fungibleAssetOptions: {
@@ -319,7 +329,7 @@ describe('moveFunds procedure', () => {
 
     const items: PortfolioMovement[] = [
       {
-        asset: ticker,
+        asset: assetId,
         nfts: [new BigNumber(100)],
       },
     ];
@@ -347,7 +357,7 @@ describe('moveFunds procedure', () => {
     const fromId = new BigNumber(1);
     const toId = new BigNumber(2);
     const did = 'someDid';
-    const ticker = 'TICKER';
+    const assetId = 'TICKER';
 
     entityMockUtils.configureMocks({
       fungibleAssetOptions: {
@@ -360,7 +370,7 @@ describe('moveFunds procedure', () => {
 
     const items: PortfolioMovement[] = [
       {
-        asset: ticker,
+        asset: assetId,
         amount: new BigNumber(100),
       },
     ];
@@ -388,7 +398,7 @@ describe('moveFunds procedure', () => {
     const fromId = new BigNumber(1);
     const toId = new BigNumber(2);
     const did = 'someDid';
-    const ticker = 'TICKER';
+    const assetId = '0x7777';
 
     entityMockUtils.configureMocks({
       fungibleAssetOptions: { exists: false },
@@ -396,7 +406,7 @@ describe('moveFunds procedure', () => {
     });
     const items: PortfolioMovement[] = [
       {
-        asset: ticker,
+        asset: assetId,
         amount: new BigNumber(100),
       },
     ];
@@ -408,7 +418,7 @@ describe('moveFunds procedure', () => {
 
     const expectedError = new PolymeshError({
       code: ErrorCode.DataUnavailable,
-      message: `No asset exists with ticker: "${ticker}"`,
+      message: `No asset exists with asset ID: "${assetId}"`,
     });
 
     await expect(
@@ -424,14 +434,14 @@ describe('moveFunds procedure', () => {
     const fromId = new BigNumber(1);
     const toId = new BigNumber(2);
     const did = 'someDid';
-    const asset = entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER001' });
+    const asset = entityMockUtils.getFungibleAssetInstance({ assetId: '0x1234' });
     entityMockUtils.configureMocks({
       nftCollectionOptions: { exists: false },
     });
 
     const items: FungiblePortfolioMovement[] = [
       {
-        asset: asset.ticker,
+        asset: asset.id,
         amount: new BigNumber(100),
       },
     ];
@@ -481,13 +491,13 @@ describe('moveFunds procedure', () => {
       .calledWith(toPortfolioId, mockContext)
       .mockReturnValue(rawToMeshPortfolioId);
 
-    const rawMovePortfolioItem = dsMockUtils.createMockMovePortfolioItem({
-      ticker: dsMockUtils.createMockTicker(asTicker(items[0].asset)),
+    const rawMovePortfolioItem = dsMockUtils.createMockMovePortfolioItemAsFungible({
+      assetId: dsMockUtils.createMockAssetId((items[0].asset as FungibleAsset).id),
       amount: dsMockUtils.createMockBalance(items[0].amount),
     });
     when(fungiblePortfolioMovementToMovePortfolioFundSpy)
       .calledWith(items[0], mockContext)
-      .mockReturnValue(rawMovePortfolioItem);
+      .mockResolvedValue(rawMovePortfolioItem);
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
@@ -575,20 +585,20 @@ describe('moveFunds procedure', () => {
     const fromId = new BigNumber(1);
     const toId = new BigNumber(2);
     const did = 'someDid';
-    const ticker = 'TICKER';
+    const assetId = '0x1234';
     const context = dsMockUtils.getContextInstance();
-    const asset = entityMockUtils.getNftCollectionInstance({ ticker: 'TICKER001' });
-    const assetTwo = entityMockUtils.getNftCollectionInstance({ ticker: 'TICKER002' });
+    const asset = entityMockUtils.getNftCollectionInstance({ assetId: 'TICKER001' });
+    const assetTwo = entityMockUtils.getNftCollectionInstance({ assetId: 'TICKER002' });
+
     entityMockUtils.configureMocks({
       nftCollectionOptions: { exists: true },
     });
-
-    const nftOne = new Nft({ ticker, id: new BigNumber(1) }, context);
-    const nftTwo = new Nft({ ticker: assetTwo.ticker, id: new BigNumber(2) }, context);
+    const nftOne = new Nft({ assetId, id: new BigNumber(1) }, context);
+    const nftTwo = new Nft({ assetId: assetTwo.id, id: new BigNumber(2) }, context);
 
     const items: NonFungiblePortfolioMovement[] = [
       {
-        asset: asset.ticker,
+        asset: asset.id,
         nfts: [nftOne.id],
       },
       {
@@ -648,7 +658,7 @@ describe('moveFunds procedure', () => {
     const rawMovePortfolioItem = 'mockItem' as unknown as PolymeshPrimitivesPortfolioFund;
     when(nftMovementToMovePortfolioFundSpy)
       .calledWith(items[0], mockContext)
-      .mockReturnValue(rawMovePortfolioItem);
+      .mockResolvedValue(rawMovePortfolioItem);
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 

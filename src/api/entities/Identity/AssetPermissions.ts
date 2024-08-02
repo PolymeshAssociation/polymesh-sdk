@@ -37,14 +37,14 @@ import {
 import { Ensured } from '~/types/utils';
 import {
   agentGroupToPermissionGroup,
+  assetToMeshAssetId,
   extrinsicPermissionsToTransactionPermissions,
+  meshAssetToAssetId,
   middlewareEventDetailsToEventIdentifier,
   stringToIdentityId,
-  stringToTicker,
-  tickerToString,
 } from '~/utils/conversion';
 import {
-  asTicker,
+  asBaseAsset,
   calculateNextKey,
   createProcedureMethod,
   getAssetIdForMiddleware,
@@ -115,8 +115,8 @@ export class AssetPermissions extends Namespace<Identity> {
     const assetEntries = await externalAgents.agentOf.entries(rawDid);
 
     return P.map(assetEntries, async ([key]) => {
-      const ticker = tickerToString(key.args[1]);
-      const asset = new FungibleAsset({ ticker }, context);
+      const assetId = meshAssetToAssetId(key.args[1], context);
+      const asset = new FungibleAsset({ assetId }, context);
       const group = await this.getGroup({ asset });
 
       return {
@@ -151,11 +151,11 @@ export class AssetPermissions extends Namespace<Identity> {
       });
     }
 
-    const ticker = asTicker(asset);
-    const rawTicker = stringToTicker(ticker, context);
+    const baseAsset = await asBaseAsset(asset, context);
+    const rawAssetId = assetToMeshAssetId(baseAsset, context);
 
     const groupOption = await externalAgents.groupOfAgent(
-      rawTicker,
+      rawAssetId,
       stringToIdentityId(did, context)
     );
 
@@ -180,10 +180,11 @@ export class AssetPermissions extends Namespace<Identity> {
     if (group.isCustom) {
       const groupId = group.asCustom;
 
-      const groupPermissionsOption = await externalAgents.groupPermissions(rawTicker, groupId);
+      const groupPermissionsOption = await externalAgents.groupPermissions(rawAssetId, groupId);
 
       const permissions = extrinsicPermissionsToTransactionPermissions(
-        groupPermissionsOption.unwrap()
+        groupPermissionsOption.unwrap(),
+        context
       );
 
       if (permissions === null) {
@@ -294,12 +295,13 @@ export class AssetPermissions extends Namespace<Identity> {
       parent: { did },
     } = this;
 
-    const ticker = asTicker(asset);
+    const baseAsset = await asBaseAsset(asset, context);
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(baseAsset, context);
+
     const rawIdentityId = stringToIdentityId(did, context);
 
-    const rawGroupPermissions = await externalAgents.groupOfAgent(rawTicker, rawIdentityId);
+    const rawGroupPermissions = await externalAgents.groupOfAgent(rawAssetId, rawIdentityId);
 
     if (rawGroupPermissions.isNone) {
       throw new PolymeshError({
@@ -309,7 +311,7 @@ export class AssetPermissions extends Namespace<Identity> {
     }
     const agentGroup = rawGroupPermissions.unwrap();
 
-    return agentGroupToPermissionGroup(agentGroup, ticker, context);
+    return agentGroupToPermissionGroup(agentGroup, baseAsset.id, context);
   }
 
   /**

@@ -1,8 +1,8 @@
-import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
 import { when } from 'jest-when';
 
 import { getAuthorization, Params, prepareModifyAsset } from '~/api/procedures/modifyAsset';
-import { Context } from '~/internal';
+import { BaseAsset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Asset, SecurityIdentifier, SecurityIdentifierType, TxTags } from '~/types';
@@ -19,9 +19,10 @@ jest.mock(
 
 describe('modifyAsset procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
-  let ticker: string;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
+  let assetId: string;
+  let asset: BaseAsset;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let fundingRound: string;
   let identifiers: SecurityIdentifier[];
 
@@ -29,9 +30,10 @@ describe('modifyAsset procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    ticker = 'SOME_TICKER';
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
+    assetId = '0x1234';
+    asset = entityMockUtils.getBaseAssetInstance({ assetId });
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
     fundingRound = 'Series A';
     identifiers = [
       {
@@ -51,7 +53,7 @@ describe('modifyAsset procedure', () => {
       },
     });
     mockContext = dsMockUtils.getContextInstance();
-    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(assetToMeshAssetIdSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
   });
 
   afterEach(() => {
@@ -74,36 +76,25 @@ describe('modifyAsset procedure', () => {
   });
 
   it('should throw an error if makeDivisible is set to true and the Asset is already divisible', () => {
-    entityMockUtils.configureMocks({
-      fungibleAssetOptions: {
-        details: { isDivisible: true },
-      },
-    });
-
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     return expect(
       prepareModifyAsset.call(proc, {
-        ticker,
+        asset: entityMockUtils.getFungibleAssetInstance({
+          assetId,
+          details: { isDivisible: true },
+        }),
         makeDivisible: true,
       })
     ).rejects.toThrow('The Asset is already divisible');
   });
 
   it('should throw an error if makeDivisible is set to true and the Asset is an NFT Collection', () => {
-    entityMockUtils.configureMocks({
-      fungibleAssetOptions: {
-        exists: false,
-      },
-      nftCollectionOptions: {
-        exists: true,
-      },
-    });
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     return expect(
       prepareModifyAsset.call(proc, {
-        ticker,
+        asset: entityMockUtils.getNftCollectionInstance({ assetId, exists: true }),
         makeDivisible: true,
       })
     ).rejects.toThrow('NFT Collections cannot be made divisible');
@@ -114,7 +105,7 @@ describe('modifyAsset procedure', () => {
 
     return expect(
       prepareModifyAsset.call(proc, {
-        ticker,
+        asset: entityMockUtils.getBaseAssetInstance({ assetId, details: { name: 'ASSET_NAME' } }),
         name: 'ASSET_NAME',
       })
     ).rejects.toThrow('New name is the same as current name');
@@ -125,24 +116,18 @@ describe('modifyAsset procedure', () => {
 
     return expect(
       prepareModifyAsset.call(proc, {
-        ticker,
+        asset: entityMockUtils.getBaseAssetInstance({ assetId, currentFundingRound: fundingRound }),
         fundingRound,
       })
     ).rejects.toThrow('New funding round name is the same as current funding round');
   });
 
   it('should throw an error if newIdentifiers are the same identifiers currently in the Asset', () => {
-    entityMockUtils.configureMocks({
-      fungibleAssetOptions: {
-        getIdentifiers: identifiers,
-      },
-    });
-
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     return expect(
       prepareModifyAsset.call(proc, {
-        ticker,
+        asset: entityMockUtils.getBaseAssetInstance({ assetId, getIdentifiers: identifiers }),
         identifiers,
       })
     ).rejects.toThrow('New identifiers are the same as current identifiers');
@@ -154,13 +139,13 @@ describe('modifyAsset procedure', () => {
     const transaction = dsMockUtils.createTxMock('asset', 'makeDivisible');
 
     const result = await prepareModifyAsset.call(proc, {
-      ticker,
+      asset,
       makeDivisible: true,
     });
 
     expect(result).toEqual({
-      transactions: [{ transaction, args: [rawTicker] }],
-      resolver: expect.objectContaining({ ticker }),
+      transactions: [{ transaction, args: [rawAssetId] }],
+      resolver: expect.objectContaining({ id: assetId }),
     });
   });
 
@@ -176,7 +161,7 @@ describe('modifyAsset procedure', () => {
     const transaction = dsMockUtils.createTxMock('asset', 'renameAsset');
 
     const result = await prepareModifyAsset.call(proc, {
-      ticker,
+      asset,
       name: newName,
     });
 
@@ -184,10 +169,10 @@ describe('modifyAsset procedure', () => {
       transactions: [
         {
           transaction,
-          args: [rawTicker, rawAssetName],
+          args: [rawAssetId, rawAssetName],
         },
       ],
-      resolver: expect.objectContaining({ ticker }),
+      resolver: expect.objectContaining({ id: assetId }),
     });
   });
 
@@ -203,7 +188,7 @@ describe('modifyAsset procedure', () => {
     const transaction = dsMockUtils.createTxMock('asset', 'setFundingRound');
 
     const result = await prepareModifyAsset.call(proc, {
-      ticker,
+      asset,
       fundingRound: newFundingRound,
     });
 
@@ -211,10 +196,10 @@ describe('modifyAsset procedure', () => {
       transactions: [
         {
           transaction,
-          args: [rawTicker, rawFundingRound],
+          args: [rawAssetId, rawFundingRound],
         },
       ],
-      resolver: expect.objectContaining({ ticker }),
+      resolver: expect.objectContaining({ id: assetId }),
     });
   });
 
@@ -231,7 +216,7 @@ describe('modifyAsset procedure', () => {
     const transaction = dsMockUtils.createTxMock('asset', 'updateIdentifiers');
 
     const result = await prepareModifyAsset.call(proc, {
-      ticker,
+      asset,
       identifiers,
     });
 
@@ -239,10 +224,10 @@ describe('modifyAsset procedure', () => {
       transactions: [
         {
           transaction,
-          args: [rawTicker, [rawIdentifier]],
+          args: [rawAssetId, [rawIdentifier]],
         },
       ],
-      resolver: expect.objectContaining({ ticker }),
+      resolver: expect.objectContaining({ id: assetId }),
     });
   });
 
@@ -252,14 +237,14 @@ describe('modifyAsset procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
       const name = 'NEW NAME';
       const args = {
-        ticker,
+        asset,
       } as Params;
 
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [],
           portfolios: [],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
         },
       });
 
@@ -272,7 +257,7 @@ describe('modifyAsset procedure', () => {
             TxTags.asset.UpdateIdentifiers,
           ],
           portfolios: [],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
         },
       });
     });

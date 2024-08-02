@@ -19,19 +19,28 @@ import {
   ProcedureMethod,
 } from '~/types';
 import { HumanReadableType, Modify } from '~/types/utils';
-import { bigNumberToU32, momentToDate, stringToTicker, u64ToBigNumber } from '~/utils/conversion';
+import {
+  assetToMeshAssetId,
+  bigNumberToU32,
+  momentToDate,
+  u64ToBigNumber,
+} from '~/utils/conversion';
 import { createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
 import { CorporateActionKind, CorporateActionTargets, TaxWithholding } from './types';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
-  ticker: string;
+  assetId: string;
 }
 
 export interface HumanReadable {
   id: string;
+  /**
+   * @deprecated in favour of `assetId`
+   */
   ticker: string;
+  assetId: string;
   declarationDate: string;
   description: string;
   targets: HumanReadableType<CorporateActionTargets>;
@@ -58,9 +67,9 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
    * Check if a value is of type {@link UniqueIdentifiers}
    */
   public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
-    const { id, ticker } = identifier as UniqueIdentifiers;
+    const { id, assetId } = identifier as UniqueIdentifiers;
 
-    return id instanceof BigNumber && typeof ticker === 'string';
+    return id instanceof BigNumber && typeof assetId === 'string';
   }
 
   /**
@@ -121,10 +130,10 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
 
     super(identifiers, context);
 
-    const { id, ticker } = identifiers;
+    const { id, assetId } = identifiers;
 
     this.id = id;
-    this.asset = new FungibleAsset({ ticker }, context);
+    this.asset = new FungibleAsset({ assetId }, context);
     this.kind = kind;
     this.declarationDate = declarationDate;
     this.description = description;
@@ -133,7 +142,12 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
     this.taxWithholdings = taxWithholdings;
 
     this.linkDocuments = createProcedureMethod(
-      { getProcedureAndArgs: procedureArgs => [linkCaDocs, { id, ticker, ...procedureArgs }] },
+      {
+        getProcedureAndArgs: procedureArgs => [
+          linkCaDocs,
+          { id, asset: this.asset, ...procedureArgs },
+        ],
+      },
       context
     );
   }
@@ -178,10 +192,11 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
         polymeshApi: { query },
       },
       context,
-      asset: { ticker },
+      asset,
+      asset: { id: assetId },
     } = this;
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(asset, context);
 
     const corporateAction = await this.fetchCorporateAction();
     if (corporateAction.isNone) {
@@ -200,14 +215,14 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
     const { checkpoint } = recordDate.unwrap();
 
     if (checkpoint.isExisting) {
-      return new Checkpoint({ ticker, id: u64ToBigNumber(checkpoint.asExisting) }, context);
+      return new Checkpoint({ assetId, id: u64ToBigNumber(checkpoint.asExisting) }, context);
     }
 
     const [scheduleId, amount] = checkpoint.asScheduled;
 
     const [schedule, rawCheckpointIds] = await Promise.all([
-      query.checkpoint.scheduledCheckpoints(rawTicker, scheduleId),
-      query.checkpoint.schedulePoints(rawTicker, scheduleId),
+      query.checkpoint.scheduledCheckpoints(rawAssetId, scheduleId),
+      query.checkpoint.schedulePoints(rawAssetId, scheduleId),
     ]);
 
     const createdCheckpointIndex = u64ToBigNumber(amount).toNumber();
@@ -216,16 +231,16 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
       const points = [...schedule.unwrap().pending].map(rawPoint => momentToDate(rawPoint));
       return new CheckpointSchedule(
         {
-          ticker,
           id,
           pendingPoints: points,
+          assetId,
         },
         context
       );
     }
 
     return new Checkpoint(
-      { ticker, id: u64ToBigNumber(rawCheckpointIds[createdCheckpointIndex]) },
+      { assetId, id: u64ToBigNumber(rawCheckpointIds[createdCheckpointIndex]) },
       context
     );
   }
@@ -240,12 +255,12 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
       },
       context,
       id,
-      asset: { ticker },
+      asset,
     } = this;
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(asset, context);
 
-    return query.corporateAction.corporateActions(rawTicker, bigNumberToU32(id, context));
+    return query.corporateAction.corporateActions(rawAssetId, bigNumberToU32(id, context));
   }
 
   /**
@@ -264,6 +279,7 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
 
     return toHumanReadable({
       ticker: asset,
+      assetId: asset,
       id,
       declarationDate,
       defaultTaxWithholding,

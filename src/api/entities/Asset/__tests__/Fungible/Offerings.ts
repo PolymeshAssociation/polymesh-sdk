@@ -1,8 +1,9 @@
 import { Bytes, Option } from '@polkadot/types';
-import { PalletStoFundraiser, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import { PalletStoFundraiser, PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
+import { Offerings } from '~/api/entities/Asset/Fungible/Offerings';
 import { Context, FungibleAsset, Namespace, Offering, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
@@ -13,8 +14,6 @@ import {
 } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
-
-import { Offerings } from '../../Fungible/Offerings';
 
 jest.mock(
   '~/api/entities/Asset/Fungible',
@@ -30,7 +29,7 @@ jest.mock(
 );
 
 describe('Offerings class', () => {
-  let ticker: string;
+  let assetId: string;
   let asset: FungibleAsset;
   let context: Context;
 
@@ -41,12 +40,12 @@ describe('Offerings class', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    ticker = 'SOME_ASSET';
+    assetId = 'SOME_ASSET';
   });
 
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
-    asset = entityMockUtils.getFungibleAssetInstance({ ticker });
+    asset = entityMockUtils.getFungibleAssetInstance({ assetId });
 
     offerings = new Offerings(asset, context);
   });
@@ -83,7 +82,7 @@ describe('Offerings class', () => {
       };
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: { ticker, ...args }, transformer: undefined }, context, {})
+        .calledWith({ args: { asset, ...args }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
       const tx = await offerings.launch(args);
@@ -96,7 +95,7 @@ describe('Offerings class', () => {
     it('should return the requested Offering', async () => {
       entityMockUtils.configureMocks({
         offeringOptions: {
-          ticker,
+          assetId,
         },
       });
       const id = new BigNumber(1);
@@ -118,10 +117,10 @@ describe('Offerings class', () => {
   });
 
   describe('method: get', () => {
-    let rawTicker: PolymeshPrimitivesTicker;
+    let rawAssetId: PolymeshPrimitivesAssetAssetID;
     let rawName: Option<Bytes>;
 
-    let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+    let stringToAssetIdSpy: jest.SpyInstance<PolymeshPrimitivesAssetAssetID, [string, Context]>;
     let fundraiserToOfferingDetailsSpy: jest.SpyInstance<
       OfferingDetails,
       [PalletStoFundraiser, Bytes, Context]
@@ -131,8 +130,8 @@ describe('Offerings class', () => {
     let fundraisers: PalletStoFundraiser[];
 
     beforeAll(() => {
-      rawTicker = dsMockUtils.createMockTicker(ticker);
-      stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+      rawAssetId = dsMockUtils.createMockAssetId(assetId);
+      stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
       fundraiserToOfferingDetailsSpy = jest.spyOn(
         utilsConversionModule,
         'fundraiserToOfferingDetails'
@@ -207,8 +206,8 @@ describe('Offerings class', () => {
             did: dsMockUtils.createMockIdentityId(raisingPortfolio.owner.did),
             kind: dsMockUtils.createMockPortfolioKind('Default'),
           }),
-          offeringAsset: rawTicker,
-          raisingAsset: dsMockUtils.createMockTicker(raisingCurrency),
+          offeringAsset: rawAssetId,
+          raisingAsset: dsMockUtils.createMockAssetId(raisingCurrency),
           venueId: dsMockUtils.createMockU64(venue.id),
           tiers: [
             dsMockUtils.createMockFundraiserTier({
@@ -234,8 +233,8 @@ describe('Offerings class', () => {
             did: dsMockUtils.createMockIdentityId(raisingPortfolio.owner.did),
             kind: dsMockUtils.createMockPortfolioKind('Default'),
           }),
-          offeringAsset: rawTicker,
-          raisingAsset: dsMockUtils.createMockTicker(raisingCurrency),
+          offeringAsset: rawAssetId,
+          raisingAsset: dsMockUtils.createMockAssetId(raisingCurrency),
           venueId: dsMockUtils.createMockU64(venue.id),
           tiers: [
             dsMockUtils.createMockFundraiserTier({
@@ -255,7 +254,7 @@ describe('Offerings class', () => {
     });
 
     beforeEach(() => {
-      when(stringToTickerSpy).calledWith(ticker, context).mockReturnValue(rawTicker);
+      when(stringToAssetIdSpy).calledWith(assetId, context).mockReturnValue(rawAssetId);
       when(fundraiserToOfferingDetailsSpy)
         .calledWith(fundraisers[0], rawName.unwrap(), context)
         .mockReturnValue(details[0]);
@@ -266,19 +265,19 @@ describe('Offerings class', () => {
       dsMockUtils.createQueryMock('sto', 'fundraisers', {
         entries: [
           tuple(
-            [rawTicker, dsMockUtils.createMockU64(new BigNumber(1))],
+            [rawAssetId, dsMockUtils.createMockU64(new BigNumber(1))],
             dsMockUtils.createMockOption(fundraisers[0])
           ),
           tuple(
-            [rawTicker, dsMockUtils.createMockU64(new BigNumber(2))],
+            [rawAssetId, dsMockUtils.createMockU64(new BigNumber(2))],
             dsMockUtils.createMockOption(fundraisers[1])
           ),
         ],
       });
       dsMockUtils.createQueryMock('sto', 'fundraiserNames', {
         entries: [
-          tuple([rawTicker, dsMockUtils.createMockU64(new BigNumber(1))], rawName),
-          tuple([rawTicker, dsMockUtils.createMockU64(new BigNumber(2))], rawName),
+          tuple([rawAssetId, dsMockUtils.createMockU64(new BigNumber(1))], rawName),
+          tuple([rawAssetId, dsMockUtils.createMockU64(new BigNumber(2))], rawName),
         ],
       });
     });

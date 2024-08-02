@@ -97,17 +97,20 @@ describe('Network Class', () => {
     it('should return current network information', async () => {
       const name = 'someName';
       const version = new BigNumber(1);
+      const genesisHash = 'someGenesisHash';
+
       const fakeResult = {
         name,
         version,
+        genesisHash,
       };
 
       dsMockUtils.setRuntimeVersion({ specVersion: dsMockUtils.createMockU32(version) });
       dsMockUtils
         .createRpcMock('system', 'chain')
         .mockResolvedValue(dsMockUtils.createMockText(name));
-
       const result = await network.getNetworkProperties();
+
       expect(result).toEqual(fakeResult);
     });
   });
@@ -356,7 +359,7 @@ describe('Network Class', () => {
           withSigningManager: true,
           transactionFees: [
             {
-              tag: TxTags.asset.RegisterTicker,
+              tag: TxTags.asset.RegisterUniqueTicker,
               fees: protocolFees,
             },
           ],
@@ -414,6 +417,7 @@ describe('Network Class', () => {
         .mockResolvedValue(
           dsMockUtils.createMockRuntimeDispatchInfo({
             partialFee: rawGasFees,
+            weight: dsMockUtils.createMockWeight(),
           })
         );
 
@@ -562,7 +566,7 @@ describe('Network Class', () => {
     });
 
     it('should handle non prefixed hex strings', async () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker', {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker', {
         autoResolve: MockTxStatus.Succeeded,
       });
 
@@ -575,7 +579,7 @@ describe('Network Class', () => {
     });
 
     it('should throw an error if the status is rejected', async () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker', {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker', {
         autoResolve: false,
       });
 
@@ -592,7 +596,7 @@ describe('Network Class', () => {
     });
 
     it('should throw an error if there is an error submitting', async () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker', {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker', {
         autoResolve: false,
       });
 
@@ -609,7 +613,7 @@ describe('Network Class', () => {
     });
 
     it("should throw an error if signature isn't hex encoded", async () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker', {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker', {
         autoResolve: false,
       });
 
@@ -629,7 +633,7 @@ describe('Network Class', () => {
     });
 
     it('should use polling when subscription is not enabled', async () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker', {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker', {
         autoResolve: false,
       });
 

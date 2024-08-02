@@ -12,26 +12,30 @@ import {
 } from '~/internal';
 import { ErrorCode, NoArgsProcedureMethod, ProcedureMethod, SetMetadataParams } from '~/types';
 import {
+  assetToMeshAssetId,
   bigNumberToU64,
   bytesToString,
   meshMetadataSpecToMetadataSpec,
   meshMetadataValueToMetadataValue,
   metadataToMeshMetadataKey,
-  stringToTicker,
 } from '~/utils/conversion';
 import { createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
 import { MetadataDetails, MetadataLockStatus, MetadataType, MetadataValue } from './types';
 
 export interface UniqueIdentifiers {
-  ticker: string;
   type: MetadataType;
   id: BigNumber;
+  assetId: string;
 }
 
 export interface HumanReadable {
   id: string;
+  /**
+   * @deprecated in favour of `assetId`
+   */
   ticker: string;
+  assetId: string;
   type: MetadataType;
 }
 
@@ -59,9 +63,9 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
    * Check if a value is of type {@link UniqueIdentifiers}
    */
   public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
-    const { id, ticker, type } = identifier as UniqueIdentifiers;
+    const { id, assetId, type } = identifier as UniqueIdentifiers;
 
-    return id instanceof BigNumber && typeof ticker === 'string' && type in MetadataType;
+    return id instanceof BigNumber && typeof assetId === 'string' && type in MetadataType;
   }
 
   /**
@@ -70,9 +74,9 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
   public constructor(identifiers: UniqueIdentifiers, context: Context) {
     super(identifiers, context);
 
-    const { ticker, type, id } = identifiers;
+    const { type, id, assetId } = identifiers;
 
-    this.asset = new BaseAsset({ ticker }, context);
+    this.asset = new BaseAsset({ assetId }, context);
     this.type = type;
     this.id = id;
 
@@ -137,19 +141,19 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
         },
       },
       id,
-      asset: { ticker },
+      asset,
       type,
       context,
     } = this;
 
     const rawId = bigNumberToU64(id, context);
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(asset, context);
 
     let rawName, rawSpecs;
     if (type === MetadataType.Local) {
       [rawName, rawSpecs] = await Promise.all([
-        assetMetadataLocalKeyToName(rawTicker, rawId),
-        assetMetadataLocalSpecs(rawTicker, rawId),
+        assetMetadataLocalKeyToName(rawAssetId, rawId),
+        assetMetadataLocalSpecs(rawAssetId, rawId),
       ]);
     } else {
       [rawName, rawSpecs] = await Promise.all([
@@ -180,16 +184,16 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
       },
       id,
       type,
-      asset: { ticker },
+      asset,
       context,
     } = this;
 
     const rawMetadataKey = metadataToMeshMetadataKey(type, id, context);
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(asset, context);
 
     const [rawValue, rawValueDetails] = await Promise.all([
-      assetMetadataValues(rawTicker, rawMetadataKey),
-      assetMetadataValueDetails(rawTicker, rawMetadataKey),
+      assetMetadataValues(rawAssetId, rawMetadataKey),
+      assetMetadataValueDetails(rawAssetId, rawMetadataKey),
     ]);
 
     return meshMetadataValueToMetadataValue(rawValue, rawValueDetails);
@@ -209,7 +213,7 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
       },
       id,
       type,
-      asset: { ticker },
+      asset,
       context,
     } = this;
 
@@ -220,8 +224,8 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
     if (type === MetadataType.Global) {
       rawName = await assetMetadataGlobalKeyToName(rawId);
     } else {
-      const rawTicker = stringToTicker(ticker, context);
-      rawName = await assetMetadataLocalKeyToName(rawTicker, rawId);
+      const rawAssetId = assetToMeshAssetId(asset, context);
+      rawName = await assetMetadataLocalKeyToName(rawAssetId, rawId);
     }
 
     return rawName.isSome;
@@ -299,6 +303,7 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
 
     return toHumanReadable({
       ticker: asset,
+      assetId: asset,
       id,
       type,
     });

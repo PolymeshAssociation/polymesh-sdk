@@ -10,13 +10,13 @@ import {
 } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
+  assetToMeshAssetId,
   nftToMeshNft,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
   portfolioToPortfolioId,
   portfolioToPortfolioKind,
-  stringToTicker,
 } from '~/utils/conversion';
 import { asNftId } from '~/utils/internal';
 
@@ -28,7 +28,7 @@ export interface Storage {
 /**
  * @hidden
  */
-export type Params = { ticker: string } & NftControllerTransferParams;
+export type Params = { collection: NftCollection } & NftControllerTransferParams;
 
 /**
  * @hidden
@@ -40,14 +40,13 @@ export async function prepareNftControllerTransfer(
   const {
     context: {
       polymeshApi: { tx },
+      isV6,
     },
     storage: { did, destinationPortfolio },
     context,
   } = this;
-  const { ticker, originPortfolio, nfts: givenNfts } = args;
+  const { collection, originPortfolio, nfts: givenNfts } = args;
   const nftIds = givenNfts.map(nft => asNftId(nft));
-
-  const collection = new NftCollection({ ticker }, context);
 
   const originPortfolioId = portfolioLikeToPortfolioId(originPortfolio);
 
@@ -79,16 +78,31 @@ export async function prepareNftControllerTransfer(
     throw new PolymeshError({
       code: ErrorCode.InsufficientBalance,
       message: 'The origin Portfolio does not have all of the requested NFTs',
-      data: { unavailable: unavailableNfts.map(id => id.toString()) },
+      data: { unavailable: unavailableNfts.map(nftId => nftId.toString()) },
     });
   }
 
-  const rawNfts = nftToMeshNft(ticker, nftIds, context);
+  const rawNfts = nftToMeshNft(collection, nftIds, context);
 
+  const rawAssetId = assetToMeshAssetId(collection, context);
+
+  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
+  if (isV6) {
+    return {
+      transaction: tx.nft.controllerTransfer,
+      args: [
+        rawAssetId,
+        rawNfts,
+        portfolioIdToMeshPortfolioId(originPortfolioId, context),
+        portfolioToPortfolioKind(destinationPortfolio, context),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ] as any, // NOSONAR
+      resolver: undefined,
+    };
+  }
   return {
     transaction: tx.nft.controllerTransfer,
     args: [
-      stringToTicker(ticker, context),
       rawNfts,
       portfolioIdToMeshPortfolioId(originPortfolioId, context),
       portfolioToPortfolioKind(destinationPortfolio, context),
@@ -102,21 +116,18 @@ export async function prepareNftControllerTransfer(
  */
 export async function getAuthorization(
   this: Procedure<Params, void, Storage>,
-  { ticker }: Params
+  { collection }: Params
 ): Promise<ProcedureAuthorization> {
   const {
-    context,
     storage: { destinationPortfolio },
   } = this;
-
-  const asset = new NftCollection({ ticker }, context);
 
   const portfolioId = portfolioToPortfolioId(destinationPortfolio);
 
   return {
     roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
     permissions: {
-      assets: [asset],
+      assets: [collection],
       transactions: [TxTags.nft.ControllerTransfer],
       portfolios: [destinationPortfolio],
     },

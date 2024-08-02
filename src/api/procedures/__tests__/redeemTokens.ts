@@ -1,5 +1,5 @@
 import { Balance } from '@polkadot/types/interfaces';
-import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -13,7 +13,7 @@ import {
 import { Context, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PortfolioBalance, TxTags } from '~/types';
+import { FungibleAsset, PortfolioBalance, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -39,11 +39,12 @@ jest.mock(
 
 describe('redeemTokens procedure', () => {
   let mockContext: Mocked<Context>;
-  let ticker: string;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let assetId: string;
+  let asset: FungibleAsset;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let amount: BigNumber;
   let rawAmount: Balance;
-  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
   let bigNumberToBalanceSpy: jest.SpyInstance<
     Balance,
     [BigNumber, Context, (boolean | undefined)?]
@@ -53,25 +54,21 @@ describe('redeemTokens procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    ticker = 'SOME_TICKER';
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    assetId = '0x1234';
+    asset = entityMockUtils.getFungibleAssetInstance({ assetId, details: { isDivisible: true } });
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
     amount = new BigNumber(100);
     rawAmount = dsMockUtils.createMockBalance(amount);
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(assetToMeshAssetIdSpy)
+      .calledWith(expect.objectContaining({ id: assetId }), mockContext)
+      .mockReturnValue(rawAssetId);
     when(bigNumberToBalanceSpy).calledWith(amount, mockContext, true).mockReturnValue(rawAmount);
-    entityMockUtils.configureMocks({
-      fungibleAssetOptions: {
-        details: {
-          isDivisible: true,
-        },
-      },
-    });
   });
 
   afterEach(() => {
@@ -90,7 +87,7 @@ describe('redeemTokens procedure', () => {
       fromPortfolio: entityMockUtils.getDefaultPortfolioInstance({
         getAssetBalances: [
           {
-            asset: entityMockUtils.getFungibleAssetInstance({ ticker }),
+            asset,
             free: new BigNumber(500),
           } as unknown as PortfolioBalance,
         ],
@@ -100,11 +97,11 @@ describe('redeemTokens procedure', () => {
     const transaction = dsMockUtils.createTxMock('asset', 'redeem');
 
     const result = await prepareRedeemTokens.call(proc, {
-      ticker,
+      asset,
       amount,
     });
 
-    expect(result).toEqual({ transaction, args: [rawTicker, rawAmount], resolver: undefined });
+    expect(result).toEqual({ transaction, args: [rawAssetId, rawAmount], resolver: undefined });
   });
 
   it('should return a redeemFromPortfolio transaction spec', async () => {
@@ -112,7 +109,7 @@ describe('redeemTokens procedure', () => {
       id: new BigNumber(1),
       getAssetBalances: [
         {
-          asset: entityMockUtils.getFungibleAssetInstance({ ticker }),
+          asset,
           free: new BigNumber(500),
         } as unknown as PortfolioBalance,
       ],
@@ -121,7 +118,7 @@ describe('redeemTokens procedure', () => {
       fromPortfolio: from,
     });
 
-    const transaction = dsMockUtils.createTxMock('asset', 'redeemFromPortfolio');
+    const transaction = dsMockUtils.createTxMock('asset', 'redeem');
 
     const rawPortfolioKind = dsMockUtils.createMockPortfolioKind({
       User: dsMockUtils.createMockU64(new BigNumber(1)),
@@ -132,13 +129,13 @@ describe('redeemTokens procedure', () => {
       .mockReturnValue(rawPortfolioKind);
 
     const result = await prepareRedeemTokens.call(proc, {
-      ticker,
+      asset,
       amount,
       from,
     });
     expect(result).toEqual({
       transaction,
-      args: [rawTicker, rawAmount, rawPortfolioKind],
+      args: [rawAssetId, rawAmount, rawPortfolioKind],
       resolver: undefined,
     });
   });
@@ -148,7 +145,7 @@ describe('redeemTokens procedure', () => {
       fromPortfolio: entityMockUtils.getNumberedPortfolioInstance({
         getAssetBalances: [
           {
-            asset: entityMockUtils.getFungibleAssetInstance({ ticker }),
+            asset,
             free: new BigNumber(0),
           } as unknown as PortfolioBalance,
         ],
@@ -157,7 +154,7 @@ describe('redeemTokens procedure', () => {
 
     return expect(
       prepareRedeemTokens.call(proc, {
-        ticker,
+        asset,
         amount,
       })
     ).rejects.toThrow('Insufficient free balance');
@@ -178,7 +175,7 @@ describe('redeemTokens procedure', () => {
       });
 
       const params = {
-        ticker,
+        asset,
         amount,
       };
       let boundFunc = getAuthorization.bind(proc);
@@ -188,7 +185,7 @@ describe('redeemTokens procedure', () => {
       expect(result).toEqual({
         permissions: {
           transactions: [TxTags.asset.Redeem],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
           portfolios: [fromPortfolio],
         },
       });
@@ -206,7 +203,7 @@ describe('redeemTokens procedure', () => {
       expect(result).toEqual({
         permissions: {
           transactions: [TxTags.asset.RedeemFromPortfolio],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
           portfolios: [fromPortfolio],
         },
       });

@@ -2,21 +2,21 @@ import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, IssueTokensParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { MAX_BALANCE } from '~/utils/constants';
-import { bigNumberToBalance, portfolioToPortfolioKind, stringToTicker } from '~/utils/conversion';
+import {
+  assetToMeshAssetId,
+  bigNumberToBalance,
+  portfolioToPortfolioKind,
+} from '~/utils/conversion';
 
 export type Params = IssueTokensParams & {
-  ticker: string;
-};
-
-export interface Storage {
   asset: FungibleAsset;
-}
+};
 
 /**
  * @hidden
  */
 export async function prepareIssueTokens(
-  this: Procedure<Params, FungibleAsset, Storage>,
+  this: Procedure<Params, FungibleAsset>,
   args: Params
 ): Promise<TransactionSpec<FungibleAsset, ExtrinsicParams<'asset', 'issue'>>> {
   const {
@@ -26,9 +26,8 @@ export async function prepareIssueTokens(
       },
     },
     context,
-    storage: { asset: assetEntity },
   } = this;
-  const { ticker, amount, portfolioId } = args;
+  const { asset: assetEntity, amount, portfolioId } = args;
 
   const [{ isDivisible, totalSupply }, signingIdentity] = await Promise.all([
     assetEntity.details(),
@@ -39,7 +38,7 @@ export async function prepareIssueTokens(
   if (supplyAfterMint.isGreaterThan(MAX_BALANCE)) {
     throw new PolymeshError({
       code: ErrorCode.LimitExceeded,
-      message: `This issuance operation will cause the total supply of "${ticker}" to exceed the supply limit`,
+      message: `This issuance operation will cause the total supply of "${assetEntity.id}" to exceed the supply limit`,
       data: {
         currentSupply: totalSupply,
         supplyLimit: MAX_BALANCE,
@@ -51,13 +50,13 @@ export async function prepareIssueTokens(
     ? await signingIdentity.portfolios.getPortfolio({ portfolioId })
     : await signingIdentity.portfolios.getPortfolio();
 
-  const rawTicker = stringToTicker(ticker, context);
+  const rawAssetId = assetToMeshAssetId(assetEntity, context);
   const rawValue = bigNumberToBalance(amount, context, isDivisible);
   const rawPortfolio = portfolioToPortfolioKind(portfolio, context);
 
   return {
     transaction: asset.issue,
-    args: [rawTicker, rawValue, rawPortfolio],
+    args: [rawAssetId, rawValue, rawPortfolio],
     resolver: assetEntity,
   };
 }
@@ -66,11 +65,9 @@ export async function prepareIssueTokens(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, FungibleAsset, Storage>
+  this: Procedure<Params, FungibleAsset>,
+  { asset }: Params
 ): ProcedureAuthorization {
-  const {
-    storage: { asset },
-  } = this;
   return {
     permissions: {
       transactions: [TxTags.asset.Issue],
@@ -83,19 +80,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export function prepareStorage(
-  this: Procedure<Params, FungibleAsset, Storage>,
-  { ticker }: Params
-): Storage {
-  const { context } = this;
-
-  return {
-    asset: new FungibleAsset({ ticker }, context),
-  };
-}
-
-/**
- * @hidden
- */
-export const issueTokens = (): Procedure<Params, FungibleAsset, Storage> =>
-  new Procedure(prepareIssueTokens, getAuthorization, prepareStorage);
+export const issueTokens = (): Procedure<Params, FungibleAsset> =>
+  new Procedure(prepareIssueTokens, getAuthorization);

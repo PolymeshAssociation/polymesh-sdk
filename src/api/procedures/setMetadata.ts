@@ -1,11 +1,11 @@
-import { FungibleAsset, MetadataEntry, PolymeshError, Procedure } from '~/internal';
+import { MetadataEntry, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, MetadataLockStatus, SetMetadataParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
+  assetToMeshAssetId,
   metadataToMeshMetadataKey,
   metadataValueDetailToMeshMetadataValueDetail,
   metadataValueToMeshMetadataValue,
-  stringToTicker,
 } from '~/utils/conversion';
 import { optionize } from '~/utils/internal';
 
@@ -34,16 +34,12 @@ export async function prepareSetMetadata(
   } = this;
 
   const {
-    metadataEntry: {
-      id,
-      type,
-      asset: { ticker },
-    },
+    metadataEntry: { id, type, asset },
     metadataEntry,
     ...rest
   } = params;
 
-  const rawTicker = stringToTicker(ticker, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
   const rawMetadataKey = metadataToMeshMetadataKey(type, id, context);
 
   const currentValue = await metadataEntry.value();
@@ -96,8 +92,8 @@ export async function prepareSetMetadata(
 
   return {
     transaction,
-    args: [rawTicker, rawMetadataKey, ...args],
-    resolver: new MetadataEntry({ id, type, ticker }, context),
+    args: [rawAssetId, rawMetadataKey, ...args],
+    resolver: new MetadataEntry({ id, type, assetId: asset.id }, context),
   };
 }
 
@@ -108,12 +104,8 @@ export function getAuthorization(
   this: Procedure<Params, MetadataEntry>,
   params: Params
 ): ProcedureAuthorization {
-  const { context } = this;
-
   const {
-    metadataEntry: {
-      asset: { ticker },
-    },
+    metadataEntry: { asset },
   } = params;
 
   const transactions = [];
@@ -127,7 +119,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions,
-      assets: [new FungibleAsset({ ticker }, context)],
+      assets: [asset],
       portfolios: [],
     },
   };

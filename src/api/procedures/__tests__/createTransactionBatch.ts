@@ -36,7 +36,7 @@ describe('createTransactionBatch procedure', () => {
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
 
-    tx1 = dsMockUtils.createTxMock('asset', 'registerTicker');
+    tx1 = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
     tx2 = dsMockUtils.createTxMock('asset', 'createAsset');
     tx3 = dsMockUtils.createTxMock('portfolio', 'createPortfolio');
   });
@@ -75,7 +75,7 @@ describe('createTransactionBatch procedure', () => {
     >(mockContext, {
       processedTransactions,
       tags: [
-        TxTags.asset.RegisterTicker,
+        TxTags.asset.RegisterUniqueTicker,
         TxTags.asset.CreateAsset,
         TxTags.portfolio.CreatePortfolio,
       ],
@@ -99,7 +99,7 @@ describe('createTransactionBatch procedure', () => {
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', async () => {
       const tags = [
-        TxTags.asset.RegisterTicker,
+        TxTags.asset.RegisterUniqueTicker,
         TxTags.asset.CreateAsset,
         TxTags.portfolio.CreatePortfolio,
       ];
@@ -193,7 +193,7 @@ describe('createTransactionBatch procedure', () => {
           },
         ],
         tags: [
-          TxTags.asset.RegisterTicker,
+          TxTags.asset.RegisterUniqueTicker,
           TxTags.asset.CreateAsset,
           TxTags.portfolio.CreatePortfolio,
         ],

@@ -15,7 +15,7 @@ jest.mock(
 );
 
 describe('CustomPermissionGroup class', () => {
-  const ticker = 'ASSET_NAME';
+  const assetId = '0x1234';
   const id = new BigNumber(1);
 
   let context: Context;
@@ -25,7 +25,7 @@ describe('CustomPermissionGroup class', () => {
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    jest.spyOn(utilsConversionModule, 'stringToTicker').mockImplementation();
+    jest.spyOn(utilsConversionModule, 'stringToAssetId').mockImplementation();
   });
 
   beforeEach(() => {
@@ -49,16 +49,16 @@ describe('CustomPermissionGroup class', () => {
 
   describe('constructor', () => {
     it('should assign id to instance', () => {
-      const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
+      const customPermissionGroup = new CustomPermissionGroup({ id, assetId }, context);
 
       expect(customPermissionGroup.id).toBe(id);
-      expect(customPermissionGroup.asset.ticker).toBe(ticker);
+      expect(customPermissionGroup.asset.id).toBe(assetId);
     });
   });
 
   describe('method: isUniqueIdentifiers', () => {
     it('should return true if the object conforms to the interface', () => {
-      expect(CustomPermissionGroup.isUniqueIdentifiers({ id: new BigNumber(1), ticker })).toBe(
+      expect(CustomPermissionGroup.isUniqueIdentifiers({ id: new BigNumber(1), assetId })).toBe(
         true
       );
       expect(CustomPermissionGroup.isUniqueIdentifiers({})).toBe(false);
@@ -70,20 +70,21 @@ describe('CustomPermissionGroup class', () => {
     it('should return a human readable version of the entity', () => {
       entityMockUtils.configureMocks({
         fungibleAssetOptions: {
-          toHuman: ticker,
+          toHuman: assetId,
         },
       });
-      const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
+      const customPermissionGroup = new CustomPermissionGroup({ id, assetId }, context);
       expect(customPermissionGroup.toHuman()).toEqual({
         id: id.toString(),
-        ticker,
+        assetId,
+        ticker: assetId,
       });
     });
   });
 
   describe('method: setPermissions', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
+      const customPermissionGroup = new CustomPermissionGroup({ id, assetId }, context);
 
       const args = {
         permissions: {
@@ -109,25 +110,31 @@ describe('CustomPermissionGroup class', () => {
 
   describe('method: getPermissions', () => {
     it('should return a list of permissions and transaction groups', async () => {
-      const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
+      const customPermissionGroup = new CustomPermissionGroup({ id, assetId }, context);
+
+      const rawStoName = dsMockUtils.createMockText('Sto');
+      const rawIdentityName = dsMockUtils.createMockText('Identity');
+
+      const rawInvestPermissions = dsMockUtils.createMockPalletPermissions({
+        extrinsics: dsMockUtils.createMockExtrinsicName({
+          These: [dsMockUtils.createMockText('invest')],
+        }),
+      });
+
+      const rawAddClaimPermissions = dsMockUtils.createMockPalletPermissions({
+        extrinsics: dsMockUtils.createMockExtrinsicName({
+          These: [dsMockUtils.createMockText('addClaim')],
+        }),
+      });
+
+      const permissionMap = new Map();
+      permissionMap.set(rawStoName, rawInvestPermissions);
+      permissionMap.set(rawIdentityName, rawAddClaimPermissions);
 
       dsMockUtils.createQueryMock('externalAgents', 'groupPermissions', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockExtrinsicPermissions({
-            These: [
-              dsMockUtils.createMockPalletPermissions({
-                palletName: 'Sto',
-                dispatchableNames: dsMockUtils.createMockDispatchableNames({
-                  These: [dsMockUtils.createMockBytes('invest')],
-                }),
-              }),
-              dsMockUtils.createMockPalletPermissions({
-                palletName: 'Identity',
-                dispatchableNames: dsMockUtils.createMockDispatchableNames({
-                  These: [dsMockUtils.createMockBytes('addClaim')],
-                }),
-              }),
-            ],
+            These: dsMockUtils.createMockBTreeMap(permissionMap),
           })
         ),
       });
@@ -143,7 +150,7 @@ describe('CustomPermissionGroup class', () => {
 
   describe('method: exists', () => {
     it('should return whether the Custom Permission Group exists', async () => {
-      const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
+      const customPermissionGroup = new CustomPermissionGroup({ id, assetId }, context);
 
       dsMockUtils.createQueryMock('externalAgents', 'agIdSequence', {
         returnValue: dsMockUtils.createMockU32(new BigNumber(0)),

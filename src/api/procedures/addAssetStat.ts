@@ -1,4 +1,4 @@
-import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
+import { PolymeshError, Procedure } from '~/internal';
 import { AddAssetStatParams, ErrorCode, StatType, TxTags } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import {
@@ -8,9 +8,8 @@ import {
   statisticsOpTypeToStatType,
   statisticStatTypesToBtreeStatType,
   statTypeToStatOpType,
-  stringToTickerKey,
 } from '~/utils/conversion';
-import { checkTxType, compareStatsToInput } from '~/utils/internal';
+import { checkTxType, compareStatsToInput, getAssetIdForStats } from '~/utils/internal';
 
 /**
  * @hidden
@@ -28,11 +27,12 @@ export async function prepareAddAssetStat(
     },
     context,
   } = this;
-  const { ticker, type } = args;
+  const { asset, type } = args;
 
-  const tickerKey = stringToTickerKey(ticker, context);
-  const currentStats = await statisticsQuery.activeAssetStats(tickerKey);
-  const needStat = ![...currentStats].find(s => compareStatsToInput(s, args));
+  const rawAssetId = getAssetIdForStats(asset, context);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const currentStats = await statisticsQuery.activeAssetStats(rawAssetId as any); // NOSONAR
+  const needStat = ![...currentStats].find(s => compareStatsToInput(s, args, context));
 
   if (!needStat) {
     throw new PolymeshError({
@@ -41,7 +41,7 @@ export async function prepareAddAssetStat(
     });
   }
 
-  const op = statTypeToStatOpType(type, context);
+  const operationType = statTypeToStatOpType(type, context);
 
   const transactions = [];
 
@@ -50,12 +50,16 @@ export async function prepareAddAssetStat(
     rawClaimIssuer = claimIssuerToMeshClaimIssuer(args, context);
   }
 
-  const newStat = statisticsOpTypeToStatType({ op, claimIssuer: rawClaimIssuer }, context);
+  const newStat = statisticsOpTypeToStatType(
+    { operationType, claimIssuer: rawClaimIssuer },
+    context
+  );
   const newStats = statisticStatTypesToBtreeStatType([...currentStats, newStat], context);
   transactions.push(
     checkTxType({
       transaction: statistics.setActiveAssetStats,
-      args: [tickerKey, newStats],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      args: [rawAssetId as any, newStats], // NOSONAR
     })
   );
 
@@ -66,7 +70,8 @@ export async function prepareAddAssetStat(
     transactions.push(
       checkTxType({
         transaction: statistics.batchUpdateAssetStats,
-        args: [tickerKey, newStat, statValue],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        args: [rawAssetId as any, newStat, statValue], // NOSONAR
       })
     );
   } else if (args.type === StatType.ScopedCount) {
@@ -74,7 +79,8 @@ export async function prepareAddAssetStat(
     transactions.push(
       checkTxType({
         transaction: statistics.batchUpdateAssetStats,
-        args: [tickerKey, newStat, statValue],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        args: [rawAssetId as any, newStat, statValue], // NOSONAR
       })
     );
   }
@@ -86,13 +92,12 @@ export async function prepareAddAssetStat(
  */
 export function getAuthorization(
   this: Procedure<AddAssetStatParams, void>,
-  { type, ticker }: AddAssetStatParams
+  { type, asset }: AddAssetStatParams
 ): ProcedureAuthorization {
   const transactions = [TxTags.statistics.SetActiveAssetStats];
   if (type === StatType.Count || type === StatType.ScopedCount) {
     transactions.push(TxTags.statistics.BatchUpdateAssetStats);
   }
-  const asset = new FungibleAsset({ ticker }, this.context);
   return {
     permissions: {
       transactions,

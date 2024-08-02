@@ -85,6 +85,7 @@ export class Network {
           rpc: {
             system: { chain },
           },
+          genesisHash,
         },
       },
     } = this;
@@ -93,13 +94,14 @@ export class Network {
     return {
       name: textToString(name),
       version: u32ToBigNumber(specVersion),
+      genesisHash: hashToString(genesisHash),
     };
   }
 
   /**
    * Retrieve the protocol fees associated with running specific transactions
    *
-   * @param args.tags - list of transaction tags (e.g. [TxTags.asset.CreateAsset, TxTags.asset.RegisterTicker] or ["asset.createAsset", "asset.registerTicker"])
+   * @param args.tags - list of transaction tags (e.g. [TxTags.asset.CreateAsset, TxTags.asset.RegisterUniqueTicker] or ["asset.createAsset", "asset.registerTicker"])
    */
   public getProtocolFees(args: { tags: TxTag[] }): Promise<ProtocolFees[]> {
     return this.context.getProtocolFees(args);
@@ -493,7 +495,7 @@ export class Network {
     } = this;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return !!(query as any).confidentialAsset;
+    return !!(query as any).confidentialAsset; // NOSONAR
   }
 
   /**

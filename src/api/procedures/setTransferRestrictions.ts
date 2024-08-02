@@ -8,7 +8,7 @@ import BigNumber from 'bignumber.js';
 import { entries, flatten, forEach } from 'lodash';
 
 import { SetTransferRestrictionsParams } from '~/api/entities/Asset/Fungible/TransferRestrictions/TransferRestrictionBase';
-import { Context, FungibleAsset, Identity, PolymeshError, Procedure } from '~/internal';
+import { Context, Identity, PolymeshError, Procedure } from '~/internal';
 import {
   ClaimCountRestrictionValue,
   ClaimCountTransferRestriction,
@@ -32,7 +32,6 @@ import {
   identitiesToBtreeSet,
   identityIdToString,
   meshClaimTypeToClaimType,
-  stringToTickerKey,
   toExemptKey,
   transferRestrictionToPolymeshTransferCondition,
   transferRestrictionTypeToStatOpType,
@@ -43,6 +42,7 @@ import {
   assertStatIsSet,
   checkTxType,
   compareTransferRestrictionToInput,
+  getAssetIdForStats,
   neededStatTypeForRestrictionInput,
   requestMulti,
 } from '~/utils/internal';
@@ -256,9 +256,9 @@ export async function prepareSetTransferRestrictions(
     restrictions: { length: newRestrictionAmount },
     restrictions,
     type,
-    ticker,
+    asset,
   } = args;
-  const tickerKey = stringToTickerKey(ticker, context);
+  const rawAssetId = getAssetIdForStats(asset, context);
 
   assertInputValid(restrictions, type);
 
@@ -288,10 +288,10 @@ export async function prepareSetTransferRestrictions(
 
   transactions.push(
     checkTxType({
-      transaction: statistics.setAssetTransferCompliance,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      transaction: statistics.setAssetTransferCompliance as any, // NOSONAR
       args: [
-        tickerKey,
-        // if we do not add the current restrictions (filteredRestrictions), then they will be removed
+        rawAssetId, // if we do not add the current restrictions (filteredRestrictions), then they will be removed
         complianceConditionsToBtreeSet([...filteredRestrictions, ...conditions], context),
       ],
     })
@@ -303,8 +303,7 @@ export async function prepareSetTransferRestrictions(
         return;
       }
       const rawClaimType = claimType === 'None' ? undefined : (claimType as ClaimType);
-      const exemptKey = toExemptKey(tickerKey, op, rawClaimType);
-
+      const exemptKey = toExemptKey(context, rawAssetId, op, rawClaimType);
       const exemptedBtreeSet = identitiesToBtreeSet(exempted, context);
       const rawExempt = booleanToBool(exempt, context);
 
@@ -329,7 +328,7 @@ export async function prepareSetTransferRestrictions(
  */
 export function getAuthorization(
   this: Procedure<SetTransferRestrictionsParams, BigNumber, Storage>,
-  { ticker, restrictions }: SetTransferRestrictionsParams
+  { asset, restrictions }: SetTransferRestrictionsParams
 ): ProcedureAuthorization {
   const transactions: TxTag[] = [TxTags.statistics.SetAssetTransferCompliance];
 
@@ -340,7 +339,7 @@ export function getAuthorization(
 
   return {
     permissions: {
-      assets: [new FungibleAsset({ ticker }, this.context)],
+      assets: [asset],
       transactions,
       portfolios: [],
     },
@@ -362,14 +361,17 @@ export async function prepareStorage(
       },
     },
   } = this;
-  const { ticker, type } = args;
-  const tickerKey = stringToTickerKey(ticker, context);
+  const { asset, type } = args;
+
+  const rawAssetId = getAssetIdForStats(asset, context);
 
   const [currentStats, { requirements: currentRestrictions }] = await requestMulti<
     [typeof statistics.activeAssetStats, typeof statistics.assetTransferCompliances]
   >(context, [
-    [statistics.activeAssetStats, tickerKey],
-    [statistics.assetTransferCompliances, tickerKey],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [statistics.activeAssetStats, rawAssetId as any], // NOSONAR
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [statistics.assetTransferCompliances, rawAssetId as any], // NOSONAR
   ]);
 
   args.restrictions.forEach(restriction => {
@@ -431,11 +433,9 @@ export async function prepareStorage(
 
   claimTypes.forEach(claimType => {
     exemptionFetchers.push(
-      statistics.transferConditionExemptEntities.entries({
-        asset: tickerKey,
-        op,
-        claimType,
-      })
+      statistics.transferConditionExemptEntities.entries(
+        toExemptKey(context, rawAssetId, op, claimType)
+      )
     );
   });
   const rawCurrentExemptions = flatten(await Promise.all(exemptionFetchers));

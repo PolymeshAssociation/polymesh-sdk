@@ -2,11 +2,11 @@
 export default {
   rpc: {
     complianceReport: {
-      description: 'Checks all compliance requirements for the given ticker.',
+      description: 'Checks all compliance requirements for the given asset.',
       params: [
         {
-          name: 'assetId',
-          type: 'AssetId',
+          name: 'asset_id',
+          type: 'AssetID',
         },
         {
           name: 'sender_identity',

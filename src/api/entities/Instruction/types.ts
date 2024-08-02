@@ -39,7 +39,7 @@ export type InstructionEndCondition =
 
 export type InstructionDetails = {
   status: InstructionStatus;
-  createdAt: Date;
+  createdAt: Date | null;
   /**
    * Date at which the trade was agreed upon (optional, for offchain trades)
    */
@@ -48,7 +48,7 @@ export type InstructionDetails = {
    * Date at which the trade was executed (optional, for offchain trades)
    */
   valueDate: Date | null;
-  venue: Venue;
+  venue: Venue | null;
   memo: string | null;
 } & InstructionEndCondition;
 
@@ -70,6 +70,9 @@ export interface OffChainLeg {
   from: Identity;
   to: Identity;
   offChainAmount: BigNumber;
+  /**
+   * the ticker of the off chain asset
+   */
   asset: string;
 }
 

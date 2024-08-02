@@ -36,7 +36,6 @@ import type {
   Permill,
 } from '@polkadot/types/interfaces/runtime';
 import type {
-  PalletBridgeBridgeTx,
   PalletContractsWasmDeterminism,
   PalletCorporateActionsBallotBallotMeta,
   PalletCorporateActionsBallotBallotTimeRange,
@@ -46,17 +45,18 @@ import type {
   PalletCorporateActionsInitiateCorporateActionArgs,
   PalletCorporateActionsRecordDateSpec,
   PalletCorporateActionsTargetIdentities,
+  PalletElectionProviderMultiPhaseRawSolution,
+  PalletElectionProviderMultiPhaseSolutionOrSnapshotSize,
   PalletImOnlineHeartbeat,
   PalletImOnlineSr25519AppSr25519Signature,
   PalletPipsSnapshotResult,
-  PalletStakingCompactAssignments,
-  PalletStakingElectionSize,
+  PalletStakingPalletConfigOpPerbill,
+  PalletStakingPalletConfigOpPercent,
+  PalletStakingPalletConfigOpU128,
+  PalletStakingPalletConfigOpU32,
   PalletStakingRewardDestination,
   PalletStakingSlashingSwitch,
   PalletStakingValidatorPrefs,
-  PalletStateTrieMigrationMigrationLimits,
-  PalletStateTrieMigrationMigrationTask,
-  PalletStateTrieMigrationProgress,
   PalletStoPriceTier,
   PalletUtilityUniqueCall,
   PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
@@ -68,11 +68,13 @@ import type {
   PolymeshContractsChainExtensionExtrinsicId,
   PolymeshContractsNextUpgrade,
   PolymeshPrimitivesAgentAgentGroup,
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesAssetAssetType,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
   PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
   PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
+  PolymeshPrimitivesAssetNonFungibleType,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesBeneficiary,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
@@ -92,6 +94,7 @@ import type {
   PolymeshPrimitivesPortfolioFund,
   PolymeshPrimitivesPosRatio,
   PolymeshPrimitivesSecondaryKey,
+  PolymeshPrimitivesSecondaryKeyExtrinsicPermissions,
   PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesSecondaryKeySignatory,
   PolymeshPrimitivesSettlementAffirmationCount,
@@ -102,7 +105,6 @@ import type {
   PolymeshPrimitivesSettlementVenueType,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesStatisticsStatUpdate,
-  PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceTransferCondition,
   PolymeshPrimitivesTransferComplianceTransferConditionExemptKey,
@@ -112,6 +114,7 @@ import type {
   SpConsensusGrandpaEquivocationProof,
   SpConsensusSlotsEquivocationProof,
   SpNposElectionsElectionScore,
+  SpNposElectionsSupport,
   SpRuntimeMultiSignature,
   SpSessionMembershipProof,
   SpWeightsWeightV2Weight,
@@ -172,9 +175,9 @@ declare module '@polkadot/api-base/types/submittable' {
                 | string
                 | Uint8Array
               )[],
-          assetId: U8aFixed | string | Uint8Array
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [Vec<PolymeshPrimitivesDocument>, U8aFixed]
+        [Vec<PolymeshPrimitivesDocument>, PolymeshPrimitivesAssetAssetID]
       >;
       /**
        * Sets all identities in the `mediators` set as mandatory mediators for any instruction transfering `asset_id`.
@@ -189,10 +192,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       addMandatoryMediators: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           mediators: BTreeSet<PolymeshPrimitivesIdentityId>
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, BTreeSet<PolymeshPrimitivesIdentityId>]
+        [PolymeshPrimitivesAssetAssetID, BTreeSet<PolymeshPrimitivesIdentityId>]
       >;
       /**
        * Forces a transfer of token from `from_portfolio` to the caller's default portfolio.
@@ -209,7 +212,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       controllerTransfer: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           value: u128 | AnyNumber | Uint8Array,
           fromPortfolio:
             | PolymeshPrimitivesIdentityIdPortfolioId
@@ -217,17 +220,17 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, u128, PolymeshPrimitivesIdentityIdPortfolioId]
+        [PolymeshPrimitivesAssetAssetID, u128, PolymeshPrimitivesIdentityIdPortfolioId]
       >;
       /**
-       * Initializes a new [`SecurityToken`], with the initiating account as its owner.
+       * Initializes a new [`AssetDetails`], with the initiating account as its owner.
        * The total supply will initially be zero. To mint tokens, use [`Module::issue`].
        *
        * # Arguments
        * * `origin`: contains the secondary key of the caller (i.e. who signed the transaction to execute this function).
        * * `asset_name`: the [`AssetName`] associated to the security token.
-       * * `divisible`: sets [`SecurityToken::divisible`], where `true` means the token is divisible.
-       * * `asset_type`: the [`AssetType`] that represents the security type of the [`SecurityToken`].
+       * * `divisible`: sets [`AssetDetails::divisible`], where `true` means the token is divisible.
+       * * `asset_type`: the [`AssetType`] that represents the security type of the [`AssetDetails`].
        * * `asset_identifiers`: a vector of [`AssetIdentifier`].
        * * `funding_round_name`: the name of the funding round ([`FundingRoundName`]).
        *
@@ -277,14 +280,14 @@ declare module '@polkadot/api-base/types/submittable' {
         ]
       >;
       /**
-       * Initializes a new [`SecurityToken`], with the initiating account as its owner.
+       * Initializes a new [`AssetDetails`], with the initiating account as its owner.
        * The total supply will initially be zero. To mint tokens, use [`Module::issue`].
        * Note: Utility extrinsic to batch [`Module::create_asset`] and [`Module::register_custom_asset_type`].
        *
        * # Arguments
        * * `origin`: contains the secondary key of the caller (i.e. who signed the transaction to execute this function).
        * * `asset_name`: the [`AssetName`] associated to the security token.
-       * * `divisible`: sets [`SecurityToken::divisible`], where `true` means the token is divisible.
+       * * `divisible`: sets [`AssetDetails::divisible`], where `true` means the token is divisible.
        * * `custom_asset_type`: the custom asset type of the token.
        * * `asset_identifiers`: a vector of [`AssetIdentifier`].
        * * `funding_round_name`: the name of the funding round ([`FundingRoundName`]).
@@ -324,8 +327,10 @@ declare module '@polkadot/api-base/types/submittable' {
        * * Root
        **/
       exemptAssetAffirmation: AugmentedSubmittable<
-        (assetId: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed]
+        (
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesAssetAssetID]
       >;
       /**
        * Freezes transfers of a given token.
@@ -338,8 +343,10 @@ declare module '@polkadot/api-base/types/submittable' {
        * * Asset
        **/
       freeze: AugmentedSubmittable<
-        (assetId: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed]
+        (
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesAssetAssetID]
       >;
       /**
        * Issue (i.e mint) new tokens to the caller, which must be an authorized external agent.
@@ -356,7 +363,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       issue: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           amount: u128 | AnyNumber | Uint8Array,
           portfolioKind:
             | PolymeshPrimitivesIdentityIdPortfolioKind
@@ -365,7 +372,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, u128, PolymeshPrimitivesIdentityIdPortfolioKind]
+        [PolymeshPrimitivesAssetAssetID, u128, PolymeshPrimitivesIdentityIdPortfolioKind]
       >;
       /**
        * Establishes a connection between a ticker and an AssetID.
@@ -381,12 +388,12 @@ declare module '@polkadot/api-base/types/submittable' {
       linkTickerToAssetId: AugmentedSubmittable<
         (
           ticker: PolymeshPrimitivesTicker | string | Uint8Array,
-          assetId: U8aFixed | string | Uint8Array
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [PolymeshPrimitivesTicker, U8aFixed]
+        [PolymeshPrimitivesTicker, PolymeshPrimitivesAssetAssetID]
       >;
       /**
-       * If the token associated to `asset_id` is indivisible, sets [`SecurityToken::divisible`] to true.
+       * If the token associated to `asset_id` is indivisible, sets [`AssetDetails::divisible`] to true.
        *
        * # Arguments
        * * `origin`: is a signer that has permissions to act as an agent of `ticker`.
@@ -396,8 +403,10 @@ declare module '@polkadot/api-base/types/submittable' {
        * * Asset
        **/
       makeDivisible: AugmentedSubmittable<
-        (assetId: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed]
+        (
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesAssetAssetID]
       >;
       /**
        * Pre-approves the receivement of an asset.
@@ -410,8 +419,10 @@ declare module '@polkadot/api-base/types/submittable' {
        * * Asset
        **/
       preApproveAsset: AugmentedSubmittable<
-        (assetId: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed]
+        (
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesAssetAssetID]
       >;
       /**
        * Redeems (i.e burns) existing tokens by reducing the balance of the caller's portfolio and the total supply of the token.
@@ -428,7 +439,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       redeem: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           value: u128 | AnyNumber | Uint8Array,
           portfolioKind:
             | PolymeshPrimitivesIdentityIdPortfolioKind
@@ -437,7 +448,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, u128, PolymeshPrimitivesIdentityIdPortfolioKind]
+        [PolymeshPrimitivesAssetAssetID, u128, PolymeshPrimitivesIdentityIdPortfolioKind]
       >;
       /**
        * Registers and set local asset metadata.
@@ -456,7 +467,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       registerAndSetLocalAssetMetadata: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           name: Bytes | string | Uint8Array,
           spec:
             | PolymeshPrimitivesAssetMetadataAssetMetadataSpec
@@ -473,7 +484,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
         ) => SubmittableExtrinsic<ApiType>,
         [
-          U8aFixed,
+          PolymeshPrimitivesAssetAssetID,
           Bytes,
           PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
           Bytes,
@@ -514,7 +525,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       registerAssetMetadataLocalType: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           name: Bytes | string | Uint8Array,
           spec:
             | PolymeshPrimitivesAssetMetadataAssetMetadataSpec
@@ -522,7 +533,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, Bytes, PolymeshPrimitivesAssetMetadataAssetMetadataSpec]
+        [PolymeshPrimitivesAssetAssetID, Bytes, PolymeshPrimitivesAssetMetadataAssetMetadataSpec]
       >;
       /**
        * Registers a custom asset type.
@@ -565,8 +576,10 @@ declare module '@polkadot/api-base/types/submittable' {
        * * Root
        **/
       removeAssetAffirmationExemption: AugmentedSubmittable<
-        (assetId: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed]
+        (
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesAssetAssetID]
       >;
       /**
        * Removes the pre approval of an asset.
@@ -579,8 +592,10 @@ declare module '@polkadot/api-base/types/submittable' {
        * * Asset
        **/
       removeAssetPreApproval: AugmentedSubmittable<
-        (assetId: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed]
+        (
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesAssetAssetID]
       >;
       /**
        * Remove documents for a given token.
@@ -596,9 +611,9 @@ declare module '@polkadot/api-base/types/submittable' {
       removeDocuments: AugmentedSubmittable<
         (
           docsId: Vec<u32> | (u32 | AnyNumber | Uint8Array)[],
-          assetId: U8aFixed | string | Uint8Array
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [Vec<u32>, U8aFixed]
+        [Vec<u32>, PolymeshPrimitivesAssetAssetID]
       >;
       /**
        * Removes the asset metadata key and value of a local key.
@@ -613,10 +628,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       removeLocalMetadataKey: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           localKey: u64 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, u64]
+        [PolymeshPrimitivesAssetAssetID, u64]
       >;
       /**
        * Removes all identities in the `mediators` set from the mandatory mediators list for the given `asset_id`.
@@ -631,10 +646,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       removeMandatoryMediators: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           mediators: BTreeSet<PolymeshPrimitivesIdentityId>
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, BTreeSet<PolymeshPrimitivesIdentityId>]
+        [PolymeshPrimitivesAssetAssetID, BTreeSet<PolymeshPrimitivesIdentityId>]
       >;
       /**
        * Removes the asset metadata value of a metadata key.
@@ -649,7 +664,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       removeMetadataValue: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           metadataKey:
             | PolymeshPrimitivesAssetMetadataAssetMetadataKey
             | { Global: any }
@@ -657,7 +672,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, PolymeshPrimitivesAssetMetadataAssetMetadataKey]
+        [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesAssetMetadataAssetMetadataKey]
       >;
       /**
        * Updates the [`AssetName`] associated to a security token.
@@ -672,10 +687,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       renameAsset: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           assetName: Bytes | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, Bytes]
+        [PolymeshPrimitivesAssetAssetID, Bytes]
       >;
       /**
        * Set asset metadata value.
@@ -693,7 +708,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       setAssetMetadata: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           key:
             | PolymeshPrimitivesAssetMetadataAssetMetadataKey
             | { Global: any }
@@ -710,7 +725,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
         ) => SubmittableExtrinsic<ApiType>,
         [
-          U8aFixed,
+          PolymeshPrimitivesAssetAssetID,
           PolymeshPrimitivesAssetMetadataAssetMetadataKey,
           Bytes,
           Option<PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail>
@@ -731,7 +746,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       setAssetMetadataDetails: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           key:
             | PolymeshPrimitivesAssetMetadataAssetMetadataKey
             | { Global: any }
@@ -745,7 +760,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [
-          U8aFixed,
+          PolymeshPrimitivesAssetAssetID,
           PolymeshPrimitivesAssetMetadataAssetMetadataKey,
           PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail
         ]
@@ -763,10 +778,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       setFundingRound: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           foundingRoundName: Bytes | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, Bytes]
+        [PolymeshPrimitivesAssetAssetID, Bytes]
       >;
       /**
        * Unfreezes transfers of a given token.
@@ -779,8 +794,10 @@ declare module '@polkadot/api-base/types/submittable' {
        * * Asset
        **/
       unfreeze: AugmentedSubmittable<
-        (assetId: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed]
+        (
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesAssetAssetID]
       >;
       /**
        * Updates the type of an asset.
@@ -795,7 +812,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       updateAssetType: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           assetType:
             | PolymeshPrimitivesAssetAssetType
             | { EquityCommon: any }
@@ -813,7 +830,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, PolymeshPrimitivesAssetAssetType]
+        [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesAssetAssetType]
       >;
       /**
        * Updates the asset identifiers associated to the token.
@@ -828,7 +845,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       updateIdentifiers: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           assetIdentifiers:
             | Vec<PolymeshPrimitivesAssetIdentifier>
             | (
@@ -842,7 +859,7 @@ declare module '@polkadot/api-base/types/submittable' {
                 | Uint8Array
               )[]
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, Vec<PolymeshPrimitivesAssetIdentifier>]
+        [PolymeshPrimitivesAssetAssetID, Vec<PolymeshPrimitivesAssetIdentifier>]
       >;
     };
     babe: {
@@ -1044,262 +1061,6 @@ declare module '@polkadot/api-base/types/submittable' {
       >;
     };
     base: {};
-    bridge: {
-      /**
-       * Add a freeze admin.
-       *
-       * ## Errors
-       * - `BadAdmin` if `origin` is not `Self::admin()` account.
-       **/
-      addFreezeAdmin: AugmentedSubmittable<
-        (freezeAdmin: AccountId32 | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [AccountId32]
-      >;
-      /**
-       * Proposes a vector of bridge transactions. The vector is processed until the first
-       * proposal which causes an error, in which case the error is returned and the rest of
-       * proposals are not processed.
-       *
-       * ## Errors
-       * - `ControllerNotSet` if `Controllers` was not set.
-       *
-       * # Weight
-       * `500_000_000 + 7_000_000 * bridge_txs.len()`
-       **/
-      batchProposeBridgeTx: AugmentedSubmittable<
-        (
-          bridgeTxs:
-            | Vec<PalletBridgeBridgeTx>
-            | (
-                | PalletBridgeBridgeTx
-                | { nonce?: any; recipient?: any; amount?: any; txHash?: any }
-                | string
-                | Uint8Array
-              )[]
-        ) => SubmittableExtrinsic<ApiType>,
-        [Vec<PalletBridgeBridgeTx>]
-      >;
-      /**
-       * Changes the bridge admin key.
-       *
-       * ## Errors
-       * - `BadAdmin` if `origin` is not `Self::admin()` account.
-       **/
-      changeAdmin: AugmentedSubmittable<
-        (admin: AccountId32 | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [AccountId32]
-      >;
-      /**
-       * Changes the bridge limit exempted list.
-       *
-       * ## Errors
-       * - `BadAdmin` if `origin` is not `Self::admin()` account.
-       **/
-      changeBridgeExempted: AugmentedSubmittable<
-        (
-          exempted:
-            | Vec<ITuple<[PolymeshPrimitivesIdentityId, bool]>>
-            | [PolymeshPrimitivesIdentityId | string | Uint8Array, bool | boolean | Uint8Array][]
-        ) => SubmittableExtrinsic<ApiType>,
-        [Vec<ITuple<[PolymeshPrimitivesIdentityId, bool]>>]
-      >;
-      /**
-       * Changes the bridge limits.
-       *
-       * ## Errors
-       * - `BadAdmin` if `origin` is not `Self::admin()` account.
-       * - `DivisionByZero` if `duration` is zero.
-       **/
-      changeBridgeLimit: AugmentedSubmittable<
-        (
-          amount: u128 | AnyNumber | Uint8Array,
-          duration: u32 | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [u128, u32]
-      >;
-      /**
-       * Changes the controller account as admin.
-       *
-       * ## Errors
-       * - `BadAdmin` if `origin` is not `Self::admin()` account.
-       **/
-      changeController: AugmentedSubmittable<
-        (controller: AccountId32 | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [AccountId32]
-      >;
-      /**
-       * Changes the timelock period.
-       *
-       * ## Errors
-       * - `BadAdmin` if `origin` is not `Self::admin()` account.
-       **/
-      changeTimelock: AugmentedSubmittable<
-        (timelock: u32 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [u32]
-      >;
-      /**
-       * Forces handling a transaction by bypassing the bridge limit and timelock.
-       *
-       * ## Errors
-       * - `BadAdmin` if `origin` is not `Self::admin()` account.
-       * - `NoValidCdd` if `bridge_tx.recipient` does not have a valid CDD claim.
-       **/
-      forceHandleBridgeTx: AugmentedSubmittable<
-        (
-          bridgeTx:
-            | PalletBridgeBridgeTx
-            | { nonce?: any; recipient?: any; amount?: any; txHash?: any }
-            | string
-            | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [PalletBridgeBridgeTx]
-      >;
-      /**
-       * Freezes transaction handling in the bridge module if it is not already frozen. When the
-       * bridge is frozen, attempted transactions get postponed instead of getting handled.
-       *
-       * ## Errors
-       * - `BadAdmin` if `origin` is not `Self::admin()` account.
-       **/
-      freeze: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
-      /**
-       * Freezes given bridge transactions.
-       * If any bridge txn is already handled then this function will just ignore it and process next one.
-       *
-       * ## Errors
-       * - `BadAdmin` if `origin` is not `Self::admin()` account.
-       *
-       * # Weight
-       * `400_000_000 + 2_000_000 * bridge_txs.len()`
-       **/
-      freezeTxs: AugmentedSubmittable<
-        (
-          bridgeTxs:
-            | Vec<PalletBridgeBridgeTx>
-            | (
-                | PalletBridgeBridgeTx
-                | { nonce?: any; recipient?: any; amount?: any; txHash?: any }
-                | string
-                | Uint8Array
-              )[]
-        ) => SubmittableExtrinsic<ApiType>,
-        [Vec<PalletBridgeBridgeTx>]
-      >;
-      /**
-       * Handles an approved bridge transaction proposal.
-       *
-       * ## Errors
-       * - `BadCaller` if `origin` is not `Self::controller` or  `Self::admin`.
-       * - `TimelockedTx` if the transaction status is `Timelocked`.
-       * - `ProposalAlreadyHandled` if the transaction status is `Handled`.
-       **/
-      handleBridgeTx: AugmentedSubmittable<
-        (
-          bridgeTx:
-            | PalletBridgeBridgeTx
-            | { nonce?: any; recipient?: any; amount?: any; txHash?: any }
-            | string
-            | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [PalletBridgeBridgeTx]
-      >;
-      /**
-       * Root callable extrinsic, used as an internal call to handle a scheduled timelocked bridge transaction.
-       *
-       * # Errors
-       * - `BadOrigin` if `origin` is not root.
-       * - `ProposalAlreadyHandled` if transaction status is `Handled`.
-       * - `FrozenTx` if transaction status is `Frozen`.
-       **/
-      handleScheduledBridgeTx: AugmentedSubmittable<
-        (
-          bridgeTx:
-            | PalletBridgeBridgeTx
-            | { nonce?: any; recipient?: any; amount?: any; txHash?: any }
-            | string
-            | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [PalletBridgeBridgeTx]
-      >;
-      /**
-       * Proposes a bridge transaction, which amounts to making a multisig proposal for the
-       * bridge transaction if the transaction is new or approving an existing proposal if the
-       * transaction has already been proposed.
-       *
-       * ## Errors
-       * - `ControllerNotSet` if `Controllers` was not set.
-       **/
-      proposeBridgeTx: AugmentedSubmittable<
-        (
-          bridgeTx:
-            | PalletBridgeBridgeTx
-            | { nonce?: any; recipient?: any; amount?: any; txHash?: any }
-            | string
-            | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [PalletBridgeBridgeTx]
-      >;
-      /**
-       * Remove a freeze admin.
-       *
-       * ## Errors
-       * - `BadAdmin` if `origin` is not `Self::admin()` account.
-       **/
-      removeFreezeAdmin: AugmentedSubmittable<
-        (freezeAdmin: AccountId32 | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [AccountId32]
-      >;
-      /**
-       * Remove given bridge transactions.
-       *
-       * ## Errors
-       * - `BadAdmin` if `origin` is not `Self::admin()` account.
-       * - `NotFrozen` if a tx in `bridge_txs` is not frozen.
-       **/
-      removeTxs: AugmentedSubmittable<
-        (
-          bridgeTxs:
-            | Vec<PalletBridgeBridgeTx>
-            | (
-                | PalletBridgeBridgeTx
-                | { nonce?: any; recipient?: any; amount?: any; txHash?: any }
-                | string
-                | Uint8Array
-              )[]
-        ) => SubmittableExtrinsic<ApiType>,
-        [Vec<PalletBridgeBridgeTx>]
-      >;
-      /**
-       * Unfreezes transaction handling in the bridge module if it is frozen.
-       *
-       * ## Errors
-       * - `BadAdmin` if `origin` is not `Self::admin()` account.
-       **/
-      unfreeze: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
-      /**
-       * Unfreezes given bridge transactions.
-       * If any bridge txn is already handled then this function will just ignore it and process next one.
-       *
-       * ## Errors
-       * - `BadAdmin` if `origin` is not `Self::admin()` account.
-       *
-       * # Weight
-       * `400_000_000 + 7_000_000 * bridge_txs.len()`
-       **/
-      unfreezeTxs: AugmentedSubmittable<
-        (
-          bridgeTxs:
-            | Vec<PalletBridgeBridgeTx>
-            | (
-                | PalletBridgeBridgeTx
-                | { nonce?: any; recipient?: any; amount?: any; txHash?: any }
-                | string
-                | Uint8Array
-              )[]
-        ) => SubmittableExtrinsic<ApiType>,
-        [Vec<PalletBridgeBridgeTx>]
-      >;
-    };
     capitalDistribution: {
       /**
        * Claim a benefit of the capital distribution attached to `ca_id`.
@@ -1381,13 +1142,21 @@ declare module '@polkadot/api-base/types/submittable' {
         (
           caId: PalletCorporateActionsCaId | { assetId?: any; localId?: any } | string | Uint8Array,
           portfolio: Option<u64> | null | Uint8Array | u64 | AnyNumber,
-          currency: U8aFixed | string | Uint8Array,
+          currency: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           perShare: u128 | AnyNumber | Uint8Array,
           amount: u128 | AnyNumber | Uint8Array,
           paymentAt: u64 | AnyNumber | Uint8Array,
           expiresAt: Option<u64> | null | Uint8Array | u64 | AnyNumber
         ) => SubmittableExtrinsic<ApiType>,
-        [PalletCorporateActionsCaId, Option<u64>, U8aFixed, u128, u128, u64, Option<u64>]
+        [
+          PalletCorporateActionsCaId,
+          Option<u64>,
+          PolymeshPrimitivesAssetAssetID,
+          u128,
+          u128,
+          u64,
+          Option<u64>
+        ]
       >;
       /**
        * Push benefit of an ongoing distribution to the given `holder`.
@@ -1585,8 +1354,10 @@ declare module '@polkadot/api-base/types/submittable' {
        * - `CounterOverflow` if the total checkpoint counter would overflow.
        **/
       createCheckpoint: AugmentedSubmittable<
-        (assetId: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed]
+        (
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesAssetAssetID]
       >;
       /**
        * Creates a schedule generating checkpoints
@@ -1609,14 +1380,14 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       createSchedule: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           schedule:
             | PolymeshCommonUtilitiesCheckpointScheduleCheckpoints
             | { pending?: any }
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, PolymeshCommonUtilitiesCheckpointScheduleCheckpoints]
+        [PolymeshPrimitivesAssetAssetID, PolymeshCommonUtilitiesCheckpointScheduleCheckpoints]
       >;
       /**
        * Removes the checkpoint schedule of an asset identified by `id`.
@@ -1636,10 +1407,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       removeSchedule: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           id: u64 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, u64]
+        [PolymeshPrimitivesAssetAssetID, u64]
       >;
       /**
        * Sets the max complexity of a schedule set for an arbitrary asset_id to `max_complexity`.
@@ -1784,7 +1555,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       addComplianceRequirement: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           senderConditions:
             | Vec<PolymeshPrimitivesCondition>
             | (
@@ -1802,7 +1573,11 @@ declare module '@polkadot/api-base/types/submittable' {
                 | Uint8Array
               )[]
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, Vec<PolymeshPrimitivesCondition>, Vec<PolymeshPrimitivesCondition>]
+        [
+          PolymeshPrimitivesAssetAssetID,
+          Vec<PolymeshPrimitivesCondition>,
+          Vec<PolymeshPrimitivesCondition>
+        ]
       >;
       /**
        * Adds another default trusted claim issuer at the asset level.
@@ -1817,14 +1592,14 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       addDefaultTrustedClaimIssuer: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           issuer:
             | PolymeshPrimitivesConditionTrustedIssuer
             | { issuer?: any; trustedFor?: any }
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, PolymeshPrimitivesConditionTrustedIssuer]
+        [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesConditionTrustedIssuer]
       >;
       /**
        * Modify an existing compliance requirement of a given asset.
@@ -1839,14 +1614,14 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       changeComplianceRequirement: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           newReq:
             | PolymeshPrimitivesComplianceManagerComplianceRequirement
             | { senderConditions?: any; receiverConditions?: any; id?: any }
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, PolymeshPrimitivesComplianceManagerComplianceRequirement]
+        [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesComplianceManagerComplianceRequirement]
       >;
       /**
        * Pauses the verification of conditions for `asset_id` during transfers.
@@ -1859,8 +1634,10 @@ declare module '@polkadot/api-base/types/submittable' {
        * * Asset
        **/
       pauseAssetCompliance: AugmentedSubmittable<
-        (assetId: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed]
+        (
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesAssetAssetID]
       >;
       /**
        * Removes a compliance requirement from an asset's compliance.
@@ -1875,10 +1652,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       removeComplianceRequirement: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           id: u32 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, u32]
+        [PolymeshPrimitivesAssetAssetID, u32]
       >;
       /**
        * Removes the given `issuer` from the set of default trusted claim issuers at the asset level.
@@ -1893,10 +1670,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       removeDefaultTrustedClaimIssuer: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           issuer: PolymeshPrimitivesIdentityId | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, PolymeshPrimitivesIdentityId]
+        [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesIdentityId]
       >;
       /**
        * Replaces an asset's compliance with a new compliance.
@@ -1917,7 +1694,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       replaceAssetCompliance: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           assetCompliance:
             | Vec<PolymeshPrimitivesComplianceManagerComplianceRequirement>
             | (
@@ -1927,7 +1704,10 @@ declare module '@polkadot/api-base/types/submittable' {
                 | Uint8Array
               )[]
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, Vec<PolymeshPrimitivesComplianceManagerComplianceRequirement>]
+        [
+          PolymeshPrimitivesAssetAssetID,
+          Vec<PolymeshPrimitivesComplianceManagerComplianceRequirement>
+        ]
       >;
       /**
        * Removes an asset's compliance
@@ -1940,8 +1720,10 @@ declare module '@polkadot/api-base/types/submittable' {
        * * Asset
        **/
       resetAssetCompliance: AugmentedSubmittable<
-        (assetId: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed]
+        (
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesAssetAssetID]
       >;
       /**
        * Resumes the verification of conditions for `asset_id` during transfers.
@@ -1954,8 +1736,10 @@ declare module '@polkadot/api-base/types/submittable' {
        * * Asset
        **/
       resumeAssetCompliance: AugmentedSubmittable<
-        (assetId: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed]
+        (
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesAssetAssetID]
       >;
     };
     contracts: {
@@ -2288,7 +2072,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       initiateCorporateAction: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           kind:
             | PalletCorporateActionsCaKind
             | 'PredictableBenefit'
@@ -2328,7 +2112,7 @@ declare module '@polkadot/api-base/types/submittable' {
               ][]
         ) => SubmittableExtrinsic<ApiType>,
         [
-          U8aFixed,
+          PolymeshPrimitivesAssetAssetID,
           PalletCorporateActionsCaKind,
           u64,
           Option<PalletCorporateActionsRecordDateSpec>,
@@ -2358,7 +2142,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
             | Uint8Array,
           portfolio: Option<u64> | null | Uint8Array | u64 | AnyNumber,
-          currency: U8aFixed | string | Uint8Array,
+          currency: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           perShare: u128 | AnyNumber | Uint8Array,
           amount: u128 | AnyNumber | Uint8Array,
           paymentAt: u64 | AnyNumber | Uint8Array,
@@ -2367,7 +2151,7 @@ declare module '@polkadot/api-base/types/submittable' {
         [
           PalletCorporateActionsInitiateCorporateActionArgs,
           Option<u64>,
-          U8aFixed,
+          PolymeshPrimitivesAssetAssetID,
           u128,
           u128,
           u64,
@@ -2444,14 +2228,14 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       setDefaultTargets: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           targets:
             | PalletCorporateActionsTargetIdentities
             | { identities?: any; treatment?: any }
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, PalletCorporateActionsTargetIdentities]
+        [PolymeshPrimitivesAssetAssetID, PalletCorporateActionsTargetIdentities]
       >;
       /**
        * Set the default withholding tax for all DIDs and CAs relevant to this `asset_id`.
@@ -2469,10 +2253,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       setDefaultWithholdingTax: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           tax: Permill | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, Permill]
+        [PolymeshPrimitivesAssetAssetID, Permill]
       >;
       /**
        * Set the withholding tax of `asset_id` for `taxed_did` to `tax`.
@@ -2494,11 +2278,11 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       setDidWithholdingTax: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           taxedDid: PolymeshPrimitivesIdentityId | string | Uint8Array,
           tax: Option<Permill> | null | Uint8Array | Permill | AnyNumber
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, PolymeshPrimitivesIdentityId, Option<Permill>]
+        [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesIdentityId, Option<Permill>]
       >;
       /**
        * Set the max `length` of `details` in terms of bytes.
@@ -2679,6 +2463,116 @@ declare module '@polkadot/api-base/types/submittable' {
         [PalletCorporateActionsCaId, Vec<PalletCorporateActionsBallotBallotVote>]
       >;
     };
+    electionProviderMultiPhase: {
+      /**
+       * Trigger the governance fallback.
+       *
+       * This can only be called when [`Phase::Emergency`] is enabled, as an alternative to
+       * calling [`Call::set_emergency_election_result`].
+       **/
+      governanceFallback: AugmentedSubmittable<
+        (
+          maybeMaxVoters: Option<u32> | null | Uint8Array | u32 | AnyNumber,
+          maybeMaxTargets: Option<u32> | null | Uint8Array | u32 | AnyNumber
+        ) => SubmittableExtrinsic<ApiType>,
+        [Option<u32>, Option<u32>]
+      >;
+      /**
+       * Set a solution in the queue, to be handed out to the client of this pallet in the next
+       * call to `ElectionProvider::elect`.
+       *
+       * This can only be set by `T::ForceOrigin`, and only when the phase is `Emergency`.
+       *
+       * The solution is not checked for any feasibility and is assumed to be trustworthy, as any
+       * feasibility check itself can in principle cause the election process to fail (due to
+       * memory/weight constrains).
+       **/
+      setEmergencyElectionResult: AugmentedSubmittable<
+        (
+          supports:
+            | Vec<ITuple<[AccountId32, SpNposElectionsSupport]>>
+            | [
+                AccountId32 | string | Uint8Array,
+                SpNposElectionsSupport | { total?: any; voters?: any } | string | Uint8Array
+              ][]
+        ) => SubmittableExtrinsic<ApiType>,
+        [Vec<ITuple<[AccountId32, SpNposElectionsSupport]>>]
+      >;
+      /**
+       * Set a new value for `MinimumUntrustedScore`.
+       *
+       * Dispatch origin must be aligned with `T::ForceOrigin`.
+       *
+       * This check can be turned off by setting the value to `None`.
+       **/
+      setMinimumUntrustedScore: AugmentedSubmittable<
+        (
+          maybeNextScore:
+            | Option<SpNposElectionsElectionScore>
+            | null
+            | Uint8Array
+            | SpNposElectionsElectionScore
+            | { minimalStake?: any; sumStake?: any; sumStakeSquared?: any }
+            | string
+        ) => SubmittableExtrinsic<ApiType>,
+        [Option<SpNposElectionsElectionScore>]
+      >;
+      /**
+       * Submit a solution for the signed phase.
+       *
+       * The dispatch origin fo this call must be __signed__.
+       *
+       * The solution is potentially queued, based on the claimed score and processed at the end
+       * of the signed phase.
+       *
+       * A deposit is reserved and recorded for the solution. Based on the outcome, the solution
+       * might be rewarded, slashed, or get all or a part of the deposit back.
+       **/
+      submit: AugmentedSubmittable<
+        (
+          rawSolution:
+            | PalletElectionProviderMultiPhaseRawSolution
+            | { solution?: any; score?: any; round?: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PalletElectionProviderMultiPhaseRawSolution]
+      >;
+      /**
+       * Submit a solution for the unsigned phase.
+       *
+       * The dispatch origin fo this call must be __none__.
+       *
+       * This submission is checked on the fly. Moreover, this unsigned solution is only
+       * validated when submitted to the pool from the **local** node. Effectively, this means
+       * that only active validators can submit this transaction when authoring a block (similar
+       * to an inherent).
+       *
+       * To prevent any incorrect solution (and thus wasted time/weight), this transaction will
+       * panic if the solution submitted by the validator is invalid in any way, effectively
+       * putting their authoring reward at risk.
+       *
+       * No deposit or reward is associated with this submission.
+       **/
+      submitUnsigned: AugmentedSubmittable<
+        (
+          rawSolution:
+            | PalletElectionProviderMultiPhaseRawSolution
+            | { solution?: any; score?: any; round?: any }
+            | string
+            | Uint8Array,
+          witness:
+            | PalletElectionProviderMultiPhaseSolutionOrSnapshotSize
+            | { voters?: any; targets?: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [
+          PalletElectionProviderMultiPhaseRawSolution,
+          PalletElectionProviderMultiPhaseSolutionOrSnapshotSize
+        ]
+      >;
+    };
     externalAgents: {
       /**
        * Abdicate agentship for `asset_id`.
@@ -2694,8 +2588,10 @@ declare module '@polkadot/api-base/types/submittable' {
        * * Asset
        **/
       abdicate: AugmentedSubmittable<
-        (assetId: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed]
+        (
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesAssetAssetID]
       >;
       /**
        * Accept an authorization by an agent "Alice" who issued `auth_id`
@@ -2739,7 +2635,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       changeGroup: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           agent: PolymeshPrimitivesIdentityId | string | Uint8Array,
           group:
             | PolymeshPrimitivesAgentAgentGroup
@@ -2751,7 +2647,11 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, PolymeshPrimitivesIdentityId, PolymeshPrimitivesAgentAgentGroup]
+        [
+          PolymeshPrimitivesAssetAssetID,
+          PolymeshPrimitivesIdentityId,
+          PolymeshPrimitivesAgentAgentGroup
+        ]
       >;
       /**
        * Utility extrinsic to batch `create_group` and  `change_group` for custom groups only.
@@ -2762,9 +2662,9 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       createAndChangeCustomGroup: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           perms:
-            | PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions
+            | PolymeshPrimitivesSecondaryKeyExtrinsicPermissions
             | { Whole: any }
             | { These: any }
             | { Except: any }
@@ -2773,8 +2673,8 @@ declare module '@polkadot/api-base/types/submittable' {
           agent: PolymeshPrimitivesIdentityId | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [
-          U8aFixed,
-          PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
+          PolymeshPrimitivesAssetAssetID,
+          PolymeshPrimitivesSecondaryKeyExtrinsicPermissions,
           PolymeshPrimitivesIdentityId
         ]
       >;
@@ -2800,16 +2700,16 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       createGroup: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           perms:
-            | PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions
+            | PolymeshPrimitivesSecondaryKeyExtrinsicPermissions
             | { Whole: any }
             | { These: any }
             | { Except: any }
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions]
+        [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesSecondaryKeyExtrinsicPermissions]
       >;
       /**
        * Utility extrinsic to batch `create_group` and  `add_auth`.
@@ -2820,9 +2720,9 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       createGroupAndAddAuth: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           perms:
-            | PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions
+            | PolymeshPrimitivesSecondaryKeyExtrinsicPermissions
             | { Whole: any }
             | { These: any }
             | { Except: any }
@@ -2832,8 +2732,8 @@ declare module '@polkadot/api-base/types/submittable' {
           expiry: Option<u64> | null | Uint8Array | u64 | AnyNumber
         ) => SubmittableExtrinsic<ApiType>,
         [
-          U8aFixed,
-          PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
+          PolymeshPrimitivesAssetAssetID,
+          PolymeshPrimitivesSecondaryKeyExtrinsicPermissions,
           PolymeshPrimitivesIdentityId,
           Option<u64>
         ]
@@ -2856,10 +2756,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       removeAgent: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           agent: PolymeshPrimitivesIdentityId | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, PolymeshPrimitivesIdentityId]
+        [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesIdentityId]
       >;
       /**
        * Updates the permissions of the custom AG identified by `id`, for the given `asset_id`.
@@ -2880,17 +2780,17 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       setGroupPermissions: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           id: u32 | AnyNumber | Uint8Array,
           perms:
-            | PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions
+            | PolymeshPrimitivesSecondaryKeyExtrinsicPermissions
             | { Whole: any }
             | { These: any }
             | { Except: any }
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, u32, PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions]
+        [PolymeshPrimitivesAssetAssetID, u32, PolymeshPrimitivesSecondaryKeyExtrinsicPermissions]
       >;
     };
     grandpa: {
@@ -3544,83 +3444,51 @@ declare module '@polkadot/api-base/types/submittable' {
     };
     multiSig: {
       /**
-       * Accepts a multisig signer authorization given to signer's identity.
-       *
-       * # Arguments
-       * * `auth_id` - Auth id of the authorization.
-       * #[deprecated(since = "6.1.0", note = "Identity based signers not supported")]
-       **/
-      acceptMultisigSignerAsIdentity: AugmentedSubmittable<
-        (authId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [u64]
-      >;
-      /**
        * Accepts a multisig signer authorization given to signer's key (AccountId).
        *
        * # Arguments
        * * `auth_id` - Auth id of the authorization.
        **/
-      acceptMultisigSignerAsKey: AugmentedSubmittable<
+      acceptMultisigSigner: AugmentedSubmittable<
         (authId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [u64]
       >;
       /**
-       * Adds a signer to the multisig. This must be called by the multisig itself.
-       *
-       * # Arguments
-       * * `signer` - Signatory to add.
+       * Add an admin identity to the multisig.  This must be called by the multisig itself.
        **/
-      addMultisigSigner: AugmentedSubmittable<
+      addAdmin: AugmentedSubmittable<
         (
-          signer:
-            | PolymeshPrimitivesSecondaryKeySignatory
-            | { Identity: any }
-            | { Account: any }
-            | string
-            | Uint8Array
+          adminDid: PolymeshPrimitivesIdentityId | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [PolymeshPrimitivesSecondaryKeySignatory]
+        [PolymeshPrimitivesIdentityId]
       >;
       /**
-       * Adds a signer to the multisig. This must be called by the creator identity of the
+       * Adds signers to the multisig.  This must be called by the multisig itself.
+       *
+       * # Arguments
+       * * `signers` - Signers to add.
+       **/
+      addMultisigSigners: AugmentedSubmittable<
+        (
+          signers: Vec<AccountId32> | (AccountId32 | string | Uint8Array)[]
+        ) => SubmittableExtrinsic<ApiType>,
+        [Vec<AccountId32>]
+      >;
+      /**
+       * Adds a signer to the multisig.  This must be called by the admin identity of the
        * multisig.
        *
        * # Arguments
        * * `multisig` - Address of the multi sig
-       * * `signers` - Signatories to add.
+       * * `signers` - Signers to add.
        *
-       * # Weight
-       * `900_000_000 + 3_000_000 * signers.len()`
        **/
-      addMultisigSignersViaCreator: AugmentedSubmittable<
+      addMultisigSignersViaAdmin: AugmentedSubmittable<
         (
           multisig: AccountId32 | string | Uint8Array,
-          signers:
-            | Vec<PolymeshPrimitivesSecondaryKeySignatory>
-            | (
-                | PolymeshPrimitivesSecondaryKeySignatory
-                | { Identity: any }
-                | { Account: any }
-                | string
-                | Uint8Array
-              )[]
+          signers: Vec<AccountId32> | (AccountId32 | string | Uint8Array)[]
         ) => SubmittableExtrinsic<ApiType>,
-        [AccountId32, Vec<PolymeshPrimitivesSecondaryKeySignatory>]
-      >;
-      /**
-       * Approves a multisig proposal using the caller's identity.
-       *
-       * # Arguments
-       * * `multisig` - MultiSig address.
-       * * `proposal_id` - Proposal id to approve.
-       * If quorum is reached, the proposal will be immediately executed.
-       **/
-      approveAsIdentity: AugmentedSubmittable<
-        (
-          multisig: AccountId32 | string | Uint8Array,
-          proposalId: u64 | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [AccountId32, u64]
+        [AccountId32, Vec<AccountId32>]
       >;
       /**
        * Approves a multisig proposal using the caller's secondary key (`AccountId`).
@@ -3628,17 +3496,42 @@ declare module '@polkadot/api-base/types/submittable' {
        * # Arguments
        * * `multisig` - MultiSig address.
        * * `proposal_id` - Proposal id to approve.
+       * * `max_weight` - The maximum weight to execute the proposal.
+       *
        * If quorum is reached, the proposal will be immediately executed.
        **/
-      approveAsKey: AugmentedSubmittable<
+      approve: AugmentedSubmittable<
         (
           multisig: AccountId32 | string | Uint8Array,
-          proposalId: u64 | AnyNumber | Uint8Array
+          proposalId: u64 | AnyNumber | Uint8Array,
+          maxWeight:
+            | Option<SpWeightsWeightV2Weight>
+            | null
+            | Uint8Array
+            | SpWeightsWeightV2Weight
+            | { refTime?: any; proofSize?: any }
+            | string
+        ) => SubmittableExtrinsic<ApiType>,
+        [AccountId32, u64, Option<SpWeightsWeightV2Weight>]
+      >;
+      /**
+       * Approves a multisig join identity proposal.
+       *
+       * # Arguments
+       * * `multisig` - MultiSig address.
+       * * `auth_id` - The join identity authorization to approve.
+       *
+       * If quorum is reached, the join identity proposal will be immediately executed.
+       **/
+      approveJoinIdentity: AugmentedSubmittable<
+        (
+          multisig: AccountId32 | string | Uint8Array,
+          authId: u64 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [AccountId32, u64]
       >;
       /**
-       * Changes the number of signatures required by a multisig. This must be called by the
+       * Changes the number of signatures required by a multisig.  This must be called by the
        * multisig itself.
        *
        * # Arguments
@@ -3649,15 +3542,15 @@ declare module '@polkadot/api-base/types/submittable' {
         [u64]
       >;
       /**
-       * Changes the number of signatures required by a multisig. This must be called by the creator of the multisig.
+       * Changes the number of signatures required by a multisig.  This must be called by the admin of the multisig.
        *
        * # Arguments
-       * * `multisig_account` - The account identifier ([`AccountId`]) for the multi signature account.
+       * * `multisig` - The account identifier ([`AccountId`]) for the multi signature account.
        * * `signatures_required` - The number of required signatures.
        **/
-      changeSigsRequiredViaCreator: AugmentedSubmittable<
+      changeSigsRequiredViaAdmin: AugmentedSubmittable<
         (
-          multisigAccount: AccountId32 | string | Uint8Array,
+          multisig: AccountId32 | string | Uint8Array,
           signaturesRequired: u64 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [AccountId32, u64]
@@ -3668,155 +3561,46 @@ declare module '@polkadot/api-base/types/submittable' {
        * # Arguments
        * * `signers` - Signers of the multisig (They need to accept authorization before they are actually added).
        * * `sigs_required` - Number of sigs required to process a multi-sig tx.
+       * * `permissions` - optional custom permissions.  Only the primary key can provide custom permissions.
        **/
       createMultisig: AugmentedSubmittable<
         (
-          signers:
-            | Vec<PolymeshPrimitivesSecondaryKeySignatory>
-            | (
-                | PolymeshPrimitivesSecondaryKeySignatory
-                | { Identity: any }
-                | { Account: any }
-                | string
-                | Uint8Array
-              )[],
-          sigsRequired: u64 | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Vec<PolymeshPrimitivesSecondaryKeySignatory>, u64]
-      >;
-      /**
-       * Creates a multisig proposal if it hasn't been created or approves it if it has.
-       *
-       * # Arguments
-       * * `multisig` - MultiSig address.
-       * * `proposal` - Proposal to be voted on.
-       * * `expiry` - Optional proposal expiry time.
-       * * `auto_close` - Close proposal on receiving enough reject votes.
-       * If this is 1 out of `m` multisig, the proposal will be immediately executed.
-       * #[deprecated(since = "6.0.0", note = "Please use the `create_proposal_as_identity` and `approve_as_identity` instead")]
-       **/
-      createOrApproveProposalAsIdentity: AugmentedSubmittable<
-        (
-          multisig: AccountId32 | string | Uint8Array,
-          proposal: Call | IMethod | string | Uint8Array,
-          expiry: Option<u64> | null | Uint8Array | u64 | AnyNumber,
-          autoClose: bool | boolean | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [AccountId32, Call, Option<u64>, bool]
-      >;
-      /**
-       * Creates a multisig proposal if it hasn't been created or approves it if it has.
-       *
-       * # Arguments
-       * * `multisig` - MultiSig address.
-       * * `proposal` - Proposal to be voted on.
-       * * `expiry` - Optional proposal expiry time.
-       * * `auto_close` - Close proposal on receiving enough reject votes.
-       * If this is 1 out of `m` multisig, the proposal will be immediately executed.
-       * #[deprecated(since = "6.0.0", note = "Please use the `create_proposal_as_key` and `approve_as_key` instead")]
-       **/
-      createOrApproveProposalAsKey: AugmentedSubmittable<
-        (
-          multisig: AccountId32 | string | Uint8Array,
-          proposal: Call | IMethod | string | Uint8Array,
-          expiry: Option<u64> | null | Uint8Array | u64 | AnyNumber,
-          autoClose: bool | boolean | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [AccountId32, Call, Option<u64>, bool]
-      >;
-      /**
-       * Creates a multisig proposal
-       *
-       * # Arguments
-       * * `multisig` - MultiSig address.
-       * * `proposal` - Proposal to be voted on.
-       * * `expiry` - Optional proposal expiry time.
-       * * `auto_close` - Close proposal on receiving enough reject votes.
-       * If this is 1 out of `m` multisig, the proposal will be immediately executed.
-       **/
-      createProposalAsIdentity: AugmentedSubmittable<
-        (
-          multisig: AccountId32 | string | Uint8Array,
-          proposal: Call | IMethod | string | Uint8Array,
-          expiry: Option<u64> | null | Uint8Array | u64 | AnyNumber,
-          autoClose: bool | boolean | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [AccountId32, Call, Option<u64>, bool]
-      >;
-      /**
-       * Creates a multisig proposal
-       *
-       * # Arguments
-       * * `multisig` - MultiSig address.
-       * * `proposal` - Proposal to be voted on.
-       * * `expiry` - Optional proposal expiry time.
-       * * `auto_close` - Close proposal on receiving enough reject votes.
-       * If this is 1 out of `m` multisig, the proposal will be immediately executed.
-       **/
-      createProposalAsKey: AugmentedSubmittable<
-        (
-          multisig: AccountId32 | string | Uint8Array,
-          proposal: Call | IMethod | string | Uint8Array,
-          expiry: Option<u64> | null | Uint8Array | u64 | AnyNumber,
-          autoClose: bool | boolean | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [AccountId32, Call, Option<u64>, bool]
-      >;
-      /**
-       * Root callable extrinsic, used as an internal call for executing scheduled multisig proposal.
-       **/
-      executeScheduledProposal: AugmentedSubmittable<
-        (
-          multisig: AccountId32 | string | Uint8Array,
-          proposalId: u64 | AnyNumber | Uint8Array,
-          multisigDid: PolymeshPrimitivesIdentityId | string | Uint8Array,
-          proposalWeight:
-            | SpWeightsWeightV2Weight
-            | { refTime?: any; proofSize?: any }
-            | string
+          signers: Vec<AccountId32> | (AccountId32 | string | Uint8Array)[],
+          sigsRequired: u64 | AnyNumber | Uint8Array,
+          permissions:
+            | Option<PolymeshPrimitivesSecondaryKeyPermissions>
+            | null
             | Uint8Array
+            | PolymeshPrimitivesSecondaryKeyPermissions
+            | { asset?: any; extrinsic?: any; portfolio?: any }
+            | string
         ) => SubmittableExtrinsic<ApiType>,
-        [AccountId32, u64, PolymeshPrimitivesIdentityId, SpWeightsWeightV2Weight]
+        [Vec<AccountId32>, u64, Option<PolymeshPrimitivesSecondaryKeyPermissions>]
       >;
       /**
-       * Adds a multisig as the primary key of the current did if the current DID is the creator
-       * of the multisig.
-       *
-       * # Arguments
-       * * `multi_sig` - multi sig address
-       **/
-      makeMultisigPrimary: AugmentedSubmittable<
-        (
-          multisig: AccountId32 | string | Uint8Array,
-          optionalCddAuthId: Option<u64> | null | Uint8Array | u64 | AnyNumber
-        ) => SubmittableExtrinsic<ApiType>,
-        [AccountId32, Option<u64>]
-      >;
-      /**
-       * Adds a multisig as a secondary key of current did if the current did is the creator of the
-       * multisig.
-       *
-       * # Arguments
-       * * `multisig` - multi sig address
-       **/
-      makeMultisigSecondary: AugmentedSubmittable<
-        (multisig: AccountId32 | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [AccountId32]
-      >;
-      /**
-       * Rejects a multisig proposal using the caller's identity.
+       * Creates a multisig proposal
        *
        * # Arguments
        * * `multisig` - MultiSig address.
-       * * `proposal_id` - Proposal id to reject.
-       * If quorum is reached, the proposal will be immediately executed.
+       * * `proposal` - Proposal to be voted on.
+       * * `expiry` - Optional proposal expiry time.
+       *
+       * If this is 1 out of `m` multisig, the proposal will be immediately executed.
        **/
-      rejectAsIdentity: AugmentedSubmittable<
+      createProposal: AugmentedSubmittable<
         (
           multisig: AccountId32 | string | Uint8Array,
-          proposalId: u64 | AnyNumber | Uint8Array
+          proposal: Call | IMethod | string | Uint8Array,
+          expiry: Option<u64> | null | Uint8Array | u64 | AnyNumber
         ) => SubmittableExtrinsic<ApiType>,
-        [AccountId32, u64]
+        [AccountId32, Call, Option<u64>]
+      >;
+      /**
+       * Accept a JoinIdentity authorization for this multisig.  This must be called by the multisig itself.
+       **/
+      joinIdentity: AugmentedSubmittable<
+        (authId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [u64]
       >;
       /**
        * Rejects a multisig proposal using the caller's secondary key (`AccountId`).
@@ -3826,7 +3610,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * * `proposal_id` - Proposal id to reject.
        * If quorum is reached, the proposal will be immediately executed.
        **/
-      rejectAsKey: AugmentedSubmittable<
+      reject: AugmentedSubmittable<
         (
           multisig: AccountId32 | string | Uint8Array,
           proposalId: u64 | AnyNumber | Uint8Array
@@ -3834,55 +3618,50 @@ declare module '@polkadot/api-base/types/submittable' {
         [AccountId32, u64]
       >;
       /**
-       * Removes the creator ability to call `add_multisig_signers_via_creator`, `remove_multisig_signers_via_creator`
-       * and `change_sigs_required_via_creator`.
+       * Removes the admin identity from the `multisig`.  This must be called by the admin of the multisig.
        **/
-      removeCreatorControls: AugmentedSubmittable<
-        (multisigAccount: AccountId32 | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
+      removeAdminViaAdmin: AugmentedSubmittable<
+        (multisig: AccountId32 | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [AccountId32]
       >;
       /**
-       * Removes a signer from the multisig. This must be called by the multisig itself.
+       * Removes signers from the multisig.  This must be called by the multisig itself.
        *
        * # Arguments
-       * * `signer` - Signatory to remove.
+       * * `signers` - Signers to remove.
        **/
-      removeMultisigSigner: AugmentedSubmittable<
+      removeMultisigSigners: AugmentedSubmittable<
         (
-          signer:
-            | PolymeshPrimitivesSecondaryKeySignatory
-            | { Identity: any }
-            | { Account: any }
-            | string
-            | Uint8Array
+          signers: Vec<AccountId32> | (AccountId32 | string | Uint8Array)[]
         ) => SubmittableExtrinsic<ApiType>,
-        [PolymeshPrimitivesSecondaryKeySignatory]
+        [Vec<AccountId32>]
       >;
       /**
        * Removes a signer from the multisig.
-       * This must be called by the creator identity of the multisig.
+       * This must be called by the admin identity of the multisig.
        *
        * # Arguments
        * * `multisig` - Address of the multisig.
-       * * `signers` - Signatories to remove.
+       * * `signers` - Signers to remove.
        *
-       * # Weight
-       * `900_000_000 + 3_000_000 * signers.len()`
        **/
-      removeMultisigSignersViaCreator: AugmentedSubmittable<
+      removeMultisigSignersViaAdmin: AugmentedSubmittable<
         (
           multisig: AccountId32 | string | Uint8Array,
-          signers:
-            | Vec<PolymeshPrimitivesSecondaryKeySignatory>
-            | (
-                | PolymeshPrimitivesSecondaryKeySignatory
-                | { Identity: any }
-                | { Account: any }
-                | string
-                | Uint8Array
-              )[]
+          signers: Vec<AccountId32> | (AccountId32 | string | Uint8Array)[]
         ) => SubmittableExtrinsic<ApiType>,
-        [AccountId32, Vec<PolymeshPrimitivesSecondaryKeySignatory>]
+        [AccountId32, Vec<AccountId32>]
+      >;
+      /**
+       * Removes the paying identity from the `multisig`.  This must be called by the multisig itself.
+       **/
+      removePayer: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
+      /**
+       * Removes the paying identity from the `multisig`.  This must be called by the paying identity of the multisig.
+       **/
+      removePayerViaPayer: AugmentedSubmittable<
+        (multisig: AccountId32 | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [AccountId32]
       >;
     };
     nft: {
@@ -3925,7 +3704,8 @@ declare module '@polkadot/api-base/types/submittable' {
        *
        * # Arguments
        * * `origin` - contains the secondary key of the caller (i.e. who signed the transaction to execute this function).
-       * * `asset_id` - the [`AssetID`] associated to the new collection.
+       * * `asset_id` - optional [`AssetID`] associated to the new collection. `None` will create a new asset.
+       * * `nft_type` - in case the asset hasn't been created yet, one will be created with the given type.
        * * `collection_keys` - all mandatory metadata keys that the tokens in the collection must have.
        *
        * ## Errors
@@ -3940,10 +3720,29 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       createNftCollection: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId:
+            | Option<PolymeshPrimitivesAssetAssetID>
+            | null
+            | Uint8Array
+            | PolymeshPrimitivesAssetAssetID
+            | string,
+          nftType:
+            | Option<PolymeshPrimitivesAssetNonFungibleType>
+            | null
+            | Uint8Array
+            | PolymeshPrimitivesAssetNonFungibleType
+            | { Derivative: any }
+            | { FixedIncome: any }
+            | { Invoice: any }
+            | { Custom: any }
+            | string,
           collectionKeys: PolymeshPrimitivesNftNftCollectionKeys
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, PolymeshPrimitivesNftNftCollectionKeys]
+        [
+          Option<PolymeshPrimitivesAssetAssetID>,
+          Option<PolymeshPrimitivesAssetNonFungibleType>,
+          PolymeshPrimitivesNftNftCollectionKeys
+        ]
       >;
       /**
        * Issues an NFT to the caller.
@@ -3966,7 +3765,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       issueNft: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           nftMetadataAttributes:
             | Vec<PolymeshPrimitivesNftNftMetadataAttribute>
             | (
@@ -3983,7 +3782,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [
-          U8aFixed,
+          PolymeshPrimitivesAssetAssetID,
           Vec<PolymeshPrimitivesNftNftMetadataAttribute>,
           PolymeshPrimitivesIdentityIdPortfolioKind
         ]
@@ -4007,16 +3806,17 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       redeemNft: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           nftId: u64 | AnyNumber | Uint8Array,
           portfolioKind:
             | PolymeshPrimitivesIdentityIdPortfolioKind
             | { Default: any }
             | { User: any }
             | string
-            | Uint8Array
+            | Uint8Array,
+          numberOfKeys: Option<u8> | null | Uint8Array | u8 | AnyNumber
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, u64, PolymeshPrimitivesIdentityIdPortfolioKind]
+        [PolymeshPrimitivesAssetAssetID, u64, PolymeshPrimitivesIdentityIdPortfolioKind, Option<u8>]
       >;
     };
     pips: {
@@ -4671,14 +4471,14 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       preApprovePortfolio: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           portfolioId:
             | PolymeshPrimitivesIdentityIdPortfolioId
             | { did?: any; kind?: any }
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, PolymeshPrimitivesIdentityIdPortfolioId]
+        [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesIdentityIdPortfolioId]
       >;
       /**
        * When called by the custodian of `portfolio_id`,
@@ -4713,14 +4513,14 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       removePortfolioPreApproval: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           portfolioId:
             | PolymeshPrimitivesIdentityIdPortfolioId
             | { did?: any; kind?: any }
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, PolymeshPrimitivesIdentityIdPortfolioId]
+        [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesIdentityIdPortfolioId]
       >;
       /**
        * Renames a non-default portfolio.
@@ -5103,7 +4903,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       addAndAffirmInstruction: AugmentedSubmittable<
         (
-          venueId: u64 | AnyNumber | Uint8Array,
+          venueId: Option<u64> | null | Uint8Array | u64 | AnyNumber,
           settlementType:
             | PolymeshPrimitivesSettlementSettlementType
             | { SettleOnAffirmation: any }
@@ -5139,7 +4939,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
         ) => SubmittableExtrinsic<ApiType>,
         [
-          u64,
+          Option<u64>,
           PolymeshPrimitivesSettlementSettlementType,
           Option<u64>,
           Option<u64>,
@@ -5166,7 +4966,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       addAndAffirmWithMediators: AugmentedSubmittable<
         (
-          venueId: u64 | AnyNumber | Uint8Array,
+          venueId: Option<u64> | null | Uint8Array | u64 | AnyNumber,
           settlementType:
             | PolymeshPrimitivesSettlementSettlementType
             | { SettleOnAffirmation: any }
@@ -5203,7 +5003,7 @@ declare module '@polkadot/api-base/types/submittable' {
           mediators: BTreeSet<PolymeshPrimitivesIdentityId>
         ) => SubmittableExtrinsic<ApiType>,
         [
-          u64,
+          Option<u64>,
           PolymeshPrimitivesSettlementSettlementType,
           Option<u64>,
           Option<u64>,
@@ -5217,7 +5017,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * Adds a new instruction.
        *
        * # Arguments
-       * * `venue_id`: The [`VenueId`] of the venue this instruction belongs to.
+       * * `venue_id`: The optional [`VenueId`] of the venue this instruction belongs to.
        * * `settlement_type`: The [`SettlementType`] specifying when the instruction should be settled.
        * * `trade_date`: Optional date from which people can interact with this instruction.
        * * `value_date`: Optional date after which the instruction should be settled (not enforced).
@@ -5226,7 +5026,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       addInstruction: AugmentedSubmittable<
         (
-          venueId: u64 | AnyNumber | Uint8Array,
+          venueId: Option<u64> | null | Uint8Array | u64 | AnyNumber,
           settlementType:
             | PolymeshPrimitivesSettlementSettlementType
             | { SettleOnAffirmation: any }
@@ -5254,7 +5054,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
         ) => SubmittableExtrinsic<ApiType>,
         [
-          u64,
+          Option<u64>,
           PolymeshPrimitivesSettlementSettlementType,
           Option<u64>,
           Option<u64>,
@@ -5276,7 +5076,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       addInstructionWithMediators: AugmentedSubmittable<
         (
-          venueId: u64 | AnyNumber | Uint8Array,
+          venueId: Option<u64> | null | Uint8Array | u64 | AnyNumber,
           settlementType:
             | PolymeshPrimitivesSettlementSettlementType
             | { SettleOnAffirmation: any }
@@ -5305,7 +5105,7 @@ declare module '@polkadot/api-base/types/submittable' {
           mediators: BTreeSet<PolymeshPrimitivesIdentityId>
         ) => SubmittableExtrinsic<ApiType>,
         [
-          u64,
+          Option<u64>,
           PolymeshPrimitivesSettlementSettlementType,
           Option<u64>,
           Option<u64>,
@@ -5501,10 +5301,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       allowVenues: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           venues: Vec<u64> | (u64 | AnyNumber | Uint8Array)[]
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, Vec<u64>]
+        [PolymeshPrimitivesAssetAssetID, Vec<u64>]
       >;
       /**
        * Registers a new venue.
@@ -5539,10 +5339,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       disallowVenues: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           venues: Vec<u64> | (u64 | AnyNumber | Uint8Array)[]
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, Vec<u64>]
+        [PolymeshPrimitivesAssetAssetID, Vec<u64>]
       >;
       /**
        * Manually executes an instruction.
@@ -5589,12 +5389,6 @@ declare module '@polkadot/api-base/types/submittable' {
           Option<SpWeightsWeightV2Weight>
         ]
       >;
-      //Removed in 6.0
-      rescheduleInstruction: AugmentedSubmittable<
-        (id: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [u64]
-      >;
-
       /**
        * Root callable extrinsic, used as an internal call to execute a scheduled settlement instruction.
        **/
@@ -5699,10 +5493,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       setVenueFiltering: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           enabled: bool | boolean | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, bool]
+        [PolymeshPrimitivesAssetAssetID, bool]
       >;
       /**
        * Edit a venue's details.
@@ -5827,13 +5621,9 @@ declare module '@polkadot/api-base/types/submittable' {
     };
     staking: {
       /**
-       * Scale up the ideal number of validators by a factor upto maximum of
-       * `ElectionProviderBase::MaxWinners`.
+       * Adds a permissioned identity and sets its preferences.
        *
        * The dispatch origin must be Root.
-       *
-       * ## Complexity
-       * Same as [`Self::set_validator_count`].
        **/
       addPermissionedValidator: AugmentedSubmittable<
         (
@@ -5877,6 +5667,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | { Stash: any }
             | { Controller: any }
             | { Account: any }
+            | { None: any }
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
@@ -5917,11 +5708,7 @@ declare module '@polkadot/api-base/types/submittable' {
         [u32, Vec<u32>]
       >;
       /**
-       * Switch slashing status on the basis of given `SlashingSwitch`. Can only be called by root.
-       *
-       * # Arguments
-       * * origin - AccountId of root.
-       * * slashing_switch - Switch used to set the targets for s
+       * Switch slashing status on the basis of given `slashing_switch`. Can only be called by root.
        **/
       changeSlashingAllowedFor: AugmentedSubmittable<
         (
@@ -5949,20 +5736,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       chill: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
       /**
-       * GC forcefully chills a validator.
-       * Effects will be felt at the beginning of the next era.
-       * And, it can be only called when [`EraElectionStatus`] is `Closed`.
-       *
-       * # Arguments
-       * * origin which must be a GC.
-       * * identity must be permissioned to run operator/validator nodes.
-       * * stash_keys contains the secondary keys of the permissioned identity
-       *
-       * # Errors
-       * * `BadOrigin` The origin was not a GC member.
-       * * `CallNotAllowed` The call is not allowed at the given time due to restrictions of election period.
-       * * `NotExists` Permissioned validator doesn't exist.
-       * * `NotStash` Not a stash account for the permissioned i
+       * Governance council forcefully chills a validator. Effects will be felt at the beginning of the next era.
        **/
       chillFromGovernance: AugmentedSubmittable<
         (
@@ -5970,6 +5744,47 @@ declare module '@polkadot/api-base/types/submittable' {
           stashKeys: Vec<AccountId32> | (AccountId32 | string | Uint8Array)[]
         ) => SubmittableExtrinsic<ApiType>,
         [PolymeshPrimitivesIdentityId, Vec<AccountId32>]
+      >;
+      /**
+       * Declare a `controller` to stop participating as either a validator or nominator.
+       *
+       * Effects will be felt at the beginning of the next era.
+       *
+       * The dispatch origin for this call must be _Signed_, but can be called by anyone.
+       *
+       * If the caller is the same as the controller being targeted, then no further checks are
+       * enforced, and this function behaves just like `chill`.
+       *
+       * If the caller is different than the controller being targeted, the following conditions
+       * must be met:
+       *
+       * * `controller` must belong to a nominator who has become non-decodable,
+       *
+       * Or:
+       *
+       * * A `ChillThreshold` must be set and checked which defines how close to the max
+       * nominators or validators we must reach before users can start chilling one-another.
+       * * A `MaxNominatorCount` and `MaxValidatorCount` must be set which is used to determine
+       * how close we are to the threshold.
+       * * A `MinNominatorBond` and `MinValidatorBond` must be set and checked, which determines
+       * if this is a person that should be chilled because they have not met the threshold
+       * bond required.
+       *
+       * This can be helpful if bond requirements are updated, and we need to remove old users
+       * who do not satisfy these requirements.
+       **/
+      chillOther: AugmentedSubmittable<
+        (controller: AccountId32 | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [AccountId32]
+      >;
+      /**
+       * Force a validator to have at least the minimum commission. This will not affect a
+       * validator who already has a commission greater than or equal to the minimum. Any account
+       * can call this.
+       **/
+      forceApplyMinCommission: AugmentedSubmittable<
+        (validatorStash: AccountId32 | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [AccountId32]
       >;
       /**
        * Force there to be a new era at the end of the next session. After this, it will be
@@ -6040,6 +5855,36 @@ declare module '@polkadot/api-base/types/submittable' {
       increaseValidatorCount: AugmentedSubmittable<
         (additional: Compact<u32> | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [Compact<u32>]
+      >;
+      /**
+       * Remove the given nominations from the calling validator.
+       *
+       * Effects will be felt at the beginning of the next era.
+       *
+       * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+       *
+       * - `who`: A list of nominator stash accounts who are nominating this validator which
+       * should no longer be nominating this validator.
+       *
+       * Note: Making this call only makes sense if you first set the validator preferences to
+       * block any further nominations.
+       **/
+      kick: AugmentedSubmittable<
+        (
+          who:
+            | Vec<MultiAddress>
+            | (
+                | MultiAddress
+                | { Id: any }
+                | { Index: any }
+                | { Raw: any }
+                | { Address32: any }
+                | { Address20: any }
+                | string
+                | Uint8Array
+              )[]
+        ) => SubmittableExtrinsic<ApiType>,
+        [Vec<MultiAddress>]
       >;
       /**
        * Declare the desire to nominate `targets` for the origin controller.
@@ -6133,8 +5978,8 @@ declare module '@polkadot/api-base/types/submittable' {
       >;
       /**
        * Remove an identity from the pool of (wannabe) validator identities. Effects are known in the next session.
-       * Staking module checks `PermissionedIdentity` to ensure validators have
-       * completed KYB compliance
+       *
+       * The dispatch origin must be Root.
        *
        * # Arguments
        * * origin Required origin for removing a potential validator.
@@ -6198,22 +6043,6 @@ declare module '@polkadot/api-base/types/submittable' {
         [MultiAddress]
       >;
       /**
-       * Rebond a portion of the stash scheduled to be unlocked.
-       *
-       * The dispatch origin must be signed by the controller.
-       *
-       * ## Complexity
-       * - Time complexity: O(L), where L is unlocking chunks
-       * - Bounded by `MaxUnlockingChunks`.
-       **/
-      setHistoryDepth: AugmentedSubmittable<
-        (
-          newHistoryDepth: Compact<u32> | AnyNumber | Uint8Array,
-          eraItemsDeleted: Compact<u32> | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Compact<u32>, Compact<u32>]
-      >;
-      /**
        * Set the validators who cannot be slashed (if any).
        *
        * The dispatch origin must be Root.
@@ -6225,15 +6054,14 @@ declare module '@polkadot/api-base/types/submittable' {
         [Vec<AccountId32>]
       >;
       /**
-       * Changes commission rate which applies to all validators. Only Governance
-       * committee is allowed to change this value.
+       * Sets the minimum amount of commission that each validators must maintain.
        *
-       * # Arguments
-       * * `new_cap` the new commission cap.
+       * This call has lower privilege requirements than `set_staking_config` and can be called
+       * by the `T::AdminOrigin`. Root can always call this.
        **/
-      setMinBondThreshold: AugmentedSubmittable<
-        (newValue: u128 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [u128]
+      setMinCommission: AugmentedSubmittable<
+        (updated: Perbill | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [Perbill]
       >;
       /**
        * (Re-)set the payment target for a controller.
@@ -6257,10 +6085,84 @@ declare module '@polkadot/api-base/types/submittable' {
             | { Stash: any }
             | { Controller: any }
             | { Account: any }
+            | { None: any }
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [PalletStakingRewardDestination]
+      >;
+      /**
+       * Update the various staking configurations .
+       *
+       * * `min_nominator_bond`: The minimum active bond needed to be a nominator.
+       * * `min_validator_bond`: The minimum active bond needed to be a validator.
+       * * `max_nominator_count`: The max number of users who can be a nominator at once. When
+       * set to `None`, no limit is enforced.
+       * * `max_validator_count`: The max number of users who can be a validator at once. When
+       * set to `None`, no limit is enforced.
+       * * `chill_threshold`: The ratio of `max_nominator_count` or `max_validator_count` which
+       * should be filled in order for the `chill_other` transaction to work.
+       * * `min_commission`: The minimum amount of commission that each validators must maintain.
+       * This is checked only upon calling `validate`. Existing validators are not affected.
+       *
+       * RuntimeOrigin must be Root to call this function.
+       *
+       * NOTE: Existing nominators and validators will not be affected by this update.
+       * to kick people under the new limits, `chill_other` should be called.
+       **/
+      setStakingConfigs: AugmentedSubmittable<
+        (
+          minNominatorBond:
+            | PalletStakingPalletConfigOpU128
+            | { Noop: any }
+            | { Set: any }
+            | { Remove: any }
+            | string
+            | Uint8Array,
+          minValidatorBond:
+            | PalletStakingPalletConfigOpU128
+            | { Noop: any }
+            | { Set: any }
+            | { Remove: any }
+            | string
+            | Uint8Array,
+          maxNominatorCount:
+            | PalletStakingPalletConfigOpU32
+            | { Noop: any }
+            | { Set: any }
+            | { Remove: any }
+            | string
+            | Uint8Array,
+          maxValidatorCount:
+            | PalletStakingPalletConfigOpU32
+            | { Noop: any }
+            | { Set: any }
+            | { Remove: any }
+            | string
+            | Uint8Array,
+          chillThreshold:
+            | PalletStakingPalletConfigOpPercent
+            | { Noop: any }
+            | { Set: any }
+            | { Remove: any }
+            | string
+            | Uint8Array,
+          minCommission:
+            | PalletStakingPalletConfigOpPerbill
+            | { Noop: any }
+            | { Set: any }
+            | { Remove: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [
+          PalletStakingPalletConfigOpU128,
+          PalletStakingPalletConfigOpU128,
+          PalletStakingPalletConfigOpU32,
+          PalletStakingPalletConfigOpU32,
+          PalletStakingPalletConfigOpPercent,
+          PalletStakingPalletConfigOpPerbill
+        ]
       >;
       /**
        * Sets the ideal number of validators.
@@ -6273,158 +6175,6 @@ declare module '@polkadot/api-base/types/submittable' {
       setValidatorCount: AugmentedSubmittable<
         (updated: Compact<u32> | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [Compact<u32>]
-      >;
-      /**
-       * Submit an election result to the chain. If the solution:
-       *
-       * 1. is valid.
-       * 2. has a better score than a potentially existing solution on chain.
-       *
-       * then, it will be _put_ on chain.
-       *
-       * A solution consists of two pieces of data:
-       *
-       * 1. `winners`: a flat vector of all the winners of the round.
-       * 2. `assignments`: the compact version of an assignment vector that encodes the edge
-       * weights.
-       *
-       * Both of which may be computed using _phragmen_, or any other algorithm.
-       *
-       * Additionally, the submitter must provide:
-       *
-       * - The `score` that they claim their solution has.
-       *
-       * Both validators and nominators will be represented by indices in the solution. The
-       * indices should respect the corresponding types ([`ValidatorIndex`] and
-       * [`NominatorIndex`]). Moreover, they should be valid when used to index into
-       * [`SnapshotValidators`] and [`SnapshotNominators`]. Any invalid index will cause the
-       * solution to be rejected. These two storage items are set during the election window and
-       * may be used to determine the indices.
-       *
-       * A solution is valid if:
-       *
-       * 0. It is submitted when [`EraElectionStatus`] is `Open`.
-       * 1. Its claimed score is equal to the score computed on-chain.
-       * 2. Presents the correct number of winners.
-       * 3. All indexes must be value according to the snapshot vectors. All edge values must
-       * also be correct and should not overflow the granularity of the ratio type (i.e. 256
-       * or billion).
-       * 4. For each edge, all targets are actually nominated by the voter.
-       * 5. Has correct self-votes.
-       *
-       * A solutions score is consisted of 3 parameters:
-       *
-       * 1. `min { support.total }` for each support of a winner. This value should be maximized.
-       * 2. `sum { support.total }` for each support of a winner. This value should be minimized.
-       * 3. `sum { support.total^2 }` for each support of a winner. This value should be
-       * minimized (to ensure less variance)
-       *
-       * # <weight>
-       * The transaction is assumed to be the longest path, a better solution.
-       * - Initial solution is almost the same.
-       * - Worse solution is retraced in pre-dispatch-checks which sets its own weight.
-       * # </weight>
-       **/
-      submitElectionSolution: AugmentedSubmittable<
-        (
-          winners: Vec<u16> | (u16 | AnyNumber | Uint8Array)[],
-          compact:
-            | PalletStakingCompactAssignments
-            | {
-                votes1?: any;
-                votes2?: any;
-                votes3?: any;
-                votes4?: any;
-                votes5?: any;
-                votes6?: any;
-                votes7?: any;
-                votes8?: any;
-                votes9?: any;
-                votes10?: any;
-                votes11?: any;
-                votes12?: any;
-                votes13?: any;
-                votes14?: any;
-                votes15?: any;
-                votes16?: any;
-              }
-            | string
-            | Uint8Array,
-          score:
-            | SpNposElectionsElectionScore
-            | { minimalStake?: any; sumStake?: any; sumStakeSquared?: any }
-            | string
-            | Uint8Array,
-          era: u32 | AnyNumber | Uint8Array,
-          size:
-            | PalletStakingElectionSize
-            | { validators?: any; nominators?: any }
-            | string
-            | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [
-          Vec<u16>,
-          PalletStakingCompactAssignments,
-          SpNposElectionsElectionScore,
-          u32,
-          PalletStakingElectionSize
-        ]
-      >;
-      /**
-       * Unsigned version of `submit_election_solution`.
-       *
-       * Note that this must pass the [`ValidateUnsigned`] check which only allows transactions
-       * from the local node to be included. In other words, only the block author can include a
-       * transaction in the block.
-       *
-       * # <weight>
-       * See [`submit_election_solution`].
-       * # </weight>
-       **/
-      submitElectionSolutionUnsigned: AugmentedSubmittable<
-        (
-          winners: Vec<u16> | (u16 | AnyNumber | Uint8Array)[],
-          compact:
-            | PalletStakingCompactAssignments
-            | {
-                votes1?: any;
-                votes2?: any;
-                votes3?: any;
-                votes4?: any;
-                votes5?: any;
-                votes6?: any;
-                votes7?: any;
-                votes8?: any;
-                votes9?: any;
-                votes10?: any;
-                votes11?: any;
-                votes12?: any;
-                votes13?: any;
-                votes14?: any;
-                votes15?: any;
-                votes16?: any;
-              }
-            | string
-            | Uint8Array,
-          score:
-            | SpNposElectionsElectionScore
-            | { minimalStake?: any; sumStake?: any; sumStakeSquared?: any }
-            | string
-            | Uint8Array,
-          era: u32 | AnyNumber | Uint8Array,
-          size:
-            | PalletStakingElectionSize
-            | { validators?: any; nominators?: any }
-            | string
-            | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [
-          Vec<u16>,
-          PalletStakingCompactAssignments,
-          SpNposElectionsElectionScore,
-          u32,
-          PalletStakingElectionSize
-        ]
       >;
       /**
        * Schedule a portion of the stash to be unlocked ready for transfer out after the bond
@@ -6452,12 +6202,7 @@ declare module '@polkadot/api-base/types/submittable' {
         [Compact<u128>]
       >;
       /**
-       * Update the intended validator count for a given DID.
-       *
-       * # Arguments
-       * * origin which must be the required origin for adding a potential validator.
-       * * identity to add as a validator.
-       * * new_intended_count New value of intended co
+       * Sets the intended count to `new_intended_count` for the given `identity`.
        **/
       updatePermissionedValidatorIntendedCount: AugmentedSubmittable<
         (
@@ -6517,142 +6262,6 @@ declare module '@polkadot/api-base/types/submittable' {
         [u32]
       >;
     };
-    stateTrieMigration: {
-      /**
-       * Continue the migration for the given `limits`.
-       *
-       * The dispatch origin of this call can be any signed account.
-       *
-       * This transaction has NO MONETARY INCENTIVES. calling it will not reward anyone. Albeit,
-       * Upon successful execution, the transaction fee is returned.
-       *
-       * The (potentially over-estimated) of the byte length of all the data read must be
-       * provided for up-front fee-payment and weighing. In essence, the caller is guaranteeing
-       * that executing the current `MigrationTask` with the given `limits` will not exceed
-       * `real_size_upper` bytes of read data.
-       *
-       * The `witness_task` is merely a helper to prevent the caller from being slashed or
-       * generally trigger a migration that they do not intend. This parameter is just a message
-       * from caller, saying that they believed `witness_task` was the last state of the
-       * migration, and they only wish for their transaction to do anything, if this assumption
-       * holds. In case `witness_task` does not match, the transaction fails.
-       *
-       * Based on the documentation of [`MigrationTask::migrate_until_exhaustion`], the
-       * recommended way of doing this is to pass a `limit` that only bounds `count`, as the
-       * `size` limit can always be overwritten.
-       **/
-      continueMigrate: AugmentedSubmittable<
-        (
-          limits:
-            | PalletStateTrieMigrationMigrationLimits
-            | { size_?: any; item?: any }
-            | string
-            | Uint8Array,
-          realSizeUpper: u32 | AnyNumber | Uint8Array,
-          witnessTask:
-            | PalletStateTrieMigrationMigrationTask
-            | {
-                progressTop?: any;
-                progressChild?: any;
-                size_?: any;
-                topItems?: any;
-                childItems?: any;
-              }
-            | string
-            | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [PalletStateTrieMigrationMigrationLimits, u32, PalletStateTrieMigrationMigrationTask]
-      >;
-      /**
-       * Control the automatic migration.
-       *
-       * The dispatch origin of this call must be [`Config::ControlOrigin`].
-       **/
-      controlAutoMigration: AugmentedSubmittable<
-        (
-          maybeConfig:
-            | Option<PalletStateTrieMigrationMigrationLimits>
-            | null
-            | Uint8Array
-            | PalletStateTrieMigrationMigrationLimits
-            | { size_?: any; item?: any }
-            | string
-        ) => SubmittableExtrinsic<ApiType>,
-        [Option<PalletStateTrieMigrationMigrationLimits>]
-      >;
-      /**
-       * Forcefully set the progress the running migration.
-       *
-       * This is only useful in one case: the next key to migrate is too big to be migrated with
-       * a signed account, in a parachain context, and we simply want to skip it. A reasonable
-       * example of this would be `:code:`, which is both very expensive to migrate, and commonly
-       * used, so probably it is already migrated.
-       *
-       * In case you mess things up, you can also, in principle, use this to reset the migration
-       * process.
-       **/
-      forceSetProgress: AugmentedSubmittable<
-        (
-          progressTop:
-            | PalletStateTrieMigrationProgress
-            | { ToStart: any }
-            | { LastKey: any }
-            | { Complete: any }
-            | string
-            | Uint8Array,
-          progressChild:
-            | PalletStateTrieMigrationProgress
-            | { ToStart: any }
-            | { LastKey: any }
-            | { Complete: any }
-            | string
-            | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [PalletStateTrieMigrationProgress, PalletStateTrieMigrationProgress]
-      >;
-      /**
-       * Migrate the list of child keys by iterating each of them one by one.
-       *
-       * All of the given child keys must be present under one `child_root`.
-       *
-       * This does not affect the global migration process tracker ([`MigrationProcess`]), and
-       * should only be used in case any keys are leftover due to a bug.
-       **/
-      migrateCustomChild: AugmentedSubmittable<
-        (
-          root: Bytes | string | Uint8Array,
-          childKeys: Vec<Bytes> | (Bytes | string | Uint8Array)[],
-          totalSize: u32 | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Bytes, Vec<Bytes>, u32]
-      >;
-      /**
-       * Migrate the list of top keys by iterating each of them one by one.
-       *
-       * This does not affect the global migration process tracker ([`MigrationProcess`]), and
-       * should only be used in case any keys are leftover due to a bug.
-       **/
-      migrateCustomTop: AugmentedSubmittable<
-        (
-          keys: Vec<Bytes> | (Bytes | string | Uint8Array)[],
-          witnessSize: u32 | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Vec<Bytes>, u32]
-      >;
-      /**
-       * Set the maximum limit of the signed migration.
-       **/
-      setSignedMaxLimits: AugmentedSubmittable<
-        (
-          limits:
-            | PalletStateTrieMigrationMigrationLimits
-            | { size_?: any; item?: any }
-            | string
-            | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [PalletStateTrieMigrationMigrationLimits]
-      >;
-    };
     statistics: {
       /**
        * Allow a trusted issuer to init/resync asset/company stats.
@@ -6673,7 +6282,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       batchUpdateAssetStats: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           statType:
             | PolymeshPrimitivesStatisticsStatType
             | { operationType?: any; claimIssuer?: any }
@@ -6682,7 +6291,7 @@ declare module '@polkadot/api-base/types/submittable' {
           values: BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>
         ) => SubmittableExtrinsic<ApiType>,
         [
-          U8aFixed,
+          PolymeshPrimitivesAssetAssetID,
           PolymeshPrimitivesStatisticsStatType,
           BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>
         ]
@@ -6706,10 +6315,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       setActiveAssetStats: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           statTypes: BTreeSet<PolymeshPrimitivesStatisticsStatType>
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, BTreeSet<PolymeshPrimitivesStatisticsStatType>]
+        [PolymeshPrimitivesAssetAssetID, BTreeSet<PolymeshPrimitivesStatisticsStatType>]
       >;
       /**
        * Set asset transfer compliance rules.
@@ -6730,10 +6339,13 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       setAssetTransferCompliance: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           transferConditions: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>]
+        [
+          PolymeshPrimitivesAssetAssetID,
+          BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>
+        ]
       >;
       /**
        * Set/unset entities exempt from an asset's transfer compliance rules.
@@ -6794,13 +6406,13 @@ declare module '@polkadot/api-base/types/submittable' {
             | { did?: any; kind?: any }
             | string
             | Uint8Array,
-          offeringAsset: U8aFixed | string | Uint8Array,
+          offeringAsset: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           raisingPortfolio:
             | PolymeshPrimitivesIdentityIdPortfolioId
             | { did?: any; kind?: any }
             | string
             | Uint8Array,
-          raisingAsset: U8aFixed | string | Uint8Array,
+          raisingAsset: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           tiers:
             | Vec<PalletStoPriceTier>
             | (PalletStoPriceTier | { total?: any; price?: any } | string | Uint8Array)[],
@@ -6812,9 +6424,9 @@ declare module '@polkadot/api-base/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>,
         [
           PolymeshPrimitivesIdentityIdPortfolioId,
-          U8aFixed,
+          PolymeshPrimitivesAssetAssetID,
           PolymeshPrimitivesIdentityIdPortfolioId,
-          U8aFixed,
+          PolymeshPrimitivesAssetAssetID,
           Vec<PalletStoPriceTier>,
           u64,
           Option<u64>,
@@ -6834,10 +6446,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       freezeFundraiser: AugmentedSubmittable<
         (
-          offeringAsset: U8aFixed | string | Uint8Array,
+          offeringAsset: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           id: u64 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, u64]
+        [PolymeshPrimitivesAssetAssetID, u64]
       >;
       /**
        * Invest in a fundraiser.
@@ -6865,7 +6477,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | { did?: any; kind?: any }
             | string
             | Uint8Array,
-          offeringAsset: U8aFixed | string | Uint8Array,
+          offeringAsset: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           id: u64 | AnyNumber | Uint8Array,
           purchaseAmount: u128 | AnyNumber | Uint8Array,
           maxPrice: Option<u128> | null | Uint8Array | u128 | AnyNumber,
@@ -6887,7 +6499,7 @@ declare module '@polkadot/api-base/types/submittable' {
         [
           PolymeshPrimitivesIdentityIdPortfolioId,
           PolymeshPrimitivesIdentityIdPortfolioId,
-          U8aFixed,
+          PolymeshPrimitivesAssetAssetID,
           u64,
           u128,
           Option<u128>,
@@ -6907,12 +6519,12 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       modifyFundraiserWindow: AugmentedSubmittable<
         (
-          offeringAsset: U8aFixed | string | Uint8Array,
+          offeringAsset: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           id: u64 | AnyNumber | Uint8Array,
           start: u64 | AnyNumber | Uint8Array,
           end: Option<u64> | null | Uint8Array | u64 | AnyNumber
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, u64, u64, Option<u64>]
+        [PolymeshPrimitivesAssetAssetID, u64, u64, Option<u64>]
       >;
       /**
        * Stop a fundraiser.
@@ -6925,10 +6537,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       stop: AugmentedSubmittable<
         (
-          offeringAsset: U8aFixed | string | Uint8Array,
+          offeringAsset: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           id: u64 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, u64]
+        [PolymeshPrimitivesAssetAssetID, u64]
       >;
       /**
        * Unfreeze a fundraiser.
@@ -6941,10 +6553,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       unfreezeFundraiser: AugmentedSubmittable<
         (
-          offeringAsset: U8aFixed | string | Uint8Array,
+          offeringAsset: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           id: u64 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, u64]
+        [PolymeshPrimitivesAssetAssetID, u64]
       >;
     };
     sudo: {

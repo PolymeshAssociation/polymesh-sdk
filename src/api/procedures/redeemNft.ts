@@ -9,7 +9,7 @@ import {
 } from '~/internal';
 import { ErrorCode, RedeemNftParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { bigNumberToU64, portfolioToPortfolioKind, stringToTicker } from '~/utils/conversion';
+import { assetToMeshAssetId, bigNumberToU64, portfolioToPortfolioKind } from '~/utils/conversion';
 
 export interface Storage {
   fromPortfolio: DefaultPortfolio | NumberedPortfolio;
@@ -18,7 +18,7 @@ export interface Storage {
 /**
  * @hidden
  */
-export type Params = { ticker: string; id: BigNumber } & RedeemNftParams;
+export type Params = { collection: NftCollection; id: BigNumber } & RedeemNftParams;
 
 /**
  * @hidden
@@ -30,16 +30,23 @@ export async function prepareRedeemNft(
   const {
     context,
     context: {
-      polymeshApi: { tx },
+      isV6,
+      polymeshApi: { tx, query },
     },
     storage: { fromPortfolio },
   } = this;
 
-  const { ticker, id } = args;
+  const { collection, id } = args;
 
-  const rawTicker = stringToTicker(ticker, context);
+  const collectionId = await collection.getCollectionId();
+  const rawAssetId = assetToMeshAssetId(collection, context);
+  const rawId = bigNumberToU64(id, context);
+  const rawCollectionId = bigNumberToU64(collectionId, context);
 
-  const [{ free }] = await fromPortfolio.getCollections({ collections: [ticker] });
+  const [[{ free }], rawKeySet] = await Promise.all([
+    fromPortfolio.getCollections({ collections: [collection.id] }),
+    query.nft.collectionKeys(rawCollectionId),
+  ]);
 
   if (!free.find(heldNft => heldNft.id.eq(id))) {
     throw new PolymeshError({
@@ -51,11 +58,15 @@ export async function prepareRedeemNft(
     });
   }
 
-  const rawId = bigNumberToU64(id, context);
+  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
+  const txArgs = isV6
+    ? [rawAssetId, rawId, portfolioToPortfolioKind(fromPortfolio, context)]
+    : [rawAssetId, rawId, portfolioToPortfolioKind(fromPortfolio, context), rawKeySet.size];
 
   return {
     transaction: tx.nft.redeemNft,
-    args: [rawTicker, rawId, portfolioToPortfolioKind(fromPortfolio, context)],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    args: txArgs as any,
     resolver: undefined,
   };
 }
@@ -65,17 +76,16 @@ export async function prepareRedeemNft(
  */
 export async function getAuthorization(
   this: Procedure<Params, void, Storage>,
-  { ticker }: Params
+  { collection }: Params
 ): Promise<ProcedureAuthorization> {
   const {
-    context,
     storage: { fromPortfolio },
   } = this;
 
   return {
     permissions: {
       transactions: [TxTags.nft.RedeemNft],
-      assets: [new NftCollection({ ticker }, context)],
+      assets: [collection],
       portfolios: [fromPortfolio],
     },
   };

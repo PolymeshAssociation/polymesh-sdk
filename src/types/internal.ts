@@ -13,6 +13,7 @@ import {
 import { RpcInterface } from '@polkadot/rpc-core/types';
 import { u32 } from '@polkadot/types';
 import {
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
@@ -23,6 +24,7 @@ import { Identity, Procedure } from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
 import {
   ClaimType,
+  FungibleAsset,
   InputStatClaim,
   KnownAssetType,
   KnownNftType,
@@ -46,7 +48,7 @@ export type Extrinsics = SubmittableExtrinsics<'promise'>;
  * Parameter list for a specific extrinsic
  *
  * @param ModuleName - pallet name (e.g. 'asset')
- * @param TransactionName - extrinsic name (e.g. 'registerTicker')
+ * @param TransactionName - extrinsic name (e.g. 'registerUniqueTicker')
  */
 export type ExtrinsicParams<
   ModuleName extends keyof Extrinsics,
@@ -272,8 +274,8 @@ export interface ExtrinsicIdentifier {
 }
 
 export interface CorporateActionIdentifier {
-  ticker: string;
   localId: BigNumber;
+  asset: FungibleAsset;
 }
 
 /**
@@ -305,17 +307,27 @@ export type Falsyable<T> = T | null | undefined;
 export type PermissionsEnum<P> =
   | 'Whole'
   | {
-      These: P[];
+      These: P;
     }
   | {
-      Except: P[];
+      Except: P;
     };
-export type PalletPermissions = {
+
+export type PalletPermissionsV6 = {
   /* eslint-disable @typescript-eslint/naming-convention */
-  pallet_name: string;
-  dispatchable_names: PermissionsEnum<string>;
+  palletName: string;
+  dispatchableNames: PermissionsEnum<string[]>;
   /* eslint-enable @typescript-eslint/naming-convention */
 };
+
+export type PalletPermissionsV7 = Map<
+  string,
+  {
+    extrinsics: PermissionsEnum<string[]>;
+  }
+>;
+
+export type PalletPermissions = PalletPermissionsV6[] | PalletPermissionsV7;
 
 export enum InstructionStatus {
   Pending = 'Pending',
@@ -337,17 +349,27 @@ export interface TickerKey {
   Ticker: PolymeshPrimitivesTicker;
 }
 
+export interface AssetIdKey {
+  AssetId: PolymeshPrimitivesAssetAssetID;
+}
+
 /**
  * Infer Procedure parameters parameters from a Procedure function
  */
 export type ProcedureParams<ProcedureFunction extends (...args: unknown[]) => unknown> =
   ReturnType<ProcedureFunction> extends Procedure<infer Params> ? Params : never;
 
-export interface ExemptKey {
-  asset: TickerKey;
+export type ExemptKey = {
   op: PolymeshPrimitivesStatisticsStatOpType;
   claimType?: ClaimType;
-}
+} & (
+  | {
+      asset: TickerKey;
+    }
+  | {
+      assetId: PolymeshPrimitivesAssetAssetID;
+    }
+);
 
 export type StatClaimInputType = Omit<InputStatClaim, 'affiliate' | 'accredited'>;
 
@@ -355,3 +377,11 @@ export interface StatClaimIssuer {
   issuer: Identity;
   claimType: StatClaimType;
 }
+
+export type MeshTickerOrAssetId =
+  | {
+      ticker: PolymeshPrimitivesTicker;
+    }
+  | {
+      assetId: PolymeshPrimitivesAssetAssetID;
+    };

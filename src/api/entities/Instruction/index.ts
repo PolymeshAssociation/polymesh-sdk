@@ -5,7 +5,6 @@ import {
 import { hexAddPrefix, hexStripPrefix } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import { lt } from 'semver';
 
 import { executeManualInstruction } from '~/api/procedures/executeManualInstruction';
 import {
@@ -21,8 +20,7 @@ import {
   Venue,
 } from '~/internal';
 import { instructionEventsQuery } from '~/middleware/queries/settlements';
-import { instructionsQuery } from '~/middleware/queries/settlementsOld';
-import { InstructionEventEnum, InstructionStatusEnum, Query } from '~/middleware/types';
+import { InstructionEventEnum, Query } from '~/middleware/types';
 import {
   AffirmAsMediatorParams,
   AffirmInstructionParams,
@@ -46,7 +44,6 @@ import {
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
 import { Ensured } from '~/types/utils';
 import { isOffChainLeg } from '~/utils';
-import { SETTLEMENTS_V2_SQ_VERSION } from '~/utils/constants';
 import {
   balanceToBigNumber,
   bigNumberToU64,
@@ -54,6 +51,7 @@ import {
   instructionMemoToString,
   mediatorAffirmationStatusToStatus,
   meshAffirmationStatusToAffirmationStatus,
+  meshAssetToAssetId,
   meshInstructionStatusToInstructionStatus,
   meshNftToNftId,
   meshPortfolioIdToPortfolio,
@@ -63,13 +61,7 @@ import {
   tickerToString,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import {
-  createProcedureMethod,
-  getLatestSqVersion,
-  optionize,
-  requestMulti,
-  requestPaginated,
-} from '~/utils/internal';
+import { createProcedureMethod, optionize, requestMulti, requestPaginated } from '~/utils/internal';
 
 import {
   AffirmationStatus,
@@ -341,10 +333,10 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     return {
       status,
-      createdAt: momentToDate(createdAt.unwrap()),
+      createdAt: createdAt.isSome ? momentToDate(createdAt.unwrap()) : null,
       tradeDate: tradeDate.isSome ? momentToDate(tradeDate.unwrap()) : null,
       valueDate: valueDate.isSome ? momentToDate(valueDate.unwrap()) : null,
-      venue: new Venue({ id: u64ToBigNumber(venueId) }, context),
+      venue: venueId.isSome ? new Venue({ id: u64ToBigNumber(venueId.unwrap()) }, context) : null,
       memo: memo.isSome ? instructionMemoToString(memo.unwrap()) : null,
       ...meshSettlementTypeToEndCondition(type),
     };
@@ -432,9 +424,16 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         if (leg.isSome) {
           const legValue: PolymeshPrimitivesSettlementLeg = leg.unwrap();
           if (legValue.isFungible) {
-            const { sender, receiver, amount, ticker: rawTicker } = legValue.asFungible;
+            const {
+              sender,
+              receiver,
+              amount,
+              ticker: rawTicker,
+              assetId: rawAssetId,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } = legValue.asFungible as any; // NOSONAR
 
-            const ticker = tickerToString(rawTicker);
+            const assetId = meshAssetToAssetId(rawTicker || rawAssetId, context);
             const fromPortfolio = meshPortfolioIdToPortfolio(sender, context);
             const toPortfolio = meshPortfolioIdToPortfolio(receiver, context);
 
@@ -442,20 +441,20 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
               from: fromPortfolio,
               to: toPortfolio,
               amount: balanceToBigNumber(amount),
-              asset: new FungibleAsset({ ticker }, context),
+              asset: new FungibleAsset({ assetId }, context),
             };
           } else if (legValue.isNonFungible) {
             const { sender, receiver, nfts } = legValue.asNonFungible;
 
             const from = meshPortfolioIdToPortfolio(sender, context);
             const to = meshPortfolioIdToPortfolio(receiver, context);
-            const { ticker, ids } = meshNftToNftId(nfts);
+            const { assetId, ids } = meshNftToNftId(nfts, context);
 
             return {
               from,
               to,
-              nfts: ids.map(nftId => new Nft({ ticker, id: nftId }, context)),
-              asset: new NftCollection({ ticker }, context),
+              nfts: ids.map(nftId => new Nft({ assetId, id: nftId }, context)),
+              asset: new NftCollection({ assetId }, context),
             };
           } else {
             const {
@@ -579,39 +578,6 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     event: InstructionEventEnum.InstructionExecuted | InstructionEventEnum.InstructionFailed
   ): Promise<EventIdentifier | null> {
     const { id, context } = this;
-
-    // TODO @prashantasdeveloper Remove after SQ dual version support
-    const sqVersion = await getLatestSqVersion(context);
-
-    const instructionStatusMap = {
-      [InstructionEventEnum.InstructionExecuted]: InstructionStatusEnum.Executed,
-      [InstructionEventEnum.InstructionFailed]: InstructionStatusEnum.Failed,
-    };
-
-    if (lt(sqVersion, SETTLEMENTS_V2_SQ_VERSION)) {
-      const {
-        data: {
-          instructions: {
-            nodes: [details],
-          },
-        },
-      } = await context.queryMiddleware(
-        instructionsQuery(
-          {
-            status: instructionStatusMap[event],
-            id: id.toString(),
-          },
-          new BigNumber(1),
-          new BigNumber(0)
-        )
-      );
-
-      return optionize(middlewareEventDetailsToEventIdentifier)(
-        details?.updatedBlock,
-        details?.eventIdx
-      );
-    }
-    // Dual version support end
 
     const {
       data: {

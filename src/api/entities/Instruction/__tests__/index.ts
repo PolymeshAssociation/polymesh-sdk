@@ -8,13 +8,12 @@ import { when } from 'jest-when';
 
 import { Context, Entity, Instruction, PolymeshTransaction } from '~/internal';
 import { instructionEventsQuery } from '~/middleware/queries/settlements';
-import { instructionsQuery } from '~/middleware/queries/settlementsOld';
-import { InstructionEventEnum, InstructionStatusEnum } from '~/middleware/types';
+import { InstructionEventEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
+  createMockAssetId,
   createMockInstructionStatus,
   createMockNfts,
-  createMockTicker,
   createMockU64,
 } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
@@ -31,7 +30,6 @@ import {
 } from '~/types';
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
 import { tuple } from '~/types/utils';
-import { SETTLEMENTS_V2_SQ_VERSION } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -360,7 +358,7 @@ describe('Instruction class', () => {
       let rawSettlementType = dsMockUtils.createMockSettlementType(type);
       const rawInstructionDetails = dsMockUtils.createMockInstruction({
         instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
-        venueId: dsMockUtils.createMockU64(venueId),
+        venueId: dsMockUtils.createMockOption(dsMockUtils.createMockU64(venueId)),
         createdAt: dsMockUtils.createMockOption(
           dsMockUtils.createMockMoment(new BigNumber(createdAt.getTime()))
         ),
@@ -399,7 +397,7 @@ describe('Instruction class', () => {
         type,
         memo,
       });
-      expect(result.venue.id).toEqual(venueId);
+      expect(result.venue?.id).toEqual(venueId);
 
       type = InstructionType.SettleOnBlock;
       const endBlock = new BigNumber(100);
@@ -413,6 +411,7 @@ describe('Instruction class', () => {
       queryMultiMock.mockResolvedValueOnce([
         dsMockUtils.createMockInstruction({
           ...rawInstructionDetails,
+          createdAt: dsMockUtils.createMockOption(),
           tradeDate: dsMockUtils.createMockOption(),
           valueDate: dsMockUtils.createMockOption(),
           settlementType: rawSettlementType,
@@ -425,14 +424,14 @@ describe('Instruction class', () => {
 
       expect(result).toMatchObject({
         status,
-        createdAt,
+        createdAt: null,
         tradeDate: null,
         valueDate: null,
         type,
         endBlock,
         memo: null,
       });
-      expect(result.venue.id).toEqual(venueId);
+      expect(result.venue?.id).toEqual(venueId);
 
       type = InstructionType.SettleManual;
 
@@ -465,7 +464,7 @@ describe('Instruction class', () => {
         endAfterBlock: endBlock,
         memo: null,
       });
-      expect(result.venue.id).toEqual(venueId);
+      expect(result.venue?.id).toEqual(venueId);
 
       status = InstructionStatus.Failed;
       type = InstructionType.SettleOnAffirmation;
@@ -492,14 +491,35 @@ describe('Instruction class', () => {
         type,
         memo,
       });
-      expect(result.venue.id).toEqual(venueId);
+      expect(result.venue?.id).toEqual(venueId);
+
+      queryMultiMock.mockResolvedValueOnce([
+        dsMockUtils.createMockInstruction({
+          ...rawInstructionDetails,
+          venueId: dsMockUtils.createMockOption(),
+        }),
+        dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Failed),
+        rawOptionalMemo,
+      ]);
+
+      result = await instruction.details();
+
+      expect(result).toMatchObject({
+        status,
+        createdAt,
+        tradeDate,
+        valueDate,
+        type,
+        memo,
+      });
+      expect(result.venue).toBeNull();
     });
 
     it('should throw an error if an Instruction leg is not present', () => {
       queryMultiMock.mockResolvedValueOnce([
         dsMockUtils.createMockInstruction({
           instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
-          venueId: dsMockUtils.createMockU64(new BigNumber(1)),
+          venueId: dsMockUtils.createMockOption(dsMockUtils.createMockU64(new BigNumber(1))),
           createdAt: dsMockUtils.createMockOption(),
           tradeDate: dsMockUtils.createMockOption(),
           valueDate: dsMockUtils.createMockOption(),
@@ -607,11 +627,11 @@ describe('Instruction class', () => {
     it("should return the instruction's legs", async () => {
       const fromDid = 'fromDid';
       const toDid = 'toDid';
-      const ticker = 'SOME_TICKER';
-      const ticker2 = 'SOME_TICKER2';
+      const assetId = '0x1111';
+      const assetId2 = '0x2222';
       const amount = new BigNumber(1000);
 
-      entityMockUtils.configureMocks({ fungibleAssetOptions: { ticker } });
+      entityMockUtils.configureMocks({ fungibleAssetOptions: { assetId } });
       instructionStatusMock.mockResolvedValue(
         createMockInstructionStatus(InternalInstructionStatus.Pending)
       );
@@ -626,7 +646,7 @@ describe('Instruction class', () => {
               did: dsMockUtils.createMockIdentityId(toDid),
               kind: dsMockUtils.createMockPortfolioKind('Default'),
             }),
-            ticker: dsMockUtils.createMockTicker(ticker),
+            assetId: dsMockUtils.createMockAssetId(assetId),
             amount: dsMockUtils.createMockU128(amount.shiftedBy(6)),
           },
         })
@@ -643,7 +663,7 @@ describe('Instruction class', () => {
               did: dsMockUtils.createMockIdentityId(toDid),
               kind: dsMockUtils.createMockPortfolioKind('Default'),
             }),
-            ticker: dsMockUtils.createMockTicker(ticker2),
+            assetId: dsMockUtils.createMockAssetId(assetId2),
             amount: dsMockUtils.createMockU128(amount.shiftedBy(6)),
           },
         })
@@ -673,13 +693,13 @@ describe('Instruction class', () => {
 
       const resultLeg1 = leg[0] as FungibleLeg;
       expect(resultLeg1.amount).toEqual(amount);
-      expect(resultLeg1.asset.ticker).toBe(ticker2);
+      expect(resultLeg1.asset.id).toBe(assetId2);
       expect(resultLeg1.from.owner.did).toBe(fromDid);
       expect(resultLeg1.to.owner.did).toBe(toDid);
 
       const resultLeg2 = leg[1] as FungibleLeg;
       expect(resultLeg2.amount).toEqual(amount);
-      expect(resultLeg2.asset.ticker).toBe(ticker);
+      expect(resultLeg2.asset.id).toBe(assetId);
       expect(resultLeg2.from.owner.did).toBe(fromDid);
       expect(resultLeg2.to.owner.did).toBe(toDid);
     });
@@ -694,9 +714,9 @@ describe('Instruction class', () => {
     it('should handle NFT legs', async () => {
       const fromDid = 'fromDid';
       const toDid = 'toDid';
-      const ticker = 'SOME_TICKER';
+      const assetId = '0x1111';
 
-      entityMockUtils.configureMocks({ fungibleAssetOptions: { ticker } });
+      entityMockUtils.configureMocks({ fungibleAssetOptions: { assetId } });
       instructionStatusMock.mockResolvedValue(
         createMockInstructionStatus(InternalInstructionStatus.Pending)
       );
@@ -712,7 +732,7 @@ describe('Instruction class', () => {
               kind: dsMockUtils.createMockPortfolioKind('Default'),
             }),
             nfts: createMockNfts({
-              ticker: createMockTicker(ticker),
+              assetId: createMockAssetId(assetId),
               ids: [createMockU64(new BigNumber(1))],
             }),
           },
@@ -734,7 +754,7 @@ describe('Instruction class', () => {
       expect(resultLeg.nfts).toEqual(
         expect.arrayContaining([expect.objectContaining({ id: new BigNumber(1) })])
       );
-      expect(resultLeg.asset.ticker).toBe(ticker);
+      expect(resultLeg.asset.id).toBe(assetId);
       expect(resultLeg.from.owner.did).toBe(fromDid);
       expect(resultLeg.to.owner.did).toBe(toDid);
     });
@@ -744,10 +764,9 @@ describe('Instruction class', () => {
       const rawFromId = dsMockUtils.createMockIdentityId(fromDid);
       const toDid = 'toDid';
       const rawToId = dsMockUtils.createMockIdentityId(toDid);
-      const ticker = 'SOME_TICKER';
+      const offChainAsset = 'SOME_TICKER';
       const amount = new BigNumber(10);
 
-      entityMockUtils.configureMocks({ fungibleAssetOptions: { ticker } });
       instructionStatusMock.mockResolvedValue(
         createMockInstructionStatus(InternalInstructionStatus.Pending)
       );
@@ -761,7 +780,7 @@ describe('Instruction class', () => {
           OffChain: {
             senderIdentity: rawFromId,
             receiverIdentity: rawToId,
-            ticker: dsMockUtils.createMockTicker(ticker),
+            ticker: dsMockUtils.createMockTicker(offChainAsset),
             amount: dsMockUtils.createMockU128(amount.shiftedBy(6)),
           },
         })
@@ -780,15 +799,15 @@ describe('Instruction class', () => {
 
       const resultLeg = leg[0] as OffChainLeg;
       expect(resultLeg.offChainAmount).toEqual(amount);
-      expect(resultLeg.asset).toBe(ticker);
+      expect(resultLeg.asset).toBe(offChainAsset);
       expect(resultLeg.from.did).toBe(fromDid);
       expect(resultLeg.to.did).toBe(toDid);
     });
 
     it('should throw an error if a leg in None', () => {
-      const ticker = 'SOME_TICKER';
+      const assetId = '0x1111';
 
-      entityMockUtils.configureMocks({ fungibleAssetOptions: { ticker } });
+      entityMockUtils.configureMocks({ fungibleAssetOptions: { assetId } });
       instructionStatusMock.mockResolvedValue(
         createMockInstructionStatus(InternalInstructionStatus.Pending)
       );
@@ -985,22 +1004,19 @@ describe('Instruction class', () => {
     });
 
     let bigNumberToU64Spy: jest.SpyInstance;
-    let getLatestSqVersionSpy: jest.SpyInstance;
 
     beforeAll(() => {
       bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
-      getLatestSqVersionSpy = jest.spyOn(utilsInternalModule, 'getLatestSqVersion');
     });
 
     beforeEach(() => {
-      getLatestSqVersionSpy.mockResolvedValue('15.0.0');
       when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
     });
 
     it('should return Pending Instruction status', async () => {
       const queryResult = dsMockUtils.createMockInstruction({
         instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
-        venueId: dsMockUtils.createMockU64(),
+        venueId: dsMockUtils.createMockOption(dsMockUtils.createMockU64()),
         createdAt: dsMockUtils.createMockOption(),
         tradeDate: dsMockUtils.createMockOption(),
         valueDate: dsMockUtils.createMockOption(),
@@ -1034,15 +1050,10 @@ describe('Instruction class', () => {
       };
       const fakeEventIdentifierResult = { blockNumber, blockDate, blockHash, eventIndex: eventIdx };
 
-      const queryVariables = {
-        status: InstructionStatusEnum.Executed,
-        id: id.toString(),
-      };
-
       // Should return Pending status
       const queryResult = dsMockUtils.createMockInstruction({
         instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
-        venueId: dsMockUtils.createMockU64(),
+        venueId: dsMockUtils.createMockOption(dsMockUtils.createMockU64()),
         createdAt: dsMockUtils.createMockOption(),
         tradeDate: dsMockUtils.createMockOption(),
         valueDate: dsMockUtils.createMockOption(),
@@ -1057,35 +1068,6 @@ describe('Instruction class', () => {
         .calledWith(rawId)
         .mockResolvedValue(dsMockUtils.createMockInstructionStatus('Success'));
 
-      dsMockUtils.createApolloMultipleQueriesMock([
-        {
-          query: instructionsQuery(queryVariables, new BigNumber(1), new BigNumber(0)),
-          returnData: {
-            instructions: { nodes: [fakeQueryResult] },
-          },
-        },
-        {
-          query: instructionsQuery(
-            {
-              ...queryVariables,
-              status: InstructionStatusEnum.Failed,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructions: { nodes: [] },
-          },
-        },
-      ]);
-
-      let result = await instruction.getStatus();
-      expect(result).toMatchObject({
-        status: InstructionStatus.Success,
-        eventIdentifier: fakeEventIdentifierResult,
-      });
-
-      getLatestSqVersionSpy.mockResolvedValueOnce(SETTLEMENTS_V2_SQ_VERSION);
       dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: instructionEventsQuery(
@@ -1119,7 +1101,7 @@ describe('Instruction class', () => {
         },
       ]);
 
-      result = await instruction.getStatus();
+      const result = await instruction.getStatus();
       expect(result).toMatchObject({
         status: InstructionStatus.Success,
         eventIdentifier: fakeEventIdentifierResult,
@@ -1137,15 +1119,9 @@ describe('Instruction class', () => {
       };
       const fakeEventIdentifierResult = { blockNumber, blockDate, blockHash, eventIndex: eventIdx };
 
-      const queryVariables = {
-        status: InstructionStatusEnum.Executed,
-        id: id.toString(),
-      };
-
-      // Should return Pending status
       const queryResult = dsMockUtils.createMockInstruction({
         instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
-        venueId: dsMockUtils.createMockU64(),
+        venueId: dsMockUtils.createMockOption(dsMockUtils.createMockU64()),
         createdAt: dsMockUtils.createMockOption(),
         tradeDate: dsMockUtils.createMockOption(),
         valueDate: dsMockUtils.createMockOption(),
@@ -1160,39 +1136,6 @@ describe('Instruction class', () => {
         .calledWith(rawId)
         .mockResolvedValue(dsMockUtils.createMockInstructionStatus('Failed'));
 
-      dsMockUtils.createApolloMultipleQueriesMock([
-        {
-          query: instructionsQuery(queryVariables, new BigNumber(1), new BigNumber(0)),
-          returnData: {
-            instructions: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: instructionsQuery(
-            {
-              ...queryVariables,
-              status: InstructionStatusEnum.Failed,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructions: {
-              nodes: [fakeQueryResult],
-            },
-          },
-        },
-      ]);
-
-      let result = await instruction.getStatus();
-      expect(result).toMatchObject({
-        status: InstructionStatus.Failed,
-        eventIdentifier: fakeEventIdentifierResult,
-      });
-
-      getLatestSqVersionSpy.mockResolvedValueOnce(SETTLEMENTS_V2_SQ_VERSION);
       dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: instructionEventsQuery(
@@ -1226,7 +1169,7 @@ describe('Instruction class', () => {
         },
       ]);
 
-      result = await instruction.getStatus();
+      const result = await instruction.getStatus();
       expect(result).toMatchObject({
         status: InstructionStatus.Failed,
         eventIdentifier: fakeEventIdentifierResult,
@@ -1234,15 +1177,9 @@ describe('Instruction class', () => {
     });
 
     it("should throw an error if Instruction status couldn't be determined", async () => {
-      const queryVariables = {
-        status: InstructionStatusEnum.Executed,
-        id: id.toString(),
-      };
-
-      // Should return Pending status
       const queryResult = dsMockUtils.createMockInstruction({
         instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
-        venueId: dsMockUtils.createMockU64(),
+        venueId: dsMockUtils.createMockOption(dsMockUtils.createMockU64()),
         createdAt: dsMockUtils.createMockOption(),
         tradeDate: dsMockUtils.createMockOption(),
         valueDate: dsMockUtils.createMockOption(),
@@ -1259,33 +1196,6 @@ describe('Instruction class', () => {
           dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Unknown)
         );
 
-      dsMockUtils.createApolloMultipleQueriesMock([
-        {
-          query: instructionsQuery(queryVariables, new BigNumber(1), new BigNumber(0)),
-          returnData: {
-            instructions: { nodes: [] },
-          },
-        },
-        {
-          query: instructionsQuery(
-            {
-              ...queryVariables,
-              status: InstructionStatusEnum.Failed,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructions: { nodes: [] },
-          },
-        },
-      ]);
-
-      await expect(instruction.getStatus()).rejects.toThrow(
-        "It isn't possible to determine the current status of this Instruction"
-      );
-
-      getLatestSqVersionSpy.mockResolvedValueOnce(SETTLEMENTS_V2_SQ_VERSION);
       dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: instructionEventsQuery(
@@ -1357,7 +1267,7 @@ describe('Instruction class', () => {
         exists: false,
       });
       const amount = new BigNumber(1);
-      const asset = entityMockUtils.getFungibleAssetInstance({ ticker: 'SOME_ASSET' });
+      const asset = entityMockUtils.getFungibleAssetInstance({ assetId: 'SOME_ASSET' });
 
       jest.spyOn(instruction, 'getLegs').mockResolvedValue({
         data: [
@@ -1494,7 +1404,7 @@ describe('Instruction class', () => {
                 did: dsMockUtils.createMockIdentityId('toDid'),
                 kind: dsMockUtils.createMockPortfolioKind('Default'),
               }),
-              ticker: dsMockUtils.createMockTicker('ticker'),
+              assetId: dsMockUtils.createMockAssetId('0x12345'),
               amount: dsMockUtils.createMockU128(new BigNumber(10)),
             },
           })

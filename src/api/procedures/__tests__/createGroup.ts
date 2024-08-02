@@ -1,13 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import {
-  getAuthorization,
-  Params,
-  prepareCreateGroup,
-  prepareStorage,
-  Storage,
-} from '~/api/procedures/createGroup';
+import { getAuthorization, Params, prepareCreateGroup } from '~/api/procedures/createGroup';
 import * as procedureUtilsModule from '~/api/procedures/utils';
 import { Context, CustomPermissionGroup } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -26,22 +20,24 @@ jest.mock(
 );
 
 describe('createGroup procedure', () => {
-  const ticker = 'SOME_TICKER';
+  const assetId = '0x1234';
   const transactions = {
     type: PermissionType.Include,
     values: [TxTags.sto.Invest, TxTags.asset.CreateAsset],
   };
   let target: string;
-  const rawTicker = dsMockUtils.createMockTicker(ticker);
+  const rawAssetId = dsMockUtils.createMockAssetId(assetId);
+  const rawStoName = dsMockUtils.createMockText('Sto');
+  const investPermissions = dsMockUtils.createMockPalletPermissions({
+    extrinsics: dsMockUtils.createMockExtrinsicName({
+      These: [dsMockUtils.createMockText('invest')],
+    }),
+  });
+  const permissionsMap = new Map();
+  permissionsMap.set(rawStoName, investPermissions);
+
   const rawExtrinsicPermissions = dsMockUtils.createMockExtrinsicPermissions({
-    These: [
-      dsMockUtils.createMockPalletPermissions({
-        palletName: 'Sto',
-        dispatchableNames: dsMockUtils.createMockDispatchableNames({
-          These: [dsMockUtils.createMockBytes('invest')],
-        }),
-      }),
-    ],
+    These: dsMockUtils.createMockBTreeMap(permissionsMap),
   });
 
   let mockContext: Mocked<Context>;
@@ -53,7 +49,7 @@ describe('createGroup procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    jest.spyOn(utilsConversionModule, 'stringToTicker').mockReturnValue(rawTicker);
+    jest.spyOn(utilsConversionModule, 'assetToMeshAssetId').mockReturnValue(rawAssetId);
     jest
       .spyOn(utilsConversionModule, 'transactionPermissionsToExtrinsicPermissions')
       .mockReturnValue(rawExtrinsicPermissions);
@@ -92,7 +88,7 @@ describe('createGroup procedure', () => {
     });
 
     const args = {
-      ticker,
+      assetId,
       permissions: { transactions },
     };
 
@@ -100,9 +96,11 @@ describe('createGroup procedure', () => {
       .calledWith({ transactions }, mockContext)
       .mockReturnValue({ transactions });
 
-    const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
-      mockContext,
-      {
+    const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup>(mockContext);
+
+    await expect(
+      prepareCreateGroup.call(proc, {
+        ...args,
         asset: entityMockUtils.getFungibleAssetInstance({
           permissionsGetAgents: [
             {
@@ -111,50 +109,44 @@ describe('createGroup procedure', () => {
             },
           ],
         }),
-      }
-    );
-
-    await expect(prepareCreateGroup.call(proc, args)).rejects.toThrow(errorMsg);
+      })
+    ).rejects.toThrow(errorMsg);
 
     assertGroupDoesNotExistSpy.mockRestore();
   });
 
   it('should return a create group transaction spec', async () => {
-    const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
-      mockContext,
-      {
-        asset: entityMockUtils.getFungibleAssetInstance({
-          ticker,
-          permissionsGetGroups: {
-            custom: [
-              entityMockUtils.getCustomPermissionGroupInstance({
-                ticker,
-                id: new BigNumber(2),
-                getPermissions: {
-                  transactions: null,
-                  transactionGroups: [],
-                },
-              }),
-            ],
-            known: [],
-          },
-        }),
-      }
-    );
+    const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup>(mockContext);
 
     const fakePermissions = { transactions };
     when(permissionsLikeToPermissionsSpy)
       .calledWith(fakePermissions, mockContext)
       .mockReturnValue({ transactions });
 
+    const asset = entityMockUtils.getFungibleAssetInstance({
+      assetId,
+      permissionsGetGroups: {
+        custom: [
+          entityMockUtils.getCustomPermissionGroupInstance({
+            assetId,
+            id: new BigNumber(2),
+            getPermissions: {
+              transactions: null,
+              transactionGroups: [],
+            },
+          }),
+        ],
+        known: [],
+      },
+    });
     let result = await prepareCreateGroup.call(proc, {
-      ticker,
+      asset,
       permissions: fakePermissions,
     });
 
     expect(result).toEqual({
       transaction: externalAgentsCreateGroupTransaction,
-      args: [rawTicker, rawExtrinsicPermissions],
+      args: [rawAssetId, rawExtrinsicPermissions],
       resolver: expect.any(Function),
     });
 
@@ -171,48 +163,27 @@ describe('createGroup procedure', () => {
       .mockReturnValue({ transactions: null });
 
     result = await prepareCreateGroup.call(proc, {
-      ticker,
+      asset,
       permissions: { transactions },
     });
 
     expect(result).toEqual({
       transaction: externalAgentsCreateGroupTransaction,
-      args: [rawTicker, rawExtrinsicPermissions],
+      args: [rawAssetId, rawExtrinsicPermissions],
       resolver: expect.any(Function),
-    });
-  });
-
-  describe('prepareStorage', () => {
-    it('should return the Asset', () => {
-      const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
-        mockContext
-      );
-      const boundFunc = prepareStorage.bind(proc);
-
-      const result = boundFunc({ ticker } as Params);
-
-      expect(result).toEqual({
-        asset: expect.objectContaining({ ticker }),
-      });
     });
   });
 
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
-        mockContext,
-        {
-          asset: entityMockUtils.getFungibleAssetInstance({
-            ticker,
-          }),
-        }
-      );
+      const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      expect(boundFunc()).toEqual({
+      const asset = entityMockUtils.getBaseAssetInstance({ assetId });
+      expect(boundFunc({ asset } as unknown as Params)).toEqual({
         permissions: {
           transactions: [TxTags.externalAgents.CreateGroup],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [asset],
           portfolios: [],
         },
       });

@@ -110,7 +110,7 @@ export const ROOT_TYPES = rootTypes;
 /**
  * The Polymesh RPC node version range that is compatible with this version of the SDK
  */
-export const SUPPORTED_NODE_VERSION_RANGE = '6.2 || 6.3';
+export const SUPPORTED_NODE_VERSION_RANGE = '6.2 || 6.3 || 7.0';
 
 /**
  * The Polymesh Private RPC node version range that is compatible with this version of the SDK
@@ -126,7 +126,7 @@ export const PRIVATE_SUPPORTED_NODE_SEMVER = coerce(PRIVATE_SUPPORTED_NODE_VERSI
 /**
  * The Polymesh chain spec version range that is compatible with this version of the SDK
  */
-export const SUPPORTED_SPEC_VERSION_RANGE = '6.3';
+export const SUPPORTED_SPEC_VERSION_RANGE = '6.3 || 7.0';
 
 /**
  * The Polymesh private chain spec version range that is compatible with this version of the SDK
@@ -172,9 +172,12 @@ export const DEFAULT_CDD_ID = '0x00000000000000000000000000000000000000000000000
 /**
  * Minimum version of Middleware V2 GraphQL Service (SubQuery) that is compatible with this version of the SDK
  */
-export const MINIMUM_SQ_VERSION = '12.2.0-alpha.2';
+export const MINIMUM_SQ_VERSION = '16.0.0-alpha.1';
 
-export const SETTLEMENTS_V2_SQ_VERSION = '16.0.0-alpha.1';
+/**
+ * Minimum version of Middleware V2 GraphQL Service (SubQuery) that is compatible with this version of the SDK
+ */
+export const SQ_VERSION_7_X = '16.1.0-alpha.1';
 
 /**
  * Global metadata key used to conventionally register an NFT image
@@ -195,3 +198,5 @@ export const GLOBAL_TOKEN_URI_NAME = 'tokenUri';
  * Global metadata key used to conventionally register token information
  */
 export const GLOBAL_BASE_TOKEN_URI_NAME = 'baseTokenUri';
+
+export const ASSET_ID_PREFIX = 'modlpy/pallet_asset';

@@ -28,7 +28,10 @@ import * as utilsConversionModule from '~/utils/conversion';
 
 describe('modifyClaims procedure', () => {
   let mockContext: Mocked<Context>;
-  let claimToMeshClaimSpy: jest.SpyInstance<PolymeshPrimitivesIdentityClaimClaim, [Claim, Context]>;
+  let claimToMeshClaimSpy: jest.SpyInstance<
+    Promise<PolymeshPrimitivesIdentityClaimClaim>,
+    [Claim, Context]
+  >;
   let dateToMomentSpy: jest.SpyInstance<Moment, [Date, Context]>;
   let identityIdToStringSpy: jest.SpyInstance<string, [PolymeshPrimitivesIdentityId]>;
   let stringToIdentityIdSpy: jest.SpyInstance<PolymeshPrimitivesIdentityId, [string, Context]>;
@@ -68,8 +71,6 @@ describe('modifyClaims procedure', () => {
     identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
     stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
     balanceToBigNumberSpy = jest.spyOn(utilsConversionModule, 'balanceToBigNumber');
-
-    jest.spyOn(utilsConversionModule, 'stringToTicker').mockImplementation();
 
     someDid = 'someDid';
     otherDid = 'otherDid';
@@ -131,13 +132,13 @@ describe('modifyClaims procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
     addClaimTransaction = dsMockUtils.createTxMock('identity', 'addClaim');
     revokeClaimTransaction = dsMockUtils.createTxMock('identity', 'revokeClaim');
-    when(claimToMeshClaimSpy).calledWith(cddClaim, mockContext).mockReturnValue(rawCddClaim);
+    when(claimToMeshClaimSpy).calledWith(cddClaim, mockContext).mockResolvedValue(rawCddClaim);
     when(claimToMeshClaimSpy)
       .calledWith(buyLockupClaim, mockContext)
-      .mockReturnValue(rawBuyLockupClaim);
+      .mockResolvedValue(rawBuyLockupClaim);
     when(claimToMeshClaimSpy)
       .calledWith(defaultCddClaim, mockContext)
-      .mockReturnValue(rawDefaultCddClaim);
+      .mockResolvedValue(rawDefaultCddClaim);
     when(stringToIdentityIdSpy).calledWith(someDid, mockContext).mockReturnValue(rawSomeDid);
     when(stringToIdentityIdSpy).calledWith(otherDid, mockContext).mockReturnValue(rawOtherDid);
     when(dateToMomentSpy).calledWith(expiry, mockContext).mockReturnValue(rawExpiry);
@@ -548,48 +549,47 @@ describe('modifyClaims procedure', () => {
       resolver: undefined,
     });
   });
-});
-
-describe('getAuthorization', () => {
-  it('should return the appropriate roles and permissions', () => {
-    let args = {
-      claims: [
-        {
-          target: 'someDid',
-          claim: { type: ClaimType.CustomerDueDiligence },
-        },
-      ],
-      operation: ClaimOperation.Add,
-    } as ModifyClaimsParams;
-
-    expect(getAuthorization(args)).toEqual({
-      roles: [{ type: RoleType.CddProvider }],
-      permissions: {
-        assets: [],
-        portfolios: [],
-        transactions: [TxTags.identity.AddClaim],
-      },
-    });
-
-    args = {
-      claims: [
-        {
-          target: 'someDid',
-          claim: {
-            type: ClaimType.Accredited,
-            scope: { type: ScopeType.Identity, value: 'someIdentityId' },
+  describe('getAuthorization', () => {
+    it('should return the appropriate roles and permissions', () => {
+      args = {
+        claims: [
+          {
+            target: 'someDid',
+            claim: { type: ClaimType.CustomerDueDiligence },
           },
-        },
-      ],
-      operation: ClaimOperation.Revoke,
-    } as ModifyClaimsParams;
+        ],
+        operation: ClaimOperation.Add,
+      } as ModifyClaimsParams;
 
-    expect(getAuthorization(args)).toEqual({
-      permissions: {
-        assets: [],
-        portfolios: [],
-        transactions: [TxTags.identity.RevokeClaim],
-      },
+      expect(getAuthorization(args)).toEqual({
+        roles: [{ type: RoleType.CddProvider }],
+        permissions: {
+          assets: [],
+          portfolios: [],
+          transactions: [TxTags.identity.AddClaim],
+        },
+      });
+
+      args = {
+        claims: [
+          {
+            target: 'someDid',
+            claim: {
+              type: ClaimType.Accredited,
+              scope: { type: ScopeType.Identity, value: 'someIdentityId' },
+            },
+          },
+        ],
+        operation: ClaimOperation.Revoke,
+      } as ModifyClaimsParams;
+
+      expect(getAuthorization(args)).toEqual({
+        permissions: {
+          assets: [],
+          portfolios: [],
+          transactions: [TxTags.identity.RevokeClaim],
+        },
+      });
     });
   });
 });

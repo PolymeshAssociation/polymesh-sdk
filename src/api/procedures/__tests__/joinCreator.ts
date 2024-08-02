@@ -68,11 +68,13 @@ describe('joinCreator procedure', () => {
 
     multiSig = entityMockUtils.getMultiSigInstance({ address: DUMMY_ACCOUNT_ID });
 
+    // @ts-expect-error is not available in v7
     makePrimaryTx = dsMockUtils.createTxMock('multiSig', 'makeMultisigPrimary');
+    // @ts-expect-error is not available in v7
     makeSecondaryTx = dsMockUtils.createTxMock('multiSig', 'makeMultisigSecondary');
     setPermissionsTx = dsMockUtils.createTxMock('identity', 'setSecondaryKeyPermissions');
 
-    mockContext = dsMockUtils.getContextInstance();
+    mockContext = dsMockUtils.getContextInstance({ isV6: true });
 
     when(stringToAccountIdSpy)
       .calledWith(multiSig.address, mockContext)
@@ -172,7 +174,7 @@ describe('getAuthorization', () => {
   let mockContext: Context;
 
   beforeEach(() => {
-    mockContext = dsMockUtils.getContextInstance();
+    mockContext = dsMockUtils.getContextInstance({ isV6: true });
   });
 
   it('should return the appropriate roles and permissions for as primary', () => {
@@ -228,5 +230,32 @@ describe('getAuthorization', () => {
         portfolios: [],
       },
     });
+  });
+
+  it('should throw an error if called from v7', () => {
+    mockContext = dsMockUtils.getContextInstance({ isV6: false });
+
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+    const boundFunc = getAuthorization.bind(proc);
+
+    let expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'This method is deprecated. Use `identities.rotatePrimaryKey` instead.',
+    });
+
+    expect(() =>
+      boundFunc({ asPrimary: true, multiSig: entityMockUtils.getMultiSigInstance() })
+    ).toThrow(expectedError);
+
+    expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message:
+        'This method is deprecated. MultiSig automatically is attached as secondary key to the creators identity.',
+    });
+
+    expect(() =>
+      boundFunc({ asPrimary: false, multiSig: entityMockUtils.getMultiSigInstance() })
+    ).toThrow(expectedError);
   });
 });

@@ -11,6 +11,7 @@ import {
   OfferingTimingStatus,
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -70,19 +71,19 @@ describe('Offering class', () => {
   });
 
   describe('constructor', () => {
-    it('should assign ticker and id to instance', () => {
-      const ticker = 'SOME_TICKER';
+    it('should assign assetId and id to instance', () => {
+      const assetId = '0x1234';
       const id = new BigNumber(1);
-      const offering = new Offering({ id, ticker }, context);
+      const offering = new Offering({ id, assetId }, context);
 
-      expect(offering.asset.ticker).toBe(ticker);
+      expect(offering.asset.id).toBe(assetId);
       expect(offering.id).toEqual(id);
     });
   });
 
   describe('method: isUniqueIdentifiers', () => {
     it('should return true if the object conforms to the interface', () => {
-      expect(Offering.isUniqueIdentifiers({ id: new BigNumber(1), ticker: 'symbol' })).toBe(true);
+      expect(Offering.isUniqueIdentifiers({ id: new BigNumber(1), assetId: 'symbol' })).toBe(true);
       expect(Offering.isUniqueIdentifiers({})).toBe(false);
       expect(Offering.isUniqueIdentifiers({ id: new BigNumber(1) })).toBe(false);
       expect(Offering.isUniqueIdentifiers({ id: 1 })).toBe(false);
@@ -90,7 +91,7 @@ describe('Offering class', () => {
   });
 
   describe('method: details', () => {
-    const ticker = 'FAKE_TICKER';
+    const assetId = '0x1234';
     const id = new BigNumber(1);
     const someDid = 'someDid';
     const name = 'someSto';
@@ -109,14 +110,14 @@ describe('Offering class', () => {
           did: dsMockUtils.createMockIdentityId(someDid),
           kind: dsMockUtils.createMockPortfolioKind('Default'),
         }),
-        offeringAsset: dsMockUtils.createMockTicker(ticker),
+        offeringAsset: dsMockUtils.createMockAssetId(assetId),
         raisingPortfolio: dsMockUtils.createMockPortfolioId({
           did: dsMockUtils.createMockIdentityId(otherDid),
           kind: dsMockUtils.createMockPortfolioKind({
             User: dsMockUtils.createMockU64(new BigNumber(1)),
           }),
         }),
-        raisingAsset: dsMockUtils.createMockTicker(raisingCurrency),
+        raisingAsset: dsMockUtils.createMockAssetId(raisingCurrency),
         tiers: [
           dsMockUtils.createMockFundraiserTier({
             total: dsMockUtils.createMockBalance(amount),
@@ -140,7 +141,7 @@ describe('Offering class', () => {
 
     beforeEach(() => {
       context = dsMockUtils.getContextInstance();
-      offering = new Offering({ ticker, id }, context);
+      offering = new Offering({ assetId, id }, context);
     });
 
     it('should return details for an Asset offering', async () => {
@@ -215,12 +216,12 @@ describe('Offering class', () => {
 
   describe('method: close', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const ticker = 'SOME_TICKER';
+      const assetId = '0x1234';
       const id = new BigNumber(1);
-      const offering = new Offering({ id, ticker }, context);
+      const offering = new Offering({ id, assetId }, context);
 
       const args = {
-        ticker,
+        asset: offering.asset,
         id,
       };
 
@@ -238,16 +239,16 @@ describe('Offering class', () => {
 
   describe('method: modifyTimes', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const ticker = 'SOME_TICKER';
+      const assetId = '0x1234';
       const id = new BigNumber(1);
-      const offering = new Offering({ id, ticker }, context);
+      const offering = new Offering({ id, assetId }, context);
 
       const now = new Date();
       const start = new Date(now.getTime() + 100000);
       const end = new Date(start.getTime() + 100000);
 
       const args = {
-        ticker,
+        asset: offering.asset,
         id,
         start,
         end,
@@ -270,14 +271,18 @@ describe('Offering class', () => {
 
   describe('method: getInvestments', () => {
     it('should return a list of investors', async () => {
-      const ticker = 'SOME_TICKER';
+      const assetId = '0x1234';
       const id = new BigNumber(1);
-      const offering = new Offering({ id, ticker }, context);
+      const offering = new Offering({ id, assetId }, context);
       const did = 'someDid';
-      const offeringToken = 'TICKER';
+      const offeringToken = '0x1111';
       const raiseToken = 'USD';
       const offeringTokenAmount = new BigNumber(10000);
       const raiseTokenAmount = new BigNumber(1000);
+
+      when(jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware'))
+        .calledWith(assetId, context)
+        .mockResolvedValue(assetId);
 
       const nodes = [
         {
@@ -298,7 +303,7 @@ describe('Offering class', () => {
         investmentsQuery(
           {
             stoId: id.toNumber(),
-            offeringToken: ticker,
+            offeringToken: assetId,
           },
           new BigNumber(5),
           new BigNumber(0)
@@ -322,7 +327,7 @@ describe('Offering class', () => {
       dsMockUtils.createApolloQueryMock(
         investmentsQuery({
           stoId: id.toNumber(),
-          offeringToken: ticker,
+          offeringToken: assetId,
         }),
         {
           investments: {
@@ -340,14 +345,18 @@ describe('Offering class', () => {
 
   describe('method: freeze', () => {
     it('should prepare the procedure and return the resulting transaction', async () => {
-      const ticker = 'SOME_TICKER';
+      const assetId = '0x1234';
       const id = new BigNumber(1);
-      const offering = new Offering({ id, ticker }, context);
+      const offering = new Offering({ id, assetId }, context);
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Offering>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: { ticker, id, freeze: true }, transformer: undefined }, context, {})
+        .calledWith(
+          { args: { asset: offering.asset, id, freeze: true }, transformer: undefined },
+          context,
+          {}
+        )
         .mockResolvedValue(expectedTransaction);
 
       const tx = await offering.freeze();
@@ -358,14 +367,18 @@ describe('Offering class', () => {
 
   describe('method: unfreeze', () => {
     it('should prepare the procedure and return the resulting transaction', async () => {
-      const ticker = 'SOME_TICKER';
+      const assetId = '0x1234';
       const id = new BigNumber(1);
-      const offering = new Offering({ id, ticker }, context);
+      const offering = new Offering({ id, assetId }, context);
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Offering>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: { ticker, id, freeze: false }, transformer: undefined }, context, {})
+        .calledWith(
+          { args: { asset: offering.asset, id, freeze: false }, transformer: undefined },
+          context,
+          {}
+        )
         .mockResolvedValue(expectedTransaction);
 
       const tx = await offering.unfreeze();
@@ -376,9 +389,9 @@ describe('Offering class', () => {
 
   describe('method: invest', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const ticker = 'SOME_TICKER';
+      const assetId = '0x1234';
       const id = new BigNumber(1);
-      const offering = new Offering({ id, ticker }, context);
+      const offering = new Offering({ id, assetId }, context);
       const did = 'someDid';
 
       const purchasePortfolio = entityMockUtils.getDefaultPortfolioInstance({ did });
@@ -386,7 +399,7 @@ describe('Offering class', () => {
       const purchaseAmount = new BigNumber(10);
 
       const args = {
-        ticker,
+        asset: offering.asset,
         id,
         purchasePortfolio,
         fundingPortfolio,
@@ -411,7 +424,7 @@ describe('Offering class', () => {
 
   describe('method: exists', () => {
     it('should return whether the Offering exists', async () => {
-      const offering = new Offering({ ticker: 'SOME_TICKER', id: new BigNumber(1) }, context);
+      const offering = new Offering({ assetId: '0x1234', id: new BigNumber(1) }, context);
 
       dsMockUtils.createQueryMock('sto', 'fundraisers', {
         returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockFundraiser()),
@@ -431,11 +444,12 @@ describe('Offering class', () => {
 
   describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
-      const offering = new Offering({ ticker: 'SOME_TICKER', id: new BigNumber(1) }, context);
+      const offering = new Offering({ assetId: '0x1234', id: new BigNumber(1) }, context);
 
       expect(offering.toHuman()).toEqual({
         id: '1',
-        ticker: 'SOME_TICKER',
+        assetId: '0x1234',
+        ticker: '0x1234',
       });
     });
   });

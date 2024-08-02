@@ -26,11 +26,11 @@ export async function prepareConsumeAddMultiSigSignerAuthorization(
   args: ConsumeAddMultiSigSignerAuthorizationParams
 ): Promise<
   | TransactionSpec<void, ExtrinsicParams<'identity', 'removeAuthorization'>>
-  | TransactionSpec<void, ExtrinsicParams<'multiSig', 'acceptMultisigSignerAsIdentity'>>
-  | TransactionSpec<void, ExtrinsicParams<'multiSig', 'acceptMultisigSignerAsKey'>>
+  | TransactionSpec<void, ExtrinsicParams<'multiSig', 'acceptMultisigSigner'>>
 > {
   const {
     context: {
+      isV6,
       polymeshApi: {
         tx: { identity, multiSig },
       },
@@ -67,10 +67,18 @@ export async function prepareConsumeAddMultiSigSignerAuthorization(
 
   await assertAuthorizationRequestValid(authRequest, context);
 
-  const transaction =
-    target instanceof Account
-      ? multiSig.acceptMultisigSignerAsKey
-      : multiSig.acceptMultisigSignerAsIdentity;
+  let transaction;
+  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
+  if (isV6) {
+    transaction =
+      target instanceof Account
+        ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (multiSig as any).acceptMultisigSignerAsKey // NOSONAR
+        : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (multiSig as any).acceptMultisigSignerAsIdentity; // NOSONAR
+  } else {
+    transaction = multiSig.acceptMultisigSigner;
+  }
 
   return { transaction, paidForBy: issuer, args: [rawAuthId], resolver: undefined };
 }

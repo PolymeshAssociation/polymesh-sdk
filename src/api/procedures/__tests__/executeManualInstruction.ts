@@ -50,6 +50,12 @@ describe('executeManualInstruction procedure', () => {
   const fungibleTokens = dsMockUtils.createMockU32(new BigNumber(1));
   const nonFungibleTokens = dsMockUtils.createMockU32(new BigNumber(2));
   const offChainAssets = dsMockUtils.createMockU32(new BigNumber(3));
+  const consumedWeight = dsMockUtils.createMockWeight({
+    refTime: dsMockUtils.createMockCompact(dsMockUtils.createMockU64(new BigNumber(0))),
+    proofSize: dsMockUtils.createMockCompact(
+      dsMockUtils.createMockU64(new BigNumber('9455603734'))
+    ),
+  });
 
   const did = 'someDid';
   let portfolio: DefaultPortfolio;
@@ -113,12 +119,14 @@ describe('executeManualInstruction procedure', () => {
     };
 
     dsMockUtils.createCallMock('settlementApi', 'getExecuteInstructionInfo', {
-      returnValue: {
-        fungibleTokens,
-        nonFungibleTokens,
-        offChainAssets,
-        consumedWeight: 'someWeight',
-      },
+      returnValue: dsMockUtils.createMockOption(
+        dsMockUtils.createMockExecuteInstructionInfo({
+          fungibleTokens,
+          nonFungibleTokens,
+          offChainAssets,
+          consumedWeight,
+        })
+      ),
     });
   });
 
@@ -133,15 +141,31 @@ describe('executeManualInstruction procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should throw an error if the signing identity is not the custodian of any of the involved portfolios', () => {
-    const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
+  it('should throw an error if the signing identity is not the custodian of any of the involved portfolios', async () => {
+    let proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
       portfolios: [],
       offChainParties: new Set<string>(['offChainSender', 'offChainReceiver']),
       instructionDetails,
       signerDid: 'someOtherDid',
     });
 
-    return expect(
+    await expect(
+      prepareExecuteManualInstruction.call(proc, {
+        id,
+        skipAffirmationCheck: false,
+      })
+    ).rejects.toThrow('The signing identity is not involved in this Instruction');
+
+    proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
+      portfolios: [],
+      offChainParties: new Set<string>(['offChainSender', 'offChainReceiver']),
+      instructionDetails: {
+        ...instructionDetails,
+        venue: null,
+      },
+      signerDid: 'someOtherDid',
+    });
+    await expect(
       prepareExecuteManualInstruction.call(proc, {
         id,
         skipAffirmationCheck: false,
@@ -217,7 +241,7 @@ describe('executeManualInstruction procedure', () => {
         fungibleTokens,
         nonFungibleTokens,
         offChainAssets,
-        'someWeight',
+        consumedWeight,
       ],
       resolver: expect.objectContaining({ id }),
     });
@@ -243,7 +267,7 @@ describe('executeManualInstruction procedure', () => {
         fungibleTokens,
         nonFungibleTokens,
         offChainAssets,
-        'someWeight',
+        consumedWeight,
       ],
       resolver: expect.objectContaining({ id }),
     });
@@ -270,7 +294,7 @@ describe('executeManualInstruction procedure', () => {
         fungibleTokens,
         nonFungibleTokens,
         offChainAssets,
-        'someWeight',
+        consumedWeight,
       ],
       resolver: expect.objectContaining({ id }),
     });
@@ -312,7 +336,7 @@ describe('executeManualInstruction procedure', () => {
     const sender = entityMockUtils.getIdentityInstance({ did: senderDid });
     const receiver = entityMockUtils.getIdentityInstance({ did: receiverDid });
     const amount = new BigNumber(1);
-    const asset = entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER' });
+    const asset = entityMockUtils.getFungibleAssetInstance({ assetId: '0x1234' });
 
     it('should return the custodied portfolios and offChain parties associated in the instruction legs for the signing identity', async () => {
       const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext);

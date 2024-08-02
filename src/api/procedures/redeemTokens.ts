@@ -9,7 +9,11 @@ import {
 } from '~/internal';
 import { ErrorCode, RedeemTokensParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { bigNumberToBalance, portfolioToPortfolioKind, stringToTicker } from '~/utils/conversion';
+import {
+  assetToMeshAssetId,
+  bigNumberToBalance,
+  portfolioToPortfolioKind,
+} from '~/utils/conversion';
 
 export interface Storage {
   fromPortfolio: DefaultPortfolio | NumberedPortfolio;
@@ -18,7 +22,7 @@ export interface Storage {
 /**
  * @hidden
  */
-export type Params = { ticker: string } & RedeemTokensParams;
+export type Params = { asset: FungibleAsset } & RedeemTokensParams;
 
 /**
  * @hidden
@@ -26,25 +30,22 @@ export type Params = { ticker: string } & RedeemTokensParams;
 export async function prepareRedeemTokens(
   this: Procedure<Params, void, Storage>,
   args: Params
-): Promise<
-  | TransactionSpec<void, ExtrinsicParams<'asset', 'redeem'>>
-  | TransactionSpec<void, ExtrinsicParams<'asset', 'redeemFromPortfolio'>>
-> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'asset', 'redeem'>>> {
   const {
     context,
     context: {
       polymeshApi: { tx },
+      isV6,
     },
     storage: { fromPortfolio },
   } = this;
 
-  const { ticker, amount, from } = args;
+  const { asset, amount } = args;
 
-  const asset = new FungibleAsset({ ticker }, context);
-  const rawTicker = stringToTicker(ticker, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
 
   const [[{ free }], { isDivisible }] = await Promise.all([
-    fromPortfolio.getAssetBalances({ assets: [ticker] }),
+    fromPortfolio.getAssetBalances({ assets: [asset.id] }),
     asset.details(),
   ]);
 
@@ -60,17 +61,15 @@ export async function prepareRedeemTokens(
 
   const rawAmount = bigNumberToBalance(amount, context, isDivisible);
 
-  if (from) {
-    return {
-      transaction: tx.asset.redeemFromPortfolio,
-      args: [rawTicker, rawAmount, portfolioToPortfolioKind(fromPortfolio, context)],
-      resolver: undefined,
-    };
+  let transaction = tx.asset.redeem;
+  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
+  if (isV6) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    transaction = (tx.asset as any).redeemFromPortfolio; // NOSONAR
   }
-
   return {
-    transaction: tx.asset.redeem,
-    args: [rawTicker, rawAmount],
+    transaction,
+    args: [rawAssetId, rawAmount, portfolioToPortfolioKind(fromPortfolio, context)],
     resolver: undefined,
   };
 }
@@ -80,17 +79,16 @@ export async function prepareRedeemTokens(
  */
 export async function getAuthorization(
   this: Procedure<Params, void, Storage>,
-  { ticker, from }: Params
+  { asset, from }: Params
 ): Promise<ProcedureAuthorization> {
   const {
-    context,
     storage: { fromPortfolio },
   } = this;
 
   return {
     permissions: {
       transactions: [from ? TxTags.asset.RedeemFromPortfolio : TxTags.asset.Redeem],
-      assets: [new FungibleAsset({ ticker }, context)],
+      assets: [asset],
       portfolios: [fromPortfolio],
     },
   };

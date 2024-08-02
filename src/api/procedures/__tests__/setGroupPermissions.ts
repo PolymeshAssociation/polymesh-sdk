@@ -14,23 +14,29 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('setGroupPermissions procedure', () => {
-  const ticker = 'SOME_TICKER';
+  const assetId = '0x1234';
   const permissions = {
     transactions: {
       type: PermissionType.Include,
       values: [TxTags.sto.Invest],
     },
   };
-  const rawTicker = dsMockUtils.createMockTicker(ticker);
+  const rawAssetId = dsMockUtils.createMockAssetId(assetId);
+  const rawPalletName = dsMockUtils.createMockText('Sto');
+
+  const rawPalletPermissions = dsMockUtils.createMockPalletPermissions({
+    extrinsics: dsMockUtils.createMockExtrinsicName({
+      These: [dsMockUtils.createMockText('invest')],
+    }),
+  });
+
+  const permissionsMap = new Map();
+  permissionsMap.set(rawPalletName, rawPalletPermissions);
+
+  const rawPermissions = dsMockUtils.createMockBTreeMap(permissionsMap);
+
   const rawExtrinsicPermissions = dsMockUtils.createMockExtrinsicPermissions({
-    These: [
-      dsMockUtils.createMockPalletPermissions({
-        palletName: 'Sto',
-        dispatchableNames: dsMockUtils.createMockDispatchableNames({
-          These: [dsMockUtils.createMockBytes('invest')],
-        }),
-      }),
-    ],
+    These: rawPermissions,
   });
   const customId = new BigNumber(1);
   const rawAgId = dsMockUtils.createMockU32(customId);
@@ -44,7 +50,7 @@ describe('setGroupPermissions procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    jest.spyOn(utilsConversionModule, 'stringToTicker').mockReturnValue(rawTicker);
+    jest.spyOn(utilsConversionModule, 'assetToMeshAssetId').mockReturnValue(rawAssetId);
     jest
       .spyOn(utilsConversionModule, 'transactionPermissionsToExtrinsicPermissions')
       .mockReturnValue(rawExtrinsicPermissions);
@@ -85,7 +91,7 @@ describe('setGroupPermissions procedure', () => {
     try {
       await prepareSetGroupPermissions.call(proc, {
         group: entityMockUtils.getCustomPermissionGroupInstance({
-          ticker,
+          assetId,
           id: customId,
           getPermissions: {
             transactions: permissions.transactions,
@@ -111,7 +117,7 @@ describe('setGroupPermissions procedure', () => {
 
     const result = await prepareSetGroupPermissions.call(proc, {
       group: entityMockUtils.getCustomPermissionGroupInstance({
-        ticker,
+        assetId,
         id: customId,
         getPermissions: {
           transactions: permissions.transactions,
@@ -123,7 +129,7 @@ describe('setGroupPermissions procedure', () => {
 
     expect(result).toEqual({
       transaction: externalAgentsSetGroupPermissionsTransaction,
-      args: [rawTicker, rawAgId, rawExtrinsicPermissions],
+      args: [rawAssetId, rawAgId, rawExtrinsicPermissions],
       resolver: undefined,
     });
   });
@@ -141,7 +147,7 @@ describe('setGroupPermissions procedure', () => {
       ).toEqual({
         permissions: {
           transactions: [TxTags.externalAgents.SetGroupPermissions],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
           portfolios: [],
         },
       });

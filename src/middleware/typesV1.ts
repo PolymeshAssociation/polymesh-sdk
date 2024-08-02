@@ -2,9 +2,12 @@ import { Scalars } from '~/middleware/types';
 
 export enum ClaimScopeTypeEnum {
   Identity = 'Identity',
+  /**
+   * @deprecated in favour of 'Asset'
+   */
   Ticker = 'Ticker',
-  Custom = 'Custom',
   Asset = 'Asset',
+  Custom = 'Custom',
 }
 
 export type MiddlewareScope = Scalars['JSON']['input'];

@@ -1,12 +1,9 @@
-import { bool, Bytes, Option, u32, Vec } from '@polkadot/types';
-import { Balance } from '@polkadot/types/interfaces';
+import { Bytes, u32 } from '@polkadot/types';
 import {
-  PolymeshPrimitivesAssetAssetType,
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesAssetIdentifier,
-  PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
   PolymeshPrimitivesAssetNonFungibleType,
   PolymeshPrimitivesDocument,
-  PolymeshPrimitivesNftNftCollectionKeys,
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
@@ -36,6 +33,7 @@ import {
 } from '~/types';
 import { InternalNftType, PolymeshTx, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/TickerReservation',
@@ -51,6 +49,7 @@ jest.mock(
 describe('createNftCollection procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
   let nameToAssetNameSpy: jest.SpyInstance<Bytes, [string, Context]>;
   let stringToTickerKeySpy: jest.SpyInstance<TickerKey, [string, Context]>;
   let internalNftTypeToNftTypeSpy: jest.SpyInstance<
@@ -68,12 +67,14 @@ describe('createNftCollection procedure', () => {
   let stringToBytesSpy: jest.SpyInstance<Bytes, [string, Context]>;
   let bigNumberToU32: jest.SpyInstance<u32, [BigNumber, Context]>;
   let ticker: string;
+  let assetId: string;
   let signingIdentity: Identity;
   let name: string;
   let nftType: string;
   let securityIdentifiers: SecurityIdentifier[];
   let documents: AssetDocument[];
   let rawTicker: PolymeshPrimitivesTicker;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let rawName: Bytes;
   let rawType: PolymeshPrimitivesAssetNonFungibleType;
   let rawIdentifiers: PolymeshPrimitivesAssetIdentifier[];
@@ -93,7 +94,9 @@ describe('createNftCollection procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
+    jest.spyOn(utilsInternalModule, 'asBaseAsset').mockImplementation();
     stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     nameToAssetNameSpy = jest.spyOn(utilsConversionModule, 'nameToAssetName');
     stringToTickerKeySpy = jest.spyOn(utilsConversionModule, 'stringToTickerKey');
     internalNftTypeToNftTypeSpy = jest.spyOn(utilsConversionModule, 'internalNftTypeToNftType');
@@ -106,6 +109,7 @@ describe('createNftCollection procedure', () => {
     stringToBytesSpy = jest.spyOn(utilsConversionModule, 'stringToBytes');
     bigNumberToU32 = jest.spyOn(utilsConversionModule, 'bigNumberToU32');
     ticker = 'NFT';
+    assetId = '0x1234';
     name = 'someName';
     signingIdentity = entityMockUtils.getIdentityInstance();
     nftType = KnownNftType.Derivative;
@@ -123,6 +127,7 @@ describe('createNftCollection procedure', () => {
       },
     ];
     rawTicker = dsMockUtils.createMockTicker(ticker);
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
     rawName = dsMockUtils.createMockBytes(name);
     rawType = dsMockUtils.createMockNftType(nftType as KnownNftType);
     rawIdentifiers = securityIdentifiers.map(({ type, value }) =>
@@ -152,28 +157,11 @@ describe('createNftCollection procedure', () => {
     protocolFees = [new BigNumber(250), new BigNumber(150), new BigNumber(100)];
   });
 
-  let createAssetTransaction: PolymeshTx<
-    [
-      Bytes,
-      PolymeshPrimitivesTicker,
-      Balance,
-      bool,
-      PolymeshPrimitivesAssetAssetType,
-      Vec<PolymeshPrimitivesAssetIdentifier>,
-      Option<Bytes>,
-      bool
-    ]
-  >;
-  let createNftCollectionTransaction: PolymeshTx<
-    [
-      PolymeshPrimitivesTicker,
-      Option<PolymeshPrimitivesAssetNonFungibleType>,
-      PolymeshPrimitivesNftNftCollectionKeys
-    ]
-  >;
-  let registerAssetMetadataLocalTypeTransaction: PolymeshTx<
-    [PolymeshPrimitivesTicker, PolymeshPrimitivesAssetMetadataAssetMetadataSpec]
-  >;
+  let createAssetTransactionTx: PolymeshTx;
+  let registerUniqueTickerTx: PolymeshTx;
+  let linkTickerToAssetIdTx: PolymeshTx;
+  let createNftCollectionTransaction: PolymeshTx;
+  let registerAssetMetadataLocalTypeTransaction: PolymeshTx;
   let addDocumentsTransaction: PolymeshTx<[PolymeshPrimitivesDocument[], PolymeshPrimitivesTicker]>;
 
   beforeEach(() => {
@@ -181,7 +169,9 @@ describe('createNftCollection procedure', () => {
       returnValue: dsMockUtils.createMockTickerRegistrationConfig(),
     });
 
-    createAssetTransaction = dsMockUtils.createTxMock('asset', 'createAsset');
+    createAssetTransactionTx = dsMockUtils.createTxMock('asset', 'createAsset');
+    registerUniqueTickerTx = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+    linkTickerToAssetIdTx = dsMockUtils.createTxMock('asset', 'linkTickerToAssetId');
     createNftCollectionTransaction = dsMockUtils.createTxMock('nft', 'createNftCollection');
     registerAssetMetadataLocalTypeTransaction = dsMockUtils.createTxMock(
       'asset',
@@ -189,9 +179,15 @@ describe('createNftCollection procedure', () => {
     );
     addDocumentsTransaction = dsMockUtils.createTxMock('asset', 'addDocuments');
 
-    mockContext = dsMockUtils.getContextInstance({ withSigningManager: true });
+    mockContext = dsMockUtils.getContextInstance({
+      withSigningManager: true,
+      getNextAssetId: assetId,
+    });
 
     when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(assetToMeshAssetIdSpy)
+      .calledWith(expect.objectContaining({ id: assetId }), mockContext)
+      .mockReturnValue(rawAssetId);
     when(nameToAssetNameSpy).calledWith(name, mockContext).mockReturnValue(rawName);
     when(stringToTickerKeySpy)
       .calledWith(ticker, mockContext)
@@ -210,11 +206,8 @@ describe('createNftCollection procedure', () => {
       .mockReturnValue(rawDocuments[0]);
 
     when(mockContext.getProtocolFees)
-      .calledWith({ tags: [TxTags.asset.RegisterTicker, TxTags.asset.CreateAsset] })
-      .mockResolvedValue([
-        { tag: TxTags.asset.RegisterTicker, fees: protocolFees[0] },
-        { tag: TxTags.asset.CreateAsset, fees: protocolFees[1] },
-      ]);
+      .calledWith({ tags: [TxTags.asset.CreateAsset] })
+      .mockResolvedValue([{ tag: TxTags.asset.CreateAsset, fees: protocolFees[1] }]);
     when(mockContext.getProtocolFees)
       .calledWith({ tags: [TxTags.asset.RegisterCustomAssetType] })
       .mockResolvedValue([{ tag: TxTags.asset.RegisterCustomAssetType, fees: protocolFees[2] }]);
@@ -234,9 +227,10 @@ describe('createNftCollection procedure', () => {
   it('should throw an error if an Asset with that ticker has already been launched for non NFT type', () => {
     const proc = procedureMockUtils.getInstance<Params, NftCollection, Storage>(mockContext, {
       customTypeData: null,
-      status: TickerReservationStatus.AssetCreated,
-      signingIdentity,
       needsLocalMetadata: false,
+      status: TickerReservationStatus.AssetCreated,
+      assetId,
+      isAssetCreated: true,
     });
 
     return expect(prepareCreateNftCollection.call(proc, args)).rejects.toThrow(
@@ -247,9 +241,10 @@ describe('createNftCollection procedure', () => {
   it('should throw an error if the ticker contains non numeric characters', () => {
     const proc = procedureMockUtils.getInstance<Params, NftCollection, Storage>(mockContext, {
       customTypeData: null,
-      status: TickerReservationStatus.Reserved,
-      signingIdentity,
       needsLocalMetadata: false,
+      status: TickerReservationStatus.Reserved,
+      assetId,
+      isAssetCreated: false,
     });
 
     return expect(
@@ -283,9 +278,10 @@ describe('createNftCollection procedure', () => {
     it('should add an Asset creation transaction to the batch', async () => {
       const proc = procedureMockUtils.getInstance<Params, NftCollection, Storage>(mockContext, {
         customTypeData: null,
-        status: TickerReservationStatus.Reserved,
-        signingIdentity,
         needsLocalMetadata: false,
+        status: TickerReservationStatus.Reserved,
+        assetId,
+        isAssetCreated: false,
       });
       const rawNftType = dsMockUtils.createMockNftType(KnownNftType.Derivative);
       const rawCollectionKeys = [] as const;
@@ -303,18 +299,22 @@ describe('createNftCollection procedure', () => {
       expect(JSON.stringify(result.transactions)).toEqual(
         JSON.stringify([
           {
-            transaction: createAssetTransaction,
-            args: [rawName, rawTicker, rawDivisible, rawAssetType, ['fakeId'], null],
+            transaction: createAssetTransactionTx,
+            fee: undefined,
+            args: [rawName, rawDivisible, rawAssetType, ['fakeId'], null],
+          },
+          {
+            transaction: linkTickerToAssetIdTx,
+            args: [rawTicker, rawAssetId],
           },
           {
             transaction: addDocumentsTransaction,
             feeMultiplier: new BigNumber(1),
-            args: [rawDocuments, rawTicker],
+            args: [rawDocuments, rawAssetId],
           },
           {
             transaction: createNftCollectionTransaction,
-            fee: new BigNumber('200'),
-            args: [rawTicker, rawNftType, []],
+            args: [rawAssetId, rawNftType, []],
           },
         ])
       );
@@ -329,9 +329,10 @@ describe('createNftCollection procedure', () => {
 
       const proc = procedureMockUtils.getInstance<Params, NftCollection, Storage>(mockContext, {
         customTypeData: null,
-        status: TickerReservationStatus.AssetCreated,
-        signingIdentity,
         needsLocalMetadata: false,
+        status: TickerReservationStatus.AssetCreated,
+        assetId,
+        isAssetCreated: true,
       });
       const rawNftType = dsMockUtils.createMockNftType(KnownNftType.Derivative);
       const rawCollectionKeys = [] as const;
@@ -348,8 +349,7 @@ describe('createNftCollection procedure', () => {
         JSON.stringify([
           {
             transaction: createNftCollectionTransaction,
-            fee: new BigNumber('200'),
-            args: [rawTicker, rawNftType, []],
+            args: [rawAssetId, rawNftType, []],
           },
         ])
       );
@@ -364,7 +364,8 @@ describe('createNftCollection procedure', () => {
           rawValue: dsMockUtils.createMockBytes('someCustomType'),
         },
         status: TickerReservationStatus.Free,
-        signingIdentity,
+        isAssetCreated: false,
+        assetId,
         needsLocalMetadata: false,
       });
       const rawNftType = dsMockUtils.createMockNftType({
@@ -387,13 +388,21 @@ describe('createNftCollection procedure', () => {
       expect(JSON.stringify(result.transactions)).toEqual(
         JSON.stringify([
           {
-            transaction: createAssetTransaction,
-            args: [rawName, rawTicker, rawDivisible, rawAssetType, [], null],
+            transaction: createAssetTransactionTx,
+            fee: undefined,
+            args: [rawName, rawDivisible, rawAssetType, [], null],
+          },
+          {
+            transaction: registerUniqueTickerTx,
+            args: [rawTicker],
+          },
+          {
+            transaction: linkTickerToAssetIdTx,
+            args: [rawTicker, rawAssetId],
           },
           {
             transaction: createNftCollectionTransaction,
-            fee: new BigNumber('200'),
-            args: [rawTicker, rawNftType, []],
+            args: [rawAssetId, rawNftType, []],
           },
         ])
       );
@@ -403,7 +412,8 @@ describe('createNftCollection procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, NftCollection, Storage>(mockContext, {
         customTypeData: null,
         status: TickerReservationStatus.Free,
-        signingIdentity,
+        isAssetCreated: false,
+        assetId,
         needsLocalMetadata: true,
       });
       const rawNftType = dsMockUtils.createMockNftType(KnownNftType.Derivative);
@@ -429,17 +439,24 @@ describe('createNftCollection procedure', () => {
       expect(JSON.stringify(result.transactions)).toEqual(
         JSON.stringify([
           {
-            transaction: createAssetTransaction,
-            args: [rawName, rawTicker, rawDivisible, rawAssetType, [], null],
+            transaction: createAssetTransactionTx,
+            args: [rawName, rawDivisible, rawAssetType, [], null],
+          },
+          {
+            transaction: registerUniqueTickerTx,
+            args: [rawTicker],
+          },
+          {
+            transaction: linkTickerToAssetIdTx,
+            args: [rawTicker, rawAssetId],
           },
           {
             transaction: registerAssetMetadataLocalTypeTransaction,
-            args: [rawTicker, rawName, fakeMetadataSpec],
+            args: [rawAssetId, rawName, fakeMetadataSpec],
           },
           {
             transaction: createNftCollectionTransaction,
-            fee: new BigNumber('200'),
-            args: [rawTicker, rawNftType, rawCollectionKeys],
+            args: [rawAssetId, rawNftType, rawCollectionKeys],
           },
         ])
       );
@@ -451,7 +468,8 @@ describe('createNftCollection procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, NftCollection, Storage>(mockContext, {
         customTypeData: null,
         status: TickerReservationStatus.Free,
-        signingIdentity,
+        isAssetCreated: false,
+        assetId,
         needsLocalMetadata: true,
       });
 
@@ -466,6 +484,8 @@ describe('createNftCollection procedure', () => {
           transactions: [
             TxTags.nft.CreateNftCollection,
             TxTags.asset.CreateAsset,
+            TxTags.asset.RegisterUniqueTicker,
+            TxTags.asset.LinkTickerToAssetId,
             TxTags.asset.RegisterAssetMetadataLocalType,
             TxTags.asset.AddDocuments,
           ],
@@ -477,7 +497,8 @@ describe('createNftCollection procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, NftCollection, Storage>(mockContext, {
         customTypeData: null,
         status: TickerReservationStatus.Reserved,
-        signingIdentity,
+        isAssetCreated: false,
+        assetId,
         needsLocalMetadata: false,
       });
 
@@ -490,7 +511,11 @@ describe('createNftCollection procedure', () => {
         permissions: {
           assets: [],
           portfolios: [],
-          transactions: [TxTags.nft.CreateNftCollection, TxTags.asset.CreateAsset],
+          transactions: [
+            TxTags.nft.CreateNftCollection,
+            TxTags.asset.CreateAsset,
+            TxTags.asset.LinkTickerToAssetId,
+          ],
         },
       });
     });
@@ -499,7 +524,8 @@ describe('createNftCollection procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, NftCollection, Storage>(mockContext, {
         customTypeData: null,
         status: TickerReservationStatus.AssetCreated,
-        signingIdentity,
+        isAssetCreated: true,
+        assetId,
         needsLocalMetadata: false,
       });
 
@@ -509,7 +535,7 @@ describe('createNftCollection procedure', () => {
 
       expect(result).toEqual({
         permissions: {
-          assets: expect.arrayContaining([expect.objectContaining({ ticker })]),
+          assets: expect.arrayContaining([expect.objectContaining({ id: assetId })]),
           portfolios: [],
           transactions: [TxTags.nft.CreateNftCollection],
         },
@@ -536,7 +562,7 @@ describe('createNftCollection procedure', () => {
         },
       });
 
-      dsMockUtils.createQueryMock('nft', 'collectionTicker', {
+      dsMockUtils.createQueryMock('nft', 'collectionAsset', {
         returnValue: dsMockUtils.createMockU64(new BigNumber(0)),
       });
     });
@@ -562,9 +588,10 @@ describe('createNftCollection procedure', () => {
         expect(JSON.stringify(result)).toEqual(
           JSON.stringify({
             customTypeData: null,
-            status: TickerReservationStatus.Free,
-            signingIdentity: entityMockUtils.getIdentityInstance(),
             needsLocalMetadata: true,
+            isAssetCreated: false,
+            assetId,
+            status: TickerReservationStatus.Free,
           })
         );
       });
@@ -588,9 +615,10 @@ describe('createNftCollection procedure', () => {
         expect(JSON.stringify(result)).toEqual(
           JSON.stringify({
             customTypeData: null,
-            status: TickerReservationStatus.Free,
-            signingIdentity: entityMockUtils.getIdentityInstance(),
             needsLocalMetadata: false,
+            isAssetCreated: false,
+            assetId,
+            status: TickerReservationStatus.Free,
           })
         );
       });
@@ -693,11 +721,44 @@ describe('createNftCollection procedure', () => {
       });
     });
 
-    it('should throw if the NftCollection already exists', () => {
+    it('should throw if the ticker is already linked to another asset', async () => {
+      entityMockUtils.configureMocks({
+        tickerReservationOptions: {
+          details: {
+            owner: entityMockUtils.getIdentityInstance(),
+            expiryDate: null,
+            status: TickerReservationStatus.AssetCreated,
+            assetId: '0x9999988888',
+          },
+        },
+      });
       const proc = procedureMockUtils.getInstance<Params, NftCollection, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
-      dsMockUtils.createQueryMock('nft', 'collectionTicker', {
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'Ticker is already linked to another asset',
+      });
+
+      await expect(
+        boundFunc({ ticker, assetId, nftType: KnownNftType.Derivative, collectionKeys: [] })
+      ).rejects.toThrow(expectedError);
+    });
+
+    it('should throw if the NftCollection already exists', async () => {
+      entityMockUtils.configureMocks({
+        tickerReservationOptions: {
+          details: {
+            owner: entityMockUtils.getIdentityInstance(),
+            expiryDate: null,
+            status: TickerReservationStatus.AssetCreated,
+          },
+        },
+      });
+      const proc = procedureMockUtils.getInstance<Params, NftCollection, Storage>(mockContext);
+      const boundFunc = prepareStorage.bind(proc);
+
+      dsMockUtils.createQueryMock('nft', 'collectionAsset', {
         returnValue: dsMockUtils.createMockU64(new BigNumber(1)),
       });
 
@@ -706,8 +767,18 @@ describe('createNftCollection procedure', () => {
         message: 'An NFT collection already exists with the ticker',
       });
 
-      return expect(
+      await expect(
         boundFunc({ ticker, nftType: KnownNftType.Derivative, collectionKeys: [] })
+      ).rejects.toThrow(expectedError);
+
+      entityMockUtils.configureMocks({
+        nftCollectionOptions: {
+          exists: true,
+        },
+      });
+
+      await expect(
+        boundFunc({ assetId, nftType: KnownNftType.Derivative, collectionKeys: [] })
       ).rejects.toThrow(expectedError);
     });
   });

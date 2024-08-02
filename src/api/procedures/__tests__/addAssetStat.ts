@@ -1,11 +1,11 @@
 import {
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesStatisticsStatUpdate,
-  PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
 import { BTreeSet } from '@polkadot/types-codec';
@@ -21,12 +21,14 @@ import {
   ClaimType,
   CountryCode,
   ErrorCode,
+  FungibleAsset,
   StatClaimType,
   StatType,
   TxTags,
 } from '~/types';
-import { PolymeshTx, TickerKey } from '~/types/internal';
+import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Asset/Fungible',
@@ -35,10 +37,11 @@ jest.mock(
 
 describe('addAssetStat procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerKeySpy: jest.SpyInstance<TickerKey, [string, Context]>;
-  let ticker: string;
+  let getAssetIdForStatsSpy: jest.SpyInstance;
+  let assetId: string;
+  let asset: FungibleAsset;
   let count: BigNumber;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let args: AddAssetStatParams;
   let rawStatType: PolymeshPrimitivesStatisticsStatType;
   let rawStatBtreeSet: BTreeSet<PolymeshPrimitivesStatisticsStatType>;
@@ -46,11 +49,11 @@ describe('addAssetStat procedure', () => {
   let raw2ndKey: PolymeshPrimitivesStatisticsStat2ndKey;
 
   let setActiveAssetStatsTxMock: PolymeshTx<
-    [PolymeshPrimitivesTicker, PolymeshPrimitivesTransferComplianceTransferCondition]
+    [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesTransferComplianceTransferCondition]
   >;
   let batchUpdateAssetStatsTxMock: PolymeshTx<
     [
-      PolymeshPrimitivesTicker,
+      PolymeshPrimitivesAssetAssetID,
       PolymeshPrimitivesStatisticsStatType,
       BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>
     ]
@@ -59,7 +62,7 @@ describe('addAssetStat procedure', () => {
     PolymeshPrimitivesStatisticsStatType,
     [
       {
-        op: PolymeshPrimitivesStatisticsStatOpType;
+        operationType: PolymeshPrimitivesStatisticsStatOpType;
         claimIssuer?: [PolymeshPrimitivesIdentityClaimClaimType, PolymeshPrimitivesIdentityId];
       },
       Context
@@ -90,9 +93,10 @@ describe('addAssetStat procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     mockContext = dsMockUtils.getContextInstance();
-    ticker = 'TICKER';
+    assetId = '0x1234';
+    asset = entityMockUtils.getFungibleAssetInstance({ assetId });
     count = new BigNumber(10);
-    stringToTickerKeySpy = jest.spyOn(utilsConversionModule, 'stringToTickerKey');
+    getAssetIdForStatsSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForStats');
     createStat2ndKeySpy = jest.spyOn(utilsConversionModule, 'createStat2ndKey');
     statisticsOpTypeToStatOpTypeSpy = jest.spyOn(
       utilsConversionModule,
@@ -121,7 +125,7 @@ describe('addAssetStat procedure', () => {
 
     rawStatType = dsMockUtils.createMockStatisticsStatType();
     rawStatBtreeSet = dsMockUtils.createMockBTreeSet([rawStatType]);
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
     rawStatUpdate = dsMockUtils.createMockStatUpdate();
     statUpdateBtreeSet = dsMockUtils.createMockBTreeSet([rawStatUpdate]);
 
@@ -133,9 +137,7 @@ describe('addAssetStat procedure', () => {
       .mockReturnValue(statUpdateBtreeSet);
     statisticsOpTypeToStatOpTypeSpy.mockReturnValue(rawStatType);
 
-    when(stringToTickerKeySpy)
-      .calledWith(ticker, mockContext)
-      .mockReturnValue({ Ticker: rawTicker });
+    when(getAssetIdForStatsSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
     statisticStatTypesToBtreeStatTypeSpy.mockReturnValue(rawStatBtreeSet);
   });
 
@@ -154,7 +156,7 @@ describe('addAssetStat procedure', () => {
   it('should add an setAssetStats transaction to the queue', async () => {
     args = {
       type: StatType.Balance,
-      ticker,
+      asset,
     };
     const proc = procedureMockUtils.getInstance<AddAssetStatParams, void>(mockContext, {});
 
@@ -164,7 +166,7 @@ describe('addAssetStat procedure', () => {
       transactions: [
         {
           transaction: setActiveAssetStatsTxMock,
-          args: [{ Ticker: rawTicker }, rawStatBtreeSet],
+          args: [rawAssetId, rawStatBtreeSet],
         },
       ],
       resolver: undefined,
@@ -172,7 +174,7 @@ describe('addAssetStat procedure', () => {
 
     args = {
       type: StatType.Count,
-      ticker,
+      asset,
       count,
     };
 
@@ -185,11 +187,11 @@ describe('addAssetStat procedure', () => {
       transactions: [
         {
           transaction: setActiveAssetStatsTxMock,
-          args: [{ Ticker: rawTicker }, rawStatBtreeSet],
+          args: [rawAssetId, rawStatBtreeSet],
         },
         {
           transaction: batchUpdateAssetStatsTxMock,
-          args: [{ Ticker: rawTicker }, rawStatType, statUpdateBtreeSet],
+          args: [rawAssetId, rawStatType, statUpdateBtreeSet],
         },
       ],
       resolver: undefined,
@@ -197,7 +199,7 @@ describe('addAssetStat procedure', () => {
 
     args = {
       type: StatType.ScopedCount,
-      ticker,
+      asset,
       issuer: entityMockUtils.getIdentityInstance(),
       claimType: ClaimType.Accredited,
       value: {
@@ -216,11 +218,11 @@ describe('addAssetStat procedure', () => {
       transactions: [
         {
           transaction: setActiveAssetStatsTxMock,
-          args: [{ Ticker: rawTicker }, rawStatBtreeSet],
+          args: [rawAssetId, rawStatBtreeSet],
         },
         {
           transaction: batchUpdateAssetStatsTxMock,
-          args: [{ Ticker: rawTicker }, rawStatType, statUpdateBtreeSet],
+          args: [rawAssetId, rawStatType, statUpdateBtreeSet],
         },
       ],
       resolver: undefined,
@@ -231,7 +233,7 @@ describe('addAssetStat procedure', () => {
     const proc = procedureMockUtils.getInstance<AddAssetStatParams, void>(mockContext, {});
     args = {
       type: StatType.Balance,
-      ticker,
+      asset,
     };
 
     activeAssetStatsMock.mockReturnValue([rawStatType]);
@@ -249,7 +251,7 @@ describe('addAssetStat procedure', () => {
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
       args = {
-        ticker,
+        asset,
         count,
         type: StatType.Count,
       };
@@ -259,7 +261,7 @@ describe('addAssetStat procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          assets: [expect.objectContaining({ ticker })],
+          assets: [asset],
           transactions: [
             TxTags.statistics.SetActiveAssetStats,
             TxTags.statistics.BatchUpdateAssetStats,
@@ -267,9 +269,9 @@ describe('addAssetStat procedure', () => {
           portfolios: [],
         },
       });
-      expect(boundFunc({ ticker, type: StatType.Balance })).toEqual({
+      expect(boundFunc({ asset, type: StatType.Balance })).toEqual({
         permissions: {
-          assets: [expect.objectContaining({ ticker })],
+          assets: [asset],
           transactions: [TxTags.statistics.SetActiveAssetStats],
           portfolios: [],
         },

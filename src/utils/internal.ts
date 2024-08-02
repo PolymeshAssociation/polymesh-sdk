@@ -11,22 +11,31 @@ import { BTreeSet, Bytes, Option, StorageKey, u32 } from '@polkadot/types';
 import { EventRecord } from '@polkadot/types/interfaces';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import {
-  PalletAssetSecurityToken,
+  PalletAssetAssetDetails,
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesSecondaryKeyKeyRecord,
+  PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesStatisticsStatClaim,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
 import type { Callback, Codec, Observable } from '@polkadot/types/types';
 import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/types/types';
-import { hexAddPrefix, hexStripPrefix, stringToHex, stringUpperFirst } from '@polkadot/util';
+import {
+  hexAddPrefix,
+  hexHasPrefix,
+  hexStripPrefix,
+  isHex,
+  stringToHex,
+  stringUpperFirst,
+} from '@polkadot/util';
 import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import fetch from 'cross-fetch';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
-import { lt, major, satisfies } from 'semver';
+import { coerce, lt, major, satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
 import {
@@ -95,6 +104,7 @@ import {
   PolymeshTx,
   Queries,
   StatClaimIssuer,
+  TickerKey,
   TxWithArgs,
 } from '~/types/internal';
 import {
@@ -112,7 +122,6 @@ import {
   PRIVATE_SUPPORTED_NODE_VERSION_RANGE,
   PRIVATE_SUPPORTED_SPEC_SEMVER,
   PRIVATE_SUPPORTED_SPEC_VERSION_RANGE,
-  SETTLEMENTS_V2_SQ_VERSION,
   STATE_RUNTIME_VERSION_CALL,
   SUPPORTED_NODE_SEMVER,
   SUPPORTED_NODE_VERSION_RANGE,
@@ -121,6 +130,8 @@ import {
   SYSTEM_VERSION_RPC_CALL,
 } from '~/utils/constants';
 import {
+  assetIdToString,
+  assetToMeshAssetId,
   bigNumberToU32,
   claimIssuerToMeshClaimIssuer,
   coerceHexToString,
@@ -128,6 +139,7 @@ import {
   identityIdToString,
   meshClaimTypeToClaimType,
   meshPermissionsToPermissions,
+  meshPermissionsToPermissionsV2,
   meshStatToStatType,
   middlewareScopeToScope,
   permillToBigNumber,
@@ -135,7 +147,9 @@ import {
   statisticsOpTypeToStatType,
   statsClaimToStatClaimInputType,
   stringToAccountId,
+  stringToAssetId,
   stringToTicker,
+  tickerToString,
   transferRestrictionTypeToStatOpType,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -270,10 +284,11 @@ export function createClaim(
   jurisdiction: Falsyable<string>,
   middlewareScope: Falsyable<MiddlewareScope>,
   cddId: Falsyable<string>,
-  customClaimTypeId: Falsyable<BigNumber>
+  customClaimTypeId: Falsyable<BigNumber>,
+  context: Context
 ): Claim {
   const type = claimType as ClaimType;
-  const scope = (middlewareScope ? middlewareScopeToScope(middlewareScope) : {}) as Scope;
+  const scope = (middlewareScope ? middlewareScopeToScope(middlewareScope, context) : {}) as Scope;
 
   switch (type) {
     case ClaimType.Jurisdiction: {
@@ -964,18 +979,131 @@ export function assertAddressValid(address: string, ss58Format: BigNumber): void
 
 /**
  * @hidden
+ *
+ * Validates a ticker value
  */
-export function asTicker(asset: string | BaseAsset): string {
-  return typeof asset === 'string' ? asset : asset.ticker;
+export function assertTickerValid(ticker: string): void {
+  if (!ticker.length || ticker.length > MAX_TICKER_LENGTH) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} characters`,
+    });
+  }
+
+  if (!isPrintableAscii(ticker)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Only printable ASCII is allowed as ticker name',
+    });
+  }
+
+  if (ticker !== ticker.toUpperCase()) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Ticker cannot contain lower case letters',
+    });
+  }
 }
 
 /**
  * @hidden
- *
- * @note alternatively {@link asAsset} returns a more precise type but is async due to a network call
  */
-export function asBaseAsset(asset: string | BaseAsset, context: Context): BaseAsset {
-  return typeof asset === 'string' ? new BaseAsset({ ticker: asset }, context) : asset;
+export async function getTickerForAsset(id: string, context: Context): Promise<string | undefined> {
+  const {
+    polymeshApi: {
+      query: { asset },
+    },
+  } = context;
+  let ticker;
+  const rawAssetId = stringToAssetId(id, context);
+  const rawTicker = await asset.assetIDTicker(rawAssetId);
+  if (rawTicker.isSome) {
+    ticker = tickerToString(rawTicker.unwrap());
+  }
+  return ticker;
+}
+
+/**
+ * @hidden
+ */
+export async function getAssetIdForTicker(ticker: string, context: Context): Promise<string> {
+  const {
+    polymeshApi: {
+      query: { asset },
+    },
+  } = context;
+  assertTickerValid(ticker);
+  const rawTicker = stringToTicker(ticker, context);
+  const rawAssetId = await asset.tickerAssetID(rawTicker);
+  if (rawAssetId.isNone) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: `There is no Asset with ticker: "${ticker}"`,
+    });
+  }
+  return assetIdToString(rawAssetId.unwrap());
+}
+
+/**
+ * @hidden
+ */
+export async function getAssetIdAndTicker(
+  assetId: string,
+  context: Context
+): Promise<{
+  ticker?: string;
+  assetId: string;
+}> {
+  const { isV6 } = context;
+
+  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
+  if (isV6) {
+    return {
+      ticker: assetId,
+      assetId,
+    };
+  }
+
+  return {
+    assetId,
+    ticker: await getTickerForAsset(assetId, context),
+  };
+}
+
+/**
+ * @hidden
+ */
+export async function asBaseAsset(asset: string | BaseAsset, context: Context): Promise<BaseAsset> {
+  const { isV6 } = context;
+  if (asset instanceof BaseAsset) {
+    return asset;
+  }
+  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
+  if (isV6) {
+    assertTickerValid(asset);
+    return new BaseAsset({ assetId: asset }, context);
+  }
+
+  if (isHex(asset) && asset.length === 34) {
+    const ticker = await getTickerForAsset(asset, context);
+    const baseAsset = new BaseAsset({ assetId: asset }, context);
+    baseAsset.ticker = ticker;
+    return baseAsset;
+  } else {
+    assertTickerValid(asset);
+    const id = await getAssetIdForTicker(asset, context);
+    const baseAsset = new BaseAsset({ assetId: id }, context);
+    baseAsset.ticker = asset;
+    return baseAsset;
+  }
+}
+
+/**
+ * @hidden
+ */
+export async function asAssetId(asset: string | BaseAsset, context: Context): Promise<string> {
+  const baseAsset = await asBaseAsset(asset, context);
+  return baseAsset.id;
 }
 
 /**
@@ -984,12 +1112,15 @@ export function asBaseAsset(asset: string | BaseAsset, context: Context): BaseAs
  * @note alternatively {@link asBaseAsset} returns a generic `BaseAsset`, but is synchronous
  */
 export async function asAsset(asset: string | Asset, context: Context): Promise<Asset> {
+  let assetId: string;
   if (typeof asset !== 'string') {
-    return asset;
+    assetId = asset.id;
+  } else {
+    assetId = asset;
   }
 
-  const fungible = new FungibleAsset({ ticker: asset }, context);
-  const collection = new NftCollection({ ticker: asset }, context);
+  const fungible = new FungibleAsset({ assetId }, context);
+  const collection = new NftCollection({ assetId }, context);
 
   const [isAsset, isCollection] = await Promise.all([fungible.exists(), collection.exists()]);
 
@@ -1002,7 +1133,7 @@ export async function asAsset(asset: string | Asset, context: Context): Promise<
 
   throw new PolymeshError({
     code: ErrorCode.DataUnavailable,
-    message: `No asset exists with ticker: "${asset}"`,
+    message: `No asset exists with asset ID: "${asset}"`,
   });
 }
 
@@ -1015,9 +1146,9 @@ export function asFungibleAsset(asset: string | BaseAsset, context: Context): Fu
     return asset;
   }
 
-  const ticker = typeof asset === 'string' ? asset : asset.ticker;
+  const assetId = typeof asset === 'string' ? asset : asset.id;
 
-  return new FungibleAsset({ ticker }, context);
+  return new FungibleAsset({ assetId }, context);
 }
 
 /**
@@ -1303,6 +1434,18 @@ export async function getExemptedIds(
   return exemptedIds;
 }
 
+const getAllowedMajors = (range: string, supportedSpecSemver: string): string[] => {
+  const lowMajor = major(supportedSpecSemver).toString();
+  const versions = range.split('||');
+  if (versions.length === 1) {
+    return [lowMajor];
+  }
+  const higherAllowedSpec = versions[versions.length - 1].trim();
+  const higherVersion = coerce(higherAllowedSpec)!.version;
+  const highMajor = major(higherVersion).toString();
+  return [lowMajor, highMajor];
+};
+
 /**
  * @hidden
  */
@@ -1313,30 +1456,32 @@ function assertExpectedNodeVersion(
 ): void {
   const { result: version } = data;
 
-  const neededMajor = isPrivateSupported
-    ? major(PRIVATE_SUPPORTED_NODE_SEMVER).toString()
-    : major(SUPPORTED_NODE_SEMVER).toString();
+  const supportedSemver = isPrivateSupported
+    ? PRIVATE_SUPPORTED_NODE_SEMVER
+    : SUPPORTED_NODE_SEMVER;
 
-  const neededSemver = isPrivateSupported
+  const supportedSpecVersionRange = isPrivateSupported
     ? PRIVATE_SUPPORTED_NODE_VERSION_RANGE
     : SUPPORTED_NODE_VERSION_RANGE;
 
-  if (!satisfies(version, neededMajor)) {
+  const neededMajors = getAllowedMajors(supportedSpecVersionRange, supportedSemver);
+
+  if (neededMajors.every(neededMajor => !satisfies(version, neededMajor))) {
     const error = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
       data: {
         rpcNodeVersion: version,
-        supportedVersionRange: neededSemver,
+        supportedVersionRange: supportedSpecVersionRange,
       },
     });
 
     reject(error);
   }
 
-  if (!satisfies(version, neededSemver)) {
+  if (!satisfies(version, supportedSpecVersionRange)) {
     console.warn(
-      `This version of the SDK supports Polymesh RPC node version "${neededSemver}". The node is at version ${version}. Please upgrade the SDK`
+      `This version of the SDK supports Polymesh RPC node version "${supportedSpecVersionRange}". The node is at version ${version}. Please upgrade the SDK`
     );
   }
 }
@@ -1387,30 +1532,32 @@ function assertExpectedSpecVersion(
     .map((ver: string) => ver.replace(/^0+(?!$)/g, ''))
     .join('.');
 
-  const neededMajor = isPrivateSupported
-    ? major(PRIVATE_SUPPORTED_SPEC_SEMVER).toString()
-    : major(SUPPORTED_SPEC_SEMVER).toString();
+  const supportedSemver = isPrivateSupported
+    ? PRIVATE_SUPPORTED_SPEC_SEMVER
+    : SUPPORTED_SPEC_SEMVER;
 
-  const neededSemver = isPrivateSupported
+  const supportedSpecVersionRange = isPrivateSupported
     ? PRIVATE_SUPPORTED_SPEC_VERSION_RANGE
     : SUPPORTED_SPEC_VERSION_RANGE;
 
-  if (!satisfies(specVersionAsSemver, neededMajor)) {
+  const neededMajors = getAllowedMajors(supportedSpecVersionRange, supportedSemver);
+
+  if (neededMajors.every(neededMajor => !satisfies(specVersionAsSemver, neededMajor))) {
     const error = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh chain spec version. Please upgrade the SDK',
       data: {
         specVersion: specVersionAsSemver,
-        supportedVersionRange: neededSemver,
+        supportedVersionRange: supportedSemver,
       },
     });
 
     reject(error);
   }
 
-  if (!satisfies(specVersionAsSemver, neededSemver)) {
+  if (!satisfies(specVersionAsSemver, supportedSpecVersionRange)) {
     console.warn(
-      `This version of the SDK supports Polymesh chain spec version "${neededSemver}". The chain spec is at version ${specVersionAsSemver}. Please upgrade the SDK`
+      `This version of the SDK supports Polymesh chain spec version "${supportedSpecVersionRange}". The chain spec is at version ${specVersionAsSemver}. Please upgrade the SDK`
     );
   }
 }
@@ -1464,8 +1611,8 @@ export function extractProtocol(url: string): string | undefined {
  * @param nodeUrl - URL for the chain node
  * @returns A promise that resolves if the version is in the expected range, otherwise it will reject
  */
-export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
+export function assertExpectedChainVersion(nodeUrl: string): Promise<number> {
+  return new Promise<number>((resolve, reject) => {
     const protocol = extractProtocol(nodeUrl);
 
     if (!protocol) {
@@ -1493,7 +1640,7 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
           cleanup();
         }
 
-        resolve();
+        resolve(specResponse.result.specVersion);
       }
     };
 
@@ -1580,39 +1727,12 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
 
 /**
  * @hidden
- *
- * Validates a ticker value
- */
-export function assertTickerValid(ticker: string): void {
-  if (!ticker.length || ticker.length > MAX_TICKER_LENGTH) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} characters`,
-    });
-  }
-
-  if (!isPrintableAscii(ticker)) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Only printable ASCII is allowed as ticker name',
-    });
-  }
-
-  if (ticker !== ticker.toUpperCase()) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Ticker cannot contain lower case letters',
-    });
-  }
-}
-
-/**
- * @hidden
  * @returns true is the given stat is able to track the data for the given args
  */
 export function compareStatsToInput(
   rawStatType: PolymeshPrimitivesStatisticsStatType,
-  args: RemoveAssetStatParams
+  args: RemoveAssetStatParams,
+  context: Context
 ): boolean {
   let claimIssuer;
   const { type } = args;
@@ -1643,7 +1763,7 @@ export function compareStatsToInput(
     }
   }
 
-  const stat = meshStatToStatType(rawStatType);
+  const stat = meshStatToStatType(rawStatType, context);
 
   return stat === type;
 }
@@ -1766,9 +1886,10 @@ export function compareTransferRestrictionToInput(
  */
 export function compareStatTypeToTransferRestrictionType(
   statType: PolymeshPrimitivesStatisticsStatType,
-  transferRestrictionType: TransferRestrictionType
+  transferRestrictionType: TransferRestrictionType,
+  context: Context
 ): boolean {
-  const opType = meshStatToStatType(statType);
+  const opType = meshStatToStatType(statType, context);
   if (opType === StatType.Count) {
     return transferRestrictionType === TransferRestrictionType.Count;
   } else if (opType === StatType.Balance) {
@@ -1796,7 +1917,7 @@ export function neededStatTypeForRestrictionInput(
   const rawOp = transferRestrictionTypeToStatOpType(type, context);
 
   const rawIssuer = claimIssuer ? claimIssuerToMeshClaimIssuer(claimIssuer, context) : undefined;
-  return statisticsOpTypeToStatType({ op: rawOp, claimIssuer: rawIssuer }, context);
+  return statisticsOpTypeToStatType({ operationType: rawOp, claimIssuer: rawIssuer }, context);
 }
 
 /**
@@ -1851,40 +1972,62 @@ export async function getSecondaryAccountPermissions(
     polymeshApi: {
       query: { identity: identityQuery },
     },
+    isV6,
   } = context;
 
   const { accounts, identity } = args;
 
-  const assembleResult = (
+  const assembleResult = async (
     optKeyRecords: Option<PolymeshPrimitivesSecondaryKeyKeyRecord>[]
-  ): PermissionedAccount[] => {
-    return optKeyRecords.reduce((result: PermissionedAccount[], optKeyRecord, index) => {
-      const account = accounts[index];
-      if (optKeyRecord.isNone) {
-        return result;
-      }
-      const record = optKeyRecord.unwrap();
+  ): Promise<PermissionedAccount[]> => {
+    const result: PermissionedAccount[] = [];
+    let index = 0;
+    const getAccountAsSecondaryKey = async (
+      record: PolymeshPrimitivesSecondaryKeyKeyRecord,
+      account: Account | MultiSig
+    ): Promise<void> => {
+      /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
+      if (isV6) {
+        const [rawIdentityId, rawPermissions] = record.asSecondaryKey as unknown as [
+          PolymeshPrimitivesIdentityId,
+          PolymeshPrimitivesSecondaryKeyPermissions
+        ];
 
-      if (record.isSecondaryKey) {
-        const [rawIdentityId, rawPermissions] = record.asSecondaryKey;
-
-        if (identity && identityIdToString(rawIdentityId) !== identity.did) {
-          return result;
+        if (!identity || identityIdToString(rawIdentityId) === identity.did) {
+          result.push({
+            account,
+            permissions: meshPermissionsToPermissions(rawPermissions, context),
+          });
         }
-        result.push({
-          account,
-          permissions: meshPermissionsToPermissions(rawPermissions, context),
-        });
+      } else {
+        const rawIdentityId = record.asSecondaryKey;
+        if (!identity || identityIdToString(rawIdentityId) === identity.did) {
+          result.push({
+            account,
+            permissions: await meshPermissionsToPermissionsV2(account, context),
+          });
+        }
       }
+    };
+    for (const optKeyRecord of optKeyRecords) {
+      const account = accounts[index];
+      if (optKeyRecord.isSome) {
+        const record = optKeyRecord.unwrap();
 
-      return result;
-    }, []);
+        if (record.isSecondaryKey) {
+          await getAccountAsSecondaryKey(record, account);
+        }
+      }
+      index++;
+    }
+    return result;
   };
 
   const identityKeys = accounts.map(({ address }) => stringToAccountId(address, context));
   if (callback) {
-    return identityQuery.keyRecords.multi(identityKeys, result => {
-      return callback(assembleResult(result));
+    return identityQuery.keyRecords.multi(identityKeys, async result => {
+      const value = await assembleResult(result);
+      await callback(value);
     });
   }
   const rawResults = await identityQuery.keyRecords.multi(identityKeys);
@@ -1897,7 +2040,6 @@ export async function getSecondaryAccountPermissions(
  */
 export async function getExemptedBtreeSet(
   identities: (string | Identity)[],
-  ticker: string,
   context: Context
 ): Promise<BTreeSet<PolymeshPrimitivesIdentityId>> {
   const exemptedIds = await getExemptedIds(identities, context);
@@ -1917,14 +2059,23 @@ export async function getIdentityFromKeyRecord(
     polymeshApi: {
       query: { identity },
     },
+    isV6,
   } = context;
 
   if (keyRecord.isPrimaryKey) {
     const did = identityIdToString(keyRecord.asPrimaryKey);
     return new Identity({ did }, context);
   } else if (keyRecord.isSecondaryKey) {
-    const did = identityIdToString(keyRecord.asSecondaryKey[0]);
-    return new Identity({ did }, context);
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
+    if (isV6) {
+      const did = identityIdToString(
+        keyRecord.asSecondaryKey[0] as unknown as PolymeshPrimitivesIdentityId
+      );
+      return new Identity({ did }, context);
+    } else {
+      const did = identityIdToString(keyRecord.asSecondaryKey);
+      return new Identity({ did }, context);
+    }
   } else {
     const multiSigAddress = keyRecord.asMultiSigSignerKey;
     const optMultiSigKeyRecord = await identity.keyRecords(multiSigAddress);
@@ -1946,18 +2097,18 @@ export async function getIdentityFromKeyRecord(
  * @note `assetDetails` and `tickers` must have the same offset
  */
 export function assembleAssetQuery(
-  assetDetails: Option<PalletAssetSecurityToken>[],
-  tickers: string[],
+  assetDetails: Option<PalletAssetAssetDetails>[],
+  assetIds: string[],
   context: Context
 ): Asset[] {
   return assetDetails.map((rawDetails, index) => {
-    const ticker = tickers[index];
+    const assetId = assetIds[index];
     const detail = rawDetails.unwrap();
 
     if (detail.assetType.isNonFungible) {
-      return new NftCollection({ ticker }, context);
+      return new NftCollection({ assetId }, context);
     } else {
-      return new FungibleAsset({ ticker }, context);
+      return new FungibleAsset({ assetId }, context);
     }
   });
 }
@@ -1978,7 +2129,8 @@ export function asNftId(nft: Nft | BigNumber): BigNumber {
  */
 export function areSameClaims(
   claim: Claim,
-  { scope, type, customClaimTypeId }: MiddlewareClaim
+  { scope, type, customClaimTypeId }: MiddlewareClaim,
+  context: Context
 ): boolean {
   // filter out deprecated claim types
   if (
@@ -1990,7 +2142,11 @@ export function areSameClaims(
     return false;
   }
 
-  if (isScopedClaim(claim) && scope && !isEqual(middlewareScopeToScope(scope), claim.scope)) {
+  if (
+    isScopedClaim(claim) &&
+    scope &&
+    !isEqual(middlewareScopeToScope(scope, context), claim.scope)
+  ) {
     return false;
   }
 
@@ -2111,12 +2267,24 @@ export async function getAccount(
   const { address } = args;
 
   const rawAddress = stringToAccountId(address, context);
-  const identity = await multiSig.multiSigToIdentity(rawAddress);
-  if (identity.isEmpty) {
-    return new Account(args, context);
+  const rawSigners = await multiSig.multiSigSigners.entries(rawAddress);
+  if (rawSigners.length > 0) {
+    return new MultiSig(args, context);
   }
 
-  return new MultiSig(args, context);
+  return new Account(args, context);
+}
+
+/**
+ * @hidden
+ */
+export function getAssetIdForStats(
+  asset: Asset,
+  context: Context
+): TickerKey | PolymeshPrimitivesAssetAssetID {
+  const rawAssetId = assetToMeshAssetId(asset, context);
+  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
+  return context.isV6 ? { Ticker: rawAssetId } : rawAssetId;
 }
 
 /**
@@ -2134,27 +2302,34 @@ const getAssetIdForLegacyTicker = (ticker: string, context: Context): string => 
  * @hidden
  */
 export async function getAssetIdForMiddleware(
-  asset: string | BaseAsset,
+  assetIdOrTicker: string | BaseAsset,
   context: Context
 ): Promise<string> {
-  const ticker = asTicker(asset);
+  /**
+   * For cases where ticker is passed in with 7.x chain, we make sure we get assetId mapped with the ticker
+   * `asAssetId` creates a `BaseAsset` and returns the ID which is the ticker value for 6.x chain and ID for 7.x chain
+   */
+  const assetId = await asAssetId(assetIdOrTicker, context);
 
-  const sqVersion = await getLatestSqVersion(context);
-
-  if (lt(sqVersion, SETTLEMENTS_V2_SQ_VERSION)) {
-    // old SQ requires no change
-    return ticker;
+  if (!hexHasPrefix(assetId)) {
+    // this will only be true if chain 6.x is running
+    return getAssetIdForLegacyTicker(assetId, context);
   }
 
-  return getAssetIdForLegacyTicker(ticker, context);
+  return assetId;
 }
 
 /**
  * @hidden
  */
 export function getAssetIdFromMiddleware(
-  assetIdAndTicker: Falsyable<Pick<MiddlewareAsset, 'id' | 'ticker'>>
+  assetIdAndTicker: Falsyable<Pick<MiddlewareAsset, 'id' | 'ticker'>>,
+  context: Context
 ): string {
-  const { ticker } = assetIdAndTicker!;
-  return coerceHexToString(ticker!);
+  const { id, ticker } = assetIdAndTicker!;
+  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
+  if (context.isV6) {
+    return coerceHexToString(ticker!);
+  }
+  return id;
 }

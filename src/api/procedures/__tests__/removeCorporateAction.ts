@@ -5,7 +5,7 @@ import {
   Params,
   prepareRemoveCorporateAction,
 } from '~/api/procedures/removeCorporateAction';
-import { Context } from '~/internal';
+import { Context, FungibleAsset } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { TxTags } from '~/types';
@@ -24,9 +24,10 @@ describe('removeCorporateAction procedure', () => {
   let mockContext: Mocked<Context>;
   let corporateActionsQueryMock: jest.Mock;
 
-  const ticker = 'SOME_TICKER';
+  let asset: FungibleAsset;
+  const assetId = '0x1234';
   const id = new BigNumber(1);
-  const rawCaId = dsMockUtils.createMockCAId({ ticker, localId: id });
+  const rawCaId = dsMockUtils.createMockCAId({ assetId, localId: id });
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -37,6 +38,7 @@ describe('removeCorporateAction procedure', () => {
   });
 
   beforeEach(() => {
+    asset = entityMockUtils.getFungibleAssetInstance({ assetId });
     mockContext = dsMockUtils.getContextInstance();
     corporateActionsQueryMock = dsMockUtils.createQueryMock('corporateAction', 'corporateActions');
   });
@@ -62,7 +64,7 @@ describe('removeCorporateAction procedure', () => {
     return expect(
       prepareRemoveCorporateAction.call(proc, {
         corporateAction: entityMockUtils.getDividendDistributionInstance(),
-        ticker,
+        asset,
       })
     ).rejects.toThrow("The Distribution doesn't exist");
   });
@@ -79,7 +81,7 @@ describe('removeCorporateAction procedure', () => {
     return expect(
       prepareRemoveCorporateAction.call(proc, {
         corporateAction: new BigNumber(1),
-        ticker,
+        asset,
       })
     ).rejects.toThrow("The Corporate Action doesn't exist");
   });
@@ -108,7 +110,7 @@ describe('removeCorporateAction procedure', () => {
     return expect(
       prepareRemoveCorporateAction.call(proc, {
         corporateAction: entityMockUtils.getDividendDistributionInstance(),
-        ticker,
+        asset,
       })
     ).rejects.toThrow('The Distribution has already started');
   });
@@ -121,7 +123,7 @@ describe('removeCorporateAction procedure', () => {
         corporateAction: entityMockUtils.getCorporateActionInstance({
           exists: false,
         }),
-        ticker,
+        asset,
       })
     ).rejects.toThrow("The Corporate Action doesn't exist");
   });
@@ -134,7 +136,7 @@ describe('removeCorporateAction procedure', () => {
       corporateAction: entityMockUtils.getCorporateActionInstance({
         exists: true,
       }),
-      ticker,
+      asset,
     });
 
     expect(result).toEqual({ transaction, args: [rawCaId], resolver: undefined });
@@ -159,7 +161,7 @@ describe('removeCorporateAction procedure', () => {
 
     result = await prepareRemoveCorporateAction.call(proc, {
       corporateAction: entityMockUtils.getDividendDistributionInstance(),
-      ticker,
+      asset,
     });
 
     expect(result).toEqual({ transaction, args: [rawCaId], resolver: undefined });
@@ -170,7 +172,7 @@ describe('removeCorporateAction procedure', () => {
 
     result = await prepareRemoveCorporateAction.call(proc, {
       corporateAction: new BigNumber(1),
-      ticker,
+      asset,
     });
 
     expect(result).toEqual({ transaction, args: [rawCaId], resolver: undefined });
@@ -181,13 +183,13 @@ describe('removeCorporateAction procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args = {
-        ticker,
+        asset,
       } as Params;
 
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.corporateAction.RemoveCa],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
           portfolios: [],
         },
       });

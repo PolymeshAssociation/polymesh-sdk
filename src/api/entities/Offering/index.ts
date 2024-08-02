@@ -24,19 +24,32 @@ import {
   UnsubCallback,
 } from '~/types';
 import { Ensured } from '~/types/utils';
-import { bigNumberToU64, fundraiserToOfferingDetails, stringToTicker } from '~/utils/conversion';
-import { calculateNextKey, createProcedureMethod, toHumanReadable } from '~/utils/internal';
+import {
+  assetToMeshAssetId,
+  bigNumberToU64,
+  fundraiserToOfferingDetails,
+} from '~/utils/conversion';
+import {
+  calculateNextKey,
+  createProcedureMethod,
+  getAssetIdForMiddleware,
+  toHumanReadable,
+} from '~/utils/internal';
 
 import { Investment, OfferingDetails } from './types';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
-  ticker: string;
+  assetId: string;
 }
 
 export interface HumanReadable {
   id: string;
+  /**
+   * @deprecated in favour of `assetId`
+   */
   ticker: string;
+  assetId: string;
 }
 
 /**
@@ -48,9 +61,9 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
    * Check if a value is of type {@link UniqueIdentifiers}
    */
   public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
-    const { id, ticker } = identifier as UniqueIdentifiers;
+    const { id, assetId } = identifier as UniqueIdentifiers;
 
-    return id instanceof BigNumber && typeof ticker === 'string';
+    return id instanceof BigNumber && typeof assetId === 'string';
   }
 
   /**
@@ -69,35 +82,35 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
   public constructor(identifiers: UniqueIdentifiers, context: Context) {
     super(identifiers, context);
 
-    const { id, ticker } = identifiers;
+    const { id, assetId } = identifiers;
 
     this.id = id;
-    this.asset = new FungibleAsset({ ticker }, context);
+    this.asset = new FungibleAsset({ assetId }, context);
 
     this.freeze = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [toggleFreezeOffering, { ticker, id, freeze: true }],
+        getProcedureAndArgs: () => [toggleFreezeOffering, { asset: this.asset, id, freeze: true }],
         voidArgs: true,
       },
       context
     );
     this.unfreeze = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [toggleFreezeOffering, { ticker, id, freeze: false }],
+        getProcedureAndArgs: () => [toggleFreezeOffering, { asset: this.asset, id, freeze: false }],
         voidArgs: true,
       },
       context
     );
     this.close = createProcedureMethod(
-      { getProcedureAndArgs: () => [closeOffering, { ticker, id }], voidArgs: true },
+      { getProcedureAndArgs: () => [closeOffering, { asset: this.asset, id }], voidArgs: true },
       context
     );
     this.modifyTimes = createProcedureMethod(
-      { getProcedureAndArgs: args => [modifyOfferingTimes, { ticker, id, ...args }] },
+      { getProcedureAndArgs: args => [modifyOfferingTimes, { asset: this.asset, id, ...args }] },
       context
     );
     this.invest = createProcedureMethod(
-      { getProcedureAndArgs: args => [investInOffering, { ticker, id, ...args }] },
+      { getProcedureAndArgs: args => [investInOffering, { asset: this.asset, id, ...args }] },
       context
     );
   }
@@ -121,7 +134,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
         },
       },
       id,
-      asset: { ticker },
+      asset,
       context,
     } = this;
 
@@ -132,22 +145,25 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
       return fundraiserToOfferingDetails(rawFundraiser.unwrap(), rawName.unwrap(), context);
     };
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(asset, context);
     const rawU64 = bigNumberToU64(id, context);
 
-    const fetchName = (): Promise<Option<Bytes>> => sto.fundraiserNames(rawTicker, rawU64);
+    const fetchName = (): Promise<Option<Bytes>> => sto.fundraiserNames(rawAssetId, rawU64);
 
     if (callback) {
       context.assertSupportsSubscription();
 
       const fundraiserName = await fetchName();
-      return sto.fundraisers(rawTicker, rawU64, fundraiserData => {
+      return sto.fundraisers(rawAssetId, rawU64, fundraiserData => {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(assembleResult(fundraiserData, fundraiserName));
       });
     }
 
-    const [fundraiser, name] = await Promise.all([sto.fundraisers(rawTicker, rawU64), fetchName()]);
+    const [fundraiser, name] = await Promise.all([
+      sto.fundraisers(rawAssetId, rawU64),
+      fetchName(),
+    ]);
 
     return assembleResult(fundraiser, name);
   }
@@ -204,8 +220,10 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
     const {
       context,
       id,
-      asset: { ticker },
+      asset: { id: assetId },
     } = this;
+
+    const middlewareAssetId = await getAssetIdForMiddleware(assetId, context);
 
     const { size, start } = opts;
 
@@ -217,7 +235,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
       investmentsQuery(
         {
           stoId: id.toNumber(),
-          offeringToken: ticker,
+          offeringToken: middlewareAssetId,
         },
         size,
         start
@@ -245,14 +263,12 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
    * Determine whether this Offering exists on chain
    */
   public async exists(): Promise<boolean> {
-    const {
-      asset: { ticker },
-      id,
-      context,
-    } = this;
+    const { asset, id, context } = this;
+
+    const rawAssetId = assetToMeshAssetId(asset, context);
 
     const fundraiser = await context.polymeshApi.query.sto.fundraisers(
-      stringToTicker(ticker, context),
+      rawAssetId,
       bigNumberToU64(id, context)
     );
 
@@ -267,6 +283,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
 
     return toHumanReadable({
       ticker: asset,
+      assetId: asset,
       id,
     });
   }

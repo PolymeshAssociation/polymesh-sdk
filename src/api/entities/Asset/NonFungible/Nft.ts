@@ -16,19 +16,19 @@ import {
   GLOBAL_TOKEN_URI_NAME,
 } from '~/utils/constants';
 import {
+  assetToMeshAssetId,
   bigNumberToU64,
   boolToBoolean,
   bytesToString,
   meshMetadataKeyToMetadataKey,
   meshPortfolioIdToPortfolio,
   portfolioToPortfolioId,
-  stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
 export type NftUniqueIdentifiers = {
-  ticker: string;
+  assetId: string;
   id: BigNumber;
 };
 
@@ -60,9 +60,9 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
   public static override isUniqueIdentifiers(
     identifier: unknown
   ): identifier is NftUniqueIdentifiers {
-    const { ticker, id } = identifier as NftUniqueIdentifiers;
+    const { assetId, id } = identifier as NftUniqueIdentifiers;
 
-    return typeof ticker === 'string' && id instanceof BigNumber;
+    return typeof assetId === 'string' && id instanceof BigNumber;
   }
 
   /**
@@ -71,14 +71,17 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
   constructor(identifiers: NftUniqueIdentifiers, context: Context) {
     super(identifiers, context);
 
-    const { ticker, id } = identifiers;
+    const { id, assetId } = identifiers;
 
     this.id = id;
 
-    this.collection = new NftCollection({ ticker }, context);
+    this.collection = new NftCollection({ assetId }, context);
 
     this.redeem = createProcedureMethod(
-      { getProcedureAndArgs: args => [redeemNft, { ticker, id, ...args }], optionalArgs: true },
+      {
+        getProcedureAndArgs: args => [redeemNft, { collection: this.collection, id, ...args }],
+        optionalArgs: true,
+      },
       context
     );
   }
@@ -103,13 +106,16 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
 
     const entries = await query.nft.metadataValue.entries([rawCollectionId, rawId]);
 
-    return entries.map(([storageKey, rawValue]) => {
+    const data = [];
+    for (const [storageKey, rawValue] of entries) {
       const rawMetadataKey = storageKey.args[1];
-      const key = meshMetadataKeyToMetadataKey(rawMetadataKey, collection.ticker);
+      const key = await meshMetadataKeyToMetadataKey(rawMetadataKey, collection, context);
       const value = bytesToString(rawValue);
 
-      return { key, value };
-    });
+      data.push({ key, value });
+    }
+
+    return data;
   }
 
   /**
@@ -200,7 +206,7 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
    */
   public async getOwner(): Promise<DefaultPortfolio | NumberedPortfolio | null> {
     const {
-      collection: { ticker },
+      collection,
       id,
       context: {
         polymeshApi: {
@@ -212,10 +218,11 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
       context,
     } = this;
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(collection, context);
+
     const rawNftId = bigNumberToU64(id, context);
 
-    const owner = await nftOwner(rawTicker, rawNftId);
+    const owner = await nftOwner(rawAssetId, rawNftId);
 
     if (owner.isEmpty) {
       return null;
@@ -231,7 +238,7 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
    */
   public async isLocked(): Promise<boolean> {
     const {
-      collection: { ticker },
+      collection,
       id,
       context: {
         polymeshApi: {
@@ -250,8 +257,10 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
       });
     }
 
+    const rawAssetId = assetToMeshAssetId(collection, context);
+
     const rawLocked = await portfolio.portfolioLockedNFT(portfolioToPortfolioId(owner), [
-      stringToTicker(ticker, context),
+      rawAssetId,
       bigNumberToU64(id, context),
     ]);
 
@@ -263,12 +272,12 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
    */
   public toHuman(): HumanReadable {
     const {
-      collection: { ticker },
+      collection: { id: assetId },
       id,
     } = this;
 
     return {
-      collection: ticker,
+      collection: assetId,
       id: id.toString(),
     };
   }
@@ -317,7 +326,7 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
    */
   private async getBaseUri(metadataId: BigNumber | null): Promise<string | null> {
     const {
-      collection: { ticker },
+      collection,
       context,
       context: {
         polymeshApi: { query },
@@ -329,8 +338,9 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
     }
 
     const rawId = bigNumberToU64(metadataId, context);
-    const rawTicker = stringToTicker(ticker, context);
-    const rawValue = await query.asset.assetMetadataValues(rawTicker, { Global: rawId });
+    const rawAssetId = assetToMeshAssetId(collection, context);
+
+    const rawValue = await query.asset.assetMetadataValues(rawAssetId, { Global: rawId });
 
     if (rawValue.isNone) {
       return null;

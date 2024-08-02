@@ -1,8 +1,8 @@
 import {
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesStatisticsStatUpdate,
-  PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceAssetTransferCompliance,
   PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
@@ -18,13 +18,15 @@ import {
   ClaimType,
   CountryCode,
   ErrorCode,
+  FungibleAsset,
   RemoveAssetStatParams,
   StatClaimType,
   StatType,
   TxTags,
 } from '~/types';
-import { PolymeshTx, TickerKey } from '~/types/internal';
+import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Asset/Fungible',
@@ -34,9 +36,10 @@ jest.mock(
 describe('removeAssetStat procedure', () => {
   const did = 'someDid';
   let mockContext: Mocked<Context>;
-  let stringToTickerKeySpy: jest.SpyInstance<TickerKey, [string, Context]>;
-  let ticker: string;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let getAssetIdForStatsSpy: jest.SpyInstance;
+  let assetId: string;
+  let asset: FungibleAsset;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let args: RemoveAssetStatParams;
   let rawCountStatType: PolymeshPrimitivesStatisticsStatType;
   let rawBalanceStatType: PolymeshPrimitivesStatisticsStatType;
@@ -55,7 +58,7 @@ describe('removeAssetStat procedure', () => {
   ];
 
   let setActiveAssetStats: PolymeshTx<
-    [PolymeshPrimitivesTicker, PolymeshPrimitivesTransferComplianceTransferCondition]
+    [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesTransferComplianceTransferCondition]
   >;
   let statUpdatesToBtreeStatUpdateSpy: jest.SpyInstance<
     BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>,
@@ -108,8 +111,9 @@ describe('removeAssetStat procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     mockContext = dsMockUtils.getContextInstance();
-    ticker = 'TICKER';
-    stringToTickerKeySpy = jest.spyOn(utilsConversionModule, 'stringToTickerKey');
+    assetId = '0x1234';
+    asset = entityMockUtils.getFungibleAssetInstance({ assetId });
+    getAssetIdForStatsSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForStats');
     createStat2ndKeySpy = jest.spyOn(utilsConversionModule, 'createStat2ndKey');
     statUpdatesToBtreeStatUpdateSpy = jest.spyOn(
       utilsConversionModule,
@@ -138,11 +142,11 @@ describe('removeAssetStat procedure', () => {
 
     rawCountStatType = dsMockUtils.createMockStatisticsStatType();
     rawBalanceStatType = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
+      operationType: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
       claimIssuer: dsMockUtils.createMockOption(),
     });
     rawClaimCountStatType = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatType.ScopedCount),
+      operationType: dsMockUtils.createMockStatisticsOpType(StatType.ScopedCount),
       claimIssuer: dsMockUtils.createMockOption([
         dsMockUtils.createMockClaimType(),
         dsMockUtils.createMockIdentityId(),
@@ -154,7 +158,7 @@ describe('removeAssetStat procedure', () => {
       rawClaimCountStatType,
     ]);
     emptyStatTypeBtreeSet = dsMockUtils.createMockBTreeSet([]);
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
     rawStatUpdate = dsMockUtils.createMockStatUpdate();
     rawStatUpdateBtree = dsMockUtils.createMockBTreeSet([rawStatUpdate]);
 
@@ -186,13 +190,11 @@ describe('removeAssetStat procedure', () => {
     queryMultiResult = [dsMockUtils.createMockBTreeSet([]), fakeCurrentRequirements];
     queryMultiMock.mockReturnValue(queryMultiResult);
 
-    when(stringToTickerKeySpy)
-      .calledWith(ticker, mockContext)
-      .mockReturnValue({ Ticker: rawTicker });
+    when(getAssetIdForStatsSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
     statisticStatTypesToBtreeStatTypeSpy.mockReturnValue(emptyStatTypeBtreeSet);
     args = {
       type: StatType.Balance,
-      ticker,
+      asset,
     };
   });
 
@@ -217,13 +219,13 @@ describe('removeAssetStat procedure', () => {
 
     expect(result).toEqual({
       transaction: setActiveAssetStats,
-      args: [{ Ticker: rawTicker }, emptyStatTypeBtreeSet],
+      args: [rawAssetId, emptyStatTypeBtreeSet],
       resolver: undefined,
     });
 
     args = {
       type: StatType.ScopedCount,
-      ticker,
+      asset,
       issuer: entityMockUtils.getIdentityInstance(),
       claimType: ClaimType.Affiliate,
     };
@@ -232,7 +234,7 @@ describe('removeAssetStat procedure', () => {
 
     expect(result).toEqual({
       transaction: setActiveAssetStats,
-      args: [{ Ticker: rawTicker }, emptyStatTypeBtreeSet],
+      args: [rawAssetId, emptyStatTypeBtreeSet],
       resolver: undefined,
     });
   });
@@ -273,13 +275,13 @@ describe('removeAssetStat procedure', () => {
     statSpy.mockReturnValue(StatType.Count);
 
     args = {
-      ticker: 'TICKER',
+      asset,
       type: StatType.Count,
     };
     await expect(prepareRemoveAssetStat.call(proc, args)).rejects.toThrowError(expectedError);
 
     args = {
-      ticker: 'TICKER',
+      asset,
       type: StatType.ScopedCount,
       issuer: entityMockUtils.getIdentityInstance({ did }),
       claimType: ClaimType.Accredited,
@@ -291,7 +293,7 @@ describe('removeAssetStat procedure', () => {
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
       args = {
-        ticker,
+        asset,
         type: StatType.Count,
       };
 
@@ -300,7 +302,7 @@ describe('removeAssetStat procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
           transactions: [TxTags.statistics.SetActiveAssetStats],
           portfolios: [],
         },

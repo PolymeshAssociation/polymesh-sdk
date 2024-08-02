@@ -83,9 +83,9 @@ export interface AssetDocument {
  */
 export interface UniqueIdentifiers {
   /**
-   * ticker of the Asset
+   * id of the Asset
    */
-  ticker: string;
+  assetId: string;
 }
 
 export interface AssetDetails {
@@ -130,7 +130,7 @@ export interface TransferBreakdown {
   /**
    * how the transfer adheres to the asset's compliance rules
    */
-  compliance: Compliance;
+  compliance?: Compliance;
   /**
    * list of transfer restrictions and whether the transfer satisfies each one
    */
@@ -209,7 +209,11 @@ export type MetadataKeyId =
   | {
       type: MetadataType.Local;
       id: BigNumber;
-      ticker: string;
+      /**
+       * @deprecated in favour of `assetId`
+       */
+      ticker?: string;
+      assetId: string;
     };
 
 export interface NftMetadata {
@@ -345,6 +349,11 @@ export enum TransferError {
    * occurs if some compliance rule would prevent the transfer
    */
   ComplianceFailure = 'ComplianceFailure',
+
+  /**
+   * occurs if some statistics transfer condition would prevent the transfer
+   */
+  TransferNotAllowed = 'TransferNotAllowed',
 }
 
 export interface AssetWithGroup {

@@ -11,4 +11,6 @@ export interface MultiSigDetails {
 export interface MultiSigSigners {
   signerFor: MultiSig;
   signers: Signer[];
+  isAdmin: boolean;
+  isPayer: boolean;
 }

@@ -25,10 +25,11 @@ export const createTickerReservationResolver =
 export async function prepareReserveTicker(
   this: Procedure<ReserveTickerParams, TickerReservation>,
   args: ReserveTickerParams
-): Promise<TransactionSpec<TickerReservation, ExtrinsicParams<'asset', 'registerTicker'>>> {
+): Promise<TransactionSpec<TickerReservation, ExtrinsicParams<'asset', 'registerUniqueTicker'>>> {
   const {
     context: {
       polymeshApi: { tx },
+      isV6,
     },
     context,
   } = this;
@@ -71,8 +72,15 @@ export async function prepareReserveTicker(
     }
   }
 
+  let transaction = tx.asset.registerUniqueTicker;
+  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
+  if (isV6) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    transaction = (tx.asset as any).registerTicker; // NOSONAR
+  }
+
   return {
-    transaction: tx.asset.registerTicker,
+    transaction,
     args: [rawTicker],
     resolver: createTickerReservationResolver(context),
   };
@@ -88,7 +96,7 @@ export function getAuthorization({
 }: ReserveTickerParams): ProcedureAuthorization {
   const auth: ProcedureAuthorization = {
     permissions: {
-      transactions: [TxTags.asset.RegisterTicker],
+      transactions: [TxTags.asset.RegisterUniqueTicker],
       assets: [],
       portfolios: [],
     },

@@ -101,6 +101,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       fungibleTokens: dsMockUtils.createMockU32(new BigNumber(3)),
       nonFungibleTokens: dsMockUtils.createMockU32(new BigNumber(0)),
       offChainAssets: dsMockUtils.createMockU32(new BigNumber(1)),
+      consumedWeight: dsMockUtils.createMockWeight(),
     });
     mockAffirmCount = dsMockUtils.createMockAffirmationCount();
     mockAssetCount = createMockAssetCount({
@@ -138,7 +139,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     dsMockUtils.createTxMock('settlement', 'withdrawAffirmationAsMediator');
     dsMockUtils.createTxMock('settlement', 'rejectInstructionAsMediator');
     dsMockUtils.createCallMock('settlementApi', 'getExecuteInstructionInfo', {
-      returnValue: mockExecuteInfo,
+      returnValue: dsMockUtils.createMockOption(mockExecuteInfo),
     });
     dsMockUtils.createCallMock('settlementApi', 'getAffirmationCount', {
       returnValue: mockAffirmCount,
@@ -413,6 +414,26 @@ describe('modifyInstructionAffirmation procedure', () => {
         Storage
       >(mockContext, storage);
 
+      await expect(
+        prepareModifyInstructionAffirmation.call(proc, {
+          id,
+          operation: InstructionAffirmationOperation.Affirm,
+          receipts: [
+            {
+              ...receipt,
+              signer: 'notAllowedSigner',
+            },
+          ],
+        })
+      ).rejects.toThrow('Some signers are not allowed to sign the receipt for this Instruction');
+
+      entityMockUtils.configureMocks({
+        instructionOptions: {
+          details: {
+            venue: undefined,
+          },
+        },
+      });
       await expect(
         prepareModifyInstructionAffirmation.call(proc, {
           id,
@@ -1045,7 +1066,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     const receiver = entityMockUtils.getIdentityInstance({ did: 'offChainReceiverDid' });
     const offChainAsset = 'OFFCHAIN_ASSET';
     const amount = new BigNumber(1);
-    const asset = entityMockUtils.getFungibleAssetInstance({ ticker: 'SOME_ASSET' });
+    const asset = entityMockUtils.getFungibleAssetInstance({ assetId: 'SOME_ASSET' });
 
     it('should return the portfolios for which to modify affirmation status', async () => {
       const proc = procedureMockUtils.getInstance<

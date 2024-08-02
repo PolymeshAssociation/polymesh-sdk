@@ -1,4 +1,4 @@
-import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 
 import {
   Context,
@@ -26,7 +26,9 @@ import {
   UnsubCallback,
 } from '~/types';
 import {
+  assetIdToString,
   bytesToString,
+  meshAssetToAssetId,
   meshMetadataSpecToMetadataSpec,
   stringToIdentityId,
   tickerToString,
@@ -36,6 +38,7 @@ import {
   asAsset,
   assembleAssetQuery,
   createProcedureMethod,
+  getAssetIdForTicker,
   getDid,
   isPrintableAscii,
   requestPaginated,
@@ -142,20 +145,45 @@ export class Assets {
   }): Promise<TickerReservation[]> {
     const {
       context: {
-        polymeshApi: { query },
+        polymeshApi: {
+          query: { asset },
+        },
+        isV6,
       },
       context,
     } = this;
 
     const did = await getDid(args?.owner, context);
+    const rawDid = stringToIdentityId(did, context);
 
-    const entries = await query.asset.assetOwnershipRelations.entries(
-      stringToIdentityId(did, context)
-    );
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
+    if (isV6) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const entries = await (asset as any).assetOwnershipRelations.entries(rawDid); // NOSONAR
 
-    return entries.reduce<TickerReservation[]>((result, [key, relation]) => {
-      if (relation.isTickerOwned) {
-        const ticker = tickerToString(key.args[1]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (entries as any[]).reduce<TickerReservation[]>((result, [key, relation]) => {
+        if (relation.isTickerOwned) {
+          const ticker = tickerToString(key.args[1]);
+
+          if (isPrintableAscii(ticker)) {
+            return [...result, new TickerReservation({ ticker }, context)];
+          }
+        }
+
+        return result;
+      }, []);
+    }
+
+    const entries = await asset.tickersOwnedByUser.entries(rawDid);
+
+    const rawTickers = entries.map(([key]) => key.args[1]);
+
+    const rawAssetIds = await asset.tickerAssetID.multi(rawTickers);
+
+    return rawAssetIds.reduce<TickerReservation[]>((result, rawAssetId, index) => {
+      if (rawAssetId.isNone) {
+        const ticker = tickerToString(rawTickers[index]);
 
         if (isPrintableAscii(ticker)) {
           return [...result, new TickerReservation({ ticker }, context)];
@@ -183,11 +211,27 @@ export class Assets {
    *
    * @note `getFungibleAsset` and `getNftCollection` are similar to this method, but return a more specific type
    */
-  public async getAsset(args: { ticker: string }): Promise<Asset> {
-    const { context } = this;
-    const { ticker } = args;
+  public async getAsset(args: { ticker: string }): Promise<Asset>;
+  public async getAsset(args: { assetId: string }): Promise<Asset>;
+  // eslint-disable-next-line require-jsdoc
+  public async getAsset(args: { ticker?: string; assetId?: string }): Promise<Asset> {
+    const {
+      context,
+      context: { isV6 },
+    } = this;
+    const { ticker, assetId } = args;
 
-    return asAsset(ticker, context);
+    let assetIdValue = assetId;
+    if (ticker) {
+      /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
+      if (isV6) {
+        assetIdValue = ticker;
+      } else {
+        assetIdValue = await getAssetIdForTicker(ticker, context);
+      }
+    }
+
+    return asAsset(assetIdValue!, context);
   }
 
   /**
@@ -200,51 +244,105 @@ export class Assets {
   public async getAssets(args?: { owner: string | Identity }): Promise<Asset[]> {
     const {
       context: {
-        polymeshApi: { query },
+        polymeshApi: {
+          query: { asset },
+        },
+        isV6,
       },
       context,
     } = this;
 
     const did = await getDid(args?.owner, context);
+    const rawDid = stringToIdentityId(did, context);
 
-    const entries = await query.asset.assetOwnershipRelations.entries(
-      stringToIdentityId(did, context)
-    );
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
+    if (isV6) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const entries = await (asset as any).assetOwnershipRelations.entries(rawDid); // NOSONAR
 
-    const ownedTickers: string[] = [];
-    const rawTickers: PolymeshPrimitivesTicker[] = [];
+      const ownedTickers: string[] = [];
+      const rawTickers: PolymeshPrimitivesTicker[] = [];
 
-    entries.forEach(([key, relation]) => {
-      if (relation.isAssetOwned) {
-        const rawTicker = key.args[1];
-        const ticker = tickerToString(rawTicker);
-        if (isPrintableAscii(ticker)) {
-          ownedTickers.push(ticker);
-          rawTickers.push(rawTicker);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (entries as any[]).forEach(([key, relation]) => {
+        if (relation.isAssetOwned) {
+          const rawTicker = key.args[1];
+          const ticker = tickerToString(rawTicker);
+          if (isPrintableAscii(ticker)) {
+            ownedTickers.push(ticker);
+            rawTickers.push(rawTicker);
+          }
         }
-      }
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ownedDetails = await (asset as any).tokens.multi(rawTickers); // NOSONAR
+
+      return assembleAssetQuery(ownedDetails, ownedTickers, context);
+    }
+
+    const entries = await asset.securityTokensOwnedByUser.entries(rawDid);
+
+    const ownedAssets: string[] = [];
+    const rawAssetIds: PolymeshPrimitivesAssetAssetID[] = [];
+
+    entries.forEach(([key]) => {
+      const rawAssetId = key.args[1];
+      rawAssetIds.push(rawAssetId);
+      ownedAssets.push(assetIdToString(rawAssetId));
     });
+    const ownedDetails = await asset.assets.multi(rawAssetIds);
 
-    const ownedDetails = await query.asset.tokens.multi(rawTickers);
+    return assembleAssetQuery(ownedDetails, ownedAssets, context);
+  }
 
-    return assembleAssetQuery(ownedDetails, ownedTickers, context);
+  /**
+   * @hidden
+   */
+  private async getIdFromAssetIdAndTicker(assetId?: string, ticker?: string): Promise<string> {
+    const {
+      context,
+      context: { isV6 },
+    } = this;
+    let assetIdValue: string;
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
+    if (isV6) {
+      assetIdValue = (assetId ?? ticker)!;
+    } else if (ticker) {
+      assetIdValue = await getAssetIdForTicker(ticker, context);
+    } else {
+      assetIdValue = assetId!;
+    }
+    return assetIdValue;
   }
 
   /**
    * Retrieve a FungibleAsset
    *
    * @param args.ticker - Asset ticker
+   * @param args.assetId - Unique Id of the Asset (for spec version 6.x, this is same as ticker)
    */
-  public async getFungibleAsset(args: { ticker: string }): Promise<FungibleAsset> {
-    const { ticker } = args;
+  public async getFungibleAsset(args: { assetId: string }): Promise<FungibleAsset>;
+  public async getFungibleAsset(args: { ticker: string }): Promise<FungibleAsset>;
+  // eslint-disable-next-line require-jsdoc
+  public async getFungibleAsset(args: {
+    ticker?: string;
+    assetId?: string;
+  }): Promise<FungibleAsset> {
+    const { ticker, assetId } = args;
 
-    const asset = new FungibleAsset({ ticker }, this.context);
+    const { context } = this;
+
+    const assetIdValue = await this.getIdFromAssetIdAndTicker(assetId, ticker);
+
+    const asset = new FungibleAsset({ assetId: assetIdValue }, context);
+
     const exists = await asset.exists();
 
     if (!exists) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
-        message: `There is no Asset with ticker "${ticker}"`,
+        message: `There is no Asset with ${ticker ? 'ticker' : 'asset ID'} "${ticker ?? assetId}"`,
       });
     }
 
@@ -256,20 +354,34 @@ export class Assets {
    *
    * @param args.ticker - NftCollection ticker
    */
-  public async getNftCollection(args: { ticker: string }): Promise<NftCollection> {
-    const { ticker } = args;
+  public async getNftCollection(args: { ticker: string }): Promise<NftCollection>;
+  public async getNftCollection(args: { assetId: string }): Promise<NftCollection>;
 
-    const nftCollection = new NftCollection({ ticker }, this.context);
-    const exists = await nftCollection.exists();
+  // eslint-disable-next-line require-jsdoc
+  public async getNftCollection(args: {
+    ticker?: string;
+    assetId?: string;
+  }): Promise<NftCollection> {
+    const { ticker, assetId } = args;
+
+    const { context } = this;
+
+    const assetIdValue = await this.getIdFromAssetIdAndTicker(assetId, ticker);
+
+    const collection = new NftCollection({ assetId: assetIdValue }, context);
+
+    const exists = await collection.exists();
 
     if (!exists) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
-        message: `There is no NftCollection with ticker "${ticker}"`,
+        message: `There is no NftCollection with ${ticker ? 'ticker' : 'asset ID'} "${
+          ticker ?? assetId
+        }"`,
       });
     }
 
-    return nftCollection;
+    return collection;
   }
 
   /**
@@ -281,35 +393,42 @@ export class Assets {
     const {
       context: {
         polymeshApi: {
-          query: {
-            asset: { assetNames, tokens },
-          },
+          query: { asset },
         },
+        isV6,
       },
       context,
     } = this;
 
-    const { entries, lastKey: next } = await requestPaginated(assetNames, {
+    const { entries, lastKey: next } = await requestPaginated(asset.assetNames, {
       paginationOpts,
     });
 
-    const tickers: string[] = [];
-    const rawTickers: PolymeshPrimitivesTicker[] = [];
+    const assetIds: string[] = [];
+    const rawAssetIds: (PolymeshPrimitivesTicker | PolymeshPrimitivesAssetAssetID)[] = [];
 
     entries.forEach(
       ([
         {
-          args: [rawTicker],
+          args: [rawAssetId],
         },
       ]) => {
-        rawTickers.push(rawTicker);
-        tickers.push(tickerToString(rawTicker));
+        rawAssetIds.push(rawAssetId);
+        assetIds.push(meshAssetToAssetId(rawAssetId, context));
       }
     );
 
-    const details = await tokens.multi(rawTickers);
+    let tokensStorage;
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
+    if (isV6) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tokensStorage = (asset as any).tokens; // NOSONAR
+    } else {
+      tokensStorage = asset.assets;
+    }
+    const details = await tokensStorage.multi(rawAssetIds);
 
-    const data = assembleAssetQuery(details, tickers, context);
+    const data = assembleAssetQuery(details, assetIds, context);
 
     return {
       data,

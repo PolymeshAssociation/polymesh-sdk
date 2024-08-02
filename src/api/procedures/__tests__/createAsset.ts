@@ -1,6 +1,7 @@
-import { bool, BTreeSet, Bytes, Option, Vec } from '@polkadot/types';
+import { bool, BTreeSet, Bytes } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import {
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesAssetAssetType,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesDocument,
@@ -56,6 +57,7 @@ jest.mock(
 describe('createAsset procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let stringToAssetIdSpy: jest.SpyInstance;
   let bigNumberToBalanceSpy: jest.SpyInstance;
   let stringToBytesSpy: jest.SpyInstance<Bytes, [string, Context]>;
   let nameToAssetNameSpy: jest.SpyInstance<Bytes, [string, Context]>;
@@ -79,6 +81,7 @@ describe('createAsset procedure', () => {
     [AssetDocument, Context]
   >;
   let ticker: string;
+  let assetId: string;
   let signingIdentity: Identity;
   let name: string;
   let initialSupply: BigNumber;
@@ -88,6 +91,7 @@ describe('createAsset procedure', () => {
   let fundingRound: string;
   let documents: AssetDocument[];
   let rawTicker: PolymeshPrimitivesTicker;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let rawName: Bytes;
   let rawInitialSupply: Balance;
   let rawIsDivisible: bool;
@@ -129,6 +133,7 @@ describe('createAsset procedure', () => {
     );
     booleanToBoolSpy = jest.spyOn(utilsConversionModule, 'booleanToBool');
     stringToTickerKeySpy = jest.spyOn(utilsConversionModule, 'stringToTickerKey');
+    stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
     statisticStatTypesToBtreeStatTypeSpy = jest.spyOn(
       utilsConversionModule,
       'statisticStatTypesToBtreeStatType'
@@ -143,8 +148,11 @@ describe('createAsset procedure', () => {
     );
     assetDocumentToDocumentSpy = jest.spyOn(utilsConversionModule, 'assetDocumentToDocument');
     ticker = 'TICKER';
+    assetId = '0x1234';
     name = 'someName';
-    signingIdentity = entityMockUtils.getIdentityInstance({ portfoliosGetPortfolio: getPortfolio });
+    signingIdentity = entityMockUtils.getIdentityInstance({
+      portfoliosGetPortfolio: getPortfolio,
+    });
     initialSupply = new BigNumber(100);
     isDivisible = false;
     assetType = KnownAssetType.EquityCommon;
@@ -163,6 +171,7 @@ describe('createAsset procedure', () => {
       },
     ];
     rawTicker = dsMockUtils.createMockTicker(ticker);
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
     rawName = dsMockUtils.createMockBytes(name);
     rawInitialSupply = dsMockUtils.createMockBalance(initialSupply);
     rawIsDivisible = dsMockUtils.createMockBool(isDivisible);
@@ -203,18 +212,9 @@ describe('createAsset procedure', () => {
     numberedPortfolioId = new BigNumber(1);
   });
 
-  let createAssetTransaction: PolymeshTx<
-    [
-      Bytes,
-      PolymeshPrimitivesTicker,
-      Balance,
-      bool,
-      PolymeshPrimitivesAssetAssetType,
-      Vec<PolymeshPrimitivesAssetIdentifier>,
-      Option<Bytes>,
-      bool
-    ]
-  >;
+  let createAssetTransaction: PolymeshTx;
+  let linkTickerToAssetIdTx: PolymeshTx;
+  let registerUniqueTickerTx: PolymeshTx;
 
   beforeEach(() => {
     dsMockUtils.createQueryMock('asset', 'tickerConfig', {
@@ -222,10 +222,16 @@ describe('createAsset procedure', () => {
     });
 
     createAssetTransaction = dsMockUtils.createTxMock('asset', 'createAsset');
+    linkTickerToAssetIdTx = dsMockUtils.createTxMock('asset', 'linkTickerToAssetId');
+    registerUniqueTickerTx = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
 
-    mockContext = dsMockUtils.getContextInstance({ withSigningManager: true });
+    mockContext = dsMockUtils.getContextInstance({
+      withSigningManager: true,
+      getNextAssetId: assetId,
+    });
 
     when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(stringToAssetIdSpy).calledWith(assetId, mockContext).mockReturnValue(rawAssetId);
     when(bigNumberToBalanceSpy)
       .calledWith(initialSupply, mockContext, isDivisible)
       .mockReturnValue(rawInitialSupply);
@@ -251,11 +257,8 @@ describe('createAsset procedure', () => {
       .mockReturnValue(rawDocuments[0]);
 
     when(mockContext.getProtocolFees)
-      .calledWith({ tags: [TxTags.asset.RegisterTicker, TxTags.asset.CreateAsset] })
-      .mockResolvedValue([
-        { tag: TxTags.asset.RegisterTicker, fees: protocolFees[0] },
-        { tag: TxTags.asset.CreateAsset, fees: protocolFees[1] },
-      ]);
+      .calledWith({ tags: [TxTags.asset.CreateAsset] })
+      .mockResolvedValue([{ tag: TxTags.asset.CreateAsset, fees: protocolFees[1] }]);
 
     when(mockContext.getProtocolFees)
       .calledWith({ tags: [TxTags.asset.RegisterCustomAssetType] })
@@ -353,11 +356,15 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetTransaction,
-          args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+          args: [rawName, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+        },
+        {
+          transaction: linkTickerToAssetIdTx,
+          args: [rawTicker, rawAssetId],
         },
       ],
       fee: undefined,
-      resolver: expect.objectContaining({ ticker }),
+      resolver: expect.objectContaining({ id: assetId }),
     });
 
     result = await prepareCreateAsset.call(proc, {
@@ -372,11 +379,15 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetTransaction,
-          args: [rawName, rawTicker, rawIsDivisible, rawType, [], null],
+          args: [rawName, rawIsDivisible, rawType, [], null],
+        },
+        {
+          transaction: linkTickerToAssetIdTx,
+          args: [rawTicker, rawAssetId],
         },
       ],
       fee: undefined,
-      resolver: expect.objectContaining({ ticker }),
+      resolver: expect.objectContaining({ id: assetId }),
     });
   });
 
@@ -394,15 +405,19 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetTransaction,
-          args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+          args: [rawName, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+        },
+        {
+          transaction: linkTickerToAssetIdTx,
+          args: [rawTicker, rawAssetId],
         },
         {
           transaction: issueTransaction,
-          args: [rawTicker, rawInitialSupply, defaultPortfolioKind],
+          args: [rawAssetId, rawInitialSupply, defaultPortfolioKind],
         },
       ],
       fee: undefined,
-      resolver: expect.objectContaining({ ticker }),
+      resolver: expect.objectContaining({ id: assetId }),
     });
   });
 
@@ -424,15 +439,19 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetTransaction,
-          args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+          args: [rawName, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+        },
+        {
+          transaction: linkTickerToAssetIdTx,
+          args: [rawTicker, rawAssetId],
         },
         {
           transaction: issueTransaction,
-          args: [rawTicker, rawInitialSupply, defaultPortfolioKind],
+          args: [rawAssetId, rawInitialSupply, defaultPortfolioKind],
         },
       ],
       fee: undefined,
-      resolver: expect.objectContaining({ ticker }),
+      resolver: expect.objectContaining({ id: assetId }),
     });
   });
 
@@ -454,15 +473,19 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetTransaction,
-          args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+          args: [rawName, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+        },
+        {
+          transaction: linkTickerToAssetIdTx,
+          args: [rawTicker, rawAssetId],
         },
         {
           transaction: issueTransaction,
-          args: [rawTicker, rawInitialSupply, numberedPortfolioKind],
+          args: [rawAssetId, rawInitialSupply, numberedPortfolioKind],
         },
       ],
       fee: undefined,
-      resolver: expect.objectContaining({ ticker }),
+      resolver: expect.objectContaining({ id: assetId }),
     });
   });
 
@@ -482,11 +505,15 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetTransaction,
-          args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+          args: [rawName, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+        },
+        {
+          transaction: linkTickerToAssetIdTx,
+          args: [rawTicker, rawAssetId],
         },
       ],
       fee: undefined,
-      resolver: expect.objectContaining({ ticker }),
+      resolver: expect.objectContaining({ id: assetId }),
     });
 
     proc = procedureMockUtils.getInstance<Params, FungibleAsset, Storage>(mockContext, {
@@ -504,11 +531,19 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetTransaction,
-          fee: protocolFees[0].plus(protocolFees[1]),
-          args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+          fee: protocolFees[1],
+          args: [rawName, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+        },
+        {
+          transaction: registerUniqueTickerTx,
+          args: [rawTicker],
+        },
+        {
+          transaction: linkTickerToAssetIdTx,
+          args: [rawTicker, rawAssetId],
         },
       ],
-      resolver: expect.objectContaining({ ticker }),
+      resolver: expect.objectContaining({ id: assetId }),
     });
   });
 
@@ -539,16 +574,24 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetTx,
-          args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
-          fee: protocolFees[0].plus(protocolFees[1]).plus(protocolFees[2]),
+          args: [rawName, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+          fee: protocolFees[1],
+        },
+        {
+          transaction: registerUniqueTickerTx,
+          args: [rawTicker],
+        },
+        {
+          transaction: linkTickerToAssetIdTx,
+          args: [rawTicker, rawAssetId],
         },
         {
           transaction: addDocumentsTx,
           feeMultiplier: new BigNumber(rawDocuments.length),
-          args: [rawDocuments, rawTicker],
+          args: [rawDocuments, rawAssetId],
         },
       ],
-      resolver: expect.objectContaining({ ticker }),
+      resolver: expect.objectContaining({ id: assetId }),
     });
   });
 
@@ -577,14 +620,18 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetTx,
-          args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+          args: [rawName, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+        },
+        {
+          transaction: linkTickerToAssetIdTx,
+          args: [rawTicker, rawAssetId],
         },
         {
           transaction: addStatsTx,
-          args: [{ Ticker: rawTicker }, mockStatsBtree],
+          args: [rawAssetId, mockStatsBtree],
         },
       ],
-      resolver: expect.objectContaining({ ticker }),
+      resolver: expect.objectContaining({ id: assetId }),
     });
   });
 
@@ -609,10 +656,14 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetWithCustomTypeTx,
-          args: [rawName, rawTicker, rawIsDivisible, rawValue, rawIdentifiers, rawFundingRound],
+          args: [rawName, rawIsDivisible, rawValue, rawIdentifiers, rawFundingRound],
+        },
+        {
+          transaction: linkTickerToAssetIdTx,
+          args: [rawTicker, rawAssetId],
         },
       ],
-      resolver: expect.objectContaining({ ticker }),
+      resolver: expect.objectContaining({ id: assetId }),
     });
   });
 
@@ -633,7 +684,7 @@ describe('createAsset procedure', () => {
         permissions: {
           assets: [],
           portfolios: [],
-          transactions: [TxTags.asset.CreateAsset],
+          transactions: [TxTags.asset.CreateAsset, TxTags.asset.LinkTickerToAssetId],
         },
       });
 
@@ -661,6 +712,7 @@ describe('createAsset procedure', () => {
           portfolios: [],
           transactions: [
             TxTags.asset.CreateAsset,
+            TxTags.asset.LinkTickerToAssetId,
             TxTags.asset.AddDocuments,
             TxTags.asset.RegisterCustomAssetType,
             TxTags.statistics.SetActiveAssetStats,
@@ -686,7 +738,7 @@ describe('createAsset procedure', () => {
         permissions: {
           assets: [],
           portfolios: [],
-          transactions: [TxTags.asset.CreateAsset],
+          transactions: [TxTags.asset.CreateAsset, TxTags.asset.LinkTickerToAssetId],
         },
       });
 
@@ -707,7 +759,11 @@ describe('createAsset procedure', () => {
         permissions: {
           assets: [],
           portfolios: [],
-          transactions: [TxTags.asset.CreateAsset],
+          transactions: [
+            TxTags.asset.CreateAsset,
+            TxTags.asset.RegisterUniqueTicker,
+            TxTags.asset.LinkTickerToAssetId,
+          ],
         },
       });
     });

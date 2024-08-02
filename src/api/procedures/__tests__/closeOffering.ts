@@ -4,7 +4,13 @@ import { getAuthorization, Params, prepareCloseOffering } from '~/api/procedures
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { OfferingBalanceStatus, OfferingSaleStatus, OfferingTimingStatus, TxTags } from '~/types';
+import {
+  FungibleAsset,
+  OfferingBalanceStatus,
+  OfferingSaleStatus,
+  OfferingTimingStatus,
+  TxTags,
+} from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -18,10 +24,11 @@ jest.mock(
 );
 
 describe('closeOffering procedure', () => {
-  const ticker = 'SOME_TICKER';
+  const assetId = '0x1234';
   const id = new BigNumber(1);
+  let asset: FungibleAsset;
 
-  const rawTicker = dsMockUtils.createMockTicker(ticker);
+  const rawAssetId = dsMockUtils.createMockAssetId(assetId);
   const rawId = dsMockUtils.createMockU64(id);
 
   let mockContext: Mocked<Context>;
@@ -42,11 +49,12 @@ describe('closeOffering procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    jest.spyOn(utilsConversionModule, 'stringToTicker').mockReturnValue(rawTicker);
+    jest.spyOn(utilsConversionModule, 'assetToMeshAssetId').mockReturnValue(rawAssetId);
     jest.spyOn(utilsConversionModule, 'bigNumberToU64').mockReturnValue(rawId);
   });
 
   beforeEach(() => {
+    asset = entityMockUtils.getFungibleAssetInstance({ assetId });
     stopStoTransaction = dsMockUtils.createTxMock('sto', 'stop');
     mockContext = dsMockUtils.getContextInstance();
   });
@@ -65,11 +73,11 @@ describe('closeOffering procedure', () => {
   it('should return a stop sto transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    const result = await prepareCloseOffering.call(proc, { ticker, id });
+    const result = await prepareCloseOffering.call(proc, { asset, id });
 
     expect(result).toEqual({
       transaction: stopStoTransaction,
-      args: [rawTicker, rawId],
+      args: [rawAssetId, rawId],
       resolver: undefined,
     });
   });
@@ -89,7 +97,7 @@ describe('closeOffering procedure', () => {
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    return expect(prepareCloseOffering.call(proc, { ticker, id })).rejects.toThrow(
+    return expect(prepareCloseOffering.call(proc, { asset, id })).rejects.toThrow(
       'The Offering is already closed'
     );
   });
@@ -99,13 +107,13 @@ describe('closeOffering procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args = {
-        ticker,
+        asset,
       } as Params;
 
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.sto.Stop],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [asset],
           portfolios: [],
         },
       });

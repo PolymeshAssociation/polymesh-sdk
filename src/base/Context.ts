@@ -6,6 +6,7 @@ import {
   QueryOptions,
 } from '@apollo/client/core';
 import { ApiPromise } from '@polkadot/api';
+import { UnsubscribePromise } from '@polkadot/api/types';
 import { getTypeDef, Option } from '@polkadot/types';
 import { AccountInfo, Header } from '@polkadot/types/interfaces';
 import {
@@ -34,7 +35,6 @@ import { claimsQuery } from '~/middleware/queries/claims';
 import { heartbeatQuery, metadataQuery } from '~/middleware/queries/common';
 import { polyxTransactionsQuery } from '~/middleware/queries/polyxTransactions';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
-import { Query as QueryOld } from '~/middleware/typesV6';
 import {
   AccountBalance,
   ClaimData,
@@ -57,6 +57,7 @@ import { Ensured } from '~/types/utils';
 import { DEFAULT_GQL_PAGE_SIZE, MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   accountIdToString,
+  assetToMeshAssetId,
   balanceToBigNumber,
   bigNumberToU32,
   boolToBoolean,
@@ -64,6 +65,7 @@ import {
   corporateActionIdentifierToCaId,
   distributionToDividendDistributionParams,
   identityIdToString,
+  meshAssetToAssetId,
   meshClaimToClaim,
   meshCorporateActionToCorporateActionParams,
   middlewareClaimToClaimData,
@@ -74,9 +76,7 @@ import {
   stringToAccountId,
   stringToHash,
   stringToIdentityId,
-  stringToTicker,
   textToString,
-  tickerToString,
   txTagToProtocolOp,
   u16ToBigNumber,
   u32ToBigNumber,
@@ -88,6 +88,7 @@ import {
   calculateNextKey,
   delay,
   getApiAtBlock,
+  getLatestSqVersion,
 } from '~/utils/internal';
 
 import { processType } from './utils';
@@ -126,6 +127,10 @@ export class Context {
 
   private _isArchiveNodeResult?: boolean;
 
+  public isV6 = false;
+
+  private unsubChainVersion: UnsubscribePromise;
+
   /**
    * @hidden
    */
@@ -135,6 +140,16 @@ export class Context {
     this._middlewareApi = middlewareApiV2;
     this.polymeshApi = polymeshApi;
     this.ss58Format = ss58Format;
+
+    this.isV6 = !('tickerAssetID' in polymeshApi.query.asset);
+
+    this.unsubChainVersion = polymeshApi.query.system.lastRuntimeUpgrade(upgrade => {
+      /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
+      if (upgrade.isSome) {
+        const { specVersion } = upgrade.unwrap();
+        this.isV6 = specVersion.toNumber() < 7000000;
+      }
+    });
   }
 
   /**
@@ -613,7 +628,7 @@ export class Context {
    *
    * Retrieve the protocol fees associated with running specific transactions
    *
-   * @param tags - list of transaction tags (e.g. [TxTags.asset.CreateAsset, TxTags.asset.RegisterTicker] or ["asset.createAsset", "asset.registerTicker"])
+   * @param tags - list of transaction tags (e.g. [TxTags.asset.CreateAsset, TxTags.asset.RegisterUniqueTicker] or ["asset.createAsset", "asset.registerTicker"])
    * @param blockHash - optional hash of the block to get the protocol fees at that block
    */
   public async getProtocolFees({
@@ -749,14 +764,14 @@ export class Context {
     const distributionsMultiParams: PalletCorporateActionsCaId[] = [];
     const corporateActionParams: CorporateActionParams[] = [];
     const corporateActionIds: BigNumber[] = [];
-    const tickers: string[] = [];
+    const assetIds: string[] = [];
 
     const assetChunks = chunk(assets, MAX_CONCURRENT_REQUESTS);
 
     await P.each(assetChunks, async assetChunk => {
       const corporateActions = await Promise.all(
-        assetChunk.map(({ ticker }) =>
-          corporateActionQuery.corporateActions.entries(stringToTicker(ticker, this))
+        assetChunk.map(assetValue =>
+          corporateActionQuery.corporateActions.entries(assetToMeshAssetId(assetValue, this))
         )
       );
       const eligibleCas = flatten(corporateActions).filter(([, action]) => {
@@ -769,18 +784,21 @@ export class Context {
         eligibleCas,
         async ([
           {
-            args: [rawTicker, rawId],
+            args: [rawAssetId, rawId],
           },
           corporateAction,
         ]) => {
           const localId = u32ToBigNumber(rawId);
-          const ticker = tickerToString(rawTicker);
-          const caId = corporateActionIdentifierToCaId({ ticker, localId }, this);
+          const assetId = meshAssetToAssetId(rawAssetId, this);
+          const caId = corporateActionIdentifierToCaId(
+            { asset: new FungibleAsset({ assetId }, this), localId },
+            this
+          );
           const details = await corporateActionQuery.details(caId);
           const action = corporateAction.unwrap();
 
           return {
-            ticker,
+            assetId,
             localId,
             caId,
             corporateAction: meshCorporateActionToCorporateActionParams(action, details, this),
@@ -788,8 +806,8 @@ export class Context {
         }
       );
 
-      corporateActionData.forEach(({ ticker, localId, caId, corporateAction }) => {
-        tickers.push(ticker);
+      corporateActionData.forEach(({ assetId, localId, caId, corporateAction }) => {
+        assetIds.push(assetId);
         corporateActionIds.push(localId);
         distributionsMultiParams.push(caId);
         corporateActionParams.push(corporateAction);
@@ -822,7 +840,7 @@ export class Context {
         result.push({
           distribution: new DividendDistribution(
             {
-              ticker: tickers[index],
+              assetId: assetIds[index],
               id: corporateActionIds[index],
               ...corporateActionParams[index],
               ...distributionToDividendDistributionParams(dist, this),
@@ -899,7 +917,7 @@ export class Context {
             issuedAt: momentToDate(issuanceDate),
             lastUpdatedAt: momentToDate(lastUpdateDate),
             expiry,
-            claim: meshClaimToClaim(claim),
+            claim: meshClaimToClaim(claim, this),
           });
         }
       });
@@ -1040,13 +1058,12 @@ export class Context {
     return api;
   }
 
-  // TODO @prashantasdeveloper Remove `QueryOld` after SQ dual version support
   /**
    * @hidden
    *
    * Make a query to the middleware V2 server using the apollo client
    */
-  public async queryMiddleware<Result extends Partial<Query | QueryOld>>(
+  public async queryMiddleware<Result extends Partial<Query>>(
     query: QueryOptions<OperationVariables, Result>
   ): Promise<ApolloQueryResult<Result>> {
     let result: ApolloQueryResult<Result>;
@@ -1111,7 +1128,7 @@ export class Context {
               unsub();
               resolve(header);
             })
-            .catch(err => reject(err));
+            .catch(err => reject(err)); // NOSONAR
         });
       });
 
@@ -1156,6 +1173,9 @@ export class Context {
       ({ middlewareApi } = this);
     }
 
+    const unsub = await this.unsubChainVersion;
+    unsub();
+
     this.isDisconnected = true;
 
     if (middlewareApi) {
@@ -1174,6 +1194,7 @@ export class Context {
    *   Context to Procedures with different signing Accounts
    */
   public clone(): Context {
+    // NOSONAR
     return clone(this);
   }
 
@@ -1243,6 +1264,8 @@ export class Context {
       },
     } = await this.queryMiddleware<Ensured<Query, '_metadata'>>(metadataQuery());
 
+    const sqVersion = await getLatestSqVersion(this);
+
     /* eslint-disable @typescript-eslint/no-non-null-assertion */
     return {
       chain: chain!,
@@ -1252,6 +1275,7 @@ export class Context {
       lastProcessedHeight: new BigNumber(lastProcessedHeight!),
       lastProcessedTimestamp: new Date(parseInt(lastProcessedTimestamp)),
       indexerHealthy: Boolean(indexerHealthy),
+      sqVersion,
     };
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
   }

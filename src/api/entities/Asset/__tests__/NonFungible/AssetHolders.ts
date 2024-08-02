@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 
 import { AssetHolders } from '~/api/entities/Asset/NonFungible/AssetHolders';
 import { Context, Namespace } from '~/internal';
@@ -36,20 +37,22 @@ describe('AssetHolder class', () => {
   });
 
   describe('method: get', () => {
-    const ticker = 'TICKER';
+    const assetId = '0x1234';
     let assetHolders: AssetHolders;
     let collection: NftCollection;
     let context: Context;
+    let getAssetIdForMiddlewareSpy: jest.SpyInstance;
 
     beforeAll(() => {
       dsMockUtils.initMocks();
+      getAssetIdForMiddlewareSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware');
     });
 
     beforeEach(() => {
       context = dsMockUtils.getContextInstance();
-      collection = entityMockUtils.getNftCollectionInstance({ ticker });
-      jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware').mockResolvedValue(ticker);
+      collection = entityMockUtils.getNftCollectionInstance({ assetId });
       assetHolders = new AssetHolders(collection, context);
+      when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
 
       const nftHoldersResponse = {
         nodes: [
@@ -66,7 +69,7 @@ describe('AssetHolder class', () => {
       };
 
       dsMockUtils.createApolloQueryMock(
-        nftCollectionHolders(ticker, new BigNumber(2), new BigNumber(0)),
+        nftCollectionHolders(assetId, new BigNumber(2), new BigNumber(0)),
         {
           nftHolders: nftHoldersResponse,
         }

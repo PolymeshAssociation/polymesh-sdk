@@ -42,6 +42,7 @@ import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import { isFungibleLegBuilder, isNftLegBuilder, isOffChainLeg } from '~/utils';
 import { MAX_LEGS_LENGTH } from '~/utils/constants';
 import {
+  assetToMeshAssetIdWithKey,
   bigNumberToBalance,
   bigNumberToU64,
   dateToMoment,
@@ -60,12 +61,12 @@ import {
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
+  asAssetId,
   asBaseAsset,
   asDid,
   asIdentity,
   assembleBatchTransactions,
   assertIdentityExists,
-  asTicker,
   filterEventRecords,
   optionize,
 } from '~/utils/internal';
@@ -74,7 +75,7 @@ import {
  * @hidden
  */
 export type Params = AddInstructionsParams & {
-  venueId: BigNumber;
+  venueId?: BigNumber;
 };
 
 /**
@@ -88,7 +89,7 @@ export interface Storage {
  * @hidden
  */
 type InternalAddAndAffirmInstructionParams = [
-  u64,
+  u64 | null,
   PolymeshPrimitivesSettlementSettlementType,
   u64 | null,
   u64 | null,
@@ -102,7 +103,7 @@ type InternalAddAndAffirmInstructionParams = [
  * @hidden
  */
 type InternalAddInstructionParams = [
-  u64,
+  u64 | null,
   PolymeshPrimitivesSettlementSettlementType,
   u64 | null,
   u64 | null,
@@ -160,12 +161,12 @@ function getEndCondition(
 /**
  * @hidden
  */
-function validateFungibleLeg(leg: FungibleLeg, ticker: string): void {
+function validateFungibleLeg(leg: FungibleLeg, assetId: string): void {
   if (!('amount' in leg)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The key "amount" should be present in a fungible leg',
-      data: { ticker },
+      data: { assetId },
     });
   }
 }
@@ -173,12 +174,12 @@ function validateFungibleLeg(leg: FungibleLeg, ticker: string): void {
 /**
  * @hidden
  */
-function validateNonFungibleLeg(leg: NftLeg, ticker: string): void {
+function validateNonFungibleLeg(leg: NftLeg, assetId: string): void {
   if (!('nfts' in leg)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The key "nfts" should be present in an NFT leg',
-      data: { ticker },
+      data: { assetId },
     });
   }
 }
@@ -199,8 +200,6 @@ async function separateLegs(
   const offChainLegs: InstructionOffChainLeg[] = [];
 
   for (const leg of legs) {
-    const ticker = asTicker(leg.asset);
-
     if (isOffChainLeg(leg)) {
       offChainLegs.push(leg);
     } else {
@@ -208,12 +207,13 @@ async function separateLegs(
         isFungibleLegBuilder(leg, context),
         isNftLegBuilder(leg, context),
       ]);
+      const assetId = await asAssetId(leg.asset, context);
 
       if (isFungible(leg)) {
-        validateFungibleLeg(leg, ticker);
+        validateFungibleLeg(leg, assetId);
         fungibleLegs.push(leg);
       } else if (isNft(leg)) {
-        validateNonFungibleLeg(leg, ticker);
+        validateNonFungibleLeg(leg, assetId);
         nftLegs.push(leg);
       }
     }
@@ -227,11 +227,11 @@ async function separateLegs(
  */
 async function assertVenueFiltering(
   instructions: AddInstructionParams[],
-  venueId: BigNumber,
+  venueId: BigNumber | undefined,
   context: Context
 ): Promise<void> {
-  const assets = instructions.flatMap(instruction => {
-    const result: BaseAsset[] = [];
+  const assetPromises = instructions.flatMap(instruction => {
+    const result: Promise<BaseAsset>[] = [];
     instruction.legs.forEach(leg => {
       if (!isOffChainLeg(leg)) {
         result.push(asBaseAsset(leg.asset, context));
@@ -239,6 +239,8 @@ async function assertVenueFiltering(
     });
     return result;
   });
+
+  const assets = await Promise.all(assetPromises);
 
   const venueFiltering = await Promise.all(assets.map(asset => asset.getVenueFilteringDetails()));
 
@@ -258,15 +260,27 @@ async function assertVenueFiltering(
     undefined
   );
 
-  if (permittedVenues !== undefined && !permittedVenues.some(({ id }) => id.eq(venueId))) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'One or more assets are not allowed to be traded at this venue',
-      data: {
-        possibleVenues: permittedVenues.map(venue => venue.id.toString()),
-        venueId: venueId.toString(),
-      },
-    });
+  if (permittedVenues !== undefined) {
+    if (venueId === undefined) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'One or more of the assets must be traded at a venue',
+        data: {
+          possibleVenues: permittedVenues.map(venue => venue.id.toString()),
+        },
+      });
+    }
+
+    if (!permittedVenues.some(({ id }) => id.eq(venueId))) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'One or more assets are not allowed to be traded at this venue',
+        data: {
+          possibleVenues: permittedVenues.map(venue => venue.id.toString()),
+          venueId: venueId.toString(),
+        },
+      });
+    }
   }
 }
 
@@ -277,7 +291,7 @@ async function getTxArgsAndErrors(
   instructions: AddInstructionParams[],
   portfoliosToAffirm: (DefaultPortfolio | NumberedPortfolio)[][],
   latestBlock: BigNumber,
-  venueId: BigNumber,
+  venueId: BigNumber | undefined,
   context: Context
 ): Promise<{
   errIndexes: {
@@ -287,6 +301,7 @@ async function getTxArgsAndErrors(
     endBlockErrIndexes: number[];
     datesErrIndexes: number[];
     sameIdentityErrIndexes: number[];
+    offChainNoVenueErrIndexes: number[];
   };
   addAndAffirmInstructionParams: InternalAddAndAffirmInstructionParams;
   addInstructionParams: InternalAddInstructionParams;
@@ -299,6 +314,7 @@ async function getTxArgsAndErrors(
   const legAmountErrIndexes: number[] = [];
   const endBlockErrIndexes: number[] = [];
   const sameIdentityErrIndexes: number[] = [];
+  const offChainNoVenueErrIndexes: number[] = [];
   /**
    * array of indexes of Instructions where the value date is before the trade date
    */
@@ -315,6 +331,10 @@ async function getTxArgsAndErrors(
     }
 
     const { fungibleLegs, nftLegs, offChainLegs } = await separateLegs(legs, context);
+
+    if (venueId === undefined && offChainLegs.length > 0) {
+      offChainNoVenueErrIndexes.push(i);
+    }
 
     const zeroAmountFungibleLegs = fungibleLegs.filter(leg => leg.amount.isZero());
     if (zeroAmountFungibleLegs.length) {
@@ -362,9 +382,10 @@ async function getTxArgsAndErrors(
       !legAmountErrIndexes.length &&
       !endBlockErrIndexes.length &&
       !datesErrIndexes.length &&
-      !sameIdentityErrIndexes.length
+      !sameIdentityErrIndexes.length &&
+      !offChainNoVenueErrIndexes.length
     ) {
-      const rawVenueId = bigNumberToU64(venueId, context);
+      const rawVenueId = optionize(bigNumberToU64)(venueId, context);
       const rawSettlementType = endConditionToSettlementType(endCondition, context);
       const rawTradeDate = optionize(dateToMoment)(tradeDate, context);
       const rawValueDate = optionize(dateToMoment)(valueDate, context);
@@ -388,11 +409,12 @@ async function getTxArgsAndErrors(
           const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromId, context);
           const rawToPortfolio = portfolioIdToMeshPortfolioId(toId, context);
 
+          const baseAsset = await asBaseAsset(asset, context);
           const rawLeg = legToFungibleLeg(
             {
               sender: rawFromPortfolio,
               receiver: rawToPortfolio,
-              ticker: stringToTicker(asTicker(asset), context),
+              ...assetToMeshAssetIdWithKey(baseAsset, context),
               amount: bigNumberToBalance(amount, context),
             },
             context
@@ -411,6 +433,8 @@ async function getTxArgsAndErrors(
             assertValidCdd(toId.did, context),
           ]);
 
+          const baseAsset = await asBaseAsset(asset, context);
+
           const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromId, context);
           const rawToPortfolio = portfolioIdToMeshPortfolioId(toId, context);
 
@@ -418,7 +442,7 @@ async function getTxArgsAndErrors(
             {
               sender: rawFromPortfolio,
               receiver: rawToPortfolio,
-              nfts: nftToMeshNft(asTicker(asset), nfts, context),
+              nfts: nftToMeshNft(baseAsset, nfts, context),
             },
             context
           );
@@ -481,6 +505,7 @@ async function getTxArgsAndErrors(
       endBlockErrIndexes,
       datesErrIndexes,
       sameIdentityErrIndexes,
+      offChainNoVenueErrIndexes,
     },
     addAndAffirmInstructionParams,
     addInstructionParams,
@@ -499,13 +524,24 @@ export async function prepareAddInstruction(
       polymeshApi: {
         tx: { settlement },
       },
+      isV6,
     },
     context,
     storage: { portfoliosToAffirm },
   } = this;
   const { instructions, venueId } = args;
 
-  await assertVenueFiltering(instructions, venueId, context);
+  if (isV6 && !venueId) {
+    throw new PolymeshError({
+      code: ErrorCode.General,
+      message: 'A venue id must be provided on v6 chains',
+    });
+  }
+
+  const venueAssertions = [assertVenueFiltering(instructions, venueId, context)];
+  if (venueId) {
+    venueAssertions.push(assertVenueExists(venueId, context));
+  }
 
   const allMediators = instructions.flatMap(
     ({ mediators }) => mediators?.map(mediator => asIdentity(mediator, context)) ?? []
@@ -513,8 +549,8 @@ export async function prepareAddInstruction(
 
   const [latestBlock] = await Promise.all([
     context.getLatestBlock(),
-    assertVenueExists(venueId, context),
     ...allMediators.map(mediator => assertIdentityExists(mediator)),
+    ...venueAssertions,
   ]);
 
   if (!instructions.length) {
@@ -532,6 +568,7 @@ export async function prepareAddInstruction(
       endBlockErrIndexes,
       datesErrIndexes,
       sameIdentityErrIndexes,
+      offChainNoVenueErrIndexes,
     },
     addAndAffirmInstructionParams,
     addInstructionParams,
@@ -598,6 +635,16 @@ export async function prepareAddInstruction(
     });
   }
 
+  if (offChainNoVenueErrIndexes.length) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Instruction legs cannot be offchain without a venue',
+      data: {
+        failedInstructionIndexes: offChainNoVenueErrIndexes,
+      },
+    });
+  }
+
   /**
    * After the upgrade is out, the "withMediator" variants are safe to use exclusively
    */
@@ -644,8 +691,10 @@ export async function getAuthorization(
     portfolios = unionWith(portfolios, portfoliosList, isEqual);
   });
 
+  const roles = venueId ? [{ type: RoleType.VenueOwner, venueId } as const] : undefined;
+
   return {
-    roles: [{ type: RoleType.VenueOwner, venueId }],
+    roles,
     permissions: {
       assets: [],
       portfolios,

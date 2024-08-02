@@ -1,5 +1,5 @@
 import { u64 } from '@polkadot/types';
-import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -8,7 +8,7 @@ import {
   prepareToggleFreezeOffering,
   ToggleFreezeOfferingParams,
 } from '~/api/procedures/toggleFreezeOffering';
-import { Context, Offering } from '~/internal';
+import { Context, FungibleAsset, Offering } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { OfferingBalanceStatus, OfferingSaleStatus, OfferingTimingStatus, TxTags } from '~/types';
@@ -25,10 +25,11 @@ jest.mock(
 
 describe('toggleFreezeOffering procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
   let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
-  let ticker: string;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let assetId: string;
+  let asset: FungibleAsset;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let id: BigNumber;
   let rawId: u64;
 
@@ -36,17 +37,18 @@ describe('toggleFreezeOffering procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
-    ticker = 'tickerFrozen';
+    assetId = '0x1234';
+    asset = entityMockUtils.getFungibleAssetInstance({ assetId });
     id = new BigNumber(1);
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
     rawId = dsMockUtils.createMockU64(id);
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(assetToMeshAssetIdSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
     when(bigNumberToU64Spy).calledWith(id, mockContext).mockReturnValue(rawId);
   });
 
@@ -78,7 +80,7 @@ describe('toggleFreezeOffering procedure', () => {
 
     return expect(
       prepareToggleFreezeOffering.call(proc, {
-        ticker,
+        asset,
         id,
         freeze: true,
       })
@@ -102,7 +104,7 @@ describe('toggleFreezeOffering procedure', () => {
 
     return expect(
       prepareToggleFreezeOffering.call(proc, {
-        ticker,
+        asset,
         id,
         freeze: true,
       })
@@ -126,7 +128,7 @@ describe('toggleFreezeOffering procedure', () => {
 
     await expect(
       prepareToggleFreezeOffering.call(proc, {
-        ticker,
+        asset,
         id,
         freeze: false,
       })
@@ -146,7 +148,7 @@ describe('toggleFreezeOffering procedure', () => {
 
     return expect(
       prepareToggleFreezeOffering.call(proc, {
-        ticker,
+        asset,
         id,
         freeze: false,
       })
@@ -159,15 +161,15 @@ describe('toggleFreezeOffering procedure', () => {
     const transaction = dsMockUtils.createTxMock('sto', 'freezeFundraiser');
 
     const result = await prepareToggleFreezeOffering.call(proc, {
-      ticker,
+      asset,
       id,
       freeze: true,
     });
 
     expect(result).toEqual({
       transaction,
-      args: [rawTicker, rawId],
-      resolver: expect.objectContaining({ asset: expect.objectContaining({ ticker }) }),
+      args: [rawAssetId, rawId],
+      resolver: expect.objectContaining({ asset: expect.objectContaining({ id: assetId }) }),
     });
   });
 
@@ -189,15 +191,15 @@ describe('toggleFreezeOffering procedure', () => {
     const transaction = dsMockUtils.createTxMock('sto', 'unfreezeFundraiser');
 
     const result = await prepareToggleFreezeOffering.call(proc, {
-      ticker,
+      asset,
       id,
       freeze: false,
     });
 
     expect(result).toEqual({
       transaction,
-      args: [rawTicker, rawId],
-      resolver: expect.objectContaining({ asset: expect.objectContaining({ ticker }) }),
+      args: [rawAssetId, rawId],
+      resolver: expect.objectContaining({ asset: expect.objectContaining({ id: assetId }) }),
     });
   });
 
@@ -208,9 +210,7 @@ describe('toggleFreezeOffering procedure', () => {
       );
       const boundFunc = getAuthorization.bind(proc);
 
-      const asset = expect.objectContaining({ ticker });
-
-      expect(boundFunc({ ticker, id, freeze: true })).toEqual({
+      expect(boundFunc({ asset, id, freeze: true })).toEqual({
         permissions: {
           transactions: [TxTags.sto.FreezeFundraiser],
           assets: [asset],
@@ -218,7 +218,7 @@ describe('toggleFreezeOffering procedure', () => {
         },
       });
 
-      expect(boundFunc({ ticker, id, freeze: false })).toEqual({
+      expect(boundFunc({ asset, id, freeze: false })).toEqual({
         permissions: {
           transactions: [TxTags.sto.UnfreezeFundraiser],
           assets: [asset],

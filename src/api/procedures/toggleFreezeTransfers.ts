@@ -1,7 +1,7 @@
 import { BaseAsset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { stringToTicker } from '~/utils/conversion';
+import { assetToMeshAssetId } from '~/utils/conversion';
 
 export interface ToggleFreezeTransfersParams {
   freeze: boolean;
@@ -11,7 +11,7 @@ export interface ToggleFreezeTransfersParams {
  * @hidden
  */
 export type Params = ToggleFreezeTransfersParams & {
-  ticker: string;
+  asset: BaseAsset;
 };
 
 /**
@@ -29,13 +29,12 @@ export async function prepareToggleFreezeTransfers(
     },
     context,
   } = this;
-  const { ticker, freeze } = args;
 
-  const rawTicker = stringToTicker(ticker, context);
+  const { asset: assetEntity, freeze } = args;
 
-  const assetEntity = new BaseAsset({ ticker }, context);
+  const rawAssetId = assetToMeshAssetId(assetEntity, context);
 
-  const isFrozen = await assetEntity.isFrozen();
+  const isFrozen = await args.asset.isFrozen();
 
   if (freeze) {
     if (isFrozen) {
@@ -47,7 +46,7 @@ export async function prepareToggleFreezeTransfers(
 
     return {
       transaction: asset.freeze,
-      args: [rawTicker],
+      args: [rawAssetId],
       resolver: undefined,
     };
   }
@@ -60,7 +59,7 @@ export async function prepareToggleFreezeTransfers(
 
   return {
     transaction: asset.unfreeze,
-    args: [rawTicker],
+    args: [rawAssetId],
     resolver: undefined,
   };
 }
@@ -70,12 +69,12 @@ export async function prepareToggleFreezeTransfers(
  */
 export function getAuthorization(
   this: Procedure<Params, void>,
-  { ticker, freeze }: Params
+  { asset, freeze }: Params
 ): ProcedureAuthorization {
   return {
     permissions: {
       transactions: [freeze ? TxTags.asset.Freeze : TxTags.asset.Unfreeze],
-      assets: [new BaseAsset({ ticker }, this.context)],
+      assets: [asset],
       portfolios: [],
     },
   };

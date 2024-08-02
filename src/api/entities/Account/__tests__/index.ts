@@ -14,9 +14,7 @@ import {
   createMockAccountId,
   createMockCall,
   createMockIdentityId,
-  createMockMoment,
   createMockOption,
-  createMockPermissions,
   createMockU64,
 } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
@@ -205,10 +203,7 @@ describe('Account class', () => {
       dsMockUtils.createQueryMock('identity', 'keyRecords', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockKeyRecord({
-            SecondaryKey: [
-              dsMockUtils.createMockIdentityId(secondaryDid),
-              dsMockUtils.createMockPermissions(),
-            ],
+            SecondaryKey: dsMockUtils.createMockIdentityId(secondaryDid),
           })
         ),
       });
@@ -242,7 +237,7 @@ describe('Account class', () => {
         ),
       });
 
-      dsMockUtils.createQueryMock('multiSig', 'multiSigToIdentity', {
+      dsMockUtils.createQueryMock('multiSig', 'adminDid', {
         returnValue: multiDid,
       });
 
@@ -466,8 +461,8 @@ describe('Account class', () => {
 
   describe('method: isFrozen', () => {
     beforeAll(() => {
-      dsMockUtils.createQueryMock('multiSig', 'multiSigToIdentity', {
-        returnValue: dsMockUtils.createMockIdentityId(),
+      dsMockUtils.createQueryMock('multiSig', 'multiSigSigners', {
+        returnValue: [],
       });
     });
 
@@ -477,10 +472,7 @@ describe('Account class', () => {
       const keyRecordsMock = dsMockUtils.createQueryMock('identity', 'keyRecords').mockReturnValue(
         dsMockUtils.createMockOption(
           dsMockUtils.createMockKeyRecord({
-            SecondaryKey: [
-              dsMockUtils.createMockIdentityId('someDid'),
-              dsMockUtils.createMockPermissions(),
-            ],
+            SecondaryKey: dsMockUtils.createMockIdentityId('someDid'),
           })
         )
       );
@@ -909,7 +901,7 @@ describe('Account class', () => {
       mockQueryMulti.mockResolvedValue([
         dsMockUtils.createMockOption(
           dsMockUtils.createMockKeyRecord({
-            SecondaryKey: [createMockAccountId('secondaryAddress'), createMockPermissions()],
+            SecondaryKey: createMockIdentityId('secondaryAddress'),
           })
         ),
         dsMockUtils.createMockU64(new BigNumber(2)),
@@ -979,15 +971,15 @@ describe('Account class', () => {
           ],
         ],
       });
-      dsMockUtils.createQueryMock('multiSig', 'proposalDetail', {
+      dsMockUtils.createQueryMock('multiSig', 'proposalStates', {
         multi: [
-          dsMockUtils.createMockProposalDetails({
-            approvals: new BigNumber(1),
-            rejections: new BigNumber(1),
-            status: dsMockUtils.createMockProposalStatus('ActiveOrExpired'),
-            autoClose: true,
-            expiry: createMockOption(createMockMoment(new BigNumber(new Date().getTime() + 10000))),
-          }),
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockProposalState({
+              Active: {
+                until: createMockOption(),
+              },
+            })
+          ),
         ],
       });
 
@@ -1038,6 +1030,25 @@ describe('Account class', () => {
 
       const result = await account.getOffChainReceipts();
       expect(result).toEqual(mockResult);
+    });
+  });
+
+  describe('method: getNextAssetId', () => {
+    it('should return the list of off chain receipts redeemed by the Account', async () => {
+      const accountId = dsMockUtils.createMockAccountId(address);
+      accountId.toHex = jest.fn();
+      accountId.toHex.mockReturnValue('0x54321');
+      jest.spyOn(utilsConversionModule, 'stringToAccountId').mockReturnValue(accountId);
+
+      const mockNonce = dsMockUtils.createMockU64(new BigNumber(1));
+      mockNonce.toHex = jest.fn();
+      mockNonce.toHex.mockReturnValue('0x01');
+
+      const assetNonceMock = dsMockUtils.createQueryMock('asset', 'assetNonce');
+      when(assetNonceMock).calledWith(accountId).mockResolvedValue(mockNonce);
+
+      const result = await account.getNextAssetId();
+      expect(result).toEqual('0xd9a10c7859b683e55a939cd1a30934a6');
     });
   });
 });

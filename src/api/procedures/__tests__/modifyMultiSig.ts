@@ -35,6 +35,11 @@ describe('modifyMultiSig procedure', () => {
   const newSigner1 = getAccountInstance({ address: 'xyz' });
   const newSigner2 = getAccountInstance({ address: 'jki' });
 
+  let rawOldSigner1: AccountId;
+  let rawOldSigner2: AccountId;
+  let rawNewSigner1: AccountId;
+  let rawNewSigner2: AccountId;
+
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
@@ -42,6 +47,7 @@ describe('modifyMultiSig procedure', () => {
     stringToAccountIdSpy = jest
       .spyOn(utilsConversionModule, 'stringToAccountId')
       .mockImplementation();
+
     signerToSignatorySpy = jest
       .spyOn(utilsConversionModule, 'signerToSignatory')
       .mockImplementation();
@@ -54,6 +60,11 @@ describe('modifyMultiSig procedure', () => {
       },
     });
     rawAccountId = dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID);
+    rawOldSigner1 = dsMockUtils.createMockAccountId(oldSigner1.address);
+    rawOldSigner2 = dsMockUtils.createMockAccountId(oldSigner2.address);
+    rawNewSigner1 = dsMockUtils.createMockAccountId(newSigner1.address);
+    rawNewSigner2 = dsMockUtils.createMockAccountId(newSigner1.address);
+
     mockContext = dsMockUtils.getContextInstance();
     when(stringToAccountIdSpy)
       .calledWith(DUMMY_ACCOUNT_ID, mockContext)
@@ -63,6 +74,20 @@ describe('modifyMultiSig procedure', () => {
     when(signerToSignatorySpy).calledWith(oldSigner2, mockContext).mockReturnValue('oldTwo');
     when(signerToSignatorySpy).calledWith(newSigner1, mockContext).mockReturnValue('newOne');
     when(signerToSignatorySpy).calledWith(newSigner2, mockContext).mockReturnValue('newTwo');
+
+    // for v7 tests
+    when(stringToAccountIdSpy)
+      .calledWith(oldSigner1.address, mockContext)
+      .mockReturnValue(rawOldSigner1);
+    when(stringToAccountIdSpy)
+      .calledWith(oldSigner2.address, mockContext)
+      .mockReturnValue(rawOldSigner2);
+    when(stringToAccountIdSpy)
+      .calledWith(newSigner1.address, mockContext)
+      .mockReturnValue(rawNewSigner1);
+    when(stringToAccountIdSpy)
+      .calledWith(newSigner2.address, mockContext)
+      .mockReturnValue(rawNewSigner2);
   });
 
   afterEach(() => {
@@ -108,10 +133,10 @@ describe('modifyMultiSig procedure', () => {
     return expect(prepareModifyMultiSig.call(proc, args)).rejects.toThrowError(expectedError);
   });
 
-  it('should throw an error if called by someone who is not the creator', () => {
+  it('should throw an error if called by someone who is not the admin', async () => {
     const args = {
       multiSig: entityMockUtils.getMultiSigInstance({
-        getCreator: getIdentityInstance({ isEqual: false }),
+        getAdmin: getIdentityInstance({ isEqual: false }),
       }),
       signers: [getAccountInstance()],
     };
@@ -128,10 +153,19 @@ describe('modifyMultiSig procedure', () => {
 
     const expectedError = new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'A MultiSig can only be modified by its creator',
+      message: 'A MultiSig can only be modified by its admin',
     });
 
-    return expect(prepareModifyMultiSig.call(proc, args)).rejects.toThrowError(expectedError);
+    await expect(prepareModifyMultiSig.call(proc, args)).rejects.toThrowError(expectedError);
+
+    await expect(
+      prepareModifyMultiSig.call(proc, {
+        ...args,
+        multiSig: entityMockUtils.getMultiSigInstance({
+          getAdmin: null,
+        }),
+      })
+    ).rejects.toThrowError(expectedError);
   });
 
   it('should add update and remove signer transactions to the queue', async () => {
@@ -145,11 +179,8 @@ describe('modifyMultiSig procedure', () => {
       signers: [newSigner1, newSigner2],
     };
 
-    const addTransaction = dsMockUtils.createTxMock('multiSig', 'addMultisigSignersViaCreator');
-    const removeTransaction = dsMockUtils.createTxMock(
-      'multiSig',
-      'removeMultisigSignersViaCreator'
-    );
+    const addTransaction = dsMockUtils.createTxMock('multiSig', 'addMultisigSignersViaAdmin');
+    const removeTransaction = dsMockUtils.createTxMock('multiSig', 'removeMultisigSignersViaAdmin');
 
     const proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
       mockContext,
@@ -167,11 +198,11 @@ describe('modifyMultiSig procedure', () => {
       transactions: [
         {
           transaction: addTransaction,
-          args: [rawAccountId, ['newOne', 'newTwo']],
+          args: [rawAccountId, [rawNewSigner1, rawNewSigner2]],
         },
         {
           transaction: removeTransaction,
-          args: [rawAccountId, ['oldOne', 'oldTwo']],
+          args: [rawAccountId, [rawOldSigner1, rawOldSigner2]],
         },
       ],
     });
@@ -188,7 +219,7 @@ describe('modifyMultiSig procedure', () => {
       signers: [oldSigner1, oldSigner2, newSigner1, newSigner2],
     };
 
-    const addTransaction = dsMockUtils.createTxMock('multiSig', 'addMultisigSignersViaCreator');
+    const addTransaction = dsMockUtils.createTxMock('multiSig', 'addMultisigSignersViaAdmin');
 
     when(signerToSignatorySpy).calledWith(newSigner1, mockContext).mockReturnValue('newOne');
     when(signerToSignatorySpy).calledWith(newSigner2, mockContext).mockReturnValue('newTwo');
@@ -209,7 +240,7 @@ describe('modifyMultiSig procedure', () => {
       transactions: [
         {
           transaction: addTransaction,
-          args: [rawAccountId, ['newOne', 'newTwo']],
+          args: [rawAccountId, [rawNewSigner1, rawNewSigner2]],
         },
       ],
     });
@@ -226,10 +257,7 @@ describe('modifyMultiSig procedure', () => {
       signers: [oldSigner1],
     };
 
-    const removeTransaction = dsMockUtils.createTxMock(
-      'multiSig',
-      'removeMultisigSignersViaCreator'
-    );
+    const removeTransaction = dsMockUtils.createTxMock('multiSig', 'removeMultisigSignersViaAdmin');
 
     const proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
       mockContext,
@@ -244,7 +272,8 @@ describe('modifyMultiSig procedure', () => {
     const result = await prepareModifyMultiSig.call(proc, args);
 
     expect(result).toEqual({
-      transactions: [{ transaction: removeTransaction, args: [rawAccountId, ['oldTwo']] }],
+      resolver: undefined,
+      transactions: [{ transaction: removeTransaction, args: [rawAccountId, [rawOldSigner2]] }],
     });
   });
 
@@ -262,10 +291,7 @@ describe('modifyMultiSig procedure', () => {
       requiredSignatures: newRequiredSignatures,
     };
 
-    const changeSigsRequiredTx = dsMockUtils.createTxMock(
-      'multiSig',
-      'changeSigsRequiredViaCreator'
-    );
+    const changeSigsRequiredTx = dsMockUtils.createTxMock('multiSig', 'changeSigsRequiredViaAdmin');
 
     const proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
       mockContext,

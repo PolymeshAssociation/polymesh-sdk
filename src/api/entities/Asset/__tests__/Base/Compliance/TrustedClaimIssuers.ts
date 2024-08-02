@@ -4,13 +4,12 @@ import {
 } from '@polkadot/types/lookup';
 import { when } from 'jest-when';
 
+import { TrustedClaimIssuers } from '~/api/entities/Asset/Base/Compliance/TrustedClaimIssuers';
 import { Context, FungibleAsset, Namespace, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { ModifyAssetTrustedClaimIssuersAddSetParams } from '~/types';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
-
-import { TrustedClaimIssuers } from '../../../Base/Compliance/TrustedClaimIssuers';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -69,7 +68,7 @@ describe('TrustedClaimIssuers class', () => {
       when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
-            args: { ticker: asset.ticker, ...args, operation: TrustedClaimIssuerOperation.Set },
+            args: { asset, ...args, operation: TrustedClaimIssuerOperation.Set },
             transformer: undefined,
           },
           context,
@@ -108,7 +107,7 @@ describe('TrustedClaimIssuers class', () => {
       when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
-            args: { ticker: asset.ticker, ...args, operation: TrustedClaimIssuerOperation.Add },
+            args: { asset, ...args, operation: TrustedClaimIssuerOperation.Add },
             transformer: undefined,
           },
           context,
@@ -144,7 +143,7 @@ describe('TrustedClaimIssuers class', () => {
       when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
-            args: { ticker: asset.ticker, ...args, operation: TrustedClaimIssuerOperation.Remove },
+            args: { asset, ...args, operation: TrustedClaimIssuerOperation.Remove },
             transformer: undefined,
           },
           context,
@@ -161,9 +160,9 @@ describe('TrustedClaimIssuers class', () => {
   });
 
   describe('method: get', () => {
-    let ticker: string;
-    let rawTicker: PolymeshPrimitivesTicker;
-    let stringToTickerSpy: jest.SpyInstance;
+    let assetId: string;
+    let rawAssetId: PolymeshPrimitivesTicker;
+    let assetToMeshAssetIdSpy: jest.SpyInstance;
     let context: Context;
     let asset: FungibleAsset;
     let expectedDids: string[];
@@ -174,11 +173,11 @@ describe('TrustedClaimIssuers class', () => {
     let trustedClaimIssuers: TrustedClaimIssuers;
 
     beforeAll(() => {
-      ticker = 'test';
-      rawTicker = dsMockUtils.createMockTicker(ticker);
-      stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+      assetId = 'test';
+      rawAssetId = dsMockUtils.createMockAssetId(assetId);
+      assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
       context = dsMockUtils.getContextInstance();
-      asset = entityMockUtils.getFungibleAssetInstance({ ticker });
+      asset = entityMockUtils.getFungibleAssetInstance({ assetId });
 
       expectedDids = ['someDid', 'otherDid', 'yetAnotherDid'];
 
@@ -193,7 +192,7 @@ describe('TrustedClaimIssuers class', () => {
         );
       });
 
-      when(stringToTickerSpy).calledWith(ticker, context).mockReturnValue(rawTicker);
+      when(assetToMeshAssetIdSpy).calledWith(asset, context).mockReturnValue(rawAssetId);
       trustedClaimIssuerMock = dsMockUtils.createQueryMock(
         'complianceManager',
         'trustedClaimIssuer'
@@ -207,7 +206,7 @@ describe('TrustedClaimIssuers class', () => {
     });
 
     it('should return the current default trusted claim issuers', async () => {
-      when(trustedClaimIssuerMock).calledWith(rawTicker).mockResolvedValue(claimIssuers);
+      when(trustedClaimIssuerMock).calledWith(rawAssetId).mockResolvedValue(claimIssuers);
 
       const result = await trustedClaimIssuers.get();
 
@@ -220,7 +219,7 @@ describe('TrustedClaimIssuers class', () => {
       const unsubCallback = 'unsubCallback';
 
       when(trustedClaimIssuerMock)
-        .calledWith(rawTicker, expect.any(Function))
+        .calledWith(rawAssetId, expect.any(Function))
         .mockImplementation((_, cbFunc) => {
           cbFunc(claimIssuers);
           return unsubCallback;

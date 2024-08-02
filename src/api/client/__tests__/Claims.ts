@@ -79,7 +79,7 @@ describe('Claims Class', () => {
             expiry: null,
             claim: {
               type: ClaimType.Accredited,
-              scope: { type: ScopeType.Ticker, value: 'TICKER' },
+              scope: { type: ScopeType.Asset, value: '0x1234' },
             },
           },
         ],
@@ -238,10 +238,8 @@ describe('Claims Class', () => {
     it('should return a list of Identities with claims associated to them filtered by scope', async () => {
       const targetDid = 'someTargetDid';
       const issuerDid = 'someIssuerDid';
-      const scope: Scope = { type: ScopeType.Ticker, value: 'someValue' };
-      jest
-        .spyOn(utilsConversionModule, 'scopeToMiddlewareScope')
-        .mockResolvedValue({ type: 'Ticker', value: 'someValue' });
+      const scope: Scope = { type: ScopeType.Asset, value: '0x1234' };
+      jest.spyOn(utilsConversionModule, 'scopeToMiddlewareScope').mockResolvedValue(scope);
       const date = 1589816265000;
       const accreditedType = ClaimTypeEnum.Accredited;
       const claimData = {
@@ -284,13 +282,13 @@ describe('Claims Class', () => {
             ...commonClaimData,
             expiry: date,
             type: accreditedType,
-            scope: { type: 'Ticker', value: 'someValue' },
+            scope: { type: 'Asset', value: '0x1234' },
           },
           {
             ...commonClaimData,
             expiry: null,
             type: accreditedType,
-            scope: { type: 'Ticker', value: 'someValue' },
+            scope: { type: 'Asset', value: '0x1234' },
           },
         ],
       };
@@ -300,7 +298,7 @@ describe('Claims Class', () => {
       dsMockUtils.createApolloQueryMock(
         claimsQuery({
           dids: [targetDid],
-          scope: { type: 'Ticker', value: 'someValue' },
+          scope: { type: 'Asset', value: '0x1234' },
           trustedClaimIssuers: [issuerDid],
           claimTypes: [ClaimTypeEnum.Accredited],
           includeExpired: false,
@@ -520,8 +518,8 @@ describe('Claims Class', () => {
           claim: {
             type: ClaimType.Jurisdiction,
             scope: {
-              type: ScopeType.Ticker,
-              value: 'someTicker',
+              type: ScopeType.Asset,
+              value: '0x1234',
             },
           },
         },

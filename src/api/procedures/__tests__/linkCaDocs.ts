@@ -1,8 +1,8 @@
 import { Option, u32, Vec } from '@polkadot/types';
 import {
   PalletCorporateActionsCaId,
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesDocument,
-  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -11,7 +11,7 @@ import { getAuthorization, Params, prepareLinkCaDocs } from '~/api/procedures/li
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AssetDocument, TxTags } from '~/types';
+import { AssetDocument, FungibleAsset, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -23,14 +23,18 @@ jest.mock(
 
 describe('linkCaDocs procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
-  let ticker: string;
+  let stringToAssetIdSpy: jest.SpyInstance<PolymeshPrimitivesAssetAssetID, [string, Context]>;
+  let assetId: string;
+  let asset: FungibleAsset;
   let id: BigNumber;
   let documents: AssetDocument[];
-  let rawTicker: PolymeshPrimitivesTicker;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let rawDocuments: PolymeshPrimitivesDocument[];
   let rawDocumentIds: u32[];
-  let documentEntries: [[PolymeshPrimitivesTicker, u32], Option<PolymeshPrimitivesDocument>][];
+  let documentEntries: [
+    [PolymeshPrimitivesAssetAssetID, u32],
+    Option<PolymeshPrimitivesDocument>
+  ][];
   let args: Params;
   let rawCaId: PalletCorporateActionsCaId;
 
@@ -38,8 +42,9 @@ describe('linkCaDocs procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    ticker = 'SOME_TICKER';
+    stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
+    assetId = '0x1234';
+    asset = entityMockUtils.getFungibleAssetInstance({ assetId });
     id = new BigNumber(1);
     documents = [
       {
@@ -53,7 +58,7 @@ describe('linkCaDocs procedure', () => {
         contentHash: '0x02',
       },
     ];
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
     rawDocuments = documents.map(({ name, uri, contentHash, type, filedAt }) =>
       dsMockUtils.createMockDocument({
         name: dsMockUtils.createMockBytes(name),
@@ -71,19 +76,21 @@ describe('linkCaDocs procedure', () => {
     rawDocumentIds = [];
     rawDocuments.forEach((doc, index) => {
       const rawId = dsMockUtils.createMockU32(new BigNumber(index));
-      documentEntries.push(tuple([rawTicker, rawId], dsMockUtils.createMockOption(doc)));
+      documentEntries.push(tuple([rawAssetId, rawId], dsMockUtils.createMockOption(doc)));
       rawDocumentIds.push(rawId);
     });
     args = {
       id,
-      ticker,
+      asset,
       documents,
     };
-    rawCaId = dsMockUtils.createMockCAId({ ticker, localId: id });
+    rawCaId = dsMockUtils.createMockCAId({ assetId, localId: id });
     jest.spyOn(utilsConversionModule, 'corporateActionIdentifierToCaId').mockReturnValue(rawCaId);
   });
 
-  let linkCaDocTransaction: PolymeshTx<[Vec<PolymeshPrimitivesDocument>, PolymeshPrimitivesTicker]>;
+  let linkCaDocTransaction: PolymeshTx<
+    [Vec<PolymeshPrimitivesDocument>, PolymeshPrimitivesAssetAssetID]
+  >;
 
   beforeEach(() => {
     dsMockUtils.createQueryMock('asset', 'assetDocuments', {
@@ -94,7 +101,7 @@ describe('linkCaDocs procedure', () => {
 
     mockContext = dsMockUtils.getContextInstance();
 
-    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(stringToAssetIdSpy).calledWith(assetId, mockContext).mockReturnValue(rawAssetId);
   });
 
   afterEach(() => {
@@ -117,7 +124,7 @@ describe('linkCaDocs procedure', () => {
     try {
       await prepareLinkCaDocs.call(proc, {
         id,
-        ticker,
+        asset,
         documents: [
           documents[0],
           {
@@ -155,7 +162,7 @@ describe('linkCaDocs procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          assets: [expect.objectContaining({ ticker })],
+          assets: [asset],
           transactions: [TxTags.corporateAction.LinkCaDoc],
           portfolios: [],
         },

@@ -1,6 +1,6 @@
 import {
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
-  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import { u64 } from '@polkadot/types-codec';
 import BigNumber from 'bignumber.js';
@@ -29,12 +29,12 @@ jest.mock(
 
 describe('removeLocalMetadata procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
   let bigNumberToU64Spy: jest.SpyInstance;
   let collectionTickerMock: jest.Mock;
 
-  let ticker: string;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let assetId: string;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let id: BigNumber;
   let rawKey: u64;
 
@@ -44,7 +44,7 @@ describe('removeLocalMetadata procedure', () => {
   let rawMetadataKey: PolymeshPrimitivesAssetMetadataAssetMetadataKey;
 
   let removeLocalMetadataKeyMock: PolymeshTx<
-    [PolymeshPrimitivesTicker, PolymeshPrimitivesAssetMetadataAssetMetadataKey]
+    [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesAssetMetadataAssetMetadataKey]
   >;
 
   let metadataEntry: MetadataEntry;
@@ -55,19 +55,19 @@ describe('removeLocalMetadata procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    ticker = 'SOME_TICKER';
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    assetId = '0x1234';
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
 
     id = new BigNumber(1);
     type = MetadataType.Local;
 
-    metadataEntry = new MetadataEntry({ id, type, ticker }, mockContext);
+    metadataEntry = new MetadataEntry({ id, type, assetId }, mockContext);
 
     isModifiableSpy = jest.spyOn(metadataEntry, 'isModifiable');
     isModifiableSpy.mockResolvedValue({
@@ -80,13 +80,15 @@ describe('removeLocalMetadata procedure', () => {
       Local: dsMockUtils.createMockU64(id),
     });
 
-    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(assetToMeshAssetIdSpy)
+      .calledWith(expect.objectContaining({ id: assetId }), mockContext)
+      .mockReturnValue(rawAssetId);
 
     rawKey = dsMockUtils.createMockU64(id);
     when(bigNumberToU64Spy).calledWith(id, mockContext).mockReturnValue(rawKey);
 
     removeLocalMetadataKeyMock = dsMockUtils.createTxMock('asset', 'removeLocalMetadataKey');
-    collectionTickerMock = dsMockUtils.createQueryMock('nft', 'collectionTicker');
+    collectionTickerMock = dsMockUtils.createQueryMock('nft', 'collectionAsset');
 
     collectionTickerMock.mockReturnValue(dsMockUtils.createMockU64(new BigNumber(0)));
   });
@@ -110,7 +112,7 @@ describe('removeLocalMetadata procedure', () => {
 
     expect(result).toEqual({
       transaction: removeLocalMetadataKeyMock,
-      args: [rawTicker, rawKey],
+      args: [rawAssetId, rawKey],
       resolver: undefined,
     });
   });
@@ -128,7 +130,7 @@ describe('removeLocalMetadata procedure', () => {
 
     await expect(
       prepareRemoveLocalMetadata.call(proc, {
-        metadataEntry: new MetadataEntry({ id, ticker, type: MetadataType.Global }, mockContext),
+        metadataEntry: new MetadataEntry({ id, assetId, type: MetadataType.Global }, mockContext),
       })
     ).rejects.toThrow(mockError);
     isModifiableSpy.mockRestore();
@@ -154,6 +156,12 @@ describe('removeLocalMetadata procedure', () => {
     dsMockUtils.createQueryMock('nft', 'collectionKeys', {
       returnValue: dsMockUtils.createMockBTreeSet([rawMetadataKey]),
     });
+
+    jest.spyOn(utilsConversionModule, 'meshMetadataKeyToMetadataKey').mockResolvedValue({
+      id,
+      type: MetadataType.Local,
+      assetId,
+    });
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const result = prepareRemoveLocalMetadata.call(proc, params);
@@ -174,7 +182,7 @@ describe('removeLocalMetadata procedure', () => {
       expect(boundFunc(params)).toEqual({
         permissions: {
           transactions: [TxTags.asset.RemoveLocalMetadataKey],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
           portfolios: [],
         },
       });

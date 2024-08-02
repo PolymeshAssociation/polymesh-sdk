@@ -1,6 +1,7 @@
 import { BTreeSet, Option, u32, u64 } from '@polkadot/types';
 import { Balance, Moment } from '@polkadot/types/interfaces';
 import {
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesMemo,
@@ -22,6 +23,7 @@ import {
   Storage,
 } from '~/api/procedures/addInstruction';
 import {
+  BaseAsset,
   Context,
   DefaultPortfolio,
   Instruction,
@@ -72,6 +74,7 @@ describe('addInstruction procedure', () => {
   let portfolioLikeToPortfolioIdSpy: jest.SpyInstance;
   let portfolioLikeToPortfolioSpy: jest.SpyInstance;
   let getCustodianMock: jest.Mock;
+  let stringToAssetIdSpy: jest.SpyInstance<PolymeshPrimitivesAssetAssetID, [string, Context]>;
   let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
   let bigNumberToBalanceSpy: jest.SpyInstance<
@@ -101,7 +104,7 @@ describe('addInstruction procedure', () => {
   let toPortfolio: DefaultPortfolio | NumberedPortfolio;
   let asset: string;
   let nftAsset: string;
-  let offChainAsset: string;
+  let offChainTicker: string;
   let tradeDate: Date;
   let valueDate: Date;
   let endBlock: BigNumber;
@@ -114,8 +117,8 @@ describe('addInstruction procedure', () => {
   let rawTo: PolymeshPrimitivesIdentityIdPortfolioId;
   let rawSenderIdentity: PolymeshPrimitivesIdentityId;
   let rawReceiverIdentity: PolymeshPrimitivesIdentityId;
-  let rawTicker: PolymeshPrimitivesTicker;
-  let rawNftTicker: PolymeshPrimitivesTicker;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawNftAssetId: PolymeshPrimitivesAssetAssetID;
   let rawOffChainTicker: PolymeshPrimitivesTicker;
   let rawTradeDate: Moment;
   let rawValueDate: Moment;
@@ -143,6 +146,7 @@ describe('addInstruction procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
+
     portfolioIdToMeshPortfolioIdSpy = jest.spyOn(
       utilsConversionModule,
       'portfolioIdToMeshPortfolioId'
@@ -150,6 +154,7 @@ describe('addInstruction procedure', () => {
     portfolioLikeToPortfolioIdSpy = jest.spyOn(utilsConversionModule, 'portfolioLikeToPortfolioId');
     portfolioLikeToPortfolioSpy = jest.spyOn(utilsConversionModule, 'portfolioLikeToPortfolio');
     getCustodianMock = jest.fn();
+    stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
     stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
     bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
     bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
@@ -179,9 +184,9 @@ describe('addInstruction procedure', () => {
       did: toDid,
       id: new BigNumber(2),
     });
-    asset = 'SOME_ASSET';
-    nftAsset = 'TEST_NFT';
-    offChainAsset = 'SOME_OFFCHAIN_ASSET';
+    asset = '0x1111';
+    nftAsset = '0x2222';
+    offChainTicker = 'SOME_TICKER';
     const now = new Date();
     tradeDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     valueDate = new Date(now.getTime() + 24 * 60 * 60 * 1000 + 1);
@@ -205,9 +210,9 @@ describe('addInstruction procedure', () => {
       dsMockUtils.createMockIdentityId(mediatorDid),
     ]);
     rawEmptyMediatorSet = dsMockUtils.createMockBTreeSet([]);
-    rawTicker = dsMockUtils.createMockTicker(asset);
-    rawNftTicker = dsMockUtils.createMockTicker(nftAsset);
-    rawOffChainTicker = dsMockUtils.createMockTicker(offChainAsset);
+    rawAssetId = dsMockUtils.createMockAssetId(asset);
+    rawNftAssetId = dsMockUtils.createMockAssetId(nftAsset);
+    rawOffChainTicker = dsMockUtils.createMockTicker(offChainTicker);
     rawTradeDate = dsMockUtils.createMockMoment(new BigNumber(tradeDate.getTime()));
     rawValueDate = dsMockUtils.createMockMoment(new BigNumber(valueDate.getTime()));
     rawEndBlock = dsMockUtils.createMockU32(endBlock);
@@ -216,7 +221,7 @@ describe('addInstruction procedure', () => {
     rawBlockSettlementType = dsMockUtils.createMockSettlementType({ SettleOnBlock: rawEndBlock });
     rawManualSettlementType = dsMockUtils.createMockSettlementType({ SettleManual: rawEndBlock });
     rawNfts = dsMockUtils.createMockNfts({
-      ticker: rawNftTicker,
+      assetId: rawNftAssetId,
       ids: [dsMockUtils.createMockU64()],
     });
     rawLeg = dsMockUtils.createMockInstructionLeg({
@@ -224,7 +229,7 @@ describe('addInstruction procedure', () => {
         sender: rawFrom,
         receiver: rawTo,
         amount: rawAmount,
-        ticker: rawTicker,
+        assetId: rawAssetId,
       },
     });
     rawNftLeg = dsMockUtils.createMockInstructionLeg({
@@ -252,7 +257,7 @@ describe('addInstruction procedure', () => {
       {
         from: PolymeshPrimitivesIdentityIdPortfolioId;
         to: PolymeshPrimitivesIdentityIdPortfolioId;
-        asset: PolymeshPrimitivesTicker;
+        asset: PolymeshPrimitivesAssetAssetID;
         amount: Balance;
       }[],
       PolymeshPrimitivesIdentityIdPortfolioId[],
@@ -268,7 +273,7 @@ describe('addInstruction procedure', () => {
       {
         from: PolymeshPrimitivesIdentityIdPortfolioId;
         to: PolymeshPrimitivesIdentityIdPortfolioId;
-        asset: PolymeshPrimitivesTicker;
+        asset: PolymeshPrimitivesAssetAssetID;
         amount: Balance;
       }[],
       Option<PolymeshPrimitivesMemo>,
@@ -277,6 +282,16 @@ describe('addInstruction procedure', () => {
   >;
 
   beforeEach(() => {
+    jest.spyOn(utilsInternalModule, 'asBaseAsset').mockImplementation((a): Promise<BaseAsset> => {
+      return Promise.resolve(
+        typeof a === 'string' ? entityMockUtils.getBaseAssetInstance({ assetId: a }) : a
+      );
+    });
+
+    jest.spyOn(utilsInternalModule, 'asAssetId').mockImplementation((a): Promise<string> => {
+      return Promise.resolve(typeof a === 'string' ? a : a.id);
+    });
+
     const tickerReservationDetailsMock = jest.fn();
     tickerReservationDetailsMock.mockResolvedValue({
       owner: entityMockUtils.getIdentityInstance(),
@@ -316,9 +331,9 @@ describe('addInstruction procedure', () => {
         details: tickerReservationDetailsMock,
       },
     });
-    when(stringToTickerSpy).calledWith(asset, mockContext).mockReturnValue(rawTicker);
+    when(stringToAssetIdSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
     when(stringToTickerSpy)
-      .calledWith(offChainAsset, mockContext)
+      .calledWith(offChainTicker, mockContext)
       .mockReturnValue(rawOffChainTicker);
     when(bigNumberToU64Spy).calledWith(venueId, mockContext).mockReturnValue(rawVenueId);
     when(bigNumberToBalanceSpy).calledWith(amount, mockContext).mockReturnValue(rawAmount);
@@ -432,6 +447,8 @@ describe('addInstruction procedure', () => {
 
     entityMockUtils.configureMocks({
       venueOptions: { exists: true },
+      fungibleAssetOptions: { exists: true },
+      nftCollectionOptions: { exists: false },
     });
 
     let error;
@@ -439,7 +456,7 @@ describe('addInstruction procedure', () => {
       from,
       to,
       amount: new BigNumber(0),
-      asset: entityMockUtils.getFungibleAssetInstance({ ticker: asset }),
+      asset: entityMockUtils.getFungibleAssetInstance({ assetId: asset }),
     });
     try {
       await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs }] });
@@ -459,6 +476,8 @@ describe('addInstruction procedure', () => {
 
     entityMockUtils.configureMocks({
       venueOptions: { exists: true },
+      fungibleAssetOptions: { exists: false },
+      nftCollectionOptions: { exists: true },
     });
 
     let error;
@@ -466,7 +485,7 @@ describe('addInstruction procedure', () => {
       from,
       to,
       nfts: [],
-      asset: entityMockUtils.getNftCollectionInstance({ ticker: asset }),
+      asset: entityMockUtils.getNftCollectionInstance({ assetId: asset }),
     });
     try {
       await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs }] });
@@ -493,7 +512,7 @@ describe('addInstruction procedure', () => {
       from: sender,
       to: receiver,
       offChainAmount: new BigNumber(0),
-      asset: offChainAsset,
+      asset: offChainTicker,
     } as OffChainLeg);
 
     try {
@@ -503,6 +522,30 @@ describe('addInstruction procedure', () => {
     }
 
     expect(error.message).toBe('Instruction legs cannot have zero amount');
+    expect(error.code).toBe(ErrorCode.ValidationError);
+    expect(error.data.failedInstructionIndexes[0]).toBe(0);
+  });
+
+  it('should throw an error if any instruction contains off chain leg without a venue', async () => {
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      portfoliosToAffirm: [],
+    });
+
+    let error;
+    const legs = Array(2).fill({
+      from: sender,
+      to: receiver,
+      offChainAmount: new BigNumber(1),
+      asset: offChainTicker,
+    } as OffChainLeg);
+
+    try {
+      await prepareAddInstruction.call(proc, { venueId: undefined, instructions: [{ legs }] });
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('Instruction legs cannot be offchain without a venue');
     expect(error.code).toBe(ErrorCode.ValidationError);
     expect(error.data.failedInstructionIndexes[0]).toBe(0);
   });
@@ -535,7 +578,7 @@ describe('addInstruction procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe('No asset exists with ticker: "SOME_ASSET"');
+    expect(error.message).toBe('No asset exists with asset ID: "0x1111"');
     expect(error.code).toBe(ErrorCode.DataUnavailable);
   });
 
@@ -546,6 +589,8 @@ describe('addInstruction procedure', () => {
 
     entityMockUtils.configureMocks({
       venueOptions: { exists: true },
+      fungibleAssetOptions: { exists: true },
+      nftCollectionOptions: { exists: false },
     });
 
     let error;
@@ -553,7 +598,7 @@ describe('addInstruction procedure', () => {
       from: to,
       to,
       amount: new BigNumber(10),
-      asset: entityMockUtils.getFungibleAssetInstance({ ticker: asset }),
+      asset: entityMockUtils.getFungibleAssetInstance({ assetId: asset }),
     });
     try {
       await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs }] });
@@ -580,7 +625,7 @@ describe('addInstruction procedure', () => {
       from: sender,
       to: sender,
       offChainAmount: new BigNumber(10),
-      asset: offChainAsset,
+      asset: offChainTicker,
     });
     try {
       await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs }] });
@@ -620,9 +665,9 @@ describe('addInstruction procedure', () => {
     });
 
     entityMockUtils.configureMocks({
-      venueOptions: {
-        exists: true,
-      },
+      venueOptions: { exists: true },
+      fungibleAssetOptions: { exists: true },
+      nftCollectionOptions: { exists: false },
     });
 
     let error;
@@ -631,7 +676,7 @@ describe('addInstruction procedure', () => {
       from,
       to,
       amount,
-      asset: entityMockUtils.getFungibleAssetInstance({ ticker: asset }),
+      asset: entityMockUtils.getFungibleAssetInstance({ assetId: asset }),
     });
 
     try {
@@ -654,7 +699,7 @@ describe('addInstruction procedure', () => {
       to,
       amount,
       asset: entityMockUtils.getFungibleAssetInstance({
-        ticker: asset,
+        assetId: asset,
         getVenueFilteringDetails: {
           isEnabled: true,
           allowedVenues: [
@@ -670,7 +715,7 @@ describe('addInstruction procedure', () => {
       to,
       amount,
       asset: entityMockUtils.getFungibleAssetInstance({
-        ticker: asset,
+        assetId: asset,
         getVenueFilteringDetails: {
           isEnabled: true,
           allowedVenues: [entityMockUtils.getVenueInstance({ id: new BigNumber(2) })],
@@ -691,6 +736,63 @@ describe('addInstruction procedure', () => {
     ).rejects.toThrow(expectedError);
   });
 
+  it('should throw an error if no venue is specified and an asset has filtering enabled', () => {
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      portfoliosToAffirm: [],
+    });
+
+    const legOne = {
+      from,
+      to,
+      amount,
+      asset: entityMockUtils.getFungibleAssetInstance({
+        assetId: asset,
+        getVenueFilteringDetails: {
+          isEnabled: true,
+          allowedVenues: [entityMockUtils.getVenueInstance({ id: new BigNumber(1) })],
+        },
+      }),
+    };
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'One or more of the assets must be traded at a venue',
+    });
+
+    return expect(
+      prepareAddInstruction.call(proc, {
+        instructions: [{ legs: [legOne] }],
+      })
+    ).rejects.toThrow(expectedError);
+  });
+
+  it('should throw an error if no venue and the chain is still on v6', () => {
+    mockContext.isV6 = true;
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      portfoliosToAffirm: [],
+    });
+
+    const legOne = {
+      from,
+      to,
+      amount,
+      asset: entityMockUtils.getFungibleAssetInstance({
+        assetId: asset,
+      }),
+    };
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.General,
+      message: 'A venue id must be provided on v6 chains',
+    });
+
+    return expect(
+      prepareAddInstruction.call(proc, {
+        instructions: [{ legs: [legOne] }],
+      })
+    ).rejects.toThrow(expectedError);
+  });
+
   it('should throw an error if the end block is in the past', async () => {
     dsMockUtils.configureMocks({ contextOptions: { latestBlock: new BigNumber(1000) } });
 
@@ -698,6 +800,8 @@ describe('addInstruction procedure', () => {
       venueOptions: {
         exists: true,
       },
+      fungibleAssetOptions: { exists: true },
+      nftCollectionOptions: { exists: false },
     });
 
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
@@ -720,7 +824,7 @@ describe('addInstruction procedure', () => {
                 from,
                 to,
                 amount,
-                asset: entityMockUtils.getFungibleAssetInstance({ ticker: asset }),
+                asset: entityMockUtils.getFungibleAssetInstance({ assetId: asset }),
               },
             ],
             endBlock: new BigNumber(100),
@@ -918,6 +1022,8 @@ describe('addInstruction procedure', () => {
       venueOptions: {
         exists: true,
       },
+      nftCollectionOptions: { exists: false },
+      fungibleAssetOptions: { exists: true },
     });
     getCustodianMock.mockReturnValue({ did: toDid });
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
@@ -930,7 +1036,7 @@ describe('addInstruction procedure', () => {
           from,
           to,
           amount,
-          asset: entityMockUtils.getFungibleAssetInstance({ ticker: asset }),
+          asset: entityMockUtils.getFungibleAssetInstance({ assetId: asset }),
         },
       ],
       tradeDate,
@@ -1015,7 +1121,7 @@ describe('addInstruction procedure', () => {
               from: sender,
               to: receiver,
               offChainAmount: amount,
-              asset: offChainAsset,
+              asset: offChainTicker,
             },
           ],
         },
@@ -1053,7 +1159,7 @@ describe('addInstruction procedure', () => {
         instructions: [
           {
             mediators: [mediatorDid],
-            legs: [{ from: fromPortfolio, to: toPortfolio, amount, asset: 'SOME_ASSET' }],
+            legs: [{ from: fromPortfolio, to: toPortfolio, amount, asset: '0x1111' }],
           },
         ],
       });
@@ -1077,13 +1183,30 @@ describe('addInstruction procedure', () => {
         instructions: [
           {
             mediators: [mediatorDid],
-            legs: [{ from: fromPortfolio, to: toPortfolio, amount, asset: 'SOME_ASSET' }],
+            legs: [{ from: fromPortfolio, to: toPortfolio, amount, asset: '0x1111' }],
           },
         ],
       });
 
       expect(result).toEqual({
         roles: [{ type: RoleType.VenueOwner, venueId }],
+        permissions: {
+          assets: [],
+          portfolios: [],
+          transactions: [TxTags.settlement.AddInstructionWithMediators],
+        },
+      });
+
+      result = await boundFunc({
+        instructions: [
+          {
+            mediators: [mediatorDid],
+            legs: [{ from: fromPortfolio, to: toPortfolio, amount, asset: '0x1111' }],
+          },
+        ],
+      });
+
+      expect(result).toEqual({
         permissions: {
           assets: [],
           portfolios: [],

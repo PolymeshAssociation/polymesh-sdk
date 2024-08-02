@@ -9,7 +9,7 @@ import {
 import { Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { CreateMultiSigParams, ErrorCode } from '~/types';
+import { CreateMultiSigParams, ErrorCode, TxGroup } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -55,7 +55,7 @@ describe('createMultiSig procedure', () => {
       mockContext
     );
 
-    const result = await prepareCreateMultiSigAccount.call(proc, {
+    let result = await prepareCreateMultiSigAccount.call(proc, {
       signers,
       requiredSignatures,
     });
@@ -63,7 +63,26 @@ describe('createMultiSig procedure', () => {
     expect(result).toEqual({
       transaction: createMultiSigTransaction,
       resolver: expect.any(Function),
-      args: [rawSignatories, rawRequiredSignatures],
+      args: [rawSignatories, rawRequiredSignatures, null],
+    });
+
+    const rawPermissions = dsMockUtils.createMockPermissions();
+    jest
+      .spyOn(utilsConversionModule, 'permissionsToMeshPermissions')
+      .mockReturnValue(rawPermissions);
+
+    result = await prepareCreateMultiSigAccount.call(proc, {
+      signers,
+      requiredSignatures,
+      permissions: {
+        transactionGroups: [TxGroup.AssetManagement],
+      },
+    });
+
+    expect(result).toEqual({
+      transaction: createMultiSigTransaction,
+      resolver: expect.any(Function),
+      args: [rawSignatories, rawRequiredSignatures, rawPermissions],
     });
   });
 
@@ -77,6 +96,26 @@ describe('createMultiSig procedure', () => {
     const expectedError = new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The number of required signatures should not exceed the number of signers',
+    });
+
+    return expect(
+      prepareCreateMultiSigAccount.call(proc, {
+        signers,
+        requiredSignatures,
+      })
+    ).rejects.toThrowError(expectedError);
+  });
+
+  it('should throw an error if more Identity signers are provided', () => {
+    const proc = procedureMockUtils.getInstance<CreateMultiSigParams, MultiSig>(mockContext);
+    const mockIdentity = entityMockUtils.getIdentityInstance();
+
+    const signers = [mockIdentity];
+    const requiredSignatures = new BigNumber(1);
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'MultiSig signers must be accounts as of v7',
     });
 
     return expect(

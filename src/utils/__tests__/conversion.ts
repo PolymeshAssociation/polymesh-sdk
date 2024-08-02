@@ -11,6 +11,7 @@ import {
   Permill,
 } from '@polkadot/types/interfaces';
 import { H512 } from '@polkadot/types/interfaces/runtime';
+import { DispatchError } from '@polkadot/types/interfaces/system';
 import {
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
@@ -22,6 +23,7 @@ import {
   PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
   PolymeshPrimitivesAgentAgentGroup,
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesAssetAssetType,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
@@ -43,10 +45,11 @@ import {
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesIdentityIdPortfolioKind,
   PolymeshPrimitivesMemo,
-  PolymeshPrimitivesMultisigProposalStatus,
+  PolymeshPrimitivesMultisigProposalState,
   PolymeshPrimitivesNftNftMetadataAttribute,
   PolymeshPrimitivesNftNfTs,
   PolymeshPrimitivesPortfolioFund,
+  PolymeshPrimitivesSecondaryKeyExtrinsicPermissions,
   PolymeshPrimitivesSecondaryKeySignatory,
   PolymeshPrimitivesSettlementAssetCount,
   PolymeshPrimitivesSettlementLeg,
@@ -59,7 +62,6 @@ import {
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesStatisticsStatUpdate,
-  PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceTransferCondition,
   SpCoreEcdsaSignature,
@@ -67,13 +69,14 @@ import {
   SpCoreSr25519Signature,
   SpRuntimeMultiSignature,
 } from '@polkadot/types/lookup';
-import { BTreeSet } from '@polkadot/types-codec';
+import { BTreeSet, Result } from '@polkadot/types-codec';
 import type { ITuple } from '@polkadot/types-codec/types';
 import { hexToU8a, stringToHex } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 import {
   AuthorizationType as MeshAuthorizationType,
+  ComplianceReport,
   ExtrinsicPermissions,
   Permissions as MeshPermissions,
 } from 'polymesh-types/polymesh';
@@ -101,9 +104,9 @@ import {
   Portfolio as MiddlewarePortfolio,
 } from '~/middleware/types';
 import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
-import { Instruction as MiddlewareInstructionOld } from '~/middleware/typesV6';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
+  createMockAssetId,
   createMockIdentityId,
   createMockNfts,
   createMockOption,
@@ -186,10 +189,16 @@ import {
   addressToKey,
   agentGroupToPermissionGroup,
   agentGroupToPermissionGroupIdentifier,
+  assetComplianceReportToCompliance,
   assetComplianceResultToCompliance,
   assetCountToRaw,
+  assetDispatchErrorToTransferError,
   assetDocumentToDocument,
   assetIdentifierToSecurityIdentifier,
+  assetIdToString,
+  assetToMeshAssetId,
+  assetToMeshAssetIdKey,
+  assetToMeshAssetIdWithKey,
   assetTypeToKnownOrId,
   authorizationDataToAuthorization,
   authorizationToAuthorizationData,
@@ -202,7 +211,6 @@ import {
   booleanToBool,
   boolToBoolean,
   bytesToString,
-  canTransferResultToTransferStatus,
   caTaxWithholdingsToMeshTaxWithholdings,
   cddIdToString,
   cddStatusToBoolean,
@@ -255,6 +263,7 @@ import {
   legToOffChainLeg,
   mediatorAffirmationStatusToStatus,
   meshAffirmationStatusToAffirmationStatus,
+  meshAssetToAssetId,
   meshClaimToClaim,
   meshClaimToInputStatClaim,
   meshClaimTypeToClaimType,
@@ -265,6 +274,8 @@ import {
   meshMetadataValueToMetadataValue,
   meshNftToNftId,
   meshPermissionsToPermissions,
+  meshPermissionsToPermissionsV2,
+  meshProposalStateToProposalStatus, // NOSONAR
   meshProposalStatusToProposalStatus,
   meshScopeToScope,
   meshSettlementTypeToEndCondition,
@@ -292,7 +303,6 @@ import {
   nftToMeshNft,
   offChainMetadataToMeshReceiptMetadata,
   offeringTierToPriceTier,
-  oldMiddlewareInstructionToHistoricInstruction,
   percentageToPermill,
   permillToBigNumber,
   permissionGroupIdentifierToAgentGroup,
@@ -325,6 +335,8 @@ import {
   statsClaimToStatClaimInputType,
   statUpdatesToBtreeStatUpdate,
   stringToAccountId,
+  stringToAssetId,
+  stringToAssetIdKey,
   stringToBlockHash,
   stringToBytes,
   stringToCddId,
@@ -349,6 +361,7 @@ import {
   transactionToTxTag,
   transferConditionsToBtreeTransferConditions,
   transferConditionToTransferRestriction,
+  transferReportToTransferBreakdown,
   transferRestrictionToPolymeshTransferCondition,
   transferRestrictionTypeToStatOpType,
   trustedClaimIssuerToTrustedIssuer,
@@ -492,9 +505,9 @@ describe('stringToBytes and bytesToString', () => {
   describe('bytesToString', () => {
     it('should convert a polkadot Bytes object to a string', () => {
       const fakeResult = 'someBytes';
-      const ticker = dsMockUtils.createMockBytes(fakeResult);
+      const bytes = dsMockUtils.createMockBytes(fakeResult);
 
-      const result = bytesToString(ticker);
+      const result = bytesToString(bytes);
       expect(result).toEqual(fakeResult);
     });
   });
@@ -515,26 +528,27 @@ describe('fungibleMovementToPortfolioFund', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should convert a portfolio item into a polkadot move portfolio item', () => {
+  it('should convert a portfolio item into a polkadot move portfolio item', async () => {
     const context = dsMockUtils.getContextInstance();
-    const ticker = 'SOME_ASSET';
+    const assetId = '0x1234';
     const amount = new BigNumber(100);
     const memo = 'someMessage';
-    const asset = entityMockUtils.getFungibleAssetInstance({ ticker });
-    const rawTicker = dsMockUtils.createMockTicker(ticker);
+    const asset = entityMockUtils.getBaseAssetInstance({ assetId });
+    const rawAssetId = dsMockUtils.createMockAssetId(assetId);
     const rawAmount = dsMockUtils.createMockBalance(amount);
     const rawMemo = 'memo' as unknown as PolymeshPrimitivesMemo;
     const fakeResult =
       'PolymeshPrimitivesPortfolioFund' as unknown as PolymeshPrimitivesPortfolioFund;
 
+    jest.spyOn(utilsInternalModule, 'asBaseAsset').mockResolvedValue(asset);
     let portfolioMovement: PortfolioMovement = {
-      asset: ticker,
+      asset: assetId,
       amount,
     };
 
     when(context.createType)
-      .calledWith('PolymeshPrimitivesTicker', padString(ticker, 12))
-      .mockReturnValue(rawTicker);
+      .calledWith('PolymeshPrimitivesAssetAssetID', assetId)
+      .mockReturnValue(rawAssetId);
 
     when(context.createType)
       .calledWith('Balance', portfolioMovement.amount.multipliedBy(Math.pow(10, 6)).toString())
@@ -544,24 +558,24 @@ describe('fungibleMovementToPortfolioFund', () => {
       .calledWith('PolymeshPrimitivesPortfolioFund', {
         description: {
           Fungible: {
-            ticker: rawTicker,
             amount: rawAmount,
+            assetId: rawAssetId,
           },
         },
         memo: null,
       })
       .mockReturnValue(fakeResult);
 
-    let result = fungibleMovementToPortfolioFund(portfolioMovement, context);
+    let result = await fungibleMovementToPortfolioFund(portfolioMovement, context);
 
     expect(result).toBe(fakeResult);
 
     portfolioMovement = {
-      asset,
+      asset: assetId,
       amount,
     };
 
-    result = fungibleMovementToPortfolioFund(portfolioMovement, context);
+    result = await fungibleMovementToPortfolioFund(portfolioMovement, context);
 
     expect(result).toBe(fakeResult);
 
@@ -573,7 +587,7 @@ describe('fungibleMovementToPortfolioFund', () => {
       .calledWith('PolymeshPrimitivesPortfolioFund', {
         description: {
           Fungible: {
-            ticker: rawTicker,
+            assetId: rawAssetId,
             amount: rawAmount,
           },
         },
@@ -582,12 +596,12 @@ describe('fungibleMovementToPortfolioFund', () => {
       .mockReturnValue(fakeResult);
 
     portfolioMovement = {
-      asset,
+      asset: assetId,
       amount,
       memo,
     };
 
-    result = fungibleMovementToPortfolioFund(portfolioMovement, context);
+    result = await fungibleMovementToPortfolioFund(portfolioMovement, context);
 
     expect(result).toBe(fakeResult);
   });
@@ -608,26 +622,27 @@ describe('nftMovementToPortfolioFund', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should convert a portfolio item into a polkadot move portfolio item', () => {
+  it('should convert a portfolio item into a polkadot move portfolio item', async () => {
     const context = dsMockUtils.getContextInstance();
-    const ticker = 'COLLECTION';
+    const assetId = 'COLLECTION';
     const id = new BigNumber(1);
     const memo = 'someMessage';
-    const asset = entityMockUtils.getNftCollectionInstance({ ticker });
-    const rawTicker = dsMockUtils.createMockTicker(ticker);
+    const asset = entityMockUtils.getNftCollectionInstance({ assetId });
+    const rawAssetId = dsMockUtils.createMockAssetId(assetId);
     const rawId = dsMockUtils.createMockU64(id);
     const rawMemo = 'memo' as unknown as PolymeshPrimitivesMemo;
     const fakeResult =
       'PolymeshPrimitivesPortfolioFund' as unknown as PolymeshPrimitivesPortfolioFund;
 
+    jest.spyOn(utilsInternalModule, 'asBaseAsset').mockResolvedValue(asset);
     let portfolioMovement: NonFungiblePortfolioMovement = {
-      asset: ticker,
+      asset: assetId,
       nfts: [id],
     };
 
     when(context.createType)
-      .calledWith('PolymeshPrimitivesTicker', padString(ticker, 12))
-      .mockReturnValue(rawTicker);
+      .calledWith('PolymeshPrimitivesAssetAssetID', assetId)
+      .mockReturnValue(rawAssetId);
 
     when(context.createType).calledWith('u64', id.toString()).mockReturnValue(rawId);
 
@@ -635,7 +650,7 @@ describe('nftMovementToPortfolioFund', () => {
       .calledWith('PolymeshPrimitivesPortfolioFund', {
         description: {
           NonFungible: {
-            ticker: rawTicker,
+            assetId: rawAssetId,
             ids: [rawId],
           },
         },
@@ -643,7 +658,7 @@ describe('nftMovementToPortfolioFund', () => {
       })
       .mockReturnValue(fakeResult);
 
-    let result = nftMovementToPortfolioFund(portfolioMovement, context);
+    let result = await nftMovementToPortfolioFund(portfolioMovement, context);
 
     expect(result).toBe(fakeResult);
 
@@ -652,7 +667,7 @@ describe('nftMovementToPortfolioFund', () => {
       nfts: [id],
     };
 
-    result = nftMovementToPortfolioFund(portfolioMovement, context);
+    result = await nftMovementToPortfolioFund(portfolioMovement, context);
 
     expect(result).toBe(fakeResult);
 
@@ -664,7 +679,7 @@ describe('nftMovementToPortfolioFund', () => {
       .calledWith('PolymeshPrimitivesPortfolioFund', {
         description: {
           NonFungible: {
-            ticker: rawTicker,
+            assetId: rawAssetId,
             ids: [rawId],
           },
         },
@@ -678,7 +693,7 @@ describe('nftMovementToPortfolioFund', () => {
       memo,
     };
 
-    result = nftMovementToPortfolioFund(portfolioMovement, context);
+    result = await nftMovementToPortfolioFund(portfolioMovement, context);
 
     expect(result).toBe(fakeResult);
   });
@@ -773,6 +788,191 @@ describe('stringToTicker and tickerToString', () => {
 
       const result = tickerToString(ticker);
       expect(result).toEqual(fakeResult);
+    });
+  });
+});
+
+describe('stringToAssetId, stringToAssetIdKey and assetIdToString', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  describe('stringToAssetId', () => {
+    it('should convert a string to a polkadot Ticker object', () => {
+      const context = dsMockUtils.getContextInstance();
+
+      const value = '0x1234';
+      const fakeResult = '0x1234' as unknown as PolymeshPrimitivesAssetAssetID;
+
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesAssetAssetID', value)
+        .mockReturnValue(fakeResult);
+
+      const result = stringToAssetId(value, context);
+
+      expect(result).toBe(fakeResult);
+    });
+  });
+
+  describe('stringToAssetIdKey', () => {
+    beforeAll(() => {
+      dsMockUtils.initMocks();
+    });
+
+    afterEach(() => {
+      dsMockUtils.reset();
+    });
+
+    afterAll(() => {
+      dsMockUtils.cleanup();
+    });
+
+    it('should call stringToAssetIdKey and return the result as an object', () => {
+      const value = '0x1234';
+      const fakeResult = '0x1234' as unknown as PolymeshPrimitivesAssetAssetID;
+      const context = dsMockUtils.getContextInstance();
+
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesAssetAssetID', value)
+        .mockReturnValue(fakeResult);
+
+      const result = stringToAssetIdKey(value, context);
+      expect(result).toEqual({ AssetId: fakeResult });
+    });
+  });
+
+  describe('stringToAssetId', () => {
+    it('should convert a polkadot AssetId object to a string', () => {
+      const fakeResult = '0x1234';
+      const assetId = dsMockUtils.createMockAssetId(fakeResult);
+
+      const result = assetIdToString(assetId);
+      expect(result).toEqual(fakeResult);
+    });
+  });
+});
+
+describe('meshAssetToAssetId, assetToMeshAssetIdKey and assetToMeshAssetId', () => {
+  let context: Context;
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  describe('meshAssetToAssetId', () => {
+    it('should convert a mesh Ticker or AssetId to string value', () => {
+      const assetId = '0x1234';
+      const mockAssetId = dsMockUtils.createMockAssetId(assetId);
+
+      let result = meshAssetToAssetId(mockAssetId, context);
+      expect(result).toBe(assetId);
+
+      const ticker = 'SOME_TICKER';
+      const mockTicker = dsMockUtils.createMockTicker(ticker);
+
+      result = meshAssetToAssetId(mockTicker, dsMockUtils.getContextInstance({ isV6: true }));
+      expect(result).toBe(ticker);
+    });
+  });
+
+  describe('assetToMeshAssetIdKey', () => {
+    it('should call assetToMeshAssetIdKey and return the result as an object', () => {
+      let value = '0x1234';
+      const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesAssetAssetID;
+
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesAssetAssetID', value)
+        .mockReturnValue(fakeResult);
+
+      let result = assetToMeshAssetIdKey(value, context);
+      expect(result).toEqual({ AssetId: fakeResult });
+
+      context = dsMockUtils.getContextInstance({ isV6: true });
+
+      value = 'SOME_TICKER';
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesTicker', padString(value, 12))
+        .mockReturnValue(fakeResult);
+
+      result = assetToMeshAssetIdKey(value, context);
+      expect(result).toEqual({ Ticker: fakeResult });
+    });
+  });
+
+  describe('assetToMeshAssetId', () => {
+    it('should call assetToMeshAssetId and return the result', () => {
+      let value = '0x1234';
+      const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesAssetAssetID;
+
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesAssetAssetID', value)
+        .mockReturnValue(fakeResult);
+
+      let result = assetToMeshAssetId(
+        entityMockUtils.getBaseAssetInstance({ assetId: value }),
+        context
+      );
+      expect(result).toEqual(fakeResult);
+
+      context = dsMockUtils.getContextInstance({ isV6: true });
+      value = 'SOME_TICKER';
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesTicker', padString(value, 12))
+        .mockReturnValue(fakeResult);
+
+      result = assetToMeshAssetId(
+        entityMockUtils.getBaseAssetInstance({ assetId: value }),
+        context
+      );
+      expect(result).toEqual(fakeResult);
+    });
+  });
+
+  describe('assetToMeshAssetId', () => {
+    it('should call assetToMeshAssetIdWithKey and return the result', () => {
+      let value = '0x1234';
+      const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesAssetAssetID;
+
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesAssetAssetID', value)
+        .mockReturnValue(fakeResult);
+
+      let result = assetToMeshAssetIdWithKey(
+        entityMockUtils.getBaseAssetInstance({ assetId: value }),
+        context
+      );
+      expect(result).toEqual({ assetId: fakeResult });
+
+      context = dsMockUtils.getContextInstance({ isV6: true });
+      value = 'SOME_TICKER';
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesTicker', padString(value, 12))
+        .mockReturnValue(fakeResult);
+
+      result = assetToMeshAssetIdWithKey(
+        entityMockUtils.getBaseAssetInstance({ assetId: value }),
+        context
+      );
+      expect(result).toEqual({ ticker: fakeResult });
     });
   });
 });
@@ -1182,6 +1382,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
   describe('authorizationToAuthorizationData', () => {
     it('should convert an Authorization to a polkadot AuthorizationData object', () => {
       const ticker = 'TICKER_NAME';
+      const assetId = '0x1234';
       const context = dsMockUtils.getContextInstance();
 
       let value: Authorization = {
@@ -1207,9 +1408,13 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       expect(result).toBe(fakeResult);
 
       const fakeTicker = 'convertedTicker' as unknown as PolymeshPrimitivesTicker;
+      const fakeAssetId = '0x1234' as unknown as PolymeshPrimitivesAssetAssetID;
       when(createTypeMock)
         .calledWith('PolymeshPrimitivesTicker', padString(ticker, 12))
         .mockReturnValue(fakeTicker);
+      when(createTypeMock)
+        .calledWith('PolymeshPrimitivesAssetAssetID', assetId)
+        .mockReturnValue(fakeAssetId);
 
       value = {
         type: AuthorizationType.JoinIdentity,
@@ -1274,7 +1479,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       expect(result).toBe(fakeResult);
 
       const knownPermissionGroup = entityMockUtils.getKnownPermissionGroupInstance({
-        ticker,
+        assetId,
         type: PermissionGroupType.Full,
       });
 
@@ -1290,7 +1495,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
       when(createTypeMock)
         .calledWith('PolymeshPrimitivesAuthorizationAuthorizationData', {
-          [value.type]: [fakeTicker, rawAgentGroup],
+          [value.type]: [fakeAssetId, rawAgentGroup],
         })
         .mockReturnValue(fakeResult);
 
@@ -1299,7 +1504,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
       const id = new BigNumber(1);
       const customPermissionGroup = entityMockUtils.getCustomPermissionGroupInstance({
-        ticker,
+        assetId,
         id,
       });
 
@@ -1318,7 +1523,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
       when(createTypeMock)
         .calledWith('PolymeshPrimitivesAuthorizationAuthorizationData', {
-          [value.type]: [fakeTicker, rawAgentGroup],
+          [value.type]: [fakeAssetId, rawAgentGroup],
         })
         .mockReturnValue(fakeResult);
       result = authorizationToAuthorizationData(value, context);
@@ -1326,16 +1531,12 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
       value = {
         type: AuthorizationType.TransferAssetOwnership,
-        value: 'TICKER',
+        value: assetId,
       };
 
       when(createTypeMock)
-        .calledWith('PolymeshPrimitivesTicker', padString('TICKER', MAX_TICKER_LENGTH))
-        .mockReturnValue(fakeTicker);
-
-      when(createTypeMock)
         .calledWith('PolymeshPrimitivesAuthorizationAuthorizationData', {
-          [value.type]: fakeTicker,
+          [value.type]: fakeAssetId,
         })
         .mockReturnValue(fakeResult);
 
@@ -1485,7 +1686,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
         value: 'SOME_TICKER',
       };
       authorizationData = dsMockUtils.createMockAuthorizationData({
-        TransferAssetOwnership: dsMockUtils.createMockTicker(fakeResult.value),
+        TransferAssetOwnership: dsMockUtils.createMockAssetId(fakeResult.value),
       });
 
       result = authorizationDataToAuthorization(authorizationData, context);
@@ -1528,18 +1729,21 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       result = authorizationDataToAuthorization(authorizationData, context);
       expect(result).toEqual(fakeResult);
 
-      const ticker = 'SOME_TICKER';
+      const assetId = '0x1234';
       const type = PermissionGroupType.Full;
       fakeResult = {
         type: AuthorizationType.BecomeAgent,
         value: expect.objectContaining({
-          asset: expect.objectContaining({ ticker }),
+          asset: expect.objectContaining({ id: assetId }),
           type,
         }),
       };
 
       authorizationData = dsMockUtils.createMockAuthorizationData({
-        BecomeAgent: [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockAgentGroup(type)],
+        BecomeAgent: [
+          dsMockUtils.createMockAssetId(assetId),
+          dsMockUtils.createMockAgentGroup(type),
+        ],
       });
 
       result = authorizationDataToAuthorization(authorizationData, context);
@@ -1706,9 +1910,9 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       let fakeExtrinsicPermissionsResult: unknown =
         'convertedExtrinsicPermissions' as unknown as ExtrinsicPermissions;
       when(context.createType)
-        .calledWith('PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions', 'Whole')
+        .calledWith('PolymeshPrimitivesSecondaryKeyExtrinsicPermissions', 'Whole')
         .mockReturnValue(
-          fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions
+          fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSecondaryKeyExtrinsicPermissions
         );
 
       when(createTypeMock)
@@ -1742,16 +1946,16 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       };
 
       when(createTypeMock)
-        .calledWith('PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions', expect.anything())
+        .calledWith('PolymeshPrimitivesSecondaryKeyExtrinsicPermissions', expect.anything())
         .mockReturnValue(
-          fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions
+          fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSecondaryKeyExtrinsicPermissions
         );
 
-      const ticker = 'SOME_TICKER';
+      const assetId = '0x1234';
       const did = 'someDid';
       value = {
         assets: {
-          values: [entityMockUtils.getFungibleAssetInstance({ ticker })],
+          values: [entityMockUtils.getFungibleAssetInstance({ assetId })],
           type: PermissionType.Include,
         },
         transactions: {
@@ -1765,7 +1969,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         },
       };
 
-      const rawTicker = dsMockUtils.createMockTicker(ticker);
+      const rawAssetId = dsMockUtils.createMockAssetId(assetId);
       const rawPortfolioId = dsMockUtils.createMockPortfolioId({
         did: dsMockUtils.createMockIdentityId(did),
         kind: dsMockUtils.createMockPortfolioKind('Default'),
@@ -1773,7 +1977,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       when(createTypeMock)
         .calledWith('PolymeshPrimitivesSecondaryKeyPermissions', {
           asset: {
-            These: [rawTicker],
+            These: [rawAssetId],
           },
           extrinsic: fakeExtrinsicPermissionsResult,
           portfolio: {
@@ -1782,8 +1986,8 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         })
         .mockReturnValue(fakeResult);
       when(createTypeMock)
-        .calledWith('PolymeshPrimitivesTicker', padString(ticker, 12))
-        .mockReturnValue(rawTicker);
+        .calledWith('PolymeshPrimitivesAssetAssetID', assetId)
+        .mockReturnValue(rawAssetId);
       when(createTypeMock)
         .calledWith('PolymeshPrimitivesIdentityIdPortfolioId', expect.anything())
         .mockReturnValue(rawPortfolioId);
@@ -1803,9 +2007,9 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       };
 
       when(createTypeMock)
-        .calledWith('PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions', expect.anything())
+        .calledWith('PolymeshPrimitivesSecondaryKeyExtrinsicPermissions', expect.anything())
         .mockReturnValue(
-          fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions
+          fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSecondaryKeyExtrinsicPermissions
         );
 
       value = {
@@ -1842,14 +2046,14 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       };
 
       when(createTypeMock)
-        .calledWith('PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions', expect.anything())
+        .calledWith('PolymeshPrimitivesSecondaryKeyExtrinsicPermissions', expect.anything())
         .mockReturnValue(
-          fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions
+          fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSecondaryKeyExtrinsicPermissions
         );
 
       value = {
         assets: {
-          values: [entityMockUtils.getFungibleAssetInstance({ ticker })],
+          values: [entityMockUtils.getFungibleAssetInstance({ assetId })],
           type: PermissionType.Exclude,
         },
         transactions: {
@@ -1866,7 +2070,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       when(createTypeMock)
         .calledWith('PolymeshPrimitivesSecondaryKeyPermissions', {
           asset: {
-            Except: [rawTicker],
+            Except: [rawAssetId],
           },
           extrinsic: fakeExtrinsicPermissionsResult,
           portfolio: {
@@ -1892,16 +2096,16 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       };
 
       when(createTypeMock)
-        .calledWith('PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions', expect.anything())
+        .calledWith('PolymeshPrimitivesSecondaryKeyExtrinsicPermissions', expect.anything())
         .mockReturnValue(
-          fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions
+          fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSecondaryKeyExtrinsicPermissions
         );
 
-      const tickers = ['B_TICKER', 'A_TICKER', 'C_TICKER'];
+      const assetIds = ['0x2222', '0x1111', '0x3333'];
 
       value = {
         assets: {
-          values: tickers.map(t => entityMockUtils.getFungibleAssetInstance({ ticker: t })),
+          values: assetIds.map(t => entityMockUtils.getFungibleAssetInstance({ assetId: t })),
           type: PermissionType.Include,
         },
         transactions: {
@@ -1915,19 +2119,19 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         },
       };
 
-      const rawTickers = tickers.map(t => dsMockUtils.createMockTicker(t));
+      const rawAssetIds = assetIds.map(t => dsMockUtils.createMockAssetId(t));
       when(createTypeMock)
         .calledWith('PolymeshPrimitivesSecondaryKeyPermissions', {
-          asset: { These: [rawTickers[1], rawTickers[0], rawTickers[2]] },
+          asset: { These: [rawAssetIds[1], rawAssetIds[0], rawAssetIds[2]] },
           extrinsic: fakeExtrinsicPermissionsResult,
           portfolio: { These: [rawPortfolioId] },
         })
         .mockReturnValue(fakeResult);
 
-      tickers.forEach((t, i) =>
+      assetIds.forEach((t, i) =>
         when(createTypeMock)
-          .calledWith('PolymeshPrimitivesTicker', padString(t, 12))
-          .mockReturnValue(rawTickers[i])
+          .calledWith('PolymeshPrimitivesAssetAssetID', t)
+          .mockReturnValue(rawAssetIds[i])
       );
 
       result = permissionsToMeshPermissions(value, context);
@@ -1991,11 +2195,28 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
   describe('meshPermissionsToPermissions', () => {
     it('should convert a polkadot Permissions object to a Permissions', () => {
       const context = dsMockUtils.getContextInstance();
-      const ticker = 'SOME_TICKER';
+      const assetId = '0x1234';
       const did = 'someDid';
+      const rawIdentityName = dsMockUtils.createMockText('Identity');
+      const rawAuthorshipName = dsMockUtils.createMockText('Authorship');
+
+      const rawIdentityPermissions = dsMockUtils.createMockPalletPermissions({
+        extrinsics: dsMockUtils.createMockExtrinsicName({
+          These: [dsMockUtils.createMockText('add_claim')],
+        }),
+      });
+
+      const rawAuthorshipPermissions = dsMockUtils.createMockPalletPermissions({
+        extrinsics: dsMockUtils.createMockExtrinsicName('Whole'),
+      });
+
+      const permissionsMap = new Map();
+      permissionsMap.set(rawIdentityName, rawIdentityPermissions);
+      permissionsMap.set(rawAuthorshipName, rawAuthorshipPermissions);
+
       let fakeResult: Permissions = {
         assets: {
-          values: [expect.objectContaining({ ticker })],
+          values: [expect.objectContaining({ id: assetId })],
           type: PermissionType.Include,
         },
         transactions: {
@@ -2010,21 +2231,10 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       };
       let permissions = dsMockUtils.createMockPermissions({
         asset: dsMockUtils.createMockAssetPermissions({
-          These: [dsMockUtils.createMockTicker(ticker)],
+          These: [dsMockUtils.createMockAssetId(assetId)],
         }),
         extrinsic: dsMockUtils.createMockExtrinsicPermissions({
-          These: [
-            dsMockUtils.createMockPalletPermissions({
-              palletName: 'Identity',
-              dispatchableNames: dsMockUtils.createMockDispatchableNames({
-                These: [dsMockUtils.createMockBytes('add_claim')],
-              }),
-            }),
-            dsMockUtils.createMockPalletPermissions({
-              palletName: 'Authorship',
-              dispatchableNames: dsMockUtils.createMockDispatchableNames('Whole'),
-            }),
-          ],
+          These: dsMockUtils.createMockBTreeMap(permissionsMap),
         }),
         portfolio: dsMockUtils.createMockPortfolioPermissions({
           These: [
@@ -2056,7 +2266,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
 
       fakeResult = {
         assets: {
-          values: [expect.objectContaining({ ticker })],
+          values: [expect.objectContaining({ id: assetId })],
           type: PermissionType.Exclude,
         },
         transactions: {
@@ -2071,19 +2281,21 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         },
       };
 
+      const rawIdentityExpectPermissions = dsMockUtils.createMockPalletPermissions({
+        extrinsics: dsMockUtils.createMockExtrinsicName({
+          Except: [dsMockUtils.createMockText('add_claim')],
+        }),
+      });
+
+      const exceptPermissionsMap = new Map();
+      exceptPermissionsMap.set(rawIdentityName, rawIdentityExpectPermissions);
+
       permissions = dsMockUtils.createMockPermissions({
         asset: dsMockUtils.createMockAssetPermissions({
-          Except: [dsMockUtils.createMockTicker(ticker)],
+          Except: [dsMockUtils.createMockAssetId(assetId)],
         }),
         extrinsic: dsMockUtils.createMockExtrinsicPermissions({
-          Except: [
-            dsMockUtils.createMockPalletPermissions({
-              palletName: 'Identity',
-              dispatchableNames: dsMockUtils.createMockDispatchableNames({
-                Except: [dsMockUtils.createMockBytes('add_claim')],
-              }),
-            }),
-          ],
+          Except: dsMockUtils.createMockBTreeMap(exceptPermissionsMap),
         }),
         portfolio: dsMockUtils.createMockPortfolioPermissions({
           Except: [
@@ -2096,6 +2308,150 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       });
 
       result = meshPermissionsToPermissions(permissions, context);
+      expect(result).toEqual(fakeResult);
+    });
+  });
+
+  describe('meshPermissionsToPermissionsV2', () => {
+    it('should convert an Account object to a Permissions', async () => {
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
+      dsMockUtils.createQueryMock('identity', 'keyAssetPermissions');
+      dsMockUtils.createQueryMock('identity', 'keyExtrinsicPermissions');
+      dsMockUtils.createQueryMock('identity', 'keyPortfolioPermissions');
+      const context = dsMockUtils.getContextInstance();
+      const assetId = '0x1234';
+      const did = 'someDid';
+
+      const rawIdentityName = dsMockUtils.createMockText('Identity');
+      const rawAuthorshipName = dsMockUtils.createMockText('Authorship');
+
+      const rawIdentityPermissions = dsMockUtils.createMockPalletPermissions({
+        extrinsics: dsMockUtils.createMockExtrinsicName({
+          These: [dsMockUtils.createMockText('add_claim')],
+        }),
+      });
+
+      const rawAuthorshipPermissions = dsMockUtils.createMockPalletPermissions({
+        extrinsics: dsMockUtils.createMockExtrinsicName('Whole'),
+      });
+
+      const permissionsMap = new Map();
+      permissionsMap.set(rawIdentityName, rawIdentityPermissions);
+      permissionsMap.set(rawAuthorshipName, rawAuthorshipPermissions);
+
+      let fakeResult: Permissions = {
+        assets: {
+          values: [expect.objectContaining({ id: assetId })],
+          type: PermissionType.Include,
+        },
+        transactions: {
+          type: PermissionType.Include,
+          values: [TxTags.identity.AddClaim, ModuleName.Authorship],
+        },
+        transactionGroups: [],
+        portfolios: {
+          values: [expect.objectContaining({ owner: expect.objectContaining({ did }) })],
+          type: PermissionType.Include,
+        },
+      };
+
+      dsMockUtils.getQueryMultiMock().mockResolvedValue([
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockAssetPermissions({
+            These: [dsMockUtils.createMockAssetId(assetId)],
+          })
+        ),
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockExtrinsicPermissions({
+            These: dsMockUtils.createMockBTreeMap(permissionsMap),
+          })
+        ),
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockPortfolioPermissions({
+            These: [
+              dsMockUtils.createMockPortfolioId({
+                did: dsMockUtils.createMockIdentityId(did),
+                kind: dsMockUtils.createMockPortfolioKind('Default'),
+              }),
+            ],
+          })
+        ),
+      ]);
+
+      let result = await meshPermissionsToPermissionsV2(
+        entityMockUtils.getAccountInstance(),
+        context
+      );
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        assets: null,
+        transactions: null,
+        transactionGroups: [],
+        portfolios: null,
+      };
+
+      dsMockUtils
+        .getQueryMultiMock()
+        .mockResolvedValue([
+          dsMockUtils.createMockOption(),
+          dsMockUtils.createMockOption(),
+          dsMockUtils.createMockOption(),
+        ]);
+
+      result = await meshPermissionsToPermissionsV2(entityMockUtils.getMultiSigInstance(), context);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        assets: {
+          values: [expect.objectContaining({ id: assetId })],
+          type: PermissionType.Exclude,
+        },
+        transactions: {
+          type: PermissionType.Exclude,
+          values: [ModuleName.Identity],
+          exceptions: [TxTags.identity.AddClaim],
+        },
+        transactionGroups: [],
+        portfolios: {
+          values: [expect.objectContaining({ owner: expect.objectContaining({ did }) })],
+          type: PermissionType.Exclude,
+        },
+      };
+
+      const rawIdentityExpectPermissions = dsMockUtils.createMockPalletPermissions({
+        extrinsics: dsMockUtils.createMockExtrinsicName({
+          Except: [dsMockUtils.createMockText('add_claim')],
+        }),
+      });
+
+      const exceptPermissionsMap = new Map();
+      exceptPermissionsMap.set(rawIdentityName, rawIdentityExpectPermissions);
+
+      dsMockUtils.getQueryMultiMock().mockResolvedValue([
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockAssetPermissions({
+            Except: [dsMockUtils.createMockAssetId(assetId)],
+          })
+        ),
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockExtrinsicPermissions({
+            Except: dsMockUtils.createMockBTreeMap(exceptPermissionsMap),
+          })
+        ),
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockPortfolioPermissions({
+            Except: [
+              dsMockUtils.createMockPortfolioId({
+                did: dsMockUtils.createMockIdentityId(did),
+                kind: dsMockUtils.createMockPortfolioKind('Default'),
+              }),
+            ],
+          })
+        ),
+      ]);
+
+      result = await meshPermissionsToPermissionsV2(entityMockUtils.getAccountInstance(), context);
       expect(result).toEqual(fakeResult);
     });
   });
@@ -3393,25 +3749,6 @@ describe('cddStatusToBoolean', () => {
   });
 });
 
-describe('canTransferResultToTransferStatus', () => {
-  it('should convert a polkadot CanTransferResult object to a TransferStatus', () => {
-    const errorMsg = 'someError';
-    expect(() =>
-      canTransferResultToTransferStatus(
-        dsMockUtils.createMockCanTransferResult({
-          Err: dsMockUtils.createMockBytes(errorMsg),
-        })
-      )
-    ).toThrow(`Error while checking transfer validity: ${errorMsg}`);
-
-    const result = canTransferResultToTransferStatus(
-      dsMockUtils.createMockCanTransferResult({ Ok: dsMockUtils.createMockU8(new BigNumber(81)) })
-    );
-
-    expect(result).toBe(TransferStatus.Success);
-  });
-});
-
 describe('granularCanTransferResultToTransferBreakdown', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -3625,6 +3962,246 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
   });
 });
 
+describe('transferReportToTransferBreakdown', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a polkadot transfer report to a TransferBreakdown', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    let result = transferReportToTransferBreakdown(
+      [] as unknown as Vec<DispatchError>,
+      undefined,
+      dsMockUtils.createMockDispatchResult({
+        Ok: dsMockUtils.createMockAssetComplianceReport({
+          pausedCompliance: true,
+          anyRequirementSatisfied: true,
+          requirements: [],
+        }),
+      }) as unknown as Result<ComplianceReport, DispatchError>,
+      context
+    );
+
+    expect(result).toEqual({
+      general: [],
+      compliance: {
+        requirements: [],
+        complies: true,
+      },
+      restrictions: [],
+      result: true,
+    });
+
+    context.polymeshApi.errors.nft = {
+      DuplicatedNFTId: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferComplianceFailure: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferFrozenAsset: { is: jest.fn().mockReturnValue(true) },
+      InvalidNFTTransferInsufficientCount: { is: jest.fn().mockReturnValue(false) },
+      NFTNotFound: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferNFTNotOwned: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferSamePortfolio: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferNFTIsLocked: { is: jest.fn().mockReturnValue(false) },
+    } as unknown as DecoratedErrors<'promise'>['nft'];
+
+    context.polymeshApi.errors.asset = {
+      InvalidGranularity: { is: jest.fn().mockReturnValue(false) },
+      SenderSameAsReceiver: { is: jest.fn().mockReturnValue(false) },
+      InvalidTransferInvalidReceiverCDD: { is: jest.fn().mockReturnValue(false) },
+      InvalidTransferInvalidSenderCDD: { is: jest.fn().mockReturnValue(false) },
+      InsufficientBalance: { is: jest.fn().mockReturnValue(false) },
+      InvalidTransferFrozenAsset: { is: jest.fn().mockReturnValue(false) },
+      InvalidTransferComplianceFailure: { is: jest.fn().mockReturnValue(false) },
+      InvalidTransfer: { is: jest.fn().mockReturnValue(false) },
+    } as unknown as DecoratedErrors<'promise'>['asset'];
+
+    context.polymeshApi.errors.portfolio = {
+      PortfolioDoesNotExist: { is: jest.fn().mockReturnValue(false) },
+      InsufficientPortfolioBalance: { is: jest.fn().mockReturnValue(true) },
+    } as unknown as DecoratedErrors<'promise'>['portfolio'];
+
+    context.polymeshApi.errors.statistics = {
+      InvalidTransfer: { is: jest.fn().mockReturnValue(false) },
+    } as unknown as DecoratedErrors<'promise'>['statistics'];
+
+    result = transferReportToTransferBreakdown(
+      [
+        dsMockUtils.createMockDispatchResult({
+          Err: { index: createMockU8(), module: createMockU8aFixed() },
+        }).asErr,
+      ] as Vec<DispatchError>,
+      [
+        dsMockUtils.createMockDispatchResult({
+          Err: { index: createMockU8(), module: createMockU8aFixed() },
+        }).asErr,
+      ] as Vec<DispatchError>,
+      dsMockUtils.createMockDispatchResult({
+        Ok: dsMockUtils.createMockAssetComplianceReport({
+          pausedCompliance: false,
+          anyRequirementSatisfied: false,
+          requirements: [],
+        }),
+      }) as unknown as Result<ComplianceReport, DispatchError>,
+      context
+    );
+
+    expect(result).toEqual({
+      general: [TransferError.TransfersFrozen, TransferError.InsufficientPortfolioBalance],
+      compliance: {
+        requirements: [],
+        complies: false,
+      },
+      restrictions: [],
+      result: false,
+    });
+  });
+});
+
+describe('assetDispatchErrorToTransferError', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should process errors', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    context.polymeshApi.errors.asset = {
+      InvalidGranularity: { is: jest.fn().mockReturnValue(false) },
+      SenderSameAsReceiver: { is: jest.fn().mockReturnValue(false) },
+      InvalidTransferInvalidReceiverCDD: { is: jest.fn().mockReturnValue(false) },
+      InvalidTransferInvalidSenderCDD: { is: jest.fn().mockReturnValue(false) },
+      InsufficientBalance: { is: jest.fn().mockReturnValue(false) },
+      InvalidTransferFrozenAsset: { is: jest.fn().mockReturnValue(false) },
+      InvalidTransferComplianceFailure: { is: jest.fn().mockReturnValue(false) },
+      InvalidTransfer: { is: jest.fn().mockReturnValue(false) },
+    } as unknown as DecoratedErrors<'promise'>['asset'];
+
+    context.polymeshApi.errors.portfolio = {
+      PortfolioDoesNotExist: { is: jest.fn().mockReturnValue(false) },
+      InsufficientPortfolioBalance: { is: jest.fn().mockReturnValue(false) },
+    } as unknown as DecoratedErrors<'promise'>['portfolio'];
+
+    context.polymeshApi.errors.statistics = {
+      InvalidTransfer: { is: jest.fn().mockReturnValue(false) },
+    } as unknown as DecoratedErrors<'promise'>['statistics'];
+
+    const mockError = dsMockUtils.createMockDispatchResult({
+      Err: { index: createMockU8(), module: createMockU8aFixed() },
+    }).asErr;
+
+    dsMockUtils.setErrorMock('asset', 'InvalidGranularity', {
+      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
+    });
+
+    let result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.InvalidGranularity);
+
+    dsMockUtils.setErrorMock('asset', 'SenderSameAsReceiver', {
+      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
+    });
+
+    result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.SelfTransfer);
+
+    dsMockUtils.setErrorMock('asset', 'InvalidTransferInvalidReceiverCDD', {
+      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
+    });
+
+    result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.InvalidReceiverCdd);
+
+    dsMockUtils.setErrorMock('asset', 'InvalidTransferInvalidSenderCDD', {
+      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
+    });
+
+    result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.InvalidSenderCdd);
+
+    dsMockUtils.setErrorMock('asset', 'InsufficientBalance', {
+      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
+    });
+
+    result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.InsufficientBalance);
+
+    dsMockUtils.setErrorMock('asset', 'InvalidTransferFrozenAsset', {
+      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
+    });
+
+    result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.TransfersFrozen);
+
+    dsMockUtils.setErrorMock('asset', 'InvalidTransferComplianceFailure', {
+      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
+    });
+
+    result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.ComplianceFailure);
+
+    dsMockUtils.setErrorMock('asset', 'InvalidTransfer', {
+      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
+    });
+
+    result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.ComplianceFailure);
+
+    dsMockUtils.setErrorMock('portfolio', 'PortfolioDoesNotExist', {
+      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
+    });
+
+    result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.InvalidSenderPortfolio);
+
+    dsMockUtils.setErrorMock('portfolio', 'InsufficientPortfolioBalance', {
+      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
+    });
+
+    result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.InsufficientPortfolioBalance);
+
+    dsMockUtils.setErrorMock('statistics', 'InvalidTransferStatisticsFailure', {
+      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
+    });
+
+    result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.TransferNotAllowed);
+
+    return expect(() => assetDispatchErrorToTransferError(mockError, context)).toThrow(
+      new PolymeshError({
+        code: ErrorCode.General,
+        message: 'Received unknown Asset can transfer status',
+      })
+    );
+  });
+});
+
 describe('nftDispatchErrorToTransferError', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -3715,71 +4292,105 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
   });
 
   describe('scopeToMeshScope', () => {
-    it('should convert a Custom type Scope into a polkadot Scope object', () => {
+    it('should convert a Custom type Scope into a polkadot Scope object', async () => {
       const context = dsMockUtils.getContextInstance();
       const value: Scope = {
         type: ScopeType.Custom,
         value: 'someValue',
       };
-      const fakeResult = 'ScopeEnum' as unknown as PolymeshPrimitivesIdentityClaimScope;
+      const fakeResult = { [ScopeType.Custom]: 'someValue' };
 
-      when(context.createType)
-        .calledWith('Scope', { [value.type]: value.value })
-        .mockReturnValue(fakeResult);
+      const result = await scopeToMeshScope(value, context);
 
-      const result = scopeToMeshScope(value, context);
-
-      expect(result).toBe(fakeResult);
+      expect(result).toEqual(fakeResult);
     });
 
-    it('should convert a Identity type Scope into a polkadot Scope object', () => {
+    it('should convert a Identity type Scope into a polkadot Scope object', async () => {
       const context = dsMockUtils.getContextInstance();
       const value: Scope = {
         type: ScopeType.Identity,
         value: '0x51a5fed99b9d305ef26e6af92dd3dcb181a30a07dc5f075e260b82a92d48913c',
       };
-      const fakeResult = 'ScopeEnum' as unknown as PolymeshPrimitivesIdentityClaimScope;
       const fakeIdentityId =
         '0x51a5fed99b9d305ef26e6af92dd3dcb181a30a07dc5f075e260b82a92d48913c' as unknown as PolymeshPrimitivesIdentityId;
+      const fakeResult = { [value.type]: fakeIdentityId };
 
       when(context.createType)
         .calledWith('PolymeshPrimitivesIdentityId', value.value)
         .mockReturnValue(fakeIdentityId);
 
-      when(context.createType)
-        .calledWith('Scope', { [value.type]: fakeIdentityId })
-        .mockReturnValue(fakeResult);
+      const result = await scopeToMeshScope(value, context);
 
-      const result = scopeToMeshScope(value, context);
-
-      expect(result).toBe(fakeResult);
+      expect(result).toEqual(fakeResult);
     });
 
-    it('should convert a Ticker type Scope into a polkadot Scope object', () => {
+    it('should convert a Asset type Scope into a polkadot Scope object', async () => {
       const context = dsMockUtils.getContextInstance();
       const value: Scope = {
-        type: ScopeType.Ticker,
+        type: ScopeType.Asset,
+        value: '0x1234',
+      };
+      jest
+        .spyOn(utilsInternalModule, 'asBaseAsset')
+        .mockResolvedValue(entityMockUtils.getBaseAssetInstance({ assetId: value.value }));
+
+      const fakeAssetId = '0x1234' as unknown as PolymeshPrimitivesAssetAssetID;
+
+      const fakeResult = {
+        [value.type]: fakeAssetId,
+      };
+
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesAssetAssetID', value.value)
+        .mockReturnValue(fakeAssetId);
+
+      const result = await scopeToMeshScope(value, context);
+
+      expect(result).toEqual(fakeResult);
+    });
+
+    it('should convert a Ticker type Scope into a polkadot Scope object', async () => {
+      const context = dsMockUtils.getContextInstance({ isV6: true });
+      const value: Scope = {
+        type: ScopeType.Ticker, // NOSONAR
         value: 'SOME_TICKER',
       };
-      const fakeResult = 'ScopeEnum' as unknown as PolymeshPrimitivesIdentityClaimScope;
-      const fakeTicker = 'SOME_TICKER' as unknown as PolymeshPrimitivesTicker;
+
+      jest
+        .spyOn(utilsInternalModule, 'asBaseAsset')
+        .mockResolvedValue(entityMockUtils.getBaseAssetInstance({ assetId: value.value }));
+
+      const fakeAssetId = '0x1234' as unknown as PolymeshPrimitivesTicker;
+
+      const fakeResult = {
+        [value.type]: fakeAssetId,
+      };
 
       when(context.createType)
-        .calledWith('PolymeshPrimitivesTicker', padString(value.value, MAX_TICKER_LENGTH))
-        .mockReturnValue(fakeTicker);
+        .calledWith('PolymeshPrimitivesTicker', padString(value.value, 12))
+        .mockReturnValue(fakeAssetId);
 
-      when(context.createType)
-        .calledWith('Scope', { [value.type]: fakeTicker })
-        .mockReturnValue(fakeResult);
+      const result = await scopeToMeshScope(value, context);
 
-      const result = scopeToMeshScope(value, context);
-
-      expect(result).toBe(fakeResult);
+      expect(result).toEqual(fakeResult);
     });
   });
 
   describe('meshScopeToScope', () => {
+    beforeAll(() => {
+      dsMockUtils.initMocks();
+    });
+
+    afterEach(() => {
+      dsMockUtils.reset();
+    });
+
+    afterAll(() => {
+      dsMockUtils.cleanup();
+    });
     it('should convert a polkadot Scope object into a Scope', () => {
+      const context = dsMockUtils.getContextInstance();
+
       let fakeResult: Scope = {
         type: ScopeType.Identity,
         value: 'someDid',
@@ -3788,18 +4399,18 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
         Identity: dsMockUtils.createMockIdentityId(fakeResult.value),
       });
 
-      let result = meshScopeToScope(scope);
+      let result = meshScopeToScope(scope, context);
       expect(result).toEqual(fakeResult);
 
       fakeResult = {
-        type: ScopeType.Ticker,
-        value: 'SOME_TICKER',
+        type: ScopeType.Asset,
+        value: '0x1234',
       };
       scope = dsMockUtils.createMockScope({
-        Ticker: dsMockUtils.createMockTicker(fakeResult.value),
+        Asset: dsMockUtils.createMockAssetId(fakeResult.value),
       });
 
-      result = meshScopeToScope(scope);
+      result = meshScopeToScope(scope, context);
       expect(result).toEqual(fakeResult);
 
       fakeResult = {
@@ -3810,7 +4421,18 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
         Custom: dsMockUtils.createMockBytes(fakeResult.value),
       });
 
-      result = meshScopeToScope(scope);
+      result = meshScopeToScope(scope, context);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        type: ScopeType.Ticker, // NOSONAR
+        value: 'SOME_TICKER',
+      };
+      scope = dsMockUtils.createMockScope({
+        Ticker: dsMockUtils.createMockTicker(fakeResult.value),
+      });
+
+      result = meshScopeToScope(scope, dsMockUtils.getContextInstance({ isV6: true }));
       expect(result).toEqual(fakeResult);
     });
   });
@@ -3830,7 +4452,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
   });
 
   describe('claimToMeshClaim', () => {
-    it('should convert a Claim to a polkadot PolymeshPrimitivesIdentityClaimClaim object', () => {
+    it('should convert a Claim to a polkadot PolymeshPrimitivesIdentityClaimClaim object', async () => {
       const context = dsMockUtils.getContextInstance();
       let value: Claim = {
         type: ClaimType.Jurisdiction,
@@ -3845,11 +4467,11 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
       when(createTypeMock).calledWith('Scope', expect.anything()).mockReturnValue(fakeScope);
       when(createTypeMock)
         .calledWith('PolymeshPrimitivesIdentityClaimClaim', {
-          [value.type]: [value.code, scopeToMeshScope(value.scope, context)],
+          [value.type]: [value.code, await scopeToMeshScope(value.scope, context)],
         })
         .mockReturnValue(fakeResult);
 
-      let result = claimToMeshClaim(value, context);
+      let result = await claimToMeshClaim(value, context);
 
       expect(result).toBe(fakeResult);
 
@@ -3860,11 +4482,11 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
 
       when(createTypeMock)
         .calledWith('PolymeshPrimitivesIdentityClaimClaim', {
-          [value.type]: scopeToMeshScope(value.scope, context),
+          [value.type]: await scopeToMeshScope(value.scope, context),
         })
         .mockReturnValue(fakeResult);
 
-      result = claimToMeshClaim(value, context);
+      result = await claimToMeshClaim(value, context);
 
       expect(result).toBe(fakeResult);
 
@@ -3879,7 +4501,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         })
         .mockReturnValue(fakeResult);
 
-      result = claimToMeshClaim(value, context);
+      result = await claimToMeshClaim(value, context);
 
       expect(result).toBe(fakeResult);
 
@@ -3893,20 +4515,33 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         .calledWith('PolymeshPrimitivesIdentityClaimClaim', {
           [value.type]: [
             bigNumberToU32(value.customClaimTypeId, context),
-            scopeToMeshScope(value.scope, context),
+            await scopeToMeshScope(value.scope, context),
           ],
         })
         .mockReturnValue(fakeResult);
 
-      result = claimToMeshClaim(value, context);
+      result = await claimToMeshClaim(value, context);
 
       expect(result).toBe(fakeResult);
     });
   });
 
   describe('meshClaimToClaim', () => {
+    beforeAll(() => {
+      dsMockUtils.initMocks();
+    });
+
+    afterEach(() => {
+      dsMockUtils.reset();
+    });
+
+    afterAll(() => {
+      dsMockUtils.cleanup();
+    });
+
     it('should convert a polkadot Claim object to a Claim', () => {
-      let scope = { type: ScopeType.Ticker, value: 'SOME_TICKER' };
+      const context = dsMockUtils.getContextInstance();
+      let scope = { type: ScopeType.Asset, value: '0x1234' };
 
       let fakeResult: Claim = {
         type: ClaimType.Accredited,
@@ -3915,11 +4550,11 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
 
       let claim = dsMockUtils.createMockClaim({
         Accredited: dsMockUtils.createMockScope({
-          Ticker: dsMockUtils.createMockTicker(scope.value),
+          Asset: dsMockUtils.createMockAssetId(scope.value),
         }),
       });
 
-      let result = meshClaimToClaim(claim);
+      let result = meshClaimToClaim(claim, context);
       expect(result).toEqual(fakeResult);
 
       scope = { type: ScopeType.Identity, value: 'someDid' };
@@ -3934,7 +4569,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         }),
       });
 
-      result = meshClaimToClaim(claim);
+      result = meshClaimToClaim(claim, context);
       expect(result).toEqual(fakeResult);
 
       fakeResult = {
@@ -3947,7 +4582,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         }),
       });
 
-      result = meshClaimToClaim(claim);
+      result = meshClaimToClaim(claim, context);
       expect(result).toEqual(fakeResult);
 
       fakeResult = {
@@ -3960,7 +4595,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         }),
       });
 
-      result = meshClaimToClaim(claim);
+      result = meshClaimToClaim(claim, context);
       expect(result).toEqual(fakeResult);
 
       fakeResult = {
@@ -3971,7 +4606,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         CustomerDueDiligence: dsMockUtils.createMockCddId(fakeResult.id),
       });
 
-      result = meshClaimToClaim(claim);
+      result = meshClaimToClaim(claim, context);
       expect(result).toEqual(fakeResult);
 
       fakeResult = {
@@ -3987,7 +4622,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         ],
       });
 
-      result = meshClaimToClaim(claim);
+      result = meshClaimToClaim(claim, context);
       expect(result).toEqual(fakeResult);
 
       fakeResult = {
@@ -4000,7 +4635,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         }),
       });
 
-      result = meshClaimToClaim(claim);
+      result = meshClaimToClaim(claim, context);
       expect(result).toEqual(fakeResult);
 
       fakeResult = {
@@ -4013,7 +4648,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         }),
       });
 
-      result = meshClaimToClaim(claim);
+      result = meshClaimToClaim(claim, context);
       expect(result).toEqual(fakeResult);
 
       fakeResult = {
@@ -4026,7 +4661,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         }),
       });
 
-      result = meshClaimToClaim(claim);
+      result = meshClaimToClaim(claim, context);
       expect(result).toEqual(fakeResult);
 
       const customClaimTypeId = new BigNumber(1);
@@ -4080,7 +4715,7 @@ describe('corporateActionParamsToMeshCorporateActionArgs', () => {
   });
 
   it('should convert a list of corporate action parameters to a polkadot PalletCorporateActionsInitiateCorporateActionArgs object', () => {
-    const ticker = 'SOME_TICKER';
+    const assetId = '0x1234';
     const kind = CorporateActionKind.UnpredictableBenefit;
     const declarationDate = new Date();
     const checkpoint = new Date(new Date().getTime() + 10000);
@@ -4106,7 +4741,7 @@ describe('corporateActionParamsToMeshCorporateActionArgs', () => {
     const context = dsMockUtils.getContextInstance();
     const createTypeMock = context.createType;
 
-    const rawTicker = dsMockUtils.createMockTicker(ticker);
+    const rawAssetId = dsMockUtils.createMockAssetId(assetId);
     const rawKind = dsMockUtils.createMockCAKind(kind);
     const rawDeclDate = dsMockUtils.createMockMoment(declarationDateValue);
     const rawRecordDate = dsMockUtils.createMockRecordDateSpec(recordDateValue);
@@ -4120,7 +4755,7 @@ describe('corporateActionParamsToMeshCorporateActionArgs', () => {
     const rawPermill = dsMockUtils.createMockPermill(percentage);
 
     const fakeResult = dsMockUtils.createMockInitiateCorporateActionArgs({
-      ticker,
+      assetId,
       kind,
       declDate: declarationDateValue,
       recordDate: dsMockUtils.createMockOption(rawRecordDate),
@@ -4131,8 +4766,8 @@ describe('corporateActionParamsToMeshCorporateActionArgs', () => {
     });
 
     when(createTypeMock)
-      .calledWith('PolymeshPrimitivesTicker', padString(ticker, MAX_TICKER_LENGTH))
-      .mockReturnValue(rawTicker);
+      .calledWith('PolymeshPrimitivesAssetAssetID', assetId)
+      .mockReturnValue(rawAssetId);
     when(createTypeMock).calledWith('PalletCorporateActionsCaKind', kind).mockReturnValue(rawKind);
     when(createTypeMock).calledWith('u64', declarationDate.getTime()).mockReturnValue(rawDeclDate);
     when(createTypeMock).calledWith('u64', checkpoint.getTime()).mockReturnValue(rawCheckpointDate);
@@ -4141,7 +4776,7 @@ describe('corporateActionParamsToMeshCorporateActionArgs', () => {
       .mockReturnValue(rawRecordDate);
     when(createTypeMock).calledWith('Bytes', description).mockReturnValue(rawDetails);
     when(createTypeMock)
-      .calledWith('TargetTreatment', targets.treatment)
+      .calledWith('PalletCorporateActionsTargetTreatment', targets.treatment)
       .mockReturnValue(rawTargetTreatment);
     when(createTypeMock)
       .calledWith('PalletCorporateActionsTargetIdentities', {
@@ -4161,7 +4796,7 @@ describe('corporateActionParamsToMeshCorporateActionArgs', () => {
 
     when(createTypeMock)
       .calledWith('PalletCorporateActionsInitiateCorporateActionArgs', {
-        ticker: rawTicker,
+        assetId: rawAssetId,
         kind: rawKind,
         declDate: rawDeclDate,
         recordDate: rawRecordDate,
@@ -4175,7 +4810,7 @@ describe('corporateActionParamsToMeshCorporateActionArgs', () => {
     expect(
       corporateActionParamsToMeshCorporateActionArgs(
         {
-          ticker,
+          asset: entityMockUtils.getFungibleAssetInstance({ assetId }),
           kind,
           declarationDate,
           checkpoint,
@@ -4348,25 +4983,44 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
 
   describe('middlewareScopeToScope', () => {
     it('should convert a MiddlewareScope object to a Scope', () => {
-      let result = middlewareScopeToScope({
-        type: ClaimScopeTypeEnum.Ticker,
-        value: 'SOMETHING',
-      });
+      let result = middlewareScopeToScope(
+        {
+          type: ClaimScopeTypeEnum.Asset,
+          value: '0x1234',
+        },
+        context
+      );
 
-      expect(result).toEqual({ type: ScopeType.Ticker, value: 'SOMETHING' });
+      expect(result).toEqual({ type: ScopeType.Asset, value: '0x1234' });
 
-      result = middlewareScopeToScope({ type: ClaimScopeTypeEnum.Identity, value: 'someDid' });
+      result = middlewareScopeToScope(
+        {
+          type: ClaimScopeTypeEnum.Ticker, // NOSONAR
+          value: 'TICKER',
+        },
+        context
+      );
+
+      expect(result).toEqual({ type: ScopeType.Asset, value: 'TICKER' });
+
+      result = middlewareScopeToScope(
+        { type: ClaimScopeTypeEnum.Identity, value: 'someDid' },
+        context
+      );
 
       expect(result).toEqual({ type: ScopeType.Identity, value: 'someDid' });
 
-      result = middlewareScopeToScope({ type: ClaimScopeTypeEnum.Custom, value: 'SOMETHING_ELSE' });
+      result = middlewareScopeToScope(
+        { type: ClaimScopeTypeEnum.Custom, value: 'SOMETHING_ELSE' },
+        context
+      );
 
       expect(result).toEqual({ type: ScopeType.Custom, value: 'SOMETHING_ELSE' });
     });
 
     it('should throw an error for invalid scope type', () => {
       expect(() =>
-        middlewareScopeToScope({ type: 'RANDOM_TYPE', value: 'SOMETHING_ELSE' })
+        middlewareScopeToScope({ type: 'RANDOM_TYPE', value: 'SOMETHING_ELSE' }, context)
       ).toThrow('Unsupported Scope Type. Please contact the Polymesh team');
     });
   });
@@ -4378,128 +5032,20 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Identity, value: scope.value });
 
       const getAssetIdForMiddlewareSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware');
-      scope = { type: ScopeType.Ticker, value: 'SOME_TICKER' };
-      getAssetIdForMiddlewareSpy.mockResolvedValue('0x1234');
+      scope = { type: ScopeType.Asset, value: '0x1234' };
+      getAssetIdForMiddlewareSpy.mockResolvedValue(scope.value);
       result = await scopeToMiddlewareScope(scope, context);
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Asset, value: '0x1234' });
 
-      scope = { type: ScopeType.Ticker, value: 'SOME_TICKER' };
-      getAssetIdForMiddlewareSpy.mockResolvedValue('SOME_TICKER');
+      scope = { type: ScopeType.Ticker, value: 'SOME_TICKER' }; // NOSONAR
+      getAssetIdForMiddlewareSpy.mockResolvedValue('0x1234');
       result = await scopeToMiddlewareScope(scope, context);
-      expect(result).toEqual({ type: ClaimScopeTypeEnum.Ticker, value: 'SOME_TICKER' });
+      expect(result).toEqual({ type: ClaimScopeTypeEnum.Asset, value: '0x1234' });
 
       scope = { type: ScopeType.Custom, value: 'customValue' };
       result = await scopeToMiddlewareScope(scope, context);
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Custom, value: scope.value });
     });
-  });
-});
-
-describe('oldMiddlewareInstructionToHistoricInstruction', () => {
-  it('should convert a old middleware Instruction object to a HistoricInstruction', () => {
-    const instructionId1 = new BigNumber(1);
-    const instructionId2 = new BigNumber(2);
-    const blockNumber = new BigNumber(1234);
-    const blockHash = 'someHash';
-    const memo = 'memo';
-    const ticker = 'SOME_TICKER';
-    const amount1 = new BigNumber(10);
-    const amount2 = new BigNumber(5);
-    const venueId = new BigNumber(1);
-    const createdAt = new Date('2022/01/01');
-    const status = InstructionStatusEnum.Executed;
-    const portfolioDid1 = 'portfolioDid1';
-    const portfolioKind1 = 'Default';
-
-    const portfolioDid2 = 'portfolioDid2';
-    const portfolioKind2 = '10';
-    const type1 = InstructionType.SettleOnAffirmation;
-    const type2 = InstructionType.SettleOnBlock;
-    const endBlock = new BigNumber(1238);
-
-    const legs1 = [
-      {
-        assetId: ticker,
-        amount: amount1.shiftedBy(6).toString(),
-        fromId: `${portfolioDid1}/${portfolioKind1}`,
-        toId: `${portfolioDid2}/${portfolioKind2}`,
-      },
-    ];
-    const legs2 = [
-      {
-        assetId: ticker,
-        amount: amount2.shiftedBy(6).toString(),
-        fromId: `${portfolioDid2}/${portfolioKind2}`,
-        toId: `${portfolioDid1}/${portfolioKind1}`,
-      },
-    ];
-
-    const context = dsMockUtils.getContextInstance();
-
-    let instruction = {
-      id: instructionId1.toString(),
-      createdBlock: {
-        blockId: blockNumber.toNumber(),
-        hash: blockHash,
-        datetime: createdAt,
-      },
-      status,
-      memo,
-      venueId: venueId.toString(),
-      settlementType: type1,
-      legs: {
-        nodes: legs1,
-      },
-    } as unknown as MiddlewareInstructionOld;
-
-    let result = oldMiddlewareInstructionToHistoricInstruction(instruction, context);
-
-    expect(result.id).toEqual(instructionId1);
-    expect(result.blockHash).toEqual(blockHash);
-    expect(result.blockNumber).toEqual(blockNumber);
-    expect(result.status).toEqual(status);
-    expect(result.memo).toEqual(memo);
-    expect(result.type).toEqual(InstructionType.SettleOnAffirmation);
-    expect(result.venueId).toEqual(venueId);
-    expect(result.createdAt).toEqual(createdAt);
-    let resultLeg = result.legs[0] as FungibleLeg;
-    expect(resultLeg.asset.ticker).toBe(ticker);
-    expect(resultLeg.amount).toEqual(amount1);
-    expect(resultLeg.from.owner.did).toBe(portfolioDid1);
-    expect(resultLeg.to.owner.did).toBe(portfolioDid2);
-    expect((result.legs[0].to as NumberedPortfolio).id).toEqual(new BigNumber(portfolioKind2));
-
-    instruction = {
-      id: instructionId2.toString(),
-      createdBlock: {
-        blockId: blockNumber.toNumber(),
-        hash: blockHash,
-        datetime: createdAt,
-      },
-      status,
-      settlementType: type2,
-      endBlock: endBlock.toString(),
-      venueId: venueId.toString(),
-      legs: {
-        nodes: legs2,
-      },
-    } as unknown as MiddlewareInstructionOld;
-
-    result = oldMiddlewareInstructionToHistoricInstruction(instruction, context);
-
-    expect(result.id).toEqual(instructionId2);
-    expect(result.memo).toBeNull();
-    expect(result.type).toEqual(InstructionType.SettleOnBlock);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect((result as any).endBlock).toEqual(endBlock);
-    expect(result.venueId).toEqual(venueId);
-    expect(result.createdAt).toEqual(createdAt);
-    resultLeg = result.legs[0] as FungibleLeg;
-    expect(resultLeg.asset.ticker).toBe(ticker);
-    expect(resultLeg.amount).toEqual(amount2);
-    expect(resultLeg.from.owner.did).toBe(portfolioDid2);
-    expect(resultLeg.to.owner.did).toBe(portfolioDid1);
-    expect((result.legs[0].from as NumberedPortfolio).id).toEqual(new BigNumber(portfolioKind2));
   });
 });
 
@@ -4511,6 +5057,7 @@ describe('middlewareInstructionToHistoricInstruction', () => {
     const blockNumber = new BigNumber(1234);
     const blockHash = 'someHash';
     const memo = 'memo';
+    const assetId = '0x1234';
     const ticker = 'SOME_TICKER';
     const amount1 = new BigNumber(10);
     const nftId = new BigNumber(5);
@@ -4532,7 +5079,7 @@ describe('middlewareInstructionToHistoricInstruction', () => {
     const legs1 = [
       {
         legType: LegTypeEnum.Fungible,
-        assetId: ticker,
+        assetId,
         ticker,
         amount: amount1.shiftedBy(6).toString(),
         fromPortfolio: portfolioKind1,
@@ -4544,7 +5091,7 @@ describe('middlewareInstructionToHistoricInstruction', () => {
     const legs2 = [
       {
         legType: LegTypeEnum.NonFungible,
-        aassetId: ticker,
+        assetId,
         ticker,
         nftIds: [nftId.toString()],
         fromPortfolio: portfolioKind2,
@@ -4556,7 +5103,7 @@ describe('middlewareInstructionToHistoricInstruction', () => {
     const legs3 = [
       {
         legType: LegTypeEnum.OffChain,
-        assetId: ticker,
+        assetId,
         ticker,
         amount: amount3.shiftedBy(6).toString(),
         from: portfolioDid2,
@@ -4582,6 +5129,8 @@ describe('middlewareInstructionToHistoricInstruction', () => {
       },
     } as unknown as Instruction;
 
+    jest.spyOn(utilsInternalModule, 'getAssetIdFromMiddleware').mockReturnValue(assetId);
+
     let resultLeg: Leg;
     let result = middlewareInstructionToHistoricInstruction(instruction, context);
 
@@ -4594,7 +5143,7 @@ describe('middlewareInstructionToHistoricInstruction', () => {
     expect(result.venueId).toEqual(venueId);
     expect(result.createdAt).toEqual(createdAt);
     resultLeg = result.legs[0] as FungibleLeg;
-    expect(resultLeg.asset.ticker).toBe(ticker);
+    expect(resultLeg.asset.id).toBe(assetId);
     expect(resultLeg.amount).toEqual(amount1);
     expect(resultLeg.from.owner.did).toBe(portfolioDid1);
     expect(resultLeg.to.owner.did).toBe(portfolioDid2);
@@ -4626,7 +5175,7 @@ describe('middlewareInstructionToHistoricInstruction', () => {
     expect(result.venueId).toEqual(venueId);
     expect(result.createdAt).toEqual(createdAt);
     resultLeg = result.legs[0] as NftLeg;
-    expect(resultLeg.asset.ticker).toBe(ticker);
+    expect(resultLeg.asset.id).toBe(assetId);
     expect(resultLeg.nfts).toEqual([
       expect.objectContaining({
         id: nftId,
@@ -4960,7 +5509,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
   });
 
   describe('requirementToComplianceRequirement', () => {
-    it('should convert a Requirement to a polkadot ComplianceRequirement object', () => {
+    it('should convert a Requirement to a polkadot ComplianceRequirement object', async () => {
       const did = 'someDid';
       const context = dsMockUtils.getContextInstance();
       const conditions: InputCondition[] = [
@@ -5056,7 +5605,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
         })
         .mockReturnValue(fakeResult);
 
-      const result = requirementToComplianceRequirement(value, context);
+      const result = await requirementToComplianceRequirement(value, context);
 
       expect(result).toEqual(fakeResult);
     });
@@ -5248,9 +5797,9 @@ describe('txTagToProtocolOp', () => {
 
     const createTypeMock = context.createType;
     when(createTypeMock)
-      .calledWith('PolymeshCommonUtilitiesProtocolFeeProtocolOp', 'AssetRegisterTicker')
+      .calledWith('PolymeshCommonUtilitiesProtocolFeeProtocolOp', 'AssetRegisterUniqueTicker')
       .mockReturnValue(fakeResult);
-    expect(txTagToProtocolOp(TxTags.asset.RegisterTicker, context)).toEqual(fakeResult);
+    expect(txTagToProtocolOp(TxTags.asset.RegisterUniqueTicker, context)).toEqual(fakeResult);
 
     when(createTypeMock)
       .calledWith('PolymeshCommonUtilitiesProtocolFeeProtocolOp', 'AssetIssue')
@@ -5935,6 +6484,196 @@ describe('assetComplianceResultToCompliance', () => {
   });
 });
 
+describe('assetComplianceReportToCompliance', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a polkadot ComplianceReport object to a RequirementCompliance', () => {
+    const id = new BigNumber(1);
+    const assetDid = 'someAssetDid';
+    const cddId = 'someCddId';
+    const context = dsMockUtils.getContextInstance();
+    const issuerDids = [
+      { identity: new Identity({ did: 'someDid' }, context), trustedFor: null },
+      { identity: new Identity({ did: 'otherDid' }, context), trustedFor: null },
+    ];
+    const fakeIssuerDids = [
+      { identity: expect.objectContaining({ did: 'someDid' }), trustedFor: null },
+      { identity: expect.objectContaining({ did: 'otherDid' }), trustedFor: null },
+    ];
+    const conditions: ConditionCompliance[] = [
+      {
+        condition: {
+          type: ConditionType.IsPresent,
+          target: ConditionTarget.Both,
+          claim: {
+            type: ClaimType.KnowYourCustomer,
+            scope: { type: ScopeType.Identity, value: assetDid },
+          },
+          trustedClaimIssuers: fakeIssuerDids,
+        },
+        complies: true,
+      },
+      {
+        condition: {
+          type: ConditionType.IsAbsent,
+          target: ConditionTarget.Receiver,
+          claim: {
+            type: ClaimType.BuyLockup,
+            scope: { type: ScopeType.Identity, value: assetDid },
+          },
+          trustedClaimIssuers: fakeIssuerDids,
+        },
+        complies: false,
+      },
+      {
+        condition: {
+          type: ConditionType.IsNoneOf,
+          target: ConditionTarget.Sender,
+          claims: [
+            {
+              type: ClaimType.Blocked,
+              scope: { type: ScopeType.Identity, value: assetDid },
+            },
+            {
+              type: ClaimType.SellLockup,
+              scope: { type: ScopeType.Identity, value: assetDid },
+            },
+          ],
+          trustedClaimIssuers: fakeIssuerDids,
+        },
+        complies: true,
+      },
+      {
+        condition: {
+          type: ConditionType.IsAnyOf,
+          target: ConditionTarget.Both,
+          claims: [
+            {
+              type: ClaimType.Exempted,
+              scope: { type: ScopeType.Identity, value: assetDid },
+            },
+            {
+              type: ClaimType.CustomerDueDiligence,
+              id: cddId,
+            },
+          ],
+          trustedClaimIssuers: fakeIssuerDids,
+        },
+        complies: false,
+      },
+    ];
+    const fakeResult = {
+      id,
+      conditions,
+    };
+
+    const scope = dsMockUtils.createMockScope({
+      Identity: dsMockUtils.createMockIdentityId(assetDid),
+    });
+    /* eslint-disable @typescript-eslint/naming-convention */
+    const issuers = issuerDids.map(({ identity: { did } }) =>
+      dsMockUtils.createMockTrustedIssuer({
+        issuer: dsMockUtils.createMockIdentityId(did),
+        trustedFor: dsMockUtils.createMockTrustedFor(),
+      })
+    );
+    const rawConditions = [
+      dsMockUtils.createMockConditionReport({
+        condition: dsMockUtils.createMockCondition({
+          conditionType: dsMockUtils.createMockConditionType({
+            IsPresent: dsMockUtils.createMockClaim({ KnowYourCustomer: scope }),
+          }),
+          issuers,
+        }),
+        satisfied: dsMockUtils.createMockBool(true),
+      }),
+      dsMockUtils.createMockConditionReport({
+        condition: dsMockUtils.createMockCondition({
+          conditionType: dsMockUtils.createMockConditionType({
+            IsAbsent: dsMockUtils.createMockClaim({ BuyLockup: scope }),
+          }),
+          issuers,
+        }),
+        satisfied: dsMockUtils.createMockBool(false),
+      }),
+      dsMockUtils.createMockConditionReport({
+        condition: dsMockUtils.createMockCondition({
+          conditionType: dsMockUtils.createMockConditionType({
+            IsNoneOf: [
+              dsMockUtils.createMockClaim({ Blocked: scope }),
+              dsMockUtils.createMockClaim({ SellLockup: scope }),
+            ],
+          }),
+          issuers,
+        }),
+        satisfied: dsMockUtils.createMockBool(true),
+      }),
+      dsMockUtils.createMockConditionReport({
+        condition: dsMockUtils.createMockCondition({
+          conditionType: dsMockUtils.createMockConditionType({
+            IsAnyOf: [
+              dsMockUtils.createMockClaim({ Exempted: scope }),
+              dsMockUtils.createMockClaim({
+                CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
+              }),
+            ],
+          }),
+          issuers,
+        }),
+        satisfied: dsMockUtils.createMockBool(false),
+      }),
+    ];
+
+    const rawRequirements = dsMockUtils.createMockComplianceRequirementReport({
+      senderConditions: [rawConditions[0], rawConditions[2], rawConditions[3]],
+      receiverConditions: [rawConditions[0], rawConditions[1], rawConditions[3]],
+      id: dsMockUtils.createMockU32(new BigNumber(1)),
+      requirementSatisfied: dsMockUtils.createMockBool(false),
+    });
+
+    let assetComplianceReport = dsMockUtils.createMockAssetComplianceReport({
+      pausedCompliance: dsMockUtils.createMockBool(true),
+      requirements: [rawRequirements],
+      anyRequirementSatisfied: dsMockUtils.createMockBool(true),
+    });
+
+    let result = assetComplianceReportToCompliance(
+      dsMockUtils.createMockDispatchResult({
+        Ok: assetComplianceReport,
+      }) as unknown as Result<ComplianceReport, DispatchError>,
+      context
+    );
+    expect(result.requirements[0].conditions).toEqual(
+      expect.arrayContaining(fakeResult.conditions)
+    );
+    expect(result.complies).toBe(true);
+
+    assetComplianceReport = dsMockUtils.createMockAssetComplianceReport({
+      pausedCompliance: dsMockUtils.createMockBool(false),
+      requirements: [rawRequirements],
+      anyRequirementSatisfied: dsMockUtils.createMockBool(true),
+    });
+
+    result = assetComplianceReportToCompliance(
+      dsMockUtils.createMockDispatchResult({
+        Ok: assetComplianceReport,
+      }) as unknown as Result<ComplianceReport, DispatchError>,
+      context
+    );
+    expect(result.complies).toBe(true);
+  });
+});
+
 describe('moduleAddressToString', () => {
   const context = dsMockUtils.getContextInstance();
 
@@ -6572,15 +7311,15 @@ describe('permissionsLikeToPermissions', () => {
       portfolios: null,
     });
 
-    const firstTicker = 'TICKER';
-    const firstToken = entityMockUtils.getFungibleAssetInstance({ ticker: firstTicker });
-    const secondTicker = 'OTHER_TICKER';
+    const firstAssetId = '0x1111';
+    const firstAsset = entityMockUtils.getFungibleAssetInstance({ assetId: firstAssetId });
+    const secondAssetId = '0x2222';
     const did = 'someDid';
     const portfolio = entityMockUtils.getDefaultPortfolioInstance({ did });
 
     args = {
       assets: {
-        values: [firstToken, secondTicker],
+        values: [firstAsset, secondAssetId],
         type: PermissionType.Include,
       },
       transactions: {
@@ -6594,14 +7333,14 @@ describe('permissionsLikeToPermissions', () => {
       },
     };
 
-    const fakeFirstToken = expect.objectContaining({ ticker: firstTicker });
-    const fakeSecondToken = expect.objectContaining({ ticker: secondTicker });
+    const fakeFirstAsset = expect.objectContaining({ id: firstAssetId });
+    const fakeSecondAsset = expect.objectContaining({ id: secondAssetId });
     const fakePortfolio = expect.objectContaining({ owner: expect.objectContaining({ did }) });
 
     result = permissionsLikeToPermissions(args, context);
     expect(result).toEqual({
       assets: {
-        values: [fakeFirstToken, fakeSecondToken],
+        values: [fakeFirstAsset, fakeSecondAsset],
         type: PermissionType.Include,
       },
       transactions: {
@@ -7189,7 +7928,7 @@ describe('fundraiserToOfferingDetails', () => {
 
     const someDid = 'someDid';
     const name = 'someSto';
-    const ticker = 'TICKER';
+    const assetId = '0x1234';
     const otherDid = 'otherDid';
     const raisingCurrency = 'USD';
     const amount = new BigNumber(10000);
@@ -7243,12 +7982,12 @@ describe('fundraiserToOfferingDetails', () => {
       did: creator,
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
-    const offeringAsset = dsMockUtils.createMockTicker(ticker);
+    const offeringAsset = dsMockUtils.createMockAssetId(assetId);
     const raisingPortfolio = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(otherDid),
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
-    const raisingAsset = dsMockUtils.createMockTicker(raisingCurrency);
+    const raisingAsset = dsMockUtils.createMockAssetId(raisingCurrency);
     const rawTiers = [
       dsMockUtils.createMockFundraiserTier({
         total: dsMockUtils.createMockBalance(amount),
@@ -7774,7 +8513,9 @@ describe('targetsToTargetIdentities', () => {
     const rawTreatment = dsMockUtils.createMockTargetTreatment();
 
     when(createTypeMock).calledWith('PolymeshPrimitivesIdentityId', did).mockReturnValue(rawDid);
-    when(createTypeMock).calledWith('TargetTreatment', treatment).mockReturnValue(rawTreatment);
+    when(createTypeMock)
+      .calledWith('PalletCorporateActionsTargetTreatment', treatment)
+      .mockReturnValue(rawTreatment);
     when(createTypeMock)
       .calledWith('PalletCorporateActionsTargetIdentities', {
         identities: [rawDid],
@@ -7873,26 +8614,32 @@ describe('corporateActionIdentifierToCaId', () => {
   it('should convert a CorporateActionIdentifier object to a polkadot PalletCorporateActionsCaId object', () => {
     const context = dsMockUtils.getContextInstance();
     const args = {
-      ticker: 'SOME_TICKER',
+      assetId: '0x1234',
       localId: new BigNumber(1),
     };
-    const ticker = dsMockUtils.createMockTicker(args.ticker);
-    const localId = dsMockUtils.createMockU32(args.localId);
+    const rawAssetId = dsMockUtils.createMockAssetId(args.assetId);
+    const rawLocalId = dsMockUtils.createMockU32(args.localId);
     const fakeResult = 'CAId' as unknown as PalletCorporateActionsCaId;
 
     when(context.createType)
-      .calledWith('PolymeshPrimitivesTicker', padString(args.ticker, 12))
-      .mockReturnValue(ticker);
-    when(context.createType).calledWith('u32', args.localId.toString()).mockReturnValue(localId);
+      .calledWith('PolymeshPrimitivesAssetAssetID', args.assetId)
+      .mockReturnValue(rawAssetId);
+    when(context.createType).calledWith('u32', args.localId.toString()).mockReturnValue(rawLocalId);
 
     when(context.createType)
       .calledWith('PalletCorporateActionsCaId', {
-        ticker,
-        localId,
+        assetId: rawAssetId,
+        localId: rawLocalId,
       })
       .mockReturnValue(fakeResult);
 
-    const result = corporateActionIdentifierToCaId(args, context);
+    const result = corporateActionIdentifierToCaId(
+      {
+        ...args,
+        asset: entityMockUtils.getFungibleAssetInstance({ assetId: args.assetId }),
+      },
+      context
+    );
     expect(result).toEqual(fakeResult);
   });
 });
@@ -7946,7 +8693,7 @@ describe('transactionPermissionsToExtrinsicPermissions', () => {
     const fakeResult = 'convertedExtrinsicPermissions' as unknown as ExtrinsicPermissions;
 
     when(context.createType)
-      .calledWith('PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions', expect.anything())
+      .calledWith('PolymeshPrimitivesSecondaryKeyExtrinsicPermissions', expect.anything())
       .mockReturnValue(fakeResult);
 
     let result = transactionPermissionsToExtrinsicPermissions(value, context);
@@ -7954,7 +8701,7 @@ describe('transactionPermissionsToExtrinsicPermissions', () => {
     expect(result).toEqual(fakeResult);
 
     when(context.createType)
-      .calledWith('PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions', 'Whole')
+      .calledWith('PolymeshPrimitivesSecondaryKeyExtrinsicPermissions', 'Whole')
       .mockReturnValue(fakeResult);
 
     result = transactionPermissionsToExtrinsicPermissions(null, context);
@@ -7979,43 +8726,43 @@ describe('agentGroupToPermissionGroup', () => {
   });
 
   it('should convert a polkadot PolymeshPrimitivesAgentAgentGroup object to a PermissionGroup entity', () => {
-    const ticker = 'SOME_TICKER';
+    const assetId = '0x1234';
     const context = dsMockUtils.getContextInstance();
 
     let agentGroup = dsMockUtils.createMockAgentGroup('Full');
-    let result = agentGroupToPermissionGroup(agentGroup, ticker, context);
+    let result = agentGroupToPermissionGroup(agentGroup, assetId, context);
     expect(result).toEqual(
       expect.objectContaining({
-        asset: expect.objectContaining({ ticker }),
+        asset: expect.objectContaining({ id: assetId }),
         type: PermissionGroupType.Full,
       })
     );
 
     agentGroup = dsMockUtils.createMockAgentGroup('ExceptMeta');
 
-    result = agentGroupToPermissionGroup(agentGroup, ticker, context);
+    result = agentGroupToPermissionGroup(agentGroup, assetId, context);
     expect(result).toEqual(
       expect.objectContaining({
-        asset: expect.objectContaining({ ticker }),
+        asset: expect.objectContaining({ id: assetId }),
         type: PermissionGroupType.ExceptMeta,
       })
     );
 
     agentGroup = dsMockUtils.createMockAgentGroup('PolymeshV1CAA');
-    result = agentGroupToPermissionGroup(agentGroup, ticker, context);
+    result = agentGroupToPermissionGroup(agentGroup, assetId, context);
     expect(result).toEqual(
       expect.objectContaining({
-        asset: expect.objectContaining({ ticker }),
+        asset: expect.objectContaining({ id: assetId }),
         type: PermissionGroupType.PolymeshV1Caa,
       })
     );
 
     agentGroup = dsMockUtils.createMockAgentGroup('PolymeshV1PIA');
 
-    result = agentGroupToPermissionGroup(agentGroup, ticker, context);
+    result = agentGroupToPermissionGroup(agentGroup, assetId, context);
     expect(result).toEqual(
       expect.objectContaining({
-        asset: expect.objectContaining({ ticker }),
+        asset: expect.objectContaining({ id: assetId }),
         type: PermissionGroupType.PolymeshV1Pia,
       })
     );
@@ -8024,9 +8771,9 @@ describe('agentGroupToPermissionGroup', () => {
     const rawAgId = dsMockUtils.createMockU32(id);
     agentGroup = dsMockUtils.createMockAgentGroup({ Custom: rawAgId });
 
-    result = agentGroupToPermissionGroup(agentGroup, ticker, context);
+    result = agentGroupToPermissionGroup(agentGroup, assetId, context);
     expect(result).toEqual(
-      expect.objectContaining({ asset: expect.objectContaining({ ticker }), id })
+      expect.objectContaining({ asset: expect.objectContaining({ id: assetId }), id })
     );
   });
 
@@ -8065,13 +8812,28 @@ describe('agentGroupToPermissionGroup', () => {
 
   describe('statisticsOpTypeToStatType', () => {
     it('should return a statType', () => {
-      const op = 'MaxInvestorCount' as unknown as PolymeshPrimitivesStatisticsStatOpType;
-      const context = dsMockUtils.getContextInstance();
+      const operationType = 'MaxInvestorCount' as unknown as PolymeshPrimitivesStatisticsStatOpType;
+      let context = dsMockUtils.getContextInstance();
       when(context.createType)
-        .calledWith('PolymeshPrimitivesStatisticsStatType', { op, claimIssuer: undefined })
+        .calledWith('PolymeshPrimitivesStatisticsStatType', {
+          operationType,
+          claimIssuer: undefined,
+        })
         .mockReturnValue('statType' as unknown as PolymeshPrimitivesStatisticsStatType);
 
-      const result = statisticsOpTypeToStatType({ op }, context);
+      let result = statisticsOpTypeToStatType({ operationType }, context);
+
+      expect(result).toEqual('statType');
+
+      context = dsMockUtils.getContextInstance({ isV6: true });
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesStatisticsStatType', {
+          op: operationType,
+          claimIssuer: undefined,
+        })
+        .mockReturnValue('statType' as unknown as PolymeshPrimitivesStatisticsStatType);
+
+      result = statisticsOpTypeToStatType({ operationType }, context);
 
       expect(result).toEqual('statType');
     });
@@ -8123,19 +8885,54 @@ describe('agentGroupToPermissionGroup', () => {
   });
 
   describe('meshStatToStat', () => {
+    beforeAll(() => {
+      dsMockUtils.initMocks();
+    });
+
+    afterEach(() => {
+      dsMockUtils.reset();
+    });
+
+    afterAll(() => {
+      dsMockUtils.cleanup();
+    });
+
     it('should return the type', () => {
       const rawStat = {
-        op: { type: 'Count' },
+        operationType: { type: 'Count' },
         claimIssuer: createMockOption(),
       } as unknown as PolymeshPrimitivesStatisticsStatType;
 
-      const result = meshStatToStatType(rawStat);
+      const result = meshStatToStatType(rawStat, dsMockUtils.getContextInstance());
 
       expect(result).toEqual(StatType.Count);
+    });
+
+    it('should return the type', () => {
+      const rawStat = {
+        op: { type: 'Balance' },
+        claimIssuer: createMockOption(),
+      } as unknown as PolymeshPrimitivesStatisticsStatType;
+
+      const result = meshStatToStatType(rawStat, dsMockUtils.getContextInstance({ isV6: true }));
+
+      expect(result).toEqual(StatType.Balance);
     });
   });
 
   describe('createStat2ndKey', () => {
+    beforeAll(() => {
+      dsMockUtils.initMocks();
+    });
+
+    afterEach(() => {
+      dsMockUtils.reset();
+    });
+
+    afterAll(() => {
+      dsMockUtils.cleanup();
+    });
+
     it('should return a NoClaimStat 2nd key', () => {
       const context = dsMockUtils.getContextInstance();
 
@@ -8637,29 +9434,29 @@ describe('sortStatsByClaimType', () => {
       dsMockUtils.createMockClaimType(ClaimType.Blocked),
       issuer,
     ];
-    const op = dsMockUtils.createMockStatisticsOpType(StatType.Count);
+    const operationType = dsMockUtils.createMockStatisticsOpType(StatType.Count);
     const accreditedStat = dsMockUtils.createMockStatisticsStatType({
-      op,
+      operationType,
       claimIssuer: dsMockUtils.createMockOption(accreditedIssuer),
     });
 
     const affiliateStat = dsMockUtils.createMockStatisticsStatType({
-      op,
+      operationType,
       claimIssuer: dsMockUtils.createMockOption(affiliateIssuer),
     });
 
     const jurisdictionStat = dsMockUtils.createMockStatisticsStatType({
-      op,
+      operationType,
       claimIssuer: dsMockUtils.createMockOption(jurisdictionIssuer),
     });
 
     const nonStat = dsMockUtils.createMockStatisticsStatType({
-      op,
+      operationType,
       claimIssuer: dsMockUtils.createMockOption(nonStatIssuer),
     });
 
     const countStat = dsMockUtils.createMockStatisticsStatType({
-      op,
+      operationType,
       claimIssuer: dsMockUtils.createMockOption(),
     });
 
@@ -8835,7 +9632,10 @@ describe('inputStatTypeToMeshStatType', () => {
       .mockReturnValue(fakeOp);
 
     when(createTypeMock)
-      .calledWith('PolymeshPrimitivesStatisticsStatType', { op: fakeOp, claimIssuer: undefined })
+      .calledWith('PolymeshPrimitivesStatisticsStatType', {
+        operationType: fakeOp,
+        claimIssuer: undefined,
+      })
       .mockReturnValue(fakeStatistic);
 
     when(createTypeMock)
@@ -8848,7 +9648,7 @@ describe('inputStatTypeToMeshStatType', () => {
 
     when(createTypeMock)
       .calledWith('PolymeshPrimitivesStatisticsStatType', {
-        op: fakeOp,
+        operationType: fakeOp,
         claimIssuer: [fakeClaimType, fakeIssuer],
       })
       .mockReturnValue(fakeStatistic);
@@ -8871,51 +9671,85 @@ describe('inputStatTypeToMeshStatType', () => {
 
 describe('meshProposalStatusToProposalStatus', () => {
   it('should convert raw statuses to the correct ProposalStatus', () => {
-    let result = meshProposalStatusToProposalStatus(
-      dsMockUtils.createMockProposalStatus('ActiveOrExpired'),
-      null
-    );
+    let result = meshProposalStatusToProposalStatus({ type: 'ActiveOrExpired' }, null); // NOSONAR
     expect(result).toEqual(ProposalStatus.Active);
 
-    result = meshProposalStatusToProposalStatus(
-      dsMockUtils.createMockProposalStatus('ActiveOrExpired'),
-      new Date(1)
-    );
+    result = meshProposalStatusToProposalStatus({ type: 'ActiveOrExpired' }, new Date(1)); // NOSONAR
     expect(result).toEqual(ProposalStatus.Expired);
 
-    result = meshProposalStatusToProposalStatus(
-      dsMockUtils.createMockProposalStatus('ExecutionSuccessful'),
-      null
-    );
+    result = meshProposalStatusToProposalStatus({ type: 'ExecutionSuccessful' }, null); // NOSONAR
     expect(result).toEqual(ProposalStatus.Successful);
 
-    result = meshProposalStatusToProposalStatus(
-      dsMockUtils.createMockProposalStatus('ExecutionFailed'),
-      null
-    );
+    result = meshProposalStatusToProposalStatus({ type: 'ExecutionFailed' }, null); // NOSONAR
     expect(result).toEqual(ProposalStatus.Failed);
 
-    result = meshProposalStatusToProposalStatus(
-      dsMockUtils.createMockProposalStatus('Rejected'),
-      null
-    );
+    result = meshProposalStatusToProposalStatus({ type: 'Rejected' }, null); // NOSONAR
     expect(result).toEqual(ProposalStatus.Rejected);
 
-    result = meshProposalStatusToProposalStatus(
-      dsMockUtils.createMockProposalStatus('Invalid'),
-      null
-    );
+    result = meshProposalStatusToProposalStatus({ type: 'Invalid' }, null); // NOSONAR
     expect(result).toEqual(ProposalStatus.Invalid);
   });
 
   it('should throw an error if it receives an unknown status', () => {
-    const expectedError = new UnreachableCaseError('UnknownStatus' as never);
+    return expect(
+      () => meshProposalStatusToProposalStatus({ type: 'UnknownStatus' }, null) // NOSONAR
+    ).toThrowError('Unexpected proposal status received');
+  });
+});
+
+describe('meshProposalStateToProposalStatus', () => {
+  it('should convert raw statuses to the correct ProposalStatus', () => {
+    let result = meshProposalStateToProposalStatus(
+      dsMockUtils.createMockProposalState({
+        Active: {
+          until: dsMockUtils.createMockOption(),
+        },
+      })
+    );
+    expect(result).toEqual(ProposalStatus.Active);
+
+    result = meshProposalStateToProposalStatus(
+      dsMockUtils.createMockProposalState({
+        Active: {
+          until: dsMockUtils.createMockOption(
+            dsMockUtils.createMockU64(new BigNumber(new Date().getTime() + 1000000))
+          ),
+        },
+      })
+    );
+    expect(result).toEqual(ProposalStatus.Active);
+
+    result = meshProposalStateToProposalStatus(
+      dsMockUtils.createMockProposalState({
+        Active: {
+          until: dsMockUtils.createMockOption(
+            dsMockUtils.createMockU64(new BigNumber(new Date().getTime() - 1000000))
+          ),
+        },
+      })
+    );
+    expect(result).toEqual(ProposalStatus.Expired);
+
+    result = meshProposalStateToProposalStatus(
+      dsMockUtils.createMockProposalState('ExecutionSuccessful')
+    );
+    expect(result).toEqual(ProposalStatus.Successful);
+
+    result = meshProposalStateToProposalStatus(
+      dsMockUtils.createMockProposalState('ExecutionFailed')
+    );
+    expect(result).toEqual(ProposalStatus.Failed);
+
+    result = meshProposalStateToProposalStatus(dsMockUtils.createMockProposalState('Rejected'));
+    expect(result).toEqual(ProposalStatus.Rejected);
+  });
+
+  it('should throw an error if it receives an unknown status', () => {
     return expect(() =>
-      meshProposalStatusToProposalStatus(
-        { type: 'UnknownStatus' } as unknown as PolymeshPrimitivesMultisigProposalStatus,
-        null
-      )
-    ).toThrowError(expectedError);
+      meshProposalStateToProposalStatus({
+        type: 'UnknownStatus',
+      } as unknown as PolymeshPrimitivesMultisigProposalState)
+    ).toThrowError('Unreachable case: "UnknownStatus"');
   });
 });
 
@@ -9427,52 +10261,69 @@ describe('middlewareAgentGroupDataToPermissionGroup', () => {
   });
 
   it('should convert a middleware agent group data object to a PermissionGroup entity', () => {
-    const ticker = 'SOME_TICKER';
+    const assetId = '0x1234';
     const context = dsMockUtils.getContextInstance();
 
-    let agentGroup: Record<string, Record<string, null | number>> = { [ticker]: { full: null } };
+    let agentGroup: Record<string, Record<string, null | number>> = { [assetId]: { full: null } };
     let result = middlewareAgentGroupDataToPermissionGroup(agentGroup, context);
     expect(result).toEqual(
       expect.objectContaining({
-        asset: expect.objectContaining({ ticker }),
+        asset: expect.objectContaining({ id: assetId }),
         type: PermissionGroupType.Full,
       })
     );
 
-    agentGroup = { [ticker]: { exceptMeta: null } };
+    agentGroup = { [assetId]: { exceptMeta: null } };
 
     result = middlewareAgentGroupDataToPermissionGroup(agentGroup, context);
     expect(result).toEqual(
       expect.objectContaining({
-        asset: expect.objectContaining({ ticker }),
+        asset: expect.objectContaining({ id: assetId }),
         type: PermissionGroupType.ExceptMeta,
       })
     );
 
-    agentGroup = { [ticker]: { polymeshV1CAA: null } };
+    agentGroup = { [assetId]: { polymeshV1CAA: null } };
     result = middlewareAgentGroupDataToPermissionGroup(agentGroup, context);
     expect(result).toEqual(
       expect.objectContaining({
-        asset: expect.objectContaining({ ticker }),
+        asset: expect.objectContaining({ id: assetId }),
         type: PermissionGroupType.PolymeshV1Caa,
       })
     );
 
-    agentGroup = { [ticker]: { polymeshV1PIA: null } };
+    agentGroup = { [assetId]: { polymeshV1PIA: null } };
 
     result = middlewareAgentGroupDataToPermissionGroup(agentGroup, context);
     expect(result).toEqual(
       expect.objectContaining({
-        asset: expect.objectContaining({ ticker }),
+        asset: expect.objectContaining({ id: assetId }),
         type: PermissionGroupType.PolymeshV1Pia,
       })
     );
 
-    agentGroup = { [ticker]: { custom: 1 } };
+    agentGroup = { [assetId]: { custom: 1 } };
 
     result = middlewareAgentGroupDataToPermissionGroup(agentGroup, context);
     expect(result).toEqual(
-      expect.objectContaining({ asset: expect.objectContaining({ ticker }), id: new BigNumber(1) })
+      expect.objectContaining({
+        asset: expect.objectContaining({ id: assetId }),
+        id: new BigNumber(1),
+      })
+    );
+
+    const ticker = 'SOME_TICKER';
+    agentGroup = { [ticker]: { custom: 1 } };
+
+    result = middlewareAgentGroupDataToPermissionGroup(
+      agentGroup,
+      dsMockUtils.getContextInstance({ isV6: true })
+    );
+    expect(result).toEqual(
+      expect.objectContaining({
+        asset: expect.objectContaining({ id: ticker }),
+        id: new BigNumber(1),
+      })
     );
   });
 });
@@ -9494,12 +10345,12 @@ describe('middlewarePermissionsDataToPermissions', () => {
 
   it('should convert a middleware permissions data to a Permissions', () => {
     const context = dsMockUtils.getContextInstance();
-    const ticker = 'SOME_TICKER';
-    const hexTicker = '0x534F4D455F5449434B455200';
+    const assetId = '0x1234';
+    const rawAssetId = '0x1234';
     const did = 'someDid';
     let fakeResult: Permissions = {
       assets: {
-        values: [expect.objectContaining({ ticker })],
+        values: [expect.objectContaining({ id: assetId })],
         type: PermissionType.Include,
       },
       transactions: {
@@ -9513,7 +10364,7 @@ describe('middlewarePermissionsDataToPermissions', () => {
       },
     };
     let permissions: Record<string, unknown> = {
-      asset: { these: [hexTicker] },
+      asset: { these: [rawAssetId] },
       extrinsic: {
         these: [
           {
@@ -9560,7 +10411,7 @@ describe('middlewarePermissionsDataToPermissions', () => {
 
     fakeResult = {
       assets: {
-        values: [expect.objectContaining({ ticker })],
+        values: [expect.objectContaining({ id: assetId })],
         type: PermissionType.Exclude,
       },
       transactions: {
@@ -9577,7 +10428,7 @@ describe('middlewarePermissionsDataToPermissions', () => {
 
     permissions = {
       asset: {
-        except: [hexTicker],
+        except: [rawAssetId],
       },
       extrinsic: {
         except: [
@@ -9601,6 +10452,21 @@ describe('middlewarePermissionsDataToPermissions', () => {
 
     result = middlewarePermissionsDataToPermissions(JSON.stringify(permissions), context);
     expect(result).toEqual(fakeResult);
+
+    result = middlewarePermissionsDataToPermissions(
+      JSON.stringify({
+        ...permissions,
+        asset: { these: ['TICKER'] },
+      }),
+      dsMockUtils.getContextInstance({ isV6: true })
+    );
+    expect(result).toEqual({
+      ...fakeResult,
+      assets: {
+        values: [expect.objectContaining({ id: 'TICKER' })],
+        type: PermissionType.Include,
+      },
+    });
   });
 });
 
@@ -9703,9 +10569,9 @@ describe('middlewareAuthorizationDataToAuthorization', () => {
 
     fakeResult = {
       type: AuthorizationType.TransferAssetOwnership,
-      value: 'SOME_TICKER',
+      value: '0x1234',
     };
-    authorizationData = '0x534F4D455F5449434B455200';
+    authorizationData = '0x1234';
 
     result = middlewareAuthorizationDataToAuthorization(
       context,
@@ -9751,17 +10617,17 @@ describe('middlewareAuthorizationDataToAuthorization', () => {
     );
     expect(result).toEqual(fakeResult);
 
-    const ticker = 'SOME_TICKER';
+    const assetId = '0x1234';
     const type = PermissionGroupType.Full;
     fakeResult = {
       type: AuthorizationType.BecomeAgent,
       value: expect.objectContaining({
-        asset: expect.objectContaining({ ticker }),
+        asset: expect.objectContaining({ id: assetId }),
         type,
       }),
     };
 
-    authorizationData = `{"${ticker}",${JSON.stringify({ full: null })}}`;
+    authorizationData = `{"${assetId}",${JSON.stringify({ full: null })}}`;
 
     result = middlewareAuthorizationDataToAuthorization(
       context,
@@ -9817,7 +10683,7 @@ describe('legToFungibleLeg', () => {
     const value = {
       sender: createMockPortfolioId(),
       receiver: createMockPortfolioId(),
-      ticker: createMockTicker(),
+      assetId: createMockAssetId(),
       amount: createMockU128(),
     } as const;
 
@@ -9979,46 +10845,104 @@ describe('collectionKeysToMetadataKeys', () => {
 });
 
 describe('meshMetadataKeyToMetadataKey', () => {
-  it('should convert local metadata', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert local metadata', async () => {
     const localId = new BigNumber(1);
-    const ticker = 'TICKER';
+    const assetId = '0x1234';
     const rawKey = dsMockUtils.createMockAssetMetadataKey({
       Local: dsMockUtils.createMockU64(localId),
     });
+    const ticker = 'SOME_TICKER';
 
-    const result = meshMetadataKeyToMetadataKey(rawKey, ticker);
+    jest.spyOn(utilsInternalModule, 'getAssetIdAndTicker').mockResolvedValue({
+      assetId,
+      ticker,
+    });
 
-    expect(result).toEqual({ type: MetadataType.Local, id: localId, ticker });
+    const result = await meshMetadataKeyToMetadataKey(
+      rawKey,
+      entityMockUtils.getBaseAssetInstance({ assetId }),
+      dsMockUtils.getContextInstance()
+    );
+
+    expect(result).toEqual({ type: MetadataType.Local, id: localId, assetId, ticker });
   });
 
-  it('should convert Global metadata', () => {
+  it('should convert Global metadata', async () => {
     const globalId = new BigNumber(2);
     const rawKey = dsMockUtils.createMockAssetMetadataKey({
       Global: dsMockUtils.createMockU64(globalId),
     });
 
-    const result = meshMetadataKeyToMetadataKey(rawKey, '');
+    const result = await meshMetadataKeyToMetadataKey(
+      rawKey,
+      entityMockUtils.getBaseAssetInstance(),
+      dsMockUtils.getContextInstance()
+    );
 
     expect(result).toEqual({ type: MetadataType.Global, id: globalId });
   });
 });
 
 describe('meshNftToNftId', () => {
-  it('should convert a set of NFTs', () => {
-    const ticker = 'TICKER';
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
 
-    const mockNft = dsMockUtils.createMockNfts({
-      ticker: dsMockUtils.createMockTicker(ticker),
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+  it('should convert a set of NFTs', () => {
+    let assetId = '0x1234';
+
+    let mockNft = dsMockUtils.createMockNfts({
+      assetId: dsMockUtils.createMockAssetId(assetId),
       ids: [
         dsMockUtils.createMockU64(new BigNumber(1)),
         dsMockUtils.createMockU64(new BigNumber(2)),
       ],
     });
 
-    const result = meshNftToNftId(mockNft);
+    let result = meshNftToNftId(mockNft, dsMockUtils.getContextInstance());
 
     expect(result).toEqual({
-      ticker,
+      assetId,
+      ids: [new BigNumber(1), new BigNumber(2)],
+    });
+
+    assetId = 'SOME_TICKER';
+    mockNft = dsMockUtils.createMockCodec(
+      {
+        ticker: dsMockUtils.createMockTicker(assetId),
+        ids: [
+          dsMockUtils.createMockU64(new BigNumber(1)),
+          dsMockUtils.createMockU64(new BigNumber(2)),
+        ],
+      },
+      false
+    );
+
+    result = meshNftToNftId(mockNft, dsMockUtils.getContextInstance({ isV6: true }));
+
+    expect(result).toEqual({
+      assetId,
       ids: [new BigNumber(1), new BigNumber(2)],
     });
   });
@@ -10084,10 +11008,12 @@ describe('nftInputToNftMetadataAttribute', () => {
 describe('nftToMeshNft', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
   });
 
   afterEach(() => {
     dsMockUtils.reset();
+    entityMockUtils.reset();
   });
 
   afterAll(() => {
@@ -10095,8 +11021,8 @@ describe('nftToMeshNft', () => {
   });
 
   it('should converts Nft input', () => {
-    const ticker = 'TICKER';
-    const rawTicker = dsMockUtils.createMockTicker(ticker);
+    const assetId = '0x1234';
+    const rawAssetId = dsMockUtils.createMockAssetId(assetId);
     const id = new BigNumber(1);
     const rawId = dsMockUtils.createMockU64(id);
     const context = dsMockUtils.getContextInstance();
@@ -10104,17 +11030,17 @@ describe('nftToMeshNft', () => {
     const mockResult = 'mockResult' as unknown as PolymeshPrimitivesNftNfTs;
 
     when(context.createType)
-      .calledWith('PolymeshPrimitivesTicker', padString(ticker, MAX_TICKER_LENGTH))
-      .mockReturnValue(rawTicker);
+      .calledWith('PolymeshPrimitivesAssetAssetID', assetId)
+      .mockReturnValue(rawAssetId);
     when(context.createType).calledWith('u64', id.toString()).mockReturnValue(rawId);
     when(context.createType)
       .calledWith('PolymeshPrimitivesNftNfTs', {
-        ticker: rawTicker,
+        assetId: rawAssetId,
         ids: [rawId],
       })
       .mockReturnValue(mockResult);
 
-    const result = nftToMeshNft(ticker, [id], context);
+    const result = nftToMeshNft(entityMockUtils.getBaseAssetInstance({ assetId }), [id], context);
 
     expect(result).toEqual(mockResult);
   });

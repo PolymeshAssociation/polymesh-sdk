@@ -1,29 +1,22 @@
 import { isFullGroupType } from '~/api/procedures/utils';
-import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
+import { BaseAsset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RemoveExternalAgentParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { stringToIdentityId, stringToTicker } from '~/utils/conversion';
+import { assetToMeshAssetId, stringToIdentityId } from '~/utils/conversion';
 import { getIdentity } from '~/utils/internal';
 
 /**
  * @hidden
  */
 export type Params = RemoveExternalAgentParams & {
-  ticker: string;
+  asset: BaseAsset;
 };
 
 /**
  * @hidden
  */
-export interface Storage {
-  asset: FungibleAsset;
-}
-
-/**
- * @hidden
- */
 export async function prepareRemoveExternalAgent(
-  this: Procedure<Params, void, Storage>,
+  this: Procedure<Params, void>,
   args: Params
 ): Promise<TransactionSpec<void, ExtrinsicParams<'externalAgents', 'removeAgent'>>> {
   const {
@@ -33,10 +26,9 @@ export async function prepareRemoveExternalAgent(
       },
     },
     context,
-    storage: { asset },
   } = this;
 
-  const { ticker, target } = args;
+  const { asset, target } = args;
 
   const [currentAgents, targetIdentity] = await Promise.all([
     asset.permissions.getAgents(),
@@ -63,12 +55,13 @@ export async function prepareRemoveExternalAgent(
     }
   }
 
-  const rawTicker = stringToTicker(ticker, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
+
   const rawAgent = stringToIdentityId(targetIdentity.did, context);
 
   return {
     transaction: externalAgents.removeAgent,
-    args: [rawTicker, rawAgent],
+    args: [rawAssetId, rawAgent],
     resolver: undefined,
   };
 }
@@ -76,10 +69,10 @@ export async function prepareRemoveExternalAgent(
 /**
  * @hidden
  */
-export function getAuthorization(this: Procedure<Params, void, Storage>): ProcedureAuthorization {
-  const {
-    storage: { asset },
-  } = this;
+export function getAuthorization(
+  this: Procedure<Params, void>,
+  { asset }: Params
+): ProcedureAuthorization {
   return {
     permissions: {
       transactions: [TxTags.externalAgents.RemoveAgent],
@@ -92,19 +85,5 @@ export function getAuthorization(this: Procedure<Params, void, Storage>): Proced
 /**
  * @hidden
  */
-export function prepareStorage(
-  this: Procedure<Params, void, Storage>,
-  { ticker }: Params
-): Storage {
-  const { context } = this;
-
-  return {
-    asset: new FungibleAsset({ ticker }, context),
-  };
-}
-
-/**
- * @hidden
- */
-export const removeExternalAgent = (): Procedure<Params, void, Storage> =>
-  new Procedure(prepareRemoveExternalAgent, getAuthorization, prepareStorage);
+export const removeExternalAgent = (): Procedure<Params, void> =>
+  new Procedure(prepareRemoveExternalAgent, getAuthorization);

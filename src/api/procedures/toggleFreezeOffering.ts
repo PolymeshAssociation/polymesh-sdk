@@ -3,12 +3,12 @@ import BigNumber from 'bignumber.js';
 import { FungibleAsset, Offering, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, OfferingSaleStatus, OfferingTimingStatus, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { bigNumberToU64, stringToTicker } from '~/utils/conversion';
+import { assetToMeshAssetId, bigNumberToU64 } from '~/utils/conversion';
 
 export interface ToggleFreezeOfferingParams {
   id: BigNumber;
   freeze: boolean;
-  ticker: string;
+  asset: FungibleAsset;
 }
 
 /**
@@ -29,12 +29,12 @@ export async function prepareToggleFreezeOffering(
     },
     context,
   } = this;
-  const { ticker, id, freeze } = args;
+  const { asset, id, freeze } = args;
 
-  const rawTicker = stringToTicker(ticker, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
   const rawId = bigNumberToU64(id, context);
 
-  const offering = new Offering({ ticker, id }, context);
+  const offering = new Offering({ id, assetId: asset.id }, context);
 
   const {
     status: { timing, sale },
@@ -57,7 +57,7 @@ export async function prepareToggleFreezeOffering(
 
     return {
       transaction: txSto.freezeFundraiser,
-      args: [rawTicker, rawId],
+      args: [rawAssetId, rawId],
       resolver: offering,
     };
   }
@@ -78,7 +78,7 @@ export async function prepareToggleFreezeOffering(
 
   return {
     transaction: txSto.unfreezeFundraiser,
-    args: [rawTicker, rawId],
+    args: [rawAssetId, rawId],
     resolver: offering,
   };
 }
@@ -88,12 +88,12 @@ export async function prepareToggleFreezeOffering(
  */
 export function getAuthorization(
   this: Procedure<ToggleFreezeOfferingParams, Offering>,
-  { ticker, freeze }: ToggleFreezeOfferingParams
+  { asset, freeze }: ToggleFreezeOfferingParams
 ): ProcedureAuthorization {
   return {
     permissions: {
       transactions: [freeze ? TxTags.sto.FreezeFundraiser : TxTags.sto.UnfreezeFundraiser],
-      assets: [new FungibleAsset({ ticker }, this.context)],
+      assets: [asset],
       portfolios: [],
     },
   };

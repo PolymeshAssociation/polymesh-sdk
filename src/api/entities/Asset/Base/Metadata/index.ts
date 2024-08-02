@@ -21,12 +21,12 @@ import {
   RegisterMetadataParams,
 } from '~/types';
 import {
+  assetToMeshAssetId,
   bigNumberToU64,
   bytesToString,
   meshMetadataKeyToMetadataKey,
   meshMetadataSpecToMetadataSpec,
   meshMetadataValueToMetadataValue,
-  stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
@@ -41,10 +41,8 @@ export class Metadata extends Namespace<BaseAsset> {
   constructor(parent: BaseAsset, context: Context) {
     super(parent, context);
 
-    const { ticker } = parent;
-
     this.register = createProcedureMethod(
-      { getProcedureAndArgs: args => [registerMetadata, { ticker, ...args }] },
+      { getProcedureAndArgs: args => [registerMetadata, { asset: parent, ...args }] },
       context
     );
   }
@@ -72,18 +70,18 @@ export class Metadata extends Namespace<BaseAsset> {
         },
       },
       context,
-      parent: { ticker },
+      parent,
     } = this;
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(parent, context);
 
     const [rawGlobalKeys, rawLocalKeys] = await Promise.all([
       assetMetadataGlobalKeyToName.entries(),
-      assetMetadataLocalKeyToName.entries(rawTicker),
+      assetMetadataLocalKeyToName.entries(rawAssetId),
     ]);
 
     const assembleResult = (rawId: u64, type: MetadataType): MetadataEntry =>
-      new MetadataEntry({ ticker, type, id: u64ToBigNumber(rawId) }, context);
+      new MetadataEntry({ assetId: parent.id, type, id: u64ToBigNumber(rawId) }, context);
 
     return [
       ...rawGlobalKeys.map(
@@ -118,7 +116,7 @@ export class Metadata extends Namespace<BaseAsset> {
         },
       },
       context,
-      parent: { ticker },
+      parent,
     } = this;
 
     const { id, type } = args;
@@ -130,8 +128,8 @@ export class Metadata extends Namespace<BaseAsset> {
     if (type === MetadataType.Global) {
       rawName = await assetMetadataGlobalKeyToName(rawId);
     } else {
-      const rawTicker = stringToTicker(ticker, context);
-      rawName = await assetMetadataLocalKeyToName(rawTicker, rawId);
+      const rawAssetId = assetToMeshAssetId(parent, context);
+      rawName = await assetMetadataLocalKeyToName(rawAssetId, rawId);
     }
 
     if (rawName.isEmpty) {
@@ -141,7 +139,7 @@ export class Metadata extends Namespace<BaseAsset> {
       });
     }
 
-    return new MetadataEntry({ ticker, type, id }, context);
+    return new MetadataEntry({ assetId: parent.id, type, id }, context);
   }
 
   /**
@@ -151,7 +149,8 @@ export class Metadata extends Namespace<BaseAsset> {
    */
   public async getNextLocalId(): Promise<BigNumber> {
     const {
-      parent: { ticker },
+      parent: asset,
+      context,
       context: {
         polymeshApi: {
           query: {
@@ -161,7 +160,9 @@ export class Metadata extends Namespace<BaseAsset> {
       },
     } = this;
 
-    const rawId = await currentAssetMetadataLocalKey(ticker);
+    const rawAssetId = assetToMeshAssetId(asset, context);
+
+    const rawId = await currentAssetMetadataLocalKey(rawAssetId);
 
     if (rawId.isSome) {
       return u64ToBigNumber(rawId.unwrap()).plus(1);
@@ -190,12 +191,12 @@ export class Metadata extends Namespace<BaseAsset> {
         },
       },
       context,
-      parent: { ticker },
+      parent,
     } = this;
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(parent, context);
 
-    const [rawValueEntries] = await Promise.all([assetMetadataValues.entries(rawTicker)]);
+    const [rawValueEntries] = await Promise.all([assetMetadataValues.entries(rawAssetId)]);
 
     const namePromises: Promise<Option<Bytes>>[] = [];
     const specPromises: Promise<Option<PolymeshPrimitivesAssetMetadataAssetMetadataSpec>>[] = [];
@@ -209,11 +210,11 @@ export class Metadata extends Namespace<BaseAsset> {
           args: [, rawMetadataKey],
         },
       ]) => {
-        valueDetailsPromises.push(assetMetadataValueDetails(rawTicker, rawMetadataKey));
+        valueDetailsPromises.push(assetMetadataValueDetails(rawAssetId, rawMetadataKey));
 
         if (rawMetadataKey.isLocal) {
-          namePromises.push(assetMetadataLocalKeyToName(rawTicker, rawMetadataKey.asLocal));
-          specPromises.push(assetMetadataLocalSpecs(rawTicker, rawMetadataKey.asLocal));
+          namePromises.push(assetMetadataLocalKeyToName(rawAssetId, rawMetadataKey.asLocal));
+          specPromises.push(assetMetadataLocalSpecs(rawAssetId, rawMetadataKey.asLocal));
         } else {
           namePromises.push(assetMetadataGlobalKeyToName(rawMetadataKey.asGlobal));
           specPromises.push(assetMetadataGlobalSpecs(rawMetadataKey.asGlobal));
@@ -225,7 +226,9 @@ export class Metadata extends Namespace<BaseAsset> {
     const specValues = await Promise.all(specPromises);
     const valueDetails = await Promise.all(valueDetailsPromises);
 
-    return rawValueEntries.map((rawValueEntry, index) => {
+    const data = [];
+    let index = 0;
+    for (const rawValueEntry of rawValueEntries) {
       const [
         {
           args: [, rawMetadataKey],
@@ -233,18 +236,21 @@ export class Metadata extends Namespace<BaseAsset> {
         rawValue,
       ] = rawValueEntry;
 
-      return {
+      data.push({
         metadataEntry: new MetadataEntry(
           {
-            ...meshMetadataKeyToMetadataKey(rawMetadataKey, ticker),
-            ticker,
+            ...(await meshMetadataKeyToMetadataKey(rawMetadataKey, parent, context)),
+            assetId: parent.id,
           },
           context
         ),
         name: bytesToString(nameValues[index].unwrap()),
         specs: meshMetadataSpecToMetadataSpec(specValues[index]),
         ...meshMetadataValueToMetadataValue(rawValue, valueDetails[index])!,
-      };
-    });
+      });
+      index++;
+    }
+
+    return data;
   }
 }

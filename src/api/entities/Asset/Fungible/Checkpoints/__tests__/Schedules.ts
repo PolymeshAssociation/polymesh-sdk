@@ -1,14 +1,18 @@
-import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { CheckpointSchedule, Context, Namespace, PolymeshTransaction } from '~/internal';
+import { Schedules } from '~/api/entities/Asset/Fungible/Checkpoints/Schedules';
+import {
+  CheckpointSchedule,
+  Context,
+  FungibleAsset,
+  Namespace,
+  PolymeshTransaction,
+} from '~/internal';
 import { Moment } from '~/polkadot';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
-
-import { Schedules } from '../Schedules';
 
 jest.mock(
   '~/api/entities/CheckpointSchedule',
@@ -25,18 +29,19 @@ describe('Schedules class', () => {
   let context: Context;
   let schedules: Schedules;
 
-  let ticker: string;
+  let assetId: string;
+  let asset: FungibleAsset;
 
-  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    ticker = 'SOME_TICKER';
+    assetId = '0x1234';
 
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
   });
 
   afterEach(() => {
@@ -46,7 +51,7 @@ describe('Schedules class', () => {
 
     context = dsMockUtils.getContextInstance();
 
-    const asset = entityMockUtils.getFungibleAssetInstance({ ticker });
+    asset = entityMockUtils.getFungibleAssetInstance({ ticker: assetId });
     schedules = new Schedules(asset, context);
   });
 
@@ -75,7 +80,7 @@ describe('Schedules class', () => {
       };
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: { ticker, ...args }, transformer: undefined }, context, {})
+        .calledWith({ args: { asset, ...args }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
       const tx = await schedules.create(args);
@@ -96,7 +101,7 @@ describe('Schedules class', () => {
       };
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: { ticker, ...args }, transformer: undefined }, context, {})
+        .calledWith({ args: { asset, ...args }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
       const tx = await schedules.remove(args);
@@ -149,19 +154,21 @@ describe('Schedules class', () => {
     });
 
     it('should return the current checkpoint schedules', async () => {
-      const rawTicker = dsMockUtils.createMockTicker(ticker);
+      const rawAssetId = dsMockUtils.createMockAssetId(assetId);
       const id = new BigNumber(1);
       const rawId = dsMockUtils.createMockU64(id);
       const start = new Date('10/14/1987');
       const nextCheckpointDate = new Date('10/14/2030');
       const remaining = new BigNumber(2);
 
-      when(stringToTickerSpy).calledWith(ticker, context).mockReturnValue(rawTicker);
+      when(assetToMeshAssetIdSpy)
+        .calledWith(expect.objectContaining({ id: assetId }), context)
+        .mockReturnValue(rawAssetId);
 
       dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
         entries: [
           tuple(
-            [dsMockUtils.createMockTicker(rawTicker), rawId],
+            [dsMockUtils.createMockAssetId(rawAssetId), rawId],
             dsMockUtils.createMockOption(
               dsMockUtils.createMockCheckpointSchedule({
                 pending: dsMockUtils.createMockBTreeSet<Moment>([
@@ -181,7 +188,7 @@ describe('Schedules class', () => {
         nextCheckpointDate: start,
       });
       expect(result[0].schedule.id).toEqual(id);
-      expect(result[0].schedule.asset.ticker).toEqual(ticker);
+      expect(result[0].schedule.asset.id).toEqual(assetId);
     });
   });
 

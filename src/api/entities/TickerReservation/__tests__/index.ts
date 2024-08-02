@@ -68,8 +68,11 @@ describe('TickerReservation class', () => {
     let queryMultiMock: jest.Mock;
 
     beforeEach(() => {
-      dsMockUtils.createQueryMock('asset', 'tickers');
-      dsMockUtils.createQueryMock('asset', 'tokens');
+      dsMockUtils.createQueryMock('asset', 'uniqueTickerRegistration');
+      dsMockUtils.createQueryMock('asset', 'assets');
+      dsMockUtils
+        .createQueryMock('asset', 'tickerAssetID')
+        .mockResolvedValue(dsMockUtils.createMockOption(dsMockUtils.createMockAssetId('0x1234')));
       queryMultiMock = dsMockUtils.getQueryMultiMock();
     });
 
@@ -303,14 +306,14 @@ describe('TickerReservation class', () => {
     it('should return whether the Reservation exists', async () => {
       const tickerRes = new TickerReservation({ ticker: 'SOME_TICKER' }, context);
 
-      dsMockUtils.createQueryMock('asset', 'tickers', {
+      dsMockUtils.createQueryMock('asset', 'uniqueTickerRegistration', {
         size: new BigNumber(10),
       });
 
       let result = await tickerRes.exists();
       expect(result).toBe(true);
 
-      dsMockUtils.createQueryMock('asset', 'tickers', {
+      dsMockUtils.createQueryMock('asset', 'uniqueTickerRegistration', {
         size: new BigNumber(0),
       });
 

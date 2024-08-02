@@ -5,14 +5,14 @@ import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
 import { BaseAsset, PolymeshError, Procedure } from '~/internal';
 import { AddAssetRequirementParams, ErrorCode, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { requirementToComplianceRequirement, stringToTicker } from '~/utils/conversion';
+import { assetToMeshAssetId, requirementToComplianceRequirement } from '~/utils/conversion';
 import { conditionsAreEqual, hasSameElements } from '~/utils/internal';
 
 /**
  * @hidden
  */
 export type Params = AddAssetRequirementParams & {
-  ticker: string;
+  asset: BaseAsset;
 };
 
 /**
@@ -30,11 +30,9 @@ export async function prepareAddAssetRequirement(
     },
     context,
   } = this;
-  const { ticker, conditions } = args;
+  const { asset, conditions } = args;
 
-  const rawTicker = stringToTicker(ticker, context);
-
-  const asset = new BaseAsset({ ticker }, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
 
   const { requirements: currentRequirements, defaultTrustedClaimIssuers } =
     await asset.compliance.requirements.get();
@@ -60,14 +58,14 @@ export async function prepareAddAssetRequirement(
     context
   );
 
-  const { senderConditions, receiverConditions } = requirementToComplianceRequirement(
+  const { senderConditions, receiverConditions } = await requirementToComplianceRequirement(
     { conditions, id: new BigNumber(1) },
     context
   );
 
   return {
     transaction: tx.complianceManager.addComplianceRequirement,
-    args: [rawTicker, senderConditions, receiverConditions],
+    args: [rawAssetId, senderConditions, receiverConditions],
     resolver: undefined,
   };
 }
@@ -77,12 +75,12 @@ export async function prepareAddAssetRequirement(
  */
 export function getAuthorization(
   this: Procedure<Params, void>,
-  { ticker }: Params
+  { asset }: Params
 ): ProcedureAuthorization {
   return {
     permissions: {
       transactions: [TxTags.complianceManager.AddComplianceRequirement],
-      assets: [new BaseAsset({ ticker }, this.context)],
+      assets: [asset],
       portfolios: [],
     },
   };

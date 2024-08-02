@@ -399,7 +399,7 @@ export type GetTransferRestrictionReturnType<T> = ActiveTransferRestrictions<
     : ClaimPercentageTransferRestriction
 >;
 
-export type RemoveAssetStatParams = { ticker: string } & (
+export type RemoveAssetStatParams = { asset: FungibleAsset } & (
   | RemoveCountStatParams
   | RemoveBalanceStatParams
   | RemoveScopedCountParams
@@ -422,7 +422,7 @@ export type AddClaimPercentageStatParams = StatClaimIssuer & {
   type: StatType.ScopedBalance;
 };
 
-export type AddAssetStatParams = { ticker: string } & (
+export type AddAssetStatParams = { asset: FungibleAsset } & (
   | AddCountStatParams
   | AddPercentageStatParams
   | AddClaimCountStatParams
@@ -724,9 +724,21 @@ export type CollectionKeyInput = GlobalCollectionKeyInput | LocalCollectionKeyIn
 
 export interface CreateNftCollectionParams {
   /**
-   * The primary identifier for the collection. The ticker must either be free, or the signer has appropriate permissions if reserved
+   * The ID of the asset to be used to create the collection.
+   * If no assetId is provided, a new asset with `NonFungible` asset type will be created
+   *
+   * @note for spec version before 7.x, this value is overwritten by `ticker` value
    */
-  ticker: string;
+  assetId?: string;
+  /**
+   * The primary identifier for the collection.
+   * The ticker must either be free, or the signer has appropriate permissions if reserved.
+   *
+   * Since spec version 7.x, this value (if provided) is then linked to `assetId` asset
+   *
+   * @note This value is mandatory for spec version before 7.x
+   */
+  ticker?: string;
   /**
    * The collection name. defaults to `ticker`
    */
@@ -961,7 +973,7 @@ export interface AddInstructionsParams {
 }
 
 export type AddInstructionWithVenueIdParams = AddInstructionParams & {
-  venueId: BigNumber;
+  venueId?: BigNumber;
 };
 
 export interface InstructionIdParams {
@@ -1428,6 +1440,13 @@ export interface LinkCaDocsParams {
   documents: AssetDocument[];
 }
 
+export interface LinkTickerToAssetParams {
+  /**
+   * The ticker to attach
+   */
+  ticker: string;
+}
+
 export interface ModifyCaCheckpointParams {
   checkpoint: InputCaCheckpoint | null;
 }
@@ -1594,8 +1613,15 @@ export interface CreateTransactionBatchParams<ReturnValues extends readonly [...
 }
 
 export interface CreateMultiSigParams {
+  /**
+   * @note Signer must be an Account as of v7
+   */
   signers: Signer[];
   requiredSignatures: BigNumber;
+  /**
+   * Grants permissions to the MultiSig upon creation. The caller must be the primary key of the Identity for these to work
+   */
+  permissions?: PermissionsLike;
 }
 
 export interface ModifyMultiSigParams {
@@ -1613,7 +1639,14 @@ export interface ModifyMultiSigParams {
   requiredSignatures?: BigNumber;
 }
 
-export interface JoinCreatorAsPrimary {
+export interface SetMultiSigAdminParams {
+  /**
+   * The identity to become an admin for the MultiSig. `null` will remove the current admin
+   */
+  admin: Identity | string | null;
+}
+
+interface JoinCreatorAsPrimary {
   asPrimary: true;
   cddAuthId?: BigNumber;
 }

@@ -99,6 +99,7 @@ export { createCheckpoint } from '~/api/procedures/createCheckpoint';
 export { controllerTransfer } from '~/api/procedures/controllerTransfer';
 export { nftControllerTransfer } from '~/api/procedures/nftControllerTransfer';
 export { linkCaDocs } from '~/api/procedures/linkCaDocs';
+export { linkTickerToAsset } from '~/api/procedures/linkTickerToAsset';
 export { Identity } from '~/api/entities/Identity';
 export { ChildIdentity } from '~/api/entities/Identity/ChildIdentity';
 export { Account } from '~/api/entities/Account';
@@ -157,6 +158,8 @@ export { acceptPrimaryKeyRotation } from '~/api/procedures/acceptPrimaryKeyRotat
 export { addAssetMediators } from '~/api/procedures/addAssetMediators';
 export { removeAssetMediators } from '~/api/procedures/removeAssetMediators';
 export { Storage as ModifyMultiSigStorage, modifyMultiSig } from '~/api/procedures/modifyMultiSig';
+export { removeMultiSigPayer } from '~/api/procedures/removeMultiSigPayer';
+export { setMultiSigAdmin } from '~/api/procedures/setMultiSigAdmin';
 export {
   SetCountTransferRestrictionsParams,
   SetPercentageTransferRestrictionsParams,
@@ -167,7 +170,7 @@ export { addAssetStat } from '~/api/procedures/addAssetStat';
 export { removeAssetStat } from '~/api/procedures/removeAssetStat';
 export { setVenueFiltering } from '~/api/procedures/setVenueFiltering';
 export { registerCustomClaimType } from '~/api/procedures/registerCustomClaimType';
-export { toggleTickerPreApproval } from '~/api/procedures/toggleTickerPreApproval';
+export { toggleAssetPreApproval } from '~/api/procedures/toggleAssetPreApproval';
 export { allowIdentityToCreatePortfolios } from '~/api/procedures/allowIdentityToCreatePortfolios';
 export { revokeIdentityToCreatePortfolios } from '~/api/procedures/revokeIdentityToCreatePortfolios';
 export { rotatePrimaryKeyToSecondary } from '~/api/procedures/rotatePrimaryKeyToSecondary';

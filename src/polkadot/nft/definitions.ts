@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 export default {
   rpc: {
-    validateNFTTransfer: {
+    transferReport: {
       description:
-        'Verifies if and the sender and receiver are not the same, if both have valid balances, if the sender owns the nft, and if all compliance rules are being respected.',
+        "Returns a vector containing all errors for the transfer. An empty vec means there's no error.",
       params: [
         {
           name: 'sender_portfolio',
@@ -21,12 +21,17 @@ export default {
           isOptional: false,
         },
         {
+          name: 'skip_locked_check',
+          type: 'bool',
+          isOptional: false,
+        },
+        {
           name: 'blockHash',
           type: 'Hash',
           isOptional: true,
         },
       ],
-      type: 'DispatchResult',
+      type: 'Vec<DispatchError>',
     },
   },
   types: {},
