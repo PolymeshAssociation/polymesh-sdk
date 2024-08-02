@@ -1,14 +1,13 @@
-import { FungibleAsset, Procedure } from '~/internal';
+import { BaseAsset, Procedure } from '~/internal';
 import { SetVenueFilteringParams, TxTags } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
-import { bigNumberToU64, booleanToBool, stringToTicker } from '~/utils/conversion';
+import { assetToMeshAssetId, bigNumberToU64, booleanToBool } from '~/utils/conversion';
 import { checkTxType } from '~/utils/internal';
-
 /**
  * @hidden
  */
 export type Params = {
-  ticker: string;
+  asset: BaseAsset;
 } & SetVenueFilteringParams;
 
 /**
@@ -25,17 +24,17 @@ export async function prepareVenueFiltering(
     context,
   } = this;
 
-  const { ticker, enabled, allowedVenues, disallowedVenues } = args;
-  const rawTicker = stringToTicker(ticker, context);
+  const { asset, enabled, allowedVenues, disallowedVenues } = args;
+  const rawAssetId = assetToMeshAssetId(asset, context);
   const transactions = [];
 
-  const isEnabled = await query.settlement.venueFiltering(rawTicker);
+  const isEnabled = await query.settlement.venueFiltering(rawAssetId);
 
   if (enabled !== undefined && isEnabled.valueOf() !== enabled) {
     transactions.push(
       checkTxType({
         transaction: tx.settlement.setVenueFiltering,
-        args: [rawTicker, booleanToBool(enabled, context)],
+        args: [rawAssetId, booleanToBool(enabled, context)],
       })
     );
   }
@@ -44,7 +43,7 @@ export async function prepareVenueFiltering(
     transactions.push(
       checkTxType({
         transaction: tx.settlement.allowVenues,
-        args: [rawTicker, allowedVenues.map(venue => bigNumberToU64(venue, context))],
+        args: [rawAssetId, allowedVenues.map(venue => bigNumberToU64(venue, context))],
       })
     );
   }
@@ -53,7 +52,7 @@ export async function prepareVenueFiltering(
     transactions.push(
       checkTxType({
         transaction: tx.settlement.disallowVenues,
-        args: [rawTicker, disallowedVenues.map(venue => bigNumberToU64(venue, context))],
+        args: [rawAssetId, disallowedVenues.map(venue => bigNumberToU64(venue, context))],
       })
     );
   }
@@ -66,10 +65,8 @@ export async function prepareVenueFiltering(
  */
 export function getAuthorization(
   this: Procedure<Params, void>,
-  { ticker, enabled, disallowedVenues, allowedVenues }: Params
+  { asset, enabled, disallowedVenues, allowedVenues }: Params
 ): ProcedureAuthorization {
-  const { context } = this;
-
   const transactions = [];
 
   if (enabled !== undefined) {
@@ -87,7 +84,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions,
-      assets: [new FungibleAsset({ ticker }, context)],
+      assets: [asset],
     },
   };
 }

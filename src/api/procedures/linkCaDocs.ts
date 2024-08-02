@@ -6,9 +6,9 @@ import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, LinkCaDocsParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
+  assetToMeshAssetId,
   corporateActionIdentifierToCaId,
   documentToAssetDocument,
-  stringToTicker,
 } from '~/utils/conversion';
 
 /**
@@ -16,7 +16,7 @@ import {
  */
 export type Params = LinkCaDocsParams & {
   id: BigNumber;
-  ticker: string;
+  asset: FungibleAsset;
 };
 
 /**
@@ -37,9 +37,10 @@ export async function prepareLinkCaDocs(
     },
     context,
   } = this;
-  const { id: caId, ticker, documents } = args;
+  const { id: caId, asset, documents } = args;
 
-  const rawAssetDocuments = await assetDocuments.entries(stringToTicker(ticker, context));
+  const rawAssetId = assetToMeshAssetId(asset, context);
+  const rawAssetDocuments = await assetDocuments.entries(rawAssetId);
 
   const docIdsToLink: u32[] = [];
   const documentsCopy = [...documents]; // avoid mutation
@@ -66,7 +67,7 @@ export async function prepareLinkCaDocs(
     });
   }
 
-  const rawCaId = corporateActionIdentifierToCaId({ ticker, localId: caId }, context);
+  const rawCaId = corporateActionIdentifierToCaId({ asset, localId: caId }, context);
 
   return {
     transaction: corporateAction.linkCaDoc,
@@ -80,11 +81,11 @@ export async function prepareLinkCaDocs(
  */
 export function getAuthorization(
   this: Procedure<Params, void>,
-  { ticker }: Params
+  { asset }: Params
 ): ProcedureAuthorization {
   return {
     permissions: {
-      assets: [new FungibleAsset({ ticker }, this.context)],
+      assets: [asset],
       transactions: [TxTags.corporateAction.LinkCaDoc],
       portfolios: [],
     },

@@ -345,7 +345,7 @@ export class DividendDistribution extends CorporateActionBase {
   }): Promise<DistributionParticipant | null> {
     const {
       id: localId,
-      asset: { ticker },
+      asset,
       targets: { identities: targetIdentities, treatment },
       paymentDate,
       context,
@@ -383,7 +383,7 @@ export class DividendDistribution extends CorporateActionBase {
     }
 
     const rawDid = stringToIdentityId(identity.did, context);
-    const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
+    const rawCaId = corporateActionIdentifierToCaId({ asset, localId }, context);
     const holderPaid = await query.capitalDistribution.holderPaid([rawCaId, rawDid]);
     const paid = boolToBoolean(holderPaid);
 
@@ -426,14 +426,10 @@ export class DividendDistribution extends CorporateActionBase {
    * @hidden
    */
   private fetchDistribution(): Promise<Option<PalletCorporateActionsDistribution>> {
-    const {
-      asset: { ticker },
-      id,
-      context,
-    } = this;
+    const { asset, id, context } = this;
 
     return context.polymeshApi.query.capitalDistribution.distributions(
-      corporateActionIdentifierToCaId({ ticker, localId: id }, context)
+      corporateActionIdentifierToCaId({ asset, localId: id }, context)
     );
   }
 
@@ -553,7 +549,7 @@ export class DividendDistribution extends CorporateActionBase {
     participants: DistributionParticipant[]
   ): Promise<boolean[]> {
     const {
-      asset: { ticker },
+      asset,
       id: localId,
       context: {
         polymeshApi: {
@@ -572,7 +568,7 @@ export class DividendDistribution extends CorporateActionBase {
 
     let paidStatuses: boolean[] = [];
 
-    const caId = corporateActionIdentifierToCaId({ localId, ticker }, context);
+    const caId = corporateActionIdentifierToCaId({ localId, asset }, context);
 
     await P.each(parallelCallChunks, async callChunk => {
       const parallelMultiCalls = callChunk.map(participantChunk => {

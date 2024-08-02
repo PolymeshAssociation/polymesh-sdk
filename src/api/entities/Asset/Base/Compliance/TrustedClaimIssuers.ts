@@ -17,7 +17,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
-import { stringToTicker, trustedIssuerToTrustedClaimIssuer } from '~/utils/conversion';
+import { assetToMeshAssetId, trustedIssuerToTrustedClaimIssuer } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**
@@ -30,8 +30,6 @@ export class TrustedClaimIssuers extends Namespace<BaseAsset> {
   constructor(parent: BaseAsset, context: Context) {
     super(parent, context);
 
-    const { ticker } = parent;
-
     this.set = createProcedureMethod<
       ModifyAssetTrustedClaimIssuersAddSetParams,
       ModifyAssetTrustedClaimIssuersParams,
@@ -40,7 +38,7 @@ export class TrustedClaimIssuers extends Namespace<BaseAsset> {
       {
         getProcedureAndArgs: args => [
           modifyAssetTrustedClaimIssuers,
-          { ticker, ...args, operation: TrustedClaimIssuerOperation.Set },
+          { asset: parent, ...args, operation: TrustedClaimIssuerOperation.Set },
         ],
       },
       context
@@ -53,7 +51,7 @@ export class TrustedClaimIssuers extends Namespace<BaseAsset> {
       {
         getProcedureAndArgs: args => [
           modifyAssetTrustedClaimIssuers,
-          { ticker, ...args, operation: TrustedClaimIssuerOperation.Add },
+          { asset: parent, ...args, operation: TrustedClaimIssuerOperation.Add },
         ],
       },
       context
@@ -66,7 +64,7 @@ export class TrustedClaimIssuers extends Namespace<BaseAsset> {
       {
         getProcedureAndArgs: args => [
           modifyAssetTrustedClaimIssuers,
-          { ticker, ...args, operation: TrustedClaimIssuerOperation.Remove },
+          { asset: parent, ...args, operation: TrustedClaimIssuerOperation.Remove },
         ],
       },
       context
@@ -109,10 +107,10 @@ export class TrustedClaimIssuers extends Namespace<BaseAsset> {
         },
       },
       context,
-      parent: { ticker },
+      parent,
     } = this;
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(parent, context);
 
     const assembleResult = (
       issuers: PolymeshPrimitivesConditionTrustedIssuer[]
@@ -123,7 +121,7 @@ export class TrustedClaimIssuers extends Namespace<BaseAsset> {
           trustedFor,
         } = trustedIssuerToTrustedClaimIssuer(issuer, context);
         return {
-          identity: new DefaultTrustedClaimIssuer({ did, ticker }, context),
+          identity: new DefaultTrustedClaimIssuer({ did, assetId: parent.id }, context),
           trustedFor,
         };
       });
@@ -131,13 +129,13 @@ export class TrustedClaimIssuers extends Namespace<BaseAsset> {
     if (callback) {
       context.assertSupportsSubscription();
 
-      return complianceManager.trustedClaimIssuer(rawTicker, issuers => {
+      return complianceManager.trustedClaimIssuer(rawAssetId, issuers => {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(assembleResult(issuers));
       });
     }
 
-    const claimIssuers = await complianceManager.trustedClaimIssuer(rawTicker);
+    const claimIssuers = await complianceManager.trustedClaimIssuer(rawAssetId);
 
     return assembleResult(claimIssuers);
   }

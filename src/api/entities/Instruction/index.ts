@@ -54,13 +54,13 @@ import {
   instructionMemoToString,
   mediatorAffirmationStatusToStatus,
   meshAffirmationStatusToAffirmationStatus,
+  meshAssetToAssetId,
   meshInstructionStatusToInstructionStatus,
   meshNftToNftId,
   meshPortfolioIdToPortfolio,
   meshSettlementTypeToEndCondition,
   middlewareEventDetailsToEventIdentifier,
   momentToDate,
-  tickerToString,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
@@ -432,9 +432,16 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         if (leg.isSome) {
           const legValue: PolymeshPrimitivesSettlementLeg = leg.unwrap();
           if (legValue.isFungible) {
-            const { sender, receiver, amount, ticker: rawTicker } = legValue.asFungible;
+            const {
+              sender,
+              receiver,
+              amount,
+              ticker: rawTicker,
+              assetId: rawAssetId,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } = legValue.asFungible as any;
 
-            const ticker = tickerToString(rawTicker);
+            const assetId = meshAssetToAssetId(rawTicker || rawAssetId, context);
             const fromPortfolio = meshPortfolioIdToPortfolio(sender, context);
             const toPortfolio = meshPortfolioIdToPortfolio(receiver, context);
 
@@ -442,20 +449,20 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
               from: fromPortfolio,
               to: toPortfolio,
               amount: balanceToBigNumber(amount),
-              asset: new FungibleAsset({ ticker }, context),
+              asset: new FungibleAsset({ assetId }, context),
             };
           } else if (legValue.isNonFungible) {
             const { sender, receiver, nfts } = legValue.asNonFungible;
 
             const from = meshPortfolioIdToPortfolio(sender, context);
             const to = meshPortfolioIdToPortfolio(receiver, context);
-            const { ticker, ids } = meshNftToNftId(nfts);
+            const { assetId, ids } = meshNftToNftId(nfts, context);
 
             return {
               from,
               to,
-              nfts: ids.map(nftId => new Nft({ ticker, id: nftId }, context)),
-              asset: new NftCollection({ ticker }, context),
+              nfts: ids.map(nftId => new Nft({ assetId, id: nftId }, context)),
+              asset: new NftCollection({ assetId }, context),
             };
           } else {
             const {
@@ -463,9 +470,11 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
               receiverIdentity,
               amount,
               ticker: rawTicker,
-            } = legValue.asOffChain;
+              assetId: rawAssetId,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } = legValue.asOffChain as any;
 
-            const ticker = tickerToString(rawTicker);
+            const assetId = meshAssetToAssetId(rawTicker || rawAssetId, context);
             const from = identityIdToString(senderIdentity);
             const to = identityIdToString(receiverIdentity);
 
@@ -473,7 +482,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
               from: new Identity({ did: from }, context),
               to: new Identity({ did: to }, context),
               offChainAmount: balanceToBigNumber(amount),
-              asset: ticker,
+              asset: assetId,
             };
           }
         } else {
@@ -848,7 +857,8 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       });
     }
 
-    const { senderIdentity, receiverIdentity, ticker, amount } = rawLeg.asOffChain;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { senderIdentity, receiverIdentity, ticker, assetId, amount } = rawLeg.asOffChain as any;
 
     const rawUid = bigNumberToU64(uid, context);
 
@@ -858,7 +868,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       rawLegId.toHex(true),
       senderIdentity.toHex(),
       receiverIdentity.toHex(),
-      ticker.toHex(),
+      ticker?.toHex() || assetId?.toHex(),
       amount.toHex(true),
     ];
 

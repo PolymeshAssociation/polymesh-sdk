@@ -7,7 +7,7 @@ import {
   DropLast,
   ObsInnerType,
 } from '@polkadot/api/types';
-import { BTreeSet, Bytes, Option, StorageKey, u32 } from '@polkadot/types';
+import { BTreeSet, Bytes, Option, StorageKey, U8aFixed, u32 } from '@polkadot/types';
 import { EventRecord } from '@polkadot/types/interfaces';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import {
@@ -20,7 +20,7 @@ import {
 } from '@polkadot/types/lookup';
 import type { Callback, Codec, Observable } from '@polkadot/types/types';
 import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/types/types';
-import { stringUpperFirst } from '@polkadot/util';
+import { isHex, stringUpperFirst } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import fetch from 'cross-fetch';
@@ -90,6 +90,7 @@ import {
   PolymeshTx,
   Queries,
   StatClaimIssuer,
+  TickerKey,
   TxWithArgs,
 } from '~/types/internal';
 import {
@@ -115,6 +116,8 @@ import {
   SYSTEM_VERSION_RPC_CALL,
 } from '~/utils/constants';
 import {
+  assetIdToString,
+  assetToMeshAssetId,
   bigNumberToU32,
   claimIssuerToMeshClaimIssuer,
   identitiesToBtreeSet,
@@ -128,6 +131,9 @@ import {
   statisticsOpTypeToStatType,
   statsClaimToStatClaimInputType,
   stringToAccountId,
+  stringToAssetId,
+  stringToTicker,
+  tickerToString,
   transferRestrictionTypeToStatOpType,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -956,9 +962,138 @@ export function assertAddressValid(address: string, ss58Format: BigNumber): void
 
 /**
  * @hidden
+ *
+ * Validates a ticker value
  */
-export function asTicker(asset: string | BaseAsset): string {
-  return typeof asset === 'string' ? asset : asset.ticker;
+export function assertTickerValid(ticker: string): void {
+  if (!ticker.length || ticker.length > MAX_TICKER_LENGTH) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} characters`,
+    });
+  }
+
+  if (!isPrintableAscii(ticker)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Only printable ASCII is allowed as ticker name',
+    });
+  }
+
+  if (ticker !== ticker.toUpperCase()) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Ticker cannot contain lower case letters',
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
+export async function getTickerForAsset(id: string, context: Context): Promise<string> {
+  const {
+    polymeshApi: {
+      query: { asset },
+    },
+  } = context;
+  // TODO @prashantasdeveloper add comment
+  let ticker = '';
+  const rawAssetId = stringToAssetId(id, context);
+  const rawTicker = await asset.assetIDTicker(rawAssetId);
+  if (rawTicker.isSome) {
+    ticker = tickerToString(rawTicker.unwrap());
+  }
+  return ticker;
+}
+
+/**
+ * @hidden
+ */
+export async function getAssetIdForTicker(ticker: string, context: Context): Promise<string> {
+  const {
+    polymeshApi: {
+      query: { asset },
+    },
+  } = context;
+  let assetId = '';
+  assertTickerValid(ticker);
+  const rawTicker = stringToTicker(ticker, context);
+  const rawAssetId = await asset.assetIDTicker(rawTicker);
+  if (rawAssetId.isSome) {
+    assetId = assetIdToString(rawAssetId.unwrap());
+  }
+  return assetId;
+}
+
+/**
+ * @hidden
+ */
+export async function getAssetIdAndTicker(
+  id: string,
+  context: Context
+): Promise<{
+  ticker: string;
+  assetId: string;
+}> {
+  const { isV6 } = context;
+
+  if (isV6) {
+    return {
+      ticker: id,
+      assetId: id,
+    };
+  }
+  return {
+    assetId: id,
+    ticker: await getTickerForAsset(id, context),
+  };
+}
+
+/**
+ * @hidden
+ */
+export async function asBaseAssetV2(
+  asset: string | BaseAsset,
+  context: Context
+): Promise<BaseAsset> {
+  const { isV6 } = context;
+  if (asset instanceof BaseAsset) {
+    return asset;
+  }
+  if (isV6) {
+    assertTickerValid(asset);
+    return new BaseAsset({ assetId: asset }, context);
+  }
+
+  if (isHex(asset) && asset.length === 34) {
+    const ticker = await getTickerForAsset(asset, context);
+    const baseAsset = new BaseAsset({ assetId: asset }, context);
+    baseAsset.ticker = ticker;
+    return baseAsset;
+  } else {
+    const id = await getAssetIdForTicker(asset, context);
+    const baseAsset = new BaseAsset({ assetId: id }, context);
+    baseAsset.ticker = asset;
+    return baseAsset;
+  }
+}
+
+/**
+ * @hidden
+ */
+export async function asAssetId(asset: string | BaseAsset, context: Context): Promise<string> {
+  const baseAsset = await asBaseAssetV2(asset, context);
+  return baseAsset.id;
+}
+
+/**
+ * @hidden
+ * this will return ticker for v6 and assetId for v7 and later
+ */
+export async function asAssetInput(asset: string | Asset, context: Context): Promise<string> {
+  const baseAsset = await asBaseAssetV2(asset, context);
+  return baseAsset.id;
 }
 
 /**
@@ -967,7 +1102,7 @@ export function asTicker(asset: string | BaseAsset): string {
  * @note alternatively {@link asAsset} returns a more precise type but is async due to a network call
  */
 export function asBaseAsset(asset: string | BaseAsset, context: Context): BaseAsset {
-  return typeof asset === 'string' ? new BaseAsset({ ticker: asset }, context) : asset;
+  return typeof asset === 'string' ? new BaseAsset({ assetId: asset }, context) : asset;
 }
 
 /**
@@ -980,8 +1115,8 @@ export async function asAsset(asset: string | Asset, context: Context): Promise<
     return asset;
   }
 
-  const fungible = new FungibleAsset({ ticker: asset }, context);
-  const collection = new NftCollection({ ticker: asset }, context);
+  const fungible = new FungibleAsset({ assetId: asset }, context);
+  const collection = new NftCollection({ assetId: asset }, context);
 
   const [isAsset, isCollection] = await Promise.all([fungible.exists(), collection.exists()]);
 
@@ -1007,9 +1142,9 @@ export function asFungibleAsset(asset: string | BaseAsset, context: Context): Fu
     return asset;
   }
 
-  const ticker = typeof asset === 'string' ? asset : asset.ticker;
+  const assetId = typeof asset === 'string' ? asset : asset.id;
 
-  return new FungibleAsset({ ticker }, context);
+  return new FungibleAsset({ assetId }, context);
 }
 
 /**
@@ -1572,39 +1707,12 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
 
 /**
  * @hidden
- *
- * Validates a ticker value
- */
-export function assertTickerValid(ticker: string): void {
-  if (!ticker.length || ticker.length > MAX_TICKER_LENGTH) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} characters`,
-    });
-  }
-
-  if (!isPrintableAscii(ticker)) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Only printable ASCII is allowed as ticker name',
-    });
-  }
-
-  if (ticker !== ticker.toUpperCase()) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Ticker cannot contain lower case letters',
-    });
-  }
-}
-
-/**
- * @hidden
  * @returns true is the given stat is able to track the data for the given args
  */
 export function compareStatsToInput(
   rawStatType: PolymeshPrimitivesStatisticsStatType,
-  args: RemoveAssetStatParams
+  args: RemoveAssetStatParams,
+  context: Context
 ): boolean {
   let claimIssuer;
   const { type } = args;
@@ -1635,7 +1743,7 @@ export function compareStatsToInput(
     }
   }
 
-  const stat = meshStatToStatType(rawStatType);
+  const stat = meshStatToStatType(rawStatType, context);
 
   return stat === type;
 }
@@ -1758,9 +1866,10 @@ export function compareTransferRestrictionToInput(
  */
 export function compareStatTypeToTransferRestrictionType(
   statType: PolymeshPrimitivesStatisticsStatType,
-  transferRestrictionType: TransferRestrictionType
+  transferRestrictionType: TransferRestrictionType,
+  context: Context
 ): boolean {
-  const opType = meshStatToStatType(statType);
+  const opType = meshStatToStatType(statType, context);
   if (opType === StatType.Count) {
     return transferRestrictionType === TransferRestrictionType.Count;
   } else if (opType === StatType.Balance) {
@@ -1889,7 +1998,6 @@ export async function getSecondaryAccountPermissions(
  */
 export async function getExemptedBtreeSet(
   identities: (string | Identity)[],
-  ticker: string,
   context: Context
 ): Promise<BTreeSet<PolymeshPrimitivesIdentityId>> {
   const exemptedIds = await getExemptedIds(identities, context);
@@ -1943,13 +2051,13 @@ export function assembleAssetQuery(
   context: Context
 ): Asset[] {
   return assetDetails.map((rawDetails, index) => {
-    const ticker = tickers[index];
+    const assetId = tickers[index];
     const detail = rawDetails.unwrap();
 
     if (detail.assetType.isNonFungible) {
-      return new NftCollection({ ticker }, context);
+      return new NftCollection({ assetId }, context);
     } else {
-      return new FungibleAsset({ ticker }, context);
+      return new FungibleAsset({ assetId }, context);
     }
   });
 }
@@ -2109,4 +2217,13 @@ export async function getAccount(
   }
 
   return new Account(args, context);
+}
+
+/**
+ * @hidden
+ */
+export function getAssetIdForStats(asset: Asset, context: Context): TickerKey | U8aFixed {
+  const rawAssetId = assetToMeshAssetId(asset, context);
+
+  return context.isV6 ? { Ticker: rawAssetId } : rawAssetId;
 }

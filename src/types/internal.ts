@@ -17,12 +17,14 @@ import {
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import { ISubmittableResult, Signer as PolkadotSigner } from '@polkadot/types/types';
+import { U8aFixed } from '@polkadot/types-codec';
 import BigNumber from 'bignumber.js';
 
 import { Identity, Procedure } from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
 import {
   ClaimType,
+  FungibleAsset,
   InputStatClaim,
   KnownAssetType,
   KnownNftType,
@@ -272,8 +274,8 @@ export interface ExtrinsicIdentifier {
 }
 
 export interface CorporateActionIdentifier {
-  ticker: string;
   localId: BigNumber;
+  asset: FungibleAsset;
 }
 
 /**
@@ -337,17 +339,27 @@ export interface TickerKey {
   Ticker: PolymeshPrimitivesTicker;
 }
 
+export interface AssetIdKey {
+  AssetId: U8aFixed;
+}
+
 /**
  * Infer Procedure parameters parameters from a Procedure function
  */
 export type ProcedureParams<ProcedureFunction extends (...args: unknown[]) => unknown> =
   ReturnType<ProcedureFunction> extends Procedure<infer Params> ? Params : never;
 
-export interface ExemptKey {
-  asset: TickerKey;
+export type ExemptKey = {
   op: PolymeshPrimitivesStatisticsStatOpType;
   claimType?: ClaimType;
-}
+} & (
+  | {
+      asset: TickerKey;
+    }
+  | {
+      assetId: U8aFixed;
+    }
+);
 
 export type StatClaimInputType = Omit<InputStatClaim, 'affiliate' | 'accredited'>;
 
@@ -355,3 +367,11 @@ export interface StatClaimIssuer {
   issuer: Identity;
   claimType: StatClaimType;
 }
+
+export type MeshTickerOrAssetId =
+  | {
+      ticker: PolymeshPrimitivesTicker;
+    }
+  | {
+      assetId: U8aFixed;
+    };

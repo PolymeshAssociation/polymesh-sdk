@@ -3,13 +3,13 @@ import BigNumber from 'bignumber.js';
 import { FungibleAsset, Offering, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, OfferingSaleStatus, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { bigNumberToU64, stringToTicker } from '~/utils/conversion';
+import { assetToMeshAssetId, bigNumberToU64 } from '~/utils/conversion';
 
 /**
  * @hidden
  */
 export interface Params {
-  ticker: string;
+  asset: FungibleAsset;
   id: BigNumber;
 }
 
@@ -28,9 +28,13 @@ export async function prepareCloseOffering(
     },
     context,
   } = this;
-  const { ticker, id } = args;
+  const {
+    asset: { id: assetId },
+    asset,
+    id,
+  } = args;
 
-  const offering = new Offering({ ticker, id }, context);
+  const offering = new Offering({ id, assetId }, context);
 
   const {
     status: { sale },
@@ -43,12 +47,12 @@ export async function prepareCloseOffering(
     });
   }
 
-  const rawTicker = stringToTicker(ticker, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
   const rawId = bigNumberToU64(id, context);
 
   return {
     transaction: txSto.stop,
-    args: [rawTicker, rawId],
+    args: [rawAssetId, rawId],
     resolver: undefined,
   };
 }
@@ -58,13 +62,12 @@ export async function prepareCloseOffering(
  */
 export function getAuthorization(
   this: Procedure<Params, void>,
-  { ticker }: Params
+  { asset }: Params
 ): ProcedureAuthorization {
-  const { context } = this;
   return {
     permissions: {
       transactions: [TxTags.sto.Stop],
-      assets: [new FungibleAsset({ ticker }, context)],
+      assets: [asset],
       portfolios: [],
     },
   };

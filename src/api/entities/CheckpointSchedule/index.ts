@@ -2,17 +2,26 @@ import BigNumber from 'bignumber.js';
 
 import { Checkpoint, Context, Entity, FungibleAsset, PolymeshError } from '~/internal';
 import { ErrorCode, ScheduleDetails } from '~/types';
-import { bigNumberToU64, momentToDate, stringToTicker, u64ToBigNumber } from '~/utils/conversion';
+import {
+  assetToMeshAssetId,
+  bigNumberToU64,
+  momentToDate,
+  u64ToBigNumber,
+} from '~/utils/conversion';
 import { toHumanReadable } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
-  ticker: string;
+  assetId: string;
 }
 
 export interface HumanReadable {
   id: string;
+  /**
+   * @deprecated in favour of `assetId`
+   */
   ticker: string;
+  assetId: string;
   pendingPoints: string[];
   expiryDate: string | null;
 }
@@ -32,9 +41,9 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
    * Check if a value is of type {@link UniqueIdentifiers}
    */
   public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
-    const { id, ticker } = identifier as UniqueIdentifiers;
+    const { id, assetId } = identifier as UniqueIdentifiers;
 
-    return id instanceof BigNumber && typeof ticker === 'string';
+    return id instanceof BigNumber && typeof assetId === 'string';
   }
 
   /**
@@ -65,13 +74,13 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
 
     super(identifiers, context);
 
-    const { id, ticker } = identifiers;
+    const { id, assetId } = identifiers;
 
     const sortedPoints = [...pendingPoints].sort((a, b) => a.getTime() - b.getTime());
     this.pendingPoints = sortedPoints;
     this.expiryDate = sortedPoints[sortedPoints.length - 1];
     this.id = id;
-    this.asset = new FungibleAsset({ ticker }, context);
+    this.asset = new FungibleAsset({ assetId }, context);
   }
 
   /**
@@ -86,13 +95,13 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
       },
       id,
       context,
-      asset: { ticker },
+      asset,
     } = this;
 
     const rawId = bigNumberToU64(id, context);
 
     const scheduleOpt = await checkpoint.scheduledCheckpoints(
-      stringToTicker(ticker, context),
+      assetToMeshAssetId(asset, context),
       rawId
     );
 
@@ -123,7 +132,8 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
         },
       },
       context,
-      asset: { ticker },
+      asset: { id: assetId },
+      asset,
       id,
     } = this;
 
@@ -137,11 +147,11 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
     }
 
     const result = await checkpoint.schedulePoints(
-      stringToTicker(ticker, context),
+      assetToMeshAssetId(asset, context),
       bigNumberToU64(id, context)
     );
 
-    return result.map(rawId => new Checkpoint({ id: u64ToBigNumber(rawId), ticker }, context));
+    return result.map(rawId => new Checkpoint({ id: u64ToBigNumber(rawId), assetId }, context));
   }
 
   /**
@@ -155,14 +165,14 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
         },
       },
       context,
-      asset: { ticker },
+      asset,
       id,
     } = this;
 
     const rawId = bigNumberToU64(id, context);
 
     const rawSchedule = await checkpoint.scheduledCheckpoints(
-      stringToTicker(ticker, context),
+      assetToMeshAssetId(asset, context),
       rawId
     );
 
@@ -177,6 +187,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
 
     return toHumanReadable({
       ticker: asset,
+      assetId: asset,
       id,
       pendingPoints,
       expiryDate: pendingPoints[pendingPoints.length - 1],

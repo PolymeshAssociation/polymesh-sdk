@@ -34,13 +34,12 @@ import {
 } from '~/types';
 import {
   identityIdToString,
-  stringToTickerKey,
   transferConditionToTransferRestriction,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { createProcedureMethod, getAssetIdForStats } from '~/utils/internal';
 
-export type SetTransferRestrictionsParams = { ticker: string } & (
+export type SetTransferRestrictionsParams = { asset: FungibleAsset } & (
   | SetCountTransferRestrictionsParams
   | SetPercentageTransferRestrictionsParams
   | SetClaimCountTransferRestrictionsParams
@@ -79,8 +78,6 @@ export abstract class TransferRestrictionBase<
   constructor(parent: FungibleAsset, context: Context) {
     super(parent, context);
 
-    const { ticker } = parent;
-
     this.addRestriction = createProcedureMethod<
       AddRestrictionParams<T>,
       AddTransferRestrictionParams,
@@ -89,7 +86,7 @@ export abstract class TransferRestrictionBase<
       {
         getProcedureAndArgs: args => [
           addTransferRestriction,
-          { ...args, type: this.type, ticker } as unknown as AddTransferRestrictionParams,
+          { ...args, type: this.type, asset: parent } as unknown as AddTransferRestrictionParams,
         ],
       },
       context
@@ -104,7 +101,7 @@ export abstract class TransferRestrictionBase<
       {
         getProcedureAndArgs: args => [
           setTransferRestrictions,
-          { ...args, type: this.type, ticker } as SetTransferRestrictionsParams,
+          { ...args, type: this.type, asset: parent } as SetTransferRestrictionsParams,
         ],
       },
       context
@@ -121,7 +118,7 @@ export abstract class TransferRestrictionBase<
           {
             restrictions: [],
             type: this.type,
-            ticker,
+            asset: parent,
           } as SetTransferRestrictionsParams,
         ],
         voidArgs: true,
@@ -136,7 +133,7 @@ export abstract class TransferRestrictionBase<
           {
             ...args,
             type: restrictionTypeToStatType[this.type],
-            ticker,
+            asset: parent,
           } as AddAssetStatParams,
         ],
       },
@@ -154,7 +151,7 @@ export abstract class TransferRestrictionBase<
           {
             ...args,
             type: restrictionTypeToStatType[this.type],
-            ticker,
+            asset: parent,
           } as RemoveAssetStatParams,
         ],
       },
@@ -204,18 +201,21 @@ export abstract class TransferRestrictionBase<
    */
   public async get(): Promise<GetTransferRestrictionReturnType<T>> {
     const {
-      parent: { ticker },
+      parent,
       context: {
         polymeshApi: {
           query: { statistics },
           consts,
         },
+        isV6,
       },
       context,
       type,
     } = this;
-    const tickerKey = stringToTickerKey(ticker, context);
-    const { requirements } = await statistics.assetTransferCompliances(tickerKey);
+
+    const rawAssetId = getAssetIdForStats(parent, context);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { requirements } = await (statistics.assetTransferCompliances as any)(rawAssetId);
     const filteredRequirements = [...requirements].filter(requirement => {
       if (type === TransferRestrictionType.Count) {
         return requirement.isMaxInvestorCount;
@@ -229,11 +229,15 @@ export abstract class TransferRestrictionBase<
     });
     const rawExemptedLists = await Promise.all(
       filteredRequirements.map(() =>
-        statistics.transferConditionExemptEntities.entries({ asset: tickerKey })
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (statistics.transferConditionExemptEntities as any).entries(
+          isV6 ? { asset: rawAssetId } : { assetId: rawAssetId }
+        )
       )
     );
 
-    const restrictions = rawExemptedLists.map((list, index) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const restrictions = (rawExemptedLists as any[][]).map((list, index) => {
       const exemptedIds = list.map(
         ([
           {

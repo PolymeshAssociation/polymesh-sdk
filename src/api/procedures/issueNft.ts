@@ -5,20 +5,16 @@ import { Context, NftCollection, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, IssueNftParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
+  assetToMeshAssetId,
   meshNftToNftId,
   nftInputToNftMetadataVec,
   portfolioToPortfolioKind,
-  stringToTicker,
 } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
 
 export type Params = IssueNftParams & {
-  ticker: string;
-};
-
-export interface Storage {
   collection: NftCollection;
-}
+};
 
 /**
  * @hidden
@@ -28,16 +24,16 @@ export const issueNftResolver =
   (receipt: ISubmittableResult): Nft => {
     const [{ data }] = filterEventRecords(receipt, 'nft', 'NFTPortfolioUpdated');
 
-    const { ticker, ids } = meshNftToNftId(data[1]);
+    const { assetId, ids } = meshNftToNftId(data[1], context);
 
-    return new Nft({ ticker, id: ids[0] }, context);
+    return new Nft({ id: ids[0], assetId }, context);
   };
 
 /**
  * @hidden
  */
 export async function prepareIssueNft(
-  this: Procedure<Params, Nft, Storage>,
+  this: Procedure<Params, Nft>,
   args: Params
 ): Promise<TransactionSpec<Nft, ExtrinsicParams<'nft', 'issueNft'>>> {
   const {
@@ -45,9 +41,8 @@ export async function prepareIssueNft(
       polymeshApi: { tx },
     },
     context,
-    storage: { collection },
   } = this;
-  const { ticker, portfolioId, metadata } = args;
+  const { portfolioId, metadata, collection } = args;
   const rawMetadataValues = nftInputToNftMetadataVec(metadata, context);
 
   const neededMetadata = await collection.collectionKeys();
@@ -62,7 +57,7 @@ export async function prepareIssueNft(
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: 'A metadata value was given that is not required for this collection',
-        data: { ticker, type: value.type, id: value.id },
+        data: { assetId: collection.id, type: value.type, id: value.id },
       });
     }
 
@@ -83,12 +78,12 @@ export async function prepareIssueNft(
     ? await signingIdentity.portfolios.getPortfolio({ portfolioId })
     : await signingIdentity.portfolios.getPortfolio();
 
-  const rawTicker = stringToTicker(ticker, context);
+  const rawAssetId = assetToMeshAssetId(collection, context);
   const rawPortfolio = portfolioToPortfolioKind(portfolio, context);
 
   return {
     transaction: tx.nft.issueNft,
-    args: [rawTicker, rawMetadataValues, rawPortfolio],
+    args: [rawAssetId, rawMetadataValues, rawPortfolio],
     resolver: issueNftResolver(context),
   };
 }
@@ -96,10 +91,10 @@ export async function prepareIssueNft(
 /**
  * @hidden
  */
-export function getAuthorization(this: Procedure<Params, Nft, Storage>): ProcedureAuthorization {
-  const {
-    storage: { collection },
-  } = this;
+export function getAuthorization(
+  this: Procedure<Params, Nft>,
+  { collection }: Params
+): ProcedureAuthorization {
   return {
     permissions: {
       transactions: [TxTags.nft.IssueNft],
@@ -112,16 +107,5 @@ export function getAuthorization(this: Procedure<Params, Nft, Storage>): Procedu
 /**
  * @hidden
  */
-export function prepareStorage(this: Procedure<Params, Nft, Storage>, { ticker }: Params): Storage {
-  const { context } = this;
-
-  return {
-    collection: new NftCollection({ ticker }, context),
-  };
-}
-
-/**
- * @hidden
- */
-export const issueNft = (): Procedure<Params, Nft, Storage> =>
-  new Procedure(prepareIssueNft, getAuthorization, prepareStorage);
+export const issueNft = (): Procedure<Params, Nft> =>
+  new Procedure(prepareIssueNft, getAuthorization);

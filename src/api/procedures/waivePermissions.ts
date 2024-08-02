@@ -1,7 +1,7 @@
 import { BaseAsset, Identity, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RoleType, TxTags, WaivePermissionsParams } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { stringToTicker } from '~/utils/conversion';
+import { assetToMeshAssetId } from '~/utils/conversion';
 import { asBaseAsset } from '~/utils/internal';
 
 /**
@@ -45,11 +45,11 @@ export async function prepareWaivePermissions(
     });
   }
 
-  const rawTicker = stringToTicker(asset.ticker, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
 
   return {
     transaction: tx.externalAgents.abdicate,
-    args: [rawTicker],
+    args: [rawAssetId],
     resolver: undefined,
   };
 }

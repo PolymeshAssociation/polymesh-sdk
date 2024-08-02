@@ -70,11 +70,13 @@ import {
 } from '~/utils/constants';
 import {
   accountIdToString,
+  assetToMeshAssetId,
   balanceToBigNumber,
   boolToBoolean,
   cddStatusToBoolean,
   corporateActionIdentifierToCaId,
   identityIdToString,
+  meshAssetToAssetId,
   middlewareInstructionToHistoricInstruction,
   oldMiddlewareInstructionToHistoricInstruction,
   portfolioIdToMeshPortfolioId,
@@ -83,14 +85,12 @@ import {
   signatoryToSignerValue,
   signerValueToSigner,
   stringToIdentityId,
-  stringToTicker,
-  tickerToString,
   transactionPermissionsToTxGroups,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
   asAsset,
-  asTicker,
+  asBaseAssetV2,
   calculateNextKey,
   createProcedureMethod,
   getAccount,
@@ -226,14 +226,21 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         polymeshApi: {
           query: { asset },
         },
+        isV6,
       },
     } = this;
     const { ticker } = args;
 
-    const rawTicker = stringToTicker(ticker, context);
+    const baseAsset = await asBaseAssetV2(ticker, context);
+    const rawAssetId = assetToMeshAssetId(baseAsset, context);
     const rawIdentityId = stringToIdentityId(did, context);
 
-    const meshAsset = await asset.tokens(rawTicker);
+    let tokensStorage = asset.securityTokens;
+    if (isV6) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tokensStorage = (asset as any).tokens;
+    }
+    const meshAsset = await tokensStorage(rawAssetId);
 
     if (meshAsset.isNone) {
       throw new PolymeshError({
@@ -245,13 +252,13 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     if (callback) {
       context.assertSupportsSubscription();
 
-      return asset.balanceOf(rawTicker, rawIdentityId, res => {
+      return asset.balanceOf(rawAssetId, rawIdentityId, res => {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(balanceToBigNumber(res));
       });
     }
 
-    const balance = await asset.balanceOf(rawTicker, rawIdentityId);
+    const balance = await asset.balanceOf(rawAssetId, rawIdentityId);
 
     return balanceToBigNumber(balance);
   }
@@ -403,7 +410,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const count = new BigNumber(totalCount);
 
-    const data = nodes.map(({ assetId: ticker }) => new FungibleAsset({ ticker }, context));
+    const data = nodes.map(({ assetId }) => new FungibleAsset({ assetId }, context));
 
     const next = calculateNextKey(count, data.length, start);
 
@@ -448,9 +455,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const count = new BigNumber(totalCount);
 
-    const data = nodes.map(({ assetId: ticker, nftIds }) => {
-      const collection = new NftCollection({ ticker }, context);
-      const nfts = nftIds.map((id: number) => new Nft({ ticker, id: new BigNumber(id) }, context));
+    const data = nodes.map(({ assetId, nftIds }) => {
+      const collection = new NftCollection({ assetId }, context);
+      const nfts = nftIds.map((id: number) => new Nft({ assetId, id: new BigNumber(id) }, context));
 
       return { collection, nfts };
     });
@@ -502,7 +509,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       trustingAssetsQuery({ issuer: did })
     );
 
-    return nodes.map(({ assetId: ticker }) => new FungibleAsset({ ticker }, context));
+    return nodes.map(({ assetId }) => new FungibleAsset({ assetId }, context));
   }
 
   /**
@@ -745,12 +752,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
      *   - This Identity has already been paid
      */
     return P.filter(distributions, async ({ distribution }): Promise<boolean> => {
-      const {
-        expiryDate,
-        asset: { ticker },
-        id: localId,
-        paymentDate,
-      } = distribution;
+      const { expiryDate, asset, id: localId, paymentDate } = distribution;
 
       const isExpired = expiryDate && expiryDate < now;
       const hasNotStarted = paymentDate > now;
@@ -761,7 +763,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
       const holderPaid = await context.polymeshApi.query.capitalDistribution.holderPaid(
         tuple(
-          corporateActionIdentifierToCaId({ ticker, localId }, context),
+          corporateActionIdentifierToCaId({ asset, localId }, context),
           stringToIdentityId(did, context)
         )
       );
@@ -982,16 +984,21 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       context,
       context: {
         polymeshApi: {
-          query: {
-            asset: { preApprovedTicker },
-          },
+          query: { asset },
         },
+        isV6,
       },
     } = this;
 
     const rawDid = stringToIdentityId(this.did, context);
 
-    const { entries, lastKey: next } = await requestPaginated(preApprovedTicker, {
+    let preApprovedStorage = asset.preApprovedAsset;
+    if (isV6) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      preApprovedStorage = (asset as any).preApprovedTicker;
+    }
+
+    const { entries, lastKey: next } = await requestPaginated(preApprovedStorage, {
       arg: rawDid,
       paginationOpts,
     });
@@ -999,11 +1006,11 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const data = await Promise.all(
       entries.map(([storageKey]) => {
         const {
-          args: [, rawTicker],
+          args: [, rawAssetId],
         } = storageKey;
-        const ticker = tickerToString(rawTicker);
+        const assetId = meshAssetToAssetId(rawAssetId, context);
 
-        return asAsset(ticker, context);
+        return asAsset(assetId, context);
       })
     );
 
@@ -1018,19 +1025,24 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       context,
       context: {
         polymeshApi: {
-          query: {
-            asset: { preApprovedTicker },
-          },
+          query: { asset: assetQuery },
         },
+        isV6,
       },
     } = this;
 
-    const ticker = asTicker(asset);
-    const rawTicker = stringToTicker(ticker, context);
+    let preApprovedStorage = assetQuery.preApprovedAsset;
+    if (isV6) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      preApprovedStorage = (asset as any).preApprovedTicker;
+    }
+
+    const baseAsset = await asBaseAssetV2(asset, context);
+    const rawAssetId = assetToMeshAssetId(baseAsset, context);
 
     const rawDid = stringToIdentityId(this.did, context);
 
-    const rawIsApproved = await preApprovedTicker(rawDid, rawTicker);
+    const rawIsApproved = await preApprovedStorage(rawDid, rawAssetId);
 
     return boolToBoolean(rawIsApproved);
   }

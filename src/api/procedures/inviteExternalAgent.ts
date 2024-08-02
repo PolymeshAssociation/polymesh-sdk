@@ -20,13 +20,13 @@ import {
 } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
+  assetToMeshAssetId,
   authorizationToAuthorizationData,
   dateToMoment,
   permissionsLikeToPermissions,
   signerToString,
   signerValueToSignatory,
   stringToIdentityId,
-  stringToTicker,
   transactionPermissionsToExtrinsicPermissions,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -46,21 +46,14 @@ export const createGroupAndAuthorizationResolver =
  * @hidden
  */
 export type Params = InviteExternalAgentParams & {
-  ticker: string;
+  asset: BaseAsset;
 };
 
 /**
  * @hidden
  */
-export interface Storage {
-  asset: BaseAsset;
-}
-
-/**
- * @hidden
- */
 export async function prepareInviteExternalAgent(
-  this: Procedure<Params, AuthorizationRequest, Storage>,
+  this: Procedure<Params, AuthorizationRequest>,
   args: Params
 ): Promise<
   | TransactionSpec<
@@ -76,10 +69,9 @@ export async function prepareInviteExternalAgent(
       },
     },
     context,
-    storage: { asset },
   } = this;
 
-  const { ticker, target, permissions, expiry = null } = args;
+  const { asset, target, permissions, expiry = null } = args;
 
   const issuer = await context.getSigningIdentity();
   const targetIdentity = await context.getIdentity(target);
@@ -117,7 +109,7 @@ export async function prepareInviteExternalAgent(
     newAuthorizationData = createBecomeAgentData(permissions);
     rawAuthorizationData = authorizationToAuthorizationData(newAuthorizationData, context);
   } else {
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(asset, context);
     const { transactions } = permissionsLikeToPermissions(permissions, context);
 
     const matchingGroup = await getGroupFromPermissions(asset, transactions);
@@ -130,7 +122,7 @@ export async function prepareInviteExternalAgent(
       return {
         transaction: externalAgents.createGroupAndAddAuth,
         args: [
-          rawTicker,
+          rawAssetId,
           transactionPermissionsToExtrinsicPermissions(transactions, context),
           stringToIdentityId(targetDid, context),
           null,
@@ -162,11 +154,9 @@ export async function prepareInviteExternalAgent(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, AuthorizationRequest, Storage>
+  this: Procedure<Params, AuthorizationRequest>,
+  { asset }: Params
 ): ProcedureAuthorization {
-  const {
-    storage: { asset },
-  } = this;
   return {
     permissions: {
       transactions: [TxTags.identity.AddAuthorization],
@@ -179,19 +169,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export function prepareStorage(
-  this: Procedure<Params, AuthorizationRequest, Storage>,
-  { ticker }: Params
-): Storage {
-  const { context } = this;
-
-  return {
-    asset: new BaseAsset({ ticker }, context),
-  };
-}
-
-/**
- * @hidden
- */
-export const inviteExternalAgent = (): Procedure<Params, AuthorizationRequest, Storage> =>
-  new Procedure(prepareInviteExternalAgent, getAuthorization, prepareStorage);
+export const inviteExternalAgent = (): Procedure<Params, AuthorizationRequest> =>
+  new Procedure(prepareInviteExternalAgent, getAuthorization);

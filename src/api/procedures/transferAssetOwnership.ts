@@ -1,5 +1,5 @@
 import { createAuthorizationResolver } from '~/api/procedures/utils';
-import { AuthorizationRequest, FungibleAsset, Procedure } from '~/internal';
+import { AuthorizationRequest, BaseAsset, Procedure } from '~/internal';
 import {
   Authorization,
   AuthorizationType,
@@ -19,7 +19,7 @@ import { asIdentity, assertNoPendingAuthorizationExists, optionize } from '~/uti
 /**
  * @hidden
  */
-export type Params = { ticker: string } & TransferAssetOwnershipParams;
+export type Params = { asset: BaseAsset } & TransferAssetOwnershipParams;
 
 /**
  * @hidden
@@ -34,7 +34,7 @@ export async function prepareTransferAssetOwnership(
     },
     context,
   } = this;
-  const { ticker, target, expiry = null } = args;
+  const { asset, target, expiry = null } = args;
   const issuer = await context.getSigningIdentity();
   const targetIdentity = asIdentity(target, context);
 
@@ -50,7 +50,7 @@ export async function prepareTransferAssetOwnership(
 
   const authorization: Authorization = {
     type: AuthorizationType.TransferAssetOwnership,
-    value: ticker,
+    value: asset.id,
   };
 
   assertNoPendingAuthorizationExists({
@@ -75,11 +75,11 @@ export async function prepareTransferAssetOwnership(
  */
 export function getAuthorization(
   this: Procedure<Params, AuthorizationRequest>,
-  { ticker }: Params
+  { asset }: Params
 ): ProcedureAuthorization {
   return {
     permissions: {
-      assets: [new FungibleAsset({ ticker }, this.context)],
+      assets: [asset],
       transactions: [TxTags.identity.AddAuthorization],
       portfolios: [],
     },

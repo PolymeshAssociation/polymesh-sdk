@@ -1,29 +1,33 @@
-import { u64 } from '@polkadot/types';
-import { PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import { U8aFixed, u64 } from '@polkadot/types';
+import { PolymeshPrimitivesIdentityId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import { Context, Entity, FungibleAsset, Identity } from '~/internal';
 import { IdentityBalance, PaginationOptions, ResultSet } from '~/types';
 import { tuple } from '~/types/utils';
 import {
+  assetToMeshAssetId,
   balanceToBigNumber,
   bigNumberToU64,
   identityIdToString,
   momentToDate,
   stringToIdentityId,
-  stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { getIdentity, requestPaginated, toHumanReadable } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
-  ticker: string;
+  assetId: string;
 }
 
 export interface HumanReadable {
   id: string;
+  /**
+   * @deprecated in favour of `assetId`
+   */
   ticker: string;
+  assetId: string;
 }
 
 /**
@@ -36,9 +40,9 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
    * Check if a value is of type {@link UniqueIdentifiers}
    */
   public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
-    const { id, ticker } = identifier as UniqueIdentifiers;
+    const { id, assetId } = identifier as UniqueIdentifiers;
 
-    return id instanceof BigNumber && typeof ticker === 'string';
+    return id instanceof BigNumber && typeof assetId === 'string';
   }
 
   /**
@@ -57,24 +61,21 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
   public constructor(identifiers: UniqueIdentifiers, context: Context) {
     super(identifiers, context);
 
-    const { id, ticker } = identifiers;
+    const { id, assetId } = identifiers;
 
     this.id = id;
-    this.asset = new FungibleAsset({ ticker }, context);
+    this.asset = new FungibleAsset({ assetId }, context);
   }
 
   /**
    * Retrieve the Asset's total supply at this checkpoint
    */
   public async totalSupply(): Promise<BigNumber> {
-    const {
-      context,
-      asset: { ticker },
-      id,
-    } = this;
+    const { context, asset, id } = this;
 
+    const rawAssetId = assetToMeshAssetId(asset, context);
     const rawSupply = await context.polymeshApi.query.checkpoint.totalSupply(
-      stringToTicker(ticker, context),
+      rawAssetId,
       bigNumberToU64(id, context)
     );
 
@@ -85,14 +86,12 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
    * Retrieve this Checkpoint's creation date
    */
   public async createdAt(): Promise<Date> {
-    const {
-      context,
-      asset: { ticker },
-      id,
-    } = this;
+    const { context, asset, id } = this;
+
+    const rawAssetId = assetToMeshAssetId(asset, context);
 
     const creationTime = await context.polymeshApi.query.checkpoint.timestamps(
-      stringToTicker(ticker, context),
+      rawAssetId,
       bigNumberToU64(id, context)
     );
 
@@ -116,21 +115,20 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
         },
       },
       context,
-      asset: { ticker },
+      asset: assetEntity,
       id,
     } = this;
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(assetEntity, context);
 
     // Get one page of current Asset balances
     const { entries, lastKey: next } = await requestPaginated(asset.balanceOf, {
-      arg: rawTicker,
+      arg: rawAssetId,
       paginationOpts,
     });
 
     const currentDidBalances: { did: string; balance: BigNumber }[] = [];
-    const balanceUpdatesMultiParams: [PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId][] =
-      [];
+    const balanceUpdatesMultiParams: [U8aFixed, PolymeshPrimitivesIdentityId][] = [];
 
     // Prepare the query for balance updates. Push to currentDidBalances to be used if there are no updates for the balance
     entries.forEach(([storageKey, balance]) => {
@@ -141,7 +139,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
         did: identityIdToString(identityId),
         balance: balanceToBigNumber(balance),
       });
-      balanceUpdatesMultiParams.push(tuple(rawTicker, identityId));
+      balanceUpdatesMultiParams.push(tuple(rawAssetId, identityId));
     });
 
     // Query for balance updates
@@ -149,7 +147,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
 
     const checkpointBalanceMultiParams: {
       did: string;
-      params: [(PolymeshPrimitivesTicker | u64)[], PolymeshPrimitivesIdentityId];
+      params: [(U8aFixed | u64)[], PolymeshPrimitivesIdentityId];
     }[] = [];
     const currentIdentityBalances: IdentityBalance[] = [];
 
@@ -162,7 +160,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
         // If a balance update has occurred for the Identity since the desired Checkpoint, then query Checkpoint storage directly
         checkpointBalanceMultiParams.push({
           did,
-          params: tuple([rawTicker, firstUpdatedCheckpoint], stringToIdentityId(did, context)),
+          params: tuple([rawAssetId, firstUpdatedCheckpoint], stringToIdentityId(did, context)),
         });
       } else {
         // Otherwise use the current balance
@@ -206,16 +204,17 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
           query: { checkpoint },
         },
       },
-      asset: { ticker },
+      asset,
       id,
     } = this;
 
     const identity = await getIdentity(args?.identity, context);
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(asset, context);
+
     const rawIdentityId = stringToIdentityId(identity.did, context);
 
-    const balanceUpdates = await checkpoint.balanceUpdates(rawTicker, rawIdentityId);
+    const balanceUpdates = await checkpoint.balanceUpdates(rawAssetId, rawIdentityId);
     const firstUpdatedCheckpoint = balanceUpdates.find(checkpointId =>
       u64ToBigNumber(checkpointId).gte(id)
     );
@@ -227,13 +226,13 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
     let balance: BigNumber;
     if (firstUpdatedCheckpoint) {
       const rawBalance = await checkpoint.balance(
-        tuple(rawTicker, firstUpdatedCheckpoint),
+        tuple(rawAssetId, firstUpdatedCheckpoint),
         rawIdentityId
       );
       balance = balanceToBigNumber(rawBalance);
     } else {
       // if no balanceUpdate has occurred since the Checkpoint has been created, then the current balance should be used. The Checkpoint storage will not have an entry
-      balance = await identity.getAssetBalance({ ticker });
+      balance = await identity.getAssetBalance({ ticker: asset.id });
     }
 
     return balance;
@@ -250,11 +249,13 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
         },
       },
       context,
-      asset: { ticker },
+      asset,
       id,
     } = this;
 
-    const rawCheckpointId = await checkpoint.checkpointIdSequence(stringToTicker(ticker, context));
+    const rawAssetId = assetToMeshAssetId(asset, context);
+
+    const rawCheckpointId = await checkpoint.checkpointIdSequence(rawAssetId);
 
     return id.lte(u64ToBigNumber(rawCheckpointId));
   }
@@ -267,6 +268,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
 
     return toHumanReadable({
       ticker: asset,
+      assetId: asset,
       id,
     });
   }

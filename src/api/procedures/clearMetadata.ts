@@ -1,7 +1,7 @@
-import { FungibleAsset, MetadataEntry, Procedure } from '~/internal';
+import { MetadataEntry, Procedure } from '~/internal';
 import { TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { metadataToMeshMetadataKey, stringToTicker } from '~/utils/conversion';
+import { assetToMeshAssetId, metadataToMeshMetadataKey } from '~/utils/conversion';
 
 /**
  * @hidden
@@ -25,15 +25,11 @@ export async function prepareClearMetadata(
   } = this;
 
   const {
-    metadataEntry: {
-      id,
-      type,
-      asset: { ticker },
-    },
+    metadataEntry: { id, type, asset },
     metadataEntry,
   } = params;
 
-  const rawTicker = stringToTicker(ticker, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
   const rawMetadataKey = metadataToMeshMetadataKey(type, id, context);
 
   const { canModify, reason } = await metadataEntry.isModifiable();
@@ -44,7 +40,7 @@ export async function prepareClearMetadata(
 
   return {
     transaction: tx.asset.removeMetadataValue,
-    args: [rawTicker, rawMetadataKey],
+    args: [rawAssetId, rawMetadataKey],
     resolver: undefined,
   };
 }
@@ -54,20 +50,12 @@ export async function prepareClearMetadata(
  */
 export function getAuthorization(
   this: Procedure<Params, void>,
-  params: Params
+  { metadataEntry: { asset } }: Params
 ): ProcedureAuthorization {
-  const { context } = this;
-
-  const {
-    metadataEntry: {
-      asset: { ticker },
-    },
-  } = params;
-
   return {
     permissions: {
       transactions: [TxTags.asset.RemoveMetadataValue],
-      assets: [new FungibleAsset({ ticker }, context)],
+      assets: [asset],
       portfolios: [],
     },
   };

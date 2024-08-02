@@ -3,7 +3,6 @@ import {
   Checkpoint,
   CorporateActionBase,
   DividendDistribution,
-  FungibleAsset,
   PolymeshError,
   Procedure,
 } from '~/internal';
@@ -31,15 +30,12 @@ export async function prepareModifyCaCheckpoint(
   } = this;
   const { checkpoint, corporateAction } = args;
 
-  const {
-    id: localId,
-    asset: { ticker },
-  } = corporateAction;
+  const { id: localId, asset } = corporateAction;
 
   let checkpointValue;
 
   if (checkpoint) {
-    checkpointValue = await getCheckpointValue(checkpoint, ticker, context);
+    checkpointValue = await getCheckpointValue(checkpoint, asset, context);
     await assertCaCheckpointValid(checkpointValue);
   }
 
@@ -61,7 +57,7 @@ export async function prepareModifyCaCheckpoint(
     }
   }
 
-  const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
+  const rawCaId = corporateActionIdentifierToCaId({ asset, localId }, context);
   const rawRecordDateSpec = optionize(checkpointToRecordDateSpec)(checkpointValue, context);
 
   return {
@@ -76,18 +72,12 @@ export async function prepareModifyCaCheckpoint(
  */
 export function getAuthorization(
   this: Procedure<Params, void>,
-  {
-    corporateAction: {
-      asset: { ticker },
-    },
-  }: Params
+  { corporateAction: { asset } }: Params
 ): ProcedureAuthorization {
-  const { context } = this;
-
   return {
     permissions: {
       transactions: [TxTags.corporateAction.ChangeRecordDate],
-      assets: [new FungibleAsset({ ticker }, context)],
+      assets: [asset],
       portfolios: [],
     },
   };

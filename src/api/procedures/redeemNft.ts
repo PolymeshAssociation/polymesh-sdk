@@ -9,7 +9,7 @@ import {
 } from '~/internal';
 import { ErrorCode, RedeemNftParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { bigNumberToU64, portfolioToPortfolioKind, stringToTicker } from '~/utils/conversion';
+import { assetToMeshAssetId, bigNumberToU64, portfolioToPortfolioKind } from '~/utils/conversion';
 
 export interface Storage {
   fromPortfolio: DefaultPortfolio | NumberedPortfolio;
@@ -18,7 +18,7 @@ export interface Storage {
 /**
  * @hidden
  */
-export type Params = { ticker: string; id: BigNumber } & RedeemNftParams;
+export type Params = { collection: NftCollection; id: BigNumber } & RedeemNftParams;
 
 /**
  * @hidden
@@ -35,11 +35,11 @@ export async function prepareRedeemNft(
     storage: { fromPortfolio },
   } = this;
 
-  const { ticker, id } = args;
+  const { collection, id } = args;
 
-  const rawTicker = stringToTicker(ticker, context);
+  const rawAssetId = assetToMeshAssetId(collection, context);
 
-  const [{ free }] = await fromPortfolio.getCollections({ collections: [ticker] });
+  const [{ free }] = await fromPortfolio.getCollections({ collections: [collection.id] });
 
   if (!free.find(heldNft => heldNft.id.eq(id))) {
     throw new PolymeshError({
@@ -55,7 +55,7 @@ export async function prepareRedeemNft(
 
   return {
     transaction: tx.nft.redeemNft,
-    args: [rawTicker, rawId, portfolioToPortfolioKind(fromPortfolio, context)],
+    args: [rawAssetId, rawId, portfolioToPortfolioKind(fromPortfolio, context)],
     resolver: undefined,
   };
 }
@@ -65,17 +65,16 @@ export async function prepareRedeemNft(
  */
 export async function getAuthorization(
   this: Procedure<Params, void, Storage>,
-  { ticker }: Params
+  { collection }: Params
 ): Promise<ProcedureAuthorization> {
   const {
-    context,
     storage: { fromPortfolio },
   } = this;
 
   return {
     permissions: {
       transactions: [TxTags.nft.RedeemNft],
-      assets: [new NftCollection({ ticker }, context)],
+      assets: [collection],
       portfolios: [fromPortfolio],
     },
   };

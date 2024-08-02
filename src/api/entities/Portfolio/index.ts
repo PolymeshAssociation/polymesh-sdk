@@ -32,15 +32,15 @@ import {
   addressToKey,
   balanceToBigNumber,
   identityIdToString,
+  meshAssetToAssetId,
   oldMiddlewareDataToHistoricalSettlements,
   portfolioIdToMeshPortfolioId,
-  tickerToString,
   toHistoricalSettlements,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
+  asAssetId,
   asFungibleAsset,
-  asTicker,
   createProcedureMethod,
   getIdentity,
   getLatestSqVersion,
@@ -175,11 +175,11 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     const assetBalances: Record<string, PortfolioBalance> = {};
 
     totalBalanceEntries.forEach(([key, balance]) => {
-      const ticker = tickerToString(key.args[1]);
+      const assetId = meshAssetToAssetId(key.args[1], context);
       const total = balanceToBigNumber(balance);
 
-      assetBalances[ticker] = {
-        asset: new FungibleAsset({ ticker }, context),
+      assetBalances[assetId] = {
+        asset: new FungibleAsset({ assetId }, context),
         total,
         locked: new BigNumber(0),
         free: total,
@@ -187,14 +187,14 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     });
 
     lockedBalanceEntries.forEach(([key, balance]) => {
-      const ticker = tickerToString(key.args[1]);
+      const assetId = meshAssetToAssetId(key.args[1], context);
       const locked = balanceToBigNumber(balance);
 
       if (!locked.isZero()) {
-        const tickerBalance = assetBalances[ticker];
+        const tickerBalance = assetBalances[assetId];
 
         tickerBalance.locked = locked;
-        tickerBalance.free = assetBalances[ticker].total.minus(locked);
+        tickerBalance.free = assetBalances[assetId].total.minus(locked);
       }
     });
 
@@ -208,10 +208,10 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     if (mask) {
       return mask.map(portfolioBalance => {
         const {
-          asset: { ticker },
+          asset: { id: assetId },
         } = portfolioBalance;
 
-        return assetBalances[ticker] ?? portfolioBalance;
+        return assetBalances[assetId] ?? portfolioBalance;
       });
     }
 
@@ -251,8 +251,10 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       });
     }
 
-    const queriedCollections = args?.collections.map(asset => asTicker(asset));
-    const seenTickers = new Set<string>();
+    const queriedCollections = await Promise.all(
+      args?.collections.map(asset => asAssetId(asset, context)) || []
+    );
+    const seenAssetIds = new Set<string>();
 
     const processCollectionEntry = (
       collectionRecord: Record<string, Nft[]>,
@@ -260,26 +262,26 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     ): Record<string, Nft[]> => {
       const [
         {
-          args: [, [rawTicker, rawNftId]],
+          args: [, [rawAssetId, rawNftId]],
         },
       ] = entry;
 
-      const ticker = tickerToString(rawTicker);
+      const assetId = meshAssetToAssetId(rawAssetId, context);
       const heldId = u64ToBigNumber(rawNftId);
 
-      if (queriedCollections && !queriedCollections.includes(ticker)) {
+      if (queriedCollections && !queriedCollections.includes(assetId)) {
         return collectionRecord;
       }
 
       // if the user provided a filter arg, then ignore any asset not specified
-      if (!queriedCollections || queriedCollections.includes(ticker)) {
-        seenTickers.add(ticker);
-        const nft = new Nft({ id: heldId, ticker }, context);
+      if (!queriedCollections || queriedCollections.includes(assetId)) {
+        seenAssetIds.add(assetId);
+        const nft = new Nft({ id: heldId, assetId }, context);
 
-        if (!collectionRecord[ticker]) {
-          collectionRecord[ticker] = [nft];
+        if (!collectionRecord[assetId]) {
+          collectionRecord[assetId] = [nft];
         } else {
-          collectionRecord[ticker].push(nft);
+          collectionRecord[assetId].push(nft);
         }
       }
 
@@ -297,16 +299,16 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     );
 
     const collections: PortfolioCollection[] = [];
-    seenTickers.forEach(ticker => {
-      const held = heldCollections[ticker];
-      const locked = lockedCollections[ticker] || [];
+    seenAssetIds.forEach(assetId => {
+      const held = heldCollections[assetId];
+      const locked = lockedCollections[assetId] || [];
       // calculate free NFTs by filtering held NFTs by locked NFT IDs
       const lockedIds = new Set(locked.map(({ id }) => id.toString()));
       const free = held.filter(({ id }) => !lockedIds.has(id.toString()));
       const total = new BigNumber(held.length);
 
       collections.push({
-        collection: new NftCollection({ ticker }, context),
+        collection: new NftCollection({ assetId }, context),
         free,
         locked,
         total,

@@ -1,10 +1,10 @@
 import BigNumber from 'bignumber.js';
 
-import { Context, Entity, FungibleAsset } from '~/internal';
+import { BaseAsset, Context, Entity, FungibleAsset } from '~/internal';
 import { GroupPermissions, PermissionGroupType } from '~/types';
 
 export interface UniqueIdentifiers {
-  ticker: string;
+  assetId: string;
   id?: BigNumber;
   type?: PermissionGroupType;
 }
@@ -16,7 +16,7 @@ export abstract class PermissionGroup extends Entity<UniqueIdentifiers, unknown>
   /**
    * Asset for which this group specifies permissions
    */
-  public asset: FungibleAsset;
+  public asset: BaseAsset;
 
   /**
    * @hidden
@@ -24,9 +24,9 @@ export abstract class PermissionGroup extends Entity<UniqueIdentifiers, unknown>
   public constructor(identifiers: UniqueIdentifiers, context: Context) {
     super(identifiers, context);
 
-    const { ticker } = identifiers;
+    const { assetId } = identifiers;
 
-    this.asset = new FungibleAsset({ ticker }, context);
+    this.asset = new FungibleAsset({ assetId }, context);
   }
 
   /**

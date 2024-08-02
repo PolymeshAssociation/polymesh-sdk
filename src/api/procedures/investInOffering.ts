@@ -3,6 +3,7 @@ import BigNumber from 'bignumber.js';
 import { Offering, PolymeshError, Procedure } from '~/internal';
 import {
   ErrorCode,
+  FungibleAsset,
   InvestInOfferingParams,
   OfferingSaleStatus,
   OfferingTimingStatus,
@@ -13,12 +14,12 @@ import {
 } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
+  assetToMeshAssetId,
   bigNumberToBalance,
   bigNumberToU64,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
-  stringToTicker,
 } from '~/utils/conversion';
 import { optionize } from '~/utils/internal';
 
@@ -27,7 +28,7 @@ import { optionize } from '~/utils/internal';
  */
 export type Params = InvestInOfferingParams & {
   id: BigNumber;
-  ticker: string;
+  asset: FungibleAsset;
 };
 
 /**
@@ -115,9 +116,15 @@ export async function prepareInvestInSto(
     context,
     storage: { purchasePortfolioId, fundingPortfolioId },
   } = this;
-  const { ticker, id, purchaseAmount, maxPrice } = args;
+  const {
+    asset: { id: assetId },
+    asset,
+    id,
+    purchaseAmount,
+    maxPrice,
+  } = args;
 
-  const offering = new Offering({ ticker, id }, context);
+  const offering = new Offering({ id, assetId }, context);
 
   const portfolio = portfolioIdToPortfolio(fundingPortfolioId, context);
 
@@ -166,12 +173,14 @@ export async function prepareInvestInSto(
     });
   }
 
+  const rawAssetId = assetToMeshAssetId(asset, context);
+
   return {
     transaction: txSto.invest,
     args: [
       portfolioIdToMeshPortfolioId(purchasePortfolioId, context),
       portfolioIdToMeshPortfolioId(fundingPortfolioId, context),
-      stringToTicker(ticker, context),
+      rawAssetId,
       bigNumberToU64(id, context),
       bigNumberToBalance(purchaseAmount, context),
       optionize(bigNumberToBalance)(maxPrice, context),

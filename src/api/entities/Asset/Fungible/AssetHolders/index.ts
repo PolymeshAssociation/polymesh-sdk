@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { FungibleAsset, Identity, Namespace } from '~/internal';
 import { IdentityBalance, PaginationOptions, ResultSet } from '~/types';
-import { balanceToBigNumber, identityIdToString, stringToTicker } from '~/utils/conversion';
+import { assetToMeshAssetId, balanceToBigNumber, identityIdToString } from '~/utils/conversion';
 import { requestPaginated } from '~/utils/internal';
 
 /**
@@ -20,12 +20,12 @@ export class AssetHolders extends Namespace<FungibleAsset> {
         polymeshApi: { query },
       },
       context,
-      parent: { ticker },
+      parent,
     } = this;
 
-    const rawTicker = stringToTicker(ticker, context);
+    const rawAssetId = assetToMeshAssetId(parent, context);
     const { entries, lastKey: next } = await requestPaginated(query.asset.balanceOf, {
-      arg: rawTicker,
+      arg: rawAssetId,
       paginationOpts,
     });
 

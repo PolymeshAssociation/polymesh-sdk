@@ -1,13 +1,13 @@
-import { PolymeshError, Procedure } from '~/internal';
+import { BaseAsset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { stringToTicker } from '~/utils/conversion';
+import { assetToMeshAssetId } from '~/utils/conversion';
 
 /**
  * @hidden
  */
 export interface Params {
-  ticker: string;
+  asset: BaseAsset;
   preApprove: boolean;
 }
 
@@ -21,13 +21,14 @@ export async function prepareToggleTickerPreApproval(
   const {
     context: {
       polymeshApi: { tx },
+      isV6,
     },
     context,
   } = this;
-  const { ticker, preApprove } = args;
+  const { asset, preApprove } = args;
 
   const identity = await context.getSigningIdentity();
-  const isPreApproved = await identity.isAssetPreApproved(ticker);
+  const isPreApproved = await identity.isAssetPreApproved(asset);
 
   if (isPreApproved === preApprove) {
     const message = isPreApproved
@@ -36,17 +37,24 @@ export async function prepareToggleTickerPreApproval(
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
       message,
-      data: { identity: identity.did, ticker },
+      data: { identity: identity.did, assetId: asset.id },
     });
   }
 
-  const rawTicker = stringToTicker(ticker, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
 
-  const transaction = preApprove ? tx.asset.preApproveTicker : tx.asset.removeTickerPreApproval;
+  let transaction = preApprove ? tx.asset.preApproveAsset : tx.asset.removeAssetPreApproval;
+  if (isV6) {
+    transaction = preApprove
+      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (tx.asset as any).preApproveTicker
+      : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (tx.asset as any).removeTickerPreApproval;
+  }
 
   return {
     transaction,
-    args: [rawTicker],
+    args: [rawAssetId],
     resolver: undefined,
   };
 }

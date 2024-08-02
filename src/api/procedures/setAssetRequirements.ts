@@ -2,17 +2,17 @@ import BigNumber from 'bignumber.js';
 import { flatten, map } from 'lodash';
 
 import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
-import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
+import { BaseAsset, PolymeshError, Procedure } from '~/internal';
 import { Condition, ErrorCode, InputCondition, SetAssetRequirementsParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { requirementToComplianceRequirement, stringToTicker } from '~/utils/conversion';
+import { assetToMeshAssetId, requirementToComplianceRequirement } from '~/utils/conversion';
 import { conditionsAreEqual, hasSameElements } from '~/utils/internal';
 
 /**
  * @hidden
  */
 export type Params = SetAssetRequirementsParams & {
-  ticker: string;
+  asset: BaseAsset;
 };
 
 /**
@@ -31,11 +31,9 @@ export async function prepareSetAssetRequirements(
     },
     context,
   } = this;
-  const { ticker, requirements } = args;
+  const { asset, requirements } = args;
 
-  const rawTicker = stringToTicker(ticker, context);
-
-  const asset = new FungibleAsset({ ticker }, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
 
   const { requirements: currentRequirements, defaultTrustedClaimIssuers } =
     await asset.compliance.requirements.get();
@@ -65,7 +63,7 @@ export async function prepareSetAssetRequirements(
   if (!requirements.length) {
     return {
       transaction: tx.complianceManager.resetAssetCompliance,
-      args: [rawTicker],
+      args: [rawAssetId],
       resolver: undefined,
     };
   }
@@ -78,7 +76,7 @@ export async function prepareSetAssetRequirements(
 
   return {
     transaction: tx.complianceManager.replaceAssetCompliance,
-    args: [rawTicker, rawAssetCompliance],
+    args: [rawAssetId, rawAssetCompliance],
     resolver: undefined,
   };
 }
@@ -88,14 +86,14 @@ export async function prepareSetAssetRequirements(
  */
 export function getAuthorization(
   this: Procedure<Params, void>,
-  { ticker, requirements }: Params
+  { asset, requirements }: Params
 ): ProcedureAuthorization {
   return {
     permissions: {
       transactions: requirements.length
         ? [TxTags.complianceManager.ReplaceAssetCompliance]
         : [TxTags.complianceManager.ResetAssetCompliance],
-      assets: [new FungibleAsset({ ticker }, this.context)],
+      assets: [asset],
       portfolios: [],
     },
   };

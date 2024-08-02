@@ -1,13 +1,13 @@
 import { u32 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 
-import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
+import { BaseAsset, PolymeshError, Procedure } from '~/internal';
 import { AssetDocument, ErrorCode, SetAssetDocumentsParams, TxTags } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import {
   assetDocumentToDocument,
+  assetToMeshAssetId,
   documentToAssetDocument,
-  stringToTicker,
 } from '~/utils/conversion';
 import { checkTxType, hasSameElements } from '~/utils/internal';
 
@@ -20,7 +20,7 @@ export interface Storage {
  * @hidden
  */
 export type Params = SetAssetDocumentsParams & {
-  ticker: string;
+  asset: BaseAsset;
 };
 
 /**
@@ -37,7 +37,7 @@ export async function prepareSetAssetDocuments(
     context,
     storage: { currentDocIds, currentDocs },
   } = this;
-  const { ticker, documents } = args;
+  const { asset, documents } = args;
 
   if (hasSameElements(currentDocs, documents)) {
     throw new PolymeshError({
@@ -48,7 +48,7 @@ export async function prepareSetAssetDocuments(
 
   const rawDocuments = documents.map(doc => assetDocumentToDocument(doc, context));
 
-  const rawTicker = stringToTicker(ticker, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
 
   const transactions = [];
 
@@ -57,7 +57,7 @@ export async function prepareSetAssetDocuments(
       checkTxType({
         transaction: tx.asset.removeDocuments,
         feeMultiplier: new BigNumber(currentDocIds.length),
-        args: [currentDocIds, rawTicker],
+        args: [currentDocIds, rawAssetId],
       })
     );
   }
@@ -67,7 +67,7 @@ export async function prepareSetAssetDocuments(
       checkTxType({
         transaction: tx.asset.addDocuments,
         feeMultiplier: new BigNumber(rawDocuments.length),
-        args: [rawDocuments, rawTicker],
+        args: [rawDocuments, rawAssetId],
       })
     );
   }
@@ -80,7 +80,7 @@ export async function prepareSetAssetDocuments(
  */
 export function getAuthorization(
   this: Procedure<Params, void, Storage>,
-  { ticker, documents }: Params
+  { asset, documents }: Params
 ): ProcedureAuthorization {
   const {
     storage: { currentDocIds },
@@ -97,7 +97,7 @@ export function getAuthorization(
 
   return {
     permissions: {
-      assets: [new FungibleAsset({ ticker }, this.context)],
+      assets: [asset],
       transactions,
       portfolios: [],
     },
@@ -109,7 +109,7 @@ export function getAuthorization(
  */
 export async function prepareStorage(
   this: Procedure<Params, void, Storage>,
-  { ticker }: Params
+  { asset }: Params
 ): Promise<Storage> {
   const {
     context: {
@@ -118,17 +118,17 @@ export async function prepareStorage(
     context,
   } = this;
 
-  const currentDocEntries = await query.asset.assetDocuments.entries(
-    stringToTicker(ticker, context)
-  );
+  const rawAssetId = assetToMeshAssetId(asset, context);
+
+  const currentDocEntries = await query.asset.assetDocuments.entries(rawAssetId);
 
   const currentDocIds: u32[] = [];
   const currentDocs: AssetDocument[] = [];
 
   currentDocEntries.forEach(([key, doc]) => {
-    const [, id] = key.args;
+    const [, docId] = key.args;
     if (doc.isSome) {
-      currentDocIds.push(id);
+      currentDocIds.push(docId);
       currentDocs.push(documentToAssetDocument(doc.unwrap()));
     }
   });

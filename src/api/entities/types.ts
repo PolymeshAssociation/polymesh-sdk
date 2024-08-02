@@ -143,7 +143,11 @@ export enum ConditionTarget {
 export enum ScopeType {
   // eslint-disable-next-line @typescript-eslint/no-shadow
   Identity = 'Identity',
+  /**
+   * @deprecated in favour of Asset
+   */
   Ticker = 'Ticker',
+  Asset = 'Asset',
   Custom = 'Custom',
 }
 

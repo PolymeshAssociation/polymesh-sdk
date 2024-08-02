@@ -1,7 +1,7 @@
-import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
+import { BaseAsset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { boolToBoolean, stringToTicker } from '~/utils/conversion';
+import { assetToMeshAssetId, boolToBoolean } from '~/utils/conversion';
 
 export interface TogglePauseRequirementsParams {
   pause: boolean;
@@ -11,7 +11,7 @@ export interface TogglePauseRequirementsParams {
  * @hidden
  */
 export type Params = TogglePauseRequirementsParams & {
-  ticker: string;
+  asset: BaseAsset;
 };
 
 /**
@@ -30,11 +30,11 @@ export async function prepareTogglePauseRequirements(
     },
     context,
   } = this;
-  const { ticker, pause } = args;
+  const { asset, pause } = args;
 
-  const rawTicker = stringToTicker(ticker, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
 
-  const { paused } = await query.complianceManager.assetCompliances(rawTicker);
+  const { paused } = await query.complianceManager.assetCompliances(rawAssetId);
 
   if (pause === boolToBoolean(paused)) {
     throw new PolymeshError({
@@ -47,7 +47,7 @@ export async function prepareTogglePauseRequirements(
     transaction: pause
       ? tx.complianceManager.pauseAssetCompliance
       : tx.complianceManager.resumeAssetCompliance,
-    args: [rawTicker],
+    args: [rawAssetId],
     resolver: undefined,
   };
 }
@@ -57,7 +57,7 @@ export async function prepareTogglePauseRequirements(
  */
 export function getAuthorization(
   this: Procedure<Params, void>,
-  { ticker, pause }: Params
+  { asset, pause }: Params
 ): ProcedureAuthorization {
   return {
     permissions: {
@@ -66,7 +66,7 @@ export function getAuthorization(
           ? TxTags.complianceManager.PauseAssetCompliance
           : TxTags.complianceManager.ResumeAssetCompliance,
       ],
-      assets: [new FungibleAsset({ ticker }, this.context)],
+      assets: [asset],
       portfolios: [],
     },
   };
