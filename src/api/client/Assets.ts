@@ -1,5 +1,4 @@
-import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
-import { U8aFixed } from '@polkadot/types-codec';
+import { PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 
 import {
   Context,
@@ -199,11 +198,34 @@ export class Assets {
    *
    * @note `getFungibleAsset` and `getNftCollection` are similar to this method, but return a more specific type
    */
-  public async getAsset(args: { ticker: string }): Promise<Asset> {
-    const { context } = this;
-    const { ticker } = args;
+  public async getAsset(args: { ticker: string }): Promise<Asset>;
+  public async getAsset(args: { assetId: string }): Promise<Asset>;
+  // eslint-disable-next-line require-jsdoc
+  public async getAsset(args: { ticker?: string; assetId?: string }): Promise<Asset> {
+    const {
+      context,
+      context: { isV6 },
+    } = this;
+    const { ticker, assetId } = args;
 
-    return asAsset(ticker, context);
+    let assetIdValue = assetId;
+    if (isV6) {
+      if (ticker) {
+        assetIdValue = ticker;
+      }
+    } else {
+      if (ticker) {
+        assetIdValue = await getAssetIdForTicker(ticker, context);
+        if (!assetIdValue) {
+          throw new PolymeshError({
+            code: ErrorCode.DataUnavailable,
+            message: `No asset exists with ticker: "${ticker}"`,
+          });
+        }
+      }
+    }
+
+    return asAsset(assetIdValue!, context);
   }
 
   /**
@@ -252,10 +274,10 @@ export class Assets {
       return assembleAssetQuery(ownedDetails, ownedTickers, context);
     }
 
-    const entries = await asset.securityTokensOwnedByuser.entries(rawDid);
+    const entries = await asset.securityTokensOwnedByUser.entries(rawDid);
 
     const ownedAssets: string[] = [];
-    const rawAssetIds: U8aFixed[] = [];
+    const rawAssetIds: PolymeshPrimitivesAssetAssetID[] = [];
 
     entries.forEach(([key]) => {
       const rawAssetId = key.args[1];

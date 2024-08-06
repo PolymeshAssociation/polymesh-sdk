@@ -266,6 +266,7 @@ import type {
   PolymeshContractsRawEvent,
   PolymeshExtensionsCheckWeight,
   PolymeshPrimitivesAgentAgentGroup,
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesAssetAssetType,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
@@ -331,6 +332,7 @@ import type {
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesStatisticsStatUpdate,
+  PolymeshPrimitivesSubsetSubsetRestrictionAssetID,
   PolymeshPrimitivesSubsetSubsetRestrictionDispatchableName,
   PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
   PolymeshPrimitivesSubsetSubsetRestrictionPortfolioId,
@@ -644,6 +646,7 @@ declare module '@polkadot/types/types/registry' {
     PolymeshContractsRawEvent: PolymeshContractsRawEvent;
     PolymeshExtensionsCheckWeight: PolymeshExtensionsCheckWeight;
     PolymeshPrimitivesAgentAgentGroup: PolymeshPrimitivesAgentAgentGroup;
+    PolymeshPrimitivesAssetAssetID: PolymeshPrimitivesAssetAssetID;
     PolymeshPrimitivesAssetAssetType: PolymeshPrimitivesAssetAssetType;
     PolymeshPrimitivesAssetIdentifier: PolymeshPrimitivesAssetIdentifier;
     PolymeshPrimitivesAssetMetadataAssetMetadataKey: PolymeshPrimitivesAssetMetadataAssetMetadataKey;
@@ -709,6 +712,7 @@ declare module '@polkadot/types/types/registry' {
     PolymeshPrimitivesStatisticsStatOpType: PolymeshPrimitivesStatisticsStatOpType;
     PolymeshPrimitivesStatisticsStatType: PolymeshPrimitivesStatisticsStatType;
     PolymeshPrimitivesStatisticsStatUpdate: PolymeshPrimitivesStatisticsStatUpdate;
+    PolymeshPrimitivesSubsetSubsetRestrictionAssetID: PolymeshPrimitivesSubsetSubsetRestrictionAssetID;
     PolymeshPrimitivesSubsetSubsetRestrictionDispatchableName: PolymeshPrimitivesSubsetSubsetRestrictionDispatchableName;
     PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions: PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions;
     PolymeshPrimitivesSubsetSubsetRestrictionPortfolioId: PolymeshPrimitivesSubsetSubsetRestrictionPortfolioId;

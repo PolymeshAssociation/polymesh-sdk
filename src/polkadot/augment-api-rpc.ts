@@ -17,6 +17,7 @@ import type {
   Json,
   Null,
   Option,
+  Result,
   Text,
   U256,
   U64,
@@ -106,11 +107,11 @@ import type {
 import type { IExtrinsic, Observable } from '@polkadot/types/types';
 import type {
   AffirmationCount,
-  AssetDidResult,
+  AssetID,
   AuthorizationType,
-  CanTransferGranularReturn,
   CappedFee,
   CddStatus,
+  ComplianceReport,
   DidStatus,
   ExecuteInstructionInfo,
   IdentityClaim,
@@ -125,7 +126,6 @@ import type {
   ProtocolOp,
   RpcDidRecords,
   Signatory,
-  Ticker,
   VoteCount,
 } from 'polymesh-types/polymesh';
 
@@ -135,26 +135,17 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
   interface RpcInterface {
     asset: {
       /**
-       * Checks whether a transaction with given parameters can take place or not. The result is granular meaning each check is run and returned regardless of outcome.
+       * Returns a vector containing all errors for the transfer. An empty vec means there's no error.
        **/
-      canTransferGranular: AugmentedRpc<
+      transferReport: AugmentedRpc<
         (
-          fromCustodian:
-            | Option<PolymeshPrimitivesIdentityId>
-            | null
-            | Uint8Array
-            | PolymeshPrimitivesIdentityId,
-          fromPortfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
-          toCustodian:
-            | Option<PolymeshPrimitivesIdentityId>
-            | null
-            | Uint8Array
-            | PolymeshPrimitivesIdentityId,
-          toPortfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
-          ticker: Ticker | string | Uint8Array,
-          value: Balance | AnyNumber | Uint8Array,
+          senderPortfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
+          receiverPortfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
+          assetId: AssetID | string | Uint8Array,
+          transferValue: Balance | AnyNumber | Uint8Array,
+          skipLockedCheck: bool | boolean | Uint8Array,
           blockHash?: Hash | string | Uint8Array
-        ) => Observable<CanTransferGranularReturn>
+        ) => Observable<Vec<DispatchError>>
       >;
     };
     author: {
@@ -319,6 +310,18 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
           key: StorageKey | string | Uint8Array | any,
           at?: Hash | string | Uint8Array
         ) => Observable<Option<u64>>
+      >;
+    };
+    compliance: {
+      /**
+       * Checks all compliance requirements for the given asset.
+       **/
+      complianceReport: AugmentedRpc<
+        (
+          asset_id: AssetID | string | Uint8Array,
+          sender_identity: IdentityId | string | Uint8Array,
+          receiver_identity: IdentityId | string | Uint8Array
+        ) => Observable<Result<ComplianceReport, DispatchError>>
       >;
     };
     contracts: {
@@ -792,15 +795,6 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
     };
     identity: {
       /**
-       * function is used to query the given ticker DID
-       **/
-      getAssetDid: AugmentedRpc<
-        (
-          ticker: Ticker | string | Uint8Array,
-          blockHash?: Hash | string | Uint8Array
-        ) => Observable<AssetDidResult>
-      >;
-      /**
        * Used to get the did record values for a given DID
        **/
       getDidRecords: AugmentedRpc<
@@ -935,7 +929,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
         (
           sender_portfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
           receiver_portfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
-          nfts: NFTs | { ticker?: any; ids?: any } | string | Uint8Array,
+          nfts: NFTs | { asset_id?: any; ids?: any } | string | Uint8Array,
           blockHash?: Hash | string | Uint8Array
         ) => Observable<DispatchResult>
       >;

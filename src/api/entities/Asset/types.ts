@@ -11,7 +11,6 @@ import {
 } from '~/internal';
 import { EventIdEnum } from '~/middleware/types';
 import {
-  Compliance,
   EventIdentifier,
   MetadataDetails,
   MetadataType,
@@ -130,11 +129,11 @@ export interface TransferBreakdown {
   /**
    * how the transfer adheres to the asset's compliance rules
    */
-  compliance: Compliance;
+  // compliance: Compliance;
   /**
    * list of transfer restrictions and whether the transfer satisfies each one
    */
-  restrictions: TransferRestrictionResult[];
+  // restrictions: TransferRestrictionResult[];
   /**
    * true if the transfer is possible
    */
