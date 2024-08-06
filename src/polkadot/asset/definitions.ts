@@ -1,38 +1,33 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 export default {
   rpc: {
-    canTransferGranular: {
+    transferReport: {
       description:
-        'Checks whether a transaction with given parameters can take place or not. The result is granular meaning each check is run and returned regardless of outcome.',
+        "Returns a vector containing all errors for the transfer. An empty vec means there's no error.",
       params: [
         {
-          name: 'fromCustodian',
-          type: 'Option<PolymeshPrimitivesIdentityId>',
-          isOptional: false,
-        },
-        {
-          name: 'fromPortfolio',
+          name: 'senderPortfolio',
           type: 'PortfolioId',
           isOptional: false,
         },
         {
-          name: 'toCustodian',
-          type: 'Option<PolymeshPrimitivesIdentityId>',
-          isOptional: false,
-        },
-        {
-          name: 'toPortfolio',
+          name: 'receiverPortfolio',
           type: 'PortfolioId',
           isOptional: false,
         },
         {
-          name: 'ticker',
-          type: 'Ticker',
+          name: 'assetId',
+          type: 'AssetID',
           isOptional: false,
         },
         {
-          name: 'value',
+          name: 'transferValue',
           type: 'Balance',
+          isOptional: false,
+        },
+        {
+          name: 'skipLockedCheck',
+          type: 'bool',
           isOptional: false,
         },
         {
@@ -41,7 +36,7 @@ export default {
           isOptional: true,
         },
       ],
-      type: 'CanTransferGranularReturn',
+      type: 'Vec<DispatchError>',
     },
   },
   types: {},

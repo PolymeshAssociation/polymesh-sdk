@@ -1123,10 +1123,6 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InvalidNFTTransferFrozenAsset: AugmentedError<ApiType>;
       /**
-       * Ticker and NFT ticker don't match
-       **/
-      InvalidNFTTransferInconsistentTicker: AugmentedError<ApiType>;
-      /**
        * Failed to transfer an NFT - the number of nfts in the identity is insufficient.
        **/
       InvalidNFTTransferInsufficientCount: AugmentedError<ApiType>;

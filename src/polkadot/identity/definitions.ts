@@ -22,22 +22,6 @@ export default {
       ],
       type: 'CddStatus',
     },
-    getAssetDid: {
-      description: 'function is used to query the given ticker DID',
-      params: [
-        {
-          name: 'ticker',
-          type: 'Ticker',
-          isOptional: false,
-        },
-        {
-          name: 'blockHash',
-          type: 'Hash',
-          isOptional: true,
-        },
-      ],
-      type: 'AssetDidResult',
-    },
     getDidRecords: {
       description: 'Used to get the did record values for a given DID',
       params: [
