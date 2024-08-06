@@ -195,3 +195,5 @@ export const GLOBAL_TOKEN_URI_NAME = 'tokenUri';
  * Global metadata key used to conventionally register token information
  */
 export const GLOBAL_BASE_TOKEN_URI_NAME = 'baseTokenUri';
+
+export const ASSET_ID_PREFIX = 'modlpy/pallet_asset';
