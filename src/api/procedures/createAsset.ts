@@ -28,11 +28,14 @@ import {
   bigNumberToBalance,
   booleanToBool,
   fundingRoundToAssetFundingRound,
+  inputStatTypeToMeshStatType,
   internalAssetTypeToAssetType,
   meshAssetToAssetId,
   nameToAssetName,
   portfolioToPortfolioKind,
   securityIdentifierToAssetIdentifier,
+  statisticStatTypesToBtreeStatType,
+  stringToAssetId,
   stringToBytes,
   stringToTicker,
 } from '~/utils/conversion';
@@ -131,12 +134,17 @@ export async function prepareCreateAsset(
     fundingRound,
     documents,
     reservationRequired,
-    // initialStatistics,
+    initialStatistics,
   } = args;
+
+  const nextAssetId = await signingIdentity.getNextAssetId();
+
+  const rawAssetId = stringToAssetId(nextAssetId, context);
 
   assertTickerAvailable(ticker, status, reservationRequired);
 
   const rawTicker = stringToTicker(ticker, context);
+
   const rawName = nameToAssetName(name, context);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rawNameTickerArgs: any[] = isV6 ? [rawName, rawTicker] : [rawName];
@@ -207,18 +215,36 @@ export async function prepareCreateAsset(
     );
   }
 
-  // if (initialStatistics?.length) {
-  //   const tickerKey = stringToAssetIdKey(ticker, context);
-  //   const rawStats = initialStatistics.map(i => inputStatTypeToMeshStatType(i, context));
-  //   const bTreeStats = statisticStatTypesToBtreeStatType(rawStats, context);
+  if (!isV6) {
+    if (status === TickerReservationStatus.Free) {
+      transactions.push(
+        checkTxType({
+          transaction: tx.asset.registerUniqueTicker,
+          args: [rawTicker],
+        })
+      );
+    }
+    if (status !== TickerReservationStatus.AssetCreated) {
+      transactions.push(
+        checkTxType({
+          transaction: tx.asset.linkTickerToAssetId,
+          args: [rawTicker, rawAssetId],
+        })
+      );
+    }
+  }
 
-  //   transactions.push(
-  //     checkTxType({
-  //       transaction: tx.statistics.setActiveAssetStats,
-  //       args: [tickerKey, bTreeStats],
-  //     })
-  //   );
-  // }
+  if (initialStatistics?.length) {
+    const rawStats = initialStatistics.map(i => inputStatTypeToMeshStatType(i, context));
+    const bTreeStats = statisticStatTypesToBtreeStatType(rawStats, context);
+
+    transactions.push(
+      checkTxType({
+        transaction: tx.statistics.setActiveAssetStats,
+        args: [rawAssetId, bTreeStats],
+      })
+    );
+  }
 
   if (initialSupply?.gt(0)) {
     const rawInitialSupply = bigNumberToBalance(initialSupply, context, isDivisible);
@@ -232,7 +258,7 @@ export async function prepareCreateAsset(
     transactions.push(
       checkTxType({
         transaction: tx.asset.issue,
-        args: [rawTicker, rawInitialSupply, rawPortfolio],
+        args: [rawAssetId, rawInitialSupply, rawPortfolio],
       })
     );
   }
@@ -246,7 +272,7 @@ export async function prepareCreateAsset(
       checkTxType({
         transaction: tx.asset.addDocuments,
         feeMultiplier,
-        args: [rawDocuments, rawTicker],
+        args: [rawDocuments, rawAssetId],
       })
     );
   }
