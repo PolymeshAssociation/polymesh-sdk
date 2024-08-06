@@ -68,11 +68,13 @@ import type {
   PolymeshContractsChainExtensionExtrinsicId,
   PolymeshContractsNextUpgrade,
   PolymeshPrimitivesAgentAgentGroup,
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesAssetAssetType,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
   PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
   PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
+  PolymeshPrimitivesAssetNonFungibleType,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesBeneficiary,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
@@ -172,9 +174,9 @@ declare module '@polkadot/api-base/types/submittable' {
                 | string
                 | Uint8Array
               )[],
-          assetId: U8aFixed | string | Uint8Array
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [Vec<PolymeshPrimitivesDocument>, U8aFixed]
+        [Vec<PolymeshPrimitivesDocument>, PolymeshPrimitivesAssetAssetID]
       >;
       /**
        * Sets all identities in the `mediators` set as mandatory mediators for any instruction transfering `asset_id`.
@@ -189,10 +191,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       addMandatoryMediators: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           mediators: BTreeSet<PolymeshPrimitivesIdentityId>
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, BTreeSet<PolymeshPrimitivesIdentityId>]
+        [PolymeshPrimitivesAssetAssetID, BTreeSet<PolymeshPrimitivesIdentityId>]
       >;
       /**
        * Forces a transfer of token from `from_portfolio` to the caller's default portfolio.
@@ -209,7 +211,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       controllerTransfer: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           value: u128 | AnyNumber | Uint8Array,
           fromPortfolio:
             | PolymeshPrimitivesIdentityIdPortfolioId
@@ -217,7 +219,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, u128, PolymeshPrimitivesIdentityIdPortfolioId]
+        [PolymeshPrimitivesAssetAssetID, u128, PolymeshPrimitivesIdentityIdPortfolioId]
       >;
       /**
        * Initializes a new [`SecurityToken`], with the initiating account as its owner.
@@ -324,8 +326,10 @@ declare module '@polkadot/api-base/types/submittable' {
        * * Root
        **/
       exemptAssetAffirmation: AugmentedSubmittable<
-        (assetId: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed]
+        (
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesAssetAssetID]
       >;
       /**
        * Freezes transfers of a given token.
@@ -338,8 +342,10 @@ declare module '@polkadot/api-base/types/submittable' {
        * * Asset
        **/
       freeze: AugmentedSubmittable<
-        (assetId: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed]
+        (
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesAssetAssetID]
       >;
       /**
        * Issue (i.e mint) new tokens to the caller, which must be an authorized external agent.
@@ -356,7 +362,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       issue: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           amount: u128 | AnyNumber | Uint8Array,
           portfolioKind:
             | PolymeshPrimitivesIdentityIdPortfolioKind
@@ -365,7 +371,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, u128, PolymeshPrimitivesIdentityIdPortfolioKind]
+        [PolymeshPrimitivesAssetAssetID, u128, PolymeshPrimitivesIdentityIdPortfolioKind]
       >;
       /**
        * Establishes a connection between a ticker and an AssetID.
@@ -381,9 +387,9 @@ declare module '@polkadot/api-base/types/submittable' {
       linkTickerToAssetId: AugmentedSubmittable<
         (
           ticker: PolymeshPrimitivesTicker | string | Uint8Array,
-          assetId: U8aFixed | string | Uint8Array
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [PolymeshPrimitivesTicker, U8aFixed]
+        [PolymeshPrimitivesTicker, PolymeshPrimitivesAssetAssetID]
       >;
       /**
        * If the token associated to `asset_id` is indivisible, sets [`SecurityToken::divisible`] to true.
@@ -396,8 +402,10 @@ declare module '@polkadot/api-base/types/submittable' {
        * * Asset
        **/
       makeDivisible: AugmentedSubmittable<
-        (assetId: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed]
+        (
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesAssetAssetID]
       >;
       /**
        * Pre-approves the receivement of an asset.
@@ -410,8 +418,10 @@ declare module '@polkadot/api-base/types/submittable' {
        * * Asset
        **/
       preApproveAsset: AugmentedSubmittable<
-        (assetId: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed]
+        (
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesAssetAssetID]
       >;
       /**
        * Redeems (i.e burns) existing tokens by reducing the balance of the caller's portfolio and the total supply of the token.
@@ -428,7 +438,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       redeem: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           value: u128 | AnyNumber | Uint8Array,
           portfolioKind:
             | PolymeshPrimitivesIdentityIdPortfolioKind
@@ -437,7 +447,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, u128, PolymeshPrimitivesIdentityIdPortfolioKind]
+        [PolymeshPrimitivesAssetAssetID, u128, PolymeshPrimitivesIdentityIdPortfolioKind]
       >;
       /**
        * Registers and set local asset metadata.
@@ -456,7 +466,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       registerAndSetLocalAssetMetadata: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           name: Bytes | string | Uint8Array,
           spec:
             | PolymeshPrimitivesAssetMetadataAssetMetadataSpec
@@ -473,7 +483,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
         ) => SubmittableExtrinsic<ApiType>,
         [
-          U8aFixed,
+          PolymeshPrimitivesAssetAssetID,
           Bytes,
           PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
           Bytes,
@@ -514,7 +524,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       registerAssetMetadataLocalType: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           name: Bytes | string | Uint8Array,
           spec:
             | PolymeshPrimitivesAssetMetadataAssetMetadataSpec
@@ -522,7 +532,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, Bytes, PolymeshPrimitivesAssetMetadataAssetMetadataSpec]
+        [PolymeshPrimitivesAssetAssetID, Bytes, PolymeshPrimitivesAssetMetadataAssetMetadataSpec]
       >;
       /**
        * Registers a custom asset type.
@@ -565,8 +575,10 @@ declare module '@polkadot/api-base/types/submittable' {
        * * Root
        **/
       removeAssetAffirmationExemption: AugmentedSubmittable<
-        (assetId: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed]
+        (
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesAssetAssetID]
       >;
       /**
        * Removes the pre approval of an asset.
@@ -579,8 +591,10 @@ declare module '@polkadot/api-base/types/submittable' {
        * * Asset
        **/
       removeAssetPreApproval: AugmentedSubmittable<
-        (assetId: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed]
+        (
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesAssetAssetID]
       >;
       /**
        * Remove documents for a given token.
@@ -596,9 +610,9 @@ declare module '@polkadot/api-base/types/submittable' {
       removeDocuments: AugmentedSubmittable<
         (
           docsId: Vec<u32> | (u32 | AnyNumber | Uint8Array)[],
-          assetId: U8aFixed | string | Uint8Array
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [Vec<u32>, U8aFixed]
+        [Vec<u32>, PolymeshPrimitivesAssetAssetID]
       >;
       /**
        * Removes the asset metadata key and value of a local key.
@@ -613,10 +627,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       removeLocalMetadataKey: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           localKey: u64 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, u64]
+        [PolymeshPrimitivesAssetAssetID, u64]
       >;
       /**
        * Removes all identities in the `mediators` set from the mandatory mediators list for the given `asset_id`.
@@ -631,10 +645,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       removeMandatoryMediators: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           mediators: BTreeSet<PolymeshPrimitivesIdentityId>
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, BTreeSet<PolymeshPrimitivesIdentityId>]
+        [PolymeshPrimitivesAssetAssetID, BTreeSet<PolymeshPrimitivesIdentityId>]
       >;
       /**
        * Removes the asset metadata value of a metadata key.
@@ -649,7 +663,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       removeMetadataValue: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           metadataKey:
             | PolymeshPrimitivesAssetMetadataAssetMetadataKey
             | { Global: any }
@@ -657,7 +671,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, PolymeshPrimitivesAssetMetadataAssetMetadataKey]
+        [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesAssetMetadataAssetMetadataKey]
       >;
       /**
        * Updates the [`AssetName`] associated to a security token.
@@ -672,10 +686,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       renameAsset: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           assetName: Bytes | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, Bytes]
+        [PolymeshPrimitivesAssetAssetID, Bytes]
       >;
       /**
        * Set asset metadata value.
@@ -693,7 +707,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       setAssetMetadata: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           key:
             | PolymeshPrimitivesAssetMetadataAssetMetadataKey
             | { Global: any }
@@ -710,7 +724,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
         ) => SubmittableExtrinsic<ApiType>,
         [
-          U8aFixed,
+          PolymeshPrimitivesAssetAssetID,
           PolymeshPrimitivesAssetMetadataAssetMetadataKey,
           Bytes,
           Option<PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail>
@@ -731,7 +745,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       setAssetMetadataDetails: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           key:
             | PolymeshPrimitivesAssetMetadataAssetMetadataKey
             | { Global: any }
@@ -745,7 +759,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [
-          U8aFixed,
+          PolymeshPrimitivesAssetAssetID,
           PolymeshPrimitivesAssetMetadataAssetMetadataKey,
           PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail
         ]
@@ -763,10 +777,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       setFundingRound: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           foundingRoundName: Bytes | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, Bytes]
+        [PolymeshPrimitivesAssetAssetID, Bytes]
       >;
       /**
        * Unfreezes transfers of a given token.
@@ -779,8 +793,10 @@ declare module '@polkadot/api-base/types/submittable' {
        * * Asset
        **/
       unfreeze: AugmentedSubmittable<
-        (assetId: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed]
+        (
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesAssetAssetID]
       >;
       /**
        * Updates the type of an asset.
@@ -795,7 +811,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       updateAssetType: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           assetType:
             | PolymeshPrimitivesAssetAssetType
             | { EquityCommon: any }
@@ -813,7 +829,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, PolymeshPrimitivesAssetAssetType]
+        [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesAssetAssetType]
       >;
       /**
        * Updates the asset identifiers associated to the token.
@@ -828,7 +844,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       updateIdentifiers: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           assetIdentifiers:
             | Vec<PolymeshPrimitivesAssetIdentifier>
             | (
@@ -842,7 +858,7 @@ declare module '@polkadot/api-base/types/submittable' {
                 | Uint8Array
               )[]
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, Vec<PolymeshPrimitivesAssetIdentifier>]
+        [PolymeshPrimitivesAssetAssetID, Vec<PolymeshPrimitivesAssetIdentifier>]
       >;
     };
     babe: {
@@ -1381,13 +1397,21 @@ declare module '@polkadot/api-base/types/submittable' {
         (
           caId: PalletCorporateActionsCaId | { assetId?: any; localId?: any } | string | Uint8Array,
           portfolio: Option<u64> | null | Uint8Array | u64 | AnyNumber,
-          currency: U8aFixed | string | Uint8Array,
+          currency: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           perShare: u128 | AnyNumber | Uint8Array,
           amount: u128 | AnyNumber | Uint8Array,
           paymentAt: u64 | AnyNumber | Uint8Array,
           expiresAt: Option<u64> | null | Uint8Array | u64 | AnyNumber
         ) => SubmittableExtrinsic<ApiType>,
-        [PalletCorporateActionsCaId, Option<u64>, U8aFixed, u128, u128, u64, Option<u64>]
+        [
+          PalletCorporateActionsCaId,
+          Option<u64>,
+          PolymeshPrimitivesAssetAssetID,
+          u128,
+          u128,
+          u64,
+          Option<u64>
+        ]
       >;
       /**
        * Push benefit of an ongoing distribution to the given `holder`.
@@ -1585,8 +1609,10 @@ declare module '@polkadot/api-base/types/submittable' {
        * - `CounterOverflow` if the total checkpoint counter would overflow.
        **/
       createCheckpoint: AugmentedSubmittable<
-        (assetId: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed]
+        (
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesAssetAssetID]
       >;
       /**
        * Creates a schedule generating checkpoints
@@ -1609,14 +1635,14 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       createSchedule: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           schedule:
             | PolymeshCommonUtilitiesCheckpointScheduleCheckpoints
             | { pending?: any }
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, PolymeshCommonUtilitiesCheckpointScheduleCheckpoints]
+        [PolymeshPrimitivesAssetAssetID, PolymeshCommonUtilitiesCheckpointScheduleCheckpoints]
       >;
       /**
        * Removes the checkpoint schedule of an asset identified by `id`.
@@ -1636,10 +1662,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       removeSchedule: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           id: u64 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, u64]
+        [PolymeshPrimitivesAssetAssetID, u64]
       >;
       /**
        * Sets the max complexity of a schedule set for an arbitrary asset_id to `max_complexity`.
@@ -1784,7 +1810,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       addComplianceRequirement: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           senderConditions:
             | Vec<PolymeshPrimitivesCondition>
             | (
@@ -1802,7 +1828,11 @@ declare module '@polkadot/api-base/types/submittable' {
                 | Uint8Array
               )[]
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, Vec<PolymeshPrimitivesCondition>, Vec<PolymeshPrimitivesCondition>]
+        [
+          PolymeshPrimitivesAssetAssetID,
+          Vec<PolymeshPrimitivesCondition>,
+          Vec<PolymeshPrimitivesCondition>
+        ]
       >;
       /**
        * Adds another default trusted claim issuer at the asset level.
@@ -1817,14 +1847,14 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       addDefaultTrustedClaimIssuer: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           issuer:
             | PolymeshPrimitivesConditionTrustedIssuer
             | { issuer?: any; trustedFor?: any }
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, PolymeshPrimitivesConditionTrustedIssuer]
+        [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesConditionTrustedIssuer]
       >;
       /**
        * Modify an existing compliance requirement of a given asset.
@@ -1839,14 +1869,14 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       changeComplianceRequirement: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           newReq:
             | PolymeshPrimitivesComplianceManagerComplianceRequirement
             | { senderConditions?: any; receiverConditions?: any; id?: any }
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, PolymeshPrimitivesComplianceManagerComplianceRequirement]
+        [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesComplianceManagerComplianceRequirement]
       >;
       /**
        * Pauses the verification of conditions for `asset_id` during transfers.
@@ -1859,8 +1889,10 @@ declare module '@polkadot/api-base/types/submittable' {
        * * Asset
        **/
       pauseAssetCompliance: AugmentedSubmittable<
-        (assetId: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed]
+        (
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesAssetAssetID]
       >;
       /**
        * Removes a compliance requirement from an asset's compliance.
@@ -1875,10 +1907,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       removeComplianceRequirement: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           id: u32 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, u32]
+        [PolymeshPrimitivesAssetAssetID, u32]
       >;
       /**
        * Removes the given `issuer` from the set of default trusted claim issuers at the asset level.
@@ -1893,10 +1925,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       removeDefaultTrustedClaimIssuer: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           issuer: PolymeshPrimitivesIdentityId | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, PolymeshPrimitivesIdentityId]
+        [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesIdentityId]
       >;
       /**
        * Replaces an asset's compliance with a new compliance.
@@ -1917,7 +1949,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       replaceAssetCompliance: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           assetCompliance:
             | Vec<PolymeshPrimitivesComplianceManagerComplianceRequirement>
             | (
@@ -1927,7 +1959,10 @@ declare module '@polkadot/api-base/types/submittable' {
                 | Uint8Array
               )[]
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, Vec<PolymeshPrimitivesComplianceManagerComplianceRequirement>]
+        [
+          PolymeshPrimitivesAssetAssetID,
+          Vec<PolymeshPrimitivesComplianceManagerComplianceRequirement>
+        ]
       >;
       /**
        * Removes an asset's compliance
@@ -1940,8 +1975,10 @@ declare module '@polkadot/api-base/types/submittable' {
        * * Asset
        **/
       resetAssetCompliance: AugmentedSubmittable<
-        (assetId: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed]
+        (
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesAssetAssetID]
       >;
       /**
        * Resumes the verification of conditions for `asset_id` during transfers.
@@ -1954,8 +1991,10 @@ declare module '@polkadot/api-base/types/submittable' {
        * * Asset
        **/
       resumeAssetCompliance: AugmentedSubmittable<
-        (assetId: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed]
+        (
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesAssetAssetID]
       >;
     };
     contracts: {
@@ -2288,7 +2327,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       initiateCorporateAction: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           kind:
             | PalletCorporateActionsCaKind
             | 'PredictableBenefit'
@@ -2328,7 +2367,7 @@ declare module '@polkadot/api-base/types/submittable' {
               ][]
         ) => SubmittableExtrinsic<ApiType>,
         [
-          U8aFixed,
+          PolymeshPrimitivesAssetAssetID,
           PalletCorporateActionsCaKind,
           u64,
           Option<PalletCorporateActionsRecordDateSpec>,
@@ -2358,7 +2397,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
             | Uint8Array,
           portfolio: Option<u64> | null | Uint8Array | u64 | AnyNumber,
-          currency: U8aFixed | string | Uint8Array,
+          currency: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           perShare: u128 | AnyNumber | Uint8Array,
           amount: u128 | AnyNumber | Uint8Array,
           paymentAt: u64 | AnyNumber | Uint8Array,
@@ -2367,7 +2406,7 @@ declare module '@polkadot/api-base/types/submittable' {
         [
           PalletCorporateActionsInitiateCorporateActionArgs,
           Option<u64>,
-          U8aFixed,
+          PolymeshPrimitivesAssetAssetID,
           u128,
           u128,
           u64,
@@ -2444,14 +2483,14 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       setDefaultTargets: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           targets:
             | PalletCorporateActionsTargetIdentities
             | { identities?: any; treatment?: any }
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, PalletCorporateActionsTargetIdentities]
+        [PolymeshPrimitivesAssetAssetID, PalletCorporateActionsTargetIdentities]
       >;
       /**
        * Set the default withholding tax for all DIDs and CAs relevant to this `asset_id`.
@@ -2469,10 +2508,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       setDefaultWithholdingTax: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           tax: Permill | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, Permill]
+        [PolymeshPrimitivesAssetAssetID, Permill]
       >;
       /**
        * Set the withholding tax of `asset_id` for `taxed_did` to `tax`.
@@ -2494,11 +2533,11 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       setDidWithholdingTax: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           taxedDid: PolymeshPrimitivesIdentityId | string | Uint8Array,
           tax: Option<Permill> | null | Uint8Array | Permill | AnyNumber
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, PolymeshPrimitivesIdentityId, Option<Permill>]
+        [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesIdentityId, Option<Permill>]
       >;
       /**
        * Set the max `length` of `details` in terms of bytes.
@@ -2694,8 +2733,10 @@ declare module '@polkadot/api-base/types/submittable' {
        * * Asset
        **/
       abdicate: AugmentedSubmittable<
-        (assetId: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed]
+        (
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesAssetAssetID]
       >;
       /**
        * Accept an authorization by an agent "Alice" who issued `auth_id`
@@ -2739,7 +2780,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       changeGroup: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           agent: PolymeshPrimitivesIdentityId | string | Uint8Array,
           group:
             | PolymeshPrimitivesAgentAgentGroup
@@ -2751,7 +2792,11 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, PolymeshPrimitivesIdentityId, PolymeshPrimitivesAgentAgentGroup]
+        [
+          PolymeshPrimitivesAssetAssetID,
+          PolymeshPrimitivesIdentityId,
+          PolymeshPrimitivesAgentAgentGroup
+        ]
       >;
       /**
        * Utility extrinsic to batch `create_group` and  `change_group` for custom groups only.
@@ -2762,7 +2807,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       createAndChangeCustomGroup: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           perms:
             | PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions
             | { Whole: any }
@@ -2773,7 +2818,7 @@ declare module '@polkadot/api-base/types/submittable' {
           agent: PolymeshPrimitivesIdentityId | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [
-          U8aFixed,
+          PolymeshPrimitivesAssetAssetID,
           PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
           PolymeshPrimitivesIdentityId
         ]
@@ -2800,7 +2845,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       createGroup: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           perms:
             | PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions
             | { Whole: any }
@@ -2809,7 +2854,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions]
+        [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions]
       >;
       /**
        * Utility extrinsic to batch `create_group` and  `add_auth`.
@@ -2820,7 +2865,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       createGroupAndAddAuth: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           perms:
             | PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions
             | { Whole: any }
@@ -2832,7 +2877,7 @@ declare module '@polkadot/api-base/types/submittable' {
           expiry: Option<u64> | null | Uint8Array | u64 | AnyNumber
         ) => SubmittableExtrinsic<ApiType>,
         [
-          U8aFixed,
+          PolymeshPrimitivesAssetAssetID,
           PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
           PolymeshPrimitivesIdentityId,
           Option<u64>
@@ -2856,10 +2901,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       removeAgent: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           agent: PolymeshPrimitivesIdentityId | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, PolymeshPrimitivesIdentityId]
+        [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesIdentityId]
       >;
       /**
        * Updates the permissions of the custom AG identified by `id`, for the given `asset_id`.
@@ -2880,7 +2925,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       setGroupPermissions: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           id: u32 | AnyNumber | Uint8Array,
           perms:
             | PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions
@@ -2890,7 +2935,11 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, u32, PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions]
+        [
+          PolymeshPrimitivesAssetAssetID,
+          u32,
+          PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions
+        ]
       >;
     };
     grandpa: {
@@ -3925,7 +3974,8 @@ declare module '@polkadot/api-base/types/submittable' {
        *
        * # Arguments
        * * `origin` - contains the secondary key of the caller (i.e. who signed the transaction to execute this function).
-       * * `asset_id` - the [`AssetID`] associated to the new collection.
+       * * `asset_id` - optional [`AssetID`] associated to the new collection. `None` will create a new asset.
+       * * `nft_type` - in case the asset hasn't been created yet, one will be created with the given type.
        * * `collection_keys` - all mandatory metadata keys that the tokens in the collection must have.
        *
        * ## Errors
@@ -3940,10 +3990,29 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       createNftCollection: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId:
+            | Option<PolymeshPrimitivesAssetAssetID>
+            | null
+            | Uint8Array
+            | PolymeshPrimitivesAssetAssetID
+            | string,
+          nftType:
+            | Option<PolymeshPrimitivesAssetNonFungibleType>
+            | null
+            | Uint8Array
+            | PolymeshPrimitivesAssetNonFungibleType
+            | { Derivative: any }
+            | { FixedIncome: any }
+            | { Invoice: any }
+            | { Custom: any }
+            | string,
           collectionKeys: PolymeshPrimitivesNftNftCollectionKeys
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, PolymeshPrimitivesNftNftCollectionKeys]
+        [
+          Option<PolymeshPrimitivesAssetAssetID>,
+          Option<PolymeshPrimitivesAssetNonFungibleType>,
+          PolymeshPrimitivesNftNftCollectionKeys
+        ]
       >;
       /**
        * Issues an NFT to the caller.
@@ -3966,7 +4035,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       issueNft: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           nftMetadataAttributes:
             | Vec<PolymeshPrimitivesNftNftMetadataAttribute>
             | (
@@ -3983,7 +4052,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [
-          U8aFixed,
+          PolymeshPrimitivesAssetAssetID,
           Vec<PolymeshPrimitivesNftNftMetadataAttribute>,
           PolymeshPrimitivesIdentityIdPortfolioKind
         ]
@@ -4007,7 +4076,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       redeemNft: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           nftId: u64 | AnyNumber | Uint8Array,
           portfolioKind:
             | PolymeshPrimitivesIdentityIdPortfolioKind
@@ -4016,7 +4085,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, u64, PolymeshPrimitivesIdentityIdPortfolioKind]
+        [PolymeshPrimitivesAssetAssetID, u64, PolymeshPrimitivesIdentityIdPortfolioKind]
       >;
     };
     pips: {
@@ -4671,14 +4740,14 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       preApprovePortfolio: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           portfolioId:
             | PolymeshPrimitivesIdentityIdPortfolioId
             | { did?: any; kind?: any }
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, PolymeshPrimitivesIdentityIdPortfolioId]
+        [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesIdentityIdPortfolioId]
       >;
       /**
        * When called by the custodian of `portfolio_id`,
@@ -4713,14 +4782,14 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       removePortfolioPreApproval: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           portfolioId:
             | PolymeshPrimitivesIdentityIdPortfolioId
             | { did?: any; kind?: any }
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, PolymeshPrimitivesIdentityIdPortfolioId]
+        [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesIdentityIdPortfolioId]
       >;
       /**
        * Renames a non-default portfolio.
@@ -5501,10 +5570,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       allowVenues: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           venues: Vec<u64> | (u64 | AnyNumber | Uint8Array)[]
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, Vec<u64>]
+        [PolymeshPrimitivesAssetAssetID, Vec<u64>]
       >;
       /**
        * Registers a new venue.
@@ -5539,10 +5608,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       disallowVenues: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           venues: Vec<u64> | (u64 | AnyNumber | Uint8Array)[]
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, Vec<u64>]
+        [PolymeshPrimitivesAssetAssetID, Vec<u64>]
       >;
       /**
        * Manually executes an instruction.
@@ -5699,10 +5768,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       setVenueFiltering: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           enabled: bool | boolean | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, bool]
+        [PolymeshPrimitivesAssetAssetID, bool]
       >;
       /**
        * Edit a venue's details.
@@ -6673,7 +6742,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       batchUpdateAssetStats: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           statType:
             | PolymeshPrimitivesStatisticsStatType
             | { operationType?: any; claimIssuer?: any }
@@ -6682,7 +6751,7 @@ declare module '@polkadot/api-base/types/submittable' {
           values: BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>
         ) => SubmittableExtrinsic<ApiType>,
         [
-          U8aFixed,
+          PolymeshPrimitivesAssetAssetID,
           PolymeshPrimitivesStatisticsStatType,
           BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>
         ]
@@ -6706,10 +6775,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       setActiveAssetStats: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           statTypes: BTreeSet<PolymeshPrimitivesStatisticsStatType>
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, BTreeSet<PolymeshPrimitivesStatisticsStatType>]
+        [PolymeshPrimitivesAssetAssetID, BTreeSet<PolymeshPrimitivesStatisticsStatType>]
       >;
       /**
        * Set asset transfer compliance rules.
@@ -6730,10 +6799,13 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       setAssetTransferCompliance: AugmentedSubmittable<
         (
-          assetId: U8aFixed | string | Uint8Array,
+          assetId: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           transferConditions: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>]
+        [
+          PolymeshPrimitivesAssetAssetID,
+          BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>
+        ]
       >;
       /**
        * Set/unset entities exempt from an asset's transfer compliance rules.
@@ -6794,13 +6866,13 @@ declare module '@polkadot/api-base/types/submittable' {
             | { did?: any; kind?: any }
             | string
             | Uint8Array,
-          offeringAsset: U8aFixed | string | Uint8Array,
+          offeringAsset: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           raisingPortfolio:
             | PolymeshPrimitivesIdentityIdPortfolioId
             | { did?: any; kind?: any }
             | string
             | Uint8Array,
-          raisingAsset: U8aFixed | string | Uint8Array,
+          raisingAsset: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           tiers:
             | Vec<PalletStoPriceTier>
             | (PalletStoPriceTier | { total?: any; price?: any } | string | Uint8Array)[],
@@ -6812,9 +6884,9 @@ declare module '@polkadot/api-base/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>,
         [
           PolymeshPrimitivesIdentityIdPortfolioId,
-          U8aFixed,
+          PolymeshPrimitivesAssetAssetID,
           PolymeshPrimitivesIdentityIdPortfolioId,
-          U8aFixed,
+          PolymeshPrimitivesAssetAssetID,
           Vec<PalletStoPriceTier>,
           u64,
           Option<u64>,
@@ -6834,10 +6906,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       freezeFundraiser: AugmentedSubmittable<
         (
-          offeringAsset: U8aFixed | string | Uint8Array,
+          offeringAsset: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           id: u64 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, u64]
+        [PolymeshPrimitivesAssetAssetID, u64]
       >;
       /**
        * Invest in a fundraiser.
@@ -6865,7 +6937,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | { did?: any; kind?: any }
             | string
             | Uint8Array,
-          offeringAsset: U8aFixed | string | Uint8Array,
+          offeringAsset: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           id: u64 | AnyNumber | Uint8Array,
           purchaseAmount: u128 | AnyNumber | Uint8Array,
           maxPrice: Option<u128> | null | Uint8Array | u128 | AnyNumber,
@@ -6887,7 +6959,7 @@ declare module '@polkadot/api-base/types/submittable' {
         [
           PolymeshPrimitivesIdentityIdPortfolioId,
           PolymeshPrimitivesIdentityIdPortfolioId,
-          U8aFixed,
+          PolymeshPrimitivesAssetAssetID,
           u64,
           u128,
           Option<u128>,
@@ -6907,12 +6979,12 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       modifyFundraiserWindow: AugmentedSubmittable<
         (
-          offeringAsset: U8aFixed | string | Uint8Array,
+          offeringAsset: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           id: u64 | AnyNumber | Uint8Array,
           start: u64 | AnyNumber | Uint8Array,
           end: Option<u64> | null | Uint8Array | u64 | AnyNumber
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, u64, u64, Option<u64>]
+        [PolymeshPrimitivesAssetAssetID, u64, u64, Option<u64>]
       >;
       /**
        * Stop a fundraiser.
@@ -6925,10 +6997,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       stop: AugmentedSubmittable<
         (
-          offeringAsset: U8aFixed | string | Uint8Array,
+          offeringAsset: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           id: u64 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, u64]
+        [PolymeshPrimitivesAssetAssetID, u64]
       >;
       /**
        * Unfreeze a fundraiser.
@@ -6941,10 +7013,10 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       unfreezeFundraiser: AugmentedSubmittable<
         (
-          offeringAsset: U8aFixed | string | Uint8Array,
+          offeringAsset: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           id: u64 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [U8aFixed, u64]
+        [PolymeshPrimitivesAssetAssetID, u64]
       >;
     };
     sudo: {

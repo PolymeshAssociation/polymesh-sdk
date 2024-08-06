@@ -25,6 +25,7 @@ import {
   PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
   PolymeshPrimitivesAgentAgentGroup,
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesAssetAssetType,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
@@ -150,10 +151,8 @@ import {
 import {
   AssetComplianceResult,
   AuthorizationType as MeshAuthorizationType,
-  CanTransferResult,
   CddStatus,
   ComplianceRequirementResult,
-  GranularCanTransferResult,
   Moment,
 } from '~/polkadot/polymesh';
 import {
@@ -356,8 +355,8 @@ export function stringToTicker(ticker: string, context: Context): PolymeshPrimit
 /**
  * @hidden
  */
-export function stringToAssetId(assetId: string, context: Context): U8aFixed {
-  return context.createType('U8aFixed', assetId);
+export function stringToAssetId(assetId: string, context: Context): PolymeshPrimitivesAssetAssetID {
+  return context.createType('PolymeshPrimitivesAssetAssetID', assetId);
 }
 
 /**
@@ -384,7 +383,7 @@ export function tickerToString(ticker: PolymeshPrimitivesTicker): string {
 /**
  * @hidden
  */
-export function assetIdToString(assetId: U8aFixed): string {
+export function assetIdToString(assetId: PolymeshPrimitivesAssetAssetID): string {
   return assetId.toString();
 }
 
@@ -392,7 +391,7 @@ export function assetIdToString(assetId: U8aFixed): string {
  * @hidden
  */
 export function meshAssetToAssetId(
-  value: PolymeshPrimitivesTicker | U8aFixed,
+  value: PolymeshPrimitivesTicker | PolymeshPrimitivesAssetAssetID,
   context: Context
 ): string {
   const { isV6 } = context;
@@ -416,7 +415,10 @@ export function assetToMeshAssetIdKey(value: string, context: Context): TickerKe
 /**
  * @hidden
  */
-export function assetToMeshAssetId({ id }: BaseAsset, context: Context): U8aFixed {
+export function assetToMeshAssetId(
+  { id }: BaseAsset,
+  context: Context
+): PolymeshPrimitivesAssetAssetID {
   const { isV6 } = context;
 
   if (isV6) {
@@ -434,10 +436,10 @@ export function assetToMeshAssetInputParam(
   context: Context
 ):
   | {
-      ticker: U8aFixed;
+      ticker: PolymeshPrimitivesTicker;
     }
   | {
-      assetId: U8aFixed;
+      assetId: PolymeshPrimitivesAssetAssetID;
     } {
   const { isV6 } = context;
 
@@ -2185,21 +2187,21 @@ export function cddStatusToBoolean(cddStatus: CddStatus): boolean {
   return false;
 }
 
-/**
- * @hidden
- */
-export function canTransferResultToTransferStatus(
-  canTransferResult: CanTransferResult
-): TransferStatus {
-  if (canTransferResult.isErr) {
-    throw new PolymeshError({
-      code: ErrorCode.UnexpectedError,
-      message: `Error while checking transfer validity: ${bytesToString(canTransferResult.asErr)}`,
-    });
-  }
+// /**
+//  * @hidden
+//  */
+// export function canTransferResultToTransferStatus(
+//   canTransferResult: DispatchError
+// ): TransferStatus {
+//   if (canTransferResult.isErr) {
+//     throw new PolymeshError({
+//       code: ErrorCode.UnexpectedError,
+//       message: `Error while checking transfer validity: ${bytesToString(canTransferResult.asErr)}`,
+//     });
+//   }
 
-  return u8ToTransferStatus(canTransferResult.asOk);
-}
+//   return u8ToTransferStatus(canTransferResult.asOk);
+// }
 
 /**
  * @hidden
@@ -3339,6 +3341,69 @@ export function transferConditionToTransferRestriction(
 /**
  * @hidden
  */
+export function assetDispatchErrorToTransferError(
+  error: DispatchError,
+  context: Context
+): TransferError {
+  const { asset: assetErrors, portfolio: portfolioErrors } = context.polymeshApi.errors;
+
+  if (error.isModule) {
+    const moduleErr = error.asModule;
+
+    if (assetErrors.InvalidGranularity.is(moduleErr)) {
+      return TransferError.InvalidGranularity;
+    }
+
+    if (assetErrors.SenderSameAsReceiver.is(moduleErr)) {
+      return TransferError.SelfTransfer;
+    }
+
+    if (assetErrors.InvalidTransferInvalidReceiverCDD.is(moduleErr)) {
+      return TransferError.InvalidReceiverCdd;
+    }
+
+    if (assetErrors.InvalidTransferInvalidSenderCDD.is(moduleErr)) {
+      return TransferError.InvalidSenderCdd;
+    }
+
+    if (assetErrors.InsufficientBalance.is(moduleErr)) {
+      return TransferError.InsufficientBalance;
+    }
+
+    if (assetErrors.InvalidTransferFrozenAsset.is(moduleErr)) {
+      return TransferError.TransfersFrozen;
+    }
+
+    if (portfolioErrors.PortfolioDoesNotExist.is(moduleErr)) {
+      return TransferError.InvalidSenderPortfolio;
+    }
+
+    // if (portfolioErrors.PortfolioDoesNotExist.is(moduleErr)) {
+    //   return TransferError.InvalidReceiverPortfolio;
+    // }
+
+    if (portfolioErrors.InsufficientPortfolioBalance.is(moduleErr)) {
+      return TransferError.InsufficientPortfolioBalance;
+    }
+
+    if (assetErrors.InvalidTransferComplianceFailure.is(moduleErr)) {
+      return TransferError.ComplianceFailure;
+    }
+
+    if (assetErrors.InvalidTransfer.is(moduleErr)) {
+      return TransferError.ComplianceFailure;
+    }
+  }
+
+  throw new PolymeshError({
+    code: ErrorCode.UnexpectedError,
+    message: 'Received unknown Asset can transfer status',
+  });
+}
+
+/**
+ * @hidden
+ */
 export function nftDispatchErrorToTransferError(
   error: DispatchError,
   context: Context
@@ -3381,84 +3446,28 @@ export function nftDispatchErrorToTransferError(
  * @hidden
  */
 export function granularCanTransferResultToTransferBreakdown(
-  result: GranularCanTransferResult,
+  result: Vec<DispatchError>,
   validateNftResult: DispatchResult | undefined,
   context: Context
 ): TransferBreakdown {
-  const {
-    invalid_granularity: invalidGranularity,
-    self_transfer: selfTransfer,
-    invalid_receiver_cdd: invalidReceiverCdd,
-    invalid_sender_cdd: invalidSenderCdd,
-    sender_insufficient_balance: insufficientBalance,
-    asset_frozen: assetFrozen,
-    portfolio_validity_result: {
-      sender_portfolio_does_not_exist: senderPortfolioNotExists,
-      receiver_portfolio_does_not_exist: receiverPortfolioNotExists,
-      sender_insufficient_balance: senderInsufficientBalance,
-    },
-    transfer_condition_result: transferConditionResult,
-    compliance_result: complianceResult,
-    result: finalResult,
-  } = result;
+  let general = [];
+  let canTransfer = true;
 
-  const general = [];
-
-  if (boolToBoolean(invalidGranularity)) {
-    general.push(TransferError.InvalidGranularity);
-  }
-
-  if (boolToBoolean(selfTransfer)) {
-    general.push(TransferError.SelfTransfer);
-  }
-
-  if (boolToBoolean(invalidReceiverCdd)) {
-    general.push(TransferError.InvalidReceiverCdd);
-  }
-
-  if (boolToBoolean(invalidSenderCdd)) {
-    general.push(TransferError.InvalidSenderCdd);
-  }
-
-  if (boolToBoolean(insufficientBalance)) {
-    general.push(TransferError.InsufficientBalance);
-  }
-
-  if (boolToBoolean(assetFrozen)) {
-    general.push(TransferError.TransfersFrozen);
-  }
-
-  if (boolToBoolean(senderPortfolioNotExists)) {
-    general.push(TransferError.InvalidSenderPortfolio);
-  }
-
-  if (boolToBoolean(receiverPortfolioNotExists)) {
-    general.push(TransferError.InvalidReceiverPortfolio);
-  }
-
-  if (boolToBoolean(senderInsufficientBalance)) {
-    general.push(TransferError.InsufficientPortfolioBalance);
-  }
-
-  const restrictions = transferConditionResult.map(({ condition, result: tmResult }) => {
-    return {
-      restriction: transferConditionToTransferRestriction(condition, context),
-      result: boolToBoolean(tmResult),
-    };
-  });
-
-  let canTransfer = boolToBoolean(finalResult);
-
-  if (canTransfer && validateNftResult?.isErr) {
+  if (validateNftResult?.isErr) {
     const transferError = nftDispatchErrorToTransferError(validateNftResult.asErr, context);
     general.push(transferError);
     canTransfer = false;
   }
 
+  if (result.length) {
+    const errors = result.map(error => assetDispatchErrorToTransferError(error, context));
+    general = [...general, ...errors];
+  }
+
   return {
     general,
-    compliance: assetComplianceResultToCompliance(complianceResult, context),
-    restrictions,
+    // compliance: assetComplianceResultToCompliance(complianceResult, context),
+    // restrictions,
     result: canTransfer,
   };
 }
@@ -4160,14 +4169,14 @@ export function complianceConditionsToBtreeSet(
  */
 export function toExemptKey(
   context: Context,
-  rawAssetId: TickerKey | U8aFixed,
+  rawAssetId: TickerKey | PolymeshPrimitivesAssetAssetID,
   op: PolymeshPrimitivesStatisticsStatOpType,
   claimType?: ClaimType
 ): ExemptKey {
   if (context.isV6) {
     return { asset: rawAssetId as TickerKey, op, claimType };
   }
-  return { assetId: rawAssetId as U8aFixed, op, claimType };
+  return { assetId: rawAssetId as PolymeshPrimitivesAssetAssetID, op, claimType };
 }
 
 /**
@@ -4993,7 +5002,8 @@ export function meshNftToNftId(
   assetId: string;
   ids: BigNumber[];
 } {
-  let rawTicker: U8aFixed, rawIds: Vec<u64>;
+  let rawTicker: PolymeshPrimitivesTicker | PolymeshPrimitivesAssetAssetID;
+  let rawIds: Vec<u64>;
   if (context.isV6) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ({ ticker: rawTicker, ids: rawIds } = rawInfo as any);

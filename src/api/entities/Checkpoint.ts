@@ -1,5 +1,8 @@
-import { U8aFixed, u64 } from '@polkadot/types';
-import { PolymeshPrimitivesIdentityId } from '@polkadot/types/lookup';
+import { u64 } from '@polkadot/types';
+import {
+  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesIdentityId,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import { Context, Entity, FungibleAsset, Identity } from '~/internal';
@@ -128,7 +131,10 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
     });
 
     const currentDidBalances: { did: string; balance: BigNumber }[] = [];
-    const balanceUpdatesMultiParams: [U8aFixed, PolymeshPrimitivesIdentityId][] = [];
+    const balanceUpdatesMultiParams: [
+      PolymeshPrimitivesAssetAssetID,
+      PolymeshPrimitivesIdentityId
+    ][] = [];
 
     // Prepare the query for balance updates. Push to currentDidBalances to be used if there are no updates for the balance
     entries.forEach(([storageKey, balance]) => {
@@ -147,7 +153,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
 
     const checkpointBalanceMultiParams: {
       did: string;
-      params: [(U8aFixed | u64)[], PolymeshPrimitivesIdentityId];
+      params: [(PolymeshPrimitivesAssetAssetID | u64)[], PolymeshPrimitivesIdentityId];
     }[] = [];
     const currentIdentityBalances: IdentityBalance[] = [];
 

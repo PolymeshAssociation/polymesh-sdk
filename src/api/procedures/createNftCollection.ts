@@ -7,6 +7,7 @@ import { values } from 'lodash';
 import { addManualFees } from '~/api/procedures/utils';
 import {
   BaseAsset,
+  FungibleAsset,
   Identity,
   NftCollection,
   PolymeshError,
@@ -33,6 +34,7 @@ import {
   booleanToBool,
   collectionKeysToMetadataKeys,
   internalAssetTypeToAssetType,
+  internalNftTypeToNftType,
   metadataSpecToMeshMetadataSpec,
   nameToAssetName,
   securityIdentifierToAssetIdentifier,
@@ -121,19 +123,23 @@ export async function prepareCreateNftCollection(
     : (nftType as KnownNftType);
   const transactions = [];
 
+  const signingIdentity = await context.getSigningIdentity();
+
+  const assetId = await signingIdentity.generateNextAssetId();
+
   assertTickerOk(ticker);
 
   const rawTicker = stringToTicker(ticker, context);
   const rawName = nameToAssetName(name ?? ticker, context);
   const rawNameTickerArgs = isV6 ? [rawName, rawTicker] : [rawName];
-  // const rawType = internalNftTypeToNftType(internalNftType, context);
+  const rawType = internalNftTypeToNftType(internalNftType, context);
   const rawDivisibility = booleanToBool(false, context);
   const rawIdentifiers = securityIdentifiers.map(identifier =>
     securityIdentifierToAssetIdentifier(identifier, context)
   );
   const rawFundingRound = optionize(stringToBytes)(fundingRound, context);
 
-  const nextLocalId = new BigNumber(1);
+  let nextLocalId = new BigNumber(1);
   let fee: BigNumber | undefined;
   if (status === TickerReservationStatus.Free) {
     const rawAssetType = internalAssetTypeToAssetType({ NonFungible: internalNftType }, context);
@@ -181,19 +187,19 @@ export async function prepareCreateNftCollection(
      * assets can be created with type Nft, but not have a created collection,
      * we handle this case to prevent a ticker getting stuck if it was initialized via non SDK methods
      */
-    // const asset = new FungibleAsset({ ticker }, context);
-    // let nonFungible;
-    // [fee, { nonFungible }, nextLocalId] = await Promise.all([
-    //   addManualFees(new BigNumber(0), [TxTags.nft.CreateNftCollection], context),
-    //   asset.details(),
-    //   asset.metadata.getNextLocalId(),
-    // ]);
-    // if (!nonFungible) {
-    //   throw new PolymeshError({
-    //     code: ErrorCode.UnmetPrerequisite,
-    //     message: 'Only assets with type NFT can be turned into NFT collections',
-    //   });
-    // }
+    const asset = new FungibleAsset({ assetId }, context);
+    let nonFungible;
+    [fee, { nonFungible }, nextLocalId] = await Promise.all([
+      addManualFees(new BigNumber(0), [TxTags.nft.CreateNftCollection], context),
+      asset.details(),
+      asset.metadata.getNextLocalId(),
+    ]);
+    if (!nonFungible) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'Only assets with type NFT can be turned into NFT collections',
+      });
+    }
   }
 
   const globalMetadataKeys = collectionKeys.filter(isGlobalMetadata);
@@ -242,11 +248,7 @@ export async function prepareCreateNftCollection(
     checkTxType({
       transaction: tx.nft.createNftCollection,
       fee,
-      args: [
-        rawTicker,
-        // rawType,
-        rawCollectionKeys,
-      ],
+      args: [rawTicker, rawType, rawCollectionKeys],
     })
   );
 
