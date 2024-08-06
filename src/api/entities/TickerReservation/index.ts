@@ -110,7 +110,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
 
     const rawTicker = stringToTicker(ticker, context);
 
-    const assembleResult = (
+    const assembleResultV6 = (
       reservationOpt: Option<PalletAssetTickerRegistration>,
       tokenOpt: Option<PalletAssetSecurityToken>
     ): TickerReservationDetails => {
@@ -159,20 +159,28 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
           [tokensStorage, rawTicker],
         ],
         ([registration, token]) => {
-          // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
-          callback(assembleResult(registration, token));
+          // eslint-disable-next-line @typescript-eslint/no-floating-promises, @typescript-eslint/no-explicit-any -- callback errors should be handled by the caller
+          callback(assembleResultV6(registration, token as any));
         }
       );
+    }
+
+    let rawAssetId = rawTicker;
+
+    if (!isV6) {
+      const meshAssetId = await asset.tickerAssetID(rawTicker);
+
+      rawAssetId = meshAssetId.unwrapOrDefault();
     }
 
     const [tickerRegistration, meshAsset] = await requestMulti<
       [typeof tickerRegistrationStorage, typeof tokensStorage]
     >(context, [
       [tickerRegistrationStorage, rawTicker],
-      [tokensStorage, rawTicker],
+      [tokensStorage, rawAssetId],
     ]);
 
-    return assembleResult(tickerRegistration, meshAsset);
+    return assembleResultV6(tickerRegistration, meshAsset);
   }
 
   /**
