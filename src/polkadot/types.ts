@@ -2,6 +2,7 @@
 /* eslint-disable */
 
 export * from './asset/types.js';
+export * from './compliance/types.js';
 export * from './group/types.js';
 export * from './identity/types.js';
 export * from './nft/types.js';

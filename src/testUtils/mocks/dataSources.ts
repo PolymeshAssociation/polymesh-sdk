@@ -51,7 +51,6 @@ import {
 } from '@polkadot/types/interfaces';
 import {
   FrameSystemPhase,
-  PalletAssetAssetOwnershipRelation,
   PalletAssetSecurityToken,
   PalletAssetTickerRegistration,
   PalletAssetTickerRegistrationConfig,
@@ -126,10 +125,10 @@ import {
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesStatisticsStatUpdate,
+  PolymeshPrimitivesSubsetSubsetRestrictionAssetID,
   PolymeshPrimitivesSubsetSubsetRestrictionDispatchableName,
   PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
   PolymeshPrimitivesSubsetSubsetRestrictionPortfolioId,
-  PolymeshPrimitivesSubsetSubsetRestrictionTicker,
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceAssetTransferCompliance,
   PolymeshPrimitivesTransferComplianceTransferCondition,
@@ -160,7 +159,6 @@ import {
   AssetCount,
   AuthorizationType as MeshAuthorizationType,
   CanTransferGranularReturn,
-  CanTransferResult,
   CddStatus,
   ComplianceRequirementResult,
   ConditionResult,
@@ -2558,8 +2556,8 @@ export const createMockAssetPermissions = (
     | 'Whole'
     | { These: PolymeshPrimitivesTicker[] }
     | { Except: PolymeshPrimitivesTicker[] }
-): MockCodec<PolymeshPrimitivesSubsetSubsetRestrictionTicker> => {
-  return createMockEnum<PolymeshPrimitivesSubsetSubsetRestrictionTicker>(assetPermissions);
+): MockCodec<PolymeshPrimitivesSubsetSubsetRestrictionAssetID> => {
+  return createMockEnum<PolymeshPrimitivesSubsetSubsetRestrictionAssetID>(assetPermissions);
 };
 
 /**
@@ -2595,7 +2593,7 @@ export const createMockPortfolioPermissions = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockPermissions = (permissions?: {
-  asset: PolymeshPrimitivesSubsetSubsetRestrictionTicker;
+  asset: PolymeshPrimitivesSubsetSubsetRestrictionAssetID;
   extrinsic: PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions;
   portfolio: PolymeshPrimitivesSubsetSubsetRestrictionPortfolioId;
 }): MockCodec<PolymeshPrimitivesSecondaryKeyPermissions> => {
@@ -3079,9 +3077,9 @@ export const createMockKeyRecord = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockCanTransferResult = (
-  canTransferResult?: { Ok: u8 } | { Err: Bytes }
-): MockCodec<CanTransferResult> => createMockEnum<CanTransferResult>(canTransferResult);
+// export const createMockCanTransferResult = (
+//   canTransferResult?: { Ok: u8 } | { Err: Bytes }
+// ): MockCodec<CanTransferResult> => createMockEnum<CanTransferResult>(canTransferResult);
 
 /**
  * @hidden
@@ -3099,10 +3097,10 @@ export const createMockText = (value?: string | Text): MockCodec<Text> => {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockAssetOwnershipRelation = (
-  assetOwnershipRelation?: 'NotOwned' | 'TickerOwned' | 'AssetOwned'
-): MockCodec<PalletAssetAssetOwnershipRelation> =>
-  createMockEnum<PalletAssetAssetOwnershipRelation>(assetOwnershipRelation);
+// export const createMockAssetOwnershipRelation = (
+//   assetOwnershipRelation?: 'NotOwned' | 'TickerOwned' | 'AssetOwned'
+// ): MockCodec<PalletAssetAssetOwnershipRelation> =>
+//   createMockEnum<PalletAssetAssetOwnershipRelation>(assetOwnershipRelation);
 
 /**
  * @hidden
@@ -3630,8 +3628,8 @@ export const createMockCAId = (
         localId: u32 | Parameters<typeof createMockU32>[0];
       }
 ): MockCodec<PalletCorporateActionsCaId> => {
-  const { ticker, localId } = caId ?? {
-    ticker: createMockTicker(),
+  const { assetId, localId } = caId ?? {
+    assetId: createMockTicker(),
     localId: createMockU32(),
   };
 

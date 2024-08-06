@@ -13,11 +13,11 @@ import {
 import { RpcInterface } from '@polkadot/rpc-core/types';
 import { u32 } from '@polkadot/types';
 import {
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import { ISubmittableResult, Signer as PolkadotSigner } from '@polkadot/types/types';
-import { U8aFixed } from '@polkadot/types-codec';
 import BigNumber from 'bignumber.js';
 
 import { Identity, Procedure } from '~/internal';
@@ -340,7 +340,7 @@ export interface TickerKey {
 }
 
 export interface AssetIdKey {
-  AssetId: U8aFixed;
+  AssetId: PolymeshPrimitivesAssetAssetID;
 }
 
 /**
@@ -357,7 +357,7 @@ export type ExemptKey = {
       asset: TickerKey;
     }
   | {
-      assetId: U8aFixed;
+      assetId: PolymeshPrimitivesAssetAssetID;
     }
 );
 
@@ -373,5 +373,5 @@ export type MeshTickerOrAssetId =
       ticker: PolymeshPrimitivesTicker;
     }
   | {
-      assetId: U8aFixed;
+      assetId: PolymeshPrimitivesAssetAssetID;
     };

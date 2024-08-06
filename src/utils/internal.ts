@@ -1026,7 +1026,7 @@ export async function getAssetIdForTicker(ticker: string, context: Context): Pro
   let assetId = '';
   assertTickerValid(ticker);
   const rawTicker = stringToTicker(ticker, context);
-  const rawAssetId = await asset.assetIDTicker(rawTicker);
+  const rawAssetId = await asset.tickerAssetID(rawTicker);
   if (rawAssetId.isSome) {
     assetId = assetIdToString(rawAssetId.unwrap());
   }
