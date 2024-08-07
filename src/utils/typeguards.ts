@@ -17,6 +17,7 @@ import {
   Identity,
   Instruction,
   KnownPermissionGroup,
+  MultiSig,
   NftCollection,
   NumberedPortfolio,
   Offering,
@@ -368,6 +369,13 @@ export function isFungibleAsset(asset: BaseAsset): asset is FungibleAsset {
  */
 export function isNftCollection(asset: BaseAsset): asset is NftCollection {
   return asset instanceof NftCollection;
+}
+
+/**
+ * Return whether an account is MultiSig
+ */
+export function isMultiSigAccount(account: Account | MultiSig): account is MultiSig {
+  return account instanceof MultiSig;
 }
 
 /**
