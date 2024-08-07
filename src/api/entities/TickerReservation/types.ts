@@ -15,7 +15,7 @@ export enum TickerReservationStatus {
   AssetCreated = 'AssetCreated',
 }
 
-export interface TickerReservationDetails {
+export type TickerReservationDetails = {
   /**
    * Identity ID of the owner of the ticker, null if it hasn't been reserved
    */
@@ -24,5 +24,15 @@ export interface TickerReservationDetails {
    * date at which the reservation expires, null if it never expires (permanent reservation or Asset already launched)
    */
   expiryDate: Date | null;
-  status: TickerReservationStatus;
-}
+} & (
+  | {
+      status: TickerReservationStatus.Free | TickerReservationStatus.Reserved;
+    }
+  | {
+      status: TickerReservationStatus.AssetCreated;
+      /**
+       * Asset ID to which this ticker is linked.
+       */
+      assetId: string;
+    }
+);

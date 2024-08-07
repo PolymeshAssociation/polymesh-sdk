@@ -19,7 +19,12 @@ import {
   TransferTickerOwnershipParams,
   UnsubCallback,
 } from '~/types';
-import { identityIdToString, momentToDate, stringToTicker } from '~/utils/conversion';
+import {
+  identityIdToString,
+  meshAssetToAssetId,
+  momentToDate,
+  stringToTicker,
+} from '~/utils/conversion';
 import { assertTickerValid, createProcedureMethod, requestMulti } from '~/utils/internal';
 
 import { TickerReservationDetails, TickerReservationStatus } from './types';
@@ -112,7 +117,8 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
 
     const assembleResultV6 = (
       reservationOpt: Option<PalletAssetTickerRegistration>,
-      tokenOpt: Option<PalletAssetSecurityToken>
+      tokenOpt: Option<PalletAssetSecurityToken>,
+      assetId: string
     ): TickerReservationDetails => {
       let owner: Identity | null = null;
       let status = TickerReservationStatus.Free;
@@ -136,6 +142,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
         owner,
         expiryDate,
         status,
+        assetId,
       };
     };
 
@@ -160,7 +167,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
         ],
         ([registration, token]) => {
           // eslint-disable-next-line @typescript-eslint/no-floating-promises, @typescript-eslint/no-explicit-any -- callback errors should be handled by the caller
-          callback(assembleResultV6(registration, token as any));
+          callback(assembleResultV6(registration, token as any, ticker));
         }
       );
     }
@@ -180,7 +187,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
       [tokensStorage, rawAssetId],
     ]);
 
-    return assembleResultV6(tickerRegistration, meshAsset);
+    return assembleResultV6(tickerRegistration, meshAsset, meshAssetToAssetId(rawAssetId, context));
   }
 
   /**

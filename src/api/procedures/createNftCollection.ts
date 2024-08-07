@@ -4,11 +4,9 @@ import { Bytes, u32 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
 
-import { addManualFees } from '~/api/procedures/utils';
 import {
   BaseAsset,
   FungibleAsset,
-  Identity,
   NftCollection,
   PolymeshError,
   Procedure,
@@ -30,6 +28,7 @@ import {
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import {
   assetDocumentToDocument,
+  assetToMeshAssetId,
   bigNumberToU32,
   booleanToBool,
   collectionKeysToMetadataKeys,
@@ -41,7 +40,7 @@ import {
   stringToBytes,
   stringToTicker,
 } from '~/utils/conversion';
-import { checkTxType, isAllowedCharacters, optionize } from '~/utils/internal';
+import { asBaseAsset, checkTxType, isAllowedCharacters, optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -73,11 +72,10 @@ export interface Storage {
     rawValue: Bytes;
   } | null;
 
-  status: TickerReservationStatus;
-
-  signingIdentity: Identity;
-
   needsLocalMetadata: boolean;
+  status?: TickerReservationStatus;
+  assetId: string;
+  isAssetCreated: boolean;
 }
 
 /**
@@ -107,7 +105,7 @@ export async function prepareCreateNftCollection(
       isV6,
     },
     context,
-    storage: { customTypeData, status },
+    storage: { customTypeData, status, assetId, isAssetCreated },
   } = this;
   const {
     ticker,
@@ -118,20 +116,17 @@ export async function prepareCreateNftCollection(
     documents,
     fundingRound,
   } = args;
+
   const internalNftType = customTypeData
     ? { Custom: customTypeData.rawId }
     : (nftType as KnownNftType);
+
   const transactions = [];
 
-  const signingIdentity = await context.getSigningIdentity();
+  const rawAssetId = assetToMeshAssetId(asBaseAsset(assetId, context), context);
 
-  const assetId = await signingIdentity.generateNextAssetId();
-
-  assertTickerOk(ticker);
-
-  const rawTicker = stringToTicker(ticker, context);
-  const rawName = nameToAssetName(name ?? ticker, context);
-  const rawNameTickerArgs = isV6 ? [rawName, rawTicker] : [rawName];
+  const rawName = nameToAssetName(name ?? ticker ?? assetId, context);
+  const rawNameTickerArgs = isV6 ? [rawName, rawAssetId] : [rawName];
   const rawType = internalNftTypeToNftType(internalNftType, context);
   const rawDivisibility = booleanToBool(false, context);
   const rawIdentifiers = securityIdentifiers.map(identifier =>
@@ -139,58 +134,22 @@ export async function prepareCreateNftCollection(
   );
   const rawFundingRound = optionize(stringToBytes)(fundingRound, context);
 
-  let nextLocalId = new BigNumber(1);
-  let fee: BigNumber | undefined;
-  if (status === TickerReservationStatus.Free) {
-    const rawAssetType = internalAssetTypeToAssetType({ NonFungible: internalNftType }, context);
-    fee = await addManualFees(
-      new BigNumber(0),
-      [TxTags.asset.RegisterTicker, TxTags.asset.CreateAsset, TxTags.nft.CreateNftCollection],
-      context
-    );
+  const rawAssetType = internalAssetTypeToAssetType({ NonFungible: internalNftType }, context);
 
-    transactions.push(
-      checkTxType({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        transaction: tx.asset.createAsset as any,
-        args: [
-          ...rawNameTickerArgs,
-          rawDivisibility,
-          rawAssetType,
-          rawIdentifiers,
-          rawFundingRound,
-        ],
-      })
-    );
-  } else if (status === TickerReservationStatus.Reserved) {
-    const rawAssetType = internalAssetTypeToAssetType({ NonFungible: internalNftType }, context);
-    fee = await addManualFees(
-      new BigNumber(0),
-      [TxTags.asset.CreateAsset, TxTags.nft.CreateNftCollection],
-      context
-    );
-    transactions.push(
-      checkTxType({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        transaction: tx.asset.createAsset as any,
-        args: [
-          ...rawNameTickerArgs,
-          rawDivisibility,
-          rawAssetType,
-          rawIdentifiers,
-          rawFundingRound,
-        ],
-      })
-    );
-  } else if (status === TickerReservationStatus.AssetCreated) {
+  let nextLocalId = new BigNumber(1);
+
+  let fee: BigNumber | undefined;
+
+  const txTags: TxTag[] = [TxTags.nft.CreateNftCollection];
+
+  if (isAssetCreated) {
     /**
      * assets can be created with type Nft, but not have a created collection,
      * we handle this case to prevent a ticker getting stuck if it was initialized via non SDK methods
      */
     const asset = new FungibleAsset({ assetId }, context);
     let nonFungible;
-    [fee, { nonFungible }, nextLocalId] = await Promise.all([
-      addManualFees(new BigNumber(0), [TxTags.nft.CreateNftCollection], context),
+    [{ nonFungible }, nextLocalId] = await Promise.all([
       asset.details(),
       asset.metadata.getNextLocalId(),
     ]);
@@ -199,6 +158,46 @@ export async function prepareCreateNftCollection(
         code: ErrorCode.UnmetPrerequisite,
         message: 'Only assets with type NFT can be turned into NFT collections',
       });
+    }
+  } else {
+    if (isV6) {
+      txTags.push(TxTags.asset.RegisterTicker);
+    }
+    txTags.push(TxTags.asset.CreateAsset);
+    transactions.push(
+      checkTxType({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        transaction: tx.asset.createAsset as any,
+        args: [
+          ...rawNameTickerArgs,
+          rawDivisibility,
+          rawAssetType,
+          rawIdentifiers,
+          rawFundingRound,
+        ],
+      })
+    );
+  }
+
+  if (!isV6 && ticker && status) {
+    if (status === TickerReservationStatus.Free) {
+      txTags.push(TxTags.asset.RegisterUniqueTicker);
+      transactions.push(
+        checkTxType({
+          transaction: tx.asset.registerUniqueTicker,
+          args: [stringToTicker(ticker, context)],
+        })
+      );
+    }
+
+    if (status !== TickerReservationStatus.AssetCreated) {
+      txTags.push(TxTags.asset.LinkTickerToAssetId);
+      transactions.push(
+        checkTxType({
+          transaction: tx.asset.linkTickerToAssetId,
+          args: [stringToTicker(ticker, context), rawAssetId],
+        })
+      );
     }
   }
 
@@ -213,7 +212,7 @@ export async function prepareCreateNftCollection(
     transactions.push(
       checkTxType({
         transaction: tx.asset.registerAssetMetadataLocalType,
-        args: [rawTicker, rawMetadataName, rawSpec],
+        args: [rawAssetId, rawMetadataName, rawSpec],
       })
     );
   });
@@ -239,7 +238,7 @@ export async function prepareCreateNftCollection(
       checkTxType({
         transaction: tx.asset.addDocuments,
         feeMultiplier,
-        args: [rawDocuments, rawTicker],
+        args: [rawDocuments, rawAssetId],
       })
     );
   }
@@ -248,13 +247,13 @@ export async function prepareCreateNftCollection(
     checkTxType({
       transaction: tx.nft.createNftCollection,
       fee,
-      args: [rawTicker, rawType, rawCollectionKeys],
+      args: [rawAssetId, rawType, rawCollectionKeys],
     })
   );
 
   return {
     transactions,
-    resolver: new NftCollection({ assetId: ticker }, context),
+    resolver: new NftCollection({ assetId }, context),
   };
 }
 
@@ -266,14 +265,23 @@ export async function getAuthorization(
   { ticker, documents }: Params
 ): Promise<ProcedureAuthorization> {
   const {
-    storage: { status, needsLocalMetadata },
+    storage: { status, needsLocalMetadata, isAssetCreated, assetId },
     context,
+    context: { isV6 },
   } = this;
 
   const transactions: TxTag[] = [TxTags.nft.CreateNftCollection];
 
-  if (status !== TickerReservationStatus.AssetCreated) {
+  if (!isAssetCreated) {
     transactions.push(TxTags.asset.CreateAsset);
+  }
+
+  if (!isV6 && status === TickerReservationStatus.Free) {
+    transactions.push(TxTags.asset.RegisterUniqueTicker);
+  }
+
+  if (!isV6 && status && status !== TickerReservationStatus.AssetCreated) {
+    transactions.push(TxTags.asset.LinkTickerToAssetId);
   }
 
   if (needsLocalMetadata) {
@@ -290,16 +298,18 @@ export async function getAuthorization(
     portfolios: [],
   };
 
-  if (status === TickerReservationStatus.Reserved) {
+  if (ticker && status && status === TickerReservationStatus.Reserved) {
     return {
       permissions,
       roles: [{ type: RoleType.TickerOwner, ticker }],
     };
-  } else if (status === TickerReservationStatus.AssetCreated) {
+  }
+
+  if (isAssetCreated) {
     return {
       permissions: {
         ...permissions,
-        assets: [new BaseAsset({ assetId: ticker }, context)],
+        assets: [new BaseAsset({ assetId }, context)],
       },
     };
   }
@@ -312,32 +322,75 @@ export async function getAuthorization(
  */
 export async function prepareStorage(
   this: Procedure<Params, NftCollection, Storage>,
-  { ticker, nftType, collectionKeys }: Params
+  { ticker, assetId, nftType, collectionKeys }: Params
 ): Promise<Storage> {
-  const { context } = this;
+  const {
+    context,
+    context: { isV6 },
+  } = this;
+
+  const signingIdentity = await context.getSigningIdentity();
+
+  const assertNftCollectionDoesNotExists = async (id: string): Promise<void> => {
+    const nft = new NftCollection({ assetId: id }, context);
+    const collectionExists = await nft.exists();
+
+    if (collectionExists) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'An NFT collection already exists with the ticker',
+        data: { ticker },
+      });
+    }
+  };
+
+  const storageStatus: Pick<Storage, 'status' | 'assetId' | 'isAssetCreated'> = {
+    isAssetCreated: false,
+    assetId: '',
+  };
+
+  if (ticker) {
+    assertTickerOk(ticker);
+
+    if (isV6) {
+      storageStatus.assetId = ticker;
+    }
+
+    const reservation = new TickerReservation({ ticker }, context);
+    const reservationDetails = await reservation.details();
+    const { status } = reservationDetails;
+    storageStatus.status = status;
+    if (status === TickerReservationStatus.AssetCreated) {
+      storageStatus.assetId = reservationDetails.assetId;
+      storageStatus.isAssetCreated = true;
+      if (!isV6 && assetId && assetId !== reservationDetails.assetId) {
+        throw new PolymeshError({
+          code: ErrorCode.UnmetPrerequisite,
+          message: 'Ticker is already linked to another asset',
+          data: {
+            ticker,
+            linkedAssetId: reservationDetails.assetId,
+          },
+        });
+      }
+      await assertNftCollectionDoesNotExists(reservationDetails.assetId);
+    } else {
+      storageStatus.assetId = await signingIdentity.getNextAssetId();
+    }
+  } else if (isV6) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Ticker must be provided while creating a NFT collection',
+    });
+  }
+
+  if (!isV6 && assetId) {
+    storageStatus.assetId = assetId;
+    storageStatus.isAssetCreated = true;
+    await assertNftCollectionDoesNotExists(assetId);
+  }
 
   const needsLocalMetadata = collectionKeys.some(isLocalMetadata);
-  const reservation = new TickerReservation({ ticker }, context);
-
-  // const nft = new NftCollection({ ticker }, context);
-
-  const [
-    { status },
-    signingIdentity,
-    // collectionExists
-  ] = await Promise.all([
-    reservation.details(),
-    context.getSigningIdentity(),
-    // nft.exists(),
-  ]);
-
-  // if (collectionExists) {
-  //   throw new PolymeshError({
-  //     code: ErrorCode.UnmetPrerequisite,
-  //     message: 'An NFT collection already exists with the ticker',
-  //     data: { ticker },
-  //   });
-  // }
 
   let customTypeData: Storage['customTypeData'];
 
@@ -380,9 +433,8 @@ export async function prepareStorage(
 
   return {
     customTypeData,
-    status,
-    signingIdentity,
     needsLocalMetadata,
+    ...storageStatus,
   };
 }
 
