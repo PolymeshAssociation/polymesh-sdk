@@ -92,7 +92,7 @@ describe('TransferRestrictionBase class', () => {
       when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
-            args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.Count },
+            args: { asset, ...args, type: TransferRestrictionType.Count },
             transformer: undefined,
           },
           context,
@@ -120,7 +120,7 @@ describe('TransferRestrictionBase class', () => {
       when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
-            args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.Percentage },
+            args: { asset, ...args, type: TransferRestrictionType.Percentage },
             transformer: undefined,
           },
           context,
@@ -161,7 +161,7 @@ describe('TransferRestrictionBase class', () => {
       when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
-            args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.Count },
+            args: { asset, ...args, type: TransferRestrictionType.Count },
             transformer: undefined,
           },
           context,
@@ -188,7 +188,7 @@ describe('TransferRestrictionBase class', () => {
       when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
-            args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.Percentage },
+            args: { asset, ...args, type: TransferRestrictionType.Percentage },
             transformer: undefined,
           },
           context,
@@ -226,7 +226,7 @@ describe('TransferRestrictionBase class', () => {
       when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
-            args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.ClaimCount },
+            args: { asset, ...args, type: TransferRestrictionType.ClaimCount },
             transformer: undefined,
           },
           context,
@@ -255,7 +255,7 @@ describe('TransferRestrictionBase class', () => {
       when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
-            args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.ClaimPercentage },
+            args: { asset, ...args, type: TransferRestrictionType.ClaimPercentage },
             transformer: undefined,
           },
           context,
@@ -292,7 +292,7 @@ describe('TransferRestrictionBase class', () => {
       when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
-            args: { ticker: asset.ticker, restrictions: [], type: TransferRestrictionType.Count },
+            args: { asset, restrictions: [], type: TransferRestrictionType.Count },
             transformer: undefined,
           },
           context,
@@ -314,7 +314,7 @@ describe('TransferRestrictionBase class', () => {
         .calledWith(
           {
             args: {
-              ticker: asset.ticker,
+              asset,
               restrictions: [],
               type: TransferRestrictionType.Percentage,
             },
@@ -515,7 +515,7 @@ describe('TransferRestrictionBase class', () => {
         .calledWith(
           {
             args: {
-              ticker: asset.ticker,
+              asset,
               count: new BigNumber(3),
               type: TransferRestrictionType.Count,
             },
@@ -542,7 +542,7 @@ describe('TransferRestrictionBase class', () => {
         .calledWith(
           {
             args: {
-              ticker: asset.ticker,
+              asset,
               type: StatType.Balance,
             },
             transformer: undefined,
@@ -582,7 +582,7 @@ describe('TransferRestrictionBase class', () => {
         .calledWith(
           {
             args: {
-              ticker: asset.ticker,
+              asset,
               type: StatType.Count,
             },
             transformer: undefined,
@@ -608,7 +608,7 @@ describe('TransferRestrictionBase class', () => {
         .calledWith(
           {
             args: {
-              ticker: asset.ticker,
+              asset,
               type: StatType.Balance,
             },
             transformer: undefined,
@@ -635,7 +635,7 @@ describe('TransferRestrictionBase class', () => {
         .calledWith(
           {
             args: {
-              ticker: asset.ticker,
+              asset,
               type: StatType.ScopedCount,
               issuer,
               claimType: ClaimType.Jurisdiction,
@@ -667,7 +667,7 @@ describe('TransferRestrictionBase class', () => {
         .calledWith(
           {
             args: {
-              ticker: asset.ticker,
+              asset,
               type: StatType.ScopedBalance,
               issuer,
               claimType: ClaimType.Jurisdiction,

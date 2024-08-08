@@ -64,14 +64,14 @@ describe('Requirements class', () => {
       const asset = entityMockUtils.getFungibleAssetInstance();
       const requirements = new Requirements(asset, context);
 
-      const args: Omit<Params, 'ticker'> = {
+      const args: Omit<Params, 'asset'> = {
         requirements: [
           [
             {
               type: ConditionType.IsPresent,
               claim: {
                 type: ClaimType.Exempted,
-                scope: { type: ScopeType.Ticker, value: 'SOME_TICKER' },
+                scope: { type: ScopeType.Asset, value: '0x1234' },
               },
               target: ConditionTarget.Both,
             },
@@ -79,7 +79,7 @@ describe('Requirements class', () => {
               type: ConditionType.IsAbsent,
               claim: {
                 type: ClaimType.Blocked,
-                scope: { type: ScopeType.Ticker, value: 'SOME_TICKER' },
+                scope: { type: ScopeType.Asset, value: '0x1234' },
               },
               target: ConditionTarget.Both,
             },
@@ -91,11 +91,7 @@ describe('Requirements class', () => {
         'someTransaction' as unknown as PolymeshTransaction<FungibleAsset>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith(
-          { args: { ticker: asset.ticker, ...args }, transformer: undefined },
-          context,
-          {}
-        )
+        .calledWith({ args: { asset, ...args }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
       const tx = await requirements.set(args);
@@ -120,7 +116,7 @@ describe('Requirements class', () => {
             type: ConditionType.IsPresent,
             claim: {
               type: ClaimType.Exempted,
-              scope: { type: ScopeType.Ticker, value: 'SOME_TICKER' },
+              scope: { type: ScopeType.Asset, value: '0x1234' },
             },
             target: ConditionTarget.Both,
           },
@@ -128,7 +124,7 @@ describe('Requirements class', () => {
             type: ConditionType.IsAbsent,
             claim: {
               type: ClaimType.Blocked,
-              scope: { type: ScopeType.Ticker, value: 'SOME_TICKER' },
+              scope: { type: ScopeType.Asset, value: '0x1234' },
             },
             target: ConditionTarget.Both,
           },
@@ -139,11 +135,7 @@ describe('Requirements class', () => {
         'someTransaction' as unknown as PolymeshTransaction<FungibleAsset>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith(
-          { args: { ticker: asset.ticker, ...args }, transformer: undefined },
-          context,
-          {}
-        )
+        .calledWith({ args: { asset, ...args }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
       const tx = await requirements.add(args);
@@ -170,11 +162,7 @@ describe('Requirements class', () => {
         'someTransaction' as unknown as PolymeshTransaction<FungibleAsset>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith(
-          { args: { ticker: asset.ticker, ...args }, transformer: undefined },
-          context,
-          {}
-        )
+        .calledWith({ args: { asset, ...args }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
       const tx = await requirements.remove(args);
@@ -196,11 +184,7 @@ describe('Requirements class', () => {
       const expectedQueue = 'someQueue' as unknown as PolymeshTransaction<FungibleAsset>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith(
-          { args: { ticker: asset.ticker, requirements: [] }, transformer: undefined },
-          context,
-          {}
-        )
+        .calledWith({ args: { asset, requirements: [] }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedQueue);
 
       const tx = await requirements.reset();
@@ -210,7 +194,7 @@ describe('Requirements class', () => {
   });
 
   describe('method: get', () => {
-    let ticker: string;
+    let assetId: string;
     let context: Context;
     let asset: FungibleAsset;
     let requirements: Requirements;
@@ -236,9 +220,9 @@ describe('Requirements class', () => {
     });
 
     beforeEach(() => {
-      ticker = 'FAKE_TICKER';
+      assetId = '0x1234';
       context = dsMockUtils.getContextInstance();
-      asset = entityMockUtils.getFungibleAssetInstance({ ticker });
+      asset = entityMockUtils.getFungibleAssetInstance({ assetId });
       requirements = new Requirements(asset, context);
       defaultClaimIssuers = [
         {
@@ -445,11 +429,7 @@ describe('Requirements class', () => {
       const expectedQueue = 'someQueue' as unknown as PolymeshTransaction<FungibleAsset>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith(
-          { args: { ticker: asset.ticker, pause: true }, transformer: undefined },
-          context,
-          {}
-        )
+        .calledWith({ args: { asset, pause: true }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedQueue);
 
       const tx = await requirements.pause();
@@ -471,11 +451,7 @@ describe('Requirements class', () => {
       const expectedQueue = 'someQueue' as unknown as PolymeshTransaction<FungibleAsset>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith(
-          { args: { ticker: asset.ticker, pause: false }, transformer: undefined },
-          context,
-          {}
-        )
+        .calledWith({ args: { asset, pause: false }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedQueue);
 
       const tx = await requirements.unpause();
@@ -508,11 +484,7 @@ describe('Requirements class', () => {
       const expectedQueue = 'someQueue' as unknown as PolymeshTransaction<FungibleAsset>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith(
-          { args: { ticker: asset.ticker, ...args }, transformer: undefined },
-          context,
-          {}
-        )
+        .calledWith({ args: { asset, ...args }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedQueue);
 
       const tx = await requirements.modify(args);
@@ -530,21 +502,21 @@ describe('Requirements class', () => {
       const fakeResult = false;
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getFungibleAssetInstance();
-      const rawTicker = dsMockUtils.createMockTicker(asset.ticker);
+      const rawAssetId = dsMockUtils.createMockAssetId(asset.id);
       const mockBool = dsMockUtils.createMockBool(fakeResult);
 
-      const requirements = new Requirements(asset, context);
+      when(jest.spyOn(utilsConversionModule, 'assetToMeshAssetId'))
+        .calledWith(asset, context)
+        .mockReturnValue(rawAssetId);
 
-      when(jest.spyOn(utilsConversionModule, 'stringToTicker'))
-        .calledWith(asset.ticker, context)
-        .mockReturnValue(rawTicker);
+      const requirements = new Requirements(asset, context);
 
       when(jest.spyOn(utilsConversionModule, 'boolToBoolean'))
         .calledWith(mockBool)
         .mockReturnValue(fakeResult);
 
       when(dsMockUtils.createQueryMock('complianceManager', 'assetCompliances'))
-        .calledWith(rawTicker)
+        .calledWith(rawAssetId)
         .mockResolvedValue({ paused: mockBool });
 
       const result = await requirements.arePaused();

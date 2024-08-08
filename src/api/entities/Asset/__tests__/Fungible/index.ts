@@ -2,8 +2,8 @@ import { bool, Bytes, Option } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import {
   PalletAssetSecurityToken,
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesAssetIdentifier,
-  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -24,7 +24,6 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { ErrorCode, SecurityIdentifier, SecurityIdentifierType } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
-import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -59,26 +58,25 @@ describe('Fungible class', () => {
   });
 
   describe('constructor', () => {
-    it('should assign ticker and did to instance', () => {
-      const ticker = 'test';
+    it('should assign assetId to instance', () => {
+      const assetId = '0x1234';
       const context = dsMockUtils.getContextInstance();
-      const asset = new FungibleAsset({ ticker }, context);
+      const asset = new FungibleAsset({ assetId }, context);
 
-      expect(asset.ticker).toBe(ticker);
-      expect(asset.did).toBe(utilsConversionModule.tickerToDid(ticker));
+      expect(asset.id).toBe(assetId);
     });
   });
 
   describe('method: isUniqueIdentifiers', () => {
     it('should return true if the object conforms to the interface', () => {
-      expect(FungibleAsset.isUniqueIdentifiers({ ticker: 'SOME_TICKER' })).toBe(true);
+      expect(FungibleAsset.isUniqueIdentifiers({ assetId: '0x1234' })).toBe(true);
       expect(FungibleAsset.isUniqueIdentifiers({})).toBe(false);
-      expect(FungibleAsset.isUniqueIdentifiers({ ticker: 3 })).toBe(false);
+      expect(FungibleAsset.isUniqueIdentifiers({ assetId: 3 })).toBe(false);
     });
   });
 
   describe('method: details', () => {
-    let ticker: string;
+    let assetId: string;
     let name: string;
     let totalSupply: BigNumber;
     let isDivisible: boolean;
@@ -93,7 +91,7 @@ describe('Fungible class', () => {
     let asset: FungibleAsset;
 
     beforeAll(() => {
-      ticker = 'FAKE_TICKER';
+      assetId = '0x1234';
       name = 'tokenName';
       totalSupply = new BigNumber(1000);
       isDivisible = true;
@@ -114,20 +112,20 @@ describe('Fungible class', () => {
       );
       rawName = dsMockUtils.createMockOption(dsMockUtils.createMockBytes(name));
       context = dsMockUtils.getContextInstance();
-      asset = new FungibleAsset({ ticker }, context);
+      asset = new FungibleAsset({ assetId }, context);
 
       dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         entries: [
           tuple(
-            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(did)],
+            [dsMockUtils.createMockAssetId(assetId), dsMockUtils.createMockIdentityId(did)],
             dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('PolymeshV1PIA'))
           ),
           tuple(
-            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(owner)],
+            [dsMockUtils.createMockAssetId(assetId), dsMockUtils.createMockIdentityId(owner)],
             dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('Full'))
           ),
           tuple(
-            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(did)],
+            [dsMockUtils.createMockAssetId(assetId), dsMockUtils.createMockIdentityId(did)],
             dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('ExceptMeta'))
           ),
         ],
@@ -138,7 +136,7 @@ describe('Fungible class', () => {
     });
 
     it('should return details for an Asset', async () => {
-      const tokensMock = dsMockUtils.createQueryMock('asset', 'tokens', {
+      const tokensMock = dsMockUtils.createQueryMock('asset', 'securityTokens', {
         returnValue: rawToken,
       });
 
@@ -157,7 +155,7 @@ describe('Fungible class', () => {
       dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         entries: [
           tuple(
-            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(did)],
+            [dsMockUtils.createMockAssetId(assetId), dsMockUtils.createMockIdentityId(did)],
             dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('Full'))
           ),
         ],
@@ -191,7 +189,7 @@ describe('Fungible class', () => {
     });
 
     it('should throw if asset was not found', () => {
-      const tokensMock = dsMockUtils.createQueryMock('asset', 'tokens', {
+      const tokensMock = dsMockUtils.createQueryMock('asset', 'securityTokens', {
         returnValue: dsMockUtils.createMockOption(),
       });
       tokensMock.mockResolvedValue(dsMockUtils.createMockOption());
@@ -209,11 +207,13 @@ describe('Fungible class', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (rawToken as any).primaryIssuanceAgent = dsMockUtils.createMockOption();
 
-      dsMockUtils.createQueryMock('asset', 'tokens').mockImplementation(async (_, cbFunc) => {
-        cbFunc(rawToken);
+      dsMockUtils
+        .createQueryMock('asset', 'securityTokens')
+        .mockImplementation(async (_, cbFunc) => {
+          cbFunc(rawToken);
 
-        return unsubCallback;
-      });
+          return unsubCallback;
+        });
 
       when(bytesToStringSpy).calledWith(rawName).mockReturnValue(name);
 
@@ -235,9 +235,9 @@ describe('Fungible class', () => {
 
   describe('method: transferOwnership', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const ticker = 'TEST';
+      const assetId = 'TEST';
       const context = dsMockUtils.getContextInstance();
-      const asset = new FungibleAsset({ ticker }, context);
+      const asset = new FungibleAsset({ assetId }, context);
       const target = 'someOtherDid';
       const expiry = new Date('10/14/3040');
 
@@ -250,7 +250,7 @@ describe('Fungible class', () => {
         'someTransaction' as unknown as PolymeshTransaction<FungibleAsset>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: { ticker, ...args }, transformer: undefined }, context, {})
+        .calledWith({ args: { asset, ...args }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
       const tx = await asset.transferOwnership(args);
@@ -261,9 +261,9 @@ describe('Fungible class', () => {
 
   describe('method: addRequiredMediators', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const ticker = 'TEST';
+      const assetId = 'TEST';
       const context = dsMockUtils.getContextInstance();
-      const asset = new FungibleAsset({ ticker }, context);
+      const asset = new FungibleAsset({ assetId }, context);
       const args = {
         asset,
         mediators: ['newDid'],
@@ -283,9 +283,9 @@ describe('Fungible class', () => {
 
   describe('method: removeRequiredMediators', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const ticker = 'TEST';
+      const assetId = 'TEST';
       const context = dsMockUtils.getContextInstance();
-      const asset = new FungibleAsset({ ticker }, context);
+      const asset = new FungibleAsset({ assetId }, context);
       const args = {
         asset,
         mediators: ['currentDid'],
@@ -305,9 +305,9 @@ describe('Fungible class', () => {
 
   describe('method: modify', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const ticker = 'TEST';
+      const assetId = 'TEST';
       const context = dsMockUtils.getContextInstance();
-      const asset = new FungibleAsset({ ticker }, context);
+      const asset = new FungibleAsset({ assetId }, context);
       const makeDivisible = true as const;
 
       const args = {
@@ -318,7 +318,7 @@ describe('Fungible class', () => {
         'someTransaction' as unknown as PolymeshTransaction<FungibleAsset>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: { ticker, ...args }, transformer: undefined }, context, {})
+        .calledWith({ args: { asset, ...args }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
       const tx = await asset.modify(args);
@@ -328,7 +328,7 @@ describe('Fungible class', () => {
   });
 
   describe('method: currentFundingRound', () => {
-    let ticker: string;
+    let assetId: string;
     let fundingRound: string;
     let rawFundingRound: Bytes;
 
@@ -336,14 +336,14 @@ describe('Fungible class', () => {
     let asset: FungibleAsset;
 
     beforeAll(() => {
-      ticker = 'FAKE_TICKER';
+      assetId = '0x1234';
       fundingRound = 'Series A';
     });
 
     beforeEach(() => {
       rawFundingRound = dsMockUtils.createMockBytes(fundingRound);
       context = dsMockUtils.getContextInstance();
-      asset = new FungibleAsset({ ticker }, context);
+      asset = new FungibleAsset({ assetId }, context);
     });
 
     it('should return null if there is no funding round for an Asset', async () => {
@@ -385,7 +385,7 @@ describe('Fungible class', () => {
   });
 
   describe('method: getIdentifiers', () => {
-    let ticker: string;
+    let assetId: string;
     let isinValue: string;
     let cusipValue: string;
     let cinsValue: string;
@@ -402,7 +402,7 @@ describe('Fungible class', () => {
     let asset: FungibleAsset;
 
     beforeAll(() => {
-      ticker = 'TEST';
+      assetId = 'TEST';
       isinValue = 'FAKE ISIN';
       cusipValue = 'FAKE CUSIP';
       cinsValue = 'FAKE CINS';
@@ -449,11 +449,11 @@ describe('Fungible class', () => {
 
     beforeEach(() => {
       context = dsMockUtils.getContextInstance();
-      asset = new FungibleAsset({ ticker }, context);
+      asset = new FungibleAsset({ assetId }, context);
     });
 
     it('should return the list of security identifiers for an Asset', async () => {
-      dsMockUtils.createQueryMock('asset', 'identifiers', {
+      dsMockUtils.createQueryMock('asset', 'assetIdentifiers', {
         returnValue: [isinMock, cusipMock, cinsMock, leiMock, figiMock],
       });
 
@@ -469,11 +469,13 @@ describe('Fungible class', () => {
     it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
 
-      dsMockUtils.createQueryMock('asset', 'identifiers').mockImplementation(async (_, cbFunc) => {
-        cbFunc([isinMock, cusipMock, cinsMock, leiMock, figiMock]);
+      dsMockUtils
+        .createQueryMock('asset', 'assetIdentifiers')
+        .mockImplementation(async (_, cbFunc) => {
+          cbFunc([isinMock, cusipMock, cinsMock, leiMock, figiMock]);
 
-        return unsubCallback;
-      });
+          return unsubCallback;
+        });
 
       const callback = jest.fn();
       const result = await asset.getIdentifiers(callback);
@@ -485,17 +487,17 @@ describe('Fungible class', () => {
 
   describe('method: createdAt', () => {
     it('should return the event identifier object of the Asset creation', async () => {
-      const ticker = 'SOME_TICKER';
+      const assetId = '0x1234';
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
       const blockHash = 'someHash';
       const eventIdx = new BigNumber(1);
       const variables = {
-        ticker,
+        id: assetId,
       };
       const fakeResult = { blockNumber, blockHash, blockDate, eventIndex: eventIdx };
       const context = dsMockUtils.getContextInstance();
-      const asset = new FungibleAsset({ ticker }, context);
+      const asset = new FungibleAsset({ assetId }, context);
 
       dsMockUtils.createApolloQueryMock(assetQuery(variables), {
         assets: {
@@ -518,12 +520,12 @@ describe('Fungible class', () => {
     });
 
     it('should return null if the query result is empty', async () => {
-      const ticker = 'SOME_TICKER';
+      const assetId = '0x1234';
       const variables = {
-        ticker,
+        id: assetId,
       };
       const context = dsMockUtils.getContextInstance();
-      const asset = new FungibleAsset({ ticker }, context);
+      const asset = new FungibleAsset({ assetId }, context);
 
       dsMockUtils.createApolloQueryMock(assetQuery(variables), {
         assets: {
@@ -537,15 +539,15 @@ describe('Fungible class', () => {
 
   describe('method: freeze', () => {
     it('should prepare the procedure and return the resulting transaction', async () => {
-      const ticker = 'TICKER';
+      const assetId = '0x1234';
       const context = dsMockUtils.getContextInstance();
-      const asset = new FungibleAsset({ ticker }, context);
+      const asset = new FungibleAsset({ assetId }, context);
 
       const expectedTransaction =
         'someTransaction' as unknown as PolymeshTransaction<FungibleAsset>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: { ticker, freeze: true }, transformer: undefined }, context, {})
+        .calledWith({ args: { asset, freeze: true }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
       const tx = await asset.freeze();
@@ -556,15 +558,15 @@ describe('Fungible class', () => {
 
   describe('method: unfreeze', () => {
     it('should prepare the procedure and return the resulting transaction', async () => {
-      const ticker = 'TICKER';
+      const assetId = '0x1234';
       const context = dsMockUtils.getContextInstance();
-      const asset = new FungibleAsset({ ticker }, context);
+      const asset = new FungibleAsset({ assetId }, context);
 
       const expectedTransaction =
         'someTransaction' as unknown as PolymeshTransaction<FungibleAsset>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: { ticker, freeze: false }, transformer: undefined }, context, {})
+        .calledWith({ args: { asset, freeze: false }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
       const tx = await asset.unfreeze();
@@ -588,9 +590,9 @@ describe('Fungible class', () => {
     });
 
     it('should return whether the Asset is frozen or not', async () => {
-      const ticker = 'TICKER';
+      const assetId = '0x1234';
       const context = dsMockUtils.getContextInstance();
-      const asset = new FungibleAsset({ ticker }, context);
+      const asset = new FungibleAsset({ assetId }, context);
 
       frozenMock.mockResolvedValue(rawBoolValue);
 
@@ -600,9 +602,9 @@ describe('Fungible class', () => {
     });
 
     it('should allow subscription', async () => {
-      const ticker = 'TICKER';
+      const assetId = '0x1234';
       const context = dsMockUtils.getContextInstance();
-      const asset = new FungibleAsset({ ticker }, context);
+      const asset = new FungibleAsset({ assetId }, context);
       const unsubCallback = 'unsubCallBack';
 
       frozenMock.mockImplementation(async (_, cbFunc) => {
@@ -620,15 +622,15 @@ describe('Fungible class', () => {
 
   describe('method: redeem', () => {
     it('should prepare the procedure and return the resulting transaction', async () => {
-      const ticker = 'TICKER';
+      const assetId = '0x1234';
       const amount = new BigNumber(100);
       const context = dsMockUtils.getContextInstance();
-      const asset = new FungibleAsset({ ticker }, context);
+      const asset = new FungibleAsset({ assetId }, context);
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: { amount, ticker }, transformer: undefined }, context, {})
+        .calledWith({ args: { amount, asset }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
       const queue = await asset.redeem({ amount });
@@ -638,40 +640,40 @@ describe('Fungible class', () => {
   });
 
   describe('method: investorCount', () => {
-    let ticker: string;
-    let rawTicker: PolymeshPrimitivesTicker;
-    let stringToTickerSpy: jest.SpyInstance;
+    let assetId: string;
+    let rawAssetId: PolymeshPrimitivesAssetAssetID;
+    let stringToAssetIdSpy: jest.SpyInstance;
     let boolToBooleanSpy: jest.SpyInstance<boolean, [bool]>;
 
     beforeAll(() => {
-      ticker = 'TICKER';
-      rawTicker = dsMockUtils.createMockTicker(ticker);
-      stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+      assetId = '0x1234';
+      rawAssetId = dsMockUtils.createMockAssetId(assetId);
+      stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
       boolToBooleanSpy = jest.spyOn(utilsConversionModule, 'boolToBoolean');
     });
 
     beforeEach(() => {
-      when(stringToTickerSpy).calledWith(ticker).mockReturnValue(rawTicker);
+      when(stringToAssetIdSpy).calledWith(assetId).mockReturnValue(rawAssetId);
     });
 
     it('should return the amount of unique investors that hold the Asset when PUIS is disabled', async () => {
       const context = dsMockUtils.getContextInstance();
-      const asset = new FungibleAsset({ ticker }, context);
+      const asset = new FungibleAsset({ assetId }, context);
 
       boolToBooleanSpy.mockReturnValue(true);
 
       dsMockUtils.createQueryMock('asset', 'balanceOf', {
         entries: [
           tuple(
-            [rawTicker, dsMockUtils.createMockIdentityId('0x600')],
+            [rawAssetId, dsMockUtils.createMockIdentityId('0x600')],
             dsMockUtils.createMockBalance(new BigNumber(100))
           ),
           tuple(
-            [rawTicker, dsMockUtils.createMockIdentityId('0x500')],
+            [rawAssetId, dsMockUtils.createMockIdentityId('0x500')],
             dsMockUtils.createMockBalance(new BigNumber(100))
           ),
           tuple(
-            [rawTicker, dsMockUtils.createMockIdentityId('0x400')],
+            [rawAssetId, dsMockUtils.createMockIdentityId('0x400')],
             dsMockUtils.createMockBalance(new BigNumber(0))
           ),
         ],
@@ -685,17 +687,17 @@ describe('Fungible class', () => {
 
   describe('method: controllerTransfer', () => {
     it('should prepare the procedure and return the resulting transaction', async () => {
-      const ticker = 'TICKER';
+      const assetId = '0x1234';
       const originPortfolio = 'portfolio';
       const amount = new BigNumber(1);
       const context = dsMockUtils.getContextInstance();
-      const asset = new FungibleAsset({ ticker }, context);
+      const asset = new FungibleAsset({ assetId }, context);
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       when(procedureMockUtils.getPrepareMock())
         .calledWith(
-          { args: { ticker, originPortfolio, amount }, transformer: undefined },
+          { args: { asset, originPortfolio, amount }, transformer: undefined },
           context,
           {}
         )
@@ -709,10 +711,9 @@ describe('Fungible class', () => {
 
   describe('method: getOperationHistory', () => {
     it('should return a list of agent operations', async () => {
-      const ticker = 'TICKER';
-      jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware').mockResolvedValue(ticker);
+      const assetId = '0x1234';
       const context = dsMockUtils.getContextInstance();
-      const asset = new FungibleAsset({ ticker }, context);
+      const asset = new FungibleAsset({ assetId }, context);
 
       const did = 'someDid';
       const blockId = new BigNumber(1);
@@ -722,7 +723,7 @@ describe('Fungible class', () => {
 
       dsMockUtils.createApolloQueryMock(
         tickerExternalAgentHistoryQuery({
-          assetId: ticker,
+          assetId,
         }),
         {
           tickerExternalAgentHistories: {
@@ -755,7 +756,7 @@ describe('Fungible class', () => {
 
       dsMockUtils.createApolloQueryMock(
         tickerExternalAgentHistoryQuery({
-          assetId: ticker,
+          assetId,
         }),
         {
           tickerExternalAgentHistories: {
@@ -772,19 +773,14 @@ describe('Fungible class', () => {
 
   describe('method: getTransactionHistory', () => {
     it('should return the list of asset transactions', async () => {
-      const ticker = 'TICKER';
       const assetId = '0x1234';
       const context = dsMockUtils.getContextInstance();
-      jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware').mockResolvedValue(ticker);
-      const asset = new FungibleAsset({ ticker }, context);
+      const asset = new FungibleAsset({ assetId }, context);
       const transactionResponse = {
         totalCount: new BigNumber(5),
         nodes: [
           {
-            asset: {
-              id: assetId,
-              ticker,
-            },
+            assetId,
             amount: new BigNumber(100).shiftedBy(6),
             eventId: EventIdEnum.Issued,
             toPortfolioId: 'SOME_DID/0',
@@ -798,10 +794,7 @@ describe('Fungible class', () => {
             },
           },
           {
-            asset: {
-              id: assetId,
-              ticker,
-            },
+            assetId,
             amount: new BigNumber(1).shiftedBy(6),
             eventId: EventIdEnum.Redeemed,
             fromPortfolioId: 'SOME_DID/0',
@@ -815,10 +808,7 @@ describe('Fungible class', () => {
             },
           },
           {
-            asset: {
-              id: assetId,
-              ticker,
-            },
+            assetId,
             amount: new BigNumber(10).shiftedBy(6),
             eventId: EventIdEnum.Transfer,
             fromPortfolioId: 'SOME_DID/0',
@@ -837,7 +827,7 @@ describe('Fungible class', () => {
       };
 
       dsMockUtils.createApolloQueryMock(
-        assetTransactionQuery({ assetId: ticker }, new BigNumber(3), new BigNumber(0)),
+        assetTransactionQuery({ assetId }, new BigNumber(3), new BigNumber(0)),
         {
           assetTransactions: transactionResponse,
         }
@@ -848,19 +838,19 @@ describe('Fungible class', () => {
         start: new BigNumber(0),
       });
 
-      expect(result.data[0].asset.ticker).toEqual(ticker);
+      expect(result.data[0].asset.id).toEqual(assetId);
       expect(result.data[0].amount).toEqual(new BigNumber(100));
       expect(result.data[0].event).toEqual(transactionResponse.nodes[0].eventId);
       expect(result.data[0].from).toBeNull();
       expect(result.data[0].to instanceof DefaultPortfolio).toBe(true);
 
-      expect(result.data[1].asset.ticker).toEqual(ticker);
+      expect(result.data[1].asset.id).toEqual(assetId);
       expect(result.data[1].amount).toEqual(new BigNumber(1));
       expect(result.data[1].event).toEqual(transactionResponse.nodes[1].eventId);
       expect(result.data[1].to).toBeNull();
       expect(result.data[1].from).toBeInstanceOf(DefaultPortfolio);
 
-      expect(result.data[2].asset.ticker).toEqual(ticker);
+      expect(result.data[2].asset.id).toEqual(assetId);
       expect(result.data[2].amount).toEqual(new BigNumber(10));
       expect(result.data[2].event).toEqual(transactionResponse.nodes[2].eventId);
       expect(result.data[2].from).toBeInstanceOf(DefaultPortfolio);
@@ -875,15 +865,15 @@ describe('Fungible class', () => {
 
   describe('method: exists', () => {
     it('should return whether the Asset exists', async () => {
-      const ticker = 'TICKER';
+      const assetId = '0x1234';
       const context = dsMockUtils.getContextInstance();
-      const asset = new FungibleAsset({ ticker }, context);
+      const asset = new FungibleAsset({ assetId }, context);
 
-      dsMockUtils.createQueryMock('asset', 'tokens', {
+      dsMockUtils.createQueryMock('asset', 'securityTokens', {
         size: new BigNumber(10),
       });
 
-      dsMockUtils.createQueryMock('nft', 'collectionTicker', {
+      dsMockUtils.createQueryMock('nft', 'collectionAsset', {
         returnValue: dsMockUtils.createMockU64(new BigNumber(0)),
       });
 
@@ -891,7 +881,7 @@ describe('Fungible class', () => {
 
       expect(result).toBe(true);
 
-      dsMockUtils.createQueryMock('nft', 'collectionTicker', {
+      dsMockUtils.createQueryMock('nft', 'collectionAsset', {
         returnValue: dsMockUtils.createMockU64(new BigNumber(2)),
       });
 
@@ -899,11 +889,11 @@ describe('Fungible class', () => {
 
       expect(result).toBe(false);
 
-      dsMockUtils.createQueryMock('asset', 'tokens', {
+      dsMockUtils.createQueryMock('asset', 'securityTokens', {
         size: new BigNumber(0),
       });
 
-      dsMockUtils.createQueryMock('nft', 'collectionTicker', {
+      dsMockUtils.createQueryMock('nft', 'collectionAsset', {
         returnValue: dsMockUtils.createMockU64(new BigNumber(0)),
       });
 
@@ -916,9 +906,9 @@ describe('Fungible class', () => {
   describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       const context = dsMockUtils.getContextInstance();
-      const asset = new FungibleAsset({ ticker: 'SOME_TICKER' }, context);
+      const asset = new FungibleAsset({ assetId: '0x1234' }, context);
 
-      expect(asset.toHuman()).toBe('SOME_TICKER');
+      expect(asset.toHuman()).toBe('0x1234');
     });
   });
 
@@ -928,9 +918,9 @@ describe('Fungible class', () => {
         returnValue: [dsMockUtils.createMockIdentityId('someDid')],
       });
 
-      const ticker = 'TICKER';
+      const assetId = '0x1234';
       const context = dsMockUtils.getContextInstance();
-      const asset = new FungibleAsset({ ticker }, context);
+      const asset = new FungibleAsset({ assetId }, context);
 
       const result = await asset.getRequiredMediators();
 

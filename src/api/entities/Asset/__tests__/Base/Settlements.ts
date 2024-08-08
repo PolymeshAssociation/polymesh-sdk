@@ -1,21 +1,20 @@
 import { AccountId, Balance, DispatchError } from '@polkadot/types/interfaces';
 import {
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioId,
-  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
+import { Vec } from '@polkadot/types-codec';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { FungibleSettlements, NonFungibleSettlements } from '~/api/entities/Asset/Base/Settlements';
-import { Context, Namespace, PolymeshError, PolymeshTransaction } from '~/internal';
-import { GranularCanTransferResult } from '~/polkadot';
+import { Context, Namespace, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { createMockCanTransferGranularReturn } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import {
   DefaultPortfolio,
-  ErrorCode,
+  FungibleAsset,
   NftCollection,
   NumberedPortfolio,
   PortfolioId,
@@ -24,8 +23,6 @@ import {
 } from '~/types';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
-
-import { FungibleAsset } from '../../Fungible';
 
 jest.mock(
   '~/base/Procedure',
@@ -36,7 +33,7 @@ describe('Settlements class', () => {
   let mockContext: Mocked<Context>;
   let mockAsset: Mocked<FungibleAsset>;
   let stringToAccountIdSpy: jest.SpyInstance<AccountId, [string, Context]>;
-  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let stringToAssetIdSpy: jest.SpyInstance<PolymeshPrimitivesAssetAssetID, [string, Context]>;
   let bigNumberToBalanceSpy: jest.SpyInstance;
   let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance<
     PolymeshPrimitivesIdentityIdPortfolioId,
@@ -49,12 +46,12 @@ describe('Settlements class', () => {
   >;
   let stringToIdentityIdSpy: jest.SpyInstance<PolymeshPrimitivesIdentityId, [string, Context]>;
   let rawAccountId: AccountId;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let rawToDid: PolymeshPrimitivesIdentityId;
   let rawAmount: Balance;
   let amount: BigNumber;
   let toDid: string;
-  let ticker: string;
+  let assetId: string;
   let fromDid: string;
   let fromPortfolioId: PortfolioId;
   let toPortfolioId: PortfolioId;
@@ -63,7 +60,7 @@ describe('Settlements class', () => {
   let rawFromDid: PolymeshPrimitivesIdentityId;
   let fromPortfolio: entityMockUtils.MockDefaultPortfolio;
   let toPortfolio: entityMockUtils.MockDefaultPortfolio;
-  let granularCanTransferResultToTransferBreakdownSpy: jest.SpyInstance;
+  let transferReportToTransferBreakdownSpy: jest.SpyInstance;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -73,7 +70,7 @@ describe('Settlements class', () => {
     toDid = 'toDid';
     amount = new BigNumber(100);
     stringToAccountIdSpy = jest.spyOn(utilsConversionModule, 'stringToAccountId');
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
     bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
     portfolioIdToMeshPortfolioIdSpy = jest.spyOn(
       utilsConversionModule,
@@ -89,9 +86,9 @@ describe('Settlements class', () => {
     rawFromDid = dsMockUtils.createMockIdentityId(fromDid);
     rawFromPortfolio = dsMockUtils.createMockPortfolioId({ did: fromDid, kind: 'Default' });
     rawToPortfolio = dsMockUtils.createMockPortfolioId({ did: toDid, kind: 'Default' });
-    granularCanTransferResultToTransferBreakdownSpy = jest.spyOn(
+    transferReportToTransferBreakdownSpy = jest.spyOn(
       utilsConversionModule,
-      'granularCanTransferResultToTransferBreakdown'
+      'transferReportToTransferBreakdown'
     );
   });
 
@@ -99,9 +96,9 @@ describe('Settlements class', () => {
     mockContext = dsMockUtils.getContextInstance();
     mockAsset = entityMockUtils.getFungibleAssetInstance();
 
-    ticker = mockAsset.ticker;
+    assetId = mockAsset.id;
     rawAccountId = dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID);
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
     rawToDid = dsMockUtils.createMockIdentityId(toDid);
     toPortfolio = entityMockUtils.getDefaultPortfolioInstance({
       ...toPortfolioId,
@@ -126,7 +123,7 @@ describe('Settlements class', () => {
     when(stringToAccountIdSpy)
       .calledWith(DUMMY_ACCOUNT_ID, mockContext)
       .mockReturnValue(rawAccountId);
-    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(stringToAssetIdSpy).calledWith(assetId, mockContext).mockReturnValue(rawAssetId);
     when(stringToIdentityIdSpy).calledWith(toDid, mockContext).mockReturnValue(rawToDid);
     when(bigNumberToBalanceSpy).calledWith(amount, mockContext, false).mockReturnValue(rawAmount);
   });
@@ -180,100 +177,26 @@ describe('Settlements class', () => {
             })
           );
 
-        const okResponse = 'rpcResponse' as unknown as GranularCanTransferResult;
-        const response = createMockCanTransferGranularReturn({
-          Ok: okResponse,
-        });
+        const response = 'rpcResponse' as unknown as Vec<DispatchError>;
 
-        when(dsMockUtils.createCallMock('assetApi', 'canTransferGranular'))
-          .calledWith(
-            rawSigningDid,
-            rawFromPortfolio,
-            rawToDid,
-            rawToPortfolio,
-            rawTicker,
-            rawAmount
-          )
-          .mockReturnValue(response);
+        dsMockUtils.createCallMock('assetApi', 'transferReport').mockReturnValue(response);
 
         const expected = 'breakdown' as unknown as TransferBreakdown;
 
-        when(granularCanTransferResultToTransferBreakdownSpy)
-          .calledWith(okResponse, undefined, mockContext)
+        when(transferReportToTransferBreakdownSpy)
+          .calledWith(response, undefined, mockContext)
           .mockReturnValue(expected);
 
         const result = await settlements.canTransfer({ to: toDid, amount });
 
         expect(result).toEqual(expected);
       });
-
-      it('should return a transfer breakdown representing whether the transaction can be made from another Identity', async () => {
-        const okResponse = 'rpcResponse' as unknown as GranularCanTransferResult;
-        const response = createMockCanTransferGranularReturn({
-          Ok: okResponse,
-        });
-
-        when(portfolioIdToMeshPortfolioIdSpy)
-          .calledWith({ did: fromDid }, mockContext)
-          .mockReturnValue(rawFromPortfolio);
-
-        fromPortfolio.getCustodian.mockResolvedValue(
-          entityMockUtils.getIdentityInstance({ did: fromDid })
-        );
-        toPortfolio.getCustodian.mockResolvedValue(
-          entityMockUtils.getIdentityInstance({ did: toDid })
-        );
-        when(dsMockUtils.createCallMock('assetApi', 'canTransferGranular'))
-          .calledWith(rawFromDid, rawFromPortfolio, rawToDid, rawToPortfolio, rawTicker, rawAmount)
-          .mockReturnValue(response);
-
-        const expected = 'breakdown' as unknown as TransferBreakdown;
-
-        when(granularCanTransferResultToTransferBreakdownSpy)
-          .calledWith(okResponse, undefined, mockContext)
-          .mockReturnValue(expected);
-
-        const result = await settlements.canTransfer({ from: fromDid, to: toDid, amount });
-
-        expect(result).toEqual(expected);
-      });
-
-      it('should error if response is Err', () => {
-        const errResponse = 'unexpected error' as unknown as DispatchError;
-        const response = createMockCanTransferGranularReturn({
-          Err: errResponse,
-        });
-
-        when(portfolioIdToMeshPortfolioIdSpy)
-          .calledWith({ did: fromDid }, mockContext)
-          .mockReturnValue(rawFromPortfolio);
-
-        fromPortfolio.getCustodian.mockResolvedValue(
-          entityMockUtils.getIdentityInstance({ did: fromDid })
-        );
-        toPortfolio.getCustodian.mockResolvedValue(
-          entityMockUtils.getIdentityInstance({ did: toDid })
-        );
-        when(dsMockUtils.createCallMock('assetApi', 'canTransferGranular'))
-          .calledWith(rawFromDid, rawFromPortfolio, rawToDid, rawToPortfolio, rawTicker, rawAmount)
-          .mockReturnValue(response);
-
-        const expectedError = new PolymeshError({
-          message:
-            'RPC result from "asset.canTransferGranular" was not OK. Execution meter was likely exceeded',
-          code: ErrorCode.LimitExceeded,
-        });
-
-        return expect(
-          settlements.canTransfer({ from: fromDid, to: toDid, amount })
-        ).rejects.toThrow(expectedError);
-      });
     });
 
     describe('method: preApproveTicker', () => {
       it('should prepare the procedure and return the resulting transaction', async () => {
         const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
-        const args = { ticker, preApprove: true };
+        const args = { asset: mockAsset, preApprove: true };
 
         when(procedureMockUtils.getPrepareMock())
           .calledWith({ args, transformer: undefined }, mockContext, {})
@@ -288,7 +211,7 @@ describe('Settlements class', () => {
     describe('method: removePreApproval', () => {
       it('should prepare the procedure and return the resulting transaction', async () => {
         const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
-        const args = { ticker, preApprove: false };
+        const args = { asset: mockAsset, preApprove: false };
 
         when(procedureMockUtils.getPrepareMock())
           .calledWith({ args, transformer: undefined }, mockContext, {})
@@ -315,10 +238,7 @@ describe('Settlements class', () => {
     });
 
     it('should work for NftCollections', async () => {
-      const okResponse = 'rpcResponse' as unknown as GranularCanTransferResult;
-      const response = createMockCanTransferGranularReturn({
-        Ok: okResponse,
-      });
+      const response = 'rpcResponse' as unknown as Vec<DispatchError>;
 
       when(portfolioIdToMeshPortfolioIdSpy)
         .calledWith({ did: fromDid }, mockContext)
@@ -330,7 +250,7 @@ describe('Settlements class', () => {
       toPortfolio.getCustodian.mockResolvedValue(
         entityMockUtils.getIdentityInstance({ did: toDid })
       );
-      dsMockUtils.createCallMock('assetApi', 'canTransferGranular').mockReturnValue(response);
+      dsMockUtils.createCallMock('assetApi', 'transferReport').mockReturnValue(response);
 
       const mockDispatch = dsMockUtils.createMockDispatchResult();
       dsMockUtils.createCallMock('nftApi', 'validateNftTransfer', {
@@ -339,8 +259,8 @@ describe('Settlements class', () => {
 
       const expected = 'breakdown' as unknown as TransferBreakdown;
 
-      when(granularCanTransferResultToTransferBreakdownSpy)
-        .calledWith(okResponse, mockDispatch, mockContext)
+      when(transferReportToTransferBreakdownSpy)
+        .calledWith(response, mockDispatch, mockContext)
         .mockReturnValue(expected);
 
       const result = await settlements.canTransfer({

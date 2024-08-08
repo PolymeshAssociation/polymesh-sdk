@@ -153,6 +153,7 @@ import {
   AuthorizationType as MeshAuthorizationType,
   CddStatus,
   ComplianceRequirementResult,
+  GranularCanTransferResult,
   Moment,
 } from '~/polkadot/polymesh';
 import {
@@ -290,7 +291,6 @@ import {
   assertTickerValid,
   conditionsAreEqual,
   createClaim,
-  getAssetIdForMiddleware,
   getAssetIdFromMiddleware,
   isModuleOrTagMatch,
   optionize,
@@ -2329,10 +2329,7 @@ export function middlewareScopeToScope(scope: MiddlewareScope): Scope {
   switch (type) {
     case ClaimScopeTypeEnum.Ticker:
     case ClaimScopeTypeEnum.Asset:
-      return {
-        type: ScopeType.Ticker,
-        value: getAssetIdFromMiddleware({ id: value, ticker: value }),
-      };
+      return { type: ScopeType.Asset, value: removePadding(value) };
     case ClaimScopeTypeEnum.Identity:
     case ClaimScopeTypeEnum.Custom:
       return { type: scope.type as ScopeType, value };
@@ -3446,6 +3443,92 @@ export function nftDispatchErrorToTransferError(
  * @hidden
  */
 export function granularCanTransferResultToTransferBreakdown(
+  result: GranularCanTransferResult,
+  validateNftResult: DispatchResult | undefined,
+  context: Context
+): TransferBreakdown {
+  const {
+    invalid_granularity: invalidGranularity,
+    self_transfer: selfTransfer,
+    invalid_receiver_cdd: invalidReceiverCdd,
+    invalid_sender_cdd: invalidSenderCdd,
+    sender_insufficient_balance: insufficientBalance,
+    asset_frozen: assetFrozen,
+    portfolio_validity_result: {
+      sender_portfolio_does_not_exist: senderPortfolioNotExists,
+      receiver_portfolio_does_not_exist: receiverPortfolioNotExists,
+      sender_insufficient_balance: senderInsufficientBalance,
+    },
+    transfer_condition_result: transferConditionResult,
+    compliance_result: complianceResult,
+    result: finalResult,
+  } = result;
+
+  const general = [];
+
+  if (boolToBoolean(invalidGranularity)) {
+    general.push(TransferError.InvalidGranularity);
+  }
+
+  if (boolToBoolean(selfTransfer)) {
+    general.push(TransferError.SelfTransfer);
+  }
+
+  if (boolToBoolean(invalidReceiverCdd)) {
+    general.push(TransferError.InvalidReceiverCdd);
+  }
+
+  if (boolToBoolean(invalidSenderCdd)) {
+    general.push(TransferError.InvalidSenderCdd);
+  }
+
+  if (boolToBoolean(insufficientBalance)) {
+    general.push(TransferError.InsufficientBalance);
+  }
+
+  if (boolToBoolean(assetFrozen)) {
+    general.push(TransferError.TransfersFrozen);
+  }
+
+  if (boolToBoolean(senderPortfolioNotExists)) {
+    general.push(TransferError.InvalidSenderPortfolio);
+  }
+
+  if (boolToBoolean(receiverPortfolioNotExists)) {
+    general.push(TransferError.InvalidReceiverPortfolio);
+  }
+
+  if (boolToBoolean(senderInsufficientBalance)) {
+    general.push(TransferError.InsufficientPortfolioBalance);
+  }
+
+  const restrictions = transferConditionResult.map(({ condition, result: tmResult }) => {
+    return {
+      restriction: transferConditionToTransferRestriction(condition, context),
+      result: boolToBoolean(tmResult),
+    };
+  });
+
+  let canTransfer = boolToBoolean(finalResult);
+
+  if (canTransfer && validateNftResult?.isErr) {
+    const transferError = nftDispatchErrorToTransferError(validateNftResult.asErr, context);
+    general.push(transferError);
+    canTransfer = false;
+  }
+
+  return {
+    general,
+    compliance: assetComplianceResultToCompliance(complianceResult, context),
+    restrictions,
+    result: canTransfer,
+  };
+}
+
+/**
+ * @hidden
+ */
+export function transferReportToTransferBreakdown(
   result: Vec<DispatchError>,
   validateNftResult: DispatchResult | undefined,
   context: Context
@@ -3467,7 +3550,7 @@ export function granularCanTransferResultToTransferBreakdown(
   return {
     general,
     // compliance: assetComplianceResultToCompliance(complianceResult, context),
-    // restrictions,
+    restrictions: [],
     result: canTransfer,
   };
 }

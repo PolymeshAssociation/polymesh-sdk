@@ -20,11 +20,11 @@ import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
  * Get Asset details for a given ticker
  */
 export function assetQuery(
-  variables: QueryArgs<Asset, 'ticker'>
-): QueryOptions<QueryArgs<Asset, 'ticker'>> {
+  variables: QueryArgs<Asset, 'id'>
+): QueryOptions<QueryArgs<Asset, 'id'>> {
   const query = gql`
-    query AssetQuery($ticker: String!) {
-      assets(filter: { ticker: { equalTo: $ticker } }) {
+    query AssetQuery($id: String!) {
+      assets(filter: { id: { equalTo: $id } }) {
         nodes {
           eventIdx
           createdBlock {

@@ -8,7 +8,7 @@ jest.mock(
 );
 
 describe('KnownPermissionGroup class', () => {
-  const ticker = 'ASSET_NAME';
+  const assetId = '0x1234';
 
   let context: Context;
 
@@ -37,9 +37,9 @@ describe('KnownPermissionGroup class', () => {
   describe('constructor', () => {
     it('should assign id to instance', () => {
       const type = PermissionGroupType.Full;
-      const knownPermissionGroup = new KnownPermissionGroup({ type, ticker }, context);
+      const knownPermissionGroup = new KnownPermissionGroup({ type, assetId }, context);
 
-      expect(knownPermissionGroup.asset.ticker).toBe(ticker);
+      expect(knownPermissionGroup.asset.id).toBe(assetId);
       expect(knownPermissionGroup.type).toBe(type);
     });
   });
@@ -49,11 +49,11 @@ describe('KnownPermissionGroup class', () => {
       expect(
         KnownPermissionGroup.isUniqueIdentifiers({
           type: PermissionGroupType.PolymeshV1Caa,
-          ticker,
+          assetId,
         })
       ).toBe(true);
       expect(KnownPermissionGroup.isUniqueIdentifiers({})).toBe(false);
-      expect(KnownPermissionGroup.isUniqueIdentifiers({ ticker })).toBe(false);
+      expect(KnownPermissionGroup.isUniqueIdentifiers({ assetId })).toBe(false);
     });
   });
 
@@ -61,14 +61,15 @@ describe('KnownPermissionGroup class', () => {
     it('should return a human readable version of the entity', () => {
       entityMockUtils.configureMocks({
         fungibleAssetOptions: {
-          toHuman: ticker,
+          toHuman: assetId,
         },
       });
       const type = PermissionGroupType.Full;
-      const knownPermissionGroup = new KnownPermissionGroup({ type, ticker }, context);
+      const knownPermissionGroup = new KnownPermissionGroup({ type, assetId }, context);
       expect(knownPermissionGroup.toHuman()).toEqual({
         type,
-        ticker,
+        assetId,
+        ticker: assetId,
       });
     });
   });
@@ -76,7 +77,7 @@ describe('KnownPermissionGroup class', () => {
   describe('method: getPermissions', () => {
     it('should return a list of permissions and transaction groups', async () => {
       let type = PermissionGroupType.ExceptMeta;
-      let knownPermissionGroup = new KnownPermissionGroup({ type, ticker }, context);
+      let knownPermissionGroup = new KnownPermissionGroup({ type, assetId }, context);
 
       let result = await knownPermissionGroup.getPermissions();
 
@@ -86,7 +87,7 @@ describe('KnownPermissionGroup class', () => {
       });
 
       type = PermissionGroupType.PolymeshV1Caa;
-      knownPermissionGroup = new KnownPermissionGroup({ type, ticker }, context);
+      knownPermissionGroup = new KnownPermissionGroup({ type, assetId }, context);
 
       result = await knownPermissionGroup.getPermissions();
 
@@ -99,7 +100,7 @@ describe('KnownPermissionGroup class', () => {
       });
 
       type = PermissionGroupType.PolymeshV1Pia;
-      knownPermissionGroup = new KnownPermissionGroup({ type, ticker }, context);
+      knownPermissionGroup = new KnownPermissionGroup({ type, assetId }, context);
 
       result = await knownPermissionGroup.getPermissions();
 
@@ -113,7 +114,7 @@ describe('KnownPermissionGroup class', () => {
       });
 
       type = PermissionGroupType.Full;
-      knownPermissionGroup = new KnownPermissionGroup({ type, ticker }, context);
+      knownPermissionGroup = new KnownPermissionGroup({ type, assetId }, context);
 
       result = await knownPermissionGroup.getPermissions();
 
@@ -124,7 +125,7 @@ describe('KnownPermissionGroup class', () => {
   describe('exists', () => {
     it('should return true', () => {
       const type = PermissionGroupType.ExceptMeta;
-      const knownPermissionGroup = new KnownPermissionGroup({ type, ticker }, context);
+      const knownPermissionGroup = new KnownPermissionGroup({ type, assetId }, context);
 
       return expect(knownPermissionGroup.exists()).resolves.toBe(true);
     });

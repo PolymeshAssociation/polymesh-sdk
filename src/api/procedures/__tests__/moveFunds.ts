@@ -481,7 +481,7 @@ describe('moveFunds procedure', () => {
       .calledWith(toPortfolioId, mockContext)
       .mockReturnValue(rawToMeshPortfolioId);
 
-    const rawMovePortfolioItem = dsMockUtils.createMockMovePortfolioItem({
+    const rawMovePortfolioItem = dsMockUtils.createMockMovePortfolioItemAsFungible({
       ticker: dsMockUtils.createMockTicker((items[0].asset as FungibleAsset).ticker),
       amount: dsMockUtils.createMockBalance(items[0].amount),
     });

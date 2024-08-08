@@ -61,11 +61,7 @@ describe('Documents class', () => {
         'someTransaction' as unknown as PolymeshTransaction<FungibleAsset>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith(
-          { args: { ticker: asset.ticker, ...args }, transformer: undefined },
-          context,
-          {}
-        )
+        .calledWith({ args: { asset, ...args }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
       const tx = await documents.set(args);
@@ -100,7 +96,7 @@ describe('Documents class', () => {
         tuple(
           {
             args: [
-              dsMockUtils.createMockTicker(asset.ticker),
+              dsMockUtils.createMockAssetId(asset.id),
               dsMockUtils.createMockU32(new BigNumber(index)),
             ],
           } as unknown as StorageKey,

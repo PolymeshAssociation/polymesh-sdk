@@ -40,7 +40,7 @@ jest.mock(
 describe('CorporateAction class', () => {
   let context: Context;
   let id: BigNumber;
-  let ticker: string;
+  let assetId: string;
   let declarationDate: Date;
   let kind: CorporateActionKind;
   let description: string;
@@ -68,7 +68,7 @@ describe('CorporateAction class', () => {
     context = dsMockUtils.getContextInstance();
 
     id = new BigNumber(1);
-    ticker = 'SOME_TICKER';
+    assetId = '0x1234';
     declarationDate = new Date('10/14/1987 UTC');
     kind = CorporateActionKind.UnpredictableBenefit;
     description = 'someDescription';
@@ -108,7 +108,7 @@ describe('CorporateAction class', () => {
     corporateAction = new NonAbstract(
       {
         id,
-        ticker,
+        assetId,
         kind,
         declarationDate,
         description,
@@ -138,7 +138,7 @@ describe('CorporateAction class', () => {
   describe('constructor', () => {
     it('should assign parameters to instance', () => {
       expect(corporateAction.id).toEqual(id);
-      expect(corporateAction.asset.ticker).toBe(ticker);
+      expect(corporateAction.asset.id).toBe(assetId);
       expect(corporateAction.declarationDate).toEqual(declarationDate);
       expect(corporateAction.description).toEqual(description);
       expect(corporateAction.targets).toEqual(targets);
@@ -150,10 +150,10 @@ describe('CorporateAction class', () => {
   describe('method: isUniqueIdentifiers', () => {
     it('should return true if the object conforms to the interface', () => {
       expect(
-        CorporateActionBase.isUniqueIdentifiers({ ticker: 'SYMBOL', id: new BigNumber(1) })
+        CorporateActionBase.isUniqueIdentifiers({ assetId: 'SYMBOL', id: new BigNumber(1) })
       ).toBe(true);
       expect(CorporateActionBase.isUniqueIdentifiers({})).toBe(false);
-      expect(CorporateActionBase.isUniqueIdentifiers({ ticker: 'SYMBOL' })).toBe(false);
+      expect(CorporateActionBase.isUniqueIdentifiers({ assetId: 'SYMBOL' })).toBe(false);
       expect(CorporateActionBase.isUniqueIdentifiers({ id: 1 })).toBe(false);
     });
   });
@@ -173,7 +173,11 @@ describe('CorporateAction class', () => {
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: { id, ticker, ...args }, transformer: undefined }, context, {})
+        .calledWith(
+          { args: { id, asset: corporateAction.asset, ...args }, transformer: undefined },
+          context,
+          {}
+        )
         .mockResolvedValue(expectedTransaction);
 
       const tx = await corporateAction.linkDocuments(args);
@@ -300,7 +304,8 @@ describe('CorporateAction class', () => {
     it('should return a human readable version of the entity', () => {
       expect(corporateAction.toHuman()).toEqual({
         id: '1',
-        ticker: 'SOME_TICKER',
+        assetId: '0x1234',
+        ticker: '0x1234',
         declarationDate: '1987-10-14T00:00:00.000Z',
         defaultTaxWithholding: '10',
         description: 'someDescription',
