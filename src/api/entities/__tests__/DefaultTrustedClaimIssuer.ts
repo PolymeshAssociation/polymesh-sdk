@@ -1,6 +1,6 @@
 import {
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesConditionTrustedIssuer,
-  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -37,12 +37,12 @@ describe('DefaultTrustedClaimIssuer class', () => {
   });
 
   describe('constructor', () => {
-    it('should assign ticker and Identity to instance', () => {
+    it('should assign assetId and Identity to instance', () => {
       const did = 'someDid';
-      const ticker = 'SOME_TICKER';
-      const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
+      const assetId = '0x1234';
+      const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, assetId }, context);
 
-      expect(trustedClaimIssuer.asset.ticker).toBe(ticker);
+      expect(trustedClaimIssuer.asset.id).toBe(assetId);
       expect(trustedClaimIssuer.did).toEqual(did);
     });
   });
@@ -50,7 +50,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
   describe('method: isUniqueIdentifiers', () => {
     it('should return true if the object conforms to the interface', () => {
       expect(
-        DefaultTrustedClaimIssuer.isUniqueIdentifiers({ did: 'someDid', ticker: 'symbol' })
+        DefaultTrustedClaimIssuer.isUniqueIdentifiers({ did: 'someDid', assetId: '0x1234' })
       ).toBe(true);
       expect(DefaultTrustedClaimIssuer.isUniqueIdentifiers({})).toBe(false);
       expect(DefaultTrustedClaimIssuer.isUniqueIdentifiers({ did: 'someDid' })).toBe(false);
@@ -60,9 +60,9 @@ describe('DefaultTrustedClaimIssuer class', () => {
 
   describe('method: addedAt', () => {
     const did = 'someDid';
-    const ticker = 'SOME_TICKER';
+    const assetId = '0x1234';
     const variables = {
-      assetId: ticker,
+      assetId,
       issuer: did,
     };
 
@@ -72,7 +72,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
       const eventIdx = new BigNumber(1);
       const blockHash = 'someHash';
       const fakeResult = { blockNumber, blockHash, blockDate, eventIndex: eventIdx };
-      const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
+      const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, assetId }, context);
 
       dsMockUtils.createApolloQueryMock(trustedClaimIssuerQuery(variables), {
         trustedClaimIssuers: {
@@ -95,7 +95,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
     });
 
     it('should return null if the query result is empty', async () => {
-      const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
+      const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, assetId }, context);
 
       dsMockUtils.createApolloQueryMock(trustedClaimIssuerQuery(variables), {
         trustedClaimIssuers: {
@@ -108,16 +108,15 @@ describe('DefaultTrustedClaimIssuer class', () => {
   });
 
   describe('method: trustedFor', () => {
-    let ticker: string;
-    let rawTicker: PolymeshPrimitivesTicker;
-    let stringToTickerSpy: jest.SpyInstance;
+    let assetId: string;
+    let rawAssetId: PolymeshPrimitivesAssetAssetID;
+    let stringToAssetIdSpy: jest.SpyInstance;
     let claimIssuers: PolymeshPrimitivesConditionTrustedIssuer[];
     let trustedClaimIssuerMock: jest.Mock;
 
     beforeAll(() => {
-      ticker = 'SOME_TICKER';
-      rawTicker = dsMockUtils.createMockTicker(ticker);
-      stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+      assetId = '0x1234';
+      stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
       claimIssuers = [
         dsMockUtils.createMockTrustedIssuer({
           issuer: dsMockUtils.createMockIdentityId('someDid'),
@@ -135,12 +134,11 @@ describe('DefaultTrustedClaimIssuer class', () => {
     });
 
     beforeEach(() => {
-      when(stringToTickerSpy).calledWith(ticker, context).mockReturnValue(rawTicker);
       trustedClaimIssuerMock = dsMockUtils.createQueryMock(
         'complianceManager',
         'trustedClaimIssuer'
       );
-      when(trustedClaimIssuerMock).calledWith(rawTicker).mockResolvedValue(claimIssuers);
+      when(trustedClaimIssuerMock).calledWith(rawAssetId).mockResolvedValue(claimIssuers);
     });
 
     afterAll(() => {
@@ -148,7 +146,11 @@ describe('DefaultTrustedClaimIssuer class', () => {
     });
 
     it('should return the claim types for which the Claim Issuer is trusted', async () => {
-      let trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did: 'someDid', ticker }, context);
+      let trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did: 'someDid', assetId }, context);
+      when(stringToAssetIdSpy)
+        .calledWith(trustedClaimIssuer.asset, context)
+        .mockReturnValue(rawAssetId);
+
       let spy = jest.spyOn(trustedClaimIssuer, 'isEqual').mockReturnValue(true);
 
       let result = await trustedClaimIssuer.trustedFor();
@@ -156,7 +158,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
       expect(result).toBeNull();
       spy.mockRestore();
 
-      trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did: 'otherDid', ticker }, context);
+      trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did: 'otherDid', assetId }, context);
 
       spy = jest
         .spyOn(trustedClaimIssuer, 'isEqual')
@@ -170,8 +172,11 @@ describe('DefaultTrustedClaimIssuer class', () => {
 
     it('should throw an error if the Identity is no longer a trusted Claim Issuer', async () => {
       const did = 'randomDid';
-      const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
+      const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, assetId }, context);
 
+      when(stringToAssetIdSpy)
+        .calledWith(trustedClaimIssuer.asset, context)
+        .mockReturnValue(rawAssetId);
       let err;
       try {
         await trustedClaimIssuer.trustedFor();
@@ -180,7 +185,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
       }
 
       expect(err.message).toBe(
-        `The Identity with DID "${did}" is no longer a trusted issuer for "${ticker}"`
+        `The Identity with DID "${did}" is no longer a trusted issuer for "${assetId}"`
       );
     });
   });

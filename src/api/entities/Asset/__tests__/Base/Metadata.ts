@@ -1,5 +1,5 @@
 import { u64 } from '@polkadot/types';
-import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -24,30 +24,30 @@ jest.mock(
 );
 
 describe('Metadata class', () => {
-  let ticker: string;
+  let assetId: string;
   let asset: FungibleAsset;
   let context: Context;
   let metadata: Metadata;
-  let rawTicker: PolymeshPrimitivesTicker;
-  let stringToTickerSpy: jest.SpyInstance;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let stringToAssetIdSpy: jest.SpyInstance;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
   });
 
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
-    ticker = 'SOME_TICKER';
-    rawTicker = dsMockUtils.createMockTicker(ticker);
-    asset = entityMockUtils.getFungibleAssetInstance({ ticker });
+    assetId = '0x1234';
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
+    asset = entityMockUtils.getFungibleAssetInstance({ assetId });
 
     metadata = new Metadata(asset, context);
 
-    when(stringToTickerSpy).calledWith(ticker, context).mockReturnValue(rawTicker);
+    when(stringToAssetIdSpy).calledWith(assetId, context).mockReturnValue(rawAssetId);
   });
 
   afterEach(() => {
@@ -73,7 +73,7 @@ describe('Metadata class', () => {
       const params = { name: 'SOME_METADATA', specs: {} };
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: { ticker, ...params }, transformer: undefined }, context, {})
+        .calledWith({ args: { asset, ...params }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
       const tx = await metadata.register(params);
@@ -111,7 +111,7 @@ describe('Metadata class', () => {
       dsMockUtils.createQueryMock('asset', 'assetMetadataLocalKeyToName', {
         entries: rawIds.map((rawId, index) =>
           tuple(
-            [rawTicker, rawId],
+            [rawAssetId, rawId],
             dsMockUtils.createMockOption(dsMockUtils.createMockBytes(`LOCAL_NAME_${index}`))
           )
         ),
@@ -128,17 +128,17 @@ describe('Metadata class', () => {
       expect(result).toEqual([
         expect.objectContaining({
           id: new BigNumber(1),
-          asset: expect.objectContaining({ ticker }),
+          asset: expect.objectContaining({ id: assetId }),
           type: MetadataType.Global,
         }),
         expect.objectContaining({
           id: new BigNumber(1),
-          asset: expect.objectContaining({ ticker }),
+          asset: expect.objectContaining({ id: assetId }),
           type: MetadataType.Local,
         }),
         expect.objectContaining({
           id: new BigNumber(2),
-          asset: expect.objectContaining({ ticker }),
+          asset: expect.objectContaining({ id: assetId }),
           type: MetadataType.Local,
         }),
       ]);
@@ -186,7 +186,7 @@ describe('Metadata class', () => {
       expect(result).toEqual(
         expect.objectContaining({
           id,
-          asset: expect.objectContaining({ ticker }),
+          asset: expect.objectContaining({ id: assetId }),
           type: MetadataType.Global,
         })
       );
@@ -203,7 +203,7 @@ describe('Metadata class', () => {
       expect(result).toEqual(
         expect.objectContaining({
           id,
-          asset: expect.objectContaining({ ticker }),
+          asset: expect.objectContaining({ id: assetId }),
           type: MetadataType.Local,
         })
       );
@@ -365,7 +365,7 @@ describe('Metadata class', () => {
         entries: [
           tuple(
             [
-              rawTicker,
+              rawAssetId,
               dsMockUtils.createMockAssetMetadataKey({
                 Global: dsMockUtils.createMockU64(new BigNumber(1)),
               }),
@@ -374,7 +374,7 @@ describe('Metadata class', () => {
           ),
           tuple(
             [
-              rawTicker,
+              rawAssetId,
               dsMockUtils.createMockAssetMetadataKey({
                 Local: dsMockUtils.createMockU64(new BigNumber(1)),
               }),
@@ -390,7 +390,7 @@ describe('Metadata class', () => {
             {
               id: new BigNumber(1),
               type: MetadataType.Global,
-              ticker,
+              assetId,
             },
             context
           ),
@@ -405,7 +405,7 @@ describe('Metadata class', () => {
             {
               id: new BigNumber(1),
               type: MetadataType.Local,
-              ticker,
+              assetId,
             },
             context
           ),

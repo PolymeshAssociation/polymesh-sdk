@@ -393,7 +393,7 @@ describe('Portfolios class', () => {
           query: oldSettlementsForAllPortfoliosQuery({
             identityId: did,
             address: key,
-            ticker: undefined,
+            assetId: undefined,
           }),
           returnData: {
             legs: settlementsResponse,
@@ -403,7 +403,7 @@ describe('Portfolios class', () => {
           query: portfoliosMovementsQuery({
             identityId: did,
             address: key,
-            ticker: undefined,
+            assetId: undefined,
           }),
           returnData: {
             portfolioMovements: {
@@ -439,7 +439,7 @@ describe('Portfolios class', () => {
           query: oldSettlementsForAllPortfoliosQuery({
             identityId: did,
             address: undefined,
-            ticker: undefined,
+            assetId: undefined,
           }),
           returnData: {
             legs: {
@@ -451,7 +451,7 @@ describe('Portfolios class', () => {
           query: portfoliosMovementsQuery({
             identityId: did,
             address: undefined,
-            ticker: undefined,
+            assetId: undefined,
           }),
           returnData: {
             portfolioMovements: {
@@ -600,7 +600,7 @@ describe('Portfolios class', () => {
           query: settlementsForAllPortfoliosQuery({
             identityId: did,
             address: account,
-            ticker: undefined,
+            assetId: undefined,
           }),
           returnData: {
             legs: settlementsResponse,
@@ -610,7 +610,7 @@ describe('Portfolios class', () => {
           query: portfoliosMovementsQuery({
             identityId: did,
             address: account,
-            ticker: undefined,
+            assetId: undefined,
           }),
           returnData: {
             portfolioMovements: {
@@ -646,7 +646,7 @@ describe('Portfolios class', () => {
           query: settlementsForAllPortfoliosQuery({
             identityId: did,
             address: undefined,
-            ticker: undefined,
+            assetId: undefined,
           }),
           returnData: {
             legs: {
@@ -658,7 +658,7 @@ describe('Portfolios class', () => {
           query: portfoliosMovementsQuery({
             identityId: did,
             address: undefined,
-            ticker: undefined,
+            assetId: undefined,
           }),
           returnData: {
             portfolioMovements: {

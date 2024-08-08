@@ -40,7 +40,7 @@ type PortfolioMovementArgs = 'fromId' | 'toId' | 'assetId' | 'address';
  *  @hidden
  */
 function createPortfolioMovementFilters(
-  { identityId, portfolioId, ticker, address }: QuerySettlementFilters,
+  { identityId, portfolioId, assetId: ticker, address }: QuerySettlementFilters,
   queryAll?: boolean
 ): {
   args: string;

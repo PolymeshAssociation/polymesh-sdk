@@ -215,7 +215,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
     const {
       context,
       id,
-      asset: { ticker },
+      asset: { id: assetId },
     } = this;
 
     const { size, start } = opts;
@@ -228,7 +228,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
       investmentsQuery(
         {
           stoId: id.toNumber(),
-          offeringToken: ticker,
+          offeringToken: assetId,
         },
         size,
         start

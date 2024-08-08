@@ -12,9 +12,9 @@ import { instructionsQuery } from '~/middleware/queries/settlementsOld';
 import { InstructionEventEnum, InstructionStatusEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
+  createMockAssetId,
   createMockInstructionStatus,
   createMockNfts,
-  createMockTicker,
   createMockU64,
 } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
@@ -607,11 +607,11 @@ describe('Instruction class', () => {
     it("should return the instruction's legs", async () => {
       const fromDid = 'fromDid';
       const toDid = 'toDid';
-      const ticker = 'SOME_TICKER';
-      const ticker2 = 'SOME_TICKER2';
+      const assetId = '0x1111';
+      const assetId2 = '0x2222';
       const amount = new BigNumber(1000);
 
-      entityMockUtils.configureMocks({ fungibleAssetOptions: { ticker } });
+      entityMockUtils.configureMocks({ fungibleAssetOptions: { assetId } });
       instructionStatusMock.mockResolvedValue(
         createMockInstructionStatus(InternalInstructionStatus.Pending)
       );
@@ -626,7 +626,7 @@ describe('Instruction class', () => {
               did: dsMockUtils.createMockIdentityId(toDid),
               kind: dsMockUtils.createMockPortfolioKind('Default'),
             }),
-            ticker: dsMockUtils.createMockTicker(ticker),
+            assetId: dsMockUtils.createMockAssetId(assetId),
             amount: dsMockUtils.createMockU128(amount.shiftedBy(6)),
           },
         })
@@ -643,7 +643,7 @@ describe('Instruction class', () => {
               did: dsMockUtils.createMockIdentityId(toDid),
               kind: dsMockUtils.createMockPortfolioKind('Default'),
             }),
-            ticker: dsMockUtils.createMockTicker(ticker2),
+            assetId: dsMockUtils.createMockAssetId(assetId2),
             amount: dsMockUtils.createMockU128(amount.shiftedBy(6)),
           },
         })
@@ -673,13 +673,13 @@ describe('Instruction class', () => {
 
       const resultLeg1 = leg[0] as FungibleLeg;
       expect(resultLeg1.amount).toEqual(amount);
-      expect(resultLeg1.asset.ticker).toBe(ticker2);
+      expect(resultLeg1.asset.id).toBe(assetId2);
       expect(resultLeg1.from.owner.did).toBe(fromDid);
       expect(resultLeg1.to.owner.did).toBe(toDid);
 
       const resultLeg2 = leg[1] as FungibleLeg;
       expect(resultLeg2.amount).toEqual(amount);
-      expect(resultLeg2.asset.ticker).toBe(ticker);
+      expect(resultLeg2.asset.id).toBe(assetId);
       expect(resultLeg2.from.owner.did).toBe(fromDid);
       expect(resultLeg2.to.owner.did).toBe(toDid);
     });
@@ -694,9 +694,9 @@ describe('Instruction class', () => {
     it('should handle NFT legs', async () => {
       const fromDid = 'fromDid';
       const toDid = 'toDid';
-      const ticker = 'SOME_TICKER';
+      const assetId = '0x1111';
 
-      entityMockUtils.configureMocks({ fungibleAssetOptions: { ticker } });
+      entityMockUtils.configureMocks({ fungibleAssetOptions: { assetId } });
       instructionStatusMock.mockResolvedValue(
         createMockInstructionStatus(InternalInstructionStatus.Pending)
       );
@@ -712,7 +712,7 @@ describe('Instruction class', () => {
               kind: dsMockUtils.createMockPortfolioKind('Default'),
             }),
             nfts: createMockNfts({
-              ticker: createMockTicker(ticker),
+              assetId: createMockAssetId(assetId),
               ids: [createMockU64(new BigNumber(1))],
             }),
           },
@@ -734,7 +734,7 @@ describe('Instruction class', () => {
       expect(resultLeg.nfts).toEqual(
         expect.arrayContaining([expect.objectContaining({ id: new BigNumber(1) })])
       );
-      expect(resultLeg.asset.ticker).toBe(ticker);
+      expect(resultLeg.asset.id).toBe(assetId);
       expect(resultLeg.from.owner.did).toBe(fromDid);
       expect(resultLeg.to.owner.did).toBe(toDid);
     });
@@ -744,10 +744,10 @@ describe('Instruction class', () => {
       const rawFromId = dsMockUtils.createMockIdentityId(fromDid);
       const toDid = 'toDid';
       const rawToId = dsMockUtils.createMockIdentityId(toDid);
-      const ticker = 'SOME_TICKER';
+      const assetId = '0x1111';
       const amount = new BigNumber(10);
 
-      entityMockUtils.configureMocks({ fungibleAssetOptions: { ticker } });
+      entityMockUtils.configureMocks({ fungibleAssetOptions: { assetId } });
       instructionStatusMock.mockResolvedValue(
         createMockInstructionStatus(InternalInstructionStatus.Pending)
       );
@@ -761,7 +761,7 @@ describe('Instruction class', () => {
           OffChain: {
             senderIdentity: rawFromId,
             receiverIdentity: rawToId,
-            ticker: dsMockUtils.createMockTicker(ticker),
+            assetId: dsMockUtils.createMockAssetId(assetId),
             amount: dsMockUtils.createMockU128(amount.shiftedBy(6)),
           },
         })
@@ -780,15 +780,15 @@ describe('Instruction class', () => {
 
       const resultLeg = leg[0] as OffChainLeg;
       expect(resultLeg.offChainAmount).toEqual(amount);
-      expect(resultLeg.asset).toBe(ticker);
+      expect(resultLeg.asset).toBe(assetId);
       expect(resultLeg.from.did).toBe(fromDid);
       expect(resultLeg.to.did).toBe(toDid);
     });
 
     it('should throw an error if a leg in None', () => {
-      const ticker = 'SOME_TICKER';
+      const assetId = '0x1111';
 
-      entityMockUtils.configureMocks({ fungibleAssetOptions: { ticker } });
+      entityMockUtils.configureMocks({ fungibleAssetOptions: { assetId } });
       instructionStatusMock.mockResolvedValue(
         createMockInstructionStatus(InternalInstructionStatus.Pending)
       );
@@ -1357,7 +1357,7 @@ describe('Instruction class', () => {
         exists: false,
       });
       const amount = new BigNumber(1);
-      const asset = entityMockUtils.getFungibleAssetInstance({ ticker: 'SOME_ASSET' });
+      const asset = entityMockUtils.getFungibleAssetInstance({ assetId: 'SOME_ASSET' });
 
       jest.spyOn(instruction, 'getLegs').mockResolvedValue({
         data: [
@@ -1494,7 +1494,7 @@ describe('Instruction class', () => {
                 did: dsMockUtils.createMockIdentityId('toDid'),
                 kind: dsMockUtils.createMockPortfolioKind('Default'),
               }),
-              ticker: dsMockUtils.createMockTicker('ticker'),
+              assetId: dsMockUtils.createMockAssetId('0x12345'),
               amount: dsMockUtils.createMockU128(new BigNumber(10)),
             },
           })
@@ -1515,11 +1515,11 @@ describe('Instruction class', () => {
       const receiverIdentity = 'receiverDid';
       const rawReceiverIdentity = dsMockUtils.createMockIdentityId(receiverIdentity);
 
-      const ticker = 'ABCDEF';
+      const assetId = '0x123456';
 
-      const rawTicker = dsMockUtils.createMockTicker(ticker);
-      rawTicker.toHex = jest.fn();
-      rawTicker.toHex.mockReturnValue('0xABCDEF0000');
+      const rawAssetId = dsMockUtils.createMockAssetId(assetId);
+      rawAssetId.toHex = jest.fn();
+      rawAssetId.toHex.mockReturnValue('0x123456');
 
       const amount = new BigNumber(10);
 
@@ -1532,7 +1532,7 @@ describe('Instruction class', () => {
               senderIdentity: rawSenderIdentity,
               receiverIdentity: rawReceiverIdentity,
               amount: rawAmount,
-              ticker: rawTicker,
+              assetId: rawAssetId,
             },
           })
         ),

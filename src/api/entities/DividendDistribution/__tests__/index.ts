@@ -37,7 +37,7 @@ describe('DividendDistribution class', () => {
   let context: Context;
 
   let id: BigNumber;
-  let ticker: string;
+  let assetId: string;
   let declarationDate: Date;
   let description: string;
   let targets: CorporateActionTargets;
@@ -61,7 +61,7 @@ describe('DividendDistribution class', () => {
     context = dsMockUtils.getContextInstance();
 
     id = new BigNumber(1);
-    ticker = 'SOME_TICKER';
+    assetId = '0x1234';
     declarationDate = new Date('10/14/1987 UTC');
     description = 'something';
     const targetIdentity = entityMockUtils.getIdentityInstance({
@@ -88,7 +88,7 @@ describe('DividendDistribution class', () => {
     dividendDistribution = new DividendDistribution(
       {
         id,
-        ticker,
+        assetId,
         declarationDate,
         description,
         targets,
@@ -142,7 +142,7 @@ describe('DividendDistribution class', () => {
   describe('constructor', () => {
     it('should assign parameters to instance', () => {
       expect(dividendDistribution.id).toEqual(id);
-      expect(dividendDistribution.asset.ticker).toBe(ticker);
+      expect(dividendDistribution.asset.id).toBe(assetId);
       expect(dividendDistribution.declarationDate).toEqual(declarationDate);
       expect(dividendDistribution.description).toEqual(description);
       expect(dividendDistribution.targets).toEqual(targets);
@@ -281,7 +281,7 @@ describe('DividendDistribution class', () => {
 
       dsMockUtils.createApolloQueryMock(
         distributionQuery({
-          assetId: ticker,
+          assetId,
           localId: id.toNumber(),
         }),
         {
@@ -307,7 +307,7 @@ describe('DividendDistribution class', () => {
 
       dsMockUtils.createApolloQueryMock(
         distributionQuery({
-          assetId: ticker,
+          assetId,
           localId: id.toNumber(),
         }),
         {
@@ -447,7 +447,7 @@ describe('DividendDistribution class', () => {
 
       jest
         .spyOn(utilsConversionModule, 'corporateActionIdentifierToCaId')
-        .mockReturnValue(dsMockUtils.createMockCAId({ ticker, localId: id }));
+        .mockReturnValue(dsMockUtils.createMockCAId({ assetId, localId: id }));
       jest.spyOn(utilsConversionModule, 'boolToBoolean').mockReturnValue(false);
 
       dsMockUtils.createQueryMock('capitalDistribution', 'holderPaid', {
@@ -561,7 +561,7 @@ describe('DividendDistribution class', () => {
       dsMockUtils.createApolloQueryMock(
         distributionPaymentsQuery(
           {
-            distributionId: `${ticker}/${id.toString()}`,
+            distributionId: `${assetId}/${id.toString()}`,
           },
           size,
           start
@@ -605,7 +605,7 @@ describe('DividendDistribution class', () => {
     it('should return null if the query result is empty', async () => {
       dsMockUtils.createApolloQueryMock(
         distributionPaymentsQuery({
-          distributionId: `${ticker}/${id.toString()}`,
+          distributionId: `${assetId}/${id.toString()}`,
         }),
         {
           distributionPayments: {
@@ -626,7 +626,7 @@ describe('DividendDistribution class', () => {
 
       dsMockUtils.createApolloQueryMock(
         distributionPaymentsQuery({
-          distributionId: `${ticker}/${id.toString()}`,
+          distributionId: `${assetId}/${id.toString()}`,
         }),
         {
           distributionPayments: {
@@ -650,7 +650,8 @@ describe('DividendDistribution class', () => {
       };
       expect(dividendDistribution.toHuman()).toEqual({
         id: '1',
-        ticker: 'SOME_TICKER',
+        ticker: '0x1234',
+        assetId: '0x1234',
         declarationDate: '1987-10-14T00:00:00.000Z',
         defaultTaxWithholding: '0.123456',
         description: 'something',

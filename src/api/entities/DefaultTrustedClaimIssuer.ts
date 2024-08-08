@@ -53,7 +53,7 @@ export class DefaultTrustedClaimIssuer extends Identity {
    */
   public async addedAt(): Promise<EventIdentifier | null> {
     const {
-      asset: { ticker: assetId },
+      asset: { id: assetId },
       did: issuer,
       context,
     } = this;
@@ -100,7 +100,7 @@ export class DefaultTrustedClaimIssuer extends Identity {
     if (!claimIssuer) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
-        message: `The Identity with DID "${did}" is no longer a trusted issuer for "${asset.ticker}"`,
+        message: `The Identity with DID "${did}" is no longer a trusted issuer for "${asset.id}"`,
       });
     }
 

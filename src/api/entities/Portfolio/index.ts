@@ -418,7 +418,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
           identityId,
           portfolioId,
           address,
-          ticker,
+          assetId: ticker,
         })
       );
 
@@ -429,7 +429,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
           identityId,
           portfolioId,
           address,
-          ticker,
+          assetId: ticker,
         })
       );
 
@@ -470,7 +470,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
         identityId,
         portfolioId,
         address: account,
-        ticker,
+        assetId: ticker,
       })
     );
 
@@ -479,7 +479,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
         identityId,
         portfolioId,
         address: account,
-        ticker,
+        assetId: ticker,
       })
     );
 

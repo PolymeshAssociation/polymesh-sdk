@@ -1,7 +1,11 @@
-import { PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesIdentityId,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
+import { AssetPermissions } from '~/api/entities/Identity/AssetPermissions';
 import {
   Context,
   Identity,
@@ -19,8 +23,6 @@ import { FungibleAsset, PermissionGroupType, PermissionType, TxTags } from '~/ty
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
-import { AssetPermissions } from '../AssetPermissions';
-
 jest.mock(
   '~/base/Procedure',
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
@@ -28,7 +30,7 @@ jest.mock(
 
 describe('AssetPermissions class', () => {
   const did = 'someDid';
-  const ticker = 'SOME_TICKER';
+  const assetId = '0x1234';
   let asset: Mocked<FungibleAsset>;
 
   let context: Mocked<Context>;
@@ -44,7 +46,7 @@ describe('AssetPermissions class', () => {
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
     identity = entityMockUtils.getIdentityInstance({ did });
-    asset = entityMockUtils.getFungibleAssetInstance({ ticker });
+    asset = entityMockUtils.getFungibleAssetInstance({ assetId });
     assetPermissions = new AssetPermissions(identity, context);
   });
 
@@ -99,7 +101,7 @@ describe('AssetPermissions class', () => {
       const blockHash = 'someHash';
       const eventIdx = new BigNumber(1);
       const variables = {
-        assetId: ticker,
+        assetId,
       };
       const fakeResult = { blockNumber, blockHash, blockDate, eventIndex: eventIdx };
 
@@ -125,7 +127,7 @@ describe('AssetPermissions class', () => {
 
     it('should return null if the query result is empty', async () => {
       const variables = {
-        assetId: ticker,
+        assetId,
       };
 
       dsMockUtils.createApolloQueryMock(tickerExternalAgentsQuery(variables), {
@@ -379,13 +381,13 @@ describe('AssetPermissions class', () => {
 
   describe('method: get', () => {
     let rawDid: PolymeshPrimitivesIdentityId;
-    let rawTicker: PolymeshPrimitivesTicker;
+    let rawAssetId: PolymeshPrimitivesAssetAssetID;
     let stringToIdentityIdSpy: jest.SpyInstance;
 
     beforeAll(() => {
       stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
       rawDid = dsMockUtils.createMockIdentityId(did);
-      rawTicker = dsMockUtils.createMockTicker(ticker);
+      rawAssetId = dsMockUtils.createMockAssetId(assetId);
     });
 
     beforeEach(() => {
@@ -398,7 +400,7 @@ describe('AssetPermissions class', () => {
 
     it('should return a list of AgentWithGroup', async () => {
       const group = entityMockUtils.getKnownPermissionGroupInstance({
-        ticker,
+        assetId,
         type: PermissionGroupType.Full,
         getPermissions: {
           transactions: null,
@@ -408,19 +410,19 @@ describe('AssetPermissions class', () => {
 
       entityMockUtils.configureMocks({
         fungibleAssetOptions: {
-          ticker,
+          assetId,
         },
       });
 
       jest.spyOn(assetPermissions, 'getGroup').mockResolvedValue(group);
 
       dsMockUtils.createQueryMock('externalAgents', 'agentOf', {
-        entries: [tuple([rawDid, rawTicker], {})],
+        entries: [tuple([rawDid, rawAssetId], {})],
       });
 
       const result = await assetPermissions.get();
       expect(result.length).toEqual(1);
-      expect(result[0].asset.ticker).toEqual(ticker);
+      expect(result[0].asset.id).toEqual(assetId);
       expect(result[0].group instanceof KnownPermissionGroup).toEqual(true);
     });
   });
@@ -435,7 +437,7 @@ describe('AssetPermissions class', () => {
       dsMockUtils.createApolloQueryMock(
         tickerExternalAgentActionsQuery(
           {
-            assetId: ticker,
+            assetId,
             callerId: did,
             palletName: undefined,
             eventId: undefined,
@@ -461,7 +463,7 @@ describe('AssetPermissions class', () => {
       );
 
       let result = await assetPermissions.getOperationHistory({
-        asset: ticker,
+        asset: assetId,
         start: new BigNumber(0),
         size: new BigNumber(1),
       });
@@ -479,7 +481,7 @@ describe('AssetPermissions class', () => {
 
       dsMockUtils.createApolloQueryMock(
         tickerExternalAgentActionsQuery({
-          assetId: ticker,
+          assetId,
           callerId: did,
           palletName: undefined,
           eventId: undefined,
@@ -493,7 +495,7 @@ describe('AssetPermissions class', () => {
       );
 
       result = await assetPermissions.getOperationHistory({
-        asset: ticker,
+        asset: assetId,
       });
 
       expect(result.next).toEqual(null);

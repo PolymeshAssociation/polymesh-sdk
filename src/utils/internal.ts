@@ -1016,14 +1016,16 @@ export async function getAssetIdForTicker(ticker: string, context: Context): Pro
       query: { asset },
     },
   } = context;
-  let assetId = '';
   assertTickerValid(ticker);
   const rawTicker = stringToTicker(ticker, context);
   const rawAssetId = await asset.tickerAssetID(rawTicker);
-  if (rawAssetId.isSome) {
-    assetId = assetIdToString(rawAssetId.unwrap());
+  if (rawAssetId.isNone) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: `There is no Asset with ticker: "${ticker}"`,
+    });
   }
-  return assetId;
+  return assetIdToString(rawAssetId.unwrap());
 }
 
 /**
@@ -1129,7 +1131,7 @@ export async function asAsset(asset: string | Asset, context: Context): Promise<
 
   throw new PolymeshError({
     code: ErrorCode.DataUnavailable,
-    message: `No asset exists with ticker: "${asset}"`,
+    message: `No asset exists with asset ID: "${asset}"`,
   });
 }
 
@@ -2047,11 +2049,11 @@ export async function getIdentityFromKeyRecord(
  */
 export function assembleAssetQuery(
   assetDetails: Option<PalletAssetSecurityToken>[],
-  tickers: string[],
+  assetIds: string[],
   context: Context
 ): Asset[] {
   return assetDetails.map((rawDetails, index) => {
-    const assetId = tickers[index];
+    const assetId = assetIds[index];
     const detail = rawDetails.unwrap();
 
     if (detail.assetType.isNonFungible) {

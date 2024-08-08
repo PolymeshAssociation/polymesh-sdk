@@ -91,7 +91,7 @@ export class DividendDistribution extends CorporateActionBase {
   public origin: DefaultPortfolio | NumberedPortfolio;
 
   /**
-   * ticker of the currency in which dividends are being distributed
+   * Asset ID of the currency in which dividends are being distributed
    */
   public currency: string;
 
@@ -441,13 +441,13 @@ export class DividendDistribution extends CorporateActionBase {
   public async getWithheldTax(): Promise<BigNumber> {
     const {
       id,
-      asset: { ticker },
+      asset: { id: assetId },
       context,
     } = this;
 
     const taxPromise = context.queryMiddleware<Ensured<Query, 'distributions'>>(
       distributionQuery({
-        assetId: ticker,
+        assetId,
         localId: id.toNumber(),
       })
     );
@@ -482,7 +482,7 @@ export class DividendDistribution extends CorporateActionBase {
   ): Promise<ResultSet<DistributionPayment>> {
     const {
       id,
-      asset: { ticker },
+      asset: { id: assetId },
       context,
     } = this;
     const { size, start } = opts;
@@ -490,7 +490,7 @@ export class DividendDistribution extends CorporateActionBase {
     const paymentsPromise = context.queryMiddleware<Ensured<Query, 'distributionPayments'>>(
       distributionPaymentsQuery(
         {
-          distributionId: `${ticker}/${id.toString()}`,
+          distributionId: `${assetId}/${id.toString()}`,
         },
         size,
         start

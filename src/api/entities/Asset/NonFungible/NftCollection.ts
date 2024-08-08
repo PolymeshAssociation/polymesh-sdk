@@ -246,7 +246,7 @@ export class NftCollection extends BaseAsset {
    * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
    */
   public async createdAt(): Promise<EventIdentifier | null> {
-    const { ticker, context } = this;
+    const { id, context } = this;
 
     const {
       data: {
@@ -256,7 +256,7 @@ export class NftCollection extends BaseAsset {
       },
     } = await context.queryMiddleware<Ensured<Query, 'assets'>>(
       assetQuery({
-        ticker,
+        id,
       })
     );
 
@@ -330,7 +330,7 @@ export class NftCollection extends BaseAsset {
     size?: BigNumber;
     start?: BigNumber;
   }): Promise<ResultSet<HistoricNftTransaction>> {
-    const { context, ticker } = this;
+    const { context, id } = this;
     const { size, start } = opts;
 
     const {
@@ -340,7 +340,7 @@ export class NftCollection extends BaseAsset {
     } = await context.queryMiddleware<Ensured<Query, 'assetTransactions'>>(
       assetTransactionQuery(
         {
-          assetId: ticker,
+          assetId: id,
         },
         size,
         start
@@ -368,8 +368,7 @@ export class NftCollection extends BaseAsset {
         return {
           asset: collection,
           nfts: nftIds.map(
-            // TODO @prashantasdeveloper
-            (id: string) => new Nft({ assetId, id: new BigNumber(id) }, context)
+            (nftId: string) => new Nft({ assetId, id: new BigNumber(nftId) }, context)
           ),
           event: eventId,
           to: optionize(middlewarePortfolioToPortfolio)(toPortfolio, context),

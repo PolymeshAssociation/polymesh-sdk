@@ -210,7 +210,7 @@ export class Portfolios extends Namespace<Identity> {
         oldSettlementsForAllPortfoliosQuery({
           identityId,
           address,
-          ticker,
+          assetId: ticker,
         })
       );
 
@@ -220,7 +220,7 @@ export class Portfolios extends Namespace<Identity> {
         portfoliosMovementsQuery({
           identityId,
           address,
-          ticker,
+          assetId: ticker,
         })
       );
 
@@ -250,7 +250,7 @@ export class Portfolios extends Namespace<Identity> {
       settlementsForAllPortfoliosQuery({
         identityId,
         address: account,
-        ticker,
+        assetId: ticker,
       })
     );
 
@@ -258,7 +258,7 @@ export class Portfolios extends Namespace<Identity> {
       portfoliosMovementsQuery({
         identityId,
         address: account,
-        ticker,
+        assetId: ticker,
       })
     );
 

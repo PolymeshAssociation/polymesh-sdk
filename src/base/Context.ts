@@ -143,8 +143,8 @@ export class Context {
 
     this.unsubChainVersion = polymeshApi.query.system.lastRuntimeUpgrade(upgrade => {
       if (upgrade.isSome) {
-        const { specVersion } = upgrade.unwrap();
-        this.isV6 = specVersion.toNumber() < 7000000;
+        // const { specVersion } = upgrade.unwrap();
+        // this.isV6 = false;
       }
     });
   }

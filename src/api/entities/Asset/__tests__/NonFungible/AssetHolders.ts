@@ -35,7 +35,7 @@ describe('AssetHolder class', () => {
   });
 
   describe('method: get', () => {
-    const ticker = 'TICKER';
+    const assetId = '0x1234';
     let assetHolders: AssetHolders;
     let collection: NftCollection;
     let context: Context;
@@ -46,7 +46,7 @@ describe('AssetHolder class', () => {
 
     beforeEach(() => {
       context = dsMockUtils.getContextInstance();
-      collection = entityMockUtils.getNftCollectionInstance({ ticker });
+      collection = entityMockUtils.getNftCollectionInstance({ assetId });
       assetHolders = new AssetHolders(collection, context);
 
       const nftHoldersResponse = {
@@ -64,7 +64,7 @@ describe('AssetHolder class', () => {
       };
 
       dsMockUtils.createApolloQueryMock(
-        nftCollectionHolders(ticker, new BigNumber(2), new BigNumber(0)),
+        nftCollectionHolders(assetId, new BigNumber(2), new BigNumber(0)),
         {
           nftHolders: nftHoldersResponse,
         }

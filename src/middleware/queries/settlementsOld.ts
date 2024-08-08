@@ -138,7 +138,7 @@ export function instructionsByDidQuery(
 export interface QuerySettlementFilters {
   identityId: string;
   portfolioId?: BigNumber;
-  ticker?: string;
+  assetId?: string;
   address?: string;
 }
 
@@ -148,7 +148,7 @@ type LegArgs = 'fromId' | 'toId' | 'assetId' | 'addresses';
  *  @hidden
  */
 function createLegFilters(
-  { identityId, portfolioId, ticker, address }: QuerySettlementFilters,
+  { identityId, portfolioId, assetId, address }: QuerySettlementFilters,
   queryAll?: boolean
 ): {
   args: string;
@@ -166,8 +166,8 @@ function createLegFilters(
     toId: queryAll ? `${identityId}` : `${identityId}/${portfolioNumber}`,
   };
 
-  if (ticker) {
-    variables.assetId = ticker;
+  if (assetId) {
+    variables.assetId = assetId;
     args.push('$assetId: String!');
     const assetIdFilter = 'assetId: { equalTo: $assetId }';
     toIdFilters.push(assetIdFilter);
