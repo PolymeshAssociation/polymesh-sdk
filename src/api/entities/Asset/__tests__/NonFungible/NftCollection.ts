@@ -67,29 +67,28 @@ describe('NftCollection class', () => {
   });
 
   describe('constructor', () => {
-    it('should assign ticker and did to instance', () => {
-      const ticker = 'test';
+    it('should assign assetId to instance', () => {
+      const assetId = 'test';
       const context = dsMockUtils.getContextInstance();
-      const nftCollection = new NftCollection({ ticker }, context);
+      const nftCollection = new NftCollection({ assetId }, context);
 
-      expect(nftCollection.ticker).toBe(ticker);
-      expect(nftCollection.did).toBe(utilsConversionModule.tickerToDid(ticker));
+      expect(nftCollection.id).toBe(assetId);
     });
   });
 
   describe('method: isUniqueIdentifiers', () => {
     it('should return true if the object conforms to the interface', () => {
-      expect(NftCollection.isUniqueIdentifiers({ ticker: 'SOME_TICKER' })).toBe(true);
+      expect(NftCollection.isUniqueIdentifiers({ assetId: '0x1234' })).toBe(true);
       expect(NftCollection.isUniqueIdentifiers({})).toBe(false);
-      expect(NftCollection.isUniqueIdentifiers({ ticker: 3 })).toBe(false);
+      expect(NftCollection.isUniqueIdentifiers({ assetId: 3 })).toBe(false);
     });
   });
 
   describe('method: transferOwnership', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const ticker = 'TEST';
+      const assetId = 'TEST';
       const context = dsMockUtils.getContextInstance();
-      const nftCollection = new NftCollection({ ticker }, context);
+      const nftCollection = new NftCollection({ assetId }, context);
       const target = 'someOtherDid';
       const expiry = new Date('10/14/3040');
 
@@ -102,7 +101,11 @@ describe('NftCollection class', () => {
         'someTransaction' as unknown as PolymeshTransaction<NftCollection>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: { ticker, ...args }, transformer: undefined }, context, {})
+        .calledWith(
+          { args: { asset: nftCollection, ...args }, transformer: undefined },
+          context,
+          {}
+        )
         .mockResolvedValue(expectedTransaction);
 
       const tx = await nftCollection.transferOwnership(args);
@@ -113,14 +116,14 @@ describe('NftCollection class', () => {
 
   describe('method: investorCount', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const ticker = 'TEST';
+      const assetId = 'TEST';
       const context = dsMockUtils.getContextInstance();
-      const nftCollection = new NftCollection({ ticker }, context);
+      const nftCollection = new NftCollection({ assetId }, context);
 
       dsMockUtils.createQueryMock('nft', 'numberOfNFTs', {
         entries: [
           tuple(
-            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId('someDid')],
+            [dsMockUtils.createMockAssetId(assetId), dsMockUtils.createMockIdentityId('someDid')],
             dsMockUtils.createMockU64(new BigNumber(3))
           ),
         ],
@@ -133,7 +136,7 @@ describe('NftCollection class', () => {
   });
 
   describe('method: getIdentifiers', () => {
-    let ticker: string;
+    let assetId: string;
     let isinValue: string;
     let isinMock: PolymeshPrimitivesAssetIdentifier;
     let securityIdentifiers: SecurityIdentifier[];
@@ -142,7 +145,7 @@ describe('NftCollection class', () => {
     let nftCollection: NftCollection;
 
     beforeAll(() => {
-      ticker = 'TEST';
+      assetId = 'TEST';
       isinValue = 'FAKE ISIN';
       isinMock = dsMockUtils.createMockAssetIdentifier({
         Isin: dsMockUtils.createMockU8aFixed(isinValue),
@@ -157,11 +160,11 @@ describe('NftCollection class', () => {
 
     beforeEach(() => {
       context = dsMockUtils.getContextInstance();
-      nftCollection = new NftCollection({ ticker }, context);
+      nftCollection = new NftCollection({ assetId }, context);
     });
 
     it('should return the list of security identifiers for an NftCollection', async () => {
-      dsMockUtils.createQueryMock('asset', 'identifiers', {
+      dsMockUtils.createQueryMock('asset', 'assetIdentifiers', {
         returnValue: [isinMock],
       });
 
@@ -173,11 +176,13 @@ describe('NftCollection class', () => {
     it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
 
-      dsMockUtils.createQueryMock('asset', 'identifiers').mockImplementation(async (_, cbFunc) => {
-        cbFunc([isinMock]);
+      dsMockUtils
+        .createQueryMock('asset', 'assetIdentifiers')
+        .mockImplementation(async (_, cbFunc) => {
+          cbFunc([isinMock]);
 
-        return unsubCallback;
-      });
+          return unsubCallback;
+        });
 
       const callback = jest.fn();
       const result = await nftCollection.getIdentifiers(callback);
@@ -189,17 +194,17 @@ describe('NftCollection class', () => {
 
   describe('method: createdAt', () => {
     it('should return the event identifier object of the Asset creation', async () => {
-      const ticker = 'SOME_TICKER';
+      const assetId = '0x1234';
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
       const blockHash = 'someHash';
       const eventIdx = new BigNumber(1);
       const variables = {
-        ticker,
+        id: assetId,
       };
       const fakeResult = { blockNumber, blockHash, blockDate, eventIndex: eventIdx };
       const context = dsMockUtils.getContextInstance();
-      const nftCollection = new NftCollection({ ticker }, context);
+      const nftCollection = new NftCollection({ assetId }, context);
 
       dsMockUtils.createApolloQueryMock(assetQuery(variables), {
         assets: {
@@ -222,12 +227,12 @@ describe('NftCollection class', () => {
     });
 
     it('should return null if the query result is empty', async () => {
-      const ticker = 'SOME_TICKER';
+      const assetId = '0x1234';
       const variables = {
-        ticker,
+        id: assetId,
       };
       const context = dsMockUtils.getContextInstance();
-      const nftCollection = new NftCollection({ ticker }, context);
+      const nftCollection = new NftCollection({ assetId }, context);
 
       dsMockUtils.createApolloQueryMock(assetQuery(variables), {
         assets: {
@@ -254,9 +259,9 @@ describe('NftCollection class', () => {
     });
 
     it('should return whether the NftCollection is frozen or not', async () => {
-      const ticker = 'TICKER';
+      const assetId = '0x1234';
       const context = dsMockUtils.getContextInstance();
-      const nftCollection = new NftCollection({ ticker }, context);
+      const nftCollection = new NftCollection({ assetId }, context);
 
       frozenMock.mockResolvedValue(rawBoolValue);
 
@@ -266,9 +271,9 @@ describe('NftCollection class', () => {
     });
 
     it('should allow subscription', async () => {
-      const ticker = 'TICKER';
+      const assetId = '0x1234';
       const context = dsMockUtils.getContextInstance();
-      const nftCollection = new NftCollection({ ticker }, context);
+      const nftCollection = new NftCollection({ assetId }, context);
       const unsubCallback = 'unsubCallBack';
 
       frozenMock.mockImplementation(async (_, cbFunc) => {
@@ -285,7 +290,7 @@ describe('NftCollection class', () => {
   });
 
   describe('method: details', () => {
-    let ticker: string;
+    let assetId: string;
     let internalDetailsSpy: jest.SpyInstance;
 
     const did = 'someDid';
@@ -304,7 +309,7 @@ describe('NftCollection class', () => {
       dsMockUtils.createQueryMock('nft', 'numberOfNFTs', {
         entries: [
           tuple(
-            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(did)],
+            [dsMockUtils.createMockAssetId(assetId), dsMockUtils.createMockIdentityId(did)],
             dsMockUtils.createMockU64(new BigNumber(3))
           ),
         ],
@@ -312,7 +317,7 @@ describe('NftCollection class', () => {
     });
 
     beforeAll(() => {
-      ticker = 'TICKER';
+      assetId = '0x1234';
     });
 
     beforeEach(() => {
@@ -324,7 +329,7 @@ describe('NftCollection class', () => {
     });
 
     it('should return details about the collection', async () => {
-      const nftCollection = new NftCollection({ ticker }, context);
+      const nftCollection = new NftCollection({ assetId }, context);
 
       const result = await nftCollection.details();
 
@@ -335,7 +340,7 @@ describe('NftCollection class', () => {
     });
 
     it('should allow subscription', async () => {
-      const nftCollection = new NftCollection({ ticker }, context);
+      const nftCollection = new NftCollection({ assetId }, context);
       const fakeUnsubCallback = 'unsubCallback';
 
       internalDetailsSpy.mockImplementation(cb => {
@@ -365,9 +370,9 @@ describe('NftCollection class', () => {
 
     it('should return required metadata', async () => {
       const context = dsMockUtils.getContextInstance();
-      const ticker = 'TICKER';
+      const assetId = '0x1234';
       const id = new BigNumber(1);
-      const collection = new NftCollection({ ticker }, context);
+      const collection = new NftCollection({ assetId }, context);
       const mockGlobalKey = dsMockUtils.createMockAssetMetadataKey({
         Global: dsMockUtils.createMockU64(id),
       });
@@ -378,11 +383,11 @@ describe('NftCollection class', () => {
       jest.spyOn(collection, 'getCollectionId').mockResolvedValue(id);
 
       when(meshMetadataKeyToMetadataKeySpy)
-        .calledWith(mockGlobalKey, ticker)
+        .calledWith(mockGlobalKey, assetId)
         .mockReturnValue({ type: MetadataType.Global, id });
 
       when(meshMetadataKeyToMetadataKeySpy)
-        .calledWith(mockLocalKey, ticker)
+        .calledWith(mockLocalKey, assetId)
         .mockReturnValue({ type: MetadataType.Local, id });
 
       u64ToBigNumberSpy.mockReturnValue(id);
@@ -396,7 +401,7 @@ describe('NftCollection class', () => {
       });
       const mockLocalEntry = entityMockUtils.getMetadataEntryInstance({
         id,
-        ticker,
+        assetId,
         type: MetadataType.Local,
       });
       mockGlobalEntry.details.mockResolvedValue({
@@ -406,6 +411,10 @@ describe('NftCollection class', () => {
       mockLocalEntry.details.mockResolvedValue({
         name: 'Example Local Name',
         specs: {},
+      });
+      jest.spyOn(utilsInternalModule, 'getAssetIdAndTicker').mockResolvedValue({
+        assetId,
+        ticker: 'SOME_TICKER',
       });
       jest.spyOn(collection.metadata, 'get').mockResolvedValue([mockGlobalEntry, mockLocalEntry]);
       const result = await collection.collectionKeys();
@@ -419,7 +428,7 @@ describe('NftCollection class', () => {
             specs: {},
           }),
           expect.objectContaining({
-            ticker,
+            assetId,
             type: MetadataType.Local,
             id: new BigNumber(1),
             name: 'Example Local Name',
@@ -431,9 +440,9 @@ describe('NftCollection class', () => {
 
     it('should throw an error if needed metadata details are not found', async () => {
       const context = dsMockUtils.getContextInstance();
-      const ticker = 'TICKER';
+      const assetId = '0x1234';
       const id = new BigNumber(1);
-      const collection = new NftCollection({ ticker }, context);
+      const collection = new NftCollection({ assetId }, context);
       const mockMetadataKey = dsMockUtils.createMockAssetMetadataKey({
         Global: dsMockUtils.createMockU64(id),
       });
@@ -441,7 +450,7 @@ describe('NftCollection class', () => {
       jest.spyOn(collection, 'getCollectionId').mockResolvedValue(id);
 
       when(meshMetadataKeyToMetadataKeySpy)
-        .calledWith(mockMetadataKey, ticker)
+        .calledWith(mockMetadataKey, assetId)
         .mockReturnValue({ type: MetadataType.Global, id });
 
       u64ToBigNumberSpy.mockReturnValue(id);
@@ -467,12 +476,12 @@ describe('NftCollection class', () => {
   describe('method: getCollectionId', () => {
     it('should return and cache the collection ID', async () => {
       const context = dsMockUtils.getContextInstance();
-      const ticker = 'TICKER';
-      const collection = new NftCollection({ ticker }, context);
+      const assetId = '0x1234';
+      const collection = new NftCollection({ assetId }, context);
       const id = new BigNumber(1);
       const rawId = dsMockUtils.createMockU64(id);
 
-      const idMock = dsMockUtils.createQueryMock('nft', 'collectionTicker', { returnValue: rawId });
+      const idMock = dsMockUtils.createQueryMock('nft', 'collectionAsset', { returnValue: rawId });
 
       const result = await collection.getCollectionId();
 
@@ -486,9 +495,9 @@ describe('NftCollection class', () => {
 
   describe('method: issue', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const ticker = 'TEST';
+      const assetId = 'TEST';
       const context = dsMockUtils.getContextInstance();
-      const collection = new NftCollection({ ticker }, context);
+      const collection = new NftCollection({ assetId }, context);
 
       const args = {
         metadata: [],
@@ -499,7 +508,7 @@ describe('NftCollection class', () => {
         'someTransaction' as unknown as PolymeshTransaction<NftCollection>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: { ticker, ...args }, transformer: undefined }, context, {})
+        .calledWith({ args: { collection, ...args }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
       const tx = await collection.issue(args);
@@ -510,9 +519,9 @@ describe('NftCollection class', () => {
 
   describe('method: controllerTransfer', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const ticker = 'TEST';
+      const assetId = 'TEST';
       const context = dsMockUtils.getContextInstance();
-      const collection = new NftCollection({ ticker }, context);
+      const collection = new NftCollection({ assetId }, context);
 
       const args = {
         originPortfolio: entityMockUtils.getDefaultPortfolioInstance(),
@@ -523,7 +532,7 @@ describe('NftCollection class', () => {
         'someTransaction' as unknown as PolymeshTransaction<NftCollection>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: { ticker, ...args }, transformer: undefined }, context, {})
+        .calledWith({ args: { collection, ...args }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
       const tx = await collection.controllerTransfer(args);
@@ -534,10 +543,10 @@ describe('NftCollection class', () => {
 
   describe('method: getNft', () => {
     it('should return the NFT if it exists', async () => {
-      const ticker = 'TEST';
+      const assetId = 'TEST';
       const id = new BigNumber(1);
       const context = dsMockUtils.getContextInstance();
-      const collection = new NftCollection({ ticker }, context);
+      const collection = new NftCollection({ assetId }, context);
 
       entityMockUtils.configureMocks({
         nftOptions: { exists: true },
@@ -549,10 +558,10 @@ describe('NftCollection class', () => {
     });
 
     it('should throw an error if the NFT does not exist', async () => {
-      const ticker = 'TEST';
+      const assetId = 'TEST';
       const id = new BigNumber(1);
       const context = dsMockUtils.getContextInstance();
-      const collection = new NftCollection({ ticker }, context);
+      const collection = new NftCollection({ assetId }, context);
 
       entityMockUtils.configureMocks({
         nftOptions: { exists: false },
@@ -569,19 +578,14 @@ describe('NftCollection class', () => {
 
   describe('method: getTransactionHistory', () => {
     it('should return the list of the collection transactions', async () => {
-      const ticker = 'TICKER';
-      const context = dsMockUtils.getContextInstance();
-      jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware').mockResolvedValue(ticker);
-      const asset = new NftCollection({ ticker }, context);
       const assetId = '0x1234';
+      const context = dsMockUtils.getContextInstance();
+      const asset = new NftCollection({ assetId }, context);
       const transactionResponse = {
         totalCount: new BigNumber(5),
         nodes: [
           {
-            asset: {
-              id: assetId,
-              ticker,
-            },
+            assetId,
             nftIds: ['1'],
             eventId: EventIdEnum.Issued,
             toPortfolioId: 'SOME_DID/0',
@@ -595,10 +599,7 @@ describe('NftCollection class', () => {
             },
           },
           {
-            asset: {
-              id: assetId,
-              ticker,
-            },
+            assetId,
             nftIds: ['1'],
             eventId: EventIdEnum.Transfer,
             toPortfolioId: 'OTHER_DID/0',
@@ -617,7 +618,7 @@ describe('NftCollection class', () => {
       };
 
       dsMockUtils.createApolloQueryMock(
-        assetTransactionQuery({ assetId: ticker }, new BigNumber(3), new BigNumber(0)),
+        assetTransactionQuery({ assetId }, new BigNumber(3), new BigNumber(0)),
         {
           assetTransactions: transactionResponse,
         }
@@ -628,7 +629,7 @@ describe('NftCollection class', () => {
         size: new BigNumber(3),
       });
 
-      expect(result.data[0].asset.ticker).toEqual(ticker);
+      expect(result.data[0].asset.id).toEqual(assetId);
       expect(result.data[0].nfts).toEqual(
         expect.arrayContaining([expect.objectContaining({ id: new BigNumber(1) })])
       );
@@ -636,7 +637,7 @@ describe('NftCollection class', () => {
       expect(result.data[0].from).toBeNull();
       expect(result.data[0].to instanceof DefaultPortfolio).toBe(true);
 
-      expect(result.data[1].asset.ticker).toEqual(ticker);
+      expect(result.data[1].asset.id).toEqual(assetId);
       expect(result.data[1].nfts).toEqual(
         expect.arrayContaining([expect.objectContaining({ id: new BigNumber(1) })])
       );
@@ -653,11 +654,11 @@ describe('NftCollection class', () => {
 
   describe('method: exists', () => {
     it('should return whether the NftCollection exists', async () => {
-      const ticker = 'TICKER';
+      const assetId = '0x1234';
       const context = dsMockUtils.getContextInstance();
-      const nftCollection = new NftCollection({ ticker }, context);
+      const nftCollection = new NftCollection({ assetId }, context);
 
-      dsMockUtils.createQueryMock('nft', 'collectionTicker', {
+      dsMockUtils.createQueryMock('nft', 'collectionAsset', {
         returnValue: new BigNumber(10),
       });
 
@@ -665,7 +666,7 @@ describe('NftCollection class', () => {
 
       expect(result).toBe(true);
 
-      dsMockUtils.createQueryMock('nft', 'collectionTicker', {
+      dsMockUtils.createQueryMock('nft', 'collectionAsset', {
         returnValue: new BigNumber(0),
       });
 
@@ -678,9 +679,9 @@ describe('NftCollection class', () => {
   describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       const context = dsMockUtils.getContextInstance();
-      const nftCollection = new NftCollection({ ticker: 'SOME_TICKER' }, context);
+      const nftCollection = new NftCollection({ assetId: '0x1234' }, context);
 
-      expect(nftCollection.toHuman()).toBe('SOME_TICKER');
+      expect(nftCollection.toHuman()).toBe('0x1234');
     });
   });
 });

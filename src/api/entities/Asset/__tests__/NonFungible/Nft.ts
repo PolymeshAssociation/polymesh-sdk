@@ -39,30 +39,30 @@ describe('Nft class', () => {
   });
 
   describe('constructor', () => {
-    it('should assign ticker and did to instance', () => {
-      const ticker = 'TICKER';
+    it('should assign assetId and did to instance', () => {
+      const assetId = '0x1234';
       const context = dsMockUtils.getContextInstance();
       const id = new BigNumber(1);
-      const nft = new Nft({ ticker, id }, context);
+      const nft = new Nft({ assetId, id }, context);
 
-      expect(nft.collection.ticker).toBe(ticker);
+      expect(nft.collection.id).toBe(assetId);
       expect(nft.id).toEqual(id);
-      expect(nft.collection.ticker).toEqual(ticker);
+      expect(nft.collection.id).toEqual(assetId);
     });
   });
 
   describe('method: isUniqueIdentifiers', () => {
     it('should return true if the object conforms to the interface', () => {
-      expect(Nft.isUniqueIdentifiers({ ticker: 'TICKER', id: new BigNumber(1) })).toBe(true);
+      expect(Nft.isUniqueIdentifiers({ assetId: '0x1234', id: new BigNumber(1) })).toBe(true);
       expect(Nft.isUniqueIdentifiers({})).toBe(false);
-      expect(Nft.isUniqueIdentifiers({ ticker: 3 })).toBe(false);
+      expect(Nft.isUniqueIdentifiers({ assetId: 3 })).toBe(false);
     });
   });
 
   describe('method: getMetadata', () => {
     it('should return values for the metadata associated to the Nft', async () => {
       const id = new BigNumber(1);
-      const ticker = 'TICKER';
+      const assetId = '0x1234';
       const context = dsMockUtils.getContextInstance();
       entityMockUtils.getNftCollectionInstance({
         getCollectionId: new BigNumber(1),
@@ -82,13 +82,13 @@ describe('Nft class', () => {
         ],
       });
 
-      const nft = new Nft({ ticker, id }, context);
+      const nft = new Nft({ assetId, id }, context);
 
       const result = await nft.getMetadata();
 
       expect(result).toEqual([
         {
-          key: { id, ticker: 'TICKER', type: 'Local' },
+          key: { id, assetId: '0x1234', type: 'Local' },
           value: 'This is a test metadata value',
         },
       ]);
@@ -97,10 +97,10 @@ describe('Nft class', () => {
 
   describe('method: exists', () => {
     it('should return whether NFT exists or not', async () => {
-      const ticker = 'TICKER';
+      const assetId = '0x1234';
       const context = dsMockUtils.getContextInstance();
       const id = new BigNumber(3);
-      const nft = new Nft({ ticker, id }, context);
+      const nft = new Nft({ assetId, id }, context);
 
       const getOwnerSpy = jest.spyOn(nft, 'getOwner');
 
@@ -119,7 +119,7 @@ describe('Nft class', () => {
   });
 
   describe('getImageUrl', () => {
-    const ticker = 'TEST';
+    const assetId = 'TEST';
     const id = new BigNumber(1);
     let context: Context;
 
@@ -145,7 +145,7 @@ describe('Nft class', () => {
           returnValue: dsMockUtils.createMockBytes(imageUrl),
         });
 
-        const nft = new Nft({ ticker, id }, context);
+        const nft = new Nft({ assetId, id }, context);
 
         const result = await nft.getImageUri();
 
@@ -161,7 +161,7 @@ describe('Nft class', () => {
           returnValue: dsMockUtils.createMockOption(),
         });
 
-        const nft = new Nft({ ticker, id }, context);
+        const nft = new Nft({ assetId, id }, context);
 
         const result = await nft.getImageUri();
         expect(result).toBeNull();
@@ -181,7 +181,7 @@ describe('Nft class', () => {
           returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockBytes(testUrl)),
         });
 
-        const nft = new Nft({ ticker, id }, context);
+        const nft = new Nft({ assetId, id }, context);
 
         const result = await nft.getImageUri();
 
@@ -194,7 +194,7 @@ describe('Nft class', () => {
           returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockBytes(testUrl)),
         });
 
-        const nft = new Nft({ ticker, id }, context);
+        const nft = new Nft({ assetId, id }, context);
 
         const result = await nft.getImageUri();
 
@@ -208,7 +208,7 @@ describe('Nft class', () => {
           returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockBytes(testUrl)),
         });
 
-        const nft = new Nft({ ticker, id }, context);
+        const nft = new Nft({ assetId, id }, context);
 
         const result = await nft.getImageUri();
 
@@ -224,7 +224,7 @@ describe('Nft class', () => {
           returnValue: dsMockUtils.createMockBytes(''),
         });
 
-        const nft = new Nft({ ticker, id }, context);
+        const nft = new Nft({ assetId, id }, context);
 
         const result = await nft.getImageUri();
         expect(result).toBeNull();
@@ -237,7 +237,7 @@ describe('Nft class', () => {
           returnValue: dsMockUtils.createMockOption(),
         });
 
-        const nft = new Nft({ ticker, id }, context);
+        const nft = new Nft({ assetId, id }, context);
 
         const result = await nft.getImageUri();
 
@@ -247,7 +247,7 @@ describe('Nft class', () => {
   });
 
   describe('getTokenUri', () => {
-    const ticker = 'TEST';
+    const assetId = 'TEST';
     const id = new BigNumber(1);
     let context: Context;
 
@@ -273,7 +273,7 @@ describe('Nft class', () => {
           returnValue: dsMockUtils.createMockBytes(imageUrl),
         });
 
-        const nft = new Nft({ ticker, id }, context);
+        const nft = new Nft({ assetId, id }, context);
 
         const result = await nft.getTokenUri();
 
@@ -289,7 +289,7 @@ describe('Nft class', () => {
           returnValue: dsMockUtils.createMockOption(),
         });
 
-        const nft = new Nft({ ticker, id }, context);
+        const nft = new Nft({ assetId, id }, context);
 
         const result = await nft.getTokenUri();
         expect(result).toBeNull();
@@ -309,7 +309,7 @@ describe('Nft class', () => {
           returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockBytes(testUrl)),
         });
 
-        const nft = new Nft({ ticker, id }, context);
+        const nft = new Nft({ assetId, id }, context);
 
         const result = await nft.getTokenUri();
 
@@ -322,7 +322,7 @@ describe('Nft class', () => {
           returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockBytes(testUrl)),
         });
 
-        const nft = new Nft({ ticker, id }, context);
+        const nft = new Nft({ assetId, id }, context);
 
         const result = await nft.getTokenUri();
 
@@ -338,7 +338,7 @@ describe('Nft class', () => {
           returnValue: dsMockUtils.createMockBytes(''),
         });
 
-        const nft = new Nft({ ticker, id }, context);
+        const nft = new Nft({ assetId, id }, context);
 
         const result = await nft.getTokenUri();
         expect(result).toBeNull();
@@ -348,15 +348,19 @@ describe('Nft class', () => {
 
   describe('method: redeem', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const ticker = 'TEST';
+      const assetId = 'TEST';
       const id = new BigNumber(1);
       const context = dsMockUtils.getContextInstance();
-      const nft = new Nft({ ticker, id }, context);
+      const nft = new Nft({ assetId, id }, context);
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: { ticker, id }, transformer: undefined }, context, {})
+        .calledWith(
+          { args: { collection: nft.collection, id }, transformer: undefined },
+          context,
+          {}
+        )
         .mockResolvedValue(expectedTransaction);
 
       const tx = await nft.redeem();
@@ -366,7 +370,7 @@ describe('Nft class', () => {
   });
 
   describe('method: getOwner', () => {
-    const ticker = 'TEST';
+    const assetId = 'TEST';
     const id = new BigNumber(1);
     let context: Context;
     let nftOwnerMock: jest.Mock;
@@ -375,7 +379,7 @@ describe('Nft class', () => {
     beforeEach(async () => {
       context = dsMockUtils.getContextInstance();
       nftOwnerMock = dsMockUtils.createQueryMock('nft', 'nftOwner');
-      nft = new Nft({ ticker, id }, context);
+      nft = new Nft({ assetId, id }, context);
     });
 
     it('should return null if no owner exists', async () => {
@@ -413,7 +417,7 @@ describe('Nft class', () => {
   });
 
   describe('method: isLocked', () => {
-    const ticker = 'TEST';
+    const assetId = 'TEST';
     const id = new BigNumber(1);
     let context: Context;
     let nft: Nft;
@@ -421,7 +425,7 @@ describe('Nft class', () => {
 
     beforeEach(async () => {
       context = dsMockUtils.getContextInstance();
-      nft = new Nft({ ticker, id }, context);
+      nft = new Nft({ assetId, id }, context);
       ownerSpy = jest.spyOn(nft, 'getOwner');
     });
 
@@ -451,10 +455,10 @@ describe('Nft class', () => {
   describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       const context = dsMockUtils.getContextInstance();
-      const ticker = 'TICKER';
-      const nft = new Nft({ ticker, id: new BigNumber(1) }, context);
+      const assetId = '0x1234';
+      const nft = new Nft({ assetId, id: new BigNumber(1) }, context);
 
-      expect(nft.toHuman()).toEqual({ collection: 'TICKER', id: '1' });
+      expect(nft.toHuman()).toEqual({ collection: '0x1234', id: '1' });
     });
   });
 });

@@ -2,6 +2,7 @@ import { Bytes, Option, StorageKey } from '@polkadot/types';
 import {
   PalletAssetSecurityToken,
   PolymeshPrimitivesAgentAgentGroup,
+  PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
@@ -132,6 +133,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
       this.did = tickerToDid(assetId);
     } else {
       this.id = assetId;
+      // TODO @prashantasdeveloper check logic around asset DID
     }
 
     this.compliance = new Compliance(this, context);
@@ -229,15 +231,17 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
 
     const rawAssetId = assetToMeshAssetId(this, context);
 
-    let identifiersStorage = asset.assetIdentifiers;
+    let identifiersStorage;
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       identifiersStorage = (asset as any).identifiers;
+    } else {
+      identifiersStorage = asset.assetIdentifiers;
     }
 
     if (callback) {
       context.assertSupportsSubscription();
-      return identifiersStorage(rawAssetId, identifiers => {
+      return identifiersStorage(rawAssetId, (identifiers: PolymeshPrimitivesAssetIdentifier[]) => {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(identifiers.map(assetIdentifierToSecurityIdentifier));
       });

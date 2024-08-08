@@ -1,12 +1,11 @@
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
+import { Distributions } from '~/api/entities/Asset/Fungible/CorporateActions/Distributions';
 import { DividendDistribution, Namespace, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { ConfigureDividendDistributionParams, DistributionWithDetails } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
-
-import { Distributions } from '../Distributions';
 
 jest.mock(
   '~/api/entities/DividendDistribution',
@@ -69,11 +68,7 @@ describe('Distributions class', () => {
         'someTransaction' as unknown as PolymeshTransaction<DividendDistribution>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith(
-          { args: { ticker: asset.ticker, ...args }, transformer: undefined },
-          context,
-          {}
-        )
+        .calledWith({ args: { asset, ...args }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
       const tx = await distributions.configureDividendDistribution(args);
@@ -84,7 +79,7 @@ describe('Distributions class', () => {
 
   describe('method: getOne', () => {
     beforeAll(() => {
-      jest.spyOn(utilsConversionModule, 'stringToTicker').mockImplementation();
+      jest.spyOn(utilsConversionModule, 'stringToAssetId').mockImplementation();
       jest.spyOn(utilsConversionModule, 'bigNumberToU32').mockImplementation();
     });
     afterAll(() => {
@@ -92,7 +87,7 @@ describe('Distributions class', () => {
     });
 
     it('should return the requested Distribution', async () => {
-      const ticker = 'SOME_TICKER';
+      const assetId = '0x1234';
       const id = new BigNumber(1);
 
       dsMockUtils.createQueryMock('corporateAction', 'corporateActions', {
@@ -131,21 +126,21 @@ describe('Distributions class', () => {
       });
 
       const context = dsMockUtils.getContextInstance();
-      const asset = entityMockUtils.getFungibleAssetInstance({ ticker });
+      const asset = entityMockUtils.getFungibleAssetInstance({ assetId });
 
       const target = new Distributions(asset, context);
 
       const { distribution, details } = await target.getOne({ id });
 
       expect(distribution.id).toEqual(id);
-      expect(distribution.asset.ticker).toBe(ticker);
+      expect(distribution.asset.id).toBe(assetId);
       expect(distribution instanceof DividendDistribution).toBe(true);
       expect(details.fundsReclaimed).toBe(false);
       expect(details.remainingFunds).toEqual(new BigNumber(5000));
     });
 
     it('should throw an error if the Distribution does not exist', async () => {
-      const ticker = 'SOME_TICKER';
+      const assetId = '0x1234';
       const id = new BigNumber(1);
 
       dsMockUtils.createQueryMock('corporateAction', 'corporateActions', {
@@ -173,7 +168,7 @@ describe('Distributions class', () => {
       });
 
       const context = dsMockUtils.getContextInstance();
-      const asset = entityMockUtils.getFungibleAssetInstance({ ticker });
+      const asset = entityMockUtils.getFungibleAssetInstance({ assetId });
 
       const target = new Distributions(asset, context);
 
@@ -211,10 +206,10 @@ describe('Distributions class', () => {
     });
 
     it('should return all distributions associated to the Asset', async () => {
-      const ticker = 'SOME_TICKER';
+      const assetId = '0x1234';
 
       const context = dsMockUtils.getContextInstance();
-      const asset = entityMockUtils.getFungibleAssetInstance({ ticker });
+      const asset = entityMockUtils.getFungibleAssetInstance({ assetId });
 
       when(context.getDividendDistributionsForAssets)
         .calledWith({ assets: [asset] })

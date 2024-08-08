@@ -5,7 +5,6 @@ import { Context, Namespace } from '~/internal';
 import { nftCollectionHolders } from '~/middleware/queries/assets';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { NftCollection } from '~/types';
-import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Asset/NonFungible',
@@ -36,7 +35,7 @@ describe('AssetHolder class', () => {
   });
 
   describe('method: get', () => {
-    const ticker = 'TICKER';
+    const assetId = '0x1234';
     let assetHolders: AssetHolders;
     let collection: NftCollection;
     let context: Context;
@@ -47,8 +46,7 @@ describe('AssetHolder class', () => {
 
     beforeEach(() => {
       context = dsMockUtils.getContextInstance();
-      collection = entityMockUtils.getNftCollectionInstance({ ticker });
-      jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware').mockResolvedValue(ticker);
+      collection = entityMockUtils.getNftCollectionInstance({ assetId });
       assetHolders = new AssetHolders(collection, context);
 
       const nftHoldersResponse = {
@@ -66,7 +64,7 @@ describe('AssetHolder class', () => {
       };
 
       dsMockUtils.createApolloQueryMock(
-        nftCollectionHolders(ticker, new BigNumber(2), new BigNumber(0)),
+        nftCollectionHolders(assetId, new BigNumber(2), new BigNumber(0)),
         {
           nftHolders: nftHoldersResponse,
         }

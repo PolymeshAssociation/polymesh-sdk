@@ -74,6 +74,7 @@ import {
   PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
   PolymeshPrimitivesAgentAgentGroup,
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesAssetAssetType,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
@@ -418,6 +419,7 @@ interface TxMockData {
 }
 interface ContextOptions {
   did?: string;
+  isV6?: boolean;
   withSigningManager?: boolean;
   balance?: AccountBalance;
   subsidy?: SubsidyWithAllowance;
@@ -656,6 +658,7 @@ let queryMultiMock = jest.fn();
 
 const defaultContextOptions: ContextOptions = {
   did: 'someDid',
+  isV6: false,
   withSigningManager: true,
   balance: {
     free: new BigNumber(100),
@@ -797,6 +800,7 @@ let signingManagerOptions = defaultSigningManagerOptions;
  */
 function configureContext(opts: ContextOptions): void {
   const getSigningIdentity = jest.fn();
+  const isV6 = opts.isV6;
   const identity = {
     did: opts.did,
     hasRoles: jest.fn().mockResolvedValue(opts.hasRoles),
@@ -865,6 +869,7 @@ function configureContext(opts: ContextOptions): void {
 
   const queryMock = mockInstanceContainer.apolloInstance.query;
   const contextInstance = {
+    isV6,
     signingAddress,
     nonce,
     getSigningIdentity,
@@ -1992,6 +1997,20 @@ export const createMockTicker = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockAssetId = (
+  assetId?: string | PolymeshPrimitivesAssetAssetID
+): MockCodec<PolymeshPrimitivesAssetAssetID> => {
+  if (isCodec<PolymeshPrimitivesAssetAssetID>(assetId)) {
+    return assetId as MockCodec<PolymeshPrimitivesAssetAssetID>;
+  }
+
+  return createMockStringCodec<PolymeshPrimitivesAssetAssetID>(assetId);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockAccountId = (accountId?: string | AccountId): MockCodec<AccountId> => {
   if (isCodec<AccountId>(accountId)) {
     return accountId as MockCodec<AccountId>;
@@ -2242,23 +2261,27 @@ export const createMockPortfolioId = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockMovePortfolioItem = (movePortfolioItem?: {
-  ticker: PolymeshPrimitivesTicker | Parameters<typeof createMockTicker>[0];
+export const createMockMovePortfolioItemAsFungible = (movePortfolioItem?: {
+  assetId: PolymeshPrimitivesAssetAssetID | Parameters<typeof createMockAssetId>[0];
   amount: Balance | Parameters<typeof createMockBalance>[0];
 }): MockCodec<PolymeshPrimitivesPortfolioFund> => {
   if (isCodec<PolymeshPrimitivesPortfolioFund>(movePortfolioItem)) {
     return movePortfolioItem as unknown as MockCodec<PolymeshPrimitivesPortfolioFund>;
   }
 
-  const { ticker, amount } = movePortfolioItem ?? {
-    ticker: createMockTicker(),
+  const { assetId, amount } = movePortfolioItem ?? {
+    assetId: createMockAssetId(),
     amount: createMockBalance(),
   };
 
   return createMockCodec(
     {
-      ticker: createMockTicker(ticker),
-      amount: createMockBalance(amount),
+      description: {
+        Fungible: {
+          assetId: createMockAssetId(assetId),
+          amount: createMockBalance(amount),
+        },
+      },
     },
     !movePortfolioItem
   );
@@ -2736,7 +2759,7 @@ export const createMockCountryCode = (
 export const createMockScope = (
   scope?:
     | { Identity: PolymeshPrimitivesIdentityId }
-    | { Ticker: PolymeshPrimitivesTicker }
+    | { AssetId: PolymeshPrimitivesAssetAssetID }
     | { Custom: Bytes }
 ): MockCodec<PolymeshPrimitivesIdentityClaimScope> =>
   createMockEnum<PolymeshPrimitivesIdentityClaimScope>(scope);
@@ -3077,6 +3100,7 @@ export const createMockKeyRecord = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+// TODO @prashantasdeveloper
 // export const createMockCanTransferResult = (
 //   canTransferResult?: { Ok: u8 } | { Err: Bytes }
 // ): MockCodec<CanTransferResult> => createMockEnum<CanTransferResult>(canTransferResult);
@@ -3097,6 +3121,7 @@ export const createMockText = (value?: string | Text): MockCodec<Text> => {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+// TODO @prashantasdeveloper
 // export const createMockAssetOwnershipRelation = (
 //   assetOwnershipRelation?: 'NotOwned' | 'TickerOwned' | 'AssetOwned'
 // ): MockCodec<PalletAssetAssetOwnershipRelation> =>
@@ -3236,7 +3261,7 @@ export const createMockInstructionLeg = (
         Fungible: {
           sender: PolymeshPrimitivesIdentityIdPortfolioId;
           receiver: PolymeshPrimitivesIdentityIdPortfolioId;
-          ticker: PolymeshPrimitivesTicker;
+          assetId: PolymeshPrimitivesAssetAssetID;
           amount: Balance;
         };
       }
@@ -3251,7 +3276,7 @@ export const createMockInstructionLeg = (
         OffChain: {
           senderIdentity: PolymeshPrimitivesIdentityId;
           receiverIdentity: PolymeshPrimitivesIdentityId;
-          ticker: PolymeshPrimitivesTicker;
+          assetId: PolymeshPrimitivesAssetAssetID;
           amount: Balance;
         };
       }
@@ -3349,9 +3374,9 @@ export const createMockFundraiser = (fundraiser?: {
   const data = fundraiser ?? {
     creator: createMockIdentityId(),
     offeringPortfolio: createMockPortfolioId(),
-    offeringAsset: createMockTicker(),
+    offeringAsset: createMockAssetId(),
     raisingPortfolio: createMockPortfolioId(),
-    raisingAsset: createMockTicker(),
+    raisingAsset: createMockAssetId(),
     tiers: [],
     venueId: createMockU64(),
     start: createMockMoment(),
@@ -3624,18 +3649,18 @@ export const createMockCAId = (
   caId?:
     | PalletCorporateActionsCaId
     | {
-        ticker: PolymeshPrimitivesTicker | Parameters<typeof createMockTicker>[0];
+        assetId: PolymeshPrimitivesAssetAssetID | Parameters<typeof createMockAssetId>[0];
         localId: u32 | Parameters<typeof createMockU32>[0];
       }
 ): MockCodec<PalletCorporateActionsCaId> => {
   const { assetId, localId } = caId ?? {
-    assetId: createMockTicker(),
+    assetId: createMockAssetId(),
     localId: createMockU32(),
   };
 
   return createMockCodec(
     {
-      ticker: createMockTicker(ticker),
+      assetId: createMockAssetId(assetId),
       localId: createMockU32(localId),
     },
     !caId
@@ -3648,7 +3673,7 @@ export const createMockCAId = (
  */
 export const createMockDistribution = (distribution?: {
   from: PolymeshPrimitivesIdentityIdPortfolioId | Parameters<typeof createMockPortfolioId>[0];
-  currency: PolymeshPrimitivesTicker | Parameters<typeof createMockTicker>[0];
+  currency: PolymeshPrimitivesAssetAssetID | Parameters<typeof createMockAssetId>[0];
   perShare: Balance | Parameters<typeof createMockBalance>[0];
   amount: Balance | Parameters<typeof createMockBalance>[0];
   remaining: Balance | Parameters<typeof createMockBalance>[0];
@@ -3659,7 +3684,7 @@ export const createMockDistribution = (distribution?: {
   const { from, currency, perShare, amount, remaining, reclaimed, paymentAt, expiresAt } =
     distribution ?? {
       from: createMockPortfolioId(),
-      currency: createMockTicker(),
+      currency: createMockAssetId(),
       perShare: createMockBalance(),
       amount: createMockBalance(),
       remaining: createMockBalance(),
@@ -3671,7 +3696,7 @@ export const createMockDistribution = (distribution?: {
   return createMockCodec(
     {
       from: createMockPortfolioId(from),
-      currency: createMockTicker(currency),
+      currency: createMockAssetId(currency),
       perShare: createMockBalance(perShare),
       amount: createMockBalance(amount),
       remaining: createMockBalance(remaining),
@@ -4133,7 +4158,7 @@ export const createMockInitiateCorporateActionArgs = (
   caArgs?:
     | PalletCorporateActionsInitiateCorporateActionArgs
     | {
-        ticker: PolymeshPrimitivesTicker | Parameters<typeof createMockTicker>[0];
+        assetId: PolymeshPrimitivesAssetAssetID | Parameters<typeof createMockAssetId>[0];
         kind: PalletCorporateActionsCaKind | Parameters<typeof createMockCAKind>[0];
         declDate: u64 | Parameters<typeof createMockU64>[0];
         recordDate: Option<PalletCorporateActionsRecordDateSpec>;
@@ -4149,7 +4174,7 @@ export const createMockInitiateCorporateActionArgs = (
       }
 ): MockCodec<PalletCorporateActionsInitiateCorporateActionArgs> => {
   const {
-    ticker,
+    assetId,
     kind,
     declDate,
     recordDate,
@@ -4158,7 +4183,7 @@ export const createMockInitiateCorporateActionArgs = (
     defaultWithholdingTax,
     withholdingTax,
   } = caArgs ?? {
-    ticker: createMockTicker(),
+    assetId: createMockAssetId(),
     kind: createMockCAKind(),
     declDate: createMockU64(),
     recordDate: createMockOption(),
@@ -4170,7 +4195,7 @@ export const createMockInitiateCorporateActionArgs = (
 
   return createMockCodec(
     {
-      ticker: createMockTicker(ticker),
+      assetId: createMockAssetId(assetId),
       kind: createMockCAKind(kind),
       declDate: createMockU64(declDate),
       recordDate: createMockOption(recordDate),
@@ -4426,15 +4451,15 @@ export const createMockContractInfo = (contractInfo?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockNfts = (nfts?: {
-  ticker: PolymeshPrimitivesTicker;
+  assetId: PolymeshPrimitivesAssetAssetID;
   ids: u64[];
 }): MockCodec<PolymeshPrimitivesNftNfTs> => {
-  const { ticker, ids } = nfts ?? {
-    ticker: createMockTicker(),
+  const { assetId, ids } = nfts ?? {
+    assetId: createMockAssetId(),
     ids: [],
   };
 
-  return createMockCodec({ ticker, ids }, !nfts);
+  return createMockCodec({ assetId, ids }, !nfts);
 };
 
 /**
@@ -4626,18 +4651,18 @@ export const createMockAssetCount = (
 export const createMockRpcAssetCount = (
   assetCount?:
     | {
-        fungibleTokens: u32 | Parameters<typeof createMockU32>[0];
-        nonFungibleTokens: u32 | Parameters<typeof createMockU32>[0];
-        offChainAssets: u32 | Parameters<typeof createMockU32>[0];
+        fungible_tokens: u32 | Parameters<typeof createMockU32>[0];
+        non_fungible_tokens: u32 | Parameters<typeof createMockU32>[0];
+        off_chain_assets: u32 | Parameters<typeof createMockU32>[0];
       }
     | AssetCount
 ): MockCodec<AssetCount> => {
-  const { fungibleTokens, nonFungibleTokens, offChainAssets } = assetCount ?? {
-    fungible: createMockU32(),
-    nonFungible: createMockU32(),
-    offChain: createMockU32(),
+  const { fungible_tokens, non_fungible_tokens, off_chain_assets } = assetCount ?? {
+    fungible_tokens: createMockU32(),
+    non_fungible_tokens: createMockU32(),
+    off_chain_assets: createMockU32(),
   };
-  return createMockCodec({ fungibleTokens, nonFungibleTokens, offChainAssets }, !assetCount);
+  return createMockCodec({ fungible_tokens, non_fungible_tokens, off_chain_assets }, !assetCount);
 };
 
 /**

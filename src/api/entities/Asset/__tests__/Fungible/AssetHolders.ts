@@ -1,9 +1,13 @@
 import { StorageKey } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
-import { PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesIdentityId,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
+import { AssetHolders } from '~/api/entities/Asset/Fungible/AssetHolders';
 import { Context, Namespace } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -11,8 +15,6 @@ import { IdentityBalance } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
-
-import { AssetHolders } from '../../Fungible/AssetHolders';
 
 jest.mock(
   '~/api/entities/Asset/Fungible',
@@ -24,9 +26,9 @@ jest.mock(
 );
 
 describe('AssetHolder class', () => {
-  let ticker: string;
+  let assetId: string;
   let mockContext: Mocked<Context>;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let requestPaginatedSpy: jest.SpyInstance;
   let identityIdToStringSpy: jest.SpyInstance<string, [PolymeshPrimitivesIdentityId]>;
   let balanceToBigNumberSpy: jest.SpyInstance<BigNumber, [Balance]>;
@@ -44,15 +46,15 @@ describe('AssetHolder class', () => {
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
-    ticker = 'TEST';
+    assetId = '0x1234';
     mockContext = dsMockUtils.getContextInstance();
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
     requestPaginatedSpy = jest.spyOn(utilsInternalModule, 'requestPaginated');
     identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
     balanceToBigNumberSpy = jest.spyOn(utilsConversionModule, 'balanceToBigNumber');
-    when(jest.spyOn(utilsConversionModule, 'stringToTicker'))
-      .calledWith(ticker, mockContext)
-      .mockReturnValue(rawTicker);
+    when(jest.spyOn(utilsConversionModule, 'stringToAssetId'))
+      .calledWith(assetId, mockContext)
+      .mockReturnValue(rawAssetId);
   });
 
   afterEach(() => {
@@ -91,7 +93,7 @@ describe('AssetHolder class', () => {
         when(balanceToBigNumberSpy).calledWith(fakeBalance).mockReturnValue(balance);
 
         balanceOfEntries.push(
-          tuple({ args: [rawTicker, identityId] } as unknown as StorageKey, fakeBalance)
+          tuple({ args: [rawAssetId, identityId] } as unknown as StorageKey, fakeBalance)
         );
 
         expectedHolders.push({
@@ -129,7 +131,7 @@ describe('AssetHolder class', () => {
       when(balanceToBigNumberSpy).calledWith(fakeBalance).mockReturnValue(balance);
 
       balanceOfEntries.push(
-        tuple({ args: [rawTicker, identityId] } as unknown as StorageKey, fakeBalance)
+        tuple({ args: [rawAssetId, identityId] } as unknown as StorageKey, fakeBalance)
       );
 
       expectedHolders.push({

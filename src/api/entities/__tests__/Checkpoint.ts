@@ -21,7 +21,7 @@ describe('Checkpoint class', () => {
   let context: Context;
 
   let id: BigNumber;
-  let ticker: string;
+  let assetId: string;
 
   let balanceToBigNumberSpy: jest.SpyInstance;
 
@@ -30,7 +30,7 @@ describe('Checkpoint class', () => {
     entityMockUtils.initMocks();
 
     id = new BigNumber(1);
-    ticker = 'SOME_TICKER';
+    assetId = '0x1234';
 
     balanceToBigNumberSpy = jest.spyOn(utilsConversionModule, 'balanceToBigNumber');
   });
@@ -54,16 +54,18 @@ describe('Checkpoint class', () => {
 
   describe('constructor', () => {
     it('should assign ticker and id to instance', () => {
-      const checkpoint = new Checkpoint({ id, ticker }, context);
+      const checkpoint = new Checkpoint({ id, assetId }, context);
 
-      expect(checkpoint.asset.ticker).toBe(ticker);
+      expect(checkpoint.asset.id).toBe(assetId);
       expect(checkpoint.id).toEqual(id);
     });
   });
 
   describe('method: isUniqueIdentifiers', () => {
     it('should return true if the object conforms to the interface', () => {
-      expect(Checkpoint.isUniqueIdentifiers({ id: new BigNumber(1), ticker: 'symbol' })).toBe(true);
+      expect(Checkpoint.isUniqueIdentifiers({ id: new BigNumber(1), assetId: '0x1234' })).toBe(
+        true
+      );
       expect(Checkpoint.isUniqueIdentifiers({})).toBe(false);
       expect(Checkpoint.isUniqueIdentifiers({ id: new BigNumber(1) })).toBe(false);
       expect(Checkpoint.isUniqueIdentifiers({ id: 'id' })).toBe(false);
@@ -72,7 +74,7 @@ describe('Checkpoint class', () => {
 
   describe('method: createdAt', () => {
     it("should return the Checkpoint's creation date", async () => {
-      const checkpoint = new Checkpoint({ id, ticker }, context);
+      const checkpoint = new Checkpoint({ id, assetId }, context);
       const timestamp = 12000;
 
       dsMockUtils.createQueryMock('checkpoint', 'timestamps', {
@@ -87,7 +89,7 @@ describe('Checkpoint class', () => {
 
   describe('method: totalSupply', () => {
     it("should return the Checkpoint's total supply", async () => {
-      const checkpoint = new Checkpoint({ id, ticker }, context);
+      const checkpoint = new Checkpoint({ id, assetId }, context);
       const balance = new BigNumber(10000000000);
       const expected = new BigNumber(balance).shiftedBy(-6);
 
@@ -110,7 +112,7 @@ describe('Checkpoint class', () => {
     });
 
     it("should return the Checkpoint's Asset Holder balances", async () => {
-      const checkpoint = new Checkpoint({ id, ticker }, context);
+      const checkpoint = new Checkpoint({ id, assetId }, context);
 
       const balanceOf = [
         {
@@ -127,7 +129,7 @@ describe('Checkpoint class', () => {
         },
       ];
 
-      const rawTicker = dsMockUtils.createMockTicker(ticker);
+      const rawTicker = dsMockUtils.createMockTicker(assetId);
       const rawBalanceOf = balanceOf.map(({ identity, balance }) => ({
         identityId: dsMockUtils.createMockIdentityId(identity),
         balance: dsMockUtils.createMockBalance(balance),
@@ -185,7 +187,7 @@ describe('Checkpoint class', () => {
 
   describe('method: balance', () => {
     it("should return a specific Identity's balance at the Checkpoint", async () => {
-      const checkpoint = new Checkpoint({ id, ticker }, context);
+      const checkpoint = new Checkpoint({ id, assetId }, context);
       const balance = new BigNumber(10000000000);
 
       const expected = new BigNumber(balance).shiftedBy(-6);
@@ -228,7 +230,7 @@ describe('Checkpoint class', () => {
     it('should return whether the checkpoint exists', async () => {
       jest.spyOn(utilsConversionModule, 'stringToTicker').mockImplementation();
 
-      const checkpoint = new Checkpoint({ id, ticker }, context);
+      const checkpoint = new Checkpoint({ id, assetId }, context);
 
       dsMockUtils.createQueryMock('checkpoint', 'checkpointIdSequence', {
         returnValue: [dsMockUtils.createMockU64(new BigNumber(5))],
@@ -250,10 +252,11 @@ describe('Checkpoint class', () => {
 
   describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
-      const checkpoint = new Checkpoint({ id: new BigNumber(1), ticker: 'SOME_TICKER' }, context);
+      const checkpoint = new Checkpoint({ id: new BigNumber(1), assetId: '0x1234' }, context);
       expect(checkpoint.toHuman()).toEqual({
         id: '1',
-        ticker: 'SOME_TICKER',
+        ticker: '0x1234',
+        assetId: '0x1234',
       });
     });
   });
