@@ -12,7 +12,7 @@ jest.mock(
 );
 
 describe('BaseAsset class', () => {
-  let ticker: string;
+  let assetId: string;
   let context: MockContext;
   let mediatorDid: string;
   let asset: BaseAsset;
@@ -25,8 +25,8 @@ describe('BaseAsset class', () => {
 
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
-    ticker = 'TICKER';
-    asset = new BaseAsset({ ticker }, context);
+    assetId = '0x1234';
+    asset = new BaseAsset({ assetId }, context);
 
     mediatorDid = 'someDid';
 
@@ -55,7 +55,7 @@ describe('BaseAsset class', () => {
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<BaseAsset>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: { ticker, ...args }, transformer: undefined }, context, {})
+        .calledWith({ args: { asset, ...args }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
       const tx = await asset.setVenueFiltering(args);
@@ -73,7 +73,7 @@ describe('BaseAsset class', () => {
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<BaseAsset>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: { ticker, ...args }, transformer: undefined }, context, {})
+        .calledWith({ args: { asset, ...args }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
       const tx = await asset.setVenueFiltering(args);
@@ -91,7 +91,7 @@ describe('BaseAsset class', () => {
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<BaseAsset>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: { ticker, ...args }, transformer: undefined }, context, {})
+        .calledWith({ args: { asset, ...args }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
       const tx = await asset.setVenueFiltering(args);
@@ -108,7 +108,7 @@ describe('BaseAsset class', () => {
       dsMockUtils.createQueryMock('settlement', 'venueAllowList', {
         entries: [
           tuple(
-            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockU64(new BigNumber(1))],
+            [dsMockUtils.createMockAssetId(assetId), dsMockUtils.createMockU64(new BigNumber(1))],
             dsMockUtils.createMockBool(true)
           ),
         ],
@@ -125,11 +125,11 @@ describe('BaseAsset class', () => {
 
   describe('method: exists', () => {
     it('should return whether the BaseAsset exists', async () => {
-      dsMockUtils.createQueryMock('asset', 'tokens', {
+      dsMockUtils.createQueryMock('asset', 'securityTokens', {
         size: new BigNumber(10),
       });
 
-      dsMockUtils.createQueryMock('nft', 'collectionTicker', {
+      dsMockUtils.createQueryMock('nft', 'collectionAsset', {
         returnValue: dsMockUtils.createMockU64(new BigNumber(0)),
       });
 
@@ -137,7 +137,7 @@ describe('BaseAsset class', () => {
 
       expect(result).toBe(true);
 
-      dsMockUtils.createQueryMock('nft', 'collectionTicker', {
+      dsMockUtils.createQueryMock('nft', 'collectionAsset', {
         returnValue: dsMockUtils.createMockU64(new BigNumber(2)),
       });
 
@@ -145,11 +145,11 @@ describe('BaseAsset class', () => {
 
       expect(result).toBe(false);
 
-      dsMockUtils.createQueryMock('asset', 'tokens', {
+      dsMockUtils.createQueryMock('asset', 'securityTokens', {
         size: new BigNumber(0),
       });
 
-      dsMockUtils.createQueryMock('nft', 'collectionTicker', {
+      dsMockUtils.createQueryMock('nft', 'collectionAsset', {
         returnValue: dsMockUtils.createMockU64(new BigNumber(0)),
       });
 

@@ -18,10 +18,10 @@ describe('CheckpointSchedule class', () => {
   let context: Context;
 
   let id: BigNumber;
-  let ticker: string;
+  let assetId: string;
   let start: Date;
   let nextCheckpointDate: Date;
-  let stringToTickerSpy: jest.SpyInstance;
+  let stringToAssetIdSpy: jest.SpyInstance;
   let bigNumberToU64Spy: jest.SpyInstance;
 
   beforeAll(() => {
@@ -29,10 +29,10 @@ describe('CheckpointSchedule class', () => {
     entityMockUtils.initMocks();
 
     id = new BigNumber(1);
-    ticker = 'SOME_TICKER';
+    assetId = '0x1234';
     start = new Date('10/14/1987 UTC');
     nextCheckpointDate = new Date(new Date().getTime() + 60 * 60 * 1000 * 24 * 365 * 60);
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
     bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
   });
 
@@ -54,29 +54,29 @@ describe('CheckpointSchedule class', () => {
   });
 
   describe('constructor', () => {
-    it('should assign ticker and id to instance', () => {
-      let schedule = new CheckpointSchedule({ id, ticker, pendingPoints: [start] }, context);
+    it('should assign assetId and id to instance', () => {
+      let schedule = new CheckpointSchedule({ id, assetId, pendingPoints: [start] }, context);
 
-      expect(schedule.asset.ticker).toBe(ticker);
+      expect(schedule.asset.id).toBe(assetId);
       expect(schedule.id).toEqual(id);
 
       schedule = new CheckpointSchedule(
         {
           id,
-          ticker,
+          assetId,
           pendingPoints: [start],
         },
         context
       );
 
-      expect(schedule.asset.ticker).toBe(ticker);
+      expect(schedule.asset.id).toBe(assetId);
       expect(schedule.id).toEqual(id);
       expect(schedule.expiryDate).toEqual(start);
 
       schedule = new CheckpointSchedule(
         {
           id,
-          ticker,
+          assetId,
           pendingPoints: [start],
         },
         context
@@ -89,7 +89,7 @@ describe('CheckpointSchedule class', () => {
   describe('method: isUniqueIdentifiers', () => {
     it('should return true if the object conforms to the interface', () => {
       expect(
-        CheckpointSchedule.isUniqueIdentifiers({ id: new BigNumber(1), ticker: 'symbol' })
+        CheckpointSchedule.isUniqueIdentifiers({ id: new BigNumber(1), assetId: 'symbol' })
       ).toBe(true);
       expect(CheckpointSchedule.isUniqueIdentifiers({})).toBe(false);
       expect(CheckpointSchedule.isUniqueIdentifiers({ id: new BigNumber(1) })).toBe(false);
@@ -100,11 +100,11 @@ describe('CheckpointSchedule class', () => {
   describe('method: details', () => {
     it('should throw an error if Schedule does not exists', async () => {
       const checkpointSchedule = new CheckpointSchedule(
-        { id: new BigNumber(2), ticker, pendingPoints: [start] },
+        { id: new BigNumber(2), assetId, pendingPoints: [start] },
         context
       );
 
-      stringToTickerSpy.mockReturnValue(dsMockUtils.createMockTicker(ticker));
+      stringToAssetIdSpy.mockReturnValue(dsMockUtils.createMockAssetId(assetId));
       dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
         returnValue: dsMockUtils.createMockOption(),
       });
@@ -123,11 +123,11 @@ describe('CheckpointSchedule class', () => {
     it('should return the Schedule details ', async () => {
       const rawRemaining = new BigNumber(1);
       const checkpointSchedule = new CheckpointSchedule(
-        { id, ticker, pendingPoints: [start] },
+        { id, assetId, pendingPoints: [start] },
         context
       );
 
-      stringToTickerSpy.mockReturnValue(dsMockUtils.createMockTicker(ticker));
+      stringToAssetIdSpy.mockReturnValue(dsMockUtils.createMockAssetId(assetId));
       jest.spyOn(utilsConversionModule, 'u32ToBigNumber').mockClear().mockReturnValue(rawRemaining);
       jest.spyOn(utilsConversionModule, 'momentToDate').mockReturnValue(nextCheckpointDate);
 
@@ -147,7 +147,7 @@ describe('CheckpointSchedule class', () => {
   describe('method: getCheckpoints', () => {
     it("should throw an error if the schedule doesn't exist", async () => {
       const schedule = new CheckpointSchedule(
-        { id: new BigNumber(2), ticker, pendingPoints: [start] },
+        { id: new BigNumber(2), assetId, pendingPoints: [start] },
         context
       );
 
@@ -176,7 +176,7 @@ describe('CheckpointSchedule class', () => {
       const schedule = new CheckpointSchedule(
         {
           id: new BigNumber(2),
-          ticker,
+          assetId,
           pendingPoints: [start],
         },
         context
@@ -208,7 +208,7 @@ describe('CheckpointSchedule class', () => {
 
   describe('method: exists', () => {
     it('should return whether the schedule exists', async () => {
-      let schedule = new CheckpointSchedule({ id, ticker, pendingPoints: [start] }, context);
+      let schedule = new CheckpointSchedule({ id, assetId, pendingPoints: [start] }, context);
 
       dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
         returnValue: dsMockUtils.createMockOption(
@@ -226,7 +226,7 @@ describe('CheckpointSchedule class', () => {
       });
 
       schedule = new CheckpointSchedule(
-        { id: new BigNumber(2), ticker, pendingPoints: [start] },
+        { id: new BigNumber(2), assetId, pendingPoints: [start] },
         context
       );
 
@@ -241,14 +241,15 @@ describe('CheckpointSchedule class', () => {
       const schedule = new CheckpointSchedule(
         {
           id: new BigNumber(1),
-          ticker: 'SOME_TICKER',
+          assetId: '0x1234',
           pendingPoints: [start],
         },
         context
       );
       expect(schedule.toHuman()).toEqual({
         id: '1',
-        ticker: 'SOME_TICKER',
+        assetId: '0x1234',
+        ticker: '0x1234',
         pendingPoints: ['1987-10-14T00:00:00.000Z'],
         expiryDate: schedule.expiryDate?.toISOString(),
       });

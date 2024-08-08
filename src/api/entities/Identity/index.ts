@@ -238,10 +238,12 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const rawAssetId = assetToMeshAssetId(baseAsset, context);
     const rawIdentityId = stringToIdentityId(did, context);
 
-    let tokensStorage = asset.securityTokens;
+    let tokensStorage;
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tokensStorage = (asset as any).tokens;
+    } else {
+      tokensStorage = asset.securityTokens;
     }
     const meshAsset = await tokensStorage(rawAssetId);
 

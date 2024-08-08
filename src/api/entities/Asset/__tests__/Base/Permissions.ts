@@ -34,7 +34,7 @@ jest.mock(
 );
 
 describe('Permissions class', () => {
-  let ticker: string;
+  let assetId: string;
   let asset: FungibleAsset;
   let context: Context;
   let target: string;
@@ -45,13 +45,13 @@ describe('Permissions class', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    ticker = 'SOME_ASSET';
+    assetId = '0x1234';
     target = 'someDid';
   });
 
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
-    asset = entityMockUtils.getFungibleAssetInstance({ ticker });
+    asset = entityMockUtils.getFungibleAssetInstance({ assetId });
     permissions = new Permissions(asset, context);
   });
 
@@ -77,7 +77,7 @@ describe('Permissions class', () => {
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = {
-        ticker: asset.ticker,
+        asset,
         permissions: { transactions: {} as TransactionPermissions },
       };
 
@@ -101,7 +101,7 @@ describe('Permissions class', () => {
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = {
-        ticker: asset.ticker,
+        asset,
         target,
         permissions: { transactions: {} as TransactionPermissions },
       };
@@ -126,7 +126,7 @@ describe('Permissions class', () => {
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = {
-        ticker: asset.ticker,
+        asset,
         target,
       };
 
@@ -151,7 +151,7 @@ describe('Permissions class', () => {
     it('should retrieve a specific Custom Permission Group', async () => {
       entityMockUtils.configureMocks({
         customPermissionGroupOptions: {
-          ticker,
+          assetId,
         },
       });
       const id = new BigNumber(1);
@@ -159,7 +159,7 @@ describe('Permissions class', () => {
       const result = await permissions.getGroup({ id });
 
       expect(result.id).toEqual(id);
-      expect(result.asset.ticker).toBe(ticker);
+      expect(result.asset.id).toBe(assetId);
     });
 
     it('should throw an error if the Custom Permission Group does not exist', () => {
@@ -175,7 +175,7 @@ describe('Permissions class', () => {
     it('should retrieve a specific Known Permission Group', async () => {
       entityMockUtils.configureMocks({
         knownPermissionGroupOptions: {
-          ticker,
+          assetId,
         },
       });
       const type = PermissionGroupType.Full;
@@ -183,7 +183,7 @@ describe('Permissions class', () => {
       const result = await permissions.getGroup({ type });
 
       expect(result.type).toEqual(type);
-      expect(result.asset.ticker).toBe(ticker);
+      expect(result.asset.id).toBe(assetId);
     });
   });
 
@@ -198,7 +198,7 @@ describe('Permissions class', () => {
       dsMockUtils.createQueryMock('externalAgents', 'groupPermissions', {
         entries: [
           tuple(
-            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockU32(id)],
+            [dsMockUtils.createMockAssetId(assetId), dsMockUtils.createMockU32(id)],
             dsMockUtils.createMockOption(dsMockUtils.createMockExtrinsicPermissions())
           ),
         ],
@@ -226,23 +226,23 @@ describe('Permissions class', () => {
       dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         entries: [
           tuple(
-            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(did)],
+            [dsMockUtils.createMockAssetId(assetId), dsMockUtils.createMockIdentityId(did)],
             dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('ExceptMeta'))
           ),
           tuple(
-            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(otherDid)],
+            [dsMockUtils.createMockAssetId(assetId), dsMockUtils.createMockIdentityId(otherDid)],
             dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('Full'))
           ),
           tuple(
-            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(did)],
+            [dsMockUtils.createMockAssetId(assetId), dsMockUtils.createMockIdentityId(did)],
             dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('PolymeshV1CAA'))
           ),
           tuple(
-            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(otherDid)],
+            [dsMockUtils.createMockAssetId(assetId), dsMockUtils.createMockIdentityId(otherDid)],
             dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('PolymeshV1PIA'))
           ),
           tuple(
-            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(otherDid)],
+            [dsMockUtils.createMockAssetId(assetId), dsMockUtils.createMockIdentityId(otherDid)],
             dsMockUtils.createMockOption(
               dsMockUtils.createMockAgentGroup({
                 Custom: dsMockUtils.createMockU32(customId),

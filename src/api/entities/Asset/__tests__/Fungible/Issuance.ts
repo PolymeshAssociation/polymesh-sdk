@@ -1,10 +1,9 @@
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
+import { Issuance } from '~/api/entities/Asset/Fungible/Issuance';
 import { FungibleAsset, Namespace, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-
-import { Issuance } from '../../Fungible/Issuance';
 
 jest.mock(
   '~/base/Procedure',
@@ -44,7 +43,7 @@ describe('Issuance class', () => {
       const issuance = new Issuance(asset, context);
 
       const args = {
-        ticker: asset.ticker,
+        asset,
         amount: new BigNumber(100),
       };
 

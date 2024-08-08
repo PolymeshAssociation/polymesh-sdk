@@ -28,6 +28,7 @@ import {
 import {
   assetIdToString,
   bytesToString,
+  meshAssetToAssetId,
   meshMetadataSpecToMetadataSpec,
   stringToIdentityId,
   tickerToString,
@@ -175,10 +176,21 @@ export class Assets {
 
     const entries = await asset.tickersOwnedByUser.entries(rawDid);
 
-    return entries.map(([key]) => {
-      const ticker = tickerToString(key.args[1]);
-      return new TickerReservation({ ticker }, context);
-    });
+    const rawTickers = entries.map(([key]) => key.args[1]);
+
+    const rawAssetIds = await asset.tickerAssetID.multi(rawTickers);
+
+    return rawAssetIds.reduce<TickerReservation[]>((result, rawAssetId, index) => {
+      if (rawAssetId.isNone) {
+        const ticker = tickerToString(rawTickers[index]);
+
+        if (isPrintableAscii(ticker)) {
+          return [...result, new TickerReservation({ ticker }, context)];
+        }
+      }
+
+      return result;
+    }, []);
   }
 
   /**
@@ -209,19 +221,11 @@ export class Assets {
     const { ticker, assetId } = args;
 
     let assetIdValue = assetId;
-    if (isV6) {
-      if (ticker) {
+    if (ticker) {
+      if (isV6) {
         assetIdValue = ticker;
-      }
-    } else {
-      if (ticker) {
+      } else {
         assetIdValue = await getAssetIdForTicker(ticker, context);
-        if (!assetIdValue) {
-          throw new PolymeshError({
-            code: ErrorCode.DataUnavailable,
-            message: `No asset exists with ticker: "${ticker}"`,
-          });
-        }
       }
     }
 
@@ -281,15 +285,31 @@ export class Assets {
 
     entries.forEach(([key]) => {
       const rawAssetId = key.args[1];
-      const ticker = assetIdToString(rawAssetId);
-      if (isPrintableAscii(ticker)) {
-        ownedAssets.push(ticker);
-        rawAssetIds.push(rawAssetId);
-      }
+      rawAssetIds.push(rawAssetId);
+      ownedAssets.push(assetIdToString(rawAssetId));
     });
     const ownedDetails = await asset.securityTokens.multi(rawAssetIds);
 
     return assembleAssetQuery(ownedDetails, ownedAssets, context);
+  }
+
+  /**
+   * @hidden
+   */
+  private async getIdFromAssetIdAndTicker(assetId?: string, ticker?: string): Promise<string> {
+    const {
+      context,
+      context: { isV6 },
+    } = this;
+    let assetIdValue: string;
+    if (isV6) {
+      assetIdValue = (assetId ?? ticker)!;
+    } else if (ticker) {
+      assetIdValue = await getAssetIdForTicker(ticker, context);
+    } else {
+      assetIdValue = assetId!;
+    }
+    return assetIdValue;
   }
 
   /**
@@ -307,46 +327,18 @@ export class Assets {
   }): Promise<FungibleAsset> {
     const { ticker, assetId } = args;
 
-    const {
-      context,
-      context: { isV6 },
-    } = this;
+    const { context } = this;
 
-    let asset: FungibleAsset;
-    if (isV6) {
-      const id = (assetId || ticker)!;
-      asset = new FungibleAsset({ assetId: id }, context);
-      const exists = await asset.exists();
+    const assetIdValue = await this.getIdFromAssetIdAndTicker(assetId, ticker);
 
-      if (!exists) {
-        throw new PolymeshError({
-          code: ErrorCode.DataUnavailable,
-          message: `There is no Asset with ticker "${id}"`,
-        });
-      }
-
-      return asset;
-    }
-
-    if (ticker) {
-      const id = await getAssetIdForTicker(ticker, context);
-      if (!id.length) {
-        throw new PolymeshError({
-          code: ErrorCode.DataUnavailable,
-          message: `There is no Asset with ticker "${ticker}"`,
-        });
-      }
-      asset = new FungibleAsset({ assetId: id }, context);
-    } else {
-      asset = new FungibleAsset({ assetId: assetId! }, context);
-    }
+    const asset = new FungibleAsset({ assetId: assetIdValue }, context);
 
     const exists = await asset.exists();
 
     if (!exists) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
-        message: `There is no Asset with ticker "${ticker}"`,
+        message: `There is no Asset with ${ticker ? 'ticker' : 'asset ID'} "${ticker ?? assetId}"`,
       });
     }
 
@@ -368,46 +360,20 @@ export class Assets {
   }): Promise<NftCollection> {
     const { ticker, assetId } = args;
 
-    const {
-      context,
-      context: { isV6 },
-    } = this;
+    const { context } = this;
 
-    let collection: NftCollection;
-    if (isV6) {
-      const id = (assetId || ticker)!;
-      collection = new NftCollection({ assetId: id }, context);
-      const exists = await collection.exists();
+    const assetIdValue = await this.getIdFromAssetIdAndTicker(assetId, ticker);
 
-      if (!exists) {
-        throw new PolymeshError({
-          code: ErrorCode.DataUnavailable,
-          message: `There is no NftCollection with ticker "${id}"`,
-        });
-      }
-
-      return collection;
-    }
-
-    if (ticker) {
-      const id = await getAssetIdForTicker(ticker, context);
-      if (!id.length) {
-        throw new PolymeshError({
-          code: ErrorCode.DataUnavailable,
-          message: `There is no NftCollection with ticker "${ticker}"`,
-        });
-      }
-      collection = new NftCollection({ assetId: id }, context);
-    } else {
-      collection = new NftCollection({ assetId: assetId! }, context);
-    }
+    const collection = new NftCollection({ assetId: assetIdValue }, context);
 
     const exists = await collection.exists();
 
     if (!exists) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
-        message: `There is no NftCollection with ticker "${ticker}"`,
+        message: `There is no NftCollection with ${ticker ? 'ticker' : 'asset ID'} "${
+          ticker ?? assetId
+        }"`,
       });
     }
 
@@ -423,35 +389,41 @@ export class Assets {
     const {
       context: {
         polymeshApi: {
-          query: {
-            asset: { assetNames, securityTokens },
-          },
+          query: { asset },
         },
+        isV6,
       },
       context,
     } = this;
 
-    const { entries, lastKey: next } = await requestPaginated(assetNames, {
+    const { entries, lastKey: next } = await requestPaginated(asset.assetNames, {
       paginationOpts,
     });
 
-    const tickers: string[] = [];
-    const rawTickers: PolymeshPrimitivesTicker[] = [];
+    const assetIds: string[] = [];
+    const rawAssetIds: (PolymeshPrimitivesTicker | PolymeshPrimitivesAssetAssetID)[] = [];
 
     entries.forEach(
       ([
         {
-          args: [rawTicker],
+          args: [rawAssetId],
         },
       ]) => {
-        rawTickers.push(rawTicker);
-        tickers.push(tickerToString(rawTicker));
+        rawAssetIds.push(rawAssetId);
+        assetIds.push(meshAssetToAssetId(rawAssetId, context));
       }
     );
 
-    const details = await securityTokens.multi(rawTickers);
+    let tokensStorage;
+    if (isV6) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tokensStorage = (asset as any).tokens;
+    } else {
+      tokensStorage = asset.securityTokens;
+    }
+    const details = await tokensStorage.multi(rawAssetIds);
 
-    const data = assembleAssetQuery(details, tickers, context);
+    const data = assembleAssetQuery(details, assetIds, context);
 
     return {
       data,

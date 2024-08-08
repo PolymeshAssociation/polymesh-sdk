@@ -1,8 +1,8 @@
 import { u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import {
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesIdentityIdPortfolioId,
-  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -185,17 +185,17 @@ describe('Portfolio class', () => {
   describe('method: getAssetBalances', () => {
     let did: string;
     let id: BigNumber;
-    let ticker0: string;
-    let ticker1: string;
-    let ticker2: string;
+    let assetId0: string;
+    let assetId1: string;
+    let assetId2: string;
     let total0: BigNumber;
     let total1: BigNumber;
     let locked0: BigNumber;
     let locked1: BigNumber;
     let locked2: BigNumber;
-    let rawTicker0: PolymeshPrimitivesTicker;
-    let rawTicker1: PolymeshPrimitivesTicker;
-    let rawTicker2: PolymeshPrimitivesTicker;
+    let rawAssetId0: PolymeshPrimitivesAssetAssetID;
+    let rawAssetId1: PolymeshPrimitivesAssetAssetID;
+    let rawAssetId2: PolymeshPrimitivesAssetAssetID;
     let rawTotal0: Balance;
     let rawTotal1: Balance;
     let rawLocked0: Balance;
@@ -206,17 +206,17 @@ describe('Portfolio class', () => {
     beforeAll(() => {
       did = 'someDid';
       id = new BigNumber(1);
-      ticker0 = 'TICKER0';
-      ticker1 = 'TICKER1';
-      ticker2 = 'TICKER2';
+      assetId0 = '0x1111';
+      assetId1 = '0x2222';
+      assetId2 = '0x3333';
       total0 = new BigNumber(100);
       total1 = new BigNumber(200);
       locked0 = new BigNumber(50);
       locked1 = new BigNumber(25);
       locked2 = new BigNumber(0);
-      rawTicker0 = dsMockUtils.createMockTicker(ticker0);
-      rawTicker1 = dsMockUtils.createMockTicker(ticker1);
-      rawTicker2 = dsMockUtils.createMockTicker(ticker2);
+      rawAssetId0 = dsMockUtils.createMockAssetId(assetId0);
+      rawAssetId1 = dsMockUtils.createMockAssetId(assetId1);
+      rawAssetId2 = dsMockUtils.createMockAssetId(assetId2);
       rawTotal0 = dsMockUtils.createMockBalance(total0.shiftedBy(6));
       rawTotal1 = dsMockUtils.createMockBalance(total1.shiftedBy(6));
       rawLocked0 = dsMockUtils.createMockBalance(locked0.shiftedBy(6));
@@ -235,15 +235,15 @@ describe('Portfolio class', () => {
     beforeEach(() => {
       dsMockUtils.createQueryMock('portfolio', 'portfolioAssetBalances', {
         entries: [
-          tuple([rawPortfolioId, rawTicker0], rawTotal0),
-          tuple([rawPortfolioId, rawTicker1], rawTotal1),
+          tuple([rawPortfolioId, rawAssetId0], rawTotal0),
+          tuple([rawPortfolioId, rawAssetId1], rawTotal1),
         ],
       });
       dsMockUtils.createQueryMock('portfolio', 'portfolioLockedAssets', {
         entries: [
-          tuple([rawPortfolioId, rawTicker0], rawLocked0),
-          tuple([rawPortfolioId, rawTicker1], rawLocked1),
-          tuple([rawPortfolioId, rawTicker2], rawLocked2),
+          tuple([rawPortfolioId, rawAssetId0], rawLocked0),
+          tuple([rawPortfolioId, rawAssetId1], rawLocked1),
+          tuple([rawPortfolioId, rawAssetId2], rawLocked2),
         ],
       });
     });
@@ -257,11 +257,11 @@ describe('Portfolio class', () => {
 
       const result = await portfolio.getAssetBalances();
 
-      expect(result[0].asset.ticker).toBe(ticker0);
+      expect(result[0].asset.id).toBe(assetId0);
       expect(result[0].total).toEqual(total0);
       expect(result[0].locked).toEqual(locked0);
       expect(result[0].free).toEqual(total0.minus(locked0));
-      expect(result[1].asset.ticker).toBe(ticker1);
+      expect(result[1].asset.id).toBe(assetId1);
       expect(result[1].total).toEqual(total1);
       expect(result[1].locked).toEqual(locked1);
       expect(result[1].free).toEqual(total1.minus(locked1));
@@ -270,17 +270,17 @@ describe('Portfolio class', () => {
     it('should return the requested portfolio assets and their balances', async () => {
       const portfolio = new NonAbstract({ did, id }, context);
 
-      const otherTicker = 'OTHER_TICKER';
+      const otherAssetId = '0x9999';
       const result = await portfolio.getAssetBalances({
-        assets: [ticker0, new FungibleAsset({ ticker: otherTicker }, context)],
+        assets: [assetId0, new FungibleAsset({ assetId: otherAssetId }, context)],
       });
 
       expect(result.length).toBe(2);
-      expect(result[0].asset.ticker).toBe(ticker0);
+      expect(result[0].asset.id).toBe(assetId0);
       expect(result[0].total).toEqual(total0);
       expect(result[0].locked).toEqual(locked0);
       expect(result[0].free).toEqual(total0.minus(locked0));
-      expect(result[1].asset.ticker).toBe(otherTicker);
+      expect(result[1].asset.id).toBe(otherAssetId);
       expect(result[1].total).toEqual(new BigNumber(0));
       expect(result[1].locked).toEqual(new BigNumber(0));
       expect(result[1].free).toEqual(new BigNumber(0));
@@ -304,12 +304,12 @@ describe('Portfolio class', () => {
     let lockedNftId: BigNumber;
     let heldOnlyNftId: BigNumber;
     let lockedOnlyNftId: BigNumber;
-    let ticker: string;
-    let heldOnlyTicker: string;
-    let lockedOnlyTicker: string;
-    let rawTicker: PolymeshPrimitivesTicker;
-    let rawHeldOnlyTicker: PolymeshPrimitivesTicker;
-    let rawLockedOnlyTicker: PolymeshPrimitivesTicker;
+    let assetId: string;
+    let heldOnlyAssetId: string;
+    let lockedOnlyAssetId: string;
+    let rawAssetId: PolymeshPrimitivesAssetAssetID;
+    let rawHeldOnlyAssetId: PolymeshPrimitivesAssetAssetID;
+    let rawLockedOnlyAssetId: PolymeshPrimitivesAssetAssetID;
     let rawNftId: u64;
     let rawSecondId: u64;
     let rawLockedId: u64;
@@ -326,12 +326,12 @@ describe('Portfolio class', () => {
       lockedNftId = new BigNumber(13);
       heldOnlyNftId = new BigNumber(20);
       lockedOnlyNftId = new BigNumber(30);
-      ticker = 'TICKER';
-      heldOnlyTicker = 'HELD';
-      lockedOnlyTicker = 'LOCKED';
-      rawTicker = dsMockUtils.createMockTicker(ticker);
-      rawHeldOnlyTicker = dsMockUtils.createMockTicker(heldOnlyTicker);
-      rawLockedOnlyTicker = dsMockUtils.createMockTicker(lockedOnlyTicker);
+      assetId = '0x1234';
+      heldOnlyAssetId = '0x6666';
+      lockedOnlyAssetId = '0x7777';
+      rawAssetId = dsMockUtils.createMockAssetId(assetId);
+      rawHeldOnlyAssetId = dsMockUtils.createMockAssetId(heldOnlyAssetId);
+      rawLockedOnlyAssetId = dsMockUtils.createMockAssetId(lockedOnlyAssetId);
       rawNftId = dsMockUtils.createMockU64(nftId);
       rawSecondId = dsMockUtils.createMockU64(secondNftId);
       rawLockedId = dsMockUtils.createMockU64(lockedNftId);
@@ -350,19 +350,20 @@ describe('Portfolio class', () => {
     beforeEach(() => {
       dsMockUtils.createQueryMock('portfolio', 'portfolioNFT', {
         entries: [
-          tuple([rawPortfolioId, [rawTicker, rawNftId]], rawTrue),
-          tuple([rawPortfolioId, [rawTicker, rawSecondId]], rawTrue),
-          tuple([rawPortfolioId, [rawTicker, rawLockedId]], rawTrue),
-          tuple([rawPortfolioId, [rawHeldOnlyTicker, rawHeldOnlyId]], rawTrue),
-          tuple([rawPortfolioId, [rawLockedOnlyTicker, rawLockedOnlyId]], rawTrue),
+          tuple([rawPortfolioId, [rawAssetId, rawNftId]], rawTrue),
+          tuple([rawPortfolioId, [rawAssetId, rawSecondId]], rawTrue),
+          tuple([rawPortfolioId, [rawAssetId, rawLockedId]], rawTrue),
+          tuple([rawPortfolioId, [rawHeldOnlyAssetId, rawHeldOnlyId]], rawTrue),
+          tuple([rawPortfolioId, [rawLockedOnlyAssetId, rawLockedOnlyId]], rawTrue),
         ],
       });
       dsMockUtils.createQueryMock('portfolio', 'portfolioLockedNFT', {
         entries: [
-          tuple([rawPortfolioId, [rawTicker, rawLockedId]], rawTrue),
-          tuple([rawPortfolioId, [rawLockedOnlyTicker, rawLockedOnlyId]], rawTrue),
+          tuple([rawPortfolioId, [rawAssetId, rawLockedId]], rawTrue),
+          tuple([rawPortfolioId, [rawLockedOnlyAssetId, rawLockedOnlyId]], rawTrue),
         ],
       });
+      jest.spyOn(utilsInternalModule, 'asAssetId').mockResolvedValue(assetId);
     });
 
     afterAll(() => {
@@ -377,7 +378,7 @@ describe('Portfolio class', () => {
       expect(result).toEqual(
         expect.arrayContaining([
           {
-            collection: expect.objectContaining({ ticker }),
+            collection: expect.objectContaining({ assetId }),
             free: expect.arrayContaining([
               expect.objectContaining({ id: nftId }),
               expect.objectContaining({ id: secondNftId }),
@@ -386,13 +387,13 @@ describe('Portfolio class', () => {
             total: new BigNumber(3),
           },
           expect.objectContaining({
-            collection: expect.objectContaining({ ticker: heldOnlyTicker }),
+            collection: expect.objectContaining({ assetId: heldOnlyAssetId }),
             free: expect.arrayContaining([expect.objectContaining({ id: heldOnlyNftId })]),
             locked: [],
             total: new BigNumber(1),
           }),
           expect.objectContaining({
-            collection: expect.objectContaining({ ticker: lockedOnlyTicker }),
+            collection: expect.objectContaining({ assetId: lockedOnlyAssetId }),
             free: [],
             locked: expect.arrayContaining([expect.objectContaining({ id: lockedOnlyNftId })]),
             total: new BigNumber(1),
@@ -404,13 +405,13 @@ describe('Portfolio class', () => {
     it('should filter assets if any are specified', async () => {
       const portfolio = new NonAbstract({ did, id: portfolioId }, context);
 
-      const result = await portfolio.getCollections({ collections: [ticker] });
+      const result = await portfolio.getCollections({ collections: [assetId] });
 
       expect(result.length).toEqual(1);
       expect(result).toEqual(
         expect.arrayContaining([
           {
-            collection: expect.objectContaining({ ticker }),
+            collection: expect.objectContaining({ assetId }),
             free: expect.arrayContaining([
               expect.objectContaining({ id: nftId }),
               expect.objectContaining({ id: secondNftId }),
@@ -557,8 +558,8 @@ describe('Portfolio class', () => {
     const blockHash1 = 'someHash';
     const blockHash2 = 'otherHash';
 
-    const ticker1 = 'TICKER_1';
-    const ticker2 = 'TICKER_2';
+    const assetId1 = '0x1111';
+    const assetId2 = '0x2222';
 
     const amount1 = new BigNumber(1000);
     const amount2 = new BigNumber(2000);
@@ -591,7 +592,7 @@ describe('Portfolio class', () => {
 
       const legs1 = [
         {
-          assetId: ticker1,
+          assetId: assetId1,
           amount: amount1,
           direction: SettlementDirectionEnum.Incoming,
           addresses: ['be865155e5b6be843e99117a825e9580bb03e401a9c2ace644fff604fe624917'],
@@ -609,7 +610,7 @@ describe('Portfolio class', () => {
       ];
       const legs2 = [
         {
-          assetId: ticker2,
+          assetId: assetId2,
           amount: amount2,
           direction: SettlementDirectionEnum.Outgoing,
           addresses: ['be865155e5b6be843e99117a825e9580bb03e401a9c2ace644fff604fe624917'],
@@ -705,8 +706,8 @@ describe('Portfolio class', () => {
       expect(result[1].blockNumber).toEqual(blockNumber2);
       expect(result[0].blockHash).toBe(blockHash1);
       expect(result[1].blockHash).toBe(blockHash2);
-      expect((result[0].legs[0] as FungibleLeg).asset.ticker).toBe(ticker1);
-      expect((result[1].legs[0] as FungibleLeg).asset.ticker).toBe(ticker2);
+      expect((result[0].legs[0] as FungibleLeg).asset.id).toBe(assetId1);
+      expect((result[1].legs[0] as FungibleLeg).asset.id).toBe(assetId2);
       expect((result[0].legs[0] as FungibleLeg).amount).toEqual(amount1.div(Math.pow(10, 6)));
       expect((result[1].legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
       expect((result[0].legs[0] as FungibleLeg).from.owner.did).toBe(portfolioDid1);
@@ -745,10 +746,7 @@ describe('Portfolio class', () => {
                     blockId: blockNumber1.toNumber(),
                     hash: 'someHash',
                   },
-                  asset: {
-                    id: ticker2,
-                    ticker: ticker2,
-                  },
+                  assetId: assetId2,
                   amount: amount2,
                   address: 'be865155e5b6be843e99117a825e9580bb03e401a9c2ace644fff604fe624917',
                   from: {
@@ -773,7 +771,7 @@ describe('Portfolio class', () => {
 
       expect(result[0].blockNumber).toEqual(blockNumber1);
       expect(result[0].blockHash).toBe(blockHash1);
-      expect((result[0].legs[0] as FungibleLeg).asset.ticker).toBe(ticker2);
+      expect((result[0].legs[0] as FungibleLeg).asset.id).toBe(assetId2);
       expect((result[0].legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
       expect((result[0].legs[0] as FungibleLeg).from.owner.did).toBe(portfolioDid1);
       expect((result[0].legs[0] as FungibleLeg).to.owner.did).toBe(portfolioDid1);
@@ -828,8 +826,7 @@ describe('Portfolio class', () => {
       const legs1 = [
         {
           legType: LegTypeEnum.Fungible,
-          assetId: ticker1,
-          ticker: ticker1,
+          assetId: assetId1,
           amount: amount1,
           direction: SettlementDirectionEnum.Incoming,
           addresses: ['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'],
@@ -842,8 +839,7 @@ describe('Portfolio class', () => {
       const legs2 = [
         {
           legType: LegTypeEnum.Fungible,
-          assetId: ticker2,
-          ticker: ticker2,
+          assetId: assetId2,
           amount: amount2,
           direction: SettlementDirectionEnum.Outgoing,
           addresses: ['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'],
@@ -916,8 +912,8 @@ describe('Portfolio class', () => {
       expect(result[1].blockNumber).toEqual(blockNumber2);
       expect(result[0].blockHash).toBe(blockHash1);
       expect(result[1].blockHash).toBe(blockHash2);
-      expect((result[0].legs[0] as FungibleLeg).asset.ticker).toBe(ticker1);
-      expect((result[1].legs[0] as FungibleLeg).asset.ticker).toBe(ticker2);
+      expect((result[0].legs[0] as FungibleLeg).asset.id).toBe(assetId1);
+      expect((result[1].legs[0] as FungibleLeg).asset.id).toBe(assetId2);
       expect((result[0].legs[0] as FungibleLeg).amount).toEqual(amount1.div(Math.pow(10, 6)));
       expect((result[1].legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
       expect((result[0].legs[0] as FungibleLeg).from.owner.did).toBe(portfolioDid1);
@@ -927,14 +923,14 @@ describe('Portfolio class', () => {
       expect((result[1].legs[0].from as NumberedPortfolio).id).toEqual(portfolioId2);
       expect((result[1].legs[0] as FungibleLeg).to.owner.did).toEqual(portfolioDid1);
 
-      jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware').mockResolvedValue(ticker2);
+      jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware').mockResolvedValue(assetId2);
       dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: settlementsQuery({
             identityId: did,
             portfolioId: undefined,
             address: undefined,
-            assetId: ticker2,
+            assetId: assetId2,
           }),
           returnData: {
             legs: {
@@ -947,7 +943,7 @@ describe('Portfolio class', () => {
             identityId: did,
             portfolioId: undefined,
             address: undefined,
-            assetId: ticker2,
+            assetId: undefined,
           }),
           returnData: {
             portfolioMovements: {
@@ -957,10 +953,7 @@ describe('Portfolio class', () => {
                     blockId: blockNumber1.toNumber(),
                     hash: 'someHash',
                   },
-                  asset: {
-                    id: '0x1234',
-                    ticker: ticker2,
-                  },
+                  assetId: assetId2,
                   amount: amount2,
                   address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
                   from: {
@@ -982,12 +975,12 @@ describe('Portfolio class', () => {
 
       portfolio = new NonAbstract({ did }, context);
       result = await portfolio.getTransactionHistory({
-        ticker: ticker2,
+        ticker: assetId2,
       });
 
       expect(result[0].blockNumber).toEqual(blockNumber1);
       expect(result[0].blockHash).toBe(blockHash1);
-      expect((result[0].legs[0] as FungibleLeg).asset.ticker).toBe(ticker2);
+      expect((result[0].legs[0] as FungibleLeg).asset.id).toBe(assetId2);
       expect((result[0].legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
       expect((result[0].legs[0] as FungibleLeg).from.owner.did).toBe(portfolioDid1);
       expect((result[0].legs[0] as FungibleLeg).to.owner.did).toBe(portfolioDid1);

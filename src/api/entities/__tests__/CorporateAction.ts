@@ -28,7 +28,7 @@ jest.mock(
 describe('CorporateAction class', () => {
   let context: Context;
   let id: BigNumber;
-  let ticker: string;
+  let assetId: string;
   let declarationDate: Date;
   let kind: CorporateActionKind;
   let description: string;
@@ -48,7 +48,7 @@ describe('CorporateAction class', () => {
     context = dsMockUtils.getContextInstance();
 
     id = new BigNumber(1);
-    ticker = 'SOME_TICKER';
+    assetId = '0x1234';
     declarationDate = new Date('10/14/1987 UTC');
     kind = CorporateActionKind.UnpredictableBenefit;
     description = 'someDescription';
@@ -62,7 +62,7 @@ describe('CorporateAction class', () => {
     corporateAction = new CorporateAction(
       {
         id,
-        ticker,
+        assetId,
         kind,
         declarationDate,
         description,

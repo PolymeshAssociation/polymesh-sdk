@@ -217,13 +217,17 @@ describe('Assets Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createQueryMock('asset', 'assetOwnershipRelations', {
+      dsMockUtils.createQueryMock('asset', 'tickersOwnedByUser', {
         entries: [
           tuple(
             [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
-            dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
+            dsMockUtils.createMockBool(true)
           ),
         ],
+      });
+
+      dsMockUtils.createQueryMock('asset', 'tickerAssetID', {
+        multi: [dsMockUtils.createMockOption()],
       });
 
       const tickerReservations = await assets.getTickerReservations({ owner: did });
@@ -238,13 +242,17 @@ describe('Assets Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createQueryMock('asset', 'assetOwnershipRelations', {
+      dsMockUtils.createQueryMock('asset', 'tickersOwnedByUser', {
         entries: [
           tuple(
             [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
-            dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
+            dsMockUtils.createMockBool(true)
           ),
         ],
+      });
+
+      dsMockUtils.createQueryMock('asset', 'tickerAssetID', {
+        multi: [dsMockUtils.createMockOption()],
       });
 
       const tickerReservations = await assets.getTickerReservations();
@@ -260,20 +268,28 @@ describe('Assets Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createQueryMock('asset', 'assetOwnershipRelations', {
+      dsMockUtils.createQueryMock('asset', 'tickersOwnedByUser', {
         entries: [
           tuple(
             [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
-            dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
+            dsMockUtils.createMockBool(true)
           ),
           tuple(
             [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker('SOME_TICKER')],
-            dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
+            dsMockUtils.createMockBool(true)
           ),
           tuple(
             [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(unreadableTicker)],
-            dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
+            dsMockUtils.createMockBool(true)
           ),
+        ],
+      });
+
+      dsMockUtils.createQueryMock('asset', 'tickerAssetID', {
+        multi: [
+          dsMockUtils.createMockOption(),
+          dsMockUtils.createMockOption(dsMockUtils.createMockAssetId('0x1234')),
+          dsMockUtils.createMockOption(),
         ],
       });
 
@@ -293,62 +309,41 @@ describe('Assets Class', () => {
   });
 
   describe('method: getAsset', () => {
-    it('should return a specific Asset', async () => {
-      const ticker = 'TEST';
+    it('should return a specific Asset for an asset ID', async () => {
+      const assetId = '0x1234';
 
       entityMockUtils.configureMocks({
         fungibleAssetOptions: { exists: false },
         nftCollectionOptions: { exists: true },
       });
 
+      const asset = await assets.getAsset({ assetId });
+      expect(asset).toBeInstanceOf(NftCollection);
+    });
+
+    it('should return a specific Asset for a ticker', async () => {
+      const ticker = 'TICKER';
+
+      entityMockUtils.configureMocks({
+        fungibleAssetOptions: { exists: false },
+        nftCollectionOptions: { exists: true },
+      });
+
+      jest.spyOn(utilsInternalModule, 'getAssetIdForTicker').mockResolvedValue('0x1234');
+
       const asset = await assets.getAsset({ ticker });
       expect(asset).toBeInstanceOf(NftCollection);
     });
 
     it('should throw if the Asset does not exist', async () => {
-      const ticker = 'TEST';
+      const assetId = '0x1234';
       entityMockUtils.configureMocks({
         fungibleAssetOptions: { exists: false },
         nftCollectionOptions: { exists: false },
       });
 
-      return expect(assets.getAsset({ ticker })).rejects.toThrow(
-        `No asset exists with ticker: "${ticker}"`
-      );
-    });
-  });
-
-  describe('method: getFungibleAsset', () => {
-    it('should return a specific Asset', async () => {
-      const ticker = 'TEST';
-
-      const asset = await assets.getFungibleAsset({ ticker });
-      expect(asset.ticker).toBe(ticker);
-    });
-
-    it('should throw if the Asset does not exist', async () => {
-      const ticker = 'TEST';
-      entityMockUtils.configureMocks({ fungibleAssetOptions: { exists: false } });
-
-      return expect(assets.getFungibleAsset({ ticker })).rejects.toThrow(
-        `There is no Asset with ticker "${ticker}"`
-      );
-    });
-  });
-
-  describe('method: getNftCollection', () => {
-    const ticker = 'NFTTEST';
-
-    it('should return the collection if it exists', async () => {
-      const nftCollection = await assets.getNftCollection({ ticker });
-      expect(nftCollection.ticker).toBe(ticker);
-    });
-
-    it('should throw if the collection does not exist', async () => {
-      entityMockUtils.configureMocks({ nftCollectionOptions: { exists: false } });
-
-      return expect(assets.getNftCollection({ ticker })).rejects.toThrow(
-        `There is no NftCollection with ticker "${ticker}"`
+      return expect(assets.getAsset({ assetId })).rejects.toThrow(
+        `No asset exists with asset ID: "${assetId}"`
       );
     });
   });
@@ -363,21 +358,19 @@ describe('Assets Class', () => {
     });
 
     it('should return a list of Assets owned by the supplied did', async () => {
-      const fakeTicker = 'TEST';
+      const fakeAssetId = '0x1234';
       const did = 'someDid';
 
-      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
-
-      dsMockUtils.createQueryMock('asset', 'assetOwnershipRelations', {
+      dsMockUtils.createQueryMock('asset', 'securityTokensOwnedByUser', {
         entries: [
           tuple(
-            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
-            dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
+            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockAssetId(fakeAssetId)],
+            dsMockUtils.createMockBool(true)
           ),
         ],
       });
 
-      dsMockUtils.createQueryMock('asset', 'tokens', {
+      dsMockUtils.createQueryMock('asset', 'securityTokens', {
         multi: [
           dsMockUtils.createMockOption(
             dsMockUtils.createMockSecurityToken({
@@ -393,25 +386,23 @@ describe('Assets Class', () => {
       const asset = await assets.getAssets({ owner: 'someDid' });
 
       expect(asset).toHaveLength(1);
-      expect(asset[0].ticker).toBe(fakeTicker);
+      expect(asset[0].id).toBe(fakeAssetId);
     });
 
     it('should return a list of Assets owned by the signing Identity if no did is supplied', async () => {
-      const fakeTicker = 'TEST';
+      const assetId = '0x1234';
       const did = 'someDid';
 
-      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
-
-      dsMockUtils.createQueryMock('asset', 'assetOwnershipRelations', {
+      dsMockUtils.createQueryMock('asset', 'securityTokensOwnedByUser', {
         entries: [
           tuple(
-            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
-            dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
+            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockAssetId(assetId)],
+            dsMockUtils.createMockBool(true)
           ),
         ],
       });
 
-      dsMockUtils.createQueryMock('asset', 'tokens', {
+      dsMockUtils.createQueryMock('asset', 'securityTokens', {
         multi: [
           dsMockUtils.createMockOption(
             dsMockUtils.createMockSecurityToken({
@@ -427,50 +418,66 @@ describe('Assets Class', () => {
       const assetResults = await assets.getAssets();
 
       expect(assetResults).toHaveLength(1);
-      expect(assetResults[0].ticker).toBe(fakeTicker);
+      expect(assetResults[0].id).toBe(assetId);
+    });
+  });
+
+  describe('method: getFungibleAsset', () => {
+    const assetId = '0x1234';
+
+    const ticker = 'TEST';
+    it('should return a specific Asset for a specific asset ID', async () => {
+      const asset = await assets.getFungibleAsset({ assetId });
+      expect(asset.id).toBe(assetId);
     });
 
-    it('should filter out Assets whose tickers have unreadable characters', async () => {
-      const fakeTicker = 'TEST';
-      const unreadableTicker = String.fromCharCode(65533);
-      const did = 'someDid';
+    it('should return a specific Asset for a ticker', async () => {
+      jest.spyOn(utilsInternalModule, 'getAssetIdForTicker').mockResolvedValue(assetId);
 
-      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+      const asset = await assets.getFungibleAsset({ ticker });
+      expect(asset.id).toBe(assetId);
+    });
 
-      dsMockUtils.createQueryMock('asset', 'assetOwnershipRelations', {
-        entries: [
-          tuple(
-            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
-            dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
-          ),
-          tuple(
-            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker('SOME_TICKER')],
-            dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
-          ),
-          tuple(
-            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(unreadableTicker)],
-            dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
-          ),
-        ],
-      });
+    it('should throw if the Asset does not exist', async () => {
+      entityMockUtils.configureMocks({ fungibleAssetOptions: { exists: false } });
 
-      dsMockUtils.createQueryMock('asset', 'tokens', {
-        multi: [
-          dsMockUtils.createMockOption(
-            dsMockUtils.createMockSecurityToken({
-              ownerDid: dsMockUtils.createMockIdentityId(did),
-              assetType: dsMockUtils.createMockAssetType(KnownAssetType.Commodity),
-              divisible: dsMockUtils.createMockBool(false),
-              totalSupply: dsMockUtils.createMockBalance(new BigNumber(0)),
-            })
-          ),
-        ],
-      });
+      await expect(assets.getFungibleAsset({ assetId })).rejects.toThrow(
+        `There is no Asset with asset ID "${assetId}"`
+      );
 
-      const assetResults = await assets.getAssets();
+      jest.spyOn(utilsInternalModule, 'getAssetIdForTicker').mockResolvedValue(assetId);
+      await expect(assets.getFungibleAsset({ ticker })).rejects.toThrow(
+        `There is no Asset with ticker "${ticker}"`
+      );
+    });
+  });
 
-      expect(assetResults).toHaveLength(1);
-      expect(assetResults[0].ticker).toBe(fakeTicker);
+  describe('method: getNftCollection', () => {
+    const ticker = 'NFTTEST';
+    const assetId = '0x1234';
+
+    it('should return the collection for a specific asset ID', async () => {
+      const nftCollection = await assets.getNftCollection({ assetId });
+      expect(nftCollection.id).toBe(assetId);
+    });
+
+    it('should return the collection for a specific ticker', async () => {
+      const nftCollection = await assets.getNftCollection({ ticker });
+      jest.spyOn(utilsInternalModule, 'getAssetIdForTicker').mockResolvedValue(assetId);
+      expect(nftCollection.id).toBe(assetId);
+    });
+
+    it('should throw if the collection does not exist', async () => {
+      entityMockUtils.configureMocks({ nftCollectionOptions: { exists: false } });
+
+      await expect(assets.getNftCollection({ assetId })).rejects.toThrow(
+        `There is no NftCollection with asset ID "${assetId}"`
+      );
+
+      jest.spyOn(utilsInternalModule, 'getAssetIdForTicker').mockResolvedValue(assetId);
+      await expect(assets.getNftCollection({ ticker })).rejects.toThrow(
+        `There is no NftCollection with ticker "${ticker}"`
+      );
     });
   });
 
@@ -479,11 +486,11 @@ describe('Assets Class', () => {
     const expectedAssets = [
       {
         name: 'someAsset',
-        ticker: 'SOME_ASSET',
+        id: '0x1234',
       },
       {
         name: 'otherAsset',
-        ticker: 'OTHER_ASSET',
+        id: '0x4567',
       },
     ];
 
@@ -503,16 +510,16 @@ describe('Assets Class', () => {
     });
 
     it('should retrieve all Assets on the chain', async () => {
-      const entries = expectedAssets.map(({ name, ticker }) =>
+      const entries = expectedAssets.map(({ name, id }) =>
         tuple(
           {
-            args: [dsMockUtils.createMockTicker(ticker)],
+            args: [dsMockUtils.createMockAssetId(id)],
           } as unknown as StorageKey,
           dsMockUtils.createMockBytes(name)
         )
       );
 
-      dsMockUtils.createQueryMock('asset', 'tokens', {
+      dsMockUtils.createQueryMock('asset', 'securityTokens', {
         multi: [
           dsMockUtils.createMockOption(
             dsMockUtils.createMockSecurityToken({
@@ -539,21 +546,21 @@ describe('Assets Class', () => {
 
       const result = await assets.get();
 
-      const expectedData = expectedAssets.map(({ ticker }) => expect.objectContaining({ ticker }));
-      expect(result).toEqual({ data: expectedData, next: null });
+      const expectedData = expectedAssets.map(({ id }) => expect.objectContaining({ id }));
+      expect(result).toEqual({ data: expect.arrayContaining(expectedData), next: null });
     });
 
     it('should retrieve the first page of results', async () => {
       const entries = [
         tuple(
           {
-            args: [dsMockUtils.createMockTicker(expectedAssets[0].ticker)],
+            args: [dsMockUtils.createMockAssetId(expectedAssets[0].id)],
           } as unknown as StorageKey,
           dsMockUtils.createMockBytes(expectedAssets[0].name)
         ),
       ];
 
-      dsMockUtils.createQueryMock('asset', 'tokens', {
+      dsMockUtils.createQueryMock('asset', 'securityTokens', {
         multi: [
           dsMockUtils.createMockOption(
             dsMockUtils.createMockSecurityToken({
@@ -571,7 +578,7 @@ describe('Assets Class', () => {
       const result = await assets.get({ size: new BigNumber(1) });
 
       expect(result).toEqual({
-        data: [expect.objectContaining({ ticker: expectedAssets[0].ticker })],
+        data: [expect.objectContaining({ id: expectedAssets[0].id })],
         next: 'someKey',
       });
     });

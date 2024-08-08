@@ -1,11 +1,11 @@
 import { StorageKey, u64 } from '@polkadot/types';
 import { AccountId, Balance } from '@polkadot/types/interfaces';
 import {
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesIdentityDidRecord,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesSecondaryKeyKeyRecord,
   PolymeshPrimitivesSecondaryKeyPermissions,
-  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import { bool } from '@polkadot/types/primitive';
 import BigNumber from 'bignumber.js';
@@ -101,8 +101,7 @@ describe('Identity class', () => {
   let context: MockContext;
   let stringToIdentityIdSpy: jest.SpyInstance<PolymeshPrimitivesIdentityId, [string, Context]>;
   let identityIdToStringSpy: jest.SpyInstance<string, [PolymeshPrimitivesIdentityId]>;
-  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
-  let tickerToStringSpy: jest.SpyInstance<string, [PolymeshPrimitivesTicker]>;
+  let stringToAssetIdSpy: jest.SpyInstance;
   let u64ToBigNumberSpy: jest.SpyInstance<BigNumber, [u64]>;
   let getAccountSpy: jest.SpyInstance<Promise<Account>, [{ address: string }, Context]>;
 
@@ -112,8 +111,7 @@ describe('Identity class', () => {
     procedureMockUtils.initMocks();
     stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
     identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    tickerToStringSpy = jest.spyOn(utilsConversionModule, 'tickerToString');
+    stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
     u64ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u64ToBigNumber');
   });
 
@@ -337,9 +335,9 @@ describe('Identity class', () => {
   });
 
   describe('method: getAssetBalance', () => {
-    let ticker: string;
+    let assetId: string;
     let did: string;
-    let rawTicker: PolymeshPrimitivesTicker;
+    let rawAssetId: PolymeshPrimitivesAssetAssetID;
     let rawIdentityId: PolymeshPrimitivesIdentityId;
     let fakeValue: BigNumber;
     let fakeBalance: Balance;
@@ -350,23 +348,23 @@ describe('Identity class', () => {
     let identity: Identity;
 
     beforeAll(() => {
-      ticker = 'TEST';
+      assetId = '0x1234';
       did = 'someDid';
-      rawTicker = dsMockUtils.createMockTicker(ticker);
+      rawAssetId = dsMockUtils.createMockAssetId(assetId);
       rawIdentityId = dsMockUtils.createMockIdentityId(did);
       fakeValue = new BigNumber(100);
       fakeBalance = dsMockUtils.createMockBalance(fakeValue);
       mockContext = dsMockUtils.getContextInstance();
       balanceOfMock = dsMockUtils.createQueryMock('asset', 'balanceOf');
-      assetMock = dsMockUtils.createQueryMock('asset', 'tokens');
+      assetMock = dsMockUtils.createQueryMock('asset', 'securityTokens');
 
       when(stringToIdentityIdSpy).calledWith(did, mockContext).mockReturnValue(rawIdentityId);
 
       identity = new Identity({ did }, mockContext);
 
-      when(jest.spyOn(utilsConversionModule, 'stringToTicker'))
-        .calledWith(ticker, mockContext)
-        .mockReturnValue(rawTicker);
+      when(jest.spyOn(utilsConversionModule, 'stringToAssetId'))
+        .calledWith(assetId, mockContext)
+        .mockReturnValue(rawAssetId);
 
       when(jest.spyOn(utilsConversionModule, 'balanceToBigNumber'))
         .calledWith(fakeBalance)
@@ -375,7 +373,7 @@ describe('Identity class', () => {
 
     beforeEach(() => {
       when(assetMock)
-        .calledWith(rawTicker)
+        .calledWith(rawAssetId)
         .mockResolvedValue(
           dsMockUtils.createMockSecurityToken({
             ownerDid: dsMockUtils.createMockIdentityId('tokenOwner'),
@@ -387,9 +385,9 @@ describe('Identity class', () => {
     });
 
     it('should return the balance of a given Asset', async () => {
-      when(balanceOfMock).calledWith(rawTicker, rawIdentityId).mockResolvedValue(fakeBalance);
+      when(balanceOfMock).calledWith(rawAssetId, rawIdentityId).mockResolvedValue(fakeBalance);
 
-      const result = await identity.getAssetBalance({ ticker });
+      const result = await identity.getAssetBalance({ ticker: assetId });
 
       expect(result).toEqual(fakeValue);
     });
@@ -399,27 +397,27 @@ describe('Identity class', () => {
       const callback = jest.fn();
 
       when(balanceOfMock)
-        .calledWith(rawTicker, rawIdentityId, expect.any(Function))
+        .calledWith(rawAssetId, rawIdentityId, expect.any(Function))
         .mockImplementation(async (_a, _b, cbFunc) => {
           cbFunc(fakeBalance);
           return unsubCallback;
         });
 
-      const result = await identity.getAssetBalance({ ticker }, callback);
+      const result = await identity.getAssetBalance({ ticker: assetId }, callback);
 
       expect(result).toEqual(unsubCallback);
       expect(callback).toBeCalledWith(fakeValue);
     });
 
     it("should throw an error if the Asset doesn't exist", () => {
-      when(assetMock).calledWith(rawTicker).mockResolvedValue(dsMockUtils.createMockOption());
+      when(assetMock).calledWith(rawAssetId).mockResolvedValue(dsMockUtils.createMockOption());
 
       const expectedError = new PolymeshError({
         code: ErrorCode.DataUnavailable,
-        message: `There is no Asset with ticker "${ticker}"`,
+        message: `There is no Asset with ticker "${assetId}"`,
       });
 
-      return expect(identity.getAssetBalance({ ticker })).rejects.toThrow(expectedError);
+      return expect(identity.getAssetBalance({ ticker: assetId })).rejects.toThrow(expectedError);
     });
   });
 
@@ -568,42 +566,39 @@ describe('Identity class', () => {
 
   describe('method: getTrustingAssets', () => {
     const did = 'someDid';
-    const tickers = ['ASSET1', 'ASSET2'];
+    const assetIds = ['0x1234', '0x5678'];
 
     it('should return a list of Assets', async () => {
       const identity = new Identity({ did }, context);
 
       dsMockUtils.createApolloQueryMock(trustingAssetsQuery({ issuer: did }), {
         trustedClaimIssuers: {
-          nodes: tickers.map(ticker => ({ asset: { id: ticker, ticker } })),
+          nodes: assetIds.map(assetId => ({ assetId })),
         },
       });
 
       const result = await identity.getTrustingAssets();
 
-      expect(result[0].ticker).toBe('ASSET1');
-      expect(result[1].ticker).toBe('ASSET2');
+      expect(result[0].id).toBe(assetIds[0]);
+      expect(result[1].id).toBe(assetIds[1]);
     });
   });
 
   describe('method: getHeldAssets', () => {
     const did = 'someDid';
-    const tickers = ['ASSET1', 'ASSET2'];
+    const assetIds = ['0x1234', '0x5678'];
 
     it('should return a list of Assets', async () => {
       const identity = new Identity({ did }, context);
 
       dsMockUtils.createApolloQueryMock(assetHoldersQuery({ identityId: did }), {
-        assetHolders: {
-          nodes: tickers.map(ticker => ({ asset: { id: ticker, ticker } })),
-          totalCount: 2,
-        },
+        assetHolders: { nodes: assetIds.map(assetId => ({ assetId })), totalCount: 2 },
       });
 
       let result = await identity.getHeldAssets();
 
-      expect(result.data[0].ticker).toBe(tickers[0]);
-      expect(result.data[1].ticker).toBe(tickers[1]);
+      expect(result.data[0].id).toBe(assetIds[0]);
+      expect(result.data[1].id).toBe(assetIds[1]);
 
       dsMockUtils.createApolloQueryMock(
         assetHoldersQuery(
@@ -613,10 +608,7 @@ describe('Identity class', () => {
           AssetHoldersOrderBy.CreatedBlockIdAsc
         ),
         {
-          assetHolders: {
-            nodes: tickers.map(ticker => ({ asset: { id: ticker, ticker } })),
-            totalCount: 2,
-          },
+          assetHolders: { nodes: assetIds.map(assetId => ({ assetId })), totalCount: 2 },
         }
       );
 
@@ -626,29 +618,29 @@ describe('Identity class', () => {
         order: AssetHoldersOrderBy.CreatedBlockIdAsc,
       });
 
-      expect(result.data[0].ticker).toBe(tickers[0]);
-      expect(result.data[1].ticker).toBe(tickers[1]);
+      expect(result.data[0].id).toBe(assetIds[0]);
+      expect(result.data[1].id).toBe(assetIds[1]);
     });
   });
 
   describe('method: getHeldNfts', () => {
     const did = 'someDid';
-    const tickers = ['ASSET1', 'ASSET2'];
+    const assetIds = ['0x1234', '0x4321'];
 
     it('should return a list of HeldNfts', async () => {
       const identity = new Identity({ did }, context);
 
       dsMockUtils.createApolloQueryMock(nftHoldersQuery({ identityId: did }), {
         nftHolders: {
-          nodes: tickers.map(ticker => ({ asset: { id: ticker, ticker }, nftIds: [] })),
+          nodes: assetIds.map(assetId => ({ assetId, nftIds: [] })),
           totalCount: 2,
         },
       });
 
       let result = await identity.getHeldNfts();
 
-      expect(result.data[0].collection.ticker).toBe(tickers[0]);
-      expect(result.data[1].collection.ticker).toBe(tickers[1]);
+      expect(result.data[0].collection.id).toBe(assetIds[0]);
+      expect(result.data[1].collection.id).toBe(assetIds[1]);
 
       dsMockUtils.createApolloQueryMock(
         nftHoldersQuery(
@@ -659,7 +651,7 @@ describe('Identity class', () => {
         ),
         {
           nftHolders: {
-            nodes: tickers.map(ticker => ({ asset: { id: ticker, ticker }, nftIds: [1, 3] })),
+            nodes: assetIds.map(assetId => ({ assetId, nftIds: [1, 3] })),
             totalCount: 2,
           },
         }
@@ -671,8 +663,8 @@ describe('Identity class', () => {
         order: NftHoldersOrderBy.CreatedBlockIdAsc,
       });
 
-      expect(result.data[0].collection.ticker).toBe(tickers[0]);
-      expect(result.data[1].collection.ticker).toBe(tickers[1]);
+      expect(result.data[0].collection.id).toBe(assetIds[0]);
+      expect(result.data[1].collection.id).toBe(assetIds[1]);
       expect(result.data[0].nfts).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ id: new BigNumber(1) }),
@@ -1024,8 +1016,8 @@ describe('Identity class', () => {
 
     beforeAll(() => {
       assets = [
-        entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER_1' }),
-        entityMockUtils.getFungibleAssetInstance({ ticker: 'TICKER_2' }),
+        entityMockUtils.getFungibleAssetInstance({ assetId: '0x1111' }),
+        entityMockUtils.getFungibleAssetInstance({ assetId: '0x2222' }),
       ];
       const distributionTemplate = {
         expiryDate: null,
@@ -1063,7 +1055,7 @@ describe('Identity class', () => {
           distribution: entityMockUtils.getDividendDistributionInstance({
             ...distributionTemplate,
             id: new BigNumber(5),
-            ticker: 'HOLDER_PAID',
+            assetId: '0x9999',
           }),
           details: detailsTemplate,
         },
@@ -1084,7 +1076,7 @@ describe('Identity class', () => {
       const holderPaidMock = dsMockUtils.createQueryMock('capitalDistribution', 'holderPaid');
 
       const rawCaId = dsMockUtils.createMockCAId({
-        ticker: 'HOLDER_PAID',
+        assetId: '0x9999',
         localId: new BigNumber(5),
       });
       const rawIdentityId = dsMockUtils.createMockIdentityId('someDid');
@@ -1093,7 +1085,10 @@ describe('Identity class', () => {
         .calledWith('someDid', context)
         .mockReturnValue(rawIdentityId);
       when(jest.spyOn(utilsConversionModule, 'corporateActionIdentifierToCaId'))
-        .calledWith({ ticker: 'HOLDER_PAID', localId: new BigNumber(5) }, context)
+        .calledWith(
+          { asset: expect.objectContaining({ id: '0x9999' }), localId: new BigNumber(5) },
+          context
+        )
         .mockReturnValue(rawCaId);
 
       holderPaidMock.mockResolvedValue(dsMockUtils.createMockBool(false));
@@ -1376,23 +1371,22 @@ describe('Identity class', () => {
   describe('method: preApprovedAssets', () => {
     it('should the list of pre-approved assets for the identity', async () => {
       const did = 'someDid';
-      const ticker = 'TICKER';
-      const rawTicker = dsMockUtils.createMockTicker(ticker);
+      const assetId = '0x1234';
+      const rawAssetId = dsMockUtils.createMockAssetId(assetId);
       const rawDid = dsMockUtils.createMockIdentityId(did);
       const mockContext = dsMockUtils.getContextInstance();
       const identity = new Identity({ did }, mockContext);
 
       when(identityIdToStringSpy).calledWith(rawDid).mockReturnValue(did);
-      when(tickerToStringSpy).calledWith(rawTicker).mockReturnValue(ticker);
 
-      dsMockUtils.createQueryMock('asset', 'preApprovedTicker', {
-        entries: [tuple([rawDid, rawTicker], dsMockUtils.createMockBool(true))],
+      dsMockUtils.createQueryMock('asset', 'preApprovedAsset', {
+        entries: [tuple([rawDid, rawAssetId], dsMockUtils.createMockBool(true))],
       });
 
       const result = await identity.preApprovedAssets();
 
       expect(result).toEqual({
-        data: [expect.objectContaining({ ticker: 'TICKER' })],
+        data: [expect.objectContaining({ id: assetId })],
         next: null,
       });
     });
@@ -1401,20 +1395,22 @@ describe('Identity class', () => {
   describe('method: isAssetPreApproved', () => {
     it('should return whether the asset is pre-approved or not', async () => {
       const did = 'someDid';
-      const ticker = 'TICKER';
-      const rawTicker = dsMockUtils.createMockTicker(ticker);
+      const assetId = '0x1234';
+      const asset = entityMockUtils.getBaseAssetInstance({ assetId });
+      const rawAssetId = dsMockUtils.createMockAssetId(assetId);
       const rawDid = dsMockUtils.createMockIdentityId(did);
       const mockContext = dsMockUtils.getContextInstance();
       const identity = new Identity({ did }, mockContext);
 
+      jest.spyOn(utilsInternalModule, 'asBaseAssetV2').mockResolvedValue(asset);
+      when(stringToAssetIdSpy).calledWith(assetId, mockContext).mockReturnValue(rawAssetId);
       when(identityIdToStringSpy).calledWith(rawDid).mockReturnValue(did);
-      when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
 
       dsMockUtils
-        .createQueryMock('asset', 'preApprovedTicker')
+        .createQueryMock('asset', 'preApprovedAsset')
         .mockResolvedValue(dsMockUtils.createMockBool(true));
 
-      const result = await identity.isAssetPreApproved(ticker);
+      const result = await identity.isAssetPreApproved(assetId);
 
       expect(result).toBeTruthy();
     });
@@ -1454,7 +1450,7 @@ describe('Identity class', () => {
       const identity = new Identity({ did }, mockContext);
 
       dsMockUtils
-        .createQueryMock('asset', 'preApprovedTicker')
+        .createQueryMock('asset', 'preApprovedAsset')
         .mockResolvedValue(dsMockUtils.createMockBool(true));
 
       const result = await identity.getMultiSigSigners();

@@ -13,7 +13,7 @@ jest.mock(
 
 describe('MetadataEntry class', () => {
   let context: Context;
-  const ticker = 'SOME_TICKER';
+  const assetId = '0x1234';
   const id = new BigNumber(1);
   const type = MetadataType.Local;
   let metadataEntry: MetadataEntry;
@@ -23,12 +23,12 @@ describe('MetadataEntry class', () => {
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    jest.spyOn(utilsConversionModule, 'stringToTicker').mockImplementation();
+    jest.spyOn(utilsConversionModule, 'stringToAssetId').mockImplementation();
   });
 
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
-    metadataEntry = new MetadataEntry({ id, ticker, type }, context);
+    metadataEntry = new MetadataEntry({ id, assetId, type }, context);
   });
 
   afterEach(() => {
@@ -47,12 +47,12 @@ describe('MetadataEntry class', () => {
   });
 
   describe('constructor', () => {
-    it('should assign ticker, type and id to instance', () => {
+    it('should assign assetId, type and id to instance', () => {
       expect(metadataEntry).toEqual(
         expect.objectContaining({
           id,
           type,
-          asset: expect.objectContaining({ ticker }),
+          asset: expect.objectContaining({ assetId }),
         })
       );
     });
@@ -63,15 +63,15 @@ describe('MetadataEntry class', () => {
       expect(
         MetadataEntry.isUniqueIdentifiers({
           id: new BigNumber(1),
-          ticker: 'SOME_TICKER',
+          assetId: '0x1234',
           type: MetadataType.Local,
         })
       ).toBe(true);
       expect(MetadataEntry.isUniqueIdentifiers({})).toBe(false);
       expect(MetadataEntry.isUniqueIdentifiers({ id: 2 })).toBe(false);
-      expect(MetadataEntry.isUniqueIdentifiers({ id: new BigNumber(1), ticker: 3 })).toBe(false);
+      expect(MetadataEntry.isUniqueIdentifiers({ id: new BigNumber(1), assetId: 3 })).toBe(false);
       expect(
-        MetadataEntry.isUniqueIdentifiers({ id: new BigNumber(1), ticker: 3, type: 'Random' })
+        MetadataEntry.isUniqueIdentifiers({ id: new BigNumber(1), assetId: 3, type: 'Random' })
       ).toBe(false);
     });
   });
@@ -167,7 +167,7 @@ describe('MetadataEntry class', () => {
       });
 
       const globalMetadataEntry = new MetadataEntry(
-        { ticker, id, type: MetadataType.Global },
+        { assetId, id, type: MetadataType.Global },
         context
       );
       result = await globalMetadataEntry.details();
@@ -222,7 +222,7 @@ describe('MetadataEntry class', () => {
         returnValue: dsMockUtils.createMockOption(),
       });
 
-      metadataEntry = new MetadataEntry({ id, ticker, type: MetadataType.Global }, context);
+      metadataEntry = new MetadataEntry({ id, assetId, type: MetadataType.Global }, context);
 
       await expect(metadataEntry.exists()).resolves.toBeFalsy();
 
@@ -271,7 +271,7 @@ describe('MetadataEntry class', () => {
         code: ErrorCode.DataUnavailable,
         message: 'Metadata does not exists for the Asset',
         data: {
-          ticker,
+          assetId,
           type,
           id,
         },
@@ -336,7 +336,8 @@ describe('MetadataEntry class', () => {
     it('should return a human readable version of the entity', () => {
       expect(metadataEntry.toHuman()).toEqual({
         id: '1',
-        ticker: 'SOME_TICKER',
+        assetId: '0x1234',
+        ticker: '0x1234',
         type: 'Local',
       });
     });

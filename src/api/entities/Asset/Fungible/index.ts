@@ -83,7 +83,7 @@ export class FungibleAsset extends BaseAsset {
    * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
    */
   public async createdAt(): Promise<EventIdentifier | null> {
-    const { ticker, context } = this;
+    const { id, context } = this;
 
     const {
       data: {
@@ -93,7 +93,7 @@ export class FungibleAsset extends BaseAsset {
       },
     } = await context.queryMiddleware<Ensured<Query, 'assets'>>(
       assetQuery({
-        ticker,
+        id,
       })
     );
 
@@ -144,7 +144,7 @@ export class FungibleAsset extends BaseAsset {
    * @note uses the middlewareV2
    */
   public async getOperationHistory(): Promise<HistoricAgentOperation[]> {
-    const { context, ticker: assetId } = this;
+    const { context, id: assetId } = this;
 
     const middlewareAssetId = await getAssetIdForMiddleware(assetId, context);
 
@@ -178,10 +178,8 @@ export class FungibleAsset extends BaseAsset {
     size?: BigNumber;
     start?: BigNumber;
   }): Promise<ResultSet<HistoricAssetTransaction>> {
-    const { context, ticker } = this;
+    const { context, id } = this;
     const { size, start } = opts;
-
-    const middlewareAssetId = await getAssetIdForMiddleware(ticker, context);
 
     const {
       data: {
@@ -190,7 +188,7 @@ export class FungibleAsset extends BaseAsset {
     } = await context.queryMiddleware<Ensured<Query, 'assetTransactions'>>(
       assetTransactionQuery(
         {
-          assetId: middlewareAssetId,
+          assetId: id,
         },
         size,
         start
