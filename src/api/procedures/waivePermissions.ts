@@ -77,11 +77,14 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export function prepareStorage(this: Procedure<Params, void, Storage>, { asset }: Params): Storage {
+export async function prepareStorage(
+  this: Procedure<Params, void, Storage>,
+  { asset }: Params
+): Promise<Storage> {
   const { context } = this;
 
   return {
-    asset: asBaseAsset(asset, context),
+    asset: await asBaseAsset(asset, context),
   };
 }
 

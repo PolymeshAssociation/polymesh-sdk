@@ -48,7 +48,7 @@ export type Extrinsics = SubmittableExtrinsics<'promise'>;
  * Parameter list for a specific extrinsic
  *
  * @param ModuleName - pallet name (e.g. 'asset')
- * @param TransactionName - extrinsic name (e.g. 'registerTicker')
+ * @param TransactionName - extrinsic name (e.g. 'registerUniqueTicker')
  */
 export type ExtrinsicParams<
   ModuleName extends keyof Extrinsics,

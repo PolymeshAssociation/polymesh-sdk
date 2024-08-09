@@ -123,7 +123,7 @@ export async function prepareCreateNftCollection(
 
   const transactions = [];
 
-  const rawAssetId = assetToMeshAssetId(asBaseAsset(assetId, context), context);
+  const rawAssetId = assetToMeshAssetId(await asBaseAsset(assetId, context), context);
 
   const rawName = nameToAssetName(name ?? ticker ?? assetId, context);
   const rawNameTickerArgs = isV6 ? [rawName, rawAssetId] : [rawName];
@@ -161,7 +161,7 @@ export async function prepareCreateNftCollection(
     }
   } else {
     if (isV6) {
-      txTags.push(TxTags.asset.RegisterTicker);
+      txTags.push(TxTags.asset.RegisterUniqueTicker);
     }
     txTags.push(TxTags.asset.CreateAsset);
     transactions.push(

@@ -356,7 +356,7 @@ describe('Network Class', () => {
           withSigningManager: true,
           transactionFees: [
             {
-              tag: TxTags.asset.RegisterTicker,
+              tag: TxTags.asset.RegisterUniqueTicker,
               fees: protocolFees,
             },
           ],
@@ -562,7 +562,7 @@ describe('Network Class', () => {
     });
 
     it('should handle non prefixed hex strings', async () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker', {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker', {
         autoResolve: MockTxStatus.Succeeded,
       });
 
@@ -575,7 +575,7 @@ describe('Network Class', () => {
     });
 
     it('should throw an error if the status is rejected', async () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker', {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker', {
         autoResolve: false,
       });
 
@@ -592,7 +592,7 @@ describe('Network Class', () => {
     });
 
     it('should throw an error if there is an error submitting', async () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker', {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker', {
         autoResolve: false,
       });
 
@@ -609,7 +609,7 @@ describe('Network Class', () => {
     });
 
     it("should throw an error if signature isn't hex encoded", async () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker', {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker', {
         autoResolve: false,
       });
 
@@ -629,7 +629,7 @@ describe('Network Class', () => {
     });
 
     it('should use polling when subscription is not enabled', async () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker', {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker', {
         autoResolve: false,
       });
 

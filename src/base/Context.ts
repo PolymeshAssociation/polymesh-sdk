@@ -625,7 +625,7 @@ export class Context {
    *
    * Retrieve the protocol fees associated with running specific transactions
    *
-   * @param tags - list of transaction tags (e.g. [TxTags.asset.CreateAsset, TxTags.asset.RegisterTicker] or ["asset.createAsset", "asset.registerTicker"])
+   * @param tags - list of transaction tags (e.g. [TxTags.asset.CreateAsset, TxTags.asset.RegisterUniqueTicker] or ["asset.createAsset", "asset.registerTicker"])
    * @param blockHash - optional hash of the block to get the protocol fees at that block
    */
   public async getProtocolFees({

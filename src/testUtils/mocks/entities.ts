@@ -1460,7 +1460,7 @@ const MockAuthorizationRequestClass = createMockEntityClass<AuthorizationRequest
     isExpired: false,
     target: getIdentityInstance({ did: 'targetDid' }),
     issuer: getIdentityInstance({ did: 'issuerDid' }),
-    data: { type: AuthorizationType.TransferAssetOwnership, value: 'UNWANTED_TOKEN' },
+    data: { type: AuthorizationType.TransferAssetOwnership, value: '0x9090' },
     expiry: null,
   }),
   ['AuthorizationRequest']

@@ -173,14 +173,14 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export function prepareStorage(
+export async function prepareStorage(
   this: Procedure<Params, CustomPermissionGroup | KnownPermissionGroup, Storage>,
   { group: { asset } }: Params
-): Storage {
+): Promise<Storage> {
   const { context } = this;
 
   return {
-    asset: asBaseAsset(asset, context),
+    asset: await asBaseAsset(asset, context),
   };
 }
 

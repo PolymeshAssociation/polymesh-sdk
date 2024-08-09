@@ -182,11 +182,11 @@ describe('addTransferRestriction procedure', () => {
 
     rawCountStatType = dsMockUtils.createMockStatisticsStatType();
     rawBalanceStatType = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
+      operationType: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
       claimIssuer: dsMockUtils.createMockOption(),
     });
     rawClaimCountStatType = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatType.ScopedCount),
+      operationType: dsMockUtils.createMockStatisticsOpType(StatType.ScopedCount),
       claimIssuer: dsMockUtils.createMockOption([
         dsMockUtils.createMockClaimType(),
         dsMockUtils.createMockIdentityId(),

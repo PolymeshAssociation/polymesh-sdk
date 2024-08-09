@@ -21,7 +21,7 @@ import {
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolioId,
 } from '~/utils/conversion';
-import { asAsset, asAssetId, asBaseAssetV2, asNftId } from '~/utils/internal';
+import { asAsset, asAssetId, asBaseAsset, asNftId } from '~/utils/internal';
 
 /**
  * @hidden
@@ -180,7 +180,7 @@ export async function prepareMoveFunds(
   const unavailableNfts: Record<string, BigNumber[]> = {};
 
   for (const movement of nftMovements) {
-    const { id: assetId } = await asBaseAssetV2(movement.asset, context);
+    const { id: assetId } = await asBaseAsset(movement.asset, context);
     const heldNfts = heldCollections.find(({ collection }) => collection.id === assetId);
 
     movement.nfts.forEach(nftId => {
