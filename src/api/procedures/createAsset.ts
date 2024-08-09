@@ -160,7 +160,7 @@ export async function prepareCreateAsset(
   if (status === TickerReservationStatus.Free) {
     fee = await addManualFees(
       new BigNumber(0),
-      [TxTags.asset.RegisterTicker, TxTags.asset.CreateAsset],
+      [TxTags.asset.RegisterUniqueTicker, TxTags.asset.CreateAsset],
       context
     );
   }

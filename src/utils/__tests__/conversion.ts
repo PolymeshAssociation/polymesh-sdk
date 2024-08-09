@@ -527,7 +527,7 @@ describe('fungibleMovementToPortfolioFund', () => {
     const fakeResult =
       'PolymeshPrimitivesPortfolioFund' as unknown as PolymeshPrimitivesPortfolioFund;
 
-    jest.spyOn(utilsInternalModule, 'asBaseAssetV2').mockResolvedValue(asset);
+    jest.spyOn(utilsInternalModule, 'asBaseAsset').mockResolvedValue(asset);
     let portfolioMovement: PortfolioMovement = {
       asset: assetId,
       amount,
@@ -621,7 +621,7 @@ describe('nftMovementToPortfolioFund', () => {
     const fakeResult =
       'PolymeshPrimitivesPortfolioFund' as unknown as PolymeshPrimitivesPortfolioFund;
 
-    jest.spyOn(utilsInternalModule, 'asBaseAssetV2').mockResolvedValue(asset);
+    jest.spyOn(utilsInternalModule, 'asBaseAsset').mockResolvedValue(asset);
     let portfolioMovement: NonFungiblePortfolioMovement = {
       asset: assetId,
       nfts: [id],
@@ -5202,9 +5202,9 @@ describe('txTagToProtocolOp', () => {
 
     const createTypeMock = context.createType;
     when(createTypeMock)
-      .calledWith('PolymeshCommonUtilitiesProtocolFeeProtocolOp', 'AssetRegisterTicker')
+      .calledWith('PolymeshCommonUtilitiesProtocolFeeProtocolOp', 'AssetRegisterUniqueTicker')
       .mockReturnValue(fakeResult);
-    expect(txTagToProtocolOp(TxTags.asset.RegisterTicker, context)).toEqual(fakeResult);
+    expect(txTagToProtocolOp(TxTags.asset.RegisterUniqueTicker, context)).toEqual(fakeResult);
 
     when(createTypeMock)
       .calledWith('PolymeshCommonUtilitiesProtocolFeeProtocolOp', 'AssetIssue')
@@ -8025,13 +8025,16 @@ describe('agentGroupToPermissionGroup', () => {
 
   describe('statisticsOpTypeToStatType', () => {
     it('should return a statType', () => {
-      const op = 'MaxInvestorCount' as unknown as PolymeshPrimitivesStatisticsStatOpType;
+      const operationType = 'MaxInvestorCount' as unknown as PolymeshPrimitivesStatisticsStatOpType;
       const context = dsMockUtils.getContextInstance();
       when(context.createType)
-        .calledWith('PolymeshPrimitivesStatisticsStatType', { op, claimIssuer: undefined })
+        .calledWith('PolymeshPrimitivesStatisticsStatType', {
+          operationType,
+          claimIssuer: undefined,
+        })
         .mockReturnValue('statType' as unknown as PolymeshPrimitivesStatisticsStatType);
 
-      const result = statisticsOpTypeToStatType({ operationType: op }, context);
+      const result = statisticsOpTypeToStatType({ operationType }, context);
 
       expect(result).toEqual('statType');
     });
@@ -8621,29 +8624,29 @@ describe('sortStatsByClaimType', () => {
       dsMockUtils.createMockClaimType(ClaimType.Blocked),
       issuer,
     ];
-    const op = dsMockUtils.createMockStatisticsOpType(StatType.Count);
+    const operationType = dsMockUtils.createMockStatisticsOpType(StatType.Count);
     const accreditedStat = dsMockUtils.createMockStatisticsStatType({
-      op,
+      operationType,
       claimIssuer: dsMockUtils.createMockOption(accreditedIssuer),
     });
 
     const affiliateStat = dsMockUtils.createMockStatisticsStatType({
-      op,
+      operationType,
       claimIssuer: dsMockUtils.createMockOption(affiliateIssuer),
     });
 
     const jurisdictionStat = dsMockUtils.createMockStatisticsStatType({
-      op,
+      operationType,
       claimIssuer: dsMockUtils.createMockOption(jurisdictionIssuer),
     });
 
     const nonStat = dsMockUtils.createMockStatisticsStatType({
-      op,
+      operationType,
       claimIssuer: dsMockUtils.createMockOption(nonStatIssuer),
     });
 
     const countStat = dsMockUtils.createMockStatisticsStatType({
-      op,
+      operationType,
       claimIssuer: dsMockUtils.createMockOption(),
     });
 
@@ -8819,7 +8822,10 @@ describe('inputStatTypeToMeshStatType', () => {
       .mockReturnValue(fakeOp);
 
     when(createTypeMock)
-      .calledWith('PolymeshPrimitivesStatisticsStatType', { op: fakeOp, claimIssuer: undefined })
+      .calledWith('PolymeshPrimitivesStatisticsStatType', {
+        operationType: fakeOp,
+        claimIssuer: undefined,
+      })
       .mockReturnValue(fakeStatistic);
 
     when(createTypeMock)
@@ -8832,7 +8838,7 @@ describe('inputStatTypeToMeshStatType', () => {
 
     when(createTypeMock)
       .calledWith('PolymeshPrimitivesStatisticsStatType', {
-        op: fakeOp,
+        operationType: fakeOp,
         claimIssuer: [fakeClaimType, fakeIssuer],
       })
       .mockReturnValue(fakeStatistic);

@@ -62,7 +62,6 @@ import {
 import {
   asAssetId,
   asBaseAsset,
-  asBaseAssetV2,
   asDid,
   asIdentity,
   assembleBatchTransactions,
@@ -230,8 +229,8 @@ async function assertVenueFiltering(
   venueId: BigNumber,
   context: Context
 ): Promise<void> {
-  const assets = instructions.flatMap(instruction => {
-    const result: BaseAsset[] = [];
+  const assetPromises = instructions.flatMap(instruction => {
+    const result: Promise<BaseAsset>[] = [];
     instruction.legs.forEach(leg => {
       if (!isOffChainLeg(leg)) {
         result.push(asBaseAsset(leg.asset, context));
@@ -239,6 +238,8 @@ async function assertVenueFiltering(
     });
     return result;
   });
+
+  const assets = await Promise.all(assetPromises);
 
   const venueFiltering = await Promise.all(assets.map(asset => asset.getVenueFilteringDetails()));
 
@@ -388,7 +389,7 @@ async function getTxArgsAndErrors(
           const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromId, context);
           const rawToPortfolio = portfolioIdToMeshPortfolioId(toId, context);
 
-          const baseAsset = await asBaseAssetV2(asset, context);
+          const baseAsset = await asBaseAsset(asset, context);
           const rawLeg = legToFungibleLeg(
             {
               sender: rawFromPortfolio,
@@ -412,7 +413,7 @@ async function getTxArgsAndErrors(
             assertValidCdd(toId.did, context),
           ]);
 
-          const baseAsset = await asBaseAssetV2(asset, context);
+          const baseAsset = await asBaseAsset(asset, context);
 
           const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromId, context);
           const rawToPortfolio = portfolioIdToMeshPortfolioId(toId, context);

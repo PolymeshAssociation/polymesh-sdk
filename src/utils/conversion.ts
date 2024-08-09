@@ -282,7 +282,7 @@ import {
 } from '~/utils/constants';
 import {
   asAccount,
-  asBaseAssetV2,
+  asBaseAsset,
   asDid,
   asNftId,
   assertAddressValid,
@@ -2804,7 +2804,7 @@ export function txTagToProtocolOp(
   context: Context
 ): PolymeshCommonUtilitiesProtocolFeeProtocolOp {
   const protocolOpTags = [
-    TxTags.asset.RegisterTicker,
+    TxTags.asset.RegisterUniqueTicker,
     TxTags.asset.RegisterUniqueTicker,
     TxTags.asset.Issue,
     TxTags.asset.AddDocuments,
@@ -3139,7 +3139,7 @@ export async function fungibleMovementToPortfolioFund(
 ): Promise<PolymeshPrimitivesPortfolioFund> {
   const { asset, amount, memo } = portfolioItem;
 
-  const baseAsset = await asBaseAssetV2(asset, context);
+  const baseAsset = await asBaseAsset(asset, context);
 
   return context.createType('PolymeshPrimitivesPortfolioFund', {
     description: {
@@ -3161,7 +3161,7 @@ export async function nftMovementToPortfolioFund(
 ): Promise<PolymeshPrimitivesPortfolioFund> {
   const { asset, nfts, memo } = portfolioItem;
 
-  const baseAsset = await asBaseAssetV2(asset, context);
+  const baseAsset = await asBaseAsset(asset, context);
 
   return context.createType('PolymeshPrimitivesPortfolioFund', {
     description: {

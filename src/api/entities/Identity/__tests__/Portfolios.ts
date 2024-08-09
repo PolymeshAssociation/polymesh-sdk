@@ -210,8 +210,8 @@ describe('Portfolios class', () => {
     const blockHash2 = 'otherHash';
     const blockHash3 = 'hash3';
 
-    const ticker1 = 'TICKER_1';
-    const ticker2 = 'TICKER_2';
+    const assetId1 = '0x1111';
+    const assetId2 = '0x2222';
 
     const amount1 = new BigNumber(1000);
     const amount2 = new BigNumber(2000);
@@ -237,7 +237,7 @@ describe('Portfolios class', () => {
 
       const legs1 = [
         {
-          assetId: ticker1,
+          assetId: assetId1,
           amount: amount1,
           direction: SettlementDirectionEnum.Incoming,
           addresses: ['be865155e5b6be843e99117a825e9580bb03e401a9c2ace644fff604fe624917'],
@@ -255,7 +255,7 @@ describe('Portfolios class', () => {
       ];
       const legs2 = [
         {
-          assetId: ticker2,
+          assetId: assetId2,
           amount: amount2,
           direction: SettlementDirectionEnum.Outgoing,
           addresses: ['be865155e5b6be843e99117a825e9580bb03e401a9c2ace644fff604fe624917'],
@@ -274,7 +274,7 @@ describe('Portfolios class', () => {
 
       const legs3 = [
         {
-          assetId: ticker2,
+          assetId: assetId2,
           amount: amount2,
           direction: SettlementDirectionEnum.None,
           addresses: ['be865155e5b6be843e99117a825e9580bb03e401a9c2ace644fff604fe624917'],
@@ -293,7 +293,7 @@ describe('Portfolios class', () => {
 
       const legs4 = [
         {
-          assetId: ticker2,
+          assetId: assetId2,
           amount: amount2,
           direction: SettlementDirectionEnum.None,
           addresses: ['be865155e5b6be843e99117a825e9580bb03e401a9c2ace644fff604fe624917'],
@@ -421,8 +421,8 @@ describe('Portfolios class', () => {
       expect(result[1].blockNumber).toEqual(blockNumber2);
       expect(result[0].blockHash).toBe(blockHash1);
       expect(result[1].blockHash).toBe(blockHash2);
-      expect((result[0].legs[0] as FungibleLeg).asset.ticker).toBe(ticker1);
-      expect((result[1].legs[0] as FungibleLeg).asset.ticker).toBe(ticker2);
+      expect((result[0].legs[0] as FungibleLeg).asset.id).toBe(assetId1);
+      expect((result[1].legs[0] as FungibleLeg).asset.id).toBe(assetId2);
       expect((result[0].legs[0] as FungibleLeg).amount).toEqual(amount1.div(Math.pow(10, 6)));
       expect((result[1].legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
       expect((result[0].legs[0] as FungibleLeg).from.owner.did).toBe(portfolioDid1);
@@ -461,7 +461,7 @@ describe('Portfolios class', () => {
                     blockId: blockNumber1.toNumber(),
                     hash: 'someHash',
                   },
-                  assetId: ticker2,
+                  assetId: assetId2,
                   amount: amount2,
                   address: 'be865155e5b6be843e99117a825e9580bb03e401a9c2ace644fff604fe624917',
                   from: {
@@ -485,7 +485,7 @@ describe('Portfolios class', () => {
 
       expect(result[0].blockNumber).toEqual(blockNumber1);
       expect(result[0].blockHash).toBe(blockHash1);
-      expect((result[0].legs[0] as FungibleLeg).asset.ticker).toBe(ticker2);
+      expect((result[0].legs[0] as FungibleLeg).asset.id).toBe(assetId2);
       expect((result[0].legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
       expect((result[0].legs[0] as FungibleLeg).from.owner.did).toBe(portfolioDid1);
       expect((result[0].legs[0] as FungibleLeg).to.owner.did).toBe(portfolioDid1);
@@ -498,7 +498,7 @@ describe('Portfolios class', () => {
       const legs1 = [
         {
           legType: LegTypeEnum.Fungible,
-          assetId: ticker1,
+          assetId: assetId1,
           amount: amount1,
           direction: SettlementDirectionEnum.Incoming,
           addresses: ['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'],
@@ -511,7 +511,7 @@ describe('Portfolios class', () => {
       const legs2 = [
         {
           legType: LegTypeEnum.Fungible,
-          assetId: ticker2,
+          assetId: assetId2,
           amount: amount2,
           direction: SettlementDirectionEnum.Outgoing,
           addresses: ['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'],
@@ -525,7 +525,7 @@ describe('Portfolios class', () => {
       const legs3 = [
         {
           legType: LegTypeEnum.Fungible,
-          assetId: ticker2,
+          assetId: assetId2,
           amount: amount2,
           direction: SettlementDirectionEnum.None,
           addresses: ['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'],
@@ -539,7 +539,7 @@ describe('Portfolios class', () => {
       const legs4 = [
         {
           legType: LegTypeEnum.Fungible,
-          assetId: ticker2,
+          assetId: assetId2,
           amount: amount2,
           direction: SettlementDirectionEnum.None,
           addresses: ['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'],
@@ -628,8 +628,8 @@ describe('Portfolios class', () => {
       expect(result[1].blockNumber).toEqual(blockNumber2);
       expect(result[0].blockHash).toBe(blockHash1);
       expect(result[1].blockHash).toBe(blockHash2);
-      expect((result[0].legs[0] as FungibleLeg).asset.ticker).toBe(ticker1);
-      expect((result[1].legs[0] as FungibleLeg).asset.ticker).toBe(ticker2);
+      expect((result[0].legs[0] as FungibleLeg).asset.id).toBe(assetId1);
+      expect((result[1].legs[0] as FungibleLeg).asset.id).toBe(assetId2);
       expect((result[0].legs[0] as FungibleLeg).amount).toEqual(amount1.div(Math.pow(10, 6)));
       expect((result[1].legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
       expect((result[0].legs[0] as FungibleLeg).from.owner.did).toBe(portfolioDid1);
@@ -668,7 +668,7 @@ describe('Portfolios class', () => {
                     blockId: blockNumber1.toNumber(),
                     hash: 'someHash',
                   },
-                  assetId: ticker2,
+                  assetId: assetId2,
                   amount: amount2,
                   address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
                   from: {
@@ -692,7 +692,7 @@ describe('Portfolios class', () => {
 
       expect(result[0].blockNumber).toEqual(blockNumber1);
       expect(result[0].blockHash).toBe(blockHash1);
-      expect((result[0].legs[0] as FungibleLeg).asset.ticker).toBe(ticker2);
+      expect((result[0].legs[0] as FungibleLeg).asset.id).toBe(assetId2);
       expect((result[0].legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
       expect((result[0].legs[0] as FungibleLeg).from.owner.did).toBe(portfolioDid1);
       expect((result[0].legs[0] as FungibleLeg).to.owner.did).toBe(portfolioDid1);

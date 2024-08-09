@@ -50,7 +50,7 @@ describe('settlementsQuery', () => {
     const variables = {
       identityId: 'someDid',
       portfolioId: new BigNumber(1),
-      ticker: 'SOME_TICKER',
+      assetId: '0x1234',
       address: 'someAddress',
     };
 
@@ -59,7 +59,7 @@ describe('settlementsQuery', () => {
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual({
       addresses: ['someAddress'],
-      assetId: 'SOME_TICKER',
+      assetId: '0x1234',
       fromId: 'someDid/1',
       toId: 'someDid/1',
     });
@@ -70,7 +70,7 @@ describe('settlementsForAllPortfoliosQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
     const variables = {
       identityId: 'someDid',
-      ticker: 'SOME_TICKER',
+      assetId: '0x1234',
       address: 'someAddress',
     };
 
@@ -79,7 +79,7 @@ describe('settlementsForAllPortfoliosQuery', () => {
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual({
       addresses: ['someAddress'],
-      assetId: 'SOME_TICKER',
+      assetId: '0x1234',
       fromId: 'someDid',
       toId: 'someDid',
     });

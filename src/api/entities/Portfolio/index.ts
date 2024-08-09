@@ -251,9 +251,14 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       });
     }
 
-    const queriedCollections = await Promise.all(
-      args?.collections.map(asset => asAssetId(asset, context)) || []
-    );
+    let queriedCollections: string[] | undefined;
+
+    if (args?.collections) {
+      queriedCollections = await Promise.all(
+        args?.collections.map(asset => asAssetId(asset, context))
+      );
+    }
+
     const seenAssetIds = new Set<string>();
 
     const processCollectionEntry = (

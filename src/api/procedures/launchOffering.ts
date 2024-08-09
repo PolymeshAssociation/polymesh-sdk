@@ -18,7 +18,7 @@ import {
   stringToBytes,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { asBaseAssetV2, filterEventRecords, optionize } from '~/utils/internal';
+import { asBaseAsset, filterEventRecords, optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -119,7 +119,7 @@ export async function prepareLaunchOffering(
   }
 
   const rawAssetId = assetToMeshAssetId(asset, context);
-  const raisingAsset = await asBaseAssetV2(raisingCurrency, context);
+  const raisingAsset = await asBaseAsset(raisingCurrency, context);
 
   return {
     transaction: tx.sto.createFundraiser,

@@ -2469,6 +2469,7 @@ describe('assertNoPendingAuthorizationExists', () => {
   let otherIssuer: Identity;
   let otherTarget: Identity;
   let authReqBase: Pick<AuthorizationRequest, 'authId' | 'expiry' | 'issuer' | 'target' | 'data'>;
+  const assetId = '0x1234';
   const ticker = 'TICKER';
 
   beforeEach(() => {
@@ -2555,7 +2556,7 @@ describe('assertNoPendingAuthorizationExists', () => {
         authorizationRequests: [
           entityMockUtils.getAuthorizationRequestInstance({
             ...authReqBase,
-            data: { type: AuthorizationType.TransferAssetOwnership, value: ticker },
+            data: { type: AuthorizationType.TransferAssetOwnership, value: assetId },
           }),
         ],
         message: mockMessage,

@@ -67,7 +67,7 @@ describe('reserveTicker procedure', () => {
       returnValue: dsMockUtils.createMockTickerRegistrationConfig(),
     });
 
-    transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
+    transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
 
     mockContext = dsMockUtils.getContextInstance();
 
@@ -251,7 +251,7 @@ describe('getAuthorization', () => {
     };
 
     const permissions = {
-      transactions: [TxTags.asset.RegisterTicker],
+      transactions: [TxTags.asset.RegisterUniqueTicker],
       assets: [],
       portfolios: [],
     };

@@ -1055,10 +1055,7 @@ export async function getAssetIdAndTicker(
 /**
  * @hidden
  */
-export async function asBaseAssetV2(
-  asset: string | BaseAsset,
-  context: Context
-): Promise<BaseAsset> {
+export async function asBaseAsset(asset: string | BaseAsset, context: Context): Promise<BaseAsset> {
   const { isV6 } = context;
   if (asset instanceof BaseAsset) {
     return asset;
@@ -1085,7 +1082,7 @@ export async function asBaseAssetV2(
  * @hidden
  */
 export async function asAssetId(asset: string | BaseAsset, context: Context): Promise<string> {
-  const baseAsset = await asBaseAssetV2(asset, context);
+  const baseAsset = await asBaseAsset(asset, context);
   return baseAsset.id;
 }
 
@@ -1094,17 +1091,8 @@ export async function asAssetId(asset: string | BaseAsset, context: Context): Pr
  * this will return ticker for v6 and assetId for v7 and later
  */
 export async function asAssetInput(asset: string | Asset, context: Context): Promise<string> {
-  const baseAsset = await asBaseAssetV2(asset, context);
+  const baseAsset = await asBaseAsset(asset, context);
   return baseAsset.id;
-}
-
-/**
- * @hidden
- *
- * @note alternatively {@link asAsset} returns a more precise type but is async due to a network call
- */
-export function asBaseAsset(asset: string | BaseAsset, context: Context): BaseAsset {
-  return typeof asset === 'string' ? new BaseAsset({ assetId: asset }, context) : asset;
 }
 
 /**

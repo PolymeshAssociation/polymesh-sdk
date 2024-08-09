@@ -362,8 +362,8 @@ describe('Identity class', () => {
 
       identity = new Identity({ did }, mockContext);
 
-      when(jest.spyOn(utilsConversionModule, 'stringToAssetId'))
-        .calledWith(assetId, mockContext)
+      when(jest.spyOn(utilsConversionModule, 'assetToMeshAssetId'))
+        .calledWith(expect.objectContaining({ id: assetId }), mockContext)
         .mockReturnValue(rawAssetId);
 
       when(jest.spyOn(utilsConversionModule, 'balanceToBigNumber'))
@@ -382,12 +382,15 @@ describe('Identity class', () => {
             assetType: dsMockUtils.createMockAssetType('EquityCommon'),
           })
         );
+      jest
+        .spyOn(utilsInternalModule, 'asAsset')
+        .mockResolvedValue(entityMockUtils.getFungibleAssetInstance({ assetId }));
     });
 
     it('should return the balance of a given Asset', async () => {
       when(balanceOfMock).calledWith(rawAssetId, rawIdentityId).mockResolvedValue(fakeBalance);
 
-      const result = await identity.getAssetBalance({ ticker: assetId });
+      const result = await identity.getAssetBalance({ assetId });
 
       expect(result).toEqual(fakeValue);
     });
@@ -403,7 +406,7 @@ describe('Identity class', () => {
           return unsubCallback;
         });
 
-      const result = await identity.getAssetBalance({ ticker: assetId }, callback);
+      const result = await identity.getAssetBalance({ assetId }, callback);
 
       expect(result).toEqual(unsubCallback);
       expect(callback).toBeCalledWith(fakeValue);
@@ -414,10 +417,10 @@ describe('Identity class', () => {
 
       const expectedError = new PolymeshError({
         code: ErrorCode.DataUnavailable,
-        message: `There is no Asset with ticker "${assetId}"`,
+        message: `There is no Asset with asset ID "${assetId}"`,
       });
 
-      return expect(identity.getAssetBalance({ ticker: assetId })).rejects.toThrow(expectedError);
+      return expect(identity.getAssetBalance({ assetId })).rejects.toThrow(expectedError);
     });
   });
 
@@ -1402,7 +1405,7 @@ describe('Identity class', () => {
       const mockContext = dsMockUtils.getContextInstance();
       const identity = new Identity({ did }, mockContext);
 
-      jest.spyOn(utilsInternalModule, 'asBaseAssetV2').mockResolvedValue(asset);
+      jest.spyOn(utilsInternalModule, 'asBaseAsset').mockResolvedValue(asset);
       when(stringToAssetIdSpy).calledWith(assetId, mockContext).mockReturnValue(rawAssetId);
       when(identityIdToStringSpy).calledWith(rawDid).mockReturnValue(did);
 

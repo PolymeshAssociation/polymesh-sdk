@@ -1027,10 +1027,10 @@ describe('Polymesh Transaction Base class', () => {
 
     beforeEach(() => {
       when(context.getProtocolFees)
-        .calledWith({ tags: [TxTags.asset.RegisterTicker] })
+        .calledWith({ tags: [TxTags.asset.RegisterUniqueTicker] })
         .mockResolvedValue([
           {
-            tag: TxTags.asset.RegisterTicker,
+            tag: TxTags.asset.RegisterUniqueTicker,
             fees: protocolFees[0],
           },
         ]);
@@ -1069,7 +1069,7 @@ describe('Polymesh Transaction Base class', () => {
 
       let { fees, payingAccountData } = await tx.getTotalFees();
 
-      expect(fees.protocol).toEqual(new BigNumber(200));
+      expect(fees.protocol).toEqual(new BigNumber(250));
       expect(fees.gas).toEqual(new BigNumber(5));
       expect(payingAccountData.type).toBe(PayingAccountType.Caller);
       expect(payingAccountData.account.address).toBe('0xdummy');
@@ -1089,7 +1089,7 @@ describe('Polymesh Transaction Base class', () => {
 
       ({ fees, payingAccountData } = await tx.getTotalFees());
 
-      expect(fees.protocol).toEqual(new BigNumber(400));
+      expect(fees.protocol).toEqual(new BigNumber(500));
       expect(fees.gas).toEqual(new BigNumber(5));
       expect(payingAccountData.type).toBe(PayingAccountType.Caller);
       expect(payingAccountData.account.address).toBe('0xdummy');
