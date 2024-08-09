@@ -84,7 +84,7 @@ describe('consumeAuthorizationRequests procedure', () => {
         issuer: entityMockUtils.getIdentityInstance({ did: 'issuerDid1' }),
         data: {
           type: AuthorizationType.TransferAssetOwnership,
-          value: 'SOME_TICKER1',
+          value: '0x12347',
         },
       },
       {
@@ -124,7 +124,7 @@ describe('consumeAuthorizationRequests procedure', () => {
         issuer: entityMockUtils.getIdentityInstance({ did: 'issuerDid7' }),
         data: {
           type: AuthorizationType.TransferAssetOwnership,
-          value: 'SOME_TICKER7',
+          value: '0x12347',
         },
       },
     ];

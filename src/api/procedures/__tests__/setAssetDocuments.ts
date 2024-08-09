@@ -1,5 +1,5 @@
 import { Option, u32, Vec } from '@polkadot/types';
-import { PolymeshPrimitivesDocument, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesDocument } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -10,7 +10,7 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/setAssetDocuments';
-import { Context } from '~/internal';
+import { BaseAsset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { AssetDocument, TxTags } from '~/types';
@@ -25,16 +25,20 @@ jest.mock(
 
 describe('setAssetDocuments procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
   let assetDocumentToDocumentSpy: jest.SpyInstance<
     PolymeshPrimitivesDocument,
     [AssetDocument, Context]
   >;
-  let ticker: string;
+  let assetId: string;
+  let asset: BaseAsset;
   let documents: AssetDocument[];
-  let rawTicker: PolymeshPrimitivesTicker;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let rawDocuments: PolymeshPrimitivesDocument[];
-  let documentEntries: [[PolymeshPrimitivesTicker, u32], Option<PolymeshPrimitivesDocument>][];
+  let documentEntries: [
+    [PolymeshPrimitivesAssetAssetID, u32],
+    Option<PolymeshPrimitivesDocument>
+  ][];
   let args: Params;
 
   beforeAll(() => {
@@ -49,10 +53,11 @@ describe('setAssetDocuments procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
     assetDocumentToDocumentSpy = jest.spyOn(utilsConversionModule, 'assetDocumentToDocument');
-    ticker = 'SOME_TICKER';
+    assetId = '0x1234';
+    asset = entityMockUtils.getBaseAssetInstance({ assetId });
     documents = [
       {
         name: 'someDocument',
@@ -65,7 +70,7 @@ describe('setAssetDocuments procedure', () => {
         contentHash: '0x02',
       },
     ];
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
     rawDocuments = documents.map(({ name, uri, contentHash, type, filedAt }) =>
       dsMockUtils.createMockDocument({
         name: dsMockUtils.createMockBytes(name),
@@ -81,18 +86,18 @@ describe('setAssetDocuments procedure', () => {
     );
     documentEntries = rawDocuments.map((doc, index) =>
       tuple(
-        [rawTicker, dsMockUtils.createMockU32(new BigNumber(index))],
+        [rawAssetId, dsMockUtils.createMockU32(new BigNumber(index))],
         dsMockUtils.createMockOption(doc)
       )
     );
     args = {
-      ticker,
+      asset,
       documents,
     };
   });
 
-  let removeDocumentsTransaction: PolymeshTx<[Vec<u32>, PolymeshPrimitivesTicker]>;
-  let addDocumentsTransaction: PolymeshTx<[Vec<u32>, PolymeshPrimitivesTicker]>;
+  let removeDocumentsTransaction: PolymeshTx<[Vec<u32>, PolymeshPrimitivesAssetAssetID]>;
+  let addDocumentsTransaction: PolymeshTx<[Vec<u32>, PolymeshPrimitivesAssetAssetID]>;
 
   beforeEach(() => {
     dsMockUtils.createQueryMock('asset', 'assetDocuments', {
@@ -104,7 +109,7 @@ describe('setAssetDocuments procedure', () => {
 
     mockContext = dsMockUtils.getContextInstance();
 
-    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(assetToMeshAssetIdSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
     documents.forEach((doc, index) => {
       when(assetDocumentToDocumentSpy)
         .calledWith(doc, mockContext)
@@ -148,12 +153,12 @@ describe('setAssetDocuments procedure', () => {
         {
           transaction: removeDocumentsTransaction,
           feeMultiplier: new BigNumber(1),
-          args: [docIds, rawTicker],
+          args: [docIds, rawAssetId],
         },
         {
           transaction: addDocumentsTransaction,
           feeMultiplier: new BigNumber(rawDocuments.length),
-          args: [rawDocuments, rawTicker],
+          args: [rawDocuments, rawAssetId],
         },
       ],
       resolver: undefined,
@@ -173,7 +178,7 @@ describe('setAssetDocuments procedure', () => {
         {
           transaction: addDocumentsTransaction,
           feeMultiplier: new BigNumber(rawDocuments.length),
-          args: [rawDocuments, rawTicker],
+          args: [rawDocuments, rawAssetId],
         },
       ],
       resolver: undefined,
@@ -194,7 +199,7 @@ describe('setAssetDocuments procedure', () => {
         {
           transaction: removeDocumentsTransaction,
           feeMultiplier: new BigNumber(1),
-          args: [docIds, rawTicker],
+          args: [docIds, rawAssetId],
         },
       ],
       resolver: undefined,
@@ -211,7 +216,7 @@ describe('setAssetDocuments procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
           transactions: [TxTags.asset.AddDocuments, TxTags.asset.RemoveDocuments],
           portfolios: [],
         },
@@ -225,7 +230,7 @@ describe('setAssetDocuments procedure', () => {
 
       expect(boundFunc({ ...args, documents: [] })).toEqual({
         permissions: {
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
           transactions: [],
           portfolios: [],
         },

@@ -1,8 +1,8 @@
 import { Vec } from '@polkadot/types';
 import {
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesConditionTrustedIssuer,
   PolymeshPrimitivesIdentityId,
-  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import { when } from 'jest-when';
 
@@ -11,7 +11,7 @@ import {
   Params,
   prepareModifyAssetTrustedClaimIssuers,
 } from '~/api/procedures/modifyAssetTrustedClaimIssuers';
-import { Context } from '~/internal';
+import { BaseAsset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { InputTrustedClaimIssuer, TrustedClaimIssuer, TxTags } from '~/types';
@@ -29,7 +29,7 @@ jest.mock(
 
 describe('modifyAssetTrustedClaimIssuers procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
   let trustedClaimIssuerToTrustedIssuerSpy: jest.SpyInstance<
     PolymeshPrimitivesConditionTrustedIssuer,
     [InputTrustedClaimIssuer, Context]
@@ -37,10 +37,11 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
   let stringToIdentityIdSpy: jest.SpyInstance<PolymeshPrimitivesIdentityId, [string, Context]>;
   let identityIdToStringSpy: jest.SpyInstance<string, [PolymeshPrimitivesIdentityId]>;
   let trustedClaimIssuerMock: jest.Mock;
-  let ticker: string;
+  let assetId: string;
+  let asset: BaseAsset;
   let claimIssuerDids: string[];
   let claimIssuers: TrustedClaimIssuer[];
-  let rawTicker: PolymeshPrimitivesTicker;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let rawClaimIssuers: PolymeshPrimitivesConditionTrustedIssuer[];
   let args: Omit<Params, 'operation' | 'claimIssuers'>;
 
@@ -48,20 +49,21 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     trustedClaimIssuerToTrustedIssuerSpy = jest.spyOn(
       utilsConversionModule,
       'trustedClaimIssuerToTrustedIssuer'
     );
     stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
     identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
-    ticker = 'SOME_TICKER';
+    assetId = '0x1234';
+    asset = entityMockUtils.getBaseAssetInstance({ assetId });
     claimIssuerDids = ['aDid', 'otherDid', 'differentDid'];
     claimIssuers = claimIssuerDids.map(did => ({
       identity: entityMockUtils.getIdentityInstance({ did }),
       trustedFor: null,
     }));
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
     rawClaimIssuers = claimIssuerDids.map(did =>
       dsMockUtils.createMockTrustedIssuer({
         issuer: dsMockUtils.createMockIdentityId(did),
@@ -69,15 +71,15 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
       })
     );
     args = {
-      ticker,
+      asset,
     };
   });
 
   let removeDefaultTrustedClaimIssuerTransaction: PolymeshTx<
-    [Vec<PolymeshPrimitivesIdentityId>, PolymeshPrimitivesTicker]
+    [Vec<PolymeshPrimitivesIdentityId>, PolymeshPrimitivesAssetAssetID]
   >;
   let addDefaultTrustedClaimIssuerTransaction: PolymeshTx<
-    [Vec<PolymeshPrimitivesConditionTrustedIssuer>, PolymeshPrimitivesTicker]
+    [Vec<PolymeshPrimitivesConditionTrustedIssuer>, PolymeshPrimitivesAssetAssetID]
   >;
 
   beforeEach(() => {
@@ -100,7 +102,7 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
 
     mockContext = dsMockUtils.getContextInstance();
 
-    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(assetToMeshAssetIdSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
     claimIssuerDids.forEach((did, index) => {
       when(trustedClaimIssuerToTrustedIssuerSpy)
         .calledWith(
@@ -138,7 +140,7 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
           trustedFor: dsMockUtils.createMockTrustedFor({ Specific: [] }),
         })
     );
-    when(trustedClaimIssuerMock).calledWith(rawTicker).mockReturnValue(alternativeClaimIssuers);
+    when(trustedClaimIssuerMock).calledWith(rawAssetId).mockReturnValue(alternativeClaimIssuers);
     claimIssuerDids.forEach((did, index) => {
       when(trustedClaimIssuerToTrustedIssuerSpy)
         .calledWith(
@@ -181,7 +183,7 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
 
   it('should add a transaction to remove the current claim issuers and another one to add the ones in the input (set)', async () => {
     const currentClaimIssuers = rawClaimIssuers.slice(0, -1);
-    when(trustedClaimIssuerMock).calledWith(rawTicker).mockReturnValue(currentClaimIssuers);
+    when(trustedClaimIssuerMock).calledWith(rawAssetId).mockReturnValue(currentClaimIssuers);
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const result = await prepareModifyAssetTrustedClaimIssuers.call(proc, {
@@ -194,11 +196,11 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
       transactions: [
         ...currentClaimIssuers.map(({ issuer }) => ({
           transaction: removeDefaultTrustedClaimIssuerTransaction,
-          args: [rawTicker, issuer],
+          args: [rawAssetId, issuer],
         })),
         ...rawClaimIssuers.map(issuer => ({
           transaction: addDefaultTrustedClaimIssuerTransaction,
-          args: [rawTicker, issuer],
+          args: [rawAssetId, issuer],
         })),
       ],
       resolver: undefined,
@@ -220,7 +222,7 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
     expect(result).toEqual({
       transactions: rawClaimIssuers.map(issuer => ({
         transaction: addDefaultTrustedClaimIssuerTransaction,
-        args: [rawTicker, issuer],
+        args: [rawAssetId, issuer],
       })),
       resolver: undefined,
     });
@@ -228,7 +230,7 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
 
   it('should not add an add claim issuers transaction if there are no claim issuers passed as arguments (set)', async () => {
     const currentClaimIssuers = rawClaimIssuers.slice(0, -1);
-    when(trustedClaimIssuerMock).calledWith(rawTicker).mockReturnValue(currentClaimIssuers);
+    when(trustedClaimIssuerMock).calledWith(rawAssetId).mockReturnValue(currentClaimIssuers);
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const result = await prepareModifyAssetTrustedClaimIssuers.call(proc, {
@@ -240,7 +242,7 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
     expect(result).toEqual({
       transactions: currentClaimIssuers.map(({ issuer }) => ({
         transaction: removeDefaultTrustedClaimIssuerTransaction,
-        args: [rawTicker, issuer],
+        args: [rawAssetId, issuer],
       })),
       resolver: undefined,
     });
@@ -248,7 +250,7 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
 
   it('should throw an error if trying to remove an Identity that is not a trusted claim issuer', async () => {
     const currentClaimIssuers: PolymeshPrimitivesIdentityId[] = [];
-    when(trustedClaimIssuerMock).calledWith(rawTicker).mockReturnValue(currentClaimIssuers);
+    when(trustedClaimIssuerMock).calledWith(rawAssetId).mockReturnValue(currentClaimIssuers);
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     let error;
@@ -271,7 +273,7 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
 
   it('should add a transaction to remove the supplied Trusted Claim Issuers (remove)', async () => {
     const currentClaimIssuers = rawClaimIssuers;
-    when(trustedClaimIssuerMock).calledWith(rawTicker).mockReturnValue(currentClaimIssuers);
+    when(trustedClaimIssuerMock).calledWith(rawAssetId).mockReturnValue(currentClaimIssuers);
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const result = await prepareModifyAssetTrustedClaimIssuers.call(proc, {
@@ -283,7 +285,7 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
     expect(result).toEqual({
       transactions: currentClaimIssuers.map(({ issuer }) => ({
         transaction: removeDefaultTrustedClaimIssuerTransaction,
-        args: [rawTicker, issuer],
+        args: [rawAssetId, issuer],
       })),
       resolver: undefined,
     });
@@ -291,7 +293,7 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
 
   it('should throw an error if trying to add an Identity that is already a Trusted Claim Issuer', async () => {
     const currentClaimIssuers = rawClaimIssuers;
-    when(trustedClaimIssuerMock).calledWith(rawTicker).mockReturnValue(currentClaimIssuers);
+    when(trustedClaimIssuerMock).calledWith(rawAssetId).mockReturnValue(currentClaimIssuers);
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     let error;
@@ -314,7 +316,7 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
 
   it('should add a transaction to add the supplied Trusted Claim Issuers (add)', async () => {
     const currentClaimIssuers: PolymeshPrimitivesIdentityId[] = [];
-    when(trustedClaimIssuerMock).calledWith(rawTicker).mockReturnValue(currentClaimIssuers);
+    when(trustedClaimIssuerMock).calledWith(rawAssetId).mockReturnValue(currentClaimIssuers);
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const result = await prepareModifyAssetTrustedClaimIssuers.call(proc, {
@@ -326,7 +328,7 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
     expect(result).toEqual({
       transactions: rawClaimIssuers.map(issuer => ({
         transaction: addDefaultTrustedClaimIssuerTransaction,
-        args: [rawTicker, issuer],
+        args: [rawAssetId, issuer],
       })),
       resolver: undefined,
     });
@@ -336,10 +338,8 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
     it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
-      const asset = expect.objectContaining({ ticker });
-
       expect(
-        boundFunc({ ticker, operation: TrustedClaimIssuerOperation.Add, claimIssuers: [] })
+        boundFunc({ asset, operation: TrustedClaimIssuerOperation.Add, claimIssuers: [] })
       ).toEqual({
         permissions: {
           transactions: [TxTags.complianceManager.AddDefaultTrustedClaimIssuer],
@@ -349,7 +349,7 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
       });
 
       expect(
-        boundFunc({ ticker, operation: TrustedClaimIssuerOperation.Remove, claimIssuers: [] })
+        boundFunc({ asset, operation: TrustedClaimIssuerOperation.Remove, claimIssuers: [] })
       ).toEqual({
         permissions: {
           transactions: [TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer],
@@ -359,7 +359,7 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
       });
 
       expect(
-        boundFunc({ ticker, operation: TrustedClaimIssuerOperation.Set, claimIssuers: [] })
+        boundFunc({ asset, operation: TrustedClaimIssuerOperation.Set, claimIssuers: [] })
       ).toEqual({
         permissions: {
           transactions: [

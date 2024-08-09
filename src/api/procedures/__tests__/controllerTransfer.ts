@@ -1,7 +1,7 @@
 import { Balance } from '@polkadot/types/interfaces';
 import {
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesIdentityIdPortfolioId,
-  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
@@ -12,7 +12,7 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/controllerTransfer';
-import { Context, DefaultPortfolio, NumberedPortfolio } from '~/internal';
+import { Context, DefaultPortfolio, FungibleAsset, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { PortfolioBalance, PortfolioId, RoleType, TxTags } from '~/types';
@@ -40,9 +40,10 @@ describe('controllerTransfer procedure', () => {
     [BigNumber, Context, (boolean | undefined)?]
   >;
   let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance;
-  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
-  let ticker: string;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
+  let assetId: string;
+  let asset: FungibleAsset;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let did: string;
   let rawPortfolioId: PolymeshPrimitivesIdentityIdPortfolioId;
   let originPortfolio: DefaultPortfolio;
@@ -59,9 +60,10 @@ describe('controllerTransfer procedure', () => {
       utilsConversionModule,
       'portfolioIdToMeshPortfolioId'
     );
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    ticker = 'SOME_TICKER';
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
+    assetId = '0x1234';
+    asset = entityMockUtils.getFungibleAssetInstance({ assetId });
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
     did = 'fakeDid';
     rawPortfolioId = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(did),
@@ -77,7 +79,7 @@ describe('controllerTransfer procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    stringToTickerSpy.mockReturnValue(rawTicker);
+    assetToMeshAssetIdSpy.mockReturnValue(rawAssetId);
     portfolioIdToPortfolioSpy.mockReturnValue(originPortfolio);
     bigNumberToBalanceSpy.mockReturnValue(rawAmount);
     portfolioIdToMeshPortfolioIdSpy.mockReturnValue(rawPortfolioId);
@@ -105,7 +107,7 @@ describe('controllerTransfer procedure', () => {
 
     return expect(
       prepareControllerTransfer.call(proc, {
-        ticker,
+        asset,
         originPortfolio: selfPortfolio,
         amount: new BigNumber(1000),
       })
@@ -119,7 +121,7 @@ describe('controllerTransfer procedure', () => {
 
     return expect(
       prepareControllerTransfer.call(proc, {
-        ticker,
+        asset,
         originPortfolio,
         amount: new BigNumber(1000),
       })
@@ -134,14 +136,14 @@ describe('controllerTransfer procedure', () => {
     const transaction = dsMockUtils.createTxMock('asset', 'controllerTransfer');
 
     const result = await prepareControllerTransfer.call(proc, {
-      ticker,
+      asset,
       originPortfolio,
       amount,
     });
 
     expect(result).toEqual({
       transaction,
-      args: [rawTicker, rawAmount, rawPortfolioId],
+      args: [rawAssetId, rawAmount, rawPortfolioId],
       resolver: undefined,
     });
   });
@@ -162,11 +164,11 @@ describe('controllerTransfer procedure', () => {
         },
       ];
 
-      expect(await boundFunc({ ticker, originPortfolio, amount })).toEqual({
+      expect(await boundFunc({ asset, originPortfolio, amount })).toEqual({
         roles,
         permissions: {
           transactions: [TxTags.asset.ControllerTransfer],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [asset],
           portfolios: [
             expect.objectContaining({ owner: expect.objectContaining({ did: portfolioId.did }) }),
           ],

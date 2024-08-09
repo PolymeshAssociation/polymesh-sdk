@@ -1,5 +1,5 @@
 import { bool, u64 } from '@polkadot/types';
-import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -9,7 +9,7 @@ import {
   prepareVenueFiltering,
   setVenueFiltering,
 } from '~/api/procedures/setVenueFiltering';
-import { Context } from '~/internal';
+import { BaseAsset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockCodec } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
@@ -24,13 +24,15 @@ jest.mock(
 describe('setVenueFiltering procedure', () => {
   let mockContext: Mocked<Context>;
   let venueFilteringMock: jest.Mock;
-  const enabledTicker = 'ENABLED';
-  const disabledTicker = 'DISABLED';
-  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let enabledAsset: BaseAsset;
+  let disabledAsset: BaseAsset;
+  const enabledAssetId = '0x111';
+  const disabledAssetId = '0x222';
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
   let booleanToBoolSpy: jest.SpyInstance<bool, [boolean, Context]>;
   let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
-  let rawEnabledTicker: PolymeshPrimitivesTicker;
-  let rawDisabledTicker: PolymeshPrimitivesTicker;
+  let rawEnabledAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawDisabledAssetId: PolymeshPrimitivesAssetAssetID;
   let rawFalse: bool;
   const venues: BigNumber[] = [new BigNumber(1)];
   let rawVenues: MockCodec<u64>[];
@@ -39,11 +41,13 @@ describe('setVenueFiltering procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     booleanToBoolSpy = jest.spyOn(utilsConversionModule, 'booleanToBool');
     bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
-    rawEnabledTicker = dsMockUtils.createMockTicker(enabledTicker);
-    rawDisabledTicker = dsMockUtils.createMockTicker(disabledTicker);
+    rawEnabledAssetId = dsMockUtils.createMockAssetId(enabledAssetId);
+    rawDisabledAssetId = dsMockUtils.createMockAssetId(disabledAssetId);
+    enabledAsset = entityMockUtils.getBaseAssetInstance({ assetId: enabledAssetId });
+    disabledAsset = entityMockUtils.getBaseAssetInstance({ assetId: disabledAssetId });
     rawFalse = dsMockUtils.createMockBool(false);
   });
 
@@ -53,18 +57,18 @@ describe('setVenueFiltering procedure', () => {
     venueFilteringMock = dsMockUtils.createQueryMock('settlement', 'venueFiltering');
     rawVenues = venues.map(venue => dsMockUtils.createMockU64(venue));
 
-    when(stringToTickerSpy)
-      .calledWith(enabledTicker, mockContext)
-      .mockReturnValue(rawEnabledTicker);
-    when(stringToTickerSpy)
-      .calledWith(disabledTicker, mockContext)
-      .mockReturnValue(rawDisabledTicker);
+    when(assetToMeshAssetIdSpy)
+      .calledWith(enabledAsset, mockContext)
+      .mockReturnValue(rawEnabledAssetId);
+    when(assetToMeshAssetIdSpy)
+      .calledWith(disabledAsset, mockContext)
+      .mockReturnValue(rawDisabledAssetId);
 
     when(venueFilteringMock)
-      .calledWith(rawEnabledTicker)
+      .calledWith(rawEnabledAssetId)
       .mockResolvedValue(dsMockUtils.createMockBool(true));
     when(venueFilteringMock)
-      .calledWith(rawDisabledTicker)
+      .calledWith(rawDisabledAssetId)
       .mockResolvedValue(dsMockUtils.createMockBool(false));
 
     when(booleanToBoolSpy).calledWith(false, mockContext).mockReturnValue(rawFalse);
@@ -102,7 +106,7 @@ describe('setVenueFiltering procedure', () => {
       const transaction = dsMockUtils.createTxMock('settlement', 'setVenueFiltering');
 
       const result = await prepareVenueFiltering.call(proc, {
-        ticker: enabledTicker,
+        asset: enabledAsset,
         enabled: setEnabled,
       });
 
@@ -110,7 +114,7 @@ describe('setVenueFiltering procedure', () => {
         transactions: [
           {
             transaction,
-            args: [rawEnabledTicker, rawFalse],
+            args: [rawEnabledAssetId, rawFalse],
           },
         ],
         resolver: undefined,
@@ -122,7 +126,7 @@ describe('setVenueFiltering procedure', () => {
       const transaction = dsMockUtils.createTxMock('settlement', 'allowVenues');
 
       const result = await prepareVenueFiltering.call(proc, {
-        ticker: enabledTicker,
+        asset: enabledAsset,
         allowedVenues: venues,
       });
 
@@ -130,7 +134,7 @@ describe('setVenueFiltering procedure', () => {
         transactions: [
           {
             transaction,
-            args: [rawEnabledTicker, rawVenues],
+            args: [rawEnabledAssetId, rawVenues],
           },
         ],
         resolver: undefined,
@@ -142,7 +146,7 @@ describe('setVenueFiltering procedure', () => {
       const transaction = dsMockUtils.createTxMock('settlement', 'disallowVenues');
 
       const result = await prepareVenueFiltering.call(proc, {
-        ticker: enabledTicker,
+        asset: enabledAsset,
         disallowedVenues: venues,
       });
 
@@ -150,7 +154,7 @@ describe('setVenueFiltering procedure', () => {
         transactions: [
           {
             transaction,
-            args: [rawEnabledTicker, rawVenues],
+            args: [rawEnabledAssetId, rawVenues],
           },
         ],
         resolver: undefined,
@@ -161,7 +165,7 @@ describe('setVenueFiltering procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
       const result = await prepareVenueFiltering.call(proc, {
-        ticker: enabledTicker,
+        asset: enabledAsset,
         disallowedVenues: [],
         allowedVenues: [],
       });
@@ -178,14 +182,14 @@ describe('setVenueFiltering procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args: Params = {
-        ticker: enabledTicker,
+        asset: enabledAsset,
         enabled: true,
       };
 
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.settlement.SetVenueFiltering],
-          assets: [expect.objectContaining({ ticker: enabledTicker })],
+          assets: [expect.objectContaining({ id: enabledAssetId })],
         },
       });
     });
@@ -194,14 +198,14 @@ describe('setVenueFiltering procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args: Params = {
-        ticker: enabledTicker,
+        asset: enabledAsset,
         allowedVenues: venues,
       };
 
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.settlement.AllowVenues],
-          assets: [expect.objectContaining({ ticker: enabledTicker })],
+          assets: [expect.objectContaining({ id: enabledAssetId })],
         },
       });
     });
@@ -210,14 +214,14 @@ describe('setVenueFiltering procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args: Params = {
-        ticker: enabledTicker,
+        asset: enabledAsset,
         disallowedVenues: venues,
       };
 
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.settlement.DisallowVenues],
-          assets: [expect.objectContaining({ ticker: enabledTicker })],
+          assets: [expect.objectContaining({ id: enabledAssetId })],
         },
       });
     });

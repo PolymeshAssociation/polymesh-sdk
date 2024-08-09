@@ -3,6 +3,7 @@ import BigNumber from 'bignumber.js';
 
 import { assertDistributionDatesValid } from '~/api/procedures/utils';
 import {
+  BaseAsset,
   Checkpoint,
   Context,
   DefaultPortfolio,
@@ -187,7 +188,7 @@ export async function prepareConfigureDividendDistribution(
       originPortfolio instanceof BigNumber ? originPortfolio : originPortfolio.id,
       context
     );
-  const rawCurrency = assetToMeshAssetId(asset, context);
+  const rawCurrency = assetToMeshAssetId(new BaseAsset({ assetId: currency }, context), context);
 
   const rawPerShare = bigNumberToBalance(perShare, context);
   const rawAmount = bigNumberToBalance(maxAmount, context);

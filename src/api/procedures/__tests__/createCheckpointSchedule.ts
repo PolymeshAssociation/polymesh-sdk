@@ -1,4 +1,4 @@
-import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -12,7 +12,7 @@ import {
 import { CheckpointSchedule, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { TxTags } from '~/types';
+import { FungibleAsset, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -29,25 +29,26 @@ jest.mock(
 
 describe('createCheckpointSchedule procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let datesToScheduleCheckpointsSpy: jest.SpyInstance<any, [Date[], Context]>;
-  let ticker: string;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
+  let datesToScheduleCheckpointsSpy: jest.SpyInstance;
+  let assetId: string;
+  let asset: FungibleAsset;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     datesToScheduleCheckpointsSpy = jest.spyOn(utilsConversionModule, 'datesToScheduleCheckpoints');
-    ticker = 'SOME_TICKER';
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    assetId = '0x1234';
+    asset = entityMockUtils.getFungibleAssetInstance({ assetId });
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(assetToMeshAssetIdSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
   });
 
   afterEach(() => {
@@ -66,7 +67,7 @@ describe('createCheckpointSchedule procedure', () => {
 
     return expect(
       prepareCreateCheckpointSchedule.call(proc, {
-        ticker,
+        asset,
         points: [new Date(new Date().getTime() - 10000)],
       })
     ).rejects.toThrow('Schedule points must be in the future');
@@ -90,14 +91,14 @@ describe('createCheckpointSchedule procedure', () => {
     datesToScheduleCheckpointsSpy.mockReturnValue(rawSchedule);
 
     const result = await prepareCreateCheckpointSchedule.call(proc, {
-      ticker,
+      asset,
       points: [start],
     });
 
     expect(result).toEqual({
       transaction,
       resolver: expect.any(Function),
-      args: [rawTicker, rawSchedule],
+      args: [rawAssetId, rawSchedule],
     });
   });
 
@@ -109,7 +110,7 @@ describe('createCheckpointSchedule procedure', () => {
     beforeAll(() => {
       entityMockUtils.initMocks({
         checkpointScheduleOptions: {
-          ticker,
+          assetId,
           id,
           start,
         },
@@ -119,7 +120,7 @@ describe('createCheckpointSchedule procedure', () => {
       filterEventRecordsSpy.mockReturnValue([
         dsMockUtils.createMockIEvent([
           dsMockUtils.createMockIdentityId('someDid'),
-          dsMockUtils.createMockTicker(ticker),
+          dsMockUtils.createMockAssetId(assetId),
           dsMockUtils.createMockU64(id),
           dsMockUtils.createMockCheckpointSchedule({
             pending: dsMockUtils.createMockBTreeSet([
@@ -136,10 +137,10 @@ describe('createCheckpointSchedule procedure', () => {
 
     it('should return the new CheckpointSchedule', () => {
       const result = createCheckpointScheduleResolver(
-        ticker,
+        assetId,
         mockContext
       )({} as ISubmittableResult);
-      expect(result.asset.ticker).toBe(ticker);
+      expect(result.asset.id).toBe(assetId);
       expect(result.id).toEqual(id);
     });
   });
@@ -151,10 +152,10 @@ describe('createCheckpointSchedule procedure', () => {
 
       const start = new Date('10/14/1987');
 
-      expect(boundFunc({ ticker, points: [start] })).toEqual({
+      expect(boundFunc({ asset, points: [start] })).toEqual({
         permissions: {
           transactions: [TxTags.checkpoint.CreateSchedule],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [asset],
           portfolios: [],
         },
       });

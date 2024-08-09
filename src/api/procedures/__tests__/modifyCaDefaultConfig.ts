@@ -1,4 +1,4 @@
-import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -8,7 +8,7 @@ import {
   prepareModifyCaDefaultConfig,
 } from '~/api/procedures/modifyCaDefaultConfig';
 import * as utilsProcedureModule from '~/api/procedures/utils';
-import { Context } from '~/internal';
+import { Context, FungibleAsset } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { InputTargets, TargetTreatment, TxTags } from '~/types';
@@ -21,26 +21,28 @@ jest.mock(
 
 describe('modifyCaDefaultConfig procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
   let targetsToTargetIdentitiesSpy: jest.SpyInstance;
   let percentageToPermillSpy: jest.SpyInstance;
   let stringToIdentityIdSpy: jest.SpyInstance;
 
   let assertCaTaxWithholdingsValidSpy: jest.SpyInstance;
 
-  let ticker: string;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let assetId: string;
+  let asset: FungibleAsset;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     targetsToTargetIdentitiesSpy = jest.spyOn(utilsConversionModule, 'targetsToTargetIdentities');
     percentageToPermillSpy = jest.spyOn(utilsConversionModule, 'percentageToPermill');
     stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
-    ticker = 'SOME_TICKER';
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    assetId = '0x1234';
+    asset = entityMockUtils.getFungibleAssetInstance({ assetId });
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
     assertCaTaxWithholdingsValidSpy = jest.spyOn(
       utilsProcedureModule,
       'assertCaTaxWithholdingsValid'
@@ -50,7 +52,9 @@ describe('modifyCaDefaultConfig procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(assetToMeshAssetIdSpy)
+      .calledWith(expect.objectContaining({ id: assetId }), mockContext)
+      .mockReturnValue(rawAssetId);
   });
 
   afterEach(() => {
@@ -85,7 +89,7 @@ describe('modifyCaDefaultConfig procedure', () => {
 
     return expect(
       prepareModifyCaDefaultConfig.call(proc, {
-        ticker,
+        asset,
         targets,
       })
     ).rejects.toThrow('New targets are the same as the current ones');
@@ -101,7 +105,7 @@ describe('modifyCaDefaultConfig procedure', () => {
 
     return expect(
       prepareModifyCaDefaultConfig.call(proc, {
-        ticker,
+        asset,
         defaultTaxWithholding,
       })
     ).rejects.toThrow('New default tax withholding is the same as the current one');
@@ -116,13 +120,13 @@ describe('modifyCaDefaultConfig procedure', () => {
         percentage: new BigNumber(15),
       },
     ];
-    entityMockUtils.configureMocks({
-      fungibleAssetOptions: { corporateActionsGetDefaultConfig: { taxWithholdings } },
-    });
 
     return expect(
       prepareModifyCaDefaultConfig.call(proc, {
-        ticker,
+        asset: entityMockUtils.getFungibleAssetInstance({
+          assetId,
+          corporateActionsGetDefaultConfig: { taxWithholdings },
+        }),
         taxWithholdings,
       })
     ).rejects.toThrow('New per-Identity tax withholding percentages are the same as current ones');
@@ -137,9 +141,6 @@ describe('modifyCaDefaultConfig procedure', () => {
         percentage: new BigNumber(15),
       },
     ];
-    entityMockUtils.configureMocks({
-      fungibleAssetOptions: { corporateActionsGetDefaultConfig: { taxWithholdings } },
-    });
 
     when(assertCaTaxWithholdingsValidSpy)
       .calledWith(taxWithholdings, mockContext)
@@ -149,7 +150,10 @@ describe('modifyCaDefaultConfig procedure', () => {
 
     return expect(
       prepareModifyCaDefaultConfig.call(proc, {
-        ticker,
+        asset: entityMockUtils.getFungibleAssetInstance({
+          assetId,
+          corporateActionsGetDefaultConfig: { taxWithholdings },
+        }),
         taxWithholdings,
       })
     ).rejects.toThrow();
@@ -165,30 +169,28 @@ describe('modifyCaDefaultConfig procedure', () => {
       treatment: TargetTreatment.Exclude,
     };
 
-    entityMockUtils.configureMocks({
-      fungibleAssetOptions: {
-        corporateActionsGetDefaultConfig: {
-          targets: {
-            identities: [entityMockUtils.getIdentityInstance({ did: 'someDid' })],
-            treatment: TargetTreatment.Include,
-          },
-        },
-      },
-    });
-
     let rawTargets = dsMockUtils.createMockTargetIdentities({
       identities: [],
       treatment: 'Exclude',
     });
     when(targetsToTargetIdentitiesSpy).calledWith(targets, mockContext).mockReturnValue(rawTargets);
 
+    const fungibleAsset = entityMockUtils.getFungibleAssetInstance({
+      assetId,
+      corporateActionsGetDefaultConfig: {
+        targets: {
+          identities: [entityMockUtils.getIdentityInstance({ did: 'someDid' })],
+          treatment: TargetTreatment.Include,
+        },
+      },
+    });
     let result = await prepareModifyCaDefaultConfig.call(proc, {
-      ticker,
+      asset: fungibleAsset,
       targets,
     });
 
     expect(result).toEqual({
-      transactions: [{ transaction, args: [rawTicker, rawTargets] }],
+      transactions: [{ transaction, args: [rawAssetId, rawTargets] }],
       resolver: undefined,
     });
 
@@ -204,12 +206,12 @@ describe('modifyCaDefaultConfig procedure', () => {
     when(targetsToTargetIdentitiesSpy).calledWith(targets, mockContext).mockReturnValue(rawTargets);
 
     result = await prepareModifyCaDefaultConfig.call(proc, {
-      ticker,
+      asset: fungibleAsset,
       targets,
     });
 
     expect(result).toEqual({
-      transactions: [{ transaction, args: [rawTicker, rawTargets] }],
+      transactions: [{ transaction, args: [rawAssetId, rawTargets] }],
       resolver: undefined,
     });
   });
@@ -219,26 +221,23 @@ describe('modifyCaDefaultConfig procedure', () => {
 
     const transaction = dsMockUtils.createTxMock('corporateAction', 'setDefaultWithholdingTax');
 
-    entityMockUtils.configureMocks({
-      fungibleAssetOptions: {
-        corporateActionsGetDefaultConfig: {
-          defaultTaxWithholding: new BigNumber(10),
-        },
-      },
-    });
-
     const rawPercentage = dsMockUtils.createMockPermill(new BigNumber(150000));
     when(percentageToPermillSpy)
       .calledWith(new BigNumber(15), mockContext)
       .mockReturnValue(rawPercentage);
 
     const result = await prepareModifyCaDefaultConfig.call(proc, {
-      ticker,
+      asset: entityMockUtils.getFungibleAssetInstance({
+        assetId,
+        corporateActionsGetDefaultConfig: {
+          defaultTaxWithholding: new BigNumber(10),
+        },
+      }),
       defaultTaxWithholding: new BigNumber(15),
     });
 
     expect(result).toEqual({
-      transactions: [{ transaction, args: [rawTicker, rawPercentage] }],
+      transactions: [{ transaction, args: [rawAssetId, rawPercentage] }],
       resolver: undefined,
     });
   });
@@ -271,7 +270,7 @@ describe('modifyCaDefaultConfig procedure', () => {
       },
     ];
     const result = await prepareModifyCaDefaultConfig.call(proc, {
-      ticker,
+      asset,
       taxWithholdings,
     });
 
@@ -280,7 +279,7 @@ describe('modifyCaDefaultConfig procedure', () => {
       transactions: [
         {
           transaction,
-          args: [rawTicker, rawDid, rawPercentage],
+          args: [rawAssetId, rawDid, rawPercentage],
         },
       ],
       resolver: undefined,
@@ -292,14 +291,14 @@ describe('modifyCaDefaultConfig procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args = {
-        ticker,
+        asset,
       } as Params;
 
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [],
           portfolios: [],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
         },
       });
 
@@ -318,7 +317,7 @@ describe('modifyCaDefaultConfig procedure', () => {
             TxTags.corporateAction.SetDidWithholdingTax,
           ],
           portfolios: [],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
         },
       });
     });

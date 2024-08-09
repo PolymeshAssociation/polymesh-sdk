@@ -40,7 +40,7 @@ describe('Polymesh Transaction Batch class', () => {
 
   describe('method: toTransactionSpec', () => {
     it('should return the tx spec of a transaction', () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const args = tuple('FOO');
       const resolver = (): number => 1;
       const transformer = (): number => 2;
@@ -77,7 +77,7 @@ describe('Polymesh Transaction Batch class', () => {
 
   describe('get: transactions', () => {
     it('should return transactions and their arguments', () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const args = tuple('A_TICKER');
 
       const transactions = [
@@ -98,7 +98,7 @@ describe('Polymesh Transaction Batch class', () => {
 
       const expectedResult = [
         {
-          tag: TxTags.asset.RegisterTicker,
+          tag: TxTags.asset.RegisterUniqueTicker,
           args,
         },
       ];
@@ -124,7 +124,7 @@ describe('Polymesh Transaction Batch class', () => {
       });
     });
     it('should execute the underlying transaction with the provided arguments, setting the tx and block hash when finished', async () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const batchMock = dsMockUtils.createTxMock('utility', 'batchAll', { autoResolve: false });
       const args = tuple('A_TICKER');
 
@@ -162,7 +162,7 @@ describe('Polymesh Transaction Batch class', () => {
     });
 
     it('should throw an error when one of the transactions in the batch fails', async () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const batchMock = dsMockUtils.createTxMock('utility', 'batchAll', {
         autoResolve: false,
       });
@@ -194,7 +194,7 @@ describe('Polymesh Transaction Batch class', () => {
 
   describe('method: supportsSubsidy', () => {
     it('should return false', () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const args = tuple('A_TICKER');
 
       const transactions = [
@@ -219,7 +219,7 @@ describe('Polymesh Transaction Batch class', () => {
 
   describe('method: splitTransactions', () => {
     it('should return an array of the individual transactions in the batch', async () => {
-      const tx1 = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const tx1 = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const tx2 = dsMockUtils.createTxMock('asset', 'createAsset');
       const args = tuple('A_TICKER');
 
@@ -274,7 +274,7 @@ describe('Polymesh Transaction Batch class', () => {
     });
 
     it('should ensure transactions are run in the same order as they come in the batch', () => {
-      const tx1 = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const tx1 = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const tx2 = dsMockUtils.createTxMock('asset', 'createAsset');
       const args = tuple('A_TICKER');
 

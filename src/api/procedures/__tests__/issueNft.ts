@@ -1,4 +1,4 @@
-import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -9,14 +9,12 @@ import {
   issueNftResolver,
   Params,
   prepareIssueNft,
-  prepareStorage,
-  Storage,
 } from '~/api/procedures/issueNft';
 import { Context, PolymeshError, Portfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { EntityGetter } from '~/testUtils/mocks/entities';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode, MetadataType, TxTags } from '~/types';
+import { ErrorCode, MetadataType, NftCollection, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -31,9 +29,10 @@ jest.mock(
 
 describe('issueNft procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
-  let ticker: string;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let assetToMeshAssetIdSpySpy: jest.SpyInstance;
+  let assetId: string;
+  let collection: NftCollection;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let portfolioToPortfolioKindSpy: jest.SpyInstance;
   let nftInputToMetadataValueSpy: jest.SpyInstance;
 
@@ -41,16 +40,17 @@ describe('issueNft procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    assetToMeshAssetIdSpySpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     nftInputToMetadataValueSpy = jest.spyOn(utilsConversionModule, 'nftInputToNftMetadataVec');
     portfolioToPortfolioKindSpy = jest.spyOn(utilsConversionModule, 'portfolioToPortfolioKind');
-    ticker = 'SOME_TICKER';
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    assetId = '0x1234';
+    collection = entityMockUtils.getNftCollectionInstance({ assetId });
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(assetToMeshAssetIdSpySpy).calledWith(collection, mockContext).mockReturnValue(rawAssetId);
   });
 
   afterEach(() => {
@@ -62,22 +62,6 @@ describe('issueNft procedure', () => {
   afterAll(() => {
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
-  });
-
-  describe('prepareStorage', () => {
-    it('should return the NftCollection', () => {
-      const proc = procedureMockUtils.getInstance<Params, Nft, Storage>(mockContext);
-      const boundFunc = prepareStorage.bind(proc);
-
-      const result = boundFunc({
-        ticker,
-        metadata: [],
-      });
-
-      expect(result).toEqual({
-        collection: expect.objectContaining({ ticker }),
-      });
-    });
   });
 
   describe('issue NFT', () => {
@@ -121,20 +105,18 @@ describe('issueNft procedure', () => {
     it('should return an issueNft transaction spec', async () => {
       const args = {
         metadata: [],
-        ticker,
+        collection,
       };
       nftInputToMetadataValueSpy.mockReturnValue([]);
       mockContext.getSigningIdentity.mockResolvedValue(entityMockUtils.getIdentityInstance());
 
       const transaction = dsMockUtils.createTxMock('nft', 'issueNft');
-      const proc = procedureMockUtils.getInstance<Params, Nft, Storage>(mockContext, {
-        collection: entityMockUtils.getNftCollectionInstance(),
-      });
+      const proc = procedureMockUtils.getInstance<Params, Nft>(mockContext);
 
       const result = await prepareIssueNft.call(proc, args);
       expect(result).toEqual({
         transaction,
-        args: [rawTicker, [], defaultPortfolioKind],
+        args: [rawAssetId, [], defaultPortfolioKind],
         resolver: expect.any(Function),
       });
     });
@@ -142,21 +124,19 @@ describe('issueNft procedure', () => {
     it('should issue tokens to Default portfolio if portfolioId is not specified', async () => {
       const args = {
         metadata: [],
-        ticker,
+        collection,
       };
       mockContext.getSigningIdentity.mockResolvedValue(
         entityMockUtils.getIdentityInstance({ portfoliosGetPortfolio: getPortfolio })
       );
       nftInputToMetadataValueSpy.mockReturnValue([]);
       const transaction = dsMockUtils.createTxMock('nft', 'issueNft');
-      const proc = procedureMockUtils.getInstance<Params, Nft, Storage>(mockContext, {
-        collection: entityMockUtils.getNftCollectionInstance(),
-      });
+      const proc = procedureMockUtils.getInstance<Params, Nft>(mockContext);
       const result = await prepareIssueNft.call(proc, args);
 
       expect(result).toEqual({
         transaction,
-        args: [rawTicker, [], defaultPortfolioKind],
+        args: [rawAssetId, [], defaultPortfolioKind],
         resolver: expect.any(Function),
       });
     });
@@ -164,7 +144,7 @@ describe('issueNft procedure', () => {
     it('should issue tokens to Default portfolio if default portfolioId is provided', async () => {
       const args = {
         metadata: [],
-        ticker,
+        collection,
         portfolioId: defaultPortfolioId,
       };
       mockContext.getSigningIdentity.mockResolvedValue(
@@ -172,14 +152,12 @@ describe('issueNft procedure', () => {
       );
       nftInputToMetadataValueSpy.mockReturnValue([]);
       const transaction = dsMockUtils.createTxMock('nft', 'issueNft');
-      const proc = procedureMockUtils.getInstance<Params, Nft, Storage>(mockContext, {
-        collection: entityMockUtils.getNftCollectionInstance(),
-      });
+      const proc = procedureMockUtils.getInstance<Params, Nft>(mockContext);
       const result = await prepareIssueNft.call(proc, args);
 
       expect(result).toEqual({
         transaction,
-        args: [rawTicker, [], defaultPortfolioKind],
+        args: [rawAssetId, [], defaultPortfolioKind],
         resolver: expect.any(Function),
       });
     });
@@ -187,7 +165,7 @@ describe('issueNft procedure', () => {
     it('should issue the Nft to the Numbered portfolio that is specified', async () => {
       const args = {
         metadata: [],
-        ticker,
+        collection,
         portfolioId: numberedPortfolioId,
       };
       mockContext.getSigningIdentity.mockResolvedValue(
@@ -197,14 +175,12 @@ describe('issueNft procedure', () => {
       nftInputToMetadataValueSpy.mockReturnValue([]);
 
       const transaction = dsMockUtils.createTxMock('nft', 'issueNft');
-      const proc = procedureMockUtils.getInstance<Params, Nft, Storage>(mockContext, {
-        collection: entityMockUtils.getNftCollectionInstance(),
-      });
+      const proc = procedureMockUtils.getInstance<Params, Nft>(mockContext);
       const result = await prepareIssueNft.call(proc, args);
 
       expect(result).toEqual({
         transaction,
-        args: [rawTicker, [], numberedPortfolioKind],
+        args: [rawAssetId, [], numberedPortfolioKind],
         resolver: expect.any(Function),
       });
     });
@@ -212,16 +188,14 @@ describe('issueNft procedure', () => {
     it('should throw if unneeded metadata is provided', () => {
       const args = {
         metadata: [{ type: MetadataType.Local, id: new BigNumber(1), value: 'test' }],
-        ticker,
+        collection,
       };
       nftInputToMetadataValueSpy.mockReturnValue([]);
       mockContext.getSigningIdentity.mockResolvedValue(entityMockUtils.getIdentityInstance());
 
       dsMockUtils.createTxMock('nft', 'issueNft');
 
-      const proc = procedureMockUtils.getInstance<Params, Nft, Storage>(mockContext, {
-        collection: entityMockUtils.getNftCollectionInstance(),
-      });
+      const proc = procedureMockUtils.getInstance<Params, Nft>(mockContext);
 
       const expectedError = new PolymeshError({
         code: ErrorCode.ValidationError,
@@ -234,20 +208,19 @@ describe('issueNft procedure', () => {
     it('should throw if not all needed metadata is given', () => {
       const args = {
         metadata: [],
-        ticker,
+        collection: entityMockUtils.getNftCollectionInstance({
+          collectionKeys: [
+            { type: MetadataType.Global, id: new BigNumber(1), specs: {}, name: 'Example Global' },
+          ],
+          assetId,
+        }),
       };
       nftInputToMetadataValueSpy.mockReturnValue([]);
       mockContext.getSigningIdentity.mockResolvedValue(entityMockUtils.getIdentityInstance());
 
       dsMockUtils.createTxMock('nft', 'issueNft');
 
-      const proc = procedureMockUtils.getInstance<Params, Nft, Storage>(mockContext, {
-        collection: entityMockUtils.getNftCollectionInstance({
-          collectionKeys: [
-            { type: MetadataType.Global, id: new BigNumber(1), specs: {}, name: 'Example Global' },
-          ],
-        }),
-      });
+      const proc = procedureMockUtils.getInstance<Params, Nft>(mockContext);
 
       const expectedError = new PolymeshError({
         code: ErrorCode.ValidationError,
@@ -263,27 +236,26 @@ describe('issueNft procedure', () => {
           { type: MetadataType.Local, id: new BigNumber(1), value: 'local' },
           { type: MetadataType.Global, id: new BigNumber(2), value: 'global' },
         ],
-        ticker,
+        collection: entityMockUtils.getNftCollectionInstance({
+          collectionKeys: [
+            {
+              type: MetadataType.Local,
+              id: new BigNumber(1),
+              assetId,
+              name: 'Example Local',
+              specs: {},
+            },
+            { type: MetadataType.Global, id: new BigNumber(2), specs: {}, name: 'Example Global' },
+          ],
+          assetId,
+        }),
       };
       nftInputToMetadataValueSpy.mockReturnValue([]);
       mockContext.getSigningIdentity.mockResolvedValue(entityMockUtils.getIdentityInstance());
 
       dsMockUtils.createTxMock('nft', 'issueNft');
 
-      const proc = procedureMockUtils.getInstance<Params, Nft, Storage>(mockContext, {
-        collection: entityMockUtils.getNftCollectionInstance({
-          collectionKeys: [
-            {
-              type: MetadataType.Local,
-              id: new BigNumber(1),
-              ticker,
-              name: 'Example Local',
-              specs: {},
-            },
-            { type: MetadataType.Global, id: new BigNumber(2), specs: {}, name: 'Example Global' },
-          ],
-        }),
-      });
+      const proc = procedureMockUtils.getInstance<Params, Nft>(mockContext);
 
       return expect(prepareIssueNft.call(proc, args)).resolves.not.toThrow();
     });
@@ -291,15 +263,13 @@ describe('issueNft procedure', () => {
 
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, Nft, Storage>(mockContext, {
-        collection: entityMockUtils.getNftCollectionInstance({ ticker }),
-      });
+      const proc = procedureMockUtils.getInstance<Params, Nft>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      expect(boundFunc()).toEqual({
+      expect(boundFunc({ collection } as unknown as Params)).toEqual({
         permissions: {
           transactions: [TxTags.nft.IssueNft],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [collection],
           portfolios: [],
         },
       });
@@ -310,13 +280,9 @@ describe('issueNft procedure', () => {
     const filterEventRecordsSpy = jest.spyOn(utilsInternalModule, 'filterEventRecords');
     const id = new BigNumber(1);
 
-    beforeAll(() => {
-      entityMockUtils.initMocks({ checkpointOptions: { ticker, id } });
-    });
-
     beforeEach(() => {
       const mockNft = dsMockUtils.createMockNfts({
-        ticker: dsMockUtils.createMockTicker(ticker),
+        assetId: dsMockUtils.createMockAssetId(assetId),
         ids: [dsMockUtils.createMockU64(id)],
       });
       filterEventRecordsSpy.mockReturnValue([dsMockUtils.createMockIEvent(['someDid', mockNft])]);
@@ -330,7 +296,8 @@ describe('issueNft procedure', () => {
       const context = dsMockUtils.getContextInstance();
       const result = issueNftResolver(context)({} as ISubmittableResult);
 
-      expect(result.collection).toEqual(expect.objectContaining({ ticker }));
+      expect(result.collection).toEqual(expect.objectContaining({ id: assetId }));
+      expect(result.id).toEqual(id);
     });
   });
 });

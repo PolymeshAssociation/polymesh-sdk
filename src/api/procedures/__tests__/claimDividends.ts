@@ -9,13 +9,13 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('claimDividends procedure', () => {
-  const ticker = 'SOME_TICKER';
+  const assetId = '0x1234';
   const did = 'someDid';
   const id = new BigNumber(1);
   const paymentDate = new Date('10/14/1987');
   const expiryDate = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365);
 
-  const rawCaId = dsMockUtils.createMockCAId({ ticker, localId: id });
+  const rawCaId = dsMockUtils.createMockCAId({ assetId, localId: id });
   const rawDid = dsMockUtils.createMockIdentityId(did);
 
   let distribution: DividendDistribution;

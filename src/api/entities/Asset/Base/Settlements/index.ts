@@ -2,9 +2,16 @@ import { DispatchError, DispatchResult } from '@polkadot/types/interfaces/system
 import { Vec } from '@polkadot/types-codec';
 import BigNumber from 'bignumber.js';
 
-import { toggleTickerPreApproval } from '~/api/procedures/toggleTickerPreApproval';
 import { assertPortfolioExists } from '~/api/procedures/utils';
-import { BaseAsset, Context, FungibleAsset, Namespace, Nft, PolymeshError } from '~/internal';
+import {
+  BaseAsset,
+  Context,
+  FungibleAsset,
+  Namespace,
+  Nft,
+  PolymeshError,
+  toggleAssetPreApproval,
+} from '~/internal';
 import { CanTransferGranularReturn } from '~/polkadot';
 import {
   ErrorCode,
@@ -50,7 +57,7 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
 
     this.preApprove = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [toggleTickerPreApproval, { asset: parent, preApprove: true }],
+        getProcedureAndArgs: () => [toggleAssetPreApproval, { asset: parent, preApprove: true }],
         voidArgs: true,
       },
       context
@@ -58,7 +65,7 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
 
     this.removePreApproval = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [toggleTickerPreApproval, { asset: parent, preApprove: false }],
+        getProcedureAndArgs: () => [toggleAssetPreApproval, { asset: parent, preApprove: false }],
         voidArgs: true,
       },
       context

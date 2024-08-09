@@ -1,13 +1,13 @@
 import { BTreeSet, Option, u32, u64 } from '@polkadot/types';
 import { Balance, Moment } from '@polkadot/types/interfaces';
 import {
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesMemo,
   PolymeshPrimitivesNftNfTs,
   PolymeshPrimitivesSettlementLeg,
   PolymeshPrimitivesSettlementSettlementType,
-  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
@@ -22,6 +22,7 @@ import {
   Storage,
 } from '~/api/procedures/addInstruction';
 import {
+  BaseAsset,
   Context,
   DefaultPortfolio,
   Instruction,
@@ -72,7 +73,7 @@ describe('addInstruction procedure', () => {
   let portfolioLikeToPortfolioIdSpy: jest.SpyInstance;
   let portfolioLikeToPortfolioSpy: jest.SpyInstance;
   let getCustodianMock: jest.Mock;
-  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let stringToAssetIdSpy: jest.SpyInstance<PolymeshPrimitivesAssetAssetID, [string, Context]>;
   let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
   let bigNumberToBalanceSpy: jest.SpyInstance<
     Balance,
@@ -114,9 +115,9 @@ describe('addInstruction procedure', () => {
   let rawTo: PolymeshPrimitivesIdentityIdPortfolioId;
   let rawSenderIdentity: PolymeshPrimitivesIdentityId;
   let rawReceiverIdentity: PolymeshPrimitivesIdentityId;
-  let rawTicker: PolymeshPrimitivesTicker;
-  let rawNftTicker: PolymeshPrimitivesTicker;
-  let rawOffChainTicker: PolymeshPrimitivesTicker;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawNftAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawOffChainAssetId: PolymeshPrimitivesAssetAssetID;
   let rawTradeDate: Moment;
   let rawValueDate: Moment;
   let rawEndBlock: u32;
@@ -143,6 +144,7 @@ describe('addInstruction procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
+
     portfolioIdToMeshPortfolioIdSpy = jest.spyOn(
       utilsConversionModule,
       'portfolioIdToMeshPortfolioId'
@@ -150,7 +152,7 @@ describe('addInstruction procedure', () => {
     portfolioLikeToPortfolioIdSpy = jest.spyOn(utilsConversionModule, 'portfolioLikeToPortfolioId');
     portfolioLikeToPortfolioSpy = jest.spyOn(utilsConversionModule, 'portfolioLikeToPortfolio');
     getCustodianMock = jest.fn();
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
     bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
     bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
     endConditionToSettlementTypeSpy = jest.spyOn(
@@ -179,9 +181,9 @@ describe('addInstruction procedure', () => {
       did: toDid,
       id: new BigNumber(2),
     });
-    asset = 'SOME_ASSET';
-    nftAsset = 'TEST_NFT';
-    offChainAsset = 'SOME_OFFCHAIN_ASSET';
+    asset = '0x1111';
+    nftAsset = '0x2222';
+    offChainAsset = '0x3333';
     const now = new Date();
     tradeDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     valueDate = new Date(now.getTime() + 24 * 60 * 60 * 1000 + 1);
@@ -205,9 +207,9 @@ describe('addInstruction procedure', () => {
       dsMockUtils.createMockIdentityId(mediatorDid),
     ]);
     rawEmptyMediatorSet = dsMockUtils.createMockBTreeSet([]);
-    rawTicker = dsMockUtils.createMockTicker(asset);
-    rawNftTicker = dsMockUtils.createMockTicker(nftAsset);
-    rawOffChainTicker = dsMockUtils.createMockTicker(offChainAsset);
+    rawAssetId = dsMockUtils.createMockAssetId(asset);
+    rawNftAssetId = dsMockUtils.createMockAssetId(nftAsset);
+    rawOffChainAssetId = dsMockUtils.createMockAssetId(offChainAsset);
     rawTradeDate = dsMockUtils.createMockMoment(new BigNumber(tradeDate.getTime()));
     rawValueDate = dsMockUtils.createMockMoment(new BigNumber(valueDate.getTime()));
     rawEndBlock = dsMockUtils.createMockU32(endBlock);
@@ -216,7 +218,7 @@ describe('addInstruction procedure', () => {
     rawBlockSettlementType = dsMockUtils.createMockSettlementType({ SettleOnBlock: rawEndBlock });
     rawManualSettlementType = dsMockUtils.createMockSettlementType({ SettleManual: rawEndBlock });
     rawNfts = dsMockUtils.createMockNfts({
-      ticker: rawNftTicker,
+      assetId: rawNftAssetId,
       ids: [dsMockUtils.createMockU64()],
     });
     rawLeg = dsMockUtils.createMockInstructionLeg({
@@ -224,7 +226,7 @@ describe('addInstruction procedure', () => {
         sender: rawFrom,
         receiver: rawTo,
         amount: rawAmount,
-        ticker: rawTicker,
+        assetId: rawAssetId,
       },
     });
     rawNftLeg = dsMockUtils.createMockInstructionLeg({
@@ -239,7 +241,7 @@ describe('addInstruction procedure', () => {
         senderIdentity: rawSenderIdentity,
         receiverIdentity: rawReceiverIdentity,
         amount: rawAmount,
-        ticker: rawOffChainTicker,
+        assetId: rawOffChainAssetId,
       },
     });
   });
@@ -252,7 +254,7 @@ describe('addInstruction procedure', () => {
       {
         from: PolymeshPrimitivesIdentityIdPortfolioId;
         to: PolymeshPrimitivesIdentityIdPortfolioId;
-        asset: PolymeshPrimitivesTicker;
+        asset: PolymeshPrimitivesAssetAssetID;
         amount: Balance;
       }[],
       PolymeshPrimitivesIdentityIdPortfolioId[],
@@ -268,7 +270,7 @@ describe('addInstruction procedure', () => {
       {
         from: PolymeshPrimitivesIdentityIdPortfolioId;
         to: PolymeshPrimitivesIdentityIdPortfolioId;
-        asset: PolymeshPrimitivesTicker;
+        asset: PolymeshPrimitivesAssetAssetID;
         amount: Balance;
       }[],
       Option<PolymeshPrimitivesMemo>,
@@ -277,6 +279,16 @@ describe('addInstruction procedure', () => {
   >;
 
   beforeEach(() => {
+    jest.spyOn(utilsInternalModule, 'asBaseAssetV2').mockImplementation((a): Promise<BaseAsset> => {
+      return Promise.resolve(
+        typeof a === 'string' ? entityMockUtils.getBaseAssetInstance({ assetId: a }) : a
+      );
+    });
+
+    jest.spyOn(utilsInternalModule, 'asAssetId').mockImplementation((a): Promise<string> => {
+      return Promise.resolve(typeof a === 'string' ? a : a.id);
+    });
+
     const tickerReservationDetailsMock = jest.fn();
     tickerReservationDetailsMock.mockResolvedValue({
       owner: entityMockUtils.getIdentityInstance(),
@@ -316,10 +328,10 @@ describe('addInstruction procedure', () => {
         details: tickerReservationDetailsMock,
       },
     });
-    when(stringToTickerSpy).calledWith(asset, mockContext).mockReturnValue(rawTicker);
-    when(stringToTickerSpy)
+    when(stringToAssetIdSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
+    when(stringToAssetIdSpy)
       .calledWith(offChainAsset, mockContext)
-      .mockReturnValue(rawOffChainTicker);
+      .mockReturnValue(rawOffChainAssetId);
     when(bigNumberToU64Spy).calledWith(venueId, mockContext).mockReturnValue(rawVenueId);
     when(bigNumberToBalanceSpy).calledWith(amount, mockContext).mockReturnValue(rawAmount);
     when(endConditionToSettlementTypeSpy)
@@ -439,7 +451,7 @@ describe('addInstruction procedure', () => {
       from,
       to,
       amount: new BigNumber(0),
-      asset: entityMockUtils.getFungibleAssetInstance({ ticker: asset }),
+      asset: entityMockUtils.getFungibleAssetInstance({ assetId: asset }),
     });
     try {
       await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs }] });
@@ -466,7 +478,7 @@ describe('addInstruction procedure', () => {
       from,
       to,
       nfts: [],
-      asset: entityMockUtils.getNftCollectionInstance({ ticker: asset }),
+      asset: entityMockUtils.getNftCollectionInstance({ assetId: asset }),
     });
     try {
       await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs }] });
@@ -535,7 +547,7 @@ describe('addInstruction procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe('No asset exists with ticker: "SOME_ASSET"');
+    expect(error.message).toBe('No asset exists with asset ID: "0x1111"');
     expect(error.code).toBe(ErrorCode.DataUnavailable);
   });
 
@@ -553,7 +565,7 @@ describe('addInstruction procedure', () => {
       from: to,
       to,
       amount: new BigNumber(10),
-      asset: entityMockUtils.getFungibleAssetInstance({ ticker: asset }),
+      asset: entityMockUtils.getFungibleAssetInstance({ assetId: asset }),
     });
     try {
       await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs }] });
@@ -631,7 +643,7 @@ describe('addInstruction procedure', () => {
       from,
       to,
       amount,
-      asset: entityMockUtils.getFungibleAssetInstance({ ticker: asset }),
+      asset: entityMockUtils.getFungibleAssetInstance({ assetId: asset }),
     });
 
     try {
@@ -654,7 +666,7 @@ describe('addInstruction procedure', () => {
       to,
       amount,
       asset: entityMockUtils.getFungibleAssetInstance({
-        ticker: asset,
+        assetId: asset,
         getVenueFilteringDetails: {
           isEnabled: true,
           allowedVenues: [
@@ -670,7 +682,7 @@ describe('addInstruction procedure', () => {
       to,
       amount,
       asset: entityMockUtils.getFungibleAssetInstance({
-        ticker: asset,
+        assetId: asset,
         getVenueFilteringDetails: {
           isEnabled: true,
           allowedVenues: [entityMockUtils.getVenueInstance({ id: new BigNumber(2) })],
@@ -720,7 +732,7 @@ describe('addInstruction procedure', () => {
                 from,
                 to,
                 amount,
-                asset: entityMockUtils.getFungibleAssetInstance({ ticker: asset }),
+                asset: entityMockUtils.getFungibleAssetInstance({ assetId: asset }),
               },
             ],
             endBlock: new BigNumber(100),
@@ -930,7 +942,7 @@ describe('addInstruction procedure', () => {
           from,
           to,
           amount,
-          asset: entityMockUtils.getFungibleAssetInstance({ ticker: asset }),
+          asset: entityMockUtils.getFungibleAssetInstance({ assetId: asset }),
         },
       ],
       tradeDate,
@@ -1053,7 +1065,7 @@ describe('addInstruction procedure', () => {
         instructions: [
           {
             mediators: [mediatorDid],
-            legs: [{ from: fromPortfolio, to: toPortfolio, amount, asset: 'SOME_ASSET' }],
+            legs: [{ from: fromPortfolio, to: toPortfolio, amount, asset: '0x1111' }],
           },
         ],
       });
@@ -1077,7 +1089,7 @@ describe('addInstruction procedure', () => {
         instructions: [
           {
             mediators: [mediatorDid],
-            legs: [{ from: fromPortfolio, to: toPortfolio, amount, asset: 'SOME_ASSET' }],
+            legs: [{ from: fromPortfolio, to: toPortfolio, amount, asset: '0x1111' }],
           },
         ],
       });
