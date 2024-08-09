@@ -2,8 +2,8 @@ import { Bytes, u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import {
   PalletStoPriceTier,
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesIdentityIdPortfolioId,
-  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
@@ -21,6 +21,7 @@ import { Context, DefaultPortfolio, Offering, Venue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
+  FungibleAsset,
   OfferingTier,
   PortfolioBalance,
   PortfolioId,
@@ -53,7 +54,7 @@ jest.mock(
 
 describe('launchOffering procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
   let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance<
     PolymeshPrimitivesIdentityIdPortfolioId,
     [PortfolioId, Context]
@@ -65,7 +66,8 @@ describe('launchOffering procedure', () => {
   let offeringTierToPriceTierSpy: jest.SpyInstance<PalletStoPriceTier, [OfferingTier, Context]>;
   let stringToBytesSpy: jest.SpyInstance<Bytes, [string, Context]>;
   let portfolioIdToPortfolioSpy: jest.SpyInstance;
-  let ticker: string;
+  let assetId: string;
+  let asset: FungibleAsset;
   let offeringPortfolio: PortfolioLike;
   let portfolio: entityMockUtils.MockDefaultPortfolio;
   let offeringPortfolioId: PortfolioId;
@@ -80,10 +82,10 @@ describe('launchOffering procedure', () => {
   let amount: BigNumber;
   let price: BigNumber;
   let minInvestment: BigNumber;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let rawOfferingPortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
   let rawRaisingPortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
-  let rawRaisingCurrency: PolymeshPrimitivesTicker;
+  let rawRaisingCurrency: PolymeshPrimitivesAssetAssetID;
   let rawVenueId: u64;
   let rawName: Bytes;
   let rawStart: u64;
@@ -97,7 +99,7 @@ describe('launchOffering procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     portfolioIdToMeshPortfolioIdSpy = jest.spyOn(
       utilsConversionModule,
       'portfolioIdToMeshPortfolioId'
@@ -109,13 +111,14 @@ describe('launchOffering procedure', () => {
     bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
     stringToBytesSpy = jest.spyOn(utilsConversionModule, 'stringToBytes');
     portfolioIdToPortfolioSpy = jest.spyOn(utilsConversionModule, 'portfolioIdToPortfolio');
-    ticker = 'tickerFrozen';
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    assetId = '0x1234';
+    asset = entityMockUtils.getFungibleAssetInstance({ assetId });
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
     offeringPortfolio = 'oneDid';
     raisingPortfolio = 'treasuryDid';
     offeringPortfolioId = { did: offeringPortfolio };
     raisingPortfolioId = { did: raisingPortfolio };
-    raisingCurrency = 'USD';
+    raisingCurrency = '0x9999';
     venueId = new BigNumber(1);
     name = 'someOffering';
     const now = new Date();
@@ -132,7 +135,7 @@ describe('launchOffering procedure', () => {
       did: dsMockUtils.createMockIdentityId(raisingPortfolio),
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
-    rawRaisingCurrency = dsMockUtils.createMockTicker(raisingCurrency);
+    rawRaisingCurrency = dsMockUtils.createMockAssetId(raisingCurrency);
     rawVenueId = dsMockUtils.createMockU64(venueId);
     rawName = dsMockUtils.createMockBytes(name);
     rawStart = dsMockUtils.createMockMoment(new BigNumber(start.getTime()));
@@ -154,9 +157,12 @@ describe('launchOffering procedure', () => {
       },
     });
     mockContext = dsMockUtils.getContextInstance();
-    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
-    when(stringToTickerSpy)
-      .calledWith(raisingCurrency, mockContext)
+    when(assetToMeshAssetIdSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
+    jest
+      .spyOn(utilsInternalModule, 'asBaseAssetV2')
+      .mockResolvedValue(entityMockUtils.getBaseAssetInstance({ assetId: raisingCurrency }));
+    when(assetToMeshAssetIdSpy)
+      .calledWith(expect.objectContaining({ id: raisingCurrency }), mockContext)
       .mockReturnValue(rawRaisingCurrency);
     when(portfolioLikeToPortfolioIdSpy)
       .calledWith(offeringPortfolio)
@@ -186,7 +192,7 @@ describe('launchOffering procedure', () => {
       .mockReturnValue(portfolio);
 
     args = {
-      ticker,
+      asset,
       offeringPortfolio,
       raisingPortfolio,
       raisingCurrency,
@@ -281,7 +287,7 @@ describe('launchOffering procedure', () => {
       transaction,
       args: [
         rawOfferingPortfolio,
-        rawTicker,
+        rawAssetId,
         rawRaisingPortfolio,
         rawRaisingCurrency,
         rawTiers,
@@ -319,7 +325,7 @@ describe('launchOffering procedure', () => {
       transaction,
       args: [
         rawOfferingPortfolio,
-        rawTicker,
+        rawAssetId,
         rawRaisingPortfolio,
         rawRaisingCurrency,
         rawTiers,
@@ -337,10 +343,6 @@ describe('launchOffering procedure', () => {
     const filterEventRecordsSpy = jest.spyOn(utilsInternalModule, 'filterEventRecords');
     const stoId = new BigNumber(15);
 
-    beforeAll(() => {
-      entityMockUtils.initMocks({ offeringOptions: { ticker, id: stoId } });
-    });
-
     beforeEach(() => {
       filterEventRecordsSpy.mockReturnValue([
         dsMockUtils.createMockIEvent(['filler', dsMockUtils.createMockU64(stoId)]),
@@ -352,10 +354,10 @@ describe('launchOffering procedure', () => {
     });
 
     it('should return the new Offering', () => {
-      const result = createOfferingResolver(ticker, mockContext)({} as ISubmittableResult);
+      const result = createOfferingResolver(assetId, mockContext)({} as ISubmittableResult);
 
       expect(result).toEqual(
-        expect.objectContaining({ asset: expect.objectContaining({ ticker }), id: stoId })
+        expect.objectContaining({ asset: expect.objectContaining({ id: assetId }), id: stoId })
       );
     });
   });
@@ -388,7 +390,7 @@ describe('launchOffering procedure', () => {
         roles,
         permissions: {
           transactions: [TxTags.sto.CreateFundraiser],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [asset],
           portfolios,
         },
       });

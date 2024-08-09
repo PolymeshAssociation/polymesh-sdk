@@ -1,4 +1,7 @@
-import { PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesIdentityId,
+} from '@polkadot/types/lookup';
 import { BTreeSet } from '@polkadot/types-codec';
 import { when } from 'jest-when';
 
@@ -23,25 +26,25 @@ describe('removeAssetMediators procedure', () => {
   let mockContext: Mocked<Context>;
   let identitiesToSetSpy: jest.SpyInstance;
   let asset: BaseAsset;
-  let ticker: string;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let assetId: string;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let currentMediator: Identity;
   let rawCurrentMediator: PolymeshPrimitivesIdentityId;
-  let stringToTickerSpy: jest.SpyInstance;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
   let mockRemoveMediators: BTreeSet<PolymeshPrimitivesIdentityId>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     identitiesToSetSpy = jest.spyOn(utilsConversionModule, 'identitiesToBtreeSet');
-    ticker = 'TICKER';
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    assetId = '0x1234';
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
     currentMediator = entityMockUtils.getIdentityInstance({ did: 'currentDid' });
     rawCurrentMediator = dsMockUtils.createMockIdentityId(currentMediator.did);
     asset = entityMockUtils.getBaseAssetInstance({
-      ticker,
+      assetId,
       getRequiredMediators: [currentMediator],
     });
     mockRemoveMediators = dsMockUtils.createMockBTreeSet<PolymeshPrimitivesIdentityId>([
@@ -50,7 +53,7 @@ describe('removeAssetMediators procedure', () => {
   });
 
   let removeMandatoryMediatorsTransaction: PolymeshTx<
-    [PolymeshPrimitivesTicker, BTreeSet<PolymeshPrimitivesIdentityId>]
+    [PolymeshPrimitivesAssetAssetID, BTreeSet<PolymeshPrimitivesIdentityId>]
   >;
 
   beforeEach(() => {
@@ -61,7 +64,7 @@ describe('removeAssetMediators procedure', () => {
 
     mockContext = dsMockUtils.getContextInstance();
 
-    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(assetToMeshAssetIdSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
     when(identitiesToSetSpy)
       .calledWith(
         expect.arrayContaining([expect.objectContaining({ did: currentMediator.did })]),
@@ -104,7 +107,7 @@ describe('removeAssetMediators procedure', () => {
 
     expect(result).toEqual({
       transaction: removeMandatoryMediatorsTransaction,
-      args: [rawTicker, mockRemoveMediators],
+      args: [rawAssetId, mockRemoveMediators],
       resolver: undefined,
     });
   });
@@ -121,7 +124,7 @@ describe('removeAssetMediators procedure', () => {
       expect(boundFunc(params)).toEqual({
         permissions: {
           transactions: [TxTags.asset.RemoveMandatoryMediators],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
           portfolios: [],
         },
       });

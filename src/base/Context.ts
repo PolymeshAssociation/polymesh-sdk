@@ -143,8 +143,8 @@ export class Context {
 
     this.unsubChainVersion = polymeshApi.query.system.lastRuntimeUpgrade(upgrade => {
       if (upgrade.isSome) {
-        // const { specVersion } = upgrade.unwrap();
-        // this.isV6 = false;
+        const { specVersion } = upgrade.unwrap();
+        this.isV6 = specVersion.toNumber() < 700000;
       }
     });
   }
@@ -1171,10 +1171,10 @@ export class Context {
       ({ middlewareApi } = this);
     }
 
-    this.isDisconnected = true;
-
     const unsub = await this.unsubChainVersion;
     unsub();
+
+    this.isDisconnected = true;
 
     if (middlewareApi) {
       middlewareApi.stop();

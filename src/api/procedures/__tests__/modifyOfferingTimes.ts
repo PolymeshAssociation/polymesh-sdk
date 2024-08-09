@@ -10,7 +10,13 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { OfferingBalanceStatus, OfferingSaleStatus, OfferingTimingStatus, TxTags } from '~/types';
+import {
+  FungibleAsset,
+  OfferingBalanceStatus,
+  OfferingSaleStatus,
+  OfferingTimingStatus,
+  TxTags,
+} from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -23,16 +29,16 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
-describe('modifyStoTimes procedure', () => {
-  const ticker = 'SOME_TICKER';
+describe('modifyOfferingTimes procedure', () => {
+  const assetId = '0x1234';
   const id = new BigNumber(1);
   const now = new Date();
   const newStart = new Date(now.getTime() + 700000);
   const newEnd = new Date(newStart.getTime() + 700000);
   const start = new Date(now.getTime() + 500000);
   const end = new Date(start.getTime() + 500000);
-
-  const rawTicker = dsMockUtils.createMockTicker(ticker);
+  let asset: FungibleAsset;
+  const rawAssetId = dsMockUtils.createMockAssetId(assetId);
   const rawId = dsMockUtils.createMockU64(id);
   const rawNewStart = dsMockUtils.createMockMoment(new BigNumber(newStart.getTime()));
   const rawNewEnd = dsMockUtils.createMockMoment(new BigNumber(newEnd.getTime()));
@@ -44,19 +50,14 @@ describe('modifyStoTimes procedure', () => {
 
   let dateToMomentSpy: jest.SpyInstance<u64, [Date, Context]>;
 
-  const args = {
-    ticker,
-    id,
-    start: newStart,
-    end: newEnd,
-  };
+  let args: Params;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    jest.spyOn(utilsConversionModule, 'stringToTicker').mockReturnValue(rawTicker);
+    jest.spyOn(utilsConversionModule, 'assetToMeshAssetId').mockReturnValue(rawAssetId);
     jest.spyOn(utilsConversionModule, 'bigNumberToU64').mockReturnValue(rawId);
     dateToMomentSpy = jest.spyOn(utilsConversionModule, 'dateToMoment');
   });
@@ -75,6 +76,15 @@ describe('modifyStoTimes procedure', () => {
         },
       },
     });
+
+    asset = entityMockUtils.getFungibleAssetInstance({ assetId });
+
+    args = {
+      asset,
+      id,
+      start: newStart,
+      end: newEnd,
+    };
     mockContext = dsMockUtils.getContextInstance();
 
     when(dateToMomentSpy).calledWith(newStart, mockContext).mockReturnValue(rawNewStart);
@@ -102,15 +112,15 @@ describe('modifyStoTimes procedure', () => {
 
     expect(result).toEqual({
       transaction: modifyFundraiserWindowTransaction,
-      args: [rawTicker, rawId, rawNewStart, rawNewEnd],
+      args: [rawAssetId, rawId, rawNewStart, rawNewEnd],
       resolver: undefined,
     });
 
-    result = await prepareModifyOfferingTimes.call(proc, { ...args, start: undefined });
+    result = await prepareModifyOfferingTimes.call(proc, { ...args, start: undefined } as Params);
 
     expect(result).toEqual({
       transaction: modifyFundraiserWindowTransaction,
-      args: [rawTicker, rawId, rawStart, rawNewEnd],
+      args: [rawAssetId, rawId, rawStart, rawNewEnd],
       resolver: undefined,
     });
 
@@ -118,15 +128,15 @@ describe('modifyStoTimes procedure', () => {
 
     expect(result).toEqual({
       transaction: modifyFundraiserWindowTransaction,
-      args: [rawTicker, rawId, rawNewStart, null],
+      args: [rawAssetId, rawId, rawNewStart, null],
       resolver: undefined,
     });
 
-    result = await prepareModifyOfferingTimes.call(proc, { ...args, end: undefined });
+    result = await prepareModifyOfferingTimes.call(proc, { ...args, end: undefined } as Params);
 
     expect(result).toEqual({
       transaction: modifyFundraiserWindowTransaction,
-      args: [rawTicker, rawId, rawNewStart, rawEnd],
+      args: [rawAssetId, rawId, rawNewStart, rawEnd],
       resolver: undefined,
     });
 
@@ -144,11 +154,11 @@ describe('modifyStoTimes procedure', () => {
       },
     });
 
-    result = await prepareModifyOfferingTimes.call(proc, { ...args, end: undefined });
+    result = await prepareModifyOfferingTimes.call(proc, { ...args, end: undefined } as Params);
 
     expect(result).toEqual({
       transaction: modifyFundraiserWindowTransaction,
-      args: [rawTicker, rawId, rawNewStart, null],
+      args: [rawAssetId, rawId, rawNewStart, null],
       resolver: undefined,
     });
   });
@@ -311,7 +321,7 @@ describe('modifyStoTimes procedure', () => {
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.sto.ModifyFundraiserWindow],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
           portfolios: [],
         },
       });

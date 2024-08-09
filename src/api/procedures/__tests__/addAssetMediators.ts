@@ -1,4 +1,7 @@
-import { PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesIdentityId,
+} from '@polkadot/types/lookup';
 import { BTreeSet } from '@polkadot/types-codec';
 import { when } from 'jest-when';
 
@@ -20,31 +23,32 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockBaseAssetModule('~/api/entities/Asset/Base')
 );
 
-describe('addAssetRequirement procedure', () => {
+describe('addAssetMediators procedure', () => {
   let mockContext: Mocked<Context>;
   let identitiesToSetSpy: jest.SpyInstance;
   let asset: BaseAsset;
-  let ticker: string;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let assetId: string;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let currentMediator: Identity;
   let newMediator: Identity;
   let rawNewMediatorDid: PolymeshPrimitivesIdentityId;
-  let stringToTickerSpy: jest.SpyInstance;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
   let mockNewMediators: BTreeSet<PolymeshPrimitivesIdentityId>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     identitiesToSetSpy = jest.spyOn(utilsConversionModule, 'identitiesToBtreeSet');
-    ticker = 'TICKER';
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    assetId = '0x1234';
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
     currentMediator = entityMockUtils.getIdentityInstance({ did: 'currentDid' });
     newMediator = entityMockUtils.getIdentityInstance({ did: 'newDid' });
     rawNewMediatorDid = dsMockUtils.createMockIdentityId(newMediator.did);
     asset = entityMockUtils.getBaseAssetInstance({
-      ticker,
+      assetId,
       getRequiredMediators: [currentMediator],
     });
     mockNewMediators = dsMockUtils.createMockBTreeSet<PolymeshPrimitivesIdentityId>([
@@ -53,7 +57,7 @@ describe('addAssetRequirement procedure', () => {
   });
 
   let addMandatoryMediatorsTransaction: PolymeshTx<
-    [PolymeshPrimitivesTicker, BTreeSet<PolymeshPrimitivesIdentityId>]
+    [PolymeshPrimitivesAssetAssetID, BTreeSet<PolymeshPrimitivesIdentityId>]
   >;
 
   beforeEach(() => {
@@ -61,7 +65,7 @@ describe('addAssetRequirement procedure', () => {
 
     mockContext = dsMockUtils.getContextInstance();
 
-    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(assetToMeshAssetIdSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
     when(identitiesToSetSpy)
       .calledWith(
         expect.arrayContaining([expect.objectContaining({ did: newMediator.did })]),
@@ -119,7 +123,7 @@ describe('addAssetRequirement procedure', () => {
 
     expect(result).toEqual({
       transaction: addMandatoryMediatorsTransaction,
-      args: [rawTicker, mockNewMediators],
+      args: [rawAssetId, mockNewMediators],
       resolver: undefined,
     });
   });
@@ -136,7 +140,7 @@ describe('addAssetRequirement procedure', () => {
       expect(boundFunc(params)).toEqual({
         permissions: {
           transactions: [TxTags.asset.AddMandatoryMediators],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [asset],
           portfolios: [],
         },
       });

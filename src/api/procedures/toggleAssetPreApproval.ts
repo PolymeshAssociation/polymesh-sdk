@@ -14,7 +14,7 @@ export interface Params {
 /**
  * @hidden
  */
-export async function prepareToggleTickerPreApproval(
+export async function prepareToggleAssetPreApproval(
   this: Procedure<Params, void>,
   args: Params
 ): Promise<TransactionSpec<void, ExtrinsicParams<'assets', 'preApprove'>>> {
@@ -80,5 +80,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const toggleTickerPreApproval = (): Procedure<Params, void> =>
-  new Procedure(prepareToggleTickerPreApproval, getAuthorization);
+export const toggleAssetPreApproval = (): Procedure<Params, void> =>
+  new Procedure(prepareToggleAssetPreApproval, getAuthorization);

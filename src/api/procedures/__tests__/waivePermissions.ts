@@ -18,9 +18,9 @@ jest.mock(
 );
 
 describe('waivePermissions procedure', () => {
-  const ticker = 'SOME_TICKER';
+  const assetId = '0x1234';
   const did = 'someDid';
-  const rawTicker = dsMockUtils.createMockTicker(ticker);
+  const rawAssetId = dsMockUtils.createMockAssetId(assetId);
 
   let mockContext: Mocked<Context>;
   let externalAgentsAbdicateTransaction: PolymeshTx<unknown[]>;
@@ -30,7 +30,7 @@ describe('waivePermissions procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    jest.spyOn(utilsConversionModule, 'stringToTicker').mockReturnValue(rawTicker);
+    jest.spyOn(utilsConversionModule, 'assetToMeshAssetId').mockReturnValue(rawAssetId);
   });
 
   beforeEach(() => {
@@ -51,7 +51,7 @@ describe('waivePermissions procedure', () => {
 
   it('should throw an error if the Identity is not an Agent for the Asset', async () => {
     const asset = entityMockUtils.getFungibleAssetInstance({
-      ticker,
+      assetId,
       permissionsGetAgents: [
         {
           group: entityMockUtils.getKnownPermissionGroupInstance(),
@@ -92,7 +92,7 @@ describe('waivePermissions procedure', () => {
 
   it('should return an abdicate transaction spec', async () => {
     const asset = entityMockUtils.getFungibleAssetInstance({
-      ticker,
+      assetId,
       permissionsGetAgents: [
         {
           group: entityMockUtils.getKnownPermissionGroupInstance(),
@@ -116,7 +116,7 @@ describe('waivePermissions procedure', () => {
 
     expect(result).toEqual({
       transaction: externalAgentsAbdicateTransaction,
-      args: [rawTicker],
+      args: [rawAssetId],
       resolver: undefined,
     });
   });
@@ -124,7 +124,7 @@ describe('waivePermissions procedure', () => {
   describe('prepareStorage', () => {
     it('should return the Asset', () => {
       const asset = entityMockUtils.getFungibleAssetInstance({
-        ticker,
+        assetId,
       });
 
       const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
@@ -146,7 +146,7 @@ describe('waivePermissions procedure', () => {
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
       const asset = entityMockUtils.getFungibleAssetInstance({
-        ticker,
+        assetId,
       });
 
       const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
@@ -164,7 +164,7 @@ describe('waivePermissions procedure', () => {
       ).toEqual({
         signerPermissions: {
           transactions: [TxTags.externalAgents.Abdicate],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
           portfolios: [],
         },
         roles: [{ type: RoleType.Identity, did }],

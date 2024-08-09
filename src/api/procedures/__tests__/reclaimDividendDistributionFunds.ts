@@ -17,12 +17,12 @@ jest.mock(
 );
 
 describe('reclaimDividendDistributionFunds procedure', () => {
-  const ticker = 'SOME_TICKER';
+  const assetId = '0x1234';
   const id = new BigNumber(1);
   const expiryDate = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365);
   const did = 'someDid';
 
-  const rawCaId = dsMockUtils.createMockCAId({ ticker, localId: id });
+  const rawCaId = dsMockUtils.createMockCAId({ assetId, localId: id });
 
   let origin: DefaultPortfolio;
   let distribution: DividendDistribution;
@@ -44,7 +44,7 @@ describe('reclaimDividendDistributionFunds procedure', () => {
     });
     distribution = entityMockUtils.getDividendDistributionInstance({
       origin,
-      ticker,
+      assetId,
       id,
       expiryDate,
     });
@@ -85,7 +85,7 @@ describe('reclaimDividendDistributionFunds procedure', () => {
       await prepareReclaimDividendDistributionFunds.call(proc, {
         distribution: entityMockUtils.getDividendDistributionInstance({
           origin,
-          ticker,
+          assetId,
           id,
           expiryDate: new Date(new Date().getTime() - 1000 * 60 * 60 * 24 * 365),
           details: {
@@ -108,7 +108,7 @@ describe('reclaimDividendDistributionFunds procedure', () => {
     const result = await prepareReclaimDividendDistributionFunds.call(proc, {
       distribution: entityMockUtils.getDividendDistributionInstance({
         origin,
-        ticker,
+        assetId,
         id,
       }),
     });
@@ -125,7 +125,7 @@ describe('reclaimDividendDistributionFunds procedure', () => {
       const params = {
         distribution: {
           origin,
-          asset: { ticker },
+          asset: { id: assetId },
         },
       } as unknown as Params;
 
@@ -138,7 +138,7 @@ describe('reclaimDividendDistributionFunds procedure', () => {
         roles: [{ type: RoleType.PortfolioCustodian, portfolioId: { did } }],
         permissions: {
           transactions: [TxTags.capitalDistribution.Reclaim],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
           portfolios: [expect.objectContaining({ owner: expect.objectContaining({ did }) })],
         },
       });

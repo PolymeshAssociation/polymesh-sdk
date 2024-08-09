@@ -1120,12 +1120,15 @@ export function asBaseAsset(asset: string | BaseAsset, context: Context): BaseAs
  * @note alternatively {@link asBaseAsset} returns a generic `BaseAsset`, but is synchronous
  */
 export async function asAsset(asset: string | Asset, context: Context): Promise<Asset> {
+  let assetId: string;
   if (typeof asset !== 'string') {
-    return asset;
+    assetId = asset.id;
+  } else {
+    assetId = asset;
   }
 
-  const fungible = new FungibleAsset({ assetId: asset }, context);
-  const collection = new NftCollection({ assetId: asset }, context);
+  const fungible = new FungibleAsset({ assetId }, context);
+  const collection = new NftCollection({ assetId }, context);
 
   const [isAsset, isCollection] = await Promise.all([fungible.exists(), collection.exists()]);
 
