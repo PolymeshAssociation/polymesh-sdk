@@ -22,6 +22,7 @@ import { Mocked } from '~/testUtils/types';
 import { FungibleAsset, PermissionGroupType, PermissionType, TxTags } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/base/Procedure',
@@ -433,6 +434,8 @@ describe('AssetPermissions class', () => {
       const blockHash = 'someHash';
       const eventIndex = new BigNumber(1);
       const datetime = '2020-10-10';
+
+      jest.spyOn(utilsInternalModule, 'asAssetId').mockResolvedValue(assetId);
 
       dsMockUtils.createApolloQueryMock(
         tickerExternalAgentActionsQuery(

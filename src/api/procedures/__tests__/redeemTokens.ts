@@ -55,7 +55,7 @@ describe('redeemTokens procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     assetId = '0x1234';
-    asset = entityMockUtils.getFungibleAssetInstance({ assetId });
+    asset = entityMockUtils.getFungibleAssetInstance({ assetId, details: { isDivisible: true } });
     rawAssetId = dsMockUtils.createMockAssetId(assetId);
     amount = new BigNumber(100);
     rawAmount = dsMockUtils.createMockBalance(amount);
@@ -65,15 +65,10 @@ describe('redeemTokens procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    when(assetToMeshAssetIdSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
+    when(assetToMeshAssetIdSpy)
+      .calledWith(expect.objectContaining({ id: assetId }), mockContext)
+      .mockReturnValue(rawAssetId);
     when(bigNumberToBalanceSpy).calledWith(amount, mockContext, true).mockReturnValue(rawAmount);
-    entityMockUtils.configureMocks({
-      fungibleAssetOptions: {
-        details: {
-          isDivisible: true,
-        },
-      },
-    });
   });
 
   afterEach(() => {
