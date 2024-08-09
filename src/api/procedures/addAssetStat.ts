@@ -41,7 +41,7 @@ export async function prepareAddAssetStat(
     });
   }
 
-  const op = statTypeToStatOpType(type, context);
+  const operationType = statTypeToStatOpType(type, context);
 
   const transactions = [];
 
@@ -50,7 +50,10 @@ export async function prepareAddAssetStat(
     rawClaimIssuer = claimIssuerToMeshClaimIssuer(args, context);
   }
 
-  const newStat = statisticsOpTypeToStatType({ op, claimIssuer: rawClaimIssuer }, context);
+  const newStat = statisticsOpTypeToStatType(
+    { operationType, claimIssuer: rawClaimIssuer },
+    context
+  );
   const newStats = statisticStatTypesToBtreeStatType([...currentStats, newStat], context);
   transactions.push(
     checkTxType({

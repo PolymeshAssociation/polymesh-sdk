@@ -12,15 +12,7 @@ import BigNumber from 'bignumber.js';
 import crossFetch from 'cross-fetch';
 import { when } from 'jest-when';
 
-import {
-  Account,
-  Context,
-  FungibleAsset,
-  Identity,
-  Nft,
-  PolymeshError,
-  Procedure,
-} from '~/internal';
+import { Account, Context, Identity, Nft, PolymeshError, Procedure } from '~/internal';
 import { latestSqVersionQuery } from '~/middleware/queries/common';
 import { Claim as MiddlewareClaim } from '~/middleware/types';
 import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
@@ -82,7 +74,6 @@ import {
   assertIsPositive,
   assertNoPendingAuthorizationExists,
   assertTickerValid,
-  asTicker,
   calculateNextKey,
   compareStatsToInput,
   compareStatTypeToTransferRestrictionType,
@@ -563,7 +554,7 @@ describe('requestPaginated', () => {
       tuple(['ticker1'], dsMockUtils.createMockU32(new BigNumber(1))),
       tuple(['ticker2'], dsMockUtils.createMockU32(new BigNumber(2))),
     ];
-    const queryMock = dsMockUtils.createQueryMock('asset', 'tickers', {
+    const queryMock = dsMockUtils.createQueryMock('asset', 'uniqueTickerRegistration', {
       entries,
     });
 
@@ -646,7 +637,7 @@ describe('requestAtBlock', () => {
       isCurrentNodeArchive: true,
     });
     const returnValue = dsMockUtils.createMockU32(new BigNumber(5));
-    const queryMock = dsMockUtils.createQueryMock('asset', 'tickers', {
+    const queryMock = dsMockUtils.createQueryMock('asset', 'uniqueTickerRegistration', {
       returnValue,
     });
     const apiAtMock = getAtMock();
@@ -656,7 +647,7 @@ describe('requestAtBlock', () => {
 
     let res = await requestAtBlock(
       'asset',
-      'tickers',
+      'uniqueTickerRegistration',
       {
         blockHash,
         args: [ticker],
@@ -672,7 +663,7 @@ describe('requestAtBlock', () => {
 
     res = await requestAtBlock(
       'asset',
-      'tickers',
+      'uniqueTickerRegistration',
       {
         args: [ticker],
       },
@@ -867,18 +858,6 @@ describe('assertAddressValid', () => {
     expect(() =>
       assertAddressValid('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY', ss58Format)
     ).not.toThrow();
-  });
-});
-
-describe('asTicker', () => {
-  it('should return an Asset symbol', async () => {
-    const symbol = 'ASSET';
-    let result = asTicker(symbol);
-
-    expect(result).toBe(symbol);
-
-    result = asTicker(new FungibleAsset({ ticker: symbol }, dsMockUtils.getContextInstance()));
-    expect(result).toBe(symbol);
   });
 });
 
@@ -1553,14 +1532,20 @@ describe('neededStatTypeForRestrictionInput', () => {
       .mockReturnValue('Balance' as unknown as PolymeshPrimitivesStatisticsStatOpType);
 
     when(context.createType)
-      .calledWith('PolymeshPrimitivesStatisticsStatType', { op: 'Count', claimIssuer: undefined })
+      .calledWith('PolymeshPrimitivesStatisticsStatType', {
+        operationType: 'Count',
+        claimIssuer: undefined,
+      })
       .mockReturnValue('CountStat' as unknown as PolymeshPrimitivesStatisticsStatType);
     when(context.createType)
-      .calledWith('PolymeshPrimitivesStatisticsStatType', { op: 'Balance', claimIssuer: undefined })
+      .calledWith('PolymeshPrimitivesStatisticsStatType', {
+        operationType: 'Balance',
+        claimIssuer: undefined,
+      })
       .mockReturnValue('BalanceStat' as unknown as PolymeshPrimitivesStatisticsStatType);
     when(context.createType)
       .calledWith('PolymeshPrimitivesStatisticsStatType', {
-        op: 'Balance',
+        operationType: 'Balance',
         claimIssuer: mockClaimIssuer,
       })
       .mockReturnValue('ScopedBalanceStat' as unknown as PolymeshPrimitivesStatisticsStatType);
@@ -1777,8 +1762,10 @@ describe('compareTransferRestrictionToInput', () => {
 });
 
 describe('compareStatTypeToTransferRestrictionType', () => {
+  let context: Context;
   beforeAll(() => {
     dsMockUtils.initMocks();
+    context = dsMockUtils.getContextInstance();
   });
 
   afterEach(() => {
@@ -1792,23 +1779,23 @@ describe('compareStatTypeToTransferRestrictionType', () => {
   const issuerId = dsMockUtils.createMockIdentityId(did);
 
   const countStatType = dsMockUtils.createMockStatisticsStatType({
-    op: dsMockUtils.createMockStatisticsOpType(StatType.Count),
+    operationType: dsMockUtils.createMockStatisticsOpType(StatType.Count),
     claimIssuer: dsMockUtils.createMockOption(),
   });
   const percentStatType = dsMockUtils.createMockStatisticsStatType({
-    op: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
+    operationType: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
     claimIssuer: dsMockUtils.createMockOption(),
   });
 
   const claimCountStat = dsMockUtils.createMockStatisticsStatType({
-    op: dsMockUtils.createMockStatisticsOpType(StatType.Count),
+    operationType: dsMockUtils.createMockStatisticsOpType(StatType.Count),
     claimIssuer: dsMockUtils.createMockOption([
       dsMockUtils.createMockClaimType(ClaimType.Affiliate),
       issuerId,
     ]),
   });
   const claimPercentageStat = dsMockUtils.createMockStatisticsStatType({
-    op: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
+    operationType: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
     claimIssuer: dsMockUtils.createMockOption([
       dsMockUtils.createMockClaimType(ClaimType.Affiliate),
       issuerId,
@@ -1818,25 +1805,29 @@ describe('compareStatTypeToTransferRestrictionType', () => {
   it('should return true if the PolymeshPrimitivesStatisticsStatType matches the given TransferRestriction', () => {
     let result = compareStatTypeToTransferRestrictionType(
       countStatType,
-      TransferRestrictionType.Count
+      TransferRestrictionType.Count,
+      context
     );
     expect(result).toEqual(true);
 
     result = compareStatTypeToTransferRestrictionType(
       percentStatType,
-      TransferRestrictionType.Percentage
+      TransferRestrictionType.Percentage,
+      context
     );
     expect(result).toEqual(true);
 
     result = compareStatTypeToTransferRestrictionType(
       claimCountStat,
-      TransferRestrictionType.ClaimCount
+      TransferRestrictionType.ClaimCount,
+      context
     );
     expect(result).toEqual(true);
 
     result = compareStatTypeToTransferRestrictionType(
       claimPercentageStat,
-      TransferRestrictionType.ClaimPercentage
+      TransferRestrictionType.ClaimPercentage,
+      context
     );
     expect(result).toEqual(true);
   });
@@ -1844,33 +1835,39 @@ describe('compareStatTypeToTransferRestrictionType', () => {
   it('should return false if the PolymeshPrimitivesStatisticsStatType does not match the given TransferRestriction', () => {
     let result = compareStatTypeToTransferRestrictionType(
       countStatType,
-      TransferRestrictionType.Percentage
+      TransferRestrictionType.Percentage,
+      context
     );
     expect(result).toEqual(false);
 
     result = compareStatTypeToTransferRestrictionType(
       percentStatType,
-      TransferRestrictionType.Count
+      TransferRestrictionType.Count,
+      context
     );
     expect(result).toEqual(false);
 
     result = compareStatTypeToTransferRestrictionType(
       claimCountStat,
-      TransferRestrictionType.ClaimPercentage
+      TransferRestrictionType.ClaimPercentage,
+      context
     );
     expect(result).toEqual(false);
 
     result = compareStatTypeToTransferRestrictionType(
       claimPercentageStat,
-      TransferRestrictionType.ClaimCount
+      TransferRestrictionType.ClaimCount,
+      context
     );
     expect(result).toEqual(false);
   });
 });
 
 describe('compareStatsToInput', () => {
+  let context: Context;
   beforeAll(() => {
     dsMockUtils.initMocks();
+    context = dsMockUtils.getContextInstance();
   });
 
   afterEach(() => {
@@ -1884,32 +1881,32 @@ describe('compareStatsToInput', () => {
   const did = 'someDid';
   const issuer = entityMockUtils.getIdentityInstance({ did });
   const issuerId = dsMockUtils.createMockIdentityId(did);
-  const ticker = 'TICKER';
+  const asset = entityMockUtils.getFungibleAssetInstance({ assetId: '0x1234' });
 
   it('should return true if input matches stat', () => {
     const countStat = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatType.Count),
+      operationType: dsMockUtils.createMockStatisticsOpType(StatType.Count),
       claimIssuer: dsMockUtils.createMockOption(),
     });
 
     let args: RemoveAssetStatParams = {
       type: StatType.Count,
-      ticker,
+      asset,
     };
 
-    let result = compareStatsToInput(countStat, args);
+    let result = compareStatsToInput(countStat, args, context);
     expect(result).toEqual(true);
 
     const percentStat = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
+      operationType: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
       claimIssuer: dsMockUtils.createMockOption(),
     });
-    args = { type: StatType.Balance, ticker };
-    result = compareStatsToInput(percentStat, args);
+    args = { type: StatType.Balance, asset };
+    result = compareStatsToInput(percentStat, args, context);
     expect(result).toEqual(true);
 
     const claimCountStat = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatType.Count),
+      operationType: dsMockUtils.createMockStatisticsOpType(StatType.Count),
       claimIssuer: dsMockUtils.createMockOption([
         dsMockUtils.createMockClaimType(ClaimType.Affiliate),
         issuerId,
@@ -1919,13 +1916,13 @@ describe('compareStatsToInput', () => {
       type: StatType.ScopedCount,
       issuer,
       claimType: ClaimType.Affiliate,
-      ticker,
+      asset,
     };
-    result = compareStatsToInput(claimCountStat, args);
+    result = compareStatsToInput(claimCountStat, args, context);
     expect(result).toEqual(true);
 
     const claimPercentageStat = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
+      operationType: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
       claimIssuer: dsMockUtils.createMockOption([
         dsMockUtils.createMockClaimType(ClaimType.Affiliate),
         issuerId,
@@ -1935,40 +1932,40 @@ describe('compareStatsToInput', () => {
       type: StatType.ScopedBalance,
       issuer,
       claimType: ClaimType.Affiliate,
-      ticker,
+      asset,
     };
-    result = compareStatsToInput(claimPercentageStat, args);
+    result = compareStatsToInput(claimPercentageStat, args, context);
     expect(result).toEqual(true);
   });
 
   it('should return false if input does not match the stat', () => {
     const countStat = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatType.Count),
+      operationType: dsMockUtils.createMockStatisticsOpType(StatType.Count),
       claimIssuer: dsMockUtils.createMockOption(),
     });
 
     let args: RemoveAssetStatParams = {
       type: StatType.Balance,
-      ticker,
+      asset,
     };
-    let result = compareStatsToInput(countStat, args);
+    let result = compareStatsToInput(countStat, args, context);
     expect(result).toEqual(false);
 
     const percentStat = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
+      operationType: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
       claimIssuer: dsMockUtils.createMockOption(),
     });
     args = {
       type: StatType.ScopedBalance,
       issuer,
       claimType: ClaimType.Accredited,
-      ticker,
+      asset,
     };
-    result = compareStatsToInput(percentStat, args);
+    result = compareStatsToInput(percentStat, args, context);
     expect(result).toEqual(false);
 
     const claimCountStat = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatType.Count),
+      operationType: dsMockUtils.createMockStatisticsOpType(StatType.Count),
       claimIssuer: dsMockUtils.createMockOption([
         dsMockUtils.createMockClaimType(ClaimType.Jurisdiction),
         issuerId,
@@ -1978,29 +1975,29 @@ describe('compareStatsToInput', () => {
       type: StatType.ScopedCount,
       issuer,
       claimType: ClaimType.Affiliate,
-      ticker,
+      asset,
     };
-    result = compareStatsToInput(claimCountStat, args);
+    result = compareStatsToInput(claimCountStat, args, context);
     expect(result).toEqual(false);
 
     args = {
       type: StatType.ScopedCount,
       issuer: entityMockUtils.getIdentityInstance({ did: 'differentDid' }),
       claimType: ClaimType.Jurisdiction,
-      ticker,
+      asset,
     };
-    result = compareStatsToInput(claimCountStat, args);
+    result = compareStatsToInput(claimCountStat, args, context);
     expect(result).toEqual(false);
 
-    result = compareStatsToInput(percentStat, args);
+    result = compareStatsToInput(percentStat, args, context);
     expect(result).toEqual(false);
 
     args = {
       type: StatType.Count,
-      ticker,
+      asset,
     };
 
-    result = compareStatsToInput(claimCountStat, args);
+    result = compareStatsToInput(claimCountStat, args, context);
     expect(result).toEqual(false);
   });
 });
@@ -2365,23 +2362,23 @@ describe('asFungibleAsset', () => {
     expect(result).toEqual(input);
   });
 
-  it('should create a new FungibleAsset given a ticker', () => {
+  it('should create a new FungibleAsset given an asset ID', () => {
     const mockContext = dsMockUtils.getContextInstance();
-    const ticker = 'TICKER';
+    const assetId = '0x1234';
 
-    const result = asFungibleAsset(ticker, mockContext);
+    const result = asFungibleAsset(assetId, mockContext);
 
-    expect(result).toEqual(expect.objectContaining({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ id: assetId }));
   });
 
   it('should create a new FungibleAsset given a BaseAsset', () => {
     const mockContext = dsMockUtils.getContextInstance();
-    const ticker = 'TICKER';
-    const baseAsset = entityMockUtils.getBaseAssetInstance({ ticker });
+    const assetId = '0x1234';
+    const baseAsset = entityMockUtils.getBaseAssetInstance({ assetId });
 
     const result = asFungibleAsset(baseAsset, mockContext);
 
-    expect(result).toEqual(expect.objectContaining({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ id: assetId }));
   });
 });
 
@@ -2389,8 +2386,8 @@ describe('asNftId', () => {
   it('should return a BigNumber when given an NFT', () => {
     const context = dsMockUtils.getContextInstance();
     const id = new BigNumber(1);
-    const ticker = 'TICKER';
-    const nft = new Nft({ id, ticker }, context);
+    const assetId = '0x1234';
+    const nft = new Nft({ id, assetId }, context);
 
     const result = asNftId(nft);
 

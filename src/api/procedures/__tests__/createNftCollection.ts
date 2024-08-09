@@ -212,9 +212,9 @@ describe('createNftCollection procedure', () => {
       .mockReturnValue(rawDocuments[0]);
 
     when(mockContext.getProtocolFees)
-      .calledWith({ tags: [TxTags.asset.RegisterTicker, TxTags.asset.CreateAsset] })
+      .calledWith({ tags: [TxTags.asset.RegisterUniqueTicker, TxTags.asset.CreateAsset] })
       .mockResolvedValue([
-        { tag: TxTags.asset.RegisterTicker, fees: protocolFees[0] },
+        { tag: TxTags.asset.RegisterUniqueTicker, fees: protocolFees[0] },
         { tag: TxTags.asset.CreateAsset, fees: protocolFees[1] },
       ]);
     when(mockContext.getProtocolFees)
