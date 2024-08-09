@@ -11,6 +11,7 @@ import { Mocked } from '~/testUtils/types';
 import { RoleType, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Asset/Fungible',
@@ -122,15 +123,17 @@ describe('waivePermissions procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    it('should return the Asset', () => {
+    it('should return the Asset', async () => {
       const asset = entityMockUtils.getFungibleAssetInstance({
         assetId,
       });
 
+      jest.spyOn(utilsInternalModule, 'asBaseAsset').mockResolvedValue(asset);
+
       const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
-      const result = boundFunc({
+      const result = await boundFunc({
         identity: entityMockUtils.getIdentityInstance({
           did,
         }),

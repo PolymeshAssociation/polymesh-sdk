@@ -74,7 +74,7 @@ describe('setTransferRestrictions procedure', () => {
     PolymeshPrimitivesStatisticsStatType,
     [
       {
-        op: PolymeshPrimitivesStatisticsStatOpType;
+        operationType: PolymeshPrimitivesStatisticsStatOpType;
         claimIssuer?: [PolymeshPrimitivesIdentityClaimClaimType, PolymeshPrimitivesIdentityId];
       },
       Context

@@ -363,7 +363,9 @@ describe('Portfolio class', () => {
           tuple([rawPortfolioId, [rawLockedOnlyAssetId, rawLockedOnlyId]], rawTrue),
         ],
       });
-      jest.spyOn(utilsInternalModule, 'asAssetId').mockResolvedValue(assetId);
+      jest.spyOn(utilsInternalModule, 'asAssetId').mockImplementation((a): Promise<string> => {
+        return Promise.resolve(typeof a === 'string' ? a : a.id);
+      });
     });
 
     afterAll(() => {
@@ -378,7 +380,7 @@ describe('Portfolio class', () => {
       expect(result).toEqual(
         expect.arrayContaining([
           {
-            collection: expect.objectContaining({ assetId }),
+            collection: expect.objectContaining({ id: assetId }),
             free: expect.arrayContaining([
               expect.objectContaining({ id: nftId }),
               expect.objectContaining({ id: secondNftId }),
@@ -387,13 +389,13 @@ describe('Portfolio class', () => {
             total: new BigNumber(3),
           },
           expect.objectContaining({
-            collection: expect.objectContaining({ assetId: heldOnlyAssetId }),
+            collection: expect.objectContaining({ id: heldOnlyAssetId }),
             free: expect.arrayContaining([expect.objectContaining({ id: heldOnlyNftId })]),
             locked: [],
             total: new BigNumber(1),
           }),
           expect.objectContaining({
-            collection: expect.objectContaining({ assetId: lockedOnlyAssetId }),
+            collection: expect.objectContaining({ id: lockedOnlyAssetId }),
             free: [],
             locked: expect.arrayContaining([expect.objectContaining({ id: lockedOnlyNftId })]),
             total: new BigNumber(1),
@@ -411,7 +413,7 @@ describe('Portfolio class', () => {
       expect(result).toEqual(
         expect.arrayContaining([
           {
-            collection: expect.objectContaining({ assetId }),
+            collection: expect.objectContaining({ id: assetId }),
             free: expect.arrayContaining([
               expect.objectContaining({ id: nftId }),
               expect.objectContaining({ id: secondNftId }),

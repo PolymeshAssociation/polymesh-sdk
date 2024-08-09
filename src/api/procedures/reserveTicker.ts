@@ -95,7 +95,7 @@ export function getAuthorization({
 }: ReserveTickerParams): ProcedureAuthorization {
   const auth: ProcedureAuthorization = {
     permissions: {
-      transactions: [TxTags.asset.RegisterTicker],
+      transactions: [TxTags.asset.RegisterUniqueTicker],
       assets: [],
       portfolios: [],
     },

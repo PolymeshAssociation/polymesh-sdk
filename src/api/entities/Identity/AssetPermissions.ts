@@ -45,7 +45,7 @@ import {
 } from '~/utils/conversion';
 import {
   asAssetId,
-  asBaseAssetV2,
+  asBaseAsset,
   calculateNextKey,
   createProcedureMethod,
   getAssetIdForMiddleware,
@@ -152,7 +152,7 @@ export class AssetPermissions extends Namespace<Identity> {
       });
     }
 
-    const baseAsset = await asBaseAssetV2(asset, context);
+    const baseAsset = await asBaseAsset(asset, context);
     const rawAssetId = assetToMeshAssetId(baseAsset, context);
 
     const groupOption = await externalAgents.groupOfAgent(
@@ -295,7 +295,7 @@ export class AssetPermissions extends Namespace<Identity> {
       parent: { did },
     } = this;
 
-    const baseAsset = await asBaseAssetV2(asset, context);
+    const baseAsset = await asBaseAsset(asset, context);
 
     const rawAssetId = assetToMeshAssetId(baseAsset, context);
 

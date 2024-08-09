@@ -279,7 +279,7 @@ describe('addInstruction procedure', () => {
   >;
 
   beforeEach(() => {
-    jest.spyOn(utilsInternalModule, 'asBaseAssetV2').mockImplementation((a): Promise<BaseAsset> => {
+    jest.spyOn(utilsInternalModule, 'asBaseAsset').mockImplementation((a): Promise<BaseAsset> => {
       return Promise.resolve(
         typeof a === 'string' ? entityMockUtils.getBaseAssetInstance({ assetId: a }) : a
       );

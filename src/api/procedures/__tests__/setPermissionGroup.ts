@@ -16,6 +16,7 @@ import { Mocked } from '~/testUtils/types';
 import { PermissionGroupType, PermissionType, TxGroup, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Asset/Fungible',
@@ -393,7 +394,11 @@ describe('setPermissionGroup procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    it('should return the Asset', () => {
+    it('should return the Asset', async () => {
+      jest
+        .spyOn(utilsInternalModule, 'asBaseAsset')
+        .mockResolvedValue(expect.objectContaining({ id: assetId }));
+
       const proc = procedureMockUtils.getInstance<
         Params,
         CustomPermissionGroup | KnownPermissionGroup,
@@ -401,16 +406,16 @@ describe('setPermissionGroup procedure', () => {
       >(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
-      let result = boundFunc({
+      let result = await boundFunc({
         identity: entityMockUtils.getIdentityInstance(),
         group: { transactionGroups: [], asset: assetId },
       } as Params);
 
       expect(result).toEqual({
-        asset: expect.objectContaining({ assetId }),
+        asset: expect.objectContaining({ id: assetId }),
       });
 
-      result = boundFunc({
+      result = await boundFunc({
         identity: entityMockUtils.getIdentityInstance(),
         group: entityMockUtils.getCustomPermissionGroupInstance({
           assetId,
