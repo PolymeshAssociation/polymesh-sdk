@@ -1,7 +1,7 @@
 import {
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesCondition,
-  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -11,7 +11,7 @@ import {
   Params,
   prepareRemoveAssetRequirement,
 } from '~/api/procedures/removeAssetRequirement';
-import { Context } from '~/internal';
+import { BaseAsset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { TxTags } from '~/types';
@@ -25,10 +25,11 @@ jest.mock(
 
 describe('removeAssetRequirement procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
-  let ticker: string;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
+  let assetId: string;
+  let asset: BaseAsset;
   let requirement: BigNumber;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let senderConditions: PolymeshPrimitivesCondition[][];
   let receiverConditions: PolymeshPrimitivesCondition[][];
   let rawComplianceRequirement: PolymeshPrimitivesComplianceManagerComplianceRequirement[];
@@ -38,17 +39,19 @@ describe('removeAssetRequirement procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    ticker = 'SOME_TICKER';
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
+    assetId = '0x1234';
+    asset = entityMockUtils.getBaseAssetInstance({ assetId });
+
     requirement = new BigNumber(1);
 
     args = {
-      ticker,
+      asset,
       requirement,
     };
   });
 
-  let removeComplianceRequirementTransaction: PolymeshTx<[PolymeshPrimitivesTicker]>;
+  let removeComplianceRequirementTransaction: PolymeshTx<[PolymeshPrimitivesAssetAssetID]>;
 
   beforeEach(() => {
     dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {
@@ -62,7 +65,7 @@ describe('removeAssetRequirement procedure', () => {
 
     mockContext = dsMockUtils.getContextInstance();
 
-    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(assetToMeshAssetIdSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
 
     senderConditions = [
       'senderConditions0' as unknown as PolymeshPrimitivesCondition[],
@@ -123,7 +126,7 @@ describe('removeAssetRequirement procedure', () => {
 
     expect(result).toEqual({
       transaction: removeComplianceRequirementTransaction,
-      args: [rawTicker, rawId],
+      args: [rawAssetId, rawId],
       resolver: undefined,
     });
   });
@@ -133,13 +136,13 @@ describe('removeAssetRequirement procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const params = {
-        ticker,
+        asset,
       } as Params;
 
       expect(boundFunc(params)).toEqual({
         permissions: {
           transactions: [TxTags.complianceManager.RemoveComplianceRequirement],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
           portfolios: [],
         },
       });

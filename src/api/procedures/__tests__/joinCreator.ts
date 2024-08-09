@@ -1,7 +1,7 @@
 import { AccountId } from '@polkadot/types/interfaces';
 import {
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesSecondaryKeyPermissions,
-  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import { when } from 'jest-when';
 
@@ -47,7 +47,7 @@ describe('joinCreator procedure', () => {
     );
   });
 
-  let makePrimaryTx: PolymeshTx<[PolymeshPrimitivesTicker]>;
+  let makePrimaryTx: PolymeshTx<[PolymeshPrimitivesAssetAssetID]>;
   let makeSecondaryTx: PolymeshTx<[]>;
   let setPermissionsTx: PolymeshTx<[]>;
 

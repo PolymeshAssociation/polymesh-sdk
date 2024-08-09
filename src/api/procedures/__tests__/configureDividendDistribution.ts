@@ -4,7 +4,7 @@ import {
   PalletCorporateActionsCorporateAction,
   PalletCorporateActionsDistribution,
   PalletCorporateActionsInitiateCorporateActionArgs,
-  PolymeshPrimitivesTicker,
+  PolymeshPrimitivesAssetAssetID,
 } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
@@ -21,7 +21,14 @@ import {
 import { Context, DividendDistribution, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { CorporateActionKind, InputCaCheckpoint, RoleType, TargetTreatment, TxTags } from '~/types';
+import {
+  CorporateActionKind,
+  FungibleAsset,
+  InputCaCheckpoint,
+  RoleType,
+  TargetTreatment,
+  TxTags,
+} from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -55,7 +62,8 @@ jest.mock(
 );
 
 describe('configureDividendDistribution procedure', () => {
-  let ticker: string;
+  let assetId: string;
+  let asset: FungibleAsset;
   let declarationDate: Date;
   let checkpoint: InputCaCheckpoint;
   let description: string;
@@ -70,7 +78,7 @@ describe('configureDividendDistribution procedure', () => {
   let expiryDate: Date;
 
   let rawPortfolioNumber: u64;
-  let rawCurrency: PolymeshPrimitivesTicker;
+  let rawCurrency: PolymeshPrimitivesAssetAssetID;
   let rawPerShare: Balance;
   let rawAmount: Balance;
   let rawPaymentAt: u64;
@@ -80,7 +88,7 @@ describe('configureDividendDistribution procedure', () => {
   let mockContext: Mocked<Context>;
   let initiateCorporateActionAndDistributeTransaction: PolymeshTx<unknown[]>;
 
-  let stringToTickerSpy: jest.SpyInstance;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
   let bigNumberToU64Spy: jest.SpyInstance;
   let dateToMomentSpy: jest.SpyInstance;
   let bigNumberToBalanceSpy: jest.SpyInstance;
@@ -91,7 +99,8 @@ describe('configureDividendDistribution procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    ticker = 'SOME_TICKER';
+    assetId = '0x1234';
+    asset = entityMockUtils.getFungibleAssetInstance({ assetId });
     declarationDate = new Date('10/14/1987');
     checkpoint = new Date(new Date().getTime() + 60 * 60 * 1000);
     description = 'someDescription';
@@ -105,27 +114,27 @@ describe('configureDividendDistribution procedure', () => {
       id: new BigNumber(2),
       getAssetBalances: [
         {
-          asset: entityMockUtils.getFungibleAssetInstance({ ticker: currency }),
+          asset: entityMockUtils.getFungibleAssetInstance({ assetId: currency }),
           total: new BigNumber(1000001),
           locked: new BigNumber(0),
           free: new BigNumber(1000001),
         },
       ],
     });
-    currency = 'USD';
+    currency = '0x9000';
     perShare = new BigNumber(100);
     maxAmount = new BigNumber(1000000);
     paymentDate = new Date(checkpoint.getTime() + 60 * 60 * 1000);
     expiryDate = new Date(paymentDate.getTime() + 60 * 60 * 1000 * 24 * 365);
 
     rawPortfolioNumber = dsMockUtils.createMockU64(originPortfolio.id);
-    rawCurrency = dsMockUtils.createMockTicker(currency);
+    rawCurrency = dsMockUtils.createMockAssetId(currency);
     rawPerShare = dsMockUtils.createMockBalance(perShare);
     rawAmount = dsMockUtils.createMockBalance(maxAmount);
     rawPaymentAt = dsMockUtils.createMockMoment(new BigNumber(paymentDate.getTime()));
     rawExpiresAt = dsMockUtils.createMockMoment(new BigNumber(expiryDate.getTime()));
     rawCorporateActionArgs = dsMockUtils.createMockInitiateCorporateActionArgs({
-      ticker,
+      assetId,
       kind: CorporateActionKind.UnpredictableBenefit,
       declDate: dsMockUtils.createMockMoment(new BigNumber(declarationDate.getTime())),
       recordDate: dsMockUtils.createMockOption(
@@ -141,7 +150,7 @@ describe('configureDividendDistribution procedure', () => {
       withholdingTax: [[taxWithholdings[0].identity, taxWithholdings[0].percentage]],
     });
 
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
     dateToMomentSpy = jest.spyOn(utilsConversionModule, 'dateToMoment');
     bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
@@ -159,7 +168,9 @@ describe('configureDividendDistribution procedure', () => {
 
     mockContext = dsMockUtils.getContextInstance();
 
-    when(stringToTickerSpy).calledWith(currency, mockContext).mockReturnValue(rawCurrency);
+    when(assetToMeshAssetIdSpy)
+      .calledWith(expect.objectContaining({ id: currency }), mockContext)
+      .mockReturnValue(rawCurrency);
     when(bigNumberToU64Spy)
       .calledWith(originPortfolio.id, mockContext)
       .mockReturnValue(rawPortfolioNumber);
@@ -170,7 +181,7 @@ describe('configureDividendDistribution procedure', () => {
     when(corporateActionParamsToMeshCorporateActionArgsSpy)
       .calledWith(
         {
-          ticker,
+          asset,
           kind: CorporateActionKind.UnpredictableBenefit,
           declarationDate,
           checkpoint,
@@ -185,7 +196,7 @@ describe('configureDividendDistribution procedure', () => {
     when(corporateActionParamsToMeshCorporateActionArgsSpy)
       .calledWith(
         {
-          ticker,
+          asset,
           kind: CorporateActionKind.UnpredictableBenefit,
           declarationDate: expect.any(Date),
           checkpoint,
@@ -224,7 +235,7 @@ describe('configureDividendDistribution procedure', () => {
 
     try {
       await prepareConfigureDividendDistribution.call(proc, {
-        ticker,
+        asset,
         declarationDate,
         checkpoint,
         description,
@@ -232,7 +243,7 @@ describe('configureDividendDistribution procedure', () => {
         defaultTaxWithholding,
         taxWithholdings,
         originPortfolio,
-        currency: ticker,
+        currency: assetId,
         perShare,
         maxAmount,
         paymentDate,
@@ -255,7 +266,7 @@ describe('configureDividendDistribution procedure', () => {
 
     try {
       await prepareConfigureDividendDistribution.call(proc, {
-        ticker,
+        asset,
         declarationDate,
         checkpoint,
         description,
@@ -286,7 +297,7 @@ describe('configureDividendDistribution procedure', () => {
 
     try {
       await prepareConfigureDividendDistribution.call(proc, {
-        ticker,
+        asset,
         declarationDate: new Date(new Date().getTime() + 500000),
         checkpoint,
         description,
@@ -317,7 +328,7 @@ describe('configureDividendDistribution procedure', () => {
 
     try {
       await prepareConfigureDividendDistribution.call(proc, {
-        ticker,
+        asset,
         declarationDate,
         checkpoint,
         description,
@@ -339,7 +350,7 @@ describe('configureDividendDistribution procedure', () => {
 
     try {
       await prepareConfigureDividendDistribution.call(proc, {
-        ticker,
+        asset,
         declarationDate,
         checkpoint: entityMockUtils.getCheckpointScheduleInstance(),
         description,
@@ -374,7 +385,7 @@ describe('configureDividendDistribution procedure', () => {
 
     try {
       await prepareConfigureDividendDistribution.call(proc, {
-        ticker,
+        asset,
         declarationDate,
         checkpoint,
         description,
@@ -404,7 +415,7 @@ describe('configureDividendDistribution procedure', () => {
 
     try {
       await prepareConfigureDividendDistribution.call(proc, {
-        ticker,
+        asset,
         declarationDate,
         checkpoint,
         description,
@@ -431,7 +442,7 @@ describe('configureDividendDistribution procedure', () => {
         portfolio: entityMockUtils.getNumberedPortfolioInstance({
           getAssetBalances: [
             {
-              asset: entityMockUtils.getFungibleAssetInstance({ ticker: currency }),
+              asset: entityMockUtils.getFungibleAssetInstance({ assetId: currency }),
               total: new BigNumber(1),
               locked: new BigNumber(0),
               free: new BigNumber(1),
@@ -445,7 +456,7 @@ describe('configureDividendDistribution procedure', () => {
 
     try {
       await prepareConfigureDividendDistribution.call(proc, {
-        ticker,
+        asset,
         declarationDate,
         checkpoint: entityMockUtils.getCheckpointInstance(),
         description,
@@ -485,7 +496,7 @@ describe('configureDividendDistribution procedure', () => {
 
     try {
       await prepareConfigureDividendDistribution.call(proc, {
-        ticker,
+        asset,
         declarationDate,
         checkpoint: entityMockUtils.getCheckpointInstance(),
         description,
@@ -512,7 +523,7 @@ describe('configureDividendDistribution procedure', () => {
     });
 
     let result = await prepareConfigureDividendDistribution.call(proc, {
-      ticker,
+      asset,
       declarationDate,
       checkpoint,
       description,
@@ -542,7 +553,7 @@ describe('configureDividendDistribution procedure', () => {
     });
 
     result = await prepareConfigureDividendDistribution.call(proc, {
-      ticker,
+      asset,
       declarationDate,
       checkpoint,
       description,
@@ -576,7 +587,7 @@ describe('configureDividendDistribution procedure', () => {
         did: 'someDid',
         getAssetBalances: [
           {
-            asset: entityMockUtils.getFungibleAssetInstance({ ticker: currency }),
+            asset: entityMockUtils.getFungibleAssetInstance({ assetId: currency }),
             total: new BigNumber(1000001),
             locked: new BigNumber(0),
             free: new BigNumber(1000001),
@@ -586,7 +597,7 @@ describe('configureDividendDistribution procedure', () => {
     });
 
     result = await prepareConfigureDividendDistribution.call(proc, {
-      ticker,
+      asset,
       checkpoint,
       description,
       currency,
@@ -660,7 +671,7 @@ describe('configureDividendDistribution procedure', () => {
         dsMockUtils.createMockIEvent([
           'data',
           dsMockUtils.createMockCAId({
-            ticker,
+            assetId,
             localId: id,
           }),
           rawDistribution,
@@ -677,7 +688,7 @@ describe('configureDividendDistribution procedure', () => {
         {} as ISubmittableResult
       );
 
-      expect(result.asset.ticker).toBe(ticker);
+      expect(result.asset.id).toBe(assetId);
       expect(result.id).toEqual(id);
       expect(result.declarationDate).toEqual(declarationDate);
       expect(result.description).toEqual(description);
@@ -716,7 +727,7 @@ describe('configureDividendDistribution procedure', () => {
       );
       const boundFunc = getAuthorization.bind(proc);
       const args = {
-        ticker,
+        asset,
       } as Params;
 
       expect(boundFunc(args)).toEqual({
@@ -728,7 +739,7 @@ describe('configureDividendDistribution procedure', () => {
         ],
         permissions: {
           transactions: [TxTags.capitalDistribution.Distribute],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [asset],
           portfolios: [originPortfolio],
         },
       });

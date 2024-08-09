@@ -18,7 +18,7 @@ jest.mock(
 );
 
 describe('modifyCaCheckpoint procedure', () => {
-  const ticker = 'SOME_TICKER';
+  const assetId = '0x1234';
 
   let mockContext: Mocked<Context>;
   let changeRecordDateTransaction: PolymeshTx<unknown[]>;
@@ -172,7 +172,7 @@ describe('modifyCaCheckpoint procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
     const id = new BigNumber(1);
 
-    const rawCaId = dsMockUtils.createMockCAId({ ticker, localId: id });
+    const rawCaId = dsMockUtils.createMockCAId({ assetId, localId: id });
 
     jest.spyOn(utilsConversionModule, 'corporateActionIdentifierToCaId').mockReturnValue(rawCaId);
 
@@ -247,13 +247,13 @@ describe('modifyCaCheckpoint procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
       const args = {
         corporateAction: {
-          asset: { ticker },
+          asset: entityMockUtils.getFungibleAssetInstance({ assetId }),
         },
-      } as Params;
+      } as unknown as Params;
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
           transactions: [TxTags.corporateAction.ChangeRecordDate],
           portfolios: [],
         },

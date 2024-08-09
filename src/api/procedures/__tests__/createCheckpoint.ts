@@ -1,4 +1,4 @@
-import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -12,7 +12,7 @@ import {
 import { Checkpoint, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { TxTags } from '~/types';
+import { FungibleAsset, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -27,22 +27,24 @@ jest.mock(
 
 describe('createCheckpoint procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
-  let ticker: string;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
+  let assetId: string;
+  let asset: FungibleAsset;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    ticker = 'SOME_TICKER';
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
+    assetId = '0x1234';
+    asset = entityMockUtils.getFungibleAssetInstance({ assetId });
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(assetToMeshAssetIdSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
   });
 
   afterEach(() => {
@@ -62,10 +64,10 @@ describe('createCheckpoint procedure', () => {
     const transaction = dsMockUtils.createTxMock('checkpoint', 'createCheckpoint');
 
     const result = await prepareCreateCheckpoint.call(proc, {
-      ticker,
+      asset,
     });
 
-    expect(result).toEqual({ transaction, resolver: expect.any(Function), args: [rawTicker] });
+    expect(result).toEqual({ transaction, resolver: expect.any(Function), args: [rawAssetId] });
   });
 
   describe('createCheckpointResolver', () => {
@@ -73,12 +75,12 @@ describe('createCheckpoint procedure', () => {
     const id = new BigNumber(1);
 
     beforeAll(() => {
-      entityMockUtils.initMocks({ checkpointOptions: { ticker, id } });
+      entityMockUtils.initMocks({ checkpointOptions: { assetId, id } });
     });
 
     beforeEach(() => {
       filterEventRecordsSpy.mockReturnValue([
-        dsMockUtils.createMockIEvent(['someDid', ticker, id]),
+        dsMockUtils.createMockIEvent(['someDid', assetId, id]),
       ]);
     });
 
@@ -87,8 +89,8 @@ describe('createCheckpoint procedure', () => {
     });
 
     it('should return the new Checkpoint', () => {
-      const result = createCheckpointResolver(ticker, mockContext)({} as ISubmittableResult);
-      expect(result.asset.ticker).toBe(ticker);
+      const result = createCheckpointResolver(assetId, mockContext)({} as ISubmittableResult);
+      expect(result.asset.id).toBe(assetId);
       expect(result.id).toEqual(id);
     });
   });
@@ -98,10 +100,10 @@ describe('createCheckpoint procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, Checkpoint>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      expect(boundFunc({ ticker })).toEqual({
+      expect(boundFunc({ asset })).toEqual({
         permissions: {
           transactions: [TxTags.checkpoint.CreateCheckpoint],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [asset],
           portfolios: [],
         },
       });

@@ -1,8 +1,8 @@
 import { u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import {
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesIdentityIdPortfolioId,
-  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -14,7 +14,7 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/investInOffering';
-import { Context, DefaultPortfolio } from '~/internal';
+import { Context, DefaultPortfolio, FungibleAsset } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -42,7 +42,7 @@ jest.mock(
 
 describe('investInOffering procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
   let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance<
     PolymeshPrimitivesIdentityIdPortfolioId,
     [PortfolioId, Context]
@@ -52,7 +52,8 @@ describe('investInOffering procedure', () => {
   let bigNumberToBalanceSpy: jest.SpyInstance<Balance, [BigNumber, Context, boolean?]>;
 
   let id: BigNumber;
-  let ticker: string;
+  let assetId: string;
+  let asset: FungibleAsset;
   let purchasePortfolio: PortfolioLike;
   let purchasePortfolioId: PortfolioId;
   let fundingPortfolio: PortfolioLike;
@@ -60,7 +61,7 @@ describe('investInOffering procedure', () => {
   let purchaseAmount: BigNumber;
   let maxPrice: BigNumber;
   let rawId: u64;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let rawPurchasePortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
   let rawFundingPortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
   let rawPurchaseAmount: Balance;
@@ -71,7 +72,7 @@ describe('investInOffering procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     portfolioIdToMeshPortfolioIdSpy = jest.spyOn(
       utilsConversionModule,
       'portfolioIdToMeshPortfolioId'
@@ -81,8 +82,9 @@ describe('investInOffering procedure', () => {
     bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
     id = new BigNumber(id);
     rawId = dsMockUtils.createMockU64(id);
-    ticker = 'tickerFrozen';
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    assetId = '0x1234';
+    asset = entityMockUtils.getFungibleAssetInstance({ assetId });
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
     purchasePortfolio = 'purchasePortfolioDid';
     fundingPortfolio = 'fundingPortfolioDid';
     purchasePortfolioId = { did: purchasePortfolio };
@@ -103,7 +105,7 @@ describe('investInOffering procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(assetToMeshAssetIdSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
     when(portfolioLikeToPortfolioIdSpy)
       .calledWith(purchasePortfolio)
       .mockReturnValue(purchasePortfolioId);
@@ -124,7 +126,7 @@ describe('investInOffering procedure', () => {
 
     args = {
       id,
-      ticker,
+      asset,
       purchasePortfolio,
       fundingPortfolio,
       purchaseAmount,
@@ -344,7 +346,7 @@ describe('investInOffering procedure', () => {
       args: [
         rawPurchasePortfolio,
         rawFundingPortfolio,
-        rawTicker,
+        rawAssetId,
         rawId,
         rawPurchaseAmount,
         null,
@@ -363,7 +365,7 @@ describe('investInOffering procedure', () => {
       args: [
         rawPurchasePortfolio,
         rawFundingPortfolio,
-        rawTicker,
+        rawAssetId,
         rawId,
         rawPurchaseAmount,
         rawMaxPrice,

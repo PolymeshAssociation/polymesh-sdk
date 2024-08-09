@@ -12,7 +12,7 @@ import {
   Params,
   prepareTransferAssetOwnership,
 } from '~/api/procedures/transferAssetOwnership';
-import { AuthorizationRequest, Context } from '~/internal';
+import { AuthorizationRequest, BaseAsset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -48,7 +48,8 @@ describe('transferAssetOwnership procedure', () => {
     [Authorization, Context]
   >;
   let dateToMomentSpy: jest.SpyInstance<Moment, [Date, Context]>;
-  let ticker: string;
+  let assetId: string;
+  let asset: BaseAsset;
   let did: string;
   let expiry: Date;
   let rawSignatory: PolymeshPrimitivesSecondaryKeySignatory;
@@ -68,18 +69,19 @@ describe('transferAssetOwnership procedure', () => {
       'authorizationToAuthorizationData'
     );
     dateToMomentSpy = jest.spyOn(utilsConversionModule, 'dateToMoment');
-    ticker = 'SOME_TICKER';
+    assetId = '0x1234';
+    asset = entityMockUtils.getBaseAssetInstance({ assetId });
     did = 'someDid';
     expiry = new Date('10/14/3040');
     rawSignatory = dsMockUtils.createMockSignatory({
       Identity: dsMockUtils.createMockIdentityId(did),
     });
     rawAuthorizationData = dsMockUtils.createMockAuthorizationData({
-      TransferAssetOwnership: dsMockUtils.createMockTicker(ticker),
+      TransferAssetOwnership: dsMockUtils.createMockAssetId(assetId),
     });
     rawMoment = dsMockUtils.createMockMoment(new BigNumber(expiry.getTime()));
     args = {
-      ticker,
+      asset,
       target: did,
     };
     signerToStringSpy = jest.spyOn(utilsConversionModule, 'signerToString');
@@ -109,7 +111,7 @@ describe('transferAssetOwnership procedure', () => {
       .calledWith({ type: SignerType.Identity, value: did }, mockContext)
       .mockReturnValue(rawSignatory);
     when(authorizationToAuthorizationDataSpy)
-      .calledWith({ type: AuthorizationType.TransferAssetOwnership, value: ticker }, mockContext)
+      .calledWith({ type: AuthorizationType.TransferAssetOwnership, value: assetId }, mockContext)
       .mockReturnValue(rawAuthorizationData);
     when(dateToMomentSpy).calledWith(expiry, mockContext).mockReturnValue(rawMoment);
     when(signerToStringSpy)
@@ -140,7 +142,7 @@ describe('transferAssetOwnership procedure', () => {
             issuer: entityMockUtils.getIdentityInstance({ did }),
             authId: new BigNumber(1),
             expiry: null,
-            data: { type: AuthorizationType.TransferAssetOwnership, value: ticker },
+            data: { type: AuthorizationType.TransferAssetOwnership, value: assetId },
           }),
         ],
       },
@@ -184,7 +186,7 @@ describe('transferAssetOwnership procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
           transactions: [TxTags.identity.AddAuthorization],
           portfolios: [],
         },

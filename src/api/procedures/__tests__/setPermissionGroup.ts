@@ -23,9 +23,9 @@ jest.mock(
 );
 
 describe('setPermissionGroup procedure', () => {
-  const ticker = 'SOME_TICKER';
+  const assetId = '0x1234';
   const did = 'someDid';
-  const rawTicker = dsMockUtils.createMockTicker(ticker);
+  const rawAssetId = dsMockUtils.createMockAssetId(assetId);
   const rawIdentityId = dsMockUtils.createMockIdentityId(did);
   const rawExtrinsicPermissions = dsMockUtils.createMockExtrinsicPermissions({
     These: [
@@ -43,7 +43,7 @@ describe('setPermissionGroup procedure', () => {
   let externalAgentsCreateAndChangeGroupTransaction: PolymeshTx<unknown[]>;
   let permissionGroupIdentifierToAgentGroupSpy: jest.SpyInstance;
   let transactionPermissionsToExtrinsicPermissionsSpy: jest.SpyInstance;
-  let stringToTickerSpy: jest.SpyInstance;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
   let stringToIdentityIdSpy: jest.SpyInstance;
   let getGroupFromPermissionsSpy: jest.SpyInstance;
 
@@ -61,7 +61,7 @@ describe('setPermissionGroup procedure', () => {
       utilsConversionModule,
       'permissionGroupIdentifierToAgentGroup'
     );
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
     getGroupFromPermissionsSpy = jest.spyOn(utilsProcedureModule, 'getGroupFromPermissions');
   });
@@ -76,7 +76,7 @@ describe('setPermissionGroup procedure', () => {
       'createAndChangeCustomGroup'
     );
     mockContext = dsMockUtils.getContextInstance();
-    stringToTickerSpy.mockReturnValue(rawTicker);
+    assetToMeshAssetIdSpy.mockReturnValue(rawAssetId);
     stringToIdentityIdSpy.mockReturnValue(rawIdentityId);
     transactionPermissionsToExtrinsicPermissionsSpy.mockReturnValue(rawExtrinsicPermissions);
   });
@@ -94,7 +94,7 @@ describe('setPermissionGroup procedure', () => {
 
   it('should throw an error if the target is the last agent with full permissions', async () => {
     const group = entityMockUtils.getKnownPermissionGroupInstance({
-      ticker,
+      assetId,
       type: PermissionGroupType.Full,
     });
 
@@ -104,7 +104,7 @@ describe('setPermissionGroup procedure', () => {
       Storage
     >(mockContext, {
       asset: entityMockUtils.getFungibleAssetInstance({
-        ticker,
+        assetId,
         permissionsGetAgents: [
           {
             agent: entityMockUtils.getIdentityInstance(),
@@ -122,7 +122,7 @@ describe('setPermissionGroup procedure', () => {
           assetPermissionsGetGroup: group,
         }),
         group: {
-          asset: ticker,
+          asset: assetId,
           transactions: {
             type: PermissionType.Include,
             values: [],
@@ -145,7 +145,7 @@ describe('setPermissionGroup procedure', () => {
       Storage
     >(mockContext, {
       asset: entityMockUtils.getFungibleAssetInstance({
-        ticker,
+        assetId,
         permissionsGetAgents: [],
       }),
     });
@@ -156,7 +156,7 @@ describe('setPermissionGroup procedure', () => {
       await prepareSetPermissionGroup.call(proc, {
         identity: entityMockUtils.getIdentityInstance(),
         group: {
-          asset: ticker,
+          asset: assetId,
           transactions: {
             type: PermissionType.Include,
             values: [],
@@ -173,13 +173,13 @@ describe('setPermissionGroup procedure', () => {
   it('should throw an error if the Agent is already part of the permission group', async () => {
     const identity = entityMockUtils.getIdentityInstance({
       assetPermissionsGetGroup: entityMockUtils.getKnownPermissionGroupInstance({
-        ticker,
+        assetId,
         type: PermissionGroupType.PolymeshV1Caa,
       }),
     });
     let group: Mocked<CustomPermissionGroup | KnownPermissionGroup> =
       entityMockUtils.getKnownPermissionGroupInstance({
-        ticker,
+        assetId,
         type: PermissionGroupType.PolymeshV1Caa,
       });
     const proc = procedureMockUtils.getInstance<
@@ -188,7 +188,7 @@ describe('setPermissionGroup procedure', () => {
       Storage
     >(mockContext, {
       asset: entityMockUtils.getFungibleAssetInstance({
-        ticker,
+        assetId,
         permissionsGetAgents: [
           {
             agent: identity,
@@ -203,7 +203,7 @@ describe('setPermissionGroup procedure', () => {
     try {
       await prepareSetPermissionGroup.call(proc, {
         identity,
-        asset: ticker,
+        asset: assetId,
         group,
       });
     } catch (err) {
@@ -214,7 +214,7 @@ describe('setPermissionGroup procedure', () => {
 
     const id = new BigNumber(1);
     group = entityMockUtils.getCustomPermissionGroupInstance({
-      ticker,
+      assetId,
       id,
     });
 
@@ -223,7 +223,7 @@ describe('setPermissionGroup procedure', () => {
         identity: entityMockUtils.getIdentityInstance({
           assetPermissionsGetGroup: group,
         }),
-        asset: ticker,
+        asset: assetId,
         group,
       });
     } catch (err) {
@@ -236,7 +236,7 @@ describe('setPermissionGroup procedure', () => {
   it('should return a change group transaction spec if the passed group exists', async () => {
     const identity = entityMockUtils.getIdentityInstance({
       assetPermissionsGetGroup: entityMockUtils.getKnownPermissionGroupInstance({
-        ticker,
+        assetId,
         type: PermissionGroupType.Full,
       }),
     });
@@ -257,7 +257,7 @@ describe('setPermissionGroup procedure', () => {
       Storage
     >(mockContext, {
       asset: entityMockUtils.getFungibleAssetInstance({
-        ticker,
+        assetId,
         permissionsGetAgents: [
           {
             agent: identity,
@@ -278,7 +278,7 @@ describe('setPermissionGroup procedure', () => {
     let result = await prepareSetPermissionGroup.call(proc, {
       identity,
       group: {
-        asset: ticker,
+        asset: assetId,
         transactions: {
           type: PermissionType.Include,
           values: [],
@@ -288,7 +288,7 @@ describe('setPermissionGroup procedure', () => {
 
     expect(result).toEqual({
       transaction: externalAgentsChangeGroupTransaction,
-      args: [rawTicker, rawIdentityId, rawAgentGroup],
+      args: [rawAssetId, rawIdentityId, rawAgentGroup],
       resolver: expectedGroup,
     });
 
@@ -305,7 +305,7 @@ describe('setPermissionGroup procedure', () => {
     result = await prepareSetPermissionGroup.call(proc, {
       identity,
       group: {
-        asset: ticker,
+        asset: assetId,
         transactions: {
           type: PermissionType.Include,
           values: [],
@@ -315,7 +315,7 @@ describe('setPermissionGroup procedure', () => {
 
     expect(result).toEqual({
       transaction: externalAgentsChangeGroupTransaction,
-      args: [rawTicker, rawIdentityId, rawAgentGroup],
+      args: [rawAssetId, rawIdentityId, rawAgentGroup],
       resolver: expectedGroup,
     });
   });
@@ -324,7 +324,7 @@ describe('setPermissionGroup procedure', () => {
     const id = new BigNumber(1);
     const identity = entityMockUtils.getIdentityInstance({
       assetPermissionsGetGroup: entityMockUtils.getKnownPermissionGroupInstance({
-        ticker,
+        assetId,
         type: PermissionGroupType.Full,
       }),
     });
@@ -335,7 +335,7 @@ describe('setPermissionGroup procedure', () => {
       Storage
     >(mockContext, {
       asset: entityMockUtils.getFungibleAssetInstance({
-        ticker,
+        assetId,
         permissionsGetAgents: [
           {
             agent: identity,
@@ -358,7 +358,7 @@ describe('setPermissionGroup procedure', () => {
     let result = await prepareSetPermissionGroup.call(proc, {
       identity,
       group: {
-        asset: ticker,
+        asset: assetId,
         transactions: {
           type: PermissionType.Include,
           values: [],
@@ -368,26 +368,26 @@ describe('setPermissionGroup procedure', () => {
 
     expect(result).toEqual({
       transaction: externalAgentsCreateAndChangeGroupTransaction,
-      args: [rawTicker, rawExtrinsicPermissions, rawIdentityId],
+      args: [rawAssetId, rawExtrinsicPermissions, rawIdentityId],
       resolver: expect.any(Function),
     });
 
     result = await prepareSetPermissionGroup.call(proc, {
       identity: entityMockUtils.getIdentityInstance({
         assetPermissionsGetGroup: entityMockUtils.getCustomPermissionGroupInstance({
-          ticker,
+          assetId,
           id,
         }),
       }),
       group: {
-        asset: ticker,
+        asset: assetId,
         transactionGroups: [TxGroup.AdvancedAssetManagement],
       },
     });
 
     expect(result).toEqual({
       transaction: externalAgentsCreateAndChangeGroupTransaction,
-      args: [rawTicker, rawExtrinsicPermissions, rawIdentityId],
+      args: [rawAssetId, rawExtrinsicPermissions, rawIdentityId],
       resolver: expect.any(Function),
     });
   });
@@ -403,22 +403,22 @@ describe('setPermissionGroup procedure', () => {
 
       let result = boundFunc({
         identity: entityMockUtils.getIdentityInstance(),
-        group: { transactionGroups: [], asset: ticker },
+        group: { transactionGroups: [], asset: assetId },
       } as Params);
 
       expect(result).toEqual({
-        asset: expect.objectContaining({ ticker }),
+        asset: expect.objectContaining({ assetId }),
       });
 
       result = boundFunc({
         identity: entityMockUtils.getIdentityInstance(),
         group: entityMockUtils.getCustomPermissionGroupInstance({
-          ticker,
+          assetId,
         }),
       } as Params);
 
       expect(result).toEqual({
-        asset: expect.objectContaining({ ticker }),
+        asset: expect.objectContaining({ id: assetId }),
       });
     });
   });
@@ -431,7 +431,7 @@ describe('setPermissionGroup procedure', () => {
         Storage
       >(mockContext, {
         asset: entityMockUtils.getFungibleAssetInstance({
-          ticker,
+          assetId,
         }),
       });
       const boundFunc = getAuthorization.bind(proc);
@@ -439,7 +439,7 @@ describe('setPermissionGroup procedure', () => {
       expect(boundFunc()).toEqual({
         permissions: {
           transactions: [TxTags.externalAgents.ChangeGroup],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
           portfolios: [],
         },
       });

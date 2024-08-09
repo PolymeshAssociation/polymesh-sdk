@@ -31,7 +31,7 @@ describe('Polymesh Transaction class', () => {
   });
 
   describe('method: toTransactionSpec', () => {
-    const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
+    const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
     const args = tuple('FOO');
     const resolver = (): number => 1;
     const transformer = (): number => 2;
@@ -93,7 +93,7 @@ describe('Polymesh Transaction class', () => {
 
   describe('get: args', () => {
     it('should return unwrapped args', () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const args = tuple('A_TICKER');
 
       const tx = new PolymeshTransaction(

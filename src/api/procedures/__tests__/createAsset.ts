@@ -1,12 +1,12 @@
 import { bool, BTreeSet, Bytes, Option, Vec } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import {
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesAssetAssetType,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesDocument,
   PolymeshPrimitivesIdentityIdPortfolioKind,
   PolymeshPrimitivesStatisticsStatType,
-  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -55,7 +55,7 @@ jest.mock(
 
 describe('createAsset procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let stringToAssetIdSpy: jest.SpyInstance<PolymeshPrimitivesAssetAssetID, [string, Context]>;
   let bigNumberToBalanceSpy: jest.SpyInstance;
   let stringToBytesSpy: jest.SpyInstance<Bytes, [string, Context]>;
   let nameToAssetNameSpy: jest.SpyInstance<Bytes, [string, Context]>;
@@ -78,7 +78,7 @@ describe('createAsset procedure', () => {
     PolymeshPrimitivesDocument,
     [AssetDocument, Context]
   >;
-  let ticker: string;
+  let assetId: string;
   let signingIdentity: Identity;
   let name: string;
   let initialSupply: BigNumber;
@@ -87,7 +87,7 @@ describe('createAsset procedure', () => {
   let securityIdentifiers: SecurityIdentifier[];
   let fundingRound: string;
   let documents: AssetDocument[];
-  let rawTicker: PolymeshPrimitivesTicker;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let rawName: Bytes;
   let rawInitialSupply: Balance;
   let rawIsDivisible: bool;
@@ -119,7 +119,7 @@ describe('createAsset procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
     bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
     stringToBytesSpy = jest.spyOn(utilsConversionModule, 'stringToBytes');
     nameToAssetNameSpy = jest.spyOn(utilsConversionModule, 'nameToAssetName');
@@ -142,7 +142,7 @@ describe('createAsset procedure', () => {
       'securityIdentifierToAssetIdentifier'
     );
     assetDocumentToDocumentSpy = jest.spyOn(utilsConversionModule, 'assetDocumentToDocument');
-    ticker = 'TICKER';
+    assetId = '0x1234';
     name = 'someName';
     signingIdentity = entityMockUtils.getIdentityInstance({ portfoliosGetPortfolio: getPortfolio });
     initialSupply = new BigNumber(100);
@@ -162,7 +162,7 @@ describe('createAsset procedure', () => {
         contentHash: 'someHash',
       },
     ];
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
     rawName = dsMockUtils.createMockBytes(name);
     rawInitialSupply = dsMockUtils.createMockBalance(initialSupply);
     rawIsDivisible = dsMockUtils.createMockBool(isDivisible);
@@ -187,7 +187,7 @@ describe('createAsset procedure', () => {
     );
     rawFundingRound = dsMockUtils.createMockBytes(fundingRound);
     args = {
-      ticker,
+      assetId,
       name,
       isDivisible,
       assetType,
@@ -206,7 +206,7 @@ describe('createAsset procedure', () => {
   let createAssetTransaction: PolymeshTx<
     [
       Bytes,
-      PolymeshPrimitivesTicker,
+      PolymeshPrimitivesAssetAssetID,
       Balance,
       bool,
       PolymeshPrimitivesAssetAssetType,
@@ -225,15 +225,15 @@ describe('createAsset procedure', () => {
 
     mockContext = dsMockUtils.getContextInstance({ withSigningManager: true });
 
-    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(stringToAssetIdSpy).calledWith(assetId, mockContext).mockReturnValue(rawAssetId);
     when(bigNumberToBalanceSpy)
       .calledWith(initialSupply, mockContext, isDivisible)
       .mockReturnValue(rawInitialSupply);
     when(nameToAssetNameSpy).calledWith(name, mockContext).mockReturnValue(rawName);
     when(booleanToBoolSpy).calledWith(isDivisible, mockContext).mockReturnValue(rawIsDivisible);
     when(stringToTickerKeySpy)
-      .calledWith(ticker, mockContext)
-      .mockReturnValue({ Ticker: rawTicker });
+      .calledWith(assetId, mockContext)
+      .mockReturnValue({ Ticker: rawAssetId });
     when(internalAssetTypeToAssetTypeSpy)
       .calledWith(assetType as KnownAssetType, mockContext)
       .mockReturnValue(rawType);
@@ -304,7 +304,7 @@ describe('createAsset procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should throw an error if an Asset with that ticker has already been launched', () => {
+  it('should throw an error if an Asset with that assetId has already been launched', () => {
     const proc = procedureMockUtils.getInstance<Params, FungibleAsset, Storage>(mockContext, {
       customTypeData: null,
       status: TickerReservationStatus.AssetCreated,
@@ -312,11 +312,11 @@ describe('createAsset procedure', () => {
     });
 
     return expect(prepareCreateAsset.call(proc, args)).rejects.toThrow(
-      `An Asset with ticker "${ticker}" already exists`
+      `An Asset with assetId "${assetId}" already exists`
     );
   });
 
-  it("should throw an error if that ticker hasn't been reserved and reservation is required", () => {
+  it("should throw an error if that assetId hasn't been reserved and reservation is required", () => {
     const proc = procedureMockUtils.getInstance<Params, FungibleAsset, Storage>(mockContext, {
       customTypeData: null,
       status: TickerReservationStatus.Free,
@@ -324,20 +324,20 @@ describe('createAsset procedure', () => {
     });
 
     return expect(prepareCreateAsset.call(proc, args)).rejects.toThrow(
-      `You must first reserve ticker "${ticker}" in order to create an Asset with it`
+      `You must first reserve assetId "${assetId}" in order to create an Asset with it`
     );
   });
 
-  it('should throw an error if the ticker contains non numeric characters', () => {
+  it('should throw an error if the assetId contains non numeric characters', () => {
     const proc = procedureMockUtils.getInstance<Params, FungibleAsset, Storage>(mockContext, {
       customTypeData: null,
       status: TickerReservationStatus.Reserved,
       signingIdentity,
     });
 
-    return expect(
-      prepareCreateAsset.call(proc, { ...args, ticker: 'SOME_TICKER!' })
-    ).rejects.toThrow('New Tickers can only contain alphanumeric values "_", "-", ".", and "/"');
+    return expect(prepareCreateAsset.call(proc, { ...args, assetId: '0x1234!' })).rejects.toThrow(
+      'New Tickers can only contain alphanumeric values "_", "-", ".", and "/"'
+    );
   });
 
   it('should add an Asset creation transaction to the batch', async () => {
@@ -353,11 +353,11 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetTransaction,
-          args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+          args: [rawName, rawAssetId, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
         },
       ],
       fee: undefined,
-      resolver: expect.objectContaining({ ticker }),
+      resolver: expect.objectContaining({ assetId }),
     });
 
     result = await prepareCreateAsset.call(proc, {
@@ -372,11 +372,11 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetTransaction,
-          args: [rawName, rawTicker, rawIsDivisible, rawType, [], null],
+          args: [rawName, rawAssetId, rawIsDivisible, rawType, [], null],
         },
       ],
       fee: undefined,
-      resolver: expect.objectContaining({ ticker }),
+      resolver: expect.objectContaining({ assetId }),
     });
   });
 
@@ -394,15 +394,15 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetTransaction,
-          args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+          args: [rawName, rawAssetId, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
         },
         {
           transaction: issueTransaction,
-          args: [rawTicker, rawInitialSupply, defaultPortfolioKind],
+          args: [rawAssetId, rawInitialSupply, defaultPortfolioKind],
         },
       ],
       fee: undefined,
-      resolver: expect.objectContaining({ ticker }),
+      resolver: expect.objectContaining({ assetId }),
     });
   });
 
@@ -424,15 +424,15 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetTransaction,
-          args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+          args: [rawName, rawAssetId, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
         },
         {
           transaction: issueTransaction,
-          args: [rawTicker, rawInitialSupply, defaultPortfolioKind],
+          args: [rawAssetId, rawInitialSupply, defaultPortfolioKind],
         },
       ],
       fee: undefined,
-      resolver: expect.objectContaining({ ticker }),
+      resolver: expect.objectContaining({ assetId }),
     });
   });
 
@@ -454,15 +454,15 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetTransaction,
-          args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+          args: [rawName, rawAssetId, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
         },
         {
           transaction: issueTransaction,
-          args: [rawTicker, rawInitialSupply, numberedPortfolioKind],
+          args: [rawAssetId, rawInitialSupply, numberedPortfolioKind],
         },
       ],
       fee: undefined,
-      resolver: expect.objectContaining({ ticker }),
+      resolver: expect.objectContaining({ assetId }),
     });
   });
 
@@ -482,11 +482,11 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetTransaction,
-          args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+          args: [rawName, rawAssetId, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
         },
       ],
       fee: undefined,
-      resolver: expect.objectContaining({ ticker }),
+      resolver: expect.objectContaining({ assetId }),
     });
 
     proc = procedureMockUtils.getInstance<Params, FungibleAsset, Storage>(mockContext, {
@@ -505,10 +505,10 @@ describe('createAsset procedure', () => {
         {
           transaction: createAssetTransaction,
           fee: protocolFees[0].plus(protocolFees[1]),
-          args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+          args: [rawName, rawAssetId, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
         },
       ],
-      resolver: expect.objectContaining({ ticker }),
+      resolver: expect.objectContaining({ assetId }),
     });
   });
 
@@ -539,16 +539,16 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetTx,
-          args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+          args: [rawName, rawAssetId, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
           fee: protocolFees[0].plus(protocolFees[1]).plus(protocolFees[2]),
         },
         {
           transaction: addDocumentsTx,
           feeMultiplier: new BigNumber(rawDocuments.length),
-          args: [rawDocuments, rawTicker],
+          args: [rawDocuments, rawAssetId],
         },
       ],
-      resolver: expect.objectContaining({ ticker }),
+      resolver: expect.objectContaining({ assetId }),
     });
   });
 
@@ -577,14 +577,14 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetTx,
-          args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+          args: [rawName, rawAssetId, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
         },
         {
           transaction: addStatsTx,
-          args: [{ Ticker: rawTicker }, mockStatsBtree],
+          args: [{ Ticker: rawAssetId }, mockStatsBtree],
         },
       ],
-      resolver: expect.objectContaining({ ticker }),
+      resolver: expect.objectContaining({ assetId }),
     });
   });
 
@@ -609,10 +609,10 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetWithCustomTypeTx,
-          args: [rawName, rawTicker, rawIsDivisible, rawValue, rawIdentifiers, rawFundingRound],
+          args: [rawName, rawAssetId, rawIsDivisible, rawValue, rawIdentifiers, rawFundingRound],
         },
       ],
-      resolver: expect.objectContaining({ ticker }),
+      resolver: expect.objectContaining({ assetId }),
     });
   });
 
@@ -629,7 +629,7 @@ describe('createAsset procedure', () => {
       let result = await boundFunc(args);
 
       expect(result).toEqual({
-        roles: [{ type: RoleType.TickerOwner, ticker }],
+        roles: [{ type: RoleType.TickerOwner, assetId }],
         permissions: {
           assets: [],
           portfolios: [],
@@ -655,7 +655,7 @@ describe('createAsset procedure', () => {
       });
 
       expect(result).toEqual({
-        roles: [{ type: RoleType.TickerOwner, ticker }],
+        roles: [{ type: RoleType.TickerOwner, assetId }],
         permissions: {
           assets: [],
           portfolios: [],
@@ -682,7 +682,7 @@ describe('createAsset procedure', () => {
       result = await boundFunc({ ...args, documents: [] });
 
       expect(result).toEqual({
-        roles: [{ type: RoleType.TickerOwner, ticker }],
+        roles: [{ type: RoleType.TickerOwner, assetId }],
         permissions: {
           assets: [],
           portfolios: [],
@@ -718,7 +718,7 @@ describe('createAsset procedure', () => {
       mockContext.getSigningIdentity.mockResolvedValue(signingIdentity);
     });
 
-    it('should return the custom asset type ID and bytes representation along with ticker reservation status', async () => {
+    it('should return the custom asset type ID and bytes representation along with assetId reservation status', async () => {
       const proc = procedureMockUtils.getInstance<Params, FungibleAsset, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 

@@ -1,8 +1,8 @@
 import { Bytes, Option, u32 } from '@polkadot/types';
 import {
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
   PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
-  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
@@ -14,7 +14,7 @@ import {
   Params,
   prepareRegisterMetadata,
 } from '~/api/procedures/registerMetadata';
-import { Context, MetadataEntry, PolymeshError } from '~/internal';
+import { BaseAsset, Context, MetadataEntry, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { ErrorCode, MetadataLockStatus, MetadataType, TxTags } from '~/types';
@@ -33,14 +33,15 @@ jest.mock(
 
 describe('registerMetadata procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
   let u32ToBigNumberSpy: jest.SpyInstance;
   let stringToBytesSpy: jest.SpyInstance;
   let metadataSpecToMeshMetadataSpecSpy: jest.SpyInstance;
 
   let queryMultiMock: jest.Mock;
-  let ticker: string;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let assetId: string;
+  let asset: BaseAsset;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let metadataNameMaxLength: BigNumber;
   let rawMetadataNameMaxLength: u32;
   let params: Params;
@@ -48,12 +49,12 @@ describe('registerMetadata procedure', () => {
   let rawName: Bytes;
   let rawSpecs: PolymeshPrimitivesAssetMetadataAssetMetadataSpec;
   let registerAssetMetadataLocalTypeTxMock: PolymeshTx<
-    [PolymeshPrimitivesTicker, Bytes, PolymeshPrimitivesAssetMetadataAssetMetadataSpec]
+    [PolymeshPrimitivesAssetAssetID, Bytes, PolymeshPrimitivesAssetMetadataAssetMetadataSpec]
   >;
 
   let registerAndSetLocalAssetMetadataMock: PolymeshTx<
     [
-      PolymeshPrimitivesTicker,
+      PolymeshPrimitivesAssetAssetID,
       Bytes,
       PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
       Bytes,
@@ -66,7 +67,7 @@ describe('registerMetadata procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     u32ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u32ToBigNumber');
     stringToBytesSpy = jest.spyOn(utilsConversionModule, 'stringToBytes');
     metadataSpecToMeshMetadataSpecSpy = jest.spyOn(
@@ -77,10 +78,11 @@ describe('registerMetadata procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    ticker = 'SOME_TICKER';
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    assetId = '0x1234';
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
+    asset = entityMockUtils.getBaseAssetInstance({ assetId });
 
-    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(assetToMeshAssetIdSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
 
     metadataNameMaxLength = new BigNumber(15);
     rawMetadataNameMaxLength = dsMockUtils.createMockU32(metadataNameMaxLength);
@@ -101,7 +103,7 @@ describe('registerMetadata procedure', () => {
     metadataSpecToMeshMetadataSpecSpy.mockReturnValue(rawSpecs);
 
     params = {
-      ticker,
+      asset,
       name,
       specs: {},
     };
@@ -187,7 +189,7 @@ describe('registerMetadata procedure', () => {
 
     expect(result).toEqual({
       transaction: registerAssetMetadataLocalTypeTxMock,
-      args: [rawTicker, rawName, rawSpecs],
+      args: [rawAssetId, rawName, rawSpecs],
       resolver: expect.any(Function),
     });
   });
@@ -229,7 +231,7 @@ describe('registerMetadata procedure', () => {
 
     expect(result).toEqual({
       transaction: registerAndSetLocalAssetMetadataMock,
-      args: [rawTicker, rawName, rawSpecs, rawValue, null],
+      args: [rawAssetId, rawName, rawSpecs, rawValue, null],
       resolver: expect.any(Function),
     });
 
@@ -244,7 +246,7 @@ describe('registerMetadata procedure', () => {
 
     expect(result).toEqual({
       transaction: registerAndSetLocalAssetMetadataMock,
-      args: [rawTicker, rawName, rawSpecs, rawValue, rawValueDetail],
+      args: [rawAssetId, rawName, rawSpecs, rawValue, rawValueDetail],
       resolver: expect.any(Function),
     });
   });
@@ -258,7 +260,7 @@ describe('registerMetadata procedure', () => {
       expect(boundFunc(params)).toEqual({
         permissions: {
           transactions: [TxTags.asset.RegisterAssetMetadataLocalType],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
           portfolios: [],
         },
       });
@@ -266,7 +268,7 @@ describe('registerMetadata procedure', () => {
       expect(boundFunc({ ...params, value: 'SOME_VALUE' })).toEqual({
         permissions: {
           transactions: [TxTags.asset.RegisterAndSetLocalAssetMetadata],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
           portfolios: [],
         },
       });
@@ -304,12 +306,12 @@ describe('registerMetadata procedure', () => {
     it('should return the new MetadataEntry', () => {
       const fakeContext = {} as Context;
 
-      const result = createMetadataResolver(ticker, fakeContext)({} as ISubmittableResult);
+      const result = createMetadataResolver(assetId, fakeContext)({} as ISubmittableResult);
 
       expect(result).toEqual(
         expect.objectContaining({
           id,
-          asset: expect.objectContaining({ ticker }),
+          asset: expect.objectContaining({ id: assetId }),
           type: MetadataType.Local,
         })
       );

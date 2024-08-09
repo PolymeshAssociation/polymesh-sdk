@@ -66,7 +66,7 @@ describe('Polymesh Transaction Base class', () => {
 
   describe('method: toTransactionSpec', () => {
     it('should return the base tx spec of a transaction', () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const args = tuple('FOO');
       const resolver = (): number => 1;
       const transformer = (): number => 2;
@@ -117,7 +117,7 @@ describe('Polymesh Transaction Base class', () => {
       const transaction = dsMockUtils.createTxMock('utility', 'batchAll', {
         autoResolve: false,
       });
-      const underlyingTx = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const underlyingTx = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const args = tuple('A_TICKER');
 
       const tx = new PolymeshTransactionBatch(
@@ -163,7 +163,7 @@ describe('Polymesh Transaction Base class', () => {
         {
           ...txSpec,
           transactions: [
-            { transaction: dsMockUtils.createTxMock('asset', 'registerTicker'), args },
+            { transaction: dsMockUtils.createTxMock('asset', 'registerUniqueTicker'), args },
           ],
           resolver: undefined,
         },
@@ -204,7 +204,7 @@ describe('Polymesh Transaction Base class', () => {
     });
 
     it('should resolve the result if it is a resolver function', async () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const args = tuple('YET_ANOTHER_TICKER');
       const resolverMock = jest.fn().mockResolvedValue(1);
       const balance = {
@@ -242,7 +242,7 @@ describe('Polymesh Transaction Base class', () => {
     });
 
     it('should throw an error if attempting to run a transaction that has already run', async () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const args = tuple('HOW_MANY_TICKERS_DO_I_NEED');
 
       const tx = new PolymeshTransaction(
@@ -263,7 +263,7 @@ describe('Polymesh Transaction Base class', () => {
     });
 
     it('should throw an error when the transaction is aborted', async () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker', {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker', {
         autoResolve: dsMockUtils.MockTxStatus.Aborted,
       });
       const args = tuple('IT_HURTS');
@@ -296,7 +296,9 @@ describe('Polymesh Transaction Base class', () => {
     });
 
     it('should throw an error when the transaction fails', async () => {
-      let transaction = dsMockUtils.createTxMock('asset', 'registerTicker', { autoResolve: false });
+      let transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker', {
+        autoResolve: false,
+      });
       const args = tuple('PLEASE_MAKE_IT_STOP');
 
       let tx = new PolymeshTransaction(
@@ -321,7 +323,9 @@ describe('Polymesh Transaction Base class', () => {
       await expect(runPromise).rejects.toThrow('Bad origin');
       expect(tx.status).toBe(TransactionStatus.Failed);
 
-      transaction = dsMockUtils.createTxMock('asset', 'registerTicker', { autoResolve: false });
+      transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker', {
+        autoResolve: false,
+      });
       tx = new PolymeshTransaction(
         {
           ...txSpec,
@@ -346,7 +350,9 @@ describe('Polymesh Transaction Base class', () => {
       );
       expect(tx.status).toBe(TransactionStatus.Failed);
 
-      transaction = dsMockUtils.createTxMock('asset', 'registerTicker', { autoResolve: false });
+      transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker', {
+        autoResolve: false,
+      });
       tx = new PolymeshTransaction(
         {
           ...txSpec,
@@ -369,7 +375,9 @@ describe('Polymesh Transaction Base class', () => {
       await expect(runPromise).rejects.toThrow('Unknown error');
       expect(tx.status).toBe(TransactionStatus.Failed);
 
-      transaction = dsMockUtils.createTxMock('asset', 'registerTicker', { autoResolve: false });
+      transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker', {
+        autoResolve: false,
+      });
       tx = new PolymeshTransaction(
         {
           ...txSpec,
@@ -397,7 +405,7 @@ describe('Polymesh Transaction Base class', () => {
       const message = 'Something went wrong';
       getBlockMock.mockRejectedValue(new Error(message));
 
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker', {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker', {
         autoResolve: false,
       });
       const args = tuple('HERE WE ARE AGAIN');
@@ -425,7 +433,7 @@ describe('Polymesh Transaction Base class', () => {
     });
 
     it('should throw an error if there is a problem unsubscribing', async () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker', {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker', {
         autoResolve: false,
       });
       const args = tuple('I HATE TESTING THESE THINGS');
@@ -453,7 +461,7 @@ describe('Polymesh Transaction Base class', () => {
     });
 
     it('should throw an error when the transaction is rejected', async () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker', {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker', {
         autoResolve: dsMockUtils.MockTxStatus.Rejected,
       });
       const args = tuple('THIS_IS_THE_LAST_ONE_I_SWEAR');
@@ -814,7 +822,7 @@ describe('Polymesh Transaction Base class', () => {
     });
 
     it('should execute the underlying transaction with the provided arguments, setting the tx and block hash when finished', async () => {
-      const underlyingTx = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const underlyingTx = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const args = [dsMockUtils.createMockText('A_TICKER')];
 
       const transaction = dsMockUtils.createTxMock('multiSig', 'createProposalAsKey', {
@@ -845,7 +853,7 @@ describe('Polymesh Transaction Base class', () => {
     });
 
     it('should use multiSigOpts.expiry if it is provided', async () => {
-      const underlyingTx = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const underlyingTx = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const args = [dsMockUtils.createMockText('A_TICKER')];
 
       dsMockUtils.createTxMock('multiSig', 'createProposalAsKey', {
@@ -874,7 +882,7 @@ describe('Polymesh Transaction Base class', () => {
     });
 
     it('should throw an error if trying to run a transaction that already ran', async () => {
-      const underlyingTx = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const underlyingTx = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const args = [dsMockUtils.createMockText('A_TICKER')];
 
       dsMockUtils.createTxMock('multiSig', 'createProposalAsKey', {});
@@ -924,7 +932,7 @@ describe('Polymesh Transaction Base class', () => {
     });
 
     it('should throw an error from running the transaction', async () => {
-      const underlyingTx = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const underlyingTx = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
 
       dsMockUtils.createTxMock('multiSig', 'createProposalAsKey', {
         autoResolve: MockTxStatus.Aborted,
@@ -948,7 +956,7 @@ describe('Polymesh Transaction Base class', () => {
 
   describe('method: onStatusChange', () => {
     it("should execute a callback when the transaction's status changes", async () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const args = tuple('I_HAVE_LOST_THE_WILL_TO_LIVE');
 
       const tx = new PolymeshTransaction(
@@ -973,7 +981,7 @@ describe('Polymesh Transaction Base class', () => {
     });
 
     it('should return an unsubscribe function', async () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker', {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker', {
         autoResolve: false,
       });
       const args = tuple('THE_ONLY_THING_THAT_KEEPS_ME_GOING_IS_THE_HOPE_OF_FULL_COVERAGE');
@@ -1042,7 +1050,7 @@ describe('Polymesh Transaction Base class', () => {
     });
 
     it('should fetch (if missing) and return transaction fees', async () => {
-      const tx1 = dsMockUtils.createTxMock('asset', 'registerTicker', { gas: rawGasFees[0] });
+      const tx1 = dsMockUtils.createTxMock('asset', 'registerUniqueTicker', { gas: rawGasFees[0] });
       const tx2 = dsMockUtils.createTxMock('asset', 'createAsset', { gas: rawGasFees[1] });
       dsMockUtils.createTxMock('utility', 'batchAll', { gas: rawGasFees[1] });
 
@@ -1061,7 +1069,7 @@ describe('Polymesh Transaction Base class', () => {
 
       let { fees, payingAccountData } = await tx.getTotalFees();
 
-      expect(fees.protocol).toEqual(new BigNumber(250));
+      expect(fees.protocol).toEqual(new BigNumber(200));
       expect(fees.gas).toEqual(new BigNumber(5));
       expect(payingAccountData.type).toBe(PayingAccountType.Caller);
       expect(payingAccountData.account.address).toBe('0xdummy');
@@ -1081,7 +1089,7 @@ describe('Polymesh Transaction Base class', () => {
 
       ({ fees, payingAccountData } = await tx.getTotalFees());
 
-      expect(fees.protocol).toEqual(new BigNumber(500));
+      expect(fees.protocol).toEqual(new BigNumber(400));
       expect(fees.gas).toEqual(new BigNumber(5));
       expect(payingAccountData.type).toBe(PayingAccountType.Caller);
       expect(payingAccountData.account.address).toBe('0xdummy');
@@ -1145,7 +1153,7 @@ describe('Polymesh Transaction Base class', () => {
 
       ({ fees, payingAccountData } = await tx.getTotalFees());
 
-      expect(fees.protocol).toEqual(new BigNumber(400));
+      expect(fees.protocol).toEqual(new BigNumber(350));
       expect(fees.gas).toEqual(new BigNumber(10));
       expect(payingAccountData.type).toBe(PayingAccountType.Caller);
       expect(payingAccountData.account.address).toBe('0xdummy');
@@ -1170,7 +1178,7 @@ describe('Polymesh Transaction Base class', () => {
     });
 
     it("should execute a callback when the queue's data has been processed by middleware V2", async () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const args = tuple('MAKE_IT_STOP');
 
       const tx = new PolymeshTransaction(
@@ -1214,7 +1222,7 @@ describe('Polymesh Transaction Base class', () => {
     });
 
     it('should execute a callback with an error if 10 seconds pass without the data being processed by middleware ', async () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const args = tuple('THE_PAIN_IS_UNBEARABLE');
 
       const tx = new PolymeshTransaction(
@@ -1252,7 +1260,7 @@ describe('Polymesh Transaction Base class', () => {
     });
 
     it('should throw an error if both middleware v1 and v2 are not enabled', async () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const args = tuple('PLEASE_NO_MORE');
 
       const tx = new PolymeshTransaction(
@@ -1281,7 +1289,7 @@ describe('Polymesh Transaction Base class', () => {
     });
 
     it('should return an unsubscribe function', async () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const args = tuple("I'M_DONE");
 
       const tx = new PolymeshTransaction(
@@ -1316,7 +1324,7 @@ describe('Polymesh Transaction Base class', () => {
 
   describe('getter: result', () => {
     it('should return a result if the transaction was successful', async () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const resolver = (): number => 1;
       const transformer = (): number => 2;
       const args = tuple('FOO');
@@ -1337,7 +1345,7 @@ describe('Polymesh Transaction Base class', () => {
     });
 
     it('should throw an error is the transaction was not successful', () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const args = tuple('FOO');
       const tx = new PolymeshTransaction(
         {
@@ -1361,7 +1369,7 @@ describe('Polymesh Transaction Base class', () => {
 
   describe('getter: isSuccess', () => {
     it('should be true if the transaction status is TransactionStatus.Success', async () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const args = tuple('FOO');
       const tx = new PolymeshTransaction(
         {
@@ -1379,7 +1387,7 @@ describe('Polymesh Transaction Base class', () => {
     });
 
     it('should be false otherwise', () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const args = tuple('FOO');
       const tx = new PolymeshTransaction(
         {
@@ -1430,7 +1438,7 @@ describe('Polymesh Transaction Base class', () => {
         .calledWith('SignerPayload', expect.objectContaining({ genesisHash }))
         .mockReturnValue(mockSignerPayload);
 
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const args = tuple('FOO');
 
       let tx = new PolymeshTransaction(

@@ -42,7 +42,7 @@ import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import { isFungibleLegBuilder, isNftLegBuilder, isOffChainLeg } from '~/utils';
 import { MAX_LEGS_LENGTH } from '~/utils/constants';
 import {
-  assetToMeshAssetInputParam,
+  assetToMeshAssetIdWithKey,
   bigNumberToBalance,
   bigNumberToU64,
   dateToMoment,
@@ -200,8 +200,6 @@ async function separateLegs(
   const offChainLegs: InstructionOffChainLeg[] = [];
 
   for (const leg of legs) {
-    const assetId = await asAssetId(leg.asset, context);
-
     if (isOffChainLeg(leg)) {
       offChainLegs.push(leg);
     } else {
@@ -209,6 +207,7 @@ async function separateLegs(
         isFungibleLegBuilder(leg, context),
         isNftLegBuilder(leg, context),
       ]);
+      const assetId = await asAssetId(leg.asset, context);
 
       if (isFungible(leg)) {
         validateFungibleLeg(leg, assetId);
@@ -394,7 +393,7 @@ async function getTxArgsAndErrors(
             {
               sender: rawFromPortfolio,
               receiver: rawToPortfolio,
-              ...assetToMeshAssetInputParam(baseAsset, context),
+              ...assetToMeshAssetIdWithKey(baseAsset, context),
               amount: bigNumberToBalance(amount, context),
             },
             context
@@ -440,7 +439,7 @@ async function getTxArgsAndErrors(
             {
               senderIdentity: rawFromIdentityId,
               receiverIdentity: rawToIdentityId,
-              ...assetToMeshAssetInputParam(new BaseAsset({ assetId: asset }, context), context),
+              ...assetToMeshAssetIdWithKey(new BaseAsset({ assetId: asset }, context), context),
               amount: bigNumberToBalance(offChainAmount, context),
             },
             context

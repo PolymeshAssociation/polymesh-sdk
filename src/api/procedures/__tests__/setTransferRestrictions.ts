@@ -1,11 +1,11 @@
 import { bool, BTreeSet, u64 } from '@polkadot/types';
 import { Permill } from '@polkadot/types/interfaces';
 import {
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
-  PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
@@ -28,14 +28,16 @@ import {
   ClaimPercentageRestrictionValue,
   ClaimType,
   ErrorCode,
+  FungibleAsset,
   Identity,
   StatType,
   TransferRestriction,
   TransferRestrictionType,
   TxTags,
 } from '~/types';
-import { PolymeshTx, TickerKey } from '~/types/internal';
+import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Asset/Fungible',
@@ -52,7 +54,7 @@ describe('setTransferRestrictions procedure', () => {
     PolymeshPrimitivesTransferComplianceTransferCondition,
     [TransferRestriction, Context]
   >;
-  let stringToTickerKeySpy: jest.SpyInstance<TickerKey, [string, Context]>;
+  let getAssetIdForStatsSpy: jest.SpyInstance;
   let stringToIdentityIdSpy: jest.SpyInstance;
   let identitiesToBtreeSetSpy: jest.SpyInstance<
     BTreeSet<PolymeshPrimitivesIdentityId>,
@@ -77,7 +79,8 @@ describe('setTransferRestrictions procedure', () => {
     ]
   >;
   let statSpy: jest.SpyInstance;
-  let ticker: string;
+  let assetId: string;
+  let asset: FungibleAsset;
   let count: BigNumber;
   let percentage: BigNumber;
   let maxInvestorRestriction: TransferRestriction;
@@ -86,7 +89,7 @@ describe('setTransferRestrictions procedure', () => {
   let claimPercentageRestriction: TransferRestriction;
   let claimCountRestrictionValue: ClaimCountRestrictionValue;
   let claimPercentageRestrictionValue: ClaimPercentageRestrictionValue;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let rawCount: u64;
   let rawPercentage: Permill;
   let rawCountRestriction: PolymeshPrimitivesTransferComplianceTransferCondition;
@@ -128,7 +131,7 @@ describe('setTransferRestrictions procedure', () => {
       utilsConversionModule,
       'transferRestrictionToPolymeshTransferCondition'
     );
-    stringToTickerKeySpy = jest.spyOn(utilsConversionModule, 'stringToTickerKey');
+    getAssetIdForStatsSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForStats');
     stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
     identitiesToBtreeSetSpy = jest.spyOn(utilsConversionModule, 'identitiesToBtreeSet');
     transferRestrictionTypeToStatOpTypeSpy = jest.spyOn(
@@ -143,7 +146,8 @@ describe('setTransferRestrictions procedure', () => {
     statisticsOpTypeToStatTypeSpy = jest.spyOn(utilsConversionModule, 'statisticsOpTypeToStatType');
     identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
     booleanToBoolSpy = jest.spyOn(utilsConversionModule, 'booleanToBool');
-    ticker = 'TICKER';
+    assetId = '0x1234';
+    asset = entityMockUtils.getFungibleAssetInstance({ assetId });
     count = new BigNumber(10);
     percentage = new BigNumber(49);
     maxInvestorRestriction = { type: TransferRestrictionType.Count, value: count };
@@ -177,19 +181,22 @@ describe('setTransferRestrictions procedure', () => {
   });
 
   let setAssetTransferComplianceTransaction: PolymeshTx<
-    [PolymeshPrimitivesTicker, PolymeshPrimitivesTransferComplianceTransferCondition]
+    [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesTransferComplianceTransferCondition]
   >;
   let setEntitiesExemptTransaction: PolymeshTx<
     [
       boolean,
-      { asset: { Ticker: PolymeshPrimitivesTicker }; op: PolymeshPrimitivesStatisticsStatOpType },
+      {
+        asset: { Ticker: PolymeshPrimitivesAssetAssetID };
+        op: PolymeshPrimitivesStatisticsStatOpType;
+      },
       BTreeSet<PolymeshPrimitivesIdentityId>
     ]
   >;
 
   beforeEach(() => {
     args = {
-      ticker,
+      asset,
       restrictions: [{ count }],
       type: TransferRestrictionType.Count,
     };
@@ -205,7 +212,7 @@ describe('setTransferRestrictions procedure', () => {
 
     mockContext = dsMockUtils.getContextInstance();
 
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
     rawCount = dsMockUtils.createMockU64(count);
     rawPercentage = dsMockUtils.createMockPermill(percentage.multipliedBy(10000));
     rawCountRestriction = dsMockUtils.createMockTransferCondition({ MaxInvestorCount: rawCount });
@@ -252,9 +259,7 @@ describe('setTransferRestrictions procedure', () => {
     when(transferRestrictionToPolymeshTransferConditionSpy)
       .calledWith(claimPercentageRestriction, mockContext)
       .mockReturnValue(rawClaimPercentageRestriction);
-    when(stringToTickerKeySpy)
-      .calledWith(ticker, mockContext)
-      .mockReturnValue({ Ticker: rawTicker });
+    when(getAssetIdForStatsSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
     when(stringToIdentityIdSpy)
       .calledWith(exemptedDid, mockContext)
       .mockReturnValue(rawExemptedDid);
@@ -300,7 +305,7 @@ describe('setTransferRestrictions procedure', () => {
       transactions: [
         {
           transaction: setAssetTransferComplianceTransaction,
-          args: [{ Ticker: rawTicker }, rawCountRestrictionBtreeSet],
+          args: [rawAssetId, rawCountRestrictionBtreeSet],
         },
       ],
       resolver: new BigNumber(1),
@@ -316,7 +321,7 @@ describe('setTransferRestrictions procedure', () => {
     );
 
     args = {
-      ticker,
+      asset,
       restrictions: [{ percentage }],
       type: TransferRestrictionType.Percentage,
     };
@@ -327,7 +332,7 @@ describe('setTransferRestrictions procedure', () => {
       transactions: [
         {
           transaction: setAssetTransferComplianceTransaction,
-          args: [{ Ticker: rawTicker }, rawPercentageRestrictionBtreeSet],
+          args: [rawAssetId, rawPercentageRestrictionBtreeSet],
         },
       ],
       resolver: new BigNumber(1),
@@ -343,7 +348,7 @@ describe('setTransferRestrictions procedure', () => {
     );
 
     args = {
-      ticker,
+      asset,
       restrictions: [claimCountRestrictionValue],
       type: TransferRestrictionType.ClaimCount,
     };
@@ -354,14 +359,14 @@ describe('setTransferRestrictions procedure', () => {
       transactions: [
         {
           transaction: setAssetTransferComplianceTransaction,
-          args: [{ Ticker: rawTicker }, rawClaimCountRestrictionBtreeSet],
+          args: [rawAssetId, rawClaimCountRestrictionBtreeSet],
         },
       ],
       resolver: new BigNumber(1),
     });
 
     args = {
-      ticker,
+      asset,
       restrictions: [claimPercentageRestrictionValue],
       type: TransferRestrictionType.ClaimPercentage,
     };
@@ -372,7 +377,7 @@ describe('setTransferRestrictions procedure', () => {
       transactions: [
         {
           transaction: setAssetTransferComplianceTransaction,
-          args: [{ Ticker: rawTicker }, rawClaimPercentageRestrictionBtreeSet],
+          args: [rawAssetId, rawClaimPercentageRestrictionBtreeSet],
         },
       ],
       resolver: new BigNumber(1),
@@ -408,7 +413,7 @@ describe('setTransferRestrictions procedure', () => {
       .calledWith(TransferRestrictionType.ClaimCount, mockContext)
       .mockReturnValue(op as unknown as PolymeshPrimitivesStatisticsStatOpType);
     args = {
-      ticker,
+      asset,
       restrictions: [{ ...claimCountRestrictionValue, exemptedIdentities: exemptedDids }],
       type: TransferRestrictionType.ClaimCount,
     };
@@ -420,14 +425,14 @@ describe('setTransferRestrictions procedure', () => {
       transactions: [
         {
           transaction: setAssetTransferComplianceTransaction,
-          args: [{ Ticker: rawTicker }, rawClaimCountRestrictionBtreeSet],
+          args: [rawAssetId, rawClaimCountRestrictionBtreeSet],
         },
         {
           transaction: setEntitiesExemptTransaction,
           feeMultiplier: new BigNumber(3),
           args: [
             rawTrue,
-            { asset: { Ticker: rawTicker }, op, claimType: ClaimType.Accredited },
+            { assetId: rawAssetId, op, claimType: ClaimType.Accredited },
             exemptedDidsBtreeSet,
           ],
         },
@@ -436,7 +441,7 @@ describe('setTransferRestrictions procedure', () => {
     });
 
     args = {
-      ticker,
+      asset,
       restrictions: [
         {
           count,
@@ -453,16 +458,12 @@ describe('setTransferRestrictions procedure', () => {
       transactions: [
         {
           transaction: setAssetTransferComplianceTransaction,
-          args: [{ Ticker: rawTicker }, rawCountRestrictionBtreeSet],
+          args: [rawAssetId, rawCountRestrictionBtreeSet],
         },
         {
           transaction: setEntitiesExemptTransaction,
           feeMultiplier: new BigNumber(3),
-          args: [
-            rawTrue,
-            { asset: { Ticker: rawTicker }, op, claimType: undefined },
-            exemptedDidsBtreeSet,
-          ],
+          args: [rawTrue, { assetId: rawAssetId, op, claimType: undefined }, exemptedDidsBtreeSet],
         },
       ],
       resolver: new BigNumber(1),
@@ -498,7 +499,7 @@ describe('setTransferRestrictions procedure', () => {
       .mockReturnValue(op as unknown as PolymeshPrimitivesStatisticsStatOpType);
 
     args = {
-      ticker,
+      asset,
       restrictions: [{ count }],
       type: TransferRestrictionType.Count,
     };
@@ -508,16 +509,12 @@ describe('setTransferRestrictions procedure', () => {
       transactions: [
         {
           transaction: setAssetTransferComplianceTransaction,
-          args: [{ Ticker: rawTicker }, rawCountRestrictionBtreeSet],
+          args: [rawAssetId, rawCountRestrictionBtreeSet],
         },
         {
           transaction: setEntitiesExemptTransaction,
           feeMultiplier: new BigNumber(2),
-          args: [
-            rawFalse,
-            { asset: { Ticker: rawTicker }, op, claimType: undefined },
-            exemptedDidsBtreeSet,
-          ],
+          args: [rawFalse, { assetId: rawAssetId, op, claimType: undefined }, exemptedDidsBtreeSet],
         },
       ],
       resolver: new BigNumber(1),
@@ -543,7 +540,7 @@ describe('setTransferRestrictions procedure', () => {
       .mockReturnValue(op as unknown as PolymeshPrimitivesStatisticsStatOpType);
 
     args = {
-      ticker,
+      asset,
       restrictions: [claimCountRestrictionValue],
       type: TransferRestrictionType.ClaimCount,
     };
@@ -554,14 +551,14 @@ describe('setTransferRestrictions procedure', () => {
       transactions: [
         {
           transaction: setAssetTransferComplianceTransaction,
-          args: [{ Ticker: rawTicker }, rawClaimCountRestrictionBtreeSet],
+          args: [rawAssetId, rawClaimCountRestrictionBtreeSet],
         },
         {
           transaction: setEntitiesExemptTransaction,
           feeMultiplier: new BigNumber(2),
           args: [
             rawFalse,
-            { asset: { Ticker: rawTicker }, op, claimType: ClaimType.Accredited },
+            { assetId: rawAssetId, op, claimType: ClaimType.Accredited },
             exemptedDidsBtreeSet,
           ],
         },
@@ -574,7 +571,7 @@ describe('setTransferRestrictions procedure', () => {
     args = {
       type: TransferRestrictionType.Count,
       restrictions: [],
-      ticker,
+      asset,
     };
 
     const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
@@ -597,7 +594,7 @@ describe('setTransferRestrictions procedure', () => {
       transactions: [
         {
           transaction: setAssetTransferComplianceTransaction,
-          args: [{ Ticker: rawTicker }, emptyConditionsBtreeSet],
+          args: [rawAssetId, emptyConditionsBtreeSet],
         },
       ],
       resolver: new BigNumber(0),
@@ -621,7 +618,7 @@ describe('setTransferRestrictions procedure', () => {
 
     await expect(
       prepareSetTransferRestrictions.call(proc, {
-        ticker,
+        asset,
         restrictions: [{ count }],
         type: TransferRestrictionType.Count,
       })
@@ -638,7 +635,7 @@ describe('setTransferRestrictions procedure', () => {
 
     return expect(
       prepareSetTransferRestrictions.call(proc, {
-        ticker,
+        asset,
         restrictions: [{ percentage }],
         type: TransferRestrictionType.Percentage,
       })
@@ -647,7 +644,7 @@ describe('setTransferRestrictions procedure', () => {
 
   it('should throw an error if attempting to remove an empty restriction list', async () => {
     args = {
-      ticker,
+      asset,
       restrictions: [],
       type: TransferRestrictionType.Count,
     };
@@ -668,9 +665,9 @@ describe('setTransferRestrictions procedure', () => {
     expect(err.message).toBe('The restrictions and exemptions are already in place');
   });
 
-  it('should throw an eStatTypeng to add more restrictions than there are slots available', async () => {
+  it('should throw an error if trying to add more restrictions than there are slots available', async () => {
     args = {
-      ticker,
+      asset,
       restrictions: [{ count }, { count: new BigNumber(2) }],
       type: TransferRestrictionType.Count,
     };
@@ -713,7 +710,7 @@ describe('setTransferRestrictions procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
           transactions: [TxTags.statistics.SetAssetTransferCompliance],
           portfolios: [],
         },
@@ -734,7 +731,7 @@ describe('setTransferRestrictions procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
           transactions: [
             TxTags.statistics.SetAssetTransferCompliance,
             TxTags.statistics.SetEntitiesExempt,
@@ -797,6 +794,8 @@ describe('setTransferRestrictions procedure', () => {
         },
       });
 
+      asset = entityMockUtils.getFungibleAssetInstance({ assetId });
+
       dsMockUtils.createQueryMock('statistics', 'activeAssetStats', {
         returnValue: rawStatTypeBtree,
       });
@@ -817,7 +816,7 @@ describe('setTransferRestrictions procedure', () => {
       const boundFunc = prepareStorage.bind(proc);
 
       args = {
-        ticker,
+        asset,
         type: TransferRestrictionType.Count,
         restrictions: [
           {
@@ -834,7 +833,7 @@ describe('setTransferRestrictions procedure', () => {
       });
 
       args = {
-        ticker,
+        asset,
         type: TransferRestrictionType.Percentage,
         restrictions: [
           {
@@ -878,7 +877,7 @@ describe('setTransferRestrictions procedure', () => {
       });
 
       args = {
-        ticker,
+        asset,
         type: TransferRestrictionType.ClaimCount,
         restrictions: [claimCountRestrictionValue],
       };
@@ -890,7 +889,7 @@ describe('setTransferRestrictions procedure', () => {
       });
 
       args = {
-        ticker,
+        asset,
         type: TransferRestrictionType.ClaimPercentage,
         restrictions: [claimPercentageRestrictionValue],
       };
