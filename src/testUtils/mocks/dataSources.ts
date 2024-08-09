@@ -2759,7 +2759,7 @@ export const createMockCountryCode = (
 export const createMockScope = (
   scope?:
     | { Identity: PolymeshPrimitivesIdentityId }
-    | { AssetId: PolymeshPrimitivesAssetAssetID }
+    | { Asset: PolymeshPrimitivesAssetAssetID }
     | { Custom: Bytes }
 ): MockCodec<PolymeshPrimitivesIdentityClaimScope> =>
   createMockEnum<PolymeshPrimitivesIdentityClaimScope>(scope);
@@ -4083,7 +4083,7 @@ export const createMockStatisticsStatType = (
   stat?:
     | PolymeshPrimitivesStatisticsStatType
     | {
-        op: PolymeshPrimitivesStatisticsStatOpType;
+        operationType: PolymeshPrimitivesStatisticsStatOpType;
         claimIssuer: Option<
           ITuple<[PolymeshPrimitivesIdentityClaimClaimType, PolymeshPrimitivesIdentityId]>
         >;
@@ -4093,17 +4093,17 @@ export const createMockStatisticsStatType = (
     return stat as MockCodec<PolymeshPrimitivesStatisticsStatType>;
   }
 
-  const { op, claimIssuer } = stat ?? {
-    op: createMockStatisticsOpType(),
+  const { operationType, claimIssuer } = stat ?? {
+    operationType: createMockStatisticsOpType(),
     claimIssuer: createMockOption(),
   };
 
   return createMockCodec(
     {
-      op,
+      operationType,
       claimIssuer: createMockOption(claimIssuer),
     },
-    !op
+    !operationType
   );
 };
 

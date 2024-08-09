@@ -1385,21 +1385,22 @@ export function authorizationToAuthorizationData(
     value = permissionsToMeshPermissions(auth.value, context);
   } else if (type === AuthorizationType.PortfolioCustody) {
     value = portfolioIdToMeshPortfolioId(portfolioToPortfolioId(auth.value), context);
-  } else if (
-    auth.type === AuthorizationType.TransferAssetOwnership ||
-    auth.type === AuthorizationType.TransferTicker
-  ) {
+  } else if (auth.type === AuthorizationType.TransferAssetOwnership) {
+    value = context.isV6
+      ? stringToTicker(auth.value, context)
+      : stringToAssetId(auth.value, context);
+  } else if (auth.type === AuthorizationType.TransferTicker) {
     value = stringToTicker(auth.value, context);
   } else if (type === AuthorizationType.RotatePrimaryKeyToSecondary) {
     value = permissionsToMeshPermissions(auth.value, context);
   } else if (type === AuthorizationType.BecomeAgent) {
-    const ticker = stringToTicker(auth.value.asset.id, context);
+    const assetId = assetToMeshAssetId(auth.value.asset, context);
     if (auth.value instanceof CustomPermissionGroup) {
       const { id } = auth.value;
-      value = [ticker, permissionGroupIdentifierToAgentGroup({ custom: id }, context)];
+      value = [assetId, permissionGroupIdentifierToAgentGroup({ custom: id }, context)];
     } else {
       const { type: groupType } = auth.value;
-      value = [ticker, permissionGroupIdentifierToAgentGroup(groupType, context)];
+      value = [assetId, permissionGroupIdentifierToAgentGroup(groupType, context)];
     }
   } else {
     value = auth.value;
@@ -2186,22 +2187,6 @@ export function cddStatusToBoolean(cddStatus: CddStatus): boolean {
   return false;
 }
 
-// /**
-//  * @hidden
-//  */
-// export function canTransferResultToTransferStatus(
-//   canTransferResult: DispatchError
-// ): TransferStatus {
-//   if (canTransferResult.isErr) {
-//     throw new PolymeshError({
-//       code: ErrorCode.UnexpectedError,
-//       message: `Error while checking transfer validity: ${bytesToString(canTransferResult.asErr)}`,
-//     });
-//   }
-
-//   return u8ToTransferStatus(canTransferResult.asOk);
-// }
-
 /**
  * @hidden
  */
@@ -2844,6 +2829,7 @@ export function txTagToProtocolOp(
 ): PolymeshCommonUtilitiesProtocolFeeProtocolOp {
   const protocolOpTags = [
     TxTags.asset.RegisterTicker,
+    TxTags.asset.RegisterUniqueTicker,
     TxTags.asset.Issue,
     TxTags.asset.AddDocuments,
     TxTags.asset.CreateAsset,
@@ -4084,13 +4070,22 @@ export function corporateActionParamsToMeshCorporateActionArgs(
  */
 export function statisticsOpTypeToStatType(
   args: {
-    op: PolymeshPrimitivesStatisticsStatOpType;
+    operationType: PolymeshPrimitivesStatisticsStatOpType;
     claimIssuer?: [PolymeshPrimitivesIdentityClaimClaimType, PolymeshPrimitivesIdentityId];
   },
   context: Context
 ): PolymeshPrimitivesStatisticsStatType {
-  const { op, claimIssuer } = args;
-  return context.createType('PolymeshPrimitivesStatisticsStatType', { op, claimIssuer });
+  const { operationType, claimIssuer } = args;
+  if (context.isV6) {
+    return context.createType('PolymeshPrimitivesStatisticsStatType', {
+      op: operationType,
+      claimIssuer,
+    });
+  }
+  return context.createType('PolymeshPrimitivesStatisticsStatType', {
+    operationType,
+    claimIssuer,
+  });
 }
 
 /**
@@ -4394,7 +4389,7 @@ export function inputStatTypeToMeshStatType(
   if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
     claimIssuer = claimIssuerToMeshClaimIssuer(input.claimIssuer, context);
   }
-  return statisticsOpTypeToStatType({ op, claimIssuer }, context);
+  return statisticsOpTypeToStatType({ operationType: op, claimIssuer }, context);
 }
 
 /**
@@ -4882,7 +4877,7 @@ export function middlewareAgentGroupDataToPermissionGroup(
     permissionGroupIdentifier = { custom: new BigNumber(agentGroup.custom!) };
   }
 
-  const ticker = coerceHexToString(asset);
+  const ticker = context.isV6 ? coerceHexToString(asset) : asset;
   return assemblePermissionGroup(permissionGroupIdentifier, ticker, context);
 }
 
@@ -4984,9 +4979,12 @@ export function middlewarePermissionsDataToPermissions(
   if (assetsPermissions) {
     assets = {
       values: [...assetsPermissions].map(
-        ticker => new FungibleAsset({ assetId: coerceHexToString(ticker) }, context)
+        assetId =>
+          new FungibleAsset(
+            { assetId: context.isV6 ? coerceHexToString(assetId) : assetId },
+            context
+          )
       ),
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       type: assetsType!,
     };
   }
@@ -5089,7 +5087,7 @@ export function middlewareAuthorizationDataToAuthorization(
     case AuthTypeEnum.TransferAssetOwnership: {
       return {
         type: AuthorizationType.TransferAssetOwnership,
-        value: coerceHexToString(data!),
+        value: context.isV6 ? coerceHexToString(data!) : data!,
       };
     }
     case AuthTypeEnum.PortfolioCustody: {

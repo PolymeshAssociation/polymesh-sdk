@@ -69,7 +69,10 @@ export async function prepareRemoveAssetStat(
 
   const op = statTypeToStatOpType(type, context);
 
-  const removeTarget = statisticsOpTypeToStatType({ op, claimIssuer: rawClaimIssuer }, context);
+  const removeTarget = statisticsOpTypeToStatType(
+    { operationType: op, claimIssuer: rawClaimIssuer },
+    context
+  );
   const statsArr = [...currentStats];
   const removeIndex = statsArr.findIndex(s => removeTarget.eq(s));
   if (removeIndex >= 0) {
