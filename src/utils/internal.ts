@@ -1909,7 +1909,7 @@ export function neededStatTypeForRestrictionInput(
   const rawOp = transferRestrictionTypeToStatOpType(type, context);
 
   const rawIssuer = claimIssuer ? claimIssuerToMeshClaimIssuer(claimIssuer, context) : undefined;
-  return statisticsOpTypeToStatType({ op: rawOp, claimIssuer: rawIssuer }, context);
+  return statisticsOpTypeToStatType({ operationType: rawOp, claimIssuer: rawIssuer }, context);
 }
 
 /**

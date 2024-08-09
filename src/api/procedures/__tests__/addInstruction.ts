@@ -444,6 +444,8 @@ describe('addInstruction procedure', () => {
 
     entityMockUtils.configureMocks({
       venueOptions: { exists: true },
+      fungibleAssetOptions: { exists: true },
+      nftCollectionOptions: { exists: false },
     });
 
     let error;
@@ -471,6 +473,8 @@ describe('addInstruction procedure', () => {
 
     entityMockUtils.configureMocks({
       venueOptions: { exists: true },
+      fungibleAssetOptions: { exists: false },
+      nftCollectionOptions: { exists: true },
     });
 
     let error;
@@ -558,6 +562,8 @@ describe('addInstruction procedure', () => {
 
     entityMockUtils.configureMocks({
       venueOptions: { exists: true },
+      fungibleAssetOptions: { exists: true },
+      nftCollectionOptions: { exists: false },
     });
 
     let error;
@@ -632,9 +638,9 @@ describe('addInstruction procedure', () => {
     });
 
     entityMockUtils.configureMocks({
-      venueOptions: {
-        exists: true,
-      },
+      venueOptions: { exists: true },
+      fungibleAssetOptions: { exists: true },
+      nftCollectionOptions: { exists: false },
     });
 
     let error;
@@ -710,6 +716,8 @@ describe('addInstruction procedure', () => {
       venueOptions: {
         exists: true,
       },
+      fungibleAssetOptions: { exists: true },
+      nftCollectionOptions: { exists: false },
     });
 
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
@@ -930,6 +938,8 @@ describe('addInstruction procedure', () => {
       venueOptions: {
         exists: true,
       },
+      nftCollectionOptions: { exists: false },
+      fungibleAssetOptions: { exists: true },
     });
     getCustodianMock.mockReturnValue({ did: toDid });
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
