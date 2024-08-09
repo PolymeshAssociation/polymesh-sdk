@@ -93,7 +93,7 @@ import {
 } from '~/utils/conversion';
 import {
   asAsset,
-  asBaseAssetV2,
+  asBaseAsset,
   calculateNextKey,
   createProcedureMethod,
   getAccount,
@@ -212,14 +212,20 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    * @note can be subscribed to, if connected to node using a web socket
    */
   public getAssetBalance(args: { ticker: string }): Promise<BigNumber>;
+  public getAssetBalance(args: { assetId: string }): Promise<BigNumber>;
   public getAssetBalance(
     args: { ticker: string },
     callback: SubCallback<BigNumber>
   ): Promise<UnsubCallback>;
 
+  public getAssetBalance(
+    args: { assetId: string },
+    callback: SubCallback<BigNumber>
+  ): Promise<UnsubCallback>;
+
   // eslint-disable-next-line require-jsdoc
   public async getAssetBalance(
-    args: { ticker: string },
+    args: { ticker?: string; assetId?: string },
     callback?: SubCallback<BigNumber>
   ): Promise<BigNumber | UnsubCallback> {
     const {
@@ -232,9 +238,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         isV6,
       },
     } = this;
-    const { ticker } = args;
+    const { ticker, assetId } = args;
 
-    const baseAsset = await asBaseAssetV2(ticker, context);
+    const baseAsset = await asAsset((assetId ?? ticker)!, context);
     const rawAssetId = assetToMeshAssetId(baseAsset, context);
     const rawIdentityId = stringToIdentityId(did, context);
 
@@ -250,7 +256,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     if (meshAsset.isNone) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
-        message: `There is no Asset with ticker "${ticker}"`,
+        message: `There is no Asset with ${ticker ? 'ticker' : 'asset ID'} "${ticker ?? assetId}"`,
       });
     }
 
@@ -1042,7 +1048,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       preApprovedStorage = (asset as any).preApprovedTicker;
     }
 
-    const baseAsset = await asBaseAssetV2(asset, context);
+    const baseAsset = await asBaseAsset(asset, context);
     const rawAssetId = assetToMeshAssetId(baseAsset, context);
 
     const rawDid = stringToIdentityId(this.did, context);

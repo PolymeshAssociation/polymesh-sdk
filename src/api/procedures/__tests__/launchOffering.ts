@@ -159,7 +159,7 @@ describe('launchOffering procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
     when(assetToMeshAssetIdSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
     jest
-      .spyOn(utilsInternalModule, 'asBaseAssetV2')
+      .spyOn(utilsInternalModule, 'asBaseAsset')
       .mockResolvedValue(entityMockUtils.getBaseAssetInstance({ assetId: raisingCurrency }));
     when(assetToMeshAssetIdSpy)
       .calledWith(expect.objectContaining({ id: raisingCurrency }), mockContext)

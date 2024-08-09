@@ -99,7 +99,7 @@ export class Network {
   /**
    * Retrieve the protocol fees associated with running specific transactions
    *
-   * @param args.tags - list of transaction tags (e.g. [TxTags.asset.CreateAsset, TxTags.asset.RegisterTicker] or ["asset.createAsset", "asset.registerTicker"])
+   * @param args.tags - list of transaction tags (e.g. [TxTags.asset.CreateAsset, TxTags.asset.RegisterUniqueTicker] or ["asset.createAsset", "asset.registerTicker"])
    */
   public getProtocolFees(args: { tags: TxTag[] }): Promise<ProtocolFees[]> {
     return this.context.getProtocolFees(args);

@@ -52,7 +52,7 @@ describe('MetadataEntry class', () => {
         expect.objectContaining({
           id,
           type,
-          asset: expect.objectContaining({ assetId }),
+          asset: expect.objectContaining({ id: assetId }),
         })
       );
     });

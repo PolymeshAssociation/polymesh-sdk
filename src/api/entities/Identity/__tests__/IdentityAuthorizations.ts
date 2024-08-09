@@ -62,14 +62,14 @@ describe('IdentityAuthorizations class', () => {
         {
           authId: new BigNumber(1),
           expiry: null,
-          data: { type: AuthorizationType.TransferAssetOwnership, value: 'myTicker' },
+          data: { type: AuthorizationType.TransferAssetOwnership, value: '0x1234' },
           target: entityMockUtils.getIdentityInstance({ did: 'alice' }),
           issuer: identity,
         } as const,
         {
           authId: new BigNumber(2),
           expiry: new Date('10/14/3040'),
-          data: { type: AuthorizationType.TransferAssetOwnership, value: 'otherTicker' },
+          data: { type: AuthorizationType.TransferAssetOwnership, value: '0x5678' },
           target: entityMockUtils.getIdentityInstance({ did: 'bob' }),
           issuer: identity,
         } as const,
@@ -83,7 +83,7 @@ describe('IdentityAuthorizations class', () => {
             expiry ? dsMockUtils.createMockMoment(new BigNumber(expiry.getTime())) : expiry
           ),
           authorizationData: dsMockUtils.createMockAuthorizationData({
-            TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
+            TransferAssetOwnership: dsMockUtils.createMockAssetId(data.value),
           }),
           authorizedBy: dsMockUtils.createMockIdentityId(did),
         })
@@ -165,7 +165,7 @@ describe('IdentityAuthorizations class', () => {
       const identityAuthorization = new IdentityAuthorizations(identity, context);
       const id = new BigNumber(1);
 
-      const data = { type: AuthorizationType.TransferAssetOwnership, value: 'myTicker' } as const;
+      const data = { type: AuthorizationType.TransferAssetOwnership, value: '0x1234' } as const;
 
       dsMockUtils.createQueryMock('identity', 'authorizationsGiven', {
         returnValue: dsMockUtils.createMockSignatory({
@@ -179,7 +179,7 @@ describe('IdentityAuthorizations class', () => {
           dsMockUtils.createMockAuthorization({
             authId: dsMockUtils.createMockU64(id),
             authorizationData: dsMockUtils.createMockAuthorizationData({
-              TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
+              TransferAssetOwnership: dsMockUtils.createMockAssetId(data.value),
             }),
             expiry: dsMockUtils.createMockOption(),
             authorizedBy: dsMockUtils.createMockIdentityId(did),
@@ -206,7 +206,7 @@ describe('IdentityAuthorizations class', () => {
       const identityAuthorization = new IdentityAuthorizations(identity, context);
       const id = new BigNumber(1);
 
-      const data = { type: AuthorizationType.TransferAssetOwnership, value: 'myTicker' } as const;
+      const data = { type: AuthorizationType.TransferAssetOwnership, value: '0x1234' } as const;
 
       dsMockUtils.createQueryMock('identity', 'authorizationsGiven', {
         returnValue: dsMockUtils.createMockSignatory(),
