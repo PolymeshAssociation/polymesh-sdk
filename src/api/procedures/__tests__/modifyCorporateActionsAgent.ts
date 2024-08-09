@@ -1,9 +1,9 @@
 import { Moment } from '@polkadot/types/interfaces';
 import {
   PolymeshPrimitivesAgentAgentGroup,
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesSecondaryKeySignatory,
-  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -18,7 +18,7 @@ import { Procedure } from '~/base/Procedure';
 import { Account, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, SignerValue, TxTags } from '~/types';
+import { Authorization, FungibleAsset, SignerValue, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -38,8 +38,9 @@ describe('modifyCorporateActionsAgent procedure', () => {
     PolymeshPrimitivesSecondaryKeySignatory,
     [SignerValue, Context]
   >;
-  let ticker: string;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let assetId: string;
+  let asset: FungibleAsset;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let rawAgentGroup: PolymeshPrimitivesAgentAgentGroup;
   let target: string;
   let rawSignatory: PolymeshPrimitivesSecondaryKeySignatory;
@@ -56,15 +57,16 @@ describe('modifyCorporateActionsAgent procedure', () => {
     dateToMomentSpy = jest.spyOn(utilsConversionModule, 'dateToMoment');
     signerToStringSpy = jest.spyOn(utilsConversionModule, 'signerToString');
     signerValueToSignatorySpy = jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
-    ticker = 'SOME_TICKER';
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    assetId = '0x1234';
+    asset = entityMockUtils.getFungibleAssetInstance({ assetId });
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
     rawAgentGroup = dsMockUtils.createMockAgentGroup('Full');
     target = 'someDid';
     rawSignatory = dsMockUtils.createMockSignatory({
       Identity: dsMockUtils.createMockIdentityId(target),
     });
     rawAuthorizationData = dsMockUtils.createMockAuthorizationData({
-      BecomeAgent: [rawTicker, rawAgentGroup],
+      BecomeAgent: [rawAssetId, rawAgentGroup],
     });
   });
 
@@ -94,7 +96,7 @@ describe('modifyCorporateActionsAgent procedure', () => {
   it("should throw an error if the supplied target doesn't exist", () => {
     const args = {
       target,
-      ticker,
+      asset,
     };
 
     dsMockUtils.configureMocks({ contextOptions: { invalidDids: [target] } });
@@ -107,15 +109,12 @@ describe('modifyCorporateActionsAgent procedure', () => {
   });
 
   it('should throw an error if the supplied Identity is currently the corporate actions agent', () => {
-    entityMockUtils.configureMocks({
-      fungibleAssetOptions: {
-        corporateActionsGetAgents: [entityMockUtils.getIdentityInstance({ did: target })],
-      },
-    });
-
     const args = {
       target,
-      ticker,
+      asset: entityMockUtils.getFungibleAssetInstance({
+        assetId,
+        corporateActionsGetAgents: [entityMockUtils.getIdentityInstance({ did: target })],
+      }),
       requestExpiry: new Date(),
     };
 
@@ -135,7 +134,7 @@ describe('modifyCorporateActionsAgent procedure', () => {
 
     const args = {
       target,
-      ticker,
+      asset,
       requestExpiry: new Date(),
     };
 
@@ -149,7 +148,7 @@ describe('modifyCorporateActionsAgent procedure', () => {
   it('should return an add authorization transaction spec', async () => {
     const args = {
       target,
-      ticker,
+      asset,
     };
     const requestExpiry = new Date('12/12/2050');
     const rawExpiry = dsMockUtils.createMockMoment(new BigNumber(requestExpiry.getTime()));
@@ -184,14 +183,14 @@ describe('modifyCorporateActionsAgent procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args = {
-        ticker,
+        asset,
       } as Params;
 
       expect(boundFunc(args)).toEqual({
         permissions: {
           portfolios: [],
           transactions: [TxTags.identity.AddAuthorization],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
         },
       });
     });

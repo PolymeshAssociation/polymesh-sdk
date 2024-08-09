@@ -1,4 +1,4 @@
-import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -25,8 +25,8 @@ jest.mock(
 
 describe('CorporateActions class', () => {
   let context: Context;
-  let ticker: string;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let assetId: string;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let asset: FungibleAsset;
   let corporateActions: CorporateActions;
 
@@ -35,11 +35,11 @@ describe('CorporateActions class', () => {
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    ticker = 'SOME_TICKER';
+    assetId = '0x1234';
 
-    when(jest.spyOn(utilsConversionModule, 'stringToTicker'))
-      .calledWith(ticker, context)
-      .mockReturnValue(rawTicker);
+    when(jest.spyOn(utilsConversionModule, 'stringToAssetId'))
+      .calledWith(assetId, context)
+      .mockReturnValue(rawAssetId);
   });
 
   beforeEach(() => {
@@ -48,7 +48,7 @@ describe('CorporateActions class', () => {
     procedureMockUtils.reset();
 
     context = dsMockUtils.getContextInstance();
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
     asset = entityMockUtils.getFungibleAssetInstance();
     corporateActions = new CorporateActions(asset, context);
   });
@@ -80,7 +80,7 @@ describe('CorporateActions class', () => {
       when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
-            args: { ticker: 'SOME_TICKER', targets, taxWithholdings, defaultTaxWithholding },
+            args: { asset, targets, taxWithholdings, defaultTaxWithholding },
             transformer: undefined,
           },
           context,
@@ -104,11 +104,7 @@ describe('CorporateActions class', () => {
       const corporateAction = new BigNumber(100);
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith(
-          { args: { corporateAction, ticker: 'SOME_TICKER' }, transformer: undefined },
-          context,
-          {}
-        )
+        .calledWith({ args: { corporateAction, asset }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
       const tx = await corporateActions.remove({ corporateAction });
@@ -121,16 +117,19 @@ describe('CorporateActions class', () => {
     it('should retrieve a list of agent Identities', async () => {
       const did = 'someDid';
       const otherDid = 'otherDid';
-      const fakeTicker = 'TEST';
+      const fakeAssetId = '0x9999';
 
       dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         entries: [
           tuple(
-            [dsMockUtils.createMockTicker(fakeTicker), dsMockUtils.createMockIdentityId(did)],
+            [dsMockUtils.createMockAssetId(fakeAssetId), dsMockUtils.createMockIdentityId(did)],
             dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('PolymeshV1CAA'))
           ),
           tuple(
-            [dsMockUtils.createMockTicker(fakeTicker), dsMockUtils.createMockIdentityId(otherDid)],
+            [
+              dsMockUtils.createMockAssetId(fakeAssetId),
+              dsMockUtils.createMockIdentityId(otherDid),
+            ],
             dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('PolymeshV1PIA'))
           ),
         ],

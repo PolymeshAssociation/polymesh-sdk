@@ -1,5 +1,5 @@
 import { u64 } from '@polkadot/types';
-import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import {
@@ -11,7 +11,7 @@ import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { createMockBTreeSet } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
-import { TxTags } from '~/types';
+import { FungibleAsset, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -21,11 +21,12 @@ jest.mock(
 
 describe('removeCheckpointSchedule procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
   let bigNumberToU64Spy: jest.SpyInstance;
   let u32ToBigNumberSpy: jest.SpyInstance;
-  let ticker: string;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let assetId: string;
+  let asset: FungibleAsset;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let id: BigNumber;
   let rawId: u64;
 
@@ -33,18 +34,19 @@ describe('removeCheckpointSchedule procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
     u32ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u32ToBigNumber');
-    ticker = 'SOME_TICKER';
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    assetId = '0x1234';
+    asset = entityMockUtils.getFungibleAssetInstance({ assetId });
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
     id = new BigNumber(1);
     rawId = dsMockUtils.createMockU64(id);
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    stringToTickerSpy.mockReturnValue(rawTicker);
+    assetToMeshAssetIdSpy.mockReturnValue(rawAssetId);
     bigNumberToU64Spy.mockReturnValue(rawId);
 
     dsMockUtils.createQueryMock('checkpoint', 'scheduleRefCount');
@@ -63,7 +65,7 @@ describe('removeCheckpointSchedule procedure', () => {
 
   it('should throw an error if the Schedule no longer exists', () => {
     const args = {
-      ticker,
+      asset,
       schedule: id,
     };
 
@@ -80,7 +82,7 @@ describe('removeCheckpointSchedule procedure', () => {
 
   it('should throw an error if Schedule Ref Count is not zero', () => {
     const args = {
-      ticker,
+      asset,
       schedule: id,
     };
 
@@ -101,7 +103,7 @@ describe('removeCheckpointSchedule procedure', () => {
 
   it('should return a remove schedule transaction spec', async () => {
     const args = {
-      ticker,
+      asset,
       schedule: id,
     };
 
@@ -116,17 +118,17 @@ describe('removeCheckpointSchedule procedure', () => {
 
     let result = await prepareRemoveCheckpointSchedule.call(proc, args);
 
-    expect(result).toEqual({ transaction, args: [rawTicker, rawId], resolver: undefined });
+    expect(result).toEqual({ transaction, args: [rawAssetId, rawId], resolver: undefined });
 
     transaction = dsMockUtils.createTxMock('checkpoint', 'removeSchedule');
     proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     result = await prepareRemoveCheckpointSchedule.call(proc, {
-      ticker,
+      asset,
       schedule: entityMockUtils.getCheckpointScheduleInstance(),
     });
 
-    expect(result).toEqual({ transaction, args: [rawTicker, rawId], resolver: undefined });
+    expect(result).toEqual({ transaction, args: [rawAssetId, rawId], resolver: undefined });
   });
 
   describe('getAuthorization', () => {
@@ -134,13 +136,13 @@ describe('removeCheckpointSchedule procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args = {
-        ticker,
+        asset,
       } as Params;
 
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.checkpoint.RemoveSchedule],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
           portfolios: [],
         },
       });

@@ -1,6 +1,6 @@
 import {
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
-  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -24,18 +24,18 @@ jest.mock(
 
 describe('clearMetadata procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
   let metadataToMeshMetadataKeySpy: jest.SpyInstance;
 
-  let ticker: string;
+  let assetId: string;
   let id: BigNumber;
   let type: MetadataType;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let rawMetadataKey: PolymeshPrimitivesAssetMetadataAssetMetadataKey;
   let params: Params;
 
   let removeMetadataValueMock: PolymeshTx<
-    [PolymeshPrimitivesTicker, PolymeshPrimitivesAssetMetadataAssetMetadataKey]
+    [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesAssetMetadataAssetMetadataKey]
   >;
 
   let isModifiableSpy: jest.SpyInstance;
@@ -47,19 +47,19 @@ describe('clearMetadata procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     metadataToMeshMetadataKeySpy = jest.spyOn(utilsConversionModule, 'metadataToMeshMetadataKey');
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    ticker = 'SOME_TICKER';
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    assetId = '0x1234';
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
 
     id = new BigNumber(1);
     type = MetadataType.Local;
 
-    metadataEntry = new MetadataEntry({ id, type, ticker }, mockContext);
+    metadataEntry = new MetadataEntry({ id, type, assetId }, mockContext);
 
     isModifiableSpy = jest.spyOn(metadataEntry, 'isModifiable');
     isModifiableSpy.mockResolvedValue({
@@ -68,7 +68,9 @@ describe('clearMetadata procedure', () => {
 
     params = { metadataEntry };
 
-    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(assetToMeshAssetIdSpy)
+      .calledWith(metadataEntry.asset, mockContext)
+      .mockReturnValue(rawAssetId);
 
     rawMetadataKey = dsMockUtils.createMockAssetMetadataKey({
       Local: dsMockUtils.createMockU64(id),
@@ -99,7 +101,7 @@ describe('clearMetadata procedure', () => {
 
     expect(result).toEqual({
       transaction: removeMetadataValueMock,
-      args: [rawTicker, rawMetadataKey],
+      args: [rawAssetId, rawMetadataKey],
       resolver: undefined,
     });
   });
@@ -127,7 +129,7 @@ describe('clearMetadata procedure', () => {
       expect(boundFunc(params)).toEqual({
         permissions: {
           transactions: [TxTags.asset.RemoveMetadataValue],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [metadataEntry.asset],
           portfolios: [],
         },
       });

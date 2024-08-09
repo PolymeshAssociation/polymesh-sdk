@@ -1,8 +1,8 @@
 import {
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesIdentityIdPortfolioKind,
   PolymeshPrimitivesNftNfTs,
-  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -38,17 +38,14 @@ describe('nftControllerTransfer procedure', () => {
     [PortfolioId, Context]
   >;
   let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance;
-  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
-  let nftToMeshNftSpy: jest.SpyInstance<
-    PolymeshPrimitivesNftNfTs,
-    [string, (BigNumber | Nft)[], Context]
-  >;
+  let stringToAssetIdSpy: jest.SpyInstance<PolymeshPrimitivesAssetAssetID, [string, Context]>;
+  let nftToMeshNftSpy: jest.SpyInstance;
   let portfolioToPortfolioKindSpy: jest.SpyInstance<
     PolymeshPrimitivesIdentityIdPortfolioKind,
     [NumberedPortfolio | DefaultPortfolio, Context]
   >;
-  let ticker: string;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let assetId: string;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let originDid: string;
   let signerDid: string;
   let rawPortfolioId: PolymeshPrimitivesIdentityIdPortfolioId;
@@ -70,10 +67,10 @@ describe('nftControllerTransfer procedure', () => {
     );
     portfolioToPortfolioKindSpy = jest.spyOn(utilsConversionModule, 'portfolioToPortfolioKind');
     nftToMeshNftSpy = jest.spyOn(utilsConversionModule, 'nftToMeshNft');
-    collection = entityMockUtils.getNftCollectionInstance({ ticker });
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    ticker = 'SOME_TICKER';
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    collection = entityMockUtils.getNftCollectionInstance({ assetId });
+    stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
+    assetId = '0x1234';
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
     originDid = 'fakeDid';
     signerDid = 'signerDid';
     rawPortfolioId = dsMockUtils.createMockPortfolioId({
@@ -82,9 +79,9 @@ describe('nftControllerTransfer procedure', () => {
     });
     rawDestinationPortfolioKind = dsMockUtils.createMockPortfolioKind('Default');
 
-    nfts = [new Nft({ id: new BigNumber(1), ticker }, mockContext)];
+    nfts = [new Nft({ id: new BigNumber(1), assetId }, mockContext)];
     rawNfts = dsMockUtils.createMockNfts({
-      ticker: rawTicker,
+      assetId: rawAssetId,
       ids: nfts.map(nft => dsMockUtils.createMockU64(nft.id)),
     });
     originPortfolio = entityMockUtils.getDefaultPortfolioInstance({
@@ -96,7 +93,7 @@ describe('nftControllerTransfer procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    stringToTickerSpy.mockReturnValue(rawTicker);
+    stringToAssetIdSpy.mockReturnValue(rawAssetId);
 
     originPortfolio = entityMockUtils.getDefaultPortfolioInstance({
       did: originDid,
@@ -117,7 +114,7 @@ describe('nftControllerTransfer procedure', () => {
 
     when(nftToMeshNftSpy)
       .calledWith(
-        ticker,
+        collection,
         nfts.map(({ id }) => id),
         mockContext
       )
@@ -149,7 +146,7 @@ describe('nftControllerTransfer procedure', () => {
 
     return expect(
       prepareNftControllerTransfer.call(proc, {
-        ticker,
+        collection,
         originPortfolio: selfPortfolio,
         nfts,
       })
@@ -164,7 +161,7 @@ describe('nftControllerTransfer procedure', () => {
 
     return expect(
       prepareNftControllerTransfer.call(proc, {
-        ticker,
+        collection,
         originPortfolio,
         nfts,
       })
@@ -182,7 +179,7 @@ describe('nftControllerTransfer procedure', () => {
 
     return expect(
       prepareNftControllerTransfer.call(proc, {
-        ticker,
+        collection,
         originPortfolio,
         nfts,
       })
@@ -198,14 +195,14 @@ describe('nftControllerTransfer procedure', () => {
     const transaction = dsMockUtils.createTxMock('nft', 'controllerTransfer');
 
     const result = await prepareNftControllerTransfer.call(proc, {
-      ticker,
+      collection,
       originPortfolio,
       nfts,
     });
 
     expect(result).toEqual({
       transaction,
-      args: [rawTicker, rawNfts, rawPortfolioId, rawDestinationPortfolioKind],
+      args: [rawNfts, rawPortfolioId, rawDestinationPortfolioKind],
       resolver: undefined,
     });
   });
@@ -227,11 +224,11 @@ describe('nftControllerTransfer procedure', () => {
         },
       ];
 
-      expect(await boundFunc({ ticker, originPortfolio, nfts })).toEqual({
+      expect(await boundFunc({ collection, originPortfolio, nfts })).toEqual({
         roles,
         permissions: {
           transactions: [TxTags.nft.ControllerTransfer],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [collection],
           portfolios: [
             expect.objectContaining({ owner: expect.objectContaining({ did: portfolioId.did }) }),
           ],
@@ -244,7 +241,7 @@ describe('nftControllerTransfer procedure', () => {
     it('should return the DID and portfolio of signing Identity', async () => {
       const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
-      const result = await boundFunc({ ticker, originPortfolio, nfts, destinationPortfolio });
+      const result = await boundFunc({ collection, originPortfolio, nfts, destinationPortfolio });
 
       expect(result).toEqual({
         did: 'someDid',
@@ -258,7 +255,7 @@ describe('nftControllerTransfer procedure', () => {
       );
       const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
-      const result = await boundFunc({ ticker, originPortfolio, nfts });
+      const result = await boundFunc({ collection, originPortfolio, nfts });
 
       expect(result).toEqual(
         expect.objectContaining({

@@ -69,8 +69,6 @@ describe('modifyClaims procedure', () => {
     stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
     balanceToBigNumberSpy = jest.spyOn(utilsConversionModule, 'balanceToBigNumber');
 
-    jest.spyOn(utilsConversionModule, 'stringToTicker').mockImplementation();
-
     someDid = 'someDid';
     otherDid = 'otherDid';
     cddId = 'cddId';
@@ -548,48 +546,47 @@ describe('modifyClaims procedure', () => {
       resolver: undefined,
     });
   });
-});
-
-describe('getAuthorization', () => {
-  it('should return the appropriate roles and permissions', () => {
-    let args = {
-      claims: [
-        {
-          target: 'someDid',
-          claim: { type: ClaimType.CustomerDueDiligence },
-        },
-      ],
-      operation: ClaimOperation.Add,
-    } as ModifyClaimsParams;
-
-    expect(getAuthorization(args)).toEqual({
-      roles: [{ type: RoleType.CddProvider }],
-      permissions: {
-        assets: [],
-        portfolios: [],
-        transactions: [TxTags.identity.AddClaim],
-      },
-    });
-
-    args = {
-      claims: [
-        {
-          target: 'someDid',
-          claim: {
-            type: ClaimType.Accredited,
-            scope: { type: ScopeType.Identity, value: 'someIdentityId' },
+  describe('getAuthorization', () => {
+    it('should return the appropriate roles and permissions', () => {
+      args = {
+        claims: [
+          {
+            target: 'someDid',
+            claim: { type: ClaimType.CustomerDueDiligence },
           },
-        },
-      ],
-      operation: ClaimOperation.Revoke,
-    } as ModifyClaimsParams;
+        ],
+        operation: ClaimOperation.Add,
+      } as ModifyClaimsParams;
 
-    expect(getAuthorization(args)).toEqual({
-      permissions: {
-        assets: [],
-        portfolios: [],
-        transactions: [TxTags.identity.RevokeClaim],
-      },
+      expect(getAuthorization(args)).toEqual({
+        roles: [{ type: RoleType.CddProvider }],
+        permissions: {
+          assets: [],
+          portfolios: [],
+          transactions: [TxTags.identity.AddClaim],
+        },
+      });
+
+      args = {
+        claims: [
+          {
+            target: 'someDid',
+            claim: {
+              type: ClaimType.Accredited,
+              scope: { type: ScopeType.Identity, value: 'someIdentityId' },
+            },
+          },
+        ],
+        operation: ClaimOperation.Revoke,
+      } as ModifyClaimsParams;
+
+      expect(getAuthorization(args)).toEqual({
+        permissions: {
+          assets: [],
+          portfolios: [],
+          transactions: [TxTags.identity.RevokeClaim],
+        },
+      });
     });
   });
 });

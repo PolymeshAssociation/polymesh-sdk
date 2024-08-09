@@ -1045,7 +1045,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     const receiver = entityMockUtils.getIdentityInstance({ did: 'offChainReceiverDid' });
     const offChainAsset = 'OFFCHAIN_ASSET';
     const amount = new BigNumber(1);
-    const asset = entityMockUtils.getFungibleAssetInstance({ ticker: 'SOME_ASSET' });
+    const asset = entityMockUtils.getFungibleAssetInstance({ assetId: 'SOME_ASSET' });
 
     it('should return the portfolios for which to modify affirmation status', async () => {
       const proc = procedureMockUtils.getInstance<

@@ -1,12 +1,12 @@
-import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
 import { when } from 'jest-when';
 
 import {
   getAuthorization,
   Params,
-  prepareToggleTickerPreApproval,
-} from '~/api/procedures/toggleTickerPreApproval';
-import { Context } from '~/internal';
+  prepareToggleAssetPreApproval,
+} from '~/api/procedures/toggleAssetPreApproval';
+import { BaseAsset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Identity, TxTags } from '~/types';
@@ -17,20 +17,22 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
 
-describe('toggleTickerPreApproval procedure', () => {
+describe('toggleAssetPreApproval procedure', () => {
   let mockContext: Mocked<Context>;
   let mockSigningIdentity: Mocked<Identity>;
-  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
-  let ticker: string;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
+  let assetId: string;
+  let asset: BaseAsset;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    ticker = 'TEST';
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
+    assetId = 'TEST';
+    asset = entityMockUtils.getBaseAssetInstance({ assetId });
+    rawAssetId = dsMockUtils.createMockTicker(assetId);
   });
 
   beforeEach(() => {
@@ -39,7 +41,9 @@ describe('toggleTickerPreApproval procedure', () => {
     });
     mockContext = dsMockUtils.getContextInstance();
     mockContext.getSigningIdentity.mockResolvedValue(mockSigningIdentity);
-    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(assetToMeshAssetIdSpy)
+      .calledWith(expect.objectContaining({ id: assetId }), mockContext)
+      .mockReturnValue(rawAssetId);
   });
 
   afterEach(() => {
@@ -58,8 +62,8 @@ describe('toggleTickerPreApproval procedure', () => {
     mockSigningIdentity.isAssetPreApproved.mockResolvedValue(true);
 
     return expect(
-      prepareToggleTickerPreApproval.call(proc, {
-        ticker,
+      prepareToggleAssetPreApproval.call(proc, {
+        asset,
         preApprove: true,
       })
     ).rejects.toThrow('The signing identity has already pre-approved the ticker');
@@ -69,8 +73,8 @@ describe('toggleTickerPreApproval procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(
-      prepareToggleTickerPreApproval.call(proc, {
-        ticker,
+      prepareToggleAssetPreApproval.call(proc, {
+        asset,
         preApprove: false,
       })
     ).rejects.toThrow('The signing identity has not pre-approved the asset');
@@ -79,16 +83,16 @@ describe('toggleTickerPreApproval procedure', () => {
   it('should return a pre approve transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    const transaction = dsMockUtils.createTxMock('asset', 'preApproveTicker');
+    const transaction = dsMockUtils.createTxMock('asset', 'preApproveAsset');
 
-    const result = await prepareToggleTickerPreApproval.call(proc, {
-      ticker,
+    const result = await prepareToggleAssetPreApproval.call(proc, {
+      asset,
       preApprove: true,
     });
 
     expect(result).toEqual({
       transaction,
-      args: [rawTicker],
+      args: [rawAssetId],
     });
   });
 
@@ -96,16 +100,16 @@ describe('toggleTickerPreApproval procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
     mockSigningIdentity.isAssetPreApproved.mockResolvedValue(true);
 
-    const transaction = dsMockUtils.createTxMock('asset', 'removeTickerPreApproval');
+    const transaction = dsMockUtils.createTxMock('asset', 'removeAssetPreApproval');
 
-    const result = await prepareToggleTickerPreApproval.call(proc, {
-      ticker,
+    const result = await prepareToggleAssetPreApproval.call(proc, {
+      asset,
       preApprove: false,
     });
 
     expect(result).toEqual({
       transaction,
-      args: [rawTicker],
+      args: [rawAssetId],
     });
   });
 
@@ -114,7 +118,7 @@ describe('toggleTickerPreApproval procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args: Params = {
-        ticker,
+        asset,
         preApprove: true,
       };
 

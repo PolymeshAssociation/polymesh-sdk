@@ -10,13 +10,13 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('payDividends procedure', () => {
-  const ticker = 'SOME_TICKER';
+  const assetId = '0x1234';
   const did = 'someDid';
   const id = new BigNumber(1);
   const paymentDate = new Date('10/14/1987');
   const expiryDate = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365);
 
-  const rawCaId = dsMockUtils.createMockCAId({ ticker, localId: id });
+  const rawCaId = dsMockUtils.createMockCAId({ assetId, localId: id });
 
   let distribution: DividendDistribution;
 
@@ -27,7 +27,7 @@ describe('payDividends procedure', () => {
   beforeAll(() => {
     entityMockUtils.initMocks({
       dividendDistributionOptions: {
-        ticker,
+        assetId,
         id,
         paymentDate,
         expiryDate,
@@ -71,7 +71,7 @@ describe('payDividends procedure', () => {
         ),
         treatment: TargetTreatment.Include,
       },
-      ticker,
+      assetId,
       id,
       paymentDate,
       expiryDate,
@@ -216,7 +216,7 @@ describe('payDividends procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
 
       distribution = entityMockUtils.getDividendDistributionInstance({
-        ticker,
+        assetId,
       });
 
       const result = await boundFunc();

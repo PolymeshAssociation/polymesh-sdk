@@ -424,14 +424,13 @@ export function assetToMeshAssetId(
   if (isV6) {
     return stringToTicker(id, context);
   }
-
   return stringToAssetId(id, context);
 }
 
 /**
  * @hidden
  */
-export function assetToMeshAssetInputParam(
+export function assetToMeshAssetIdWithKey(
   { id }: BaseAsset,
   context: Context
 ):
@@ -3164,7 +3163,7 @@ export function nftToMeshNft(
   context: Context
 ): PolymeshPrimitivesNftNfTs {
   return context.createType('PolymeshPrimitivesNftNfTs', {
-    ...assetToMeshAssetInputParam(assetArgs, context),
+    ...assetToMeshAssetIdWithKey(assetArgs, context),
     ids: nfts.map(id => bigNumberToU64(asNftId(id), context)),
   });
 }
@@ -3184,7 +3183,7 @@ export async function fungibleMovementToPortfolioFund(
     description: {
       Fungible: {
         amount: bigNumberToBalance(amount, context),
-        ...assetToMeshAssetInputParam(baseAsset, context),
+        ...assetToMeshAssetIdWithKey(baseAsset, context),
       },
     },
     memo: optionize(stringToMemo)(memo, context),
@@ -3205,7 +3204,7 @@ export async function nftMovementToPortfolioFund(
   return context.createType('PolymeshPrimitivesPortfolioFund', {
     description: {
       NonFungible: {
-        ...assetToMeshAssetInputParam(baseAsset, context),
+        ...assetToMeshAssetIdWithKey(baseAsset, context),
         ids: nfts.map(nftId => bigNumberToU64(asNftId(nftId), context)),
       },
     },
@@ -4020,7 +4019,7 @@ export function corporateActionIdentifierToCaId(
 ): PalletCorporateActionsCaId {
   const { asset, localId } = corporateActionIdentifier;
   return context.createType('PalletCorporateActionsCaId', {
-    ...assetToMeshAssetInputParam(asset, context),
+    ...assetToMeshAssetIdWithKey(asset, context),
     localId: bigNumberToU32(localId, context),
   });
 }

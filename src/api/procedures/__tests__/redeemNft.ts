@@ -1,5 +1,5 @@
 import { u64 } from '@polkadot/types';
-import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -13,7 +13,7 @@ import {
 import { Context, NumberedPortfolio, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode, TxTags } from '~/types';
+import { ErrorCode, NftCollection, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -39,28 +39,30 @@ jest.mock(
 
 describe('redeemNft procedure', () => {
   let mockContext: Mocked<Context>;
-  let ticker: string;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let assetId: string;
+  let collection: NftCollection;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let id: BigNumber;
   let rawId: u64;
-  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
   let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    ticker = 'SOME_TICKER';
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    assetId = '0x1234';
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
+    collection = entityMockUtils.getNftCollectionInstance({ assetId });
     id = new BigNumber(1);
     rawId = dsMockUtils.createMockU64(id);
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(assetToMeshAssetIdSpy).calledWith(collection, mockContext).mockReturnValue(rawAssetId);
     when(bigNumberToU64Spy).calledWith(id, mockContext).mockReturnValue(rawId);
   });
 
@@ -76,13 +78,13 @@ describe('redeemNft procedure', () => {
   });
 
   it('should return a redeemNft transaction spec', async () => {
-    const nft = entityMockUtils.getNftInstance({ ticker, id });
+    const nft = entityMockUtils.getNftInstance({ assetId, id });
 
     const from = entityMockUtils.getNumberedPortfolioInstance({
       id: new BigNumber(1),
       getCollections: [
         {
-          collection: entityMockUtils.getNftCollectionInstance({ ticker }),
+          collection,
           free: [nft],
           locked: [],
           total: new BigNumber(1),
@@ -104,13 +106,13 @@ describe('redeemNft procedure', () => {
       .mockReturnValue(rawPortfolioKind);
 
     const result = await prepareRedeemNft.call(proc, {
-      ticker,
+      collection,
       id,
       from,
     });
     expect(result).toEqual({
       transaction,
-      args: [rawTicker, rawId, rawPortfolioKind],
+      args: [rawAssetId, rawId, rawPortfolioKind],
       resolver: undefined,
     });
   });
@@ -120,7 +122,7 @@ describe('redeemNft procedure', () => {
       fromPortfolio: entityMockUtils.getNumberedPortfolioInstance({
         getCollections: [
           {
-            collection: entityMockUtils.getNftCollectionInstance({ ticker }),
+            collection,
             free: [],
             locked: [],
             total: new BigNumber(0),
@@ -136,7 +138,7 @@ describe('redeemNft procedure', () => {
 
     return expect(
       prepareRedeemNft.call(proc, {
-        ticker,
+        collection,
         id,
       })
     ).rejects.toThrow(expectedError);
@@ -157,7 +159,7 @@ describe('redeemNft procedure', () => {
       });
 
       const params = {
-        ticker,
+        collection,
         id,
       };
       const boundFunc = getAuthorization.bind(proc);
@@ -167,7 +169,7 @@ describe('redeemNft procedure', () => {
       expect(result).toEqual({
         permissions: {
           transactions: [TxTags.nft.RedeemNft],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
           portfolios: [fromPortfolio],
         },
       });

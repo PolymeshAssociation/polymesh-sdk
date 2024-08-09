@@ -1,4 +1,4 @@
-import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
 import { when } from 'jest-when';
 
 import {
@@ -6,7 +6,7 @@ import {
   Params,
   prepareToggleFreezeTransfers,
 } from '~/api/procedures/toggleFreezeTransfers';
-import { Context } from '~/internal';
+import { BaseAsset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { TxTags } from '~/types';
@@ -19,22 +19,26 @@ jest.mock(
 
 describe('toggleFreezeTransfers procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
-  let ticker: string;
-  let rawTicker: PolymeshPrimitivesTicker;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
+  let assetId: string;
+  let asset: BaseAsset;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    ticker = 'tickerFrozen';
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
+    assetId = '0x1234';
+    asset = entityMockUtils.getBaseAssetInstance({ assetId });
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(assetToMeshAssetIdSpy)
+      .calledWith(expect.objectContaining({ id: assetId }), mockContext)
+      .mockReturnValue(rawAssetId);
   });
 
   afterEach(() => {
@@ -49,17 +53,14 @@ describe('toggleFreezeTransfers procedure', () => {
   });
 
   it('should throw an error if freeze is set to true and the Asset is already frozen', () => {
-    entityMockUtils.configureMocks({
-      baseAssetOptions: {
-        isFrozen: true,
-      },
-    });
-
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(
       prepareToggleFreezeTransfers.call(proc, {
-        ticker,
+        asset: entityMockUtils.getBaseAssetInstance({
+          assetId,
+          isFrozen: true,
+        }),
         freeze: true,
       })
     ).rejects.toThrow('The Asset is already frozen');
@@ -70,7 +71,7 @@ describe('toggleFreezeTransfers procedure', () => {
 
     return expect(
       prepareToggleFreezeTransfers.call(proc, {
-        ticker,
+        asset,
         freeze: false,
       })
     ).rejects.toThrow('The Asset is already unfrozen');
@@ -82,35 +83,32 @@ describe('toggleFreezeTransfers procedure', () => {
     const transaction = dsMockUtils.createTxMock('asset', 'freeze');
 
     const result = await prepareToggleFreezeTransfers.call(proc, {
-      ticker,
+      asset,
       freeze: true,
     });
 
     expect(result).toEqual({
       transaction,
-      args: [rawTicker],
+      args: [rawAssetId],
     });
   });
 
   it('should add an unfreeze transaction spec', async () => {
-    entityMockUtils.configureMocks({
-      baseAssetOptions: {
-        isFrozen: true,
-      },
-    });
-
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const transaction = dsMockUtils.createTxMock('asset', 'unfreeze');
 
     const result = await prepareToggleFreezeTransfers.call(proc, {
-      ticker,
+      asset: entityMockUtils.getBaseAssetInstance({
+        assetId,
+        isFrozen: true,
+      }),
       freeze: false,
     });
 
     expect(result).toEqual({
       transaction,
-      args: [rawTicker],
+      args: [rawAssetId],
     });
   });
 
@@ -119,9 +117,7 @@ describe('toggleFreezeTransfers procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      const asset = expect.objectContaining({ ticker });
-
-      expect(boundFunc({ ticker, freeze: true })).toEqual({
+      expect(boundFunc({ asset, freeze: true })).toEqual({
         permissions: {
           transactions: [TxTags.asset.Freeze],
           assets: [asset],
@@ -129,7 +125,7 @@ describe('toggleFreezeTransfers procedure', () => {
         },
       });
 
-      expect(boundFunc({ ticker, freeze: false })).toEqual({
+      expect(boundFunc({ asset, freeze: false })).toEqual({
         permissions: {
           transactions: [TxTags.asset.Unfreeze],
           assets: [asset],

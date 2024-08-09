@@ -1051,7 +1051,7 @@ describe('Context class', () => {
         middlewareApiV2: dsMockUtils.getMiddlewareApi(),
       });
 
-      dsMockUtils.createTxMock('asset', 'registerTicker', {
+      dsMockUtils.createTxMock('asset', 'registerUniqueTicker', {
         meta: {
           args: [
             {
@@ -1062,7 +1062,9 @@ describe('Context class', () => {
         },
       });
 
-      expect(context.getTransactionArguments({ tag: TxTags.asset.RegisterTicker })).toMatchObject([
+      expect(
+        context.getTransactionArguments({ tag: TxTags.asset.RegisterUniqueTicker })
+      ).toMatchObject([
         {
           name: 'ticker',
           type: TransactionArgumentType.Text,
@@ -1203,26 +1205,6 @@ describe('Context class', () => {
           type: TransactionArgumentType.Text,
           name: 'someArg',
           optional: false,
-        },
-      ]);
-
-      dsMockUtils.createTxMock('asset', 'setFundingRound', {
-        meta: {
-          args: [
-            {
-              type: 'AssetOwnershipRelation',
-              name: 'relation',
-            },
-          ],
-        },
-      });
-
-      expect(context.getTransactionArguments({ tag: TxTags.asset.SetFundingRound })).toMatchObject([
-        {
-          type: TransactionArgumentType.SimpleEnum,
-          name: 'relation',
-          optional: false,
-          internal: ['NotOwned', 'TickerOwned', 'AssetOwned'],
         },
       ]);
 
@@ -1812,8 +1794,8 @@ describe('Context class', () => {
     });
 
     it('should return all distributions associated to the passed assets', async () => {
-      const tickers = ['TICKER_0', 'TICKER_1', 'TICKER_2'];
-      const rawTickers = tickers.map(dsMockUtils.createMockTicker);
+      const assetIds = ['0x0000', '0x1111', '0x2222'];
+      const rawAssetIds = assetIds.map(dsMockUtils.createMockAssetId);
 
       const polymeshApi = dsMockUtils.getApiInstance();
       const middlewareApiV2 = dsMockUtils.getMiddlewareApi();
@@ -1903,16 +1885,16 @@ describe('Context class', () => {
 
       const localIds = [new BigNumber(1), new BigNumber(2), new BigNumber(3)];
       const caIds = [
-        dsMockUtils.createMockCAId({ ticker: rawTickers[0], localId: localIds[0] }),
-        dsMockUtils.createMockCAId({ ticker: rawTickers[1], localId: localIds[1] }),
-        dsMockUtils.createMockCAId({ ticker: rawTickers[1], localId: localIds[2] }),
+        dsMockUtils.createMockCAId({ assetId: rawAssetIds[0], localId: localIds[0] }),
+        dsMockUtils.createMockCAId({ assetId: rawAssetIds[1], localId: localIds[1] }),
+        dsMockUtils.createMockCAId({ assetId: rawAssetIds[1], localId: localIds[2] }),
       ];
 
       dsMockUtils.createQueryMock('corporateAction', 'corporateActions', {
         entries: [
-          [[rawTickers[0], localIds[0]], corporateActions[0]],
-          [[rawTickers[1], localIds[1]], corporateActions[1]],
-          [[rawTickers[1], localIds[2]], corporateActions[2]],
+          [[rawAssetIds[0], localIds[0]], corporateActions[0]],
+          [[rawAssetIds[1], localIds[1]], corporateActions[1]],
+          [[rawAssetIds[1], localIds[2]], corporateActions[2]],
         ],
       });
       const details = [
@@ -1925,13 +1907,31 @@ describe('Context class', () => {
         'corporateActionIdentifierToCaId'
       );
       when(corporateActionIdentifierToCaIdSpy)
-        .calledWith({ ticker: tickers[0], localId: new BigNumber(localIds[0]) }, context)
+        .calledWith(
+          {
+            asset: expect.objectContaining({ id: assetIds[0] }),
+            localId: new BigNumber(localIds[0]),
+          },
+          context
+        )
         .mockReturnValue(caIds[0]);
       when(corporateActionIdentifierToCaIdSpy)
-        .calledWith({ ticker: tickers[1], localId: new BigNumber(localIds[1]) }, context)
+        .calledWith(
+          {
+            asset: expect.objectContaining({ id: assetIds[1] }),
+            localId: new BigNumber(localIds[1]),
+          },
+          context
+        )
         .mockReturnValue(caIds[1]);
       when(corporateActionIdentifierToCaIdSpy)
-        .calledWith({ ticker: tickers[1], localId: new BigNumber(localIds[2]) }, context)
+        .calledWith(
+          {
+            asset: expect.objectContaining({ id: assetIds[2] }),
+            localId: new BigNumber(localIds[2]),
+          },
+          context
+        )
         .mockReturnValue(caIds[2]);
 
       const detailsMock = dsMockUtils.createQueryMock('corporateAction', 'details');
@@ -1945,12 +1945,12 @@ describe('Context class', () => {
 
       const stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
 
-      tickers.forEach((ticker, index) =>
-        when(stringToTickerSpy).calledWith(ticker, context).mockReturnValue(rawTickers[index])
+      assetIds.forEach((ticker, index) =>
+        when(stringToTickerSpy).calledWith(ticker, context).mockReturnValue(rawAssetIds[index])
       );
 
       const result = await context.getDividendDistributionsForAssets({
-        assets: tickers.map(ticker => entityMockUtils.getFungibleAssetInstance({ ticker })),
+        assets: assetIds.map(ticker => entityMockUtils.getFungibleAssetInstance({ ticker })),
       });
 
       expect(result.length).toBe(2);

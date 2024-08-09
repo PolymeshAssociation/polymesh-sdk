@@ -278,7 +278,7 @@ describe('Procedure class', () => {
       posRatioToBigNumberSpy = jest.spyOn(utilsConversionModule, 'posRatioToBigNumber');
       balanceToBigNumberSpy = jest.spyOn(utilsConversionModule, 'balanceToBigNumber');
       txTagToProtocolOpSpy = jest.spyOn(utilsConversionModule, 'txTagToProtocolOp');
-      txTags = [TxTags.asset.RegisterTicker, TxTags.identity.CddRegisterDid];
+      txTags = [TxTags.asset.RegisterUniqueTicker, TxTags.identity.CddRegisterDid];
       fees = [new BigNumber(250), new BigNumber(0)];
       numerator = new BigNumber(7);
       denominator = new BigNumber(3);
@@ -292,7 +292,7 @@ describe('Procedure class', () => {
         returnValue: rawCoefficient,
       });
       when(dsMockUtils.createQueryMock('protocolFee', 'baseFees'))
-        .calledWith('AssetRegisterTicker')
+        .calledWith('AssetregisterUniqueTicker')
         .mockResolvedValue(rawFees[0]);
       when(dsMockUtils.createQueryMock('protocolFee', 'baseFees'))
         .calledWith('IdentityRegisterDid')
@@ -311,7 +311,7 @@ describe('Procedure class', () => {
     });
 
     it('should prepare and return a transaction spec with the corresponding transactions, arguments, fees and return value', async () => {
-      const tx1 = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const tx1 = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const tx2 = dsMockUtils.createTxMock('identity', 'cddRegisterDid');
 
       const func1 = async function (
@@ -461,7 +461,7 @@ describe('Procedure class', () => {
     });
 
     it('should detect when signer is a MultiSig signer', async () => {
-      const tx = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const tx = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
 
       const constructorMock = polymeshTransactionMockUtils.getTransactionConstructorMock();
 
@@ -512,7 +512,7 @@ describe('Procedure class', () => {
         this: Procedure<typeof procArgs, string>
       ): Promise<TransactionSpec<string, [string]>> {
         return {
-          transaction: dsMockUtils.createTxMock('asset', 'registerTicker'),
+          transaction: dsMockUtils.createTxMock('asset', 'registerUniqueTicker'),
           args: [ticker],
           resolver: 'success',
         };
@@ -607,7 +607,7 @@ describe('Procedure class', () => {
 
     beforeAll(() => {
       proc = new Procedure(async () => ({
-        transaction: dsMockUtils.createTxMock('asset', 'registerTicker'),
+        transaction: dsMockUtils.createTxMock('asset', 'registerUniqueTicker'),
         resolver: undefined,
         args: ['TICKER'],
       }));
@@ -633,7 +633,7 @@ describe('Procedure class', () => {
 
     beforeAll(() => {
       proc = new Procedure(async () => ({
-        transaction: dsMockUtils.createTxMock('asset', 'registerTicker'),
+        transaction: dsMockUtils.createTxMock('asset', 'registerUniqueTicker'),
         resolver: undefined,
         args: ['TICKER'],
       }));

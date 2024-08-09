@@ -102,10 +102,7 @@ export async function prepareNftControllerTransfer(
   return {
     transaction: tx.nft.controllerTransfer,
     args: [
-      {
-        assetId: rawAssetId,
-        ids: rawNfts,
-      },
+      rawNfts,
       portfolioIdToMeshPortfolioId(originPortfolioId, context),
       portfolioToPortfolioKind(destinationPortfolio, context),
     ],

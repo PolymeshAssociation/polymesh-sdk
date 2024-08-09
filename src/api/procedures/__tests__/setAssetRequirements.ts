@@ -1,8 +1,8 @@
 import { Vec } from '@polkadot/types';
 import {
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesCondition,
-  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -12,7 +12,7 @@ import {
   Params,
   prepareSetAssetRequirements,
 } from '~/api/procedures/setAssetRequirements';
-import { Context } from '~/internal';
+import { BaseAsset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -34,15 +34,16 @@ jest.mock(
 
 describe('setAssetRequirements procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
   let requirementToComplianceRequirementSpy: jest.SpyInstance<
     PolymeshPrimitivesComplianceManagerComplianceRequirement,
     [InputRequirement, Context]
   >;
-  let ticker: string;
+  let assetId: string;
+  let asset: BaseAsset;
   let requirements: Condition[][];
   let currentRequirements: Requirement[];
-  let rawTicker: PolymeshPrimitivesTicker;
+  let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let senderConditions: PolymeshPrimitivesCondition[][];
   let receiverConditions: PolymeshPrimitivesCondition[][];
   let rawComplianceRequirements: PolymeshPrimitivesComplianceManagerComplianceRequirement[];
@@ -52,12 +53,12 @@ describe('setAssetRequirements procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     requirementToComplianceRequirementSpy = jest.spyOn(
       utilsConversionModule,
       'requirementToComplianceRequirement'
     );
-    ticker = 'SOME_TICKER';
+    assetId = '0x1234';
     requirements = [
       [
         {
@@ -101,14 +102,21 @@ describe('setAssetRequirements procedure', () => {
       'receiverConditions1' as unknown as PolymeshPrimitivesCondition[],
       'receiverConditions2' as unknown as PolymeshPrimitivesCondition[],
     ];
-    rawTicker = dsMockUtils.createMockTicker(ticker);
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
+    asset = entityMockUtils.getBaseAssetInstance({
+      assetId,
+      complianceRequirementsGet: {
+        requirements: currentRequirements,
+        defaultTrustedClaimIssuers: [],
+      },
+    });
     args = {
-      ticker,
+      asset,
       requirements,
     };
   });
 
-  let resetAssetComplianceTransaction: PolymeshTx<[PolymeshPrimitivesTicker]>;
+  let resetAssetComplianceTransaction: PolymeshTx<[PolymeshPrimitivesAssetAssetID]>;
   let replaceAssetComplianceTransaction: PolymeshTx<
     Vec<PolymeshPrimitivesComplianceManagerComplianceRequirement>
   >;
@@ -116,14 +124,6 @@ describe('setAssetRequirements procedure', () => {
   beforeEach(() => {
     dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {
       returnValue: dsMockUtils.createMockU32(new BigNumber(50)),
-    });
-    entityMockUtils.configureMocks({
-      fungibleAssetOptions: {
-        complianceRequirementsGet: {
-          requirements: currentRequirements,
-          defaultTrustedClaimIssuers: [],
-        },
-      },
     });
 
     resetAssetComplianceTransaction = dsMockUtils.createTxMock(
@@ -138,7 +138,9 @@ describe('setAssetRequirements procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
 
     rawComplianceRequirements = [];
-    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(assetToMeshAssetIdSpy)
+      .calledWith(expect.objectContaining({ id: assetId }), mockContext)
+      .mockReturnValue(rawAssetId);
     requirements.forEach((conditions, index) => {
       const complianceRequirement = dsMockUtils.createMockComplianceRequirement({
         senderConditions: senderConditions[index],
@@ -178,26 +180,27 @@ describe('setAssetRequirements procedure', () => {
 
     expect(result).toEqual({
       transaction: resetAssetComplianceTransaction,
-      args: [rawTicker],
+      args: [rawAssetId],
     });
   });
 
   it('should return a replace asset compliance transaction spec', async () => {
-    entityMockUtils.configureMocks({
-      fungibleAssetOptions: {
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+    const result = await prepareSetAssetRequirements.call(proc, {
+      ...args,
+      asset: entityMockUtils.getBaseAssetInstance({
+        assetId,
         complianceRequirementsGet: {
           requirements: currentRequirements.slice(0, 1),
           defaultTrustedClaimIssuers: [],
         },
-      },
+      }),
     });
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-
-    const result = await prepareSetAssetRequirements.call(proc, args);
 
     expect(result).toEqual({
       transaction: replaceAssetComplianceTransaction,
-      args: [rawTicker, rawComplianceRequirements],
+      args: [rawAssetId, rawComplianceRequirements],
     });
   });
 
@@ -206,14 +209,14 @@ describe('setAssetRequirements procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const params = {
-        ticker,
+        asset,
         requirements: [],
       };
 
       expect(boundFunc(params)).toEqual({
         permissions: {
           transactions: [TxTags.complianceManager.ResetAssetCompliance],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
           portfolios: [],
         },
       });
@@ -221,7 +224,7 @@ describe('setAssetRequirements procedure', () => {
       expect(boundFunc({ ...params, requirements: [1] as unknown as InputCondition[][] })).toEqual({
         permissions: {
           transactions: [TxTags.complianceManager.ReplaceAssetCompliance],
-          assets: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ id: assetId })],
           portfolios: [],
         },
       });
