@@ -1078,6 +1078,7 @@ export async function asBaseAsset(asset: string | BaseAsset, context: Context): 
     baseAsset.ticker = ticker;
     return baseAsset;
   } else {
+    assertTickerValid(asset);
     const id = await getAssetIdForTicker(asset, context);
     const baseAsset = new BaseAsset({ assetId: id }, context);
     baseAsset.ticker = asset;
