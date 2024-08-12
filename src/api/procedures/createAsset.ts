@@ -1,17 +1,9 @@
 import { Bytes, u32 } from '@polkadot/types';
-import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
 
 import { addManualFees } from '~/api/procedures/utils';
-import {
-  Context,
-  FungibleAsset,
-  Identity,
-  PolymeshError,
-  Procedure,
-  TickerReservation,
-} from '~/internal';
+import { FungibleAsset, Identity, PolymeshError, Procedure, TickerReservation } from '~/internal';
 import {
   AssetTx,
   CreateAssetWithTickerParams,
@@ -30,7 +22,6 @@ import {
   fundingRoundToAssetFundingRound,
   inputStatTypeToMeshStatType,
   internalAssetTypeToAssetType,
-  meshAssetToAssetId,
   nameToAssetName,
   portfolioToPortfolioKind,
   securityIdentifierToAssetIdentifier,
@@ -39,7 +30,7 @@ import {
   stringToBytes,
   stringToTicker,
 } from '~/utils/conversion';
-import { checkTxType, filterEventRecords, isAllowedCharacters, optionize } from '~/utils/internal';
+import { checkTxType, isAllowedCharacters, optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -99,18 +90,6 @@ function assertTickerAvailable(
 /**
  * @hidden
  */
-export const createAssetResolver =
-  (context: Context) =>
-  (receipt: ISubmittableResult): FungibleAsset => {
-    const [{ data }] = filterEventRecords(receipt, 'asset', 'AssetCreated');
-    const assetId = meshAssetToAssetId(data[1], context);
-
-    return new FungibleAsset({ assetId }, context);
-  };
-
-/**
- * @hidden
- */
 export async function prepareCreateAsset(
   this: Procedure<Params, FungibleAsset, Storage>,
   args: Params
@@ -137,13 +116,20 @@ export async function prepareCreateAsset(
     initialStatistics,
   } = args;
 
-  const nextAssetId = await signingIdentity.getNextAssetId();
-
-  const rawAssetId = stringToAssetId(nextAssetId, context);
+  // to be used as ticker for 6.x chain and next asset id for 7.x chain
+  let rawAssetId;
+  let assetId: string;
 
   assertTickerAvailable(ticker, status, reservationRequired);
-
   const rawTicker = stringToTicker(ticker, context);
+
+  if (isV6) {
+    rawAssetId = rawTicker;
+    assetId = ticker;
+  } else {
+    assetId = await signingIdentity.getNextAssetId();
+    rawAssetId = stringToAssetId(assetId, context);
+  }
 
   const rawName = nameToAssetName(name, context);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -158,36 +144,45 @@ export async function prepareCreateAsset(
 
   let fee: BigNumber | undefined;
   if (status === TickerReservationStatus.Free) {
-    fee = await addManualFees(
-      new BigNumber(0),
-      [TxTags.asset.RegisterUniqueTicker, TxTags.asset.CreateAsset],
-      context
-    );
+    if (isV6) {
+      fee = await addManualFees(
+        new BigNumber(0),
+        [TxTags.asset.RegisterTicker, TxTags.asset.CreateAsset],
+        context
+      );
+    } else {
+      fee = await addManualFees(new BigNumber(0), [TxTags.asset.CreateAsset], context);
+    }
   }
 
   /*
-   * - if the passed Asset type isn't one of the fixed ones (custom), we check if there is already
-   *   an on-chain custom Asset type with that name:
+   * - if the passed Asset type isn't one of the fixed ones (custom),
+   *   we check if there is already an on-chain custom Asset type with that name:
    *   - if not, we create it together with the Asset
    *   - otherwise, we create the asset with the id of the existing custom asset type
    * - if the passed Asset type is a fixed one, we create the asset using that Asset type
    */
   if (customTypeData) {
-    const { rawValue, id } = customTypeData;
-
-    /*
-     * We add the fee for registering a custom asset type in case we're calculating
-     * the Asset creation fees manually
-     */
-    fee = await addManualFees(fee, [TxTags.asset.RegisterCustomAssetType], context);
+    const { rawValue: rawAssetType, id } = customTypeData;
 
     if (id.isEmpty) {
+      /*
+       * We add the fee for registering a custom asset type in case we're calculating
+       * the Asset creation fees manually
+       */
+      fee = await addManualFees(fee, [TxTags.asset.RegisterCustomAssetType], context);
       transactions.push(
         checkTxType({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           transaction: tx.asset.createAssetWithCustomType as any,
           fee,
-          args: [...rawNameTickerArgs, rawIsDivisible, rawValue, rawIdentifiers, rawFundingRound],
+          args: [
+            ...rawNameTickerArgs,
+            rawIsDivisible,
+            rawAssetType,
+            rawIdentifiers,
+            rawFundingRound,
+          ],
         })
       );
     } else {
@@ -215,6 +210,7 @@ export async function prepareCreateAsset(
     );
   }
 
+  // since 7.x, we need to separately register ticker first if ticker does not exists and then link to asset
   if (!isV6) {
     if (status === TickerReservationStatus.Free) {
       transactions.push(
@@ -240,8 +236,9 @@ export async function prepareCreateAsset(
 
     transactions.push(
       checkTxType({
-        transaction: tx.statistics.setActiveAssetStats,
-        args: [rawAssetId, bTreeStats],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        transaction: tx.statistics.setActiveAssetStats as any,
+        args: [isV6 ? { Ticker: rawAssetId } : rawAssetId, bTreeStats],
       })
     );
   }
@@ -279,7 +276,7 @@ export async function prepareCreateAsset(
 
   return {
     transactions,
-    resolver: createAssetResolver(context),
+    resolver: new FungibleAsset({ assetId }, context),
   };
 }
 
@@ -292,9 +289,19 @@ export async function getAuthorization(
 ): Promise<ProcedureAuthorization> {
   const {
     storage: { customTypeData, status },
+    context: { isV6 },
   } = this;
 
   const transactions: (AssetTx | StatisticsTx)[] = [TxTags.asset.CreateAsset];
+
+  if (!isV6) {
+    if (status === TickerReservationStatus.Free) {
+      transactions.push(TxTags.asset.RegisterUniqueTicker);
+    }
+    if (status !== TickerReservationStatus.AssetCreated) {
+      transactions.push(TxTags.asset.LinkTickerToAssetId);
+    }
+  }
 
   if (documents?.length) {
     transactions.push(TxTags.asset.AddDocuments);

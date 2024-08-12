@@ -1,9 +1,8 @@
-// TODO @prashantasdeveloper fix the logic here
-
 import { Bytes, u32 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
 
+import { addManualFees } from '~/api/procedures/utils';
 import {
   BaseAsset,
   FungibleAsset,
@@ -40,7 +39,7 @@ import {
   stringToBytes,
   stringToTicker,
 } from '~/utils/conversion';
-import { asBaseAsset, checkTxType, isAllowedCharacters, optionize } from '~/utils/internal';
+import { checkTxType, isAllowedCharacters, optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -74,6 +73,9 @@ export interface Storage {
 
   needsLocalMetadata: boolean;
   status?: TickerReservationStatus;
+  /**
+   * @note in case of V6, this will be same as ticker
+   */
   assetId: string;
   isAssetCreated: boolean;
 }
@@ -123,7 +125,12 @@ export async function prepareCreateNftCollection(
 
   const transactions = [];
 
-  const rawAssetId = assetToMeshAssetId(await asBaseAsset(assetId, context), context);
+  if (ticker) {
+    assertTickerOk(ticker);
+  }
+
+  const nftCollection = new NftCollection({ assetId }, context);
+  const rawAssetId = assetToMeshAssetId(nftCollection, context);
 
   const rawName = nameToAssetName(name ?? ticker ?? assetId, context);
   const rawNameTickerArgs = isV6 ? [rawName, rawAssetId] : [rawName];
@@ -139,8 +146,6 @@ export async function prepareCreateNftCollection(
   let nextLocalId = new BigNumber(1);
 
   let fee: BigNumber | undefined;
-
-  const txTags: TxTag[] = [TxTags.nft.CreateNftCollection];
 
   if (isAssetCreated) {
     /**
@@ -160,14 +165,18 @@ export async function prepareCreateNftCollection(
       });
     }
   } else {
-    if (isV6) {
-      txTags.push(TxTags.asset.RegisterUniqueTicker);
+    if (isV6 && status === TickerReservationStatus.Free) {
+      fee = await addManualFees(
+        new BigNumber(0),
+        [TxTags.asset.RegisterTicker, TxTags.asset.CreateAsset],
+        context
+      );
     }
-    txTags.push(TxTags.asset.CreateAsset);
     transactions.push(
       checkTxType({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         transaction: tx.asset.createAsset as any,
+        fee,
         args: [
           ...rawNameTickerArgs,
           rawDivisibility,
@@ -181,7 +190,6 @@ export async function prepareCreateNftCollection(
 
   if (!isV6 && ticker && status) {
     if (status === TickerReservationStatus.Free) {
-      txTags.push(TxTags.asset.RegisterUniqueTicker);
       transactions.push(
         checkTxType({
           transaction: tx.asset.registerUniqueTicker,
@@ -191,7 +199,6 @@ export async function prepareCreateNftCollection(
     }
 
     if (status !== TickerReservationStatus.AssetCreated) {
-      txTags.push(TxTags.asset.LinkTickerToAssetId);
       transactions.push(
         checkTxType({
           transaction: tx.asset.linkTickerToAssetId,
@@ -246,14 +253,13 @@ export async function prepareCreateNftCollection(
   transactions.push(
     checkTxType({
       transaction: tx.nft.createNftCollection,
-      fee,
       args: [rawAssetId, rawType, rawCollectionKeys],
     })
   );
 
   return {
     transactions,
-    resolver: new NftCollection({ assetId }, context),
+    resolver: nftCollection,
   };
 }
 
@@ -276,12 +282,13 @@ export async function getAuthorization(
     transactions.push(TxTags.asset.CreateAsset);
   }
 
-  if (!isV6 && status === TickerReservationStatus.Free) {
-    transactions.push(TxTags.asset.RegisterUniqueTicker);
-  }
-
-  if (!isV6 && status && status !== TickerReservationStatus.AssetCreated) {
-    transactions.push(TxTags.asset.LinkTickerToAssetId);
+  if (!isV6) {
+    if (status === TickerReservationStatus.Free) {
+      transactions.push(TxTags.asset.RegisterUniqueTicker);
+    }
+    if (status !== TickerReservationStatus.AssetCreated) {
+      transactions.push(TxTags.asset.LinkTickerToAssetId);
+    }
   }
 
   if (needsLocalMetadata) {
