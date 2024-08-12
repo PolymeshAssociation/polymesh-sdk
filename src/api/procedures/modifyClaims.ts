@@ -121,18 +121,19 @@ export async function prepareModifyClaims(
   ][] = [];
   let allTargets: string[] = [];
 
-  claims.forEach(({ target, expiry, claim }: ClaimTarget) => {
+  for (const claimValue of claims) {
+    const { target, expiry, claim } = claimValue as ClaimTarget;
     const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
 
     allTargets.push(signerToString(target));
     modifyClaimArgs.push(
       tuple(
         stringToIdentityId(signerToString(target), context),
-        claimToMeshClaim(claim, context),
+        await claimToMeshClaim(claim, context),
         rawExpiry
       )
     );
-  });
+  }
 
   allTargets = uniq(allTargets);
 

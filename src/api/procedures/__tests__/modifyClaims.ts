@@ -28,7 +28,10 @@ import * as utilsConversionModule from '~/utils/conversion';
 
 describe('modifyClaims procedure', () => {
   let mockContext: Mocked<Context>;
-  let claimToMeshClaimSpy: jest.SpyInstance<PolymeshPrimitivesIdentityClaimClaim, [Claim, Context]>;
+  let claimToMeshClaimSpy: jest.SpyInstance<
+    Promise<PolymeshPrimitivesIdentityClaimClaim>,
+    [Claim, Context]
+  >;
   let dateToMomentSpy: jest.SpyInstance<Moment, [Date, Context]>;
   let identityIdToStringSpy: jest.SpyInstance<string, [PolymeshPrimitivesIdentityId]>;
   let stringToIdentityIdSpy: jest.SpyInstance<PolymeshPrimitivesIdentityId, [string, Context]>;
@@ -129,13 +132,13 @@ describe('modifyClaims procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
     addClaimTransaction = dsMockUtils.createTxMock('identity', 'addClaim');
     revokeClaimTransaction = dsMockUtils.createTxMock('identity', 'revokeClaim');
-    when(claimToMeshClaimSpy).calledWith(cddClaim, mockContext).mockReturnValue(rawCddClaim);
+    when(claimToMeshClaimSpy).calledWith(cddClaim, mockContext).mockResolvedValue(rawCddClaim);
     when(claimToMeshClaimSpy)
       .calledWith(buyLockupClaim, mockContext)
-      .mockReturnValue(rawBuyLockupClaim);
+      .mockResolvedValue(rawBuyLockupClaim);
     when(claimToMeshClaimSpy)
       .calledWith(defaultCddClaim, mockContext)
-      .mockReturnValue(rawDefaultCddClaim);
+      .mockResolvedValue(rawDefaultCddClaim);
     when(stringToIdentityIdSpy).calledWith(someDid, mockContext).mockReturnValue(rawSomeDid);
     when(stringToIdentityIdSpy).calledWith(otherDid, mockContext).mockReturnValue(rawOtherDid);
     when(dateToMomentSpy).calledWith(expiry, mockContext).mockReturnValue(rawExpiry);
