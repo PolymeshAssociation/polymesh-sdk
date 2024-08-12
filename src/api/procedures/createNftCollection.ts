@@ -381,7 +381,7 @@ export async function prepareStorage(
         });
       }
       await assertNftCollectionDoesNotExists(reservationDetails.assetId);
-    } else {
+    } else if (!isV6) {
       storageStatus.assetId = await signingIdentity.getNextAssetId();
     }
   } else if (isV6) {
