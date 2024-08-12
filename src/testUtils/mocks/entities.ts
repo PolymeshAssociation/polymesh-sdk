@@ -154,6 +154,7 @@ interface IdentityOptions extends EntityOptions {
   isAssetPreApproved?: EntityGetter<boolean>;
   preApprovedAssets?: EntityGetter<ResultSet<Asset[]>>;
   getOffChainAuthorizationNonce?: EntityGetter<BigNumber>;
+  getNextAssetId?: EntityGetter<string>;
 }
 
 interface ChildIdentityOptions extends IdentityOptions {
@@ -601,6 +602,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     preApprovedAssets!: jest.Mock;
     isAssetPreApproved!: jest.Mock;
     getOffChainAuthorizationNonce!: jest.Mock;
+    getNextAssetId!: jest.Mock;
 
     /**
      * @hidden
@@ -643,6 +645,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
       this.getOffChainAuthorizationNonce = createEntityGetterMock(
         opts.getOffChainAuthorizationNonce
       );
+      this.getNextAssetId = createEntityGetterMock(opts.getNextAssetId);
     }
   },
   () => ({
@@ -682,6 +685,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     isAssetPreApproved: false,
     toHuman: 'someDid',
     getOffChainAuthorizationNonce: new BigNumber(0),
+    getNextAssetId: '0x1234',
   }),
   ['Identity']
 );
@@ -813,6 +817,7 @@ const MockChildIdentityClass = createMockEntityClass<ChildIdentityOptions>(
     preApprovedAssets: { data: [], next: null, count: new BigNumber(0) },
     isAssetPreApproved: false,
     getOffChainAuthorizationNonce: new BigNumber(0),
+    getNextAssetId: '0x1234',
   }),
   ['ChildIdentity', 'Identity']
 );

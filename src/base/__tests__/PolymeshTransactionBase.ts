@@ -1153,7 +1153,7 @@ describe('Polymesh Transaction Base class', () => {
 
       ({ fees, payingAccountData } = await tx.getTotalFees());
 
-      expect(fees.protocol).toEqual(new BigNumber(350));
+      expect(fees.protocol).toEqual(new BigNumber(400));
       expect(fees.gas).toEqual(new BigNumber(10));
       expect(payingAccountData.type).toBe(PayingAccountType.Caller);
       expect(payingAccountData.account.address).toBe('0xdummy');
