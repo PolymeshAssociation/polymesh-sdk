@@ -43,7 +43,10 @@ export const createDividendDistributionResolver =
   async (receipt: ISubmittableResult): Promise<DividendDistribution> => {
     const [{ data }] = filterEventRecords(receipt, 'capitalDistribution', 'Created');
     const [, caId, distribution] = data;
-    const { assetId, localId } = caId;
+    const { localId } = caId;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const assetId = context.isV6 ? (caId as any).ticker : caId.assetId;
 
     const { corporateAction } = context.polymeshApi.query;
 

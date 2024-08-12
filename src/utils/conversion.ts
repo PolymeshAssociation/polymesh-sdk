@@ -396,9 +396,9 @@ export function meshAssetToAssetId(
 ): string {
   const { isV6 } = context;
   if (isV6) {
-    return removePadding(u8aToString(value));
+    return tickerToString(value);
   }
-  return value.toString();
+  return assetIdToString(value);
 }
 
 /**
@@ -2190,21 +2190,21 @@ export function cddStatusToBoolean(cddStatus: CddStatus): boolean {
 /**
  * @hidden
  */
-export function scopeToMeshScope(
+export async function scopeToMeshScope(
   scope: Scope,
   context: Context
-): PolymeshPrimitivesIdentityClaimScope {
+): Promise<PolymeshPrimitivesIdentityClaimScope> {
   const { type, value } = scope;
 
   let scopeType: string = type;
   const { isV6 } = context;
 
-  let scopeValue: PolymeshPrimitivesTicker | PolymeshPrimitivesIdentityId | string;
+  let scopeValue: U8aFixed | PolymeshPrimitivesIdentityId | string;
   switch (type) {
     case ScopeType.Ticker:
     case ScopeType.Asset:
-      scopeValue = isV6 ? stringToTicker(value, context) : stringToAssetId(value, context);
-      scopeType = ScopeType.Asset;
+      scopeValue = await assetToMeshAssetId(new BaseAsset({ assetId: value }, context), context);
+      scopeType = isV6 ? ScopeType.Ticker : ScopeType.Asset;
       break;
     case ScopeType.Identity:
       scopeValue = stringToIdentityId(value, context);
@@ -2214,9 +2214,8 @@ export function scopeToMeshScope(
       break;
   }
 
-  return context.createType('PolymeshPrimitivesIdentityClaimScope', {
-    [scopeType]: scopeValue,
-  });
+  // TODO @prashantasdeveloper replace this by actual type when dual version is removed
+  return { [scopeType]: scopeValue } as unknown as PolymeshPrimitivesIdentityClaimScope;
 }
 
 /**
@@ -2231,7 +2230,7 @@ export function meshScopeToScope(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((scope as any).isTicker) {
       return {
-        type: ScopeType.Asset,
+        type: ScopeType.Ticker,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         value: tickerToString((scope as any).asTicker),
       };
@@ -2275,10 +2274,10 @@ export function cddIdToString(cddId: PolymeshPrimitivesCddId): string {
 /**
  * @hidden
  */
-export function claimToMeshClaim(
+export async function claimToMeshClaim(
   claim: Claim,
   context: Context
-): PolymeshPrimitivesIdentityClaimClaim {
+): Promise<PolymeshPrimitivesIdentityClaimClaim> {
   let value;
 
   switch (claim.type) {
@@ -2288,16 +2287,19 @@ export function claimToMeshClaim(
     }
     case ClaimType.Jurisdiction: {
       const { code, scope } = claim;
-      value = tuple(code, scopeToMeshScope(scope, context));
+      value = tuple(code, await scopeToMeshScope(scope, context));
       break;
     }
     case ClaimType.Custom: {
       const { customClaimTypeId, scope } = claim;
-      value = tuple(bigNumberToU32(customClaimTypeId, context), scopeToMeshScope(scope, context));
+      value = tuple(
+        bigNumberToU32(customClaimTypeId, context),
+        await scopeToMeshScope(scope, context)
+      );
       break;
     }
     default: {
-      value = scopeToMeshScope(claim.scope, context);
+      value = await scopeToMeshScope(claim.scope, context);
     }
   }
 
@@ -2557,14 +2559,14 @@ export function trustedClaimIssuerToTrustedIssuer(
 /**
  * @hidden
  */
-export function requirementToComplianceRequirement(
+export async function requirementToComplianceRequirement(
   requirement: InputRequirement,
   context: Context
-): PolymeshPrimitivesComplianceManagerComplianceRequirement {
+): Promise<PolymeshPrimitivesComplianceManagerComplianceRequirement> {
   const senderConditions: PolymeshPrimitivesCondition[] = [];
   const receiverConditions: PolymeshPrimitivesCondition[] = [];
 
-  requirement.conditions.forEach(condition => {
+  for (const condition of requirement.conditions) {
     let conditionContent:
       | PolymeshPrimitivesIdentityClaimClaim
       | PolymeshPrimitivesIdentityClaimClaim[]
@@ -2572,10 +2574,10 @@ export function requirementToComplianceRequirement(
     let { type } = condition;
     if (isSingleClaimCondition(condition)) {
       const { claim } = condition;
-      conditionContent = claimToMeshClaim(claim, context);
+      conditionContent = await claimToMeshClaim(claim, context);
     } else if (isMultiClaimCondition(condition)) {
       const { claims } = condition;
-      conditionContent = claims.map(claim => claimToMeshClaim(claim, context));
+      conditionContent = await Promise.all(claims.map(claim => claimToMeshClaim(claim, context)));
     } else if (isIdentityCondition(condition)) {
       const { identity } = condition;
       conditionContent = stringToTargetIdentity(signerToString(identity), context);
@@ -2606,7 +2608,7 @@ export function requirementToComplianceRequirement(
     if ([ConditionTarget.Both, ConditionTarget.Sender].includes(target)) {
       senderConditions.push(meshCondition);
     }
-  });
+  }
 
   return context.createType('PolymeshPrimitivesComplianceManagerComplianceRequirement', {
     senderConditions,
@@ -3877,7 +3879,7 @@ export function targetsToTargetIdentities(
 
   return context.createType('PalletCorporateActionsTargetIdentities', {
     identities: identities.map(identity => stringToIdentityId(signerToString(identity), context)),
-    treatment: context.createType('TargetTreatment', treatment),
+    treatment: context.createType('PalletCorporateActionsTargetTreatment', treatment),
   });
 }
 

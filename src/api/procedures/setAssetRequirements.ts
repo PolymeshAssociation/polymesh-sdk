@@ -67,10 +67,12 @@ export async function prepareSetAssetRequirements(
       resolver: undefined,
     };
   }
-  const rawAssetCompliance = requirements.map((requirement, index) =>
-    requirementToComplianceRequirement(
-      { conditions: requirement, id: new BigNumber(index) },
-      context
+  const rawAssetCompliance = await Promise.all(
+    requirements.map((requirement, index) =>
+      requirementToComplianceRequirement(
+        { conditions: requirement, id: new BigNumber(index) },
+        context
+      )
     )
   );
 

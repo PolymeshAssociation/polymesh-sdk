@@ -65,7 +65,7 @@ export async function prepareModifyComplianceRequirement(
     context
   );
 
-  const rawComplianceRequirement = requirementToComplianceRequirement(
+  const rawComplianceRequirement = await requirementToComplianceRequirement(
     { conditions: newConditions, id },
     context
   );

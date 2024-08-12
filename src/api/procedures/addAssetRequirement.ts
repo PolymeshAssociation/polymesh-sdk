@@ -58,7 +58,7 @@ export async function prepareAddAssetRequirement(
     context
   );
 
-  const { senderConditions, receiverConditions } = requirementToComplianceRequirement(
+  const { senderConditions, receiverConditions } = await requirementToComplianceRequirement(
     { conditions, id: new BigNumber(1) },
     context
   );

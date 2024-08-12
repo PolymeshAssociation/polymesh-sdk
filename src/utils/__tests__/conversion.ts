@@ -3702,66 +3702,57 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
   });
 
   describe('scopeToMeshScope', () => {
-    it('should convert a Custom type Scope into a polkadot Scope object', () => {
+    it('should convert a Custom type Scope into a polkadot Scope object', async () => {
       const context = dsMockUtils.getContextInstance();
       const value: Scope = {
         type: ScopeType.Custom,
         value: 'someValue',
       };
-      const fakeResult = 'ScopeEnum' as unknown as PolymeshPrimitivesIdentityClaimScope;
+      const fakeResult = { [ScopeType.Custom]: 'someValue' };
 
-      when(context.createType)
-        .calledWith('PolymeshPrimitivesIdentityClaimScope', { [value.type]: value.value })
-        .mockReturnValue(fakeResult);
+      const result = await scopeToMeshScope(value, context);
 
-      const result = scopeToMeshScope(value, context);
-
-      expect(result).toBe(fakeResult);
+      expect(result).toEqual(fakeResult);
     });
 
-    it('should convert a Identity type Scope into a polkadot Scope object', () => {
+    it('should convert a Identity type Scope into a polkadot Scope object', async () => {
       const context = dsMockUtils.getContextInstance();
       const value: Scope = {
         type: ScopeType.Identity,
         value: '0x51a5fed99b9d305ef26e6af92dd3dcb181a30a07dc5f075e260b82a92d48913c',
       };
-      const fakeResult = 'ScopeEnum' as unknown as PolymeshPrimitivesIdentityClaimScope;
       const fakeIdentityId =
         '0x51a5fed99b9d305ef26e6af92dd3dcb181a30a07dc5f075e260b82a92d48913c' as unknown as PolymeshPrimitivesIdentityId;
+      const fakeResult = { [value.type]: fakeIdentityId };
 
       when(context.createType)
         .calledWith('PolymeshPrimitivesIdentityId', value.value)
         .mockReturnValue(fakeIdentityId);
 
-      when(context.createType)
-        .calledWith('PolymeshPrimitivesIdentityClaimScope', { [value.type]: fakeIdentityId })
-        .mockReturnValue(fakeResult);
+      const result = await scopeToMeshScope(value, context);
 
-      const result = scopeToMeshScope(value, context);
-
-      expect(result).toBe(fakeResult);
+      expect(result).toEqual(fakeResult);
     });
 
-    it('should convert a Asset type Scope into a polkadot Scope object', () => {
+    it('should convert a Asset type Scope into a polkadot Scope object', async () => {
       const context = dsMockUtils.getContextInstance();
       const value: Scope = {
         type: ScopeType.Asset,
         value: '0x1234',
       };
-      const fakeResult = 'ScopeEnum' as unknown as PolymeshPrimitivesIdentityClaimScope;
       const fakeAssetId = '0x1234' as unknown as PolymeshPrimitivesAssetAssetID;
+
+      const fakeResult = {
+        [value.type]: fakeAssetId,
+      };
 
       when(context.createType)
         .calledWith('PolymeshPrimitivesAssetAssetID', value.value)
         .mockReturnValue(fakeAssetId);
 
-      when(context.createType)
-        .calledWith('PolymeshPrimitivesIdentityClaimScope', { [value.type]: fakeAssetId })
-        .mockReturnValue(fakeResult);
+      const result = await scopeToMeshScope(value, context);
 
-      const result = scopeToMeshScope(value, context);
-
-      expect(result).toBe(fakeResult);
+      expect(result).toEqual(fakeResult);
     });
   });
 
@@ -3830,7 +3821,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
   });
 
   describe('claimToMeshClaim', () => {
-    it('should convert a Claim to a polkadot PolymeshPrimitivesIdentityClaimClaim object', () => {
+    it('should convert a Claim to a polkadot PolymeshPrimitivesIdentityClaimClaim object', async () => {
       const context = dsMockUtils.getContextInstance();
       let value: Claim = {
         type: ClaimType.Jurisdiction,
@@ -3845,11 +3836,11 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
       when(createTypeMock).calledWith('Scope', expect.anything()).mockReturnValue(fakeScope);
       when(createTypeMock)
         .calledWith('PolymeshPrimitivesIdentityClaimClaim', {
-          [value.type]: [value.code, scopeToMeshScope(value.scope, context)],
+          [value.type]: [value.code, await scopeToMeshScope(value.scope, context)],
         })
         .mockReturnValue(fakeResult);
 
-      let result = claimToMeshClaim(value, context);
+      let result = await claimToMeshClaim(value, context);
 
       expect(result).toBe(fakeResult);
 
@@ -3860,11 +3851,11 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
 
       when(createTypeMock)
         .calledWith('PolymeshPrimitivesIdentityClaimClaim', {
-          [value.type]: scopeToMeshScope(value.scope, context),
+          [value.type]: await scopeToMeshScope(value.scope, context),
         })
         .mockReturnValue(fakeResult);
 
-      result = claimToMeshClaim(value, context);
+      result = await claimToMeshClaim(value, context);
 
       expect(result).toBe(fakeResult);
 
@@ -3879,7 +3870,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         })
         .mockReturnValue(fakeResult);
 
-      result = claimToMeshClaim(value, context);
+      result = await claimToMeshClaim(value, context);
 
       expect(result).toBe(fakeResult);
 
@@ -3893,12 +3884,12 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         .calledWith('PolymeshPrimitivesIdentityClaimClaim', {
           [value.type]: [
             bigNumberToU32(value.customClaimTypeId, context),
-            scopeToMeshScope(value.scope, context),
+            await scopeToMeshScope(value.scope, context),
           ],
         })
         .mockReturnValue(fakeResult);
 
-      result = claimToMeshClaim(value, context);
+      result = await claimToMeshClaim(value, context);
 
       expect(result).toBe(fakeResult);
     });
@@ -4129,7 +4120,7 @@ describe('corporateActionParamsToMeshCorporateActionArgs', () => {
       .mockReturnValue(rawRecordDate);
     when(createTypeMock).calledWith('Bytes', description).mockReturnValue(rawDetails);
     when(createTypeMock)
-      .calledWith('TargetTreatment', targets.treatment)
+      .calledWith('PalletCorporateActionsTargetTreatment', targets.treatment)
       .mockReturnValue(rawTargetTreatment);
     when(createTypeMock)
       .calledWith('PalletCorporateActionsTargetIdentities', {
@@ -4928,7 +4919,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
   });
 
   describe('requirementToComplianceRequirement', () => {
-    it('should convert a Requirement to a polkadot ComplianceRequirement object', () => {
+    it('should convert a Requirement to a polkadot ComplianceRequirement object', async () => {
       const did = 'someDid';
       const context = dsMockUtils.getContextInstance();
       const conditions: InputCondition[] = [
@@ -5024,7 +5015,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
         })
         .mockReturnValue(fakeResult);
 
-      const result = requirementToComplianceRequirement(value, context);
+      const result = await requirementToComplianceRequirement(value, context);
 
       expect(result).toEqual(fakeResult);
     });
@@ -7742,7 +7733,9 @@ describe('targetsToTargetIdentities', () => {
     const rawTreatment = dsMockUtils.createMockTargetTreatment();
 
     when(createTypeMock).calledWith('PolymeshPrimitivesIdentityId', did).mockReturnValue(rawDid);
-    when(createTypeMock).calledWith('TargetTreatment', treatment).mockReturnValue(rawTreatment);
+    when(createTypeMock)
+      .calledWith('PalletCorporateActionsTargetTreatment', treatment)
+      .mockReturnValue(rawTreatment);
     when(createTypeMock)
       .calledWith('PalletCorporateActionsTargetIdentities', {
         identities: [rawDid],
