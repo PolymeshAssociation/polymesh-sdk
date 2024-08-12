@@ -36,7 +36,7 @@ describe('setAssetRequirements procedure', () => {
   let mockContext: Mocked<Context>;
   let assetToMeshAssetIdSpy: jest.SpyInstance;
   let requirementToComplianceRequirementSpy: jest.SpyInstance<
-    PolymeshPrimitivesComplianceManagerComplianceRequirement,
+    Promise<PolymeshPrimitivesComplianceManagerComplianceRequirement>,
     [InputRequirement, Context]
   >;
   let assetId: string;
@@ -150,7 +150,7 @@ describe('setAssetRequirements procedure', () => {
       rawComplianceRequirements.push(complianceRequirement);
       when(requirementToComplianceRequirementSpy)
         .calledWith({ conditions, id: new BigNumber(index) }, mockContext)
-        .mockReturnValue(complianceRequirement);
+        .mockResolvedValue(complianceRequirement);
     });
   });
 
