@@ -1412,8 +1412,6 @@ function transformSchema(schemaObj) {
 
   camelCaseParamNames(asset.transferReport);
 
-  asset.canTransferGranular.params[0].type = 'Option<PolymeshPrimitivesIdentityId>';
-  asset.canTransferGranular.params[2].type = 'Option<PolymeshPrimitivesIdentityId>';
   runtime.AssetApi[0].methods['can_transfer_granular'] = {
     description:
       'Checks whether a transaction with given parameters can take place or not. The result is granular meaning each check is run and returned regardless of outcome.',
@@ -1446,7 +1444,7 @@ function transformSchema(schemaObj) {
     type: 'CanTransferGranularReturn',
   };
   runtime.AssetApi.push({
-    methods: runtime.AssetApi[0],
+    methods: runtime.AssetApi[0].methods,
     version: 3,
   });
 

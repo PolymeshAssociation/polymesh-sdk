@@ -141,12 +141,12 @@ export class Context {
     this.polymeshApi = polymeshApi;
     this.ss58Format = ss58Format;
 
-    this.isV6 = !('tickerAssetId' in polymeshApi.query.asset);
+    this.isV6 = false;
 
     this.unsubChainVersion = polymeshApi.query.system.lastRuntimeUpgrade(upgrade => {
       if (upgrade.isSome) {
         const { specVersion } = upgrade.unwrap();
-        this.isV6 = specVersion.toNumber() < 7000000;
+        this.isV6 = specVersion.toNumber() < 700000;
       }
     });
   }

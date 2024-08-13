@@ -362,6 +362,10 @@ describe('Identity class', () => {
 
       identity = new Identity({ did }, mockContext);
 
+      jest
+        .spyOn(utilsInternalModule, 'asBaseAsset')
+        .mockResolvedValue(entityMockUtils.getBaseAssetInstance({ assetId }));
+
       when(jest.spyOn(utilsConversionModule, 'assetToMeshAssetId'))
         .calledWith(expect.objectContaining({ id: assetId }), mockContext)
         .mockReturnValue(rawAssetId);

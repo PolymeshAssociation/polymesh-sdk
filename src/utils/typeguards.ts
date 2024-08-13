@@ -59,7 +59,7 @@ import {
   UnscopedClaim,
   VenueOwnerRole,
 } from '~/types';
-import { asAsset } from '~/utils/internal';
+import { asAsset, asBaseAsset } from '~/utils/internal';
 
 /**
  * Return whether value is an Entity
@@ -388,7 +388,8 @@ export const isFungibleLegBuilder = async (
   leg: InstructionLeg,
   context: Context
 ): Promise<IsFungibleLegGuard> => {
-  const asset = await asAsset(leg.asset, context);
+  const baseAsset = await asBaseAsset(leg.asset, context);
+  const asset = await asAsset(baseAsset.id, context);
 
   return (iLeg: InstructionLeg): iLeg is FungibleLeg => {
     return asset instanceof FungibleAsset;
@@ -409,7 +410,8 @@ export const isNftLegBuilder = async (
   leg: InstructionLeg,
   context: Context
 ): Promise<IsNftLegGuard> => {
-  const asset = await asAsset(leg.asset, context);
+  const baseAsset = await asBaseAsset(leg.asset, context);
+  const asset = await asAsset(baseAsset.id, context);
 
   return (iLeg: InstructionLeg): iLeg is NftLeg => {
     return asset instanceof NftCollection;
