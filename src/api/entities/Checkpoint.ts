@@ -238,7 +238,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
       balance = balanceToBigNumber(rawBalance);
     } else {
       // if no balanceUpdate has occurred since the Checkpoint has been created, then the current balance should be used. The Checkpoint storage will not have an entry
-      balance = await identity.getAssetBalance({ ticker: asset.id });
+      balance = await identity.getAssetBalance({ assetId: asset.id });
     }
 
     return balance;

@@ -3740,6 +3740,10 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
         type: ScopeType.Asset,
         value: '0x1234',
       };
+      jest
+        .spyOn(utilsInternalModule, 'asBaseAsset')
+        .mockResolvedValue(entityMockUtils.getBaseAssetInstance({ assetId: value.value }));
+
       const fakeAssetId = '0x1234' as unknown as PolymeshPrimitivesAssetAssetID;
 
       const fakeResult = {

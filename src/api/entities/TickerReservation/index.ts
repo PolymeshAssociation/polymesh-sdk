@@ -146,8 +146,8 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
       };
     };
 
-    let tickerRegistrationStorage;
-    let tokensStorage;
+    let tokensStorage = asset.securityTokens;
+    let tickerRegistrationStorage = asset.uniqueTickerRegistration;
     let rawAssetId = rawTicker;
 
     if (isV6) {
@@ -156,10 +156,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tokensStorage = (asset as any).tokens;
     } else {
-      tokensStorage = asset.securityTokens;
-      tickerRegistrationStorage = asset.uniqueTickerRegistration;
       const meshAssetId = await asset.tickerAssetID(rawTicker);
-
       rawAssetId = meshAssetId.unwrapOrDefault();
     }
 
@@ -169,22 +166,12 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
       return requestMulti<[typeof tickerRegistrationStorage, typeof tokensStorage]>(
         context,
         [
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          [tickerRegistrationStorage, rawTicker as any],
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          [tokensStorage, rawTicker as any],
+          [tickerRegistrationStorage, rawTicker],
+          [tokensStorage, rawAssetId],
         ],
         ([registration, token]) => {
           // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
-          callback(
-            assembleResultV6(
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              registration as any,
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              token as any,
-              meshAssetToAssetId(rawAssetId, context)
-            )
-          );
+          callback(assembleResultV6(registration, token, meshAssetToAssetId(rawAssetId, context)));
         }
       );
     }
@@ -192,17 +179,11 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
     const [tickerRegistration, meshAsset] = await requestMulti<
       [typeof tickerRegistrationStorage, typeof tokensStorage]
     >(context, [
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      [tickerRegistrationStorage, rawAssetId as any],
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      [tokensStorage, rawAssetId as any],
+      [tickerRegistrationStorage, rawTicker],
+      [tokensStorage, rawAssetId],
     ]);
 
-    return assembleResultV6(
-      tickerRegistration as Option<PalletAssetTickerRegistration>,
-      meshAsset as Option<PalletAssetSecurityToken>,
-      meshAssetToAssetId(rawAssetId, context)
-    );
+    return assembleResultV6(tickerRegistration, meshAsset, meshAssetToAssetId(rawAssetId, context));
   }
 
   /**
