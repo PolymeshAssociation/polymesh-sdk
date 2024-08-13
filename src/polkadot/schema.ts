@@ -381,7 +381,7 @@ export default {
       trustedFor: 'TrustedFor',
     },
     Condition: {
-      conditionType: 'ConditionType',
+      conditionType: 'PolymeshPrimitivesConditionConditionType',
       issuers: 'Vec<PolymeshPrimitivesConditionTrustedIssuer>',
     },
     ConditionResult: {
@@ -1018,6 +1018,100 @@ export default {
     AssetApi: [
       {
         methods: {
+          can_transfer_granular: {
+            description:
+              'Checks whether a transaction with given parameters can take place or not. The result is granular meaning each check is run and returned regardless of outcome.',
+            params: [
+              {
+                name: 'from_custodian',
+                type: 'Option<PolymeshPrimitivesIdentityId>',
+              },
+              {
+                name: 'from_portfolio',
+                type: 'PortfolioId',
+              },
+              {
+                name: 'to_custodian',
+                type: 'Option<PolymeshPrimitivesIdentityId>',
+              },
+              {
+                name: 'to_portfolio',
+                type: 'PortfolioId',
+              },
+              {
+                name: 'ticker',
+                type: 'Ticker',
+              },
+              {
+                name: 'value',
+                type: 'Balance',
+              },
+            ],
+            type: 'CanTransferGranularReturn',
+          },
+          transfer_report: {
+            description:
+              "Returns a vector containing all errors for the transfer. An empty vec means there's no error.",
+            params: [
+              {
+                name: 'sender_portfolio',
+                type: 'PortfolioId',
+              },
+              {
+                name: 'receiver_portfolio',
+                type: 'PortfolioId',
+              },
+              {
+                name: 'asset_id',
+                type: 'AssetID',
+              },
+              {
+                name: 'transfer_value',
+                type: 'Balance',
+              },
+              {
+                name: 'skip_locked_check',
+                type: 'bool',
+              },
+            ],
+            type: 'Vec<DispatchError>',
+          },
+        },
+        version: 3,
+      },
+      {
+        methods: {
+          can_transfer_granular: {
+            description:
+              'Checks whether a transaction with given parameters can take place or not. The result is granular meaning each check is run and returned regardless of outcome.',
+            params: [
+              {
+                name: 'from_custodian',
+                type: 'Option<PolymeshPrimitivesIdentityId>',
+              },
+              {
+                name: 'from_portfolio',
+                type: 'PortfolioId',
+              },
+              {
+                name: 'to_custodian',
+                type: 'Option<PolymeshPrimitivesIdentityId>',
+              },
+              {
+                name: 'to_portfolio',
+                type: 'PortfolioId',
+              },
+              {
+                name: 'ticker',
+                type: 'Ticker',
+              },
+              {
+                name: 'value',
+                type: 'Balance',
+              },
+            ],
+            type: 'CanTransferGranularReturn',
+          },
           transfer_report: {
             description:
               "Returns a vector containing all errors for the transfer. An empty vec means there's no error.",
