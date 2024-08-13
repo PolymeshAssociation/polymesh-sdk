@@ -1,7 +1,10 @@
 // Auto-generated via `yarn polkadot-types-from-defs`, do not edit
 /* eslint-disable */
 
-import { PolymeshPrimitivesConditionTrustedIssuer } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesConditionConditionType,
+  PolymeshPrimitivesConditionTrustedIssuer,
+} from '@polkadot/types/lookup';
 import type {
   Bytes,
   Enum,
@@ -244,7 +247,7 @@ export interface ComplianceRequirementResult extends Struct {
 
 /** @name Condition */
 export interface Condition extends Struct {
-  readonly conditionType: ConditionType;
+  readonly conditionType: PolymeshPrimitivesConditionConditionType;
   readonly issuers: Vec<PolymeshPrimitivesConditionTrustedIssuer>;
 }
 
@@ -1038,9 +1041,11 @@ export interface Scope extends Enum {
   readonly asIdentity: IdentityId;
   readonly isAsset: boolean;
   readonly asAsset: AssetID;
+  readonly isTicker: boolean;
+  readonly asTicker: Ticker;
   readonly isCustom: boolean;
   readonly asCustom: Bytes;
-  readonly type: 'Identity' | 'Asset' | 'Custom';
+  readonly type: 'Identity' | 'Asset' | 'Ticker' | 'Custom';
 }
 
 /** @name SecondaryKey */

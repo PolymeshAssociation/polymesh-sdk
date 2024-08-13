@@ -322,6 +322,7 @@ const schemaFile = {
       _enum: {
         Identity: 'IdentityId',
         Asset: 'AssetID',
+        Ticker: 'Ticker',
         Custom: 'Vec<u8>',
       },
     },
@@ -1024,6 +1025,37 @@ const schemaFile = {
     AssetApi: [
       {
         methods: {
+          can_transfer_granular: {
+            description:
+              'Checks whether a transaction with given parameters can take place or not. The result is granular meaning each check is run and returned regardless of outcome.',
+            params: [
+              {
+                name: 'from_custodian',
+                type: 'Option<PolymeshPrimitivesIdentityId>',
+              },
+              {
+                name: 'from_portfolio',
+                type: 'PortfolioId',
+              },
+              {
+                name: 'to_custodian',
+                type: 'Option<PolymeshPrimitivesIdentityId>',
+              },
+              {
+                name: 'to_portfolio',
+                type: 'PortfolioId',
+              },
+              {
+                name: 'ticker',
+                type: 'Ticker',
+              },
+              {
+                name: 'value',
+                type: 'Balance',
+              },
+            ],
+            type: 'CanTransferGranularReturn',
+          },
           transfer_report: {
             description:
               "Returns a vector containing all errors for the transfer. An empty vec means there's no error.",
@@ -1374,10 +1406,49 @@ function transformSchema(schemaObj) {
 
   camelCaseKeys(schemaObj, 'types', 'Condition');
   schemaObj.types.Condition.issuers = 'Vec<PolymeshPrimitivesConditionTrustedIssuer>';
+  schemaObj.types.Condition.conditionType = 'PolymeshPrimitivesConditionConditionType';
 
   camelCaseKeys(schemaObj, 'types', 'TrustedIssuer');
 
   camelCaseParamNames(asset.transferReport);
+
+  asset.canTransferGranular.params[0].type = 'Option<PolymeshPrimitivesIdentityId>';
+  asset.canTransferGranular.params[2].type = 'Option<PolymeshPrimitivesIdentityId>';
+  runtime.AssetApi[0].methods['can_transfer_granular'] = {
+    description:
+      'Checks whether a transaction with given parameters can take place or not. The result is granular meaning each check is run and returned regardless of outcome.',
+    params: [
+      {
+        name: 'from_custodian',
+        type: 'Option<PolymeshPrimitivesIdentityId>',
+      },
+      {
+        name: 'from_portfolio',
+        type: 'PortfolioId',
+      },
+      {
+        name: 'to_custodian',
+        type: 'Option<PolymeshPrimitivesIdentityId>',
+      },
+      {
+        name: 'to_portfolio',
+        type: 'PortfolioId',
+      },
+      {
+        name: 'ticker',
+        type: 'Ticker',
+      },
+      {
+        name: 'value',
+        type: 'Balance',
+      },
+    ],
+    type: 'CanTransferGranularReturn',
+  };
+  runtime.AssetApi.push({
+    methods: runtime.AssetApi[0],
+    version: 3,
+  });
 
   camelCaseParamNames(settlement.getExecuteInstructionInfo);
   camelCaseKeys(schemaObj, 'types', 'ExecuteInstructionInfo');
