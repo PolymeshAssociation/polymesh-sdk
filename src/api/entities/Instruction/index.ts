@@ -61,6 +61,7 @@ import {
   meshSettlementTypeToEndCondition,
   middlewareEventDetailsToEventIdentifier,
   momentToDate,
+  tickerToString,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
@@ -470,11 +471,9 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
               receiverIdentity,
               amount,
               ticker: rawTicker,
-              assetId: rawAssetId,
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            } = legValue.asOffChain as any;
+            } = legValue.asOffChain;
 
-            const assetId = meshAssetToAssetId(rawTicker || rawAssetId, context);
+            const ticker = tickerToString(rawTicker);
             const from = identityIdToString(senderIdentity);
             const to = identityIdToString(receiverIdentity);
 
@@ -482,7 +481,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
               from: new Identity({ did: from }, context),
               to: new Identity({ did: to }, context),
               offChainAmount: balanceToBigNumber(amount),
-              asset: assetId,
+              asset: ticker,
             };
           }
         } else {

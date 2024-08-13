@@ -744,10 +744,9 @@ describe('Instruction class', () => {
       const rawFromId = dsMockUtils.createMockIdentityId(fromDid);
       const toDid = 'toDid';
       const rawToId = dsMockUtils.createMockIdentityId(toDid);
-      const assetId = '0x1111';
+      const offChainAsset = 'SOME_TICKER';
       const amount = new BigNumber(10);
 
-      entityMockUtils.configureMocks({ fungibleAssetOptions: { assetId } });
       instructionStatusMock.mockResolvedValue(
         createMockInstructionStatus(InternalInstructionStatus.Pending)
       );
@@ -761,7 +760,7 @@ describe('Instruction class', () => {
           OffChain: {
             senderIdentity: rawFromId,
             receiverIdentity: rawToId,
-            assetId: dsMockUtils.createMockAssetId(assetId),
+            ticker: dsMockUtils.createMockTicker(offChainAsset),
             amount: dsMockUtils.createMockU128(amount.shiftedBy(6)),
           },
         })
@@ -780,7 +779,7 @@ describe('Instruction class', () => {
 
       const resultLeg = leg[0] as OffChainLeg;
       expect(resultLeg.offChainAmount).toEqual(amount);
-      expect(resultLeg.asset).toBe(assetId);
+      expect(resultLeg.asset).toBe(offChainAsset);
       expect(resultLeg.from.did).toBe(fromDid);
       expect(resultLeg.to.did).toBe(toDid);
     });
@@ -1515,11 +1514,11 @@ describe('Instruction class', () => {
       const receiverIdentity = 'receiverDid';
       const rawReceiverIdentity = dsMockUtils.createMockIdentityId(receiverIdentity);
 
-      const assetId = '0x123456';
+      const ticker = 'ABCDEF';
 
-      const rawAssetId = dsMockUtils.createMockAssetId(assetId);
-      rawAssetId.toHex = jest.fn();
-      rawAssetId.toHex.mockReturnValue('0x123456');
+      const rawTicker = dsMockUtils.createMockTicker(ticker);
+      rawTicker.toHex = jest.fn();
+      rawTicker.toHex.mockReturnValue('0xABCDEF0000');
 
       const amount = new BigNumber(10);
 
@@ -1532,7 +1531,7 @@ describe('Instruction class', () => {
               senderIdentity: rawSenderIdentity,
               receiverIdentity: rawReceiverIdentity,
               amount: rawAmount,
-              assetId: rawAssetId,
+              ticker: rawTicker,
             },
           })
         ),

@@ -57,6 +57,7 @@ import {
   portfolioLikeToPortfolioId,
   stringToIdentityId,
   stringToMemo,
+  stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
@@ -440,7 +441,7 @@ async function getTxArgsAndErrors(
             {
               senderIdentity: rawFromIdentityId,
               receiverIdentity: rawToIdentityId,
-              ...assetToMeshAssetIdWithKey(new BaseAsset({ assetId: asset }, context), context),
+              ticker: stringToTicker(asset, context),
               amount: bigNumberToBalance(offChainAmount, context),
             },
             context

@@ -4779,8 +4779,9 @@ export function legToOffChainLeg(
   leg: {
     senderIdentity: PolymeshPrimitivesIdentityId;
     receiverIdentity: PolymeshPrimitivesIdentityId;
+    ticker: PolymeshPrimitivesTicker;
     amount: Balance;
-  } & MeshTickerOrAssetId,
+  },
   context: Context
 ): PolymeshPrimitivesSettlementLeg {
   return context.createType('PolymeshPrimitivesSettlementLeg', { OffChain: leg });

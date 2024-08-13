@@ -154,7 +154,6 @@ interface IdentityOptions extends EntityOptions {
   isAssetPreApproved?: EntityGetter<boolean>;
   preApprovedAssets?: EntityGetter<ResultSet<Asset[]>>;
   getOffChainAuthorizationNonce?: EntityGetter<BigNumber>;
-  getNextAssetId?: EntityGetter<string>;
 }
 
 interface ChildIdentityOptions extends IdentityOptions {
@@ -254,6 +253,7 @@ interface AccountOptions extends EntityOptions {
   authorizationsGetReceived?: EntityGetter<AuthorizationRequest[]>;
   authorizationsGetOne?: EntityGetter<AuthorizationRequest>;
   getMultiSig?: EntityGetter<MultiSig | null>;
+  getNextAssetId?: EntityGetter<string>;
 }
 
 interface SubsidyOptions extends EntityOptions {
@@ -602,7 +602,6 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     preApprovedAssets!: jest.Mock;
     isAssetPreApproved!: jest.Mock;
     getOffChainAuthorizationNonce!: jest.Mock;
-    getNextAssetId!: jest.Mock;
 
     /**
      * @hidden
@@ -645,7 +644,6 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
       this.getOffChainAuthorizationNonce = createEntityGetterMock(
         opts.getOffChainAuthorizationNonce
       );
-      this.getNextAssetId = createEntityGetterMock(opts.getNextAssetId);
     }
   },
   () => ({
@@ -685,7 +683,6 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     isAssetPreApproved: false,
     toHuman: 'someDid',
     getOffChainAuthorizationNonce: new BigNumber(0),
-    getNextAssetId: '0x1234',
   }),
   ['Identity']
 );
@@ -817,7 +814,6 @@ const MockChildIdentityClass = createMockEntityClass<ChildIdentityOptions>(
     preApprovedAssets: { data: [], next: null, count: new BigNumber(0) },
     isAssetPreApproved: false,
     getOffChainAuthorizationNonce: new BigNumber(0),
-    getNextAssetId: '0x1234',
   }),
   ['ChildIdentity', 'Identity']
 );
@@ -834,6 +830,7 @@ const MockAccountClass = createMockEntityClass<AccountOptions>(
     hasPermissions!: jest.Mock;
     checkPermissions!: jest.Mock;
     getMultiSig!: jest.Mock;
+    getNextAssetId!: jest.Mock;
     authorizations = {} as {
       getReceived: jest.Mock;
       getOne: jest.Mock;
@@ -862,6 +859,7 @@ const MockAccountClass = createMockEntityClass<AccountOptions>(
       this.authorizations.getReceived = createEntityGetterMock(opts.authorizationsGetReceived);
       this.authorizations.getOne = createEntityGetterMock(opts.authorizationsGetOne);
       this.getMultiSig = createEntityGetterMock(opts.getMultiSig);
+      this.getNextAssetId = createEntityGetterMock(opts.getNextAssetId);
     }
   },
   () => ({
@@ -882,6 +880,7 @@ const MockAccountClass = createMockEntityClass<AccountOptions>(
     authorizationsGetReceived: [],
     authorizationsGetOne: getAuthorizationRequestInstance(),
     getMultiSig: null,
+    getNextAssetId: '0x1234',
   }),
   ['Account']
 );
@@ -2076,6 +2075,7 @@ const MockMultiSigClass = createMockEntityClass<MultiSigOptions>(
     authorizationsGetReceived: [],
     authorizationsGetOne: getAuthorizationRequestInstance(),
     getMultiSig: null,
+    getNextAssetId: '0x1234',
   }),
   ['MultiSig', 'Account']
 );
