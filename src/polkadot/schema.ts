@@ -316,6 +316,7 @@ export default {
       _enum: {
         Identity: 'IdentityId',
         Asset: 'AssetID',
+        Ticker: 'Ticker',
         Custom: 'Vec<u8>',
       },
     },
@@ -1078,7 +1079,7 @@ export default {
             type: 'Vec<DispatchError>',
           },
         },
-        version: 3,
+        version: 4,
       },
       {
         methods: {
@@ -1141,7 +1142,7 @@ export default {
             type: 'Vec<DispatchError>',
           },
         },
-        version: 4,
+        version: 3,
       },
     ],
     ComplianceApi: [

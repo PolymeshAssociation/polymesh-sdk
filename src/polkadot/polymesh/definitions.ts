@@ -868,6 +868,7 @@ export default {
       _enum: {
         Identity: 'IdentityId',
         Asset: 'AssetID',
+        Ticker: 'Ticker',
         Custom: 'Vec<u8>',
       },
     },
@@ -933,7 +934,7 @@ export default {
       trustedFor: 'TrustedFor',
     },
     Condition: {
-      conditionType: 'ConditionType',
+      conditionType: 'PolymeshPrimitivesConditionConditionType',
       issuers: 'Vec<PolymeshPrimitivesConditionTrustedIssuer>',
     },
     ConditionResult: {

@@ -2197,13 +2197,15 @@ export async function scopeToMeshScope(
   const { type, value } = scope;
 
   let scopeType: string = type;
+  let baseAsset: BaseAsset;
   const { isV6 } = context;
 
   let scopeValue: U8aFixed | PolymeshPrimitivesIdentityId | string;
   switch (type) {
     case ScopeType.Ticker:
     case ScopeType.Asset:
-      scopeValue = await assetToMeshAssetId(new BaseAsset({ assetId: value }, context), context);
+      baseAsset = await asBaseAsset(value, context);
+      scopeValue = await assetToMeshAssetId(baseAsset, context);
       scopeType = isV6 ? ScopeType.Ticker : ScopeType.Asset;
       break;
     case ScopeType.Identity:
