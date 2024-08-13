@@ -240,7 +240,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     } = this;
     const { ticker, assetId } = args;
 
-    const baseAsset = await asAsset((assetId ?? ticker)!, context);
+    const baseAsset = await asBaseAsset((assetId ?? ticker)!, context);
     const rawAssetId = assetToMeshAssetId(baseAsset, context);
     const rawIdentityId = stringToIdentityId(did, context);
 
