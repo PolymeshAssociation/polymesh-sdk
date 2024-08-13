@@ -464,6 +464,7 @@ interface ContextOptions {
   supportsSubsidy?: boolean;
   supportsSubscription?: boolean;
   getSignature?: `0x${string}`;
+  getNextAssetId?: string;
 }
 
 interface SigningManagerOptions {
@@ -787,6 +788,7 @@ const defaultContextOptions: ContextOptions = {
   supportsSubsidy: true,
   supportsSubscription: true,
   getSignature: '0xsignature',
+  getNextAssetId: '0x1234',
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultSigningManagerOptions: SigningManagerOptions = {
@@ -851,6 +853,7 @@ function configureContext(opts: ContextOptions): void {
         isFrozen: jest.fn().mockResolvedValue(opts.isFrozen),
         isEqual: jest.fn().mockReturnValue(opts.signingAccountIsEqual),
         getMultiSig: jest.fn().mockResolvedValue(null),
+        getNextAssetId: jest.fn().mockResolvedValue(opts.getNextAssetId),
       })
     : getSigningAccount.mockImplementation(() => {
         throw new Error('There is no Account associated with the SDK');
@@ -3276,7 +3279,7 @@ export const createMockInstructionLeg = (
         OffChain: {
           senderIdentity: PolymeshPrimitivesIdentityId;
           receiverIdentity: PolymeshPrimitivesIdentityId;
-          assetId: PolymeshPrimitivesAssetAssetID;
+          ticker: PolymeshPrimitivesTicker;
           amount: Balance;
         };
       }

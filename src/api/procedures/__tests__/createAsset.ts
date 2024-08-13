@@ -152,7 +152,6 @@ describe('createAsset procedure', () => {
     name = 'someName';
     signingIdentity = entityMockUtils.getIdentityInstance({
       portfoliosGetPortfolio: getPortfolio,
-      getNextAssetId: assetId,
     });
     initialSupply = new BigNumber(100);
     isDivisible = false;
@@ -226,7 +225,10 @@ describe('createAsset procedure', () => {
     linkTickerToAssetIdTx = dsMockUtils.createTxMock('asset', 'linkTickerToAssetId');
     registerUniqueTickerTx = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
 
-    mockContext = dsMockUtils.getContextInstance({ withSigningManager: true });
+    mockContext = dsMockUtils.getContextInstance({
+      withSigningManager: true,
+      getNextAssetId: assetId,
+    });
 
     when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
     when(stringToAssetIdSpy).calledWith(assetId, mockContext).mockReturnValue(rawAssetId);

@@ -110,6 +110,7 @@ import {
   createMockNfts,
   createMockOption,
   createMockPortfolioId,
+  createMockTicker,
   createMockU8,
   createMockU8aFixed,
   createMockU32,
@@ -9926,7 +9927,7 @@ describe('legToOffChainLeg', () => {
     const value = {
       senderIdentity: createMockIdentityId(),
       receiverIdentity: createMockIdentityId(),
-      assetId: createMockAssetId(),
+      ticker: createMockTicker(),
       amount: createMockU128(),
     } as const;
 

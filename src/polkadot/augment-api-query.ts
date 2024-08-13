@@ -293,6 +293,11 @@ declare module '@polkadot/api-base/types/storage' {
         (arg: PolymeshPrimitivesAssetAssetID | string | Uint8Array) => Observable<Option<Bytes>>,
         [PolymeshPrimitivesAssetAssetID]
       >;
+      assetNonce: AugmentedQuery<
+        ApiType,
+        (arg: AccountId32 | string | Uint8Array) => Observable<u64>,
+        [AccountId32]
+      >;
       /**
        * A list of assets that exempt all users from affirming its receivement.
        **/
@@ -394,11 +399,6 @@ declare module '@polkadot/api-base/types/storage' {
           arg2: PolymeshPrimitivesAssetAssetID | string | Uint8Array
         ) => Observable<bool>,
         [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetID]
-      >;
-      rngNonce: AugmentedQuery<
-        ApiType,
-        (arg: PolymeshPrimitivesIdentityId | string | Uint8Array) => Observable<u64>,
-        [PolymeshPrimitivesIdentityId]
       >;
       /**
        * Maps each [`AssetID`] to its underling [`SecurityToken`].
