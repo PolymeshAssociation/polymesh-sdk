@@ -127,7 +127,7 @@ export async function prepareCreateAsset(
     rawAssetId = rawTicker;
     assetId = ticker;
   } else {
-    assetId = await signingIdentity.getNextAssetId();
+    assetId = await context.getSigningAccount().getNextAssetId();
     rawAssetId = stringToAssetId(assetId, context);
   }
 

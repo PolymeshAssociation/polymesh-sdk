@@ -8,6 +8,7 @@ import {
   PolymeshPrimitivesNftNfTs,
   PolymeshPrimitivesSettlementLeg,
   PolymeshPrimitivesSettlementSettlementType,
+  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
@@ -74,6 +75,7 @@ describe('addInstruction procedure', () => {
   let portfolioLikeToPortfolioSpy: jest.SpyInstance;
   let getCustodianMock: jest.Mock;
   let stringToAssetIdSpy: jest.SpyInstance<PolymeshPrimitivesAssetAssetID, [string, Context]>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
   let bigNumberToBalanceSpy: jest.SpyInstance<
     Balance,
@@ -102,7 +104,7 @@ describe('addInstruction procedure', () => {
   let toPortfolio: DefaultPortfolio | NumberedPortfolio;
   let asset: string;
   let nftAsset: string;
-  let offChainAsset: string;
+  let offChainTicker: string;
   let tradeDate: Date;
   let valueDate: Date;
   let endBlock: BigNumber;
@@ -117,7 +119,7 @@ describe('addInstruction procedure', () => {
   let rawReceiverIdentity: PolymeshPrimitivesIdentityId;
   let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let rawNftAssetId: PolymeshPrimitivesAssetAssetID;
-  let rawOffChainAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawOffChainTicker: PolymeshPrimitivesTicker;
   let rawTradeDate: Moment;
   let rawValueDate: Moment;
   let rawEndBlock: u32;
@@ -153,6 +155,7 @@ describe('addInstruction procedure', () => {
     portfolioLikeToPortfolioSpy = jest.spyOn(utilsConversionModule, 'portfolioLikeToPortfolio');
     getCustodianMock = jest.fn();
     stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
     bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
     bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
     endConditionToSettlementTypeSpy = jest.spyOn(
@@ -183,7 +186,7 @@ describe('addInstruction procedure', () => {
     });
     asset = '0x1111';
     nftAsset = '0x2222';
-    offChainAsset = '0x3333';
+    offChainTicker = 'SOME_TICKER';
     const now = new Date();
     tradeDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     valueDate = new Date(now.getTime() + 24 * 60 * 60 * 1000 + 1);
@@ -209,7 +212,7 @@ describe('addInstruction procedure', () => {
     rawEmptyMediatorSet = dsMockUtils.createMockBTreeSet([]);
     rawAssetId = dsMockUtils.createMockAssetId(asset);
     rawNftAssetId = dsMockUtils.createMockAssetId(nftAsset);
-    rawOffChainAssetId = dsMockUtils.createMockAssetId(offChainAsset);
+    rawOffChainTicker = dsMockUtils.createMockTicker(offChainTicker);
     rawTradeDate = dsMockUtils.createMockMoment(new BigNumber(tradeDate.getTime()));
     rawValueDate = dsMockUtils.createMockMoment(new BigNumber(valueDate.getTime()));
     rawEndBlock = dsMockUtils.createMockU32(endBlock);
@@ -241,7 +244,7 @@ describe('addInstruction procedure', () => {
         senderIdentity: rawSenderIdentity,
         receiverIdentity: rawReceiverIdentity,
         amount: rawAmount,
-        assetId: rawOffChainAssetId,
+        ticker: rawOffChainTicker,
       },
     });
   });
@@ -329,9 +332,9 @@ describe('addInstruction procedure', () => {
       },
     });
     when(stringToAssetIdSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
-    when(stringToAssetIdSpy)
-      .calledWith(offChainAsset, mockContext)
-      .mockReturnValue(rawOffChainAssetId);
+    when(stringToTickerSpy)
+      .calledWith(offChainTicker, mockContext)
+      .mockReturnValue(rawOffChainTicker);
     when(bigNumberToU64Spy).calledWith(venueId, mockContext).mockReturnValue(rawVenueId);
     when(bigNumberToBalanceSpy).calledWith(amount, mockContext).mockReturnValue(rawAmount);
     when(endConditionToSettlementTypeSpy)
@@ -509,7 +512,7 @@ describe('addInstruction procedure', () => {
       from: sender,
       to: receiver,
       offChainAmount: new BigNumber(0),
-      asset: offChainAsset,
+      asset: offChainTicker,
     } as OffChainLeg);
 
     try {
@@ -598,7 +601,7 @@ describe('addInstruction procedure', () => {
       from: sender,
       to: sender,
       offChainAmount: new BigNumber(10),
-      asset: offChainAsset,
+      asset: offChainTicker,
     });
     try {
       await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs }] });
@@ -1037,7 +1040,7 @@ describe('addInstruction procedure', () => {
               from: sender,
               to: receiver,
               offChainAmount: amount,
-              asset: offChainAsset,
+              asset: offChainTicker,
             },
           ],
         },
