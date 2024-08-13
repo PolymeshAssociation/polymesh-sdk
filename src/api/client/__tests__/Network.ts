@@ -551,7 +551,14 @@ describe('Network Class', () => {
       (context.polymeshApi as any).tx = jest.fn().mockReturnValue(transaction);
 
       const signature = '0x01';
-      await network.submitTransaction(mockPayload, signature);
+      const result = await network.submitTransaction(mockPayload, signature);
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          transactionHash: '0x01',
+          result: expect.any(Object),
+        })
+      );
     });
 
     it('should handle non prefixed hex strings', async () => {
@@ -636,14 +643,21 @@ describe('Network Class', () => {
         status: dsMockUtils.createMockExtrinsicStatus({
           Finalized: dsMockUtils.createMockHash('blockHash'),
         }),
-        txHash: dsMockUtils.createMockHash('bond'),
+        txHash: dsMockUtils.createMockHash('txHash'),
         txIndex: 1,
       });
 
       jest.spyOn(baseUtils, 'pollForTransactionFinalization').mockResolvedValue(fakeReceipt);
 
       const signature = '0x01';
-      await network.submitTransaction(mockPayload, signature);
+      const result = await network.submitTransaction(mockPayload, signature);
+
+      expect(result).toEqual({
+        blockHash: 'blockHash',
+        transactionHash: '0x01',
+        transactionIndex: new BigNumber(1),
+        result: fakeReceipt,
+      });
     });
   });
 

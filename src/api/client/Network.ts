@@ -217,13 +217,13 @@ export class Network {
 
     transaction.addSignature(payload.address, signature, payload);
 
-    if (context.supportsSubscription()) {
-      const submissionDetails: SubmissionDetails = {
-        blockHash: '',
-        transactionHash: transaction.hash.toString(),
-        transactionIndex: new BigNumber(0),
-      };
+    const submissionDetails: SubmissionDetails = {
+      blockHash: '',
+      transactionHash: transaction.hash.toString(),
+      transactionIndex: new BigNumber(-1),
+    } as SubmissionDetails;
 
+    if (context.supportsSubscription()) {
       return new Promise((resolve, reject) => {
         const gettingUnsub = transaction.send(receipt => {
           const { status } = receipt;
@@ -276,6 +276,7 @@ export class Network {
                 reject(error);
               });
             } else if (receipt.isFinalized) {
+              submissionDetails.result = receipt;
               finishing = Promise.all([unsubscribing]).then(() => {
                 resolve(submissionDetails);
               });
@@ -298,6 +299,7 @@ export class Network {
         blockHash: hashToString(result.status.asFinalized),
         transactionHash: hashToString(transaction.hash),
         transactionIndex: new BigNumber(result.txIndex!),
+        result,
       };
     }
   }
