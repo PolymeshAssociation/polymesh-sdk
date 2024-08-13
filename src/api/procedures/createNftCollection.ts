@@ -336,8 +336,6 @@ export async function prepareStorage(
     context: { isV6 },
   } = this;
 
-  const signingIdentity = await context.getSigningIdentity();
-
   const assertNftCollectionDoesNotExists = async (id: string): Promise<void> => {
     const nft = new NftCollection({ assetId: id }, context);
     const collectionExists = await nft.exists();
@@ -382,7 +380,7 @@ export async function prepareStorage(
       }
       await assertNftCollectionDoesNotExists(reservationDetails.assetId);
     } else if (!isV6) {
-      storageStatus.assetId = await signingIdentity.getNextAssetId();
+      storageStatus.assetId = await context.getSigningAccount().getNextAssetId();
     }
   } else if (isV6) {
     throw new PolymeshError({

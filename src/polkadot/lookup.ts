@@ -1694,7 +1694,7 @@ export default {
       OffChain: {
         senderIdentity: 'PolymeshPrimitivesIdentityId',
         receiverIdentity: 'PolymeshPrimitivesIdentityId',
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        ticker: 'PolymeshPrimitivesTicker',
         amount: 'u128',
       },
     },

@@ -26,7 +26,7 @@ import BigNumber from 'bignumber.js';
 import fetch from 'cross-fetch';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
-import { lt, major, satisfies } from 'semver';
+import { coerce, lt, major, satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
 import {
@@ -1424,6 +1424,18 @@ export async function getExemptedIds(
   return exemptedIds;
 }
 
+const getAllowedMajors = (range: string, supportedSpecSemver: string): string[] => {
+  const lowMajor = major(supportedSpecSemver).toString();
+  const versions = range.split('||');
+  if (versions.length === 1) {
+    return [lowMajor];
+  }
+  const higherAllowedSpec = versions[versions.length - 1].trim();
+  const higherVersion = coerce(higherAllowedSpec)!.version;
+  const highMajor = major(higherVersion).toString();
+  return [lowMajor, highMajor];
+};
+
 /**
  * @hidden
  */
@@ -1434,30 +1446,32 @@ function assertExpectedNodeVersion(
 ): void {
   const { result: version } = data;
 
-  const neededMajor = isPrivateSupported
-    ? major(PRIVATE_SUPPORTED_NODE_SEMVER).toString()
-    : major(SUPPORTED_NODE_SEMVER).toString();
+  const supportedSemver = isPrivateSupported
+    ? PRIVATE_SUPPORTED_NODE_SEMVER
+    : SUPPORTED_NODE_SEMVER;
 
-  const neededSemver = isPrivateSupported
+  const supportedSpecVersionRange = isPrivateSupported
     ? PRIVATE_SUPPORTED_NODE_VERSION_RANGE
     : SUPPORTED_NODE_VERSION_RANGE;
 
-  if (!satisfies(version, neededMajor)) {
+  const neededMajors = getAllowedMajors(supportedSpecVersionRange, supportedSemver);
+
+  if (neededMajors.every(neededMajor => !satisfies(version, neededMajor))) {
     const error = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
       data: {
         rpcNodeVersion: version,
-        supportedVersionRange: neededSemver,
+        supportedVersionRange: supportedSpecVersionRange,
       },
     });
 
     reject(error);
   }
 
-  if (!satisfies(version, neededSemver)) {
+  if (!satisfies(version, supportedSpecVersionRange)) {
     console.warn(
-      `This version of the SDK supports Polymesh RPC node version "${neededSemver}". The node is at version ${version}. Please upgrade the SDK`
+      `This version of the SDK supports Polymesh RPC node version "${supportedSpecVersionRange}". The node is at version ${version}. Please upgrade the SDK`
     );
   }
 }
@@ -1508,30 +1522,32 @@ function assertExpectedSpecVersion(
     .map((ver: string) => ver.replace(/^0+(?!$)/g, ''))
     .join('.');
 
-  const neededMajor = isPrivateSupported
-    ? major(PRIVATE_SUPPORTED_SPEC_SEMVER).toString()
-    : major(SUPPORTED_SPEC_SEMVER).toString();
+  const supportedSemver = isPrivateSupported
+    ? PRIVATE_SUPPORTED_SPEC_SEMVER
+    : SUPPORTED_SPEC_SEMVER;
 
-  const neededSemver = isPrivateSupported
+  const supportedSpecVersionRange = isPrivateSupported
     ? PRIVATE_SUPPORTED_SPEC_VERSION_RANGE
     : SUPPORTED_SPEC_VERSION_RANGE;
 
-  if (!satisfies(specVersionAsSemver, neededMajor)) {
+  const neededMajors = getAllowedMajors(supportedSpecVersionRange, supportedSemver);
+
+  if (neededMajors.every(neededMajor => !satisfies(specVersionAsSemver, neededMajor))) {
     const error = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh chain spec version. Please upgrade the SDK',
       data: {
         specVersion: specVersionAsSemver,
-        supportedVersionRange: neededSemver,
+        supportedVersionRange: supportedSemver,
       },
     });
 
     reject(error);
   }
 
-  if (!satisfies(specVersionAsSemver, neededSemver)) {
+  if (!satisfies(specVersionAsSemver, supportedSpecVersionRange)) {
     console.warn(
-      `This version of the SDK supports Polymesh chain spec version "${neededSemver}". The chain spec is at version ${specVersionAsSemver}. Please upgrade the SDK`
+      `This version of the SDK supports Polymesh chain spec version "${supportedSpecVersionRange}". The chain spec is at version ${specVersionAsSemver}. Please upgrade the SDK`
     );
   }
 }

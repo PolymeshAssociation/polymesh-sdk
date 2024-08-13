@@ -70,6 +70,9 @@ export interface OffChainLeg {
   from: Identity;
   to: Identity;
   offChainAmount: BigNumber;
+  /**
+   * the ticker of the off chain asset
+   */
   asset: string;
 }
 

@@ -179,7 +179,10 @@ describe('createNftCollection procedure', () => {
     );
     addDocumentsTransaction = dsMockUtils.createTxMock('asset', 'addDocuments');
 
-    mockContext = dsMockUtils.getContextInstance({ withSigningManager: true });
+    mockContext = dsMockUtils.getContextInstance({
+      withSigningManager: true,
+      getNextAssetId: assetId,
+    });
 
     when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
     when(assetToMeshAssetIdSpy)

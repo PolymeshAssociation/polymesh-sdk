@@ -1,3 +1,5 @@
+import { hexAddPrefix, hexStripPrefix, stringToHex } from '@polkadot/util';
+import { blake2AsHex } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 
 import {
@@ -38,6 +40,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { Ensured } from '~/types/utils';
+import { ASSET_ID_PREFIX } from '~/utils/constants';
 import {
   accountIdToString,
   addressToKey,
@@ -608,5 +611,33 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         },
       ]) => u64ToBigNumber(rawReceiptUid)
     );
+  }
+
+  /**
+   * Returns next assetID that will be generated for this Identity
+   */
+  public async getNextAssetId(): Promise<string> {
+    const {
+      context: {
+        polymeshApi: {
+          query: {
+            asset: { assetNonce },
+          },
+        },
+      },
+      context,
+      address,
+    } = this;
+
+    const rawAccountId = stringToAccountId(address, context);
+    const rawNonce = await assetNonce(rawAccountId);
+
+    const prefix = stringToHex(ASSET_ID_PREFIX);
+
+    const assetComponents = [prefix, rawAccountId.toHex(), rawNonce.toHex(true)];
+
+    const data = hexAddPrefix(assetComponents.map(e => hexStripPrefix(e)).join(''));
+
+    return blake2AsHex(data, 128);
   }
 }

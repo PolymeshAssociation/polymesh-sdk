@@ -2878,7 +2878,7 @@ declare module '@polkadot/types/lookup' {
     readonly asOffChain: {
       readonly senderIdentity: PolymeshPrimitivesIdentityId;
       readonly receiverIdentity: PolymeshPrimitivesIdentityId;
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly ticker: PolymeshPrimitivesTicker;
       readonly amount: u128;
     } & Struct;
     readonly type: 'Fungible' | 'NonFungible' | 'OffChain';

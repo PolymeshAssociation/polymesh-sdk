@@ -4,8 +4,6 @@ import {
   PolymeshPrimitivesIdentityDidRecord,
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
-import { hexAddPrefix, hexStripPrefix, stringToHex } from '@polkadot/util';
-import { blake2AsHex } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, differenceWith, flatten, intersectionWith, lt, uniqBy } from 'lodash';
@@ -66,7 +64,6 @@ import {
   isVenueOwnerRole,
 } from '~/utils';
 import {
-  ASSET_ID_PREFIX,
   MAX_CONCURRENT_REQUESTS,
   MAX_PAGE_SIZE,
   SETTLEMENTS_V2_SQ_VERSION,
@@ -1141,33 +1138,5 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const rawNonce = await offChainAuthorizationNonce(rawDid);
 
     return u64ToBigNumber(rawNonce);
-  }
-
-  /**
-   * Returns next assetID that will be generated for this Identity
-   */
-  public async getNextAssetId(): Promise<string> {
-    const {
-      context: {
-        polymeshApi: {
-          query: {
-            asset: { rngNonce },
-          },
-        },
-      },
-      context,
-      did,
-    } = this;
-
-    const rawDid = stringToIdentityId(did, context);
-    const rawNonce = await rngNonce(rawDid);
-
-    const prefix = stringToHex(ASSET_ID_PREFIX);
-
-    const assetComponents = [prefix, did, rawNonce.toHex(true)];
-
-    const data = hexAddPrefix(assetComponents.map(e => hexStripPrefix(e)).join(''));
-
-    return blake2AsHex(data, 128);
   }
 }
