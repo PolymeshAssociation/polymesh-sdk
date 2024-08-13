@@ -12,7 +12,7 @@ import {
   PolymeshError,
   toggleAssetPreApproval,
 } from '~/internal';
-import { CanTransferGranularReturn } from '~/polkadot';
+import { CanTransferGranularReturn } from '~/polkadot/polymesh';
 import {
   ErrorCode,
   NftCollection,
