@@ -23,7 +23,6 @@ import {
 import { assetHoldersQuery, nftHoldersQuery } from '~/middleware/queries/assets';
 import { trustingAssetsQuery } from '~/middleware/queries/claims';
 import { instructionPartiesQuery } from '~/middleware/queries/settlements';
-import { instructionsByDidQuery } from '~/middleware/queries/settlementsOld';
 import { AssetHoldersOrderBy, NftHoldersOrderBy } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
@@ -42,7 +41,6 @@ import {
   VenueType,
 } from '~/types';
 import { tuple } from '~/types/utils';
-import { SETTLEMENTS_V2_SQ_VERSION } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -1243,39 +1241,7 @@ describe('Identity class', () => {
   });
 
   describe('method: getHistoricalInstructions', () => {
-    let getLatestSqVersionSpy: jest.SpyInstance;
-    beforeEach(() => {
-      getLatestSqVersionSpy = jest.spyOn(utilsInternalModule, 'getLatestSqVersion');
-    });
-
-    it('should return the list of all instructions where the Identity was involved for older SQ', async () => {
-      getLatestSqVersionSpy.mockResolvedValue('15.0.0');
-      const identity = new Identity({ did: 'someDid' }, context);
-      const oldMiddlewareInstructionToHistoricInstructionSpy = jest.spyOn(
-        utilsConversionModule,
-        'oldMiddlewareInstructionToHistoricInstruction'
-      );
-
-      const legsResponse = {
-        totalCount: 5,
-        nodes: [{ instruction: 'instruction' }],
-      };
-
-      dsMockUtils.createApolloQueryMock(instructionsByDidQuery(identity.did), {
-        legs: legsResponse,
-      });
-
-      const mockHistoricInstruction = 'mockData' as unknown as HistoricInstruction;
-
-      oldMiddlewareInstructionToHistoricInstructionSpy.mockReturnValue(mockHistoricInstruction);
-
-      const result = await identity.getHistoricalInstructions();
-
-      expect(result).toEqual([mockHistoricInstruction]);
-    });
-
     it('should return the list of all instructions where the Identity was involved', async () => {
-      getLatestSqVersionSpy.mockResolvedValue(SETTLEMENTS_V2_SQ_VERSION);
       const identity = new Identity({ did: 'someDid' }, context);
       const middlewareInstructionToHistoricInstructionSpy = jest.spyOn(
         utilsConversionModule,
