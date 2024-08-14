@@ -135,6 +135,7 @@ import {
   Claim as MiddlewareClaim,
   CustomClaimType as MiddlewareCustomClaimType,
   Instruction as MiddlewareInstruction,
+  InstructionStatusEnum,
   InstructionTypeEnum,
   Leg as MiddlewareLeg,
   LegTypeEnum,
@@ -143,11 +144,6 @@ import {
   PortfolioMovement as MiddlewarePortfolioMovement,
 } from '~/middleware/types';
 import { ClaimScopeTypeEnum, MiddlewareScope, SettlementDirectionEnum } from '~/middleware/typesV1';
-import {
-  Instruction as InstructionOld,
-  Leg as MiddlewareLegOld,
-  SettlementResultEnum,
-} from '~/middleware/typesV6';
 import {
   AssetComplianceResult,
   AuthorizationType as MeshAuthorizationType,
@@ -302,7 +298,6 @@ import {
   isNumberedPortfolio,
   isSingleClaimCondition,
 } from '~/utils/typeguards';
-
 export * from '~/generated/utils';
 
 /**
@@ -4550,64 +4545,6 @@ export function portfolioIdStringToPortfolio(id: string): MiddlewarePortfolio {
   return { identityId, number: parseInt(number, 10) } as MiddlewarePortfolio;
 }
 
-// TODO @prashantasdeveloper Remove after SQ dual version support
-/**
- * @hidden
- */
-export function oldMiddlewareInstructionToHistoricInstruction(
-  instruction: InstructionOld,
-  context: Context
-): HistoricInstruction {
-  /* eslint-disable @typescript-eslint/no-non-null-assertion */
-  const {
-    id: instructionId,
-    status,
-    settlementType,
-    endBlock,
-    tradeDate,
-    valueDate,
-    legs: { nodes: legs },
-    memo,
-    createdBlock,
-    venueId,
-  } = instruction;
-  const { blockId, hash, datetime } = createdBlock!;
-
-  let typeDetails;
-
-  if (settlementType === InstructionType.SettleOnAffirmation) {
-    typeDetails = {
-      type: InstructionType.SettleOnAffirmation,
-    };
-  } else {
-    typeDetails = {
-      type: settlementType as InstructionType,
-      endBlock: new BigNumber(endBlock!),
-    };
-  }
-
-  return {
-    id: new BigNumber(instructionId),
-    blockNumber: new BigNumber(blockId),
-    blockHash: hash,
-    status,
-    tradeDate,
-    valueDate,
-    ...typeDetails,
-    memo: memo ?? null,
-    venueId: new BigNumber(venueId),
-    createdAt: new Date(datetime),
-    legs: legs.map(({ fromId, toId, assetId, amount }) => ({
-      asset: new FungibleAsset({ assetId }, context),
-      amount: new BigNumber(amount).shiftedBy(-6),
-      from: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(fromId), context),
-      to: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(toId), context),
-    })),
-  };
-  /* eslint-enable @typescript-eslint/no-non-null-assertion */
-}
-// Dual version support end
-
 /**
  * @hidden
  */
@@ -5157,7 +5094,7 @@ function portfolioMovementsToHistoricSettlements(
       return {
         blockNumber: new BigNumber(blockId),
         blockHash: hash,
-        status: SettlementResultEnum.Executed,
+        status: InstructionStatusEnum.Executed,
         accounts: [handleMiddlewareAddress(accountAddress, context)],
         legs: [
           {
@@ -5171,94 +5108,6 @@ function portfolioMovementsToHistoricSettlements(
       };
     }
   );
-}
-
-// TODO @prashantasdeveloper Remove after SQ dual version support
-/**
- * @hidden
- */
-export function oldMiddlewareDataToHistoricalSettlements(
-  settlementsResult: MiddlewareLegOld[],
-  portfolioMovements: MiddlewarePortfolioMovement[],
-  filter: string,
-  context: Context
-): HistoricSettlement[] {
-  let data: HistoricSettlement[] = [];
-
-  const getDirection = (fromId: string, toId: string): SettlementDirectionEnum => {
-    const [fromDid] = fromId.split('/');
-    const [toDid] = toId.split('/');
-    const [filterDid, filterPortfolioId] = filter.split('/');
-
-    if (fromId === toId) {
-      return SettlementDirectionEnum.None;
-    }
-
-    if (filterPortfolioId && fromId === filter) {
-      return SettlementDirectionEnum.Outgoing;
-    }
-
-    if (filterPortfolioId && toId === filter) {
-      return SettlementDirectionEnum.Incoming;
-    }
-
-    if (fromDid === filterDid && toDid !== filterDid) {
-      return SettlementDirectionEnum.Incoming;
-    }
-
-    if (toDid === filterDid && fromDid !== filterDid) {
-      return SettlementDirectionEnum.Outgoing;
-    }
-
-    return SettlementDirectionEnum.None;
-  };
-
-  /* eslint-disable @typescript-eslint/no-non-null-assertion */
-  settlementsResult.forEach(({ settlement }) => {
-    const {
-      createdBlock,
-      result: settlementResult,
-      legs: { nodes: legs },
-      instructionsByLegSettlementIdAndInstructionId: {
-        nodes: [instruction],
-      },
-    } = settlement!;
-
-    const { id: instructionId } = instruction!;
-
-    const { blockId, hash } = createdBlock!;
-
-    data.push({
-      blockNumber: new BigNumber(blockId),
-      blockHash: hash,
-      status: settlementResult as unknown as SettlementResultEnum,
-      accounts: legs[0].addresses.map(
-        (accountAddress: string) =>
-          new Account({ address: keyToAddress(accountAddress, context) }, context)
-      ),
-      instruction: new Instruction({ id: new BigNumber(instructionId) }, context),
-      legs: legs.map(({ fromId, toId, assetId, amount }) => ({
-        asset: new FungibleAsset({ assetId }, context),
-        amount: new BigNumber(amount).shiftedBy(-6),
-        direction: getDirection(fromId, toId),
-        from: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(fromId), context),
-        to: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(toId), context),
-      })),
-    });
-  });
-
-  data = [
-    ...data,
-    ...portfolioMovementsToHistoricSettlements(
-      portfolioMovements,
-      context,
-      (accountAddress: string) =>
-        new Account({ address: keyToAddress(accountAddress, context) }, context)
-    ),
-  ];
-  /* eslint-enable @typescript-eslint/no-non-null-assertion */
-
-  return data.sort((a, b) => a.blockNumber.minus(b.blockNumber).toNumber());
 }
 
 /**
@@ -5309,7 +5158,7 @@ export function toHistoricalSettlements(
     data.push({
       blockNumber: new BigNumber(blockId),
       blockHash: hash,
-      status: status as unknown as SettlementResultEnum,
+      status,
       accounts: legs[0].addresses.map((address: string) => new Account({ address }, context)),
       instruction: new Instruction({ id: new BigNumber(id) }, context),
       legs: legs.map(leg => ({

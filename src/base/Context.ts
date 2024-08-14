@@ -35,7 +35,6 @@ import { claimsQuery } from '~/middleware/queries/claims';
 import { heartbeatQuery, metadataQuery } from '~/middleware/queries/common';
 import { polyxTransactionsQuery } from '~/middleware/queries/polyxTransactions';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
-import { Query as QueryOld } from '~/middleware/typesV6';
 import {
   AccountBalance,
   ClaimData,
@@ -1063,7 +1062,7 @@ export class Context {
    *
    * Make a query to the middleware V2 server using the apollo client
    */
-  public async queryMiddleware<Result extends Partial<Query | QueryOld>>(
+  public async queryMiddleware<Result extends Partial<Query>>(
     query: QueryOptions<OperationVariables, Result>
   ): Promise<ApolloQueryResult<Result>> {
     let result: ApolloQueryResult<Result>;

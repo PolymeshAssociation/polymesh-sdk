@@ -102,7 +102,6 @@ import {
   Portfolio as MiddlewarePortfolio,
 } from '~/middleware/types';
 import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
-import { Instruction as MiddlewareInstructionOld } from '~/middleware/typesV6';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   createMockAssetId,
@@ -293,7 +292,6 @@ import {
   nftToMeshNft,
   offChainMetadataToMeshReceiptMetadata,
   offeringTierToPriceTier,
-  oldMiddlewareInstructionToHistoricInstruction,
   percentageToPermill,
   permillToBigNumber,
   permissionGroupIdentifierToAgentGroup,
@@ -4345,114 +4343,6 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
       result = scopeToMiddlewareScope(scope);
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Custom, value: scope.value });
     });
-  });
-});
-
-describe('oldMiddlewareInstructionToHistoricInstruction', () => {
-  it('should convert a old middleware Instruction object to a HistoricInstruction', () => {
-    const instructionId1 = new BigNumber(1);
-    const instructionId2 = new BigNumber(2);
-    const blockNumber = new BigNumber(1234);
-    const blockHash = 'someHash';
-    const memo = 'memo';
-    const assetId = '0x1234';
-    const amount1 = new BigNumber(10);
-    const amount2 = new BigNumber(5);
-    const venueId = new BigNumber(1);
-    const createdAt = new Date('2022/01/01');
-    const status = InstructionStatusEnum.Executed;
-    const portfolioDid1 = 'portfolioDid1';
-    const portfolioKind1 = 'Default';
-
-    const portfolioDid2 = 'portfolioDid2';
-    const portfolioKind2 = '10';
-    const type1 = InstructionType.SettleOnAffirmation;
-    const type2 = InstructionType.SettleOnBlock;
-    const endBlock = new BigNumber(1238);
-
-    const legs1 = [
-      {
-        assetId,
-        amount: amount1.shiftedBy(6).toString(),
-        fromId: `${portfolioDid1}/${portfolioKind1}`,
-        toId: `${portfolioDid2}/${portfolioKind2}`,
-      },
-    ];
-    const legs2 = [
-      {
-        assetId,
-        amount: amount2.shiftedBy(6).toString(),
-        fromId: `${portfolioDid2}/${portfolioKind2}`,
-        toId: `${portfolioDid1}/${portfolioKind1}`,
-      },
-    ];
-
-    const context = dsMockUtils.getContextInstance();
-
-    let instruction = {
-      id: instructionId1.toString(),
-      createdBlock: {
-        blockId: blockNumber.toNumber(),
-        hash: blockHash,
-        datetime: createdAt,
-      },
-      status,
-      memo,
-      venueId: venueId.toString(),
-      settlementType: type1,
-      legs: {
-        nodes: legs1,
-      },
-    } as unknown as MiddlewareInstructionOld;
-
-    let result = oldMiddlewareInstructionToHistoricInstruction(instruction, context);
-
-    expect(result.id).toEqual(instructionId1);
-    expect(result.blockHash).toEqual(blockHash);
-    expect(result.blockNumber).toEqual(blockNumber);
-    expect(result.status).toEqual(status);
-    expect(result.memo).toEqual(memo);
-    expect(result.type).toEqual(InstructionType.SettleOnAffirmation);
-    expect(result.venueId).toEqual(venueId);
-    expect(result.createdAt).toEqual(createdAt);
-    let resultLeg = result.legs[0] as FungibleLeg;
-    expect(resultLeg.asset.id).toBe(assetId);
-    expect(resultLeg.amount).toEqual(amount1);
-    expect(resultLeg.from.owner.did).toBe(portfolioDid1);
-    expect(resultLeg.to.owner.did).toBe(portfolioDid2);
-    expect((result.legs[0].to as NumberedPortfolio).id).toEqual(new BigNumber(portfolioKind2));
-
-    instruction = {
-      id: instructionId2.toString(),
-      createdBlock: {
-        blockId: blockNumber.toNumber(),
-        hash: blockHash,
-        datetime: createdAt,
-      },
-      status,
-      settlementType: type2,
-      endBlock: endBlock.toString(),
-      venueId: venueId.toString(),
-      legs: {
-        nodes: legs2,
-      },
-    } as unknown as MiddlewareInstructionOld;
-
-    result = oldMiddlewareInstructionToHistoricInstruction(instruction, context);
-
-    expect(result.id).toEqual(instructionId2);
-    expect(result.memo).toBeNull();
-    expect(result.type).toEqual(InstructionType.SettleOnBlock);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect((result as any).endBlock).toEqual(endBlock);
-    expect(result.venueId).toEqual(venueId);
-    expect(result.createdAt).toEqual(createdAt);
-    resultLeg = result.legs[0] as FungibleLeg;
-    expect(resultLeg.asset.id).toBe(assetId);
-    expect(resultLeg.amount).toEqual(amount2);
-    expect(resultLeg.from.owner.did).toBe(portfolioDid2);
-    expect(resultLeg.to.owner.did).toBe(portfolioDid1);
-    expect((result.legs[0].from as NumberedPortfolio).id).toEqual(new BigNumber(portfolioKind2));
   });
 });
 
