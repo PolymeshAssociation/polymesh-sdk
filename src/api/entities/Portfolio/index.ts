@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { lt, values } from 'lodash';
+import { values } from 'lodash';
 
 import {
   AuthorizationRequest,
@@ -16,9 +16,7 @@ import {
 } from '~/internal';
 import { portfolioMovementsQuery } from '~/middleware/queries/portfolios';
 import { settlementsQuery } from '~/middleware/queries/settlements';
-import { settlementsQuery as oldSettlementsQuery } from '~/middleware/queries/settlementsOld';
 import { Query } from '~/middleware/types';
-import { Query as QueryOld } from '~/middleware/typesV6';
 import {
   ErrorCode,
   MoveFundsParams,
@@ -27,13 +25,10 @@ import {
   SetCustodianParams,
 } from '~/types';
 import { Ensured } from '~/types/utils';
-import { SETTLEMENTS_V2_SQ_VERSION } from '~/utils/constants';
 import {
-  addressToKey,
   balanceToBigNumber,
   identityIdToString,
   meshAssetToAssetId,
-  oldMiddlewareDataToHistoricalSettlements,
   portfolioIdToMeshPortfolioId,
   toHistoricalSettlements,
   u64ToBigNumber,
@@ -44,7 +39,6 @@ import {
   createProcedureMethod,
   getAssetIdForMiddleware,
   getIdentity,
-  getLatestSqVersion,
   toHumanReadable,
 } from '~/utils/internal';
 
@@ -412,70 +406,10 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     } = this;
 
     const { account, ticker } = filters;
-
     let middlewareAssetId;
     if (ticker) {
       middlewareAssetId = await getAssetIdForMiddleware(ticker, context);
     }
-
-    // TODO @prashantasdeveloper Remove after SQ dual version support
-    const sqVersion = await getLatestSqVersion(context);
-
-    if (lt(sqVersion, SETTLEMENTS_V2_SQ_VERSION)) {
-      const address = account ? addressToKey(account, context) : undefined;
-
-      const settlementsPromise = context.queryMiddleware<Ensured<QueryOld, 'legs'>>(
-        oldSettlementsQuery({
-          identityId,
-          portfolioId,
-          address,
-          assetId: ticker,
-        })
-      );
-
-      const portfolioMovementsPromise = context.queryMiddleware<
-        Ensured<Query, 'portfolioMovements'>
-      >(
-        portfolioMovementsQuery({
-          identityId,
-          portfolioId,
-          address,
-          assetId: middlewareAssetId,
-        })
-      );
-
-      const [
-        {
-          data: {
-            legs: { nodes: settlements },
-          },
-        },
-        {
-          data: {
-            portfolioMovements: { nodes: portfolioMovements },
-          },
-        },
-        exists,
-      ] = await Promise.all([settlementsPromise, portfolioMovementsPromise, this.exists()]);
-
-      if (!exists) {
-        throw new PolymeshError({
-          code: ErrorCode.DataUnavailable,
-          message: notExistsMessage,
-        });
-      }
-
-      const portfolioFilter = `${identityId}/${new BigNumber(portfolioId || 0).toString()}`;
-
-      return oldMiddlewareDataToHistoricalSettlements(
-        settlements,
-        portfolioMovements,
-        portfolioFilter,
-        context
-      );
-    }
-    // Dual version support end
-
     const settlementsPromise = context.queryMiddleware<Ensured<Query, 'legs'>>(
       settlementsQuery({
         identityId,
