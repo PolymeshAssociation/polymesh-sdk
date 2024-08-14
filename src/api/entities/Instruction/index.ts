@@ -5,7 +5,6 @@ import {
 import { hexAddPrefix, hexStripPrefix } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import { lt } from 'semver';
 
 import { executeManualInstruction } from '~/api/procedures/executeManualInstruction';
 import {
@@ -21,8 +20,7 @@ import {
   Venue,
 } from '~/internal';
 import { instructionEventsQuery } from '~/middleware/queries/settlements';
-import { instructionsQuery } from '~/middleware/queries/settlementsOld';
-import { InstructionEventEnum, InstructionStatusEnum, Query } from '~/middleware/types';
+import { InstructionEventEnum, Query } from '~/middleware/types';
 import {
   AffirmAsMediatorParams,
   AffirmInstructionParams,
@@ -46,7 +44,6 @@ import {
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
 import { Ensured } from '~/types/utils';
 import { isOffChainLeg } from '~/utils';
-import { SETTLEMENTS_V2_SQ_VERSION } from '~/utils/constants';
 import {
   balanceToBigNumber,
   bigNumberToU64,
@@ -64,13 +61,7 @@ import {
   tickerToString,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import {
-  createProcedureMethod,
-  getLatestSqVersion,
-  optionize,
-  requestMulti,
-  requestPaginated,
-} from '~/utils/internal';
+import { createProcedureMethod, optionize, requestMulti, requestPaginated } from '~/utils/internal';
 
 import {
   AffirmationStatus,
@@ -587,39 +578,6 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     event: InstructionEventEnum.InstructionExecuted | InstructionEventEnum.InstructionFailed
   ): Promise<EventIdentifier | null> {
     const { id, context } = this;
-
-    // TODO @prashantasdeveloper Remove after SQ dual version support
-    const sqVersion = await getLatestSqVersion(context);
-
-    const instructionStatusMap = {
-      [InstructionEventEnum.InstructionExecuted]: InstructionStatusEnum.Executed,
-      [InstructionEventEnum.InstructionFailed]: InstructionStatusEnum.Failed,
-    };
-
-    if (lt(sqVersion, SETTLEMENTS_V2_SQ_VERSION)) {
-      const {
-        data: {
-          instructions: {
-            nodes: [details],
-          },
-        },
-      } = await context.queryMiddleware(
-        instructionsQuery(
-          {
-            status: instructionStatusMap[event],
-            id: id.toString(),
-          },
-          new BigNumber(1),
-          new BigNumber(0)
-        )
-      );
-
-      return optionize(middlewareEventDetailsToEventIdentifier)(
-        details?.updatedBlock,
-        details?.eventIdx
-      );
-    }
-    // Dual version support end
 
     const {
       data: {

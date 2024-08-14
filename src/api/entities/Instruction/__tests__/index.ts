@@ -8,8 +8,7 @@ import { when } from 'jest-when';
 
 import { Context, Entity, Instruction, PolymeshTransaction } from '~/internal';
 import { instructionEventsQuery } from '~/middleware/queries/settlements';
-import { instructionsQuery } from '~/middleware/queries/settlementsOld';
-import { InstructionEventEnum, InstructionStatusEnum } from '~/middleware/types';
+import { InstructionEventEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   createMockAssetId,
@@ -31,7 +30,6 @@ import {
 } from '~/types';
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
 import { tuple } from '~/types/utils';
-import { SETTLEMENTS_V2_SQ_VERSION } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -1033,11 +1031,6 @@ describe('Instruction class', () => {
       };
       const fakeEventIdentifierResult = { blockNumber, blockDate, blockHash, eventIndex: eventIdx };
 
-      const queryVariables = {
-        status: InstructionStatusEnum.Executed,
-        id: id.toString(),
-      };
-
       // Should return Pending status
       const queryResult = dsMockUtils.createMockInstruction({
         instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
@@ -1058,35 +1051,6 @@ describe('Instruction class', () => {
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
-          query: instructionsQuery(queryVariables, new BigNumber(1), new BigNumber(0)),
-          returnData: {
-            instructions: { nodes: [fakeQueryResult] },
-          },
-        },
-        {
-          query: instructionsQuery(
-            {
-              ...queryVariables,
-              status: InstructionStatusEnum.Failed,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructions: { nodes: [] },
-          },
-        },
-      ]);
-
-      let result = await instruction.getStatus();
-      expect(result).toMatchObject({
-        status: InstructionStatus.Success,
-        eventIdentifier: fakeEventIdentifierResult,
-      });
-
-      getLatestSqVersionSpy.mockResolvedValueOnce(SETTLEMENTS_V2_SQ_VERSION);
-      dsMockUtils.createApolloMultipleQueriesMock([
-        {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionExecuted,
@@ -1118,7 +1082,7 @@ describe('Instruction class', () => {
         },
       ]);
 
-      result = await instruction.getStatus();
+      const result = await instruction.getStatus();
       expect(result).toMatchObject({
         status: InstructionStatus.Success,
         eventIdentifier: fakeEventIdentifierResult,
@@ -1136,12 +1100,6 @@ describe('Instruction class', () => {
       };
       const fakeEventIdentifierResult = { blockNumber, blockDate, blockHash, eventIndex: eventIdx };
 
-      const queryVariables = {
-        status: InstructionStatusEnum.Executed,
-        id: id.toString(),
-      };
-
-      // Should return Pending status
       const queryResult = dsMockUtils.createMockInstruction({
         instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
         venueId: dsMockUtils.createMockU64(),
@@ -1161,39 +1119,6 @@ describe('Instruction class', () => {
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
-          query: instructionsQuery(queryVariables, new BigNumber(1), new BigNumber(0)),
-          returnData: {
-            instructions: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: instructionsQuery(
-            {
-              ...queryVariables,
-              status: InstructionStatusEnum.Failed,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructions: {
-              nodes: [fakeQueryResult],
-            },
-          },
-        },
-      ]);
-
-      let result = await instruction.getStatus();
-      expect(result).toMatchObject({
-        status: InstructionStatus.Failed,
-        eventIdentifier: fakeEventIdentifierResult,
-      });
-
-      getLatestSqVersionSpy.mockResolvedValueOnce(SETTLEMENTS_V2_SQ_VERSION);
-      dsMockUtils.createApolloMultipleQueriesMock([
-        {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionExecuted,
@@ -1225,7 +1150,7 @@ describe('Instruction class', () => {
         },
       ]);
 
-      result = await instruction.getStatus();
+      const result = await instruction.getStatus();
       expect(result).toMatchObject({
         status: InstructionStatus.Failed,
         eventIdentifier: fakeEventIdentifierResult,
@@ -1233,12 +1158,6 @@ describe('Instruction class', () => {
     });
 
     it("should throw an error if Instruction status couldn't be determined", async () => {
-      const queryVariables = {
-        status: InstructionStatusEnum.Executed,
-        id: id.toString(),
-      };
-
-      // Should return Pending status
       const queryResult = dsMockUtils.createMockInstruction({
         instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
         venueId: dsMockUtils.createMockU64(),
@@ -1258,33 +1177,6 @@ describe('Instruction class', () => {
           dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Unknown)
         );
 
-      dsMockUtils.createApolloMultipleQueriesMock([
-        {
-          query: instructionsQuery(queryVariables, new BigNumber(1), new BigNumber(0)),
-          returnData: {
-            instructions: { nodes: [] },
-          },
-        },
-        {
-          query: instructionsQuery(
-            {
-              ...queryVariables,
-              status: InstructionStatusEnum.Failed,
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructions: { nodes: [] },
-          },
-        },
-      ]);
-
-      await expect(instruction.getStatus()).rejects.toThrow(
-        "It isn't possible to determine the current status of this Instruction"
-      );
-
-      getLatestSqVersionSpy.mockResolvedValueOnce(SETTLEMENTS_V2_SQ_VERSION);
       dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: instructionEventsQuery(
