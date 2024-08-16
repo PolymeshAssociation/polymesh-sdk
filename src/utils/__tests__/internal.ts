@@ -1160,7 +1160,7 @@ describe('warnUnexpectedSqVersion', () => {
       subqueryVersions: {
         nodes: [
           {
-            version: '12.2.0-alpha.2',
+            version: '16.2.0-alpha.2',
           },
         ],
       },
