@@ -51,7 +51,9 @@ import {
 import {
   calculateNextKey,
   createProcedureMethod,
+  getAssetIdForMiddleware,
   getIdentity,
+  getLatestSqVersion,
   toHumanReadable,
   xor,
 } from '~/utils/internal';
@@ -445,9 +447,12 @@ export class DividendDistribution extends CorporateActionBase {
       context,
     } = this;
 
+    const latestSqVersion = await getLatestSqVersion(context);
+    const middlewareAssetId = await getAssetIdForMiddleware(assetId, latestSqVersion, context);
+
     const taxPromise = context.queryMiddleware<Ensured<Query, 'distributions'>>(
       distributionQuery({
-        assetId,
+        assetId: middlewareAssetId,
         localId: id.toNumber(),
       })
     );
@@ -487,10 +492,13 @@ export class DividendDistribution extends CorporateActionBase {
     } = this;
     const { size, start } = opts;
 
+    const latestSqVersion = await getLatestSqVersion(context);
+    const middlewareAssetId = await getAssetIdForMiddleware(assetId, latestSqVersion, context);
+
     const paymentsPromise = context.queryMiddleware<Ensured<Query, 'distributionPayments'>>(
       distributionPaymentsQuery(
         {
-          distributionId: `${assetId}/${id.toString()}`,
+          distributionId: `${middlewareAssetId}/${id.toString()}`,
         },
         size,
         start

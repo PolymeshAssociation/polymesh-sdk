@@ -44,11 +44,11 @@ import {
   stringToIdentityId,
 } from '~/utils/conversion';
 import {
-  asAssetId,
   asBaseAsset,
   calculateNextKey,
   createProcedureMethod,
   getAssetIdForMiddleware,
+  getLatestSqVersion,
   isModuleOrTagMatch,
   optionize,
 } from '~/utils/internal';
@@ -323,7 +323,9 @@ export class AssetPermissions extends Namespace<Identity> {
    */
   public async enabledAt({ asset }: { asset: string | Asset }): Promise<EventIdentifier | null> {
     const { context } = this;
-    const assetId = await asAssetId(asset, context);
+
+    const latestSqVersion = await getLatestSqVersion(context);
+    const middlewareAssetId = await getAssetIdForMiddleware(asset, latestSqVersion, context);
 
     const {
       data: {
@@ -333,7 +335,7 @@ export class AssetPermissions extends Namespace<Identity> {
       },
     } = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgents'>>(
       tickerExternalAgentsQuery({
-        assetId,
+        assetId: middlewareAssetId,
       })
     );
 
@@ -378,7 +380,8 @@ export class AssetPermissions extends Namespace<Identity> {
 
     const { asset, moduleId: palletName, eventId, size, start } = opts;
 
-    const assetId = await asAssetId(asset, context);
+    const latestSqVersion = await getLatestSqVersion(context);
+    const middlewareAssetId = await getAssetIdForMiddleware(asset, latestSqVersion, context);
 
     const {
       data: {
@@ -387,7 +390,7 @@ export class AssetPermissions extends Namespace<Identity> {
     } = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgentActions'>>(
       tickerExternalAgentActionsQuery(
         {
-          assetId,
+          assetId: middlewareAssetId,
           callerId: did,
           palletName,
           eventId,
