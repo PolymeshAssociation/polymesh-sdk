@@ -26,7 +26,12 @@ import {
   toHistoricalSettlements,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, requestPaginated } from '~/utils/internal';
+import {
+  createProcedureMethod,
+  getAssetIdForMiddleware,
+  getLatestSqVersion,
+  requestPaginated,
+} from '~/utils/internal';
 
 /**
  * Handles all Portfolio related functionality on the Identity side
@@ -184,7 +189,11 @@ export class Portfolios extends Namespace<Identity> {
   public async getTransactionHistory(
     filters: {
       account?: string;
+      /**
+       * @deprecated in favour of assetId
+       */
       ticker?: string;
+      assetId?: string;
     } = {}
   ): Promise<HistoricSettlement[]> {
     const {
@@ -192,13 +201,21 @@ export class Portfolios extends Namespace<Identity> {
       parent: { did: identityId },
     } = this;
 
-    const { account, ticker } = filters;
+    const { account, ticker, assetId } = filters;
+
+    let middlewareAssetId;
+    const assetIdValue = assetId ?? ticker;
+    const latestSqVersion = await getLatestSqVersion(context);
+
+    if (assetIdValue) {
+      middlewareAssetId = await getAssetIdForMiddleware(assetIdValue, latestSqVersion, context);
+    }
 
     const settlementsPromise = context.queryMiddleware<Ensured<Query, 'legs'>>(
       settlementsForAllPortfoliosQuery({
         identityId,
         address: account,
-        assetId: ticker,
+        assetId: middlewareAssetId,
       })
     );
 
@@ -206,7 +223,7 @@ export class Portfolios extends Namespace<Identity> {
       portfoliosMovementsQuery({
         identityId,
         address: account,
-        assetId: ticker,
+        assetId: middlewareAssetId,
       })
     );
 
@@ -223,6 +240,12 @@ export class Portfolios extends Namespace<Identity> {
       },
     ] = await Promise.all([settlementsPromise, portfolioMovementsPromise]);
 
-    return toHistoricalSettlements(settlements, portfolioMovements, { identityId }, context);
+    return toHistoricalSettlements(
+      settlements,
+      portfolioMovements,
+      { identityId },
+      context,
+      latestSqVersion
+    );
   }
 }

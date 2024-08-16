@@ -108,6 +108,7 @@ import {
   PRIVATE_SUPPORTED_NODE_VERSION_RANGE,
   PRIVATE_SUPPORTED_SPEC_SEMVER,
   PRIVATE_SUPPORTED_SPEC_VERSION_RANGE,
+  SQ_VERSION_7_X,
   STATE_RUNTIME_VERSION_CALL,
   SUPPORTED_NODE_SEMVER,
   SUPPORTED_NODE_VERSION_RANGE,
@@ -268,10 +269,14 @@ export function createClaim(
   jurisdiction: Falsyable<string>,
   middlewareScope: Falsyable<MiddlewareScope>,
   cddId: Falsyable<string>,
-  customClaimTypeId: Falsyable<BigNumber>
+  customClaimTypeId: Falsyable<BigNumber>,
+  latestSqVersion: string,
+  context: Context
 ): Claim {
   const type = claimType as ClaimType;
-  const scope = (middlewareScope ? middlewareScopeToScope(middlewareScope) : {}) as Scope;
+  const scope = (
+    middlewareScope ? middlewareScopeToScope(middlewareScope, latestSqVersion, context) : {}
+  ) as Scope;
 
   switch (type) {
     case ClaimType.Jurisdiction: {
@@ -2088,7 +2093,9 @@ export function asNftId(nft: Nft | BigNumber): BigNumber {
  */
 export function areSameClaims(
   claim: Claim,
-  { scope, type, customClaimTypeId }: MiddlewareClaim
+  { scope, type, customClaimTypeId }: MiddlewareClaim,
+  context: Context,
+  latestSqVersion: string
 ): boolean {
   // filter out deprecated claim types
   if (
@@ -2100,7 +2107,11 @@ export function areSameClaims(
     return false;
   }
 
-  if (isScopedClaim(claim) && scope && !isEqual(middlewareScopeToScope(scope), claim.scope)) {
+  if (
+    isScopedClaim(claim) &&
+    scope &&
+    !isEqual(middlewareScopeToScope(scope, latestSqVersion, context), claim.scope)
+  ) {
     return false;
   }
 
@@ -2236,4 +2247,50 @@ export function getAssetIdForStats(asset: Asset, context: Context): TickerKey | 
   const rawAssetId = assetToMeshAssetId(asset, context);
 
   return context.isV6 ? { Ticker: rawAssetId } : rawAssetId;
+}
+
+/**
+ * @hidden
+ */
+export async function getAssetIdForMiddleware(
+  assetIdOrTicker: string | Asset,
+  latestSqVersion: string,
+  context: Context
+): Promise<string> {
+  if (lt(latestSqVersion, SQ_VERSION_7_X)) {
+    // this means SQ is on version with settlements v2 changes.
+    if (!context.isV6) {
+      throw new PolymeshError({
+        code: ErrorCode.MiddlewareError,
+        message: `SQ needs to be updated to atleast version ${SQ_VERSION_7_X} to support 7.x chain`,
+      });
+    }
+    return asAssetId(assetIdOrTicker, context);
+  }
+
+  return asAssetId(assetIdOrTicker, context);
+}
+
+/**
+ * @hidden
+ */
+export function getAssetIdFromMiddleware(
+  assetIdOrTicker: string,
+  latestSqVersion: string,
+  context: Context
+): string {
+  if (lt(latestSqVersion, SQ_VERSION_7_X)) {
+    // this means SQ is on version with settlements v2 changes.
+    if (!context.isV6) {
+      throw new PolymeshError({
+        code: ErrorCode.MiddlewareError,
+        message: `SQ needs to be updated to atleast version ${SQ_VERSION_7_X} to support 7.x chain`,
+      });
+    }
+    // this is true when 6.x chain is being used with settlements v2 SQ -> All asset IDs are saved as ticker
+    return assetIdOrTicker;
+  }
+
+  // TODO fetch ticker for assetID for 6.x version
+  return assetIdOrTicker;
 }

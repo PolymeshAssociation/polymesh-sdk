@@ -34,7 +34,7 @@ import {
   middlewareInstructionToHistoricInstruction,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { calculateNextKey, createProcedureMethod } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod, getLatestSqVersion } from '~/utils/internal';
 
 import { HistoricInstruction, VenueDetails } from './types';
 
@@ -258,9 +258,10 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
         start
       )
     );
+    const latestSqVersion = await getLatestSqVersion(context);
 
     const data = instructionsResult.map(middlewareInstruction =>
-      middlewareInstructionToHistoricInstruction(middlewareInstruction, context)
+      middlewareInstructionToHistoricInstruction(middlewareInstruction, context, latestSqVersion)
     );
 
     const count = new BigNumber(totalCount);

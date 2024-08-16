@@ -29,7 +29,13 @@ import {
   bigNumberToU64,
   fundraiserToOfferingDetails,
 } from '~/utils/conversion';
-import { calculateNextKey, createProcedureMethod, toHumanReadable } from '~/utils/internal';
+import {
+  calculateNextKey,
+  createProcedureMethod,
+  getAssetIdForMiddleware,
+  getLatestSqVersion,
+  toHumanReadable,
+} from '~/utils/internal';
 
 import { Investment, OfferingDetails } from './types';
 
@@ -218,6 +224,9 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
       asset: { id: assetId },
     } = this;
 
+    const latestSqVersion = await getLatestSqVersion(context);
+    const middlewareAssetId = await getAssetIdForMiddleware(assetId, latestSqVersion, context);
+
     const { size, start } = opts;
 
     const {
@@ -228,7 +237,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
       investmentsQuery(
         {
           stoId: id.toNumber(),
-          offeringToken: assetId,
+          offeringToken: middlewareAssetId,
         },
         size,
         start

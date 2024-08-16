@@ -599,7 +599,7 @@ describe('Claims Class', () => {
 
       when(jest.spyOn(utilsConversionModule, 'toIdentityWithClaimsArray'))
         .calledWith(claimsQueryResponse.nodes as unknown as Claim[], context, 'issuerId')
-        .mockReturnValue(fakeClaims);
+        .mockResolvedValue(fakeClaims);
 
       dsMockUtils.createApolloQueryMock(
         claimsQuery({

@@ -28,18 +28,27 @@ import {
   signerToString,
   stringToIdentityId,
 } from '~/utils/conversion';
-import { areSameClaims, asIdentity, assembleBatchTransactions } from '~/utils/internal';
+import {
+  areSameClaims,
+  asIdentity,
+  assembleBatchTransactions,
+  getLatestSqVersion,
+} from '~/utils/internal';
 
-const findClaimsByOtherIssuers = (
+const findClaimsByOtherIssuers = async (
   claims: ClaimTarget[],
   claimsByDid: Record<string, MiddlewareClaim[]>,
-  signerDid: string
-): Claim[] =>
-  claims.reduce<Claim[]>((prev, { target, claim }) => {
+  signerDid: string,
+  context: Context
+): Promise<Claim[]> => {
+  const latestSqVerison = await getLatestSqVersion(context);
+  return claims.reduce<Claim[]>((prev, { target, claim }) => {
     const targetClaims = claimsByDid[signerToString(target)] ?? [];
 
     const claimIssuedByOtherDids = targetClaims.some(
-      targetClaim => areSameClaims(claim, targetClaim) && targetClaim.issuerId !== signerDid
+      targetClaim =>
+        areSameClaims(claim, targetClaim, context, latestSqVerison) &&
+        targetClaim.issuerId !== signerDid
     );
 
     if (claimIssuedByOtherDids) {
@@ -48,6 +57,7 @@ const findClaimsByOtherIssuers = (
 
     return prev;
   }, []);
+};
 
 /**
  * @hidden
@@ -174,7 +184,12 @@ export async function prepareModifyClaims(
 
     const claimsByDid = groupBy(claimsData, 'targetId');
 
-    const claimsByOtherIssuers: Claim[] = findClaimsByOtherIssuers(claims, claimsByDid, currentDid);
+    const claimsByOtherIssuers: Claim[] = await findClaimsByOtherIssuers(
+      claims,
+      claimsByDid,
+      currentDid,
+      context
+    );
 
     if (claimsByOtherIssuers.length) {
       throw new PolymeshError({

@@ -37,7 +37,9 @@ import {
   asAssetId,
   asFungibleAsset,
   createProcedureMethod,
+  getAssetIdForMiddleware,
   getIdentity,
+  getLatestSqVersion,
   toHumanReadable,
 } from '~/utils/internal';
 
@@ -395,7 +397,11 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
   public async getTransactionHistory(
     filters: {
       account?: string;
+      /**
+       * @deprecated in favour of assetId
+       */
       ticker?: string;
+      assetId?: string;
     } = {}
   ): Promise<HistoricSettlement[]> {
     const {
@@ -404,14 +410,22 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       _id: portfolioId,
     } = this;
 
-    const { account, ticker } = filters;
+    const { account, ticker, assetId } = filters;
+
+    let middlewareAssetId;
+    const assetIdValue = assetId ?? ticker;
+    const latestSqVersion = await getLatestSqVersion(context);
+
+    if (assetIdValue) {
+      middlewareAssetId = await getAssetIdForMiddleware(assetIdValue, latestSqVersion, context);
+    }
 
     const settlementsPromise = context.queryMiddleware<Ensured<Query, 'legs'>>(
       settlementsQuery({
         identityId,
         portfolioId,
         address: account,
-        assetId: ticker,
+        assetId: middlewareAssetId,
       })
     );
 
@@ -420,7 +434,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
         identityId,
         portfolioId,
         address: account,
-        assetId: ticker,
+        assetId: middlewareAssetId,
       })
     );
 
@@ -452,7 +466,8 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
         identityId,
         portfolio: new BigNumber(portfolioId || 0).toNumber(),
       },
-      context
+      context,
+      latestSqVersion
     );
   }
 

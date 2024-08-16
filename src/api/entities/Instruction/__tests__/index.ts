@@ -982,15 +982,12 @@ describe('Instruction class', () => {
     });
 
     let bigNumberToU64Spy: jest.SpyInstance;
-    let getLatestSqVersionSpy: jest.SpyInstance;
 
     beforeAll(() => {
       bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
-      getLatestSqVersionSpy = jest.spyOn(utilsInternalModule, 'getLatestSqVersion');
     });
 
     beforeEach(() => {
-      getLatestSqVersionSpy.mockResolvedValue('15.0.0');
       when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
     });
 
