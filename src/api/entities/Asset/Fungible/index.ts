@@ -28,6 +28,7 @@ import {
   createProcedureMethod,
   getAssetIdForMiddleware,
   getAssetIdFromMiddleware,
+  getLatestSqVersion,
   optionize,
 } from '~/utils/internal';
 
@@ -85,6 +86,9 @@ export class FungibleAsset extends BaseAsset {
   public async createdAt(): Promise<EventIdentifier | null> {
     const { id, context } = this;
 
+    const latestSqVersion = await getLatestSqVersion(context);
+    const middlewareAssetId = await getAssetIdForMiddleware(id, latestSqVersion, context);
+
     const {
       data: {
         assets: {
@@ -93,7 +97,7 @@ export class FungibleAsset extends BaseAsset {
       },
     } = await context.queryMiddleware<Ensured<Query, 'assets'>>(
       assetQuery({
-        id,
+        id: middlewareAssetId,
       })
     );
 
@@ -146,7 +150,8 @@ export class FungibleAsset extends BaseAsset {
   public async getOperationHistory(): Promise<HistoricAgentOperation[]> {
     const { context, id: assetId } = this;
 
-    const middlewareAssetId = await getAssetIdForMiddleware(assetId, context);
+    const latestSqVersion = await getLatestSqVersion(context);
+    const middlewareAssetId = await getAssetIdForMiddleware(assetId, latestSqVersion, context);
 
     const {
       data: {
@@ -181,6 +186,9 @@ export class FungibleAsset extends BaseAsset {
     const { context, id } = this;
     const { size, start } = opts;
 
+    const latestSqVersion = await getLatestSqVersion(context);
+    const middlewareAssetId = await getAssetIdForMiddleware(id, latestSqVersion, context);
+
     const {
       data: {
         assetTransactions: { nodes, totalCount },
@@ -188,48 +196,49 @@ export class FungibleAsset extends BaseAsset {
     } = await context.queryMiddleware<Ensured<Query, 'assetTransactions'>>(
       assetTransactionQuery(
         {
-          assetId: id,
+          assetId: middlewareAssetId,
         },
         size,
         start
       )
     );
 
-    const data: HistoricAssetTransaction[] = nodes.map(
-      ({
-        asset,
-        amount,
-        fromPortfolioId,
-        toPortfolioId,
-        createdBlock,
-        eventId,
-        eventIdx,
-        extrinsicIdx,
+    const data: HistoricAssetTransaction[] = [];
+
+    for (const {
+      assetId,
+      amount,
+      fromPortfolioId,
+      toPortfolioId,
+      createdBlock,
+      eventId,
+      eventIdx,
+      extrinsicIdx,
+      fundingRound,
+      instructionId,
+      instructionMemo,
+    } of nodes) {
+      const fromPortfolio = optionize(portfolioIdStringToPortfolio)(fromPortfolioId);
+      const toPortfolio = optionize(portfolioIdStringToPortfolio)(toPortfolioId);
+
+      data.push({
+        asset: new FungibleAsset(
+          { assetId: getAssetIdFromMiddleware(assetId, latestSqVersion, context) },
+          context
+        ),
+        amount: new BigNumber(amount).shiftedBy(-6),
+        event: eventId,
+        from: optionize(middlewarePortfolioToPortfolio)(fromPortfolio, context),
+        to: optionize(middlewarePortfolioToPortfolio)(toPortfolio, context),
         fundingRound,
-        instructionId,
+        instructionId: instructionId ? new BigNumber(instructionId) : undefined,
         instructionMemo,
-      }) => {
-        const fromPortfolio = optionize(portfolioIdStringToPortfolio)(fromPortfolioId);
-        const toPortfolio = optionize(portfolioIdStringToPortfolio)(toPortfolioId);
-
-        const assetId = getAssetIdFromMiddleware(asset);
-
-        return {
-          asset: new FungibleAsset({ assetId }, context),
-          amount: new BigNumber(amount).shiftedBy(-6),
-          event: eventId,
-          from: optionize(middlewarePortfolioToPortfolio)(fromPortfolio, context),
-          to: optionize(middlewarePortfolioToPortfolio)(toPortfolio, context),
-          fundingRound,
-          instructionId: instructionId ? new BigNumber(instructionId) : undefined,
-          instructionMemo,
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          extrinsicIndex: new BigNumber(extrinsicIdx!),
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          ...middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx),
-        };
-      }
-    );
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        extrinsicIndex: new BigNumber(extrinsicIdx!),
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        ...middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx),
+      });
+    }
 
     const count = new BigNumber(totalCount);
     const next = calculateNextKey(count, data.length, start);

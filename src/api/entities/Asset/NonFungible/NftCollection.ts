@@ -37,7 +37,9 @@ import {
   calculateNextKey,
   createProcedureMethod,
   getAssetIdAndTicker,
+  getAssetIdForMiddleware,
   getAssetIdFromMiddleware,
+  getLatestSqVersion,
   optionize,
 } from '~/utils/internal';
 
@@ -249,6 +251,9 @@ export class NftCollection extends BaseAsset {
   public async createdAt(): Promise<EventIdentifier | null> {
     const { id, context } = this;
 
+    const latestSqVersion = await getLatestSqVersion(context);
+    const middlewareAssetId = await getAssetIdForMiddleware(id, latestSqVersion, context);
+
     const {
       data: {
         assets: {
@@ -257,7 +262,7 @@ export class NftCollection extends BaseAsset {
       },
     } = await context.queryMiddleware<Ensured<Query, 'assets'>>(
       assetQuery({
-        id,
+        id: middlewareAssetId,
       })
     );
 
@@ -334,6 +339,7 @@ export class NftCollection extends BaseAsset {
     const { context, id } = this;
     const { size, start } = opts;
 
+    const latestSqVersion = await getLatestSqVersion(context);
     const {
       data: {
         assetTransactions: { nodes, totalCount },
@@ -348,44 +354,43 @@ export class NftCollection extends BaseAsset {
       )
     );
 
-    const data: HistoricNftTransaction[] = nodes.map(
-      ({
-        asset,
-        nftIds,
-        fromPortfolioId,
-        toPortfolioId,
-        createdBlock,
-        eventId,
-        eventIdx,
-        extrinsicIdx,
+    const data: HistoricNftTransaction[] = [];
+
+    for (const {
+      assetId: middlewareAssetId,
+      nftIds,
+      fromPortfolioId,
+      toPortfolioId,
+      createdBlock,
+      eventId,
+      eventIdx,
+      extrinsicIdx,
+      fundingRound,
+      instructionId,
+      instructionMemo,
+    } of nodes) {
+      const fromPortfolio = optionize(portfolioIdStringToPortfolio)(fromPortfolioId);
+      const toPortfolio = optionize(portfolioIdStringToPortfolio)(toPortfolioId);
+
+      const assetId = getAssetIdFromMiddleware(middlewareAssetId, latestSqVersion, context);
+      const collection = new NftCollection({ assetId }, context);
+      data.push({
+        asset: collection,
+        nfts: nftIds.map(
+          (nftId: string) => new Nft({ assetId, id: new BigNumber(nftId) }, context)
+        ),
+        event: eventId,
+        to: optionize(middlewarePortfolioToPortfolio)(toPortfolio, context),
+        from: optionize(middlewarePortfolioToPortfolio)(fromPortfolio, context),
         fundingRound,
-        instructionId,
         instructionMemo,
-      }) => {
-        const fromPortfolio = optionize(portfolioIdStringToPortfolio)(fromPortfolioId);
-        const toPortfolio = optionize(portfolioIdStringToPortfolio)(toPortfolioId);
-
-        const assetId = getAssetIdFromMiddleware(asset);
-        const collection = new NftCollection({ assetId }, context);
-
-        return {
-          asset: collection,
-          nfts: nftIds.map(
-            (nftId: string) => new Nft({ assetId, id: new BigNumber(nftId) }, context)
-          ),
-          event: eventId,
-          to: optionize(middlewarePortfolioToPortfolio)(toPortfolio, context),
-          from: optionize(middlewarePortfolioToPortfolio)(fromPortfolio, context),
-          fundingRound,
-          instructionMemo,
-          instructionId: instructionId ? new BigNumber(instructionId) : undefined,
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          extrinsicIndex: new BigNumber(extrinsicIdx!),
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          ...middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx),
-        };
-      }
-    );
+        instructionId: instructionId ? new BigNumber(instructionId) : undefined,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        extrinsicIndex: new BigNumber(extrinsicIdx!),
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        ...middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx),
+      });
+    }
 
     const count = new BigNumber(totalCount);
     const next = calculateNextKey(count, data.length, start);

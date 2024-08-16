@@ -596,7 +596,12 @@ describe('Claims Class', () => {
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
       when(jest.spyOn(utilsConversionModule, 'toIdentityWithClaimsArray'))
-        .calledWith(claimsQueryResponse.nodes as unknown as Claim[], context, 'issuerId')
+        .calledWith(
+          claimsQueryResponse.nodes as unknown as Claim[],
+          context,
+          'issuerId',
+          expect.anything()
+        )
         .mockReturnValue(fakeClaims);
 
       dsMockUtils.createApolloQueryMock(
