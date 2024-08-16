@@ -8,7 +8,6 @@ export enum ClaimScopeTypeEnum {
   Ticker = 'Ticker',
   Asset = 'Asset',
   Custom = 'Custom',
-  Asset = 'Asset',
 }
 
 export type MiddlewareScope = Scalars['JSON']['input'];

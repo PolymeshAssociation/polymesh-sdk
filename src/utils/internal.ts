@@ -20,8 +20,8 @@ import {
 } from '@polkadot/types/lookup';
 import type { Callback, Codec, Observable } from '@polkadot/types/types';
 import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/types/types';
-import { hexAddPrefix, hexStripPrefix, isHex, stringToHex, stringUpperFirst } from '@polkadot/util';
-import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
+import { isHex, stringUpperFirst } from '@polkadot/util';
+import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import fetch from 'cross-fetch';
 import stringify from 'json-stable-stringify';
@@ -44,12 +44,7 @@ import {
   PolymeshError,
 } from '~/internal';
 import { latestSqVersionQuery } from '~/middleware/queries/common';
-import {
-  Asset as MiddlewareAsset,
-  Claim as MiddlewareClaim,
-  ClaimTypeEnum,
-  Query,
-} from '~/middleware/types';
+import { Claim as MiddlewareClaim, ClaimTypeEnum, Query } from '~/middleware/types';
 import { MiddlewareScope } from '~/middleware/typesV1';
 import {
   Asset,
@@ -113,7 +108,7 @@ import {
   PRIVATE_SUPPORTED_NODE_VERSION_RANGE,
   PRIVATE_SUPPORTED_SPEC_SEMVER,
   PRIVATE_SUPPORTED_SPEC_VERSION_RANGE,
-  SETTLEMENTS_V2_SQ_VERSION,
+  SQ_VERSION_7_X,
   STATE_RUNTIME_VERSION_CALL,
   SUPPORTED_NODE_SEMVER,
   SUPPORTED_NODE_VERSION_RANGE,
@@ -126,7 +121,6 @@ import {
   assetToMeshAssetId,
   bigNumberToU32,
   claimIssuerToMeshClaimIssuer,
-  coerceHexToString,
   identitiesToBtreeSet,
   identityIdToString,
   meshClaimTypeToClaimType,
@@ -275,10 +269,14 @@ export function createClaim(
   jurisdiction: Falsyable<string>,
   middlewareScope: Falsyable<MiddlewareScope>,
   cddId: Falsyable<string>,
-  customClaimTypeId: Falsyable<BigNumber>
+  customClaimTypeId: Falsyable<BigNumber>,
+  latestSqVersion: string,
+  context: Context
 ): Claim {
   const type = claimType as ClaimType;
-  const scope = (middlewareScope ? middlewareScopeToScope(middlewareScope) : {}) as Scope;
+  const scope = (
+    middlewareScope ? middlewareScopeToScope(middlewareScope, latestSqVersion, context) : {}
+  ) as Scope;
 
   switch (type) {
     case ClaimType.Jurisdiction: {
@@ -2095,7 +2093,9 @@ export function asNftId(nft: Nft | BigNumber): BigNumber {
  */
 export function areSameClaims(
   claim: Claim,
-  { scope, type, customClaimTypeId }: MiddlewareClaim
+  { scope, type, customClaimTypeId }: MiddlewareClaim,
+  context: Context,
+  latestSqVersion: string
 ): boolean {
   // filter out deprecated claim types
   if (
@@ -2107,7 +2107,11 @@ export function areSameClaims(
     return false;
   }
 
-  if (isScopedClaim(claim) && scope && !isEqual(middlewareScopeToScope(scope), claim.scope)) {
+  if (
+    isScopedClaim(claim) &&
+    scope &&
+    !isEqual(middlewareScopeToScope(scope, latestSqVersion, context), claim.scope)
+  ) {
     return false;
   }
 
@@ -2239,48 +2243,54 @@ export async function getAccount(
 /**
  * @hidden
  */
-const getAssetIdForLegacyTicker = (ticker: string, context: Context): string => {
-  const assetComponents = [stringToHex('legacy_ticker'), stringToTicker(ticker, context).toHex()];
+export function getAssetIdForStats(asset: Asset, context: Context): TickerKey | U8aFixed {
+  const rawAssetId = assetToMeshAssetId(asset, context);
 
-  const data = hexAddPrefix(assetComponents.map(e => hexStripPrefix(e)).join(''));
-
-  return blake2AsHex(data, 128);
-};
+  return context.isV6 ? { Ticker: rawAssetId } : rawAssetId;
+}
 
 /**
  * @hidden
  */
 export async function getAssetIdForMiddleware(
-  asset: string | BaseAsset,
+  assetIdOrTicker: string | Asset,
+  latestSqVersion: string,
   context: Context
 ): Promise<string> {
-  const ticker = await asAssetId(asset, context);
-
-  const sqVersion = await getLatestSqVersion(context);
-
-  if (lt(sqVersion, SETTLEMENTS_V2_SQ_VERSION)) {
-    // old SQ requires no change
-    return ticker;
+  if (lt(latestSqVersion, SQ_VERSION_7_X)) {
+    // this means SQ is on version with settlements v2 changes.
+    if (!context.isV6) {
+      throw new PolymeshError({
+        code: ErrorCode.MiddlewareError,
+        message: `SQ needs to be updated to atleast version ${SQ_VERSION_7_X} to support 7.x chain`,
+      });
+    }
+    return asAssetId(assetIdOrTicker, context);
   }
 
-  return getAssetIdForLegacyTicker(ticker, context);
+  return asAssetId(assetIdOrTicker, context);
 }
 
 /**
  * @hidden
  */
 export function getAssetIdFromMiddleware(
-  assetIdAndTicker: Falsyable<Pick<MiddlewareAsset, 'id' | 'ticker'>>
+  assetIdOrTicker: string,
+  latestSqVersion: string,
+  context: Context
 ): string {
-  const { ticker } = assetIdAndTicker!;
-  return coerceHexToString(ticker!);
-}
+  if (lt(latestSqVersion, SQ_VERSION_7_X)) {
+    // this means SQ is on version with settlements v2 changes.
+    if (!context.isV6) {
+      throw new PolymeshError({
+        code: ErrorCode.MiddlewareError,
+        message: `SQ needs to be updated to atleast version ${SQ_VERSION_7_X} to support 7.x chain`,
+      });
+    }
+    // this is true when 6.x chain is being used with settlements v2 SQ -> All asset IDs are saved as ticker
+    return assetIdOrTicker;
+  }
 
-/**
- * @hidden
- */
-export function getAssetIdForStats(asset: Asset, context: Context): TickerKey | U8aFixed {
-  const rawAssetId = assetToMeshAssetId(asset, context);
-
-  return context.isV6 ? { Ticker: rawAssetId } : rawAssetId;
+  // TODO fetch ticker for assetID for 6.x version
+  return assetIdOrTicker;
 }

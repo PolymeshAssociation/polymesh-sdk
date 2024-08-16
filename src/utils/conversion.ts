@@ -287,6 +287,7 @@ import {
   assertTickerValid,
   conditionsAreEqual,
   createClaim,
+  getAssetIdForMiddleware,
   getAssetIdFromMiddleware,
   isModuleOrTagMatch,
   optionize,
@@ -2306,13 +2307,20 @@ export async function claimToMeshClaim(
 /**
  * @hidden
  */
-export function middlewareScopeToScope(scope: MiddlewareScope): Scope {
+export function middlewareScopeToScope(
+  scope: MiddlewareScope,
+  latestSqVersion: string,
+  context: Context
+): Scope {
   const { type, value } = scope;
 
   switch (type) {
     case ClaimScopeTypeEnum.Ticker:
     case ClaimScopeTypeEnum.Asset:
-      return { type: ScopeType.Asset, value: removePadding(value) };
+      return {
+        type: ScopeType.Asset,
+        value: getAssetIdFromMiddleware(value, latestSqVersion, context),
+      };
     case ClaimScopeTypeEnum.Identity:
     case ClaimScopeTypeEnum.Custom:
       return { type: scope.type as ScopeType, value };
@@ -2330,7 +2338,11 @@ export function middlewareScopeToScope(scope: MiddlewareScope): Scope {
 /**
  * @hidden
  */
-export function scopeToMiddlewareScope(scope: Scope): MiddlewareScope {
+export async function scopeToMiddlewareScope(
+  scope: Scope,
+  context: Context,
+  latestSqVersion: string
+): Promise<MiddlewareScope> {
   const { type, value } = scope;
 
   switch (type) {
@@ -2338,7 +2350,7 @@ export function scopeToMiddlewareScope(scope: Scope): MiddlewareScope {
     case ScopeType.Asset:
       return {
         type: ClaimScopeTypeEnum.Asset,
-        value,
+        value: await getAssetIdForMiddleware(value, latestSqVersion, context),
       };
     case ScopeType.Identity:
     case ScopeType.Custom:
@@ -3071,7 +3083,11 @@ export function endConditionToSettlementType(
 /**
  * @hidden
  */
-export function middlewareClaimToClaimData(claim: MiddlewareClaim, context: Context): ClaimData {
+export function middlewareClaimToClaimData(
+  claim: MiddlewareClaim,
+  context: Context,
+  latestSqVersion: string
+): ClaimData {
   const {
     targetId,
     issuerId,
@@ -3095,7 +3111,9 @@ export function middlewareClaimToClaimData(claim: MiddlewareClaim, context: Cont
       jurisdiction,
       scope,
       cddId,
-      customClaimTypeId ? new BigNumber(customClaimTypeId) : undefined
+      customClaimTypeId ? new BigNumber(customClaimTypeId) : undefined,
+      latestSqVersion,
+      context
     ),
   };
 }
@@ -3106,13 +3124,14 @@ export function middlewareClaimToClaimData(claim: MiddlewareClaim, context: Cont
 export function toIdentityWithClaimsArray(
   data: MiddlewareClaim[],
   context: Context,
-  groupByAttribute: string
+  groupByAttribute: string,
+  latestSqVersion: string
 ): IdentityWithClaims[] {
   const groupedData = groupBy(data, groupByAttribute);
 
   return map(groupedData, (claims, did) => ({
     identity: new Identity({ did }, context),
-    claims: claims.map(claim => middlewareClaimToClaimData(claim, context)),
+    claims: claims.map(claim => middlewareClaimToClaimData(claim, context, latestSqVersion)),
   }));
 }
 
@@ -4549,12 +4568,19 @@ export function portfolioIdStringToPortfolio(id: string): MiddlewarePortfolio {
 /**
  * @hidden
  */
-export function middlewareLegToLeg(leg: MiddlewareLeg, context: Context): Leg {
+export function middlewareLegToLeg(
+  leg: MiddlewareLeg,
+  context: Context,
+  latestSqVersion: string
+): Leg {
   const { legType, from, fromPortfolio, to, toPortfolio, assetId, ticker, nftIds, amount } = leg;
 
   if (legType === LegTypeEnum.Fungible) {
     return {
-      asset: new FungibleAsset({ assetId }, context),
+      asset: new FungibleAsset(
+        { assetId: getAssetIdFromMiddleware(assetId, latestSqVersion, context) },
+        context
+      ),
       amount: new BigNumber(amount).shiftedBy(-6),
       from: middlewarePortfolioToPortfolio(
         { identityId: from, number: fromPortfolio! } as MiddlewarePortfolio,
@@ -4568,7 +4594,7 @@ export function middlewareLegToLeg(leg: MiddlewareLeg, context: Context): Leg {
   }
 
   if (legType === LegTypeEnum.NonFungible) {
-    const id = getAssetIdFromMiddleware({ id: assetId, ticker });
+    const id = getAssetIdFromMiddleware(assetId, latestSqVersion, context);
     return {
       from: middlewarePortfolioToPortfolio(
         { identityId: from, number: fromPortfolio! } as MiddlewarePortfolio,
@@ -4578,8 +4604,10 @@ export function middlewareLegToLeg(leg: MiddlewareLeg, context: Context): Leg {
         { identityId: to, number: toPortfolio! } as MiddlewarePortfolio,
         context
       ),
-      nfts: nftIds.map((nftId: number) => new Nft({ assetId, id: new BigNumber(nftId) }, context)),
-      asset: new NftCollection({ assetId }, context),
+      nfts: nftIds.map(
+        (nftId: number) => new Nft({ assetId: id, id: new BigNumber(nftId) }, context)
+      ),
+      asset: new NftCollection({ assetId: id }, context),
     };
   }
 
@@ -4597,7 +4625,8 @@ export function middlewareLegToLeg(leg: MiddlewareLeg, context: Context): Leg {
  */
 export function middlewareInstructionToHistoricInstruction(
   instruction: MiddlewareInstruction,
-  context: Context
+  context: Context,
+  latestSqVersion: string
 ): HistoricInstruction {
   /* eslint-disable @typescript-eslint/no-non-null-assertion */
   const {
@@ -4644,7 +4673,7 @@ export function middlewareInstructionToHistoricInstruction(
     memo: memo ?? null,
     venueId: new BigNumber(venueId),
     createdAt: new Date(datetime),
-    legs: legs.map(leg => middlewareLegToLeg(leg, context)),
+    legs: legs.map(leg => middlewareLegToLeg(leg, context, latestSqVersion)),
   };
   /* eslint-enable @typescript-eslint/no-non-null-assertion */
 }
@@ -5088,10 +5117,11 @@ export function toCustomClaimTypeWithIdentity(
 function portfolioMovementsToHistoricSettlements(
   portfolioMovements: MiddlewarePortfolioMovement[],
   context: Context,
-  handleMiddlewareAddress: (address: string, context: Context) => Account
+  handleMiddlewareAddress: (address: string, context: Context) => Account,
+  latestSqVersion: string
 ): HistoricSettlement[] {
   return portfolioMovements.map(
-    ({ createdBlock, fromId, toId, asset, amount, address: accountAddress }) => {
+    ({ createdBlock, fromId, toId, assetId, amount, address: accountAddress }) => {
       const { blockId, hash } = createdBlock!;
       return {
         blockNumber: new BigNumber(blockId),
@@ -5100,7 +5130,10 @@ function portfolioMovementsToHistoricSettlements(
         accounts: [handleMiddlewareAddress(accountAddress, context)],
         legs: [
           {
-            asset: new FungibleAsset({ assetId }, context),
+            asset: new FungibleAsset(
+              { assetId: getAssetIdFromMiddleware(assetId, latestSqVersion, context) },
+              context
+            ),
             amount: new BigNumber(amount).shiftedBy(-6),
             direction: SettlementDirectionEnum.None,
             from: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(fromId), context),
@@ -5122,7 +5155,8 @@ export function toHistoricalSettlements(
     identityId: string;
     portfolio?: number;
   },
-  context: Context
+  context: Context,
+  latestSqVersion: string
 ): HistoricSettlement[] {
   let data: HistoricSettlement[] = [];
 
@@ -5164,7 +5198,7 @@ export function toHistoricalSettlements(
       accounts: legs[0].addresses.map((address: string) => new Account({ address }, context)),
       instruction: new Instruction({ id: new BigNumber(id) }, context),
       legs: legs.map(leg => ({
-        ...middlewareLegToLeg(leg, context),
+        ...middlewareLegToLeg(leg, context, latestSqVersion),
         direction: getDirection(leg),
       })),
     });
@@ -5175,7 +5209,8 @@ export function toHistoricalSettlements(
     ...portfolioMovementsToHistoricSettlements(
       portfolioMovements,
       context,
-      (accountAddress: string) => new Account({ address: accountAddress }, context)
+      (accountAddress: string) => new Account({ address: accountAddress }, context),
+      latestSqVersion
     ),
   ];
   /* eslint-enable @typescript-eslint/no-non-null-assertion */
