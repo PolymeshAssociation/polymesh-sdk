@@ -189,7 +189,10 @@ export function trustingAssetsQuery(
         orderBy: [${TrustedClaimIssuersOrderBy.AssetIdAsc}]
       ) {
         nodes {
-          assetId
+          asset {
+            id
+            ticker
+          }
         }
       }
     }

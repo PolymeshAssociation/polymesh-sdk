@@ -98,6 +98,7 @@ function buildPortfolioMovementsQuery(args: string, filter: string): DocumentNod
         fromId
         toId
         assetId
+        ticker
         amount
         address
         createdBlock {

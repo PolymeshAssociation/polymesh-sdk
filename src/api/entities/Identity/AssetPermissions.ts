@@ -48,7 +48,6 @@ import {
   calculateNextKey,
   createProcedureMethod,
   getAssetIdForMiddleware,
-  getLatestSqVersion,
   isModuleOrTagMatch,
   optionize,
 } from '~/utils/internal';
@@ -324,8 +323,7 @@ export class AssetPermissions extends Namespace<Identity> {
   public async enabledAt({ asset }: { asset: string | Asset }): Promise<EventIdentifier | null> {
     const { context } = this;
 
-    const latestSqVersion = await getLatestSqVersion(context);
-    const middlewareAssetId = await getAssetIdForMiddleware(asset, latestSqVersion, context);
+    const middlewareAssetId = await getAssetIdForMiddleware(asset, context);
 
     const {
       data: {
@@ -380,8 +378,7 @@ export class AssetPermissions extends Namespace<Identity> {
 
     const { asset, moduleId: palletName, eventId, size, start } = opts;
 
-    const latestSqVersion = await getLatestSqVersion(context);
-    const middlewareAssetId = await getAssetIdForMiddleware(asset, latestSqVersion, context);
+    const middlewareAssetId = await getAssetIdForMiddleware(asset, context);
 
     const {
       data: {

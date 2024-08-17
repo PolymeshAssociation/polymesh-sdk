@@ -26,12 +26,7 @@ import {
   toHistoricalSettlements,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import {
-  createProcedureMethod,
-  getAssetIdForMiddleware,
-  getLatestSqVersion,
-  requestPaginated,
-} from '~/utils/internal';
+import { createProcedureMethod, getAssetIdForMiddleware, requestPaginated } from '~/utils/internal';
 
 /**
  * Handles all Portfolio related functionality on the Identity side
@@ -205,10 +200,9 @@ export class Portfolios extends Namespace<Identity> {
 
     let middlewareAssetId;
     const assetIdValue = assetId ?? ticker;
-    const latestSqVersion = await getLatestSqVersion(context);
 
     if (assetIdValue) {
-      middlewareAssetId = await getAssetIdForMiddleware(assetIdValue, latestSqVersion, context);
+      middlewareAssetId = await getAssetIdForMiddleware(assetIdValue, context);
     }
 
     const settlementsPromise = context.queryMiddleware<Ensured<Query, 'legs'>>(
@@ -240,12 +234,6 @@ export class Portfolios extends Namespace<Identity> {
       },
     ] = await Promise.all([settlementsPromise, portfolioMovementsPromise]);
 
-    return toHistoricalSettlements(
-      settlements,
-      portfolioMovements,
-      { identityId },
-      context,
-      latestSqVersion
-    );
+    return toHistoricalSettlements(settlements, portfolioMovements, { identityId }, context);
   }
 }

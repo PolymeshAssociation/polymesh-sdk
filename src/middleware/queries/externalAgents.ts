@@ -62,7 +62,6 @@ export function tickerExternalAgentHistoryQuery(
       ) {
         nodes {
           identityId
-          assetId
           eventIdx
           createdBlock {
             blockId
