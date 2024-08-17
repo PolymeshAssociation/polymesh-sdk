@@ -88,7 +88,6 @@ import {
   createProcedureMethod,
   getAccount,
   getAssetIdFromMiddleware,
-  getLatestSqVersion,
   getSecondaryAccountPermissions,
   requestPaginated,
 } from '~/utils/internal';
@@ -409,17 +408,11 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         order
       )
     );
-
-    const latestSqVersion = await getLatestSqVersion(context);
-
     const count = new BigNumber(totalCount);
 
     const data = nodes.map(
-      ({ assetId }) =>
-        new FungibleAsset(
-          { assetId: getAssetIdFromMiddleware(assetId, latestSqVersion, context) },
-          context
-        )
+      ({ asset }) =>
+        new FungibleAsset({ assetId: getAssetIdFromMiddleware(asset, context) }, context)
     );
 
     const next = calculateNextKey(count, data.length, start);
@@ -463,17 +456,16 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       )
     );
 
-    const latestSqVersion = await getLatestSqVersion(context);
-
     const count = new BigNumber(totalCount);
 
-    const data = nodes.map(({ assetId, nftIds }) => {
+    const data = nodes.map(({ asset, nftIds }) => {
+      const assetId = getAssetIdFromMiddleware(asset, context);
       const collection = new NftCollection({ assetId }, context);
       const nfts = nftIds.map(
         (id: number) =>
           new Nft(
             {
-              assetId: getAssetIdFromMiddleware(assetId, latestSqVersion, context),
+              assetId,
               id: new BigNumber(id),
             },
             context
@@ -530,14 +522,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       trustingAssetsQuery({ issuer: did })
     );
 
-    const latestSqVersion = await getLatestSqVersion(context);
-
     return nodes.map(
-      ({ assetId }) =>
-        new FungibleAsset(
-          { assetId: getAssetIdFromMiddleware(assetId, latestSqVersion, context) },
-          context
-        )
+      ({ asset }) =>
+        new FungibleAsset({ assetId: getAssetIdFromMiddleware(asset, context) }, context)
     );
   }
 
@@ -933,11 +920,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       instructionPartiesQuery(did)
     );
 
-    const latestSqVersion = await getLatestSqVersion(context);
-
     return instructionsResult.map(({ instruction }) =>
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      middlewareInstructionToHistoricInstruction(instruction!, context, latestSqVersion)
+      middlewareInstructionToHistoricInstruction(instruction!, context)
     );
   }
 

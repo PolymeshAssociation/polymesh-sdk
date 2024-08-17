@@ -20,8 +20,15 @@ import {
 } from '@polkadot/types/lookup';
 import type { Callback, Codec, Observable } from '@polkadot/types/types';
 import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/types/types';
-import { isHex, stringUpperFirst } from '@polkadot/util';
-import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
+import {
+  hexAddPrefix,
+  hexHasPrefix,
+  hexStripPrefix,
+  isHex,
+  stringToHex,
+  stringUpperFirst,
+} from '@polkadot/util';
+import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import fetch from 'cross-fetch';
 import stringify from 'json-stable-stringify';
@@ -44,7 +51,12 @@ import {
   PolymeshError,
 } from '~/internal';
 import { latestSqVersionQuery } from '~/middleware/queries/common';
-import { Claim as MiddlewareClaim, ClaimTypeEnum, Query } from '~/middleware/types';
+import {
+  Asset as MiddlewareAsset,
+  Claim as MiddlewareClaim,
+  ClaimTypeEnum,
+  Query,
+} from '~/middleware/types';
 import { MiddlewareScope } from '~/middleware/typesV1';
 import {
   Asset,
@@ -108,7 +120,6 @@ import {
   PRIVATE_SUPPORTED_NODE_VERSION_RANGE,
   PRIVATE_SUPPORTED_SPEC_SEMVER,
   PRIVATE_SUPPORTED_SPEC_VERSION_RANGE,
-  SQ_VERSION_7_X,
   STATE_RUNTIME_VERSION_CALL,
   SUPPORTED_NODE_SEMVER,
   SUPPORTED_NODE_VERSION_RANGE,
@@ -270,13 +281,10 @@ export function createClaim(
   middlewareScope: Falsyable<MiddlewareScope>,
   cddId: Falsyable<string>,
   customClaimTypeId: Falsyable<BigNumber>,
-  latestSqVersion: string,
   context: Context
 ): Claim {
   const type = claimType as ClaimType;
-  const scope = (
-    middlewareScope ? middlewareScopeToScope(middlewareScope, latestSqVersion, context) : {}
-  ) as Scope;
+  const scope = (middlewareScope ? middlewareScopeToScope(middlewareScope, context) : {}) as Scope;
 
   switch (type) {
     case ClaimType.Jurisdiction: {
@@ -2094,8 +2102,7 @@ export function asNftId(nft: Nft | BigNumber): BigNumber {
 export function areSameClaims(
   claim: Claim,
   { scope, type, customClaimTypeId }: MiddlewareClaim,
-  context: Context,
-  latestSqVersion: string
+  context: Context
 ): boolean {
   // filter out deprecated claim types
   if (
@@ -2110,7 +2117,7 @@ export function areSameClaims(
   if (
     isScopedClaim(claim) &&
     scope &&
-    !isEqual(middlewareScopeToScope(scope, latestSqVersion, context), claim.scope)
+    !isEqual(middlewareScopeToScope(scope, context), claim.scope)
   ) {
     return false;
   }
@@ -2249,48 +2256,45 @@ export function getAssetIdForStats(asset: Asset, context: Context): TickerKey | 
   return context.isV6 ? { Ticker: rawAssetId } : rawAssetId;
 }
 
+export const getAssetIdForLegacyTicker = (ticker: string, context: Context): string => {
+  const assetComponents = [stringToHex('legacy_ticker'), stringToTicker(ticker, context).toHex()];
+
+  const data = hexAddPrefix(assetComponents.map(e => hexStripPrefix(e)).join(''));
+
+  return blake2AsHex(data, 128);
+};
+
 /**
  * @hidden
  */
 export async function getAssetIdForMiddleware(
   assetIdOrTicker: string | Asset,
-  latestSqVersion: string,
   context: Context
 ): Promise<string> {
-  if (lt(latestSqVersion, SQ_VERSION_7_X)) {
-    // this means SQ is on version with settlements v2 changes.
-    if (!context.isV6) {
-      throw new PolymeshError({
-        code: ErrorCode.MiddlewareError,
-        message: `SQ needs to be updated to atleast version ${SQ_VERSION_7_X} to support 7.x chain`,
-      });
-    }
-    return asAssetId(assetIdOrTicker, context);
+  /**
+   * For cases where ticker is passed in with 7.x chain, we make sure we get assetId mapped with the ticker
+   * `asAssetId` creates a `BaseAsset` and returns the ID which is the ticker value for 6.x chain and ID for 7.x chain
+   */
+  const assetId = await asAssetId(assetIdOrTicker, context);
+
+  if (!hexHasPrefix(assetId)) {
+    // this will only be true if chain 6.x is running
+    return getAssetIdForLegacyTicker(assetId, context);
   }
 
-  return asAssetId(assetIdOrTicker, context);
+  return assetId;
 }
 
 /**
  * @hidden
  */
 export function getAssetIdFromMiddleware(
-  assetIdOrTicker: string,
-  latestSqVersion: string,
+  assetIdAndTicker: Falsyable<Pick<MiddlewareAsset, 'id' | 'ticker'>>,
   context: Context
 ): string {
-  if (lt(latestSqVersion, SQ_VERSION_7_X)) {
-    // this means SQ is on version with settlements v2 changes.
-    if (!context.isV6) {
-      throw new PolymeshError({
-        code: ErrorCode.MiddlewareError,
-        message: `SQ needs to be updated to atleast version ${SQ_VERSION_7_X} to support 7.x chain`,
-      });
-    }
-    // this is true when 6.x chain is being used with settlements v2 SQ -> All asset IDs are saved as ticker
-    return assetIdOrTicker;
+  const { id, ticker } = assetIdAndTicker!;
+  if (context.isV6) {
+    return ticker!;
   }
-
-  // TODO fetch ticker for assetID for 6.x version
-  return assetIdOrTicker;
+  return id;
 }

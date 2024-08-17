@@ -28,12 +28,7 @@ import {
   signerToString,
   stringToIdentityId,
 } from '~/utils/conversion';
-import {
-  areSameClaims,
-  asIdentity,
-  assembleBatchTransactions,
-  getLatestSqVersion,
-} from '~/utils/internal';
+import { areSameClaims, asIdentity, assembleBatchTransactions } from '~/utils/internal';
 
 const findClaimsByOtherIssuers = async (
   claims: ClaimTarget[],
@@ -41,14 +36,12 @@ const findClaimsByOtherIssuers = async (
   signerDid: string,
   context: Context
 ): Promise<Claim[]> => {
-  const latestSqVerison = await getLatestSqVersion(context);
   return claims.reduce<Claim[]>((prev, { target, claim }) => {
     const targetClaims = claimsByDid[signerToString(target)] ?? [];
 
     const claimIssuedByOtherDids = targetClaims.some(
       targetClaim =>
-        areSameClaims(claim, targetClaim, context, latestSqVerison) &&
-        targetClaim.issuerId !== signerDid
+        areSameClaims(claim, targetClaim, context) && targetClaim.issuerId !== signerDid
     );
 
     if (claimIssuedByOtherDids) {
