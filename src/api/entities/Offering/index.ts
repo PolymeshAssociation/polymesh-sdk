@@ -33,7 +33,6 @@ import {
   calculateNextKey,
   createProcedureMethod,
   getAssetIdForMiddleware,
-  getLatestSqVersion,
   toHumanReadable,
 } from '~/utils/internal';
 
@@ -224,8 +223,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
       asset: { id: assetId },
     } = this;
 
-    const latestSqVersion = await getLatestSqVersion(context);
-    const middlewareAssetId = await getAssetIdForMiddleware(assetId, latestSqVersion, context);
+    const middlewareAssetId = await getAssetIdForMiddleware(assetId, context);
 
     const { size, start } = opts;
 

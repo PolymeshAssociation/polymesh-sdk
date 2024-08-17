@@ -39,7 +39,6 @@ import {
   createProcedureMethod,
   getAssetIdForMiddleware,
   getIdentity,
-  getLatestSqVersion,
   toHumanReadable,
 } from '~/utils/internal';
 
@@ -414,10 +413,9 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
 
     let middlewareAssetId;
     const assetIdValue = assetId ?? ticker;
-    const latestSqVersion = await getLatestSqVersion(context);
 
     if (assetIdValue) {
-      middlewareAssetId = await getAssetIdForMiddleware(assetIdValue, latestSqVersion, context);
+      middlewareAssetId = await getAssetIdForMiddleware(assetIdValue, context);
     }
 
     const settlementsPromise = context.queryMiddleware<Ensured<Query, 'legs'>>(
@@ -466,8 +464,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
         identityId,
         portfolio: new BigNumber(portfolioId || 0).toNumber(),
       },
-      context,
-      latestSqVersion
+      context
     );
   }
 
