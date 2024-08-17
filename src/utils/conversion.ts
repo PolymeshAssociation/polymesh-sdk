@@ -2307,11 +2307,7 @@ export async function claimToMeshClaim(
 /**
  * @hidden
  */
-export function middlewareScopeToScope(
-  scope: MiddlewareScope,
-  latestSqVersion: string,
-  context: Context
-): Scope {
+export function middlewareScopeToScope(scope: MiddlewareScope, context: Context): Scope {
   const { type, value } = scope;
 
   switch (type) {
@@ -2319,7 +2315,7 @@ export function middlewareScopeToScope(
     case ClaimScopeTypeEnum.Asset:
       return {
         type: ScopeType.Asset,
-        value: getAssetIdFromMiddleware(value, latestSqVersion, context),
+        value: getAssetIdFromMiddleware({ id: value, ticker: value }, context),
       };
     case ClaimScopeTypeEnum.Identity:
     case ClaimScopeTypeEnum.Custom:
@@ -2340,8 +2336,7 @@ export function middlewareScopeToScope(
  */
 export async function scopeToMiddlewareScope(
   scope: Scope,
-  context: Context,
-  latestSqVersion: string
+  context: Context
 ): Promise<MiddlewareScope> {
   const { type, value } = scope;
 
@@ -2350,7 +2345,7 @@ export async function scopeToMiddlewareScope(
     case ScopeType.Asset:
       return {
         type: ClaimScopeTypeEnum.Asset,
-        value: await getAssetIdForMiddleware(value, latestSqVersion, context),
+        value: await getAssetIdForMiddleware(value, context),
       };
     case ScopeType.Identity:
     case ScopeType.Custom:
@@ -3106,11 +3101,7 @@ export function endConditionToSettlementType(
 /**
  * @hidden
  */
-export function middlewareClaimToClaimData(
-  claim: MiddlewareClaim,
-  context: Context,
-  latestSqVersion: string
-): ClaimData {
+export function middlewareClaimToClaimData(claim: MiddlewareClaim, context: Context): ClaimData {
   const {
     targetId,
     issuerId,
@@ -3135,7 +3126,6 @@ export function middlewareClaimToClaimData(
       scope,
       cddId,
       customClaimTypeId ? new BigNumber(customClaimTypeId) : undefined,
-      latestSqVersion,
       context
     ),
   };
@@ -3147,14 +3137,13 @@ export function middlewareClaimToClaimData(
 export function toIdentityWithClaimsArray(
   data: MiddlewareClaim[],
   context: Context,
-  groupByAttribute: string,
-  latestSqVersion: string
+  groupByAttribute: string
 ): IdentityWithClaims[] {
   const groupedData = groupBy(data, groupByAttribute);
 
   return map(groupedData, (claims, did) => ({
     identity: new Identity({ did }, context),
-    claims: claims.map(claim => middlewareClaimToClaimData(claim, context, latestSqVersion)),
+    claims: claims.map(claim => middlewareClaimToClaimData(claim, context)),
   }));
 }
 
@@ -4640,17 +4629,13 @@ export function portfolioIdStringToPortfolio(id: string): MiddlewarePortfolio {
 /**
  * @hidden
  */
-export function middlewareLegToLeg(
-  leg: MiddlewareLeg,
-  context: Context,
-  latestSqVersion: string
-): Leg {
+export function middlewareLegToLeg(leg: MiddlewareLeg, context: Context): Leg {
   const { legType, from, fromPortfolio, to, toPortfolio, assetId, ticker, nftIds, amount } = leg;
 
   if (legType === LegTypeEnum.Fungible) {
     return {
       asset: new FungibleAsset(
-        { assetId: getAssetIdFromMiddleware(assetId, latestSqVersion, context) },
+        { assetId: getAssetIdFromMiddleware({ id: assetId, ticker }, context) },
         context
       ),
       amount: new BigNumber(amount).shiftedBy(-6),
@@ -4666,7 +4651,7 @@ export function middlewareLegToLeg(
   }
 
   if (legType === LegTypeEnum.NonFungible) {
-    const id = getAssetIdFromMiddleware(assetId, latestSqVersion, context);
+    const id = getAssetIdFromMiddleware({ id: assetId, ticker }, context);
     return {
       from: middlewarePortfolioToPortfolio(
         { identityId: from, number: fromPortfolio! } as MiddlewarePortfolio,
@@ -4697,8 +4682,7 @@ export function middlewareLegToLeg(
  */
 export function middlewareInstructionToHistoricInstruction(
   instruction: MiddlewareInstruction,
-  context: Context,
-  latestSqVersion: string
+  context: Context
 ): HistoricInstruction {
   /* eslint-disable @typescript-eslint/no-non-null-assertion */
   const {
@@ -4745,7 +4729,7 @@ export function middlewareInstructionToHistoricInstruction(
     memo: memo ?? null,
     venueId: new BigNumber(venueId),
     createdAt: new Date(datetime),
-    legs: legs.map(leg => middlewareLegToLeg(leg, context, latestSqVersion)),
+    legs: legs.map(leg => middlewareLegToLeg(leg, context)),
   };
   /* eslint-enable @typescript-eslint/no-non-null-assertion */
 }
@@ -5189,11 +5173,10 @@ export function toCustomClaimTypeWithIdentity(
 function portfolioMovementsToHistoricSettlements(
   portfolioMovements: MiddlewarePortfolioMovement[],
   context: Context,
-  handleMiddlewareAddress: (address: string, context: Context) => Account,
-  latestSqVersion: string
+  handleMiddlewareAddress: (address: string, context: Context) => Account
 ): HistoricSettlement[] {
   return portfolioMovements.map(
-    ({ createdBlock, fromId, toId, assetId, amount, address: accountAddress }) => {
+    ({ createdBlock, fromId, toId, asset, amount, address: accountAddress }) => {
       const { blockId, hash } = createdBlock!;
       return {
         blockNumber: new BigNumber(blockId),
@@ -5203,7 +5186,7 @@ function portfolioMovementsToHistoricSettlements(
         legs: [
           {
             asset: new FungibleAsset(
-              { assetId: getAssetIdFromMiddleware(assetId, latestSqVersion, context) },
+              { assetId: getAssetIdFromMiddleware(asset, context) },
               context
             ),
             amount: new BigNumber(amount).shiftedBy(-6),
@@ -5227,8 +5210,7 @@ export function toHistoricalSettlements(
     identityId: string;
     portfolio?: number;
   },
-  context: Context,
-  latestSqVersion: string
+  context: Context
 ): HistoricSettlement[] {
   let data: HistoricSettlement[] = [];
 
@@ -5270,7 +5252,7 @@ export function toHistoricalSettlements(
       accounts: legs[0].addresses.map((address: string) => new Account({ address }, context)),
       instruction: new Instruction({ id: new BigNumber(id) }, context),
       legs: legs.map(leg => ({
-        ...middlewareLegToLeg(leg, context, latestSqVersion),
+        ...middlewareLegToLeg(leg, context),
         direction: getDirection(leg),
       })),
     });
@@ -5281,8 +5263,7 @@ export function toHistoricalSettlements(
     ...portfolioMovementsToHistoricSettlements(
       portfolioMovements,
       context,
-      (accountAddress: string) => new Account({ address: accountAddress }, context),
-      latestSqVersion
+      (accountAddress: string) => new Account({ address: accountAddress }, context)
     ),
   ];
   /* eslint-enable @typescript-eslint/no-non-null-assertion */

@@ -191,7 +191,7 @@ export function trustingAssetsQuery(
         nodes {
           asset {
             id
-            ticker 
+            ticker
           }
         }
       }

@@ -66,7 +66,7 @@ export function assetHoldersQuery(
         nodes {
           asset {
             id
-            ticker 
+            ticker
           }
         }
       }
@@ -102,7 +102,7 @@ export function nftHoldersQuery(
         nodes {
           asset {
             id
-            ticker 
+            ticker
           }
           nftIds
         }
@@ -136,7 +136,7 @@ export function assetTransactionQuery(
         nodes {
           asset {
             id
-            ticker 
+            ticker
           }
           amount
           nftIds

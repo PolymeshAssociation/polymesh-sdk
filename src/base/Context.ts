@@ -88,7 +88,6 @@ import {
   calculateNextKey,
   delay,
   getApiAtBlock,
-  getLatestSqVersion,
 } from '~/utils/internal';
 
 import { processType } from './utils';
@@ -967,11 +966,9 @@ export class Context {
       )
     );
 
-    const latestSqVersion = await getLatestSqVersion(this);
-
     const count = new BigNumber(totalCount);
 
-    const data = claimsList.map(claim => middlewareClaimToClaimData(claim, this, latestSqVersion));
+    const data = claimsList.map(claim => middlewareClaimToClaimData(claim, this));
 
     const next = calculateNextKey(count, data.length, start);
 

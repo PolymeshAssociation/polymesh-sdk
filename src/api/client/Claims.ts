@@ -49,13 +49,7 @@ import {
   toIdentityWithClaimsArray,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import {
-  calculateNextKey,
-  createProcedureMethod,
-  getDid,
-  getLatestSqVersion,
-  removePadding,
-} from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod, getDid, removePadding } from '~/utils/internal';
 
 /**
  * Handles all Claims related functionality
@@ -220,10 +214,8 @@ export class Claims {
 
     let targetIssuers;
 
-    const latestSqVersion = await getLatestSqVersion(context);
-
     const filters = {
-      scope: scope ? await scopeToMiddlewareScope(scope, context, latestSqVersion) : undefined,
+      scope: scope ? await scopeToMiddlewareScope(scope, context) : undefined,
       trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
         signerToString(trustedClaimIssuer)
       ),
@@ -266,7 +258,7 @@ export class Claims {
       })
     );
 
-    const data = toIdentityWithClaimsArray(nodes, context, 'targetId', latestSqVersion);
+    const data = toIdentityWithClaimsArray(nodes, context, 'targetId');
     const next = calculateNextKey(count, data.length, start);
 
     return {
@@ -443,10 +435,9 @@ export class Claims {
     const isMiddlewareAvailable = await context.isMiddlewareAvailable();
 
     if (isMiddlewareAvailable) {
-      const latestSqVersion = await getLatestSqVersion(context);
       const filters = {
         dids: [did],
-        scope: scope ? await scopeToMiddlewareScope(scope, context, latestSqVersion) : undefined,
+        scope: scope ? await scopeToMiddlewareScope(scope, context) : undefined,
         includeExpired,
       };
 
@@ -483,7 +474,7 @@ export class Claims {
         })
       );
 
-      const data = toIdentityWithClaimsArray(nodes, context, 'issuerId', latestSqVersion);
+      const data = toIdentityWithClaimsArray(nodes, context, 'issuerId');
       const next = calculateNextKey(count, data.length, start);
 
       return {

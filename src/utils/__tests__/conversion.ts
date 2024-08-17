@@ -4355,25 +4355,34 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
 
   describe('middlewareScopeToScope', () => {
     it('should convert a MiddlewareScope object to a Scope', () => {
-      let result = middlewareScopeToScope({
-        type: ClaimScopeTypeEnum.Asset,
-        value: '0x1234',
-      });
+      let result = middlewareScopeToScope(
+        {
+          type: ClaimScopeTypeEnum.Asset,
+          value: '0x1234',
+        },
+        context
+      );
 
       expect(result).toEqual({ type: ScopeType.Asset, value: '0x1234' });
 
-      result = middlewareScopeToScope({ type: ClaimScopeTypeEnum.Identity, value: 'someDid' });
+      result = middlewareScopeToScope(
+        { type: ClaimScopeTypeEnum.Identity, value: 'someDid' },
+        context
+      );
 
       expect(result).toEqual({ type: ScopeType.Identity, value: 'someDid' });
 
-      result = middlewareScopeToScope({ type: ClaimScopeTypeEnum.Custom, value: 'SOMETHING_ELSE' });
+      result = middlewareScopeToScope(
+        { type: ClaimScopeTypeEnum.Custom, value: 'SOMETHING_ELSE' },
+        context
+      );
 
       expect(result).toEqual({ type: ScopeType.Custom, value: 'SOMETHING_ELSE' });
     });
 
     it('should throw an error for invalid scope type', () => {
       expect(() =>
-        middlewareScopeToScope({ type: 'RANDOM_TYPE', value: 'SOMETHING_ELSE' })
+        middlewareScopeToScope({ type: 'RANDOM_TYPE', value: 'SOMETHING_ELSE' }, context)
       ).toThrow('Unsupported Scope Type. Please contact the Polymesh team');
     });
   });
@@ -4381,18 +4390,18 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
   describe('scopeToMiddlewareScope', () => {
     it('should convert a Scope to a MiddlewareScope object', async () => {
       let scope: Scope = { type: ScopeType.Identity, value: 'someDid' };
-      let result = scopeToMiddlewareScope(scope);
+      let result = scopeToMiddlewareScope(scope, context);
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Identity, value: scope.value });
 
       scope = { type: ScopeType.Asset, value: '0x1234' };
-      result = scopeToMiddlewareScope(scope);
+      result = scopeToMiddlewareScope(scope, context);
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Asset, value: '0x1234' });
 
-      result = scopeToMiddlewareScope(scope);
+      result = scopeToMiddlewareScope(scope, context);
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Asset, value: '0x1234' });
 
       scope = { type: ScopeType.Custom, value: 'customValue' };
-      result = scopeToMiddlewareScope(scope);
+      result = scopeToMiddlewareScope(scope, context);
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Custom, value: scope.value });
     });
   });
