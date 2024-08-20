@@ -51,11 +51,13 @@ describe('DividendDistribution class', () => {
   let expiryDate: Date | null;
   let paymentDate: Date;
   let dividendDistribution: DividendDistribution;
+  let getAssetIdForMiddlewareSpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
+    getAssetIdForMiddlewareSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware');
   });
 
   beforeEach(() => {
@@ -123,6 +125,7 @@ describe('DividendDistribution class', () => {
         })
       ),
     });
+    when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
   });
 
   afterEach(() => {

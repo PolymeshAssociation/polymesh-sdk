@@ -44,10 +44,13 @@ jest.mock(
 );
 
 describe('NftCollection class', () => {
+  let getAssetIdForMiddlewareSpy: jest.SpyInstance;
+
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
+    getAssetIdForMiddlewareSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware');
   });
 
   afterEach(() => {
@@ -205,6 +208,7 @@ describe('NftCollection class', () => {
       const fakeResult = { blockNumber, blockHash, blockDate, eventIndex: eventIdx };
       const context = dsMockUtils.getContextInstance();
       const nftCollection = new NftCollection({ assetId }, context);
+      when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
 
       dsMockUtils.createApolloQueryMock(assetQuery(variables), {
         assets: {
@@ -233,6 +237,7 @@ describe('NftCollection class', () => {
       };
       const context = dsMockUtils.getContextInstance();
       const nftCollection = new NftCollection({ assetId }, context);
+      when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
 
       dsMockUtils.createApolloQueryMock(assetQuery(variables), {
         assets: {
@@ -581,11 +586,17 @@ describe('NftCollection class', () => {
       const assetId = '0x1234';
       const context = dsMockUtils.getContextInstance();
       const asset = new NftCollection({ assetId }, context);
+      when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
+
+      const middlewareAsset = {
+        id: assetId,
+        ticker: 'SOME_TICKER',
+      };
       const transactionResponse = {
         totalCount: new BigNumber(5),
         nodes: [
           {
-            assetId,
+            asset: middlewareAsset,
             nftIds: ['1'],
             eventId: EventIdEnum.Issued,
             toPortfolioId: 'SOME_DID/0',
@@ -599,7 +610,7 @@ describe('NftCollection class', () => {
             },
           },
           {
-            assetId,
+            asset: middlewareAsset,
             nftIds: ['1'],
             eventId: EventIdEnum.Transfer,
             toPortfolioId: 'OTHER_DID/0',
@@ -623,6 +634,10 @@ describe('NftCollection class', () => {
           assetTransactions: transactionResponse,
         }
       );
+
+      when(jest.spyOn(utilsInternalModule, 'getAssetIdFromMiddleware'))
+        .calledWith(middlewareAsset, context)
+        .mockReturnValue(assetId);
 
       const result = await asset.getTransactionHistory({
         start: new BigNumber(0),

@@ -11,6 +11,7 @@ import {
   OfferingTimingStatus,
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -278,6 +279,10 @@ describe('Offering class', () => {
       const raiseToken = 'USD';
       const offeringTokenAmount = new BigNumber(10000);
       const raiseTokenAmount = new BigNumber(1000);
+
+      when(jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware'))
+        .calledWith(assetId, context)
+        .mockResolvedValue(assetId);
 
       const nodes = [
         {

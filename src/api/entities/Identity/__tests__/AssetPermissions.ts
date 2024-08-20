@@ -37,6 +37,7 @@ describe('AssetPermissions class', () => {
   let context: Mocked<Context>;
   let assetPermissions: AssetPermissions;
   let identity: Identity;
+  let getAssetIdForMiddlewareSpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -49,6 +50,8 @@ describe('AssetPermissions class', () => {
     identity = entityMockUtils.getIdentityInstance({ did });
     asset = entityMockUtils.getFungibleAssetInstance({ assetId });
     assetPermissions = new AssetPermissions(identity, context);
+    getAssetIdForMiddlewareSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware');
+    when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
   });
 
   afterEach(() => {
@@ -434,8 +437,6 @@ describe('AssetPermissions class', () => {
       const blockHash = 'someHash';
       const eventIndex = new BigNumber(1);
       const datetime = '2020-10-10';
-
-      jest.spyOn(utilsInternalModule, 'asAssetId').mockResolvedValue(assetId);
 
       dsMockUtils.createApolloQueryMock(
         tickerExternalAgentActionsQuery(

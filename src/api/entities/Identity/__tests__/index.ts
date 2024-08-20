@@ -102,6 +102,7 @@ describe('Identity class', () => {
   let stringToAssetIdSpy: jest.SpyInstance;
   let u64ToBigNumberSpy: jest.SpyInstance<BigNumber, [u64]>;
   let getAccountSpy: jest.SpyInstance<Promise<Account>, [{ address: string }, Context]>;
+  let getAssetIdFromMiddlewareSpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -111,6 +112,7 @@ describe('Identity class', () => {
     identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
     stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
     u64ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u64ToBigNumber');
+    getAssetIdFromMiddlewareSpy = jest.spyOn(utilsInternalModule, 'getAssetIdFromMiddleware');
   });
 
   beforeEach(() => {
@@ -578,9 +580,15 @@ describe('Identity class', () => {
 
       dsMockUtils.createApolloQueryMock(trustingAssetsQuery({ issuer: did }), {
         trustedClaimIssuers: {
-          nodes: assetIds.map(assetId => ({ assetId })),
+          nodes: assetIds.map(assetId => ({ asset: { id: assetId } })),
         },
       });
+
+      assetIds.forEach(assetId =>
+        when(getAssetIdFromMiddlewareSpy)
+          .calledWith({ id: assetId }, context)
+          .mockReturnValue(assetId)
+      );
 
       const result = await identity.getTrustingAssets();
 
@@ -596,8 +604,16 @@ describe('Identity class', () => {
     it('should return a list of Assets', async () => {
       const identity = new Identity({ did }, context);
 
+      assetIds.forEach(assetId =>
+        when(getAssetIdFromMiddlewareSpy)
+          .calledWith({ id: assetId }, context)
+          .mockReturnValue(assetId)
+      );
       dsMockUtils.createApolloQueryMock(assetHoldersQuery({ identityId: did }), {
-        assetHolders: { nodes: assetIds.map(assetId => ({ assetId })), totalCount: 2 },
+        assetHolders: {
+          nodes: assetIds.map(assetId => ({ asset: { id: assetId } })),
+          totalCount: 2,
+        },
       });
 
       let result = await identity.getHeldAssets();
@@ -613,7 +629,10 @@ describe('Identity class', () => {
           AssetHoldersOrderBy.CreatedBlockIdAsc
         ),
         {
-          assetHolders: { nodes: assetIds.map(assetId => ({ assetId })), totalCount: 2 },
+          assetHolders: {
+            nodes: assetIds.map(assetId => ({ asset: { id: assetId } })),
+            totalCount: 2,
+          },
         }
       );
 
@@ -635,9 +654,15 @@ describe('Identity class', () => {
     it('should return a list of HeldNfts', async () => {
       const identity = new Identity({ did }, context);
 
+      assetIds.forEach(assetId =>
+        when(getAssetIdFromMiddlewareSpy)
+          .calledWith({ id: assetId }, context)
+          .mockReturnValue(assetId)
+      );
+
       dsMockUtils.createApolloQueryMock(nftHoldersQuery({ identityId: did }), {
         nftHolders: {
-          nodes: assetIds.map(assetId => ({ assetId, nftIds: [] })),
+          nodes: assetIds.map(assetId => ({ asset: { id: assetId }, nftIds: [] })),
           totalCount: 2,
         },
       });
@@ -656,7 +681,7 @@ describe('Identity class', () => {
         ),
         {
           nftHolders: {
-            nodes: assetIds.map(assetId => ({ assetId, nftIds: [1, 3] })),
+            nodes: assetIds.map(assetId => ({ asset: { id: assetId }, nftIds: [1, 3] })),
             totalCount: 2,
           },
         }

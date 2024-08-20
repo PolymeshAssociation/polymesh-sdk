@@ -1,10 +1,12 @@
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 
 import { AssetHolders } from '~/api/entities/Asset/NonFungible/AssetHolders';
 import { Context, Namespace } from '~/internal';
 import { nftCollectionHolders } from '~/middleware/queries/assets';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { NftCollection } from '~/types';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Asset/NonFungible',
@@ -39,15 +41,18 @@ describe('AssetHolder class', () => {
     let assetHolders: AssetHolders;
     let collection: NftCollection;
     let context: Context;
+    let getAssetIdForMiddlewareSpy: jest.SpyInstance;
 
     beforeAll(() => {
       dsMockUtils.initMocks();
+      getAssetIdForMiddlewareSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware');
     });
 
     beforeEach(() => {
       context = dsMockUtils.getContextInstance();
       collection = entityMockUtils.getNftCollectionInstance({ assetId });
       assetHolders = new AssetHolders(collection, context);
+      when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
 
       const nftHoldersResponse = {
         nodes: [
