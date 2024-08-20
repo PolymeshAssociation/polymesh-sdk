@@ -4390,18 +4390,19 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
   describe('scopeToMiddlewareScope', () => {
     it('should convert a Scope to a MiddlewareScope object', async () => {
       let scope: Scope = { type: ScopeType.Identity, value: 'someDid' };
-      let result = scopeToMiddlewareScope(scope, context);
+      let result = await scopeToMiddlewareScope(scope, context);
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Identity, value: scope.value });
 
       scope = { type: ScopeType.Asset, value: '0x1234' };
-      result = scopeToMiddlewareScope(scope, context);
+      jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware').mockResolvedValue(scope.value);
+      result = await scopeToMiddlewareScope(scope, context);
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Asset, value: '0x1234' });
 
-      result = scopeToMiddlewareScope(scope, context);
+      result = await scopeToMiddlewareScope(scope, context);
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Asset, value: '0x1234' });
 
       scope = { type: ScopeType.Custom, value: 'customValue' };
-      result = scopeToMiddlewareScope(scope, context);
+      result = await scopeToMiddlewareScope(scope, context);
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Custom, value: scope.value });
     });
   });
@@ -4416,6 +4417,7 @@ describe('middlewareInstructionToHistoricInstruction', () => {
     const blockHash = 'someHash';
     const memo = 'memo';
     const assetId = '0x1234';
+    const ticker = 'SOME_TICKER';
     const amount1 = new BigNumber(10);
     const nftId = new BigNumber(5);
     const amount3 = new BigNumber(100);
@@ -4437,6 +4439,7 @@ describe('middlewareInstructionToHistoricInstruction', () => {
       {
         legType: LegTypeEnum.Fungible,
         assetId,
+        ticker,
         amount: amount1.shiftedBy(6).toString(),
         fromPortfolio: portfolioKind1,
         from: portfolioDid1,
@@ -4448,6 +4451,7 @@ describe('middlewareInstructionToHistoricInstruction', () => {
       {
         legType: LegTypeEnum.NonFungible,
         assetId,
+        ticker,
         nftIds: [nftId.toString()],
         fromPortfolio: portfolioKind2,
         from: portfolioDid2,
@@ -4459,6 +4463,7 @@ describe('middlewareInstructionToHistoricInstruction', () => {
       {
         legType: LegTypeEnum.OffChain,
         assetId,
+        ticker,
         amount: amount3.shiftedBy(6).toString(),
         from: portfolioDid2,
         to: portfolioDid1,
@@ -4482,6 +4487,8 @@ describe('middlewareInstructionToHistoricInstruction', () => {
         nodes: legs1,
       },
     } as unknown as Instruction;
+
+    jest.spyOn(utilsInternalModule, 'getAssetIdFromMiddleware').mockReturnValue(assetId);
 
     let resultLeg: Leg;
     let result = middlewareInstructionToHistoricInstruction(instruction, context);
@@ -4563,7 +4570,7 @@ describe('middlewareInstructionToHistoricInstruction', () => {
     expect(result.venueId).toEqual(venueId);
     expect(result.createdAt).toEqual(createdAt);
     resultLeg = result.legs[0] as OffChainLeg;
-    expect(resultLeg.asset).toEqual(assetId);
+    expect(resultLeg.asset).toEqual(ticker);
     expect(resultLeg.offChainAmount).toEqual(amount3);
     expect(resultLeg.from.did).toBe(portfolioDid2);
     expect(resultLeg.to.did).toBe(portfolioDid1);
