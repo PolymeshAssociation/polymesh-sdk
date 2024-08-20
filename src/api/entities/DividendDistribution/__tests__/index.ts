@@ -19,6 +19,7 @@ import {
 } from '~/types';
 import { MAX_DECIMALS } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -50,11 +51,13 @@ describe('DividendDistribution class', () => {
   let expiryDate: Date | null;
   let paymentDate: Date;
   let dividendDistribution: DividendDistribution;
+  let getAssetIdForMiddlewareSpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
+    getAssetIdForMiddlewareSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware');
   });
 
   beforeEach(() => {
@@ -122,6 +125,7 @@ describe('DividendDistribution class', () => {
         })
       ),
     });
+    when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
   });
 
   afterEach(() => {

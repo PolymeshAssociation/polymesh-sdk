@@ -206,7 +206,9 @@ describe('Portfolios class', () => {
     const blockHash3 = 'hash3';
 
     const assetId1 = '0x1111';
+    const ticker1 = 'TICKER_1';
     const assetId2 = '0x2222';
+    const ticker2 = 'TICKER_2';
 
     const amount1 = new BigNumber(1000);
     const amount2 = new BigNumber(2000);
@@ -224,10 +226,34 @@ describe('Portfolios class', () => {
     });
 
     it('should return a list of transactions', async () => {
+      const getAssetIdFromMiddlewareSpy = jest.spyOn(
+        utilsInternalModule,
+        'getAssetIdFromMiddleware'
+      );
+      when(getAssetIdFromMiddlewareSpy)
+        .calledWith(
+          {
+            id: assetId1,
+            ticker: ticker1,
+          },
+          mockContext
+        )
+        .mockReturnValue(assetId1);
+      when(getAssetIdFromMiddlewareSpy)
+        .calledWith(
+          {
+            id: assetId2,
+            ticker: ticker2,
+          },
+          mockContext
+        )
+        .mockReturnValue(assetId2);
+
       const legs1 = [
         {
           legType: LegTypeEnum.Fungible,
           assetId: assetId1,
+          ticker: ticker1,
           amount: amount1,
           direction: SettlementDirectionEnum.Incoming,
           addresses: ['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'],
@@ -241,6 +267,7 @@ describe('Portfolios class', () => {
         {
           legType: LegTypeEnum.Fungible,
           assetId: assetId2,
+          ticker: ticker2,
           amount: amount2,
           direction: SettlementDirectionEnum.Outgoing,
           addresses: ['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'],
@@ -255,6 +282,7 @@ describe('Portfolios class', () => {
         {
           legType: LegTypeEnum.Fungible,
           assetId: assetId2,
+          ticker: ticker2,
           amount: amount2,
           direction: SettlementDirectionEnum.None,
           addresses: ['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'],
@@ -269,6 +297,7 @@ describe('Portfolios class', () => {
         {
           legType: LegTypeEnum.Fungible,
           assetId: assetId2,
+          ticker: ticker2,
           amount: amount2,
           direction: SettlementDirectionEnum.None,
           addresses: ['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'],
@@ -397,7 +426,10 @@ describe('Portfolios class', () => {
                     blockId: blockNumber1.toNumber(),
                     hash: 'someHash',
                   },
-                  assetId: assetId2,
+                  asset: {
+                    id: assetId2,
+                    ticker: ticker2,
+                  },
                   amount: amount2,
                   address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
                   from: {

@@ -474,12 +474,26 @@ describe('mergeReceipts', () => {
 });
 
 describe('createClaim', () => {
+  let context: Context;
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    context = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
   it('should create Claim objects from claims data provided by middleware', () => {
     let type = 'Jurisdiction';
     const jurisdiction = 'CL';
     let scope = { type: ClaimScopeTypeEnum.Identity, value: 'someScope' };
 
-    let result = createClaim(type, jurisdiction, scope, null, null);
+    let result = createClaim(type, jurisdiction, scope, null, null, context);
     expect(result).toEqual({
       type: ClaimType.Jurisdiction,
       code: CountryCode.Cl,
@@ -489,7 +503,7 @@ describe('createClaim', () => {
     type = 'BuyLockup';
     scope = { type: ClaimScopeTypeEnum.Identity, value: 'someScope' };
 
-    result = createClaim(type, null, scope, null, null);
+    result = createClaim(type, null, scope, null, null, context);
     expect(result).toEqual({
       type: ClaimType.BuyLockup,
       scope,
@@ -498,7 +512,7 @@ describe('createClaim', () => {
     type = 'CustomerDueDiligence';
     const id = 'someId';
 
-    result = createClaim(type, null, null, id, null);
+    result = createClaim(type, null, null, id, null, context);
     expect(result).toEqual({
       type: ClaimType.CustomerDueDiligence,
       id,
@@ -507,7 +521,7 @@ describe('createClaim', () => {
     type = 'Custom';
     const customClaimTypeId = new BigNumber(1);
 
-    result = createClaim(type, null, scope, id, customClaimTypeId);
+    result = createClaim(type, null, scope, id, customClaimTypeId, context);
     expect(result).toEqual({
       type: ClaimType.Custom,
       customClaimTypeId,
@@ -520,7 +534,7 @@ describe('createClaim', () => {
     const id = 'someId';
     const type = 'Custom';
 
-    expect(() => createClaim(type, null, scope, id, null)).toThrow(
+    expect(() => createClaim(type, null, scope, id, null, context)).toThrow(
       'Custom claim type ID is required'
     );
   });
@@ -2404,6 +2418,20 @@ describe('asNftId', () => {
 });
 
 describe('areSameClaims', () => {
+  let context: Context;
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    context = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
   it('should return true if same claims are provided', () => {
     const firstClaim: ScopedClaim = {
       type: ClaimType.Custom,
@@ -2416,7 +2444,7 @@ describe('areSameClaims', () => {
 
     const secondClaim = { ...firstClaim } as unknown as MiddlewareClaim;
 
-    const result = areSameClaims(firstClaim, secondClaim);
+    const result = areSameClaims(firstClaim, secondClaim, context);
 
     expect(result).toBeTruthy();
   });
@@ -2435,7 +2463,7 @@ describe('areSameClaims', () => {
       scope: { type: ScopeType.Ticker, value: 'TICKER' },
     } as unknown as MiddlewareClaim;
 
-    const result = areSameClaims(firstClaim, secondClaim);
+    const result = areSameClaims(firstClaim, secondClaim, context);
 
     expect(result).toBeFalsy();
   });
@@ -2455,7 +2483,7 @@ describe('areSameClaims', () => {
       customClaimTypeId: new BigNumber(2),
     } as unknown as MiddlewareClaim;
 
-    const result = areSameClaims(firstClaim, secondClaim);
+    const result = areSameClaims(firstClaim, secondClaim, context);
 
     expect(result).toBeFalsy();
   });

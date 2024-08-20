@@ -10,6 +10,7 @@ import { trustedClaimIssuerQuery } from '~/middleware/queries/claims';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { ClaimType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 describe('DefaultTrustedClaimIssuer class', () => {
   let context: Context;
@@ -65,6 +66,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
       assetId,
       issuer: did,
     };
+    const getAssetIdForMiddlewareSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware');
 
     it('should return the event identifier object of the trusted claim issuer creation', async () => {
       const blockNumber = new BigNumber(1234);
@@ -73,6 +75,8 @@ describe('DefaultTrustedClaimIssuer class', () => {
       const blockHash = 'someHash';
       const fakeResult = { blockNumber, blockHash, blockDate, eventIndex: eventIdx };
       const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, assetId }, context);
+
+      when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
 
       dsMockUtils.createApolloQueryMock(trustedClaimIssuerQuery(variables), {
         trustedClaimIssuers: {
@@ -102,6 +106,8 @@ describe('DefaultTrustedClaimIssuer class', () => {
           nodes: [],
         },
       });
+
+      when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
       const result = await trustedClaimIssuer.addedAt();
       expect(result).toBeNull();
     });

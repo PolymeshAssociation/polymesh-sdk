@@ -240,6 +240,7 @@ describe('Claims Class', () => {
       const targetDid = 'someTargetDid';
       const issuerDid = 'someIssuerDid';
       const scope: Scope = { type: ScopeType.Asset, value: '0x1234' };
+      jest.spyOn(utilsConversionModule, 'scopeToMiddlewareScope').mockResolvedValue(scope);
       const date = 1589816265000;
       const accreditedType = ClaimTypeEnum.Accredited;
       const claimData = {
@@ -599,7 +600,7 @@ describe('Claims Class', () => {
 
       when(jest.spyOn(utilsConversionModule, 'toIdentityWithClaimsArray'))
         .calledWith(claimsQueryResponse.nodes as unknown as Claim[], context, 'issuerId')
-        .mockResolvedValue(fakeClaims);
+        .mockReturnValue(fakeClaims);
 
       dsMockUtils.createApolloQueryMock(
         claimsQuery({
