@@ -76,6 +76,7 @@ import {
   PolymeshPrimitivesTransferComplianceTransferCondition,
   SpRuntimeMultiSignature,
 } from '@polkadot/types/lookup';
+import type { IsError } from '@polkadot/types/metadata/decorate/types';
 import { ITuple } from '@polkadot/types/types';
 import { BTreeSet } from '@polkadot/types-codec';
 import {
@@ -287,6 +288,7 @@ import {
   assertTickerValid,
   conditionsAreEqual,
   createClaim,
+  getAssetIdAndTicker,
   getAssetIdForMiddleware,
   getAssetIdFromMiddleware,
   isModuleOrTagMatch,
@@ -414,7 +416,7 @@ export function assetToMeshAssetIdKey(value: string, context: Context): TickerKe
 export function assetToMeshAssetId(
   { id }: BaseAsset,
   context: Context
-): PolymeshPrimitivesAssetAssetID {
+): PolymeshPrimitivesAssetAssetID | PolymeshPrimitivesTicker {
   const { isV6 } = context;
 
   if (isV6) {
@@ -2201,7 +2203,7 @@ export async function scopeToMeshScope(
     case ScopeType.Ticker:
     case ScopeType.Asset:
       baseAsset = await asBaseAsset(value, context);
-      scopeValue = await assetToMeshAssetId(baseAsset, context);
+      scopeValue = assetToMeshAssetId(baseAsset, context);
       scopeType = isV6 ? ScopeType.Ticker : ScopeType.Asset;
       break;
     case ScopeType.Identity:
@@ -2212,7 +2214,6 @@ export async function scopeToMeshScope(
       break;
   }
 
-  // TODO @prashantasdeveloper replace this by actual type when dual version is removed
   return { [scopeType]: scopeValue } as unknown as PolymeshPrimitivesIdentityClaimScope;
 }
 
@@ -2224,22 +2225,18 @@ export function meshScopeToScope(
   context: Context
 ): Scope {
   const { isV6 } = context;
-  if (isV6) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((scope as any).isTicker) {
-      return {
-        type: ScopeType.Ticker,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        value: tickerToString((scope as any).asTicker),
-      };
-    }
-  } else {
-    if (scope.isAsset) {
-      return {
-        type: ScopeType.Asset,
-        value: assetIdToString(scope.asAsset),
-      };
-    }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (isV6 && (scope as any).isTicker) {
+    return {
+      type: ScopeType.Ticker,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      value: tickerToString((scope as any).asTicker),
+    };
+  } else if (scope.isAsset) {
+    return {
+      type: ScopeType.Asset,
+      value: assetIdToString(scope.asAsset),
+    };
   }
 
   if (scope.isIdentity) {
@@ -3336,51 +3333,27 @@ export function assetDispatchErrorToTransferError(
 ): TransferError {
   const { asset: assetErrors, portfolio: portfolioErrors } = context.polymeshApi.errors;
 
+  type ErrorCase = [IsError, TransferError];
+
+  const record: ErrorCase[] = [
+    [assetErrors.InvalidGranularity, TransferError.InvalidGranularity],
+    [assetErrors.SenderSameAsReceiver, TransferError.SelfTransfer],
+    [assetErrors.InvalidTransferInvalidReceiverCDD, TransferError.InvalidReceiverCdd],
+    [assetErrors.InvalidTransferInvalidSenderCDD, TransferError.InvalidSenderCdd],
+    [assetErrors.InsufficientBalance, TransferError.InsufficientBalance],
+    [assetErrors.InvalidTransferFrozenAsset, TransferError.TransfersFrozen],
+    [portfolioErrors.PortfolioDoesNotExist, TransferError.InvalidSenderPortfolio],
+    [portfolioErrors.InsufficientPortfolioBalance, TransferError.InsufficientPortfolioBalance],
+    [assetErrors.InvalidTransferComplianceFailure, TransferError.ComplianceFailure],
+    [assetErrors.InvalidTransfer, TransferError.ComplianceFailure],
+  ];
   if (error.isModule) {
     const moduleErr = error.asModule;
 
-    if (assetErrors.InvalidGranularity.is(moduleErr)) {
-      return TransferError.InvalidGranularity;
-    }
+    const errorCase = record.find(([augmentedError]) => augmentedError.is(moduleErr));
 
-    if (assetErrors.SenderSameAsReceiver.is(moduleErr)) {
-      return TransferError.SelfTransfer;
-    }
-
-    if (assetErrors.InvalidTransferInvalidReceiverCDD.is(moduleErr)) {
-      return TransferError.InvalidReceiverCdd;
-    }
-
-    if (assetErrors.InvalidTransferInvalidSenderCDD.is(moduleErr)) {
-      return TransferError.InvalidSenderCdd;
-    }
-
-    if (assetErrors.InsufficientBalance.is(moduleErr)) {
-      return TransferError.InsufficientBalance;
-    }
-
-    if (assetErrors.InvalidTransferFrozenAsset.is(moduleErr)) {
-      return TransferError.TransfersFrozen;
-    }
-
-    if (portfolioErrors.PortfolioDoesNotExist.is(moduleErr)) {
-      return TransferError.InvalidSenderPortfolio;
-    }
-
-    // if (portfolioErrors.PortfolioDoesNotExist.is(moduleErr)) {
-    //   return TransferError.InvalidReceiverPortfolio;
-    // }
-
-    if (portfolioErrors.InsufficientPortfolioBalance.is(moduleErr)) {
-      return TransferError.InsufficientPortfolioBalance;
-    }
-
-    if (assetErrors.InvalidTransferComplianceFailure.is(moduleErr)) {
-      return TransferError.ComplianceFailure;
-    }
-
-    if (assetErrors.InvalidTransfer.is(moduleErr)) {
-      return TransferError.ComplianceFailure;
+    if (errorCase) {
+      return errorCase[1];
     }
   }
 
@@ -3536,7 +3509,8 @@ export function transferReportToTransferBreakdown(
 
   if (result.length) {
     const errors = result.map(error => assetDispatchErrorToTransferError(error, context));
-    general = [...general, ...errors];
+    general = Array.from(new Set([...general, ...errors]));
+    canTransfer = false;
   }
 
   return {
@@ -3972,9 +3946,6 @@ export function corporateActionParamsToMeshCorporateActionArgs(
     taxWithholdings,
   } = params;
 
-  const { isV6 } = context;
-
-  const rawAssetId = assetToMeshAssetId(asset, context);
   const rawKind = corporateActionKindToCaKind(kind, context);
   const rawDeclDate = dateToMoment(declarationDate, context);
   const rawRecordDate = optionize(checkpointToRecordDateSpec)(checkpoint, context);
@@ -3986,10 +3957,8 @@ export function corporateActionParamsToMeshCorporateActionArgs(
     context
   );
 
-  const key = isV6 ? 'ticker' : 'assetId';
-
   return context.createType('PalletCorporateActionsInitiateCorporateActionArgs', {
-    [key]: rawAssetId,
+    ...assetToMeshAssetIdWithKey(asset, context),
     kind: rawKind,
     declDate: rawDeclDate,
     recordDate: rawRecordDate,
@@ -4103,11 +4072,13 @@ export function meshStatToStatType(
   context: Context
 ): StatType {
   const claimIssuer = rawStat.claimIssuer;
-  let type = rawStat.operationType.type;
+  let type: 'Count' | 'Balance';
 
   if (context.isV6) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     type = (rawStat as any).op.type;
+  } else {
+    type = rawStat.operationType.type;
   }
 
   if (claimIssuer.isNone) {
@@ -5010,15 +4981,15 @@ export function collectionKeysToMetadataKeys(
 /**
  * @hidden
  */
-export function meshMetadataKeyToMetadataKey(
+export async function meshMetadataKeyToMetadataKey(
   rawKey: PolymeshPrimitivesAssetMetadataAssetMetadataKey,
   asset: BaseAsset,
   context: Context
-): MetadataKeyId {
+): Promise<MetadataKeyId> {
   if (rawKey.isGlobal) {
     return { type: MetadataType.Global, id: u64ToBigNumber(rawKey.asGlobal) };
   } else {
-    const assetIdParams = context.isV6 ? { ticker: asset.id } : { assetId: asset.id };
+    const assetIdParams = await getAssetIdAndTicker(asset.id, context);
     return {
       type: MetadataType.Local,
       id: u64ToBigNumber(rawKey.asLocal),

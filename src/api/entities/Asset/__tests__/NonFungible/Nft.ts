@@ -3,7 +3,7 @@ import { when } from 'jest-when';
 
 import { Context, Entity, Nft, PolymeshError, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { ErrorCode } from '~/types';
+import { ErrorCode, MetadataType } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -82,13 +82,16 @@ describe('Nft class', () => {
         ],
       });
 
+      const key = { id, assetId: '0x1234', type: MetadataType.Local };
+      jest.spyOn(utilsConversionModule, 'meshMetadataKeyToMetadataKey').mockResolvedValue(key);
+
       const nft = new Nft({ assetId, id }, context);
 
       const result = await nft.getMetadata();
 
       expect(result).toEqual([
         {
-          key: { id, assetId: '0x1234', type: 'Local' },
+          key,
           value: 'This is a test metadata value',
         },
       ]);

@@ -814,8 +814,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       });
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { senderIdentity, receiverIdentity, ticker, assetId, amount } = rawLeg.asOffChain as any;
+    const { senderIdentity, receiverIdentity, ticker, amount } = rawLeg.asOffChain;
 
     const rawUid = bigNumberToU64(uid, context);
 
@@ -825,7 +824,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       rawLegId.toHex(true),
       senderIdentity.toHex(),
       receiverIdentity.toHex(),
-      ticker?.toHex() || assetId?.toHex(),
+      ticker.toHex(),
       amount.toHex(true),
     ];
 

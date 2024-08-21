@@ -361,28 +361,38 @@ describe('Metadata class', () => {
         .mockReturnValueOnce(rawGlobalValueDetails)
         .mockReturnValueOnce(rawLocalValueDetails);
 
+      const globalKey = dsMockUtils.createMockAssetMetadataKey({
+        Global: dsMockUtils.createMockU64(new BigNumber(1)),
+      });
+      const localKey = dsMockUtils.createMockAssetMetadataKey({
+        Local: dsMockUtils.createMockU64(new BigNumber(1)),
+      });
       dsMockUtils.createQueryMock('asset', 'assetMetadataValues', {
         entries: [
-          tuple(
-            [
-              rawAssetId,
-              dsMockUtils.createMockAssetMetadataKey({
-                Global: dsMockUtils.createMockU64(new BigNumber(1)),
-              }),
-            ],
-            rawGlobalValue
-          ),
-          tuple(
-            [
-              rawAssetId,
-              dsMockUtils.createMockAssetMetadataKey({
-                Local: dsMockUtils.createMockU64(new BigNumber(1)),
-              }),
-            ],
-            rawLocalValue
-          ),
+          tuple([rawAssetId, globalKey], rawGlobalValue),
+          tuple([rawAssetId, localKey], rawLocalValue),
         ],
       });
+
+      const meshMetadataKeyToMetadataKeySpy = jest.spyOn(
+        utilsConversionModule,
+        'meshMetadataKeyToMetadataKey'
+      );
+
+      when(meshMetadataKeyToMetadataKeySpy)
+        .calledWith(globalKey, asset, context)
+        .mockResolvedValue({
+          id: new BigNumber(1),
+          type: MetadataType.Global,
+        });
+
+      when(meshMetadataKeyToMetadataKeySpy)
+        .calledWith(localKey, asset, context)
+        .mockResolvedValue({
+          id: new BigNumber(1),
+          type: MetadataType.Local,
+          assetId,
+        });
 
       const mockResult = [
         {

@@ -250,7 +250,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
 
     if (args?.collections) {
       queriedCollections = await Promise.all(
-        args?.collections.map(asset => asAssetId(asset, context))
+        args.collections.map(asset => asAssetId(asset, context))
       );
     }
 

@@ -1040,4 +1040,23 @@ describe('Account class', () => {
       expect(result).toEqual(mockResult);
     });
   });
+
+  describe('method: getNextAssetId', () => {
+    it('should return the list of off chain receipts redeemed by the Account', async () => {
+      const accountId = dsMockUtils.createMockAccountId(address);
+      accountId.toHex = jest.fn();
+      accountId.toHex.mockReturnValue('0x54321');
+      jest.spyOn(utilsConversionModule, 'stringToAccountId').mockReturnValue(accountId);
+
+      const mockNonce = dsMockUtils.createMockU64(new BigNumber(1));
+      mockNonce.toHex = jest.fn();
+      mockNonce.toHex.mockReturnValue('0x01');
+
+      const assetNonceMock = dsMockUtils.createQueryMock('asset', 'assetNonce');
+      when(assetNonceMock).calledWith(accountId).mockResolvedValue(mockNonce);
+
+      const result = await account.getNextAssetId();
+      expect(result).toEqual('0xd9a10c7859b683e55a939cd1a30934a6');
+    });
+  });
 });
