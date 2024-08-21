@@ -123,6 +123,21 @@ describe('BaseAsset class', () => {
     });
   });
 
+  describe('method: linkTicker', () => {
+    it('should call the procedure and return the result', async () => {
+      const ticker = 'SOME_TICKER';
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<BaseAsset>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { asset, ticker }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await asset.linkTicker({ ticker });
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
   describe('method: exists', () => {
     it('should return whether the BaseAsset exists', async () => {
       dsMockUtils.createQueryMock('asset', 'securityTokens', {
