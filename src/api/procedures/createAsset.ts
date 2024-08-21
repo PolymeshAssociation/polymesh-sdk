@@ -1,9 +1,17 @@
 import { Bytes, u32 } from '@polkadot/types';
+import { PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
 
 import { addManualFees } from '~/api/procedures/utils';
-import { FungibleAsset, Identity, PolymeshError, Procedure, TickerReservation } from '~/internal';
+import {
+  Context,
+  FungibleAsset,
+  Identity,
+  PolymeshError,
+  Procedure,
+  TickerReservation,
+} from '~/internal';
 import {
   AssetTx,
   CreateAssetWithTickerParams,
@@ -14,7 +22,7 @@ import {
   TickerReservationStatus,
   TxTags,
 } from '~/types';
-import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
+import { BatchTransactionSpec, ProcedureAuthorization, TxWithArgs } from '~/types/internal';
 import {
   assetDocumentToDocument,
   bigNumberToBalance,
@@ -89,48 +97,26 @@ function assertTickerAvailable(
 
 /**
  * @hidden
+ * - if the passed Asset type isn't one of the fixed ones (custom),
+ *   we check if there is already an on-chain custom Asset type with that name:
+ *   - if not, we create it together with the Asset
+ *   - otherwise, we create the asset with the id of the existing custom asset type
+ * - if the passed Asset type is a fixed one, we create the asset using that Asset type
  */
-export async function prepareCreateAsset(
-  this: Procedure<Params, FungibleAsset, Storage>,
+async function getCreateAssetTransaction(
+  customTypeData: Storage['customTypeData'],
+  context: Context,
+  fee: BigNumber | undefined,
   args: Params
-): Promise<BatchTransactionSpec<FungibleAsset, unknown[][]>> {
+): Promise<TxWithArgs<unknown[]>> {
   const {
-    context: {
-      polymeshApi: { tx },
-      isV6,
-    },
-    context,
-    storage: { customTypeData, status, signingIdentity },
-  } = this;
-  const {
-    ticker,
-    name,
-    initialSupply,
-    portfolioId,
-    isDivisible,
-    assetType,
-    securityIdentifiers = [],
-    fundingRound,
-    documents,
-    reservationRequired,
-    initialStatistics,
-  } = args;
+    polymeshApi: { tx },
+    isV6,
+  } = context;
 
-  // to be used as ticker for 6.x chain and next asset id for 7.x chain
-  let rawAssetId;
-  let assetId: string;
+  const { ticker, name, isDivisible, assetType, securityIdentifiers = [], fundingRound } = args;
 
-  assertTickerAvailable(ticker, status, reservationRequired);
   const rawTicker = stringToTicker(ticker, context);
-
-  if (isV6) {
-    rawAssetId = rawTicker;
-    assetId = ticker;
-  } else {
-    assetId = await context.getSigningAccount().getNextAssetId();
-    rawAssetId = stringToAssetId(assetId, context);
-  }
-
   const rawName = nameToAssetName(name, context);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rawNameTickerArgs: any[] = isV6 ? [rawName, rawTicker] : [rawName];
@@ -140,28 +126,6 @@ export async function prepareCreateAsset(
   );
   const rawFundingRound = optionize(fundingRoundToAssetFundingRound)(fundingRound, context);
 
-  const transactions = [];
-
-  let fee: BigNumber | undefined;
-  if (status === TickerReservationStatus.Free) {
-    if (isV6) {
-      fee = await addManualFees(
-        new BigNumber(0),
-        [TxTags.asset.RegisterTicker, TxTags.asset.CreateAsset],
-        context
-      );
-    } else {
-      fee = await addManualFees(new BigNumber(0), [TxTags.asset.CreateAsset], context);
-    }
-  }
-
-  /*
-   * - if the passed Asset type isn't one of the fixed ones (custom),
-   *   we check if there is already an on-chain custom Asset type with that name:
-   *   - if not, we create it together with the Asset
-   *   - otherwise, we create the asset with the id of the existing custom asset type
-   * - if the passed Asset type is a fixed one, we create the asset using that Asset type
-   */
   if (customTypeData) {
     const { rawValue: rawAssetType, id } = customTypeData;
 
@@ -171,46 +135,50 @@ export async function prepareCreateAsset(
        * the Asset creation fees manually
        */
       fee = await addManualFees(fee, [TxTags.asset.RegisterCustomAssetType], context);
-      transactions.push(
-        checkTxType({
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          transaction: tx.asset.createAssetWithCustomType as any,
-          fee,
-          args: [
-            ...rawNameTickerArgs,
-            rawIsDivisible,
-            rawAssetType,
-            rawIdentifiers,
-            rawFundingRound,
-          ],
-        })
-      );
+      return checkTxType({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        transaction: tx.asset.createAssetWithCustomType as any,
+        fee,
+        args: [...rawNameTickerArgs, rawIsDivisible, rawAssetType, rawIdentifiers, rawFundingRound],
+      });
     } else {
       const rawType = internalAssetTypeToAssetType({ Custom: id }, context);
 
-      transactions.push(
-        checkTxType({
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          transaction: tx.asset.createAsset as any,
-          fee,
-          args: [...rawNameTickerArgs, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
-        })
-      );
-    }
-  } else {
-    const rawType = internalAssetTypeToAssetType(assetType as KnownAssetType, context);
-
-    transactions.push(
-      checkTxType({
+      return checkTxType({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         transaction: tx.asset.createAsset as any,
         fee,
         args: [...rawNameTickerArgs, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
-      })
-    );
-  }
+      });
+    }
+  } else {
+    const rawType = internalAssetTypeToAssetType(assetType as KnownAssetType, context);
 
-  // since 7.x, we need to separately register ticker first if ticker does not exists and then link to asset
+    return checkTxType({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      transaction: tx.asset.createAsset as any,
+      fee,
+      args: [...rawNameTickerArgs, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+    });
+  }
+}
+
+/**
+ * @hidden
+ *
+ * since 7.x, we need to separately register ticker first if ticker does not exists and then link to asset
+ */
+function getTickerTransactions(
+  rawTicker: PolymeshPrimitivesTicker,
+  rawAssetId: PolymeshPrimitivesAssetAssetID,
+  context: Context,
+  status: Storage['status']
+): TxWithArgs<unknown[]>[] {
+  const {
+    polymeshApi: { tx },
+    isV6,
+  } = context;
+  const transactions = [];
   if (!isV6) {
     if (status === TickerReservationStatus.Free) {
       transactions.push(
@@ -230,18 +198,24 @@ export async function prepareCreateAsset(
     }
   }
 
-  if (initialStatistics?.length) {
-    const rawStats = initialStatistics.map(i => inputStatTypeToMeshStatType(i, context));
-    const bTreeStats = statisticStatTypesToBtreeStatType(rawStats, context);
+  return transactions;
+}
 
-    transactions.push(
-      checkTxType({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        transaction: tx.statistics.setActiveAssetStats as any,
-        args: [isV6 ? { Ticker: rawAssetId } : rawAssetId, bTreeStats],
-      })
-    );
-  }
+/**
+ * @hidden
+ */
+async function getDocumentsAndIssueTransaction(
+  args: Params,
+  rawAssetId: PolymeshPrimitivesAssetAssetID,
+  context: Context,
+  signingIdentity: Identity
+): Promise<TxWithArgs<unknown[]>[]> {
+  const {
+    polymeshApi: { tx },
+  } = context;
+  const { initialSupply, portfolioId, isDivisible, documents } = args;
+
+  const transactions = [];
 
   if (initialSupply?.gt(0)) {
     const rawInitialSupply = bigNumberToBalance(initialSupply, context, isDivisible);
@@ -273,6 +247,82 @@ export async function prepareCreateAsset(
       })
     );
   }
+
+  return transactions;
+}
+
+/**
+ * @hidden
+ */
+export async function prepareCreateAsset(
+  this: Procedure<Params, FungibleAsset, Storage>,
+  args: Params
+): Promise<BatchTransactionSpec<FungibleAsset, unknown[][]>> {
+  const {
+    context: {
+      polymeshApi: { tx },
+      isV6,
+    },
+    context,
+    storage: { customTypeData, status, signingIdentity },
+  } = this;
+  const { ticker, reservationRequired, initialStatistics } = args;
+
+  // to be used as ticker for 6.x chain and next asset id for 7.x chain
+  let rawAssetId;
+  let assetId: string;
+
+  assertTickerAvailable(ticker, status, reservationRequired);
+  const rawTicker = stringToTicker(ticker, context);
+
+  if (isV6) {
+    rawAssetId = rawTicker;
+    assetId = ticker;
+  } else {
+    assetId = await context.getSigningAccount().getNextAssetId();
+    rawAssetId = stringToAssetId(assetId, context);
+  }
+
+  let transactions = [];
+
+  let fee: BigNumber | undefined;
+  if (status === TickerReservationStatus.Free) {
+    if (isV6) {
+      fee = await addManualFees(
+        new BigNumber(0),
+        [TxTags.asset.RegisterTicker, TxTags.asset.CreateAsset],
+        context
+      );
+    } else {
+      fee = await addManualFees(new BigNumber(0), [TxTags.asset.CreateAsset], context);
+    }
+  }
+
+  transactions.push(await getCreateAssetTransaction(customTypeData, context, fee, args));
+
+  // since 7.x, we need to separately register ticker first if ticker does not exists and then link to asset
+  transactions = [
+    ...transactions,
+    ...getTickerTransactions(rawTicker, rawAssetId, context, status),
+  ];
+
+  if (initialStatistics?.length) {
+    const rawStats = initialStatistics.map(i => inputStatTypeToMeshStatType(i, context));
+    const bTreeStats = statisticStatTypesToBtreeStatType(rawStats, context);
+
+    transactions.push(
+      checkTxType({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        transaction: tx.statistics.setActiveAssetStats as any,
+        args: [isV6 ? { Ticker: rawAssetId } : rawAssetId, bTreeStats],
+      })
+    );
+  }
+
+  transactions = [
+    ...transactions,
+    ...(await getDocumentsAndIssueTransaction(args, rawAssetId, context, signingIdentity)),
+  ];
 
   return {
     transactions,

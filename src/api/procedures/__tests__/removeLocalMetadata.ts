@@ -156,6 +156,12 @@ describe('removeLocalMetadata procedure', () => {
     dsMockUtils.createQueryMock('nft', 'collectionKeys', {
       returnValue: dsMockUtils.createMockBTreeSet([rawMetadataKey]),
     });
+
+    jest.spyOn(utilsConversionModule, 'meshMetadataKeyToMetadataKey').mockResolvedValue({
+      id,
+      type: MetadataType.Local,
+      assetId,
+    });
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const result = prepareRemoveLocalMetadata.call(proc, params);

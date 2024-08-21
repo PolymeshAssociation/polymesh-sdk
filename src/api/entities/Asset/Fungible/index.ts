@@ -260,13 +260,14 @@ export class FungibleAsset extends BaseAsset {
     } = this;
     const rawAssetId = assetToMeshAssetId(this, context);
 
-    let tokensStorage = asset.securityTokens;
     let collectionsStorage = nft.collectionAsset;
+    let tokensStorage = asset.securityTokens;
+
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tokensStorage = (asset as any).tokens;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       collectionsStorage = (nft as any).collectionTicker;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tokensStorage = (asset as any).tokens;
     }
 
     const [tokenSize, nftId] = await Promise.all([
