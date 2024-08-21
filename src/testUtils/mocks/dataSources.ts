@@ -1228,7 +1228,10 @@ function isCodec<T extends Codec>(codec: any): codec is T {
 /**
  * @hidden
  */
-const createMockCodec = <T extends Codec>(codec: unknown, isEmpty: boolean): MockCodec<T> => {
+export const createMockCodec = <T extends Codec>(
+  codec: unknown,
+  isEmpty: boolean
+): MockCodec<T> => {
   if (isCodec<T>(codec)) {
     return codec as MockCodec<T>;
   }
@@ -2763,6 +2766,7 @@ export const createMockScope = (
   scope?:
     | { Identity: PolymeshPrimitivesIdentityId }
     | { Asset: PolymeshPrimitivesAssetAssetID }
+    | { Ticker: PolymeshPrimitivesTicker }
     | { Custom: Bytes }
 ): MockCodec<PolymeshPrimitivesIdentityClaimScope> =>
   createMockEnum<PolymeshPrimitivesIdentityClaimScope>(scope);
@@ -3119,16 +3123,6 @@ export const createMockText = (value?: string | Text): MockCodec<Text> => {
 
   return createMockStringCodec<Text>(value);
 };
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-// TODO @prashantasdeveloper
-// export const createMockAssetOwnershipRelation = (
-//   assetOwnershipRelation?: 'NotOwned' | 'TickerOwned' | 'AssetOwned'
-// ): MockCodec<PalletAssetAssetOwnershipRelation> =>
-//   createMockEnum<PalletAssetAssetOwnershipRelation>(assetOwnershipRelation);
 
 /**
  * @hidden

@@ -11,6 +11,7 @@ import {
   Permill,
 } from '@polkadot/types/interfaces';
 import { H512 } from '@polkadot/types/interfaces/runtime';
+import { DispatchError } from '@polkadot/types/interfaces/system';
 import {
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
@@ -189,8 +190,13 @@ import {
   agentGroupToPermissionGroupIdentifier,
   assetComplianceResultToCompliance,
   assetCountToRaw,
+  assetDispatchErrorToTransferError,
   assetDocumentToDocument,
   assetIdentifierToSecurityIdentifier,
+  assetIdToString,
+  assetToMeshAssetId,
+  assetToMeshAssetIdKey,
+  assetToMeshAssetIdWithKey,
   assetTypeToKnownOrId,
   authorizationDataToAuthorization,
   authorizationToAuthorizationData,
@@ -255,6 +261,7 @@ import {
   legToOffChainLeg,
   mediatorAffirmationStatusToStatus,
   meshAffirmationStatusToAffirmationStatus,
+  meshAssetToAssetId,
   meshClaimToClaim,
   meshClaimToInputStatClaim,
   meshClaimTypeToClaimType,
@@ -324,6 +331,8 @@ import {
   statsClaimToStatClaimInputType,
   statUpdatesToBtreeStatUpdate,
   stringToAccountId,
+  stringToAssetId,
+  stringToAssetIdKey,
   stringToBlockHash,
   stringToBytes,
   stringToCddId,
@@ -348,6 +357,7 @@ import {
   transactionToTxTag,
   transferConditionsToBtreeTransferConditions,
   transferConditionToTransferRestriction,
+  transferReportToTransferBreakdown,
   transferRestrictionToPolymeshTransferCondition,
   transferRestrictionTypeToStatOpType,
   trustedClaimIssuerToTrustedIssuer,
@@ -774,6 +784,191 @@ describe('stringToTicker and tickerToString', () => {
 
       const result = tickerToString(ticker);
       expect(result).toEqual(fakeResult);
+    });
+  });
+});
+
+describe('stringToAssetId, stringToAssetIdKey and assetIdToString', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  describe('stringToAssetId', () => {
+    it('should convert a string to a polkadot Ticker object', () => {
+      const context = dsMockUtils.getContextInstance();
+
+      const value = '0x1234';
+      const fakeResult = '0x1234' as unknown as PolymeshPrimitivesAssetAssetID;
+
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesAssetAssetID', value)
+        .mockReturnValue(fakeResult);
+
+      const result = stringToAssetId(value, context);
+
+      expect(result).toBe(fakeResult);
+    });
+  });
+
+  describe('stringToAssetIdKey', () => {
+    beforeAll(() => {
+      dsMockUtils.initMocks();
+    });
+
+    afterEach(() => {
+      dsMockUtils.reset();
+    });
+
+    afterAll(() => {
+      dsMockUtils.cleanup();
+    });
+
+    it('should call stringToAssetIdKey and return the result as an object', () => {
+      const value = '0x1234';
+      const fakeResult = '0x1234' as unknown as PolymeshPrimitivesAssetAssetID;
+      const context = dsMockUtils.getContextInstance();
+
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesAssetAssetID', value)
+        .mockReturnValue(fakeResult);
+
+      const result = stringToAssetIdKey(value, context);
+      expect(result).toEqual({ AssetId: fakeResult });
+    });
+  });
+
+  describe('stringToAssetId', () => {
+    it('should convert a polkadot AssetId object to a string', () => {
+      const fakeResult = '0x1234';
+      const assetId = dsMockUtils.createMockAssetId(fakeResult);
+
+      const result = assetIdToString(assetId);
+      expect(result).toEqual(fakeResult);
+    });
+  });
+});
+
+describe('meshAssetToAssetId, assetToMeshAssetIdKey and assetToMeshAssetId', () => {
+  let context: Context;
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  describe('meshAssetToAssetId', () => {
+    it('should convert a mesh Ticker or AssetId to string value', () => {
+      const assetId = '0x1234';
+      const mockAssetId = dsMockUtils.createMockAssetId(assetId);
+
+      let result = meshAssetToAssetId(mockAssetId, context);
+      expect(result).toBe(assetId);
+
+      const ticker = 'SOME_TICKER';
+      const mockTicker = dsMockUtils.createMockTicker(ticker);
+
+      result = meshAssetToAssetId(mockTicker, dsMockUtils.getContextInstance({ isV6: true }));
+      expect(result).toBe(ticker);
+    });
+  });
+
+  describe('assetToMeshAssetIdKey', () => {
+    it('should call assetToMeshAssetIdKey and return the result as an object', () => {
+      let value = '0x1234';
+      const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesAssetAssetID;
+
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesAssetAssetID', value)
+        .mockReturnValue(fakeResult);
+
+      let result = assetToMeshAssetIdKey(value, context);
+      expect(result).toEqual({ AssetId: fakeResult });
+
+      context = dsMockUtils.getContextInstance({ isV6: true });
+
+      value = 'SOME_TICKER';
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesTicker', padString(value, 12))
+        .mockReturnValue(fakeResult);
+
+      result = assetToMeshAssetIdKey(value, context);
+      expect(result).toEqual({ Ticker: fakeResult });
+    });
+  });
+
+  describe('assetToMeshAssetId', () => {
+    it('should call assetToMeshAssetId and return the result', () => {
+      let value = '0x1234';
+      const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesAssetAssetID;
+
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesAssetAssetID', value)
+        .mockReturnValue(fakeResult);
+
+      let result = assetToMeshAssetId(
+        entityMockUtils.getBaseAssetInstance({ assetId: value }),
+        context
+      );
+      expect(result).toEqual(fakeResult);
+
+      context = dsMockUtils.getContextInstance({ isV6: true });
+      value = 'SOME_TICKER';
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesTicker', padString(value, 12))
+        .mockReturnValue(fakeResult);
+
+      result = assetToMeshAssetId(
+        entityMockUtils.getBaseAssetInstance({ assetId: value }),
+        context
+      );
+      expect(result).toEqual(fakeResult);
+    });
+  });
+
+  describe('assetToMeshAssetId', () => {
+    it('should call assetToMeshAssetIdWithKey and return the result', () => {
+      let value = '0x1234';
+      const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesAssetAssetID;
+
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesAssetAssetID', value)
+        .mockReturnValue(fakeResult);
+
+      let result = assetToMeshAssetIdWithKey(
+        entityMockUtils.getBaseAssetInstance({ assetId: value }),
+        context
+      );
+      expect(result).toEqual({ assetId: fakeResult });
+
+      context = dsMockUtils.getContextInstance({ isV6: true });
+      value = 'SOME_TICKER';
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesTicker', padString(value, 12))
+        .mockReturnValue(fakeResult);
+
+      result = assetToMeshAssetIdWithKey(
+        entityMockUtils.getBaseAssetInstance({ assetId: value }),
+        context
+      );
+      expect(result).toEqual({ ticker: fakeResult });
     });
   });
 });
@@ -3611,6 +3806,198 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
   });
 });
 
+describe('transferReportToTransferBreakdown', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a polkadot transfer report to a TransferBreakdown', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    context.polymeshApi.errors.nft = {
+      DuplicatedNFTId: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferComplianceFailure: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferFrozenAsset: { is: jest.fn().mockReturnValue(true) },
+      InvalidNFTTransferInsufficientCount: { is: jest.fn().mockReturnValue(false) },
+      NFTNotFound: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferNFTNotOwned: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferSamePortfolio: { is: jest.fn().mockReturnValue(false) },
+      InvalidNFTTransferNFTIsLocked: { is: jest.fn().mockReturnValue(false) },
+    } as unknown as DecoratedErrors<'promise'>['nft'];
+
+    context.polymeshApi.errors.asset = {
+      InvalidGranularity: { is: jest.fn().mockReturnValue(false) },
+      SenderSameAsReceiver: { is: jest.fn().mockReturnValue(false) },
+      InvalidTransferInvalidReceiverCDD: { is: jest.fn().mockReturnValue(false) },
+      InvalidTransferInvalidSenderCDD: { is: jest.fn().mockReturnValue(false) },
+      InsufficientBalance: { is: jest.fn().mockReturnValue(false) },
+      InvalidTransferFrozenAsset: { is: jest.fn().mockReturnValue(false) },
+      InvalidTransferComplianceFailure: { is: jest.fn().mockReturnValue(false) },
+      InvalidTransfer: { is: jest.fn().mockReturnValue(false) },
+    } as unknown as DecoratedErrors<'promise'>['asset'];
+
+    context.polymeshApi.errors.portfolio = {
+      PortfolioDoesNotExist: { is: jest.fn().mockReturnValue(false) },
+      InsufficientPortfolioBalance: { is: jest.fn().mockReturnValue(true) },
+    } as unknown as DecoratedErrors<'promise'>['portfolio'];
+
+    const result = transferReportToTransferBreakdown(
+      [
+        dsMockUtils.createMockDispatchResult({
+          Err: { index: createMockU8(), module: createMockU8aFixed() },
+        }).asErr,
+      ] as Vec<DispatchError>,
+      dsMockUtils.createMockDispatchResult({
+        Err: { index: createMockU8(), module: createMockU8aFixed() },
+      }),
+      context
+    );
+
+    expect(result).toEqual({
+      general: [TransferError.TransfersFrozen, TransferError.InsufficientPortfolioBalance],
+      // compliance: {
+      //   requirements: [],
+      //   complies: false,
+      // },
+      restrictions: [],
+      result: false,
+    });
+  });
+});
+
+describe('assetDispatchErrorToTransferError', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should process errors', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    context.polymeshApi.errors.asset = {
+      InvalidGranularity: { is: jest.fn().mockReturnValue(false) },
+      SenderSameAsReceiver: { is: jest.fn().mockReturnValue(false) },
+      InvalidTransferInvalidReceiverCDD: { is: jest.fn().mockReturnValue(false) },
+      InvalidTransferInvalidSenderCDD: { is: jest.fn().mockReturnValue(false) },
+      InsufficientBalance: { is: jest.fn().mockReturnValue(false) },
+      InvalidTransferFrozenAsset: { is: jest.fn().mockReturnValue(false) },
+      InvalidTransferComplianceFailure: { is: jest.fn().mockReturnValue(false) },
+      InvalidTransfer: { is: jest.fn().mockReturnValue(false) },
+    } as unknown as DecoratedErrors<'promise'>['asset'];
+
+    context.polymeshApi.errors.portfolio = {
+      PortfolioDoesNotExist: { is: jest.fn().mockReturnValue(false) },
+      InsufficientPortfolioBalance: { is: jest.fn().mockReturnValue(false) },
+    } as unknown as DecoratedErrors<'promise'>['portfolio'];
+
+    const mockError = dsMockUtils.createMockDispatchResult({
+      Err: { index: createMockU8(), module: createMockU8aFixed() },
+    }).asErr;
+
+    dsMockUtils.setErrorMock('asset', 'InvalidGranularity', {
+      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
+    });
+
+    let result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.InvalidGranularity);
+
+    dsMockUtils.setErrorMock('asset', 'SenderSameAsReceiver', {
+      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
+    });
+
+    result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.SelfTransfer);
+
+    dsMockUtils.setErrorMock('asset', 'InvalidTransferInvalidReceiverCDD', {
+      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
+    });
+
+    result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.InvalidReceiverCdd);
+
+    dsMockUtils.setErrorMock('asset', 'InvalidTransferInvalidSenderCDD', {
+      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
+    });
+
+    result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.InvalidSenderCdd);
+
+    dsMockUtils.setErrorMock('asset', 'InsufficientBalance', {
+      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
+    });
+
+    result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.InsufficientBalance);
+
+    dsMockUtils.setErrorMock('asset', 'InvalidTransferFrozenAsset', {
+      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
+    });
+
+    result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.TransfersFrozen);
+
+    dsMockUtils.setErrorMock('asset', 'InvalidTransferComplianceFailure', {
+      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
+    });
+
+    result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.ComplianceFailure);
+
+    dsMockUtils.setErrorMock('asset', 'InvalidTransfer', {
+      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
+    });
+
+    result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.ComplianceFailure);
+
+    dsMockUtils.setErrorMock('portfolio', 'PortfolioDoesNotExist', {
+      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
+    });
+
+    result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.InvalidSenderPortfolio);
+
+    dsMockUtils.setErrorMock('portfolio', 'InsufficientPortfolioBalance', {
+      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
+    });
+
+    result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.InsufficientPortfolioBalance);
+
+    return expect(() => assetDispatchErrorToTransferError(mockError, context)).toThrow(
+      new PolymeshError({
+        code: ErrorCode.General,
+        message: 'Received unknown Asset can transfer status',
+      })
+    );
+  });
+});
+
 describe('nftDispatchErrorToTransferError', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -3757,6 +4144,32 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
 
       expect(result).toEqual(fakeResult);
     });
+
+    it('should convert a Ticker type Scope into a polkadot Scope object', async () => {
+      const context = dsMockUtils.getContextInstance({ isV6: true });
+      const value: Scope = {
+        type: ScopeType.Ticker,
+        value: 'SOME_TICKER',
+      };
+
+      jest
+        .spyOn(utilsInternalModule, 'asBaseAsset')
+        .mockResolvedValue(entityMockUtils.getBaseAssetInstance({ assetId: value.value }));
+
+      const fakeAssetId = '0x1234' as unknown as PolymeshPrimitivesTicker;
+
+      const fakeResult = {
+        [value.type]: fakeAssetId,
+      };
+
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesTicker', padString(value.value, 12))
+        .mockReturnValue(fakeAssetId);
+
+      const result = await scopeToMeshScope(value, context);
+
+      expect(result).toEqual(fakeResult);
+    });
   });
 
   describe('meshScopeToScope', () => {
@@ -3805,6 +4218,17 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
       });
 
       result = meshScopeToScope(scope, context);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        type: ScopeType.Ticker,
+        value: 'SOME_TICKER',
+      };
+      scope = dsMockUtils.createMockScope({
+        Ticker: dsMockUtils.createMockTicker(fakeResult.value),
+      });
+
+      result = meshScopeToScope(scope, dsMockUtils.getContextInstance({ isV6: true }));
       expect(result).toEqual(fakeResult);
     });
   });
@@ -4393,11 +4817,14 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
       let result = await scopeToMiddlewareScope(scope, context);
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Identity, value: scope.value });
 
+      const getAssetIdForMiddlewareSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware');
       scope = { type: ScopeType.Asset, value: '0x1234' };
-      jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware').mockResolvedValue(scope.value);
+      getAssetIdForMiddlewareSpy.mockResolvedValue(scope.value);
       result = await scopeToMiddlewareScope(scope, context);
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Asset, value: '0x1234' });
 
+      scope = { type: ScopeType.Ticker, value: 'SOME_TICKER' };
+      getAssetIdForMiddlewareSpy.mockResolvedValue('0x1234');
       result = await scopeToMiddlewareScope(scope, context);
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Asset, value: '0x1234' });
 
@@ -7982,7 +8409,7 @@ describe('agentGroupToPermissionGroup', () => {
   describe('statisticsOpTypeToStatType', () => {
     it('should return a statType', () => {
       const operationType = 'MaxInvestorCount' as unknown as PolymeshPrimitivesStatisticsStatOpType;
-      const context = dsMockUtils.getContextInstance();
+      let context = dsMockUtils.getContextInstance();
       when(context.createType)
         .calledWith('PolymeshPrimitivesStatisticsStatType', {
           operationType,
@@ -7990,7 +8417,19 @@ describe('agentGroupToPermissionGroup', () => {
         })
         .mockReturnValue('statType' as unknown as PolymeshPrimitivesStatisticsStatType);
 
-      const result = statisticsOpTypeToStatType({ operationType }, context);
+      let result = statisticsOpTypeToStatType({ operationType }, context);
+
+      expect(result).toEqual('statType');
+
+      context = dsMockUtils.getContextInstance({ isV6: true });
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesStatisticsStatType', {
+          op: operationType,
+          claimIssuer: undefined,
+        })
+        .mockReturnValue('statType' as unknown as PolymeshPrimitivesStatisticsStatType);
+
+      result = statisticsOpTypeToStatType({ operationType }, context);
 
       expect(result).toEqual('statType');
     });
@@ -8063,6 +8502,17 @@ describe('agentGroupToPermissionGroup', () => {
       const result = meshStatToStatType(rawStat, dsMockUtils.getContextInstance());
 
       expect(result).toEqual(StatType.Count);
+    });
+
+    it('should return the type', () => {
+      const rawStat = {
+        op: { type: 'Balance' },
+        claimIssuer: createMockOption(),
+      } as unknown as PolymeshPrimitivesStatisticsStatType;
+
+      const result = meshStatToStatType(rawStat, dsMockUtils.getContextInstance({ isV6: true }));
+
+      expect(result).toEqual(StatType.Balance);
     });
   });
 
@@ -9423,6 +9873,20 @@ describe('middlewareAgentGroupDataToPermissionGroup', () => {
         id: new BigNumber(1),
       })
     );
+
+    const ticker = 'SOME_TICKER';
+    agentGroup = { [ticker]: { custom: 1 } };
+
+    result = middlewareAgentGroupDataToPermissionGroup(
+      agentGroup,
+      dsMockUtils.getContextInstance({ isV6: true })
+    );
+    expect(result).toEqual(
+      expect.objectContaining({
+        asset: expect.objectContaining({ id: ticker }),
+        id: new BigNumber(1),
+      })
+    );
   });
 });
 
@@ -9550,6 +10014,21 @@ describe('middlewarePermissionsDataToPermissions', () => {
 
     result = middlewarePermissionsDataToPermissions(JSON.stringify(permissions), context);
     expect(result).toEqual(fakeResult);
+
+    result = middlewarePermissionsDataToPermissions(
+      JSON.stringify({
+        ...permissions,
+        asset: { these: ['TICKER'] },
+      }),
+      dsMockUtils.getContextInstance({ isV6: true })
+    );
+    expect(result).toEqual({
+      ...fakeResult,
+      assets: {
+        values: [expect.objectContaining({ id: 'TICKER' })],
+        type: PermissionType.Include,
+      },
+    });
   });
 });
 
@@ -9942,29 +10421,35 @@ describe('meshMetadataKeyToMetadataKey', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should convert local metadata', () => {
+  it('should convert local metadata', async () => {
     const localId = new BigNumber(1);
     const assetId = '0x1234';
     const rawKey = dsMockUtils.createMockAssetMetadataKey({
       Local: dsMockUtils.createMockU64(localId),
     });
+    const ticker = 'SOME_TICKER';
 
-    const result = meshMetadataKeyToMetadataKey(
+    jest.spyOn(utilsInternalModule, 'getAssetIdAndTicker').mockResolvedValue({
+      assetId,
+      ticker,
+    });
+
+    const result = await meshMetadataKeyToMetadataKey(
       rawKey,
       entityMockUtils.getBaseAssetInstance({ assetId }),
       dsMockUtils.getContextInstance()
     );
 
-    expect(result).toEqual({ type: MetadataType.Local, id: localId, assetId });
+    expect(result).toEqual({ type: MetadataType.Local, id: localId, assetId, ticker });
   });
 
-  it('should convert Global metadata', () => {
+  it('should convert Global metadata', async () => {
     const globalId = new BigNumber(2);
     const rawKey = dsMockUtils.createMockAssetMetadataKey({
       Global: dsMockUtils.createMockU64(globalId),
     });
 
-    const result = meshMetadataKeyToMetadataKey(
+    const result = await meshMetadataKeyToMetadataKey(
       rawKey,
       entityMockUtils.getBaseAssetInstance(),
       dsMockUtils.getContextInstance()
@@ -9987,9 +10472,9 @@ describe('meshNftToNftId', () => {
     dsMockUtils.cleanup();
   });
   it('should convert a set of NFTs', () => {
-    const assetId = '0x1234';
+    let assetId = '0x1234';
 
-    const mockNft = dsMockUtils.createMockNfts({
+    let mockNft = dsMockUtils.createMockNfts({
       assetId: dsMockUtils.createMockAssetId(assetId),
       ids: [
         dsMockUtils.createMockU64(new BigNumber(1)),
@@ -9997,7 +10482,26 @@ describe('meshNftToNftId', () => {
       ],
     });
 
-    const result = meshNftToNftId(mockNft, dsMockUtils.getContextInstance());
+    let result = meshNftToNftId(mockNft, dsMockUtils.getContextInstance());
+
+    expect(result).toEqual({
+      assetId,
+      ids: [new BigNumber(1), new BigNumber(2)],
+    });
+
+    assetId = 'SOME_TICKER';
+    mockNft = dsMockUtils.createMockCodec(
+      {
+        ticker: dsMockUtils.createMockTicker(assetId),
+        ids: [
+          dsMockUtils.createMockU64(new BigNumber(1)),
+          dsMockUtils.createMockU64(new BigNumber(2)),
+        ],
+      },
+      false
+    );
+
+    result = meshNftToNftId(mockNft, dsMockUtils.getContextInstance({ isV6: true }));
 
     expect(result).toEqual({
       assetId,

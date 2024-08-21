@@ -49,7 +49,7 @@ export async function prepareModifyAsset(
     });
   }
 
-  const rawAssetId = await assetToMeshAssetId(asset, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
 
   const [{ isDivisible, name }, fundingRound, identifiers] = await Promise.all([
     asset.details(),
