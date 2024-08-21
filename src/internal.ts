@@ -99,6 +99,7 @@ export { createCheckpoint } from '~/api/procedures/createCheckpoint';
 export { controllerTransfer } from '~/api/procedures/controllerTransfer';
 export { nftControllerTransfer } from '~/api/procedures/nftControllerTransfer';
 export { linkCaDocs } from '~/api/procedures/linkCaDocs';
+export { linkTickerToAsset } from '~/api/procedures/linkTickerToAsset';
 export { Identity } from '~/api/entities/Identity';
 export { ChildIdentity } from '~/api/entities/Identity/ChildIdentity';
 export { Account } from '~/api/entities/Account';
