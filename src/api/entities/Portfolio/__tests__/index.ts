@@ -360,9 +360,6 @@ describe('Portfolio class', () => {
           tuple([rawPortfolioId, [rawLockedOnlyAssetId, rawLockedOnlyId]], rawTrue),
         ],
       });
-      jest.spyOn(utilsInternalModule, 'asAssetId').mockImplementation((a): Promise<string> => {
-        return Promise.resolve(typeof a === 'string' ? a : a.id);
-      });
     });
 
     afterAll(() => {
@@ -404,9 +401,12 @@ describe('Portfolio class', () => {
     it('should filter assets if any are specified', async () => {
       const portfolio = new NonAbstract({ did, id: portfolioId }, context);
 
+      jest.spyOn(utilsInternalModule, 'asAssetId').mockResolvedValue(assetId);
+
       const result = await portfolio.getCollections({ collections: [assetId] });
 
       expect(result.length).toEqual(1);
+
       expect(result).toEqual(
         expect.arrayContaining([
           {
@@ -651,13 +651,15 @@ describe('Portfolio class', () => {
         ],
       };
 
+      const middlewareAssetId = '0x1234';
+
       dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: settlementsQuery({
             identityId: did,
             portfolioId: id,
             address: account,
-            assetId: undefined,
+            assetId: middlewareAssetId,
           }),
           returnData: {
             legs: settlementsResponse,
@@ -668,7 +670,7 @@ describe('Portfolio class', () => {
             identityId: did,
             portfolioId: id,
             address: account,
-            assetId: undefined,
+            assetId: middlewareAssetId,
           }),
           returnData: {
             portfolioMovements: {
@@ -678,8 +680,14 @@ describe('Portfolio class', () => {
         },
       ]);
 
+      const getAssetIdForMiddlewareSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware');
+      when(getAssetIdForMiddlewareSpy)
+        .calledWith(middlewareAssetId, context)
+        .mockResolvedValue(middlewareAssetId);
+
       let result = await portfolio.getTransactionHistory({
         account,
+        assetId: middlewareAssetId,
       });
 
       expect(result[0].blockNumber).toEqual(blockNumber1);
@@ -703,7 +711,7 @@ describe('Portfolio class', () => {
             identityId: did,
             portfolioId: undefined,
             address: undefined,
-            assetId: undefined,
+            assetId: middlewareAssetId,
           }),
           returnData: {
             legs: {
@@ -716,7 +724,7 @@ describe('Portfolio class', () => {
             identityId: did,
             portfolioId: undefined,
             address: undefined,
-            assetId: undefined,
+            assetId: middlewareAssetId,
           }),
           returnData: {
             portfolioMovements: {
@@ -749,8 +757,14 @@ describe('Portfolio class', () => {
         },
       ]);
 
+      when(getAssetIdForMiddlewareSpy)
+        .calledWith('SOME_TICKER', context)
+        .mockResolvedValue('0x1234');
+
       portfolio = new NonAbstract({ did }, context);
-      result = await portfolio.getTransactionHistory();
+      result = await portfolio.getTransactionHistory({
+        ticker: 'SOME_TICKER',
+      });
 
       expect(result[0].blockNumber).toEqual(blockNumber1);
       expect(result[0].blockHash).toBe(blockHash1);

@@ -76,8 +76,9 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
 
   /**
    * ticker of the Asset
+   *
+   * Since the chain version 7.x, ticker can be optionally associated with an Asset
    */
-  // TODO @prashantasdeveloper add comment
   public ticker?: string;
 
   /**
@@ -509,7 +510,6 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
     return !tokenSize.isZero() && nftId.isZero();
   }
 
-  // TODO @prashantasdeveloper add comments
   /**
    * Return the BaseAsset's ID
    */
