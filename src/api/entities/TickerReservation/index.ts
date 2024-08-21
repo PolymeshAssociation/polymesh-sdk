@@ -115,7 +115,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
 
     const rawTicker = stringToTicker(ticker, context);
 
-    const assembleResultV6 = (
+    const assembleResult = (
       reservationOpt: Option<PalletAssetTickerRegistration>,
       tokenOpt: Option<PalletAssetSecurityToken>,
       assetId: string
@@ -171,7 +171,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
         ],
         ([registration, token]) => {
           // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
-          callback(assembleResultV6(registration, token, meshAssetToAssetId(rawAssetId, context)));
+          callback(assembleResult(registration, token, meshAssetToAssetId(rawAssetId, context)));
         }
       );
     }
@@ -183,7 +183,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
       [tokensStorage, rawAssetId],
     ]);
 
-    return assembleResultV6(tickerRegistration, meshAsset, meshAssetToAssetId(rawAssetId, context));
+    return assembleResult(tickerRegistration, meshAsset, meshAssetToAssetId(rawAssetId, context));
   }
 
   /**

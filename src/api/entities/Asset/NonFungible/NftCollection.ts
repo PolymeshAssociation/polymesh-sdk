@@ -171,8 +171,8 @@ export class NftCollection extends BaseAsset {
     const rawCollectionId = bigNumberToU64(collectionId, context);
 
     const rawKeys = await query.nft.collectionKeys(rawCollectionId);
-    const neededKeys = [...rawKeys].map(value =>
-      meshMetadataKeyToMetadataKey(value, this, context)
+    const neededKeys = await Promise.all(
+      [...rawKeys].map(value => meshMetadataKeyToMetadataKey(value, this, context))
     );
 
     const allMetadata = await this.metadata.get();

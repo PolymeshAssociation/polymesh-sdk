@@ -64,6 +64,7 @@ import { SUPPORTED_NODE_VERSION_RANGE, SUPPORTED_SPEC_VERSION_RANGE } from '../c
 import {
   areSameClaims,
   asAccount,
+  asBaseAsset,
   asChildIdentity,
   asFungibleAsset,
   asNftId,
@@ -85,6 +86,11 @@ import {
   extractProtocol,
   filterEventRecords,
   getApiAtBlock,
+  getAssetIdAndTicker,
+  getAssetIdForMiddleware,
+  getAssetIdForStats,
+  getAssetIdForTicker,
+  getAssetIdFromMiddleware,
   getCheckpointValue,
   getDid,
   getExemptedIds,
@@ -92,6 +98,7 @@ import {
   getIdentityFromKeyRecord,
   getPortfolioIdsByName,
   getSecondaryAccountPermissions,
+  getTickerForAsset,
   hasSameElements,
   isAllowedCharacters,
   isModuleOrTagMatch,
@@ -2714,5 +2721,313 @@ describe('extractProtocol', () => {
     const result = extractProtocol('someString');
 
     expect(result).toBeUndefined();
+  });
+});
+
+describe('getTickerForAsset', () => {
+  let context: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    context = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return the ticker for an asset ID', async () => {
+    const assetIdTickerMock = dsMockUtils.createQueryMock('asset', 'assetIDTicker');
+
+    const assetId = '0x1234';
+    const rawAssetId = dsMockUtils.createMockAssetId(assetId);
+
+    jest.spyOn(utilsConversionModule, 'stringToAssetId').mockReturnValue(rawAssetId);
+    const ticker = 'SOME_TICKER';
+    const rawTicker = dsMockUtils.createMockTicker(ticker);
+    when(assetIdTickerMock)
+      .calledWith(rawAssetId)
+      .mockResolvedValue(dsMockUtils.createMockOption(rawTicker));
+
+    let result = await getTickerForAsset(assetId, context);
+
+    expect(result).toEqual(ticker);
+
+    when(assetIdTickerMock).calledWith(rawAssetId).mockResolvedValue(dsMockUtils.createMockOption);
+
+    result = await getTickerForAsset(assetId, context);
+
+    expect(result).toEqual(undefined);
+  });
+});
+
+describe('getAssetIdForTicker', () => {
+  let context: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    context = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+  it('should return the assetId for a ticker', async () => {
+    const tickerAssetIdMock = dsMockUtils.createQueryMock('asset', 'tickerAssetID');
+
+    const assetId = '0x1234';
+    const rawAssetId = dsMockUtils.createMockAssetId(assetId);
+
+    const ticker = 'SOME_TICKER';
+    const rawTicker = dsMockUtils.createMockTicker(ticker);
+
+    jest.spyOn(utilsConversionModule, 'stringToTicker').mockReturnValue(rawTicker);
+
+    when(tickerAssetIdMock)
+      .calledWith(rawTicker)
+      .mockResolvedValue(dsMockUtils.createMockOption(rawAssetId));
+
+    const result = await getAssetIdForTicker(ticker, context);
+
+    expect(result).toEqual(assetId);
+
+    when(tickerAssetIdMock).calledWith(rawTicker).mockResolvedValue(dsMockUtils.createMockOption());
+
+    await expect(getAssetIdForTicker(ticker, context)).rejects.toThrow(
+      `There is no Asset with ticker: "${ticker}"`
+    );
+  });
+});
+
+describe('getAssetIdAndTicker', () => {
+  let context: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    context = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return both assetId and ticker for an assetId', async () => {
+    const assetId = '0x1234';
+    const ticker = 'TICKER';
+
+    dsMockUtils
+      .createQueryMock('asset', 'assetIDTicker')
+      .mockResolvedValue(dsMockUtils.createMockOption(dsMockUtils.createMockTicker(ticker)));
+    let result = await getAssetIdAndTicker(assetId, context);
+
+    expect(result).toEqual({
+      assetId,
+      ticker,
+    });
+
+    result = await getAssetIdAndTicker(ticker, dsMockUtils.getContextInstance({ isV6: true }));
+
+    expect(result).toEqual({
+      assetId: ticker,
+      ticker,
+    });
+  });
+});
+
+describe('asBaseAsset', () => {
+  let context: Context;
+  let assetIdTickerMock: jest.Mock;
+  let tickerAssetIdMock: jest.Mock;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+    context = dsMockUtils.getContextInstance();
+
+    assetIdTickerMock = dsMockUtils.createQueryMock('asset', 'assetIDTicker');
+    tickerAssetIdMock = dsMockUtils.createQueryMock('asset', 'tickerAssetID');
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return BaseAsset when an instance of it is already provided', async () => {
+    const baseAsset = entityMockUtils.getBaseAssetInstance();
+    const result = await asBaseAsset(baseAsset, context);
+
+    expect(result).toBe(baseAsset);
+  });
+
+  it('should return BaseAsset for v6 version when ticker is provided', async () => {
+    const baseAsset = 'SOME_TICKER';
+    const result = await asBaseAsset(baseAsset, dsMockUtils.getContextInstance({ isV6: true }));
+
+    expect(result).toEqual(expect.objectContaining({ id: baseAsset }));
+  });
+
+  it('should return BaseAsset when asset ID is provided', async () => {
+    const baseAsset = '0x1234'.padEnd(34, '0');
+    const ticker = 'SOME_TICKER;';
+
+    assetIdTickerMock.mockResolvedValue(
+      dsMockUtils.createMockOption(dsMockUtils.createMockTicker(ticker))
+    );
+    const result = await asBaseAsset(baseAsset, context);
+
+    expect(result.id).toEqual(baseAsset);
+    expect(result.ticker).toEqual(ticker);
+  });
+
+  it('should return BaseAsset when ticker is provided', async () => {
+    const assetId = '0x1234'.padEnd(34, '0');
+    const ticker = 'SOME_TICKER;';
+
+    tickerAssetIdMock.mockResolvedValue(
+      dsMockUtils.createMockOption(dsMockUtils.createMockAssetId(assetId))
+    );
+    const result = await asBaseAsset(ticker, context);
+
+    expect(result.id).toEqual(assetId);
+    expect(result.ticker).toEqual(ticker);
+  });
+});
+
+describe('getAssetIdForStats', () => {
+  let context: Context;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+    context = dsMockUtils.getContextInstance();
+
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return both assetId for stats', () => {
+    const mockAssetId = dsMockUtils.createMockAssetId('0x1234');
+    assetToMeshAssetIdSpy.mockReturnValue(mockAssetId);
+    let result = getAssetIdForStats(entityMockUtils.getFungibleAssetInstance(), context);
+
+    expect(result).toEqual(mockAssetId);
+
+    const mockTicker = dsMockUtils.createMockTicker('SOME_TICKER');
+    assetToMeshAssetIdSpy.mockReturnValue(mockTicker);
+    result = getAssetIdForStats(
+      entityMockUtils.getFungibleAssetInstance(),
+      dsMockUtils.getContextInstance({ isV6: true })
+    );
+
+    expect(result).toEqual(expect.objectContaining({ Ticker: mockTicker }));
+  });
+});
+
+describe('getAssetIdForMiddleware', () => {
+  let context: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+    context = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return asset ID compatible with middleware', async () => {
+    const baseAsset = entityMockUtils.getBaseAssetInstance({ assetId: '0x1234' });
+    const result = await getAssetIdForMiddleware(baseAsset, context);
+
+    expect(result).toEqual('0x1234');
+  });
+
+  it('should return asset ID for legacy ticker compatible with middleware', async () => {
+    const ticker = 'SOME_TICKER';
+    const mockTicker = dsMockUtils.createMockTicker(ticker);
+    mockTicker.toHex = jest.fn();
+    mockTicker.toHex.mockReturnValue('0x1111');
+
+    jest.spyOn(utilsConversionModule, 'stringToTicker').mockReturnValue(mockTicker);
+
+    const result = await getAssetIdForMiddleware(
+      'SOME_TICKER',
+      dsMockUtils.getContextInstance({ isV6: true })
+    );
+
+    expect(result).toEqual('0xc5ad37bd0d02c8ce39a7b943f45f0ebc');
+  });
+});
+
+describe('getAssetIdFromMiddleware', () => {
+  let context: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    context = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return asset ID from middleware', async () => {
+    const assetId = '0x1234';
+    const ticker = 'SOME_TICKER';
+    let result = getAssetIdFromMiddleware(
+      {
+        id: assetId,
+        ticker,
+      },
+      context
+    );
+
+    expect(result).toEqual(assetId);
+
+    result = getAssetIdFromMiddleware(
+      {
+        id: assetId,
+        ticker,
+      },
+      dsMockUtils.getContextInstance({ isV6: true })
+    );
+
+    expect(result).toEqual(ticker);
   });
 });

@@ -7,11 +7,12 @@ import {
   DropLast,
   ObsInnerType,
 } from '@polkadot/api/types';
-import { BTreeSet, Bytes, Option, StorageKey, U8aFixed, u32 } from '@polkadot/types';
+import { BTreeSet, Bytes, Option, StorageKey, u32 } from '@polkadot/types';
 import { EventRecord } from '@polkadot/types/interfaces';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import {
   PalletAssetSecurityToken,
+  PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesSecondaryKeyKeyRecord,
   PolymeshPrimitivesStatisticsStatClaim,
@@ -132,6 +133,7 @@ import {
   assetToMeshAssetId,
   bigNumberToU32,
   claimIssuerToMeshClaimIssuer,
+  coerceHexToString,
   identitiesToBtreeSet,
   identityIdToString,
   meshClaimTypeToClaimType,
@@ -1004,14 +1006,13 @@ export function assertTickerValid(ticker: string): void {
 /**
  * @hidden
  */
-export async function getTickerForAsset(id: string, context: Context): Promise<string> {
+export async function getTickerForAsset(id: string, context: Context): Promise<string | undefined> {
   const {
     polymeshApi: {
       query: { asset },
     },
   } = context;
-  // TODO @prashantasdeveloper add comment
-  let ticker = '';
+  let ticker;
   const rawAssetId = stringToAssetId(id, context);
   const rawTicker = await asset.assetIDTicker(rawAssetId);
   if (rawTicker.isSome) {
@@ -1045,23 +1046,24 @@ export async function getAssetIdForTicker(ticker: string, context: Context): Pro
  * @hidden
  */
 export async function getAssetIdAndTicker(
-  id: string,
+  assetId: string,
   context: Context
 ): Promise<{
-  ticker: string;
+  ticker?: string;
   assetId: string;
 }> {
   const { isV6 } = context;
 
   if (isV6) {
     return {
-      ticker: id,
-      assetId: id,
+      ticker: assetId,
+      assetId,
     };
   }
+
   return {
-    assetId: id,
-    ticker: await getTickerForAsset(id, context),
+    assetId,
+    ticker: await getTickerForAsset(assetId, context),
   };
 }
 
@@ -1096,15 +1098,6 @@ export async function asBaseAsset(asset: string | BaseAsset, context: Context): 
  * @hidden
  */
 export async function asAssetId(asset: string | BaseAsset, context: Context): Promise<string> {
-  const baseAsset = await asBaseAsset(asset, context);
-  return baseAsset.id;
-}
-
-/**
- * @hidden
- * this will return ticker for v6 and assetId for v7 and later
- */
-export async function asAssetInput(asset: string | Asset, context: Context): Promise<string> {
   const baseAsset = await asBaseAsset(asset, context);
   return baseAsset.id;
 }
@@ -2250,13 +2243,19 @@ export async function getAccount(
 /**
  * @hidden
  */
-export function getAssetIdForStats(asset: Asset, context: Context): TickerKey | U8aFixed {
+export function getAssetIdForStats(
+  asset: Asset,
+  context: Context
+): TickerKey | PolymeshPrimitivesAssetAssetID {
   const rawAssetId = assetToMeshAssetId(asset, context);
 
   return context.isV6 ? { Ticker: rawAssetId } : rawAssetId;
 }
 
-export const getAssetIdForLegacyTicker = (ticker: string, context: Context): string => {
+/**
+ * @hidden
+ */
+const getAssetIdForLegacyTicker = (ticker: string, context: Context): string => {
   const assetComponents = [stringToHex('legacy_ticker'), stringToTicker(ticker, context).toHex()];
 
   const data = hexAddPrefix(assetComponents.map(e => hexStripPrefix(e)).join(''));
@@ -2268,7 +2267,7 @@ export const getAssetIdForLegacyTicker = (ticker: string, context: Context): str
  * @hidden
  */
 export async function getAssetIdForMiddleware(
-  assetIdOrTicker: string | Asset,
+  assetIdOrTicker: string | BaseAsset,
   context: Context
 ): Promise<string> {
   /**
@@ -2294,7 +2293,7 @@ export function getAssetIdFromMiddleware(
 ): string {
   const { id, ticker } = assetIdAndTicker!;
   if (context.isV6) {
-    return ticker!;
+    return coerceHexToString(ticker!);
   }
   return id;
 }

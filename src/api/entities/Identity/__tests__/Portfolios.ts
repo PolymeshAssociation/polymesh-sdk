@@ -358,7 +358,7 @@ describe('Portfolios class', () => {
           query: settlementsForAllPortfoliosQuery({
             identityId: did,
             address: account,
-            assetId: undefined,
+            assetId: '0x1234',
           }),
           returnData: {
             legs: settlementsResponse,
@@ -368,7 +368,7 @@ describe('Portfolios class', () => {
           query: portfoliosMovementsQuery({
             identityId: did,
             address: account,
-            assetId: undefined,
+            assetId: '0x1234',
           }),
           returnData: {
             portfolioMovements: {
@@ -378,8 +378,14 @@ describe('Portfolios class', () => {
         },
       ]);
 
+      const getAssetIdForMiddlewareSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware');
+      when(getAssetIdForMiddlewareSpy)
+        .calledWith('0x1234', mockContext)
+        .mockResolvedValue('0x1234');
+
       let result = await identity.portfolios.getTransactionHistory({
         account,
+        assetId: '0x1234',
       });
 
       expect(result[0].blockNumber).toEqual(blockNumber1);
@@ -404,7 +410,7 @@ describe('Portfolios class', () => {
           query: settlementsForAllPortfoliosQuery({
             identityId: did,
             address: undefined,
-            assetId: undefined,
+            assetId: '0x1234',
           }),
           returnData: {
             legs: {
@@ -416,7 +422,7 @@ describe('Portfolios class', () => {
           query: portfoliosMovementsQuery({
             identityId: did,
             address: undefined,
-            assetId: undefined,
+            assetId: '0x1234',
           }),
           returnData: {
             portfolioMovements: {
@@ -449,7 +455,13 @@ describe('Portfolios class', () => {
         },
       ]);
 
-      result = await identity.portfolios.getTransactionHistory();
+      when(getAssetIdForMiddlewareSpy)
+        .calledWith('SOME_TICKER', mockContext)
+        .mockResolvedValue('0x1234');
+
+      result = await identity.portfolios.getTransactionHistory({
+        ticker: 'SOME_TICKER',
+      });
 
       expect(result[0].blockNumber).toEqual(blockNumber1);
       expect(result[0].blockHash).toBe(blockHash1);

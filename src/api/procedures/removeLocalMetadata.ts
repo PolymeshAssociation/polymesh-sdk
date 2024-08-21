@@ -59,9 +59,10 @@ export async function prepareRemoveLocalMetadata(
 
   if (!collectionKey.isZero()) {
     const rawKeys = await nft.collectionKeys(collectionKey);
-    const isRequired = [...rawKeys].some(value =>
-      meshMetadataKeyToMetadataKey(value, asset, context).id.eq(id)
+    const metadataKeys = await Promise.all(
+      [...rawKeys].map(value => meshMetadataKeyToMetadataKey(value, asset, context))
     );
+    const isRequired = metadataKeys.some(value => value.id.eq(id));
 
     if (isRequired) {
       throw new PolymeshError({

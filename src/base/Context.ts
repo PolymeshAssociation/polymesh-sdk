@@ -1056,7 +1056,6 @@ export class Context {
     return api;
   }
 
-  // TODO @prashantasdeveloper Remove `QueryOld` after SQ dual version support
   /**
    * @hidden
    *

@@ -389,11 +389,11 @@ describe('NftCollection class', () => {
 
       when(meshMetadataKeyToMetadataKeySpy)
         .calledWith(mockGlobalKey, assetId)
-        .mockReturnValue({ type: MetadataType.Global, id });
+        .mockResolvedValue({ type: MetadataType.Global, id });
 
       when(meshMetadataKeyToMetadataKeySpy)
         .calledWith(mockLocalKey, assetId)
-        .mockReturnValue({ type: MetadataType.Local, id });
+        .mockResolvedValue({ type: MetadataType.Local, id });
 
       u64ToBigNumberSpy.mockReturnValue(id);
       dsMockUtils.createQueryMock('nft', 'collectionKeys', {
@@ -456,7 +456,7 @@ describe('NftCollection class', () => {
 
       when(meshMetadataKeyToMetadataKeySpy)
         .calledWith(mockMetadataKey, assetId)
-        .mockReturnValue({ type: MetadataType.Global, id });
+        .mockResolvedValue({ type: MetadataType.Global, id });
 
       u64ToBigNumberSpy.mockReturnValue(id);
       dsMockUtils.createQueryMock('nft', 'collectionKeys', {
