@@ -17,6 +17,7 @@ import {
   Context,
   Entity,
   Identity,
+  linkTickerToAsset,
   modifyAsset,
   PolymeshError,
   removeAssetMediators,
@@ -31,6 +32,7 @@ import {
   AssetMediatorParams,
   AuthorizationRequest,
   ErrorCode,
+  LinkTickerToAssetParams,
   ModifyAssetParams,
   NoArgsProcedureMethod,
   ProcedureMethod,
@@ -186,6 +188,13 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
       { getProcedureAndArgs: args => [modifyAsset, { asset: this, ...args }] },
       context
     );
+
+    this.linkTicker = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [linkTickerToAsset, { asset: this, ...args }],
+      },
+      context
+    );
   }
 
   /**
@@ -207,6 +216,14 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
    * Remove required mediators
    */
   public removeRequiredMediators: ProcedureMethod<AssetMediatorParams, void>;
+
+  /**
+   * Link ticker to the asset
+   *
+   * @note if ticker is already reserved, then required role:
+   * - Ticker Owner
+   */
+  public linkTicker: ProcedureMethod<LinkTickerToAssetParams, void>;
 
   /**
    * Retrieve the Asset's identifiers list
