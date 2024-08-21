@@ -1440,6 +1440,13 @@ export interface LinkCaDocsParams {
   documents: AssetDocument[];
 }
 
+export interface LinkTickerToAssetParams {
+  /**
+   * The ticker to attach
+   */
+  ticker: string;
+}
+
 export interface ModifyCaCheckpointParams {
   checkpoint: InputCaCheckpoint | null;
 }
