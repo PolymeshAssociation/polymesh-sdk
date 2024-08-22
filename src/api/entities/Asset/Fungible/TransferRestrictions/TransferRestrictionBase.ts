@@ -15,6 +15,7 @@ import {
   AddAssetStatParams,
   AddRestrictionParams,
   ClaimCountRestrictionValue,
+  ClaimPercentageRestrictionValue,
   GetTransferRestrictionReturnType,
   NoArgsProcedureMethod,
   ProcedureMethod,
@@ -36,6 +37,7 @@ import {
   identityIdToString,
   stringToTickerKey,
   transferConditionToTransferRestriction,
+  transferRestrictionTypeToStatOpType,
   u32ToBigNumber,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
@@ -216,6 +218,9 @@ export abstract class TransferRestrictionBase<
     } = this;
     const tickerKey = stringToTickerKey(ticker, context);
     const { requirements } = await statistics.assetTransferCompliances(tickerKey);
+
+    const existingRequirementCount = [...requirements].length;
+
     const filteredRequirements = [...requirements].filter(requirement => {
       if (type === TransferRestrictionType.Count) {
         return requirement.isMaxInvestorCount;
@@ -228,9 +233,33 @@ export abstract class TransferRestrictionBase<
       }
     });
     const rawExemptedLists = await Promise.all(
-      filteredRequirements.map(() =>
-        statistics.transferConditionExemptEntities.entries({ asset: tickerKey })
-      )
+      filteredRequirements.map(req => {
+        const { value } = transferConditionToTransferRestriction(req, context);
+
+        if (req.isClaimCount) {
+          const { claim } = value as ClaimCountRestrictionValue;
+          return statistics.transferConditionExemptEntities.entries({
+            asset: tickerKey,
+            op: transferRestrictionTypeToStatOpType(TransferRestrictionType.ClaimCount, context),
+            claimType: claim.type,
+          });
+        } else if (req.isClaimOwnership) {
+          const { claim } = value as ClaimPercentageRestrictionValue;
+          return statistics.transferConditionExemptEntities.entries({
+            asset: tickerKey,
+            op: transferRestrictionTypeToStatOpType(
+              TransferRestrictionType.ClaimPercentage,
+              context
+            ),
+            claimType: claim.type,
+          });
+        } else {
+          return statistics.transferConditionExemptEntities.entries({
+            asset: tickerKey,
+            op: transferRestrictionTypeToStatOpType(type, context),
+          });
+        }
+      })
     );
 
     const restrictions = rawExemptedLists.map((list, index) => {
@@ -278,7 +307,7 @@ export abstract class TransferRestrictionBase<
 
     return {
       restrictions,
-      availableSlots: maxTransferConditions.minus(restrictions.length),
+      availableSlots: maxTransferConditions.minus(existingRequirementCount),
     } as GetTransferRestrictionReturnType<T>;
   }
 }
