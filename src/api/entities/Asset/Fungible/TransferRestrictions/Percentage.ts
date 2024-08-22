@@ -2,6 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { TransferRestrictionBase } from '~/internal';
 import {
+  ActiveStats,
   ActiveTransferRestrictions,
   AddPercentageTransferRestrictionParams,
   NoArgsProcedureMethod,
@@ -72,4 +73,10 @@ export class Percentage extends TransferRestrictionBase<TransferRestrictionType.
    *   before reaching that limit
    */
   public declare get: () => Promise<ActiveTransferRestrictions<PercentageTransferRestriction>>;
+
+  /**
+   * Retrieve current Percentage Transfer Restriction investor balance statistic for the Asset
+   *
+   */
+  public declare getStat: () => Promise<ActiveStats>;
 }

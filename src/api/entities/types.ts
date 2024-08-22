@@ -822,3 +822,8 @@ export type NonFungiblePortfolioMovement = {
 };
 
 export type PortfolioMovement = FungiblePortfolioMovement | NonFungiblePortfolioMovement;
+
+export type ActiveStats = {
+  isSet: boolean;
+  claims?: { claimType: ClaimType; issuer: Identity }[];
+};

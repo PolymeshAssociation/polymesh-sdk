@@ -6,12 +6,14 @@ import {
   AddTransferRestrictionParams,
   Context,
   FungibleAsset,
+  Identity,
   Namespace,
   removeAssetStat,
   setTransferRestrictions,
   SetTransferRestrictionsStorage,
 } from '~/internal';
 import {
+  ActiveStats,
   AddAssetStatParams,
   AddRestrictionParams,
   ClaimCountRestrictionValue,
@@ -35,6 +37,8 @@ import {
 } from '~/types';
 import {
   identityIdToString,
+  meshClaimTypeToClaimType,
+  meshStatToStatType,
   stringToTickerKey,
   transferConditionToTransferRestriction,
   transferRestrictionTypeToStatOpType,
@@ -309,5 +313,75 @@ export abstract class TransferRestrictionBase<
       restrictions,
       availableSlots: maxTransferConditions.minus(existingRequirementCount),
     } as GetTransferRestrictionReturnType<T>;
+  }
+
+  /**
+   * Retrieve all active Transfer Restrictions of the corresponding type
+   *
+   * @note there is a maximum number of restrictions allowed across all types.
+   *   The `availableSlots` property of the result represents how many more restrictions can be added
+   *   before reaching that limit
+   */
+  public async getStat(): Promise<ActiveStats> {
+    const {
+      parent: { ticker },
+      context,
+      context: {
+        polymeshApi: {
+          query: { statistics },
+        },
+      },
+      type,
+    } = this;
+    const tickerKey = stringToTickerKey(ticker, context);
+    const currentStats = await statistics.activeAssetStats(tickerKey);
+
+    let isSet = false;
+    const claims: ActiveStats['claims'] = [];
+
+    [...currentStats].forEach(stat => {
+      const statType = meshStatToStatType(stat);
+
+      if (
+        type === TransferRestrictionType.ClaimCount &&
+        !stat.claimIssuer.isNone &&
+        statType === StatType.ScopedCount
+      ) {
+        isSet = true;
+        const [rawClaimType, rawIssuer] = stat.claimIssuer.unwrap();
+        const claimType = meshClaimTypeToClaimType(rawClaimType);
+        const issuer = new Identity({ did: identityIdToString(rawIssuer) }, context);
+
+        claims.push({ claimType, issuer });
+      } else if (
+        type === TransferRestrictionType.ClaimPercentage &&
+        !stat.claimIssuer.isNone &&
+        statType === StatType.ScopedBalance
+      ) {
+        isSet = true;
+        const [rawClaimType, rawIssuer] = stat.claimIssuer.unwrap();
+        const claimType = meshClaimTypeToClaimType(rawClaimType);
+        const issuer = new Identity({ did: identityIdToString(rawIssuer) }, context);
+
+        claims.push({ claimType, issuer });
+      } else if (
+        type === TransferRestrictionType.Percentage &&
+        stat.claimIssuer.isNone &&
+        statType === StatType.Balance
+      ) {
+        isSet = true;
+      } else if (
+        type === TransferRestrictionType.Count &&
+        stat.claimIssuer.isNone &&
+        statType === StatType.Count
+      ) {
+        isSet = true;
+      }
+    });
+
+    return {
+      isSet,
+      ...(claims.length ? { claims } : {}),
+    };
   }
 }
