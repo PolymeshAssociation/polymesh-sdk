@@ -226,7 +226,9 @@ function transformInput(
   if (!needDifferentConditions && !needDifferentExemptions) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
-      message: 'The restrictions and exemptions are already in place',
+      message: inputRestrictions.length
+        ? 'The restrictions and exemptions are already in place'
+        : 'No restrictions to remove',
     });
   }
 
