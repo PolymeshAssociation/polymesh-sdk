@@ -24,6 +24,7 @@ import {
 } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -570,12 +571,17 @@ describe('NftCollection class', () => {
     it('should return the list of the collection transactions', async () => {
       const ticker = 'TICKER';
       const context = dsMockUtils.getContextInstance();
+      jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware').mockResolvedValue(ticker);
       const asset = new NftCollection({ ticker }, context);
+      const assetId = '0x1234';
       const transactionResponse = {
         totalCount: new BigNumber(5),
         nodes: [
           {
-            assetId: ticker,
+            asset: {
+              id: assetId,
+              ticker,
+            },
             nftIds: ['1'],
             eventId: EventIdEnum.Issued,
             toPortfolioId: 'SOME_DID/0',
@@ -589,7 +595,10 @@ describe('NftCollection class', () => {
             },
           },
           {
-            assetId: ticker,
+            asset: {
+              id: assetId,
+              ticker,
+            },
             nftIds: ['1'],
             eventId: EventIdEnum.Transfer,
             toPortfolioId: 'OTHER_DID/0',

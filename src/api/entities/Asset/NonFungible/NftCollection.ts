@@ -40,7 +40,12 @@ import {
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { calculateNextKey, createProcedureMethod, optionize } from '~/utils/internal';
+import {
+  calculateNextKey,
+  createProcedureMethod,
+  getAssetIdFromMiddleware,
+  optionize,
+} from '~/utils/internal';
 
 const sumNftIssuance = (
   numberOfNfts: [StorageKey<[PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId]>, u64][]
@@ -336,7 +341,7 @@ export class NftCollection extends BaseAsset {
 
     const data: HistoricNftTransaction[] = nodes.map(
       ({
-        assetId,
+        asset,
         nftIds,
         fromPortfolioId,
         toPortfolioId,
@@ -351,8 +356,11 @@ export class NftCollection extends BaseAsset {
         const fromPortfolio = optionize(portfolioIdStringToPortfolio)(fromPortfolioId);
         const toPortfolio = optionize(portfolioIdStringToPortfolio)(toPortfolioId);
 
+        const assetId = getAssetIdFromMiddleware(asset);
+        const collection = new NftCollection({ ticker: assetId }, context);
+
         return {
-          asset: new NftCollection({ ticker: assetId }, context),
+          asset: collection,
           nfts: nftIds.map(
             (id: string) => new Nft({ ticker: assetId, id: new BigNumber(id) }, context)
           ),

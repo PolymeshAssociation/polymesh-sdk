@@ -24,7 +24,13 @@ import {
   stringToTicker,
   tickerToDid,
 } from '~/utils/conversion';
-import { calculateNextKey, createProcedureMethod, optionize } from '~/utils/internal';
+import {
+  calculateNextKey,
+  createProcedureMethod,
+  getAssetIdForMiddleware,
+  getAssetIdFromMiddleware,
+  optionize,
+} from '~/utils/internal';
 
 import { FungibleSettlements } from '../Base/Settlements';
 import { UniqueIdentifiers } from '../types';
@@ -147,13 +153,15 @@ export class FungibleAsset extends BaseAsset {
   public async getOperationHistory(): Promise<HistoricAgentOperation[]> {
     const { context, ticker: assetId } = this;
 
+    const middlewareAssetId = await getAssetIdForMiddleware(assetId, context);
+
     const {
       data: {
         tickerExternalAgentHistories: { nodes },
       },
     } = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgentHistories'>>(
       tickerExternalAgentHistoryQuery({
-        assetId,
+        assetId: middlewareAssetId,
       })
     );
 
@@ -180,6 +188,8 @@ export class FungibleAsset extends BaseAsset {
     const { context, ticker } = this;
     const { size, start } = opts;
 
+    const middlewareAssetId = await getAssetIdForMiddleware(ticker, context);
+
     const {
       data: {
         assetTransactions: { nodes, totalCount },
@@ -187,7 +197,7 @@ export class FungibleAsset extends BaseAsset {
     } = await context.queryMiddleware<Ensured<Query, 'assetTransactions'>>(
       assetTransactionQuery(
         {
-          assetId: ticker,
+          assetId: middlewareAssetId,
         },
         size,
         start
@@ -196,7 +206,7 @@ export class FungibleAsset extends BaseAsset {
 
     const data: HistoricAssetTransaction[] = nodes.map(
       ({
-        assetId,
+        asset,
         amount,
         fromPortfolioId,
         toPortfolioId,
@@ -210,6 +220,8 @@ export class FungibleAsset extends BaseAsset {
       }) => {
         const fromPortfolio = optionize(portfolioIdStringToPortfolio)(fromPortfolioId);
         const toPortfolio = optionize(portfolioIdStringToPortfolio)(toPortfolioId);
+
+        const assetId = getAssetIdFromMiddleware(asset);
 
         return {
           asset: new FungibleAsset({ ticker: assetId }, context),

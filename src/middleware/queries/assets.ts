@@ -64,7 +64,10 @@ export function assetHoldersQuery(
       ) {
         totalCount
         nodes {
-          assetId
+          asset {
+            id
+            ticker 
+          }
         }
       }
     }
@@ -97,7 +100,10 @@ export function nftHoldersQuery(
       ) {
         totalCount
         nodes {
-          assetId
+          asset {
+            id
+            ticker 
+          }
           nftIds
         }
       }
@@ -128,7 +134,10 @@ export function assetTransactionQuery(
       ) {
         totalCount
         nodes {
-          assetId
+          asset {
+            id
+            ticker 
+          }
           amount
           nftIds
           fromPortfolioId

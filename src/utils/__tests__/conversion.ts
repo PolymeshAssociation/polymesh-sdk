@@ -4294,11 +4294,25 @@ describe('meshClaimTypeToClaimType', () => {
 });
 
 describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
+  let context: Context;
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    context = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
   describe('middlewareScopeToScope', () => {
     it('should convert a MiddlewareScope object to a Scope', () => {
       let result = middlewareScopeToScope({
         type: ClaimScopeTypeEnum.Ticker,
-        value: 'SOMETHING\u0000\u0000\u0000',
+        value: 'SOMETHING',
       });
 
       expect(result).toEqual({ type: ScopeType.Ticker, value: 'SOMETHING' });
@@ -4320,20 +4334,24 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
   });
 
   describe('scopeToMiddlewareScope', () => {
-    it('should convert a Scope to a MiddlewareScope object', () => {
+    it('should convert a Scope to a MiddlewareScope object', async () => {
       let scope: Scope = { type: ScopeType.Identity, value: 'someDid' };
-      let result = scopeToMiddlewareScope(scope);
+      let result = await scopeToMiddlewareScope(scope, context);
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Identity, value: scope.value });
 
-      scope = { type: ScopeType.Ticker, value: 'someTicker' };
-      result = scopeToMiddlewareScope(scope);
-      expect(result).toEqual({ type: ClaimScopeTypeEnum.Ticker, value: 'someTicker\0\0' });
+      const getAssetIdForMiddlewareSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware');
+      scope = { type: ScopeType.Ticker, value: 'SOME_TICKER' };
+      getAssetIdForMiddlewareSpy.mockResolvedValue('0x1234');
+      result = await scopeToMiddlewareScope(scope, context);
+      expect(result).toEqual({ type: ClaimScopeTypeEnum.Asset, value: '0x1234' });
 
-      result = scopeToMiddlewareScope(scope, false);
-      expect(result).toEqual({ type: ClaimScopeTypeEnum.Ticker, value: 'someTicker' });
+      scope = { type: ScopeType.Ticker, value: 'SOME_TICKER' };
+      getAssetIdForMiddlewareSpy.mockResolvedValue('SOME_TICKER');
+      result = await scopeToMiddlewareScope(scope, context);
+      expect(result).toEqual({ type: ClaimScopeTypeEnum.Ticker, value: 'SOME_TICKER' });
 
       scope = { type: ScopeType.Custom, value: 'customValue' };
-      result = scopeToMiddlewareScope(scope);
+      result = await scopeToMiddlewareScope(scope, context);
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Custom, value: scope.value });
     });
   });
@@ -4477,6 +4495,7 @@ describe('middlewareInstructionToHistoricInstruction', () => {
       {
         legType: LegTypeEnum.Fungible,
         assetId: ticker,
+        ticker,
         amount: amount1.shiftedBy(6).toString(),
         fromPortfolio: portfolioKind1,
         from: portfolioDid1,
@@ -4487,7 +4506,8 @@ describe('middlewareInstructionToHistoricInstruction', () => {
     const legs2 = [
       {
         legType: LegTypeEnum.NonFungible,
-        assetId: ticker,
+        aassetId: ticker,
+        ticker,
         nftIds: [nftId.toString()],
         fromPortfolio: portfolioKind2,
         from: portfolioDid2,
@@ -4499,6 +4519,7 @@ describe('middlewareInstructionToHistoricInstruction', () => {
       {
         legType: LegTypeEnum.OffChain,
         assetId: ticker,
+        ticker,
         amount: amount3.shiftedBy(6).toString(),
         from: portfolioDid2,
         to: portfolioDid1,

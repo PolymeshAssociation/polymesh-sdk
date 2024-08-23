@@ -78,7 +78,7 @@ describe('settlementsQuery', () => {
     const variables = {
       identityId: 'someDid',
       portfolioId: new BigNumber(1),
-      ticker: 'SOME_TICKER',
+      assetId: 'SOME_TICKER',
       address: 'someAddress',
     };
 
@@ -100,7 +100,7 @@ describe('settlementsForAllPortfoliosQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
     const variables = {
       identityId: 'someDid',
-      ticker: 'SOME_TICKER',
+      assetId: 'SOME_TICKER',
       address: 'someAddress',
     };
 

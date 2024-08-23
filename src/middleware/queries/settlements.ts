@@ -32,6 +32,7 @@ const instructionAttributes = `
               to
               toPortfolio
               assetId
+              ticker
               amount
               nftIds
               addresses
@@ -177,7 +178,7 @@ export function instructionPartiesQuery(
 export interface QuerySettlementFilters {
   identityId: string;
   portfolioId?: BigNumber;
-  ticker?: string;
+  assetId?: string;
   address?: string;
 }
 
@@ -187,7 +188,7 @@ type LegArgs = 'from' | 'fromPortfolio' | 'to' | 'toPortfolio' | 'assetId' | 'ad
  *  @hidden
  */
 function createLegFilters(
-  { identityId, portfolioId, ticker, address }: QuerySettlementFilters,
+  { identityId, portfolioId, assetId, address }: QuerySettlementFilters,
   queryAll?: boolean
 ): {
   args: string;
@@ -211,8 +212,8 @@ function createLegFilters(
     toIdFilters.push('toPortfolio: { equalTo: $toPortfolio }');
   }
 
-  if (ticker) {
-    variables.assetId = ticker;
+  if (assetId) {
+    variables.assetId = assetId;
     args.push('$assetId: String!');
     const assetIdFilter = 'assetId: { equalTo: $assetId }';
     toIdFilters.push(assetIdFilter);

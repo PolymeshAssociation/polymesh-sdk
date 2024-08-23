@@ -32,7 +32,12 @@ import {
   toHistoricalSettlements,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, getLatestSqVersion, requestPaginated } from '~/utils/internal';
+import {
+  createProcedureMethod,
+  getAssetIdForMiddleware,
+  getLatestSqVersion,
+  requestPaginated,
+} from '~/utils/internal';
 
 /**
  * Handles all Portfolio related functionality on the Identity side
@@ -200,6 +205,11 @@ export class Portfolios extends Namespace<Identity> {
 
     const { account, ticker } = filters;
 
+    let middlewareAssetId;
+    if (ticker) {
+      middlewareAssetId = await getAssetIdForMiddleware(ticker, context);
+    }
+
     // TODO @prashantasdeveloper Remove after SQ dual version support
     const sqVersion = await getLatestSqVersion(context);
 
@@ -210,7 +220,7 @@ export class Portfolios extends Namespace<Identity> {
         oldSettlementsForAllPortfoliosQuery({
           identityId,
           address,
-          ticker,
+          assetId: ticker,
         })
       );
 
@@ -220,7 +230,7 @@ export class Portfolios extends Namespace<Identity> {
         portfoliosMovementsQuery({
           identityId,
           address,
-          ticker,
+          assetId: middlewareAssetId,
         })
       );
 
@@ -250,7 +260,7 @@ export class Portfolios extends Namespace<Identity> {
       settlementsForAllPortfoliosQuery({
         identityId,
         address: account,
-        ticker,
+        assetId: middlewareAssetId,
       })
     );
 
@@ -258,7 +268,7 @@ export class Portfolios extends Namespace<Identity> {
       portfoliosMovementsQuery({
         identityId,
         address: account,
-        ticker,
+        assetId: middlewareAssetId,
       })
     );
 

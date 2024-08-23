@@ -8,7 +8,7 @@ import {
   stringToTicker,
   trustedIssuerToTrustedClaimIssuer,
 } from '~/utils/conversion';
-import { optionize } from '~/utils/internal';
+import { getAssetIdForMiddleware, optionize } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   did: string;
@@ -58,6 +58,7 @@ export class DefaultTrustedClaimIssuer extends Identity {
       context,
     } = this;
 
+    const middlewareAssetId = await getAssetIdForMiddleware(assetId, context);
     const {
       data: {
         trustedClaimIssuers: {
@@ -66,7 +67,7 @@ export class DefaultTrustedClaimIssuer extends Identity {
       },
     } = await context.queryMiddleware<Ensured<Query, 'trustedClaimIssuers'>>(
       trustedClaimIssuerQuery({
-        assetId,
+        assetId: middlewareAssetId,
         issuer,
       })
     );

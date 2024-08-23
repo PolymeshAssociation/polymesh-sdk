@@ -94,6 +94,7 @@ import {
   calculateNextKey,
   createProcedureMethod,
   getAccount,
+  getAssetIdFromMiddleware,
   getLatestSqVersion,
   getSecondaryAccountPermissions,
   requestPaginated,
@@ -403,8 +404,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const count = new BigNumber(totalCount);
 
-    const data = nodes.map(({ assetId: ticker }) => new FungibleAsset({ ticker }, context));
-
+    const data = nodes.map(
+      ({ asset }) => new FungibleAsset({ ticker: getAssetIdFromMiddleware(asset) }, context)
+    );
     const next = calculateNextKey(count, data.length, start);
 
     return {
@@ -448,9 +450,19 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const count = new BigNumber(totalCount);
 
-    const data = nodes.map(({ assetId: ticker, nftIds }) => {
-      const collection = new NftCollection({ ticker }, context);
-      const nfts = nftIds.map((id: number) => new Nft({ ticker, id: new BigNumber(id) }, context));
+    const data = nodes.map(({ asset, nftIds }) => {
+      const assetId = getAssetIdFromMiddleware(asset);
+      const collection = new NftCollection({ ticker: assetId }, context);
+      const nfts = nftIds.map(
+        (id: number) =>
+          new Nft(
+            {
+              ticker: assetId,
+              id: new BigNumber(id),
+            },
+            context
+          )
+      );
 
       return { collection, nfts };
     });
@@ -502,7 +514,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       trustingAssetsQuery({ issuer: did })
     );
 
-    return nodes.map(({ assetId: ticker }) => new FungibleAsset({ ticker }, context));
+    return nodes.map(
+      ({ asset }) => new FungibleAsset({ ticker: getAssetIdFromMiddleware(asset) }, context)
+    );
   }
 
   /**

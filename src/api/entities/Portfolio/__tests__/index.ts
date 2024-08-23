@@ -676,7 +676,7 @@ describe('Portfolio class', () => {
             identityId: did,
             portfolioId: id,
             address: key,
-            ticker: undefined,
+            assetId: undefined,
           }),
           returnData: {
             legs: settlementsResponse,
@@ -687,7 +687,7 @@ describe('Portfolio class', () => {
             identityId: did,
             portfolioId: id,
             address: key,
-            ticker: undefined,
+            assetId: undefined,
           }),
           returnData: {
             portfolioMovements: {
@@ -722,7 +722,7 @@ describe('Portfolio class', () => {
             identityId: did,
             portfolioId: undefined,
             address: undefined,
-            ticker: undefined,
+            assetId: undefined,
           }),
           returnData: {
             legs: {
@@ -735,7 +735,7 @@ describe('Portfolio class', () => {
             identityId: did,
             portfolioId: undefined,
             address: undefined,
-            ticker: undefined,
+            assetId: undefined,
           }),
           returnData: {
             portfolioMovements: {
@@ -745,7 +745,10 @@ describe('Portfolio class', () => {
                     blockId: blockNumber1.toNumber(),
                     hash: 'someHash',
                   },
-                  assetId: ticker2,
+                  asset: {
+                    id: ticker2,
+                    ticker: ticker2,
+                  },
                   amount: amount2,
                   address: 'be865155e5b6be843e99117a825e9580bb03e401a9c2ace644fff604fe624917',
                   from: {
@@ -789,7 +792,7 @@ describe('Portfolio class', () => {
             identityId: did,
             portfolioId: id,
             address: undefined,
-            ticker: undefined,
+            assetId: undefined,
           }),
           returnData: {
             legs: {
@@ -802,7 +805,7 @@ describe('Portfolio class', () => {
             identityId: did,
             portfolioId: id,
             address: undefined,
-            ticker: undefined,
+            assetId: undefined,
           }),
           returnData: {
             portfolioMovements: {
@@ -826,6 +829,7 @@ describe('Portfolio class', () => {
         {
           legType: LegTypeEnum.Fungible,
           assetId: ticker1,
+          ticker: ticker1,
           amount: amount1,
           direction: SettlementDirectionEnum.Incoming,
           addresses: ['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'],
@@ -839,6 +843,7 @@ describe('Portfolio class', () => {
         {
           legType: LegTypeEnum.Fungible,
           assetId: ticker2,
+          ticker: ticker2,
           amount: amount2,
           direction: SettlementDirectionEnum.Outgoing,
           addresses: ['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'],
@@ -882,7 +887,7 @@ describe('Portfolio class', () => {
             identityId: did,
             portfolioId: id,
             address: account,
-            ticker: undefined,
+            assetId: undefined,
           }),
           returnData: {
             legs: settlementsResponse,
@@ -893,7 +898,7 @@ describe('Portfolio class', () => {
             identityId: did,
             portfolioId: id,
             address: account,
-            ticker: undefined,
+            assetId: undefined,
           }),
           returnData: {
             portfolioMovements: {
@@ -922,13 +927,14 @@ describe('Portfolio class', () => {
       expect((result[1].legs[0].from as NumberedPortfolio).id).toEqual(portfolioId2);
       expect((result[1].legs[0] as FungibleLeg).to.owner.did).toEqual(portfolioDid1);
 
+      jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware').mockResolvedValue(ticker2);
       dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: settlementsQuery({
             identityId: did,
             portfolioId: undefined,
             address: undefined,
-            ticker: undefined,
+            assetId: ticker2,
           }),
           returnData: {
             legs: {
@@ -941,7 +947,7 @@ describe('Portfolio class', () => {
             identityId: did,
             portfolioId: undefined,
             address: undefined,
-            ticker: undefined,
+            assetId: ticker2,
           }),
           returnData: {
             portfolioMovements: {
@@ -951,7 +957,10 @@ describe('Portfolio class', () => {
                     blockId: blockNumber1.toNumber(),
                     hash: 'someHash',
                   },
-                  assetId: ticker2,
+                  asset: {
+                    id: '0x1234',
+                    ticker: ticker2,
+                  },
                   amount: amount2,
                   address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
                   from: {
@@ -972,7 +981,9 @@ describe('Portfolio class', () => {
       ]);
 
       portfolio = new NonAbstract({ did }, context);
-      result = await portfolio.getTransactionHistory();
+      result = await portfolio.getTransactionHistory({
+        ticker: ticker2,
+      });
 
       expect(result[0].blockNumber).toEqual(blockNumber1);
       expect(result[0].blockHash).toBe(blockHash1);
@@ -995,7 +1006,7 @@ describe('Portfolio class', () => {
             identityId: did,
             portfolioId: id,
             address: undefined,
-            ticker: undefined,
+            assetId: undefined,
           }),
           returnData: {
             legs: {
@@ -1008,7 +1019,7 @@ describe('Portfolio class', () => {
             identityId: did,
             portfolioId: id,
             address: undefined,
-            ticker: undefined,
+            assetId: undefined,
           }),
           returnData: {
             portfolioMovements: {

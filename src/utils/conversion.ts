@@ -99,7 +99,6 @@ import {
   groupBy,
   includes,
   map,
-  padEnd,
   range,
   rangeRight,
   snakeCase,
@@ -289,6 +288,8 @@ import {
   asTicker,
   conditionsAreEqual,
   createClaim,
+  getAssetIdForMiddleware,
+  getAssetIdFromMiddleware,
   isModuleOrTagMatch,
   optionize,
   padString,
@@ -2217,7 +2218,11 @@ export function middlewareScopeToScope(scope: MiddlewareScope): Scope {
 
   switch (type) {
     case ClaimScopeTypeEnum.Ticker:
-      return { type: ScopeType.Ticker, value: removePadding(value) };
+    case ClaimScopeTypeEnum.Asset:
+      return {
+        type: ScopeType.Ticker,
+        value: getAssetIdFromMiddleware({ id: value, ticker: value }),
+      };
     case ClaimScopeTypeEnum.Identity:
     case ClaimScopeTypeEnum.Custom:
       return { type: scope.type as ScopeType, value };
@@ -2235,15 +2240,27 @@ export function middlewareScopeToScope(scope: MiddlewareScope): Scope {
 /**
  * @hidden
  */
-export function scopeToMiddlewareScope(scope: Scope, padTicker = true): MiddlewareScope {
+export async function scopeToMiddlewareScope(
+  scope: Scope,
+  context: Context
+): Promise<MiddlewareScope> {
   const { type, value } = scope;
 
   switch (type) {
-    case ScopeType.Ticker:
+    case ScopeType.Ticker: {
+      const middlewareAssetId = await getAssetIdForMiddleware(value, context);
+      if (value === middlewareAssetId) {
+        // old SQ is used
+        return {
+          type: ClaimScopeTypeEnum.Ticker,
+          value,
+        };
+      }
       return {
-        type: ClaimScopeTypeEnum.Ticker,
-        value: padTicker ? padEnd(value, 12, '\0') : value,
+        type: ClaimScopeTypeEnum.Asset,
+        value: middlewareAssetId,
       };
+    }
     case ScopeType.Identity:
     case ScopeType.Custom:
       return { type: ClaimScopeTypeEnum[scope.type], value };
@@ -4387,11 +4404,14 @@ export function oldMiddlewareInstructionToHistoricInstruction(
  * @hidden
  */
 export function middlewareLegToLeg(leg: MiddlewareLeg, context: Context): Leg {
-  const { legType, from, fromPortfolio, to, toPortfolio, assetId, nftIds, amount } = leg;
+  const { legType, from, fromPortfolio, to, toPortfolio, assetId, ticker, nftIds, amount } = leg;
 
   if (legType === LegTypeEnum.Fungible) {
     return {
-      asset: new FungibleAsset({ ticker: assetId }, context),
+      asset: new FungibleAsset(
+        { ticker: getAssetIdFromMiddleware({ id: assetId, ticker }) },
+        context
+      ),
       amount: new BigNumber(amount).shiftedBy(-6),
       from: middlewarePortfolioToPortfolio(
         { identityId: from, number: fromPortfolio! } as MiddlewarePortfolio,
@@ -4405,6 +4425,7 @@ export function middlewareLegToLeg(leg: MiddlewareLeg, context: Context): Leg {
   }
 
   if (legType === LegTypeEnum.NonFungible) {
+    const id = getAssetIdFromMiddleware({ id: assetId, ticker });
     return {
       from: middlewarePortfolioToPortfolio(
         { identityId: from, number: fromPortfolio! } as MiddlewarePortfolio,
@@ -4415,9 +4436,9 @@ export function middlewareLegToLeg(leg: MiddlewareLeg, context: Context): Leg {
         context
       ),
       nfts: nftIds.map(
-        (nftId: number) => new Nft({ ticker: assetId, id: new BigNumber(nftId) }, context)
+        (nftId: number) => new Nft({ ticker: id, id: new BigNumber(nftId) }, context)
       ),
-      asset: new NftCollection({ ticker: assetId }, context),
+      asset: new NftCollection({ ticker: id }, context),
     };
   }
 
@@ -4425,7 +4446,7 @@ export function middlewareLegToLeg(leg: MiddlewareLeg, context: Context): Leg {
   return {
     from: new Identity({ did: from }, context),
     to: new Identity({ did: to }, context),
-    asset: assetId,
+    asset: ticker!,
     offChainAmount: new BigNumber(amount).shiftedBy(-6),
   };
 }
@@ -4911,7 +4932,7 @@ function portfolioMovementsToHistoricSettlements(
   handleMiddlewareAddress: (address: string, context: Context) => Account
 ): HistoricSettlement[] {
   return portfolioMovements.map(
-    ({ createdBlock, fromId, toId, assetId, amount, address: accountAddress }) => {
+    ({ createdBlock, fromId, toId, asset, amount, address: accountAddress }) => {
       const { blockId, hash } = createdBlock!;
       return {
         blockNumber: new BigNumber(blockId),
@@ -4920,7 +4941,7 @@ function portfolioMovementsToHistoricSettlements(
         accounts: [handleMiddlewareAddress(accountAddress, context)],
         legs: [
           {
-            asset: new FungibleAsset({ ticker: assetId }, context),
+            asset: new FungibleAsset({ ticker: getAssetIdFromMiddleware(asset) }, context),
             amount: new BigNumber(amount).shiftedBy(-6),
             direction: SettlementDirectionEnum.None,
             from: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(fromId), context),

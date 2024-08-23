@@ -393,7 +393,7 @@ describe('Portfolios class', () => {
           query: oldSettlementsForAllPortfoliosQuery({
             identityId: did,
             address: key,
-            ticker: undefined,
+            assetId: undefined,
           }),
           returnData: {
             legs: settlementsResponse,
@@ -403,7 +403,7 @@ describe('Portfolios class', () => {
           query: portfoliosMovementsQuery({
             identityId: did,
             address: key,
-            ticker: undefined,
+            assetId: undefined,
           }),
           returnData: {
             portfolioMovements: {
@@ -439,7 +439,7 @@ describe('Portfolios class', () => {
           query: oldSettlementsForAllPortfoliosQuery({
             identityId: did,
             address: undefined,
-            ticker: undefined,
+            assetId: undefined,
           }),
           returnData: {
             legs: {
@@ -451,7 +451,7 @@ describe('Portfolios class', () => {
           query: portfoliosMovementsQuery({
             identityId: did,
             address: undefined,
-            ticker: undefined,
+            assetId: undefined,
           }),
           returnData: {
             portfolioMovements: {
@@ -461,7 +461,10 @@ describe('Portfolios class', () => {
                     blockId: blockNumber1.toNumber(),
                     hash: 'someHash',
                   },
-                  assetId: ticker2,
+                  asset: {
+                    id: ticker2,
+                    ticker: ticker2,
+                  },
                   amount: amount2,
                   address: 'be865155e5b6be843e99117a825e9580bb03e401a9c2ace644fff604fe624917',
                   from: {
@@ -499,6 +502,7 @@ describe('Portfolios class', () => {
         {
           legType: LegTypeEnum.Fungible,
           assetId: ticker1,
+          ticker: ticker1,
           amount: amount1,
           direction: SettlementDirectionEnum.Incoming,
           addresses: ['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'],
@@ -512,6 +516,7 @@ describe('Portfolios class', () => {
         {
           legType: LegTypeEnum.Fungible,
           assetId: ticker2,
+          ticker: ticker2,
           amount: amount2,
           direction: SettlementDirectionEnum.Outgoing,
           addresses: ['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'],
@@ -526,6 +531,7 @@ describe('Portfolios class', () => {
         {
           legType: LegTypeEnum.Fungible,
           assetId: ticker2,
+          ticker: ticker2,
           amount: amount2,
           direction: SettlementDirectionEnum.None,
           addresses: ['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'],
@@ -540,6 +546,7 @@ describe('Portfolios class', () => {
         {
           legType: LegTypeEnum.Fungible,
           assetId: ticker2,
+          ticker: ticker2,
           amount: amount2,
           direction: SettlementDirectionEnum.None,
           addresses: ['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'],
@@ -600,7 +607,7 @@ describe('Portfolios class', () => {
           query: settlementsForAllPortfoliosQuery({
             identityId: did,
             address: account,
-            ticker: undefined,
+            assetId: undefined,
           }),
           returnData: {
             legs: settlementsResponse,
@@ -610,7 +617,7 @@ describe('Portfolios class', () => {
           query: portfoliosMovementsQuery({
             identityId: did,
             address: account,
-            ticker: undefined,
+            assetId: undefined,
           }),
           returnData: {
             portfolioMovements: {
@@ -641,12 +648,14 @@ describe('Portfolios class', () => {
       expect(result[2].legs[0].direction).toEqual(SettlementDirectionEnum.None);
       expect(result[3].legs[0].direction).toEqual(SettlementDirectionEnum.None);
 
+      jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware').mockResolvedValue(ticker2);
+
       dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: settlementsForAllPortfoliosQuery({
             identityId: did,
             address: undefined,
-            ticker: undefined,
+            assetId: ticker2,
           }),
           returnData: {
             legs: {
@@ -658,7 +667,7 @@ describe('Portfolios class', () => {
           query: portfoliosMovementsQuery({
             identityId: did,
             address: undefined,
-            ticker: undefined,
+            assetId: ticker2,
           }),
           returnData: {
             portfolioMovements: {
@@ -668,7 +677,10 @@ describe('Portfolios class', () => {
                     blockId: blockNumber1.toNumber(),
                     hash: 'someHash',
                   },
-                  assetId: ticker2,
+                  asset: {
+                    id: '0x1234',
+                    ticker: ticker2,
+                  },
                   amount: amount2,
                   address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
                   from: {
@@ -688,7 +700,9 @@ describe('Portfolios class', () => {
         },
       ]);
 
-      result = await identity.portfolios.getTransactionHistory();
+      result = await identity.portfolios.getTransactionHistory({
+        ticker: ticker2,
+      });
 
       expect(result[0].blockNumber).toEqual(blockNumber1);
       expect(result[0].blockHash).toBe(blockHash1);

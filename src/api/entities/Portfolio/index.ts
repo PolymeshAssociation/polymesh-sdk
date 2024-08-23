@@ -42,6 +42,7 @@ import {
   asFungibleAsset,
   asTicker,
   createProcedureMethod,
+  getAssetIdForMiddleware,
   getIdentity,
   getLatestSqVersion,
   toHumanReadable,
@@ -405,6 +406,11 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
 
     const { account, ticker } = filters;
 
+    let middlewareAssetId;
+    if (ticker) {
+      middlewareAssetId = await getAssetIdForMiddleware(ticker, context);
+    }
+
     // TODO @prashantasdeveloper Remove after SQ dual version support
     const sqVersion = await getLatestSqVersion(context);
 
@@ -416,7 +422,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
           identityId,
           portfolioId,
           address,
-          ticker,
+          assetId: ticker,
         })
       );
 
@@ -427,7 +433,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
           identityId,
           portfolioId,
           address,
-          ticker,
+          assetId: middlewareAssetId,
         })
       );
 
@@ -468,7 +474,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
         identityId,
         portfolioId,
         address: account,
-        ticker,
+        assetId: middlewareAssetId,
       })
     );
 
@@ -477,7 +483,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
         identityId,
         portfolioId,
         address: account,
-        ticker,
+        assetId: middlewareAssetId,
       })
     );
 

@@ -575,7 +575,7 @@ describe('Identity class', () => {
 
       dsMockUtils.createApolloQueryMock(trustingAssetsQuery({ issuer: did }), {
         trustedClaimIssuers: {
-          nodes: tickers.map(ticker => ({ assetId: ticker })),
+          nodes: tickers.map(ticker => ({ asset: { id: ticker, ticker } })),
         },
       });
 
@@ -594,7 +594,10 @@ describe('Identity class', () => {
       const identity = new Identity({ did }, context);
 
       dsMockUtils.createApolloQueryMock(assetHoldersQuery({ identityId: did }), {
-        assetHolders: { nodes: tickers.map(ticker => ({ assetId: ticker })), totalCount: 2 },
+        assetHolders: {
+          nodes: tickers.map(ticker => ({ asset: { id: ticker, ticker } })),
+          totalCount: 2,
+        },
       });
 
       let result = await identity.getHeldAssets();
@@ -610,7 +613,10 @@ describe('Identity class', () => {
           AssetHoldersOrderBy.CreatedBlockIdAsc
         ),
         {
-          assetHolders: { nodes: tickers.map(ticker => ({ assetId: ticker })), totalCount: 2 },
+          assetHolders: {
+            nodes: tickers.map(ticker => ({ asset: { id: ticker, ticker } })),
+            totalCount: 2,
+          },
         }
       );
 
@@ -634,7 +640,7 @@ describe('Identity class', () => {
 
       dsMockUtils.createApolloQueryMock(nftHoldersQuery({ identityId: did }), {
         nftHolders: {
-          nodes: tickers.map(ticker => ({ assetId: ticker, nftIds: [] })),
+          nodes: tickers.map(ticker => ({ asset: { id: ticker, ticker }, nftIds: [] })),
           totalCount: 2,
         },
       });
@@ -653,7 +659,7 @@ describe('Identity class', () => {
         ),
         {
           nftHolders: {
-            nodes: tickers.map(ticker => ({ assetId: ticker, nftIds: [1, 3] })),
+            nodes: tickers.map(ticker => ({ asset: { id: ticker, ticker }, nftIds: [1, 3] })),
             totalCount: 2,
           },
         }

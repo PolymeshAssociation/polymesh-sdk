@@ -5,6 +5,7 @@ import { Context, Namespace } from '~/internal';
 import { nftCollectionHolders } from '~/middleware/queries/assets';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { NftCollection } from '~/types';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Asset/NonFungible',
@@ -47,6 +48,7 @@ describe('AssetHolder class', () => {
     beforeEach(() => {
       context = dsMockUtils.getContextInstance();
       collection = entityMockUtils.getNftCollectionInstance({ ticker });
+      jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware').mockResolvedValue(ticker);
       assetHolders = new AssetHolders(collection, context);
 
       const nftHoldersResponse = {

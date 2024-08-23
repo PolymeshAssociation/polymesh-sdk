@@ -21,7 +21,7 @@ describe('portfolioMovementsQuery', () => {
     const variables = {
       identityId: 'someDid',
       portfolioId: new BigNumber(1),
-      ticker: 'SOME_TICKER',
+      assetId: 'SOME_TICKER',
       address: 'someAddress',
     };
 
