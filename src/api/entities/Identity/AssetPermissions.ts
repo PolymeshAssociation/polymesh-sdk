@@ -183,7 +183,8 @@ export class AssetPermissions extends Namespace<Identity> {
       const groupPermissionsOption = await externalAgents.groupPermissions(rawAssetId, groupId);
 
       const permissions = extrinsicPermissionsToTransactionPermissions(
-        groupPermissionsOption.unwrap()
+        groupPermissionsOption.unwrap(),
+        context
       );
 
       if (permissions === null) {

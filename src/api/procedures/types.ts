@@ -1613,8 +1613,15 @@ export interface CreateTransactionBatchParams<ReturnValues extends readonly [...
 }
 
 export interface CreateMultiSigParams {
+  /**
+   * @note Signer must be an Account as of v7
+   */
   signers: Signer[];
   requiredSignatures: BigNumber;
+  /**
+   * Grants permissions to the MultiSig upon creation. The caller must be the primary key of the Identity for these to work
+   */
+  permissions?: PermissionsLike;
 }
 
 export interface ModifyMultiSigParams {

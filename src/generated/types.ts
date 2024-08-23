@@ -419,6 +419,21 @@ export enum MultiSigTx {
   MakeMultisigSecondary = 'multiSig.makeMultisigSecondary',
   ChangeSigsRequiredViaCreator = 'multiSig.changeSigsRequiredViaCreator',
   RemoveCreatorControls = 'multiSig.removeCreatorControls',
+  CreateProposal = 'multiSig.createProposal',
+  Approve = 'multiSig.approve',
+  Reject = 'multiSig.reject',
+  AcceptMultisigSigner = 'multiSig.acceptMultisigSigner',
+  AddMultisigSigners = 'multiSig.addMultisigSigners',
+  RemoveMultisigSigners = 'multiSig.removeMultisigSigners',
+  AddMultisigSignersViaAdmin = 'multiSig.addMultisigSignersViaAdmin',
+  RemoveMultisigSignersViaAdmin = 'multiSig.removeMultisigSignersViaAdmin',
+  ChangeSigsRequiredViaAdmin = 'multiSig.changeSigsRequiredViaAdmin',
+  AddAdmin = 'multiSig.addAdmin',
+  RemoveAdminViaAdmin = 'multiSig.removeAdminViaAdmin',
+  RemovePayer = 'multiSig.removePayer',
+  RemovePayerViaPayer = 'multiSig.removePayerViaPayer',
+  ApproveJoinIdentity = 'multiSig.approveJoinIdentity',
+  JoinIdentity = 'multiSig.joinIdentity',
 }
 
 export enum BridgeTx {
@@ -475,6 +490,11 @@ export enum StakingTx {
   ChangeSlashingAllowedFor = 'staking.changeSlashingAllowedFor',
   UpdatePermissionedValidatorIntendedCount = 'staking.updatePermissionedValidatorIntendedCount',
   ChillFromGovernance = 'staking.chillFromGovernance',
+  Kick = 'staking.kick',
+  SetStakingConfigs = 'staking.setStakingConfigs',
+  ChillOther = 'staking.chillOther',
+  ForceApplyMinCommission = 'staking.forceApplyMinCommission',
+  SetMinCommission = 'staking.setMinCommission',
 }
 
 export enum SessionTx {
@@ -807,6 +827,14 @@ export enum StateTrieMigrationTx {
   ForceSetProgress = 'stateTrieMigration.forceSetProgress',
 }
 
+export enum ElectionProviderMultiPhaseTx {
+  SubmitUnsigned = 'electionProviderMultiPhase.submitUnsigned',
+  SetMinimumUntrustedScore = 'electionProviderMultiPhase.setMinimumUntrustedScore',
+  SetEmergencyElectionResult = 'electionProviderMultiPhase.setEmergencyElectionResult',
+  Submit = 'electionProviderMultiPhase.submit',
+  GovernanceFallback = 'electionProviderMultiPhase.governanceFallback',
+}
+
 export enum ModuleName {
   System = 'system',
   Babe = 'babe',
@@ -853,6 +881,7 @@ export enum ModuleName {
   Contracts = 'contracts',
   Nft = 'nft',
   StateTrieMigration = 'stateTrieMigration',
+  ElectionProviderMultiPhase = 'electionProviderMultiPhase',
 }
 
 export type TxTag =
@@ -900,7 +929,8 @@ export type TxTag =
   | PreimageTx
   | ContractsTx
   | NftTx
-  | StateTrieMigrationTx;
+  | StateTrieMigrationTx
+  | ElectionProviderMultiPhaseTx;
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const TxTags = {
@@ -949,4 +979,5 @@ export const TxTags = {
   contracts: ContractsTx,
   nft: NftTx,
   stateTrieMigration: StateTrieMigrationTx,
+  electionProviderMultiPhase: ElectionProviderMultiPhaseTx,
 };

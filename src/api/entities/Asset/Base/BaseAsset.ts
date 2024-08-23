@@ -1,6 +1,6 @@
 import { Bytes, Option, StorageKey } from '@polkadot/types';
 import {
-  PalletAssetSecurityToken,
+  PalletAssetAssetDetails,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesIdentityId,
@@ -327,7 +327,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
     } = this;
 
     const assembleResult = async (
-      optToken: Option<PalletAssetSecurityToken>,
+      optToken: Option<PalletAssetAssetDetails>,
       agentGroups: [
         StorageKey<[PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId]>,
         Option<PolymeshPrimitivesAgentAgentGroup>
@@ -379,7 +379,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
     const groupOfAgentPromise = externalAgents.groupOfAgent.entries(rawAssetId);
     const namePromise = asset.assetNames(rawAssetId);
 
-    let tokensStorage = asset.securityTokens;
+    let tokensStorage = asset.assets;
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tokensStorage = (asset as any).tokens;
@@ -510,7 +510,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
       },
     } = this;
     const rawAssetId = assetToMeshAssetId(this, context);
-    let tokensStorage = asset.securityTokens;
+    let tokensStorage = asset.assets;
     let collectionsStorage = nft.collectionAsset;
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
