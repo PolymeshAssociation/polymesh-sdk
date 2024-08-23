@@ -51,7 +51,7 @@ import {
 } from '@polkadot/types/interfaces';
 import {
   FrameSystemPhase,
-  PalletAssetSecurityToken,
+  PalletAssetAssetDetails,
   PalletAssetTickerRegistration,
   PalletAssetTickerRegistrationConfig,
   PalletContractsStorageContractInfo,
@@ -103,8 +103,8 @@ import {
   PolymeshPrimitivesIdentityIdPortfolioKind,
   PolymeshPrimitivesJurisdictionCountryCode,
   PolymeshPrimitivesMemo,
-  PolymeshPrimitivesMultisigProposalDetails,
-  PolymeshPrimitivesMultisigProposalStatus,
+  PolymeshPrimitivesMultisigProposalState,
+  PolymeshPrimitivesMultisigProposalVoteCount,
   PolymeshPrimitivesNftNfTs,
   PolymeshPrimitivesPortfolioFund,
   PolymeshPrimitivesPosRatio,
@@ -127,8 +127,6 @@ import {
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesStatisticsStatUpdate,
   PolymeshPrimitivesSubsetSubsetRestrictionAssetID,
-  PolymeshPrimitivesSubsetSubsetRestrictionDispatchableName,
-  PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
   PolymeshPrimitivesSubsetSubsetRestrictionPortfolioId,
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceAssetTransferCompliance,
@@ -2355,7 +2353,7 @@ export const createMockSecurityToken = (token?: {
   ownerDid: PolymeshPrimitivesIdentityId;
   divisible: bool;
   assetType: PolymeshPrimitivesAssetAssetType;
-}): MockCodec<PalletAssetSecurityToken> => {
+}): MockCodec<PalletAssetAssetDetails> => {
   const st = token ?? {
     totalSupply: createMockBalance(),
     ownerDid: createMockIdentityId(),
@@ -4274,30 +4272,38 @@ export const createMockCall = (callArgs?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockProposalDetails = (proposalDetails?: {
+export const createMockProposalState = (proposalState?: {
+  status: PolymeshPrimitivesMultisigProposalStatus | Parameters<typeof createMockProposalStatus>[0];
+  expiry: Option<Moment> | null;
+}): PolymeshPrimitivesMultisigProposalState => {
+  const { status, expiry } = proposalState ?? {
+    status: createMockProposalStatus(),
+    expiry: createMockOption(),
+  };
+  return createMockCodec(
+    {
+      status,
+      expiry,
+    },
+    !proposalState
+  ) as MockCodec<PolymeshPrimitivesMultisigProposalState>;
+};
+
+export const createMockProposalVoteCount = (voteCount?: {
   approvals: u64 | Parameters<typeof createMockU64>[0];
   rejections: u64 | Parameters<typeof createMockU64>[0];
-  status: PolymeshPrimitivesMultisigProposalStatus | Parameters<typeof createMockProposalStatus>[0];
-  autoClose: bool | Parameters<typeof createMockBool>[0];
-  expiry: Option<Moment> | null;
-}): PolymeshPrimitivesMultisigProposalDetails => {
-  const { approvals, rejections, status, autoClose, expiry } = proposalDetails ?? {
+}): PolymeshPrimitivesMultisigProposalVoteCount => {
+  const { approvals, rejections } = voteCount ?? {
     approvals: createMockU64(),
     rejections: createMockU64(),
-    status: createMockProposalStatus(),
-    autoClose: createMockBool(),
-    expiry: createMockOption(),
   };
   return createMockCodec(
     {
       approvals,
       rejections,
-      status,
-      expiry,
-      autoClose,
     },
-    !proposalDetails
-  ) as MockCodec<PolymeshPrimitivesMultisigProposalDetails>;
+    !voteCount
+  ) as MockCodec<PolymeshPrimitivesMultisigProposalVoteCount>;
 };
 
 /**

@@ -261,7 +261,7 @@ export class FungibleAsset extends BaseAsset {
     const rawAssetId = assetToMeshAssetId(this, context);
 
     let collectionsStorage = nft.collectionAsset;
-    let tokensStorage = asset.securityTokens;
+    let tokensStorage = asset.assets;
 
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

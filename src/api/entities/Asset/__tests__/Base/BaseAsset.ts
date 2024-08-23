@@ -140,7 +140,7 @@ describe('BaseAsset class', () => {
 
   describe('method: exists', () => {
     it('should return whether the BaseAsset exists', async () => {
-      dsMockUtils.createQueryMock('asset', 'securityTokens', {
+      dsMockUtils.createQueryMock('asset', 'assets', {
         size: new BigNumber(10),
       });
 
@@ -160,7 +160,7 @@ describe('BaseAsset class', () => {
 
       expect(result).toBe(false);
 
-      dsMockUtils.createQueryMock('asset', 'securityTokens', {
+      dsMockUtils.createQueryMock('asset', 'assets', {
         size: new BigNumber(0),
       });
 

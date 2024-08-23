@@ -278,7 +278,7 @@ export class Assets {
       return assembleAssetQuery(ownedDetails, ownedTickers, context);
     }
 
-    const entries = await asset.securityTokensOwnedByUser.entries(rawDid);
+    const entries = await asset.assetsOwnedByUser.entries(rawDid);
 
     const ownedAssets: string[] = [];
     const rawAssetIds: PolymeshPrimitivesAssetAssetID[] = [];
@@ -288,7 +288,7 @@ export class Assets {
       rawAssetIds.push(rawAssetId);
       ownedAssets.push(assetIdToString(rawAssetId));
     });
-    const ownedDetails = await asset.securityTokens.multi(rawAssetIds);
+    const ownedDetails = await asset.assets.multi(rawAssetIds);
 
     return assembleAssetQuery(ownedDetails, ownedAssets, context);
   }
@@ -419,7 +419,7 @@ export class Assets {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tokensStorage = (asset as any).tokens;
     } else {
-      tokensStorage = asset.securityTokens;
+      tokensStorage = asset.assets;
     }
     const details = await tokensStorage.multi(rawAssetIds);
 

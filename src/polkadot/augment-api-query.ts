@@ -21,15 +21,22 @@ import type {
   u64,
   u8,
 } from '@polkadot/types-codec';
-import type { AnyNumber, IMethod, ITuple } from '@polkadot/types-codec/types';
-import type { AccountId32, Call, H256, Perbill, Permill } from '@polkadot/types/interfaces/runtime';
+import type { AnyNumber, ITuple } from '@polkadot/types-codec/types';
+import type {
+  AccountId32,
+  Call,
+  H256,
+  Perbill,
+  Percent,
+  Permill,
+} from '@polkadot/types/interfaces/runtime';
 import type {
   FrameSupportDispatchPerDispatchClassWeight,
   FrameSystemAccountInfo,
   FrameSystemEventRecord,
   FrameSystemLastRuntimeUpgradeInfo,
   FrameSystemPhase,
-  PalletAssetSecurityToken,
+  PalletAssetAssetDetails,
   PalletAssetTickerRegistration,
   PalletAssetTickerRegistrationConfig,
   PalletBalancesBalanceLock,
@@ -46,6 +53,11 @@ import type {
   PalletCorporateActionsCorporateAction,
   PalletCorporateActionsDistribution,
   PalletCorporateActionsTargetIdentities,
+  PalletElectionProviderMultiPhasePhase,
+  PalletElectionProviderMultiPhaseReadySolution,
+  PalletElectionProviderMultiPhaseRoundSnapshot,
+  PalletElectionProviderMultiPhaseSignedSignedSubmission,
+  PalletElectionProviderMultiPhaseSolutionOrSnapshotSize,
   PalletGrandpaStoredPendingChange,
   PalletGrandpaStoredState,
   PalletIdentityClaim1stKey,
@@ -64,8 +76,6 @@ import type {
   PalletRelayerSubsidy,
   PalletSchedulerScheduled,
   PalletStakingActiveEraInfo,
-  PalletStakingElectionResult,
-  PalletStakingElectionStatus,
   PalletStakingEraRewardPoints,
   PalletStakingExposure,
   PalletStakingForcing,
@@ -106,9 +116,11 @@ import type {
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesMemo,
-  PolymeshPrimitivesMultisigProposalDetails,
+  PolymeshPrimitivesMultisigProposalState,
+  PolymeshPrimitivesMultisigProposalVoteCount,
   PolymeshPrimitivesNftNftCollection,
   PolymeshPrimitivesPosRatio,
+  PolymeshPrimitivesSecondaryKeyExtrinsicPermissions,
   PolymeshPrimitivesSecondaryKeyKeyRecord,
   PolymeshPrimitivesSecondaryKeySignatory,
   PolymeshPrimitivesSettlementAffirmationStatus,
@@ -121,7 +133,8 @@ import type {
   PolymeshPrimitivesStatisticsStat1stKey,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatType,
-  PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
+  PolymeshPrimitivesSubsetSubsetRestrictionAssetID,
+  PolymeshPrimitivesSubsetSubsetRestrictionPortfolioId,
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceAssetTransferCompliance,
   PolymeshPrimitivesTransferComplianceTransferConditionExemptKey,
@@ -242,18 +255,6 @@ declare module '@polkadot/api-base/types/storage' {
         [PolymeshPrimitivesAssetAssetID, u64]
       >;
       /**
-       * Next Asset Metadata Global Key.
-       **/
-      assetMetadataNextGlobalKey: AugmentedQuery<ApiType, () => Observable<u64>, []>;
-      /**
-       * Next Asset Metadata Local Key.
-       **/
-      assetMetadataNextLocalKey: AugmentedQuery<
-        ApiType,
-        (arg: PolymeshPrimitivesAssetAssetID | string | Uint8Array) => Observable<u64>,
-        [PolymeshPrimitivesAssetAssetID]
-      >;
-      /**
        * Details for an asset's Metadata values.
        **/
       assetMetadataValueDetails: AugmentedQuery<
@@ -293,10 +294,23 @@ declare module '@polkadot/api-base/types/storage' {
         (arg: PolymeshPrimitivesAssetAssetID | string | Uint8Array) => Observable<Option<Bytes>>,
         [PolymeshPrimitivesAssetAssetID]
       >;
+      /**
+       * A per account nonce that is used for generating an [`AssetID`].
+       **/
       assetNonce: AugmentedQuery<
         ApiType,
         (arg: AccountId32 | string | Uint8Array) => Observable<u64>,
         [AccountId32]
+      >;
+      /**
+       * Maps each [`AssetID`] to its underling [`AssetDetails`].
+       **/
+      assets: AugmentedQuery<
+        ApiType,
+        (
+          arg: PolymeshPrimitivesAssetAssetID | string | Uint8Array
+        ) => Observable<Option<PalletAssetAssetDetails>>,
+        [PolymeshPrimitivesAssetAssetID]
       >;
       /**
        * A list of assets that exempt all users from affirming its receivement.
@@ -401,19 +415,9 @@ declare module '@polkadot/api-base/types/storage' {
         [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetID]
       >;
       /**
-       * Maps each [`AssetID`] to its underling [`SecurityToken`].
-       **/
-      securityTokens: AugmentedQuery<
-        ApiType,
-        (
-          arg: PolymeshPrimitivesAssetAssetID | string | Uint8Array
-        ) => Observable<Option<PalletAssetSecurityToken>>,
-        [PolymeshPrimitivesAssetAssetID]
-      >;
-      /**
        * All security tokens owned by a user.
        **/
-      securityTokensOwnedByUser: AugmentedQuery<
+      assetsOwnedByUser: AugmentedQuery<
         ApiType,
         (
           arg1: PolymeshPrimitivesIdentityId | string | Uint8Array,
@@ -1185,6 +1189,10 @@ declare module '@polkadot/api-base/types/storage' {
         [PalletCorporateActionsCaId]
       >;
       /**
+       * Storage version.
+       **/
+      storageVersion: AugmentedQuery<ApiType, () => Observable<u8>, []>;
+      /**
        * Time details of a corporate ballot associated with a CA.
        * The timestamps denote when voting starts and stops.
        *
@@ -1212,6 +1220,111 @@ declare module '@polkadot/api-base/types/storage' {
           arg2: PolymeshPrimitivesIdentityId | string | Uint8Array
         ) => Observable<Vec<PalletCorporateActionsBallotBallotVote>>,
         [PalletCorporateActionsCaId, PolymeshPrimitivesIdentityId]
+      >;
+    };
+    electionProviderMultiPhase: {
+      /**
+       * Current phase.
+       **/
+      currentPhase: AugmentedQuery<
+        ApiType,
+        () => Observable<PalletElectionProviderMultiPhasePhase>,
+        []
+      >;
+      /**
+       * Desired number of targets to elect for this round.
+       *
+       * Only exists when [`Snapshot`] is present.
+       **/
+      desiredTargets: AugmentedQuery<ApiType, () => Observable<Option<u32>>, []>;
+      /**
+       * The minimum score that each 'untrusted' solution must attain in order to be considered
+       * feasible.
+       *
+       * Can be set via `set_minimum_untrusted_score`.
+       **/
+      minimumUntrustedScore: AugmentedQuery<
+        ApiType,
+        () => Observable<Option<SpNposElectionsElectionScore>>,
+        []
+      >;
+      /**
+       * Current best solution, signed or unsigned, queued to be returned upon `elect`.
+       **/
+      queuedSolution: AugmentedQuery<
+        ApiType,
+        () => Observable<Option<PalletElectionProviderMultiPhaseReadySolution>>,
+        []
+      >;
+      /**
+       * Internal counter for the number of rounds.
+       *
+       * This is useful for de-duplication of transactions submitted to the pool, and general
+       * diagnostics of the pallet.
+       *
+       * This is merely incremented once per every time that an upstream `elect` is called.
+       **/
+      round: AugmentedQuery<ApiType, () => Observable<u32>, []>;
+      /**
+       * A sorted, bounded vector of `(score, block_number, index)`, where each `index` points to a
+       * value in `SignedSubmissions`.
+       *
+       * We never need to process more than a single signed submission at a time. Signed submissions
+       * can be quite large, so we're willing to pay the cost of multiple database accesses to access
+       * them one at a time instead of reading and decoding all of them at once.
+       **/
+      signedSubmissionIndices: AugmentedQuery<
+        ApiType,
+        () => Observable<Vec<ITuple<[SpNposElectionsElectionScore, u32, u32]>>>,
+        []
+      >;
+      /**
+       * The next index to be assigned to an incoming signed submission.
+       *
+       * Every accepted submission is assigned a unique index; that index is bound to that particular
+       * submission for the duration of the election. On election finalization, the next index is
+       * reset to 0.
+       *
+       * We can't just use `SignedSubmissionIndices.len()`, because that's a bounded set; past its
+       * capacity, it will simply saturate. We can't just iterate over `SignedSubmissionsMap`,
+       * because iteration is slow. Instead, we store the value here.
+       **/
+      signedSubmissionNextIndex: AugmentedQuery<ApiType, () => Observable<u32>, []>;
+      /**
+       * Unchecked, signed solutions.
+       *
+       * Together with `SubmissionIndices`, this stores a bounded set of `SignedSubmissions` while
+       * allowing us to keep only a single one in memory at a time.
+       *
+       * Twox note: the key of the map is an auto-incrementing index which users cannot inspect or
+       * affect; we shouldn't need a cryptographically secure hasher.
+       **/
+      signedSubmissionsMap: AugmentedQuery<
+        ApiType,
+        (
+          arg: u32 | AnyNumber | Uint8Array
+        ) => Observable<Option<PalletElectionProviderMultiPhaseSignedSignedSubmission>>,
+        [u32]
+      >;
+      /**
+       * Snapshot data of the round.
+       *
+       * This is created at the beginning of the signed phase and cleared upon calling `elect`.
+       **/
+      snapshot: AugmentedQuery<
+        ApiType,
+        () => Observable<Option<PalletElectionProviderMultiPhaseRoundSnapshot>>,
+        []
+      >;
+      /**
+       * The metadata of the [`RoundSnapshot`]
+       *
+       * Only exists when [`Snapshot`] is present.
+       **/
+      snapshotMetadata: AugmentedQuery<
+        ApiType,
+        () => Observable<Option<PalletElectionProviderMultiPhaseSolutionOrSnapshotSize>>,
+        []
       >;
     };
     externalAgents: {
@@ -1256,7 +1369,7 @@ declare module '@polkadot/api-base/types/storage' {
         (
           arg1: PolymeshPrimitivesAssetAssetID | string | Uint8Array,
           arg2: u32 | AnyNumber | Uint8Array
-        ) => Observable<Option<PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions>>,
+        ) => Observable<Option<PolymeshPrimitivesSecondaryKeyExtrinsicPermissions>>,
         [PolymeshPrimitivesAssetAssetID, u32]
       >;
       /**
@@ -1267,6 +1380,7 @@ declare module '@polkadot/api-base/types/storage' {
         (arg: PolymeshPrimitivesAssetAssetID | string | Uint8Array) => Observable<u32>,
         [PolymeshPrimitivesAssetAssetID]
       >;
+      storageVersion: AugmentedQuery<ApiType, () => Observable<u8>, []>;
     };
     grandpa: {
       /**
@@ -1386,10 +1500,6 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       currentAuthId: AugmentedQuery<ApiType, () => Observable<u64>, []>;
       /**
-       * It stores the current identity for current transaction.
-       **/
-      currentDid: AugmentedQuery<ApiType, () => Observable<Option<U8aFixed>>, []>;
-      /**
        * It stores the current gas fee payer for the current transaction
        **/
       currentPayer: AugmentedQuery<ApiType, () => Observable<Option<AccountId32>>, []>;
@@ -1443,7 +1553,37 @@ declare module '@polkadot/api-base/types/storage' {
         [PolymeshPrimitivesIdentityId]
       >;
       /**
-       * Map from AccountId to `KeyRecord` that holds the key's identity and permissions.
+       * A secondary key's asset permissions.
+       **/
+      keyAssetPermissions: AugmentedQuery<
+        ApiType,
+        (
+          arg: AccountId32 | string | Uint8Array
+        ) => Observable<Option<PolymeshPrimitivesSubsetSubsetRestrictionAssetID>>,
+        [AccountId32]
+      >;
+      /**
+       * A secondary key's extrinsic permissions.
+       **/
+      keyExtrinsicPermissions: AugmentedQuery<
+        ApiType,
+        (
+          arg: AccountId32 | string | Uint8Array
+        ) => Observable<Option<PolymeshPrimitivesSecondaryKeyExtrinsicPermissions>>,
+        [AccountId32]
+      >;
+      /**
+       * A secondary key's portfolio permissions.
+       **/
+      keyPortfolioPermissions: AugmentedQuery<
+        ApiType,
+        (
+          arg: AccountId32 | string | Uint8Array
+        ) => Observable<Option<PolymeshPrimitivesSubsetSubsetRestrictionPortfolioId>>,
+        [AccountId32]
+      >;
+      /**
+       * Map from AccountId to `KeyRecord` that holds the key's type and identity.
        **/
       keyRecords: AugmentedQuery<
         ApiType,
@@ -1564,13 +1704,35 @@ declare module '@polkadot/api-base/types/storage' {
     };
     multiSig: {
       /**
-       * Tracks creators who are no longer allowed to call via_creator extrinsics.
+       * The multisig's admin identity.  The primary key of this identity
+       * has admin control over the multisig.
+       *
+       * multisig -> Option<IdentityId>.
        **/
-      lostCreatorPrivileges: AugmentedQuery<
+      adminDid: AugmentedQuery<
         ApiType,
-        (arg: PolymeshPrimitivesIdentityId | string | Uint8Array) => Observable<bool>,
-        [PolymeshPrimitivesIdentityId]
+        (
+          arg: AccountId32 | string | Uint8Array
+        ) => Observable<Option<PolymeshPrimitivesIdentityId>>,
+        [AccountId32]
       >;
+      /**
+       * Pending join identity authorization proposals.
+       *
+       * multisig -> auth id => Option<proposal id>.
+       **/
+      authToProposalId: AugmentedQuery<
+        ApiType,
+        (
+          arg1: AccountId32 | string | Uint8Array,
+          arg2: u64 | AnyNumber | Uint8Array
+        ) => Observable<Option<u64>>,
+        [AccountId32, u64]
+      >;
+      /**
+       * Proposal execution reentry guard.
+       **/
+      executionReentry: AugmentedQuery<ApiType, () => Observable<bool>, []>;
       /**
        * Nonce to ensure unique MultiSig addresses are generated; starts from 1.
        **/
@@ -1582,14 +1744,9 @@ declare module '@polkadot/api-base/types/storage' {
         ApiType,
         (
           arg1: AccountId32 | string | Uint8Array,
-          arg2:
-            | PolymeshPrimitivesSecondaryKeySignatory
-            | { Identity: any }
-            | { Account: any }
-            | string
-            | Uint8Array
+          arg2: AccountId32 | string | Uint8Array
         ) => Observable<bool>,
-        [AccountId32, PolymeshPrimitivesSecondaryKeySignatory]
+        [AccountId32, AccountId32]
       >;
       /**
        * Confirmations required before processing a multisig tx.
@@ -1600,17 +1757,11 @@ declare module '@polkadot/api-base/types/storage' {
         [AccountId32]
       >;
       /**
-       * Maps a multisig account to its identity.
+       * Next proposal id for a multisig.  Starts from 0.
+       *
+       * multisig => next proposal id
        **/
-      multiSigToIdentity: AugmentedQuery<
-        ApiType,
-        (arg: AccountId32 | string | Uint8Array) => Observable<PolymeshPrimitivesIdentityId>,
-        [AccountId32]
-      >;
-      /**
-       * Number of transactions proposed in a multisig. Used as tx id; starts from 0.
-       **/
-      multiSigTxDone: AugmentedQuery<
+      nextProposalId: AugmentedQuery<
         ApiType,
         (arg: AccountId32 | string | Uint8Array) => Observable<u64>,
         [AccountId32]
@@ -1624,33 +1775,22 @@ declare module '@polkadot/api-base/types/storage' {
         [AccountId32]
       >;
       /**
-       * Details of a multisig proposal
+       * The multisig's paying identity.  The primary key of this identity
+       * pays the transaction/protocal fees of the multisig proposals.
        *
-       * multisig -> proposal id => ProposalDetails.
+       * multisig -> Option<IdentityId>.
        **/
-      proposalDetail: AugmentedQuery<
+      payingDid: AugmentedQuery<
         ApiType,
         (
-          arg1: AccountId32 | string | Uint8Array,
-          arg2: u64 | AnyNumber | Uint8Array
-        ) => Observable<PolymeshPrimitivesMultisigProposalDetails>,
-        [AccountId32, u64]
-      >;
-      /**
-       * A mapping of proposals to their IDs.
-       **/
-      proposalIds: AugmentedQuery<
-        ApiType,
-        (
-          arg1: AccountId32 | string | Uint8Array,
-          arg2: Call | IMethod | string | Uint8Array
-        ) => Observable<Option<u64>>,
-        [AccountId32, Call]
+          arg: AccountId32 | string | Uint8Array
+        ) => Observable<Option<PolymeshPrimitivesIdentityId>>,
+        [AccountId32]
       >;
       /**
        * Proposals presented for voting to a multisig.
        *
-       * multisig -> proposal id => Option<T::Proposal>.
+       * multisig -> proposal id => Option<Proposal>.
        **/
       proposals: AugmentedQuery<
         ApiType,
@@ -1658,6 +1798,32 @@ declare module '@polkadot/api-base/types/storage' {
           arg1: AccountId32 | string | Uint8Array,
           arg2: u64 | AnyNumber | Uint8Array
         ) => Observable<Option<Call>>,
+        [AccountId32, u64]
+      >;
+      /**
+       * The state of a multisig proposal
+       *
+       * multisig -> proposal id => Option<ProposalState>.
+       **/
+      proposalStates: AugmentedQuery<
+        ApiType,
+        (
+          arg1: AccountId32 | string | Uint8Array,
+          arg2: u64 | AnyNumber | Uint8Array
+        ) => Observable<Option<PolymeshPrimitivesMultisigProposalState>>,
+        [AccountId32, u64]
+      >;
+      /**
+       * The count of approvals/rejections of a multisig proposal.
+       *
+       * multisig -> proposal id => Option<ProposalVoteCount>.
+       **/
+      proposalVoteCounts: AugmentedQuery<
+        ApiType,
+        (
+          arg1: AccountId32 | string | Uint8Array,
+          arg2: u64 | AnyNumber | Uint8Array
+        ) => Observable<Option<PolymeshPrimitivesMultisigProposalVoteCount>>,
         [AccountId32, u64]
       >;
       /**
@@ -1679,14 +1845,9 @@ declare module '@polkadot/api-base/types/storage' {
           arg1:
             | ITuple<[AccountId32, u64]>
             | [AccountId32 | string | Uint8Array, u64 | AnyNumber | Uint8Array],
-          arg2:
-            | PolymeshPrimitivesSecondaryKeySignatory
-            | { Identity: any }
-            | { Account: any }
-            | string
-            | Uint8Array
+          arg2: AccountId32 | string | Uint8Array
         ) => Observable<bool>,
-        [ITuple<[AccountId32, u64]>, PolymeshPrimitivesSecondaryKeySignatory]
+        [ITuple<[AccountId32, u64]>, AccountId32]
       >;
     };
     nft: {
@@ -1743,18 +1904,6 @@ declare module '@polkadot/api-base/types/storage' {
             | Uint8Array
         ) => Observable<Bytes>,
         [ITuple<[u64, u64]>, PolymeshPrimitivesAssetMetadataAssetMetadataKey]
-      >;
-      /**
-       * The next available id for an NFT collection.
-       **/
-      nextCollectionId: AugmentedQuery<ApiType, () => Observable<u64>, []>;
-      /**
-       * The next available id for an NFT within a collection.
-       **/
-      nextNFTId: AugmentedQuery<
-        ApiType,
-        (arg: u64 | AnyNumber | Uint8Array) => Observable<u64>,
-        [u64]
       >;
       /**
        * Tracks the owner of an NFT
@@ -2638,6 +2787,20 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       canceledSlashPayout: AugmentedQuery<ApiType, () => Observable<u128>, []>;
       /**
+       * The threshold for when users can start calling `chill_other` for other validators /
+       * nominators. The threshold is compared to the actual number of validators / nominators
+       * (`CountFor*`) in the system compared to the configured max (`Max*Count`).
+       **/
+      chillThreshold: AugmentedQuery<ApiType, () => Observable<Option<Percent>>, []>;
+      /**
+       * Counter for the related counted storage map
+       **/
+      counterForNominators: AugmentedQuery<ApiType, () => Observable<u32>, []>;
+      /**
+       * Counter for the related counted storage map
+       **/
+      counterForValidators: AugmentedQuery<ApiType, () => Observable<u32>, []>;
+      /**
        * The current era index.
        *
        * This is the latest planned era, depending on how the Session pallet queues the validator
@@ -2645,14 +2808,11 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       currentEra: AugmentedQuery<ApiType, () => Observable<Option<u32>>, []>;
       /**
-       * The earliest era for which we have a pending, unapplied slash.
+       * The last planned session scheduled by the session pallet.
+       *
+       * This is basically in sync with the call to [`pallet_session::SessionManager::new_session`].
        **/
-      earliestUnappliedSlash: AugmentedQuery<ApiType, () => Observable<Option<u32>>, []>;
-      /**
-       * Flag to control the execution of the offchain election. When `Open(_)`, we accept solutions
-       * to be submitted.
-       **/
-      eraElectionStatus: AugmentedQuery<ApiType, () => Observable<PalletStakingElectionStatus>, []>;
+      currentPlannedSession: AugmentedQuery<ApiType, () => Observable<u32>, []>;
       /**
        * Rewards for the last `HISTORY_DEPTH` eras.
        * If reward hasn't been set or has been removed then 0 reward is returned.
@@ -2749,26 +2909,11 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       forceEra: AugmentedQuery<ApiType, () => Observable<PalletStakingForcing>, []>;
       /**
-       * Number of eras to keep in history.
-       *
-       * Information is kept for eras in `[current_era - history_depth; current_era]`.
-       *
-       * Must be more than the number of eras delayed by session otherwise. I.e. active era must
-       * always be in history. I.e. `active_era > current_era - history_depth` must be
-       * guaranteed.
-       **/
-      historyDepth: AugmentedQuery<ApiType, () => Observable<u32>, []>;
-      /**
        * Any validators that may never be slashed or forcibly kicked. It's a Vec since they're
        * easy to initialize and the performance hit is minimal (we expect no more than four
        * invulnerables) and restricted to testnets.
        **/
       invulnerables: AugmentedQuery<ApiType, () => Observable<Vec<AccountId32>>, []>;
-      /**
-       * True if the current **planned** session is final. Note that this does not take era
-       * forcing into account.
-       **/
-      isCurrentSessionFinal: AugmentedQuery<ApiType, () => Observable<bool>, []>;
       /**
        * Map from all (unlocked) "controller" accounts to the info regarding the staking.
        **/
@@ -2778,13 +2923,39 @@ declare module '@polkadot/api-base/types/storage' {
         [AccountId32]
       >;
       /**
-       * The minimum amount with which a validator can bond.
+       * The maximum nominator count before we stop allowing new validators to join.
+       *
+       * When this value is not set, no limits are enforced.
        **/
-      minimumBondThreshold: AugmentedQuery<ApiType, () => Observable<u128>, []>;
+      maxNominatorsCount: AugmentedQuery<ApiType, () => Observable<Option<u32>>, []>;
+      /**
+       * The maximum validator count before we stop allowing new validators to join.
+       *
+       * When this value is not set, no limits are enforced.
+       **/
+      maxValidatorsCount: AugmentedQuery<ApiType, () => Observable<Option<u32>>, []>;
+      /**
+       * The minimum amount of commission that validators can set.
+       *
+       * If set to `0`, no limit exists.
+       **/
+      minCommission: AugmentedQuery<ApiType, () => Observable<Perbill>, []>;
+      /**
+       * The minimum active nominator stake of the last successful election.
+       **/
+      minimumActiveStake: AugmentedQuery<ApiType, () => Observable<u128>, []>;
       /**
        * Minimum number of staking participants before emergency conditions are imposed.
        **/
       minimumValidatorCount: AugmentedQuery<ApiType, () => Observable<u32>, []>;
+      /**
+       * The minimum active bond to become and maintain the role of a nominator.
+       **/
+      minNominatorBond: AugmentedQuery<ApiType, () => Observable<u128>, []>;
+      /**
+       * The minimum active bond to become and maintain the role of a validator.
+       **/
+      minValidatorBond: AugmentedQuery<ApiType, () => Observable<u128>, []>;
       /**
        * The map from nominator stash key to their nomination preferences, namely the validators that
        * they wish to support.
@@ -2855,23 +3026,8 @@ declare module '@polkadot/api-base/types/storage' {
       >;
       polymeshStorageVersion: AugmentedQuery<ApiType, () => Observable<u8>, []>;
       /**
-       * The next validator set. At the end of an era, if this is available (potentially from the
-       * result of an offchain worker), it is immediately used. Otherwise, the on-chain election
-       * is executed.
+       * Slashing switch for validators & Nominators.
        **/
-      queuedElected: AugmentedQuery<
-        ApiType,
-        () => Observable<Option<PalletStakingElectionResult>>,
-        []
-      >;
-      /**
-       * The score of the current [`QueuedElected`].
-       **/
-      queuedScore: AugmentedQuery<
-        ApiType,
-        () => Observable<Option<SpNposElectionsElectionScore>>,
-        []
-      >;
       slashingAllowedFor: AugmentedQuery<
         ApiType,
         () => Observable<PalletStakingSlashingSwitch>,
@@ -2894,16 +3050,6 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       slashRewardFraction: AugmentedQuery<ApiType, () => Observable<Perbill>, []>;
       /**
-       * Snapshot of nominators at the beginning of the current election window. This should only
-       * have a value when [`EraElectionStatus`] == `ElectionStatus::Open(_)`.
-       **/
-      snapshotNominators: AugmentedQuery<ApiType, () => Observable<Option<Vec<AccountId32>>>, []>;
-      /**
-       * Snapshot of validators at the beginning of the current election window. This should only
-       * have a value when [`EraElectionStatus`] == `ElectionStatus::Open(_)`.
-       **/
-      snapshotValidators: AugmentedQuery<ApiType, () => Observable<Option<Vec<AccountId32>>>, []>;
-      /**
        * Records information about the maximum slash of a stash within a slashing span,
        * as well as how much reward has been paid out.
        **/
@@ -2925,8 +3071,7 @@ declare module '@polkadot/api-base/types/storage' {
         [u32]
       >;
       /**
-       * Allows flexibility in commission. Every validator has commission that should be in the
-       * range [0, Cap].
+       * Allows flexibility in commission. Every validator has commission that should be in the range [0, Cap].
        **/
       validatorCommissionCap: AugmentedQuery<ApiType, () => Observable<Perbill>, []>;
       /**
@@ -3086,6 +3231,10 @@ declare module '@polkadot/api-base/types/storage' {
         ) => Observable<Option<PalletStoFundraiser>>,
         [PolymeshPrimitivesAssetAssetID, u64]
       >;
+      /**
+       * Storage migration version.
+       **/
+      storageVersion: AugmentedQuery<ApiType, () => Observable<u8>, []>;
     };
     sudo: {
       /**

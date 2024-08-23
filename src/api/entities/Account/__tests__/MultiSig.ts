@@ -147,11 +147,19 @@ describe('MultiSig class', () => {
         ],
       });
 
-      dsMockUtils.createQueryMock('multiSig', 'proposalDetail', {
+      dsMockUtils.createQueryMock('multiSig', 'proposalStates', {
         multi: [
-          dsMockUtils.createMockProposalDetails({
+          dsMockUtils.createMockProposalState({
             ...proposalDetails,
             expiry: createMockOption(createMockMoment(new BigNumber(new Date().getTime() + 10000))),
+          }),
+        ],
+      });
+
+      dsMockUtils.createQueryMock('multiSig', 'proposalVoteCounts', {
+        multi: [
+          dsMockUtils.createMockProposalVoteCount({
+            ...proposalDetails,
           }),
         ],
       });
@@ -181,9 +189,17 @@ describe('MultiSig class', () => {
         ],
       });
 
-      dsMockUtils.createQueryMock('multiSig', 'proposalDetail', {
+      dsMockUtils.createQueryMock('multiSig', 'proposalVoteCounts', {
         multi: [
-          dsMockUtils.createMockProposalDetails({
+          dsMockUtils.createMockProposalVoteCount({
+            ...proposalDetails,
+          }),
+        ],
+      });
+
+      dsMockUtils.createQueryMock('multiSig', 'proposalStates', {
+        multi: [
+          dsMockUtils.createMockProposalState({
             ...proposalDetails,
             expiry: createMockOption(createMockMoment(new BigNumber(3))),
           }),
@@ -251,27 +267,25 @@ describe('MultiSig class', () => {
     });
   });
 
-  describe('method: getCreator', () => {
+  describe('method: getAdmin', () => {
     it('should return the Identity of the creator of the MultiSig', async () => {
       const expectedDid = 'abc';
-      dsMockUtils.createQueryMock('multiSig', 'multiSigToIdentity', {
-        returnValue: createMockIdentityId(expectedDid),
+      dsMockUtils.createQueryMock('multiSig', 'adminDid', {
+        returnValue: createMockOption(createMockIdentityId(expectedDid)),
       });
 
-      const result = await multiSig.getCreator();
-      return expect(result.did).toEqual(expectedDid);
+      const result = await multiSig.getAdmin();
+      return expect(result?.did).toEqual(expectedDid);
     });
 
-    it('should throw an error if there is no creator', () => {
-      dsMockUtils.createQueryMock('multiSig', 'multiSigToIdentity', {
-        returnValue: createMockIdentityId(),
-      });
-      const expectedError = new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message: 'No creator was found for this MultiSig address',
+    it('should return null if there is no creator', async () => {
+      dsMockUtils.createQueryMock('multiSig', 'adminDid', {
+        returnValue: createMockOption(),
       });
 
-      return expect(multiSig.getCreator()).rejects.toThrowError(expectedError);
+      const result = await multiSig.getAdmin();
+
+      return expect(result).toBeNull();
     });
   });
 
@@ -288,23 +302,6 @@ describe('MultiSig class', () => {
         .mockResolvedValue(expectedTransaction);
 
       const procedure = await multiSig.modify(args);
-
-      expect(procedure).toBe(expectedTransaction);
-    });
-  });
-
-  describe('method: joinCreator', () => {
-    it('should prepare the procedure and return the resulting procedure', async () => {
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
-      const args = {
-        asPrimary: true,
-      };
-
-      when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: { multiSig, ...args }, transformer: undefined }, context, {})
-        .mockResolvedValue(expectedTransaction);
-
-      const procedure = await multiSig.joinCreator(args);
 
       expect(procedure).toBe(expectedTransaction);
     });

@@ -2,27 +2,24 @@ import BigNumber from 'bignumber.js';
 
 import { UniqueIdentifiers } from '~/api/entities/Account';
 import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
-import { Account, Context, Identity, joinCreator, modifyMultiSig, PolymeshError } from '~/internal';
+import { Account, Context, Identity, modifyMultiSig, PolymeshError } from '~/internal';
 import { multiSigProposalsQuery } from '~/middleware/queries/multisigs';
 import { Query } from '~/middleware/types';
 import {
   ErrorCode,
-  JoinCreatorParams,
   ModifyMultiSigParams,
   MultiSigDetails,
-  OptionalArgsProcedureMethod,
   ProcedureMethod,
   ProposalStatus,
   ResultSet,
 } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
+  accountIdToString,
   addressToKey,
   identityIdToString,
   meshProposalStatusToProposalStatus,
   momentToDate,
-  signatoryToSignerValue,
-  signerValueToSigner,
   stringToAccountId,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -40,13 +37,6 @@ export class MultiSig extends Account {
     this.modify = createProcedureMethod(
       {
         getProcedureAndArgs: modifyArgs => [modifyMultiSig, { multiSig: this, ...modifyArgs }],
-      },
-      context
-    );
-    this.joinCreator = createProcedureMethod(
-      {
-        getProcedureAndArgs: joinArgs => [joinCreator, { multiSig: this, ...joinArgs }],
-        optionalArgs: true,
       },
       context
     );
@@ -77,7 +67,8 @@ export class MultiSig extends Account {
           args: [, signatory],
         },
       ]) => {
-        return signerValueToSigner(signatoryToSignerValue(signatory), context);
+        const signerAddress = accountIdToString(signatory);
+        return new Account({ address: signerAddress }, context);
       }
     );
     const requiredSignatures = u64ToBigNumber(rawSignersRequired);
@@ -145,13 +136,20 @@ export class MultiSig extends Account {
       }
     );
 
-    const details = await multiSig.proposalDetail.multi(queries);
+    const details = await multiSig.proposalStates.multi(queries);
 
-    const statuses = details.map(({ status: rawStatus, expiry: rawExpiry }) => {
-      const expiry = optionize(momentToDate)(rawExpiry.unwrapOr(null));
+    const statuses = details
+      .filter(detail => detail.isSome)
+      .map(stateOpt => {
+        const detail = stateOpt.unwrap();
 
-      return meshProposalStatusToProposalStatus(rawStatus, expiry);
-    });
+        let expiry = null;
+        if (detail.isActive) {
+          expiry = optionize(momentToDate)(detail.asActive.until.unwrapOr(null));
+        }
+
+        return meshProposalStatusToProposalStatus(detail.type, expiry);
+      });
 
     return proposals.filter((_, index) => statuses[index] === ProposalStatus.Active);
   }
@@ -193,7 +191,72 @@ export class MultiSig extends Account {
   }
 
   /**
+   * Returns the Identity of the MultiSig admin. This Identity can add or remove signers directly without creating a MultiSigProposal first.
+   */
+  public async getAdmin(): Promise<Identity | null> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { multiSig },
+        },
+        isV6,
+      },
+      context,
+      address,
+    } = this;
+
+    if (isV6) {
+      return this.getCreator();
+    }
+
+    const rawAddress = addressToKey(address, context);
+    const rawAdminDid = await multiSig.adminDid(rawAddress);
+    if (rawAdminDid.isNone) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'No creator was found for this MultiSig address',
+      });
+    }
+
+    const did = identityIdToString(rawAdminDid.unwrap());
+
+    return new Identity({ did }, context);
+  }
+
+  /**
+   * Returns the payer for the MultiSig. If set
+   */
+  public async getPayer(): Promise<Identity | null> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { multiSig },
+        },
+        isV6,
+      },
+      context,
+      address,
+    } = this;
+
+    if (isV6) {
+      return this.getCreator();
+    }
+
+    const rawAddress = addressToKey(address, context);
+    const rawPayingDid = await multiSig.payingDid(rawAddress);
+    if (rawPayingDid.isNone) {
+      return null;
+    }
+
+    const did = identityIdToString(rawPayingDid.unwrap());
+
+    return new Identity({ did }, context);
+  }
+
+  /**
    * Returns the Identity of the MultiSig creator. This Identity can add or remove signers directly without creating a MultiSigProposal first.
+   *
+   * @deprecated use `getAdmin` or `getPayer` instead depending on your need
    */
   public async getCreator(): Promise<Identity> {
     const {
@@ -201,23 +264,38 @@ export class MultiSig extends Account {
         polymeshApi: {
           query: { multiSig },
         },
+        isV6,
       },
       context,
       address,
     } = this;
 
-    const rawAddress = addressToKey(address, context);
-    const rawCreatorDid = await multiSig.multiSigToIdentity(rawAddress);
-    if (rawCreatorDid.isEmpty) {
-      throw new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message: 'No creator was found for this MultiSig address',
-      });
+    if (isV6) {
+      const rawAddress = addressToKey(address, context);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const rawAdminDid = await (multiSig as any).multiSigToIdentity(rawAddress);
+      if (rawAdminDid.isNone) {
+        throw new PolymeshError({
+          code: ErrorCode.DataUnavailable,
+          message: 'No creator was found for this MultiSig address',
+        });
+      }
+
+      const did = identityIdToString(rawAdminDid.unwrap());
+
+      return new Identity({ did }, context);
+    } else {
+      const admin = await this.getAdmin();
+
+      if (admin === null) {
+        throw new PolymeshError({
+          code: ErrorCode.DataUnavailable,
+          message: 'No creator was found for this MultiSig address',
+        });
+      }
+
+      return admin;
     }
-
-    const did = identityIdToString(rawCreatorDid);
-
-    return new Identity({ did }, context);
   }
 
   /**
@@ -227,13 +305,4 @@ export class MultiSig extends Account {
     Pick<ModifyMultiSigParams, 'signers' | 'requiredSignatures'>,
     void
   >;
-
-  /**
-   * Attach a MultiSig directly to the creator's identity. This method bypasses the usual authorization step to join an identity
-   *
-   * @note the caller should be the MultiSig creator's primary key
-   *
-   * @note To attach the MultiSig to an identity other than the creator's, {@link api/client/AccountManagement!AccountManagement.inviteAccount | inviteAccount} can be used instead. The MultiSig will then need to accept the created authorization
-   */
-  public joinCreator: OptionalArgsProcedureMethod<JoinCreatorParams, void>;
 }

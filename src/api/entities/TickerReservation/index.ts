@@ -1,4 +1,4 @@
-import { PalletAssetSecurityToken, PalletAssetTickerRegistration } from '@polkadot/types/lookup';
+import { PalletAssetAssetDetails, PalletAssetTickerRegistration } from '@polkadot/types/lookup';
 import { Option } from '@polkadot/types-codec';
 
 import {
@@ -117,7 +117,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
 
     const assembleResult = (
       reservationOpt: Option<PalletAssetTickerRegistration>,
-      tokenOpt: Option<PalletAssetSecurityToken>,
+      tokenOpt: Option<PalletAssetAssetDetails>,
       assetId: string
     ): TickerReservationDetails => {
       let owner: Identity | null = null;
@@ -146,7 +146,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
       };
     };
 
-    let tokensStorage = asset.securityTokens;
+    let tokensStorage = asset.assets;
     let tickerRegistrationStorage = asset.uniqueTickerRegistration;
     let rawAssetId = rawTicker;
 

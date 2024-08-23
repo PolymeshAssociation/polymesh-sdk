@@ -3,6 +3,7 @@ import { AccountId32 } from '@polkadot/types/interfaces';
 import {
   PolymeshPrimitivesIdentityDidRecord,
   PolymeshPrimitivesIdentityId,
+  PolymeshPrimitivesSecondaryKeySignatory,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
@@ -239,7 +240,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tokensStorage = (asset as any).tokens;
     } else {
-      tokensStorage = asset.securityTokens;
+      tokensStorage = asset.assets;
     }
     const meshAsset = await tokensStorage(rawAssetId);
 
@@ -1055,57 +1056,69 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const {
       context,
       context: {
-        polymeshApi: {
-          query: {
-            multiSig: { multiSigToIdentity, multiSigSigners },
-          },
-        },
+        polymeshApi: { query },
+        isV6,
       },
       did,
     } = this;
 
-    const entries = await multiSigToIdentity.entries();
+    if (isV6) {
+      type Entry = [{ args: [AccountId32] }, PolymeshPrimitivesIdentityId];
 
-    const multiSigs: Record<string, Signer[]> = {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const entries: Entry[] = await (query.multiSig as any).multiSigToIdentity.entries();
 
-    const rawSigners = await Promise.all(
-      entries
-        .filter(([, rawIdentityId]) => {
-          const identity = identityIdToString(rawIdentityId);
-          return identity === did;
-        })
-        .map(
+      const multiSigs: Record<string, Signer[]> = {};
+
+      const rawSigners = await Promise.all(
+        entries
+          .filter(([, rawIdentityId]: Entry) => {
+            const identity = identityIdToString(rawIdentityId);
+            return identity === did;
+          })
+          .map(
+            ([
+              {
+                args: [rawMultiSigAccount],
+              },
+            ]) => {
+              const multiSigAccount = accountIdToString(rawMultiSigAccount);
+              multiSigs[multiSigAccount] = [];
+              return query.multiSig.multiSigSigners.entries(rawMultiSigAccount);
+            }
+          )
+      );
+
+      rawSigners.forEach(rawSigner => {
+        rawSigner.forEach(
           ([
             {
-              args: [rawMultiSigAccount],
+              args: [rawMultiSigAccount, signatory],
             },
           ]) => {
             const multiSigAccount = accountIdToString(rawMultiSigAccount);
-            multiSigs[multiSigAccount] = [];
-            return multiSigSigners.entries(rawMultiSigAccount);
+            multiSigs[multiSigAccount].push(
+              signerValueToSigner(
+                signatoryToSignerValue(
+                  signatory as unknown as PolymeshPrimitivesSecondaryKeySignatory
+                ),
+                context
+              )
+            );
           }
-        )
-    );
+        );
+      });
 
-    rawSigners.forEach(rawSigner => {
-      rawSigner.forEach(
-        ([
-          {
-            args: [rawMultiSigAccount, signatory],
-          },
-        ]) => {
-          const multiSigAccount = accountIdToString(rawMultiSigAccount);
-          multiSigs[multiSigAccount].push(
-            signerValueToSigner(signatoryToSignerValue(signatory), context)
-          );
-        }
-      );
-    });
-
-    return Object.keys(multiSigs).map(multiSig => ({
-      signerFor: new MultiSig({ address: multiSig }, context),
-      signers: multiSigs[multiSig],
-    }));
+      return Object.keys(multiSigs).map(multiSig => ({
+        signerFor: new MultiSig({ address: multiSig }, context),
+        signers: multiSigs[multiSig],
+      }));
+    } else {
+      throw new PolymeshError({
+        code: ErrorCode.General,
+        message: 'TODO is this supported in v7?',
+      });
+    }
   }
 
   /**

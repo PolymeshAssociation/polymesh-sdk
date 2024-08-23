@@ -49,12 +49,13 @@ import {
   PolymeshPrimitivesIdentityIdPortfolioKind,
   PolymeshPrimitivesJurisdictionCountryCode,
   PolymeshPrimitivesMemo,
-  PolymeshPrimitivesMultisigProposalStatus,
+  PolymeshPrimitivesMultisigProposalState,
   PolymeshPrimitivesNftNftMetadataAttribute,
   PolymeshPrimitivesNftNfTs,
   PolymeshPrimitivesPortfolioFund,
   PolymeshPrimitivesPosRatio,
   PolymeshPrimitivesSecondaryKey,
+  PolymeshPrimitivesSecondaryKeyExtrinsicPermissions,
   PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesSecondaryKeySignatory,
   PolymeshPrimitivesSettlementAffirmationStatus,
@@ -71,7 +72,6 @@ import {
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesStatisticsStatUpdate,
-  PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceTransferCondition,
   SpRuntimeMultiSignature,
@@ -1120,11 +1120,18 @@ function buildPalletPermissions(
 export function transactionPermissionsToExtrinsicPermissions(
   transactionPermissions: TransactionPermissions | null,
   context: Context
-): PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions {
-  return context.createType(
-    'PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions',
-    transactionPermissions ? buildPalletPermissions(transactionPermissions) : 'Whole'
-  );
+): PolymeshPrimitivesSecondaryKeyExtrinsicPermissions {
+  if (context.isV6) {
+    return context.createType(
+      'PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions',
+      transactionPermissions ? buildPalletPermissions(transactionPermissions) : 'Whole'
+    );
+  } else {
+    return context.createType(
+      'PolymeshPrimitivesSecondaryKeyExtrinsicPermissions',
+      transactionPermissions ? buildPalletPermissions(transactionPermissions) : 'Whole'
+    );
+  }
 }
 
 /**
@@ -1189,7 +1196,8 @@ const formatTxTag = (dispatchable: string, moduleName: string): TxTag => {
  * @hidden
  */
 export function extrinsicPermissionsToTransactionPermissions(
-  permissions: PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions
+  permissions: PolymeshPrimitivesSecondaryKeyExtrinsicPermissions,
+  context: Context
 ): TransactionPermissions | null {
   let extrinsicType: PermissionType;
   let pallets;
@@ -1205,33 +1213,42 @@ export function extrinsicPermissionsToTransactionPermissions(
   let exceptions: TxTag[] = [];
 
   if (pallets) {
-    pallets.forEach(({ palletName, dispatchableNames }) => {
-      const moduleName = stringLowerFirst(bytesToString(palletName));
-      if (dispatchableNames.isExcept) {
-        const dispatchables = [...dispatchableNames.asExcept];
-        exceptions = [
-          ...exceptions,
-          ...dispatchables.map(name => formatTxTag(bytesToString(name), moduleName)),
-        ];
-        txValues = [...txValues, moduleName as ModuleName];
-      } else if (dispatchableNames.isThese) {
-        const dispatchables = [...dispatchableNames.asThese];
-        txValues = [
-          ...txValues,
-          ...dispatchables.map(name => formatTxTag(bytesToString(name), moduleName)),
-        ];
-      } else {
-        txValues = [...txValues, moduleName as ModuleName];
-      }
-    });
+    if (context.isV6) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (pallets as unknown as any[]).forEach(({ palletName, dispatchableNames }) => {
+        const moduleName = stringLowerFirst(bytesToString(palletName));
+        if (dispatchableNames.isExcept) {
+          const dispatchables = [...dispatchableNames.asExcept];
+          exceptions = [
+            ...exceptions,
+            ...dispatchables.map(name => formatTxTag(bytesToString(name), moduleName)),
+          ];
+          txValues = [...txValues, moduleName as ModuleName];
+        } else if (dispatchableNames.isThese) {
+          const dispatchables = [...dispatchableNames.asThese];
+          txValues = [
+            ...txValues,
+            ...dispatchables.map(name => formatTxTag(bytesToString(name), moduleName)),
+          ];
+        } else {
+          txValues = [...txValues, moduleName as ModuleName];
+        }
+      });
 
-    const result = {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      type: extrinsicType!,
-      values: txValues,
-    };
+      const result = {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        type: extrinsicType!,
+        values: txValues,
+      };
 
-    return exceptions.length ? { ...result, exceptions } : result;
+      return exceptions.length ? { ...result, exceptions } : result;
+    } else {
+      // TODO figure out the difference in new permissions
+      throw new PolymeshError({
+        code: ErrorCode.General,
+        message: 'Not implemented',
+      });
+    }
   }
 
   return null;
@@ -1270,7 +1287,7 @@ export function meshPermissionsToPermissions(
     };
   }
 
-  transactions = extrinsicPermissionsToTransactionPermissions(extrinsic);
+  transactions = extrinsicPermissionsToTransactionPermissions(extrinsic, context);
 
   let portfoliosType: PermissionType;
   let portfolioIds;
@@ -4377,9 +4394,12 @@ export function inputStatTypeToMeshStatType(
 
 /**
  * @hidden
+ *
+ * @deprecated - should be removed post v7
  */
 export function meshProposalStatusToProposalStatus(
-  status: PolymeshPrimitivesMultisigProposalStatus,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  status: any,
   expiry: Date | null
 ): ProposalStatus {
   const { type } = status;
@@ -4392,6 +4412,37 @@ export function meshProposalStatusToProposalStatus(
       }
     case 'Invalid':
       return ProposalStatus.Invalid;
+    case 'ExecutionSuccessful':
+      return ProposalStatus.Successful;
+    case 'ExecutionFailed':
+      return ProposalStatus.Failed;
+    case 'Rejected':
+      return ProposalStatus.Rejected;
+    default:
+      throw new PolymeshError({
+        code: ErrorCode.General,
+        message: 'Unexpected proposal status received',
+        data: { type },
+      });
+  }
+}
+
+/**
+ * @hidden
+ */
+export function meshProposalStateToProposalStatus(
+  status: PolymeshPrimitivesMultisigProposalState
+): ProposalStatus {
+  let expiry;
+  const { type } = status;
+  switch (type) {
+    case 'Active':
+      expiry = optionize(momentToDate)(status.asActive.until.unwrapOr(null));
+      if (!expiry || expiry > new Date()) {
+        return ProposalStatus.Active;
+      } else {
+        return ProposalStatus.Expired;
+      }
     case 'ExecutionSuccessful':
       return ProposalStatus.Successful;
     case 'ExecutionFailed':
