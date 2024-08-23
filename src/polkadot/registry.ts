@@ -34,11 +34,11 @@ import type {
   FrameSystemLimitsBlockWeights,
   FrameSystemLimitsWeightsPerClass,
   FrameSystemPhase,
+  PalletAssetAssetDetails,
   PalletAssetCall,
   PalletAssetCheckpointCall,
   PalletAssetCheckpointError,
   PalletAssetError,
-  PalletAssetSecurityToken,
   PalletAssetTickerRegistration,
   PalletAssetTickerRegistrationConfig,
   PalletBabeCall,
@@ -48,13 +48,8 @@ import type {
   PalletBalancesError,
   PalletBaseCall,
   PalletBaseError,
-  PalletBridgeBridgeTx,
   PalletBridgeBridgeTxDetail,
   PalletBridgeBridgeTxStatus,
-  PalletBridgeCall,
-  PalletBridgeError,
-  PalletBridgeHandledTxStatus,
-  PalletBridgeRawEvent,
   PalletCommitteeCall,
   PalletCommitteeError,
   PalletCommitteeInstance1,
@@ -104,6 +99,16 @@ import type {
   PalletCorporateActionsRecordDateSpec,
   PalletCorporateActionsTargetIdentities,
   PalletCorporateActionsTargetTreatment,
+  PalletElectionProviderMultiPhaseCall,
+  PalletElectionProviderMultiPhaseElectionCompute,
+  PalletElectionProviderMultiPhaseError,
+  PalletElectionProviderMultiPhaseEvent,
+  PalletElectionProviderMultiPhasePhase,
+  PalletElectionProviderMultiPhaseRawSolution,
+  PalletElectionProviderMultiPhaseReadySolution,
+  PalletElectionProviderMultiPhaseRoundSnapshot,
+  PalletElectionProviderMultiPhaseSignedSignedSubmission,
+  PalletElectionProviderMultiPhaseSolutionOrSnapshotSize,
   PalletExternalAgentsCall,
   PalletExternalAgentsError,
   PalletGrandpaCall,
@@ -133,6 +138,7 @@ import type {
   PalletIndicesEvent,
   PalletMultisigCall,
   PalletMultisigError,
+  PalletMultisigEvent,
   PalletNftCall,
   PalletNftError,
   PalletOffencesEvent,
@@ -175,17 +181,16 @@ import type {
   PalletSettlementCall,
   PalletSettlementError,
   PalletStakingActiveEraInfo,
-  PalletStakingCompactAssignments,
-  PalletStakingElectionCompute,
-  PalletStakingElectionResult,
-  PalletStakingElectionSize,
-  PalletStakingElectionStatus,
   PalletStakingEraRewardPoints,
   PalletStakingExposure,
   PalletStakingForcing,
   PalletStakingIndividualExposure,
   PalletStakingNominations,
   PalletStakingPalletCall,
+  PalletStakingPalletConfigOpPerbill,
+  PalletStakingPalletConfigOpPercent,
+  PalletStakingPalletConfigOpU128,
+  PalletStakingPalletConfigOpU32,
   PalletStakingPalletError,
   PalletStakingPalletEvent,
   PalletStakingPermissionedIdentityPrefs,
@@ -249,7 +254,6 @@ import type {
   PolymeshCommonUtilitiesIdentityRawEvent,
   PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth,
   PolymeshCommonUtilitiesMaybeBlock,
-  PolymeshCommonUtilitiesMultisigRawEvent,
   PolymeshCommonUtilitiesNftEvent,
   PolymeshCommonUtilitiesPortfolioEvent,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
@@ -298,8 +302,8 @@ import type {
   PolymeshPrimitivesIdentityIdPortfolioKind,
   PolymeshPrimitivesJurisdictionCountryCode,
   PolymeshPrimitivesMemo,
-  PolymeshPrimitivesMultisigProposalDetails,
-  PolymeshPrimitivesMultisigProposalStatus,
+  PolymeshPrimitivesMultisigProposalState,
+  PolymeshPrimitivesMultisigProposalVoteCount,
   PolymeshPrimitivesNftNfTs,
   PolymeshPrimitivesNftNftCollection,
   PolymeshPrimitivesNftNftCollectionKeys,
@@ -309,6 +313,7 @@ import type {
   PolymeshPrimitivesPortfolioPortfolioUpdateReason,
   PolymeshPrimitivesPosRatio,
   PolymeshPrimitivesSecondaryKey,
+  PolymeshPrimitivesSecondaryKeyExtrinsicPermissions,
   PolymeshPrimitivesSecondaryKeyKeyRecord,
   PolymeshPrimitivesSecondaryKeyPalletPermissions,
   PolymeshPrimitivesSecondaryKeyPermissions,
@@ -333,13 +338,13 @@ import type {
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesStatisticsStatUpdate,
   PolymeshPrimitivesSubsetSubsetRestrictionAssetID,
-  PolymeshPrimitivesSubsetSubsetRestrictionDispatchableName,
-  PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
+  PolymeshPrimitivesSubsetSubsetRestrictionExtrinsicName,
   PolymeshPrimitivesSubsetSubsetRestrictionPortfolioId,
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceAssetTransferCompliance,
   PolymeshPrimitivesTransferComplianceTransferCondition,
   PolymeshPrimitivesTransferComplianceTransferConditionExemptKey,
+  PolymeshRuntimeCommonNposSolution16,
   PolymeshRuntimeDevelopRuntime,
   PolymeshRuntimeDevelopRuntimeOriginCaller,
   PolymeshRuntimeDevelopRuntimeSessionKeys,
@@ -367,6 +372,7 @@ import type {
   SpCoreSr25519Signature,
   SpCoreVoid,
   SpNposElectionsElectionScore,
+  SpNposElectionsSupport,
   SpRuntimeBlakeTwo256,
   SpRuntimeDigest,
   SpRuntimeDigestDigestItem,
@@ -414,11 +420,11 @@ declare module '@polkadot/types/types/registry' {
     FrameSystemLimitsBlockWeights: FrameSystemLimitsBlockWeights;
     FrameSystemLimitsWeightsPerClass: FrameSystemLimitsWeightsPerClass;
     FrameSystemPhase: FrameSystemPhase;
+    PalletAssetAssetDetails: PalletAssetAssetDetails;
     PalletAssetCall: PalletAssetCall;
     PalletAssetCheckpointCall: PalletAssetCheckpointCall;
     PalletAssetCheckpointError: PalletAssetCheckpointError;
     PalletAssetError: PalletAssetError;
-    PalletAssetSecurityToken: PalletAssetSecurityToken;
     PalletAssetTickerRegistration: PalletAssetTickerRegistration;
     PalletAssetTickerRegistrationConfig: PalletAssetTickerRegistrationConfig;
     PalletBabeCall: PalletBabeCall;
@@ -428,13 +434,8 @@ declare module '@polkadot/types/types/registry' {
     PalletBalancesError: PalletBalancesError;
     PalletBaseCall: PalletBaseCall;
     PalletBaseError: PalletBaseError;
-    PalletBridgeBridgeTx: PalletBridgeBridgeTx;
     PalletBridgeBridgeTxDetail: PalletBridgeBridgeTxDetail;
     PalletBridgeBridgeTxStatus: PalletBridgeBridgeTxStatus;
-    PalletBridgeCall: PalletBridgeCall;
-    PalletBridgeError: PalletBridgeError;
-    PalletBridgeHandledTxStatus: PalletBridgeHandledTxStatus;
-    PalletBridgeRawEvent: PalletBridgeRawEvent;
     PalletCommitteeCall: PalletCommitteeCall;
     PalletCommitteeError: PalletCommitteeError;
     PalletCommitteeInstance1: PalletCommitteeInstance1;
@@ -484,6 +485,16 @@ declare module '@polkadot/types/types/registry' {
     PalletCorporateActionsRecordDateSpec: PalletCorporateActionsRecordDateSpec;
     PalletCorporateActionsTargetIdentities: PalletCorporateActionsTargetIdentities;
     PalletCorporateActionsTargetTreatment: PalletCorporateActionsTargetTreatment;
+    PalletElectionProviderMultiPhaseCall: PalletElectionProviderMultiPhaseCall;
+    PalletElectionProviderMultiPhaseElectionCompute: PalletElectionProviderMultiPhaseElectionCompute;
+    PalletElectionProviderMultiPhaseError: PalletElectionProviderMultiPhaseError;
+    PalletElectionProviderMultiPhaseEvent: PalletElectionProviderMultiPhaseEvent;
+    PalletElectionProviderMultiPhasePhase: PalletElectionProviderMultiPhasePhase;
+    PalletElectionProviderMultiPhaseRawSolution: PalletElectionProviderMultiPhaseRawSolution;
+    PalletElectionProviderMultiPhaseReadySolution: PalletElectionProviderMultiPhaseReadySolution;
+    PalletElectionProviderMultiPhaseRoundSnapshot: PalletElectionProviderMultiPhaseRoundSnapshot;
+    PalletElectionProviderMultiPhaseSignedSignedSubmission: PalletElectionProviderMultiPhaseSignedSignedSubmission;
+    PalletElectionProviderMultiPhaseSolutionOrSnapshotSize: PalletElectionProviderMultiPhaseSolutionOrSnapshotSize;
     PalletExternalAgentsCall: PalletExternalAgentsCall;
     PalletExternalAgentsError: PalletExternalAgentsError;
     PalletGrandpaCall: PalletGrandpaCall;
@@ -513,6 +524,7 @@ declare module '@polkadot/types/types/registry' {
     PalletIndicesEvent: PalletIndicesEvent;
     PalletMultisigCall: PalletMultisigCall;
     PalletMultisigError: PalletMultisigError;
+    PalletMultisigEvent: PalletMultisigEvent;
     PalletNftCall: PalletNftCall;
     PalletNftError: PalletNftError;
     PalletOffencesEvent: PalletOffencesEvent;
@@ -555,17 +567,16 @@ declare module '@polkadot/types/types/registry' {
     PalletSettlementCall: PalletSettlementCall;
     PalletSettlementError: PalletSettlementError;
     PalletStakingActiveEraInfo: PalletStakingActiveEraInfo;
-    PalletStakingCompactAssignments: PalletStakingCompactAssignments;
-    PalletStakingElectionCompute: PalletStakingElectionCompute;
-    PalletStakingElectionResult: PalletStakingElectionResult;
-    PalletStakingElectionSize: PalletStakingElectionSize;
-    PalletStakingElectionStatus: PalletStakingElectionStatus;
     PalletStakingEraRewardPoints: PalletStakingEraRewardPoints;
     PalletStakingExposure: PalletStakingExposure;
     PalletStakingForcing: PalletStakingForcing;
     PalletStakingIndividualExposure: PalletStakingIndividualExposure;
     PalletStakingNominations: PalletStakingNominations;
     PalletStakingPalletCall: PalletStakingPalletCall;
+    PalletStakingPalletConfigOpPerbill: PalletStakingPalletConfigOpPerbill;
+    PalletStakingPalletConfigOpPercent: PalletStakingPalletConfigOpPercent;
+    PalletStakingPalletConfigOpU128: PalletStakingPalletConfigOpU128;
+    PalletStakingPalletConfigOpU32: PalletStakingPalletConfigOpU32;
     PalletStakingPalletError: PalletStakingPalletError;
     PalletStakingPalletEvent: PalletStakingPalletEvent;
     PalletStakingPermissionedIdentityPrefs: PalletStakingPermissionedIdentityPrefs;
@@ -629,7 +640,6 @@ declare module '@polkadot/types/types/registry' {
     PolymeshCommonUtilitiesIdentityRawEvent: PolymeshCommonUtilitiesIdentityRawEvent;
     PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth: PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth;
     PolymeshCommonUtilitiesMaybeBlock: PolymeshCommonUtilitiesMaybeBlock;
-    PolymeshCommonUtilitiesMultisigRawEvent: PolymeshCommonUtilitiesMultisigRawEvent;
     PolymeshCommonUtilitiesNftEvent: PolymeshCommonUtilitiesNftEvent;
     PolymeshCommonUtilitiesPortfolioEvent: PolymeshCommonUtilitiesPortfolioEvent;
     PolymeshCommonUtilitiesProtocolFeeProtocolOp: PolymeshCommonUtilitiesProtocolFeeProtocolOp;
@@ -678,8 +688,8 @@ declare module '@polkadot/types/types/registry' {
     PolymeshPrimitivesIdentityIdPortfolioKind: PolymeshPrimitivesIdentityIdPortfolioKind;
     PolymeshPrimitivesJurisdictionCountryCode: PolymeshPrimitivesJurisdictionCountryCode;
     PolymeshPrimitivesMemo: PolymeshPrimitivesMemo;
-    PolymeshPrimitivesMultisigProposalDetails: PolymeshPrimitivesMultisigProposalDetails;
-    PolymeshPrimitivesMultisigProposalStatus: PolymeshPrimitivesMultisigProposalStatus;
+    PolymeshPrimitivesMultisigProposalState: PolymeshPrimitivesMultisigProposalState;
+    PolymeshPrimitivesMultisigProposalVoteCount: PolymeshPrimitivesMultisigProposalVoteCount;
     PolymeshPrimitivesNftNfTs: PolymeshPrimitivesNftNfTs;
     PolymeshPrimitivesNftNftCollection: PolymeshPrimitivesNftNftCollection;
     PolymeshPrimitivesNftNftCollectionKeys: PolymeshPrimitivesNftNftCollectionKeys;
@@ -689,6 +699,7 @@ declare module '@polkadot/types/types/registry' {
     PolymeshPrimitivesPortfolioPortfolioUpdateReason: PolymeshPrimitivesPortfolioPortfolioUpdateReason;
     PolymeshPrimitivesPosRatio: PolymeshPrimitivesPosRatio;
     PolymeshPrimitivesSecondaryKey: PolymeshPrimitivesSecondaryKey;
+    PolymeshPrimitivesSecondaryKeyExtrinsicPermissions: PolymeshPrimitivesSecondaryKeyExtrinsicPermissions;
     PolymeshPrimitivesSecondaryKeyKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
     PolymeshPrimitivesSecondaryKeyPalletPermissions: PolymeshPrimitivesSecondaryKeyPalletPermissions;
     PolymeshPrimitivesSecondaryKeyPermissions: PolymeshPrimitivesSecondaryKeyPermissions;
@@ -713,13 +724,13 @@ declare module '@polkadot/types/types/registry' {
     PolymeshPrimitivesStatisticsStatType: PolymeshPrimitivesStatisticsStatType;
     PolymeshPrimitivesStatisticsStatUpdate: PolymeshPrimitivesStatisticsStatUpdate;
     PolymeshPrimitivesSubsetSubsetRestrictionAssetID: PolymeshPrimitivesSubsetSubsetRestrictionAssetID;
-    PolymeshPrimitivesSubsetSubsetRestrictionDispatchableName: PolymeshPrimitivesSubsetSubsetRestrictionDispatchableName;
-    PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions: PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions;
+    PolymeshPrimitivesSubsetSubsetRestrictionExtrinsicName: PolymeshPrimitivesSubsetSubsetRestrictionExtrinsicName;
     PolymeshPrimitivesSubsetSubsetRestrictionPortfolioId: PolymeshPrimitivesSubsetSubsetRestrictionPortfolioId;
     PolymeshPrimitivesTicker: PolymeshPrimitivesTicker;
     PolymeshPrimitivesTransferComplianceAssetTransferCompliance: PolymeshPrimitivesTransferComplianceAssetTransferCompliance;
     PolymeshPrimitivesTransferComplianceTransferCondition: PolymeshPrimitivesTransferComplianceTransferCondition;
     PolymeshPrimitivesTransferComplianceTransferConditionExemptKey: PolymeshPrimitivesTransferComplianceTransferConditionExemptKey;
+    PolymeshRuntimeCommonNposSolution16: PolymeshRuntimeCommonNposSolution16;
     PolymeshRuntimeDevelopRuntime: PolymeshRuntimeDevelopRuntime;
     PolymeshRuntimeDevelopRuntimeOriginCaller: PolymeshRuntimeDevelopRuntimeOriginCaller;
     PolymeshRuntimeDevelopRuntimeSessionKeys: PolymeshRuntimeDevelopRuntimeSessionKeys;
@@ -747,6 +758,7 @@ declare module '@polkadot/types/types/registry' {
     SpCoreSr25519Signature: SpCoreSr25519Signature;
     SpCoreVoid: SpCoreVoid;
     SpNposElectionsElectionScore: SpNposElectionsElectionScore;
+    SpNposElectionsSupport: SpNposElectionsSupport;
     SpRuntimeBlakeTwo256: SpRuntimeBlakeTwo256;
     SpRuntimeDigest: SpRuntimeDigest;
     SpRuntimeDigestDigestItem: SpRuntimeDigestDigestItem;

@@ -69,7 +69,7 @@ describe('TickerReservation class', () => {
 
     beforeEach(() => {
       dsMockUtils.createQueryMock('asset', 'uniqueTickerRegistration');
-      dsMockUtils.createQueryMock('asset', 'securityTokens');
+      dsMockUtils.createQueryMock('asset', 'assets');
       dsMockUtils
         .createQueryMock('asset', 'tickerAssetID')
         .mockResolvedValue(dsMockUtils.createMockOption(dsMockUtils.createMockAssetId('0x1234')));

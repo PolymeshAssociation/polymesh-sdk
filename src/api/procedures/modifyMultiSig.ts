@@ -1,9 +1,9 @@
 import BigNumber from 'bignumber.js';
 
 import { PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, ModifyMultiSigParams, Signer, TxTags } from '~/types';
+import { Account, ErrorCode, ModifyMultiSigParams, Signer, TxTags } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
-import { signerToSignatory, signerToString, stringToAccountId } from '~/utils/conversion';
+import { signerToString, stringToAccountId } from '~/utils/conversion';
 import { checkTxType } from '~/utils/internal';
 
 export interface Storage {
@@ -38,6 +38,7 @@ export async function prepareModifyMultiSig(
   const {
     context: {
       polymeshApi: { tx },
+      isV6,
     },
     storage: { signersToAdd, signersToRemove, requiredSignatures },
     context,
@@ -74,21 +75,34 @@ export async function prepareModifyMultiSig(
 
   const transactions = [];
 
+  let addSignersTx = tx.multiSig.addMultisigSignersViaAdmin;
+  let removeSignersTx = tx.multiSig.removeMultisigSignersViaAdmin;
+  if (isV6) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    addSignersTx = (tx.multiSig as any).addMultisigSignersViaCreator;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    removeSignersTx = (tx.multiSig as any).removeMultisigSignersViaCreator;
+  }
+
   if (signersToAdd.length > 0) {
-    const rawAddedSigners = signersToAdd.map(signer => signerToSignatory(signer, context));
+    const rawAddedSigners = signersToAdd.map(signer =>
+      stringToAccountId((signer as Account).address, context)
+    );
     transactions.push(
       checkTxType({
-        transaction: tx.multiSig.addMultisigSignersViaCreator,
+        transaction: addSignersTx,
         args: [rawAddress, rawAddedSigners],
       })
     );
   }
 
   if (signersToRemove.length > 0) {
-    const rawRemovedSigners = signersToRemove.map(signer => signerToSignatory(signer, context));
+    const rawRemovedSigners = signersToRemove.map(signer =>
+      stringToAccountId((signer as Account).address, context)
+    );
     transactions.push(
       checkTxType({
-        transaction: tx.multiSig.removeMultisigSignersViaCreator,
+        transaction: removeSignersTx,
         args: [rawAddress, rawRemovedSigners],
       })
     );

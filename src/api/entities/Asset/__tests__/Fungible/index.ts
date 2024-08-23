@@ -1,7 +1,7 @@
 import { bool, Bytes, Option } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import {
-  PalletAssetSecurityToken,
+  PalletAssetAssetDetails,
   PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesAssetIdentifier,
 } from '@polkadot/types/lookup';
@@ -87,7 +87,7 @@ describe('Fungible Asset class', () => {
     let assetType: 'EquityCommon';
     let did: string;
 
-    let rawToken: Option<PalletAssetSecurityToken>;
+    let rawToken: Option<PalletAssetAssetDetails>;
     let rawName: Option<Bytes>;
 
     let context: Context;
@@ -139,7 +139,7 @@ describe('Fungible Asset class', () => {
     });
 
     it('should return details for an Asset', async () => {
-      const tokensMock = dsMockUtils.createQueryMock('asset', 'securityTokens', {
+      const tokensMock = dsMockUtils.createQueryMock('asset', 'assets', {
         returnValue: rawToken,
       });
 
@@ -192,7 +192,7 @@ describe('Fungible Asset class', () => {
     });
 
     it('should throw if asset was not found', () => {
-      const tokensMock = dsMockUtils.createQueryMock('asset', 'securityTokens', {
+      const tokensMock = dsMockUtils.createQueryMock('asset', 'assets', {
         returnValue: dsMockUtils.createMockOption(),
       });
       tokensMock.mockResolvedValue(dsMockUtils.createMockOption());
@@ -210,13 +210,11 @@ describe('Fungible Asset class', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (rawToken as any).primaryIssuanceAgent = dsMockUtils.createMockOption();
 
-      dsMockUtils
-        .createQueryMock('asset', 'securityTokens')
-        .mockImplementation(async (_, cbFunc) => {
-          cbFunc(rawToken);
+      dsMockUtils.createQueryMock('asset', 'assets').mockImplementation(async (_, cbFunc) => {
+        cbFunc(rawToken);
 
-          return unsubCallback;
-        });
+        return unsubCallback;
+      });
 
       when(bytesToStringSpy).calledWith(rawName).mockReturnValue(name);
 
@@ -886,7 +884,7 @@ describe('Fungible Asset class', () => {
       const context = dsMockUtils.getContextInstance();
       const asset = new FungibleAsset({ assetId }, context);
 
-      dsMockUtils.createQueryMock('asset', 'securityTokens', {
+      dsMockUtils.createQueryMock('asset', 'assets', {
         size: new BigNumber(10),
       });
 
@@ -906,7 +904,7 @@ describe('Fungible Asset class', () => {
 
       expect(result).toBe(false);
 
-      dsMockUtils.createQueryMock('asset', 'securityTokens', {
+      dsMockUtils.createQueryMock('asset', 'assets', {
         size: new BigNumber(0),
       });
 

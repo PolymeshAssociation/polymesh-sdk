@@ -257,60 +257,6 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       TooLong: AugmentedError<ApiType>;
     };
-    bridge: {
-      /**
-       * The origin is not the admin address.
-       **/
-      BadAdmin: AugmentedError<ApiType>;
-      /**
-       * The origin is not the controller or the admin address.
-       **/
-      BadCaller: AugmentedError<ApiType>;
-      /**
-       * The identity's minted total has reached the bridge limit.
-       **/
-      BridgeLimitReached: AugmentedError<ApiType>;
-      /**
-       * The bridge controller address is not set.
-       **/
-      ControllerNotSet: AugmentedError<ApiType>;
-      /**
-       * The block interval duration is zero. Cannot divide.
-       **/
-      DivisionByZero: AugmentedError<ApiType>;
-      /**
-       * The bridge is already frozen.
-       **/
-      Frozen: AugmentedError<ApiType>;
-      /**
-       * The transaction is frozen.
-       **/
-      FrozenTx: AugmentedError<ApiType>;
-      /**
-       * The bridge is not frozen.
-       **/
-      NotFrozen: AugmentedError<ApiType>;
-      /**
-       * The recipient DID has no valid CDD.
-       **/
-      NoValidCdd: AugmentedError<ApiType>;
-      /**
-       * The identity's minted total has overflowed.
-       **/
-      Overflow: AugmentedError<ApiType>;
-      /**
-       * The bridge transaction proposal has already been handled and the funds minted.
-       **/
-      ProposalAlreadyHandled: AugmentedError<ApiType>;
-      /**
-       * The transaction is timelocked.
-       **/
-      TimelockedTx: AugmentedError<ApiType>;
-      /**
-       * Unauthorized to perform an operation.
-       **/
-      Unauthorized: AugmentedError<ApiType>;
-    };
     capitalDistribution: {
       /**
        * A distribution already exists for this CA.
@@ -392,10 +338,6 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       LastMemberCannotQuit: AugmentedError<ApiType>;
       /**
-       * Missing current DID
-       **/
-      MissingCurrentIdentity: AugmentedError<ApiType>;
-      /**
        * Can't remove a member that doesn't exist.
        **/
       NoSuchMember: AugmentedError<ApiType>;
@@ -447,10 +389,6 @@ declare module '@polkadot/api-base/types/errors' {
        * Last member of the committee can not quit.
        **/
       LastMemberCannotQuit: AugmentedError<ApiType>;
-      /**
-       * Missing current DID
-       **/
-      MissingCurrentIdentity: AugmentedError<ApiType>;
       /**
        * Can't remove a member that doesn't exist.
        **/
@@ -733,6 +671,64 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       WrongVoteCount: AugmentedError<ApiType>;
     };
+    electionProviderMultiPhase: {
+      /**
+       * Some bound not met
+       **/
+      BoundNotMet: AugmentedError<ApiType>;
+      /**
+       * The call is not allowed at this point.
+       **/
+      CallNotAllowed: AugmentedError<ApiType>;
+      /**
+       * The fallback failed
+       **/
+      FallbackFailed: AugmentedError<ApiType>;
+      /**
+       * `Self::insert_submission` returned an invalid index.
+       **/
+      InvalidSubmissionIndex: AugmentedError<ApiType>;
+      /**
+       * Snapshot metadata should exist but didn't.
+       **/
+      MissingSnapshotMetadata: AugmentedError<ApiType>;
+      /**
+       * OCW submitted solution for wrong round
+       **/
+      OcwCallWrongEra: AugmentedError<ApiType>;
+      /**
+       * Submission was too early.
+       **/
+      PreDispatchEarlySubmission: AugmentedError<ApiType>;
+      /**
+       * Submission was too weak, score-wise.
+       **/
+      PreDispatchWeakSubmission: AugmentedError<ApiType>;
+      /**
+       * Wrong number of winners presented.
+       **/
+      PreDispatchWrongWinnerCount: AugmentedError<ApiType>;
+      /**
+       * The origin failed to pay the deposit.
+       **/
+      SignedCannotPayDeposit: AugmentedError<ApiType>;
+      /**
+       * Witness data to dispatchable is invalid.
+       **/
+      SignedInvalidWitness: AugmentedError<ApiType>;
+      /**
+       * The queue was full, and the solution was not better than any of the existing ones.
+       **/
+      SignedQueueFull: AugmentedError<ApiType>;
+      /**
+       * The signed submission consumes too much weight
+       **/
+      SignedTooMuchWeight: AugmentedError<ApiType>;
+      /**
+       * Submitted solution has too many winners
+       **/
+      TooManyWinners: AugmentedError<ApiType>;
+    };
     externalAgents: {
       /**
        * The provided `agent` is already an agent for the `AssetID`.
@@ -887,9 +883,9 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       KeyNotAllowed: AugmentedError<ApiType>;
       /**
-       * Missing current identity on the transaction
+       * Caller is missing an identity.
        **/
-      MissingCurrentIdentity: AugmentedError<ApiType>;
+      MissingIdentity: AugmentedError<ApiType>;
       /**
        * Multisig can not be unlinked from an identity while it still holds POLYX
        **/
@@ -973,53 +969,41 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       AlreadyVoted: AugmentedError<ApiType>;
       /**
-       * The multisig is not attached to a CDD'd identity.
-       **/
-      CddMissing: AugmentedError<ApiType>;
-      /**
        * Changing multisig parameters not allowed since multisig is a primary key.
        **/
       ChangeNotAllowed: AugmentedError<ApiType>;
-      /**
-       * The creator is no longer allowed to call via creator extrinsics.
-       **/
-      CreatorControlsHaveBeenRemoved: AugmentedError<ApiType>;
       /**
        * Multisig address.
        **/
       DecodingError: AugmentedError<ApiType>;
       /**
-       * Couldn't charge fee for the transaction.
+       * Identity provided is not the multisig's admin.
        **/
-      FailedToChargeFee: AugmentedError<ApiType>;
+      IdentityNotAdmin: AugmentedError<ApiType>;
       /**
-       * Scheduling of a proposal fails
+       * Identity provided is not the multisig's payer.
        **/
-      FailedToSchedule: AugmentedError<ApiType>;
+      IdentityNotPayer: AugmentedError<ApiType>;
       /**
-       * Identity provided is not the multisig's creator.
+       * Max weight not enough to execute proposal.
        **/
-      IdentityNotCreator: AugmentedError<ApiType>;
-      /**
-       * Current DID is missing
-       **/
-      MissingCurrentIdentity: AugmentedError<ApiType>;
+      MaxWeightTooLow: AugmentedError<ApiType>;
       /**
        * Multisig is not attached to an identity
        **/
       MultisigMissingIdentity: AugmentedError<ApiType>;
       /**
-       * Multisig not allowed to add itself as a signer.
+       * A multisig can't be a signer of another multisig.
        **/
-      MultisigNotAllowedToLinkToItself: AugmentedError<ApiType>;
+      NestingNotAllowed: AugmentedError<ApiType>;
       /**
        * A nonce overflow.
        **/
       NonceOverflow: AugmentedError<ApiType>;
       /**
-       * No signers.
+       * Multisig doesn't have a paying DID.
        **/
-      NoSigners: AugmentedError<ApiType>;
+      NoPayingDid: AugmentedError<ApiType>;
       /**
        * No such multisig.
        **/
@@ -1029,13 +1013,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       NotASigner: AugmentedError<ApiType>;
       /**
-       * Not enough signers.
+       * Not enough signers.  The number of signers has to be greater then or equal to
+       * the required number of signers to approve proposals.
        **/
       NotEnoughSigners: AugmentedError<ApiType>;
-      /**
-       * The function can only be called by the primary key of the did
-       **/
-      NotPrimaryKey: AugmentedError<ApiType>;
       /**
        * Proposal was executed earlier
        **/
@@ -1053,9 +1034,9 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       ProposalMissing: AugmentedError<ApiType>;
       /**
-       * Too few or too many required signatures.
+       * Required number of signers must be greater then zero.
        **/
-      RequiredSignaturesOutOfBounds: AugmentedError<ApiType>;
+      RequiredSignersIsZero: AugmentedError<ApiType>;
       /**
        * Signer is an account key that is already associated with an identity.
        **/
@@ -1065,7 +1046,7 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       SignerAlreadyLinkedToMultisig: AugmentedError<ApiType>;
       /**
-       * More signers than required.
+       * Tried to add/remove too many signers.
        **/
       TooManySigners: AugmentedError<ApiType>;
     };
@@ -1726,10 +1707,6 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       AlreadyClaimed: AugmentedError<ApiType>;
       /**
-       * Permissioned validator already exists.
-       **/
-      AlreadyExists: AugmentedError<ApiType>;
-      /**
        * Controller is already paired.
        **/
       AlreadyPaired: AugmentedError<ApiType>;
@@ -1742,17 +1719,29 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       BadTarget: AugmentedError<ApiType>;
       /**
-       * When the amount to be bonded is less than `MinimumBond`
-       **/
-      BondTooSmall: AugmentedError<ApiType>;
-      /**
        * Some bound is not met.
        **/
       BoundNotMet: AugmentedError<ApiType>;
       /**
-       * The call is not allowed at the given time due to restrictions of election period.
+       * The user has enough bond and thus cannot be chilled forcefully by an external person.
        **/
-      CallNotAllowed: AugmentedError<ApiType>;
+      CannotChillOther: AugmentedError<ApiType>;
+      /**
+       * Validator commiission is above maximum.
+       **/
+      CommissionTooHigh: AugmentedError<ApiType>;
+      /**
+       * Commission is too low. Must be at least `MinCommission`.
+       **/
+      CommissionTooLow: AugmentedError<ApiType>;
+      /**
+       * New commission must be different from previous commission.
+       **/
+      CommissionUnchanged: AugmentedError<ApiType>;
+      /**
+       * Duplicate index.
+       **/
+      DuplicateIndex: AugmentedError<ApiType>;
       /**
        * Targets cannot be empty.
        **/
@@ -1762,17 +1751,31 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       FundedTarget: AugmentedError<ApiType>;
       /**
-       * Running validator count hit the intended count.
+       * Permissioned validator already exists.
        **/
-      HitIntendedValidatorCount: AugmentedError<ApiType>;
+      IdentityIsAlreadyPermissioned: AugmentedError<ApiType>;
+      /**
+       * Identity has not gone throught CDD.
+       **/
+      IdentityIsMissingCDD: AugmentedError<ApiType>;
+      /**
+       * Identity was not found in the permissioned identity pool.
+       **/
+      IdentityNotFound: AugmentedError<ApiType>;
+      /**
+       * Incorrect previous history depth input provided.
+       **/
+      IncorrectHistoryDepth: AugmentedError<ApiType>;
       /**
        * Incorrect number of slashing spans provided.
        **/
       IncorrectSlashingSpans: AugmentedError<ApiType>;
       /**
-       * Can not bond with value less than minimum balance.
+       * Cannot have a validator or nominator role, with value less than the minimum defined by
+       * governance (see `MinValidatorBond` and `MinNominatorBond`). If unbonding is the
+       * intention, `chill` first to remove one's role as validator/nominator.
        **/
-      InsufficientValue: AugmentedError<ApiType>;
+      InsufficientBond: AugmentedError<ApiType>;
       /**
        * When the intended number of validators to run is >= 2/3 of `validator_count`.
        **/
@@ -1782,25 +1785,13 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InvalidEraToReward: AugmentedError<ApiType>;
       /**
+       * Invalid number of nominations.
+       **/
+      InvalidNumberOfNominations: AugmentedError<ApiType>;
+      /**
        * Slash record index out of bounds.
        **/
       InvalidSlashIndex: AugmentedError<ApiType>;
-      /**
-       * Validator prefs are not in valid range.
-       **/
-      InvalidValidatorCommission: AugmentedError<ApiType>;
-      /**
-       * Given potential validator identity is invalid.
-       **/
-      InvalidValidatorIdentity: AugmentedError<ApiType>;
-      /**
-       * Validator should have minimum 50k POLYX bonded.
-       **/
-      InvalidValidatorUnbondAmount: AugmentedError<ApiType>;
-      /**
-       * Updates with same value.
-       **/
-      NoChange: AugmentedError<ApiType>;
       /**
        * Can not schedule more unlock chunks.
        **/
@@ -1809,10 +1800,6 @@ declare module '@polkadot/api-base/types/errors' {
        * Not a controller account.
        **/
       NotController: AugmentedError<ApiType>;
-      /**
-       * Permissioned validator not exists.
-       **/
-      NotExists: AugmentedError<ApiType>;
       /**
        * Items are not sorted and unique.
        **/
@@ -1826,70 +1813,15 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       NoUnlockChunk: AugmentedError<ApiType>;
       /**
-       * Error while building the assignment type from the compact. This can happen if an index
-       * is invalid, or if the weights _overflow_.
-       **/
-      OffchainElectionBogusCompact: AugmentedError<ApiType>;
-      /**
-       * The submitted result has unknown edges that are not among the presented winners.
-       **/
-      OffchainElectionBogusEdge: AugmentedError<ApiType>;
-      /**
-       * The election size is invalid.
-       **/
-      OffchainElectionBogusElectionSize: AugmentedError<ApiType>;
-      /**
-       * One of the submitted nominators has an edge to which they have not voted on chain.
-       **/
-      OffchainElectionBogusNomination: AugmentedError<ApiType>;
-      /**
-       * One of the submitted nominators is not an active nominator on chain.
-       **/
-      OffchainElectionBogusNominator: AugmentedError<ApiType>;
-      /**
-       * The claimed score does not match with the one computed from the data.
-       **/
-      OffchainElectionBogusScore: AugmentedError<ApiType>;
-      /**
-       * A self vote must only be originated from a validator to ONLY themselves.
-       **/
-      OffchainElectionBogusSelfVote: AugmentedError<ApiType>;
-      /**
-       * One of the submitted winners is not an active candidate on chain (index is out of range
-       * in snapshot).
-       **/
-      OffchainElectionBogusWinner: AugmentedError<ApiType>;
-      /**
-       * Incorrect number of winners were presented.
-       **/
-      OffchainElectionBogusWinnerCount: AugmentedError<ApiType>;
-      /**
-       * The submitted result is received out of the open window.
-       **/
-      OffchainElectionEarlySubmission: AugmentedError<ApiType>;
-      /**
-       * One of the submitted nominators has an edge which is submitted before the last non-zero
-       * slash of the target.
-       **/
-      OffchainElectionSlashedNomination: AugmentedError<ApiType>;
-      /**
-       * The submitted result is not as good as the one stored on chain.
-       **/
-      OffchainElectionWeakSubmission: AugmentedError<ApiType>;
-      /**
-       * The snapshot data of the current window is missing.
-       **/
-      SnapshotUnavailable: AugmentedError<ApiType>;
-      /**
        * Validator or nominator stash identity does not exist.
        **/
       StashIdentityDoesNotExist: AugmentedError<ApiType>;
       /**
-       * Nominator stash was not CDDed.
+       * Nominator stash has not gone through CDD.
        **/
       StashIdentityNotCDDed: AugmentedError<ApiType>;
       /**
-       * Validator stash identity was not permissioned.
+       * Validator's stash identity is not permissioned.
        **/
       StashIdentityNotPermissioned: AugmentedError<ApiType>;
       /**
@@ -1901,6 +1833,14 @@ declare module '@polkadot/api-base/types/errors' {
        * Too many nomination targets supplied.
        **/
       TooManyTargets: AugmentedError<ApiType>;
+      /**
+       * There are too many validator candidates in the system.
+       **/
+      TooManyValidators: AugmentedError<ApiType>;
+      /**
+       * No validator was found for the given key.
+       **/
+      ValidatorNotFound: AugmentedError<ApiType>;
     };
     stateTrieMigration: {
       /**
@@ -2109,10 +2049,6 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       LastMemberCannotQuit: AugmentedError<ApiType>;
       /**
-       * Missing current DID
-       **/
-      MissingCurrentIdentity: AugmentedError<ApiType>;
-      /**
        * Can't remove a member that doesn't exist.
        **/
       NoSuchMember: AugmentedError<ApiType>;
@@ -2190,10 +2126,6 @@ declare module '@polkadot/api-base/types/errors' {
        * Last member of the committee can not quit.
        **/
       LastMemberCannotQuit: AugmentedError<ApiType>;
-      /**
-       * Missing current DID
-       **/
-      MissingCurrentIdentity: AugmentedError<ApiType>;
       /**
        * Can't remove a member that doesn't exist.
        **/
