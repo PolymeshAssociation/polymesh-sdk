@@ -356,7 +356,7 @@ describe('Identity class', () => {
       fakeBalance = dsMockUtils.createMockBalance(fakeValue);
       mockContext = dsMockUtils.getContextInstance();
       balanceOfMock = dsMockUtils.createQueryMock('asset', 'balanceOf');
-      assetMock = dsMockUtils.createQueryMock('asset', 'securityTokens');
+      assetMock = dsMockUtils.createQueryMock('asset', 'assets');
 
       when(stringToIdentityIdSpy).calledWith(did, mockContext).mockReturnValue(rawIdentityId);
 

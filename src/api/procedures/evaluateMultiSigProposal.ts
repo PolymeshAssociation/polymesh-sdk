@@ -24,11 +24,12 @@ export async function prepareMultiSigProposalEvaluation(
   this: Procedure<MultiSigProposalVoteParams, void>,
   args: MultiSigProposalVoteParams
 ): Promise<
-  | TransactionSpec<void, ExtrinsicParams<'multiSig', 'approveAsKey'>>
-  | TransactionSpec<void, ExtrinsicParams<'multiSig', 'rejectAsKey'>>
+  | TransactionSpec<void, ExtrinsicParams<'multiSig', 'approve'>>
+  | TransactionSpec<void, ExtrinsicParams<'multiSig', 'reject'>>
 > {
   const {
     context: {
+      isV6,
       polymeshApi: {
         tx: { multiSig },
         query: {
@@ -51,13 +52,16 @@ export async function prepareMultiSigProposalEvaluation(
   const rawProposalId = bigNumberToU64(id, context);
   const signingAccount = context.getSigningAccount();
 
-  const rawSigner = signerToSignatory(signingAccount, context);
+  const rawSigner = isV6
+    ? signerToSignatory(signingAccount, context)
+    : stringToAccountId(signingAccount.address, context);
 
   const [creator, { signers: multiSigSigners }, { status }, hasVoted] = await Promise.all([
     proposal.multiSig.getCreator(),
     proposal.multiSig.details(),
     proposal.details(),
-    votes([rawMultiSigAddress, rawProposalId], rawSigner),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    votes([rawMultiSigAddress, rawProposalId], rawSigner as any),
   ]);
 
   if (
@@ -106,10 +110,20 @@ export async function prepareMultiSigProposalEvaluation(
   }
 
   let transaction;
-  if (action === MultiSigProposalAction.Approve) {
-    transaction = multiSig.approveAsKey;
+  if (isV6) {
+    if (action === MultiSigProposalAction.Approve) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      transaction = (multiSig as any).approveAsKey;
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      transaction = (multiSig as any).rejectAsKey;
+    }
   } else {
-    transaction = multiSig.rejectAsKey;
+    if (action === MultiSigProposalAction.Approve) {
+      transaction = multiSig.approve;
+    } else {
+      transaction = multiSig.reject;
+    }
   }
 
   return {

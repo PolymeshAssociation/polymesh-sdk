@@ -83,7 +83,10 @@ export class CustomPermissionGroup extends PermissionGroup {
 
     const rawGroupPermissions = await externalAgents.groupPermissions(rawAssetId, rawAgId);
 
-    const transactions = extrinsicPermissionsToTransactionPermissions(rawGroupPermissions.unwrap());
+    const transactions = extrinsicPermissionsToTransactionPermissions(
+      rawGroupPermissions.unwrap(),
+      context
+    );
 
     const transactionGroups = transactionPermissionsToTxGroups(transactions);
 

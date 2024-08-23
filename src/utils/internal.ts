@@ -11,10 +11,11 @@ import { BTreeSet, Bytes, Option, StorageKey, u32 } from '@polkadot/types';
 import { EventRecord } from '@polkadot/types/interfaces';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import {
-  PalletAssetSecurityToken,
+  PalletAssetAssetDetails,
   PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesSecondaryKeyKeyRecord,
+  PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesStatisticsStatClaim,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesTransferComplianceTransferCondition,
@@ -1968,6 +1969,7 @@ export async function getSecondaryAccountPermissions(
     polymeshApi: {
       query: { identity: identityQuery },
     },
+    isV6,
   } = context;
 
   const { accounts, identity } = args;
@@ -1983,15 +1985,35 @@ export async function getSecondaryAccountPermissions(
       const record = optKeyRecord.unwrap();
 
       if (record.isSecondaryKey) {
-        const [rawIdentityId, rawPermissions] = record.asSecondaryKey;
+        if (isV6) {
+          const [rawIdentityId, rawPermissions] = record.asSecondaryKey as unknown as [
+            PolymeshPrimitivesIdentityId,
+            PolymeshPrimitivesSecondaryKeyPermissions
+          ];
 
-        if (identity && identityIdToString(rawIdentityId) !== identity.did) {
-          return result;
+          if (identity && identityIdToString(rawIdentityId) !== identity.did) {
+            return result;
+          }
+          result.push({
+            account,
+            permissions: meshPermissionsToPermissions(rawPermissions, context),
+          });
+        } else {
+          const rawIdentityId = record.asSecondaryKey;
+          if (identity && identityIdToString(rawIdentityId) !== identity.did) {
+            return result;
+          }
+
+          throw new PolymeshError({
+            code: ErrorCode.General,
+            message: 'not implemented',
+          });
+
+          // TODO query for separate permissions + assemble
+          // identityQuery.keyAssetPermissions;
+          // identityQuery.keyExtrinsicPermissions;
+          // identityQuery.keyPortfolioPermissions;
         }
-        result.push({
-          account,
-          permissions: meshPermissionsToPermissions(rawPermissions, context),
-        });
       }
 
       return result;
@@ -2033,14 +2055,22 @@ export async function getIdentityFromKeyRecord(
     polymeshApi: {
       query: { identity },
     },
+    isV6,
   } = context;
 
   if (keyRecord.isPrimaryKey) {
     const did = identityIdToString(keyRecord.asPrimaryKey);
     return new Identity({ did }, context);
   } else if (keyRecord.isSecondaryKey) {
-    const did = identityIdToString(keyRecord.asSecondaryKey[0]);
-    return new Identity({ did }, context);
+    if (isV6) {
+      const did = identityIdToString(
+        keyRecord.asSecondaryKey[0] as unknown as PolymeshPrimitivesIdentityId
+      );
+      return new Identity({ did }, context);
+    } else {
+      const did = identityIdToString(keyRecord.asSecondaryKey);
+      return new Identity({ did }, context);
+    }
   } else {
     const multiSigAddress = keyRecord.asMultiSigSignerKey;
     const optMultiSigKeyRecord = await identity.keyRecords(multiSigAddress);
@@ -2062,7 +2092,7 @@ export async function getIdentityFromKeyRecord(
  * @note `assetDetails` and `tickers` must have the same offset
  */
 export function assembleAssetQuery(
-  assetDetails: Option<PalletAssetSecurityToken>[],
+  assetDetails: Option<PalletAssetAssetDetails>[],
   assetIds: string[],
   context: Context
 ): Asset[] {

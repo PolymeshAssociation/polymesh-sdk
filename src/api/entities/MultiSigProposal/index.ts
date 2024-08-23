@@ -25,6 +25,7 @@ import {
   accountIdToString,
   bigNumberToU64,
   boolToBoolean,
+  meshProposalStateToProposalStatus,
   meshProposalStatusToProposalStatus,
   middlewareEventDetailsToEventIdentifier,
   momentToDate,
@@ -106,6 +107,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
         polymeshApi: {
           query: { multiSig },
         },
+        isV6,
       },
       multiSig: { address: multiSigAddress },
       id,
@@ -115,58 +117,115 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
     const rawMultiSignAddress = stringToAccountId(multiSigAddress, context);
     const rawId = bigNumberToU64(id, context);
 
-    const [
-      {
-        approvals: rawApprovals,
-        rejections: rawRejections,
-        status: rawStatus,
-        expiry: rawExpiry,
-        autoClose: rawAutoClose,
-      },
-      proposalOpt,
-      votes,
-    ] = await Promise.all([
-      multiSig.proposalDetail(rawMultiSignAddress, rawId),
-      multiSig.proposals(rawMultiSignAddress, rawId),
-      multiSig.votes.entries([rawMultiSignAddress, rawId]),
-    ]);
+    if (isV6) {
+      const [
+        {
+          approvals: rawApprovals,
+          rejections: rawRejections,
+          status: rawStatus,
+          expiry: rawExpiry,
+          autoClose: rawAutoClose,
+        },
+        proposalOpt,
+        votes,
+      ] = await Promise.all([
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (multiSig as any).proposalDetail(rawMultiSignAddress, rawId),
+        multiSig.proposals(rawMultiSignAddress, rawId),
+        multiSig.votes.entries([rawMultiSignAddress, rawId]),
+      ]);
 
-    if (proposalOpt.isNone) {
-      throw new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message: `Proposal with ID: "${id}" was not found. It may have already been executed`,
-      });
+      if (proposalOpt.isNone) {
+        throw new PolymeshError({
+          code: ErrorCode.DataUnavailable,
+          message: `Proposal with ID: "${id}" was not found. It may have already been executed`,
+        });
+      }
+
+      const proposal = proposalOpt.unwrap();
+      const { method, section } = proposal;
+      const { args } = proposal.toJSON();
+
+      const approvalAmount = u64ToBigNumber(rawApprovals);
+      const rejectionAmount = u64ToBigNumber(rawRejections);
+      const expiry = optionize(momentToDate)(rawExpiry.unwrapOr(null));
+      const status = meshProposalStatusToProposalStatus(rawStatus, expiry);
+      const autoClose = boolToBoolean(rawAutoClose);
+      const voted: Account[] = [];
+      if (votes.length > 0) {
+        votes.forEach(([voteStorageKey, didVote]) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if (didVote.isTrue && (voteStorageKey.args[1] as any).isAccount)
+            voted.push(
+              new Account(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                { address: accountIdToString((voteStorageKey.args[1] as any).asAccount) },
+                context
+              )
+            );
+        });
+      }
+
+      return {
+        approvalAmount,
+        rejectionAmount,
+        status,
+        expiry,
+        autoClose,
+        args,
+        txTag: `${section}.${method}` as TxTag,
+        voted,
+      };
+    } else {
+      const [proposalStateOpt, proposalVoteCountsOpt, proposalOpt, votes] = await Promise.all([
+        multiSig.proposalStates(rawMultiSignAddress, rawId),
+        multiSig.proposalVoteCounts(rawMultiSignAddress, rawId),
+        multiSig.proposals(rawMultiSignAddress, rawId),
+        multiSig.votes.entries([rawMultiSignAddress, rawId]),
+      ]);
+
+      if (proposalStateOpt.isNone || proposalOpt.isNone || proposalVoteCountsOpt.isNone) {
+        throw new PolymeshError({
+          code: ErrorCode.DataUnavailable,
+          message: `Data for proposal with ID: "${id}" was not found. It may have already been executed`,
+        });
+      }
+
+      const state = proposalStateOpt.unwrap();
+      const { approvals: rawApprovals, rejections: rawRejections } = proposalVoteCountsOpt.unwrap();
+      const proposal = proposalOpt.unwrap();
+      const { method, section } = proposal;
+      const { args } = proposal.toJSON();
+
+      const approvalAmount = u64ToBigNumber(rawApprovals);
+      const rejectionAmount = u64ToBigNumber(rawRejections);
+
+      const rawExpiry = state.isActive ? state.asActive.until.unwrapOr(null) : null;
+
+      const expiry = optionize(momentToDate)(rawExpiry);
+      const status = meshProposalStateToProposalStatus(state);
+      const autoClose = true;
+      const voted: Account[] = [];
+      if (votes.length > 0) {
+        votes.forEach(([voteStorageKey, didVote]) => {
+          if (didVote.isTrue && voteStorageKey.args[1])
+            voted.push(
+              new Account({ address: accountIdToString(voteStorageKey.args[1]) }, context)
+            );
+        });
+      }
+
+      return {
+        approvalAmount,
+        rejectionAmount,
+        status,
+        expiry,
+        autoClose,
+        args,
+        txTag: `${section}.${method}` as TxTag,
+        voted,
+      };
     }
-
-    const proposal = proposalOpt.unwrap();
-    const { method, section } = proposal;
-    const { args } = proposal.toJSON();
-
-    const approvalAmount = u64ToBigNumber(rawApprovals);
-    const rejectionAmount = u64ToBigNumber(rawRejections);
-    const expiry = optionize(momentToDate)(rawExpiry.unwrapOr(null));
-    const status = meshProposalStatusToProposalStatus(rawStatus, expiry);
-    const autoClose = boolToBoolean(rawAutoClose);
-    const voted: Account[] = [];
-    if (votes.length > 0) {
-      votes.forEach(([voteStorageKey, didVote]) => {
-        if (didVote.isTrue && voteStorageKey.args[1].isAccount)
-          voted.push(
-            new Account({ address: accountIdToString(voteStorageKey.args[1].asAccount) }, context)
-          );
-      });
-    }
-
-    return {
-      approvalAmount,
-      rejectionAmount,
-      status,
-      expiry,
-      autoClose,
-      args,
-      txTag: `${section}.${method}` as TxTag,
-      voted,
-    };
   }
 
   /**

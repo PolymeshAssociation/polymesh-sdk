@@ -336,7 +336,9 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       createdAt: momentToDate(createdAt.unwrap()),
       tradeDate: tradeDate.isSome ? momentToDate(tradeDate.unwrap()) : null,
       valueDate: valueDate.isSome ? momentToDate(valueDate.unwrap()) : null,
-      venue: new Venue({ id: u64ToBigNumber(venueId) }, context),
+      venue: venueId.isSome
+        ? new Venue({ id: u64ToBigNumber(venueId.unwrap()) }, context)
+        : new Venue({ id: new BigNumber(-1) }, context), // TODO make field optional
       memo: memo.isSome ? instructionMemoToString(memo.unwrap()) : null,
       ...meshSettlementTypeToEndCondition(type),
     };

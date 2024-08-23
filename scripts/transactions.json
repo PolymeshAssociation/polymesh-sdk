@@ -150,7 +150,22 @@
     "execute_scheduled_proposal": "execute_scheduled_proposal",
     "make_multisig_secondary": "make_multisig_secondary",
     "change_sigs_required_via_creator": "change_sigs_required_via_creator",
-    "remove_creator_controls": "remove_creator_controls"
+    "remove_creator_controls": "remove_creator_controls",
+    "create_proposal": "create_proposal",
+    "approve": "approve",
+    "reject": "reject",
+    "accept_multisig_signer": "accept_multisig_signer",
+    "add_multisig_signers": "add_multisig_signers",
+    "remove_multisig_signers": "remove_multisig_signers",
+    "add_multisig_signers_via_admin": "add_multisig_signers_via_admin",
+    "remove_multisig_signers_via_admin": "remove_multisig_signers_via_admin",
+    "change_sigs_required_via_admin": "change_sigs_required_via_admin",
+    "add_admin": "add_admin",
+    "remove_admin_via_admin": "remove_admin_via_admin",
+    "remove_payer": "remove_payer",
+    "remove_payer_via_payer": "remove_payer_via_payer",
+    "approve_join_identity": "approve_join_identity",
+    "join_identity": "join_identity"
   },
   "Bridge": {
     "change_controller": "change_controller",
@@ -204,7 +219,12 @@
     "payout_stakers_by_system": "payout_stakers_by_system",
     "change_slashing_allowed_for": "change_slashing_allowed_for",
     "update_permissioned_validator_intended_count": "update_permissioned_validator_intended_count",
-    "chill_from_governance": "chill_from_governance"
+    "chill_from_governance": "chill_from_governance",
+    "kick": "kick",
+    "set_staking_configs": "set_staking_configs",
+    "chill_other": "chill_other",
+    "force_apply_min_commission": "force_apply_min_commission",
+    "set_min_commission": "set_min_commission"
   },
   "Session": {
     "set_keys": "set_keys",
@@ -507,5 +527,12 @@
     "migrate_custom_child": "migrate_custom_child",
     "set_signed_max_limits": "set_signed_max_limits",
     "force_set_progress": "force_set_progress"
+  },
+  "ElectionProviderMultiPhase": {
+    "submit_unsigned": "submit_unsigned",
+    "set_minimum_untrusted_score": "set_minimum_untrusted_score",
+    "set_emergency_election_result": "set_emergency_election_result",
+    "submit": "submit",
+    "governance_fallback": "governance_fallback"
   }
 }
