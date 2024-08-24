@@ -139,6 +139,7 @@ import {
   identityIdToString,
   meshClaimTypeToClaimType,
   meshPermissionsToPermissions,
+  meshPermissionsToPermissionsV2,
   meshStatToStatType,
   middlewareScopeToScope,
   permillToBigNumber,
@@ -1974,56 +1975,49 @@ export async function getSecondaryAccountPermissions(
 
   const { accounts, identity } = args;
 
-  const assembleResult = (
+  const assembleResult = async (
     optKeyRecords: Option<PolymeshPrimitivesSecondaryKeyKeyRecord>[]
-  ): PermissionedAccount[] => {
-    return optKeyRecords.reduce((result: PermissionedAccount[], optKeyRecord, index) => {
+  ): Promise<PermissionedAccount[]> => {
+    const result: PermissionedAccount[] = [];
+    let index = 0;
+    for (const optKeyRecord of optKeyRecords) {
       const account = accounts[index];
-      if (optKeyRecord.isNone) {
-        return result;
-      }
-      const record = optKeyRecord.unwrap();
+      if (optKeyRecord.isSome) {
+        const record = optKeyRecord.unwrap();
 
-      if (record.isSecondaryKey) {
-        if (isV6) {
-          const [rawIdentityId, rawPermissions] = record.asSecondaryKey as unknown as [
-            PolymeshPrimitivesIdentityId,
-            PolymeshPrimitivesSecondaryKeyPermissions
-          ];
+        if (record.isSecondaryKey) {
+          if (isV6) {
+            const [rawIdentityId, rawPermissions] = record.asSecondaryKey as unknown as [
+              PolymeshPrimitivesIdentityId,
+              PolymeshPrimitivesSecondaryKeyPermissions
+            ];
 
-          if (identity && identityIdToString(rawIdentityId) !== identity.did) {
-            return result;
+            if (!identity || identityIdToString(rawIdentityId) === identity.did) {
+              result.push({
+                account,
+                permissions: meshPermissionsToPermissions(rawPermissions, context),
+              });
+            }
+          } else {
+            const rawIdentityId = record.asSecondaryKey;
+            if (!identity || identityIdToString(rawIdentityId) === identity.did) {
+              result.push({
+                account,
+                permissions: await meshPermissionsToPermissionsV2(account, context),
+              });
+            }
           }
-          result.push({
-            account,
-            permissions: meshPermissionsToPermissions(rawPermissions, context),
-          });
-        } else {
-          const rawIdentityId = record.asSecondaryKey;
-          if (identity && identityIdToString(rawIdentityId) !== identity.did) {
-            return result;
-          }
-
-          throw new PolymeshError({
-            code: ErrorCode.General,
-            message: 'not implemented',
-          });
-
-          // TODO query for separate permissions + assemble
-          // identityQuery.keyAssetPermissions;
-          // identityQuery.keyExtrinsicPermissions;
-          // identityQuery.keyPortfolioPermissions;
         }
       }
-
-      return result;
-    }, []);
+      index++;
+    }
+    return result;
   };
 
   const identityKeys = accounts.map(({ address }) => stringToAccountId(address, context));
   if (callback) {
-    return identityQuery.keyRecords.multi(identityKeys, result => {
-      return callback(assembleResult(result));
+    return identityQuery.keyRecords.multi(identityKeys, async result => {
+      return callback(await assembleResult(result));
     });
   }
   const rawResults = await identityQuery.keyRecords.multi(identityKeys);
