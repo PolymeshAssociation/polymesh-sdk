@@ -122,6 +122,7 @@ import {
   Identity,
   Instruction,
   KnownPermissionGroup,
+  MultiSig,
   Nft,
   NftCollection,
   NumberedPortfolio,
@@ -295,6 +296,7 @@ import {
   optionize,
   padString,
   removePadding,
+  requestMulti,
 } from '~/utils/internal';
 import {
   isIdentityCondition,
@@ -1297,6 +1299,93 @@ export function meshPermissionsToPermissions(
   } else if (portfolio.isExcept) {
     portfoliosType = PermissionType.Exclude;
     portfolioIds = portfolio.asExcept;
+  }
+
+  if (portfolioIds) {
+    portfolios = {
+      values: [...portfolioIds].map(portfolioId =>
+        meshPortfolioIdToPortfolio(portfolioId, context)
+      ),
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      type: portfoliosType!,
+    };
+  }
+
+  return {
+    assets,
+    transactions,
+    transactionGroups: transactions ? transactionPermissionsToTxGroups(transactions) : [],
+    portfolios,
+  };
+}
+
+/**
+ * @hidden
+ */
+export async function meshPermissionsToPermissionsV2(
+  account: Account | MultiSig,
+  context: Context
+): Promise<Permissions> {
+  const {
+    polymeshApi: {
+      query: {
+        identity: { keyAssetPermissions, keyExtrinsicPermissions, keyPortfolioPermissions },
+      },
+    },
+  } = context;
+
+  const rawAccountId = stringToAccountId(account.address, context);
+
+  const [asset, extrinsic, portfolio] = await requestMulti<
+    [typeof keyAssetPermissions, typeof keyExtrinsicPermissions, typeof keyPortfolioPermissions]
+  >(context, [
+    [keyAssetPermissions, rawAccountId],
+    [keyExtrinsicPermissions, rawAccountId],
+    [keyPortfolioPermissions, rawAccountId],
+  ]);
+
+  let assets: SectionPermissions<FungibleAsset> | null = null;
+  let transactions: TransactionPermissions | null = null;
+  let portfolios: SectionPermissions<DefaultPortfolio | NumberedPortfolio> | null = null;
+
+  let assetsType: PermissionType;
+  let assetsPermissions;
+  if (asset.isSome) {
+    const rawAssetPermissions = asset.unwrap();
+    if (rawAssetPermissions.isThese) {
+      assetsType = PermissionType.Include;
+      assetsPermissions = rawAssetPermissions.asThese;
+    } else if (rawAssetPermissions.isExcept) {
+      assetsType = PermissionType.Exclude;
+      assetsPermissions = rawAssetPermissions.asExcept;
+    }
+  }
+
+  if (assetsPermissions) {
+    assets = {
+      values: [...assetsPermissions].map(
+        assetId => new FungibleAsset({ assetId: meshAssetToAssetId(assetId, context) }, context)
+      ),
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      type: assetsType!,
+    };
+  }
+
+  if (extrinsic.isSome) {
+    transactions = extrinsicPermissionsToTransactionPermissions(extrinsic.unwrap(), context);
+  }
+
+  let portfoliosType: PermissionType;
+  let portfolioIds;
+  if (portfolio.isSome) {
+    const rawPortfolioPermissions = portfolio.unwrap();
+    if (rawPortfolioPermissions.isThese) {
+      portfoliosType = PermissionType.Include;
+      portfolioIds = rawPortfolioPermissions.asThese;
+    } else if (rawPortfolioPermissions.isExcept) {
+      portfoliosType = PermissionType.Exclude;
+      portfolioIds = rawPortfolioPermissions.asExcept;
+    }
   }
 
   if (portfolioIds) {

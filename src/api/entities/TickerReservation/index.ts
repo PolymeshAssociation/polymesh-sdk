@@ -118,7 +118,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
     const assembleResult = (
       reservationOpt: Option<PalletAssetTickerRegistration>,
       tokenOpt: Option<PalletAssetAssetDetails>,
-      assetId: string
+      assetId?: string
     ): TickerReservationDetails => {
       let owner: Identity | null = null;
       let status = TickerReservationStatus.Free;
@@ -128,7 +128,15 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
         status = TickerReservationStatus.AssetCreated;
         const rawOwnerDid = tokenOpt.unwrap().ownerDid;
         owner = new Identity({ did: identityIdToString(rawOwnerDid) }, context);
-      } else if (reservationOpt.isSome) {
+        return {
+          owner,
+          expiryDate,
+          status,
+          assetId: assetId!,
+        };
+      }
+
+      if (reservationOpt.isSome) {
         const { owner: rawOwnerDid, expiry } = reservationOpt.unwrap();
         owner = new Identity({ did: identityIdToString(rawOwnerDid) }, context);
 
@@ -142,22 +150,26 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
         owner,
         expiryDate,
         status,
-        assetId,
       };
     };
 
     let tokensStorage = asset.assets;
     let tickerRegistrationStorage = asset.uniqueTickerRegistration;
     let rawAssetId = rawTicker;
+    let assetId: string | undefined;
 
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tickerRegistrationStorage = (asset as any).tickers;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tokensStorage = (asset as any).tokens;
+      assetId = ticker;
     } else {
       const meshAssetId = await asset.tickerAssetID(rawTicker);
       rawAssetId = meshAssetId.unwrapOrDefault();
+      if (meshAssetId.isSome) {
+        assetId = meshAssetToAssetId(meshAssetId.unwrap(), context);
+      }
     }
 
     if (callback) {
@@ -171,7 +183,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
         ],
         ([registration, token]) => {
           // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
-          callback(assembleResult(registration, token, meshAssetToAssetId(rawAssetId, context)));
+          callback(assembleResult(registration, token, assetId));
         }
       );
     }
@@ -183,7 +195,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
       [tokensStorage, rawAssetId],
     ]);
 
-    return assembleResult(tickerRegistration, meshAsset, meshAssetToAssetId(rawAssetId, context));
+    return assembleResult(tickerRegistration, meshAsset, assetId);
   }
 
   /**
