@@ -12,6 +12,7 @@ import { Account, Context, MultiSigProposal, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { ErrorCode, Identity, MultiSigProposalAction, ProposalStatus } from '~/types';
+import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -29,8 +30,12 @@ describe('evaluateMultiSigProposal', () => {
   let bigNumberToU64Spy: jest.SpyInstance;
   let signerToSignatorySpy: jest.SpyInstance;
   let multiSigAddress: string;
+  let signerAddress: string;
+  let otherAddress: string;
   let proposalId: BigNumber;
   let rawMultiSigAccount: AccountId;
+  let rawSignerAccount: AccountId;
+  let rawOtherAccount: AccountId;
   let rawProposalId: u64;
   let proposal: MultiSigProposal;
   let rawSigner: PolymeshPrimitivesSecondaryKeySignatory;
@@ -48,6 +53,8 @@ describe('evaluateMultiSigProposal', () => {
     signerToSignatorySpy = jest.spyOn(utilsConversionModule, 'signerToSignatory');
 
     multiSigAddress = 'multiSigAddress';
+    signerAddress = 'someAddress';
+    otherAddress = 'someOtherAddress';
     proposalId = new BigNumber(1);
   });
 
@@ -59,19 +66,27 @@ describe('evaluateMultiSigProposal', () => {
     votesQuery = dsMockUtils.createQueryMock('multiSig', 'votes');
 
     rawMultiSigAccount = dsMockUtils.createMockAccountId(multiSigAddress);
+    rawSignerAccount = dsMockUtils.createMockAccountId(signerAddress);
+    rawOtherAccount = dsMockUtils.createMockAccountId(otherAddress);
     when(stringToAccountId)
       .calledWith(multiSigAddress, mockContext)
       .mockReturnValue(rawMultiSigAccount);
+
+    when(stringToAccountId)
+      .calledWith(signerAddress, mockContext)
+      .mockReturnValue(rawSignerAccount);
+
+    when(stringToAccountId).calledWith(otherAddress, mockContext).mockReturnValue(rawOtherAccount);
 
     rawProposalId = dsMockUtils.createMockU64(proposalId);
     when(bigNumberToU64Spy).calledWith(proposalId, mockContext).mockReturnValue(rawProposalId);
 
     rawSigner = dsMockUtils.createMockSignatory({
-      Account: dsMockUtils.createMockAccountId('someAddress'),
+      Account: dsMockUtils.createMockAccountId(signerAddress),
     });
 
     creator = entityMockUtils.getIdentityInstance();
-    when(signerToSignatorySpy).mockReturnValue(rawSigner);
+    signerToSignatorySpy.mockReturnValue(rawSigner);
 
     proposalDetails = {
       status: ProposalStatus.Active,
@@ -111,6 +126,12 @@ describe('evaluateMultiSigProposal', () => {
       mockContext = dsMockUtils.getContextInstance({
         signingAccountIsEqual: false,
       });
+
+      const mockSigner = mockContext.getSigningAccount();
+
+      when(stringToAccountId)
+        .calledWith(mockSigner.address, mockContext)
+        .mockReturnValue(dsMockUtils.createMockAccountId('unknownAccount'));
 
       const proc = procedureMockUtils.getInstance<MultiSigProposalVoteParams, void>(mockContext);
 
@@ -220,7 +241,7 @@ describe('evaluateMultiSigProposal', () => {
     it('should return a approveAsKey transaction spec', async () => {
       const proc = procedureMockUtils.getInstance<MultiSigProposalVoteParams, void>(mockContext);
 
-      const transaction = dsMockUtils.createTxMock('multiSig', 'approveAsKey');
+      const transaction = dsMockUtils.createTxMock('multiSig', 'approve');
 
       const result = await prepareMultiSigProposalEvaluation.call(proc, {
         proposal,
@@ -234,10 +255,10 @@ describe('evaluateMultiSigProposal', () => {
       });
     });
 
-    it('should return a rejectAsKey transaction spec', async () => {
+    it('should return a reject transaction spec', async () => {
       const proc = procedureMockUtils.getInstance<MultiSigProposalVoteParams, void>(mockContext);
 
-      const transaction = dsMockUtils.createTxMock('multiSig', 'rejectAsKey');
+      const transaction = dsMockUtils.createTxMock('multiSig', 'reject');
 
       const result = await prepareMultiSigProposalEvaluation.call(proc, {
         proposal,

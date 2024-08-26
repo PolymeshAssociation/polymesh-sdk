@@ -957,7 +957,7 @@ describe('Identity class', () => {
       multiMock.mockResolvedValueOnce([
         dsMockUtils.createMockInstruction({
           instructionId: dsMockUtils.createMockU64(id5),
-          venueId: dsMockUtils.createMockU64(),
+          venueId: dsMockUtils.createMockOption(dsMockUtils.createMockU64()),
           settlementType: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
           createdAt: dsMockUtils.createMockOption(),
           tradeDate: dsMockUtils.createMockOption(),
