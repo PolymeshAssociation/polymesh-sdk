@@ -2153,7 +2153,7 @@ describe('method: getSecondaryAccountPermissions', () => {
       PrimaryKey: dsMockUtils.createMockIdentityId(did),
     });
     rawSecondaryKeyRecord = dsMockUtils.createMockKeyRecord({
-      SecondaryKey: [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockPermissions()],
+      SecondaryKey: dsMockUtils.createMockIdentityId(did),
     });
     rawMultiSigKeyRecord = dsMockUtils.createMockKeyRecord({
       MultiSigSignerKey: dsMockUtils.createMockAccountId('someAddress'),
@@ -2202,7 +2202,7 @@ describe('method: getSecondaryAccountPermissions', () => {
   it('should filter out Accounts if they do not belong to the given identity', async () => {
     const mockContext = dsMockUtils.getContextInstance();
     const otherSecondaryKey = dsMockUtils.createMockKeyRecord({
-      SecondaryKey: [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockPermissions()],
+      SecondaryKey: dsMockUtils.createMockIdentityId(did),
     });
     dsMockUtils.createQueryMock('identity', 'keyRecords', {
       multi: [
@@ -2308,10 +2308,7 @@ describe('getIdentityFromKeyRecord', () => {
     expect(identity?.did).toEqual(did);
 
     const secondaryKeyRecord = dsMockUtils.createMockKeyRecord({
-      SecondaryKey: [
-        dsMockUtils.createMockIdentityId(secondaryDid),
-        dsMockUtils.createMockPermissions(),
-      ],
+      SecondaryKey: dsMockUtils.createMockIdentityId(secondaryDid),
     });
 
     identity = await getIdentityFromKeyRecord(secondaryKeyRecord, mockContext);

@@ -112,7 +112,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
       mockContext
     );
 
-    dsMockUtils.createTxMock('multiSig', 'acceptMultisigSignerAsKey');
+    dsMockUtils.createTxMock('multiSig', 'acceptMultisigSigner');
     dsMockUtils
       .createQueryMock('identity', 'keyRecords')
       .mockReturnValue(
@@ -158,7 +158,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
       returnValue: dsMockUtils.createMockAccountId(),
     });
 
-    const transaction = dsMockUtils.createTxMock('multiSig', 'acceptMultisigSignerAsKey');
+    const transaction = dsMockUtils.createTxMock('multiSig', 'acceptMultisigSigner');
 
     const issuer = entityMockUtils.getIdentityInstance();
     const target = entityMockUtils.getAccountInstance({
@@ -196,7 +196,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
       mockContext
     );
 
-    const transaction = dsMockUtils.createTxMock('multiSig', 'acceptMultisigSignerAsIdentity');
+    const transaction = dsMockUtils.createTxMock('multiSig', 'acceptMultisigSigner');
 
     const issuer = entityMockUtils.getIdentityInstance();
     const target = entityMockUtils.getIdentityInstance({ did: 'someOtherDid' });

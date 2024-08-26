@@ -109,6 +109,7 @@ import {
   PolymeshPrimitivesPortfolioFund,
   PolymeshPrimitivesPosRatio,
   PolymeshPrimitivesSecondaryKey,
+  PolymeshPrimitivesSecondaryKeyExtrinsicPermissions,
   PolymeshPrimitivesSecondaryKeyKeyRecord,
   PolymeshPrimitivesSecondaryKeyPalletPermissions,
   PolymeshPrimitivesSecondaryKeyPermissions,
@@ -127,6 +128,7 @@ import {
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesStatisticsStatUpdate,
   PolymeshPrimitivesSubsetSubsetRestrictionAssetID,
+  PolymeshPrimitivesSubsetSubsetRestrictionExtrinsicName,
   PolymeshPrimitivesSubsetSubsetRestrictionPortfolioId,
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceAssetTransferCompliance,
@@ -1908,7 +1910,7 @@ export const createMockIdentityId = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 const createMockEnum = <T extends Enum>(
-  enumValue?: string | Record<string, Codec | Codec[]> | T,
+  enumValue?: string | Record<string, Codec | Codec[] | unknown> | T,
   index?: number
 ): MockCodec<T> => {
   if (isCodec<T>(enumValue)) {
@@ -2393,20 +2395,18 @@ export const createMockDocument = (document?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockDispatchableNames = (
+export const createMockExtrinsicName = (
   dispatchableNames?:
     | 'Whole'
     | { These: Bytes[] }
     | { Except: Bytes[] }
-    | PolymeshPrimitivesSubsetSubsetRestrictionDispatchableName
-): MockCodec<PolymeshPrimitivesSubsetSubsetRestrictionDispatchableName> => {
-  if (isCodec<PolymeshPrimitivesSubsetSubsetRestrictionDispatchableName>(dispatchableNames)) {
-    return dispatchableNames as MockCodec<PolymeshPrimitivesSubsetSubsetRestrictionDispatchableName>;
+    | PolymeshPrimitivesSubsetSubsetRestrictionExtrinsicName
+): MockCodec<PolymeshPrimitivesSubsetSubsetRestrictionExtrinsicName> => {
+  if (isCodec<PolymeshPrimitivesSubsetSubsetRestrictionExtrinsicName>(dispatchableNames)) {
+    return dispatchableNames as MockCodec<PolymeshPrimitivesSubsetSubsetRestrictionExtrinsicName>;
   }
 
-  return createMockEnum<PolymeshPrimitivesSubsetSubsetRestrictionDispatchableName>(
-    dispatchableNames
-  );
+  return createMockEnum<PolymeshPrimitivesSubsetSubsetRestrictionExtrinsicName>(dispatchableNames);
 };
 
 /**
@@ -2416,18 +2416,18 @@ export const createMockDispatchableNames = (
 export const createMockPalletPermissions = (permissions?: {
   palletName: string | Parameters<typeof createMockBytes>[0];
   dispatchableNames:
-    | PolymeshPrimitivesSubsetSubsetRestrictionDispatchableName
-    | Parameters<typeof createMockDispatchableNames>[0];
+    | PolymeshPrimitivesSubsetSubsetRestrictionExtrinsicName
+    | Parameters<typeof createMockExtrinsicName>[0];
 }): MockCodec<PolymeshPrimitivesSecondaryKeyPalletPermissions> => {
   const { palletName, dispatchableNames } = permissions ?? {
     palletName: undefined,
-    dispatchableNames: createMockDispatchableNames(),
+    dispatchableNames: createMockExtrinsicName(),
   };
 
   return createMockCodec(
     {
       palletName: createMockBytes(palletName),
-      dispatchableNames: createMockDispatchableNames(dispatchableNames),
+      dispatchableNames: createMockExtrinsicName(dispatchableNames),
     },
     !permissions
   );
@@ -2596,10 +2596,8 @@ export const createMockExtrinsicPermissions = (
     | 'Whole'
     | { These: PolymeshPrimitivesSecondaryKeyPalletPermissions[] }
     | { Except: PolymeshPrimitivesSecondaryKeyPalletPermissions[] }
-): MockCodec<PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions> => {
-  return createMockEnum<PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions>(
-    assetPermissions
-  );
+): MockCodec<PolymeshPrimitivesSecondaryKeyExtrinsicPermissions> => {
+  return createMockEnum<PolymeshPrimitivesSecondaryKeyExtrinsicPermissions>(assetPermissions);
 };
 
 /**
@@ -2621,7 +2619,7 @@ export const createMockPortfolioPermissions = (
  */
 export const createMockPermissions = (permissions?: {
   asset: PolymeshPrimitivesSubsetSubsetRestrictionAssetID;
-  extrinsic: PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions;
+  extrinsic: PolymeshPrimitivesSecondaryKeyExtrinsicPermissions;
   portfolio: PolymeshPrimitivesSubsetSubsetRestrictionPortfolioId;
 }): MockCodec<PolymeshPrimitivesSecondaryKeyPermissions> => {
   const perms = permissions ?? {
@@ -3086,9 +3084,7 @@ export const createMockIdentityDidRecord = (identity?: {
 export const createMockKeyRecord = (
   value?:
     | { PrimaryKey: PolymeshPrimitivesIdentityId }
-    | {
-        SecondaryKey: [PolymeshPrimitivesIdentityId, PolymeshPrimitivesSecondaryKeyPermissions];
-      }
+    | { SecondaryKey: PolymeshPrimitivesIdentityId }
     | { MultiSigSignerKey: AccountId }
 ): MockCodec<PolymeshPrimitivesSecondaryKeyKeyRecord> => {
   const record = value ?? {
@@ -3119,21 +3115,6 @@ export const createMockText = (value?: string | Text): MockCodec<Text> => {
   }
 
   return createMockStringCodec<Text>(value);
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockProposalStatus = (
-  proposalStatus?:
-    | 'Invalid'
-    | 'ActiveOrExpired'
-    | 'ExecutionSuccessful'
-    | 'ExecutionFailed'
-    | 'Rejected'
-): MockCodec<PolymeshPrimitivesMultisigProposalStatus> => {
-  return createMockEnum(proposalStatus) as MockCodec<PolymeshPrimitivesMultisigProposalStatus>;
 };
 
 /**
@@ -4271,23 +4252,24 @@ export const createMockCall = (callArgs?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockProposalState = (proposalState?: {
-  status: PolymeshPrimitivesMultisigProposalStatus | Parameters<typeof createMockProposalStatus>[0];
-  expiry: Option<Moment> | null;
-}): PolymeshPrimitivesMultisigProposalState => {
-  const { status, expiry } = proposalState ?? {
-    status: createMockProposalStatus(),
-    expiry: createMockOption(),
-  };
-  return createMockCodec(
-    {
-      status,
-      expiry,
-    },
-    !proposalState
-  ) as MockCodec<PolymeshPrimitivesMultisigProposalState>;
+export const createMockProposalState = (
+  proposalState?:
+    | {
+        Active: {
+          until: Option<u64> | Parameters<typeof createMockU64>[0];
+        };
+      }
+    | 'ExecutionSuccessful'
+    | 'ExecutionFailed'
+    | 'Rejected'
+): MockCodec<PolymeshPrimitivesMultisigProposalState> => {
+  return createMockEnum(proposalState) as MockCodec<PolymeshPrimitivesMultisigProposalState>;
 };
 
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockProposalVoteCount = (voteCount?: {
   approvals: u64 | Parameters<typeof createMockU64>[0];
   rejections: u64 | Parameters<typeof createMockU64>[0];
