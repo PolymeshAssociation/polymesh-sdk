@@ -558,7 +558,7 @@ export default {
     Ticker: '[u8; 12]',
     CddId: '[u8; 32]',
     PalletName: 'Text',
-    DispatchableName: 'Text',
+    ExtrinsicName: 'Text',
     AssetPermissions: {
       _enum: {
         Whole: '',
@@ -573,22 +573,21 @@ export default {
         Except: 'Vec<PortfolioId>',
       },
     },
-    DispatchableNames: {
+    ExtrinsicNames: {
       _enum: {
         Whole: '',
-        These: 'Vec<DispatchableName>',
-        Except: 'Vec<DispatchableName>',
+        These: 'Vec<ExtrinsicName>',
+        Except: 'Vec<ExtrinsicName>',
       },
     },
     PalletPermissions: {
-      palletName: 'PalletName',
-      dispatchableNames: 'DispatchableNames',
+      extrinsics: 'ExtrinsicNames',
     },
     ExtrinsicPermissions: {
       _enum: {
         Whole: '',
-        These: 'Vec<PalletPermissions>',
-        Except: 'Vec<PalletPermissions>',
+        These: 'Vec<(PalletName, PalletPermissions)>',
+        Except: 'Vec<(PalletName, PalletPermissions)>',
       },
     },
     Permissions: {
@@ -868,8 +867,8 @@ export default {
       _enum: {
         Identity: 'IdentityId',
         Asset: 'AssetID',
-        Ticker: 'Ticker',
         Custom: 'Vec<u8>',
+        Ticker: 'Ticker',
       },
     },
     CustomClaimTypeId: 'u32',

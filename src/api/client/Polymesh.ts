@@ -152,11 +152,12 @@ export class Polymesh {
 
     const { metadata, noInitWarn, typesBundle } = polkadot ?? {};
 
-    await assertExpectedChainVersion(nodeUrl);
+    const specVersion = await assertExpectedChainVersion(nodeUrl);
 
     try {
-      const { types, rpc, signedExtensions, runtime } = schema;
+      const { types, rpc, signedExtensions, runtime, runtimeV6 } = schema;
 
+      const runtimeApis = specVersion >= 7000000 ? runtime : runtimeV6;
       const connectionProtocol = extractProtocol(nodeUrl)!;
 
       const provider = connectionProtocol.startsWith('http')
@@ -167,7 +168,7 @@ export class Polymesh {
         provider,
         types,
         rpc,
-        runtime: runtime as unknown as DefinitionsCall,
+        runtime: runtimeApis as unknown as DefinitionsCall,
         signedExtensions,
         metadata,
         noInitWarn,
