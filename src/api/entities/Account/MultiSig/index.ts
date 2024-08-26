@@ -18,8 +18,11 @@ import {
   accountIdToString,
   addressToKey,
   identityIdToString,
+  meshProposalStateToProposalStatus,
   meshProposalStatusToProposalStatus,
   momentToDate,
+  signatoryToSignerValue,
+  signerValueToSigner,
   stringToAccountId,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -51,6 +54,7 @@ export class MultiSig extends Account {
         polymeshApi: {
           query: { multiSig },
         },
+        isV6,
       },
       context,
       address,
@@ -67,6 +71,10 @@ export class MultiSig extends Account {
           args: [, signatory],
         },
       ]) => {
+        if (isV6) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          return signerValueToSigner(signatoryToSignerValue(signatory as any), context);
+        }
         const signerAddress = accountIdToString(signatory);
         return new Account({ address: signerAddress }, context);
       }
@@ -107,6 +115,7 @@ export class MultiSig extends Account {
         polymeshApi: {
           query: { multiSig },
         },
+        isV6,
       },
       context,
       address,
@@ -136,20 +145,28 @@ export class MultiSig extends Account {
       }
     );
 
+    if (isV6) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const details: any[] = await (multiSig as any).proposalDetail.multi(queries);
+
+      const statuses = details.map(({ status: rawStatus, expiry: rawExpiry }) => {
+        const expiry = optionize(momentToDate)(rawExpiry.unwrapOr(null));
+
+        return meshProposalStatusToProposalStatus(rawStatus, expiry);
+      });
+
+      return proposals.filter((_, index) => statuses[index] === ProposalStatus.Active);
+    }
+
     const details = await multiSig.proposalStates.multi(queries);
 
-    const statuses = details
-      .filter(detail => detail.isSome)
-      .map(stateOpt => {
-        const detail = stateOpt.unwrap();
-
-        let expiry = null;
-        if (detail.isActive) {
-          expiry = optionize(momentToDate)(detail.asActive.until.unwrapOr(null));
-        }
-
-        return meshProposalStatusToProposalStatus(detail.type, expiry);
-      });
+    const statuses = details.map(stateOpt => {
+      if (stateOpt.isSome) {
+        const state = stateOpt.unwrap();
+        return meshProposalStateToProposalStatus(state);
+      }
+      return ProposalStatus.Invalid;
+    });
 
     return proposals.filter((_, index) => statuses[index] === ProposalStatus.Active);
   }
@@ -193,7 +210,7 @@ export class MultiSig extends Account {
   /**
    * Returns the Identity of the MultiSig admin. This Identity can add or remove signers directly without creating a MultiSigProposal first.
    */
-  public async getAdmin(): Promise<Identity | null> {
+  public async getAdmin(): Promise<Identity> {
     const {
       context: {
         polymeshApi: {
