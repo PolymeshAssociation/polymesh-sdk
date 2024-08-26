@@ -1203,9 +1203,9 @@ import type {
   CountryCode,
   CustomClaimTypeId,
   DidStatus,
-  DispatchableName,
-  DispatchableNames,
   ExecuteInstructionInfo,
+  ExtrinsicName,
+  ExtrinsicNames,
   ExtrinsicPermissions,
   FungibleLeg,
   GranularCanTransferResult,
@@ -1543,8 +1543,6 @@ declare module '@polkadot/types/types/registry' {
     Digest: Digest;
     DigestItem: DigestItem;
     DigestOf: DigestOf;
-    DispatchableName: DispatchableName;
-    DispatchableNames: DispatchableNames;
     DispatchClass: DispatchClass;
     DispatchError: DispatchError;
     DispatchErrorModule: DispatchErrorModule;
@@ -1666,6 +1664,8 @@ declare module '@polkadot/types/types/registry' {
     ExtrinsicMetadataV13: ExtrinsicMetadataV13;
     ExtrinsicMetadataV14: ExtrinsicMetadataV14;
     ExtrinsicMetadataV15: ExtrinsicMetadataV15;
+    ExtrinsicName: ExtrinsicName;
+    ExtrinsicNames: ExtrinsicNames;
     ExtrinsicOrHash: ExtrinsicOrHash;
     ExtrinsicPayload: ExtrinsicPayload;
     ExtrinsicPayloadUnknown: ExtrinsicPayloadUnknown;

@@ -1609,8 +1609,8 @@ export function extractProtocol(url: string): string | undefined {
  * @param nodeUrl - URL for the chain node
  * @returns A promise that resolves if the version is in the expected range, otherwise it will reject
  */
-export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
+export function assertExpectedChainVersion(nodeUrl: string): Promise<number> {
+  return new Promise<number>((resolve, reject) => {
     const protocol = extractProtocol(nodeUrl);
 
     if (!protocol) {
@@ -1638,7 +1638,7 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
           cleanup();
         }
 
-        resolve();
+        resolve(specResponse.result.specVersion);
       }
     };
 

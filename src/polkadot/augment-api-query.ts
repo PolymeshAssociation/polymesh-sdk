@@ -417,7 +417,7 @@ declare module '@polkadot/api-base/types/storage' {
       /**
        * All security tokens owned by a user.
        **/
-      assetsOwnedByUser: AugmentedQuery<
+      securityTokensOwnedByUser: AugmentedQuery<
         ApiType,
         (
           arg1: PolymeshPrimitivesIdentityId | string | Uint8Array,
