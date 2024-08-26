@@ -287,7 +287,12 @@ export const pollForTransactionFinalization = async (
 /**
  * @hidden
  */
-const multiSigNoWrapTxs: TxTag[] = [MultiSigTx.ApproveAsKey, MultiSigTx.RejectAsKey];
+const multiSigNoWrapTxs: TxTag[] = [
+  MultiSigTx.ApproveAsKey,
+  MultiSigTx.RejectAsKey,
+  MultiSigTx.Approve,
+  MultiSigTx.Reject,
+];
 
 /**
  * @hidden
