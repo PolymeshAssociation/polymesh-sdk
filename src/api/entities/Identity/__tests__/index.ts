@@ -1191,7 +1191,7 @@ describe('Identity class', () => {
         PrimaryKey: dsMockUtils.createMockIdentityId('someDid'),
       });
       rawSecondaryKeyRecord = dsMockUtils.createMockKeyRecord({
-        SecondaryKey: [dsMockUtils.createMockIdentityId(), dsMockUtils.createMockPermissions()],
+        SecondaryKey: dsMockUtils.createMockIdentityId(),
       });
       rawMultiSigKeyRecord = dsMockUtils.createMockKeyRecord({
         MultiSigSignerKey: dsMockUtils.createMockAccountId('someAddress'),
@@ -1416,7 +1416,7 @@ describe('Identity class', () => {
 
   describe('method: getMultiSigSigners', () => {
     it('should return the MultiSig signers associated with an Identity', async () => {
-      dsMockUtils.createQueryMock('multiSig', 'multiSigToIdentity', {
+      dsMockUtils.createQueryMock('multiSig', 'adminDid', {
         entries: [
           tuple(
             [dsMockUtils.createMockAccountId('multiSig')],

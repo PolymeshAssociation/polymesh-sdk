@@ -130,12 +130,6 @@ describe('MultiSig class', () => {
 
   describe('method: getProposals', () => {
     const id = new BigNumber(1);
-    const proposalDetails = {
-      approvals: new BigNumber(1),
-      rejections: new BigNumber(1),
-      status: dsMockUtils.createMockProposalStatus('ActiveOrExpired'),
-      autoClose: true,
-    };
 
     it('should get proposals', async () => {
       dsMockUtils.createQueryMock('multiSig', 'proposals', {
@@ -149,17 +143,23 @@ describe('MultiSig class', () => {
 
       dsMockUtils.createQueryMock('multiSig', 'proposalStates', {
         multi: [
-          dsMockUtils.createMockProposalState({
-            ...proposalDetails,
-            expiry: createMockOption(createMockMoment(new BigNumber(new Date().getTime() + 10000))),
-          }),
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockProposalState({
+              Active: {
+                until: createMockOption(
+                  createMockMoment(new BigNumber(new Date().getTime() + 10000))
+                ),
+              },
+            })
+          ),
         ],
       });
 
       dsMockUtils.createQueryMock('multiSig', 'proposalVoteCounts', {
         multi: [
           dsMockUtils.createMockProposalVoteCount({
-            ...proposalDetails,
+            approvals: new BigNumber(1),
+            rejections: new BigNumber(1),
           }),
         ],
       });
@@ -192,7 +192,8 @@ describe('MultiSig class', () => {
       dsMockUtils.createQueryMock('multiSig', 'proposalVoteCounts', {
         multi: [
           dsMockUtils.createMockProposalVoteCount({
-            ...proposalDetails,
+            approvals: new BigNumber(1),
+            rejections: new BigNumber(1),
           }),
         ],
       });
@@ -200,8 +201,9 @@ describe('MultiSig class', () => {
       dsMockUtils.createQueryMock('multiSig', 'proposalStates', {
         multi: [
           dsMockUtils.createMockProposalState({
-            ...proposalDetails,
-            expiry: createMockOption(createMockMoment(new BigNumber(3))),
+            Active: {
+              until: createMockOption(createMockMoment(new BigNumber(3))),
+            },
           }),
         ],
       });
@@ -278,14 +280,14 @@ describe('MultiSig class', () => {
       return expect(result?.did).toEqual(expectedDid);
     });
 
-    it('should return null if there is no creator', async () => {
+    it('should return null if there is no admin', () => {
       dsMockUtils.createQueryMock('multiSig', 'adminDid', {
         returnValue: createMockOption(),
       });
 
-      const result = await multiSig.getAdmin();
-
-      return expect(result).toBeNull();
+      return expect(multiSig.getAdmin()).rejects.toThrow(
+        'No creator was found for this MultiSig address'
+      );
     });
   });
 

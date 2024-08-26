@@ -118,13 +118,13 @@ describe('CustomPermissionGroup class', () => {
             These: [
               dsMockUtils.createMockPalletPermissions({
                 palletName: 'Sto',
-                dispatchableNames: dsMockUtils.createMockDispatchableNames({
+                dispatchableNames: dsMockUtils.createMockExtrinsicName({
                   These: [dsMockUtils.createMockBytes('invest')],
                 }),
               }),
               dsMockUtils.createMockPalletPermissions({
                 palletName: 'Identity',
-                dispatchableNames: dsMockUtils.createMockDispatchableNames({
+                dispatchableNames: dsMockUtils.createMockExtrinsicName({
                   These: [dsMockUtils.createMockBytes('addClaim')],
                 }),
               }),

@@ -6,7 +6,6 @@ import { Account, Context, MultiSig, PolymeshError, PolymeshTransaction } from '
 import { multiSigProposalQuery, multiSigProposalVotesQuery } from '~/middleware/queries/multisigs';
 import { MultiSigProposalVoteActionEnum, SignerTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { createMockMoment, createMockOption } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import { ErrorCode, MultiSigProposalAction, ProposalStatus } from '~/types';
 import { tuple } from '~/types/utils';
@@ -63,14 +62,22 @@ describe('MultiSigProposal class', () => {
 
   describe('method: details', () => {
     it('should return the details of the MultiSigProposal', async () => {
-      dsMockUtils.createQueryMock('multiSig', 'proposalDetail', {
-        returnValue: dsMockUtils.createMockProposalDetails({
-          approvals: new BigNumber(1),
-          rejections: new BigNumber(1),
-          status: dsMockUtils.createMockProposalStatus('ActiveOrExpired'),
-          autoClose: true,
-          expiry: createMockOption(createMockMoment(new BigNumber(3))),
-        }),
+      dsMockUtils.createQueryMock('multiSig', 'proposalStates', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockProposalState({
+            Active: {
+              until: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(new BigNumber(3))),
+            },
+          })
+        ),
+      });
+      dsMockUtils.createQueryMock('multiSig', 'proposalVoteCounts', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockProposalVoteCount({
+            approvals: new BigNumber(1),
+            rejections: new BigNumber(1),
+          })
+        ),
       });
 
       const mockProposal = dsMockUtils.createMockCall({
@@ -80,25 +87,14 @@ describe('MultiSigProposal class', () => {
       });
       mockProposal.toJSON = jest.fn().mockReturnValue({ args: ['ABC'] });
       dsMockUtils.createQueryMock('multiSig', 'proposals', {
-        returnValue: createMockOption(mockProposal),
+        returnValue: dsMockUtils.createMockOption(mockProposal),
       });
       dsMockUtils.createQueryMock('multiSig', 'votes', {
         entries: [
           tuple(
             [
               [dsMockUtils.createMockAccountId(), dsMockUtils.createMockU64()],
-              dsMockUtils.createMockSignatory({
-                Account: dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID),
-              }),
-            ],
-            dsMockUtils.createMockBool(true)
-          ),
-          tuple(
-            [
-              [dsMockUtils.createMockAccountId(), dsMockUtils.createMockU64()],
-              dsMockUtils.createMockSignatory({
-                Identity: dsMockUtils.createMockIdentityId('some_did'),
-              }),
+              dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID),
             ],
             dsMockUtils.createMockBool(true)
           ),
@@ -110,22 +106,30 @@ describe('MultiSigProposal class', () => {
       expect(result).toEqual({
         approvalAmount: new BigNumber(1),
         args: ['ABC'],
-        autoClose: undefined,
+        autoClose: true,
         expiry: new Date(3),
         rejectionAmount: new BigNumber(1),
         status: ProposalStatus.Expired,
         txTag: 'asset.reserveTicker',
-        voted: [new Account({ address: DUMMY_ACCOUNT_ID }, dsMockUtils.getContextInstance())],
+        voted: [expect.objectContaining({ address: DUMMY_ACCOUNT_ID })],
       });
 
-      dsMockUtils.createQueryMock('multiSig', 'proposalDetail', {
-        returnValue: dsMockUtils.createMockProposalDetails({
-          approvals: new BigNumber(1),
-          rejections: new BigNumber(1),
-          status: dsMockUtils.createMockProposalStatus('ActiveOrExpired'),
-          autoClose: true,
-          expiry: createMockOption(),
-        }),
+      dsMockUtils.createQueryMock('multiSig', 'proposalStates', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockProposalState({
+            Active: {
+              until: dsMockUtils.createMockOption(),
+            },
+          })
+        ),
+      });
+      dsMockUtils.createQueryMock('multiSig', 'proposalVoteCounts', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockProposalVoteCount({
+            approvals: new BigNumber(1),
+            rejections: new BigNumber(1),
+          })
+        ),
       });
 
       result = await proposal.details();
@@ -133,28 +137,36 @@ describe('MultiSigProposal class', () => {
       expect(result).toEqual({
         approvalAmount: new BigNumber(1),
         args: ['ABC'],
-        autoClose: undefined,
+        autoClose: true,
         expiry: null,
         rejectionAmount: new BigNumber(1),
         status: ProposalStatus.Active,
         txTag: 'asset.reserveTicker',
-        voted: [new Account({ address: DUMMY_ACCOUNT_ID }, dsMockUtils.getContextInstance())],
+        voted: [expect.objectContaining({ address: DUMMY_ACCOUNT_ID })],
       });
     });
 
     it('should throw an error if no data is returned', () => {
       dsMockUtils.createQueryMock('multiSig', 'proposals', {
-        returnValue: createMockOption(),
+        returnValue: dsMockUtils.createMockOption(),
       });
 
-      dsMockUtils.createQueryMock('multiSig', 'proposalDetail', {
-        returnValue: dsMockUtils.createMockProposalDetails({
-          approvals: new BigNumber(1),
-          rejections: new BigNumber(1),
-          status: dsMockUtils.createMockProposalStatus('ActiveOrExpired'),
-          autoClose: true,
-          expiry: null,
-        }),
+      dsMockUtils.createQueryMock('multiSig', 'proposalStates', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockProposalState({
+            Active: {
+              until: dsMockUtils.createMockOption(),
+            },
+          })
+        ),
+      });
+      dsMockUtils.createQueryMock('multiSig', 'proposalVoteCounts', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockProposalVoteCount({
+            approvals: new BigNumber(1),
+            rejections: new BigNumber(1),
+          })
+        ),
       });
 
       dsMockUtils.createQueryMock('multiSig', 'votes', {
@@ -163,7 +175,7 @@ describe('MultiSigProposal class', () => {
 
       const expectedError = new PolymeshError({
         code: ErrorCode.DataUnavailable,
-        message: 'Proposal with ID: "1" was not found. It may have already been executed',
+        message: 'Data for proposal with ID: "1" was not found. It may have already been executed',
       });
 
       return expect(proposal.details()).rejects.toThrowError(expectedError);
