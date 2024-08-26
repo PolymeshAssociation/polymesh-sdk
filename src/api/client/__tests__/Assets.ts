@@ -361,7 +361,7 @@ describe('Assets Class', () => {
       const fakeAssetId = '0x1234';
       const did = 'someDid';
 
-      dsMockUtils.createQueryMock('asset', 'assetsOwnedByUser', {
+      dsMockUtils.createQueryMock('asset', 'securityTokensOwnedByUser', {
         entries: [
           tuple(
             [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockAssetId(fakeAssetId)],
@@ -393,7 +393,7 @@ describe('Assets Class', () => {
       const assetId = '0x1234';
       const did = 'someDid';
 
-      dsMockUtils.createQueryMock('asset', 'assetsOwnedByUser', {
+      dsMockUtils.createQueryMock('asset', 'securityTokensOwnedByUser', {
         entries: [
           tuple(
             [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockAssetId(assetId)],

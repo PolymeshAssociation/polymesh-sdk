@@ -278,7 +278,7 @@ export class Assets {
       return assembleAssetQuery(ownedDetails, ownedTickers, context);
     }
 
-    const entries = await asset.assetsOwnedByUser.entries(rawDid);
+    const entries = await asset.securityTokensOwnedByUser.entries(rawDid);
 
     const ownedAssets: string[] = [];
     const rawAssetIds: PolymeshPrimitivesAssetAssetID[] = [];
