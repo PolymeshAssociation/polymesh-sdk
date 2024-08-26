@@ -1,9 +1,10 @@
+import { AccountId } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 
 import { PolymeshError, Procedure } from '~/internal';
 import { Account, ErrorCode, ModifyMultiSigParams, Signer, TxTags } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
-import { signerToString, stringToAccountId } from '~/utils/conversion';
+import { signerToSignatory, signerToString, stringToAccountId } from '~/utils/conversion';
 import { checkTxType } from '~/utils/internal';
 
 export interface Storage {
@@ -77,17 +78,21 @@ export async function prepareModifyMultiSig(
 
   let addSignersTx = tx.multiSig.addMultisigSignersViaAdmin;
   let removeSignersTx = tx.multiSig.removeMultisigSignersViaAdmin;
+  type ToSignerFn = ((signer: Account) => AccountId) | ((signer: Signer) => AccountId); // v6 really uses PolymeshPrimitivesSecondaryKeySignatory
+  let toRawSignerTx: ToSignerFn = (signer: Account) => stringToAccountId(signer.address, context);
+
   if (isV6) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     addSignersTx = (tx.multiSig as any).addMultisigSignersViaCreator;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     removeSignersTx = (tx.multiSig as any).removeMultisigSignersViaCreator;
+
+    toRawSignerTx = (signer: Signer): AccountId =>
+      signerToSignatory(signer, context) as unknown as AccountId;
   }
 
   if (signersToAdd.length > 0) {
-    const rawAddedSigners = signersToAdd.map(signer =>
-      stringToAccountId((signer as Account).address, context)
-    );
+    const rawAddedSigners = signersToAdd.map(signer => toRawSignerTx(signer as Account));
     transactions.push(
       checkTxType({
         transaction: addSignersTx,
@@ -97,9 +102,7 @@ export async function prepareModifyMultiSig(
   }
 
   if (signersToRemove.length > 0) {
-    const rawRemovedSigners = signersToRemove.map(signer =>
-      stringToAccountId((signer as Account).address, context)
-    );
+    const rawRemovedSigners = signersToRemove.map(signer => toRawSignerTx(signer as Account));
     transactions.push(
       checkTxType({
         transaction: removeSignersTx,

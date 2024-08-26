@@ -825,7 +825,7 @@ describe('Polymesh Transaction Base class', () => {
       const underlyingTx = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const args = [dsMockUtils.createMockText('A_TICKER')];
 
-      const transaction = dsMockUtils.createTxMock('multiSig', 'createProposalAsKey', {
+      const transaction = dsMockUtils.createTxMock('multiSig', 'createProposal', {
         autoResolve: MockTxStatus.Succeeded,
       });
 
@@ -856,7 +856,7 @@ describe('Polymesh Transaction Base class', () => {
       const underlyingTx = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const args = [dsMockUtils.createMockText('A_TICKER')];
 
-      dsMockUtils.createTxMock('multiSig', 'createProposalAsKey', {
+      dsMockUtils.createTxMock('multiSig', 'createProposal', {
         autoResolve: MockTxStatus.Succeeded,
       });
 
@@ -885,7 +885,7 @@ describe('Polymesh Transaction Base class', () => {
       const underlyingTx = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const args = [dsMockUtils.createMockText('A_TICKER')];
 
-      dsMockUtils.createTxMock('multiSig', 'createProposalAsKey', {});
+      dsMockUtils.createTxMock('multiSig', 'createProposal', {});
 
       const tx = new PolymeshTransaction(
         {
@@ -909,7 +909,7 @@ describe('Polymesh Transaction Base class', () => {
     });
 
     it('should not wrap the transaction in a proposal if its to approve a proposal', () => {
-      const transaction = dsMockUtils.createTxMock('multiSig', 'approveAsKey');
+      const transaction = dsMockUtils.createTxMock('multiSig', 'approve');
 
       const tx = new PolymeshTransaction(
         {
@@ -934,7 +934,7 @@ describe('Polymesh Transaction Base class', () => {
     it('should throw an error from running the transaction', async () => {
       const underlyingTx = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
 
-      dsMockUtils.createTxMock('multiSig', 'createProposalAsKey', {
+      dsMockUtils.createTxMock('multiSig', 'createProposal', {
         autoResolve: MockTxStatus.Aborted,
       });
       const args = [dsMockUtils.createMockText('A_TICKER')];

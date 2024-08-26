@@ -358,7 +358,7 @@ describe('Instruction class', () => {
       let rawSettlementType = dsMockUtils.createMockSettlementType(type);
       const rawInstructionDetails = dsMockUtils.createMockInstruction({
         instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
-        venueId: dsMockUtils.createMockU64(venueId),
+        venueId: dsMockUtils.createMockOption(dsMockUtils.createMockU64(venueId)),
         createdAt: dsMockUtils.createMockOption(
           dsMockUtils.createMockMoment(new BigNumber(createdAt.getTime()))
         ),
@@ -497,7 +497,7 @@ describe('Instruction class', () => {
       queryMultiMock.mockResolvedValueOnce([
         dsMockUtils.createMockInstruction({
           instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
-          venueId: dsMockUtils.createMockU64(new BigNumber(1)),
+          venueId: dsMockUtils.createMockOption(dsMockUtils.createMockU64(new BigNumber(1))),
           createdAt: dsMockUtils.createMockOption(),
           tradeDate: dsMockUtils.createMockOption(),
           valueDate: dsMockUtils.createMockOption(),
@@ -994,7 +994,7 @@ describe('Instruction class', () => {
     it('should return Pending Instruction status', async () => {
       const queryResult = dsMockUtils.createMockInstruction({
         instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
-        venueId: dsMockUtils.createMockU64(),
+        venueId: dsMockUtils.createMockOption(dsMockUtils.createMockU64()),
         createdAt: dsMockUtils.createMockOption(),
         tradeDate: dsMockUtils.createMockOption(),
         valueDate: dsMockUtils.createMockOption(),
@@ -1031,7 +1031,7 @@ describe('Instruction class', () => {
       // Should return Pending status
       const queryResult = dsMockUtils.createMockInstruction({
         instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
-        venueId: dsMockUtils.createMockU64(),
+        venueId: dsMockUtils.createMockOption(dsMockUtils.createMockU64()),
         createdAt: dsMockUtils.createMockOption(),
         tradeDate: dsMockUtils.createMockOption(),
         valueDate: dsMockUtils.createMockOption(),
@@ -1099,7 +1099,7 @@ describe('Instruction class', () => {
 
       const queryResult = dsMockUtils.createMockInstruction({
         instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
-        venueId: dsMockUtils.createMockU64(),
+        venueId: dsMockUtils.createMockOption(dsMockUtils.createMockU64()),
         createdAt: dsMockUtils.createMockOption(),
         tradeDate: dsMockUtils.createMockOption(),
         valueDate: dsMockUtils.createMockOption(),
@@ -1157,7 +1157,7 @@ describe('Instruction class', () => {
     it("should throw an error if Instruction status couldn't be determined", async () => {
       const queryResult = dsMockUtils.createMockInstruction({
         instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
-        venueId: dsMockUtils.createMockU64(),
+        venueId: dsMockUtils.createMockOption(dsMockUtils.createMockU64()),
         createdAt: dsMockUtils.createMockOption(),
         tradeDate: dsMockUtils.createMockOption(),
         valueDate: dsMockUtils.createMockOption(),

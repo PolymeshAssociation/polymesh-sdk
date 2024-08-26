@@ -1245,11 +1245,33 @@ export function extrinsicPermissionsToTransactionPermissions(
 
       return exceptions.length ? { ...result, exceptions } : result;
     } else {
-      // TODO figure out the difference in new permissions
-      throw new PolymeshError({
-        code: ErrorCode.General,
-        message: 'Not implemented',
+      pallets.forEach(({ extrinsics: dispatchableNames }, palletName) => {
+        const moduleName = stringLowerFirst(textToString(palletName));
+        if (dispatchableNames.isExcept) {
+          const dispatchables = [...dispatchableNames.asExcept];
+          exceptions = [
+            ...exceptions,
+            ...dispatchables.map(name => formatTxTag(textToString(name), moduleName)),
+          ];
+          txValues = [...txValues, moduleName as ModuleName];
+        } else if (dispatchableNames.isThese) {
+          const dispatchables = [...dispatchableNames.asThese];
+          txValues = [
+            ...txValues,
+            ...dispatchables.map(name => formatTxTag(textToString(name), moduleName)),
+          ];
+        } else {
+          txValues = [...txValues, moduleName as ModuleName];
+        }
       });
+
+      const result = {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        type: extrinsicType!,
+        values: txValues,
+      };
+
+      return exceptions.length ? { ...result, exceptions } : result;
     }
   }
 

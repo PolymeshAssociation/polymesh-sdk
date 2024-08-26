@@ -3204,7 +3204,7 @@ export const createMockAffirmationStatus = (
  */
 export const createMockInstruction = (instruction?: {
   instructionId: u64;
-  venueId: u64;
+  venueId: Option<u64>;
   settlementType: PolymeshPrimitivesSettlementSettlementType;
   createdAt: Option<Moment>;
   tradeDate: Option<Moment>;
