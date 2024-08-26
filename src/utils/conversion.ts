@@ -1125,7 +1125,7 @@ export function transactionPermissionsToExtrinsicPermissions(
 ): PolymeshPrimitivesSecondaryKeyExtrinsicPermissions {
   if (context.isV6) {
     return context.createType(
-      'PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions',
+      'PolymeshPrimitivesSecondaryKeyExtrinsicPermissions',
       transactionPermissions ? buildPalletPermissions(transactionPermissions) : 'Whole'
     );
   } else {

@@ -45,10 +45,10 @@ import {
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesIdentityIdPortfolioKind,
   PolymeshPrimitivesMemo,
-  PolymeshPrimitivesMultisigProposalStatus,
   PolymeshPrimitivesNftNftMetadataAttribute,
   PolymeshPrimitivesNftNfTs,
   PolymeshPrimitivesPortfolioFund,
+  PolymeshPrimitivesSecondaryKeyExtrinsicPermissions,
   PolymeshPrimitivesSecondaryKeySignatory,
   PolymeshPrimitivesSettlementAssetCount,
   PolymeshPrimitivesSettlementLeg,
@@ -61,7 +61,6 @@ import {
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesStatisticsStatUpdate,
-  PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceTransferCondition,
   SpCoreEcdsaSignature,
@@ -1906,9 +1905,9 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       let fakeExtrinsicPermissionsResult: unknown =
         'convertedExtrinsicPermissions' as unknown as ExtrinsicPermissions;
       when(context.createType)
-        .calledWith('PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions', 'Whole')
+        .calledWith('PolymeshPrimitivesSecondaryKeyExtrinsicPermissions', 'Whole')
         .mockReturnValue(
-          fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions
+          fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSecondaryKeyExtrinsicPermissions
         );
 
       when(createTypeMock)
@@ -1942,9 +1941,9 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       };
 
       when(createTypeMock)
-        .calledWith('PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions', expect.anything())
+        .calledWith('PolymeshPrimitivesSecondaryKeyExtrinsicPermissions', expect.anything())
         .mockReturnValue(
-          fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions
+          fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSecondaryKeyExtrinsicPermissions
         );
 
       const assetId = '0x1234';
@@ -2003,9 +2002,9 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       };
 
       when(createTypeMock)
-        .calledWith('PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions', expect.anything())
+        .calledWith('PolymeshPrimitivesSecondaryKeyExtrinsicPermissions', expect.anything())
         .mockReturnValue(
-          fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions
+          fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSecondaryKeyExtrinsicPermissions
         );
 
       value = {
@@ -2042,9 +2041,9 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       };
 
       when(createTypeMock)
-        .calledWith('PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions', expect.anything())
+        .calledWith('PolymeshPrimitivesSecondaryKeyExtrinsicPermissions', expect.anything())
         .mockReturnValue(
-          fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions
+          fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSecondaryKeyExtrinsicPermissions
         );
 
       value = {
@@ -2092,9 +2091,9 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       };
 
       when(createTypeMock)
-        .calledWith('PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions', expect.anything())
+        .calledWith('PolymeshPrimitivesSecondaryKeyExtrinsicPermissions', expect.anything())
         .mockReturnValue(
-          fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions
+          fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSecondaryKeyExtrinsicPermissions
         );
 
       const assetIds = ['0x2222', '0x1111', '0x3333'];
@@ -2216,13 +2215,13 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
           These: [
             dsMockUtils.createMockPalletPermissions({
               palletName: 'Identity',
-              dispatchableNames: dsMockUtils.createMockDispatchableNames({
+              dispatchableNames: dsMockUtils.createMockExtrinsicName({
                 These: [dsMockUtils.createMockBytes('add_claim')],
               }),
             }),
             dsMockUtils.createMockPalletPermissions({
               palletName: 'Authorship',
-              dispatchableNames: dsMockUtils.createMockDispatchableNames('Whole'),
+              dispatchableNames: dsMockUtils.createMockExtrinsicName('Whole'),
             }),
           ],
         }),
@@ -2279,7 +2278,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
           Except: [
             dsMockUtils.createMockPalletPermissions({
               palletName: 'Identity',
-              dispatchableNames: dsMockUtils.createMockDispatchableNames({
+              dispatchableNames: dsMockUtils.createMockExtrinsicName({
                 Except: [dsMockUtils.createMockBytes('add_claim')],
               }),
             }),
@@ -8289,7 +8288,7 @@ describe('transactionPermissionsToExtrinsicPermissions', () => {
     const fakeResult = 'convertedExtrinsicPermissions' as unknown as ExtrinsicPermissions;
 
     when(context.createType)
-      .calledWith('PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions', expect.anything())
+      .calledWith('PolymeshPrimitivesSecondaryKeyExtrinsicPermissions', expect.anything())
       .mockReturnValue(fakeResult);
 
     let result = transactionPermissionsToExtrinsicPermissions(value, context);
@@ -8297,7 +8296,7 @@ describe('transactionPermissionsToExtrinsicPermissions', () => {
     expect(result).toEqual(fakeResult);
 
     when(context.createType)
-      .calledWith('PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions', 'Whole')
+      .calledWith('PolymeshPrimitivesSecondaryKeyExtrinsicPermissions', 'Whole')
       .mockReturnValue(fakeResult);
 
     result = transactionPermissionsToExtrinsicPermissions(null, context);
@@ -9267,51 +9266,29 @@ describe('inputStatTypeToMeshStatType', () => {
 
 describe('meshProposalStatusToProposalStatus', () => {
   it('should convert raw statuses to the correct ProposalStatus', () => {
-    let result = meshProposalStatusToProposalStatus(
-      dsMockUtils.createMockProposalStatus('ActiveOrExpired'),
-      null
-    );
+    let result = meshProposalStatusToProposalStatus({ type: 'ActiveOrExpired' }, null);
     expect(result).toEqual(ProposalStatus.Active);
 
-    result = meshProposalStatusToProposalStatus(
-      dsMockUtils.createMockProposalStatus('ActiveOrExpired'),
-      new Date(1)
-    );
+    result = meshProposalStatusToProposalStatus({ type: 'ActiveOrExpired' }, new Date(1));
     expect(result).toEqual(ProposalStatus.Expired);
 
-    result = meshProposalStatusToProposalStatus(
-      dsMockUtils.createMockProposalStatus('ExecutionSuccessful'),
-      null
-    );
+    result = meshProposalStatusToProposalStatus({ type: 'ExecutionSuccessful' }, null);
     expect(result).toEqual(ProposalStatus.Successful);
 
-    result = meshProposalStatusToProposalStatus(
-      dsMockUtils.createMockProposalStatus('ExecutionFailed'),
-      null
-    );
+    result = meshProposalStatusToProposalStatus({ type: 'ExecutionFailed' }, null);
     expect(result).toEqual(ProposalStatus.Failed);
 
-    result = meshProposalStatusToProposalStatus(
-      dsMockUtils.createMockProposalStatus('Rejected'),
-      null
-    );
+    result = meshProposalStatusToProposalStatus({ type: 'Rejected' }, null);
     expect(result).toEqual(ProposalStatus.Rejected);
 
-    result = meshProposalStatusToProposalStatus(
-      dsMockUtils.createMockProposalStatus('Invalid'),
-      null
-    );
+    result = meshProposalStatusToProposalStatus({ type: 'Invalid' }, null);
     expect(result).toEqual(ProposalStatus.Invalid);
   });
 
   it('should throw an error if it receives an unknown status', () => {
-    const expectedError = new UnreachableCaseError('UnknownStatus' as never);
     return expect(() =>
-      meshProposalStatusToProposalStatus(
-        { type: 'UnknownStatus' } as unknown as PolymeshPrimitivesMultisigProposalStatus,
-        null
-      )
-    ).toThrowError(expectedError);
+      meshProposalStatusToProposalStatus({ type: 'UnknownStatus' }, null)
+    ).toThrowError('Unexpected proposal status received');
   });
 });
 

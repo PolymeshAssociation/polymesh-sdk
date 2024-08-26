@@ -31,7 +31,7 @@ describe('createGroup procedure', () => {
     These: [
       dsMockUtils.createMockPalletPermissions({
         palletName: 'Sto',
-        dispatchableNames: dsMockUtils.createMockDispatchableNames({
+        dispatchableNames: dsMockUtils.createMockExtrinsicName({
           These: [dsMockUtils.createMockBytes('invest')],
         }),
       }),

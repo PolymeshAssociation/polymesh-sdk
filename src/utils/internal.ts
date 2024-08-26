@@ -2017,7 +2017,8 @@ export async function getSecondaryAccountPermissions(
   const identityKeys = accounts.map(({ address }) => stringToAccountId(address, context));
   if (callback) {
     return identityQuery.keyRecords.multi(identityKeys, async result => {
-      return callback(await assembleResult(result));
+      const value = await assembleResult(result);
+      return callback(value);
     });
   }
   const rawResults = await identityQuery.keyRecords.multi(identityKeys);
