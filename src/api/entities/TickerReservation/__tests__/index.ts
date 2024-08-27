@@ -222,7 +222,6 @@ describe('TickerReservation class', () => {
         owner: null,
         expiryDate: null,
         status: TickerReservationStatus.Free,
-        assetId: '0x1234',
       });
     });
   });
