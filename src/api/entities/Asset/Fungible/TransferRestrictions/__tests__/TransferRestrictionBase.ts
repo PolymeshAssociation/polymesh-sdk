@@ -382,7 +382,7 @@ describe('TransferRestrictionBase class', () => {
     });
 
     beforeEach(() => {
-      const maxStats = new BigNumber(2);
+      const maxStats = new BigNumber(5);
       context = dsMockUtils.getContextInstance();
       asset = entityMockUtils.getFungibleAssetInstance();
       dsMockUtils.setConstMock('statistics', 'maxStatsPerAsset', {
