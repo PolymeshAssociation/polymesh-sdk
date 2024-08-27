@@ -12,7 +12,6 @@ import { Account, Context, MultiSigProposal, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { ErrorCode, Identity, MultiSigProposalAction, ProposalStatus } from '~/types';
-import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(

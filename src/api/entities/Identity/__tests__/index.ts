@@ -99,6 +99,7 @@ describe('Identity class', () => {
   let context: MockContext;
   let stringToIdentityIdSpy: jest.SpyInstance<PolymeshPrimitivesIdentityId, [string, Context]>;
   let identityIdToStringSpy: jest.SpyInstance<string, [PolymeshPrimitivesIdentityId]>;
+  let stringToAccountIdSpy: jest.SpyInstance<AccountId, [string, Context]>;
   let stringToAssetIdSpy: jest.SpyInstance;
   let u64ToBigNumberSpy: jest.SpyInstance<BigNumber, [u64]>;
   let getAccountSpy: jest.SpyInstance<Promise<Account>, [{ address: string }, Context]>;
@@ -116,6 +117,10 @@ describe('Identity class', () => {
   });
 
   beforeEach(() => {
+    stringToAccountIdSpy = jest.spyOn(utilsConversionModule, 'stringToAccountId');
+    stringToAccountIdSpy.mockImplementation(accountId =>
+      dsMockUtils.createMockAccountId(accountId)
+    );
     context = dsMockUtils.getContextInstance({
       middlewareEnabled: true,
     });
@@ -1420,11 +1425,20 @@ describe('Identity class', () => {
         entries: [
           tuple(
             [dsMockUtils.createMockAccountId('multiSig')],
-            dsMockUtils.createMockIdentityId('someDid')
+            dsMockUtils.createMockOption(dsMockUtils.createMockIdentityId('someDid'))
           ),
           tuple(
             [dsMockUtils.createMockAccountId('multiSig2')],
-            dsMockUtils.createMockIdentityId('randomDid')
+            dsMockUtils.createMockOption(dsMockUtils.createMockIdentityId('randomDid'))
+          ),
+        ],
+      });
+
+      dsMockUtils.createQueryMock('multiSig', 'payingDid', {
+        entries: [
+          tuple(
+            [dsMockUtils.createMockAccountId('multiSig2')],
+            dsMockUtils.createMockOption(dsMockUtils.createMockIdentityId('randomDid'))
           ),
         ],
       });
@@ -1434,9 +1448,7 @@ describe('Identity class', () => {
           tuple(
             [
               dsMockUtils.createMockAccountId('multiSig'),
-              dsMockUtils.createMockSignatory({
-                Account: dsMockUtils.createMockAccountId('signer'),
-              }),
+              dsMockUtils.createMockAccountId('signer'),
             ],
             dsMockUtils.createMockBool(true)
           ),
@@ -1463,6 +1475,8 @@ describe('Identity class', () => {
               address: 'signer',
             }),
           ],
+          isAdmin: true,
+          isPayer: false,
         },
       ]);
     });
