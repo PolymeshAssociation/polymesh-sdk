@@ -78,6 +78,7 @@ import {
   portfolioLikeToPortfolioId,
   signatoryToSignerValue,
   signerValueToSigner,
+  stringToAccountId,
   stringToIdentityId,
   transactionPermissionsToTxGroups,
   u64ToBigNumber,
@@ -1048,7 +1049,10 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Returns the list of MultiSig accounts linked with this Identity along with the signatories
+   * Returns the list of MultiSig accounts along with their signatories this identity has responsibility for.
+   * The roles possible are:
+   * - Admin: The identity is able to unilaterally modify the MultiSig properties, such as the signers and signatures required for a proposal
+   * - Payer: The identity's primary key will be deducted any POLYX fees the MultiSig may incur
    *
    * @note this query can be potentially **SLOW** depending on the number of MultiSigs present on the chain
    */
@@ -1112,12 +1116,74 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       return Object.keys(multiSigs).map(multiSig => ({
         signerFor: new MultiSig({ address: multiSig }, context),
         signers: multiSigs[multiSig],
+        isAdmin: true,
+        isPayer: true,
       }));
     } else {
-      throw new PolymeshError({
-        code: ErrorCode.General,
-        message: 'TODO is this supported in v7?',
-      });
+      type Entry = [{ args: [AccountId32] }, Option<PolymeshPrimitivesIdentityId>];
+      const rawAdmins = await query.multiSig.adminDid.entries();
+
+      const adminForMultiSigs = rawAdmins
+        .filter(([, rawIdentityId]: Entry) => {
+          const identity = identityIdToString(rawIdentityId.unwrap());
+          return identity === did;
+        })
+        .map(
+          ([
+            {
+              args: [rawMultiSigAccount],
+            },
+          ]) => {
+            return accountIdToString(rawMultiSigAccount);
+          }
+        );
+
+      const rawPayers = await query.multiSig.payingDid.entries();
+      const payerForMultiSigs = rawPayers
+        .filter(([, rawIdentityId]: Entry) => {
+          const identity = identityIdToString(rawIdentityId.unwrap());
+          return identity === did;
+        })
+        .map(
+          ([
+            {
+              args: [rawMultiSigAccount],
+            },
+          ]) => {
+            return accountIdToString(rawMultiSigAccount);
+          }
+        );
+
+      const multiSigs = [...new Set([...adminForMultiSigs, ...payerForMultiSigs])].map(
+        address => new MultiSig({ address }, context)
+      );
+
+      const signers = await Promise.all(
+        multiSigs.map(async ({ address }) => {
+          const rawAccountId = stringToAccountId(address, context);
+
+          const rawSigners = await query.multiSig.multiSigSigners.entries(rawAccountId);
+
+          return rawSigners.map(
+            ([
+              {
+                args: [, rawAddress],
+              },
+            ]) => {
+              const signerAddress = accountIdToString(rawAddress);
+
+              return new Account({ address: signerAddress }, context);
+            }
+          );
+        })
+      );
+
+      return multiSigs.map((multiSig, i) => ({
+        signerFor: multiSig,
+        signers: signers[i],
+        isAdmin: adminForMultiSigs.some(address => address === multiSig.address),
+        isPayer: payerForMultiSigs.some(address => address === multiSig.address),
+      }));
     }
   }
 

@@ -63,7 +63,7 @@ describe('createMultiSig procedure', () => {
     expect(result).toEqual({
       transaction: createMultiSigTransaction,
       resolver: expect.any(Function),
-      args: [rawSignatories, rawRequiredSignatures],
+      args: [rawSignatories, rawRequiredSignatures, null],
     });
   });
 
