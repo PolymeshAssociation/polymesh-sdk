@@ -22,15 +22,21 @@ describe('setGroupPermissions procedure', () => {
     },
   };
   const rawAssetId = dsMockUtils.createMockAssetId(assetId);
+  const rawPalletName = dsMockUtils.createMockText('Sto');
+
+  const rawPalletPermissions = dsMockUtils.createMockPalletPermissions({
+    extrinsics: dsMockUtils.createMockExtrinsicName({
+      These: [dsMockUtils.createMockText('invest')],
+    }),
+  });
+
+  const permissionsMap = new Map();
+  permissionsMap.set(rawPalletName, rawPalletPermissions);
+
+  const rawPermissions = dsMockUtils.createMockBTreeMap(permissionsMap);
+
   const rawExtrinsicPermissions = dsMockUtils.createMockExtrinsicPermissions({
-    These: [
-      dsMockUtils.createMockPalletPermissions({
-        palletName: 'Sto',
-        dispatchableNames: dsMockUtils.createMockExtrinsicName({
-          These: [dsMockUtils.createMockBytes('invest')],
-        }),
-      }),
-    ],
+    These: rawPermissions,
   });
   const customId = new BigNumber(1);
   const rawAgId = dsMockUtils.createMockU32(customId);
