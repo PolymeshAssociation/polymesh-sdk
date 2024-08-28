@@ -27,15 +27,17 @@ describe('createGroup procedure', () => {
   };
   let target: string;
   const rawAssetId = dsMockUtils.createMockAssetId(assetId);
+  const rawStoName = dsMockUtils.createMockText('Sto');
+  const investPermissions = dsMockUtils.createMockPalletPermissions({
+    extrinsics: dsMockUtils.createMockExtrinsicName({
+      These: [dsMockUtils.createMockText('invest')],
+    }),
+  });
+  const permissionsMap = new Map();
+  permissionsMap.set(rawStoName, investPermissions);
+
   const rawExtrinsicPermissions = dsMockUtils.createMockExtrinsicPermissions({
-    These: [
-      dsMockUtils.createMockPalletPermissions({
-        palletName: 'Sto',
-        dispatchableNames: dsMockUtils.createMockExtrinsicName({
-          These: [dsMockUtils.createMockBytes('invest')],
-        }),
-      }),
-    ],
+    These: dsMockUtils.createMockBTreeMap(permissionsMap),
   });
 
   let mockContext: Mocked<Context>;
