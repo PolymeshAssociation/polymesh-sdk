@@ -2192,6 +2192,23 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       const context = dsMockUtils.getContextInstance();
       const assetId = '0x1234';
       const did = 'someDid';
+      const rawIdentityName = dsMockUtils.createMockText('Identity');
+      const rawAuthorshipName = dsMockUtils.createMockText('Authorship');
+
+      const rawIdentityPermissions = dsMockUtils.createMockPalletPermissions({
+        extrinsics: dsMockUtils.createMockExtrinsicName({
+          These: [dsMockUtils.createMockText('add_claim')],
+        }),
+      });
+
+      const rawAuthorshipPermissions = dsMockUtils.createMockPalletPermissions({
+        extrinsics: dsMockUtils.createMockExtrinsicName('Whole'),
+      });
+
+      const permissionsMap = new Map();
+      permissionsMap.set(rawIdentityName, rawIdentityPermissions);
+      permissionsMap.set(rawAuthorshipName, rawAuthorshipPermissions);
+
       let fakeResult: Permissions = {
         assets: {
           values: [expect.objectContaining({ id: assetId })],
@@ -2212,18 +2229,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
           These: [dsMockUtils.createMockAssetId(assetId)],
         }),
         extrinsic: dsMockUtils.createMockExtrinsicPermissions({
-          These: [
-            dsMockUtils.createMockPalletPermissions({
-              palletName: 'Identity',
-              dispatchableNames: dsMockUtils.createMockExtrinsicName({
-                These: [dsMockUtils.createMockBytes('add_claim')],
-              }),
-            }),
-            dsMockUtils.createMockPalletPermissions({
-              palletName: 'Authorship',
-              dispatchableNames: dsMockUtils.createMockExtrinsicName('Whole'),
-            }),
-          ],
+          These: dsMockUtils.createMockBTreeMap(permissionsMap),
         }),
         portfolio: dsMockUtils.createMockPortfolioPermissions({
           These: [
@@ -2270,19 +2276,21 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         },
       };
 
+      const rawIdentityExpectPermissions = dsMockUtils.createMockPalletPermissions({
+        extrinsics: dsMockUtils.createMockExtrinsicName({
+          Except: [dsMockUtils.createMockText('add_claim')],
+        }),
+      });
+
+      const exceptPermissionsMap = new Map();
+      exceptPermissionsMap.set(rawIdentityName, rawIdentityExpectPermissions);
+
       permissions = dsMockUtils.createMockPermissions({
         asset: dsMockUtils.createMockAssetPermissions({
           Except: [dsMockUtils.createMockAssetId(assetId)],
         }),
         extrinsic: dsMockUtils.createMockExtrinsicPermissions({
-          Except: [
-            dsMockUtils.createMockPalletPermissions({
-              palletName: 'Identity',
-              dispatchableNames: dsMockUtils.createMockExtrinsicName({
-                Except: [dsMockUtils.createMockBytes('add_claim')],
-              }),
-            }),
-          ],
+          Except: dsMockUtils.createMockBTreeMap(exceptPermissionsMap),
         }),
         portfolio: dsMockUtils.createMockPortfolioPermissions({
           Except: [
