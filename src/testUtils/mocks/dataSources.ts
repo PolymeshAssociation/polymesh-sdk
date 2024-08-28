@@ -8,6 +8,7 @@ import { DecoratedErrors, DecoratedRpc } from '@polkadot/api/types';
 import { RpcInterface } from '@polkadot/rpc-core/types';
 import {
   bool,
+  BTreeMap,
   BTreeSet,
   Bytes,
   Compact,
@@ -1987,6 +1988,37 @@ export const createMockBTreeSet = <T extends Codec>(
 
 /**
  * @hidden
+ */
+export const createMockBTreeMap = <K extends Codec, V extends Codec>(
+  items: BTreeMap<K, V> | Map<K, V> = new Map()
+): MockCodec<BTreeMap<K, V>> => {
+  if (isCodec<BTreeMap<K, V>>(items)) {
+    return items as MockCodec<BTreeMap<K, V>>;
+  }
+
+  // const codecItems = items.forEach((item, key) => {
+  //   if (isCodec(item)) {
+  //     return item;
+  //   }
+
+  //   if (typeof item === 'string') {
+  //     return createMockStringCodec(item);
+  //   }
+
+  //   if (typeof item === 'number' || item instanceof BigNumber) {
+  //     return createMockNumberCodec(new BigNumber(item));
+  //   }
+
+  //   return createMockCodec(item, !item);
+  // });
+
+  const res = createMockCodec(items, !items) as unknown as Mutable<BTreeMap>;
+
+  return res as MockCodec<BTreeMap<K, V>>;
+};
+
+/**
+ * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockTicker = (
@@ -2396,17 +2428,17 @@ export const createMockDocument = (document?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockExtrinsicName = (
-  dispatchableNames?:
+  extrinsicName?:
     | 'Whole'
-    | { These: Bytes[] }
-    | { Except: Bytes[] }
+    | { These: Text[] }
+    | { Except: Text[] }
     | PolymeshPrimitivesSubsetSubsetRestrictionExtrinsicName
 ): MockCodec<PolymeshPrimitivesSubsetSubsetRestrictionExtrinsicName> => {
-  if (isCodec<PolymeshPrimitivesSubsetSubsetRestrictionExtrinsicName>(dispatchableNames)) {
-    return dispatchableNames as MockCodec<PolymeshPrimitivesSubsetSubsetRestrictionExtrinsicName>;
+  if (isCodec<PolymeshPrimitivesSubsetSubsetRestrictionExtrinsicName>(extrinsicName)) {
+    return extrinsicName as MockCodec<PolymeshPrimitivesSubsetSubsetRestrictionExtrinsicName>;
   }
 
-  return createMockEnum<PolymeshPrimitivesSubsetSubsetRestrictionExtrinsicName>(dispatchableNames);
+  return createMockEnum<PolymeshPrimitivesSubsetSubsetRestrictionExtrinsicName>(extrinsicName);
 };
 
 /**
@@ -2414,20 +2446,17 @@ export const createMockExtrinsicName = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockPalletPermissions = (permissions?: {
-  palletName: string | Parameters<typeof createMockBytes>[0];
-  dispatchableNames:
+  extrinsics:
     | PolymeshPrimitivesSubsetSubsetRestrictionExtrinsicName
     | Parameters<typeof createMockExtrinsicName>[0];
 }): MockCodec<PolymeshPrimitivesSecondaryKeyPalletPermissions> => {
-  const { palletName, dispatchableNames } = permissions ?? {
-    palletName: undefined,
-    dispatchableNames: createMockExtrinsicName(),
+  const { extrinsics } = permissions ?? {
+    extrinsics: createMockExtrinsicName(),
   };
 
   return createMockCodec(
     {
-      palletName: createMockBytes(palletName),
-      dispatchableNames: createMockExtrinsicName(dispatchableNames),
+      extrinsics: createMockExtrinsicName(extrinsics),
     },
     !permissions
   );
@@ -2594,8 +2623,8 @@ export const createMockAssetPermissions = (
 export const createMockExtrinsicPermissions = (
   assetPermissions?:
     | 'Whole'
-    | { These: PolymeshPrimitivesSecondaryKeyPalletPermissions[] }
-    | { Except: PolymeshPrimitivesSecondaryKeyPalletPermissions[] }
+    | { These: BTreeMap<Text, PolymeshPrimitivesSecondaryKeyPalletPermissions> }
+    | { Except: BTreeMap<Text, PolymeshPrimitivesSecondaryKeyPalletPermissions> }
 ): MockCodec<PolymeshPrimitivesSecondaryKeyExtrinsicPermissions> => {
   return createMockEnum<PolymeshPrimitivesSecondaryKeyExtrinsicPermissions>(assetPermissions);
 };

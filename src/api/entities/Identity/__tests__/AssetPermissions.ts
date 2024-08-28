@@ -297,18 +297,22 @@ describe('AssetPermissions class', () => {
         result: true,
       });
 
-      /* eslint-disable @typescript-eslint/naming-convention */
+      const mockExtrinsicNames = dsMockUtils.createMockExtrinsicName({
+        Except: [dsMockUtils.createMockText('createAsset')],
+      });
+
+      const assetTextKey = dsMockUtils.createMockText('asset');
+      const exceptPermissions = dsMockUtils.createMockPalletPermissions({
+        extrinsics: mockExtrinsicNames,
+      });
+
+      const permMap = new Map();
+      permMap.set(assetTextKey, exceptPermissions);
+
       dsMockUtils.createQueryMock('externalAgents', 'groupPermissions', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockExtrinsicPermissions({
-            These: [
-              dsMockUtils.createMockPalletPermissions({
-                palletName: 'asset',
-                dispatchableNames: {
-                  Except: [dsMockUtils.createMockBytes('createAsset')],
-                },
-              }),
-            ],
+            These: dsMockUtils.createMockBTreeMap(permMap),
           })
         ),
       });
@@ -333,15 +337,17 @@ describe('AssetPermissions class', () => {
         missingPermissions: [TxTags.asset.CreateAsset],
       });
 
+      const exceptAllAssetPerms = new Map();
+
+      const mockWholeExceptPerms = dsMockUtils.createMockPalletPermissions({
+        extrinsics: 'Whole',
+      });
+      exceptAllAssetPerms.set(assetTextKey, mockWholeExceptPerms);
+
       dsMockUtils.createQueryMock('externalAgents', 'groupPermissions', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockExtrinsicPermissions({
-            Except: [
-              dsMockUtils.createMockPalletPermissions({
-                palletName: 'asset',
-                dispatchableNames: 'Whole',
-              }),
-            ],
+            Except: dsMockUtils.createMockBTreeMap(exceptAllAssetPerms),
           })
         ),
       });

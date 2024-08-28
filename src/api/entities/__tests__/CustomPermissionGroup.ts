@@ -112,23 +112,29 @@ describe('CustomPermissionGroup class', () => {
     it('should return a list of permissions and transaction groups', async () => {
       const customPermissionGroup = new CustomPermissionGroup({ id, assetId }, context);
 
+      const rawStoName = dsMockUtils.createMockText('Sto');
+      const rawIdentityName = dsMockUtils.createMockText('Identity');
+
+      const rawInvestPermissions = dsMockUtils.createMockPalletPermissions({
+        extrinsics: dsMockUtils.createMockExtrinsicName({
+          These: [dsMockUtils.createMockText('invest')],
+        }),
+      });
+
+      const rawAddClaimPermissions = dsMockUtils.createMockPalletPermissions({
+        extrinsics: dsMockUtils.createMockExtrinsicName({
+          These: [dsMockUtils.createMockText('addClaim')],
+        }),
+      });
+
+      const permissionMap = new Map();
+      permissionMap.set(rawStoName, rawInvestPermissions);
+      permissionMap.set(rawIdentityName, rawAddClaimPermissions);
+
       dsMockUtils.createQueryMock('externalAgents', 'groupPermissions', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockExtrinsicPermissions({
-            These: [
-              dsMockUtils.createMockPalletPermissions({
-                palletName: 'Sto',
-                dispatchableNames: dsMockUtils.createMockExtrinsicName({
-                  These: [dsMockUtils.createMockBytes('invest')],
-                }),
-              }),
-              dsMockUtils.createMockPalletPermissions({
-                palletName: 'Identity',
-                dispatchableNames: dsMockUtils.createMockExtrinsicName({
-                  These: [dsMockUtils.createMockBytes('addClaim')],
-                }),
-              }),
-            ],
+            These: dsMockUtils.createMockBTreeMap(permissionMap),
           })
         ),
       });
