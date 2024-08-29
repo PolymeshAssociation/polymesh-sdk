@@ -1358,13 +1358,15 @@ export async function meshPermissionsToPermissionsV2(
 
   const rawAccountId = stringToAccountId(account.address, context);
 
-  const [asset, extrinsic, portfolio] = await requestMulti<
+  const multResult = await requestMulti<
     [typeof keyAssetPermissions, typeof keyExtrinsicPermissions, typeof keyPortfolioPermissions]
   >(context, [
     [keyAssetPermissions, rawAccountId],
     [keyExtrinsicPermissions, rawAccountId],
     [keyPortfolioPermissions, rawAccountId],
   ]);
+
+  const [asset, extrinsic, portfolio] = multResult;
 
   let assets: SectionPermissions<FungibleAsset> | null = null;
   let transactions: TransactionPermissions | null = null;
