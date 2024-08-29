@@ -124,7 +124,7 @@ function assertInputValid(
             data: { countryCode: claim.countryCode },
           });
         }
-        seenJurisdictions.add(claim.countryCode || 'none');
+        seenJurisdictions.add(claim.countryCode ?? 'none');
       } else {
         // cannot add two ClaimType.Accredited or ClaimType.Affiliate restrictions will result in internal error
         if (seenClaimTypes.has(claim.type)) {

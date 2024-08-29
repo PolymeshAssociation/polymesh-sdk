@@ -1,3 +1,4 @@
+import { PolymeshPrimitivesStatisticsStatType } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import {
@@ -339,42 +340,29 @@ export abstract class TransferRestrictionBase<
     let isSet = false;
     const claims: ActiveStats['claims'] = [];
 
+    const pushClaims = (stat: PolymeshPrimitivesStatisticsStatType): void => {
+      const [rawClaimType, rawIssuer] = stat.claimIssuer.unwrap();
+      const claimType = meshClaimTypeToClaimType(rawClaimType);
+      const issuer = new Identity({ did: identityIdToString(rawIssuer) }, context);
+
+      claims.push({ claimType, issuer });
+    };
+
     [...currentStats].forEach(stat => {
       const statType = meshStatToStatType(stat);
 
-      if (
-        type === TransferRestrictionType.ClaimCount &&
-        !stat.claimIssuer.isNone &&
-        statType === StatType.ScopedCount
-      ) {
+      if (type === TransferRestrictionType.ClaimCount && statType === StatType.ScopedCount) {
         isSet = true;
-        const [rawClaimType, rawIssuer] = stat.claimIssuer.unwrap();
-        const claimType = meshClaimTypeToClaimType(rawClaimType);
-        const issuer = new Identity({ did: identityIdToString(rawIssuer) }, context);
-
-        claims.push({ claimType, issuer });
+        pushClaims(stat);
       } else if (
         type === TransferRestrictionType.ClaimPercentage &&
-        !stat.claimIssuer.isNone &&
         statType === StatType.ScopedBalance
       ) {
         isSet = true;
-        const [rawClaimType, rawIssuer] = stat.claimIssuer.unwrap();
-        const claimType = meshClaimTypeToClaimType(rawClaimType);
-        const issuer = new Identity({ did: identityIdToString(rawIssuer) }, context);
-
-        claims.push({ claimType, issuer });
-      } else if (
-        type === TransferRestrictionType.Percentage &&
-        stat.claimIssuer.isNone &&
-        statType === StatType.Balance
-      ) {
+        pushClaims(stat);
+      } else if (type === TransferRestrictionType.Percentage && statType === StatType.Balance) {
         isSet = true;
-      } else if (
-        type === TransferRestrictionType.Count &&
-        stat.claimIssuer.isNone &&
-        statType === StatType.Count
-      ) {
+      } else if (type === TransferRestrictionType.Count && statType === StatType.Count) {
         isSet = true;
       }
     });

@@ -21,7 +21,7 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/setTransferRestrictions';
-import { Context, PolymeshError } from '~/internal';
+import { Context, PolymeshError, Procedure, setTransferRestrictions } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -103,6 +103,7 @@ describe('setTransferRestrictions procedure', () => {
   let rawClaimCountRestrictionBtreeSet: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   let rawClaimPercentageRestrictionBtreeSet: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   let booleanToBoolSpy: jest.SpyInstance<bool, [boolean, Context]>;
+  let identityIdToStringSpy: jest.SpyInstance<string, [PolymeshPrimitivesIdentityId]>;
 
   const min = new BigNumber(10);
   const max = new BigNumber(20);
@@ -170,6 +171,7 @@ describe('setTransferRestrictions procedure', () => {
       type: TransferRestrictionType.ClaimPercentage,
       value: claimPercentageRestrictionValue,
     };
+    identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
   });
 
   let setAssetTransferComplianceTransaction: PolymeshTx<
@@ -813,6 +815,38 @@ describe('setTransferRestrictions procedure', () => {
 
     expect(err.message).toBe('Duplicate Jurisdiction CountryCode found in input');
     expect(err.data).toEqual({ countryCode: CountryCode.Us });
+
+    args = {
+      ticker,
+      restrictions: [
+        {
+          min,
+          max,
+          issuer,
+          claim: {
+            type: ClaimType.Jurisdiction,
+          },
+        },
+        {
+          min,
+          max,
+          issuer,
+          claim: {
+            type: ClaimType.Jurisdiction,
+          },
+        },
+      ],
+      type: TransferRestrictionType.ClaimCount,
+    };
+
+    try {
+      await prepareSetTransferRestrictions.call(proc, args);
+    } catch (error) {
+      err = error;
+    }
+
+    expect(err.message).toBe('Duplicate Jurisdiction CountryCode found in input');
+    expect(err.data).toEqual({ countryCode: undefined });
   });
 
   describe('getAuthorization', () => {
@@ -881,11 +915,7 @@ describe('setTransferRestrictions procedure', () => {
     beforeAll(() => {
       identityScopeId = 'someScopeId';
 
-      dsMockUtils.createQueryMock('statistics', 'activeAssetStats');
-      dsMockUtils.createQueryMock('statistics', 'assetTransferCompliances');
-
       rawIdentityScopeId = dsMockUtils.createMockIdentityId(identityScopeId);
-      queryMultiMock = dsMockUtils.getQueryMultiMock();
 
       rawCountStatType = dsMockUtils.createMockStatisticsStatType();
       rawBalanceStatType = dsMockUtils.createMockStatisticsStatType({
@@ -908,6 +938,8 @@ describe('setTransferRestrictions procedure', () => {
     });
 
     beforeEach(() => {
+      queryMultiMock = dsMockUtils.getQueryMultiMock();
+
       when(stringToIdentityIdSpy)
         .calledWith(identityScopeId, mockContext)
         .mockReturnValue(rawIdentityScopeId);
@@ -931,6 +963,8 @@ describe('setTransferRestrictions procedure', () => {
           dsMockUtils.createMockIdentityId(),
         ]),
       });
+      dsMockUtils.createQueryMock('statistics', 'activeAssetStats');
+      dsMockUtils.createQueryMock('statistics', 'assetTransferCompliances');
     });
 
     afterAll(() => {
@@ -1061,7 +1095,65 @@ describe('setTransferRestrictions procedure', () => {
       });
     });
 
-    it('should return current exemptions for the restriction', async () => {});
+    it('should return current exemptions for the restriction', async () => {
+      identityIdToStringSpy.mockReturnValue('someDid');
+      queryMultiResult = [
+        statBtreeSet,
+        {
+          paused: dsMockUtils.createMockBool(false),
+          requirements: [
+            rawClaimCountRestriction,
+            rawClaimPercentageRestriction,
+            rawCountRestriction,
+            rawPercentageRestriction,
+          ],
+        } as unknown as PolymeshPrimitivesTransferComplianceAssetTransferCompliance,
+      ];
+
+      queryMultiMock.mockReturnValue(queryMultiResult);
+      const mock = dsMockUtils.createQueryMock('statistics', 'transferConditionExemptEntities');
+      mock.entries.mockResolvedValue([
+        [
+          {
+            args: [
+              {
+                claimType: dsMockUtils.createMockOption(
+                  dsMockUtils.createMockClaimType(ClaimType.Accredited)
+                ),
+              },
+              dsMockUtils.createMockIdentityId('someDid'),
+            ],
+          },
+          true,
+        ],
+      ]);
+
+      const proc = procedureMockUtils.getInstance<
+        SetTransferRestrictionsParams,
+        BigNumber,
+        Storage
+      >(mockContext);
+      const boundFunc = prepareStorage.bind(proc);
+
+      args = {
+        ticker,
+        type: TransferRestrictionType.Count,
+        restrictions: [
+          {
+            count,
+          },
+        ],
+      };
+
+      const mockIdentity = entityMockUtils.getIdentityInstance({ did: 'someDid' });
+      const result = await boundFunc(args);
+      expect(JSON.stringify(result.currentExemptions)).toEqual(
+        JSON.stringify({
+          ...emptyExemptions,
+          Accredited: [mockIdentity],
+        })
+      );
+    });
   });
 
   describe('addExemptionIfNotPresent', () => {
@@ -1085,6 +1177,14 @@ describe('setTransferRestrictions procedure', () => {
       addExemptionIfNotPresent(toInsertId, exemptionRecords, claimType, filterSet);
 
       expect(exemptionRecords[claimType]).toEqual([toInsertId]);
+    });
+  });
+
+  describe('setTransferRestrictions', () => {
+    it('should return the result of the prepareSetTransferRestrictions call', async () => {
+      const result = setTransferRestrictions();
+
+      expect(result).toBeInstanceOf(Procedure);
     });
   });
 });
