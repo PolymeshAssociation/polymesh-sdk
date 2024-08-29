@@ -75,7 +75,7 @@ import {
  * @hidden
  */
 export type Params = AddInstructionsParams & {
-  venueId: BigNumber;
+  venueId?: BigNumber;
 };
 
 /**
@@ -89,7 +89,7 @@ export interface Storage {
  * @hidden
  */
 type InternalAddAndAffirmInstructionParams = [
-  u64,
+  u64 | null,
   PolymeshPrimitivesSettlementSettlementType,
   u64 | null,
   u64 | null,
@@ -103,7 +103,7 @@ type InternalAddAndAffirmInstructionParams = [
  * @hidden
  */
 type InternalAddInstructionParams = [
-  u64,
+  u64 | null,
   PolymeshPrimitivesSettlementSettlementType,
   u64 | null,
   u64 | null,
@@ -227,7 +227,7 @@ async function separateLegs(
  */
 async function assertVenueFiltering(
   instructions: AddInstructionParams[],
-  venueId: BigNumber,
+  venueId: BigNumber | undefined,
   context: Context
 ): Promise<void> {
   const assetPromises = instructions.flatMap(instruction => {
@@ -260,15 +260,27 @@ async function assertVenueFiltering(
     undefined
   );
 
-  if (permittedVenues !== undefined && !permittedVenues.some(({ id }) => id.eq(venueId))) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'One or more assets are not allowed to be traded at this venue',
-      data: {
-        possibleVenues: permittedVenues.map(venue => venue.id.toString()),
-        venueId: venueId.toString(),
-      },
-    });
+  if (permittedVenues !== undefined) {
+    if (venueId === undefined) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'One or more of the assets must be traded at a venue',
+        data: {
+          possibleVenues: permittedVenues.map(venue => venue.id.toString()),
+        },
+      });
+    }
+
+    if (!permittedVenues.some(({ id }) => id.eq(venueId))) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'One or more assets are not allowed to be traded at this venue',
+        data: {
+          possibleVenues: permittedVenues.map(venue => venue.id.toString()),
+          venueId: venueId.toString(),
+        },
+      });
+    }
   }
 }
 
@@ -279,7 +291,7 @@ async function getTxArgsAndErrors(
   instructions: AddInstructionParams[],
   portfoliosToAffirm: (DefaultPortfolio | NumberedPortfolio)[][],
   latestBlock: BigNumber,
-  venueId: BigNumber,
+  venueId: BigNumber | undefined,
   context: Context
 ): Promise<{
   errIndexes: {
@@ -366,7 +378,7 @@ async function getTxArgsAndErrors(
       !datesErrIndexes.length &&
       !sameIdentityErrIndexes.length
     ) {
-      const rawVenueId = bigNumberToU64(venueId, context);
+      const rawVenueId = optionize(bigNumberToU64)(venueId, context);
       const rawSettlementType = endConditionToSettlementType(endCondition, context);
       const rawTradeDate = optionize(dateToMoment)(tradeDate, context);
       const rawValueDate = optionize(dateToMoment)(valueDate, context);
@@ -504,13 +516,24 @@ export async function prepareAddInstruction(
       polymeshApi: {
         tx: { settlement },
       },
+      isV6,
     },
     context,
     storage: { portfoliosToAffirm },
   } = this;
   const { instructions, venueId } = args;
 
-  await assertVenueFiltering(instructions, venueId, context);
+  if (isV6 && !venueId) {
+    throw new PolymeshError({
+      code: ErrorCode.General,
+      message: 'A venue id must be provided on v6 chains',
+    });
+  }
+
+  const venueAssertions = [assertVenueFiltering(instructions, venueId, context)];
+  if (venueId) {
+    venueAssertions.push(assertVenueExists(venueId, context));
+  }
 
   const allMediators = instructions.flatMap(
     ({ mediators }) => mediators?.map(mediator => asIdentity(mediator, context)) ?? []
@@ -518,8 +541,8 @@ export async function prepareAddInstruction(
 
   const [latestBlock] = await Promise.all([
     context.getLatestBlock(),
-    assertVenueExists(venueId, context),
     ...allMediators.map(mediator => assertIdentityExists(mediator)),
+    ...venueAssertions,
   ]);
 
   if (!instructions.length) {
@@ -649,8 +672,10 @@ export async function getAuthorization(
     portfolios = unionWith(portfolios, portfoliosList, isEqual);
   });
 
+  const roles = venueId ? [{ type: RoleType.VenueOwner, venueId } as const] : undefined;
+
   return {
-    roles: [{ type: RoleType.VenueOwner, venueId }],
+    roles,
     permissions: {
       assets: [],
       portfolios,
