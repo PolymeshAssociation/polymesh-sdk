@@ -973,7 +973,7 @@ export interface AddInstructionsParams {
 }
 
 export type AddInstructionWithVenueIdParams = AddInstructionParams & {
-  venueId: BigNumber;
+  venueId?: BigNumber;
 };
 
 export interface InstructionIdParams {
