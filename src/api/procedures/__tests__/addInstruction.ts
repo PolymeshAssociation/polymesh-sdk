@@ -712,6 +712,63 @@ describe('addInstruction procedure', () => {
     ).rejects.toThrow(expectedError);
   });
 
+  it('should throw an error if no venue is specified and an asset has filtering enabled', () => {
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      portfoliosToAffirm: [],
+    });
+
+    const legOne = {
+      from,
+      to,
+      amount,
+      asset: entityMockUtils.getFungibleAssetInstance({
+        assetId: asset,
+        getVenueFilteringDetails: {
+          isEnabled: true,
+          allowedVenues: [entityMockUtils.getVenueInstance({ id: new BigNumber(1) })],
+        },
+      }),
+    };
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'One or more of the assets must be traded at a venue',
+    });
+
+    return expect(
+      prepareAddInstruction.call(proc, {
+        instructions: [{ legs: [legOne] }],
+      })
+    ).rejects.toThrow(expectedError);
+  });
+
+  it('should throw an error if no venue and the chain is still on v6', () => {
+    mockContext.isV6 = true;
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      portfoliosToAffirm: [],
+    });
+
+    const legOne = {
+      from,
+      to,
+      amount,
+      asset: entityMockUtils.getFungibleAssetInstance({
+        assetId: asset,
+      }),
+    };
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.General,
+      message: 'A venue id must be provided on v6 chains',
+    });
+
+    return expect(
+      prepareAddInstruction.call(proc, {
+        instructions: [{ legs: [legOne] }],
+      })
+    ).rejects.toThrow(expectedError);
+  });
+
   it('should throw an error if the end block is in the past', async () => {
     dsMockUtils.configureMocks({ contextOptions: { latestBlock: new BigNumber(1000) } });
 
@@ -1109,6 +1166,23 @@ describe('addInstruction procedure', () => {
 
       expect(result).toEqual({
         roles: [{ type: RoleType.VenueOwner, venueId }],
+        permissions: {
+          assets: [],
+          portfolios: [],
+          transactions: [TxTags.settlement.AddInstructionWithMediators],
+        },
+      });
+
+      result = await boundFunc({
+        instructions: [
+          {
+            mediators: [mediatorDid],
+            legs: [{ from: fromPortfolio, to: toPortfolio, amount, asset: '0x1111' }],
+          },
+        ],
+      });
+
+      expect(result).toEqual({
         permissions: {
           assets: [],
           portfolios: [],
