@@ -49,6 +49,7 @@ import {
 import { tuple } from '~/types/utils';
 import {
   CONFIDENTIAL_ASSETS_SUPPORTED_CALL,
+  DUMMY_ACCOUNT_ID,
   MAX_TICKER_LENGTH,
   MINIMUM_SQ_VERSION,
   PRIVATE_SUPPORTED_NODE_SEMVER,
@@ -255,7 +256,7 @@ describe('asAccount', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
-    address = 'someAddress';
+    address = DUMMY_ACCOUNT_ID;
   });
 
   beforeEach(() => {
@@ -2107,7 +2108,7 @@ describe('compareTransferRestrictionToStat', () => {
 });
 
 describe('method: getSecondaryAccountPermissions', () => {
-  const accountId = 'someAccountId';
+  const accountId = DUMMY_ACCOUNT_ID;
   const did = 'someDid';
 
   let account: Account;
@@ -2122,14 +2123,21 @@ describe('method: getSecondaryAccountPermissions', () => {
 
   beforeAll(() => {
     dsMockUtils.initMocks();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+    jest.restoreAllMocks();
+  });
+
+  beforeEach(() => {
     account = entityMockUtils.getAccountInstance({ address: accountId });
     meshPermissionsToPermissionsSpy = jest.spyOn(
       utilsConversionModule,
-      'meshPermissionsToPermissions'
+      'meshPermissionsToPermissionsV2'
     );
     stringToAccountIdSpy = jest.spyOn(utilsConversionModule, 'stringToAccountId');
     identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
-    account = entityMockUtils.getAccountInstance();
     fakeResult = [
       {
         account,
@@ -2141,14 +2149,7 @@ describe('method: getSecondaryAccountPermissions', () => {
         },
       },
     ];
-  });
 
-  afterAll(() => {
-    dsMockUtils.cleanup();
-    jest.restoreAllMocks();
-  });
-
-  beforeEach(() => {
     rawPrimaryKeyRecord = dsMockUtils.createMockKeyRecord({
       PrimaryKey: dsMockUtils.createMockIdentityId(did),
     });
@@ -2156,7 +2157,7 @@ describe('method: getSecondaryAccountPermissions', () => {
       SecondaryKey: dsMockUtils.createMockIdentityId(did),
     });
     rawMultiSigKeyRecord = dsMockUtils.createMockKeyRecord({
-      MultiSigSignerKey: dsMockUtils.createMockAccountId('someAddress'),
+      MultiSigSignerKey: dsMockUtils.createMockAccountId('someMultiAddress'),
     });
 
     meshPermissionsToPermissionsSpy.mockReturnValue({
@@ -2187,9 +2188,13 @@ describe('method: getSecondaryAccountPermissions', () => {
     const result = await getSecondaryAccountPermissions(
       {
         accounts: [
-          entityMockUtils.getAccountInstance(),
+          entityMockUtils.getAccountInstance({
+            address: '5Fs4Azv4K6y8BxDkXXQpJkxdRBvXQeg8SsQRqg9cTnv3bfec',
+          }),
           account,
-          entityMockUtils.getAccountInstance(),
+          entityMockUtils.getAccountInstance({
+            address: '5Fk31JFH3QcnwxHt6NDnRHEt5T7mWu6cW6xubArmMxVcB7Yq',
+          }),
         ],
         identity,
       },
@@ -2259,6 +2264,8 @@ describe('method: getSecondaryAccountPermissions', () => {
       mockContext,
       callback
     );
+
+    await new Promise(setImmediate);
 
     expect(callback).toHaveBeenCalledWith(fakeResult);
     expect(result).toEqual(unsubCallback);
