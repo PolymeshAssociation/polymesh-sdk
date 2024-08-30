@@ -1,20 +1,16 @@
-import { Vec } from '@polkadot/types';
-import {
-  PolymeshPrimitivesAssetAssetID,
-  PolymeshPrimitivesDocument,
-  PolymeshPrimitivesTicker,
-} from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import { when } from 'jest-when';
 
 import {
   getAuthorization,
   Params,
   prepareLinkTickerToAsset,
+  Storage,
 } from '~/api/procedures/linkTickerToAsset';
 import { Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { FungibleAsset, RoleType, TxTags } from '~/types';
+import { FungibleAsset, RoleType, TickerReservationStatus, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -58,11 +54,11 @@ describe('linkTickerToAsset procedure', () => {
     jest.spyOn(utilsConversionModule, 'assetToMeshAssetId').mockReturnValue(rawAssetId);
   });
 
-  let linkTickerToAssetIdTx: PolymeshTx<
-    [Vec<PolymeshPrimitivesDocument>, PolymeshPrimitivesAssetAssetID]
-  >;
+  let linkTickerToAssetIdTx: PolymeshTx<[PolymeshPrimitivesTicker, PolymeshPrimitivesAssetAssetID]>;
+  let registerUniqueTickerTx: PolymeshTx<[PolymeshPrimitivesTicker]>;
 
   beforeEach(() => {
+    registerUniqueTickerTx = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
     linkTickerToAssetIdTx = dsMockUtils.createTxMock('asset', 'linkTickerToAssetId');
 
     mockContext = dsMockUtils.getContextInstance();
@@ -83,7 +79,9 @@ describe('linkTickerToAsset procedure', () => {
   });
 
   it('should return a link ticker to asset id transaction', async () => {
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      status: TickerReservationStatus.Reserved,
+    });
 
     const result = await prepareLinkTickerToAsset.call(proc, args);
 
@@ -94,16 +92,66 @@ describe('linkTickerToAsset procedure', () => {
     });
   });
 
+  it('should return a register and link batch', async () => {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      status: TickerReservationStatus.Free,
+    });
+
+    const result = await prepareLinkTickerToAsset.call(proc, args);
+
+    expect(result).toEqual({
+      transactions: [
+        {
+          transaction: registerUniqueTickerTx,
+          args: [rawTicker],
+        },
+        {
+          transaction: linkTickerToAssetIdTx,
+          args: [rawTicker, rawAssetId],
+        },
+      ],
+      resolver: undefined,
+    });
+  });
+
   it('should throw an error if the chain is on v6', async () => {
     mockContext.isV6 = true;
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      status: TickerReservationStatus.Free,
+    });
+
+    return expect(prepareLinkTickerToAsset.call(proc, args)).rejects.toThrow(PolymeshError);
+  });
+
+  it('should throw an error if the ticker is already linked', async () => {
+    mockContext.isV6 = true;
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      status: TickerReservationStatus.AssetCreated,
+    });
 
     return expect(prepareLinkTickerToAsset.call(proc, args)).rejects.toThrow(PolymeshError);
   });
 
   describe('getAuthorization', () => {
-    it('should return the appropriate roles and permissions', async () => {
-      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+    it('should return the appropriate roles and permissions for a free status', async () => {
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+        status: TickerReservationStatus.Free,
+      });
+      const boundFunc = getAuthorization.bind(proc);
+
+      return expect(boundFunc(args)).resolves.toEqual({
+        permissions: {
+          assets: [asset],
+          transactions: [TxTags.asset.LinkTickerToAssetId, TxTags.asset.RegisterUniqueTicker],
+          portfolios: [],
+        },
+      });
+    });
+
+    it('should return the appropriate roles and permissions for a reserved status', async () => {
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+        status: TickerReservationStatus.Reserved,
+      });
       const boundFunc = getAuthorization.bind(proc);
 
       return expect(boundFunc(args)).resolves.toEqual({
@@ -112,7 +160,7 @@ describe('linkTickerToAsset procedure', () => {
           transactions: [TxTags.asset.LinkTickerToAssetId],
           portfolios: [],
         },
-        roles: [{ ticker, type: RoleType.TickerOwner }],
+        roles: [{ type: RoleType.TickerOwner, ticker }],
       });
     });
   });
