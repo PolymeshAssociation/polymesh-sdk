@@ -79,7 +79,7 @@ describe('Claims Class', () => {
             expiry: null,
             claim: {
               type: ClaimType.Accredited,
-              scope: { type: ScopeType.Ticker, value: 'TICKER' },
+              scope: { type: ScopeType.Asset, value: '0x1234' },
             },
           },
         ],
@@ -520,8 +520,8 @@ describe('Claims Class', () => {
           claim: {
             type: ClaimType.Jurisdiction,
             scope: {
-              type: ScopeType.Ticker,
-              value: 'someTicker',
+              type: ScopeType.Asset,
+              value: '0x1234',
             },
           },
         },
