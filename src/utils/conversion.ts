@@ -98,6 +98,7 @@ import { computeWithoutCheck } from 'iso-7064';
 import {
   camelCase,
   flatten,
+  forEach,
   groupBy,
   includes,
   map,
@@ -261,8 +262,9 @@ import {
   InternalNftType,
   MeshTickerOrAssetId,
   PalletPermissions,
+  PalletPermissionsV6,
+  PalletPermissionsV7,
   PermissionGroupIdentifier,
-  PermissionsEnum,
   PolymeshTx,
   StatClaimInputType,
   StatClaimIssuer,
@@ -304,6 +306,8 @@ import {
   isNumberedPortfolio,
   isSingleClaimCondition,
 } from '~/utils/typeguards';
+
+import { PermissionsEnum } from './../types/internal';
 export * from '~/generated/utils';
 
 /**
@@ -1044,7 +1048,8 @@ function initExtrinsicDict(
  * @hidden
  */
 function buildPalletPermissions(
-  transactions: TransactionPermissions
+  transactions: TransactionPermissions,
+  isV6: boolean
 ): PermissionsEnum<PalletPermissions> {
   let extrinsic: PermissionsEnum<PalletPermissions>;
   const message =
@@ -1077,8 +1082,10 @@ function buildPalletPermissions(
     }
   });
 
-  const pallets: PalletPermissions[] = map(extrinsicDict, (val, key) => {
-    let dispatchables: PermissionsEnum<string>;
+  const getDispatchables = (
+    val: { tx: string[]; exception?: true } | null
+  ): PermissionsEnum<string[]> => {
+    let dispatchables: PermissionsEnum<string[]>;
 
     if (val === null) {
       dispatchables = 'Whole';
@@ -1096,13 +1103,25 @@ function buildPalletPermissions(
       }
     }
 
+    return dispatchables;
+  };
+
+  const palletsV6: PalletPermissionsV6[] = map(extrinsicDict, (val, key) => {
     return {
       /* eslint-disable @typescript-eslint/naming-convention */
-      pallet_name: key,
-      dispatchable_names: dispatchables,
+      palletName: key,
+      dispatchableNames: getDispatchables(val),
       /* eslint-enable @typescript-eslint/naming-convention */
     };
   });
+
+  const palletsV7: PalletPermissionsV7 = new Map();
+  forEach(extrinsicDict, (val, key) => {
+    palletsV7.set(key, { extrinsics: getDispatchables(val) });
+  });
+
+  const pallets = isV6 ? palletsV6 : palletsV7;
+
   if (type === PermissionType.Include) {
     extrinsic = {
       These: pallets,
@@ -1125,15 +1144,16 @@ export function transactionPermissionsToExtrinsicPermissions(
 ): PolymeshPrimitivesSecondaryKeyExtrinsicPermissions {
   if (context.isV6) {
     return context.createType(
-      'PolymeshPrimitivesSecondaryKeyExtrinsicPermissions',
-      transactionPermissions ? buildPalletPermissions(transactionPermissions) : 'Whole'
-    );
-  } else {
-    return context.createType(
-      'PolymeshPrimitivesSecondaryKeyExtrinsicPermissions',
-      transactionPermissions ? buildPalletPermissions(transactionPermissions) : 'Whole'
+      'PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions',
+      transactionPermissions
+        ? buildPalletPermissions(transactionPermissions, context.isV6)
+        : 'Whole'
     );
   }
+  return context.createType(
+    'PolymeshPrimitivesSecondaryKeyExtrinsicPermissions',
+    transactionPermissions ? buildPalletPermissions(transactionPermissions, context.isV6) : 'Whole'
+  );
 }
 
 /**
@@ -1147,7 +1167,7 @@ export function permissionsToMeshPermissions(
 
   const extrinsic = transactionPermissionsToExtrinsicPermissions(transactions, context);
 
-  let asset: PermissionsEnum<PolymeshPrimitivesTicker> = 'Whole';
+  let asset: PermissionsEnum<PolymeshPrimitivesTicker[]> = 'Whole';
   if (assets) {
     const { values: assetValues, type } = assets;
     assetValues.sort(({ id: assetIdA }, { id: assetIdB }) => assetIdA.localeCompare(assetIdB));
@@ -1163,7 +1183,7 @@ export function permissionsToMeshPermissions(
     }
   }
 
-  let portfolio: PermissionsEnum<PolymeshPrimitivesIdentityIdPortfolioId> = 'Whole';
+  let portfolio: PermissionsEnum<PolymeshPrimitivesIdentityIdPortfolioId[]> = 'Whole';
   if (portfolios) {
     const { values: portfolioValues, type } = portfolios;
     const portfolioIds = portfolioValues.map(pValue =>
@@ -1358,7 +1378,7 @@ export async function meshPermissionsToPermissionsV2(
 
   const rawAccountId = stringToAccountId(account.address, context);
 
-  const multResult = await requestMulti<
+  const multiResult = await requestMulti<
     [typeof keyAssetPermissions, typeof keyExtrinsicPermissions, typeof keyPortfolioPermissions]
   >(context, [
     [keyAssetPermissions, rawAccountId],
@@ -1366,7 +1386,7 @@ export async function meshPermissionsToPermissionsV2(
     [keyPortfolioPermissions, rawAccountId],
   ]);
 
-  const [asset, extrinsic, portfolio] = multResult;
+  const [asset, extrinsic, portfolio] = multiResult;
 
   let assets: SectionPermissions<FungibleAsset> | null = null;
   let transactions: TransactionPermissions | null = null;
