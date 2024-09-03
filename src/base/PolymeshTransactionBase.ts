@@ -943,7 +943,7 @@ export abstract class PolymeshTransactionBase<
 
     // For MultiSig the fees come from the creator's primary key
     if (multiSig) {
-      const multiId = await multiSig.getCreator();
+      const multiId = await multiSig.getCreator(); // NOSONAR
 
       const { account } = await multiId.getPrimaryAccount();
 

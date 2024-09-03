@@ -2401,7 +2401,7 @@ describe('Context class', () => {
   describe('method: assertSupportsSubscription', () => {
     it('should return true if subscription is supported', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (polymeshApi as any).hasSubscriptions = true;
+      (polymeshApi as any).hasSubscriptions = true; // NOSONAR
 
       const context = await Context.create({
         polymeshApi,
@@ -2413,7 +2413,7 @@ describe('Context class', () => {
 
     it('should throw an error if subscription is not supported', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (polymeshApi as any).hasSubscriptions = false;
+      (polymeshApi as any).hasSubscriptions = false; // NOSONAR
 
       const context = await Context.create({
         polymeshApi,
