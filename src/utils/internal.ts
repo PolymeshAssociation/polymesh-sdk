@@ -1980,33 +1980,39 @@ export async function getSecondaryAccountPermissions(
   ): Promise<PermissionedAccount[]> => {
     const result: PermissionedAccount[] = [];
     let index = 0;
+    const getAccountAsSecondaryKey = async (
+      record: PolymeshPrimitivesSecondaryKeyKeyRecord,
+      account: Account | MultiSig
+    ): Promise<void> => {
+      if (isV6) {
+        const [rawIdentityId, rawPermissions] = record.asSecondaryKey as unknown as [
+          PolymeshPrimitivesIdentityId,
+          PolymeshPrimitivesSecondaryKeyPermissions
+        ];
+
+        if (!identity || identityIdToString(rawIdentityId) === identity.did) {
+          result.push({
+            account,
+            permissions: meshPermissionsToPermissions(rawPermissions, context),
+          });
+        }
+      } else {
+        const rawIdentityId = record.asSecondaryKey;
+        if (!identity || identityIdToString(rawIdentityId) === identity.did) {
+          result.push({
+            account,
+            permissions: await meshPermissionsToPermissionsV2(account, context),
+          });
+        }
+      }
+    };
     for (const optKeyRecord of optKeyRecords) {
       const account = accounts[index];
       if (optKeyRecord.isSome) {
         const record = optKeyRecord.unwrap();
 
         if (record.isSecondaryKey) {
-          if (isV6) {
-            const [rawIdentityId, rawPermissions] = record.asSecondaryKey as unknown as [
-              PolymeshPrimitivesIdentityId,
-              PolymeshPrimitivesSecondaryKeyPermissions
-            ];
-
-            if (!identity || identityIdToString(rawIdentityId) === identity.did) {
-              result.push({
-                account,
-                permissions: meshPermissionsToPermissions(rawPermissions, context),
-              });
-            }
-          } else {
-            const rawIdentityId = record.asSecondaryKey;
-            if (!identity || identityIdToString(rawIdentityId) === identity.did) {
-              result.push({
-                account,
-                permissions: await meshPermissionsToPermissionsV2(account, context),
-              });
-            }
-          }
+          await getAccountAsSecondaryKey(record, account);
         }
       }
       index++;

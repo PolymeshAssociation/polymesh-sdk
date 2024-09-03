@@ -31,7 +31,7 @@ export async function prepareAddAssetStat(
 
   const rawAssetId = getAssetIdForStats(asset, context);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const currentStats = await statisticsQuery.activeAssetStats(rawAssetId as any);
+  const currentStats = await statisticsQuery.activeAssetStats(rawAssetId as any); // NOSONAR
   const needStat = ![...currentStats].find(s => compareStatsToInput(s, args, context));
 
   if (!needStat) {
@@ -59,7 +59,7 @@ export async function prepareAddAssetStat(
     checkTxType({
       transaction: statistics.setActiveAssetStats,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      args: [rawAssetId as any, newStats],
+      args: [rawAssetId as any, newStats], // NOSONAR
     })
   );
 
@@ -71,7 +71,7 @@ export async function prepareAddAssetStat(
       checkTxType({
         transaction: statistics.batchUpdateAssetStats,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        args: [rawAssetId as any, newStat, statValue],
+        args: [rawAssetId as any, newStat, statValue], // NOSONAR
       })
     );
   } else if (args.type === StatType.ScopedCount) {
@@ -80,7 +80,7 @@ export async function prepareAddAssetStat(
       checkTxType({
         transaction: statistics.batchUpdateAssetStats,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        args: [rawAssetId as any, newStat, statValue],
+        args: [rawAssetId as any, newStat, statValue], // NOSONAR
       })
     );
   }

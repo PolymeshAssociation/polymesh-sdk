@@ -46,7 +46,7 @@ export const createDividendDistributionResolver =
     const { localId } = caId;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const assetId = context.isV6 ? (caId as any).ticker : caId.assetId;
+    const assetId = context.isV6 ? (caId as any).ticker : caId.assetId; // NOSONAR
 
     const { corporateAction } = context.polymeshApi.query;
 

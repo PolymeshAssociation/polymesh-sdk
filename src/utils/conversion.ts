@@ -1237,25 +1237,26 @@ export function extrinsicPermissionsToTransactionPermissions(
   if (pallets) {
     if (context.isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (pallets as unknown as any[]).forEach(({ palletName, dispatchableNames }) => {
-        const moduleName = stringLowerFirst(bytesToString(palletName));
-        if (dispatchableNames.isExcept) {
-          const dispatchables = [...dispatchableNames.asExcept];
-          exceptions = [
-            ...exceptions,
-            ...dispatchables.map(name => formatTxTag(bytesToString(name), moduleName)),
-          ];
-          txValues = [...txValues, moduleName as ModuleName];
-        } else if (dispatchableNames.isThese) {
-          const dispatchables = [...dispatchableNames.asThese];
-          txValues = [
-            ...txValues,
-            ...dispatchables.map(name => formatTxTag(bytesToString(name), moduleName)),
-          ];
-        } else {
-          txValues = [...txValues, moduleName as ModuleName];
-        }
-      });
+      (pallets as unknown as any[]) // NOSONAR
+        .forEach(({ palletName, dispatchableNames }) => {
+          const moduleName = stringLowerFirst(bytesToString(palletName));
+          if (dispatchableNames.isExcept) {
+            const dispatchables = [...dispatchableNames.asExcept];
+            exceptions = [
+              ...exceptions,
+              ...dispatchables.map(name => formatTxTag(bytesToString(name), moduleName)),
+            ];
+            txValues = [...txValues, moduleName as ModuleName];
+          } else if (dispatchableNames.isThese) {
+            const dispatchables = [...dispatchableNames.asThese];
+            txValues = [
+              ...txValues,
+              ...dispatchables.map(name => formatTxTag(bytesToString(name), moduleName)),
+            ];
+          } else {
+            txValues = [...txValues, moduleName as ModuleName];
+          }
+        });
 
       const result = {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -1597,13 +1598,11 @@ export function bigNumberToBalance(value: BigNumber, context: Context, divisible
         },
       });
     }
-  } else {
-    if (value.decimalPlaces()) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'The value has decimals but the Asset is indivisible',
-      });
-    }
+  } else if (value.decimalPlaces()) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The value has decimals but the Asset is indivisible',
+    });
   }
 
   return context.createType('Balance', value.shiftedBy(6).toString());
@@ -2350,11 +2349,11 @@ export async function scopeToMeshScope(
 
   let scopeValue: U8aFixed | PolymeshPrimitivesIdentityId | string;
   switch (type) {
-    case ScopeType.Ticker:
+    case ScopeType.Ticker: // NOSONAR
     case ScopeType.Asset:
       baseAsset = await asBaseAsset(value, context);
       scopeValue = assetToMeshAssetId(baseAsset, context);
-      scopeType = isV6 ? ScopeType.Ticker : ScopeType.Asset;
+      scopeType = isV6 ? ScopeType.Ticker : ScopeType.Asset; // NOSONAR
       break;
     case ScopeType.Identity:
       scopeValue = stringToIdentityId(value, context);
@@ -2375,12 +2374,15 @@ export function meshScopeToScope(
   context: Context
 ): Scope {
   const { isV6 } = context;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if (isV6 && (scope as any).isTicker) {
+  if (
+    isV6 &&
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (scope as any).isTicker // NOSONAR
+  ) {
     return {
-      type: ScopeType.Ticker,
+      type: ScopeType.Ticker, // NOSONAR
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      value: tickerToString((scope as any).asTicker),
+      value: tickerToString((scope as any).asTicker), // NOSONAR
     };
   } else if (scope.isAsset) {
     return {
@@ -2458,7 +2460,7 @@ export function middlewareScopeToScope(scope: MiddlewareScope, context: Context)
   const { type, value } = scope;
 
   switch (type) {
-    case ClaimScopeTypeEnum.Ticker:
+    case ClaimScopeTypeEnum.Ticker: // NOSONAR
     case ClaimScopeTypeEnum.Asset:
       return {
         type: ScopeType.Asset,
@@ -2488,7 +2490,7 @@ export async function scopeToMiddlewareScope(
   const { type, value } = scope;
 
   switch (type) {
-    case ScopeType.Ticker:
+    case ScopeType.Ticker: // NOSONAR
     case ScopeType.Asset:
       return {
         type: ClaimScopeTypeEnum.Asset,
@@ -4303,7 +4305,7 @@ export function meshStatToStatType(
 
   if (context.isV6) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    type = (rawStat as any).op.type;
+    type = (rawStat as any).op.type; // NOSONAR
   } else {
     type = rawStat.operationType.type;
   }
@@ -5273,7 +5275,7 @@ export function meshNftToNftId(
   let rawIds: Vec<u64>;
   if (context.isV6) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ({ ticker: rawTicker, ids: rawIds } = rawInfo as any);
+    ({ ticker: rawTicker, ids: rawIds } = rawInfo as any); // NOSONAR
   } else {
     ({ assetId: rawTicker, ids: rawIds } = rawInfo);
   }

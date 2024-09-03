@@ -47,9 +47,9 @@ export async function prepareToggleAssetPreApproval(
   if (isV6) {
     transaction = preApprove
       ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (tx.asset as any).preApproveTicker
+        (tx.asset as any).preApproveTicker // NOSONAR
       : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (tx.asset as any).removeTickerPreApproval;
+        (tx.asset as any).removeTickerPreApproval; // NOSONAR
   }
 
   return {

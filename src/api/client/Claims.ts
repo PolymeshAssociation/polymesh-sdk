@@ -244,7 +244,7 @@ export class Claims {
     const count = new BigNumber(targetIssuers.length);
 
     // tooling-gql does pagination based on sorted target issuers, hence the explicit `sort()` function (as graphql doesn't sort the final data)
-    targetIssuers.sort();
+    targetIssuers.sort((a, b) => a.localeCompare(b));
     targetIssuers = targetIssuers.slice(start.toNumber(), size.plus(start).toNumber());
 
     const {
@@ -304,7 +304,8 @@ export class Claims {
 
       let ticker: string | undefined;
 
-      if (type === ScopeType.Ticker) {
+      // prettier-ignore
+      if (type === ScopeType.Ticker) { // NOSONAR
         ticker = removePadding(value);
       }
 
@@ -460,7 +461,7 @@ export class Claims {
       // note: pagination count is based on the claim issuers and not the claims count
       const count = new BigNumber(claimIssuers.length);
 
-      claimIssuers.sort();
+      claimIssuers.sort((a, b) => a.localeCompare(b));
       claimIssuers = claimIssuers.slice(start.toNumber(), size.plus(start).toNumber());
 
       const {

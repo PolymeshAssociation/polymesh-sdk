@@ -1911,7 +1911,7 @@ export const createMockIdentityId = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 const createMockEnum = <T extends Enum>(
-  enumValue?: string | Record<string, Codec | Codec[] | unknown> | T,
+  enumValue?: string | Record<string, Codec | Codec[] | Record<string, unknown>> | T,
   index?: number
 ): MockCodec<T> => {
   if (isCodec<T>(enumValue)) {
@@ -3125,15 +3125,6 @@ export const createMockKeyRecord = (
     ...record,
   });
 };
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-// TODO @prashantasdeveloper
-// export const createMockCanTransferResult = (
-//   canTransferResult?: { Ok: u8 } | { Err: Bytes }
-// ): MockCodec<CanTransferResult> => createMockEnum<CanTransferResult>(canTransferResult);
 
 /**
  * @hidden
