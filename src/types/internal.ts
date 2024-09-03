@@ -307,17 +307,28 @@ export type Falsyable<T> = T | null | undefined;
 export type PermissionsEnum<P> =
   | 'Whole'
   | {
-      These: P[];
+      These: P;
     }
   | {
-      Except: P[];
+      Except: P;
     };
-export type PalletPermissions = {
+
+export type PalletPermissionsV6 = {
   /* eslint-disable @typescript-eslint/naming-convention */
-  pallet_name: string;
-  dispatchable_names: PermissionsEnum<string>;
+  palletName: string;
+  dispatchableNames: PermissionsEnum<string[]>;
   /* eslint-enable @typescript-eslint/naming-convention */
 };
+
+// export type PalletPermissionsV6 = PalletPermissions[];
+export type PalletPermissionsV7 = Map<
+  string,
+  {
+    extrinsics: PermissionsEnum<string[]>;
+  }
+>;
+
+export type PalletPermissions = PalletPermissionsV6[] | PalletPermissionsV7;
 
 export enum InstructionStatus {
   Pending = 'Pending',
