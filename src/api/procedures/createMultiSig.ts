@@ -52,7 +52,7 @@ export async function prepareCreateMultiSigAccount(
       transaction: tx.multiSig.createMultisig,
       resolver: createMultiSigResolver(context),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      args: [rawSignatories, rawRequiredSignatures] as any,
+      args: [rawSignatories, rawRequiredSignatures] as any, // NOSONAR
     };
   } else {
     const { signers, requiredSignatures, permissions } = args;

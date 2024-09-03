@@ -284,7 +284,7 @@ export class NftCollection extends BaseAsset {
     let collectionStorage = nft.collectionAsset;
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      collectionStorage = (nft as any).collectionTicker;
+      collectionStorage = (nft as any).collectionTicker; // NOSONAR
     }
 
     const rawAssetId = assetToMeshAssetId(this, context);
@@ -314,7 +314,7 @@ export class NftCollection extends BaseAsset {
     let collectionStorage = nft.collectionAsset;
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      collectionStorage = (nft as any).collectionTicker;
+      collectionStorage = (nft as any).collectionTicker; // NOSONAR
     }
 
     const rawAssetId = assetToMeshAssetId(this, context);

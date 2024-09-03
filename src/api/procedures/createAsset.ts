@@ -137,7 +137,7 @@ async function getCreateAssetTransaction(
       fee = await addManualFees(fee, [TxTags.asset.RegisterCustomAssetType], context);
       return checkTxType({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        transaction: tx.asset.createAssetWithCustomType as any,
+        transaction: tx.asset.createAssetWithCustomType as any, // NOSONAR
         fee,
         args: [...rawNameTickerArgs, rawIsDivisible, rawAssetType, rawIdentifiers, rawFundingRound],
       });
@@ -146,7 +146,7 @@ async function getCreateAssetTransaction(
 
       return checkTxType({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        transaction: tx.asset.createAsset as any,
+        transaction: tx.asset.createAsset as any, // NOSONAR
         fee,
         args: [...rawNameTickerArgs, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
       });
@@ -156,7 +156,7 @@ async function getCreateAssetTransaction(
 
     return checkTxType({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      transaction: tx.asset.createAsset as any,
+      transaction: tx.asset.createAsset as any, // NOSONAR
       fee,
       args: [...rawNameTickerArgs, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
     });
@@ -313,7 +313,7 @@ export async function prepareCreateAsset(
     transactions.push(
       checkTxType({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        transaction: tx.statistics.setActiveAssetStats as any,
+        transaction: tx.statistics.setActiveAssetStats as any, // NOSONAR
         args: [isV6 ? { Ticker: rawAssetId } : rawAssetId, bTreeStats],
       })
     );

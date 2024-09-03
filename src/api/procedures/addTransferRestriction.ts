@@ -74,9 +74,9 @@ export async function prepareAddTransferRestriction(
     [typeof statisticsQuery.activeAssetStats, typeof statisticsQuery.assetTransferCompliances]
   >(context, [
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    [statisticsQuery.activeAssetStats, rawAssetId as any],
+    [statisticsQuery.activeAssetStats, rawAssetId as any], // NOSONAR
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    [statisticsQuery.assetTransferCompliances, rawAssetId as any],
+    [statisticsQuery.assetTransferCompliances, rawAssetId as any], // NOSONAR
   ]);
 
   const neededStat = neededStatTypeForRestrictionInput({ type, claimIssuer }, context);
@@ -132,7 +132,7 @@ export async function prepareAddTransferRestriction(
     checkTxType({
       transaction: statistics.setAssetTransferCompliance,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      args: [rawAssetId as any, conditions],
+      args: [rawAssetId as any, conditions], // NOSONAR
     })
   );
 

@@ -72,9 +72,9 @@ export async function prepareConsumeAddMultiSigSignerAuthorization(
     transaction =
       target instanceof Account
         ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (multiSig as any).acceptMultisigSignerAsKey
+          (multiSig as any).acceptMultisigSignerAsKey // NOSONAR
         : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (multiSig as any).acceptMultisigSignerAsIdentity;
+          (multiSig as any).acceptMultisigSignerAsIdentity; // NOSONAR
   } else {
     transaction = multiSig.acceptMultisigSigner;
   }

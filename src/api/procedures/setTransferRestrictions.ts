@@ -225,7 +225,7 @@ export async function prepareSetTransferRestrictions(
   transactions.push(
     checkTxType({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      transaction: statistics.setAssetTransferCompliance as any,
+      transaction: statistics.setAssetTransferCompliance as any, // NOSONAR
       args: [rawAssetId, complianceConditionsToBtreeSet(conditions, context)],
     })
   );
@@ -298,7 +298,7 @@ export async function prepareStorage(
   const rawAssetId = getAssetIdForStats(asset, context);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const currentStats = await statistics.activeAssetStats(rawAssetId as any);
+  const currentStats = await statistics.activeAssetStats(rawAssetId as any); // NOSONAR
 
   args.restrictions.forEach(restriction => {
     let claimIssuer;

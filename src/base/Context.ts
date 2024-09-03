@@ -1126,7 +1126,7 @@ export class Context {
               unsub();
               resolve(header);
             })
-            .catch(err => reject(err));
+            .catch(err => reject(err)); // NOSONAR
         });
       });
 
@@ -1192,6 +1192,7 @@ export class Context {
    *   Context to Procedures with different signing Accounts
    */
   public clone(): Context {
+    // NOSONAR
     return clone(this);
   }
 

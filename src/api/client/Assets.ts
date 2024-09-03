@@ -158,7 +158,7 @@ export class Assets {
 
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const entries = await (asset as any).assetOwnershipRelations.entries(rawDid);
+      const entries = await (asset as any).assetOwnershipRelations.entries(rawDid); // NOSONAR
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (entries as any[]).reduce<TickerReservation[]>((result, [key, relation]) => {
@@ -255,7 +255,7 @@ export class Assets {
 
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const entries = await (asset as any).assetOwnershipRelations.entries(rawDid);
+      const entries = await (asset as any).assetOwnershipRelations.entries(rawDid); // NOSONAR
 
       const ownedTickers: string[] = [];
       const rawTickers: PolymeshPrimitivesTicker[] = [];
@@ -273,7 +273,7 @@ export class Assets {
       });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const ownedDetails = await (asset as any).tokens.multi(rawTickers);
+      const ownedDetails = await (asset as any).tokens.multi(rawTickers); // NOSONAR
 
       return assembleAssetQuery(ownedDetails, ownedTickers, context);
     }
@@ -417,7 +417,7 @@ export class Assets {
     let tokensStorage;
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tokensStorage = (asset as any).tokens;
+      tokensStorage = (asset as any).tokens; // NOSONAR
     } else {
       tokensStorage = asset.assets;
     }

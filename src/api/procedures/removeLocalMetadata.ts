@@ -50,7 +50,7 @@ export async function prepareRemoveLocalMetadata(
   let collectionAssetStorage = nft.collectionAsset;
   if (isV6) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    collectionAssetStorage = (nft as any).collectionTicker;
+    collectionAssetStorage = (nft as any).collectionTicker; // NOSONAR
   }
   const [collectionKey, { canModify, reason }] = await Promise.all([
     collectionAssetStorage(rawAssetId),

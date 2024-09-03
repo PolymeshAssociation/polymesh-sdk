@@ -19,7 +19,7 @@ import {
   addressToKey,
   identityIdToString,
   meshProposalStateToProposalStatus,
-  meshProposalStatusToProposalStatus,
+  meshProposalStatusToProposalStatus, // NOSONAR
   momentToDate,
   signatoryToSignerValue,
   signerValueToSigner,
@@ -73,7 +73,7 @@ export class MultiSig extends Account {
       ]) => {
         if (isV6) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return signerValueToSigner(signatoryToSignerValue(signatory as any), context);
+          return signerValueToSigner(signatoryToSignerValue(signatory as any), context); // NOSONAR
         }
         const signerAddress = accountIdToString(signatory);
         return new Account({ address: signerAddress }, context);
@@ -147,12 +147,12 @@ export class MultiSig extends Account {
 
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const details: any[] = await (multiSig as any).proposalDetail.multi(queries);
+      const details: any[] = await (multiSig as any).proposalDetail.multi(queries); // NOSONAR
 
       const statuses = details.map(({ status: rawStatus, expiry: rawExpiry }) => {
         const expiry = optionize(momentToDate)(rawExpiry.unwrapOr(null));
 
-        return meshProposalStatusToProposalStatus(rawStatus, expiry);
+        return meshProposalStatusToProposalStatus(rawStatus, expiry); // NOSONAR
       });
 
       return proposals.filter((_, index) => statuses[index] === ProposalStatus.Active);
@@ -223,7 +223,7 @@ export class MultiSig extends Account {
     } = this;
 
     if (isV6) {
-      return this.getCreator();
+      return this.getCreator(); // NOSONAR
     }
 
     const rawAddress = addressToKey(address, context);
@@ -256,7 +256,7 @@ export class MultiSig extends Account {
     } = this;
 
     if (isV6) {
-      return this.getCreator();
+      return this.getCreator(); // NOSONAR
     }
 
     const rawAddress = addressToKey(address, context);
@@ -290,7 +290,7 @@ export class MultiSig extends Account {
     if (isV6) {
       const rawAddress = addressToKey(address, context);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const rawAdminDid = await (multiSig as any).multiSigToIdentity(rawAddress);
+      const rawAdminDid = await (multiSig as any).multiSigToIdentity(rawAddress); // NOSONAR
       if (rawAdminDid.isNone) {
         throw new PolymeshError({
           code: ErrorCode.DataUnavailable,

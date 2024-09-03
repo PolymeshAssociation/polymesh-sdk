@@ -83,9 +83,9 @@ export async function prepareModifyMultiSig(
 
   if (isV6) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    addSignersTx = (tx.multiSig as any).addMultisigSignersViaCreator;
+    addSignersTx = (tx.multiSig as any).addMultisigSignersViaCreator; // NOSONAR
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    removeSignersTx = (tx.multiSig as any).removeMultisigSignersViaCreator;
+    removeSignersTx = (tx.multiSig as any).removeMultisigSignersViaCreator; // NOSONAR
 
     toRawSignerTx = (signer: Signer): AccountId =>
       signerToSignatory(signer, context) as unknown as AccountId;

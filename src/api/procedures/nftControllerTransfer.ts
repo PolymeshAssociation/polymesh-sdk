@@ -95,7 +95,7 @@ export async function prepareNftControllerTransfer(
         portfolioIdToMeshPortfolioId(originPortfolioId, context),
         portfolioToPortfolioKind(destinationPortfolio, context),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ] as any,
+      ] as any, // NOSONAR
       resolver: undefined,
     };
   }
