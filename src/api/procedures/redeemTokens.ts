@@ -64,7 +64,7 @@ export async function prepareRedeemTokens(
   let transaction = tx.asset.redeem;
   if (isV6) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    transaction = (tx.asset as any).redeemFromPortfolio;
+    transaction = (tx.asset as any).redeemFromPortfolio; // NOSONAR
   }
   return {
     transaction,

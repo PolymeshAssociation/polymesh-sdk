@@ -320,7 +320,6 @@ export type PalletPermissionsV6 = {
   /* eslint-enable @typescript-eslint/naming-convention */
 };
 
-// export type PalletPermissionsV6 = PalletPermissions[];
 export type PalletPermissionsV7 = Map<
   string,
   {

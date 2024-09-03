@@ -265,9 +265,9 @@ export class FungibleAsset extends BaseAsset {
 
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      collectionsStorage = (nft as any).collectionTicker;
+      collectionsStorage = (nft as any).collectionTicker; // NOSONAR
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tokensStorage = (asset as any).tokens;
+      tokensStorage = (asset as any).tokens; // NOSONAR
     }
 
     const [tokenSize, nftId] = await Promise.all([

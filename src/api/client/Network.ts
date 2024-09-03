@@ -493,7 +493,7 @@ export class Network {
     } = this;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return !!(query as any).confidentialAsset;
+    return !!(query as any).confidentialAsset; // NOSONAR
   }
 
   /**

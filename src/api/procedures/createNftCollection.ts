@@ -152,7 +152,7 @@ async function getCreateAssetTxAndFees(
 
   return checkTxType({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    transaction: tx.asset.createAsset as any,
+    transaction: tx.asset.createAsset as any, // NOSONAR
     fee,
     args: [...rawNameTickerArgs, rawDivisibility, rawAssetType, rawIdentifiers, rawFundingRound],
   });
@@ -463,7 +463,7 @@ export async function prepareStorage(
       storageStatus.assetId = reservationDetails.assetId;
       storageStatus.isAssetCreated = true;
       if (assetIdExistsForV7 && assetId !== reservationDetails.assetId) {
-        // For v7 chain, if assetID is provided in arguments, and the ticker provided is not already associted with the given asset ID, throw an error
+        // For v7 chain, if assetID is provided in arguments, and the ticker provided is not already associated with the given asset ID, throw an error
         throw new PolymeshError({
           code: ErrorCode.UnmetPrerequisite,
           message: 'Ticker is already linked to another asset',

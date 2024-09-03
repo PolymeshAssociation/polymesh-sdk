@@ -271,7 +271,7 @@ import {
   meshMetadataValueToMetadataValue,
   meshNftToNftId,
   meshPermissionsToPermissions,
-  meshProposalStatusToProposalStatus,
+  meshProposalStatusToProposalStatus, // NOSONAR
   meshScopeToScope,
   meshSettlementTypeToEndCondition,
   meshStatToStatType,
@@ -4155,7 +4155,7 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
     it('should convert a Ticker type Scope into a polkadot Scope object', async () => {
       const context = dsMockUtils.getContextInstance({ isV6: true });
       const value: Scope = {
-        type: ScopeType.Ticker,
+        type: ScopeType.Ticker, // NOSONAR
         value: 'SOME_TICKER',
       };
 
@@ -4228,7 +4228,7 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
       expect(result).toEqual(fakeResult);
 
       fakeResult = {
-        type: ScopeType.Ticker,
+        type: ScopeType.Ticker, // NOSONAR
         value: 'SOME_TICKER',
       };
       scope = dsMockUtils.createMockScope({
@@ -4792,7 +4792,7 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
       result = await scopeToMiddlewareScope(scope, context);
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Asset, value: '0x1234' });
 
-      scope = { type: ScopeType.Ticker, value: 'SOME_TICKER' };
+      scope = { type: ScopeType.Ticker, value: 'SOME_TICKER' }; // NOSONAR
       getAssetIdForMiddlewareSpy.mockResolvedValue('0x1234');
       result = await scopeToMiddlewareScope(scope, context);
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Asset, value: '0x1234' });
@@ -9236,28 +9236,28 @@ describe('inputStatTypeToMeshStatType', () => {
 
 describe('meshProposalStatusToProposalStatus', () => {
   it('should convert raw statuses to the correct ProposalStatus', () => {
-    let result = meshProposalStatusToProposalStatus({ type: 'ActiveOrExpired' }, null);
+    let result = meshProposalStatusToProposalStatus({ type: 'ActiveOrExpired' }, null); // NOSONAR
     expect(result).toEqual(ProposalStatus.Active);
 
-    result = meshProposalStatusToProposalStatus({ type: 'ActiveOrExpired' }, new Date(1));
+    result = meshProposalStatusToProposalStatus({ type: 'ActiveOrExpired' }, new Date(1)); // NOSONAR
     expect(result).toEqual(ProposalStatus.Expired);
 
-    result = meshProposalStatusToProposalStatus({ type: 'ExecutionSuccessful' }, null);
+    result = meshProposalStatusToProposalStatus({ type: 'ExecutionSuccessful' }, null); // NOSONAR
     expect(result).toEqual(ProposalStatus.Successful);
 
-    result = meshProposalStatusToProposalStatus({ type: 'ExecutionFailed' }, null);
+    result = meshProposalStatusToProposalStatus({ type: 'ExecutionFailed' }, null); // NOSONAR
     expect(result).toEqual(ProposalStatus.Failed);
 
-    result = meshProposalStatusToProposalStatus({ type: 'Rejected' }, null);
+    result = meshProposalStatusToProposalStatus({ type: 'Rejected' }, null); // NOSONAR
     expect(result).toEqual(ProposalStatus.Rejected);
 
-    result = meshProposalStatusToProposalStatus({ type: 'Invalid' }, null);
+    result = meshProposalStatusToProposalStatus({ type: 'Invalid' }, null); // NOSONAR
     expect(result).toEqual(ProposalStatus.Invalid);
   });
 
   it('should throw an error if it receives an unknown status', () => {
-    return expect(() =>
-      meshProposalStatusToProposalStatus({ type: 'UnknownStatus' }, null)
+    return expect(
+      () => meshProposalStatusToProposalStatus({ type: 'UnknownStatus' }, null) // NOSONAR
     ).toThrowError('Unexpected proposal status received');
   });
 });

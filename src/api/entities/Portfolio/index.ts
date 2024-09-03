@@ -409,7 +409,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       _id: portfolioId,
     } = this;
 
-    const { account, ticker, assetId } = filters;
+    const { account, ticker, assetId } = filters; // NOSONAR
 
     let middlewareAssetId;
     const assetIdValue = assetId ?? ticker;

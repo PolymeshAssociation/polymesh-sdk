@@ -160,9 +160,9 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
 
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tickerRegistrationStorage = (asset as any).tickers;
+      tickerRegistrationStorage = (asset as any).tickers; // NOSONAR
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tokensStorage = (asset as any).tokens;
+      tokensStorage = (asset as any).tokens; // NOSONAR
       assetId = ticker;
     } else {
       const meshAssetId = await asset.tickerAssetID(rawTicker);
@@ -247,7 +247,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
 
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tickerRegistrationStorage = (asset as any).tickers;
+      tickerRegistrationStorage = (asset as any).tickers; // NOSONAR
     }
     const tickerSize = await tickerRegistrationStorage.size(stringToTicker(ticker, context));
 
