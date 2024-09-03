@@ -222,10 +222,14 @@ export abstract class TransferRestrictionBase<
 
     const rawAssetId = getAssetIdForStats(parent, context);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+<<<<<<< HEAD
     const { requirements } = await (statistics.assetTransferCompliances as any)(rawAssetId);
 
     const existingRequirementCount = [...requirements].length;
 
+=======
+    const { requirements } = await statistics.assetTransferCompliances(rawAssetId as any); // NOSONAR
+>>>>>>> 184ec54c8 (chore: 🤖 disable sonar for `any` assertions)
     const filteredRequirements = [...requirements].filter(requirement => {
       if (type === TransferRestrictionType.Count) {
         return requirement.isMaxInvestorCount;
@@ -240,6 +244,7 @@ export abstract class TransferRestrictionBase<
 
     const rawAssetKey = isV6 ? { asset: rawAssetId } : { assetId: rawAssetId };
     const rawExemptedLists = await Promise.all(
+<<<<<<< HEAD
       filteredRequirements.map(req => {
         const { value } = transferConditionToTransferRestriction(req, context);
 
@@ -267,49 +272,57 @@ export abstract class TransferRestrictionBase<
           });
         }
       })
+=======
+      filteredRequirements.map(() =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (statistics.transferConditionExemptEntities as any) // NOSONAR
+          .entries(isV6 ? { asset: rawAssetId } : { assetId: rawAssetId })
+      )
+>>>>>>> 184ec54c8 (chore: 🤖 disable sonar for `any` assertions)
     );
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const restrictions = (rawExemptedLists as any[][]).map((list, index) => {
-      const exemptedIds = list.map(
-        ([
-          {
-            args: [, scopeId],
-          },
-        ]) => identityIdToString(scopeId) // `ScopeId` and `PolymeshPrimitivesIdentityId` are the same type, so this is fine
-      );
-      const { value } = transferConditionToTransferRestriction(
-        filteredRequirements[index],
-        context
-      );
-      let restriction;
+    const restrictions = (rawExemptedLists as any[][]) // NOSONAR
+      .map((list, index) => {
+        const exemptedIds = list.map(
+          ([
+            {
+              args: [, scopeId],
+            },
+          ]) => identityIdToString(scopeId) // `ScopeId` and `PolymeshPrimitivesIdentityId` are the same type, so this is fine
+        );
+        const { value } = transferConditionToTransferRestriction(
+          filteredRequirements[index],
+          context
+        );
+        let restriction;
 
-      if (type === TransferRestrictionType.Count) {
-        restriction = {
-          count: value,
-        };
-      } else if (type === TransferRestrictionType.Percentage) {
-        restriction = {
-          percentage: value,
-        };
-      } else {
-        const { min, max, claim, issuer } = value as ClaimCountRestrictionValue;
-        restriction = {
-          min,
-          max,
-          claim,
-          issuer,
-        };
-      }
+        if (type === TransferRestrictionType.Count) {
+          restriction = {
+            count: value,
+          };
+        } else if (type === TransferRestrictionType.Percentage) {
+          restriction = {
+            percentage: value,
+          };
+        } else {
+          const { min, max, claim, issuer } = value as ClaimCountRestrictionValue;
+          restriction = {
+            min,
+            max,
+            claim,
+            issuer,
+          };
+        }
 
-      if (exemptedIds.length) {
-        return {
-          ...restriction,
-          exemptedIds,
-        };
-      }
-      return restriction;
-    });
+        if (exemptedIds.length) {
+          return {
+            ...restriction,
+            exemptedIds,
+          };
+        }
+        return restriction;
+      });
 
     const maxTransferConditions = u32ToBigNumber(consts.statistics.maxTransferConditionsPerAsset);
 

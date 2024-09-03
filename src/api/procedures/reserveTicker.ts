@@ -75,7 +75,7 @@ export async function prepareReserveTicker(
   let transaction = tx.asset.registerUniqueTicker;
   if (isV6) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    transaction = (tx.asset as any).registerTicker;
+    transaction = (tx.asset as any).registerTicker; // NOSONAR
   }
 
   return {

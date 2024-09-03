@@ -289,7 +289,7 @@ export async function prepareSetTransferRestrictions(
   transactions.push(
     checkTxType({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      transaction: statistics.setAssetTransferCompliance as any,
+      transaction: statistics.setAssetTransferCompliance as any, // NOSONAR
       args: [
         rawAssetId, // if we do not add the current restrictions (filteredRestrictions), then they will be removed
         complianceConditionsToBtreeSet([...filteredRestrictions, ...conditions], context),
@@ -369,9 +369,9 @@ export async function prepareStorage(
     [typeof statistics.activeAssetStats, typeof statistics.assetTransferCompliances]
   >(context, [
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    [statistics.activeAssetStats, rawAssetId as any],
+    [statistics.activeAssetStats, rawAssetId as any], // NOSONAR
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    [statistics.assetTransferCompliances, rawAssetId as any],
+    [statistics.assetTransferCompliances, rawAssetId as any], // NOSONAR
   ]);
 
   args.restrictions.forEach(restriction => {

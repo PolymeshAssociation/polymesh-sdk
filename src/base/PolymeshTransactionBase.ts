@@ -985,7 +985,7 @@ export abstract class PolymeshTransactionBase<
 
       if (isV6) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (multiSig as any).createProposalAsKey(rawMultiSigId, tx, rawExpiry, true);
+        return (multiSig as any).createProposalAsKey(rawMultiSigId, tx, rawExpiry, true); // NOSONAR
       } else {
         return multiSig.createProposal(rawMultiSigId, tx, rawExpiry);
       }

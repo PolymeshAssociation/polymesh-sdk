@@ -24,7 +24,7 @@ import {
   PolymeshError,
 } from '~/internal';
 import { extrinsicsByArgs } from '~/middleware/queries/extrinsics';
-import { CallIdEnum, ExtrinsicsOrderBy, ModuleIdEnum, Query } from '~/middleware/types';
+import { ExtrinsicsOrderBy, Query } from '~/middleware/types';
 import {
   AccountBalance,
   CheckPermissionsResult,
@@ -287,8 +287,8 @@ export class Account extends Entity<UniqueIdentifiers, string> {
           address: signerAddress!,
           nonce: nonce ? new BigNumber(nonce) : null,
           txTag: extrinsicIdentifierToTxTag({
-            moduleId: extrinsicModuleId as ModuleIdEnum,
-            callId: extrinsicCallId as CallIdEnum,
+            moduleId: extrinsicModuleId,
+            callId: extrinsicCallId,
           }),
           params: JSON.parse(paramsTxt),
           success: !!txSuccess,

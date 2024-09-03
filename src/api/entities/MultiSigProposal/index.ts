@@ -26,7 +26,7 @@ import {
   bigNumberToU64,
   boolToBoolean,
   meshProposalStateToProposalStatus,
-  meshProposalStatusToProposalStatus,
+  meshProposalStatusToProposalStatus, // NOSONAR
   middlewareEventDetailsToEventIdentifier,
   momentToDate,
   signerValueToSigner,
@@ -130,7 +130,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
         votes,
       ] = await Promise.all([
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (multiSig as any).proposalDetail(rawMultiSignAddress, rawId),
+        (multiSig as any).proposalDetail(rawMultiSignAddress, rawId), // NOSONAR
         multiSig.proposals(rawMultiSignAddress, rawId),
         multiSig.votes.entries([rawMultiSignAddress, rawId]),
       ]);
@@ -149,20 +149,22 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
       const approvalAmount = u64ToBigNumber(rawApprovals);
       const rejectionAmount = u64ToBigNumber(rawRejections);
       const expiry = optionize(momentToDate)(rawExpiry.unwrapOr(null));
-      const status = meshProposalStatusToProposalStatus(rawStatus, expiry);
+      const status = meshProposalStatusToProposalStatus(rawStatus, expiry); // NOSONAR
       const autoClose = boolToBoolean(rawAutoClose);
       const voted: Account[] = [];
       if (votes.length > 0) {
         votes.forEach(([voteStorageKey, didVote]) => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          if (didVote.isTrue && (voteStorageKey.args[1] as any).isAccount)
+          const isAccount = (voteStorageKey.args[1] as any).isAccount; // NOSONAR
+          if (didVote.isTrue && isAccount) {
             voted.push(
               new Account(
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                { address: accountIdToString((voteStorageKey.args[1] as any).asAccount) },
+                { address: accountIdToString((voteStorageKey.args[1] as any).asAccount) }, // NOSONAR
                 context
               )
             );
+          }
         });
       }
 

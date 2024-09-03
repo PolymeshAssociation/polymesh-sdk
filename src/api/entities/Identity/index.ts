@@ -239,7 +239,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     let tokensStorage;
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tokensStorage = (asset as any).tokens;
+      tokensStorage = (asset as any).tokens; // NOSONAR
     } else {
       tokensStorage = asset.assets;
     }
@@ -996,7 +996,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     let preApprovedStorage = asset.preApprovedAsset;
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      preApprovedStorage = (asset as any).preApprovedTicker;
+      preApprovedStorage = (asset as any).preApprovedTicker; // NOSONAR
     }
 
     const { entries, lastKey: next } = await requestPaginated(preApprovedStorage, {
@@ -1035,7 +1035,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     let preApprovedStorage = assetQuery.preApprovedAsset;
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      preApprovedStorage = (asset as any).preApprovedTicker;
+      preApprovedStorage = (asset as any).preApprovedTicker; // NOSONAR
     }
 
     const baseAsset = await asBaseAsset(asset, context);
@@ -1070,7 +1070,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       type Entry = [{ args: [AccountId32] }, PolymeshPrimitivesIdentityId];
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const entries: Entry[] = await (query.multiSig as any).multiSigToIdentity.entries();
+      const entries: Entry[] = await (query.multiSig as any).multiSigToIdentity.entries(); // NOSONAR
 
       const multiSigs: Record<string, Signer[]> = {};
 

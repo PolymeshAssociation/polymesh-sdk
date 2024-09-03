@@ -196,7 +196,7 @@ export class Portfolios extends Namespace<Identity> {
       parent: { did: identityId },
     } = this;
 
-    const { account, ticker, assetId } = filters;
+    const { account, ticker, assetId } = filters; // NOSONAR
 
     let middlewareAssetId;
     const assetIdValue = assetId ?? ticker;

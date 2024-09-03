@@ -61,7 +61,7 @@ export async function prepareMultiSigProposalEvaluation(
     proposal.multiSig.details(),
     proposal.details(),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    votes([rawMultiSigAddress, rawProposalId], rawSigner as any),
+    votes([rawMultiSigAddress, rawProposalId], rawSigner as any), // NOSONAR
   ]);
 
   if (
@@ -111,19 +111,14 @@ export async function prepareMultiSigProposalEvaluation(
 
   let transaction;
   if (isV6) {
-    if (action === MultiSigProposalAction.Approve) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      transaction = (multiSig as any).approveAsKey;
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      transaction = (multiSig as any).rejectAsKey;
-    }
+    transaction =
+      action === MultiSigProposalAction.Approve
+        ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (multiSig as any).approveAsKey // NOSONAR
+        : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (multiSig as any).rejectAsKey; // NOSONAR
   } else {
-    if (action === MultiSigProposalAction.Approve) {
-      transaction = multiSig.approve;
-    } else {
-      transaction = multiSig.reject;
-    }
+    transaction = action === MultiSigProposalAction.Approve ? multiSig.approve : multiSig.reject;
   }
 
   return {

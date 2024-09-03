@@ -252,7 +252,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
     let identifiersStorage;
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      identifiersStorage = (asset as any).identifiers;
+      identifiersStorage = (asset as any).identifiers; // NOSONAR
     } else {
       identifiersStorage = asset.assetIdentifiers;
     }
@@ -382,7 +382,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
     let tokensStorage = asset.assets;
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tokensStorage = (asset as any).tokens;
+      tokensStorage = (asset as any).tokens; // NOSONAR
     }
 
     if (callback) {
@@ -514,9 +514,9 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
     let collectionsStorage = nft.collectionAsset;
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tokensStorage = (asset as any).tokens;
+      tokensStorage = (asset as any).tokens; // NOSONAR
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      collectionsStorage = (nft as any).collectionTicker;
+      collectionsStorage = (nft as any).collectionTicker; // NOSONAR
     }
 
     const [tokenSize, nftId] = await Promise.all([

@@ -433,7 +433,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
               ticker: rawTicker,
               assetId: rawAssetId,
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            } = legValue.asFungible as any;
+            } = legValue.asFungible as any; // NOSONAR
 
             const assetId = meshAssetToAssetId(rawTicker || rawAssetId, context);
             const fromPortfolio = meshPortfolioIdToPortfolio(sender, context);
