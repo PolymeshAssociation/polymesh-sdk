@@ -2001,22 +2001,6 @@ export const createMockBTreeMap = <K extends Codec, V extends Codec>(
     return items as MockCodec<BTreeMap<K, V>>;
   }
 
-  // const codecItems = items.forEach((item, key) => {
-  //   if (isCodec(item)) {
-  //     return item;
-  //   }
-
-  //   if (typeof item === 'string') {
-  //     return createMockStringCodec(item);
-  //   }
-
-  //   if (typeof item === 'number' || item instanceof BigNumber) {
-  //     return createMockNumberCodec(new BigNumber(item));
-  //   }
-
-  //   return createMockCodec(item, !item);
-  // });
-
   const res = createMockCodec(items, !items) as unknown as Mutable<BTreeMap>;
 
   return res as MockCodec<BTreeMap<K, V>>;

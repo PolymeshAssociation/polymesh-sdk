@@ -122,7 +122,7 @@ const assertReceipts = async (
   const instruction = new Instruction({ id: instructionId }, context);
 
   const { venue } = await instruction.details();
-  const allowedSigners = await venue.getAllowedSigners();
+  const allowedSigners = await venue?.getAllowedSigners();
 
   const invalidReceipts: OffChainAffirmationReceipt[] = [];
   const invalidSignerReceipts: OffChainAffirmationReceipt[] = [];
@@ -144,7 +144,9 @@ const assertReceipts = async (
 
     const { address: signerAddress } = asAccount(signer, context);
 
-    const isAllowedSigner = allowedSigners.some(({ address }) => signerAddress === address);
+    const isAllowedSigner = allowedSigners
+      ? allowedSigners.some(({ address }) => signerAddress === address)
+      : true;
 
     if (!isAllowedSigner) {
       invalidSignerReceipts.push(receipt);

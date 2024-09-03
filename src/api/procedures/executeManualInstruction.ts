@@ -71,11 +71,9 @@ export async function prepareExecuteManualInstruction(
   await assertInstructionValidForManualExecution(instructionDetails, context);
 
   if (!portfolios.length) {
-    const {
-      owner: { did: venueOwner },
-    } = await instructionDetails.venue.details();
+    const details = await instructionDetails.venue?.details();
 
-    if (venueOwner !== signerDid && !offChainParties.has(signerDid)) {
+    if (details?.owner.did !== signerDid && !offChainParties.has(signerDid)) {
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'The signing identity is not involved in this Instruction',
