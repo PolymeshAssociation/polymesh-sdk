@@ -397,7 +397,7 @@ describe('Instruction class', () => {
         type,
         memo,
       });
-      expect(result.venue.id).toEqual(venueId);
+      expect(result.venue?.id).toEqual(venueId);
 
       type = InstructionType.SettleOnBlock;
       const endBlock = new BigNumber(100);
@@ -430,7 +430,7 @@ describe('Instruction class', () => {
         endBlock,
         memo: null,
       });
-      expect(result.venue.id).toEqual(venueId);
+      expect(result.venue?.id).toEqual(venueId);
 
       type = InstructionType.SettleManual;
 
@@ -463,7 +463,7 @@ describe('Instruction class', () => {
         endAfterBlock: endBlock,
         memo: null,
       });
-      expect(result.venue.id).toEqual(venueId);
+      expect(result.venue?.id).toEqual(venueId);
 
       status = InstructionStatus.Failed;
       type = InstructionType.SettleOnAffirmation;
@@ -490,7 +490,28 @@ describe('Instruction class', () => {
         type,
         memo,
       });
-      expect(result.venue.id).toEqual(venueId);
+      expect(result.venue?.id).toEqual(venueId);
+
+      queryMultiMock.mockResolvedValueOnce([
+        dsMockUtils.createMockInstruction({
+          ...rawInstructionDetails,
+          venueId: dsMockUtils.createMockOption(),
+        }),
+        dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Failed),
+        rawOptionalMemo,
+      ]);
+
+      result = await instruction.details();
+
+      expect(result).toMatchObject({
+        status,
+        createdAt,
+        tradeDate,
+        valueDate,
+        type,
+        memo,
+      });
+      expect(result.venue).toBeNull();
     });
 
     it('should throw an error if an Instruction leg is not present', () => {
