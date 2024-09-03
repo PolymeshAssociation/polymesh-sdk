@@ -222,14 +222,10 @@ export abstract class TransferRestrictionBase<
 
     const rawAssetId = getAssetIdForStats(parent, context);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-<<<<<<< HEAD
-    const { requirements } = await (statistics.assetTransferCompliances as any)(rawAssetId);
+    const { requirements } = await statistics.assetTransferCompliances(rawAssetId as any); // NOSONAR
 
     const existingRequirementCount = [...requirements].length;
 
-=======
-    const { requirements } = await statistics.assetTransferCompliances(rawAssetId as any); // NOSONAR
->>>>>>> 184ec54c8 (chore: 🤖 disable sonar for `any` assertions)
     const filteredRequirements = [...requirements].filter(requirement => {
       if (type === TransferRestrictionType.Count) {
         return requirement.isMaxInvestorCount;
@@ -244,7 +240,6 @@ export abstract class TransferRestrictionBase<
 
     const rawAssetKey = isV6 ? { asset: rawAssetId } : { assetId: rawAssetId };
     const rawExemptedLists = await Promise.all(
-<<<<<<< HEAD
       filteredRequirements.map(req => {
         const { value } = transferConditionToTransferRestriction(req, context);
 
@@ -272,13 +267,6 @@ export abstract class TransferRestrictionBase<
           });
         }
       })
-=======
-      filteredRequirements.map(() =>
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (statistics.transferConditionExemptEntities as any) // NOSONAR
-          .entries(isV6 ? { asset: rawAssetId } : { assetId: rawAssetId })
-      )
->>>>>>> 184ec54c8 (chore: 🤖 disable sonar for `any` assertions)
     );
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

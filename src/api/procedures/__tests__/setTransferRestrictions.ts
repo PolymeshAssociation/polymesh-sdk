@@ -185,7 +185,7 @@ describe('setTransferRestrictions procedure', () => {
       boolean,
       {
         asset: { Ticker: PolymeshPrimitivesAssetAssetID };
-        op: PolymeshPrimitivesStatisticsStatOpType;
+        operationType: PolymeshPrimitivesStatisticsStatOpType;
       },
       BTreeSet<PolymeshPrimitivesIdentityId>
     ]
@@ -679,7 +679,7 @@ describe('setTransferRestrictions procedure', () => {
   it('should throw an error if trying to add more restrictions than there are slots available', async () => {
     args = {
       asset,
-      restrictions: [{ count }, { count: new BigNumber(2) }],
+      restrictions: [{ count: new BigNumber(2) }],
       type: TransferRestrictionType.Count,
     };
 
@@ -915,11 +915,11 @@ describe('setTransferRestrictions procedure', () => {
 
       rawCountStatType = dsMockUtils.createMockStatisticsStatType();
       rawBalanceStatType = dsMockUtils.createMockStatisticsStatType({
-        op: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
+        operationType: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
         claimIssuer: dsMockUtils.createMockOption(),
       });
       rawClaimCountStatType = dsMockUtils.createMockStatisticsStatType({
-        op: dsMockUtils.createMockStatisticsOpType(StatType.ScopedCount),
+        operationType: dsMockUtils.createMockStatisticsOpType(StatType.ScopedCount),
         claimIssuer: dsMockUtils.createMockOption([
           dsMockUtils.createMockClaimType(),
           dsMockUtils.createMockIdentityId(),
@@ -951,7 +951,7 @@ describe('setTransferRestrictions procedure', () => {
       asset = entityMockUtils.getFungibleAssetInstance({ assetId });
 
       rawClaimCountStatType = dsMockUtils.createMockStatisticsStatType({
-        op: dsMockUtils.createMockStatisticsOpType(StatType.ScopedCount),
+        operationType: dsMockUtils.createMockStatisticsOpType(StatType.ScopedCount),
         claimIssuer: dsMockUtils.createMockOption([
           dsMockUtils.createMockClaimType(),
           dsMockUtils.createMockIdentityId(),

@@ -705,7 +705,6 @@ describe('Portfolio class', () => {
       expect((result[1].legs[0].from as NumberedPortfolio).id).toEqual(portfolioId2);
       expect((result[1].legs[0] as FungibleLeg).to.owner.did).toEqual(portfolioDid1);
 
-      jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware').mockResolvedValue(assetId2);
       dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: settlementsQuery({

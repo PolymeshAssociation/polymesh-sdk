@@ -68,10 +68,6 @@ describe('DefaultTrustedClaimIssuer class', () => {
     };
     const getAssetIdForMiddlewareSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware');
 
-    beforeEach(() => {
-      jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware').mockResolvedValue(ticker);
-    });
-
     it('should return the event identifier object of the trusted claim issuer creation', async () => {
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');

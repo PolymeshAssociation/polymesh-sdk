@@ -461,8 +461,8 @@ describe('Account class', () => {
 
   describe('method: isFrozen', () => {
     beforeAll(() => {
-      dsMockUtils.createQueryMock('multiSig', 'multiSigToIdentity', {
-        returnValue: dsMockUtils.createMockIdentityId(),
+      dsMockUtils.createQueryMock('multiSig', 'multiSigSigners', {
+        returnValue: [],
       });
     });
 
