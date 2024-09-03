@@ -333,12 +333,10 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     return {
       status,
-      createdAt: momentToDate(createdAt.unwrap()),
+      createdAt: createdAt.isSome ? momentToDate(createdAt.unwrap()) : null,
       tradeDate: tradeDate.isSome ? momentToDate(tradeDate.unwrap()) : null,
       valueDate: valueDate.isSome ? momentToDate(valueDate.unwrap()) : null,
-      venue: venueId.isSome
-        ? new Venue({ id: u64ToBigNumber(venueId.unwrap()) }, context)
-        : new Venue({ id: new BigNumber(-1) }, context), // TODO make field optional
+      venue: venueId.isSome ? new Venue({ id: u64ToBigNumber(venueId.unwrap()) }, context) : null,
       memo: memo.isSome ? instructionMemoToString(memo.unwrap()) : null,
       ...meshSettlementTypeToEndCondition(type),
     };
