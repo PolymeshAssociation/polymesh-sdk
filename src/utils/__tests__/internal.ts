@@ -2471,7 +2471,7 @@ describe('areSameClaims', () => {
 
     const secondClaim = {
       ...firstClaim,
-      scope: { type: ScopeType.Ticker, value: 'TICKER' },
+      scope: { type: ScopeType.Asset, value: '0x1234' },
     } as unknown as MiddlewareClaim;
 
     const result = areSameClaims(firstClaim, secondClaim, context);

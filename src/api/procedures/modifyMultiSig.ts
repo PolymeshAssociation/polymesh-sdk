@@ -48,7 +48,7 @@ export async function prepareModifyMultiSig(
 
   const [signingIdentity, creator] = await Promise.all([
     context.getSigningIdentity(),
-    multiSig.getCreator(),
+    multiSig.getCreator(), // NOSONAR
   ]);
 
   if (!signersToAdd.length && !signersToRemove.length) {

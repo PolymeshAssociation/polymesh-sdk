@@ -57,7 +57,7 @@ export async function prepareMultiSigProposalEvaluation(
     : stringToAccountId(signingAccount.address, context);
 
   const [creator, { signers: multiSigSigners }, { status }, hasVoted] = await Promise.all([
-    proposal.multiSig.getCreator(),
+    proposal.multiSig.getCreator(), // NOSONAR
     proposal.multiSig.details(),
     proposal.details(),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
