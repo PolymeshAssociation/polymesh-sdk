@@ -2263,12 +2263,12 @@ export async function getAccount(
   const { address } = args;
 
   const rawAddress = stringToAccountId(address, context);
-  const identity = await multiSig.multiSigToIdentity(rawAddress);
-  if (identity.isEmpty) {
-    return new Account(args, context);
+  const rawSigners = await multiSig.multiSigSigners.entries(rawAddress);
+  if (rawSigners.length > 0) {
+    return new MultiSig(args, context);
   }
 
-  return new MultiSig(args, context);
+  return new Account(args, context);
 }
 
 /**

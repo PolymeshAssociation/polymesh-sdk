@@ -405,8 +405,6 @@ describe('Portfolios class', () => {
       expect(result[2].legs[0].direction).toEqual(SettlementDirectionEnum.None);
       expect(result[3].legs[0].direction).toEqual(SettlementDirectionEnum.None);
 
-      jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware').mockResolvedValue(assetId2);
-
       dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: settlementsForAllPortfoliosQuery({

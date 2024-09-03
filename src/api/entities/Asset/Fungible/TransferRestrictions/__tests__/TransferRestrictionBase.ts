@@ -707,22 +707,22 @@ describe('TransferRestrictionBase class', () => {
       activeAssetStatsMock = dsMockUtils.createQueryMock('statistics', 'activeAssetStats');
 
       rawCountStatType = dsMockUtils.createMockStatisticsStatType({
-        op: dsMockUtils.createMockStatisticsOpType(StatType.Count),
+        operationType: dsMockUtils.createMockStatisticsOpType(StatType.Count),
         claimIssuer: dsMockUtils.createMockOption(),
       });
       rawPercentageStatType = dsMockUtils.createMockStatisticsStatType({
-        op: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
+        operationType: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
         claimIssuer: dsMockUtils.createMockOption(),
       });
       rawClaimCountStatType = dsMockUtils.createMockStatisticsStatType({
-        op: dsMockUtils.createMockStatisticsOpType(StatType.Count),
+        operationType: dsMockUtils.createMockStatisticsOpType(StatType.Count),
         claimIssuer: dsMockUtils.createMockOption([
           dsMockUtils.createMockClaimType(ClaimType.Affiliate),
           issuerDid,
         ]),
       });
       rawClaimPercentageStatType = dsMockUtils.createMockStatisticsStatType({
-        op: dsMockUtils.createMockStatisticsOpType(StatType.ScopedBalance),
+        operationType: dsMockUtils.createMockStatisticsOpType(StatType.ScopedBalance),
         claimIssuer: dsMockUtils.createMockOption([
           dsMockUtils.createMockClaimType(ClaimType.Accredited),
           issuerDid,

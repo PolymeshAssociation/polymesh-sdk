@@ -1471,7 +1471,7 @@ describe('Polymesh Transaction Base class', () => {
         )
         .mockReturnValue(era);
 
-      dsMockUtils.createTxMock('multiSig', 'createProposalAsKey');
+      dsMockUtils.createTxMock('multiSig', 'createProposal');
 
       tx = new PolymeshTransaction(
         {
