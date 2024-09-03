@@ -206,8 +206,8 @@ describe('AccountManagement class', () => {
 
     it('should return an Account object with the passed address', async () => {
       const params = { address: 'testAddress' };
-      dsMockUtils.createQueryMock('multiSig', 'multiSigToIdentity', {
-        returnValue: dsMockUtils.createMockIdentityId(),
+      dsMockUtils.createQueryMock('multiSig', 'multiSigSigners', {
+        returnValue: [],
       });
 
       const result = await accountManagement.getAccount(params);
@@ -218,8 +218,8 @@ describe('AccountManagement class', () => {
 
     it('should return a MultiSig instance if the address is for a MultiSig', async () => {
       const params = { address: 'testAddress' };
-      dsMockUtils.createQueryMock('multiSig', 'multiSigToIdentity', {
-        returnValue: dsMockUtils.createMockIdentityId('someDid'),
+      dsMockUtils.createQueryMock('multiSig', 'multiSigSigners', {
+        entries: [[['someSignerAddress'], 'someSignerAddress']],
       });
 
       const result = await accountManagement.getAccount(params);
