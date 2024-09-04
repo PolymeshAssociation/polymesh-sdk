@@ -101,6 +101,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       fungibleTokens: dsMockUtils.createMockU32(new BigNumber(3)),
       nonFungibleTokens: dsMockUtils.createMockU32(new BigNumber(0)),
       offChainAssets: dsMockUtils.createMockU32(new BigNumber(1)),
+      consumedWeight: dsMockUtils.createMockWeight(),
     });
     mockAffirmCount = dsMockUtils.createMockAffirmationCount();
     mockAssetCount = createMockAssetCount({
@@ -138,7 +139,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     dsMockUtils.createTxMock('settlement', 'withdrawAffirmationAsMediator');
     dsMockUtils.createTxMock('settlement', 'rejectInstructionAsMediator');
     dsMockUtils.createCallMock('settlementApi', 'getExecuteInstructionInfo', {
-      returnValue: mockExecuteInfo,
+      returnValue: dsMockUtils.createMockOption(mockExecuteInfo),
     });
     dsMockUtils.createCallMock('settlementApi', 'getAffirmationCount', {
       returnValue: mockAffirmCount,

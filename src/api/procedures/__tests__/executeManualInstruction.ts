@@ -50,6 +50,12 @@ describe('executeManualInstruction procedure', () => {
   const fungibleTokens = dsMockUtils.createMockU32(new BigNumber(1));
   const nonFungibleTokens = dsMockUtils.createMockU32(new BigNumber(2));
   const offChainAssets = dsMockUtils.createMockU32(new BigNumber(3));
+  const consumedWeight = dsMockUtils.createMockWeight({
+    refTime: dsMockUtils.createMockCompact(dsMockUtils.createMockU64(new BigNumber(0))),
+    proofSize: dsMockUtils.createMockCompact(
+      dsMockUtils.createMockU64(new BigNumber('9455603734'))
+    ),
+  });
 
   const did = 'someDid';
   let portfolio: DefaultPortfolio;
@@ -113,12 +119,14 @@ describe('executeManualInstruction procedure', () => {
     };
 
     dsMockUtils.createCallMock('settlementApi', 'getExecuteInstructionInfo', {
-      returnValue: {
-        fungibleTokens,
-        nonFungibleTokens,
-        offChainAssets,
-        consumedWeight: 'someWeight',
-      },
+      returnValue: dsMockUtils.createMockOption(
+        dsMockUtils.createMockExecuteInstructionInfo({
+          fungibleTokens,
+          nonFungibleTokens,
+          offChainAssets,
+          consumedWeight,
+        })
+      ),
     });
   });
 
@@ -217,7 +225,7 @@ describe('executeManualInstruction procedure', () => {
         fungibleTokens,
         nonFungibleTokens,
         offChainAssets,
-        'someWeight',
+        consumedWeight,
       ],
       resolver: expect.objectContaining({ id }),
     });
@@ -243,7 +251,7 @@ describe('executeManualInstruction procedure', () => {
         fungibleTokens,
         nonFungibleTokens,
         offChainAssets,
-        'someWeight',
+        consumedWeight,
       ],
       resolver: expect.objectContaining({ id }),
     });
@@ -270,7 +278,7 @@ describe('executeManualInstruction procedure', () => {
         fungibleTokens,
         nonFungibleTokens,
         offChainAssets,
-        'someWeight',
+        consumedWeight,
       ],
       resolver: expect.objectContaining({ id }),
     });

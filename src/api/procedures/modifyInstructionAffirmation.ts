@@ -641,10 +641,11 @@ export async function prepareStorage(
   const portfolioIdParams = portfolioParams.map(portfolioLikeToPortfolioId);
 
   const instruction = new Instruction({ id }, context);
-  const [{ data: legs }, signer, instructionInfo] = await Promise.all([
+
+  const [{ data: legs }, signer, executeInstructionInfo] = await Promise.all([
     instruction.getLegs(),
     context.getSigningIdentity(),
-    polymeshApi.call.settlementApi.getExecuteInstructionInfo<ExecuteInstructionInfo>(rawId),
+    polymeshApi.call.settlementApi.getExecuteInstructionInfo(rawId),
   ]);
 
   const [portfolios, senderLegAmount, offChainLegIndices] = await P.reduce<
@@ -670,6 +671,14 @@ export async function prepareStorage(
     },
     [[], new BigNumber(0), []]
   );
+
+  let instructionInfo: ExecuteInstructionInfo;
+  if (context.isV6) {
+    instructionInfo = executeInstructionInfo as ExecuteInstructionInfo;
+  } else {
+    const rawInfo = executeInstructionInfo as Option<ExecuteInstructionInfo>;
+    instructionInfo = rawInfo.unwrapOrDefault();
+  }
 
   return {
     portfolios,
