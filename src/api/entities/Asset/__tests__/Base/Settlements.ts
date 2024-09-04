@@ -4,12 +4,13 @@ import {
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioId,
 } from '@polkadot/types/lookup';
-import { Vec } from '@polkadot/types-codec';
+import { Result, Vec } from '@polkadot/types-codec';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { FungibleSettlements, NonFungibleSettlements } from '~/api/entities/Asset/Base/Settlements';
 import { Context, Namespace, PolymeshTransaction } from '~/internal';
+import { ComplianceReport } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -177,14 +178,25 @@ describe('Settlements class', () => {
             })
           );
 
-        const response = 'rpcResponse' as unknown as Vec<DispatchError>;
+        const transferReportResponse = 'transferReportResponse' as unknown as Vec<DispatchError>;
 
-        dsMockUtils.createCallMock('assetApi', 'transferReport').mockReturnValue(response);
+        dsMockUtils
+          .createCallMock('assetApi', 'transferReport')
+          .mockReturnValue(transferReportResponse);
+
+        const complianceReportResponse = 'complianceReportResponse' as unknown as Result<
+          ComplianceReport,
+          DispatchError
+        >;
+
+        dsMockUtils
+          .createCallMock('complianceApi', 'complianceReport')
+          .mockReturnValue(complianceReportResponse);
 
         const expected = 'breakdown' as unknown as TransferBreakdown;
 
         when(transferReportToTransferBreakdownSpy)
-          .calledWith(response, undefined, mockContext)
+          .calledWith(transferReportResponse, undefined, complianceReportResponse, mockContext)
           .mockReturnValue(expected);
 
         const result = await settlements.canTransfer({ to: toDid, amount });
@@ -238,8 +250,6 @@ describe('Settlements class', () => {
     });
 
     it('should work for NftCollections', async () => {
-      const response = 'rpcResponse' as unknown as Vec<DispatchError>;
-
       when(portfolioIdToMeshPortfolioIdSpy)
         .calledWith({ did: fromDid }, mockContext)
         .mockReturnValue(rawFromPortfolio);
@@ -250,17 +260,37 @@ describe('Settlements class', () => {
       toPortfolio.getCustodian.mockResolvedValue(
         entityMockUtils.getIdentityInstance({ did: toDid })
       );
-      dsMockUtils.createCallMock('assetApi', 'transferReport').mockReturnValue(response);
 
-      const mockDispatch = dsMockUtils.createMockDispatchResult();
-      dsMockUtils.createCallMock('nftApi', 'validateNftTransfer', {
-        returnValue: mockDispatch,
-      });
+      const nftTransferReportResponse =
+        'nftTransferReportResponse' as unknown as Vec<DispatchError>;
+      dsMockUtils
+        .createCallMock('nftApi', 'transferReport')
+        .mockReturnValue(nftTransferReportResponse);
+
+      const transferReportResponse = 'transferReportResponse' as unknown as Vec<DispatchError>;
+
+      dsMockUtils
+        .createCallMock('assetApi', 'transferReport')
+        .mockReturnValue(transferReportResponse);
+
+      const complianceReportResponse = 'complianceReportResponse' as unknown as Result<
+        ComplianceReport,
+        DispatchError
+      >;
+
+      dsMockUtils
+        .createCallMock('complianceApi', 'complianceReport')
+        .mockReturnValue(complianceReportResponse);
 
       const expected = 'breakdown' as unknown as TransferBreakdown;
 
       when(transferReportToTransferBreakdownSpy)
-        .calledWith(response, mockDispatch, mockContext)
+        .calledWith(
+          transferReportResponse,
+          nftTransferReportResponse,
+          complianceReportResponse,
+          mockContext
+        )
         .mockReturnValue(expected);
 
       const result = await settlements.canTransfer({

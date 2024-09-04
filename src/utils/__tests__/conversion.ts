@@ -68,13 +68,14 @@ import {
   SpCoreSr25519Signature,
   SpRuntimeMultiSignature,
 } from '@polkadot/types/lookup';
-import { BTreeSet } from '@polkadot/types-codec';
+import { BTreeSet, Result } from '@polkadot/types-codec';
 import type { ITuple } from '@polkadot/types-codec/types';
 import { hexToU8a, stringToHex } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 import {
   AuthorizationType as MeshAuthorizationType,
+  ComplianceReport,
   ExtrinsicPermissions,
   Permissions as MeshPermissions,
 } from 'polymesh-types/polymesh';
@@ -187,6 +188,7 @@ import {
   addressToKey,
   agentGroupToPermissionGroup,
   agentGroupToPermissionGroupIdentifier,
+  assetComplianceReportToCompliance,
   assetComplianceResultToCompliance,
   assetCountToRaw,
   assetDispatchErrorToTransferError,
@@ -3856,24 +3858,37 @@ describe('transferReportToTransferBreakdown', () => {
       InsufficientPortfolioBalance: { is: jest.fn().mockReturnValue(true) },
     } as unknown as DecoratedErrors<'promise'>['portfolio'];
 
+    context.polymeshApi.errors.statistics = {
+      InvalidTransfer: { is: jest.fn().mockReturnValue(false) },
+    } as unknown as DecoratedErrors<'promise'>['statistics'];
+
     const result = transferReportToTransferBreakdown(
       [
         dsMockUtils.createMockDispatchResult({
           Err: { index: createMockU8(), module: createMockU8aFixed() },
         }).asErr,
       ] as Vec<DispatchError>,
+      [
+        dsMockUtils.createMockDispatchResult({
+          Err: { index: createMockU8(), module: createMockU8aFixed() },
+        }).asErr,
+      ] as Vec<DispatchError>,
       dsMockUtils.createMockDispatchResult({
-        Err: { index: createMockU8(), module: createMockU8aFixed() },
-      }),
+        Ok: dsMockUtils.createMockAssetComplianceReport({
+          pausedCompliance: false,
+          anyRequirementSatistifed: false,
+          requirements: [],
+        }),
+      }) as unknown as Result<ComplianceReport, DispatchError>,
       context
     );
 
     expect(result).toEqual({
       general: [TransferError.TransfersFrozen, TransferError.InsufficientPortfolioBalance],
-      // compliance: {
-      //   requirements: [],
-      //   complies: false,
-      // },
+      compliance: {
+        requirements: [],
+        complies: false,
+      },
       restrictions: [],
       result: false,
     });
@@ -3911,6 +3926,10 @@ describe('assetDispatchErrorToTransferError', () => {
       PortfolioDoesNotExist: { is: jest.fn().mockReturnValue(false) },
       InsufficientPortfolioBalance: { is: jest.fn().mockReturnValue(false) },
     } as unknown as DecoratedErrors<'promise'>['portfolio'];
+
+    context.polymeshApi.errors.statistics = {
+      InvalidTransfer: { is: jest.fn().mockReturnValue(false) },
+    } as unknown as DecoratedErrors<'promise'>['statistics'];
 
     const mockError = dsMockUtils.createMockDispatchResult({
       Err: { index: createMockU8(), module: createMockU8aFixed() },
@@ -3995,6 +4014,14 @@ describe('assetDispatchErrorToTransferError', () => {
     result = assetDispatchErrorToTransferError(mockError, context);
 
     expect(result).toEqual(TransferError.InsufficientPortfolioBalance);
+
+    dsMockUtils.setErrorMock('statistics', 'InvalidTransfer', {
+      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
+    });
+
+    result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.TransferNotAllowed);
 
     return expect(() => assetDispatchErrorToTransferError(mockError, context)).toThrow(
       new PolymeshError({
@@ -6235,6 +6262,196 @@ describe('assetComplianceResultToCompliance', () => {
     });
 
     result = assetComplianceResultToCompliance(assetComplianceResult, context);
+    expect(result.complies).toBe(true);
+  });
+});
+
+describe('assetComplianceReportToCompliance', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a polkadot ComplianceReport object to a RequirementCompliance', () => {
+    const id = new BigNumber(1);
+    const assetDid = 'someAssetDid';
+    const cddId = 'someCddId';
+    const context = dsMockUtils.getContextInstance();
+    const issuerDids = [
+      { identity: new Identity({ did: 'someDid' }, context), trustedFor: null },
+      { identity: new Identity({ did: 'otherDid' }, context), trustedFor: null },
+    ];
+    const fakeIssuerDids = [
+      { identity: expect.objectContaining({ did: 'someDid' }), trustedFor: null },
+      { identity: expect.objectContaining({ did: 'otherDid' }), trustedFor: null },
+    ];
+    const conditions: ConditionCompliance[] = [
+      {
+        condition: {
+          type: ConditionType.IsPresent,
+          target: ConditionTarget.Both,
+          claim: {
+            type: ClaimType.KnowYourCustomer,
+            scope: { type: ScopeType.Identity, value: assetDid },
+          },
+          trustedClaimIssuers: fakeIssuerDids,
+        },
+        complies: true,
+      },
+      {
+        condition: {
+          type: ConditionType.IsAbsent,
+          target: ConditionTarget.Receiver,
+          claim: {
+            type: ClaimType.BuyLockup,
+            scope: { type: ScopeType.Identity, value: assetDid },
+          },
+          trustedClaimIssuers: fakeIssuerDids,
+        },
+        complies: false,
+      },
+      {
+        condition: {
+          type: ConditionType.IsNoneOf,
+          target: ConditionTarget.Sender,
+          claims: [
+            {
+              type: ClaimType.Blocked,
+              scope: { type: ScopeType.Identity, value: assetDid },
+            },
+            {
+              type: ClaimType.SellLockup,
+              scope: { type: ScopeType.Identity, value: assetDid },
+            },
+          ],
+          trustedClaimIssuers: fakeIssuerDids,
+        },
+        complies: true,
+      },
+      {
+        condition: {
+          type: ConditionType.IsAnyOf,
+          target: ConditionTarget.Both,
+          claims: [
+            {
+              type: ClaimType.Exempted,
+              scope: { type: ScopeType.Identity, value: assetDid },
+            },
+            {
+              type: ClaimType.CustomerDueDiligence,
+              id: cddId,
+            },
+          ],
+          trustedClaimIssuers: fakeIssuerDids,
+        },
+        complies: false,
+      },
+    ];
+    const fakeResult = {
+      id,
+      conditions,
+    };
+
+    const scope = dsMockUtils.createMockScope({
+      Identity: dsMockUtils.createMockIdentityId(assetDid),
+    });
+    /* eslint-disable @typescript-eslint/naming-convention */
+    const issuers = issuerDids.map(({ identity: { did } }) =>
+      dsMockUtils.createMockTrustedIssuer({
+        issuer: dsMockUtils.createMockIdentityId(did),
+        trustedFor: dsMockUtils.createMockTrustedFor(),
+      })
+    );
+    const rawConditions = [
+      dsMockUtils.createMockConditionReport({
+        condition: dsMockUtils.createMockCondition({
+          conditionType: dsMockUtils.createMockConditionType({
+            IsPresent: dsMockUtils.createMockClaim({ KnowYourCustomer: scope }),
+          }),
+          issuers,
+        }),
+        satisfied: dsMockUtils.createMockBool(true),
+      }),
+      dsMockUtils.createMockConditionReport({
+        condition: dsMockUtils.createMockCondition({
+          conditionType: dsMockUtils.createMockConditionType({
+            IsAbsent: dsMockUtils.createMockClaim({ BuyLockup: scope }),
+          }),
+          issuers,
+        }),
+        satisfied: dsMockUtils.createMockBool(false),
+      }),
+      dsMockUtils.createMockConditionReport({
+        condition: dsMockUtils.createMockCondition({
+          conditionType: dsMockUtils.createMockConditionType({
+            IsNoneOf: [
+              dsMockUtils.createMockClaim({ Blocked: scope }),
+              dsMockUtils.createMockClaim({ SellLockup: scope }),
+            ],
+          }),
+          issuers,
+        }),
+        satisfied: dsMockUtils.createMockBool(true),
+      }),
+      dsMockUtils.createMockConditionReport({
+        condition: dsMockUtils.createMockCondition({
+          conditionType: dsMockUtils.createMockConditionType({
+            IsAnyOf: [
+              dsMockUtils.createMockClaim({ Exempted: scope }),
+              dsMockUtils.createMockClaim({
+                CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
+              }),
+            ],
+          }),
+          issuers,
+        }),
+        satisfied: dsMockUtils.createMockBool(false),
+      }),
+    ];
+
+    const rawRequirements = dsMockUtils.createMockComplianceRequirementReport({
+      senderConditions: [rawConditions[0], rawConditions[2], rawConditions[3]],
+      receiverConditions: [rawConditions[0], rawConditions[1], rawConditions[3]],
+      id: dsMockUtils.createMockU32(new BigNumber(1)),
+      requirementSatisfied: dsMockUtils.createMockBool(false),
+    });
+
+    let assetComplianceReport = dsMockUtils.createMockAssetComplianceReport({
+      pausedCompliance: dsMockUtils.createMockBool(true),
+      requirements: [rawRequirements],
+      anyRequirementSatistifed: dsMockUtils.createMockBool(true),
+    });
+
+    let result = assetComplianceReportToCompliance(
+      dsMockUtils.createMockDispatchResult({
+        Ok: assetComplianceReport,
+      }) as unknown as Result<ComplianceReport, DispatchError>,
+      context
+    );
+    expect(result.requirements[0].conditions).toEqual(
+      expect.arrayContaining(fakeResult.conditions)
+    );
+    expect(result.complies).toBe(true);
+
+    assetComplianceReport = dsMockUtils.createMockAssetComplianceReport({
+      pausedCompliance: dsMockUtils.createMockBool(false),
+      requirements: [rawRequirements],
+      anyRequirementSatistifed: dsMockUtils.createMockBool(true),
+    });
+
+    result = assetComplianceReportToCompliance(
+      dsMockUtils.createMockDispatchResult({
+        Ok: assetComplianceReport,
+      }) as unknown as Result<ComplianceReport, DispatchError>,
+      context
+    );
     expect(result.complies).toBe(true);
   });
 });
