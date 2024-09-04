@@ -1014,10 +1014,10 @@ export interface ProtocolOp extends Enum {
 
 /** @name RequirementReport */
 export interface RequirementReport extends Struct {
-  readonly requirement_satisfied: bool;
+  readonly requirementSatisfied: bool;
   readonly id: u32;
-  readonly sender_conditions: Vec<ConditionReport>;
-  readonly receiver_conditions: Vec<ConditionReport>;
+  readonly senderConditions: Vec<ConditionReport>;
+  readonly receiverConditions: Vec<ConditionReport>;
 }
 
 /** @name RpcDidRecords */

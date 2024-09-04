@@ -374,6 +374,10 @@ function transformSchema(schemaObj) {
 
   camelCaseKeys(schemaObj, 'types', 'ComplianceRequirementResult');
 
+  // for v7
+  camelCaseKeys(schemaObj, 'types', 'RequirementReport');
+  camelCaseKeys(schemaObj, 'types', 'ComplianceReport');
+
   camelCaseKeys(schemaObj, 'types', 'Condition');
   schemaObj.types.Condition.issuers = 'Vec<PolymeshPrimitivesConditionTrustedIssuer>';
   schemaObj.types.Condition.conditionType = 'PolymeshPrimitivesConditionConditionType';
