@@ -103,6 +103,7 @@ export async function prepareExecuteManualInstruction(
 
   let executeInstructionInfo: ExecuteInstructionInfo;
 
+  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
   if (context.isV6) {
     executeInstructionInfo =
       await call.settlementApi.getExecuteInstructionInfo<ExecuteInstructionInfo>(rawInstructionId);

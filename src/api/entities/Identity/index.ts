@@ -237,6 +237,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const rawIdentityId = stringToIdentityId(did, context);
 
     let tokensStorage;
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tokensStorage = (asset as any).tokens; // NOSONAR
@@ -994,6 +995,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const rawDid = stringToIdentityId(this.did, context);
 
     let preApprovedStorage = asset.preApprovedAsset;
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       preApprovedStorage = (asset as any).preApprovedTicker; // NOSONAR
@@ -1033,6 +1035,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     } = this;
 
     let preApprovedStorage = assetQuery.preApprovedAsset;
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       preApprovedStorage = (asset as any).preApprovedTicker; // NOSONAR
@@ -1066,6 +1069,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       did,
     } = this;
 
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
     if (isV6) {
       type Entry = [{ args: [AccountId32] }, PolymeshPrimitivesIdentityId];
 

@@ -52,6 +52,7 @@ export async function prepareMultiSigProposalEvaluation(
   const rawProposalId = bigNumberToU64(id, context);
   const signingAccount = context.getSigningAccount();
 
+  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
   const rawSigner = isV6
     ? signerToSignatory(signingAccount, context)
     : stringToAccountId(signingAccount.address, context);
@@ -110,6 +111,7 @@ export async function prepareMultiSigProposalEvaluation(
   }
 
   let transaction;
+  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
   if (isV6) {
     transaction =
       action === MultiSigProposalAction.Approve

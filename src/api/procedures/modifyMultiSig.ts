@@ -81,6 +81,7 @@ export async function prepareModifyMultiSig(
   type ToSignerFn = ((signer: Account) => AccountId) | ((signer: Signer) => AccountId); // v6 really uses PolymeshPrimitivesSecondaryKeySignatory
   let toRawSignerTx: ToSignerFn = (signer: Account) => stringToAccountId(signer.address, context);
 
+  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
   if (isV6) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     addSignersTx = (tx.multiSig as any).addMultisigSignersViaCreator; // NOSONAR

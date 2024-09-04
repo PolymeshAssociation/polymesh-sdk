@@ -44,6 +44,7 @@ export async function prepareToggleAssetPreApproval(
   const rawAssetId = assetToMeshAssetId(asset, context);
 
   let transaction = preApprove ? tx.asset.preApproveAsset : tx.asset.removeAssetPreApproval;
+  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
   if (isV6) {
     transaction = preApprove
       ? // eslint-disable-next-line @typescript-eslint/no-explicit-any

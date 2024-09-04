@@ -45,6 +45,7 @@ import {
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesIdentityIdPortfolioKind,
   PolymeshPrimitivesMemo,
+  PolymeshPrimitivesMultisigProposalState,
   PolymeshPrimitivesNftNftMetadataAttribute,
   PolymeshPrimitivesNftNfTs,
   PolymeshPrimitivesPortfolioFund,
@@ -273,7 +274,8 @@ import {
   meshMetadataValueToMetadataValue,
   meshNftToNftId,
   meshPermissionsToPermissions,
-  meshProposalStatusToProposalStatus, // NOSONAR
+  meshProposalStateToProposalStatus, // NOSONAR
+  meshProposalStatusToProposalStatus,
   meshScopeToScope,
   meshSettlementTypeToEndCondition,
   meshStatToStatType,
@@ -9476,6 +9478,62 @@ describe('meshProposalStatusToProposalStatus', () => {
     return expect(
       () => meshProposalStatusToProposalStatus({ type: 'UnknownStatus' }, null) // NOSONAR
     ).toThrowError('Unexpected proposal status received');
+  });
+});
+
+describe('meshProposalStateToProposalStatus', () => {
+  it('should convert raw statuses to the correct ProposalStatus', () => {
+    let result = meshProposalStateToProposalStatus(
+      dsMockUtils.createMockProposalState({
+        Active: {
+          until: dsMockUtils.createMockOption(),
+        },
+      })
+    );
+    expect(result).toEqual(ProposalStatus.Active);
+
+    result = meshProposalStateToProposalStatus(
+      dsMockUtils.createMockProposalState({
+        Active: {
+          until: dsMockUtils.createMockOption(
+            dsMockUtils.createMockU64(new BigNumber(new Date().getTime() + 1000000))
+          ),
+        },
+      })
+    );
+    expect(result).toEqual(ProposalStatus.Active);
+
+    result = meshProposalStateToProposalStatus(
+      dsMockUtils.createMockProposalState({
+        Active: {
+          until: dsMockUtils.createMockOption(
+            dsMockUtils.createMockU64(new BigNumber(new Date().getTime() - 1000000))
+          ),
+        },
+      })
+    );
+    expect(result).toEqual(ProposalStatus.Expired);
+
+    result = meshProposalStateToProposalStatus(
+      dsMockUtils.createMockProposalState('ExecutionSuccessful')
+    );
+    expect(result).toEqual(ProposalStatus.Successful);
+
+    result = meshProposalStateToProposalStatus(
+      dsMockUtils.createMockProposalState('ExecutionFailed')
+    );
+    expect(result).toEqual(ProposalStatus.Failed);
+
+    result = meshProposalStateToProposalStatus(dsMockUtils.createMockProposalState('Rejected'));
+    expect(result).toEqual(ProposalStatus.Rejected);
+  });
+
+  it('should throw an error if it receives an unknown status', () => {
+    return expect(() =>
+      meshProposalStateToProposalStatus({
+        type: 'UnknownStatus',
+      } as unknown as PolymeshPrimitivesMultisigProposalState)
+    ).toThrowError('Unreachable case: "UnknownStatus"');
   });
 });
 

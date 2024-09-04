@@ -117,6 +117,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
     const rawMultiSignAddress = stringToAccountId(multiSigAddress, context);
     const rawId = bigNumberToU64(id, context);
 
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
     if (isV6) {
       const [
         {

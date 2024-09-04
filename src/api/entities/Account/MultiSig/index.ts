@@ -71,6 +71,7 @@ export class MultiSig extends Account {
           args: [, signatory],
         },
       ]) => {
+        /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
         if (isV6) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return signerValueToSigner(signatoryToSignerValue(signatory as any), context); // NOSONAR
@@ -145,6 +146,7 @@ export class MultiSig extends Account {
       }
     );
 
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const details: any[] = await (multiSig as any).proposalDetail.multi(queries); // NOSONAR
@@ -222,6 +224,7 @@ export class MultiSig extends Account {
       address,
     } = this;
 
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
     if (isV6) {
       return this.getCreator(); // NOSONAR
     }
@@ -255,6 +258,7 @@ export class MultiSig extends Account {
       address,
     } = this;
 
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
     if (isV6) {
       return this.getCreator(); // NOSONAR
     }
@@ -287,6 +291,7 @@ export class MultiSig extends Account {
       address,
     } = this;
 
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
     if (isV6) {
       const rawAddress = addressToKey(address, context);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

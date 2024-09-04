@@ -138,6 +138,7 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
 
     const rawAssetId = assetToMeshAssetId(parent, context);
 
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
     if (isV6) {
       let granularResult: CanTransferGranularReturn;
       let nftResult: DispatchResult | undefined;

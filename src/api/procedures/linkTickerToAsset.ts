@@ -47,6 +47,7 @@ export async function prepareLinkTickerToAsset(
 
   const { ticker, asset } = args;
 
+  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
   if (isV6) {
     throw new PolymeshError({
       code: ErrorCode.General,

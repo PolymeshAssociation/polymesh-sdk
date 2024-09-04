@@ -131,6 +131,7 @@ async function getCreateAssetTxAndFees(
 
   let fee: BigNumber | undefined;
 
+  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
   if (isV6 && status === TickerReservationStatus.Free) {
     fee = await addManualFees(
       new BigNumber(0),
@@ -449,6 +450,7 @@ export async function prepareStorage(
   if (ticker) {
     assertTickerOk(ticker);
 
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
     if (isV6) {
       // for chain 6.x, we assume asset ID same as ticker
       storageStatus.assetId = ticker;
@@ -479,6 +481,7 @@ export async function prepareStorage(
       storageStatus.assetId = await context.getSigningAccount().getNextAssetId();
     }
   } else if (isV6) {
+    /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
     // ticker is mandatory for 6.x chain
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
