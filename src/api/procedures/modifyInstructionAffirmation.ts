@@ -146,7 +146,7 @@ const assertReceipts = async (
 
     const isAllowedSigner = allowedSigners
       ? allowedSigners.some(({ address }) => signerAddress === address)
-      : true;
+      : false;
 
     if (!isAllowedSigner) {
       invalidSignerReceipts.push(receipt);
