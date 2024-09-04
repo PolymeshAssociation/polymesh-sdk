@@ -1,5 +1,5 @@
 import { DispatchError, DispatchResult } from '@polkadot/types/interfaces/system';
-import { Vec } from '@polkadot/types-codec';
+import { Result, Vec } from '@polkadot/types-codec';
 import BigNumber from 'bignumber.js';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
@@ -12,7 +12,7 @@ import {
   PolymeshError,
   toggleAssetPreApproval,
 } from '~/internal';
-import { CanTransferGranularReturn } from '~/polkadot/polymesh';
+import { CanTransferGranularReturn, ComplianceReport } from '~/polkadot/polymesh';
 import {
   ErrorCode,
   NftCollection,
@@ -110,7 +110,7 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
       context,
     } = this;
 
-    const { assetApi, nftApi } = call;
+    const { assetApi, nftApi, complianceApi } = call;
 
     const { to } = args;
     const from = args.from ?? (await context.getSigningIdentity());
@@ -136,12 +136,12 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
     const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromPortfolioId, context);
     const rawToPortfolio = portfolioIdToMeshPortfolioId(toPortfolioId, context);
 
-    let nftResult;
-
     const rawAssetId = assetToMeshAssetId(parent, context);
 
     if (isV6) {
       let granularResult: CanTransferGranularReturn;
+      let nftResult: DispatchResult | undefined;
+
       if ('amount' in args) {
         amount = args.amount;
         ({ isDivisible } = await parent.details());
@@ -180,19 +180,14 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
     }
 
     let granularResult: Vec<DispatchError>;
+    let nftResult: Vec<DispatchError> | undefined;
+    let complianceResult: Result<ComplianceReport, DispatchError>;
+    const rawFromDid = stringToIdentityId(fromPortfolioId.did, context);
+    const rawToDid = stringToIdentityId(toPortfolioId.did, context);
     if ('amount' in args) {
       amount = args.amount;
       ({ isDivisible } = await parent.details());
-      granularResult = await assetApi.transferReport<Vec<DispatchError>>(
-        rawFromPortfolio,
-        rawToPortfolio,
-        rawAssetId,
-        bigNumberToBalance(amount, context, isDivisible),
-        booleanToBool(false, context)
-      );
-    } else {
-      const rawNfts = nftToMeshNft(parent, args.nfts, context);
-      [granularResult, nftResult] = await Promise.all([
+      [granularResult, complianceResult] = await Promise.all([
         assetApi.transferReport<Vec<DispatchError>>(
           rawFromPortfolio,
           rawToPortfolio,
@@ -200,11 +195,37 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
           bigNumberToBalance(amount, context, isDivisible),
           booleanToBool(false, context)
         ),
-        nftApi.validateNftTransfer<DispatchResult>(rawFromPortfolio, rawToPortfolio, rawNfts),
+        complianceApi.complianceReport<Result<ComplianceReport, DispatchError>>(
+          rawAssetId,
+          rawFromDid,
+          rawToDid
+        ),
+      ]);
+    } else {
+      const rawNfts = nftToMeshNft(parent, args.nfts, context);
+      [granularResult, nftResult, complianceResult] = await Promise.all([
+        assetApi.transferReport<Vec<DispatchError>>(
+          rawFromPortfolio,
+          rawToPortfolio,
+          rawAssetId,
+          bigNumberToBalance(amount, context, isDivisible),
+          booleanToBool(false, context)
+        ),
+        nftApi.transferReport<Vec<DispatchError>>(
+          rawFromPortfolio,
+          rawToPortfolio,
+          rawNfts,
+          booleanToBool(false, context)
+        ),
+        complianceApi.complianceReport<Result<ComplianceReport, DispatchError>>(
+          rawAssetId,
+          rawFromDid,
+          rawToDid
+        ),
       ]);
     }
 
-    return transferReportToTransferBreakdown(granularResult, nftResult, context);
+    return transferReportToTransferBreakdown(granularResult, nftResult, complianceResult, context);
   }
 }
 

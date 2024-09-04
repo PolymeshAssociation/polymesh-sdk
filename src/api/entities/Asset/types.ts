@@ -349,6 +349,11 @@ export enum TransferError {
    * occurs if some compliance rule would prevent the transfer
    */
   ComplianceFailure = 'ComplianceFailure',
+
+  /**
+   * occurs if some statistics transfer condition would prevent the transfer
+   */
+  TransferNotAllowed = 'TransferNotAllowed',
 }
 
 export interface AssetWithGroup {
