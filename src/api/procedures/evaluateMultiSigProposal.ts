@@ -53,7 +53,12 @@ export async function prepareMultiSigProposalEvaluation(
 
   const rawSigner = signerToSignatory(signingAccount, context);
 
-  const [creator, { signers: multiSigSigners }, { status }, hasVoted] = await Promise.all([
+  const [
+    creator,
+    { signers: multiSigSigners },
+    { status, approvalAmount, rejectionAmount },
+    hasVoted,
+  ] = await Promise.all([
     proposal.multiSig.getCreator(),
     proposal.multiSig.details(),
     proposal.details(),
@@ -71,7 +76,9 @@ export async function prepareMultiSigProposalEvaluation(
     });
   }
 
-  if (boolToBoolean(hasVoted)) {
+  const totalVotes = approvalAmount.plus(rejectionAmount).toNumber();
+
+  if (boolToBoolean(hasVoted) && totalVotes > 1) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'The signing Account has already voted for this MultiSig Proposal',

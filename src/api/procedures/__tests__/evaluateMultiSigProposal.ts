@@ -5,10 +5,11 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import {
+  evaluateMultiSigProposal,
   MultiSigProposalVoteParams,
   prepareMultiSigProposalEvaluation,
 } from '~/api/procedures/evaluateMultiSigProposal';
-import { Account, Context, MultiSigProposal, PolymeshError } from '~/internal';
+import { Account, Context, MultiSigProposal, PolymeshError, Procedure } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { ErrorCode, Identity, MultiSigProposalAction, ProposalStatus } from '~/types';
@@ -75,6 +76,8 @@ describe('evaluateMultiSigProposal', () => {
 
     proposalDetails = {
       status: ProposalStatus.Active,
+      approvalAmount: new BigNumber(1),
+      rejectionAmount: new BigNumber(0),
     };
     proposal = entityMockUtils.getMultiSigProposalInstance({
       id: proposalId,
@@ -130,6 +133,26 @@ describe('evaluateMultiSigProposal', () => {
     it('should throw an error if the signing Account has already voted for the proposal', async () => {
       votesQuery.mockResolvedValueOnce(dsMockUtils.createMockBool(true));
 
+      const votedProposal = entityMockUtils.getMultiSigProposalInstance({
+        id: proposalId,
+        multiSig: entityMockUtils.getMultiSigInstance({
+          address: multiSigAddress,
+          getCreator: creator,
+          details: {
+            signers: [
+              new Account({ address: 'someAddress' }, mockContext),
+              new Account({ address: 'someOtherAddress' }, mockContext),
+            ],
+            requiredSignatures: new BigNumber(1),
+          },
+        }),
+        details: {
+          status: ProposalStatus.Active,
+          approvalAmount: new BigNumber(1),
+          rejectionAmount: new BigNumber(1),
+        },
+      });
+
       const proc = procedureMockUtils.getInstance<MultiSigProposalVoteParams, void>(mockContext);
 
       const expectedError = new PolymeshError({
@@ -139,7 +162,7 @@ describe('evaluateMultiSigProposal', () => {
 
       await expect(
         prepareMultiSigProposalEvaluation.call(proc, {
-          proposal,
+          proposal: votedProposal,
           action: MultiSigProposalAction.Approve,
         })
       ).rejects.toThrow(expectedError);
@@ -203,6 +226,8 @@ describe('evaluateMultiSigProposal', () => {
           }),
           details: {
             status: errorCase[0],
+            approvalAmount: new BigNumber(1),
+            rejectionAmount: new BigNumber(0),
           },
         });
 
@@ -249,6 +274,14 @@ describe('evaluateMultiSigProposal', () => {
         paidForBy: creator,
         args: [rawMultiSigAccount, rawProposalId],
       });
+    });
+  });
+
+  describe('evaluateMultiSigProposal', () => {
+    it('should return new Procedure called with prepareMultiSigProposalEvaluation', () => {
+      const result = evaluateMultiSigProposal();
+
+      expect(result).toBeInstanceOf(Procedure);
     });
   });
 });
