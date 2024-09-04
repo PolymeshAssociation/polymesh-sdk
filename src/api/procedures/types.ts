@@ -1606,7 +1606,11 @@ export interface ModifyMultiSigParams {
   /**
    * The signers to set for the MultiSig
    */
-  signers: Signer[];
+  signers?: Signer[];
+  /**
+   * The required number of signatures for the MultiSig
+   */
+  requiredSignatures?: BigNumber;
 }
 
 interface JoinCreatorAsPrimary {

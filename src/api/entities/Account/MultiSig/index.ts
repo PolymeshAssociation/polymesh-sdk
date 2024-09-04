@@ -223,7 +223,10 @@ export class MultiSig extends Account {
   /**
    * Modify the signers for the MultiSig. The signing Account must belong to the Identity of the creator of the MultiSig
    */
-  public modify: ProcedureMethod<Pick<ModifyMultiSigParams, 'signers'>, void>;
+  public modify: ProcedureMethod<
+    Pick<ModifyMultiSigParams, 'signers' | 'requiredSignatures'>,
+    void
+  >;
 
   /**
    * Attach a MultiSig directly to the creator's identity. This method bypasses the usual authorization step to join an identity
