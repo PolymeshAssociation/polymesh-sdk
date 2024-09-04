@@ -156,6 +156,7 @@ export class Assets {
     const did = await getDid(args?.owner, context);
     const rawDid = stringToIdentityId(did, context);
 
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const entries = await (asset as any).assetOwnershipRelations.entries(rawDid); // NOSONAR
@@ -222,6 +223,7 @@ export class Assets {
 
     let assetIdValue = assetId;
     if (ticker) {
+      /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
       if (isV6) {
         assetIdValue = ticker;
       } else {
@@ -253,6 +255,7 @@ export class Assets {
     const did = await getDid(args?.owner, context);
     const rawDid = stringToIdentityId(did, context);
 
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const entries = await (asset as any).assetOwnershipRelations.entries(rawDid); // NOSONAR
@@ -302,6 +305,7 @@ export class Assets {
       context: { isV6 },
     } = this;
     let assetIdValue: string;
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
     if (isV6) {
       assetIdValue = (assetId ?? ticker)!;
     } else if (ticker) {
@@ -415,6 +419,7 @@ export class Assets {
     );
 
     let tokensStorage;
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tokensStorage = (asset as any).tokens; // NOSONAR

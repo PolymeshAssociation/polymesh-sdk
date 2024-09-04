@@ -130,6 +130,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
 
     const { assetId } = identifiers;
     const { isV6 } = context;
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
     if (isV6) {
       this.ticker = assetId;
       this.id = assetId;
@@ -250,6 +251,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
     const rawAssetId = assetToMeshAssetId(this, context);
 
     let identifiersStorage;
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       identifiersStorage = (asset as any).identifiers; // NOSONAR
@@ -380,6 +382,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
     const namePromise = asset.assetNames(rawAssetId);
 
     let tokensStorage = asset.assets;
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tokensStorage = (asset as any).tokens; // NOSONAR
@@ -512,6 +515,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
     const rawAssetId = assetToMeshAssetId(this, context);
     let tokensStorage = asset.assets;
     let collectionsStorage = nft.collectionAsset;
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tokensStorage = (asset as any).tokens; // NOSONAR

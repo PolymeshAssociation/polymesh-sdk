@@ -35,6 +35,7 @@ export async function prepareCreateMultiSigAccount(
     },
     context,
   } = this;
+  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
   if (isV6) {
     const { signers, requiredSignatures } = args;
 

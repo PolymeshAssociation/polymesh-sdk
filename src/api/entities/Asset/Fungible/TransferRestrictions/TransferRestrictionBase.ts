@@ -238,6 +238,7 @@ export abstract class TransferRestrictionBase<
       }
     });
 
+    /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
     const rawAssetKey = isV6 ? { asset: rawAssetId } : { assetId: rawAssetId };
     const rawExemptedLists = await Promise.all(
       filteredRequirements.map(req => {

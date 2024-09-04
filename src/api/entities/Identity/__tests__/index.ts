@@ -1437,6 +1437,10 @@ describe('Identity class', () => {
       dsMockUtils.createQueryMock('multiSig', 'payingDid', {
         entries: [
           tuple(
+            [dsMockUtils.createMockAccountId('multiSig')],
+            dsMockUtils.createMockOption(dsMockUtils.createMockIdentityId('someDid'))
+          ),
+          tuple(
             [dsMockUtils.createMockAccountId('multiSig2')],
             dsMockUtils.createMockOption(dsMockUtils.createMockIdentityId('randomDid'))
           ),
@@ -1476,7 +1480,7 @@ describe('Identity class', () => {
             }),
           ],
           isAdmin: true,
-          isPayer: false,
+          isPayer: true,
         },
       ]);
     });

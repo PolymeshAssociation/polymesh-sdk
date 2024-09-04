@@ -45,6 +45,7 @@ export const createDividendDistributionResolver =
     const [, caId, distribution] = data;
     const { localId } = caId;
 
+    /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const assetId = context.isV6 ? (caId as any).ticker : caId.assetId; // NOSONAR
 

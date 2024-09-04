@@ -470,6 +470,34 @@ describe('Portfolios class', () => {
       expect((result[0].legs[0] as FungibleLeg).from.owner.did).toBe(portfolioDid1);
       expect((result[0].legs[0] as FungibleLeg).to.owner.did).toBe(portfolioDid1);
       expect((result[0].legs[0].to as NumberedPortfolio).id).toEqual(portfolioId2);
+
+      dsMockUtils.createApolloMultipleQueriesMock([
+        {
+          query: settlementsForAllPortfoliosQuery({
+            identityId: did,
+            address: undefined,
+            assetId: undefined,
+          }),
+          returnData: {
+            legs: {
+              nodes: [],
+            },
+          },
+        },
+        {
+          query: portfoliosMovementsQuery({
+            identityId: did,
+            address: undefined,
+            assetId: undefined,
+          }),
+          returnData: {
+            portfolioMovements: {
+              nodes: [],
+            },
+          },
+        },
+      ]);
+      await expect(identity.portfolios.getTransactionHistory()).resolves.not.toThrow();
     });
   });
 });

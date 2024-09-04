@@ -68,6 +68,7 @@ export async function prepareConsumeAddMultiSigSignerAuthorization(
   await assertAuthorizationRequestValid(authRequest, context);
 
   let transaction;
+  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
   if (isV6) {
     transaction =
       target instanceof Account

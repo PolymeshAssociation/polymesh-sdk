@@ -48,6 +48,7 @@ export async function prepareRemoveLocalMetadata(
   const rawKeyId = bigNumberToU64(id, context);
 
   let collectionAssetStorage = nft.collectionAsset;
+  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
   if (isV6) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     collectionAssetStorage = (nft as any).collectionTicker; // NOSONAR

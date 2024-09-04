@@ -158,6 +158,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
     let rawAssetId = rawTicker;
     let assetId: string | undefined;
 
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tickerRegistrationStorage = (asset as any).tickers; // NOSONAR
@@ -245,6 +246,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
 
     let tickerRegistrationStorage = asset.uniqueTickerRegistration;
 
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tickerRegistrationStorage = (asset as any).tickers; // NOSONAR
