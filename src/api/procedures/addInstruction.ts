@@ -301,6 +301,7 @@ async function getTxArgsAndErrors(
     endBlockErrIndexes: number[];
     datesErrIndexes: number[];
     sameIdentityErrIndexes: number[];
+    offChainNoVenueErrIndexes: number[];
   };
   addAndAffirmInstructionParams: InternalAddAndAffirmInstructionParams;
   addInstructionParams: InternalAddInstructionParams;
@@ -313,6 +314,7 @@ async function getTxArgsAndErrors(
   const legAmountErrIndexes: number[] = [];
   const endBlockErrIndexes: number[] = [];
   const sameIdentityErrIndexes: number[] = [];
+  const offChainNoVenueErrIndexes: number[] = [];
   /**
    * array of indexes of Instructions where the value date is before the trade date
    */
@@ -329,6 +331,10 @@ async function getTxArgsAndErrors(
     }
 
     const { fungibleLegs, nftLegs, offChainLegs } = await separateLegs(legs, context);
+
+    if (venueId === undefined && offChainLegs.length > 0) {
+      offChainNoVenueErrIndexes.push(i);
+    }
 
     const zeroAmountFungibleLegs = fungibleLegs.filter(leg => leg.amount.isZero());
     if (zeroAmountFungibleLegs.length) {
@@ -376,7 +382,8 @@ async function getTxArgsAndErrors(
       !legAmountErrIndexes.length &&
       !endBlockErrIndexes.length &&
       !datesErrIndexes.length &&
-      !sameIdentityErrIndexes.length
+      !sameIdentityErrIndexes.length &&
+      !offChainNoVenueErrIndexes.length
     ) {
       const rawVenueId = optionize(bigNumberToU64)(venueId, context);
       const rawSettlementType = endConditionToSettlementType(endCondition, context);
@@ -498,6 +505,7 @@ async function getTxArgsAndErrors(
       endBlockErrIndexes,
       datesErrIndexes,
       sameIdentityErrIndexes,
+      offChainNoVenueErrIndexes,
     },
     addAndAffirmInstructionParams,
     addInstructionParams,
@@ -560,6 +568,7 @@ export async function prepareAddInstruction(
       endBlockErrIndexes,
       datesErrIndexes,
       sameIdentityErrIndexes,
+      offChainNoVenueErrIndexes,
     },
     addAndAffirmInstructionParams,
     addInstructionParams,
@@ -622,6 +631,16 @@ export async function prepareAddInstruction(
       message: 'Instruction leg cannot transfer Assets between same identity',
       data: {
         failedInstructionIndexes: sameIdentityErrIndexes,
+      },
+    });
+  }
+
+  if (offChainNoVenueErrIndexes.length) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Instruction legs cannot be offchain without a venue',
+      data: {
+        failedInstructionIndexes: offChainNoVenueErrIndexes,
       },
     });
   }
