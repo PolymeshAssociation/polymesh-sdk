@@ -162,12 +162,15 @@ import {
   AuthorizationType as MeshAuthorizationType,
   CanTransferGranularReturn,
   CddStatus,
+  ComplianceReport,
   ComplianceRequirementResult,
+  ConditionReport,
   ConditionResult,
   ExecuteInstructionInfo,
   GranularCanTransferResult,
   Moment,
   PortfolioValidityResult,
+  RequirementReport,
   TransferConditionResult,
 } from '~/polkadot/polymesh';
 import { dsMockUtils } from '~/testUtils/mocks';
@@ -3010,6 +3013,27 @@ export const createMockConditionResult = (conditionResult?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockConditionReport = (conditionReport?: {
+  condition: PolymeshPrimitivesCondition | Parameters<typeof createMockCondition>[0];
+  satisfied: bool | Parameters<typeof createMockBool>[0];
+}): MockCodec<ConditionReport> => {
+  const { condition, satisfied } = conditionReport ?? {
+    condition: createMockCondition(),
+    satisfied: createMockBool(),
+  };
+  return createMockCodec(
+    {
+      condition: createMockCondition(condition),
+      satisfied: createMockBool(satisfied),
+    },
+    !conditionReport
+  );
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockComplianceRequirement = (complianceRequirement?: {
   senderConditions: PolymeshPrimitivesCondition[];
   receiverConditions: PolymeshPrimitivesCondition[];
@@ -3060,6 +3084,34 @@ export const createMockComplianceRequirementResult = (complianceRequirementResul
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockComplianceRequirementReport = (complianceRequirementReport?: {
+  senderConditions: (ConditionReport | Parameters<typeof createMockConditionReport>[0])[];
+  receiverConditions: (ConditionReport | Parameters<typeof createMockConditionReport>[0])[];
+  id: u32 | Parameters<typeof createMockU32>[0];
+  requirementSatisfied: bool | Parameters<typeof createMockBool>[0];
+}): RequirementReport => {
+  const { senderConditions, receiverConditions, id, requirementSatisfied } =
+    complianceRequirementReport ?? {
+      senderConditions: [],
+      receiverConditions: [],
+      id: createMockU32(),
+      requirementSatisfied: createMockBool(),
+    };
+  return createMockCodec(
+    {
+      senderConditions: senderConditions.map(condition => createMockConditionReport(condition)),
+      receiverConditions: receiverConditions.map(condition => createMockConditionReport(condition)),
+      id: createMockU32(id),
+      requirementSatisfied: createMockBool(requirementSatisfied),
+    },
+    !complianceRequirementReport
+  );
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockAssetComplianceResult = (assetComplianceResult?: {
   paused: bool | Parameters<typeof createMockBool>[0];
   requirements: {
@@ -3085,6 +3137,38 @@ export const createMockAssetComplianceResult = (assetComplianceResult?: {
       result: createMockBool(result),
     },
     !assetComplianceResult
+  );
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAssetComplianceReport = (assetComplianceReport?: {
+  pausedCompliance: bool | Parameters<typeof createMockBool>[0];
+  requirements: {
+    senderConditions: ConditionReport[];
+    receiverConditions: ConditionReport[];
+    requirementSatisfied: bool;
+    id: u32 | Parameters<typeof createMockU32>[0];
+  }[];
+  anyRequirementSatistifed: bool | Parameters<typeof createMockBool>[0];
+}): MockCodec<ComplianceReport> => {
+  const { pausedCompliance, requirements, anyRequirementSatistifed } = assetComplianceReport ?? {
+    pausedCompliance: createMockBool(),
+    requirements: [],
+    anyRequirementSatistifed: createMockBool(),
+  };
+
+  return createMockCodec(
+    {
+      pausedCompliance: createMockBool(pausedCompliance),
+      requirements: requirements.map(requirement =>
+        createMockComplianceRequirementReport(requirement)
+      ),
+      anyRequirementSatistifed: createMockBool(anyRequirementSatistifed),
+    },
+    !assetComplianceReport
   );
 };
 
@@ -3847,15 +3931,24 @@ export const createMockDispatchResult = (
           module: U8aFixed | Parameters<typeof createMockU8aFixed>[0];
         };
       }
+    | {
+        Ok: Codec;
+      }
 ): MockCodec<DispatchResult> => {
   if (isCodec<DispatchResult>(dispatchResult)) {
     return dispatchResult as MockCodec<DispatchResult>;
   }
 
-  if (dispatchResult?.Err) {
-    const mockError = createMockCodec(dispatchResult?.Err, !dispatchResult?.Err);
-    const mockModuleError = createMockEnum({ Module: mockError });
-    return createMockEnum<DispatchResult>({ Err: mockModuleError });
+  if (dispatchResult) {
+    if ('Err' in dispatchResult) {
+      const mockError = createMockCodec(dispatchResult?.Err, !dispatchResult?.Err);
+      const mockModuleError = createMockEnum({ Module: mockError });
+      return createMockEnum<DispatchResult>({ Err: mockModuleError });
+    }
+
+    if ('Ok' in dispatchResult) {
+      return createMockEnum<DispatchResult>({ Ok: dispatchResult.Ok });
+    }
   }
 
   return createMockEnum<DispatchResult>();

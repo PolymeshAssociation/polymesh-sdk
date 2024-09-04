@@ -3784,7 +3784,6 @@ export function transferReportToTransferBreakdown(
   }
 
   if (result.length) {
-    console.log(JSON.stringify(result.toJSON()));
     const errors = result.map(error => assetDispatchErrorToTransferError(error, context));
     general = Array.from(new Set([...general, ...errors]));
     canTransfer = false;
