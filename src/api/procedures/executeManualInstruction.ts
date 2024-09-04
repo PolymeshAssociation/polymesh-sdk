@@ -1,4 +1,5 @@
 import { PolymeshPrimitivesIdentityIdPortfolioId } from '@polkadot/types/lookup';
+import { Option } from '@polkadot/types-codec';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
@@ -100,8 +101,20 @@ export async function prepareExecuteManualInstruction(
     }
   }
 
+  let executeInstructionInfo: ExecuteInstructionInfo;
+
+  if (context.isV6) {
+    executeInstructionInfo =
+      await call.settlementApi.getExecuteInstructionInfo<ExecuteInstructionInfo>(rawInstructionId);
+  } else {
+    const rawInfo = await call.settlementApi.getExecuteInstructionInfo<
+      Option<ExecuteInstructionInfo>
+    >(rawInstructionId);
+
+    executeInstructionInfo = rawInfo.unwrapOrDefault();
+  }
   const { fungibleTokens, nonFungibleTokens, offChainAssets, consumedWeight } =
-    await call.settlementApi.getExecuteInstructionInfo<ExecuteInstructionInfo>(rawInstructionId);
+    executeInstructionInfo;
 
   return {
     transaction: settlementTx.executeManualInstruction,
