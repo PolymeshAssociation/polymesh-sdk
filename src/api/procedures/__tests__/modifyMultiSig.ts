@@ -128,10 +128,10 @@ describe('modifyMultiSig procedure', () => {
     return expect(prepareModifyMultiSig.call(proc, args)).rejects.toThrowError(expectedError);
   });
 
-  it('should throw an error if called by someone who is not the creator', () => {
+  it('should throw an error if called by someone who is not the admin', () => {
     const args = {
       multiSig: entityMockUtils.getMultiSigInstance({
-        getCreator: getIdentityInstance({ isEqual: false }),
+        getAdmin: getIdentityInstance({ isEqual: false }),
       }),
       signers: [getAccountInstance()],
     };
@@ -147,7 +147,7 @@ describe('modifyMultiSig procedure', () => {
 
     const expectedError = new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'A MultiSig can only be modified by its creator',
+      message: 'A MultiSig can only be modified by its admin',
     });
 
     return expect(prepareModifyMultiSig.call(proc, args)).rejects.toThrowError(expectedError);

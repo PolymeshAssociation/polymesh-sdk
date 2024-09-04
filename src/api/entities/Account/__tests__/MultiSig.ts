@@ -285,9 +285,7 @@ describe('MultiSig class', () => {
         returnValue: createMockOption(),
       });
 
-      return expect(multiSig.getAdmin()).rejects.toThrow(
-        'No creator was found for this MultiSig address'
-      );
+      return expect(multiSig.getAdmin()).resolves.toBeNull();
     });
   });
 

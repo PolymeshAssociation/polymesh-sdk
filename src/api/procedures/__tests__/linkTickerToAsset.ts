@@ -5,6 +5,7 @@ import {
   getAuthorization,
   Params,
   prepareLinkTickerToAsset,
+  prepareStorage,
   Storage,
 } from '~/api/procedures/linkTickerToAsset';
 import { Context, PolymeshError } from '~/internal';
@@ -124,12 +125,33 @@ describe('linkTickerToAsset procedure', () => {
   });
 
   it('should throw an error if the ticker is already linked', async () => {
-    mockContext.isV6 = true;
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       status: TickerReservationStatus.AssetCreated,
     });
 
     return expect(prepareLinkTickerToAsset.call(proc, args)).rejects.toThrow(PolymeshError);
+  });
+
+  describe('prepareStorage', () => {
+    it('should return the ticker reservations status', async () => {
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+        status: TickerReservationStatus.AssetCreated,
+      });
+      entityMockUtils.configureMocks({
+        tickerReservationOptions: {
+          details: { status: TickerReservationStatus.Reserved },
+        },
+      });
+
+      const boundFunc = prepareStorage.bind(proc);
+
+      const result = await boundFunc({
+        ticker: 'TICKER',
+        asset: entityMockUtils.getFungibleAssetInstance(),
+      });
+
+      expect(result).toEqual({ status: TickerReservationStatus.Reserved });
+    });
   });
 
   describe('getAuthorization', () => {

@@ -46,9 +46,9 @@ export async function prepareModifyMultiSig(
   } = this;
   const { signers, multiSig } = args;
 
-  const [signingIdentity, creator] = await Promise.all([
+  const [signingIdentity, admin] = await Promise.all([
     context.getSigningIdentity(),
-    multiSig.getCreator(), // NOSONAR
+    multiSig.getAdmin(),
   ]);
 
   if (!signersToAdd.length && !signersToRemove.length) {
@@ -58,10 +58,10 @@ export async function prepareModifyMultiSig(
         'The given signers are equal to the current signers. At least one signer should be added or removed',
     });
   }
-  if (!creator.isEqual(signingIdentity)) {
+  if (!admin || !admin.isEqual(signingIdentity)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'A MultiSig can only be modified by its creator',
+      message: 'A MultiSig can only be modified by its admin',
     });
   }
 
