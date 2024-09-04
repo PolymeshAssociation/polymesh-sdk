@@ -212,7 +212,7 @@ export class MultiSig extends Account {
   /**
    * Returns the Identity of the MultiSig admin. This Identity can add or remove signers directly without creating a MultiSigProposal first.
    */
-  public async getAdmin(): Promise<Identity> {
+  public async getAdmin(): Promise<Identity | null> {
     const {
       context: {
         polymeshApi: {
@@ -232,10 +232,7 @@ export class MultiSig extends Account {
     const rawAddress = addressToKey(address, context);
     const rawAdminDid = await multiSig.adminDid(rawAddress);
     if (rawAdminDid.isNone) {
-      throw new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message: 'No creator was found for this MultiSig address',
-      });
+      return null;
     }
 
     const did = identityIdToString(rawAdminDid.unwrap());
@@ -244,7 +241,7 @@ export class MultiSig extends Account {
   }
 
   /**
-   * Returns the payer for the MultiSig. If set
+   * Returns the payer for the MultiSig, if set the primary account of the identity will pay for any fees the MultiSig may incur
    */
   public async getPayer(): Promise<Identity | null> {
     const {

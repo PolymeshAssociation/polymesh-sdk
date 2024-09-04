@@ -364,6 +364,8 @@ interface MultiSigOptions extends AccountOptions {
   address?: string;
   details?: { signers: Signer[]; requiredSignatures: BigNumber };
   getCreator?: EntityGetter<Identity>;
+  getAdmin?: EntityGetter<Identity | null>;
+  getPayer?: EntityGetter<Identity | null>;
 }
 interface MultiSigProposalOptions extends EntityOptions {
   id?: BigNumber;
@@ -2027,6 +2029,8 @@ const MockMultiSigClass = createMockEntityClass<MultiSigOptions>(
     checkPermissions!: jest.Mock;
     details!: jest.Mock;
     getCreator!: jest.Mock;
+    getAdmin!: jest.Mock;
+    getPayer!: jest.Mock;
 
     /**
      * @hidden
@@ -2050,6 +2054,8 @@ const MockMultiSigClass = createMockEntityClass<MultiSigOptions>(
       this.checkPermissions = createEntityGetterMock(opts.checkPermissions);
       this.details = createEntityGetterMock(opts.details);
       this.getCreator = createEntityGetterMock(opts.getCreator);
+      this.getAdmin = createEntityGetterMock(opts.getAdmin);
+      this.getPayer = createEntityGetterMock(opts.getPayer);
     }
   },
   () => ({
@@ -2072,6 +2078,8 @@ const MockMultiSigClass = createMockEntityClass<MultiSigOptions>(
       requiredSignatures: new BigNumber(0),
     },
     getCreator: getIdentityInstance(),
+    getAdmin: getIdentityInstance(),
+    getPayer: getIdentityInstance(),
     authorizationsGetReceived: [],
     authorizationsGetOne: getAuthorizationRequestInstance(),
     getMultiSig: null,
