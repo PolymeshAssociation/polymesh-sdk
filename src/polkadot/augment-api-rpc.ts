@@ -97,7 +97,6 @@ import type {
   ChainProperties,
   ChainType,
   DispatchError,
-  DispatchResult,
   Health,
   NetworkState,
   NodeRole,
@@ -923,15 +922,16 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
     };
     nft: {
       /**
-       * Verifies if and the sender and receiver are not the same, if both have valid balances, if the sender owns the nft, and if all compliance rules are being respected.
+       * Returns a vector containing all errors for the transfer. An empty vec means there's no error.
        **/
-      validateNFTTransfer: AugmentedRpc<
+      transferReport: AugmentedRpc<
         (
           sender_portfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
           receiver_portfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
           nfts: NFTs | { asset_id?: any; ids?: any } | string | Uint8Array,
+          skip_locked_check: bool | boolean | Uint8Array,
           blockHash?: Hash | string | Uint8Array
-        ) => Observable<DispatchResult>
+        ) => Observable<Vec<DispatchError>>
       >;
     };
     offchain: {
@@ -1062,7 +1062,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
         (
           instruction_id: InstructionId | AnyNumber | Uint8Array,
           blockHash?: Hash | string | Uint8Array
-        ) => Observable<ExecuteInstructionInfo>
+        ) => Observable<Option<ExecuteInstructionInfo>>
       >;
       /**
        * Returns a vector containing all errors for the execution. An empty vec means there's no error.

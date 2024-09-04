@@ -16,7 +16,7 @@ export default {
           isOptional: true,
         },
       ],
-      type: 'ExecuteInstructionInfo',
+      type: 'Option<ExecuteInstructionInfo>',
     },
     getAffirmationCount: {
       description:

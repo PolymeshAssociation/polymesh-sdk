@@ -899,9 +899,9 @@ export default {
       },
     },
     nft: {
-      validateNFTTransfer: {
+      transferReport: {
         description:
-          'Verifies if and the sender and receiver are not the same, if both have valid balances, if the sender owns the nft, and if all compliance rules are being respected.',
+          "Returns a vector containing all errors for the transfer. An empty vec means there's no error.",
         params: [
           {
             name: 'sender_portfolio',
@@ -919,12 +919,17 @@ export default {
             isOptional: false,
           },
           {
+            name: 'skip_locked_check',
+            type: 'bool',
+            isOptional: false,
+          },
+          {
             name: 'blockHash',
             type: 'Hash',
             isOptional: true,
           },
         ],
-        type: 'DispatchResult',
+        type: 'Vec<DispatchError>',
       },
     },
     settlement: {
@@ -943,7 +948,7 @@ export default {
             isOptional: true,
           },
         ],
-        type: 'ExecuteInstructionInfo',
+        type: 'Option<ExecuteInstructionInfo>',
       },
       getAffirmationCount: {
         description:
@@ -1155,9 +1160,9 @@ export default {
     NFTApi: [
       {
         methods: {
-          validate_nft_transfer: {
+          transfer_report: {
             description:
-              'Verifies if and the sender and receiver are not the same, if both have valid balances, if the sender owns the nft, and if all compliance rules are being respected.',
+              "Returns a vector containing all errors for the transfer. An empty vec means there's no error.",
             params: [
               {
                 name: 'sender_portfolio',
@@ -1171,8 +1176,12 @@ export default {
                 name: 'nfts',
                 type: 'NFTs',
               },
+              {
+                name: 'skip_locked_check',
+                type: 'bool',
+              },
             ],
-            type: 'DispatchResult',
+            type: 'Vec<DispatchError>',
           },
         },
         version: 2,
@@ -1190,7 +1199,7 @@ export default {
                 type: 'InstructionId',
               },
             ],
-            type: 'ExecuteInstructionInfo',
+            type: 'Option<ExecuteInstructionInfo>',
           },
           get_affirmation_count: {
             description:
