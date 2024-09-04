@@ -143,6 +143,7 @@ export class Context {
     this.isV6 = !('tickerAssetID' in polymeshApi.query.asset);
 
     this.unsubChainVersion = polymeshApi.query.system.lastRuntimeUpgrade(upgrade => {
+      /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
       if (upgrade.isSome) {
         const { specVersion } = upgrade.unwrap();
         this.isV6 = specVersion.toNumber() < 7000000;

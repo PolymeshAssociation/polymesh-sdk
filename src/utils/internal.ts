@@ -1056,6 +1056,7 @@ export async function getAssetIdAndTicker(
 }> {
   const { isV6 } = context;
 
+  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
   if (isV6) {
     return {
       ticker: assetId,
@@ -1077,6 +1078,7 @@ export async function asBaseAsset(asset: string | BaseAsset, context: Context): 
   if (asset instanceof BaseAsset) {
     return asset;
   }
+  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
   if (isV6) {
     assertTickerValid(asset);
     return new BaseAsset({ assetId: asset }, context);
@@ -1984,6 +1986,7 @@ export async function getSecondaryAccountPermissions(
       record: PolymeshPrimitivesSecondaryKeyKeyRecord,
       account: Account | MultiSig
     ): Promise<void> => {
+      /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
       if (isV6) {
         const [rawIdentityId, rawPermissions] = record.asSecondaryKey as unknown as [
           PolymeshPrimitivesIdentityId,
@@ -2063,6 +2066,7 @@ export async function getIdentityFromKeyRecord(
     const did = identityIdToString(keyRecord.asPrimaryKey);
     return new Identity({ did }, context);
   } else if (keyRecord.isSecondaryKey) {
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
     if (isV6) {
       const did = identityIdToString(
         keyRecord.asSecondaryKey[0] as unknown as PolymeshPrimitivesIdentityId
@@ -2279,7 +2283,7 @@ export function getAssetIdForStats(
   context: Context
 ): TickerKey | PolymeshPrimitivesAssetAssetID {
   const rawAssetId = assetToMeshAssetId(asset, context);
-
+  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
   return context.isV6 ? { Ticker: rawAssetId } : rawAssetId;
 }
 
@@ -2323,6 +2327,7 @@ export function getAssetIdFromMiddleware(
   context: Context
 ): string {
   const { id, ticker } = assetIdAndTicker!;
+  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
   if (context.isV6) {
     return coerceHexToString(ticker!);
   }

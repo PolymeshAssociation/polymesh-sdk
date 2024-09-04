@@ -86,6 +86,7 @@ export async function prepareNftControllerTransfer(
 
   const rawAssetId = assetToMeshAssetId(collection, context);
 
+  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
   if (isV6) {
     return {
       transaction: tx.nft.controllerTransfer,

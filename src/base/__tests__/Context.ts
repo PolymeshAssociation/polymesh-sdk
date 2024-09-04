@@ -1815,8 +1815,6 @@ describe('Context class', () => {
         middlewareApiV2,
       });
 
-      context.isV6 = false;
-
       assetIds.forEach((assetId, index) => {
         when(assetToMeshAssetIdSpy)
           .calledWith(expect.objectContaining({ id: assetId }), context)

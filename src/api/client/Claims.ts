@@ -304,6 +304,7 @@ export class Claims {
 
       let ticker: string | undefined;
 
+      /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
       // prettier-ignore
       if (type === ScopeType.Ticker) { // NOSONAR
         ticker = removePadding(value);

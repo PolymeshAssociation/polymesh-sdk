@@ -401,6 +401,7 @@ export function meshAssetToAssetId(
   context: Context
 ): string {
   const { isV6 } = context;
+  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
   if (isV6) {
     return tickerToString(value);
   }
@@ -412,6 +413,7 @@ export function meshAssetToAssetId(
  */
 export function assetToMeshAssetIdKey(value: string, context: Context): TickerKey | AssetIdKey {
   const { isV6 } = context;
+  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
   if (isV6) {
     return stringToTickerKey(value, context);
   }
@@ -427,6 +429,7 @@ export function assetToMeshAssetId(
 ): PolymeshPrimitivesAssetAssetID | PolymeshPrimitivesTicker {
   const { isV6 } = context;
 
+  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
   if (isV6) {
     return stringToTicker(id, context);
   }
@@ -448,6 +451,7 @@ export function assetToMeshAssetIdWithKey(
     } {
   const { isV6 } = context;
 
+  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
   if (isV6) {
     return {
       ticker: stringToTicker(id, context),
@@ -1144,6 +1148,7 @@ export function transactionPermissionsToExtrinsicPermissions(
   transactionPermissions: TransactionPermissions | null,
   context: Context
 ): PolymeshPrimitivesSecondaryKeyExtrinsicPermissions {
+  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
   if (context.isV6) {
     return context.createType(
       'PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions',
@@ -1237,6 +1242,7 @@ export function extrinsicPermissionsToTransactionPermissions(
   let exceptions: TxTag[] = [];
 
   if (pallets) {
+    /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
     if (context.isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (pallets as unknown as any[]) // NOSONAR
@@ -1537,6 +1543,7 @@ export function authorizationToAuthorizationData(
   } else if (type === AuthorizationType.PortfolioCustody) {
     value = portfolioIdToMeshPortfolioId(portfolioToPortfolioId(auth.value), context);
   } else if (auth.type === AuthorizationType.TransferAssetOwnership) {
+    /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
     value = context.isV6
       ? stringToTicker(auth.value, context)
       : stringToAssetId(auth.value, context);
@@ -2355,6 +2362,7 @@ export async function scopeToMeshScope(
     case ScopeType.Asset:
       baseAsset = await asBaseAsset(value, context);
       scopeValue = assetToMeshAssetId(baseAsset, context);
+      /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
       scopeType = isV6 ? ScopeType.Ticker : ScopeType.Asset; // NOSONAR
       break;
     case ScopeType.Identity:
@@ -2376,6 +2384,7 @@ export function meshScopeToScope(
   context: Context
 ): Scope {
   const { isV6 } = context;
+  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
   if (
     isV6 &&
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -4256,6 +4265,7 @@ export function statisticsOpTypeToStatType(
   context: Context
 ): PolymeshPrimitivesStatisticsStatType {
   const { operationType, claimIssuer } = args;
+  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
   if (context.isV6) {
     return context.createType('PolymeshPrimitivesStatisticsStatType', {
       op: operationType,
@@ -4350,6 +4360,7 @@ export function meshStatToStatType(
   const claimIssuer = rawStat.claimIssuer;
   let type: 'Count' | 'Balance';
 
+  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
   if (context.isV6) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     type = (rawStat as any).op.type; // NOSONAR
@@ -4504,6 +4515,7 @@ export function toExemptKey(
   op: PolymeshPrimitivesStatisticsStatOpType,
   claimType?: ClaimType
 ): ExemptKey {
+  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
   if (context.isV6) {
     return { asset: rawAssetId as TickerKey, op, claimType };
   }
@@ -5042,6 +5054,7 @@ export function middlewareAgentGroupDataToPermissionGroup(
     permissionGroupIdentifier = { custom: new BigNumber(agentGroup.custom!) };
   }
 
+  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
   const ticker = context.isV6 ? coerceHexToString(asset) : asset;
   return assemblePermissionGroup(permissionGroupIdentifier, ticker, context);
 }
@@ -5146,6 +5159,7 @@ export function middlewarePermissionsDataToPermissions(
       values: [...assetsPermissions].map(
         assetId =>
           new FungibleAsset(
+            /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
             { assetId: context.isV6 ? coerceHexToString(assetId) : assetId },
             context
           )
@@ -5252,6 +5266,7 @@ export function middlewareAuthorizationDataToAuthorization(
     case AuthTypeEnum.TransferAssetOwnership: {
       return {
         type: AuthorizationType.TransferAssetOwnership,
+        /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
         value: context.isV6 ? coerceHexToString(data!) : data!,
       };
     }
@@ -5320,6 +5335,7 @@ export function meshNftToNftId(
 } {
   let rawTicker: PolymeshPrimitivesTicker | PolymeshPrimitivesAssetAssetID;
   let rawIds: Vec<u64>;
+  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
   if (context.isV6) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ({ ticker: rawTicker, ids: rawIds } = rawInfo as any); // NOSONAR

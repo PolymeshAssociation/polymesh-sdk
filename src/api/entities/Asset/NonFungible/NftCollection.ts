@@ -282,6 +282,7 @@ export class NftCollection extends BaseAsset {
     } = this;
 
     let collectionStorage = nft.collectionAsset;
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       collectionStorage = (nft as any).collectionTicker; // NOSONAR
@@ -312,6 +313,7 @@ export class NftCollection extends BaseAsset {
     }
 
     let collectionStorage = nft.collectionAsset;
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       collectionStorage = (nft as any).collectionTicker; // NOSONAR

@@ -118,6 +118,7 @@ async function getCreateAssetTransaction(
 
   const rawTicker = stringToTicker(ticker, context);
   const rawName = nameToAssetName(name, context);
+  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rawNameTickerArgs: any[] = isV6 ? [rawName, rawTicker] : [rawName];
   const rawIsDivisible = booleanToBool(isDivisible, context);
@@ -275,6 +276,7 @@ export async function prepareCreateAsset(
   assertTickerAvailable(ticker, status, reservationRequired);
   const rawTicker = stringToTicker(ticker, context);
 
+  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
   if (isV6) {
     rawAssetId = rawTicker;
     assetId = ticker;
@@ -287,6 +289,7 @@ export async function prepareCreateAsset(
 
   let fee: BigNumber | undefined;
   if (status === TickerReservationStatus.Free) {
+    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
     if (isV6) {
       fee = await addManualFees(
         new BigNumber(0),
@@ -310,11 +313,13 @@ export async function prepareCreateAsset(
     const rawStats = initialStatistics.map(i => inputStatTypeToMeshStatType(i, context));
     const bTreeStats = statisticStatTypesToBtreeStatType(rawStats, context);
 
+    /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
+    const rawAssetIdValue = isV6 ? { Ticker: rawAssetId } : rawAssetId;
     transactions.push(
       checkTxType({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         transaction: tx.statistics.setActiveAssetStats as any, // NOSONAR
-        args: [isV6 ? { Ticker: rawAssetId } : rawAssetId, bTreeStats],
+        args: [rawAssetIdValue, bTreeStats],
       })
     );
   }
