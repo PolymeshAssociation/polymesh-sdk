@@ -120,15 +120,15 @@ export async function prepareModifyMultiSig(
   } = this;
   const { signers, multiSig, requiredSignatures: newRequiredSignatures } = args;
 
-  const [signingIdentity, creator] = await Promise.all([
+  const [signingIdentity, admin] = await Promise.all([
     context.getSigningIdentity(),
-    multiSig.getCreator(), // NOSONAR
+    multiSig.getAdmin(),
   ]);
 
-  if (!creator.isEqual(signingIdentity)) {
+  if (!admin || !admin.isEqual(signingIdentity)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'A MultiSig can only be modified by its creator',
+      message: 'A MultiSig can only be modified by its admin',
     });
   }
 

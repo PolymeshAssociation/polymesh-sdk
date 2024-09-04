@@ -98,6 +98,8 @@ describe('evaluateMultiSigProposal', () => {
       multiSig: entityMockUtils.getMultiSigInstance({
         address: multiSigAddress,
         getCreator: creator,
+        getPayer: creator,
+        getAdmin: creator,
         details: {
           signers: [
             new Account({ address: 'someAddress' }, mockContext),
@@ -236,6 +238,7 @@ describe('evaluateMultiSigProposal', () => {
           multiSig: entityMockUtils.getMultiSigInstance({
             address: multiSigAddress,
             getCreator: creator,
+            getPayer: creator,
             details: {
               signers: [
                 new Account({ address: 'someAddress' }, mockContext),

@@ -811,7 +811,7 @@ describe('Polymesh Transaction Base class', () => {
 
       multiSig = entityMockUtils.getMultiSigInstance({
         address: DUMMY_ACCOUNT_ID,
-        getCreator: entityMockUtils.getIdentityInstance({
+        getPayer: entityMockUtils.getIdentityInstance({
           getPrimaryAccount: {
             account: entityMockUtils.getAccountInstance({
               getBalance: { total: new BigNumber(1000), free: new BigNumber(1000) },
@@ -850,6 +850,42 @@ describe('Polymesh Transaction Base class', () => {
       expect(result).toBeInstanceOf(MultiSigProposal);
       expect(tx.status).toEqual(TransactionStatus.Succeeded);
       expect(() => tx.result).toThrow(PolymeshError); // MultiSig Proposal would mess up the type
+    });
+
+    it('should handle when MultiSig does not have a payer', async () => {
+      multiSig = entityMockUtils.getMultiSigInstance({
+        address: DUMMY_ACCOUNT_ID,
+        getPayer: null,
+        getBalance: { total: new BigNumber(1000), free: new BigNumber(1000) },
+      });
+
+      const underlyingTx = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+      const args = [dsMockUtils.createMockText('A_TICKER')];
+
+      const transaction = dsMockUtils.createTxMock('multiSig', 'createProposal', {
+        autoResolve: MockTxStatus.Succeeded,
+      });
+
+      const tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          transaction: underlyingTx,
+          args,
+          resolver: 3,
+          multiSig,
+        },
+        context
+      );
+
+      const runAsProposalPromise = tx.runAsProposal();
+
+      const result = await runAsProposalPromise;
+
+      expect(underlyingTx).toHaveBeenCalledWith(...args);
+      expect(transaction).toHaveBeenCalled();
+
+      expect(result).toBeInstanceOf(MultiSigProposal);
+      expect(tx.status).toEqual(TransactionStatus.Succeeded);
     });
 
     it('should use multiSigOpts.expiry if it is provided', async () => {
