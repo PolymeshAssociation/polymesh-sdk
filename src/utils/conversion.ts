@@ -78,7 +78,7 @@ import {
 } from '@polkadot/types/lookup';
 import type { IsError } from '@polkadot/types/metadata/decorate/types';
 import { ITuple } from '@polkadot/types/types';
-import { BTreeSet } from '@polkadot/types-codec';
+import { BTreeSet, Result } from '@polkadot/types-codec';
 import {
   hexHasPrefix,
   hexToString,
@@ -151,9 +151,11 @@ import {
   AssetComplianceResult,
   AuthorizationType as MeshAuthorizationType,
   CddStatus,
+  ComplianceReport,
   ComplianceRequirementResult,
   GranularCanTransferResult,
   Moment,
+  RequirementReport,
 } from '~/polkadot/polymesh';
 import {
   AccountWithSignature,
@@ -2896,6 +2898,75 @@ export function complianceRequirementResultToRequirementCompliance(
 /**
  * @hidden
  */
+export function complianceRequirementReportToRequirementCompliance(
+  complianceRequirement: RequirementReport,
+  context: Context
+): RequirementCompliance {
+  const conditions: ConditionCompliance[] = [];
+
+  const conditionCompliancesAreEqual = (
+    { condition: aCondition, complies: aComplies }: ConditionCompliance,
+    { condition: bCondition, complies: bComplies }: ConditionCompliance
+  ): boolean => conditionsAreEqual(aCondition, bCondition) && aComplies === bComplies;
+
+  complianceRequirement.senderConditions.forEach(
+    ({ condition: { conditionType, issuers }, satisfied }) => {
+      const newCondition = {
+        condition: {
+          ...meshConditionTypeToCondition(conditionType, context),
+          target: ConditionTarget.Sender,
+          trustedClaimIssuers: issuers.map(trustedIssuer =>
+            trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
+          ),
+        },
+        complies: boolToBoolean(satisfied),
+      };
+
+      const existingCondition = conditions.find(condition =>
+        conditionCompliancesAreEqual(condition, newCondition)
+      );
+
+      if (!existingCondition) {
+        conditions.push(newCondition);
+      }
+    }
+  );
+
+  complianceRequirement.receiverConditions.forEach(
+    ({ condition: { conditionType, issuers }, satisfied }) => {
+      const newCondition = {
+        condition: {
+          ...meshConditionTypeToCondition(conditionType, context),
+          target: ConditionTarget.Receiver,
+          trustedClaimIssuers: issuers.map(trustedIssuer =>
+            trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
+          ),
+        },
+        complies: boolToBoolean(satisfied),
+      };
+
+      const existingCondition = conditions.find(condition =>
+        conditionCompliancesAreEqual(condition, newCondition)
+      );
+
+      if (existingCondition && existingCondition.condition.target === ConditionTarget.Sender) {
+        existingCondition.condition.target = ConditionTarget.Both;
+      } else {
+        conditions.push(newCondition);
+      }
+    }
+  );
+
+  return {
+    id: u32ToBigNumber(complianceRequirement.id),
+    conditions,
+    complies: boolToBoolean(complianceRequirement.requirementSatisfied),
+  };
+}
+
+/**
+ * @hidden
+ */
 export function complianceRequirementToRequirement(
   complianceRequirement: PolymeshPrimitivesComplianceManagerComplianceRequirement,
   context: Context
@@ -3025,6 +3096,30 @@ export function assetComplianceResultToCompliance(
   const { requirements: rawRequirements, result, paused } = assetComplianceResult;
   const requirements = rawRequirements.map(requirement =>
     complianceRequirementResultToRequirementCompliance(requirement, context)
+  );
+
+  return {
+    requirements,
+    complies: boolToBoolean(paused) || boolToBoolean(result),
+  };
+}
+
+/**
+ * @hidden
+ */
+export function assetComplianceReportToCompliance(
+  assetComplianceReport: Result<ComplianceReport, DispatchError>,
+  context: Context
+): Compliance {
+  const report = assetComplianceReport.asOk;
+
+  const {
+    requirements: rawRequirements,
+    anyRequirementSatistifed: result,
+    pausedCompliance: paused,
+  } = report;
+  const requirements = rawRequirements.map(requirement =>
+    complianceRequirementReportToRequirementCompliance(requirement, context)
   );
 
   return {
@@ -3483,7 +3578,11 @@ export function assetDispatchErrorToTransferError(
   error: DispatchError,
   context: Context
 ): TransferError {
-  const { asset: assetErrors, portfolio: portfolioErrors } = context.polymeshApi.errors;
+  const {
+    asset: assetErrors,
+    portfolio: portfolioErrors,
+    statistics: statisticsError,
+  } = context.polymeshApi.errors;
 
   type ErrorCase = [IsError, TransferError];
 
@@ -3498,6 +3597,7 @@ export function assetDispatchErrorToTransferError(
     [portfolioErrors.InsufficientPortfolioBalance, TransferError.InsufficientPortfolioBalance],
     [assetErrors.InvalidTransferComplianceFailure, TransferError.ComplianceFailure],
     [assetErrors.InvalidTransfer, TransferError.ComplianceFailure],
+    [statisticsError.InvalidTransfer, TransferError.TransferNotAllowed],
   ];
   if (error.isModule) {
     const moduleErr = error.asModule;
@@ -3647,19 +3747,21 @@ export function granularCanTransferResultToTransferBreakdown(
  */
 export function transferReportToTransferBreakdown(
   result: Vec<DispatchError>,
-  validateNftResult: DispatchResult | undefined,
+  validateNftResult: Vec<DispatchError> | undefined,
+  complianceResult: Result<ComplianceReport, DispatchError>,
   context: Context
 ): TransferBreakdown {
-  let general = [];
+  let general: TransferError[] = [];
   let canTransfer = true;
 
-  if (validateNftResult?.isErr) {
-    const transferError = nftDispatchErrorToTransferError(validateNftResult.asErr, context);
-    general.push(transferError);
+  if (validateNftResult?.length) {
+    const errors = result.map(error => nftDispatchErrorToTransferError(error, context));
+    general = Array.from(new Set([...general, ...errors]));
     canTransfer = false;
   }
 
   if (result.length) {
+    console.log(JSON.stringify(result.toJSON()));
     const errors = result.map(error => assetDispatchErrorToTransferError(error, context));
     general = Array.from(new Set([...general, ...errors]));
     canTransfer = false;
@@ -3667,7 +3769,7 @@ export function transferReportToTransferBreakdown(
 
   return {
     general,
-    // compliance: assetComplianceResultToCompliance(complianceResult, context),
+    compliance: assetComplianceReportToCompliance(complianceResult, context),
     restrictions: [],
     result: canTransfer,
   };

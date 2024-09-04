@@ -617,15 +617,15 @@ export default {
       offchain_count: 'u32',
     },
     ComplianceReport: {
-      any_requirement_satistifed: 'bool',
-      paused_compliance: 'bool',
+      anyRequirementSatistifed: 'bool',
+      pausedCompliance: 'bool',
       requirements: 'Vec<RequirementReport>',
     },
     RequirementReport: {
-      requirement_satisfied: 'bool',
+      requirementSatisfied: 'bool',
       id: 'u32',
-      sender_conditions: 'Vec<ConditionReport>',
-      receiver_conditions: 'Vec<ConditionReport>',
+      senderConditions: 'Vec<ConditionReport>',
+      receiverConditions: 'Vec<ConditionReport>',
     },
     ConditionReport: {
       satisfied: 'bool',
