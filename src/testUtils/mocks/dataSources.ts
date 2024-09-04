@@ -1,4 +1,5 @@
 /* istanbul ignore file */
+
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -50,6 +51,7 @@ import {
   RuntimeVersion,
   SignedBlock,
 } from '@polkadot/types/interfaces';
+import { Weight } from '@polkadot/types/interfaces/runtime';
 import {
   FrameSystemPhase,
   PalletAssetAssetDetails,
@@ -4702,22 +4704,53 @@ export const createMockMediatorAffirmationStatus = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockWeight = (
+  weight?:
+    | Weight
+    | {
+        refTime: Compact<u64>;
+        proofSize: Compact<u64>;
+      }
+): MockCodec<Weight> => {
+  const { refTime, proofSize } = weight ?? {
+    refTime: createMockCompact(),
+    proofSize: createMockCompact(),
+  };
+
+  return createMockCodec(
+    {
+      refTime: createMockCompact(refTime.unwrap()),
+      proofSize: createMockCompact(proofSize.unwrap()),
+    },
+    !weight
+  );
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockExecuteInstructionInfo = (
   info:
     | {
         fungibleTokens: u32 | Parameters<typeof createMockU32>[0];
         nonFungibleTokens: u32 | Parameters<typeof createMockU32>[0];
         offChainAssets: u32 | Parameters<typeof createMockU32>[0];
+        consumedWeight: Weight | Parameters<typeof createMockWeight>[0];
       }
     | ExecuteInstructionInfo
 ): MockCodec<ExecuteInstructionInfo> => {
-  const { fungibleTokens, nonFungibleTokens, offChainAssets } = info ?? {
+  const { fungibleTokens, nonFungibleTokens, offChainAssets, consumedWeight } = info ?? {
     fungibleTokens: createMockU32(),
     nonFungibleToken: createMockU32(),
     offChainAssets: createMockU32(),
+    consumedWeight: createMockWeight(),
   };
 
-  return createMockCodec({ fungibleTokens, nonFungibleTokens, offChainAssets }, !info);
+  return createMockCodec(
+    { fungibleTokens, nonFungibleTokens, offChainAssets, consumedWeight },
+    !info
+  );
 };
 
 /**
