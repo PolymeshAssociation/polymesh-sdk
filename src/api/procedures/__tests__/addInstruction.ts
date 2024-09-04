@@ -526,6 +526,30 @@ describe('addInstruction procedure', () => {
     expect(error.data.failedInstructionIndexes[0]).toBe(0);
   });
 
+  it('should throw an error if any instruction contains off chain leg without a venue', async () => {
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      portfoliosToAffirm: [],
+    });
+
+    let error;
+    const legs = Array(2).fill({
+      from: sender,
+      to: receiver,
+      offChainAmount: new BigNumber(1),
+      asset: offChainTicker,
+    } as OffChainLeg);
+
+    try {
+      await prepareAddInstruction.call(proc, { venueId: undefined, instructions: [{ legs }] });
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('Instruction legs cannot be offchain without a venue');
+    expect(error.code).toBe(ErrorCode.ValidationError);
+    expect(error.data.failedInstructionIndexes[0]).toBe(0);
+  });
+
   it('should throw an error if given an string asset that does not exist', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
       portfoliosToAffirm: [],
