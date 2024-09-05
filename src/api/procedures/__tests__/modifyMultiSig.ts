@@ -425,11 +425,9 @@ describe('modifyMultiSig procedure', () => {
         message: 'The number of required signatures should not exceed the number of signers',
       });
 
-      try {
-        assertRequiredSignersExceedsSigners(2, new BigNumber(2), undefined, new BigNumber(4));
-      } catch (error) {
-        expect(error).toEqual(expectedError);
-      }
+      expect(() =>
+        assertRequiredSignersExceedsSigners(2, new BigNumber(2), undefined, new BigNumber(4))
+      ).toThrow(expectedError);
     });
 
     it('should throw an error if the number of signers is less than required signatures', () => {
@@ -438,11 +436,9 @@ describe('modifyMultiSig procedure', () => {
         message: 'The number of signers should not be less than the number of required signatures',
       });
 
-      try {
-        assertRequiredSignersExceedsSigners(2, new BigNumber(3), [newSigner1, newSigner2]);
-      } catch (error) {
-        expect(error).toEqual(expectedError);
-      }
+      expect(() =>
+        assertRequiredSignersExceedsSigners(2, new BigNumber(3), [newSigner1, newSigner2])
+      ).toThrow(expectedError);
     });
 
     it('should throw an error if the number of signers is less than required signatures to be set', () => {
@@ -451,16 +447,14 @@ describe('modifyMultiSig procedure', () => {
         message: 'The number of signers should not be less than the number of required signatures',
       });
 
-      try {
+      expect(() =>
         assertRequiredSignersExceedsSigners(
           2,
           new BigNumber(2),
           [newSigner1, newSigner2],
           new BigNumber(3)
-        );
-      } catch (error) {
-        expect(error).toEqual(expectedError);
-      }
+        )
+      ).toThrow(expectedError);
     });
   });
 
@@ -472,11 +466,9 @@ describe('modifyMultiSig procedure', () => {
           'The given signers are equal to the current signers. At least one signer should be added or removed',
       });
 
-      try {
-        assertNoDataChange(new BigNumber(2), [], [], [oldSigner1, oldSigner2]);
-      } catch (error) {
-        expect(error).toEqual(expectedError);
-      }
+      expect(() => assertNoDataChange(new BigNumber(2), [], [], [oldSigner1, oldSigner2])).toThrow(
+        expectedError
+      );
     });
     it('should throw an error if required signatures to be set equals current', () => {
       const expectedError = new PolymeshError({
@@ -485,11 +477,9 @@ describe('modifyMultiSig procedure', () => {
           'The given required signatures are equal to the current required signatures. The number of required signatures should be different',
       });
 
-      try {
-        assertNoDataChange(new BigNumber(2), [], [], undefined, new BigNumber(2));
-      } catch (error) {
-        expect(error).toEqual(expectedError);
-      }
+      expect(() =>
+        assertNoDataChange(new BigNumber(2), [], [], undefined, new BigNumber(2))
+      ).toThrow(expectedError);
     });
   });
 
@@ -500,11 +490,7 @@ describe('modifyMultiSig procedure', () => {
         message: 'The number of required signatures should be at least 1',
       });
 
-      try {
-        assertValidRequiredSignatures(new BigNumber(0));
-      } catch (error) {
-        expect(error).toEqual(expectedError);
-      }
+      expect(() => assertValidRequiredSignatures(new BigNumber(0))).toThrow(expectedError);
     });
   });
 
