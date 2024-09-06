@@ -282,10 +282,7 @@ describe('modifyMultiSig procedure', () => {
       requiredSignatures: newRequiredSignatures,
     };
 
-    const changeSigsRequiredTx = dsMockUtils.createTxMock(
-      'multiSig',
-      'changeSigsRequiredViaCreator'
-    );
+    const changeSigsRequiredTx = dsMockUtils.createTxMock('multiSig', 'changeSigsRequiredViaAdmin');
 
     const proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
       mockContext,
