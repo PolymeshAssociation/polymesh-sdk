@@ -44,7 +44,7 @@ jobs:
           mv coverage/clover.xml coverage/clover-${{matrix.shard}}.xml
           mv coverage/lcov.info coverage/lcov-${{matrix.shard}}.info
           mv coverage/coverage-final.json coverage/coverage-${{matrix.shard}}.json
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: coverage-artifacts
           path: coverage/
