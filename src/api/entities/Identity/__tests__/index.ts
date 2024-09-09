@@ -399,7 +399,11 @@ describe('Identity class', () => {
     it('should return the balance of a given Asset', async () => {
       when(balanceOfMock).calledWith(rawAssetId, rawIdentityId).mockResolvedValue(fakeBalance);
 
-      const result = await identity.getAssetBalance({ assetId });
+      let result = await identity.getAssetBalance({ assetId });
+
+      expect(result).toEqual(fakeValue);
+
+      result = await identity.getAssetBalance({ ticker: 'SOME_TICKER' });
 
       expect(result).toEqual(fakeValue);
     });
@@ -421,15 +425,24 @@ describe('Identity class', () => {
       expect(callback).toBeCalledWith(fakeValue);
     });
 
-    it("should throw an error if the Asset doesn't exist", () => {
+    it("should throw an error if the Asset doesn't exist", async () => {
       when(assetMock).calledWith(rawAssetId).mockResolvedValue(dsMockUtils.createMockOption());
 
-      const expectedError = new PolymeshError({
+      let expectedError = new PolymeshError({
         code: ErrorCode.DataUnavailable,
         message: `There is no Asset with asset ID "${assetId}"`,
       });
 
-      return expect(identity.getAssetBalance({ assetId })).rejects.toThrow(expectedError);
+      await expect(identity.getAssetBalance({ assetId })).rejects.toThrow(expectedError);
+
+      expectedError = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'There is no Asset with ticker "SOME_TICKER"',
+      });
+
+      await expect(identity.getAssetBalance({ ticker: 'SOME_TICKER' })).rejects.toThrow(
+        expectedError
+      );
     });
   });
 

@@ -156,6 +156,7 @@ export class Polymesh {
     try {
       const { types, rpc, signedExtensions, runtime, runtimeV6 } = schema;
 
+      /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
       const runtimeApis = specVersion >= 7000000 ? runtime : runtimeV6;
       const connectionProtocol = extractProtocol(nodeUrl)!;
 

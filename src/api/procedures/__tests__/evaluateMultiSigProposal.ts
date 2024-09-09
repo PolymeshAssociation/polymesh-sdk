@@ -12,7 +12,13 @@ import {
 import { Account, Context, MultiSigProposal, PolymeshError, Procedure } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode, Identity, MultiSigProposalAction, ProposalStatus } from '~/types';
+import {
+  ErrorCode,
+  Identity,
+  MultiSigProposalAction,
+  MultiSigProposalDetails,
+  ProposalStatus,
+} from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -40,7 +46,7 @@ describe('evaluateMultiSigProposal', () => {
   let proposal: MultiSigProposal;
   let rawSigner: PolymeshPrimitivesSecondaryKeySignatory;
   let creator: Identity;
-  let proposalDetails;
+  let proposalDetails: MultiSigProposalDetails;
   let votesQuery: jest.Mock;
 
   beforeAll(() => {
@@ -92,7 +98,7 @@ describe('evaluateMultiSigProposal', () => {
       status: ProposalStatus.Active,
       approvalAmount: new BigNumber(1),
       rejectionAmount: new BigNumber(0),
-    };
+    } as MultiSigProposalDetails;
     proposal = entityMockUtils.getMultiSigProposalInstance({
       id: proposalId,
       multiSig: entityMockUtils.getMultiSigInstance({
@@ -283,6 +289,24 @@ describe('evaluateMultiSigProposal', () => {
     });
 
     it('should return a reject transaction spec', async () => {
+      proposal = entityMockUtils.getMultiSigProposalInstance({
+        id: proposalId,
+        multiSig: entityMockUtils.getMultiSigInstance({
+          address: multiSigAddress,
+          getCreator: creator,
+          getPayer: null,
+          getAdmin: creator,
+          details: {
+            signers: [
+              new Account({ address: 'someAddress' }, mockContext),
+              new Account({ address: 'someOtherAddress' }, mockContext),
+            ],
+            requiredSignatures: new BigNumber(1),
+          },
+        }),
+        details: proposalDetails,
+      });
+
       const proc = procedureMockUtils.getInstance<MultiSigProposalVoteParams, void>(mockContext);
 
       const transaction = dsMockUtils.createTxMock('multiSig', 'reject');
@@ -294,7 +318,6 @@ describe('evaluateMultiSigProposal', () => {
 
       expect(result).toEqual({
         transaction,
-        paidForBy: creator,
         args: [rawMultiSigAccount, rawProposalId],
       });
     });

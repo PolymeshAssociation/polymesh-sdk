@@ -2599,8 +2599,8 @@ export const createMockFundraiserName = (name?: string): Bytes => createMockByte
 export const createMockAssetPermissions = (
   assetPermissions?:
     | 'Whole'
-    | { These: PolymeshPrimitivesTicker[] }
-    | { Except: PolymeshPrimitivesTicker[] }
+    | { These: PolymeshPrimitivesAssetAssetID[] }
+    | { Except: PolymeshPrimitivesAssetAssetID[] }
 ): MockCodec<PolymeshPrimitivesSubsetSubsetRestrictionAssetID> => {
   return createMockEnum<PolymeshPrimitivesSubsetSubsetRestrictionAssetID>(assetPermissions);
 };

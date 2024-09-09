@@ -269,6 +269,29 @@ describe('MultiSig class', () => {
     });
   });
 
+  describe('method: getCreator', () => {
+    it('should return the Identity of the creator of the MultiSig', async () => {
+      const expectedDid = 'abc';
+      dsMockUtils.createQueryMock('multiSig', 'adminDid', {
+        returnValue: createMockOption(createMockIdentityId(expectedDid)),
+      });
+
+      const result = await multiSig.getCreator(); // NOSONAR
+      return expect(result?.did).toEqual(expectedDid);
+    });
+
+    it('should throw an error if there is no creator', () => {
+      dsMockUtils.createQueryMock('multiSig', 'adminDid', {
+        returnValue: createMockOption(),
+      });
+
+      const creatorPromise = multiSig.getCreator(); // NOSONAR
+      return expect(creatorPromise).rejects.toThrowError(
+        'No creator was found for this MultiSig address'
+      );
+    });
+  });
+
   describe('method: getAdmin', () => {
     it('should return the Identity of the creator of the MultiSig', async () => {
       const expectedDid = 'abc';
@@ -286,6 +309,26 @@ describe('MultiSig class', () => {
       });
 
       return expect(multiSig.getAdmin()).resolves.toBeNull();
+    });
+  });
+
+  describe('method: getPayer', () => {
+    it('should return the Identity of the payer of the MultiSig', async () => {
+      const expectedDid = 'abc';
+      dsMockUtils.createQueryMock('multiSig', 'payingDid', {
+        returnValue: createMockOption(createMockIdentityId(expectedDid)),
+      });
+
+      const result = await multiSig.getPayer();
+      return expect(result?.did).toEqual(expectedDid);
+    });
+
+    it('should return null if there is no admin', () => {
+      dsMockUtils.createQueryMock('multiSig', 'payingDid', {
+        returnValue: createMockOption(),
+      });
+
+      return expect(multiSig.getPayer()).resolves.toBeNull();
     });
   });
 

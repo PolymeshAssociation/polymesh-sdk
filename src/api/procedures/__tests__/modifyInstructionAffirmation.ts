@@ -426,6 +426,26 @@ describe('modifyInstructionAffirmation procedure', () => {
           ],
         })
       ).rejects.toThrow('Some signers are not allowed to sign the receipt for this Instruction');
+
+      entityMockUtils.configureMocks({
+        instructionOptions: {
+          details: {
+            venue: undefined,
+          },
+        },
+      });
+      await expect(
+        prepareModifyInstructionAffirmation.call(proc, {
+          id,
+          operation: InstructionAffirmationOperation.Affirm,
+          receipts: [
+            {
+              ...receipt,
+              signer: 'notAllowedSigner',
+            },
+          ],
+        })
+      ).rejects.toThrow('Some signers are not allowed to sign the receipt for this Instruction');
     });
 
     it('should throw an error if offchain leg is already affirmed', async () => {

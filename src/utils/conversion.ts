@@ -1126,6 +1126,7 @@ function buildPalletPermissions(
     palletsV7.set(key, { extrinsics: getDispatchables(val) });
   });
 
+  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
   const pallets = isV6 ? palletsV6 : palletsV7;
 
   if (type === PermissionType.Include) {
@@ -5241,10 +5242,11 @@ export function middlewareAuthorizationDataToAuthorization(
         value: coerceHexToString(data!),
       };
     case AuthTypeEnum.TransferAssetOwnership: {
+      /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
+      const value = context.isV6 ? coerceHexToString(data!) : data!;
       return {
         type: AuthorizationType.TransferAssetOwnership,
-        /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
-        value: context.isV6 ? coerceHexToString(data!) : data!,
+        value,
       };
     }
     case AuthTypeEnum.PortfolioCustody: {

@@ -141,15 +141,31 @@ describe('executeManualInstruction procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should throw an error if the signing identity is not the custodian of any of the involved portfolios', () => {
-    const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
+  it('should throw an error if the signing identity is not the custodian of any of the involved portfolios', async () => {
+    let proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
       portfolios: [],
       offChainParties: new Set<string>(['offChainSender', 'offChainReceiver']),
       instructionDetails,
       signerDid: 'someOtherDid',
     });
 
-    return expect(
+    await expect(
+      prepareExecuteManualInstruction.call(proc, {
+        id,
+        skipAffirmationCheck: false,
+      })
+    ).rejects.toThrow('The signing identity is not involved in this Instruction');
+
+    proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
+      portfolios: [],
+      offChainParties: new Set<string>(['offChainSender', 'offChainReceiver']),
+      instructionDetails: {
+        ...instructionDetails,
+        venue: null,
+      },
+      signerDid: 'someOtherDid',
+    });
+    await expect(
       prepareExecuteManualInstruction.call(proc, {
         id,
         skipAffirmationCheck: false,
