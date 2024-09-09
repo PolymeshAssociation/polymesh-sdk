@@ -133,7 +133,7 @@ describe('modifyMultiSig procedure', () => {
     return expect(prepareModifyMultiSig.call(proc, args)).rejects.toThrowError(expectedError);
   });
 
-  it('should throw an error if called by someone who is not the admin', () => {
+  it('should throw an error if called by someone who is not the admin', async () => {
     const args = {
       multiSig: entityMockUtils.getMultiSigInstance({
         getAdmin: getIdentityInstance({ isEqual: false }),
@@ -156,7 +156,16 @@ describe('modifyMultiSig procedure', () => {
       message: 'A MultiSig can only be modified by its admin',
     });
 
-    return expect(prepareModifyMultiSig.call(proc, args)).rejects.toThrowError(expectedError);
+    await expect(prepareModifyMultiSig.call(proc, args)).rejects.toThrowError(expectedError);
+
+    await expect(
+      prepareModifyMultiSig.call(proc, {
+        ...args,
+        multiSig: entityMockUtils.getMultiSigInstance({
+          getAdmin: null,
+        }),
+      })
+    ).rejects.toThrowError(expectedError);
   });
 
   it('should add update and remove signer transactions to the queue', async () => {

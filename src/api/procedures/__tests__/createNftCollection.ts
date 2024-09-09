@@ -721,6 +721,30 @@ describe('createNftCollection procedure', () => {
       });
     });
 
+    it('should throw if the ticker is already linked to another asset', async () => {
+      entityMockUtils.configureMocks({
+        tickerReservationOptions: {
+          details: {
+            owner: entityMockUtils.getIdentityInstance(),
+            expiryDate: null,
+            status: TickerReservationStatus.AssetCreated,
+            assetId: '0x9999988888',
+          },
+        },
+      });
+      const proc = procedureMockUtils.getInstance<Params, NftCollection, Storage>(mockContext);
+      const boundFunc = prepareStorage.bind(proc);
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'Ticker is already linked to another asset',
+      });
+
+      await expect(
+        boundFunc({ ticker, assetId, nftType: KnownNftType.Derivative, collectionKeys: [] })
+      ).rejects.toThrow(expectedError);
+    });
+
     it('should throw if the NftCollection already exists', async () => {
       entityMockUtils.configureMocks({
         tickerReservationOptions: {

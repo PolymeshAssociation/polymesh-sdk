@@ -274,6 +274,7 @@ import {
   meshMetadataValueToMetadataValue,
   meshNftToNftId,
   meshPermissionsToPermissions,
+  meshPermissionsToPermissionsV2,
   meshProposalStateToProposalStatus, // NOSONAR
   meshProposalStatusToProposalStatus,
   meshScopeToScope,
@@ -2310,6 +2311,150 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       expect(result).toEqual(fakeResult);
     });
   });
+
+  describe('meshPermissionsToPermissionsV2', () => {
+    it('should convert an Account object to a Permissions', async () => {
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
+      dsMockUtils.createQueryMock('identity', 'keyAssetPermissions');
+      dsMockUtils.createQueryMock('identity', 'keyExtrinsicPermissions');
+      dsMockUtils.createQueryMock('identity', 'keyPortfolioPermissions');
+      const context = dsMockUtils.getContextInstance();
+      const assetId = '0x1234';
+      const did = 'someDid';
+
+      const rawIdentityName = dsMockUtils.createMockText('Identity');
+      const rawAuthorshipName = dsMockUtils.createMockText('Authorship');
+
+      const rawIdentityPermissions = dsMockUtils.createMockPalletPermissions({
+        extrinsics: dsMockUtils.createMockExtrinsicName({
+          These: [dsMockUtils.createMockText('add_claim')],
+        }),
+      });
+
+      const rawAuthorshipPermissions = dsMockUtils.createMockPalletPermissions({
+        extrinsics: dsMockUtils.createMockExtrinsicName('Whole'),
+      });
+
+      const permissionsMap = new Map();
+      permissionsMap.set(rawIdentityName, rawIdentityPermissions);
+      permissionsMap.set(rawAuthorshipName, rawAuthorshipPermissions);
+
+      let fakeResult: Permissions = {
+        assets: {
+          values: [expect.objectContaining({ id: assetId })],
+          type: PermissionType.Include,
+        },
+        transactions: {
+          type: PermissionType.Include,
+          values: [TxTags.identity.AddClaim, ModuleName.Authorship],
+        },
+        transactionGroups: [],
+        portfolios: {
+          values: [expect.objectContaining({ owner: expect.objectContaining({ did }) })],
+          type: PermissionType.Include,
+        },
+      };
+
+      dsMockUtils.getQueryMultiMock().mockResolvedValue([
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockAssetPermissions({
+            These: [dsMockUtils.createMockAssetId(assetId)],
+          })
+        ),
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockExtrinsicPermissions({
+            These: dsMockUtils.createMockBTreeMap(permissionsMap),
+          })
+        ),
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockPortfolioPermissions({
+            These: [
+              dsMockUtils.createMockPortfolioId({
+                did: dsMockUtils.createMockIdentityId(did),
+                kind: dsMockUtils.createMockPortfolioKind('Default'),
+              }),
+            ],
+          })
+        ),
+      ]);
+
+      let result = await meshPermissionsToPermissionsV2(
+        entityMockUtils.getAccountInstance(),
+        context
+      );
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        assets: null,
+        transactions: null,
+        transactionGroups: [],
+        portfolios: null,
+      };
+
+      dsMockUtils
+        .getQueryMultiMock()
+        .mockResolvedValue([
+          dsMockUtils.createMockOption(),
+          dsMockUtils.createMockOption(),
+          dsMockUtils.createMockOption(),
+        ]);
+
+      result = await meshPermissionsToPermissionsV2(entityMockUtils.getMultiSigInstance(), context);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        assets: {
+          values: [expect.objectContaining({ id: assetId })],
+          type: PermissionType.Exclude,
+        },
+        transactions: {
+          type: PermissionType.Exclude,
+          values: [ModuleName.Identity],
+          exceptions: [TxTags.identity.AddClaim],
+        },
+        transactionGroups: [],
+        portfolios: {
+          values: [expect.objectContaining({ owner: expect.objectContaining({ did }) })],
+          type: PermissionType.Exclude,
+        },
+      };
+
+      const rawIdentityExpectPermissions = dsMockUtils.createMockPalletPermissions({
+        extrinsics: dsMockUtils.createMockExtrinsicName({
+          Except: [dsMockUtils.createMockText('add_claim')],
+        }),
+      });
+
+      const exceptPermissionsMap = new Map();
+      exceptPermissionsMap.set(rawIdentityName, rawIdentityExpectPermissions);
+
+      dsMockUtils.getQueryMultiMock().mockResolvedValue([
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockAssetPermissions({
+            Except: [dsMockUtils.createMockAssetId(assetId)],
+          })
+        ),
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockExtrinsicPermissions({
+            Except: dsMockUtils.createMockBTreeMap(exceptPermissionsMap),
+          })
+        ),
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockPortfolioPermissions({
+            Except: [
+              dsMockUtils.createMockPortfolioId({
+                did: dsMockUtils.createMockIdentityId(did),
+                kind: dsMockUtils.createMockPortfolioKind('Default'),
+              }),
+            ],
+          })
+        ),
+      ]);
+
+      result = await meshPermissionsToPermissionsV2(entityMockUtils.getAccountInstance(), context);
+      expect(result).toEqual(fakeResult);
+    });
+  });
 });
 
 describe('bigNumberToU64 and u64ToBigNumber', () => {
@@ -3833,6 +3978,29 @@ describe('transferReportToTransferBreakdown', () => {
   it('should convert a polkadot transfer report to a TransferBreakdown', () => {
     const context = dsMockUtils.getContextInstance();
 
+    let result = transferReportToTransferBreakdown(
+      [] as unknown as Vec<DispatchError>,
+      undefined,
+      dsMockUtils.createMockDispatchResult({
+        Ok: dsMockUtils.createMockAssetComplianceReport({
+          pausedCompliance: true,
+          anyRequirementSatistifed: true,
+          requirements: [],
+        }),
+      }) as unknown as Result<ComplianceReport, DispatchError>,
+      context
+    );
+
+    expect(result).toEqual({
+      general: [],
+      compliance: {
+        requirements: [],
+        complies: true,
+      },
+      restrictions: [],
+      result: true,
+    });
+
     context.polymeshApi.errors.nft = {
       DuplicatedNFTId: { is: jest.fn().mockReturnValue(false) },
       InvalidNFTTransferComplianceFailure: { is: jest.fn().mockReturnValue(false) },
@@ -3864,7 +4032,7 @@ describe('transferReportToTransferBreakdown', () => {
       InvalidTransfer: { is: jest.fn().mockReturnValue(false) },
     } as unknown as DecoratedErrors<'promise'>['statistics'];
 
-    const result = transferReportToTransferBreakdown(
+    result = transferReportToTransferBreakdown(
       [
         dsMockUtils.createMockDispatchResult({
           Err: { index: createMockU8(), module: createMockU8aFixed() },
@@ -4824,6 +4992,16 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
       );
 
       expect(result).toEqual({ type: ScopeType.Asset, value: '0x1234' });
+
+      result = middlewareScopeToScope(
+        {
+          type: ClaimScopeTypeEnum.Ticker, // NOSONAR
+          value: 'TICKER',
+        },
+        context
+      );
+
+      expect(result).toEqual({ type: ScopeType.Asset, value: 'TICKER' });
 
       result = middlewareScopeToScope(
         { type: ClaimScopeTypeEnum.Identity, value: 'someDid' },

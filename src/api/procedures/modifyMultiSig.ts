@@ -125,7 +125,7 @@ export async function prepareModifyMultiSig(
     multiSig.getAdmin(),
   ]);
 
-  if (!admin || !admin.isEqual(signingIdentity)) {
+  if (!admin?.isEqual(signingIdentity)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'A MultiSig can only be modified by its admin',

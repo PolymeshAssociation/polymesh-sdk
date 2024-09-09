@@ -141,8 +141,11 @@ async function getCreateAssetTxAndFees(
   }
 
   const internalNftType = getInternalNftType(customTypeData, nftType);
+  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
   const rawName = nameToAssetName(name ?? ticker ?? assetId, context);
+  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
   const rawNameTickerArgs = isV6 ? [rawName, rawAssetId] : [rawName];
+
   const rawDivisibility = booleanToBool(false, context);
   const rawIdentifiers = securityIdentifiers.map(identifier =>
     securityIdentifierToAssetIdentifier(identifier, context)
@@ -480,13 +483,15 @@ export async function prepareStorage(
     } else if (!isV6) {
       storageStatus.assetId = await context.getSigningAccount().getNextAssetId();
     }
-  } else if (isV6) {
+  } else {
     /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
-    // ticker is mandatory for 6.x chain
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'Ticker must be provided while creating a NFT collection',
-    });
+    if (isV6) {
+      // ticker is mandatory for 6.x chain
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'Ticker must be provided while creating a NFT collection',
+      });
+    }
   }
 
   if (assetIdExistsForV7) {

@@ -116,11 +116,7 @@ describe('MultiSigProposal class', () => {
 
       dsMockUtils.createQueryMock('multiSig', 'proposalStates', {
         returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockProposalState({
-            Active: {
-              until: dsMockUtils.createMockOption(),
-            },
-          })
+          dsMockUtils.createMockProposalState('ExecutionSuccessful')
         ),
       });
       dsMockUtils.createQueryMock('multiSig', 'proposalVoteCounts', {
@@ -140,7 +136,7 @@ describe('MultiSigProposal class', () => {
         autoClose: true,
         expiry: null,
         rejectionAmount: new BigNumber(1),
-        status: ProposalStatus.Active,
+        status: ProposalStatus.Successful,
         txTag: 'asset.reserveTicker',
         voted: [expect.objectContaining({ address: DUMMY_ACCOUNT_ID })],
       });
