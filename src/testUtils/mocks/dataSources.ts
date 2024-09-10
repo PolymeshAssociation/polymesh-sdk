@@ -4062,22 +4062,51 @@ export const createMockBlockHash = (value?: string | BlockHash): MockCodec<Block
 };
 
 /**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockWeight = (
+  weight?:
+    | Weight
+    | {
+        refTime: Compact<u64>;
+        proofSize: Compact<u64>;
+      }
+): MockCodec<Weight> => {
+  const { refTime, proofSize } = weight ?? {
+    refTime: createMockCompact(),
+    proofSize: createMockCompact(),
+  };
+
+  return createMockCodec(
+    {
+      refTime: createMockCompact(refTime.unwrap()),
+      proofSize: createMockCompact(proofSize.unwrap()),
+    },
+    !weight
+  );
+};
+
+/**
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockRuntimeDispatchInfo = (
   runtimeDispatchInfo?:
     | RuntimeDispatchInfo
     | {
+        weight: Weight | Parameters<typeof createMockWeight>[0];
         partialFee: Balance | Parameters<typeof createMockBalance>[0];
       }
 ): MockCodec<RuntimeDispatchInfo> => {
-  const { partialFee } = runtimeDispatchInfo ?? {
+  const { partialFee, weight } = runtimeDispatchInfo ?? {
     partialFee: createMockBalance(),
+    weight: createMockWeight(),
   };
 
   return createMockCodec(
     {
       partialFee: createMockBalance(partialFee),
+      weight: createMockWeight(weight),
     },
     !runtimeDispatchInfo
   );
@@ -4683,32 +4712,6 @@ export const createMockMediatorAffirmationStatus = (
   }
 
   return createMockEnum<PolymeshPrimitivesSettlementMediatorAffirmationStatus>(status);
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockWeight = (
-  weight?:
-    | Weight
-    | {
-        refTime: Compact<u64>;
-        proofSize: Compact<u64>;
-      }
-): MockCodec<Weight> => {
-  const { refTime, proofSize } = weight ?? {
-    refTime: createMockCompact(),
-    proofSize: createMockCompact(),
-  };
-
-  return createMockCodec(
-    {
-      refTime: createMockCompact(refTime.unwrap()),
-      proofSize: createMockCompact(proofSize.unwrap()),
-    },
-    !weight
-  );
 };
 
 /**

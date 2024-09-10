@@ -349,4 +349,24 @@ describe('MultiSig class', () => {
       expect(procedure).toBe(expectedTransaction);
     });
   });
+
+  describe('method: setAdmin', () => {
+    it('should prepare the procedure and return the resulting procedure', async () => {
+      const did = 'someDid';
+      const admin = entityMockUtils.getIdentityInstance({ did });
+
+      const expectedTransaction = 'someQueue' as unknown as PolymeshTransaction<void>;
+      const args = {
+        admin,
+      };
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { multiSig, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const procedure = await multiSig.setAdmin(args);
+
+      expect(procedure).toBe(expectedTransaction);
+    });
+  });
 });

@@ -414,6 +414,7 @@ describe('Network Class', () => {
         .mockResolvedValue(
           dsMockUtils.createMockRuntimeDispatchInfo({
             partialFee: rawGasFees,
+            weight: dsMockUtils.createMockWeight(),
           })
         );
 
