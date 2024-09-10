@@ -7,6 +7,7 @@ import {
   Account,
   Context,
   Identity,
+  joinCreator,
   modifyMultiSig,
   PolymeshError,
   removeMultiSigPayer,
@@ -15,9 +16,11 @@ import { multiSigProposalsQuery } from '~/middleware/queries/multisigs';
 import { Query } from '~/middleware/types';
 import {
   ErrorCode,
+  JoinCreatorParams,
   ModifyMultiSigParams,
   MultiSigDetails,
   NoArgsProcedureMethod,
+  OptionalArgsProcedureMethod,
   ProcedureMethod,
   ProposalStatus,
   ResultSet,
@@ -47,12 +50,14 @@ export class MultiSig extends Account {
    */
   public constructor(identifiers: UniqueIdentifiers, context: Context) {
     super(identifiers, context);
+
     this.modify = createProcedureMethod(
       {
         getProcedureAndArgs: modifyArgs => [modifyMultiSig, { multiSig: this, ...modifyArgs }],
       },
       context
     );
+
     this.setAdmin = createProcedureMethod(
       { getProcedureAndArgs: adminArgs => [setMultiSigAdmin, { multiSig: this, ...adminArgs }] },
       context
@@ -64,6 +69,14 @@ export class MultiSig extends Account {
       },
       context
     );
+
+    this.joinCreator = createProcedureMethod(
+      {
+        getProcedureAndArgs: joinArgs => [joinCreator, { multiSig: this, ...joinArgs }],
+        optionalArgs: true,
+      },
+      context
+    ); // NOSONAR
   }
 
   /**
@@ -252,6 +265,7 @@ export class MultiSig extends Account {
 
     const rawAddress = addressToKey(address, context);
     const rawAdminDid = await multiSig.adminDid(rawAddress);
+
     if (rawAdminDid.isNone) {
       return null;
     }
@@ -313,15 +327,16 @@ export class MultiSig extends Account {
     if (isV6) {
       const rawAddress = addressToKey(address, context);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const rawAdminDid = await (multiSig as any).multiSigToIdentity(rawAddress); // NOSONAR
-      if (rawAdminDid.isNone) {
+      const rawCreatorDid = await (multiSig as any).multiSigToIdentity(rawAddress); // NOSONAR
+
+      if (rawCreatorDid.isNone || rawCreatorDid.isEmpty) {
         throw new PolymeshError({
           code: ErrorCode.DataUnavailable,
           message: 'No creator was found for this MultiSig address',
         });
       }
 
-      const did = identityIdToString(rawAdminDid.unwrap());
+      const did = identityIdToString(rawCreatorDid);
 
       return new Identity({ did }, context);
     } else {
@@ -359,4 +374,15 @@ export class MultiSig extends Account {
    * @note This method must be called by one of the MultiSig signer's or by the paying identity.
    */
   public removePayer: NoArgsProcedureMethod<void>;
+
+  /**
+   * Attach a MultiSig directly to the creator's identity. This method bypasses the usual authorization step to join an identity
+   *
+   * @note the caller should be the MultiSig creator's primary key
+   *
+   * @note To attach the MultiSig to an identity other than the creator's, {@link api/client/AccountManagement!AccountManagement.inviteAccount | inviteAccount} can be used instead. The MultiSig will then need to accept the created authorization
+   *
+   * @deprecated this method is only available in v6 as in v7 the MultiSig is automatically attached to the creator's identity
+   */
+  public joinCreator: OptionalArgsProcedureMethod<JoinCreatorParams, void> | (() => never);
 }
