@@ -383,4 +383,26 @@ describe('MultiSig class', () => {
       expect(procedure).toBe(expectedTransaction);
     });
   });
+
+  describe('method: joinCreator', () => {
+    it('should prepare the procedure and return the resulting procedure', async () => {
+      context = dsMockUtils.getContextInstance({ isV6: true });
+      multiSig = new MultiSig({ address }, context);
+
+      expect(multiSig.joinCreator).toBeDefined(); // NOSONAR
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+      const args = {
+        asPrimary: true,
+      };
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { multiSig, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const procedure = await multiSig.joinCreator(args); // NOSONAR
+
+      expect(procedure).toBe(expectedTransaction);
+    });
+  });
 });
