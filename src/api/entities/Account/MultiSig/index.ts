@@ -2,6 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { UniqueIdentifiers } from '~/api/entities/Account';
 import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
+import { setMultiSigAdmin } from '~/api/procedures/setMultiSigAdmin';
 import { Account, Context, Identity, modifyMultiSig, PolymeshError } from '~/internal';
 import { multiSigProposalsQuery } from '~/middleware/queries/multisigs';
 import { Query } from '~/middleware/types';
@@ -12,6 +13,7 @@ import {
   ProcedureMethod,
   ProposalStatus,
   ResultSet,
+  SetMultiSigAdminParams,
 } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
@@ -41,6 +43,10 @@ export class MultiSig extends Account {
       {
         getProcedureAndArgs: modifyArgs => [modifyMultiSig, { multiSig: this, ...modifyArgs }],
       },
+      context
+    );
+    this.setAdmin = createProcedureMethod(
+      { getProcedureAndArgs: adminArgs => [setMultiSigAdmin, { multiSig: this, ...adminArgs }] },
       context
     );
   }
@@ -324,4 +330,10 @@ export class MultiSig extends Account {
     Pick<ModifyMultiSigParams, 'signers' | 'requiredSignatures'>,
     void
   >;
+
+  /**
+   * Set an admin for the MultiSig. When setting an admin it must be signed by one of the MultiSig signers and ran
+   * as a proposal. When removing an admin it must be called by account belonging to the admin's identity
+   */
+  public setAdmin: ProcedureMethod<SetMultiSigAdminParams, void>;
 }

@@ -1639,6 +1639,13 @@ export interface ModifyMultiSigParams {
   requiredSignatures?: BigNumber;
 }
 
+export interface SetMultiSigAdminParams {
+  /**
+   * The identity to become an admin for the MultiSig. `null` will remove the current admin
+   */
+  admin: Identity | string | null;
+}
+
 interface JoinCreatorAsPrimary {
   asPrimary: true;
   cddAuthId?: BigNumber;

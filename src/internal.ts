@@ -158,6 +158,7 @@ export { acceptPrimaryKeyRotation } from '~/api/procedures/acceptPrimaryKeyRotat
 export { addAssetMediators } from '~/api/procedures/addAssetMediators';
 export { removeAssetMediators } from '~/api/procedures/removeAssetMediators';
 export { Storage as ModifyMultiSigStorage, modifyMultiSig } from '~/api/procedures/modifyMultiSig';
+export { setMultiSigAdmin } from '~/api/procedures/setMultiSigAdmin';
 export {
   SetCountTransferRestrictionsParams,
   SetPercentageTransferRestrictionsParams,

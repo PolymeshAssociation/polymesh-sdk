@@ -1,5 +1,5 @@
 import { u64 } from '@polkadot/types';
-import { AccountId } from '@polkadot/types/interfaces';
+import { AccountId, RuntimeDispatchInfo } from '@polkadot/types/interfaces';
 import { PolymeshPrimitivesSecondaryKeySignatory } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -43,11 +43,14 @@ describe('evaluateMultiSigProposal', () => {
   let rawSignerAccount: AccountId;
   let rawOtherAccount: AccountId;
   let rawProposalId: u64;
+  let rawDispatchInfo: RuntimeDispatchInfo;
   let proposal: MultiSigProposal;
   let rawSigner: PolymeshPrimitivesSecondaryKeySignatory;
   let creator: Identity;
   let proposalDetails: MultiSigProposalDetails;
   let votesQuery: jest.Mock;
+  let proposalQuery: jest.Mock;
+  let callInfoCall: jest.Mock;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -57,6 +60,10 @@ describe('evaluateMultiSigProposal', () => {
     stringToAccountId = jest.spyOn(utilsConversionModule, 'stringToAccountId');
     bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
     signerToSignatorySpy = jest.spyOn(utilsConversionModule, 'signerToSignatory');
+    rawDispatchInfo = dsMockUtils.createMockRuntimeDispatchInfo({
+      weight: dsMockUtils.createMockWeight(),
+      partialFee: dsMockUtils.createMockBalance(),
+    });
 
     multiSigAddress = 'multiSigAddress';
     signerAddress = 'someAddress';
@@ -70,6 +77,8 @@ describe('evaluateMultiSigProposal', () => {
     });
 
     votesQuery = dsMockUtils.createQueryMock('multiSig', 'votes');
+    proposalQuery = dsMockUtils.createQueryMock('multiSig', 'proposals');
+    callInfoCall = dsMockUtils.createCallMock('transactionPaymentCallApi', 'queryCallInfo');
 
     rawMultiSigAccount = dsMockUtils.createMockAccountId(multiSigAddress);
     rawSignerAccount = dsMockUtils.createMockAccountId(signerAddress);
@@ -118,6 +127,8 @@ describe('evaluateMultiSigProposal', () => {
     });
 
     votesQuery.mockResolvedValue(dsMockUtils.createMockBool(false));
+    proposalQuery.mockResolvedValue(dsMockUtils.createMockOption(dsMockUtils.createMockCall()));
+    callInfoCall.mockResolvedValue(rawDispatchInfo);
   });
 
   afterEach(() => {
@@ -271,7 +282,24 @@ describe('evaluateMultiSigProposal', () => {
       }
     });
 
-    it('should return a approveAsKey transaction spec', async () => {
+    it('should throw an error if proposal information is not found', () => {
+      const proc = procedureMockUtils.getInstance<MultiSigProposalVoteParams, void>(mockContext);
+      proposalQuery.mockResolvedValue(dsMockUtils.createMockOption());
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The proposal data was not found on chain',
+      });
+
+      return expect(
+        prepareMultiSigProposalEvaluation.call(proc, {
+          proposal,
+          action: MultiSigProposalAction.Approve,
+        })
+      ).rejects.toThrow(expectedError);
+    });
+
+    it('should return a approve transaction spec', async () => {
       const proc = procedureMockUtils.getInstance<MultiSigProposalVoteParams, void>(mockContext);
 
       const transaction = dsMockUtils.createTxMock('multiSig', 'approve');
@@ -284,7 +312,7 @@ describe('evaluateMultiSigProposal', () => {
       expect(result).toEqual({
         transaction,
         paidForBy: creator,
-        args: [rawMultiSigAccount, rawProposalId],
+        args: [rawMultiSigAccount, rawProposalId, rawDispatchInfo.weight],
       });
     });
 
