@@ -4,8 +4,10 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Context, Entity, Instruction, PolymeshTransaction } from '~/internal';
+import { instructionEventsQuery } from '~/middleware/newSettlementsQueries';
 import { instructionsQuery } from '~/middleware/queries';
 import { InstructionStatusEnum } from '~/middleware/types';
+import { InstructionEventEnum } from '~/middleware/typesLatest';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   createMockInstructionStatus,
@@ -25,6 +27,7 @@ import {
 } from '~/types';
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
 import { tuple } from '~/types/utils';
+import { SETTLEMENTS_V2_SQ_VERSION } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -846,12 +849,15 @@ describe('Instruction class', () => {
     });
 
     let bigNumberToU64Spy: jest.SpyInstance;
+    let getLatestSqVersionSpy: jest.SpyInstance;
 
     beforeAll(() => {
       bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+      getLatestSqVersionSpy = jest.spyOn(utilsInternalModule, 'getLatestSqVersion');
     });
 
     beforeEach(() => {
+      getLatestSqVersionSpy.mockResolvedValue('15.0.0');
       when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
     });
 
@@ -937,7 +943,47 @@ describe('Instruction class', () => {
         },
       ]);
 
-      const result = await instruction.getStatus();
+      let result = await instruction.getStatus();
+      expect(result).toMatchObject({
+        status: InstructionStatus.Success,
+        eventIdentifier: fakeEventIdentifierResult,
+      });
+
+      getLatestSqVersionSpy.mockResolvedValueOnce(SETTLEMENTS_V2_SQ_VERSION);
+      dsMockUtils.createApolloMultipleQueriesMock([
+        {
+          query: instructionEventsQuery(
+            {
+              event: InstructionEventEnum.InstructionExecuted,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [fakeQueryResult],
+            },
+          },
+        },
+        {
+          query: instructionEventsQuery(
+            {
+              event: InstructionEventEnum.InstructionFailed,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [],
+            },
+          },
+        },
+      ]);
+
+      result = await instruction.getStatus();
       expect(result).toMatchObject({
         status: InstructionStatus.Success,
         eventIdentifier: fakeEventIdentifierResult,
@@ -1004,7 +1050,47 @@ describe('Instruction class', () => {
         },
       ]);
 
-      const result = await instruction.getStatus();
+      let result = await instruction.getStatus();
+      expect(result).toMatchObject({
+        status: InstructionStatus.Failed,
+        eventIdentifier: fakeEventIdentifierResult,
+      });
+
+      getLatestSqVersionSpy.mockResolvedValueOnce(SETTLEMENTS_V2_SQ_VERSION);
+      dsMockUtils.createApolloMultipleQueriesMock([
+        {
+          query: instructionEventsQuery(
+            {
+              event: InstructionEventEnum.InstructionExecuted,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [],
+            },
+          },
+        },
+        {
+          query: instructionEventsQuery(
+            {
+              event: InstructionEventEnum.InstructionFailed,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [fakeQueryResult],
+            },
+          },
+        },
+      ]);
+
+      result = await instruction.getStatus();
       expect(result).toMatchObject({
         status: InstructionStatus.Failed,
         eventIdentifier: fakeEventIdentifierResult,
@@ -1059,7 +1145,45 @@ describe('Instruction class', () => {
         },
       ]);
 
-      return expect(instruction.getStatus()).rejects.toThrow(
+      await expect(instruction.getStatus()).rejects.toThrow(
+        "It isn't possible to determine the current status of this Instruction"
+      );
+
+      getLatestSqVersionSpy.mockResolvedValueOnce(SETTLEMENTS_V2_SQ_VERSION);
+      dsMockUtils.createApolloMultipleQueriesMock([
+        {
+          query: instructionEventsQuery(
+            {
+              event: InstructionEventEnum.InstructionExecuted,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [],
+            },
+          },
+        },
+        {
+          query: instructionEventsQuery(
+            {
+              event: InstructionEventEnum.InstructionFailed,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [],
+            },
+          },
+        },
+      ]);
+
+      await expect(instruction.getStatus()).rejects.toThrow(
         "It isn't possible to determine the current status of this Instruction"
       );
     });

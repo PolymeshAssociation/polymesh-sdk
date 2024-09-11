@@ -27,6 +27,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { ErrorCode, SecurityIdentifier, SecurityIdentifierType } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -37,7 +38,7 @@ jest.mock(
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 
-describe('Asset class', () => {
+describe('Fungible class', () => {
   let bytesToStringSpy: jest.SpyInstance;
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -668,6 +669,7 @@ describe('Asset class', () => {
   describe('method: getOperationHistory', () => {
     it('should return a list of agent operations', async () => {
       const ticker = 'TICKER';
+      jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware').mockResolvedValue(ticker);
       const context = dsMockUtils.getContextInstance();
       const asset = new FungibleAsset({ ticker }, context);
 
@@ -730,20 +732,22 @@ describe('Asset class', () => {
   describe('method: getTransactionHistory', () => {
     it('should return the list of asset transactions', async () => {
       const ticker = 'TICKER';
+      const assetId = '0x1234';
       const context = dsMockUtils.getContextInstance();
+      jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware').mockResolvedValue(ticker);
       const asset = new FungibleAsset({ ticker }, context);
       const transactionResponse = {
         totalCount: new BigNumber(5),
         nodes: [
           {
-            assetId: ticker,
+            asset: {
+              id: assetId,
+              ticker,
+            },
             amount: new BigNumber(100).shiftedBy(6),
             eventId: EventIdEnum.Issued,
-            toPortfolio: {
-              identityId: 'SOME_DID',
-              number: 0,
-            },
-            fromPortfolio: null,
+            toPortfolioId: 'SOME_DID/0',
+            fromPortfolioId: null,
             eventIdx: 1,
             extrinsicIdx: 1,
             createdBlock: {
@@ -753,14 +757,14 @@ describe('Asset class', () => {
             },
           },
           {
-            assetId: ticker,
+            asset: {
+              id: assetId,
+              ticker,
+            },
             amount: new BigNumber(1).shiftedBy(6),
             eventId: EventIdEnum.Redeemed,
-            fromPortfolio: {
-              identityId: 'SOME_DID',
-              number: 0,
-            },
-            toPortfolio: null,
+            fromPortfolioId: 'SOME_DID/0',
+            toPortfolioId: null,
             eventIdx: 1,
             extrinsicIdx: 1,
             createdBlock: {
@@ -770,17 +774,16 @@ describe('Asset class', () => {
             },
           },
           {
-            assetId: ticker,
+            asset: {
+              id: assetId,
+              ticker,
+            },
             amount: new BigNumber(10).shiftedBy(6),
             eventId: EventIdEnum.Transfer,
-            fromPortfolio: {
-              identityId: 'SOME_DID',
-              number: 0,
-            },
-            toPortfolio: {
-              identityId: 'SOME_OTHER_DID',
-              number: 1,
-            },
+            fromPortfolioId: 'SOME_DID/0',
+            toPortfolioId: 'SOME_OTHER_DID/1',
+            instructionId: '2',
+            instructionMemo: 'Some memo',
             eventIdx: 1,
             extrinsicIdx: 1,
             createdBlock: {

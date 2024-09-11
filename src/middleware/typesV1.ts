@@ -3,6 +3,7 @@ import { Scalars } from '~/middleware/types';
 export enum ClaimScopeTypeEnum {
   Identity = 'Identity',
   Ticker = 'Ticker',
+  Asset = 'Asset',
   Custom = 'Custom',
 }
 

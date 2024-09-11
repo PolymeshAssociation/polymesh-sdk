@@ -20,8 +20,8 @@ import {
 } from '@polkadot/types/lookup';
 import type { Callback, Codec, Observable } from '@polkadot/types/types';
 import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/types/types';
-import { stringUpperFirst } from '@polkadot/util';
-import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
+import { hexAddPrefix, hexStripPrefix, stringToHex, stringUpperFirst } from '@polkadot/util';
+import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
@@ -43,6 +43,7 @@ import {
 } from '~/internal';
 import { latestSqVersionQuery } from '~/middleware/queries';
 import { Claim as MiddlewareClaim, ClaimTypeEnum, Query } from '~/middleware/types';
+import { Asset as MiddlewareAsset } from '~/middleware/typesLatest';
 import { MiddlewareScope } from '~/middleware/typesV1';
 import {
   CaCheckpointType,
@@ -92,6 +93,7 @@ import {
 import {
   MAX_TICKER_LENGTH,
   MINIMUM_SQ_VERSION,
+  SETTLEMENTS_V2_SQ_VERSION,
   STATE_RUNTIME_VERSION_CALL,
   SUPPORTED_NODE_SEMVER,
   SUPPORTED_NODE_VERSION_RANGE,
@@ -102,6 +104,7 @@ import {
 import {
   bigNumberToU32,
   claimIssuerToMeshClaimIssuer,
+  coerceHexToString,
   identitiesToBtreeSet,
   identityIdToString,
   meshClaimTypeToClaimType,
@@ -113,6 +116,7 @@ import {
   statisticsOpTypeToStatType,
   statsClaimToStatClaimInputType,
   stringToAccountId,
+  stringToTicker,
   transferRestrictionTypeToStatOpType,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -1890,4 +1894,61 @@ export function areSameClaims(
   }
 
   return ClaimType[type] === claim.type;
+}
+
+/**
+ * @hidden
+ *
+ * Get latest SQ version
+ */
+export async function getLatestSqVersion(context: Context): Promise<string> {
+  const {
+    data: {
+      subqueryVersions: {
+        nodes: [sqVersion],
+      },
+    },
+  } = await context.queryMiddleware<Ensured<Query, 'subqueryVersions'>>(latestSqVersionQuery());
+
+  return sqVersion?.version || '1.0.0';
+}
+
+/**
+ * @hidden
+ */
+const getAssetIdForLegacyTicker = (ticker: string, context: Context): string => {
+  const assetComponents = [stringToHex('legacy_ticker'), stringToTicker(ticker, context).toHex()];
+
+  const data = hexAddPrefix(assetComponents.map(e => hexStripPrefix(e)).join(''));
+
+  return blake2AsHex(data, 128);
+};
+
+/**
+ * @hidden
+ */
+export async function getAssetIdForMiddleware(
+  asset: string | BaseAsset,
+  context: Context
+): Promise<string> {
+  const ticker = asTicker(asset);
+
+  const sqVersion = await getLatestSqVersion(context);
+
+  if (lt(sqVersion, SETTLEMENTS_V2_SQ_VERSION)) {
+    // old SQ requires no change
+    return ticker;
+  }
+
+  return getAssetIdForLegacyTicker(ticker, context);
+}
+
+/**
+ * @hidden
+ */
+export function getAssetIdFromMiddleware(
+  assetIdAndTicker: Falsyable<Pick<MiddlewareAsset, 'id' | 'ticker'>>
+): string {
+  const { ticker } = assetIdAndTicker!;
+  return coerceHexToString(ticker!);
 }

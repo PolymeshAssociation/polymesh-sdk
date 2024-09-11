@@ -1672,7 +1672,7 @@ function isOption<T extends Codec>(codec: any): codec is Option<T> {
   return typeof codec?.unwrap === 'function';
 }
 
-export type MockCodec<C extends Codec> = C & { eq: jest.Mock };
+export type MockCodec<C extends Codec> = C & { eq: jest.Mock; toHex: jest.Mock };
 
 /**
  * @hidden
@@ -1686,6 +1686,7 @@ const createMockCodec = <T extends Codec>(codec: unknown, isEmpty: boolean): Moc
   (clone as any)._isCodec = true;
   clone.isEmpty = isEmpty;
   clone.eq = jest.fn();
+  clone.toHex = jest.fn();
 
   return clone;
 };
@@ -1712,6 +1713,7 @@ const createMockStringCodec = <T extends Codec>(value?: string | T): MockCodec<T
   return createMockCodec(
     {
       toString: () => value,
+      toHex: () => `0x${value}`,
     },
     value === undefined
   );

@@ -10,6 +10,7 @@ import { trustedClaimIssuerQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { ClaimType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 describe('DefaultTrustedClaimIssuer class', () => {
   let context: Context;
@@ -65,6 +66,10 @@ describe('DefaultTrustedClaimIssuer class', () => {
       assetId: ticker,
       issuer: did,
     };
+
+    beforeEach(() => {
+      jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware').mockResolvedValue(ticker);
+    });
 
     it('should return the event identifier object of the trusted claim issuer creation', async () => {
       const blockNumber = new BigNumber(1234);

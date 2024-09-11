@@ -11,12 +11,15 @@ import {
   PolymeshTransaction,
   Venue,
 } from '~/internal';
+import { instructionsQuery as newInstructionsQuery } from '~/middleware/newSettlementsQueries';
 import { instructionsQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { HistoricInstruction, InstructionStatus, VenueType } from '~/types';
 import { tuple } from '~/types/utils';
+import { SETTLEMENTS_V2_SQ_VERSION } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -156,7 +159,14 @@ describe('Venue class', () => {
   });
 
   describe('method: getHistoricalInstructions', () => {
-    it('should return the paginated list of all instructions that have been associated with a Venue', async () => {
+    let getLatestSqVersionSpy: jest.SpyInstance;
+
+    beforeAll(() => {
+      getLatestSqVersionSpy = jest.spyOn(utilsInternalModule, 'getLatestSqVersion');
+    });
+
+    it('should return the paginated list of all instructions that have been associated with a Venue for old SQ', async () => {
+      getLatestSqVersionSpy.mockResolvedValue('15.0.0');
       const middlewareInstructionToHistoricInstructionSpy = jest.spyOn(
         utilsConversionModule,
         'middlewareInstructionToHistoricInstruction'
@@ -199,6 +209,63 @@ describe('Venue class', () => {
 
       dsMockUtils.createApolloQueryMock(
         instructionsQuery({
+          venueId: venueId.toString(),
+        }),
+        {
+          instructions: instructionsResponse,
+        }
+      );
+
+      result = await venue.getHistoricalInstructions();
+
+      expect(result.count).toEqual(new BigNumber(5));
+      expect(result.next).toEqual(new BigNumber(result.data.length));
+    });
+
+    it('should return the paginated list of all instructions that have been associated with a Venue', async () => {
+      getLatestSqVersionSpy.mockResolvedValue(SETTLEMENTS_V2_SQ_VERSION);
+      const middlewareInstructionToHistoricInstructionSpy = jest.spyOn(
+        utilsConversionModule,
+        'latestMiddlewareInstructionToHistoricInstruction'
+      );
+
+      const venueId = new BigNumber(1);
+
+      const instructionsResponse = {
+        totalCount: 5,
+        nodes: ['instructions'],
+      };
+
+      dsMockUtils.createApolloQueryMock(
+        newInstructionsQuery(
+          {
+            venueId: venueId.toString(),
+          },
+          new BigNumber(2),
+          new BigNumber(0)
+        ),
+        {
+          instructions: instructionsResponse,
+        }
+      );
+
+      const mockHistoricInstruction = 'mockData' as unknown as HistoricInstruction;
+
+      middlewareInstructionToHistoricInstructionSpy.mockReturnValue(mockHistoricInstruction);
+
+      let result = await venue.getHistoricalInstructions({
+        size: new BigNumber(2),
+        start: new BigNumber(0),
+      });
+
+      const { data, next, count } = result;
+
+      expect(next).toEqual(new BigNumber(1));
+      expect(count).toEqual(new BigNumber(5));
+      expect(data).toEqual([mockHistoricInstruction]);
+
+      dsMockUtils.createApolloQueryMock(
+        newInstructionsQuery({
           venueId: venueId.toString(),
         }),
         {

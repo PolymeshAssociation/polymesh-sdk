@@ -236,6 +236,9 @@ describe('Claims Class', () => {
       const targetDid = 'someTargetDid';
       const issuerDid = 'someIssuerDid';
       const scope: Scope = { type: ScopeType.Ticker, value: 'someValue' };
+      jest
+        .spyOn(utilsConversionModule, 'scopeToMiddlewareScope')
+        .mockResolvedValue({ type: 'Ticker', value: 'someValue' });
       const date = 1589816265000;
       const accreditedType = ClaimTypeEnum.Accredited;
       const claimData = {

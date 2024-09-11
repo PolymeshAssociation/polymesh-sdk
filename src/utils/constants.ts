@@ -108,7 +108,7 @@ export const SUPPORTED_NODE_SEMVER = coerce(SUPPORTED_NODE_VERSION_RANGE)!.versi
 /**
  * The Polymesh chain spec version range that is compatible with this version of the SDK
  */
-export const SUPPORTED_SPEC_VERSION_RANGE = '6.0 || 6.1';
+export const SUPPORTED_SPEC_VERSION_RANGE = '6.0 || 6.1 || 6.2 || 6.3';
 
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 export const SUPPORTED_SPEC_SEMVER = coerce(SUPPORTED_SPEC_VERSION_RANGE)!.version;
@@ -141,6 +141,8 @@ export const DEFAULT_CDD_ID = '0x00000000000000000000000000000000000000000000000
  * Minimum version of Middleware V2 GraphQL Service (SubQuery) that is compatible with this version of the SDK
  */
 export const MINIMUM_SQ_VERSION = '10.1.0';
+
+export const SETTLEMENTS_V2_SQ_VERSION = '16.0.0-alpha.1';
 
 /**
  * Global metadata key used to conventionally register an NFT image

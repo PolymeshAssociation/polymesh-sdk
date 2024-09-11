@@ -320,7 +320,7 @@ export function investmentsQuery(
  *
  * @hidden
  */
-function createArgsAndFilters(
+export function createArgsAndFilters(
   filters: Record<string, unknown>,
   typeMap: Record<string, string>
 ): {
@@ -669,7 +669,10 @@ export function trustingAssetsQuery(
         orderBy: [${TrustedClaimIssuersOrderBy.AssetIdAsc}]
       ) {
         nodes {
-          assetId
+          asset {
+            id
+            ticker 
+          }
         }
       }
     }
@@ -788,7 +791,6 @@ export function tickerExternalAgentHistoryQuery(
       ) {
         nodes {
           identityId
-          assetId
           eventIdx
           createdBlock {
             blockId
@@ -937,7 +939,10 @@ export function assetHoldersQuery(
       ) {
         totalCount
         nodes {
-          assetId
+          asset {
+            id
+            ticker
+          }
         }
       }
     }
@@ -970,7 +975,10 @@ export function nftHoldersQuery(
       ) {
         totalCount
         nodes {
-          assetId
+          asset {
+            id
+            ticker
+          }
           nftIds
         }
       }
@@ -986,7 +994,7 @@ export function nftHoldersQuery(
 export interface QuerySettlementFilters {
   identityId: string;
   portfolioId?: BigNumber;
-  ticker?: string;
+  assetId?: string;
   address?: string;
 }
 
@@ -995,7 +1003,7 @@ type LegArgs = 'fromId' | 'toId' | 'assetId' | 'addresses';
 /**
  *  @hidden
  */
-function createLegFilters({ identityId, portfolioId, ticker, address }: QuerySettlementFilters): {
+function createLegFilters({ identityId, portfolioId, assetId, address }: QuerySettlementFilters): {
   args: string;
   filter: string;
   variables: QueryArgs<Leg, LegArgs>;
@@ -1009,8 +1017,8 @@ function createLegFilters({ identityId, portfolioId, ticker, address }: QuerySet
     toId: `${identityId}/${portfolioNumber}`,
   };
 
-  if (ticker) {
-    variables.assetId = ticker;
+  if (assetId) {
+    variables.assetId = assetId;
     args.push('$assetId: String!');
     const assetIdFilter = 'assetId: { equalTo: $assetId }';
     toIdFilters.push(assetIdFilter);
@@ -1095,7 +1103,7 @@ type PortfolioMovementArgs = 'fromId' | 'toId' | 'assetId' | 'address';
 function createPortfolioMovementFilters({
   identityId,
   portfolioId,
-  ticker,
+  assetId: ticker,
   address,
 }: QuerySettlementFilters): {
   args: string;
@@ -1163,7 +1171,10 @@ export function portfolioMovementsQuery(
             identityId
             number
           }
-          assetId
+          asset {
+            id
+            ticker
+          }
           amount
           address
           createdBlock {
@@ -1242,7 +1253,10 @@ export function assetTransactionQuery(
       ) {
         totalCount
         nodes {
-          assetId
+          asset {
+            id
+            ticker
+          }
           amount
           fromPortfolioId
           fromPortfolio {

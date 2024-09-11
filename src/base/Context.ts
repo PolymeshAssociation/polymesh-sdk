@@ -37,6 +37,7 @@ import {
   polyxTransactionsQuery,
 } from '~/middleware/queries';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
+import { Query as LatestQuery } from '~/middleware/typesLatest';
 import {
   AccountBalance,
   ClaimData,
@@ -1021,7 +1022,7 @@ export class Context {
    *
    * Make a query to the middleware V2 server using the apollo client
    */
-  public async queryMiddleware<Result extends Partial<Query>>(
+  public async queryMiddleware<Result extends Partial<Query | LatestQuery>>(
     query: QueryOptions<OperationVariables, Result>
   ): Promise<ApolloQueryResult<Result>> {
     let result: ApolloQueryResult<Result>;

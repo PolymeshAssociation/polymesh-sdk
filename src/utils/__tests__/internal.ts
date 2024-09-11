@@ -54,6 +54,7 @@ import { tuple } from '~/types/utils';
 import {
   MAX_TICKER_LENGTH,
   MINIMUM_SQ_VERSION,
+  SETTLEMENTS_V2_SQ_VERSION,
   SUPPORTED_NODE_SEMVER,
   SUPPORTED_SPEC_SEMVER,
 } from '~/utils/constants';
@@ -83,11 +84,14 @@ import {
   delay,
   filterEventRecords,
   getApiAtBlock,
+  getAssetIdForMiddleware,
+  getAssetIdFromMiddleware,
   getCheckpointValue,
   getDid,
   getExemptedIds,
   getIdentity,
   getIdentityFromKeyRecord,
+  getLatestSqVersion,
   getPortfolioIdsByName,
   getSecondaryAccountPermissions,
   hasSameElements,
@@ -2297,5 +2301,121 @@ describe('areSameClaims', () => {
     const result = areSameClaims(firstClaim, secondClaim);
 
     expect(result).toBeFalsy();
+  });
+});
+
+describe('getLatestSqVersion', () => {
+  let context: Context;
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    context = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return latest SQ version', async () => {
+    dsMockUtils.createApolloQueryMock(latestSqVersionQuery(), {
+      subqueryVersions: {
+        nodes: [
+          {
+            version: '9.6.0',
+          },
+        ],
+      },
+    });
+
+    let result = await getLatestSqVersion(context);
+
+    expect(result).toEqual('9.6.0');
+
+    dsMockUtils.createApolloQueryMock(latestSqVersionQuery(), {
+      subqueryVersions: {
+        nodes: [],
+      },
+    });
+
+    result = await getLatestSqVersion(context);
+
+    expect(result).toEqual('1.0.0');
+  });
+});
+
+describe('getAssetIdForMiddleware', () => {
+  let context: Context;
+  let latestSqVersionQueryMock: jest.Mock;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+    context = dsMockUtils.getContextInstance();
+    latestSqVersionQueryMock = dsMockUtils.createApolloQueryMock(latestSqVersionQuery(), {
+      subqueryVersions: {
+        nodes: [
+          {
+            version: '15.0.0',
+          },
+        ],
+      },
+    });
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return asset ID compatible with middleware', async () => {
+    const baseAsset = entityMockUtils.getBaseAssetInstance({ ticker: 'SOME_TICKER' });
+    const result = await getAssetIdForMiddleware(baseAsset, context);
+
+    expect(result).toEqual('SOME_TICKER');
+  });
+
+  it('should return asset ID for legacy ticker compatible with middleware', async () => {
+    latestSqVersionQueryMock.mockResolvedValue({
+      data: {
+        subqueryVersions: {
+          nodes: [
+            {
+              version: SETTLEMENTS_V2_SQ_VERSION,
+            },
+          ],
+        },
+      },
+    });
+    const ticker = 'SOME_TICKER';
+    const mockTicker = dsMockUtils.createMockTicker(ticker);
+    mockTicker.toHex = jest.fn();
+    mockTicker.toHex.mockReturnValue('0x1111');
+
+    jest.spyOn(utilsConversionModule, 'stringToTicker').mockReturnValue(mockTicker);
+
+    const result = await getAssetIdForMiddleware('SOME_TICKER', context);
+
+    expect(result).toEqual('0xc5ad37bd0d02c8ce39a7b943f45f0ebc');
+  });
+});
+
+describe('getAssetIdFromMiddleware', () => {
+  it('should return asset ID from middleware', async () => {
+    const assetId = '0x1234';
+    const ticker = 'SOME_TICKER';
+    const result = getAssetIdFromMiddleware({
+      id: assetId,
+      ticker,
+    });
+
+    expect(result).toEqual(ticker);
   });
 });

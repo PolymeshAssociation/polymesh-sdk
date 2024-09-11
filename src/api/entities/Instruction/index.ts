@@ -4,6 +4,7 @@ import {
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
+import { lt } from 'lodash';
 
 import { executeManualInstruction } from '~/api/procedures/executeManualInstruction';
 import {
@@ -17,8 +18,10 @@ import {
   PolymeshError,
   Venue,
 } from '~/internal';
+import { instructionEventsQuery } from '~/middleware/newSettlementsQueries';
 import { instructionsQuery } from '~/middleware/queries';
 import { InstructionStatusEnum, Query } from '~/middleware/types';
+import { InstructionEventEnum } from '~/middleware/typesLatest';
 import {
   AffirmOrWithdrawInstructionParams,
   DefaultPortfolio,
@@ -36,6 +39,7 @@ import {
 } from '~/types';
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
 import { Ensured } from '~/types/utils';
+import { SETTLEMENTS_V2_SQ_VERSION } from '~/utils/constants';
 import {
   balanceToBigNumber,
   bigNumberToU64,
@@ -51,7 +55,13 @@ import {
   tickerToString,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, optionize, requestMulti, requestPaginated } from '~/utils/internal';
+import {
+  createProcedureMethod,
+  getLatestSqVersion,
+  optionize,
+  requestMulti,
+  requestPaginated,
+} from '~/utils/internal';
 
 import {
   InstructionAffirmation,
@@ -431,8 +441,8 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     }
 
     const [executedEventIdentifier, failedEventIdentifier] = await Promise.all([
-      this.getInstructionEventFromMiddleware(InstructionStatusEnum.Executed),
-      this.getInstructionEventFromMiddleware(InstructionStatusEnum.Failed),
+      this.getInstructionEventFromMiddleware(InstructionEventEnum.InstructionExecuted),
+      this.getInstructionEventFromMiddleware(InstructionEventEnum.InstructionFailed),
     ]);
 
     if (executedEventIdentifier) {
@@ -485,21 +495,54 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * Retrieve Instruction status event from middleware V2
    */
   private async getInstructionEventFromMiddleware(
-    status: InstructionStatusEnum
+    event: InstructionEventEnum.InstructionExecuted | InstructionEventEnum.InstructionFailed
   ): Promise<EventIdentifier | null> {
     const { id, context } = this;
 
+    // TODO @prashantasdeveloper Remove after SQ dual version support
+    const sqVersion = await getLatestSqVersion(context);
+
+    const instructionStatusMap = {
+      [InstructionEventEnum.InstructionExecuted]: InstructionStatusEnum.Executed,
+      [InstructionEventEnum.InstructionFailed]: InstructionStatusEnum.Failed,
+    };
+
+    if (lt(sqVersion, SETTLEMENTS_V2_SQ_VERSION)) {
+      const {
+        data: {
+          instructions: {
+            nodes: [details],
+          },
+        },
+      } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(
+        instructionsQuery(
+          {
+            status: instructionStatusMap[event],
+            id: id.toString(),
+          },
+          new BigNumber(1),
+          new BigNumber(0)
+        )
+      );
+
+      return optionize(middlewareEventDetailsToEventIdentifier)(
+        details?.updatedBlock,
+        details?.eventIdx
+      );
+    }
+    // Dual version support end
+
     const {
       data: {
-        instructions: {
+        instructionEvents: {
           nodes: [details],
         },
       },
-    } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(
-      instructionsQuery(
+    } = await context.queryMiddleware(
+      instructionEventsQuery(
         {
-          status,
-          id: id.toString(),
+          event,
+          instructionId: id.toString(),
         },
         new BigNumber(1),
         new BigNumber(0)

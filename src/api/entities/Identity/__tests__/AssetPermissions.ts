@@ -2,6 +2,7 @@ import { PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker } from '@polkado
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
+import { AssetPermissions } from '~/api/entities/Identity/AssetPermissions';
 import {
   Context,
   Identity,
@@ -15,8 +16,7 @@ import { Mocked } from '~/testUtils/types';
 import { FungibleAsset, PermissionGroupType, PermissionType, TxTags } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
-
-import { AssetPermissions } from '../AssetPermissions';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/base/Procedure',
@@ -90,6 +90,10 @@ describe('AssetPermissions class', () => {
   });
 
   describe('method: enabledAt', () => {
+    beforeEach(() => {
+      jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware').mockResolvedValue(ticker);
+    });
+
     it('should return the event identifier object of the agent added', async () => {
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
@@ -423,6 +427,10 @@ describe('AssetPermissions class', () => {
   });
 
   describe('method: getOperationHistory', () => {
+    beforeEach(() => {
+      jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware').mockResolvedValue(ticker);
+    });
+
     it('should return the Events triggered by Operations the Identity has performed on a specific Asset', async () => {
       const blockId = new BigNumber(1);
       const blockHash = 'someHash';

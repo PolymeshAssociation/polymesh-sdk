@@ -19,6 +19,7 @@ import {
   PolymeshError,
   PolymeshTransaction,
 } from '~/internal';
+import { instructionPartiesQuery } from '~/middleware/newSettlementsQueries';
 import {
   assetHoldersQuery,
   instructionsByDidQuery,
@@ -44,6 +45,7 @@ import {
   VenueType,
 } from '~/types';
 import { tuple } from '~/types/utils';
+import { SETTLEMENTS_V2_SQ_VERSION } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -580,7 +582,10 @@ describe('Identity class', () => {
       const identity = new Identity({ did }, context);
 
       dsMockUtils.createApolloQueryMock(assetHoldersQuery({ identityId: did }), {
-        assetHolders: { nodes: tickers.map(ticker => ({ assetId: ticker })), totalCount: 2 },
+        assetHolders: {
+          nodes: tickers.map(ticker => ({ asset: { id: ticker, ticker } })),
+          totalCount: 2,
+        },
       });
 
       let result = await identity.getHeldAssets();
@@ -596,7 +601,10 @@ describe('Identity class', () => {
           AssetHoldersOrderBy.CreatedBlockIdAsc
         ),
         {
-          assetHolders: { nodes: tickers.map(ticker => ({ assetId: ticker })), totalCount: 2 },
+          assetHolders: {
+            nodes: tickers.map(ticker => ({ asset: { id: ticker, ticker } })),
+            totalCount: 2,
+          },
         }
       );
 
@@ -620,7 +628,7 @@ describe('Identity class', () => {
 
       dsMockUtils.createApolloQueryMock(nftHoldersQuery({ identityId: did }), {
         nftHolders: {
-          nodes: tickers.map(ticker => ({ assetId: ticker, nftIds: [] })),
+          nodes: tickers.map(ticker => ({ asset: { id: ticker, ticker }, nftIds: [] })),
           totalCount: 2,
         },
       });
@@ -639,7 +647,7 @@ describe('Identity class', () => {
         ),
         {
           nftHolders: {
-            nodes: tickers.map(ticker => ({ assetId: ticker, nftIds: [1, 3] })),
+            nodes: tickers.map(ticker => ({ asset: { id: ticker, ticker }, nftIds: [1, 3] })),
             totalCount: 2,
           },
         }
@@ -1216,9 +1224,15 @@ describe('Identity class', () => {
   });
 
   describe('method: getHistoricalInstructions', () => {
-    it('should return the list of all instructions where the Identity was involved', async () => {
+    let getLatestSqVersionSpy: jest.SpyInstance;
+    beforeEach(() => {
+      getLatestSqVersionSpy = jest.spyOn(utilsInternalModule, 'getLatestSqVersion');
+    });
+
+    it('should return the list of all instructions where the Identity was involved for older SQ', async () => {
+      getLatestSqVersionSpy.mockResolvedValue('15.0.0');
       const identity = new Identity({ did: 'someDid' }, context);
-      const middlewareInstructionToHistoricInstructionSpy = jest.spyOn(
+      const oldMiddlewareInstructionToHistoricInstructionSpy = jest.spyOn(
         utilsConversionModule,
         'middlewareInstructionToHistoricInstruction'
       );
@@ -1230,6 +1244,32 @@ describe('Identity class', () => {
 
       dsMockUtils.createApolloQueryMock(instructionsByDidQuery(identity.did), {
         legs: legsResponse,
+      });
+
+      const mockHistoricInstruction = 'mockData' as unknown as HistoricInstruction;
+
+      oldMiddlewareInstructionToHistoricInstructionSpy.mockReturnValue(mockHistoricInstruction);
+
+      const result = await identity.getHistoricalInstructions();
+
+      expect(result).toEqual([mockHistoricInstruction]);
+    });
+
+    it('should return the list of all instructions where the Identity was involved', async () => {
+      getLatestSqVersionSpy.mockResolvedValue(SETTLEMENTS_V2_SQ_VERSION);
+      const identity = new Identity({ did: 'someDid' }, context);
+      const middlewareInstructionToHistoricInstructionSpy = jest.spyOn(
+        utilsConversionModule,
+        'latestMiddlewareInstructionToHistoricInstruction'
+      );
+
+      const legsResponse = {
+        totalCount: 5,
+        nodes: [{ instruction: 'instruction' }],
+      };
+
+      dsMockUtils.createApolloQueryMock(instructionPartiesQuery(identity.did), {
+        instructionParties: legsResponse,
       });
 
       const mockHistoricInstruction = 'mockData' as unknown as HistoricInstruction;

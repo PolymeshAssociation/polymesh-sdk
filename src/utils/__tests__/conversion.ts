@@ -85,9 +85,11 @@ import {
   CustomClaimType as MiddlewareCustomClaimType,
   Instruction,
   InstructionStatusEnum,
+  LegTypeEnum,
   ModuleIdEnum,
   Portfolio as MiddlewarePortfolio,
 } from '~/middleware/types';
+import { Instruction as LatestMiddlewareInstruction } from '~/middleware/typesLatest';
 import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
@@ -157,7 +159,7 @@ import {
 import { InstructionStatus, PermissionGroupIdentifier } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
-import * as internalUtils from '~/utils/internal';
+import * as utilsInternalModule from '~/utils/internal';
 import { padString } from '~/utils/internal';
 
 import {
@@ -225,6 +227,7 @@ import {
   isLeiValid,
   keyAndValueToStatUpdate,
   keyToAddress,
+  latestMiddlewareInstructionToHistoricInstruction,
   legToFungibleLeg,
   legToNonFungibleLeg,
   meshAffirmationStatusToAffirmationStatus,
@@ -269,6 +272,7 @@ import {
   permissionGroupIdentifierToAgentGroup,
   permissionsLikeToPermissions,
   permissionsToMeshPermissions,
+  portfolioIdStringToPortfolio,
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
@@ -4261,11 +4265,25 @@ describe('meshClaimTypeToClaimType', () => {
 });
 
 describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
+  let context: Context;
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    context = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
   describe('middlewareScopeToScope', () => {
     it('should convert a MiddlewareScope object to a Scope', () => {
       let result = middlewareScopeToScope({
         type: ClaimScopeTypeEnum.Ticker,
-        value: 'SOMETHING\u0000\u0000\u0000',
+        value: 'SOMETHING',
       });
 
       expect(result).toEqual({ type: ScopeType.Ticker, value: 'SOMETHING' });
@@ -4287,20 +4305,24 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
   });
 
   describe('scopeToMiddlewareScope', () => {
-    it('should convert a Scope to a MiddlewareScope object', () => {
+    it('should convert a Scope to a MiddlewareScope object', async () => {
       let scope: Scope = { type: ScopeType.Identity, value: 'someDid' };
-      let result = scopeToMiddlewareScope(scope);
+      let result = await scopeToMiddlewareScope(scope, context);
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Identity, value: scope.value });
 
-      scope = { type: ScopeType.Ticker, value: 'someTicker' };
-      result = scopeToMiddlewareScope(scope);
-      expect(result).toEqual({ type: ClaimScopeTypeEnum.Ticker, value: 'someTicker\0\0' });
+      const getAssetIdForMiddlewareSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware');
+      scope = { type: ScopeType.Ticker, value: 'SOME_TICKER' };
+      getAssetIdForMiddlewareSpy.mockResolvedValue('0x1234');
+      result = await scopeToMiddlewareScope(scope, context);
+      expect(result).toEqual({ type: ClaimScopeTypeEnum.Asset, value: '0x1234' });
 
-      result = scopeToMiddlewareScope(scope, false);
-      expect(result).toEqual({ type: ClaimScopeTypeEnum.Ticker, value: 'someTicker' });
+      scope = { type: ScopeType.Ticker, value: 'SOME_TICKER' };
+      getAssetIdForMiddlewareSpy.mockResolvedValue('SOME_TICKER');
+      result = await scopeToMiddlewareScope(scope, context);
+      expect(result).toEqual({ type: ClaimScopeTypeEnum.Ticker, value: 'SOME_TICKER' });
 
       scope = { type: ScopeType.Custom, value: 'customValue' };
-      result = scopeToMiddlewareScope(scope);
+      result = await scopeToMiddlewareScope(scope, context);
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Custom, value: scope.value });
     });
   });
@@ -4424,6 +4446,158 @@ describe('middlewareInstructionToHistoricInstruction', () => {
   });
 });
 
+describe('latestMiddlewareInstructionToHistoricInstruction', () => {
+  it('should convert a middleware Instruction object to a HistoricInstruction', () => {
+    const instructionId1 = new BigNumber(1);
+    const instructionId2 = new BigNumber(2);
+    const instructionId3 = new BigNumber(3);
+    const blockNumber = new BigNumber(1234);
+    const blockHash = 'someHash';
+    const memo = 'memo';
+    const ticker = 'SOME_TICKER';
+    const amount1 = new BigNumber(10);
+    const nftId = new BigNumber(5);
+    const amount3 = new BigNumber(100);
+    const venueId = new BigNumber(1);
+    const createdAt = new Date('2022/01/01');
+    const status = InstructionStatusEnum.Executed;
+    const portfolioDid1 = 'portfolioDid1';
+    const portfolioKind1 = 'Default';
+
+    const portfolioDid2 = 'portfolioDid2';
+    const portfolioKind2 = '10';
+    const type1 = InstructionType.SettleOnAffirmation;
+    const type2 = InstructionType.SettleOnBlock;
+    const endBlock = new BigNumber(1238);
+    const type3 = InstructionType.SettleManual;
+    const endAfterBlock = new BigNumber(10);
+
+    const legs1 = [
+      {
+        legType: LegTypeEnum.Fungible,
+        assetId: ticker,
+        ticker,
+        amount: amount1.shiftedBy(6).toString(),
+        fromPortfolio: portfolioKind1,
+        from: portfolioDid1,
+        toPortfolio: portfolioKind2,
+        to: portfolioDid2,
+      },
+    ];
+    const legs2 = [
+      {
+        legType: LegTypeEnum.NonFungible,
+        aassetId: ticker,
+        ticker,
+        nftIds: [nftId.toString()],
+        fromPortfolio: portfolioKind2,
+        from: portfolioDid2,
+        toPortfolio: portfolioKind1,
+        to: portfolioDid1,
+      },
+    ];
+    const legs3 = [
+      {
+        legType: LegTypeEnum.OffChain,
+        assetId: ticker,
+        ticker,
+        amount: amount3.shiftedBy(6).toString(),
+        from: portfolioDid2,
+        to: portfolioDid1,
+      },
+    ];
+
+    const context = dsMockUtils.getContextInstance();
+
+    let instruction = {
+      id: instructionId1.toString(),
+      createdBlock: {
+        blockId: blockNumber.toNumber(),
+        hash: blockHash,
+        datetime: createdAt,
+      },
+      status,
+      memo,
+      venueId: venueId.toString(),
+      settlementType: type1,
+      legs: {
+        nodes: legs1,
+      },
+    } as unknown as LatestMiddlewareInstruction;
+
+    let result = latestMiddlewareInstructionToHistoricInstruction(instruction, context);
+
+    expect(result.id).toEqual(instructionId1);
+    expect(result.blockHash).toEqual(blockHash);
+    expect(result.blockNumber).toEqual(blockNumber);
+    expect(result.status).toEqual(status);
+    expect(result.memo).toEqual(memo);
+    expect(result.type).toEqual(InstructionType.SettleOnAffirmation);
+    expect(result.venueId).toEqual(venueId);
+    expect(result.createdAt).toEqual(createdAt);
+    const resultLeg = result.legs[0] as FungibleLeg;
+    expect(resultLeg.asset.ticker).toBe(ticker);
+    expect(resultLeg.amount).toEqual(amount1);
+    expect(resultLeg.from.owner.did).toBe(portfolioDid1);
+    expect(resultLeg.to.owner.did).toBe(portfolioDid2);
+    expect((result.legs[0].to as NumberedPortfolio).id).toEqual(new BigNumber(portfolioKind2));
+
+    instruction = {
+      id: instructionId2.toString(),
+      createdBlock: {
+        blockId: blockNumber.toNumber(),
+        hash: blockHash,
+        datetime: createdAt,
+      },
+      status,
+      type: type2,
+      endBlock: endBlock.toString(),
+      venueId: venueId.toString(),
+      legs: {
+        nodes: legs2,
+      },
+    } as unknown as LatestMiddlewareInstruction;
+
+    result = latestMiddlewareInstructionToHistoricInstruction(instruction, context);
+
+    expect(result.id).toEqual(instructionId2);
+    expect(result.memo).toBeNull();
+    expect(result.type).toEqual(InstructionType.SettleOnBlock);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((result as any).endBlock).toEqual(endBlock);
+    expect(result.venueId).toEqual(venueId);
+    expect(result.createdAt).toEqual(createdAt);
+    expect(result.legs.length).toEqual(0);
+
+    instruction = {
+      id: instructionId3.toString(),
+      createdBlock: {
+        blockId: blockNumber.toNumber(),
+        hash: blockHash,
+        datetime: createdAt,
+      },
+      status,
+      type: type3,
+      endAfterBlock: endAfterBlock.toString(),
+      venueId: venueId.toString(),
+      legs: {
+        nodes: legs3,
+      },
+    } as unknown as LatestMiddlewareInstruction;
+
+    result = latestMiddlewareInstructionToHistoricInstruction(instruction, context);
+
+    expect(result.id).toEqual(instructionId3);
+    expect(result.memo).toBeNull();
+    expect(result.type).toEqual(InstructionType.SettleManual);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((result as any).endAfterBlock).toEqual(endAfterBlock);
+    expect(result.venueId).toEqual(venueId);
+    expect(result.createdAt).toEqual(createdAt);
+    expect(result.legs.length).toEqual(0);
+  });
+});
+
 describe('middlewareEventDetailsToEventIdentifier', () => {
   it('should convert Event details to an EventIdentifier', () => {
     const eventIdx = 3;
@@ -4455,7 +4629,7 @@ describe('middlewareClaimToClaimData', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
-    createClaimSpy = jest.spyOn(internalUtils, 'createClaim');
+    createClaimSpy = jest.spyOn(utilsInternalModule, 'createClaim');
   });
 
   afterEach(() => {
@@ -9843,5 +10017,22 @@ describe('toCustomClaimTypeWithIdentity', () => {
       { name: 'name2', id: new BigNumber(2), did: 'did2' },
       { name: 'name3', id: new BigNumber(3), did: undefined },
     ]);
+  });
+});
+
+describe('portfolioIdStringToPortfolio', () => {
+  test('should convert a valid id string to MiddlewarePortfolio object', () => {
+    const id = '12345/678';
+    const expectedOutput = { identityId: '12345', number: 678 };
+
+    expect(portfolioIdStringToPortfolio(id)).toEqual(expectedOutput);
+  });
+
+  test('should return NaN for invalid number part', () => {
+    const id = '12345/abc';
+    const result = portfolioIdStringToPortfolio(id);
+
+    expect(result.identityId).toBe('12345');
+    expect(result.number).toBeNaN();
   });
 });

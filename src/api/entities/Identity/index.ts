@@ -6,7 +6,7 @@ import {
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import { chunk, differenceWith, flatten, intersectionWith, uniqBy } from 'lodash';
+import { chunk, differenceWith, flatten, intersectionWith, lt, uniqBy } from 'lodash';
 
 import { unlinkChildIdentity } from '~/api/procedures/unlinkChildIdentity';
 import { assertPortfolioExists } from '~/api/procedures/utils';
@@ -23,6 +23,7 @@ import {
   TickerReservation,
   Venue,
 } from '~/internal';
+import { instructionPartiesQuery } from '~/middleware/newSettlementsQueries';
 import {
   assetHoldersQuery,
   instructionsByDidQuery,
@@ -30,6 +31,7 @@ import {
   trustingAssetsQuery,
 } from '~/middleware/queries';
 import { AssetHoldersOrderBy, NftHoldersOrderBy, Query } from '~/middleware/types';
+import { Query as LatestQuery } from '~/middleware/typesLatest';
 import {
   CheckRolesResult,
   DefaultPortfolio,
@@ -58,7 +60,11 @@ import {
   isTickerOwnerRole,
   isVenueOwnerRole,
 } from '~/utils';
-import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
+import {
+  MAX_CONCURRENT_REQUESTS,
+  MAX_PAGE_SIZE,
+  SETTLEMENTS_V2_SQ_VERSION,
+} from '~/utils/constants';
 import {
   accountIdToString,
   balanceToBigNumber,
@@ -66,6 +72,7 @@ import {
   cddStatusToBoolean,
   corporateActionIdentifierToCaId,
   identityIdToString,
+  latestMiddlewareInstructionToHistoricInstruction,
   middlewareInstructionToHistoricInstruction,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
@@ -78,6 +85,8 @@ import {
 import {
   calculateNextKey,
   createProcedureMethod,
+  getAssetIdFromMiddleware,
+  getLatestSqVersion,
   getSecondaryAccountPermissions,
   requestPaginated,
 } from '~/utils/internal';
@@ -373,8 +382,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const count = new BigNumber(totalCount);
 
-    const data = nodes.map(({ assetId: ticker }) => new FungibleAsset({ ticker }, context));
-
+    const data = nodes.map(
+      ({ asset }) => new FungibleAsset({ ticker: getAssetIdFromMiddleware(asset) }, context)
+    );
     const next = calculateNextKey(count, data.length, start);
 
     return {
@@ -418,9 +428,19 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const count = new BigNumber(totalCount);
 
-    const data = nodes.map(({ assetId: ticker, nftIds }) => {
-      const collection = new NftCollection({ ticker }, context);
-      const nfts = nftIds.map((id: number) => new Nft({ ticker, id: new BigNumber(id) }, context));
+    const data = nodes.map(({ asset, nftIds }) => {
+      const assetId = getAssetIdFromMiddleware(asset);
+      const collection = new NftCollection({ ticker: assetId }, context);
+      const nfts = nftIds.map(
+        (id: number) =>
+          new Nft(
+            {
+              ticker: assetId,
+              id: new BigNumber(id),
+            },
+            context
+          )
+      );
 
       return { collection, nfts };
     });
@@ -855,15 +875,34 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   public async getHistoricalInstructions(): Promise<HistoricInstruction[]> {
     const { context, did } = this;
 
+    // TODO @prashantasdeveloper Remove after SQ dual version support
+    const sqVersion = await getLatestSqVersion(context);
+
+    if (lt(sqVersion, SETTLEMENTS_V2_SQ_VERSION)) {
+      const {
+        data: {
+          legs: { nodes: instructionsResult },
+        },
+      } = await context.queryMiddleware<Ensured<Query, 'legs'>>(instructionsByDidQuery(did));
+
+      return instructionsResult.map(({ instruction }) =>
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        middlewareInstructionToHistoricInstruction(instruction!, context)
+      );
+    }
+    // Dual version support end
+
     const {
       data: {
-        legs: { nodes: instructionsResult },
+        instructionParties: { nodes: instructionsResult },
       },
-    } = await context.queryMiddleware<Ensured<Query, 'legs'>>(instructionsByDidQuery(did));
+    } = await context.queryMiddleware<Ensured<LatestQuery, 'instructionParties'>>(
+      instructionPartiesQuery(did)
+    );
 
     return instructionsResult.map(({ instruction }) =>
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      middlewareInstructionToHistoricInstruction(instruction!, context)
+      latestMiddlewareInstructionToHistoricInstruction(instruction!, context)
     );
   }
 

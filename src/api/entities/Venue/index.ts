@@ -1,9 +1,12 @@
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
+import { lt } from 'lodash';
 
 import { addInstruction, Context, Entity, Identity, Instruction, modifyVenue } from '~/internal';
+import { instructionsQuery as newInstructionsQuery } from '~/middleware/newSettlementsQueries';
 import { instructionsQuery } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
+import { Query as LatestQuery } from '~/middleware/typesLatest';
 import {
   AddInstructionParams,
   AddInstructionsParams,
@@ -15,15 +18,17 @@ import {
   ResultSet,
 } from '~/types';
 import { Ensured } from '~/types/utils';
+import { SETTLEMENTS_V2_SQ_VERSION } from '~/utils/constants';
 import {
   bigNumberToU64,
   bytesToString,
   identityIdToString,
+  latestMiddlewareInstructionToHistoricInstruction,
   meshVenueTypeToVenueType,
   middlewareInstructionToHistoricInstruction,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { calculateNextKey, createProcedureMethod } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod, getLatestSqVersion } from '~/utils/internal';
 
 import { HistoricInstruction, VenueDetails } from './types';
 
@@ -214,23 +219,48 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
 
     const { size, start } = opts;
 
-    const {
-      data: {
-        instructions: { nodes: instructionsResult, totalCount },
-      },
-    } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(
-      instructionsQuery(
-        {
-          venueId: id.toString(),
-        },
-        size,
-        start
-      )
-    );
+    let data: HistoricInstruction[];
 
-    const data = instructionsResult.map(middlewareInstruction =>
-      middlewareInstructionToHistoricInstruction(middlewareInstruction, context)
-    );
+    const sqVersion = await getLatestSqVersion(context);
+    let instructionsResult, totalCount;
+
+    if (lt(sqVersion, SETTLEMENTS_V2_SQ_VERSION)) {
+      ({
+        data: {
+          instructions: { nodes: instructionsResult, totalCount },
+        },
+      } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(
+        instructionsQuery(
+          {
+            venueId: id.toString(),
+          },
+          size,
+          start
+        )
+      ));
+
+      data = instructionsResult.map(middlewareInstruction =>
+        middlewareInstructionToHistoricInstruction(middlewareInstruction, context)
+      );
+    } else {
+      ({
+        data: {
+          instructions: { nodes: instructionsResult, totalCount },
+        },
+      } = await context.queryMiddleware<Ensured<LatestQuery, 'instructions'>>(
+        newInstructionsQuery(
+          {
+            venueId: id.toString(),
+          },
+          size,
+          start
+        )
+      ));
+
+      data = instructionsResult.map(middlewareInstruction =>
+        latestMiddlewareInstructionToHistoricInstruction(middlewareInstruction, context)
+      );
+    }
 
     const count = new BigNumber(totalCount);
 

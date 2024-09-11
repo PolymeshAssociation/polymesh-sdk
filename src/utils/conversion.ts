@@ -84,7 +84,6 @@ import {
   groupBy,
   includes,
   map,
-  padEnd,
   range,
   rangeRight,
   snakeCase,
@@ -117,10 +116,19 @@ import {
   Claim as MiddlewareClaim,
   CustomClaimType as MiddlewareCustomClaimType,
   Instruction,
+  Leg as MiddlewareLeg,
+  LegTypeEnum,
   ModuleIdEnum,
   Portfolio as MiddlewarePortfolio,
+  PortfolioMovement as MiddlewarePortfolioMovement,
+  SettlementResultEnum,
 } from '~/middleware/types';
-import { ClaimScopeTypeEnum, MiddlewareScope } from '~/middleware/typesV1';
+import {
+  Instruction as LatestMiddlewareInstruction,
+  InstructionTypeEnum,
+  Leg as LatestMiddlewareLeg,
+} from '~/middleware/typesLatest';
+import { ClaimScopeTypeEnum, MiddlewareScope, SettlementDirectionEnum } from '~/middleware/typesV1';
 import {
   AssetComplianceResult,
   AuthorizationType as MeshAuthorizationType,
@@ -158,6 +166,7 @@ import {
   ExternalAgentCondition,
   FungiblePortfolioMovement,
   HistoricInstruction,
+  HistoricSettlement,
   IdentityCondition,
   IdentityWithClaims,
   InputCorporateActionTargets,
@@ -170,6 +179,7 @@ import {
   InstructionType,
   KnownAssetType,
   KnownNftType,
+  Leg,
   MetadataKeyId,
   MetadataLockStatus,
   MetadataSpec,
@@ -254,6 +264,8 @@ import {
   asTicker,
   conditionsAreEqual,
   createClaim,
+  getAssetIdForMiddleware,
+  getAssetIdFromMiddleware,
   isModuleOrTagMatch,
   optionize,
   padString,
@@ -2175,7 +2187,11 @@ export function middlewareScopeToScope(scope: MiddlewareScope): Scope {
 
   switch (type) {
     case ClaimScopeTypeEnum.Ticker:
-      return { type: ScopeType.Ticker, value: removePadding(value) };
+    case ClaimScopeTypeEnum.Asset:
+      return {
+        type: ScopeType.Ticker,
+        value: getAssetIdFromMiddleware({ id: value, ticker: value }),
+      };
     case ClaimScopeTypeEnum.Identity:
     case ClaimScopeTypeEnum.Custom:
       return { type: scope.type as ScopeType, value };
@@ -2193,15 +2209,27 @@ export function middlewareScopeToScope(scope: MiddlewareScope): Scope {
 /**
  * @hidden
  */
-export function scopeToMiddlewareScope(scope: Scope, padTicker = true): MiddlewareScope {
+export async function scopeToMiddlewareScope(
+  scope: Scope,
+  context: Context
+): Promise<MiddlewareScope> {
   const { type, value } = scope;
 
   switch (type) {
-    case ScopeType.Ticker:
+    case ScopeType.Ticker: {
+      const middlewareAssetId = await getAssetIdForMiddleware(value, context);
+      if (value === middlewareAssetId) {
+        // old SQ is used
+        return {
+          type: ClaimScopeTypeEnum.Ticker,
+          value,
+        };
+      }
       return {
-        type: ClaimScopeTypeEnum.Ticker,
-        value: padTicker ? padEnd(value, 12, '\0') : value,
+        type: ClaimScopeTypeEnum.Asset,
+        value: middlewareAssetId,
       };
+    }
     case ScopeType.Identity:
     case ScopeType.Custom:
       return { type: ClaimScopeTypeEnum[scope.type], value };
@@ -4716,4 +4744,251 @@ export function toCustomClaimTypeWithIdentity(
     id: new BigNumber(item.id),
     did: item.identity?.did,
   }));
+}
+
+/**
+ * @hidden
+ */
+export function portfolioIdStringToPortfolio(id: string): MiddlewarePortfolio {
+  const [identityId, number] = id.split('/');
+
+  return { identityId, number: parseInt(number, 10) } as MiddlewarePortfolio;
+}
+
+/**
+ * @hidden
+ */
+function portfolioMovementsToHistoricSettlements(
+  portfolioMovements: MiddlewarePortfolioMovement[],
+  context: Context,
+  handleMiddlewareAddress: (address: string, context: Context) => Account
+): HistoricSettlement[] {
+  return portfolioMovements.map(
+    ({ createdBlock, fromId, toId, asset, amount, address: accountAddress }) => {
+      const { blockId, hash } = createdBlock!;
+      return {
+        blockNumber: new BigNumber(blockId),
+        blockHash: hash,
+        status: SettlementResultEnum.Executed,
+        accounts: [handleMiddlewareAddress(accountAddress, context)],
+        legs: [
+          {
+            asset: new FungibleAsset({ ticker: getAssetIdFromMiddleware(asset) }, context),
+            amount: new BigNumber(amount).shiftedBy(-6),
+            direction: SettlementDirectionEnum.None,
+            from: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(fromId), context),
+            to: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(toId), context),
+          },
+        ],
+      };
+    }
+  );
+}
+
+/**
+ * @hidden
+ */
+export function toHistoricalSettlements(
+  settlementsResult: MiddlewareLeg[],
+  portfolioMovements: MiddlewarePortfolioMovement[],
+  portfolioFilter: string,
+  context: Context
+): HistoricSettlement[] {
+  let data: HistoricSettlement[] = [];
+
+  const getDirection = (fromId: string): SettlementDirectionEnum => {
+    if (fromId === portfolioFilter) {
+      return SettlementDirectionEnum.Outgoing;
+    }
+    return SettlementDirectionEnum.Incoming;
+  };
+
+  /* eslint-disable @typescript-eslint/no-non-null-assertion */
+  settlementsResult.forEach(({ settlement }) => {
+    const {
+      createdBlock,
+      result: settlementResult,
+      legs: { nodes: legs },
+    } = settlement!;
+
+    const { blockId, hash } = createdBlock!;
+
+    data.push({
+      blockNumber: new BigNumber(blockId),
+      blockHash: hash,
+      status: settlementResult as unknown as SettlementResultEnum,
+      accounts: legs[0].addresses.map(
+        (accountAddress: string) =>
+          new Account({ address: keyToAddress(accountAddress, context) }, context)
+      ),
+      legs: legs.map(({ fromId, toId, assetId, amount }) => ({
+        asset: new FungibleAsset({ ticker: assetId }, context),
+        amount: new BigNumber(amount).shiftedBy(-6),
+        direction: getDirection(fromId),
+        from: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(fromId), context),
+        to: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(toId), context),
+      })),
+    });
+  });
+
+  data = [
+    ...data,
+    ...portfolioMovementsToHistoricSettlements(
+      portfolioMovements,
+      context,
+      (accountAddress: string) =>
+        new Account({ address: keyToAddress(accountAddress, context) }, context)
+    ),
+  ];
+  /* eslint-enable @typescript-eslint/no-non-null-assertion */
+
+  return data.sort((a, b) => a.blockNumber.minus(b.blockNumber).toNumber());
+}
+
+/**
+ * @hidden
+ */
+export function latestMiddlewareLegToLeg(leg: LatestMiddlewareLeg, context: Context): Leg {
+  const { from, fromPortfolio, to, toPortfolio, assetId, ticker, amount } = leg;
+
+  return {
+    asset: new FungibleAsset(
+      { ticker: getAssetIdFromMiddleware({ id: assetId, ticker }) },
+      context
+    ),
+    amount: new BigNumber(amount).shiftedBy(-6),
+    from: middlewarePortfolioToPortfolio(
+      { identityId: from, number: fromPortfolio! } as MiddlewarePortfolio,
+      context
+    ),
+    to: middlewarePortfolioToPortfolio(
+      { identityId: to, number: toPortfolio! } as MiddlewarePortfolio,
+      context
+    ),
+  };
+}
+
+/**
+ * @hidden
+ */
+export function latestMiddlewareDataToHistoricalSettlements(
+  settlementsResult: LatestMiddlewareLeg[],
+  portfolioMovements: MiddlewarePortfolioMovement[],
+  filter: {
+    identityId: string;
+    portfolio?: number;
+  },
+  context: Context
+): HistoricSettlement[] {
+  let data: HistoricSettlement[] = [];
+
+  const getDirection = (leg: LatestMiddlewareLeg): SettlementDirectionEnum => {
+    const { from, fromPortfolio, to, toPortfolio } = leg;
+    const { identityId, portfolio } = filter;
+
+    let result = SettlementDirectionEnum.None;
+
+    if (from === identityId && fromPortfolio === portfolio) {
+      result = SettlementDirectionEnum.Incoming;
+    } else if (to === identityId && toPortfolio === portfolio) {
+      result = SettlementDirectionEnum.Outgoing;
+    }
+
+    return result;
+  };
+
+  /* eslint-disable @typescript-eslint/no-non-null-assertion */
+  settlementsResult.forEach(({ instruction }) => {
+    const {
+      createdBlock,
+      status,
+      legs: { nodes: legs },
+    } = instruction!;
+
+    const { blockId, hash } = createdBlock!;
+
+    data.push({
+      blockNumber: new BigNumber(blockId),
+      blockHash: hash,
+      status: status as unknown as SettlementResultEnum,
+      accounts: legs[0].addresses.map((address: string) => new Account({ address }, context)),
+      legs: legs
+        .filter(leg => leg.legType === LegTypeEnum.Fungible)
+        .map(leg => ({
+          ...latestMiddlewareLegToLeg(leg, context),
+          direction: getDirection(leg),
+        })),
+    });
+  });
+
+  data = [
+    ...data,
+    ...portfolioMovementsToHistoricSettlements(
+      portfolioMovements,
+      context,
+      (accountAddress: string) => new Account({ address: accountAddress }, context)
+    ),
+  ];
+  /* eslint-enable @typescript-eslint/no-non-null-assertion */
+
+  return data.sort((a, b) => a.blockNumber.minus(b.blockNumber).toNumber());
+}
+
+/**
+ * @hidden
+ */
+export function latestMiddlewareInstructionToHistoricInstruction(
+  instruction: LatestMiddlewareInstruction,
+  context: Context
+): HistoricInstruction {
+  /* eslint-disable @typescript-eslint/no-non-null-assertion */
+  const {
+    id: instructionId,
+    status,
+    type,
+    endBlock,
+    endAfterBlock,
+    tradeDate,
+    valueDate,
+    legs: { nodes: legs },
+    memo,
+    createdBlock,
+    venueId,
+  } = instruction;
+  const { blockId, hash, datetime } = createdBlock!;
+
+  let typeDetails;
+
+  if (type === InstructionTypeEnum.SettleManual) {
+    typeDetails = {
+      type: InstructionType.SettleManual,
+      endAfterBlock: new BigNumber(endAfterBlock!),
+    };
+  } else if (type === InstructionTypeEnum.SettleOnBlock) {
+    typeDetails = {
+      type: InstructionType.SettleOnBlock,
+      endBlock: new BigNumber(endBlock!),
+    };
+  } else {
+    typeDetails = {
+      type: InstructionType.SettleOnAffirmation,
+    };
+  }
+
+  return {
+    id: new BigNumber(instructionId),
+    blockNumber: new BigNumber(blockId),
+    blockHash: hash,
+    status,
+    tradeDate,
+    valueDate,
+    ...typeDetails,
+    memo: memo ?? null,
+    venueId: new BigNumber(venueId),
+    createdAt: new Date(datetime),
+    legs: legs
+      .filter(leg => leg.legType === LegTypeEnum.Fungible)
+      .map(leg => latestMiddlewareLegToLeg(leg, context)),
+  };
+  /* eslint-enable @typescript-eslint/no-non-null-assertion */
 }

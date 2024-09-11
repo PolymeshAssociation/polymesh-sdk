@@ -36,10 +36,17 @@ import {
   bytesToString,
   middlewareEventDetailsToEventIdentifier,
   middlewarePortfolioToPortfolio,
+  portfolioIdStringToPortfolio,
   stringToTicker,
   tickerToDid,
 } from '~/utils/conversion';
-import { calculateNextKey, createProcedureMethod, optionize } from '~/utils/internal';
+import {
+  calculateNextKey,
+  createProcedureMethod,
+  getAssetIdForMiddleware,
+  getAssetIdFromMiddleware,
+  optionize,
+} from '~/utils/internal';
 
 import { FungibleSettlements } from '../Base/Settlements';
 import { UniqueIdentifiers } from '../types';
@@ -217,13 +224,15 @@ export class FungibleAsset extends BaseAsset {
   public async getOperationHistory(): Promise<HistoricAgentOperation[]> {
     const { context, ticker: assetId } = this;
 
+    const middlewareAssetId = await getAssetIdForMiddleware(assetId, context);
+
     const {
       data: {
         tickerExternalAgentHistories: { nodes },
       },
     } = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgentHistories'>>(
       tickerExternalAgentHistoryQuery({
-        assetId,
+        assetId: middlewareAssetId,
       })
     );
 
@@ -250,6 +259,8 @@ export class FungibleAsset extends BaseAsset {
     const { context, ticker } = this;
     const { size, start } = opts;
 
+    const middlewareAssetId = await getAssetIdForMiddleware(ticker, context);
+
     const {
       data: {
         assetTransactions: { nodes, totalCount },
@@ -257,34 +268,41 @@ export class FungibleAsset extends BaseAsset {
     } = await context.queryMiddleware<Ensured<Query, 'assetTransactions'>>(
       assetTransactionQuery(
         {
-          assetId: ticker,
+          assetId: middlewareAssetId,
         },
         size,
         start
       )
     );
 
-    const data = nodes.map(
+    const data: HistoricAssetTransaction[] = nodes.map(
       ({
-        assetId,
+        asset,
         amount,
-        fromPortfolio,
-        toPortfolio,
+        fromPortfolioId,
+        toPortfolioId,
         createdBlock,
         eventId,
         eventIdx,
         extrinsicIdx,
-      }) => ({
-        asset: new FungibleAsset({ ticker: assetId }, context),
-        amount: new BigNumber(amount).shiftedBy(-6),
-        event: eventId,
-        from: optionize(middlewarePortfolioToPortfolio)(fromPortfolio, context),
-        to: optionize(middlewarePortfolioToPortfolio)(toPortfolio, context),
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        extrinsicIndex: new BigNumber(extrinsicIdx!),
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        ...middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx),
-      })
+      }) => {
+        const fromPortfolio = optionize(portfolioIdStringToPortfolio)(fromPortfolioId);
+        const toPortfolio = optionize(portfolioIdStringToPortfolio)(toPortfolioId);
+
+        const assetId = getAssetIdFromMiddleware(asset);
+
+        return {
+          asset: new FungibleAsset({ ticker: assetId }, context),
+          amount: new BigNumber(amount).shiftedBy(-6),
+          event: eventId,
+          from: optionize(middlewarePortfolioToPortfolio)(fromPortfolio, context),
+          to: optionize(middlewarePortfolioToPortfolio)(toPortfolio, context),
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          extrinsicIndex: new BigNumber(extrinsicIdx!),
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          ...middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx),
+        };
+      }
     );
 
     const count = new BigNumber(totalCount);

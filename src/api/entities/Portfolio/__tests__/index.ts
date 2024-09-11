@@ -15,12 +15,15 @@ import {
   PolymeshTransaction,
   Portfolio,
 } from '~/internal';
+import { settlementsQuery as newSettlementsQuery } from '~/middleware/newSettlementsQueries';
 import { portfolioMovementsQuery, settlementsQuery } from '~/middleware/queries';
-import { SettlementResultEnum } from '~/middleware/types';
+import { InstructionStatusEnum, LegTypeEnum, SettlementResultEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { FungibleLeg, MoveFundsParams, SettlementDirectionEnum } from '~/types';
 import { tuple } from '~/types/utils';
+import { SETTLEMENTS_V2_SQ_VERSION } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -538,40 +541,46 @@ describe('Portfolio class', () => {
     let did: string;
     let id: BigNumber;
 
+    const account = 'someAccount';
+    const key = 'someKey';
+
+    const blockNumber1 = new BigNumber(1);
+    const blockNumber2 = new BigNumber(2);
+
+    const blockHash1 = 'someHash';
+    const blockHash2 = 'otherHash';
+
+    const ticker1 = 'TICKER_1';
+    const ticker2 = 'TICKER_2';
+
+    const amount1 = new BigNumber(1000);
+    const amount2 = new BigNumber(2000);
+
+    const portfolioDid1 = 'portfolioDid1';
+    const portfolioNumber1 = 0;
+
+    const portfolioDid2 = 'someDid';
+    const portfolioNumber2 = 1;
+
+    const portfolioId2 = new BigNumber(portfolioNumber2);
+
+    let getLatestSqVersionSpy: jest.SpyInstance;
+
     beforeAll(() => {
       did = 'someDid';
       id = new BigNumber(1);
+      getLatestSqVersionSpy = jest.spyOn(utilsInternalModule, 'getLatestSqVersion');
     });
 
     afterAll(() => {
       jest.restoreAllMocks();
     });
 
-    it('should return a list of transactions', async () => {
+    // TODO @prashantasdeveloper Remove after SQ dual version support
+    it('should return a list of transactions for old SQ', async () => {
+      getLatestSqVersionSpy.mockResolvedValue('15.0.0');
+
       let portfolio = new NonAbstract({ id, did }, context);
-
-      const account = 'someAccount';
-      const key = 'someKey';
-
-      const blockNumber1 = new BigNumber(1);
-      const blockNumber2 = new BigNumber(2);
-
-      const blockHash1 = 'someHash';
-      const blockHash2 = 'otherHash';
-
-      const ticker1 = 'TICKER_1';
-      const ticker2 = 'TICKER_2';
-
-      const amount1 = new BigNumber(1000);
-      const amount2 = new BigNumber(2000);
-
-      const portfolioDid1 = 'portfolioDid1';
-      const portfolioNumber1 = '0';
-
-      const portfolioDid2 = 'someDid';
-      const portfolioNumber2 = '1';
-
-      const portfolioId2 = new BigNumber(portfolioNumber2);
 
       const legs1 = [
         {
@@ -646,7 +655,7 @@ describe('Portfolio class', () => {
             identityId: did,
             portfolioId: id,
             address: key,
-            ticker: undefined,
+            assetId: undefined,
           }),
           returnData: {
             legs: settlementsResponse,
@@ -657,7 +666,7 @@ describe('Portfolio class', () => {
             identityId: did,
             portfolioId: id,
             address: key,
-            ticker: undefined,
+            assetId: undefined,
           }),
           returnData: {
             portfolioMovements: {
@@ -675,16 +684,16 @@ describe('Portfolio class', () => {
       expect(result[1].blockNumber).toEqual(blockNumber2);
       expect(result[0].blockHash).toBe(blockHash1);
       expect(result[1].blockHash).toBe(blockHash2);
-      expect(result[0].legs[0].asset.ticker).toBe(ticker1);
-      expect(result[1].legs[0].asset.ticker).toBe(ticker2);
+      expect((result[0].legs[0] as FungibleLeg).asset.ticker).toBe(ticker1);
+      expect((result[1].legs[0] as FungibleLeg).asset.ticker).toBe(ticker2);
       expect((result[0].legs[0] as FungibleLeg).amount).toEqual(amount1.div(Math.pow(10, 6)));
       expect((result[1].legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
-      expect(result[0].legs[0].from.owner.did).toBe(portfolioDid1);
-      expect(result[0].legs[0].to.owner.did).toBe(portfolioDid2);
+      expect((result[0].legs[0] as FungibleLeg).from.owner.did).toBe(portfolioDid1);
+      expect((result[0].legs[0] as FungibleLeg).to.owner.did).toBe(portfolioDid2);
       expect((result[0].legs[0].to as NumberedPortfolio).id).toEqual(portfolioId2);
-      expect(result[1].legs[0].from.owner.did).toBe(portfolioDid2);
+      expect((result[1].legs[0] as FungibleLeg).from.owner.did).toBe(portfolioDid2);
       expect((result[1].legs[0].from as NumberedPortfolio).id).toEqual(portfolioId2);
-      expect(result[1].legs[0].to.owner.did).toEqual(portfolioDid1);
+      expect((result[1].legs[0] as FungibleLeg).to.owner.did).toEqual(portfolioDid1);
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
@@ -692,7 +701,7 @@ describe('Portfolio class', () => {
             identityId: did,
             portfolioId: undefined,
             address: undefined,
-            ticker: undefined,
+            assetId: undefined,
           }),
           returnData: {
             legs: {
@@ -705,7 +714,7 @@ describe('Portfolio class', () => {
             identityId: did,
             portfolioId: undefined,
             address: undefined,
-            ticker: undefined,
+            assetId: undefined,
           }),
           returnData: {
             portfolioMovements: {
@@ -715,7 +724,10 @@ describe('Portfolio class', () => {
                     blockId: blockNumber1.toNumber(),
                     hash: 'someHash',
                   },
-                  assetId: ticker2,
+                  asset: {
+                    id: ticker2,
+                    ticker: ticker2,
+                  },
                   amount: amount2,
                   address: 'be865155e5b6be843e99117a825e9580bb03e401a9c2ace644fff604fe624917',
                   from: {
@@ -740,14 +752,17 @@ describe('Portfolio class', () => {
 
       expect(result[0].blockNumber).toEqual(blockNumber1);
       expect(result[0].blockHash).toBe(blockHash1);
-      expect(result[0].legs[0].asset.ticker).toBe(ticker2);
+      expect((result[0].legs[0] as FungibleLeg).asset.ticker).toBe(ticker2);
       expect((result[0].legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
-      expect(result[0].legs[0].from.owner.did).toBe(portfolioDid1);
-      expect(result[0].legs[0].to.owner.did).toBe(portfolioDid1);
+      expect((result[0].legs[0] as FungibleLeg).from.owner.did).toBe(portfolioDid1);
+      expect((result[0].legs[0] as FungibleLeg).to.owner.did).toBe(portfolioDid1);
       expect((result[0].legs[0].to as NumberedPortfolio).id).toEqual(portfolioId2);
+      expect(result[0].legs[0].direction).toEqual(SettlementDirectionEnum.None);
     });
 
-    it('should throw an error if the portfolio does not exist', () => {
+    it('should throw an error if the portfolio does not exist for old SQ', () => {
+      getLatestSqVersionSpy.mockResolvedValue('15.0.0');
+
       const portfolio = new NonAbstract({ did, id }, context);
       exists = false;
 
@@ -755,9 +770,159 @@ describe('Portfolio class', () => {
         {
           query: settlementsQuery({
             identityId: did,
+            portfolioId: id,
+            address: undefined,
+            assetId: undefined,
+          }),
+          returnData: {
+            legs: {
+              nodes: [],
+            },
+          },
+        },
+        {
+          query: portfolioMovementsQuery({
+            identityId: did,
+            portfolioId: id,
+            address: undefined,
+            assetId: undefined,
+          }),
+          returnData: {
+            portfolioMovements: {
+              nodes: [],
+            },
+          },
+        },
+      ]);
+
+      return expect(portfolio.getTransactionHistory()).rejects.toThrow(
+        "The Portfolio doesn't exist or was removed by its owner"
+      );
+    });
+
+    it('should return a list of transactions', async () => {
+      getLatestSqVersionSpy.mockResolvedValue(SETTLEMENTS_V2_SQ_VERSION);
+
+      let portfolio = new NonAbstract({ id, did }, context);
+
+      const legs1 = [
+        {
+          legType: LegTypeEnum.Fungible,
+          assetId: ticker1,
+          ticker: ticker1,
+          amount: amount1,
+          direction: SettlementDirectionEnum.Incoming,
+          addresses: ['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'],
+          fromPortfolio: portfolioNumber1,
+          from: portfolioDid1,
+          toPortfolio: portfolioNumber2,
+          to: portfolioDid2,
+          createdBlock: {
+            blockId: new BigNumber(1234),
+            hash: '0xsomehash',
+          },
+        },
+      ];
+      const legs2 = [
+        {
+          legType: LegTypeEnum.Fungible,
+          assetId: ticker2,
+          ticker: ticker2,
+          amount: amount2,
+          direction: SettlementDirectionEnum.Outgoing,
+          addresses: ['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'],
+          toPortfolio: portfolioNumber1,
+          to: portfolioDid1,
+          fromPortfolio: portfolioNumber2,
+          from: portfolioDid2,
+          createdBlock: {
+            blockId: new BigNumber(1234),
+            hash: '0xsomehash',
+          },
+        },
+      ];
+
+      const settlementsResponse = {
+        nodes: [
+          {
+            instruction: {
+              createdBlock: {
+                blockId: blockNumber1.toNumber(),
+                hash: blockHash1,
+              },
+              id: '1',
+              status: InstructionStatusEnum.Executed,
+              legs: { nodes: legs1 },
+            },
+          },
+          {
+            instruction: {
+              createdBlock: {
+                blockId: blockNumber2.toNumber(),
+                hash: blockHash2,
+              },
+              id: '2',
+              status: InstructionStatusEnum.Executed,
+              legs: { nodes: legs2 },
+            },
+          },
+        ],
+      };
+
+      dsMockUtils.createApolloMultipleQueriesMock([
+        {
+          query: newSettlementsQuery({
+            identityId: did,
+            portfolioId: id,
+            address: account,
+            assetId: undefined,
+          }),
+          returnData: {
+            legs: settlementsResponse,
+          },
+        },
+        {
+          query: portfolioMovementsQuery({
+            identityId: did,
+            portfolioId: id,
+            address: account,
+            assetId: undefined,
+          }),
+          returnData: {
+            portfolioMovements: {
+              nodes: [],
+            },
+          },
+        },
+      ]);
+
+      let result = await portfolio.getTransactionHistory({
+        account,
+      });
+
+      expect(result[0].blockNumber).toEqual(blockNumber1);
+      expect(result[1].blockNumber).toEqual(blockNumber2);
+      expect(result[0].blockHash).toBe(blockHash1);
+      expect(result[1].blockHash).toBe(blockHash2);
+      expect((result[0].legs[0] as FungibleLeg).asset.ticker).toBe(ticker1);
+      expect((result[1].legs[0] as FungibleLeg).asset.ticker).toBe(ticker2);
+      expect((result[0].legs[0] as FungibleLeg).amount).toEqual(amount1.div(Math.pow(10, 6)));
+      expect((result[1].legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
+      expect((result[0].legs[0] as FungibleLeg).from.owner.did).toBe(portfolioDid1);
+      expect((result[0].legs[0] as FungibleLeg).to.owner.did).toBe(portfolioDid2);
+      expect((result[0].legs[0].to as NumberedPortfolio).id).toEqual(portfolioId2);
+      expect((result[1].legs[0] as FungibleLeg).from.owner.did).toBe(portfolioDid2);
+      expect((result[1].legs[0].from as NumberedPortfolio).id).toEqual(portfolioId2);
+      expect((result[1].legs[0] as FungibleLeg).to.owner.did).toEqual(portfolioDid1);
+
+      jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware').mockResolvedValue(ticker2);
+      dsMockUtils.createApolloMultipleQueriesMock([
+        {
+          query: newSettlementsQuery({
+            identityId: did,
             portfolioId: undefined,
             address: undefined,
-            ticker: undefined,
+            assetId: ticker2,
           }),
           returnData: {
             legs: {
@@ -770,7 +935,79 @@ describe('Portfolio class', () => {
             identityId: did,
             portfolioId: undefined,
             address: undefined,
-            ticker: undefined,
+            assetId: ticker2,
+          }),
+          returnData: {
+            portfolioMovements: {
+              nodes: [
+                {
+                  createdBlock: {
+                    blockId: blockNumber1.toNumber(),
+                    hash: 'someHash',
+                  },
+                  asset: {
+                    id: '0x1234',
+                    ticker: ticker2,
+                  },
+                  amount: amount2,
+                  address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+                  from: {
+                    number: portfolioNumber1,
+                    identityId: portfolioDid1,
+                  },
+                  fromId: `${portfolioDid1}/${portfolioNumber1}`,
+                  to: {
+                    number: portfolioNumber2,
+                    identityId: portfolioDid1,
+                  },
+                  toId: `${portfolioDid1}/${portfolioNumber2}`,
+                },
+              ],
+            },
+          },
+        },
+      ]);
+
+      portfolio = new NonAbstract({ did }, context);
+      result = await portfolio.getTransactionHistory({
+        ticker: ticker2,
+      });
+
+      expect(result[0].blockNumber).toEqual(blockNumber1);
+      expect(result[0].blockHash).toBe(blockHash1);
+      expect((result[0].legs[0] as FungibleLeg).asset.ticker).toBe(ticker2);
+      expect((result[0].legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
+      expect((result[0].legs[0] as FungibleLeg).from.owner.did).toBe(portfolioDid1);
+      expect((result[0].legs[0] as FungibleLeg).to.owner.did).toBe(portfolioDid1);
+      expect((result[0].legs[0].to as NumberedPortfolio).id).toEqual(portfolioId2);
+    });
+
+    it('should throw an error if the portfolio does not exist', () => {
+      getLatestSqVersionSpy.mockResolvedValue(SETTLEMENTS_V2_SQ_VERSION);
+
+      const portfolio = new NonAbstract({ did, id }, context);
+      exists = false;
+
+      dsMockUtils.createApolloMultipleQueriesMock([
+        {
+          query: newSettlementsQuery({
+            identityId: did,
+            portfolioId: id,
+            address: undefined,
+            assetId: undefined,
+          }),
+          returnData: {
+            legs: {
+              nodes: [],
+            },
+          },
+        },
+        {
+          query: portfolioMovementsQuery({
+            identityId: did,
+            portfolioId: id,
+            address: undefined,
+            assetId: undefined,
           }),
           returnData: {
             portfolioMovements: {
