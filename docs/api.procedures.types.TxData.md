@@ -1,0 +1,42 @@
+# Interface: TxData\<Args\>
+
+[api/procedures/types](../wiki/api.procedures.types).TxData
+
+Transaction data for display purposes
+
+## Type parameters
+
+| Name | Type |
+| :------ | :------ |
+| `Args` | extends `unknown`[] = `unknown`[] |
+
+## Table of contents
+
+### Properties
+
+- [args](../wiki/api.procedures.types.TxData#args)
+- [tag](../wiki/api.procedures.types.TxData#tag)
+
+## Properties
+
+### args
+
+• **args**: `Args`
+
+arguments with which the transaction will be called
+
+#### Defined in
+
+[api/procedures/types.ts:221](https://github.com/PolymeshAssociation/polymesh-sdk/blob/fe2e6dd1/src/api/procedures/types.ts#L221)
+
+___
+
+### tag
+
+• **tag**: [`TxTag`](../wiki/generated.types#txtag)
+
+transaction string identifier
+
+#### Defined in
+
+[api/procedures/types.ts:217](https://github.com/PolymeshAssociation/polymesh-sdk/blob/fe2e6dd1/src/api/procedures/types.ts#L217)
