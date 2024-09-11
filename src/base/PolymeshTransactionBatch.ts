@@ -94,11 +94,9 @@ export class PolymeshTransactionBatch<
       },
     } = this;
 
-    const tx = utility.batchAll(
+    return utility.batchAll(
       this.transactionData.map(({ transaction, args }) => transaction(...args))
     );
-
-    return this.wrapProposalIfNeeded(tx);
   }
 
   /**

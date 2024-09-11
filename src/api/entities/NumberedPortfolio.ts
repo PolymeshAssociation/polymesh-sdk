@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { Context, PolymeshError, Portfolio, renamePortfolio } from '~/internal';
-import { portfolioQuery } from '~/middleware/queries/portfolios';
+import { portfolioQuery } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import { ErrorCode, EventIdentifier, ProcedureMethod, RenamePortfolioParams } from '~/types';
 import { Ensured } from '~/types/utils';

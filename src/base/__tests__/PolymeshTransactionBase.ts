@@ -8,22 +8,19 @@ import { noop } from 'lodash';
 import * as baseUtils from '~/base/utils';
 import {
   Context,
-  MultiSigProposal,
   PolymeshError,
   PolymeshTransaction,
   PolymeshTransactionBase,
   PolymeshTransactionBatch,
 } from '~/internal';
-import { latestBlockQuery } from '~/middleware/queries/common';
+import { latestBlockQuery } from '~/middleware/queries';
 import { fakePromise, fakePromises } from '~/testUtils';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockSigningPayload, MockTxStatus } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode, MultiSig, PayingAccountType, TransactionStatus, TxTags } from '~/types';
+import { ErrorCode, PayingAccountType, TransactionStatus, TxTags } from '~/types';
 import { tuple } from '~/types/utils';
-import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
-import * as utilsInternalModule from '~/utils/internal';
 
 describe('Polymesh Transaction Base class', () => {
   let context: Mocked<Context>;
@@ -741,209 +738,6 @@ describe('Polymesh Transaction Base class', () => {
 
       return expect(tx.run()).rejects.toThrow(expectedError);
     });
-
-    it('should throw an error if called with a multiSig signer', async () => {
-      const transaction = dsMockUtils.createTxMock('staking', 'bond', { autoResolve: false });
-      context.supportsSubscription.mockReturnValue(false);
-
-      const args = tuple('FOO');
-      const txWithArgsMock = transaction(...args);
-
-      txWithArgsMock.signAndSend.mockRejectedValue(new Error('some error'));
-
-      const expectedError = new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message:
-          '`.run` cannot be used with a MultiSig signer. `.runAsProposal` should be called instead',
-      });
-
-      const tx = new PolymeshTransaction(
-        {
-          ...txSpec,
-          transaction,
-          args,
-          multiSig: entityMockUtils.getMultiSigInstance(),
-          resolver: undefined,
-        },
-        context
-      );
-
-      return expect(tx.run()).rejects.toThrow(expectedError);
-    });
-  });
-
-  describe('method: runAsProposal', () => {
-    let getBlockMock: jest.Mock;
-    let multiSig: MultiSig;
-    let filterEventRecordsSpy: jest.SpyInstance;
-
-    beforeEach(() => {
-      getBlockMock = dsMockUtils.createRpcMock('chain', 'getBlock');
-      getBlockMock.mockResolvedValue(
-        dsMockUtils.createMockSignedBlock({
-          block: {
-            header: {
-              number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(new BigNumber(1))),
-              parentHash: 'hash',
-              stateRoot: 'hash',
-              extrinsicsRoot: 'hash',
-            },
-            extrinsics: undefined,
-          },
-        })
-      );
-
-      const proposalId = new BigNumber(2);
-      const rawProposalId = dsMockUtils.createMockU64(proposalId);
-
-      filterEventRecordsSpy = jest.spyOn(utilsInternalModule, 'filterEventRecords');
-      when(filterEventRecordsSpy)
-        .calledWith(expect.any(Object), 'multiSig', 'ProposalAdded')
-        .mockReturnValue([dsMockUtils.createMockIEvent([undefined, undefined, rawProposalId])]);
-
-      multiSig = entityMockUtils.getMultiSigInstance({
-        address: DUMMY_ACCOUNT_ID,
-        getCreator: entityMockUtils.getIdentityInstance({
-          getPrimaryAccount: {
-            account: entityMockUtils.getAccountInstance({
-              getBalance: { total: new BigNumber(1000), free: new BigNumber(1000) },
-            }),
-          },
-        }),
-      });
-    });
-
-    it('should execute the underlying transaction with the provided arguments, setting the tx and block hash when finished', async () => {
-      const underlyingTx = dsMockUtils.createTxMock('asset', 'registerTicker');
-      const args = [dsMockUtils.createMockText('A_TICKER')];
-
-      const transaction = dsMockUtils.createTxMock('multiSig', 'createProposalAsKey', {
-        autoResolve: MockTxStatus.Succeeded,
-      });
-
-      const tx = new PolymeshTransaction(
-        {
-          ...txSpec,
-          transaction: underlyingTx,
-          args,
-          resolver: 3,
-          multiSig,
-        },
-        context
-      );
-
-      const runAsProposalPromise = tx.runAsProposal();
-
-      const result = await runAsProposalPromise;
-
-      expect(underlyingTx).toHaveBeenCalledWith(...args);
-      expect(transaction).toHaveBeenCalled();
-
-      expect(result).toBeInstanceOf(MultiSigProposal);
-      expect(tx.status).toEqual(TransactionStatus.Succeeded);
-      expect(() => tx.result).toThrow(PolymeshError); // MultiSig Proposal would mess up the type
-    });
-
-    it('should use multiSigOpts.expiry if it is provided', async () => {
-      const underlyingTx = dsMockUtils.createTxMock('asset', 'registerTicker');
-      const args = [dsMockUtils.createMockText('A_TICKER')];
-
-      dsMockUtils.createTxMock('multiSig', 'createProposalAsKey', {
-        autoResolve: MockTxStatus.Succeeded,
-      });
-
-      const expiry = new Date('10/14/1987');
-
-      const dateToMomentSpy = jest.spyOn(utilsConversionModule, 'dateToMoment');
-
-      const tx = new PolymeshTransaction(
-        {
-          ...txSpec,
-          transaction: underlyingTx,
-          args,
-          resolver: 3,
-          multiSig,
-          multiSigOpts: { expiry },
-        },
-        context
-      );
-
-      await tx.runAsProposal();
-
-      expect(dateToMomentSpy).toHaveBeenCalledWith(expiry, context);
-    });
-
-    it('should throw an error if trying to run a transaction that already ran', async () => {
-      const underlyingTx = dsMockUtils.createTxMock('asset', 'registerTicker');
-      const args = [dsMockUtils.createMockText('A_TICKER')];
-
-      dsMockUtils.createTxMock('multiSig', 'createProposalAsKey', {});
-
-      const tx = new PolymeshTransaction(
-        {
-          ...txSpec,
-          transaction: underlyingTx,
-          args,
-          resolver: 3,
-          multiSig,
-        },
-        context
-      );
-
-      await tx.runAsProposal();
-
-      const expectedError = new PolymeshError({
-        code: ErrorCode.General,
-        message: 'Cannot re-run a Transaction',
-      });
-
-      return expect(tx.runAsProposal()).rejects.toThrow(expectedError);
-    });
-
-    it('should not wrap the transaction in a proposal if its to approve a proposal', () => {
-      const transaction = dsMockUtils.createTxMock('multiSig', 'approveAsKey');
-
-      const tx = new PolymeshTransaction(
-        {
-          ...txSpec,
-          transaction,
-          args: [],
-          resolver: 3,
-          multiSig,
-        },
-        context
-      );
-
-      const expectedError = new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message:
-          '`.run` should be used instead. Either the signing account is not a MultiSig signer, or the transaction is to approve or reject a MultiSig proposal',
-      });
-
-      return expect(tx.runAsProposal()).rejects.toThrow(expectedError);
-    });
-
-    it('should throw an error from running the transaction', async () => {
-      const underlyingTx = dsMockUtils.createTxMock('asset', 'registerTicker');
-
-      dsMockUtils.createTxMock('multiSig', 'createProposalAsKey', {
-        autoResolve: MockTxStatus.Aborted,
-      });
-      const args = [dsMockUtils.createMockText('A_TICKER')];
-
-      const tx = new PolymeshTransaction(
-        {
-          ...txSpec,
-          transaction: underlyingTx,
-          args,
-          resolver: 3,
-          multiSig,
-        },
-        context
-      );
-
-      await expect(tx.runAsProposal()).rejects.toThrow(PolymeshError);
-    });
   });
 
   describe('method: onStatusChange', () => {
@@ -1452,7 +1246,6 @@ describe('Polymesh Transaction Base class', () => {
           rawPayload: 'fakeRawPayload',
           method: expect.stringContaining('0x'),
           metadata: {},
-          multiSig: null,
         })
       );
 
@@ -1463,8 +1256,6 @@ describe('Polymesh Transaction Base class', () => {
         )
         .mockReturnValue(era);
 
-      dsMockUtils.createTxMock('multiSig', 'createProposalAsKey');
-
       tx = new PolymeshTransaction(
         {
           ...txSpec,
@@ -1472,14 +1263,11 @@ describe('Polymesh Transaction Base class', () => {
           args,
           resolver: undefined,
           mortality: { immortal: false, lifetime: new BigNumber(32) },
-          multiSig: entityMockUtils.getMultiSigInstance({ address: DUMMY_ACCOUNT_ID }),
         },
         context
       );
 
-      const { multiSig } = await tx.toSignablePayload();
-
-      expect(multiSig).toEqual(DUMMY_ACCOUNT_ID);
+      await tx.toSignablePayload();
 
       expect(context.createType).toHaveBeenCalledWith(
         'ExtrinsicEra',

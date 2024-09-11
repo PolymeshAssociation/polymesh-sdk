@@ -155,19 +155,15 @@ export class Metadata extends Namespace<BaseAsset> {
       context: {
         polymeshApi: {
           query: {
-            asset: { currentAssetMetadataLocalKey },
+            asset: { assetMetadataNextLocalKey },
           },
         },
       },
     } = this;
 
-    const rawId = await currentAssetMetadataLocalKey(ticker);
+    const rawId = await assetMetadataNextLocalKey(ticker);
 
-    if (rawId.isSome) {
-      return u64ToBigNumber(rawId.unwrap()).plus(1);
-    }
-
-    return new BigNumber(1);
+    return u64ToBigNumber(rawId).plus(1); // "next" is actually the last used
   }
 
   /**

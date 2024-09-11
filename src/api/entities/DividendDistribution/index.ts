@@ -23,7 +23,7 @@ import {
   PolymeshError,
   reclaimDividendDistributionFunds,
 } from '~/internal';
-import { distributionPaymentsQuery, distributionQuery } from '~/middleware/queries/distributions';
+import { distributionPaymentsQuery, distributionQuery } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
   CorporateActionKind,
@@ -51,7 +51,6 @@ import {
 import {
   calculateNextKey,
   createProcedureMethod,
-  getAssetIdForMiddleware,
   getIdentity,
   toHumanReadable,
   xor,
@@ -450,11 +449,9 @@ export class DividendDistribution extends CorporateActionBase {
       context,
     } = this;
 
-    const middlewareAssetId = await getAssetIdForMiddleware(ticker, context);
-
     const taxPromise = context.queryMiddleware<Ensured<Query, 'distributions'>>(
       distributionQuery({
-        assetId: middlewareAssetId,
+        assetId: ticker,
         localId: id.toNumber(),
       })
     );
@@ -494,12 +491,10 @@ export class DividendDistribution extends CorporateActionBase {
     } = this;
     const { size, start } = opts;
 
-    const middlewareAssetId = await getAssetIdForMiddleware(ticker, context);
-
     const paymentsPromise = context.queryMiddleware<Ensured<Query, 'distributionPayments'>>(
       distributionPaymentsQuery(
         {
-          distributionId: `${middlewareAssetId}/${id.toString()}`,
+          distributionId: `${ticker}/${id.toString()}`,
         },
         size,
         start

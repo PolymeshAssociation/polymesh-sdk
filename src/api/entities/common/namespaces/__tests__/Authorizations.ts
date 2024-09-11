@@ -4,7 +4,7 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Context, Namespace } from '~/internal';
-import { authorizationsQuery } from '~/middleware/queries/authorizations';
+import { authorizationsQuery } from '~/middleware/queries';
 import { AuthorizationStatusEnum, AuthTypeEnum } from '~/middleware/types';
 import { AuthorizationType as MeshAuthorizationType } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';

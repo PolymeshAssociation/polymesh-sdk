@@ -3,7 +3,6 @@ import { PolymeshPrimitivesIdentityId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { Portfolios } from '~/api/entities/Identity/Portfolios';
 import {
   Context,
   DefaultPortfolio,
@@ -12,17 +11,15 @@ import {
   NumberedPortfolio,
   PolymeshTransaction,
 } from '~/internal';
-import { portfoliosMovementsQuery } from '~/middleware/queries/portfolios';
-import { settlementsForAllPortfoliosQuery } from '~/middleware/queries/settlements';
-import { settlementsForAllPortfoliosQuery as oldSettlementsForAllPortfoliosQuery } from '~/middleware/queries/settlementsOld';
-import { LegTypeEnum } from '~/middleware/types';
+import { portfoliosMovementsQuery, settlementsForAllPortfoliosQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { FungibleLeg, SettlementDirectionEnum, SettlementResultEnum } from '~/types';
 import { tuple } from '~/types/utils';
-import { SETTLEMENTS_V2_SQ_VERSION } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
+
+import { Portfolios } from '../Portfolios';
 
 jest.mock(
   '~/api/entities/NumberedPortfolio',
@@ -198,42 +195,34 @@ describe('Portfolios class', () => {
   });
 
   describe('method: getTransactionHistory', () => {
-    let getLatestSqVersionSpy: jest.SpyInstance;
-
-    const account = 'someAccount';
-    const key = 'someKey';
-
-    const blockNumber1 = new BigNumber(1);
-    const blockNumber2 = new BigNumber(2);
-
-    const blockHash1 = 'someHash';
-    const blockHash2 = 'otherHash';
-    const blockHash3 = 'hash3';
-
-    const ticker1 = 'TICKER_1';
-    const ticker2 = 'TICKER_2';
-
-    const amount1 = new BigNumber(1000);
-    const amount2 = new BigNumber(2000);
-
-    const portfolioDid1 = 'portfolioDid1';
-    const portfolioNumber1 = '0';
-
-    const portfolioDid2 = 'someDid';
-    const portfolioNumber2 = '1';
-
-    const portfolioId2 = new BigNumber(portfolioNumber2);
-
-    beforeEach(() => {
-      getLatestSqVersionSpy = jest.spyOn(utilsInternalModule, 'getLatestSqVersion');
-    });
-
     afterAll(() => {
       jest.restoreAllMocks();
     });
 
-    it('should return a list of transactions with old SQ', async () => {
-      getLatestSqVersionSpy.mockResolvedValue('15.0.0');
+    it('should return a list of transactions', async () => {
+      const account = 'someAccount';
+      const key = 'someKey';
+
+      const blockNumber1 = new BigNumber(1);
+      const blockNumber2 = new BigNumber(2);
+
+      const blockHash1 = 'someHash';
+      const blockHash2 = 'otherHash';
+      const blockHash3 = 'hash3';
+
+      const ticker1 = 'TICKER_1';
+      const ticker2 = 'TICKER_2';
+
+      const amount1 = new BigNumber(1000);
+      const amount2 = new BigNumber(2000);
+
+      const portfolioDid1 = 'portfolioDid1';
+      const portfolioNumber1 = '0';
+
+      const portfolioDid2 = 'someDid';
+      const portfolioNumber2 = '1';
+
+      const portfolioId2 = new BigNumber(portfolioNumber2);
 
       const legs1 = [
         {
@@ -318,13 +307,6 @@ describe('Portfolios class', () => {
                 blockId: blockNumber1.toNumber(),
                 hash: blockHash1,
               },
-              instructionsByLegSettlementIdAndInstructionId: {
-                nodes: [
-                  {
-                    id: '1',
-                  },
-                ],
-              },
               result: SettlementResultEnum.Executed,
               legs: { nodes: legs1 },
             },
@@ -334,13 +316,6 @@ describe('Portfolios class', () => {
               createdBlock: {
                 blockId: blockNumber2.toNumber(),
                 hash: blockHash2,
-              },
-              instructionsByLegSettlementIdAndInstructionId: {
-                nodes: [
-                  {
-                    id: '2',
-                  },
-                ],
               },
               result: SettlementResultEnum.Executed,
               legs: { nodes: legs2 },
@@ -352,13 +327,6 @@ describe('Portfolios class', () => {
                 blockId: blockNumber2.toNumber(),
                 hash: blockHash3,
               },
-              instructionsByLegSettlementIdAndInstructionId: {
-                nodes: [
-                  {
-                    id: '3',
-                  },
-                ],
-              },
               result: SettlementResultEnum.Executed,
               legs: { nodes: legs3 },
             },
@@ -368,13 +336,6 @@ describe('Portfolios class', () => {
               createdBlock: {
                 blockId: blockNumber2.toNumber(),
                 hash: blockHash3,
-              },
-              instructionsByLegSettlementIdAndInstructionId: {
-                nodes: [
-                  {
-                    id: '4',
-                  },
-                ],
               },
               result: SettlementResultEnum.Executed,
               legs: { nodes: legs4 },
@@ -390,10 +351,10 @@ describe('Portfolios class', () => {
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
-          query: oldSettlementsForAllPortfoliosQuery({
+          query: settlementsForAllPortfoliosQuery({
             identityId: did,
             address: key,
-            assetId: undefined,
+            ticker: undefined,
           }),
           returnData: {
             legs: settlementsResponse,
@@ -403,7 +364,7 @@ describe('Portfolios class', () => {
           query: portfoliosMovementsQuery({
             identityId: did,
             address: key,
-            assetId: undefined,
+            ticker: undefined,
           }),
           returnData: {
             portfolioMovements: {
@@ -421,25 +382,25 @@ describe('Portfolios class', () => {
       expect(result[1].blockNumber).toEqual(blockNumber2);
       expect(result[0].blockHash).toBe(blockHash1);
       expect(result[1].blockHash).toBe(blockHash2);
-      expect((result[0].legs[0] as FungibleLeg).asset.ticker).toBe(ticker1);
-      expect((result[1].legs[0] as FungibleLeg).asset.ticker).toBe(ticker2);
+      expect(result[0].legs[0].asset.ticker).toBe(ticker1);
+      expect(result[1].legs[0].asset.ticker).toBe(ticker2);
       expect((result[0].legs[0] as FungibleLeg).amount).toEqual(amount1.div(Math.pow(10, 6)));
       expect((result[1].legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
-      expect((result[0].legs[0] as FungibleLeg).from.owner.did).toBe(portfolioDid1);
-      expect((result[0].legs[0] as FungibleLeg).to.owner.did).toBe(portfolioDid2);
+      expect(result[0].legs[0].from.owner.did).toBe(portfolioDid1);
+      expect(result[0].legs[0].to.owner.did).toBe(portfolioDid2);
       expect((result[0].legs[0].to as NumberedPortfolio).id).toEqual(portfolioId2);
-      expect((result[1].legs[0] as FungibleLeg).from.owner.did).toBe(portfolioDid2);
+      expect(result[1].legs[0].from.owner.did).toBe(portfolioDid2);
       expect((result[1].legs[0].from as NumberedPortfolio).id).toEqual(portfolioId2);
-      expect((result[1].legs[0] as FungibleLeg).to.owner.did).toEqual(portfolioDid1);
+      expect(result[1].legs[0].to.owner.did).toEqual(portfolioDid1);
       expect(result[2].legs[0].direction).toEqual(SettlementDirectionEnum.None);
       expect(result[3].legs[0].direction).toEqual(SettlementDirectionEnum.None);
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
-          query: oldSettlementsForAllPortfoliosQuery({
+          query: settlementsForAllPortfoliosQuery({
             identityId: did,
             address: undefined,
-            assetId: undefined,
+            ticker: undefined,
           }),
           returnData: {
             legs: {
@@ -451,7 +412,7 @@ describe('Portfolios class', () => {
           query: portfoliosMovementsQuery({
             identityId: did,
             address: undefined,
-            assetId: undefined,
+            ticker: undefined,
           }),
           returnData: {
             portfolioMovements: {
@@ -461,10 +422,7 @@ describe('Portfolios class', () => {
                     blockId: blockNumber1.toNumber(),
                     hash: 'someHash',
                   },
-                  asset: {
-                    id: ticker2,
-                    ticker: ticker2,
-                  },
+                  assetId: ticker2,
                   amount: amount2,
                   address: 'be865155e5b6be843e99117a825e9580bb03e401a9c2ace644fff604fe624917',
                   from: {
@@ -488,228 +446,10 @@ describe('Portfolios class', () => {
 
       expect(result[0].blockNumber).toEqual(blockNumber1);
       expect(result[0].blockHash).toBe(blockHash1);
-      expect((result[0].legs[0] as FungibleLeg).asset.ticker).toBe(ticker2);
+      expect(result[0].legs[0].asset.ticker).toBe(ticker2);
       expect((result[0].legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
-      expect((result[0].legs[0] as FungibleLeg).from.owner.did).toBe(portfolioDid1);
-      expect((result[0].legs[0] as FungibleLeg).to.owner.did).toBe(portfolioDid1);
-      expect((result[0].legs[0].to as NumberedPortfolio).id).toEqual(portfolioId2);
-    });
-
-    it('should return a list of transactions', async () => {
-      getLatestSqVersionSpy.mockResolvedValue(SETTLEMENTS_V2_SQ_VERSION);
-
-      const legs1 = [
-        {
-          legType: LegTypeEnum.Fungible,
-          assetId: ticker1,
-          ticker: ticker1,
-          amount: amount1,
-          direction: SettlementDirectionEnum.Incoming,
-          addresses: ['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'],
-          from: portfolioDid1,
-          fromPortfolio: portfolioNumber1,
-          toPortfolio: portfolioNumber2,
-          to: did,
-        },
-      ];
-      const legs2 = [
-        {
-          legType: LegTypeEnum.Fungible,
-          assetId: ticker2,
-          ticker: ticker2,
-          amount: amount2,
-          direction: SettlementDirectionEnum.Outgoing,
-          addresses: ['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'],
-          from: did,
-          fromPortfolio: portfolioNumber2,
-          toPortfolio: portfolioNumber1,
-          to: portfolioDid1,
-        },
-      ];
-
-      const legs3 = [
-        {
-          legType: LegTypeEnum.Fungible,
-          assetId: ticker2,
-          ticker: ticker2,
-          amount: amount2,
-          direction: SettlementDirectionEnum.None,
-          addresses: ['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'],
-          from: did,
-          fromPortfolio: portfolioNumber2,
-          toPortfolio: portfolioNumber1,
-          to: did,
-        },
-      ];
-
-      const legs4 = [
-        {
-          legType: LegTypeEnum.Fungible,
-          assetId: ticker2,
-          ticker: ticker2,
-          amount: amount2,
-          direction: SettlementDirectionEnum.None,
-          addresses: ['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'],
-          from: did,
-          fromPortfolio: portfolioNumber1,
-          to: did,
-          toPortfolio: portfolioNumber1,
-        },
-      ];
-
-      const settlementsResponse = {
-        nodes: [
-          {
-            instruction: {
-              createdBlock: {
-                blockId: blockNumber1.toNumber(),
-                hash: blockHash1,
-              },
-              status: SettlementResultEnum.Executed,
-              legs: { nodes: legs1 },
-            },
-          },
-          {
-            instruction: {
-              createdBlock: {
-                blockId: blockNumber2.toNumber(),
-                hash: blockHash2,
-              },
-              status: SettlementResultEnum.Executed,
-              legs: { nodes: legs2 },
-            },
-          },
-          {
-            instruction: {
-              createdBlock: {
-                blockId: blockNumber2.toNumber(),
-                hash: blockHash3,
-              },
-              status: SettlementResultEnum.Executed,
-              legs: { nodes: legs3 },
-            },
-          },
-          {
-            instruction: {
-              createdBlock: {
-                blockId: blockNumber2.toNumber(),
-                hash: blockHash3,
-              },
-              status: SettlementResultEnum.Executed,
-              legs: { nodes: legs4 },
-            },
-          },
-        ],
-      };
-
-      dsMockUtils.createApolloMultipleQueriesMock([
-        {
-          query: settlementsForAllPortfoliosQuery({
-            identityId: did,
-            address: account,
-            assetId: undefined,
-          }),
-          returnData: {
-            legs: settlementsResponse,
-          },
-        },
-        {
-          query: portfoliosMovementsQuery({
-            identityId: did,
-            address: account,
-            assetId: undefined,
-          }),
-          returnData: {
-            portfolioMovements: {
-              nodes: [],
-            },
-          },
-        },
-      ]);
-
-      let result = await identity.portfolios.getTransactionHistory({
-        account,
-      });
-
-      expect(result[0].blockNumber).toEqual(blockNumber1);
-      expect(result[1].blockNumber).toEqual(blockNumber2);
-      expect(result[0].blockHash).toBe(blockHash1);
-      expect(result[1].blockHash).toBe(blockHash2);
-      expect((result[0].legs[0] as FungibleLeg).asset.ticker).toBe(ticker1);
-      expect((result[1].legs[0] as FungibleLeg).asset.ticker).toBe(ticker2);
-      expect((result[0].legs[0] as FungibleLeg).amount).toEqual(amount1.div(Math.pow(10, 6)));
-      expect((result[1].legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
-      expect((result[0].legs[0] as FungibleLeg).from.owner.did).toBe(portfolioDid1);
-      expect((result[0].legs[0] as FungibleLeg).to.owner.did).toBe(portfolioDid2);
-      expect((result[0].legs[0].to as NumberedPortfolio).id).toEqual(portfolioId2);
-      expect((result[1].legs[0] as FungibleLeg).from.owner.did).toBe(portfolioDid2);
-      expect((result[1].legs[0].from as NumberedPortfolio).id).toEqual(portfolioId2);
-      expect((result[1].legs[0] as FungibleLeg).to.owner.did).toEqual(portfolioDid1);
-      expect(result[2].legs[0].direction).toEqual(SettlementDirectionEnum.None);
-      expect(result[3].legs[0].direction).toEqual(SettlementDirectionEnum.None);
-
-      jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware').mockResolvedValue(ticker2);
-
-      dsMockUtils.createApolloMultipleQueriesMock([
-        {
-          query: settlementsForAllPortfoliosQuery({
-            identityId: did,
-            address: undefined,
-            assetId: ticker2,
-          }),
-          returnData: {
-            legs: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: portfoliosMovementsQuery({
-            identityId: did,
-            address: undefined,
-            assetId: ticker2,
-          }),
-          returnData: {
-            portfolioMovements: {
-              nodes: [
-                {
-                  createdBlock: {
-                    blockId: blockNumber1.toNumber(),
-                    hash: 'someHash',
-                  },
-                  asset: {
-                    id: '0x1234',
-                    ticker: ticker2,
-                  },
-                  amount: amount2,
-                  address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-                  from: {
-                    number: portfolioNumber1,
-                    identityId: portfolioDid1,
-                  },
-                  fromId: `${portfolioDid1}/${portfolioNumber1}`,
-                  to: {
-                    number: portfolioNumber2,
-                    identityId: portfolioDid1,
-                  },
-                  toId: `${portfolioDid1}/${portfolioNumber2}`,
-                },
-              ],
-            },
-          },
-        },
-      ]);
-
-      result = await identity.portfolios.getTransactionHistory({
-        ticker: ticker2,
-      });
-
-      expect(result[0].blockNumber).toEqual(blockNumber1);
-      expect(result[0].blockHash).toBe(blockHash1);
-      expect((result[0].legs[0] as FungibleLeg).asset.ticker).toBe(ticker2);
-      expect((result[0].legs[0] as FungibleLeg).amount).toEqual(amount2.div(Math.pow(10, 6)));
-      expect((result[0].legs[0] as FungibleLeg).from.owner.did).toBe(portfolioDid1);
-      expect((result[0].legs[0] as FungibleLeg).to.owner.did).toBe(portfolioDid1);
+      expect(result[0].legs[0].from.owner.did).toBe(portfolioDid1);
+      expect(result[0].legs[0].to.owner.did).toBe(portfolioDid1);
       expect((result[0].legs[0].to as NumberedPortfolio).id).toEqual(portfolioId2);
     });
   });

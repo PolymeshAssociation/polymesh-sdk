@@ -125,10 +125,6 @@ export enum PayingAccountType {
    * the caller Account is responsible of paying the fees
    */
   Caller = 'Caller',
-  /**
-   * The creator of the MultiSig is responsible for paying the fees
-   */
-  MultiSigCreator = 'MultiSigCreator',
 }
 
 /**
@@ -147,7 +143,7 @@ export type PayingAccount =
       allowance: BigNumber;
     }
   | {
-      type: PayingAccountType.Caller | PayingAccountType.Other | PayingAccountType.MultiSigCreator;
+      type: PayingAccountType.Caller | PayingAccountType.Other;
       account: Account;
     };
 
@@ -197,13 +193,6 @@ export interface TransactionPayload {
    * Additional information attached to the payload, such as IDs or memos about the transaction
    */
   readonly metadata: Record<string, string>;
-
-  /**
-   * The address of the MultiSig if the transaction is a proposal.
-   *
-   * Will be set only if the signing account is a MultiSig signer and the transaction is not approving or rejecting an existing proposal
-   */
-  readonly multiSig: string | null;
 }
 
 export type PolymeshTransaction<

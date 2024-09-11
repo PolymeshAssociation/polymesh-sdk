@@ -20,9 +20,9 @@ import {
 import { signerToString } from '~/utils/conversion';
 import {
   assertExpectedChainVersion,
+  assertExpectedSqVersion,
   createProcedureMethod,
   extractProtocol,
-  warnUnexpectedSqVersion,
 } from '~/utils/internal';
 
 import { AccountManagement } from './AccountManagement';
@@ -151,7 +151,8 @@ export class Polymesh {
 
     const { metadata, noInitWarn, typesBundle } = polkadot ?? {};
 
-    await assertExpectedChainVersion(nodeUrl);
+    // Defer `await` on any checks to minimize total startup time
+    const requiredChecks: Promise<void>[] = [assertExpectedChainVersion(nodeUrl)];
 
     try {
       const { types, rpc, signedExtensions, runtime } = schema;
@@ -211,8 +212,10 @@ export class Polymesh {
         }
       };
 
-      await Promise.all([checkMiddleware(), warnUnexpectedSqVersion(context)]);
+      requiredChecks.push(checkMiddleware(), assertExpectedSqVersion(context));
     }
+
+    await Promise.all(requiredChecks);
 
     return new Polymesh(context);
   }

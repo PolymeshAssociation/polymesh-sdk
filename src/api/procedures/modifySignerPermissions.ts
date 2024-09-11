@@ -1,6 +1,6 @@
 import { assertSecondaryAccounts } from '~/api/procedures/utils';
 import { Identity, Procedure } from '~/internal';
-import { Account, ModifySignerPermissionsParams, TxTags } from '~/types';
+import { ModifySignerPermissionsParams, TxTags } from '~/types';
 import { BatchTransactionSpec, ExtrinsicParams, ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
@@ -15,7 +15,6 @@ import { asAccount, getSecondaryAccountPermissions } from '~/utils/internal';
  */
 export interface Storage {
   identity: Identity;
-  actingAccount: Account;
 }
 
 /**
@@ -72,12 +71,14 @@ export async function getAuthorization(
   this: Procedure<ModifySignerPermissionsParams, void, Storage>
 ): Promise<ProcedureAuthorization> {
   const {
-    storage: { identity, actingAccount },
+    context,
+    storage: { identity },
   } = this;
 
+  const signingAccount = context.getSigningAccount();
   const { account: primaryAccount } = await identity.getPrimaryAccount();
 
-  if (!actingAccount.isEqual(primaryAccount)) {
+  if (!signingAccount.isEqual(primaryAccount)) {
     return {
       signerPermissions:
         "Secondary Account permissions can only be modified by the Identity's primary Account",
@@ -101,14 +102,8 @@ export async function prepareStorage(
 ): Promise<Storage> {
   const { context } = this;
 
-  const [identity, actingAccount] = await Promise.all([
-    context.getSigningIdentity(),
-    context.getActingAccount(),
-  ]);
-
   return {
-    identity,
-    actingAccount,
+    identity: await context.getSigningIdentity(),
   };
 }
 

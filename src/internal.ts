@@ -33,7 +33,6 @@ export { createPortfolios } from '~/api/procedures/createPortfolios';
 export { createAsset } from '~/api/procedures/createAsset';
 export { createNftCollection } from '~/api/procedures/createNftCollection';
 export { createVenue } from '~/api/procedures/createVenue';
-export { updateVenueSigners } from '~/api/procedures/updateVenueSigners';
 export { inviteAccount } from '~/api/procedures/inviteAccount';
 export { subsidizeAccount } from '~/api/procedures/subsidizeAccount';
 export { issueTokens } from '~/api/procedures/issueTokens';
@@ -47,10 +46,8 @@ export {
 } from '~/api/procedures/modifyAssetTrustedClaimIssuers';
 export { registerIdentity } from '~/api/procedures/registerIdentity';
 export { createChildIdentity } from '~/api/procedures/createChildIdentity';
-export { createChildIdentities } from '~/api/procedures/createChildIdentities';
 export { attestPrimaryKeyRotation } from '~/api/procedures/attestPrimaryKeyRotation';
 export { rotatePrimaryKey } from '~/api/procedures/rotatePrimaryKey';
-export { addSecondaryAccounts } from '~/api/procedures/addSecondaryAccountsWithAuth';
 export { removeSecondaryAccounts } from '~/api/procedures/removeSecondaryAccounts';
 export {
   modifySignerPermissions,
@@ -171,4 +168,3 @@ export { toggleTickerPreApproval } from '~/api/procedures/toggleTickerPreApprova
 export { allowIdentityToCreatePortfolios } from '~/api/procedures/allowIdentityToCreatePortfolios';
 export { revokeIdentityToCreatePortfolios } from '~/api/procedures/revokeIdentityToCreatePortfolios';
 export { rotatePrimaryKeyToSecondary } from '~/api/procedures/rotatePrimaryKeyToSecondary';
-export { joinCreator } from '~/api/procedures/joinCreator';

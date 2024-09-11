@@ -5,7 +5,6 @@ import {
   AuthorizationRequest,
   ChildIdentity,
   Context,
-  createChildIdentities,
   createChildIdentity,
   createPortfolios,
   Identity,
@@ -18,7 +17,6 @@ import {
 import {
   AllowIdentityToCreatePortfoliosParams,
   AttestPrimaryKeyRotationParams,
-  CreateChildIdentitiesParams,
   CreateChildIdentityParams,
   ProcedureMethod,
   RegisterIdentityParams,
@@ -87,13 +85,6 @@ export class Identities {
     this.createChild = createProcedureMethod(
       {
         getProcedureAndArgs: args => [createChildIdentity, args],
-      },
-      context
-    );
-
-    this.createChildren = createProcedureMethod(
-      {
-        getProcedureAndArgs: args => [createChildIdentities, args],
       },
       context
     );
@@ -219,19 +210,6 @@ export class Identities {
    *  - the signing Identity is already a child of some other identity
    */
   public createChild: ProcedureMethod<CreateChildIdentityParams, ChildIdentity>;
-
-  /**
-   * Create child identities using off chain authorization
-   *
-   * @note the list of `key` provided in the params should not be linked to any other account
-   *
-   * @throws if
-   *  - the signing account is not a primary key
-   *  - the signing Identity is already a child of some other identity
-   *  - `expiresAt` is not a future date
-   *  - the any `key` in `childKeyAuths` is already linked to an Identity
-   */
-  public createChildren: ProcedureMethod<CreateChildIdentitiesParams, ChildIdentity[]>;
 
   /**
    * Gives permission to the Identity to create Portfolios on behalf of the signing Identity

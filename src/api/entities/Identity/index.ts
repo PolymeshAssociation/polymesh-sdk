@@ -6,7 +6,7 @@ import {
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import { chunk, differenceWith, flatten, intersectionWith, lt, uniqBy } from 'lodash';
+import { chunk, differenceWith, flatten, intersectionWith, uniqBy } from 'lodash';
 
 import { unlinkChildIdentity } from '~/api/procedures/unlinkChildIdentity';
 import { assertPortfolioExists } from '~/api/procedures/utils';
@@ -25,12 +25,13 @@ import {
   TickerReservation,
   Venue,
 } from '~/internal';
-import { assetHoldersQuery, nftHoldersQuery } from '~/middleware/queries/assets';
-import { trustingAssetsQuery } from '~/middleware/queries/claims';
-import { instructionPartiesQuery } from '~/middleware/queries/settlements';
-import { instructionsByDidQuery } from '~/middleware/queries/settlementsOld';
+import {
+  assetHoldersQuery,
+  instructionsByDidQuery,
+  nftHoldersQuery,
+  trustingAssetsQuery,
+} from '~/middleware/queries';
 import { AssetHoldersOrderBy, NftHoldersOrderBy, Query } from '~/middleware/types';
-import { Query as QueryOld } from '~/middleware/typesV6';
 import { CddStatus } from '~/polkadot/polymesh';
 import {
   Asset,
@@ -63,11 +64,7 @@ import {
   isTickerOwnerRole,
   isVenueOwnerRole,
 } from '~/utils';
-import {
-  MAX_CONCURRENT_REQUESTS,
-  MAX_PAGE_SIZE,
-  SETTLEMENTS_V2_SQ_VERSION,
-} from '~/utils/constants';
+import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   accountIdToString,
   balanceToBigNumber,
@@ -76,7 +73,6 @@ import {
   corporateActionIdentifierToCaId,
   identityIdToString,
   middlewareInstructionToHistoricInstruction,
-  oldMiddlewareInstructionToHistoricInstruction,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
@@ -94,8 +90,6 @@ import {
   calculateNextKey,
   createProcedureMethod,
   getAccount,
-  getAssetIdFromMiddleware,
-  getLatestSqVersion,
   getSecondaryAccountPermissions,
   requestPaginated,
 } from '~/utils/internal';
@@ -404,9 +398,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const count = new BigNumber(totalCount);
 
-    const data = nodes.map(
-      ({ asset }) => new FungibleAsset({ ticker: getAssetIdFromMiddleware(asset) }, context)
-    );
+    const data = nodes.map(({ assetId: ticker }) => new FungibleAsset({ ticker }, context));
+
     const next = calculateNextKey(count, data.length, start);
 
     return {
@@ -450,19 +443,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const count = new BigNumber(totalCount);
 
-    const data = nodes.map(({ asset, nftIds }) => {
-      const assetId = getAssetIdFromMiddleware(asset);
-      const collection = new NftCollection({ ticker: assetId }, context);
-      const nfts = nftIds.map(
-        (id: number) =>
-          new Nft(
-            {
-              ticker: assetId,
-              id: new BigNumber(id),
-            },
-            context
-          )
-      );
+    const data = nodes.map(({ assetId: ticker, nftIds }) => {
+      const collection = new NftCollection({ ticker }, context);
+      const nfts = nftIds.map((id: number) => new Nft({ ticker, id: new BigNumber(id) }, context));
 
       return { collection, nfts };
     });
@@ -514,9 +497,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       trustingAssetsQuery({ issuer: did })
     );
 
-    return nodes.map(
-      ({ asset }) => new FungibleAsset({ ticker: getAssetIdFromMiddleware(asset) }, context)
-    );
+    return nodes.map(({ assetId: ticker }) => new FungibleAsset({ ticker }, context));
   }
 
   /**
@@ -908,30 +889,11 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   public async getHistoricalInstructions(): Promise<HistoricInstruction[]> {
     const { context, did } = this;
 
-    // TODO @prashantasdeveloper Remove after SQ dual version support
-    const sqVersion = await getLatestSqVersion(context);
-
-    if (lt(sqVersion, SETTLEMENTS_V2_SQ_VERSION)) {
-      const {
-        data: {
-          legs: { nodes: instructionsResult },
-        },
-      } = await context.queryMiddleware<Ensured<QueryOld, 'legs'>>(instructionsByDidQuery(did));
-
-      return instructionsResult.map(({ instruction }) =>
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        oldMiddlewareInstructionToHistoricInstruction(instruction!, context)
-      );
-    }
-    // Dual version support end
-
     const {
       data: {
-        instructionParties: { nodes: instructionsResult },
+        legs: { nodes: instructionsResult },
       },
-    } = await context.queryMiddleware<Ensured<Query, 'instructionParties'>>(
-      instructionPartiesQuery(did)
-    );
+    } = await context.queryMiddleware<Ensured<Query, 'legs'>>(instructionsByDidQuery(did));
 
     return instructionsResult.map(({ instruction }) =>
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -1109,28 +1071,5 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       signerFor: new MultiSig({ address: multiSig }, context),
       signers: multiSigs[multiSig],
     }));
-  }
-
-  /**
-   * Returns the off chain authorization nonce for this Identity
-   */
-  public async getOffChainAuthorizationNonce(): Promise<BigNumber> {
-    const {
-      context,
-      context: {
-        polymeshApi: {
-          query: {
-            identity: { offChainAuthorizationNonce },
-          },
-        },
-      },
-      did,
-    } = this;
-
-    const rawDid = stringToIdentityId(did, context);
-
-    const rawNonce = await offChainAuthorizationNonce(rawDid);
-
-    return u64ToBigNumber(rawNonce);
   }
 }

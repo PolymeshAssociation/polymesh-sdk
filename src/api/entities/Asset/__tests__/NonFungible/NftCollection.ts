@@ -12,7 +12,7 @@ import {
   PolymeshError,
   PolymeshTransaction,
 } from '~/internal';
-import { assetQuery, assetTransactionQuery } from '~/middleware/queries/assets';
+import { assetQuery, nftTransactionQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   ErrorCode,
@@ -24,7 +24,6 @@ import {
 } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
-import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -571,21 +570,19 @@ describe('NftCollection class', () => {
     it('should return the list of the collection transactions', async () => {
       const ticker = 'TICKER';
       const context = dsMockUtils.getContextInstance();
-      jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware').mockResolvedValue(ticker);
       const asset = new NftCollection({ ticker }, context);
-      const assetId = '0x1234';
       const transactionResponse = {
         totalCount: new BigNumber(5),
         nodes: [
           {
-            asset: {
-              id: assetId,
-              ticker,
-            },
+            assetId: ticker,
             nftIds: ['1'],
             eventId: EventIdEnum.Issued,
-            toPortfolioId: 'SOME_DID/0',
-            fromPortfolioId: null,
+            toPortfolio: {
+              identityId: 'SOME_DID',
+              number: 0,
+            },
+            fromPortfolio: null,
             extrinsicIdx: 1,
             eventIdx: 1,
             createdBlock: {
@@ -595,14 +592,17 @@ describe('NftCollection class', () => {
             },
           },
           {
-            asset: {
-              id: assetId,
-              ticker,
-            },
+            assetId: ticker,
             nftIds: ['1'],
             eventId: EventIdEnum.Transfer,
-            toPortfolioId: 'OTHER_DID/0',
-            fromPortfolioId: 'SOME_DID/0',
+            toPortfolio: {
+              identityId: 'OTHER_DID',
+              number: 0,
+            },
+            fromPortfolio: {
+              identityId: 'SOME_DID',
+              number: 0,
+            },
             instructionId: 1,
             instructionMemo: 'some memo',
             extrinsicIdx: 1,
@@ -617,7 +617,7 @@ describe('NftCollection class', () => {
       };
 
       dsMockUtils.createApolloQueryMock(
-        assetTransactionQuery({ assetId: ticker }, new BigNumber(3), new BigNumber(0)),
+        nftTransactionQuery({ assetId: ticker }, new BigNumber(3), new BigNumber(0)),
         {
           assetTransactions: transactionResponse,
         }

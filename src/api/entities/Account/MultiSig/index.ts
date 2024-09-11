@@ -2,15 +2,13 @@ import BigNumber from 'bignumber.js';
 
 import { UniqueIdentifiers } from '~/api/entities/Account';
 import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
-import { Account, Context, Identity, joinCreator, modifyMultiSig, PolymeshError } from '~/internal';
-import { multiSigProposalsQuery } from '~/middleware/queries/multisigs';
+import { Account, Context, Identity, modifyMultiSig, PolymeshError } from '~/internal';
+import { multiSigProposalsQuery } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
   ErrorCode,
-  JoinCreatorParams,
   ModifyMultiSigParams,
   MultiSigDetails,
-  OptionalArgsProcedureMethod,
   ProcedureMethod,
   ProposalStatus,
   ResultSet,
@@ -40,13 +38,6 @@ export class MultiSig extends Account {
     this.modify = createProcedureMethod(
       {
         getProcedureAndArgs: modifyArgs => [modifyMultiSig, { multiSig: this, ...modifyArgs }],
-      },
-      context
-    );
-    this.joinCreator = createProcedureMethod(
-      {
-        getProcedureAndArgs: joinArgs => [joinCreator, { multiSig: this, ...joinArgs }],
-        optionalArgs: true,
       },
       context
     );
@@ -157,22 +148,26 @@ export class MultiSig extends Account {
   }
 
   /**
-   * Return a set of { @link api/entities/MultiSigProposal!MultiSigProposal | MultiSigProposal } for this MultiSig Account
+   * Return all { @link api/entities/MultiSigProposal!MultiSigProposal } for this MultiSig Account
    *
    * @note uses the middlewareV2
    */
-  public async getHistoricalProposals(opts?: {
+  public async getHistoricalProposals(opts: {
     size?: BigNumber;
     start?: BigNumber;
   }): Promise<ResultSet<MultiSigProposal>> {
-    const { context, address } = this;
-    const { size, start } = opts ?? {};
+    const {
+      context: { queryMiddleware },
+      context,
+      address,
+    } = this;
+    const { size, start } = opts;
 
     const {
       data: {
         multiSigProposals: { nodes, totalCount },
       },
-    } = await context.queryMiddleware<Ensured<Query, 'multiSigProposals'>>(
+    } = await queryMiddleware<Ensured<Query, 'multiSigProposals'>>(
       multiSigProposalsQuery(address, size, start)
     );
 
@@ -224,13 +219,4 @@ export class MultiSig extends Account {
    * Modify the signers for the MultiSig. The signing Account must belong to the Identity of the creator of the MultiSig
    */
   public modify: ProcedureMethod<Pick<ModifyMultiSigParams, 'signers'>, void>;
-
-  /**
-   * Attach a MultiSig directly to the creator's identity. This method bypasses the usual authorization step to join an identity
-   *
-   * @note the caller should be the MultiSig creator's primary key
-   *
-   * @note To attach the MultiSig to an identity other than the creator's, {@link api/client/AccountManagement!AccountManagement.inviteAccount | inviteAccount} can be used instead. The MultiSig will then need to accept the created authorization
-   */
-  public joinCreator: OptionalArgsProcedureMethod<JoinCreatorParams, void>;
 }

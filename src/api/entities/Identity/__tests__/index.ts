@@ -20,10 +20,12 @@ import {
   PolymeshError,
   PolymeshTransaction,
 } from '~/internal';
-import { assetHoldersQuery, nftHoldersQuery } from '~/middleware/queries/assets';
-import { trustingAssetsQuery } from '~/middleware/queries/claims';
-import { instructionPartiesQuery } from '~/middleware/queries/settlements';
-import { instructionsByDidQuery } from '~/middleware/queries/settlementsOld';
+import {
+  assetHoldersQuery,
+  instructionsByDidQuery,
+  nftHoldersQuery,
+  trustingAssetsQuery,
+} from '~/middleware/queries';
 import { AssetHoldersOrderBy, NftHoldersOrderBy } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
@@ -42,7 +44,6 @@ import {
   VenueType,
 } from '~/types';
 import { tuple } from '~/types/utils';
-import { SETTLEMENTS_V2_SQ_VERSION } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -575,7 +576,7 @@ describe('Identity class', () => {
 
       dsMockUtils.createApolloQueryMock(trustingAssetsQuery({ issuer: did }), {
         trustedClaimIssuers: {
-          nodes: tickers.map(ticker => ({ asset: { id: ticker, ticker } })),
+          nodes: tickers.map(ticker => ({ assetId: ticker })),
         },
       });
 
@@ -594,10 +595,7 @@ describe('Identity class', () => {
       const identity = new Identity({ did }, context);
 
       dsMockUtils.createApolloQueryMock(assetHoldersQuery({ identityId: did }), {
-        assetHolders: {
-          nodes: tickers.map(ticker => ({ asset: { id: ticker, ticker } })),
-          totalCount: 2,
-        },
+        assetHolders: { nodes: tickers.map(ticker => ({ assetId: ticker })), totalCount: 2 },
       });
 
       let result = await identity.getHeldAssets();
@@ -613,10 +611,7 @@ describe('Identity class', () => {
           AssetHoldersOrderBy.CreatedBlockIdAsc
         ),
         {
-          assetHolders: {
-            nodes: tickers.map(ticker => ({ asset: { id: ticker, ticker } })),
-            totalCount: 2,
-          },
+          assetHolders: { nodes: tickers.map(ticker => ({ assetId: ticker })), totalCount: 2 },
         }
       );
 
@@ -640,7 +635,7 @@ describe('Identity class', () => {
 
       dsMockUtils.createApolloQueryMock(nftHoldersQuery({ identityId: did }), {
         nftHolders: {
-          nodes: tickers.map(ticker => ({ asset: { id: ticker, ticker }, nftIds: [] })),
+          nodes: tickers.map(ticker => ({ assetId: ticker, nftIds: [] })),
           totalCount: 2,
         },
       });
@@ -659,7 +654,7 @@ describe('Identity class', () => {
         ),
         {
           nftHolders: {
-            nodes: tickers.map(ticker => ({ asset: { id: ticker, ticker }, nftIds: [1, 3] })),
+            nodes: tickers.map(ticker => ({ assetId: ticker, nftIds: [1, 3] })),
             totalCount: 2,
           },
         }
@@ -1241,39 +1236,7 @@ describe('Identity class', () => {
   });
 
   describe('method: getHistoricalInstructions', () => {
-    let getLatestSqVersionSpy: jest.SpyInstance;
-    beforeEach(() => {
-      getLatestSqVersionSpy = jest.spyOn(utilsInternalModule, 'getLatestSqVersion');
-    });
-
-    it('should return the list of all instructions where the Identity was involved for older SQ', async () => {
-      getLatestSqVersionSpy.mockResolvedValue('15.0.0');
-      const identity = new Identity({ did: 'someDid' }, context);
-      const oldMiddlewareInstructionToHistoricInstructionSpy = jest.spyOn(
-        utilsConversionModule,
-        'oldMiddlewareInstructionToHistoricInstruction'
-      );
-
-      const legsResponse = {
-        totalCount: 5,
-        nodes: [{ instruction: 'instruction' }],
-      };
-
-      dsMockUtils.createApolloQueryMock(instructionsByDidQuery(identity.did), {
-        legs: legsResponse,
-      });
-
-      const mockHistoricInstruction = 'mockData' as unknown as HistoricInstruction;
-
-      oldMiddlewareInstructionToHistoricInstructionSpy.mockReturnValue(mockHistoricInstruction);
-
-      const result = await identity.getHistoricalInstructions();
-
-      expect(result).toEqual([mockHistoricInstruction]);
-    });
-
     it('should return the list of all instructions where the Identity was involved', async () => {
-      getLatestSqVersionSpy.mockResolvedValue(SETTLEMENTS_V2_SQ_VERSION);
       const identity = new Identity({ did: 'someDid' }, context);
       const middlewareInstructionToHistoricInstructionSpy = jest.spyOn(
         utilsConversionModule,
@@ -1285,8 +1248,8 @@ describe('Identity class', () => {
         nodes: [{ instruction: 'instruction' }],
       };
 
-      dsMockUtils.createApolloQueryMock(instructionPartiesQuery(identity.did), {
-        instructionParties: legsResponse,
+      dsMockUtils.createApolloQueryMock(instructionsByDidQuery(identity.did), {
+        legs: legsResponse,
       });
 
       const mockHistoricInstruction = 'mockData' as unknown as HistoricInstruction;
@@ -1471,31 +1434,6 @@ describe('Identity class', () => {
           ],
         },
       ]);
-    });
-  });
-
-  describe('method: getOffChainAuthorizationNonce', () => {
-    it('should return the off chain authorization nonce for an Identity', async () => {
-      const did = 'someDid';
-      const rawIdentityId = dsMockUtils.createMockIdentityId(did);
-      const mockContext = dsMockUtils.getContextInstance();
-
-      stringToIdentityIdSpy.mockReturnValue(rawIdentityId);
-
-      const nonce = new BigNumber(2);
-      const rawNonce = dsMockUtils.createMockU64(nonce);
-
-      dsMockUtils
-        .createQueryMock('identity', 'offChainAuthorizationNonce')
-        .mockResolvedValue(rawNonce);
-
-      when(u64ToBigNumberSpy).calledWith(rawNonce).mockReturnValue(nonce);
-
-      const identity = new Identity({ did }, mockContext);
-
-      const result = await identity.getOffChainAuthorizationNonce();
-
-      expect(result).toEqual(nonce);
     });
   });
 });

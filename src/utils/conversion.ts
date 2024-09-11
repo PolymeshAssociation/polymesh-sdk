@@ -1,3 +1,4 @@
+import { ApolloQueryResult } from '@apollo/client/core';
 import { bool, Bytes, Option, Text, u8, U8aFixed, u16, u32, u64, u128, Vec } from '@polkadot/types';
 import {
   AccountId,
@@ -7,7 +8,6 @@ import {
   Hash,
   Permill,
 } from '@polkadot/types/interfaces';
-import { H512 } from '@polkadot/types/interfaces/runtime';
 import { DispatchError, DispatchResult } from '@polkadot/types/interfaces/system';
 import {
   PalletCorporateActionsCaId,
@@ -21,8 +21,6 @@ import {
   PalletStoFundraiserTier,
   PalletStoPriceTier,
   PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
-  PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth,
-  PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetAssetType,
@@ -61,8 +59,6 @@ import {
   PolymeshPrimitivesSettlementInstructionStatus,
   PolymeshPrimitivesSettlementLeg,
   PolymeshPrimitivesSettlementMediatorAffirmationStatus,
-  PolymeshPrimitivesSettlementReceiptDetails,
-  PolymeshPrimitivesSettlementReceiptMetadata,
   PolymeshPrimitivesSettlementSettlementType,
   PolymeshPrimitivesSettlementVenueType,
   PolymeshPrimitivesStatisticsStat2ndKey,
@@ -73,7 +69,6 @@ import {
   PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceTransferCondition,
-  SpRuntimeMultiSignature,
 } from '@polkadot/types/lookup';
 import { ITuple } from '@polkadot/types/types';
 import { BTreeSet } from '@polkadot/types-codec';
@@ -99,6 +94,7 @@ import {
   groupBy,
   includes,
   map,
+  padEnd,
   range,
   rangeRight,
   snakeCase,
@@ -117,10 +113,8 @@ import {
   DefaultPortfolio,
   FungibleAsset,
   Identity,
-  Instruction,
   KnownPermissionGroup,
   Nft,
-  NftCollection,
   NumberedPortfolio,
   PolymeshError,
   Portfolio,
@@ -132,20 +126,13 @@ import {
   CallIdEnum,
   Claim as MiddlewareClaim,
   CustomClaimType as MiddlewareCustomClaimType,
-  Instruction as MiddlewareInstruction,
-  InstructionTypeEnum,
-  Leg as MiddlewareLeg,
-  LegTypeEnum,
+  Instruction,
   ModuleIdEnum,
   Portfolio as MiddlewarePortfolio,
-  PortfolioMovement as MiddlewarePortfolioMovement,
+  Query,
+  SettlementResultEnum,
 } from '~/middleware/types';
 import { ClaimScopeTypeEnum, MiddlewareScope, SettlementDirectionEnum } from '~/middleware/typesV1';
-import {
-  Instruction as InstructionOld,
-  Leg as MiddlewareLegOld,
-  SettlementResultEnum,
-} from '~/middleware/typesV6';
 import {
   AssetComplianceResult,
   AuthorizationType as MeshAuthorizationType,
@@ -156,12 +143,10 @@ import {
   Moment,
 } from '~/polkadot/polymesh';
 import {
-  AccountWithSignature,
   AffirmationStatus,
   AssetDocument,
   Authorization,
   AuthorizationType,
-  ChildKeyWithAuth,
   Claim,
   ClaimCountRestrictionValue,
   ClaimCountStatInput,
@@ -198,7 +183,6 @@ import {
   InstructionType,
   KnownAssetType,
   KnownNftType,
-  Leg,
   MediatorAffirmation,
   MetadataKeyId,
   MetadataLockStatus,
@@ -210,7 +194,6 @@ import {
   MultiClaimCondition,
   NftMetadataInput,
   NonFungiblePortfolioMovement,
-  OffChainAffirmationReceipt,
   OfferingBalanceStatus,
   OfferingDetails,
   OfferingSaleStatus,
@@ -232,7 +215,6 @@ import {
   SecurityIdentifier,
   SecurityIdentifierType,
   Signer,
-  SignerKeyRingType,
   SignerType,
   SignerValue,
   SingleClaimCondition,
@@ -267,18 +249,16 @@ import {
   StatClaimIssuer,
   TickerKey,
 } from '~/types/internal';
-import { tuple } from '~/types/utils';
+import { Ensured, tuple } from '~/types/utils';
 import {
   IGNORE_CHECKSUM,
   MAX_BALANCE,
   MAX_DECIMALS,
   MAX_MEMO_LENGTH,
   MAX_MODULE_LENGTH,
-  MAX_OFF_CHAIN_METADATA_LENGTH,
   MAX_TICKER_LENGTH,
 } from '~/utils/constants';
 import {
-  asAccount,
   asDid,
   asNftId,
   assertAddressValid,
@@ -288,8 +268,6 @@ import {
   asTicker,
   conditionsAreEqual,
   createClaim,
-  getAssetIdForMiddleware,
-  getAssetIdFromMiddleware,
   isModuleOrTagMatch,
   optionize,
   padString,
@@ -369,13 +347,6 @@ export function tickerToString(ticker: PolymeshPrimitivesTicker): string {
  */
 export function stringToU8aFixed(value: string, context: Context): U8aFixed {
   return context.createType('U8aFixed', value);
-}
-
-/**
- * @hidden
- */
-export function stringToH512(value: string, context: Context): H512 {
-  return context.createType('H512', value);
 }
 
 /**
@@ -2218,11 +2189,7 @@ export function middlewareScopeToScope(scope: MiddlewareScope): Scope {
 
   switch (type) {
     case ClaimScopeTypeEnum.Ticker:
-    case ClaimScopeTypeEnum.Asset:
-      return {
-        type: ScopeType.Ticker,
-        value: getAssetIdFromMiddleware({ id: value, ticker: value }),
-      };
+      return { type: ScopeType.Ticker, value: removePadding(value) };
     case ClaimScopeTypeEnum.Identity:
     case ClaimScopeTypeEnum.Custom:
       return { type: scope.type as ScopeType, value };
@@ -2240,27 +2207,15 @@ export function middlewareScopeToScope(scope: MiddlewareScope): Scope {
 /**
  * @hidden
  */
-export async function scopeToMiddlewareScope(
-  scope: Scope,
-  context: Context
-): Promise<MiddlewareScope> {
+export function scopeToMiddlewareScope(scope: Scope, padTicker = true): MiddlewareScope {
   const { type, value } = scope;
 
   switch (type) {
-    case ScopeType.Ticker: {
-      const middlewareAssetId = await getAssetIdForMiddleware(value, context);
-      if (value === middlewareAssetId) {
-        // old SQ is used
-        return {
-          type: ClaimScopeTypeEnum.Ticker,
-          value,
-        };
-      }
+    case ScopeType.Ticker:
       return {
-        type: ClaimScopeTypeEnum.Asset,
-        value: middlewareAssetId,
+        type: ClaimScopeTypeEnum.Ticker,
+        value: padTicker ? padEnd(value, 12, '\0') : value,
       };
-    }
     case ScopeType.Identity:
     case ScopeType.Custom:
       return { type: ClaimScopeTypeEnum[scope.type], value };
@@ -2857,13 +2812,10 @@ export function secondaryAccountToMeshSecondaryKey(
   secondaryKey: PermissionedAccount,
   context: Context
 ): PolymeshPrimitivesSecondaryKey {
-  const {
-    account: { address },
-    permissions,
-  } = secondaryKey;
+  const { account, permissions } = secondaryKey;
 
   return context.createType('PolymeshPrimitivesSecondaryKey', {
-    key: stringToAccountId(address, context),
+    signer: signerValueToSignatory(signerToSignerValue(account), context),
     permissions: permissionsToMeshPermissions(permissions, context),
   });
 }
@@ -4336,18 +4288,8 @@ export function instructionMemoToString(value: U8aFixed): string {
 /**
  * @hidden
  */
-export function portfolioIdStringToPortfolio(id: string): MiddlewarePortfolio {
-  const [identityId, number] = id.split('/');
-
-  return { identityId, number: parseInt(number, 10) } as MiddlewarePortfolio;
-}
-
-// TODO @prashantasdeveloper Remove after SQ dual version support
-/**
- * @hidden
- */
-export function oldMiddlewareInstructionToHistoricInstruction(
-  instruction: InstructionOld,
+export function middlewareInstructionToHistoricInstruction(
+  instruction: Instruction,
   context: Context
 ): HistoricInstruction {
   /* eslint-disable @typescript-eslint/no-non-null-assertion */
@@ -4389,124 +4331,16 @@ export function oldMiddlewareInstructionToHistoricInstruction(
     memo: memo ?? null,
     venueId: new BigNumber(venueId),
     createdAt: new Date(datetime),
-    legs: legs.map(({ fromId, toId, assetId, amount }) => ({
+    legs: legs.map(({ from, to, assetId, amount }) => ({
       asset: new FungibleAsset({ ticker: assetId }, context),
       amount: new BigNumber(amount).shiftedBy(-6),
-      from: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(fromId), context),
-      to: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(toId), context),
+      from: middlewarePortfolioToPortfolio(from!, context),
+      to: middlewarePortfolioToPortfolio(to!, context),
     })),
   };
   /* eslint-enable @typescript-eslint/no-non-null-assertion */
 }
-// Dual version support end
 
-/**
- * @hidden
- */
-export function middlewareLegToLeg(leg: MiddlewareLeg, context: Context): Leg {
-  const { legType, from, fromPortfolio, to, toPortfolio, assetId, ticker, nftIds, amount } = leg;
-
-  if (legType === LegTypeEnum.Fungible) {
-    return {
-      asset: new FungibleAsset(
-        { ticker: getAssetIdFromMiddleware({ id: assetId, ticker }) },
-        context
-      ),
-      amount: new BigNumber(amount).shiftedBy(-6),
-      from: middlewarePortfolioToPortfolio(
-        { identityId: from, number: fromPortfolio! } as MiddlewarePortfolio,
-        context
-      ),
-      to: middlewarePortfolioToPortfolio(
-        { identityId: to, number: toPortfolio! } as MiddlewarePortfolio,
-        context
-      ),
-    };
-  }
-
-  if (legType === LegTypeEnum.NonFungible) {
-    const id = getAssetIdFromMiddleware({ id: assetId, ticker });
-    return {
-      from: middlewarePortfolioToPortfolio(
-        { identityId: from, number: fromPortfolio! } as MiddlewarePortfolio,
-        context
-      ),
-      to: middlewarePortfolioToPortfolio(
-        { identityId: to, number: toPortfolio! } as MiddlewarePortfolio,
-        context
-      ),
-      nfts: nftIds.map(
-        (nftId: number) => new Nft({ ticker: id, id: new BigNumber(nftId) }, context)
-      ),
-      asset: new NftCollection({ ticker: id }, context),
-    };
-  }
-
-  // presume off chain
-  return {
-    from: new Identity({ did: from }, context),
-    to: new Identity({ did: to }, context),
-    asset: ticker!,
-    offChainAmount: new BigNumber(amount).shiftedBy(-6),
-  };
-}
-
-/**
- * @hidden
- */
-export function middlewareInstructionToHistoricInstruction(
-  instruction: MiddlewareInstruction,
-  context: Context
-): HistoricInstruction {
-  /* eslint-disable @typescript-eslint/no-non-null-assertion */
-  const {
-    id: instructionId,
-    status,
-    type,
-    endBlock,
-    endAfterBlock,
-    tradeDate,
-    valueDate,
-    legs: { nodes: legs },
-    memo,
-    createdBlock,
-    venueId,
-  } = instruction;
-  const { blockId, hash, datetime } = createdBlock!;
-
-  let typeDetails;
-
-  if (type === InstructionTypeEnum.SettleManual) {
-    typeDetails = {
-      type: InstructionType.SettleManual,
-      endAfterBlock: new BigNumber(endAfterBlock!),
-    };
-  } else if (type === InstructionTypeEnum.SettleOnBlock) {
-    typeDetails = {
-      type: InstructionType.SettleOnBlock,
-      endBlock: new BigNumber(endBlock!),
-    };
-  } else {
-    typeDetails = {
-      type: InstructionType.SettleOnAffirmation,
-    };
-  }
-
-  return {
-    id: new BigNumber(instructionId),
-    blockNumber: new BigNumber(blockId),
-    blockHash: hash,
-    status,
-    tradeDate,
-    valueDate,
-    ...typeDetails,
-    memo: memo ?? null,
-    venueId: new BigNumber(venueId),
-    createdAt: new Date(datetime),
-    legs: legs.map(leg => middlewareLegToLeg(leg, context)),
-  };
-  /* eslint-enable @typescript-eslint/no-non-null-assertion */
-}
 /**
  * @hidden
  */
@@ -4567,21 +4401,6 @@ export function legToNonFungibleLeg(
   context: Context
 ): PolymeshPrimitivesSettlementLeg {
   return context.createType('PolymeshPrimitivesSettlementLeg', { NonFungible: leg });
-}
-
-/**
- * @hidden
- */
-export function legToOffChainLeg(
-  leg: {
-    senderIdentity: PolymeshPrimitivesIdentityId;
-    receiverIdentity: PolymeshPrimitivesIdentityId;
-    ticker: PolymeshPrimitivesTicker;
-    amount: Balance;
-  },
-  context: Context
-): PolymeshPrimitivesSettlementLeg {
-  return context.createType('PolymeshPrimitivesSettlementLeg', { OffChain: leg });
 }
 
 /**
@@ -4916,54 +4735,23 @@ export function nftInputToNftMetadataVec(
 export function toCustomClaimTypeWithIdentity(
   data: MiddlewareCustomClaimType[]
 ): CustomClaimTypeWithDid[] {
-  return data.map(({ id, name, identityId: did }) => ({
-    id: new BigNumber(id),
-    name,
-    did,
+  return data.map(item => ({
+    name: item.name,
+    id: new BigNumber(item.id),
+    did: item.identity?.did,
   }));
 }
 
 /**
  * @hidden
  */
-function portfolioMovementsToHistoricSettlements(
-  portfolioMovements: MiddlewarePortfolioMovement[],
-  context: Context,
-  handleMiddlewareAddress: (address: string, context: Context) => Account
-): HistoricSettlement[] {
-  return portfolioMovements.map(
-    ({ createdBlock, fromId, toId, asset, amount, address: accountAddress }) => {
-      const { blockId, hash } = createdBlock!;
-      return {
-        blockNumber: new BigNumber(blockId),
-        blockHash: hash,
-        status: SettlementResultEnum.Executed,
-        accounts: [handleMiddlewareAddress(accountAddress, context)],
-        legs: [
-          {
-            asset: new FungibleAsset({ ticker: getAssetIdFromMiddleware(asset) }, context),
-            amount: new BigNumber(amount).shiftedBy(-6),
-            direction: SettlementDirectionEnum.None,
-            from: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(fromId), context),
-            to: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(toId), context),
-          },
-        ],
-      };
-    }
-  );
-}
-
-// TODO @prashantasdeveloper Remove after SQ dual version support
-/**
- * @hidden
- */
-export function oldMiddlewareDataToHistoricalSettlements(
-  settlementsResult: MiddlewareLegOld[],
-  portfolioMovements: MiddlewarePortfolioMovement[],
+export function toHistoricalSettlements(
+  settlementsResult: ApolloQueryResult<Ensured<Query, 'legs'>>,
+  portfolioMovementsResult: ApolloQueryResult<Ensured<Query, 'portfolioMovements'>>,
   filter: string,
   context: Context
 ): HistoricSettlement[] {
-  let data: HistoricSettlement[] = [];
+  const data: HistoricSettlement[] = [];
 
   const getDirection = (fromId: string, toId: string): SettlementDirectionEnum => {
     const [fromDid] = fromId.split('/');
@@ -4994,17 +4782,12 @@ export function oldMiddlewareDataToHistoricalSettlements(
   };
 
   /* eslint-disable @typescript-eslint/no-non-null-assertion */
-  settlementsResult.forEach(({ settlement }) => {
+  settlementsResult.data.legs.nodes.forEach(({ settlement }) => {
     const {
       createdBlock,
       result: settlementResult,
       legs: { nodes: legs },
-      instructionsByLegSettlementIdAndInstructionId: {
-        nodes: [instruction],
-      },
     } = settlement!;
-
-    const { id: instructionId } = instruction!;
 
     const { blockId, hash } = createdBlock!;
 
@@ -5016,97 +4799,36 @@ export function oldMiddlewareDataToHistoricalSettlements(
         (accountAddress: string) =>
           new Account({ address: keyToAddress(accountAddress, context) }, context)
       ),
-      instruction: new Instruction({ id: new BigNumber(instructionId) }, context),
-      legs: legs.map(({ fromId, toId, assetId, amount }) => ({
+      legs: legs.map(({ from, to, fromId, toId, assetId, amount }) => ({
         asset: new FungibleAsset({ ticker: assetId }, context),
         amount: new BigNumber(amount).shiftedBy(-6),
         direction: getDirection(fromId, toId),
-        from: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(fromId), context),
-        to: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(toId), context),
+        from: middlewarePortfolioToPortfolio(from!, context),
+        to: middlewarePortfolioToPortfolio(to!, context),
       })),
     });
   });
 
-  data = [
-    ...data,
-    ...portfolioMovementsToHistoricSettlements(
-      portfolioMovements,
-      context,
-      (accountAddress: string) =>
-        new Account({ address: keyToAddress(accountAddress, context) }, context)
-    ),
-  ];
-  /* eslint-enable @typescript-eslint/no-non-null-assertion */
-
-  return data.sort((a, b) => a.blockNumber.minus(b.blockNumber).toNumber());
-}
-
-/**
- * @hidden
- */
-export function toHistoricalSettlements(
-  settlementsResult: MiddlewareLeg[],
-  portfolioMovements: MiddlewarePortfolioMovement[],
-  filter: {
-    identityId: string;
-    portfolio?: number;
-  },
-  context: Context
-): HistoricSettlement[] {
-  let data: HistoricSettlement[] = [];
-
-  const getDirection = (leg: MiddlewareLeg): SettlementDirectionEnum => {
-    const { from, fromPortfolio, to, toPortfolio } = leg;
-    const { identityId, portfolio } = filter;
-
-    let result = SettlementDirectionEnum.None;
-
-    if (from === to) {
-      result = SettlementDirectionEnum.None;
-    } else if (from === identityId) {
-      if (!portfolio || fromPortfolio === portfolio) {
-        result = SettlementDirectionEnum.Incoming;
-      }
-    } else if (to === identityId) {
-      if (!portfolio || toPortfolio === portfolio) {
-        result = SettlementDirectionEnum.Outgoing;
-      }
+  portfolioMovementsResult.data.portfolioMovements.nodes.forEach(
+    ({ createdBlock, from, to, fromId, toId, assetId, amount, address: accountAddress }) => {
+      const { blockId, hash } = createdBlock!;
+      data.push({
+        blockNumber: new BigNumber(blockId),
+        blockHash: hash,
+        status: SettlementResultEnum.Executed,
+        accounts: [new Account({ address: keyToAddress(accountAddress, context) }, context)],
+        legs: [
+          {
+            asset: new FungibleAsset({ ticker: assetId }, context),
+            amount: new BigNumber(amount).shiftedBy(-6),
+            direction: getDirection(fromId, toId),
+            from: middlewarePortfolioToPortfolio(from!, context),
+            to: middlewarePortfolioToPortfolio(to!, context),
+          },
+        ],
+      });
     }
-    return result;
-  };
-
-  /* eslint-disable @typescript-eslint/no-non-null-assertion */
-  settlementsResult.forEach(({ instruction }) => {
-    const {
-      id,
-      createdBlock,
-      status,
-      legs: { nodes: legs },
-    } = instruction!;
-
-    const { blockId, hash } = createdBlock!;
-
-    data.push({
-      blockNumber: new BigNumber(blockId),
-      blockHash: hash,
-      status: status as unknown as SettlementResultEnum,
-      accounts: legs[0].addresses.map((address: string) => new Account({ address }, context)),
-      instruction: new Instruction({ id: new BigNumber(id) }, context),
-      legs: legs.map(leg => ({
-        ...middlewareLegToLeg(leg, context),
-        direction: getDirection(leg),
-      })),
-    });
-  });
-
-  data = [
-    ...data,
-    ...portfolioMovementsToHistoricSettlements(
-      portfolioMovements,
-      context,
-      (accountAddress: string) => new Account({ address: accountAddress }, context)
-    ),
-  ];
+  );
   /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
   return data.sort((a, b) => a.blockNumber.minus(b.blockNumber).toNumber());
@@ -5156,120 +4878,4 @@ export function createRawExtrinsicStatus(
   context: Context
 ): ExtrinsicStatus {
   return context.createType('ExtrinsicStatus', { [status]: value });
-}
-
-/**
- * @hidden
- */
-export function signatureToMeshRuntimeMultiSignature(
-  type: SignerKeyRingType,
-  value: string,
-  context: Context
-): SpRuntimeMultiSignature {
-  let rawValue;
-  if (type === SignerKeyRingType.Ecdsa) {
-    rawValue = context.createType('SpCoreEcdsaSignature', value);
-  } else if (type === SignerKeyRingType.Ed25519) {
-    rawValue = context.createType('SpCoreEd25519Signature', value);
-  } else {
-    // assume sr 25519
-    rawValue = context.createType('SpCoreSr25519Signature', value);
-  }
-
-  return context.createType('SpRuntimeMultiSignature', {
-    [type]: rawValue,
-  });
-}
-
-/**
- * @hidden
- */
-export function offChainMetadataToMeshReceiptMetadata(
-  metadata: string,
-  context: Context
-): PolymeshPrimitivesSettlementReceiptMetadata {
-  if (metadata.length > MAX_OFF_CHAIN_METADATA_LENGTH) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Max metadata length exceeded',
-      data: {
-        maxLength: MAX_OFF_CHAIN_METADATA_LENGTH,
-      },
-    });
-  }
-
-  return context.createType(
-    'PolymeshPrimitivesSettlementReceiptMetadata',
-    padString(metadata, MAX_OFF_CHAIN_METADATA_LENGTH)
-  );
-}
-
-/**
- * @hidden
- */
-export function receiptDetailsToMeshReceiptDetails(
-  receiptDetails: OffChainAffirmationReceipt[],
-  instructionId: BigNumber,
-  context: Context
-): Vec<PolymeshPrimitivesSettlementReceiptDetails> {
-  const rawInstructionId = bigNumberToU64(instructionId, context);
-  const rawReceiptDetails = receiptDetails.map(({ legId, uid, signer, signature, metadata }) => {
-    const { address: signerAddress } = asAccount(signer, context);
-
-    return context.createType('PolymeshPrimitivesSettlementReceiptDetails', {
-      uid: bigNumberToU64(uid, context),
-      instructionId: rawInstructionId,
-      legId: bigNumberToU64(legId, context),
-      signer: stringToAccountId(signerAddress, context),
-      signature: signatureToMeshRuntimeMultiSignature(signature.type, signature.value, context),
-      metadata: optionize(offChainMetadataToMeshReceiptMetadata)(metadata, context),
-    });
-  });
-
-  return context.createType('Vec<PolymeshPrimitivesSettlementReceiptDetails>', rawReceiptDetails);
-}
-
-/**
- * @hidden
- */
-export function secondaryAccountWithAuthToSecondaryKeyWithAuth(
-  accounts: AccountWithSignature[],
-  context: Context
-): Vec<PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth> {
-  const keyWithAuths = accounts.map(({ secondaryAccount, authSignature }) => {
-    const { account, permissions } = secondaryAccount;
-    return {
-      secondaryKey: secondaryAccountToMeshSecondaryKey(
-        {
-          account: asAccount(account, context),
-          permissions: permissionsLikeToPermissions(permissions, context),
-        },
-        context
-      ),
-      authSignature: stringToH512(authSignature, context),
-    };
-  });
-
-  return context.createType(
-    'Vec<PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth>',
-    keyWithAuths
-  );
-}
-
-/**
- * @hidden
- */
-export function childKeysWithAuthToCreateChildIdentitiesWithAuth(
-  childKeyAuths: ChildKeyWithAuth[],
-  context: Context
-): Vec<PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth> {
-  const keyWithAuths = childKeyAuths.map(({ key, authSignature }) => ({
-    key: stringToAccountId(asAccount(key, context).address, context),
-    authSignature: stringToH512(authSignature, context),
-  }));
-
-  return context.createType(
-    'Vec<PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth>',
-    keyWithAuths
-  );
 }

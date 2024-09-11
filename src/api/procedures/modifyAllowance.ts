@@ -95,19 +95,19 @@ export async function prepareModifyAllowance(
  *
  * To modify the allowance for a Subsidy, the caller must be the subsidizer
  */
-export async function getAuthorization(
+export function getAuthorization(
   this: Procedure<ModifyAllowanceParams, void>,
   args: ModifyAllowanceParams
-): Promise<ProcedureAuthorization> {
+): ProcedureAuthorization {
   const { context } = this;
   const {
     subsidy: { subsidizer },
     operation,
   } = args;
 
-  const actingAccount = await context.getActingAccount();
+  const currentAccount = context.getSigningAccount();
 
-  const hasRoles = subsidizer.isEqual(actingAccount);
+  const hasRoles = subsidizer.isEqual(currentAccount);
 
   const transactionMap = {
     [AllowanceOperation.Increase]: TxTags.relayer.IncreasePolyxLimit,

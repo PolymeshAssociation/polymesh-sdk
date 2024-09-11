@@ -77,25 +77,25 @@ export async function prepareStorage(
 ): Promise<Storage> {
   const { context } = this;
 
-  const actingAccount = await context.getActingAccount();
+  const signingAccount = context.getSigningAccount();
 
   const getAuthRequest = async (
     auth: BigNumber | AuthorizationRequest
   ): Promise<AuthorizationRequest> => {
     if (auth && auth instanceof BigNumber) {
-      return actingAccount.authorizations.getOne({ id: auth });
+      return signingAccount.authorizations.getOne({ id: auth });
     }
     return auth;
   };
 
   const ownerAuthRequest = await getAuthRequest(ownerAuth);
 
-  let calledByTarget = actingAccount.isEqual(ownerAuthRequest.target);
+  let calledByTarget = signingAccount.isEqual(ownerAuthRequest.target);
 
   let cddAuthRequest;
   if (cddAuth) {
     cddAuthRequest = await getAuthRequest(cddAuth);
-    calledByTarget = calledByTarget && actingAccount.isEqual(cddAuthRequest.target);
+    calledByTarget = calledByTarget && signingAccount.isEqual(cddAuthRequest.target);
   }
 
   return {

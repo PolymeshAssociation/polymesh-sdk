@@ -21,7 +21,7 @@ import {
   PolymeshError,
   Procedure,
 } from '~/internal';
-import { latestSqVersionQuery } from '~/middleware/queries/common';
+import { latestSqVersionQuery } from '~/middleware/queries';
 import { Claim as MiddlewareClaim } from '~/middleware/types';
 import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -61,14 +61,12 @@ import {
   MINIMUM_SQ_VERSION,
   PRIVATE_SUPPORTED_NODE_SEMVER,
   PRIVATE_SUPPORTED_SPEC_SEMVER,
-  SETTLEMENTS_V2_SQ_VERSION,
   STATE_RUNTIME_VERSION_CALL,
   SUPPORTED_NODE_SEMVER,
   SUPPORTED_SPEC_SEMVER,
   SYSTEM_VERSION_RPC_CALL,
 } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
-import * as utilsInternalModule from '~/utils/internal';
 
 import { SUPPORTED_NODE_VERSION_RANGE, SUPPORTED_SPEC_VERSION_RANGE } from '../constants';
 import {
@@ -79,6 +77,7 @@ import {
   asNftId,
   assertAddressValid,
   assertExpectedChainVersion,
+  assertExpectedSqVersion,
   assertIdentityExists,
   assertIsInteger,
   assertIsPositive,
@@ -96,7 +95,6 @@ import {
   extractProtocol,
   filterEventRecords,
   getApiAtBlock,
-  getAssetIdForMiddleware,
   getCheckpointValue,
   getDid,
   getExemptedIds,
@@ -119,7 +117,6 @@ import {
   serialize,
   sliceBatchReceipt,
   unserialize,
-  warnUnexpectedSqVersion,
 } from '../internal';
 
 jest.mock(
@@ -1154,7 +1151,7 @@ describe('getExemptedIds', () => {
   });
 });
 
-describe('warnUnexpectedSqVersion', () => {
+describe('assertExpectedSqVersion', () => {
   let warnSpy: jest.SpyInstance;
   let context: MockContext;
 
@@ -1186,14 +1183,14 @@ describe('warnUnexpectedSqVersion', () => {
         ],
       },
     });
-    const promise = warnUnexpectedSqVersion(dsMockUtils.getContextInstance());
+    const promise = assertExpectedSqVersion(dsMockUtils.getContextInstance());
 
     await expect(promise).resolves.not.toThrow();
 
     expect(warnSpy).not.toHaveBeenCalled();
   });
 
-  it('should log a warning for incompatible SubQuery version', async () => {
+  it('should log a warning for incompatible Subquery version', async () => {
     dsMockUtils.createApolloQueryMock(latestSqVersionQuery(), {
       subqueryVersions: {
         nodes: [
@@ -1203,11 +1200,11 @@ describe('warnUnexpectedSqVersion', () => {
         ],
       },
     });
-    await warnUnexpectedSqVersion(context);
+    await assertExpectedSqVersion(context);
 
     expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(warnSpy).toHaveBeenCalledWith(
-      `This version of the SDK supports Polymesh SubQuery version ${MINIMUM_SQ_VERSION} or higher. Please upgrade the MiddlewareV2`
+      `This version of the SDK supports Polymesh Subquery version ${MINIMUM_SQ_VERSION} or higher. Please upgrade the MiddlewareV2`
     );
 
     warnSpy.mockReset();
@@ -1217,7 +1214,7 @@ describe('warnUnexpectedSqVersion', () => {
         nodes: [],
       },
     });
-    await warnUnexpectedSqVersion(context);
+    await assertExpectedSqVersion(context);
 
     expect(warnSpy).toHaveBeenCalledTimes(1);
   });
@@ -2691,78 +2688,5 @@ describe('extractProtocol', () => {
     const result = extractProtocol('someString');
 
     expect(result).toBeUndefined();
-  });
-});
-
-describe('getAssetIdForMiddleware', () => {
-  let context: Context;
-  let latestSqVersionQueryMock: jest.Mock;
-
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-    entityMockUtils.initMocks();
-    context = dsMockUtils.getContextInstance();
-    latestSqVersionQueryMock = dsMockUtils.createApolloQueryMock(latestSqVersionQuery(), {
-      subqueryVersions: {
-        nodes: [
-          {
-            version: '15.0.0',
-          },
-        ],
-      },
-    });
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-    entityMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should return asset ID compatible with middleware', async () => {
-    const baseAsset = entityMockUtils.getBaseAssetInstance({ ticker: 'SOME_TICKER' });
-    const result = await getAssetIdForMiddleware(baseAsset, context);
-
-    expect(result).toEqual('SOME_TICKER');
-  });
-
-  it('should return asset ID for legacy ticker compatible with middleware', async () => {
-    latestSqVersionQueryMock.mockResolvedValue({
-      data: {
-        subqueryVersions: {
-          nodes: [
-            {
-              version: SETTLEMENTS_V2_SQ_VERSION,
-            },
-          ],
-        },
-      },
-    });
-    const ticker = 'SOME_TICKER';
-    const mockTicker = dsMockUtils.createMockTicker(ticker);
-    mockTicker.toHex = jest.fn();
-    mockTicker.toHex.mockReturnValue('0x1111');
-
-    jest.spyOn(utilsConversionModule, 'stringToTicker').mockReturnValue(mockTicker);
-
-    const result = await getAssetIdForMiddleware('SOME_TICKER', context);
-
-    expect(result).toEqual('0xc5ad37bd0d02c8ce39a7b943f45f0ebc');
-  });
-});
-
-describe('getAssetIdFromMiddleware', () => {
-  it('should return asset ID from middleware', async () => {
-    const assetId = '0x1234';
-    const ticker = 'SOME_TICKER';
-    const result = utilsInternalModule.getAssetIdFromMiddleware({
-      id: assetId,
-      ticker,
-    });
-
-    expect(result).toEqual(ticker);
   });
 });

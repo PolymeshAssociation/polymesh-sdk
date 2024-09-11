@@ -16,10 +16,10 @@ export async function prepareLeaveIdentity(
     context,
   } = this;
 
-  const actingAccount = await context.getActingAccount();
-  const actingIdentity = await actingAccount.getIdentity();
+  const signingAccount = context.getSigningAccount();
+  const signingIdentity = await signingAccount.getIdentity();
 
-  if (!actingIdentity) {
+  if (!signingIdentity) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'There is no Identity associated to the signing Account',
@@ -27,13 +27,13 @@ export async function prepareLeaveIdentity(
   }
   const [accountPermission] = await getSecondaryAccountPermissions(
     {
-      accounts: [actingAccount],
-      identity: actingIdentity,
+      accounts: [signingAccount],
+      identity: signingIdentity,
     },
     context
   );
 
-  const isSecondaryAccount = accountPermission && actingAccount.isEqual(accountPermission.account);
+  const isSecondaryAccount = accountPermission && signingAccount.isEqual(accountPermission.account);
   if (!isSecondaryAccount) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,

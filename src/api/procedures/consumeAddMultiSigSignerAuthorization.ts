@@ -44,7 +44,7 @@ export async function prepareConsumeAddMultiSigSignerAuthorization(
   const rawAuthId = bigNumberToU64(authId, context);
 
   if (!accept) {
-    const { address } = await context.getActingAccount();
+    const { address } = context.getSigningAccount();
 
     const paidByThirdParty = address === signerToString(target);
     const addTransactionArgs: { paidForBy?: Identity } = {};
@@ -87,14 +87,14 @@ export async function getAuthorization(
 
   let hasRoles;
 
-  const actingAccount = await context.getActingAccount();
-  const identity = await actingAccount.getIdentity();
+  const signingAccount = context.getSigningAccount();
+  const identity = await signingAccount.getIdentity();
 
   let calledByTarget: boolean;
 
   let permissions;
   if (target instanceof Account) {
-    calledByTarget = target.isEqual(actingAccount);
+    calledByTarget = target.isEqual(signingAccount);
     hasRoles = calledByTarget;
     // An account accepting multisig cannot be part of an Identity, so we cannot check for permissions
   } else {

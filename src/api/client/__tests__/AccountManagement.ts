@@ -5,7 +5,7 @@ import { AccountManagement } from '~/api/client/AccountManagement';
 import { Account, MultiSig, PolymeshTransaction, Subsidy } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
-import { AccountBalance, Identity, PermissionType, SubCallback } from '~/types';
+import { AccountBalance, PermissionType, SubCallback } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -206,8 +206,8 @@ describe('AccountManagement class', () => {
 
     it('should return an Account object with the passed address', async () => {
       const params = { address: 'testAddress' };
-      dsMockUtils.createQueryMock('multiSig', 'multiSigToIdentity', {
-        returnValue: dsMockUtils.createMockIdentityId(),
+      dsMockUtils.createQueryMock('multiSig', 'multiSigSigners', {
+        returnValue: [],
       });
 
       const result = await accountManagement.getAccount(params);
@@ -218,8 +218,8 @@ describe('AccountManagement class', () => {
 
     it('should return a MultiSig instance if the address is for a MultiSig', async () => {
       const params = { address: 'testAddress' };
-      dsMockUtils.createQueryMock('multiSig', 'multiSigToIdentity', {
-        returnValue: dsMockUtils.createMockIdentityId('someDid'),
+      dsMockUtils.createQueryMock('multiSig', 'multiSigSigners', {
+        entries: [[['someSignerAddress'], 'someSignerAddress']],
       });
 
       const result = await accountManagement.getAccount(params);
@@ -394,68 +394,6 @@ describe('AccountManagement class', () => {
       const tx = await accountManagement.acceptPrimaryKey(args);
 
       expect(tx).toBe(expectedTransaction);
-    });
-  });
-
-  describe('method: addSecondaryAccounts', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Identity>;
-
-      const args = {
-        accounts: [
-          {
-            secondaryAccount: {
-              account: entityMockUtils.getAccountInstance({
-                address: 'secondaryAccount',
-                getIdentity: null,
-              }),
-              permissions: {
-                assets: null,
-                portfolios: null,
-                transactions: null,
-                transactionGroups: [],
-              },
-            },
-            authSignature: '0xSignature',
-          },
-        ],
-        expiresAt: new Date('2050/01/01'),
-      };
-
-      when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args, transformer: undefined }, context, {})
-        .mockResolvedValue(expectedTransaction);
-
-      const tx = await accountManagement.addSecondaryAccounts(args);
-
-      expect(tx).toBe(expectedTransaction);
-    });
-  });
-
-  describe('generateOffChainAuthSignature', () => {
-    it('should generate off chain authorization signature for a specific signer targeting an Identity', async () => {
-      const args = {
-        signer: entityMockUtils.getAccountInstance({ address: 'signer' }),
-        target: entityMockUtils.getIdentityInstance({ did: 'someTargetDid' }),
-        expiry: new Date('2050/01/01'),
-      };
-
-      const rawTargetId = dsMockUtils.createMockIdentityId(args.target.did);
-      rawTargetId.toHex = jest.fn();
-      rawTargetId.toHex.mockReturnValue('0x1000000'.padEnd(66, '0'));
-
-      const rawNonce = dsMockUtils.createMockU64(new BigNumber(0));
-      const rawMoment = dsMockUtils.createMockMoment(new BigNumber(args.expiry.getTime()));
-
-      jest.spyOn(utilsConversionModule, 'stringToIdentityId').mockReturnValue(rawTargetId);
-
-      jest.spyOn(utilsConversionModule, 'bigNumberToU64').mockReturnValue(rawNonce);
-
-      jest.spyOn(utilsConversionModule, 'dateToMoment').mockReturnValue(rawMoment);
-
-      const result = await accountManagement.generateOffChainAuthSignature(args);
-
-      expect(result).toEqual('0xsignature');
     });
   });
 });

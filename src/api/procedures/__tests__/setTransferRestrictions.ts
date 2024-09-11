@@ -6,7 +6,6 @@ import {
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesTicker,
-  PolymeshPrimitivesTransferComplianceAssetTransferCompliance,
   PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
@@ -21,14 +20,13 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/setTransferRestrictions';
-import { Context, PolymeshError, Procedure, setTransferRestrictions } from '~/internal';
+import { Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
   ClaimCountRestrictionValue,
   ClaimPercentageRestrictionValue,
   ClaimType,
-  CountryCode,
   ErrorCode,
   Identity,
   StatType,
@@ -38,7 +36,6 @@ import {
 } from '~/types';
 import { PolymeshTx, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
-import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Asset/Fungible',
@@ -79,6 +76,7 @@ describe('setTransferRestrictions procedure', () => {
       Context
     ]
   >;
+  let statSpy: jest.SpyInstance;
   let ticker: string;
   let count: BigNumber;
   let percentage: BigNumber;
@@ -96,14 +94,17 @@ describe('setTransferRestrictions procedure', () => {
   let rawClaimCountRestriction: PolymeshPrimitivesTransferComplianceTransferCondition;
   let rawClaimPercentageRestriction: PolymeshPrimitivesTransferComplianceTransferCondition;
   let rawExemptedDid: PolymeshPrimitivesIdentityId;
+  let rawStatType: PolymeshPrimitivesStatisticsStatType;
+  let rawStatTypeBtree: BTreeSet<PolymeshPrimitivesStatisticsStatType>;
   let mockNeededStat: PolymeshPrimitivesStatisticsStatType;
+  let rawStatStatTypeEqMock: jest.Mock;
   let args: SetTransferRestrictionsParams;
   let rawCountRestrictionBtreeSet: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   let rawPercentageRestrictionBtreeSet: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   let rawClaimCountRestrictionBtreeSet: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   let rawClaimPercentageRestrictionBtreeSet: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
-  let booleanToBoolSpy: jest.SpyInstance<bool, [boolean, Context]>;
   let identityIdToStringSpy: jest.SpyInstance<string, [PolymeshPrimitivesIdentityId]>;
+  let booleanToBoolSpy: jest.SpyInstance<bool, [boolean, Context]>;
 
   const min = new BigNumber(10);
   const max = new BigNumber(20);
@@ -134,11 +135,13 @@ describe('setTransferRestrictions procedure', () => {
       utilsConversionModule,
       'transferRestrictionTypeToStatOpType'
     );
+    statSpy = jest.spyOn(utilsConversionModule, 'statTypeToStatOpType');
     complianceConditionsToBtreeSetSpy = jest.spyOn(
       utilsConversionModule,
       'complianceConditionsToBtreeSet'
     );
     statisticsOpTypeToStatTypeSpy = jest.spyOn(utilsConversionModule, 'statisticsOpTypeToStatType');
+    identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
     booleanToBoolSpy = jest.spyOn(utilsConversionModule, 'booleanToBool');
     ticker = 'TICKER';
     count = new BigNumber(10);
@@ -171,7 +174,6 @@ describe('setTransferRestrictions procedure', () => {
       type: TransferRestrictionType.ClaimPercentage,
       value: claimPercentageRestrictionValue,
     };
-    identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
   });
 
   let setAssetTransferComplianceTransaction: PolymeshTx<
@@ -206,13 +208,9 @@ describe('setTransferRestrictions procedure', () => {
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawCount = dsMockUtils.createMockU64(count);
     rawPercentage = dsMockUtils.createMockPermill(percentage.multipliedBy(10000));
-    rawCountRestriction = dsMockUtils.createMockTransferCondition({
-      MaxInvestorCount: rawCount,
-      isMaxInvestorCount: true,
-    });
+    rawCountRestriction = dsMockUtils.createMockTransferCondition({ MaxInvestorCount: rawCount });
     rawPercentageRestriction = dsMockUtils.createMockTransferCondition({
       MaxInvestorOwnership: rawPercentage,
-      isMaxInvestorOwnership: true,
     });
     rawClaimCountRestriction = dsMockUtils.createMockTransferCondition({
       ClaimCount: [
@@ -221,7 +219,6 @@ describe('setTransferRestrictions procedure', () => {
         rawCount,
         dsMockUtils.createMockOption(),
       ],
-      isClaimCount: true,
     });
     rawClaimPercentageRestriction = dsMockUtils.createMockTransferCondition({
       ClaimOwnership: [
@@ -230,7 +227,6 @@ describe('setTransferRestrictions procedure', () => {
         rawPercentage,
         rawPercentage,
       ],
-      isClaimOwnership: true,
     });
     rawCountRestrictionBtreeSet = dsMockUtils.createMockBTreeSet([rawCountRestriction]);
     rawPercentageRestrictionBtreeSet = dsMockUtils.createMockBTreeSet([rawPercentageRestriction]);
@@ -238,9 +234,11 @@ describe('setTransferRestrictions procedure', () => {
     rawClaimPercentageRestrictionBtreeSet = dsMockUtils.createMockBTreeSet([
       rawClaimPercentageRestriction,
     ]);
-
     rawExemptedDid = dsMockUtils.createMockIdentityId(exemptedDid);
+    rawStatType = dsMockUtils.createMockStatisticsStatType();
     mockNeededStat = dsMockUtils.createMockStatisticsStatType();
+    rawStatStatTypeEqMock = rawStatType.eq as jest.Mock;
+    rawStatTypeBtree = dsMockUtils.createMockBTreeSet([rawStatType]);
 
     when(transferRestrictionToPolymeshTransferConditionSpy)
       .calledWith(maxInvestorRestriction, mockContext)
@@ -290,8 +288,7 @@ describe('setTransferRestrictions procedure', () => {
     let proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
-        currentTypeRestrictions: [rawPercentageRestriction],
-        filteredRestrictions: [],
+        currentRestrictions: [rawPercentageRestriction],
         currentExemptions: emptyExemptions,
         occupiedSlots: new BigNumber(0),
       }
@@ -312,8 +309,7 @@ describe('setTransferRestrictions procedure', () => {
     proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
-        currentTypeRestrictions: [rawCountRestriction],
-        filteredRestrictions: [],
+        currentRestrictions: [rawCountRestriction],
         currentExemptions: emptyExemptions,
         occupiedSlots: new BigNumber(0),
       }
@@ -340,8 +336,7 @@ describe('setTransferRestrictions procedure', () => {
     proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
-        currentTypeRestrictions: [],
-        filteredRestrictions: [],
+        currentRestrictions: [],
         currentExemptions: emptyExemptions,
         occupiedSlots: new BigNumber(0),
       }
@@ -389,8 +384,7 @@ describe('setTransferRestrictions procedure', () => {
     const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
-        currentTypeRestrictions: [],
-        filteredRestrictions: [],
+        currentRestrictions: [],
         currentExemptions: emptyExemptions,
         occupiedSlots: new BigNumber(0),
       }
@@ -480,8 +474,7 @@ describe('setTransferRestrictions procedure', () => {
     let proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
-        filteredRestrictions: [],
-        currentTypeRestrictions: [],
+        currentRestrictions: [],
         currentExemptions: {
           ...emptyExemptions,
           None: [
@@ -533,8 +526,7 @@ describe('setTransferRestrictions procedure', () => {
     proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
-        currentTypeRestrictions: [],
-        filteredRestrictions: [],
+        currentRestrictions: [],
         currentExemptions: {
           ...emptyExemptions,
           Accredited: [
@@ -588,8 +580,7 @@ describe('setTransferRestrictions procedure', () => {
     const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
-        currentTypeRestrictions: [rawCountRestriction],
-        filteredRestrictions: [],
+        currentRestrictions: [rawCountRestriction],
         currentExemptions: emptyExemptions,
         occupiedSlots: new BigNumber(0),
       }
@@ -617,8 +608,7 @@ describe('setTransferRestrictions procedure', () => {
     let proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
-        currentTypeRestrictions: [rawCountRestriction],
-        filteredRestrictions: [],
+        currentRestrictions: [rawCountRestriction],
         currentExemptions: emptyExemptions,
         occupiedSlots: new BigNumber(0),
       }
@@ -640,8 +630,7 @@ describe('setTransferRestrictions procedure', () => {
     proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
-        currentTypeRestrictions: [rawPercentageRestriction],
-        filteredRestrictions: [],
+        currentRestrictions: [rawPercentageRestriction],
         currentExemptions: emptyExemptions,
         occupiedSlots: new BigNumber(0),
       }
@@ -665,8 +654,7 @@ describe('setTransferRestrictions procedure', () => {
     const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
-        currentTypeRestrictions: [],
-        filteredRestrictions: [],
+        currentRestrictions: [],
         currentExemptions: emptyExemptions,
         occupiedSlots: new BigNumber(0),
       }
@@ -677,21 +665,20 @@ describe('setTransferRestrictions procedure', () => {
     } catch (error) {
       err = error;
     }
-    expect(err.message).toBe('No restrictions to remove');
+    expect(err.message).toBe('The restrictions and exemptions are already in place');
   });
 
   it('should throw an eStatTypeng to add more restrictions than there are slots available', async () => {
     args = {
       ticker,
-      restrictions: [{ count }],
+      restrictions: [{ count }, { count: new BigNumber(2) }],
       type: TransferRestrictionType.Count,
     };
 
     const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
-        currentTypeRestrictions: [rawClaimCountRestriction],
-        filteredRestrictions: [],
+        currentRestrictions: [rawCountRestriction],
         currentExemptions: emptyExemptions,
         occupiedSlots: new BigNumber(3),
       }
@@ -711,151 +698,12 @@ describe('setTransferRestrictions procedure', () => {
     expect(err.data).toEqual({ availableSlots: new BigNumber(0) });
   });
 
-  it('should throw an error if more than one set of Percentage/Count restrictions are provided', async () => {
-    args = {
-      ticker,
-      restrictions: [{ count }, { count: new BigNumber(1) }],
-      type: TransferRestrictionType.Count,
-    };
-
-    const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
-      mockContext,
-      {
-        currentTypeRestrictions: [rawClaimCountRestriction],
-        filteredRestrictions: [],
-        currentExemptions: emptyExemptions,
-        occupiedSlots: new BigNumber(3),
-      }
-    );
-
-    let err;
-
-    try {
-      await prepareSetTransferRestrictions.call(proc, args);
-    } catch (error) {
-      err = error;
-    }
-
-    expect(err.message).toBe('Only one of provided Transfer Type Restriction can be set at a time');
-    expect(err.data).toEqual({ type: TransferRestrictionType.Count });
-  });
-
-  it('should throw an error if multiple instances of same Claim are included', async () => {
-    args = {
-      ticker,
-      restrictions: [claimCountRestrictionValue, claimCountRestrictionValue],
-      type: TransferRestrictionType.ClaimCount,
-    };
-
-    const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
-      mockContext,
-      {
-        currentTypeRestrictions: [rawClaimCountRestriction],
-        filteredRestrictions: [],
-        currentExemptions: emptyExemptions,
-        occupiedSlots: new BigNumber(1),
-      }
-    );
-
-    let err;
-
-    try {
-      await prepareSetTransferRestrictions.call(proc, args);
-    } catch (error) {
-      err = error;
-    }
-
-    expect(err.message).toBe('Duplicate ClaimType found in input');
-    expect(err.data).toEqual({ claimType: claimCountRestrictionValue.claim.type });
-  });
-
-  it('should throw an error if multiple instances of same Jurisdiction are included', async () => {
-    args = {
-      ticker,
-      restrictions: [
-        {
-          min,
-          max,
-          issuer,
-          claim: {
-            type: ClaimType.Jurisdiction,
-            countryCode: CountryCode.Us,
-          },
-        },
-        {
-          min,
-          max,
-          issuer,
-          claim: {
-            type: ClaimType.Jurisdiction,
-            countryCode: CountryCode.Us,
-          },
-        },
-      ],
-      type: TransferRestrictionType.ClaimCount,
-    };
-
-    const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
-      mockContext,
-      {
-        currentTypeRestrictions: [rawClaimCountRestriction],
-        filteredRestrictions: [],
-        currentExemptions: emptyExemptions,
-        occupiedSlots: new BigNumber(1),
-      }
-    );
-
-    let err;
-
-    try {
-      await prepareSetTransferRestrictions.call(proc, args);
-    } catch (error) {
-      err = error;
-    }
-
-    expect(err.message).toBe('Duplicate Jurisdiction CountryCode found in input');
-    expect(err.data).toEqual({ countryCode: CountryCode.Us });
-
-    args = {
-      ticker,
-      restrictions: [
-        {
-          min,
-          max,
-          issuer,
-          claim: {
-            type: ClaimType.Jurisdiction,
-          },
-        },
-        {
-          min,
-          max,
-          issuer,
-          claim: {
-            type: ClaimType.Jurisdiction,
-          },
-        },
-      ],
-      type: TransferRestrictionType.ClaimCount,
-    };
-
-    try {
-      await prepareSetTransferRestrictions.call(proc, args);
-    } catch (error) {
-      err = error;
-    }
-
-    expect(err.message).toBe('Duplicate Jurisdiction CountryCode found in input');
-    expect(err.data).toEqual({ countryCode: undefined });
-  });
-
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
       let proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
         mockContext,
         {
-          currentTypeRestrictions: [],
-          filteredRestrictions: [],
+          currentRestrictions: [],
           currentExemptions: emptyExemptions,
           occupiedSlots: new BigNumber(0),
         }
@@ -876,8 +724,7 @@ describe('setTransferRestrictions procedure', () => {
       proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
         mockContext,
         {
-          currentTypeRestrictions: [],
-          filteredRestrictions: [],
+          currentRestrictions: [],
           currentExemptions: emptyExemptions,
           occupiedSlots: new BigNumber(0),
         }
@@ -900,71 +747,59 @@ describe('setTransferRestrictions procedure', () => {
 
   describe('prepareStorage', () => {
     let identityScopeId: string;
-    let rawCountStatType: PolymeshPrimitivesStatisticsStatType;
-    let rawBalanceStatType: PolymeshPrimitivesStatisticsStatType;
-    let rawClaimCountStatType: PolymeshPrimitivesStatisticsStatType;
+
     let rawIdentityScopeId: PolymeshPrimitivesIdentityId;
-    let queryMultiMock: jest.Mock;
-    let queryMultiResult: [
-      BTreeSet<PolymeshPrimitivesStatisticsStatType>,
-      PolymeshPrimitivesTransferComplianceAssetTransferCompliance
-    ];
-    let statBtreeSet: BTreeSet<PolymeshPrimitivesStatisticsStatType>;
-    let assertStatIsSetSpy: jest.SpyInstance;
+
+    const getCountMock = jest.fn();
+    const getPercentageMock = jest.fn();
+    const getClaimCountMock = jest.fn();
+    const getClaimPercentageMock = jest.fn();
 
     beforeAll(() => {
       identityScopeId = 'someScopeId';
 
       rawIdentityScopeId = dsMockUtils.createMockIdentityId(identityScopeId);
-
-      rawCountStatType = dsMockUtils.createMockStatisticsStatType();
-      rawBalanceStatType = dsMockUtils.createMockStatisticsStatType({
-        op: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
-        claimIssuer: dsMockUtils.createMockOption(),
-      });
-      rawClaimCountStatType = dsMockUtils.createMockStatisticsStatType({
-        op: dsMockUtils.createMockStatisticsOpType(StatType.ScopedCount),
-        claimIssuer: dsMockUtils.createMockOption([
-          dsMockUtils.createMockClaimType(),
-          dsMockUtils.createMockIdentityId(),
-        ]),
-      });
-      statBtreeSet = dsMockUtils.createMockBTreeSet([
-        rawCountStatType,
-        rawBalanceStatType,
-        rawClaimCountStatType,
-      ]);
-      assertStatIsSetSpy = jest.spyOn(utilsInternalModule, 'assertStatIsSet');
     });
 
     beforeEach(() => {
-      queryMultiMock = dsMockUtils.getQueryMultiMock();
-
+      dsMockUtils.createQueryMock('statistics', 'transferConditionExemptEntities', {
+        entries: [],
+      });
       when(stringToIdentityIdSpy)
         .calledWith(identityScopeId, mockContext)
         .mockReturnValue(rawIdentityScopeId);
 
-      assertStatIsSetSpy.mockReturnValue(true);
-
+      getCountMock.mockResolvedValue({
+        restrictions: [{ count }],
+        availableSlots: new BigNumber(1),
+      });
+      getPercentageMock.mockResolvedValue({
+        restrictions: [{ percentage }],
+        availableSlots: new BigNumber(1),
+      });
+      getClaimCountMock.mockResolvedValue({
+        restrictions: [claimCountRestrictionValue],
+        availableSlots: new BigNumber(1),
+      });
+      getClaimPercentageMock.mockResolvedValue({
+        restrictions: [claimPercentageRestrictionValue],
+        availableSlots: new BigNumber(1),
+      });
       entityMockUtils.configureMocks({
         identityOptions: {
           getScopeId: identityScopeId,
         },
+        fungibleAssetOptions: {
+          transferRestrictionsCountGet: getCountMock,
+          transferRestrictionsPercentageGet: getPercentageMock,
+          transferRestrictionsClaimCountGet: getClaimCountMock,
+          transferRestrictionsClaimPercentageGet: getClaimPercentageMock,
+        },
       });
-      rawCountStatType = dsMockUtils.createMockStatisticsStatType();
-      rawBalanceStatType = dsMockUtils.createMockStatisticsStatType({
-        op: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
-        claimIssuer: dsMockUtils.createMockOption(),
+
+      dsMockUtils.createQueryMock('statistics', 'activeAssetStats', {
+        returnValue: rawStatTypeBtree,
       });
-      rawClaimCountStatType = dsMockUtils.createMockStatisticsStatType({
-        op: dsMockUtils.createMockStatisticsOpType(StatType.ScopedCount),
-        claimIssuer: dsMockUtils.createMockOption([
-          dsMockUtils.createMockClaimType(),
-          dsMockUtils.createMockIdentityId(),
-        ]),
-      });
-      dsMockUtils.createQueryMock('statistics', 'activeAssetStats');
-      dsMockUtils.createQueryMock('statistics', 'assetTransferCompliances');
     });
 
     afterAll(() => {
@@ -972,24 +807,8 @@ describe('setTransferRestrictions procedure', () => {
     });
 
     it('should fetch, process and return shared data', async () => {
-      queryMultiResult = [
-        statBtreeSet,
-        {
-          paused: dsMockUtils.createMockBool(false),
-          requirements: [
-            rawClaimCountRestriction,
-            rawClaimPercentageRestriction,
-            rawCountRestriction,
-            rawPercentageRestriction,
-          ],
-        } as unknown as PolymeshPrimitivesTransferComplianceAssetTransferCompliance,
-      ];
-
-      queryMultiMock.mockReturnValue(queryMultiResult);
-      dsMockUtils.createQueryMock('statistics', 'transferConditionExemptEntities', {
-        entries: [],
-      });
-
+      rawStatStatTypeEqMock.mockReturnValue(true);
+      identityIdToStringSpy.mockReturnValue('someDid');
       const proc = procedureMockUtils.getInstance<
         SetTransferRestrictionsParams,
         BigNumber,
@@ -1010,12 +829,7 @@ describe('setTransferRestrictions procedure', () => {
       let result = await boundFunc(args);
       expect(result).toEqual({
         occupiedSlots: new BigNumber(3),
-        filteredRestrictions: [
-          rawClaimCountRestriction,
-          rawClaimPercentageRestriction,
-          rawPercentageRestriction,
-        ],
-        currentTypeRestrictions: [rawCountRestriction],
+        currentRestrictions: [rawCountRestriction],
         currentExemptions: emptyExemptions,
       });
 
@@ -1029,88 +843,74 @@ describe('setTransferRestrictions procedure', () => {
         ],
       };
 
+      statSpy.mockReturnValue(StatType.Balance);
+
       result = await boundFunc(args);
 
       expect(result).toEqual({
+        currentRestrictions: [rawPercentageRestriction],
         occupiedSlots: new BigNumber(3),
-        filteredRestrictions: [
-          rawClaimCountRestriction,
-          rawClaimPercentageRestriction,
-          rawCountRestriction,
-        ],
-        currentTypeRestrictions: [rawPercentageRestriction],
+        currentExemptions: emptyExemptions,
+      });
+
+      args.restrictions = [];
+
+      getCountMock.mockResolvedValue({ restrictions: [{ count }], availableSlots: 1 });
+
+      result = await boundFunc(args);
+      expect(result).toEqual({
+        currentRestrictions: [rawPercentageRestriction],
+        occupiedSlots: new BigNumber(3),
+        currentExemptions: emptyExemptions,
+      });
+
+      getCountMock.mockResolvedValue({
+        restrictions: [{ count, exemptedIds: [exemptedDid] }],
+        availableSlots: 1,
+      });
+
+      result = await boundFunc(args);
+
+      expect(result).toEqual({
+        currentRestrictions: [rawPercentageRestriction],
+        occupiedSlots: new BigNumber(3),
         currentExemptions: emptyExemptions,
       });
 
       args = {
         ticker,
         type: TransferRestrictionType.ClaimCount,
-        restrictions: [
-          {
-            claim: { type: ClaimType.Accredited, accredited: true },
-            min: new BigNumber(10),
-            max: new BigNumber(20),
-            issuer,
-          },
-        ],
+        restrictions: [claimCountRestrictionValue],
       };
-
       result = await boundFunc(args);
-
       expect(result).toEqual({
+        currentRestrictions: [rawClaimCountRestriction],
         occupiedSlots: new BigNumber(3),
-        filteredRestrictions: [
-          rawClaimPercentageRestriction,
-          rawCountRestriction,
-          rawPercentageRestriction,
-        ],
-        currentTypeRestrictions: [rawClaimCountRestriction],
         currentExemptions: emptyExemptions,
       });
 
       args = {
         ticker,
         type: TransferRestrictionType.ClaimPercentage,
-        restrictions: [
-          {
-            claim: { type: ClaimType.Accredited, accredited: true },
-            min: new BigNumber(10),
-            max: new BigNumber(20),
-            issuer,
-          },
-        ],
+        restrictions: [claimPercentageRestrictionValue],
       };
-
       result = await boundFunc(args);
-
       expect(result).toEqual({
+        currentRestrictions: [rawClaimPercentageRestriction],
         occupiedSlots: new BigNumber(3),
-        filteredRestrictions: [
-          rawClaimCountRestriction,
-          rawCountRestriction,
-          rawPercentageRestriction,
-        ],
-        currentTypeRestrictions: [rawClaimPercentageRestriction],
         currentExemptions: emptyExemptions,
       });
     });
 
     it('should return current exemptions for the restriction', async () => {
+      rawStatStatTypeEqMock.mockReturnValue(true);
+      const proc = procedureMockUtils.getInstance<
+        SetTransferRestrictionsParams,
+        BigNumber,
+        Storage
+      >(mockContext);
+      const boundFunc = prepareStorage.bind(proc);
       identityIdToStringSpy.mockReturnValue('someDid');
-      queryMultiResult = [
-        statBtreeSet,
-        {
-          paused: dsMockUtils.createMockBool(false),
-          requirements: [
-            rawClaimCountRestriction,
-            rawClaimPercentageRestriction,
-            rawCountRestriction,
-            rawPercentageRestriction,
-          ],
-        } as unknown as PolymeshPrimitivesTransferComplianceAssetTransferCompliance,
-      ];
-
-      queryMultiMock.mockReturnValue(queryMultiResult);
       const mock = dsMockUtils.createQueryMock('statistics', 'transferConditionExemptEntities');
       mock.entries.mockResolvedValue([
         [
@@ -1127,6 +927,25 @@ describe('setTransferRestrictions procedure', () => {
           true,
         ],
       ]);
+      const mockIdentity = entityMockUtils.getIdentityInstance({ did: 'someDid' });
+      const result = await boundFunc(args);
+      expect(JSON.stringify(result)).toEqual(
+        JSON.stringify({
+          occupiedSlots: new BigNumber(3),
+          currentRestrictions: [rawCountRestriction],
+          currentExemptions: {
+            ...emptyExemptions,
+            Accredited: [mockIdentity],
+          },
+        })
+      );
+    });
+
+    it('should throw an error if the appropriate stat is not set', async () => {
+      dsMockUtils.createQueryMock('statistics', 'activeAssetStats', {
+        returnValue: rawStatTypeBtree,
+      });
+      rawStatStatTypeEqMock.mockReturnValue(false);
 
       const proc = procedureMockUtils.getInstance<
         SetTransferRestrictionsParams,
@@ -1135,24 +954,13 @@ describe('setTransferRestrictions procedure', () => {
       >(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
-      args = {
-        ticker,
-        type: TransferRestrictionType.Count,
-        restrictions: [
-          {
-            count,
-          },
-        ],
-      };
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message:
+          'The appropriate stat type for this restriction is not set. Try calling enableStat in the namespace first',
+      });
 
-      const mockIdentity = entityMockUtils.getIdentityInstance({ did: 'someDid' });
-      const result = await boundFunc(args);
-      expect(JSON.stringify(result.currentExemptions)).toEqual(
-        JSON.stringify({
-          ...emptyExemptions,
-          Accredited: [mockIdentity],
-        })
-      );
+      return expect(boundFunc(args)).rejects.toThrowError(expectedError);
     });
   });
 
@@ -1177,14 +985,6 @@ describe('setTransferRestrictions procedure', () => {
       addExemptionIfNotPresent(toInsertId, exemptionRecords, claimType, filterSet);
 
       expect(exemptionRecords[claimType]).toEqual([toInsertId]);
-    });
-  });
-
-  describe('setTransferRestrictions', () => {
-    it('should return the result of the prepareSetTransferRestrictions call', async () => {
-      const result = setTransferRestrictions();
-
-      expect(result).toBeInstanceOf(Procedure);
     });
   });
 });

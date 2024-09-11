@@ -8,7 +8,7 @@ import {
   MultiSig,
   PolymeshError,
 } from '~/internal';
-import { multiSigProposalQuery, multiSigProposalVotesQuery } from '~/middleware/queries/multisigs';
+import { multiSigProposalQuery, multiSigProposalVotesQuery } from '~/middleware/queries';
 import { MultiSigProposal as MiddlewareMultiSigProposal, Query } from '~/middleware/types';
 import {
   ErrorCode,

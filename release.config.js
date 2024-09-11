@@ -10,6 +10,10 @@ module.exports = {
       name: 'alpha',
       prerelease: true,
     },
+    {
+      name: 'revert-24-breaking',
+      range: '24.7.x',
+    },
   ],
   /*
    * In this order the **prepare** step of @semantic-release/npm will run first

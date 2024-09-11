@@ -11,20 +11,13 @@ import {
   PolymeshTransaction,
   Venue,
 } from '~/internal';
-import { instructionsQuery } from '~/middleware/queries/settlements';
-import { instructionsQuery as oldInstructionsQuery } from '~/middleware/queries/settlementsOld';
+import { instructionsQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { HistoricInstruction, InstructionStatus, VenueType } from '~/types';
 import { tuple } from '~/types/utils';
-import { SETTLEMENTS_V2_SQ_VERSION } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
-import * as utilsInternalModule from '~/utils/internal';
 
-jest.mock(
-  '~/api/entities/Account',
-  require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
-);
 jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
@@ -163,71 +156,7 @@ describe('Venue class', () => {
   });
 
   describe('method: getHistoricalInstructions', () => {
-    let getLatestSqVersionSpy: jest.SpyInstance;
-
-    beforeAll(() => {
-      getLatestSqVersionSpy = jest.spyOn(utilsInternalModule, 'getLatestSqVersion');
-    });
-
-    it('should return the paginated list of all instructions that have been associated with a Venue for old SQ', async () => {
-      getLatestSqVersionSpy.mockResolvedValue('15.0.0');
-      const middlewareInstructionToHistoricInstructionSpy = jest.spyOn(
-        utilsConversionModule,
-        'oldMiddlewareInstructionToHistoricInstruction'
-      );
-
-      const venueId = new BigNumber(1);
-
-      const instructionsResponse = {
-        totalCount: 5,
-        nodes: ['instructions'],
-      };
-
-      dsMockUtils.createApolloQueryMock(
-        oldInstructionsQuery(
-          {
-            venueId: venueId.toString(),
-          },
-          new BigNumber(2),
-          new BigNumber(0)
-        ),
-        {
-          instructions: instructionsResponse,
-        }
-      );
-
-      const mockHistoricInstruction = 'mockData' as unknown as HistoricInstruction;
-
-      middlewareInstructionToHistoricInstructionSpy.mockReturnValue(mockHistoricInstruction);
-
-      let result = await venue.getHistoricalInstructions({
-        size: new BigNumber(2),
-        start: new BigNumber(0),
-      });
-
-      const { data, next, count } = result;
-
-      expect(next).toEqual(new BigNumber(1));
-      expect(count).toEqual(new BigNumber(5));
-      expect(data).toEqual([mockHistoricInstruction]);
-
-      dsMockUtils.createApolloQueryMock(
-        oldInstructionsQuery({
-          venueId: venueId.toString(),
-        }),
-        {
-          instructions: instructionsResponse,
-        }
-      );
-
-      result = await venue.getHistoricalInstructions();
-
-      expect(result.count).toEqual(new BigNumber(5));
-      expect(result.next).toEqual(new BigNumber(result.data.length));
-    });
-
     it('should return the paginated list of all instructions that have been associated with a Venue', async () => {
-      getLatestSqVersionSpy.mockResolvedValue(SETTLEMENTS_V2_SQ_VERSION);
       const middlewareInstructionToHistoricInstructionSpy = jest.spyOn(
         utilsConversionModule,
         'middlewareInstructionToHistoricInstruction'
@@ -453,75 +382,6 @@ describe('Venue class', () => {
         .mockResolvedValue(expectedTransaction);
 
       const tx = await venue.modify({ description, type });
-
-      expect(tx).toBe(expectedTransaction);
-    });
-  });
-
-  describe('method: getAllowedSigners', () => {
-    it('should return the list of signers allowed by the Venue', async () => {
-      const mockSigner = 'some_signer';
-
-      const rawSigner = dsMockUtils.createMockAccountId(mockSigner);
-
-      dsMockUtils.createQueryMock('settlement', 'venueSigners', {
-        entries: [tuple([rawId, rawSigner], dsMockUtils.createMockBool(true))],
-      });
-
-      const result = await venue.getAllowedSigners();
-      expect(result).toEqual(
-        expect.arrayContaining([expect.objectContaining({ address: mockSigner })])
-      );
-    });
-  });
-
-  describe('method: addSigners', () => {
-    afterAll(() => {
-      jest.restoreAllMocks();
-    });
-
-    it('should prepare the procedure and return the resulting transaction', async () => {
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
-      const signers = ['newSigner'];
-
-      when(procedureMockUtils.getPrepareMock())
-        .calledWith(
-          {
-            args: { venue, signers, addSigners: true },
-            transformer: undefined,
-          },
-          context,
-          {}
-        )
-        .mockResolvedValue(expectedTransaction);
-
-      const tx = await venue.addSigners({ signers });
-
-      expect(tx).toBe(expectedTransaction);
-    });
-  });
-
-  describe('method: removeSigners', () => {
-    afterAll(() => {
-      jest.restoreAllMocks();
-    });
-
-    it('should prepare the procedure and return the resulting transaction', async () => {
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
-      const signers = ['removeSigner'];
-
-      when(procedureMockUtils.getPrepareMock())
-        .calledWith(
-          {
-            args: { venue, signers, addSigners: false },
-            transformer: undefined,
-          },
-          context,
-          {}
-        )
-        .mockResolvedValue(expectedTransaction);
-
-      const tx = await venue.removeSigners({ signers });
 
       expect(tx).toBe(expectedTransaction);
     });

@@ -84,7 +84,7 @@ describe('consumeAddRelayerPayingKeyAuthorization procedure', () => {
       void,
       Storage
     >(mockContext, {
-      actingAccount: targetAccount,
+      signingAccount: targetAccount,
       calledByTarget: true,
     });
 
@@ -116,7 +116,7 @@ describe('consumeAddRelayerPayingKeyAuthorization procedure', () => {
       void,
       Storage
     >(mockContext, {
-      actingAccount: targetAccount,
+      signingAccount: targetAccount,
       calledByTarget: true,
     });
 
@@ -157,7 +157,7 @@ describe('consumeAddRelayerPayingKeyAuthorization procedure', () => {
       void,
       Storage
     >(mockContext, {
-      actingAccount: targetAccount,
+      signingAccount: targetAccount,
       calledByTarget: false,
     });
 
@@ -203,7 +203,7 @@ describe('consumeAddRelayerPayingKeyAuthorization procedure', () => {
       void,
       Storage
     >(mockContext, {
-      actingAccount: targetAccount,
+      signingAccount: targetAccount,
       calledByTarget: true,
     });
 
@@ -231,7 +231,7 @@ describe('consumeAddRelayerPayingKeyAuthorization procedure', () => {
       } as unknown as ConsumeAddRelayerPayingKeyAuthorizationParams);
 
       expect(result).toEqual({
-        actingAccount: mockContext.getSigningAccount(),
+        signingAccount: mockContext.getSigningAccount(),
         calledByTarget: true,
       });
     });
@@ -244,7 +244,7 @@ describe('consumeAddRelayerPayingKeyAuthorization procedure', () => {
         void,
         Storage
       >(mockContext, {
-        actingAccount: targetAccount,
+        signingAccount: targetAccount,
         calledByTarget: true,
       });
       const constructorParams = {
@@ -282,7 +282,7 @@ describe('consumeAddRelayerPayingKeyAuthorization procedure', () => {
         void,
         Storage
       >(mockContext, {
-        actingAccount: targetAccount,
+        signingAccount: targetAccount,
         calledByTarget: false,
       });
       boundFunc = getAuthorization.bind(proc);
@@ -300,7 +300,7 @@ describe('consumeAddRelayerPayingKeyAuthorization procedure', () => {
         void,
         Storage
       >(mockContext, {
-        actingAccount: entityMockUtils.getAccountInstance({
+        signingAccount: entityMockUtils.getAccountInstance({
           address: 'someOtherAddress',
           getIdentity: undefined,
         }),
@@ -322,7 +322,7 @@ describe('consumeAddRelayerPayingKeyAuthorization procedure', () => {
         void,
         Storage
       >(mockContext, {
-        actingAccount: entityMockUtils.getAccountInstance({
+        signingAccount: entityMockUtils.getAccountInstance({
           address: 'someOtherAddress',
           getIdentity: entityMockUtils.getIdentityInstance({ did: 'someOtherDid', isEqual: false }),
         }),

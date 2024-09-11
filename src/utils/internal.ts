@@ -20,8 +20,8 @@ import {
 } from '@polkadot/types/lookup';
 import type { Callback, Codec, Observable } from '@polkadot/types/types';
 import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/types/types';
-import { hexAddPrefix, hexStripPrefix, stringToHex, stringUpperFirst } from '@polkadot/util';
-import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
+import { stringUpperFirst } from '@polkadot/util';
+import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import fetch from 'cross-fetch';
 import stringify from 'json-stable-stringify';
@@ -43,13 +43,8 @@ import {
   NftCollection,
   PolymeshError,
 } from '~/internal';
-import { latestSqVersionQuery } from '~/middleware/queries/common';
-import {
-  Asset as MiddlewareAsset,
-  Claim as MiddlewareClaim,
-  ClaimTypeEnum,
-  Query,
-} from '~/middleware/types';
+import { latestSqVersionQuery } from '~/middleware/queries';
+import { Claim as MiddlewareClaim, ClaimTypeEnum, Query } from '~/middleware/types';
 import { MiddlewareScope } from '~/middleware/typesV1';
 import {
   Asset,
@@ -112,7 +107,6 @@ import {
   PRIVATE_SUPPORTED_NODE_VERSION_RANGE,
   PRIVATE_SUPPORTED_SPEC_SEMVER,
   PRIVATE_SUPPORTED_SPEC_VERSION_RANGE,
-  SETTLEMENTS_V2_SQ_VERSION,
   STATE_RUNTIME_VERSION_CALL,
   SUPPORTED_NODE_SEMVER,
   SUPPORTED_NODE_VERSION_RANGE,
@@ -123,7 +117,6 @@ import {
 import {
   bigNumberToU32,
   claimIssuerToMeshClaimIssuer,
-  coerceHexToString,
   identitiesToBtreeSet,
   identityIdToString,
   meshClaimTypeToClaimType,
@@ -135,7 +128,6 @@ import {
   statisticsOpTypeToStatType,
   statsClaimToStatClaimInputType,
   stringToAccountId,
-  stringToTicker,
   transferRestrictionTypeToStatOpType,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -947,7 +939,6 @@ export function assertAddressValid(address: string, ss58Format: BigNumber): void
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The supplied address is not a valid SS58 address',
-      data: { address, expectedFormat: ss58Format.toString() },
     });
   }
 
@@ -956,7 +947,7 @@ export function assertAddressValid(address: string, ss58Format: BigNumber): void
       code: ErrorCode.ValidationError,
       message: "The supplied address is not encoded with the chain's SS58 format",
       data: {
-        ss58Format: ss58Format.toString(),
+        ss58Format,
       },
     });
   }
@@ -1418,9 +1409,9 @@ function assertExpectedSpecVersion(
 /**
  * @hidden
  *
- * Get latest SQ version
+ * Checks SQ version compatibility with the SDK
  */
-export async function getLatestSqVersion(context: Context): Promise<string> {
+export async function assertExpectedSqVersion(context: Context): Promise<void> {
   const {
     data: {
       subqueryVersions: {
@@ -1429,19 +1420,9 @@ export async function getLatestSqVersion(context: Context): Promise<string> {
     },
   } = await context.queryMiddleware<Ensured<Query, 'subqueryVersions'>>(latestSqVersionQuery());
 
-  return sqVersion?.version || '1.0.0';
-}
-
-/**
- * @hidden
- *
- * Checks SQ version compatibility with the SDK
- */
-export async function warnUnexpectedSqVersion(context: Context): Promise<void> {
-  const sqVersion = await getLatestSqVersion(context);
-  if (lt(sqVersion, MINIMUM_SQ_VERSION)) {
+  if (!sqVersion || lt(sqVersion.version, MINIMUM_SQ_VERSION)) {
     console.warn(
-      `This version of the SDK supports Polymesh SubQuery version ${MINIMUM_SQ_VERSION} or higher. Please upgrade the MiddlewareV2`
+      `This version of the SDK supports Polymesh Subquery version ${MINIMUM_SQ_VERSION} or higher. Please upgrade the MiddlewareV2`
     );
   }
 }
@@ -2111,50 +2092,10 @@ export async function getAccount(
   const { address } = args;
 
   const rawAddress = stringToAccountId(address, context);
-  const identity = await multiSig.multiSigToIdentity(rawAddress);
-  if (identity.isEmpty) {
-    return new Account(args, context);
+  const rawSigners = await multiSig.multiSigSigners.entries(rawAddress);
+  if (rawSigners.length > 0) {
+    return new MultiSig(args, context);
   }
 
-  return new MultiSig(args, context);
-}
-
-/**
- * @hidden
- */
-const getAssetIdForLegacyTicker = (ticker: string, context: Context): string => {
-  const assetComponents = [stringToHex('legacy_ticker'), stringToTicker(ticker, context).toHex()];
-
-  const data = hexAddPrefix(assetComponents.map(e => hexStripPrefix(e)).join(''));
-
-  return blake2AsHex(data, 128);
-};
-
-/**
- * @hidden
- */
-export async function getAssetIdForMiddleware(
-  asset: string | BaseAsset,
-  context: Context
-): Promise<string> {
-  const ticker = asTicker(asset);
-
-  const sqVersion = await getLatestSqVersion(context);
-
-  if (lt(sqVersion, SETTLEMENTS_V2_SQ_VERSION)) {
-    // old SQ requires no change
-    return ticker;
-  }
-
-  return getAssetIdForLegacyTicker(ticker, context);
-}
-
-/**
- * @hidden
- */
-export function getAssetIdFromMiddleware(
-  assetIdAndTicker: Falsyable<Pick<MiddlewareAsset, 'id' | 'ticker'>>
-): string {
-  const { ticker } = assetIdAndTicker!;
-  return coerceHexToString(ticker!);
+  return new Account(args, context);
 }

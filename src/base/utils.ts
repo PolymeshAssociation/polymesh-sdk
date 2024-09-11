@@ -11,12 +11,10 @@ import {
   ArrayTransactionArgument,
   ComplexTransactionArgument,
   ErrorCode,
-  MultiSigTx,
   PlainTransactionArgument,
   SimpleEnumTransactionArgument,
   TransactionArgument,
   TransactionArgumentType,
-  TxTag,
 } from '~/types';
 import { ROOT_TYPES } from '~/utils/constants';
 import { bigNumberToU32, createRawExtrinsicStatus } from '~/utils/conversion';
@@ -282,17 +280,4 @@ export const pollForTransactionFinalization = async (
     status: rawStatus,
     events: relatedEvents,
   });
-};
-
-/**
- * @hidden
- */
-const multiSigNoWrapTxs: TxTag[] = [MultiSigTx.ApproveAsKey, MultiSigTx.RejectAsKey];
-
-/**
- * @hidden
- * @returns `true` if a tag is an exception to the rule "All multiSig signer transactions should be wrapped as proposals"
- */
-export const isMultiSigNoWrapTx = (tag: TxTag): boolean => {
-  return multiSigNoWrapTxs.includes(tag);
 };

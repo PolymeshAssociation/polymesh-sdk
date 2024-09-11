@@ -153,7 +153,6 @@ interface IdentityOptions extends EntityOptions {
   assetPermissionsGet?: EntityGetter<AssetWithGroup[]>;
   isAssetPreApproved?: EntityGetter<boolean>;
   preApprovedAssets?: EntityGetter<ResultSet<Asset[]>>;
-  getOffChainAuthorizationNonce?: EntityGetter<BigNumber>;
 }
 
 interface ChildIdentityOptions extends IdentityOptions {
@@ -262,7 +261,6 @@ interface SubsidyOptions extends EntityOptions {
 interface VenueOptions extends EntityOptions {
   id?: BigNumber;
   details?: EntityGetter<VenueDetails>;
-  getAllowedSigners?: EntityGetter<Account[]>;
 }
 
 interface NumberedPortfolioOptions extends EntityOptions {
@@ -598,7 +596,6 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     isCddProvider!: jest.Mock;
     preApprovedAssets!: jest.Mock;
     isAssetPreApproved!: jest.Mock;
-    getOffChainAuthorizationNonce!: jest.Mock;
 
     /**
      * @hidden
@@ -638,9 +635,6 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
       this.isCddProvider = createEntityGetterMock(opts.isCddProvider);
       this.preApprovedAssets = createEntityGetterMock(opts.preApprovedAssets);
       this.isAssetPreApproved = createEntityGetterMock(opts.isAssetPreApproved);
-      this.getOffChainAuthorizationNonce = createEntityGetterMock(
-        opts.getOffChainAuthorizationNonce
-      );
     }
   },
   () => ({
@@ -679,7 +673,6 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     preApprovedAssets: { data: [], next: null, count: new BigNumber(0) },
     isAssetPreApproved: false,
     toHuman: 'someDid',
-    getOffChainAuthorizationNonce: new BigNumber(0),
   }),
   ['Identity']
 );
@@ -810,7 +803,6 @@ const MockChildIdentityClass = createMockEntityClass<ChildIdentityOptions>(
     getParentDid: getIdentityInstance(),
     preApprovedAssets: { data: [], next: null, count: new BigNumber(0) },
     isAssetPreApproved: false,
-    getOffChainAuthorizationNonce: new BigNumber(0),
   }),
   ['ChildIdentity', 'Identity']
 );
@@ -1460,7 +1452,6 @@ const MockVenueClass = createMockEntityClass<VenueOptions>(
     uuid!: string;
     id!: BigNumber;
     details!: jest.Mock;
-    getAllowedSigners!: jest.Mock;
 
     /**
      * @hidden
@@ -1476,7 +1467,6 @@ const MockVenueClass = createMockEntityClass<VenueOptions>(
       this.uuid = 'venue';
       this.id = opts.id;
       this.details = createEntityGetterMock(opts.details);
-      this.getAllowedSigners = createEntityGetterMock(opts.getAllowedSigners);
     }
   },
   () => ({
@@ -1486,7 +1476,6 @@ const MockVenueClass = createMockEntityClass<VenueOptions>(
       type: VenueType.Distribution,
       description: 'someDescription',
     },
-    getAllowedSigners: [getAccountInstance({ address: 'allowedSigner' })],
   }),
   ['Venue']
 );
