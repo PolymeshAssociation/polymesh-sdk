@@ -3,8 +3,11 @@ import { groupBy, map } from 'lodash';
 
 import { BaseAsset } from '~/api/entities/Asset/Base';
 import { Context, controllerTransfer, Identity, redeemTokens } from '~/internal';
-import { assetQuery, assetTransactionQuery } from '~/middleware/queries/assets';
-import { tickerExternalAgentHistoryQuery } from '~/middleware/queries/externalAgents';
+import {
+  assetQuery,
+  assetTransactionQuery,
+  tickerExternalAgentHistoryQuery,
+} from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
   ControllerTransferParams,
@@ -20,17 +23,10 @@ import {
   balanceToBigNumber,
   middlewareEventDetailsToEventIdentifier,
   middlewarePortfolioToPortfolio,
-  portfolioIdStringToPortfolio,
   stringToTicker,
   tickerToDid,
 } from '~/utils/conversion';
-import {
-  calculateNextKey,
-  createProcedureMethod,
-  getAssetIdForMiddleware,
-  getAssetIdFromMiddleware,
-  optionize,
-} from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod, optionize } from '~/utils/internal';
 
 import { FungibleSettlements } from '../Base/Settlements';
 import { UniqueIdentifiers } from '../types';
@@ -153,15 +149,13 @@ export class FungibleAsset extends BaseAsset {
   public async getOperationHistory(): Promise<HistoricAgentOperation[]> {
     const { context, ticker: assetId } = this;
 
-    const middlewareAssetId = await getAssetIdForMiddleware(assetId, context);
-
     const {
       data: {
         tickerExternalAgentHistories: { nodes },
       },
     } = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgentHistories'>>(
       tickerExternalAgentHistoryQuery({
-        assetId: middlewareAssetId,
+        assetId,
       })
     );
 
@@ -188,8 +182,6 @@ export class FungibleAsset extends BaseAsset {
     const { context, ticker } = this;
     const { size, start } = opts;
 
-    const middlewareAssetId = await getAssetIdForMiddleware(ticker, context);
-
     const {
       data: {
         assetTransactions: { nodes, totalCount },
@@ -197,7 +189,7 @@ export class FungibleAsset extends BaseAsset {
     } = await context.queryMiddleware<Ensured<Query, 'assetTransactions'>>(
       assetTransactionQuery(
         {
-          assetId: middlewareAssetId,
+          assetId: ticker,
         },
         size,
         start
@@ -206,10 +198,10 @@ export class FungibleAsset extends BaseAsset {
 
     const data: HistoricAssetTransaction[] = nodes.map(
       ({
-        asset,
+        assetId,
         amount,
-        fromPortfolioId,
-        toPortfolioId,
+        fromPortfolio,
+        toPortfolio,
         createdBlock,
         eventId,
         eventIdx,
@@ -217,27 +209,20 @@ export class FungibleAsset extends BaseAsset {
         fundingRound,
         instructionId,
         instructionMemo,
-      }) => {
-        const fromPortfolio = optionize(portfolioIdStringToPortfolio)(fromPortfolioId);
-        const toPortfolio = optionize(portfolioIdStringToPortfolio)(toPortfolioId);
-
-        const assetId = getAssetIdFromMiddleware(asset);
-
-        return {
-          asset: new FungibleAsset({ ticker: assetId }, context),
-          amount: new BigNumber(amount).shiftedBy(-6),
-          event: eventId,
-          from: optionize(middlewarePortfolioToPortfolio)(fromPortfolio, context),
-          to: optionize(middlewarePortfolioToPortfolio)(toPortfolio, context),
-          fundingRound,
-          instructionId: instructionId ? new BigNumber(instructionId) : undefined,
-          instructionMemo,
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          extrinsicIndex: new BigNumber(extrinsicIdx!),
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          ...middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx),
-        };
-      }
+      }) => ({
+        asset: new FungibleAsset({ ticker: assetId }, context),
+        amount: new BigNumber(amount).shiftedBy(-6),
+        event: eventId,
+        from: optionize(middlewarePortfolioToPortfolio)(fromPortfolio, context),
+        to: optionize(middlewarePortfolioToPortfolio)(toPortfolio, context),
+        fundingRound,
+        instructionId: instructionId ? new BigNumber(instructionId) : undefined,
+        instructionMemo,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        extrinsicIndex: new BigNumber(extrinsicIdx!),
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        ...middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx),
+      })
     );
 
     const count = new BigNumber(totalCount);

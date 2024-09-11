@@ -24,19 +24,14 @@ export class PolymeshError extends Error {
     message,
     code,
     data,
-    stack,
   }: {
     message?: string;
     code: ErrorCode;
     data?: Record<string, unknown>;
-    stack?: Error['stack'];
   }) {
     super(message || defaultMessages[code] || `Unknown error, code: ${code}`);
 
     this.code = code;
     this.data = data;
-    if (stack) {
-      this.stack = stack;
-    }
   }
 }

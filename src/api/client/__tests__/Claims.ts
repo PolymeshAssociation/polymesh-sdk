@@ -3,11 +3,7 @@ import { when } from 'jest-when';
 
 import { Claims } from '~/api/client/Claims';
 import { Context, PolymeshTransaction } from '~/internal';
-import {
-  claimsGroupingQuery,
-  claimsQuery,
-  customClaimTypeQuery,
-} from '~/middleware/queries/claims';
+import { claimsGroupingQuery, claimsQuery, customClaimTypeQuery } from '~/middleware/queries';
 import {
   Claim,
   ClaimsGroupBy,
@@ -240,9 +236,6 @@ describe('Claims Class', () => {
       const targetDid = 'someTargetDid';
       const issuerDid = 'someIssuerDid';
       const scope: Scope = { type: ScopeType.Ticker, value: 'someValue' };
-      jest
-        .spyOn(utilsConversionModule, 'scopeToMiddlewareScope')
-        .mockResolvedValue({ type: 'Ticker', value: 'someValue' });
       const date = 1589816265000;
       const accreditedType = ClaimTypeEnum.Accredited;
       const claimData = {
@@ -864,7 +857,9 @@ describe('Claims Class', () => {
           {
             id: '1',
             name: 'Some Claim Type',
-            identityId: did,
+            identity: {
+              did,
+            },
           },
         ],
         totalCount: 1,
@@ -906,7 +901,9 @@ describe('Claims Class', () => {
           {
             id: '1',
             name: 'Some Claim Type',
-            identityId: did,
+            identity: {
+              did,
+            },
           },
         ],
         totalCount: 1,

@@ -2,7 +2,6 @@ import BigNumber from 'bignumber.js';
 
 import { TransferRestrictionBase } from '~/internal';
 import {
-  ActiveStats,
   ActiveTransferRestrictions,
   AddClaimCountStatParams,
   AddClaimCountTransferRestrictionParams,
@@ -85,10 +84,4 @@ export class ClaimCount extends TransferRestrictionBase<TransferRestrictionType.
    *   before reaching that limit
    */
   public declare get: () => Promise<ActiveTransferRestrictions<ClaimCountTransferRestriction>>;
-
-  /**
-   * Retrieve current Claim Count Transfer Restriction investor balance statistic for the Asset
-   *
-   */
-  public declare getStat: () => Promise<ActiveStats>;
 }

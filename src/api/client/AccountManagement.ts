@@ -1,10 +1,7 @@
-import { hexAddPrefix, hexStripPrefix } from '@polkadot/util';
-
 import { MultiSig } from '~/api/entities/Account/MultiSig';
 import {
   acceptPrimaryKeyRotation,
   Account,
-  addSecondaryAccounts,
   AuthorizationRequest,
   Context,
   createMultiSigAccount,
@@ -20,9 +17,7 @@ import {
 import {
   AcceptPrimaryKeyRotationParams,
   AccountBalance,
-  AddSecondaryAccountsParams,
   CreateMultiSigParams,
-  Identity,
   InviteAccountParams,
   ModifySignerPermissionsParams,
   NoArgsProcedureMethod,
@@ -33,14 +28,7 @@ import {
   SubsidizeAccountParams,
   UnsubCallback,
 } from '~/types';
-import { bigNumberToU64, dateToMoment, stringToIdentityId } from '~/utils/conversion';
-import {
-  asAccount,
-  asIdentity,
-  assertAddressValid,
-  createProcedureMethod,
-  getAccount,
-} from '~/utils/internal';
+import { asAccount, assertAddressValid, createProcedureMethod, getAccount } from '~/utils/internal';
 
 /**
  * Handles functionality related to Account Management
@@ -61,13 +49,6 @@ export class AccountManagement {
     this.removeSecondaryAccounts = createProcedureMethod(
       {
         getProcedureAndArgs: args => [removeSecondaryAccounts, { ...args }],
-      },
-      context
-    );
-
-    this.addSecondaryAccounts = createProcedureMethod(
-      {
-        getProcedureAndArgs: args => [addSecondaryAccounts, { ...args }],
       },
       context
     );
@@ -140,13 +121,6 @@ export class AccountManagement {
    * Remove a list of secondary Accounts associated with the signing Identity
    */
   public removeSecondaryAccounts: ProcedureMethod<RemoveSecondaryAccountsParams, void>;
-
-  /**
-   * Adds a list of secondary Accounts to the signing Identity
-   *
-   * @throws if the signing Account is not the primary Account of the Identity
-   */
-  public addSecondaryAccounts: ProcedureMethod<AddSecondaryAccountsParams, Identity>;
 
   /**
    * Revoke all permissions of a list of secondary Accounts associated with the signing Identity
@@ -317,35 +291,4 @@ export class AccountManagement {
    * unlinked to any identity.
    */
   public acceptPrimaryKey: ProcedureMethod<AcceptPrimaryKeyRotationParams, void>;
-
-  /**
-   * Generate an offchain authorization signature with a specified signer
-   *
-   * @param args.signer Signer to be used to generate the off chain auth signature
-   * @param args.target DID of the identity to which signer is targeting the authorization
-   * @param args.expiry date after which the authorization expires
-   */
-  public async generateOffChainAuthSignature(args: {
-    signer: string | Account;
-    target: string | Identity;
-    expiry: Date;
-  }): Promise<`0x${string}`> {
-    const { context } = this;
-
-    const { target, signer, expiry } = args;
-
-    const targetIdentity = asIdentity(target, context);
-
-    const offChainAuthNonce = await targetIdentity.getOffChainAuthorizationNonce();
-
-    const rawTargetDid = stringToIdentityId(targetIdentity.did, context);
-    const rawNonce = bigNumberToU64(offChainAuthNonce, context);
-    const rawExpiry = dateToMoment(expiry, context);
-
-    const payloadStrings = [rawTargetDid.toHex(), rawNonce.toHex(true), rawExpiry.toHex(true)];
-
-    const rawPayload = hexAddPrefix(payloadStrings.map(e => hexStripPrefix(e)).join(''));
-
-    return context.getSignature({ rawPayload, signer });
-  }
 }

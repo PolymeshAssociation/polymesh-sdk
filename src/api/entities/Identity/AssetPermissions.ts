@@ -13,10 +13,7 @@ import {
   setPermissionGroup,
   waivePermissions,
 } from '~/internal';
-import {
-  tickerExternalAgentActionsQuery,
-  tickerExternalAgentsQuery,
-} from '~/middleware/queries/externalAgents';
+import { tickerExternalAgentActionsQuery, tickerExternalAgentsQuery } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import {
   Asset,
@@ -47,7 +44,6 @@ import {
   asTicker,
   calculateNextKey,
   createProcedureMethod,
-  getAssetIdForMiddleware,
   isModuleOrTagMatch,
   optionize,
 } from '~/utils/internal';
@@ -321,8 +317,7 @@ export class AssetPermissions extends Namespace<Identity> {
    */
   public async enabledAt({ asset }: { asset: string | Asset }): Promise<EventIdentifier | null> {
     const { context } = this;
-
-    const middlewareAssetId = await getAssetIdForMiddleware(asset, context);
+    const ticker = asTicker(asset);
 
     const {
       data: {
@@ -332,7 +327,7 @@ export class AssetPermissions extends Namespace<Identity> {
       },
     } = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgents'>>(
       tickerExternalAgentsQuery({
-        assetId: middlewareAssetId,
+        assetId: ticker,
       })
     );
 
@@ -377,7 +372,7 @@ export class AssetPermissions extends Namespace<Identity> {
 
     const { asset, moduleId: palletName, eventId, size, start } = opts;
 
-    const middlewareAssetId = await getAssetIdForMiddleware(asset, context);
+    const ticker = asTicker(asset);
 
     const {
       data: {
@@ -386,7 +381,7 @@ export class AssetPermissions extends Namespace<Identity> {
     } = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgentActions'>>(
       tickerExternalAgentActionsQuery(
         {
-          assetId: middlewareAssetId,
+          assetId: ticker,
           callerId: did,
           palletName,
           eventId,

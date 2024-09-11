@@ -13,7 +13,6 @@ import { flatten, isEqual, union, unionWith } from 'lodash';
 
 import { assertPortfolioExists, assertValidCdd, assertVenueExists } from '~/api/procedures/utils';
 import {
-  BaseAsset,
   Context,
   DefaultPortfolio,
   Instruction,
@@ -25,21 +24,18 @@ import {
   AddInstructionParams,
   AddInstructionsParams,
   ErrorCode,
-  FungibleLeg,
   InstructionEndCondition,
   InstructionFungibleLeg,
   InstructionLeg,
   InstructionNftLeg,
-  InstructionOffChainLeg,
   InstructionType,
-  NftLeg,
   RoleType,
   SettlementTx,
   TxTags,
   Venue,
 } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
-import { isFungibleLegBuilder, isNftLegBuilder, isOffChainLeg } from '~/utils';
+import { isFungibleLegBuilder, isNftLegBuilder } from '~/utils';
 import { MAX_LEGS_LENGTH } from '~/utils/constants';
 import {
   bigNumberToBalance,
@@ -49,19 +45,16 @@ import {
   identitiesToBtreeSet,
   legToFungibleLeg,
   legToNonFungibleLeg,
-  legToOffChainLeg,
   nftToMeshNft,
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
-  stringToIdentityId,
   stringToMemo,
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
   asBaseAsset,
-  asDid,
   asIdentity,
   assembleBatchTransactions,
   assertIdentityExists,
@@ -160,66 +153,42 @@ function getEndCondition(
 /**
  * @hidden
  */
-function validateFungibleLeg(leg: FungibleLeg, ticker: string): void {
-  if (!('amount' in leg)) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'The key "amount" should be present in a fungible leg',
-      data: { ticker },
-    });
-  }
-}
-
-/**
- * @hidden
- */
-function validateNonFungibleLeg(leg: NftLeg, ticker: string): void {
-  if (!('nfts' in leg)) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'The key "nfts" should be present in an NFT leg',
-      data: { ticker },
-    });
-  }
-}
-
-/**
- * @hidden
- */
 async function separateLegs(
   legs: InstructionLeg[],
   context: Context
-): Promise<{
-  fungibleLegs: InstructionFungibleLeg[];
-  nftLegs: InstructionNftLeg[];
-  offChainLegs: InstructionOffChainLeg[];
-}> {
+): Promise<{ fungibleLegs: InstructionFungibleLeg[]; nftLegs: InstructionNftLeg[] }> {
   const fungibleLegs: InstructionFungibleLeg[] = [];
   const nftLegs: InstructionNftLeg[] = [];
-  const offChainLegs: InstructionOffChainLeg[] = [];
 
   for (const leg of legs) {
     const ticker = asTicker(leg.asset);
+    const [isFungible, isNft] = await Promise.all([
+      isFungibleLegBuilder(leg, context),
+      isNftLegBuilder(leg, context),
+    ]);
 
-    if (isOffChainLeg(leg)) {
-      offChainLegs.push(leg);
-    } else {
-      const [isFungible, isNft] = await Promise.all([
-        isFungibleLegBuilder(leg, context),
-        isNftLegBuilder(leg, context),
-      ]);
-
-      if (isFungible(leg)) {
-        validateFungibleLeg(leg, ticker);
-        fungibleLegs.push(leg);
-      } else if (isNft(leg)) {
-        validateNonFungibleLeg(leg, ticker);
-        nftLegs.push(leg);
+    if (isFungible(leg)) {
+      if (!('amount' in leg)) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'The key "amount" should be present in a fungible leg',
+          data: { ticker },
+        });
       }
+      fungibleLegs.push(leg);
+    } else if (isNft(leg)) {
+      if (!('nfts' in leg)) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'The key "nfts" should be present in an NFT leg',
+          data: { ticker },
+        });
+      }
+      nftLegs.push(leg);
     }
   }
 
-  return { fungibleLegs, nftLegs, offChainLegs };
+  return { fungibleLegs, nftLegs };
 }
 
 /**
@@ -231,13 +200,7 @@ async function assertVenueFiltering(
   context: Context
 ): Promise<void> {
   const assets = instructions.flatMap(instruction => {
-    const result: BaseAsset[] = [];
-    instruction.legs.forEach(leg => {
-      if (!isOffChainLeg(leg)) {
-        result.push(asBaseAsset(leg.asset, context));
-      }
-    });
-    return result;
+    return instruction.legs.map(leg => asBaseAsset(leg.asset, context));
   });
 
   const venueFiltering = await Promise.all(assets.map(asset => asset.getVenueFilteringDetails()));
@@ -314,7 +277,7 @@ async function getTxArgsAndErrors(
       legLengthErrIndexes.push(i);
     }
 
-    const { fungibleLegs, nftLegs, offChainLegs } = await separateLegs(legs, context);
+    const { fungibleLegs, nftLegs } = await separateLegs(legs, context);
 
     const zeroAmountFungibleLegs = fungibleLegs.filter(leg => leg.amount.isZero());
     if (zeroAmountFungibleLegs.length) {
@@ -326,20 +289,10 @@ async function getTxArgsAndErrors(
       legAmountErrIndexes.push(i);
     }
 
-    const zeroAmountOffChainLegs = offChainLegs.filter(leg => leg.offChainAmount.isZero());
-    if (zeroAmountOffChainLegs.length) {
-      legAmountErrIndexes.push(i);
-    }
-
-    const sameIdentityLegs = legs.filter(leg => {
-      if (isOffChainLeg(leg)) {
-        return asDid(leg.from) === asDid(leg.to);
-      } else {
-        const { from, to } = leg;
-        const fromId = portfolioLikeToPortfolioId(from);
-        const toId = portfolioLikeToPortfolioId(to);
-        return fromId.did === toId.did;
-      }
+    const sameIdentityLegs = legs.filter(({ from, to }) => {
+      const fromId = portfolioLikeToPortfolioId(from);
+      const toId = portfolioLikeToPortfolioId(to);
+      return fromId.did === toId.did;
     });
 
     if (sameIdentityLegs.length) {
@@ -419,25 +372,6 @@ async function getTxArgsAndErrors(
               sender: rawFromPortfolio,
               receiver: rawToPortfolio,
               nfts: nftToMeshNft(asTicker(asset), nfts, context),
-            },
-            context
-          );
-
-          rawLegs.push(rawLeg);
-        }),
-        ...offChainLegs.map(async ({ from, to, offChainAmount, asset }) => {
-          const fromId = asDid(from);
-          const toId = asDid(to);
-
-          const rawFromIdentityId = stringToIdentityId(fromId, context);
-          const rawToIdentityId = stringToIdentityId(toId, context);
-
-          const rawLeg = legToOffChainLeg(
-            {
-              senderIdentity: rawFromIdentityId,
-              receiverIdentity: rawToIdentityId,
-              ticker: stringToTicker(asset, context),
-              amount: bigNumberToBalance(offChainAmount, context),
             },
             context
           );
@@ -605,7 +539,6 @@ export async function prepareAddInstruction(
     transaction: settlement.addInstructionWithMediators,
     argsArray: addInstructionParams,
   };
-
   const addAndAffirmTx = {
     transaction: settlement.addAndAffirmWithMediators,
     argsArray: addAndAffirmInstructionParams,
@@ -666,26 +599,24 @@ export async function prepareStorage(
   const identity = await context.getSigningIdentity();
 
   const portfoliosToAffirm = await P.map(instructions, async ({ legs }) => {
-    const portfolios = await P.map(legs, async leg => {
+    const portfolios = await P.map(legs, async ({ from, to }) => {
+      const fromPortfolio = portfolioLikeToPortfolio(from, context);
+      const toPortfolio = portfolioLikeToPortfolio(to, context);
+
       const result = [];
-      if (!isOffChainLeg(leg)) {
-        const { from, to } = leg;
-        const fromPortfolio = portfolioLikeToPortfolio(from, context);
-        const toPortfolio = portfolioLikeToPortfolio(to, context);
+      const [fromCustodied, toCustodied] = await Promise.all([
+        fromPortfolio.isCustodiedBy({ identity }),
+        toPortfolio.isCustodiedBy({ identity }),
+      ]);
 
-        const [fromCustodied, toCustodied] = await Promise.all([
-          fromPortfolio.isCustodiedBy({ identity }),
-          toPortfolio.isCustodiedBy({ identity }),
-        ]);
-
-        if (fromCustodied) {
-          result.push(fromPortfolio);
-        }
-
-        if (toCustodied) {
-          result.push(toPortfolio);
-        }
+      if (fromCustodied) {
+        result.push(fromPortfolio);
       }
+
+      if (toCustodied) {
+        result.push(toPortfolio);
+      }
+
       return result;
     });
     return flatten(portfolios);

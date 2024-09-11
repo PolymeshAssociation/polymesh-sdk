@@ -1,21 +1,9 @@
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import { lt } from 'lodash';
 
-import {
-  Account,
-  addInstruction,
-  Context,
-  Entity,
-  Identity,
-  Instruction,
-  modifyVenue,
-  updateVenueSigners,
-} from '~/internal';
-import { instructionsQuery } from '~/middleware/queries/settlements';
-import { instructionsQuery as oldInstructionsQuery } from '~/middleware/queries/settlementsOld';
+import { addInstruction, Context, Entity, Identity, Instruction, modifyVenue } from '~/internal';
+import { instructionsQuery } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { Query as QueryOld } from '~/middleware/typesV6';
 import {
   AddInstructionParams,
   AddInstructionsParams,
@@ -25,21 +13,17 @@ import {
   NumberedPortfolio,
   ProcedureMethod,
   ResultSet,
-  UpdateVenueSignersParams,
 } from '~/types';
 import { Ensured } from '~/types/utils';
-import { SETTLEMENTS_V2_SQ_VERSION } from '~/utils/constants';
 import {
-  accountIdToString,
   bigNumberToU64,
   bytesToString,
   identityIdToString,
   meshVenueTypeToVenueType,
   middlewareInstructionToHistoricInstruction,
-  oldMiddlewareInstructionToHistoricInstruction,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { calculateNextKey, createProcedureMethod, getLatestSqVersion } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod } from '~/utils/internal';
 
 import { HistoricInstruction, VenueDetails } from './types';
 
@@ -105,26 +89,6 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
 
     this.modify = createProcedureMethod(
       { getProcedureAndArgs: args => [modifyVenue, { ...args, venue: this }] },
-      context
-    );
-
-    this.addSigners = createProcedureMethod(
-      {
-        getProcedureAndArgs: args => [
-          updateVenueSigners,
-          { ...args, addSigners: true, venue: this },
-        ],
-      },
-      context
-    );
-
-    this.removeSigners = createProcedureMethod(
-      {
-        getProcedureAndArgs: args => [
-          updateVenueSigners,
-          { ...args, addSigners: false, venue: this },
-        ],
-      },
       context
     );
   }
@@ -250,48 +214,23 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
 
     const { size, start } = opts;
 
-    let data: HistoricInstruction[];
-    // TODO @prashantasdeveloper Remove after SQ dual version support
-    const sqVersion = await getLatestSqVersion(context);
-    let instructionsResult, totalCount;
-
-    if (lt(sqVersion, SETTLEMENTS_V2_SQ_VERSION)) {
-      ({
-        data: {
-          instructions: { nodes: instructionsResult, totalCount },
+    const {
+      data: {
+        instructions: { nodes: instructionsResult, totalCount },
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(
+      instructionsQuery(
+        {
+          venueId: id.toString(),
         },
-      } = await context.queryMiddleware<Ensured<QueryOld, 'instructions'>>(
-        oldInstructionsQuery(
-          {
-            venueId: id.toString(),
-          },
-          size,
-          start
-        )
-      ));
+        size,
+        start
+      )
+    );
 
-      data = instructionsResult.map(middlewareInstruction =>
-        oldMiddlewareInstructionToHistoricInstruction(middlewareInstruction, context)
-      );
-    } else {
-      ({
-        data: {
-          instructions: { nodes: instructionsResult, totalCount },
-        },
-      } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(
-        instructionsQuery(
-          {
-            venueId: id.toString(),
-          },
-          size,
-          start
-        )
-      ));
-
-      data = instructionsResult.map(middlewareInstruction =>
-        middlewareInstructionToHistoricInstruction(middlewareInstruction, context)
-      );
-    }
+    const data = instructionsResult.map(middlewareInstruction =>
+      middlewareInstructionToHistoricInstruction(middlewareInstruction, context)
+    );
 
     const count = new BigNumber(totalCount);
 
@@ -302,32 +241,6 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
       next,
       count,
     };
-  }
-
-  /**
-   * Get all signers allowed by this Venue.
-   * Only these signers are allowed to affirm off-chain instructions
-   */
-  public async getAllowedSigners(): Promise<Account[]> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { settlement },
-        },
-      },
-      id,
-      context,
-    } = this;
-
-    const signerEntries = await settlement.venueSigners.entries(bigNumberToU64(id, context));
-
-    return signerEntries.map(
-      ([
-        {
-          args: [, rawAccountId],
-        },
-      ]) => new Account({ address: accountIdToString(rawAccountId) }, context)
-    );
   }
 
   /**
@@ -353,26 +266,6 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
    *   - Venue Owner
    */
   public modify: ProcedureMethod<ModifyVenueParams, void>;
-
-  /**
-   * Adds a list of signers allowed to sign receipts for this Venue
-   *
-   * @note required role:
-   *   - Venue Owner
-   *
-   * @throws if one or more specified signers are already added to the Venue
-   */
-  public addSigners: ProcedureMethod<UpdateVenueSignersParams, void>;
-
-  /**
-   * Adds a list of signers allowed to sign receipts for this Venue
-   *
-   * @note required role:
-   *   - Venue Owner
-   *
-   * @throws if one or more specified signers are already added to the Venue
-   */
-  public removeSigners: ProcedureMethod<UpdateVenueSignersParams, void>;
 
   /**
    * Return the Venue's ID

@@ -17,7 +17,6 @@ import {
   Identity,
   Instruction,
   KnownPermissionGroup,
-  MultiSig,
   NftCollection,
   NumberedPortfolio,
   Offering,
@@ -48,7 +47,6 @@ import {
   KycClaim,
   MultiClaimCondition,
   NftLeg,
-  OffChainLeg,
   PortfolioCustodianRole,
   ProposalStatus,
   Role,
@@ -372,13 +370,6 @@ export function isNftCollection(asset: BaseAsset): asset is NftCollection {
 }
 
 /**
- * Return whether an account is MultiSig
- */
-export function isMultiSigAccount(account: Account | MultiSig): account is MultiSig {
-  return account instanceof MultiSig;
-}
-
-/**
  * @hidden
  */
 type IsFungibleLegGuard = (leg: InstructionLeg) => leg is FungibleLeg;
@@ -422,11 +413,4 @@ export const isNftLegBuilder = async (
   return (iLeg: InstructionLeg): iLeg is NftLeg => {
     return asset instanceof NftCollection;
   };
-};
-
-/**
- * Return whether a leg is for an off-chain asset
- */
-export const isOffChainLeg = (leg: InstructionLeg): leg is OffChainLeg => {
-  return typeof leg.asset === 'string' && 'offChainAmount' in leg;
 };

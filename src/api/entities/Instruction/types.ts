@@ -66,14 +66,7 @@ export interface NftLeg {
   asset: NftCollection;
 }
 
-export interface OffChainLeg {
-  from: Identity;
-  to: Identity;
-  offChainAmount: BigNumber;
-  asset: string;
-}
-
-export type Leg = FungibleLeg | NftLeg | OffChainLeg;
+export type Leg = FungibleLeg | NftLeg;
 
 export enum AffirmationStatus {
   Unknown = 'Unknown',
@@ -83,11 +76,6 @@ export enum AffirmationStatus {
 
 export interface InstructionAffirmation {
   identity: Identity;
-  status: AffirmationStatus;
-}
-
-export interface OffChainAffirmation {
-  legId: BigNumber;
   status: AffirmationStatus;
 }
 

@@ -1,5 +1,5 @@
 import { Context, FungibleAsset, Identity, PolymeshError } from '~/internal';
-import { trustedClaimIssuerQuery } from '~/middleware/queries/claims';
+import { trustedClaimIssuerQuery } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import { ClaimType, ErrorCode, EventIdentifier } from '~/types';
 import { Ensured } from '~/types/utils';
@@ -8,7 +8,7 @@ import {
   stringToTicker,
   trustedIssuerToTrustedClaimIssuer,
 } from '~/utils/conversion';
-import { getAssetIdForMiddleware, optionize } from '~/utils/internal';
+import { optionize } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   did: string;
@@ -58,7 +58,6 @@ export class DefaultTrustedClaimIssuer extends Identity {
       context,
     } = this;
 
-    const middlewareAssetId = await getAssetIdForMiddleware(assetId, context);
     const {
       data: {
         trustedClaimIssuers: {
@@ -67,7 +66,7 @@ export class DefaultTrustedClaimIssuer extends Identity {
       },
     } = await context.queryMiddleware<Ensured<Query, 'trustedClaimIssuers'>>(
       trustedClaimIssuerQuery({
-        assetId: middlewareAssetId,
+        assetId,
         issuer,
       })
     );

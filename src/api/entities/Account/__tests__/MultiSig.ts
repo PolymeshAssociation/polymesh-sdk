@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Account, Context, MultiSig, PolymeshError, PolymeshTransaction } from '~/internal';
-import { multiSigProposalsQuery } from '~/middleware/queries/multisigs';
+import { multiSigProposalsQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   createMockAccountId,
@@ -217,7 +217,7 @@ describe('MultiSig class', () => {
       nodes: [mockHistoricalMultisig],
     };
 
-    it('should get historical proposals', async () => {
+    it('should get proposals', async () => {
       dsMockUtils.createApolloQueryMock(
         multiSigProposalsQuery(address, new BigNumber(1), new BigNumber(0)),
         {
@@ -237,17 +237,14 @@ describe('MultiSig class', () => {
       expect(data.length).toEqual(1);
     });
 
-    it('should work with optional pagination params', async () => {
-      dsMockUtils.createApolloQueryMock(multiSigProposalsQuery(address), {
-        multiSigProposals: multiSigProposalsResponse,
+    it('should return an empty array if no proposals are pending', async () => {
+      dsMockUtils.createQueryMock('multiSig', 'proposals', {
+        entries: [],
       });
-      const result = await multiSig.getHistoricalProposals();
 
-      const { data, next, count } = result;
+      const result = await multiSig.getProposals();
 
-      expect(next).toEqual(new BigNumber(1));
-      expect(count).toEqual(new BigNumber(2));
-      expect(data.length).toEqual(1);
+      expect(result).toEqual([]);
     });
   });
 
@@ -277,7 +274,7 @@ describe('MultiSig class', () => {
 
   describe('method: modify', () => {
     const account = entityMockUtils.getAccountInstance({ address });
-    it('should prepare the procedure and return the resulting procedure', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const expectedTransaction = 'someQueue' as unknown as PolymeshTransaction<void>;
       const args = {
         signers: [account],
@@ -287,26 +284,9 @@ describe('MultiSig class', () => {
         .calledWith({ args: { multiSig, ...args }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
-      const procedure = await multiSig.modify(args);
+      const queue = await multiSig.modify(args);
 
-      expect(procedure).toBe(expectedTransaction);
-    });
-  });
-
-  describe('method: joinCreator', () => {
-    it('should prepare the procedure and return the resulting procedure', async () => {
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
-      const args = {
-        asPrimary: true,
-      };
-
-      when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: { multiSig, ...args }, transformer: undefined }, context, {})
-        .mockResolvedValue(expectedTransaction);
-
-      const procedure = await multiSig.joinCreator(args);
-
-      expect(procedure).toBe(expectedTransaction);
+      expect(queue).toBe(expectedTransaction);
     });
   });
 });

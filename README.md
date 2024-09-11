@@ -1,6 +1,6 @@
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
 [![js-semistandard-style](https://img.shields.io/badge/code%20style-semistandard-brightgreen.svg?style=flat-square)](https://github.com/standard/semistandard)
-[![Types](https://img.shields.io/npm/types/@polymeshassociation/polymesh-sdk)](https://www.npmjs.com/package/@polymeshassociation/polymesh-sdk)
+[![Types](https://img.shields.io/npm/types/@polymeshassociation/polymesh-sdk)](https://)
 [![npm](https://img.shields.io/npm/v/@polymeshassociation/polymesh-sdk)](https://www.npmjs.com/package/@polymeshassociation/polymesh-sdk)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=PolymeshAssociation_polymesh-sdk&metric=coverage)](https://sonarcloud.io/summary/new_code?id=PolymeshAssociation_polymesh-sdk)
@@ -122,29 +122,6 @@ Creating transactions is a two-step process. First a procedure is created, which
    * For example, if the `ticker` was claimed after the procedure was created, but before it was executed, or the signing manager didn't generate a correct signature.
    */
   const newAsset = await createAssetProc.run()
-```
-
-#### Creating MultiSig Proposals
-
-If the signingAccount is a MultiSig signer, then the transaction will need to be ran with `.runAsProposal()` instead of the usual `.run()`.
-The underlying transaction will be wrapped with `multiSig.createProposalAsKey` extrinsic and will resolve to the MultiSig proposal created.
-
-Approving and rejecting existing proposals are an exception and should be submitted with `.run()`. If your application supports
-MultiSig signers, then the procedure's `multiSig` param can be checked to ensure the correct method is called.
-
-```typescript
-  const createAssetProc = await polyClient.assets.createAsset(
-    args,
-    {
-      signingAccount: multiSigSigner
-    }
-  )
-  createAssetProc.multiSig // indicates the acting MultiSig. If set `runAsProposal` must be used
-  const proposal = await createAssetProc.runAsProposal()
-
-  const rejectProc = await proposal.reject({ signingAccount: multiSigSigner })
-  rejectProc.multiSig // returns `null`. Rejecting a proposal does not get wrapped
-  await rejectProc.run()
 ```
 
 #### Reading Data

@@ -6,9 +6,12 @@ import P from 'bluebird';
 import { when } from 'jest-when';
 
 import { Account, Context, PolymeshError } from '~/internal';
-import { claimsQuery } from '~/middleware/queries/claims';
-import { heartbeatQuery, metadataQuery } from '~/middleware/queries/common';
-import { polyxTransactionsQuery } from '~/middleware/queries/polyxTransactions';
+import {
+  claimsQuery,
+  heartbeatQuery,
+  metadataQuery,
+  polyxTransactionsQuery,
+} from '~/middleware/queries';
 import {
   BalanceTypeEnum,
   CallIdEnum,
@@ -646,62 +649,6 @@ describe('Context class', () => {
 
       const result = context.getSigningAccount();
       expect(result).toEqual(expect.objectContaining({ address }));
-    });
-
-    it('should throw an error if there is no Account associated with the SDK', async () => {
-      const context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
-      });
-
-      expect(() => context.getSigningAccount()).toThrow(
-        'There is no signing Account associated with the SDK instance'
-      );
-    });
-  });
-
-  describe('method: getActingAccount', () => {
-    beforeAll(() => {
-      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
-    });
-
-    afterAll(() => {
-      jest.restoreAllMocks();
-    });
-
-    it('should return the signing Account if its not a MultiSig signer', async () => {
-      const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
-
-      const context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
-        signingManager: dsMockUtils.getSigningManagerInstance({
-          getAccounts: [address],
-        }),
-      });
-
-      const result = await context.getActingAccount();
-      expect(result).toEqual(expect.objectContaining({ address }));
-    });
-
-    it('should return the acting Account if the signer is a MultiSig signer', async () => {
-      const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
-
-      const context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
-        signingManager: dsMockUtils.getSigningManagerInstance({
-          getAccounts: [address],
-        }),
-      });
-      entityMockUtils.configureMocks({
-        accountOptions: {
-          getMultiSig: entityMockUtils.getMultiSigInstance({ address: 'someMultiAddress' }),
-        },
-      });
-
-      const result = await context.getActingAccount();
-      expect(result).toEqual(expect.objectContaining({ address: 'someMultiAddress' }));
     });
 
     it('should throw an error if there is no Account associated with the SDK', async () => {
@@ -2411,98 +2358,6 @@ describe('Context class', () => {
       });
 
       expect(() => context.assertSupportsSubscription()).toThrow(expectedError);
-    });
-  });
-
-  describe('method: getSignature', () => {
-    beforeAll(() => {
-      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
-    });
-
-    afterAll(() => {
-      jest.restoreAllMocks();
-    });
-
-    it('should throw an error when no signer is set or signer has not signRaw method', async () => {
-      const expectedError = new PolymeshError({
-        code: ErrorCode.General,
-        message:
-          'There is no signer associated with the SDK instance or the signer does not supporting raw payload',
-      });
-
-      let context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
-      });
-
-      await expect(
-        context.getSignature({
-          rawPayload: '0xSomePayload',
-        })
-      ).rejects.toThrow(expectedError);
-
-      const signer = 'signer' as PolkadotSigner;
-      context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
-        signingManager: dsMockUtils.getSigningManagerInstance({
-          getExternalSigner: signer,
-        }),
-      });
-
-      await expect(
-        context.getSignature({
-          rawPayload: '0xSomePayload',
-        })
-      ).rejects.toThrow(expectedError);
-    });
-
-    it('should return the signature after signing the payload', async () => {
-      const signer = {
-        signRaw: jest.fn(() => {
-          return Promise.resolve({
-            id: 1,
-            signature: '0xsignature',
-          });
-        }),
-      } as PolkadotSigner;
-
-      const address = 'someAddress';
-
-      const context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
-        signingManager: dsMockUtils.getSigningManagerInstance({
-          getExternalSigner: signer,
-          getAccounts: [address],
-        }),
-      });
-
-      const rawPayload = '0xRawPayload';
-
-      let result = await context.getSignature({ rawPayload });
-
-      expect(signer.signRaw).toHaveBeenCalledWith({
-        address,
-        data: rawPayload,
-        type: 'bytes',
-      });
-
-      expect(signer.signRaw).toHaveBeenCalledTimes(1);
-
-      expect(result).toEqual('0xsignature');
-
-      result = await context.getSignature({ rawPayload, signer: 'someOtherSigner' });
-
-      expect(signer.signRaw).toHaveBeenCalledWith({
-        address: 'someOtherSigner',
-        data: rawPayload,
-        type: 'bytes',
-      });
-
-      expect(signer.signRaw).toHaveBeenCalledTimes(2);
-
-      expect(result).toEqual('0xsignature');
     });
   });
 });

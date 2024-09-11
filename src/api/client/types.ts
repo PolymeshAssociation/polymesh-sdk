@@ -1,5 +1,4 @@
 import { ApiOptions } from '@polkadot/api/types';
-import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
 import { TxTag } from '~/types';
@@ -47,10 +46,6 @@ export interface SubmissionDetails {
   blockHash: string;
   transactionIndex: BigNumber;
   transactionHash: string;
-  /**
-   * The raw result of the transaction. Contains event data for the transaction
-   */
-  result: ISubmittableResult;
 }
 
 /**

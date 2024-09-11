@@ -3,7 +3,7 @@ import { when } from 'jest-when';
 
 import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 import { Account, Context, MultiSig, PolymeshError, PolymeshTransaction } from '~/internal';
-import { multiSigProposalQuery, multiSigProposalVotesQuery } from '~/middleware/queries/multisigs';
+import { multiSigProposalQuery, multiSigProposalVotesQuery } from '~/middleware/queries';
 import { MultiSigProposalVoteActionEnum, SignerTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { createMockMoment, createMockOption } from '~/testUtils/mocks/dataSources';

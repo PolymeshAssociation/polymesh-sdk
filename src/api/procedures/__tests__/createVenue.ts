@@ -13,11 +13,6 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
-jest.mock(
-  '~/api/entities/Account',
-  require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
-);
-
 describe('createVenue procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToBytes: jest.SpyInstance<Bytes, [string, Context]>;
@@ -26,39 +21,18 @@ describe('createVenue procedure', () => {
     [VenueType, Context]
   >;
   let createVenueTransaction: PolymeshTx<unknown[]>;
-  let description: string;
-  let type: VenueType;
-  let args: CreateVenueParams;
-
-  let rawDetails: Bytes;
-  let rawType: PolymeshPrimitivesSettlementVenueType;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
     dsMockUtils.initMocks();
-
     stringToBytes = jest.spyOn(utilsConversionModule, 'stringToBytes');
     venueTypeToMeshVenueTypeSpy = jest.spyOn(utilsConversionModule, 'venueTypeToMeshVenueType');
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-
-    description = 'description';
-    type = VenueType.Distribution;
-
     createVenueTransaction = dsMockUtils.createTxMock('settlement', 'createVenue');
-
-    const rawMaxVenueSigners = dsMockUtils.createMockU32(new BigNumber(2));
-    dsMockUtils.setConstMock('settlement', 'maxNumberOfVenueSigners', {
-      returnValue: rawMaxVenueSigners,
-    });
-
-    rawDetails = dsMockUtils.createMockBytes(description);
-    rawType = dsMockUtils.createMockVenueType(type);
-
-    args = { description, type };
   });
 
   afterEach(() => {
@@ -72,42 +46,26 @@ describe('createVenue procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should throw an error if maximum venue signers gets exceeded', () => {
-    const signers = ['newSigner', 'newSigner2', 'newSigner3'];
-
-    const proc = procedureMockUtils.getInstance<CreateVenueParams, Venue>(mockContext);
-
-    return expect(
-      prepareCreateVenue.call(proc, {
-        ...args,
-        signers,
-      })
-    ).rejects.toThrow('Maximum number of venue signers exceeded');
-  });
-
   it('should return a createVenue transaction spec', async () => {
+    const description = 'description';
+    const type = VenueType.Distribution;
+    const args = {
+      description,
+      type,
+    };
+    const rawDetails = dsMockUtils.createMockBytes(description);
+    const rawType = dsMockUtils.createMockVenueType(type);
+
     const proc = procedureMockUtils.getInstance<CreateVenueParams, Venue>(mockContext);
 
     when(stringToBytes).calledWith(description, mockContext).mockReturnValue(rawDetails);
     when(venueTypeToMeshVenueTypeSpy).calledWith(type, mockContext).mockReturnValue(rawType);
 
-    let result = await prepareCreateVenue.call(proc, args);
+    const result = await prepareCreateVenue.call(proc, args);
 
     expect(result).toEqual({
       transaction: createVenueTransaction,
       args: [rawDetails, [], rawType],
-      resolver: expect.any(Function),
-    });
-
-    const rawSigner = dsMockUtils.createMockAccountId('newSigner');
-
-    jest.spyOn(utilsConversionModule, 'stringToAccountId').mockReturnValue(rawSigner);
-
-    result = await prepareCreateVenue.call(proc, { ...args, signers: ['newSigner'] });
-
-    expect(result).toEqual({
-      transaction: createVenueTransaction,
-      args: [rawDetails, [rawSigner], rawType],
       resolver: expect.any(Function),
     });
   });

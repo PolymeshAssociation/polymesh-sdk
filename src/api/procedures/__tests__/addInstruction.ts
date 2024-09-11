@@ -32,10 +32,8 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import {
   ErrorCode,
-  Identity,
   InstructionEndCondition,
   InstructionType,
-  OffChainLeg,
   PortfolioLike,
   RoleType,
   TickerReservationStatus,
@@ -86,14 +84,11 @@ describe('addInstruction procedure', () => {
   let stringToInstructionMemoSpy: jest.SpyInstance;
   let legToFungibleLegSpy: jest.SpyInstance;
   let legToNonFungibleLegSpy: jest.SpyInstance;
-  let legToOffChainLegSpy: jest.SpyInstance;
   let identityToBtreeSetSpy: jest.SpyInstance;
   let venueId: BigNumber;
   let amount: BigNumber;
   let from: PortfolioLike;
   let to: PortfolioLike;
-  let sender: Identity;
-  let receiver: Identity;
   let fromDid: string;
   let toDid: string;
   let mediatorDid: string;
@@ -101,7 +96,6 @@ describe('addInstruction procedure', () => {
   let toPortfolio: DefaultPortfolio | NumberedPortfolio;
   let asset: string;
   let nftAsset: string;
-  let offChainAsset: string;
   let tradeDate: Date;
   let valueDate: Date;
   let endBlock: BigNumber;
@@ -112,11 +106,8 @@ describe('addInstruction procedure', () => {
   let rawAmount: Balance;
   let rawFrom: PolymeshPrimitivesIdentityIdPortfolioId;
   let rawTo: PolymeshPrimitivesIdentityIdPortfolioId;
-  let rawSenderIdentity: PolymeshPrimitivesIdentityId;
-  let rawReceiverIdentity: PolymeshPrimitivesIdentityId;
   let rawTicker: PolymeshPrimitivesTicker;
   let rawNftTicker: PolymeshPrimitivesTicker;
-  let rawOffChainTicker: PolymeshPrimitivesTicker;
   let rawTradeDate: Moment;
   let rawValueDate: Moment;
   let rawEndBlock: u32;
@@ -127,7 +118,6 @@ describe('addInstruction procedure', () => {
   let rawNfts: PolymeshPrimitivesNftNfTs;
   let rawLeg: PolymeshPrimitivesSettlementLeg;
   let rawNftLeg: PolymeshPrimitivesSettlementLeg;
-  let rawOffChainLeg: PolymeshPrimitivesSettlementLeg;
   let rawMediatorSet: BTreeSet<PolymeshPrimitivesIdentityId>;
   let rawEmptyMediatorSet: BTreeSet<PolymeshPrimitivesIdentityId>;
 
@@ -161,7 +151,6 @@ describe('addInstruction procedure', () => {
     stringToInstructionMemoSpy = jest.spyOn(utilsConversionModule, 'stringToMemo');
     legToFungibleLegSpy = jest.spyOn(utilsConversionModule, 'legToFungibleLeg');
     legToNonFungibleLegSpy = jest.spyOn(utilsConversionModule, 'legToNonFungibleLeg');
-    legToOffChainLegSpy = jest.spyOn(utilsConversionModule, 'legToOffChainLeg');
     identityToBtreeSetSpy = jest.spyOn(utilsConversionModule, 'identitiesToBtreeSet');
 
     venueId = new BigNumber(1);
@@ -181,7 +170,6 @@ describe('addInstruction procedure', () => {
     });
     asset = 'SOME_ASSET';
     nftAsset = 'TEST_NFT';
-    offChainAsset = 'SOME_OFFCHAIN_ASSET';
     const now = new Date();
     tradeDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     valueDate = new Date(now.getTime() + 24 * 60 * 60 * 1000 + 1);
@@ -197,17 +185,12 @@ describe('addInstruction procedure', () => {
       did: dsMockUtils.createMockIdentityId(to),
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
-    sender = entityMockUtils.getIdentityInstance({ did: 'sender' });
-    receiver = entityMockUtils.getIdentityInstance({ did: 'receiver' });
-    rawSenderIdentity = dsMockUtils.createMockIdentityId(sender.did);
-    rawReceiverIdentity = dsMockUtils.createMockIdentityId(receiver.did);
     rawMediatorSet = dsMockUtils.createMockBTreeSet([
       dsMockUtils.createMockIdentityId(mediatorDid),
     ]);
     rawEmptyMediatorSet = dsMockUtils.createMockBTreeSet([]);
     rawTicker = dsMockUtils.createMockTicker(asset);
     rawNftTicker = dsMockUtils.createMockTicker(nftAsset);
-    rawOffChainTicker = dsMockUtils.createMockTicker(offChainAsset);
     rawTradeDate = dsMockUtils.createMockMoment(new BigNumber(tradeDate.getTime()));
     rawValueDate = dsMockUtils.createMockMoment(new BigNumber(valueDate.getTime()));
     rawEndBlock = dsMockUtils.createMockU32(endBlock);
@@ -232,14 +215,6 @@ describe('addInstruction procedure', () => {
         sender: rawFrom,
         receiver: rawTo,
         nfts: rawNfts,
-      },
-    });
-    rawOffChainLeg = dsMockUtils.createMockInstructionLeg({
-      OffChain: {
-        senderIdentity: rawSenderIdentity,
-        receiverIdentity: rawReceiverIdentity,
-        amount: rawAmount,
-        ticker: rawOffChainTicker,
       },
     });
   });
@@ -317,9 +292,6 @@ describe('addInstruction procedure', () => {
       },
     });
     when(stringToTickerSpy).calledWith(asset, mockContext).mockReturnValue(rawTicker);
-    when(stringToTickerSpy)
-      .calledWith(offChainAsset, mockContext)
-      .mockReturnValue(rawOffChainTicker);
     when(bigNumberToU64Spy).calledWith(venueId, mockContext).mockReturnValue(rawVenueId);
     when(bigNumberToBalanceSpy).calledWith(amount, mockContext).mockReturnValue(rawAmount);
     when(endConditionToSettlementTypeSpy)
@@ -344,8 +316,6 @@ describe('addInstruction procedure', () => {
     when(legToNonFungibleLegSpy)
       .calledWith({ from, to, asset, nfts: [] }, mockContext)
       .mockReturnValue(rawNftLeg);
-
-    legToOffChainLegSpy.mockReturnValue(rawOffChainLeg);
 
     when(identityToBtreeSetSpy)
       .calledWith(
@@ -479,34 +449,6 @@ describe('addInstruction procedure', () => {
     expect(error.data.failedInstructionIndexes[0]).toBe(0);
   });
 
-  it('should throw an error if any instruction contains off chain leg with zero amount', async () => {
-    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      portfoliosToAffirm: [],
-    });
-
-    entityMockUtils.configureMocks({
-      venueOptions: { exists: true },
-    });
-
-    let error;
-    const legs = Array(2).fill({
-      from: sender,
-      to: receiver,
-      offChainAmount: new BigNumber(0),
-      asset: offChainAsset,
-    } as OffChainLeg);
-
-    try {
-      await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs }] });
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe('Instruction legs cannot have zero amount');
-    expect(error.code).toBe(ErrorCode.ValidationError);
-    expect(error.data.failedInstructionIndexes[0]).toBe(0);
-  });
-
   it('should throw an error if given an string asset that does not exist', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
       portfoliosToAffirm: [],
@@ -554,33 +496,6 @@ describe('addInstruction procedure', () => {
       to,
       amount: new BigNumber(10),
       asset: entityMockUtils.getFungibleAssetInstance({ ticker: asset }),
-    });
-    try {
-      await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs }] });
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe('Instruction leg cannot transfer Assets between same identity');
-    expect(error.code).toBe(ErrorCode.ValidationError);
-    expect(error.data.failedInstructionIndexes[0]).toBe(0);
-  });
-
-  it('should throw an error if any instruction contains offchain leg with transferring offchain Asset within same Identity', async () => {
-    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      portfoliosToAffirm: [],
-    });
-
-    entityMockUtils.configureMocks({
-      venueOptions: { exists: true },
-    });
-
-    let error;
-    const legs = Array(2).fill({
-      from: sender,
-      to: sender,
-      offChainAmount: new BigNumber(10),
-      asset: offChainAsset,
     });
     try {
       await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs }] });
@@ -987,52 +902,6 @@ describe('addInstruction procedure', () => {
             rawValueDate,
             [rawLeg],
             rawInstructionMemo,
-            rawEmptyMediatorSet,
-          ],
-        },
-      ],
-      resolver: expect.any(Function),
-    });
-  });
-
-  it('should handle offchain leg', async () => {
-    dsMockUtils.configureMocks({ contextOptions: { did: sender.did } });
-    entityMockUtils.configureMocks({
-      venueOptions: {
-        exists: true,
-      },
-    });
-    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      portfoliosToAffirm: [[]],
-    });
-
-    const result = await prepareAddInstruction.call(proc, {
-      venueId: args.venueId,
-      instructions: [
-        {
-          legs: [
-            {
-              from: sender,
-              to: receiver,
-              offChainAmount: amount,
-              asset: offChainAsset,
-            },
-          ],
-        },
-      ],
-    });
-
-    expect(result).toEqual({
-      transactions: [
-        {
-          transaction: addWithMediatorsTransaction,
-          args: [
-            rawVenueId,
-            rawAuthSettlementType,
-            null,
-            null,
-            [rawOffChainLeg],
-            null,
             rawEmptyMediatorSet,
           ],
         },

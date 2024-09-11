@@ -31,14 +31,6 @@ jest.mock(
   )
 );
 
-const ticker = 'MY_ASSET';
-const secondaryAccounts = ['0x1', '0x2'];
-const procArgs = {
-  ticker,
-  secondaryAccounts,
-};
-const returnValue = 'good';
-
 describe('Procedure class', () => {
   let context: MockContext;
 
@@ -311,8 +303,16 @@ describe('Procedure class', () => {
     });
 
     it('should prepare and return a transaction spec with the corresponding transactions, arguments, fees and return value', async () => {
+      const ticker = 'MY_ASSET';
+      const secondaryAccounts = ['0x1', '0x2'];
+      const procArgs = {
+        ticker,
+        secondaryAccounts,
+      };
       const tx1 = dsMockUtils.createTxMock('asset', 'registerTicker');
       const tx2 = dsMockUtils.createTxMock('identity', 'cddRegisterDid');
+
+      const returnValue = 'good';
 
       const func1 = async function (
         this: Procedure<typeof procArgs, string>,
@@ -330,7 +330,7 @@ describe('Procedure class', () => {
       const proc1 = new Procedure(func1);
 
       const transaction = await proc1.prepare({ args: procArgs }, context, {
-        signingAccount: entityMockUtils.getAccountInstance(),
+        signingAccount: 'something',
         nonce: new BigNumber(15),
       });
 
@@ -351,9 +351,9 @@ describe('Procedure class', () => {
             expect.objectContaining({ transaction: tx2, args: [secondaryAccounts] }),
           ]),
         }),
-        { ...context, signingAddress: 'someAddress', nonce: new BigNumber(15) }
+        { ...context, signingAddress: 'something', nonce: new BigNumber(15) }
       );
-      expect(context.setSigningAddress).toHaveBeenCalledWith('someAddress');
+      expect(context.setSigningAddress).toHaveBeenCalledWith('something');
       expect(context.setNonce).toHaveBeenCalledWith(new BigNumber(15));
 
       const func2 = async function (
@@ -370,7 +370,7 @@ describe('Procedure class', () => {
       const proc2 = new Procedure(func2);
 
       const transaction2 = await proc2.prepare({ args: procArgs }, context, {
-        signingAccount: entityMockUtils.getAccountInstance(),
+        signingAccount: 'something',
       });
 
       const constructorMock = polymeshTransactionMockUtils.getTransactionConstructorMock();
@@ -383,11 +383,11 @@ describe('Procedure class', () => {
         expect.objectContaining({ transaction: tx1, args: [ticker] }),
         {
           ...context,
-          signingAddress: 'someAddress',
+          signingAddress: 'something',
           nonce: new BigNumber(-1),
         }
       );
-      expect(context.setSigningAddress).toHaveBeenCalledWith('someAddress');
+      expect(context.setSigningAddress).toHaveBeenCalledWith('something');
 
       const func3 = async function (
         this: Procedure<typeof procArgs, string>,
@@ -402,7 +402,7 @@ describe('Procedure class', () => {
       const proc3 = new Procedure(func3);
 
       const transaction3 = await proc3.prepare({ args: procArgs }, context, {
-        signingAccount: entityMockUtils.getAccountInstance(),
+        signingAccount: 'something',
         nonce: () => new BigNumber(10),
       });
 
@@ -414,11 +414,11 @@ describe('Procedure class', () => {
         expect.objectContaining({ transaction: tx1, args: [ticker] }),
         {
           ...context,
-          signingAddress: 'someAddress',
+          signingAddress: 'something',
           nonce: new BigNumber(10),
         }
       );
-      expect(context.setSigningAddress).toHaveBeenCalledWith('someAddress');
+      expect(context.setSigningAddress).toHaveBeenCalledWith('something');
       expect(context.setNonce).toHaveBeenCalledWith(new BigNumber(10));
 
       constructorMock.mockReset();
@@ -426,7 +426,7 @@ describe('Procedure class', () => {
       const nonce = (): Promise<BigNumber> => Promise.resolve(new BigNumber(15));
 
       await proc3.prepare({ args: procArgs }, context, {
-        signingAccount: entityMockUtils.getAccountInstance(),
+        signingAccount: 'something',
         nonce,
       });
 
@@ -434,7 +434,7 @@ describe('Procedure class', () => {
         expect.objectContaining({ transaction: tx1, args: [ticker] }),
         {
           ...context,
-          signingAddress: 'someAddress',
+          signingAddress: 'something',
           nonce: new BigNumber(15),
         }
       );
@@ -444,7 +444,7 @@ describe('Procedure class', () => {
       constructorMock.mockReset();
 
       await proc3.prepare({ args: procArgs }, context, {
-        signingAccount: entityMockUtils.getAccountInstance(),
+        signingAccount: 'something',
         nonce: Promise.resolve(new BigNumber(12)),
       });
 
@@ -452,7 +452,7 @@ describe('Procedure class', () => {
         expect.objectContaining({ transaction: tx1, args: [ticker] }),
         {
           ...context,
-          signingAddress: 'someAddress',
+          signingAddress: 'something',
           nonce: new BigNumber(12),
         }
       );
@@ -460,41 +460,14 @@ describe('Procedure class', () => {
       expect(context.setNonce).toHaveBeenCalledWith(new BigNumber(12));
     });
 
-    it('should detect when signer is a MultiSig signer', async () => {
-      const tx = dsMockUtils.createTxMock('asset', 'registerTicker');
-
-      const constructorMock = polymeshTransactionMockUtils.getTransactionConstructorMock();
-
-      const func = async function (
-        this: Procedure<typeof procArgs, string>,
-        args: typeof procArgs
-      ): Promise<BatchTransactionSpec<string, [[string]]>> {
-        return {
-          transactions: [{ transaction: tx, args: [args.ticker] }],
-          resolver: returnValue,
-        };
+    it('should throw any errors encountered during preparation', () => {
+      const ticker = 'MY_ASSET';
+      const secondaryAccounts = ['0x1', '0x2'];
+      const procArgs = {
+        ticker,
+        secondaryAccounts,
       };
 
-      const proc = new Procedure(func);
-
-      await proc.prepare({ args: procArgs }, context, {
-        signingAccount: entityMockUtils.getAccountInstance({
-          getMultiSig: entityMockUtils.getMultiSigInstance({ address: 'someMultiSigAddress' }),
-        }),
-        nonce: Promise.resolve(new BigNumber(12)),
-      });
-
-      expect(constructorMock).toHaveBeenCalledWith(
-        expect.objectContaining({ transaction: tx, args: [ticker] }),
-        {
-          ...context,
-          signingAddress: 'someAddress',
-          nonce: new BigNumber(12),
-        }
-      );
-    });
-
-    it('should throw any errors encountered during preparation', () => {
       const errorMsg = 'failed';
       const func = async function (
         this: Procedure<typeof procArgs, string>
@@ -508,6 +481,12 @@ describe('Procedure class', () => {
     });
 
     it("should throw an error if the caller doesn't have the appropriate roles", async () => {
+      const ticker = 'MY_ASSET';
+      const secondaryAccounts = ['0x1', '0x2'];
+      const procArgs = {
+        ticker,
+        secondaryAccounts,
+      };
       const func = async function (
         this: Procedure<typeof procArgs, string>
       ): Promise<TransactionSpec<string, [string]>> {

@@ -30,11 +30,13 @@ import {
   PolymeshError,
   Subsidy,
 } from '~/internal';
-import { claimsQuery } from '~/middleware/queries/claims';
-import { heartbeatQuery, metadataQuery } from '~/middleware/queries/common';
-import { polyxTransactionsQuery } from '~/middleware/queries/polyxTransactions';
+import {
+  claimsQuery,
+  heartbeatQuery,
+  metadataQuery,
+  polyxTransactionsQuery,
+} from '~/middleware/queries';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
-import { Query as QueryOld } from '~/middleware/typesV6';
 import {
   AccountBalance,
   ClaimData,
@@ -82,7 +84,6 @@ import {
   u32ToBigNumber,
 } from '~/utils/conversion';
 import {
-  asAccount,
   asDid,
   assertAddressValid,
   calculateNextKey,
@@ -442,7 +443,7 @@ export class Context {
   /**
    * @hidden
    *
-   * Retrieve the account that will sign the transaction
+   * Retrieve the signing Account
    *
    * @throws if there is no signing Account associated to the SDK instance
    */
@@ -450,24 +451,6 @@ export class Context {
     const address = this.getSigningAddress();
 
     return new Account({ address }, this);
-  }
-
-  /**
-   * @hidden
-   *
-   * Retrieve the account that is acting. Like `getSigningAccount`, except this method will consider MultiSig signers
-   * and return the acting MultiSig account instead. This should be used when the account is involved in the extrinsic,
-   * such as accepting a "join identity" authorization.
-   *
-   * @throws if there is no signing Account associated to the SDK instance
-   */
-  public async getActingAccount(): Promise<Account> {
-    const signingAccount = this.getSigningAccount();
-
-    const multiSig = await signingAccount.getMultiSig();
-
-    // Return as Account to ensure consistent comparison via uuid
-    return multiSig ? new Account({ address: multiSig.address }, this) : signingAccount;
   }
 
   /**
@@ -1040,13 +1023,12 @@ export class Context {
     return api;
   }
 
-  // TODO @prashantasdeveloper Remove `QueryOld` after SQ dual version support
   /**
    * @hidden
    *
    * Make a query to the middleware V2 server using the apollo client
    */
-  public async queryMiddleware<Result extends Partial<Query | QueryOld>>(
+  public async queryMiddleware<Result extends Partial<Query>>(
     query: QueryOptions<OperationVariables, Result>
   ): Promise<ApolloQueryResult<Result>> {
     let result: ApolloQueryResult<Result>;
@@ -1054,12 +1036,11 @@ export class Context {
       result = await this.middlewareApi.query(query);
     } catch (err) {
       const resultMessage = err.networkError?.result?.message;
-      const { message: errorMessage, stack } = err;
+      const { message: errorMessage } = err;
       const message = resultMessage ?? errorMessage;
       throw new PolymeshError({
         code: ErrorCode.MiddlewareError,
         message: `Error in middleware V2 query: ${message}`,
-        stack,
       });
     }
 
@@ -1355,40 +1336,5 @@ export class Context {
           'Subscriptions are not supported over http. SDK must be initialized with a ws connection in order to subscribe',
       });
     }
-  }
-
-  /**
-   * Get signature for a raw payload string
-   */
-  public async getSignature(args: {
-    rawPayload: `0x${string}`;
-    signer?: string | Account;
-  }): Promise<`0x${string}`> {
-    const { rawPayload, signer } = args;
-
-    const externalSigner = this.getExternalSigner();
-
-    if (!externalSigner?.signRaw) {
-      throw new PolymeshError({
-        code: ErrorCode.General,
-        message:
-          'There is no signer associated with the SDK instance or the signer does not supporting raw payload',
-      });
-    }
-
-    let account: string | Account;
-    if (signer) {
-      account = signer;
-    } else {
-      account = this.getSigningAddress();
-    }
-
-    const result = await externalSigner.signRaw({
-      address: asAccount(account, this).address,
-      data: rawPayload,
-      type: 'bytes',
-    });
-
-    return result.signature;
   }
 }

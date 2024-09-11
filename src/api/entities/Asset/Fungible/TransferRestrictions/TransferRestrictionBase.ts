@@ -1,4 +1,3 @@
-import { PolymeshPrimitivesStatisticsStatType } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import {
@@ -7,18 +6,15 @@ import {
   AddTransferRestrictionParams,
   Context,
   FungibleAsset,
-  Identity,
   Namespace,
   removeAssetStat,
   setTransferRestrictions,
   SetTransferRestrictionsStorage,
 } from '~/internal';
 import {
-  ActiveStats,
   AddAssetStatParams,
   AddRestrictionParams,
   ClaimCountRestrictionValue,
-  ClaimPercentageRestrictionValue,
   GetTransferRestrictionReturnType,
   NoArgsProcedureMethod,
   ProcedureMethod,
@@ -38,11 +34,8 @@ import {
 } from '~/types';
 import {
   identityIdToString,
-  meshClaimTypeToClaimType,
-  meshStatToStatType,
   stringToTickerKey,
   transferConditionToTransferRestriction,
-  transferRestrictionTypeToStatOpType,
   u32ToBigNumber,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
@@ -223,9 +216,6 @@ export abstract class TransferRestrictionBase<
     } = this;
     const tickerKey = stringToTickerKey(ticker, context);
     const { requirements } = await statistics.assetTransferCompliances(tickerKey);
-
-    const existingRequirementCount = [...requirements].length;
-
     const filteredRequirements = [...requirements].filter(requirement => {
       if (type === TransferRestrictionType.Count) {
         return requirement.isMaxInvestorCount;
@@ -238,33 +228,9 @@ export abstract class TransferRestrictionBase<
       }
     });
     const rawExemptedLists = await Promise.all(
-      filteredRequirements.map(req => {
-        const { value } = transferConditionToTransferRestriction(req, context);
-
-        if (req.isClaimCount) {
-          const { claim } = value as ClaimCountRestrictionValue;
-          return statistics.transferConditionExemptEntities.entries({
-            asset: tickerKey,
-            op: transferRestrictionTypeToStatOpType(TransferRestrictionType.ClaimCount, context),
-            claimType: claim.type,
-          });
-        } else if (req.isClaimOwnership) {
-          const { claim } = value as ClaimPercentageRestrictionValue;
-          return statistics.transferConditionExemptEntities.entries({
-            asset: tickerKey,
-            op: transferRestrictionTypeToStatOpType(
-              TransferRestrictionType.ClaimPercentage,
-              context
-            ),
-            claimType: claim.type,
-          });
-        } else {
-          return statistics.transferConditionExemptEntities.entries({
-            asset: tickerKey,
-            op: transferRestrictionTypeToStatOpType(type, context),
-          });
-        }
-      })
+      filteredRequirements.map(() =>
+        statistics.transferConditionExemptEntities.entries({ asset: tickerKey })
+      )
     );
 
     const restrictions = rawExemptedLists.map((list, index) => {
@@ -312,64 +278,7 @@ export abstract class TransferRestrictionBase<
 
     return {
       restrictions,
-      availableSlots: maxTransferConditions.minus(existingRequirementCount),
+      availableSlots: maxTransferConditions.minus(restrictions.length),
     } as GetTransferRestrictionReturnType<T>;
-  }
-
-  /**
-   * Retrieve all active Transfer Restrictions of the corresponding type
-   *
-   * @note there is a maximum number of restrictions allowed across all types.
-   *   The `availableSlots` property of the result represents how many more restrictions can be added
-   *   before reaching that limit
-   */
-  public async getStat(): Promise<ActiveStats> {
-    const {
-      parent: { ticker },
-      context,
-      context: {
-        polymeshApi: {
-          query: { statistics },
-        },
-      },
-      type,
-    } = this;
-    const tickerKey = stringToTickerKey(ticker, context);
-    const currentStats = await statistics.activeAssetStats(tickerKey);
-
-    let isSet = false;
-    const claims: ActiveStats['claims'] = [];
-
-    const pushClaims = (stat: PolymeshPrimitivesStatisticsStatType): void => {
-      const [rawClaimType, rawIssuer] = stat.claimIssuer.unwrap();
-      const claimType = meshClaimTypeToClaimType(rawClaimType);
-      const issuer = new Identity({ did: identityIdToString(rawIssuer) }, context);
-
-      claims.push({ claimType, issuer });
-    };
-
-    [...currentStats].forEach(stat => {
-      const statType = meshStatToStatType(stat);
-
-      if (type === TransferRestrictionType.ClaimCount && statType === StatType.ScopedCount) {
-        isSet = true;
-        pushClaims(stat);
-      } else if (
-        type === TransferRestrictionType.ClaimPercentage &&
-        statType === StatType.ScopedBalance
-      ) {
-        isSet = true;
-        pushClaims(stat);
-      } else if (type === TransferRestrictionType.Percentage && statType === StatType.Balance) {
-        isSet = true;
-      } else if (type === TransferRestrictionType.Count && statType === StatType.Count) {
-        isSet = true;
-      }
-    });
-
-    return {
-      isSet,
-      ...(claims.length ? { claims } : {}),
-    };
   }
 }

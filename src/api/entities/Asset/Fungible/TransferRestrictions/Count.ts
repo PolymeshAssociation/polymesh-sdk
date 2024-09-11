@@ -2,7 +2,6 @@ import BigNumber from 'bignumber.js';
 
 import { Context, FungibleAsset, TransferRestrictionBase } from '~/internal';
 import {
-  ActiveStats,
   ActiveTransferRestrictions,
   AddCountStatParams,
   AddCountTransferRestrictionParams,
@@ -101,10 +100,4 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
    * creation and try again if a race occurred. Future versions of the chain should introduce an extrinsic to avoid this issue
    */
   public investorCount: () => Promise<BigNumber>;
-
-  /**
-   * Retrieve current Count Transfer Restriction investor balance statistic for the Asset
-   *
-   */
-  public declare getStat: () => Promise<ActiveStats>;
 }

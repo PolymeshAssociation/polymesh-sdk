@@ -1,8 +1,9 @@
 import BigNumber from 'bignumber.js';
 
-import { Account, FungibleAsset, Instruction, Nft } from '~/internal';
+import { Account, FungibleAsset, Nft } from '~/internal';
+import { SettlementResultEnum as SettlementResult } from '~/middleware/types';
 import { SettlementDirectionEnum as SettlementDirection } from '~/middleware/typesV1';
-import { Balance, Leg, NftCollection, SettlementResultEnum } from '~/types';
+import { Balance, Leg, NftCollection } from '~/types';
 
 export interface PortfolioBalance extends Balance {
   asset: FungibleAsset;
@@ -31,14 +32,10 @@ export type SettlementLeg = Leg & {
 export interface HistoricSettlement {
   blockNumber: BigNumber;
   blockHash: string;
-  status: SettlementResultEnum;
+  status: SettlementResult;
   /**
    * Array of Accounts that participated by affirming the settlement
    */
   accounts: Account[];
   legs: SettlementLeg[];
-  /**
-   * This value is null when depicting portfolio movements
-   */
-  instruction?: Instruction;
 }

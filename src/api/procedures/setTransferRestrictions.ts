@@ -44,12 +44,12 @@ import {
   checkTxType,
   compareTransferRestrictionToInput,
   neededStatTypeForRestrictionInput,
-  requestMulti,
 } from '~/utils/internal';
 
 /**
  * @hidden
  */
+
 type ClaimKey = StatClaimType | 'None';
 export type ExemptionRecords = Record<ClaimKey, Identity[]>;
 export const newExemptionRecord = (): ExemptionRecords => ({
@@ -79,67 +79,10 @@ export const addExemptionIfNotPresent = (
 };
 
 export interface Storage {
+  currentRestrictions: PolymeshPrimitivesTransferComplianceTransferCondition[];
   currentExemptions: ExemptionRecords;
-  filteredRestrictions: PolymeshPrimitivesTransferComplianceTransferCondition[];
-  currentTypeRestrictions: PolymeshPrimitivesTransferComplianceTransferCondition[];
   occupiedSlots: BigNumber;
 }
-
-/**
- * @hidden
- * Checks if the input restrictions are valid
- */
-function assertInputValid(
-  inputRestrictions:
-    | CountTransferRestrictionInput[]
-    | PercentageTransferRestrictionInput[]
-    | ClaimCountTransferRestrictionInput[]
-    | ClaimPercentageTransferRestrictionInput[],
-  type: TransferRestrictionType
-): void {
-  if (
-    [TransferRestrictionType.Percentage, TransferRestrictionType.Count].includes(type) &&
-    inputRestrictions.length > 1
-  ) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Only one of provided Transfer Type Restriction can be set at a time',
-      data: { type },
-    });
-  }
-
-  if (type === TransferRestrictionType.ClaimCount) {
-    const seenJurisdictions = new Set<string>();
-    const seenClaimTypes = new Set<string>();
-
-    inputRestrictions.forEach(restriction => {
-      const { claim } = restriction as ClaimCountTransferRestrictionInput;
-
-      if (claim.type === ClaimType.Jurisdiction) {
-        // cannot add two claims with same country code restrictions will result in internal error
-        if (seenJurisdictions.has(claim.countryCode || 'none')) {
-          throw new PolymeshError({
-            code: ErrorCode.ValidationError,
-            message: 'Duplicate Jurisdiction CountryCode found in input',
-            data: { countryCode: claim.countryCode },
-          });
-        }
-        seenJurisdictions.add(claim.countryCode ?? 'none');
-      } else {
-        // cannot add two ClaimType.Accredited or ClaimType.Affiliate restrictions will result in internal error
-        if (seenClaimTypes.has(claim.type)) {
-          throw new PolymeshError({
-            code: ErrorCode.ValidationError,
-            message: 'Duplicate ClaimType found in input',
-            data: { claimType: claim.type },
-          });
-        }
-        seenClaimTypes.add(claim.type);
-      }
-    });
-  }
-}
-
 /**
  * @hidden
  *
@@ -186,11 +129,9 @@ function transformInput(
     const compareConditions = (
       transferCondition: PolymeshPrimitivesTransferComplianceTransferCondition
     ): boolean => compareTransferRestrictionToInput(transferCondition, condition);
-
     if (!needDifferentConditions) {
       needDifferentConditions = ![...currentRestrictions].find(compareConditions);
     }
-
     const rawCondition = transferRestrictionToPolymeshTransferCondition(condition, context);
     conditions.push(rawCondition);
 
@@ -226,9 +167,7 @@ function transformInput(
   if (!needDifferentConditions && !needDifferentExemptions) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
-      message: inputRestrictions.length
-        ? 'The restrictions and exemptions are already in place'
-        : 'No restrictions to remove',
+      message: 'The restrictions and exemptions are already in place',
     });
   }
 
@@ -249,7 +188,7 @@ export async function prepareSetTransferRestrictions(
         consts,
       },
     },
-    storage: { occupiedSlots, currentExemptions, filteredRestrictions, currentTypeRestrictions },
+    storage: { currentRestrictions, occupiedSlots, currentExemptions },
     context,
   } = this;
   const {
@@ -260,11 +199,9 @@ export async function prepareSetTransferRestrictions(
   } = args;
   const tickerKey = stringToTickerKey(ticker, context);
 
-  assertInputValid(restrictions, type);
-
   const { conditions, toSetExemptions, toRemoveExemptions } = transformInput(
     restrictions,
-    currentTypeRestrictions,
+    currentRestrictions,
     currentExemptions,
     type,
     context
@@ -272,8 +209,7 @@ export async function prepareSetTransferRestrictions(
 
   const maxTransferConditions = u32ToBigNumber(consts.statistics.maxTransferConditionsPerAsset);
   const finalCount = occupiedSlots.plus(newRestrictionAmount);
-
-  if (finalCount.isGreaterThan(maxTransferConditions)) {
+  if (finalCount.gte(maxTransferConditions)) {
     throw new PolymeshError({
       code: ErrorCode.LimitExceeded,
       message: 'Cannot set more Transfer Restrictions than there are slots available',
@@ -289,11 +225,7 @@ export async function prepareSetTransferRestrictions(
   transactions.push(
     checkTxType({
       transaction: statistics.setAssetTransferCompliance,
-      args: [
-        tickerKey,
-        // if we do not add the current restrictions (filteredRestrictions), then they will be removed
-        complianceConditionsToBtreeSet([...filteredRestrictions, ...conditions], context),
-      ],
+      args: [tickerKey, complianceConditionsToBtreeSet(conditions, context)],
     })
   );
 
@@ -304,10 +236,8 @@ export async function prepareSetTransferRestrictions(
       }
       const rawClaimType = claimType === 'None' ? undefined : (claimType as ClaimType);
       const exemptKey = toExemptKey(tickerKey, op, rawClaimType);
-
       const exemptedBtreeSet = identitiesToBtreeSet(exempted, context);
       const rawExempt = booleanToBool(exempt, context);
-
       transactions.push(
         checkTxType({
           transaction: statistics.setEntitiesExempt,
@@ -363,14 +293,10 @@ export async function prepareStorage(
     },
   } = this;
   const { ticker, type } = args;
+
   const tickerKey = stringToTickerKey(ticker, context);
 
-  const [currentStats, { requirements: currentRestrictions }] = await requestMulti<
-    [typeof statistics.activeAssetStats, typeof statistics.assetTransferCompliances]
-  >(context, [
-    [statistics.activeAssetStats, tickerKey],
-    [statistics.assetTransferCompliances, tickerKey],
-  ]);
+  const currentStats = await statistics.activeAssetStats(tickerKey);
 
   args.restrictions.forEach(restriction => {
     let claimIssuer;
@@ -388,28 +314,55 @@ export async function prepareStorage(
     assertStatIsSet(currentStats, neededStat);
   });
 
-  const filteredRestrictions = [...currentRestrictions].filter(requirement => {
-    if (type === TransferRestrictionType.Count) {
-      return !requirement.isMaxInvestorCount;
-    } else if (type === TransferRestrictionType.Percentage) {
-      return !requirement.isMaxInvestorOwnership;
-    } else if (type === TransferRestrictionType.ClaimCount) {
-      return !requirement.isClaimCount;
-    } else {
-      return !requirement.isClaimOwnership;
-    }
-  });
-  const currentTypeRestrictions = [...currentRestrictions].filter(requirement => {
-    if (type === TransferRestrictionType.Count) {
-      return requirement.isMaxInvestorCount;
-    } else if (type === TransferRestrictionType.Percentage) {
-      return requirement.isMaxInvestorOwnership;
-    } else if (type === TransferRestrictionType.ClaimCount) {
-      return requirement.isClaimCount;
-    } else {
-      return requirement.isClaimOwnership;
-    }
-  });
+  const {
+    transferRestrictions: { count, percentage, claimCount, claimPercentage },
+  } = new FungibleAsset({ ticker }, context);
+
+  const [
+    { restrictions: currentCountRestrictions },
+    { restrictions: currentPercentageRestrictions },
+    { restrictions: currentClaimCountRestrictions },
+    { restrictions: currentClaimPercentageRestrictions },
+  ] = await Promise.all([count.get(), percentage.get(), claimCount.get(), claimPercentage.get()]);
+
+  const currentRestrictions: TransferRestriction[] = [];
+
+  let occupiedSlots =
+    currentCountRestrictions.length +
+    currentPercentageRestrictions.length +
+    currentClaimCountRestrictions.length +
+    currentClaimPercentageRestrictions.length;
+  if (type === TransferRestrictionType.Count) {
+    occupiedSlots -= currentCountRestrictions.length;
+  } else if (type === TransferRestrictionType.Percentage) {
+    occupiedSlots -= currentPercentageRestrictions.length;
+  } else if (type === TransferRestrictionType.ClaimCount) {
+    occupiedSlots -= currentClaimCountRestrictions.length;
+  } else {
+    occupiedSlots -= currentClaimPercentageRestrictions.length;
+  }
+
+  if (type === TransferRestrictionType.Count) {
+    currentCountRestrictions.forEach(({ count: value }) => {
+      const restriction = { type: TransferRestrictionType.Count, value } as const;
+      currentRestrictions.push(restriction);
+    });
+  } else if (type === TransferRestrictionType.Percentage) {
+    currentPercentageRestrictions.forEach(({ percentage: value }) => {
+      const restriction = { type: TransferRestrictionType.Percentage, value } as const;
+      currentRestrictions.push(restriction);
+    });
+  } else if (type === TransferRestrictionType.ClaimCount) {
+    currentClaimCountRestrictions.forEach(({ claim, min, max, issuer }) => {
+      const restriction = { type, value: { claim, min, max, issuer } };
+      currentRestrictions.push(restriction);
+    });
+  } else {
+    currentClaimPercentageRestrictions.forEach(({ claim, min, max, issuer }) => {
+      const restriction = { type, value: { claim, min, max, issuer } };
+      currentRestrictions.push(restriction);
+    });
+  }
 
   const op = transferRestrictionTypeToStatOpType(type, context);
 
@@ -457,10 +410,15 @@ export async function prepareStorage(
     }
   );
 
+  const transformRestriction = (
+    restriction: TransferRestriction
+  ): PolymeshPrimitivesTransferComplianceTransferCondition => {
+    return transferRestrictionToPolymeshTransferCondition(restriction, context);
+  };
+
   return {
-    occupiedSlots: new BigNumber(filteredRestrictions.length),
-    currentTypeRestrictions,
-    filteredRestrictions,
+    occupiedSlots: new BigNumber(occupiedSlots),
+    currentRestrictions: currentRestrictions.map(transformRestriction),
     currentExemptions,
   };
 }

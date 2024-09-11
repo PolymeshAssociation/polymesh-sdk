@@ -66,7 +66,7 @@ export async function getAuthorization(
     },
   } = args;
 
-  const { address } = await context.getActingAccount();
+  const { address } = context.getSigningAccount();
 
   const hasRoles = [beneficiaryAddress, subsidizerAddress].includes(address);
 

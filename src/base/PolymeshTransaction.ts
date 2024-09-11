@@ -2,7 +2,6 @@ import { SubmittableExtrinsic } from '@polkadot/api/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
-import { isMultiSigNoWrapTx } from '~/base/utils';
 import { Context, PolymeshTransactionBase } from '~/internal';
 import { TxTag, TxTags } from '~/types';
 import { PolymeshTx, TransactionConstructionData, TransactionSpec } from '~/types/internal';
@@ -88,20 +87,13 @@ export class PolymeshTransaction<
     this.feeMultiplier = feeMultiplier;
     this.protocolFee = fee;
     this.paidForBy = paidForBy;
-
-    // some transactions should never be MultiSig proposals, like approving a proposal
-    if (isMultiSigNoWrapTx(this.tag)) {
-      this.multiSig = null;
-    }
   }
 
   // eslint-disable-next-line require-jsdoc
   protected composeTx(): SubmittableExtrinsic<'promise', ISubmittableResult> {
     const { transaction, args } = this;
 
-    const tx = transaction(...args);
-
-    return this.wrapProposalIfNeeded(tx);
+    return transaction(...args);
   }
 
   // eslint-disable-next-line require-jsdoc

@@ -5,8 +5,7 @@ import { when } from 'jest-when';
 import { Network } from '~/api/client/Network';
 import * as baseUtils from '~/base/utils';
 import { Context, PolymeshError, PolymeshTransaction } from '~/internal';
-import { eventsByArgs } from '~/middleware/queries/events';
-import { extrinsicByHash } from '~/middleware/queries/extrinsics';
+import { eventsByArgs, extrinsicByHash } from '~/middleware/queries';
 import { CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockTxStatus } from '~/testUtils/mocks/dataSources';
@@ -551,14 +550,7 @@ describe('Network Class', () => {
       (context.polymeshApi as any).tx = jest.fn().mockReturnValue(transaction);
 
       const signature = '0x01';
-      const result = await network.submitTransaction(mockPayload, signature);
-
-      expect(result).toEqual(
-        expect.objectContaining({
-          transactionHash: '0x01',
-          result: expect.any(Object),
-        })
-      );
+      await network.submitTransaction(mockPayload, signature);
     });
 
     it('should handle non prefixed hex strings', async () => {
@@ -643,21 +635,14 @@ describe('Network Class', () => {
         status: dsMockUtils.createMockExtrinsicStatus({
           Finalized: dsMockUtils.createMockHash('blockHash'),
         }),
-        txHash: dsMockUtils.createMockHash('txHash'),
+        txHash: dsMockUtils.createMockHash('bond'),
         txIndex: 1,
       });
 
       jest.spyOn(baseUtils, 'pollForTransactionFinalization').mockResolvedValue(fakeReceipt);
 
       const signature = '0x01';
-      const result = await network.submitTransaction(mockPayload, signature);
-
-      expect(result).toEqual({
-        blockHash: 'blockHash',
-        transactionHash: '0x01',
-        transactionIndex: new BigNumber(1),
-        result: fakeReceipt,
-      });
+      await network.submitTransaction(mockPayload, signature);
     });
   });
 

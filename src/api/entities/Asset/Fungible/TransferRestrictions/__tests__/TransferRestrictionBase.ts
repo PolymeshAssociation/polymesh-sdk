@@ -1,8 +1,4 @@
-import {
-  PolymeshPrimitivesIdentityId,
-  PolymeshPrimitivesStatisticsStatType,
-  PolymeshPrimitivesTransferComplianceTransferCondition,
-} from '@polkadot/types/lookup';
+import { PolymeshPrimitivesTransferComplianceTransferCondition } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -386,7 +382,7 @@ describe('TransferRestrictionBase class', () => {
     });
 
     beforeEach(() => {
-      const maxStats = new BigNumber(5);
+      const maxStats = new BigNumber(2);
       context = dsMockUtils.getContextInstance();
       asset = entityMockUtils.getFungibleAssetInstance();
       dsMockUtils.setConstMock('statistics', 'maxStatsPerAsset', {
@@ -685,145 +681,6 @@ describe('TransferRestrictionBase class', () => {
       });
 
       expect(transaction).toBe(expectedTransaction);
-    });
-  });
-
-  describe('method: getStat', () => {
-    let context: Context;
-    let asset: FungibleAsset;
-
-    let rawCountStatType: PolymeshPrimitivesStatisticsStatType;
-    let rawPercentageStatType: PolymeshPrimitivesStatisticsStatType;
-    let rawClaimCountStatType: PolymeshPrimitivesStatisticsStatType;
-    let rawClaimPercentageStatType: PolymeshPrimitivesStatisticsStatType;
-
-    let activeAssetStatsMock: jest.Mock;
-    let issuerDid: PolymeshPrimitivesIdentityId;
-
-    beforeEach(() => {
-      context = dsMockUtils.getContextInstance();
-      issuerDid = dsMockUtils.createMockIdentityId();
-      asset = entityMockUtils.getFungibleAssetInstance();
-      activeAssetStatsMock = dsMockUtils.createQueryMock('statistics', 'activeAssetStats');
-
-      rawCountStatType = dsMockUtils.createMockStatisticsStatType({
-        op: dsMockUtils.createMockStatisticsOpType(StatType.Count),
-        claimIssuer: dsMockUtils.createMockOption(),
-      });
-      rawPercentageStatType = dsMockUtils.createMockStatisticsStatType({
-        op: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
-        claimIssuer: dsMockUtils.createMockOption(),
-      });
-      rawClaimCountStatType = dsMockUtils.createMockStatisticsStatType({
-        op: dsMockUtils.createMockStatisticsOpType(StatType.Count),
-        claimIssuer: dsMockUtils.createMockOption([
-          dsMockUtils.createMockClaimType(ClaimType.Affiliate),
-          issuerDid,
-        ]),
-      });
-      rawClaimPercentageStatType = dsMockUtils.createMockStatisticsStatType({
-        op: dsMockUtils.createMockStatisticsOpType(StatType.ScopedBalance),
-        claimIssuer: dsMockUtils.createMockOption([
-          dsMockUtils.createMockClaimType(ClaimType.Accredited),
-          issuerDid,
-        ]),
-      });
-    });
-
-    afterEach(() => {
-      jest.restoreAllMocks();
-    });
-
-    it('should return the active stats status for (Count) when stats disabled', async () => {
-      activeAssetStatsMock.mockResolvedValueOnce([]);
-      const count = new Count(asset, context);
-
-      const result = await count.getStat();
-
-      expect(result).toEqual({
-        isSet: false,
-      });
-    });
-
-    it('should return the active stats status for (Count) when stats enabled', async () => {
-      activeAssetStatsMock.mockResolvedValueOnce([rawCountStatType]);
-
-      const count = new Count(asset, context);
-      const result = await count.getStat();
-
-      expect(result).toEqual({
-        isSet: true,
-      });
-    });
-
-    it('should return the active stats status for (Percentage) when stats disabled', async () => {
-      activeAssetStatsMock.mockResolvedValueOnce([]);
-
-      const percentage = new Percentage(asset, context);
-      const result = await percentage.getStat();
-
-      expect(result).toEqual({
-        isSet: false,
-      });
-    });
-
-    it('should return the active stats status for (Percentage) when stats enabled', async () => {
-      activeAssetStatsMock.mockResolvedValueOnce([rawPercentageStatType]);
-      const percentage = new Percentage(asset, context);
-
-      const result = await percentage.getStat();
-
-      expect(result).toEqual({
-        isSet: true,
-      });
-    });
-
-    it('should return the active stats status for (ClaimCount) when stats disabled', async () => {
-      activeAssetStatsMock.mockResolvedValueOnce([]);
-      const claimCount = new ClaimCount(asset, context);
-
-      const result = await claimCount.getStat();
-
-      expect(result).toEqual({
-        isSet: false,
-      });
-    });
-
-    it('should return the active stats status for (ClaimCount) when stats enabled', async () => {
-      activeAssetStatsMock.mockResolvedValueOnce([rawClaimCountStatType]);
-      const claimCount = new ClaimCount(asset, context);
-
-      const result = await claimCount.getStat();
-
-      expect(result.isSet).toBeTruthy();
-      expect(result.claims).toBeDefined();
-
-      const [claim] = result.claims || [];
-      expect(claim.claimType).toEqual(ClaimType.Affiliate);
-    });
-
-    it('should return the active stats status for (ClaimPercentage) when stats disabled', async () => {
-      activeAssetStatsMock.mockResolvedValueOnce([]);
-      const claimPercentage = new ClaimPercentage(asset, context);
-
-      const result = await claimPercentage.getStat();
-
-      expect(result).toEqual({
-        isSet: false,
-      });
-    });
-
-    it('should return the active stats status for (ClaimPercentage) when stats enabled', async () => {
-      activeAssetStatsMock.mockResolvedValueOnce([rawClaimPercentageStatType]);
-      const claimPercentage = new ClaimPercentage(asset, context);
-
-      const result = await claimPercentage.getStat();
-
-      expect(result.isSet).toBeTruthy();
-      expect(result.claims).toBeDefined();
-
-      const [claim] = result.claims || [];
-      expect(claim.claimType).toEqual(ClaimType.Accredited);
     });
   });
 });

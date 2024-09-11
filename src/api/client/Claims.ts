@@ -9,11 +9,7 @@ import {
   PolymeshError,
   registerCustomClaimType,
 } from '~/internal';
-import {
-  claimsGroupingQuery,
-  claimsQuery,
-  customClaimTypeQuery,
-} from '~/middleware/queries/claims';
+import { claimsGroupingQuery, claimsQuery, customClaimTypeQuery } from '~/middleware/queries';
 import { ClaimsGroupBy, ClaimsOrderBy, ClaimTypeEnum, Query } from '~/middleware/types';
 import { IdentityClaim } from '~/polkadot/polymesh';
 import {
@@ -215,7 +211,7 @@ export class Claims {
     let targetIssuers;
 
     const filters = {
-      scope: scope ? await scopeToMiddlewareScope(scope, context) : undefined,
+      scope: scope ? scopeToMiddlewareScope(scope, false) : undefined,
       trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
         signerToString(trustedClaimIssuer)
       ),
@@ -443,7 +439,7 @@ export class Claims {
     if (isMiddlewareAvailable) {
       const filters = {
         dids: [did],
-        scope: scope ? await scopeToMiddlewareScope(scope, context) : undefined,
+        scope: scope ? scopeToMiddlewareScope(scope, false) : undefined,
         includeExpired,
       };
 

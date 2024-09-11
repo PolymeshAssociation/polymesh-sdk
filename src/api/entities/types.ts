@@ -18,7 +18,6 @@ import {
   KnownPermissionGroup as KnownPermissionGroupClass,
   MetadataEntry as MetadataEntryClass,
   MultiSig as MultiSigClass,
-  MultiSigProposal as MultiSigProposalClass,
   Nft as NftClass,
   NftCollection as NftCollectionClass,
   NumberedPortfolio as NumberedPortfolioClass,
@@ -42,7 +41,6 @@ import { Modify } from '~/types/utils';
 
 export type Account = AccountClass;
 export type MultiSig = MultiSigClass;
-export type MultiSigProposal = MultiSigProposalClass;
 export type AuthorizationRequest = AuthorizationRequestClass;
 export type Checkpoint = CheckpointClass;
 export type CheckpointSchedule = CheckpointScheduleClass;
@@ -822,8 +820,3 @@ export type NonFungiblePortfolioMovement = {
 };
 
 export type PortfolioMovement = FungiblePortfolioMovement | NonFungiblePortfolioMovement;
-
-export type ActiveStats = {
-  isSet: boolean;
-  claims?: { claimType: ClaimType; issuer: Identity }[];
-};

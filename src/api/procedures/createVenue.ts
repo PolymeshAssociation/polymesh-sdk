@@ -1,16 +1,10 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 
-import { Context, PolymeshError, Procedure, Venue } from '~/internal';
-import { CreateVenueParams, ErrorCode, TxTags } from '~/types';
+import { Context, Procedure, Venue } from '~/internal';
+import { CreateVenueParams, TxTags } from '~/types';
 import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
-import {
-  stringToAccountId,
-  stringToBytes,
-  u32ToBigNumber,
-  u64ToBigNumber,
-  venueTypeToMeshVenueType,
-} from '~/utils/conversion';
-import { asAccount, filterEventRecords } from '~/utils/internal';
+import { stringToBytes, u64ToBigNumber, venueTypeToMeshVenueType } from '~/utils/conversion';
+import { filterEventRecords } from '~/utils/internal';
 
 /**
  * @hidden
@@ -35,35 +29,19 @@ export async function prepareCreateVenue(
     context: {
       polymeshApi: {
         tx: { settlement },
-        consts: {
-          settlement: { maxNumberOfVenueSigners },
-        },
       },
     },
     context,
   } = this;
-  const { description, type, signers = [] } = args;
+  const { description, type } = args;
 
   const rawDetails = stringToBytes(description, context);
   const rawType = venueTypeToMeshVenueType(type, context);
 
-  const maxVenueSigners = u32ToBigNumber(maxNumberOfVenueSigners);
-
-  if (maxVenueSigners.lt(signers.length)) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'Maximum number of venue signers exceeded',
-      data: { maxVenueSigners },
-    });
-  }
-
-  const rawSigners = signers.map(signer =>
-    stringToAccountId(asAccount(signer, context).address, context)
-  );
-
+  // NOTE @monitz87: we're sending an empty signer array for the moment
   return {
     transaction: settlement.createVenue,
-    args: [rawDetails, rawSigners, rawType],
+    args: [rawDetails, [], rawType],
     resolver: createCreateVenueResolver(context),
   };
 }
