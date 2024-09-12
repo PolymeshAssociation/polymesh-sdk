@@ -1613,12 +1613,12 @@ export interface ModifyMultiSigParams {
   requiredSignatures?: BigNumber;
 }
 
-interface JoinCreatorAsPrimary {
+export interface JoinCreatorAsPrimary {
   asPrimary: true;
   cddAuthId?: BigNumber;
 }
 
-interface JoinCreatorAsSecondary {
+export interface JoinCreatorAsSecondary {
   asPrimary?: false;
   /**
    * (optional) Permissions to grant the MultiSig. Defaults to none
