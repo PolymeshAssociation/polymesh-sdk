@@ -537,11 +537,9 @@ declare module '@polkadot/types/lookup' {
     readonly asIdentity: PolymeshPrimitivesIdentityId;
     readonly isAsset: boolean;
     readonly asAsset: PolymeshPrimitivesAssetAssetId;
-    readonly isTicker: boolean;
-    readonly asTicker: PolymeshPrimitivesTicker;
     readonly isCustom: boolean;
     readonly asCustom: Bytes;
-    readonly type: 'Identity' | 'Asset' | 'Ticker' | 'Custom';
+    readonly type: 'Identity' | 'Asset' | 'Custom';
   }
 
   /** @name PolymeshPrimitivesCddId (68) */
@@ -2795,8 +2793,6 @@ declare module '@polkadot/types/lookup' {
     >;
     readonly isLegFailedExecution: boolean;
     readonly asLegFailedExecution: ITuple<[PolymeshPrimitivesIdentityId, u64, u64]>;
-    readonly isInstructionFailed: boolean;
-    readonly asInstructionFailed: ITuple<[PolymeshPrimitivesIdentityId, u64]>;
     readonly isInstructionExecuted: boolean;
     readonly asInstructionExecuted: ITuple<[PolymeshPrimitivesIdentityId, u64]>;
     readonly isVenueUnauthorized: boolean;
@@ -2852,7 +2848,6 @@ declare module '@polkadot/types/lookup' {
       | 'VenuesAllowed'
       | 'VenuesBlocked'
       | 'LegFailedExecution'
-      | 'InstructionFailed'
       | 'InstructionExecuted'
       | 'VenueUnauthorized'
       | 'SchedulingFailed'

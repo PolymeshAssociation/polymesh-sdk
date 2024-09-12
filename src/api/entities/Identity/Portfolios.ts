@@ -219,9 +219,6 @@ export class Portfolios extends Namespace<Identity> {
   public async getTransactionHistory(
     filters: {
       account?: string;
-      /**
-       * @deprecated in favour of assetId
-       */
       ticker?: string;
       assetId?: string;
     } = {}
@@ -231,7 +228,7 @@ export class Portfolios extends Namespace<Identity> {
       parent: { did: identityId },
     } = this;
 
-    const { account, ticker, assetId } = filters; // NOSONAR
+    const { account, ticker, assetId } = filters;
 
     let middlewareAssetId;
     const assetIdValue = assetId ?? ticker;

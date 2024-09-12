@@ -456,7 +456,6 @@ describe('Offering class', () => {
       expect(offering.toHuman()).toEqual({
         id: '1',
         assetId: '12341234-1234-1234-1234-123412341234',
-        ticker: '12341234-1234-1234-1234-123412341234',
       });
     });
   });

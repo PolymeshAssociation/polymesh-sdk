@@ -56,7 +56,7 @@ describe('setTransferRestrictions procedure', () => {
     PolymeshPrimitivesTransferComplianceTransferCondition,
     [TransferRestriction, Context]
   >;
-  let getAssetIdForStatsSpy: jest.SpyInstance;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
   let stringToIdentityIdSpy: jest.SpyInstance;
   let identitiesToBtreeSetSpy: jest.SpyInstance<
     BTreeSet<PolymeshPrimitivesIdentityId>,
@@ -129,7 +129,7 @@ describe('setTransferRestrictions procedure', () => {
       utilsConversionModule,
       'transferRestrictionToPolymeshTransferCondition'
     );
-    getAssetIdForStatsSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForStats');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
     identitiesToBtreeSetSpy = jest.spyOn(utilsConversionModule, 'identitiesToBtreeSet');
     transferRestrictionTypeToStatOpTypeSpy = jest.spyOn(
@@ -260,7 +260,7 @@ describe('setTransferRestrictions procedure', () => {
     when(transferRestrictionToPolymeshTransferConditionSpy)
       .calledWith(claimPercentageRestriction, mockContext)
       .mockReturnValue(rawClaimPercentageRestriction);
-    when(getAssetIdForStatsSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
+    when(assetToMeshAssetIdSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
     when(stringToIdentityIdSpy)
       .calledWith(exemptedDid, mockContext)
       .mockReturnValue(rawExemptedDid);

@@ -40,7 +40,7 @@ import {
   TickerReservationStatus,
   TxTags,
 } from '~/types';
-import { InternalAssetType, InternalNftType, PolymeshTx, TickerKey } from '~/types/internal';
+import { InternalAssetType, InternalNftType, PolymeshTx } from '~/types/internal';
 import { uuidToHex } from '~/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -64,7 +64,6 @@ describe('createAsset procedure', () => {
   let nameToAssetNameSpy: jest.SpyInstance<Bytes, [string, Context]>;
   let fundingRoundToAssetFundingRoundSpy: jest.SpyInstance<Bytes, [string, Context]>;
   let booleanToBoolSpy: jest.SpyInstance<bool, [boolean, Context]>;
-  let stringToTickerKeySpy: jest.SpyInstance<TickerKey, [string, Context]>;
   let statisticStatTypesToBtreeStatTypeSpy: jest.SpyInstance<
     BTreeSet<PolymeshPrimitivesStatisticsStatType>,
     [PolymeshPrimitivesStatisticsStatType[], Context]
@@ -133,7 +132,6 @@ describe('createAsset procedure', () => {
       'fundingRoundToAssetFundingRound'
     );
     booleanToBoolSpy = jest.spyOn(utilsConversionModule, 'booleanToBool');
-    stringToTickerKeySpy = jest.spyOn(utilsConversionModule, 'stringToTickerKey');
     stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
     statisticStatTypesToBtreeStatTypeSpy = jest.spyOn(
       utilsConversionModule,
@@ -238,9 +236,6 @@ describe('createAsset procedure', () => {
       .mockReturnValue(rawInitialSupply);
     when(nameToAssetNameSpy).calledWith(name, mockContext).mockReturnValue(rawName);
     when(booleanToBoolSpy).calledWith(isDivisible, mockContext).mockReturnValue(rawIsDivisible);
-    when(stringToTickerKeySpy)
-      .calledWith(ticker, mockContext)
-      .mockReturnValue({ Ticker: rawTicker });
     when(internalAssetTypeToAssetTypeSpy)
       .calledWith(assetType as KnownAssetType, mockContext)
       .mockReturnValue(rawType);
@@ -329,19 +324,6 @@ describe('createAsset procedure', () => {
 
     return expect(prepareCreateAsset.call(proc, args)).rejects.toThrow(
       `You must first reserve ticker "${ticker}" in order to create an Asset with it`
-    );
-  });
-
-  it('should throw an error if the ticker is not provided for v6 chain', () => {
-    mockContext.isV6 = true;
-    const proc = procedureMockUtils.getInstance<Params, FungibleAsset, Storage>(mockContext, {
-      customTypeData: null,
-      status: undefined,
-      signingIdentity,
-    });
-
-    return expect(prepareCreateAsset.call(proc, { ...args, ticker: undefined })).rejects.toThrow(
-      'Ticker is mandatory for v6 chains'
     );
   });
 

@@ -111,7 +111,7 @@ export const ROOT_TYPES = rootTypes;
 /**
  * The Polymesh RPC node version range that is compatible with this version of the SDK
  */
-export const SUPPORTED_NODE_VERSION_RANGE = '6.2 || 6.3 || 7.0';
+export const SUPPORTED_NODE_VERSION_RANGE = '7.0';
 
 /**
  * The Polymesh Private RPC node version range that is compatible with this version of the SDK

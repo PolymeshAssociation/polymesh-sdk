@@ -83,11 +83,6 @@ describe('Context class', () => {
   beforeEach(() => {
     polymeshApi = dsMockUtils.getApiInstance();
 
-    dsMockUtils.setRuntimeVersion({
-      specVersion: dsMockUtils.createMockU32(new BigNumber(7000004)),
-      specName: dsMockUtils.createMockText('mock_spec'),
-    });
-
     dsMockUtils.setConstMock('system', 'ss58Prefix', {
       returnValue: dsMockUtils.createMockU8(new BigNumber(42)),
     });
@@ -1792,12 +1787,12 @@ describe('Context class', () => {
 
   describe('method: getDividendDistributionsForAssets', () => {
     let assetToMeshAssetIdSpy: jest.SpyInstance;
-    let meshAssetToAssetIdSpy: jest.SpyInstance;
+    let assetIdToStringSpy: jest.SpyInstance;
 
     beforeAll(() => {
       jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
       assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
-      meshAssetToAssetIdSpy = jest.spyOn(utilsConversionModule, 'meshAssetToAssetId');
+      assetIdToStringSpy = jest.spyOn(utilsConversionModule, 'assetIdToString');
     });
 
     afterAll(() => {
@@ -1824,9 +1819,7 @@ describe('Context class', () => {
           .calledWith(expect.objectContaining({ id: assetId }), context)
           .mockReturnValue(rawAssetIds[index]);
 
-        when(meshAssetToAssetIdSpy)
-          .calledWith(rawAssetIds[index], context)
-          .mockReturnValue(assetId);
+        when(assetIdToStringSpy).calledWith(rawAssetIds[index]).mockReturnValue(assetId);
       });
 
       /* eslint-disable @typescript-eslint/naming-convention */
@@ -1909,9 +1902,9 @@ describe('Context class', () => {
         dsMockUtils.createMockOption(),
       ];
 
-      when(meshAssetToAssetIdSpy).calledWith(usdAssetId, context).mockReturnValue('0xUSD');
+      when(assetIdToStringSpy).calledWith(usdAssetId).mockReturnValue('0xUSD');
 
-      when(meshAssetToAssetIdSpy).calledWith(cadAssetId, context).mockReturnValue('0xCAD');
+      when(assetIdToStringSpy).calledWith(cadAssetId).mockReturnValue('0xCAD');
 
       const localIds = [new BigNumber(1), new BigNumber(2), new BigNumber(3)];
       const caIds = [

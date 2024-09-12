@@ -66,20 +66,6 @@ describe('setMultiSigAdmin procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should throw an error if the chain is on v6', () => {
-    mockContext.isV6 = true;
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-
-    const expectedError = new PolymeshError({
-      code: ErrorCode.General,
-      message: 'MultiSig admins are not supported on v6 chains',
-    });
-
-    return expect(
-      prepareSetMultiSigAdmin.call(proc, { multiSig, admin: adminIdentity })
-    ).rejects.toThrow(expectedError);
-  });
-
   it('should throw an error if the supplied identity is already an admin for the MultiSig', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 

@@ -269,29 +269,6 @@ describe('MultiSig class', () => {
     });
   });
 
-  describe('method: getCreator', () => {
-    it('should return the Identity of the creator of the MultiSig', async () => {
-      const expectedDid = 'abc';
-      dsMockUtils.createQueryMock('multiSig', 'adminDid', {
-        returnValue: createMockOption(createMockIdentityId(expectedDid)),
-      });
-
-      const result = await multiSig.getCreator(); // NOSONAR
-      return expect(result?.did).toEqual(expectedDid);
-    });
-
-    it('should throw an error if there is no creator', () => {
-      dsMockUtils.createQueryMock('multiSig', 'adminDid', {
-        returnValue: createMockOption(),
-      });
-
-      const creatorPromise = multiSig.getCreator(); // NOSONAR
-      return expect(creatorPromise).rejects.toThrowError(
-        'No creator was found for this MultiSig address'
-      );
-    });
-  });
-
   describe('method: getAdmin', () => {
     it('should return the Identity of the creator of the MultiSig', async () => {
       const expectedDid = 'abc';
@@ -379,28 +356,6 @@ describe('MultiSig class', () => {
         .mockResolvedValue(expectedTransaction);
 
       const procedure = await multiSig.removePayer();
-
-      expect(procedure).toBe(expectedTransaction);
-    });
-  });
-
-  describe('method: joinCreator', () => {
-    it('should prepare the procedure and return the resulting procedure', async () => {
-      context = dsMockUtils.getContextInstance({ isV6: true });
-      multiSig = new MultiSig({ address }, context);
-
-      expect(multiSig.joinCreator).toBeDefined(); // NOSONAR
-
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
-      const args = {
-        asPrimary: true,
-      };
-
-      when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: { multiSig, ...args }, transformer: undefined }, context, {})
-        .mockResolvedValue(expectedTransaction);
-
-      const procedure = await multiSig.joinCreator(args); // NOSONAR
 
       expect(procedure).toBe(expectedTransaction);
     });

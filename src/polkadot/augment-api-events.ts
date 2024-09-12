@@ -2082,10 +2082,6 @@ declare module '@polkadot/api-base/types/events' {
        **/
       InstructionExecuted: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, u64]>;
       /**
-       * Instruction failed execution (did, instruction_id)
-       **/
-      InstructionFailed: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, u64]>;
-      /**
        * An instruction with mediators has been created.
        * Parameters: [`InstructionId`] of the instruction and the [`IdentityId`] of all mediators.
        **/

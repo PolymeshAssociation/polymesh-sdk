@@ -277,19 +277,11 @@ export class NftCollection extends BaseAsset {
         polymeshApi: {
           query: { nft },
         },
-        isV6,
       },
     } = this;
 
-    let collectionStorage = nft.collectionAsset;
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      collectionStorage = (nft as any).collectionTicker; // NOSONAR
-    }
-
     const rawAssetId = assetToMeshAssetId(this, context);
-    const rawTokenId = await collectionStorage(rawAssetId);
+    const rawTokenId = await nft.collectionAsset(rawAssetId);
 
     return !rawTokenId.isZero();
   }
@@ -304,7 +296,6 @@ export class NftCollection extends BaseAsset {
         polymeshApi: {
           query: { nft },
         },
-        isV6,
       },
     } = this;
 
@@ -312,15 +303,8 @@ export class NftCollection extends BaseAsset {
       return this._id;
     }
 
-    let collectionStorage = nft.collectionAsset;
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      collectionStorage = (nft as any).collectionTicker; // NOSONAR
-    }
-
     const rawAssetId = assetToMeshAssetId(this, context);
-    const rawId = await collectionStorage(rawAssetId);
+    const rawId = await nft.collectionAsset(rawAssetId);
 
     this._id = u64ToBigNumber(rawId);
 
@@ -371,7 +355,7 @@ export class NftCollection extends BaseAsset {
       const fromPortfolio = optionize(portfolioIdStringToPortfolio)(fromPortfolioId);
       const toPortfolio = optionize(portfolioIdStringToPortfolio)(toPortfolioId);
 
-      const assetId = getAssetIdFromMiddleware(asset, context);
+      const assetId = getAssetIdFromMiddleware(asset);
       const collection = new NftCollection({ assetId }, context);
       data.push({
         asset: collection,

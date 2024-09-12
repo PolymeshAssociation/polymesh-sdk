@@ -711,45 +711,6 @@ describe('modifyInstructionAffirmation procedure', () => {
     });
   });
 
-  it('should return a withdraw instruction transaction spec with portfolios as an array for v6', async () => {
-    mockContext.isV6 = true;
-    const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Affirmed');
-    dsMockUtils.createQueryMock('settlement', 'userAffirmations', {
-      multi: [rawAffirmationStatus, rawAffirmationStatus],
-    });
-    when(meshAffirmationStatusToAffirmationStatusSpy)
-      .calledWith(rawAffirmationStatus)
-      .mockReturnValue(AffirmationStatus.Affirmed);
-
-    const proc = procedureMockUtils.getInstance<
-      ModifyInstructionAffirmationParams,
-      Instruction,
-      Storage
-    >(mockContext, {
-      portfolios: [portfolio, portfolio],
-      portfolioParams: [],
-      senderLegAmount: legAmount,
-      totalLegAmount: legAmount,
-      signer,
-      offChainLegIndices: [],
-      instructionInfo: mockExecuteInfo,
-    });
-
-    const transaction = dsMockUtils.createTxMock('settlement', 'withdrawAffirmationWithCount');
-
-    const result = await prepareModifyInstructionAffirmation.call(proc, {
-      id,
-      operation: InstructionAffirmationOperation.Withdraw,
-    });
-
-    expect(result).toEqual({
-      transaction,
-      feeMultiplier: new BigNumber(2),
-      args: [rawInstructionId, [rawPortfolioId, rawPortfolioId], mockAffirmCount],
-      resolver: expect.objectContaining({ id }),
-    });
-  });
-
   it('should throw an error if a mediator attempts to withdraw a non affirmed transaction', async () => {
     const rawAffirmationStatus = createMockMediatorAffirmationStatus(AffirmationStatus.Pending);
     dsMockUtils.createQueryMock('settlement', 'instructionMediatorsAffirmations', {

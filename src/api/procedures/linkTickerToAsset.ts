@@ -39,21 +39,12 @@ export async function prepareLinkTickerToAsset(
   const {
     context: {
       polymeshApi: { tx },
-      isV6,
     },
     storage: { status },
     context,
   } = this;
 
   const { ticker, asset } = args;
-
-  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-  if (isV6) {
-    throw new PolymeshError({
-      code: ErrorCode.General,
-      message: 'linking ticker to asset is only supported on v7+ chains',
-    });
-  }
 
   if (status === TickerReservationStatus.AssetCreated) {
     throw new PolymeshError({

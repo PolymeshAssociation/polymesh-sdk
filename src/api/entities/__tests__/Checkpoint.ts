@@ -261,7 +261,6 @@ describe('Checkpoint class', () => {
       );
       expect(checkpoint.toHuman()).toEqual({
         id: '1',
-        ticker: '12341234-1234-1234-1234-123412341234',
         assetId: '12341234-1234-1234-1234-123412341234',
       });
     });

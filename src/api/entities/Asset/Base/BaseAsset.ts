@@ -45,7 +45,7 @@ import {
   UnsubCallback,
   VenueFilteringDetails,
 } from '~/types';
-import { tickerToDid, uuidToHex } from '~/utils';
+import { uuidToHex } from '~/utils';
 import {
   assetIdentifierToSecurityIdentifier,
   assetToMeshAssetId,
@@ -71,22 +71,6 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
   public documents: Documents;
   public metadata: Metadata;
   public permissions: Permissions;
-
-  /**
-   * Identity ID of the Asset (used for Claims)
-   *
-   * @deprecated this is no longer used from chain 7.x
-   */
-  public did?: string;
-
-  /**
-   * ticker of the Asset
-   *
-   * Since the chain version 7.x, ticker can be optionally associated with an Asset
-   *
-   * @deprecated in favour of `ticker` value received from the response of `details` method
-   */
-  public ticker?: string;
 
   /**
    * Unique ID of the Asset in UUID format
@@ -143,15 +127,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
     super(identifiers, context);
 
     const { assetId } = identifiers;
-    const { isV6 } = context;
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      this.ticker = assetId;
-      this.id = assetId;
-      this.did = tickerToDid(assetId);
-    } else {
-      this.id = assetId;
-    }
+    this.id = assetId;
 
     this.compliance = new Compliance(this, context);
     this.documents = new Documents(this, context);
@@ -272,31 +248,24 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
         polymeshApi: {
           query: { asset },
         },
-        isV6,
       },
       context,
     } = this;
 
     const rawAssetId = assetToMeshAssetId(this, context);
 
-    let identifiersStorage;
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      identifiersStorage = (asset as any).identifiers; // NOSONAR
-    } else {
-      identifiersStorage = asset.assetIdentifiers;
-    }
-
     if (callback) {
       context.assertSupportsSubscription();
-      return identifiersStorage(rawAssetId, (identifiers: PolymeshPrimitivesAssetIdentifier[]) => {
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
-        callback(identifiers.map(assetIdentifierToSecurityIdentifier));
-      });
+      return asset.assetIdentifiers(
+        rawAssetId,
+        (identifiers: PolymeshPrimitivesAssetIdentifier[]) => {
+          // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
+          callback(identifiers.map(assetIdentifierToSecurityIdentifier));
+        }
+      );
     }
 
-    const assetIdentifiers = await identifiersStorage(rawAssetId);
+    const assetIdentifiers = await asset.assetIdentifiers(rawAssetId);
 
     return assetIdentifiers.map(assetIdentifierToSecurityIdentifier);
   }
@@ -352,7 +321,6 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
         polymeshApi: {
           query: { asset, externalAgents },
         },
-        isV6,
       },
       context,
     } = this;
@@ -364,7 +332,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
         Option<PolymeshPrimitivesAgentAgentGroup>
       ][],
       assetName: Option<Bytes>,
-      tickerValue: string | Option<PolymeshPrimitivesTicker> | undefined
+      tickerValue: Option<PolymeshPrimitivesTicker>
     ): Promise<AssetDetails> => {
       const fullAgents: Identity[] = [];
 
@@ -396,13 +364,8 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
       }
 
       let ticker;
-      if (tickerValue) {
-        /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-        if (typeof tickerValue === 'string') {
-          ticker = tickerValue;
-        } else if (tickerValue.isSome) {
-          ticker = tickerToString(tickerValue.unwrap());
-        }
+      if (tickerValue.isSome) {
+        ticker = tickerToString(tickerValue.unwrap());
       }
 
       return {
@@ -421,17 +384,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
 
     const groupOfAgentPromise = externalAgents.groupOfAgent.entries(rawAssetId);
     const namePromise = asset.assetNames(rawAssetId);
-
-    let tokensStorage = asset.assets;
-    let tickerPromise;
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tokensStorage = (asset as any).tokens; // NOSONAR
-      tickerPromise = this.ticker;
-    } else {
-      tickerPromise = asset.assetIdTicker(rawAssetId);
-    }
+    const tickerPromise = asset.assetIdTicker(rawAssetId);
 
     if (callback) {
       context.assertSupportsSubscription();
@@ -439,7 +392,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
       const assetName = await namePromise;
       const tickerValue = await tickerPromise;
 
-      return tokensStorage(rawAssetId, async securityToken => {
+      return asset.assets(rawAssetId, async securityToken => {
         const result = await assembleResult(securityToken, groupEntries, assetName, tickerValue);
 
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
@@ -448,7 +401,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
     }
 
     const [token, groups, name, tickerValue] = await Promise.all([
-      tokensStorage(rawAssetId),
+      asset.assets(rawAssetId),
       groupOfAgentPromise,
       namePromise,
       tickerPromise,
@@ -556,23 +509,13 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
         polymeshApi: {
           query: { asset, nft },
         },
-        isV6,
       },
     } = this;
     const rawAssetId = assetToMeshAssetId(this, context);
-    let tokensStorage = asset.assets;
-    let collectionsStorage = nft.collectionAsset;
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tokensStorage = (asset as any).tokens; // NOSONAR
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      collectionsStorage = (nft as any).collectionTicker; // NOSONAR
-    }
 
     const [tokenSize, nftId] = await Promise.all([
-      tokensStorage.size(rawAssetId),
-      collectionsStorage(rawAssetId),
+      asset.assets.size(rawAssetId),
+      nft.collectionAsset(rawAssetId),
     ]);
 
     return !tokenSize.isZero() && nftId.isZero();

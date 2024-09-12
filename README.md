@@ -14,7 +14,7 @@
 
 ## Polymesh version
 
-This release is compatible with Polymesh v6.3 and v7.0
+This release is compatible with Polymesh v7.0
 
 <!--- End of section --->
 
@@ -133,18 +133,15 @@ Approving and rejecting existing proposals are an exception and should be submit
 MultiSig signers, then the procedure's `multiSig` param can be checked to ensure the correct method is called.
 
 ```typescript
-  const createAssetProc = await polyClient.assets.createAsset(
-    args,
-    {
-      signingAccount: multiSigSigner
-    }
-  )
-  createAssetProc.multiSig // indicates the acting MultiSig. If set `runAsProposal` must be used
-  const proposal = await createAssetProc.runAsProposal()
+const createAssetProc = await polyClient.assets.createAsset(args, {
+  signingAccount: multiSigSigner,
+});
+createAssetProc.multiSig; // indicates the acting MultiSig. If set `runAsProposal` must be used
+const proposal = await createAssetProc.runAsProposal();
 
-  const rejectProc = await proposal.reject({ signingAccount: multiSigSigner })
-  rejectProc.multiSig // returns `null`. Rejecting a proposal does not get wrapped
-  await rejectProc.run()
+const rejectProc = await proposal.reject({ signingAccount: multiSigSigner });
+rejectProc.multiSig; // returns `null`. Rejecting a proposal does not get wrapped
+await rejectProc.run();
 ```
 
 #### Reading Data

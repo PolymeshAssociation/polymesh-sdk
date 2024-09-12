@@ -217,7 +217,7 @@ export class FungibleAsset extends BaseAsset {
       const fromPortfolio = optionize(portfolioIdStringToPortfolio)(fromPortfolioId);
       const toPortfolio = optionize(portfolioIdStringToPortfolio)(toPortfolioId);
 
-      const assetId = getAssetIdFromMiddleware(asset, context);
+      const assetId = getAssetIdFromMiddleware(asset);
 
       data.push({
         asset: new FungibleAsset({ assetId }, context),
@@ -255,25 +255,13 @@ export class FungibleAsset extends BaseAsset {
         polymeshApi: {
           query: { asset, nft },
         },
-        isV6,
       },
     } = this;
     const rawAssetId = assetToMeshAssetId(this, context);
 
-    let collectionsStorage = nft.collectionAsset;
-    let tokensStorage = asset.assets;
-
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      collectionsStorage = (nft as any).collectionTicker; // NOSONAR
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tokensStorage = (asset as any).tokens; // NOSONAR
-    }
-
     const [tokenSize, nftId] = await Promise.all([
-      tokensStorage.size(rawAssetId),
-      collectionsStorage(rawAssetId),
+      asset.assets.size(rawAssetId),
+      nft.collectionAsset(rawAssetId),
     ]);
 
     return !tokenSize.isZero() && nftId.isZero();

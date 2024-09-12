@@ -1717,7 +1717,6 @@ export default {
       VenuesAllowed: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,Vec<u64>)',
       VenuesBlocked: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,Vec<u64>)',
       LegFailedExecution: '(PolymeshPrimitivesIdentityId,u64,u64)',
-      InstructionFailed: '(PolymeshPrimitivesIdentityId,u64)',
       InstructionExecuted: '(PolymeshPrimitivesIdentityId,u64)',
       VenueUnauthorized: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,u64)',
       SchedulingFailed: '(u64,SpRuntimeDispatchError)',

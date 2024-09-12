@@ -317,7 +317,6 @@ export default {
         Identity: 'IdentityId',
         Asset: 'AssetId',
         Custom: 'Vec<u8>',
-        Ticker: 'Ticker',
       },
     },
     CustomClaimTypeId: 'u32',

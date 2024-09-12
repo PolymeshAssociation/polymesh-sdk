@@ -638,7 +638,7 @@ describe('NftCollection class', () => {
       );
 
       when(jest.spyOn(utilsInternalModule, 'getAssetIdFromMiddleware'))
-        .calledWith(middlewareAsset, context)
+        .calledWith(middlewareAsset)
         .mockReturnValue(assetId);
 
       const result = await asset.getTransactionHistory({

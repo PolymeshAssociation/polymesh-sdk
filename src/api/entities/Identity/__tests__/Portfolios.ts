@@ -256,22 +256,16 @@ describe('Portfolios class', () => {
         'getAssetIdFromMiddleware'
       );
       when(getAssetIdFromMiddlewareSpy)
-        .calledWith(
-          {
-            id: assetId1,
-            ticker: ticker1,
-          },
-          mockContext
-        )
+        .calledWith({
+          id: assetId1,
+          ticker: ticker1,
+        })
         .mockReturnValue(assetId1);
       when(getAssetIdFromMiddlewareSpy)
-        .calledWith(
-          {
-            id: assetId2,
-            ticker: ticker2,
-          },
-          mockContext
-        )
+        .calledWith({
+          id: assetId2,
+          ticker: ticker2,
+        })
         .mockReturnValue(assetId2);
 
       const legs1 = [
