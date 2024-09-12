@@ -15,11 +15,6 @@ import { ErrorCode, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
-jest.mock(
-  '~/api/entities/Asset/Base',
-  require('~/testUtils/mocks/entities').mockBaseAssetModule('~/api/entities/Asset/Base')
-);
-
 describe('setMultiSigAdmin procedure', () => {
   const adminDid = 'adminDid';
   const multiSigAddress = 'multiSigAddress';

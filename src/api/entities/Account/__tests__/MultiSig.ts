@@ -369,4 +369,18 @@ describe('MultiSig class', () => {
       expect(procedure).toBe(expectedTransaction);
     });
   });
+
+  describe('method: removePayer', () => {
+    it('should prepare the procedure and return the resulting procedure', async () => {
+      const expectedTransaction = 'someQueue' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { multiSig }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const procedure = await multiSig.removePayer();
+
+      expect(procedure).toBe(expectedTransaction);
+    });
+  });
 });

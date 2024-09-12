@@ -3,13 +3,21 @@ import BigNumber from 'bignumber.js';
 import { UniqueIdentifiers } from '~/api/entities/Account';
 import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 import { setMultiSigAdmin } from '~/api/procedures/setMultiSigAdmin';
-import { Account, Context, Identity, modifyMultiSig, PolymeshError } from '~/internal';
+import {
+  Account,
+  Context,
+  Identity,
+  modifyMultiSig,
+  PolymeshError,
+  removeMultiSigPayer,
+} from '~/internal';
 import { multiSigProposalsQuery } from '~/middleware/queries/multisigs';
 import { Query } from '~/middleware/types';
 import {
   ErrorCode,
   ModifyMultiSigParams,
   MultiSigDetails,
+  NoArgsProcedureMethod,
   ProcedureMethod,
   ProposalStatus,
   ResultSet,
@@ -47,6 +55,13 @@ export class MultiSig extends Account {
     );
     this.setAdmin = createProcedureMethod(
       { getProcedureAndArgs: adminArgs => [setMultiSigAdmin, { multiSig: this, ...adminArgs }] },
+      context
+    );
+    this.removePayer = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [removeMultiSigPayer, { multiSig: this }],
+        voidArgs: true,
+      },
       context
     );
   }
@@ -336,4 +351,12 @@ export class MultiSig extends Account {
    * as a proposal. When removing an admin it must be called by account belonging to the admin's identity
    */
   public setAdmin: ProcedureMethod<SetMultiSigAdminParams, void>;
+
+  /**
+   * A MultiSig's creator is initially responsible for any fees the MultiSig may incur. This method allows for the
+   * MultiSig to pay for it's own fees.
+   *
+   * @note This method must be called by one of the MultiSig signer's or by the paying identity.
+   */
+  public removePayer: NoArgsProcedureMethod<void>;
 }
