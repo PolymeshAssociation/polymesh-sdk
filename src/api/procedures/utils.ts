@@ -537,16 +537,19 @@ async function assertJoinOrRotateAuthorizationValid(
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'Issuing Identity does not have a valid CDD claim',
+      data: { issuer: issuer.did },
     });
   }
 
   assertIsAccount(target);
 
   const targetIdentity = await target.getIdentity();
-  if (targetIdentity) {
+
+  if (targetIdentity && !targetIdentity.isEqual(issuer)) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'The target Account already has an associated Identity',
+      data: { associatedIdentity: targetIdentity.did },
     });
   }
 }

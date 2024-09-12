@@ -1024,7 +1024,7 @@ describe('authorization request validations', () => {
     it('should throw if the target already has an Identity', () => {
       const mockIssuer = entityMockUtils.getIdentityInstance({ hasValidCdd: true });
       const mockTarget = entityMockUtils.getAccountInstance({
-        getIdentity: entityMockUtils.getIdentityInstance(),
+        getIdentity: entityMockUtils.getIdentityInstance({ isEqual: false }),
       });
       const auth = new AuthorizationRequest(
         {
@@ -1045,6 +1045,25 @@ describe('authorization request validations', () => {
       return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
         expectedError
       );
+    });
+
+    it('should not throw if the target is already associated to the identity', () => {
+      const mockIssuer = entityMockUtils.getIdentityInstance({ hasValidCdd: true });
+      const mockTarget = entityMockUtils.getAccountInstance({
+        getIdentity: entityMockUtils.getIdentityInstance({ isEqual: true }),
+      });
+      const auth = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          target: mockTarget,
+          issuer: mockIssuer,
+          expiry,
+          data,
+        },
+        mockContext
+      );
+
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).resolves.not.toThrow();
     });
   });
 
@@ -1450,7 +1469,7 @@ describe('authorization request validations', () => {
     it('should throw if the target already has an Identity', () => {
       const mockIssuer = entityMockUtils.getIdentityInstance({ hasValidCdd: true });
       const unavailableTarget = entityMockUtils.getAccountInstance({
-        getIdentity: entityMockUtils.getIdentityInstance(),
+        getIdentity: entityMockUtils.getIdentityInstance({ isEqual: false }),
       });
       const auth = new AuthorizationRequest(
         {
