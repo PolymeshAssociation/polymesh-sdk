@@ -524,19 +524,11 @@ export async function prepareAddInstruction(
       polymeshApi: {
         tx: { settlement },
       },
-      isV6,
     },
     context,
     storage: { portfoliosToAffirm },
   } = this;
   const { instructions, venueId } = args;
-
-  if (isV6 && !venueId) {
-    throw new PolymeshError({
-      code: ErrorCode.General,
-      message: 'A venue id must be provided on v6 chains',
-    });
-  }
 
   const venueAssertions = [assertVenueFiltering(instructions, venueId, context)];
   if (venueId) {

@@ -264,8 +264,6 @@ import {
   InternalNftType,
   MeshTickerOrAssetId,
   PalletPermissions,
-  PalletPermissionsV6,
-  PalletPermissionsV7,
   PermissionGroupIdentifier,
   PolymeshTx,
   StatClaimInputType,
@@ -284,6 +282,7 @@ import {
 } from '~/utils/constants';
 import {
   asAccount,
+  asAssetId,
   asBaseAsset,
   asDid,
   asNftId,
@@ -294,8 +293,6 @@ import {
   conditionsAreEqual,
   createClaim,
   getAssetIdAndTicker,
-  getAssetIdForMiddleware,
-  getAssetIdFromMiddleware,
   isModuleOrTagMatch,
   optionize,
   padString,
@@ -396,27 +393,7 @@ export function assetIdToString(assetId: PolymeshPrimitivesAssetAssetID): string
 /**
  * @hidden
  */
-export function meshAssetToAssetId(
-  value: PolymeshPrimitivesTicker | PolymeshPrimitivesAssetAssetID,
-  context: Context
-): string {
-  const { isV6 } = context;
-  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-  if (isV6) {
-    return tickerToString(value);
-  }
-  return assetIdToString(value);
-}
-
-/**
- * @hidden
- */
 export function assetToMeshAssetIdKey(value: string, context: Context): TickerKey | AssetIdKey {
-  const { isV6 } = context;
-  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-  if (isV6) {
-    return stringToTickerKey(value, context);
-  }
   return stringToAssetIdKey(value, context);
 }
 
@@ -427,12 +404,6 @@ export function assetToMeshAssetId(
   { id }: BaseAsset,
   context: Context
 ): PolymeshPrimitivesAssetAssetID | PolymeshPrimitivesTicker {
-  const { isV6 } = context;
-
-  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-  if (isV6) {
-    return stringToTicker(id, context);
-  }
   return stringToAssetId(id, context);
 }
 
@@ -442,22 +413,9 @@ export function assetToMeshAssetId(
 export function assetToMeshAssetIdWithKey(
   { id }: BaseAsset,
   context: Context
-):
-  | {
-      ticker: PolymeshPrimitivesTicker;
-    }
-  | {
-      assetId: PolymeshPrimitivesAssetAssetID;
-    } {
-  const { isV6 } = context;
-
-  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-  if (isV6) {
-    return {
-      ticker: stringToTicker(id, context),
-    };
-  }
-
+): {
+  assetId: PolymeshPrimitivesAssetAssetID;
+} {
   return {
     assetId: stringToAssetId(id, context),
   };
@@ -1054,8 +1012,7 @@ function initExtrinsicDict(
  * @hidden
  */
 function buildPalletPermissions(
-  transactions: TransactionPermissions,
-  isV6: boolean
+  transactions: TransactionPermissions
 ): PermissionsEnum<PalletPermissions> {
   let extrinsic: PermissionsEnum<PalletPermissions>;
   const message =
@@ -1112,22 +1069,10 @@ function buildPalletPermissions(
     return dispatchables;
   };
 
-  const palletsV6: PalletPermissionsV6[] = map(extrinsicDict, (val, key) => {
-    return {
-      /* eslint-disable @typescript-eslint/naming-convention */
-      palletName: key,
-      dispatchableNames: getDispatchables(val),
-      /* eslint-enable @typescript-eslint/naming-convention */
-    };
-  });
-
-  const palletsV7: PalletPermissionsV7 = new Map();
+  const pallets: PalletPermissions = new Map();
   forEach(extrinsicDict, (val, key) => {
-    palletsV7.set(key, { extrinsics: getDispatchables(val) });
+    pallets.set(key, { extrinsics: getDispatchables(val) });
   });
-
-  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
-  const pallets = isV6 ? palletsV6 : palletsV7;
 
   if (type === PermissionType.Include) {
     extrinsic = {
@@ -1149,18 +1094,9 @@ export function transactionPermissionsToExtrinsicPermissions(
   transactionPermissions: TransactionPermissions | null,
   context: Context
 ): PolymeshPrimitivesSecondaryKeyExtrinsicPermissions {
-  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
-  if (context.isV6) {
-    return context.createType(
-      'PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions',
-      transactionPermissions
-        ? buildPalletPermissions(transactionPermissions, context.isV6)
-        : 'Whole'
-    );
-  }
   return context.createType(
     'PolymeshPrimitivesSecondaryKeyExtrinsicPermissions',
-    transactionPermissions ? buildPalletPermissions(transactionPermissions, context.isV6) : 'Whole'
+    transactionPermissions ? buildPalletPermissions(transactionPermissions) : 'Whole'
   );
 }
 
@@ -1226,8 +1162,7 @@ const formatTxTag = (dispatchable: string, moduleName: string): TxTag => {
  * @hidden
  */
 export function extrinsicPermissionsToTransactionPermissions(
-  permissions: PolymeshPrimitivesSecondaryKeyExtrinsicPermissions,
-  context: Context
+  permissions: PolymeshPrimitivesSecondaryKeyExtrinsicPermissions
 ): TransactionPermissions | null {
   let extrinsicType: PermissionType;
   let pallets;
@@ -1243,66 +1178,33 @@ export function extrinsicPermissionsToTransactionPermissions(
   let exceptions: TxTag[] = [];
 
   if (pallets) {
-    /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
-    if (context.isV6) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (pallets as unknown as any[]) // NOSONAR
-        .forEach(({ palletName, dispatchableNames }) => {
-          const moduleName = stringLowerFirst(bytesToString(palletName));
-          if (dispatchableNames.isExcept) {
-            const dispatchables = [...dispatchableNames.asExcept];
-            exceptions = [
-              ...exceptions,
-              ...dispatchables.map(name => formatTxTag(bytesToString(name), moduleName)),
-            ];
-            txValues = [...txValues, moduleName as ModuleName];
-          } else if (dispatchableNames.isThese) {
-            const dispatchables = [...dispatchableNames.asThese];
-            txValues = [
-              ...txValues,
-              ...dispatchables.map(name => formatTxTag(bytesToString(name), moduleName)),
-            ];
-          } else {
-            txValues = [...txValues, moduleName as ModuleName];
-          }
-        });
+    pallets.forEach(({ extrinsics: dispatchableNames }, palletName) => {
+      const moduleName = stringLowerFirst(textToString(palletName));
+      if (dispatchableNames.isExcept) {
+        const dispatchables = [...dispatchableNames.asExcept];
+        exceptions = [
+          ...exceptions,
+          ...dispatchables.map(name => formatTxTag(textToString(name), moduleName)),
+        ];
+        txValues = [...txValues, moduleName as ModuleName];
+      } else if (dispatchableNames.isThese) {
+        const dispatchables = [...dispatchableNames.asThese];
+        txValues = [
+          ...txValues,
+          ...dispatchables.map(name => formatTxTag(textToString(name), moduleName)),
+        ];
+      } else {
+        txValues = [...txValues, moduleName as ModuleName];
+      }
+    });
 
-      const result = {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        type: extrinsicType!,
-        values: txValues,
-      };
+    const result = {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      type: extrinsicType!,
+      values: txValues,
+    };
 
-      return exceptions.length ? { ...result, exceptions } : result;
-    } else {
-      pallets.forEach(({ extrinsics: dispatchableNames }, palletName) => {
-        const moduleName = stringLowerFirst(textToString(palletName));
-        if (dispatchableNames.isExcept) {
-          const dispatchables = [...dispatchableNames.asExcept];
-          exceptions = [
-            ...exceptions,
-            ...dispatchables.map(name => formatTxTag(textToString(name), moduleName)),
-          ];
-          txValues = [...txValues, moduleName as ModuleName];
-        } else if (dispatchableNames.isThese) {
-          const dispatchables = [...dispatchableNames.asThese];
-          txValues = [
-            ...txValues,
-            ...dispatchables.map(name => formatTxTag(textToString(name), moduleName)),
-          ];
-        } else {
-          txValues = [...txValues, moduleName as ModuleName];
-        }
-      });
-
-      const result = {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        type: extrinsicType!,
-        values: txValues,
-      };
-
-      return exceptions.length ? { ...result, exceptions } : result;
-    }
+    return exceptions.length ? { ...result, exceptions } : result;
   }
 
   return null;
@@ -1334,14 +1236,14 @@ export function meshPermissionsToPermissions(
   if (assetsPermissions) {
     assets = {
       values: [...assetsPermissions].map(
-        assetId => new FungibleAsset({ assetId: meshAssetToAssetId(assetId, context) }, context)
+        assetId => new FungibleAsset({ assetId: assetIdToString(assetId) }, context)
       ),
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       type: assetsType!,
     };
   }
 
-  transactions = extrinsicPermissionsToTransactionPermissions(extrinsic, context);
+  transactions = extrinsicPermissionsToTransactionPermissions(extrinsic);
 
   let portfoliosType: PermissionType;
   let portfolioIds;
@@ -1418,7 +1320,7 @@ export async function meshPermissionsToPermissionsV2(
   if (assetsPermissions) {
     assets = {
       values: [...assetsPermissions].map(
-        assetId => new FungibleAsset({ assetId: meshAssetToAssetId(assetId, context) }, context)
+        assetId => new FungibleAsset({ assetId: assetIdToString(assetId) }, context)
       ),
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       type: assetsType!,
@@ -1426,7 +1328,7 @@ export async function meshPermissionsToPermissionsV2(
   }
 
   if (extrinsic.isSome) {
-    transactions = extrinsicPermissionsToTransactionPermissions(extrinsic.unwrap(), context);
+    transactions = extrinsicPermissionsToTransactionPermissions(extrinsic.unwrap());
   }
 
   let portfoliosType: PermissionType;
@@ -1544,10 +1446,7 @@ export function authorizationToAuthorizationData(
   } else if (type === AuthorizationType.PortfolioCustody) {
     value = portfolioIdToMeshPortfolioId(portfolioToPortfolioId(auth.value), context);
   } else if (auth.type === AuthorizationType.TransferAssetOwnership) {
-    /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
-    value = context.isV6
-      ? stringToTicker(auth.value, context)
-      : stringToAssetId(auth.value, context);
+    value = stringToAssetId(auth.value, context);
   } else if (auth.type === AuthorizationType.TransferTicker) {
     value = stringToTicker(auth.value, context);
   } else if (type === AuthorizationType.RotatePrimaryKeyToSecondary) {
@@ -1700,7 +1599,7 @@ export function authorizationDataToAuthorization(
   if (auth.isTransferAssetOwnership) {
     return {
       type: AuthorizationType.TransferAssetOwnership,
-      value: meshAssetToAssetId(auth.asTransferAssetOwnership, context),
+      value: assetIdToString(auth.asTransferAssetOwnership),
     };
   }
 
@@ -1736,7 +1635,7 @@ export function authorizationDataToAuthorization(
 
     return {
       type: AuthorizationType.BecomeAgent,
-      value: agentGroupToPermissionGroup(agentGroup, meshAssetToAssetId(assetId, context), context),
+      value: agentGroupToPermissionGroup(agentGroup, assetIdToString(assetId), context),
     };
   }
 
@@ -2355,16 +2254,13 @@ export async function scopeToMeshScope(
 
   let scopeType: string = type;
   let baseAsset: BaseAsset;
-  const { isV6 } = context;
 
   let scopeValue: U8aFixed | PolymeshPrimitivesIdentityId | string;
   switch (type) {
-    case ScopeType.Ticker: // NOSONAR
     case ScopeType.Asset:
       baseAsset = await asBaseAsset(value, context);
       scopeValue = assetToMeshAssetId(baseAsset, context);
-      /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
-      scopeType = isV6 ? ScopeType.Ticker : ScopeType.Asset; // NOSONAR
+      scopeType = ScopeType.Asset;
       break;
     case ScopeType.Identity:
       scopeValue = stringToIdentityId(value, context);
@@ -2380,23 +2276,8 @@ export async function scopeToMeshScope(
 /**
  * @hidden
  */
-export function meshScopeToScope(
-  scope: PolymeshPrimitivesIdentityClaimScope,
-  context: Context
-): Scope {
-  const { isV6 } = context;
-  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
-  if (
-    isV6 &&
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (scope as any).isTicker // NOSONAR
-  ) {
-    return {
-      type: ScopeType.Ticker, // NOSONAR
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      value: tickerToString((scope as any).asTicker), // NOSONAR
-    };
-  } else if (scope.isAsset) {
+export function meshScopeToScope(scope: PolymeshPrimitivesIdentityClaimScope): Scope {
+  if (scope.isAsset) {
     return {
       type: ScopeType.Asset,
       value: assetIdToString(scope.asAsset),
@@ -2468,15 +2349,14 @@ export async function claimToMeshClaim(
 /**
  * @hidden
  */
-export function middlewareScopeToScope(scope: MiddlewareScope, context: Context): Scope {
+export function middlewareScopeToScope(scope: MiddlewareScope): Scope {
   const { type, value } = scope;
 
   switch (type) {
-    case ClaimScopeTypeEnum.Ticker: // NOSONAR
     case ClaimScopeTypeEnum.Asset:
       return {
         type: ScopeType.Asset,
-        value: getAssetIdFromMiddleware({ id: value, ticker: value }, context),
+        value,
       };
     case ClaimScopeTypeEnum.Identity:
     case ClaimScopeTypeEnum.Custom:
@@ -2502,11 +2382,10 @@ export async function scopeToMiddlewareScope(
   const { type, value } = scope;
 
   switch (type) {
-    case ScopeType.Ticker: // NOSONAR
     case ScopeType.Asset:
       return {
         type: ClaimScopeTypeEnum.Asset,
-        value: await getAssetIdForMiddleware(value, context),
+        value: await asAssetId(value, context),
       };
     case ScopeType.Identity:
     case ScopeType.Custom:
@@ -2534,44 +2413,41 @@ export function middlewareEventDetailsToEventIdentifier(
 /**
  * @hidden
  */
-export function meshClaimToClaim(
-  claim: PolymeshPrimitivesIdentityClaimClaim,
-  context: Context
-): Claim {
+export function meshClaimToClaim(claim: PolymeshPrimitivesIdentityClaimClaim): Claim {
   if (claim.isJurisdiction) {
     const [code, scope] = claim.asJurisdiction;
     return {
       type: ClaimType.Jurisdiction,
       code: meshCountryCodeToCountryCode(code),
-      scope: meshScopeToScope(scope, context),
+      scope: meshScopeToScope(scope),
     };
   }
 
   if (claim.isAccredited) {
     return {
       type: ClaimType.Accredited,
-      scope: meshScopeToScope(claim.asAccredited, context),
+      scope: meshScopeToScope(claim.asAccredited),
     };
   }
 
   if (claim.isAffiliate) {
     return {
       type: ClaimType.Affiliate,
-      scope: meshScopeToScope(claim.asAffiliate, context),
+      scope: meshScopeToScope(claim.asAffiliate),
     };
   }
 
   if (claim.isBuyLockup) {
     return {
       type: ClaimType.BuyLockup,
-      scope: meshScopeToScope(claim.asBuyLockup, context),
+      scope: meshScopeToScope(claim.asBuyLockup),
     };
   }
 
   if (claim.isSellLockup) {
     return {
       type: ClaimType.SellLockup,
-      scope: meshScopeToScope(claim.asSellLockup, context),
+      scope: meshScopeToScope(claim.asSellLockup),
     };
   }
 
@@ -2585,20 +2461,20 @@ export function meshClaimToClaim(
   if (claim.isKnowYourCustomer) {
     return {
       type: ClaimType.KnowYourCustomer,
-      scope: meshScopeToScope(claim.asKnowYourCustomer, context),
+      scope: meshScopeToScope(claim.asKnowYourCustomer),
     };
   }
 
   if (claim.isExempted) {
     return {
       type: ClaimType.Exempted,
-      scope: meshScopeToScope(claim.asExempted, context),
+      scope: meshScopeToScope(claim.asExempted),
     };
   }
 
   return {
     type: ClaimType.Blocked,
-    scope: meshScopeToScope(claim.asBlocked, context),
+    scope: meshScopeToScope(claim.asBlocked),
   };
 }
 
@@ -2796,21 +2672,21 @@ function meshConditionTypeToCondition(
   if (meshConditionType.isIsPresent) {
     return {
       type: ConditionType.IsPresent,
-      claim: meshClaimToClaim(meshConditionType.asIsPresent, context),
+      claim: meshClaimToClaim(meshConditionType.asIsPresent),
     };
   }
 
   if (meshConditionType.isIsAbsent) {
     return {
       type: ConditionType.IsAbsent,
-      claim: meshClaimToClaim(meshConditionType.asIsAbsent, context),
+      claim: meshClaimToClaim(meshConditionType.asIsAbsent),
     };
   }
 
   if (meshConditionType.isIsAnyOf) {
     return {
       type: ConditionType.IsAnyOf,
-      claims: meshConditionType.asIsAnyOf.map(claim => meshClaimToClaim(claim, context)),
+      claims: meshConditionType.asIsAnyOf.map(claim => meshClaimToClaim(claim)),
     };
   }
 
@@ -2831,7 +2707,7 @@ function meshConditionTypeToCondition(
 
   return {
     type: ConditionType.IsNoneOf,
-    claims: meshConditionType.asIsNoneOf.map(claim => meshClaimToClaim(claim, context)),
+    claims: meshConditionType.asIsNoneOf.map(claim => meshClaimToClaim(claim)),
   };
 }
 
@@ -3356,8 +3232,7 @@ export function middlewareClaimToClaimData(claim: MiddlewareClaim, context: Cont
       jurisdiction,
       scope,
       cddId,
-      customClaimTypeId ? new BigNumber(customClaimTypeId) : undefined,
-      context
+      customClaimTypeId ? new BigNumber(customClaimTypeId) : undefined
     ),
   };
 }
@@ -3978,7 +3853,7 @@ export function fundraiserToOfferingDetails(
     name: bytesToString(name),
     offeringPortfolio: meshPortfolioIdToPortfolio(offeringPortfolio, context),
     raisingPortfolio: meshPortfolioIdToPortfolio(raisingPortfolio, context),
-    raisingCurrency: meshAssetToAssetId(raisingAsset, context),
+    raisingCurrency: assetIdToString(raisingAsset),
     tiers,
     venue: new Venue({ id: u64ToBigNumber(venueId) }, context),
     start,
@@ -4160,7 +4035,7 @@ export function distributionToDividendDistributionParams(
 
   return {
     origin: meshPortfolioIdToPortfolio(from, context),
-    currency: meshAssetToAssetId(currency, context),
+    currency: assetIdToString(currency),
     perShare: balanceToBigNumber(perShare),
     maxAmount: balanceToBigNumber(amount),
     expiryDate: expiryDate.isNone ? null : momentToDate(expiryDate.unwrap()),
@@ -4243,13 +4118,6 @@ export function statisticsOpTypeToStatType(
   context: Context
 ): PolymeshPrimitivesStatisticsStatType {
   const { operationType, claimIssuer } = args;
-  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
-  if (context.isV6) {
-    return context.createType('PolymeshPrimitivesStatisticsStatType', {
-      op: operationType,
-      claimIssuer,
-    });
-  }
   return context.createType('PolymeshPrimitivesStatisticsStatType', {
     operationType,
     claimIssuer,
@@ -4331,20 +4199,9 @@ export function statUpdatesToBtreeStatUpdate(
 /**
  * @hidden
  */
-export function meshStatToStatType(
-  rawStat: PolymeshPrimitivesStatisticsStatType,
-  context: Context
-): StatType {
+export function meshStatToStatType(rawStat: PolymeshPrimitivesStatisticsStatType): StatType {
   const claimIssuer = rawStat.claimIssuer;
-  let type: 'Count' | 'Balance';
-
-  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
-  if (context.isV6) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    type = (rawStat as any).op.type; // NOSONAR
-  } else {
-    type = rawStat.operationType.type;
-  }
+  const type = rawStat.operationType.type;
 
   if (claimIssuer.isNone) {
     if (type === 'Count') {
@@ -4493,10 +4350,6 @@ export function toExemptKey(
   op: PolymeshPrimitivesStatisticsStatOpType,
   claimType?: ClaimType
 ): ExemptKey {
-  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
-  if (context.isV6) {
-    return { asset: rawAssetId as TickerKey, op, claimType };
-  }
   return { assetId: rawAssetId as PolymeshPrimitivesAssetAssetID, op, claimType };
 }
 
@@ -4562,41 +4415,6 @@ export function inputStatTypeToMeshStatType(
     claimIssuer = claimIssuerToMeshClaimIssuer(input.claimIssuer, context);
   }
   return statisticsOpTypeToStatType({ operationType: op, claimIssuer }, context);
-}
-
-/**
- * @hidden
- *
- * @deprecated - should be removed post v7
- */
-export function meshProposalStatusToProposalStatus(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  status: any,
-  expiry: Date | null
-): ProposalStatus {
-  const { type } = status;
-  switch (type) {
-    case 'ActiveOrExpired':
-      if (!expiry || expiry > new Date()) {
-        return ProposalStatus.Active;
-      } else {
-        return ProposalStatus.Expired;
-      }
-    case 'Invalid':
-      return ProposalStatus.Invalid;
-    case 'ExecutionSuccessful':
-      return ProposalStatus.Successful;
-    case 'ExecutionFailed':
-      return ProposalStatus.Failed;
-    case 'Rejected':
-      return ProposalStatus.Rejected;
-    default:
-      throw new PolymeshError({
-        code: ErrorCode.General,
-        message: 'Unexpected proposal status received',
-        data: { type },
-      });
-  }
 }
 
 /**
@@ -4833,10 +4651,7 @@ export function middlewareLegToLeg(leg: MiddlewareLeg, context: Context): Leg {
 
   if (legType === LegTypeEnum.Fungible) {
     return {
-      asset: new FungibleAsset(
-        { assetId: getAssetIdFromMiddleware({ id: assetId, ticker }, context) },
-        context
-      ),
+      asset: new FungibleAsset({ assetId }, context),
       amount: new BigNumber(amount).shiftedBy(-6),
       from: middlewarePortfolioToPortfolio(
         { identityId: from, number: fromPortfolio! } as MiddlewarePortfolio,
@@ -4850,7 +4665,6 @@ export function middlewareLegToLeg(leg: MiddlewareLeg, context: Context): Leg {
   }
 
   if (legType === LegTypeEnum.NonFungible) {
-    const id = getAssetIdFromMiddleware({ id: assetId, ticker }, context);
     return {
       from: middlewarePortfolioToPortfolio(
         { identityId: from, number: fromPortfolio! } as MiddlewarePortfolio,
@@ -4860,10 +4674,8 @@ export function middlewareLegToLeg(leg: MiddlewareLeg, context: Context): Leg {
         { identityId: to, number: toPortfolio! } as MiddlewarePortfolio,
         context
       ),
-      nfts: nftIds.map(
-        (nftId: number) => new Nft({ assetId: id, id: new BigNumber(nftId) }, context)
-      ),
-      asset: new NftCollection({ assetId: id }, context),
+      nfts: nftIds.map((nftId: number) => new Nft({ assetId, id: new BigNumber(nftId) }, context)),
+      asset: new NftCollection({ assetId }, context),
     };
   }
 
@@ -5032,9 +4844,7 @@ export function middlewareAgentGroupDataToPermissionGroup(
     permissionGroupIdentifier = { custom: new BigNumber(agentGroup.custom!) };
   }
 
-  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
-  const ticker = context.isV6 ? coerceHexToString(asset) : asset;
-  return assemblePermissionGroup(permissionGroupIdentifier, ticker, context);
+  return assemblePermissionGroup(permissionGroupIdentifier, asset, context);
 }
 
 /**
@@ -5134,14 +4944,7 @@ export function middlewarePermissionsDataToPermissions(
 
   if (assetsPermissions) {
     assets = {
-      values: [...assetsPermissions].map(
-        assetId =>
-          new FungibleAsset(
-            /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
-            { assetId: context.isV6 ? coerceHexToString(assetId) : assetId },
-            context
-          )
-      ),
+      values: [...assetsPermissions].map(assetId => new FungibleAsset({ assetId }, context)),
       type: assetsType!,
     };
   }
@@ -5242,8 +5045,7 @@ export function middlewareAuthorizationDataToAuthorization(
         value: coerceHexToString(data!),
       };
     case AuthTypeEnum.TransferAssetOwnership: {
-      /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
-      const value = context.isV6 ? coerceHexToString(data!) : data!;
+      const value = data!;
       return {
         type: AuthorizationType.TransferAssetOwnership,
         value,
@@ -5305,25 +5107,14 @@ export async function meshMetadataKeyToMetadataKey(
 /**
  * @hidden
  */
-export function meshNftToNftId(
-  rawInfo: PolymeshPrimitivesNftNfTs,
-  context: Context
-): {
+export function meshNftToNftId(rawInfo: PolymeshPrimitivesNftNfTs): {
   assetId: string;
   ids: BigNumber[];
 } {
-  let rawTicker: PolymeshPrimitivesTicker | PolymeshPrimitivesAssetAssetID;
-  let rawIds: Vec<u64>;
-  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
-  if (context.isV6) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ({ ticker: rawTicker, ids: rawIds } = rawInfo as any); // NOSONAR
-  } else {
-    ({ assetId: rawTicker, ids: rawIds } = rawInfo);
-  }
+  const { assetId: rawTicker, ids: rawIds } = rawInfo;
 
   return {
-    assetId: meshAssetToAssetId(rawTicker, context),
+    assetId: assetIdToString(rawTicker),
     ids: rawIds.map(rawId => u64ToBigNumber(rawId)),
   };
 }
@@ -5389,10 +5180,7 @@ function portfolioMovementsToHistoricSettlements(
         accounts: [handleMiddlewareAddress(accountAddress, context)],
         legs: [
           {
-            asset: new FungibleAsset(
-              { assetId: getAssetIdFromMiddleware(asset, context) },
-              context
-            ),
+            asset: new FungibleAsset({ assetId: asset!.id }, context),
             amount: new BigNumber(amount).shiftedBy(-6),
             direction: SettlementDirectionEnum.None,
             from: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(fromId), context),

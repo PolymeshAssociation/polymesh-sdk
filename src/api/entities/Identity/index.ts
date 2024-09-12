@@ -3,7 +3,6 @@ import { AccountId32 } from '@polkadot/types/interfaces';
 import {
   PolymeshPrimitivesIdentityDidRecord,
   PolymeshPrimitivesIdentityId,
-  PolymeshPrimitivesSecondaryKeySignatory,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
@@ -49,7 +48,6 @@ import {
   ProcedureMethod,
   ResultSet,
   Role,
-  Signer,
   SubCallback,
   UnlinkChildParams,
   UnsubCallback,
@@ -65,19 +63,17 @@ import {
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   accountIdToString,
+  assetIdToString,
   assetToMeshAssetId,
   balanceToBigNumber,
   boolToBoolean,
   cddStatusToBoolean,
   corporateActionIdentifierToCaId,
   identityIdToString,
-  meshAssetToAssetId,
   middlewareInstructionToHistoricInstruction,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
-  signatoryToSignerValue,
-  signerValueToSigner,
   stringToAccountId,
   stringToIdentityId,
   transactionPermissionsToTxGroups,
@@ -89,7 +85,6 @@ import {
   calculateNextKey,
   createProcedureMethod,
   getAccount,
-  getAssetIdFromMiddleware,
   getSecondaryAccountPermissions,
   requestPaginated,
 } from '~/utils/internal';
@@ -227,7 +222,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         polymeshApi: {
           query: { asset },
         },
-        isV6,
       },
     } = this;
     const { ticker, assetId } = args;
@@ -236,15 +230,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const rawAssetId = assetToMeshAssetId(baseAsset, context);
     const rawIdentityId = stringToIdentityId(did, context);
 
-    let tokensStorage;
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tokensStorage = (asset as any).tokens; // NOSONAR
-    } else {
-      tokensStorage = asset.assets;
-    }
-    const meshAsset = await tokensStorage(rawAssetId);
+    const meshAsset = await asset.assets(rawAssetId);
 
     if (meshAsset.isNone) {
       throw new PolymeshError({
@@ -413,10 +399,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     );
     const count = new BigNumber(totalCount);
 
-    const data = nodes.map(
-      ({ asset }) =>
-        new FungibleAsset({ assetId: getAssetIdFromMiddleware(asset, context) }, context)
-    );
+    const data = nodes.map(({ asset }) => new FungibleAsset({ assetId: asset!.id }, context));
 
     const next = calculateNextKey(count, data.length, start);
 
@@ -462,7 +445,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const count = new BigNumber(totalCount);
 
     const data = nodes.map(({ asset, nftIds }) => {
-      const assetId = getAssetIdFromMiddleware(asset, context);
+      const assetId = asset!.id;
       const collection = new NftCollection({ assetId }, context);
       const nfts = nftIds.map(
         (id: number) =>
@@ -525,10 +508,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       trustingAssetsQuery({ issuer: did })
     );
 
-    return nodes.map(
-      ({ asset }) =>
-        new FungibleAsset({ assetId: getAssetIdFromMiddleware(asset, context) }, context)
-    );
+    return nodes.map(({ asset }) => new FungibleAsset({ assetId: asset!.id }, context));
   }
 
   /**
@@ -988,20 +968,12 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         polymeshApi: {
           query: { asset },
         },
-        isV6,
       },
     } = this;
 
     const rawDid = stringToIdentityId(this.did, context);
 
-    let preApprovedStorage = asset.preApprovedAsset;
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      preApprovedStorage = (asset as any).preApprovedTicker; // NOSONAR
-    }
-
-    const { entries, lastKey: next } = await requestPaginated(preApprovedStorage, {
+    const { entries, lastKey: next } = await requestPaginated(asset.preApprovedAsset, {
       arg: rawDid,
       paginationOpts,
     });
@@ -1011,7 +983,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         const {
           args: [, rawAssetId],
         } = storageKey;
-        const assetId = meshAssetToAssetId(rawAssetId, context);
+        const assetId = assetIdToString(rawAssetId);
 
         return asAsset(assetId, context);
       })
@@ -1030,23 +1002,15 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         polymeshApi: {
           query: { asset: assetQuery },
         },
-        isV6,
       },
     } = this;
-
-    let preApprovedStorage = assetQuery.preApprovedAsset;
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      preApprovedStorage = (asset as any).preApprovedTicker; // NOSONAR
-    }
 
     const baseAsset = await asBaseAsset(asset, context);
     const rawAssetId = assetToMeshAssetId(baseAsset, context);
 
     const rawDid = stringToIdentityId(this.did, context);
 
-    const rawIsApproved = await preApprovedStorage(rawDid, rawAssetId);
+    const rawIsApproved = await assetQuery.preApprovedAsset(rawDid, rawAssetId);
 
     return boolToBoolean(rawIsApproved);
   }
@@ -1064,131 +1028,73 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       context,
       context: {
         polymeshApi: { query },
-        isV6,
       },
       did,
     } = this;
 
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      type Entry = [{ args: [AccountId32] }, PolymeshPrimitivesIdentityId];
+    const rawAdmins = await query.multiSig.adminDid.entries();
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const entries: Entry[] = await (query.multiSig as any).multiSigToIdentity.entries(); // NOSONAR
-
-      const multiSigs: Record<string, Signer[]> = {};
-
-      const rawSigners = await Promise.all(
-        entries
-          .filter(([, rawIdentityId]: Entry) => {
-            const identity = identityIdToString(rawIdentityId);
-            return identity === did;
-          })
-          .map(
-            ([
-              {
-                args: [rawMultiSigAccount],
-              },
-            ]) => {
-              const multiSigAccount = accountIdToString(rawMultiSigAccount);
-              multiSigs[multiSigAccount] = [];
-              return query.multiSig.multiSigSigners.entries(rawMultiSigAccount);
-            }
-          )
+    const adminForMultiSigs = rawAdmins
+      .filter(([, rawIdentityId]) => {
+        const identity = identityIdToString(rawIdentityId.unwrap());
+        return identity === did;
+      })
+      .map(
+        ([
+          {
+            args: [rawMultiSigAccount],
+          },
+        ]) => {
+          return accountIdToString(rawMultiSigAccount);
+        }
       );
 
-      rawSigners.forEach(rawSigner => {
-        rawSigner.forEach(
-          ([
-            {
-              args: [rawMultiSigAccount, signatory],
-            },
-          ]) => {
-            const multiSigAccount = accountIdToString(rawMultiSigAccount);
-            multiSigs[multiSigAccount].push(
-              signerValueToSigner(
-                signatoryToSignerValue(
-                  signatory as unknown as PolymeshPrimitivesSecondaryKeySignatory
-                ),
-                context
-              )
-            );
-          }
-        );
-      });
-
-      return Object.keys(multiSigs).map(multiSig => ({
-        signerFor: new MultiSig({ address: multiSig }, context),
-        signers: multiSigs[multiSig],
-        isAdmin: true,
-        isPayer: true,
-      }));
-    } else {
-      type Entry = [{ args: [AccountId32] }, Option<PolymeshPrimitivesIdentityId>];
-      const rawAdmins = await query.multiSig.adminDid.entries();
-
-      const adminForMultiSigs = rawAdmins
-        .filter(([, rawIdentityId]: Entry) => {
-          const identity = identityIdToString(rawIdentityId.unwrap());
-          return identity === did;
-        })
-        .map(
-          ([
-            {
-              args: [rawMultiSigAccount],
-            },
-          ]) => {
-            return accountIdToString(rawMultiSigAccount);
-          }
-        );
-
-      const rawPayers = await query.multiSig.payingDid.entries();
-      const payerForMultiSigs = rawPayers
-        .filter(([, rawIdentityId]: Entry) => {
-          const identity = identityIdToString(rawIdentityId.unwrap());
-          return identity === did;
-        })
-        .map(
-          ([
-            {
-              args: [rawMultiSigAccount],
-            },
-          ]) => {
-            return accountIdToString(rawMultiSigAccount);
-          }
-        );
-
-      const multiSigs = [...new Set([...adminForMultiSigs, ...payerForMultiSigs])].map(
-        address => new MultiSig({ address }, context)
+    const rawPayers = await query.multiSig.payingDid.entries();
+    const payerForMultiSigs = rawPayers
+      .filter(([, rawIdentityId]) => {
+        const identity = identityIdToString(rawIdentityId.unwrap());
+        return identity === did;
+      })
+      .map(
+        ([
+          {
+            args: [rawMultiSigAccount],
+          },
+        ]) => {
+          return accountIdToString(rawMultiSigAccount);
+        }
       );
 
-      const signers = await Promise.all(
-        multiSigs.map(async ({ address }) => {
-          const rawAccountId = stringToAccountId(address, context);
+    const multiSigs = [...new Set([...adminForMultiSigs, ...payerForMultiSigs])].map(
+      address => new MultiSig({ address }, context)
+    );
 
-          const rawSigners = await query.multiSig.multiSigSigners.entries(rawAccountId);
+    const signers = await Promise.all(
+      multiSigs.map(async ({ address }) => {
+        const rawAccountId = stringToAccountId(address, context);
 
-          return rawSigners.map(
-            ([
-              {
-                args: [, rawAddress],
-              },
-            ]) => {
-              const signerAddress = accountIdToString(rawAddress);
+        const rawSigners = await query.multiSig.multiSigSigners.entries(rawAccountId);
 
-              return new Account({ address: signerAddress }, context);
-            }
-          );
-        })
-      );
+        return rawSigners.map(
+          ([
+            {
+              args: [, rawAddress],
+            },
+          ]) => {
+            const signerAddress = accountIdToString(rawAddress);
 
-      return multiSigs.map((multiSig, i) => ({
-        signerFor: multiSig,
-        signers: signers[i],
-        isAdmin: adminForMultiSigs.some(address => address === multiSig.address),
-        isPayer: payerForMultiSigs.some(address => address === multiSig.address),
-      }));
-    }
+            return new Account({ address: signerAddress }, context);
+          }
+        );
+      })
+    );
+
+    return multiSigs.map((multiSig, i) => ({
+      signerFor: multiSig,
+      signers: signers[i],
+      isAdmin: adminForMultiSigs.some(address => address === multiSig.address),
+      isPayer: payerForMultiSigs.some(address => address === multiSig.address),
+    }));
   }
 
   /**

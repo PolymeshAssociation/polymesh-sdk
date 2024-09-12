@@ -99,21 +99,12 @@ export async function prepareExecuteManualInstruction(
     }
   }
 
-  let executeInstructionInfo: ExecuteInstructionInfo;
+  const rawInfo = await call.settlementApi.getExecuteInstructionInfo<
+    Option<ExecuteInstructionInfo>
+  >(rawInstructionId);
 
-  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-  if (context.isV6) {
-    executeInstructionInfo =
-      await call.settlementApi.getExecuteInstructionInfo<ExecuteInstructionInfo>(rawInstructionId);
-  } else {
-    const rawInfo = await call.settlementApi.getExecuteInstructionInfo<
-      Option<ExecuteInstructionInfo>
-    >(rawInstructionId);
-
-    executeInstructionInfo = rawInfo.unwrapOrDefault();
-  }
   const { fungibleTokens, nonFungibleTokens, offChainAssets, consumedWeight } =
-    executeInstructionInfo;
+    rawInfo.unwrapOrDefault();
 
   return {
     transaction: settlementTx.executeManualInstruction,

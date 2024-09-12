@@ -26,7 +26,7 @@ import {
   toHistoricalSettlements,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, getAssetIdForMiddleware, requestPaginated } from '~/utils/internal';
+import { asAssetId, createProcedureMethod, requestPaginated } from '~/utils/internal';
 
 /**
  * Handles all Portfolio related functionality on the Identity side
@@ -184,10 +184,6 @@ export class Portfolios extends Namespace<Identity> {
   public async getTransactionHistory(
     filters: {
       account?: string;
-      /**
-       * @deprecated in favour of assetId
-       */
-      ticker?: string;
       assetId?: string;
     } = {}
   ): Promise<HistoricSettlement[]> {
@@ -196,13 +192,12 @@ export class Portfolios extends Namespace<Identity> {
       parent: { did: identityId },
     } = this;
 
-    const { account, ticker, assetId } = filters; // NOSONAR
+    const { account, assetId } = filters;
 
     let middlewareAssetId;
-    const assetIdValue = assetId ?? ticker;
 
-    if (assetIdValue) {
-      middlewareAssetId = await getAssetIdForMiddleware(assetIdValue, context);
+    if (assetId) {
+      middlewareAssetId = await asAssetId(assetId, context);
     }
 
     const settlementsPromise = context.queryMiddleware<Ensured<Query, 'legs'>>(

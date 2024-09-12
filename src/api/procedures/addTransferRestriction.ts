@@ -13,6 +13,7 @@ import {
 } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import {
+  assetToMeshAssetId,
   complianceConditionsToBtreeSet,
   toExemptKey,
   transferRestrictionToPolymeshTransferCondition,
@@ -22,7 +23,6 @@ import {
 import {
   assertStatIsSet,
   checkTxType,
-  getAssetIdForStats,
   getExemptedBtreeSet,
   neededStatTypeForRestrictionInput,
   requestMulti,
@@ -56,7 +56,7 @@ export async function prepareAddTransferRestriction(
     context,
   } = this;
   const { asset, exemptedIdentities = [], type } = args;
-  const rawAssetId = getAssetIdForStats(asset, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
 
   let claimIssuer;
   if (
@@ -73,10 +73,8 @@ export async function prepareAddTransferRestriction(
   const [currentStats, { requirements: currentRestrictions }] = await requestMulti<
     [typeof statisticsQuery.activeAssetStats, typeof statisticsQuery.assetTransferCompliances]
   >(context, [
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    [statisticsQuery.activeAssetStats, rawAssetId as any], // NOSONAR
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    [statisticsQuery.assetTransferCompliances, rawAssetId as any], // NOSONAR
+    [statisticsQuery.activeAssetStats, rawAssetId],
+    [statisticsQuery.assetTransferCompliances, rawAssetId],
   ]);
 
   const neededStat = neededStatTypeForRestrictionInput({ type, claimIssuer }, context);
@@ -131,8 +129,7 @@ export async function prepareAddTransferRestriction(
   transactions.push(
     checkTxType({
       transaction: statistics.setAssetTransferCompliance,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      args: [rawAssetId as any, conditions], // NOSONAR
+      args: [rawAssetId, conditions],
     })
   );
 

@@ -37,12 +37,12 @@ jest.mock(
 
 describe('Fungible class', () => {
   let bytesToStringSpy: jest.SpyInstance;
-  let getAssetIdForMiddlewareSpy: jest.SpyInstance;
+  let asAssetIdSpy: jest.SpyInstance;
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    getAssetIdForMiddlewareSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware');
+    asAssetIdSpy = jest.spyOn(utilsInternalModule, 'asAssetId');
   });
 
   afterEach(() => {
@@ -498,7 +498,7 @@ describe('Fungible class', () => {
       };
       const fakeResult = { blockNumber, blockHash, blockDate, eventIndex: eventIdx };
       const context = dsMockUtils.getContextInstance();
-      when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
+      when(asAssetIdSpy).calledWith(assetId, context).mockResolvedValue(assetId);
 
       const asset = new FungibleAsset({ assetId }, context);
 
@@ -529,7 +529,7 @@ describe('Fungible class', () => {
       };
       const context = dsMockUtils.getContextInstance();
       const asset = new FungibleAsset({ assetId }, context);
-      when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
+      when(asAssetIdSpy).calledWith(assetId, context).mockResolvedValue(assetId);
 
       dsMockUtils.createApolloQueryMock(assetQuery(variables), {
         assets: {
@@ -718,7 +718,7 @@ describe('Fungible class', () => {
       const assetId = '0x1234';
       const context = dsMockUtils.getContextInstance();
       const asset = new FungibleAsset({ assetId }, context);
-      when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
+      when(asAssetIdSpy).calledWith(assetId, context).mockResolvedValue(assetId);
 
       const did = 'someDid';
       const blockId = new BigNumber(1);
@@ -781,7 +781,7 @@ describe('Fungible class', () => {
       const assetId = '0x1234';
       const context = dsMockUtils.getContextInstance();
       const asset = new FungibleAsset({ assetId }, context);
-      when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
+      when(asAssetIdSpy).calledWith(assetId, context).mockResolvedValue(assetId);
 
       const middlewareAsset = {
         id: assetId,
@@ -836,10 +836,6 @@ describe('Fungible class', () => {
           },
         ],
       };
-
-      when(jest.spyOn(utilsInternalModule, 'getAssetIdFromMiddleware'))
-        .calledWith(middlewareAsset, context)
-        .mockReturnValue(assetId);
 
       dsMockUtils.createApolloQueryMock(
         assetTransactionQuery({ assetId }, new BigNumber(3), new BigNumber(0)),

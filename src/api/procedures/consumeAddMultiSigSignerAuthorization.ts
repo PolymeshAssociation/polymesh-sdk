@@ -30,7 +30,6 @@ export async function prepareConsumeAddMultiSigSignerAuthorization(
 > {
   const {
     context: {
-      isV6,
       polymeshApi: {
         tx: { identity, multiSig },
       },
@@ -67,20 +66,12 @@ export async function prepareConsumeAddMultiSigSignerAuthorization(
 
   await assertAuthorizationRequestValid(authRequest, context);
 
-  let transaction;
-  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-  if (isV6) {
-    transaction =
-      target instanceof Account
-        ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (multiSig as any).acceptMultisigSignerAsKey // NOSONAR
-        : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (multiSig as any).acceptMultisigSignerAsIdentity; // NOSONAR
-  } else {
-    transaction = multiSig.acceptMultisigSigner;
-  }
-
-  return { transaction, paidForBy: issuer, args: [rawAuthId], resolver: undefined };
+  return {
+    transaction: multiSig.acceptMultisigSigner,
+    paidForBy: issuer,
+    args: [rawAuthId],
+    resolver: undefined,
+  };
 }
 
 /**

@@ -2,6 +2,7 @@ import { PolymeshError, Procedure } from '~/internal';
 import { AddAssetStatParams, ErrorCode, StatType, TxTags } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import {
+  assetToMeshAssetId,
   claimCountStatInputToStatUpdates,
   claimIssuerToMeshClaimIssuer,
   countStatInputToStatUpdates,
@@ -9,7 +10,7 @@ import {
   statisticStatTypesToBtreeStatType,
   statTypeToStatOpType,
 } from '~/utils/conversion';
-import { checkTxType, compareStatsToInput, getAssetIdForStats } from '~/utils/internal';
+import { checkTxType, compareStatsToInput } from '~/utils/internal';
 
 /**
  * @hidden
@@ -29,10 +30,9 @@ export async function prepareAddAssetStat(
   } = this;
   const { asset, type } = args;
 
-  const rawAssetId = getAssetIdForStats(asset, context);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const currentStats = await statisticsQuery.activeAssetStats(rawAssetId as any); // NOSONAR
-  const needStat = ![...currentStats].find(s => compareStatsToInput(s, args, context));
+  const rawAssetId = assetToMeshAssetId(asset, context);
+  const currentStats = await statisticsQuery.activeAssetStats(rawAssetId);
+  const needStat = ![...currentStats].find(s => compareStatsToInput(s, args));
 
   if (!needStat) {
     throw new PolymeshError({
@@ -58,8 +58,7 @@ export async function prepareAddAssetStat(
   transactions.push(
     checkTxType({
       transaction: statistics.setActiveAssetStats,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      args: [rawAssetId as any, newStats], // NOSONAR
+      args: [rawAssetId, newStats],
     })
   );
 
@@ -70,8 +69,7 @@ export async function prepareAddAssetStat(
     transactions.push(
       checkTxType({
         transaction: statistics.batchUpdateAssetStats,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        args: [rawAssetId as any, newStat, statValue], // NOSONAR
+        args: [rawAssetId, newStat, statValue],
       })
     );
   } else if (args.type === StatType.ScopedCount) {
@@ -79,8 +77,7 @@ export async function prepareAddAssetStat(
     transactions.push(
       checkTxType({
         transaction: statistics.batchUpdateAssetStats,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        args: [rawAssetId as any, newStat, statValue], // NOSONAR
+        args: [rawAssetId, newStat, statValue],
       })
     );
   }

@@ -313,21 +313,12 @@ export type PermissionsEnum<P> =
       Except: P;
     };
 
-export type PalletPermissionsV6 = {
-  /* eslint-disable @typescript-eslint/naming-convention */
-  palletName: string;
-  dispatchableNames: PermissionsEnum<string[]>;
-  /* eslint-enable @typescript-eslint/naming-convention */
-};
-
-export type PalletPermissionsV7 = Map<
+export type PalletPermissions = Map<
   string,
   {
     extrinsics: PermissionsEnum<string[]>;
   }
 >;
-
-export type PalletPermissions = PalletPermissionsV6[] | PalletPermissionsV7;
 
 export enum InstructionStatus {
   Pending = 'Pending',

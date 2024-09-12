@@ -1792,12 +1792,12 @@ describe('Context class', () => {
 
   describe('method: getDividendDistributionsForAssets', () => {
     let assetToMeshAssetIdSpy: jest.SpyInstance;
-    let meshAssetToAssetIdSpy: jest.SpyInstance;
+    let assetIdToStringSpy: jest.SpyInstance;
 
     beforeAll(() => {
       jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
       assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
-      meshAssetToAssetIdSpy = jest.spyOn(utilsConversionModule, 'meshAssetToAssetId');
+      assetIdToStringSpy = jest.spyOn(utilsConversionModule, 'assetIdToString');
     });
 
     afterAll(() => {
@@ -1820,9 +1820,7 @@ describe('Context class', () => {
           .calledWith(expect.objectContaining({ id: assetId }), context)
           .mockReturnValue(rawAssetIds[index]);
 
-        when(meshAssetToAssetIdSpy)
-          .calledWith(rawAssetIds[index], context)
-          .mockReturnValue(assetId);
+        when(assetIdToStringSpy).calledWith(rawAssetIds[index], context).mockReturnValue(assetId);
       });
 
       /* eslint-disable @typescript-eslint/naming-convention */
@@ -1905,9 +1903,9 @@ describe('Context class', () => {
         dsMockUtils.createMockOption(),
       ];
 
-      when(meshAssetToAssetIdSpy).calledWith(usdAssetId, context).mockReturnValue('0xUSD');
+      when(assetIdToStringSpy).calledWith(usdAssetId, context).mockReturnValue('0xUSD');
 
-      when(meshAssetToAssetIdSpy).calledWith(cadAssetId, context).mockReturnValue('0xCAD');
+      when(assetIdToStringSpy).calledWith(cadAssetId, context).mockReturnValue('0xCAD');
 
       const localIds = [new BigNumber(1), new BigNumber(2), new BigNumber(3)];
       const caIds = [

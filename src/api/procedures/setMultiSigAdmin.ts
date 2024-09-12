@@ -21,18 +21,10 @@ export async function prepareSetMultiSigAdmin(
 > {
   const {
     context: {
-      isV6,
       polymeshApi: { tx },
     },
     context,
   } = this;
-
-  if (isV6) {
-    throw new PolymeshError({
-      code: ErrorCode.General,
-      message: 'MultiSig admins are not supported on v6 chains',
-    });
-  }
 
   const { admin, multiSig } = args;
   if (admin) {

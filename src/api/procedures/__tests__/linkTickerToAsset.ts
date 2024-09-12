@@ -115,15 +115,6 @@ describe('linkTickerToAsset procedure', () => {
     });
   });
 
-  it('should throw an error if the chain is on v6', async () => {
-    mockContext.isV6 = true;
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      status: TickerReservationStatus.Free,
-    });
-
-    return expect(prepareLinkTickerToAsset.call(proc, args)).rejects.toThrow(PolymeshError);
-  });
-
   it('should throw an error if the ticker is already linked', async () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       status: TickerReservationStatus.AssetCreated,

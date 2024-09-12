@@ -44,7 +44,6 @@ import {
   UnsubCallback,
   VenueFilteringDetails,
 } from '~/types';
-import { tickerToDid } from '~/utils';
 import {
   assetIdentifierToSecurityIdentifier,
   assetToMeshAssetId,
@@ -129,16 +128,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
     super(identifiers, context);
 
     const { assetId } = identifiers;
-    const { isV6 } = context;
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      this.ticker = assetId;
-      this.id = assetId;
-      this.did = tickerToDid(assetId);
-    } else {
-      this.id = assetId;
-      // TODO @prashantasdeveloper check logic around asset DID
-    }
+    this.id = assetId;
 
     this.compliance = new Compliance(this, context);
     this.documents = new Documents(this, context);
@@ -243,31 +233,24 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
         polymeshApi: {
           query: { asset },
         },
-        isV6,
       },
       context,
     } = this;
 
     const rawAssetId = assetToMeshAssetId(this, context);
 
-    let identifiersStorage;
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      identifiersStorage = (asset as any).identifiers; // NOSONAR
-    } else {
-      identifiersStorage = asset.assetIdentifiers;
-    }
-
     if (callback) {
       context.assertSupportsSubscription();
-      return identifiersStorage(rawAssetId, (identifiers: PolymeshPrimitivesAssetIdentifier[]) => {
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
-        callback(identifiers.map(assetIdentifierToSecurityIdentifier));
-      });
+      return asset.assetIdentifiers(
+        rawAssetId,
+        (identifiers: PolymeshPrimitivesAssetIdentifier[]) => {
+          // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
+          callback(identifiers.map(assetIdentifierToSecurityIdentifier));
+        }
+      );
     }
 
-    const assetIdentifiers = await identifiersStorage(rawAssetId);
+    const assetIdentifiers = await asset.assetIdentifiers(rawAssetId);
 
     return assetIdentifiers.map(assetIdentifierToSecurityIdentifier);
   }
@@ -323,7 +306,6 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
         polymeshApi: {
           query: { asset, externalAgents },
         },
-        isV6,
       },
       context,
     } = this;
@@ -381,19 +363,12 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
     const groupOfAgentPromise = externalAgents.groupOfAgent.entries(rawAssetId);
     const namePromise = asset.assetNames(rawAssetId);
 
-    let tokensStorage = asset.assets;
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tokensStorage = (asset as any).tokens; // NOSONAR
-    }
-
     if (callback) {
       context.assertSupportsSubscription();
       const groupEntries = await groupOfAgentPromise;
       const assetName = await namePromise;
 
-      return tokensStorage(rawAssetId, async securityToken => {
+      return asset.assets(rawAssetId, async securityToken => {
         const result = await assembleResult(securityToken, groupEntries, assetName);
 
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
@@ -402,7 +377,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
     }
 
     const [token, groups, name] = await Promise.all([
-      tokensStorage(rawAssetId),
+      asset.assets(rawAssetId),
       groupOfAgentPromise,
       namePromise,
     ]);
@@ -509,23 +484,13 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
         polymeshApi: {
           query: { asset, nft },
         },
-        isV6,
       },
     } = this;
     const rawAssetId = assetToMeshAssetId(this, context);
-    let tokensStorage = asset.assets;
-    let collectionsStorage = nft.collectionAsset;
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tokensStorage = (asset as any).tokens; // NOSONAR
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      collectionsStorage = (nft as any).collectionTicker; // NOSONAR
-    }
 
     const [tokenSize, nftId] = await Promise.all([
-      tokensStorage.size(rawAssetId),
-      collectionsStorage(rawAssetId),
+      asset.assets.size(rawAssetId),
+      nft.collectionAsset(rawAssetId),
     ]);
 
     return !tokenSize.isZero() && nftId.isZero();

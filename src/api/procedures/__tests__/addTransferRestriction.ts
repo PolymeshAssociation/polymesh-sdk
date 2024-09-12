@@ -74,7 +74,7 @@ describe('addTransferRestriction procedure', () => {
     PolymeshPrimitivesTransferComplianceTransferCondition,
     [TransferRestriction, Context]
   >;
-  let getAssetIdForStatsSpy: jest.SpyInstance;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
   let complianceConditionsToBtreeSetSpy: jest.SpyInstance<
     BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>,
     [PolymeshPrimitivesTransferComplianceTransferCondition[], Context]
@@ -165,7 +165,7 @@ describe('addTransferRestriction procedure', () => {
       utilsConversionModule,
       'transferRestrictionToPolymeshTransferCondition'
     );
-    getAssetIdForStatsSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForStats');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsInternalModule, 'assetToMeshAssetId');
     transferConditionsToBtreeTransferConditionsSpy = jest.spyOn(
       utilsConversionModule,
       'transferConditionsToBtreeTransferConditions'
@@ -261,7 +261,7 @@ describe('addTransferRestriction procedure', () => {
     when(transferRestrictionToPolymeshTransferConditionSpy)
       .calledWith(expect.objectContaining(claimPercentageRestriction), mockContext)
       .mockReturnValue(rawClaimPercentageCondition);
-    when(getAssetIdForStatsSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
+    when(assetToMeshAssetIdSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
     when(complianceConditionsToBtreeSetSpy)
       .calledWith([rawCountCondition], mockContext)
       .mockReturnValue(mockCountBtreeSet);

@@ -36,7 +36,7 @@ jest.mock(
 describe('removeAssetStat procedure', () => {
   const did = 'someDid';
   let mockContext: Mocked<Context>;
-  let getAssetIdForStatsSpy: jest.SpyInstance;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
   let assetId: string;
   let asset: FungibleAsset;
   let rawAssetId: PolymeshPrimitivesAssetAssetID;
@@ -113,7 +113,7 @@ describe('removeAssetStat procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
     assetId = '0x1234';
     asset = entityMockUtils.getFungibleAssetInstance({ assetId });
-    getAssetIdForStatsSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForStats');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsInternalModule, 'assetToMeshAssetId');
     createStat2ndKeySpy = jest.spyOn(utilsConversionModule, 'createStat2ndKey');
     statUpdatesToBtreeStatUpdateSpy = jest.spyOn(
       utilsConversionModule,
@@ -190,7 +190,7 @@ describe('removeAssetStat procedure', () => {
     queryMultiResult = [dsMockUtils.createMockBTreeSet([]), fakeCurrentRequirements];
     queryMultiMock.mockReturnValue(queryMultiResult);
 
-    when(getAssetIdForStatsSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
+    when(assetToMeshAssetIdSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
     statisticStatTypesToBtreeStatTypeSpy.mockReturnValue(emptyStatTypeBtreeSet);
     args = {
       type: StatType.Balance,
