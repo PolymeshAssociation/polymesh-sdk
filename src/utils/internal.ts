@@ -12,24 +12,16 @@ import { EventRecord } from '@polkadot/types/interfaces';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import {
   PalletAssetAssetDetails,
-  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesSecondaryKeyKeyRecord,
-  PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesStatisticsStatClaim,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
 import type { Callback, Codec, Observable } from '@polkadot/types/types';
 import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/types/types';
-import {
-  hexAddPrefix,
-  hexStripPrefix,
-  stringToHex,
-  stringUpperFirst,
-  u8aToHex,
-} from '@polkadot/util';
-import { blake2AsU8a, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
+import { stringUpperFirst } from '@polkadot/util';
+import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import fetch from 'cross-fetch';
 import stringify from 'json-stable-stringify';
@@ -105,7 +97,6 @@ import {
   PolymeshTx,
   Queries,
   StatClaimIssuer,
-  TickerKey,
   TxWithArgs,
 } from '~/types/internal';
 import {
@@ -127,14 +118,11 @@ import {
 } from '~/utils/constants';
 import {
   assetIdToString,
-  assetToMeshAssetId,
   bigNumberToU32,
   claimIssuerToMeshClaimIssuer,
-  coerceHexToString,
   identitiesToBtreeSet,
   identityIdToString,
   meshClaimTypeToClaimType,
-  meshPermissionsToPermissions,
   meshPermissionsToPermissionsV2,
   meshStatToStatType,
   middlewareScopeToScope,
@@ -283,11 +271,10 @@ export function createClaim(
   jurisdiction: Falsyable<string>,
   middlewareScope: Falsyable<MiddlewareScope>,
   cddId: Falsyable<string>,
-  customClaimTypeId: Falsyable<BigNumber>,
-  context: Context
+  customClaimTypeId: Falsyable<BigNumber>
 ): Claim {
   const type = claimType as ClaimType;
-  const scope = (middlewareScope ? middlewareScopeToScope(middlewareScope, context) : {}) as Scope;
+  const scope = (middlewareScope ? middlewareScopeToScope(middlewareScope) : {}) as Scope;
 
   switch (type) {
     case ClaimType.Jurisdiction: {
@@ -1053,16 +1040,6 @@ export async function getAssetIdAndTicker(
   ticker?: string;
   assetId: string;
 }> {
-  const { isV6 } = context;
-
-  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-  if (isV6) {
-    return {
-      ticker: assetId,
-      assetId,
-    };
-  }
-
   return {
     assetId,
     ticker: await getTickerForAsset(assetId, context),
@@ -1084,28 +1061,17 @@ export function asUuid(id: string): string {
  * @hidden
  */
 export async function asBaseAsset(asset: string | BaseAsset, context: Context): Promise<BaseAsset> {
-  const { isV6 } = context;
   if (asset instanceof BaseAsset) {
     return asset;
   }
-  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-  if (isV6) {
-    assertTickerValid(asset);
-    return new BaseAsset({ assetId: asset }, context);
-  }
 
   if (isUuid(asset) || isHexUuid(asset)) {
-    const ticker = await getTickerForAsset(asset, context);
-    const baseAsset = new BaseAsset({ assetId: asUuid(asset) }, context);
-    baseAsset.ticker = ticker;
-    return baseAsset;
-  } else {
-    assertTickerValid(asset);
-    const id = await getAssetIdForTicker(asset, context);
-    const baseAsset = new BaseAsset({ assetId: id }, context);
-    baseAsset.ticker = asset;
-    return baseAsset;
+    return new BaseAsset({ assetId: asUuid(asset) }, context);
   }
+
+  assertTickerValid(asset);
+  const id = await getAssetIdForTicker(asset, context);
+  return new BaseAsset({ assetId: id }, context);
 }
 
 /**
@@ -1691,8 +1657,7 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<number> {
  */
 export function compareStatsToInput(
   rawStatType: PolymeshPrimitivesStatisticsStatType,
-  args: RemoveAssetStatParams,
-  context: Context
+  args: RemoveAssetStatParams
 ): boolean {
   let claimIssuer;
   const { type } = args;
@@ -1723,7 +1688,7 @@ export function compareStatsToInput(
     }
   }
 
-  const stat = meshStatToStatType(rawStatType, context);
+  const stat = meshStatToStatType(rawStatType);
 
   return stat === type;
 }
@@ -1843,26 +1808,6 @@ export function compareTransferRestrictionToInput(
 
 /**
  * @hidden
- */
-export function compareStatTypeToTransferRestrictionType(
-  statType: PolymeshPrimitivesStatisticsStatType,
-  transferRestrictionType: TransferRestrictionType,
-  context: Context
-): boolean {
-  const opType = meshStatToStatType(statType, context);
-  if (opType === StatType.Count) {
-    return transferRestrictionType === TransferRestrictionType.Count;
-  } else if (opType === StatType.Balance) {
-    return transferRestrictionType === TransferRestrictionType.Percentage;
-  } else if (opType === StatType.ScopedCount) {
-    return transferRestrictionType === TransferRestrictionType.ClaimCount;
-  } else {
-    return transferRestrictionType === TransferRestrictionType.ClaimPercentage;
-  }
-}
-
-/**
- * @hidden
  * @param args.type TransferRestriction type that was given
  * @param args.claimIssuer optional Issuer and ClaimType for the scope of the Stat
  * @param context
@@ -1932,7 +1877,6 @@ export async function getSecondaryAccountPermissions(
     polymeshApi: {
       query: { identity: identityQuery },
     },
-    isV6,
   } = context;
 
   const { accounts, identity } = args;
@@ -1946,27 +1890,12 @@ export async function getSecondaryAccountPermissions(
       record: PolymeshPrimitivesSecondaryKeyKeyRecord,
       account: Account | MultiSig
     ): Promise<void> => {
-      /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-      if (isV6) {
-        const [rawIdentityId, rawPermissions] = record.asSecondaryKey as unknown as [
-          PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesSecondaryKeyPermissions
-        ];
-
-        if (!identity || identityIdToString(rawIdentityId) === identity.did) {
-          result.push({
-            account,
-            permissions: meshPermissionsToPermissions(rawPermissions, context),
-          });
-        }
-      } else {
-        const rawIdentityId = record.asSecondaryKey;
-        if (!identity || identityIdToString(rawIdentityId) === identity.did) {
-          result.push({
-            account,
-            permissions: await meshPermissionsToPermissionsV2(account, context),
-          });
-        }
+      const rawIdentityId = record.asSecondaryKey;
+      if (!identity || identityIdToString(rawIdentityId) === identity.did) {
+        result.push({
+          account,
+          permissions: await meshPermissionsToPermissionsV2(account, context),
+        });
       }
     };
     for (const optKeyRecord of optKeyRecords) {
@@ -2019,23 +1948,14 @@ export async function getIdentityFromKeyRecord(
     polymeshApi: {
       query: { identity },
     },
-    isV6,
   } = context;
 
   if (keyRecord.isPrimaryKey) {
     const did = identityIdToString(keyRecord.asPrimaryKey);
     return new Identity({ did }, context);
   } else if (keyRecord.isSecondaryKey) {
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      const did = identityIdToString(
-        keyRecord.asSecondaryKey[0] as unknown as PolymeshPrimitivesIdentityId
-      );
-      return new Identity({ did }, context);
-    } else {
-      const did = identityIdToString(keyRecord.asSecondaryKey);
-      return new Identity({ did }, context);
-    }
+    const did = identityIdToString(keyRecord.asSecondaryKey);
+    return new Identity({ did }, context);
   } else {
     const multiSigAddress = keyRecord.asMultiSigSignerKey;
     const optMultiSigKeyRecord = await identity.keyRecords(multiSigAddress);
@@ -2089,8 +2009,7 @@ export function asNftId(nft: Nft | BigNumber): BigNumber {
  */
 export function areSameClaims(
   claim: Claim,
-  { scope, type, customClaimTypeId }: MiddlewareClaim,
-  context: Context
+  { scope, type, customClaimTypeId }: MiddlewareClaim
 ): boolean {
   // filter out deprecated claim types
   if (
@@ -2102,11 +2021,7 @@ export function areSameClaims(
     return false;
   }
 
-  if (
-    isScopedClaim(claim) &&
-    scope &&
-    !isEqual(middlewareScopeToScope(scope, context), claim.scope)
-  ) {
+  if (isScopedClaim(claim) && scope && !isEqual(middlewareScopeToScope(scope), claim.scope)) {
     return false;
   }
 
@@ -2237,36 +2152,6 @@ export async function getAccount(
 
 /**
  * @hidden
- */
-export function getAssetIdForStats(
-  asset: Asset,
-  context: Context
-): TickerKey | PolymeshPrimitivesAssetAssetId {
-  const rawAssetId = assetToMeshAssetId(asset, context);
-  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
-  return context.isV6 ? { Ticker: rawAssetId } : rawAssetId;
-}
-
-/**
- * @hidden
- */
-const getAssetIdForLegacyTicker = (ticker: string, context: Context): string => {
-  const assetComponents = [stringToHex('legacy_ticker'), stringToTicker(ticker, context).toHex()];
-
-  const data = hexAddPrefix(assetComponents.map(e => hexStripPrefix(e)).join(''));
-
-  const rawBytes = blake2AsU8a(data, 128);
-
-  // Version 8.
-  rawBytes[6] = (rawBytes[6] & 0x0f) | 0x80;
-  // Standard RFC4122 variant (bits 10xx)
-  rawBytes[8] = (rawBytes[8] & 0x3f) | 0x80;
-
-  return u8aToHex(rawBytes);
-};
-
-/**
- * @hidden
  *
  * Used for querying middleware which stores asset ID in hex format
  *
@@ -2282,11 +2167,6 @@ export async function getAssetIdForMiddleware(
    */
   const assetId = await asAssetId(assetIdOrTicker, context);
 
-  if (!isUuid(assetId)) {
-    // this will only be true if chain 6.x is running
-    return getAssetIdForLegacyTicker(assetId, context);
-  }
-
   return uuidToHex(assetId);
 }
 
@@ -2298,15 +2178,9 @@ export async function getAssetIdForMiddleware(
  * @returns asset ID as UUID format
  */
 export function getAssetIdFromMiddleware(
-  assetIdAndTicker: Falsyable<Pick<MiddlewareAsset, 'id' | 'ticker'>>,
-  context: Context
+  assetIdAndTicker: Falsyable<Pick<MiddlewareAsset, 'id' | 'ticker'>>
 ): string {
-  const { id, ticker } = assetIdAndTicker!;
-  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
-  if (context.isV6) {
-    return coerceHexToString(ticker!);
-  }
-
+  const { id } = assetIdAndTicker!;
   return hexToUuid(id);
 }
 

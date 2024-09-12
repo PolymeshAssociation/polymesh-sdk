@@ -199,8 +199,6 @@ import {
   assetIdentifierToSecurityIdentifier,
   assetIdToString,
   assetToMeshAssetId,
-  assetToMeshAssetIdKey,
-  assetToMeshAssetIdWithKey,
   assetTypeToKnownOrId,
   authorizationDataToAuthorization,
   authorizationToAuthorizationData,
@@ -267,7 +265,6 @@ import {
   legToOffChainLeg,
   mediatorAffirmationStatusToStatus,
   meshAffirmationStatusToAffirmationStatus,
-  meshAssetToAssetId,
   meshClaimToClaim,
   meshClaimToInputStatClaim,
   meshClaimTypeToClaimType,
@@ -279,8 +276,7 @@ import {
   meshNftToNftId,
   meshPermissionsToPermissions,
   meshPermissionsToPermissionsV2,
-  meshProposalStateToProposalStatus, // NOSONAR
-  meshProposalStatusToProposalStatus,
+  meshProposalStateToProposalStatus,
   meshScopeToScope,
   meshSettlementTypeToEndCondition,
   meshStatToStatType,
@@ -341,7 +337,6 @@ import {
   statUpdatesToBtreeStatUpdate,
   stringToAccountId,
   stringToAssetId,
-  stringToAssetIdKey,
   stringToBlockHash,
   stringToBytes,
   stringToCddId,
@@ -351,7 +346,6 @@ import {
   stringToMemo,
   stringToText,
   stringToTicker,
-  stringToTickerKey,
   stringToU8aFixed,
   targetIdentitiesToCorporateActionTargets,
   targetsToTargetIdentities,
@@ -538,14 +532,13 @@ describe('fungibleMovementToPortfolioFund', () => {
     const assetId = '12341234-1234-1234-1234-123412341234';
     const amount = new BigNumber(100);
     const memo = 'someMessage';
-    const asset = entityMockUtils.getBaseAssetInstance({ assetId });
     const rawAssetId = dsMockUtils.createMockAssetId(uuidToHex(assetId));
     const rawAmount = dsMockUtils.createMockBalance(amount);
     const rawMemo = 'memo' as unknown as PolymeshPrimitivesMemo;
     const fakeResult =
       'PolymeshPrimitivesPortfolioFund' as unknown as PolymeshPrimitivesPortfolioFund;
 
-    jest.spyOn(utilsInternalModule, 'asBaseAsset').mockResolvedValue(asset);
+    jest.spyOn(utilsInternalModule, 'asAssetId').mockResolvedValue(assetId);
     let portfolioMovement: PortfolioMovement = {
       asset: assetId,
       amount,
@@ -639,7 +632,7 @@ describe('nftMovementToPortfolioFund', () => {
     const fakeResult =
       'PolymeshPrimitivesPortfolioFund' as unknown as PolymeshPrimitivesPortfolioFund;
 
-    jest.spyOn(utilsInternalModule, 'asBaseAsset').mockResolvedValue(asset);
+    jest.spyOn(utilsInternalModule, 'asAssetId').mockResolvedValue(assetId);
     let portfolioMovement: NonFungiblePortfolioMovement = {
       asset: assetId,
       nfts: [id],
@@ -759,33 +752,6 @@ describe('stringToTicker and tickerToString', () => {
     });
   });
 
-  describe('stringToTickerKey', () => {
-    beforeAll(() => {
-      dsMockUtils.initMocks();
-    });
-
-    afterEach(() => {
-      dsMockUtils.reset();
-    });
-
-    afterAll(() => {
-      dsMockUtils.cleanup();
-    });
-
-    it('should call stringToTicker and return the result as an object', () => {
-      const value = 'SOME_TICKER';
-      const fakeResult = 'convertedTicker' as unknown as PolymeshPrimitivesTicker;
-      const context = dsMockUtils.getContextInstance();
-
-      when(context.createType)
-        .calledWith('PolymeshPrimitivesTicker', padString(value, 12))
-        .mockReturnValue(fakeResult);
-
-      const result = stringToTickerKey(value, context);
-      expect(result).toEqual({ Ticker: fakeResult });
-    });
-  });
-
   describe('tickerToString', () => {
     it('should convert a polkadot Ticker object to a string', () => {
       const fakeResult = 'SOME_TICKER';
@@ -797,7 +763,7 @@ describe('stringToTicker and tickerToString', () => {
   });
 });
 
-describe('stringToAssetId, stringToAssetIdKey and assetIdToString', () => {
+describe('stringToAssetId and assetIdToString', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -828,34 +794,6 @@ describe('stringToAssetId, stringToAssetIdKey and assetIdToString', () => {
     });
   });
 
-  describe('stringToAssetIdKey', () => {
-    beforeAll(() => {
-      dsMockUtils.initMocks();
-    });
-
-    afterEach(() => {
-      dsMockUtils.reset();
-    });
-
-    afterAll(() => {
-      dsMockUtils.cleanup();
-    });
-
-    it('should call stringToAssetIdKey and return the result as an object', () => {
-      const value = '12341234-1234-1234-1234-123412341234';
-      const fakeResult =
-        '0x12341234123412341234123412341234' as unknown as PolymeshPrimitivesAssetAssetId;
-      const context = dsMockUtils.getContextInstance();
-
-      when(context.createType)
-        .calledWith('PolymeshPrimitivesAssetAssetId', uuidToHex(value))
-        .mockReturnValue(fakeResult);
-
-      const result = stringToAssetIdKey(value, context);
-      expect(result).toEqual({ AssetId: fakeResult });
-    });
-  });
-
   describe('stringToAssetId', () => {
     it('should convert a polkadot AssetId object to a string', () => {
       const fakeResult = '0x12341234123412341234123412341234';
@@ -867,7 +805,7 @@ describe('stringToAssetId, stringToAssetIdKey and assetIdToString', () => {
   });
 });
 
-describe('meshAssetToAssetId, assetToMeshAssetIdKey and assetToMeshAssetId', () => {
+describe('assetIdToString and assetToMeshAssetId', () => {
   let context: Context;
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -885,101 +823,30 @@ describe('meshAssetToAssetId, assetToMeshAssetIdKey and assetToMeshAssetId', () 
     dsMockUtils.cleanup();
   });
 
-  describe('meshAssetToAssetId', () => {
+  describe('assetIdToString', () => {
     it('should convert a mesh Ticker or AssetId to string value', () => {
       const assetId = '0x12341234123412341234123412341234';
       const mockAssetId = dsMockUtils.createMockAssetId(assetId);
 
-      let result = meshAssetToAssetId(mockAssetId, context);
+      const result = assetIdToString(mockAssetId);
       expect(result).toBe(hexToUuid(assetId));
-
-      const ticker = 'SOME_TICKER';
-      const mockTicker = dsMockUtils.createMockTicker(ticker);
-
-      result = meshAssetToAssetId(mockTicker, dsMockUtils.getContextInstance({ isV6: true }));
-      expect(result).toBe(ticker);
-    });
-  });
-
-  describe('assetToMeshAssetIdKey', () => {
-    it('should call assetToMeshAssetIdKey and return the result as an object', () => {
-      let value = '12341234-1234-1234-1234-123412341234';
-      const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesAssetAssetId;
-
-      when(context.createType)
-        .calledWith('PolymeshPrimitivesAssetAssetId', uuidToHex(value))
-        .mockReturnValue(fakeResult);
-
-      let result = assetToMeshAssetIdKey(value, context);
-      expect(result).toEqual({ AssetId: fakeResult });
-
-      context = dsMockUtils.getContextInstance({ isV6: true });
-
-      value = 'SOME_TICKER';
-      when(context.createType)
-        .calledWith('PolymeshPrimitivesTicker', padString(value, 12))
-        .mockReturnValue(fakeResult);
-
-      result = assetToMeshAssetIdKey(value, context);
-      expect(result).toEqual({ Ticker: fakeResult });
     });
   });
 
   describe('assetToMeshAssetId', () => {
     it('should call assetToMeshAssetId and return the result', () => {
-      let value = '12341234-1234-1234-1234-123412341234';
+      const value = '12341234-1234-1234-1234-123412341234';
       const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesAssetAssetId;
 
       when(context.createType)
         .calledWith('PolymeshPrimitivesAssetAssetId', uuidToHex(value))
         .mockReturnValue(fakeResult);
 
-      let result = assetToMeshAssetId(
+      const result = assetToMeshAssetId(
         entityMockUtils.getBaseAssetInstance({ assetId: value }),
         context
       );
       expect(result).toEqual(fakeResult);
-
-      context = dsMockUtils.getContextInstance({ isV6: true });
-      value = 'SOME_TICKER';
-      when(context.createType)
-        .calledWith('PolymeshPrimitivesTicker', padString(value, 12))
-        .mockReturnValue(fakeResult);
-
-      result = assetToMeshAssetId(
-        entityMockUtils.getBaseAssetInstance({ assetId: value }),
-        context
-      );
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('assetToMeshAssetId', () => {
-    it('should call assetToMeshAssetIdWithKey and return the result', () => {
-      let value = '12341234-1234-1234-1234-123412341234';
-      const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesAssetAssetId;
-
-      when(context.createType)
-        .calledWith('PolymeshPrimitivesAssetAssetId', uuidToHex(value))
-        .mockReturnValue(fakeResult);
-
-      let result = assetToMeshAssetIdWithKey(
-        entityMockUtils.getBaseAssetInstance({ assetId: value }),
-        context
-      );
-      expect(result).toEqual({ assetId: fakeResult });
-
-      context = dsMockUtils.getContextInstance({ isV6: true });
-      value = 'SOME_TICKER';
-      when(context.createType)
-        .calledWith('PolymeshPrimitivesTicker', padString(value, 12))
-        .mockReturnValue(fakeResult);
-
-      result = assetToMeshAssetIdWithKey(
-        entityMockUtils.getBaseAssetInstance({ assetId: value }),
-        context
-      );
-      expect(result).toEqual({ ticker: fakeResult });
     });
   });
 });
@@ -4408,50 +4275,10 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
 
       expect(result).toEqual(fakeResult);
     });
-
-    it('should convert a Ticker type Scope into a polkadot Scope object', async () => {
-      const context = dsMockUtils.getContextInstance({ isV6: true });
-      const value: Scope = {
-        type: ScopeType.Ticker, // NOSONAR
-        value: 'SOME_TICKER',
-      };
-
-      jest
-        .spyOn(utilsInternalModule, 'asBaseAsset')
-        .mockResolvedValue(entityMockUtils.getBaseAssetInstance({ assetId: value.value }));
-
-      const fakeAssetId =
-        '0x12341234123412341234123412341234' as unknown as PolymeshPrimitivesTicker;
-
-      const fakeResult = {
-        [value.type]: fakeAssetId,
-      };
-
-      when(context.createType)
-        .calledWith('PolymeshPrimitivesTicker', padString(value.value, 12))
-        .mockReturnValue(fakeAssetId);
-
-      const result = await scopeToMeshScope(value, context);
-
-      expect(result).toEqual(fakeResult);
-    });
   });
 
   describe('meshScopeToScope', () => {
-    beforeAll(() => {
-      dsMockUtils.initMocks();
-    });
-
-    afterEach(() => {
-      dsMockUtils.reset();
-    });
-
-    afterAll(() => {
-      dsMockUtils.cleanup();
-    });
     it('should convert a polkadot Scope object into a Scope', () => {
-      const context = dsMockUtils.getContextInstance();
-
       let fakeResult: Scope = {
         type: ScopeType.Identity,
         value: 'someDid',
@@ -4460,7 +4287,7 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
         Identity: dsMockUtils.createMockIdentityId(fakeResult.value),
       });
 
-      let result = meshScopeToScope(scope, context);
+      let result = meshScopeToScope(scope);
       expect(result).toEqual(fakeResult);
 
       const assetId = '0x12341234123412341234123412341234';
@@ -4473,7 +4300,7 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
         Asset: dsMockUtils.createMockAssetId(assetId),
       });
 
-      result = meshScopeToScope(scope, context);
+      result = meshScopeToScope(scope);
       expect(result).toEqual(fakeResult);
 
       fakeResult = {
@@ -4484,18 +4311,7 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
         Custom: dsMockUtils.createMockBytes(fakeResult.value),
       });
 
-      result = meshScopeToScope(scope, context);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = {
-        type: ScopeType.Ticker, // NOSONAR
-        value: 'SOME_TICKER',
-      };
-      scope = dsMockUtils.createMockScope({
-        Ticker: dsMockUtils.createMockTicker(fakeResult.value),
-      });
-
-      result = meshScopeToScope(scope, dsMockUtils.getContextInstance({ isV6: true }));
+      result = meshScopeToScope(scope);
       expect(result).toEqual(fakeResult);
     });
   });
@@ -4606,20 +4422,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
   });
 
   describe('meshClaimToClaim', () => {
-    beforeAll(() => {
-      dsMockUtils.initMocks();
-    });
-
-    afterEach(() => {
-      dsMockUtils.reset();
-    });
-
-    afterAll(() => {
-      dsMockUtils.cleanup();
-    });
-
     it('should convert a polkadot Claim object to a Claim', () => {
-      const context = dsMockUtils.getContextInstance();
       let scope = { type: ScopeType.Asset, value: '0x12341234123412341234123412341234' };
 
       let fakeResult: Claim = {
@@ -4633,7 +4436,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         }),
       });
 
-      let result = meshClaimToClaim(claim, context);
+      let result = meshClaimToClaim(claim);
       expect(result).toEqual(fakeResult);
 
       scope = { type: ScopeType.Identity, value: 'someDid' };
@@ -4648,7 +4451,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         }),
       });
 
-      result = meshClaimToClaim(claim, context);
+      result = meshClaimToClaim(claim);
       expect(result).toEqual(fakeResult);
 
       fakeResult = {
@@ -4661,7 +4464,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         }),
       });
 
-      result = meshClaimToClaim(claim, context);
+      result = meshClaimToClaim(claim);
       expect(result).toEqual(fakeResult);
 
       fakeResult = {
@@ -4674,7 +4477,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         }),
       });
 
-      result = meshClaimToClaim(claim, context);
+      result = meshClaimToClaim(claim);
       expect(result).toEqual(fakeResult);
 
       fakeResult = {
@@ -4685,7 +4488,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         CustomerDueDiligence: dsMockUtils.createMockCddId(fakeResult.id),
       });
 
-      result = meshClaimToClaim(claim, context);
+      result = meshClaimToClaim(claim);
       expect(result).toEqual(fakeResult);
 
       fakeResult = {
@@ -4701,7 +4504,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         ],
       });
 
-      result = meshClaimToClaim(claim, context);
+      result = meshClaimToClaim(claim);
       expect(result).toEqual(fakeResult);
 
       fakeResult = {
@@ -4714,7 +4517,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         }),
       });
 
-      result = meshClaimToClaim(claim, context);
+      result = meshClaimToClaim(claim);
       expect(result).toEqual(fakeResult);
 
       fakeResult = {
@@ -4727,7 +4530,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         }),
       });
 
-      result = meshClaimToClaim(claim, context);
+      result = meshClaimToClaim(claim);
       expect(result).toEqual(fakeResult);
 
       fakeResult = {
@@ -4740,7 +4543,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         }),
       });
 
-      result = meshClaimToClaim(claim, context);
+      result = meshClaimToClaim(claim);
       expect(result).toEqual(fakeResult);
 
       const customClaimTypeId = new BigNumber(1);
@@ -4759,15 +4562,13 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         ],
       });
 
-      result = meshClaimToClaim(claim, context);
+      result = meshClaimToClaim(claim);
       expect(result).toEqual(fakeResult);
     });
   });
 
   it('should throw an error with an unknown type', () => {
-    const context = dsMockUtils.getContextInstance();
-
-    expect(() => meshClaimToClaim({} as PolymeshPrimitivesIdentityClaimClaim, context)).toThrow(
+    expect(() => meshClaimToClaim({} as PolymeshPrimitivesIdentityClaimClaim)).toThrow(
       UnreachableCaseError
     );
   });
@@ -4992,7 +4793,7 @@ describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
       expect(result).toEqual(fakeResult);
     });
 
-    it('should throw an error if it unparses an unknown type', () => {
+    it('should throw an error if it un-parses an unknown type', () => {
       expect(() =>
         meshClaimTypeToClaimType({} as unknown as PolymeshPrimitivesIdentityClaimClaimType)
       ).toThrow(UnreachableCaseError);
@@ -5064,54 +4865,33 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
 
   describe('middlewareScopeToScope', () => {
     it('should convert a MiddlewareScope object to a Scope', () => {
-      let result = middlewareScopeToScope(
-        {
-          type: ClaimScopeTypeEnum.Asset,
-          value: 'TICKER',
-          assetId: '0x12341234123412341234123412341234',
-        },
-        context
-      );
+      let result = middlewareScopeToScope({
+        type: ClaimScopeTypeEnum.Asset,
+        value: 'TICKER',
+        assetId: '0x12341234123412341234123412341234',
+      });
 
       expect(result).toEqual({
         type: ScopeType.Asset,
         value: '12341234-1234-1234-1234-123412341234',
       });
 
-      context.isV6 = true;
-      result = middlewareScopeToScope(
-        {
-          type: ClaimScopeTypeEnum.Ticker, // NOSONAR
-          value: 'TICKER',
-          assetId: '0x12341234123412341234123412341234',
-        },
-        context
-      );
-
-      expect(result).toEqual({ type: ScopeType.Asset, value: 'TICKER' });
-
-      result = middlewareScopeToScope(
-        { type: ClaimScopeTypeEnum.Identity, value: 'someDid' },
-        context
-      );
+      result = middlewareScopeToScope({ type: ClaimScopeTypeEnum.Identity, value: 'someDid' });
 
       expect(result).toEqual({ type: ScopeType.Identity, value: 'someDid' });
 
-      result = middlewareScopeToScope(
-        { type: ClaimScopeTypeEnum.Custom, value: 'SOMETHING_ELSE' },
-        context
-      );
+      result = middlewareScopeToScope({ type: ClaimScopeTypeEnum.Custom, value: 'SOMETHING_ELSE' });
 
       expect(result).toEqual({ type: ScopeType.Custom, value: 'SOMETHING_ELSE' });
 
-      result = middlewareScopeToScope({}, context);
+      result = middlewareScopeToScope({});
 
       expect(result).toBeUndefined();
     });
 
     it('should throw an error for invalid scope type', () => {
       expect(() =>
-        middlewareScopeToScope({ type: 'RANDOM_TYPE', value: 'SOMETHING_ELSE' }, context)
+        middlewareScopeToScope({ type: 'RANDOM_TYPE', value: 'SOMETHING_ELSE' })
       ).toThrow('Unsupported Scope Type. Please contact the Polymesh team');
     });
   });
@@ -5125,14 +4905,6 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
       const getAssetIdForMiddlewareSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware');
       scope = { type: ScopeType.Asset, value: '0x12341234123412341234123412341234' };
       getAssetIdForMiddlewareSpy.mockResolvedValue(scope.value);
-      result = await scopeToMiddlewareScope(scope, context);
-      expect(result).toEqual({
-        type: ClaimScopeTypeEnum.Asset,
-        assetId: '0x12341234123412341234123412341234',
-      });
-
-      scope = { type: ScopeType.Ticker, value: 'SOME_TICKER' }; // NOSONAR
-      getAssetIdForMiddlewareSpy.mockResolvedValue('0x12341234123412341234123412341234');
       result = await scopeToMiddlewareScope(scope, context);
       expect(result).toEqual({
         type: ClaimScopeTypeEnum.Asset,
@@ -5226,8 +4998,6 @@ describe('middlewareInstructionToHistoricInstruction', () => {
       },
     } as unknown as Instruction;
 
-    jest.spyOn(utilsInternalModule, 'getAssetIdFromMiddleware').mockReturnValue(assetId);
-
     let resultLeg: Leg;
     let result = middlewareInstructionToHistoricInstruction(instruction, context);
 
@@ -5240,7 +5010,7 @@ describe('middlewareInstructionToHistoricInstruction', () => {
     expect(result.venueId).toEqual(venueId);
     expect(result.createdAt).toEqual(createdAt);
     resultLeg = result.legs[0] as FungibleLeg;
-    expect(resultLeg.asset.id).toBe(assetId);
+    expect(resultLeg.asset.id).toBe(hexToUuid(assetId));
     expect(resultLeg.amount).toEqual(amount1);
     expect(resultLeg.from.owner.did).toBe(portfolioDid1);
     expect(resultLeg.to.owner.did).toBe(portfolioDid2);
@@ -5272,7 +5042,7 @@ describe('middlewareInstructionToHistoricInstruction', () => {
     expect(result.venueId).toEqual(undefined);
     expect(result.createdAt).toEqual(createdAt);
     resultLeg = result.legs[0] as NftLeg;
-    expect(resultLeg.asset.id).toBe(assetId);
+    expect(resultLeg.asset.id).toBe(hexToUuid(assetId));
     expect(resultLeg.nfts).toEqual([
       expect.objectContaining({
         id: nftId,
@@ -8910,7 +8680,7 @@ describe('agentGroupToPermissionGroup', () => {
   describe('statisticsOpTypeToStatType', () => {
     it('should return a statType', () => {
       const operationType = 'MaxInvestorCount' as unknown as PolymeshPrimitivesStatisticsStatOpType;
-      let context = dsMockUtils.getContextInstance();
+      const context = dsMockUtils.getContextInstance();
       when(context.createType)
         .calledWith('PolymeshPrimitivesStatisticsStatType', {
           operationType,
@@ -8918,19 +8688,7 @@ describe('agentGroupToPermissionGroup', () => {
         })
         .mockReturnValue('statType' as unknown as PolymeshPrimitivesStatisticsStatType);
 
-      let result = statisticsOpTypeToStatType({ operationType }, context);
-
-      expect(result).toEqual('statType');
-
-      context = dsMockUtils.getContextInstance({ isV6: true });
-      when(context.createType)
-        .calledWith('PolymeshPrimitivesStatisticsStatType', {
-          op: operationType,
-          claimIssuer: undefined,
-        })
-        .mockReturnValue('statType' as unknown as PolymeshPrimitivesStatisticsStatType);
-
-      result = statisticsOpTypeToStatType({ operationType }, context);
+      const result = statisticsOpTypeToStatType({ operationType }, context);
 
       expect(result).toEqual('statType');
     });
@@ -9000,20 +8758,9 @@ describe('agentGroupToPermissionGroup', () => {
         claimIssuer: createMockOption(),
       } as unknown as PolymeshPrimitivesStatisticsStatType;
 
-      const result = meshStatToStatType(rawStat, dsMockUtils.getContextInstance());
+      const result = meshStatToStatType(rawStat);
 
       expect(result).toEqual(StatType.Count);
-    });
-
-    it('should return the type', () => {
-      const rawStat = {
-        op: { type: 'Balance' },
-        claimIssuer: createMockOption(),
-      } as unknown as PolymeshPrimitivesStatisticsStatType;
-
-      const result = meshStatToStatType(rawStat, dsMockUtils.getContextInstance({ isV6: true }));
-
-      expect(result).toEqual(StatType.Balance);
     });
   });
 
@@ -9797,34 +9544,6 @@ describe('inputStatTypeToMeshStatType', () => {
   });
 });
 
-describe('meshProposalStatusToProposalStatus', () => {
-  it('should convert raw statuses to the correct ProposalStatus', () => {
-    let result = meshProposalStatusToProposalStatus({ type: 'ActiveOrExpired' }, null); // NOSONAR
-    expect(result).toEqual(ProposalStatus.Active);
-
-    result = meshProposalStatusToProposalStatus({ type: 'ActiveOrExpired' }, new Date(1)); // NOSONAR
-    expect(result).toEqual(ProposalStatus.Expired);
-
-    result = meshProposalStatusToProposalStatus({ type: 'ExecutionSuccessful' }, null); // NOSONAR
-    expect(result).toEqual(ProposalStatus.Successful);
-
-    result = meshProposalStatusToProposalStatus({ type: 'ExecutionFailed' }, null); // NOSONAR
-    expect(result).toEqual(ProposalStatus.Failed);
-
-    result = meshProposalStatusToProposalStatus({ type: 'Rejected' }, null); // NOSONAR
-    expect(result).toEqual(ProposalStatus.Rejected);
-
-    result = meshProposalStatusToProposalStatus({ type: 'Invalid' }, null); // NOSONAR
-    expect(result).toEqual(ProposalStatus.Invalid);
-  });
-
-  it('should throw an error if it receives an unknown status', () => {
-    return expect(
-      () => meshProposalStatusToProposalStatus({ type: 'UnknownStatus' }, null) // NOSONAR
-    ).toThrowError('Unexpected proposal status received');
-  });
-});
-
 describe('meshProposalStateToProposalStatus', () => {
   it('should convert raw statuses to the correct ProposalStatus', () => {
     let result = meshProposalStateToProposalStatus(
@@ -10439,20 +10158,6 @@ describe('middlewareAgentGroupDataToPermissionGroup', () => {
         id: new BigNumber(1),
       })
     );
-
-    const ticker = 'SOME_TICKER';
-    agentGroup = { [ticker]: { custom: 1 } };
-
-    result = middlewareAgentGroupDataToPermissionGroup(
-      agentGroup,
-      dsMockUtils.getContextInstance({ isV6: true })
-    );
-    expect(result).toEqual(
-      expect.objectContaining({
-        asset: expect.objectContaining({ id: ticker }),
-        id: new BigNumber(1),
-      })
-    );
   });
 });
 
@@ -11060,9 +10765,9 @@ describe('meshNftToNftId', () => {
     dsMockUtils.cleanup();
   });
   it('should convert a set of NFTs', () => {
-    let assetId = '0x12341234123412341234123412341234';
+    const assetId = '0x12341234123412341234123412341234';
 
-    let mockNft = dsMockUtils.createMockNfts({
+    const mockNft = dsMockUtils.createMockNfts({
       assetId: dsMockUtils.createMockAssetId(assetId),
       ids: [
         dsMockUtils.createMockU64(new BigNumber(1)),
@@ -11070,29 +10775,10 @@ describe('meshNftToNftId', () => {
       ],
     });
 
-    let result = meshNftToNftId(mockNft, dsMockUtils.getContextInstance());
+    const result = meshNftToNftId(mockNft);
 
     expect(result).toEqual({
       assetId: hexToUuid(assetId),
-      ids: [new BigNumber(1), new BigNumber(2)],
-    });
-
-    assetId = 'SOME_TICKER';
-    mockNft = dsMockUtils.createMockCodec(
-      {
-        ticker: dsMockUtils.createMockTicker(assetId),
-        ids: [
-          dsMockUtils.createMockU64(new BigNumber(1)),
-          dsMockUtils.createMockU64(new BigNumber(2)),
-        ],
-      },
-      false
-    );
-
-    result = meshNftToNftId(mockNft, dsMockUtils.getContextInstance({ isV6: true }));
-
-    expect(result).toEqual({
-      assetId,
       ids: [new BigNumber(1), new BigNumber(2)],
     });
   });

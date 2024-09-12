@@ -42,7 +42,6 @@ import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import { isFungibleLegBuilder, isNftLegBuilder, isOffChainLeg } from '~/utils';
 import { MAX_LEGS_LENGTH } from '~/utils/constants';
 import {
-  assetToMeshAssetIdWithKey,
   bigNumberToBalance,
   bigNumberToU64,
   dateToMoment,
@@ -56,6 +55,7 @@ import {
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
+  stringToAssetId,
   stringToIdentityId,
   stringToMemo,
   stringToTicker,
@@ -95,7 +95,7 @@ type InternalAddAndAffirmInstructionParams = [
   u64 | null,
   u64 | null,
   PolymeshPrimitivesSettlementLeg[],
-  BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId> | PolymeshPrimitivesIdentityIdPortfolioId[],
+  BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>,
   PolymeshPrimitivesMemo | null,
   BTreeSet<PolymeshPrimitivesIdentityId>
 ][];
@@ -410,12 +410,12 @@ async function getTxArgsAndErrors(
           const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromId, context);
           const rawToPortfolio = portfolioIdToMeshPortfolioId(toId, context);
 
-          const baseAsset = await asBaseAsset(asset, context);
+          const assetId = await asAssetId(asset, context);
           const rawLeg = legToFungibleLeg(
             {
               sender: rawFromPortfolio,
               receiver: rawToPortfolio,
-              ...assetToMeshAssetIdWithKey(baseAsset, context),
+              assetId: stringToAssetId(assetId, context),
               amount: bigNumberToBalance(amount, context),
             },
             context
@@ -481,8 +481,7 @@ async function getTxArgsAndErrors(
           rawTradeDate,
           rawValueDate,
           rawLegs,
-          /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
-          context.isV6 ? rawPortfolioIds : portfolioIdsToBtreeSet(rawPortfolioIds, context),
+          portfolioIdsToBtreeSet(rawPortfolioIds, context),
           rawInstructionMemo,
           rawMediators,
         ]);
@@ -527,19 +526,11 @@ export async function prepareAddInstruction(
       polymeshApi: {
         tx: { settlement },
       },
-      isV6,
     },
     context,
     storage: { portfoliosToAffirm },
   } = this;
   const { instructions, venueId } = args;
-
-  if (isV6 && !venueId) {
-    throw new PolymeshError({
-      code: ErrorCode.General,
-      message: 'A venue id must be provided on v6 chains',
-    });
-  }
 
   const venueAssertions = [assertVenueFiltering(instructions, venueId, context)];
   if (venueId) {

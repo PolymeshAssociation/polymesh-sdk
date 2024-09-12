@@ -32,21 +32,12 @@ export async function prepareUnlinkTickerFromAsset(
   const {
     context: {
       polymeshApi: { tx },
-      isV6,
     },
     storage: { ticker },
     context,
   } = this;
 
   const { asset } = args;
-
-  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-  if (isV6) {
-    throw new PolymeshError({
-      code: ErrorCode.General,
-      message: 'Unlinking ticker from asset is only supported on v7+ chains',
-    });
-  }
 
   const rawTicker = stringToTicker(ticker, context);
   const rawAssetId = assetToMeshAssetId(asset, context);

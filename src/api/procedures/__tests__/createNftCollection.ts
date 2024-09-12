@@ -31,7 +31,7 @@ import {
   TickerReservationStatus,
   TxTags,
 } from '~/types';
-import { InternalNftType, PolymeshTx, TickerKey } from '~/types/internal';
+import { InternalNftType, PolymeshTx } from '~/types/internal';
 import { uuidToHex } from '~/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -52,7 +52,6 @@ describe('createNftCollection procedure', () => {
   let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let assetToMeshAssetIdSpy: jest.SpyInstance;
   let nameToAssetNameSpy: jest.SpyInstance<Bytes, [string, Context]>;
-  let stringToTickerKeySpy: jest.SpyInstance<TickerKey, [string, Context]>;
   let internalNftTypeToNftTypeSpy: jest.SpyInstance<
     PolymeshPrimitivesAssetNonFungibleType,
     [InternalNftType, Context]
@@ -99,7 +98,6 @@ describe('createNftCollection procedure', () => {
     stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
     assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     nameToAssetNameSpy = jest.spyOn(utilsConversionModule, 'nameToAssetName');
-    stringToTickerKeySpy = jest.spyOn(utilsConversionModule, 'stringToTickerKey');
     internalNftTypeToNftTypeSpy = jest.spyOn(utilsConversionModule, 'internalNftTypeToNftType');
     securityIdentifierToAssetIdentifierSpy = jest.spyOn(
       utilsConversionModule,
@@ -192,9 +190,6 @@ describe('createNftCollection procedure', () => {
       .calledWith(expect.objectContaining({ id: assetId }), mockContext)
       .mockReturnValue(rawAssetId);
     when(nameToAssetNameSpy).calledWith(name, mockContext).mockReturnValue(rawName);
-    when(stringToTickerKeySpy)
-      .calledWith(ticker, mockContext)
-      .mockReturnValue({ Ticker: rawTicker });
     when(internalNftTypeToNftTypeSpy)
       .calledWith(nftType as KnownNftType, mockContext)
       .mockReturnValue(rawType);

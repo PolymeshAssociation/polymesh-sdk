@@ -604,9 +604,7 @@ describe('Identity class', () => {
       });
 
       assetIds.forEach(assetId =>
-        when(getAssetIdFromMiddlewareSpy)
-          .calledWith({ id: assetId }, context)
-          .mockReturnValue(assetId)
+        when(getAssetIdFromMiddlewareSpy).calledWith({ id: assetId }).mockReturnValue(assetId)
       );
 
       const result = await identity.getTrustingAssets();
@@ -624,9 +622,7 @@ describe('Identity class', () => {
       const identity = new Identity({ did }, context);
 
       assetIds.forEach(assetId =>
-        when(getAssetIdFromMiddlewareSpy)
-          .calledWith({ id: assetId }, context)
-          .mockReturnValue(assetId)
+        when(getAssetIdFromMiddlewareSpy).calledWith({ id: assetId }).mockReturnValue(assetId)
       );
       dsMockUtils.createApolloQueryMock(assetHoldersQuery({ identityId: did }), {
         assetHolders: {
@@ -674,9 +670,7 @@ describe('Identity class', () => {
       const identity = new Identity({ did }, context);
 
       assetIds.forEach(assetId =>
-        when(getAssetIdFromMiddlewareSpy)
-          .calledWith({ id: assetId }, context)
-          .mockReturnValue(assetId)
+        when(getAssetIdFromMiddlewareSpy).calledWith({ id: assetId }).mockReturnValue(assetId)
       );
 
       dsMockUtils.createApolloQueryMock(nftHoldersQuery({ identityId: did }), {

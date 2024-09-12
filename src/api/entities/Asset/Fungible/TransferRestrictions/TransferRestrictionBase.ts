@@ -37,14 +37,16 @@ import {
   TransferRestrictionType,
 } from '~/types';
 import {
+  assetToMeshAssetId,
   identityIdToString,
   meshClaimTypeToClaimType,
   meshStatToStatType,
+  stringToAssetId,
   transferConditionToTransferRestriction,
   transferRestrictionTypeToStatOpType,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, getAssetIdForStats } from '~/utils/internal';
+import { createProcedureMethod } from '~/utils/internal';
 
 export type SetTransferRestrictionsParams = { asset: FungibleAsset } & (
   | SetCountTransferRestrictionsParams
@@ -214,15 +216,13 @@ export abstract class TransferRestrictionBase<
           query: { statistics },
           consts,
         },
-        isV6,
       },
       context,
       type,
     } = this;
 
-    const rawAssetId = getAssetIdForStats(parent, context);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { requirements } = await statistics.assetTransferCompliances(rawAssetId as any); // NOSONAR
+    const rawAssetId = stringToAssetId(parent.id, context);
+    const { requirements } = await statistics.assetTransferCompliances(rawAssetId);
 
     const existingRequirementCount = [...requirements].length;
 
@@ -238,8 +238,7 @@ export abstract class TransferRestrictionBase<
       }
     });
 
-    /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
-    const rawAssetKey = isV6 ? { asset: rawAssetId } : { assetId: rawAssetId };
+    const rawAssetKey = { assetId: rawAssetId };
     const rawExemptedLists = await Promise.all(
       filteredRequirements.map(req => {
         const { value } = transferConditionToTransferRestriction(req, context);
@@ -270,48 +269,46 @@ export abstract class TransferRestrictionBase<
       })
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const restrictions = (rawExemptedLists as any[][]) // NOSONAR
-      .map((list, index) => {
-        const exemptedIds = list.map(
-          ([
-            {
-              args: [, scopeId],
-            },
-          ]) => identityIdToString(scopeId) // `ScopeId` and `PolymeshPrimitivesIdentityId` are the same type, so this is fine
-        );
-        const { value } = transferConditionToTransferRestriction(
-          filteredRequirements[index],
-          context
-        );
-        let restriction;
+    const restrictions = rawExemptedLists.map((list, index) => {
+      const exemptedIds = list.map(
+        ([
+          {
+            args: [, scopeId],
+          },
+        ]) => identityIdToString(scopeId) // `ScopeId` and `PolymeshPrimitivesIdentityId` are the same type, so this is fine
+      );
+      const { value } = transferConditionToTransferRestriction(
+        filteredRequirements[index],
+        context
+      );
+      let restriction;
 
-        if (type === TransferRestrictionType.Count) {
-          restriction = {
-            count: value,
-          };
-        } else if (type === TransferRestrictionType.Percentage) {
-          restriction = {
-            percentage: value,
-          };
-        } else {
-          const { min, max, claim, issuer } = value as ClaimCountRestrictionValue;
-          restriction = {
-            min,
-            max,
-            claim,
-            issuer,
-          };
-        }
+      if (type === TransferRestrictionType.Count) {
+        restriction = {
+          count: value,
+        };
+      } else if (type === TransferRestrictionType.Percentage) {
+        restriction = {
+          percentage: value,
+        };
+      } else {
+        const { min, max, claim, issuer } = value as ClaimCountRestrictionValue;
+        restriction = {
+          min,
+          max,
+          claim,
+          issuer,
+        };
+      }
 
-        if (exemptedIds.length) {
-          return {
-            ...restriction,
-            exemptedIds,
-          };
-        }
-        return restriction;
-      });
+      if (exemptedIds.length) {
+        return {
+          ...restriction,
+          exemptedIds,
+        };
+      }
+      return restriction;
+    });
 
     const maxTransferConditions = u32ToBigNumber(consts.statistics.maxTransferConditionsPerAsset);
 
@@ -340,9 +337,8 @@ export abstract class TransferRestrictionBase<
       type,
     } = this;
 
-    const rawAssetId = getAssetIdForStats(parent, context);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const currentStats = await (statistics.activeAssetStats as any)(rawAssetId);
+    const rawAssetId = assetToMeshAssetId(parent, context);
+    const currentStats = await statistics.activeAssetStats(rawAssetId);
 
     let isSet = false;
     const claims: ActiveStats['claims'] = [];
@@ -356,7 +352,7 @@ export abstract class TransferRestrictionBase<
     };
 
     [...currentStats].forEach(stat => {
-      const statType = meshStatToStatType(stat, context);
+      const statType = meshStatToStatType(stat);
 
       if (type === TransferRestrictionType.ClaimCount && statType === StatType.ScopedCount) {
         isSet = true;

@@ -21,13 +21,13 @@ import {
 } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
+  assetIdToString,
   assetToMeshAssetId,
   bigNumberToBalance,
   bigNumberToU64,
   corporateActionParamsToMeshCorporateActionArgs,
   dateToMoment,
   distributionToDividendDistributionParams,
-  meshAssetToAssetId,
   meshCorporateActionToCorporateActionParams,
   portfolioToPortfolioId,
   u32ToBigNumber,
@@ -47,11 +47,7 @@ export const createDividendDistributionResolver =
   async (receipt: ISubmittableResult): Promise<DividendDistribution> => {
     const [{ data }] = filterEventRecords(receipt, 'capitalDistribution', 'Created');
     const [, caId, distribution] = data;
-    const { localId } = caId;
-
-    /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const assetId = context.isV6 ? (caId as any).ticker : caId.assetId; // NOSONAR
+    const { localId, assetId } = caId;
 
     const { corporateAction } = context.polymeshApi.query;
 
@@ -62,7 +58,7 @@ export const createDividendDistributionResolver =
 
     return new DividendDistribution(
       {
-        assetId: meshAssetToAssetId(assetId, context),
+        assetId: assetIdToString(assetId),
         id: u32ToBigNumber(localId),
         ...meshCorporateActionToCorporateActionParams(corpAction.unwrap(), details, context),
         ...distributionToDividendDistributionParams(distribution, context),

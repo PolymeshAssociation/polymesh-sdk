@@ -33,15 +33,13 @@ import { areSameClaims, asIdentity, assembleBatchTransactions } from '~/utils/in
 const findClaimsByOtherIssuers = async (
   claims: ClaimTarget[],
   claimsByDid: Record<string, MiddlewareClaim[]>,
-  signerDid: string,
-  context: Context
+  signerDid: string
 ): Promise<Claim[]> => {
   return claims.reduce<Claim[]>((prev, { target, claim }) => {
     const targetClaims = claimsByDid[signerToString(target)] ?? [];
 
     const claimIssuedByOtherDids = targetClaims.some(
-      targetClaim =>
-        areSameClaims(claim, targetClaim, context) && targetClaim.issuerId !== signerDid
+      targetClaim => areSameClaims(claim, targetClaim) && targetClaim.issuerId !== signerDid
     );
 
     if (claimIssuedByOtherDids) {
@@ -181,8 +179,7 @@ export async function prepareModifyClaims(
     const claimsByOtherIssuers: Claim[] = await findClaimsByOtherIssuers(
       claims,
       claimsByDid,
-      currentDid,
-      context
+      currentDid
     );
 
     if (claimsByOtherIssuers.length) {

@@ -31,7 +31,6 @@ import {
 import {
   assetIdToString,
   bytesToString,
-  meshAssetToAssetId,
   meshMetadataSpecToMetadataSpec,
   stringToIdentityId,
   tickerToString,
@@ -160,32 +159,12 @@ export class Assets {
         polymeshApi: {
           query: { asset },
         },
-        isV6,
       },
       context,
     } = this;
 
     const did = await getDid(args?.owner, context);
     const rawDid = stringToIdentityId(did, context);
-
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const entries = await (asset as any).assetOwnershipRelations.entries(rawDid); // NOSONAR
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return (entries as any[]).reduce<TickerReservation[]>((result, [key, relation]) => {
-        if (relation.isTickerOwned) {
-          const ticker = tickerToString(key.args[1]);
-
-          if (isPrintableAscii(ticker)) {
-            return [...result, new TickerReservation({ ticker }, context)];
-          }
-        }
-
-        return result;
-      }, []);
-    }
 
     const entries = await asset.tickersOwnedByUser.entries(rawDid);
 
@@ -227,20 +206,12 @@ export class Assets {
   public async getAsset(args: { assetId: string }): Promise<Asset>;
   // eslint-disable-next-line require-jsdoc
   public async getAsset(args: { ticker?: string; assetId?: string }): Promise<Asset> {
-    const {
-      context,
-      context: { isV6 },
-    } = this;
+    const { context } = this;
     const { ticker, assetId } = args;
 
     let assetIdValue = assetId;
     if (ticker) {
-      /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-      if (isV6) {
-        assetIdValue = ticker;
-      } else {
-        assetIdValue = await getAssetIdForTicker(ticker, context);
-      }
+      assetIdValue = await getAssetIdForTicker(ticker, context);
     }
 
     return asAsset(assetIdValue!, context);
@@ -259,39 +230,12 @@ export class Assets {
         polymeshApi: {
           query: { asset },
         },
-        isV6,
       },
       context,
     } = this;
 
     const did = await getDid(args?.owner, context);
     const rawDid = stringToIdentityId(did, context);
-
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const entries = await (asset as any).assetOwnershipRelations.entries(rawDid); // NOSONAR
-
-      const ownedTickers: string[] = [];
-      const rawTickers: PolymeshPrimitivesTicker[] = [];
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (entries as any[]).forEach(([key, relation]) => {
-        if (relation.isAssetOwned) {
-          const rawTicker = key.args[1];
-          const ticker = tickerToString(rawTicker);
-          if (isPrintableAscii(ticker)) {
-            ownedTickers.push(ticker);
-            rawTickers.push(rawTicker);
-          }
-        }
-      });
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const ownedDetails = await (asset as any).tokens.multi(rawTickers); // NOSONAR
-
-      return assembleAssetQuery(ownedDetails, ownedTickers, context);
-    }
 
     const entries = await asset.securityTokensOwnedByUser.entries(rawDid);
 
@@ -312,15 +256,9 @@ export class Assets {
    * @hidden
    */
   private async getIdFromAssetIdAndTicker(assetId?: string, ticker?: string): Promise<string> {
-    const {
-      context,
-      context: { isV6 },
-    } = this;
+    const { context } = this;
     let assetIdValue: string;
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      assetIdValue = (assetId ?? ticker)!;
-    } else if (ticker) {
+    if (ticker) {
       assetIdValue = await getAssetIdForTicker(ticker, context);
     } else {
       assetIdValue = asUuid(assetId!);
@@ -407,7 +345,6 @@ export class Assets {
         polymeshApi: {
           query: { asset },
         },
-        isV6,
       },
       context,
     } = this;
@@ -426,19 +363,11 @@ export class Assets {
         },
       ]) => {
         rawAssetIds.push(rawAssetId);
-        assetIds.push(meshAssetToAssetId(rawAssetId, context));
+        assetIds.push(assetIdToString(rawAssetId));
       }
     );
 
-    let tokensStorage;
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tokensStorage = (asset as any).tokens; // NOSONAR
-    } else {
-      tokensStorage = asset.assets;
-    }
-    const details = await tokensStorage.multi(rawAssetIds);
+    const details = await asset.assets.multi(rawAssetIds);
 
     const data = assembleAssetQuery(details, assetIds, context);
 

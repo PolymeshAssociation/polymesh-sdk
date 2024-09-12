@@ -21,7 +21,6 @@ export async function prepareToggleAssetPreApproval(
   const {
     context: {
       polymeshApi: { tx },
-      isV6,
     },
     context,
   } = this;
@@ -43,15 +42,7 @@ export async function prepareToggleAssetPreApproval(
 
   const rawAssetId = assetToMeshAssetId(asset, context);
 
-  let transaction = preApprove ? tx.asset.preApproveAsset : tx.asset.removeAssetPreApproval;
-  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-  if (isV6) {
-    transaction = preApprove
-      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (tx.asset as any).preApproveTicker // NOSONAR
-      : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (tx.asset as any).removeTickerPreApproval; // NOSONAR
-  }
+  const transaction = preApprove ? tx.asset.preApproveAsset : tx.asset.removeAssetPreApproval;
 
   return {
     transaction,

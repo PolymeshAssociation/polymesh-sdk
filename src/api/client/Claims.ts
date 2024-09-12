@@ -52,7 +52,7 @@ import {
   toIdentityWithClaimsArray,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { calculateNextKey, createProcedureMethod, getDid, removePadding } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod, getDid } from '~/utils/internal';
 
 /**
  * Handles all Claims related functionality
@@ -301,8 +301,8 @@ export class Claims {
         if (claim.claim.scope) {
           return {
             scope: claim.claim.scope,
-            ticker:
-              claim.claim.scope.type === ScopeType.Ticker ? claim.claim.scope.value : undefined,
+            assetId:
+              claim.claim.scope.type === ScopeType.Asset ? claim.claim.scope.value : undefined,
           };
         }
 
@@ -373,22 +373,18 @@ export class Claims {
           scope: { type, value },
         } = claim as ScopedClaim;
 
-        let ticker: string | undefined;
+        let assetId: string | undefined;
 
-        /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-        // prettier-ignore
-        if (type === ScopeType.Ticker) { // NOSONAR
-        ticker = removePadding(value);
-      }
+        if (type === ScopeType.Asset) {
+          assetId = value;
+        }
 
         return {
           scope: {
             type,
-            value:
-              /* istanbul ignore next: this will be removed after dual version support for v6-v7 */ ticker ??
-              value,
+            value: assetId ?? value,
           },
-          ticker,
+          assetId,
         };
       });
 
@@ -447,7 +443,7 @@ export class Claims {
           issuedAt: momentToDate(issuanceDate),
           lastUpdatedAt: momentToDate(lastUpdateDate),
           expiry,
-          claim: meshClaimToClaim(claim, context) as CddClaim,
+          claim: meshClaimToClaim(claim) as CddClaim,
         });
       }
     });

@@ -981,7 +981,6 @@ export abstract class PolymeshTransactionBase<
     const {
       context,
       context: {
-        isV6,
         polymeshApi: {
           tx: { multiSig },
         },
@@ -994,13 +993,7 @@ export abstract class PolymeshTransactionBase<
       const rawMultiSigId = stringToAccountId(actingMultiSig.address, context);
       const rawExpiry = optionize(dateToMoment)(multiSigOpts.expiry, context);
 
-      /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-      if (isV6) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (multiSig as any).createProposalAsKey(rawMultiSigId, tx, rawExpiry, true); // NOSONAR
-      } else {
-        return multiSig.createProposal(rawMultiSigId, tx, rawExpiry);
-      }
+      return multiSig.createProposal(rawMultiSigId, tx, rawExpiry);
     }
 
     return tx;

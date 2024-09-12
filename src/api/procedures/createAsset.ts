@@ -119,19 +119,11 @@ async function getCreateAssetTransaction(
 ): Promise<TxWithArgs<unknown[]>> {
   const {
     polymeshApi: { tx },
-    isV6,
   } = context;
 
-  const { ticker, name, isDivisible, assetType, securityIdentifiers = [], fundingRound } = args;
+  const { name, isDivisible, assetType, securityIdentifiers = [], fundingRound } = args;
 
-  let rawTicker;
-  if (ticker) {
-    rawTicker = stringToTicker(ticker, context);
-  }
   const rawName = nameToAssetName(name, context);
-  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const rawNameTickerArgs: any[] = isV6 ? [rawName, rawTicker] : [rawName];
   const rawIsDivisible = booleanToBool(isDivisible, context);
   const rawIdentifiers = securityIdentifiers.map(identifier =>
     securityIdentifierToAssetIdentifier(identifier, context)
@@ -148,29 +140,26 @@ async function getCreateAssetTransaction(
        */
       fee = await addManualFees(fee, [TxTags.asset.RegisterCustomAssetType], context);
       return checkTxType({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        transaction: tx.asset.createAssetWithCustomType as any, // NOSONAR
+        transaction: tx.asset.createAssetWithCustomType,
         fee,
-        args: [...rawNameTickerArgs, rawIsDivisible, rawAssetType, rawIdentifiers, rawFundingRound],
+        args: [rawName, rawIsDivisible, rawAssetType, rawIdentifiers, rawFundingRound],
       });
     } else {
       const rawType = internalAssetTypeToAssetType({ Custom: rawId }, context);
 
       return checkTxType({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        transaction: tx.asset.createAsset as any, // NOSONAR
+        transaction: tx.asset.createAsset,
         fee,
-        args: [...rawNameTickerArgs, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+        args: [rawName, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
       });
     }
   } else {
     const rawType = internalAssetTypeToAssetType(assetType as KnownAssetType, context);
 
     return checkTxType({
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      transaction: tx.asset.createAsset as any, // NOSONAR
+      transaction: tx.asset.createAsset,
       fee,
-      args: [...rawNameTickerArgs, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+      args: [rawName, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
     });
   }
 }
@@ -188,27 +177,25 @@ function getTickerTransactions(
 ): TxWithArgs<unknown[]>[] {
   const {
     polymeshApi: { tx },
-    isV6,
   } = context;
   const transactions = [];
+
   if (rawTicker) {
-    if (!isV6) {
-      if (status === TickerReservationStatus.Free) {
-        transactions.push(
-          checkTxType({
-            transaction: tx.asset.registerUniqueTicker,
-            args: [rawTicker],
-          })
-        );
-      }
-      if (status !== TickerReservationStatus.AssetCreated) {
-        transactions.push(
-          checkTxType({
-            transaction: tx.asset.linkTickerToAssetId,
-            args: [rawTicker, rawAssetId],
-          })
-        );
-      }
+    if (status === TickerReservationStatus.Free) {
+      transactions.push(
+        checkTxType({
+          transaction: tx.asset.registerUniqueTicker,
+          args: [rawTicker],
+        })
+      );
+    }
+    if (status !== TickerReservationStatus.AssetCreated) {
+      transactions.push(
+        checkTxType({
+          transaction: tx.asset.linkTickerToAssetId,
+          args: [rawTicker, rawAssetId],
+        })
+      );
     }
   }
   return transactions;
@@ -274,52 +261,27 @@ export async function prepareCreateAsset(
   const {
     context: {
       polymeshApi: { tx },
-      isV6,
     },
     context,
     storage: { customTypeData, status, signingIdentity },
   } = this;
   const { ticker, reservationRequired, initialStatistics } = args;
 
-  // to be used as ticker for 6.x chain and next asset id for 7.x chain
-  let rawAssetId;
-  let assetId: string;
-
   assertTickerAvailable(ticker, status, reservationRequired);
   let rawTicker: PolymeshPrimitivesTicker | undefined;
 
   if (ticker) {
     rawTicker = stringToTicker(ticker, context);
-  } else if (isV6) {
-    throw new PolymeshError({
-      code: ErrorCode.DataUnavailable,
-      message: 'Ticker is mandatory for v6 chains',
-    });
   }
 
-  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-  if (isV6) {
-    rawAssetId = rawTicker!;
-    assetId = ticker!;
-  } else {
-    assetId = await context.getSigningAccount().getNextAssetId();
-    rawAssetId = stringToAssetId(assetId, context);
-  }
+  const assetId = await context.getSigningAccount().getNextAssetId();
+  const rawAssetId = stringToAssetId(assetId, context);
 
   let transactions = [];
 
   let fee: BigNumber | undefined;
   if (status === TickerReservationStatus.Free) {
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      fee = await addManualFees(
-        new BigNumber(0),
-        [TxTags.asset.RegisterTicker, TxTags.asset.CreateAsset],
-        context
-      );
-    } else {
-      fee = await addManualFees(new BigNumber(0), [TxTags.asset.CreateAsset], context);
-    }
+    fee = await addManualFees(new BigNumber(0), [TxTags.asset.CreateAsset], context);
   }
 
   transactions.push(await getCreateAssetTransaction(customTypeData, context, fee, args));
@@ -334,13 +296,10 @@ export async function prepareCreateAsset(
     const rawStats = initialStatistics.map(i => inputStatTypeToMeshStatType(i, context));
     const bTreeStats = statisticStatTypesToBtreeStatType(rawStats, context);
 
-    /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
-    const rawAssetIdValue = isV6 ? { Ticker: rawAssetId } : rawAssetId;
     transactions.push(
       checkTxType({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        transaction: tx.statistics.setActiveAssetStats as any, // NOSONAR
-        args: [rawAssetIdValue, bTreeStats],
+        transaction: tx.statistics.setActiveAssetStats,
+        args: [rawAssetId, bTreeStats],
       })
     );
   }
@@ -365,18 +324,15 @@ export async function getAuthorization(
 ): Promise<ProcedureAuthorization> {
   const {
     storage: { customTypeData, status },
-    context: { isV6 },
   } = this;
 
   const transactions: (AssetTx | StatisticsTx)[] = [TxTags.asset.CreateAsset];
 
-  if (!isV6) {
-    if (status === TickerReservationStatus.Free) {
-      transactions.push(TxTags.asset.RegisterUniqueTicker);
-    }
-    if (status !== TickerReservationStatus.AssetCreated) {
-      transactions.push(TxTags.asset.LinkTickerToAssetId);
-    }
+  if (status === TickerReservationStatus.Free) {
+    transactions.push(TxTags.asset.RegisterUniqueTicker);
+  }
+  if (status !== TickerReservationStatus.AssetCreated) {
+    transactions.push(TxTags.asset.LinkTickerToAssetId);
   }
 
   if (documents?.length) {

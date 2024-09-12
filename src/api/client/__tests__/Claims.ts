@@ -510,7 +510,7 @@ describe('Claims Class', () => {
   });
 
   describe('method: getClaimScopes', () => {
-    it('should return a list of scopes and tickers', async () => {
+    it('should return a list of scopes and asset IDs', async () => {
       const target = 'someTarget';
       const someDid = 'someDid';
       const fakeClaimData = [
@@ -544,7 +544,7 @@ describe('Claims Class', () => {
 
       let result = await claims.getClaimScopes({ target });
 
-      expect(result[0].ticker).toBeUndefined();
+      expect(result[0].assetId).toBeUndefined();
       expect(result[0].scope).toEqual({ type: ScopeType.Identity, value: someDid });
 
       result = await claims.getClaimScopes();
@@ -552,10 +552,10 @@ describe('Claims Class', () => {
       expect(result.length).toEqual(2);
     });
 
-    it('should return a list of scopes and tickers with middleware enabled', async () => {
+    it('should return a list of scopes and asset IDs with middleware enabled', async () => {
       const target = 'someTarget';
       const someDid = 'someDid';
-      const ticker = 'someTicker';
+      const assetId = '0x12341234123412341234123412341234';
 
       const fakeClaimData = [
         {
@@ -630,8 +630,8 @@ describe('Claims Class', () => {
                     type: ClaimType.Custom,
                     customClaimTypeId: new BigNumber(1),
                     scope: {
-                      type: ScopeType.Ticker,
-                      value: ticker,
+                      type: ScopeType.Asset,
+                      value: assetId,
                     },
                   },
                 },
@@ -701,8 +701,8 @@ describe('Claims Class', () => {
                     type: ClaimType.Custom,
                     customClaimTypeId: new BigNumber(1),
                     scope: {
-                      type: ScopeType.Ticker,
-                      value: ticker,
+                      type: ScopeType.Asset,
+                      value: assetId,
                     },
                   },
                 },
@@ -732,14 +732,14 @@ describe('Claims Class', () => {
 
       let result = await claims.getClaimScopes({ target });
 
-      expect(result[0].ticker).toBeUndefined();
+      expect(result[0].assetId).toBeUndefined();
       expect(result[0].scope).toEqual({ type: ScopeType.Identity, value: someDid });
-      expect(result[2].ticker).toEqual(ticker);
-      expect(result[2].scope).toEqual({ type: ScopeType.Ticker, value: ticker });
+      expect(result[1].assetId).toEqual(assetId);
+      expect(result[1].scope).toEqual({ type: ScopeType.Asset, value: assetId });
 
       result = await claims.getClaimScopes();
 
-      expect(result.length).toEqual(3);
+      expect(result.length).toEqual(2);
     });
   });
 

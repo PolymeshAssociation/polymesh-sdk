@@ -27,7 +27,6 @@ import {
   Permissions,
   PermissionType,
   ResultSet,
-  SubsidyWithAllowance,
   TxTags,
   UnsubCallback,
 } from '~/types';
@@ -139,47 +138,6 @@ describe('Account class', () => {
       });
 
       const result = await account.getBalance(callback);
-
-      expect(result).toEqual(unsubCallback);
-      expect(callback).toBeCalledWith(fakeResult);
-    });
-  });
-
-  describe('method: getSubsidy', () => {
-    let fakeResult: SubsidyWithAllowance;
-
-    beforeEach(() => {
-      fakeResult = {
-        subsidy: entityMockUtils.getSubsidyInstance({
-          beneficiary: address,
-        }),
-        allowance: new BigNumber(1000),
-      };
-
-      context = dsMockUtils.getContextInstance({
-        subsidy: fakeResult,
-      });
-      account = new Account({ address }, context);
-    });
-
-    it('should return the Subsidy with allowance', async () => {
-      const result = await account.getSubsidy();
-
-      expect(result).toEqual(fakeResult);
-    });
-
-    it('should allow subscription', async () => {
-      const unsubCallback = 'unsubCallback' as unknown as Promise<UnsubCallback>;
-      const callback = jest.fn();
-
-      context.accountSubsidy.mockImplementation(
-        async (_, cbFunc: (balance: SubsidyWithAllowance) => void) => {
-          cbFunc(fakeResult);
-          return unsubCallback;
-        }
-      );
-
-      const result = await account.getSubsidy(callback);
 
       expect(result).toEqual(unsubCallback);
       expect(callback).toBeCalledWith(fakeResult);

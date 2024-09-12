@@ -45,10 +45,6 @@ export interface UniqueIdentifiers {
 
 export interface HumanReadable {
   id: string;
-  /**
-   * @deprecated in favour of `assetId`
-   */
-  ticker: string;
   assetId: string;
 }
 
@@ -283,7 +279,6 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
     const { asset, id } = this;
 
     return toHumanReadable({
-      ticker: asset,
       assetId: asset,
       id,
     });

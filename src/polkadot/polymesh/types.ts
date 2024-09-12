@@ -1042,9 +1042,7 @@ export interface Scope extends Enum {
   readonly asAsset: AssetId;
   readonly isCustom: boolean;
   readonly asCustom: Bytes;
-  readonly isTicker: boolean;
-  readonly asTicker: Ticker;
-  readonly type: 'Identity' | 'Asset' | 'Custom' | 'Ticker';
+  readonly type: 'Identity' | 'Asset' | 'Custom';
 }
 
 /** @name SecondaryKey */

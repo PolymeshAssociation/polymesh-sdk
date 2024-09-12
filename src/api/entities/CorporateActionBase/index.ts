@@ -36,10 +36,6 @@ export interface UniqueIdentifiers {
 
 export interface HumanReadable {
   id: string;
-  /**
-   * @deprecated in favour of `assetId`
-   */
-  ticker: string;
   assetId: string;
   declarationDate: string;
   description: string;
@@ -278,7 +274,6 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
     } = this;
 
     return toHumanReadable({
-      ticker: asset,
       assetId: asset,
       id,
       declarationDate,

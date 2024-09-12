@@ -26,9 +26,9 @@ import {
 } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
+  assetIdToString,
   balanceToBigNumber,
   identityIdToString,
-  meshAssetToAssetId,
   portfolioIdToMeshPortfolioId,
   toHistoricalSettlements,
   u64ToBigNumber,
@@ -170,7 +170,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     const assetBalances: Record<string, PortfolioBalance> = {};
 
     totalBalanceEntries.forEach(([key, balance]) => {
-      const assetId = meshAssetToAssetId(key.args[1], context);
+      const assetId = assetIdToString(key.args[1]);
       const total = balanceToBigNumber(balance);
 
       assetBalances[assetId] = {
@@ -182,7 +182,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     });
 
     lockedBalanceEntries.forEach(([key, balance]) => {
-      const assetId = meshAssetToAssetId(key.args[1], context);
+      const assetId = assetIdToString(key.args[1]);
       const locked = balanceToBigNumber(balance);
 
       if (!locked.isZero()) {
@@ -266,7 +266,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
         },
       ] = entry;
 
-      const assetId = meshAssetToAssetId(rawAssetId, context);
+      const assetId = assetIdToString(rawAssetId);
       const heldId = u64ToBigNumber(rawNftId);
 
       if (queriedCollections && !queriedCollections.includes(assetId)) {
@@ -396,9 +396,6 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
   public async getTransactionHistory(
     filters: {
       account?: string;
-      /**
-       * @deprecated in favour of assetId
-       */
       ticker?: string;
       assetId?: string;
     } = {}
@@ -409,7 +406,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       _id: portfolioId,
     } = this;
 
-    const { account, ticker, assetId } = filters; // NOSONAR
+    const { account, ticker, assetId } = filters;
 
     let middlewareAssetId;
     const assetIdValue = assetId ?? ticker;

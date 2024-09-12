@@ -1647,9 +1647,9 @@ export interface ModifyMultiSigParams {
    */
   multiSig: MultiSig;
   /**
-   * The signers to set for the MultiSig
+   * The signer accounts to set for the MultiSig
    */
-  signers?: Signer[];
+  signers?: Account[];
   /**
    * The required number of signatures for the MultiSig
    */
@@ -1662,21 +1662,6 @@ export interface SetMultiSigAdminParams {
    */
   admin: Identity | string | null;
 }
-
-export interface JoinCreatorAsPrimary {
-  asPrimary: true;
-  cddAuthId?: BigNumber;
-}
-
-export interface JoinCreatorAsSecondary {
-  asPrimary?: false;
-  /**
-   * (optional) Permissions to grant the MultiSig. Defaults to none
-   */
-  permissions?: PermissionsLike;
-}
-
-export type JoinCreatorParams = JoinCreatorAsPrimary | JoinCreatorAsSecondary;
 
 export type SetMetadataParams =
   | { value: string; details?: MetadataValueDetails }

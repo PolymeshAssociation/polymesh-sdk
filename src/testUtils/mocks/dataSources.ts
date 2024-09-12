@@ -410,8 +410,6 @@ interface TxMockData {
 }
 interface ContextOptions {
   did?: string;
-  isV6?: boolean;
-  specVersion?: number;
   withSigningManager?: boolean;
   balance?: AccountBalance;
   subsidy?: SubsidyWithAllowance;
@@ -651,8 +649,6 @@ let queryMultiMock = jest.fn();
 
 const defaultContextOptions: ContextOptions = {
   did: 'someDid',
-  isV6: false,
-  specVersion: 7000004,
   withSigningManager: true,
   balance: {
     free: new BigNumber(100),
@@ -806,8 +802,6 @@ let signingManagerOptions = defaultSigningManagerOptions;
  */
 function configureContext(opts: ContextOptions): void {
   const getSigningIdentity = jest.fn();
-  const isV6 = opts.isV6;
-  const specVersion = opts.specVersion;
   const identity = {
     did: opts.did,
     hasRoles: jest.fn().mockResolvedValue(opts.hasRoles),
@@ -877,8 +871,6 @@ function configureContext(opts: ContextOptions): void {
 
   const queryMock = mockInstanceContainer.apolloInstance.query;
   const contextInstance = {
-    isV6,
-    specVersion,
     signingAddress,
     nonce,
     getSigningIdentity,

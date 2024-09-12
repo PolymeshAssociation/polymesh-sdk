@@ -5,10 +5,6 @@ import { toHumanReadable } from '~/utils/internal';
 
 export interface HumanReadable {
   type: PermissionGroupType;
-  /**
-   * @deprecated in favour of `assetId`
-   */
-  ticker: string;
   assetId: string;
 }
 
@@ -103,7 +99,6 @@ export class KnownPermissionGroup extends PermissionGroup {
 
     return toHumanReadable({
       type,
-      ticker: asset,
       assetId: asset,
     });
   }

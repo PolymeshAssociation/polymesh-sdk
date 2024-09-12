@@ -76,7 +76,6 @@ import {
   assertTickerValid,
   calculateNextKey,
   compareStatsToInput,
-  compareStatTypeToTransferRestrictionType,
   compareTransferRestrictionToInput,
   compareTransferRestrictionToStat,
   createClaim,
@@ -87,7 +86,6 @@ import {
   getApiAtBlock,
   getAssetIdAndTicker,
   getAssetIdForMiddleware,
-  getAssetIdForStats,
   getAssetIdForTicker,
   getAssetIdFromMiddleware,
   getCheckpointValue,
@@ -102,7 +100,6 @@ import {
   isAllowedCharacters,
   isModuleOrTagMatch,
   isPrintableAscii,
-  isV6Spec,
   mergeReceipts,
   neededStatTypeForRestrictionInput,
   optionize,
@@ -486,26 +483,12 @@ describe('mergeReceipts', () => {
 });
 
 describe('createClaim', () => {
-  let context: Context;
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-    context = dsMockUtils.getContextInstance();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
   it('should create Claim objects from claims data provided by middleware', () => {
     let type = 'Jurisdiction';
     const jurisdiction = 'CL';
     let scope = { type: ClaimScopeTypeEnum.Identity, value: 'someScope' };
 
-    let result = createClaim(type, jurisdiction, scope, null, null, context);
+    let result = createClaim(type, jurisdiction, scope, null, null);
     expect(result).toEqual({
       type: ClaimType.Jurisdiction,
       code: CountryCode.Cl,
@@ -515,7 +498,7 @@ describe('createClaim', () => {
     type = 'BuyLockup';
     scope = { type: ClaimScopeTypeEnum.Identity, value: 'someScope' };
 
-    result = createClaim(type, null, scope, null, null, context);
+    result = createClaim(type, null, scope, null, null);
     expect(result).toEqual({
       type: ClaimType.BuyLockup,
       scope,
@@ -524,7 +507,7 @@ describe('createClaim', () => {
     type = 'CustomerDueDiligence';
     const id = 'someId';
 
-    result = createClaim(type, null, null, id, null, context);
+    result = createClaim(type, null, null, id, null);
     expect(result).toEqual({
       type: ClaimType.CustomerDueDiligence,
       id,
@@ -533,7 +516,7 @@ describe('createClaim', () => {
     type = 'Custom';
     const customClaimTypeId = new BigNumber(1);
 
-    result = createClaim(type, null, scope, id, customClaimTypeId, context);
+    result = createClaim(type, null, scope, id, customClaimTypeId);
     expect(result).toEqual({
       type: ClaimType.Custom,
       customClaimTypeId,
@@ -546,7 +529,7 @@ describe('createClaim', () => {
     const id = 'someId';
     const type = 'Custom';
 
-    expect(() => createClaim(type, null, scope, id, null, context)).toThrow(
+    expect(() => createClaim(type, null, scope, id, null)).toThrow(
       'Custom claim type ID is required'
     );
   });
@@ -1722,123 +1705,7 @@ describe('compareTransferRestrictionToInput', () => {
   });
 });
 
-describe('compareStatTypeToTransferRestrictionType', () => {
-  let context: Context;
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-    context = dsMockUtils.getContextInstance();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-  const did = 'someDid';
-  const issuerId = dsMockUtils.createMockIdentityId(did);
-
-  const countStatType = dsMockUtils.createMockStatisticsStatType({
-    operationType: dsMockUtils.createMockStatisticsOpType(StatType.Count),
-    claimIssuer: dsMockUtils.createMockOption(),
-  });
-  const percentStatType = dsMockUtils.createMockStatisticsStatType({
-    operationType: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
-    claimIssuer: dsMockUtils.createMockOption(),
-  });
-
-  const claimCountStat = dsMockUtils.createMockStatisticsStatType({
-    operationType: dsMockUtils.createMockStatisticsOpType(StatType.Count),
-    claimIssuer: dsMockUtils.createMockOption([
-      dsMockUtils.createMockClaimType(ClaimType.Affiliate),
-      issuerId,
-    ]),
-  });
-  const claimPercentageStat = dsMockUtils.createMockStatisticsStatType({
-    operationType: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
-    claimIssuer: dsMockUtils.createMockOption([
-      dsMockUtils.createMockClaimType(ClaimType.Affiliate),
-      issuerId,
-    ]),
-  });
-
-  it('should return true if the PolymeshPrimitivesStatisticsStatType matches the given TransferRestriction', () => {
-    let result = compareStatTypeToTransferRestrictionType(
-      countStatType,
-      TransferRestrictionType.Count,
-      context
-    );
-    expect(result).toEqual(true);
-
-    result = compareStatTypeToTransferRestrictionType(
-      percentStatType,
-      TransferRestrictionType.Percentage,
-      context
-    );
-    expect(result).toEqual(true);
-
-    result = compareStatTypeToTransferRestrictionType(
-      claimCountStat,
-      TransferRestrictionType.ClaimCount,
-      context
-    );
-    expect(result).toEqual(true);
-
-    result = compareStatTypeToTransferRestrictionType(
-      claimPercentageStat,
-      TransferRestrictionType.ClaimPercentage,
-      context
-    );
-    expect(result).toEqual(true);
-  });
-
-  it('should return false if the PolymeshPrimitivesStatisticsStatType does not match the given TransferRestriction', () => {
-    let result = compareStatTypeToTransferRestrictionType(
-      countStatType,
-      TransferRestrictionType.Percentage,
-      context
-    );
-    expect(result).toEqual(false);
-
-    result = compareStatTypeToTransferRestrictionType(
-      percentStatType,
-      TransferRestrictionType.Count,
-      context
-    );
-    expect(result).toEqual(false);
-
-    result = compareStatTypeToTransferRestrictionType(
-      claimCountStat,
-      TransferRestrictionType.ClaimPercentage,
-      context
-    );
-    expect(result).toEqual(false);
-
-    result = compareStatTypeToTransferRestrictionType(
-      claimPercentageStat,
-      TransferRestrictionType.ClaimCount,
-      context
-    );
-    expect(result).toEqual(false);
-  });
-});
-
 describe('compareStatsToInput', () => {
-  let context: Context;
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-    context = dsMockUtils.getContextInstance();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
   const did = 'someDid';
   const issuer = entityMockUtils.getIdentityInstance({ did });
   const issuerId = dsMockUtils.createMockIdentityId(did);
@@ -1857,7 +1724,7 @@ describe('compareStatsToInput', () => {
       asset,
     };
 
-    let result = compareStatsToInput(countStat, args, context);
+    let result = compareStatsToInput(countStat, args);
     expect(result).toEqual(true);
 
     const percentStat = dsMockUtils.createMockStatisticsStatType({
@@ -1865,7 +1732,7 @@ describe('compareStatsToInput', () => {
       claimIssuer: dsMockUtils.createMockOption(),
     });
     args = { type: StatType.Balance, asset };
-    result = compareStatsToInput(percentStat, args, context);
+    result = compareStatsToInput(percentStat, args);
     expect(result).toEqual(true);
 
     const claimCountStat = dsMockUtils.createMockStatisticsStatType({
@@ -1881,7 +1748,7 @@ describe('compareStatsToInput', () => {
       claimType: ClaimType.Affiliate,
       asset,
     };
-    result = compareStatsToInput(claimCountStat, args, context);
+    result = compareStatsToInput(claimCountStat, args);
     expect(result).toEqual(true);
 
     const claimPercentageStat = dsMockUtils.createMockStatisticsStatType({
@@ -1897,7 +1764,7 @@ describe('compareStatsToInput', () => {
       claimType: ClaimType.Affiliate,
       asset,
     };
-    result = compareStatsToInput(claimPercentageStat, args, context);
+    result = compareStatsToInput(claimPercentageStat, args);
     expect(result).toEqual(true);
   });
 
@@ -1911,7 +1778,7 @@ describe('compareStatsToInput', () => {
       type: StatType.Balance,
       asset,
     };
-    let result = compareStatsToInput(countStat, args, context);
+    let result = compareStatsToInput(countStat, args);
     expect(result).toEqual(false);
 
     const percentStat = dsMockUtils.createMockStatisticsStatType({
@@ -1924,7 +1791,7 @@ describe('compareStatsToInput', () => {
       claimType: ClaimType.Accredited,
       asset,
     };
-    result = compareStatsToInput(percentStat, args, context);
+    result = compareStatsToInput(percentStat, args);
     expect(result).toEqual(false);
 
     const claimCountStat = dsMockUtils.createMockStatisticsStatType({
@@ -1940,7 +1807,7 @@ describe('compareStatsToInput', () => {
       claimType: ClaimType.Affiliate,
       asset,
     };
-    result = compareStatsToInput(claimCountStat, args, context);
+    result = compareStatsToInput(claimCountStat, args);
     expect(result).toEqual(false);
 
     args = {
@@ -1949,10 +1816,10 @@ describe('compareStatsToInput', () => {
       claimType: ClaimType.Jurisdiction,
       asset,
     };
-    result = compareStatsToInput(claimCountStat, args, context);
+    result = compareStatsToInput(claimCountStat, args);
     expect(result).toEqual(false);
 
-    result = compareStatsToInput(percentStat, args, context);
+    result = compareStatsToInput(percentStat, args);
     expect(result).toEqual(false);
 
     args = {
@@ -1960,7 +1827,7 @@ describe('compareStatsToInput', () => {
       asset,
     };
 
-    result = compareStatsToInput(claimCountStat, args, context);
+    result = compareStatsToInput(claimCountStat, args);
     expect(result).toEqual(false);
   });
 });
@@ -2386,20 +2253,6 @@ describe('asNftId', () => {
 });
 
 describe('areSameClaims', () => {
-  let context: Context;
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-    context = dsMockUtils.getContextInstance();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
   it('should return true if same claims are provided', () => {
     const firstClaim: ScopedClaim = {
       type: ClaimType.Custom,
@@ -2412,7 +2265,7 @@ describe('areSameClaims', () => {
 
     const secondClaim = { ...firstClaim } as unknown as MiddlewareClaim;
 
-    const result = areSameClaims(firstClaim, secondClaim, context);
+    const result = areSameClaims(firstClaim, secondClaim);
 
     expect(result).toBeTruthy();
   });
@@ -2435,7 +2288,7 @@ describe('areSameClaims', () => {
       },
     } as unknown as MiddlewareClaim;
 
-    const result = areSameClaims(firstClaim, secondClaim, context);
+    const result = areSameClaims(firstClaim, secondClaim);
 
     expect(result).toBeFalsy();
   });
@@ -2455,7 +2308,7 @@ describe('areSameClaims', () => {
       customClaimTypeId: new BigNumber(2),
     } as unknown as MiddlewareClaim;
 
-    const result = areSameClaims(firstClaim, secondClaim, context);
+    const result = areSameClaims(firstClaim, secondClaim);
 
     expect(result).toBeFalsy();
   });
@@ -2795,17 +2648,10 @@ describe('getAssetIdAndTicker', () => {
     dsMockUtils
       .createQueryMock('asset', 'assetIdTicker')
       .mockResolvedValue(dsMockUtils.createMockOption(dsMockUtils.createMockTicker(ticker)));
-    let result = await getAssetIdAndTicker(assetId, context);
+    const result = await getAssetIdAndTicker(assetId, context);
 
     expect(result).toEqual({
       assetId,
-      ticker,
-    });
-
-    result = await getAssetIdAndTicker(ticker, dsMockUtils.getContextInstance({ isV6: true }));
-
-    expect(result).toEqual({
-      assetId: ticker,
       ticker,
     });
   });
@@ -2841,13 +2687,6 @@ describe('asBaseAsset', () => {
     expect(result).toBe(baseAsset);
   });
 
-  it('should return BaseAsset for v6 version when ticker is provided', async () => {
-    const baseAsset = 'SOME_TICKER';
-    const result = await asBaseAsset(baseAsset, dsMockUtils.getContextInstance({ isV6: true }));
-
-    expect(result).toEqual(expect.objectContaining({ id: baseAsset }));
-  });
-
   it('should return BaseAsset when asset ID is provided', async () => {
     const baseAsset = '12341234-1234-8234-8234-123412341234';
     const ticker = 'SOME_TICKER;';
@@ -2858,7 +2697,18 @@ describe('asBaseAsset', () => {
     const result = await asBaseAsset(baseAsset, context);
 
     expect(result.id).toEqual(baseAsset);
-    expect(result.ticker).toEqual(ticker);
+  });
+
+  it('should return BaseAsset when asset ID is provided in hex format', async () => {
+    const baseAsset = '0x12341234123482348234123412341234';
+    const ticker = 'SOME_TICKER;';
+
+    assetIdTickerMock.mockResolvedValue(
+      dsMockUtils.createMockOption(dsMockUtils.createMockTicker(ticker))
+    );
+    const result = await asBaseAsset(baseAsset, context);
+
+    expect(result.id).toEqual('12341234-1234-8234-8234-123412341234');
   });
 
   it('should return BaseAsset when asset ID is provided in hex format', async () => {
@@ -2883,46 +2733,6 @@ describe('asBaseAsset', () => {
     const result = await asBaseAsset(ticker, context);
 
     expect(result.id).toEqual(hexToUuid(assetId));
-    expect(result.ticker).toEqual(ticker);
-  });
-});
-
-describe('getAssetIdForStats', () => {
-  let context: Context;
-  let assetToMeshAssetIdSpy: jest.SpyInstance;
-
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-    entityMockUtils.initMocks();
-    context = dsMockUtils.getContextInstance();
-
-    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-    entityMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should return both assetId for stats', () => {
-    const mockAssetId = dsMockUtils.createMockAssetId('0x12341234123412341234123412341234');
-    assetToMeshAssetIdSpy.mockReturnValue(mockAssetId);
-    let result = getAssetIdForStats(entityMockUtils.getFungibleAssetInstance(), context);
-
-    expect(result).toEqual(mockAssetId);
-
-    const mockTicker = dsMockUtils.createMockTicker('SOME_TICKER');
-    assetToMeshAssetIdSpy.mockReturnValue(mockTicker);
-    result = getAssetIdForStats(
-      entityMockUtils.getFungibleAssetInstance(),
-      dsMockUtils.getContextInstance({ isV6: true })
-    );
-
-    expect(result).toEqual(expect.objectContaining({ Ticker: mockTicker }));
   });
 });
 
@@ -2952,87 +2762,17 @@ describe('getAssetIdForMiddleware', () => {
 
     expect(result).toEqual('0x12341234123482348234123412341234');
   });
-
-  it('should return asset ID for legacy ticker compatible with middleware', async () => {
-    const ticker = 'SOME_TICKER';
-    const mockTicker = dsMockUtils.createMockTicker(ticker);
-    mockTicker.toHex = jest.fn();
-    mockTicker.toHex.mockReturnValue('0x1111');
-
-    jest.spyOn(utilsConversionModule, 'stringToTicker').mockReturnValue(mockTicker);
-
-    const result = await getAssetIdForMiddleware(
-      'SOME_TICKER',
-      dsMockUtils.getContextInstance({ isV6: true })
-    );
-
-    expect(result).toEqual('0xc5ad37bd0d0288ceb9a7b943f45f0ebc');
-  });
 });
 
 describe('getAssetIdFromMiddleware', () => {
-  let context: Context;
-
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-    context = dsMockUtils.getContextInstance();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
   it('should return asset ID from middleware', async () => {
     const assetId = '0x12341234123412341234123412341234';
     const ticker = 'SOME_TICKER';
-    let result = getAssetIdFromMiddleware(
-      {
-        id: assetId,
-        ticker,
-      },
-      context
-    );
+    const result = getAssetIdFromMiddleware({
+      id: assetId,
+      ticker,
+    });
 
     expect(result).toEqual('12341234-1234-1234-1234-123412341234');
-
-    result = getAssetIdFromMiddleware(
-      {
-        id: assetId,
-        ticker,
-      },
-      dsMockUtils.getContextInstance({ isV6: true })
-    );
-
-    expect(result).toEqual(ticker);
-  });
-});
-
-describe('isV6Spec', () => {
-  it('should return true for pre v7 spec', () => {
-    const result = isV6Spec('some_spec', 6000000);
-
-    expect(result).toEqual(true);
-  });
-
-  it('should return false for post v7 spec', () => {
-    const result = isV6Spec('some_spec', 7000001);
-
-    expect(result).toEqual(false);
-  });
-
-  it('should return true for pre v2 private spec', () => {
-    const result = isV6Spec('polymesh_private_dev', 1000000);
-
-    expect(result).toEqual(true);
-  });
-
-  it('should return false for post v2 private spec', () => {
-    const result = isV6Spec('polymesh_private_dev', 2000000);
-
-    expect(result).toEqual(false);
   });
 });

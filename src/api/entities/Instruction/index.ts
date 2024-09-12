@@ -58,13 +58,13 @@ import { InstructionStatus as InternalInstructionStatus } from '~/types/internal
 import { Ensured } from '~/types/utils';
 import { isOffChainLeg } from '~/utils';
 import {
+  assetIdToString,
   balanceToBigNumber,
   bigNumberToU64,
   identityIdToString,
   instructionMemoToString,
   mediatorAffirmationStatusToStatus,
   meshAffirmationStatusToAffirmationStatus,
-  meshAssetToAssetId,
   meshInstructionStatusToInstructionStatus,
   meshNftToNftId,
   meshPortfolioIdToPortfolio,
@@ -615,16 +615,9 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         if (leg.isSome) {
           const legValue: PolymeshPrimitivesSettlementLeg = leg.unwrap();
           if (legValue.isFungible) {
-            const {
-              sender,
-              receiver,
-              amount,
-              ticker: rawTicker,
-              assetId: rawAssetId,
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            } = legValue.asFungible as any; // NOSONAR
+            const { sender, receiver, amount, assetId: rawAssetId } = legValue.asFungible;
 
-            const assetId = meshAssetToAssetId(rawTicker || rawAssetId, context);
+            const assetId = assetIdToString(rawAssetId);
             const fromPortfolio = meshPortfolioIdToPortfolio(sender, context);
             const toPortfolio = meshPortfolioIdToPortfolio(receiver, context);
 
@@ -639,7 +632,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
             const from = meshPortfolioIdToPortfolio(sender, context);
             const to = meshPortfolioIdToPortfolio(receiver, context);
-            const { assetId, ids } = meshNftToNftId(nfts, context);
+            const { assetId, ids } = meshNftToNftId(nfts);
 
             return {
               from,

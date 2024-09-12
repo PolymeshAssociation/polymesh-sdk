@@ -777,33 +777,6 @@ describe('addInstruction procedure', () => {
     ).rejects.toThrow(expectedError);
   });
 
-  it('should throw an error if no venue and the chain is still on v6', () => {
-    mockContext.isV6 = true;
-    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      portfoliosToAffirm: [],
-    });
-
-    const legOne = {
-      from,
-      to,
-      amount,
-      asset: entityMockUtils.getFungibleAssetInstance({
-        assetId: asset,
-      }),
-    };
-
-    const expectedError = new PolymeshError({
-      code: ErrorCode.General,
-      message: 'A venue id must be provided on v6 chains',
-    });
-
-    return expect(
-      prepareAddInstruction.call(proc, {
-        instructions: [{ legs: [legOne] }],
-      })
-    ).rejects.toThrow(expectedError);
-  });
-
   it('should throw an error if the end block is in the past', async () => {
     dsMockUtils.configureMocks({ contextOptions: { latestBlock: new BigNumber(1000) } });
 
@@ -988,7 +961,6 @@ describe('addInstruction procedure', () => {
   });
 
   it('should handle NFT legs', async () => {
-    dsMockUtils.configureMocks({ contextOptions: { did: fromDid, isV6: false } });
     entityMockUtils.configureMocks({
       venueOptions: {
         exists: true,

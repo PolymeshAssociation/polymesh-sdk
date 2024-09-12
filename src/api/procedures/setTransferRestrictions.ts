@@ -27,6 +27,7 @@ import {
 } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import {
+  assetToMeshAssetId,
   booleanToBool,
   complianceConditionsToBtreeSet,
   identitiesToBtreeSet,
@@ -42,7 +43,6 @@ import {
   assertStatIsSet,
   checkTxType,
   compareTransferRestrictionToInput,
-  getAssetIdForStats,
   neededStatTypeForRestrictionInput,
   requestMulti,
 } from '~/utils/internal';
@@ -258,7 +258,7 @@ export async function prepareSetTransferRestrictions(
     type,
     asset,
   } = args;
-  const rawAssetId = getAssetIdForStats(asset, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
 
   assertInputValid(restrictions, type);
 
@@ -288,8 +288,7 @@ export async function prepareSetTransferRestrictions(
 
   transactions.push(
     checkTxType({
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      transaction: statistics.setAssetTransferCompliance as any, // NOSONAR
+      transaction: statistics.setAssetTransferCompliance,
       args: [
         rawAssetId, // if we do not add the current restrictions (filteredRestrictions), then they will be removed
         complianceConditionsToBtreeSet([...filteredRestrictions, ...conditions], context),
@@ -303,7 +302,7 @@ export async function prepareSetTransferRestrictions(
         return;
       }
       const rawClaimType = claimType === 'None' ? undefined : (claimType as ClaimType);
-      const exemptKey = toExemptKey(context, rawAssetId, op, rawClaimType);
+      const exemptKey = toExemptKey(rawAssetId, op, rawClaimType);
       const exemptedBtreeSet = identitiesToBtreeSet(exempted, context);
       const rawExempt = booleanToBool(exempt, context);
 
@@ -363,15 +362,13 @@ export async function prepareStorage(
   } = this;
   const { asset, type } = args;
 
-  const rawAssetId = getAssetIdForStats(asset, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
 
   const [currentStats, { requirements: currentRestrictions }] = await requestMulti<
     [typeof statistics.activeAssetStats, typeof statistics.assetTransferCompliances]
   >(context, [
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    [statistics.activeAssetStats, rawAssetId as any], // NOSONAR
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    [statistics.assetTransferCompliances, rawAssetId as any], // NOSONAR
+    [statistics.activeAssetStats, rawAssetId],
+    [statistics.assetTransferCompliances, rawAssetId],
   ]);
 
   args.restrictions.forEach(restriction => {
@@ -433,9 +430,7 @@ export async function prepareStorage(
 
   claimTypes.forEach(claimType => {
     exemptionFetchers.push(
-      statistics.transferConditionExemptEntities.entries(
-        toExemptKey(context, rawAssetId, op, claimType)
-      )
+      statistics.transferConditionExemptEntities.entries(toExemptKey(rawAssetId, op, claimType))
     );
   });
   const rawCurrentExemptions = flatten(await Promise.all(exemptionFetchers));

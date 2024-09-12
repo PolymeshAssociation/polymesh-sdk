@@ -37,7 +37,6 @@ import {
   SignerType,
   SimplePermissions,
   SubCallback,
-  SubsidyWithAllowance,
   TxTag,
   UnsubCallback,
 } from '~/types';
@@ -134,31 +133,6 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     }
 
     return context.accountBalance(address);
-  }
-
-  /**
-   * Get the subsidized balance of this Account and the subsidizer Account. If
-   *   this Account isn't being subsidized, return null
-   *
-   * @note can be subscribed to, if connected to node using a web socket
-   *
-   * @deprecated in favour of {@link api/entities/Subsidies!Subsidies.getSubsidizer | subsidies.getSubsidizer}
-   */
-  public getSubsidy(): Promise<SubsidyWithAllowance | null>;
-  public getSubsidy(callback: SubCallback<SubsidyWithAllowance | null>): Promise<UnsubCallback>;
-
-  // eslint-disable-next-line require-jsdoc
-  public getSubsidy(
-    callback?: SubCallback<SubsidyWithAllowance | null>
-  ): Promise<SubsidyWithAllowance | null | UnsubCallback> {
-    const { context, address } = this;
-
-    if (callback) {
-      context.assertSupportsSubscription();
-      return context.accountSubsidy(address, callback);
-    }
-
-    return context.accountSubsidy(address);
   }
 
   /**

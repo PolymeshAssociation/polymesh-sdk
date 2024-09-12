@@ -37,9 +37,9 @@ import {
 import { Ensured } from '~/types/utils';
 import {
   agentGroupToPermissionGroup,
+  assetIdToString,
   assetToMeshAssetId,
   extrinsicPermissionsToTransactionPermissions,
-  meshAssetToAssetId,
   middlewareEventDetailsToEventIdentifier,
   stringToIdentityId,
 } from '~/utils/conversion';
@@ -115,7 +115,7 @@ export class AssetPermissions extends Namespace<Identity> {
     const assetEntries = await externalAgents.agentOf.entries(rawDid);
 
     return P.map(assetEntries, async ([key]) => {
-      const assetId = meshAssetToAssetId(key.args[1], context);
+      const assetId = assetIdToString(key.args[1]);
       const asset = new FungibleAsset({ assetId }, context);
       const group = await this.getGroup({ asset });
 
@@ -183,8 +183,7 @@ export class AssetPermissions extends Namespace<Identity> {
       const groupPermissionsOption = await externalAgents.groupPermissions(rawAssetId, groupId);
 
       const permissions = extrinsicPermissionsToTransactionPermissions(
-        groupPermissionsOption.unwrap(),
-        context
+        groupPermissionsOption.unwrap()
       );
 
       if (permissions === null) {

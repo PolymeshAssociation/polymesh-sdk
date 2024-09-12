@@ -90,15 +90,6 @@ describe('unlinkTickerFromAsset procedure', () => {
     });
   });
 
-  it('should throw an error if the chain is on v6', async () => {
-    mockContext.isV6 = true;
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      ticker,
-    });
-
-    return expect(prepareUnlinkTickerFromAsset.call(proc, args)).rejects.toThrow(PolymeshError);
-  });
-
   describe('prepareStorage', () => {
     it('should return the ticker associated with the Asset', async () => {
       const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {

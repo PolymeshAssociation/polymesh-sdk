@@ -28,7 +28,6 @@ import {
 } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
-import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Asset/Fungible',
@@ -37,7 +36,7 @@ jest.mock(
 
 describe('addAssetStat procedure', () => {
   let mockContext: Mocked<Context>;
-  let getAssetIdForStatsSpy: jest.SpyInstance;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
   let assetId: string;
   let asset: FungibleAsset;
   let count: BigNumber;
@@ -96,7 +95,7 @@ describe('addAssetStat procedure', () => {
     assetId = '0x12341234123412341234123412341234';
     asset = entityMockUtils.getFungibleAssetInstance({ assetId });
     count = new BigNumber(10);
-    getAssetIdForStatsSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForStats');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     createStat2ndKeySpy = jest.spyOn(utilsConversionModule, 'createStat2ndKey');
     statisticsOpTypeToStatOpTypeSpy = jest.spyOn(
       utilsConversionModule,
@@ -137,7 +136,7 @@ describe('addAssetStat procedure', () => {
       .mockReturnValue(statUpdateBtreeSet);
     statisticsOpTypeToStatOpTypeSpy.mockReturnValue(rawStatType);
 
-    when(getAssetIdForStatsSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
+    when(assetToMeshAssetIdSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
     statisticStatTypesToBtreeStatTypeSpy.mockReturnValue(rawStatBtreeSet);
   });
 
