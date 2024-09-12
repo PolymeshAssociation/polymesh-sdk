@@ -41,18 +41,18 @@ describe('AssetHolder class', () => {
     let assetHolders: AssetHolders;
     let collection: NftCollection;
     let context: Context;
-    let getAssetIdForMiddlewareSpy: jest.SpyInstance;
+    let asAssetIdSpy: jest.SpyInstance;
 
     beforeAll(() => {
       dsMockUtils.initMocks();
-      getAssetIdForMiddlewareSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware');
+      asAssetIdSpy = jest.spyOn(utilsInternalModule, 'asAssetId');
     });
 
     beforeEach(() => {
       context = dsMockUtils.getContextInstance();
       collection = entityMockUtils.getNftCollectionInstance({ assetId });
       assetHolders = new AssetHolders(collection, context);
-      when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
+      when(asAssetIdSpy).calledWith(assetId, context).mockResolvedValue(assetId);
 
       const nftHoldersResponse = {
         nodes: [

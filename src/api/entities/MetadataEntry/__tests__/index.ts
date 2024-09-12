@@ -337,7 +337,6 @@ describe('MetadataEntry class', () => {
       expect(metadataEntry.toHuman()).toEqual({
         id: '1',
         assetId: '0x1234',
-        ticker: '0x1234',
         type: 'Local',
       });
     });

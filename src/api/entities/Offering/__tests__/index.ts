@@ -280,7 +280,7 @@ describe('Offering class', () => {
       const offeringTokenAmount = new BigNumber(10000);
       const raiseTokenAmount = new BigNumber(1000);
 
-      when(jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware'))
+      when(jest.spyOn(utilsInternalModule, 'asAssetId'))
         .calledWith(assetId, context)
         .mockResolvedValue(assetId);
 
@@ -449,7 +449,6 @@ describe('Offering class', () => {
       expect(offering.toHuman()).toEqual({
         id: '1',
         assetId: '0x1234',
-        ticker: '0x1234',
       });
     });
   });

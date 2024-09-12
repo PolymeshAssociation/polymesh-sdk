@@ -305,7 +305,6 @@ describe('CorporateAction class', () => {
       expect(corporateAction.toHuman()).toEqual({
         id: '1',
         assetId: '0x1234',
-        ticker: '0x1234',
         declarationDate: '1987-10-14T00:00:00.000Z',
         defaultTaxWithholding: '10',
         description: 'someDescription',

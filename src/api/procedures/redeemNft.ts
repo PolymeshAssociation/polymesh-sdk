@@ -30,7 +30,6 @@ export async function prepareRedeemNft(
   const {
     context,
     context: {
-      isV6,
       polymeshApi: { tx, query },
     },
     storage: { fromPortfolio },
@@ -58,15 +57,9 @@ export async function prepareRedeemNft(
     });
   }
 
-  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
-  const txArgs = isV6
-    ? [rawAssetId, rawId, portfolioToPortfolioKind(fromPortfolio, context)]
-    : [rawAssetId, rawId, portfolioToPortfolioKind(fromPortfolio, context), rawKeySet.size];
-
   return {
     transaction: tx.nft.redeemNft,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    args: txArgs as any,
+    args: [rawAssetId, rawId, portfolioToPortfolioKind(fromPortfolio, context), rawKeySet.size],
     resolver: undefined,
   };
 }

@@ -18,10 +18,6 @@ export interface UniqueIdentifiers {
 
 export interface HumanReadable {
   id: string;
-  /**
-   * @deprecated in favour of `assetId`
-   */
-  ticker: string;
   assetId: string;
   declarationDate: string;
   description: string;

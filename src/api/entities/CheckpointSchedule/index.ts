@@ -17,10 +17,6 @@ export interface UniqueIdentifiers {
 
 export interface HumanReadable {
   id: string;
-  /**
-   * @deprecated in favour of `assetId`
-   */
-  ticker: string;
   assetId: string;
   pendingPoints: string[];
   expiryDate: string | null;
@@ -186,7 +182,6 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
     const { asset, id, pendingPoints } = this;
 
     return toHumanReadable({
-      ticker: asset,
       assetId: asset,
       id,
       pendingPoints,

@@ -1,9 +1,8 @@
 import { Bytes, u32 } from '@polkadot/types';
-import { PolymeshPrimitivesAssetAssetId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
 
-import { addManualFees } from '~/api/procedures/utils';
 import {
   BaseAsset,
   Context,
@@ -80,9 +79,6 @@ export interface Storage {
 
   needsLocalMetadata: boolean;
   status?: TickerReservationStatus;
-  /**
-   * @note in case of V6, this will be same as ticker
-   */
   assetId: string;
   isAssetCreated: boolean;
 }
@@ -117,34 +113,20 @@ function getInternalNftType(
 async function getCreateAssetTxAndFees(
   context: Context,
   storage: Storage,
-  args: Params,
-  rawAssetId: PolymeshPrimitivesAssetAssetId | PolymeshPrimitivesTicker
+  args: Params
 ): Promise<TxWithArgs<unknown[]>> {
   const {
     polymeshApi: { tx },
-    isV6,
   } = context;
 
-  const { customTypeData, status, assetId } = storage;
+  const { customTypeData, assetId } = storage;
 
   const { ticker, nftType, name, securityIdentifiers = [], fundingRound } = args;
 
   let fee: BigNumber | undefined;
 
-  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
-  if (isV6 && status === TickerReservationStatus.Free) {
-    fee = await addManualFees(
-      new BigNumber(0),
-      [TxTags.asset.RegisterTicker, TxTags.asset.CreateAsset],
-      context
-    );
-  }
-
   const internalNftType = getInternalNftType(customTypeData, nftType);
-  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
   const rawName = nameToAssetName(name ?? ticker ?? assetId, context);
-  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
-  const rawNameTickerArgs = isV6 ? [rawName, rawAssetId] : [rawName];
 
   const rawDivisibility = booleanToBool(false, context);
   const rawIdentifiers = securityIdentifiers.map(identifier =>
@@ -155,10 +137,9 @@ async function getCreateAssetTxAndFees(
   const rawAssetType = internalAssetTypeToAssetType({ NonFungible: internalNftType }, context);
 
   return checkTxType({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    transaction: tx.asset.createAsset as any, // NOSONAR
+    transaction: tx.asset.createAsset,
     fee,
-    args: [...rawNameTickerArgs, rawDivisibility, rawAssetType, rawIdentifiers, rawFundingRound],
+    args: [rawName, rawDivisibility, rawAssetType, rawIdentifiers, rawFundingRound],
   });
 }
 
@@ -207,7 +188,6 @@ export async function prepareCreateNftCollection(
   const {
     context: {
       polymeshApi: { tx },
-      isV6,
     },
     context,
     storage: { customTypeData, status, assetId, isAssetCreated },
@@ -247,10 +227,10 @@ export async function prepareCreateNftCollection(
       });
     }
   } else {
-    transactions.push(await getCreateAssetTxAndFees(context, storage, args, rawAssetId));
+    transactions.push(await getCreateAssetTxAndFees(context, storage, args));
   }
 
-  if (!isV6 && ticker && status) {
+  if (ticker && status) {
     transactions = [...transactions, ...getTickerRelatedTx(ticker, status, rawAssetId, context)];
   }
 
@@ -319,7 +299,6 @@ export async function getAuthorization(
   const {
     storage: { status, needsLocalMetadata, isAssetCreated, assetId },
     context,
-    context: { isV6 },
   } = this;
 
   const transactions: TxTag[] = [TxTags.nft.CreateNftCollection];
@@ -328,13 +307,11 @@ export async function getAuthorization(
     transactions.push(TxTags.asset.CreateAsset);
   }
 
-  if (!isV6) {
-    if (status === TickerReservationStatus.Free) {
-      transactions.push(TxTags.asset.RegisterUniqueTicker);
-    }
-    if (status !== TickerReservationStatus.AssetCreated) {
-      transactions.push(TxTags.asset.LinkTickerToAssetId);
-    }
+  if (status === TickerReservationStatus.Free) {
+    transactions.push(TxTags.asset.RegisterUniqueTicker);
+  }
+  if (status !== TickerReservationStatus.AssetCreated) {
+    transactions.push(TxTags.asset.LinkTickerToAssetId);
   }
 
   if (needsLocalMetadata) {
@@ -425,10 +402,7 @@ export async function prepareStorage(
   this: Procedure<Params, NftCollection, Storage>,
   { ticker, assetId, nftType, collectionKeys }: Params
 ): Promise<Storage> {
-  const {
-    context,
-    context: { isV6 },
-  } = this;
+  const { context } = this;
 
   const assertNftCollectionDoesNotExists = async (id: string): Promise<void> => {
     const nft = new NftCollection({ assetId: id }, context);
@@ -448,16 +422,8 @@ export async function prepareStorage(
     assetId: '',
   };
 
-  const assetIdExistsForV7 = !isV6 && assetId;
-
   if (ticker) {
     assertTickerOk(ticker);
-
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      // for chain 6.x, we assume asset ID same as ticker
-      storageStatus.assetId = ticker;
-    }
 
     const reservation = new TickerReservation({ ticker }, context);
     const reservationDetails = await reservation.details();
@@ -467,7 +433,7 @@ export async function prepareStorage(
     if (status === TickerReservationStatus.AssetCreated) {
       storageStatus.assetId = reservationDetails.assetId;
       storageStatus.isAssetCreated = true;
-      if (assetIdExistsForV7 && assetId !== reservationDetails.assetId) {
+      if (assetId && assetId !== reservationDetails.assetId) {
         // For v7 chain, if assetID is provided in arguments, and the ticker provided is not already associated with the given asset ID, throw an error
         throw new PolymeshError({
           code: ErrorCode.UnmetPrerequisite,
@@ -480,21 +446,12 @@ export async function prepareStorage(
       }
 
       await assertNftCollectionDoesNotExists(reservationDetails.assetId);
-    } else if (!isV6) {
+    } else {
       storageStatus.assetId = await context.getSigningAccount().getNextAssetId();
-    }
-  } else {
-    /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      // ticker is mandatory for 6.x chain
-      throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message: 'Ticker must be provided while creating a NFT collection',
-      });
     }
   }
 
-  if (assetIdExistsForV7) {
+  if (assetId) {
     storageStatus.assetId = assetId;
     storageStatus.isAssetCreated = true;
     await assertNftCollectionDoesNotExists(assetId);

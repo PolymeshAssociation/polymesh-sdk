@@ -7,16 +7,13 @@ import { PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RemoveAssetStatParams, StatClaimIssuer, StatType, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
+  assetToMeshAssetId,
   claimIssuerToMeshClaimIssuer,
   statisticsOpTypeToStatType,
   statisticStatTypesToBtreeStatType,
   statTypeToStatOpType,
 } from '~/utils/conversion';
-import {
-  compareTransferRestrictionToStat,
-  getAssetIdForStats,
-  requestMulti,
-} from '~/utils/internal';
+import { compareTransferRestrictionToStat, requestMulti } from '~/utils/internal';
 
 /**
  * @hidden
@@ -35,15 +32,13 @@ export async function prepareRemoveAssetStat(
     context,
   } = this;
   const { asset, type } = args;
-  const rawAssetId = getAssetIdForStats(asset, context);
+  const rawAssetId = assetToMeshAssetId(asset, context);
 
   const [currentStats, { requirements }] = await requestMulti<
     [typeof statisticsQuery.activeAssetStats, typeof statisticsQuery.assetTransferCompliances]
   >(context, [
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    [statisticsQuery.activeAssetStats, rawAssetId as any], // NOSONAR
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    [statisticsQuery.assetTransferCompliances, rawAssetId as any], // NOSONAR
+    [statisticsQuery.activeAssetStats, rawAssetId],
+    [statisticsQuery.assetTransferCompliances, rawAssetId],
   ]);
 
   let claimIssuer: StatClaimIssuer;
@@ -87,8 +82,7 @@ export async function prepareRemoveAssetStat(
 
   return {
     transaction: statistics.setActiveAssetStats,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    args: [rawAssetId as any, newStats], // NOSONAR
+    args: [rawAssetId, newStats],
     resolver: undefined,
   };
 }

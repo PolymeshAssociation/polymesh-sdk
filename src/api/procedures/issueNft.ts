@@ -24,7 +24,7 @@ export const issueNftResolver =
   (receipt: ISubmittableResult): Nft => {
     const [{ data }] = filterEventRecords(receipt, 'nft', 'NFTPortfolioUpdated');
 
-    const { assetId, ids } = meshNftToNftId(data[1], context);
+    const { assetId, ids } = meshNftToNftId(data[1]);
 
     return new Nft({ id: ids[0], assetId }, context);
   };

@@ -175,4 +175,3 @@ export { toggleAssetPreApproval } from '~/api/procedures/toggleAssetPreApproval'
 export { allowIdentityToCreatePortfolios } from '~/api/procedures/allowIdentityToCreatePortfolios';
 export { revokeIdentityToCreatePortfolios } from '~/api/procedures/revokeIdentityToCreatePortfolios';
 export { rotatePrimaryKeyToSecondary } from '~/api/procedures/rotatePrimaryKeyToSecondary';
-export { joinCreator } from '~/api/procedures/joinCreator';

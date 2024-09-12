@@ -49,9 +49,9 @@ import {
   stringToIdentityId,
 } from '~/utils/conversion';
 import {
+  asAssetId,
   calculateNextKey,
   createProcedureMethod,
-  getAssetIdForMiddleware,
   getIdentity,
   toHumanReadable,
   xor,
@@ -446,7 +446,7 @@ export class DividendDistribution extends CorporateActionBase {
       context,
     } = this;
 
-    const middlewareAssetId = await getAssetIdForMiddleware(assetId, context);
+    const middlewareAssetId = await asAssetId(assetId, context);
 
     const taxPromise = context.queryMiddleware<Ensured<Query, 'distributions'>>(
       distributionQuery({
@@ -490,7 +490,7 @@ export class DividendDistribution extends CorporateActionBase {
     } = this;
     const { size, start } = opts;
 
-    const middlewareAssetId = await getAssetIdForMiddleware(assetId, context);
+    const middlewareAssetId = await asAssetId(assetId, context);
 
     const paymentsPromise = context.queryMiddleware<Ensured<Query, 'distributionPayments'>>(
       distributionPaymentsQuery(

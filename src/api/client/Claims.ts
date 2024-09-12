@@ -302,17 +302,15 @@ export class Claims {
         scope: { type, value },
       } = claim as ScopedClaim;
 
-      let ticker: string | undefined;
+      let assetId: string | undefined;
 
-      /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-      // prettier-ignore
-      if (type === ScopeType.Ticker) { // NOSONAR
-        ticker = removePadding(value);
+      if (type === ScopeType.Asset) {
+        assetId = removePadding(value);
       }
 
       return {
-        scope: { type, value: ticker ?? value },
-        ticker,
+        scope: { type, value: assetId ?? value },
+        assetId,
       };
     });
 
@@ -368,7 +366,7 @@ export class Claims {
           issuedAt: momentToDate(issuanceDate),
           lastUpdatedAt: momentToDate(lastUpdateDate),
           expiry,
-          claim: meshClaimToClaim(claim, context) as CddClaim,
+          claim: meshClaimToClaim(claim) as CddClaim,
         });
       }
     });

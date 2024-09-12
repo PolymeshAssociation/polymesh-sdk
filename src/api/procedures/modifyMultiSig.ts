@@ -4,17 +4,12 @@ import BigNumber from 'bignumber.js';
 import { PolymeshError, Procedure } from '~/internal';
 import { Account, ErrorCode, ModifyMultiSigParams, Signer, TxTags } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
-import {
-  bigNumberToU64,
-  signerToSignatory,
-  signerToString,
-  stringToAccountId,
-} from '~/utils/conversion';
+import { bigNumberToU64, signerToString, stringToAccountId } from '~/utils/conversion';
 import { checkTxType } from '~/utils/internal';
 
 export interface Storage {
-  signersToAdd: Signer[];
-  signersToRemove: Signer[];
+  signersToAdd: Account[];
+  signersToRemove: Account[];
   currentSignerCount: number;
   requiredSignatures: BigNumber;
 }
@@ -23,8 +18,8 @@ export interface Storage {
  * @hidden
  */
 function calculateSignerDelta(
-  current: Signer[],
-  target?: Signer[]
+  current: Account[],
+  target?: Account[]
 ): Pick<Storage, 'signersToAdd' | 'signersToRemove'> {
   if (!target) {
     return { signersToAdd: [], signersToRemove: [] };
@@ -113,7 +108,6 @@ export async function prepareModifyMultiSig(
   const {
     context: {
       polymeshApi: { tx },
-      isV6,
     },
     storage: { signersToAdd, signersToRemove, requiredSignatures, currentSignerCount },
     context,
@@ -151,51 +145,34 @@ export async function prepareModifyMultiSig(
 
   const transactions = [];
 
-  let addSignersTx = tx.multiSig.addMultisigSignersViaAdmin;
-  let removeSignersTx = tx.multiSig.removeMultisigSignersViaAdmin;
-  let changeSigsRequiredTx = tx.multiSig.changeSigsRequiredViaAdmin;
-  type ToSignerFn = ((signer: Account) => AccountId) | ((signer: Signer) => AccountId); // v6 really uses PolymeshPrimitivesSecondaryKeySignatory
-  let toRawSignerTx: ToSignerFn = (signer: Account) => stringToAccountId(signer.address, context);
-
-  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-  if (isV6) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    addSignersTx = (tx.multiSig as any).addMultisigSignersViaCreator; // NOSONAR
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    removeSignersTx = (tx.multiSig as any).removeMultisigSignersViaCreator; // NOSONAR
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    changeSigsRequiredTx = (tx.multiSig as any).changeSigsRequiredViaCreator; // NOSONAR
-
-    toRawSignerTx = (signer: Signer): AccountId =>
-      signerToSignatory(signer, context) as unknown as AccountId;
-  }
+  const toRawSignerTx = (signer: Account): AccountId => stringToAccountId(signer.address, context);
 
   if (newRequiredSignatures) {
     const rawSignersRequired = bigNumberToU64(newRequiredSignatures, context);
 
     transactions.push(
       checkTxType({
-        transaction: changeSigsRequiredTx,
+        transaction: tx.multiSig.changeSigsRequiredViaAdmin,
         args: [rawAddress, rawSignersRequired],
       })
     );
   }
 
   if (signersToAdd.length > 0) {
-    const rawAddedSigners = signersToAdd.map(signer => toRawSignerTx(signer as Account));
+    const rawAddedSigners = signersToAdd.map(signer => toRawSignerTx(signer));
     transactions.push(
       checkTxType({
-        transaction: addSignersTx,
+        transaction: tx.multiSig.addMultisigSignersViaAdmin,
         args: [rawAddress, rawAddedSigners],
       })
     );
   }
 
   if (signersToRemove.length > 0) {
-    const rawRemovedSigners = signersToRemove.map(signer => toRawSignerTx(signer as Account));
+    const rawRemovedSigners = signersToRemove.map(signer => toRawSignerTx(signer));
     transactions.push(
       checkTxType({
-        transaction: removeSignersTx,
+        transaction: tx.multiSig.removeMultisigSignersViaAdmin,
         args: [rawAddress, rawRemovedSigners],
       })
     );

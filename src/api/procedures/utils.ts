@@ -42,7 +42,7 @@ import {
   TransactionPermissions,
   TxTag,
 } from '~/types';
-import { meshAssetToAssetId, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
+import { assetIdToString, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
 import { asIdentity, filterEventRecords } from '~/utils/internal';
 
 /**
@@ -704,7 +704,7 @@ export const createCreateGroupResolver =
     const [{ data }] = filterEventRecords(receipt, 'externalAgents', 'GroupCreated');
 
     return new CustomPermissionGroup(
-      { id: u32ToBigNumber(data[2]), assetId: meshAssetToAssetId(data[1], context) },
+      { id: u32ToBigNumber(data[2]), assetId: assetIdToString(data[1]) },
       context
     );
   };

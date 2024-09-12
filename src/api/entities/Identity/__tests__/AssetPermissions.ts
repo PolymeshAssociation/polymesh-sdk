@@ -37,7 +37,7 @@ describe('AssetPermissions class', () => {
   let context: Mocked<Context>;
   let assetPermissions: AssetPermissions;
   let identity: Identity;
-  let getAssetIdForMiddlewareSpy: jest.SpyInstance;
+  let asAssetIdSpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -50,8 +50,8 @@ describe('AssetPermissions class', () => {
     identity = entityMockUtils.getIdentityInstance({ did });
     asset = entityMockUtils.getFungibleAssetInstance({ assetId });
     assetPermissions = new AssetPermissions(identity, context);
-    getAssetIdForMiddlewareSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware');
-    when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
+    asAssetIdSpy = jest.spyOn(utilsInternalModule, 'asAssetId');
+    when(asAssetIdSpy).calledWith(assetId, context).mockResolvedValue(assetId);
   });
 
   afterEach(() => {

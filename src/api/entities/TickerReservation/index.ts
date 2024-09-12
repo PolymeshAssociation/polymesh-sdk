@@ -22,8 +22,8 @@ import {
   UnsubCallback,
 } from '~/types';
 import {
+  assetIdToString,
   identityIdToString,
-  meshAssetToAssetId,
   momentToDate,
   stringToTicker,
 } from '~/utils/conversion';
@@ -107,7 +107,6 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
         polymeshApi: {
           query: { asset },
         },
-        isV6,
       },
       ticker,
       context,
@@ -153,34 +152,22 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
       };
     };
 
-    let tokensStorage = asset.assets;
-    let tickerRegistrationStorage = asset.uniqueTickerRegistration;
-    let rawAssetId = rawTicker;
     let assetId: string | undefined;
 
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tickerRegistrationStorage = (asset as any).tickers; // NOSONAR
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tokensStorage = (asset as any).tokens; // NOSONAR
-      assetId = ticker;
-    } else {
-      const meshAssetId = await asset.tickerAssetId(rawTicker);
-      rawAssetId = meshAssetId.unwrapOrDefault();
-      if (meshAssetId.isSome) {
-        assetId = meshAssetToAssetId(meshAssetId.unwrap(), context);
-      }
+    const meshAssetId = await asset.tickerAssetId(rawTicker);
+    const rawAssetId = meshAssetId.unwrapOrDefault();
+    if (meshAssetId.isSome) {
+      assetId = assetIdToString(meshAssetId.unwrap());
     }
 
     if (callback) {
       context.assertSupportsSubscription();
 
-      return requestMulti<[typeof tickerRegistrationStorage, typeof tokensStorage]>(
+      return requestMulti<[typeof asset.uniqueTickerRegistration, typeof asset.assets]>(
         context,
         [
-          [tickerRegistrationStorage, rawTicker],
-          [tokensStorage, rawAssetId],
+          [asset.uniqueTickerRegistration, rawTicker],
+          [asset.assets, rawAssetId],
         ],
         ([registration, token]) => {
           // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
@@ -190,10 +177,10 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
     }
 
     const [tickerRegistration, meshAsset] = await requestMulti<
-      [typeof tickerRegistrationStorage, typeof tokensStorage]
+      [typeof asset.uniqueTickerRegistration, typeof asset.assets]
     >(context, [
-      [tickerRegistrationStorage, rawTicker],
-      [tokensStorage, rawAssetId],
+      [asset.uniqueTickerRegistration, rawTicker],
+      [asset.assets, rawAssetId],
     ]);
 
     return assembleResult(tickerRegistration, meshAsset, assetId);
@@ -239,19 +226,11 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
         polymeshApi: {
           query: { asset },
         },
-        isV6,
       },
       context,
     } = this;
 
-    let tickerRegistrationStorage = asset.uniqueTickerRegistration;
-
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tickerRegistrationStorage = (asset as any).tickers; // NOSONAR
-    }
-    const tickerSize = await tickerRegistrationStorage.size(stringToTicker(ticker, context));
+    const tickerSize = await asset.uniqueTickerRegistration.size(stringToTicker(ticker, context));
 
     return !tickerSize.isZero();
   }

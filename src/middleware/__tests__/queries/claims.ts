@@ -15,7 +15,7 @@ describe('claimsGroupingQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
     const variables = {
       dids: ['someDid', 'otherDid'],
-      scope: { type: ClaimScopeTypeEnum.Ticker, value: 'someScope' },
+      scope: { type: ClaimScopeTypeEnum.Asset, value: '0x1234' },
       trustedClaimIssuers: ['someTrustedClaim'],
       claimTypes: [ClaimTypeEnum.Accredited],
       includeExpired: true,
@@ -32,7 +32,7 @@ describe('claimsQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
     const variables = {
       dids: ['someDid', 'otherDid'],
-      scope: { type: ClaimScopeTypeEnum.Ticker, value: 'someScope' },
+      scope: { type: ClaimScopeTypeEnum.Asset, value: '0x1234' },
       trustedClaimIssuers: ['someTrustedClaim'],
       claimTypes: [ClaimTypeEnum.Accredited],
       includeExpired: true,

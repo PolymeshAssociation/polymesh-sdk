@@ -26,7 +26,6 @@ export async function prepareRemoveMultiSigPayer(
 > {
   const {
     context: {
-      isV6,
       polymeshApi: { tx },
     },
     storage: { currentPayer, signingIdentity, isMultiSigSigner },
@@ -34,13 +33,6 @@ export async function prepareRemoveMultiSigPayer(
   } = this;
 
   const { multiSig } = args;
-
-  if (isV6) {
-    throw new PolymeshError({
-      code: ErrorCode.General,
-      message: 'MultiSig payers are not supported on v6 chains',
-    });
-  }
 
   if (!currentPayer) {
     throw new PolymeshError({

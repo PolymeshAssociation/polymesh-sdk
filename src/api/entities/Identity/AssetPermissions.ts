@@ -37,17 +37,17 @@ import {
 import { Ensured } from '~/types/utils';
 import {
   agentGroupToPermissionGroup,
+  assetIdToString,
   assetToMeshAssetId,
   extrinsicPermissionsToTransactionPermissions,
-  meshAssetToAssetId,
   middlewareEventDetailsToEventIdentifier,
   stringToIdentityId,
 } from '~/utils/conversion';
 import {
+  asAssetId,
   asBaseAsset,
   calculateNextKey,
   createProcedureMethod,
-  getAssetIdForMiddleware,
   isModuleOrTagMatch,
   optionize,
 } from '~/utils/internal';
@@ -115,7 +115,7 @@ export class AssetPermissions extends Namespace<Identity> {
     const assetEntries = await externalAgents.agentOf.entries(rawDid);
 
     return P.map(assetEntries, async ([key]) => {
-      const assetId = meshAssetToAssetId(key.args[1], context);
+      const assetId = assetIdToString(key.args[1]);
       const asset = new FungibleAsset({ assetId }, context);
       const group = await this.getGroup({ asset });
 
@@ -183,8 +183,7 @@ export class AssetPermissions extends Namespace<Identity> {
       const groupPermissionsOption = await externalAgents.groupPermissions(rawAssetId, groupId);
 
       const permissions = extrinsicPermissionsToTransactionPermissions(
-        groupPermissionsOption.unwrap(),
-        context
+        groupPermissionsOption.unwrap()
       );
 
       if (permissions === null) {
@@ -324,7 +323,7 @@ export class AssetPermissions extends Namespace<Identity> {
   public async enabledAt({ asset }: { asset: string | Asset }): Promise<EventIdentifier | null> {
     const { context } = this;
 
-    const middlewareAssetId = await getAssetIdForMiddleware(asset, context);
+    const middlewareAssetId = await asAssetId(asset, context);
 
     const {
       data: {
@@ -379,7 +378,7 @@ export class AssetPermissions extends Namespace<Identity> {
 
     const { asset, moduleId: palletName, eventId, size, start } = opts;
 
-    const middlewareAssetId = await getAssetIdForMiddleware(asset, context);
+    const middlewareAssetId = await asAssetId(asset, context);
 
     const {
       data: {
