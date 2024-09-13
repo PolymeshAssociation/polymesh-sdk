@@ -347,6 +347,8 @@ describe('evaluateMultiSigProposal', () => {
       expect(result).toEqual({
         transaction,
         args: [rawMultiSigAccount, rawProposalId],
+        paidForBy: undefined,
+        resolver: undefined,
       });
     });
   });

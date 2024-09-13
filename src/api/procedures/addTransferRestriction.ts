@@ -136,7 +136,7 @@ export async function prepareAddTransferRestriction(
   if (exemptedIdentities.length) {
     const op = transferRestrictionTypeToStatOpType(type, context);
     const exemptedIdBtreeSet = await getExemptedBtreeSet(exemptedIdentities, context);
-    const exemptKey = toExemptKey(context, rawAssetId, op, claimType);
+    const exemptKey = toExemptKey(rawAssetId, op, claimType);
     transactions.push(
       checkTxType({
         transaction: statistics.setEntitiesExempt,

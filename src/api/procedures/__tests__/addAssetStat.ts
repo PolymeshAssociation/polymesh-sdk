@@ -28,7 +28,6 @@ import {
 } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
-import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Asset/Fungible',
@@ -96,7 +95,7 @@ describe('addAssetStat procedure', () => {
     assetId = '0x1234';
     asset = entityMockUtils.getFungibleAssetInstance({ assetId });
     count = new BigNumber(10);
-    assetToMeshAssetIdSpy = jest.spyOn(utilsInternalModule, 'assetToMeshAssetId');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     createStat2ndKeySpy = jest.spyOn(utilsConversionModule, 'createStat2ndKey');
     statisticsOpTypeToStatOpTypeSpy = jest.spyOn(
       utilsConversionModule,

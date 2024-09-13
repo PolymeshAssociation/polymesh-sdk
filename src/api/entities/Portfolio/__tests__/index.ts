@@ -749,7 +749,7 @@ describe('Portfolio class', () => {
 
       portfolio = new NonAbstract({ did }, context);
       result = await portfolio.getTransactionHistory({
-        ticker: 'SOME_TICKER',
+        assetId: 'SOME_TICKER',
       });
 
       expect(result[0].blockNumber).toEqual(blockNumber1);

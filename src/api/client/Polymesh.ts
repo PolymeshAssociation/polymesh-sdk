@@ -18,7 +18,12 @@ import {
   UnsubCallback,
 } from '~/types';
 import { signerToString } from '~/utils/conversion';
-import { createProcedureMethod, extractProtocol, warnUnexpectedSqVersion } from '~/utils/internal';
+import {
+  assertExpectedChainVersion,
+  createProcedureMethod,
+  extractProtocol,
+  warnUnexpectedSqVersion,
+} from '~/utils/internal';
 
 import { AccountManagement } from './AccountManagement';
 import { Assets } from './Assets';
@@ -146,6 +151,7 @@ export class Polymesh {
 
     const { metadata, noInitWarn, typesBundle } = polkadot ?? {};
 
+    await assertExpectedChainVersion(nodeUrl);
     try {
       const { types, rpc, signedExtensions, runtime } = schema;
 

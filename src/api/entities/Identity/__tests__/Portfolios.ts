@@ -433,7 +433,7 @@ describe('Portfolios class', () => {
       when(asAssetIdSpy).calledWith('SOME_TICKER', mockContext).mockResolvedValue('0x1234');
 
       result = await identity.portfolios.getTransactionHistory({
-        ticker: 'SOME_TICKER',
+        assetId: 'SOME_TICKER',
       });
 
       expect(result[0].blockNumber).toEqual(blockNumber1);

@@ -302,7 +302,7 @@ export async function prepareSetTransferRestrictions(
         return;
       }
       const rawClaimType = claimType === 'None' ? undefined : (claimType as ClaimType);
-      const exemptKey = toExemptKey(context, rawAssetId, op, rawClaimType);
+      const exemptKey = toExemptKey(rawAssetId, op, rawClaimType);
       const exemptedBtreeSet = identitiesToBtreeSet(exempted, context);
       const rawExempt = booleanToBool(exempt, context);
 
@@ -430,9 +430,7 @@ export async function prepareStorage(
 
   claimTypes.forEach(claimType => {
     exemptionFetchers.push(
-      statistics.transferConditionExemptEntities.entries(
-        toExemptKey(context, rawAssetId, op, claimType)
-      )
+      statistics.transferConditionExemptEntities.entries(toExemptKey(rawAssetId, op, claimType))
     );
   });
   const rawCurrentExemptions = flatten(await Promise.all(exemptionFetchers));

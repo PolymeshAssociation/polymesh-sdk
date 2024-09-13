@@ -129,7 +129,7 @@ describe('setTransferRestrictions procedure', () => {
       utilsConversionModule,
       'transferRestrictionToPolymeshTransferCondition'
     );
-    assetToMeshAssetIdSpy = jest.spyOn(utilsInternalModule, 'assetToMeshAssetId');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
     identitiesToBtreeSetSpy = jest.spyOn(utilsConversionModule, 'identitiesToBtreeSet');
     transferRestrictionTypeToStatOpTypeSpy = jest.spyOn(

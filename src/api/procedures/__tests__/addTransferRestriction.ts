@@ -32,7 +32,6 @@ import {
 } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
-import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Asset/Fungible',
@@ -165,7 +164,7 @@ describe('addTransferRestriction procedure', () => {
       utilsConversionModule,
       'transferRestrictionToPolymeshTransferCondition'
     );
-    assetToMeshAssetIdSpy = jest.spyOn(utilsInternalModule, 'assetToMeshAssetId');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     transferConditionsToBtreeTransferConditionsSpy = jest.spyOn(
       utilsConversionModule,
       'transferConditionsToBtreeTransferConditions'

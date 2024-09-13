@@ -255,7 +255,6 @@ import {
   VenueType,
 } from '~/types';
 import {
-  AssetIdKey,
   CorporateActionIdentifier,
   ExemptKey,
   ExtrinsicIdentifier,
@@ -268,7 +267,6 @@ import {
   PolymeshTx,
   StatClaimInputType,
   StatClaimIssuer,
-  TickerKey,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
@@ -365,20 +363,6 @@ export function stringToAssetId(assetId: string, context: Context): PolymeshPrim
 /**
  * @hidden
  */
-export function stringToTickerKey(ticker: string, context: Context): TickerKey {
-  return { Ticker: stringToTicker(ticker, context) };
-}
-
-/**
- * @hidden
- */
-export function stringToAssetIdKey(assetId: string, context: Context): AssetIdKey {
-  return { AssetId: stringToAssetId(assetId, context) };
-}
-
-/**
- * @hidden
- */
 export function tickerToString(ticker: PolymeshPrimitivesTicker): string {
   return removePadding(u8aToString(ticker));
 }
@@ -393,32 +377,11 @@ export function assetIdToString(assetId: PolymeshPrimitivesAssetAssetID): string
 /**
  * @hidden
  */
-export function assetToMeshAssetIdKey(value: string, context: Context): TickerKey | AssetIdKey {
-  return stringToAssetIdKey(value, context);
-}
-
-/**
- * @hidden
- */
 export function assetToMeshAssetId(
   { id }: BaseAsset,
   context: Context
-): PolymeshPrimitivesAssetAssetID | PolymeshPrimitivesTicker {
+): PolymeshPrimitivesAssetAssetID {
   return stringToAssetId(id, context);
-}
-
-/**
- * @hidden
- */
-export function assetToMeshAssetIdWithKey(
-  { id }: BaseAsset,
-  context: Context
-): {
-  assetId: PolymeshPrimitivesAssetAssetID;
-} {
-  return {
-    assetId: stringToAssetId(id, context),
-  };
 }
 
 /**
@@ -3257,13 +3220,13 @@ export function toIdentityWithClaimsArray(
  * @hidden
  */
 export function nftToMeshNft(
-  assetArgs: BaseAsset,
+  { id }: BaseAsset,
   nfts: (Nft | BigNumber)[],
   context: Context
 ): PolymeshPrimitivesNftNfTs {
   return context.createType('PolymeshPrimitivesNftNfTs', {
-    ...assetToMeshAssetIdWithKey(assetArgs, context),
-    ids: nfts.map(id => bigNumberToU64(asNftId(id), context)),
+    assetId: stringToAssetId(id, context),
+    ids: nfts.map(nft => bigNumberToU64(asNftId(nft), context)),
   });
 }
 
@@ -3276,13 +3239,13 @@ export async function fungibleMovementToPortfolioFund(
 ): Promise<PolymeshPrimitivesPortfolioFund> {
   const { asset, amount, memo } = portfolioItem;
 
-  const baseAsset = await asBaseAsset(asset, context);
+  const assetId = await asAssetId(asset, context);
 
   return context.createType('PolymeshPrimitivesPortfolioFund', {
     description: {
       Fungible: {
         amount: bigNumberToBalance(amount, context),
-        ...assetToMeshAssetIdWithKey(baseAsset, context),
+        assetId: stringToAssetId(assetId, context),
       },
     },
     memo: optionize(stringToMemo)(memo, context),
@@ -3298,12 +3261,12 @@ export async function nftMovementToPortfolioFund(
 ): Promise<PolymeshPrimitivesPortfolioFund> {
   const { asset, nfts, memo } = portfolioItem;
 
-  const baseAsset = await asBaseAsset(asset, context);
+  const assetId = await asAssetId(asset, context);
 
   return context.createType('PolymeshPrimitivesPortfolioFund', {
     description: {
       NonFungible: {
-        ...assetToMeshAssetIdWithKey(baseAsset, context),
+        assetId: stringToAssetId(assetId, context),
         ids: nfts.map(nftId => bigNumberToU64(asNftId(nftId), context)),
       },
     },
@@ -4050,9 +4013,12 @@ export function corporateActionIdentifierToCaId(
   corporateActionIdentifier: CorporateActionIdentifier,
   context: Context
 ): PalletCorporateActionsCaId {
-  const { asset, localId } = corporateActionIdentifier;
+  const {
+    asset: { id: assetId },
+    localId,
+  } = corporateActionIdentifier;
   return context.createType('PalletCorporateActionsCaId', {
-    ...assetToMeshAssetIdWithKey(asset, context),
+    assetId: stringToAssetId(assetId, context),
     localId: bigNumberToU32(localId, context),
   });
 }
@@ -4074,7 +4040,7 @@ export function corporateActionParamsToMeshCorporateActionArgs(
   context: Context
 ): PalletCorporateActionsInitiateCorporateActionArgs {
   const {
-    asset,
+    asset: { id: assetId },
     kind,
     declarationDate,
     checkpoint,
@@ -4096,7 +4062,7 @@ export function corporateActionParamsToMeshCorporateActionArgs(
   );
 
   return context.createType('PalletCorporateActionsInitiateCorporateActionArgs', {
-    ...assetToMeshAssetIdWithKey(asset, context),
+    assetId: stringToAssetId(assetId, context),
     kind: rawKind,
     declDate: rawDeclDate,
     recordDate: rawRecordDate,
@@ -4345,8 +4311,7 @@ export function complianceConditionsToBtreeSet(
  * @hidden
  */
 export function toExemptKey(
-  context: Context,
-  rawAssetId: TickerKey | PolymeshPrimitivesAssetAssetID,
+  rawAssetId: PolymeshPrimitivesAssetAssetID,
   op: PolymeshPrimitivesStatisticsStatOpType,
   claimType?: ClaimType
 ): ExemptKey {

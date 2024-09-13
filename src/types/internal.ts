@@ -336,14 +336,6 @@ export type PermissionGroupIdentifier = PermissionGroupType | { custom: BigNumbe
 export type InternalNftType = KnownNftType | { Custom: u32 };
 export type InternalAssetType = KnownAssetType | { Custom: u32 } | { NonFungible: InternalNftType };
 
-export interface TickerKey {
-  Ticker: PolymeshPrimitivesTicker;
-}
-
-export interface AssetIdKey {
-  AssetId: PolymeshPrimitivesAssetAssetID;
-}
-
 /**
  * Infer Procedure parameters parameters from a Procedure function
  */
@@ -353,14 +345,8 @@ export type ProcedureParams<ProcedureFunction extends (...args: unknown[]) => un
 export type ExemptKey = {
   op: PolymeshPrimitivesStatisticsStatOpType;
   claimType?: ClaimType;
-} & (
-  | {
-      asset: TickerKey;
-    }
-  | {
-      assetId: PolymeshPrimitivesAssetAssetID;
-    }
-);
+  assetId: PolymeshPrimitivesAssetAssetID;
+};
 
 export type StatClaimInputType = Omit<InputStatClaim, 'affiliate' | 'accredited'>;
 

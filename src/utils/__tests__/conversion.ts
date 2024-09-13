@@ -197,8 +197,6 @@ import {
   assetIdentifierToSecurityIdentifier,
   assetIdToString,
   assetToMeshAssetId,
-  assetToMeshAssetIdKey,
-  assetToMeshAssetIdWithKey,
   assetTypeToKnownOrId,
   authorizationDataToAuthorization,
   authorizationToAuthorizationData,
@@ -334,7 +332,6 @@ import {
   statUpdatesToBtreeStatUpdate,
   stringToAccountId,
   stringToAssetId,
-  stringToAssetIdKey,
   stringToBlockHash,
   stringToBytes,
   stringToCddId,
@@ -344,7 +341,6 @@ import {
   stringToMemo,
   stringToText,
   stringToTicker,
-  stringToTickerKey,
   stringToU8aFixed,
   targetIdentitiesToCorporateActionTargets,
   targetsToTargetIdentities,
@@ -531,14 +527,13 @@ describe('fungibleMovementToPortfolioFund', () => {
     const assetId = '0x1234';
     const amount = new BigNumber(100);
     const memo = 'someMessage';
-    const asset = entityMockUtils.getBaseAssetInstance({ assetId });
     const rawAssetId = dsMockUtils.createMockAssetId(assetId);
     const rawAmount = dsMockUtils.createMockBalance(amount);
     const rawMemo = 'memo' as unknown as PolymeshPrimitivesMemo;
     const fakeResult =
       'PolymeshPrimitivesPortfolioFund' as unknown as PolymeshPrimitivesPortfolioFund;
 
-    jest.spyOn(utilsInternalModule, 'asBaseAsset').mockResolvedValue(asset);
+    jest.spyOn(utilsInternalModule, 'asAssetId').mockResolvedValue(assetId);
     let portfolioMovement: PortfolioMovement = {
       asset: assetId,
       amount,
@@ -632,7 +627,7 @@ describe('nftMovementToPortfolioFund', () => {
     const fakeResult =
       'PolymeshPrimitivesPortfolioFund' as unknown as PolymeshPrimitivesPortfolioFund;
 
-    jest.spyOn(utilsInternalModule, 'asBaseAsset').mockResolvedValue(asset);
+    jest.spyOn(utilsInternalModule, 'asAssetId').mockResolvedValue(assetId);
     let portfolioMovement: NonFungiblePortfolioMovement = {
       asset: assetId,
       nfts: [id],
@@ -752,33 +747,6 @@ describe('stringToTicker and tickerToString', () => {
     });
   });
 
-  describe('stringToTickerKey', () => {
-    beforeAll(() => {
-      dsMockUtils.initMocks();
-    });
-
-    afterEach(() => {
-      dsMockUtils.reset();
-    });
-
-    afterAll(() => {
-      dsMockUtils.cleanup();
-    });
-
-    it('should call stringToTicker and return the result as an object', () => {
-      const value = 'SOME_TICKER';
-      const fakeResult = 'convertedTicker' as unknown as PolymeshPrimitivesTicker;
-      const context = dsMockUtils.getContextInstance();
-
-      when(context.createType)
-        .calledWith('PolymeshPrimitivesTicker', padString(value, 12))
-        .mockReturnValue(fakeResult);
-
-      const result = stringToTickerKey(value, context);
-      expect(result).toEqual({ Ticker: fakeResult });
-    });
-  });
-
   describe('tickerToString', () => {
     it('should convert a polkadot Ticker object to a string', () => {
       const fakeResult = 'SOME_TICKER';
@@ -790,7 +758,7 @@ describe('stringToTicker and tickerToString', () => {
   });
 });
 
-describe('stringToAssetId, stringToAssetIdKey and assetIdToString', () => {
+describe('stringToAssetId and assetIdToString', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -820,33 +788,6 @@ describe('stringToAssetId, stringToAssetIdKey and assetIdToString', () => {
     });
   });
 
-  describe('stringToAssetIdKey', () => {
-    beforeAll(() => {
-      dsMockUtils.initMocks();
-    });
-
-    afterEach(() => {
-      dsMockUtils.reset();
-    });
-
-    afterAll(() => {
-      dsMockUtils.cleanup();
-    });
-
-    it('should call stringToAssetIdKey and return the result as an object', () => {
-      const value = '0x1234';
-      const fakeResult = '0x1234' as unknown as PolymeshPrimitivesAssetAssetID;
-      const context = dsMockUtils.getContextInstance();
-
-      when(context.createType)
-        .calledWith('PolymeshPrimitivesAssetAssetID', value)
-        .mockReturnValue(fakeResult);
-
-      const result = stringToAssetIdKey(value, context);
-      expect(result).toEqual({ AssetId: fakeResult });
-    });
-  });
-
   describe('stringToAssetId', () => {
     it('should convert a polkadot AssetId object to a string', () => {
       const fakeResult = '0x1234';
@@ -858,7 +799,7 @@ describe('stringToAssetId, stringToAssetIdKey and assetIdToString', () => {
   });
 });
 
-describe('assetIdToString, assetToMeshAssetIdKey and assetToMeshAssetId', () => {
+describe('assetIdToString and assetToMeshAssetId', () => {
   let context: Context;
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -886,20 +827,6 @@ describe('assetIdToString, assetToMeshAssetIdKey and assetToMeshAssetId', () => 
     });
   });
 
-  describe('assetToMeshAssetIdKey', () => {
-    it('should call assetToMeshAssetIdKey and return the result as an object', () => {
-      const value = '0x1234';
-      const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesAssetAssetID;
-
-      when(context.createType)
-        .calledWith('PolymeshPrimitivesAssetAssetID', value)
-        .mockReturnValue(fakeResult);
-
-      const result = assetToMeshAssetIdKey(value, context);
-      expect(result).toEqual({ AssetId: fakeResult });
-    });
-  });
-
   describe('assetToMeshAssetId', () => {
     it('should call assetToMeshAssetId and return the result', () => {
       const value = '0x1234';
@@ -914,23 +841,6 @@ describe('assetIdToString, assetToMeshAssetIdKey and assetToMeshAssetId', () => 
         context
       );
       expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('assetToMeshAssetId', () => {
-    it('should call assetToMeshAssetIdWithKey and return the result', () => {
-      const value = '0x1234';
-      const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesAssetAssetID;
-
-      when(context.createType)
-        .calledWith('PolymeshPrimitivesAssetAssetID', value)
-        .mockReturnValue(fakeResult);
-
-      const result = assetToMeshAssetIdWithKey(
-        entityMockUtils.getBaseAssetInstance({ assetId: value }),
-        context
-      );
-      expect(result).toEqual({ assetId: fakeResult });
     });
   });
 });
@@ -10661,9 +10571,9 @@ describe('meshNftToNftId', () => {
     dsMockUtils.cleanup();
   });
   it('should convert a set of NFTs', () => {
-    let assetId = '0x1234';
+    const assetId = '0x1234';
 
-    let mockNft = dsMockUtils.createMockNfts({
+    const mockNft = dsMockUtils.createMockNfts({
       assetId: dsMockUtils.createMockAssetId(assetId),
       ids: [
         dsMockUtils.createMockU64(new BigNumber(1)),
@@ -10671,26 +10581,7 @@ describe('meshNftToNftId', () => {
       ],
     });
 
-    let result = meshNftToNftId(mockNft);
-
-    expect(result).toEqual({
-      assetId,
-      ids: [new BigNumber(1), new BigNumber(2)],
-    });
-
-    assetId = 'SOME_TICKER';
-    mockNft = dsMockUtils.createMockCodec(
-      {
-        ticker: dsMockUtils.createMockTicker(assetId),
-        ids: [
-          dsMockUtils.createMockU64(new BigNumber(1)),
-          dsMockUtils.createMockU64(new BigNumber(2)),
-        ],
-      },
-      false
-    );
-
-    result = meshNftToNftId(mockNft);
+    const result = meshNftToNftId(mockNft);
 
     expect(result).toEqual({
       assetId,

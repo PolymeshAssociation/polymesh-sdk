@@ -42,7 +42,6 @@ import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import { isFungibleLegBuilder, isNftLegBuilder, isOffChainLeg } from '~/utils';
 import { MAX_LEGS_LENGTH } from '~/utils/constants';
 import {
-  assetToMeshAssetIdWithKey,
   bigNumberToBalance,
   bigNumberToU64,
   dateToMoment,
@@ -55,6 +54,7 @@ import {
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
+  stringToAssetId,
   stringToIdentityId,
   stringToMemo,
   stringToTicker,
@@ -409,12 +409,12 @@ async function getTxArgsAndErrors(
           const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromId, context);
           const rawToPortfolio = portfolioIdToMeshPortfolioId(toId, context);
 
-          const baseAsset = await asBaseAsset(asset, context);
+          const assetId = await asAssetId(asset, context);
           const rawLeg = legToFungibleLeg(
             {
               sender: rawFromPortfolio,
               receiver: rawToPortfolio,
-              ...assetToMeshAssetIdWithKey(baseAsset, context),
+              assetId: stringToAssetId(assetId, context),
               amount: bigNumberToBalance(amount, context),
             },
             context

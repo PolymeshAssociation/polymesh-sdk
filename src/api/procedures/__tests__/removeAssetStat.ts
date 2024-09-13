@@ -26,7 +26,6 @@ import {
 } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
-import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Asset/Fungible',
@@ -113,7 +112,7 @@ describe('removeAssetStat procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
     assetId = '0x1234';
     asset = entityMockUtils.getFungibleAssetInstance({ assetId });
-    assetToMeshAssetIdSpy = jest.spyOn(utilsInternalModule, 'assetToMeshAssetId');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     createStat2ndKeySpy = jest.spyOn(utilsConversionModule, 'createStat2ndKey');
     statUpdatesToBtreeStatUpdateSpy = jest.spyOn(
       utilsConversionModule,
