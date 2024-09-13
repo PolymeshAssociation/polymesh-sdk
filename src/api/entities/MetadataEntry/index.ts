@@ -31,10 +31,6 @@ export interface UniqueIdentifiers {
 
 export interface HumanReadable {
   id: string;
-  /**
-   * @deprecated in favour of `assetId`
-   */
-  ticker: string;
   assetId: string;
   type: MetadataType;
 }
@@ -302,7 +298,6 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
     const { asset, id, type } = this;
 
     return toHumanReadable({
-      ticker: asset,
       assetId: asset,
       id,
       type,

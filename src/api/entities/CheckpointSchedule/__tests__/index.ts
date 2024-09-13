@@ -249,7 +249,6 @@ describe('CheckpointSchedule class', () => {
       expect(schedule.toHuman()).toEqual({
         id: '1',
         assetId: '0x1234',
-        ticker: '0x1234',
         pendingPoints: ['1987-10-14T00:00:00.000Z'],
         expiryDate: schedule.expiryDate?.toISOString(),
       });

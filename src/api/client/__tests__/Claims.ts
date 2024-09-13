@@ -536,7 +536,6 @@ describe('Claims Class', () => {
 
       let result = await claims.getClaimScopes({ target });
 
-      expect(result[0].ticker).toBeUndefined();
       expect(result[0].scope).toEqual({ type: ScopeType.Identity, value: someDid });
 
       result = await claims.getClaimScopes();

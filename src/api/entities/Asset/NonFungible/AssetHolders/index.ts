@@ -5,7 +5,7 @@ import { nftCollectionHolders } from '~/middleware/queries/assets';
 import { Query } from '~/middleware/types';
 import { IdentityHeldNfts, NftCollection, ResultSet } from '~/types';
 import { Ensured } from '~/types/utils';
-import { calculateNextKey, getAssetIdForMiddleware } from '~/utils/internal';
+import { asAssetId, calculateNextKey } from '~/utils/internal';
 
 /**
  * Handles all NFT Holders related functionality
@@ -27,7 +27,7 @@ export class AssetHolders extends Namespace<NftCollection> {
 
     const { size, start } = opts;
 
-    const middlewareAssetId = await getAssetIdForMiddleware(assetId, context);
+    const middlewareAssetId = await asAssetId(assetId, context);
 
     const {
       data: {

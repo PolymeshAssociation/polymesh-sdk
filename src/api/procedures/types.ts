@@ -1630,9 +1630,9 @@ export interface ModifyMultiSigParams {
    */
   multiSig: MultiSig;
   /**
-   * The signers to set for the MultiSig
+   * The signer accounts to set for the MultiSig
    */
-  signers?: Signer[];
+  signers?: Account[];
   /**
    * The required number of signatures for the MultiSig
    */

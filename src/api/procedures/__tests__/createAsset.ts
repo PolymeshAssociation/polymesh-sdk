@@ -40,7 +40,7 @@ import {
   TickerReservationStatus,
   TxTags,
 } from '~/types';
-import { InternalAssetType, InternalNftType, PolymeshTx, TickerKey } from '~/types/internal';
+import { InternalAssetType, InternalNftType, PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -63,7 +63,6 @@ describe('createAsset procedure', () => {
   let nameToAssetNameSpy: jest.SpyInstance<Bytes, [string, Context]>;
   let fundingRoundToAssetFundingRoundSpy: jest.SpyInstance<Bytes, [string, Context]>;
   let booleanToBoolSpy: jest.SpyInstance<bool, [boolean, Context]>;
-  let stringToTickerKeySpy: jest.SpyInstance<TickerKey, [string, Context]>;
   let statisticStatTypesToBtreeStatTypeSpy: jest.SpyInstance<
     BTreeSet<PolymeshPrimitivesStatisticsStatType>,
     [PolymeshPrimitivesStatisticsStatType[], Context]
@@ -132,7 +131,6 @@ describe('createAsset procedure', () => {
       'fundingRoundToAssetFundingRound'
     );
     booleanToBoolSpy = jest.spyOn(utilsConversionModule, 'booleanToBool');
-    stringToTickerKeySpy = jest.spyOn(utilsConversionModule, 'stringToTickerKey');
     stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
     statisticStatTypesToBtreeStatTypeSpy = jest.spyOn(
       utilsConversionModule,
@@ -237,9 +235,6 @@ describe('createAsset procedure', () => {
       .mockReturnValue(rawInitialSupply);
     when(nameToAssetNameSpy).calledWith(name, mockContext).mockReturnValue(rawName);
     when(booleanToBoolSpy).calledWith(isDivisible, mockContext).mockReturnValue(rawIsDivisible);
-    when(stringToTickerKeySpy)
-      .calledWith(ticker, mockContext)
-      .mockReturnValue({ Ticker: rawTicker });
     when(internalAssetTypeToAssetTypeSpy)
       .calledWith(assetType as KnownAssetType, mockContext)
       .mockReturnValue(rawType);

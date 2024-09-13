@@ -29,14 +29,10 @@ import {
   addressToKey,
   identityIdToString,
   meshProposalStateToProposalStatus,
-  meshProposalStatusToProposalStatus, // NOSONAR
-  momentToDate,
-  signatoryToSignerValue,
-  signerValueToSigner,
   stringToAccountId,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { calculateNextKey, createProcedureMethod, optionize } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod } from '~/utils/internal';
 
 /**
  * Represents a MultiSig Account. A MultiSig Account is composed of one or more signing Accounts. In order to submit a transaction, a specific amount of those signing Accounts must approve it first
@@ -75,7 +71,6 @@ export class MultiSig extends Account {
         polymeshApi: {
           query: { multiSig },
         },
-        isV6,
       },
       context,
       address,
@@ -92,11 +87,6 @@ export class MultiSig extends Account {
           args: [, signatory],
         },
       ]) => {
-        /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-        if (isV6) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return signerValueToSigner(signatoryToSignerValue(signatory as any), context); // NOSONAR
-        }
         const signerAddress = accountIdToString(signatory);
         return new Account({ address: signerAddress }, context);
       }
@@ -137,7 +127,6 @@ export class MultiSig extends Account {
         polymeshApi: {
           query: { multiSig },
         },
-        isV6,
       },
       context,
       address,
@@ -166,20 +155,6 @@ export class MultiSig extends Account {
         return [rawKey, rawId];
       }
     );
-
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const details: any[] = await (multiSig as any).proposalDetail.multi(queries); // NOSONAR
-
-      const statuses = details.map(({ status: rawStatus, expiry: rawExpiry }) => {
-        const expiry = optionize(momentToDate)(rawExpiry.unwrapOr(null));
-
-        return meshProposalStatusToProposalStatus(rawStatus, expiry); // NOSONAR
-      });
-
-      return proposals.filter((_, index) => statuses[index] === ProposalStatus.Active);
-    }
 
     const details = await multiSig.proposalStates.multi(queries);
 
@@ -239,16 +214,10 @@ export class MultiSig extends Account {
         polymeshApi: {
           query: { multiSig },
         },
-        isV6,
       },
       context,
       address,
     } = this;
-
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      return this.getCreator(); // NOSONAR
-    }
 
     const rawAddress = addressToKey(address, context);
     const rawAdminDid = await multiSig.adminDid(rawAddress);
@@ -270,16 +239,10 @@ export class MultiSig extends Account {
         polymeshApi: {
           query: { multiSig },
         },
-        isV6,
       },
       context,
       address,
     } = this;
-
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      return this.getCreator(); // NOSONAR
-    }
 
     const rawAddress = addressToKey(address, context);
     const rawPayingDid = await multiSig.payingDid(rawAddress);
@@ -290,52 +253,6 @@ export class MultiSig extends Account {
     const did = identityIdToString(rawPayingDid.unwrap());
 
     return new Identity({ did }, context);
-  }
-
-  /**
-   * Returns the Identity of the MultiSig creator. This Identity can add or remove signers directly without creating a MultiSigProposal first.
-   *
-   * @deprecated use `getAdmin` or `getPayer` instead depending on your need
-   */
-  public async getCreator(): Promise<Identity> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { multiSig },
-        },
-        isV6,
-      },
-      context,
-      address,
-    } = this;
-
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      const rawAddress = addressToKey(address, context);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const rawAdminDid = await (multiSig as any).multiSigToIdentity(rawAddress); // NOSONAR
-      if (rawAdminDid.isNone) {
-        throw new PolymeshError({
-          code: ErrorCode.DataUnavailable,
-          message: 'No creator was found for this MultiSig address',
-        });
-      }
-
-      const did = identityIdToString(rawAdminDid.unwrap());
-
-      return new Identity({ did }, context);
-    } else {
-      const admin = await this.getAdmin();
-
-      if (admin === null) {
-        throw new PolymeshError({
-          code: ErrorCode.DataUnavailable,
-          message: 'No creator was found for this MultiSig address',
-        });
-      }
-
-      return admin;
-    }
   }
 
   /**

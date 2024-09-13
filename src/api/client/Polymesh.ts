@@ -151,13 +151,10 @@ export class Polymesh {
 
     const { metadata, noInitWarn, typesBundle } = polkadot ?? {};
 
-    const specVersion = await assertExpectedChainVersion(nodeUrl);
-
+    await assertExpectedChainVersion(nodeUrl);
     try {
-      const { types, rpc, signedExtensions, runtime, runtimeV6 } = schema;
+      const { types, rpc, signedExtensions, runtime } = schema;
 
-      /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
-      const runtimeApis = specVersion >= 7000000 ? runtime : runtimeV6;
       const connectionProtocol = extractProtocol(nodeUrl)!;
 
       const provider = connectionProtocol.startsWith('http')
@@ -168,7 +165,7 @@ export class Polymesh {
         provider,
         types,
         rpc,
-        runtime: runtimeApis,
+        runtime,
         signedExtensions,
         metadata,
         noInitWarn,

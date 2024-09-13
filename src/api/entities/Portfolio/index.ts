@@ -26,9 +26,9 @@ import {
 } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
+  assetIdToString,
   balanceToBigNumber,
   identityIdToString,
-  meshAssetToAssetId,
   portfolioIdToMeshPortfolioId,
   toHistoricalSettlements,
   u64ToBigNumber,
@@ -37,7 +37,6 @@ import {
   asAssetId,
   asFungibleAsset,
   createProcedureMethod,
-  getAssetIdForMiddleware,
   getIdentity,
   toHumanReadable,
 } from '~/utils/internal';
@@ -170,7 +169,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     const assetBalances: Record<string, PortfolioBalance> = {};
 
     totalBalanceEntries.forEach(([key, balance]) => {
-      const assetId = meshAssetToAssetId(key.args[1], context);
+      const assetId = assetIdToString(key.args[1]);
       const total = balanceToBigNumber(balance);
 
       assetBalances[assetId] = {
@@ -182,7 +181,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     });
 
     lockedBalanceEntries.forEach(([key, balance]) => {
-      const assetId = meshAssetToAssetId(key.args[1], context);
+      const assetId = assetIdToString(key.args[1]);
       const locked = balanceToBigNumber(balance);
 
       if (!locked.isZero()) {
@@ -266,7 +265,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
         },
       ] = entry;
 
-      const assetId = meshAssetToAssetId(rawAssetId, context);
+      const assetId = assetIdToString(rawAssetId);
       const heldId = u64ToBigNumber(rawNftId);
 
       if (queriedCollections && !queriedCollections.includes(assetId)) {
@@ -396,10 +395,6 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
   public async getTransactionHistory(
     filters: {
       account?: string;
-      /**
-       * @deprecated in favour of assetId
-       */
-      ticker?: string;
       assetId?: string;
     } = {}
   ): Promise<HistoricSettlement[]> {
@@ -409,13 +404,11 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       _id: portfolioId,
     } = this;
 
-    const { account, ticker, assetId } = filters; // NOSONAR
+    const { account, assetId } = filters; // NOSONAR
 
     let middlewareAssetId;
-    const assetIdValue = assetId ?? ticker;
-
-    if (assetIdValue) {
-      middlewareAssetId = await getAssetIdForMiddleware(assetIdValue, context);
+    if (assetId) {
+      middlewareAssetId = await asAssetId(assetId, context);
     }
 
     const settlementsPromise = context.queryMiddleware<Ensured<Query, 'legs'>>(

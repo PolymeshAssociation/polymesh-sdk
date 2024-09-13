@@ -226,29 +226,6 @@ describe('Portfolios class', () => {
     });
 
     it('should return a list of transactions', async () => {
-      const getAssetIdFromMiddlewareSpy = jest.spyOn(
-        utilsInternalModule,
-        'getAssetIdFromMiddleware'
-      );
-      when(getAssetIdFromMiddlewareSpy)
-        .calledWith(
-          {
-            id: assetId1,
-            ticker: ticker1,
-          },
-          mockContext
-        )
-        .mockReturnValue(assetId1);
-      when(getAssetIdFromMiddlewareSpy)
-        .calledWith(
-          {
-            id: assetId2,
-            ticker: ticker2,
-          },
-          mockContext
-        )
-        .mockReturnValue(assetId2);
-
       const legs1 = [
         {
           legType: LegTypeEnum.Fungible,
@@ -378,10 +355,8 @@ describe('Portfolios class', () => {
         },
       ]);
 
-      const getAssetIdForMiddlewareSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware');
-      when(getAssetIdForMiddlewareSpy)
-        .calledWith('0x1234', mockContext)
-        .mockResolvedValue('0x1234');
+      const asAssetIdSpy = jest.spyOn(utilsInternalModule, 'asAssetId');
+      when(asAssetIdSpy).calledWith('0x1234', mockContext).mockResolvedValue('0x1234');
 
       let result = await identity.portfolios.getTransactionHistory({
         account,
@@ -455,12 +430,10 @@ describe('Portfolios class', () => {
         },
       ]);
 
-      when(getAssetIdForMiddlewareSpy)
-        .calledWith('SOME_TICKER', mockContext)
-        .mockResolvedValue('0x1234');
+      when(asAssetIdSpy).calledWith('SOME_TICKER', mockContext).mockResolvedValue('0x1234');
 
       result = await identity.portfolios.getTransactionHistory({
-        ticker: 'SOME_TICKER',
+        assetId: 'SOME_TICKER',
       });
 
       expect(result[0].blockNumber).toEqual(blockNumber1);

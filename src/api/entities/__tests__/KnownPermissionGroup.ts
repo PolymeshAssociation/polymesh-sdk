@@ -69,7 +69,6 @@ describe('KnownPermissionGroup class', () => {
       expect(knownPermissionGroup.toHuman()).toEqual({
         type,
         assetId,
-        ticker: assetId,
       });
     });
   });
