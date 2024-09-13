@@ -333,7 +333,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     return {
       status,
-      createdAt: createdAt.isSome ? momentToDate(createdAt.unwrap()) : null,
+      createdAt: momentToDate(createdAt.unwrap()),
       tradeDate: tradeDate.isSome ? momentToDate(tradeDate.unwrap()) : null,
       valueDate: valueDate.isSome ? momentToDate(valueDate.unwrap()) : null,
       venue: venueId.isSome ? new Venue({ id: u64ToBigNumber(venueId.unwrap()) }, context) : null,

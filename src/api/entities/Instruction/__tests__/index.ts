@@ -411,7 +411,6 @@ describe('Instruction class', () => {
       queryMultiMock.mockResolvedValueOnce([
         dsMockUtils.createMockInstruction({
           ...rawInstructionDetails,
-          createdAt: dsMockUtils.createMockOption(),
           tradeDate: dsMockUtils.createMockOption(),
           valueDate: dsMockUtils.createMockOption(),
           settlementType: rawSettlementType,
@@ -424,7 +423,7 @@ describe('Instruction class', () => {
 
       expect(result).toMatchObject({
         status,
-        createdAt: null,
+        createdAt,
         tradeDate: null,
         valueDate: null,
         type,

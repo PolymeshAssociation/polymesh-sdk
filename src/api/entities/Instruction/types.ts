@@ -39,7 +39,7 @@ export type InstructionEndCondition =
 
 export type InstructionDetails = {
   status: InstructionStatus;
-  createdAt: Date | null;
+  createdAt: Date;
   /**
    * Date at which the trade was agreed upon (optional, for offchain trades)
    */
