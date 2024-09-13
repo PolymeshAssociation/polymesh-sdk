@@ -152,11 +152,10 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
       };
     };
 
-    let rawAssetId = rawTicker;
     let assetId: string | undefined;
 
     const meshAssetId = await asset.tickerAssetID(rawTicker);
-    rawAssetId = meshAssetId.unwrapOrDefault();
+    const rawAssetId = meshAssetId.unwrapOrDefault();
     if (meshAssetId.isSome) {
       assetId = assetIdToString(meshAssetId.unwrap());
     }

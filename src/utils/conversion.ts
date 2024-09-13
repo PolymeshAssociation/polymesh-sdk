@@ -4315,7 +4315,7 @@ export function toExemptKey(
   op: PolymeshPrimitivesStatisticsStatOpType,
   claimType?: ClaimType
 ): ExemptKey {
-  return { assetId: rawAssetId as PolymeshPrimitivesAssetAssetID, op, claimType };
+  return { assetId: rawAssetId, op, claimType };
 }
 
 /**
