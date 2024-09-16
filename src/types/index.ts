@@ -28,4 +28,4 @@ export {
 export { ClaimScopeTypeEnum, MiddlewareScope, SettlementDirectionEnum } from '~/middleware/typesV1';
 export { CountryCode, ModuleName, TxTag, TxTags };
 
-export type SettlementResultEnum = InstructionStatusEnum;
+export { InstructionStatusEnum as SettlementResultEnum };
