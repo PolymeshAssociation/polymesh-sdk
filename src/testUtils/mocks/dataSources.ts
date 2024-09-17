@@ -2309,12 +2309,12 @@ export const createMockNftType = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockTickerRegistrationConfig = (regConfig?: {
-  max_ticker_length: u8;
-  registration_length: Option<Moment>;
+  maxTickerLength: u8;
+  registrationLength: Option<Moment>;
 }): MockCodec<PalletAssetTickerRegistrationConfig> => {
   const config = regConfig ?? {
-    max_ticker_length: createMockU8(),
-    registration_length: createMockOption(),
+    maxTickerLength: createMockU8(),
+    registrationLength: createMockOption(),
   };
   return createMockCodec({ ...config }, !regConfig);
 };
@@ -2351,7 +2351,7 @@ export const createMockDocument = (document?: {
 }): MockCodec<PolymeshPrimitivesDocument> => {
   const doc = document ?? {
     uri: createMockBytes(),
-    content_hash: createMockDocumentHash(),
+    contentHash: createMockDocumentHash(),
     name: createMockBytes(),
     docType: createMockOption(),
     filingDate: createMockOption(),
@@ -3590,35 +3590,35 @@ export const createMockCAKind = (
  */
 export const createMockCorporateAction = (corporateAction?: {
   kind: PalletCorporateActionsCaKind | Parameters<typeof createMockCAKind>[0];
-  decl_date: Moment | Parameters<typeof createMockMoment>[0];
-  record_date: Option<PalletCorporateActionsRecordDate> | Parameters<typeof createMockOption>[0];
+  declDate: Moment | Parameters<typeof createMockMoment>[0];
+  recordDate: Option<PalletCorporateActionsRecordDate> | Parameters<typeof createMockOption>[0];
   targets:
     | PalletCorporateActionsTargetIdentities
     | Parameters<typeof createMockTargetIdentities>[0];
-  default_withholding_tax: Permill | Parameters<typeof createMockPermill>[0];
-  withholding_tax: [
+  defaultWithholdingTax: Permill | Parameters<typeof createMockPermill>[0];
+  withholdingTax: [
     PolymeshPrimitivesIdentityId | Parameters<typeof createMockIdentityId>[0],
     Permill | Parameters<typeof createMockPermill>[0]
   ][];
 }): MockCodec<PalletCorporateActionsCorporateAction> => {
-  const { kind, decl_date, record_date, targets, default_withholding_tax, withholding_tax } =
+  const { kind, declDate, recordDate, targets, defaultWithholdingTax, withholdingTax } =
     corporateAction ?? {
       kind: createMockCAKind(),
       declDate: createMockMoment(),
       recordDate: createMockOption(),
       targets: createMockTargetIdentities(),
       defaultWithholdingTax: createMockPermill(),
-      withholding_tax: [],
+      withholdingTax: [],
     };
 
   return createMockCodec(
     {
       kind: createMockCAKind(kind),
-      declDate: createMockMoment(decl_date),
-      recordDate: createMockOption(record_date),
+      declDate: createMockMoment(declDate),
+      recordDate: createMockOption(recordDate),
       targets: createMockTargetIdentities(targets),
-      defaultWithholdingTax: createMockPermill(default_withholding_tax),
-      withholdingTax: withholding_tax.map(([identityId, tax]) =>
+      defaultWithholdingTax: createMockPermill(defaultWithholdingTax),
+      withholdingTax: withholdingTax.map(([identityId, tax]) =>
         tuple(createMockIdentityId(identityId), createMockPermill(tax))
       ),
     },
@@ -3721,31 +3721,31 @@ export const createMockTransferConditionResult = (transferManagerResult?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockPortfolioValidityResult = (portfolioValidityResult?: {
-  receiver_is_same_portfolio: bool | Parameters<typeof createMockBool>[0];
-  sender_portfolio_does_not_exist: bool | Parameters<typeof createMockBool>[0];
-  receiver_portfolio_does_not_exist: bool | Parameters<typeof createMockBool>[0];
-  sender_insufficient_balance: bool | Parameters<typeof createMockBool>[0];
+  receiverIsSamePortfolio: bool | Parameters<typeof createMockBool>[0];
+  senderPortfolioDoesNotExist: bool | Parameters<typeof createMockBool>[0];
+  receiverPortfolioDoesNotExist: bool | Parameters<typeof createMockBool>[0];
+  senderInsufficientBalance: bool | Parameters<typeof createMockBool>[0];
   result: bool | Parameters<typeof createMockBool>[0];
 }): MockCodec<PortfolioValidityResult> => {
   const {
-    receiver_is_same_portfolio,
-    sender_portfolio_does_not_exist,
-    receiver_portfolio_does_not_exist,
-    sender_insufficient_balance,
+    receiverIsSamePortfolio,
+    senderPortfolioDoesNotExist,
+    receiverPortfolioDoesNotExist,
+    senderInsufficientBalance,
     result,
   } = portfolioValidityResult ?? {
-    receiver_is_same_portfolio: createMockBool(),
-    sender_portfolio_does_not_exist: createMockBool(),
-    receiver_portfolio_does_not_exist: createMockBool(),
-    sender_insufficient_balance: createMockBool(),
+    receiverIsSamePortfolio: createMockBool(),
+    senderPortfolioDoesNotExist: createMockBool(),
+    receiverPortfolioDoesNotExist: createMockBool(),
+    senderInsufficientBalance: createMockBool(),
     result: createMockBool(),
   };
   return createMockCodec(
     {
-      receiver_is_same_portfolio: createMockBool(receiver_is_same_portfolio),
-      sender_portfolio_does_not_exist: createMockBool(sender_portfolio_does_not_exist),
-      receiver_portfolio_does_not_exist: createMockBool(receiver_portfolio_does_not_exist),
-      sender_insufficient_balance: createMockBool(sender_insufficient_balance),
+      receiverIsSamePortfolio: createMockBool(receiverIsSamePortfolio),
+      senderPortfolioDoesNotExist: createMockBool(senderPortfolioDoesNotExist),
+      receiverPortfolioDoesNotExist: createMockBool(receiverPortfolioDoesNotExist),
+      senderInsufficientBalance: createMockBool(senderInsufficientBalance),
       result: createMockBool(result),
     },
     !portfolioValidityResult
@@ -3757,66 +3757,66 @@ export const createMockPortfolioValidityResult = (portfolioValidityResult?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockGranularCanTransferResult = (granularCanTransferResult?: {
-  invalid_granularity: bool | Parameters<typeof createMockBool>[0];
-  self_transfer: bool | Parameters<typeof createMockBool>[0];
-  invalid_receiver_cdd: bool | Parameters<typeof createMockBool>[0];
-  invalid_sender_cdd: bool | Parameters<typeof createMockBool>[0];
-  receiver_custodian_error: bool | Parameters<typeof createMockBool>[0];
-  sender_custodian_error: bool | Parameters<typeof createMockBool>[0];
-  sender_insufficient_balance: bool | Parameters<typeof createMockBool>[0];
-  portfolio_validity_result:
+  invalidGranularity: bool | Parameters<typeof createMockBool>[0];
+  selfTransfer: bool | Parameters<typeof createMockBool>[0];
+  invalidReceiverCdd: bool | Parameters<typeof createMockBool>[0];
+  invalidSenderCdd: bool | Parameters<typeof createMockBool>[0];
+  receiverCustodianError: bool | Parameters<typeof createMockBool>[0];
+  senderCustodianError: bool | Parameters<typeof createMockBool>[0];
+  senderInsufficientBalance: bool | Parameters<typeof createMockBool>[0];
+  portfolioValidityResult:
     | PortfolioValidityResult
     | Parameters<typeof createMockPortfolioValidityResult>[0];
-  asset_frozen: bool | Parameters<typeof createMockBool>[0];
-  transfer_condition_result: (
+  assetFrozen: bool | Parameters<typeof createMockBool>[0];
+  transferConditionResult: (
     | TransferConditionResult
     | Parameters<typeof createMockTransferConditionResult>[0]
   )[];
-  compliance_result: AssetComplianceResult | Parameters<typeof createMockAssetComplianceResult>[0];
+  complianceResult: AssetComplianceResult | Parameters<typeof createMockAssetComplianceResult>[0];
   result: bool | Parameters<typeof createMockBool>[0];
 }): MockCodec<GranularCanTransferResult> => {
   const {
-    invalid_granularity,
-    self_transfer,
-    invalid_receiver_cdd,
-    invalid_sender_cdd,
-    receiver_custodian_error,
-    sender_custodian_error,
-    sender_insufficient_balance,
-    portfolio_validity_result,
-    asset_frozen,
-    transfer_condition_result,
-    compliance_result,
+    invalidGranularity,
+    selfTransfer,
+    invalidReceiverCdd,
+    invalidSenderCdd,
+    receiverCustodianError,
+    senderCustodianError,
+    senderInsufficientBalance,
+    portfolioValidityResult,
+    assetFrozen,
+    transferConditionResult,
+    complianceResult,
     result,
   } = granularCanTransferResult ?? {
-    invalid_granularity: createMockBool(),
-    self_transfer: createMockBool(),
-    invalid_receiver_cdd: createMockBool(),
-    invalid_sender_cdd: createMockBool(),
-    receiver_custodian_error: createMockBool(),
-    sender_custodian_error: createMockBool(),
-    sender_insufficient_balance: createMockBool(),
-    portfolio_validity_result: createMockPortfolioValidityResult(),
-    asset_frozen: createMockBool(),
-    transfer_condition_result: [],
-    compliance_result: createMockAssetComplianceResult(),
+    invalidGranularity: createMockBool(),
+    selfTransfer: createMockBool(),
+    invalidReceiverCdd: createMockBool(),
+    invalidSenderCdd: createMockBool(),
+    receiverCustodianCrror: createMockBool(),
+    senderCustodianCrror: createMockBool(),
+    senderInsufficientBalance: createMockBool(),
+    portfolioValidityResult: createMockPortfolioValidityResult(),
+    assetFrozen: createMockBool(),
+    transferConditionResult: [],
+    complianceResult: createMockAssetComplianceResult(),
     result: createMockBool(),
   };
   return createMockCodec(
     {
-      invalid_granularity: createMockBool(invalid_granularity),
-      self_transfer: createMockBool(self_transfer),
-      invalid_receiver_cdd: createMockBool(invalid_receiver_cdd),
-      invalid_sender_cdd: createMockBool(invalid_sender_cdd),
-      receiver_custodian_error: createMockBool(receiver_custodian_error),
-      sender_custodian_error: createMockBool(sender_custodian_error),
-      sender_insufficient_balance: createMockBool(sender_insufficient_balance),
-      portfolio_validity_result: createMockPortfolioValidityResult(portfolio_validity_result),
-      asset_frozen: createMockBool(asset_frozen),
-      transfer_condition_result: transfer_condition_result.map(res =>
+      invalidGranularity: createMockBool(invalidGranularity),
+      selfTransfer: createMockBool(selfTransfer),
+      invalidReceiverCdd: createMockBool(invalidReceiverCdd),
+      invalidSenderCdd: createMockBool(invalidSenderCdd),
+      receiverCustodianCrror: createMockBool(receiverCustodianError),
+      senderCustodianCrror: createMockBool(senderCustodianError),
+      senderInsufficientBalance: createMockBool(senderInsufficientBalance),
+      portfolioValidityResult: createMockPortfolioValidityResult(portfolioValidityResult),
+      assetFrozen: createMockBool(assetFrozen),
+      transferConditionResult: transferConditionResult.map(res =>
         createMockTransferConditionResult(res)
       ),
-      compliance_result: createMockAssetComplianceResult(compliance_result as any),
+      complianceResult: createMockAssetComplianceResult(complianceResult as any),
       result: createMockBool(result),
     },
     !granularCanTransferResult
@@ -4636,18 +4636,18 @@ export const createMockAssetCount = (
 export const createMockRpcAssetCount = (
   assetCount?:
     | {
-        fungible: u32 | Parameters<typeof createMockU32>[0];
-        non_fungible: u32 | Parameters<typeof createMockU32>[0];
-        off_chain: u32 | Parameters<typeof createMockU32>[0];
+        fungibleTokens: u32 | Parameters<typeof createMockU32>[0];
+        nonFungibleTokens: u32 | Parameters<typeof createMockU32>[0];
+        offChainAssets: u32 | Parameters<typeof createMockU32>[0];
       }
     | AssetCount
 ): MockCodec<AssetCount> => {
-  const { fungible, non_fungible, off_chain } = assetCount ?? {
+  const { fungibleTokens, nonFungibleTokens, offChainAssets } = assetCount ?? {
     fungible: createMockU32(),
-    non_fungible: createMockU32(),
-    off_chain: createMockU32(),
+    nonFungible: createMockU32(),
+    offChain: createMockU32(),
   };
-  return createMockCodec({ fungible, non_fungible, off_chain }, !assetCount);
+  return createMockCodec({ fungibleTokens, nonFungibleTokens, offChainAssets }, !assetCount);
 };
 
 /**
@@ -4657,21 +4657,18 @@ export const createMockRpcAssetCount = (
 export const createMockAffirmationCount = (
   affirmCount?:
     | {
-        sender_asset_count: AssetCount | Parameters<typeof createMockAssetCount>[0];
-        receiver_asset_count: AssetCount | Parameters<typeof createMockAssetCount>[0];
-        offchain_count: u32 | Parameters<typeof createMockU32>[0];
+        senderAssetCount: AssetCount | Parameters<typeof createMockAssetCount>[0];
+        receiverAssetCount: AssetCount | Parameters<typeof createMockAssetCount>[0];
+        offchainCount: u32 | Parameters<typeof createMockU32>[0];
       }
     | AffirmationCount
 ): MockCodec<AffirmationCount> => {
-  const { sender_asset_count, receiver_asset_count, offchain_count } = affirmCount ?? {
-    sender_asset_count: createMockAssetCount(),
-    receiver_asset_count: createMockAssetCount(),
-    offchain_count: createMockU32(),
+  const { senderAssetCount, receiverAssetCount, offchainCount } = affirmCount ?? {
+    senderAssetCount: createMockAssetCount(),
+    receiverAssetCount: createMockAssetCount(),
+    offchainCount: createMockU32(),
   };
-  return createMockCodec(
-    { sender_asset_count, receiver_asset_count, offchain_count },
-    !affirmCount
-  );
+  return createMockCodec({ senderAssetCount, receiverAssetCount, offchainCount }, !affirmCount);
 };
 
 /**

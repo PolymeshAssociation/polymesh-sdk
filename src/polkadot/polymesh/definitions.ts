@@ -1,6 +1,557 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 export default {
   rpc: {},
+  runtime: {
+    AssetApi: [
+      {
+        methods: {
+          transfer_report: {
+            description:
+              "Returns a vector containing all errors for the transfer. An empty vec means there's no error.",
+            params: [
+              {
+                name: 'senderPortfolio',
+                type: 'PortfolioId',
+              },
+              {
+                name: 'receiverPortfolio',
+                type: 'PortfolioId',
+              },
+              {
+                name: 'assetId',
+                type: 'AssetID',
+              },
+              {
+                name: 'transferValue',
+                type: 'Balance',
+              },
+              {
+                name: 'skipLockedCheck',
+                type: 'bool',
+              },
+            ],
+            type: 'Vec<DispatchError>',
+          },
+        },
+        version: 4,
+      },
+      {
+        methods: {
+          can_transfer_granular: {
+            description:
+              'Checks whether a transaction with given parameters can take place or not. The result is granular meaning each check is run and returned regardless of outcome.',
+            params: [
+              {
+                name: 'fromCustodian',
+                type: 'Option<IdentityId>',
+              },
+              {
+                name: 'fromPortfolio',
+                type: 'PortfolioId',
+              },
+              {
+                name: 'toCustodian',
+                type: 'Option<IdentityId>',
+              },
+              {
+                name: 'toPortfolio',
+                type: 'PortfolioId',
+              },
+              {
+                name: 'ticker',
+                type: 'Ticker',
+              },
+              {
+                name: 'value',
+                type: 'Balance',
+              },
+            ],
+            type: 'CanTransferGranularReturn',
+          },
+        },
+        version: 3,
+      },
+    ],
+    GroupApi: [
+      {
+        methods: {
+          get_cdd_valid_members: {
+            description: 'Get the CDD members',
+            params: [],
+            type: 'Vec<Member>',
+          },
+          get_gc_valid_members: {
+            description: 'Get the GC members',
+            params: [],
+            type: 'Vec<Member>',
+          },
+        },
+        version: 1,
+      },
+    ],
+    IdentityApi: [
+      {
+        methods: {
+          is_identity_has_valid_cdd: {
+            description: 'use to tell whether the given did has valid cdd claim or not',
+            params: [
+              {
+                name: 'did',
+                type: 'IdentityId',
+              },
+              {
+                name: 'bufferTime',
+                type: 'Option<u64>',
+              },
+            ],
+            type: 'CddStatus',
+          },
+          get_did_records: {
+            description: 'Used to get the did record values for a given DID',
+            params: [
+              {
+                name: 'did',
+                type: 'IdentityId',
+              },
+            ],
+            type: 'RpcDidRecords',
+          },
+          get_did_status: {
+            description: 'Retrieve status of the DID',
+            params: [
+              {
+                name: 'did',
+                type: 'Vec<IdentityId>',
+              },
+            ],
+            type: 'Vec<DidStatus>',
+          },
+          get_filtered_authorizations: {
+            description:
+              'Retrieve authorizations data for a given signatory and filtered using the given authorization type',
+            params: [
+              {
+                name: 'signatory',
+                type: 'Signatory',
+              },
+              {
+                name: 'allowExpired',
+                type: 'bool',
+              },
+              {
+                name: 'authType',
+                type: 'Option<AuthorizationType>',
+              },
+            ],
+            type: 'Vec<Authorization>',
+          },
+          get_key_identity_data: {
+            description: 'Query relation between a signing key and a DID',
+            params: [
+              {
+                name: 'acc',
+                type: 'AccountId',
+              },
+            ],
+            type: 'Option<KeyIdentityData>',
+          },
+          valid_cdd_claims: {
+            description:
+              'Returns all valid IdentityClaim of type CustomerDueDiligence for the given target_identity',
+            params: [
+              {
+                name: 'targetIdentity',
+                type: 'IdentityId',
+              },
+              {
+                name: 'cddCheckerLeeway',
+                type: 'Option<u64>',
+              },
+            ],
+            type: 'Vec<IdentityClaim>',
+          },
+        },
+        version: 4,
+      },
+      {
+        methods: {
+          is_identity_has_valid_cdd: {
+            description: 'use to tell whether the given did has valid cdd claim or not',
+            params: [
+              {
+                name: 'did',
+                type: 'IdentityId',
+              },
+              {
+                name: 'bufferTime',
+                type: 'Option<u64>',
+              },
+            ],
+            type: 'CddStatus',
+          },
+          get_asset_did: {
+            description: 'function is used to query the given ticker DID',
+            params: [
+              {
+                name: 'ticker',
+                type: 'Ticker',
+              },
+            ],
+            type: 'AssetDidResult',
+          },
+          get_did_records: {
+            description: 'Used to get the did record values for a given DID',
+            params: [
+              {
+                name: 'did',
+                type: 'IdentityId',
+              },
+            ],
+            type: 'RpcDidRecords',
+          },
+          get_did_status: {
+            description: 'Retrieve status of the DID',
+            params: [
+              {
+                name: 'did',
+                type: 'Vec<IdentityId>',
+              },
+            ],
+            type: 'Vec<DidStatus>',
+          },
+          get_filtered_authorizations: {
+            description:
+              'Retrieve authorizations data for a given signatory and filtered using the given authorization type',
+            params: [
+              {
+                name: 'signatory',
+                type: 'Signatory',
+              },
+              {
+                name: 'allowExpired',
+                type: 'bool',
+              },
+              {
+                name: 'authType',
+                type: 'Option<AuthorizationType>',
+              },
+            ],
+            type: 'Vec<Authorization>',
+          },
+          get_key_identity_data: {
+            description: 'Query relation between a signing key and a DID',
+            params: [
+              {
+                name: 'acc',
+                type: 'AccountId',
+              },
+            ],
+            type: 'Option<KeyIdentityData>',
+          },
+          valid_cdd_claims: {
+            description:
+              'Returns all valid IdentityClaim of type CustomerDueDiligence for the given target_identity',
+            params: [
+              {
+                name: 'targetIdentity',
+                type: 'IdentityId',
+              },
+              {
+                name: 'cddCheckerLeeway',
+                type: 'Option<u64>',
+              },
+            ],
+            type: 'Vec<IdentityClaim>',
+          },
+        },
+        version: 3,
+      },
+    ],
+    NFTApi: [
+      {
+        methods: {
+          transfer_report: {
+            description:
+              "Returns a vector containing all errors for the transfer. An empty vec means there's no error.",
+            params: [
+              {
+                name: 'senderPortfolio',
+                type: 'PortfolioId',
+              },
+              {
+                name: 'receiverPortfolio',
+                type: 'PortfolioId',
+              },
+              {
+                name: 'nfts',
+                type: 'NFTs',
+              },
+              {
+                name: 'skipLockedCheck',
+                type: 'bool',
+              },
+            ],
+            type: 'Vec<DispatchError>',
+          },
+        },
+        version: 2,
+      },
+      {
+        methods: {
+          validate_nft_transfer: {
+            description:
+              'Verifies if and the sender and receiver are not the same, if both have valid balances, if the sender owns the nft, and if all compliance rules are being respected.',
+            params: [
+              {
+                name: 'senderPortfolio',
+                type: 'PortfolioId',
+              },
+              {
+                name: 'receiverPortfolio',
+                type: 'PortfolioId',
+              },
+              {
+                name: 'nfts',
+                type: 'NFTs',
+              },
+            ],
+            type: 'DispatchResult',
+          },
+        },
+        version: 1,
+      },
+    ],
+    SettlementApi: [
+      {
+        methods: {
+          get_execute_instruction_info: {
+            description:
+              'Returns an ExecuteInstructionInfo instance containing the consumed weight and the number of tokens in the instruction.',
+            params: [
+              {
+                name: 'instructionId',
+                type: 'InstructionId',
+              },
+            ],
+            type: 'Option<ExecuteInstructionInfo>',
+          },
+          get_affirmation_count: {
+            description:
+              'Returns an AffirmationCount instance containing the number of assets being sent/received from portfolios, and the number of off-chain assets in the instruction.',
+            params: [
+              {
+                name: 'instructionId',
+                type: 'InstructionId',
+              },
+              {
+                name: 'portfolios',
+                type: 'Vec<PortfolioId>',
+              },
+            ],
+            type: 'AffirmationCount',
+          },
+          get_transfer_report: {
+            description:
+              "Returns a vector containing all errors for the transfer. An empty vec means there's no error.",
+            params: [
+              {
+                name: 'leg',
+                type: 'Leg',
+              },
+              {
+                name: 'skipLockedCheck',
+                type: 'bool',
+              },
+            ],
+            type: 'Vec<DispatchError>',
+          },
+          get_execute_instruction_report: {
+            description:
+              "Returns a vector containing all errors for the execution. An empty vec means there's no error.",
+            params: [
+              {
+                name: 'instructionId',
+                type: 'InstructionId',
+              },
+            ],
+            type: 'Vec<DispatchError>',
+          },
+        },
+        version: 2,
+      },
+      {
+        methods: {
+          get_execute_instruction_info: {
+            description:
+              'Returns an ExecuteInstructionInfo instance containing the consumed weight and the number of tokens in the instruction.',
+            params: [
+              {
+                name: 'instructionId',
+                type: 'InstructionId',
+              },
+            ],
+            type: 'ExecuteInstructionInfo',
+          },
+          get_affirmation_count: {
+            description:
+              'Returns an AffirmationCount instance containing the number of assets being sent/received from portfolios, and the number of off-chain assets in the instruction.',
+            params: [
+              {
+                name: 'instructionId',
+                type: 'InstructionId',
+              },
+              {
+                name: 'portfolios',
+                type: 'Vec<PortfolioId>',
+              },
+            ],
+            type: 'AffirmationCount',
+          },
+          get_transfer_report: {
+            description:
+              "Returns a vector containing all errors for the transfer. An empty vec means there's no error.",
+            params: [
+              {
+                name: 'leg',
+                type: 'Leg',
+              },
+              {
+                name: 'skipLockedCheck',
+                type: 'bool',
+              },
+            ],
+            type: 'Vec<DispatchError>',
+          },
+          get_execute_instruction_report: {
+            description:
+              "Returns a vector containing all errors for the execution. An empty vec means there's no error.",
+            params: [
+              {
+                name: 'instructionId',
+                type: 'InstructionId',
+              },
+            ],
+            type: 'Vec<DispatchError>',
+          },
+        },
+        version: 1,
+      },
+    ],
+    PipsApi: [
+      {
+        methods: {
+          get_votes: {
+            description: 'Summary of votes of a proposal given by index',
+            params: [
+              {
+                name: 'index',
+                type: 'PipId',
+              },
+            ],
+            type: 'VoteCount',
+          },
+          proposed_by: {
+            description: 'Retrieves proposal indices started by address',
+            params: [
+              {
+                name: 'address',
+                type: 'AccountId',
+              },
+            ],
+            type: 'Vec<PipId>',
+          },
+          voted_on: {
+            description: 'Retrieves proposal address indices voted on',
+            params: [
+              {
+                name: 'address',
+                type: 'AccountId',
+              },
+            ],
+            type: 'Vec<PipId>',
+          },
+        },
+        version: 1,
+      },
+    ],
+    ProtocolFeeApi: [
+      {
+        methods: {
+          compute_fee: {
+            description: 'Gets the fee of a chargeable extrinsic operation',
+            params: [
+              {
+                name: 'op',
+                type: 'ProtocolOp',
+              },
+            ],
+            type: 'CappedFee',
+          },
+        },
+        version: 1,
+      },
+    ],
+    StakingApi: [
+      {
+        methods: {
+          get_curve: {
+            description: 'Retrieves curves parameters',
+            params: [],
+            type: 'Vec<(Perbill, Perbill)>',
+          },
+        },
+        version: 1,
+      },
+    ],
+    ComplianceApi: [
+      {
+        methods: {
+          compliance_report: {
+            description: 'Checks all compliance requirements for the given asset_id.',
+            params: [
+              {
+                name: 'assetId',
+                type: 'AssetID',
+              },
+              {
+                name: 'senderIdentity',
+                type: 'IdentityId',
+              },
+              {
+                name: 'receiverIdentity',
+                type: 'IdentityId',
+              },
+            ],
+            type: 'Result<ComplianceReport, DispatchError>',
+          },
+        },
+        version: 2,
+      },
+      {
+        methods: {
+          compliance_report: {
+            description: 'Checks all compliance requirements for the given ticker.',
+            params: [
+              {
+                name: 'ticker',
+                type: 'Ticker',
+              },
+              {
+                name: 'senderIdentity',
+                type: 'IdentityId',
+              },
+              {
+                name: 'receiverIdentity',
+                type: 'IdentityId',
+              },
+            ],
+            type: 'Result<ComplianceReport, DispatchError>',
+          },
+        },
+        version: 1,
+      },
+    ],
+  },
   types: {
     Address: 'MultiAddress',
     LookupSource: 'MultiAddress',
@@ -31,10 +582,10 @@ export default {
     DocumentType: 'Text',
     Document: {
       uri: 'DocumentUri',
-      content_hash: 'DocumentHash',
+      contentHash: 'DocumentHash',
       name: 'DocumentName',
-      doc_type: 'Option<DocumentType>',
-      filing_date: 'Option<Moment>',
+      docType: 'Option<DocumentType>',
+      filingDate: 'Option<Moment>',
     },
     Version: 'u8',
     CustomAssetTypeId: 'u32',
@@ -74,10 +625,10 @@ export default {
     FundingRoundName: 'Text',
     VenueDetails: 'Text',
     SecurityToken: {
-      total_supply: 'Balance',
-      owner_did: 'IdentityId',
+      totalSupply: 'Balance',
+      ownerDid: 'IdentityId',
       divisible: 'bool',
-      asset_type: 'AssetType',
+      assetType: 'AssetType',
     },
     AssetMetadataName: 'Text',
     AssetMetadataValue: 'Vec<u8>',
@@ -98,13 +649,13 @@ export default {
     },
     AssetMetadataValueDetail: {
       expire: 'Option<Moment>',
-      lock_status: 'AssetMetadataLockStatus',
+      lockStatus: 'AssetMetadataLockStatus',
     },
     AssetMetadataDescription: 'Text',
     AssetMetadataSpec: {
       url: 'Option<Url>',
       description: 'Option<AssetMetadataDescription>',
-      type_def: 'Option<Vec<u8>>',
+      typeDef: 'Option<Vec<u8>>',
     },
     PalletName: 'Text',
     DispatchableName: 'Text',
@@ -130,8 +681,8 @@ export default {
       },
     },
     PalletPermissions: {
-      pallet_name: 'PalletName',
-      dispatchable_names: 'DispatchableNames',
+      palletName: 'PalletName',
+      dispatchableNames: 'DispatchableNames',
     },
     ExtrinsicPermissions: {
       _enum: {
@@ -156,11 +707,11 @@ export default {
       permissions: 'Permissions',
     },
     SecondaryKeyWithAuth: {
-      secondary_key: 'SecondaryKey',
-      auth_signature: 'H512',
+      secondaryKey: 'SecondaryKey',
+      authSignature: 'H512',
     },
     Subsidy: {
-      paying_key: 'AccountId',
+      payingKey: 'AccountId',
       remaining: 'Balance',
     },
     IdentityRole: {
@@ -178,11 +729,11 @@ export default {
       ],
     },
     PreAuthorizedKeyInfo: {
-      target_id: 'IdentityId',
-      secondary_key: 'SecondaryKey',
+      targetId: 'IdentityId',
+      secondaryKey: 'SecondaryKey',
     },
     DidRecord: {
-      primary_key: 'Option<AccountId>',
+      primaryKey: 'Option<AccountId>',
     },
     KeyRecord: {
       _enum: {
@@ -486,15 +1037,15 @@ export default {
       },
     },
     IdentityClaim: {
-      claim_issuer: 'IdentityId',
-      issuance_date: 'Moment',
-      last_update_date: 'Moment',
+      claimIssuer: 'IdentityId',
+      issuanceDate: 'Moment',
+      lastUpdateDate: 'Moment',
       expiry: 'Option<Moment>',
       claim: 'Claim',
     },
     ComplianceRequirement: {
-      sender_conditions: 'Vec<Condition>',
-      receiver_conditions: 'Vec<Condition>',
+      senderConditions: 'Vec<Condition>',
+      receiverConditions: 'Vec<Condition>',
       id: 'u32',
     },
     ComplianceRequirementResult: {
@@ -531,17 +1082,17 @@ export default {
       result: 'bool',
     },
     TargetIdAuthorization: {
-      target_id: 'IdentityId',
+      targetId: 'IdentityId',
       nonce: 'u64',
-      expires_at: 'Moment',
+      expiresAt: 'Moment',
     },
     TickerRegistration: {
       owner: 'IdentityId',
       expiry: 'Option<Moment>',
     },
     TickerRegistrationConfig: {
-      max_ticker_length: 'u8',
-      registration_length: 'Option<Moment>',
+      maxTickerLength: 'u8',
+      registrationLength: 'Option<Moment>',
     },
     EthereumAddress: '[u8; 20]',
     EcdsaSignature: '[u8; 65]',
@@ -550,7 +1101,7 @@ export default {
     ChoiceTitle: 'Text',
     Motion: {
       title: 'MotionTitle',
-      info_link: 'MotionInfoLink',
+      infoLink: 'MotionInfoLink',
       choices: 'Vec<ChoiceTitle>',
     },
     BallotTitle: 'Text',
@@ -578,8 +1129,8 @@ export default {
       id: 'PipId',
       url: 'Option<Url>',
       description: 'Option<PipDescription>',
-      created_at: 'BlockNumber',
-      transaction_version: 'u32',
+      createdAt: 'BlockNumber',
+      transactionVersion: 'u32',
       expiry: 'MaybeBlock',
     },
     Proposer: {
@@ -601,8 +1152,8 @@ export default {
     },
     SnapshotId: 'u32',
     SnapshotMetadata: {
-      created_at: 'BlockNumber',
-      made_by: 'AccountId',
+      createdAt: 'BlockNumber',
+      madeBy: 'AccountId',
       id: 'SnapshotId',
     },
     SnapshotResult: {
@@ -643,10 +1194,10 @@ export default {
     },
     OffChainSignature: 'MultiSignature',
     Authorization: {
-      authorization_data: 'AuthorizationData',
-      authorized_by: 'IdentityId',
+      authorizationData: 'AuthorizationData',
+      authorizedBy: 'IdentityId',
       expiry: 'Option<Moment>',
-      auth_id: 'u64',
+      authId: 'u64',
     },
     AuthorizationData: {
       _enum: {
@@ -672,7 +1223,7 @@ export default {
       nonce: 'u32',
       recipient: 'AccountId',
       amount: 'Balance',
-      tx_hash: 'H256',
+      txHash: 'H256',
     },
     AssetScope: {
       _enum: {
@@ -684,7 +1235,7 @@ export default {
     },
     StatType: {
       op: 'StatOpType',
-      claim_issuer: 'Option<(ClaimType, IdentityId)>',
+      claimIssuer: 'Option<(ClaimType, IdentityId)>',
     },
     StatClaim: {
       _enum: {
@@ -695,7 +1246,7 @@ export default {
     },
     Stat1stKey: {
       asset: 'AssetScope',
-      stat_type: 'StatType',
+      statType: 'StatType',
     },
     Stat2ndKey: {
       _enum: {
@@ -722,7 +1273,7 @@ export default {
     TransferConditionExemptKey: {
       asset: 'AssetScope',
       op: 'StatOpType',
-      claim_type: 'Option<ClaimType>',
+      claimType: 'Option<ClaimType>',
     },
     AssetCompliance: {
       paused: 'bool',
@@ -735,7 +1286,7 @@ export default {
     },
     Claim1stKey: {
       target: 'IdentityId',
-      claim_type: 'ClaimType',
+      claimType: 'ClaimType',
     },
     Claim2ndKey: {
       issuer: 'IdentityId',
@@ -743,14 +1294,14 @@ export default {
     },
     InactiveMember: {
       id: 'IdentityId',
-      deactivated_at: 'Moment',
+      deactivatedAt: 'Moment',
       expiry: 'Option<Moment>',
     },
     VotingResult: {
-      ayes_count: 'u32',
-      ayes_stake: 'Balance',
-      nays_count: 'u32',
-      nays_stake: 'Balance',
+      ayesCount: 'u32',
+      ayesStake: 'Balance',
+      naysCount: 'u32',
+      naysStake: 'Balance',
     },
     ProtocolOp: {
       _enum: [
@@ -785,8 +1336,8 @@ export default {
       },
     },
     RpcDidRecordsSuccess: {
-      primary_key: 'AccountId',
-      secondary_keys: 'Vec<SecondaryKey>',
+      primaryKey: 'AccountId',
+      secondaryKeys: 'Vec<SecondaryKey>',
     },
     RpcDidRecords: {
       _enum: {
@@ -812,8 +1363,8 @@ export default {
     BridgeTxDetail: {
       amount: 'Balance',
       status: 'BridgeTxStatus',
-      execution_block: 'BlockNumber',
-      tx_hash: 'H256',
+      executionBlock: 'BlockNumber',
+      txHash: 'H256',
     },
     BridgeTxStatus: {
       _enum: {
@@ -856,7 +1407,7 @@ export default {
       rejections: 'u64',
       status: 'ProposalStatus',
       expiry: 'Option<Moment>',
-      auto_close: 'bool',
+      autoClose: 'bool',
     },
     ProposalStatus: {
       _enum: {
@@ -942,20 +1493,20 @@ export default {
     LegId: 'u64',
     InstructionId: 'u64',
     Instruction: {
-      instruction_id: 'InstructionId',
-      venue_id: 'VenueId',
+      instructionId: 'InstructionId',
+      venueId: 'VenueId',
       status: 'InstructionStatus',
-      settlement_type: 'SettlementType',
-      created_at: 'Option<Moment>',
-      trade_date: 'Option<Moment>',
-      value_date: 'Option<Moment>',
+      settlementType: 'SettlementType',
+      createdAt: 'Option<Moment>',
+      tradeDate: 'Option<Moment>',
+      valueDate: 'Option<Moment>',
     },
     Venue: {
       creator: 'IdentityId',
-      venue_type: 'VenueType',
+      venueType: 'VenueType',
     },
     Receipt: {
-      receipt_uid: 'u64',
+      receiptUid: 'u64',
       from: 'PortfolioId',
       to: 'PortfolioId',
       asset: 'Ticker',
@@ -963,8 +1514,8 @@ export default {
     },
     ReceiptMetadata: 'Text',
     ReceiptDetails: {
-      receipt_uid: 'u64',
-      leg_id: 'LegId',
+      receiptUid: 'u64',
+      legId: 'LegId',
       signer: 'AccountId',
       signature: 'OffChainSignature',
       metadata: 'ReceiptMetadata',
@@ -1008,16 +1559,16 @@ export default {
     },
     Fundraiser: {
       creator: 'IdentityId',
-      offering_portfolio: 'PortfolioId',
-      offering_asset: 'Ticker',
-      raising_portfolio: 'PortfolioId',
-      raising_asset: 'Ticker',
+      offeringPortfolio: 'PortfolioId',
+      offeringAsset: 'Ticker',
+      raisingPortfolio: 'PortfolioId',
+      raisingAsset: 'Ticker',
       tiers: 'Vec<FundraiserTier>',
-      venue_id: 'VenueId',
+      venueId: 'VenueId',
       start: 'Moment',
       end: 'Option<Moment>',
       status: 'FundraiserStatus',
-      minimum_investment: 'Balance',
+      minimumInvestment: 'Balance',
     },
     VenueId: 'u64',
     VenueType: {
@@ -1060,36 +1611,36 @@ export default {
     },
     CorporateAction: {
       kind: 'CAKind',
-      decl_date: 'Moment',
-      record_date: 'Option<RecordDate>',
+      declDate: 'Moment',
+      recordDate: 'Option<RecordDate>',
       targets: 'TargetIdentities',
-      default_withholding_tax: 'Tax',
-      withholding_tax: 'Vec<(IdentityId, Tax)>',
+      defaultWithholdingTax: 'Tax',
+      withholdingTax: 'Vec<(IdentityId, Tax)>',
     },
     InitiateCorporateActionArgs: {
       ticker: 'Ticker',
       kind: 'CAKind',
-      decl_date: 'Moment',
-      record_date: 'Option<RecordDateSpec>',
+      declDate: 'Moment',
+      recordDate: 'Option<RecordDateSpec>',
       details: 'CADetails',
       targets: 'Option<TargetIdentities>',
-      default_withholding_tax: 'Option<Tax>',
-      withholding_tax: 'Option<Vec<(IdentityId, Tax)>>',
+      defaultWithholdingTax: 'Option<Tax>',
+      withholdingTax: 'Option<Vec<(IdentityId, Tax)>>',
     },
     LocalCAId: 'u32',
     CAId: {
       ticker: 'Ticker',
-      local_id: 'LocalCAId',
+      localId: 'LocalCAId',
     },
     Distribution: {
       from: 'PortfolioId',
       currency: 'Ticker',
-      per_share: 'Balance',
+      perShare: 'Balance',
       amount: 'Balance',
       remaining: 'Balance',
       reclaimed: 'bool',
-      payment_at: 'Moment',
-      expires_at: 'Option<Moment>',
+      paymentAt: 'Moment',
+      expiresAt: 'Option<Moment>',
     },
     SlashingSwitch: {
       _enum: ['Validator', 'ValidatorAndNominator', 'None'],
@@ -1099,8 +1650,8 @@ export default {
       price: 'Balance',
     },
     PermissionedIdentityPrefs: {
-      intended_count: 'u32',
-      running_count: 'u32',
+      intendedCount: 'u32',
+      runningCount: 'u32',
     },
     CanTransferGranularReturn: {
       _enum: {
@@ -1109,25 +1660,25 @@ export default {
       },
     },
     GranularCanTransferResult: {
-      invalid_granularity: 'bool',
-      self_transfer: 'bool',
-      invalid_receiver_cdd: 'bool',
-      invalid_sender_cdd: 'bool',
-      receiver_custodian_error: 'bool',
-      sender_custodian_error: 'bool',
-      sender_insufficient_balance: 'bool',
-      portfolio_validity_result: 'PortfolioValidityResult',
-      asset_frozen: 'bool',
-      transfer_condition_result: 'Vec<TransferConditionResult>',
-      compliance_result: 'AssetComplianceResult',
+      invalidGranularity: 'bool',
+      selfTransfer: 'bool',
+      invalidReceiverCdd: 'bool',
+      invalidSenderCdd: 'bool',
+      receiverCustodianError: 'bool',
+      senderCustodianError: 'bool',
+      senderInsufficientBalance: 'bool',
+      portfolioValidityResult: 'PortfolioValidityResult',
+      assetFrozen: 'bool',
+      transferConditionResult: 'Vec<TransferConditionResult>',
+      complianceResult: 'AssetComplianceResult',
       result: 'bool',
-      consumed_weight: 'Option<Weight>',
+      consumedWeight: 'Option<Weight>',
     },
     PortfolioValidityResult: {
-      receiver_is_same_portfolio: 'bool',
-      sender_portfolio_does_not_exist: 'bool',
-      receiver_portfolio_does_not_exist: 'bool',
-      sender_insufficient_balance: 'bool',
+      receiverIsSamePortfolio: 'bool',
+      senderPortfolioDoesNotExist: 'bool',
+      receiverPortfolioDoesNotExist: 'bool',
+      senderInsufficientBalance: 'bool',
       result: 'bool',
     },
     TransferConditionResult: {
@@ -1146,8 +1697,8 @@ export default {
     },
     Member: {
       id: 'IdentityId',
-      expiry_at: 'Option<Moment>',
-      inactive_from: 'Option<Moment>',
+      expiryAt: 'Option<Moment>',
+      inactiveFrom: 'Option<Moment>',
     },
     ItnRewardStatus: {
       _enum: {
@@ -1180,8 +1731,8 @@ export default {
       nfts: 'NFTs',
     },
     OffChainLeg: {
-      sender_identity: 'IdentityId',
-      receiver_identity: 'IdentityId',
+      senderIdentity: 'IdentityId',
+      receiverIdentity: 'IdentityId',
       ticker: 'Ticker',
       amount: 'Balance',
     },
@@ -1218,14 +1769,29 @@ export default {
       error: 'Option<String>',
     },
     AssetCount: {
-      fungible: 'u32',
-      non_fungible: 'u32',
-      off_chain: 'u32',
+      fungibleTokens: 'u32',
+      nonFungibleTokens: 'u32',
+      offChainAssets: 'u32',
     },
     AffirmationCount: {
-      sender_asset_count: 'AssetCount',
-      receiver_asset_count: 'AssetCount',
-      offchain_count: 'u32',
+      senderAssetCount: 'AssetCount',
+      receiverAssetCount: 'AssetCount',
+      offchainCount: 'u32',
+    },
+    ComplianceReport: {
+      anyRequirementSatistifed: 'bool',
+      pausedCompliance: 'bool',
+      requirements: 'Vec<RequirementReport>',
+    },
+    RequirementReport: {
+      requirementSatisfied: 'bool',
+      id: 'u32',
+      senderConditions: 'Vec<ConditionReport>',
+      receiverConditions: 'Vec<ConditionReport>',
+    },
+    ConditionReport: {
+      satisfied: 'bool',
+      condition: 'Condition',
     },
   },
 };

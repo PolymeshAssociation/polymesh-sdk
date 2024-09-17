@@ -1103,6 +1103,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InvalidNFTTransferFrozenAsset: AugmentedError<ApiType>;
       /**
+       * Ticker and NFT ticker don't match
+       **/
+      InvalidNFTTransferInconsistentTicker: AugmentedError<ApiType>;
+      /**
        * Failed to transfer an NFT - the number of nfts in the identity is insufficient.
        **/
       InvalidNFTTransferInsufficientCount: AugmentedError<ApiType>;
@@ -1138,6 +1142,10 @@ declare module '@polkadot/api-base/types/errors' {
        * The maximum number of nfts being transferred in one leg was exceeded.
        **/
       MaxNumberOfNFTsPerLegExceeded: AugmentedError<ApiType>;
+      /**
+       * The NFT is locked.
+       **/
+      NFTIsLocked: AugmentedError<ApiType>;
       /**
        * The NFT does not exist.
        **/

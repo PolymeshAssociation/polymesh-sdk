@@ -7,7 +7,7 @@ export default {
       params: [
         {
           name: 'fromCustodian',
-          type: 'Option<PolymeshPrimitivesIdentityId>',
+          type: 'Option<IdentityId>',
           isOptional: false,
         },
         {
@@ -17,7 +17,7 @@ export default {
         },
         {
           name: 'toCustodian',
-          type: 'Option<PolymeshPrimitivesIdentityId>',
+          type: 'Option<IdentityId>',
           isOptional: false,
         },
         {

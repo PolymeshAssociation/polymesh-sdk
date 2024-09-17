@@ -92,7 +92,6 @@ describe('Claims Class', () => {
           getIdentityClaimsFromMiddleware,
         },
       });
-
       let result = await claims.getIssuedClaims();
       expect(result).toEqual(getIdentityClaimsFromMiddleware);
 
@@ -448,11 +447,10 @@ describe('Claims Class', () => {
         id: 'someCddId',
       };
 
-      /* eslint-disable @typescript-eslint/naming-convention */
       const rawIdentityClaim = {
-        claim_issuer: dsMockUtils.createMockIdentityId(claimIssuer),
-        issuance_date: dsMockUtils.createMockMoment(new BigNumber(issuanceDate.getTime())),
-        last_update_date: dsMockUtils.createMockMoment(new BigNumber(lastUpdateDate.getTime())),
+        claimIssuer: dsMockUtils.createMockIdentityId(claimIssuer),
+        issuanceDate: dsMockUtils.createMockMoment(new BigNumber(issuanceDate.getTime())),
+        lastUpdateDate: dsMockUtils.createMockMoment(new BigNumber(lastUpdateDate.getTime())),
         expiry: dsMockUtils.createMockOption(),
         claim: dsMockUtils.createMockClaim({
           CustomerDueDiligence: dsMockUtils.createMockCddId(claim.id),

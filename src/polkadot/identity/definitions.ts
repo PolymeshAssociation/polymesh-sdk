@@ -80,12 +80,12 @@ export default {
           isOptional: false,
         },
         {
-          name: 'allowExpired',
+          name: 'allow_expired',
           type: 'bool',
           isOptional: false,
         },
         {
-          name: 'authType',
+          name: 'auth_type',
           type: 'AuthorizationType',
           isOptional: true,
         },
@@ -95,7 +95,7 @@ export default {
           isOptional: true,
         },
       ],
-      type: 'Vec<PolymeshPrimitivesAuthorization>',
+      type: 'Vec<Authorization>',
     },
     getKeyIdentityData: {
       description: 'Query relation between a signing key and a DID',

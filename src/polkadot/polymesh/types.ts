@@ -42,9 +42,9 @@ export interface Address extends MultiAddress {}
 
 /** @name AffirmationCount */
 export interface AffirmationCount extends Struct {
-  readonly sender_asset_count: AssetCount;
-  readonly receiver_asset_count: AssetCount;
-  readonly offchain_count: u32;
+  readonly senderAssetCount: AssetCount;
+  readonly receiverAssetCount: AssetCount;
+  readonly offchainCount: u32;
 }
 
 /** @name AffirmationStatus */
@@ -84,9 +84,9 @@ export interface AssetComplianceResult extends Struct {
 
 /** @name AssetCount */
 export interface AssetCount extends Struct {
-  readonly fungible: u32;
-  readonly non_fungible: u32;
-  readonly off_chain: u32;
+  readonly fungibleTokens: u32;
+  readonly nonFungibleTokens: u32;
+  readonly offChainAssets: u32;
 }
 
 /** @name AssetDidResult */
@@ -147,7 +147,7 @@ export interface AssetMetadataName extends Text {}
 export interface AssetMetadataSpec extends Struct {
   readonly url: Option<Url>;
   readonly description: Option<AssetMetadataDescription>;
-  readonly type_def: Option<Bytes>;
+  readonly typeDef: Option<Bytes>;
 }
 
 /** @name AssetMetadataValue */
@@ -156,7 +156,7 @@ export interface AssetMetadataValue extends Bytes {}
 /** @name AssetMetadataValueDetail */
 export interface AssetMetadataValueDetail extends Struct {
   readonly expire: Option<Moment>;
-  readonly lock_status: AssetMetadataLockStatus;
+  readonly lockStatus: AssetMetadataLockStatus;
 }
 
 /** @name AssetName */
@@ -226,10 +226,10 @@ export interface AssetType extends Enum {
 
 /** @name Authorization */
 export interface Authorization extends Struct {
-  readonly authorization_data: AuthorizationData;
-  readonly authorized_by: IdentityId;
+  readonly authorizationData: AuthorizationData;
+  readonly authorizedBy: IdentityId;
   readonly expiry: Option<Moment>;
-  readonly auth_id: u64;
+  readonly authId: u64;
 }
 
 /** @name AuthorizationData */
@@ -326,15 +326,15 @@ export interface BridgeTx extends Struct {
   readonly nonce: u32;
   readonly recipient: AccountId;
   readonly amount: Balance;
-  readonly tx_hash: H256;
+  readonly txHash: H256;
 }
 
 /** @name BridgeTxDetail */
 export interface BridgeTxDetail extends Struct {
   readonly amount: Balance;
   readonly status: BridgeTxStatus;
-  readonly execution_block: BlockNumber;
-  readonly tx_hash: H256;
+  readonly executionBlock: BlockNumber;
+  readonly txHash: H256;
 }
 
 /** @name BridgeTxStatus */
@@ -363,7 +363,7 @@ export interface CADetails extends Text {}
 /** @name CAId */
 export interface CAId extends Struct {
   readonly ticker: Ticker;
-  readonly local_id: LocalCAId;
+  readonly localId: LocalCAId;
 }
 
 /** @name CAKind */
@@ -482,7 +482,7 @@ export interface Claim extends Enum {
 /** @name Claim1stKey */
 export interface Claim1stKey extends Struct {
   readonly target: IdentityId;
-  readonly claim_type: ClaimType;
+  readonly claimType: ClaimType;
 }
 
 /** @name Claim2ndKey */
@@ -524,10 +524,17 @@ export interface Committee extends Enum {
   readonly type: 'Technical' | 'Upgrade';
 }
 
+/** @name ComplianceReport */
+export interface ComplianceReport extends Struct {
+  readonly anyRequirementSatistifed: bool;
+  readonly pausedCompliance: bool;
+  readonly requirements: Vec<RequirementReport>;
+}
+
 /** @name ComplianceRequirement */
 export interface ComplianceRequirement extends Struct {
-  readonly sender_conditions: Vec<Condition>;
-  readonly receiver_conditions: Vec<Condition>;
+  readonly senderConditions: Vec<Condition>;
+  readonly receiverConditions: Vec<Condition>;
   readonly id: u32;
 }
 
@@ -543,6 +550,12 @@ export interface ComplianceRequirementResult extends Struct {
 export interface Condition extends Struct {
   readonly conditionType: ConditionType;
   readonly issuers: Vec<PolymeshPrimitivesConditionTrustedIssuer>;
+}
+
+/** @name ConditionReport */
+export interface ConditionReport extends Struct {
+  readonly satisfied: bool;
+  readonly condition: Condition;
 }
 
 /** @name ConditionResult */
@@ -569,11 +582,11 @@ export interface ConditionType extends Enum {
 /** @name CorporateAction */
 export interface CorporateAction extends Struct {
   readonly kind: CAKind;
-  readonly decl_date: Moment;
-  readonly record_date: Option<RecordDate>;
+  readonly declDate: Moment;
+  readonly recordDate: Option<RecordDate>;
   readonly targets: TargetIdentities;
-  readonly default_withholding_tax: Tax;
-  readonly withholding_tax: Vec<ITuple<[IdentityId, Tax]>>;
+  readonly defaultWithholdingTax: Tax;
+  readonly withholdingTax: Vec<ITuple<[IdentityId, Tax]>>;
 }
 
 /** @name CountryCode */
@@ -1095,7 +1108,7 @@ export interface DepositInfo extends Struct {
 
 /** @name DidRecord */
 export interface DidRecord extends Struct {
-  readonly primary_key: Option<AccountId>;
+  readonly primaryKey: Option<AccountId>;
 }
 
 /** @name DidStatus */
@@ -1123,21 +1136,21 @@ export interface DispatchableNames extends Enum {
 export interface Distribution extends Struct {
   readonly from: PortfolioId;
   readonly currency: Ticker;
-  readonly per_share: Balance;
+  readonly perShare: Balance;
   readonly amount: Balance;
   readonly remaining: Balance;
   readonly reclaimed: bool;
-  readonly payment_at: Moment;
-  readonly expires_at: Option<Moment>;
+  readonly paymentAt: Moment;
+  readonly expiresAt: Option<Moment>;
 }
 
 /** @name Document */
 export interface Document extends Struct {
   readonly uri: DocumentUri;
-  readonly content_hash: DocumentHash;
+  readonly contentHash: DocumentHash;
   readonly name: DocumentName;
-  readonly doc_type: Option<DocumentType>;
-  readonly filing_date: Option<Moment>;
+  readonly docType: Option<DocumentType>;
+  readonly filingDate: Option<Moment>;
 }
 
 /** @name DocumentHash */
@@ -1229,16 +1242,16 @@ export interface FundingRoundName extends Text {}
 /** @name Fundraiser */
 export interface Fundraiser extends Struct {
   readonly creator: IdentityId;
-  readonly offering_portfolio: PortfolioId;
-  readonly offering_asset: Ticker;
-  readonly raising_portfolio: PortfolioId;
-  readonly raising_asset: Ticker;
+  readonly offeringPortfolio: PortfolioId;
+  readonly offeringAsset: Ticker;
+  readonly raisingPortfolio: PortfolioId;
+  readonly raisingAsset: Ticker;
   readonly tiers: Vec<FundraiserTier>;
-  readonly venue_id: VenueId;
+  readonly venueId: VenueId;
   readonly start: Moment;
   readonly end: Option<Moment>;
   readonly status: FundraiserStatus;
-  readonly minimum_investment: Balance;
+  readonly minimumInvestment: Balance;
 }
 
 /** @name FundraiserId */
@@ -1279,19 +1292,19 @@ export interface FungibleToken extends Struct {
 
 /** @name GranularCanTransferResult */
 export interface GranularCanTransferResult extends Struct {
-  readonly invalid_granularity: bool;
-  readonly self_transfer: bool;
-  readonly invalid_receiver_cdd: bool;
-  readonly invalid_sender_cdd: bool;
-  readonly receiver_custodian_error: bool;
-  readonly sender_custodian_error: bool;
-  readonly sender_insufficient_balance: bool;
-  readonly portfolio_validity_result: PortfolioValidityResult;
-  readonly asset_frozen: bool;
-  readonly transfer_condition_result: Vec<TransferConditionResult>;
-  readonly compliance_result: AssetComplianceResult;
+  readonly invalidGranularity: bool;
+  readonly selfTransfer: bool;
+  readonly invalidReceiverCdd: bool;
+  readonly invalidSenderCdd: bool;
+  readonly receiverCustodianError: bool;
+  readonly senderCustodianError: bool;
+  readonly senderInsufficientBalance: bool;
+  readonly portfolioValidityResult: PortfolioValidityResult;
+  readonly assetFrozen: bool;
+  readonly transferConditionResult: Vec<TransferConditionResult>;
+  readonly complianceResult: AssetComplianceResult;
   readonly result: bool;
-  readonly consumed_weight: Option<Weight>;
+  readonly consumedWeight: Option<Weight>;
 }
 
 /** @name HandledTxStatus */
@@ -1304,9 +1317,9 @@ export interface HandledTxStatus extends Enum {
 
 /** @name IdentityClaim */
 export interface IdentityClaim extends Struct {
-  readonly claim_issuer: IdentityId;
-  readonly issuance_date: Moment;
-  readonly last_update_date: Moment;
+  readonly claimIssuer: IdentityId;
+  readonly issuanceDate: Moment;
+  readonly lastUpdateDate: Moment;
   readonly expiry: Option<Moment>;
   readonly claim: Claim;
 }
@@ -1342,7 +1355,7 @@ export interface IdentityRole extends Enum {
 /** @name InactiveMember */
 export interface InactiveMember extends Struct {
   readonly id: IdentityId;
-  readonly deactivated_at: Moment;
+  readonly deactivatedAt: Moment;
   readonly expiry: Option<Moment>;
 }
 
@@ -1350,23 +1363,23 @@ export interface InactiveMember extends Struct {
 export interface InitiateCorporateActionArgs extends Struct {
   readonly ticker: Ticker;
   readonly kind: CAKind;
-  readonly decl_date: Moment;
-  readonly record_date: Option<RecordDateSpec>;
+  readonly declDate: Moment;
+  readonly recordDate: Option<RecordDateSpec>;
   readonly details: CADetails;
   readonly targets: Option<TargetIdentities>;
-  readonly default_withholding_tax: Option<Tax>;
-  readonly withholding_tax: Option<Vec<ITuple<[IdentityId, Tax]>>>;
+  readonly defaultWithholdingTax: Option<Tax>;
+  readonly withholdingTax: Option<Vec<ITuple<[IdentityId, Tax]>>>;
 }
 
 /** @name Instruction */
 export interface Instruction extends Struct {
-  readonly instruction_id: InstructionId;
-  readonly venue_id: VenueId;
+  readonly instructionId: InstructionId;
+  readonly venueId: VenueId;
   readonly status: InstructionStatus;
-  readonly settlement_type: SettlementType;
-  readonly created_at: Option<Moment>;
-  readonly trade_date: Option<Moment>;
-  readonly value_date: Option<Moment>;
+  readonly settlementType: SettlementType;
+  readonly createdAt: Option<Moment>;
+  readonly tradeDate: Option<Moment>;
+  readonly valueDate: Option<Moment>;
 }
 
 /** @name InstructionId */
@@ -1445,8 +1458,8 @@ export interface MaybeBlock extends Enum {
 /** @name Member */
 export interface Member extends Struct {
   readonly id: IdentityId;
-  readonly expiry_at: Option<Moment>;
-  readonly inactive_from: Option<Moment>;
+  readonly expiryAt: Option<Moment>;
+  readonly inactiveFrom: Option<Moment>;
 }
 
 /** @name Memo */
@@ -1458,7 +1471,7 @@ export interface Moment extends u64 {}
 /** @name Motion */
 export interface Motion extends Struct {
   readonly title: MotionTitle;
-  readonly info_link: MotionInfoLink;
+  readonly infoLink: MotionInfoLink;
   readonly choices: Vec<ChoiceTitle>;
 }
 
@@ -1509,8 +1522,8 @@ export interface OffChainAsset extends Struct {
 
 /** @name OffChainLeg */
 export interface OffChainLeg extends Struct {
-  readonly sender_identity: IdentityId;
-  readonly receiver_identity: IdentityId;
+  readonly senderIdentity: IdentityId;
+  readonly receiverIdentity: IdentityId;
   readonly ticker: Ticker;
   readonly amount: Balance;
 }
@@ -1523,8 +1536,8 @@ export interface PalletName extends Text {}
 
 /** @name PalletPermissions */
 export interface PalletPermissions extends Struct {
-  readonly pallet_name: PalletName;
-  readonly dispatchable_names: DispatchableNames;
+  readonly palletName: PalletName;
+  readonly dispatchableNames: DispatchableNames;
 }
 
 /** @name Percentage */
@@ -1532,8 +1545,8 @@ export interface Percentage extends Permill {}
 
 /** @name PermissionedIdentityPrefs */
 export interface PermissionedIdentityPrefs extends Struct {
-  readonly intended_count: u32;
-  readonly running_count: u32;
+  readonly intendedCount: u32;
+  readonly runningCount: u32;
 }
 
 /** @name Permissions */
@@ -1561,8 +1574,8 @@ export interface PipsMetadata extends Struct {
   readonly id: PipId;
   readonly url: Option<Url>;
   readonly description: Option<PipDescription>;
-  readonly created_at: BlockNumber;
-  readonly transaction_version: u32;
+  readonly createdAt: BlockNumber;
+  readonly transactionVersion: u32;
   readonly expiry: MaybeBlock;
 }
 
@@ -1606,10 +1619,10 @@ export interface PortfolioPermissions extends Enum {
 
 /** @name PortfolioValidityResult */
 export interface PortfolioValidityResult extends Struct {
-  readonly receiver_is_same_portfolio: bool;
-  readonly sender_portfolio_does_not_exist: bool;
-  readonly receiver_portfolio_does_not_exist: bool;
-  readonly sender_insufficient_balance: bool;
+  readonly receiverIsSamePortfolio: bool;
+  readonly senderPortfolioDoesNotExist: bool;
+  readonly receiverPortfolioDoesNotExist: bool;
+  readonly senderInsufficientBalance: bool;
   readonly result: bool;
 }
 
@@ -1618,8 +1631,8 @@ export interface PosRatio extends ITuple<[u32, u32]> {}
 
 /** @name PreAuthorizedKeyInfo */
 export interface PreAuthorizedKeyInfo extends Struct {
-  readonly target_id: IdentityId;
-  readonly secondary_key: SecondaryKey;
+  readonly targetId: IdentityId;
+  readonly secondaryKey: SecondaryKey;
 }
 
 /** @name PriceTier */
@@ -1643,7 +1656,7 @@ export interface ProposalDetails extends Struct {
   readonly rejections: u64;
   readonly status: ProposalStatus;
   readonly expiry: Option<Moment>;
-  readonly auto_close: bool;
+  readonly autoClose: bool;
 }
 
 /** @name ProposalState */
@@ -1720,7 +1733,7 @@ export interface ProtocolOp extends Enum {
 
 /** @name Receipt */
 export interface Receipt extends Struct {
-  readonly receipt_uid: u64;
+  readonly receiptUid: u64;
   readonly from: PortfolioId;
   readonly to: PortfolioId;
   readonly asset: Ticker;
@@ -1729,8 +1742,8 @@ export interface Receipt extends Struct {
 
 /** @name ReceiptDetails */
 export interface ReceiptDetails extends Struct {
-  readonly receipt_uid: u64;
-  readonly leg_id: LegId;
+  readonly receiptUid: u64;
+  readonly legId: LegId;
   readonly signer: AccountId;
   readonly signature: OffChainSignature;
   readonly metadata: ReceiptMetadata;
@@ -1756,6 +1769,14 @@ export interface RecordDateSpec extends Enum {
   readonly type: 'Scheduled' | 'ExistingSchedule' | 'Existing';
 }
 
+/** @name RequirementReport */
+export interface RequirementReport extends Struct {
+  readonly requirementSatisfied: bool;
+  readonly id: u32;
+  readonly senderConditions: Vec<ConditionReport>;
+  readonly receiverConditions: Vec<ConditionReport>;
+}
+
 /** @name RestrictionResult */
 export interface RestrictionResult extends Enum {
   readonly isValid: boolean;
@@ -1775,8 +1796,8 @@ export interface RpcDidRecords extends Enum {
 
 /** @name RpcDidRecordsSuccess */
 export interface RpcDidRecordsSuccess extends Struct {
-  readonly primary_key: AccountId;
-  readonly secondary_keys: Vec<SecondaryKey>;
+  readonly primaryKey: AccountId;
+  readonly secondaryKeys: Vec<SecondaryKey>;
 }
 
 /** @name ScheduleId */
@@ -1808,16 +1829,16 @@ export interface SecondaryKey extends Struct {
 
 /** @name SecondaryKeyWithAuth */
 export interface SecondaryKeyWithAuth extends Struct {
-  readonly secondary_key: SecondaryKey;
-  readonly auth_signature: H512;
+  readonly secondaryKey: SecondaryKey;
+  readonly authSignature: H512;
 }
 
 /** @name SecurityToken */
 export interface SecurityToken extends Struct {
-  readonly total_supply: Balance;
-  readonly owner_did: IdentityId;
+  readonly totalSupply: Balance;
+  readonly ownerDid: IdentityId;
   readonly divisible: bool;
-  readonly asset_type: AssetType;
+  readonly assetType: AssetType;
 }
 
 /** @name SettlementType */
@@ -1855,8 +1876,8 @@ export interface SnapshotId extends u32 {}
 
 /** @name SnapshotMetadata */
 export interface SnapshotMetadata extends Struct {
-  readonly created_at: BlockNumber;
-  readonly made_by: AccountId;
+  readonly createdAt: BlockNumber;
+  readonly madeBy: AccountId;
   readonly id: SnapshotId;
 }
 
@@ -1877,7 +1898,7 @@ export interface SnapshottedPip extends Struct {
 /** @name Stat1stKey */
 export interface Stat1stKey extends Struct {
   readonly asset: AssetScope;
-  readonly stat_type: StatType;
+  readonly statType: StatType;
 }
 
 /** @name Stat2ndKey */
@@ -1909,7 +1930,7 @@ export interface StatOpType extends Enum {
 /** @name StatType */
 export interface StatType extends Struct {
   readonly op: StatOpType;
-  readonly claim_issuer: Option<ITuple<[ClaimType, IdentityId]>>;
+  readonly claimIssuer: Option<ITuple<[ClaimType, IdentityId]>>;
 }
 
 /** @name StatUpdate */
@@ -1928,15 +1949,15 @@ export interface StoredSchedule extends Struct {
 
 /** @name Subsidy */
 export interface Subsidy extends Struct {
-  readonly paying_key: AccountId;
+  readonly payingKey: AccountId;
   readonly remaining: Balance;
 }
 
 /** @name TargetIdAuthorization */
 export interface TargetIdAuthorization extends Struct {
-  readonly target_id: IdentityId;
+  readonly targetId: IdentityId;
   readonly nonce: u64;
-  readonly expires_at: Moment;
+  readonly expiresAt: Moment;
 }
 
 /** @name TargetIdentities */
@@ -1974,8 +1995,8 @@ export interface TickerRegistration extends Struct {
 
 /** @name TickerRegistrationConfig */
 export interface TickerRegistrationConfig extends Struct {
-  readonly max_ticker_length: u8;
-  readonly registration_length: Option<Moment>;
+  readonly maxTickerLength: u8;
+  readonly registrationLength: Option<Moment>;
 }
 
 /** @name TransferCondition */
@@ -1995,7 +2016,7 @@ export interface TransferCondition extends Enum {
 export interface TransferConditionExemptKey extends Struct {
   readonly asset: AssetScope;
   readonly op: StatOpType;
-  readonly claim_type: Option<ClaimType>;
+  readonly claimType: Option<ClaimType>;
 }
 
 /** @name TransferConditionResult */
@@ -2030,7 +2051,7 @@ export interface Url extends Text {}
 /** @name Venue */
 export interface Venue extends Struct {
   readonly creator: IdentityId;
-  readonly venue_type: VenueType;
+  readonly venueType: VenueType;
 }
 
 /** @name VenueDetails */
@@ -2076,10 +2097,10 @@ export interface VoteCountProposalFound extends Struct {
 
 /** @name VotingResult */
 export interface VotingResult extends Struct {
-  readonly ayes_count: u32;
-  readonly ayes_stake: Balance;
-  readonly nays_count: u32;
-  readonly nays_stake: Balance;
+  readonly ayesCount: u32;
+  readonly ayesStake: Balance;
+  readonly naysCount: u32;
+  readonly naysStake: Balance;
 }
 
 /** @name WeightPerClass */

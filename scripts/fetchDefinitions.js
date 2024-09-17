@@ -6,11 +6,15 @@ const util = require('util');
 const { forEach, camelCase, mapKeys } = require('lodash');
 
 const { typesBundle } = require('@polymeshassociation/polymesh-types');
-const types = require('@polymeshassociation/polymesh-types/types/6.1.x.json');
+const types = require('@polymeshassociation/polymesh-types/types/6.3.x.json');
+const versionedRpc = require('@polymeshassociation/polymesh-types/rpc/6.x').default;
 
 const definitionsDir = path.resolve('src', 'polkadot');
 const typesDir = path.resolve(definitionsDir, 'polymesh');
 const generatedDir = path.resolve('src', 'generated');
+
+rimraf.sync(definitionsDir);
+fs.mkdirSync(definitionsDir);
 
 rimraf.sync(typesDir);
 fs.mkdirSync(typesDir);
@@ -21,7 +25,6 @@ fs.mkdirSync(generatedDir);
 /**
  * @hidden
  * transforms the schema so RPC types are compatible with other methods from the polkadot api.
- * @note imports are added into the generated files in the postProcessTypes script
  */
 function transformSchema(schemaObj) {
   let {
@@ -29,31 +32,20 @@ function transformSchema(schemaObj) {
     runtime,
   } = schemaObj;
 
-  camelCaseParamNames(identity.getFilteredAuthorizations);
-  identity.getFilteredAuthorizations.type = 'Vec<PolymeshPrimitivesAuthorization>';
-  runtime.IdentityApi[0].methods.get_filtered_authorizations.params[0].type =
-    'PolymeshPrimitivesSecondaryKeySignatory';
-  runtime.IdentityApi[0].methods.get_filtered_authorizations.type =
-    'Vec<PolymeshPrimitivesAuthorization>';
-
-  camelCaseKeys(schemaObj, 'types', 'ComplianceRequirementResult');
-
-  camelCaseKeys(schemaObj, 'types', 'Condition');
+  // Convert type keys to camelCase (excluding "_enum")
   schemaObj.types.Condition.issuers = 'Vec<PolymeshPrimitivesConditionTrustedIssuer>';
+  Object.entries(types).forEach(([key, value]) => {
+    if (typeof value === 'object' && !value._enum) {
+      camelCaseKeys(schemaObj, 'types', key);
+    }
+    camelCaseParamNames(asset.canTransferGranular);
+  });
 
-  camelCaseKeys(schemaObj, 'types', 'TrustedIssuer');
-
-  camelCaseParamNames(asset.canTransferGranular);
-  asset.canTransferGranular.params[0].type = 'Option<PolymeshPrimitivesIdentityId>';
-  asset.canTransferGranular.params[2].type = 'Option<PolymeshPrimitivesIdentityId>';
-
-  runtime.AssetApi[0].methods.can_transfer_granular.params[0].type =
-    'Option<PolymeshPrimitivesIdentityId>';
-  runtime.AssetApi[0].methods.can_transfer_granular.params[2].type =
-    'Option<PolymeshPrimitivesIdentityId>';
-
-  camelCaseParamNames(settlement.getExecuteInstructionInfo);
-  camelCaseKeys(schemaObj, 'types', 'ExecuteInstructionInfo');
+  Object.values(runtime).forEach(apiMethodsArray =>
+    apiMethodsArray.forEach(apiMethodsObj =>
+      Object.values(apiMethodsObj.methods).forEach(camelCaseParamNames)
+    )
+  );
 }
 
 function camelCaseKeys(schemaObj, section, field) {
@@ -69,18 +61,18 @@ function camelCaseParamNames(field) {
 }
 
 function writeDefinitions(schemaObj) {
-  const { types, rpc: rpcModules } = schemaObj;
+  const { types, rpc: rpcModules, runtime } = schemaObj;
 
   fs.writeFileSync(
     path.resolve(typesDir, 'definitions.ts'),
     `/* eslint-disable @typescript-eslint/naming-convention */\nexport default ${util.inspect(
-      { rpc: {}, types },
+      { rpc: {}, runtime, types },
       {
         compact: false,
         depth: null,
         maxArrayLength: null,
       }
-    )}`
+    )};`
   );
 
   fs.writeFileSync(
@@ -96,7 +88,7 @@ function writeDefinitions(schemaObj) {
   );
 
   let defExports =
-    "/* istanbul ignore file */\n\nexport { default as polymesh } from './polymesh/definitions';\n";
+    "/* istanbul ignore file */\n\nexport { default as polymesh } from './polymesh/definitions';\n";
 
   forEach(rpcModules, (rpc, moduleName) => {
     const moduleDir = path.resolve(definitionsDir, moduleName);
@@ -113,7 +105,7 @@ function writeDefinitions(schemaObj) {
           depth: null,
           maxArrayLength: null,
         }
-      )}`
+      )};`
     );
 
     defExports = `${defExports}export { default as ${moduleName} } from './${moduleName}/definitions';\n`;
@@ -123,10 +115,10 @@ function writeDefinitions(schemaObj) {
 }
 
 (() => {
-  const { rpc, runtime, signedExtensions } = typesBundle.spec.polymesh_dev;
+  const { runtime, signedExtensions } = typesBundle.spec.polymesh_dev;
   const schema = {
     types,
-    rpc,
+    rpc: versionedRpc,
     runtime,
     signedExtensions,
   };

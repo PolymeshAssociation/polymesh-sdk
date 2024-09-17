@@ -107,6 +107,7 @@ import type { IExtrinsic, Observable } from '@polkadot/types/types';
 import type {
   AffirmationCount,
   AssetDidResult,
+  Authorization,
   AuthorizationType,
   CanTransferGranularReturn,
   CappedFee,
@@ -139,17 +140,9 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
        **/
       canTransferGranular: AugmentedRpc<
         (
-          fromCustodian:
-            | Option<PolymeshPrimitivesIdentityId>
-            | null
-            | Uint8Array
-            | PolymeshPrimitivesIdentityId,
+          fromCustodian: Option<IdentityId> | null | Uint8Array | IdentityId | string,
           fromPortfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
-          toCustodian:
-            | Option<PolymeshPrimitivesIdentityId>
-            | null
-            | Uint8Array
-            | PolymeshPrimitivesIdentityId,
+          toCustodian: Option<IdentityId> | null | Uint8Array | IdentityId | string,
           toPortfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
           ticker: Ticker | string | Uint8Array,
           value: Balance | AnyNumber | Uint8Array,
@@ -824,8 +817,8 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
       getFilteredAuthorizations: AugmentedRpc<
         (
           signatory: Signatory | { Identity: any } | { Account: any } | string | Uint8Array,
-          allowExpired: bool | boolean | Uint8Array,
-          authType?:
+          allow_expired: bool | boolean | Uint8Array,
+          auth_type?:
             | AuthorizationType
             | 'AttestPrimaryKeyRotation'
             | 'RotatePrimaryKey'
@@ -840,7 +833,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
             | number
             | Uint8Array,
           blockHash?: Hash | string | Uint8Array
-        ) => Observable<Vec<PolymeshPrimitivesAuthorization>>
+        ) => Observable<Vec<Authorization>>
       >;
       /**
        * Query relation between a signing key and a DID
@@ -1066,7 +1059,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
        **/
       getExecuteInstructionInfo: AugmentedRpc<
         (
-          instructionId: InstructionId | AnyNumber | Uint8Array,
+          instruction_id: InstructionId | AnyNumber | Uint8Array,
           blockHash?: Hash | string | Uint8Array
         ) => Observable<ExecuteInstructionInfo>
       >;

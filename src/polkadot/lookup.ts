@@ -5638,6 +5638,8 @@ export default {
       'InvalidNFTTransferSenderIdMatchesReceiverId',
       'InvalidNFTTransferInvalidReceiverCDD',
       'InvalidNFTTransferInvalidSenderCDD',
+      'InvalidNFTTransferInconsistentTicker',
+      'NFTIsLocked',
     ],
   },
   /**

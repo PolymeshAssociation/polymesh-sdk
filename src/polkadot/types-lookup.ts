@@ -7792,6 +7792,8 @@ declare module '@polkadot/types/lookup' {
     readonly isInvalidNFTTransferSenderIdMatchesReceiverId: boolean;
     readonly isInvalidNFTTransferInvalidReceiverCDD: boolean;
     readonly isInvalidNFTTransferInvalidSenderCDD: boolean;
+    readonly isInvalidNFTTransferInconsistentTicker: boolean;
+    readonly isNftIsLocked: boolean;
     readonly type:
       | 'BalanceOverflow'
       | 'BalanceUnderflow'
@@ -7818,7 +7820,9 @@ declare module '@polkadot/types/lookup' {
       | 'InvalidNFTTransferNFTIsLocked'
       | 'InvalidNFTTransferSenderIdMatchesReceiverId'
       | 'InvalidNFTTransferInvalidReceiverCDD'
-      | 'InvalidNFTTransferInvalidSenderCDD';
+      | 'InvalidNFTTransferInvalidSenderCDD'
+      | 'InvalidNFTTransferInconsistentTicker'
+      | 'NftIsLocked';
   }
 
   /** @name PalletTestUtilsError (753) */

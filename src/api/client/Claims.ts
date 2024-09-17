@@ -349,13 +349,7 @@ export class Claims {
     const data: ClaimData<CddClaim>[] = [];
 
     result.forEach(optClaim => {
-      const {
-        claim_issuer: claimIssuer,
-        issuance_date: issuanceDate,
-        last_update_date: lastUpdateDate,
-        expiry: rawExpiry,
-        claim,
-      } = optClaim;
+      const { claimIssuer, issuanceDate, lastUpdateDate, expiry: rawExpiry, claim } = optClaim;
 
       const expiry = !rawExpiry.isEmpty ? momentToDate(rawExpiry.unwrap()) : null;
 
