@@ -2257,7 +2257,8 @@ export function middlewareEventDetailsToEventIdentifier(
  * @hidden
  */
 export function meshClaimToClaim(claim: PolymeshPrimitivesIdentityClaimClaim): Claim {
-  if (claim.isJurisdiction) {
+  const type = claim.type;
+  if (type === 'Jurisdiction') {
     const [code, scope] = claim.asJurisdiction;
     return {
       type: ClaimType.Jurisdiction,
@@ -2266,59 +2267,72 @@ export function meshClaimToClaim(claim: PolymeshPrimitivesIdentityClaimClaim): C
     };
   }
 
-  if (claim.isAccredited) {
+  if (type === 'Accredited') {
     return {
       type: ClaimType.Accredited,
       scope: meshScopeToScope(claim.asAccredited),
     };
   }
 
-  if (claim.isAffiliate) {
+  if (type === 'Affiliate') {
     return {
       type: ClaimType.Affiliate,
       scope: meshScopeToScope(claim.asAffiliate),
     };
   }
 
-  if (claim.isBuyLockup) {
+  if (type === 'BuyLockup') {
     return {
       type: ClaimType.BuyLockup,
       scope: meshScopeToScope(claim.asBuyLockup),
     };
   }
 
-  if (claim.isSellLockup) {
+  if (type === 'SellLockup') {
     return {
       type: ClaimType.SellLockup,
       scope: meshScopeToScope(claim.asSellLockup),
     };
   }
 
-  if (claim.isCustomerDueDiligence) {
+  if (type === 'CustomerDueDiligence') {
     return {
       type: ClaimType.CustomerDueDiligence,
       id: cddIdToString(claim.asCustomerDueDiligence),
     };
   }
 
-  if (claim.isKnowYourCustomer) {
+  if (type === 'KnowYourCustomer') {
     return {
       type: ClaimType.KnowYourCustomer,
       scope: meshScopeToScope(claim.asKnowYourCustomer),
     };
   }
 
-  if (claim.isExempted) {
+  if (type === 'Exempted') {
     return {
       type: ClaimType.Exempted,
       scope: meshScopeToScope(claim.asExempted),
     };
   }
 
-  return {
-    type: ClaimType.Blocked,
-    scope: meshScopeToScope(claim.asBlocked),
-  };
+  if (type === 'Custom') {
+    const [rawId, scope] = claim.asCustom;
+    return {
+      type: ClaimType.Custom,
+      scope: meshScopeToScope(scope.unwrapOrDefault()),
+      customClaimTypeId: u32ToBigNumber(rawId),
+    };
+  }
+
+  if (type === 'Blocked') {
+    return {
+      type: ClaimType.Blocked,
+      scope: meshScopeToScope(claim.asBlocked),
+    };
+  }
+
+  throw new UnreachableCaseError(type);
 }
 
 /**
@@ -2358,39 +2372,48 @@ export function stringToTargetIdentity(
 export function meshClaimTypeToClaimType(
   claimType: PolymeshPrimitivesIdentityClaimClaimType
 ): ClaimType {
-  if (claimType.isJurisdiction) {
+  const type = claimType.type;
+  if (type === 'Jurisdiction') {
     return ClaimType.Jurisdiction;
   }
 
-  if (claimType.isAccredited) {
+  if (type === 'Accredited') {
     return ClaimType.Accredited;
   }
 
-  if (claimType.isAffiliate) {
+  if (type === 'Affiliate') {
     return ClaimType.Affiliate;
   }
 
-  if (claimType.isBuyLockup) {
+  if (type === 'BuyLockup') {
     return ClaimType.BuyLockup;
   }
 
-  if (claimType.isSellLockup) {
+  if (type === 'SellLockup') {
     return ClaimType.SellLockup;
   }
 
-  if (claimType.isCustomerDueDiligence) {
+  if (type === 'CustomerDueDiligence') {
     return ClaimType.CustomerDueDiligence;
   }
 
-  if (claimType.isKnowYourCustomer) {
+  if (type === 'KnowYourCustomer') {
     return ClaimType.KnowYourCustomer;
   }
 
-  if (claimType.isExempted) {
+  if (type === 'Exempted') {
     return ClaimType.Exempted;
   }
 
-  return ClaimType.Blocked;
+  if (type === 'Custom') {
+    return ClaimType.Custom;
+  }
+
+  if (type === 'Blocked') {
+    return ClaimType.Blocked;
+  }
+
+  throw new UnreachableCaseError(type);
 }
 
 /**

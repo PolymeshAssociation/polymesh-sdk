@@ -2619,15 +2619,7 @@ export const createMockClaim = (
       }
     | { Exempted: PolymeshPrimitivesIdentityClaimScope }
     | { Blocked: PolymeshPrimitivesIdentityClaimScope }
-  // | {
-  //     InvestorUniqueness: [
-  //       PolymeshPrimitivesIdentityClaimScope,
-  //       PolymeshPrimitivesIdentityId,
-  //       PolymeshPrimitivesCddId
-  //     ];
-  //   }
-  // | { InvestorUniquenessV2: PolymeshPrimitivesCddId }
-  // | 'NoData'
+    | { Custom: [u32, Option<PolymeshPrimitivesIdentityClaimScope>] }
 ): PolymeshPrimitivesIdentityClaimClaim =>
   createMockEnum<PolymeshPrimitivesIdentityClaimClaim>(claim);
 
