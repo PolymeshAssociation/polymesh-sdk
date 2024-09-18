@@ -4028,7 +4028,32 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
 
       result = meshClaimToClaim(claim);
       expect(result).toEqual(fakeResult);
+
+      const customClaimTypeId = new BigNumber(1);
+      fakeResult = {
+        type: ClaimType.Custom,
+        customClaimTypeId,
+        scope,
+      };
+
+      claim = dsMockUtils.createMockClaim({
+        Custom: [
+          dsMockUtils.createMockU32(customClaimTypeId),
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockScope({ Identity: dsMockUtils.createMockIdentityId(scope.value) })
+          ),
+        ],
+      });
+
+      result = meshClaimToClaim(claim);
+      expect(result).toEqual(fakeResult);
     });
+  });
+
+  it('should throw an error with an unknown type', () => {
+    expect(() => meshClaimToClaim({} as PolymeshPrimitivesIdentityClaimClaim)).toThrow(
+      UnreachableCaseError
+    );
   });
 });
 
@@ -4242,6 +4267,19 @@ describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
 
       result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
+
+      fakeResult = ClaimType.Custom;
+
+      claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+      result = meshClaimTypeToClaimType(claimType);
+      expect(result).toEqual(fakeResult);
+    });
+
+    it('should throw an error if it unparses an unknown type', () => {
+      expect(() =>
+        meshClaimTypeToClaimType({} as unknown as PolymeshPrimitivesIdentityClaimClaimType)
+      ).toThrow(UnreachableCaseError);
     });
   });
 
