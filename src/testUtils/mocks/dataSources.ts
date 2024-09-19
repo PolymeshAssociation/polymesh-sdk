@@ -3138,12 +3138,12 @@ export const createMockAssetComplianceReport = (assetComplianceReport?: {
     requirementSatisfied: bool;
     id: u32 | Parameters<typeof createMockU32>[0];
   }[];
-  anyRequirementSatistifed: bool | Parameters<typeof createMockBool>[0];
+  anyRequirementSatisfied: bool | Parameters<typeof createMockBool>[0];
 }): MockCodec<ComplianceReport> => {
-  const { pausedCompliance, requirements, anyRequirementSatistifed } = assetComplianceReport ?? {
+  const { pausedCompliance, requirements, anyRequirementSatisfied } = assetComplianceReport ?? {
     pausedCompliance: createMockBool(),
     requirements: [],
-    anyRequirementSatistifed: createMockBool(),
+    anyRequirementSatisfied: createMockBool(),
   };
 
   return createMockCodec(
@@ -3152,7 +3152,7 @@ export const createMockAssetComplianceReport = (assetComplianceReport?: {
       requirements: requirements.map(requirement =>
         createMockComplianceRequirementReport(requirement)
       ),
-      anyRequirementSatistifed: createMockBool(anyRequirementSatistifed),
+      anyRequirementSatisfied: createMockBool(anyRequirementSatisfied),
     },
     !assetComplianceReport
   );

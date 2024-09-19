@@ -3984,7 +3984,7 @@ describe('transferReportToTransferBreakdown', () => {
       dsMockUtils.createMockDispatchResult({
         Ok: dsMockUtils.createMockAssetComplianceReport({
           pausedCompliance: true,
-          anyRequirementSatistifed: true,
+          anyRequirementSatisfied: true,
           requirements: [],
         }),
       }) as unknown as Result<ComplianceReport, DispatchError>,
@@ -4046,7 +4046,7 @@ describe('transferReportToTransferBreakdown', () => {
       dsMockUtils.createMockDispatchResult({
         Ok: dsMockUtils.createMockAssetComplianceReport({
           pausedCompliance: false,
-          anyRequirementSatistifed: false,
+          anyRequirementSatisfied: false,
           requirements: [],
         }),
       }) as unknown as Result<ComplianceReport, DispatchError>,
@@ -4185,7 +4185,7 @@ describe('assetDispatchErrorToTransferError', () => {
 
     expect(result).toEqual(TransferError.InsufficientPortfolioBalance);
 
-    dsMockUtils.setErrorMock('statistics', 'InvalidTransfer', {
+    dsMockUtils.setErrorMock('statistics', 'InvalidTransferStatisticsFailure', {
       returnValue: { is: jest.fn().mockReturnValueOnce(true) },
     });
 
@@ -6606,7 +6606,7 @@ describe('assetComplianceReportToCompliance', () => {
     let assetComplianceReport = dsMockUtils.createMockAssetComplianceReport({
       pausedCompliance: dsMockUtils.createMockBool(true),
       requirements: [rawRequirements],
-      anyRequirementSatistifed: dsMockUtils.createMockBool(true),
+      anyRequirementSatisfied: dsMockUtils.createMockBool(true),
     });
 
     let result = assetComplianceReportToCompliance(
@@ -6623,7 +6623,7 @@ describe('assetComplianceReportToCompliance', () => {
     assetComplianceReport = dsMockUtils.createMockAssetComplianceReport({
       pausedCompliance: dsMockUtils.createMockBool(false),
       requirements: [rawRequirements],
-      anyRequirementSatistifed: dsMockUtils.createMockBool(true),
+      anyRequirementSatisfied: dsMockUtils.createMockBool(true),
     });
 
     result = assetComplianceReportToCompliance(

@@ -5,6 +5,7 @@ import {
   NormalizedCacheObject,
 } from '@apollo/client/core';
 import { ApiPromise, HttpProvider, WsProvider } from '@polkadot/api';
+import { DefinitionsCall } from '@polkadot/types/types';
 import { SigningManager } from '@polymeshassociation/signing-manager-types';
 import fetch from 'cross-fetch';
 import schema from 'polymesh-types/schema';
@@ -168,7 +169,7 @@ export class Polymesh {
         provider,
         types,
         rpc,
-        runtime: runtimeApis,
+        runtime: runtimeApis as unknown as DefinitionsCall,
         signedExtensions,
         metadata,
         noInitWarn,
