@@ -79,18 +79,10 @@ export async function prepareJoinCreator(
 > {
   const {
     context,
-    context: { polymeshApi, isV6 },
+    context: { polymeshApi },
   } = this;
   const { multiSig, asPrimary } = args;
   const tx = polymeshApi.tx as unknown as LocalSubmittableExtrinsics<ApiTypes>;
-
-  if (!isV6) {
-    throw new PolymeshError({
-      code: ErrorCode.NoDataChange,
-      message:
-        'This method is deprecated. MultiSig automatically is attached to the creators identity on creation.',
-    });
-  }
 
   const [signingIdentity, creator] = await Promise.all([
     context.getSigningIdentity(),
@@ -162,6 +154,19 @@ export function getAuthorization(
   args: Params
 ): ProcedureAuthorization {
   const { asPrimary } = args;
+  const {
+    context: { isV6 },
+  } = this;
+
+  if (!isV6) {
+    throw new PolymeshError({
+      code: ErrorCode.NoDataChange,
+      message: asPrimary
+        ? 'This method is deprecated. Use `identities.rotatePrimaryKey` instead.'
+        : 'This method is deprecated. MultiSig automatically is attached as secondary key to the creators identity.',
+    });
+  }
+
   const transactions = [];
   if (asPrimary) {
     transactions.push(TxTags.multiSig.MakeMultisigPrimary);
