@@ -20,7 +20,6 @@ import {
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
-  stringToIdentityId,
   stringToTicker,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
@@ -139,9 +138,9 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
       amount = args.amount;
       ({ isDivisible } = await parent.details());
       granularResult = await assetApi.canTransferGranular<CanTransferGranularReturn>(
-        stringToIdentityId(fromCustodian.did, context),
+        fromCustodian.did,
         rawFromPortfolio,
-        stringToIdentityId(toCustodian.did, context),
+        toCustodian.did,
         rawToPortfolio,
         stringToTicker(ticker, context),
         bigNumberToBalance(amount, context, isDivisible)
@@ -150,9 +149,9 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
       const rawNfts = nftToMeshNft(ticker, args.nfts, context);
       [granularResult, nftResult] = await Promise.all([
         assetApi.canTransferGranular<CanTransferGranularReturn>(
-          stringToIdentityId(fromCustodian.did, context),
+          fromCustodian.did,
           rawFromPortfolio,
-          stringToIdentityId(toCustodian.did, context),
+          toCustodian.did,
           rawToPortfolio,
           stringToTicker(ticker, context),
           bigNumberToBalance(amount, context, isDivisible)
