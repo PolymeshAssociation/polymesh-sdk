@@ -646,6 +646,7 @@ export default {
       authorizedBy: 'IdentityId',
       expiry: 'Option<Moment>',
       authId: 'u64',
+      count: 'u32',
     },
     AuthorizationData: {
       _enum: {
@@ -1696,6 +1697,54 @@ export default {
         version: 3,
       },
     ],
+    ComplianceApi: [
+      {
+        methods: {
+          compliance_report: {
+            description: 'Checks all compliance requirements for the given asset_id.',
+            params: [
+              {
+                name: 'assetId',
+                type: 'AssetID',
+              },
+              {
+                name: 'senderIdentity',
+                type: 'IdentityId',
+              },
+              {
+                name: 'receiverIdentity',
+                type: 'IdentityId',
+              },
+            ],
+            type: 'Result<ComplianceReport, DispatchError>',
+          },
+        },
+        version: 2,
+      },
+      {
+        methods: {
+          compliance_report: {
+            description: 'Checks all compliance requirements for the given ticker.',
+            params: [
+              {
+                name: 'ticker',
+                type: 'Ticker',
+              },
+              {
+                name: 'senderIdentity',
+                type: 'IdentityId',
+              },
+              {
+                name: 'receiverIdentity',
+                type: 'IdentityId',
+              },
+            ],
+            type: 'Result<ComplianceReport, DispatchError>',
+          },
+        },
+        version: 1,
+      },
+    ],
     GroupApi: [
       {
         methods: {
@@ -1945,6 +1994,60 @@ export default {
         version: 1,
       },
     ],
+    PipsApi: [
+      {
+        methods: {
+          get_votes: {
+            description: 'Summary of votes of a proposal given by index',
+            params: [
+              {
+                name: 'index',
+                type: 'PipId',
+              },
+            ],
+            type: 'VoteCount',
+          },
+          proposed_by: {
+            description: 'Retrieves proposal indices started by address',
+            params: [
+              {
+                name: 'address',
+                type: 'AccountId',
+              },
+            ],
+            type: 'Vec<PipId>',
+          },
+          voted_on: {
+            description: 'Retrieves proposal address indices voted on',
+            params: [
+              {
+                name: 'address',
+                type: 'AccountId',
+              },
+            ],
+            type: 'Vec<PipId>',
+          },
+        },
+        version: 1,
+      },
+    ],
+    ProtocolFeeApi: [
+      {
+        methods: {
+          compute_fee: {
+            description: 'Gets the fee of a chargeable extrinsic operation',
+            params: [
+              {
+                name: 'op',
+                type: 'ProtocolOp',
+              },
+            ],
+            type: 'CappedFee',
+          },
+        },
+        version: 1,
+      },
+    ],
     SettlementApi: [
       {
         methods: {
@@ -2061,60 +2164,6 @@ export default {
         version: 1,
       },
     ],
-    PipsApi: [
-      {
-        methods: {
-          get_votes: {
-            description: 'Summary of votes of a proposal given by index',
-            params: [
-              {
-                name: 'index',
-                type: 'PipId',
-              },
-            ],
-            type: 'VoteCount',
-          },
-          proposed_by: {
-            description: 'Retrieves proposal indices started by address',
-            params: [
-              {
-                name: 'address',
-                type: 'AccountId',
-              },
-            ],
-            type: 'Vec<PipId>',
-          },
-          voted_on: {
-            description: 'Retrieves proposal address indices voted on',
-            params: [
-              {
-                name: 'address',
-                type: 'AccountId',
-              },
-            ],
-            type: 'Vec<PipId>',
-          },
-        },
-        version: 1,
-      },
-    ],
-    ProtocolFeeApi: [
-      {
-        methods: {
-          compute_fee: {
-            description: 'Gets the fee of a chargeable extrinsic operation',
-            params: [
-              {
-                name: 'op',
-                type: 'ProtocolOp',
-              },
-            ],
-            type: 'CappedFee',
-          },
-        },
-        version: 1,
-      },
-    ],
     StakingApi: [
       {
         methods: {
@@ -2122,54 +2171,6 @@ export default {
             description: 'Retrieves curves parameters',
             params: [],
             type: 'Vec<(Perbill, Perbill)>',
-          },
-        },
-        version: 1,
-      },
-    ],
-    ComplianceApi: [
-      {
-        methods: {
-          compliance_report: {
-            description: 'Checks all compliance requirements for the given asset_id.',
-            params: [
-              {
-                name: 'assetId',
-                type: 'AssetID',
-              },
-              {
-                name: 'senderIdentity',
-                type: 'IdentityId',
-              },
-              {
-                name: 'receiverIdentity',
-                type: 'IdentityId',
-              },
-            ],
-            type: 'Result<ComplianceReport, DispatchError>',
-          },
-        },
-        version: 2,
-      },
-      {
-        methods: {
-          compliance_report: {
-            description: 'Checks all compliance requirements for the given ticker.',
-            params: [
-              {
-                name: 'ticker',
-                type: 'Ticker',
-              },
-              {
-                name: 'senderIdentity',
-                type: 'IdentityId',
-              },
-              {
-                name: 'receiverIdentity',
-                type: 'IdentityId',
-              },
-            ],
-            type: 'Result<ComplianceReport, DispatchError>',
           },
         },
         version: 1,

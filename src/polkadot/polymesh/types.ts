@@ -230,6 +230,7 @@ export interface Authorization extends Struct {
   readonly authorizedBy: IdentityId;
   readonly expiry: Option<Moment>;
   readonly authId: u64;
+  readonly count: u32;
 }
 
 /** @name AuthorizationData */
