@@ -41,6 +41,7 @@ export interface MiddlewareMetadata {
   lastProcessedTimestamp: Date;
   specName: string;
   targetHeight: BigNumber;
+  sqVersion: string;
 }
 
 export interface SubmissionDetails {
@@ -179,6 +180,7 @@ export interface EventIdentifier {
 export interface NetworkProperties {
   name: string;
   version: BigNumber;
+  genesisHash: string;
 }
 
 export interface Fees {

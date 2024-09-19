@@ -2146,6 +2146,7 @@ describe('Context class', () => {
         middlewareApiV2: dsMockUtils.getMiddlewareApi(),
       });
 
+      const sqVersion = '1.1.1';
       const metadata = {
         chain: 'Polymesh Testnet Develop',
         specName: 'polymesh_testnet',
@@ -2154,6 +2155,7 @@ describe('Context class', () => {
         lastProcessedTimestamp: new Date('01/06/2023'),
         targetHeight: new BigNumber(6120219),
         indexerHealthy: true,
+        sqVersion,
       };
 
       dsMockUtils.createApolloQueryMock(metadataQuery(), {
@@ -2164,6 +2166,8 @@ describe('Context class', () => {
           targetHeight: metadata.targetHeight.toString(),
         },
       });
+
+      jest.spyOn(utilsInternalModule, 'getLatestSqVersion').mockResolvedValue(sqVersion);
 
       const result = await context.getMiddlewareMetadata();
       expect(result).toEqual(metadata);

@@ -774,6 +774,7 @@ const defaultContextOptions: ContextOptions = {
     lastProcessedTimestamp: new Date('01/06/2023'),
     targetHeight: new BigNumber(10000),
     indexerHealthy: true,
+    sqVersion: '1.0.0',
   },
   sentAuthorizations: {
     data: [{} as AuthorizationRequest],

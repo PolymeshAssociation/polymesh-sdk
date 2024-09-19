@@ -97,17 +97,20 @@ describe('Network Class', () => {
     it('should return current network information', async () => {
       const name = 'someName';
       const version = new BigNumber(1);
+      const genesisHash = 'someGenesisHash';
+
       const fakeResult = {
         name,
         version,
+        genesisHash,
       };
 
       dsMockUtils.setRuntimeVersion({ specVersion: dsMockUtils.createMockU32(version) });
       dsMockUtils
         .createRpcMock('system', 'chain')
         .mockResolvedValue(dsMockUtils.createMockText(name));
-
       const result = await network.getNetworkProperties();
+
       expect(result).toEqual(fakeResult);
     });
   });

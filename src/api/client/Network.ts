@@ -85,6 +85,7 @@ export class Network {
           rpc: {
             system: { chain },
           },
+          genesisHash,
         },
       },
     } = this;
@@ -93,6 +94,7 @@ export class Network {
     return {
       name: textToString(name),
       version: u32ToBigNumber(specVersion),
+      genesisHash: hashToString(genesisHash),
     };
   }
 
