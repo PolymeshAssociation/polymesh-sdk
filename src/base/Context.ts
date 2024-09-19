@@ -88,6 +88,7 @@ import {
   calculateNextKey,
   delay,
   getApiAtBlock,
+  getLatestSqVersion,
 } from '~/utils/internal';
 
 import { processType } from './utils';
@@ -1263,6 +1264,8 @@ export class Context {
       },
     } = await this.queryMiddleware<Ensured<Query, '_metadata'>>(metadataQuery());
 
+    const sqVersion = await getLatestSqVersion(this);
+
     /* eslint-disable @typescript-eslint/no-non-null-assertion */
     return {
       chain: chain!,
@@ -1272,6 +1275,7 @@ export class Context {
       lastProcessedHeight: new BigNumber(lastProcessedHeight!),
       lastProcessedTimestamp: new Date(parseInt(lastProcessedTimestamp)),
       indexerHealthy: Boolean(indexerHealthy),
+      sqVersion,
     };
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
   }
