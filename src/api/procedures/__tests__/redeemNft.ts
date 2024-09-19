@@ -43,7 +43,9 @@ describe('redeemNft procedure', () => {
   let collection: NftCollection;
   let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let id: BigNumber;
+  let collectionId: BigNumber;
   let rawId: u64;
+  let rawCollectionId: u64;
   let assetToMeshAssetIdSpy: jest.SpyInstance;
   let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
 
@@ -55,7 +57,9 @@ describe('redeemNft procedure', () => {
     rawAssetId = dsMockUtils.createMockAssetId(assetId);
     collection = entityMockUtils.getNftCollectionInstance({ assetId });
     id = new BigNumber(1);
+    collectionId = new BigNumber(2);
     rawId = dsMockUtils.createMockU64(id);
+    rawCollectionId = dsMockUtils.createMockU64(collectionId);
     assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
   });
@@ -64,6 +68,10 @@ describe('redeemNft procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
     when(assetToMeshAssetIdSpy).calledWith(collection, mockContext).mockReturnValue(rawAssetId);
     when(bigNumberToU64Spy).calledWith(id, mockContext).mockReturnValue(rawId);
+    when(bigNumberToU64Spy).calledWith(collectionId, mockContext).mockReturnValue(rawCollectionId);
+    dsMockUtils.createQueryMock('nft', 'collectionKeys', {
+      returnValue: dsMockUtils.createMockBTreeSet(),
+    });
   });
 
   afterEach(() => {
@@ -112,7 +120,7 @@ describe('redeemNft procedure', () => {
     });
     expect(result).toEqual({
       transaction,
-      args: [rawAssetId, rawId, rawPortfolioKind],
+      args: [rawAssetId, rawId, rawPortfolioKind, 0],
       resolver: undefined,
     });
   });

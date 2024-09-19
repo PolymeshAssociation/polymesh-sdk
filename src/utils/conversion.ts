@@ -3148,7 +3148,7 @@ export function assetComplianceReportToCompliance(
 
   const {
     requirements: rawRequirements,
-    anyRequirementSatistifed: result,
+    anyRequirementSatisfied: result,
     pausedCompliance: paused,
   } = report;
   const requirements = rawRequirements.map(requirement =>
@@ -3630,7 +3630,7 @@ export function assetDispatchErrorToTransferError(
     [portfolioErrors.InsufficientPortfolioBalance, TransferError.InsufficientPortfolioBalance],
     [assetErrors.InvalidTransferComplianceFailure, TransferError.ComplianceFailure],
     [assetErrors.InvalidTransfer, TransferError.ComplianceFailure],
-    [statisticsError.InvalidTransfer, TransferError.TransferNotAllowed],
+    [statisticsError.InvalidTransferStatisticsFailure, TransferError.TransferNotAllowed],
   ];
   if (error.isModule) {
     const moduleErr = error.asModule;

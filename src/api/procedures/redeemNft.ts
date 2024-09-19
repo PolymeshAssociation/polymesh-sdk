@@ -30,16 +30,23 @@ export async function prepareRedeemNft(
   const {
     context,
     context: {
-      polymeshApi: { tx },
+      isV6,
+      polymeshApi: { tx, query },
     },
     storage: { fromPortfolio },
   } = this;
 
   const { collection, id } = args;
 
+  const collectionId = await collection.getCollectionId();
   const rawAssetId = assetToMeshAssetId(collection, context);
+  const rawId = bigNumberToU64(id, context);
+  const rawCollectionId = bigNumberToU64(collectionId, context);
 
-  const [{ free }] = await fromPortfolio.getCollections({ collections: [collection.id] });
+  const [[{ free }], rawKeySet] = await Promise.all([
+    fromPortfolio.getCollections({ collections: [collection.id] }),
+    query.nft.collectionKeys(rawCollectionId),
+  ]);
 
   if (!free.find(heldNft => heldNft.id.eq(id))) {
     throw new PolymeshError({
@@ -51,11 +58,15 @@ export async function prepareRedeemNft(
     });
   }
 
-  const rawId = bigNumberToU64(id, context);
+  /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
+  const txArgs = isV6
+    ? [rawAssetId, rawId, portfolioToPortfolioKind(fromPortfolio, context)]
+    : [rawAssetId, rawId, portfolioToPortfolioKind(fromPortfolio, context), rawKeySet.size];
 
   return {
     transaction: tx.nft.redeemNft,
-    args: [rawAssetId, rawId, portfolioToPortfolioKind(fromPortfolio, context)],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    args: txArgs as any,
     resolver: undefined,
   };
 }
