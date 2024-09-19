@@ -1,6 +1,5 @@
 import { AccountId, Balance, DispatchError } from '@polkadot/types/interfaces';
 import {
-  PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
@@ -47,10 +46,8 @@ describe('Settlements class', () => {
     DefaultPortfolio | NumberedPortfolio,
     [PortfolioId, Context]
   >;
-  let stringToIdentityIdSpy: jest.SpyInstance<PolymeshPrimitivesIdentityId, [string, Context]>;
   let rawAccountId: AccountId;
   let rawTicker: PolymeshPrimitivesTicker;
-  let rawToDid: PolymeshPrimitivesIdentityId;
   let rawAmount: Balance;
   let amount: BigNumber;
   let toDid: string;
@@ -60,7 +57,6 @@ describe('Settlements class', () => {
   let toPortfolioId: PortfolioId;
   let rawFromPortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
   let rawToPortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
-  let rawFromDid: PolymeshPrimitivesIdentityId;
   let fromPortfolio: entityMockUtils.MockDefaultPortfolio;
   let toPortfolio: entityMockUtils.MockDefaultPortfolio;
   let granularCanTransferResultToTransferBreakdownSpy: jest.SpyInstance;
@@ -81,12 +77,10 @@ describe('Settlements class', () => {
     );
     portfolioLikeToPortfolioIdSpy = jest.spyOn(utilsConversionModule, 'portfolioLikeToPortfolioId');
     portfolioIdToPortfolioSpy = jest.spyOn(utilsConversionModule, 'portfolioIdToPortfolio');
-    stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
     rawAmount = dsMockUtils.createMockBalance(amount);
     fromDid = 'fromDid';
     fromPortfolioId = { did: fromDid };
     toPortfolioId = { did: toDid };
-    rawFromDid = dsMockUtils.createMockIdentityId(fromDid);
     rawFromPortfolio = dsMockUtils.createMockPortfolioId({ did: fromDid, kind: 'Default' });
     rawToPortfolio = dsMockUtils.createMockPortfolioId({ did: toDid, kind: 'Default' });
     granularCanTransferResultToTransferBreakdownSpy = jest.spyOn(
@@ -102,7 +96,6 @@ describe('Settlements class', () => {
     ticker = mockAsset.ticker;
     rawAccountId = dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID);
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    rawToDid = dsMockUtils.createMockIdentityId(toDid);
     toPortfolio = entityMockUtils.getDefaultPortfolioInstance({
       ...toPortfolioId,
       getCustodian: entityMockUtils.getIdentityInstance({ did: toPortfolioId.did }),
@@ -122,12 +115,10 @@ describe('Settlements class', () => {
     when(portfolioIdToPortfolioSpy)
       .calledWith(fromPortfolioId, mockContext)
       .mockReturnValue(fromPortfolio);
-    when(stringToIdentityIdSpy).calledWith(fromDid, mockContext).mockReturnValue(rawFromDid);
     when(stringToAccountIdSpy)
       .calledWith(DUMMY_ACCOUNT_ID, mockContext)
       .mockReturnValue(rawAccountId);
     when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
-    when(stringToIdentityIdSpy).calledWith(toDid, mockContext).mockReturnValue(rawToDid);
     when(bigNumberToBalanceSpy).calledWith(amount, mockContext, false).mockReturnValue(rawAmount);
   });
 
@@ -157,13 +148,8 @@ describe('Settlements class', () => {
       it('should return a transfer breakdown representing whether the transaction can be made from the signing Identity', async () => {
         const signingIdentity = await mockContext.getSigningIdentity();
         const { did: signingDid } = signingIdentity;
-        const rawSigningDid = dsMockUtils.createMockIdentityId(signingDid);
 
         const currentDefaultPortfolioId = { did: signingDid };
-
-        when(stringToIdentityIdSpy)
-          .calledWith(signingDid, mockContext)
-          .mockReturnValue(rawSigningDid);
 
         when(portfolioLikeToPortfolioIdSpy)
           .calledWith(signingIdentity)
@@ -186,14 +172,7 @@ describe('Settlements class', () => {
         });
 
         when(dsMockUtils.createCallMock('assetApi', 'canTransferGranular'))
-          .calledWith(
-            rawSigningDid,
-            rawFromPortfolio,
-            rawToDid,
-            rawToPortfolio,
-            rawTicker,
-            rawAmount
-          )
+          .calledWith(signingDid, rawFromPortfolio, toDid, rawToPortfolio, rawTicker, rawAmount)
           .mockReturnValue(response);
 
         const expected = 'breakdown' as unknown as TransferBreakdown;
@@ -224,7 +203,7 @@ describe('Settlements class', () => {
           entityMockUtils.getIdentityInstance({ did: toDid })
         );
         when(dsMockUtils.createCallMock('assetApi', 'canTransferGranular'))
-          .calledWith(rawFromDid, rawFromPortfolio, rawToDid, rawToPortfolio, rawTicker, rawAmount)
+          .calledWith(fromDid, rawFromPortfolio, toDid, rawToPortfolio, rawTicker, rawAmount)
           .mockReturnValue(response);
 
         const expected = 'breakdown' as unknown as TransferBreakdown;
@@ -255,7 +234,7 @@ describe('Settlements class', () => {
           entityMockUtils.getIdentityInstance({ did: toDid })
         );
         when(dsMockUtils.createCallMock('assetApi', 'canTransferGranular'))
-          .calledWith(rawFromDid, rawFromPortfolio, rawToDid, rawToPortfolio, rawTicker, rawAmount)
+          .calledWith(fromDid, rawFromPortfolio, toDid, rawToPortfolio, rawTicker, rawAmount)
           .mockReturnValue(response);
 
         const expectedError = new PolymeshError({
