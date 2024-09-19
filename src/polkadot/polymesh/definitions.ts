@@ -395,6 +395,7 @@ export default {
       authorized_by: 'IdentityId',
       expiry: 'Option<Moment>',
       auth_id: 'u64',
+      count: 'u32',
     },
     AuthorizationData: {
       _enum: {
@@ -618,7 +619,7 @@ export default {
       offchain_count: 'u32',
     },
     ComplianceReport: {
-      anyRequirementSatistifed: 'bool',
+      anyRequirementSatisfied: 'bool',
       pausedCompliance: 'bool',
       requirements: 'Vec<RequirementReport>',
     },
