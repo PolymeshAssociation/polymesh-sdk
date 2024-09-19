@@ -43,8 +43,6 @@ import type {
   PalletStakingForcing,
   PalletStakingSlashingSwitch,
   PalletStakingValidatorPrefs,
-  PalletStateTrieMigrationError,
-  PalletStateTrieMigrationMigrationCompute,
   PalletStoFundraiser,
   PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
   PolymeshCommonUtilitiesMaybeBlock,
@@ -2393,37 +2391,6 @@ declare module '@polkadot/api-base/types/events' {
         ApiType,
         [stash: AccountId32, amount: u128],
         { stash: AccountId32; amount: u128 }
-      >;
-    };
-    stateTrieMigration: {
-      /**
-       * The auto migration task finished.
-       **/
-      AutoMigrationFinished: AugmentedEvent<ApiType, []>;
-      /**
-       * Migration got halted due to an error or miss-configuration.
-       **/
-      Halted: AugmentedEvent<
-        ApiType,
-        [error: PalletStateTrieMigrationError],
-        { error: PalletStateTrieMigrationError }
-      >;
-      /**
-       * Given number of `(top, child)` keys were migrated respectively, with the given
-       * `compute`.
-       **/
-      Migrated: AugmentedEvent<
-        ApiType,
-        [top: u32, child: u32, compute: PalletStateTrieMigrationMigrationCompute],
-        { top: u32; child: u32; compute: PalletStateTrieMigrationMigrationCompute }
-      >;
-      /**
-       * Some account got slashed by the given amount.
-       **/
-      Slashed: AugmentedEvent<
-        ApiType,
-        [who: AccountId32, amount: u128],
-        { who: AccountId32; amount: u128 }
       >;
     };
     statistics: {

@@ -83,7 +83,7 @@ export interface Authorization extends Struct {
   readonly authorizationData: AuthorizationData;
   readonly authorizedBy: IdentityId;
   readonly expiry: Option<Moment>;
-  readonly authId: u64;
+  readonly auth_id: u64;
   readonly count: u32;
 }
 
@@ -233,7 +233,7 @@ export interface ClaimType extends Enum {
 
 /** @name ComplianceReport */
 export interface ComplianceReport extends Struct {
-  readonly anyRequirementSatistifed: bool;
+  readonly anyRequirementSatisfied: bool;
   readonly pausedCompliance: bool;
   readonly requirements: Vec<RequirementReport>;
 }

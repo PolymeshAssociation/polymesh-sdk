@@ -129,7 +129,7 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       MaxLengthOfAssetNameExceeded: AugmentedError<ApiType>;
       /**
-       * No security token associated to the given asset ID.
+       * No token associated to the given asset ID.
        **/
       NoSuchAsset: AugmentedError<ApiType>;
       /**
@@ -887,10 +887,6 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       MissingIdentity: AugmentedError<ApiType>;
       /**
-       * Multisig can not be unlinked from an identity while it still holds POLYX
-       **/
-      MultiSigHasBalance: AugmentedError<ApiType>;
-      /**
        * The Identity doesn't have a parent identity.
        **/
       NoParentIdentity: AugmentedError<ApiType>;
@@ -1147,6 +1143,10 @@ declare module '@polkadot/api-base/types/errors' {
        * The NFT does not exist.
        **/
       NFTNotFound: AugmentedError<ApiType>;
+      /**
+       * The number of keys in the collection is greater than the input.
+       **/
+      NumberOfKeysIsLessThanExpected: AugmentedError<ApiType>;
       /**
        * An overflow while calculating the updated supply.
        **/
@@ -1637,6 +1637,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       OffChainAssetCantBeLocked: AugmentedError<ApiType>;
       /**
+       * Offchain assets must have a venue.
+       **/
+      OffChainAssetsMustHaveAVenue: AugmentedError<ApiType>;
+      /**
        * Receipt already used.
        **/
       ReceiptAlreadyClaimed: AugmentedError<ApiType>;
@@ -1846,47 +1850,15 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       ValidatorNotFound: AugmentedError<ApiType>;
     };
-    stateTrieMigration: {
-      /**
-       * Bad child root provided.
-       **/
-      BadChildRoot: AugmentedError<ApiType>;
-      /**
-       * Bad witness data provided.
-       **/
-      BadWitness: AugmentedError<ApiType>;
-      /**
-       * A key was longer than the configured maximum.
-       *
-       * This means that the migration halted at the current [`Progress`] and
-       * can be resumed with a larger [`crate::Config::MaxKeyLen`] value.
-       * Retrying with the same [`crate::Config::MaxKeyLen`] value will not work.
-       * The value should only be increased to avoid a storage migration for the currently
-       * stored [`crate::Progress::LastKey`].
-       **/
-      KeyTooLong: AugmentedError<ApiType>;
-      /**
-       * Max signed limits not respected.
-       **/
-      MaxSignedLimits: AugmentedError<ApiType>;
-      /**
-       * submitter does not have enough funds.
-       **/
-      NotEnoughFunds: AugmentedError<ApiType>;
-      /**
-       * Signed migration is not allowed because the maximum limit is not set yet.
-       **/
-      SignedMigrationNotAllowed: AugmentedError<ApiType>;
-    };
     statistics: {
       /**
        * A Stattype is in use and can't be removed.
        **/
       CannotRemoveStatTypeInUse: AugmentedError<ApiType>;
       /**
-       * Transfer not allowed.
+       * Invalid transfer [`TransferCondition`] not respected.
        **/
-      InvalidTransfer: AugmentedError<ApiType>;
+      InvalidTransferStatisticsFailure: AugmentedError<ApiType>;
       /**
        * The limit of StatTypes allowed for an asset has been reached.
        **/

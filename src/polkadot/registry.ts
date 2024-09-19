@@ -202,13 +202,6 @@ import type {
   PalletStakingUnappliedSlash,
   PalletStakingUnlockChunk,
   PalletStakingValidatorPrefs,
-  PalletStateTrieMigrationCall,
-  PalletStateTrieMigrationError,
-  PalletStateTrieMigrationEvent,
-  PalletStateTrieMigrationMigrationCompute,
-  PalletStateTrieMigrationMigrationLimits,
-  PalletStateTrieMigrationMigrationTask,
-  PalletStateTrieMigrationProgress,
   PalletStatisticsCall,
   PalletStatisticsError,
   PalletStoCall,
@@ -588,13 +581,6 @@ declare module '@polkadot/types/types/registry' {
     PalletStakingUnappliedSlash: PalletStakingUnappliedSlash;
     PalletStakingUnlockChunk: PalletStakingUnlockChunk;
     PalletStakingValidatorPrefs: PalletStakingValidatorPrefs;
-    PalletStateTrieMigrationCall: PalletStateTrieMigrationCall;
-    PalletStateTrieMigrationError: PalletStateTrieMigrationError;
-    PalletStateTrieMigrationEvent: PalletStateTrieMigrationEvent;
-    PalletStateTrieMigrationMigrationCompute: PalletStateTrieMigrationMigrationCompute;
-    PalletStateTrieMigrationMigrationLimits: PalletStateTrieMigrationMigrationLimits;
-    PalletStateTrieMigrationMigrationTask: PalletStateTrieMigrationMigrationTask;
-    PalletStateTrieMigrationProgress: PalletStateTrieMigrationProgress;
     PalletStatisticsCall: PalletStatisticsCall;
     PalletStatisticsError: PalletStatisticsError;
     PalletStoCall: PalletStoCall;

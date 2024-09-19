@@ -945,7 +945,7 @@ export default {
       authorizationData: 'AuthorizationData',
       authorizedBy: 'IdentityId',
       expiry: 'Option<Moment>',
-      authId: 'u64',
+      auth_id: 'u64',
       count: 'u32',
     },
     AuthorizationData: {
@@ -1170,7 +1170,7 @@ export default {
       offchainCount: 'u32',
     },
     ComplianceReport: {
-      anyRequirementSatistifed: 'bool',
+      anyRequirementSatisfied: 'bool',
       pausedCompliance: 'bool',
       requirements: 'Vec<RequirementReport>',
     },

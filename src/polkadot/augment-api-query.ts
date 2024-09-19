@@ -88,8 +88,6 @@ import type {
   PalletStakingStakingLedger,
   PalletStakingUnappliedSlash,
   PalletStakingValidatorPrefs,
-  PalletStateTrieMigrationMigrationLimits,
-  PalletStateTrieMigrationMigrationTask,
   PalletStoFundraiser,
   PalletTransactionPaymentReleases,
   PolymeshCommonUtilitiesCheckpointNextCheckpoints,
@@ -3099,39 +3097,6 @@ declare module '@polkadot/api-base/types/storage' {
           arg2: AccountId32 | string | Uint8Array
         ) => Observable<Option<ITuple<[Perbill, u128]>>>,
         [u32, AccountId32]
-      >;
-    };
-    stateTrieMigration: {
-      /**
-       * The limits that are imposed on automatic migrations.
-       *
-       * If set to None, then no automatic migration happens.
-       **/
-      autoLimits: AugmentedQuery<
-        ApiType,
-        () => Observable<Option<PalletStateTrieMigrationMigrationLimits>>,
-        []
-      >;
-      /**
-       * Migration progress.
-       *
-       * This stores the snapshot of the last migrated keys. It can be set into motion and move
-       * forward by any of the means provided by this pallet.
-       **/
-      migrationProcess: AugmentedQuery<
-        ApiType,
-        () => Observable<PalletStateTrieMigrationMigrationTask>,
-        []
-      >;
-      /**
-       * The maximum limits that the signed migration could use.
-       *
-       * If not set, no signed submission is allowed.
-       **/
-      signedMigrationMaxLimits: AugmentedQuery<
-        ApiType,
-        () => Observable<Option<PalletStateTrieMigrationMigrationLimits>>,
-        []
       >;
     };
     statistics: {
