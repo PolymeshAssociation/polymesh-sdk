@@ -1570,6 +1570,36 @@ export default {
         version: 1,
       },
     ],
+    StatisticsApi: [
+      {
+        methods: {
+          transfer_restrictions_report: {
+            description:
+              "Returns a vector containing all TransferCondition that are not being respected for the transfer. An empty vec means there's no error.",
+            params: [
+              {
+                name: 'asset_id',
+                type: 'AssetID',
+              },
+              {
+                name: 'sender_did',
+                type: 'IdentityId',
+              },
+              {
+                name: 'receiver_did',
+                type: 'IdentityId',
+              },
+              {
+                name: 'transfer_amount',
+                type: 'Balance',
+              },
+            ],
+            type: 'Result<Vec<TransferCondition>, DispatchError>',
+          },
+        },
+        version: 0,
+      },
+    ],
   },
   runtimeV6: {
     AssetApi: [
