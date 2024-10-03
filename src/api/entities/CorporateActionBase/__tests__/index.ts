@@ -84,8 +84,8 @@ describe('CorporateAction class', () => {
         dsMockUtils.createMockCorporateAction({
           kind,
           /* eslint-disable @typescript-eslint/naming-convention */
-          declDate: new BigNumber(declarationDate.getTime()),
-          recordDate: dsMockUtils.createMockRecordDate({
+          decl_date: new BigNumber(declarationDate.getTime()),
+          record_date: dsMockUtils.createMockRecordDate({
             date: new BigNumber(new Date('10/14/2019').getTime()),
             checkpoint: {
               Scheduled: [
@@ -98,8 +98,8 @@ describe('CorporateAction class', () => {
             identities: [],
             treatment: TargetTreatment.Exclude,
           },
-          defaultWithholdingTax: new BigNumber(100000),
-          withholdingTax: [],
+          default_withholding_tax: new BigNumber(100000),
+          withholding_tax: [],
           /* eslint-enable @typescript-eslint/naming-convention */
         })
       ),
@@ -243,14 +243,14 @@ describe('CorporateAction class', () => {
           dsMockUtils.createMockCorporateAction({
             kind,
             /* eslint-disable @typescript-eslint/naming-convention */
-            declDate: new BigNumber(declarationDate.getTime()),
-            recordDate: dsMockUtils.createMockOption(),
+            decl_date: new BigNumber(declarationDate.getTime()),
+            record_date: dsMockUtils.createMockOption(),
             targets: {
               identities: [],
               treatment: TargetTreatment.Exclude,
             },
-            defaultWithholdingTax: new BigNumber(100000),
-            withholdingTax: [],
+            default_withholding_tax: new BigNumber(100000),
+            withholding_tax: [],
             /* eslint-enable @typescript-eslint/naming-convention */
           })
         )
@@ -275,8 +275,8 @@ describe('CorporateAction class', () => {
           dsMockUtils.createMockCorporateAction({
             kind,
             /* eslint-disable @typescript-eslint/naming-convention */
-            declDate: new BigNumber(declarationDate.getTime()),
-            recordDate: dsMockUtils.createMockOption(
+            decl_date: new BigNumber(declarationDate.getTime()),
+            record_date: dsMockUtils.createMockOption(
               dsMockUtils.createMockRecordDate({
                 date: createMockU64(new BigNumber(new Date('10/14/1987').getTime())),
                 checkpoint: { Existing: dsMockUtils.createMockU64(new BigNumber(1)) },
@@ -286,8 +286,8 @@ describe('CorporateAction class', () => {
               identities: [],
               treatment: TargetTreatment.Exclude,
             },
-            defaultWithholdingTax: new BigNumber(100000),
-            withholdingTax: [],
+            default_withholding_tax: new BigNumber(100000),
+            withholding_tax: [],
             /* eslint-enable @typescript-eslint/naming-convention */
           })
         )

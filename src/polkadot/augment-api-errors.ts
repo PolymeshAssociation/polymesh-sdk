@@ -1136,17 +1136,9 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       MaxNumberOfNFTsPerLegExceeded: AugmentedError<ApiType>;
       /**
-       * The NFT is locked.
-       **/
-      NFTIsLocked: AugmentedError<ApiType>;
-      /**
        * The NFT does not exist.
        **/
       NFTNotFound: AugmentedError<ApiType>;
-      /**
-       * The number of keys in the collection is greater than the input.
-       **/
-      NumberOfKeysIsLessThanExpected: AugmentedError<ApiType>;
       /**
        * An overflow while calculating the updated supply.
        **/

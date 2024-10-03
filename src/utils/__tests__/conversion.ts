@@ -3767,22 +3767,22 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
     let result = granularCanTransferResultToTransferBreakdown(
       dsMockUtils.createMockGranularCanTransferResult({
         /* eslint-disable @typescript-eslint/naming-convention */
-        invalidGranularity: true,
-        selfTransfer: true,
-        invalidReceiverCdd: true,
-        invalidSenderCdd: true,
-        receiverCustodianError: true,
-        senderCustodianError: true,
-        senderInsufficientBalance: true,
-        portfolioValidityResult: {
-          receiverIsSamePortfolio: true,
-          senderPortfolioDoesNotExist: true,
-          receiverPortfolioDoesNotExist: true,
-          senderInsufficientBalance: true,
+        invalid_granularity: true,
+        self_transfer: true,
+        invalid_receiver_cdd: true,
+        invalid_sender_cdd: true,
+        receiver_custodian_error: true,
+        sender_custodian_error: true,
+        sender_insufficient_balance: true,
+        portfolio_validity_result: {
+          receiver_is_same_portfolio: true,
+          sender_portfolio_does_not_exist: true,
+          receiver_portfolio_does_not_exist: true,
+          sender_insufficient_balance: true,
           result: false,
         },
-        assetFrozen: true,
-        transferConditionResult: [
+        asset_frozen: true,
+        transfer_condition_result: [
           {
             condition: {
               MaxInvestorCount: createMockU64(new BigNumber(100)),
@@ -3790,7 +3790,7 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
             result: false,
           },
         ],
-        complianceResult: dsMockUtils.createMockAssetComplianceResult({
+        compliance_result: dsMockUtils.createMockAssetComplianceResult({
           paused: false,
           requirements: [],
           result: false,
@@ -3833,22 +3833,22 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
     result = granularCanTransferResultToTransferBreakdown(
       dsMockUtils.createMockGranularCanTransferResult({
         /* eslint-disable @typescript-eslint/naming-convention */
-        invalidGranularity: false,
-        selfTransfer: false,
-        invalidReceiverCdd: false,
-        invalidSenderCdd: false,
-        receiverCustodianError: false,
-        senderCustodianError: false,
-        senderInsufficientBalance: false,
-        portfolioValidityResult: {
-          receiverIsSamePortfolio: false,
-          senderPortfolioDoesNotExist: false,
-          receiverPortfolioDoesNotExist: false,
-          senderInsufficientBalance: false,
+        invalid_granularity: false,
+        self_transfer: false,
+        invalid_receiver_cdd: false,
+        invalid_sender_cdd: false,
+        receiver_custodian_error: false,
+        sender_custodian_error: false,
+        sender_insufficient_balance: false,
+        portfolio_validity_result: {
+          receiver_is_same_portfolio: false,
+          sender_portfolio_does_not_exist: false,
+          receiver_portfolio_does_not_exist: false,
+          sender_insufficient_balance: false,
           result: false,
         },
-        assetFrozen: false,
-        transferConditionResult: [
+        asset_frozen: false,
+        transfer_condition_result: [
           {
             condition: {
               MaxInvestorCount: dsMockUtils.createMockU64(new BigNumber(100)),
@@ -3856,7 +3856,7 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
             result: false,
           },
         ],
-        complianceResult: dsMockUtils.createMockAssetComplianceResult({
+        compliance_result: dsMockUtils.createMockAssetComplianceResult({
           paused: false,
           requirements: [],
           result: false,
@@ -3905,22 +3905,22 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
     const result = granularCanTransferResultToTransferBreakdown(
       dsMockUtils.createMockGranularCanTransferResult({
         /* eslint-disable @typescript-eslint/naming-convention */
-        invalidGranularity: false,
-        selfTransfer: false,
-        invalidReceiverCdd: false,
-        invalidSenderCdd: false,
-        receiverCustodianError: false,
-        senderCustodianError: false,
-        senderInsufficientBalance: false,
-        portfolioValidityResult: {
-          receiverIsSamePortfolio: false,
-          senderPortfolioDoesNotExist: false,
-          receiverPortfolioDoesNotExist: false,
-          senderInsufficientBalance: false,
+        invalid_granularity: false,
+        self_transfer: false,
+        invalid_receiver_cdd: false,
+        invalid_sender_cdd: false,
+        receiver_custodian_error: false,
+        sender_custodian_error: false,
+        sender_insufficient_balance: false,
+        portfolio_validity_result: {
+          receiver_is_same_portfolio: false,
+          sender_portfolio_does_not_exist: false,
+          receiver_portfolio_does_not_exist: false,
+          sender_insufficient_balance: false,
           result: false,
         },
-        assetFrozen: false,
-        transferConditionResult: [
+        asset_frozen: false,
+        transfer_condition_result: [
           {
             condition: {
               MaxInvestorCount: dsMockUtils.createMockU64(new BigNumber(100)),
@@ -3928,7 +3928,7 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
             result: false,
           },
         ],
-        complianceResult: dsMockUtils.createMockAssetComplianceResult({
+        compliance_result: dsMockUtils.createMockAssetComplianceResult({
           paused: false,
           requirements: [],
           result: false,
@@ -4663,32 +4663,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
 
       result = meshClaimToClaim(claim, context);
       expect(result).toEqual(fakeResult);
-
-      const customClaimTypeId = new BigNumber(1);
-      fakeResult = {
-        type: ClaimType.Custom,
-        customClaimTypeId,
-        scope,
-      };
-
-      claim = dsMockUtils.createMockClaim({
-        Custom: [
-          dsMockUtils.createMockU32(customClaimTypeId),
-          dsMockUtils.createMockOption(
-            dsMockUtils.createMockScope({ Identity: dsMockUtils.createMockIdentityId(scope.value) })
-          ),
-        ],
-      });
-
-      result = meshClaimToClaim(claim);
-      expect(result).toEqual(fakeResult);
     });
-  });
-
-  it('should throw an error with an unknown type', () => {
-    expect(() => meshClaimToClaim({} as PolymeshPrimitivesIdentityClaimClaim)).toThrow(
-      UnreachableCaseError
-    );
   });
 });
 
@@ -4902,19 +4877,6 @@ describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
 
       result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
-
-      fakeResult = ClaimType.Custom;
-
-      claimType = dsMockUtils.createMockClaimType(fakeResult);
-
-      result = meshClaimTypeToClaimType(claimType);
-      expect(result).toEqual(fakeResult);
-    });
-
-    it('should throw an error if it unparses an unknown type', () => {
-      expect(() =>
-        meshClaimTypeToClaimType({} as unknown as PolymeshPrimitivesIdentityClaimClaimType)
-      ).toThrow(UnreachableCaseError);
     });
   });
 
@@ -8214,14 +8176,14 @@ describe('meshCorporateActionToCorporateActionParams', () => {
     /* eslint-disable @typescript-eslint/naming-convention */
     const params = {
       kind,
-      declDate: new BigNumber(declarationDate.getTime()),
-      recordDate: null,
+      decl_date: new BigNumber(declarationDate.getTime()),
+      record_date: null,
       targets: {
         identities: dids,
         treatment: TargetTreatment.Include,
       },
-      defaultWithholdingTax: defaultTaxWithholding.shiftedBy(4),
-      withholdingTax: [tuple(dids[0], taxWithholdings[0].percentage.shiftedBy(4))],
+      default_withholding_tax: defaultTaxWithholding.shiftedBy(4),
+      withholding_tax: [tuple(dids[0], taxWithholdings[0].percentage.shiftedBy(4))],
     };
     /* eslint-enable @typescript-eslint/naming-convention */
 

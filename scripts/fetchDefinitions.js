@@ -12,9 +12,6 @@ const definitionsDir = path.resolve('src', 'polkadot');
 const typesDir = path.resolve(definitionsDir, 'polymesh');
 const generatedDir = path.resolve('src', 'generated');
 
-rimraf.sync(definitionsDir);
-fs.mkdirSync(definitionsDir);
-
 rimraf.sync(typesDir);
 fs.mkdirSync(typesDir);
 
@@ -354,6 +351,7 @@ const runtimeV6 = {
 /**
  * @hidden
  * transforms the schema so RPC types are compatible with other methods from the polkadot api.
+ * @note imports are added into the generated files in the postProcessTypes script
  */
 function transformSchema(schemaObj) {
   let {
@@ -403,18 +401,18 @@ function camelCaseParamNames(field) {
 }
 
 function writeDefinitions(schemaObj) {
-  const { types, rpc: rpcModules, runtime } = schemaObj;
+  const { types, rpc: rpcModules } = schemaObj;
 
   fs.writeFileSync(
     path.resolve(typesDir, 'definitions.ts'),
     `/* eslint-disable @typescript-eslint/naming-convention */\nexport default ${util.inspect(
-      { rpc: {}, runtime, types },
+      { rpc: {}, types },
       {
         compact: false,
         depth: null,
         maxArrayLength: null,
       }
-    )};`
+    )}`
   );
 
   fs.writeFileSync(
@@ -430,7 +428,7 @@ function writeDefinitions(schemaObj) {
   );
 
   let defExports =
-    "/* istanbul ignore file */\n\nexport { default as polymesh } from './polymesh/definitions';\n";
+    "/* istanbul ignore file */\n\nexport { default as polymesh } from './polymesh/definitions';\n";
 
   forEach(rpcModules, (rpc, moduleName) => {
     const moduleDir = path.resolve(definitionsDir, moduleName);
@@ -447,7 +445,7 @@ function writeDefinitions(schemaObj) {
           depth: null,
           maxArrayLength: null,
         }
-      )};`
+      )}`
     );
 
     defExports = `${defExports}export { default as ${moduleName} } from './${moduleName}/definitions';\n`;
@@ -457,10 +455,10 @@ function writeDefinitions(schemaObj) {
 }
 
 (() => {
-  const { runtime, signedExtensions } = typesBundle.spec.polymesh_dev;
+  const { rpc, runtime, signedExtensions } = typesBundle.spec.polymesh_dev;
   const schema = {
     types,
-    rpc: versionedRpc,
+    rpc,
     runtime,
     // To be removed after v6
     runtimeV6,

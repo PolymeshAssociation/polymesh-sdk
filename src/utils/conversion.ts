@@ -3684,19 +3684,19 @@ export function granularCanTransferResultToTransferBreakdown(
   context: Context
 ): TransferBreakdown {
   const {
-    invalidGranularity,
-    selfTransfer,
-    invalidReceiverCdd,
-    invalidSenderCdd,
-    senderInsufficientBalance: insufficientBalance,
-    assetFrozen,
-    portfolioValidityResult: {
-      senderPortfolioDoesNotExist,
-      receiverPortfolioDoesNotExist,
-      senderInsufficientBalance,
+    invalid_granularity: invalidGranularity,
+    self_transfer: selfTransfer,
+    invalid_receiver_cdd: invalidReceiverCdd,
+    invalid_sender_cdd: invalidSenderCdd,
+    sender_insufficient_balance: insufficientBalance,
+    asset_frozen: assetFrozen,
+    portfolio_validity_result: {
+      sender_portfolio_does_not_exist: senderPortfolioNotExists,
+      receiver_portfolio_does_not_exist: receiverPortfolioNotExists,
+      sender_insufficient_balance: senderInsufficientBalance,
     },
-    transferConditionResult,
-    complianceResult,
+    transfer_condition_result: transferConditionResult,
+    compliance_result: complianceResult,
     result: finalResult,
   } = result;
 
@@ -3726,11 +3726,11 @@ export function granularCanTransferResultToTransferBreakdown(
     general.push(TransferError.TransfersFrozen);
   }
 
-  if (boolToBoolean(senderPortfolioDoesNotExist)) {
+  if (boolToBoolean(senderPortfolioNotExists)) {
     general.push(TransferError.InvalidSenderPortfolio);
   }
 
-  if (boolToBoolean(receiverPortfolioDoesNotExist)) {
+  if (boolToBoolean(receiverPortfolioNotExists)) {
     general.push(TransferError.InvalidReceiverPortfolio);
   }
 

@@ -80,8 +80,8 @@ export interface AssetPermissions extends Enum {
 
 /** @name Authorization */
 export interface Authorization extends Struct {
-  readonly authorizationData: AuthorizationData;
-  readonly authorizedBy: IdentityId;
+  readonly authorization_data: AuthorizationData;
+  readonly authorized_by: IdentityId;
   readonly expiry: Option<Moment>;
   readonly auth_id: u64;
   readonly count: u32;
@@ -837,26 +837,26 @@ export interface FungibleLeg extends Struct {
 
 /** @name GranularCanTransferResult */
 export interface GranularCanTransferResult extends Struct {
-  readonly invalidGranularity: bool;
-  readonly selfTransfer: bool;
-  readonly invalidReceiverCdd: bool;
-  readonly invalidSenderCdd: bool;
-  readonly receiverCustodianError: bool;
-  readonly senderCustodianError: bool;
-  readonly senderInsufficientBalance: bool;
-  readonly portfolioValidityResult: PortfolioValidityResult;
-  readonly assetFrozen: bool;
-  readonly transferConditionResult: Vec<TransferConditionResult>;
-  readonly complianceResult: AssetComplianceResult;
+  readonly invalid_granularity: bool;
+  readonly self_transfer: bool;
+  readonly invalid_receiver_cdd: bool;
+  readonly invalid_sender_cdd: bool;
+  readonly receiver_custodian_error: bool;
+  readonly sender_custodian_error: bool;
+  readonly sender_insufficient_balance: bool;
+  readonly portfolio_validity_result: PortfolioValidityResult;
+  readonly asset_frozen: bool;
+  readonly transfer_condition_result: Vec<TransferConditionResult>;
+  readonly compliance_result: AssetComplianceResult;
   readonly result: bool;
   readonly consumed_weight: Option<Weight>;
 }
 
 /** @name IdentityClaim */
 export interface IdentityClaim extends Struct {
-  readonly claimIssuer: IdentityId;
-  readonly issuanceDate: Moment;
-  readonly lastUpdateDate: Moment;
+  readonly claim_issuer: IdentityId;
+  readonly issuance_date: Moment;
+  readonly last_update_date: Moment;
   readonly expiry: Option<Moment>;
   readonly claim: Claim;
 }
@@ -887,8 +887,8 @@ export interface Leg extends Enum {
 /** @name Member */
 export interface Member extends Struct {
   readonly id: IdentityId;
-  readonly expiryAt: Option<Moment>;
-  readonly inactiveFrom: Option<Moment>;
+  readonly expiry_at: Option<Moment>;
+  readonly inactive_from: Option<Moment>;
 }
 
 /** @name Moment */
@@ -968,10 +968,10 @@ export interface PortfolioPermissions extends Enum {
 
 /** @name PortfolioValidityResult */
 export interface PortfolioValidityResult extends Struct {
-  readonly receiverIsSamePortfolio: bool;
-  readonly senderPortfolioDoesNotExist: bool;
-  readonly receiverPortfolioDoesNotExist: bool;
-  readonly senderInsufficientBalance: bool;
+  readonly receiver_is_same_portfolio: bool;
+  readonly sender_portfolio_does_not_exist: bool;
+  readonly receiver_portfolio_does_not_exist: bool;
+  readonly sender_insufficient_balance: bool;
   readonly result: bool;
 }
 

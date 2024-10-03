@@ -1,557 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 export default {
   rpc: {},
-  runtime: {
-    AssetApi: [
-      {
-        methods: {
-          transfer_report: {
-            description:
-              "Returns a vector containing all errors for the transfer. An empty vec means there's no error.",
-            params: [
-              {
-                name: 'senderPortfolio',
-                type: 'PortfolioId',
-              },
-              {
-                name: 'receiverPortfolio',
-                type: 'PortfolioId',
-              },
-              {
-                name: 'assetId',
-                type: 'AssetID',
-              },
-              {
-                name: 'transferValue',
-                type: 'Balance',
-              },
-              {
-                name: 'skipLockedCheck',
-                type: 'bool',
-              },
-            ],
-            type: 'Vec<DispatchError>',
-          },
-        },
-        version: 4,
-      },
-      {
-        methods: {
-          can_transfer_granular: {
-            description:
-              'Checks whether a transaction with given parameters can take place or not. The result is granular meaning each check is run and returned regardless of outcome.',
-            params: [
-              {
-                name: 'fromCustodian',
-                type: 'Option<IdentityId>',
-              },
-              {
-                name: 'fromPortfolio',
-                type: 'PortfolioId',
-              },
-              {
-                name: 'toCustodian',
-                type: 'Option<IdentityId>',
-              },
-              {
-                name: 'toPortfolio',
-                type: 'PortfolioId',
-              },
-              {
-                name: 'ticker',
-                type: 'Ticker',
-              },
-              {
-                name: 'value',
-                type: 'Balance',
-              },
-            ],
-            type: 'CanTransferGranularReturn',
-          },
-        },
-        version: 3,
-      },
-    ],
-    ComplianceApi: [
-      {
-        methods: {
-          compliance_report: {
-            description: 'Checks all compliance requirements for the given asset_id.',
-            params: [
-              {
-                name: 'assetId',
-                type: 'AssetID',
-              },
-              {
-                name: 'senderIdentity',
-                type: 'IdentityId',
-              },
-              {
-                name: 'receiverIdentity',
-                type: 'IdentityId',
-              },
-            ],
-            type: 'Result<ComplianceReport, DispatchError>',
-          },
-        },
-        version: 2,
-      },
-      {
-        methods: {
-          compliance_report: {
-            description: 'Checks all compliance requirements for the given ticker.',
-            params: [
-              {
-                name: 'ticker',
-                type: 'Ticker',
-              },
-              {
-                name: 'senderIdentity',
-                type: 'IdentityId',
-              },
-              {
-                name: 'receiverIdentity',
-                type: 'IdentityId',
-              },
-            ],
-            type: 'Result<ComplianceReport, DispatchError>',
-          },
-        },
-        version: 1,
-      },
-    ],
-    GroupApi: [
-      {
-        methods: {
-          get_cdd_valid_members: {
-            description: 'Get the CDD members',
-            params: [],
-            type: 'Vec<Member>',
-          },
-          get_gc_valid_members: {
-            description: 'Get the GC members',
-            params: [],
-            type: 'Vec<Member>',
-          },
-        },
-        version: 1,
-      },
-    ],
-    IdentityApi: [
-      {
-        methods: {
-          is_identity_has_valid_cdd: {
-            description: 'use to tell whether the given did has valid cdd claim or not',
-            params: [
-              {
-                name: 'did',
-                type: 'IdentityId',
-              },
-              {
-                name: 'bufferTime',
-                type: 'Option<u64>',
-              },
-            ],
-            type: 'CddStatus',
-          },
-          get_did_records: {
-            description: 'Used to get the did record values for a given DID',
-            params: [
-              {
-                name: 'did',
-                type: 'IdentityId',
-              },
-            ],
-            type: 'RpcDidRecords',
-          },
-          get_did_status: {
-            description: 'Retrieve status of the DID',
-            params: [
-              {
-                name: 'did',
-                type: 'Vec<IdentityId>',
-              },
-            ],
-            type: 'Vec<DidStatus>',
-          },
-          get_filtered_authorizations: {
-            description:
-              'Retrieve authorizations data for a given signatory and filtered using the given authorization type',
-            params: [
-              {
-                name: 'signatory',
-                type: 'Signatory',
-              },
-              {
-                name: 'allowExpired',
-                type: 'bool',
-              },
-              {
-                name: 'authType',
-                type: 'Option<AuthorizationType>',
-              },
-            ],
-            type: 'Vec<Authorization>',
-          },
-          get_key_identity_data: {
-            description: 'Query relation between a signing key and a DID',
-            params: [
-              {
-                name: 'acc',
-                type: 'AccountId',
-              },
-            ],
-            type: 'Option<KeyIdentityData>',
-          },
-          valid_cdd_claims: {
-            description:
-              'Returns all valid IdentityClaim of type CustomerDueDiligence for the given target_identity',
-            params: [
-              {
-                name: 'targetIdentity',
-                type: 'IdentityId',
-              },
-              {
-                name: 'cddCheckerLeeway',
-                type: 'Option<u64>',
-              },
-            ],
-            type: 'Vec<IdentityClaim>',
-          },
-        },
-        version: 4,
-      },
-      {
-        methods: {
-          is_identity_has_valid_cdd: {
-            description: 'use to tell whether the given did has valid cdd claim or not',
-            params: [
-              {
-                name: 'did',
-                type: 'IdentityId',
-              },
-              {
-                name: 'bufferTime',
-                type: 'Option<u64>',
-              },
-            ],
-            type: 'CddStatus',
-          },
-          get_asset_did: {
-            description: 'function is used to query the given ticker DID',
-            params: [
-              {
-                name: 'ticker',
-                type: 'Ticker',
-              },
-            ],
-            type: 'AssetDidResult',
-          },
-          get_did_records: {
-            description: 'Used to get the did record values for a given DID',
-            params: [
-              {
-                name: 'did',
-                type: 'IdentityId',
-              },
-            ],
-            type: 'RpcDidRecords',
-          },
-          get_did_status: {
-            description: 'Retrieve status of the DID',
-            params: [
-              {
-                name: 'did',
-                type: 'Vec<IdentityId>',
-              },
-            ],
-            type: 'Vec<DidStatus>',
-          },
-          get_filtered_authorizations: {
-            description:
-              'Retrieve authorizations data for a given signatory and filtered using the given authorization type',
-            params: [
-              {
-                name: 'signatory',
-                type: 'Signatory',
-              },
-              {
-                name: 'allowExpired',
-                type: 'bool',
-              },
-              {
-                name: 'authType',
-                type: 'Option<AuthorizationType>',
-              },
-            ],
-            type: 'Vec<Authorization>',
-          },
-          get_key_identity_data: {
-            description: 'Query relation between a signing key and a DID',
-            params: [
-              {
-                name: 'acc',
-                type: 'AccountId',
-              },
-            ],
-            type: 'Option<KeyIdentityData>',
-          },
-          valid_cdd_claims: {
-            description:
-              'Returns all valid IdentityClaim of type CustomerDueDiligence for the given target_identity',
-            params: [
-              {
-                name: 'targetIdentity',
-                type: 'IdentityId',
-              },
-              {
-                name: 'cddCheckerLeeway',
-                type: 'Option<u64>',
-              },
-            ],
-            type: 'Vec<IdentityClaim>',
-          },
-        },
-        version: 3,
-      },
-    ],
-    NFTApi: [
-      {
-        methods: {
-          transfer_report: {
-            description:
-              "Returns a vector containing all errors for the transfer. An empty vec means there's no error.",
-            params: [
-              {
-                name: 'senderPortfolio',
-                type: 'PortfolioId',
-              },
-              {
-                name: 'receiverPortfolio',
-                type: 'PortfolioId',
-              },
-              {
-                name: 'nfts',
-                type: 'NFTs',
-              },
-              {
-                name: 'skipLockedCheck',
-                type: 'bool',
-              },
-            ],
-            type: 'Vec<DispatchError>',
-          },
-        },
-        version: 2,
-      },
-      {
-        methods: {
-          validate_nft_transfer: {
-            description:
-              'Verifies if and the sender and receiver are not the same, if both have valid balances, if the sender owns the nft, and if all compliance rules are being respected.',
-            params: [
-              {
-                name: 'senderPortfolio',
-                type: 'PortfolioId',
-              },
-              {
-                name: 'receiverPortfolio',
-                type: 'PortfolioId',
-              },
-              {
-                name: 'nfts',
-                type: 'NFTs',
-              },
-            ],
-            type: 'DispatchResult',
-          },
-        },
-        version: 1,
-      },
-    ],
-    PipsApi: [
-      {
-        methods: {
-          get_votes: {
-            description: 'Summary of votes of a proposal given by index',
-            params: [
-              {
-                name: 'index',
-                type: 'PipId',
-              },
-            ],
-            type: 'VoteCount',
-          },
-          proposed_by: {
-            description: 'Retrieves proposal indices started by address',
-            params: [
-              {
-                name: 'address',
-                type: 'AccountId',
-              },
-            ],
-            type: 'Vec<PipId>',
-          },
-          voted_on: {
-            description: 'Retrieves proposal address indices voted on',
-            params: [
-              {
-                name: 'address',
-                type: 'AccountId',
-              },
-            ],
-            type: 'Vec<PipId>',
-          },
-        },
-        version: 1,
-      },
-    ],
-    ProtocolFeeApi: [
-      {
-        methods: {
-          compute_fee: {
-            description: 'Gets the fee of a chargeable extrinsic operation',
-            params: [
-              {
-                name: 'op',
-                type: 'ProtocolOp',
-              },
-            ],
-            type: 'CappedFee',
-          },
-        },
-        version: 1,
-      },
-    ],
-    SettlementApi: [
-      {
-        methods: {
-          get_execute_instruction_info: {
-            description:
-              'Returns an ExecuteInstructionInfo instance containing the consumed weight and the number of tokens in the instruction.',
-            params: [
-              {
-                name: 'instructionId',
-                type: 'InstructionId',
-              },
-            ],
-            type: 'Option<ExecuteInstructionInfo>',
-          },
-          get_affirmation_count: {
-            description:
-              'Returns an AffirmationCount instance containing the number of assets being sent/received from portfolios, and the number of off-chain assets in the instruction.',
-            params: [
-              {
-                name: 'instructionId',
-                type: 'InstructionId',
-              },
-              {
-                name: 'portfolios',
-                type: 'Vec<PortfolioId>',
-              },
-            ],
-            type: 'AffirmationCount',
-          },
-          get_transfer_report: {
-            description:
-              "Returns a vector containing all errors for the transfer. An empty vec means there's no error.",
-            params: [
-              {
-                name: 'leg',
-                type: 'Leg',
-              },
-              {
-                name: 'skipLockedCheck',
-                type: 'bool',
-              },
-            ],
-            type: 'Vec<DispatchError>',
-          },
-          get_execute_instruction_report: {
-            description:
-              "Returns a vector containing all errors for the execution. An empty vec means there's no error.",
-            params: [
-              {
-                name: 'instructionId',
-                type: 'InstructionId',
-              },
-            ],
-            type: 'Vec<DispatchError>',
-          },
-        },
-        version: 2,
-      },
-      {
-        methods: {
-          get_execute_instruction_info: {
-            description:
-              'Returns an ExecuteInstructionInfo instance containing the consumed weight and the number of tokens in the instruction.',
-            params: [
-              {
-                name: 'instructionId',
-                type: 'InstructionId',
-              },
-            ],
-            type: 'ExecuteInstructionInfo',
-          },
-          get_affirmation_count: {
-            description:
-              'Returns an AffirmationCount instance containing the number of assets being sent/received from portfolios, and the number of off-chain assets in the instruction.',
-            params: [
-              {
-                name: 'instructionId',
-                type: 'InstructionId',
-              },
-              {
-                name: 'portfolios',
-                type: 'Vec<PortfolioId>',
-              },
-            ],
-            type: 'AffirmationCount',
-          },
-          get_transfer_report: {
-            description:
-              "Returns a vector containing all errors for the transfer. An empty vec means there's no error.",
-            params: [
-              {
-                name: 'leg',
-                type: 'Leg',
-              },
-              {
-                name: 'skipLockedCheck',
-                type: 'bool',
-              },
-            ],
-            type: 'Vec<DispatchError>',
-          },
-          get_execute_instruction_report: {
-            description:
-              "Returns a vector containing all errors for the execution. An empty vec means there's no error.",
-            params: [
-              {
-                name: 'instructionId',
-                type: 'InstructionId',
-              },
-            ],
-            type: 'Vec<DispatchError>',
-          },
-        },
-        version: 1,
-      },
-    ],
-    StakingApi: [
-      {
-        methods: {
-          get_curve: {
-            description: 'Retrieves curves parameters',
-            params: [],
-            type: 'Vec<(Perbill, Perbill)>',
-          },
-        },
-        version: 1,
-      },
-    ],
-  },
   types: {
     AssetID: '[u8; 16]',
     IdentityId: '[u8; 32]',
@@ -901,9 +350,9 @@ export default {
       },
     },
     IdentityClaim: {
-      claimIssuer: 'IdentityId',
-      issuanceDate: 'Moment',
-      lastUpdateDate: 'Moment',
+      claim_issuer: 'IdentityId',
+      issuance_date: 'Moment',
+      last_update_date: 'Moment',
       expiry: 'Option<Moment>',
       claim: 'Claim',
     },
@@ -942,8 +391,8 @@ export default {
     },
     PipId: 'u32',
     Authorization: {
-      authorizationData: 'AuthorizationData',
-      authorizedBy: 'IdentityId',
+      authorization_data: 'AuthorizationData',
+      authorized_by: 'IdentityId',
       expiry: 'Option<Moment>',
       auth_id: 'u64',
       count: 'u32',
@@ -1016,8 +465,8 @@ export default {
       },
     },
     RpcDidRecordsSuccess: {
-      primaryKey: 'AccountId',
-      secondaryKeys: 'Vec<SecondaryKey>',
+      primary_key: 'AccountId',
+      secondary_keys: 'Vec<SecondaryKey>',
     },
     RpcDidRecords: {
       _enum: {
@@ -1083,25 +532,25 @@ export default {
       },
     },
     GranularCanTransferResult: {
-      invalidGranularity: 'bool',
-      selfTransfer: 'bool',
-      invalidReceiverCdd: 'bool',
-      invalidSenderCdd: 'bool',
-      receiverCustodianError: 'bool',
-      senderCustodianError: 'bool',
-      senderInsufficientBalance: 'bool',
-      portfolioValidityResult: 'PortfolioValidityResult',
-      assetFrozen: 'bool',
-      transferConditionResult: 'Vec<TransferConditionResult>',
-      complianceResult: 'AssetComplianceResult',
+      invalid_granularity: 'bool',
+      self_transfer: 'bool',
+      invalid_receiver_cdd: 'bool',
+      invalid_sender_cdd: 'bool',
+      receiver_custodian_error: 'bool',
+      sender_custodian_error: 'bool',
+      sender_insufficient_balance: 'bool',
+      portfolio_validity_result: 'PortfolioValidityResult',
+      asset_frozen: 'bool',
+      transfer_condition_result: 'Vec<TransferConditionResult>',
+      compliance_result: 'AssetComplianceResult',
       result: 'bool',
-      consumedWeight: 'Option<Weight>',
+      consumed_weight: 'Option<Weight>',
     },
     PortfolioValidityResult: {
-      receiverIsSamePortfolio: 'bool',
-      senderPortfolioDoesNotExist: 'bool',
-      receiverPortfolioDoesNotExist: 'bool',
-      senderInsufficientBalance: 'bool',
+      receiver_is_same_portfolio: 'bool',
+      sender_portfolio_does_not_exist: 'bool',
+      receiver_portfolio_does_not_exist: 'bool',
+      sender_insufficient_balance: 'bool',
       result: 'bool',
     },
     TransferConditionResult: {
@@ -1120,8 +569,8 @@ export default {
     },
     Member: {
       id: 'IdentityId',
-      expiryAt: 'Option<Moment>',
-      inactiveFrom: 'Option<Moment>',
+      expiry_at: 'Option<Moment>',
+      inactive_from: 'Option<Moment>',
     },
     NFTId: 'u64',
     NFTs: {
@@ -1165,9 +614,9 @@ export default {
       off_chain_assets: 'u32',
     },
     AffirmationCount: {
-      senderAssetCount: 'AssetCount',
-      receiverAssetCount: 'AssetCount',
-      offchainCount: 'u32',
+      sender_asset_count: 'AssetCount',
+      receiver_asset_count: 'AssetCount',
+      offchain_count: 'u32',
     },
     ComplianceReport: {
       anyRequirementSatisfied: 'bool',

@@ -3813,10 +3813,9 @@ declare module '@polkadot/api-base/types/submittable' {
             | { Default: any }
             | { User: any }
             | string
-            | Uint8Array,
-          numberOfKeys: Option<u8> | null | Uint8Array | u8 | AnyNumber
+            | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [PolymeshPrimitivesAssetAssetID, u64, PolymeshPrimitivesIdentityIdPortfolioKind, Option<u8>]
+        [PolymeshPrimitivesAssetAssetID, u64, PolymeshPrimitivesIdentityIdPortfolioKind]
       >;
     };
     pips: {

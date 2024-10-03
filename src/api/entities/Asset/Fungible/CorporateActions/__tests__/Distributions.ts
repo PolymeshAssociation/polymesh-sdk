@@ -99,10 +99,10 @@ describe('Distributions class', () => {
               treatment: 'Exclude',
             },
             /* eslint-disable @typescript-eslint/naming-convention */
-            declDate: new BigNumber(0),
-            recordDate: null,
-            defaultWithholdingTax: new BigNumber(3),
-            withholdingTax: [],
+            decl_date: new BigNumber(0),
+            record_date: null,
+            default_withholding_tax: new BigNumber(3),
+            withholding_tax: [],
             /* eslint-enable @typescript-eslint/naming-convention */
           })
         ),
@@ -152,10 +152,10 @@ describe('Distributions class', () => {
               treatment: 'Exclude',
             },
             /* eslint-disable @typescript-eslint/naming-convention */
-            declDate: new BigNumber(0),
-            recordDate: null,
-            defaultWithholdingTax: new BigNumber(3),
-            withholdingTax: [],
+            decl_date: new BigNumber(0),
+            record_date: null,
+            default_withholding_tax: new BigNumber(3),
+            withholding_tax: [],
             /* eslint-enable @typescript-eslint/naming-convention */
           })
         ),
