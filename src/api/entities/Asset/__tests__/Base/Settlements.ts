@@ -10,7 +10,7 @@ import { when } from 'jest-when';
 
 import { FungibleSettlements, NonFungibleSettlements } from '~/api/entities/Asset/Base/Settlements';
 import { Context, Namespace, PolymeshTransaction } from '~/internal';
-import { ComplianceReport } from '~/polkadot/polymesh';
+import { ComplianceReport, TransferCondition } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -192,10 +192,24 @@ describe('Settlements class', () => {
           .createCallMock('complianceApi', 'complianceReport')
           .mockReturnValue(complianceReportResponse);
 
+        const statsReportResponse = 'statsReportResponse' as unknown as Result<
+          Vec<TransferCondition>,
+          DispatchError
+        >;
+        dsMockUtils
+          .createCallMock('statisticsApi', 'transferRestrictionsReport')
+          .mockReturnValue(statsReportResponse);
+
         const expected = 'breakdown' as unknown as TransferBreakdown;
 
         when(transferReportToTransferBreakdownSpy)
-          .calledWith(transferReportResponse, undefined, complianceReportResponse, mockContext)
+          .calledWith(
+            transferReportResponse,
+            undefined,
+            complianceReportResponse,
+            statsReportResponse,
+            mockContext
+          )
           .mockReturnValue(expected);
 
         const result = await settlements.canTransfer({ to: toDid, amount });
@@ -266,12 +280,6 @@ describe('Settlements class', () => {
         .createCallMock('nftApi', 'transferReport')
         .mockReturnValue(nftTransferReportResponse);
 
-      const transferReportResponse = 'transferReportResponse' as unknown as Vec<DispatchError>;
-
-      dsMockUtils
-        .createCallMock('assetApi', 'transferReport')
-        .mockReturnValue(transferReportResponse);
-
       const complianceReportResponse = 'complianceReportResponse' as unknown as Result<
         ComplianceReport,
         DispatchError
@@ -281,13 +289,23 @@ describe('Settlements class', () => {
         .createCallMock('complianceApi', 'complianceReport')
         .mockReturnValue(complianceReportResponse);
 
+      const statsReportResponse = 'statsReportResponse' as unknown as Result<
+        Vec<TransferCondition>,
+        DispatchError
+      >;
+
+      dsMockUtils
+        .createCallMock('statisticsApi', 'transferRestrictionsReport')
+        .mockReturnValue(statsReportResponse);
+
       const expected = 'breakdown' as unknown as TransferBreakdown;
 
       when(transferReportToTransferBreakdownSpy)
         .calledWith(
-          transferReportResponse,
+          undefined,
           nftTransferReportResponse,
           complianceReportResponse,
+          statsReportResponse,
           mockContext
         )
         .mockReturnValue(expected);

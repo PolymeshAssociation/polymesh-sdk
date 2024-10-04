@@ -12,7 +12,11 @@ import {
   PolymeshError,
   toggleAssetPreApproval,
 } from '~/internal';
-import { CanTransferGranularReturn, ComplianceReport } from '~/polkadot/polymesh';
+import {
+  CanTransferGranularReturn,
+  ComplianceReport,
+  TransferCondition,
+} from '~/polkadot/polymesh';
 import {
   ErrorCode,
   NftCollection,
@@ -110,7 +114,7 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
       context,
     } = this;
 
-    const { assetApi, nftApi, complianceApi } = call;
+    const { assetApi, nftApi, complianceApi, statisticsApi } = call;
 
     const { to } = args;
     const from = args.from ?? (await context.getSigningIdentity());
@@ -180,20 +184,22 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
       return granularCanTransferResultToTransferBreakdown(granularResult.asOk, nftResult, context);
     }
 
-    let granularResult: Vec<DispatchError>;
+    let granularResult: Vec<DispatchError> | undefined;
     let nftResult: Vec<DispatchError> | undefined;
     let complianceResult: Result<ComplianceReport, DispatchError>;
+    let transferRestrictionsReport: Result<Vec<TransferCondition>, DispatchError>;
     const rawFromDid = stringToIdentityId(fromPortfolioId.did, context);
     const rawToDid = stringToIdentityId(toPortfolioId.did, context);
     if ('amount' in args) {
       amount = args.amount;
       ({ isDivisible } = await parent.details());
-      [granularResult, complianceResult] = await Promise.all([
+      const rawAmount = bigNumberToBalance(amount, context, isDivisible);
+      [granularResult, complianceResult, transferRestrictionsReport] = await Promise.all([
         assetApi.transferReport<Vec<DispatchError>>(
           rawFromPortfolio,
           rawToPortfolio,
           rawAssetId,
-          bigNumberToBalance(amount, context, isDivisible),
+          rawAmount,
           booleanToBool(false, context)
         ),
         complianceApi.complianceReport<Result<ComplianceReport, DispatchError>>(
@@ -201,17 +207,17 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
           rawFromDid,
           rawToDid
         ),
+        statisticsApi.transferRestrictionsReport<Result<Vec<TransferCondition>, DispatchError>>(
+          rawAssetId,
+          rawFromDid,
+          rawToDid,
+          rawAmount
+        ),
       ]);
     } else {
       const rawNfts = nftToMeshNft(parent, args.nfts, context);
-      [granularResult, nftResult, complianceResult] = await Promise.all([
-        assetApi.transferReport<Vec<DispatchError>>(
-          rawFromPortfolio,
-          rawToPortfolio,
-          rawAssetId,
-          bigNumberToBalance(amount, context, isDivisible),
-          booleanToBool(false, context)
-        ),
+      const rawAmount = bigNumberToBalance(amount, context, isDivisible);
+      [nftResult, complianceResult, transferRestrictionsReport] = await Promise.all([
         nftApi.transferReport<Vec<DispatchError>>(
           rawFromPortfolio,
           rawToPortfolio,
@@ -223,10 +229,22 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
           rawFromDid,
           rawToDid
         ),
+        statisticsApi.transferRestrictionsReport<Result<Vec<TransferCondition>, DispatchError>>(
+          rawAssetId,
+          rawFromDid,
+          rawToDid,
+          rawAmount
+        ),
       ]);
     }
 
-    return transferReportToTransferBreakdown(granularResult, nftResult, complianceResult, context);
+    return transferReportToTransferBreakdown(
+      granularResult,
+      nftResult,
+      complianceResult,
+      transferRestrictionsReport,
+      context
+    );
   }
 }
 

@@ -79,6 +79,7 @@ import {
   ComplianceReport,
   ExtrinsicPermissions,
   Permissions as MeshPermissions,
+  TransferCondition,
 } from 'polymesh-types/polymesh';
 
 import { UnreachableCaseError } from '~/api/procedures/utils';
@@ -3979,7 +3980,7 @@ describe('transferReportToTransferBreakdown', () => {
     const context = dsMockUtils.getContextInstance();
 
     let result = transferReportToTransferBreakdown(
-      [] as unknown as Vec<DispatchError>,
+      undefined,
       undefined,
       dsMockUtils.createMockDispatchResult({
         Ok: dsMockUtils.createMockAssetComplianceReport({
@@ -3988,6 +3989,9 @@ describe('transferReportToTransferBreakdown', () => {
           requirements: [],
         }),
       }) as unknown as Result<ComplianceReport, DispatchError>,
+      dsMockUtils.createMockDispatchResult({
+        Ok: dsMockUtils.createMockVec(),
+      }) as unknown as Result<Vec<TransferCondition>, DispatchError>,
       context
     );
 
@@ -4050,6 +4054,13 @@ describe('transferReportToTransferBreakdown', () => {
           requirements: [],
         }),
       }) as unknown as Result<ComplianceReport, DispatchError>,
+      dsMockUtils.createMockDispatchResult({
+        Ok: dsMockUtils.createMockVec([
+          dsMockUtils.createMockTransferCondition({
+            MaxInvestorCount: dsMockUtils.createMockU64(new BigNumber(100)),
+          }),
+        ]),
+      }) as unknown as Result<Vec<TransferCondition>, DispatchError>,
       context
     );
 
@@ -4059,7 +4070,12 @@ describe('transferReportToTransferBreakdown', () => {
         requirements: [],
         complies: false,
       },
-      restrictions: [],
+      restrictions: [
+        {
+          restriction: { type: TransferRestrictionType.Count, value: new BigNumber(100) },
+          result: true,
+        },
+      ],
       result: false,
     });
   });

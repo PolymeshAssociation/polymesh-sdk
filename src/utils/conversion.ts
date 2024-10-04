@@ -156,6 +156,7 @@ import {
   GranularCanTransferResult,
   Moment,
   RequirementReport,
+  TransferCondition,
 } from '~/polkadot/polymesh';
 import {
   AccountWithSignature,
@@ -246,6 +247,7 @@ import {
   TransferBreakdown,
   TransferError,
   TransferRestriction,
+  TransferRestrictionResult,
   TransferRestrictionType,
   TransferStatus,
   TrustedClaimIssuer,
@@ -3779,30 +3781,41 @@ export function granularCanTransferResultToTransferBreakdown(
  * @hidden
  */
 export function transferReportToTransferBreakdown(
-  result: Vec<DispatchError>,
+  result: Vec<DispatchError> | undefined,
   validateNftResult: Vec<DispatchError> | undefined,
   complianceResult: Result<ComplianceReport, DispatchError>,
+  transferRestrictionsReport: Result<Vec<TransferCondition>, DispatchError>,
   context: Context
 ): TransferBreakdown {
   let general: TransferError[] = [];
   let canTransfer = true;
 
   if (validateNftResult?.length) {
-    const errors = result.map(error => nftDispatchErrorToTransferError(error, context));
+    const errors = validateNftResult.map(error => nftDispatchErrorToTransferError(error, context));
     general = Array.from(new Set([...general, ...errors]));
     canTransfer = false;
   }
 
-  if (result.length) {
+  if (result?.length) {
     const errors = result.map(error => assetDispatchErrorToTransferError(error, context));
     general = Array.from(new Set([...general, ...errors]));
+    canTransfer = false;
+  }
+
+  let restrictions: TransferRestrictionResult[] = [];
+  const transferRestrictions = transferRestrictionsReport.asOk;
+  if (transferRestrictions.length) {
+    restrictions = transferRestrictions.map(condition => ({
+      restriction: transferConditionToTransferRestriction(condition, context),
+      result: true,
+    }));
     canTransfer = false;
   }
 
   return {
     general,
     compliance: assetComplianceReportToCompliance(complianceResult, context),
-    restrictions: [],
+    restrictions,
     result: canTransfer,
   };
 }

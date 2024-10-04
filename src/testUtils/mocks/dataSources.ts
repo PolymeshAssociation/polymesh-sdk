@@ -1995,6 +1995,37 @@ export const createMockBTreeSet = <T extends Codec>(
 /**
  * @hidden
  */
+export const createMockVec = <T extends Codec>(
+  items: Vec<T> | unknown[] = []
+): MockCodec<Vec<T>> => {
+  if (isCodec<Vec<T>>(items)) {
+    return items as MockCodec<Vec<T>>;
+  }
+
+  const codecItems = items.map(item => {
+    if (isCodec(item)) {
+      return item;
+    }
+
+    if (typeof item === 'string') {
+      return createMockStringCodec(item);
+    }
+
+    if (typeof item === 'number' || item instanceof BigNumber) {
+      return createMockNumberCodec(new BigNumber(item));
+    }
+
+    return createMockCodec(item, !item);
+  });
+
+  const res = createMockCodec(codecItems, !items);
+
+  return res as MockCodec<Vec<T>>;
+};
+
+/**
+ * @hidden
+ */
 export const createMockBTreeMap = <K extends Codec, V extends Codec>(
   items: BTreeMap<K, V> | Map<K, V> = new Map()
 ): MockCodec<BTreeMap<K, V>> => {
