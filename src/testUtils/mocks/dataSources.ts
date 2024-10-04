@@ -2400,7 +2400,7 @@ export const createMockDocument = (document?: {
 }): MockCodec<PolymeshPrimitivesDocument> => {
   const doc = document ?? {
     uri: createMockBytes(),
-    contentHash: createMockDocumentHash(),
+    content_hash: createMockDocumentHash(),
     name: createMockBytes(),
     docType: createMockOption(),
     filingDate: createMockOption(),

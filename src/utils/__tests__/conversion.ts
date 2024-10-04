@@ -3905,22 +3905,22 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
     const result = granularCanTransferResultToTransferBreakdown(
       dsMockUtils.createMockGranularCanTransferResult({
         /* eslint-disable @typescript-eslint/naming-convention */
-        invalidGranularity: false,
-        selfTransfer: false,
-        invalidReceiverCdd: false,
-        invalidSenderCdd: false,
-        receiverCustodianError: false,
-        senderCustodianError: false,
-        senderInsufficientBalance: false,
-        portfolioValidityResult: {
-          receiverIsSamePortfolio: false,
-          senderPortfolioDoesNotExist: false,
-          receiverPortfolioDoesNotExist: false,
-          senderInsufficientBalance: false,
+        invalid_granularity: false,
+        self_transfer: false,
+        invalid_receiver_cdd: false,
+        invalid_sender_cdd: false,
+        receiver_custodian_error: false,
+        sender_custodian_error: false,
+        sender_insufficient_balance: false,
+        portfolio_validity_result: {
+          receiver_is_same_portfolio: false,
+          sender_portfolio_does_not_exist: false,
+          receiver_portfolio_does_not_exist: false,
+          sender_insufficient_balance: false,
           result: false,
         },
-        assetFrozen: false,
-        transferConditionResult: [
+        asset_frozen: false,
+        transfer_condition_result: [
           {
             condition: {
               MaxInvestorCount: dsMockUtils.createMockU64(new BigNumber(100)),
@@ -3928,7 +3928,7 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
             result: false,
           },
         ],
-        complianceResult: dsMockUtils.createMockAssetComplianceResult({
+        compliance_result: dsMockUtils.createMockAssetComplianceResult({
           paused: false,
           requirements: [],
           result: false,
@@ -4680,13 +4680,15 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         ],
       });
 
-      result = meshClaimToClaim(claim);
+      result = meshClaimToClaim(claim, context);
       expect(result).toEqual(fakeResult);
     });
   });
 
   it('should throw an error with an unknown type', () => {
-    expect(() => meshClaimToClaim({} as PolymeshPrimitivesIdentityClaimClaim)).toThrow(
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => meshClaimToClaim({} as PolymeshPrimitivesIdentityClaimClaim, context)).toThrow(
       UnreachableCaseError
     );
   });

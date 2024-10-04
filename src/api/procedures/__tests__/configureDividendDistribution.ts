@@ -133,23 +133,21 @@ describe('configureDividendDistribution procedure', () => {
     rawAmount = dsMockUtils.createMockBalance(maxAmount);
     rawPaymentAt = dsMockUtils.createMockMoment(new BigNumber(paymentDate.getTime()));
     rawExpiresAt = dsMockUtils.createMockMoment(new BigNumber(expiryDate.getTime()));
-    rawCorporateAction = dsMockUtils.createMockCorporateAction({
-      kind: 'UnpredictableBenefit',
-      decl_date: new BigNumber(declarationDate.getTime()),
-      record_date: dsMockUtils.createMockRecordDate({
-        date: new BigNumber(new Date('10/14/2021').getTime()),
-        checkpoint: {
-          Scheduled: [
-            dsMockUtils.createMockU64(new BigNumber(1)),
-            dsMockUtils.createMockU64(new BigNumber(2)),
-          ],
-        },
-      }),
-      targets,
-      default_withholding_tax: defaultTaxWithholding.shiftedBy(4),
-      withholding_tax: taxWithholdings.map(({ identity, percentage }) =>
-        tuple(identity, percentage.shiftedBy(4))
+    rawCorporateActionArgs = dsMockUtils.createMockInitiateCorporateActionArgs({
+      assetId,
+      kind: CorporateActionKind.UnpredictableBenefit,
+      declDate: dsMockUtils.createMockMoment(new BigNumber(declarationDate.getTime())),
+      recordDate: dsMockUtils.createMockOption(
+        dsMockUtils.createMockRecordDateSpec({
+          Scheduled: dsMockUtils.createMockMoment(new BigNumber(checkpoint.getTime())),
+        })
       ),
+      details: description,
+      targets: dsMockUtils.createMockOption(dsMockUtils.createMockTargetIdentities(targets)),
+      defaultWithholdingTax: dsMockUtils.createMockOption(
+        dsMockUtils.createMockPermill(defaultTaxWithholding)
+      ),
+      withholdingTax: [[taxWithholdings[0].identity, taxWithholdings[0].percentage]],
     });
 
     assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
@@ -630,8 +628,8 @@ describe('configureDividendDistribution procedure', () => {
       /* eslint-disable @typescript-eslint/naming-convention */
       rawCorporateAction = dsMockUtils.createMockCorporateAction({
         kind: 'UnpredictableBenefit',
-        declDate: new BigNumber(declarationDate.getTime()),
-        recordDate: dsMockUtils.createMockRecordDate({
+        decl_date: new BigNumber(declarationDate.getTime()),
+        record_date: dsMockUtils.createMockRecordDate({
           date: new BigNumber(new Date('10/14/2021').getTime()),
           checkpoint: {
             Scheduled: [
@@ -641,8 +639,8 @@ describe('configureDividendDistribution procedure', () => {
           },
         }),
         targets,
-        defaultWithholdingTax: defaultTaxWithholding.shiftedBy(4),
-        withholdingTax: taxWithholdings.map(({ identity, percentage }) =>
+        default_withholding_tax: defaultTaxWithholding.shiftedBy(4),
+        withholding_tax: taxWithholdings.map(({ identity, percentage }) =>
           tuple(identity, percentage.shiftedBy(4))
         ),
       });

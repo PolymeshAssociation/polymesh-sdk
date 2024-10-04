@@ -130,7 +130,10 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       calledByTarget: true,
     });
 
-    const target = targetAccount;
+    const target = entityMockUtils.getAccountInstance({
+      address: targetAddress,
+      getIdentity: entityMockUtils.getIdentityInstance({ isEqual: false }),
+    });
 
     return expect(
       prepareConsumeJoinOrRotateAuthorization.call(proc, {
