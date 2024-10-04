@@ -5589,7 +5589,6 @@ export default {
       'InvalidNFTTransferSenderIdMatchesReceiverId',
       'InvalidNFTTransferInvalidReceiverCDD',
       'InvalidNFTTransferInvalidSenderCDD',
-      'NFTIsLocked',
       'InvalidAssetID',
       'NFTIsLocked',
       'NumberOfKeysIsLessThanExpected',

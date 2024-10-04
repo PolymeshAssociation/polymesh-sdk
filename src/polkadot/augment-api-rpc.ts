@@ -817,8 +817,8 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
       getFilteredAuthorizations: AugmentedRpc<
         (
           signatory: Signatory | { Identity: any } | { Account: any } | string | Uint8Array,
-          allow_expired: bool | boolean | Uint8Array,
-          auth_type?:
+          allowExpired: bool | boolean | Uint8Array,
+          authType?:
             | AuthorizationType
             | 'AttestPrimaryKeyRotation'
             | 'RotatePrimaryKey'
@@ -833,7 +833,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
             | number
             | Uint8Array,
           blockHash?: Hash | string | Uint8Array
-        ) => Observable<Vec<Authorization>>
+        ) => Observable<Vec<PolymeshPrimitivesAuthorization>>
       >;
       /**
        * Query relation between a signing key and a DID
@@ -1060,7 +1060,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
        **/
       getExecuteInstructionInfo: AugmentedRpc<
         (
-          instruction_id: InstructionId | AnyNumber | Uint8Array,
+          instructionId: InstructionId | AnyNumber | Uint8Array,
           blockHash?: Hash | string | Uint8Array
         ) => Observable<Option<ExecuteInstructionInfo>>
       >;

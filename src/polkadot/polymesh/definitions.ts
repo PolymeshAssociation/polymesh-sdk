@@ -10,23 +10,23 @@ export default {
               "Returns a vector containing all errors for the transfer. An empty vec means there's no error.",
             params: [
               {
-                name: 'senderPortfolio',
+                name: 'sender_portfolio',
                 type: 'PortfolioId',
               },
               {
-                name: 'receiverPortfolio',
+                name: 'receiver_portfolio',
                 type: 'PortfolioId',
               },
               {
-                name: 'assetId',
+                name: 'asset_id',
                 type: 'AssetID',
               },
               {
-                name: 'transferValue',
+                name: 'transfer_value',
                 type: 'Balance',
               },
               {
-                name: 'skipLockedCheck',
+                name: 'skip_locked_check',
                 type: 'bool',
               },
             ],
@@ -42,19 +42,19 @@ export default {
               'Checks whether a transaction with given parameters can take place or not. The result is granular meaning each check is run and returned regardless of outcome.',
             params: [
               {
-                name: 'fromCustodian',
+                name: 'from_custodian',
                 type: 'Option<IdentityId>',
               },
               {
-                name: 'fromPortfolio',
+                name: 'from_portfolio',
                 type: 'PortfolioId',
               },
               {
-                name: 'toCustodian',
+                name: 'to_custodian',
                 type: 'Option<IdentityId>',
               },
               {
-                name: 'toPortfolio',
+                name: 'to_portfolio',
                 type: 'PortfolioId',
               },
               {
@@ -79,15 +79,15 @@ export default {
             description: 'Checks all compliance requirements for the given asset_id.',
             params: [
               {
-                name: 'assetId',
+                name: 'asset_id',
                 type: 'AssetID',
               },
               {
-                name: 'senderIdentity',
+                name: 'sender_identity',
                 type: 'IdentityId',
               },
               {
-                name: 'receiverIdentity',
+                name: 'receiver_identity',
                 type: 'IdentityId',
               },
             ],
@@ -106,11 +106,11 @@ export default {
                 type: 'Ticker',
               },
               {
-                name: 'senderIdentity',
+                name: 'sender_identity',
                 type: 'IdentityId',
               },
               {
-                name: 'receiverIdentity',
+                name: 'receiver_identity',
                 type: 'IdentityId',
               },
             ],
@@ -148,7 +148,7 @@ export default {
                 type: 'IdentityId',
               },
               {
-                name: 'bufferTime',
+                name: 'buffer_time',
                 type: 'Option<u64>',
               },
             ],
@@ -180,18 +180,18 @@ export default {
             params: [
               {
                 name: 'signatory',
-                type: 'Signatory',
+                type: 'PolymeshPrimitivesSecondaryKeySignatory',
               },
               {
-                name: 'allowExpired',
+                name: 'allow_expired',
                 type: 'bool',
               },
               {
-                name: 'authType',
+                name: 'auth_type',
                 type: 'Option<AuthorizationType>',
               },
             ],
-            type: 'Vec<Authorization>',
+            type: 'Vec<PolymeshPrimitivesAuthorization>',
           },
           get_key_identity_data: {
             description: 'Query relation between a signing key and a DID',
@@ -208,11 +208,11 @@ export default {
               'Returns all valid IdentityClaim of type CustomerDueDiligence for the given target_identity',
             params: [
               {
-                name: 'targetIdentity',
+                name: 'target_identity',
                 type: 'IdentityId',
               },
               {
-                name: 'cddCheckerLeeway',
+                name: 'cdd_checker_leeway',
                 type: 'Option<u64>',
               },
             ],
@@ -231,7 +231,7 @@ export default {
                 type: 'IdentityId',
               },
               {
-                name: 'bufferTime',
+                name: 'buffer_time',
                 type: 'Option<u64>',
               },
             ],
@@ -276,11 +276,11 @@ export default {
                 type: 'Signatory',
               },
               {
-                name: 'allowExpired',
+                name: 'allow_expired',
                 type: 'bool',
               },
               {
-                name: 'authType',
+                name: 'auth_type',
                 type: 'Option<AuthorizationType>',
               },
             ],
@@ -301,11 +301,11 @@ export default {
               'Returns all valid IdentityClaim of type CustomerDueDiligence for the given target_identity',
             params: [
               {
-                name: 'targetIdentity',
+                name: 'target_identity',
                 type: 'IdentityId',
               },
               {
-                name: 'cddCheckerLeeway',
+                name: 'cdd_checker_leeway',
                 type: 'Option<u64>',
               },
             ],
@@ -323,11 +323,11 @@ export default {
               "Returns a vector containing all errors for the transfer. An empty vec means there's no error.",
             params: [
               {
-                name: 'senderPortfolio',
+                name: 'sender_portfolio',
                 type: 'PortfolioId',
               },
               {
-                name: 'receiverPortfolio',
+                name: 'receiver_portfolio',
                 type: 'PortfolioId',
               },
               {
@@ -335,7 +335,7 @@ export default {
                 type: 'NFTs',
               },
               {
-                name: 'skipLockedCheck',
+                name: 'skip_locked_check',
                 type: 'bool',
               },
             ],
@@ -351,11 +351,11 @@ export default {
               'Verifies if and the sender and receiver are not the same, if both have valid balances, if the sender owns the nft, and if all compliance rules are being respected.',
             params: [
               {
-                name: 'senderPortfolio',
+                name: 'sender_portfolio',
                 type: 'PortfolioId',
               },
               {
-                name: 'receiverPortfolio',
+                name: 'receiver_portfolio',
                 type: 'PortfolioId',
               },
               {
@@ -431,7 +431,7 @@ export default {
               'Returns an ExecuteInstructionInfo instance containing the consumed weight and the number of tokens in the instruction.',
             params: [
               {
-                name: 'instructionId',
+                name: 'instruction_id',
                 type: 'InstructionId',
               },
             ],
@@ -442,7 +442,7 @@ export default {
               'Returns an AffirmationCount instance containing the number of assets being sent/received from portfolios, and the number of off-chain assets in the instruction.',
             params: [
               {
-                name: 'instructionId',
+                name: 'instruction_id',
                 type: 'InstructionId',
               },
               {
@@ -461,7 +461,7 @@ export default {
                 type: 'Leg',
               },
               {
-                name: 'skipLockedCheck',
+                name: 'skip_locked_check',
                 type: 'bool',
               },
             ],
@@ -472,7 +472,7 @@ export default {
               "Returns a vector containing all errors for the execution. An empty vec means there's no error.",
             params: [
               {
-                name: 'instructionId',
+                name: 'instruction_id',
                 type: 'InstructionId',
               },
             ],
@@ -488,7 +488,7 @@ export default {
               'Returns an ExecuteInstructionInfo instance containing the consumed weight and the number of tokens in the instruction.',
             params: [
               {
-                name: 'instructionId',
+                name: 'instruction_id',
                 type: 'InstructionId',
               },
             ],
@@ -499,7 +499,7 @@ export default {
               'Returns an AffirmationCount instance containing the number of assets being sent/received from portfolios, and the number of off-chain assets in the instruction.',
             params: [
               {
-                name: 'instructionId',
+                name: 'instruction_id',
                 type: 'InstructionId',
               },
               {
@@ -518,7 +518,7 @@ export default {
                 type: 'Leg',
               },
               {
-                name: 'skipLockedCheck',
+                name: 'skip_locked_check',
                 type: 'bool',
               },
             ],
@@ -529,7 +529,7 @@ export default {
               "Returns a vector containing all errors for the execution. An empty vec means there's no error.",
             params: [
               {
-                name: 'instructionId',
+                name: 'instruction_id',
                 type: 'InstructionId',
               },
             ],
@@ -549,6 +549,36 @@ export default {
           },
         },
         version: 1,
+      },
+    ],
+    StatisticsApi: [
+      {
+        methods: {
+          transfer_restrictions_report: {
+            description:
+              "Returns a vector containing all TransferCondition that are not being respected for the transfer. An empty vec means there's no error.",
+            params: [
+              {
+                name: 'asset_id',
+                type: 'AssetID',
+              },
+              {
+                name: 'sender_did',
+                type: 'IdentityId',
+              },
+              {
+                name: 'receiver_did',
+                type: 'IdentityId',
+              },
+              {
+                name: 'transfer_amount',
+                type: 'Balance',
+              },
+            ],
+            type: 'Result<Vec<TransferCondition>, DispatchError>',
+          },
+        },
+        version: 0,
       },
     ],
   },
@@ -901,9 +931,9 @@ export default {
       },
     },
     IdentityClaim: {
-      claimIssuer: 'IdentityId',
-      issuanceDate: 'Moment',
-      lastUpdateDate: 'Moment',
+      claim_issuer: 'IdentityId',
+      issuance_date: 'Moment',
+      last_update_date: 'Moment',
       expiry: 'Option<Moment>',
       claim: 'Claim',
     },
@@ -942,8 +972,8 @@ export default {
     },
     PipId: 'u32',
     Authorization: {
-      authorizationData: 'AuthorizationData',
-      authorizedBy: 'IdentityId',
+      authorization_data: 'AuthorizationData',
+      authorized_by: 'IdentityId',
       expiry: 'Option<Moment>',
       auth_id: 'u64',
       count: 'u32',
@@ -1016,8 +1046,8 @@ export default {
       },
     },
     RpcDidRecordsSuccess: {
-      primaryKey: 'AccountId',
-      secondaryKeys: 'Vec<SecondaryKey>',
+      primary_key: 'AccountId',
+      secondary_keys: 'Vec<SecondaryKey>',
     },
     RpcDidRecords: {
       _enum: {
@@ -1083,25 +1113,25 @@ export default {
       },
     },
     GranularCanTransferResult: {
-      invalidGranularity: 'bool',
-      selfTransfer: 'bool',
-      invalidReceiverCdd: 'bool',
-      invalidSenderCdd: 'bool',
-      receiverCustodianError: 'bool',
-      senderCustodianError: 'bool',
-      senderInsufficientBalance: 'bool',
-      portfolioValidityResult: 'PortfolioValidityResult',
-      assetFrozen: 'bool',
-      transferConditionResult: 'Vec<TransferConditionResult>',
-      complianceResult: 'AssetComplianceResult',
+      invalid_granularity: 'bool',
+      self_transfer: 'bool',
+      invalid_receiver_cdd: 'bool',
+      invalid_sender_cdd: 'bool',
+      receiver_custodian_error: 'bool',
+      sender_custodian_error: 'bool',
+      sender_insufficient_balance: 'bool',
+      portfolio_validity_result: 'PortfolioValidityResult',
+      asset_frozen: 'bool',
+      transfer_condition_result: 'Vec<TransferConditionResult>',
+      compliance_result: 'AssetComplianceResult',
       result: 'bool',
-      consumedWeight: 'Option<Weight>',
+      consumed_weight: 'Option<Weight>',
     },
     PortfolioValidityResult: {
-      receiverIsSamePortfolio: 'bool',
-      senderPortfolioDoesNotExist: 'bool',
-      receiverPortfolioDoesNotExist: 'bool',
-      senderInsufficientBalance: 'bool',
+      receiver_is_same_portfolio: 'bool',
+      sender_portfolio_does_not_exist: 'bool',
+      receiver_portfolio_does_not_exist: 'bool',
+      sender_insufficient_balance: 'bool',
       result: 'bool',
     },
     TransferConditionResult: {
@@ -1120,8 +1150,8 @@ export default {
     },
     Member: {
       id: 'IdentityId',
-      expiryAt: 'Option<Moment>',
-      inactiveFrom: 'Option<Moment>',
+      expiry_at: 'Option<Moment>',
+      inactive_from: 'Option<Moment>',
     },
     NFTId: 'u64',
     NFTs: {
@@ -1165,9 +1195,9 @@ export default {
       off_chain_assets: 'u32',
     },
     AffirmationCount: {
-      senderAssetCount: 'AssetCount',
-      receiverAssetCount: 'AssetCount',
-      offchainCount: 'u32',
+      sender_asset_count: 'AssetCount',
+      receiver_asset_count: 'AssetCount',
+      offchain_count: 'u32',
     },
     ComplianceReport: {
       anyRequirementSatisfied: 'bool',

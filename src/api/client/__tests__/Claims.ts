@@ -446,9 +446,9 @@ describe('Claims Class', () => {
       };
 
       const rawIdentityClaim = {
-        claimIssuer: dsMockUtils.createMockIdentityId(claimIssuer),
-        issuanceDate: dsMockUtils.createMockMoment(new BigNumber(issuanceDate.getTime())),
-        lastUpdateDate: dsMockUtils.createMockMoment(new BigNumber(lastUpdateDate.getTime())),
+        claim_issuer: dsMockUtils.createMockIdentityId(claimIssuer),
+        issuance_date: dsMockUtils.createMockMoment(new BigNumber(issuanceDate.getTime())),
+        last_update_date: dsMockUtils.createMockMoment(new BigNumber(lastUpdateDate.getTime())),
         expiry: dsMockUtils.createMockOption(),
         claim: dsMockUtils.createMockClaim({
           CustomerDueDiligence: dsMockUtils.createMockCddId(claim.id),

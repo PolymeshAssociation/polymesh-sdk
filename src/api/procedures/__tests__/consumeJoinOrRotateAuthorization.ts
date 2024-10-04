@@ -121,11 +121,6 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
   });
 
   it('should throw an error if the target Account is already part of an Identity', () => {
-    targetAccount = entityMockUtils.getAccountInstance({
-      address: targetAddress,
-      getIdentity: entityMockUtils.getIdentityInstance({ isEqual: false }),
-    });
-
     const proc = procedureMockUtils.getInstance<
       ConsumeJoinOrRotateAuthorizationParams,
       void,

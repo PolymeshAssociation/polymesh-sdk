@@ -45,6 +45,7 @@ describe('Settlements class', () => {
     DefaultPortfolio | NumberedPortfolio,
     [PortfolioId, Context]
   >;
+  let stringToIdentityIdSpy: jest.SpyInstance<PolymeshPrimitivesIdentityId, [string, Context]>;
   let rawAccountId: AccountId;
   let rawAssetId: PolymeshPrimitivesAssetAssetID;
   let rawToDid: PolymeshPrimitivesIdentityId;
@@ -57,6 +58,7 @@ describe('Settlements class', () => {
   let toPortfolioId: PortfolioId;
   let rawFromPortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
   let rawToPortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
+  let rawFromDid: PolymeshPrimitivesIdentityId;
   let fromPortfolio: entityMockUtils.MockDefaultPortfolio;
   let toPortfolio: entityMockUtils.MockDefaultPortfolio;
   let transferReportToTransferBreakdownSpy: jest.SpyInstance;
@@ -77,10 +79,12 @@ describe('Settlements class', () => {
     );
     portfolioLikeToPortfolioIdSpy = jest.spyOn(utilsConversionModule, 'portfolioLikeToPortfolioId');
     portfolioIdToPortfolioSpy = jest.spyOn(utilsConversionModule, 'portfolioIdToPortfolio');
+    stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
     rawAmount = dsMockUtils.createMockBalance(amount);
     fromDid = 'fromDid';
     fromPortfolioId = { did: fromDid };
     toPortfolioId = { did: toDid };
+    rawFromDid = dsMockUtils.createMockIdentityId(fromDid);
     rawFromPortfolio = dsMockUtils.createMockPortfolioId({ did: fromDid, kind: 'Default' });
     rawToPortfolio = dsMockUtils.createMockPortfolioId({ did: toDid, kind: 'Default' });
     transferReportToTransferBreakdownSpy = jest.spyOn(
@@ -116,6 +120,7 @@ describe('Settlements class', () => {
     when(portfolioIdToPortfolioSpy)
       .calledWith(fromPortfolioId, mockContext)
       .mockReturnValue(fromPortfolio);
+    when(stringToIdentityIdSpy).calledWith(fromDid, mockContext).mockReturnValue(rawFromDid);
     when(stringToAccountIdSpy)
       .calledWith(DUMMY_ACCOUNT_ID, mockContext)
       .mockReturnValue(rawAccountId);
@@ -150,9 +155,13 @@ describe('Settlements class', () => {
       it('should return a transfer breakdown representing whether the transaction can be made from the signing Identity', async () => {
         const signingIdentity = await mockContext.getSigningIdentity();
         const { did: signingDid } = signingIdentity;
+        const rawSigningDid = dsMockUtils.createMockIdentityId(signingDid);
 
         const currentDefaultPortfolioId = { did: signingDid };
 
+        when(stringToIdentityIdSpy)
+          .calledWith(signingDid, mockContext)
+          .mockReturnValue(rawSigningDid);
         when(portfolioLikeToPortfolioIdSpy)
           .calledWith(signingIdentity)
           .mockReturnValue(currentDefaultPortfolioId);

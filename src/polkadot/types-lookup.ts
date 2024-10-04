@@ -7638,7 +7638,6 @@ declare module '@polkadot/types/lookup' {
     readonly isInvalidNFTTransferSenderIdMatchesReceiverId: boolean;
     readonly isInvalidNFTTransferInvalidReceiverCDD: boolean;
     readonly isInvalidNFTTransferInvalidSenderCDD: boolean;
-    readonly isNftIsLocked: boolean;
     readonly isInvalidAssetID: boolean;
     readonly isNftIsLocked: boolean;
     readonly isNumberOfKeysIsLessThanExpected: boolean;

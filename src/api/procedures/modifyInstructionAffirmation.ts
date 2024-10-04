@@ -677,7 +677,7 @@ export async function prepareStorage(
   let instructionInfo: ExecuteInstructionInfo;
   /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
   if (context.isV6) {
-    instructionInfo = executeInstructionInfo as ExecuteInstructionInfo;
+    instructionInfo = executeInstructionInfo as unknown as ExecuteInstructionInfo;
   } else {
     const rawInfo = executeInstructionInfo as Option<ExecuteInstructionInfo>;
     instructionInfo = rawInfo.unwrapOrDefault();
