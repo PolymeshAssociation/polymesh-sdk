@@ -447,7 +447,7 @@ function createMockEntityClass<Options extends EntityOptions>(
     exists = jest.fn();
     toHuman = jest.fn();
 
-    private static constructorMock = jest.fn();
+    private static constructorMock = jest.fn(); // NOSONAR
 
     private static options = {} as Required<Options>;
 

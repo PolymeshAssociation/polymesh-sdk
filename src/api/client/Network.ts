@@ -39,7 +39,7 @@ import { createProcedureMethod, filterEventRecords, optionize } from '~/utils/in
  * Handles all Network related functionality, including querying for historical events from middleware
  */
 export class Network {
-  private context: Context;
+  private readonly context: Context;
 
   /**
    * @hidden

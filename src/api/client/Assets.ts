@@ -48,7 +48,7 @@ import {
  * Handles all Asset related functionality
  */
 export class Assets {
-  private context: Context;
+  private readonly context: Context;
 
   /**
    * @hidden

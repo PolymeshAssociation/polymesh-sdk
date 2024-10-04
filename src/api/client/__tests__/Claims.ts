@@ -445,6 +445,7 @@ describe('Claims Class', () => {
         id: 'someCddId',
       };
 
+      /* eslint-disable @typescript-eslint/naming-convention */
       const rawIdentityClaim = {
         claim_issuer: dsMockUtils.createMockIdentityId(claimIssuer),
         issuance_date: dsMockUtils.createMockMoment(new BigNumber(issuanceDate.getTime())),

@@ -55,7 +55,7 @@ import { calculateNextKey, createProcedureMethod, getDid, removePadding } from '
  * Handles all Claims related functionality
  */
 export class Claims {
-  private context: Context;
+  private readonly context: Context;
 
   /**
    * @hidden

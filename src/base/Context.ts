@@ -117,7 +117,7 @@ export class Context {
 
   public ss58Format: BigNumber;
 
-  private _middlewareApi: ApolloClient<NormalizedCacheObject> | null;
+  private readonly _middlewareApi: ApolloClient<NormalizedCacheObject> | null;
 
   private _signingManager?: SigningManager;
 
@@ -129,7 +129,7 @@ export class Context {
 
   public isV6 = false;
 
-  private unsubChainVersion: UnsubscribePromise;
+  private readonly unsubChainVersion: UnsubscribePromise;
 
   /**
    * @hidden
