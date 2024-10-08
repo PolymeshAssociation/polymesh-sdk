@@ -14,7 +14,7 @@
 
 ## Polymesh version
 
-This release is compatible with Polymesh v6.0, v6.1, v6.2
+This release is compatible with Polymesh v6.3 and v7.0
 
 <!--- End of section --->
 
@@ -26,7 +26,7 @@ The Polymesh SDK's main goal is to provide external developers with a set of too
 
 ### Technical Pre-requisites
 
-In order to use the Polymesh SDK, you must install [node](https://nodejs.org/) \(version 16\) and [npm](https://www.npmjs.com/). The library is written in [typescript](https://www.typescriptlang.org/), but can also be used in plain javascript. This document will assume you are using typescript, but the translation to javascript is very simple.
+In order to use the Polymesh SDK, you must install [node](https://nodejs.org/) \(version 18+ recommended\) and [npm](https://www.npmjs.com/). The library is written in [typescript](https://www.typescriptlang.org/), but can also be used in plain javascript. This document will assume you are using typescript, but the translation to javascript is very simple.
 
 ### Documentation
 

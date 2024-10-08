@@ -1646,7 +1646,7 @@ export interface SetMultiSigAdminParams {
   admin: Identity | string | null;
 }
 
-interface JoinCreatorAsPrimary {
+export interface JoinCreatorAsPrimary {
   asPrimary: true;
   cddAuthId?: BigNumber;
 }
