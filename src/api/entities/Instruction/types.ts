@@ -54,7 +54,7 @@ export type InstructionDetails = {
   valueDate: Date | null;
   /**
    * Venue to which the Instruction belongs to
-   * @note From 7.x chain, an Instruction can be created without specifying a Venue. Hence the null value.
+   * @note From 7.x chain, Instructions can be created without a Venue. Hence the possible null value.
    */
   venue: Venue | null;
   memo: string | null;
