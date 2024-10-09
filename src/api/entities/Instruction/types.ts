@@ -39,6 +39,10 @@ export type InstructionEndCondition =
 
 export type InstructionDetails = {
   status: InstructionStatus;
+  /**
+   * Date at which the instruction was created
+   * @note From 7.x chain, this value becomes null when instruction has been executed.
+   */
   createdAt: Date | null;
   /**
    * Date at which the trade was agreed upon (optional, for offchain trades)
@@ -48,6 +52,10 @@ export type InstructionDetails = {
    * Date at which the trade was executed (optional, for offchain trades)
    */
   valueDate: Date | null;
+  /**
+   * Venue to which the Instruction belongs to
+   * @note From 7.x chain, an Instruction can be created without specifying a Venue. Hence the null value.
+   */
   venue: Venue | null;
   memo: string | null;
 } & InstructionEndCondition;
