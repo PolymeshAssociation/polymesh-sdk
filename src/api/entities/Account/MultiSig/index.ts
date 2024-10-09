@@ -62,6 +62,7 @@ export class MultiSig extends Account {
       { getProcedureAndArgs: adminArgs => [setMultiSigAdmin, { multiSig: this, ...adminArgs }] },
       context
     );
+
     this.removePayer = createProcedureMethod(
       {
         getProcedureAndArgs: () => [removeMultiSigPayer, { multiSig: this }],
@@ -384,5 +385,5 @@ export class MultiSig extends Account {
    *
    * @deprecated this method is only available in v6 as in v7 the MultiSig is automatically attached to the creator's identity
    */
-  public joinCreator: OptionalArgsProcedureMethod<JoinCreatorParams, void> | (() => never);
+  public joinCreator: OptionalArgsProcedureMethod<JoinCreatorParams, void>;
 }
