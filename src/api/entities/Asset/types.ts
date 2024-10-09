@@ -130,7 +130,7 @@ export interface TransferBreakdown {
   /**
    * how the transfer adheres to the asset's compliance rules
    */
-  compliance?: Compliance;
+  compliance: Compliance;
   /**
    * list of transfer restrictions and whether the transfer satisfies each one
    */
