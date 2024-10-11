@@ -96,6 +96,7 @@ export interface AssetDetails {
   owner: Identity;
   totalSupply: BigNumber;
   fullAgents: Identity[];
+  ticker?: string;
 }
 
 /**

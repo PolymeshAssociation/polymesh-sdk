@@ -4,6 +4,7 @@ import {
   PalletAssetAssetDetails,
   PolymeshPrimitivesAssetAssetID,
   PolymeshPrimitivesAssetIdentifier,
+  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -92,6 +93,7 @@ describe('Fungible class', () => {
 
     let context: Context;
     let asset: FungibleAsset;
+    let rawTicker: Option<PolymeshPrimitivesTicker>;
 
     beforeAll(() => {
       assetId = '0x1234';
@@ -115,6 +117,7 @@ describe('Fungible class', () => {
       );
       rawName = dsMockUtils.createMockOption(dsMockUtils.createMockBytes(name));
       context = dsMockUtils.getContextInstance();
+      rawTicker = dsMockUtils.createMockOption(dsMockUtils.createMockTicker('TICKER'));
       asset = new FungibleAsset({ assetId }, context);
 
       dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
@@ -136,6 +139,10 @@ describe('Fungible class', () => {
       dsMockUtils.createQueryMock('asset', 'assetNames', {
         returnValue: rawName,
       });
+
+      dsMockUtils.createQueryMock('asset', 'assetIDTicker', {
+        returnValue: rawTicker,
+      });
     });
 
     it('should return details for an Asset', async () => {
@@ -154,6 +161,7 @@ describe('Fungible class', () => {
       expect(details.owner.did).toBe(owner);
       expect(details.assetType).toBe(assetType);
       expect(details.fullAgents[0].did).toBe(owner);
+      expect(details.ticker).toEqual('TICKER');
 
       dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         entries: [
@@ -164,8 +172,13 @@ describe('Fungible class', () => {
         ],
       });
 
+      dsMockUtils.createQueryMock('asset', 'assetIDTicker', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
       details = await asset.details();
       expect(details.fullAgents[0].did).toEqual(did);
+      expect(details.ticker).toBe(undefined);
 
       tokensMock.mockResolvedValue(
         dsMockUtils.createMockOption(

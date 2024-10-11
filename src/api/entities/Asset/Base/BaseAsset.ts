@@ -55,6 +55,7 @@ import {
   bytesToString,
   identitiesSetToIdentities,
   identityIdToString,
+  tickerToString,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
@@ -72,14 +73,17 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
 
   /**
    * Identity ID of the Asset (used for Claims)
+   *
+   * @deprecated this is no longer used from chain 7.x
    */
-
   public did?: string;
 
   /**
    * ticker of the Asset
    *
    * Since the chain version 7.x, ticker can be optionally associated with an Asset
+   *
+   * @deprecated in favour of `ticker` value received from the response of `details` method
    */
   public ticker?: string;
 
@@ -137,7 +141,6 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
       this.did = tickerToDid(assetId);
     } else {
       this.id = assetId;
-      // TODO @prashantasdeveloper check logic around asset DID
     }
 
     this.compliance = new Compliance(this, context);
@@ -334,7 +337,8 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
         StorageKey<[PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId]>,
         Option<PolymeshPrimitivesAgentAgentGroup>
       ][],
-      assetName: Option<Bytes>
+      assetName: Option<Bytes>,
+      tickerValue: string | Option<PolymeshPrimitivesTicker> | undefined
     ): Promise<AssetDetails> => {
       const fullAgents: Identity[] = [];
 
@@ -365,6 +369,16 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
         assetType = value;
       }
 
+      let ticker;
+      if (tickerValue) {
+        /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
+        if (typeof tickerValue === 'string') {
+          ticker = tickerValue;
+        } else if (tickerValue.isSome) {
+          ticker = tickerToString(tickerValue.unwrap());
+        }
+      }
+
       return {
         assetType,
         nonFungible: type === 'NonFungible',
@@ -373,6 +387,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
         owner,
         totalSupply: balanceToBigNumber(totalSupply),
         fullAgents,
+        ticker,
       };
     };
 
@@ -382,31 +397,37 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
     const namePromise = asset.assetNames(rawAssetId);
 
     let tokensStorage = asset.assets;
+    let tickerPromise;
     /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
     if (isV6) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tokensStorage = (asset as any).tokens; // NOSONAR
+      tickerPromise = this.ticker;
+    } else {
+      tickerPromise = asset.assetIDTicker(rawAssetId);
     }
 
     if (callback) {
       context.assertSupportsSubscription();
       const groupEntries = await groupOfAgentPromise;
       const assetName = await namePromise;
+      const tickerValue = await tickerPromise;
 
       return tokensStorage(rawAssetId, async securityToken => {
-        const result = await assembleResult(securityToken, groupEntries, assetName);
+        const result = await assembleResult(securityToken, groupEntries, assetName, tickerValue);
 
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(result);
       });
     }
 
-    const [token, groups, name] = await Promise.all([
+    const [token, groups, name, tickerValue] = await Promise.all([
       tokensStorage(rawAssetId),
       groupOfAgentPromise,
       namePromise,
+      tickerPromise,
     ]);
-    return assembleResult(token, groups, name);
+    return assembleResult(token, groups, name, tickerValue);
   }
 
   /**
