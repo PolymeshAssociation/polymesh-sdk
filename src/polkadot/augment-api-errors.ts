@@ -27,7 +27,11 @@ declare module '@polkadot/api-base/types/errors' {
       /**
        * An unexpected error when generating a new asset ID.
        **/
-      AssetIDGenerationError: AugmentedError<ApiType>;
+      AssetIdGenerationError: AugmentedError<ApiType>;
+      /**
+       * The given asset is already linked to a ticker.
+       **/
+      AssetIsAlreadyLinkedToATicker: AugmentedError<ApiType>;
       /**
        * Asset Metadata Global type already exists.
        **/
@@ -164,6 +168,10 @@ declare module '@polkadot/api-base/types/errors' {
        * The given ticker is already linked to an asset.
        **/
       TickerIsAlreadyLinkedToAnAsset: AugmentedError<ApiType>;
+      /**
+       * The given ticker is not linked to the given asset.
+       **/
+      TickerIsNotLinkedToTheAsset: AugmentedError<ApiType>;
       /**
        * The ticker has non-alphanumeric parts.
        **/
@@ -731,15 +739,15 @@ declare module '@polkadot/api-base/types/errors' {
     };
     externalAgents: {
       /**
-       * The provided `agent` is already an agent for the `AssetID`.
+       * The provided `agent` is already an agent for the `AssetId`.
        **/
       AlreadyAnAgent: AugmentedError<ApiType>;
       /**
-       * An AG with the given `AGId` did not exist for the `AssetID`.
+       * An AG with the given `AGId` did not exist for the `AssetId`.
        **/
       NoSuchAG: AugmentedError<ApiType>;
       /**
-       * The provided `agent` is not an agent for the `AssetID`.
+       * The provided `agent` is not an agent for the `AssetId`.
        **/
       NotAnAgent: AugmentedError<ApiType>;
       /**
@@ -957,6 +965,10 @@ declare module '@polkadot/api-base/types/errors' {
     };
     multiSig: {
       /**
+       * Multisig has no admin.
+       **/
+      AdminNotFound: AugmentedError<ApiType>;
+      /**
        * Already a signer.
        **/
       AlreadyASigner: AugmentedError<ApiType>;
@@ -980,6 +992,14 @@ declare module '@polkadot/api-base/types/errors' {
        * Identity provided is not the multisig's payer.
        **/
       IdentityNotPayer: AugmentedError<ApiType>;
+      /**
+       * The proposal has been invalidated after a multisg update.
+       **/
+      InvalidatedProposal: AugmentedError<ApiType>;
+      /**
+       * Expiry must be in the future.
+       **/
+      InvalidExpiryDate: AugmentedError<ApiType>;
       /**
        * Max weight not enough to execute proposal.
        **/
@@ -1074,7 +1094,7 @@ declare module '@polkadot/api-base/types/errors' {
       /**
        * There's no asset associated to the given asset_id.
        **/
-      InvalidAssetID: AugmentedError<ApiType>;
+      InvalidAssetId: AugmentedError<ApiType>;
       /**
        * The asset must be of type non-fungible.
        **/
@@ -1689,7 +1709,7 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       UnexpectedLegStatus: AugmentedError<ApiType>;
       /**
-       * AssetID could not be found on chain.
+       * AssetId could not be found on chain.
        **/
       UnexpectedOFFChainAsset: AugmentedError<ApiType>;
       /**

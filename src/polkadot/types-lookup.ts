@@ -418,23 +418,23 @@ declare module '@polkadot/types/lookup' {
 
   /** @name PolymeshPrimitivesSecondaryKeyPermissions (40) */
   interface PolymeshPrimitivesSecondaryKeyPermissions extends Struct {
-    readonly asset: PolymeshPrimitivesSubsetSubsetRestrictionAssetID;
+    readonly asset: PolymeshPrimitivesSubsetSubsetRestrictionAssetId;
     readonly extrinsic: PolymeshPrimitivesSecondaryKeyExtrinsicPermissions;
     readonly portfolio: PolymeshPrimitivesSubsetSubsetRestrictionPortfolioId;
   }
 
-  /** @name PolymeshPrimitivesSubsetSubsetRestrictionAssetID (41) */
-  interface PolymeshPrimitivesSubsetSubsetRestrictionAssetID extends Enum {
+  /** @name PolymeshPrimitivesSubsetSubsetRestrictionAssetId (41) */
+  interface PolymeshPrimitivesSubsetSubsetRestrictionAssetId extends Enum {
     readonly isWhole: boolean;
     readonly isThese: boolean;
-    readonly asThese: BTreeSet<PolymeshPrimitivesAssetAssetID>;
+    readonly asThese: BTreeSet<PolymeshPrimitivesAssetAssetId>;
     readonly isExcept: boolean;
-    readonly asExcept: BTreeSet<PolymeshPrimitivesAssetAssetID>;
+    readonly asExcept: BTreeSet<PolymeshPrimitivesAssetAssetId>;
     readonly type: 'Whole' | 'These' | 'Except';
   }
 
-  /** @name PolymeshPrimitivesAssetAssetID (42) */
-  interface PolymeshPrimitivesAssetAssetID extends U8aFixed {}
+  /** @name PolymeshPrimitivesAssetAssetId (42) */
+  interface PolymeshPrimitivesAssetAssetId extends U8aFixed {}
 
   /** @name PolymeshPrimitivesSecondaryKeyExtrinsicPermissions (46) */
   interface PolymeshPrimitivesSecondaryKeyExtrinsicPermissions extends Enum {
@@ -536,9 +536,7 @@ declare module '@polkadot/types/lookup' {
     readonly isIdentity: boolean;
     readonly asIdentity: PolymeshPrimitivesIdentityId;
     readonly isAsset: boolean;
-    readonly asAsset: PolymeshPrimitivesAssetAssetID;
-    readonly isTicker: boolean;
-    readonly asTicker: PolymeshPrimitivesTicker;
+    readonly asAsset: PolymeshPrimitivesAssetAssetId;
     readonly isCustom: boolean;
     readonly asCustom: Bytes;
     readonly type: 'Identity' | 'Asset' | 'Ticker' | 'Custom';
@@ -1065,14 +1063,14 @@ declare module '@polkadot/types/lookup' {
     readonly isAddMultiSigSigner: boolean;
     readonly asAddMultiSigSigner: AccountId32;
     readonly isTransferAssetOwnership: boolean;
-    readonly asTransferAssetOwnership: PolymeshPrimitivesAssetAssetID;
+    readonly asTransferAssetOwnership: PolymeshPrimitivesAssetAssetId;
     readonly isJoinIdentity: boolean;
     readonly asJoinIdentity: PolymeshPrimitivesSecondaryKeyPermissions;
     readonly isPortfolioCustody: boolean;
     readonly asPortfolioCustody: PolymeshPrimitivesIdentityIdPortfolioId;
     readonly isBecomeAgent: boolean;
     readonly asBecomeAgent: ITuple<
-      [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesAgentAgentGroup]
+      [PolymeshPrimitivesAssetAssetId, PolymeshPrimitivesAgentAgentGroup]
     >;
     readonly isAddRelayerPayingKey: boolean;
     readonly asAddRelayerPayingKey: ITuple<[AccountId32, AccountId32, u128]>;
@@ -1739,7 +1737,7 @@ declare module '@polkadot/types/lookup' {
     readonly asAssetCreated: ITuple<
       [
         PolymeshPrimitivesIdentityId,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
         bool,
         PolymeshPrimitivesAssetAssetType,
         PolymeshPrimitivesIdentityId,
@@ -1752,13 +1750,13 @@ declare module '@polkadot/types/lookup' {
     readonly asIdentifiersUpdated: ITuple<
       [
         PolymeshPrimitivesIdentityId,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
         Vec<PolymeshPrimitivesAssetIdentifier>
       ]
     >;
     readonly isDivisibilityChanged: boolean;
     readonly asDivisibilityChanged: ITuple<
-      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetID, bool]
+      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetId, bool]
     >;
     readonly isTickerRegistered: boolean;
     readonly asTickerRegistered: ITuple<
@@ -1770,40 +1768,40 @@ declare module '@polkadot/types/lookup' {
     >;
     readonly isAssetOwnershipTransferred: boolean;
     readonly asAssetOwnershipTransferred: ITuple<
-      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesIdentityId]
+      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetId, PolymeshPrimitivesIdentityId]
     >;
     readonly isAssetFrozen: boolean;
-    readonly asAssetFrozen: ITuple<[PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetID]>;
+    readonly asAssetFrozen: ITuple<[PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetId]>;
     readonly isAssetUnfrozen: boolean;
     readonly asAssetUnfrozen: ITuple<
-      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetID]
+      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetId]
     >;
     readonly isAssetRenamed: boolean;
     readonly asAssetRenamed: ITuple<
-      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetID, Bytes]
+      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetId, Bytes]
     >;
     readonly isFundingRoundSet: boolean;
     readonly asFundingRoundSet: ITuple<
-      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetID, Bytes]
+      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetId, Bytes]
     >;
     readonly isDocumentAdded: boolean;
     readonly asDocumentAdded: ITuple<
       [
         PolymeshPrimitivesIdentityId,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
         u32,
         PolymeshPrimitivesDocument
       ]
     >;
     readonly isDocumentRemoved: boolean;
     readonly asDocumentRemoved: ITuple<
-      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetID, u32]
+      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetId, u32]
     >;
     readonly isControllerTransfer: boolean;
     readonly asControllerTransfer: ITuple<
       [
         PolymeshPrimitivesIdentityId,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
         PolymeshPrimitivesIdentityIdPortfolioId,
         u128
       ]
@@ -1816,7 +1814,7 @@ declare module '@polkadot/types/lookup' {
     readonly asSetAssetMetadataValue: ITuple<
       [
         PolymeshPrimitivesIdentityId,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
         Bytes,
         Option<PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail>
       ]
@@ -1825,7 +1823,7 @@ declare module '@polkadot/types/lookup' {
     readonly asSetAssetMetadataValueDetails: ITuple<
       [
         PolymeshPrimitivesIdentityId,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
         PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail
       ]
     >;
@@ -1833,7 +1831,7 @@ declare module '@polkadot/types/lookup' {
     readonly asRegisterAssetMetadataLocalType: ITuple<
       [
         PolymeshPrimitivesIdentityId,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
         Bytes,
         u64,
         PolymeshPrimitivesAssetMetadataAssetMetadataSpec
@@ -1847,19 +1845,19 @@ declare module '@polkadot/types/lookup' {
     readonly asAssetTypeChanged: ITuple<
       [
         PolymeshPrimitivesIdentityId,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
         PolymeshPrimitivesAssetAssetType
       ]
     >;
     readonly isLocalMetadataKeyDeleted: boolean;
     readonly asLocalMetadataKeyDeleted: ITuple<
-      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetID, u64]
+      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetId, u64]
     >;
     readonly isMetadataValueDeleted: boolean;
     readonly asMetadataValueDeleted: ITuple<
       [
         PolymeshPrimitivesIdentityId,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
         PolymeshPrimitivesAssetMetadataAssetMetadataKey
       ]
     >;
@@ -1867,7 +1865,7 @@ declare module '@polkadot/types/lookup' {
     readonly asAssetBalanceUpdated: ITuple<
       [
         PolymeshPrimitivesIdentityId,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
         u128,
         Option<PolymeshPrimitivesIdentityIdPortfolioId>,
         Option<PolymeshPrimitivesIdentityIdPortfolioId>,
@@ -1875,22 +1873,22 @@ declare module '@polkadot/types/lookup' {
       ]
     >;
     readonly isAssetAffirmationExemption: boolean;
-    readonly asAssetAffirmationExemption: PolymeshPrimitivesAssetAssetID;
+    readonly asAssetAffirmationExemption: PolymeshPrimitivesAssetAssetId;
     readonly isRemoveAssetAffirmationExemption: boolean;
-    readonly asRemoveAssetAffirmationExemption: PolymeshPrimitivesAssetAssetID;
+    readonly asRemoveAssetAffirmationExemption: PolymeshPrimitivesAssetAssetId;
     readonly isPreApprovedAsset: boolean;
     readonly asPreApprovedAsset: ITuple<
-      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetID]
+      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetId]
     >;
     readonly isRemovePreApprovedAsset: boolean;
     readonly asRemovePreApprovedAsset: ITuple<
-      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetID]
+      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetId]
     >;
     readonly isAssetMediatorsAdded: boolean;
     readonly asAssetMediatorsAdded: ITuple<
       [
         PolymeshPrimitivesIdentityId,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
         BTreeSet<PolymeshPrimitivesIdentityId>
       ]
     >;
@@ -1898,13 +1896,13 @@ declare module '@polkadot/types/lookup' {
     readonly asAssetMediatorsRemoved: ITuple<
       [
         PolymeshPrimitivesIdentityId,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
         BTreeSet<PolymeshPrimitivesIdentityId>
       ]
     >;
     readonly isTickerLinkedToAsset: boolean;
     readonly asTickerLinkedToAsset: ITuple<
-      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, PolymeshPrimitivesAssetAssetID]
+      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, PolymeshPrimitivesAssetAssetId]
     >;
     readonly type:
       | 'AssetCreated'
@@ -2102,14 +2100,14 @@ declare module '@polkadot/types/lookup' {
 
   /** @name PalletCorporateActionsCaId (166) */
   interface PalletCorporateActionsCaId extends Struct {
-    readonly assetId: PolymeshPrimitivesAssetAssetID;
+    readonly assetId: PolymeshPrimitivesAssetAssetId;
     readonly localId: u32;
   }
 
   /** @name PalletCorporateActionsDistribution (168) */
   interface PalletCorporateActionsDistribution extends Struct {
     readonly from: PolymeshPrimitivesIdentityIdPortfolioId;
-    readonly currency: PolymeshPrimitivesAssetAssetID;
+    readonly currency: PolymeshPrimitivesAssetAssetId;
     readonly perShare: u128;
     readonly amount: u128;
     readonly remaining: u128;
@@ -2122,7 +2120,7 @@ declare module '@polkadot/types/lookup' {
   interface PolymeshCommonUtilitiesCheckpointEvent extends Enum {
     readonly isCheckpointCreated: boolean;
     readonly asCheckpointCreated: ITuple<
-      [Option<PolymeshPrimitivesIdentityId>, PolymeshPrimitivesAssetAssetID, u64, u128, u64]
+      [Option<PolymeshPrimitivesIdentityId>, PolymeshPrimitivesAssetAssetId, u64, u128, u64]
     >;
     readonly isMaximumSchedulesComplexityChanged: boolean;
     readonly asMaximumSchedulesComplexityChanged: ITuple<[PolymeshPrimitivesIdentityId, u64]>;
@@ -2130,7 +2128,7 @@ declare module '@polkadot/types/lookup' {
     readonly asScheduleCreated: ITuple<
       [
         PolymeshPrimitivesIdentityId,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
         u64,
         PolymeshCommonUtilitiesCheckpointScheduleCheckpoints
       ]
@@ -2139,7 +2137,7 @@ declare module '@polkadot/types/lookup' {
     readonly asScheduleRemoved: ITuple<
       [
         PolymeshPrimitivesIdentityId,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
         u64,
         PolymeshCommonUtilitiesCheckpointScheduleCheckpoints
       ]
@@ -2162,39 +2160,39 @@ declare module '@polkadot/types/lookup' {
     readonly asComplianceRequirementCreated: ITuple<
       [
         PolymeshPrimitivesIdentityId,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
         PolymeshPrimitivesComplianceManagerComplianceRequirement
       ]
     >;
     readonly isComplianceRequirementRemoved: boolean;
     readonly asComplianceRequirementRemoved: ITuple<
-      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetID, u32]
+      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetId, u32]
     >;
     readonly isAssetComplianceReplaced: boolean;
     readonly asAssetComplianceReplaced: ITuple<
       [
         PolymeshPrimitivesIdentityId,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
         Vec<PolymeshPrimitivesComplianceManagerComplianceRequirement>
       ]
     >;
     readonly isAssetComplianceReset: boolean;
     readonly asAssetComplianceReset: ITuple<
-      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetID]
+      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetId]
     >;
     readonly isAssetComplianceResumed: boolean;
     readonly asAssetComplianceResumed: ITuple<
-      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetID]
+      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetId]
     >;
     readonly isAssetCompliancePaused: boolean;
     readonly asAssetCompliancePaused: ITuple<
-      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetID]
+      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetId]
     >;
     readonly isComplianceRequirementChanged: boolean;
     readonly asComplianceRequirementChanged: ITuple<
       [
         PolymeshPrimitivesIdentityId,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
         PolymeshPrimitivesComplianceManagerComplianceRequirement
       ]
     >;
@@ -2202,13 +2200,13 @@ declare module '@polkadot/types/lookup' {
     readonly asTrustedDefaultClaimIssuerAdded: ITuple<
       [
         PolymeshPrimitivesIdentityId,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
         PolymeshPrimitivesConditionTrustedIssuer
       ]
     >;
     readonly isTrustedDefaultClaimIssuerRemoved: boolean;
     readonly asTrustedDefaultClaimIssuerRemoved: ITuple<
-      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesIdentityId]
+      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetId, PolymeshPrimitivesIdentityId]
     >;
     readonly type:
       | 'ComplianceRequirementCreated'
@@ -2306,19 +2304,19 @@ declare module '@polkadot/types/lookup' {
     readonly asDefaultTargetIdentitiesChanged: ITuple<
       [
         PolymeshPrimitivesIdentityId,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
         PalletCorporateActionsTargetIdentities
       ]
     >;
     readonly isDefaultWithholdingTaxChanged: boolean;
     readonly asDefaultWithholdingTaxChanged: ITuple<
-      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetID, Permill]
+      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetId, Permill]
     >;
     readonly isDidWithholdingTaxChanged: boolean;
     readonly asDidWithholdingTaxChanged: ITuple<
       [
         PolymeshPrimitivesIdentityId,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
         PolymeshPrimitivesIdentityId,
         Option<Permill>
       ]
@@ -2647,7 +2645,7 @@ declare module '@polkadot/types/lookup' {
       [
         PolymeshPrimitivesIdentityId,
         PolymeshPrimitivesIdentityIdPortfolioId,
-        PolymeshPrimitivesAssetAssetID
+        PolymeshPrimitivesAssetAssetId
       ]
     >;
     readonly isRevokePreApprovedPortfolio: boolean;
@@ -2655,7 +2653,7 @@ declare module '@polkadot/types/lookup' {
       [
         PolymeshPrimitivesIdentityId,
         PolymeshPrimitivesIdentityIdPortfolioId,
-        PolymeshPrimitivesAssetAssetID
+        PolymeshPrimitivesAssetAssetId
       ]
     >;
     readonly type:
@@ -2673,7 +2671,7 @@ declare module '@polkadot/types/lookup' {
   interface PolymeshPrimitivesPortfolioFundDescription extends Enum {
     readonly isFungible: boolean;
     readonly asFungible: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly amount: u128;
     } & Struct;
     readonly isNonFungible: boolean;
@@ -2683,7 +2681,7 @@ declare module '@polkadot/types/lookup' {
 
   /** @name PolymeshPrimitivesNftNfTs (237) */
   interface PolymeshPrimitivesNftNfTs extends Struct {
-    readonly assetId: PolymeshPrimitivesAssetAssetID;
+    readonly assetId: PolymeshPrimitivesAssetAssetId;
     readonly ids: Vec<u64>;
   }
 
@@ -2778,15 +2776,15 @@ declare module '@polkadot/types/lookup' {
     >;
     readonly isVenueFiltering: boolean;
     readonly asVenueFiltering: ITuple<
-      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetID, bool]
+      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetId, bool]
     >;
     readonly isVenuesAllowed: boolean;
     readonly asVenuesAllowed: ITuple<
-      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetID, Vec<u64>]
+      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetId, Vec<u64>]
     >;
     readonly isVenuesBlocked: boolean;
     readonly asVenuesBlocked: ITuple<
-      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetID, Vec<u64>]
+      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetId, Vec<u64>]
     >;
     readonly isLegFailedExecution: boolean;
     readonly asLegFailedExecution: ITuple<[PolymeshPrimitivesIdentityId, u64, u64]>;
@@ -2796,7 +2794,7 @@ declare module '@polkadot/types/lookup' {
     readonly asInstructionExecuted: ITuple<[PolymeshPrimitivesIdentityId, u64]>;
     readonly isVenueUnauthorized: boolean;
     readonly asVenueUnauthorized: ITuple<
-      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetID, u64]
+      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetId, u64]
     >;
     readonly isSchedulingFailed: boolean;
     readonly asSchedulingFailed: ITuple<[u64, SpRuntimeDispatchError]>;
@@ -2890,7 +2888,7 @@ declare module '@polkadot/types/lookup' {
     readonly asFungible: {
       readonly sender: PolymeshPrimitivesIdentityIdPortfolioId;
       readonly receiver: PolymeshPrimitivesIdentityIdPortfolioId;
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly amount: u128;
     } & Struct;
     readonly isNonFungible: boolean;
@@ -2915,7 +2913,7 @@ declare module '@polkadot/types/lookup' {
     readonly asStatTypesAdded: ITuple<
       [
         PolymeshPrimitivesIdentityId,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
         Vec<PolymeshPrimitivesStatisticsStatType>
       ]
     >;
@@ -2923,7 +2921,7 @@ declare module '@polkadot/types/lookup' {
     readonly asStatTypesRemoved: ITuple<
       [
         PolymeshPrimitivesIdentityId,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
         Vec<PolymeshPrimitivesStatisticsStatType>
       ]
     >;
@@ -2931,7 +2929,7 @@ declare module '@polkadot/types/lookup' {
     readonly asAssetStatsUpdated: ITuple<
       [
         PolymeshPrimitivesIdentityId,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
         PolymeshPrimitivesStatisticsStatType,
         Vec<PolymeshPrimitivesStatisticsStatUpdate>
       ]
@@ -2940,7 +2938,7 @@ declare module '@polkadot/types/lookup' {
     readonly asSetAssetTransferCompliance: ITuple<
       [
         PolymeshPrimitivesIdentityId,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
         Vec<PolymeshPrimitivesTransferComplianceTransferCondition>
       ]
     >;
@@ -3028,7 +3026,7 @@ declare module '@polkadot/types/lookup' {
 
   /** @name PolymeshPrimitivesTransferComplianceTransferConditionExemptKey (271) */
   interface PolymeshPrimitivesTransferComplianceTransferConditionExemptKey extends Struct {
-    readonly assetId: PolymeshPrimitivesAssetAssetID;
+    readonly assetId: PolymeshPrimitivesAssetAssetId;
     readonly op: PolymeshPrimitivesStatisticsStatOpType;
     readonly claimType: Option<PolymeshPrimitivesIdentityClaimClaimType>;
   }
@@ -3044,8 +3042,8 @@ declare module '@polkadot/types/lookup' {
       [
         PolymeshPrimitivesIdentityId,
         u64,
-        PolymeshPrimitivesAssetAssetID,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
+        PolymeshPrimitivesAssetAssetId,
         u128,
         u128
       ]
@@ -3073,9 +3071,9 @@ declare module '@polkadot/types/lookup' {
   interface PalletStoFundraiser extends Struct {
     readonly creator: PolymeshPrimitivesIdentityId;
     readonly offeringPortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
-    readonly offeringAsset: PolymeshPrimitivesAssetAssetID;
+    readonly offeringAsset: PolymeshPrimitivesAssetAssetId;
     readonly raisingPortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
-    readonly raisingAsset: PolymeshPrimitivesAssetAssetID;
+    readonly raisingAsset: PolymeshPrimitivesAssetAssetId;
     readonly tiers: Vec<PalletStoFundraiserTier>;
     readonly venueId: u64;
     readonly start: u64;
@@ -3173,7 +3171,7 @@ declare module '@polkadot/types/lookup' {
     readonly asGroupCreated: ITuple<
       [
         PolymeshPrimitivesEventOnly,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
         u32,
         PolymeshPrimitivesSecondaryKeyExtrinsicPermissions
       ]
@@ -3182,7 +3180,7 @@ declare module '@polkadot/types/lookup' {
     readonly asGroupPermissionsUpdated: ITuple<
       [
         PolymeshPrimitivesEventOnly,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
         u32,
         PolymeshPrimitivesSecondaryKeyExtrinsicPermissions
       ]
@@ -3191,19 +3189,19 @@ declare module '@polkadot/types/lookup' {
     readonly asAgentAdded: ITuple<
       [
         PolymeshPrimitivesEventOnly,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
         PolymeshPrimitivesAgentAgentGroup
       ]
     >;
     readonly isAgentRemoved: boolean;
     readonly asAgentRemoved: ITuple<
-      [PolymeshPrimitivesEventOnly, PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesIdentityId]
+      [PolymeshPrimitivesEventOnly, PolymeshPrimitivesAssetAssetId, PolymeshPrimitivesIdentityId]
     >;
     readonly isGroupChanged: boolean;
     readonly asGroupChanged: ITuple<
       [
         PolymeshPrimitivesEventOnly,
-        PolymeshPrimitivesAssetAssetID,
+        PolymeshPrimitivesAssetAssetId,
         PolymeshPrimitivesIdentityId,
         PolymeshPrimitivesAgentAgentGroup
       ]
@@ -3334,7 +3332,7 @@ declare module '@polkadot/types/lookup' {
   interface PolymeshCommonUtilitiesNftEvent extends Enum {
     readonly isNftCollectionCreated: boolean;
     readonly asNftCollectionCreated: ITuple<
-      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetID, u64]
+      [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetId, u64]
     >;
     readonly isNftPortfolioUpdated: boolean;
     readonly asNftPortfolioUpdated: ITuple<
@@ -4247,6 +4245,7 @@ declare module '@polkadot/types/lookup' {
     readonly asJoinIdentity: {
       readonly authId: u64;
     } & Struct;
+    readonly isRemoveAdmin: boolean;
     readonly type:
       | 'CreateMultisig'
       | 'CreateProposal'
@@ -4264,7 +4263,8 @@ declare module '@polkadot/types/lookup' {
       | 'RemovePayer'
       | 'RemovePayerViaPayer'
       | 'ApproveJoinIdentity'
-      | 'JoinIdentity';
+      | 'JoinIdentity'
+      | 'RemoveAdmin';
   }
 
   /** @name PalletStakingPalletCall (396) */
@@ -4661,56 +4661,56 @@ declare module '@polkadot/types/lookup' {
     } & Struct;
     readonly isFreeze: boolean;
     readonly asFreeze: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
     } & Struct;
     readonly isUnfreeze: boolean;
     readonly asUnfreeze: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
     } & Struct;
     readonly isRenameAsset: boolean;
     readonly asRenameAsset: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly assetName: Bytes;
     } & Struct;
     readonly isIssue: boolean;
     readonly asIssue: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly amount: u128;
       readonly portfolioKind: PolymeshPrimitivesIdentityIdPortfolioKind;
     } & Struct;
     readonly isRedeem: boolean;
     readonly asRedeem: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly value: u128;
       readonly portfolioKind: PolymeshPrimitivesIdentityIdPortfolioKind;
     } & Struct;
     readonly isMakeDivisible: boolean;
     readonly asMakeDivisible: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
     } & Struct;
     readonly isAddDocuments: boolean;
     readonly asAddDocuments: {
       readonly docs: Vec<PolymeshPrimitivesDocument>;
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
     } & Struct;
     readonly isRemoveDocuments: boolean;
     readonly asRemoveDocuments: {
       readonly docsId: Vec<u32>;
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
     } & Struct;
     readonly isSetFundingRound: boolean;
     readonly asSetFundingRound: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly foundingRoundName: Bytes;
     } & Struct;
     readonly isUpdateIdentifiers: boolean;
     readonly asUpdateIdentifiers: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly assetIdentifiers: Vec<PolymeshPrimitivesAssetIdentifier>;
     } & Struct;
     readonly isControllerTransfer: boolean;
     readonly asControllerTransfer: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly value: u128;
       readonly fromPortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
     } & Struct;
@@ -4728,20 +4728,20 @@ declare module '@polkadot/types/lookup' {
     } & Struct;
     readonly isSetAssetMetadata: boolean;
     readonly asSetAssetMetadata: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly key: PolymeshPrimitivesAssetMetadataAssetMetadataKey;
       readonly value: Bytes;
       readonly detail: Option<PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail>;
     } & Struct;
     readonly isSetAssetMetadataDetails: boolean;
     readonly asSetAssetMetadataDetails: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly key: PolymeshPrimitivesAssetMetadataAssetMetadataKey;
       readonly detail: PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail;
     } & Struct;
     readonly isRegisterAndSetLocalAssetMetadata: boolean;
     readonly asRegisterAndSetLocalAssetMetadata: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly name: Bytes;
       readonly spec: PolymeshPrimitivesAssetMetadataAssetMetadataSpec;
       readonly value: Bytes;
@@ -4749,7 +4749,7 @@ declare module '@polkadot/types/lookup' {
     } & Struct;
     readonly isRegisterAssetMetadataLocalType: boolean;
     readonly asRegisterAssetMetadataLocalType: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly name: Bytes;
       readonly spec: PolymeshPrimitivesAssetMetadataAssetMetadataSpec;
     } & Struct;
@@ -4760,49 +4760,54 @@ declare module '@polkadot/types/lookup' {
     } & Struct;
     readonly isUpdateAssetType: boolean;
     readonly asUpdateAssetType: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly assetType: PolymeshPrimitivesAssetAssetType;
     } & Struct;
     readonly isRemoveLocalMetadataKey: boolean;
     readonly asRemoveLocalMetadataKey: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly localKey: u64;
     } & Struct;
     readonly isRemoveMetadataValue: boolean;
     readonly asRemoveMetadataValue: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly metadataKey: PolymeshPrimitivesAssetMetadataAssetMetadataKey;
     } & Struct;
     readonly isExemptAssetAffirmation: boolean;
     readonly asExemptAssetAffirmation: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
     } & Struct;
     readonly isRemoveAssetAffirmationExemption: boolean;
     readonly asRemoveAssetAffirmationExemption: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
     } & Struct;
     readonly isPreApproveAsset: boolean;
     readonly asPreApproveAsset: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
     } & Struct;
     readonly isRemoveAssetPreApproval: boolean;
     readonly asRemoveAssetPreApproval: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
     } & Struct;
     readonly isAddMandatoryMediators: boolean;
     readonly asAddMandatoryMediators: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly mediators: BTreeSet<PolymeshPrimitivesIdentityId>;
     } & Struct;
     readonly isRemoveMandatoryMediators: boolean;
     readonly asRemoveMandatoryMediators: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly mediators: BTreeSet<PolymeshPrimitivesIdentityId>;
     } & Struct;
     readonly isLinkTickerToAssetId: boolean;
     readonly asLinkTickerToAssetId: {
       readonly ticker: PolymeshPrimitivesTicker;
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
+    } & Struct;
+    readonly isUnlinkTickerFromAssetId: boolean;
+    readonly asUnlinkTickerFromAssetId: {
+      readonly ticker: PolymeshPrimitivesTicker;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
     } & Struct;
     readonly type:
       | 'RegisterUniqueTicker'
@@ -4836,7 +4841,8 @@ declare module '@polkadot/types/lookup' {
       | 'RemoveAssetPreApproval'
       | 'AddMandatoryMediators'
       | 'RemoveMandatoryMediators'
-      | 'LinkTickerToAssetId';
+      | 'LinkTickerToAssetId'
+      | 'UnlinkTickerFromAssetId';
   }
 
   /** @name PalletCorporateActionsDistributionCall (431) */
@@ -4845,7 +4851,7 @@ declare module '@polkadot/types/lookup' {
     readonly asDistribute: {
       readonly caId: PalletCorporateActionsCaId;
       readonly portfolio: Option<u64>;
-      readonly currency: PolymeshPrimitivesAssetAssetID;
+      readonly currency: PolymeshPrimitivesAssetAssetId;
       readonly perShare: u128;
       readonly amount: u128;
       readonly paymentAt: u64;
@@ -4875,7 +4881,7 @@ declare module '@polkadot/types/lookup' {
   interface PalletAssetCheckpointCall extends Enum {
     readonly isCreateCheckpoint: boolean;
     readonly asCreateCheckpoint: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
     } & Struct;
     readonly isSetSchedulesMaxComplexity: boolean;
     readonly asSetSchedulesMaxComplexity: {
@@ -4883,12 +4889,12 @@ declare module '@polkadot/types/lookup' {
     } & Struct;
     readonly isCreateSchedule: boolean;
     readonly asCreateSchedule: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly schedule: PolymeshCommonUtilitiesCheckpointScheduleCheckpoints;
     } & Struct;
     readonly isRemoveSchedule: boolean;
     readonly asRemoveSchedule: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly id: u64;
     } & Struct;
     readonly type:
@@ -4902,45 +4908,45 @@ declare module '@polkadot/types/lookup' {
   interface PalletComplianceManagerCall extends Enum {
     readonly isAddComplianceRequirement: boolean;
     readonly asAddComplianceRequirement: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly senderConditions: Vec<PolymeshPrimitivesCondition>;
       readonly receiverConditions: Vec<PolymeshPrimitivesCondition>;
     } & Struct;
     readonly isRemoveComplianceRequirement: boolean;
     readonly asRemoveComplianceRequirement: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly id: u32;
     } & Struct;
     readonly isReplaceAssetCompliance: boolean;
     readonly asReplaceAssetCompliance: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly assetCompliance: Vec<PolymeshPrimitivesComplianceManagerComplianceRequirement>;
     } & Struct;
     readonly isResetAssetCompliance: boolean;
     readonly asResetAssetCompliance: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
     } & Struct;
     readonly isPauseAssetCompliance: boolean;
     readonly asPauseAssetCompliance: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
     } & Struct;
     readonly isResumeAssetCompliance: boolean;
     readonly asResumeAssetCompliance: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
     } & Struct;
     readonly isAddDefaultTrustedClaimIssuer: boolean;
     readonly asAddDefaultTrustedClaimIssuer: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly issuer: PolymeshPrimitivesConditionTrustedIssuer;
     } & Struct;
     readonly isRemoveDefaultTrustedClaimIssuer: boolean;
     readonly asRemoveDefaultTrustedClaimIssuer: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly issuer: PolymeshPrimitivesIdentityId;
     } & Struct;
     readonly isChangeComplianceRequirement: boolean;
     readonly asChangeComplianceRequirement: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly newReq: PolymeshPrimitivesComplianceManagerComplianceRequirement;
     } & Struct;
     readonly type:
@@ -4963,23 +4969,23 @@ declare module '@polkadot/types/lookup' {
     } & Struct;
     readonly isSetDefaultTargets: boolean;
     readonly asSetDefaultTargets: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly targets: PalletCorporateActionsTargetIdentities;
     } & Struct;
     readonly isSetDefaultWithholdingTax: boolean;
     readonly asSetDefaultWithholdingTax: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly tax: Permill;
     } & Struct;
     readonly isSetDidWithholdingTax: boolean;
     readonly asSetDidWithholdingTax: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly taxedDid: PolymeshPrimitivesIdentityId;
       readonly tax: Option<Permill>;
     } & Struct;
     readonly isInitiateCorporateAction: boolean;
     readonly asInitiateCorporateAction: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly kind: PalletCorporateActionsCaKind;
       readonly declDate: u64;
       readonly recordDate: Option<PalletCorporateActionsRecordDateSpec>;
@@ -5006,7 +5012,7 @@ declare module '@polkadot/types/lookup' {
     readonly asInitiateCorporateActionAndDistribute: {
       readonly caArgs: PalletCorporateActionsInitiateCorporateActionArgs;
       readonly portfolio: Option<u64>;
-      readonly currency: PolymeshPrimitivesAssetAssetID;
+      readonly currency: PolymeshPrimitivesAssetAssetId;
       readonly perShare: u128;
       readonly amount: u128;
       readonly paymentAt: u64;
@@ -5037,7 +5043,7 @@ declare module '@polkadot/types/lookup' {
 
   /** @name PalletCorporateActionsInitiateCorporateActionArgs (440) */
   interface PalletCorporateActionsInitiateCorporateActionArgs extends Struct {
-    readonly assetId: PolymeshPrimitivesAssetAssetID;
+    readonly assetId: PolymeshPrimitivesAssetAssetId;
     readonly kind: PalletCorporateActionsCaKind;
     readonly declDate: u64;
     readonly recordDate: Option<PalletCorporateActionsRecordDateSpec>;
@@ -5219,12 +5225,12 @@ declare module '@polkadot/types/lookup' {
     } & Struct;
     readonly isPreApprovePortfolio: boolean;
     readonly asPreApprovePortfolio: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly portfolioId: PolymeshPrimitivesIdentityIdPortfolioId;
     } & Struct;
     readonly isRemovePortfolioPreApproval: boolean;
     readonly asRemovePortfolioPreApproval: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly portfolioId: PolymeshPrimitivesIdentityIdPortfolioId;
     } & Struct;
     readonly isAllowIdentityToCreatePortfolios: boolean;
@@ -5387,17 +5393,17 @@ declare module '@polkadot/types/lookup' {
     } & Struct;
     readonly isSetVenueFiltering: boolean;
     readonly asSetVenueFiltering: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly enabled: bool;
     } & Struct;
     readonly isAllowVenues: boolean;
     readonly asAllowVenues: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly venues: Vec<u64>;
     } & Struct;
     readonly isDisallowVenues: boolean;
     readonly asDisallowVenues: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly venues: Vec<u64>;
     } & Struct;
     readonly isUpdateVenueSigners: boolean;
@@ -5583,18 +5589,18 @@ declare module '@polkadot/types/lookup' {
   interface PalletStatisticsCall extends Enum {
     readonly isSetActiveAssetStats: boolean;
     readonly asSetActiveAssetStats: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly statTypes: BTreeSet<PolymeshPrimitivesStatisticsStatType>;
     } & Struct;
     readonly isBatchUpdateAssetStats: boolean;
     readonly asBatchUpdateAssetStats: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly statType: PolymeshPrimitivesStatisticsStatType;
       readonly values: BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>;
     } & Struct;
     readonly isSetAssetTransferCompliance: boolean;
     readonly asSetAssetTransferCompliance: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly transferConditions: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
     } & Struct;
     readonly isSetEntitiesExempt: boolean;
@@ -5615,9 +5621,9 @@ declare module '@polkadot/types/lookup' {
     readonly isCreateFundraiser: boolean;
     readonly asCreateFundraiser: {
       readonly offeringPortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
-      readonly offeringAsset: PolymeshPrimitivesAssetAssetID;
+      readonly offeringAsset: PolymeshPrimitivesAssetAssetId;
       readonly raisingPortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
-      readonly raisingAsset: PolymeshPrimitivesAssetAssetID;
+      readonly raisingAsset: PolymeshPrimitivesAssetAssetId;
       readonly tiers: Vec<PalletStoPriceTier>;
       readonly venueId: u64;
       readonly start: Option<u64>;
@@ -5629,7 +5635,7 @@ declare module '@polkadot/types/lookup' {
     readonly asInvest: {
       readonly investmentPortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
       readonly fundingPortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
-      readonly offeringAsset: PolymeshPrimitivesAssetAssetID;
+      readonly offeringAsset: PolymeshPrimitivesAssetAssetId;
       readonly id: u64;
       readonly purchaseAmount: u128;
       readonly maxPrice: Option<u128>;
@@ -5637,24 +5643,24 @@ declare module '@polkadot/types/lookup' {
     } & Struct;
     readonly isFreezeFundraiser: boolean;
     readonly asFreezeFundraiser: {
-      readonly offeringAsset: PolymeshPrimitivesAssetAssetID;
+      readonly offeringAsset: PolymeshPrimitivesAssetAssetId;
       readonly id: u64;
     } & Struct;
     readonly isUnfreezeFundraiser: boolean;
     readonly asUnfreezeFundraiser: {
-      readonly offeringAsset: PolymeshPrimitivesAssetAssetID;
+      readonly offeringAsset: PolymeshPrimitivesAssetAssetId;
       readonly id: u64;
     } & Struct;
     readonly isModifyFundraiserWindow: boolean;
     readonly asModifyFundraiserWindow: {
-      readonly offeringAsset: PolymeshPrimitivesAssetAssetID;
+      readonly offeringAsset: PolymeshPrimitivesAssetAssetId;
       readonly id: u64;
       readonly start: u64;
       readonly end: Option<u64>;
     } & Struct;
     readonly isStop: boolean;
     readonly asStop: {
-      readonly offeringAsset: PolymeshPrimitivesAssetAssetID;
+      readonly offeringAsset: PolymeshPrimitivesAssetAssetId;
       readonly id: u64;
     } & Struct;
     readonly type:
@@ -5813,27 +5819,27 @@ declare module '@polkadot/types/lookup' {
   interface PalletExternalAgentsCall extends Enum {
     readonly isCreateGroup: boolean;
     readonly asCreateGroup: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly perms: PolymeshPrimitivesSecondaryKeyExtrinsicPermissions;
     } & Struct;
     readonly isSetGroupPermissions: boolean;
     readonly asSetGroupPermissions: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly id: u32;
       readonly perms: PolymeshPrimitivesSecondaryKeyExtrinsicPermissions;
     } & Struct;
     readonly isRemoveAgent: boolean;
     readonly asRemoveAgent: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly agent: PolymeshPrimitivesIdentityId;
     } & Struct;
     readonly isAbdicate: boolean;
     readonly asAbdicate: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
     } & Struct;
     readonly isChangeGroup: boolean;
     readonly asChangeGroup: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly agent: PolymeshPrimitivesIdentityId;
       readonly group: PolymeshPrimitivesAgentAgentGroup;
     } & Struct;
@@ -5843,14 +5849,14 @@ declare module '@polkadot/types/lookup' {
     } & Struct;
     readonly isCreateGroupAndAddAuth: boolean;
     readonly asCreateGroupAndAddAuth: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly perms: PolymeshPrimitivesSecondaryKeyExtrinsicPermissions;
       readonly target: PolymeshPrimitivesIdentityId;
       readonly expiry: Option<u64>;
     } & Struct;
     readonly isCreateAndChangeCustomGroup: boolean;
     readonly asCreateAndChangeCustomGroup: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly perms: PolymeshPrimitivesSecondaryKeyExtrinsicPermissions;
       readonly agent: PolymeshPrimitivesIdentityId;
     } & Struct;
@@ -6087,19 +6093,19 @@ declare module '@polkadot/types/lookup' {
   interface PalletNftCall extends Enum {
     readonly isCreateNftCollection: boolean;
     readonly asCreateNftCollection: {
-      readonly assetId: Option<PolymeshPrimitivesAssetAssetID>;
+      readonly assetId: Option<PolymeshPrimitivesAssetAssetId>;
       readonly nftType: Option<PolymeshPrimitivesAssetNonFungibleType>;
       readonly collectionKeys: PolymeshPrimitivesNftNftCollectionKeys;
     } & Struct;
     readonly isIssueNft: boolean;
     readonly asIssueNft: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly nftMetadataAttributes: Vec<PolymeshPrimitivesNftNftMetadataAttribute>;
       readonly portfolioKind: PolymeshPrimitivesIdentityIdPortfolioKind;
     } & Struct;
     readonly isRedeemNft: boolean;
     readonly asRedeemNft: {
-      readonly assetId: PolymeshPrimitivesAssetAssetID;
+      readonly assetId: PolymeshPrimitivesAssetAssetId;
       readonly nftId: u64;
       readonly portfolioKind: PolymeshPrimitivesIdentityIdPortfolioKind;
       readonly numberOfKeys: Option<u8>;
@@ -6315,6 +6321,9 @@ declare module '@polkadot/types/lookup' {
     readonly isMultisigMissingIdentity: boolean;
     readonly isTooManySigners: boolean;
     readonly isNoPayingDid: boolean;
+    readonly isInvalidExpiryDate: boolean;
+    readonly isInvalidatedProposal: boolean;
+    readonly isAdminNotFound: boolean;
     readonly type:
       | 'ProposalMissing'
       | 'DecodingError'
@@ -6337,7 +6346,10 @@ declare module '@polkadot/types/lookup' {
       | 'MaxWeightTooLow'
       | 'MultisigMissingIdentity'
       | 'TooManySigners'
-      | 'NoPayingDid';
+      | 'NoPayingDid'
+      | 'InvalidExpiryDate'
+      | 'InvalidatedProposal'
+      | 'AdminNotFound';
   }
 
   /** @name PalletBridgeBridgeTxDetail (583) */
@@ -6651,8 +6663,10 @@ declare module '@polkadot/types/lookup' {
     readonly isInvalidTransferInvalidSenderCDD: boolean;
     readonly isTickerRegistrationNotFound: boolean;
     readonly isTickerIsAlreadyLinkedToAnAsset: boolean;
-    readonly isAssetIDGenerationError: boolean;
+    readonly isAssetIdGenerationError: boolean;
     readonly isTickerNotRegisteredToCaller: boolean;
+    readonly isAssetIsAlreadyLinkedToATicker: boolean;
+    readonly isTickerIsNotLinkedToTheAsset: boolean;
     readonly type:
       | 'Unauthorized'
       | 'AssetAlreadyCreated'
@@ -6699,8 +6713,10 @@ declare module '@polkadot/types/lookup' {
       | 'InvalidTransferInvalidSenderCDD'
       | 'TickerRegistrationNotFound'
       | 'TickerIsAlreadyLinkedToAnAsset'
-      | 'AssetIDGenerationError'
-      | 'TickerNotRegisteredToCaller';
+      | 'AssetIdGenerationError'
+      | 'TickerNotRegisteredToCaller'
+      | 'AssetIsAlreadyLinkedToATicker'
+      | 'TickerIsNotLinkedToTheAsset';
   }
 
   /** @name PalletCorporateActionsDistributionError (645) */
@@ -7178,7 +7194,7 @@ declare module '@polkadot/types/lookup' {
 
   /** @name PolymeshPrimitivesStatisticsStat1stKey (710) */
   interface PolymeshPrimitivesStatisticsStat1stKey extends Struct {
-    readonly assetId: PolymeshPrimitivesAssetAssetID;
+    readonly assetId: PolymeshPrimitivesAssetAssetId;
     readonly statType: PolymeshPrimitivesStatisticsStatType;
   }
 
@@ -7607,7 +7623,7 @@ declare module '@polkadot/types/lookup' {
   /** @name PolymeshPrimitivesNftNftCollection (748) */
   interface PolymeshPrimitivesNftNftCollection extends Struct {
     readonly id: u64;
-    readonly assetId: PolymeshPrimitivesAssetAssetID;
+    readonly assetId: PolymeshPrimitivesAssetAssetId;
   }
 
   /** @name PalletNftError (753) */
@@ -7638,7 +7654,7 @@ declare module '@polkadot/types/lookup' {
     readonly isInvalidNFTTransferSenderIdMatchesReceiverId: boolean;
     readonly isInvalidNFTTransferInvalidReceiverCDD: boolean;
     readonly isInvalidNFTTransferInvalidSenderCDD: boolean;
-    readonly isInvalidAssetID: boolean;
+    readonly isInvalidAssetId: boolean;
     readonly isNftIsLocked: boolean;
     readonly isNumberOfKeysIsLessThanExpected: boolean;
     readonly type:
@@ -7668,7 +7684,7 @@ declare module '@polkadot/types/lookup' {
       | 'InvalidNFTTransferSenderIdMatchesReceiverId'
       | 'InvalidNFTTransferInvalidReceiverCDD'
       | 'InvalidNFTTransferInvalidSenderCDD'
-      | 'InvalidAssetID'
+      | 'InvalidAssetId'
       | 'NftIsLocked'
       | 'NumberOfKeysIsLessThanExpected';
   }

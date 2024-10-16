@@ -2,7 +2,7 @@
 export default {
   rpc: {},
   types: {
-    AssetID: '[u8; 16]',
+    AssetId: '[u8; 16]',
     IdentityId: '[u8; 32]',
     Ticker: '[u8; 12]',
     CddId: '[u8; 32]',
@@ -11,8 +11,8 @@ export default {
     AssetPermissions: {
       _enum: {
         Whole: '',
-        These: 'Vec<AssetID>',
-        Except: 'Vec<AssetID>',
+        These: 'Vec<AssetId>',
+        Except: 'Vec<AssetId>',
       },
     },
     PortfolioPermissions: {
@@ -315,7 +315,7 @@ export default {
     Scope: {
       _enum: {
         Identity: 'IdentityId',
-        Asset: 'AssetID',
+        Asset: 'AssetId',
         Custom: 'Vec<u8>',
         Ticker: 'Ticker',
       },
@@ -395,7 +395,6 @@ export default {
       authorized_by: 'IdentityId',
       expiry: 'Option<Moment>',
       auth_id: 'u64',
-      count: 'u32',
     },
     AuthorizationData: {
       _enum: {
@@ -403,10 +402,10 @@ export default {
         RotatePrimaryKey: '',
         TransferTicker: 'Ticker',
         AddMultiSigSigner: 'AccountId',
-        TransferAssetOwnership: 'AssetID',
+        TransferAssetOwnership: 'AssetId',
         JoinIdentity: 'Permissions',
         PortfolioCustody: 'PortfolioId',
-        BecomeAgent: '(AssetID, AgentGroup)',
+        BecomeAgent: '(AssetId, AgentGroup)',
         AddRelayerPayingKey: '(AccountId, AccountId, Balance)',
         RotatePrimaryKeyToSecondary: 'Permissions',
       },
@@ -574,13 +573,13 @@ export default {
     },
     NFTId: 'u64',
     NFTs: {
-      asset_id: 'AssetID',
+      asset_id: 'AssetId',
       ids: 'Vec<NFTId>',
     },
     FungibleLeg: {
       sender: 'PortfolioId',
       receiver: 'PortfolioId',
-      asset_id: 'AssetID',
+      asset_id: 'AssetId',
       amount: 'Balance',
     },
     NonFungibleLeg: {
@@ -591,7 +590,7 @@ export default {
     OffChainLeg: {
       sender_identity: 'IdentityId',
       receiver_identity: 'IdentityId',
-      asset_id: 'AssetID',
+      asset_id: 'AssetId',
       amount: 'Balance',
     },
     Leg: {

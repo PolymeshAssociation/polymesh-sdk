@@ -271,24 +271,24 @@ export default {
    * Lookup40: polymesh_primitives::secondary_key::Permissions
    **/
   PolymeshPrimitivesSecondaryKeyPermissions: {
-    asset: 'PolymeshPrimitivesSubsetSubsetRestrictionAssetID',
+    asset: 'PolymeshPrimitivesSubsetSubsetRestrictionAssetId',
     extrinsic: 'PolymeshPrimitivesSecondaryKeyExtrinsicPermissions',
     portfolio: 'PolymeshPrimitivesSubsetSubsetRestrictionPortfolioId',
   },
   /**
-   * Lookup41: polymesh_primitives::subset::SubsetRestriction<polymesh_primitives::asset::AssetID>
+   * Lookup41: polymesh_primitives::subset::SubsetRestriction<polymesh_primitives::asset::AssetId>
    **/
-  PolymeshPrimitivesSubsetSubsetRestrictionAssetID: {
+  PolymeshPrimitivesSubsetSubsetRestrictionAssetId: {
     _enum: {
       Whole: 'Null',
-      These: 'BTreeSet<PolymeshPrimitivesAssetAssetID>',
-      Except: 'BTreeSet<PolymeshPrimitivesAssetAssetID>',
+      These: 'BTreeSet<PolymeshPrimitivesAssetAssetId>',
+      Except: 'BTreeSet<PolymeshPrimitivesAssetAssetId>',
     },
   },
   /**
-   * Lookup42: polymesh_primitives::asset::AssetID
+   * Lookup42: polymesh_primitives::asset::AssetId
    **/
-  PolymeshPrimitivesAssetAssetID: '[u8;16]',
+  PolymeshPrimitivesAssetAssetId: '[u8;16]',
   /**
    * Lookup46: polymesh_primitives::secondary_key::ExtrinsicPermissions
    **/
@@ -375,7 +375,7 @@ export default {
   PolymeshPrimitivesIdentityClaimScope: {
     _enum: {
       Identity: 'PolymeshPrimitivesIdentityId',
-      Asset: 'PolymeshPrimitivesAssetAssetID',
+      Asset: 'PolymeshPrimitivesAssetAssetId',
       Custom: 'Bytes',
     },
   },
@@ -653,10 +653,10 @@ export default {
       RotatePrimaryKey: 'Null',
       TransferTicker: 'PolymeshPrimitivesTicker',
       AddMultiSigSigner: 'AccountId32',
-      TransferAssetOwnership: 'PolymeshPrimitivesAssetAssetID',
+      TransferAssetOwnership: 'PolymeshPrimitivesAssetAssetId',
       JoinIdentity: 'PolymeshPrimitivesSecondaryKeyPermissions',
       PortfolioCustody: 'PolymeshPrimitivesIdentityIdPortfolioId',
-      BecomeAgent: '(PolymeshPrimitivesAssetAssetID,PolymeshPrimitivesAgentAgentGroup)',
+      BecomeAgent: '(PolymeshPrimitivesAssetAssetId,PolymeshPrimitivesAgentAgentGroup)',
       AddRelayerPayingKey: '(AccountId32,AccountId32,u128)',
       RotatePrimaryKeyToSecondary: 'PolymeshPrimitivesSecondaryKeyPermissions',
     },
@@ -1113,51 +1113,51 @@ export default {
   PolymeshCommonUtilitiesAssetRawEvent: {
     _enum: {
       AssetCreated:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,bool,PolymeshPrimitivesAssetAssetType,PolymeshPrimitivesIdentityId,Bytes,Vec<PolymeshPrimitivesAssetIdentifier>,Option<Bytes>)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,bool,PolymeshPrimitivesAssetAssetType,PolymeshPrimitivesIdentityId,Bytes,Vec<PolymeshPrimitivesAssetIdentifier>,Option<Bytes>)',
       IdentifiersUpdated:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,Vec<PolymeshPrimitivesAssetIdentifier>)',
-      DivisibilityChanged: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,bool)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,Vec<PolymeshPrimitivesAssetIdentifier>)',
+      DivisibilityChanged: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,bool)',
       TickerRegistered: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesTicker,Option<u64>)',
       TickerTransferred:
         '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesTicker,PolymeshPrimitivesIdentityId)',
       AssetOwnershipTransferred:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,PolymeshPrimitivesIdentityId)',
-      AssetFrozen: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID)',
-      AssetUnfrozen: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID)',
-      AssetRenamed: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,Bytes)',
-      FundingRoundSet: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,Bytes)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,PolymeshPrimitivesIdentityId)',
+      AssetFrozen: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId)',
+      AssetUnfrozen: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId)',
+      AssetRenamed: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,Bytes)',
+      FundingRoundSet: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,Bytes)',
       DocumentAdded:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,u32,PolymeshPrimitivesDocument)',
-      DocumentRemoved: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,u32)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,u32,PolymeshPrimitivesDocument)',
+      DocumentRemoved: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,u32)',
       ControllerTransfer:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,PolymeshPrimitivesIdentityIdPortfolioId,u128)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,PolymeshPrimitivesIdentityIdPortfolioId,u128)',
       CustomAssetTypeExists: '(PolymeshPrimitivesIdentityId,u32,Bytes)',
       CustomAssetTypeRegistered: '(PolymeshPrimitivesIdentityId,u32,Bytes)',
       SetAssetMetadataValue:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,Bytes,Option<PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail>)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,Bytes,Option<PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail>)',
       SetAssetMetadataValueDetails:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail)',
       RegisterAssetMetadataLocalType:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,Bytes,u64,PolymeshPrimitivesAssetMetadataAssetMetadataSpec)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,Bytes,u64,PolymeshPrimitivesAssetMetadataAssetMetadataSpec)',
       RegisterAssetMetadataGlobalType:
         '(Bytes,u64,PolymeshPrimitivesAssetMetadataAssetMetadataSpec)',
       AssetTypeChanged:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,PolymeshPrimitivesAssetAssetType)',
-      LocalMetadataKeyDeleted: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,u64)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,PolymeshPrimitivesAssetAssetType)',
+      LocalMetadataKeyDeleted: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,u64)',
       MetadataValueDeleted:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,PolymeshPrimitivesAssetMetadataAssetMetadataKey)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,PolymeshPrimitivesAssetMetadataAssetMetadataKey)',
       AssetBalanceUpdated:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,u128,Option<PolymeshPrimitivesIdentityIdPortfolioId>,Option<PolymeshPrimitivesIdentityIdPortfolioId>,PolymeshPrimitivesPortfolioPortfolioUpdateReason)',
-      AssetAffirmationExemption: 'PolymeshPrimitivesAssetAssetID',
-      RemoveAssetAffirmationExemption: 'PolymeshPrimitivesAssetAssetID',
-      PreApprovedAsset: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID)',
-      RemovePreApprovedAsset: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,u128,Option<PolymeshPrimitivesIdentityIdPortfolioId>,Option<PolymeshPrimitivesIdentityIdPortfolioId>,PolymeshPrimitivesPortfolioPortfolioUpdateReason)',
+      AssetAffirmationExemption: 'PolymeshPrimitivesAssetAssetId',
+      RemoveAssetAffirmationExemption: 'PolymeshPrimitivesAssetAssetId',
+      PreApprovedAsset: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId)',
+      RemovePreApprovedAsset: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId)',
       AssetMediatorsAdded:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,BTreeSet<PolymeshPrimitivesIdentityId>)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,BTreeSet<PolymeshPrimitivesIdentityId>)',
       AssetMediatorsRemoved:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,BTreeSet<PolymeshPrimitivesIdentityId>)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,BTreeSet<PolymeshPrimitivesIdentityId>)',
       TickerLinkedToAsset:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesTicker,PolymeshPrimitivesAssetAssetID)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesTicker,PolymeshPrimitivesAssetAssetId)',
     },
   },
   /**
@@ -1299,7 +1299,7 @@ export default {
    * Lookup166: pallet_corporate_actions::CAId
    **/
   PalletCorporateActionsCaId: {
-    assetId: 'PolymeshPrimitivesAssetAssetID',
+    assetId: 'PolymeshPrimitivesAssetAssetId',
     localId: 'u32',
   },
   /**
@@ -1307,7 +1307,7 @@ export default {
    **/
   PalletCorporateActionsDistribution: {
     from: 'PolymeshPrimitivesIdentityIdPortfolioId',
-    currency: 'PolymeshPrimitivesAssetAssetID',
+    currency: 'PolymeshPrimitivesAssetAssetId',
     perShare: 'u128',
     amount: 'u128',
     remaining: 'u128',
@@ -1321,12 +1321,12 @@ export default {
   PolymeshCommonUtilitiesCheckpointEvent: {
     _enum: {
       CheckpointCreated:
-        '(Option<PolymeshPrimitivesIdentityId>,PolymeshPrimitivesAssetAssetID,u64,u128,u64)',
+        '(Option<PolymeshPrimitivesIdentityId>,PolymeshPrimitivesAssetAssetId,u64,u128,u64)',
       MaximumSchedulesComplexityChanged: '(PolymeshPrimitivesIdentityId,u64)',
       ScheduleCreated:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,u64,PolymeshCommonUtilitiesCheckpointScheduleCheckpoints)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,u64,PolymeshCommonUtilitiesCheckpointScheduleCheckpoints)',
       ScheduleRemoved:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,u64,PolymeshCommonUtilitiesCheckpointScheduleCheckpoints)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,u64,PolymeshCommonUtilitiesCheckpointScheduleCheckpoints)',
     },
   },
   /**
@@ -1341,20 +1341,20 @@ export default {
   PolymeshCommonUtilitiesComplianceManagerEvent: {
     _enum: {
       ComplianceRequirementCreated:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,PolymeshPrimitivesComplianceManagerComplianceRequirement)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,PolymeshPrimitivesComplianceManagerComplianceRequirement)',
       ComplianceRequirementRemoved:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,u32)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,u32)',
       AssetComplianceReplaced:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,Vec<PolymeshPrimitivesComplianceManagerComplianceRequirement>)',
-      AssetComplianceReset: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID)',
-      AssetComplianceResumed: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID)',
-      AssetCompliancePaused: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,Vec<PolymeshPrimitivesComplianceManagerComplianceRequirement>)',
+      AssetComplianceReset: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId)',
+      AssetComplianceResumed: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId)',
+      AssetCompliancePaused: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId)',
       ComplianceRequirementChanged:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,PolymeshPrimitivesComplianceManagerComplianceRequirement)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,PolymeshPrimitivesComplianceManagerComplianceRequirement)',
       TrustedDefaultClaimIssuerAdded:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,PolymeshPrimitivesConditionTrustedIssuer)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,PolymeshPrimitivesConditionTrustedIssuer)',
       TrustedDefaultClaimIssuerRemoved:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,PolymeshPrimitivesIdentityId)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,PolymeshPrimitivesIdentityId)',
     },
   },
   /**
@@ -1433,11 +1433,11 @@ export default {
     _enum: {
       MaxDetailsLengthChanged: '(PolymeshPrimitivesIdentityId,u32)',
       DefaultTargetIdentitiesChanged:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,PalletCorporateActionsTargetIdentities)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,PalletCorporateActionsTargetIdentities)',
       DefaultWithholdingTaxChanged:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,Permill)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,Permill)',
       DidWithholdingTaxChanged:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,PolymeshPrimitivesIdentityId,Option<Permill>)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,PolymeshPrimitivesIdentityId,Option<Permill>)',
       CAInitiated:
         '(PolymeshPrimitivesEventOnly,PalletCorporateActionsCaId,PalletCorporateActionsCorporateAction,Bytes)',
       CALinkedToDoc: '(PolymeshPrimitivesIdentityId,PalletCorporateActionsCaId,Vec<u32>)',
@@ -1625,9 +1625,9 @@ export default {
       FundsMovedBetweenPortfolios:
         '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesIdentityIdPortfolioId,PolymeshPrimitivesIdentityIdPortfolioId,PolymeshPrimitivesPortfolioFundDescription,Option<PolymeshPrimitivesMemo>)',
       PreApprovedPortfolio:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesIdentityIdPortfolioId,PolymeshPrimitivesAssetAssetID)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesIdentityIdPortfolioId,PolymeshPrimitivesAssetAssetId)',
       RevokePreApprovedPortfolio:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesIdentityIdPortfolioId,PolymeshPrimitivesAssetAssetID)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesIdentityIdPortfolioId,PolymeshPrimitivesAssetAssetId)',
     },
   },
   /**
@@ -1636,7 +1636,7 @@ export default {
   PolymeshPrimitivesPortfolioFundDescription: {
     _enum: {
       Fungible: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         amount: 'u128',
       },
       NonFungible: 'PolymeshPrimitivesNftNfTs',
@@ -1646,7 +1646,7 @@ export default {
    * Lookup237: polymesh_primitives::nft::NFTs
    **/
   PolymeshPrimitivesNftNfTs: {
-    assetId: 'PolymeshPrimitivesAssetAssetID',
+    assetId: 'PolymeshPrimitivesAssetAssetId',
     ids: 'Vec<u64>',
   },
   /**
@@ -1711,13 +1711,13 @@ export default {
       InstructionRejected: '(PolymeshPrimitivesIdentityId,u64)',
       ReceiptClaimed:
         '(PolymeshPrimitivesIdentityId,u64,u64,u64,AccountId32,Option<PolymeshPrimitivesSettlementReceiptMetadata>)',
-      VenueFiltering: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,bool)',
-      VenuesAllowed: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,Vec<u64>)',
-      VenuesBlocked: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,Vec<u64>)',
+      VenueFiltering: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,bool)',
+      VenuesAllowed: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,Vec<u64>)',
+      VenuesBlocked: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,Vec<u64>)',
       LegFailedExecution: '(PolymeshPrimitivesIdentityId,u64,u64)',
       InstructionFailed: '(PolymeshPrimitivesIdentityId,u64)',
       InstructionExecuted: '(PolymeshPrimitivesIdentityId,u64)',
-      VenueUnauthorized: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,u64)',
+      VenueUnauthorized: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,u64)',
       SchedulingFailed: '(u64,SpRuntimeDispatchError)',
       InstructionRescheduled: '(PolymeshPrimitivesIdentityId,u64)',
       VenueSignersUpdated: '(PolymeshPrimitivesIdentityId,u64,Vec<AccountId32>,bool)',
@@ -1760,7 +1760,7 @@ export default {
       Fungible: {
         sender: 'PolymeshPrimitivesIdentityIdPortfolioId',
         receiver: 'PolymeshPrimitivesIdentityIdPortfolioId',
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         amount: 'u128',
       },
       NonFungible: {
@@ -1782,13 +1782,13 @@ export default {
   PolymeshCommonUtilitiesStatisticsEvent: {
     _enum: {
       StatTypesAdded:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,Vec<PolymeshPrimitivesStatisticsStatType>)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,Vec<PolymeshPrimitivesStatisticsStatType>)',
       StatTypesRemoved:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,Vec<PolymeshPrimitivesStatisticsStatType>)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,Vec<PolymeshPrimitivesStatisticsStatType>)',
       AssetStatsUpdated:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,PolymeshPrimitivesStatisticsStatType,Vec<PolymeshPrimitivesStatisticsStatUpdate>)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,PolymeshPrimitivesStatisticsStatType,Vec<PolymeshPrimitivesStatisticsStatUpdate>)',
       SetAssetTransferCompliance:
-        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,Vec<PolymeshPrimitivesTransferComplianceTransferCondition>)',
+        '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,Vec<PolymeshPrimitivesTransferComplianceTransferCondition>)',
       TransferConditionExemptionsAdded:
         '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesTransferComplianceTransferConditionExemptKey,Vec<PolymeshPrimitivesIdentityId>)',
       TransferConditionExemptionsRemoved:
@@ -1851,7 +1851,7 @@ export default {
    * Lookup271: polymesh_primitives::transfer_compliance::TransferConditionExemptKey
    **/
   PolymeshPrimitivesTransferComplianceTransferConditionExemptKey: {
-    assetId: 'PolymeshPrimitivesAssetAssetID',
+    assetId: 'PolymeshPrimitivesAssetAssetId',
     op: 'PolymeshPrimitivesStatisticsStatOpType',
     claimType: 'Option<PolymeshPrimitivesIdentityClaimClaimType>',
   },
@@ -1862,7 +1862,7 @@ export default {
     _enum: {
       FundraiserCreated: '(PolymeshPrimitivesIdentityId,u64,Bytes,PalletStoFundraiser)',
       Invested:
-        '(PolymeshPrimitivesIdentityId,u64,PolymeshPrimitivesAssetAssetID,PolymeshPrimitivesAssetAssetID,u128,u128)',
+        '(PolymeshPrimitivesIdentityId,u64,PolymeshPrimitivesAssetAssetId,PolymeshPrimitivesAssetAssetId,u128,u128)',
       FundraiserFrozen: '(PolymeshPrimitivesIdentityId,u64)',
       FundraiserUnfrozen: '(PolymeshPrimitivesIdentityId,u64)',
       FundraiserWindowModified: '(PolymeshPrimitivesEventOnly,u64,u64,Option<u64>,u64,Option<u64>)',
@@ -1875,9 +1875,9 @@ export default {
   PalletStoFundraiser: {
     creator: 'PolymeshPrimitivesIdentityId',
     offeringPortfolio: 'PolymeshPrimitivesIdentityIdPortfolioId',
-    offeringAsset: 'PolymeshPrimitivesAssetAssetID',
+    offeringAsset: 'PolymeshPrimitivesAssetAssetId',
     raisingPortfolio: 'PolymeshPrimitivesIdentityIdPortfolioId',
-    raisingAsset: 'PolymeshPrimitivesAssetAssetID',
+    raisingAsset: 'PolymeshPrimitivesAssetAssetId',
     tiers: 'Vec<PalletStoFundraiserTier>',
     venueId: 'u64',
     start: 'u64',
@@ -1953,15 +1953,15 @@ export default {
   PolymeshCommonUtilitiesExternalAgentsEvent: {
     _enum: {
       GroupCreated:
-        '(PolymeshPrimitivesEventOnly,PolymeshPrimitivesAssetAssetID,u32,PolymeshPrimitivesSecondaryKeyExtrinsicPermissions)',
+        '(PolymeshPrimitivesEventOnly,PolymeshPrimitivesAssetAssetId,u32,PolymeshPrimitivesSecondaryKeyExtrinsicPermissions)',
       GroupPermissionsUpdated:
-        '(PolymeshPrimitivesEventOnly,PolymeshPrimitivesAssetAssetID,u32,PolymeshPrimitivesSecondaryKeyExtrinsicPermissions)',
+        '(PolymeshPrimitivesEventOnly,PolymeshPrimitivesAssetAssetId,u32,PolymeshPrimitivesSecondaryKeyExtrinsicPermissions)',
       AgentAdded:
-        '(PolymeshPrimitivesEventOnly,PolymeshPrimitivesAssetAssetID,PolymeshPrimitivesAgentAgentGroup)',
+        '(PolymeshPrimitivesEventOnly,PolymeshPrimitivesAssetAssetId,PolymeshPrimitivesAgentAgentGroup)',
       AgentRemoved:
-        '(PolymeshPrimitivesEventOnly,PolymeshPrimitivesAssetAssetID,PolymeshPrimitivesIdentityId)',
+        '(PolymeshPrimitivesEventOnly,PolymeshPrimitivesAssetAssetId,PolymeshPrimitivesIdentityId)',
       GroupChanged:
-        '(PolymeshPrimitivesEventOnly,PolymeshPrimitivesAssetAssetID,PolymeshPrimitivesIdentityId,PolymeshPrimitivesAgentAgentGroup)',
+        '(PolymeshPrimitivesEventOnly,PolymeshPrimitivesAssetAssetId,PolymeshPrimitivesIdentityId,PolymeshPrimitivesAgentAgentGroup)',
     },
   },
   /**
@@ -2070,7 +2070,7 @@ export default {
    **/
   PolymeshCommonUtilitiesNftEvent: {
     _enum: {
-      NftCollectionCreated: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetID,u64)',
+      NftCollectionCreated: '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesAssetAssetId,u64)',
       NFTPortfolioUpdated:
         '(PolymeshPrimitivesIdentityId,PolymeshPrimitivesNftNfTs,Option<PolymeshPrimitivesIdentityIdPortfolioId>,Option<PolymeshPrimitivesIdentityIdPortfolioId>,PolymeshPrimitivesPortfolioPortfolioUpdateReason)',
     },
@@ -2844,6 +2844,7 @@ export default {
       join_identity: {
         authId: 'u64',
       },
+      remove_admin: 'Null',
     },
   },
   /**
@@ -3205,46 +3206,46 @@ export default {
         fundingRoundName: 'Option<Bytes>',
       },
       freeze: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
       },
       unfreeze: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
       },
       rename_asset: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         assetName: 'Bytes',
       },
       issue: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         amount: 'u128',
         portfolioKind: 'PolymeshPrimitivesIdentityIdPortfolioKind',
       },
       redeem: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         value: 'u128',
         portfolioKind: 'PolymeshPrimitivesIdentityIdPortfolioKind',
       },
       make_divisible: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
       },
       add_documents: {
         docs: 'Vec<PolymeshPrimitivesDocument>',
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
       },
       remove_documents: {
         docsId: 'Vec<u32>',
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
       },
       set_funding_round: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         foundingRoundName: 'Bytes',
       },
       update_identifiers: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         assetIdentifiers: 'Vec<PolymeshPrimitivesAssetIdentifier>',
       },
       controller_transfer: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         value: 'u128',
         fromPortfolio: 'PolymeshPrimitivesIdentityIdPortfolioId',
       },
@@ -3259,25 +3260,25 @@ export default {
         fundingRoundName: 'Option<Bytes>',
       },
       set_asset_metadata: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         key: 'PolymeshPrimitivesAssetMetadataAssetMetadataKey',
         value: 'Bytes',
         detail: 'Option<PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail>',
       },
       set_asset_metadata_details: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         key: 'PolymeshPrimitivesAssetMetadataAssetMetadataKey',
         detail: 'PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail',
       },
       register_and_set_local_asset_metadata: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         name: 'Bytes',
         spec: 'PolymeshPrimitivesAssetMetadataAssetMetadataSpec',
         value: 'Bytes',
         detail: 'Option<PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail>',
       },
       register_asset_metadata_local_type: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         name: 'Bytes',
         spec: 'PolymeshPrimitivesAssetMetadataAssetMetadataSpec',
       },
@@ -3286,40 +3287,44 @@ export default {
         spec: 'PolymeshPrimitivesAssetMetadataAssetMetadataSpec',
       },
       update_asset_type: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         assetType: 'PolymeshPrimitivesAssetAssetType',
       },
       remove_local_metadata_key: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         localKey: 'u64',
       },
       remove_metadata_value: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         metadataKey: 'PolymeshPrimitivesAssetMetadataAssetMetadataKey',
       },
       exempt_asset_affirmation: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
       },
       remove_asset_affirmation_exemption: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
       },
       pre_approve_asset: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
       },
       remove_asset_pre_approval: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
       },
       add_mandatory_mediators: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         mediators: 'BTreeSet<PolymeshPrimitivesIdentityId>',
       },
       remove_mandatory_mediators: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         mediators: 'BTreeSet<PolymeshPrimitivesIdentityId>',
       },
       link_ticker_to_asset_id: {
         ticker: 'PolymeshPrimitivesTicker',
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
+      },
+      unlink_ticker_from_asset_id: {
+        ticker: 'PolymeshPrimitivesTicker',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
       },
     },
   },
@@ -3331,7 +3336,7 @@ export default {
       distribute: {
         caId: 'PalletCorporateActionsCaId',
         portfolio: 'Option<u64>',
-        currency: 'PolymeshPrimitivesAssetAssetID',
+        currency: 'PolymeshPrimitivesAssetAssetId',
         perShare: 'u128',
         amount: 'u128',
         paymentAt: 'u64',
@@ -3358,17 +3363,17 @@ export default {
   PalletAssetCheckpointCall: {
     _enum: {
       create_checkpoint: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
       },
       set_schedules_max_complexity: {
         maxComplexity: 'u64',
       },
       create_schedule: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         schedule: 'PolymeshCommonUtilitiesCheckpointScheduleCheckpoints',
       },
       remove_schedule: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         id: 'u64',
       },
     },
@@ -3379,37 +3384,37 @@ export default {
   PalletComplianceManagerCall: {
     _enum: {
       add_compliance_requirement: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         senderConditions: 'Vec<PolymeshPrimitivesCondition>',
         receiverConditions: 'Vec<PolymeshPrimitivesCondition>',
       },
       remove_compliance_requirement: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         id: 'u32',
       },
       replace_asset_compliance: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         assetCompliance: 'Vec<PolymeshPrimitivesComplianceManagerComplianceRequirement>',
       },
       reset_asset_compliance: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
       },
       pause_asset_compliance: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
       },
       resume_asset_compliance: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
       },
       add_default_trusted_claim_issuer: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         issuer: 'PolymeshPrimitivesConditionTrustedIssuer',
       },
       remove_default_trusted_claim_issuer: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         issuer: 'PolymeshPrimitivesIdentityId',
       },
       change_compliance_requirement: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         newReq: 'PolymeshPrimitivesComplianceManagerComplianceRequirement',
       },
     },
@@ -3423,20 +3428,20 @@ export default {
         length: 'u32',
       },
       set_default_targets: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         targets: 'PalletCorporateActionsTargetIdentities',
       },
       set_default_withholding_tax: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         tax: 'Permill',
       },
       set_did_withholding_tax: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         taxedDid: 'PolymeshPrimitivesIdentityId',
         tax: 'Option<Permill>',
       },
       initiate_corporate_action: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         kind: 'PalletCorporateActionsCaKind',
         declDate: 'u64',
         recordDate: 'Option<PalletCorporateActionsRecordDateSpec>',
@@ -3459,7 +3464,7 @@ export default {
       initiate_corporate_action_and_distribute: {
         caArgs: 'PalletCorporateActionsInitiateCorporateActionArgs',
         portfolio: 'Option<u64>',
-        currency: 'PolymeshPrimitivesAssetAssetID',
+        currency: 'PolymeshPrimitivesAssetAssetId',
         perShare: 'u128',
         amount: 'u128',
         paymentAt: 'u64',
@@ -3481,7 +3486,7 @@ export default {
    * Lookup440: pallet_corporate_actions::InitiateCorporateActionArgs
    **/
   PalletCorporateActionsInitiateCorporateActionArgs: {
-    assetId: 'PolymeshPrimitivesAssetAssetID',
+    assetId: 'PolymeshPrimitivesAssetAssetId',
     kind: 'PalletCorporateActionsCaKind',
     declDate: 'u64',
     recordDate: 'Option<PalletCorporateActionsRecordDateSpec>',
@@ -3616,11 +3621,11 @@ export default {
         funds: 'Vec<PolymeshPrimitivesPortfolioFund>',
       },
       pre_approve_portfolio: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         portfolioId: 'PolymeshPrimitivesIdentityIdPortfolioId',
       },
       remove_portfolio_pre_approval: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         portfolioId: 'PolymeshPrimitivesIdentityIdPortfolioId',
       },
       allow_identity_to_create_portfolios: {
@@ -3743,15 +3748,15 @@ export default {
         portfolios: 'Vec<PolymeshPrimitivesIdentityIdPortfolioId>',
       },
       set_venue_filtering: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         enabled: 'bool',
       },
       allow_venues: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         venues: 'Vec<u64>',
       },
       disallow_venues: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         venues: 'Vec<u64>',
       },
       update_venue_signers: {
@@ -3900,16 +3905,16 @@ export default {
   PalletStatisticsCall: {
     _enum: {
       set_active_asset_stats: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         statTypes: 'BTreeSet<PolymeshPrimitivesStatisticsStatType>',
       },
       batch_update_asset_stats: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         statType: 'PolymeshPrimitivesStatisticsStatType',
         values: 'BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>',
       },
       set_asset_transfer_compliance: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         transferConditions: 'BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>',
       },
       set_entities_exempt: {
@@ -3926,9 +3931,9 @@ export default {
     _enum: {
       create_fundraiser: {
         offeringPortfolio: 'PolymeshPrimitivesIdentityIdPortfolioId',
-        offeringAsset: 'PolymeshPrimitivesAssetAssetID',
+        offeringAsset: 'PolymeshPrimitivesAssetAssetId',
         raisingPortfolio: 'PolymeshPrimitivesIdentityIdPortfolioId',
-        raisingAsset: 'PolymeshPrimitivesAssetAssetID',
+        raisingAsset: 'PolymeshPrimitivesAssetAssetId',
         tiers: 'Vec<PalletStoPriceTier>',
         venueId: 'u64',
         start: 'Option<u64>',
@@ -3939,28 +3944,28 @@ export default {
       invest: {
         investmentPortfolio: 'PolymeshPrimitivesIdentityIdPortfolioId',
         fundingPortfolio: 'PolymeshPrimitivesIdentityIdPortfolioId',
-        offeringAsset: 'PolymeshPrimitivesAssetAssetID',
+        offeringAsset: 'PolymeshPrimitivesAssetAssetId',
         id: 'u64',
         purchaseAmount: 'u128',
         maxPrice: 'Option<u128>',
         receipt: 'Option<PolymeshPrimitivesSettlementReceiptDetails>',
       },
       freeze_fundraiser: {
-        offeringAsset: 'PolymeshPrimitivesAssetAssetID',
+        offeringAsset: 'PolymeshPrimitivesAssetAssetId',
         id: 'u64',
       },
       unfreeze_fundraiser: {
-        offeringAsset: 'PolymeshPrimitivesAssetAssetID',
+        offeringAsset: 'PolymeshPrimitivesAssetAssetId',
         id: 'u64',
       },
       modify_fundraiser_window: {
-        offeringAsset: 'PolymeshPrimitivesAssetAssetID',
+        offeringAsset: 'PolymeshPrimitivesAssetAssetId',
         id: 'u64',
         start: 'u64',
         end: 'Option<u64>',
       },
       stop: {
-        offeringAsset: 'PolymeshPrimitivesAssetAssetID',
+        offeringAsset: 'PolymeshPrimitivesAssetAssetId',
         id: 'u64',
       },
     },
@@ -4104,23 +4109,23 @@ export default {
   PalletExternalAgentsCall: {
     _enum: {
       create_group: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         perms: 'PolymeshPrimitivesSecondaryKeyExtrinsicPermissions',
       },
       set_group_permissions: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         id: 'u32',
         perms: 'PolymeshPrimitivesSecondaryKeyExtrinsicPermissions',
       },
       remove_agent: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         agent: 'PolymeshPrimitivesIdentityId',
       },
       abdicate: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
       },
       change_group: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         agent: 'PolymeshPrimitivesIdentityId',
         group: 'PolymeshPrimitivesAgentAgentGroup',
       },
@@ -4128,13 +4133,13 @@ export default {
         authId: 'u64',
       },
       create_group_and_add_auth: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         perms: 'PolymeshPrimitivesSecondaryKeyExtrinsicPermissions',
         target: 'PolymeshPrimitivesIdentityId',
         expiry: 'Option<u64>',
       },
       create_and_change_custom_group: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         perms: 'PolymeshPrimitivesSecondaryKeyExtrinsicPermissions',
         agent: 'PolymeshPrimitivesIdentityId',
       },
@@ -4339,17 +4344,17 @@ export default {
   PalletNftCall: {
     _enum: {
       create_nft_collection: {
-        assetId: 'Option<PolymeshPrimitivesAssetAssetID>',
+        assetId: 'Option<PolymeshPrimitivesAssetAssetId>',
         nftType: 'Option<PolymeshPrimitivesAssetNonFungibleType>',
         collectionKeys: 'PolymeshPrimitivesNftNftCollectionKeys',
       },
       issue_nft: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         nftMetadataAttributes: 'Vec<PolymeshPrimitivesNftNftMetadataAttribute>',
         portfolioKind: 'PolymeshPrimitivesIdentityIdPortfolioKind',
       },
       redeem_nft: {
-        assetId: 'PolymeshPrimitivesAssetAssetID',
+        assetId: 'PolymeshPrimitivesAssetAssetId',
         nftId: 'u64',
         portfolioKind: 'PolymeshPrimitivesIdentityIdPortfolioKind',
         numberOfKeys: 'Option<u8>',
@@ -4528,6 +4533,9 @@ export default {
       'MultisigMissingIdentity',
       'TooManySigners',
       'NoPayingDid',
+      'InvalidExpiryDate',
+      'InvalidatedProposal',
+      'AdminNotFound',
     ],
   },
   /**
@@ -4814,8 +4822,10 @@ export default {
       'InvalidTransferInvalidSenderCDD',
       'TickerRegistrationNotFound',
       'TickerIsAlreadyLinkedToAnAsset',
-      'AssetIDGenerationError',
+      'AssetIdGenerationError',
       'TickerNotRegisteredToCaller',
+      'AssetIsAlreadyLinkedToATicker',
+      'TickerIsNotLinkedToTheAsset',
     ],
   },
   /**
@@ -5186,7 +5196,7 @@ export default {
    * Lookup710: polymesh_primitives::statistics::Stat1stKey
    **/
   PolymeshPrimitivesStatisticsStat1stKey: {
-    assetId: 'PolymeshPrimitivesAssetAssetID',
+    assetId: 'PolymeshPrimitivesAssetAssetId',
     statType: 'PolymeshPrimitivesStatisticsStatType',
   },
   /**
@@ -5556,7 +5566,7 @@ export default {
    **/
   PolymeshPrimitivesNftNftCollection: {
     id: 'u64',
-    assetId: 'PolymeshPrimitivesAssetAssetID',
+    assetId: 'PolymeshPrimitivesAssetAssetId',
   },
   /**
    * Lookup753: pallet_nft::Error<T>
@@ -5589,7 +5599,7 @@ export default {
       'InvalidNFTTransferSenderIdMatchesReceiverId',
       'InvalidNFTTransferInvalidReceiverCDD',
       'InvalidNFTTransferInvalidSenderCDD',
-      'InvalidAssetID',
+      'InvalidAssetId',
       'NFTIsLocked',
       'NumberOfKeysIsLessThanExpected',
     ],

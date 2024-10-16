@@ -263,7 +263,7 @@ import type {
   PolymeshContractsRawEvent,
   PolymeshExtensionsCheckWeight,
   PolymeshPrimitivesAgentAgentGroup,
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesAssetAssetType,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
@@ -330,7 +330,7 @@ import type {
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesStatisticsStatUpdate,
-  PolymeshPrimitivesSubsetSubsetRestrictionAssetID,
+  PolymeshPrimitivesSubsetSubsetRestrictionAssetId,
   PolymeshPrimitivesSubsetSubsetRestrictionExtrinsicName,
   PolymeshPrimitivesSubsetSubsetRestrictionPortfolioId,
   PolymeshPrimitivesTicker,
@@ -642,7 +642,7 @@ declare module '@polkadot/types/types/registry' {
     PolymeshContractsRawEvent: PolymeshContractsRawEvent;
     PolymeshExtensionsCheckWeight: PolymeshExtensionsCheckWeight;
     PolymeshPrimitivesAgentAgentGroup: PolymeshPrimitivesAgentAgentGroup;
-    PolymeshPrimitivesAssetAssetID: PolymeshPrimitivesAssetAssetID;
+    PolymeshPrimitivesAssetAssetId: PolymeshPrimitivesAssetAssetId;
     PolymeshPrimitivesAssetAssetType: PolymeshPrimitivesAssetAssetType;
     PolymeshPrimitivesAssetIdentifier: PolymeshPrimitivesAssetIdentifier;
     PolymeshPrimitivesAssetMetadataAssetMetadataKey: PolymeshPrimitivesAssetMetadataAssetMetadataKey;
@@ -709,7 +709,7 @@ declare module '@polkadot/types/types/registry' {
     PolymeshPrimitivesStatisticsStatOpType: PolymeshPrimitivesStatisticsStatOpType;
     PolymeshPrimitivesStatisticsStatType: PolymeshPrimitivesStatisticsStatType;
     PolymeshPrimitivesStatisticsStatUpdate: PolymeshPrimitivesStatisticsStatUpdate;
-    PolymeshPrimitivesSubsetSubsetRestrictionAssetID: PolymeshPrimitivesSubsetSubsetRestrictionAssetID;
+    PolymeshPrimitivesSubsetSubsetRestrictionAssetId: PolymeshPrimitivesSubsetSubsetRestrictionAssetId;
     PolymeshPrimitivesSubsetSubsetRestrictionExtrinsicName: PolymeshPrimitivesSubsetSubsetRestrictionExtrinsicName;
     PolymeshPrimitivesSubsetSubsetRestrictionPortfolioId: PolymeshPrimitivesSubsetSubsetRestrictionPortfolioId;
     PolymeshPrimitivesTicker: PolymeshPrimitivesTicker;

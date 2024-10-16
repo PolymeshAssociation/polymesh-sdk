@@ -17,7 +17,7 @@ export default {
         },
         {
           name: 'assetId',
-          type: 'AssetID',
+          type: 'AssetId',
           isOptional: false,
         },
         {

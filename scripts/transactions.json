@@ -165,7 +165,8 @@
     "remove_payer": "remove_payer",
     "remove_payer_via_payer": "remove_payer_via_payer",
     "approve_join_identity": "approve_join_identity",
-    "join_identity": "join_identity"
+    "join_identity": "join_identity",
+    "remove_admin": "remove_admin"
   },
   "Bridge": {
     "change_controller": "change_controller",
@@ -284,7 +285,8 @@
     "remove_asset_affirmation_exemption": "remove_asset_affirmation_exemption",
     "pre_approve_asset": "pre_approve_asset",
     "remove_asset_pre_approval": "remove_asset_pre_approval",
-    "link_ticker_to_asset_id": "link_ticker_to_asset_id"
+    "link_ticker_to_asset_id": "link_ticker_to_asset_id",
+    "unlink_ticker_from_asset_id": "unlink_ticker_from_asset_id"
   },
   "CapitalDistribution": {
     "distribute": "distribute",

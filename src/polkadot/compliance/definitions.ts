@@ -6,7 +6,7 @@ export default {
       params: [
         {
           name: 'asset_id',
-          type: 'AssetID',
+          type: 'AssetId',
         },
         {
           name: 'sender_identity',

@@ -434,6 +434,7 @@ export enum MultiSigTx {
   RemovePayerViaPayer = 'multiSig.removePayerViaPayer',
   ApproveJoinIdentity = 'multiSig.approveJoinIdentity',
   JoinIdentity = 'multiSig.joinIdentity',
+  RemoveAdmin = 'multiSig.removeAdmin',
 }
 
 export enum BridgeTx {
@@ -560,6 +561,7 @@ export enum AssetTx {
   PreApproveAsset = 'asset.preApproveAsset',
   RemoveAssetPreApproval = 'asset.removeAssetPreApproval',
   LinkTickerToAssetId = 'asset.linkTickerToAssetId',
+  UnlinkTickerFromAssetId = 'asset.unlinkTickerFromAssetId',
 }
 
 export enum CapitalDistributionTx {

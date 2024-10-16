@@ -1183,7 +1183,6 @@ import type {
   AssetComplianceResult,
   AssetCount,
   AssetDidResult,
-  AssetID,
   AssetPermissions,
   Authorization,
   AuthorizationData,
@@ -1297,7 +1296,6 @@ declare module '@polkadot/types/types/registry' {
     AssetDetails: AssetDetails;
     AssetDidResult: AssetDidResult;
     AssetId: AssetId;
-    AssetID: AssetID;
     AssetInstance: AssetInstance;
     AssetInstanceV0: AssetInstanceV0;
     AssetInstanceV1: AssetInstanceV1;

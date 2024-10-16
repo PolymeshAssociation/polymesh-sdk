@@ -72,6 +72,7 @@ import type { FeeDetails, RuntimeDispatchInfoV1 } from '@polkadot/types/interfac
 import type { RpcMethods } from '@polkadot/types/interfaces/rpc';
 import type {
   AccountId,
+  AssetId,
   Balance,
   BlockNumber,
   H160,
@@ -106,7 +107,6 @@ import type {
 import type { IExtrinsic, Observable } from '@polkadot/types/types';
 import type {
   AffirmationCount,
-  AssetID,
   AuthorizationType,
   CappedFee,
   CddStatus,
@@ -140,7 +140,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
         (
           senderPortfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
           receiverPortfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
-          assetId: AssetID | string | Uint8Array,
+          assetId: AssetId | string | Uint8Array,
           transferValue: Balance | AnyNumber | Uint8Array,
           skipLockedCheck: bool | boolean | Uint8Array,
           blockHash?: Hash | string | Uint8Array
@@ -317,7 +317,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
        **/
       complianceReport: AugmentedRpc<
         (
-          asset_id: AssetID | string | Uint8Array,
+          asset_id: AssetId | string | Uint8Array,
           sender_identity: IdentityId | string | Uint8Array,
           receiver_identity: IdentityId | string | Uint8Array
         ) => Observable<Result<ComplianceReport, DispatchError>>
