@@ -1,5 +1,5 @@
-import { hexAddPrefix, hexStripPrefix, stringToHex } from '@polkadot/util';
-import { blake2AsHex } from '@polkadot/util-crypto';
+import { hexAddPrefix, hexStripPrefix, stringToHex, u8aToHex } from '@polkadot/util';
+import { blake2AsU8a } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 
 import {
@@ -623,6 +623,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
           query: {
             asset: { assetNonce },
           },
+          genesisHash,
         },
       },
       context,
@@ -634,10 +635,23 @@ export class Account extends Entity<UniqueIdentifiers, string> {
 
     const prefix = stringToHex(ASSET_ID_PREFIX);
 
-    const assetComponents = [prefix, rawAccountId.toHex(), rawNonce.toHex(true)];
+    const assetComponents = [
+      prefix,
+      genesisHash.toHex(),
+      rawAccountId.toHex(),
+      rawNonce.toHex(true),
+    ];
 
     const data = hexAddPrefix(assetComponents.map(e => hexStripPrefix(e)).join(''));
 
-    return blake2AsHex(data, 128);
+    const rawBytes = blake2AsU8a(data, 128);
+
+    // Need to override 6bits to make it a valid v8 UUID.
+    rawBytes[6] = (rawBytes[6] & 0x0f) | 0x80;
+
+    // Set the RFC4122 variant (bits 10xx) in the 8th byte
+    rawBytes[8] = (rawBytes[8] & 0x3f) | 0x80;
+
+    return u8aToHex(rawBytes);
   }
 }

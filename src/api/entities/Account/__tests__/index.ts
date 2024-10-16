@@ -1048,7 +1048,7 @@ describe('Account class', () => {
       when(assetNonceMock).calledWith(accountId).mockResolvedValue(mockNonce);
 
       const result = await account.getNextAssetId();
-      expect(result).toEqual('0xd9a10c7859b683e55a939cd1a30934a6');
+      expect(result).toEqual('0x854343c6bd6e8af0bc1665a350fb4c52');
     });
   });
 });
