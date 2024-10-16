@@ -138,6 +138,20 @@ describe('BaseAsset class', () => {
     });
   });
 
+  describe('method: unlinkTicker', () => {
+    it('should call the procedure and return the result', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<BaseAsset>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { asset }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await asset.unlinkTicker();
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
   describe('method: exists', () => {
     it('should return whether the BaseAsset exists', async () => {
       dsMockUtils.createQueryMock('asset', 'assets', {

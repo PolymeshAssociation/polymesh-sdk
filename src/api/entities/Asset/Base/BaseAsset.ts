@@ -24,6 +24,7 @@ import {
   setVenueFiltering,
   toggleFreezeTransfers,
   transferAssetOwnership,
+  unlinkTickerFromAsset,
   Venue,
 } from '~/internal';
 import {
@@ -199,6 +200,13 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
       },
       context
     );
+    this.unlinkTicker = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [unlinkTickerFromAsset, { asset: this }],
+        voidArgs: true,
+      },
+      context
+    );
   }
 
   /**
@@ -228,6 +236,15 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
    * - Ticker Owner
    */
   public linkTicker: ProcedureMethod<LinkTickerToAssetParams, void>;
+
+  /**
+   * Unlink ticker from the Asset
+   *
+   * @note Only the ticker owner is allowed to unlink the Asset
+   *
+   * @throws if there is no ticker to unlink
+   */
+  public unlinkTicker: NoArgsProcedureMethod<void>;
 
   /**
    * Retrieve the Asset's identifiers list
