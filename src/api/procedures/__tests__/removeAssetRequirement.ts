@@ -1,5 +1,5 @@
 import {
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesCondition,
 } from '@polkadot/types/lookup';
@@ -29,7 +29,7 @@ describe('removeAssetRequirement procedure', () => {
   let assetId: string;
   let asset: BaseAsset;
   let requirement: BigNumber;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let senderConditions: PolymeshPrimitivesCondition[][];
   let receiverConditions: PolymeshPrimitivesCondition[][];
   let rawComplianceRequirement: PolymeshPrimitivesComplianceManagerComplianceRequirement[];
@@ -51,7 +51,7 @@ describe('removeAssetRequirement procedure', () => {
     };
   });
 
-  let removeComplianceRequirementTransaction: PolymeshTx<[PolymeshPrimitivesAssetAssetID]>;
+  let removeComplianceRequirementTransaction: PolymeshTx<[PolymeshPrimitivesAssetAssetId]>;
 
   beforeEach(() => {
     dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {

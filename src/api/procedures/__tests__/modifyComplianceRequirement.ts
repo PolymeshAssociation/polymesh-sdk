@@ -1,5 +1,5 @@
 import {
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesCondition,
 } from '@polkadot/types/lookup';
@@ -25,7 +25,7 @@ jest.mock(
 
 describe('modifyComplianceRequirement procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToAssetIdSpy: jest.SpyInstance<PolymeshPrimitivesAssetAssetID, [string, Context]>;
+  let stringToAssetIdSpy: jest.SpyInstance<PolymeshPrimitivesAssetAssetId, [string, Context]>;
   let requirementToComplianceRequirementSpy: jest.SpyInstance<
     Promise<PolymeshPrimitivesComplianceManagerComplianceRequirement>,
     [InputRequirement, Context]
@@ -33,9 +33,9 @@ describe('modifyComplianceRequirement procedure', () => {
   let assetId: string;
   let asset: BaseAsset;
   let conditions: Condition[];
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let args: Params;
-  let modifyComplianceRequirementTransaction: PolymeshTx<[PolymeshPrimitivesAssetAssetID]>;
+  let modifyComplianceRequirementTransaction: PolymeshTx<[PolymeshPrimitivesAssetAssetId]>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();

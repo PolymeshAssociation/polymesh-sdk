@@ -2745,7 +2745,7 @@ describe('getTickerForAsset', () => {
   });
 
   it('should return the ticker for an asset ID', async () => {
-    const assetIdTickerMock = dsMockUtils.createQueryMock('asset', 'assetIDTicker');
+    const assetIdTickerMock = dsMockUtils.createQueryMock('asset', 'assetIdTicker');
 
     const assetId = '0x1234';
     const rawAssetId = dsMockUtils.createMockAssetId(assetId);
@@ -2785,7 +2785,7 @@ describe('getAssetIdForTicker', () => {
     dsMockUtils.cleanup();
   });
   it('should return the assetId for a ticker', async () => {
-    const tickerAssetIdMock = dsMockUtils.createQueryMock('asset', 'tickerAssetID');
+    const tickerAssetIdMock = dsMockUtils.createQueryMock('asset', 'tickerAssetId');
 
     const assetId = '0x1234';
     const rawAssetId = dsMockUtils.createMockAssetId(assetId);
@@ -2832,7 +2832,7 @@ describe('getAssetIdAndTicker', () => {
     const ticker = 'TICKER';
 
     dsMockUtils
-      .createQueryMock('asset', 'assetIDTicker')
+      .createQueryMock('asset', 'assetIdTicker')
       .mockResolvedValue(dsMockUtils.createMockOption(dsMockUtils.createMockTicker(ticker)));
     let result = await getAssetIdAndTicker(assetId, context);
 
@@ -2860,8 +2860,8 @@ describe('asBaseAsset', () => {
     entityMockUtils.initMocks();
     context = dsMockUtils.getContextInstance();
 
-    assetIdTickerMock = dsMockUtils.createQueryMock('asset', 'assetIDTicker');
-    tickerAssetIdMock = dsMockUtils.createQueryMock('asset', 'tickerAssetID');
+    assetIdTickerMock = dsMockUtils.createQueryMock('asset', 'assetIdTicker');
+    tickerAssetIdMock = dsMockUtils.createQueryMock('asset', 'tickerAssetId');
   });
 
   afterEach(() => {

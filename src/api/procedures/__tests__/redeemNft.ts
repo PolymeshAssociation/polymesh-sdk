@@ -1,5 +1,5 @@
 import { u64 } from '@polkadot/types';
-import { PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -41,7 +41,7 @@ describe('redeemNft procedure', () => {
   let mockContext: Mocked<Context>;
   let assetId: string;
   let collection: NftCollection;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let id: BigNumber;
   let collectionId: BigNumber;
   let rawId: u64;

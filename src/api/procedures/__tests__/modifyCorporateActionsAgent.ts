@@ -1,7 +1,7 @@
 import { Moment } from '@polkadot/types/interfaces';
 import {
   PolymeshPrimitivesAgentAgentGroup,
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesSecondaryKeySignatory,
 } from '@polkadot/types/lookup';
@@ -40,7 +40,7 @@ describe('modifyCorporateActionsAgent procedure', () => {
   >;
   let assetId: string;
   let asset: FungibleAsset;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let rawAgentGroup: PolymeshPrimitivesAgentAgentGroup;
   let target: string;
   let rawSignatory: PolymeshPrimitivesSecondaryKeySignatory;

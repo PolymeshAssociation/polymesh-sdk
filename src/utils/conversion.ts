@@ -25,7 +25,7 @@ import {
   PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
   PolymeshPrimitivesAgentAgentGroup,
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesAssetAssetType,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
@@ -363,8 +363,8 @@ export function stringToTicker(ticker: string, context: Context): PolymeshPrimit
 /**
  * @hidden
  */
-export function stringToAssetId(assetId: string, context: Context): PolymeshPrimitivesAssetAssetID {
-  return context.createType('PolymeshPrimitivesAssetAssetID', assetId);
+export function stringToAssetId(assetId: string, context: Context): PolymeshPrimitivesAssetAssetId {
+  return context.createType('PolymeshPrimitivesAssetAssetId', assetId);
 }
 
 /**
@@ -391,7 +391,7 @@ export function tickerToString(ticker: PolymeshPrimitivesTicker): string {
 /**
  * @hidden
  */
-export function assetIdToString(assetId: PolymeshPrimitivesAssetAssetID): string {
+export function assetIdToString(assetId: PolymeshPrimitivesAssetAssetId): string {
   return assetId.toString();
 }
 
@@ -399,7 +399,7 @@ export function assetIdToString(assetId: PolymeshPrimitivesAssetAssetID): string
  * @hidden
  */
 export function meshAssetToAssetId(
-  value: PolymeshPrimitivesTicker | PolymeshPrimitivesAssetAssetID,
+  value: PolymeshPrimitivesTicker | PolymeshPrimitivesAssetAssetId,
   context: Context
 ): string {
   const { isV6 } = context;
@@ -428,7 +428,7 @@ export function assetToMeshAssetIdKey(value: string, context: Context): TickerKe
 export function assetToMeshAssetId(
   { id }: BaseAsset,
   context: Context
-): PolymeshPrimitivesAssetAssetID | PolymeshPrimitivesTicker {
+): PolymeshPrimitivesAssetAssetId | PolymeshPrimitivesTicker {
   const { isV6 } = context;
 
   /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
@@ -449,7 +449,7 @@ export function assetToMeshAssetIdWithKey(
       ticker: PolymeshPrimitivesTicker;
     }
   | {
-      assetId: PolymeshPrimitivesAssetAssetID;
+      assetId: PolymeshPrimitivesAssetAssetId;
     } {
   const { isV6 } = context;
 
@@ -4525,7 +4525,7 @@ export function complianceConditionsToBtreeSet(
  */
 export function toExemptKey(
   context: Context,
-  rawAssetId: TickerKey | PolymeshPrimitivesAssetAssetID,
+  rawAssetId: TickerKey | PolymeshPrimitivesAssetAssetId,
   op: PolymeshPrimitivesStatisticsStatOpType,
   claimType?: ClaimType
 ): ExemptKey {
@@ -4533,7 +4533,7 @@ export function toExemptKey(
   if (context.isV6) {
     return { asset: rawAssetId as TickerKey, op, claimType };
   }
-  return { assetId: rawAssetId as PolymeshPrimitivesAssetAssetID, op, claimType };
+  return { assetId: rawAssetId as PolymeshPrimitivesAssetAssetId, op, claimType };
 }
 
 /**
@@ -5348,7 +5348,7 @@ export function meshNftToNftId(
   assetId: string;
   ids: BigNumber[];
 } {
-  let rawTicker: PolymeshPrimitivesTicker | PolymeshPrimitivesAssetAssetID;
+  let rawTicker: PolymeshPrimitivesTicker | PolymeshPrimitivesAssetAssetId;
   let rawIds: Vec<u64>;
   /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
   if (context.isV6) {

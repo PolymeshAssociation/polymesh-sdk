@@ -1,5 +1,5 @@
 import { bool, u64 } from '@polkadot/types';
-import { PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -31,8 +31,8 @@ describe('setVenueFiltering procedure', () => {
   let assetToMeshAssetIdSpy: jest.SpyInstance;
   let booleanToBoolSpy: jest.SpyInstance<bool, [boolean, Context]>;
   let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
-  let rawEnabledAssetId: PolymeshPrimitivesAssetAssetID;
-  let rawDisabledAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawEnabledAssetId: PolymeshPrimitivesAssetAssetId;
+  let rawDisabledAssetId: PolymeshPrimitivesAssetAssetId;
   let rawFalse: bool;
   const venues: BigNumber[] = [new BigNumber(1)];
   let rawVenues: MockCodec<u64>[];

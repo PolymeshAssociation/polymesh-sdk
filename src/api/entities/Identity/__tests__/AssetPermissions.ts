@@ -1,5 +1,5 @@
 import {
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
@@ -391,7 +391,7 @@ describe('AssetPermissions class', () => {
 
   describe('method: get', () => {
     let rawDid: PolymeshPrimitivesIdentityId;
-    let rawAssetId: PolymeshPrimitivesAssetAssetID;
+    let rawAssetId: PolymeshPrimitivesAssetAssetId;
     let stringToIdentityIdSpy: jest.SpyInstance;
 
     beforeAll(() => {

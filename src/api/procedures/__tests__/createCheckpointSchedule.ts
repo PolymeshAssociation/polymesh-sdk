@@ -1,4 +1,4 @@
-import { PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetId } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -33,7 +33,7 @@ describe('createCheckpointSchedule procedure', () => {
   let datesToScheduleCheckpointsSpy: jest.SpyInstance;
   let assetId: string;
   let asset: FungibleAsset;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
 
   beforeAll(() => {
     dsMockUtils.initMocks();

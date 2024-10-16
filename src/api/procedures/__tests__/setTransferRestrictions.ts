@@ -1,7 +1,7 @@
 import { bool, BTreeSet, u64 } from '@polkadot/types';
 import { Permill } from '@polkadot/types/interfaces';
 import {
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesStatisticsStatOpType,
@@ -90,7 +90,7 @@ describe('setTransferRestrictions procedure', () => {
   let claimPercentageRestriction: TransferRestriction;
   let claimCountRestrictionValue: ClaimCountRestrictionValue;
   let claimPercentageRestrictionValue: ClaimPercentageRestrictionValue;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let rawCount: u64;
   let rawPercentage: Permill;
   let rawCountRestriction: PolymeshPrimitivesTransferComplianceTransferCondition;
@@ -178,13 +178,13 @@ describe('setTransferRestrictions procedure', () => {
   });
 
   let setAssetTransferComplianceTransaction: PolymeshTx<
-    [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesTransferComplianceTransferCondition]
+    [PolymeshPrimitivesAssetAssetId, PolymeshPrimitivesTransferComplianceTransferCondition]
   >;
   let setEntitiesExemptTransaction: PolymeshTx<
     [
       boolean,
       {
-        asset: { Ticker: PolymeshPrimitivesAssetAssetID };
+        asset: { Ticker: PolymeshPrimitivesAssetAssetId };
         operationType: PolymeshPrimitivesStatisticsStatOpType;
       },
       BTreeSet<PolymeshPrimitivesIdentityId>

@@ -1,5 +1,5 @@
 import { u64 } from '@polkadot/types';
-import { PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetId } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
@@ -1588,7 +1588,7 @@ describe('createCreateGroupResolver', () => {
   const assetId = '0x1234';
 
   let rawAgId: u64;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
 
   let mockContext: Mocked<Context>;
 

@@ -226,7 +226,7 @@ describe('Assets Class', () => {
         ],
       });
 
-      dsMockUtils.createQueryMock('asset', 'tickerAssetID', {
+      dsMockUtils.createQueryMock('asset', 'tickerAssetId', {
         multi: [dsMockUtils.createMockOption()],
       });
 
@@ -251,7 +251,7 @@ describe('Assets Class', () => {
         ],
       });
 
-      dsMockUtils.createQueryMock('asset', 'tickerAssetID', {
+      dsMockUtils.createQueryMock('asset', 'tickerAssetId', {
         multi: [dsMockUtils.createMockOption()],
       });
 
@@ -285,7 +285,7 @@ describe('Assets Class', () => {
         ],
       });
 
-      dsMockUtils.createQueryMock('asset', 'tickerAssetID', {
+      dsMockUtils.createQueryMock('asset', 'tickerAssetId', {
         multi: [
           dsMockUtils.createMockOption(),
           dsMockUtils.createMockOption(dsMockUtils.createMockAssetId('0x1234')),

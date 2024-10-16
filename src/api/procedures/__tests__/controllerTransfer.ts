@@ -1,6 +1,6 @@
 import { Balance } from '@polkadot/types/interfaces';
 import {
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesIdentityIdPortfolioId,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
@@ -43,7 +43,7 @@ describe('controllerTransfer procedure', () => {
   let assetToMeshAssetIdSpy: jest.SpyInstance;
   let assetId: string;
   let asset: FungibleAsset;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let did: string;
   let rawPortfolioId: PolymeshPrimitivesIdentityIdPortfolioId;
   let originPortfolio: DefaultPortfolio;

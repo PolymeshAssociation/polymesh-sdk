@@ -23,7 +23,7 @@ import {
   PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
   PolymeshPrimitivesAgentAgentGroup,
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesAssetAssetType,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
@@ -548,7 +548,7 @@ describe('fungibleMovementToPortfolioFund', () => {
     };
 
     when(context.createType)
-      .calledWith('PolymeshPrimitivesAssetAssetID', assetId)
+      .calledWith('PolymeshPrimitivesAssetAssetId', assetId)
       .mockReturnValue(rawAssetId);
 
     when(context.createType)
@@ -642,7 +642,7 @@ describe('nftMovementToPortfolioFund', () => {
     };
 
     when(context.createType)
-      .calledWith('PolymeshPrimitivesAssetAssetID', assetId)
+      .calledWith('PolymeshPrimitivesAssetAssetId', assetId)
       .mockReturnValue(rawAssetId);
 
     when(context.createType).calledWith('u64', id.toString()).mockReturnValue(rawId);
@@ -811,10 +811,10 @@ describe('stringToAssetId, stringToAssetIdKey and assetIdToString', () => {
       const context = dsMockUtils.getContextInstance();
 
       const value = '0x1234';
-      const fakeResult = '0x1234' as unknown as PolymeshPrimitivesAssetAssetID;
+      const fakeResult = '0x1234' as unknown as PolymeshPrimitivesAssetAssetId;
 
       when(context.createType)
-        .calledWith('PolymeshPrimitivesAssetAssetID', value)
+        .calledWith('PolymeshPrimitivesAssetAssetId', value)
         .mockReturnValue(fakeResult);
 
       const result = stringToAssetId(value, context);
@@ -838,11 +838,11 @@ describe('stringToAssetId, stringToAssetIdKey and assetIdToString', () => {
 
     it('should call stringToAssetIdKey and return the result as an object', () => {
       const value = '0x1234';
-      const fakeResult = '0x1234' as unknown as PolymeshPrimitivesAssetAssetID;
+      const fakeResult = '0x1234' as unknown as PolymeshPrimitivesAssetAssetId;
       const context = dsMockUtils.getContextInstance();
 
       when(context.createType)
-        .calledWith('PolymeshPrimitivesAssetAssetID', value)
+        .calledWith('PolymeshPrimitivesAssetAssetId', value)
         .mockReturnValue(fakeResult);
 
       const result = stringToAssetIdKey(value, context);
@@ -898,10 +898,10 @@ describe('meshAssetToAssetId, assetToMeshAssetIdKey and assetToMeshAssetId', () 
   describe('assetToMeshAssetIdKey', () => {
     it('should call assetToMeshAssetIdKey and return the result as an object', () => {
       let value = '0x1234';
-      const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesAssetAssetID;
+      const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesAssetAssetId;
 
       when(context.createType)
-        .calledWith('PolymeshPrimitivesAssetAssetID', value)
+        .calledWith('PolymeshPrimitivesAssetAssetId', value)
         .mockReturnValue(fakeResult);
 
       let result = assetToMeshAssetIdKey(value, context);
@@ -922,10 +922,10 @@ describe('meshAssetToAssetId, assetToMeshAssetIdKey and assetToMeshAssetId', () 
   describe('assetToMeshAssetId', () => {
     it('should call assetToMeshAssetId and return the result', () => {
       let value = '0x1234';
-      const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesAssetAssetID;
+      const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesAssetAssetId;
 
       when(context.createType)
-        .calledWith('PolymeshPrimitivesAssetAssetID', value)
+        .calledWith('PolymeshPrimitivesAssetAssetId', value)
         .mockReturnValue(fakeResult);
 
       let result = assetToMeshAssetId(
@@ -951,10 +951,10 @@ describe('meshAssetToAssetId, assetToMeshAssetIdKey and assetToMeshAssetId', () 
   describe('assetToMeshAssetId', () => {
     it('should call assetToMeshAssetIdWithKey and return the result', () => {
       let value = '0x1234';
-      const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesAssetAssetID;
+      const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesAssetAssetId;
 
       when(context.createType)
-        .calledWith('PolymeshPrimitivesAssetAssetID', value)
+        .calledWith('PolymeshPrimitivesAssetAssetId', value)
         .mockReturnValue(fakeResult);
 
       let result = assetToMeshAssetIdWithKey(
@@ -1409,12 +1409,12 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       expect(result).toBe(fakeResult);
 
       const fakeTicker = 'convertedTicker' as unknown as PolymeshPrimitivesTicker;
-      const fakeAssetId = '0x1234' as unknown as PolymeshPrimitivesAssetAssetID;
+      const fakeAssetId = '0x1234' as unknown as PolymeshPrimitivesAssetAssetId;
       when(createTypeMock)
         .calledWith('PolymeshPrimitivesTicker', padString(ticker, 12))
         .mockReturnValue(fakeTicker);
       when(createTypeMock)
-        .calledWith('PolymeshPrimitivesAssetAssetID', assetId)
+        .calledWith('PolymeshPrimitivesAssetAssetId', assetId)
         .mockReturnValue(fakeAssetId);
 
       value = {
@@ -1987,7 +1987,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         })
         .mockReturnValue(fakeResult);
       when(createTypeMock)
-        .calledWith('PolymeshPrimitivesAssetAssetID', assetId)
+        .calledWith('PolymeshPrimitivesAssetAssetId', assetId)
         .mockReturnValue(rawAssetId);
       when(createTypeMock)
         .calledWith('PolymeshPrimitivesIdentityIdPortfolioId', expect.anything())
@@ -2131,7 +2131,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
 
       assetIds.forEach((t, i) =>
         when(createTypeMock)
-          .calledWith('PolymeshPrimitivesAssetAssetID', t)
+          .calledWith('PolymeshPrimitivesAssetAssetId', t)
           .mockReturnValue(rawAssetIds[i])
       );
 
@@ -4350,14 +4350,14 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
         .spyOn(utilsInternalModule, 'asBaseAsset')
         .mockResolvedValue(entityMockUtils.getBaseAssetInstance({ assetId: value.value }));
 
-      const fakeAssetId = '0x1234' as unknown as PolymeshPrimitivesAssetAssetID;
+      const fakeAssetId = '0x1234' as unknown as PolymeshPrimitivesAssetAssetId;
 
       const fakeResult = {
         [value.type]: fakeAssetId,
       };
 
       when(context.createType)
-        .calledWith('PolymeshPrimitivesAssetAssetID', value.value)
+        .calledWith('PolymeshPrimitivesAssetAssetId', value.value)
         .mockReturnValue(fakeAssetId);
 
       const result = await scopeToMeshScope(value, context);
@@ -4784,7 +4784,7 @@ describe('corporateActionParamsToMeshCorporateActionArgs', () => {
     });
 
     when(createTypeMock)
-      .calledWith('PolymeshPrimitivesAssetAssetID', assetId)
+      .calledWith('PolymeshPrimitivesAssetAssetId', assetId)
       .mockReturnValue(rawAssetId);
     when(createTypeMock).calledWith('PalletCorporateActionsCaKind', kind).mockReturnValue(rawKind);
     when(createTypeMock).calledWith('u64', declarationDate.getTime()).mockReturnValue(rawDeclDate);
@@ -8640,7 +8640,7 @@ describe('corporateActionIdentifierToCaId', () => {
     const fakeResult = 'CAId' as unknown as PalletCorporateActionsCaId;
 
     when(context.createType)
-      .calledWith('PolymeshPrimitivesAssetAssetID', args.assetId)
+      .calledWith('PolymeshPrimitivesAssetAssetId', args.assetId)
       .mockReturnValue(rawAssetId);
     when(context.createType).calledWith('u32', args.localId.toString()).mockReturnValue(rawLocalId);
 
@@ -11048,7 +11048,7 @@ describe('nftToMeshNft', () => {
     const mockResult = 'mockResult' as unknown as PolymeshPrimitivesNftNfTs;
 
     when(context.createType)
-      .calledWith('PolymeshPrimitivesAssetAssetID', assetId)
+      .calledWith('PolymeshPrimitivesAssetAssetId', assetId)
       .mockReturnValue(rawAssetId);
     when(context.createType).calledWith('u64', id.toString()).mockReturnValue(rawId);
     when(context.createType)

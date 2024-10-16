@@ -1,4 +1,4 @@
-import { PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import { when } from 'jest-when';
 
 import {
@@ -34,7 +34,7 @@ describe('linkTickerToAsset procedure', () => {
   let ticker: string;
   let asset: FungibleAsset;
   let args: Params;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let rawTicker: PolymeshPrimitivesTicker;
 
   beforeAll(() => {
@@ -55,7 +55,7 @@ describe('linkTickerToAsset procedure', () => {
     jest.spyOn(utilsConversionModule, 'assetToMeshAssetId').mockReturnValue(rawAssetId);
   });
 
-  let linkTickerToAssetIdTx: PolymeshTx<[PolymeshPrimitivesTicker, PolymeshPrimitivesAssetAssetID]>;
+  let linkTickerToAssetIdTx: PolymeshTx<[PolymeshPrimitivesTicker, PolymeshPrimitivesAssetAssetId]>;
   let registerUniqueTickerTx: PolymeshTx<[PolymeshPrimitivesTicker]>;
 
   beforeEach(() => {

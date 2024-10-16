@@ -1,5 +1,5 @@
 import { Option, u32, Vec } from '@polkadot/types';
-import { PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesDocument } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetId, PolymeshPrimitivesDocument } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -33,10 +33,10 @@ describe('setAssetDocuments procedure', () => {
   let assetId: string;
   let asset: BaseAsset;
   let documents: AssetDocument[];
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let rawDocuments: PolymeshPrimitivesDocument[];
   let documentEntries: [
-    [PolymeshPrimitivesAssetAssetID, u32],
+    [PolymeshPrimitivesAssetAssetId, u32],
     Option<PolymeshPrimitivesDocument>
   ][];
   let args: Params;
@@ -96,8 +96,8 @@ describe('setAssetDocuments procedure', () => {
     };
   });
 
-  let removeDocumentsTransaction: PolymeshTx<[Vec<u32>, PolymeshPrimitivesAssetAssetID]>;
-  let addDocumentsTransaction: PolymeshTx<[Vec<u32>, PolymeshPrimitivesAssetAssetID]>;
+  let removeDocumentsTransaction: PolymeshTx<[Vec<u32>, PolymeshPrimitivesAssetAssetId]>;
+  let addDocumentsTransaction: PolymeshTx<[Vec<u32>, PolymeshPrimitivesAssetAssetId]>;
 
   beforeEach(() => {
     dsMockUtils.createQueryMock('asset', 'assetDocuments', {

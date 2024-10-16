@@ -1,5 +1,5 @@
 import { bool } from '@polkadot/types';
-import { PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetId } from '@polkadot/types/lookup';
 import { when } from 'jest-when';
 
 import {
@@ -25,7 +25,7 @@ describe('togglePauseRequirements procedure', () => {
   let boolToBooleanSpy: jest.SpyInstance<boolean, [bool]>;
   let assetId: string;
   let asset: BaseAsset;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
 
   beforeAll(() => {
     dsMockUtils.initMocks();

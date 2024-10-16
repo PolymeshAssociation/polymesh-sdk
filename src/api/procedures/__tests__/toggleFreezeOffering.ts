@@ -1,5 +1,5 @@
 import { u64 } from '@polkadot/types';
-import { PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -29,7 +29,7 @@ describe('toggleFreezeOffering procedure', () => {
   let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
   let assetId: string;
   let asset: FungibleAsset;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let id: BigNumber;
   let rawId: u64;
 

@@ -2,7 +2,7 @@ import { Bytes, u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import {
   PalletStoPriceTier,
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesIdentityIdPortfolioId,
 } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
@@ -82,10 +82,10 @@ describe('launchOffering procedure', () => {
   let amount: BigNumber;
   let price: BigNumber;
   let minInvestment: BigNumber;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let rawOfferingPortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
   let rawRaisingPortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
-  let rawRaisingCurrency: PolymeshPrimitivesAssetAssetID;
+  let rawRaisingCurrency: PolymeshPrimitivesAssetAssetId;
   let rawVenueId: u64;
   let rawName: Bytes;
   let rawStart: u64;

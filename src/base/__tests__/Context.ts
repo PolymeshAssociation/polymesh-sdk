@@ -85,7 +85,7 @@ describe('Context class', () => {
 
     polymeshApi.query.asset = {
       ...polymeshApi.query.asset,
-      tickerAssetID: expect.any(Function),
+      tickerAssetId: expect.any(Function),
     };
 
     dsMockUtils.setConstMock('system', 'ss58Prefix', {

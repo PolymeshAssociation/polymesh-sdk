@@ -1,7 +1,7 @@
 import { Option, u32, Vec } from '@polkadot/types';
 import {
   PalletCorporateActionsCaId,
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesDocument,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
@@ -23,16 +23,16 @@ jest.mock(
 
 describe('linkCaDocs procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToAssetIdSpy: jest.SpyInstance<PolymeshPrimitivesAssetAssetID, [string, Context]>;
+  let stringToAssetIdSpy: jest.SpyInstance<PolymeshPrimitivesAssetAssetId, [string, Context]>;
   let assetId: string;
   let asset: FungibleAsset;
   let id: BigNumber;
   let documents: AssetDocument[];
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let rawDocuments: PolymeshPrimitivesDocument[];
   let rawDocumentIds: u32[];
   let documentEntries: [
-    [PolymeshPrimitivesAssetAssetID, u32],
+    [PolymeshPrimitivesAssetAssetId, u32],
     Option<PolymeshPrimitivesDocument>
   ][];
   let args: Params;
@@ -89,7 +89,7 @@ describe('linkCaDocs procedure', () => {
   });
 
   let linkCaDocTransaction: PolymeshTx<
-    [Vec<PolymeshPrimitivesDocument>, PolymeshPrimitivesAssetAssetID]
+    [Vec<PolymeshPrimitivesDocument>, PolymeshPrimitivesAssetAssetId]
   >;
 
   beforeEach(() => {

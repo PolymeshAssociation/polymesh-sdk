@@ -1,5 +1,5 @@
 import {
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesCondition,
 } from '@polkadot/types/lookup';
@@ -25,7 +25,7 @@ jest.mock(
 
 describe('addAssetRequirement procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToAssetIdSpy: jest.SpyInstance<PolymeshPrimitivesAssetAssetID, [string, Context]>;
+  let stringToAssetIdSpy: jest.SpyInstance<PolymeshPrimitivesAssetAssetId, [string, Context]>;
   let requirementToComplianceRequirementSpy: jest.SpyInstance<
     Promise<PolymeshPrimitivesComplianceManagerComplianceRequirement>,
     [InputRequirement, Context]
@@ -33,7 +33,7 @@ describe('addAssetRequirement procedure', () => {
   let assetId: string;
   let asset: BaseAsset;
   let conditions: Condition[];
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let args: Params;
 
   beforeAll(() => {
@@ -65,7 +65,7 @@ describe('addAssetRequirement procedure', () => {
     };
   });
 
-  let addComplianceRequirementTransaction: PolymeshTx<[PolymeshPrimitivesAssetAssetID]>;
+  let addComplianceRequirementTransaction: PolymeshTx<[PolymeshPrimitivesAssetAssetId]>;
 
   beforeEach(() => {
     dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {

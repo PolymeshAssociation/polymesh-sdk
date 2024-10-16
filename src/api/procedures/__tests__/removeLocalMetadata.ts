@@ -1,5 +1,5 @@
 import {
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
 } from '@polkadot/types/lookup';
 import { u64 } from '@polkadot/types-codec';
@@ -34,7 +34,7 @@ describe('removeLocalMetadata procedure', () => {
   let collectionTickerMock: jest.Mock;
 
   let assetId: string;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let id: BigNumber;
   let rawKey: u64;
 
@@ -44,7 +44,7 @@ describe('removeLocalMetadata procedure', () => {
   let rawMetadataKey: PolymeshPrimitivesAssetMetadataAssetMetadataKey;
 
   let removeLocalMetadataKeyMock: PolymeshTx<
-    [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesAssetMetadataAssetMetadataKey]
+    [PolymeshPrimitivesAssetAssetId, PolymeshPrimitivesAssetMetadataAssetMetadataKey]
   >;
 
   let metadataEntry: MetadataEntry;

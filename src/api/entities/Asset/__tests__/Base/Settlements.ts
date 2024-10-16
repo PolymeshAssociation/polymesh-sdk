@@ -1,6 +1,6 @@
 import { AccountId, Balance, DispatchError } from '@polkadot/types/interfaces';
 import {
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioId,
 } from '@polkadot/types/lookup';
@@ -34,7 +34,7 @@ describe('Settlements class', () => {
   let mockContext: Mocked<Context>;
   let mockAsset: Mocked<FungibleAsset>;
   let stringToAccountIdSpy: jest.SpyInstance<AccountId, [string, Context]>;
-  let stringToAssetIdSpy: jest.SpyInstance<PolymeshPrimitivesAssetAssetID, [string, Context]>;
+  let stringToAssetIdSpy: jest.SpyInstance<PolymeshPrimitivesAssetAssetId, [string, Context]>;
   let bigNumberToBalanceSpy: jest.SpyInstance;
   let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance<
     PolymeshPrimitivesIdentityIdPortfolioId,
@@ -47,7 +47,7 @@ describe('Settlements class', () => {
   >;
   let stringToIdentityIdSpy: jest.SpyInstance<PolymeshPrimitivesIdentityId, [string, Context]>;
   let rawAccountId: AccountId;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let rawToDid: PolymeshPrimitivesIdentityId;
   let rawAmount: Balance;
   let amount: BigNumber;

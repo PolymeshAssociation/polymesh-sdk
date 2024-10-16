@@ -1,5 +1,5 @@
 import { Balance } from '@polkadot/types/interfaces';
-import { PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -22,7 +22,7 @@ describe('issueTokens procedure', () => {
   let bigNumberToBalance: jest.SpyInstance;
   let assetId: string;
   let asset: FungibleAsset;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let amount: BigNumber;
   let rawAmount: Balance;
   let portfolioToPortfolioKindSpy: jest.SpyInstance;

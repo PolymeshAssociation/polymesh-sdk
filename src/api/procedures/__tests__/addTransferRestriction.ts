@@ -1,7 +1,7 @@
 import { BTreeSet, u64 } from '@polkadot/types';
 import { Permill } from '@polkadot/types/interfaces';
 import {
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
@@ -56,7 +56,7 @@ describe('addTransferRestriction procedure', () => {
   let claimCountRestriction: TransferRestriction;
   let percentageRestriction: TransferRestriction;
   let claimPercentageRestriction: TransferRestriction;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let rawCount: u64;
   let rawPercentage: Permill;
   let rawCountCondition: PolymeshPrimitivesTransferComplianceTransferCondition;
@@ -84,11 +84,11 @@ describe('addTransferRestriction procedure', () => {
     [PolymeshPrimitivesTransferComplianceTransferCondition[], Context]
   >;
   let setAssetTransferCompliance: PolymeshTx<
-    [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesTransferComplianceTransferCondition]
+    [PolymeshPrimitivesAssetAssetId, PolymeshPrimitivesTransferComplianceTransferCondition]
   >;
   let setExemptedEntitiesTransaction: PolymeshTx<
     [
-      PolymeshPrimitivesAssetAssetID,
+      PolymeshPrimitivesAssetAssetId,
       PolymeshPrimitivesTransferComplianceTransferCondition,
       PolymeshPrimitivesIdentityId[]
     ]

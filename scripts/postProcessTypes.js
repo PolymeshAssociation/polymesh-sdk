@@ -24,11 +24,11 @@ replace.sync({
 replace.sync({
   files: path.resolve(definitionsDir, 'types-lookup.ts'),
   from: [
-    'readonly asAsset: PolymeshPrimitivesAssetAssetID;',
+    'readonly asAsset: PolymeshPrimitivesAssetAssetId;',
     "readonly type: 'Identity' | 'Asset' | 'Custom'",
   ],
   to: [
-    'readonly asAsset: PolymeshPrimitivesAssetAssetID;\n  readonly isTicker: boolean;\n  readonly asTicker: PolymeshPrimitivesTicker;',
+    'readonly asAsset: PolymeshPrimitivesAssetAssetId;\n  readonly isTicker: boolean;\n  readonly asTicker: PolymeshPrimitivesTicker;',
     "readonly type: 'Identity' | 'Asset' | 'Ticker' | 'Custom'",
   ],
 });

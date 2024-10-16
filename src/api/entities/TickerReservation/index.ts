@@ -166,7 +166,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
       tokensStorage = (asset as any).tokens; // NOSONAR
       assetId = ticker;
     } else {
-      const meshAssetId = await asset.tickerAssetID(rawTicker);
+      const meshAssetId = await asset.tickerAssetId(rawTicker);
       rawAssetId = meshAssetId.unwrapOrDefault();
       if (meshAssetId.isSome) {
         assetId = meshAssetToAssetId(meshAssetId.unwrap(), context);

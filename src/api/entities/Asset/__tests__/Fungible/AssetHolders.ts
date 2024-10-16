@@ -1,7 +1,7 @@
 import { StorageKey } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import {
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
@@ -28,7 +28,7 @@ jest.mock(
 describe('AssetHolder class', () => {
   let assetId: string;
   let mockContext: Mocked<Context>;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let requestPaginatedSpy: jest.SpyInstance;
   let identityIdToStringSpy: jest.SpyInstance<string, [PolymeshPrimitivesIdentityId]>;
   let balanceToBigNumberSpy: jest.SpyInstance<BigNumber, [Balance]>;

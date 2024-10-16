@@ -1,5 +1,5 @@
 import {
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesIdentityIdPortfolioKind,
   PolymeshPrimitivesNftNfTs,
@@ -38,14 +38,14 @@ describe('nftControllerTransfer procedure', () => {
     [PortfolioId, Context]
   >;
   let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance;
-  let stringToAssetIdSpy: jest.SpyInstance<PolymeshPrimitivesAssetAssetID, [string, Context]>;
+  let stringToAssetIdSpy: jest.SpyInstance<PolymeshPrimitivesAssetAssetId, [string, Context]>;
   let nftToMeshNftSpy: jest.SpyInstance;
   let portfolioToPortfolioKindSpy: jest.SpyInstance<
     PolymeshPrimitivesIdentityIdPortfolioKind,
     [NumberedPortfolio | DefaultPortfolio, Context]
   >;
   let assetId: string;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let originDid: string;
   let signerDid: string;
   let rawPortfolioId: PolymeshPrimitivesIdentityIdPortfolioId;

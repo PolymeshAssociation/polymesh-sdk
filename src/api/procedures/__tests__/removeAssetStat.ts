@@ -1,5 +1,5 @@
 import {
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesStatisticsStatUpdate,
@@ -39,7 +39,7 @@ describe('removeAssetStat procedure', () => {
   let getAssetIdForStatsSpy: jest.SpyInstance;
   let assetId: string;
   let asset: FungibleAsset;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let args: RemoveAssetStatParams;
   let rawCountStatType: PolymeshPrimitivesStatisticsStatType;
   let rawBalanceStatType: PolymeshPrimitivesStatisticsStatType;
@@ -58,7 +58,7 @@ describe('removeAssetStat procedure', () => {
   ];
 
   let setActiveAssetStats: PolymeshTx<
-    [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesTransferComplianceTransferCondition]
+    [PolymeshPrimitivesAssetAssetId, PolymeshPrimitivesTransferComplianceTransferCondition]
   >;
   let statUpdatesToBtreeStatUpdateSpy: jest.SpyInstance<
     BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>,

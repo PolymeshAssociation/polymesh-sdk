@@ -1,4 +1,4 @@
-import { PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 
 import {
   Context,
@@ -179,7 +179,7 @@ export class Assets {
 
     const rawTickers = entries.map(([key]) => key.args[1]);
 
-    const rawAssetIds = await asset.tickerAssetID.multi(rawTickers);
+    const rawAssetIds = await asset.tickerAssetId.multi(rawTickers);
 
     return rawAssetIds.reduce<TickerReservation[]>((result, rawAssetId, index) => {
       if (rawAssetId.isNone) {
@@ -284,7 +284,7 @@ export class Assets {
     const entries = await asset.securityTokensOwnedByUser.entries(rawDid);
 
     const ownedAssets: string[] = [];
-    const rawAssetIds: PolymeshPrimitivesAssetAssetID[] = [];
+    const rawAssetIds: PolymeshPrimitivesAssetAssetId[] = [];
 
     entries.forEach(([key]) => {
       const rawAssetId = key.args[1];
@@ -405,7 +405,7 @@ export class Assets {
     });
 
     const assetIds: string[] = [];
-    const rawAssetIds: (PolymeshPrimitivesTicker | PolymeshPrimitivesAssetAssetID)[] = [];
+    const rawAssetIds: (PolymeshPrimitivesTicker | PolymeshPrimitivesAssetAssetId)[] = [];
 
     entries.forEach(
       ([

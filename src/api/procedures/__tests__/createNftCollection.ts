@@ -1,6 +1,6 @@
 import { Bytes, u32 } from '@polkadot/types';
 import {
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAssetNonFungibleType,
   PolymeshPrimitivesDocument,
@@ -74,7 +74,7 @@ describe('createNftCollection procedure', () => {
   let securityIdentifiers: SecurityIdentifier[];
   let documents: AssetDocument[];
   let rawTicker: PolymeshPrimitivesTicker;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let rawName: Bytes;
   let rawType: PolymeshPrimitivesAssetNonFungibleType;
   let rawIdentifiers: PolymeshPrimitivesAssetIdentifier[];

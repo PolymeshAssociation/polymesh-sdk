@@ -1,7 +1,7 @@
 import { u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import {
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesIdentityIdPortfolioId,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
@@ -190,9 +190,9 @@ describe('Portfolio class', () => {
     let locked0: BigNumber;
     let locked1: BigNumber;
     let locked2: BigNumber;
-    let rawAssetId0: PolymeshPrimitivesAssetAssetID;
-    let rawAssetId1: PolymeshPrimitivesAssetAssetID;
-    let rawAssetId2: PolymeshPrimitivesAssetAssetID;
+    let rawAssetId0: PolymeshPrimitivesAssetAssetId;
+    let rawAssetId1: PolymeshPrimitivesAssetAssetId;
+    let rawAssetId2: PolymeshPrimitivesAssetAssetId;
     let rawTotal0: Balance;
     let rawTotal1: Balance;
     let rawLocked0: Balance;
@@ -304,9 +304,9 @@ describe('Portfolio class', () => {
     let assetId: string;
     let heldOnlyAssetId: string;
     let lockedOnlyAssetId: string;
-    let rawAssetId: PolymeshPrimitivesAssetAssetID;
-    let rawHeldOnlyAssetId: PolymeshPrimitivesAssetAssetID;
-    let rawLockedOnlyAssetId: PolymeshPrimitivesAssetAssetID;
+    let rawAssetId: PolymeshPrimitivesAssetAssetId;
+    let rawHeldOnlyAssetId: PolymeshPrimitivesAssetAssetId;
+    let rawLockedOnlyAssetId: PolymeshPrimitivesAssetAssetId;
     let rawNftId: u64;
     let rawSecondId: u64;
     let rawLockedId: u64;

@@ -1,5 +1,5 @@
 import { Bytes, Option } from '@polkadot/types';
-import { PalletStoFundraiser, PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
+import { PalletStoFundraiser, PolymeshPrimitivesAssetAssetId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -117,10 +117,10 @@ describe('Offerings class', () => {
   });
 
   describe('method: get', () => {
-    let rawAssetId: PolymeshPrimitivesAssetAssetID;
+    let rawAssetId: PolymeshPrimitivesAssetAssetId;
     let rawName: Option<Bytes>;
 
-    let stringToAssetIdSpy: jest.SpyInstance<PolymeshPrimitivesAssetAssetID, [string, Context]>;
+    let stringToAssetIdSpy: jest.SpyInstance<PolymeshPrimitivesAssetAssetId, [string, Context]>;
     let fundraiserToOfferingDetailsSpy: jest.SpyInstance<
       OfferingDetails,
       [PalletStoFundraiser, Bytes, Context]

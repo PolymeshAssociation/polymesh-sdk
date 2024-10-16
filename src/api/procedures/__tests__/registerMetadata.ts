@@ -1,6 +1,6 @@
 import { Bytes, Option, u32 } from '@polkadot/types';
 import {
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
   PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
 } from '@polkadot/types/lookup';
@@ -41,7 +41,7 @@ describe('registerMetadata procedure', () => {
   let queryMultiMock: jest.Mock;
   let assetId: string;
   let asset: BaseAsset;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let metadataNameMaxLength: BigNumber;
   let rawMetadataNameMaxLength: u32;
   let params: Params;
@@ -49,12 +49,12 @@ describe('registerMetadata procedure', () => {
   let rawName: Bytes;
   let rawSpecs: PolymeshPrimitivesAssetMetadataAssetMetadataSpec;
   let registerAssetMetadataLocalTypeTxMock: PolymeshTx<
-    [PolymeshPrimitivesAssetAssetID, Bytes, PolymeshPrimitivesAssetMetadataAssetMetadataSpec]
+    [PolymeshPrimitivesAssetAssetId, Bytes, PolymeshPrimitivesAssetMetadataAssetMetadataSpec]
   >;
 
   let registerAndSetLocalAssetMetadataMock: PolymeshTx<
     [
-      PolymeshPrimitivesAssetAssetID,
+      PolymeshPrimitivesAssetAssetId,
       Bytes,
       PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
       Bytes,

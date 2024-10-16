@@ -1,7 +1,7 @@
 import { StorageKey, u64 } from '@polkadot/types';
 import { AccountId, Balance } from '@polkadot/types/interfaces';
 import {
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesIdentityDidRecord,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesSecondaryKeyKeyRecord,
@@ -342,7 +342,7 @@ describe('Identity class', () => {
   describe('method: getAssetBalance', () => {
     let assetId: string;
     let did: string;
-    let rawAssetId: PolymeshPrimitivesAssetAssetID;
+    let rawAssetId: PolymeshPrimitivesAssetAssetId;
     let rawIdentityId: PolymeshPrimitivesIdentityId;
     let fakeValue: BigNumber;
     let fakeBalance: Balance;

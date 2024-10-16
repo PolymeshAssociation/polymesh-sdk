@@ -12,7 +12,7 @@ import { EventRecord } from '@polkadot/types/interfaces';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import {
   PalletAssetAssetDetails,
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesSecondaryKeyKeyRecord,
   PolymeshPrimitivesSecondaryKeyPermissions,
@@ -1016,7 +1016,7 @@ export async function getTickerForAsset(id: string, context: Context): Promise<s
   } = context;
   let ticker;
   const rawAssetId = stringToAssetId(id, context);
-  const rawTicker = await asset.assetIDTicker(rawAssetId);
+  const rawTicker = await asset.assetIdTicker(rawAssetId);
   if (rawTicker.isSome) {
     ticker = tickerToString(rawTicker.unwrap());
   }
@@ -1034,7 +1034,7 @@ export async function getAssetIdForTicker(ticker: string, context: Context): Pro
   } = context;
   assertTickerValid(ticker);
   const rawTicker = stringToTicker(ticker, context);
-  const rawAssetId = await asset.tickerAssetID(rawTicker);
+  const rawAssetId = await asset.tickerAssetId(rawTicker);
   if (rawAssetId.isNone) {
     throw new PolymeshError({
       code: ErrorCode.DataUnavailable,
@@ -2281,7 +2281,7 @@ export async function getAccount(
 export function getAssetIdForStats(
   asset: Asset,
   context: Context
-): TickerKey | PolymeshPrimitivesAssetAssetID {
+): TickerKey | PolymeshPrimitivesAssetAssetId {
   const rawAssetId = assetToMeshAssetId(asset, context);
   /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
   return context.isV6 ? { Ticker: rawAssetId } : rawAssetId;

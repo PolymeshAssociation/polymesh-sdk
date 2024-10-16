@@ -404,7 +404,7 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
       tokensStorage = (asset as any).tokens; // NOSONAR
       tickerPromise = this.ticker;
     } else {
-      tickerPromise = asset.assetIDTicker(rawAssetId);
+      tickerPromise = asset.assetIdTicker(rawAssetId);
     }
 
     if (callback) {

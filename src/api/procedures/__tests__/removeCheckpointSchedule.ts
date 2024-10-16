@@ -1,5 +1,5 @@
 import { u64 } from '@polkadot/types';
-import { PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import {
@@ -26,7 +26,7 @@ describe('removeCheckpointSchedule procedure', () => {
   let u32ToBigNumberSpy: jest.SpyInstance;
   let assetId: string;
   let asset: FungibleAsset;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let id: BigNumber;
   let rawId: u64;
 

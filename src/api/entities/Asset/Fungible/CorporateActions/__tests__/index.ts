@@ -1,4 +1,4 @@
-import { PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -26,7 +26,7 @@ jest.mock(
 describe('CorporateActions class', () => {
   let context: Context;
   let assetId: string;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let asset: FungibleAsset;
   let corporateActions: CorporateActions;
 

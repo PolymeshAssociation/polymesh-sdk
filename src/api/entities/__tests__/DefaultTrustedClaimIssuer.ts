@@ -1,5 +1,5 @@
 import {
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesConditionTrustedIssuer,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
@@ -115,7 +115,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
 
   describe('method: trustedFor', () => {
     let assetId: string;
-    let rawAssetId: PolymeshPrimitivesAssetAssetID;
+    let rawAssetId: PolymeshPrimitivesAssetAssetId;
     let stringToAssetIdSpy: jest.SpyInstance;
     let claimIssuers: PolymeshPrimitivesConditionTrustedIssuer[];
     let trustedClaimIssuerMock: jest.Mock;

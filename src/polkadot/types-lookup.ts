@@ -537,6 +537,8 @@ declare module '@polkadot/types/lookup' {
     readonly asIdentity: PolymeshPrimitivesIdentityId;
     readonly isAsset: boolean;
     readonly asAsset: PolymeshPrimitivesAssetAssetId;
+    readonly isTicker: boolean;
+    readonly asTicker: PolymeshPrimitivesTicker;
     readonly isCustom: boolean;
     readonly asCustom: Bytes;
     readonly type: 'Identity' | 'Asset' | 'Ticker' | 'Custom';

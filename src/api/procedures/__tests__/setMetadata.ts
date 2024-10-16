@@ -1,6 +1,6 @@
 import { Bytes, Option } from '@polkadot/types';
 import {
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
   PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
 } from '@polkadot/types/lookup';
@@ -33,12 +33,12 @@ describe('setMetadata procedure', () => {
   let assetId: string;
   let id: BigNumber;
   let type: MetadataType;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let rawMetadataKey: PolymeshPrimitivesAssetMetadataAssetMetadataKey;
   let params: Params;
   let setAssetMetadataMock: PolymeshTx<
     [
-      PolymeshPrimitivesAssetAssetID,
+      PolymeshPrimitivesAssetAssetId,
       PolymeshPrimitivesAssetMetadataAssetMetadataKey,
       Bytes,
       Option<PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail>
@@ -47,7 +47,7 @@ describe('setMetadata procedure', () => {
 
   let setAssetMetadataDetailsMock: PolymeshTx<
     [
-      PolymeshPrimitivesAssetAssetID,
+      PolymeshPrimitivesAssetAssetId,
       PolymeshPrimitivesAssetMetadataAssetMetadataKey,
       PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail
     ]

@@ -2,7 +2,7 @@ import { bool, Bytes, Option } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import {
   PalletAssetAssetDetails,
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
@@ -140,7 +140,7 @@ describe('Fungible class', () => {
         returnValue: rawName,
       });
 
-      dsMockUtils.createQueryMock('asset', 'assetIDTicker', {
+      dsMockUtils.createQueryMock('asset', 'assetIdTicker', {
         returnValue: rawTicker,
       });
     });
@@ -172,7 +172,7 @@ describe('Fungible class', () => {
         ],
       });
 
-      dsMockUtils.createQueryMock('asset', 'assetIDTicker', {
+      dsMockUtils.createQueryMock('asset', 'assetIdTicker', {
         returnValue: dsMockUtils.createMockOption(),
       });
 
@@ -658,7 +658,7 @@ describe('Fungible class', () => {
 
   describe('method: investorCount', () => {
     let assetId: string;
-    let rawAssetId: PolymeshPrimitivesAssetAssetID;
+    let rawAssetId: PolymeshPrimitivesAssetAssetId;
     let stringToAssetIdSpy: jest.SpyInstance;
     let boolToBooleanSpy: jest.SpyInstance<boolean, [bool]>;
 

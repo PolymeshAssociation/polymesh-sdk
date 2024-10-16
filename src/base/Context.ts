@@ -141,7 +141,7 @@ export class Context {
     this.polymeshApi = polymeshApi;
     this.ss58Format = ss58Format;
 
-    this.isV6 = !('tickerAssetID' in polymeshApi.query.asset);
+    this.isV6 = !('tickerAssetId' in polymeshApi.query.asset);
 
     this.unsubChainVersion = polymeshApi.query.system.lastRuntimeUpgrade(upgrade => {
       /* istanbul ignore next: this will be removed after dual version support for v6-v7 */

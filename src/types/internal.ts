@@ -13,7 +13,7 @@ import {
 import { RpcInterface } from '@polkadot/rpc-core/types';
 import { u32 } from '@polkadot/types';
 import {
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
@@ -350,7 +350,7 @@ export interface TickerKey {
 }
 
 export interface AssetIdKey {
-  AssetId: PolymeshPrimitivesAssetAssetID;
+  AssetId: PolymeshPrimitivesAssetAssetId;
 }
 
 /**
@@ -367,7 +367,7 @@ export type ExemptKey = {
       asset: TickerKey;
     }
   | {
-      assetId: PolymeshPrimitivesAssetAssetID;
+      assetId: PolymeshPrimitivesAssetAssetId;
     }
 );
 
@@ -383,5 +383,5 @@ export type MeshTickerOrAssetId =
       ticker: PolymeshPrimitivesTicker;
     }
   | {
-      assetId: PolymeshPrimitivesAssetAssetID;
+      assetId: PolymeshPrimitivesAssetAssetId;
     };

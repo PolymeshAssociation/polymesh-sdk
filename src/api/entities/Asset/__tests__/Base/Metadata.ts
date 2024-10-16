@@ -1,5 +1,5 @@
 import { u64 } from '@polkadot/types';
-import { PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -28,7 +28,7 @@ describe('Metadata class', () => {
   let asset: FungibleAsset;
   let context: Context;
   let metadata: Metadata;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let stringToAssetIdSpy: jest.SpyInstance;
 
   beforeAll(() => {

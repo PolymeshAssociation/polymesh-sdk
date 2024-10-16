@@ -1,5 +1,5 @@
 import {
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
 import { BTreeSet } from '@polkadot/types-codec';
@@ -27,7 +27,7 @@ describe('removeAssetMediators procedure', () => {
   let identitiesToSetSpy: jest.SpyInstance;
   let asset: BaseAsset;
   let assetId: string;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let currentMediator: Identity;
   let rawCurrentMediator: PolymeshPrimitivesIdentityId;
   let assetToMeshAssetIdSpy: jest.SpyInstance;
@@ -53,7 +53,7 @@ describe('removeAssetMediators procedure', () => {
   });
 
   let removeMandatoryMediatorsTransaction: PolymeshTx<
-    [PolymeshPrimitivesAssetAssetID, BTreeSet<PolymeshPrimitivesIdentityId>]
+    [PolymeshPrimitivesAssetAssetId, BTreeSet<PolymeshPrimitivesIdentityId>]
   >;
 
   beforeEach(() => {

@@ -1,6 +1,6 @@
 import {
   PolymeshPrimitivesAgentAgentGroup,
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesSecondaryKeySignatory,
@@ -54,7 +54,7 @@ describe('inviteExternalAgent procedure', () => {
   let stringToIdentityIdSpy: jest.SpyInstance;
   let assetId: string;
   let asset: FungibleAsset;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let rawAgentGroup: PolymeshPrimitivesAgentAgentGroup;
   let target: string;
   let rawSignatory: PolymeshPrimitivesSecondaryKeySignatory;

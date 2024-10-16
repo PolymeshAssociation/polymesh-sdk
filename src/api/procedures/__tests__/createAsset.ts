@@ -1,7 +1,7 @@
 import { bool, BTreeSet, Bytes } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import {
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesAssetAssetType,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesDocument,
@@ -91,7 +91,7 @@ describe('createAsset procedure', () => {
   let fundingRound: string;
   let documents: AssetDocument[];
   let rawTicker: PolymeshPrimitivesTicker;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let rawName: Bytes;
   let rawInitialSupply: Balance;
   let rawIsDivisible: bool;

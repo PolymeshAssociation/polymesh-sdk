@@ -1,6 +1,6 @@
 import { Vec } from '@polkadot/types';
 import {
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesCondition,
 } from '@polkadot/types/lookup';
@@ -43,7 +43,7 @@ describe('setAssetRequirements procedure', () => {
   let asset: BaseAsset;
   let requirements: Condition[][];
   let currentRequirements: Requirement[];
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let senderConditions: PolymeshPrimitivesCondition[][];
   let receiverConditions: PolymeshPrimitivesCondition[][];
   let rawComplianceRequirements: PolymeshPrimitivesComplianceManagerComplianceRequirement[];
@@ -116,7 +116,7 @@ describe('setAssetRequirements procedure', () => {
     };
   });
 
-  let resetAssetComplianceTransaction: PolymeshTx<[PolymeshPrimitivesAssetAssetID]>;
+  let resetAssetComplianceTransaction: PolymeshTx<[PolymeshPrimitivesAssetAssetId]>;
   let replaceAssetComplianceTransaction: PolymeshTx<
     Vec<PolymeshPrimitivesComplianceManagerComplianceRequirement>
   >;

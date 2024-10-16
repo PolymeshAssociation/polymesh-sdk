@@ -1,7 +1,7 @@
 import { u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import {
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesIdentityIdPortfolioId,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
@@ -61,7 +61,7 @@ describe('investInOffering procedure', () => {
   let purchaseAmount: BigNumber;
   let maxPrice: BigNumber;
   let rawId: u64;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let rawPurchasePortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
   let rawFundingPortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
   let rawPurchaseAmount: Balance;

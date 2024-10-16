@@ -1,4 +1,4 @@
-import { PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetId } from '@polkadot/types/lookup';
 import { when } from 'jest-when';
 
 import { getAuthorization, Params, prepareModifyAsset } from '~/api/procedures/modifyAsset';
@@ -22,7 +22,7 @@ describe('modifyAsset procedure', () => {
   let assetToMeshAssetIdSpy: jest.SpyInstance;
   let assetId: string;
   let asset: BaseAsset;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let fundingRound: string;
   let identifiers: SecurityIdentifier[];
 

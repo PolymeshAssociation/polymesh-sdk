@@ -1,7 +1,7 @@
 import { BTreeSet, Option, u32, u64 } from '@polkadot/types';
 import { Balance, Moment } from '@polkadot/types/interfaces';
 import {
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesMemo,
@@ -74,7 +74,7 @@ describe('addInstruction procedure', () => {
   let portfolioLikeToPortfolioIdSpy: jest.SpyInstance;
   let portfolioLikeToPortfolioSpy: jest.SpyInstance;
   let getCustodianMock: jest.Mock;
-  let stringToAssetIdSpy: jest.SpyInstance<PolymeshPrimitivesAssetAssetID, [string, Context]>;
+  let stringToAssetIdSpy: jest.SpyInstance<PolymeshPrimitivesAssetAssetId, [string, Context]>;
   let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
   let bigNumberToBalanceSpy: jest.SpyInstance<
@@ -117,8 +117,8 @@ describe('addInstruction procedure', () => {
   let rawTo: PolymeshPrimitivesIdentityIdPortfolioId;
   let rawSenderIdentity: PolymeshPrimitivesIdentityId;
   let rawReceiverIdentity: PolymeshPrimitivesIdentityId;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
-  let rawNftAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
+  let rawNftAssetId: PolymeshPrimitivesAssetAssetId;
   let rawOffChainTicker: PolymeshPrimitivesTicker;
   let rawTradeDate: Moment;
   let rawValueDate: Moment;
@@ -257,7 +257,7 @@ describe('addInstruction procedure', () => {
       {
         from: PolymeshPrimitivesIdentityIdPortfolioId;
         to: PolymeshPrimitivesIdentityIdPortfolioId;
-        asset: PolymeshPrimitivesAssetAssetID;
+        asset: PolymeshPrimitivesAssetAssetId;
         amount: Balance;
       }[],
       PolymeshPrimitivesIdentityIdPortfolioId[],
@@ -273,7 +273,7 @@ describe('addInstruction procedure', () => {
       {
         from: PolymeshPrimitivesIdentityIdPortfolioId;
         to: PolymeshPrimitivesIdentityIdPortfolioId;
-        asset: PolymeshPrimitivesAssetAssetID;
+        asset: PolymeshPrimitivesAssetAssetId;
         amount: Balance;
       }[],
       Option<PolymeshPrimitivesMemo>,

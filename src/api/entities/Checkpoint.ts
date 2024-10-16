@@ -1,6 +1,6 @@
 import { u64 } from '@polkadot/types';
 import {
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
@@ -132,7 +132,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
 
     const currentDidBalances: { did: string; balance: BigNumber }[] = [];
     const balanceUpdatesMultiParams: [
-      PolymeshPrimitivesAssetAssetID,
+      PolymeshPrimitivesAssetAssetId,
       PolymeshPrimitivesIdentityId
     ][] = [];
 
@@ -153,7 +153,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
 
     const checkpointBalanceMultiParams: {
       did: string;
-      params: [(PolymeshPrimitivesAssetAssetID | u64)[], PolymeshPrimitivesIdentityId];
+      params: [(PolymeshPrimitivesAssetAssetId | u64)[], PolymeshPrimitivesIdentityId];
     }[] = [];
     const currentIdentityBalances: IdentityBalance[] = [];
 

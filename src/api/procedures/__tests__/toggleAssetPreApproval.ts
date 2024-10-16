@@ -1,4 +1,4 @@
-import { PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetId } from '@polkadot/types/lookup';
 import { when } from 'jest-when';
 
 import {
@@ -23,7 +23,7 @@ describe('toggleAssetPreApproval procedure', () => {
   let assetToMeshAssetIdSpy: jest.SpyInstance;
   let assetId: string;
   let asset: BaseAsset;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
 
   beforeAll(() => {
     dsMockUtils.initMocks();

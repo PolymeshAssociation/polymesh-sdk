@@ -1,5 +1,5 @@
 import {
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesStatisticsStat2ndKey,
@@ -41,7 +41,7 @@ describe('addAssetStat procedure', () => {
   let assetId: string;
   let asset: FungibleAsset;
   let count: BigNumber;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let args: AddAssetStatParams;
   let rawStatType: PolymeshPrimitivesStatisticsStatType;
   let rawStatBtreeSet: BTreeSet<PolymeshPrimitivesStatisticsStatType>;
@@ -49,11 +49,11 @@ describe('addAssetStat procedure', () => {
   let raw2ndKey: PolymeshPrimitivesStatisticsStat2ndKey;
 
   let setActiveAssetStatsTxMock: PolymeshTx<
-    [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesTransferComplianceTransferCondition]
+    [PolymeshPrimitivesAssetAssetId, PolymeshPrimitivesTransferComplianceTransferCondition]
   >;
   let batchUpdateAssetStatsTxMock: PolymeshTx<
     [
-      PolymeshPrimitivesAssetAssetID,
+      PolymeshPrimitivesAssetAssetId,
       PolymeshPrimitivesStatisticsStatType,
       BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>
     ]

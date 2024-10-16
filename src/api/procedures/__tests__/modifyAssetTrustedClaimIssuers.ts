@@ -1,6 +1,6 @@
 import { Vec } from '@polkadot/types';
 import {
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesConditionTrustedIssuer,
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
@@ -41,7 +41,7 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
   let asset: BaseAsset;
   let claimIssuerDids: string[];
   let claimIssuers: TrustedClaimIssuer[];
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let rawClaimIssuers: PolymeshPrimitivesConditionTrustedIssuer[];
   let args: Omit<Params, 'operation' | 'claimIssuers'>;
 
@@ -76,10 +76,10 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
   });
 
   let removeDefaultTrustedClaimIssuerTransaction: PolymeshTx<
-    [Vec<PolymeshPrimitivesIdentityId>, PolymeshPrimitivesAssetAssetID]
+    [Vec<PolymeshPrimitivesIdentityId>, PolymeshPrimitivesAssetAssetId]
   >;
   let addDefaultTrustedClaimIssuerTransaction: PolymeshTx<
-    [Vec<PolymeshPrimitivesConditionTrustedIssuer>, PolymeshPrimitivesAssetAssetID]
+    [Vec<PolymeshPrimitivesConditionTrustedIssuer>, PolymeshPrimitivesAssetAssetId]
   >;
 
   beforeEach(() => {

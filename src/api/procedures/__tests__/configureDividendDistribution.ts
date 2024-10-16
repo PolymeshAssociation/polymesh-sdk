@@ -4,7 +4,7 @@ import {
   PalletCorporateActionsCorporateAction,
   PalletCorporateActionsDistribution,
   PalletCorporateActionsInitiateCorporateActionArgs,
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
 } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
@@ -78,7 +78,7 @@ describe('configureDividendDistribution procedure', () => {
   let expiryDate: Date;
 
   let rawPortfolioNumber: u64;
-  let rawCurrency: PolymeshPrimitivesAssetAssetID;
+  let rawCurrency: PolymeshPrimitivesAssetAssetId;
   let rawPerShare: Balance;
   let rawAmount: Balance;
   let rawPaymentAt: u64;

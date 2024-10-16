@@ -1,5 +1,5 @@
 import {
-  PolymeshPrimitivesAssetAssetID,
+  PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
@@ -30,12 +30,12 @@ describe('clearMetadata procedure', () => {
   let assetId: string;
   let id: BigNumber;
   let type: MetadataType;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let rawMetadataKey: PolymeshPrimitivesAssetMetadataAssetMetadataKey;
   let params: Params;
 
   let removeMetadataValueMock: PolymeshTx<
-    [PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesAssetMetadataAssetMetadataKey]
+    [PolymeshPrimitivesAssetAssetId, PolymeshPrimitivesAssetMetadataAssetMetadataKey]
   >;
 
   let isModifiableSpy: jest.SpyInstance;

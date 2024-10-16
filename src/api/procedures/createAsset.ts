@@ -1,5 +1,5 @@
 import { Bytes, u32 } from '@polkadot/types';
-import { PolymeshPrimitivesAssetAssetID, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
 
@@ -171,7 +171,7 @@ async function getCreateAssetTransaction(
  */
 function getTickerTransactions(
   rawTicker: PolymeshPrimitivesTicker,
-  rawAssetId: PolymeshPrimitivesAssetAssetID,
+  rawAssetId: PolymeshPrimitivesAssetAssetId,
   context: Context,
   status: Storage['status']
 ): TxWithArgs<unknown[]>[] {
@@ -207,7 +207,7 @@ function getTickerTransactions(
  */
 async function getDocumentsAndIssueTransaction(
   args: Params,
-  rawAssetId: PolymeshPrimitivesAssetAssetID,
+  rawAssetId: PolymeshPrimitivesAssetAssetId,
   context: Context,
   signingIdentity: Identity
 ): Promise<TxWithArgs<unknown[]>[]> {

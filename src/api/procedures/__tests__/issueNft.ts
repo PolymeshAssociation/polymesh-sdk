@@ -1,4 +1,4 @@
-import { PolymeshPrimitivesAssetAssetID } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesAssetAssetId } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -32,7 +32,7 @@ describe('issueNft procedure', () => {
   let assetToMeshAssetIdSpySpy: jest.SpyInstance;
   let assetId: string;
   let collection: NftCollection;
-  let rawAssetId: PolymeshPrimitivesAssetAssetID;
+  let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let portfolioToPortfolioKindSpy: jest.SpyInstance;
   let nftInputToMetadataValueSpy: jest.SpyInstance;
 
