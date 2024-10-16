@@ -1429,6 +1429,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       SecondaryKeyNotAuthorizedForPortfolio: AugmentedError<ApiType>;
       /**
+       * Adding itself as an AllowedCustodian is not permitted.
+       **/
+      SelfAdditionNotAllowed: AugmentedError<ApiType>;
+      /**
        * The porfolio's custody is with someone other than the caller.
        **/
       UnauthorizedCustodian: AugmentedError<ApiType>;

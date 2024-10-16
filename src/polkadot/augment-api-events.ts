@@ -382,6 +382,14 @@ declare module '@polkadot/api-base/types/events' {
         ApiType,
         [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId]
       >;
+      /**
+       * An identity has unlinked a ticker from an asset.
+       * Parameters: [`IdentityId`] of caller, unlinked [`Ticker`], the asset identifier [`AssetId`].
+       **/
+      TickerUnlinkedFromAsset: AugmentedEvent<
+        ApiType,
+        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, PolymeshPrimitivesAssetAssetId]
+      >;
     };
     balances: {
       /**
@@ -2888,12 +2896,6 @@ declare module '@polkadot/api-base/types/events' {
        **/
       BatchCompleted: AugmentedEvent<ApiType, []>;
       /**
-       * Batch of dispatches completed fully with no error.
-       * Includes a vector of event counts for each dispatch.
-       * POLYMESH: event deprecated.
-       **/
-      BatchCompletedOld: AugmentedEvent<ApiType, [Vec<u32>]>;
-      /**
        * Batch of dispatches completed but has errors.
        **/
       BatchCompletedWithErrors: AugmentedEvent<ApiType, []>;
@@ -2905,26 +2907,6 @@ declare module '@polkadot/api-base/types/events' {
         ApiType,
         [index: u32, error: SpRuntimeDispatchError],
         { index: u32; error: SpRuntimeDispatchError }
-      >;
-      /**
-       * Batch of dispatches did not complete fully.
-       * Includes a vector of event counts for each dispatch and
-       * the index of the first failing dispatch as well as the error.
-       * POLYMESH: event deprecated.
-       **/
-      BatchInterruptedOld: AugmentedEvent<
-        ApiType,
-        [Vec<u32>, ITuple<[u32, SpRuntimeDispatchError]>]
-      >;
-      /**
-       * Batch of dispatches did not complete fully.
-       * Includes a vector of event counts for each call and
-       * a vector of any failed dispatches with their indices and associated error.
-       * POLYMESH: event deprecated.
-       **/
-      BatchOptimisticFailed: AugmentedEvent<
-        ApiType,
-        [Vec<u32>, Vec<ITuple<[u32, SpRuntimeDispatchError]>>]
       >;
       /**
        * A call was dispatched.
