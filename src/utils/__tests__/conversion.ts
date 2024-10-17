@@ -5177,7 +5177,7 @@ describe('middlewareInstructionToHistoricInstruction', () => {
       status,
       type: type2,
       endBlock: endBlock.toString(),
-      venueId: venueId.toString(),
+      venueId: undefined,
       legs: {
         nodes: legs2,
       },
@@ -5190,7 +5190,7 @@ describe('middlewareInstructionToHistoricInstruction', () => {
     expect(result.type).toEqual(InstructionType.SettleOnBlock);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect((result as any).endBlock).toEqual(endBlock);
-    expect(result.venueId).toEqual(venueId);
+    expect(result.venueId).toEqual(undefined);
     expect(result.createdAt).toEqual(createdAt);
     resultLeg = result.legs[0] as NftLeg;
     expect(resultLeg.asset.id).toBe(assetId);

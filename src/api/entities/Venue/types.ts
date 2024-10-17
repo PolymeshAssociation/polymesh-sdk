@@ -29,7 +29,7 @@ export interface VenueDetails {
 export type HistoricInstruction = Omit<InstructionDetails, 'status' | 'venue'> & {
   id: BigNumber;
   status: InstructionStatusEnum;
-  venueId: BigNumber;
+  venueId?: BigNumber;
   blockNumber: BigNumber;
   blockHash: string;
   legs: Leg[];

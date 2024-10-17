@@ -4962,7 +4962,7 @@ export function middlewareInstructionToHistoricInstruction(
     valueDate,
     ...typeDetails,
     memo: memo ?? null,
-    venueId: new BigNumber(venueId),
+    venueId: venueId ? new BigNumber(venueId) : undefined,
     createdAt: new Date(datetime),
     legs: legs.map(leg => middlewareLegToLeg(leg, context)),
   };
