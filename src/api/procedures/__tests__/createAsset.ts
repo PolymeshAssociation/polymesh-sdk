@@ -331,6 +331,19 @@ describe('createAsset procedure', () => {
     );
   });
 
+  it('should throw an error if the ticker is not provided for v6 chain', () => {
+    mockContext.isV6 = true;
+    const proc = procedureMockUtils.getInstance<Params, FungibleAsset, Storage>(mockContext, {
+      customTypeData: null,
+      status: undefined,
+      signingIdentity,
+    });
+
+    return expect(prepareCreateAsset.call(proc, { ...args, ticker: undefined })).rejects.toThrow(
+      'Ticker is mandatory for v6 chains'
+    );
+  });
+
   it('should throw an error if the ticker contains non numeric characters', () => {
     const proc = procedureMockUtils.getInstance<Params, FungibleAsset, Storage>(mockContext, {
       customTypeData: null,
@@ -384,6 +397,26 @@ describe('createAsset procedure', () => {
         {
           transaction: linkTickerToAssetIdTx,
           args: [rawTicker, rawAssetId],
+        },
+      ],
+      fee: undefined,
+      resolver: expect.objectContaining({ id: assetId }),
+    });
+
+    result = await prepareCreateAsset.call(proc, {
+      ...args,
+      initialSupply: new BigNumber(0),
+      securityIdentifiers: undefined,
+      fundingRound: undefined,
+      requireInvestorUniqueness: false,
+      ticker: undefined,
+    });
+
+    expect(result).toEqual({
+      transactions: [
+        {
+          transaction: createAssetTransaction,
+          args: [rawName, rawIsDivisible, rawType, [], null],
         },
       ],
       fee: undefined,
@@ -778,6 +811,17 @@ describe('createAsset procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, FungibleAsset, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
+      let result = await boundFunc({
+        assetType: KnownAssetType.EquityCommon,
+        ticker: undefined,
+      } as Params);
+
+      expect(result).toEqual({
+        customTypeData: null,
+        status: undefined,
+        signingIdentity,
+      });
+
       entityMockUtils.configureMocks({
         tickerReservationOptions: {
           details: {
@@ -788,7 +832,7 @@ describe('createAsset procedure', () => {
         },
       });
 
-      let result = await boundFunc({ assetType: KnownAssetType.EquityCommon } as Params);
+      result = await boundFunc({ assetType: KnownAssetType.EquityCommon, ticker } as Params);
 
       expect(result).toEqual({
         customTypeData: null,
@@ -804,7 +848,7 @@ describe('createAsset procedure', () => {
         returnValue: dsMockUtils.createMockOption(id),
       });
 
-      result = await boundFunc({ assetType: 'something' } as Params);
+      result = await boundFunc({ assetType: 'something', ticker } as Params);
 
       expect(result).toEqual({
         customTypeData: {
@@ -818,7 +862,7 @@ describe('createAsset procedure', () => {
       id = dsMockUtils.createMockU32(new BigNumber(10));
       customTypesMock.mockResolvedValue(dsMockUtils.createMockOption(id));
 
-      result = await boundFunc({ assetType: 'something' } as Params);
+      result = await boundFunc({ assetType: 'something', ticker } as Params);
 
       expect(result).toEqual({
         customTypeData: {

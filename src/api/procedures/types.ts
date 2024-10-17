@@ -703,7 +703,12 @@ export interface IssueTokensParams {
 }
 
 export interface CreateAssetWithTickerParams extends CreateAssetParams {
-  ticker: string;
+  /**
+   * (optional) ticker to be linked with the Asset
+   *
+   * @note from 7.x chain, ticker has been made optional. For 6.x chain, it is still mandatory.
+   */
+  ticker?: string;
 }
 
 export interface GlobalCollectionKeyInput {

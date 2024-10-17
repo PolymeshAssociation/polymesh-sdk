@@ -60,7 +60,7 @@ export interface Storage {
     rawValue: Bytes;
   } | null;
 
-  status: TickerReservationStatus;
+  status?: TickerReservationStatus;
 
   signingIdentity: Identity;
 }
@@ -69,10 +69,13 @@ export interface Storage {
  * @throws if the Ticker is not available
  */
 function assertTickerAvailable(
-  ticker: string,
-  status: TickerReservationStatus,
+  ticker: string | undefined,
+  status: TickerReservationStatus | undefined,
   reservationRequired: boolean
 ): void {
+  if (!ticker) {
+    return;
+  }
   if (status === TickerReservationStatus.AssetCreated) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
@@ -116,7 +119,10 @@ async function getCreateAssetTransaction(
 
   const { ticker, name, isDivisible, assetType, securityIdentifiers = [], fundingRound } = args;
 
-  const rawTicker = stringToTicker(ticker, context);
+  let rawTicker;
+  if (ticker) {
+    rawTicker = stringToTicker(ticker, context);
+  }
   const rawName = nameToAssetName(name, context);
   /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -170,7 +176,7 @@ async function getCreateAssetTransaction(
  * since 7.x, we need to separately register ticker first if ticker does not exists and then link to asset
  */
 function getTickerTransactions(
-  rawTicker: PolymeshPrimitivesTicker,
+  rawTicker: PolymeshPrimitivesTicker | undefined,
   rawAssetId: PolymeshPrimitivesAssetAssetId,
   context: Context,
   status: Storage['status']
@@ -180,25 +186,26 @@ function getTickerTransactions(
     isV6,
   } = context;
   const transactions = [];
-  if (!isV6) {
-    if (status === TickerReservationStatus.Free) {
-      transactions.push(
-        checkTxType({
-          transaction: tx.asset.registerUniqueTicker,
-          args: [rawTicker],
-        })
-      );
-    }
-    if (status !== TickerReservationStatus.AssetCreated) {
-      transactions.push(
-        checkTxType({
-          transaction: tx.asset.linkTickerToAssetId,
-          args: [rawTicker, rawAssetId],
-        })
-      );
+  if (rawTicker) {
+    if (!isV6) {
+      if (status === TickerReservationStatus.Free) {
+        transactions.push(
+          checkTxType({
+            transaction: tx.asset.registerUniqueTicker,
+            args: [rawTicker],
+          })
+        );
+      }
+      if (status !== TickerReservationStatus.AssetCreated) {
+        transactions.push(
+          checkTxType({
+            transaction: tx.asset.linkTickerToAssetId,
+            args: [rawTicker, rawAssetId],
+          })
+        );
+      }
     }
   }
-
   return transactions;
 }
 
@@ -274,12 +281,21 @@ export async function prepareCreateAsset(
   let assetId: string;
 
   assertTickerAvailable(ticker, status, reservationRequired);
-  const rawTicker = stringToTicker(ticker, context);
+  let rawTicker: PolymeshPrimitivesTicker | undefined;
+
+  if (ticker) {
+    rawTicker = stringToTicker(ticker, context);
+  } else if (isV6) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'Ticker is mandatory for v6 chains',
+    });
+  }
 
   /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
   if (isV6) {
-    rawAssetId = rawTicker;
-    assetId = ticker;
+    rawAssetId = rawTicker!;
+    assetId = ticker!;
   } else {
     assetId = await context.getSigningAccount().getNextAssetId();
     rawAssetId = stringToAssetId(assetId, context);
@@ -378,7 +394,7 @@ export async function getAuthorization(
     },
   };
 
-  if (status !== TickerReservationStatus.Free) {
+  if (ticker && status !== TickerReservationStatus.Free) {
     return {
       ...auth,
       roles: [{ type: RoleType.TickerOwner, ticker }],
@@ -396,11 +412,12 @@ export async function prepareStorage(
 ): Promise<Storage> {
   const { context } = this;
 
-  const reservation = new TickerReservation({ ticker }, context);
-  const [{ status }, signingIdentity] = await Promise.all([
-    reservation.details(),
-    context.getSigningIdentity(),
-  ]);
+  let status;
+  if (ticker) {
+    const reservation = new TickerReservation({ ticker }, context);
+    ({ status } = await reservation.details());
+  }
+  const signingIdentity = await context.getSigningIdentity();
 
   const isCustomType = !values<string>(KnownAssetType).includes(assetType);
 
