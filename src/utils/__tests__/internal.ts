@@ -2991,7 +2991,7 @@ describe('getAssetIdForMiddleware', () => {
       dsMockUtils.getContextInstance({ isV6: true })
     );
 
-    expect(result).toEqual('0xc5ad37bd0d02c8ce39a7b943f45f0ebc');
+    expect(result).toEqual('0xc5ad37bd0d0288ceb9a7b943f45f0ebc');
   });
 });
 

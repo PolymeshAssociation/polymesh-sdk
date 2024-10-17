@@ -172,12 +172,7 @@ export const DEFAULT_CDD_ID = '0x00000000000000000000000000000000000000000000000
 /**
  * Minimum version of Middleware V2 GraphQL Service (SubQuery) that is compatible with this version of the SDK
  */
-export const MINIMUM_SQ_VERSION = '16.0.0-alpha.1';
-
-/**
- * Minimum version of Middleware V2 GraphQL Service (SubQuery) that is compatible with this version of the SDK
- */
-export const SQ_VERSION_7_X = '16.1.0-alpha.1';
+export const MINIMUM_SQ_VERSION = '16.0.2-alpha.1';
 
 /**
  * Global metadata key used to conventionally register an NFT image

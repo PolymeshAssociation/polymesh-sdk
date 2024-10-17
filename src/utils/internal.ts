@@ -29,8 +29,9 @@ import {
   isHex,
   stringToHex,
   stringUpperFirst,
+  u8aToHex,
 } from '@polkadot/util';
-import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
+import { blake2AsU8a, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import fetch from 'cross-fetch';
 import stringify from 'json-stable-stringify';
@@ -2295,7 +2296,14 @@ const getAssetIdForLegacyTicker = (ticker: string, context: Context): string => 
 
   const data = hexAddPrefix(assetComponents.map(e => hexStripPrefix(e)).join(''));
 
-  return blake2AsHex(data, 128);
+  const rawBytes = blake2AsU8a(data, 128);
+
+  // Version 8.
+  rawBytes[6] = (rawBytes[6] & 0x0f) | 0x80;
+  // Standard RFC4122 variant (bits 10xx)
+  rawBytes[8] = (rawBytes[8] & 0x3f) | 0x80;
+
+  return u8aToHex(rawBytes);
 };
 
 /**
