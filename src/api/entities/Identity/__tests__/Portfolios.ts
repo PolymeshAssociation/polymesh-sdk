@@ -174,6 +174,31 @@ describe('Portfolios class', () => {
     });
   });
 
+  describe('method: getPortfolioByName', () => {
+    it('should return a numbered portfolio', async () => {
+      const portfolioId = new BigNumber(1);
+
+      dsMockUtils.createQueryMock('portfolio', 'nameToNumber', {
+        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockU64(portfolioId)),
+      });
+
+      const result = await portfolios.getPortfolioByName({ name: 'PF-1' });
+
+      expect(result instanceof NumberedPortfolio).toBe(true);
+      expect(result.id).toEqual(portfolioId);
+    });
+
+    it("should throw an error if a numbered portfolio doesn't exist with given name", () => {
+      dsMockUtils.createQueryMock('portfolio', 'nameToNumber', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      return expect(portfolios.getPortfolioByName({ name: 'PF-2' })).rejects.toThrow(
+        "No Portfolio exists with the name 'PF-2'"
+      );
+    });
+  });
+
   describe('method: delete', () => {
     it('should prepare the procedure and return the resulting transaction', async () => {
       const portfolioId = new BigNumber(5);

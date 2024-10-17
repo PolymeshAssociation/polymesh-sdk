@@ -22,6 +22,7 @@ import {
 import { Ensured } from '~/types/utils';
 import {
   identityIdToString,
+  stringToBytes,
   stringToIdentityId,
   toHistoricalSettlements,
   u64ToBigNumber,
@@ -163,6 +164,40 @@ export class Portfolios extends Namespace<Identity> {
     }
 
     return numberedPortfolio;
+  }
+
+  /**
+   * Retrieve a Numbered Portfolio by its name
+   *
+   * @throws if no Portfolio exists with the given name
+   */
+  public async getPortfolioByName(args: { name: string }): Promise<NumberedPortfolio> {
+    const {
+      context,
+      context: {
+        polymeshApi: {
+          query: {
+            portfolio: { nameToNumber },
+          },
+        },
+      },
+      parent: { did },
+    } = this;
+
+    const rawDid = stringToIdentityId(did, context);
+    const rawName = stringToBytes(args.name, context);
+
+    const rawId = await nameToNumber(rawDid, rawName);
+
+    if (rawId.isNone) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: `No Portfolio exists with the name '${args.name}'`,
+      });
+    }
+
+    const portfolioId = u64ToBigNumber(rawId.unwrap());
+    return new NumberedPortfolio({ id: portfolioId, did }, context);
   }
 
   /**
