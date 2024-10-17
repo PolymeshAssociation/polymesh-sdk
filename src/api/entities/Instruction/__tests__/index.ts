@@ -1099,6 +1099,21 @@ describe('Instruction class', () => {
             },
           },
         },
+        {
+          query: instructionEventsQuery(
+            {
+              event: InstructionEventEnum.InstructionRejected,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [],
+            },
+          },
+        },
       ]);
 
       const result = await instruction.getStatus();
@@ -1167,11 +1182,109 @@ describe('Instruction class', () => {
             },
           },
         },
+        {
+          query: instructionEventsQuery(
+            {
+              event: InstructionEventEnum.InstructionRejected,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [],
+            },
+          },
+        },
       ]);
 
       const result = await instruction.getStatus();
       expect(result).toMatchObject({
         status: InstructionStatus.Failed,
+        eventIdentifier: fakeEventIdentifierResult,
+      });
+    });
+
+    it('should return Rejected Instruction status', async () => {
+      const blockNumber = new BigNumber(1234);
+      const blockHash = 'someHash';
+      const blockDate = new Date('4/14/2020');
+      const eventIdx = new BigNumber(1);
+      const fakeQueryResult = {
+        updatedBlock: { blockId: blockNumber.toNumber(), hash: blockHash, datetime: blockDate },
+        eventIdx: eventIdx.toNumber(),
+      };
+      const fakeEventIdentifierResult = { blockNumber, blockDate, blockHash, eventIndex: eventIdx };
+
+      const queryResult = dsMockUtils.createMockInstruction({
+        instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
+        venueId: dsMockUtils.createMockOption(),
+        createdAt: dsMockUtils.createMockOption(),
+        tradeDate: dsMockUtils.createMockOption(),
+        valueDate: dsMockUtils.createMockOption(),
+        settlementType: dsMockUtils.createMockSettlementType(),
+      });
+
+      when(dsMockUtils.createQueryMock('settlement', 'instructionDetails'))
+        .calledWith(rawId)
+        .mockResolvedValue(queryResult);
+
+      when(dsMockUtils.createQueryMock('settlement', 'instructionStatuses'))
+        .calledWith(rawId)
+        .mockResolvedValue(dsMockUtils.createMockInstructionStatus('Rejected'));
+
+      dsMockUtils.createApolloMultipleQueriesMock([
+        {
+          query: instructionEventsQuery(
+            {
+              event: InstructionEventEnum.InstructionExecuted,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [],
+            },
+          },
+        },
+        {
+          query: instructionEventsQuery(
+            {
+              event: InstructionEventEnum.InstructionFailed,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [],
+            },
+          },
+        },
+        {
+          query: instructionEventsQuery(
+            {
+              event: InstructionEventEnum.InstructionRejected,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [fakeQueryResult],
+            },
+          },
+        },
+      ]);
+
+      const result = await instruction.getStatus();
+      expect(result).toMatchObject({
+        status: InstructionStatus.Rejected,
         eventIdentifier: fakeEventIdentifierResult,
       });
     });
@@ -1216,6 +1329,21 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionFailed,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [],
+            },
+          },
+        },
+        {
+          query: instructionEventsQuery(
+            {
+              event: InstructionEventEnum.InstructionRejected,
               instructionId: id.toString(),
             },
             new BigNumber(1),

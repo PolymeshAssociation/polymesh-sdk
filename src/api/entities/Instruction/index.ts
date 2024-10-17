@@ -502,10 +502,12 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       };
     }
 
-    const [executedEventIdentifier, failedEventIdentifier] = await Promise.all([
-      this.getInstructionEventFromMiddleware(InstructionEventEnum.InstructionExecuted),
-      this.getInstructionEventFromMiddleware(InstructionEventEnum.InstructionFailed),
-    ]);
+    const [executedEventIdentifier, failedEventIdentifier, rejectedEventIdentifier] =
+      await Promise.all([
+        this.getInstructionEventFromMiddleware(InstructionEventEnum.InstructionExecuted),
+        this.getInstructionEventFromMiddleware(InstructionEventEnum.InstructionFailed),
+        this.getInstructionEventFromMiddleware(InstructionEventEnum.InstructionRejected),
+      ]);
 
     if (executedEventIdentifier) {
       return {
@@ -518,6 +520,13 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       return {
         status: InstructionStatus.Failed,
         eventIdentifier: failedEventIdentifier,
+      };
+    }
+
+    if (rejectedEventIdentifier) {
+      return {
+        status: InstructionStatus.Rejected,
+        eventIdentifier: rejectedEventIdentifier,
       };
     }
 
@@ -575,7 +584,10 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * Retrieve Instruction status event from middleware V2
    */
   private async getInstructionEventFromMiddleware(
-    event: InstructionEventEnum.InstructionExecuted | InstructionEventEnum.InstructionFailed
+    event:
+      | InstructionEventEnum.InstructionExecuted
+      | InstructionEventEnum.InstructionFailed
+      | InstructionEventEnum.InstructionRejected
   ): Promise<EventIdentifier | null> {
     const { id, context } = this;
 
