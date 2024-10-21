@@ -2471,14 +2471,14 @@ export async function claimToMeshClaim(
  * @hidden
  */
 export function middlewareScopeToScope(scope: MiddlewareScope, context: Context): Scope {
-  const { type, value } = scope;
+  const { type, value, assetId } = scope;
 
   switch (type) {
     case ClaimScopeTypeEnum.Ticker: // NOSONAR
     case ClaimScopeTypeEnum.Asset:
       return {
         type: ScopeType.Asset,
-        value: getAssetIdFromMiddleware({ id: value, ticker: value }, context),
+        value: getAssetIdFromMiddleware({ id: assetId, ticker: value }, context),
       };
     case ClaimScopeTypeEnum.Identity:
     case ClaimScopeTypeEnum.Custom:

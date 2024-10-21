@@ -5004,17 +5004,20 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
       let result = middlewareScopeToScope(
         {
           type: ClaimScopeTypeEnum.Asset,
-          value: '0x1234',
+          value: 'TICKER',
+          assetId: '0x1234',
         },
         context
       );
 
       expect(result).toEqual({ type: ScopeType.Asset, value: '0x1234' });
 
+      context.isV6 = true;
       result = middlewareScopeToScope(
         {
           type: ClaimScopeTypeEnum.Ticker, // NOSONAR
           value: 'TICKER',
+          assetId: '0x1234',
         },
         context
       );
