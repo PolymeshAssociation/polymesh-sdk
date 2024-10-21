@@ -282,13 +282,13 @@ describe('Claims Class', () => {
             ...commonClaimData,
             expiry: date,
             type: accreditedType,
-            scope: { type: 'Asset', value: '0x1234' },
+            scope: { type: 'Asset', assetId: '0x1234', value: 'TICKER' },
           },
           {
             ...commonClaimData,
             expiry: null,
             type: accreditedType,
-            scope: { type: 'Asset', value: '0x1234' },
+            scope: { type: 'Asset', assetId: '0x1234', value: 'TICKER' },
           },
         ],
       };
