@@ -28,7 +28,10 @@ import {
 } from '~/internal';
 import { assetHoldersQuery, nftHoldersQuery } from '~/middleware/queries/assets';
 import { trustingAssetsQuery } from '~/middleware/queries/claims';
-import { instructionPartiesQuery } from '~/middleware/queries/settlements';
+import {
+  InstructionPartiesFilters,
+  instructionPartiesQuery,
+} from '~/middleware/queries/settlements';
 import { AssetHoldersOrderBy, NftHoldersOrderBy, Query } from '~/middleware/types';
 import { CddStatus } from '~/polkadot/polymesh';
 import {
@@ -911,8 +914,19 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    * Retrieve all Instructions that have been associated with this Identity's DID
    *
    * @note uses the middleware V2
+   * @note supports pagination
+   *
    */
-  public async getHistoricalInstructions(): Promise<HistoricInstruction[]> {
+  public async getHistoricalInstructions(
+    filter?: Omit<InstructionPartiesFilters, 'identity'>,
+    {
+      size,
+      start,
+    }: {
+      size?: BigNumber;
+      start?: BigNumber;
+    } = {}
+  ): Promise<HistoricInstruction[]> {
     const { context, did } = this;
 
     const {
@@ -920,7 +934,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         instructionParties: { nodes: instructionsResult },
       },
     } = await context.queryMiddleware<Ensured<Query, 'instructionParties'>>(
-      instructionPartiesQuery(did)
+      instructionPartiesQuery({ ...filter, identity: did }, size, start)
     );
 
     return instructionsResult.map(({ instruction }) =>
