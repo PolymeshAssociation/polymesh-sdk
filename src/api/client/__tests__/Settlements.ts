@@ -3,9 +3,16 @@ import { when } from 'jest-when';
 
 import { Settlements } from '~/api/client/Settlements';
 import { addInstructionTransformer, Context, PolymeshTransaction, Venue } from '~/internal';
+import { instructionPartiesQuery } from '~/middleware/queries/settlements';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Instruction, InstructionAffirmationOperation, VenueType } from '~/types';
+import {
+  HistoricInstruction,
+  Instruction,
+  InstructionAffirmationOperation,
+  VenueType,
+} from '~/types';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/Venue',
@@ -178,6 +185,32 @@ describe('Settlements Class', () => {
       const tx = await settlements.affirmInstruction({ id: instructionId });
 
       expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: getHistoricalInstructions', () => {
+    it('should return the list of all instructions where the Identity was involved', async () => {
+      const middlewareInstructionToHistoricInstructionSpy = jest.spyOn(
+        utilsConversionModule,
+        'middlewareInstructionToHistoricInstruction'
+      );
+
+      const legsResponse = {
+        totalCount: 5,
+        nodes: [{ instruction: 'instruction' }],
+      };
+
+      dsMockUtils.createApolloQueryMock(instructionPartiesQuery({}), {
+        instructionParties: legsResponse,
+      });
+
+      const mockHistoricInstruction = 'mockData' as unknown as HistoricInstruction;
+
+      middlewareInstructionToHistoricInstructionSpy.mockReturnValue(mockHistoricInstruction);
+
+      const result = await settlements.getHistoricalInstructions({});
+
+      expect(result).toEqual([mockHistoricInstruction]);
     });
   });
 });

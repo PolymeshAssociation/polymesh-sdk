@@ -11,13 +11,21 @@ import {
   Venue,
 } from '~/internal';
 import {
+  InstructionPartiesFilters,
+  instructionPartiesQuery,
+} from '~/middleware/queries/settlements';
+import { Query } from '~/middleware/types';
+import {
   AddInstructionWithVenueIdParams,
   CreateVenueParams,
   ErrorCode,
+  HistoricInstruction,
   InstructionAffirmationOperation,
   InstructionIdParams,
   ProcedureMethod,
 } from '~/types';
+import { Ensured } from '~/types/utils';
+import { middlewareInstructionToHistoricInstruction } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**
@@ -119,4 +127,36 @@ export class Settlements {
    * Affirm an Instruction (authorize)
    */
   public affirmInstruction: ProcedureMethod<InstructionIdParams, Instruction>;
+
+  /**
+   * Retrieve all Instructions that have been associated with this Identity's DID
+   *
+   * @note uses the middleware V2
+   * @note supports pagination
+   *
+   */
+  public async getHistoricalInstructions(
+    filter: InstructionPartiesFilters,
+    {
+      size,
+      start,
+    }: {
+      size?: BigNumber;
+      start?: BigNumber;
+    } = {}
+  ): Promise<HistoricInstruction[]> {
+    const { context } = this;
+
+    const {
+      data: {
+        instructionParties: { nodes: instructionsResult },
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'instructionParties'>>(
+      instructionPartiesQuery(filter, size, start)
+    );
+
+    return instructionsResult.map(({ instruction }) =>
+      middlewareInstructionToHistoricInstruction(instruction!, context)
+    );
+  }
 }
