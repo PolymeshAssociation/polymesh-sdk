@@ -9,6 +9,7 @@ import {
   InstructionEventsOrderBy,
   InstructionParty,
   InstructionsOrderBy,
+  InstructionStatusEnum,
   Leg,
   LegsOrderBy,
 } from '~/middleware/types';
@@ -52,6 +53,45 @@ const instructionAttributes = `
 `;
 
 type InstructionArgs = 'id' | 'venueId' | 'status';
+
+/**
+ * Filters for instructions
+ *
+ */
+export interface InstructionPartiesFilters {
+  /**
+   * The DID of the identity to filter by
+   */
+  identity?: string;
+  /**
+   * The asset ID to filter by
+   */
+  assetId?: string;
+  /**
+   * The ticker to filter by
+   */
+  ticker?: string;
+  /**
+   * The status to filter by
+   */
+  status?: InstructionStatusEnum;
+  /**
+   * The sender did to filter by
+   */
+  sender?: string;
+  /**
+   * The receiver did to filter by
+   */
+  receiver?: string;
+  /**
+   * The mediator did to filter by
+   */
+  mediator?: string;
+  /**
+   * The party did to filter by
+   */
+  party?: string;
+}
 
 /**
  * Query to get event details about instruction events
@@ -148,17 +188,90 @@ export function instructionsQuery(
 /**
  * @hidden
  *
+ */
+export const buildInstructionPartiesFilter = (filters: InstructionPartiesFilters) => {
+  const { identity, assetId, ticker, status, sender, receiver, mediator, party } = filters;
+
+  const args = [];
+  const baseFilter = [];
+  const instructionFilter = [];
+  const legsFilter = [];
+
+  if (identity) {
+    args.push('$identity: String!');
+    baseFilter.push('identity: { equalTo: $identity }');
+  }
+
+  if (status) {
+    args.push('$status: InstructionStatusEnum!');
+    instructionFilter.push('status: { equalTo: $status }');
+  }
+
+  if (mediator) {
+    args.push('$mediator: String!');
+    instructionFilter.push('mediators: { containsKey: $mediator }');
+  }
+
+  if (party) {
+    args.push('$party: String!');
+    instructionFilter.push('parties: { some: { identity: { equalTo: $party } } }');
+  }
+
+  if (assetId) {
+    args.push('$assetId: String!');
+    legsFilter.push('assetId: { equalTo: $assetId }');
+  }
+
+  if (ticker) {
+    args.push('$ticker: String!');
+    legsFilter.push('ticker: { equalTo: $ticker }');
+  }
+
+  if (sender) {
+    args.push('$sender: String!');
+    legsFilter.push('from: { equalTo: $sender }');
+  }
+
+  if (receiver) {
+    args.push('$receiver: String!');
+    legsFilter.push('to: { equalTo: $receiver }');
+  }
+
+  if (legsFilter.length) {
+    instructionFilter.push(`legs: { ${legsFilter.join(', ')} }`);
+  }
+
+  if (instructionFilter.length) {
+    baseFilter.push(`instruction: { ${instructionFilter.join(', ')} }`);
+  }
+
+  return {
+    args: args.length ? `(${args.join()})` : '',
+    filter: baseFilter.length ? `filter: { ${baseFilter.join(', ')} }` : '',
+  };
+};
+
+/**
+ * @hidden
+ *
  * Get Instructions where an identity is involved
  */
 export function instructionPartiesQuery(
-  identity: string
-): QueryOptions<QueryArgs<InstructionParty, 'identity'>> {
+  filters: InstructionPartiesFilters,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<QueryArgs<InstructionParty, 'identity'>>> {
+  const { args, filter } = buildInstructionPartiesFilter(filters);
+
   const query = gql`
-    query InstructionPartiesQuery($identity: String!)
+    query InstructionPartiesQuery
+    ${args}
      {
       instructionParties(
-        filter: { identity: { equalTo: $identity} }
+        ${filter}
         orderBy: [${LegsOrderBy.CreatedAtAsc}, ${LegsOrderBy.InstructionIdAsc}]
+        first: $size
+        offset: $start
       ) {
         nodes {
           instruction {
@@ -171,7 +284,7 @@ export function instructionPartiesQuery(
 
   return {
     query,
-    variables: { identity },
+    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
   };
 }
 
