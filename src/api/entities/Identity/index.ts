@@ -28,10 +28,7 @@ import {
 } from '~/internal';
 import { assetHoldersQuery, nftHoldersQuery } from '~/middleware/queries/assets';
 import { trustingAssetsQuery } from '~/middleware/queries/claims';
-import {
-  InstructionPartiesFilters,
-  instructionPartiesQuery,
-} from '~/middleware/queries/settlements';
+import { instructionPartiesQuery } from '~/middleware/queries/settlements';
 import { AssetHoldersOrderBy, NftHoldersOrderBy, Query } from '~/middleware/types';
 import { CddStatus } from '~/polkadot/polymesh';
 import {
@@ -44,6 +41,7 @@ import {
   GroupedInvolvedInstructions,
   HeldNfts,
   HistoricInstruction,
+  InstructionPartiesFilters,
   InstructionsByStatus,
   MultiSigSigners,
   NumberedPortfolio,
@@ -918,24 +916,17 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    *
    */
   public async getHistoricalInstructions(
-    filter?: Omit<InstructionPartiesFilters, 'identity'>,
-    {
-      size,
-      start,
-    }: {
-      size?: BigNumber;
-      start?: BigNumber;
-    } = {}
+    filter?: Omit<InstructionPartiesFilters, 'identity'>
   ): Promise<HistoricInstruction[]> {
     const { context, did } = this;
+
+    const query = await instructionPartiesQuery({ ...filter, identity: did }, context);
 
     const {
       data: {
         instructionParties: { nodes: instructionsResult },
       },
-    } = await context.queryMiddleware<Ensured<Query, 'instructionParties'>>(
-      instructionPartiesQuery({ ...filter, identity: did }, size, start)
-    );
+    } = await context.queryMiddleware<Ensured<Query, 'instructionParties'>>(query);
 
     return instructionsResult.map(({ instruction }) =>
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

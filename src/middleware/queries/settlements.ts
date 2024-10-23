@@ -2,18 +2,20 @@ import { DocumentNode, QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
+import { Context } from '~/internal';
 import { createArgsAndFilters } from '~/middleware/queries/common';
 import {
   Instruction,
   InstructionEvent,
   InstructionEventsOrderBy,
-  InstructionParty,
   InstructionsOrderBy,
   InstructionStatusEnum,
   Leg,
   LegsOrderBy,
 } from '~/middleware/types';
+import { InstructionPartiesFilters } from '~/types';
 import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
+import { asAssetId, asDid } from '~/utils/internal';
 
 const instructionAttributes = `
           id
@@ -54,44 +56,13 @@ const instructionAttributes = `
 
 type InstructionArgs = 'id' | 'venueId' | 'status';
 
-/**
- * Filters for instructions
- *
- */
-export interface InstructionPartiesFilters {
-  /**
-   * The DID of the identity to filter by
-   */
-  identity?: string;
-  /**
-   * The asset ID to filter by
-   */
-  assetId?: string;
-  /**
-   * The ticker to filter by
-   */
-  ticker?: string;
-  /**
-   * The status to filter by
-   */
-  status?: InstructionStatusEnum;
-  /**
-   * The sender did to filter by
-   */
-  sender?: string;
-  /**
-   * The receiver did to filter by
-   */
-  receiver?: string;
-  /**
-   * The mediator did to filter by
-   */
-  mediator?: string;
-  /**
-   * The party did to filter by
-   */
-  party?: string;
-}
+type InstructionPartiesVariables = Partial<
+  Record<keyof Omit<InstructionPartiesFilters, 'status' | 'size' | 'start'>, string> & {
+    status?: InstructionStatusEnum;
+    size?: number;
+    start?: number;
+  }
+>;
 
 /**
  * Query to get event details about instruction events
@@ -189,52 +160,62 @@ export function instructionsQuery(
  * @hidden
  *
  */
-export const buildInstructionPartiesFilter = (filters: InstructionPartiesFilters) => {
-  const { identity, assetId, ticker, status, sender, receiver, mediator, party } = filters;
+export const buildInstructionPartiesFilter = async (
+  filters: InstructionPartiesFilters,
+  context: Context
+): Promise<{
+  args: string;
+  filter: string;
+  variables: InstructionPartiesVariables;
+}> => {
+  const { identity, asset, status, sender, receiver, mediator, party, size, start } = filters;
 
-  const args = [];
+  const args = ['$start: Int', '$size: Int'];
   const baseFilter = [];
   const instructionFilter = [];
   const legsFilter = [];
+  const variables: InstructionPartiesVariables = {};
 
   if (identity) {
     args.push('$identity: String!');
     baseFilter.push('identity: { equalTo: $identity }');
+    variables.identity = asDid(identity);
   }
 
   if (status) {
     args.push('$status: InstructionStatusEnum!');
     instructionFilter.push('status: { equalTo: $status }');
+    variables.status = status;
   }
 
   if (mediator) {
     args.push('$mediator: String!');
     instructionFilter.push('mediators: { containsKey: $mediator }');
+    variables.mediator = asDid(mediator);
   }
 
   if (party) {
     args.push('$party: String!');
     instructionFilter.push('parties: { some: { identity: { equalTo: $party } } }');
+    variables.party = asDid(party);
   }
 
-  if (assetId) {
-    args.push('$assetId: String!');
-    legsFilter.push('assetId: { equalTo: $assetId }');
-  }
-
-  if (ticker) {
-    args.push('$ticker: String!');
-    legsFilter.push('ticker: { equalTo: $ticker }');
+  if (asset) {
+    args.push('$asset: String!');
+    legsFilter.push('assetId: { equalTo: $asset }');
+    variables.asset = await asAssetId(asset, context);
   }
 
   if (sender) {
     args.push('$sender: String!');
     legsFilter.push('from: { equalTo: $sender }');
+    variables.sender = asDid(sender);
   }
 
   if (receiver) {
     args.push('$receiver: String!');
     legsFilter.push('to: { equalTo: $receiver }');
+    variables.receiver = asDid(receiver);
   }
 
   if (legsFilter.length) {
@@ -245,9 +226,18 @@ export const buildInstructionPartiesFilter = (filters: InstructionPartiesFilters
     baseFilter.push(`instruction: { ${instructionFilter.join(', ')} }`);
   }
 
+  if (size) {
+    variables.size = size.toNumber();
+  }
+
+  if (start) {
+    variables.start = start.toNumber();
+  }
+
   return {
-    args: args.length ? `(${args.join()})` : '',
+    args: `(${args.join()})`,
     filter: baseFilter.length ? `filter: { ${baseFilter.join(', ')} }` : '',
+    variables,
   };
 };
 
@@ -256,12 +246,11 @@ export const buildInstructionPartiesFilter = (filters: InstructionPartiesFilters
  *
  * Get Instructions where an identity is involved
  */
-export function instructionPartiesQuery(
+export async function instructionPartiesQuery(
   filters: InstructionPartiesFilters,
-  size?: BigNumber,
-  start?: BigNumber
-): QueryOptions<PaginatedQueryArgs<QueryArgs<InstructionParty, 'identity'>>> {
-  const { args, filter } = buildInstructionPartiesFilter(filters);
+  context: Context
+): Promise<QueryOptions<PaginatedQueryArgs<Omit<InstructionPartiesFilters, 'size' | 'start'>>>> {
+  const { args, filter, variables } = await buildInstructionPartiesFilter(filters, context);
 
   const query = gql`
     query InstructionPartiesQuery
@@ -278,13 +267,14 @@ export function instructionPartiesQuery(
             ${instructionAttributes}
           }
         }
+        totalCount
       }
     }
   `;
 
   return {
     query,
-    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+    variables,
   };
 }
 
