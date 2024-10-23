@@ -200,7 +200,7 @@ describe('Settlements Class', () => {
         nodes: [{ instruction: 'instruction' }],
       };
 
-      dsMockUtils.createApolloQueryMock(instructionPartiesQuery({}), {
+      dsMockUtils.createApolloQueryMock(await instructionPartiesQuery({}, context), {
         instructionParties: legsResponse,
       });
 

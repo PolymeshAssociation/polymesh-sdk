@@ -1296,7 +1296,9 @@ describe('Identity class', () => {
         nodes: [{ instruction: 'instruction' }],
       };
 
-      dsMockUtils.createApolloQueryMock(instructionPartiesQuery({ identity: identity.did }), {
+      const query = await instructionPartiesQuery({ identity: identity.did }, context);
+
+      dsMockUtils.createApolloQueryMock(query, {
         instructionParties: legsResponse,
       });
 
