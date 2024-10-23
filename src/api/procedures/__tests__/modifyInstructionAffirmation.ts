@@ -1,4 +1,4 @@
-import { u32, u64 } from '@polkadot/types';
+import { BTreeSet, u32, u64 } from '@polkadot/types';
 import {
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesSettlementAffirmationStatus,
@@ -69,6 +69,7 @@ describe('modifyInstructionAffirmation procedure', () => {
   const portfolioId: PortfolioId = { did };
   const latestBlock = new BigNumber(100);
   let mockContext: Mocked<Context>;
+  let portfolioIdsToBtreeSetSpy: jest.SpyInstance;
   let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
   let bigNumberToU32Spy: jest.SpyInstance<u32, [BigNumber, Context]>;
   let portfolioLikeToPortfolioIdSpy: jest.SpyInstance<PortfolioId, [PortfolioLike]>;
@@ -85,6 +86,7 @@ describe('modifyInstructionAffirmation procedure', () => {
   let mockExecuteInfo: ExecuteInstructionInfo;
   let mockAffirmCount: AffirmationCount;
   let mockAssetCount: PolymeshPrimitivesSettlementAssetCount;
+  let rawPortfolioIds: BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>;
 
   beforeAll(() => {
     dsMockUtils.initMocks({
@@ -128,6 +130,8 @@ describe('modifyInstructionAffirmation procedure', () => {
     );
 
     jest.spyOn(procedureUtilsModule, 'assertInstructionValid').mockImplementation();
+
+    portfolioIdsToBtreeSetSpy = jest.spyOn(utilsConversionModule, 'portfolioIdsToBtreeSet');
   });
 
   beforeEach(() => {
@@ -159,6 +163,12 @@ describe('modifyInstructionAffirmation procedure', () => {
     dsMockUtils.createQueryMock('settlement', 'userAffirmations', {
       multi: [],
     });
+
+    rawPortfolioIds = dsMockUtils.createMockBTreeSet([rawPortfolioId, rawPortfolioId]);
+
+    when(portfolioIdsToBtreeSetSpy)
+      .calledWith([rawPortfolioId, rawPortfolioId], mockContext)
+      .mockReturnValue(rawPortfolioIds);
   });
 
   afterEach(() => {
@@ -290,7 +300,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     expect(result).toEqual({
       transaction,
       feeMultiplier: new BigNumber(2),
-      args: [rawInstructionId, [rawPortfolioId, rawPortfolioId], mockAffirmCount],
+      args: [rawInstructionId, rawPortfolioIds, mockAffirmCount],
       resolver: expect.objectContaining({ id }),
     });
   });
@@ -499,6 +509,9 @@ describe('modifyInstructionAffirmation procedure', () => {
       );
       receiptDetailsToMeshReceiptDetailsSpy.mockReturnValue([]);
 
+      const emptySet = dsMockUtils.createMockBTreeSet([]);
+      when(portfolioIdsToBtreeSetSpy).calledWith([], mockContext).mockReturnValue(emptySet);
+
       const proc = procedureMockUtils.getInstance<
         ModifyInstructionAffirmationParams,
         Instruction,
@@ -513,7 +526,7 @@ describe('modifyInstructionAffirmation procedure', () => {
 
       expect(result).toEqual({
         transaction,
-        args: [rawInstructionId, [], [], mockAffirmCount],
+        args: [rawInstructionId, [], emptySet, mockAffirmCount],
         resolver: expect.objectContaining({ id }),
       });
     });
@@ -693,7 +706,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     expect(result).toEqual({
       transaction,
       feeMultiplier: new BigNumber(2),
-      args: [rawInstructionId, [rawPortfolioId, rawPortfolioId], mockAffirmCount],
+      args: [rawInstructionId, rawPortfolioIds, mockAffirmCount],
       resolver: expect.objectContaining({ id }),
     });
   });

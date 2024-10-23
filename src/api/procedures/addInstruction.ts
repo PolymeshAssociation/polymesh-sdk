@@ -52,6 +52,7 @@ import {
   legToNonFungibleLeg,
   legToOffChainLeg,
   nftToMeshNft,
+  portfolioIdsToBtreeSet,
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
@@ -94,7 +95,7 @@ type InternalAddAndAffirmInstructionParams = [
   u64 | null,
   u64 | null,
   PolymeshPrimitivesSettlementLeg[],
-  PolymeshPrimitivesIdentityIdPortfolioId[],
+  BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>,
   PolymeshPrimitivesMemo | null,
   BTreeSet<PolymeshPrimitivesIdentityId>
 ][];
@@ -477,8 +478,11 @@ async function getTxArgsAndErrors(
           rawTradeDate,
           rawValueDate,
           rawLegs,
-          portfoliosToAffirm[i].map(portfolio =>
-            portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
+          portfolioIdsToBtreeSet(
+            portfoliosToAffirm[i].map(portfolio =>
+              portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
+            ),
+            context
           ),
           rawInstructionMemo,
           rawMediators,

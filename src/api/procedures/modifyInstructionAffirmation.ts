@@ -1,4 +1,4 @@
-import { Option, u64, Vec } from '@polkadot/types';
+import { BTreeSet, Option, u64, Vec } from '@polkadot/types';
 import {
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesSettlementAffirmationCount,
@@ -42,6 +42,7 @@ import {
   dateToMoment,
   mediatorAffirmationStatusToStatus,
   meshAffirmationStatusToAffirmationStatus,
+  portfolioIdsToBtreeSet,
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolioId,
   receiptDetailsToMeshReceiptDetails,
@@ -334,12 +335,16 @@ export async function prepareModifyInstructionAffirmation(
   let errorMessage: string;
   let transaction:
     | PolymeshTx<
-        [u64, PolymeshPrimitivesIdentityIdPortfolioId[], PolymeshPrimitivesSettlementAssetCount]
+        [
+          u64,
+          BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>,
+          PolymeshPrimitivesSettlementAssetCount
+        ]
       >
     | PolymeshTx<
         [
           u64,
-          PolymeshPrimitivesIdentityIdPortfolioId[],
+          BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>,
           PolymeshPrimitivesSettlementAffirmationCount
         ]
       >
@@ -349,7 +354,7 @@ export async function prepareModifyInstructionAffirmation(
         [
           u64,
           Vec<PolymeshPrimitivesSettlementReceiptDetails>,
-          Vec<PolymeshPrimitivesIdentityIdPortfolioId>,
+          BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>,
           Option<PolymeshPrimitivesSettlementAffirmationCount>
         ]
       >
@@ -460,7 +465,12 @@ export async function prepareModifyInstructionAffirmation(
     return {
       transaction,
       resolver: instruction,
-      args: [rawInstructionId, rawReceiptDetails, validPortfolioIds, rawAffirmCount],
+      args: [
+        rawInstructionId,
+        rawReceiptDetails,
+        portfolioIdsToBtreeSet(validPortfolioIds, context),
+        rawAffirmCount,
+      ],
     };
   }
 
@@ -468,7 +478,7 @@ export async function prepareModifyInstructionAffirmation(
     transaction,
     resolver: instruction,
     feeMultiplier: senderLegAmount,
-    args: [rawInstructionId, validPortfolioIds, rawAffirmCount],
+    args: [rawInstructionId, portfolioIdsToBtreeSet(validPortfolioIds, context), rawAffirmCount],
   };
 }
 

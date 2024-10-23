@@ -309,6 +309,7 @@ import {
   permissionGroupIdentifierToAgentGroup,
   permissionsLikeToPermissions,
   permissionsToMeshPermissions,
+  portfolioIdsToBtreeSet,
   portfolioIdStringToPortfolio,
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolio,
@@ -9047,6 +9048,40 @@ describe('statUpdatesToBtreeStatUpdate', () => {
 
     const result = statUpdatesToBtreeStatUpdate(input, context);
     expect(result).toEqual([stat1, stat2]);
+  });
+});
+
+describe('portfolioIdsToBtreeSet', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    const rawPortfolioIds = [
+      dsMockUtils.createMockPortfolioId({
+        did: dsMockUtils.createMockIdentityId('someDid'),
+        kind: 'Default',
+      }),
+    ];
+
+    const mockPortfolioIdsSet = dsMockUtils.createMockBTreeSet(rawPortfolioIds);
+
+    when(context.createType)
+      .calledWith('BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>', rawPortfolioIds)
+      .mockReturnValue(mockPortfolioIdsSet);
+
+    const result = portfolioIdsToBtreeSet(rawPortfolioIds, context);
+    expect(result).toEqual(mockPortfolioIdsSet);
   });
 });
 

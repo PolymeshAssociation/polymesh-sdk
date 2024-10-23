@@ -91,6 +91,7 @@ describe('addInstruction procedure', () => {
   let legToNonFungibleLegSpy: jest.SpyInstance;
   let legToOffChainLegSpy: jest.SpyInstance;
   let identityToBtreeSetSpy: jest.SpyInstance;
+  let portfolioIdsToBtreeSetSpy: jest.SpyInstance;
   let venueId: BigNumber;
   let amount: BigNumber;
   let from: PortfolioLike;
@@ -133,6 +134,7 @@ describe('addInstruction procedure', () => {
   let rawOffChainLeg: PolymeshPrimitivesSettlementLeg;
   let rawMediatorSet: BTreeSet<PolymeshPrimitivesIdentityId>;
   let rawEmptyMediatorSet: BTreeSet<PolymeshPrimitivesIdentityId>;
+  let rawPortfolioIds: BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>;
 
   beforeAll(() => {
     dsMockUtils.initMocks({
@@ -168,6 +170,7 @@ describe('addInstruction procedure', () => {
     legToNonFungibleLegSpy = jest.spyOn(utilsConversionModule, 'legToNonFungibleLeg');
     legToOffChainLegSpy = jest.spyOn(utilsConversionModule, 'legToOffChainLeg');
     identityToBtreeSetSpy = jest.spyOn(utilsConversionModule, 'identitiesToBtreeSet');
+    portfolioIdsToBtreeSetSpy = jest.spyOn(utilsConversionModule, 'portfolioIdsToBtreeSet');
 
     venueId = new BigNumber(1);
     amount = new BigNumber(100);
@@ -202,6 +205,7 @@ describe('addInstruction procedure', () => {
       did: dsMockUtils.createMockIdentityId(to),
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
+    rawPortfolioIds = dsMockUtils.createMockBTreeSet([rawFrom, rawTo]);
     sender = entityMockUtils.getIdentityInstance({ did: 'sender' });
     receiver = entityMockUtils.getIdentityInstance({ did: 'receiver' });
     rawSenderIdentity = dsMockUtils.createMockIdentityId(sender.did);
@@ -370,6 +374,10 @@ describe('addInstruction procedure', () => {
       .mockReturnValue(rawMediatorSet);
 
     when(identityToBtreeSetSpy).calledWith([], mockContext).mockReturnValue(rawEmptyMediatorSet);
+
+    when(portfolioIdsToBtreeSetSpy)
+      .calledWith([rawFrom, rawTo], mockContext)
+      .mockReturnValue(rawPortfolioIds);
 
     args = {
       venueId,
@@ -904,7 +912,7 @@ describe('addInstruction procedure', () => {
             null,
             null,
             [rawLeg],
-            [rawFrom, rawTo],
+            rawPortfolioIds,
             null,
             rawMediatorSet,
           ],
@@ -987,6 +995,7 @@ describe('addInstruction procedure', () => {
       },
     });
     getCustodianMock.mockReturnValue({ did: fromDid });
+
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
       portfoliosToAffirm: [[fromPortfolio, toPortfolio]],
     });
@@ -1006,7 +1015,7 @@ describe('addInstruction procedure', () => {
             null,
             null,
             [undefined],
-            [rawFrom, rawTo],
+            rawPortfolioIds,
             null,
             rawEmptyMediatorSet,
           ],

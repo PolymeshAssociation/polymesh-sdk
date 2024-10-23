@@ -2690,11 +2690,10 @@ declare module '@polkadot/api-base/types/storage' {
         [PolymeshPrimitivesIdentityIdPortfolioId, u64]
       >;
       /**
-       * Array of venues created by an identity. Only needed for the UI. IdentityId -> Vec<venue_id>
        * Venues create by an identity.
        * Only needed for the UI.
        *
-       * identity -> venue_id ()
+       * identity -> venue_id -> ()
        **/
       userVenues: AugmentedQuery<
         ApiType,

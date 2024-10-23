@@ -3561,6 +3561,16 @@ export function identitiesToBtreeSet(
 /**
  * @hidden
  */
+export function portfolioIdsToBtreeSet(
+  rawPortfolioIds: PolymeshPrimitivesIdentityIdPortfolioId[],
+  context: Context
+): BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId> {
+  return context.createType('BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>', rawPortfolioIds);
+}
+
+/**
+ * @hidden
+ */
 export function identitiesSetToIdentities(
   identitySet: BTreeSet<PolymeshPrimitivesIdentityId>,
   context: Context

@@ -293,6 +293,7 @@ declare module '@polkadot/api-base/types/consts' {
       maxNumberOfNFTs: u32 & AugmentedConst<ApiType>;
       maxNumberOfNFTsPerLeg: u32 & AugmentedConst<ApiType>;
       maxNumberOfOffChainAssets: u32 & AugmentedConst<ApiType>;
+      maxNumberOfPortfolios: u32 & AugmentedConst<ApiType>;
       maxNumberOfVenueSigners: u32 & AugmentedConst<ApiType>;
     };
     staking: {

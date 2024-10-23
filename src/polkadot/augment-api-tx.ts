@@ -4945,14 +4945,7 @@ declare module '@polkadot/api-base/types/submittable' {
                 | string
                 | Uint8Array
               )[],
-          portfolios:
-            | Vec<PolymeshPrimitivesIdentityIdPortfolioId>
-            | (
-                | PolymeshPrimitivesIdentityIdPortfolioId
-                | { did?: any; kind?: any }
-                | string
-                | Uint8Array
-              )[],
+          portfolios: BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>,
           instructionMemo:
             | Option<PolymeshPrimitivesMemo>
             | null
@@ -4966,7 +4959,7 @@ declare module '@polkadot/api-base/types/submittable' {
           Option<u64>,
           Option<u64>,
           Vec<PolymeshPrimitivesSettlementLeg>,
-          Vec<PolymeshPrimitivesIdentityIdPortfolioId>,
+          BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>,
           Option<PolymeshPrimitivesMemo>
         ]
       >;
@@ -5008,14 +5001,7 @@ declare module '@polkadot/api-base/types/submittable' {
                 | string
                 | Uint8Array
               )[],
-          portfolios:
-            | Vec<PolymeshPrimitivesIdentityIdPortfolioId>
-            | (
-                | PolymeshPrimitivesIdentityIdPortfolioId
-                | { did?: any; kind?: any }
-                | string
-                | Uint8Array
-              )[],
+          portfolios: BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>,
           instructionMemo:
             | Option<PolymeshPrimitivesMemo>
             | null
@@ -5030,7 +5016,7 @@ declare module '@polkadot/api-base/types/submittable' {
           Option<u64>,
           Option<u64>,
           Vec<PolymeshPrimitivesSettlementLeg>,
-          Vec<PolymeshPrimitivesIdentityIdPortfolioId>,
+          BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>,
           Option<PolymeshPrimitivesMemo>,
           BTreeSet<PolymeshPrimitivesIdentityId>
         ]
@@ -5149,16 +5135,9 @@ declare module '@polkadot/api-base/types/submittable' {
       affirmInstruction: AugmentedSubmittable<
         (
           id: u64 | AnyNumber | Uint8Array,
-          portfolios:
-            | Vec<PolymeshPrimitivesIdentityIdPortfolioId>
-            | (
-                | PolymeshPrimitivesIdentityIdPortfolioId
-                | { did?: any; kind?: any }
-                | string
-                | Uint8Array
-              )[]
+          portfolios: BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>
         ) => SubmittableExtrinsic<ApiType>,
-        [u64, Vec<PolymeshPrimitivesIdentityIdPortfolioId>]
+        [u64, BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>]
       >;
       /**
        * Affirms the instruction as a mediator - should only be called by mediators, otherwise it will fail.
@@ -5191,14 +5170,7 @@ declare module '@polkadot/api-base/types/submittable' {
       affirmInstructionWithCount: AugmentedSubmittable<
         (
           id: u64 | AnyNumber | Uint8Array,
-          portfolios:
-            | Vec<PolymeshPrimitivesIdentityIdPortfolioId>
-            | (
-                | PolymeshPrimitivesIdentityIdPortfolioId
-                | { did?: any; kind?: any }
-                | string
-                | Uint8Array
-              )[],
+          portfolios: BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>,
           numberOfAssets:
             | Option<PolymeshPrimitivesSettlementAffirmationCount>
             | null
@@ -5209,7 +5181,7 @@ declare module '@polkadot/api-base/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>,
         [
           u64,
-          Vec<PolymeshPrimitivesIdentityIdPortfolioId>,
+          BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>,
           Option<PolymeshPrimitivesSettlementAffirmationCount>
         ]
       >;
@@ -5242,19 +5214,12 @@ declare module '@polkadot/api-base/types/submittable' {
                 | string
                 | Uint8Array
               )[],
-          portfolios:
-            | Vec<PolymeshPrimitivesIdentityIdPortfolioId>
-            | (
-                | PolymeshPrimitivesIdentityIdPortfolioId
-                | { did?: any; kind?: any }
-                | string
-                | Uint8Array
-              )[]
+          portfolios: BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>
         ) => SubmittableExtrinsic<ApiType>,
         [
           u64,
           Vec<PolymeshPrimitivesSettlementReceiptDetails>,
-          Vec<PolymeshPrimitivesIdentityIdPortfolioId>
+          BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>
         ]
       >;
       /**
@@ -5289,14 +5254,7 @@ declare module '@polkadot/api-base/types/submittable' {
                 | string
                 | Uint8Array
               )[],
-          portfolios:
-            | Vec<PolymeshPrimitivesIdentityIdPortfolioId>
-            | (
-                | PolymeshPrimitivesIdentityIdPortfolioId
-                | { did?: any; kind?: any }
-                | string
-                | Uint8Array
-              )[],
+          portfolios: BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>,
           numberOfAssets:
             | Option<PolymeshPrimitivesSettlementAffirmationCount>
             | null
@@ -5308,7 +5266,7 @@ declare module '@polkadot/api-base/types/submittable' {
         [
           u64,
           Vec<PolymeshPrimitivesSettlementReceiptDetails>,
-          Vec<PolymeshPrimitivesIdentityIdPortfolioId>,
+          BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>,
           Option<PolymeshPrimitivesSettlementAffirmationCount>
         ]
       >;
@@ -5580,16 +5538,9 @@ declare module '@polkadot/api-base/types/submittable' {
       withdrawAffirmation: AugmentedSubmittable<
         (
           id: u64 | AnyNumber | Uint8Array,
-          portfolios:
-            | Vec<PolymeshPrimitivesIdentityIdPortfolioId>
-            | (
-                | PolymeshPrimitivesIdentityIdPortfolioId
-                | { did?: any; kind?: any }
-                | string
-                | Uint8Array
-              )[]
+          portfolios: BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>
         ) => SubmittableExtrinsic<ApiType>,
-        [u64, Vec<PolymeshPrimitivesIdentityIdPortfolioId>]
+        [u64, BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>]
       >;
       /**
        * Removes the mediator's affirmation for the instruction - should only be called by mediators, otherwise it will fail.
@@ -5618,14 +5569,7 @@ declare module '@polkadot/api-base/types/submittable' {
       withdrawAffirmationWithCount: AugmentedSubmittable<
         (
           id: u64 | AnyNumber | Uint8Array,
-          portfolios:
-            | Vec<PolymeshPrimitivesIdentityIdPortfolioId>
-            | (
-                | PolymeshPrimitivesIdentityIdPortfolioId
-                | { did?: any; kind?: any }
-                | string
-                | Uint8Array
-              )[],
+          portfolios: BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>,
           numberOfAssets:
             | Option<PolymeshPrimitivesSettlementAffirmationCount>
             | null
@@ -5636,7 +5580,7 @@ declare module '@polkadot/api-base/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>,
         [
           u64,
-          Vec<PolymeshPrimitivesIdentityIdPortfolioId>,
+          BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>,
           Option<PolymeshPrimitivesSettlementAffirmationCount>
         ]
       >;
