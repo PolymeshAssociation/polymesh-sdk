@@ -40,7 +40,7 @@ import {
 } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import { isFungibleLegBuilder, isNftLegBuilder, isOffChainLeg } from '~/utils';
-import { MAX_LEGS_LENGTH } from '~/utils/constants';
+import { BTREE_SET_PORTFOLIO_ID_SPEC_VERSION, MAX_LEGS_LENGTH } from '~/utils/constants';
 import {
   assetToMeshAssetIdWithKey,
   bigNumberToBalance,
@@ -95,7 +95,7 @@ type InternalAddAndAffirmInstructionParams = [
   u64 | null,
   u64 | null,
   PolymeshPrimitivesSettlementLeg[],
-  BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>,
+  BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId> | PolymeshPrimitivesIdentityIdPortfolioId[],
   PolymeshPrimitivesMemo | null,
   BTreeSet<PolymeshPrimitivesIdentityId>
 ][];
@@ -472,18 +472,18 @@ async function getTxArgsAndErrors(
       ]);
 
       if (portfoliosToAffirm[i].length) {
+        const rawPortfolioIds = portfoliosToAffirm[i].map(portfolio =>
+          portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
+        );
         addAndAffirmInstructionParams.push([
           rawVenueId,
           rawSettlementType,
           rawTradeDate,
           rawValueDate,
           rawLegs,
-          portfolioIdsToBtreeSet(
-            portfoliosToAffirm[i].map(portfolio =>
-              portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
-            ),
-            context
-          ),
+          context.specVersion >= BTREE_SET_PORTFOLIO_ID_SPEC_VERSION
+            ? portfolioIdsToBtreeSet(rawPortfolioIds, context)
+            : rawPortfolioIds,
           rawInstructionMemo,
           rawMediators,
         ]);
@@ -658,7 +658,8 @@ export async function prepareAddInstruction(
   };
 
   const addAndAffirmTx = {
-    transaction: settlement.addAndAffirmWithMediators,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    transaction: settlement.addAndAffirmWithMediators as any,
     argsArray: addAndAffirmInstructionParams,
   };
 

@@ -129,6 +129,8 @@ export class Context {
 
   public isV6 = false;
 
+  public specVersion: number;
+
   private readonly unsubChainVersion: UnsubscribePromise;
 
   /**
@@ -141,13 +143,14 @@ export class Context {
     this.polymeshApi = polymeshApi;
     this.ss58Format = ss58Format;
 
-    this.isV6 = !('tickerAssetId' in polymeshApi.query.asset);
+    this.specVersion = polymeshApi.runtimeVersion.specVersion.toNumber();
+    this.isV6 = this.specVersion < 7000000;
 
     this.unsubChainVersion = polymeshApi.query.system.lastRuntimeUpgrade(upgrade => {
       /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
       if (upgrade.isSome) {
-        const { specVersion } = upgrade.unwrap();
-        this.isV6 = specVersion.toNumber() < 7000000;
+        this.specVersion = upgrade.unwrap().specVersion.toNumber();
+        this.isV6 = this.specVersion < 7000000;
       }
     });
   }

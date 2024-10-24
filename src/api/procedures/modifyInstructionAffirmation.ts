@@ -35,6 +35,7 @@ import {
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { isOffChainLeg } from '~/utils';
+import { BTREE_SET_PORTFOLIO_ID_SPEC_VERSION } from '~/utils/constants';
 import {
   assetCountToRaw,
   bigNumberToU64,
@@ -461,16 +462,18 @@ export async function prepareModifyInstructionAffirmation(
     rawPortfolioIds
   );
 
+  let portfolioIds;
+  if (context.specVersion >= BTREE_SET_PORTFOLIO_ID_SPEC_VERSION) {
+    portfolioIds = portfolioIdsToBtreeSet(validPortfolioIds, context);
+  } else {
+    portfolioIds = validPortfolioIds;
+  }
+
   if (transaction === settlementTx.affirmWithReceiptsWithCount) {
     return {
       transaction,
       resolver: instruction,
-      args: [
-        rawInstructionId,
-        rawReceiptDetails,
-        portfolioIdsToBtreeSet(validPortfolioIds, context),
-        rawAffirmCount,
-      ],
+      args: [rawInstructionId, rawReceiptDetails, portfolioIds, rawAffirmCount],
     };
   }
 
@@ -478,7 +481,7 @@ export async function prepareModifyInstructionAffirmation(
     transaction,
     resolver: instruction,
     feeMultiplier: senderLegAmount,
-    args: [rawInstructionId, portfolioIdsToBtreeSet(validPortfolioIds, context), rawAffirmCount],
+    args: [rawInstructionId, portfolioIds, rawAffirmCount],
   };
 }
 

@@ -195,3 +195,5 @@ export const GLOBAL_TOKEN_URI_NAME = 'tokenUri';
 export const GLOBAL_BASE_TOKEN_URI_NAME = 'baseTokenUri';
 
 export const ASSET_ID_PREFIX = 'modlpy/pallet_asset';
+
+export const BTREE_SET_PORTFOLIO_ID_SPEC_VERSION = 7000004;
