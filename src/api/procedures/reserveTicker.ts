@@ -29,7 +29,6 @@ export async function prepareReserveTicker(
   const {
     context: {
       polymeshApi: { tx },
-      isV6,
     },
     context,
   } = this;
@@ -72,15 +71,8 @@ export async function prepareReserveTicker(
     }
   }
 
-  let transaction = tx.asset.registerUniqueTicker;
-  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-  if (isV6) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    transaction = (tx.asset as any).registerTicker; // NOSONAR
-  }
-
   return {
-    transaction,
+    transaction: tx.asset.registerUniqueTicker,
     args: [rawTicker],
     resolver: createTickerReservationResolver(context),
   };

@@ -8,7 +8,7 @@ import {
   middlewareEventDetailsToEventIdentifier,
   trustedIssuerToTrustedClaimIssuer,
 } from '~/utils/conversion';
-import { getAssetIdForMiddleware, optionize } from '~/utils/internal';
+import { asAssetId, optionize } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   did: string;
@@ -58,7 +58,7 @@ export class DefaultTrustedClaimIssuer extends Identity {
       context,
     } = this;
 
-    const middlewareAssetId = await getAssetIdForMiddleware(assetId, context);
+    const middlewareAssetId = await asAssetId(assetId, context);
     const {
       data: {
         trustedClaimIssuers: {

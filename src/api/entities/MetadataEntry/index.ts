@@ -31,10 +31,6 @@ export interface UniqueIdentifiers {
 
 export interface HumanReadable {
   id: string;
-  /**
-   * @deprecated in favour of `assetId`
-   */
-  ticker: string;
   assetId: string;
   type: MetadataType;
 }
@@ -239,7 +235,7 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
     const {
       id,
       type,
-      asset: { ticker },
+      asset: { id: assetId },
     } = this;
 
     const [exists, metadataValue] = await Promise.all([this.exists(), this.value()]);
@@ -251,7 +247,7 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
           code: ErrorCode.DataUnavailable,
           message: 'Metadata does not exists for the Asset',
           data: {
-            ticker,
+            assetId,
             type,
             id,
           },
@@ -302,7 +298,6 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
     const { asset, id, type } = this;
 
     return toHumanReadable({
-      ticker: asset,
       assetId: asset,
       id,
       type,

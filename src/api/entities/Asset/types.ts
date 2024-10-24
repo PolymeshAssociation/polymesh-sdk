@@ -210,14 +210,6 @@ export type MetadataKeyId =
   | {
       type: MetadataType.Local;
       id: BigNumber;
-      /**
-       * @deprecated in favour of `assetId`
-       */
-      ticker?: string;
-      /**
-       * Unique ID of the Asset
-       * @note For 6.x chain, this value is same as the ticker value
-       */
       assetId: string;
     };
 

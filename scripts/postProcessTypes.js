@@ -19,16 +19,3 @@ replace.sync({
     "\nimport { \n  PolymeshPrimitivesConditionConditionType,\n  PolymeshPrimitivesConditionTrustedIssuer \n} from '@polkadot/types/lookup';\nimport",
   ],
 });
-
-// TODO: This adds in 6.x support for the dual version. It should be removed when mainnet reaches 7.0
-replace.sync({
-  files: path.resolve(definitionsDir, 'types-lookup.ts'),
-  from: [
-    'readonly asAsset: PolymeshPrimitivesAssetAssetId;',
-    "readonly type: 'Identity' | 'Asset' | 'Custom'",
-  ],
-  to: [
-    'readonly asAsset: PolymeshPrimitivesAssetAssetId;\n  readonly isTicker: boolean;\n  readonly asTicker: PolymeshPrimitivesTicker;',
-    "readonly type: 'Identity' | 'Asset' | 'Ticker' | 'Custom'",
-  ],
-});

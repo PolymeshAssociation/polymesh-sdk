@@ -10,7 +10,6 @@ import {
 } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
-  assetToMeshAssetId,
   nftToMeshNft,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
@@ -40,7 +39,6 @@ export async function prepareNftControllerTransfer(
   const {
     context: {
       polymeshApi: { tx },
-      isV6,
     },
     storage: { did, destinationPortfolio },
     context,
@@ -84,22 +82,6 @@ export async function prepareNftControllerTransfer(
 
   const rawNfts = nftToMeshNft(collection, nftIds, context);
 
-  const rawAssetId = assetToMeshAssetId(collection, context);
-
-  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-  if (isV6) {
-    return {
-      transaction: tx.nft.controllerTransfer,
-      args: [
-        rawAssetId,
-        rawNfts,
-        portfolioIdToMeshPortfolioId(originPortfolioId, context),
-        portfolioToPortfolioKind(destinationPortfolio, context),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ] as any, // NOSONAR
-      resolver: undefined,
-    };
-  }
   return {
     transaction: tx.nft.controllerTransfer,
     args: [

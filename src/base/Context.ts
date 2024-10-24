@@ -6,7 +6,6 @@ import {
   QueryOptions,
 } from '@apollo/client/core';
 import { ApiPromise } from '@polkadot/api';
-import { UnsubscribePromise } from '@polkadot/api/types';
 import { getTypeDef, Option } from '@polkadot/types';
 import { AccountInfo, Header } from '@polkadot/types/interfaces';
 import {
@@ -57,6 +56,7 @@ import { Ensured } from '~/types/utils';
 import { DEFAULT_GQL_PAGE_SIZE, MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   accountIdToString,
+  assetIdToString,
   assetToMeshAssetId,
   balanceToBigNumber,
   bigNumberToU32,
@@ -65,7 +65,6 @@ import {
   corporateActionIdentifierToCaId,
   distributionToDividendDistributionParams,
   identityIdToString,
-  meshAssetToAssetId,
   meshClaimToClaim,
   meshCorporateActionToCorporateActionParams,
   middlewareClaimToClaimData,
@@ -127,10 +126,6 @@ export class Context {
 
   private _isArchiveNodeResult?: boolean;
 
-  public isV6 = false;
-
-  private readonly unsubChainVersion: UnsubscribePromise;
-
   /**
    * @hidden
    */
@@ -140,16 +135,6 @@ export class Context {
     this._middlewareApi = middlewareApiV2;
     this.polymeshApi = polymeshApi;
     this.ss58Format = ss58Format;
-
-    this.isV6 = !('tickerAssetId' in polymeshApi.query.asset);
-
-    this.unsubChainVersion = polymeshApi.query.system.lastRuntimeUpgrade(upgrade => {
-      /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
-      if (upgrade.isSome) {
-        const { specVersion } = upgrade.unwrap();
-        this.isV6 = specVersion.toNumber() < 7000000;
-      }
-    });
   }
 
   /**
@@ -789,7 +774,7 @@ export class Context {
           corporateAction,
         ]) => {
           const localId = u32ToBigNumber(rawId);
-          const assetId = meshAssetToAssetId(rawAssetId, this);
+          const assetId = assetIdToString(rawAssetId);
           const caId = corporateActionIdentifierToCaId(
             { asset: new FungibleAsset({ assetId }, this), localId },
             this
@@ -917,7 +902,7 @@ export class Context {
             issuedAt: momentToDate(issuanceDate),
             lastUpdatedAt: momentToDate(lastUpdateDate),
             expiry,
-            claim: meshClaimToClaim(claim, this),
+            claim: meshClaimToClaim(claim),
           });
         }
       });
@@ -1173,9 +1158,6 @@ export class Context {
       ({ middlewareApi } = this);
     }
 
-    const unsub = await this.unsubChainVersion;
-    unsub();
-
     this.isDisconnected = true;
 
     if (middlewareApi) {
@@ -1194,7 +1176,6 @@ export class Context {
    *   Context to Procedures with different signing Accounts
    */
   public clone(): Context {
-    // NOSONAR
     return clone(this);
   }
 

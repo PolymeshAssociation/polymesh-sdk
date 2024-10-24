@@ -13,10 +13,6 @@ import { createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
 export interface HumanReadable {
   id: string;
-  /**
-   * @deprecated in favour of `assetId`
-   */
-  ticker: string;
   assetId: string;
 }
 
@@ -83,10 +79,7 @@ export class CustomPermissionGroup extends PermissionGroup {
 
     const rawGroupPermissions = await externalAgents.groupPermissions(rawAssetId, rawAgId);
 
-    const transactions = extrinsicPermissionsToTransactionPermissions(
-      rawGroupPermissions.unwrap(),
-      context
-    );
+    const transactions = extrinsicPermissionsToTransactionPermissions(rawGroupPermissions.unwrap());
 
     const transactionGroups = transactionPermissionsToTxGroups(transactions);
 

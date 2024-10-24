@@ -51,13 +51,13 @@ describe('DividendDistribution class', () => {
   let expiryDate: Date | null;
   let paymentDate: Date;
   let dividendDistribution: DividendDistribution;
-  let getAssetIdForMiddlewareSpy: jest.SpyInstance;
+  let asAssetIdSpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    getAssetIdForMiddlewareSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware');
+    asAssetIdSpy = jest.spyOn(utilsInternalModule, 'asAssetId');
   });
 
   beforeEach(() => {
@@ -125,7 +125,7 @@ describe('DividendDistribution class', () => {
         })
       ),
     });
-    when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
+    when(asAssetIdSpy).calledWith(assetId, context).mockResolvedValue(assetId);
   });
 
   afterEach(() => {
@@ -654,7 +654,6 @@ describe('DividendDistribution class', () => {
       };
       expect(dividendDistribution.toHuman()).toEqual({
         id: '1',
-        ticker: '0x1234',
         assetId: '0x1234',
         declarationDate: '1987-10-14T00:00:00.000Z',
         defaultTaxWithholding: '0.123456',

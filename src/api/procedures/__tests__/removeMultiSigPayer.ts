@@ -70,24 +70,6 @@ describe('removeMultiSigPayer procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should throw an error if the chain is on v6', () => {
-    mockContext.isV6 = true;
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      currentPayer: null,
-      isMultiSigSigner: true,
-      signingIdentity,
-    });
-
-    const expectedError = new PolymeshError({
-      code: ErrorCode.General,
-      message: 'MultiSig payers are not supported on v6 chains',
-    });
-
-    return expect(prepareRemoveMultiSigPayer.call(proc, { multiSig })).rejects.toThrow(
-      expectedError
-    );
-  });
-
   it('should throw an error if there is no payer set for the MultiSig', () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       currentPayer: null,

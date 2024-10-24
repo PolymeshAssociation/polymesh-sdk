@@ -23,13 +23,7 @@ import {
   middlewarePortfolioToPortfolio,
   portfolioIdStringToPortfolio,
 } from '~/utils/conversion';
-import {
-  calculateNextKey,
-  createProcedureMethod,
-  getAssetIdForMiddleware,
-  getAssetIdFromMiddleware,
-  optionize,
-} from '~/utils/internal';
+import { asAssetId, calculateNextKey, createProcedureMethod, optionize } from '~/utils/internal';
 
 import { FungibleSettlements } from '../Base/Settlements';
 import { UniqueIdentifiers } from '../types';
@@ -85,7 +79,7 @@ export class FungibleAsset extends BaseAsset {
   public async createdAt(): Promise<EventIdentifier | null> {
     const { id, context } = this;
 
-    const middlewareAssetId = await getAssetIdForMiddleware(id, context);
+    const middlewareAssetId = await asAssetId(id, context);
 
     const {
       data: {
@@ -148,7 +142,7 @@ export class FungibleAsset extends BaseAsset {
   public async getOperationHistory(): Promise<HistoricAgentOperation[]> {
     const { context, id: assetId } = this;
 
-    const middlewareAssetId = await getAssetIdForMiddleware(assetId, context);
+    const middlewareAssetId = await asAssetId(assetId, context);
 
     const {
       data: {
@@ -183,7 +177,7 @@ export class FungibleAsset extends BaseAsset {
     const { context, id } = this;
     const { size, start } = opts;
 
-    const middlewareAssetId = await getAssetIdForMiddleware(id, context);
+    const middlewareAssetId = await asAssetId(id, context);
 
     const {
       data: {
@@ -217,10 +211,8 @@ export class FungibleAsset extends BaseAsset {
       const fromPortfolio = optionize(portfolioIdStringToPortfolio)(fromPortfolioId);
       const toPortfolio = optionize(portfolioIdStringToPortfolio)(toPortfolioId);
 
-      const assetId = getAssetIdFromMiddleware(asset, context);
-
       data.push({
-        asset: new FungibleAsset({ assetId }, context),
+        asset: new FungibleAsset({ assetId: asset!.id }, context),
         amount: new BigNumber(amount).shiftedBy(-6),
         event: eventId,
         from: optionize(middlewarePortfolioToPortfolio)(fromPortfolio, context),
@@ -255,25 +247,13 @@ export class FungibleAsset extends BaseAsset {
         polymeshApi: {
           query: { asset, nft },
         },
-        isV6,
       },
     } = this;
     const rawAssetId = assetToMeshAssetId(this, context);
 
-    let collectionsStorage = nft.collectionAsset;
-    let tokensStorage = asset.assets;
-
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      collectionsStorage = (nft as any).collectionTicker; // NOSONAR
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tokensStorage = (asset as any).tokens; // NOSONAR
-    }
-
     const [tokenSize, nftId] = await Promise.all([
-      tokensStorage.size(rawAssetId),
-      collectionsStorage(rawAssetId),
+      asset.assets.size(rawAssetId),
+      nft.collectionAsset(rawAssetId),
     ]);
 
     return !tokenSize.isZero() && nftId.isZero();

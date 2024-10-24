@@ -1,4 +1,4 @@
-import { DispatchError, DispatchResult } from '@polkadot/types/interfaces/system';
+import { DispatchError } from '@polkadot/types/interfaces/system';
 import { Result, Vec } from '@polkadot/types-codec';
 import BigNumber from 'bignumber.js';
 
@@ -9,30 +9,17 @@ import {
   FungibleAsset,
   Namespace,
   Nft,
-  PolymeshError,
   toggleAssetPreApproval,
 } from '~/internal';
-import {
-  CanTransferGranularReturn,
-  ComplianceReport,
-  TransferCondition,
-} from '~/polkadot/polymesh';
-import {
-  ErrorCode,
-  NftCollection,
-  NoArgsProcedureMethod,
-  PortfolioLike,
-  TransferBreakdown,
-} from '~/types';
+import { ComplianceReport, TransferCondition } from '~/polkadot/polymesh';
+import { NftCollection, NoArgsProcedureMethod, PortfolioLike, TransferBreakdown } from '~/types';
 import { isFungibleAsset } from '~/utils';
 import {
   assetToMeshAssetId,
   bigNumberToBalance,
   booleanToBool,
-  granularCanTransferResultToTransferBreakdown,
   nftToMeshNft,
   portfolioIdToMeshPortfolioId,
-  portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
   stringToIdentityId,
   transferReportToTransferBreakdown,
@@ -109,7 +96,6 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
       parent,
       context: {
         polymeshApi: { call },
-        isV6,
       },
       context,
     } = this;
@@ -123,14 +109,10 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
     let amount = new BigNumber(0);
     const fromPortfolioId = portfolioLikeToPortfolioId(from);
     const toPortfolioId = portfolioLikeToPortfolioId(to);
-    const fromPortfolio = portfolioIdToPortfolio(fromPortfolioId, context);
-    const toPortfolio = portfolioIdToPortfolio(toPortfolioId, context);
 
-    const [, , fromCustodian, toCustodian] = await Promise.all([
+    await Promise.all([
       assertPortfolioExists(fromPortfolioId, context),
       assertPortfolioExists(toPortfolioId, context),
-      fromPortfolio.getCustodian(),
-      toPortfolio.getCustodian(),
     ]);
 
     if (isFungibleAsset(parent)) {
@@ -141,48 +123,6 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
     const rawToPortfolio = portfolioIdToMeshPortfolioId(toPortfolioId, context);
 
     const rawAssetId = assetToMeshAssetId(parent, context);
-
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      let granularResult: CanTransferGranularReturn;
-      let nftResult: DispatchResult | undefined;
-
-      if ('amount' in args) {
-        amount = args.amount;
-        ({ isDivisible } = await parent.details());
-        granularResult = await assetApi.canTransferGranular<CanTransferGranularReturn>(
-          stringToIdentityId(fromCustodian.did, context),
-          rawFromPortfolio,
-          stringToIdentityId(toCustodian.did, context),
-          rawToPortfolio,
-          rawAssetId,
-          bigNumberToBalance(amount, context, isDivisible)
-        );
-      } else {
-        const rawNfts = nftToMeshNft(parent, args.nfts, context);
-        [granularResult, nftResult] = await Promise.all([
-          assetApi.canTransferGranular<CanTransferGranularReturn>(
-            stringToIdentityId(fromCustodian.did, context),
-            rawFromPortfolio,
-            stringToIdentityId(toCustodian.did, context),
-            rawToPortfolio,
-            rawAssetId,
-            bigNumberToBalance(amount, context, isDivisible)
-          ),
-          nftApi.validateNftTransfer<DispatchResult>(rawFromPortfolio, rawToPortfolio, rawNfts),
-        ]);
-      }
-
-      if (!granularResult.isOk) {
-        throw new PolymeshError({
-          code: ErrorCode.LimitExceeded,
-          message:
-            'RPC result from "asset.canTransferGranular" was not OK. Execution meter was likely exceeded',
-        });
-      }
-
-      return granularCanTransferResultToTransferBreakdown(granularResult.asOk, nftResult, context);
-    }
 
     let granularResult: Vec<DispatchError> | undefined;
     let nftResult: Vec<DispatchError> | undefined;

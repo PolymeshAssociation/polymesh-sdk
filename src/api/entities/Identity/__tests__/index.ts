@@ -103,7 +103,6 @@ describe('Identity class', () => {
   let stringToAssetIdSpy: jest.SpyInstance;
   let u64ToBigNumberSpy: jest.SpyInstance<BigNumber, [u64]>;
   let getAccountSpy: jest.SpyInstance<Promise<Account>, [{ address: string }, Context]>;
-  let getAssetIdFromMiddlewareSpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -113,7 +112,6 @@ describe('Identity class', () => {
     identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
     stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
     u64ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u64ToBigNumber');
-    getAssetIdFromMiddlewareSpy = jest.spyOn(utilsInternalModule, 'getAssetIdFromMiddleware');
   });
 
   beforeEach(() => {
@@ -602,12 +600,6 @@ describe('Identity class', () => {
         },
       });
 
-      assetIds.forEach(assetId =>
-        when(getAssetIdFromMiddlewareSpy)
-          .calledWith({ id: assetId }, context)
-          .mockReturnValue(assetId)
-      );
-
       const result = await identity.getTrustingAssets();
 
       expect(result[0].id).toBe(assetIds[0]);
@@ -622,11 +614,6 @@ describe('Identity class', () => {
     it('should return a list of Assets', async () => {
       const identity = new Identity({ did }, context);
 
-      assetIds.forEach(assetId =>
-        when(getAssetIdFromMiddlewareSpy)
-          .calledWith({ id: assetId }, context)
-          .mockReturnValue(assetId)
-      );
       dsMockUtils.createApolloQueryMock(assetHoldersQuery({ identityId: did }), {
         assetHolders: {
           nodes: assetIds.map(assetId => ({ asset: { id: assetId } })),
@@ -671,12 +658,6 @@ describe('Identity class', () => {
 
     it('should return a list of HeldNfts', async () => {
       const identity = new Identity({ did }, context);
-
-      assetIds.forEach(assetId =>
-        when(getAssetIdFromMiddlewareSpy)
-          .calledWith({ id: assetId }, context)
-          .mockReturnValue(assetId)
-      );
 
       dsMockUtils.createApolloQueryMock(nftHoldersQuery({ identityId: did }), {
         nftHolders: {

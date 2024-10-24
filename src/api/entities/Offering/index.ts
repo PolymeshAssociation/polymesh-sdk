@@ -30,9 +30,9 @@ import {
   fundraiserToOfferingDetails,
 } from '~/utils/conversion';
 import {
+  asAssetId,
   calculateNextKey,
   createProcedureMethod,
-  getAssetIdForMiddleware,
   toHumanReadable,
 } from '~/utils/internal';
 
@@ -45,10 +45,6 @@ export interface UniqueIdentifiers {
 
 export interface HumanReadable {
   id: string;
-  /**
-   * @deprecated in favour of `assetId`
-   */
-  ticker: string;
   assetId: string;
 }
 
@@ -223,7 +219,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
       asset: { id: assetId },
     } = this;
 
-    const middlewareAssetId = await getAssetIdForMiddleware(assetId, context);
+    const middlewareAssetId = await asAssetId(assetId, context);
 
     const { size, start } = opts;
 
@@ -282,7 +278,6 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
     const { asset, id } = this;
 
     return toHumanReadable({
-      ticker: asset,
       assetId: asset,
       id,
     });
