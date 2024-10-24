@@ -359,6 +359,16 @@ export enum TransferError {
    * occurs if some statistics transfer condition would prevent the transfer
    */
   TransferNotAllowed = 'TransferNotAllowed',
+
+  /**
+   * occurs if asset to be check for transfer, no longer exists
+   */
+  AssetDoesNotExists = 'AssetDoesNotExists',
+
+  /**
+   * occurs if receiver balance will overflow on receiving the transfer amount
+   */
+  BalanceOverflow = 'BalanceOverflow',
 }
 
 export interface AssetWithGroup {

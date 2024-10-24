@@ -3622,8 +3622,11 @@ export function assetDispatchErrorToTransferError(
   type ErrorCase = [IsError, TransferError];
 
   const record: ErrorCase[] = [
+    [assetErrors.NoSuchAsset, TransferError.AssetDoesNotExists],
     [assetErrors.InvalidGranularity, TransferError.InvalidGranularity],
     [assetErrors.SenderSameAsReceiver, TransferError.SelfTransfer],
+    [portfolioErrors.InvalidTransferSenderIdMatchesReceiverId, TransferError.SelfTransfer],
+    [assetErrors.BalanceOverflow, TransferError.BalanceOverflow],
     [assetErrors.InvalidTransferInvalidReceiverCDD, TransferError.InvalidReceiverCdd],
     [assetErrors.InvalidTransferInvalidSenderCDD, TransferError.InvalidSenderCdd],
     [assetErrors.InsufficientBalance, TransferError.InsufficientBalance],

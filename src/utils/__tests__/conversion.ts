@@ -4025,11 +4025,14 @@ describe('transferReportToTransferBreakdown', () => {
       InvalidTransferFrozenAsset: { is: jest.fn().mockReturnValue(false) },
       InvalidTransferComplianceFailure: { is: jest.fn().mockReturnValue(false) },
       InvalidTransfer: { is: jest.fn().mockReturnValue(false) },
+      NoSuchAsset: { is: jest.fn().mockReturnValue(false) },
+      BalanceOverflow: { is: jest.fn().mockReturnValue(false) },
     } as unknown as DecoratedErrors<'promise'>['asset'];
 
     context.polymeshApi.errors.portfolio = {
       PortfolioDoesNotExist: { is: jest.fn().mockReturnValue(false) },
       InsufficientPortfolioBalance: { is: jest.fn().mockReturnValue(true) },
+      InvalidTransferSenderIdMatchesReceiverId: { is: jest.fn().mockReturnValue(false) },
     } as unknown as DecoratedErrors<'promise'>['portfolio'];
 
     context.polymeshApi.errors.statistics = {
@@ -4106,11 +4109,14 @@ describe('assetDispatchErrorToTransferError', () => {
       InvalidTransferFrozenAsset: { is: jest.fn().mockReturnValue(false) },
       InvalidTransferComplianceFailure: { is: jest.fn().mockReturnValue(false) },
       InvalidTransfer: { is: jest.fn().mockReturnValue(false) },
+      NoSuchAsset: { is: jest.fn().mockReturnValue(false) },
+      BalanceOverflow: { is: jest.fn().mockReturnValue(false) },
     } as unknown as DecoratedErrors<'promise'>['asset'];
 
     context.polymeshApi.errors.portfolio = {
       PortfolioDoesNotExist: { is: jest.fn().mockReturnValue(false) },
       InsufficientPortfolioBalance: { is: jest.fn().mockReturnValue(false) },
+      InvalidTransferSenderIdMatchesReceiverId: { is: jest.fn().mockReturnValue(false) },
     } as unknown as DecoratedErrors<'promise'>['portfolio'];
 
     context.polymeshApi.errors.statistics = {
@@ -4161,6 +4167,22 @@ describe('assetDispatchErrorToTransferError', () => {
 
     expect(result).toEqual(TransferError.InsufficientBalance);
 
+    dsMockUtils.setErrorMock('asset', 'NoSuchAsset', {
+      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
+    });
+
+    result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.AssetDoesNotExists);
+
+    dsMockUtils.setErrorMock('asset', 'BalanceOverflow', {
+      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
+    });
+
+    result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.BalanceOverflow);
+
     dsMockUtils.setErrorMock('asset', 'InvalidTransferFrozenAsset', {
       returnValue: { is: jest.fn().mockReturnValueOnce(true) },
     });
@@ -4200,6 +4222,14 @@ describe('assetDispatchErrorToTransferError', () => {
     result = assetDispatchErrorToTransferError(mockError, context);
 
     expect(result).toEqual(TransferError.InsufficientPortfolioBalance);
+
+    dsMockUtils.setErrorMock('portfolio', 'InvalidTransferSenderIdMatchesReceiverId', {
+      returnValue: { is: jest.fn().mockReturnValueOnce(true) },
+    });
+
+    result = assetDispatchErrorToTransferError(mockError, context);
+
+    expect(result).toEqual(TransferError.SelfTransfer);
 
     dsMockUtils.setErrorMock('statistics', 'InvalidTransferStatisticsFailure', {
       returnValue: { is: jest.fn().mockReturnValueOnce(true) },
