@@ -682,6 +682,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       .calledWith(rawAffirmationStatus)
       .mockReturnValue(AffirmationStatus.Affirmed);
 
+    dsMockUtils.configureMocks({ contextOptions: { specVersion: 7000003 } });
     const proc = procedureMockUtils.getInstance<
       ModifyInstructionAffirmationParams,
       Instruction,
@@ -706,7 +707,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     expect(result).toEqual({
       transaction,
       feeMultiplier: new BigNumber(2),
-      args: [rawInstructionId, rawPortfolioIds, mockAffirmCount],
+      args: [rawInstructionId, [rawPortfolioId, rawPortfolioId], mockAffirmCount],
       resolver: expect.objectContaining({ id }),
     });
   });

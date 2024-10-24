@@ -83,10 +83,9 @@ describe('Context class', () => {
   beforeEach(() => {
     polymeshApi = dsMockUtils.getApiInstance();
 
-    polymeshApi.query.asset = {
-      ...polymeshApi.query.asset,
-      tickerAssetId: expect.any(Function),
-    };
+    dsMockUtils.setRuntimeVersion({
+      specVersion: dsMockUtils.createMockU32(new BigNumber(7000004)),
+    });
 
     dsMockUtils.setConstMock('system', 'ss58Prefix', {
       returnValue: dsMockUtils.createMockU8(new BigNumber(42)),

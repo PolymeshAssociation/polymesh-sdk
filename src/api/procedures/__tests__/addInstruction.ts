@@ -985,7 +985,7 @@ describe('addInstruction procedure', () => {
   });
 
   it('should handle NFT legs', async () => {
-    dsMockUtils.configureMocks({ contextOptions: { did: fromDid } });
+    dsMockUtils.configureMocks({ contextOptions: { did: fromDid, specVersion: 7000003 } });
     entityMockUtils.configureMocks({
       venueOptions: {
         exists: true,
@@ -1015,7 +1015,7 @@ describe('addInstruction procedure', () => {
             null,
             null,
             [undefined],
-            rawPortfolioIds,
+            [rawFrom, rawTo],
             null,
             rawEmptyMediatorSet,
           ],
