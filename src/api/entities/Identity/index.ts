@@ -41,6 +41,7 @@ import {
   GroupedInvolvedInstructions,
   HeldNfts,
   HistoricInstruction,
+  InstructionPartiesFilters,
   InstructionsByStatus,
   MultiSigSigners,
   NumberedPortfolio,
@@ -911,17 +912,21 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    * Retrieve all Instructions that have been associated with this Identity's DID
    *
    * @note uses the middleware V2
+   * @note supports pagination
+   *
    */
-  public async getHistoricalInstructions(): Promise<HistoricInstruction[]> {
+  public async getHistoricalInstructions(
+    filter?: Omit<InstructionPartiesFilters, 'identity'>
+  ): Promise<HistoricInstruction[]> {
     const { context, did } = this;
+
+    const query = await instructionPartiesQuery({ ...filter, identity: did }, context);
 
     const {
       data: {
         instructionParties: { nodes: instructionsResult },
       },
-    } = await context.queryMiddleware<Ensured<Query, 'instructionParties'>>(
-      instructionPartiesQuery(did)
-    );
+    } = await context.queryMiddleware<Ensured<Query, 'instructionParties'>>(query);
 
     return instructionsResult.map(({ instruction }) =>
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

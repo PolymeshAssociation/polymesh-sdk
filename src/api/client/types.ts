@@ -2,7 +2,9 @@ import { ApiOptions } from '@polkadot/api/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
-import { TxTag } from '~/types';
+import { Asset, Identity, InstructionStatusEnum, TxTag } from '~/types';
+
+export { InstructionStatusEnum };
 
 export interface ExtrinsicData {
   blockHash: string;
@@ -210,3 +212,46 @@ export type CustomClaimType = {
  * CustomClaimType with DID that registered the CustomClaimType
  */
 export type CustomClaimTypeWithDid = CustomClaimType & { did?: string };
+
+/**
+ * Filters for instructions
+ *
+ */
+export interface InstructionPartiesFilters {
+  /**
+   * The DID of the identity to filter by
+   */
+  identity?: string | Identity;
+  /**
+   * The asset ID to filter by
+   */
+  asset?: string | Asset;
+  /**
+   * The status to filter by
+   */
+  status?: InstructionStatusEnum;
+  /**
+   * The sender did to filter by
+   */
+  sender?: string | Identity;
+  /**
+   * The receiver did to filter by
+   */
+  receiver?: string | Identity;
+  /**
+   * The mediator did to filter by
+   */
+  mediator?: string | Identity;
+  /**
+   * The party did to filter by
+   */
+  party?: string | Identity;
+  /**
+   * The number of results to return
+   */
+  size?: BigNumber;
+  /**
+   * The number of results to skip
+   */
+  start?: BigNumber;
+}

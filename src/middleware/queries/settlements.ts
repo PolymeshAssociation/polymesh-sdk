@@ -2,17 +2,20 @@ import { DocumentNode, QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
+import { Context } from '~/internal';
 import { createArgsAndFilters } from '~/middleware/queries/common';
 import {
   Instruction,
   InstructionEvent,
   InstructionEventsOrderBy,
-  InstructionParty,
   InstructionsOrderBy,
+  InstructionStatusEnum,
   Leg,
   LegsOrderBy,
 } from '~/middleware/types';
+import { InstructionPartiesFilters } from '~/types';
 import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
+import { asAssetId, asDid } from '~/utils/internal';
 
 const instructionAttributes = `
           id
@@ -52,6 +55,14 @@ const instructionAttributes = `
 `;
 
 type InstructionArgs = 'id' | 'venueId' | 'status';
+
+type InstructionPartiesVariables = Partial<
+  Record<keyof Omit<InstructionPartiesFilters, 'status' | 'size' | 'start'>, string> & {
+    status?: InstructionStatusEnum;
+    size?: number;
+    start?: number;
+  }
+>;
 
 /**
  * Query to get event details about instruction events
@@ -148,30 +159,122 @@ export function instructionsQuery(
 /**
  * @hidden
  *
+ */
+export const buildInstructionPartiesFilter = async (
+  filters: InstructionPartiesFilters,
+  context: Context
+): Promise<{
+  args: string;
+  filter: string;
+  variables: InstructionPartiesVariables;
+}> => {
+  const { identity, asset, status, sender, receiver, mediator, party, size, start } = filters;
+
+  const args = ['$start: Int', '$size: Int'];
+  const baseFilter = [];
+  const instructionFilter = [];
+  const legsFilter = [];
+  const variables: InstructionPartiesVariables = {};
+
+  if (identity) {
+    args.push('$identity: String!');
+    baseFilter.push('identity: { equalTo: $identity }');
+    variables.identity = asDid(identity);
+  }
+
+  if (status) {
+    args.push('$status: InstructionStatusEnum!');
+    instructionFilter.push('status: { equalTo: $status }');
+    variables.status = status;
+  }
+
+  if (mediator) {
+    args.push('$mediator: String!');
+    instructionFilter.push('mediators: { containsKey: $mediator }');
+    variables.mediator = asDid(mediator);
+  }
+
+  if (party) {
+    args.push('$party: String!');
+    instructionFilter.push('parties: { some: { identity: { equalTo: $party } } }');
+    variables.party = asDid(party);
+  }
+
+  if (asset) {
+    args.push('$asset: String!');
+    legsFilter.push('assetId: { equalTo: $asset }');
+    variables.asset = await asAssetId(asset, context);
+  }
+
+  if (sender) {
+    args.push('$sender: String!');
+    legsFilter.push('from: { equalTo: $sender }');
+    variables.sender = asDid(sender);
+  }
+
+  if (receiver) {
+    args.push('$receiver: String!');
+    legsFilter.push('to: { equalTo: $receiver }');
+    variables.receiver = asDid(receiver);
+  }
+
+  if (legsFilter.length) {
+    instructionFilter.push(`legs: { ${legsFilter.join(', ')} }`);
+  }
+
+  if (instructionFilter.length) {
+    baseFilter.push(`instruction: { ${instructionFilter.join(', ')} }`);
+  }
+
+  if (size) {
+    variables.size = size.toNumber();
+  }
+
+  if (start) {
+    variables.start = start.toNumber();
+  }
+
+  return {
+    args: `(${args.join()})`,
+    filter: baseFilter.length ? `filter: { ${baseFilter.join(', ')} }` : '',
+    variables,
+  };
+};
+
+/**
+ * @hidden
+ *
  * Get Instructions where an identity is involved
  */
-export function instructionPartiesQuery(
-  identity: string
-): QueryOptions<QueryArgs<InstructionParty, 'identity'>> {
+export async function instructionPartiesQuery(
+  filters: InstructionPartiesFilters,
+  context: Context
+): Promise<QueryOptions<PaginatedQueryArgs<Omit<InstructionPartiesFilters, 'size' | 'start'>>>> {
+  const { args, filter, variables } = await buildInstructionPartiesFilter(filters, context);
+
   const query = gql`
-    query InstructionPartiesQuery($identity: String!)
+    query InstructionPartiesQuery
+    ${args}
      {
       instructionParties(
-        filter: { identity: { equalTo: $identity} }
+        ${filter}
         orderBy: [${LegsOrderBy.CreatedAtAsc}, ${LegsOrderBy.InstructionIdAsc}]
+        first: $size
+        offset: $start
       ) {
         nodes {
           instruction {
             ${instructionAttributes}
           }
         }
+        totalCount
       }
     }
   `;
 
   return {
     query,
-    variables: { identity },
+    variables,
   };
 }
 
