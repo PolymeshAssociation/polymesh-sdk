@@ -23,6 +23,7 @@ import {
   TxTags,
 } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization, TxWithArgs } from '~/types/internal';
+import { uuidToHex } from '~/utils';
 import {
   assetDocumentToDocument,
   bigNumberToBalance,
@@ -298,7 +299,7 @@ export async function prepareCreateAsset(
     assetId = ticker!;
   } else {
     assetId = await context.getSigningAccount().getNextAssetId();
-    rawAssetId = stringToAssetId(assetId, context);
+    rawAssetId = stringToAssetId(uuidToHex(assetId), context);
   }
 
   let transactions = [];

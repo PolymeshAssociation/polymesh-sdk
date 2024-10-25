@@ -110,7 +110,7 @@ describe('addTransferRestriction procedure', () => {
   let statCompareEqMock: jest.Mock;
   let stringToIdentityIdSpy: jest.SpyInstance;
   const did = 'someDid';
-  const assetId = '0x1234';
+  const assetId = '0x12341234123412341234123412341234';
   let asset: FungibleAsset;
 
   beforeAll(() => {

@@ -22,6 +22,7 @@ import {
   PortfolioLike,
   TransferBreakdown,
 } from '~/types';
+import { uuidToHex } from '~/utils';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -99,7 +100,7 @@ describe('Settlements class', () => {
 
     assetId = mockAsset.id;
     rawAccountId = dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID);
-    rawAssetId = dsMockUtils.createMockAssetId(assetId);
+    rawAssetId = dsMockUtils.createMockAssetId(uuidToHex(assetId));
     rawToDid = dsMockUtils.createMockIdentityId(toDid);
     toPortfolio = entityMockUtils.getDefaultPortfolioInstance({
       ...toPortfolioId,

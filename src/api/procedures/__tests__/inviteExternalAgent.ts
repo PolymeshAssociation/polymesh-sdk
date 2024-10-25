@@ -20,6 +20,7 @@ import { Account, AuthorizationRequest, Context, FungibleAsset, Identity } from 
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, PermissionType, SignerValue, TxTags } from '~/types';
+import { uuidToHex } from '~/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -72,8 +73,8 @@ describe('inviteExternalAgent procedure', () => {
     signerToStringSpy = jest.spyOn(utilsConversionModule, 'signerToString');
     stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
     signerValueToSignatorySpy = jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
-    assetId = '0x1234';
-    rawAssetId = dsMockUtils.createMockAssetId(assetId);
+    assetId = '12341234-1234-1234-1234-123412341234';
+    rawAssetId = dsMockUtils.createMockAssetId(uuidToHex(assetId));
     rawAgentGroup = dsMockUtils.createMockAgentGroup('Full');
     asset = entityMockUtils.getFungibleAssetInstance({ assetId });
     target = 'someDid';

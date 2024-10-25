@@ -11,7 +11,7 @@ import {
 describe('assetQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
     const variables = {
-      id: '0x1234',
+      id: '0x12341234123412341234123412341234',
     };
 
     const result = assetQuery(variables);

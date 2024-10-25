@@ -24,9 +24,7 @@ import type { Callback, Codec, Observable } from '@polkadot/types/types';
 import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import {
   hexAddPrefix,
-  hexHasPrefix,
   hexStripPrefix,
-  isHex,
   stringToHex,
   stringUpperFirst,
   u8aToHex,
@@ -154,6 +152,7 @@ import {
   transferRestrictionTypeToStatOpType,
   u64ToBigNumber,
 } from '~/utils/conversion';
+import { hexToUuid, isHexUuid, isUuid, uuidToHex } from '~/utils/strings';
 import {
   isEntity,
   isMultiClaimCondition,
@@ -1085,7 +1084,7 @@ export async function asBaseAsset(asset: string | BaseAsset, context: Context): 
     return new BaseAsset({ assetId: asset }, context);
   }
 
-  if (isHex(asset) && asset.length === 34) {
+  if (isUuid(asset)) {
     const ticker = await getTickerForAsset(asset, context);
     const baseAsset = new BaseAsset({ assetId: asset }, context);
     baseAsset.ticker = ticker;
@@ -1102,9 +1101,25 @@ export async function asBaseAsset(asset: string | BaseAsset, context: Context): 
 /**
  * @hidden
  */
+export function asUuid(id: string): string {
+  if (isHexUuid(id)) {
+    return hexToUuid(id);
+  }
+
+  return id;
+}
+
+/**
+ * @hidden
+ */
 export async function asAssetId(asset: string | BaseAsset, context: Context): Promise<string> {
-  const baseAsset = await asBaseAsset(asset, context);
-  return baseAsset.id;
+  if (asset instanceof BaseAsset) {
+    return asset.id;
+  }
+
+  const base = await asBaseAsset(asUuid(asset), context);
+
+  return base.id;
 }
 
 /**
@@ -1117,7 +1132,7 @@ export async function asAsset(asset: string | Asset, context: Context): Promise<
   if (typeof asset !== 'string') {
     assetId = asset.id;
   } else {
-    assetId = asset;
+    assetId = asUuid(asset);
   }
 
   const fungible = new FungibleAsset({ assetId }, context);
@@ -2308,6 +2323,10 @@ const getAssetIdForLegacyTicker = (ticker: string, context: Context): string => 
 
 /**
  * @hidden
+ *
+ * Used for querying middleware which stores asset ID in hex format
+ *
+ * @return assetId in hex format
  */
 export async function getAssetIdForMiddleware(
   assetIdOrTicker: string | BaseAsset,
@@ -2319,16 +2338,20 @@ export async function getAssetIdForMiddleware(
    */
   const assetId = await asAssetId(assetIdOrTicker, context);
 
-  if (!hexHasPrefix(assetId)) {
+  if (!isUuid(assetId)) {
     // this will only be true if chain 6.x is running
     return getAssetIdForLegacyTicker(assetId, context);
   }
 
-  return assetId;
+  return uuidToHex(assetId);
 }
 
 /**
  * @hidden
+ *
+ * used for converting assetId from SQ format to SDK format
+ *
+ * @returns asset ID as UUID format
  */
 export function getAssetIdFromMiddleware(
   assetIdAndTicker: Falsyable<Pick<MiddlewareAsset, 'id' | 'ticker'>>,
@@ -2339,5 +2362,6 @@ export function getAssetIdFromMiddleware(
   if (context.isV6) {
     return coerceHexToString(ticker!);
   }
-  return id;
+
+  return hexToUuid(id);
 }

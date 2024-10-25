@@ -30,7 +30,7 @@ jest.mock(
 );
 
 describe('modifyOfferingTimes procedure', () => {
-  const assetId = '0x1234';
+  const assetId = '0x12341234123412341234123412341234';
   const id = new BigNumber(1);
   const now = new Date();
   const newStart = new Date(now.getTime() + 700000);

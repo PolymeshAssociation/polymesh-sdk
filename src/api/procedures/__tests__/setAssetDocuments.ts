@@ -56,7 +56,7 @@ describe('setAssetDocuments procedure', () => {
     assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
     assetDocumentToDocumentSpy = jest.spyOn(utilsConversionModule, 'assetDocumentToDocument');
-    assetId = '0x1234';
+    assetId = '0x12341234123412341234123412341234';
     asset = entityMockUtils.getBaseAssetInstance({ assetId });
     documents = [
       {

@@ -47,6 +47,7 @@ import {
   TxTags,
 } from '~/types';
 import { tuple } from '~/types/utils';
+import { hexToUuid, uuidToHex } from '~/utils';
 import {
   CONFIDENTIAL_ASSETS_SUPPORTED_CALL,
   DUMMY_ACCOUNT_ID,
@@ -1903,7 +1904,9 @@ describe('compareStatsToInput', () => {
   const did = 'someDid';
   const issuer = entityMockUtils.getIdentityInstance({ did });
   const issuerId = dsMockUtils.createMockIdentityId(did);
-  const asset = entityMockUtils.getFungibleAssetInstance({ assetId: '0x1234' });
+  const asset = entityMockUtils.getFungibleAssetInstance({
+    assetId: '0x12341234123412341234123412341234',
+  });
 
   it('should return true if input matches stat', () => {
     const countStat = dsMockUtils.createMockStatisticsStatType({
@@ -2389,7 +2392,7 @@ describe('asFungibleAsset', () => {
 
   it('should create a new FungibleAsset given an asset ID', () => {
     const mockContext = dsMockUtils.getContextInstance();
-    const assetId = '0x1234';
+    const assetId = '0x12341234123412341234123412341234';
 
     const result = asFungibleAsset(assetId, mockContext);
 
@@ -2398,7 +2401,7 @@ describe('asFungibleAsset', () => {
 
   it('should create a new FungibleAsset given a BaseAsset', () => {
     const mockContext = dsMockUtils.getContextInstance();
-    const assetId = '0x1234';
+    const assetId = '0x12341234123412341234123412341234';
     const baseAsset = entityMockUtils.getBaseAssetInstance({ assetId });
 
     const result = asFungibleAsset(baseAsset, mockContext);
@@ -2411,7 +2414,7 @@ describe('asNftId', () => {
   it('should return a BigNumber when given an NFT', () => {
     const context = dsMockUtils.getContextInstance();
     const id = new BigNumber(1);
-    const assetId = '0x1234';
+    const assetId = '0x12341234123412341234123412341234';
     const nft = new Nft({ id, assetId }, context);
 
     const result = asNftId(nft);
@@ -2471,7 +2474,11 @@ describe('areSameClaims', () => {
 
     const secondClaim = {
       ...firstClaim,
-      scope: { type: ScopeType.Asset, value: '0x1234' },
+      scope: {
+        type: ScopeType.Asset,
+        assetId: '0x12341234123412341234123412341234',
+        value: '0x12341234123412341234123412341234',
+      },
     } as unknown as MiddlewareClaim;
 
     const result = areSameClaims(firstClaim, secondClaim, context);
@@ -2508,7 +2515,7 @@ describe('assertNoPendingAuthorizationExists', () => {
   let otherIssuer: Identity;
   let otherTarget: Identity;
   let authReqBase: Pick<AuthorizationRequest, 'authId' | 'expiry' | 'issuer' | 'target' | 'data'>;
-  const assetId = '0x1234';
+  const assetId = '0x12341234123412341234123412341234';
   const ticker = 'TICKER';
 
   beforeEach(() => {
@@ -2747,8 +2754,8 @@ describe('getTickerForAsset', () => {
   it('should return the ticker for an asset ID', async () => {
     const assetIdTickerMock = dsMockUtils.createQueryMock('asset', 'assetIdTicker');
 
-    const assetId = '0x1234';
-    const rawAssetId = dsMockUtils.createMockAssetId(assetId);
+    const assetId = '12341234-1234-1234-1234-123412341234';
+    const rawAssetId = dsMockUtils.createMockAssetId(uuidToHex(assetId));
 
     jest.spyOn(utilsConversionModule, 'stringToAssetId').mockReturnValue(rawAssetId);
     const ticker = 'SOME_TICKER';
@@ -2787,7 +2794,7 @@ describe('getAssetIdForTicker', () => {
   it('should return the assetId for a ticker', async () => {
     const tickerAssetIdMock = dsMockUtils.createQueryMock('asset', 'tickerAssetId');
 
-    const assetId = '0x1234';
+    const assetId = '0x12341234123412341234123412341234';
     const rawAssetId = dsMockUtils.createMockAssetId(assetId);
 
     const ticker = 'SOME_TICKER';
@@ -2801,7 +2808,7 @@ describe('getAssetIdForTicker', () => {
 
     const result = await getAssetIdForTicker(ticker, context);
 
-    expect(result).toEqual(assetId);
+    expect(result).toEqual(hexToUuid(assetId));
 
     when(tickerAssetIdMock).calledWith(rawTicker).mockResolvedValue(dsMockUtils.createMockOption());
 
@@ -2828,7 +2835,7 @@ describe('getAssetIdAndTicker', () => {
   });
 
   it('should return both assetId and ticker for an assetId', async () => {
-    const assetId = '0x1234';
+    const assetId = '12341234-1234-1234-1234-123412341234';
     const ticker = 'TICKER';
 
     dsMockUtils
@@ -2888,7 +2895,7 @@ describe('asBaseAsset', () => {
   });
 
   it('should return BaseAsset when asset ID is provided', async () => {
-    const baseAsset = '0x1234'.padEnd(34, '0');
+    const baseAsset = '12341234-1234-8234-8234-123412341234';
     const ticker = 'SOME_TICKER;';
 
     assetIdTickerMock.mockResolvedValue(
@@ -2901,7 +2908,7 @@ describe('asBaseAsset', () => {
   });
 
   it('should return BaseAsset when ticker is provided', async () => {
-    const assetId = '0x1234'.padEnd(34, '0');
+    const assetId = '0x12341234123412341234123412341234';
     const ticker = 'SOME_TICKER;';
 
     tickerAssetIdMock.mockResolvedValue(
@@ -2909,7 +2916,7 @@ describe('asBaseAsset', () => {
     );
     const result = await asBaseAsset(ticker, context);
 
-    expect(result.id).toEqual(assetId);
+    expect(result.id).toEqual(hexToUuid(assetId));
     expect(result.ticker).toEqual(ticker);
   });
 });
@@ -2936,7 +2943,7 @@ describe('getAssetIdForStats', () => {
   });
 
   it('should return both assetId for stats', () => {
-    const mockAssetId = dsMockUtils.createMockAssetId('0x1234');
+    const mockAssetId = dsMockUtils.createMockAssetId('0x12341234123412341234123412341234');
     assetToMeshAssetIdSpy.mockReturnValue(mockAssetId);
     let result = getAssetIdForStats(entityMockUtils.getFungibleAssetInstance(), context);
 
@@ -2972,10 +2979,12 @@ describe('getAssetIdForMiddleware', () => {
   });
 
   it('should return asset ID compatible with middleware', async () => {
-    const baseAsset = entityMockUtils.getBaseAssetInstance({ assetId: '0x1234' });
+    const baseAsset = entityMockUtils.getBaseAssetInstance({
+      assetId: '12341234-1234-8234-8234-123412341234',
+    });
     const result = await getAssetIdForMiddleware(baseAsset, context);
 
-    expect(result).toEqual('0x1234');
+    expect(result).toEqual('0x12341234123482348234123412341234');
   });
 
   it('should return asset ID for legacy ticker compatible with middleware', async () => {
@@ -3012,7 +3021,7 @@ describe('getAssetIdFromMiddleware', () => {
   });
 
   it('should return asset ID from middleware', async () => {
-    const assetId = '0x1234';
+    const assetId = '0x12341234123412341234123412341234';
     const ticker = 'SOME_TICKER';
     let result = getAssetIdFromMiddleware(
       {
@@ -3022,7 +3031,7 @@ describe('getAssetIdFromMiddleware', () => {
       context
     );
 
-    expect(result).toEqual(assetId);
+    expect(result).toEqual('12341234-1234-1234-1234-123412341234');
 
     result = getAssetIdFromMiddleware(
       {

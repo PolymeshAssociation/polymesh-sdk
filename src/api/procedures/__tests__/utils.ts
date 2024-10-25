@@ -53,6 +53,7 @@ import {
   TrustedClaimIssuer,
   TxTags,
 } from '~/types';
+import { hexToUuid } from '~/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -803,7 +804,7 @@ describe('authorization request validations', () => {
       });
       const data: Authorization = {
         type: AuthorizationType.TransferTicker,
-        value: '0x1234',
+        value: '0x12341234123412341234123412341234',
       };
       const auth = new AuthorizationRequest(
         {
@@ -825,7 +826,7 @@ describe('authorization request validations', () => {
       });
       const data: Authorization = {
         type: AuthorizationType.TransferTicker,
-        value: '0x1234',
+        value: '0x12341234123412341234123412341234',
       };
       const auth = new AuthorizationRequest(
         {
@@ -853,7 +854,7 @@ describe('authorization request validations', () => {
       });
       const data: Authorization = {
         type: AuthorizationType.TransferTicker,
-        value: '0x1234',
+        value: '0x12341234123412341234123412341234',
       };
       const auth = new AuthorizationRequest(
         {
@@ -882,7 +883,7 @@ describe('authorization request validations', () => {
       entityMockUtils.configureMocks({ fungibleAssetOptions: { exists: true } });
       const data: Authorization = {
         type: AuthorizationType.TransferAssetOwnership,
-        value: '0x1234',
+        value: '0x12341234123412341234123412341234',
       };
       const auth = new AuthorizationRequest(
         {
@@ -902,7 +903,7 @@ describe('authorization request validations', () => {
       entityMockUtils.configureMocks({ fungibleAssetOptions: { exists: false } });
       const data: Authorization = {
         type: AuthorizationType.TransferAssetOwnership,
-        value: '0x1234',
+        value: '0x12341234123412341234123412341234',
       };
       const auth = new AuthorizationRequest(
         {
@@ -1585,7 +1586,7 @@ describe('createAuthorizationResolver', () => {
 
 describe('createCreateGroupResolver', () => {
   const agId = new BigNumber(1);
-  const assetId = '0x1234';
+  const assetId = '0x12341234123412341234123412341234';
 
   let rawAgId: u64;
   let rawAssetId: PolymeshPrimitivesAssetAssetId;
@@ -1622,7 +1623,7 @@ describe('createCreateGroupResolver', () => {
     } as unknown as ISubmittableResult);
 
     expect(result.id).toEqual(agId);
-    expect(result.asset.id).toEqual(assetId);
+    expect(result.asset.id).toEqual(hexToUuid(assetId));
   });
 });
 
@@ -1633,7 +1634,7 @@ describe('assertGroupNotExists', () => {
   });
 
   it('should throw an error if there already exists a group for the asset with exactly the same permissions as the ones passed', async () => {
-    const assetId = '0x1234';
+    const assetId = '12341234-1234-1234-1234-123412341234';
 
     const transactions = {
       type: PermissionType.Include,
@@ -1713,7 +1714,7 @@ describe('assertGroupNotExists', () => {
 });
 
 describe('getGroupFromPermissions', () => {
-  const assetId = '0x1234';
+  const assetId = '0x12341234123412341234123412341234';
 
   const transactions = {
     type: PermissionType.Include,

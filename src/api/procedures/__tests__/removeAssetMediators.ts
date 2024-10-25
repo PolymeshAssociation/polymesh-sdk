@@ -39,7 +39,7 @@ describe('removeAssetMediators procedure', () => {
     entityMockUtils.initMocks();
     assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     identitiesToSetSpy = jest.spyOn(utilsConversionModule, 'identitiesToBtreeSet');
-    assetId = '0x1234';
+    assetId = '0x12341234123412341234123412341234';
     rawAssetId = dsMockUtils.createMockAssetId(assetId);
     currentMediator = entityMockUtils.getIdentityInstance({ did: 'currentDid' });
     rawCurrentMediator = dsMockUtils.createMockIdentityId(currentMediator.did);

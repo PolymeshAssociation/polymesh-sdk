@@ -11,17 +11,18 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { PermissionType, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
+import { uuidToHex } from '~/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('setGroupPermissions procedure', () => {
-  const assetId = '0x1234';
+  const assetId = '12341234-1234-1234-1234-123412341234';
   const permissions = {
     transactions: {
       type: PermissionType.Include,
       values: [TxTags.sto.Invest],
     },
   };
-  const rawAssetId = dsMockUtils.createMockAssetId(assetId);
+  const rawAssetId = dsMockUtils.createMockAssetId(uuidToHex(assetId));
   const rawPalletName = dsMockUtils.createMockText('Sto');
 
   const rawPalletPermissions = dsMockUtils.createMockPalletPermissions({

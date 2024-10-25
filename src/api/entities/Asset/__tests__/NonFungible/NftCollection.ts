@@ -71,7 +71,7 @@ describe('NftCollection class', () => {
 
   describe('constructor', () => {
     it('should assign assetId to instance', () => {
-      const assetId = 'test';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const context = dsMockUtils.getContextInstance();
       const nftCollection = new NftCollection({ assetId }, context);
 
@@ -81,7 +81,9 @@ describe('NftCollection class', () => {
 
   describe('method: isUniqueIdentifiers', () => {
     it('should return true if the object conforms to the interface', () => {
-      expect(NftCollection.isUniqueIdentifiers({ assetId: '0x1234' })).toBe(true);
+      expect(
+        NftCollection.isUniqueIdentifiers({ assetId: '12341234-1234-1234-1234-123412341234' })
+      ).toBe(true);
       expect(NftCollection.isUniqueIdentifiers({})).toBe(false);
       expect(NftCollection.isUniqueIdentifiers({ assetId: 3 })).toBe(false);
     });
@@ -119,7 +121,7 @@ describe('NftCollection class', () => {
 
   describe('method: investorCount', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const assetId = 'TEST';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const context = dsMockUtils.getContextInstance();
       const nftCollection = new NftCollection({ assetId }, context);
 
@@ -148,7 +150,7 @@ describe('NftCollection class', () => {
     let nftCollection: NftCollection;
 
     beforeAll(() => {
-      assetId = 'TEST';
+      assetId = '12341234-1234-1234-1234-123412341234';
       isinValue = 'FAKE ISIN';
       isinMock = dsMockUtils.createMockAssetIdentifier({
         Isin: dsMockUtils.createMockU8aFixed(isinValue),
@@ -197,7 +199,7 @@ describe('NftCollection class', () => {
 
   describe('method: createdAt', () => {
     it('should return the event identifier object of the Asset creation', async () => {
-      const assetId = '0x1234';
+      const assetId = '0x12341234123412341234123412341234';
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
       const blockHash = 'someHash';
@@ -231,7 +233,7 @@ describe('NftCollection class', () => {
     });
 
     it('should return null if the query result is empty', async () => {
-      const assetId = '0x1234';
+      const assetId = '0x12341234123412341234123412341234';
       const variables = {
         id: assetId,
       };
@@ -264,7 +266,7 @@ describe('NftCollection class', () => {
     });
 
     it('should return whether the NftCollection is frozen or not', async () => {
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const context = dsMockUtils.getContextInstance();
       const nftCollection = new NftCollection({ assetId }, context);
 
@@ -276,7 +278,7 @@ describe('NftCollection class', () => {
     });
 
     it('should allow subscription', async () => {
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const context = dsMockUtils.getContextInstance();
       const nftCollection = new NftCollection({ assetId }, context);
       const unsubCallback = 'unsubCallBack';
@@ -322,7 +324,7 @@ describe('NftCollection class', () => {
     });
 
     beforeAll(() => {
-      assetId = '0x1234';
+      assetId = '12341234-1234-1234-1234-123412341234';
     });
 
     beforeEach(() => {
@@ -375,7 +377,7 @@ describe('NftCollection class', () => {
 
     it('should return required metadata', async () => {
       const context = dsMockUtils.getContextInstance();
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const id = new BigNumber(1);
       const collection = new NftCollection({ assetId }, context);
       const mockGlobalKey = dsMockUtils.createMockAssetMetadataKey({
@@ -445,7 +447,7 @@ describe('NftCollection class', () => {
 
     it('should throw an error if needed metadata details are not found', async () => {
       const context = dsMockUtils.getContextInstance();
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const id = new BigNumber(1);
       const collection = new NftCollection({ assetId }, context);
       const mockMetadataKey = dsMockUtils.createMockAssetMetadataKey({
@@ -481,7 +483,7 @@ describe('NftCollection class', () => {
   describe('method: getCollectionId', () => {
     it('should return and cache the collection ID', async () => {
       const context = dsMockUtils.getContextInstance();
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const collection = new NftCollection({ assetId }, context);
       const id = new BigNumber(1);
       const rawId = dsMockUtils.createMockU64(id);
@@ -500,7 +502,7 @@ describe('NftCollection class', () => {
 
   describe('method: issue', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const assetId = 'TEST';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const context = dsMockUtils.getContextInstance();
       const collection = new NftCollection({ assetId }, context);
 
@@ -524,7 +526,7 @@ describe('NftCollection class', () => {
 
   describe('method: controllerTransfer', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const assetId = 'TEST';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const context = dsMockUtils.getContextInstance();
       const collection = new NftCollection({ assetId }, context);
 
@@ -548,7 +550,7 @@ describe('NftCollection class', () => {
 
   describe('method: getNft', () => {
     it('should return the NFT if it exists', async () => {
-      const assetId = 'TEST';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const id = new BigNumber(1);
       const context = dsMockUtils.getContextInstance();
       const collection = new NftCollection({ assetId }, context);
@@ -563,7 +565,7 @@ describe('NftCollection class', () => {
     });
 
     it('should throw an error if the NFT does not exist', async () => {
-      const assetId = 'TEST';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const id = new BigNumber(1);
       const context = dsMockUtils.getContextInstance();
       const collection = new NftCollection({ assetId }, context);
@@ -583,7 +585,7 @@ describe('NftCollection class', () => {
 
   describe('method: getTransactionHistory', () => {
     it('should return the list of the collection transactions', async () => {
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const context = dsMockUtils.getContextInstance();
       const asset = new NftCollection({ assetId }, context);
       when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
@@ -669,7 +671,7 @@ describe('NftCollection class', () => {
 
   describe('method: exists', () => {
     it('should return whether the NftCollection exists', async () => {
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const context = dsMockUtils.getContextInstance();
       const nftCollection = new NftCollection({ assetId }, context);
 
@@ -694,9 +696,12 @@ describe('NftCollection class', () => {
   describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       const context = dsMockUtils.getContextInstance();
-      const nftCollection = new NftCollection({ assetId: '0x1234' }, context);
+      const nftCollection = new NftCollection(
+        { assetId: '12341234-1234-1234-1234123412341234' },
+        context
+      );
 
-      expect(nftCollection.toHuman()).toBe('0x1234');
+      expect(nftCollection.toHuman()).toBe('12341234-1234-1234-1234123412341234');
     });
   });
 });

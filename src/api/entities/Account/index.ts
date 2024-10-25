@@ -40,6 +40,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { Ensured } from '~/types/utils';
+import { hexToUuid } from '~/utils';
 import { ASSET_ID_PREFIX } from '~/utils/constants';
 import {
   accountIdToString,
@@ -652,6 +653,6 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     // Set the RFC4122 variant (bits 10xx) in the 8th byte
     rawBytes[8] = (rawBytes[8] & 0x3f) | 0x80;
 
-    return u8aToHex(rawBytes);
+    return hexToUuid(u8aToHex(rawBytes));
   }
 }

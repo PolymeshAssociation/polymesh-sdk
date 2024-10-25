@@ -15,6 +15,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { EntityGetter } from '~/testUtils/mocks/entities';
 import { Mocked } from '~/testUtils/types';
 import { ErrorCode, MetadataType, NftCollection, TxTags } from '~/types';
+import { uuidToHex } from '~/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -43,9 +44,9 @@ describe('issueNft procedure', () => {
     assetToMeshAssetIdSpySpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     nftInputToMetadataValueSpy = jest.spyOn(utilsConversionModule, 'nftInputToNftMetadataVec');
     portfolioToPortfolioKindSpy = jest.spyOn(utilsConversionModule, 'portfolioToPortfolioKind');
-    assetId = '0x1234';
+    assetId = '12341234-1234-1234-1234-123412341234';
     collection = entityMockUtils.getNftCollectionInstance({ assetId });
-    rawAssetId = dsMockUtils.createMockAssetId(assetId);
+    rawAssetId = dsMockUtils.createMockAssetId(uuidToHex(assetId));
   });
 
   beforeEach(() => {
@@ -282,7 +283,7 @@ describe('issueNft procedure', () => {
 
     beforeEach(() => {
       const mockNft = dsMockUtils.createMockNfts({
-        assetId: dsMockUtils.createMockAssetId(assetId),
+        assetId: dsMockUtils.createMockAssetId(uuidToHex(assetId)),
         ids: [dsMockUtils.createMockU64(id)],
       });
       filterEventRecordsSpy.mockReturnValue([dsMockUtils.createMockIEvent(['someDid', mockNft])]);

@@ -26,7 +26,7 @@ jest.mock(
 );
 
 describe('Checkpoints class', () => {
-  const assetId = '0x1234';
+  const assetId = '12341234-1234-1234-1234-123412341234';
   const rawAssetId = dsMockUtils.createMockAssetId(assetId);
 
   let checkpoints: Checkpoints;

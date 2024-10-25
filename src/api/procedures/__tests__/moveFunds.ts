@@ -195,8 +195,8 @@ describe('moveFunds procedure', () => {
         from: fromPortfolio,
         to: toPortfolio,
         items: [
-          { asset: '0x1234', amount: new BigNumber(10) },
-          { asset: '0x1234', amount: new BigNumber(20) },
+          { asset: '0x12341234123412341234123412341234', amount: new BigNumber(10) },
+          { asset: '0x12341234123412341234123412341234', amount: new BigNumber(20) },
         ],
       })
     ).rejects.toThrow('Portfolio movements cannot contain any Asset more than once');
@@ -262,7 +262,7 @@ describe('moveFunds procedure', () => {
     const fromId = new BigNumber(1);
     const toId = new BigNumber(2);
     const did = 'someDid';
-    const assetId = '0x1234';
+    const assetId = '0x12341234123412341234123412341234';
     const context = dsMockUtils.getContextInstance();
 
     const asset = new NftCollection({ assetId }, context);
@@ -316,7 +316,7 @@ describe('moveFunds procedure', () => {
     const fromId = new BigNumber(1);
     const toId = new BigNumber(2);
     const did = 'someDid';
-    const assetId = '0x1234';
+    const assetId = '0x12341234123412341234123412341234';
 
     entityMockUtils.configureMocks({
       fungibleAssetOptions: {
@@ -434,7 +434,9 @@ describe('moveFunds procedure', () => {
     const fromId = new BigNumber(1);
     const toId = new BigNumber(2);
     const did = 'someDid';
-    const asset = entityMockUtils.getFungibleAssetInstance({ assetId: '0x1234' });
+    const asset = entityMockUtils.getFungibleAssetInstance({
+      assetId: '0x12341234123412341234123412341234',
+    });
     entityMockUtils.configureMocks({
       nftCollectionOptions: { exists: false },
     });
@@ -585,10 +587,14 @@ describe('moveFunds procedure', () => {
     const fromId = new BigNumber(1);
     const toId = new BigNumber(2);
     const did = 'someDid';
-    const assetId = '0x1234';
+    const assetId = '12341234-1234-1234-1234-123412341234';
     const context = dsMockUtils.getContextInstance();
-    const asset = entityMockUtils.getNftCollectionInstance({ assetId: 'TICKER001' });
-    const assetTwo = entityMockUtils.getNftCollectionInstance({ assetId: 'TICKER002' });
+    const asset = entityMockUtils.getNftCollectionInstance({
+      assetId: '12341234-1234-1234-1234-123412341234',
+    });
+    const assetTwo = entityMockUtils.getNftCollectionInstance({
+      assetId: '22341234-1234-1234-1234-123412341234',
+    });
 
     entityMockUtils.configureMocks({
       nftCollectionOptions: { exists: true },

@@ -41,6 +41,7 @@ import {
   VenueType,
 } from '~/types';
 import { tuple } from '~/types/utils';
+import { uuidToHex } from '~/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -353,7 +354,7 @@ describe('Identity class', () => {
     let identity: Identity;
 
     beforeAll(() => {
-      assetId = '0x1234';
+      assetId = '12341234-1234-1234-1234-123412341234';
       did = 'someDid';
       rawAssetId = dsMockUtils.createMockAssetId(assetId);
       rawIdentityId = dsMockUtils.createMockIdentityId(did);
@@ -591,7 +592,7 @@ describe('Identity class', () => {
 
   describe('method: getTrustingAssets', () => {
     const did = 'someDid';
-    const assetIds = ['0x1234', '0x5678'];
+    const assetIds = ['0x12341234123412341234123412341234', '0x5678'];
 
     it('should return a list of Assets', async () => {
       const identity = new Identity({ did }, context);
@@ -617,7 +618,7 @@ describe('Identity class', () => {
 
   describe('method: getHeldAssets', () => {
     const did = 'someDid';
-    const assetIds = ['0x1234', '0x5678'];
+    const assetIds = ['0x12341234123412341234123412341234', '0x5678'];
 
     it('should return a list of Assets', async () => {
       const identity = new Identity({ did }, context);
@@ -667,7 +668,7 @@ describe('Identity class', () => {
 
   describe('method: getHeldNfts', () => {
     const did = 'someDid';
-    const assetIds = ['0x1234', '0x4321'];
+    const assetIds = ['0x12341234123412341234123412341234', '0x4321'];
 
     it('should return a list of HeldNfts', async () => {
       const identity = new Identity({ did }, context);
@@ -1389,8 +1390,8 @@ describe('Identity class', () => {
   describe('method: preApprovedAssets', () => {
     it('should the list of pre-approved assets for the identity', async () => {
       const did = 'someDid';
-      const assetId = '0x1234';
-      const rawAssetId = dsMockUtils.createMockAssetId(assetId);
+      const assetId = '12341234-1234-1234-1234-123412341234';
+      const rawAssetId = dsMockUtils.createMockAssetId(uuidToHex(assetId));
       const rawDid = dsMockUtils.createMockIdentityId(did);
       const mockContext = dsMockUtils.getContextInstance();
       const identity = new Identity({ did }, mockContext);
@@ -1413,9 +1414,9 @@ describe('Identity class', () => {
   describe('method: isAssetPreApproved', () => {
     it('should return whether the asset is pre-approved or not', async () => {
       const did = 'someDid';
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const asset = entityMockUtils.getBaseAssetInstance({ assetId });
-      const rawAssetId = dsMockUtils.createMockAssetId(assetId);
+      const rawAssetId = dsMockUtils.createMockAssetId(uuidToHex(assetId));
       const rawDid = dsMockUtils.createMockIdentityId(did);
       const mockContext = dsMockUtils.getContextInstance();
       const identity = new Identity({ did }, mockContext);

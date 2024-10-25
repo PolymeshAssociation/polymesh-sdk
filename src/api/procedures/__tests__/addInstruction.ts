@@ -44,6 +44,7 @@ import {
   TxTags,
 } from '~/types';
 import { PolymeshTx } from '~/types/internal';
+import { uuidToHex } from '~/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -187,8 +188,8 @@ describe('addInstruction procedure', () => {
       did: toDid,
       id: new BigNumber(2),
     });
-    asset = '0x1111';
-    nftAsset = '0x2222';
+    asset = '12341234-1234-1234-1234-123412341234';
+    nftAsset = '22222222-1234-1234-1234-123412341234';
     offChainTicker = 'SOME_TICKER';
     const now = new Date();
     tradeDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
@@ -214,8 +215,8 @@ describe('addInstruction procedure', () => {
       dsMockUtils.createMockIdentityId(mediatorDid),
     ]);
     rawEmptyMediatorSet = dsMockUtils.createMockBTreeSet([]);
-    rawAssetId = dsMockUtils.createMockAssetId(asset);
-    rawNftAssetId = dsMockUtils.createMockAssetId(nftAsset);
+    rawAssetId = dsMockUtils.createMockAssetId(uuidToHex(asset));
+    rawNftAssetId = dsMockUtils.createMockAssetId(uuidToHex(nftAsset));
     rawOffChainTicker = dsMockUtils.createMockTicker(offChainTicker);
     rawTradeDate = dsMockUtils.createMockMoment(new BigNumber(tradeDate.getTime()));
     rawValueDate = dsMockUtils.createMockMoment(new BigNumber(valueDate.getTime()));
@@ -586,7 +587,9 @@ describe('addInstruction procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe('No asset exists with asset ID: "0x1111"');
+    expect(error.message).toBe(
+      'No asset exists with asset ID: "12341234-1234-1234-1234-123412341234"'
+    );
     expect(error.code).toBe(ErrorCode.DataUnavailable);
   });
 

@@ -31,6 +31,7 @@ import {
 } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import { tuple } from '~/types/utils';
+import { hexToUuid } from '~/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -99,7 +100,7 @@ describe('configureDividendDistribution procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    assetId = '0x1234';
+    assetId = '0x12341234123412341234123412341234';
     asset = entityMockUtils.getFungibleAssetInstance({ assetId });
     declarationDate = new Date('10/14/1987');
     checkpoint = new Date(new Date().getTime() + 60 * 60 * 1000);
@@ -121,7 +122,7 @@ describe('configureDividendDistribution procedure', () => {
         },
       ],
     });
-    currency = '0x9000';
+    currency = '0x09000000000000000000000000000000';
     perShare = new BigNumber(100);
     maxAmount = new BigNumber(1000000);
     paymentDate = new Date(checkpoint.getTime() + 60 * 60 * 1000);
@@ -688,7 +689,7 @@ describe('configureDividendDistribution procedure', () => {
         {} as ISubmittableResult
       );
 
-      expect(result.asset.id).toBe(assetId);
+      expect(result.asset.id).toBe(hexToUuid(assetId));
       expect(result.id).toEqual(id);
       expect(result.declarationDate).toEqual(declarationDate);
       expect(result.description).toEqual(description);
@@ -712,7 +713,7 @@ describe('configureDividendDistribution procedure', () => {
           id: new BigNumber(portfolioNumber),
         })
       );
-      expect(result.currency).toEqual(currency);
+      expect(result.currency).toEqual(hexToUuid(currency));
       expect(result.maxAmount).toEqual(maxAmount);
       expect(result.expiryDate).toEqual(expiryDate);
       expect(result.paymentDate).toEqual(paymentDate);

@@ -15,7 +15,7 @@ jest.mock(
 );
 
 describe('CustomPermissionGroup class', () => {
-  const assetId = '0x1234';
+  const assetId = '12341234-1234-1234-1234-123412341234';
   const id = new BigNumber(1);
 
   let context: Context;

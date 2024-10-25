@@ -56,7 +56,7 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
     );
     stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
     identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
-    assetId = '0x1234';
+    assetId = '0x12341234123412341234123412341234';
     asset = entityMockUtils.getBaseAssetInstance({ assetId });
     claimIssuerDids = ['aDid', 'otherDid', 'differentDid'];
     claimIssuers = claimIssuerDids.map(did => ({

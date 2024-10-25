@@ -336,7 +336,9 @@ describe('executeManualInstruction procedure', () => {
     const sender = entityMockUtils.getIdentityInstance({ did: senderDid });
     const receiver = entityMockUtils.getIdentityInstance({ did: receiverDid });
     const amount = new BigNumber(1);
-    const asset = entityMockUtils.getFungibleAssetInstance({ assetId: '0x1234' });
+    const asset = entityMockUtils.getFungibleAssetInstance({
+      assetId: '0x12341234123412341234123412341234',
+    });
 
     it('should return the custodied portfolios and offChain parties associated in the instruction legs for the signing identity', async () => {
       const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext);

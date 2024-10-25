@@ -61,7 +61,7 @@ describe('controllerTransfer procedure', () => {
       'portfolioIdToMeshPortfolioId'
     );
     assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
-    assetId = '0x1234';
+    assetId = '0x12341234123412341234123412341234';
     asset = entityMockUtils.getFungibleAssetInstance({ assetId });
     rawAssetId = dsMockUtils.createMockAssetId(assetId);
     did = 'fakeDid';

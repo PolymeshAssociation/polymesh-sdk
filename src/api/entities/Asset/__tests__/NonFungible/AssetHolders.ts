@@ -37,7 +37,7 @@ describe('AssetHolder class', () => {
   });
 
   describe('method: get', () => {
-    const assetId = '0x1234';
+    const assetId = '0x12341234123412341234123412341234';
     let assetHolders: AssetHolders;
     let collection: NftCollection;
     let context: Context;

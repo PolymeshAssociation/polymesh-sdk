@@ -35,7 +35,7 @@ describe('CorporateActions class', () => {
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    assetId = '0x1234';
+    assetId = '12341234-1234-1234-1234-123412341234';
 
     when(jest.spyOn(utilsConversionModule, 'stringToAssetId'))
       .calledWith(assetId, context)

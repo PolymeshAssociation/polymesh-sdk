@@ -31,7 +31,8 @@ jest.mock(
 
 describe('AssetPermissions class', () => {
   const did = 'someDid';
-  const assetId = '0x1234';
+  const assetId = '12341234-1234-8234-8234-123412341234';
+  const assetIdHex = '0x12341234123482348234123412341234';
   let asset: Mocked<FungibleAsset>;
 
   let context: Mocked<Context>;
@@ -51,7 +52,7 @@ describe('AssetPermissions class', () => {
     asset = entityMockUtils.getFungibleAssetInstance({ assetId });
     assetPermissions = new AssetPermissions(identity, context);
     getAssetIdForMiddlewareSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware');
-    when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
+    when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetIdHex);
   });
 
   afterEach(() => {
@@ -105,7 +106,7 @@ describe('AssetPermissions class', () => {
       const blockHash = 'someHash';
       const eventIdx = new BigNumber(1);
       const variables = {
-        assetId,
+        assetId: assetIdHex,
       };
       const fakeResult = { blockNumber, blockHash, blockDate, eventIndex: eventIdx };
 
@@ -131,7 +132,7 @@ describe('AssetPermissions class', () => {
 
     it('should return null if the query result is empty', async () => {
       const variables = {
-        assetId,
+        assetId: assetIdHex,
       };
 
       dsMockUtils.createApolloQueryMock(tickerExternalAgentsQuery(variables), {
@@ -397,7 +398,7 @@ describe('AssetPermissions class', () => {
     beforeAll(() => {
       stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
       rawDid = dsMockUtils.createMockIdentityId(did);
-      rawAssetId = dsMockUtils.createMockAssetId(assetId);
+      rawAssetId = dsMockUtils.createMockAssetId(assetIdHex);
     });
 
     beforeEach(() => {
@@ -447,7 +448,7 @@ describe('AssetPermissions class', () => {
       dsMockUtils.createApolloQueryMock(
         tickerExternalAgentActionsQuery(
           {
-            assetId,
+            assetId: assetIdHex,
             callerId: did,
             palletName: undefined,
             eventId: undefined,
@@ -491,7 +492,7 @@ describe('AssetPermissions class', () => {
 
       dsMockUtils.createApolloQueryMock(
         tickerExternalAgentActionsQuery({
-          assetId,
+          assetId: assetIdHex,
           callerId: did,
           palletName: undefined,
           eventId: undefined,

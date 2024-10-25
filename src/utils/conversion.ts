@@ -275,6 +275,7 @@ import {
   TickerKey,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
+import { hexToUuid } from '~/utils';
 import {
   IGNORE_CHECKSUM,
   MAX_BALANCE,
@@ -304,6 +305,7 @@ import {
   removePadding,
   requestMulti,
 } from '~/utils/internal';
+import { uuidToHex } from '~/utils/strings';
 import {
   isIdentityCondition,
   isMultiClaimCondition,
@@ -364,7 +366,7 @@ export function stringToTicker(ticker: string, context: Context): PolymeshPrimit
  * @hidden
  */
 export function stringToAssetId(assetId: string, context: Context): PolymeshPrimitivesAssetAssetId {
-  return context.createType('PolymeshPrimitivesAssetAssetId', assetId);
+  return context.createType('PolymeshPrimitivesAssetAssetId', uuidToHex(assetId));
 }
 
 /**
@@ -392,7 +394,7 @@ export function tickerToString(ticker: PolymeshPrimitivesTicker): string {
  * @hidden
  */
 export function assetIdToString(assetId: PolymeshPrimitivesAssetAssetId): string {
-  return assetId.toString();
+  return hexToUuid(assetId.toString());
 }
 
 /**

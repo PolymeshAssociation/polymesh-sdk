@@ -13,7 +13,7 @@ jest.mock(
 
 describe('MetadataEntry class', () => {
   let context: Context;
-  const assetId = '0x1234';
+  const assetId = '12341234-1234-1234-1234-123412341234';
   const id = new BigNumber(1);
   const type = MetadataType.Local;
   let metadataEntry: MetadataEntry;
@@ -63,7 +63,7 @@ describe('MetadataEntry class', () => {
       expect(
         MetadataEntry.isUniqueIdentifiers({
           id: new BigNumber(1),
-          assetId: '0x1234',
+          assetId: '12341234-1234-1234-1234-123412341234',
           type: MetadataType.Local,
         })
       ).toBe(true);
@@ -336,8 +336,8 @@ describe('MetadataEntry class', () => {
     it('should return a human readable version of the entity', () => {
       expect(metadataEntry.toHuman()).toEqual({
         id: '1',
-        assetId: '0x1234',
-        ticker: '0x1234',
+        assetId: '12341234-1234-1234-1234-123412341234',
+        ticker: '12341234-1234-1234-1234-123412341234',
         type: 'Local',
       });
     });

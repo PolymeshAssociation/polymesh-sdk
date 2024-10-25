@@ -46,7 +46,7 @@ describe('modifyComplianceRequirement procedure', () => {
       utilsConversionModule,
       'requirementToComplianceRequirement'
     );
-    assetId = '0x1234';
+    assetId = '12341234-1234-1234-1234-123412341234';
     conditions = [
       {
         type: ConditionType.IsIdentity,

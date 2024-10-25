@@ -39,7 +39,7 @@ describe('toggleFreezeOffering procedure', () => {
     entityMockUtils.initMocks();
     assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
-    assetId = '0x1234';
+    assetId = '0x12341234123412341234123412341234';
     asset = entityMockUtils.getFungibleAssetInstance({ assetId });
     id = new BigNumber(1);
     rawAssetId = dsMockUtils.createMockAssetId(assetId);

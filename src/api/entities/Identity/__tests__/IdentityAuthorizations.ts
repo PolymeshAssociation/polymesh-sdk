@@ -6,6 +6,7 @@ import { Authorizations, Identity, Namespace } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { AuthorizationType } from '~/types';
 import { tuple } from '~/types/utils';
+import { hexToUuid } from '~/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -62,14 +63,20 @@ describe('IdentityAuthorizations class', () => {
         {
           authId: new BigNumber(1),
           expiry: null,
-          data: { type: AuthorizationType.TransferAssetOwnership, value: '0x1234' },
+          data: {
+            type: AuthorizationType.TransferAssetOwnership,
+            value: '0x12341234123412341234123412341234',
+          },
           target: entityMockUtils.getIdentityInstance({ did: 'alice' }),
           issuer: identity,
         } as const,
         {
           authId: new BigNumber(2),
           expiry: new Date('10/14/3040'),
-          data: { type: AuthorizationType.TransferAssetOwnership, value: '0x5678' },
+          data: {
+            type: AuthorizationType.TransferAssetOwnership,
+            value: '0x00000000000000000000000000000001',
+          },
           target: entityMockUtils.getIdentityInstance({ did: 'bob' }),
           issuer: identity,
         } as const,
@@ -119,7 +126,7 @@ describe('IdentityAuthorizations class', () => {
           issuer,
           target,
           expiry,
-          data,
+          data: { type: data.type, value: hexToUuid(data.value) },
         })
       );
 
@@ -165,7 +172,11 @@ describe('IdentityAuthorizations class', () => {
       const identityAuthorization = new IdentityAuthorizations(identity, context);
       const id = new BigNumber(1);
 
-      const data = { type: AuthorizationType.TransferAssetOwnership, value: '0x1234' } as const;
+      const assetId = '0x12341234123412341234123412341234';
+      const data = {
+        type: AuthorizationType.TransferAssetOwnership,
+        value: hexToUuid(assetId),
+      } as const;
 
       dsMockUtils.createQueryMock('identity', 'authorizationsGiven', {
         returnValue: dsMockUtils.createMockSignatory({
@@ -179,7 +190,7 @@ describe('IdentityAuthorizations class', () => {
           dsMockUtils.createMockAuthorization({
             authId: dsMockUtils.createMockU64(id),
             authorizationData: dsMockUtils.createMockAuthorizationData({
-              TransferAssetOwnership: dsMockUtils.createMockAssetId(data.value),
+              TransferAssetOwnership: dsMockUtils.createMockAssetId(assetId),
             }),
             expiry: dsMockUtils.createMockOption(),
             authorizedBy: dsMockUtils.createMockIdentityId(did),
@@ -206,7 +217,10 @@ describe('IdentityAuthorizations class', () => {
       const identityAuthorization = new IdentityAuthorizations(identity, context);
       const id = new BigNumber(1);
 
-      const data = { type: AuthorizationType.TransferAssetOwnership, value: '0x1234' } as const;
+      const data = {
+        type: AuthorizationType.TransferAssetOwnership,
+        value: '0x12341234123412341234123412341234',
+      } as const;
 
       dsMockUtils.createQueryMock('identity', 'authorizationsGiven', {
         returnValue: dsMockUtils.createMockSignatory(),

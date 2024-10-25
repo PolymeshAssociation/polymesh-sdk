@@ -69,7 +69,7 @@ describe('transferAssetOwnership procedure', () => {
       'authorizationToAuthorizationData'
     );
     dateToMomentSpy = jest.spyOn(utilsConversionModule, 'dateToMoment');
-    assetId = '0x1234';
+    assetId = '0x12341234123412341234123412341234';
     asset = entityMockUtils.getBaseAssetInstance({ assetId });
     did = 'someDid';
     expiry = new Date('10/14/3040');

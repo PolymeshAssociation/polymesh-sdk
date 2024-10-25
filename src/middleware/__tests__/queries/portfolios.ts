@@ -21,7 +21,7 @@ describe('portfolioMovementsQuery', () => {
     const variables = {
       identityId: 'someDid',
       portfolioId: new BigNumber(1),
-      assetId: '0x1234',
+      assetId: '0x12341234123412341234123412341234',
       address: 'someAddress',
     };
 
@@ -30,7 +30,7 @@ describe('portfolioMovementsQuery', () => {
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual({
       address: 'someAddress',
-      assetId: '0x1234',
+      assetId: '0x12341234123412341234123412341234',
       fromId: 'someDid/1',
       toId: 'someDid/1',
     });

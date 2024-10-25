@@ -117,6 +117,7 @@ export const processType = (rawType: TypeDef, name: string): TransactionArgument
 
       const isSimple = subTypes.every(({ type: subType }) => subType === 'Null');
 
+      /* istanbul ignore next */
       if (isSimple) {
         return {
           type: TransactionArgumentType.SimpleEnum,

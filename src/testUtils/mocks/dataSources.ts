@@ -710,7 +710,10 @@ const defaultContextOptions: ContextOptions = {
         issuedAt: new Date(),
         lastUpdatedAt: new Date(),
         expiry: null,
-        claim: { type: ClaimType.Accredited, scope: { type: ScopeType.Asset, value: '0x1234' } },
+        claim: {
+          type: ClaimType.Accredited,
+          scope: { type: ScopeType.Asset, value: '0x12341234123412341234123412341234' },
+        },
       },
     ],
     next: new BigNumber(1),
@@ -723,7 +726,10 @@ const defaultContextOptions: ContextOptions = {
       issuedAt: new Date(),
       lastUpdatedAt: new Date(),
       expiry: null,
-      claim: { type: ClaimType.Accredited, scope: { type: ScopeType.Asset, value: '0x1234' } },
+      claim: {
+        type: ClaimType.Accredited,
+        scope: { type: ScopeType.Asset, value: '0x12341234123412341234123412341234' },
+      },
     },
   ],
   getIdentityClaimsFromMiddleware: {
@@ -734,7 +740,10 @@ const defaultContextOptions: ContextOptions = {
         issuedAt: new Date(),
         lastUpdatedAt: new Date(),
         expiry: null,
-        claim: { type: ClaimType.Accredited, scope: { type: ScopeType.Asset, value: '0x1234' } },
+        claim: {
+          type: ClaimType.Accredited,
+          scope: { type: ScopeType.Asset, value: '0x12341234123412341234123412341234' },
+        },
       },
     ],
     next: new BigNumber(1),
@@ -802,7 +811,7 @@ const defaultContextOptions: ContextOptions = {
   supportsSubsidy: true,
   supportsSubscription: true,
   getSignature: '0xsignature',
-  getNextAssetId: '0x1234',
+  getNextAssetId: '0x12341234123412341234123412341234',
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultSigningManagerOptions: SigningManagerOptions = {

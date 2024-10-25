@@ -48,7 +48,7 @@ describe('CorporateAction class', () => {
     context = dsMockUtils.getContextInstance();
 
     id = new BigNumber(1);
-    assetId = '0x1234';
+    assetId = '0x12341234123412341234123412341234';
     declarationDate = new Date('10/14/1987 UTC');
     kind = CorporateActionKind.UnpredictableBenefit;
     description = 'someDescription';

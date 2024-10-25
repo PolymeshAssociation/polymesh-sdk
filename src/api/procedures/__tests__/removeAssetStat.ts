@@ -111,7 +111,7 @@ describe('removeAssetStat procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     mockContext = dsMockUtils.getContextInstance();
-    assetId = '0x1234';
+    assetId = '0x12341234123412341234123412341234';
     asset = entityMockUtils.getFungibleAssetInstance({ assetId });
     getAssetIdForStatsSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForStats');
     createStat2ndKeySpy = jest.spyOn(utilsConversionModule, 'createStat2ndKey');

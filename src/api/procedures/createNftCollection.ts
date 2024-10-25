@@ -296,6 +296,7 @@ export async function prepareCreateNftCollection(
     );
   }
 
+  console.log([rawAssetId, rawType, rawCollectionKeys]);
   transactions.push(
     checkTxType({
       transaction: tx.nft.createNftCollection,
@@ -431,6 +432,7 @@ export async function prepareStorage(
   } = this;
 
   const assertNftCollectionDoesNotExists = async (id: string): Promise<void> => {
+    console.log('asserting id does not exist', id);
     const nft = new NftCollection({ assetId: id }, context);
     const collectionExists = await nft.exists();
 
@@ -462,6 +464,7 @@ export async function prepareStorage(
     const reservation = new TickerReservation({ ticker }, context);
     const reservationDetails = await reservation.details();
     const { status } = reservationDetails;
+    console.log([status]);
     storageStatus.status = status;
 
     if (status === TickerReservationStatus.AssetCreated) {

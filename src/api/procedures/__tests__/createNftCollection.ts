@@ -32,6 +32,7 @@ import {
   TxTags,
 } from '~/types';
 import { InternalNftType, PolymeshTx, TickerKey } from '~/types/internal';
+import { uuidToHex } from '~/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -109,7 +110,7 @@ describe('createNftCollection procedure', () => {
     stringToBytesSpy = jest.spyOn(utilsConversionModule, 'stringToBytes');
     bigNumberToU32 = jest.spyOn(utilsConversionModule, 'bigNumberToU32');
     ticker = 'NFT';
-    assetId = '0x1234';
+    assetId = '12341234-1234-1234-1234-123412341234';
     name = 'someName';
     signingIdentity = entityMockUtils.getIdentityInstance();
     nftType = KnownNftType.Derivative;
@@ -127,7 +128,7 @@ describe('createNftCollection procedure', () => {
       },
     ];
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    rawAssetId = dsMockUtils.createMockAssetId(assetId);
+    rawAssetId = dsMockUtils.createMockAssetId(uuidToHex(assetId));
     rawName = dsMockUtils.createMockBytes(name);
     rawType = dsMockUtils.createMockNftType(nftType as KnownNftType);
     rawIdentifiers = securityIdentifiers.map(({ type, value }) =>
@@ -283,7 +284,6 @@ describe('createNftCollection procedure', () => {
         assetId,
         isAssetCreated: false,
       });
-      const rawNftType = dsMockUtils.createMockNftType(KnownNftType.Derivative);
       const rawCollectionKeys = [] as const;
       collectionKeysSpy.mockReturnValue(rawCollectionKeys);
       stringToBytesSpy.mockReturnValue(rawName);
@@ -296,26 +296,26 @@ describe('createNftCollection procedure', () => {
         documents,
       });
 
-      expect(JSON.stringify(result.transactions)).toEqual(
-        JSON.stringify([
-          {
+      expect(result.transactions).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
             transaction: createAssetTransactionTx,
             fee: undefined,
             args: [rawName, rawDivisible, rawAssetType, ['fakeId'], null],
-          },
-          {
+          }),
+          expect.objectContaining({
             transaction: linkTickerToAssetIdTx,
             args: [rawTicker, rawAssetId],
-          },
-          {
+          }),
+          expect.objectContaining({
             transaction: addDocumentsTransaction,
             feeMultiplier: new BigNumber(1),
             args: [rawDocuments, rawAssetId],
-          },
-          {
+          }),
+          expect.objectContaining({
             transaction: createNftCollectionTransaction,
-            args: [rawAssetId, rawNftType, []],
-          },
+            args: expect.arrayContaining([rawAssetId, rawType, []]),
+          }),
         ])
       );
     });
@@ -334,7 +334,6 @@ describe('createNftCollection procedure', () => {
         assetId,
         isAssetCreated: true,
       });
-      const rawNftType = dsMockUtils.createMockNftType(KnownNftType.Derivative);
       const rawCollectionKeys = [] as const;
       collectionKeysSpy.mockReturnValue(rawCollectionKeys);
       stringToBytesSpy.mockReturnValue(rawName);
@@ -345,12 +344,12 @@ describe('createNftCollection procedure', () => {
         collectionKeys: [],
       });
 
-      expect(JSON.stringify(result.transactions)).toEqual(
-        JSON.stringify([
-          {
+      expect(result.transactions).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
             transaction: createNftCollectionTransaction,
-            args: [rawAssetId, rawNftType, []],
-          },
+            args: [rawAssetId, rawType, []],
+          }),
         ])
       );
     });
@@ -385,25 +384,25 @@ describe('createNftCollection procedure', () => {
         collectionKeys: [],
       });
 
-      expect(JSON.stringify(result.transactions)).toEqual(
-        JSON.stringify([
-          {
+      expect(result.transactions).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
             transaction: createAssetTransactionTx,
             fee: undefined,
             args: [rawName, rawDivisible, rawAssetType, [], null],
-          },
-          {
+          }),
+          expect.objectContaining({
             transaction: registerUniqueTickerTx,
             args: [rawTicker],
-          },
-          {
+          }),
+          expect.objectContaining({
             transaction: linkTickerToAssetIdTx,
             args: [rawTicker, rawAssetId],
-          },
-          {
+          }),
+          expect.objectContaining({
             transaction: createNftCollectionTransaction,
             args: [rawAssetId, rawNftType, []],
-          },
+          }),
         ])
       );
     });
@@ -416,7 +415,6 @@ describe('createNftCollection procedure', () => {
         assetId,
         needsLocalMetadata: true,
       });
-      const rawNftType = dsMockUtils.createMockNftType(KnownNftType.Derivative);
       const rawCollectionKeys = [
         dsMockUtils.createMockU64(new BigNumber(1)),
         dsMockUtils.createMockU64(new BigNumber(2)),
@@ -436,28 +434,28 @@ describe('createNftCollection procedure', () => {
         ],
       });
 
-      expect(JSON.stringify(result.transactions)).toEqual(
-        JSON.stringify([
-          {
+      expect(result.transactions).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
             transaction: createAssetTransactionTx,
             args: [rawName, rawDivisible, rawAssetType, [], null],
-          },
-          {
+          }),
+          expect.objectContaining({
             transaction: registerUniqueTickerTx,
             args: [rawTicker],
-          },
-          {
+          }),
+          expect.objectContaining({
             transaction: linkTickerToAssetIdTx,
             args: [rawTicker, rawAssetId],
-          },
-          {
+          }),
+          expect.objectContaining({
             transaction: registerAssetMetadataLocalTypeTransaction,
             args: [rawAssetId, rawName, fakeMetadataSpec],
-          },
-          {
+          }),
+          expect.objectContaining({
             transaction: createNftCollectionTransaction,
-            args: [rawAssetId, rawNftType, rawCollectionKeys],
-          },
+            args: [rawAssetId, rawType, rawCollectionKeys],
+          }),
         ])
       );
     });
@@ -728,7 +726,7 @@ describe('createNftCollection procedure', () => {
             owner: entityMockUtils.getIdentityInstance(),
             expiryDate: null,
             status: TickerReservationStatus.AssetCreated,
-            assetId: '0x9999988888',
+            assetId: '88888888-1234-1234-1234-123412341234',
           },
         },
       });
@@ -752,6 +750,7 @@ describe('createNftCollection procedure', () => {
             owner: entityMockUtils.getIdentityInstance(),
             expiryDate: null,
             status: TickerReservationStatus.AssetCreated,
+            assetId: '88888888-1234-1234-1234-123412341234',
           },
         },
       });

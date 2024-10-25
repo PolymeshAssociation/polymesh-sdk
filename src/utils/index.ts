@@ -9,4 +9,5 @@ export {
   txGroupToTxTags,
 } from './conversion';
 export * from './typeguards';
+export * from './strings';
 export { cryptoWaitReady } from '@polkadot/util-crypto';

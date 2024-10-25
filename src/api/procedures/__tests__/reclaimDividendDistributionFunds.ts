@@ -17,7 +17,7 @@ jest.mock(
 );
 
 describe('reclaimDividendDistributionFunds procedure', () => {
-  const assetId = '0x1234';
+  const assetId = '0x12341234123412341234123412341234';
   const id = new BigNumber(1);
   const expiryDate = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365);
   const did = 'someDid';

@@ -71,7 +71,7 @@ describe('Requirements class', () => {
               type: ConditionType.IsPresent,
               claim: {
                 type: ClaimType.Exempted,
-                scope: { type: ScopeType.Asset, value: '0x1234' },
+                scope: { type: ScopeType.Asset, value: '0x12341234123412341234123412341234' },
               },
               target: ConditionTarget.Both,
             },
@@ -79,7 +79,7 @@ describe('Requirements class', () => {
               type: ConditionType.IsAbsent,
               claim: {
                 type: ClaimType.Blocked,
-                scope: { type: ScopeType.Asset, value: '0x1234' },
+                scope: { type: ScopeType.Asset, value: '0x12341234123412341234123412341234' },
               },
               target: ConditionTarget.Both,
             },
@@ -116,7 +116,7 @@ describe('Requirements class', () => {
             type: ConditionType.IsPresent,
             claim: {
               type: ClaimType.Exempted,
-              scope: { type: ScopeType.Asset, value: '0x1234' },
+              scope: { type: ScopeType.Asset, value: '0x12341234123412341234123412341234' },
             },
             target: ConditionTarget.Both,
           },
@@ -124,7 +124,7 @@ describe('Requirements class', () => {
             type: ConditionType.IsAbsent,
             claim: {
               type: ClaimType.Blocked,
-              scope: { type: ScopeType.Asset, value: '0x1234' },
+              scope: { type: ScopeType.Asset, value: '0x12341234123412341234123412341234' },
             },
             target: ConditionTarget.Both,
           },
@@ -220,7 +220,7 @@ describe('Requirements class', () => {
     });
 
     beforeEach(() => {
-      assetId = '0x1234';
+      assetId = '12341234-1234-1234-1234-123412341234';
       context = dsMockUtils.getContextInstance();
       asset = entityMockUtils.getFungibleAssetInstance({ assetId });
       requirements = new Requirements(asset, context);

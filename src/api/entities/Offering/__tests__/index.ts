@@ -10,6 +10,7 @@ import {
   OfferingSaleStatus,
   OfferingTimingStatus,
 } from '~/types';
+import { uuidToHex } from '~/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -72,7 +73,7 @@ describe('Offering class', () => {
 
   describe('constructor', () => {
     it('should assign assetId and id to instance', () => {
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const id = new BigNumber(1);
       const offering = new Offering({ id, assetId }, context);
 
@@ -91,12 +92,12 @@ describe('Offering class', () => {
   });
 
   describe('method: details', () => {
-    const assetId = '0x1234';
+    const assetId = '12341234-1234-1234-1234-123412341234';
     const id = new BigNumber(1);
     const someDid = 'someDid';
     const name = 'someSto';
     const otherDid = 'otherDid';
-    const raisingCurrency = 'USD';
+    const raisingCurrency = '88888888-1234-1234-1234-123412341234';
     const amount = new BigNumber(1000);
     const price = new BigNumber(100);
     const remaining = new BigNumber(700);
@@ -110,14 +111,14 @@ describe('Offering class', () => {
           did: dsMockUtils.createMockIdentityId(someDid),
           kind: dsMockUtils.createMockPortfolioKind('Default'),
         }),
-        offeringAsset: dsMockUtils.createMockAssetId(assetId),
+        offeringAsset: dsMockUtils.createMockAssetId(uuidToHex(assetId)),
         raisingPortfolio: dsMockUtils.createMockPortfolioId({
           did: dsMockUtils.createMockIdentityId(otherDid),
           kind: dsMockUtils.createMockPortfolioKind({
             User: dsMockUtils.createMockU64(new BigNumber(1)),
           }),
         }),
-        raisingAsset: dsMockUtils.createMockAssetId(raisingCurrency),
+        raisingAsset: dsMockUtils.createMockAssetId(uuidToHex(raisingCurrency)),
         tiers: [
           dsMockUtils.createMockFundraiserTier({
             total: dsMockUtils.createMockBalance(amount),
@@ -216,7 +217,7 @@ describe('Offering class', () => {
 
   describe('method: close', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const id = new BigNumber(1);
       const offering = new Offering({ id, assetId }, context);
 
@@ -239,7 +240,7 @@ describe('Offering class', () => {
 
   describe('method: modifyTimes', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const id = new BigNumber(1);
       const offering = new Offering({ id, assetId }, context);
 
@@ -271,11 +272,11 @@ describe('Offering class', () => {
 
   describe('method: getInvestments', () => {
     it('should return a list of investors', async () => {
-      const assetId = '0x1234';
+      const assetId = '0x12341234123412341234123412341234';
       const id = new BigNumber(1);
       const offering = new Offering({ id, assetId }, context);
       const did = 'someDid';
-      const offeringToken = '0x1111';
+      const offeringToken = '0x11111111111181111111111111111111';
       const raiseToken = 'USD';
       const offeringTokenAmount = new BigNumber(10000);
       const raiseTokenAmount = new BigNumber(1000);
@@ -345,7 +346,7 @@ describe('Offering class', () => {
 
   describe('method: freeze', () => {
     it('should prepare the procedure and return the resulting transaction', async () => {
-      const assetId = '0x1234';
+      const assetId = '0x12341234123412341234123412341234';
       const id = new BigNumber(1);
       const offering = new Offering({ id, assetId }, context);
 
@@ -367,7 +368,7 @@ describe('Offering class', () => {
 
   describe('method: unfreeze', () => {
     it('should prepare the procedure and return the resulting transaction', async () => {
-      const assetId = '0x1234';
+      const assetId = '0x12341234123412341234123412341234';
       const id = new BigNumber(1);
       const offering = new Offering({ id, assetId }, context);
 
@@ -389,7 +390,7 @@ describe('Offering class', () => {
 
   describe('method: invest', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const assetId = '0x1234';
+      const assetId = '0x12341234123412341234123412341234';
       const id = new BigNumber(1);
       const offering = new Offering({ id, assetId }, context);
       const did = 'someDid';
@@ -424,7 +425,10 @@ describe('Offering class', () => {
 
   describe('method: exists', () => {
     it('should return whether the Offering exists', async () => {
-      const offering = new Offering({ assetId: '0x1234', id: new BigNumber(1) }, context);
+      const offering = new Offering(
+        { assetId: '12341234-1234-1234-1234-123412341234', id: new BigNumber(1) },
+        context
+      );
 
       dsMockUtils.createQueryMock('sto', 'fundraisers', {
         returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockFundraiser()),
@@ -444,12 +448,15 @@ describe('Offering class', () => {
 
   describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
-      const offering = new Offering({ assetId: '0x1234', id: new BigNumber(1) }, context);
+      const offering = new Offering(
+        { assetId: '12341234-1234-1234-1234-123412341234', id: new BigNumber(1) },
+        context
+      );
 
       expect(offering.toHuman()).toEqual({
         id: '1',
-        assetId: '0x1234',
-        ticker: '0x1234',
+        assetId: '12341234-1234-1234-1234-123412341234',
+        ticker: '12341234-1234-1234-1234-123412341234',
       });
     });
   });

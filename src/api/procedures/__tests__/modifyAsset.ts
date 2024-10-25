@@ -31,7 +31,7 @@ describe('modifyAsset procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
-    assetId = '0x1234';
+    assetId = '12341234-1234-1234-1234-123412341234';
     asset = entityMockUtils.getBaseAssetInstance({ assetId });
     rawAssetId = dsMockUtils.createMockAssetId(assetId);
     fundingRound = 'Series A';

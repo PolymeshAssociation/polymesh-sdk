@@ -53,7 +53,7 @@ describe('redeemNft procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    assetId = '0x1234';
+    assetId = '0x12341234123412341234123412341234';
     rawAssetId = dsMockUtils.createMockAssetId(assetId);
     collection = entityMockUtils.getNftCollectionInstance({ assetId });
     id = new BigNumber(1);

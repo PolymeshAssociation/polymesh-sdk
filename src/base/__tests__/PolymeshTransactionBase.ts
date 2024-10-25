@@ -1463,7 +1463,7 @@ describe('Polymesh Transaction Base class', () => {
         }),
       });
 
-      const genesisHash = '0x1234';
+      const genesisHash = '0x12341234123412341234123412341234';
       jest.spyOn(context.polymeshApi.genesisHash, 'toString').mockReturnValue(genesisHash);
 
       const era = dsMockUtils.createMockExtrinsicsEra();

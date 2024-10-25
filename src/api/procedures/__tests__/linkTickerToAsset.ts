@@ -43,7 +43,7 @@ describe('linkTickerToAsset procedure', () => {
     entityMockUtils.initMocks();
     stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
     stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    assetId = '0x1234';
+    assetId = '0x12341234123412341234123412341234';
     ticker = 'TICKER';
     asset = entityMockUtils.getFungibleAssetInstance({ assetId });
     args = {

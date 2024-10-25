@@ -39,7 +39,7 @@ describe('Schedules class', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    assetId = '0x1234';
+    assetId = '12341234-1234-1234-1234-123412341234';
 
     assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
   });

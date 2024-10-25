@@ -30,6 +30,7 @@ import {
 } from '~/types';
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
 import { tuple } from '~/types/utils';
+import { hexToUuid } from '~/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -627,8 +628,8 @@ describe('Instruction class', () => {
     it("should return the instruction's legs", async () => {
       const fromDid = 'fromDid';
       const toDid = 'toDid';
-      const assetId = '0x1111';
-      const assetId2 = '0x2222';
+      const assetId = '0x11111111111181111111111111111111';
+      const assetId2 = '0x22222222222222222222222222222222';
       const amount = new BigNumber(1000);
 
       entityMockUtils.configureMocks({ fungibleAssetOptions: { assetId } });
@@ -693,13 +694,13 @@ describe('Instruction class', () => {
 
       const resultLeg1 = leg[0] as FungibleLeg;
       expect(resultLeg1.amount).toEqual(amount);
-      expect(resultLeg1.asset.id).toBe(assetId2);
+      expect(resultLeg1.asset.id).toBe(hexToUuid(assetId2));
       expect(resultLeg1.from.owner.did).toBe(fromDid);
       expect(resultLeg1.to.owner.did).toBe(toDid);
 
       const resultLeg2 = leg[1] as FungibleLeg;
       expect(resultLeg2.amount).toEqual(amount);
-      expect(resultLeg2.asset.id).toBe(assetId);
+      expect(resultLeg2.asset.id).toBe(hexToUuid(assetId));
       expect(resultLeg2.from.owner.did).toBe(fromDid);
       expect(resultLeg2.to.owner.did).toBe(toDid);
     });
@@ -714,7 +715,7 @@ describe('Instruction class', () => {
     it('should handle NFT legs', async () => {
       const fromDid = 'fromDid';
       const toDid = 'toDid';
-      const assetId = '0x1111';
+      const assetId = '0x11111111111181111111111111111111';
 
       entityMockUtils.configureMocks({ fungibleAssetOptions: { assetId } });
       instructionStatusMock.mockResolvedValue(
@@ -754,7 +755,7 @@ describe('Instruction class', () => {
       expect(resultLeg.nfts).toEqual(
         expect.arrayContaining([expect.objectContaining({ id: new BigNumber(1) })])
       );
-      expect(resultLeg.asset.id).toBe(assetId);
+      expect(resultLeg.asset.id).toBe(hexToUuid(assetId));
       expect(resultLeg.from.owner.did).toBe(fromDid);
       expect(resultLeg.to.owner.did).toBe(toDid);
     });

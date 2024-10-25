@@ -63,7 +63,7 @@ describe('Fungible class', () => {
 
   describe('constructor', () => {
     it('should assign assetId to instance', () => {
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const context = dsMockUtils.getContextInstance();
       const asset = new FungibleAsset({ assetId }, context);
 
@@ -73,7 +73,9 @@ describe('Fungible class', () => {
 
   describe('method: isUniqueIdentifiers', () => {
     it('should return true if the object conforms to the interface', () => {
-      expect(FungibleAsset.isUniqueIdentifiers({ assetId: '0x1234' })).toBe(true);
+      expect(
+        FungibleAsset.isUniqueIdentifiers({ assetId: '12341234-1234-1234-1234-123412341234' })
+      ).toBe(true);
       expect(FungibleAsset.isUniqueIdentifiers({})).toBe(false);
       expect(FungibleAsset.isUniqueIdentifiers({ assetId: 3 })).toBe(false);
     });
@@ -96,7 +98,7 @@ describe('Fungible class', () => {
     let rawTicker: Option<PolymeshPrimitivesTicker>;
 
     beforeAll(() => {
-      assetId = '0x1234';
+      assetId = '12341234-1234-1234-1234-123412341234';
       name = 'tokenName';
       totalSupply = new BigNumber(1000);
       isDivisible = true;
@@ -350,7 +352,7 @@ describe('Fungible class', () => {
     let asset: FungibleAsset;
 
     beforeAll(() => {
-      assetId = '0x1234';
+      assetId = '12341234-1234-1234-1234-123412341234';
       fundingRound = 'Series A';
     });
 
@@ -416,7 +418,7 @@ describe('Fungible class', () => {
     let asset: FungibleAsset;
 
     beforeAll(() => {
-      assetId = 'TEST';
+      assetId = '12341234-1234-1234-1234-123412341234';
       isinValue = 'FAKE ISIN';
       cusipValue = 'FAKE CUSIP';
       cinsValue = 'FAKE CINS';
@@ -501,7 +503,7 @@ describe('Fungible class', () => {
 
   describe('method: createdAt', () => {
     it('should return the event identifier object of the Asset creation', async () => {
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
       const blockHash = 'someHash';
@@ -536,7 +538,7 @@ describe('Fungible class', () => {
     });
 
     it('should return null if the query result is empty', async () => {
-      const assetId = '0x1234';
+      const assetId = '0x12341234123412341234123412341234';
       const variables = {
         id: assetId,
       };
@@ -556,7 +558,7 @@ describe('Fungible class', () => {
 
   describe('method: freeze', () => {
     it('should prepare the procedure and return the resulting transaction', async () => {
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const context = dsMockUtils.getContextInstance();
       const asset = new FungibleAsset({ assetId }, context);
 
@@ -575,7 +577,7 @@ describe('Fungible class', () => {
 
   describe('method: unfreeze', () => {
     it('should prepare the procedure and return the resulting transaction', async () => {
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const context = dsMockUtils.getContextInstance();
       const asset = new FungibleAsset({ assetId }, context);
 
@@ -607,7 +609,7 @@ describe('Fungible class', () => {
     });
 
     it('should return whether the Asset is frozen or not', async () => {
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const context = dsMockUtils.getContextInstance();
       const asset = new FungibleAsset({ assetId }, context);
 
@@ -619,7 +621,7 @@ describe('Fungible class', () => {
     });
 
     it('should allow subscription', async () => {
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const context = dsMockUtils.getContextInstance();
       const asset = new FungibleAsset({ assetId }, context);
       const unsubCallback = 'unsubCallBack';
@@ -639,7 +641,7 @@ describe('Fungible class', () => {
 
   describe('method: redeem', () => {
     it('should prepare the procedure and return the resulting transaction', async () => {
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const amount = new BigNumber(100);
       const context = dsMockUtils.getContextInstance();
       const asset = new FungibleAsset({ assetId }, context);
@@ -663,7 +665,7 @@ describe('Fungible class', () => {
     let boolToBooleanSpy: jest.SpyInstance<boolean, [bool]>;
 
     beforeAll(() => {
-      assetId = '0x1234';
+      assetId = '12341234-1234-1234-1234-123412341234';
       rawAssetId = dsMockUtils.createMockAssetId(assetId);
       stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
       boolToBooleanSpy = jest.spyOn(utilsConversionModule, 'boolToBoolean');
@@ -704,7 +706,7 @@ describe('Fungible class', () => {
 
   describe('method: controllerTransfer', () => {
     it('should prepare the procedure and return the resulting transaction', async () => {
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const originPortfolio = 'portfolio';
       const amount = new BigNumber(1);
       const context = dsMockUtils.getContextInstance();
@@ -728,7 +730,7 @@ describe('Fungible class', () => {
 
   describe('method: getOperationHistory', () => {
     it('should return a list of agent operations', async () => {
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const context = dsMockUtils.getContextInstance();
       const asset = new FungibleAsset({ assetId }, context);
       when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
@@ -791,7 +793,7 @@ describe('Fungible class', () => {
 
   describe('method: getTransactionHistory', () => {
     it('should return the list of asset transactions', async () => {
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const context = dsMockUtils.getContextInstance();
       const asset = new FungibleAsset({ assetId }, context);
       when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
@@ -893,7 +895,7 @@ describe('Fungible class', () => {
 
   describe('method: exists', () => {
     it('should return whether the Asset exists', async () => {
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const context = dsMockUtils.getContextInstance();
       const asset = new FungibleAsset({ assetId }, context);
 
@@ -934,9 +936,9 @@ describe('Fungible class', () => {
   describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       const context = dsMockUtils.getContextInstance();
-      const asset = new FungibleAsset({ assetId: '0x1234' }, context);
+      const asset = new FungibleAsset({ assetId: '12341234-1234-1234-1234-123412341234' }, context);
 
-      expect(asset.toHuman()).toBe('0x1234');
+      expect(asset.toHuman()).toBe('12341234-1234-1234-1234-123412341234');
     });
   });
 
@@ -946,7 +948,7 @@ describe('Fungible class', () => {
         returnValue: [dsMockUtils.createMockIdentityId('someDid')],
       });
 
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const context = dsMockUtils.getContextInstance();
       const asset = new FungibleAsset({ assetId }, context);
 

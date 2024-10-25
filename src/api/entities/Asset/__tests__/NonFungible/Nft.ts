@@ -40,7 +40,7 @@ describe('Nft class', () => {
 
   describe('constructor', () => {
     it('should assign assetId and did to instance', () => {
-      const assetId = '0x1234';
+      const assetId = '0x12341234123412341234123412341234';
       const context = dsMockUtils.getContextInstance();
       const id = new BigNumber(1);
       const nft = new Nft({ assetId, id }, context);
@@ -53,7 +53,12 @@ describe('Nft class', () => {
 
   describe('method: isUniqueIdentifiers', () => {
     it('should return true if the object conforms to the interface', () => {
-      expect(Nft.isUniqueIdentifiers({ assetId: '0x1234', id: new BigNumber(1) })).toBe(true);
+      expect(
+        Nft.isUniqueIdentifiers({
+          assetId: '0x12341234123412341234123412341234',
+          id: new BigNumber(1),
+        })
+      ).toBe(true);
       expect(Nft.isUniqueIdentifiers({})).toBe(false);
       expect(Nft.isUniqueIdentifiers({ assetId: 3 })).toBe(false);
     });
@@ -62,7 +67,7 @@ describe('Nft class', () => {
   describe('method: getMetadata', () => {
     it('should return values for the metadata associated to the Nft', async () => {
       const id = new BigNumber(1);
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const context = dsMockUtils.getContextInstance();
       entityMockUtils.getNftCollectionInstance({
         getCollectionId: new BigNumber(1),
@@ -82,7 +87,7 @@ describe('Nft class', () => {
         ],
       });
 
-      const key = { id, assetId: '0x1234', type: MetadataType.Local };
+      const key = { id, assetId: '0x12341234123412341234123412341234', type: MetadataType.Local };
       jest.spyOn(utilsConversionModule, 'meshMetadataKeyToMetadataKey').mockResolvedValue(key);
 
       const nft = new Nft({ assetId, id }, context);
@@ -100,7 +105,7 @@ describe('Nft class', () => {
 
   describe('method: exists', () => {
     it('should return whether NFT exists or not', async () => {
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const context = dsMockUtils.getContextInstance();
       const id = new BigNumber(3);
       const nft = new Nft({ assetId, id }, context);
@@ -122,7 +127,7 @@ describe('Nft class', () => {
   });
 
   describe('getImageUrl', () => {
-    const assetId = 'TEST';
+    const assetId = '12341234-1234-1234-1234-123412341234';
     const id = new BigNumber(1);
     let context: Context;
 
@@ -250,7 +255,7 @@ describe('Nft class', () => {
   });
 
   describe('getTokenUri', () => {
-    const assetId = 'TEST';
+    const assetId = '12341234-1234-1234-1234-123412341234';
     const id = new BigNumber(1);
     let context: Context;
 
@@ -351,7 +356,7 @@ describe('Nft class', () => {
 
   describe('method: redeem', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const assetId = 'TEST';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const id = new BigNumber(1);
       const context = dsMockUtils.getContextInstance();
       const nft = new Nft({ assetId, id }, context);
@@ -373,7 +378,7 @@ describe('Nft class', () => {
   });
 
   describe('method: getOwner', () => {
-    const assetId = 'TEST';
+    const assetId = '12341234-1234-1234-1234-123412341234';
     const id = new BigNumber(1);
     let context: Context;
     let nftOwnerMock: jest.Mock;
@@ -420,7 +425,7 @@ describe('Nft class', () => {
   });
 
   describe('method: isLocked', () => {
-    const assetId = 'TEST';
+    const assetId = '12341234-1234-1234-1234-123412341234';
     const id = new BigNumber(1);
     let context: Context;
     let nft: Nft;
@@ -458,10 +463,10 @@ describe('Nft class', () => {
   describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       const context = dsMockUtils.getContextInstance();
-      const assetId = '0x1234';
+      const assetId = '0x12341234123412341234123412341234';
       const nft = new Nft({ assetId, id: new BigNumber(1) }, context);
 
-      expect(nft.toHuman()).toEqual({ collection: '0x1234', id: '1' });
+      expect(nft.toHuman()).toEqual({ collection: '0x12341234123412341234123412341234', id: '1' });
     });
   });
 });

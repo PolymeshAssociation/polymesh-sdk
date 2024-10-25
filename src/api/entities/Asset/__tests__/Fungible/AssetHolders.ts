@@ -46,7 +46,7 @@ describe('AssetHolder class', () => {
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
-    assetId = '0x1234';
+    assetId = '0x12341234123412341234123412341234';
     mockContext = dsMockUtils.getContextInstance();
     rawAssetId = dsMockUtils.createMockAssetId(assetId);
     requestPaginatedSpy = jest.spyOn(utilsInternalModule, 'requestPaginated');

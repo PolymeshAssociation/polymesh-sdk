@@ -40,7 +40,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
   describe('constructor', () => {
     it('should assign assetId and Identity to instance', () => {
       const did = 'someDid';
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, assetId }, context);
 
       expect(trustedClaimIssuer.asset.id).toBe(assetId);
@@ -51,7 +51,10 @@ describe('DefaultTrustedClaimIssuer class', () => {
   describe('method: isUniqueIdentifiers', () => {
     it('should return true if the object conforms to the interface', () => {
       expect(
-        DefaultTrustedClaimIssuer.isUniqueIdentifiers({ did: 'someDid', assetId: '0x1234' })
+        DefaultTrustedClaimIssuer.isUniqueIdentifiers({
+          did: 'someDid',
+          assetId: '12341234-1234-1234-1234-123412341234',
+        })
       ).toBe(true);
       expect(DefaultTrustedClaimIssuer.isUniqueIdentifiers({})).toBe(false);
       expect(DefaultTrustedClaimIssuer.isUniqueIdentifiers({ did: 'someDid' })).toBe(false);
@@ -61,7 +64,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
 
   describe('method: addedAt', () => {
     const did = 'someDid';
-    const assetId = '0x1234';
+    const assetId = '12341234-1234-1234-1234-123412341234';
     const variables = {
       assetId,
       issuer: did,
@@ -121,7 +124,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
     let trustedClaimIssuerMock: jest.Mock;
 
     beforeAll(() => {
-      assetId = '0x1234';
+      assetId = '12341234-1234-1234-1234-123412341234';
       stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
       claimIssuers = [
         dsMockUtils.createMockTrustedIssuer({

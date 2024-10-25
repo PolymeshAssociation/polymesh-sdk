@@ -1804,7 +1804,11 @@ describe('Context class', () => {
     });
 
     it('should return all distributions associated to the passed assets', async () => {
-      const assetIds = ['0x0000', '0x1111', '0x2222'];
+      const assetIds = [
+        '0x00000000000000000000000000000000',
+        '0x11111111111181111111111111111111',
+        '0x22222222222222222222222222222222',
+      ];
       const rawAssetIds = assetIds.map(dsMockUtils.createMockAssetId);
 
       const middlewareApiV2 = dsMockUtils.getMiddlewareApi();
@@ -1874,8 +1878,8 @@ describe('Context class', () => {
       ];
       /* eslint-enable @typescript-eslint/naming-convention */
 
-      const usdAssetId = dsMockUtils.createMockAssetId('0xUSD');
-      const cadAssetId = dsMockUtils.createMockAssetId('0xCAD');
+      const usdAssetId = dsMockUtils.createMockAssetId('0x00000000000080008000000000000001');
+      const cadAssetId = dsMockUtils.createMockAssetId('0x00000000000080008000000000000002');
       const distributions = [
         dsMockUtils.createMockOption(
           dsMockUtils.createMockDistribution({
@@ -1978,7 +1982,7 @@ describe('Context class', () => {
       expect(result[0].distribution.origin).toEqual(
         expect.objectContaining({ owner: expect.objectContaining({ did: 'someDid' }) })
       );
-      expect(result[0].distribution.currency).toBe('0xUSD');
+      expect(result[0].distribution.currency).toBe('00000000-0000-8000-8000-000000000001');
       expect(result[0].distribution.perShare).toEqual(new BigNumber(10));
       expect(result[0].distribution.maxAmount).toEqual(new BigNumber(500000));
       expect(result[0].distribution.expiryDate).toBe(null);
@@ -1992,7 +1996,7 @@ describe('Context class', () => {
           id: new BigNumber(2),
         })
       );
-      expect(result[1].distribution.currency).toBe('0xCAD');
+      expect(result[1].distribution.currency).toBe('00000000-0000-8000-8000-000000000002');
       expect(result[1].distribution.perShare).toEqual(new BigNumber(20));
       expect(result[1].distribution.maxAmount).toEqual(new BigNumber(300000));
       expect(result[1].distribution.expiryDate).toBe(null);

@@ -9,6 +9,7 @@ import { AuthorizationStatusEnum, AuthTypeEnum } from '~/middleware/types';
 import { AuthorizationType as MeshAuthorizationType } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { AuthorizationType, Identity, SignerValue } from '~/types';
+import { hexToUuid } from '~/utils';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -81,14 +82,20 @@ describe('Authorizations class', () => {
         {
           authId: new BigNumber(1),
           expiry: null,
-          data: { type: AuthorizationType.TransferAssetOwnership, value: '0x1111' },
+          data: {
+            type: AuthorizationType.TransferAssetOwnership,
+            value: '0x12341234123412341234123412341234',
+          },
           target: identity,
           issuer: entityMockUtils.getIdentityInstance({ did: 'alice' }),
         } as const,
         {
           authId: new BigNumber(2),
           expiry: new Date('10/14/3040'),
-          data: { type: AuthorizationType.TransferAssetOwnership, value: '0x1111' },
+          data: {
+            type: AuthorizationType.TransferAssetOwnership,
+            value: '0x12341234123412341234123412341234',
+          },
           target: identity,
           issuer: entityMockUtils.getIdentityInstance({ did: 'bob' }),
         } as const,
@@ -128,7 +135,7 @@ describe('Authorizations class', () => {
           issuer,
           target,
           expiry,
-          data,
+          data: { type: data.type, value: hexToUuid(data.value) },
         })
       );
 
@@ -164,7 +171,10 @@ describe('Authorizations class', () => {
       const id = new BigNumber(1);
 
       const authId = new BigNumber(1);
-      const data = { type: AuthorizationType.TransferAssetOwnership, value: '0x1234' } as const;
+      const data = {
+        type: AuthorizationType.TransferAssetOwnership,
+        value: '0x12341234123412341234123412341234',
+      } as const;
 
       dsMockUtils.createQueryMock('identity', 'authorizations', {
         returnValue: dsMockUtils.createMockOption(
@@ -183,7 +193,10 @@ describe('Authorizations class', () => {
 
       expect(result.authId).toEqual(authId);
       expect(result.expiry).toBeNull();
-      expect(result.data).toEqual(data);
+      expect(result.data).toEqual({
+        type: AuthorizationType.TransferAssetOwnership,
+        value: hexToUuid(data.value),
+      });
       expect((result.target as Identity).did).toEqual(did);
       expect(result.issuer.did).toEqual(issuerDid);
     });
@@ -216,7 +229,10 @@ describe('Authorizations class', () => {
         {
           authId: new BigNumber(1),
           expiry: null,
-          data: { type: AuthorizationType.TransferAssetOwnership, value: '0x1234' },
+          data: {
+            type: AuthorizationType.TransferAssetOwnership,
+            value: '0x12341234123412341234123412341234',
+          },
           target: identity,
           issuer: entityMockUtils.getIdentityInstance({ did: 'alice' }),
         } as const,

@@ -54,7 +54,7 @@ describe('redeemTokens procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    assetId = '0x1234';
+    assetId = '0x12341234123412341234123412341234';
     asset = entityMockUtils.getFungibleAssetInstance({ assetId, details: { isDivisible: true } });
     rawAssetId = dsMockUtils.createMockAssetId(assetId);
     amount = new BigNumber(100);

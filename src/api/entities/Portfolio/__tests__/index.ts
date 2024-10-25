@@ -26,6 +26,7 @@ import {
   SettlementDirectionEnum,
 } from '~/types';
 import { tuple } from '~/types/utils';
+import { hexToUuid } from '~/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -203,9 +204,9 @@ describe('Portfolio class', () => {
     beforeAll(() => {
       did = 'someDid';
       id = new BigNumber(1);
-      assetId0 = '0x1111';
-      assetId1 = '0x2222';
-      assetId2 = '0x3333';
+      assetId0 = '0x11111111111181111111111111111111';
+      assetId1 = '0x22222222222222222222222222222222';
+      assetId2 = '0x33333333333333333333333333333333';
       total0 = new BigNumber(100);
       total1 = new BigNumber(200);
       locked0 = new BigNumber(50);
@@ -254,11 +255,11 @@ describe('Portfolio class', () => {
 
       const result = await portfolio.getAssetBalances();
 
-      expect(result[0].asset.id).toBe(assetId0);
+      expect(result[0].asset.id).toBe(hexToUuid(assetId0));
       expect(result[0].total).toEqual(total0);
       expect(result[0].locked).toEqual(locked0);
       expect(result[0].free).toEqual(total0.minus(locked0));
-      expect(result[1].asset.id).toBe(assetId1);
+      expect(result[1].asset.id).toBe(hexToUuid(assetId1));
       expect(result[1].total).toEqual(total1);
       expect(result[1].locked).toEqual(locked1);
       expect(result[1].free).toEqual(total1.minus(locked1));
@@ -267,13 +268,13 @@ describe('Portfolio class', () => {
     it('should return the requested portfolio assets and their balances', async () => {
       const portfolio = new NonAbstract({ did, id }, context);
 
-      const otherAssetId = '0x9999';
+      const otherAssetId = '0x99999999999999999999999999999999';
       const result = await portfolio.getAssetBalances({
-        assets: [assetId0, new FungibleAsset({ assetId: otherAssetId }, context)],
+        assets: [hexToUuid(assetId0), new FungibleAsset({ assetId: otherAssetId }, context)],
       });
 
       expect(result.length).toBe(2);
-      expect(result[0].asset.id).toBe(assetId0);
+      expect(result[0].asset.id).toBe(hexToUuid(assetId0));
       expect(result[0].total).toEqual(total0);
       expect(result[0].locked).toEqual(locked0);
       expect(result[0].free).toEqual(total0.minus(locked0));
@@ -323,9 +324,9 @@ describe('Portfolio class', () => {
       lockedNftId = new BigNumber(13);
       heldOnlyNftId = new BigNumber(20);
       lockedOnlyNftId = new BigNumber(30);
-      assetId = '0x1234';
-      heldOnlyAssetId = '0x6666';
-      lockedOnlyAssetId = '0x7777';
+      assetId = '0x12341234123412341234123412341234';
+      heldOnlyAssetId = '0x66666666666666666666666666666666';
+      lockedOnlyAssetId = '0x77777777777777777777777777777777';
       rawAssetId = dsMockUtils.createMockAssetId(assetId);
       rawHeldOnlyAssetId = dsMockUtils.createMockAssetId(heldOnlyAssetId);
       rawLockedOnlyAssetId = dsMockUtils.createMockAssetId(lockedOnlyAssetId);
@@ -374,7 +375,7 @@ describe('Portfolio class', () => {
       expect(result).toEqual(
         expect.arrayContaining([
           {
-            collection: expect.objectContaining({ id: assetId }),
+            collection: expect.objectContaining({ id: hexToUuid(assetId) }),
             free: expect.arrayContaining([
               expect.objectContaining({ id: nftId }),
               expect.objectContaining({ id: secondNftId }),
@@ -383,13 +384,13 @@ describe('Portfolio class', () => {
             total: new BigNumber(3),
           },
           expect.objectContaining({
-            collection: expect.objectContaining({ id: heldOnlyAssetId }),
+            collection: expect.objectContaining({ id: hexToUuid(heldOnlyAssetId) }),
             free: expect.arrayContaining([expect.objectContaining({ id: heldOnlyNftId })]),
             locked: [],
             total: new BigNumber(1),
           }),
           expect.objectContaining({
-            collection: expect.objectContaining({ id: lockedOnlyAssetId }),
+            collection: expect.objectContaining({ id: hexToUuid(lockedOnlyAssetId) }),
             free: [],
             locked: expect.arrayContaining([expect.objectContaining({ id: lockedOnlyNftId })]),
             total: new BigNumber(1),
@@ -401,16 +402,16 @@ describe('Portfolio class', () => {
     it('should filter assets if any are specified', async () => {
       const portfolio = new NonAbstract({ did, id: portfolioId }, context);
 
-      jest.spyOn(utilsInternalModule, 'asAssetId').mockResolvedValue(assetId);
+      jest.spyOn(utilsInternalModule, 'asAssetId').mockResolvedValue(hexToUuid(assetId));
 
-      const result = await portfolio.getCollections({ collections: [assetId] });
+      const result = await portfolio.getCollections({ collections: [hexToUuid(assetId)] });
 
       expect(result.length).toEqual(1);
 
       expect(result).toEqual(
         expect.arrayContaining([
           {
-            collection: expect.objectContaining({ id: assetId }),
+            collection: expect.objectContaining({ id: hexToUuid(assetId) }),
             free: expect.arrayContaining([
               expect.objectContaining({ id: nftId }),
               expect.objectContaining({ id: secondNftId }),
@@ -651,7 +652,7 @@ describe('Portfolio class', () => {
         ],
       };
 
-      const middlewareAssetId = '0x1234';
+      const middlewareAssetId = '0x12341234123412341234123412341234';
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
@@ -759,7 +760,7 @@ describe('Portfolio class', () => {
 
       when(getAssetIdForMiddlewareSpy)
         .calledWith('SOME_TICKER', context)
-        .mockResolvedValue('0x1234');
+        .mockResolvedValue('0x12341234123412341234123412341234');
 
       portfolio = new NonAbstract({ did }, context);
       result = await portfolio.getTransactionHistory({

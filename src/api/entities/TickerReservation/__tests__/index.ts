@@ -72,7 +72,11 @@ describe('TickerReservation class', () => {
       dsMockUtils.createQueryMock('asset', 'assets');
       dsMockUtils
         .createQueryMock('asset', 'tickerAssetId')
-        .mockResolvedValue(dsMockUtils.createMockOption(dsMockUtils.createMockAssetId('0x1234')));
+        .mockResolvedValue(
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockAssetId('0x12341234123412341234123412341234')
+          )
+        );
       queryMultiMock = dsMockUtils.getQueryMultiMock();
     });
 

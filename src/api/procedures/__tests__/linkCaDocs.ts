@@ -14,6 +14,7 @@ import { Mocked } from '~/testUtils/types';
 import { AssetDocument, FungibleAsset, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import { tuple } from '~/types/utils';
+import { uuidToHex } from '~/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -43,7 +44,7 @@ describe('linkCaDocs procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
-    assetId = '0x1234';
+    assetId = '12341234-1234-1234-1234-123412341234';
     asset = entityMockUtils.getFungibleAssetInstance({ assetId });
     id = new BigNumber(1);
     documents = [
@@ -58,7 +59,7 @@ describe('linkCaDocs procedure', () => {
         contentHash: '0x02',
       },
     ];
-    rawAssetId = dsMockUtils.createMockAssetId(assetId);
+    rawAssetId = dsMockUtils.createMockAssetId(uuidToHex(assetId));
     rawDocuments = documents.map(({ name, uri, contentHash, type, filedAt }) =>
       dsMockUtils.createMockDocument({
         name: dsMockUtils.createMockBytes(name),

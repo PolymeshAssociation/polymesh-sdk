@@ -24,7 +24,7 @@ jest.mock(
 );
 
 describe('closeOffering procedure', () => {
-  const assetId = '0x1234';
+  const assetId = '0x12341234123412341234123412341234';
   const id = new BigNumber(1);
   let asset: FungibleAsset;
 

@@ -68,7 +68,7 @@ describe('CorporateAction class', () => {
     context = dsMockUtils.getContextInstance();
 
     id = new BigNumber(1);
-    assetId = '0x1234';
+    assetId = '12341234-1234-1234-1234-123412341234';
     declarationDate = new Date('10/14/1987 UTC');
     kind = CorporateActionKind.UnpredictableBenefit;
     description = 'someDescription';
@@ -304,8 +304,8 @@ describe('CorporateAction class', () => {
     it('should return a human readable version of the entity', () => {
       expect(corporateAction.toHuman()).toEqual({
         id: '1',
-        assetId: '0x1234',
-        ticker: '0x1234',
+        assetId: '12341234-1234-1234-1234-123412341234',
+        ticker: '12341234-1234-1234-1234-123412341234',
         declarationDate: '1987-10-14T00:00:00.000Z',
         defaultTaxWithholding: '10',
         description: 'someDescription',

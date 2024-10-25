@@ -20,7 +20,7 @@ jest.mock(
 );
 
 describe('createGroup procedure', () => {
-  const assetId = '0x1234';
+  const assetId = '0x12341234123412341234123412341234';
   const transactions = {
     type: PermissionType.Include,
     values: [TxTags.sto.Invest, TxTags.asset.CreateAsset],

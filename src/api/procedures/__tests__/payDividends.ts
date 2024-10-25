@@ -10,7 +10,7 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('payDividends procedure', () => {
-  const assetId = '0x1234';
+  const assetId = '0x12341234123412341234123412341234';
   const did = 'someDid';
   const id = new BigNumber(1);
   const paymentDate = new Date('10/14/1987');

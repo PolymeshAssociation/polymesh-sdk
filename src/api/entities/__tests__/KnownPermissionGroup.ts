@@ -8,7 +8,7 @@ jest.mock(
 );
 
 describe('KnownPermissionGroup class', () => {
-  const assetId = '0x1234';
+  const assetId = '0x12341234123412341234123412341234';
 
   let context: Context;
 

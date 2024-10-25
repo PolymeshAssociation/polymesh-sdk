@@ -230,9 +230,9 @@ describe('Portfolios class', () => {
     const blockHash2 = 'otherHash';
     const blockHash3 = 'hash3';
 
-    const assetId1 = '0x1111';
+    const assetId1 = '0x11111111111181111111111111111111';
     const ticker1 = 'TICKER_1';
-    const assetId2 = '0x2222';
+    const assetId2 = '0x22222222222222222222222222222222';
     const ticker2 = 'TICKER_2';
 
     const amount1 = new BigNumber(1000);
@@ -383,7 +383,7 @@ describe('Portfolios class', () => {
           query: settlementsForAllPortfoliosQuery({
             identityId: did,
             address: account,
-            assetId: '0x1234',
+            assetId: '0x12341234123412341234123412341234',
           }),
           returnData: {
             legs: settlementsResponse,
@@ -393,7 +393,7 @@ describe('Portfolios class', () => {
           query: portfoliosMovementsQuery({
             identityId: did,
             address: account,
-            assetId: '0x1234',
+            assetId: '0x12341234123412341234123412341234',
           }),
           returnData: {
             portfolioMovements: {
@@ -405,12 +405,12 @@ describe('Portfolios class', () => {
 
       const getAssetIdForMiddlewareSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware');
       when(getAssetIdForMiddlewareSpy)
-        .calledWith('0x1234', mockContext)
-        .mockResolvedValue('0x1234');
+        .calledWith('0x12341234123412341234123412341234', mockContext)
+        .mockResolvedValue('0x12341234123412341234123412341234');
 
       let result = await identity.portfolios.getTransactionHistory({
         account,
-        assetId: '0x1234',
+        assetId: '0x12341234123412341234123412341234',
       });
 
       expect(result[0].blockNumber).toEqual(blockNumber1);
@@ -435,7 +435,7 @@ describe('Portfolios class', () => {
           query: settlementsForAllPortfoliosQuery({
             identityId: did,
             address: undefined,
-            assetId: '0x1234',
+            assetId: '0x12341234123412341234123412341234',
           }),
           returnData: {
             legs: {
@@ -447,7 +447,7 @@ describe('Portfolios class', () => {
           query: portfoliosMovementsQuery({
             identityId: did,
             address: undefined,
-            assetId: '0x1234',
+            assetId: '0x12341234123412341234123412341234',
           }),
           returnData: {
             portfolioMovements: {
@@ -482,7 +482,7 @@ describe('Portfolios class', () => {
 
       when(getAssetIdForMiddlewareSpy)
         .calledWith('SOME_TICKER', mockContext)
-        .mockResolvedValue('0x1234');
+        .mockResolvedValue('0x12341234123412341234123412341234');
 
       result = await identity.portfolios.getTransactionHistory({
         ticker: 'SOME_TICKER',

@@ -3,6 +3,7 @@ import { when } from 'jest-when';
 
 import { CheckpointSchedule, Context, Entity } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { uuidToHex } from '~/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -29,7 +30,7 @@ describe('CheckpointSchedule class', () => {
     entityMockUtils.initMocks();
 
     id = new BigNumber(1);
-    assetId = '0x1234';
+    assetId = '12341234-1234-1234-1234-123412341234';
     start = new Date('10/14/1987 UTC');
     nextCheckpointDate = new Date(new Date().getTime() + 60 * 60 * 1000 * 24 * 365 * 60);
     stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
@@ -104,7 +105,7 @@ describe('CheckpointSchedule class', () => {
         context
       );
 
-      stringToAssetIdSpy.mockReturnValue(dsMockUtils.createMockAssetId(assetId));
+      stringToAssetIdSpy.mockReturnValue(dsMockUtils.createMockAssetId(uuidToHex(assetId)));
       dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
         returnValue: dsMockUtils.createMockOption(),
       });
@@ -241,15 +242,15 @@ describe('CheckpointSchedule class', () => {
       const schedule = new CheckpointSchedule(
         {
           id: new BigNumber(1),
-          assetId: '0x1234',
+          assetId: '12341234-1234-1234-1234-123412341234',
           pendingPoints: [start],
         },
         context
       );
       expect(schedule.toHuman()).toEqual({
         id: '1',
-        assetId: '0x1234',
-        ticker: '0x1234',
+        assetId: '12341234-1234-1234-1234-123412341234',
+        ticker: '12341234-1234-1234-1234-123412341234',
         pendingPoints: ['1987-10-14T00:00:00.000Z'],
         expiryDate: schedule.expiryDate?.toISOString(),
       });

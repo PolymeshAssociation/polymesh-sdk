@@ -18,6 +18,7 @@ import { Context, DefaultPortfolio, Nft, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { NftCollection, PortfolioBalance, PortfolioId, RoleType, TxTags } from '~/types';
+import { uuidToHex } from '~/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -67,10 +68,10 @@ describe('nftControllerTransfer procedure', () => {
     );
     portfolioToPortfolioKindSpy = jest.spyOn(utilsConversionModule, 'portfolioToPortfolioKind');
     nftToMeshNftSpy = jest.spyOn(utilsConversionModule, 'nftToMeshNft');
+    assetId = '12341234-1234-1234-1234-123412341234';
     collection = entityMockUtils.getNftCollectionInstance({ assetId });
     stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
-    assetId = '0x1234';
-    rawAssetId = dsMockUtils.createMockAssetId(assetId);
+    rawAssetId = dsMockUtils.createMockAssetId(uuidToHex(assetId));
     originDid = 'fakeDid';
     signerDid = 'signerDid';
     rawPortfolioId = dsMockUtils.createMockPortfolioId({

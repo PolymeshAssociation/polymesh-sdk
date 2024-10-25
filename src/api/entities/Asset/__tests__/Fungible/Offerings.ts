@@ -13,6 +13,7 @@ import {
   OfferingTimingStatus,
 } from '~/types';
 import { tuple } from '~/types/utils';
+import { uuidToHex } from '~/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -40,7 +41,7 @@ describe('Offerings class', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    assetId = 'SOME_ASSET';
+    assetId = '12341234-1234-1234-1234-123412341234';
   });
 
   beforeEach(() => {
@@ -95,7 +96,7 @@ describe('Offerings class', () => {
     it('should return the requested Offering', async () => {
       entityMockUtils.configureMocks({
         offeringOptions: {
-          assetId,
+          assetId: uuidToHex(assetId),
         },
       });
       const id = new BigNumber(1);
@@ -130,7 +131,7 @@ describe('Offerings class', () => {
     let fundraisers: PalletStoFundraiser[];
 
     beforeAll(() => {
-      rawAssetId = dsMockUtils.createMockAssetId(assetId);
+      rawAssetId = dsMockUtils.createMockAssetId(uuidToHex(assetId));
       stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
       fundraiserToOfferingDetailsSpy = jest.spyOn(
         utilsConversionModule,

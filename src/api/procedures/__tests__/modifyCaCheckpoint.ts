@@ -18,7 +18,7 @@ jest.mock(
 );
 
 describe('modifyCaCheckpoint procedure', () => {
-  const assetId = '0x1234';
+  const assetId = '0x12341234123412341234123412341234';
 
   let mockContext: Mocked<Context>;
   let changeRecordDateTransaction: PolymeshTx<unknown[]>;

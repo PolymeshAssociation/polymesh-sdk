@@ -882,7 +882,7 @@ const MockAccountClass = createMockEntityClass<AccountOptions>(
     authorizationsGetReceived: [],
     authorizationsGetOne: getAuthorizationRequestInstance(),
     getMultiSig: null,
-    getNextAssetId: '0x1234',
+    getNextAssetId: '12341234-1234-1234-1234-123412341234',
   }),
   ['Account']
 );
@@ -1070,7 +1070,7 @@ const MockFungibleAssetClass = createMockEntityClass<FungibleAssetOptions>(
     }
   },
   () => ({
-    assetId: '0x1234',
+    assetId: '12341234-1234-1234-1234-123412341234',
     ticker: 'SOME_TICKER',
     did: 'assetDid',
     details: {
@@ -1126,7 +1126,7 @@ const MockFungibleAssetClass = createMockEntityClass<FungibleAssetOptions>(
       },
     },
     getNextLocalId: new BigNumber(0),
-    toHuman: '0x1234',
+    toHuman: '12341234-1234-1234-1234-123412341234',
     investorCount: new BigNumber(0),
     getRequiredMediators: [],
     getVenueFilteringDetails: { isEnabled: false, allowedVenues: [] },
@@ -1203,7 +1203,7 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
     }
   },
   () => ({
-    assetId: '0x1234',
+    assetId: '12341234-1234-1234-1234-123412341234',
     ticker: 'TICKER',
     did: 'assetDid',
     details: {
@@ -1228,7 +1228,7 @@ const MockNftCollectionClass = createMockEntityClass<NftCollectionOptions>(
     transfersCanTransfer: TransferStatus.Success,
     getIdentifiers: [],
     getNextLocalId: new BigNumber(0),
-    toHuman: '0x1234',
+    toHuman: '12341234-1234-1234-1234-123412341234',
     investorCount: new BigNumber(0),
     collectionKeys: [],
     getCollectionId: new BigNumber(0),
@@ -1268,7 +1268,7 @@ const MockNftClass = createMockEntityClass<NftOptions>(
     collection: entityMockUtils.getNftCollectionInstance(),
     did: 'nftDid',
     id: new BigNumber(1),
-    assetId: '0x1234',
+    assetId: '12341234-1234-1234-1234-123412341234',
     getMetadata: [],
   }),
   ['Nft']
@@ -1338,7 +1338,7 @@ const MockBaseAssetClass = createMockEntityClass<BaseAssetOptions>(
     }
   },
   () => ({
-    assetId: '0x1234',
+    assetId: '12341234-1234-1234-1234-123412341234',
     ticker: 'SOME_TICKER',
     did: 'assetDid',
     details: {
@@ -1364,7 +1364,7 @@ const MockBaseAssetClass = createMockEntityClass<BaseAssetOptions>(
     },
     getNextLocalId: new BigNumber(0),
     getRequiredMediators: [],
-    toHuman: '0x1234',
+    toHuman: '12341234-1234-1234-1234-123412341234',
     investorCount: new BigNumber(0),
     getVenueFilteringDetails: { isEnabled: false, allowedVenues: [] },
     currentFundingRound: '',
@@ -1421,7 +1421,7 @@ const MockMetadataEntryClass = createMockEntityClass<MetadataEntryOptions>(
       lockStatus: MetadataLockStatus.Unlocked,
       expiry: undefined,
     },
-    assetId: '0x1234',
+    assetId: '12341234-1234-1234-1234-123412341234',
     id: new BigNumber(1),
     type: MetadataType.Local,
     isModifiable: {
@@ -1716,7 +1716,7 @@ const MockOfferingClass = createMockEntityClass<OfferingOptions>(
       raisingCurrency: 'USD',
       minInvestment: new BigNumber(100000000),
     },
-    assetId: '0x1234',
+    assetId: '12341234-1234-1234-1234-123412341234',
     id: new BigNumber(1),
   }),
   ['Offering']
@@ -1755,7 +1755,7 @@ const MockCheckpointClass = createMockEntityClass<CheckpointOptions>(
   () => ({
     totalSupply: new BigNumber(10000),
     createdAt: new Date('10/14/1987'),
-    assetId: '0x1234',
+    assetId: '12341234-1234-1234-1234-123412341234',
     id: new BigNumber(1),
     balance: new BigNumber(1000),
     allBalances: {
@@ -1801,7 +1801,7 @@ const MockCheckpointScheduleClass = createMockEntityClass<CheckpointScheduleOpti
     const start = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
     return {
       id: new BigNumber(1),
-      assetId: '0x1234',
+      assetId: '12341234-1234-1234-1234-123412341234',
       start,
       points: [start],
       details: {
@@ -1858,7 +1858,7 @@ const MockCorporateActionClass = createMockEntityClass<CorporateActionOptions>(
   },
   () => ({
     id: new BigNumber(1),
-    assetId: '0x1234',
+    assetId: '12341234-1234-1234-1234-123412341234',
     kind: CorporateActionKind.UnpredictableBenefit,
     declarationDate: new Date('10/14/1987'),
     description: 'someDescription',
@@ -1946,7 +1946,7 @@ const MockDividendDistributionClass = createMockEntityClass<DividendDistribution
   },
   () => ({
     id: new BigNumber(1),
-    assetId: '0x1234',
+    assetId: '12341234-1234-1234-1234-123412341234',
     kind: CorporateActionKind.UnpredictableBenefit,
     origin: getDefaultPortfolioInstance(),
     declarationDate: new Date('10/14/1987'),
@@ -2006,7 +2006,7 @@ const MockCustomPermissionGroupClass = createMockEntityClass<CustomPermissionGro
     }
   },
   () => ({
-    assetId: '0x1234',
+    assetId: '12341234-1234-1234-1234-123412341234',
     id: new BigNumber(1),
     getPermissions: {
       transactions: null,
@@ -2083,7 +2083,7 @@ const MockMultiSigClass = createMockEntityClass<MultiSigOptions>(
     authorizationsGetReceived: [],
     authorizationsGetOne: getAuthorizationRequestInstance(),
     getMultiSig: null,
-    getNextAssetId: '0x1234',
+    getNextAssetId: '12341234-1234-1234-1234-123412341234',
   }),
   ['MultiSig', 'Account']
 );
@@ -2149,7 +2149,7 @@ const MockKnownPermissionGroupClass = createMockEntityClass<KnownPermissionGroup
     }
   },
   () => ({
-    assetId: '0x1234',
+    assetId: '12341234-1234-1234-1234-123412341234',
     type: PermissionGroupType.Full,
     getPermissions: {
       transactions: null,

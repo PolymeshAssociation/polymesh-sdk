@@ -30,7 +30,7 @@ describe('Checkpoint class', () => {
     entityMockUtils.initMocks();
 
     id = new BigNumber(1);
-    assetId = '0x1234';
+    assetId = '12341234-1234-1234-1234-123412341234';
 
     balanceToBigNumberSpy = jest.spyOn(utilsConversionModule, 'balanceToBigNumber');
   });
@@ -63,9 +63,12 @@ describe('Checkpoint class', () => {
 
   describe('method: isUniqueIdentifiers', () => {
     it('should return true if the object conforms to the interface', () => {
-      expect(Checkpoint.isUniqueIdentifiers({ id: new BigNumber(1), assetId: '0x1234' })).toBe(
-        true
-      );
+      expect(
+        Checkpoint.isUniqueIdentifiers({
+          id: new BigNumber(1),
+          assetId: '0x12341234123412341234123412341234',
+        })
+      ).toBe(true);
       expect(Checkpoint.isUniqueIdentifiers({})).toBe(false);
       expect(Checkpoint.isUniqueIdentifiers({ id: new BigNumber(1) })).toBe(false);
       expect(Checkpoint.isUniqueIdentifiers({ id: 'id' })).toBe(false);
@@ -252,11 +255,14 @@ describe('Checkpoint class', () => {
 
   describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
-      const checkpoint = new Checkpoint({ id: new BigNumber(1), assetId: '0x1234' }, context);
+      const checkpoint = new Checkpoint(
+        { id: new BigNumber(1), assetId: '12341234-1234-1234-1234-123412341234' },
+        context
+      );
       expect(checkpoint.toHuman()).toEqual({
         id: '1',
-        ticker: '0x1234',
-        assetId: '0x1234',
+        ticker: '12341234-1234-1234-1234-123412341234',
+        assetId: '12341234-1234-1234-1234-123412341234',
       });
     });
   });

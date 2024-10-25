@@ -41,7 +41,7 @@ describe('Metadata class', () => {
 
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
-    assetId = '0x1234';
+    assetId = '12341234-1234-1234-1234-123412341234';
     rawAssetId = dsMockUtils.createMockAssetId(assetId);
     asset = entityMockUtils.getFungibleAssetInstance({ assetId });
 

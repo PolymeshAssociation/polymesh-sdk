@@ -20,6 +20,7 @@ import {
   TickerReservationStatus,
 } from '~/types';
 import { tuple } from '~/types/utils';
+import { hexToUuid, uuidToHex } from '~/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -288,7 +289,9 @@ describe('Assets Class', () => {
       dsMockUtils.createQueryMock('asset', 'tickerAssetId', {
         multi: [
           dsMockUtils.createMockOption(),
-          dsMockUtils.createMockOption(dsMockUtils.createMockAssetId('0x1234')),
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockAssetId('0x12341234123412341234123412341234')
+          ),
           dsMockUtils.createMockOption(),
         ],
       });
@@ -310,7 +313,7 @@ describe('Assets Class', () => {
 
   describe('method: getAsset', () => {
     it('should return a specific Asset for an asset ID', async () => {
-      const assetId = '0x1234';
+      const assetId = '0x12341234123412341234123412341234';
 
       entityMockUtils.configureMocks({
         fungibleAssetOptions: { exists: false },
@@ -329,14 +332,16 @@ describe('Assets Class', () => {
         nftCollectionOptions: { exists: true },
       });
 
-      jest.spyOn(utilsInternalModule, 'getAssetIdForTicker').mockResolvedValue('0x1234');
+      jest
+        .spyOn(utilsInternalModule, 'getAssetIdForTicker')
+        .mockResolvedValue('0x12341234123412341234123412341234');
 
       const asset = await assets.getAsset({ ticker });
       expect(asset).toBeInstanceOf(NftCollection);
     });
 
     it('should throw if the Asset does not exist', async () => {
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       entityMockUtils.configureMocks({
         fungibleAssetOptions: { exists: false },
         nftCollectionOptions: { exists: false },
@@ -358,7 +363,7 @@ describe('Assets Class', () => {
     });
 
     it('should return a list of Assets owned by the supplied did', async () => {
-      const fakeAssetId = '0x1234';
+      const fakeAssetId = '0x12341234123412341234123412341234';
       const did = 'someDid';
 
       dsMockUtils.createQueryMock('asset', 'securityTokensOwnedByUser', {
@@ -386,11 +391,11 @@ describe('Assets Class', () => {
       const asset = await assets.getAssets({ owner: 'someDid' });
 
       expect(asset).toHaveLength(1);
-      expect(asset[0].id).toBe(fakeAssetId);
+      expect(asset[0].id).toBe(hexToUuid(fakeAssetId));
     });
 
     it('should return a list of Assets owned by the signing Identity if no did is supplied', async () => {
-      const assetId = '0x1234';
+      const assetId = '0x12341234123412341234123412341234';
       const did = 'someDid';
 
       dsMockUtils.createQueryMock('asset', 'securityTokensOwnedByUser', {
@@ -418,12 +423,12 @@ describe('Assets Class', () => {
       const assetResults = await assets.getAssets();
 
       expect(assetResults).toHaveLength(1);
-      expect(assetResults[0].id).toBe(assetId);
+      expect(assetResults[0].id).toBe(hexToUuid(assetId));
     });
   });
 
   describe('method: getFungibleAsset', () => {
-    const assetId = '0x1234';
+    const assetId = '0x12341234123412341234123412341234';
 
     const ticker = 'TEST';
     it('should return a specific Asset for a specific asset ID', async () => {
@@ -454,7 +459,7 @@ describe('Assets Class', () => {
 
   describe('method: getNftCollection', () => {
     const ticker = 'NFTTEST';
-    const assetId = '0x1234';
+    const assetId = '0x12341234123412341234123412341234';
 
     it('should return the collection for a specific asset ID', async () => {
       const nftCollection = await assets.getNftCollection({ assetId });
@@ -483,14 +488,16 @@ describe('Assets Class', () => {
 
   describe('method: get', () => {
     let requestPaginatedSpy: jest.SpyInstance;
+    const assetId = '0x12341234123482348234123412341234';
+    const otherId = '0x11111111111181118111111111111111';
     const expectedAssets = [
       {
         name: 'someAsset',
-        id: '0x1234',
+        id: hexToUuid(assetId),
       },
       {
         name: 'otherAsset',
-        id: '0x4567',
+        id: hexToUuid(otherId),
       },
     ];
 
@@ -513,7 +520,7 @@ describe('Assets Class', () => {
       const entries = expectedAssets.map(({ name, id }) =>
         tuple(
           {
-            args: [dsMockUtils.createMockAssetId(id)],
+            args: [dsMockUtils.createMockAssetId(uuidToHex(id))],
           } as unknown as StorageKey,
           dsMockUtils.createMockBytes(name)
         )
@@ -554,7 +561,7 @@ describe('Assets Class', () => {
       const entries = [
         tuple(
           {
-            args: [dsMockUtils.createMockAssetId(expectedAssets[0].id)],
+            args: [dsMockUtils.createMockAssetId(uuidToHex(expectedAssets[0].id))],
           } as unknown as StorageKey,
           dsMockUtils.createMockBytes(expectedAssets[0].name)
         ),

@@ -181,6 +181,7 @@ import {
 } from '~/types';
 import { InstructionStatus, PermissionGroupIdentifier } from '~/types/internal';
 import { tuple } from '~/types/utils';
+import { hexToUuid, uuidToHex } from '~/utils';
 import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
 import * as utilsInternalModule from '~/utils/internal';
 import { padString } from '~/utils/internal';
@@ -532,11 +533,11 @@ describe('fungibleMovementToPortfolioFund', () => {
 
   it('should convert a portfolio item into a polkadot move portfolio item', async () => {
     const context = dsMockUtils.getContextInstance();
-    const assetId = '0x1234';
+    const assetId = '12341234-1234-1234-1234-123412341234';
     const amount = new BigNumber(100);
     const memo = 'someMessage';
     const asset = entityMockUtils.getBaseAssetInstance({ assetId });
-    const rawAssetId = dsMockUtils.createMockAssetId(assetId);
+    const rawAssetId = dsMockUtils.createMockAssetId(uuidToHex(assetId));
     const rawAmount = dsMockUtils.createMockBalance(amount);
     const rawMemo = 'memo' as unknown as PolymeshPrimitivesMemo;
     const fakeResult =
@@ -549,7 +550,7 @@ describe('fungibleMovementToPortfolioFund', () => {
     };
 
     when(context.createType)
-      .calledWith('PolymeshPrimitivesAssetAssetId', assetId)
+      .calledWith('PolymeshPrimitivesAssetAssetId', uuidToHex(assetId))
       .mockReturnValue(rawAssetId);
 
     when(context.createType)
@@ -626,7 +627,7 @@ describe('nftMovementToPortfolioFund', () => {
 
   it('should convert a portfolio item into a polkadot move portfolio item', async () => {
     const context = dsMockUtils.getContextInstance();
-    const assetId = 'COLLECTION';
+    const assetId = '12341234-1234-1234-1234-123412341234';
     const id = new BigNumber(1);
     const memo = 'someMessage';
     const asset = entityMockUtils.getNftCollectionInstance({ assetId });
@@ -643,7 +644,7 @@ describe('nftMovementToPortfolioFund', () => {
     };
 
     when(context.createType)
-      .calledWith('PolymeshPrimitivesAssetAssetId', assetId)
+      .calledWith('PolymeshPrimitivesAssetAssetId', uuidToHex(assetId))
       .mockReturnValue(rawAssetId);
 
     when(context.createType).calledWith('u64', id.toString()).mockReturnValue(rawId);
@@ -811,11 +812,12 @@ describe('stringToAssetId, stringToAssetIdKey and assetIdToString', () => {
     it('should convert a string to a polkadot Ticker object', () => {
       const context = dsMockUtils.getContextInstance();
 
-      const value = '0x1234';
-      const fakeResult = '0x1234' as unknown as PolymeshPrimitivesAssetAssetId;
+      const value = '12341234-1234-1234-1234-123412341234';
+      const fakeResult =
+        '0x12341234123412341234123412341234' as unknown as PolymeshPrimitivesAssetAssetId;
 
       when(context.createType)
-        .calledWith('PolymeshPrimitivesAssetAssetId', value)
+        .calledWith('PolymeshPrimitivesAssetAssetId', uuidToHex(value))
         .mockReturnValue(fakeResult);
 
       const result = stringToAssetId(value, context);
@@ -838,12 +840,13 @@ describe('stringToAssetId, stringToAssetIdKey and assetIdToString', () => {
     });
 
     it('should call stringToAssetIdKey and return the result as an object', () => {
-      const value = '0x1234';
-      const fakeResult = '0x1234' as unknown as PolymeshPrimitivesAssetAssetId;
+      const value = '12341234-1234-1234-1234-123412341234';
+      const fakeResult =
+        '0x12341234123412341234123412341234' as unknown as PolymeshPrimitivesAssetAssetId;
       const context = dsMockUtils.getContextInstance();
 
       when(context.createType)
-        .calledWith('PolymeshPrimitivesAssetAssetId', value)
+        .calledWith('PolymeshPrimitivesAssetAssetId', uuidToHex(value))
         .mockReturnValue(fakeResult);
 
       const result = stringToAssetIdKey(value, context);
@@ -853,11 +856,11 @@ describe('stringToAssetId, stringToAssetIdKey and assetIdToString', () => {
 
   describe('stringToAssetId', () => {
     it('should convert a polkadot AssetId object to a string', () => {
-      const fakeResult = '0x1234';
+      const fakeResult = '0x12341234123412341234123412341234';
       const assetId = dsMockUtils.createMockAssetId(fakeResult);
 
       const result = assetIdToString(assetId);
-      expect(result).toEqual(fakeResult);
+      expect(result).toEqual(hexToUuid(fakeResult));
     });
   });
 });
@@ -882,11 +885,11 @@ describe('meshAssetToAssetId, assetToMeshAssetIdKey and assetToMeshAssetId', () 
 
   describe('meshAssetToAssetId', () => {
     it('should convert a mesh Ticker or AssetId to string value', () => {
-      const assetId = '0x1234';
+      const assetId = '0x12341234123412341234123412341234';
       const mockAssetId = dsMockUtils.createMockAssetId(assetId);
 
       let result = meshAssetToAssetId(mockAssetId, context);
-      expect(result).toBe(assetId);
+      expect(result).toBe(hexToUuid(assetId));
 
       const ticker = 'SOME_TICKER';
       const mockTicker = dsMockUtils.createMockTicker(ticker);
@@ -898,11 +901,11 @@ describe('meshAssetToAssetId, assetToMeshAssetIdKey and assetToMeshAssetId', () 
 
   describe('assetToMeshAssetIdKey', () => {
     it('should call assetToMeshAssetIdKey and return the result as an object', () => {
-      let value = '0x1234';
+      let value = '12341234-1234-1234-1234-123412341234';
       const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesAssetAssetId;
 
       when(context.createType)
-        .calledWith('PolymeshPrimitivesAssetAssetId', value)
+        .calledWith('PolymeshPrimitivesAssetAssetId', uuidToHex(value))
         .mockReturnValue(fakeResult);
 
       let result = assetToMeshAssetIdKey(value, context);
@@ -922,11 +925,11 @@ describe('meshAssetToAssetId, assetToMeshAssetIdKey and assetToMeshAssetId', () 
 
   describe('assetToMeshAssetId', () => {
     it('should call assetToMeshAssetId and return the result', () => {
-      let value = '0x1234';
+      let value = '12341234-1234-1234-1234-123412341234';
       const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesAssetAssetId;
 
       when(context.createType)
-        .calledWith('PolymeshPrimitivesAssetAssetId', value)
+        .calledWith('PolymeshPrimitivesAssetAssetId', uuidToHex(value))
         .mockReturnValue(fakeResult);
 
       let result = assetToMeshAssetId(
@@ -951,11 +954,11 @@ describe('meshAssetToAssetId, assetToMeshAssetIdKey and assetToMeshAssetId', () 
 
   describe('assetToMeshAssetId', () => {
     it('should call assetToMeshAssetIdWithKey and return the result', () => {
-      let value = '0x1234';
+      let value = '12341234-1234-1234-1234-123412341234';
       const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesAssetAssetId;
 
       when(context.createType)
-        .calledWith('PolymeshPrimitivesAssetAssetId', value)
+        .calledWith('PolymeshPrimitivesAssetAssetId', uuidToHex(value))
         .mockReturnValue(fakeResult);
 
       let result = assetToMeshAssetIdWithKey(
@@ -1384,7 +1387,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
   describe('authorizationToAuthorizationData', () => {
     it('should convert an Authorization to a polkadot AuthorizationData object', () => {
       const ticker = 'TICKER_NAME';
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const context = dsMockUtils.getContextInstance();
 
       let value: Authorization = {
@@ -1410,12 +1413,13 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       expect(result).toBe(fakeResult);
 
       const fakeTicker = 'convertedTicker' as unknown as PolymeshPrimitivesTicker;
-      const fakeAssetId = '0x1234' as unknown as PolymeshPrimitivesAssetAssetId;
+      const fakeAssetId =
+        '0x12341234123412341234123412341234' as unknown as PolymeshPrimitivesAssetAssetId;
       when(createTypeMock)
         .calledWith('PolymeshPrimitivesTicker', padString(ticker, 12))
         .mockReturnValue(fakeTicker);
       when(createTypeMock)
-        .calledWith('PolymeshPrimitivesAssetAssetId', assetId)
+        .calledWith('PolymeshPrimitivesAssetAssetId', uuidToHex(assetId))
         .mockReturnValue(fakeAssetId);
 
       value = {
@@ -1683,12 +1687,13 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       result = authorizationDataToAuthorization(authorizationData, context);
       expect(result).toEqual(fakeResult);
 
+      const assetId = '12341234-1234-1234-1234-123412341234';
       fakeResult = {
         type: AuthorizationType.TransferAssetOwnership,
-        value: 'SOME_TICKER',
+        value: assetId,
       };
       authorizationData = dsMockUtils.createMockAuthorizationData({
-        TransferAssetOwnership: dsMockUtils.createMockAssetId(fakeResult.value),
+        TransferAssetOwnership: dsMockUtils.createMockAssetId(uuidToHex(assetId)),
       });
 
       result = authorizationDataToAuthorization(authorizationData, context);
@@ -1731,7 +1736,6 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       result = authorizationDataToAuthorization(authorizationData, context);
       expect(result).toEqual(fakeResult);
 
-      const assetId = '0x1234';
       const type = PermissionGroupType.Full;
       fakeResult = {
         type: AuthorizationType.BecomeAgent,
@@ -1743,7 +1747,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
       authorizationData = dsMockUtils.createMockAuthorizationData({
         BecomeAgent: [
-          dsMockUtils.createMockAssetId(assetId),
+          dsMockUtils.createMockAssetId(uuidToHex(assetId)),
           dsMockUtils.createMockAgentGroup(type),
         ],
       });
@@ -1953,7 +1957,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
           fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSecondaryKeyExtrinsicPermissions
         );
 
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const did = 'someDid';
       value = {
         assets: {
@@ -1971,7 +1975,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         },
       };
 
-      const rawAssetId = dsMockUtils.createMockAssetId(assetId);
+      const rawAssetId = dsMockUtils.createMockAssetId(uuidToHex(assetId));
       const rawPortfolioId = dsMockUtils.createMockPortfolioId({
         did: dsMockUtils.createMockIdentityId(did),
         kind: dsMockUtils.createMockPortfolioKind('Default'),
@@ -1988,7 +1992,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         })
         .mockReturnValue(fakeResult);
       when(createTypeMock)
-        .calledWith('PolymeshPrimitivesAssetAssetId', assetId)
+        .calledWith('PolymeshPrimitivesAssetAssetId', uuidToHex(assetId))
         .mockReturnValue(rawAssetId);
       when(createTypeMock)
         .calledWith('PolymeshPrimitivesIdentityIdPortfolioId', expect.anything())
@@ -2103,11 +2107,17 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
           fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSecondaryKeyExtrinsicPermissions
         );
 
-      const assetIds = ['0x2222', '0x1111', '0x3333'];
+      const assetIds = [
+        '0x11111111111111111111111111111111',
+        '0x00000000000000000000000000000000',
+        '0x33333333333333333333333333333333',
+      ];
 
       value = {
         assets: {
-          values: assetIds.map(t => entityMockUtils.getFungibleAssetInstance({ assetId: t })),
+          values: assetIds.map(t =>
+            entityMockUtils.getFungibleAssetInstance({ assetId: hexToUuid(t) })
+          ),
           type: PermissionType.Include,
         },
         transactions: {
@@ -2197,7 +2207,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
   describe('meshPermissionsToPermissions', () => {
     it('should convert a polkadot Permissions object to a Permissions', () => {
       const context = dsMockUtils.getContextInstance();
-      const assetId = '0x1234';
+      const assetId = '0x12341234123412341234123412341234';
       const did = 'someDid';
       const rawIdentityName = dsMockUtils.createMockText('Identity');
       const rawAuthorshipName = dsMockUtils.createMockText('Authorship');
@@ -2218,7 +2228,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
 
       let fakeResult: Permissions = {
         assets: {
-          values: [expect.objectContaining({ id: assetId })],
+          values: [expect.objectContaining({ id: hexToUuid(assetId) })],
           type: PermissionType.Include,
         },
         transactions: {
@@ -2268,7 +2278,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
 
       fakeResult = {
         assets: {
-          values: [expect.objectContaining({ id: assetId })],
+          values: [expect.objectContaining({ id: hexToUuid(assetId) })],
           type: PermissionType.Exclude,
         },
         transactions: {
@@ -2321,7 +2331,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       dsMockUtils.createQueryMock('identity', 'keyExtrinsicPermissions');
       dsMockUtils.createQueryMock('identity', 'keyPortfolioPermissions');
       const context = dsMockUtils.getContextInstance();
-      const assetId = '0x1234';
+      const assetId = '0x12341234123412341234123412341234';
       const did = 'someDid';
 
       const rawIdentityName = dsMockUtils.createMockText('Identity');
@@ -2343,7 +2353,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
 
       let fakeResult: Permissions = {
         assets: {
-          values: [expect.objectContaining({ id: assetId })],
+          values: [expect.objectContaining({ id: hexToUuid(assetId) })],
           type: PermissionType.Include,
         },
         transactions: {
@@ -2406,7 +2416,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
 
       fakeResult = {
         assets: {
-          values: [expect.objectContaining({ id: assetId })],
+          values: [expect.objectContaining({ id: hexToUuid(assetId) })],
           type: PermissionType.Exclude,
         },
         transactions: {
@@ -4375,20 +4385,21 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
       const context = dsMockUtils.getContextInstance();
       const value: Scope = {
         type: ScopeType.Asset,
-        value: '0x1234',
+        value: '12341234-1234-1234-1234-123412341234',
       };
       jest
         .spyOn(utilsInternalModule, 'asBaseAsset')
         .mockResolvedValue(entityMockUtils.getBaseAssetInstance({ assetId: value.value }));
 
-      const fakeAssetId = '0x1234' as unknown as PolymeshPrimitivesAssetAssetId;
+      const fakeAssetId =
+        '0x12341234123412341234123412341234' as unknown as PolymeshPrimitivesAssetAssetId;
 
       const fakeResult = {
         [value.type]: fakeAssetId,
       };
 
       when(context.createType)
-        .calledWith('PolymeshPrimitivesAssetAssetId', value.value)
+        .calledWith('PolymeshPrimitivesAssetAssetId', uuidToHex(value.value))
         .mockReturnValue(fakeAssetId);
 
       const result = await scopeToMeshScope(value, context);
@@ -4407,7 +4418,8 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
         .spyOn(utilsInternalModule, 'asBaseAsset')
         .mockResolvedValue(entityMockUtils.getBaseAssetInstance({ assetId: value.value }));
 
-      const fakeAssetId = '0x1234' as unknown as PolymeshPrimitivesTicker;
+      const fakeAssetId =
+        '0x12341234123412341234123412341234' as unknown as PolymeshPrimitivesTicker;
 
       const fakeResult = {
         [value.type]: fakeAssetId,
@@ -4449,12 +4461,14 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
       let result = meshScopeToScope(scope, context);
       expect(result).toEqual(fakeResult);
 
+      const assetId = '0x12341234123412341234123412341234';
+      const uuidAssetId = hexToUuid(assetId);
       fakeResult = {
         type: ScopeType.Asset,
-        value: '0x1234',
+        value: uuidAssetId,
       };
       scope = dsMockUtils.createMockScope({
-        Asset: dsMockUtils.createMockAssetId(fakeResult.value),
+        Asset: dsMockUtils.createMockAssetId(assetId),
       });
 
       result = meshScopeToScope(scope, context);
@@ -4588,11 +4602,11 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
 
     it('should convert a polkadot Claim object to a Claim', () => {
       const context = dsMockUtils.getContextInstance();
-      let scope = { type: ScopeType.Asset, value: '0x1234' };
+      let scope = { type: ScopeType.Asset, value: '0x12341234123412341234123412341234' };
 
       let fakeResult: Claim = {
         type: ClaimType.Accredited,
-        scope,
+        scope: { type: ScopeType.Asset, value: hexToUuid(scope.value) },
       };
 
       let claim = dsMockUtils.createMockClaim({
@@ -4764,7 +4778,7 @@ describe('corporateActionParamsToMeshCorporateActionArgs', () => {
   });
 
   it('should convert a list of corporate action parameters to a polkadot PalletCorporateActionsInitiateCorporateActionArgs object', () => {
-    const assetId = '0x1234';
+    const assetId = '12341234-1234-1234-1234-123412341234';
     const kind = CorporateActionKind.UnpredictableBenefit;
     const declarationDate = new Date();
     const checkpoint = new Date(new Date().getTime() + 10000);
@@ -4790,7 +4804,7 @@ describe('corporateActionParamsToMeshCorporateActionArgs', () => {
     const context = dsMockUtils.getContextInstance();
     const createTypeMock = context.createType;
 
-    const rawAssetId = dsMockUtils.createMockAssetId(assetId);
+    const rawAssetId = dsMockUtils.createMockAssetId(uuidToHex(assetId));
     const rawKind = dsMockUtils.createMockCAKind(kind);
     const rawDeclDate = dsMockUtils.createMockMoment(declarationDateValue);
     const rawRecordDate = dsMockUtils.createMockRecordDateSpec(recordDateValue);
@@ -4815,7 +4829,7 @@ describe('corporateActionParamsToMeshCorporateActionArgs', () => {
     });
 
     when(createTypeMock)
-      .calledWith('PolymeshPrimitivesAssetAssetId', assetId)
+      .calledWith('PolymeshPrimitivesAssetAssetId', uuidToHex(assetId))
       .mockReturnValue(rawAssetId);
     when(createTypeMock).calledWith('PalletCorporateActionsCaKind', kind).mockReturnValue(rawKind);
     when(createTypeMock).calledWith('u64', declarationDate.getTime()).mockReturnValue(rawDeclDate);
@@ -5036,19 +5050,22 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
         {
           type: ClaimScopeTypeEnum.Asset,
           value: 'TICKER',
-          assetId: '0x1234',
+          assetId: '0x12341234123412341234123412341234',
         },
         context
       );
 
-      expect(result).toEqual({ type: ScopeType.Asset, value: '0x1234' });
+      expect(result).toEqual({
+        type: ScopeType.Asset,
+        value: '12341234-1234-1234-1234-123412341234',
+      });
 
       context.isV6 = true;
       result = middlewareScopeToScope(
         {
           type: ClaimScopeTypeEnum.Ticker, // NOSONAR
           value: 'TICKER',
-          assetId: '0x1234',
+          assetId: '0x12341234123412341234123412341234',
         },
         context
       );
@@ -5084,15 +5101,21 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Identity, value: scope.value });
 
       const getAssetIdForMiddlewareSpy = jest.spyOn(utilsInternalModule, 'getAssetIdForMiddleware');
-      scope = { type: ScopeType.Asset, value: '0x1234' };
+      scope = { type: ScopeType.Asset, value: '0x12341234123412341234123412341234' };
       getAssetIdForMiddlewareSpy.mockResolvedValue(scope.value);
       result = await scopeToMiddlewareScope(scope, context);
-      expect(result).toEqual({ type: ClaimScopeTypeEnum.Asset, value: '0x1234' });
+      expect(result).toEqual({
+        type: ClaimScopeTypeEnum.Asset,
+        value: '0x12341234123412341234123412341234',
+      });
 
       scope = { type: ScopeType.Ticker, value: 'SOME_TICKER' }; // NOSONAR
-      getAssetIdForMiddlewareSpy.mockResolvedValue('0x1234');
+      getAssetIdForMiddlewareSpy.mockResolvedValue('0x12341234123412341234123412341234');
       result = await scopeToMiddlewareScope(scope, context);
-      expect(result).toEqual({ type: ClaimScopeTypeEnum.Asset, value: '0x1234' });
+      expect(result).toEqual({
+        type: ClaimScopeTypeEnum.Asset,
+        value: '0x12341234123412341234123412341234',
+      });
 
       scope = { type: ScopeType.Custom, value: 'customValue' };
       result = await scopeToMiddlewareScope(scope, context);
@@ -5109,7 +5132,7 @@ describe('middlewareInstructionToHistoricInstruction', () => {
     const blockNumber = new BigNumber(1234);
     const blockHash = 'someHash';
     const memo = 'memo';
-    const assetId = '0x1234';
+    const assetId = '0x12341234123412341234123412341234';
     const ticker = 'SOME_TICKER';
     const amount1 = new BigNumber(10);
     const nftId = new BigNumber(5);
@@ -7980,9 +8003,9 @@ describe('fundraiserToOfferingDetails', () => {
 
     const someDid = 'someDid';
     const name = 'someSto';
-    const assetId = '0x1234';
+    const assetId = '0x12341234123412341234123412341234';
     const otherDid = 'otherDid';
-    const raisingCurrency = 'USD';
+    const raisingCurrency = '0x09000000000000000000000000000000';
     const amount = new BigNumber(10000);
     const priceA = new BigNumber(1000);
     const priceB = new BigNumber(2000);
@@ -8013,7 +8036,7 @@ describe('fundraiserToOfferingDetails', () => {
       raisingPortfolio: expect.objectContaining({
         owner: expect.objectContaining({ did: otherDid }),
       }),
-      raisingCurrency,
+      raisingCurrency: hexToUuid(raisingCurrency),
       tiers,
       venue: expect.objectContaining({ id: new BigNumber(1) }),
       start: startDate,
@@ -8346,7 +8369,7 @@ describe('distributionToDividendDistributionParams', () => {
   it('should convert a polkadot Distribution object to a DividendDistributionParams object', () => {
     const from = new BigNumber(1);
     const did = 'someDid';
-    const currency = 'USD';
+    const currency = '0x12341234123412341234123412341234';
     const perShare = new BigNumber(100);
     const maxAmount = new BigNumber(10000);
     const paymentDate = new Date('10/14/2022');
@@ -8356,7 +8379,7 @@ describe('distributionToDividendDistributionParams', () => {
 
     const fakeResult: DividendDistributionParams = {
       origin: expect.objectContaining({ id: from, owner: expect.objectContaining({ did }) }),
-      currency,
+      currency: hexToUuid(currency),
       perShare,
       maxAmount,
       paymentDate,
@@ -8666,7 +8689,7 @@ describe('corporateActionIdentifierToCaId', () => {
   it('should convert a CorporateActionIdentifier object to a polkadot PalletCorporateActionsCaId object', () => {
     const context = dsMockUtils.getContextInstance();
     const args = {
-      assetId: '0x1234',
+      assetId: '12341234-1234-1234-1234-123412341234',
       localId: new BigNumber(1),
     };
     const rawAssetId = dsMockUtils.createMockAssetId(args.assetId);
@@ -8674,7 +8697,7 @@ describe('corporateActionIdentifierToCaId', () => {
     const fakeResult = 'CAId' as unknown as PalletCorporateActionsCaId;
 
     when(context.createType)
-      .calledWith('PolymeshPrimitivesAssetAssetId', args.assetId)
+      .calledWith('PolymeshPrimitivesAssetAssetId', uuidToHex(args.assetId))
       .mockReturnValue(rawAssetId);
     when(context.createType).calledWith('u32', args.localId.toString()).mockReturnValue(rawLocalId);
 
@@ -8778,7 +8801,7 @@ describe('agentGroupToPermissionGroup', () => {
   });
 
   it('should convert a polkadot PolymeshPrimitivesAgentAgentGroup object to a PermissionGroup entity', () => {
-    const assetId = '0x1234';
+    const assetId = '0x12341234123412341234123412341234';
     const context = dsMockUtils.getContextInstance();
 
     let agentGroup = dsMockUtils.createMockAgentGroup('Full');
@@ -10347,7 +10370,7 @@ describe('middlewareAgentGroupDataToPermissionGroup', () => {
   });
 
   it('should convert a middleware agent group data object to a PermissionGroup entity', () => {
-    const assetId = '0x1234';
+    const assetId = '0x12341234123412341234123412341234';
     const context = dsMockUtils.getContextInstance();
 
     let agentGroup: Record<string, Record<string, null | number>> = { [assetId]: { full: null } };
@@ -10431,8 +10454,8 @@ describe('middlewarePermissionsDataToPermissions', () => {
 
   it('should convert a middleware permissions data to a Permissions', () => {
     const context = dsMockUtils.getContextInstance();
-    const assetId = '0x1234';
-    const rawAssetId = '0x1234';
+    const assetId = '0x12341234123412341234123412341234';
+    const rawAssetId = '0x12341234123412341234123412341234';
     const did = 'someDid';
     let fakeResult: Permissions = {
       assets: {
@@ -10655,9 +10678,9 @@ describe('middlewareAuthorizationDataToAuthorization', () => {
 
     fakeResult = {
       type: AuthorizationType.TransferAssetOwnership,
-      value: '0x1234',
+      value: '0x12341234123412341234123412341234',
     };
-    authorizationData = '0x1234';
+    authorizationData = '0x12341234123412341234123412341234';
 
     result = middlewareAuthorizationDataToAuthorization(
       context,
@@ -10703,7 +10726,7 @@ describe('middlewareAuthorizationDataToAuthorization', () => {
     );
     expect(result).toEqual(fakeResult);
 
-    const assetId = '0x1234';
+    const assetId = '0x12341234123412341234123412341234';
     const type = PermissionGroupType.Full;
     fakeResult = {
       type: AuthorizationType.BecomeAgent,
@@ -10947,7 +10970,7 @@ describe('meshMetadataKeyToMetadataKey', () => {
 
   it('should convert local metadata', async () => {
     const localId = new BigNumber(1);
-    const assetId = '0x1234';
+    const assetId = '0x12341234123412341234123412341234';
     const rawKey = dsMockUtils.createMockAssetMetadataKey({
       Local: dsMockUtils.createMockU64(localId),
     });
@@ -10996,7 +11019,7 @@ describe('meshNftToNftId', () => {
     dsMockUtils.cleanup();
   });
   it('should convert a set of NFTs', () => {
-    let assetId = '0x1234';
+    let assetId = '0x12341234123412341234123412341234';
 
     let mockNft = dsMockUtils.createMockNfts({
       assetId: dsMockUtils.createMockAssetId(assetId),
@@ -11009,7 +11032,7 @@ describe('meshNftToNftId', () => {
     let result = meshNftToNftId(mockNft, dsMockUtils.getContextInstance());
 
     expect(result).toEqual({
-      assetId,
+      assetId: hexToUuid(assetId),
       ids: [new BigNumber(1), new BigNumber(2)],
     });
 
@@ -11107,8 +11130,8 @@ describe('nftToMeshNft', () => {
   });
 
   it('should converts Nft input', () => {
-    const assetId = '0x1234';
-    const rawAssetId = dsMockUtils.createMockAssetId(assetId);
+    const assetId = '12341234-1234-1234-1234-123412341234';
+    const rawAssetId = dsMockUtils.createMockAssetId(uuidToHex(assetId));
     const id = new BigNumber(1);
     const rawId = dsMockUtils.createMockU64(id);
     const context = dsMockUtils.getContextInstance();
@@ -11116,7 +11139,7 @@ describe('nftToMeshNft', () => {
     const mockResult = 'mockResult' as unknown as PolymeshPrimitivesNftNfTs;
 
     when(context.createType)
-      .calledWith('PolymeshPrimitivesAssetAssetId', assetId)
+      .calledWith('PolymeshPrimitivesAssetAssetId', uuidToHex(assetId))
       .mockReturnValue(rawAssetId);
     when(context.createType).calledWith('u64', id.toString()).mockReturnValue(rawId);
     when(context.createType)

@@ -142,7 +142,7 @@ describe('setTransferRestrictions procedure', () => {
     );
     statisticsOpTypeToStatTypeSpy = jest.spyOn(utilsConversionModule, 'statisticsOpTypeToStatType');
     booleanToBoolSpy = jest.spyOn(utilsConversionModule, 'booleanToBool');
-    assetId = '0x1234';
+    assetId = '12341234-1234-1234-1234-123412341234';
     asset = entityMockUtils.getFungibleAssetInstance({ assetId });
     count = new BigNumber(10);
     percentage = new BigNumber(49);

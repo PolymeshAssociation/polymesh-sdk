@@ -87,7 +87,7 @@ describe('Distributions class', () => {
     });
 
     it('should return the requested Distribution', async () => {
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const id = new BigNumber(1);
 
       dsMockUtils.createQueryMock('corporateAction', 'corporateActions', {
@@ -114,7 +114,7 @@ describe('Distributions class', () => {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockDistribution({
             from: { did: 'someDid', kind: 'Default' },
-            currency: 'CLP',
+            currency: '0x12341234123412341234123412341234',
             perShare: new BigNumber(1000000000),
             amount: new BigNumber(100000000000),
             remaining: new BigNumber(5000000000),
@@ -140,7 +140,7 @@ describe('Distributions class', () => {
     });
 
     it('should throw an error if the Distribution does not exist', async () => {
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
       const id = new BigNumber(1);
 
       dsMockUtils.createQueryMock('corporateAction', 'corporateActions', {
@@ -206,7 +206,7 @@ describe('Distributions class', () => {
     });
 
     it('should return all distributions associated to the Asset', async () => {
-      const assetId = '0x1234';
+      const assetId = '12341234-1234-1234-1234-123412341234';
 
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getFungibleAssetInstance({ assetId });

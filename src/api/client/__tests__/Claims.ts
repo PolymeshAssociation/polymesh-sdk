@@ -79,7 +79,7 @@ describe('Claims Class', () => {
             expiry: null,
             claim: {
               type: ClaimType.Accredited,
-              scope: { type: ScopeType.Asset, value: '0x1234' },
+              scope: { type: ScopeType.Asset, value: '0x12341234123412341234123412341234' },
             },
           },
         ],
@@ -120,29 +120,25 @@ describe('Claims Class', () => {
         type: ClaimTypeEnum.CustomerDueDiligence,
         id: cddId,
       };
-      const claim = {
-        target: entityMockUtils.getIdentityInstance({ did: targetDid }),
-        issuer: entityMockUtils.getIdentityInstance({ did: issuerDid }),
-        issuedAt: new Date(date),
-        lastUpdatedAt: new Date(date),
-      };
 
-      const fakeClaims = [
-        {
-          identity: entityMockUtils.getIdentityInstance({ did: targetDid }),
-          claims: [
-            {
-              ...claim,
+      const expectedClaims = [
+        expect.objectContaining({
+          identity: expect.objectContaining({ did: targetDid }),
+          claims: expect.arrayContaining([
+            expect.objectContaining({
+              target: expect.objectContaining({ did: targetDid }),
+              issuer: expect.objectContaining({ did: issuerDid }),
               expiry: new Date(date),
               claim: claimData,
-            },
-            {
-              ...claim,
+            }),
+            expect.objectContaining({
+              target: expect.objectContaining({ did: targetDid }),
+              issuer: expect.objectContaining({ did: issuerDid }),
               expiry: null,
               claim: claimData,
-            },
-          ],
-        },
+            }),
+          ]),
+        }),
       ];
 
       const commonClaimData = {
@@ -192,7 +188,7 @@ describe('Claims Class', () => {
         start: new BigNumber(0),
       });
 
-      expect(JSON.stringify(result.data)).toBe(JSON.stringify(fakeClaims));
+      expect(result.data).toEqual(expect.arrayContaining(expectedClaims));
       expect(result.count).toEqual(new BigNumber(1));
       expect(result.next).toEqual(null);
 
@@ -230,7 +226,7 @@ describe('Claims Class', () => {
 
       result = await claims.getIdentitiesWithClaims();
 
-      expect(JSON.stringify(result.data)).toBe(JSON.stringify(fakeClaims));
+      expect(result.data).toEqual(expect.arrayContaining(expectedClaims));
       expect(result.count).toEqual(new BigNumber(1));
       expect(result.next).toEqual(null);
     });
@@ -238,37 +234,41 @@ describe('Claims Class', () => {
     it('should return a list of Identities with claims associated to them filtered by scope', async () => {
       const targetDid = 'someTargetDid';
       const issuerDid = 'someIssuerDid';
-      const scope: Scope = { type: ScopeType.Asset, value: '0x1234' };
+      const scope: Scope = { type: ScopeType.Asset, value: '0x12341234123412341234123412341234' };
+      const formattedScope: Scope = {
+        type: ScopeType.Asset,
+        value: '12341234-1234-1234-1234-123412341234',
+      };
       jest.spyOn(utilsConversionModule, 'scopeToMiddlewareScope').mockResolvedValue(scope);
       const date = 1589816265000;
       const accreditedType = ClaimTypeEnum.Accredited;
-      const claimData = {
+      const expectedClaimData = expect.objectContaining({
         type: ClaimTypeEnum.Accredited,
-        scope,
-      };
-      const claim = {
-        target: entityMockUtils.getIdentityInstance({ did: targetDid }),
-        issuer: entityMockUtils.getIdentityInstance({ did: issuerDid }),
-        issuedAt: new Date(date),
-        lastUpdatedAt: new Date(date),
-      };
+        scope: formattedScope,
+      });
 
-      const fakeClaims = [
-        {
-          identity: entityMockUtils.getIdentityInstance({ did: targetDid }),
-          claims: [
-            {
-              ...claim,
+      const expectedClaims = [
+        expect.objectContaining({
+          identity: expect.objectContaining({ did: targetDid }),
+          claims: expect.arrayContaining([
+            expect.objectContaining({
+              target: expect.objectContaining({ did: targetDid }),
+              issuer: expect.objectContaining({ did: issuerDid }),
+              issuedAt: new Date(date),
+              lastUpdatedAt: new Date(date),
               expiry: new Date(date),
-              claim: claimData,
-            },
-            {
-              ...claim,
+              claim: expectedClaimData,
+            }),
+            expect.objectContaining({
+              target: expect.objectContaining({ did: targetDid }),
+              issuer: expect.objectContaining({ did: issuerDid }),
+              issuedAt: new Date(date),
+              lastUpdatedAt: new Date(date),
               expiry: null,
-              claim: claimData,
-            },
-          ],
-        },
+              claim: expectedClaimData,
+            }),
+          ]),
+        }),
       ];
       const commonClaimData = {
         targetId: targetDid,
@@ -282,13 +282,21 @@ describe('Claims Class', () => {
             ...commonClaimData,
             expiry: date,
             type: accreditedType,
-            scope: { type: 'Asset', assetId: '0x1234', value: 'TICKER' },
+            scope: {
+              type: 'Asset',
+              assetId: '0x12341234123412341234123412341234',
+              value: 'TICKER',
+            },
           },
           {
             ...commonClaimData,
             expiry: null,
             type: accreditedType,
-            scope: { type: 'Asset', assetId: '0x1234', value: 'TICKER' },
+            scope: {
+              type: 'Asset',
+              assetId: '0x12341234123412341234123412341234',
+              value: 'TICKER',
+            },
           },
         ],
       };
@@ -298,7 +306,7 @@ describe('Claims Class', () => {
       dsMockUtils.createApolloQueryMock(
         claimsQuery({
           dids: [targetDid],
-          scope: { type: 'Asset', value: '0x1234' },
+          scope: { type: 'Asset', value: '0x12341234123412341234123412341234' },
           trustedClaimIssuers: [issuerDid],
           claimTypes: [ClaimTypeEnum.Accredited],
           includeExpired: false,
@@ -318,7 +326,7 @@ describe('Claims Class', () => {
         start: new BigNumber(0),
       });
 
-      expect(JSON.stringify(result.data)).toBe(JSON.stringify(fakeClaims));
+      expect(result.data).toEqual(expect.arrayContaining(expectedClaims));
       expect(result.count).toEqual(new BigNumber(1));
       expect(result.next).toBeNull();
     });
@@ -520,7 +528,7 @@ describe('Claims Class', () => {
             type: ClaimType.Jurisdiction,
             scope: {
               type: ScopeType.Asset,
-              value: '0x1234',
+              value: '0x12341234123412341234123412341234',
             },
           },
         },

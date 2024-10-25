@@ -29,7 +29,7 @@ describe('toggleFreezeTransfers procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
-    assetId = '0x1234';
+    assetId = '0x12341234123412341234123412341234';
     asset = entityMockUtils.getBaseAssetInstance({ assetId });
     rawAssetId = dsMockUtils.createMockAssetId(assetId);
   });

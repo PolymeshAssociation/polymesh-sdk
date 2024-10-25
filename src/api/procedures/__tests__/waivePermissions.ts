@@ -19,7 +19,7 @@ jest.mock(
 );
 
 describe('waivePermissions procedure', () => {
-  const assetId = '0x1234';
+  const assetId = '0x12341234123412341234123412341234';
   const did = 'someDid';
   const rawAssetId = dsMockUtils.createMockAssetId(assetId);
 

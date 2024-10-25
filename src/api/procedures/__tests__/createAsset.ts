@@ -41,6 +41,7 @@ import {
   TxTags,
 } from '~/types';
 import { InternalAssetType, InternalNftType, PolymeshTx, TickerKey } from '~/types/internal';
+import { uuidToHex } from '~/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -148,7 +149,7 @@ describe('createAsset procedure', () => {
     );
     assetDocumentToDocumentSpy = jest.spyOn(utilsConversionModule, 'assetDocumentToDocument');
     ticker = 'TICKER';
-    assetId = '0x1234';
+    assetId = '12341234-1234-1234-1234-123412341234';
     name = 'someName';
     signingIdentity = entityMockUtils.getIdentityInstance({
       portfoliosGetPortfolio: getPortfolio,
@@ -171,7 +172,7 @@ describe('createAsset procedure', () => {
       },
     ];
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    rawAssetId = dsMockUtils.createMockAssetId(assetId);
+    rawAssetId = dsMockUtils.createMockAssetId(uuidToHex(assetId));
     rawName = dsMockUtils.createMockBytes(name);
     rawInitialSupply = dsMockUtils.createMockBalance(initialSupply);
     rawIsDivisible = dsMockUtils.createMockBool(isDivisible);
@@ -231,7 +232,9 @@ describe('createAsset procedure', () => {
     });
 
     when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
-    when(stringToAssetIdSpy).calledWith(assetId, mockContext).mockReturnValue(rawAssetId);
+    when(stringToAssetIdSpy)
+      .calledWith(uuidToHex(assetId), mockContext)
+      .mockReturnValue(rawAssetId);
     when(bigNumberToBalanceSpy)
       .calledWith(initialSupply, mockContext, isDivisible)
       .mockReturnValue(rawInitialSupply);
