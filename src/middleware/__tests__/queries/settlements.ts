@@ -11,6 +11,7 @@ import {
 } from '~/middleware/queries/settlements';
 import { InstructionEventEnum, InstructionStatusEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 import * as utilsInternalModule from '~/utils/internal';
 
 describe('instructionsQuery', () => {
@@ -155,11 +156,13 @@ describe('buildInstructionPartiesFilter', () => {
     );
   });
 
-  it('should return empty filter when no parameters are provided', async () => {
+  it('should return empty filter with default pagination when no parameters are provided', async () => {
     const result = await buildInstructionPartiesFilter({}, context);
 
     expect(result.args).toBe('($start: Int,$size: Int)');
     expect(result.filter).toBe('');
+    expect(result.variables.size).toBe(DEFAULT_GQL_PAGE_SIZE);
+    expect(result.variables.start).toBe(0);
   });
 });
 

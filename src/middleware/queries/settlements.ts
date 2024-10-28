@@ -15,6 +15,7 @@ import {
 } from '~/middleware/types';
 import { InstructionPartiesFilters } from '~/types';
 import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
+import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 import { asAssetId, asDid } from '~/utils/internal';
 
 const instructionAttributes = `
@@ -168,7 +169,17 @@ export const buildInstructionPartiesFilter = async (
   filter: string;
   variables: InstructionPartiesVariables;
 }> => {
-  const { identity, asset, status, sender, receiver, mediator, party, size, start } = filters;
+  const {
+    identity,
+    asset,
+    status,
+    sender,
+    receiver,
+    mediator,
+    party,
+    size = new BigNumber(DEFAULT_GQL_PAGE_SIZE),
+    start = new BigNumber(0),
+  } = filters;
 
   const args = ['$start: Int', '$size: Int'];
   const baseFilter = [];
