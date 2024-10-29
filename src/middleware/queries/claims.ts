@@ -131,14 +131,18 @@ export function claimsQuery(
       }
     `;
 
-  return {
-    query,
-    variables: {
+  const variables = Object.fromEntries(
+    Object.entries({
       ...filters,
       expiryTimestamp: filters.includeExpired ? undefined : new Date().getTime(),
       size: size?.toNumber(),
       start: start?.toNumber(),
-    },
+    }).filter(([, value]) => value !== undefined)
+  );
+
+  return {
+    query,
+    variables,
   };
 }
 

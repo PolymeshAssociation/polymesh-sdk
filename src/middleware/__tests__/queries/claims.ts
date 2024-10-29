@@ -58,6 +58,11 @@ describe('claimsQuery', () => {
       start: 0,
     });
   });
+
+  it('should not include undefined values in the variables', () => {
+    const result = claimsQuery({ includeExpired: true });
+    expect(result.variables).toEqual({ includeExpired: true });
+  });
 });
 
 describe('trustedClaimIssuerQuery', () => {
