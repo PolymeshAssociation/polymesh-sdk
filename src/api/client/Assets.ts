@@ -1,4 +1,5 @@
 import { PolymeshPrimitivesAssetAssetId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import BigNumber from 'bignumber.js';
 
 import {
   Context,
@@ -8,6 +9,7 @@ import {
   Identity,
   NftCollection,
   PolymeshError,
+  registerCustomAssetType,
   reserveTicker,
   TickerReservation,
 } from '~/internal';
@@ -19,6 +21,7 @@ import {
   GlobalMetadataKey,
   PaginationOptions,
   ProcedureMethod,
+  RegisterCustomAssetTypeParams,
   ReserveTickerParams,
   ResultSet,
   SubCallback,
@@ -32,6 +35,7 @@ import {
   meshMetadataSpecToMetadataSpec,
   stringToIdentityId,
   tickerToString,
+  u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
@@ -73,6 +77,13 @@ export class Assets {
     this.createNftCollection = createProcedureMethod(
       {
         getProcedureAndArgs: args => [createNftCollection, args],
+      },
+      context
+    );
+
+    this.registerCustomAssetType = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [registerCustomAssetType, args],
       },
       context
     );
@@ -482,5 +493,29 @@ export class Assets {
         };
       }
     );
+  }
+
+  /**
+   * Register a custom asset type
+   */
+  public registerCustomAssetType: ProcedureMethod<RegisterCustomAssetTypeParams, BigNumber>;
+
+  /**
+   * Gets the next custom Asset type Id
+   */
+  public async getNextCustomAssetTypeId(): Promise<BigNumber> {
+    const {
+      context: {
+        polymeshApi: {
+          query: {
+            asset: { customTypeIdSequence },
+          },
+        },
+      },
+    } = this;
+
+    const rawId = await customTypeIdSequence();
+
+    return u32ToBigNumber(rawId).plus(1);
   }
 }

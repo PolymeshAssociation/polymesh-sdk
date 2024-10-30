@@ -679,4 +679,35 @@ describe('Assets Class', () => {
       expect(result).toEqual(globalMetadata);
     });
   });
+
+  describe('method: registerCustomAssetType', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args = {
+        name: 'SOME_ASSET_TYPE',
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<BigNumber>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await assets.registerCustomAssetType(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: getNextCustomAssetTypeId', () => {
+    it('should return the next sequence in custom Asset type storage', async () => {
+      const currentMaxCustomAssetTypeId = new BigNumber(2);
+      dsMockUtils.createQueryMock('asset', 'customTypeIdSequence', {
+        returnValue: dsMockUtils.createMockU32(currentMaxCustomAssetTypeId),
+      });
+
+      const result = await assets.getNextCustomAssetTypeId();
+
+      expect(result).toEqual(currentMaxCustomAssetTypeId.plus(1));
+    });
+  });
 });

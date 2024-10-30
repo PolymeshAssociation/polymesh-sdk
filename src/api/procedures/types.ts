@@ -1746,3 +1746,7 @@ export type AllowIdentityToCreatePortfoliosParams = {
 export type RevokeIdentityToCreatePortfoliosParams = {
   did: Identity | string;
 };
+
+export interface RegisterCustomAssetTypeParams {
+  name: string;
+}
