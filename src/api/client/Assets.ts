@@ -41,6 +41,7 @@ import {
 import {
   asAsset,
   assembleAssetQuery,
+  asUuid,
   createProcedureMethod,
   getAssetIdForTicker,
   getDid,
@@ -322,7 +323,7 @@ export class Assets {
     } else if (ticker) {
       assetIdValue = await getAssetIdForTicker(ticker, context);
     } else {
-      assetIdValue = assetId!;
+      assetIdValue = asUuid(assetId!);
     }
     return assetIdValue;
   }

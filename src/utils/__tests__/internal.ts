@@ -2907,6 +2907,18 @@ describe('asBaseAsset', () => {
     expect(result.ticker).toEqual(ticker);
   });
 
+  it('should return BaseAsset when asset ID is provided in hex format', async () => {
+    const baseAsset = '0x12341234123482348234123412341234';
+    const ticker = 'SOME_TICKER;';
+
+    assetIdTickerMock.mockResolvedValue(
+      dsMockUtils.createMockOption(dsMockUtils.createMockTicker(ticker))
+    );
+    const result = await asBaseAsset(baseAsset, context);
+
+    expect(result.id).toEqual('12341234-1234-8234-8234-123412341234');
+  });
+
   it('should return BaseAsset when ticker is provided', async () => {
     const assetId = '0x12341234123412341234123412341234';
     const ticker = 'SOME_TICKER;';

@@ -433,7 +433,8 @@ describe('Assets Class', () => {
     const ticker = 'TEST';
     it('should return a specific Asset for a specific asset ID', async () => {
       const asset = await assets.getFungibleAsset({ assetId });
-      expect(asset.id).toBe(assetId);
+
+      expect(asset.id).toEqual(hexToUuid(assetId));
     });
 
     it('should return a specific Asset for a ticker', async () => {
@@ -463,13 +464,14 @@ describe('Assets Class', () => {
 
     it('should return the collection for a specific asset ID', async () => {
       const nftCollection = await assets.getNftCollection({ assetId });
-      expect(nftCollection.id).toBe(assetId);
+      expect(nftCollection.id).toEqual(hexToUuid(assetId));
     });
 
     it('should return the collection for a specific ticker', async () => {
+      jest.spyOn(utilsInternalModule, 'getAssetIdForTicker').mockResolvedValue(hexToUuid(assetId));
+
       const nftCollection = await assets.getNftCollection({ ticker });
-      jest.spyOn(utilsInternalModule, 'getAssetIdForTicker').mockResolvedValue(assetId);
-      expect(nftCollection.id).toBe(assetId);
+      expect(nftCollection.id).toEqual(hexToUuid(assetId));
     });
 
     it('should throw if the collection does not exist', async () => {

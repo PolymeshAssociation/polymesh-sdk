@@ -1073,6 +1073,17 @@ export async function getAssetIdAndTicker(
 /**
  * @hidden
  */
+export function asUuid(id: string): string {
+  if (isHexUuid(id)) {
+    return hexToUuid(id);
+  }
+
+  return id;
+}
+
+/**
+ * @hidden
+ */
 export async function asBaseAsset(asset: string | BaseAsset, context: Context): Promise<BaseAsset> {
   const { isV6 } = context;
   if (asset instanceof BaseAsset) {
@@ -1084,9 +1095,9 @@ export async function asBaseAsset(asset: string | BaseAsset, context: Context): 
     return new BaseAsset({ assetId: asset }, context);
   }
 
-  if (isUuid(asset)) {
+  if (isUuid(asset) || isHexUuid(asset)) {
     const ticker = await getTickerForAsset(asset, context);
-    const baseAsset = new BaseAsset({ assetId: asset }, context);
+    const baseAsset = new BaseAsset({ assetId: asUuid(asset) }, context);
     baseAsset.ticker = ticker;
     return baseAsset;
   } else {
@@ -1096,17 +1107,6 @@ export async function asBaseAsset(asset: string | BaseAsset, context: Context): 
     baseAsset.ticker = asset;
     return baseAsset;
   }
-}
-
-/**
- * @hidden
- */
-export function asUuid(id: string): string {
-  if (isHexUuid(id)) {
-    return hexToUuid(id);
-  }
-
-  return id;
 }
 
 /**
