@@ -5106,7 +5106,7 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
       result = await scopeToMiddlewareScope(scope, context);
       expect(result).toEqual({
         type: ClaimScopeTypeEnum.Asset,
-        value: '0x12341234123412341234123412341234',
+        assetId: '0x12341234123412341234123412341234',
       });
 
       scope = { type: ScopeType.Ticker, value: 'SOME_TICKER' }; // NOSONAR
@@ -5114,7 +5114,7 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
       result = await scopeToMiddlewareScope(scope, context);
       expect(result).toEqual({
         type: ClaimScopeTypeEnum.Asset,
-        value: '0x12341234123412341234123412341234',
+        assetId: '0x12341234123412341234123412341234',
       });
 
       scope = { type: ScopeType.Custom, value: 'customValue' };

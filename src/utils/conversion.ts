@@ -2510,7 +2510,7 @@ export async function scopeToMiddlewareScope(
     case ScopeType.Asset:
       return {
         type: ClaimScopeTypeEnum.Asset,
-        value: await getAssetIdForMiddleware(value, context),
+        assetId: await getAssetIdForMiddleware(value, context),
       };
     case ScopeType.Identity:
     case ScopeType.Custom:
