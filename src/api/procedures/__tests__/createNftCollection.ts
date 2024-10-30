@@ -807,7 +807,7 @@ describe('createNftCollection procedure', () => {
         returnValue: dsMockUtils.createMockU64(new BigNumber(1)),
       });
 
-      const expectedError = new PolymeshError({
+      let expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'An NFT collection already exists with the ticker',
       });
@@ -820,6 +820,11 @@ describe('createNftCollection procedure', () => {
         nftCollectionOptions: {
           exists: true,
         },
+      });
+
+      expectedError = new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'An NFT collection already exists with the given asset ID',
       });
 
       await expect(

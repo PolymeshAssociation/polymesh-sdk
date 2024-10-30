@@ -438,6 +438,79 @@ async function prepareStorageForCustomType(
 /**
  * @hidden
  */
+export async function assertNftCollectionDoesNotExists(
+  id: string,
+  context: Context,
+  errorParams: ConstructorParameters<typeof PolymeshError>[0]
+): Promise<void> {
+  const nft = new NftCollection({ assetId: id }, context);
+  const collectionExists = await nft.exists();
+
+  if (collectionExists) {
+    throw new PolymeshError(errorParams);
+  }
+}
+
+type StorageAssetAttributes = 'status' | 'assetId' | 'isAssetCreated';
+/**
+ * @hidden
+ */
+export async function prepareStorageForTickerDetails(
+  context: Context,
+  ticker: string,
+  assetId?: string
+): Promise<Pick<Storage, StorageAssetAttributes>> {
+  assertTickerOk(ticker);
+
+  const { isV6 } = context;
+
+  const storageStatus: Pick<Storage, StorageAssetAttributes> = {
+    isAssetCreated: false,
+    assetId: '',
+  };
+
+  const assetIdExistsForV7 = !isV6 && assetId;
+
+  /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
+  if (isV6) {
+    // for chain 6.x, we assume asset ID same as ticker
+    storageStatus.assetId = ticker;
+  }
+
+  const reservation = new TickerReservation({ ticker }, context);
+  const reservationDetails = await reservation.details();
+  const { status } = reservationDetails;
+  storageStatus.status = status;
+
+  if (status === TickerReservationStatus.AssetCreated) {
+    storageStatus.assetId = reservationDetails.assetId;
+    storageStatus.isAssetCreated = true;
+    if (assetIdExistsForV7 && assetId !== reservationDetails.assetId) {
+      // For v7 chain, if assetID is provided in arguments, and the ticker provided is not already associated with the given asset ID, throw an error
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'Ticker is already linked to another asset',
+        data: {
+          ticker,
+          linkedAssetId: reservationDetails.assetId,
+        },
+      });
+    }
+
+    await assertNftCollectionDoesNotExists(reservationDetails.assetId, context, {
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'An NFT collection already exists with the ticker',
+      data: { ticker },
+    });
+  } else if (!isV6) {
+    storageStatus.assetId = await context.getSigningAccount().getNextAssetId();
+  }
+  return storageStatus;
+}
+
+/**
+ * @hidden
+ */
 export async function prepareStorage(
   this: Procedure<Params, NftCollection, Storage>,
   { ticker, assetId, nftType, collectionKeys }: Params
@@ -447,20 +520,7 @@ export async function prepareStorage(
     context: { isV6 },
   } = this;
 
-  const assertNftCollectionDoesNotExists = async (id: string): Promise<void> => {
-    const nft = new NftCollection({ assetId: id }, context);
-    const collectionExists = await nft.exists();
-
-    if (collectionExists) {
-      throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message: 'An NFT collection already exists with the ticker',
-        data: { ticker },
-      });
-    }
-  };
-
-  const storageStatus: Pick<Storage, 'status' | 'assetId' | 'isAssetCreated'> = {
+  let storageStatus: Pick<Storage, StorageAssetAttributes> = {
     isAssetCreated: false,
     assetId: '',
   };
@@ -468,38 +528,7 @@ export async function prepareStorage(
   const assetIdExistsForV7 = !isV6 && assetId;
 
   if (ticker) {
-    assertTickerOk(ticker);
-
-    /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-    if (isV6) {
-      // for chain 6.x, we assume asset ID same as ticker
-      storageStatus.assetId = ticker;
-    }
-
-    const reservation = new TickerReservation({ ticker }, context);
-    const reservationDetails = await reservation.details();
-    const { status } = reservationDetails;
-    storageStatus.status = status;
-
-    if (status === TickerReservationStatus.AssetCreated) {
-      storageStatus.assetId = reservationDetails.assetId;
-      storageStatus.isAssetCreated = true;
-      if (assetIdExistsForV7 && assetId !== reservationDetails.assetId) {
-        // For v7 chain, if assetID is provided in arguments, and the ticker provided is not already associated with the given asset ID, throw an error
-        throw new PolymeshError({
-          code: ErrorCode.UnmetPrerequisite,
-          message: 'Ticker is already linked to another asset',
-          data: {
-            ticker,
-            linkedAssetId: reservationDetails.assetId,
-          },
-        });
-      }
-
-      await assertNftCollectionDoesNotExists(reservationDetails.assetId);
-    } else if (!isV6) {
-      storageStatus.assetId = await context.getSigningAccount().getNextAssetId();
-    }
+    storageStatus = await prepareStorageForTickerDetails(context, ticker, assetId);
   } else {
     /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
     if (isV6) {
@@ -514,7 +543,11 @@ export async function prepareStorage(
   if (assetIdExistsForV7) {
     storageStatus.assetId = assetId;
     storageStatus.isAssetCreated = true;
-    await assertNftCollectionDoesNotExists(assetId);
+    await assertNftCollectionDoesNotExists(assetId, context, {
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'An NFT collection already exists with the given asset ID',
+      data: { assetId },
+    });
   } else if (!isV6) {
     storageStatus.assetId = await context.getSigningAccount().getNextAssetId();
   }
