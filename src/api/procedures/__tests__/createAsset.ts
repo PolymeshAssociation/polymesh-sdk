@@ -232,9 +232,7 @@ describe('createAsset procedure', () => {
     });
 
     when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
-    when(stringToAssetIdSpy)
-      .calledWith(uuidToHex(assetId), mockContext)
-      .mockReturnValue(rawAssetId);
+    when(stringToAssetIdSpy).calledWith(assetId, mockContext).mockReturnValue(rawAssetId);
     when(bigNumberToBalanceSpy)
       .calledWith(initialSupply, mockContext, isDivisible)
       .mockReturnValue(rawInitialSupply);

@@ -44,6 +44,14 @@ describe('BaseAsset class', () => {
     dsMockUtils.cleanup();
   });
 
+  describe('method: rawId', () => {
+    it('should return the id in hex format', () => {
+      const result = asset.rawId;
+
+      expect(result).toEqual('0x12341234123412341234123412341234');
+    });
+  });
+
   describe('method: setVenueFiltering', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const enabled = true;

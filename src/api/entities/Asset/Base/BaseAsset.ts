@@ -45,7 +45,7 @@ import {
   UnsubCallback,
   VenueFilteringDetails,
 } from '~/types';
-import { tickerToDid } from '~/utils';
+import { tickerToDid, uuidToHex } from '~/utils';
 import {
   assetIdentifierToSecurityIdentifier,
   assetToMeshAssetId,
@@ -89,9 +89,18 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
   public ticker?: string;
 
   /**
-   * Unique ID of the Asset
+   * Unique ID of the Asset in UUID format
    */
   public id: string;
+
+  /**
+   * Unique ID of the Asset in hex format
+   *
+   * @note Although UUID format is the usual representation of asset IDs, generic polkadot/substrate tools usually expect it in hex format
+   */
+  public get rawId(): string {
+    return uuidToHex(this.id);
+  }
 
   /**
    * Transfer ownership of the Asset to another Identity. This generates an authorization request that must be accepted
