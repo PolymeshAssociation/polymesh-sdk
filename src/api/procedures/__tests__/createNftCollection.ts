@@ -160,6 +160,7 @@ describe('createNftCollection procedure', () => {
 
   let createAssetTransactionTx: PolymeshTx;
   let registerUniqueTickerTx: PolymeshTx;
+  let registerCustomAssetTypeTx: PolymeshTx;
   let linkTickerToAssetIdTx: PolymeshTx;
   let createNftCollectionTransaction: PolymeshTx;
   let registerAssetMetadataLocalTypeTransaction: PolymeshTx;
@@ -174,6 +175,7 @@ describe('createNftCollection procedure', () => {
     registerUniqueTickerTx = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
     linkTickerToAssetIdTx = dsMockUtils.createTxMock('asset', 'linkTickerToAssetId');
     createNftCollectionTransaction = dsMockUtils.createTxMock('nft', 'createNftCollection');
+    registerCustomAssetTypeTx = dsMockUtils.createTxMock('asset', 'registerCustomAssetType');
     registerAssetMetadataLocalTypeTransaction = dsMockUtils.createTxMock(
       'asset',
       'registerAssetMetadataLocalType'
@@ -357,16 +359,6 @@ describe('createNftCollection procedure', () => {
     it('should handle custom type data', async () => {
       const typeId = new BigNumber(1);
       const rawId = dsMockUtils.createMockU32(typeId);
-      const proc = procedureMockUtils.getInstance<Params, NftCollection, Storage>(mockContext, {
-        customTypeData: {
-          rawId,
-          rawValue: dsMockUtils.createMockBytes('someCustomType'),
-        },
-        status: TickerReservationStatus.Free,
-        isAssetCreated: false,
-        assetId,
-        needsLocalMetadata: false,
-      });
       const rawNftType = dsMockUtils.createMockNftType({
         Custom: dsMockUtils.createMockU32(typeId),
       });
@@ -378,31 +370,72 @@ describe('createNftCollection procedure', () => {
         .calledWith({ Custom: rawId }, mockContext)
         .mockReturnValue(rawNftType);
 
-      const result = await prepareCreateNftCollection.call(proc, {
+      const paramsWithCustomType = {
+        customTypeData: {
+          rawId,
+          rawValue: dsMockUtils.createMockBytes('someCustomType'),
+          isAlreadyCreated: true,
+        },
+        status: TickerReservationStatus.Free,
+        isAssetCreated: false,
+        assetId,
+        needsLocalMetadata: false,
+      };
+      let proc = procedureMockUtils.getInstance<Params, NftCollection, Storage>(
+        mockContext,
+        paramsWithCustomType
+      );
+      let result = await prepareCreateNftCollection.call(proc, {
         ticker,
         nftType: KnownNftType.Derivative,
+        collectionKeys: [],
+      });
+
+      const nftTransactions = [
+        expect.objectContaining({
+          transaction: createAssetTransactionTx,
+          fee: undefined,
+          args: [rawName, rawDivisible, rawAssetType, [], null],
+        }),
+        expect.objectContaining({
+          transaction: registerUniqueTickerTx,
+          args: [rawTicker],
+        }),
+        expect.objectContaining({
+          transaction: linkTickerToAssetIdTx,
+          args: [rawTicker, rawAssetId],
+        }),
+        expect.objectContaining({
+          transaction: createNftCollectionTransaction,
+          args: [rawAssetId, rawNftType, []],
+        }),
+      ];
+
+      expect(result.transactions).toEqual(expect.arrayContaining([...nftTransactions]));
+
+      const rawUnregisteredType = dsMockUtils.createMockBytes('someCustomType');
+      proc = procedureMockUtils.getInstance<Params, NftCollection, Storage>(mockContext, {
+        ...paramsWithCustomType,
+        customTypeData: {
+          rawId,
+          rawValue: rawUnregisteredType,
+          isAlreadyCreated: false,
+        },
+      });
+
+      result = await prepareCreateNftCollection.call(proc, {
+        ticker,
+        nftType: 'someCustomType',
         collectionKeys: [],
       });
 
       expect(result.transactions).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            transaction: createAssetTransactionTx,
-            fee: undefined,
-            args: [rawName, rawDivisible, rawAssetType, [], null],
+            transaction: registerCustomAssetTypeTx,
+            args: [rawUnregisteredType],
           }),
-          expect.objectContaining({
-            transaction: registerUniqueTickerTx,
-            args: [rawTicker],
-          }),
-          expect.objectContaining({
-            transaction: linkTickerToAssetIdTx,
-            args: [rawTicker, rawAssetId],
-          }),
-          expect.objectContaining({
-            transaction: createNftCollectionTransaction,
-            args: [rawAssetId, rawNftType, []],
-          }),
+          ...nftTransactions,
         ])
       );
     });
@@ -464,7 +497,11 @@ describe('createNftCollection procedure', () => {
   describe('getAuthorization', () => {
     it('should return all needed permissions', async () => {
       const proc = procedureMockUtils.getInstance<Params, NftCollection, Storage>(mockContext, {
-        customTypeData: null,
+        customTypeData: {
+          rawId: dsMockUtils.createMockU32(new BigNumber(1)),
+          rawValue: dsMockUtils.createMockBytes('SOME_ASSET_TYPE'),
+          isAlreadyCreated: false,
+        },
         status: TickerReservationStatus.Free,
         isAssetCreated: false,
         assetId,
@@ -481,6 +518,7 @@ describe('createNftCollection procedure', () => {
           portfolios: [],
           transactions: [
             TxTags.nft.CreateNftCollection,
+            TxTags.asset.RegisterCustomAssetType,
             TxTags.asset.CreateAsset,
             TxTags.asset.RegisterUniqueTicker,
             TxTags.asset.LinkTickerToAssetId,
@@ -642,11 +680,12 @@ describe('createNftCollection procedure', () => {
           JSON.stringify({
             rawId,
             rawValue,
+            isAlreadyCreated: true,
           })
         );
       });
 
-      it('should throw if custom type string was not registered', () => {
+      it('should get next custom type id and prepare storage if custom type string was not registered', async () => {
         const proc = procedureMockUtils.getInstance<Params, NftCollection, Storage>(mockContext);
         const boundFunc = prepareStorage.bind(proc);
         stringToBytesSpy.mockReturnValue(rawValue);
@@ -655,19 +694,25 @@ describe('createNftCollection procedure', () => {
           returnValue: dsMockUtils.createMockOption(),
         });
 
-        const expectedError = new PolymeshError({
-          code: ErrorCode.DataUnavailable,
-          message:
-            'createNftCollection procedure was given a custom type string that does not have a corresponding ID. Register the type and try again',
+        dsMockUtils.createQueryMock('asset', 'customTypeIdSequence', {
+          returnValue: dsMockUtils.createMockU32(new BigNumber(0)),
         });
 
-        return expect(
-          boundFunc({
-            ticker,
-            nftType: customType,
-            collectionKeys: [],
+        bigNumberToU32.mockReturnValue(rawId);
+
+        const result = await boundFunc({
+          ticker,
+          nftType: customType,
+          collectionKeys: [],
+        });
+
+        expect(JSON.stringify(result.customTypeData)).toEqual(
+          JSON.stringify({
+            rawId,
+            rawValue,
+            isAlreadyCreated: false,
           })
-        ).rejects.toThrow(expectedError);
+        );
       });
     });
 
@@ -691,6 +736,7 @@ describe('createNftCollection procedure', () => {
           JSON.stringify({
             rawId,
             rawValue,
+            isAlreadyCreated: true,
           })
         );
       });

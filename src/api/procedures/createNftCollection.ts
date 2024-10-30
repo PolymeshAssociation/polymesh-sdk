@@ -45,6 +45,7 @@ import {
   securityIdentifierToAssetIdentifier,
   stringToBytes,
   stringToTicker,
+  u32ToBigNumber,
 } from '~/utils/conversion';
 import { checkTxType, isAllowedCharacters, optionize } from '~/utils/internal';
 
@@ -76,6 +77,7 @@ export interface Storage {
   customTypeData: {
     rawId: u32;
     rawValue: Bytes;
+    isAlreadyCreated: boolean;
   } | null;
 
   needsLocalMetadata: boolean;
@@ -247,6 +249,14 @@ export async function prepareCreateNftCollection(
       });
     }
   } else {
+    if (storage.customTypeData && !storage.customTypeData.isAlreadyCreated) {
+      transactions.push(
+        checkTxType({
+          transaction: tx.asset.registerCustomAssetType,
+          args: [storage.customTypeData.rawValue],
+        })
+      );
+    }
     transactions.push(await getCreateAssetTxAndFees(context, storage, args, rawAssetId));
   }
 
@@ -296,7 +306,6 @@ export async function prepareCreateNftCollection(
     );
   }
 
-  console.log([rawAssetId, rawType, rawCollectionKeys]);
   transactions.push(
     checkTxType({
       transaction: tx.nft.createNftCollection,
@@ -318,12 +327,16 @@ export async function getAuthorization(
   { ticker, documents }: Params
 ): Promise<ProcedureAuthorization> {
   const {
-    storage: { status, needsLocalMetadata, isAssetCreated, assetId },
+    storage: { status, needsLocalMetadata, isAssetCreated, assetId, customTypeData },
     context,
     context: { isV6 },
   } = this;
 
   const transactions: TxTag[] = [TxTags.nft.CreateNftCollection];
+
+  if (customTypeData && !customTypeData.isAlreadyCreated) {
+    transactions.push(TxTags.asset.RegisterCustomAssetType);
+  }
 
   if (!isAssetCreated) {
     transactions.push(TxTags.asset.CreateAsset);
@@ -396,23 +409,26 @@ async function prepareStorageForCustomType(
     customTypeData = {
       rawId,
       rawValue,
+      isAlreadyCreated: true,
     };
   } else if (!values<string>(KnownNftType).includes(nftType)) {
     const rawValue = stringToBytes(nftType, context);
     const rawId = await context.polymeshApi.query.asset.customTypesInverse(rawValue);
     if (rawId.isNone) {
-      throw new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message:
-          'createNftCollection procedure was given a custom type string that does not have a corresponding ID. Register the type and try again',
-        data: { nftType },
-      });
+      const rawCustomAssetTypeId = await context.polymeshApi.query.asset.customTypeIdSequence();
+      const nextCustomAssetTypeId = u32ToBigNumber(rawCustomAssetTypeId).plus(1);
+      customTypeData = {
+        rawId: bigNumberToU32(nextCustomAssetTypeId, context),
+        rawValue,
+        isAlreadyCreated: false,
+      };
+    } else {
+      customTypeData = {
+        rawId: rawId.unwrap(),
+        rawValue,
+        isAlreadyCreated: true,
+      };
     }
-
-    customTypeData = {
-      rawId: rawId.unwrap(),
-      rawValue,
-    };
   } else {
     customTypeData = null;
   }
@@ -432,7 +448,6 @@ export async function prepareStorage(
   } = this;
 
   const assertNftCollectionDoesNotExists = async (id: string): Promise<void> => {
-    console.log('asserting id does not exist', id);
     const nft = new NftCollection({ assetId: id }, context);
     const collectionExists = await nft.exists();
 
@@ -464,7 +479,6 @@ export async function prepareStorage(
     const reservation = new TickerReservation({ ticker }, context);
     const reservationDetails = await reservation.details();
     const { status } = reservationDetails;
-    console.log([status]);
     storageStatus.status = status;
 
     if (status === TickerReservationStatus.AssetCreated) {
@@ -501,6 +515,8 @@ export async function prepareStorage(
     storageStatus.assetId = assetId;
     storageStatus.isAssetCreated = true;
     await assertNftCollectionDoesNotExists(assetId);
+  } else if (!isV6) {
+    storageStatus.assetId = await context.getSigningAccount().getNextAssetId();
   }
 
   const needsLocalMetadata = collectionKeys.some(isLocalMetadata);
