@@ -62,17 +62,17 @@ async function getAgentPermissionsResult(
  * to a {@link PolymeshTransaction} (or {@link PolymeshTransactionBatch}) that can be run
  */
 export class Procedure<Args = void, ReturnValue = void, Storage = Record<string, unknown>> {
-  private prepareTransactions: (
+  private readonly prepareTransactions: (
     this: Procedure<Args, ReturnValue, Storage>,
     args: Args
   ) => Promise<GenericTransactionSpec<ReturnValue>>;
 
-  private getAuthorization: (
+  private readonly getAuthorization: (
     this: Procedure<Args, ReturnValue, Storage>,
     args: Args
   ) => Promise<ProcedureAuthorization> | ProcedureAuthorization;
 
-  private prepareStorage: (
+  private readonly prepareStorage: (
     this: Procedure<Args, ReturnValue, Storage>,
     args: Args
   ) => Promise<Storage> | Storage;

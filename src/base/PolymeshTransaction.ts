@@ -49,7 +49,7 @@ export class PolymeshTransaction<
    *
    * underlying transaction to be executed
    */
-  private transaction: PolymeshTx<Args>;
+  private readonly transaction: PolymeshTx<Args>;
 
   /**
    * @hidden
@@ -68,7 +68,7 @@ export class PolymeshTransaction<
    *   dynamically generated from the transaction name, or a specific procedure has
    *   special rules for calculating them
    */
-  private protocolFee?: BigNumber;
+  private readonly protocolFee?: BigNumber;
 
   /**
    * @hidden

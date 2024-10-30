@@ -30,7 +30,7 @@ import { createProcedureMethod } from '~/utils/internal';
  * Handles all Settlement related functionality
  */
 export class Settlements {
-  private context: Context;
+  private readonly context: Context;
 
   /**
    * @hidden

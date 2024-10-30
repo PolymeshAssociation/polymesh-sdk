@@ -33,7 +33,7 @@ import { asIdentity, assertIdentityExists, createProcedureMethod } from '~/utils
  * Handles all Identity related functionality
  */
 export class Identities {
-  private context: Context;
+  private readonly context: Context;
 
   /**
    * @hidden

@@ -46,7 +46,7 @@ import {
  * Handles functionality related to Account Management
  */
 export class AccountManagement {
-  private context: Context;
+  private readonly context: Context;
 
   /**
    * @hidden

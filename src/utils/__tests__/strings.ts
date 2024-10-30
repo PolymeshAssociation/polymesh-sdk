@@ -42,7 +42,7 @@ describe('hexToUuid', () => {
 
   it('should throw an error', () => {
     const expectedError = new PolymeshError({
-      message: 'hex encoded UUID should have 32 hex characters',
+      message: 'hex encoded UUID should have 32 hex characters (16 bytes)',
       code: ErrorCode.ValidationError,
     });
 
