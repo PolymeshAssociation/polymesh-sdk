@@ -3,8 +3,8 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
 import { isMultiSigNoWrapTx } from '~/base/utils';
-import { Context, PolymeshTransactionBase } from '~/internal';
-import { TxTag, TxTags } from '~/types';
+import { Context, PolymeshError, PolymeshTransactionBase } from '~/internal';
+import { ErrorCode, TxTag, TxTags } from '~/types';
 import { PolymeshTx, TransactionConstructionData, TransactionSpec } from '~/types/internal';
 import { transactionToTxTag } from '~/utils/conversion';
 
@@ -132,5 +132,18 @@ export class PolymeshTransaction<
     const { tag, context } = this;
 
     return context.supportsSubsidy({ tag });
+  }
+
+  // eslint-disable-next-line require-jsdoc
+  protected override assertTransactionSupportsSubsidy(): void {
+    if (!this.supportsSubsidy()) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'This transaction cannot be run by a subsidized Account',
+        data: {
+          transaction: this.tag,
+        },
+      });
+    }
   }
 }

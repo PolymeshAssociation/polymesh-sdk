@@ -193,7 +193,7 @@ describe('Polymesh Transaction Batch class', () => {
   });
 
   describe('method: supportsSubsidy', () => {
-    it('should return false', () => {
+    it('should return true if all batch transaction can be subsidized', () => {
       const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
       const args = tuple('A_TICKER');
 
@@ -203,6 +203,88 @@ describe('Polymesh Transaction Batch class', () => {
           args,
         },
       ];
+
+      context.supportsSubsidy.mockReturnValueOnce(true);
+
+      const tx = new PolymeshTransactionBatch(
+        {
+          ...txSpec,
+          transactions,
+          resolver: undefined,
+        },
+        context
+      );
+
+      expect(tx.supportsSubsidy()).toBe(true);
+    });
+
+    it('should return false if batch has more than permissible max length', () => {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+      const args = tuple('A_TICKER');
+
+      const transactions = [
+        {
+          transaction,
+          args,
+        },
+        {
+          transaction,
+          args,
+        },
+        {
+          transaction,
+          args,
+        },
+        {
+          transaction,
+          args,
+        },
+        {
+          transaction,
+          args,
+        },
+        {
+          transaction,
+          args,
+        },
+        {
+          transaction,
+          args,
+        },
+        {
+          transaction,
+          args,
+        },
+      ];
+
+      const tx = new PolymeshTransactionBatch(
+        {
+          ...txSpec,
+          transactions,
+          resolver: undefined,
+        },
+        context
+      );
+
+      expect(tx.supportsSubsidy()).toBe(false);
+    });
+
+    it('should return false if one or more transactions in the batch cannot be subsidized', () => {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+      const args = tuple('A_TICKER');
+
+      const transactions = [
+        {
+          transaction,
+          args,
+        },
+        {
+          transaction: dsMockUtils.createTxMock('multisig', 'addAdmin'),
+          args: tuple('SOME_DID'),
+        },
+      ];
+
+      context.supportsSubsidy.mockReturnValueOnce(true).mockReturnValueOnce(false);
 
       const tx = new PolymeshTransactionBatch(
         {

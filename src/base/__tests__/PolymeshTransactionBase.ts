@@ -21,7 +21,7 @@ import { createMockSigningPayload, MockTxStatus } from '~/testUtils/mocks/dataSo
 import { Mocked } from '~/testUtils/types';
 import { ErrorCode, MultiSig, PayingAccountType, TransactionStatus, TxTags } from '~/types';
 import { tuple } from '~/types/utils';
-import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
+import { DUMMY_ACCOUNT_ID, MAX_BATCH_SIZE_SUPPORTING_SUBSIDY } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -480,11 +480,11 @@ describe('Polymesh Transaction Base class', () => {
       expect(tx.status).toBe(TransactionStatus.Rejected);
     });
 
-    it('should throw an error if trying to run a transaction that cannot be subsidized with a subsidized Account', async () => {
-      const transaction = dsMockUtils.createTxMock('staking', 'bond', {
+    it('should throw an error if trying to run a transaction that cannot be subsidized', async () => {
+      const notSupportedTransaction = dsMockUtils.createTxMock('staking', 'bond', {
         autoResolve: MockTxStatus.Succeeded,
       });
-      const args = tuple('JUST_KIDDING');
+      const randomArgs = tuple('JUST_KIDDING');
 
       context = dsMockUtils.getContextInstance({
         subsidy: {
@@ -497,8 +497,8 @@ describe('Polymesh Transaction Base class', () => {
       const tx = new PolymeshTransaction(
         {
           ...txSpec,
-          transaction,
-          args,
+          transaction: notSupportedTransaction,
+          args: randomArgs,
           resolver: undefined,
         },
         context
@@ -508,6 +508,77 @@ describe('Polymesh Transaction Base class', () => {
         'This transaction cannot be run by a subsidized Account'
       );
       expect(tx.status).toBe(TransactionStatus.Failed);
+
+      dsMockUtils.createTxMock('utility', 'batchAll');
+
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+      const args = tuple('A_TICKER');
+
+      const transactions = [
+        {
+          transaction,
+          args,
+        },
+        {
+          transaction,
+          args,
+        },
+        {
+          transaction,
+          args,
+        },
+        {
+          transaction,
+          args,
+        },
+        {
+          transaction,
+          args,
+        },
+        {
+          transaction,
+          args,
+        },
+        {
+          transaction,
+          args,
+        },
+        {
+          transaction,
+          args,
+        },
+      ];
+
+      const tooLongBatchTransaction = new PolymeshTransactionBatch(
+        {
+          ...txSpec,
+          transactions,
+          resolver: undefined,
+        },
+        context
+      );
+
+      await expect(tooLongBatchTransaction.run()).rejects.toThrow(
+        `Batch transactions can only be subsidized with a maximum of ${MAX_BATCH_SIZE_SUPPORTING_SUBSIDY} batched calls`
+      );
+
+      const batchWithNotSupportedTransaction = new PolymeshTransactionBatch(
+        {
+          ...txSpec,
+          transactions: [
+            {
+              transaction: notSupportedTransaction,
+              args: randomArgs,
+            },
+          ],
+          resolver: undefined,
+        },
+        context
+      );
+
+      await expect(batchWithNotSupportedTransaction.run()).rejects.toThrow(
+        'Some of the transactions cannot be run by a subsidized Account'
+      );
     });
 
     it('should throw an error if the subsidy does not have enough allowance', async () => {

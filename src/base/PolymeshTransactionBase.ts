@@ -712,7 +712,16 @@ export abstract class PolymeshTransactionBase<
    *
    * @note this depends on the type of transaction itself (e.g. `staking.bond` can't be subsidized, but `asset.createAsset` can)
    */
-  public abstract supportsSubsidy(): boolean;
+  public abstract supportsSubsidy(): void;
+
+  /**
+   * @hidden
+   *
+   * Asserts whether the transaction can be subsidized.
+   *
+   * @throws if transaction cannot be subsidized
+   */
+  protected abstract assertTransactionSupportsSubsidy(): void;
 
   /**
    * @hidden
@@ -771,12 +780,7 @@ export abstract class PolymeshTransactionBase<
 
     if (type === PayingAccountType.Subsidy) {
       const { allowance } = payingAccountData;
-      if (!this.supportsSubsidy()) {
-        throw new PolymeshError({
-          code: ErrorCode.UnmetPrerequisite,
-          message: 'This transaction cannot be run by a subsidized Account',
-        });
-      }
+      this.assertTransactionSupportsSubsidy();
 
       if (allowance.lt(total)) {
         throw new PolymeshError({

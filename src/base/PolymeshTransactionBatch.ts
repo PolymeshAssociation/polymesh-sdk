@@ -13,6 +13,7 @@ import {
   MapTxWithArgs,
   TransactionConstructionData,
 } from '~/types/internal';
+import { MAX_BATCH_SIZE_SUPPORTING_SUBSIDY } from '~/utils/constants';
 import { transactionToTxTag, u32ToBigNumber } from '~/utils/conversion';
 import { filterEventRecords, mergeReceipts } from '~/utils/internal';
 
@@ -121,11 +122,44 @@ export class PolymeshTransactionBatch<
   }
 
   /**
-   * @note batches can't be subsidized. If the caller is subsidized, they should use `splitTransactions` and
-   *   run each transaction separately
+   * @note batch can only be subsidized if -
+   *   1. Number of transactions in the batch are not more than 7
+   *   2. Every transaction in the batch can be subsidized
    */
   public supportsSubsidy(): boolean {
-    return false;
+    return (
+      this.transactionData.length <= MAX_BATCH_SIZE_SUPPORTING_SUBSIDY &&
+      this.transactionData.every(({ tag }) => this.context.supportsSubsidy({ tag }))
+    );
+  }
+
+  /**
+   * @throws error if
+   *   1. Number of transactions in the batch are more than 7
+   *   2. Batch contains a transaction that cannot be subsidized
+   */
+  protected override assertTransactionSupportsSubsidy(): void {
+    if (this.transactionData.length > MAX_BATCH_SIZE_SUPPORTING_SUBSIDY) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: `Batch transactions can only be subsidized with a maximum of ${MAX_BATCH_SIZE_SUPPORTING_SUBSIDY} batched calls`,
+        data: {
+          currentBatchLength: this.transactionData.length,
+        },
+      });
+    }
+    const unsupportedTxs = this.transactionData.filter(
+      ({ tag }) => !this.context.supportsSubsidy({ tag })
+    );
+    if (unsupportedTxs.length) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'Some of the transactions cannot be run by a subsidized Account',
+        data: {
+          transactions: unsupportedTxs,
+        },
+      });
+    }
   }
 
   /**
