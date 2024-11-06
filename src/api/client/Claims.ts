@@ -22,11 +22,14 @@ import {
   ClaimOperation,
   ClaimScope,
   ClaimType,
+  CustomClaim,
   CustomClaimType,
   CustomClaimTypeWithDid,
+  CustomClaimWithoutScope,
   ErrorCode,
   IdentityWithClaims,
   ModifyClaimsParams,
+  NextKey,
   ProcedureMethod,
   RegisterCustomClaimTypeParams,
   ResultSet,
@@ -273,12 +276,77 @@ export class Claims {
    *   If the scope is an asset DID, the corresponding ticker is returned as well
    *
    * @param opts.target - Identity for which to fetch claim scopes (optional, defaults to the signing Identity)
+   * @note in order for scopes to include scopes for custom claims, middlewareV2 is required
    */
   public async getClaimScopes(opts: { target?: string | Identity } = {}): Promise<ClaimScope[]> {
     const { context } = this;
     const { target } = opts;
 
-    const did = await getDid(target, context);
+    const [did, isMiddlewareAvailable] = await Promise.all([
+      getDid(target, context),
+      context.isMiddlewareAvailable(),
+    ]);
+
+    const customClaimScopeList: ClaimScope[] = [];
+
+    if (isMiddlewareAvailable) {
+      const { data, count, next } = await this.getIdentitiesWithClaims({
+        targets: [did],
+        claimTypes: [ClaimType.Custom],
+        includeExpired: false,
+      });
+      const getClaimScopeFromClaim = (
+        claim: ClaimData<CustomClaim | CustomClaimWithoutScope>
+      ): ClaimScope => {
+        if (claim.claim.scope) {
+          return {
+            scope: claim.claim.scope,
+            ticker:
+              claim.claim.scope.type === ScopeType.Ticker ? claim.claim.scope.value : undefined,
+          };
+        }
+
+        return { scope: null };
+      };
+
+      data.forEach(record => {
+        const { claims: claimData } = record as {
+          claims: ClaimData<CustomClaim | CustomClaimWithoutScope>[];
+        };
+
+        customClaimScopeList.push(...claimData.map(getClaimScopeFromClaim));
+      });
+
+      if (next && count) {
+        // fetch remaining scopes
+        const promises = [];
+
+        let start: NextKey = next;
+
+        while (start && BigNumber.isBigNumber(start)) {
+          promises.push(
+            this.getIdentitiesWithClaims({
+              targets: [did],
+              claimTypes: [ClaimType.Custom],
+              includeExpired: false,
+              start,
+            })
+          );
+
+          start = calculateNextKey(count, data.length, start);
+        }
+
+        const results = await Promise.all(promises);
+
+        results.forEach(record => {
+          record.data.forEach(result => {
+            const { claims: claimData } = result as { claims: ClaimData<CustomClaim>[] };
+
+            customClaimScopeList.push(...claimData.map(getClaimScopeFromClaim));
+          });
+        });
+      }
+    }
 
     const identityClaimsFromChain = await context.getIdentityClaimsFromChain({
       targets: [did],
@@ -296,27 +364,38 @@ export class Claims {
       includeExpired: true,
     });
 
-    const claimScopeList = identityClaimsFromChain.map(({ claim }) => {
-      // only Scoped Claims were fetched so this assertion is reasonable
-      const {
-        scope: { type, value },
-      } = claim as ScopedClaim;
+    const claimScopeList = identityClaimsFromChain
+      // @ts-expect-error - only Scoped Claims were fetched so this assertion is reasonable
+      .filter(claim => claim.claim.scope)
+      .map(({ claim }) => {
+        // only Scoped Claims were fetched so this assertion is reasonable
+        const {
+          scope: { type, value },
+        } = claim as ScopedClaim;
 
-      let ticker: string | undefined;
+        let ticker: string | undefined;
 
-      /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
-      // prettier-ignore
-      if (type === ScopeType.Ticker) { // NOSONAR
+        /* istanbul ignore if: this will be removed after dual version support for v6-v7 */
+        // prettier-ignore
+        if (type === ScopeType.Ticker) { // NOSONAR
         ticker = removePadding(value);
       }
 
-      return {
-        scope: { type, value: ticker ?? value },
-        ticker,
-      };
-    });
+        return {
+          scope: {
+            type,
+            value:
+              /* istanbul ignore next: this will be removed after dual version support for v6-v7 */ ticker ??
+              value,
+          },
+          ticker,
+        };
+      });
 
-    return uniqWith(claimScopeList, isEqual);
+    return uniqWith(
+      [...claimScopeList, ...customClaimScopeList.filter(scope => scope.scope)],
+      isEqual
+    );
   }
 
   /**

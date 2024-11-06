@@ -4584,6 +4584,22 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
       result = await claimToMeshClaim(value, context);
 
       expect(result).toBe(fakeResult);
+
+      value = {
+        type: ClaimType.Custom,
+        customClaimTypeId: new BigNumber(1),
+        scope: undefined,
+      };
+
+      when(createTypeMock)
+        .calledWith('PolymeshPrimitivesIdentityClaimClaim', {
+          [value.type]: [bigNumberToU32(value.customClaimTypeId, context)],
+        })
+        .mockReturnValue(fakeResult);
+
+      result = await claimToMeshClaim(value, context);
+
+      expect(result).toBe(fakeResult);
     });
   });
 
@@ -5085,6 +5101,10 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
       );
 
       expect(result).toEqual({ type: ScopeType.Custom, value: 'SOMETHING_ELSE' });
+
+      result = middlewareScopeToScope({}, context);
+
+      expect(result).toBeUndefined();
     });
 
     it('should throw an error for invalid scope type', () => {

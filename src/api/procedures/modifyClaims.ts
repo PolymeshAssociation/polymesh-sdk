@@ -129,6 +129,7 @@ export async function prepareModifyClaims(
     const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
 
     allTargets.push(signerToString(target));
+
     modifyClaimArgs.push(
       tuple(
         stringToIdentityId(signerToString(target), context),

@@ -538,6 +538,7 @@ describe('Claims Class', () => {
         contextOptions: {
           did: target,
           getIdentityClaimsFromChain: fakeClaimData,
+          middlewareAvailable: false,
         },
       });
 
@@ -549,6 +550,198 @@ describe('Claims Class', () => {
       result = await claims.getClaimScopes();
 
       expect(result.length).toEqual(2);
+    });
+
+    it('should return a list of scopes and tickers with middleware enabled', async () => {
+      const target = 'someTarget';
+      const someDid = 'someDid';
+      const ticker = 'someTicker';
+
+      const fakeClaimData = [
+        {
+          claim: {
+            type: ClaimType.Jurisdiction,
+            scope: {
+              type: ScopeType.Identity,
+              value: someDid,
+            },
+          },
+        },
+        {
+          claim: {
+            type: ClaimType.Jurisdiction,
+            scope: {
+              type: ScopeType.Asset,
+              value: '0x12341234123412341234123412341234',
+            },
+          },
+        },
+      ] as ClaimData[];
+
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          did: target,
+          getIdentityClaimsFromChain: fakeClaimData,
+          middlewareAvailable: true,
+        },
+      });
+
+      const getIdentitiesWithClaimsSpy = jest.spyOn(claims, 'getIdentitiesWithClaims');
+
+      const next = new BigNumber(4);
+      when(getIdentitiesWithClaimsSpy)
+        .calledWith({
+          targets: [target],
+          claimTypes: [ClaimType.Custom],
+          includeExpired: false,
+        })
+        .mockResolvedValue({
+          data: [
+            {
+              identity: entityMockUtils.getIdentityInstance({ did: someDid }),
+              claims: [
+                {
+                  target: entityMockUtils.getIdentityInstance({ did: target }),
+                  issuer: entityMockUtils.getIdentityInstance({ did: someDid }),
+                  issuedAt: new Date(),
+                  lastUpdatedAt: new Date(),
+                  expiry: new Date(),
+                  claim: {
+                    type: ClaimType.Custom,
+                    customClaimTypeId: new BigNumber(1),
+                    scope: {
+                      type: ScopeType.Identity,
+                      value: someDid,
+                    },
+                  },
+                },
+              ],
+            },
+            {
+              identity: entityMockUtils.getIdentityInstance({ did: someDid }),
+              claims: [
+                {
+                  target: entityMockUtils.getIdentityInstance({ did: target }),
+                  issuer: entityMockUtils.getIdentityInstance({ did: someDid }),
+                  issuedAt: new Date(),
+                  lastUpdatedAt: new Date(),
+                  expiry: new Date(),
+                  claim: {
+                    type: ClaimType.Custom,
+                    customClaimTypeId: new BigNumber(1),
+                    scope: {
+                      type: ScopeType.Ticker,
+                      value: ticker,
+                    },
+                  },
+                },
+              ],
+            },
+            {
+              identity: entityMockUtils.getIdentityInstance({ did: someDid }),
+              claims: [
+                {
+                  target: entityMockUtils.getIdentityInstance({ did: target }),
+                  issuer: entityMockUtils.getIdentityInstance({ did: someDid }),
+                  issuedAt: new Date(),
+                  lastUpdatedAt: new Date(),
+                  expiry: new Date(),
+                  claim: {
+                    type: ClaimType.Custom,
+                    customClaimTypeId: new BigNumber(1),
+                    scope: undefined,
+                  },
+                },
+              ],
+            },
+          ],
+          next,
+          count: new BigNumber(6),
+        });
+
+      when(getIdentitiesWithClaimsSpy)
+        .calledWith({
+          targets: [target],
+          claimTypes: [ClaimType.Custom],
+          includeExpired: false,
+          start: next,
+        })
+        .mockResolvedValue({
+          data: [
+            {
+              identity: entityMockUtils.getIdentityInstance({ did: someDid }),
+              claims: [
+                {
+                  target: entityMockUtils.getIdentityInstance({ did: target }),
+                  issuer: entityMockUtils.getIdentityInstance({ did: someDid }),
+                  issuedAt: new Date(),
+                  lastUpdatedAt: new Date(),
+                  expiry: new Date(),
+                  claim: {
+                    type: ClaimType.Custom,
+                    customClaimTypeId: new BigNumber(1),
+                    scope: {
+                      type: ScopeType.Identity,
+                      value: someDid,
+                    },
+                  },
+                },
+              ],
+            },
+            {
+              identity: entityMockUtils.getIdentityInstance({ did: someDid }),
+              claims: [
+                {
+                  target: entityMockUtils.getIdentityInstance({ did: target }),
+                  issuer: entityMockUtils.getIdentityInstance({ did: someDid }),
+                  issuedAt: new Date(),
+                  lastUpdatedAt: new Date(),
+                  expiry: new Date(),
+                  claim: {
+                    type: ClaimType.Custom,
+                    customClaimTypeId: new BigNumber(1),
+                    scope: {
+                      type: ScopeType.Ticker,
+                      value: ticker,
+                    },
+                  },
+                },
+              ],
+            },
+            {
+              identity: entityMockUtils.getIdentityInstance({ did: someDid }),
+              claims: [
+                {
+                  target: entityMockUtils.getIdentityInstance({ did: target }),
+                  issuer: entityMockUtils.getIdentityInstance({ did: someDid }),
+                  issuedAt: new Date(),
+                  lastUpdatedAt: new Date(),
+                  expiry: new Date(),
+                  claim: {
+                    type: ClaimType.Custom,
+                    customClaimTypeId: new BigNumber(1),
+                    scope: undefined,
+                  },
+                },
+              ],
+            },
+          ],
+          next: null,
+          count: new BigNumber(6),
+        });
+
+      let result = await claims.getClaimScopes({ target });
+
+      console.log(result);
+
+      expect(result[0].ticker).toBeUndefined();
+      expect(result[0].scope).toEqual({ type: ScopeType.Identity, value: someDid });
+      expect(result[2].ticker).toEqual(ticker);
+      expect(result[2].scope).toEqual({ type: ScopeType.Ticker, value: ticker });
+
+      result = await claims.getClaimScopes();
+
+      expect(result.length).toEqual(3);
     });
   });
 

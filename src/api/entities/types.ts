@@ -216,6 +216,8 @@ export interface CustomClaim {
   customClaimTypeId: BigNumber;
 }
 
+export type CustomClaimWithoutScope = Omit<CustomClaim, 'scope'> & { scope: undefined };
+
 export interface BlockedClaim {
   type: ClaimType.Blocked;
   scope: Scope;
@@ -232,7 +234,7 @@ export type ScopedClaim =
   | BlockedClaim
   | CustomClaim;
 
-export type UnscopedClaim = CddClaim;
+export type UnscopedClaim = CddClaim | CustomClaimWithoutScope;
 
 export type Claim = ScopedClaim | UnscopedClaim;
 

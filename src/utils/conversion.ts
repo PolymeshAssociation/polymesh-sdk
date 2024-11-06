@@ -2454,11 +2454,17 @@ export async function claimToMeshClaim(
       break;
     }
     case ClaimType.Custom: {
-      const { customClaimTypeId, scope } = claim;
-      value = tuple(
-        bigNumberToU32(customClaimTypeId, context),
-        await scopeToMeshScope(scope, context)
-      );
+      const { customClaimTypeId } = claim;
+      if (claim.scope) {
+        const { scope } = claim;
+
+        value = tuple(
+          bigNumberToU32(customClaimTypeId, context),
+          await scopeToMeshScope(scope, context)
+        );
+      } else {
+        value = tuple(bigNumberToU32(customClaimTypeId, context));
+      }
       break;
     }
     default: {
@@ -2472,7 +2478,7 @@ export async function claimToMeshClaim(
 /**
  * @hidden
  */
-export function middlewareScopeToScope(scope: MiddlewareScope, context: Context): Scope {
+export function middlewareScopeToScope(scope: MiddlewareScope, context: Context): Scope | void {
   const { type, value, assetId } = scope;
 
   switch (type) {
@@ -2485,6 +2491,10 @@ export function middlewareScopeToScope(scope: MiddlewareScope, context: Context)
     case ClaimScopeTypeEnum.Identity:
     case ClaimScopeTypeEnum.Custom:
       return { type: scope.type as ScopeType, value };
+  }
+
+  if (!type && !value) {
+    return;
   }
 
   throw new PolymeshError({
