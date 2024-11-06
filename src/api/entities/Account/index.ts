@@ -30,7 +30,9 @@ import {
   CheckPermissionsResult,
   ErrorCode,
   ExtrinsicData,
+  MultiSigTx,
   Permissions,
+  PermissionType,
   ResultSet,
   SignerType,
   SimplePermissions,
@@ -362,6 +364,19 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       return {
         assets: null,
         transactions: null,
+        transactionGroups: [],
+        portfolios: null,
+      };
+    }
+
+    if (!permissionedAccount) {
+      // this is true for multisig accounts
+      return {
+        assets: null,
+        transactions: {
+          type: PermissionType.Include,
+          values: [MultiSigTx.CreateProposal, MultiSigTx.Approve, MultiSigTx.Reject],
+        },
         transactionGroups: [],
         portfolios: null,
       };

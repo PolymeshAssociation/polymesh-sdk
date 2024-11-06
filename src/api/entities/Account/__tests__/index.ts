@@ -23,6 +23,7 @@ import {
   Balance,
   ErrorCode,
   ModuleName,
+  MultiSigTx,
   Permissions,
   PermissionType,
   ResultSet,
@@ -554,6 +555,34 @@ describe('Account class', () => {
       expect(result).toEqual({
         assets: null,
         transactions: null,
+        transactionGroups: [],
+        portfolios: null,
+      });
+
+      getIdentitySpy.mockRestore();
+    });
+
+    it('should return the permissions if the Account is the MultiSig Account', async () => {
+      const identity = entityMockUtils.getIdentityInstance({
+        getPrimaryAccount: {
+          account: entityMockUtils.getAccountInstance({ address: 'multisigAddress' }),
+        },
+      });
+
+      account = new Account({ address }, context);
+
+      const getIdentitySpy = jest.spyOn(account, 'getIdentity').mockResolvedValue(identity);
+
+      getSecondaryAccountPermissionsSpy.mockResolvedValue([]);
+
+      const result = await account.getPermissions();
+
+      expect(result).toEqual({
+        assets: null,
+        transactions: {
+          type: PermissionType.Include,
+          values: [MultiSigTx.CreateProposal, MultiSigTx.Approve, MultiSigTx.Reject],
+        },
         transactionGroups: [],
         portfolios: null,
       });
