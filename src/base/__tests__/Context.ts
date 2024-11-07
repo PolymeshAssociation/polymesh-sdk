@@ -85,6 +85,7 @@ describe('Context class', () => {
 
     dsMockUtils.setRuntimeVersion({
       specVersion: dsMockUtils.createMockU32(new BigNumber(7000004)),
+      specName: dsMockUtils.createMockText('mock_spec'),
     });
 
     dsMockUtils.setConstMock('system', 'ss58Prefix', {

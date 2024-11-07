@@ -682,7 +682,45 @@ describe('modifyInstructionAffirmation procedure', () => {
       .calledWith(rawAffirmationStatus)
       .mockReturnValue(AffirmationStatus.Affirmed);
 
-    dsMockUtils.configureMocks({ contextOptions: { specVersion: 7000003 } });
+    const proc = procedureMockUtils.getInstance<
+      ModifyInstructionAffirmationParams,
+      Instruction,
+      Storage
+    >(mockContext, {
+      portfolios: [portfolio, portfolio],
+      portfolioParams: [],
+      senderLegAmount: legAmount,
+      totalLegAmount: legAmount,
+      signer,
+      offChainLegIndices: [],
+      instructionInfo: mockExecuteInfo,
+    });
+
+    const transaction = dsMockUtils.createTxMock('settlement', 'withdrawAffirmationWithCount');
+
+    const result = await prepareModifyInstructionAffirmation.call(proc, {
+      id,
+      operation: InstructionAffirmationOperation.Withdraw,
+    });
+
+    expect(result).toEqual({
+      transaction,
+      feeMultiplier: new BigNumber(2),
+      args: [rawInstructionId, new Set([rawPortfolioId, rawPortfolioId]), mockAffirmCount],
+      resolver: expect.objectContaining({ id }),
+    });
+  });
+
+  it('should return a withdraw instruction transaction spec with portfolios as an array for v6', async () => {
+    mockContext.isV6 = true;
+    const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Affirmed');
+    dsMockUtils.createQueryMock('settlement', 'userAffirmations', {
+      multi: [rawAffirmationStatus, rawAffirmationStatus],
+    });
+    when(meshAffirmationStatusToAffirmationStatusSpy)
+      .calledWith(rawAffirmationStatus)
+      .mockReturnValue(AffirmationStatus.Affirmed);
+
     const proc = procedureMockUtils.getInstance<
       ModifyInstructionAffirmationParams,
       Instruction,

@@ -35,7 +35,6 @@ import {
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { isOffChainLeg } from '~/utils';
-import { BTREE_SET_PORTFOLIO_ID_SPEC_VERSION } from '~/utils/constants';
 import {
   assetCountToRaw,
   bigNumberToU64,
@@ -463,10 +462,10 @@ export async function prepareModifyInstructionAffirmation(
   );
 
   let portfolioIds;
-  if (context.specVersion >= BTREE_SET_PORTFOLIO_ID_SPEC_VERSION) {
-    portfolioIds = portfolioIdsToBtreeSet(validPortfolioIds, context);
-  } else {
+  if (context.isV6) {
     portfolioIds = validPortfolioIds;
+  } else {
+    portfolioIds = portfolioIdsToBtreeSet(validPortfolioIds, context);
   }
 
   if (transaction === settlementTx.affirmWithReceiptsWithCount) {

@@ -105,6 +105,7 @@ import {
   isAllowedCharacters,
   isModuleOrTagMatch,
   isPrintableAscii,
+  isV6Spec,
   mergeReceipts,
   neededStatTypeForRestrictionInput,
   optionize,
@@ -3054,5 +3055,31 @@ describe('getAssetIdFromMiddleware', () => {
     );
 
     expect(result).toEqual(ticker);
+  });
+});
+
+describe('isV6Spec', () => {
+  it('should return true for pre v7 spec', () => {
+    const result = isV6Spec('some_spec', 6000000);
+
+    expect(result).toEqual(true);
+  });
+
+  it('should return false for post v7 spec', () => {
+    const result = isV6Spec('some_spec', 7000001);
+
+    expect(result).toEqual(false);
+  });
+
+  it('should return true for pre v2 private spec', () => {
+    const result = isV6Spec('polymesh_private_dev', 1000000);
+
+    expect(result).toEqual(true);
+  });
+
+  it('should return false for post v2 private spec', () => {
+    const result = isV6Spec('polymesh_private_dev', 2000000);
+
+    expect(result).toEqual(false);
   });
 });

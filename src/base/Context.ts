@@ -89,6 +89,7 @@ import {
   delay,
   getApiAtBlock,
   getLatestSqVersion,
+  isV6Spec,
 } from '~/utils/internal';
 
 import { processType } from './utils';
@@ -131,6 +132,8 @@ export class Context {
 
   public specVersion: number;
 
+  public specName: string;
+
   private readonly unsubChainVersion: UnsubscribePromise;
 
   /**
@@ -144,13 +147,14 @@ export class Context {
     this.ss58Format = ss58Format;
 
     this.specVersion = polymeshApi.runtimeVersion.specVersion.toNumber();
-    this.isV6 = this.specVersion < 7000000;
+    this.specName = polymeshApi.runtimeVersion.specName.toString();
+    this.isV6 = isV6Spec(this.specName, this.specVersion);
 
     this.unsubChainVersion = polymeshApi.query.system.lastRuntimeUpgrade(upgrade => {
       /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
       if (upgrade.isSome) {
         this.specVersion = upgrade.unwrap().specVersion.toNumber();
-        this.isV6 = this.specVersion < 7000000;
+        this.isV6 = isV6Spec(this.specName, this.specVersion);
       }
     });
   }

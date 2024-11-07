@@ -40,7 +40,7 @@ import {
 } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import { isFungibleLegBuilder, isNftLegBuilder, isOffChainLeg } from '~/utils';
-import { BTREE_SET_PORTFOLIO_ID_SPEC_VERSION, MAX_LEGS_LENGTH } from '~/utils/constants';
+import { MAX_LEGS_LENGTH } from '~/utils/constants';
 import {
   assetToMeshAssetIdWithKey,
   bigNumberToBalance,
@@ -481,9 +481,8 @@ async function getTxArgsAndErrors(
           rawTradeDate,
           rawValueDate,
           rawLegs,
-          context.specVersion >= BTREE_SET_PORTFOLIO_ID_SPEC_VERSION
-            ? portfolioIdsToBtreeSet(rawPortfolioIds, context)
-            : rawPortfolioIds,
+          /* istanbul ignore next: this will be removed after dual version support for v6-v7 */
+          context.isV6 ? rawPortfolioIds : portfolioIdsToBtreeSet(rawPortfolioIds, context),
           rawInstructionMemo,
           rawMediators,
         ]);

@@ -115,7 +115,7 @@ export const SUPPORTED_NODE_VERSION_RANGE = '6.2 || 6.3 || 7.0';
 /**
  * The Polymesh Private RPC node version range that is compatible with this version of the SDK
  */
-export const PRIVATE_SUPPORTED_NODE_VERSION_RANGE = '1.0';
+export const PRIVATE_SUPPORTED_NODE_VERSION_RANGE = '1.0 || 1.1 || 2.0';
 
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 export const SUPPORTED_NODE_SEMVER = coerce(SUPPORTED_NODE_VERSION_RANGE)!.version;
@@ -131,7 +131,7 @@ export const SUPPORTED_SPEC_VERSION_RANGE = '6.3 || 7.0';
 /**
  * The Polymesh private chain spec version range that is compatible with this version of the SDK
  */
-export const PRIVATE_SUPPORTED_SPEC_VERSION_RANGE = '1.0';
+export const PRIVATE_SUPPORTED_SPEC_VERSION_RANGE = '1.0 || 1.1 || 2.0';
 
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 export const SUPPORTED_SPEC_SEMVER = coerce(SUPPORTED_SPEC_VERSION_RANGE)!.version;
@@ -195,6 +195,3 @@ export const GLOBAL_TOKEN_URI_NAME = 'tokenUri';
 export const GLOBAL_BASE_TOKEN_URI_NAME = 'baseTokenUri';
 
 export const ASSET_ID_PREFIX = 'modlpy/pallet_asset';
-
-// TODO @prashantasdeveloper remove this when removing dual version support
-export const BTREE_SET_PORTFOLIO_ID_SPEC_VERSION = 7000004;
