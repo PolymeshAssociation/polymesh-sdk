@@ -134,7 +134,9 @@ export class PolymeshTransaction<
     return context.supportsSubsidy({ tag });
   }
 
-  // eslint-disable-next-line require-jsdoc
+  /**
+   * @hidden
+   */
   protected override assertTransactionSupportsSubsidy(): void {
     if (!this.supportsSubsidy()) {
       throw new PolymeshError({

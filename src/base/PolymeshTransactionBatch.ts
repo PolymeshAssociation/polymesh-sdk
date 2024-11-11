@@ -134,6 +134,8 @@ export class PolymeshTransactionBatch<
   }
 
   /**
+   * @hidden
+   *
    * @throws error if
    *   1. Number of transactions in the batch are more than 7
    *   2. Batch contains a transaction that cannot be subsidized
