@@ -41,8 +41,7 @@
     "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
     "format": "cross-env prettier-eslint $PWD\"/src/**/*.{ts,tsx,js,jsx}\" --write",
     "ts-node": "yarn build:ts && ts-node --",
-    "prepare": "is-ci || husky install",
-    "postinstall": "patch-package"
+    "prepare": "is-ci || husky install"
   },
   "devDependencies": {
     "@babel/core": "^7.22.11",
@@ -134,7 +133,6 @@
     "iso-7064": "^1.1.0",
     "json-stable-stringify": "^1.0.2",
     "lodash": "^4.17.21",
-    "patch-package": "^8.0.0",
     "semver": "^7.5.4",
     "websocket": "^1.0.34"
   },
