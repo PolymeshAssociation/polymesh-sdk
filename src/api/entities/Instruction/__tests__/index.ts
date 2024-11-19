@@ -7,8 +7,20 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Context, Entity, Instruction, PolymeshTransaction } from '~/internal';
-import { instructionEventsQuery } from '~/middleware/queries/settlements';
-import { InstructionEventEnum } from '~/middleware/types';
+import {
+  instructionAffirmationsQuery,
+  instructionEventsQuery,
+  instructionsQuery,
+  legsQuery,
+  offChainAffirmationsQuery,
+} from '~/middleware/queries/settlements';
+import {
+  AffirmStatusEnum,
+  InstructionEventEnum,
+  InstructionStatusEnum,
+  InstructionTypeEnum,
+  LegTypeEnum,
+} from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   createMockAssetId,
@@ -69,6 +81,9 @@ describe('Instruction class', () => {
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
     instruction = new Instruction({ id }, context);
+    dsMockUtils.createQueryMock('settlement', 'instructionCounter', {
+      returnValue: dsMockUtils.createMockU64(new BigNumber(1000)),
+    });
   });
 
   afterEach(() => {
@@ -344,484 +359,793 @@ describe('Instruction class', () => {
       queryMultiMock = dsMockUtils.getQueryMultiMock();
     });
 
-    it('should return the Instruction details', async () => {
-      let status = InstructionStatus.Pending;
-      const createdAt = new Date('10/14/1987');
-      const tradeDate = new Date('11/17/1987');
-      const valueDate = new Date('11/17/1987');
-      const venueId = new BigNumber(1);
-      let type = InstructionType.SettleOnAffirmation;
-      const owner = 'someDid';
-      const memo = 'someMemo';
-
-      entityMockUtils.configureMocks({ identityOptions: { did: owner } });
-
-      let rawSettlementType = dsMockUtils.createMockSettlementType(type);
-      const rawInstructionDetails = dsMockUtils.createMockInstruction({
-        instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
-        venueId: dsMockUtils.createMockOption(dsMockUtils.createMockU64(venueId)),
-        createdAt: dsMockUtils.createMockOption(
-          dsMockUtils.createMockMoment(new BigNumber(createdAt.getTime()))
-        ),
-        tradeDate: dsMockUtils.createMockOption(
-          dsMockUtils.createMockMoment(new BigNumber(tradeDate.getTime()))
-        ),
-        valueDate: dsMockUtils.createMockOption(
-          dsMockUtils.createMockMoment(new BigNumber(valueDate.getTime()))
-        ),
-        settlementType: rawSettlementType,
+    it('should throw an error if an Instruction does not exists', () => {
+      dsMockUtils.createQueryMock('settlement', 'instructionCounter', {
+        returnValue: dsMockUtils.createMockU64(new BigNumber(0)),
       });
-      const rawInstructionStatus = dsMockUtils.createMockInstructionStatus(
-        InternalInstructionStatus.Pending
-      );
-      when(meshSettlementTypeToEndConditionSpy)
-        .calledWith(rawSettlementType)
-        .mockReturnValueOnce({ type });
-      const rawInstructionMemo = dsMockUtils.createMockMemo(memo);
-      const rawOptionalMemo = dsMockUtils.createMockOption(rawInstructionMemo);
-
-      when(instructionMemoToStringSpy).calledWith(rawInstructionMemo).mockReturnValue(memo);
-
-      queryMultiMock.mockResolvedValueOnce([
-        rawInstructionDetails,
-        rawInstructionStatus,
-        rawOptionalMemo,
-      ]);
-
-      let result = await instruction.details();
-
-      expect(result).toMatchObject({
-        status,
-        createdAt,
-        tradeDate,
-        valueDate,
-        type,
-        memo,
-      });
-      expect(result.venue?.id).toEqual(venueId);
-
-      type = InstructionType.SettleOnBlock;
-      const endBlock = new BigNumber(100);
-
-      rawSettlementType = dsMockUtils.createMockSettlementType({
-        SettleOnBlock: dsMockUtils.createMockU32(endBlock),
-      });
-      when(meshSettlementTypeToEndConditionSpy)
-        .calledWith(rawSettlementType)
-        .mockReturnValueOnce({ type, endBlock });
-      queryMultiMock.mockResolvedValueOnce([
-        dsMockUtils.createMockInstruction({
-          ...rawInstructionDetails,
-          createdAt: dsMockUtils.createMockOption(),
-          tradeDate: dsMockUtils.createMockOption(),
-          valueDate: dsMockUtils.createMockOption(),
-          settlementType: rawSettlementType,
-        }),
-        rawInstructionStatus,
-        dsMockUtils.createMockOption(),
-      ]);
-
-      result = await instruction.details();
-
-      expect(result).toMatchObject({
-        status,
-        createdAt: null,
-        tradeDate: null,
-        valueDate: null,
-        type,
-        endBlock,
-        memo: null,
-      });
-      expect(result.venue?.id).toEqual(venueId);
-
-      type = InstructionType.SettleManual;
-
-      rawSettlementType = dsMockUtils.createMockSettlementType({
-        SettleManual: dsMockUtils.createMockU32(endBlock),
-      });
-      when(meshSettlementTypeToEndConditionSpy)
-        .calledWith(rawSettlementType)
-        .mockReturnValueOnce({ type, endAfterBlock: endBlock });
-
-      queryMultiMock.mockResolvedValueOnce([
-        dsMockUtils.createMockInstruction({
-          ...rawInstructionDetails,
-          tradeDate: dsMockUtils.createMockOption(),
-          valueDate: dsMockUtils.createMockOption(),
-          settlementType: rawSettlementType,
-        }),
-        rawInstructionStatus,
-        dsMockUtils.createMockOption(),
-      ]);
-
-      result = await instruction.details();
-
-      expect(result).toMatchObject({
-        status,
-        createdAt,
-        tradeDate: null,
-        valueDate: null,
-        type,
-        endAfterBlock: endBlock,
-        memo: null,
-      });
-      expect(result.venue?.id).toEqual(venueId);
-
-      status = InstructionStatus.Failed;
-      type = InstructionType.SettleOnAffirmation;
-
-      when(meshSettlementTypeToEndConditionSpy)
-        .calledWith(rawSettlementType)
-        .mockReturnValueOnce({ type });
-
-      queryMultiMock.mockResolvedValueOnce([
-        dsMockUtils.createMockInstruction({
-          ...rawInstructionDetails,
-        }),
-        dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Failed),
-        rawOptionalMemo,
-      ]);
-
-      result = await instruction.details();
-
-      expect(result).toMatchObject({
-        status,
-        createdAt,
-        tradeDate,
-        valueDate,
-        type,
-        memo,
-      });
-      expect(result.venue?.id).toEqual(venueId);
-
-      queryMultiMock.mockResolvedValueOnce([
-        dsMockUtils.createMockInstruction({
-          ...rawInstructionDetails,
-          venueId: dsMockUtils.createMockOption(),
-        }),
-        dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Failed),
-        rawOptionalMemo,
-      ]);
-
-      result = await instruction.details();
-
-      expect(result).toMatchObject({
-        status,
-        createdAt,
-        tradeDate,
-        valueDate,
-        type,
-        memo,
-      });
-      expect(result.venue).toBeNull();
+      return expect(instruction.details()).rejects.toThrow('Instruction does not exists');
     });
 
-    it('should throw an error if an Instruction leg is not present', () => {
-      queryMultiMock.mockResolvedValueOnce([
-        dsMockUtils.createMockInstruction({
-          instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
-          venueId: dsMockUtils.createMockOption(dsMockUtils.createMockU64(new BigNumber(1))),
-          createdAt: dsMockUtils.createMockOption(),
-          tradeDate: dsMockUtils.createMockOption(),
-          valueDate: dsMockUtils.createMockOption(),
-          settlementType: dsMockUtils.createMockSettlementType(),
-        }),
-        dsMockUtils.createMockOption(),
-      ]);
+    describe('querying from middleware', () => {
+      it('should return the Instruction details from middleware', async () => {
+        const status = InstructionStatus.Pending;
+        const createdAt = new Date('10/14/1987');
+        const valueDate = new Date('11/17/1987');
+        const tradeDate = new Date('11/17/1987');
+        const venueId = new BigNumber(1);
+        const type = InstructionType.SettleOnAffirmation;
+        const owner = 'someDid';
+        const blockNumber = new BigNumber(100);
+        const memo = 'someMemo';
 
-      return expect(instruction.details()).rejects.toThrow(
-        'Instruction has already been executed/rejected and it was purged from chain'
-      );
+        entityMockUtils.configureMocks({ identityOptions: { did: owner } });
+
+        const middlewareInstruction = {
+          id: new BigNumber(1),
+          type: InstructionTypeEnum.SettleOnAffirmation,
+          status: InstructionStatusEnum.Created,
+          venueId,
+          createdBlock: {
+            datetime: createdAt,
+          },
+          tradeDate,
+          valueDate,
+          memo,
+        };
+        dsMockUtils.createApolloQueryMock(
+          instructionsQuery({
+            id: id.toString(),
+          }),
+          {
+            instructions: {
+              nodes: [middlewareInstruction],
+            },
+          }
+        );
+
+        const expectedDetails = {
+          status,
+          createdAt,
+          tradeDate,
+          valueDate,
+          type,
+          memo,
+          venue: expect.objectContaining({
+            id: venueId,
+          }),
+        };
+        let result = await instruction.details();
+
+        expect(result).toEqual(expect.objectContaining(expectedDetails));
+
+        dsMockUtils.createApolloQueryMock(
+          instructionsQuery({
+            id: id.toString(),
+          }),
+          {
+            instructions: {
+              nodes: [
+                {
+                  ...middlewareInstruction,
+                  type: InstructionTypeEnum.SettleOnBlock,
+                  endBlock: blockNumber.toNumber(),
+                },
+              ],
+            },
+          }
+        );
+        result = await instruction.details();
+
+        expect(result).toEqual(
+          expect.objectContaining({
+            ...expectedDetails,
+            type: InstructionType.SettleOnBlock,
+            endBlock: blockNumber,
+          })
+        );
+
+        dsMockUtils.createApolloQueryMock(
+          instructionsQuery({
+            id: id.toString(),
+          }),
+          {
+            instructions: {
+              nodes: [
+                {
+                  ...middlewareInstruction,
+                  type: InstructionTypeEnum.SettleManual,
+                  endAfterBlock: blockNumber.toNumber(),
+                },
+              ],
+            },
+          }
+        );
+
+        result = await instruction.details();
+
+        expect(result).toEqual(
+          expect.objectContaining({
+            ...expectedDetails,
+            type: InstructionType.SettleManual,
+            endAfterBlock: blockNumber,
+          })
+        );
+
+        dsMockUtils.createApolloQueryMock(
+          instructionsQuery({
+            id: id.toString(),
+          }),
+          {
+            instructions: {
+              nodes: [
+                {
+                  ...middlewareInstruction,
+                  status: InstructionStatusEnum.Failed,
+                },
+              ],
+            },
+          }
+        );
+
+        result = await instruction.details();
+
+        expect(result).toEqual(
+          expect.objectContaining({
+            ...expectedDetails,
+            status: InstructionStatus.Failed,
+          })
+        );
+
+        dsMockUtils.createApolloQueryMock(
+          instructionsQuery({
+            id: id.toString(),
+          }),
+          {
+            instructions: {
+              nodes: [
+                {
+                  ...middlewareInstruction,
+                  venueId: undefined,
+                  memo: undefined,
+                },
+              ],
+            },
+          }
+        );
+        result = await instruction.details();
+
+        expect(result.venue).toBeNull();
+        expect(result.memo).toBeNull();
+      });
+
+      it('should throw an error if an Instruction is not yet processed by middleware', () => {
+        dsMockUtils.createApolloQueryMock(instructionsQuery({ id: id.toString() }), {
+          instructions: { nodes: [] },
+        });
+
+        return expect(instruction.details()).rejects.toThrow(
+          'Instruction is not yet processed by the middleware'
+        );
+      });
+    });
+
+    describe('querying from chain', () => {
+      beforeEach(() => {
+        dsMockUtils.configureMocks({
+          contextOptions: {
+            middlewareAvailable: false,
+          },
+        });
+      });
+
+      it('should return the Instruction details from chain', async () => {
+        let status = InstructionStatus.Pending;
+        const createdAt = new Date('10/14/1987');
+        const tradeDate = new Date('11/17/1987');
+        const valueDate = new Date('11/17/1987');
+        const venueId = new BigNumber(1);
+        let type = InstructionType.SettleOnAffirmation;
+        const owner = 'someDid';
+        const memo = 'someMemo';
+
+        entityMockUtils.configureMocks({ identityOptions: { did: owner } });
+
+        let rawSettlementType = dsMockUtils.createMockSettlementType(type);
+        const rawInstructionDetails = dsMockUtils.createMockInstruction({
+          instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
+          venueId: dsMockUtils.createMockOption(dsMockUtils.createMockU64(venueId)),
+          createdAt: dsMockUtils.createMockOption(
+            dsMockUtils.createMockMoment(new BigNumber(createdAt.getTime()))
+          ),
+          tradeDate: dsMockUtils.createMockOption(
+            dsMockUtils.createMockMoment(new BigNumber(tradeDate.getTime()))
+          ),
+          valueDate: dsMockUtils.createMockOption(
+            dsMockUtils.createMockMoment(new BigNumber(valueDate.getTime()))
+          ),
+          settlementType: rawSettlementType,
+        });
+        const rawInstructionStatus = dsMockUtils.createMockInstructionStatus(
+          InternalInstructionStatus.Pending
+        );
+        when(meshSettlementTypeToEndConditionSpy)
+          .calledWith(rawSettlementType)
+          .mockReturnValueOnce({ type });
+        const rawInstructionMemo = dsMockUtils.createMockMemo(memo);
+        const rawOptionalMemo = dsMockUtils.createMockOption(rawInstructionMemo);
+
+        when(instructionMemoToStringSpy).calledWith(rawInstructionMemo).mockReturnValue(memo);
+
+        queryMultiMock.mockResolvedValueOnce([
+          rawInstructionDetails,
+          rawInstructionStatus,
+          rawOptionalMemo,
+        ]);
+
+        let result = await instruction.details();
+
+        expect(result).toMatchObject({
+          status,
+          createdAt,
+          tradeDate,
+          valueDate,
+          type,
+          memo,
+        });
+        expect(result.venue?.id).toEqual(venueId);
+
+        type = InstructionType.SettleOnBlock;
+        const endBlock = new BigNumber(100);
+
+        rawSettlementType = dsMockUtils.createMockSettlementType({
+          SettleOnBlock: dsMockUtils.createMockU32(endBlock),
+        });
+        when(meshSettlementTypeToEndConditionSpy)
+          .calledWith(rawSettlementType)
+          .mockReturnValueOnce({ type, endBlock });
+        queryMultiMock.mockResolvedValueOnce([
+          dsMockUtils.createMockInstruction({
+            ...rawInstructionDetails,
+            createdAt: dsMockUtils.createMockOption(),
+            tradeDate: dsMockUtils.createMockOption(),
+            valueDate: dsMockUtils.createMockOption(),
+            settlementType: rawSettlementType,
+          }),
+          rawInstructionStatus,
+          dsMockUtils.createMockOption(),
+        ]);
+
+        result = await instruction.details();
+
+        expect(result).toMatchObject({
+          status,
+          createdAt: null,
+          tradeDate: null,
+          valueDate: null,
+          type,
+          endBlock,
+          memo: null,
+        });
+        expect(result.venue?.id).toEqual(venueId);
+
+        type = InstructionType.SettleManual;
+
+        rawSettlementType = dsMockUtils.createMockSettlementType({
+          SettleManual: dsMockUtils.createMockU32(endBlock),
+        });
+        when(meshSettlementTypeToEndConditionSpy)
+          .calledWith(rawSettlementType)
+          .mockReturnValueOnce({ type, endAfterBlock: endBlock });
+
+        queryMultiMock.mockResolvedValueOnce([
+          dsMockUtils.createMockInstruction({
+            ...rawInstructionDetails,
+            tradeDate: dsMockUtils.createMockOption(),
+            valueDate: dsMockUtils.createMockOption(),
+            settlementType: rawSettlementType,
+          }),
+          rawInstructionStatus,
+          dsMockUtils.createMockOption(),
+        ]);
+
+        result = await instruction.details();
+
+        expect(result).toMatchObject({
+          status,
+          createdAt,
+          tradeDate: null,
+          valueDate: null,
+          type,
+          endAfterBlock: endBlock,
+          memo: null,
+        });
+        expect(result.venue?.id).toEqual(venueId);
+
+        status = InstructionStatus.Failed;
+        type = InstructionType.SettleOnAffirmation;
+
+        when(meshSettlementTypeToEndConditionSpy)
+          .calledWith(rawSettlementType)
+          .mockReturnValueOnce({ type });
+
+        queryMultiMock.mockResolvedValueOnce([
+          dsMockUtils.createMockInstruction({
+            ...rawInstructionDetails,
+          }),
+          dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Failed),
+          rawOptionalMemo,
+        ]);
+
+        result = await instruction.details();
+
+        expect(result).toMatchObject({
+          status,
+          createdAt,
+          tradeDate,
+          valueDate,
+          type,
+          memo,
+        });
+        expect(result.venue?.id).toEqual(venueId);
+
+        queryMultiMock.mockResolvedValueOnce([
+          dsMockUtils.createMockInstruction({
+            ...rawInstructionDetails,
+            venueId: dsMockUtils.createMockOption(),
+          }),
+          dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Failed),
+          rawOptionalMemo,
+        ]);
+
+        result = await instruction.details();
+
+        expect(result).toMatchObject({
+          status,
+          createdAt,
+          tradeDate,
+          valueDate,
+          type,
+          memo,
+        });
+        expect(result.venue).toBeNull();
+      });
+
+      it('should throw an error if an Instruction leg is not present', () => {
+        queryMultiMock.mockResolvedValueOnce([
+          dsMockUtils.createMockInstruction({
+            instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
+            venueId: dsMockUtils.createMockOption(dsMockUtils.createMockU64(new BigNumber(1))),
+            createdAt: dsMockUtils.createMockOption(),
+            tradeDate: dsMockUtils.createMockOption(),
+            valueDate: dsMockUtils.createMockOption(),
+            settlementType: dsMockUtils.createMockSettlementType(),
+          }),
+          dsMockUtils.createMockOption(),
+        ]);
+
+        return expect(instruction.details()).rejects.toThrow(
+          'Instruction has already been executed/rejected and it was purged from chain'
+        );
+      });
     });
   });
 
   describe('method: getAffirmations', () => {
     const did = 'someDid';
     const status = AffirmationStatus.Affirmed;
-    let rawStorageKey: [u64, PolymeshPrimitivesIdentityIdPortfolioId][];
 
-    let instructionStatusesMock: jest.Mock;
-
-    afterAll(() => {
-      jest.restoreAllMocks();
-    });
-
-    beforeAll(() => {
-      rawStorageKey = [
-        tuple(
-          dsMockUtils.createMockU64(),
-          dsMockUtils.createMockPortfolioId({
-            did: dsMockUtils.createMockIdentityId(did),
-            kind: dsMockUtils.createMockPortfolioKind('Default'),
-          })
-        ),
-      ];
-      const authsReceivedEntries = rawStorageKey.map(([instructionId, portfolioId]) =>
-        tuple(
-          {
-            args: [instructionId, portfolioId],
-          } as unknown as StorageKey,
-          dsMockUtils.createMockAffirmationStatus(AffirmationStatus.Affirmed)
-        )
-      );
-      jest
-        .spyOn(utilsInternalModule, 'requestPaginated')
-        .mockResolvedValue({ entries: authsReceivedEntries, lastKey: null });
-
-      jest.spyOn(utilsConversionModule, 'identityIdToString').mockClear().mockReturnValue(did);
-      jest
-        .spyOn(utilsConversionModule, 'meshAffirmationStatusToAffirmationStatus')
-        .mockReturnValue(status);
-    });
-
-    beforeEach(() => {
-      dsMockUtils.createQueryMock('settlement', 'instructionCounter', {
-        returnValue: dsMockUtils.createMockU64(new BigNumber(1000)),
+    describe('querying from middleware', () => {
+      it('should throw an error if the start value is passed as a string', () => {
+        return expect(
+          instruction.getAffirmations({ start: 'IncorrectValue', size: new BigNumber(1) })
+        ).rejects.toThrow('`start` should be of type BigNumber to query the data from middleware');
       });
-      instructionStatusesMock = dsMockUtils.createQueryMock('settlement', 'instructionStatuses');
 
-      instructionStatusesMock.mockResolvedValue(
-        createMockInstructionStatus(InternalInstructionStatus.Pending)
-      );
-      dsMockUtils.createQueryMock('settlement', 'affirmsReceived');
+      it('should return a list of Affirmation Statuses', async () => {
+        const start = new BigNumber(0);
+        const size = new BigNumber(1);
+        dsMockUtils.createApolloQueryMock(
+          instructionAffirmationsQuery({ instructionId: id.toString() }, size, start),
+          {
+            instructionAffirmations: {
+              nodes: [
+                {
+                  identity: did,
+                  status: AffirmStatusEnum.Affirmed,
+                },
+              ],
+              totalCount: new BigNumber(1),
+            },
+          }
+        );
+        const { data, next, count } = await instruction.getAffirmations({
+          start,
+          size,
+        });
+
+        expect(data).toHaveLength(1);
+        expect(data[0].identity.did).toEqual(did);
+        expect(data[0].status).toEqual(status);
+
+        expect(next).toBeNull();
+        expect(count).toEqual(new BigNumber(1));
+      });
     });
 
-    it('should throw an error if the instruction is not pending', () => {
-      instructionStatusesMock.mockResolvedValue(dsMockUtils.createMockInstructionStatus('Success'));
+    describe('querying from chain', () => {
+      let rawStorageKey: [u64, PolymeshPrimitivesIdentityIdPortfolioId][];
 
-      return expect(instruction.getAffirmations()).rejects.toThrow(
-        'Instruction has already been executed/rejected and it was purged from chain'
-      );
-    });
+      let instructionStatusesMock: jest.Mock;
 
-    it('should return a list of Affirmation Statuses', async () => {
-      const { data } = await instruction.getAffirmations();
+      afterAll(() => {
+        jest.restoreAllMocks();
+      });
 
-      expect(data).toHaveLength(1);
-      expect(data[0].identity.did).toEqual(did);
-      expect(data[0].status).toEqual(status);
+      beforeAll(() => {
+        rawStorageKey = [
+          tuple(
+            dsMockUtils.createMockU64(),
+            dsMockUtils.createMockPortfolioId({
+              did: dsMockUtils.createMockIdentityId(did),
+              kind: dsMockUtils.createMockPortfolioKind('Default'),
+            })
+          ),
+        ];
+        const authsReceivedEntries = rawStorageKey.map(([instructionId, portfolioId]) =>
+          tuple(
+            {
+              args: [instructionId, portfolioId],
+            } as unknown as StorageKey,
+            dsMockUtils.createMockAffirmationStatus(AffirmationStatus.Affirmed)
+          )
+        );
+        jest
+          .spyOn(utilsInternalModule, 'requestPaginated')
+          .mockResolvedValue({ entries: authsReceivedEntries, lastKey: null });
+
+        jest.spyOn(utilsConversionModule, 'identityIdToString').mockClear().mockReturnValue(did);
+        jest
+          .spyOn(utilsConversionModule, 'meshAffirmationStatusToAffirmationStatus')
+          .mockReturnValue(status);
+      });
+
+      beforeEach(() => {
+        dsMockUtils.configureMocks({ contextOptions: { middlewareAvailable: false } });
+        dsMockUtils.createQueryMock('settlement', 'instructionCounter', {
+          returnValue: dsMockUtils.createMockU64(new BigNumber(1000)),
+        });
+        instructionStatusesMock = dsMockUtils.createQueryMock('settlement', 'instructionStatuses');
+
+        instructionStatusesMock.mockResolvedValue(
+          createMockInstructionStatus(InternalInstructionStatus.Pending)
+        );
+        dsMockUtils.createQueryMock('settlement', 'affirmsReceived');
+      });
+
+      it('should throw an error if the start value is passed as a number', () => {
+        return expect(
+          instruction.getAffirmations({ start: new BigNumber(2), size: new BigNumber(1) })
+        ).rejects.toThrow('`start` should be of type string to query the data from chain');
+      });
+
+      it('should throw an error if the instruction is not pending', () => {
+        instructionStatusesMock.mockResolvedValue(
+          dsMockUtils.createMockInstructionStatus('Success')
+        );
+
+        return expect(instruction.getAffirmations()).rejects.toThrow(
+          'Instruction has already been executed/rejected and it was purged from chain'
+        );
+      });
+
+      it('should return a list of Affirmation Statuses', async () => {
+        const { data } = await instruction.getAffirmations();
+
+        expect(data).toHaveLength(1);
+        expect(data[0].identity.did).toEqual(did);
+        expect(data[0].status).toEqual(status);
+      });
     });
   });
 
   describe('method: getLegs', () => {
-    let instructionStatusMock: jest.Mock;
-
-    afterAll(() => {
-      jest.restoreAllMocks();
-    });
-
-    let bigNumberToU64Spy: jest.SpyInstance;
-
-    beforeAll(() => {
-      bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
-    });
-
-    beforeEach(() => {
-      dsMockUtils.createQueryMock('settlement', 'instructionCounter', {
-        returnValue: dsMockUtils.createMockU64(new BigNumber(1000)),
+    describe('querying from middleware', () => {
+      it('should throw an error if the start value is passed as a string', () => {
+        return expect(
+          instruction.getLegs({ start: 'IncorrectValue', size: new BigNumber(1) })
+        ).rejects.toThrow('`start` should be of type BigNumber to query the data from middleware');
       });
-      when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
-      dsMockUtils.createQueryMock('settlement', 'instructionLegs');
-      instructionStatusMock = dsMockUtils.createQueryMock('settlement', 'instructionStatuses');
-    });
 
-    it("should return the instruction's legs", async () => {
-      const fromDid = 'fromDid';
-      const toDid = 'toDid';
-      const assetId = '0x11111111111181111111111111111111';
-      const assetId2 = '0x22222222222222222222222222222222';
-      const amount = new BigNumber(1000);
+      it("should return the instruction's legs", async () => {
+        const fromDid = 'fromDid';
+        const toDid = 'toDid';
+        const assetId = '0x11111111111181111111111111111111';
+        const assetId2 = '0x22222222222222222222222222222222';
+        const amount = new BigNumber(1000);
 
-      entityMockUtils.configureMocks({ fungibleAssetOptions: { assetId } });
-      instructionStatusMock.mockResolvedValue(
-        createMockInstructionStatus(InternalInstructionStatus.Pending)
-      );
-      const mockLeg1 = dsMockUtils.createMockOption(
-        dsMockUtils.createMockInstructionLeg({
-          Fungible: {
-            sender: dsMockUtils.createMockPortfolioId({
-              did: dsMockUtils.createMockIdentityId(fromDid),
-              kind: dsMockUtils.createMockPortfolioKind('Default'),
-            }),
-            receiver: dsMockUtils.createMockPortfolioId({
-              did: dsMockUtils.createMockIdentityId(toDid),
-              kind: dsMockUtils.createMockPortfolioKind('Default'),
-            }),
-            assetId: dsMockUtils.createMockAssetId(assetId),
-            amount: dsMockUtils.createMockU128(amount.shiftedBy(6)),
-          },
-        })
-      );
+        entityMockUtils.configureMocks({ fungibleAssetOptions: { assetId } });
 
-      const mockLeg2 = dsMockUtils.createMockOption(
-        dsMockUtils.createMockInstructionLeg({
-          Fungible: {
-            sender: dsMockUtils.createMockPortfolioId({
-              did: dsMockUtils.createMockIdentityId(fromDid),
-              kind: dsMockUtils.createMockPortfolioKind('Default'),
-            }),
-            receiver: dsMockUtils.createMockPortfolioId({
-              did: dsMockUtils.createMockIdentityId(toDid),
-              kind: dsMockUtils.createMockPortfolioKind('Default'),
-            }),
-            assetId: dsMockUtils.createMockAssetId(assetId2),
-            amount: dsMockUtils.createMockU128(amount.shiftedBy(6)),
-          },
-        })
-      );
-      const entries: [StorageKey<[u64, u64]>, Option<PolymeshPrimitivesSettlementLeg>][] = [
-        tuple(
+        const mockLeg1 = {
+          legType: LegTypeEnum.Fungible,
+          from: fromDid,
+          fromPortfolio: new BigNumber(0),
+          to: toDid,
+          toPortfolio: new BigNumber(0),
+          assetId,
+          amount: amount.shiftedBy(6),
+          legIndex: new BigNumber(0),
+        };
+
+        const mockLeg2 = {
+          legType: LegTypeEnum.Fungible,
+          from: fromDid,
+          fromPortfolio: new BigNumber(0),
+          to: toDid,
+          toPortfolio: new BigNumber(0),
+          assetId: assetId2,
+          amount: amount.shiftedBy(6),
+          legIndex: new BigNumber(1),
+        };
+
+        dsMockUtils.createApolloQueryMock(
+          legsQuery(
+            {
+              instructionId: id.toString(),
+            },
+            new BigNumber(2),
+            new BigNumber(0)
+          ),
           {
-            args: [rawId, dsMockUtils.createMockU64(new BigNumber(1))],
-          } as unknown as StorageKey<[u64, u64]>,
-          mockLeg1
-        ),
-        tuple(
-          {
-            args: [rawId, dsMockUtils.createMockU64(new BigNumber(0))],
-          } as unknown as StorageKey<[u64, u64]>,
-          mockLeg2
-        ),
-      ];
+            legs: {
+              nodes: [mockLeg1, mockLeg2],
+              totalCount: new BigNumber(3),
+            },
+          }
+        );
 
-      jest
-        .spyOn(utilsInternalModule, 'requestPaginated')
-        .mockClear()
-        .mockImplementation()
-        .mockResolvedValue({ entries, lastKey: null });
+        const {
+          data: leg,
+          count,
+          next,
+        } = await instruction.getLegs({
+          size: new BigNumber(2),
+          start: new BigNumber(0),
+        });
 
-      const { data: leg } = await instruction.getLegs();
+        expect(count).toEqual(new BigNumber(3));
+        expect(next).toEqual(new BigNumber(2));
 
-      const resultLeg1 = leg[0] as FungibleLeg;
-      expect(resultLeg1.amount).toEqual(amount);
-      expect(resultLeg1.asset.id).toBe(hexToUuid(assetId2));
-      expect(resultLeg1.from.owner.did).toBe(fromDid);
-      expect(resultLeg1.to.owner.did).toBe(toDid);
+        const resultLeg1 = leg[0] as FungibleLeg;
+        expect(resultLeg1.amount).toEqual(amount);
+        expect(resultLeg1.asset.id).toBe(hexToUuid(assetId));
+        expect(resultLeg1.from.owner.did).toBe(fromDid);
+        expect(resultLeg1.to.owner.did).toBe(toDid);
 
-      const resultLeg2 = leg[1] as FungibleLeg;
-      expect(resultLeg2.amount).toEqual(amount);
-      expect(resultLeg2.asset.id).toBe(hexToUuid(assetId));
-      expect(resultLeg2.from.owner.did).toBe(fromDid);
-      expect(resultLeg2.to.owner.did).toBe(toDid);
+        const resultLeg2 = leg[1] as FungibleLeg;
+        expect(resultLeg2.amount).toEqual(amount);
+        expect(resultLeg2.asset.id).toBe(hexToUuid(assetId2));
+        expect(resultLeg2.from.owner.did).toBe(fromDid);
+        expect(resultLeg2.to.owner.did).toBe(toDid);
+      });
     });
 
-    it('should throw an error if the instruction is not pending', () => {
-      instructionStatusMock.mockResolvedValue(createMockInstructionStatus('Success'));
-      return expect(instruction.getLegs()).rejects.toThrow(
-        'Instruction has already been executed/rejected and it was purged from chain'
-      );
-    });
+    describe('querying from chain', () => {
+      let instructionStatusMock: jest.Mock;
 
-    it('should handle NFT legs', async () => {
-      const fromDid = 'fromDid';
-      const toDid = 'toDid';
-      const assetId = '0x11111111111181111111111111111111';
+      let bigNumberToU64Spy: jest.SpyInstance;
 
-      entityMockUtils.configureMocks({ fungibleAssetOptions: { assetId } });
-      instructionStatusMock.mockResolvedValue(
-        createMockInstructionStatus(InternalInstructionStatus.Pending)
-      );
-      const mockLeg = dsMockUtils.createMockOption(
-        dsMockUtils.createMockInstructionLeg({
-          NonFungible: {
-            sender: dsMockUtils.createMockPortfolioId({
-              did: dsMockUtils.createMockIdentityId(fromDid),
-              kind: dsMockUtils.createMockPortfolioKind('Default'),
-            }),
-            receiver: dsMockUtils.createMockPortfolioId({
-              did: dsMockUtils.createMockIdentityId(toDid),
-              kind: dsMockUtils.createMockPortfolioKind('Default'),
-            }),
-            nfts: createMockNfts({
-              assetId: createMockAssetId(assetId),
-              ids: [createMockU64(new BigNumber(1))],
-            }),
-          },
-        })
-      );
-      const entries = [
-        tuple({ args: ['instructionId', 'legId'] } as unknown as StorageKey, mockLeg),
-      ];
+      beforeAll(() => {
+        bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+      });
 
-      jest
-        .spyOn(utilsInternalModule, 'requestPaginated')
-        .mockClear()
-        .mockImplementation()
-        .mockResolvedValue({ entries, lastKey: null });
+      beforeEach(() => {
+        dsMockUtils.configureMocks({ contextOptions: { middlewareAvailable: false } });
+        dsMockUtils.createQueryMock('settlement', 'instructionCounter', {
+          returnValue: dsMockUtils.createMockU64(new BigNumber(1000)),
+        });
+        when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
+        dsMockUtils.createQueryMock('settlement', 'instructionLegs');
+        instructionStatusMock = dsMockUtils.createQueryMock('settlement', 'instructionStatuses');
+      });
 
-      const { data: leg } = await instruction.getLegs();
+      it("should return the instruction's legs", async () => {
+        const fromDid = 'fromDid';
+        const toDid = 'toDid';
+        const assetId = '0x11111111111181111111111111111111';
+        const assetId2 = '0x22222222222222222222222222222222';
+        const amount = new BigNumber(1000);
 
-      const resultLeg = leg[0] as NftLeg;
-      expect(resultLeg.nfts).toEqual(
-        expect.arrayContaining([expect.objectContaining({ id: new BigNumber(1) })])
-      );
-      expect(resultLeg.asset.id).toBe(hexToUuid(assetId));
-      expect(resultLeg.from.owner.did).toBe(fromDid);
-      expect(resultLeg.to.owner.did).toBe(toDid);
-    });
+        entityMockUtils.configureMocks({ fungibleAssetOptions: { assetId } });
+        instructionStatusMock.mockResolvedValue(
+          createMockInstructionStatus(InternalInstructionStatus.Pending)
+        );
+        const mockLeg1 = dsMockUtils.createMockOption(
+          dsMockUtils.createMockInstructionLeg({
+            Fungible: {
+              sender: dsMockUtils.createMockPortfolioId({
+                did: dsMockUtils.createMockIdentityId(fromDid),
+                kind: dsMockUtils.createMockPortfolioKind('Default'),
+              }),
+              receiver: dsMockUtils.createMockPortfolioId({
+                did: dsMockUtils.createMockIdentityId(toDid),
+                kind: dsMockUtils.createMockPortfolioKind('Default'),
+              }),
+              assetId: dsMockUtils.createMockAssetId(assetId),
+              amount: dsMockUtils.createMockU128(amount.shiftedBy(6)),
+            },
+          })
+        );
 
-    it('should handle off chain legs', async () => {
-      const fromDid = 'fromDid';
-      const rawFromId = dsMockUtils.createMockIdentityId(fromDid);
-      const toDid = 'toDid';
-      const rawToId = dsMockUtils.createMockIdentityId(toDid);
-      const offChainAsset = 'SOME_TICKER';
-      const amount = new BigNumber(10);
+        const mockLeg2 = dsMockUtils.createMockOption(
+          dsMockUtils.createMockInstructionLeg({
+            Fungible: {
+              sender: dsMockUtils.createMockPortfolioId({
+                did: dsMockUtils.createMockIdentityId(fromDid),
+                kind: dsMockUtils.createMockPortfolioKind('Default'),
+              }),
+              receiver: dsMockUtils.createMockPortfolioId({
+                did: dsMockUtils.createMockIdentityId(toDid),
+                kind: dsMockUtils.createMockPortfolioKind('Default'),
+              }),
+              assetId: dsMockUtils.createMockAssetId(assetId2),
+              amount: dsMockUtils.createMockU128(amount.shiftedBy(6)),
+            },
+          })
+        );
+        const entries: [StorageKey<[u64, u64]>, Option<PolymeshPrimitivesSettlementLeg>][] = [
+          tuple(
+            {
+              args: [rawId, dsMockUtils.createMockU64(new BigNumber(1))],
+            } as unknown as StorageKey<[u64, u64]>,
+            mockLeg1
+          ),
+          tuple(
+            {
+              args: [rawId, dsMockUtils.createMockU64(new BigNumber(0))],
+            } as unknown as StorageKey<[u64, u64]>,
+            mockLeg2
+          ),
+        ];
 
-      instructionStatusMock.mockResolvedValue(
-        createMockInstructionStatus(InternalInstructionStatus.Pending)
-      );
+        jest
+          .spyOn(utilsInternalModule, 'requestPaginated')
+          .mockClear()
+          .mockImplementation()
+          .mockResolvedValue({ entries, lastKey: null });
 
-      const identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
+        const { data: leg } = await instruction.getLegs();
 
-      when(identityIdToStringSpy).calledWith(rawFromId).mockReturnValue(fromDid);
-      when(identityIdToStringSpy).calledWith(rawToId).mockReturnValue(toDid);
-      const mockLeg = dsMockUtils.createMockOption(
-        dsMockUtils.createMockInstructionLeg({
-          OffChain: {
-            senderIdentity: rawFromId,
-            receiverIdentity: rawToId,
-            ticker: dsMockUtils.createMockTicker(offChainAsset),
-            amount: dsMockUtils.createMockU128(amount.shiftedBy(6)),
-          },
-        })
-      );
-      const entries = [
-        tuple({ args: ['instructionId', 'legId'] } as unknown as StorageKey, mockLeg),
-      ];
+        const resultLeg1 = leg[0] as FungibleLeg;
+        expect(resultLeg1.amount).toEqual(amount);
+        expect(resultLeg1.asset.id).toBe(hexToUuid(assetId2));
+        expect(resultLeg1.from.owner.did).toBe(fromDid);
+        expect(resultLeg1.to.owner.did).toBe(toDid);
 
-      jest
-        .spyOn(utilsInternalModule, 'requestPaginated')
-        .mockClear()
-        .mockImplementation()
-        .mockResolvedValue({ entries, lastKey: null });
+        const resultLeg2 = leg[1] as FungibleLeg;
+        expect(resultLeg2.amount).toEqual(amount);
+        expect(resultLeg2.asset.id).toBe(hexToUuid(assetId));
+        expect(resultLeg2.from.owner.did).toBe(fromDid);
+        expect(resultLeg2.to.owner.did).toBe(toDid);
+      });
 
-      const { data: leg } = await instruction.getLegs();
+      it('should throw an error if the instruction is not pending', () => {
+        instructionStatusMock.mockResolvedValue(createMockInstructionStatus('Success'));
+        return expect(instruction.getLegs()).rejects.toThrow(
+          'Instruction has already been executed/rejected and it was purged from chain'
+        );
+      });
 
-      const resultLeg = leg[0] as OffChainLeg;
-      expect(resultLeg.offChainAmount).toEqual(amount);
-      expect(resultLeg.asset).toBe(offChainAsset);
-      expect(resultLeg.from.did).toBe(fromDid);
-      expect(resultLeg.to.did).toBe(toDid);
-    });
+      it('should handle NFT legs', async () => {
+        const fromDid = 'fromDid';
+        const toDid = 'toDid';
+        const assetId = '0x11111111111181111111111111111111';
 
-    it('should throw an error if a leg in None', () => {
-      const assetId = '0x1111';
+        entityMockUtils.configureMocks({ fungibleAssetOptions: { assetId } });
+        instructionStatusMock.mockResolvedValue(
+          createMockInstructionStatus(InternalInstructionStatus.Pending)
+        );
+        const mockLeg = dsMockUtils.createMockOption(
+          dsMockUtils.createMockInstructionLeg({
+            NonFungible: {
+              sender: dsMockUtils.createMockPortfolioId({
+                did: dsMockUtils.createMockIdentityId(fromDid),
+                kind: dsMockUtils.createMockPortfolioKind('Default'),
+              }),
+              receiver: dsMockUtils.createMockPortfolioId({
+                did: dsMockUtils.createMockIdentityId(toDid),
+                kind: dsMockUtils.createMockPortfolioKind('Default'),
+              }),
+              nfts: createMockNfts({
+                assetId: createMockAssetId(assetId),
+                ids: [createMockU64(new BigNumber(1))],
+              }),
+            },
+          })
+        );
+        const entries = [
+          tuple({ args: ['instructionId', 'legId'] } as unknown as StorageKey, mockLeg),
+        ];
 
-      entityMockUtils.configureMocks({ fungibleAssetOptions: { assetId } });
-      instructionStatusMock.mockResolvedValue(
-        createMockInstructionStatus(InternalInstructionStatus.Pending)
-      );
-      const mockLeg = dsMockUtils.createMockOption();
-      const entries = [tuple(['instructionId', 'legId'] as unknown as StorageKey, mockLeg)];
+        jest
+          .spyOn(utilsInternalModule, 'requestPaginated')
+          .mockClear()
+          .mockImplementation()
+          .mockResolvedValue({ entries, lastKey: null });
 
-      jest
-        .spyOn(utilsInternalModule, 'requestPaginated')
-        .mockClear()
-        .mockImplementation()
-        .mockResolvedValue({ entries, lastKey: null });
+        const { data: leg } = await instruction.getLegs();
 
-      return expect(instruction.getLegs()).rejects.toThrow();
+        const resultLeg = leg[0] as NftLeg;
+        expect(resultLeg.nfts).toEqual(
+          expect.arrayContaining([expect.objectContaining({ id: new BigNumber(1) })])
+        );
+        expect(resultLeg.asset.id).toBe(hexToUuid(assetId));
+        expect(resultLeg.from.owner.did).toBe(fromDid);
+        expect(resultLeg.to.owner.did).toBe(toDid);
+      });
+
+      it('should handle off chain legs', async () => {
+        const fromDid = 'fromDid';
+        const rawFromId = dsMockUtils.createMockIdentityId(fromDid);
+        const toDid = 'toDid';
+        const rawToId = dsMockUtils.createMockIdentityId(toDid);
+        const offChainAsset = 'SOME_TICKER';
+        const amount = new BigNumber(10);
+
+        instructionStatusMock.mockResolvedValue(
+          createMockInstructionStatus(InternalInstructionStatus.Pending)
+        );
+
+        const identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
+
+        when(identityIdToStringSpy).calledWith(rawFromId).mockReturnValue(fromDid);
+        when(identityIdToStringSpy).calledWith(rawToId).mockReturnValue(toDid);
+        const mockLeg = dsMockUtils.createMockOption(
+          dsMockUtils.createMockInstructionLeg({
+            OffChain: {
+              senderIdentity: rawFromId,
+              receiverIdentity: rawToId,
+              ticker: dsMockUtils.createMockTicker(offChainAsset),
+              amount: dsMockUtils.createMockU128(amount.shiftedBy(6)),
+            },
+          })
+        );
+        const entries = [
+          tuple({ args: ['instructionId', 'legId'] } as unknown as StorageKey, mockLeg),
+        ];
+
+        jest
+          .spyOn(utilsInternalModule, 'requestPaginated')
+          .mockClear()
+          .mockImplementation()
+          .mockResolvedValue({ entries, lastKey: null });
+
+        const { data: leg } = await instruction.getLegs();
+
+        const resultLeg = leg[0] as OffChainLeg;
+        expect(resultLeg.offChainAmount).toEqual(amount);
+        expect(resultLeg.asset).toBe(offChainAsset);
+        expect(resultLeg.from.did).toBe(fromDid);
+        expect(resultLeg.to.did).toBe(toDid);
+      });
+
+      it('should throw an error if a leg in None', () => {
+        const assetId = '0x1111';
+
+        entityMockUtils.configureMocks({ fungibleAssetOptions: { assetId } });
+        instructionStatusMock.mockResolvedValue(
+          createMockInstructionStatus(InternalInstructionStatus.Pending)
+        );
+        const mockLeg = dsMockUtils.createMockOption();
+        const entries = [tuple(['instructionId', 'legId'] as unknown as StorageKey, mockLeg)];
+
+        jest
+          .spyOn(utilsInternalModule, 'requestPaginated')
+          .mockClear()
+          .mockImplementation()
+          .mockResolvedValue({ entries, lastKey: null });
+
+        return expect(instruction.getLegs()).rejects.toThrow();
+      });
     });
   });
 
@@ -1372,6 +1696,7 @@ describe('Instruction class', () => {
 
   describe('method: getInvolvedPortfolios', () => {
     it('should return the portfolios in the instruction where the given DID is the custodian', async () => {
+      dsMockUtils.configureMocks({ contextOptions: { middlewareAvailable: false } });
       const fromDid = 'fromDid';
       const toDid = 'toDid';
 
@@ -1425,65 +1750,231 @@ describe('Instruction class', () => {
   });
 
   describe('method: getMediators', () => {
-    const mediatorDid = 'mediatorDid';
+    const mediatorDid1 = 'mediatorDid1';
+    const mediatorDid2 = 'mediatorDid2';
 
-    it('should return the instruction mediators', async () => {
-      dsMockUtils.createQueryMock('settlement', 'instructionMediatorsAffirmations', {
-        entries: [
-          tuple(
-            [rawId, dsMockUtils.createMockIdentityId(mediatorDid)],
-            dsMockUtils.createMockMediatorAffirmationStatus('Pending')
-          ),
-        ],
+    describe('querying the middleware', () => {
+      it('should return the instruction mediators', async () => {
+        dsMockUtils.createApolloQueryMock(
+          instructionsQuery({
+            id: id.toString(),
+          }),
+          {
+            instructions: {
+              nodes: [
+                {
+                  mediators: [mediatorDid1, mediatorDid2],
+                },
+              ],
+            },
+          }
+        );
+        const expiry = new Date('2050/01/01');
+        dsMockUtils.createApolloQueryMock(
+          instructionAffirmationsQuery({
+            instructionId: id.toString(),
+            isMediator: true,
+          }),
+          {
+            instructionAffirmations: {
+              nodes: [
+                {
+                  identity: mediatorDid2,
+                  status: AffirmStatusEnum.Affirmed,
+                  expiry,
+                },
+              ],
+            },
+          }
+        );
+
+        const result = await instruction.getMediators();
+
+        expect(result).toEqual([
+          {
+            identity: expect.objectContaining({ did: mediatorDid1 }),
+            status: AffirmationStatus.Pending,
+          },
+          {
+            identity: expect.objectContaining({ did: mediatorDid2 }),
+            status: AffirmationStatus.Affirmed,
+            expiry,
+          },
+        ]);
       });
+    });
 
-      const result = await instruction.getMediators();
+    describe('querying the chain', () => {
+      it('should return the instruction mediators', async () => {
+        dsMockUtils.configureMocks({ contextOptions: { middlewareAvailable: false } });
+        dsMockUtils.createQueryMock('settlement', 'instructionMediatorsAffirmations', {
+          entries: [
+            tuple(
+              [rawId, dsMockUtils.createMockIdentityId(mediatorDid1)],
+              dsMockUtils.createMockMediatorAffirmationStatus('Pending')
+            ),
+          ],
+        });
 
-      expect(result).toEqual([
-        expect.objectContaining({
-          identity: expect.objectContaining({ did: mediatorDid }),
-          status: AffirmationStatus.Pending,
-          expiry: undefined,
-        }),
-      ]);
+        const result = await instruction.getMediators();
+
+        expect(result).toEqual([
+          expect.objectContaining({
+            identity: expect.objectContaining({ did: mediatorDid1 }),
+            status: AffirmationStatus.Pending,
+            expiry: undefined,
+          }),
+        ]);
+      });
     });
   });
 
   describe('method: getOffChainAffirmations', () => {
     const legId = new BigNumber(2);
 
-    it('should return the affirmation status of offchain legs', async () => {
-      dsMockUtils.createQueryMock('settlement', 'offChainAffirmations', {
-        entries: [
-          tuple(
-            [rawId, dsMockUtils.createMockU64(legId)],
-            dsMockUtils.createMockAffirmationStatus('Pending')
-          ),
-        ],
+    describe('querying the middleware', () => {
+      it('should return the affirmation status of offchain legs', async () => {
+        dsMockUtils.createApolloQueryMock(
+          offChainAffirmationsQuery({
+            instructionId: id.toString(),
+          }),
+          {
+            instructionAffirmations: {
+              nodes: [
+                {
+                  status: AffirmStatusEnum.Affirmed,
+                  offChainReceipt: {
+                    leg: {
+                      legIndex: legId.toString(),
+                    },
+                  },
+                },
+              ],
+            },
+          }
+        );
+
+        const result = await instruction.getOffChainAffirmations();
+
+        expect(result).toEqual([
+          expect.objectContaining({
+            legId,
+            status: AffirmationStatus.Affirmed,
+          }),
+        ]);
       });
+    });
 
-      const result = await instruction.getOffChainAffirmations();
+    describe('querying the chain', () => {
+      it('should return the affirmation status of offchain legs', async () => {
+        dsMockUtils.configureMocks({ contextOptions: { middlewareAvailable: false } });
+        dsMockUtils.createQueryMock('settlement', 'offChainAffirmations', {
+          entries: [
+            tuple(
+              [rawId, dsMockUtils.createMockU64(legId)],
+              dsMockUtils.createMockAffirmationStatus('Pending')
+            ),
+          ],
+        });
 
-      expect(result).toEqual([
-        expect.objectContaining({
-          legId,
-          status: AffirmationStatus.Pending,
-        }),
-      ]);
+        const result = await instruction.getOffChainAffirmations();
+
+        expect(result).toEqual([
+          expect.objectContaining({
+            legId,
+            status: AffirmationStatus.Pending,
+          }),
+        ]);
+      });
     });
   });
 
   describe('method: getOffChainAffirmationForLeg', () => {
     const legId = new BigNumber(2);
 
-    it('should return the affirmation status for a specific leg', async () => {
-      dsMockUtils.createQueryMock('settlement', 'offChainAffirmations', {
-        returnValue: dsMockUtils.createMockAffirmationStatus('Pending'),
+    describe('querying the middleware', () => {
+      it('should return the affirmation status of given offchain leg', async () => {
+        dsMockUtils.createApolloQueryMock(
+          legsQuery({
+            instructionId: id.toString(),
+            legIndex: legId.toNumber(),
+            legType: LegTypeEnum.OffChain,
+          }),
+          {
+            legs: {
+              nodes: [
+                {
+                  offChainReceipts: {
+                    nodes: [
+                      {
+                        uid: '1',
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          }
+        );
+
+        let result = await instruction.getOffChainAffirmationForLeg({ legId });
+
+        expect(result).toEqual(AffirmationStatus.Affirmed);
+
+        dsMockUtils.createApolloQueryMock(
+          legsQuery({
+            instructionId: id.toString(),
+            legIndex: legId.toNumber(),
+            legType: LegTypeEnum.OffChain,
+          }),
+          {
+            legs: {
+              nodes: [
+                {
+                  offChainReceipts: {
+                    nodes: [],
+                  },
+                },
+              ],
+            },
+          }
+        );
+        result = await instruction.getOffChainAffirmationForLeg({ legId });
+
+        expect(result).toEqual(AffirmationStatus.Pending);
       });
 
-      const result = await instruction.getOffChainAffirmationForLeg({ legId });
+      it('should throw an error if no leg is found', () => {
+        dsMockUtils.createApolloQueryMock(
+          legsQuery({
+            instructionId: id.toString(),
+            legIndex: legId.toNumber(),
+            legType: LegTypeEnum.OffChain,
+          }),
+          {
+            legs: {
+              nodes: [],
+            },
+          }
+        );
+        return expect(instruction.getOffChainAffirmationForLeg({ legId })).rejects.toThrow(
+          'The given leg ID is not an off-chain leg'
+        );
+      });
+    });
 
-      expect(result).toEqual(AffirmationStatus.Pending);
+    describe('querying the chain', () => {
+      it('should return the affirmation status for a specific leg', async () => {
+        dsMockUtils.configureMocks({ contextOptions: { middlewareAvailable: false } });
+
+        dsMockUtils.createQueryMock('settlement', 'offChainAffirmations', {
+          returnValue: dsMockUtils.createMockAffirmationStatus('Pending'),
+        });
+
+        const result = await instruction.getOffChainAffirmationForLeg({ legId });
+
+        expect(result).toEqual(AffirmationStatus.Pending);
+      });
     });
   });
 
