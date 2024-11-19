@@ -6,6 +6,8 @@ import { Context } from '~/internal';
 import { createArgsAndFilters } from '~/middleware/queries/common';
 import {
   Instruction,
+  InstructionAffirmation,
+  InstructionAffirmationsOrderBy,
   InstructionEvent,
   InstructionEventsOrderBy,
   InstructionsOrderBy,
@@ -18,6 +20,26 @@ import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
 import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 import { asAssetId, asDid } from '~/utils/internal';
 
+const legAttributes = `
+            legIndex
+            legType
+            from
+            fromPortfolio
+            to
+            toPortfolio
+            assetId
+            ticker
+            amount
+            nftIds
+            addresses
+            offChainReceipts {
+              nodes {
+                uid
+                signer
+              }
+            }
+`;
+
 const instructionAttributes = `
           id
           venueId
@@ -27,19 +49,10 @@ const instructionAttributes = `
           endAfterBlock
           tradeDate
           valueDate
+          mediators
           legs {
             nodes {
-              legIndex
-              legType
-              from
-              fromPortfolio
-              to
-              toPortfolio
-              assetId
-              ticker
-              amount
-              nftIds
-              addresses
+              ${legAttributes}
             }
           }
           memo
@@ -53,6 +66,24 @@ const instructionAttributes = `
             hash
             datetime
           }
+`;
+
+const instructionAffirmationAttributes = `
+      id
+      identity
+      portfolios
+      offChainReceiptId
+      offChainReceipt {
+        leg {
+          id
+          legIndex
+        }
+        signer
+      }
+      status
+      isAutomaticallyAffirmed
+      isMediator
+      expiry
 `;
 
 type InstructionArgs = 'id' | 'venueId' | 'status';
@@ -141,11 +172,119 @@ export function instructionsQuery(
         ${filter}
         first: $size
         offset: $start
-        orderBy: [${InstructionsOrderBy.CreatedAtDesc}, ${InstructionsOrderBy.IdDesc}]
+        orderBy: [${InstructionsOrderBy.CreatedAtAsc}, ${InstructionsOrderBy.IdAsc}]
       ) {
         totalCount
         nodes {
           ${instructionAttributes}
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+  };
+}
+
+type InstructionAffirmationArgs = 'instructionId' | 'status' | 'identity' | 'isMediator';
+
+/**
+ * @hidden
+ *
+ * Get a specific instruction within a venue for a specific event
+ */
+export function instructionAffirmationsQuery(
+  filters: QueryArgs<InstructionAffirmation, InstructionAffirmationArgs>,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<QueryArgs<InstructionAffirmation, InstructionAffirmationArgs>>> {
+  const { args, filter } = createArgsAndFilters(filters, {
+    status: 'AffirmStatusEnum',
+    isMediator: 'Boolean',
+  });
+  const query = gql`
+    query InstructionAffirmationsQuery
+      ${args}
+      {
+      instructionAffirmations(
+        ${filter}
+        first: $size
+        offset: $start
+        orderBy: [${InstructionAffirmationsOrderBy.CreatedAtAsc}, ${InstructionAffirmationsOrderBy.CreatedBlockIdAsc}]
+      ) {
+        totalCount
+        nodes {
+          ${instructionAffirmationAttributes}
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get a specific instruction within a venue for a specific event
+ */
+export function offChainAffirmationsQuery(
+  filters: QueryArgs<InstructionAffirmation, 'instructionId'>
+): QueryOptions<QueryArgs<InstructionAffirmation, 'instructionId'>> {
+  const query = gql`
+    query InstructionAffirmationsQuery($instructionId: String!) {
+      instructionAffirmations(
+        filter: {
+          instructionId: { equalTo: $instructionId }
+          offChainReceiptExists: true
+        }
+        orderBy: [${InstructionAffirmationsOrderBy.CreatedAtAsc}, ${InstructionAffirmationsOrderBy.CreatedBlockIdAsc}]
+      ) {
+        nodes {
+          ${instructionAffirmationAttributes}
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { ...filters },
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get a specific instruction within a venue for a specific event
+ */
+export function legsQuery(
+  filters: QueryArgs<Leg, 'instructionId' | 'legType' | 'legIndex'>,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<QueryArgs<Leg, 'instructionId' | 'legType'>>> {
+  const { args, filter } = createArgsAndFilters(filters, {
+    legType: 'LegTypeEnum',
+    legIndex: 'Int',
+  });
+  const query = gql`
+    query LegsQuery
+      ${args}
+      {
+      legs(
+        ${filter}
+        first: $size
+        offset: $start
+        orderBy: [${LegsOrderBy.LegIndexAsc}]
+      ) {
+        totalCount
+        nodes {
+          ${legAttributes}
         }
       }
     }

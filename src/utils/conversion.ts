@@ -134,6 +134,7 @@ import {
   Venue,
 } from '~/internal';
 import {
+  AffirmStatusEnum,
   AuthTypeEnum,
   Block,
   CallIdEnum,
@@ -200,6 +201,7 @@ import {
   InputStatType,
   InputTrustedClaimIssuer,
   InstructionEndCondition,
+  InstructionStatus,
   InstructionType,
   KnownAssetType,
   KnownNftType,
@@ -263,7 +265,7 @@ import {
   CorporateActionIdentifier,
   ExemptKey,
   ExtrinsicIdentifier,
-  InstructionStatus,
+  InstructionStatus as InternalInstructionStatus,
   InternalAssetType,
   InternalNftType,
   MeshTickerOrAssetId,
@@ -3285,24 +3287,24 @@ export function venueTypeToMeshVenueType(
  */
 export function meshInstructionStatusToInstructionStatus(
   instruction: PolymeshPrimitivesSettlementInstructionStatus
-): InstructionStatus {
+): InternalInstructionStatus {
   if (instruction.isPending) {
-    return InstructionStatus.Pending;
+    return InternalInstructionStatus.Pending;
   }
 
   if (instruction.isFailed) {
-    return InstructionStatus.Failed;
+    return InternalInstructionStatus.Failed;
   }
 
   if (instruction.isRejected) {
-    return InstructionStatus.Rejected;
+    return InternalInstructionStatus.Rejected;
   }
 
   if (instruction.isSuccess) {
-    return InstructionStatus.Success;
+    return InternalInstructionStatus.Success;
   }
 
-  return InstructionStatus.Unknown;
+  return InternalInstructionStatus.Unknown;
 }
 
 /**
@@ -4945,27 +4947,41 @@ export function middlewareLegToLeg(leg: MiddlewareLeg, context: Context): Leg {
 /**
  * @hidden
  */
-export function middlewareInstructionToHistoricInstruction(
-  instruction: MiddlewareInstruction,
-  context: Context
-): HistoricInstruction {
-  /* eslint-disable @typescript-eslint/no-non-null-assertion */
-  const {
-    id: instructionId,
-    status,
-    type,
-    endBlock,
-    endAfterBlock,
-    tradeDate,
-    valueDate,
-    legs: { nodes: legs },
-    memo,
-    createdBlock,
-    venueId,
-  } = instruction;
-  const { blockId, hash, datetime } = createdBlock!;
+export function middlewareAffirmStatusToAffirmationStatus(
+  status: AffirmStatusEnum
+): AffirmationStatus {
+  const affirmStatusMap = {
+    [AffirmStatusEnum.Affirmed]: AffirmationStatus.Affirmed,
+    [AffirmStatusEnum.Rejected]: AffirmationStatus.Rejected,
+  };
+  return affirmStatusMap[status];
+}
 
-  let typeDetails;
+/**
+ * @hidden
+ */
+export function middlewareInstructionStatusToInstructionStatus(
+  status: InstructionStatusEnum
+): InstructionStatus {
+  const middlewareStatusToInstructionStatusMap = {
+    [InstructionStatusEnum.Created]: InstructionStatus.Pending,
+    [InstructionStatusEnum.Executed]: InstructionStatus.Success,
+    [InstructionStatusEnum.Rejected]: InstructionStatus.Rejected,
+    [InstructionStatusEnum.Failed]: InstructionStatus.Failed,
+  };
+
+  return middlewareStatusToInstructionStatusMap[status];
+}
+
+/**
+ * @hidden
+ */
+export function middlewareInstructionToInstructionEndCondition(
+  instruction: MiddlewareInstruction
+): InstructionEndCondition {
+  const { type, endBlock, endAfterBlock } = instruction;
+
+  let typeDetails: InstructionEndCondition;
 
   if (type === InstructionTypeEnum.SettleManual) {
     typeDetails = {
@@ -4983,6 +4999,29 @@ export function middlewareInstructionToHistoricInstruction(
     };
   }
 
+  return typeDetails;
+}
+
+/**
+ * @hidden
+ */
+export function middlewareInstructionToHistoricInstruction(
+  instruction: MiddlewareInstruction,
+  context: Context
+): HistoricInstruction {
+  /* eslint-disable @typescript-eslint/no-non-null-assertion */
+  const {
+    id: instructionId,
+    status,
+    tradeDate,
+    valueDate,
+    legs: { nodes: legs },
+    memo,
+    createdBlock,
+    venueId,
+  } = instruction;
+  const { blockId, hash, datetime } = createdBlock!;
+
   return {
     id: new BigNumber(instructionId),
     blockNumber: new BigNumber(blockId),
@@ -4990,7 +5029,7 @@ export function middlewareInstructionToHistoricInstruction(
     status,
     tradeDate,
     valueDate,
-    ...typeDetails,
+    ...middlewareInstructionToInstructionEndCondition(instruction),
     memo: memo ?? null,
     venueId: venueId ? new BigNumber(venueId) : undefined,
     createdAt: new Date(datetime),

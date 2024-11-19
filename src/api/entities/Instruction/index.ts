@@ -19,8 +19,20 @@ import {
   PolymeshError,
   Venue,
 } from '~/internal';
-import { instructionEventsQuery } from '~/middleware/queries/settlements';
-import { InstructionEventEnum, Query } from '~/middleware/types';
+import {
+  instructionAffirmationsQuery,
+  instructionEventsQuery,
+  instructionsQuery,
+  legsQuery,
+  offChainAffirmationsQuery,
+} from '~/middleware/queries/settlements';
+import {
+  Instruction as MiddlewareInstruction,
+  InstructionAffirmation as MiddlewareInstructionAffirmation,
+  InstructionEventEnum,
+  LegTypeEnum,
+  Query,
+} from '~/middleware/types';
 import {
   AffirmAsMediatorParams,
   AffirmInstructionParams,
@@ -29,6 +41,7 @@ import {
   EventIdentifier,
   ExecuteManualInstructionParams,
   InstructionAffirmationOperation,
+  MiddlewarePaginationOptions,
   NoArgsProcedureMethod,
   NumberedPortfolio,
   OffChainAffirmationReceipt,
@@ -56,12 +69,22 @@ import {
   meshNftToNftId,
   meshPortfolioIdToPortfolio,
   meshSettlementTypeToEndCondition,
+  middlewareAffirmStatusToAffirmationStatus,
   middlewareEventDetailsToEventIdentifier,
+  middlewareInstructionStatusToInstructionStatus,
+  middlewareInstructionToInstructionEndCondition,
+  middlewareLegToLeg,
   momentToDate,
   tickerToString,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, optionize, requestMulti, requestPaginated } from '~/utils/internal';
+import {
+  calculateNextKey,
+  createProcedureMethod,
+  optionize,
+  requestMulti,
+  requestPaginated,
+} from '~/utils/internal';
 
 import {
   AffirmationStatus,
@@ -293,7 +316,94 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
+   * This method verifies whether the instruction exists and returns if middleware is available.
+   *
+   * @throws if instruction does not exists
+   */
+  private async getMiddlewareInfoAndCheckIfInstructionExists(): Promise<boolean> {
+    const { context } = this;
+
+    const [isMiddlewareAvailable, exists] = await Promise.all([
+      context.isMiddlewareAvailable(),
+      this.exists(),
+    ]);
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'Instruction does not exists',
+        data: {
+          instructionId: this.id,
+        },
+      });
+    }
+    return isMiddlewareAvailable;
+  }
+
+  /**
+   * Fetches the instruction details from middleware
+   *
+   * @throws if instruction data is not yet processed by the middleware
+   */
+  private async getInstructionFromMiddleware(): Promise<MiddlewareInstruction> {
+    const { context, id } = this;
+
+    const {
+      data: {
+        instructions: {
+          nodes: [instruction],
+        },
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(
+      instructionsQuery({
+        id: id.toString(),
+      })
+    );
+
+    if (!instruction) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'Instruction is not yet processed by the middleware',
+      });
+    }
+
+    return instruction;
+  }
+
+  /**
+   * Asserts that start value of pagination options based on middleware availability
+   */
+  private assertPaginationStart(
+    isMiddlewareAvailable: boolean,
+    paginationOpts?: PaginationOptions | MiddlewarePaginationOptions
+  ): void {
+    if (!paginationOpts) {
+      return;
+    }
+    if (isMiddlewareAvailable) {
+      if (typeof paginationOpts.start === 'string') {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: '`start` should be of type BigNumber to query the data from middleware',
+        });
+      }
+    } else if (typeof paginationOpts.start !== 'string') {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: '`start` should be of type string to query the data from chain',
+      });
+    }
+  }
+
+  /**
    * Retrieve information specific to this Instruction
+   *
+   * @note uses middleware (if available) to retrieve information, otherwise directly queries from the chain
+   *
+   * @throws if
+   *  - instruction does not exists
+   *  - instruction is not yet processed by the middleware (when querying from middleware)
+   *  - instruction is executed/rejected and was pruned from chain (when querying from chain)
    */
   public async details(): Promise<InstructionDetails> {
     const {
@@ -305,6 +415,26 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       id,
       context,
     } = this;
+
+    const isMiddlewareAvailable = await this.getMiddlewareInfoAndCheckIfInstructionExists();
+
+    if (isMiddlewareAvailable) {
+      const instruction = await this.getInstructionFromMiddleware();
+
+      const endCondition = middlewareInstructionToInstructionEndCondition(instruction);
+
+      const { status, tradeDate, valueDate, venueId, memo, createdBlock } = instruction;
+
+      return {
+        status: middlewareInstructionStatusToInstructionStatus(status),
+        createdAt: new Date(createdBlock!.datetime),
+        tradeDate,
+        valueDate,
+        venue: venueId ? new Venue({ id: new BigNumber(venueId) }, context) : null,
+        memo: memo ?? null,
+        ...endCondition,
+      };
+    }
 
     const rawId = bigNumberToU64(id, context);
 
@@ -345,10 +475,15 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   /**
    * Retrieve every authorization generated by this Instruction (status and authorizing Identity)
    *
-   * @note supports pagination
+   * @note supports pagination.
+   * @note uses middleware (if available) to retrieve information, otherwise directly queries from the chain
+   *
+   * @throws if
+   *  - instruction does not exists
+   *  - instruction is executed/rejected and was pruned from chain (when querying from chain)
    */
   public async getAffirmations(
-    paginationOpts?: PaginationOptions
+    paginationOpts?: PaginationOptions | MiddlewarePaginationOptions
   ): Promise<ResultSet<InstructionAffirmation>> {
     const {
       context: {
@@ -359,6 +494,44 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       id,
       context,
     } = this;
+
+    const isMiddlewareAvailable = await this.getMiddlewareInfoAndCheckIfInstructionExists();
+
+    this.assertPaginationStart(isMiddlewareAvailable, paginationOpts);
+
+    if (isMiddlewareAvailable) {
+      const start = paginationOpts?.start as BigNumber;
+      const {
+        data: {
+          instructionAffirmations: { nodes: affirmations, totalCount },
+        },
+      } = await context.queryMiddleware<Ensured<Query, 'instructionAffirmations'>>(
+        instructionAffirmationsQuery(
+          {
+            instructionId: id.toString(),
+          },
+          paginationOpts?.size,
+          start
+        )
+      );
+
+      const count = new BigNumber(totalCount);
+
+      const data = affirmations.map(affirmation => {
+        const { identity, status } = affirmation!;
+        return {
+          identity: new Identity({ did: identity }, context),
+          status: middlewareAffirmStatusToAffirmationStatus(status),
+        };
+      });
+
+      const next = calculateNextKey(count, data.length, start);
+      return {
+        data,
+        count,
+        next,
+      };
+    }
 
     const isExecuted = await this.isExecuted();
 
@@ -371,7 +544,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     const { entries, lastKey: next } = await requestPaginated(settlement.affirmsReceived, {
       arg: bigNumberToU64(id, context),
-      paginationOpts,
+      paginationOpts: paginationOpts as PaginationOptions,
     });
 
     const data = entries.map(([{ args }, meshAffirmationStatus]) => {
@@ -392,8 +565,16 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * Retrieve all legs of this Instruction
    *
    * @note supports pagination
+   * @note uses middleware (if available) to retrieve information, otherwise directly queries from the chain
+   *
+   * @throws if
+   *  - instruction does not exists
+   *  - instruction is not yet processed by the middleware (when querying from middleware)
+   *  - instruction is executed/rejected and was pruned from chain (when querying from chain)
    */
-  public async getLegs(paginationOpts?: PaginationOptions): Promise<ResultSet<Leg>> {
+  public async getLegs(
+    paginationOpts?: PaginationOptions | MiddlewarePaginationOptions
+  ): Promise<ResultSet<Leg>> {
     const {
       context: {
         polymeshApi: {
@@ -403,6 +584,38 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       id,
       context,
     } = this;
+
+    const isMiddlewareAvailable = await this.getMiddlewareInfoAndCheckIfInstructionExists();
+
+    this.assertPaginationStart(isMiddlewareAvailable, paginationOpts);
+    if (isMiddlewareAvailable) {
+      const start = paginationOpts?.start as BigNumber;
+
+      const {
+        data: {
+          legs: { nodes, totalCount },
+        },
+      } = await context.queryMiddleware<Ensured<Query, 'legs'>>(
+        legsQuery(
+          {
+            instructionId: id.toString(),
+          },
+          paginationOpts?.size,
+          start
+        )
+      );
+
+      const data = nodes.map(leg => middlewareLegToLeg(leg, context));
+
+      const count = new BigNumber(totalCount);
+
+      const next = calculateNextKey(count, data.length, start);
+      return {
+        data,
+        count,
+        next,
+      };
+    }
 
     const isExecuted = await this.isExecuted();
 
@@ -415,7 +628,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     const { entries: legs, lastKey: next } = await requestPaginated(settlement.instructionLegs, {
       arg: bigNumberToU64(id, context),
-      paginationOpts,
+      paginationOpts: paginationOpts as PaginationOptions,
     });
 
     const data = [...legs]
@@ -670,6 +883,13 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
   /**
    * Returns the mediators for the Instruction, along with their affirmation status
+   *
+   * @note uses middleware (if available) to retrieve information, otherwise directly queries from the chain
+   *
+   * @throws if
+   *  - instruction does not exists
+   *  - instruction is not yet processed by the middleware (when querying from middleware)
+   *  - instruction is executed/rejected and was pruned from chain (when querying from chain)
    */
   public async getMediators(): Promise<MediatorAffirmation[]> {
     const {
@@ -681,6 +901,50 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         },
       },
     } = this;
+
+    const isMiddlewareAvailable = await this.getMiddlewareInfoAndCheckIfInstructionExists();
+
+    if (isMiddlewareAvailable) {
+      const [
+        { mediators },
+        {
+          data: {
+            instructionAffirmations: { nodes: mediatorAffirmations },
+          },
+        },
+      ] = await Promise.all([
+        this.getInstructionFromMiddleware(),
+        context.queryMiddleware<Ensured<Query, 'instructionAffirmations'>>(
+          instructionAffirmationsQuery({
+            instructionId: id.toString(),
+            isMediator: true,
+          })
+        ),
+      ]);
+
+      const getMediatorAffirmationStatus = (
+        mediatorAffirmation?: MiddlewareInstructionAffirmation
+      ): Omit<MediatorAffirmation, 'identity'> => {
+        let status = AffirmationStatus.Pending;
+        if (mediatorAffirmation) {
+          status = middlewareAffirmStatusToAffirmationStatus(mediatorAffirmation.status);
+          if (mediatorAffirmation.expiry) {
+            return { status, expiry: mediatorAffirmation.expiry };
+          }
+        }
+        return { status };
+      };
+
+      return (mediators as string[]).map(mediator => {
+        const affirmation = mediatorAffirmations.find(
+          mediatorAffirmation => mediatorAffirmation.identity === mediator
+        );
+        return {
+          identity: new Identity({ did: mediator }, context),
+          ...getMediatorAffirmationStatus(affirmation),
+        } as MediatorAffirmation;
+      });
+    }
 
     const rawId = bigNumberToU64(id, context);
 
@@ -699,6 +963,13 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
   /**
    * Returns affirmation statuses for offchain legs in this Instruction
+   *
+   * @note uses middleware (if available) to retrieve information, otherwise directly queries from the chain
+   *
+   * @throws if
+   *  - instruction does not exists
+   *  - instruction is not yet processed by the middleware (when querying from middleware)
+   *  - instruction is executed/rejected and was pruned from chain (when querying from chain)
    */
   public async getOffChainAffirmations(): Promise<OffChainAffirmation[]> {
     const {
@@ -710,6 +981,28 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         },
       },
     } = this;
+
+    const isMiddlewareAvailable = await this.getMiddlewareInfoAndCheckIfInstructionExists();
+
+    if (isMiddlewareAvailable) {
+      const {
+        data: {
+          instructionAffirmations: { nodes: offChainAffirmations },
+        },
+      } = await context.queryMiddleware<Ensured<Query, 'instructionAffirmations'>>(
+        offChainAffirmationsQuery({
+          instructionId: id.toString(),
+        })
+      );
+
+      return offChainAffirmations.map(offChainAffirmation => {
+        const { status, offChainReceipt } = offChainAffirmation;
+        return {
+          status: middlewareAffirmStatusToAffirmationStatus(status),
+          legId: new BigNumber(offChainReceipt!.leg!.legIndex),
+        };
+      });
+    }
 
     const rawId = bigNumberToU64(id, context);
 
@@ -734,6 +1027,14 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * Returns affirmation status for a specific offchain leg in this Instruction
    *
    * @param args.legId index of the leg whose affirmation status is to be fetched
+   *
+   * @note uses middleware (if available) to retrieve information, otherwise directly queries from the chain
+   *
+   * @throws if
+   *  - instruction does not exists
+   *  - legId provided is not an off-chain leg
+   *  - instruction is not yet processed by the middleware (when querying from middleware)
+   *  - instruction is executed/rejected and was pruned from chain (when querying from chain)
    */
   public async getOffChainAffirmationForLeg(args: {
     legId: BigNumber;
@@ -749,6 +1050,35 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     } = this;
 
     const { legId } = args;
+
+    const isMiddlewareAvailable = await this.getMiddlewareInfoAndCheckIfInstructionExists();
+
+    if (isMiddlewareAvailable) {
+      const {
+        data: {
+          legs: {
+            nodes: [leg],
+          },
+        },
+      } = await context.queryMiddleware<Ensured<Query, 'legs'>>(
+        legsQuery({
+          instructionId: id.toString(),
+          legIndex: legId.toNumber(),
+          legType: LegTypeEnum.OffChain,
+        })
+      );
+
+      if (!leg) {
+        throw new PolymeshError({
+          code: ErrorCode.DataUnavailable,
+          message: 'The given leg ID is not an off-chain leg',
+        });
+      }
+
+      return leg.offChainReceipts.nodes.length
+        ? AffirmationStatus.Affirmed
+        : AffirmationStatus.Pending;
+    }
 
     const rawId = bigNumberToU64(id, context);
 

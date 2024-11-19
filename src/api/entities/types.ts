@@ -89,6 +89,11 @@ export interface PaginationOptions {
   start?: string;
 }
 
+export interface MiddlewarePaginationOptions {
+  size: BigNumber;
+  start?: BigNumber;
+}
+
 export type NextKey = string | BigNumber | null;
 
 export interface ResultSet<T> {
