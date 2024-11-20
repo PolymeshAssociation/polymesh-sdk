@@ -208,8 +208,6 @@ export async function prepareModifyAsset(
       rawType = internalAssetTypeToAssetType(newType as KnownAssetType, context);
     }
 
-    console.log('updating type');
-
     transactions.push(
       checkTxType({
         transaction: tx.asset.updateAssetType,
@@ -275,7 +273,8 @@ export async function prepareStorage(
   const customTypeData = await prepareStorageForCustomType(
     assetType,
     values(KnownAssetType),
-    context
+    context,
+    'modifyAsset'
   );
 
   return { customTypeData };
