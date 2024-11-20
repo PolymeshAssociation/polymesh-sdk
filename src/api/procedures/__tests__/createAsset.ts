@@ -587,7 +587,8 @@ describe('createAsset procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, FungibleAsset, Storage>(mockContext, {
       customTypeData: {
         rawValue,
-        id: rawTypeId,
+        rawId: rawTypeId,
+        isAlreadyCreated: true,
       },
       status: TickerReservationStatus.Free,
       signingIdentity,
@@ -673,8 +674,9 @@ describe('createAsset procedure', () => {
     const rawValue = dsMockUtils.createMockBytes('something');
     const proc = procedureMockUtils.getInstance<Params, FungibleAsset, Storage>(mockContext, {
       customTypeData: {
-        id: dsMockUtils.createMockU32(),
+        rawId: dsMockUtils.createMockU32(),
         rawValue,
+        isAlreadyCreated: false,
       },
       status: TickerReservationStatus.Reserved,
       signingIdentity,
@@ -724,8 +726,9 @@ describe('createAsset procedure', () => {
 
       proc = procedureMockUtils.getInstance<Params, FungibleAsset, Storage>(mockContext, {
         customTypeData: {
-          id: dsMockUtils.createMockU32(),
+          rawId: dsMockUtils.createMockU32(),
           rawValue: dsMockUtils.createMockBytes('something'),
+          isAlreadyCreated: false,
         },
         status: TickerReservationStatus.Reserved,
         signingIdentity,
@@ -756,8 +759,9 @@ describe('createAsset procedure', () => {
 
       proc = procedureMockUtils.getInstance<Params, FungibleAsset, Storage>(mockContext, {
         customTypeData: {
-          id: dsMockUtils.createMockU32(new BigNumber(10)),
+          rawId: dsMockUtils.createMockU32(new BigNumber(10)),
           rawValue: dsMockUtils.createMockBytes('something'),
+          isAlreadyCreated: true,
         },
         status: TickerReservationStatus.Reserved,
         signingIdentity,
@@ -778,8 +782,9 @@ describe('createAsset procedure', () => {
 
       proc = procedureMockUtils.getInstance<Params, FungibleAsset, Storage>(mockContext, {
         customTypeData: {
-          id: dsMockUtils.createMockU32(new BigNumber(10)),
+          rawId: dsMockUtils.createMockU32(new BigNumber(10)),
           rawValue: dsMockUtils.createMockBytes('something'),
+          isAlreadyCreated: true,
         },
         status: TickerReservationStatus.Free,
         signingIdentity,
@@ -853,8 +858,9 @@ describe('createAsset procedure', () => {
 
       expect(result).toEqual({
         customTypeData: {
+          isAlreadyCreated: true,
           rawValue,
-          id,
+          rawId: id,
         },
         status: TickerReservationStatus.Reserved,
         signingIdentity,
@@ -868,7 +874,8 @@ describe('createAsset procedure', () => {
       expect(result).toEqual({
         customTypeData: {
           rawValue,
-          id,
+          rawId: id,
+          isAlreadyCreated: true,
         },
         status: TickerReservationStatus.Reserved,
         signingIdentity,

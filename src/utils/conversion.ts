@@ -183,6 +183,8 @@ import {
   CorporateActionTargets,
   CountryCode,
   CountTransferRestrictionInput,
+  CreateAssetParams,
+  CreateNftCollectionParams,
   CustomClaimTypeWithDid,
   DividendDistributionParams,
   ErrorCode,
@@ -261,6 +263,7 @@ import {
 import {
   AssetIdKey,
   CorporateActionIdentifier,
+  CustomTypeData,
   ExemptKey,
   ExtrinsicIdentifier,
   InstructionStatus,
@@ -1883,6 +1886,26 @@ export function internalNftTypeToNftType(
   context: Context
 ): PolymeshPrimitivesAssetNonFungibleType {
   return context.createType('PolymeshPrimitivesAssetNonFungibleType', type);
+}
+
+/**
+ * @hidden
+ */
+export function getInternalNftType(
+  customTypeData: CustomTypeData | null,
+  nftType: CreateNftCollectionParams['nftType']
+): InternalNftType {
+  return customTypeData ? { Custom: customTypeData.rawId } : (nftType as KnownNftType);
+}
+
+/**
+ * @hidden
+ */
+export function getInternalAssetType(
+  customTypeData: CustomTypeData | null,
+  assetType: CreateAssetParams['assetType']
+): InternalAssetType {
+  return customTypeData ? { Custom: customTypeData.rawId } : (assetType as KnownAssetType);
 }
 
 /**

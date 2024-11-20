@@ -147,9 +147,11 @@ import {
   statsClaimToStatClaimInputType,
   stringToAccountId,
   stringToAssetId,
+  stringToBytes,
   stringToTicker,
   tickerToString,
   transferRestrictionTypeToStatOpType,
+  u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { hexToUuid, isHexUuid, isUuid, uuidToHex } from '~/utils/strings';
@@ -2377,4 +2379,59 @@ export function isV6Spec(specName: string, specVersion: number): boolean {
     (specVersion > 3000000 && specVersion < 7000000) ||
     (specName === 'polymesh_private_dev' && specVersion < 2000000)
   );
+}
+
+/**
+ * @hidden
+ */
+export async function prepareStorageForCustomType(
+  customType: string | BigNumber,
+  knownTypes: string[],
+  context: Context
+): Promise<Storage['customTypeData']> {
+  let customTypeData: Storage['customTypeData'];
+
+  if (customType instanceof BigNumber) {
+    const rawId = bigNumberToU32(customType, context);
+    const rawValue = await context.polymeshApi.query.asset.customTypes(rawId);
+
+    if (rawValue.isEmpty) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message:
+          'createNftCollection was given a custom type ID that does not have an corresponding value',
+        data: { customType },
+      });
+    }
+
+    customTypeData = {
+      rawId,
+      rawValue,
+      isAlreadyCreated: true,
+    };
+  } else if (!knownTypes.includes(customType)) {
+    const rawValue = stringToBytes(customType, context);
+    const rawId = await context.polymeshApi.query.asset.customTypesInverse(rawValue);
+
+    if (rawId.isNone) {
+      const rawCustomAssetTypeId = await context.polymeshApi.query.asset.customTypeIdSequence();
+      const nextCustomAssetTypeId = u32ToBigNumber(rawCustomAssetTypeId).plus(1);
+
+      customTypeData = {
+        rawId: bigNumberToU32(nextCustomAssetTypeId, context),
+        rawValue,
+        isAlreadyCreated: false,
+      };
+    } else {
+      customTypeData = {
+        rawId: rawId.unwrap(),
+        rawValue,
+        isAlreadyCreated: true,
+      };
+    }
+  } else {
+    customTypeData = null;
+  }
+
+  return customTypeData;
 }
