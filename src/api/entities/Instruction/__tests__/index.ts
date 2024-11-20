@@ -734,7 +734,81 @@ describe('Instruction class', () => {
     const did = 'someDid';
     const status = AffirmationStatus.Affirmed;
 
+    let rawStorageKey: [u64, PolymeshPrimitivesIdentityIdPortfolioId][];
+
+    let instructionStatusesMock: jest.Mock;
+
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    beforeAll(() => {
+      rawStorageKey = [
+        tuple(
+          dsMockUtils.createMockU64(),
+          dsMockUtils.createMockPortfolioId({
+            did: dsMockUtils.createMockIdentityId(did),
+            kind: dsMockUtils.createMockPortfolioKind('Default'),
+          })
+        ),
+      ];
+      const authsReceivedEntries = rawStorageKey.map(([instructionId, portfolioId]) =>
+        tuple(
+          {
+            args: [instructionId, portfolioId],
+          } as unknown as StorageKey,
+          dsMockUtils.createMockAffirmationStatus(AffirmationStatus.Affirmed)
+        )
+      );
+      jest
+        .spyOn(utilsInternalModule, 'requestPaginated')
+        .mockResolvedValue({ entries: authsReceivedEntries, lastKey: null });
+
+      jest.spyOn(utilsConversionModule, 'identityIdToString').mockClear().mockReturnValue(did);
+      jest
+        .spyOn(utilsConversionModule, 'meshAffirmationStatusToAffirmationStatus')
+        .mockReturnValue(status);
+    });
+
+    beforeEach(() => {
+      dsMockUtils.configureMocks({ contextOptions: { middlewareAvailable: false } });
+      dsMockUtils.createQueryMock('settlement', 'instructionCounter', {
+        returnValue: dsMockUtils.createMockU64(new BigNumber(1000)),
+      });
+      instructionStatusesMock = dsMockUtils.createQueryMock('settlement', 'instructionStatuses');
+
+      instructionStatusesMock.mockResolvedValue(
+        createMockInstructionStatus(InternalInstructionStatus.Pending)
+      );
+      dsMockUtils.createQueryMock('settlement', 'affirmsReceived');
+    });
+
+    it('should throw an error if the start value is passed as a number when querying from chain', () => {
+      return expect(
+        instruction.getAffirmations({ start: new BigNumber(2), size: new BigNumber(1) })
+      ).rejects.toThrow('`start` should be of type string to query the data from chain');
+    });
+
+    it('should throw an error if the instruction is not pending when querying from chain', () => {
+      instructionStatusesMock.mockResolvedValue(dsMockUtils.createMockInstructionStatus('Success'));
+
+      return expect(instruction.getAffirmations()).rejects.toThrow(
+        'Instruction has already been executed/rejected and it was purged from chain'
+      );
+    });
+
+    it('should return a list of Affirmation Statuses when querying from chain', async () => {
+      const { data } = await instruction.getAffirmations();
+
+      expect(data).toHaveLength(1);
+      expect(data[0].identity.did).toEqual(did);
+      expect(data[0].status).toEqual(status);
+    });
+
     describe('querying from middleware', () => {
+      beforeEach(() => {
+        dsMockUtils.configureMocks({ contextOptions: { middlewareAvailable: true } });
+      });
       it('should throw an error if the start value is passed as a string', () => {
         return expect(
           instruction.getAffirmations({ start: 'IncorrectValue', size: new BigNumber(1) })
@@ -758,7 +832,7 @@ describe('Instruction class', () => {
             },
           }
         );
-        const { data, next, count } = await instruction.getAffirmations({
+        let { data, next, count } = await instruction.getAffirmations({
           start,
           size,
         });
@@ -769,81 +843,22 @@ describe('Instruction class', () => {
 
         expect(next).toBeNull();
         expect(count).toEqual(new BigNumber(1));
-      });
-    });
 
-    describe('querying from chain', () => {
-      let rawStorageKey: [u64, PolymeshPrimitivesIdentityIdPortfolioId][];
-
-      let instructionStatusesMock: jest.Mock;
-
-      afterAll(() => {
-        jest.restoreAllMocks();
-      });
-
-      beforeAll(() => {
-        rawStorageKey = [
-          tuple(
-            dsMockUtils.createMockU64(),
-            dsMockUtils.createMockPortfolioId({
-              did: dsMockUtils.createMockIdentityId(did),
-              kind: dsMockUtils.createMockPortfolioKind('Default'),
-            })
-          ),
-        ];
-        const authsReceivedEntries = rawStorageKey.map(([instructionId, portfolioId]) =>
-          tuple(
-            {
-              args: [instructionId, portfolioId],
-            } as unknown as StorageKey,
-            dsMockUtils.createMockAffirmationStatus(AffirmationStatus.Affirmed)
-          )
-        );
-        jest
-          .spyOn(utilsInternalModule, 'requestPaginated')
-          .mockResolvedValue({ entries: authsReceivedEntries, lastKey: null });
-
-        jest.spyOn(utilsConversionModule, 'identityIdToString').mockClear().mockReturnValue(did);
-        jest
-          .spyOn(utilsConversionModule, 'meshAffirmationStatusToAffirmationStatus')
-          .mockReturnValue(status);
-      });
-
-      beforeEach(() => {
-        dsMockUtils.configureMocks({ contextOptions: { middlewareAvailable: false } });
-        dsMockUtils.createQueryMock('settlement', 'instructionCounter', {
-          returnValue: dsMockUtils.createMockU64(new BigNumber(1000)),
-        });
-        instructionStatusesMock = dsMockUtils.createQueryMock('settlement', 'instructionStatuses');
-
-        instructionStatusesMock.mockResolvedValue(
-          createMockInstructionStatus(InternalInstructionStatus.Pending)
-        );
-        dsMockUtils.createQueryMock('settlement', 'affirmsReceived');
-      });
-
-      it('should throw an error if the start value is passed as a number', () => {
-        return expect(
-          instruction.getAffirmations({ start: new BigNumber(2), size: new BigNumber(1) })
-        ).rejects.toThrow('`start` should be of type string to query the data from chain');
-      });
-
-      it('should throw an error if the instruction is not pending', () => {
-        instructionStatusesMock.mockResolvedValue(
-          dsMockUtils.createMockInstructionStatus('Success')
+        dsMockUtils.createApolloQueryMock(
+          instructionAffirmationsQuery({ instructionId: id.toString() }),
+          {
+            instructionAffirmations: {
+              nodes: [],
+              totalCount: new BigNumber(0),
+            },
+          }
         );
 
-        return expect(instruction.getAffirmations()).rejects.toThrow(
-          'Instruction has already been executed/rejected and it was purged from chain'
-        );
-      });
+        ({ data, next, count } = await instruction.getAffirmations());
 
-      it('should return a list of Affirmation Statuses', async () => {
-        const { data } = await instruction.getAffirmations();
-
-        expect(data).toHaveLength(1);
-        expect(data[0].identity.did).toEqual(did);
-        expect(data[0].status).toEqual(status);
+        expect(data).toEqual([]);
+        expect(next).toBeNull();
+        expect(count).toEqual(new BigNumber(0));
       });
     });
   });
@@ -888,44 +903,58 @@ describe('Instruction class', () => {
         };
 
         dsMockUtils.createApolloQueryMock(
-          legsQuery(
-            {
-              instructionId: id.toString(),
-            },
-            new BigNumber(2),
-            new BigNumber(0)
-          ),
+          legsQuery({
+            instructionId: id.toString(),
+          }),
           {
             legs: {
               nodes: [mockLeg1, mockLeg2],
-              totalCount: new BigNumber(3),
+              totalCount: new BigNumber(2),
             },
           }
         );
 
-        const {
-          data: leg,
-          count,
-          next,
-        } = await instruction.getLegs({
-          size: new BigNumber(2),
-          start: new BigNumber(0),
-        });
+        let { data, count, next } = await instruction.getLegs();
 
-        expect(count).toEqual(new BigNumber(3));
-        expect(next).toEqual(new BigNumber(2));
+        expect(count).toEqual(new BigNumber(2));
+        expect(next).toBeNull();
 
-        const resultLeg1 = leg[0] as FungibleLeg;
+        const resultLeg1 = data[0] as FungibleLeg;
         expect(resultLeg1.amount).toEqual(amount);
         expect(resultLeg1.asset.id).toBe(hexToUuid(assetId));
         expect(resultLeg1.from.owner.did).toBe(fromDid);
         expect(resultLeg1.to.owner.did).toBe(toDid);
 
-        const resultLeg2 = leg[1] as FungibleLeg;
+        const resultLeg2 = data[1] as FungibleLeg;
         expect(resultLeg2.amount).toEqual(amount);
         expect(resultLeg2.asset.id).toBe(hexToUuid(assetId2));
         expect(resultLeg2.from.owner.did).toBe(fromDid);
         expect(resultLeg2.to.owner.did).toBe(toDid);
+
+        dsMockUtils.createApolloQueryMock(
+          legsQuery(
+            {
+              instructionId: id.toString(),
+            },
+            new BigNumber(2),
+            new BigNumber(2)
+          ),
+          {
+            legs: {
+              nodes: [],
+              totalCount: new BigNumber(2),
+            },
+          }
+        );
+
+        ({ data, next, count } = await instruction.getLegs({
+          size: new BigNumber(2),
+          start: new BigNumber(2),
+        }));
+
+        expect(data).toEqual([]);
+        expect(next).toBeNull();
+        expect(count).toEqual(new BigNumber(2));
       });
     });
 
