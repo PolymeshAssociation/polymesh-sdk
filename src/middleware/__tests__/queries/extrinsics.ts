@@ -1,5 +1,6 @@
 import { extrinsicByHash, extrinsicsByArgs } from '~/middleware/queries/extrinsics';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
+import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 
 describe('extrinsicByHash', () => {
   it('should pass the variables to the grapqhl query', () => {
@@ -19,7 +20,7 @@ describe('extrinsicsByArgs', () => {
     let result = extrinsicsByArgs({});
 
     expect(result.query).toBeDefined();
-    expect(result.variables).toEqual({});
+    expect(result.variables).toEqual({ size: DEFAULT_GQL_PAGE_SIZE, start: 0 });
 
     const variables = {
       blockId: '123',
@@ -27,6 +28,8 @@ describe('extrinsicsByArgs', () => {
       moduleId: ModuleIdEnum.Asset,
       callId: CallIdEnum.CreateAsset,
       success: 1,
+      size: DEFAULT_GQL_PAGE_SIZE,
+      start: 0,
     };
 
     result = extrinsicsByArgs(variables);

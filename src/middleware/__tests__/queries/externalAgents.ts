@@ -6,6 +6,7 @@ import {
   tickerExternalAgentsQuery,
 } from '~/middleware/queries/externalAgents';
 import { EventIdEnum } from '~/types';
+import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 
 describe('tickerExternalAgentsQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
@@ -38,13 +39,15 @@ describe('tickerExternalAgentActionsQuery', () => {
     let result = tickerExternalAgentActionsQuery({});
 
     expect(result.query).toBeDefined();
-    expect(result.variables).toEqual({});
+    expect(result.variables).toEqual({ size: DEFAULT_GQL_PAGE_SIZE, start: 0 });
 
     const variables = {
       assetId: 'SOME_TICKER',
       callerId: 'someDid',
       palletName: 'asset',
       eventId: EventIdEnum.ControllerTransfer,
+      size: DEFAULT_GQL_PAGE_SIZE,
+      start: 0,
     };
 
     result = tickerExternalAgentActionsQuery(variables);

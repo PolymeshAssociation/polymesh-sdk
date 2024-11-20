@@ -19,6 +19,8 @@ describe('instructionsQuery', () => {
     const variables = {
       status: InstructionStatusEnum.Executed,
       id: '1',
+      size: DEFAULT_GQL_PAGE_SIZE,
+      start: 0,
     };
 
     let result = instructionsQuery(variables);
@@ -196,6 +198,8 @@ describe('instructionEventsQuery', () => {
     const variables = {
       event: InstructionEventEnum.InstructionExecuted,
       instructionId: '1',
+      size: DEFAULT_GQL_PAGE_SIZE,
+      start: 0,
     };
     let result = instructionEventsQuery(variables);
     expect(result.query).toBeDefined();

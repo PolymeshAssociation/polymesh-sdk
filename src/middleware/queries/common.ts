@@ -1,7 +1,9 @@
 import { QueryOptions } from '@apollo/client/core';
+import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
 import { BlocksOrderBy, SubqueryVersionsOrderBy } from '~/middleware/types';
+import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 
 /**
  * @hidden
@@ -130,4 +132,35 @@ export function createArgsAndFilters(
     args: `(${args.join()})`,
     filter: gqlFilters.length ? `filter: { ${gqlFilters.join()} }` : '',
   };
+}
+
+/**
+ * Create args and filters to be supplied to GQL query
+ *
+ * @param size - size of the page
+ * @param start - offset of the page
+ *
+ * @hidden
+ */
+export function getSizeAndOffset(
+  size?: BigNumber,
+  start?: BigNumber
+): { size: number; start: number } {
+  return {
+    size: size?.toNumber() || DEFAULT_GQL_PAGE_SIZE,
+    start: start?.toNumber() || 0,
+  };
+}
+
+/**
+ * Remove undefined values from the variables object
+ *
+ * @param variables - variables to be supplied to GQL query
+ *
+ * @hidden
+ */
+export function removeUndefinedValues(
+  variables: Record<string | number | symbol, unknown>
+): Record<string | number | symbol, unknown> {
+  return Object.fromEntries(Object.entries(variables).filter(([, value]) => value !== undefined));
 }

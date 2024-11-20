@@ -2,6 +2,7 @@ import { QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
+import { getSizeAndOffset } from '~/middleware/queries/common';
 import { PolyxTransactionsOrderBy } from '~/middleware/types';
 import { PaginatedQueryArgs } from '~/types/utils';
 
@@ -97,6 +98,6 @@ export function polyxTransactionsQuery(
 
   return {
     query,
-    variables: { ...variables, size: size?.toNumber(), start: start?.toNumber() },
+    variables: { ...variables, ...getSizeAndOffset(size, start) },
   };
 }
