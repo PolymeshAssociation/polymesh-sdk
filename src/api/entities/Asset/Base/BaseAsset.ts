@@ -131,6 +131,8 @@ export class BaseAsset extends Entity<UniqueIdentifiers, string> {
    * Modify some properties of the Asset
    *
    * @throws if the passed values result in no changes being made to the Asset
+   * @throws if the passed assetType is not a known asset type or a custom type that has not been created on the chain
+   * @throws if trying to modify an NftCollection's assetType
    */
   public modify: ProcedureMethod<ModifyAssetParams, Asset>;
 

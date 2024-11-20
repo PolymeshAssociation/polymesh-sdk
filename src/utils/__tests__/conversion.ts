@@ -245,6 +245,8 @@ import {
   fundraiserTierToTier,
   fundraiserToOfferingDetails,
   fungibleMovementToPortfolioFund,
+  getInternalAssetType,
+  getInternalNftType,
   granularCanTransferResultToTransferBreakdown,
   hashToString,
   identitiesSetToIdentities,
@@ -11555,5 +11557,77 @@ describe('childKeysWithAuthToCreateChildIdentitiesWithAuth', () => {
     const result = childKeysWithAuthToCreateChildIdentitiesWithAuth(childKeyAuths, context);
 
     expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('getInternalAssetType', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return custom asset type with raw ID when customTypeData is provided', () => {
+    const customTypeData = {
+      rawId: dsMockUtils.createMockU32(new BigNumber(1)),
+      rawValue: dsMockUtils.createMockBytes('Custom Type'),
+      isAlreadyCreated: true,
+    };
+    const assetType = KnownAssetType.EquityCommon;
+
+    const result = getInternalAssetType(customTypeData, assetType);
+
+    expect(result).toEqual({ Custom: customTypeData.rawId });
+  });
+
+  it('should return known asset type when customTypeData is null', () => {
+    const customTypeData = null;
+    const assetType = KnownAssetType.EquityCommon;
+
+    const result = getInternalAssetType(customTypeData, assetType);
+
+    expect(result).toEqual(assetType);
+  });
+});
+
+describe('getInternalNftType', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return custom nft type with raw ID when customTypeData is provided', () => {
+    const customTypeData = {
+      rawId: dsMockUtils.createMockU32(new BigNumber(1)),
+      rawValue: dsMockUtils.createMockBytes('Custom Type'),
+      isAlreadyCreated: true,
+    };
+    const assetType = KnownAssetType.EquityCommon;
+
+    const result = getInternalNftType(customTypeData, assetType);
+
+    expect(result).toEqual({ Custom: customTypeData.rawId });
+  });
+
+  it('should return known nft type when customTypeData is null', () => {
+    const customTypeData = null;
+    const assetType = KnownNftType.Derivative;
+
+    const result = getInternalNftType(customTypeData, assetType);
+
+    expect(result).toEqual(assetType);
   });
 });
