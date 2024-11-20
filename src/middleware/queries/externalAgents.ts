@@ -2,7 +2,7 @@ import { QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
-import { createArgsAndFilters } from '~/middleware/queries/common';
+import { createArgsAndFilters, getSizeAndOffset } from '~/middleware/queries/common';
 import {
   TickerExternalAgent,
   TickerExternalAgentAction,
@@ -122,6 +122,6 @@ export function tickerExternalAgentActionsQuery(
 
   return {
     query,
-    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+    variables: { ...filters, ...getSizeAndOffset(size, start) },
   };
 }

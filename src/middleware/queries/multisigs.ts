@@ -2,6 +2,7 @@ import { QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
+import { getSizeAndOffset } from '~/middleware/queries/common';
 import {
   MultiSigProposal,
   MultiSigProposalVote,
@@ -127,6 +128,6 @@ export function multiSigProposalsQuery(
 
   return {
     query,
-    variables: { size: size?.toNumber(), start: start?.toNumber(), multisigId },
+    variables: { ...getSizeAndOffset(size, start), multisigId },
   };
 }

@@ -2,6 +2,7 @@ import { QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
+import { getSizeAndOffset } from '~/middleware/queries/common';
 import { Investment, InvestmentsOrderBy } from '~/middleware/types';
 import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
 
@@ -37,6 +38,6 @@ export function investmentsQuery(
 
   return {
     query,
-    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+    variables: { ...filters, ...getSizeAndOffset(size, start) },
   };
 }

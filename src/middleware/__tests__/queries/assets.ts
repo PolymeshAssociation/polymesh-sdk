@@ -7,6 +7,7 @@ import {
   nftCollectionHolders,
   nftHoldersQuery,
 } from '~/middleware/queries/assets';
+import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 
 describe('assetQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
@@ -25,6 +26,8 @@ describe('assetHoldersQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
     const variables = {
       identityId: 'someDid',
+      size: DEFAULT_GQL_PAGE_SIZE,
+      start: 0,
     };
 
     let result = assetHoldersQuery(variables);
@@ -47,6 +50,8 @@ describe('nftHoldersQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
     const variables = {
       identityId: 'someDid',
+      size: DEFAULT_GQL_PAGE_SIZE,
+      start: 0,
     };
 
     let result = nftHoldersQuery(variables);
@@ -54,7 +59,7 @@ describe('nftHoldersQuery', () => {
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
 
-    result = assetHoldersQuery(variables, new BigNumber(1), new BigNumber(0));
+    result = nftHoldersQuery(variables, new BigNumber(1), new BigNumber(0));
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual({
@@ -69,6 +74,8 @@ describe('assetTransactionQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
     const variables = {
       assetId: 'SOME_TICKER',
+      size: DEFAULT_GQL_PAGE_SIZE,
+      start: 0,
     };
 
     let result = assetTransactionQuery(variables);
@@ -93,7 +100,7 @@ describe('nftCollectionHoldersQuery', () => {
     let result = nftCollectionHolders('TICKER');
 
     expect(result.query).toBeDefined();
-    expect(result.variables).toEqual({ assetId: 'TICKER' });
+    expect(result.variables).toEqual({ assetId: 'TICKER', size: DEFAULT_GQL_PAGE_SIZE, start: 0 });
 
     result = nftCollectionHolders(ticker, new BigNumber(1), new BigNumber(0));
 

@@ -2,6 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { authorizationsQuery } from '~/middleware/queries/authorizations';
 import { AuthorizationStatusEnum, AuthTypeEnum } from '~/middleware/types';
+import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 
 describe('authorizationsQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
@@ -15,6 +16,8 @@ describe('authorizationsQuery', () => {
       toKey: 'someKey',
       type: AuthTypeEnum.RotatePrimaryKey,
       status: AuthorizationStatusEnum.Consumed,
+      size: DEFAULT_GQL_PAGE_SIZE,
+      start: 0,
     };
 
     result = authorizationsQuery(variables);

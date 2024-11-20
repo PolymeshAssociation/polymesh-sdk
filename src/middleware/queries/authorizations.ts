@@ -2,6 +2,7 @@ import { QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
+import { getSizeAndOffset, removeUndefinedValues } from '~/middleware/queries/common';
 import { Authorization, AuthorizationsOrderBy } from '~/middleware/types';
 import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
 
@@ -56,6 +57,7 @@ export function authorizationsQuery(
   start?: BigNumber
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<Authorization, AuthorizationArgs>>> {
   const { args, filter } = createAuthorizationFilters(filters);
+
   const query = gql`
     query AuthorizationsQuery
       ${args}
@@ -85,6 +87,6 @@ export function authorizationsQuery(
 
   return {
     query,
-    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+    variables: removeUndefinedValues({ ...filters, ...getSizeAndOffset(size, start) }),
   };
 }
