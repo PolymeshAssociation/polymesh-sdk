@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
 import { Context } from '~/internal';
-import { createArgsAndFilters } from '~/middleware/queries/common';
+import { createArgsAndFilters, getSizeAndOffset } from '~/middleware/queries/common';
 import {
   Instruction,
   InstructionEvent,
@@ -116,7 +116,7 @@ export function instructionEventsQuery(
 
   return {
     query,
-    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+    variables: { ...filters, ...getSizeAndOffset(size, start) },
   };
 }
 
@@ -153,7 +153,7 @@ export function instructionsQuery(
 
   return {
     query,
-    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+    variables: { ...filters, ...getSizeAndOffset(size, start) },
   };
 }
 
@@ -237,18 +237,10 @@ export const buildInstructionPartiesFilter = async (
     baseFilter.push(`instruction: { ${instructionFilter.join(', ')} }`);
   }
 
-  if (size) {
-    variables.size = size.toNumber();
-  }
-
-  if (start) {
-    variables.start = start.toNumber();
-  }
-
   return {
     args: `(${args.join()})`,
     filter: baseFilter.length ? `filter: { ${baseFilter.join(', ')} }` : '',
-    variables,
+    variables: { ...variables, ...getSizeAndOffset(size, start) },
   };
 };
 

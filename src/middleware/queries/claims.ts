@@ -2,6 +2,7 @@ import { QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
+import { getSizeAndOffset, removeUndefinedValues } from '~/middleware/queries/common';
 import {
   ClaimsGroupBy,
   ClaimsOrderBy,
@@ -88,7 +89,7 @@ export function claimsGroupingQuery(
 
   return {
     query,
-    variables,
+    variables: removeUndefinedValues(variables as Record<string, unknown>),
   };
 }
 
@@ -131,18 +132,13 @@ export function claimsQuery(
       }
     `;
 
-  const variables = Object.fromEntries(
-    Object.entries({
-      ...filters,
-      expiryTimestamp: filters.includeExpired ? undefined : new Date().getTime(),
-      size: size?.toNumber(),
-      start: start?.toNumber(),
-    }).filter(([, value]) => value !== undefined)
-  );
-
   return {
     query,
-    variables,
+    variables: removeUndefinedValues({
+      ...filters,
+      expiryTimestamp: filters.includeExpired ? undefined : new Date().getTime(),
+      ...getSizeAndOffset(size, start),
+    }),
   };
 }
 
@@ -267,6 +263,6 @@ export function customClaimTypeQuery(
 
   return {
     query,
-    variables: { size: size?.toNumber(), start: start?.toNumber(), dids },
+    variables: removeUndefinedValues({ ...getSizeAndOffset(size, start), dids }),
   };
 }
