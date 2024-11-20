@@ -427,7 +427,8 @@ export async function prepareStorage(
   const customTypeData = await prepareStorageForCustomType(
     assetType,
     values(KnownAssetType),
-    context
+    context,
+    'createAsset'
   );
 
   return {

@@ -2387,7 +2387,8 @@ export function isV6Spec(specName: string, specVersion: number): boolean {
 export async function prepareStorageForCustomType(
   customType: string | BigNumber,
   knownTypes: string[],
-  context: Context
+  context: Context,
+  method: string
 ): Promise<Storage['customTypeData']> {
   let customTypeData: Storage['customTypeData'];
 
@@ -2398,8 +2399,7 @@ export async function prepareStorageForCustomType(
     if (rawValue.isEmpty) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
-        message:
-          'createNftCollection was given a custom type ID that does not have an corresponding value',
+        message: `${method} was given a custom type ID that does not have an corresponding value`,
         data: { customType },
       });
     }
