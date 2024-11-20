@@ -5,6 +5,7 @@ import {
   multiSigProposalsQuery,
   multiSigProposalVotesQuery,
 } from '~/middleware/queries/multisigs';
+import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 
 describe('multiSigProposalQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
@@ -39,7 +40,7 @@ describe('multiSigProposalsQuery', () => {
   it('should return correct query and variables when size, start are not provided', () => {
     const result = multiSigProposalsQuery(multisigId);
     expect(result.query).toBeDefined();
-    expect(result.variables).toEqual({ size: undefined, start: undefined, multisigId });
+    expect(result.variables).toEqual({ size: DEFAULT_GQL_PAGE_SIZE, start: 0, multisigId });
   });
 
   it('should return correct query and variables when size, start are provided', () => {

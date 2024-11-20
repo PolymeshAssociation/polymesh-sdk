@@ -2,6 +2,7 @@ import { QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
+import { getSizeAndOffset } from '~/middleware/queries/common';
 import {
   Asset,
   AssetHolder,
@@ -75,7 +76,10 @@ export function assetHoldersQuery(
 
   return {
     query,
-    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+    variables: {
+      ...filters,
+      ...getSizeAndOffset(size, start),
+    },
   };
 }
 
@@ -112,7 +116,7 @@ export function nftHoldersQuery(
 
   return {
     query,
-    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+    variables: { ...filters, ...getSizeAndOffset(size, start) },
   };
 }
 
@@ -161,7 +165,7 @@ export function assetTransactionQuery(
 
   return {
     query,
-    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+    variables: { ...filters, ...getSizeAndOffset(size, start) },
   };
 }
 
@@ -194,6 +198,6 @@ export function nftCollectionHolders(
 
   return {
     query,
-    variables: { size: size?.toNumber(), start: start?.toNumber(), assetId },
+    variables: { ...getSizeAndOffset(size, start), assetId },
   };
 }

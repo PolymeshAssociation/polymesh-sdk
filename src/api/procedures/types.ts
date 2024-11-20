@@ -664,8 +664,9 @@ export interface CreateAssetParams {
    * type of security that the Asset represents (e.g. Equity, Debt, Commodity). Common values are included in the
    *   {@link types!KnownAssetType} enum, but custom values can be used as well. Custom values must be registered on-chain the first time
    *   they're used, requiring an additional transaction. They aren't tied to a specific Asset
+   *   if using a custom type, it can be provided as a string (representing name) or a BigNumber (representing the custom type ID)
    */
-  assetType: KnownAssetType | string;
+  assetType: KnownAssetType | string | BigNumber;
   /**
    * array of domestic or international alphanumeric security identifiers for the Asset (e.g. ISIN, CUSIP, FIGI)
    */
@@ -1143,24 +1144,35 @@ export type ModifyAssetParams =
       name: string;
       fundingRound?: string;
       identifiers?: SecurityIdentifier[];
+      assetType?: KnownAssetType | string | BigNumber;
     }
   | {
       makeDivisible: true;
       name?: string;
       fundingRound?: string;
       identifiers?: SecurityIdentifier[];
+      assetType?: KnownAssetType | string | BigNumber;
     }
   | {
       makeDivisible?: true;
       name?: string;
       fundingRound: string;
       identifiers?: SecurityIdentifier[];
+      assetType?: KnownAssetType | string | BigNumber;
     }
   | {
       makeDivisible?: true;
       name?: string;
       fundingRound?: string;
       identifiers: SecurityIdentifier[];
+      assetType?: KnownAssetType | string | BigNumber;
+    }
+  | {
+      makeDivisible?: true;
+      name?: string;
+      fundingRound?: string;
+      identifiers?: SecurityIdentifier[];
+      assetType: KnownAssetType | string | BigNumber;
     };
 
 export type NftMetadataInput = {

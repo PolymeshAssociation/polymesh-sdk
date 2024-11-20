@@ -1,4 +1,3 @@
-import { Bytes, u32 } from '@polkadot/types';
 import { PolymeshPrimitivesAssetAssetId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
@@ -22,7 +21,12 @@ import {
   TickerReservationStatus,
   TxTags,
 } from '~/types';
-import { BatchTransactionSpec, ProcedureAuthorization, TxWithArgs } from '~/types/internal';
+import {
+  BatchTransactionSpec,
+  CustomTypeData,
+  ProcedureAuthorization,
+  TxWithArgs,
+} from '~/types/internal';
 import {
   assetDocumentToDocument,
   bigNumberToBalance,
@@ -35,10 +39,14 @@ import {
   securityIdentifierToAssetIdentifier,
   statisticStatTypesToBtreeStatType,
   stringToAssetId,
-  stringToBytes,
   stringToTicker,
 } from '~/utils/conversion';
-import { checkTxType, isAllowedCharacters, optionize } from '~/utils/internal';
+import {
+  checkTxType,
+  isAllowedCharacters,
+  optionize,
+  prepareStorageForCustomType,
+} from '~/utils/internal';
 
 /**
  * @hidden
@@ -55,10 +63,7 @@ export interface Storage {
    * fetched custom asset type ID and raw value in bytes. If `id.isEmpty`, then the type should be registered. A
    *   null value means the type is not custom
    */
-  customTypeData: {
-    id: u32;
-    rawValue: Bytes;
-  } | null;
+  customTypeData: CustomTypeData | null;
 
   status?: TickerReservationStatus;
 
@@ -134,9 +139,9 @@ async function getCreateAssetTransaction(
   const rawFundingRound = optionize(fundingRoundToAssetFundingRound)(fundingRound, context);
 
   if (customTypeData) {
-    const { rawValue: rawAssetType, id } = customTypeData;
+    const { rawValue: rawAssetType, rawId, isAlreadyCreated } = customTypeData;
 
-    if (id.isEmpty) {
+    if (!isAlreadyCreated) {
       /*
        * We add the fee for registering a custom asset type in case we're calculating
        * the Asset creation fees manually
@@ -149,7 +154,7 @@ async function getCreateAssetTransaction(
         args: [...rawNameTickerArgs, rawIsDivisible, rawAssetType, rawIdentifiers, rawFundingRound],
       });
     } else {
-      const rawType = internalAssetTypeToAssetType({ Custom: id }, context);
+      const rawType = internalAssetTypeToAssetType({ Custom: rawId }, context);
 
       return checkTxType({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -378,7 +383,7 @@ export async function getAuthorization(
     transactions.push(TxTags.asset.AddDocuments);
   }
 
-  if (customTypeData?.id.isEmpty) {
+  if (customTypeData?.rawId.isEmpty) {
     transactions.push(TxTags.asset.RegisterCustomAssetType);
   }
 
@@ -419,26 +424,15 @@ export async function prepareStorage(
   }
   const signingIdentity = await context.getSigningIdentity();
 
-  const isCustomType = !values<string>(KnownAssetType).includes(assetType);
-
-  if (isCustomType) {
-    const rawValue = stringToBytes(assetType, context);
-    const rawId = await context.polymeshApi.query.asset.customTypesInverse(rawValue);
-
-    const id = rawId.unwrapOrDefault();
-
-    return {
-      customTypeData: {
-        id,
-        rawValue,
-      },
-      status,
-      signingIdentity,
-    };
-  }
+  const customTypeData = await prepareStorageForCustomType(
+    assetType,
+    values(KnownAssetType),
+    context,
+    'createAsset'
+  );
 
   return {
-    customTypeData: null,
+    customTypeData,
     status,
     signingIdentity,
   };

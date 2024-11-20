@@ -1,14 +1,24 @@
+import { PolymeshPrimitivesAssetAssetType } from '@polkadot/types/lookup';
+import BigNumber from 'bignumber.js';
+import { values } from 'lodash';
+
 import { BaseAsset, PolymeshError, Procedure } from '~/internal';
-import { Asset, ErrorCode, ModifyAssetParams, TxTags } from '~/types';
-import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
+import { Asset, ErrorCode, KnownAssetType, KnownNftType, ModifyAssetParams, TxTags } from '~/types';
+import { BatchTransactionSpec, CustomTypeData, ProcedureAuthorization } from '~/types/internal';
 import { isNftCollection } from '~/utils';
 import {
   assetToMeshAssetId,
   fundingRoundToAssetFundingRound,
+  internalAssetTypeToAssetType,
   nameToAssetName,
   securityIdentifierToAssetIdentifier,
 } from '~/utils/conversion';
-import { asAsset, checkTxType, hasSameElements } from '~/utils/internal';
+import {
+  asAsset,
+  checkTxType,
+  hasSameElements,
+  prepareStorageForCustomType,
+} from '~/utils/internal';
 
 /**
  * @hidden
@@ -18,11 +28,23 @@ export type Params = { asset: BaseAsset } & ModifyAssetParams;
 /**
  * @hidden
  */
+export interface Storage {
+  /**
+   * fetched custom asset type ID and raw value in bytes.
+   * A null value means the type is not custom
+   */
+  customTypeData: CustomTypeData | null;
+}
+
+/**
+ * @hidden
+ */
 export async function prepareModifyAsset(
-  this: Procedure<Params, Asset>,
+  this: Procedure<Params, Asset, Storage>,
   args: Params
 ): Promise<BatchTransactionSpec<Asset, unknown[][]>> {
   const {
+    storage,
     context: {
       polymeshApi: { tx },
     },
@@ -34,13 +56,15 @@ export async function prepareModifyAsset(
     name: newName,
     fundingRound: newFundingRound,
     identifiers: newIdentifiers,
+    assetType: newType,
   } = args;
 
   const noArguments =
     makeDivisible === undefined &&
     newName === undefined &&
     newFundingRound === undefined &&
-    newIdentifiers === undefined;
+    newIdentifiers === undefined &&
+    newType === undefined;
 
   if (noArguments) {
     throw new PolymeshError({
@@ -51,11 +75,8 @@ export async function prepareModifyAsset(
 
   const rawAssetId = assetToMeshAssetId(asset, context);
 
-  const [{ isDivisible, name }, fundingRound, identifiers] = await Promise.all([
-    asset.details(),
-    asset.currentFundingRound(),
-    asset.getIdentifiers(),
-  ]);
+  const [{ isDivisible, name, assetType, nonFungible }, fundingRound, identifiers] =
+    await Promise.all([asset.details(), asset.currentFundingRound(), asset.getIdentifiers()]);
 
   const transactions = [];
   if (makeDivisible) {
@@ -138,6 +159,63 @@ export async function prepareModifyAsset(
     );
   }
 
+  if (newType) {
+    const { customTypeData } = storage;
+
+    if (
+      (typeof newType === 'string' && newType === assetType) ||
+      (newType instanceof BigNumber && newType.eq(assetType))
+    ) {
+      throw new PolymeshError({
+        code: ErrorCode.NoDataChange,
+        message: 'New type is the same as current type',
+      });
+    }
+
+    if (nonFungible) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'The type for a NFT Collection cannot be modified',
+      });
+    }
+
+    if (
+      typeof newType === 'string' &&
+      !values<string>(KnownAssetType).includes(newType) &&
+      values<string>(KnownNftType).includes(newType)
+    ) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'KnownNftType cannot be used as an asset type',
+      });
+    }
+
+    if (customTypeData && !customTypeData.isAlreadyCreated) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The provided custom type has not been created on the chain',
+        data: { newType },
+      });
+    }
+
+    let rawType: PolymeshPrimitivesAssetAssetType;
+
+    if (customTypeData) {
+      const { rawId } = customTypeData;
+
+      rawType = internalAssetTypeToAssetType({ Custom: rawId }, context);
+    } else {
+      rawType = internalAssetTypeToAssetType(newType as KnownAssetType, context);
+    }
+
+    transactions.push(
+      checkTxType({
+        transaction: tx.asset.updateAssetType,
+        args: [rawAssetId, rawType],
+      })
+    );
+  }
+
   return { transactions, resolver: await asAsset(asset.id, context) };
 }
 
@@ -145,8 +223,8 @@ export async function prepareModifyAsset(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, Asset>,
-  { asset, makeDivisible, name, fundingRound, identifiers }: Params
+  this: Procedure<Params, Asset, Storage>,
+  { asset, makeDivisible, name, fundingRound, identifiers, assetType }: Params
 ): ProcedureAuthorization {
   const transactions = [];
 
@@ -166,6 +244,10 @@ export function getAuthorization(
     transactions.push(TxTags.asset.UpdateIdentifiers);
   }
 
+  if (assetType) {
+    transactions.push(TxTags.asset.UpdateAssetType);
+  }
+
   return {
     permissions: {
       transactions,
@@ -178,5 +260,28 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const modifyAsset = (): Procedure<Params, Asset> =>
-  new Procedure(prepareModifyAsset, getAuthorization);
+export async function prepareStorage(
+  this: Procedure<Params, Asset, Storage>,
+  { assetType }: Params
+): Promise<Storage> {
+  const { context } = this;
+
+  if (!assetType) {
+    return { customTypeData: null };
+  }
+
+  const customTypeData = await prepareStorageForCustomType(
+    assetType,
+    values(KnownAssetType),
+    context,
+    'modifyAsset'
+  );
+
+  return { customTypeData };
+}
+
+/**
+ * @hidden
+ */
+export const modifyAsset = (): Procedure<Params, Asset, Storage> =>
+  new Procedure(prepareModifyAsset, getAuthorization, prepareStorage);

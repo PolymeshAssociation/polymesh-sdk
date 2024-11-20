@@ -1,4 +1,3 @@
-import { Bytes, u32 } from '@polkadot/types';
 import { PolymeshPrimitivesAssetAssetId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
@@ -28,16 +27,16 @@ import {
 } from '~/types';
 import {
   BatchTransactionSpec,
-  InternalNftType,
+  CustomTypeData,
   ProcedureAuthorization,
   TxWithArgs,
 } from '~/types/internal';
 import {
   assetDocumentToDocument,
   assetToMeshAssetId,
-  bigNumberToU32,
   booleanToBool,
   collectionKeysToMetadataKeys,
+  getInternalNftType,
   internalAssetTypeToAssetType,
   internalNftTypeToNftType,
   metadataSpecToMeshMetadataSpec,
@@ -45,9 +44,13 @@ import {
   securityIdentifierToAssetIdentifier,
   stringToBytes,
   stringToTicker,
-  u32ToBigNumber,
 } from '~/utils/conversion';
-import { checkTxType, isAllowedCharacters, optionize } from '~/utils/internal';
+import {
+  checkTxType,
+  isAllowedCharacters,
+  optionize,
+  prepareStorageForCustomType,
+} from '~/utils/internal';
 
 /**
  * @hidden
@@ -74,11 +77,7 @@ export interface Storage {
    * fetched custom asset type ID and raw value in bytes.
    * A null value means the type is not custom
    */
-  customTypeData: {
-    rawId: u32;
-    rawValue: Bytes;
-    isAlreadyCreated: boolean;
-  } | null;
+  customTypeData: CustomTypeData | null;
 
   needsLocalMetadata: boolean;
   status?: TickerReservationStatus;
@@ -101,16 +100,6 @@ function isLocalMetadata(value: CollectionKeyInput): value is LocalCollectionKey
  */
 function isGlobalMetadata(value: CollectionKeyInput): value is GlobalCollectionKeyInput {
   return value.type === MetadataType.Global;
-}
-
-/**
- * @hidden
- */
-function getInternalNftType(
-  customTypeData: Storage['customTypeData'],
-  nftType: Params['nftType']
-): InternalNftType {
-  return customTypeData ? { Custom: customTypeData.rawId } : (nftType as KnownNftType);
 }
 
 /**
@@ -387,57 +376,6 @@ export async function getAuthorization(
 /**
  * @hidden
  */
-async function prepareStorageForCustomType(
-  nftType: string | BigNumber,
-  context: Context
-): Promise<Storage['customTypeData']> {
-  let customTypeData: Storage['customTypeData'];
-
-  if (nftType instanceof BigNumber) {
-    const rawId = bigNumberToU32(nftType, context);
-    const rawValue = await context.polymeshApi.query.asset.customTypes(rawId);
-
-    if (rawValue.isEmpty) {
-      throw new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message:
-          'createNftCollection was given a custom type ID that does not have an corresponding value',
-        data: { nftType },
-      });
-    }
-
-    customTypeData = {
-      rawId,
-      rawValue,
-      isAlreadyCreated: true,
-    };
-  } else if (!values<string>(KnownNftType).includes(nftType)) {
-    const rawValue = stringToBytes(nftType, context);
-    const rawId = await context.polymeshApi.query.asset.customTypesInverse(rawValue);
-    if (rawId.isNone) {
-      const rawCustomAssetTypeId = await context.polymeshApi.query.asset.customTypeIdSequence();
-      const nextCustomAssetTypeId = u32ToBigNumber(rawCustomAssetTypeId).plus(1);
-      customTypeData = {
-        rawId: bigNumberToU32(nextCustomAssetTypeId, context),
-        rawValue,
-        isAlreadyCreated: false,
-      };
-    } else {
-      customTypeData = {
-        rawId: rawId.unwrap(),
-        rawValue,
-        isAlreadyCreated: true,
-      };
-    }
-  } else {
-    customTypeData = null;
-  }
-  return customTypeData;
-}
-
-/**
- * @hidden
- */
 export async function assertNftCollectionDoesNotExists(
   id: string,
   context: Context,
@@ -554,7 +492,12 @@ export async function prepareStorage(
 
   const needsLocalMetadata = collectionKeys.some(isLocalMetadata);
 
-  const customTypeData = await prepareStorageForCustomType(nftType, context);
+  const customTypeData = await prepareStorageForCustomType(
+    nftType,
+    values(KnownNftType),
+    context,
+    'createNftCollection'
+  );
 
   return {
     customTypeData,

@@ -2,7 +2,7 @@ import { QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
-import { createArgsAndFilters } from '~/middleware/queries/common';
+import { createArgsAndFilters, getSizeAndOffset } from '~/middleware/queries/common';
 import { Event, EventsOrderBy } from '~/middleware/types';
 import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
 
@@ -46,6 +46,6 @@ export function eventsByArgs(
 
   return {
     query,
-    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+    variables: { ...filters, ...getSizeAndOffset(size, start) },
   };
 }

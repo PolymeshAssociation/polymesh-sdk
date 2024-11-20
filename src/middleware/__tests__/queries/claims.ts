@@ -10,6 +10,7 @@ import {
 } from '~/middleware/queries/claims';
 import { ClaimTypeEnum } from '~/middleware/types';
 import { ClaimScopeTypeEnum } from '~/types';
+import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 
 describe('claimsGroupingQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
@@ -36,6 +37,8 @@ describe('claimsQuery', () => {
       trustedClaimIssuers: ['someTrustedClaim'],
       claimTypes: [ClaimTypeEnum.Accredited],
       includeExpired: true,
+      size: DEFAULT_GQL_PAGE_SIZE,
+      start: 0,
     };
 
     let result = claimsQuery(variables);
@@ -61,7 +64,11 @@ describe('claimsQuery', () => {
 
   it('should not include undefined values in the variables', () => {
     const result = claimsQuery({ includeExpired: true });
-    expect(result.variables).toEqual({ includeExpired: true });
+    expect(result.variables).toEqual({
+      includeExpired: true,
+      size: DEFAULT_GQL_PAGE_SIZE,
+      start: 0,
+    });
   });
 });
 
@@ -114,7 +121,7 @@ describe('customClaimTypeQuery', () => {
   it('should return correct query and variables when size, start, and dids are not provided', () => {
     const result = customClaimTypeQuery();
     expect(result.query).toBeDefined();
-    expect(result.variables).toEqual({ size: undefined, start: undefined, dids: undefined });
+    expect(result.variables).toEqual({ size: DEFAULT_GQL_PAGE_SIZE, start: 0, dids: undefined });
   });
 
   it('should return correct query and variables when size, start, and dids are provided', () => {
