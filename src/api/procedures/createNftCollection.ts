@@ -492,7 +492,12 @@ export async function prepareStorage(
 
   const needsLocalMetadata = collectionKeys.some(isLocalMetadata);
 
-  const customTypeData = await prepareStorageForCustomType(nftType, values(KnownNftType), context);
+  const customTypeData = await prepareStorageForCustomType(
+    nftType,
+    values(KnownNftType),
+    context,
+    'createNftCollection'
+  );
 
   return {
     customTypeData,
