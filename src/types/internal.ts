@@ -1,5 +1,4 @@
 /* istanbul ignore file */
-
 import {
   AugmentedEvents,
   AugmentedSubmittable,
@@ -11,7 +10,7 @@ import {
   SubmittableExtrinsics,
 } from '@polkadot/api/types';
 import { RpcInterface } from '@polkadot/rpc-core/types';
-import { u32 } from '@polkadot/types';
+import { Bytes, u32 } from '@polkadot/types';
 import {
   PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesStatisticsStatOpType,
@@ -385,3 +384,9 @@ export type MeshTickerOrAssetId =
   | {
       assetId: PolymeshPrimitivesAssetAssetId;
     };
+
+export type CustomTypeData = {
+  rawId: u32;
+  rawValue: Bytes;
+  isAlreadyCreated?: boolean;
+};
