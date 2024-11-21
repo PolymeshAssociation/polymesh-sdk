@@ -146,7 +146,12 @@ import {
   Portfolio as MiddlewarePortfolio,
   PortfolioMovement as MiddlewarePortfolioMovement,
 } from '~/middleware/types';
-import { ClaimScopeTypeEnum, MiddlewareScope, SettlementDirectionEnum } from '~/middleware/typesV1';
+import {
+  ClaimScopeTypeEnum,
+  MiddlewareScope,
+  MultiSigProposalStatusEnum,
+  SettlementDirectionEnum,
+} from '~/middleware/typesV1';
 import {
   AssetComplianceResult,
   AuthorizationType as MeshAuthorizationType,
@@ -5455,4 +5460,22 @@ export function childKeysWithAuthToCreateChildIdentitiesWithAuth(
     'Vec<PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth>',
     keyWithAuths
   );
+}
+
+/**
+ * @hidden
+ */
+export function middlewareProposalStateToProposalStatus(
+  state: MultiSigProposalStatusEnum
+): ProposalStatus {
+  const stateToStatusMap = {
+    [MultiSigProposalStatusEnum.Active]: ProposalStatus.Active,
+    [MultiSigProposalStatusEnum.Deleted]: ProposalStatus.Expired,
+    [MultiSigProposalStatusEnum.Failed]: ProposalStatus.Failed,
+    [MultiSigProposalStatusEnum.Success]: ProposalStatus.Successful,
+    [MultiSigProposalStatusEnum.Rejected]: ProposalStatus.Rejected,
+    [MultiSigProposalStatusEnum.Approved]: ProposalStatus.Active,
+  };
+
+  return stateToStatusMap[state] || ProposalStatus.Invalid;
 }

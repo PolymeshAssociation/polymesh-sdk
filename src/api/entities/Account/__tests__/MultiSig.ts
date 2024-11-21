@@ -14,7 +14,7 @@ import {
   createMockSignatory,
 } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode } from '~/types';
+import { AssetTx, BalancesTx, ErrorCode, ProposalStatus, UtilityTx } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -215,27 +215,46 @@ describe('MultiSig class', () => {
   });
 
   describe('method: getHistoricalProposals', () => {
-    const mockHistoricalMultisig = {
-      id: 'someId',
-      proposalId: 1,
-      multisigId: address,
-      approvalCount: 1,
-      rejectionCount: 1,
-      creator: {
-        did: 'somedid',
-      },
-      status: 'Pending',
-      createdBlockId: '1',
-      updatedBlockId: '1',
-      datetime: new Date().toISOString(),
-    };
+    let middlewareProposalStateToProposalStatusSpy: jest.SpyInstance;
 
-    const multiSigProposalsResponse = {
-      totalCount: 2,
-      nodes: [mockHistoricalMultisig],
-    };
+    beforeEach(() => {
+      middlewareProposalStateToProposalStatusSpy = jest.spyOn(
+        utilsConversionModule,
+        'middlewareProposalStateToProposalStatus'
+      );
+      when(middlewareProposalStateToProposalStatusSpy)
+        .calledWith('Pending')
+        .mockReturnValue(ProposalStatus.Active);
+    });
 
-    it('should get historical proposals', async () => {
+    it('should get historical proposals with pagination params', async () => {
+      const mockHistoricalMultisig = {
+        id: 'someId',
+        multisigId: address,
+        proposalId: 1,
+        status: 'Pending',
+        approvalCount: 1,
+        rejectionCount: 0,
+        params: {
+          expiry: null,
+          isBatch: false,
+          isBridge: false,
+          autoClose: false,
+          proposals: [
+            {
+              args: '{"name":"0x4d554c5449544f4b454e3100","ticker":"0x4d554c5449544f4b454e3100","divisible":false,"asset_type":"EquityPreferred","identifiers":[],"funding_round":null}',
+              call: 'create_asset',
+              module: 'Asset',
+            },
+          ],
+        },
+      };
+
+      const multiSigProposalsResponse = {
+        totalCount: 2,
+        nodes: [mockHistoricalMultisig],
+      };
+
       dsMockUtils.createApolloQueryMock(
         multiSigProposalsQuery(address, new BigNumber(1), new BigNumber(0)),
         {
@@ -253,19 +272,87 @@ describe('MultiSig class', () => {
       expect(next).toEqual(new BigNumber(1));
       expect(count).toEqual(new BigNumber(2));
       expect(data.length).toEqual(1);
+
+      expect(data[0]).toEqual({
+        proposal: expect.objectContaining({
+          id: new BigNumber(mockHistoricalMultisig.proposalId),
+          multiSig: expect.objectContaining({ address }),
+        }),
+        status: ProposalStatus.Active,
+        approvalAmount: new BigNumber(1),
+        rejectionAmount: new BigNumber(0),
+        expiry: null,
+        txTag: AssetTx.CreateAsset,
+        args: mockHistoricalMultisig.params.proposals[0].args,
+      });
     });
 
-    it('should work with optional pagination params', async () => {
+    it('should get historical proposals without pagination params', async () => {
+      const expiry = new Date('2050/01/01');
+      const mockHistoricalMultisig = {
+        id: 'someId',
+        multisigId: address,
+        proposalId: 1,
+        status: 'Pending',
+        approvalCount: 1,
+        rejectionCount: 0,
+        params: {
+          expiry: expiry.getTime().toString(),
+          isBatch: true,
+          isBridge: false,
+          autoClose: false,
+          proposals: [
+            {
+              args: '{"dest":{"Id":"5DnuhGGm5PVgSWasCbUo3xknTDEeYjdEUAHEzgd93YohhjrQ"},"value":"100,000,000,000,000"}',
+              call: 'transfer',
+              module: 'Balances',
+            },
+            {
+              args: '{"dest":{"Id":"5EvJiD9RDfiW7MUg3aPsUmnxzbogNpAmnHvz7nzvREEwEGZp"},"value":"200,000,000,000,000","memo":"MEMOMEMOMMEMOMEMOMEMOMEMOMEMOMEM"}',
+              call: 'transfer_with_memo',
+              module: 'Balances',
+            },
+          ],
+        },
+      };
+
+      const multiSigProposalsResponse = {
+        totalCount: 1,
+        nodes: [mockHistoricalMultisig],
+      };
+
       dsMockUtils.createApolloQueryMock(multiSigProposalsQuery(address), {
         multiSigProposals: multiSigProposalsResponse,
       });
+
       const result = await multiSig.getHistoricalProposals();
 
       const { data, next, count } = result;
 
-      expect(next).toEqual(new BigNumber(1));
-      expect(count).toEqual(new BigNumber(2));
-      expect(data.length).toEqual(1);
+      expect(next).toBeNull();
+      expect(count).toEqual(new BigNumber(1));
+
+      expect(data[0]).toEqual({
+        proposal: expect.objectContaining({
+          id: new BigNumber(mockHistoricalMultisig.proposalId),
+          multiSig: expect.objectContaining({ address }),
+        }),
+        status: ProposalStatus.Active,
+        approvalAmount: new BigNumber(1),
+        rejectionAmount: new BigNumber(0),
+        expiry,
+        txTag: UtilityTx.Batch,
+        args: [
+          {
+            txTag: BalancesTx.Transfer,
+            args: mockHistoricalMultisig.params.proposals[0].args,
+          },
+          {
+            txTag: BalancesTx.TransferWithMemo,
+            args: mockHistoricalMultisig.params.proposals[1].args,
+          },
+        ],
+      });
     });
   });
 
