@@ -254,7 +254,7 @@ describe('Authorizations class', () => {
         toId: did,
       }));
 
-      dsMockUtils.createApolloQueryMock(authorizationsQuery({ toId: did }), {
+      dsMockUtils.createApolloQueryMock(authorizationsQuery(false, { toId: did }), {
         authorizations: {
           nodes: fakeAuths,
           totalCount: new BigNumber(10),
@@ -291,6 +291,7 @@ describe('Authorizations class', () => {
       };
       dsMockUtils.createApolloQueryMock(
         authorizationsQuery(
+          false,
           {
             type: AuthTypeEnum.RotatePrimaryKey,
             status: AuthorizationStatusEnum.Consumed,

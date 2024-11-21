@@ -84,14 +84,22 @@ function createPortfolioMovementFilters(
 /**
  * @hidden
  */
-function buildPortfolioMovementsQuery(args: string, filter: string): DocumentNode {
+function buildPortfolioMovementsQuery(
+  paddedIds: boolean,
+  args: string,
+  filter: string
+): DocumentNode {
+  const orderBy = paddedIds
+    ? `${PortfolioMovementsOrderBy.CreatedBlockIdAsc}`
+    : `${PortfolioMovementsOrderBy.CreatedAtAsc}, ${PortfolioMovementsOrderBy.CreatedBlockIdAsc}`;
+
   return gql`
   query PortfolioMovementsQuery
     ${args}
    {
     portfolioMovements(
       ${filter}
-      orderBy: [${PortfolioMovementsOrderBy.CreatedAtAsc}, ${PortfolioMovementsOrderBy.CreatedBlockIdAsc}]
+      orderBy: [${orderBy}]
     ) {
       nodes {
         id
@@ -120,10 +128,11 @@ function buildPortfolioMovementsQuery(args: string, filter: string): DocumentNod
  * Get Settlements where a Portfolio is involved
  */
 export function portfolioMovementsQuery(
+  paddedIds: boolean,
   filters: QuerySettlementFilters
 ): QueryOptions<QueryArgs<PortfolioMovement, 'fromId' | 'toId' | 'assetId' | 'address'>> {
   const { args, filter, variables } = createPortfolioMovementFilters(filters);
-  const query = buildPortfolioMovementsQuery(args, filter);
+  const query = buildPortfolioMovementsQuery(paddedIds, args, filter);
 
   return {
     query,
@@ -137,10 +146,11 @@ export function portfolioMovementsQuery(
  * Get Settlements for all portfolios
  */
 export function portfoliosMovementsQuery(
+  paddedIds: boolean,
   filters: Omit<QuerySettlementFilters, 'portfolioId'>
 ): QueryOptions<QueryArgs<PortfolioMovement, 'fromId' | 'toId' | 'assetId' | 'address'>> {
   const { args, filter, variables } = createPortfolioMovementFilters(filters, true);
-  const query = buildPortfolioMovementsQuery(args, filter);
+  const query = buildPortfolioMovementsQuery(paddedIds, args, filter);
 
   return {
     query,

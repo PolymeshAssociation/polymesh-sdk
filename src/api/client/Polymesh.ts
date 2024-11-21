@@ -15,6 +15,7 @@ import {
   CreateTransactionBatchProcedureMethod,
   ErrorCode,
   MiddlewareConfig,
+  MiddlewareMetadata,
   PolkadotConfig,
   UnsubCallback,
 } from '~/types';
@@ -194,7 +195,7 @@ export class Polymesh {
     }
 
     if (middlewareV2) {
-      let middlewareMetadata = null;
+      let middlewareMetadata: MiddlewareMetadata | null = null;
 
       const checkMiddleware = async (): Promise<void> => {
         try {
@@ -215,6 +216,8 @@ export class Polymesh {
             message: 'Middleware V2 URL is for a different chain than the given node URL',
           });
         }
+
+        context.isSqIdPadded = middlewareMetadata.paddedIds;
       };
 
       await Promise.all([checkMiddleware(), warnUnexpectedSqVersion(context)]);

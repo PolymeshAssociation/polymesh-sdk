@@ -87,7 +87,7 @@ describe('Portfolio class', () => {
   });
 
   it('should extend Entity', () => {
-    expect(Portfolio.prototype instanceof Entity).toBe(true);
+    expect(Portfolio.prototype).toBeInstanceOf(Entity);
   });
 
   describe('constructor', () => {
@@ -669,7 +669,7 @@ describe('Portfolio class', () => {
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
-          query: settlementsQuery({
+          query: settlementsQuery(false, {
             identityId: did,
             portfolioId: id,
             address: account,
@@ -680,7 +680,7 @@ describe('Portfolio class', () => {
           },
         },
         {
-          query: portfolioMovementsQuery({
+          query: portfolioMovementsQuery(false, {
             identityId: did,
             portfolioId: id,
             address: account,
@@ -721,7 +721,7 @@ describe('Portfolio class', () => {
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
-          query: settlementsQuery({
+          query: settlementsQuery(false, {
             identityId: did,
             portfolioId: undefined,
             address: undefined,
@@ -734,7 +734,7 @@ describe('Portfolio class', () => {
           },
         },
         {
-          query: portfolioMovementsQuery({
+          query: portfolioMovementsQuery(false, {
             identityId: did,
             portfolioId: undefined,
             address: undefined,
@@ -795,7 +795,7 @@ describe('Portfolio class', () => {
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
-          query: settlementsQuery({
+          query: settlementsQuery(false, {
             identityId: did,
             portfolioId: id,
             address: undefined,
@@ -808,7 +808,7 @@ describe('Portfolio class', () => {
           },
         },
         {
-          query: portfolioMovementsQuery({
+          query: portfolioMovementsQuery(false, {
             identityId: did,
             portfolioId: id,
             address: undefined,

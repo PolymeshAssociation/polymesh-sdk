@@ -389,16 +389,6 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieve all legs of this Instruction from chain
-   * @param paginationOpts
-   *
-   * @hidden
-   */
-  public async getLegsFromChain(paginationOpts?: PaginationOptions): Promise<ResultSet<Leg>> {
-    return this.context.getInstructionLegsFromChain(this.id, paginationOpts as PaginationOptions);
-  }
-
-  /**
    * Retrieve all legs of this Instruction
    *
    * @note supports pagination
@@ -622,6 +612,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       },
     } = await context.queryMiddleware<Ensured<Query, 'instructionEvents'>>(
       instructionEventsQuery(
+        context.isSqIdPadded,
         {
           event,
           instructionId: id.toString(),
