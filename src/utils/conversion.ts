@@ -101,11 +101,13 @@ import {
   forEach,
   groupBy,
   includes,
+  isEqual,
   map,
   range,
   rangeRight,
   snakeCase,
   uniq,
+  uniqWith,
   values,
 } from 'lodash';
 
@@ -3577,7 +3579,10 @@ export function portfolioIdsToBtreeSet(
   rawPortfolioIds: PolymeshPrimitivesIdentityIdPortfolioId[],
   context: Context
 ): BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId> {
-  return context.createType('BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>', rawPortfolioIds);
+  return context.createType(
+    'BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>',
+    uniqWith(rawPortfolioIds, isEqual)
+  );
 }
 
 /**

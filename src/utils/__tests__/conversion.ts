@@ -9110,20 +9110,17 @@ describe('portfolioIdsToBtreeSet', () => {
   it('should convert BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>', () => {
     const context = dsMockUtils.getContextInstance();
 
-    const rawPortfolioIds = [
-      dsMockUtils.createMockPortfolioId({
-        did: dsMockUtils.createMockIdentityId('someDid'),
-        kind: 'Default',
-      }),
-    ];
-
-    const mockPortfolioIdsSet = dsMockUtils.createMockBTreeSet(rawPortfolioIds);
+    const rawPortfolioId = dsMockUtils.createMockPortfolioId({
+      did: dsMockUtils.createMockIdentityId('someDid'),
+      kind: 'Default',
+    });
+    const mockPortfolioIdsSet = dsMockUtils.createMockBTreeSet([rawPortfolioId]);
 
     when(context.createType)
-      .calledWith('BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>', rawPortfolioIds)
+      .calledWith('BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>', [rawPortfolioId])
       .mockReturnValue(mockPortfolioIdsSet);
 
-    const result = portfolioIdsToBtreeSet(rawPortfolioIds, context);
+    const result = portfolioIdsToBtreeSet([rawPortfolioId, rawPortfolioId], context);
     expect(result).toEqual(mockPortfolioIdsSet);
   });
 });
