@@ -255,7 +255,7 @@ export class Claims {
         claims: { nodes },
       },
     } = await context.queryMiddleware<Ensured<Query, 'claims'>>(
-      claimsQuery({
+      claimsQuery(context.isSqIdPadded, {
         dids: targetIssuers,
         ...filters,
       })
@@ -555,7 +555,7 @@ export class Claims {
           claims: { nodes },
         },
       } = await context.queryMiddleware<Ensured<Query, 'claims'>>(
-        claimsQuery({
+        claimsQuery(context.isSqIdPadded, {
           trustedClaimIssuers: claimIssuers,
           ...filters,
         })

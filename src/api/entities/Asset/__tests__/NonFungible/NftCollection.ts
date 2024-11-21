@@ -631,7 +631,7 @@ describe('NftCollection class', () => {
       };
 
       dsMockUtils.createApolloQueryMock(
-        assetTransactionQuery({ assetId }, new BigNumber(3), new BigNumber(0)),
+        assetTransactionQuery(false, { assetId }, new BigNumber(3), new BigNumber(0)),
         {
           assetTransactions: transactionResponse,
         }

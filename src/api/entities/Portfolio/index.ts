@@ -419,7 +419,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     }
 
     const settlementsPromise = context.queryMiddleware<Ensured<Query, 'legs'>>(
-      settlementsQuery({
+      settlementsQuery(context.isSqIdPadded, {
         identityId,
         portfolioId,
         address: account,
@@ -428,7 +428,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     );
 
     const portfolioMovementsPromise = context.queryMiddleware<Ensured<Query, 'portfolioMovements'>>(
-      portfolioMovementsQuery({
+      portfolioMovementsQuery(context.isSqIdPadded, {
         identityId,
         portfolioId,
         address: account,

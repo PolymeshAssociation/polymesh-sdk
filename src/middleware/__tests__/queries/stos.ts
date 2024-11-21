@@ -10,7 +10,7 @@ describe('investmentsQuery', () => {
       start: 0,
     };
 
-    const result = investmentsQuery(variables);
+    const result = investmentsQuery(false, variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);

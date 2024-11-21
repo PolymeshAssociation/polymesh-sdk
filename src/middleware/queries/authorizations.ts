@@ -52,11 +52,17 @@ function createAuthorizationFilters(variables: QueryArgs<Authorization, Authoriz
  * Get all authorizations with specified filters
  */
 export function authorizationsQuery(
+  paddedIds: boolean,
   filters: QueryArgs<Authorization, AuthorizationArgs>,
   size?: BigNumber,
   start?: BigNumber
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<Authorization, AuthorizationArgs>>> {
   const { args, filter } = createAuthorizationFilters(filters);
+
+  const idField = paddedIds ? 'id' : 'authId: id';
+  const orderBy = paddedIds
+    ? `${AuthorizationsOrderBy.CreatedBlockIdAsc}`
+    : `${AuthorizationsOrderBy.CreatedAtAsc}, ${AuthorizationsOrderBy.CreatedBlockIdAsc}`;
 
   const query = gql`
     query AuthorizationsQuery
@@ -66,11 +72,11 @@ export function authorizationsQuery(
         ${filter}
         first: $size
         offset: $start
-        orderBy: [${AuthorizationsOrderBy.CreatedAtAsc}, ${AuthorizationsOrderBy.CreatedBlockIdAsc}]
+        orderBy: [${orderBy}]
       ) {
         totalCount
         nodes {
-          id
+          ${idField}
           type
           fromId
           toId

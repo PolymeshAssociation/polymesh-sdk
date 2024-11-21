@@ -70,7 +70,7 @@ describe('Portfolios class', () => {
   });
 
   it('should extend namespace', () => {
-    expect(Portfolios.prototype instanceof Namespace).toBe(true);
+    expect(Portfolios.prototype).toBeInstanceOf(Namespace);
   });
 
   describe('method: getPortfolios', () => {
@@ -380,7 +380,7 @@ describe('Portfolios class', () => {
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
-          query: settlementsForAllPortfoliosQuery({
+          query: settlementsForAllPortfoliosQuery(false, {
             identityId: did,
             address: account,
             assetId: '0x12341234123412341234123412341234',
@@ -390,7 +390,7 @@ describe('Portfolios class', () => {
           },
         },
         {
-          query: portfoliosMovementsQuery({
+          query: portfoliosMovementsQuery(false, {
             identityId: did,
             address: account,
             assetId: '0x12341234123412341234123412341234',
@@ -432,7 +432,7 @@ describe('Portfolios class', () => {
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
-          query: settlementsForAllPortfoliosQuery({
+          query: settlementsForAllPortfoliosQuery(false, {
             identityId: did,
             address: undefined,
             assetId: '0x12341234123412341234123412341234',
@@ -444,7 +444,7 @@ describe('Portfolios class', () => {
           },
         },
         {
-          query: portfoliosMovementsQuery({
+          query: portfoliosMovementsQuery(false, {
             identityId: did,
             address: undefined,
             assetId: '0x12341234123412341234123412341234',
@@ -498,7 +498,7 @@ describe('Portfolios class', () => {
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
-          query: settlementsForAllPortfoliosQuery({
+          query: settlementsForAllPortfoliosQuery(false, {
             identityId: did,
             address: undefined,
             assetId: undefined,
@@ -510,7 +510,7 @@ describe('Portfolios class', () => {
           },
         },
         {
-          query: portfoliosMovementsQuery({
+          query: portfoliosMovementsQuery(false, {
             identityId: did,
             address: undefined,
             assetId: undefined,

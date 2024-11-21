@@ -81,7 +81,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
 
       when(getAssetIdForMiddlewareSpy).calledWith(assetId, context).mockResolvedValue(assetId);
 
-      dsMockUtils.createApolloQueryMock(trustedClaimIssuerQuery(variables), {
+      dsMockUtils.createApolloQueryMock(trustedClaimIssuerQuery(false, variables), {
         trustedClaimIssuers: {
           nodes: [
             {
@@ -104,7 +104,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
     it('should return null if the query result is empty', async () => {
       const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, assetId }, context);
 
-      dsMockUtils.createApolloQueryMock(trustedClaimIssuerQuery(variables), {
+      dsMockUtils.createApolloQueryMock(trustedClaimIssuerQuery(false, variables), {
         trustedClaimIssuers: {
           nodes: [],
         },
