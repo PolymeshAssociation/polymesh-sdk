@@ -12,9 +12,12 @@ import {
   removeMultiSigPayer,
 } from '~/internal';
 import { multiSigProposalsQuery } from '~/middleware/queries/multisigs';
-import { Query } from '~/middleware/types';
+import { CallIdEnum, ModuleIdEnum, Query, Scalars } from '~/middleware/types';
+import { MultiSigProposalStatusEnum } from '~/middleware/typesV1';
 import {
+  AnyJson,
   ErrorCode,
+  HistoricalMultiSigProposal,
   ModifyMultiSigParams,
   MultiSigDetails,
   NoArgsProcedureMethod,
@@ -22,13 +25,17 @@ import {
   ProposalStatus,
   ResultSet,
   SetMultiSigAdminParams,
+  TxTag,
+  UtilityTx,
 } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
   accountIdToString,
   addressToKey,
+  extrinsicIdentifierToTxTag,
   identityIdToString,
   meshProposalStateToProposalStatus,
+  middlewareProposalStateToProposalStatus,
   stringToAccountId,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -180,7 +187,7 @@ export class MultiSig extends Account {
   public async getHistoricalProposals(opts?: {
     size?: BigNumber;
     start?: BigNumber;
-  }): Promise<ResultSet<MultiSigProposal>> {
+  }): Promise<ResultSet<HistoricalMultiSigProposal>> {
     const { context, address } = this;
     const { size, start } = opts ?? {};
 
@@ -192,10 +199,42 @@ export class MultiSig extends Account {
       multiSigProposalsQuery(address, size, start)
     );
 
-    const data = nodes.map(
-      ({ proposalId }) =>
-        new MultiSigProposal({ id: new BigNumber(proposalId), multiSigAddress: address }, context)
-    );
+    const getTxTagAndArgs = (
+      proposal: Scalars['JSON']['output']
+    ): Pick<HistoricalMultiSigProposal, 'txTag' | 'args'> => ({
+      txTag: extrinsicIdentifierToTxTag({
+        moduleId: proposal.module.toLowerCase() as ModuleIdEnum,
+        callId: proposal.call as CallIdEnum,
+      }),
+      args: proposal.args,
+    });
+
+    const data = nodes.map(({ proposalId, status, approvalCount, rejectionCount, params }) => {
+      const { expiry, proposals, isBatch } = params;
+
+      let txTag: TxTag;
+      let args: AnyJson;
+
+      if (isBatch) {
+        txTag = UtilityTx.Batch;
+        args = proposals.map(getTxTagAndArgs);
+      } else {
+        ({ txTag, args } = getTxTagAndArgs(proposals[0]));
+      }
+
+      return {
+        proposal: new MultiSigProposal(
+          { id: new BigNumber(proposalId), multiSigAddress: address },
+          context
+        ),
+        status: middlewareProposalStateToProposalStatus(status as MultiSigProposalStatusEnum),
+        approvalAmount: new BigNumber(approvalCount),
+        rejectionAmount: new BigNumber(rejectionCount),
+        expiry: expiry ? new Date(+expiry.replaceAll(',', '')) : null,
+        txTag,
+        args,
+      } as HistoricalMultiSigProposal;
+    });
 
     const count = new BigNumber(totalCount);
 

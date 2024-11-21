@@ -104,7 +104,7 @@ import {
   ModuleIdEnum,
   Portfolio as MiddlewarePortfolio,
 } from '~/middleware/types';
-import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
+import { ClaimScopeTypeEnum, MultiSigProposalStatusEnum } from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   createMockAssetId,
@@ -293,6 +293,7 @@ import {
   middlewarePermissionsDataToPermissions,
   middlewarePortfolioDataToPortfolio,
   middlewarePortfolioToPortfolio,
+  middlewareProposalStateToProposalStatus,
   middlewareScopeToScope,
   moduleAddressToString,
   momentToDate,
@@ -10291,7 +10292,7 @@ describe('middlewarePermissionsDataToPermissions', () => {
         ...permissions,
         asset: { these: ['TICKER'] },
       }),
-      dsMockUtils.getContextInstance({ isV6: true })
+      dsMockUtils.getContextInstance()
     );
     expect(result).toEqual({
       ...fakeResult,
@@ -11337,5 +11338,32 @@ describe('getInternalNftType', () => {
     const result = getInternalNftType(customTypeData, assetType);
 
     expect(result).toEqual(assetType);
+  });
+});
+
+describe('middlewareProposalStateToProposalStatus', () => {
+  test('should convert a MultiSigProposalStatusEnum to ProposalStatus ', () => {
+    expect(middlewareProposalStateToProposalStatus(MultiSigProposalStatusEnum.Active)).toEqual(
+      ProposalStatus.Active
+    );
+    expect(middlewareProposalStateToProposalStatus(MultiSigProposalStatusEnum.Deleted)).toEqual(
+      ProposalStatus.Expired
+    );
+    expect(middlewareProposalStateToProposalStatus(MultiSigProposalStatusEnum.Failed)).toEqual(
+      ProposalStatus.Failed
+    );
+    expect(middlewareProposalStateToProposalStatus(MultiSigProposalStatusEnum.Success)).toEqual(
+      ProposalStatus.Successful
+    );
+    expect(middlewareProposalStateToProposalStatus(MultiSigProposalStatusEnum.Rejected)).toEqual(
+      ProposalStatus.Rejected
+    );
+    expect(middlewareProposalStateToProposalStatus(MultiSigProposalStatusEnum.Approved)).toEqual(
+      ProposalStatus.Active
+    );
+
+    expect(
+      middlewareProposalStateToProposalStatus('unknown' as unknown as MultiSigProposalStatusEnum)
+    ).toEqual(ProposalStatus.Invalid);
   });
 });

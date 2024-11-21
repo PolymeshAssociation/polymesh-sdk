@@ -13,3 +13,12 @@ export enum SettlementDirectionEnum {
   Incoming = 'Incoming',
   Outgoing = 'Outgoing',
 }
+
+export enum MultiSigProposalStatusEnum {
+  Active = 'Active',
+  Approved = 'Approved',
+  Success = 'Success',
+  Failed = 'Failed',
+  Rejected = 'Rejected',
+  Deleted = 'Deleted',
+}

@@ -130,6 +130,10 @@ export function multiSigProposalsQuery(
           id
           proposalId
           multisigId
+          status
+          approvalCount
+          rejectionCount
+          params
         }
         totalCount
       }
