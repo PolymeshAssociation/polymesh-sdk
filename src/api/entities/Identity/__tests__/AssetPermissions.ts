@@ -11,6 +11,7 @@ import {
   Identity,
   KnownPermissionGroup,
   Namespace,
+  PolymeshError,
   PolymeshTransaction,
 } from '~/internal';
 import {
@@ -19,7 +20,7 @@ import {
 } from '~/middleware/queries/externalAgents';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { FungibleAsset, PermissionGroupType, PermissionType, TxTags } from '~/types';
+import { ErrorCode, FungibleAsset, PermissionGroupType, PermissionType, TxTags } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -67,24 +68,21 @@ describe('AssetPermissions class', () => {
   });
 
   it('should extend namespace', () => {
-    expect(AssetPermissions.prototype instanceof Namespace).toBe(true);
+    expect(AssetPermissions.prototype).toBeInstanceOf(Namespace);
   });
 
   describe('method: getGroup', () => {
-    it('should throw an error if the Identity is no longer an Agent', async () => {
+    it('should throw an error if the Identity is no longer an Agent', () => {
       dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(),
       });
 
-      let error;
+      const expectedError = new PolymeshError({
+        message: 'This Identity is no longer an Agent for this Asset',
+        code: ErrorCode.DataUnavailable,
+      });
 
-      try {
-        await assetPermissions.getGroup({ asset });
-      } catch (err) {
-        error = err;
-      }
-
-      expect(error.message).toBe('This Identity is no longer an Agent for this Asset');
+      return expect(assetPermissions.getGroup({ asset })).rejects.toThrow(expectedError);
     });
 
     it('should return the permission group associated with the Agent', async () => {
@@ -110,7 +108,7 @@ describe('AssetPermissions class', () => {
       };
       const fakeResult = { blockNumber, blockHash, blockDate, eventIndex: eventIdx };
 
-      dsMockUtils.createApolloQueryMock(tickerExternalAgentsQuery(variables), {
+      dsMockUtils.createApolloQueryMock(tickerExternalAgentsQuery(false, variables), {
         tickerExternalAgents: {
           nodes: [
             {
@@ -135,7 +133,7 @@ describe('AssetPermissions class', () => {
         assetId: assetIdHex,
       };
 
-      dsMockUtils.createApolloQueryMock(tickerExternalAgentsQuery(variables), {
+      dsMockUtils.createApolloQueryMock(tickerExternalAgentsQuery(false, variables), {
         tickerExternalAgents: { nodes: [] },
       });
       const result = await assetPermissions.enabledAt({ asset });
@@ -447,6 +445,7 @@ describe('AssetPermissions class', () => {
 
       dsMockUtils.createApolloQueryMock(
         tickerExternalAgentActionsQuery(
+          false,
           {
             assetId: assetIdHex,
             callerId: did,
@@ -491,7 +490,7 @@ describe('AssetPermissions class', () => {
       ]);
 
       dsMockUtils.createApolloQueryMock(
-        tickerExternalAgentActionsQuery({
+        tickerExternalAgentActionsQuery(false, {
           assetId: assetIdHex,
           callerId: did,
           palletName: undefined,

@@ -14,7 +14,7 @@ describe('tickerExternalAgentsQuery', () => {
       assetId: 'SOME_TICKER',
     };
 
-    const result = tickerExternalAgentsQuery(variables);
+    const result = tickerExternalAgentsQuery(false, variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
@@ -27,7 +27,7 @@ describe('tickerExternalAgentHistoryQuery', () => {
       assetId: 'SOME_TICKER',
     };
 
-    const result = tickerExternalAgentHistoryQuery(variables);
+    const result = tickerExternalAgentHistoryQuery(false, variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
@@ -36,7 +36,7 @@ describe('tickerExternalAgentHistoryQuery', () => {
 
 describe('tickerExternalAgentActionsQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
-    let result = tickerExternalAgentActionsQuery({});
+    let result = tickerExternalAgentActionsQuery(false, {});
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual({ size: DEFAULT_GQL_PAGE_SIZE, start: 0 });
@@ -50,12 +50,12 @@ describe('tickerExternalAgentActionsQuery', () => {
       start: 0,
     };
 
-    result = tickerExternalAgentActionsQuery(variables);
+    result = tickerExternalAgentActionsQuery(false, variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
 
-    result = tickerExternalAgentActionsQuery(variables, new BigNumber(1), new BigNumber(0));
+    result = tickerExternalAgentActionsQuery(false, variables, new BigNumber(1), new BigNumber(0));
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual({

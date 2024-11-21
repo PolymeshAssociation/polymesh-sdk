@@ -153,6 +153,11 @@ export const DEFAULT_CDD_ID = '0x00000000000000000000000000000000000000000000000
 export const MINIMUM_SQ_VERSION = '16.1.0';
 
 /**
+ * The first version of Subquery that pads IDs for proper lexical order
+ */
+export const MINIMUM_SQ_PADDED_ID_VERSION = '19.0.0';
+
+/**
  * Global metadata key used to conventionally register an NFT image
  */
 export const GLOBAL_IMAGE_URI_NAME = 'imageUri';

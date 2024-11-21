@@ -251,6 +251,7 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
       },
     } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(
       instructionsQuery(
+        context.isSqIdPadded,
         {
           venueId: id.toString(),
         },

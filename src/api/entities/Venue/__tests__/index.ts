@@ -175,6 +175,7 @@ describe('Venue class', () => {
 
       dsMockUtils.createApolloQueryMock(
         instructionsQuery(
+          false,
           {
             venueId: venueId.toString(),
           },
@@ -202,7 +203,7 @@ describe('Venue class', () => {
       expect(data).toEqual([mockHistoricInstruction]);
 
       dsMockUtils.createApolloQueryMock(
-        instructionsQuery({
+        instructionsQuery(false, {
           venueId: venueId.toString(),
         }),
         {

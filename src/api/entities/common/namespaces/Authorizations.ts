@@ -173,7 +173,7 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
         authorizations: { totalCount, nodes: authorizationResult },
       },
     } = await context.queryMiddleware<Ensured<Query, 'authorizations'>>(
-      authorizationsQuery(filters, size, start)
+      authorizationsQuery(context.isSqIdPadded, filters, size, start)
     );
 
     const data = authorizationResult.map(middlewareAuthorization => {

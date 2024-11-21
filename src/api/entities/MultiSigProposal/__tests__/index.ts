@@ -223,7 +223,7 @@ describe('MultiSigProposal class', () => {
       const action = MultiSigProposalVoteActionEnum.Approved;
 
       dsMockUtils.createApolloQueryMock(
-        multiSigProposalVotesQuery({
+        multiSigProposalVotesQuery(false, {
           proposalId: `${address}/${id.toString()}`,
         }),
         {
@@ -270,7 +270,7 @@ describe('MultiSigProposal class', () => {
       jest.spyOn(utilsConversionModule, 'addressToKey').mockImplementation();
 
       dsMockUtils.createApolloQueryMock(
-        multiSigProposalQuery({
+        multiSigProposalQuery(false, {
           multisigId: address,
           proposalId: id.toNumber(),
         }),
@@ -298,7 +298,7 @@ describe('MultiSigProposal class', () => {
         expect(result).toEqual({ blockNumber, blockHash, blockDate, eventIndex: eventIdx });
 
         dsMockUtils.createApolloQueryMock(
-          multiSigProposalQuery({
+          multiSigProposalQuery(false, {
             multisigId: address,
             proposalId: id.toNumber(),
           }),
@@ -324,7 +324,7 @@ describe('MultiSigProposal class', () => {
         );
 
         dsMockUtils.createApolloQueryMock(
-          multiSigProposalQuery({
+          multiSigProposalQuery(false, {
             multisigId: address,
             proposalId: id.toNumber(),
           }),

@@ -355,7 +355,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         },
       },
     } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(
-      instructionsQuery({
+      instructionsQuery(false, {
         id: id.toString(),
       })
     );
@@ -854,6 +854,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       },
     } = await context.queryMiddleware<Ensured<Query, 'instructionEvents'>>(
       instructionEventsQuery(
+        context.isSqIdPadded,
         {
           event,
           instructionId: id.toString(),

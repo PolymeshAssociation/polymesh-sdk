@@ -19,13 +19,18 @@ import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
  * Get the event details when external agent added for a ticker
  */
 export function tickerExternalAgentsQuery(
+  paddedIds: boolean,
   variables: QueryArgs<TickerExternalAgent, 'assetId'>
 ): QueryOptions<QueryArgs<TickerExternalAgent, 'assetId'>> {
+  const orderBy = paddedIds
+    ? `${TickerExternalAgentsOrderBy.CreatedBlockIdDesc}`
+    : `${TickerExternalAgentsOrderBy.CreatedAtDesc}, ${TickerExternalAgentsOrderBy.CreatedBlockIdDesc}`;
+
   const query = gql`
     query TickerExternalAgentQuery($assetId: String!) {
       tickerExternalAgents(
         filter: { assetId: { equalTo: $assetId } }
-        orderBy: [${TickerExternalAgentsOrderBy.CreatedAtDesc}, ${TickerExternalAgentsOrderBy.CreatedBlockIdDesc}]
+        orderBy: [${orderBy}]
         first: 1
       ) {
         nodes {
@@ -52,13 +57,18 @@ export function tickerExternalAgentsQuery(
  * Get the transaction history of each external agent of an Asset
  */
 export function tickerExternalAgentHistoryQuery(
+  paddedIds: boolean,
   variables: QueryArgs<TickerExternalAgentHistory, 'assetId'>
 ): QueryOptions<QueryArgs<TickerExternalAgentHistory, 'assetId'>> {
+  const orderBy = paddedIds
+    ? `${TickerExternalAgentHistoriesOrderBy.CreatedBlockIdAsc}`
+    : `${TickerExternalAgentHistoriesOrderBy.CreatedAtAsc}, ${TickerExternalAgentHistoriesOrderBy.CreatedBlockIdAsc}`;
+
   const query = gql`
     query TickerExternalAgentHistoryQuery($assetId: String!) {
       tickerExternalAgentHistories(
         filter: { assetId: { equalTo: $assetId } }
-        orderBy: [${TickerExternalAgentHistoriesOrderBy.CreatedAtAsc}, ${TickerExternalAgentHistoriesOrderBy.CreatedBlockIdAsc}]
+        orderBy: [${orderBy}]
       ) {
         nodes {
           identityId
@@ -87,6 +97,7 @@ type TickerExternalAgentActionArgs = 'assetId' | 'callerId' | 'palletName' | 'ev
  * Get list of Events triggered by actions (from the set of actions that can only be performed by external agents) that have been performed on a specific Asset
  */
 export function tickerExternalAgentActionsQuery(
+  paddedIds: boolean,
   filters: QueryArgs<TickerExternalAgentAction, TickerExternalAgentActionArgs>,
   size?: BigNumber,
   start?: BigNumber
@@ -94,6 +105,9 @@ export function tickerExternalAgentActionsQuery(
   PaginatedQueryArgs<QueryArgs<TickerExternalAgentAction, TickerExternalAgentActionArgs>>
 > {
   const { args, filter } = createArgsAndFilters(filters, { eventId: 'EventIdEnum' });
+  const orderBy = paddedIds
+    ? `${TickerExternalAgentActionsOrderBy.CreatedBlockIdDesc}`
+    : `${TickerExternalAgentActionsOrderBy.CreatedAtDesc}, ${TickerExternalAgentActionsOrderBy.CreatedBlockIdDesc}`;
   const query = gql`
     query TickerExternalAgentActionsQuery
       ${args}
@@ -102,7 +116,7 @@ export function tickerExternalAgentActionsQuery(
         ${filter}
         first: $size
         offset: $start
-        orderBy: [${TickerExternalAgentActionsOrderBy.CreatedAtDesc}, ${TickerExternalAgentActionsOrderBy.CreatedBlockIdDesc}]
+        orderBy: [${orderBy}]
       ) {
         totalCount
         nodes {

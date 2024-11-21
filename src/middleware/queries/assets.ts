@@ -126,15 +126,20 @@ export function nftHoldersQuery(
  * Get the balance history for an Asset
  */
 export function assetTransactionQuery(
+  paddedIds: boolean,
   filters: QueryArgs<AssetTransaction, 'assetId'>,
   size?: BigNumber,
   start?: BigNumber
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<AssetTransaction, 'assetId'>>> {
+  const orderBy = paddedIds
+    ? `${AssetTransactionsOrderBy.CreatedBlockIdAsc}`
+    : `${AssetTransactionsOrderBy.CreatedAtAsc}, ${AssetTransactionsOrderBy.CreatedBlockIdAsc}`;
+
   const query = gql`
     query AssetTransactionQuery($assetId: String!) {
       assetTransactions(
         filter: { assetId: { equalTo: $assetId } }
-        orderBy: [${AssetTransactionsOrderBy.CreatedAtAsc}, ${AssetTransactionsOrderBy.CreatedBlockIdAsc}]
+        orderBy:  [${orderBy}]
       ) {
         totalCount
         nodes {

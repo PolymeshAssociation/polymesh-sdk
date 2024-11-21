@@ -23,12 +23,13 @@ describe('instructionsQuery', () => {
       start: 0,
     };
 
-    let result = instructionsQuery(variables);
+    let result = instructionsQuery(false, variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
 
     result = instructionsQuery(
+      true,
       {
         venueId: '2',
       },
@@ -201,11 +202,12 @@ describe('instructionEventsQuery', () => {
       size: DEFAULT_GQL_PAGE_SIZE,
       start: 0,
     };
-    let result = instructionEventsQuery(variables);
+    let result = instructionEventsQuery(false, variables);
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
 
     result = instructionEventsQuery(
+      true,
       {
         event: InstructionEventEnum.InstructionFailed,
       },
@@ -231,7 +233,7 @@ describe('settlementsQuery', () => {
       address: 'someAddress',
     };
 
-    const result = settlementsQuery(variables);
+    const result = settlementsQuery(false, variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual({
@@ -253,7 +255,7 @@ describe('settlementsForAllPortfoliosQuery', () => {
       address: 'someAddress',
     };
 
-    const result = settlementsForAllPortfoliosQuery(variables);
+    const result = settlementsForAllPortfoliosQuery(false, variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual({

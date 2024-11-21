@@ -20,6 +20,7 @@ import { SigningManager } from '@polymeshassociation/signing-manager-types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, clone, flatMap, flatten, flattenDeep } from 'lodash';
+import { gte } from 'semver';
 
 import { HistoricPolyxTransaction } from '~/api/entities/Account/types';
 import {
@@ -54,7 +55,12 @@ import {
   UnsubCallback,
 } from '~/types';
 import { Ensured } from '~/types/utils';
-import { DEFAULT_GQL_PAGE_SIZE, MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
+import {
+  DEFAULT_GQL_PAGE_SIZE,
+  MAX_CONCURRENT_REQUESTS,
+  MAX_PAGE_SIZE,
+  MINIMUM_SQ_PADDED_ID_VERSION,
+} from '~/utils/constants';
 import {
   accountIdToString,
   assetToMeshAssetId,
@@ -129,6 +135,8 @@ export class Context {
   private _isArchiveNodeResult?: boolean;
 
   public isV6 = false;
+
+  public isSqIdPadded = false;
 
   public specVersion: number;
 
@@ -962,6 +970,7 @@ export class Context {
       },
     } = await this.queryMiddleware<Ensured<Query, 'claims'>>(
       claimsQuery(
+        this.isSqIdPadded,
         {
           dids: targets?.map(target => signerToString(target)),
           trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
@@ -1272,6 +1281,7 @@ export class Context {
     } = await this.queryMiddleware<Ensured<Query, '_metadata'>>(metadataQuery());
 
     const sqVersion = await getLatestSqVersion(this);
+    const paddedIds = gte(sqVersion, MINIMUM_SQ_PADDED_ID_VERSION);
 
     /* eslint-disable @typescript-eslint/no-non-null-assertion */
     return {
@@ -1283,6 +1293,7 @@ export class Context {
       lastProcessedTimestamp: new Date(parseInt(lastProcessedTimestamp)),
       indexerHealthy: Boolean(indexerHealthy),
       sqVersion,
+      paddedIds,
     };
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
   }
@@ -1313,6 +1324,7 @@ export class Context {
       },
     } = await this.queryMiddleware<Ensured<Query, 'polyxTransactions'>>(
       polyxTransactionsQuery(
+        this.isSqIdPadded,
         {
           identityId: identity ? asDid(identity) : undefined,
           addresses: accounts?.map(account => signerToString(account)),
