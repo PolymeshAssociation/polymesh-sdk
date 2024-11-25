@@ -117,16 +117,11 @@ import {
   CONFIDENTIAL_ASSETS_SUPPORTED_CALL,
   MAX_TICKER_LENGTH,
   MINIMUM_SQ_VERSION,
-  PRIVATE_SUPPORTED_NODE_SEMVER,
-  PRIVATE_SUPPORTED_NODE_VERSION_RANGE,
   PRIVATE_SUPPORTED_SPEC_SEMVER,
   PRIVATE_SUPPORTED_SPEC_VERSION_RANGE,
   STATE_RUNTIME_VERSION_CALL,
-  SUPPORTED_NODE_SEMVER,
-  SUPPORTED_NODE_VERSION_RANGE,
   SUPPORTED_SPEC_SEMVER,
   SUPPORTED_SPEC_VERSION_RANGE,
-  SYSTEM_VERSION_RPC_CALL,
 } from '~/utils/constants';
 import {
   assetIdToString,
@@ -1467,46 +1462,6 @@ const getAllowedMajors = (range: string, supportedSpecSemver: string): string[] 
 
 /**
  * @hidden
- */
-function assertExpectedNodeVersion(
-  data: { result: string },
-  reject: (reason?: unknown) => void,
-  isPrivateSupported: boolean
-): void {
-  const { result: version } = data;
-
-  const supportedSemver = isPrivateSupported
-    ? PRIVATE_SUPPORTED_NODE_SEMVER
-    : SUPPORTED_NODE_SEMVER;
-
-  const supportedSpecVersionRange = isPrivateSupported
-    ? PRIVATE_SUPPORTED_NODE_VERSION_RANGE
-    : SUPPORTED_NODE_VERSION_RANGE;
-
-  const neededMajors = getAllowedMajors(supportedSpecVersionRange, supportedSemver);
-
-  if (neededMajors.every(neededMajor => !satisfies(version, neededMajor))) {
-    const error = new PolymeshError({
-      code: ErrorCode.FatalError,
-      message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
-      data: {
-        rpcNodeVersion: version,
-        supportedVersionRange: supportedSpecVersionRange,
-      },
-    });
-
-    reject(error);
-  }
-
-  if (!satisfies(version, supportedSpecVersionRange)) {
-    console.warn(
-      `This version of the SDK supports Polymesh RPC node version "${supportedSpecVersionRange}". The node is at version ${version}. Please upgrade the SDK`
-    );
-  }
-}
-
-/**
- * @hidden
  *
  * Add a dot to a number every three digits from right to left
  */
@@ -1646,14 +1601,11 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<number> {
 
     let confidentialAssetsSupported: boolean;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let nodeResponse: any;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let specResponse: any;
 
     const checkResponses = (cleanup?: () => void): void => {
-      if (specResponse && nodeResponse && typeof confidentialAssetsSupported !== 'undefined') {
+      if (specResponse && typeof confidentialAssetsSupported !== 'undefined') {
         assertExpectedSpecVersion(specResponse, reject, confidentialAssetsSupported);
-        assertExpectedNodeVersion(nodeResponse, reject, confidentialAssetsSupported);
 
         if (cleanup) {
           cleanup();
@@ -1676,7 +1628,6 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<number> {
       const client = new W3CWebSocket(nodeUrl);
       client.onopen = (): void => {
         client.send(JSON.stringify(CONFIDENTIAL_ASSETS_SUPPORTED_CALL));
-        client.send(JSON.stringify(SYSTEM_VERSION_RPC_CALL));
         client.send(JSON.stringify(STATE_RUNTIME_VERSION_CALL));
       };
 
@@ -1684,9 +1635,7 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<number> {
         const data = JSON.parse(msg.data.toString());
         const { id } = data;
 
-        if (id === SYSTEM_VERSION_RPC_CALL.id) {
-          nodeResponse = data;
-        } else if (id === CONFIDENTIAL_ASSETS_SUPPORTED_CALL.id) {
+        if (id === CONFIDENTIAL_ASSETS_SUPPORTED_CALL.id) {
           confidentialAssetsSupported = !!data.result;
         } else {
           specResponse = data;
@@ -1710,19 +1659,6 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<number> {
         .then(response => response.json())
         .then(data => {
           confidentialAssetsSupported = !!data.result;
-
-          checkResponses();
-        })
-        .catch(error => handleError(error));
-
-      fetch(nodeUrl, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(SYSTEM_VERSION_RPC_CALL),
-      })
-        .then(response => response.json())
-        .then(data => {
-          nodeResponse = data;
 
           checkResponses();
         })

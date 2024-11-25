@@ -53,16 +53,13 @@ import {
   DUMMY_ACCOUNT_ID,
   MAX_TICKER_LENGTH,
   MINIMUM_SQ_VERSION,
-  PRIVATE_SUPPORTED_NODE_SEMVER,
   PRIVATE_SUPPORTED_SPEC_SEMVER,
   STATE_RUNTIME_VERSION_CALL,
-  SUPPORTED_NODE_SEMVER,
   SUPPORTED_SPEC_SEMVER,
-  SYSTEM_VERSION_RPC_CALL,
 } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 
-import { SUPPORTED_NODE_VERSION_RANGE, SUPPORTED_SPEC_VERSION_RANGE } from '../constants';
+import { SUPPORTED_SPEC_VERSION_RANGE } from '../constants';
 import {
   areSameClaims,
   asAccount,
@@ -1296,18 +1293,6 @@ describe('assertExpectedChainVersion', () => {
           }),
         } as Response);
 
-      when(crossFetch)
-        .calledWith(url, {
-          ...requestBase,
-          body: JSON.stringify(SYSTEM_VERSION_RPC_CALL),
-        })
-        .mockResolvedValue({
-          status: 200,
-          json: async () => ({
-            result: SUPPORTED_NODE_SEMVER,
-          }),
-        } as Response);
-
       const signal = assertExpectedChainVersion('http://example.com');
 
       return expect(signal).resolves.not.toThrow();
@@ -1322,25 +1307,6 @@ describe('assertExpectedChainVersion', () => {
         .calledWith(url, {
           ...requestBase,
           body: JSON.stringify(CONFIDENTIAL_ASSETS_SUPPORTED_CALL),
-        })
-        .mockRejectedValueOnce({
-          msg: 'some error',
-        });
-
-      const signal = assertExpectedChainVersion('http://example.com');
-
-      return expect(signal).rejects.toThrow();
-    });
-
-    it('should be rejected if there is an error in node version call', () => {
-      const url = 'http://example.com';
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      const requestBase = { headers: { 'Content-Type': 'application/json' }, method: 'POST' };
-
-      when(crossFetch)
-        .calledWith(url, {
-          ...requestBase,
-          body: JSON.stringify(SYSTEM_VERSION_RPC_CALL),
         })
         .mockRejectedValueOnce({
           msg: 'some error',
@@ -1374,7 +1340,6 @@ describe('assertExpectedChainVersion', () => {
   it('should resolve if it receives both expected RPC node and chain spec version', () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     client.onopen();
-    client.sendRpcVersion(SUPPORTED_NODE_SEMVER);
     client.sendSpecVersion(getSpecVersion(SUPPORTED_SPEC_SEMVER));
     client.sendIsPrivateSupported(false);
 
@@ -1384,7 +1349,6 @@ describe('assertExpectedChainVersion', () => {
   it('should resolve if it receives both expected RPC node and chain spec version for a private node', () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     client.onopen();
-    client.sendRpcVersion(PRIVATE_SUPPORTED_NODE_SEMVER);
     client.sendSpecVersion(getSpecVersion(PRIVATE_SUPPORTED_SPEC_SEMVER));
     client.sendIsPrivateSupported(true);
 
@@ -1402,40 +1366,10 @@ describe('assertExpectedChainVersion', () => {
     return expect(signal).rejects.toThrow(expectedError);
   });
 
-  it('should throw an error given a major RPC node version mismatch', () => {
-    const signal = assertExpectedChainVersion('ws://example.com');
-    const mismatchedVersion = getMismatchedVersion(SUPPORTED_NODE_SEMVER, 0);
-    client.sendRpcVersion(mismatchedVersion);
-    client.sendSpecVersion(getSpecVersion(SUPPORTED_SPEC_SEMVER));
-    client.sendIsPrivateSupported(false);
-    const expectedError = new PolymeshError({
-      code: ErrorCode.FatalError,
-      message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
-    });
-    return expect(signal).rejects.toThrowError(expectedError);
-  });
-
-  it('should log a warning given a minor or patch RPC node version mismatch', async () => {
-    const signal = assertExpectedChainVersion('ws://example.com');
-
-    client.sendSpecVersion(getSpecVersion(SUPPORTED_SPEC_SEMVER));
-
-    const mockRpcVersion = getMismatchedVersion(SUPPORTED_NODE_SEMVER);
-    client.sendRpcVersion(mockRpcVersion);
-    client.sendIsPrivateSupported(false);
-
-    await signal;
-    expect(warnSpy).toHaveBeenCalledTimes(1);
-    expect(warnSpy).toHaveBeenCalledWith(
-      `This version of the SDK supports Polymesh RPC node version "${SUPPORTED_NODE_VERSION_RANGE}". The node is at version ${mockRpcVersion}. Please upgrade the SDK`
-    );
-  });
-
   it('should throw an error given a major chain spec version mismatch', () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     const mismatchedSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_SEMVER, 0);
     client.sendSpecVersion(getSpecVersion(mismatchedSpecVersion));
-    client.sendRpcVersion(SUPPORTED_NODE_SEMVER);
     client.sendIsPrivateSupported(false);
     const expectedError = new PolymeshError({
       code: ErrorCode.FatalError,
@@ -1448,7 +1382,6 @@ describe('assertExpectedChainVersion', () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     const mockSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_SEMVER);
     client.sendSpecVersion(getSpecVersion(mockSpecVersion));
-    client.sendRpcVersion(SUPPORTED_NODE_SEMVER);
     client.sendIsPrivateSupported(false);
     await signal;
     expect(warnSpy).toHaveBeenCalledTimes(1);
@@ -1461,7 +1394,6 @@ describe('assertExpectedChainVersion', () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     const mockSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_SEMVER, 2);
     client.sendSpecVersion(getSpecVersion(mockSpecVersion));
-    client.sendRpcVersion(SUPPORTED_NODE_SEMVER);
     client.sendIsPrivateSupported(false);
     await signal;
     expect(warnSpy).toHaveBeenCalledTimes(0);
