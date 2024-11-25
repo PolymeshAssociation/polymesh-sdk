@@ -199,11 +199,7 @@ import {
 } from '~/types';
 import { Calls, Consts, Extrinsics, PolymeshTx, Queries, Rpcs } from '~/types/internal';
 import { ArgsType, Mutable, tuple } from '~/types/utils';
-import {
-  CONFIDENTIAL_ASSETS_SUPPORTED_CALL,
-  STATE_RUNTIME_VERSION_CALL,
-  SYSTEM_VERSION_RPC_CALL,
-} from '~/utils/constants';
+import { CONFIDENTIAL_ASSETS_SUPPORTED_CALL, STATE_RUNTIME_VERSION_CALL } from '~/utils/constants';
 
 let apiEmitter: EventEmitter;
 
@@ -287,16 +283,9 @@ export class MockWebSocket {
    * @hidden
    */
   send(msg: string): void {
-    let response;
-    const nodeVersionId = SYSTEM_VERSION_RPC_CALL.id;
-
-    if (msg.indexOf(nodeVersionId) >= 0) {
-      response = { data: `{ "result": "6.0.0", "id": "${nodeVersionId}" }` };
-    } else {
-      response = {
-        data: `{ "result": { "specVersion": "6000000"}, "id": "${STATE_RUNTIME_VERSION_CALL.id}" }`,
-      };
-    }
+    const response = {
+      data: `{ "result": { "specVersion": "6000000"}, "id": "${STATE_RUNTIME_VERSION_CALL.id}" }`,
+    };
 
     this.onmessage(response);
   }
@@ -308,15 +297,6 @@ export class MockWebSocket {
    */
   triggerError(err: Error): void {
     this.onerror(err);
-  }
-
-  /**
-   * @hidden
-   * Calls onmessage with the given version
-   */
-  sendRpcVersion(version: string): void {
-    const response = { data: `{ "result": "${version}", "id": "${SYSTEM_VERSION_RPC_CALL.id}" }` };
-    this.onmessage(response);
   }
 
   /**

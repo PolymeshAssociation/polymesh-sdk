@@ -5,7 +5,6 @@ import { Polymesh } from '~/api/client/Polymesh';
 import { PolymeshError, PolymeshTransactionBatch } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { ErrorCode, TransactionArray } from '~/types';
-import { SUPPORTED_NODE_VERSION_RANGE } from '~/utils/constants';
 import * as internalUtils from '~/utils/internal';
 
 jest.mock(
@@ -44,9 +43,9 @@ jest.mock(
 );
 
 describe('Polymesh Class', () => {
-  let versionSpy: jest.SpyInstance;
+  let assertExpectedChainVersionSpy: jest.SpyInstance;
   beforeEach(() => {
-    versionSpy = jest
+    assertExpectedChainVersionSpy = jest
       .spyOn(internalUtils, 'assertExpectedChainVersion')
       .mockClear()
       .mockImplementation()
@@ -154,10 +153,9 @@ describe('Polymesh Class', () => {
     it('should throw if the Polymesh version does not satisfy the supported version range', async () => {
       const error = new PolymeshError({
         code: ErrorCode.FatalError,
-        message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
-        data: { supportedVersionRange: SUPPORTED_NODE_VERSION_RANGE },
+        message: 'Unsupported Polymesh spec version. Please upgrade the SDK',
       });
-      versionSpy.mockImplementation(() => {
+      assertExpectedChainVersionSpy.mockImplementation(() => {
         throw error;
       });
 
@@ -173,7 +171,7 @@ describe('Polymesh Class', () => {
         code: ErrorCode.FatalError,
         message: 'Unable to connect',
       });
-      versionSpy.mockImplementation(() => {
+      assertExpectedChainVersionSpy.mockImplementation(() => {
         throw error;
       });
 
