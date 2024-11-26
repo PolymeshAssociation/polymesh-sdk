@@ -100,6 +100,8 @@ import {
   Events,
   Falsyable,
   MapTxWithArgs,
+  MiddlewarePermissions,
+  MiddlewareV6Extrinsic,
   PolymeshTx,
   Queries,
   StatClaimIssuer,
@@ -2190,7 +2192,7 @@ export function assertNoPendingAuthorizationExists(params: {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
       message,
-      data: { target, issuer, authorizationType, authId },
+      data: { target, issuer, authorizationType, authId: authId.toString() },
     });
   }
 }
@@ -2373,4 +2375,27 @@ export async function prepareStorageForCustomType(
   }
 
   return customTypeData;
+}
+
+/**
+ * Determines the middleware permissions follows the legacy format
+ */
+export function isMiddlewareV6Extrinsic(
+  permissions: MiddlewarePermissions
+): permissions is MiddlewareV6Extrinsic {
+  const keys = Object.keys(permissions);
+  const vals = Object.values(permissions);
+
+  // API is the same for "whole permissions" or no permissions
+  if (keys.includes('whole') || vals.length === 0) {
+    return false;
+  }
+
+  const firstVal = vals[0];
+
+  if ('palletName' in firstVal || (firstVal[0] && 'palletName' in firstVal[0])) {
+    return true;
+  }
+
+  return false;
 }

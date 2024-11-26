@@ -77,6 +77,16 @@ export async function prepareInviteAccount(
     authorizationValue = permissionsLikeToPermissions(permissionsLike, context);
   }
 
+  if (
+    authorizationValue.transactions &&
+    authorizationValue.transactions.type === PermissionType.Exclude
+  ) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Cannot use "Exclude" when specifying permissions',
+    });
+  }
+
   const authRequest: Authorization = {
     type: AuthorizationType.JoinIdentity,
     value: authorizationValue,
