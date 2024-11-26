@@ -186,6 +186,7 @@ import {
   CountryCode as CountryCodeEnum,
   DistributionWithDetails,
   ExtrinsicData,
+  Leg,
   MiddlewareMetadata,
   PermissionedAccount,
   ProtocolFees,
@@ -457,6 +458,7 @@ interface ContextOptions {
   supportsSubscription?: boolean;
   getSignature?: `0x${string}`;
   getNextAssetId?: string;
+  getInstructionLegsFromChain?: ResultSet<Leg>;
 }
 
 interface SigningManagerOptions {
@@ -792,6 +794,10 @@ const defaultContextOptions: ContextOptions = {
   supportsSubscription: true,
   getSignature: '0xsignature',
   getNextAssetId: '0x12341234123412341234123412341234',
+  getInstructionLegsFromChain: {
+    data: [],
+    next: null,
+  },
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultSigningManagerOptions: SigningManagerOptions = {
@@ -928,6 +934,7 @@ function configureContext(opts: ContextOptions): void {
     assertHasSigningAddress: jest.fn(),
     assertSupportsSubscription: jest.fn(),
     getSignature: jest.fn().mockReturnValue(opts.getSignature),
+    getInstructionLegsFromChain: jest.fn().mockResolvedValue(opts.getInstructionLegsFromChain),
   } as unknown as MockContext;
 
   contextInstance.clone = jest.fn().mockReturnValue(contextInstance);

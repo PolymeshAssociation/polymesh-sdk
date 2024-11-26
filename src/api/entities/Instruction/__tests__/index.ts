@@ -1,8 +1,5 @@
-import { Option, StorageKey, u64 } from '@polkadot/types';
-import {
-  PolymeshPrimitivesIdentityIdPortfolioId,
-  PolymeshPrimitivesSettlementLeg,
-} from '@polkadot/types/lookup';
+import { StorageKey, u64 } from '@polkadot/types';
+import { PolymeshPrimitivesIdentityIdPortfolioId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -22,12 +19,7 @@ import {
   LegTypeEnum,
 } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import {
-  createMockAssetId,
-  createMockInstructionStatus,
-  createMockNfts,
-  createMockU64,
-} from '~/testUtils/mocks/dataSources';
+import { createMockInstructionStatus } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import {
   AffirmationStatus,
@@ -35,8 +27,7 @@ import {
   InstructionAffirmationOperation,
   InstructionStatus,
   InstructionType,
-  NftLeg,
-  OffChainLeg,
+  Leg,
   SignerKeyRingType,
   UnsubCallback,
 } from '~/types';
@@ -959,221 +950,19 @@ describe('Instruction class', () => {
     });
 
     describe('querying from chain', () => {
-      let instructionStatusMock: jest.Mock;
-
-      let bigNumberToU64Spy: jest.SpyInstance;
-
-      beforeAll(() => {
-        bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
-      });
-
-      beforeEach(() => {
-        dsMockUtils.configureMocks({ contextOptions: { middlewareAvailable: false } });
-        dsMockUtils.createQueryMock('settlement', 'instructionCounter', {
-          returnValue: dsMockUtils.createMockU64(new BigNumber(1000)),
-        });
-        when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
-        dsMockUtils.createQueryMock('settlement', 'instructionLegs');
-        instructionStatusMock = dsMockUtils.createQueryMock('settlement', 'instructionStatuses');
-      });
-
       it("should return the instruction's legs", async () => {
-        const fromDid = 'fromDid';
-        const toDid = 'toDid';
-        const assetId = '0x11111111111181111111111111111111';
-        const assetId2 = '0x22222222222222222222222222222222';
-        const amount = new BigNumber(1000);
+        const mockData = {
+          data: ['leg' as unknown as Leg],
+          next: null,
+          count: new BigNumber(1),
+        };
+        dsMockUtils.configureMocks({
+          contextOptions: { getInstructionLegsFromChain: mockData, middlewareAvailable: false },
+        });
 
-        entityMockUtils.configureMocks({ fungibleAssetOptions: { assetId } });
-        instructionStatusMock.mockResolvedValue(
-          createMockInstructionStatus(InternalInstructionStatus.Pending)
-        );
-        const mockLeg1 = dsMockUtils.createMockOption(
-          dsMockUtils.createMockInstructionLeg({
-            Fungible: {
-              sender: dsMockUtils.createMockPortfolioId({
-                did: dsMockUtils.createMockIdentityId(fromDid),
-                kind: dsMockUtils.createMockPortfolioKind('Default'),
-              }),
-              receiver: dsMockUtils.createMockPortfolioId({
-                did: dsMockUtils.createMockIdentityId(toDid),
-                kind: dsMockUtils.createMockPortfolioKind('Default'),
-              }),
-              assetId: dsMockUtils.createMockAssetId(assetId),
-              amount: dsMockUtils.createMockU128(amount.shiftedBy(6)),
-            },
-          })
-        );
+        const result = await instruction.getLegs();
 
-        const mockLeg2 = dsMockUtils.createMockOption(
-          dsMockUtils.createMockInstructionLeg({
-            Fungible: {
-              sender: dsMockUtils.createMockPortfolioId({
-                did: dsMockUtils.createMockIdentityId(fromDid),
-                kind: dsMockUtils.createMockPortfolioKind('Default'),
-              }),
-              receiver: dsMockUtils.createMockPortfolioId({
-                did: dsMockUtils.createMockIdentityId(toDid),
-                kind: dsMockUtils.createMockPortfolioKind('Default'),
-              }),
-              assetId: dsMockUtils.createMockAssetId(assetId2),
-              amount: dsMockUtils.createMockU128(amount.shiftedBy(6)),
-            },
-          })
-        );
-        const entries: [StorageKey<[u64, u64]>, Option<PolymeshPrimitivesSettlementLeg>][] = [
-          tuple(
-            {
-              args: [rawId, dsMockUtils.createMockU64(new BigNumber(1))],
-            } as unknown as StorageKey<[u64, u64]>,
-            mockLeg1
-          ),
-          tuple(
-            {
-              args: [rawId, dsMockUtils.createMockU64(new BigNumber(0))],
-            } as unknown as StorageKey<[u64, u64]>,
-            mockLeg2
-          ),
-        ];
-
-        jest
-          .spyOn(utilsInternalModule, 'requestPaginated')
-          .mockClear()
-          .mockImplementation()
-          .mockResolvedValue({ entries, lastKey: null });
-
-        const { data: leg } = await instruction.getLegs();
-
-        const resultLeg1 = leg[0] as FungibleLeg;
-        expect(resultLeg1.amount).toEqual(amount);
-        expect(resultLeg1.asset.id).toBe(hexToUuid(assetId2));
-        expect(resultLeg1.from.owner.did).toBe(fromDid);
-        expect(resultLeg1.to.owner.did).toBe(toDid);
-
-        const resultLeg2 = leg[1] as FungibleLeg;
-        expect(resultLeg2.amount).toEqual(amount);
-        expect(resultLeg2.asset.id).toBe(hexToUuid(assetId));
-        expect(resultLeg2.from.owner.did).toBe(fromDid);
-        expect(resultLeg2.to.owner.did).toBe(toDid);
-      });
-
-      it('should throw an error if the instruction is not pending', () => {
-        instructionStatusMock.mockResolvedValue(createMockInstructionStatus('Success'));
-        return expect(instruction.getLegs()).rejects.toThrow(
-          'Instruction has already been executed/rejected and it was purged from chain'
-        );
-      });
-
-      it('should handle NFT legs', async () => {
-        const fromDid = 'fromDid';
-        const toDid = 'toDid';
-        const assetId = '0x11111111111181111111111111111111';
-
-        entityMockUtils.configureMocks({ fungibleAssetOptions: { assetId } });
-        instructionStatusMock.mockResolvedValue(
-          createMockInstructionStatus(InternalInstructionStatus.Pending)
-        );
-        const mockLeg = dsMockUtils.createMockOption(
-          dsMockUtils.createMockInstructionLeg({
-            NonFungible: {
-              sender: dsMockUtils.createMockPortfolioId({
-                did: dsMockUtils.createMockIdentityId(fromDid),
-                kind: dsMockUtils.createMockPortfolioKind('Default'),
-              }),
-              receiver: dsMockUtils.createMockPortfolioId({
-                did: dsMockUtils.createMockIdentityId(toDid),
-                kind: dsMockUtils.createMockPortfolioKind('Default'),
-              }),
-              nfts: createMockNfts({
-                assetId: createMockAssetId(assetId),
-                ids: [createMockU64(new BigNumber(1))],
-              }),
-            },
-          })
-        );
-        const entries = [
-          tuple({ args: ['instructionId', 'legId'] } as unknown as StorageKey, mockLeg),
-        ];
-
-        jest
-          .spyOn(utilsInternalModule, 'requestPaginated')
-          .mockClear()
-          .mockImplementation()
-          .mockResolvedValue({ entries, lastKey: null });
-
-        const { data: leg } = await instruction.getLegs();
-
-        const resultLeg = leg[0] as NftLeg;
-        expect(resultLeg.nfts).toEqual(
-          expect.arrayContaining([expect.objectContaining({ id: new BigNumber(1) })])
-        );
-        expect(resultLeg.asset.id).toBe(hexToUuid(assetId));
-        expect(resultLeg.from.owner.did).toBe(fromDid);
-        expect(resultLeg.to.owner.did).toBe(toDid);
-      });
-
-      it('should handle off chain legs', async () => {
-        const fromDid = 'fromDid';
-        const rawFromId = dsMockUtils.createMockIdentityId(fromDid);
-        const toDid = 'toDid';
-        const rawToId = dsMockUtils.createMockIdentityId(toDid);
-        const offChainAsset = 'SOME_TICKER';
-        const amount = new BigNumber(10);
-
-        instructionStatusMock.mockResolvedValue(
-          createMockInstructionStatus(InternalInstructionStatus.Pending)
-        );
-
-        const identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
-
-        when(identityIdToStringSpy).calledWith(rawFromId).mockReturnValue(fromDid);
-        when(identityIdToStringSpy).calledWith(rawToId).mockReturnValue(toDid);
-        const mockLeg = dsMockUtils.createMockOption(
-          dsMockUtils.createMockInstructionLeg({
-            OffChain: {
-              senderIdentity: rawFromId,
-              receiverIdentity: rawToId,
-              ticker: dsMockUtils.createMockTicker(offChainAsset),
-              amount: dsMockUtils.createMockU128(amount.shiftedBy(6)),
-            },
-          })
-        );
-        const entries = [
-          tuple({ args: ['instructionId', 'legId'] } as unknown as StorageKey, mockLeg),
-        ];
-
-        jest
-          .spyOn(utilsInternalModule, 'requestPaginated')
-          .mockClear()
-          .mockImplementation()
-          .mockResolvedValue({ entries, lastKey: null });
-
-        const { data: leg } = await instruction.getLegs();
-
-        const resultLeg = leg[0] as OffChainLeg;
-        expect(resultLeg.offChainAmount).toEqual(amount);
-        expect(resultLeg.asset).toBe(offChainAsset);
-        expect(resultLeg.from.did).toBe(fromDid);
-        expect(resultLeg.to.did).toBe(toDid);
-      });
-
-      it('should throw an error if a leg in None', () => {
-        const assetId = '0x1111';
-
-        entityMockUtils.configureMocks({ fungibleAssetOptions: { assetId } });
-        instructionStatusMock.mockResolvedValue(
-          createMockInstructionStatus(InternalInstructionStatus.Pending)
-        );
-        const mockLeg = dsMockUtils.createMockOption();
-        const entries = [tuple(['instructionId', 'legId'] as unknown as StorageKey, mockLeg)];
-
-        jest
-          .spyOn(utilsInternalModule, 'requestPaginated')
-          .mockClear()
-          .mockImplementation()
-          .mockResolvedValue({ entries, lastKey: null });
-
-        return expect(instruction.getLegs()).rejects.toThrow();
+        expect(result).toEqual(mockData);
       });
     });
   });

@@ -1,7 +1,4 @@
-import {
-  PolymeshPrimitivesSettlementInstructionStatus,
-  PolymeshPrimitivesSettlementLeg,
-} from '@polkadot/types/lookup';
+import { PolymeshPrimitivesSettlementInstructionStatus } from '@polkadot/types/lookup';
 import { hexAddPrefix, hexStripPrefix } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
@@ -11,11 +8,8 @@ import {
   Account,
   Context,
   Entity,
-  FungibleAsset,
   Identity,
   modifyInstructionAffirmation,
-  Nft,
-  NftCollection,
   PolymeshError,
   Venue,
 } from '~/internal';
@@ -58,16 +52,12 @@ import { InstructionStatus as InternalInstructionStatus } from '~/types/internal
 import { Ensured } from '~/types/utils';
 import { isOffChainLeg } from '~/utils';
 import {
-  balanceToBigNumber,
   bigNumberToU64,
   identityIdToString,
   instructionMemoToString,
   mediatorAffirmationStatusToStatus,
   meshAffirmationStatusToAffirmationStatus,
-  meshAssetToAssetId,
   meshInstructionStatusToInstructionStatus,
-  meshNftToNftId,
-  meshPortfolioIdToPortfolio,
   meshSettlementTypeToEndCondition,
   middlewareAffirmStatusToAffirmationStatus,
   middlewareEventDetailsToEventIdentifier,
@@ -75,7 +65,6 @@ import {
   middlewareInstructionToInstructionEndCondition,
   middlewareLegToLeg,
   momentToDate,
-  tickerToString,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
@@ -575,15 +564,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   public async getLegs(
     paginationOpts?: PaginationOptions | MiddlewarePaginationOptions
   ): Promise<ResultSet<Leg>> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { settlement },
-        },
-      },
-      id,
-      context,
-    } = this;
+    const { id, context } = this;
 
     const isMiddlewareAvailable = await this.getMiddlewareInfoAndCheckIfInstructionExists();
 
@@ -617,88 +598,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       };
     }
 
-    const isExecuted = await this.isExecuted();
-
-    if (isExecuted) {
-      throw new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message: executedMessage,
-      });
-    }
-
-    const { entries: legs, lastKey: next } = await requestPaginated(settlement.instructionLegs, {
-      arg: bigNumberToU64(id, context),
-      paginationOpts: paginationOpts as PaginationOptions,
-    });
-
-    const data = [...legs]
-      .sort((a, b) => u64ToBigNumber(a[0].args[1]).minus(u64ToBigNumber(b[0].args[1])).toNumber())
-      .map(([, leg]) => {
-        if (leg.isSome) {
-          const legValue: PolymeshPrimitivesSettlementLeg = leg.unwrap();
-          if (legValue.isFungible) {
-            const {
-              sender,
-              receiver,
-              amount,
-              ticker: rawTicker,
-              assetId: rawAssetId,
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            } = legValue.asFungible as any; // NOSONAR
-
-            const assetId = meshAssetToAssetId(rawTicker || rawAssetId, context);
-            const fromPortfolio = meshPortfolioIdToPortfolio(sender, context);
-            const toPortfolio = meshPortfolioIdToPortfolio(receiver, context);
-
-            return {
-              from: fromPortfolio,
-              to: toPortfolio,
-              amount: balanceToBigNumber(amount),
-              asset: new FungibleAsset({ assetId }, context),
-            };
-          } else if (legValue.isNonFungible) {
-            const { sender, receiver, nfts } = legValue.asNonFungible;
-
-            const from = meshPortfolioIdToPortfolio(sender, context);
-            const to = meshPortfolioIdToPortfolio(receiver, context);
-            const { assetId, ids } = meshNftToNftId(nfts, context);
-
-            return {
-              from,
-              to,
-              nfts: ids.map(nftId => new Nft({ assetId, id: nftId }, context)),
-              asset: new NftCollection({ assetId }, context),
-            };
-          } else {
-            const {
-              senderIdentity,
-              receiverIdentity,
-              amount,
-              ticker: rawTicker,
-            } = legValue.asOffChain;
-
-            const ticker = tickerToString(rawTicker);
-            const from = identityIdToString(senderIdentity);
-            const to = identityIdToString(receiverIdentity);
-
-            return {
-              from: new Identity({ did: from }, context),
-              to: new Identity({ did: to }, context),
-              offChainAmount: balanceToBigNumber(amount),
-              asset: ticker,
-            };
-          }
-        } else {
-          throw new Error(
-            'Instruction has already been executed/rejected and it was purged from chain'
-          );
-        }
-      });
-
-    return {
-      data,
-      next,
-    };
+    return context.getInstructionLegsFromChain(id, paginationOpts as PaginationOptions);
   }
 
   /**
