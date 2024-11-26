@@ -7,17 +7,20 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { prepareInviteAccount } from '~/api/procedures/inviteAccount';
-import { Account, AuthorizationRequest, Context } from '~/internal';
+import { Account, AuthorizationRequest, Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
   Authorization,
   AuthorizationType,
+  ErrorCode,
   Identity,
   InviteAccountParams,
+  PermissionType,
   ResultSet,
   SignerType,
   SignerValue,
+  TxTags,
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -283,5 +286,41 @@ describe('inviteAccount procedure', () => {
     return expect(prepareInviteAccount.call(proc, { ...args })).rejects.toThrow(
       'The target Account already has a pending invitation to join this Identity'
     );
+  });
+
+  it('should throw an error if Exclude is specified for transactions', () => {
+    dsMockUtils.configureMocks({
+      contextOptions: {
+        sentAuthorizations: { data: [], next: null },
+      },
+    });
+
+    entityMockUtils.configureMocks({
+      accountOptions: {
+        getIdentity: null,
+      },
+    });
+
+    permissionsLikeToPermissionsSpy.mockReturnValue({
+      transactions: { type: PermissionType.Exclude, values: [TxTags.asset.Issue] },
+    });
+
+    const proc = procedureMockUtils.getInstance<InviteAccountParams, AuthorizationRequest>(
+      mockContext
+    );
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Cannot use "Exclude" when specifying permissions',
+    });
+
+    return expect(
+      prepareInviteAccount.call(proc, {
+        targetAccount: entityMockUtils.getAccountInstance(),
+        permissions: {
+          transactions: { type: PermissionType.Exclude, values: [TxTags.asset.Issue] },
+        },
+      })
+    ).rejects.toThrow(expectedError);
   });
 });

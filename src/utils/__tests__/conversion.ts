@@ -10595,6 +10595,28 @@ describe('middlewarePermissionsDataToPermissions', () => {
         type: PermissionType.Include,
       },
     });
+
+    permissions = {
+      asset: { whole: null },
+      extrinsic: {
+        these: {
+          Asset: { extrinsics: { these: ['register_custom_asset_type'] } },
+          Nft: { extrinsics: { these: ['issue_nft'] } },
+        },
+      },
+      portfolio: { whole: null },
+    };
+
+    result = middlewarePermissionsDataToPermissions(JSON.stringify(permissions), context);
+    expect(result).toEqual({
+      assets: null,
+      portfolios: null,
+      transactions: {
+        type: PermissionType.Include,
+        values: ['asset.registerCustomAssetType', 'nft.issueNft'],
+      },
+      transactionGroups: [],
+    });
   });
 });
 
