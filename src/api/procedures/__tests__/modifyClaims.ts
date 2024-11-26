@@ -236,7 +236,7 @@ describe('modifyClaims procedure', () => {
     jest.clearAllMocks();
 
     dsMockUtils.createApolloQueryMock(
-      claimsQuery({
+      claimsQuery(false, {
         dids: [someDid, otherDid],
         trustedClaimIssuers: [issuer.did],
         includeExpired,
@@ -348,7 +348,7 @@ describe('modifyClaims procedure', () => {
     const { did } = await mockContext.getSigningIdentity();
 
     dsMockUtils.createApolloQueryMock(
-      claimsQuery({
+      claimsQuery(false, {
         trustedClaimIssuers: [did],
         dids: [someDid, otherDid],
         includeExpired,
@@ -426,7 +426,7 @@ describe('modifyClaims procedure', () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
 
     dsMockUtils.createApolloQueryMock(
-      claimsQuery({
+      claimsQuery(false, {
         trustedClaimIssuers: [issuer.did],
         dids: [someDid, otherDid],
         includeExpired,
@@ -439,7 +439,7 @@ describe('modifyClaims procedure', () => {
     );
 
     dsMockUtils.createApolloQueryMock(
-      claimsQuery({
+      claimsQuery(false, {
         dids: [someDid, otherDid],
         trustedClaimIssuers: [issuer.did],
         includeExpired,
@@ -491,7 +491,7 @@ describe('modifyClaims procedure', () => {
     const { did } = await mockContext.getSigningIdentity();
 
     dsMockUtils.createApolloQueryMock(
-      claimsQuery({
+      claimsQuery(false, {
         trustedClaimIssuers: [did],
         dids: [someDid, otherDid],
         includeExpired,

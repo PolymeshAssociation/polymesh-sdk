@@ -25,7 +25,7 @@ describe('portfolioMovementsQuery', () => {
       address: 'someAddress',
     };
 
-    const result = portfolioMovementsQuery(variables);
+    const result = portfolioMovementsQuery(false, variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual({

@@ -6,7 +6,7 @@ import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 
 describe('authorizationsQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
-    let result = authorizationsQuery({});
+    let result = authorizationsQuery(false, {});
 
     expect(result.query).toBeDefined();
 
@@ -20,12 +20,12 @@ describe('authorizationsQuery', () => {
       start: 0,
     };
 
-    result = authorizationsQuery(variables);
+    result = authorizationsQuery(false, variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
 
-    result = authorizationsQuery(variables, new BigNumber(1), new BigNumber(0));
+    result = authorizationsQuery(false, variables, new BigNumber(1), new BigNumber(0));
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual({

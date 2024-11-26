@@ -390,3 +390,37 @@ export type CustomTypeData = {
   rawValue: Bytes;
   isAlreadyCreated?: boolean;
 };
+
+/**
+ * Chain v6 and below permission model
+ */
+export type MiddlewareV6Extrinsic = Record<
+  string,
+  {
+    palletName: string;
+    dispatchableNames: Record<string, string[]>;
+  }[]
+>;
+
+export type ExtrinsicGroup =
+  | {
+      whole: null;
+    }
+  | {
+      these: string[];
+    };
+
+/**
+ * Chain v7 and above permission model
+ */
+export type MiddlewareV7Extrinsic = {
+  extrinsic: {
+    these: {
+      [key: string]: {
+        extrinsics: ExtrinsicGroup;
+      };
+    };
+  };
+};
+
+export type MiddlewarePermissions = MiddlewareV6Extrinsic | MiddlewareV7Extrinsic;

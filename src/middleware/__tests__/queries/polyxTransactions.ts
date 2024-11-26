@@ -12,12 +12,12 @@ describe('polyxTransactionsQuery', () => {
       start: 0,
     };
 
-    let result = polyxTransactionsQuery(variables);
+    let result = polyxTransactionsQuery(false, variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
 
-    result = polyxTransactionsQuery({}, new BigNumber(10), new BigNumber(2));
+    result = polyxTransactionsQuery(false, {}, new BigNumber(10), new BigNumber(2));
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual({

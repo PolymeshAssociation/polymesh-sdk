@@ -86,11 +86,10 @@ export function metadataQuery(): QueryOptions {
 export function latestSqVersionQuery(): QueryOptions {
   const query = gql`
     query SubqueryVersions {
-      subqueryVersions(orderBy: [${SubqueryVersionsOrderBy.CreatedAtDesc}], first: 1) {
+      subqueryVersions(orderBy: [${SubqueryVersionsOrderBy.IdDesc}], first: 1) {
         nodes {
           id
           version
-          createdAt
         }
       }
     }
@@ -163,4 +162,13 @@ export function removeUndefinedValues(
   variables: Record<string | number | symbol, unknown>
 ): Record<string | number | symbol, unknown> {
   return Object.fromEntries(Object.entries(variables).filter(([, value]) => value !== undefined));
+}
+
+/**
+ * Pad ID for subquery
+ *
+ * @hidden
+ */
+export function padSqId(id: string): string {
+  return id.padStart(10, '0');
 }

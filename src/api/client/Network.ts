@@ -179,6 +179,7 @@ export class Network {
       },
     } = await context.queryMiddleware<Ensured<Query, 'events'>>(
       eventsByArgs(
+        context.isSqIdPadded,
         {
           moduleId,
           eventId,
@@ -338,6 +339,7 @@ export class Network {
       },
     } = await context.queryMiddleware<Ensured<Query, 'events'>>(
       eventsByArgs(
+        context.isSqIdPadded,
         {
           moduleId,
           eventId,

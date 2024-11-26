@@ -78,12 +78,12 @@ describe('assetTransactionQuery', () => {
       start: 0,
     };
 
-    let result = assetTransactionQuery(variables);
+    let result = assetTransactionQuery(false, variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
 
-    result = assetTransactionQuery(variables, new BigNumber(1), new BigNumber(0));
+    result = assetTransactionQuery(false, variables, new BigNumber(1), new BigNumber(0));
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual({
