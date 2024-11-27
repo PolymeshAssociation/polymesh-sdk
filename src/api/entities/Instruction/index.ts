@@ -289,7 +289,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     const instructionCounter = await settlement.instructionCounter();
 
-    return id.lte(u64ToBigNumber(instructionCounter));
+    return id.gt(new BigNumber(0)) && id.lt(u64ToBigNumber(instructionCounter));
   }
 
   /**
@@ -386,6 +386,16 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       data,
       next,
     };
+  }
+
+  /**
+   * Retrieve all legs of this Instruction from chain
+   * @param paginationOpts
+   *
+   * @hidden
+   */
+  public async getLegsFromChain(paginationOpts?: PaginationOptions): Promise<ResultSet<Leg>> {
+    return this.context.getInstructionLegsFromChain(this.id, paginationOpts as PaginationOptions);
   }
 
   /**
