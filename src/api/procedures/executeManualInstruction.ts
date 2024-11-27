@@ -162,7 +162,7 @@ export async function prepareStorage(
   const [{ data: legs }, { did }, details] = await Promise.all([
     instruction.getLegsFromChain(),
     context.getSigningIdentity(),
-    instruction.details(),
+    instruction.detailsFromChain(),
   ]);
 
   const [portfolios, offChainParties] = await P.reduce<

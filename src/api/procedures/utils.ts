@@ -52,7 +52,7 @@ export async function assertInstructionValid(
   instruction: Instruction,
   context: Context
 ): Promise<void> {
-  const details = await instruction.details();
+  const details = await instruction.detailsFromChain();
   const { status, type } = details;
 
   if (status !== InstructionStatus.Pending && status !== InstructionStatus.Failed) {

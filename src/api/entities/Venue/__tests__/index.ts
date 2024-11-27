@@ -241,7 +241,7 @@ describe('Venue class', () => {
 
       entityMockUtils.configureMocks({
         instructionOptions: {
-          details: detailsMock,
+          detailsFromChain: detailsMock,
         },
       });
 

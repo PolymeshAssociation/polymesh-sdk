@@ -439,7 +439,7 @@ describe('modifyInstructionAffirmation procedure', () => {
 
       entityMockUtils.configureMocks({
         instructionOptions: {
-          details: {
+          detailsFromChain: {
             venue: undefined,
           },
         },

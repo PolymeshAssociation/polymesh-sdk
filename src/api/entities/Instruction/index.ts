@@ -396,16 +396,13 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieve information specific to this Instruction
+   * @hidden
    *
-   * @note uses middleware (if available) to retrieve information, otherwise directly queries from the chain
+   * Retrieve information specific to this Instruction from chain
    *
-   * @throws if
-   *  - instruction does not exists
-   *  - instruction is not yet processed by the middleware (when querying from middleware)
-   *  - instruction is executed/rejected and was pruned from chain (when querying from chain)
+   * @throws if instruction is executed/rejected and was pruned from chain
    */
-  public async details(): Promise<InstructionDetails> {
+  public async detailsFromChain(): Promise<InstructionDetails> {
     const {
       context: {
         polymeshApi: {
@@ -415,26 +412,6 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       id,
       context,
     } = this;
-
-    const isMiddlewareAvailable = await this.getMiddlewareInfoAndCheckIfInstructionExists();
-
-    if (isMiddlewareAvailable) {
-      const instruction = await this.getInstructionFromMiddleware();
-
-      const endCondition = middlewareInstructionToInstructionEndCondition(instruction);
-
-      const { status, tradeDate, valueDate, venueId, memo, createdBlock } = instruction;
-
-      return {
-        status: middlewareInstructionStatusToInstructionStatus(status),
-        createdAt: new Date(createdBlock!.datetime),
-        tradeDate,
-        valueDate,
-        venue: venueId ? new Venue({ id: new BigNumber(venueId) }, context) : null,
-        memo: memo ?? null,
-        ...endCondition,
-      };
-    }
 
     const rawId = bigNumberToU64(id, context);
 
@@ -470,6 +447,42 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       memo: memo.isSome ? instructionMemoToString(memo.unwrap()) : null,
       ...meshSettlementTypeToEndCondition(type),
     };
+  }
+
+  /**
+   * Retrieve information specific to this Instruction
+   *
+   * @note uses middleware (if available) to retrieve information, otherwise directly queries from the chain
+   *
+   * @throws if
+   *  - instruction does not exists
+   *  - instruction is not yet processed by the middleware (when querying from middleware)
+   *  - instruction is executed/rejected and was pruned from chain (when querying from chain)
+   */
+  public async details(): Promise<InstructionDetails> {
+    const { context } = this;
+
+    const isMiddlewareAvailable = await this.getMiddlewareInfoAndCheckIfInstructionExists();
+
+    if (isMiddlewareAvailable) {
+      const instruction = await this.getInstructionFromMiddleware();
+
+      const endCondition = middlewareInstructionToInstructionEndCondition(instruction);
+
+      const { status, tradeDate, valueDate, venueId, memo, createdBlock } = instruction;
+
+      return {
+        status: middlewareInstructionStatusToInstructionStatus(status),
+        createdAt: new Date(createdBlock!.datetime),
+        tradeDate,
+        valueDate,
+        venue: venueId ? new Venue({ id: new BigNumber(venueId) }, context) : null,
+        memo: memo ?? null,
+        ...endCondition,
+      };
+    }
+
+    return this.detailsFromChain();
   }
 
   /**
@@ -568,7 +581,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    *
    * @note supports pagination
    *
-   * @throws if the instruction is executed/rejected and was pruned from chain (when querying from chain)
+   * @throws if the instruction is executed/rejected and was pruned from chain
    */
   public async getLegsFromChain(paginationOpts?: PaginationOptions): Promise<ResultSet<Leg>> {
     const {
@@ -580,6 +593,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       context,
       id,
     } = this;
+
     const instruction = new Instruction({ id }, context);
     const isExecuted = await instruction.isExecuted();
 

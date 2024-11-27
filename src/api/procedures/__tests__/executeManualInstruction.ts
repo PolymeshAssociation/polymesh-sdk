@@ -353,7 +353,7 @@ describe('executeManualInstruction procedure', () => {
             ],
             next: null,
           },
-          details: instructionDetails,
+          detailsFromChain: instructionDetails,
         },
       });
       const result = await boundFunc({
@@ -382,7 +382,7 @@ describe('executeManualInstruction procedure', () => {
       entityMockUtils.configureMocks({
         instructionOptions: {
           getLegsFromChain: { data: [{ from, to, amount, asset }], next: null },
-          details: instructionDetails,
+          detailsFromChain: instructionDetails,
         },
       });
 

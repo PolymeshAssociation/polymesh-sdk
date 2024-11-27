@@ -122,7 +122,7 @@ const assertReceipts = async (
 
   const instruction = new Instruction({ id: instructionId }, context);
 
-  const { venue } = await instruction.details();
+  const { venue } = await instruction.detailsFromChain();
   const allowedSigners = await venue?.getAllowedSigners();
 
   const invalidReceipts: OffChainAffirmationReceipt[] = [];

@@ -127,7 +127,7 @@ describe('assertInstructionValid', () => {
   it('should throw an error if instruction is not in pending or failed state', () => {
     entityMockUtils.configureMocks({
       instructionOptions: {
-        details: {
+        detailsFromChain: {
           status: InstructionStatus.Success,
         } as InstructionDetails,
       },
@@ -145,7 +145,7 @@ describe('assertInstructionValid', () => {
 
     entityMockUtils.configureMocks({
       instructionOptions: {
-        details: {
+        detailsFromChain: {
           status: InstructionStatus.Pending,
           type: InstructionType.SettleOnBlock,
           tradeDate: new Date('10/10/2010'),

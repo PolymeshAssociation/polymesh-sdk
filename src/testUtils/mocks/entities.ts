@@ -304,6 +304,7 @@ interface InstructionOptions extends EntityOptions {
   details?: EntityGetter<InstructionDetails>;
   getLegs?: EntityGetter<ResultSet<Leg>>;
   getLegsFromChain?: EntityGetter<ResultSet<Leg>>;
+  detailsFromChain?: EntityGetter<InstructionDetails>;
   isPending?: EntityGetter<boolean>;
 }
 
@@ -1516,6 +1517,7 @@ const MockInstructionClass = createMockEntityClass<InstructionOptions>(
     details!: jest.Mock;
     getLegs!: jest.Mock;
     getLegsFromChain!: jest.Mock;
+    detailsFromChain!: jest.Mock;
     isPending!: jest.Mock;
 
     /**
@@ -1535,11 +1537,20 @@ const MockInstructionClass = createMockEntityClass<InstructionOptions>(
       this.getLegs = createEntityGetterMock(opts.getLegs);
       this.isPending = createEntityGetterMock(opts.isPending);
       this.getLegsFromChain = createEntityGetterMock(opts.getLegsFromChain);
+      this.detailsFromChain = createEntityGetterMock(opts.detailsFromChain);
     }
   },
   () => ({
     id: new BigNumber(1),
     details: {
+      status: InstructionStatus.Pending,
+      createdAt: new Date(new Date().getTime() + 365 * 24 * 60 * 60 * 1000),
+      tradeDate: null,
+      valueDate: null,
+      venue: getVenueInstance(),
+      type: InstructionType.SettleOnAffirmation,
+    },
+    detailsFromChain: {
       status: InstructionStatus.Pending,
       createdAt: new Date(new Date().getTime() + 365 * 24 * 60 * 60 * 1000),
       tradeDate: null,

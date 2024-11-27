@@ -181,7 +181,7 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
     const failed: Instruction[] = [];
     const pending: Instruction[] = [];
 
-    const details = await P.map(instructions, instruction => instruction.details());
+    const details = await P.map(instructions, instruction => instruction.detailsFromChain());
 
     details.forEach(({ status }, index) => {
       if (status === InstructionStatus.Pending) {
