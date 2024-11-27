@@ -1121,9 +1121,16 @@ describe('modifyInstructionAffirmation procedure', () => {
     const asset = entityMockUtils.getFungibleAssetInstance({ assetId: 'SOME_ASSET' });
 
     it('should return the portfolios for which to modify affirmation status', async () => {
-      dsMockUtils.configureMocks({
-        contextOptions: {
-          getInstructionLegsFromChain: {
+      const proc = procedureMockUtils.getInstance<
+        ModifyInstructionAffirmationParams,
+        Instruction,
+        Storage
+      >(mockContext);
+
+      const boundFunc = prepareStorage.bind(proc);
+      entityMockUtils.configureMocks({
+        instructionOptions: {
+          getLegsFromChain: {
             data: [
               { from: from1, to: to1, amount, asset },
               { from: from2, to: to2, amount, asset },
@@ -1133,13 +1140,6 @@ describe('modifyInstructionAffirmation procedure', () => {
           },
         },
       });
-      const proc = procedureMockUtils.getInstance<
-        ModifyInstructionAffirmationParams,
-        Instruction,
-        Storage
-      >(mockContext);
-
-      const boundFunc = prepareStorage.bind(proc);
 
       let result = await boundFunc({
         id: new BigNumber(1),
@@ -1213,18 +1213,6 @@ describe('modifyInstructionAffirmation procedure', () => {
     });
 
     it('should return the portfolios for which to modify affirmation status when there is no sender legs', async () => {
-      from1 = entityMockUtils.getDefaultPortfolioInstance({ did: fromDid, isCustodiedBy: false });
-      to1 = entityMockUtils.getDefaultPortfolioInstance({ did: toDid, isCustodiedBy: false });
-
-      dsMockUtils.configureMocks({
-        contextOptions: {
-          getInstructionLegsFromChain: {
-            data: [{ from: from1, to: to1, amount, asset }],
-            next: null,
-          },
-        },
-      });
-
       const proc = procedureMockUtils.getInstance<
         ModifyInstructionAffirmationParams,
         Instruction,
@@ -1232,6 +1220,14 @@ describe('modifyInstructionAffirmation procedure', () => {
       >(mockContext);
 
       const boundFunc = prepareStorage.bind(proc);
+      from1 = entityMockUtils.getDefaultPortfolioInstance({ did: fromDid, isCustodiedBy: false });
+      to1 = entityMockUtils.getDefaultPortfolioInstance({ did: toDid, isCustodiedBy: false });
+
+      entityMockUtils.configureMocks({
+        instructionOptions: {
+          getLegsFromChain: { data: [{ from: from1, to: to1, amount, asset }], next: null },
+        },
+      });
 
       const result = await boundFunc({
         id: new BigNumber(1),

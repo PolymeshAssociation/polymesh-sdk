@@ -160,7 +160,7 @@ export async function prepareStorage(
   const instruction = new Instruction({ id }, context);
 
   const [{ data: legs }, { did }, details] = await Promise.all([
-    context.getInstructionLegsFromChain(id),
+    instruction.getLegsFromChain(),
     context.getSigningIdentity(),
     instruction.details(),
   ]);

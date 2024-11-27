@@ -654,8 +654,10 @@ export async function prepareStorage(
 
   const portfolioIdParams = portfolioParams.map(portfolioLikeToPortfolioId);
 
+  const instruction = new Instruction({ id }, context);
+
   const [{ data: legs }, signer, executeInstructionInfo] = await Promise.all([
-    context.getInstructionLegsFromChain(id),
+    instruction.getLegsFromChain(),
     context.getSigningIdentity(),
     polymeshApi.call.settlementApi.getExecuteInstructionInfo(rawId),
   ]);

@@ -14,7 +14,6 @@ import {
   PalletCorporateActionsDistribution,
   PalletRelayerSubsidy,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
-  PolymeshPrimitivesSettlementLeg,
 } from '@polkadot/types/lookup';
 import { CallFunction, Codec, DetectCodec, Signer as PolkadotSigner } from '@polkadot/types/types';
 import { SigningManager } from '@polymeshassociation/signing-manager-types';
@@ -29,9 +28,6 @@ import {
   DividendDistribution,
   FungibleAsset,
   Identity,
-  Instruction,
-  Nft,
-  NftCollection,
   PolymeshError,
   Subsidy,
 } from '~/internal';
@@ -46,10 +42,8 @@ import {
   CorporateActionParams,
   DistributionWithDetails,
   ErrorCode,
-  Leg,
   MiddlewareMetadata,
   ModuleName,
-  PaginationOptions,
   PolkadotConfig,
   ProtocolFees,
   ResultSet,
@@ -66,7 +60,6 @@ import {
   assetToMeshAssetId,
   balanceToBigNumber,
   bigNumberToU32,
-  bigNumberToU64,
   boolToBoolean,
   claimTypeToMeshClaimType,
   corporateActionIdentifierToCaId,
@@ -75,8 +68,6 @@ import {
   meshAssetToAssetId,
   meshClaimToClaim,
   meshCorporateActionToCorporateActionParams,
-  meshNftToNftId,
-  meshPortfolioIdToPortfolio,
   middlewareClaimToClaimData,
   middlewareEventDetailsToEventIdentifier,
   momentToDate,
@@ -86,11 +77,9 @@ import {
   stringToHash,
   stringToIdentityId,
   textToString,
-  tickerToString,
   txTagToProtocolOp,
   u16ToBigNumber,
   u32ToBigNumber,
-  u64ToBigNumber,
 } from '~/utils/conversion';
 import {
   asAccount,
@@ -101,7 +90,6 @@ import {
   getApiAtBlock,
   getLatestSqVersion,
   isV6Spec,
-  requestPaginated,
 } from '~/utils/internal';
 
 import { processType } from './utils';
@@ -1433,105 +1421,5 @@ export class Context {
     });
 
     return result.signature;
-  }
-
-  /**
-   * Retrieves legs for an instruction ID from chain
-   * @param instructionId whose legs needs to be fetched
-   * @param paginationOpts pagination options if given
-   * @returns Legs of the instruction
-   */
-  public async getInstructionLegsFromChain(
-    instructionId: BigNumber,
-    paginationOpts?: PaginationOptions
-  ): Promise<ResultSet<Leg>> {
-    const {
-      polymeshApi: {
-        query: { settlement },
-      },
-    } = this;
-    const instruction = new Instruction({ id: instructionId }, this);
-    const isExecuted = await instruction.isExecuted();
-
-    if (isExecuted) {
-      throw new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message: 'Instruction has already been executed/rejected and it was purged from chain',
-      });
-    }
-
-    const { entries: legs, lastKey: next } = await requestPaginated(settlement.instructionLegs, {
-      arg: bigNumberToU64(instructionId, this),
-      paginationOpts: paginationOpts as PaginationOptions,
-    });
-
-    const data = [...legs]
-      .sort((a, b) => u64ToBigNumber(a[0].args[1]).minus(u64ToBigNumber(b[0].args[1])).toNumber())
-      .map(([, leg]) => {
-        if (leg.isSome) {
-          const legValue: PolymeshPrimitivesSettlementLeg = leg.unwrap();
-          if (legValue.isFungible) {
-            const {
-              sender,
-              receiver,
-              amount,
-              ticker: rawTicker,
-              assetId: rawAssetId,
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            } = legValue.asFungible as any; // NOSONAR
-
-            const assetId = meshAssetToAssetId(rawTicker || rawAssetId, this);
-            const fromPortfolio = meshPortfolioIdToPortfolio(sender, this);
-            const toPortfolio = meshPortfolioIdToPortfolio(receiver, this);
-
-            return {
-              from: fromPortfolio,
-              to: toPortfolio,
-              amount: balanceToBigNumber(amount),
-              asset: new FungibleAsset({ assetId }, this),
-            };
-          } else if (legValue.isNonFungible) {
-            const { sender, receiver, nfts } = legValue.asNonFungible;
-
-            const from = meshPortfolioIdToPortfolio(sender, this);
-            const to = meshPortfolioIdToPortfolio(receiver, this);
-            const { assetId, ids } = meshNftToNftId(nfts, this);
-
-            return {
-              from,
-              to,
-              nfts: ids.map(nftId => new Nft({ assetId, id: nftId }, this)),
-              asset: new NftCollection({ assetId }, this),
-            };
-          } else {
-            const {
-              senderIdentity,
-              receiverIdentity,
-              amount,
-              ticker: rawTicker,
-            } = legValue.asOffChain;
-
-            const ticker = tickerToString(rawTicker);
-            const from = identityIdToString(senderIdentity);
-            const to = identityIdToString(receiverIdentity);
-
-            return {
-              from: new Identity({ did: from }, this),
-              to: new Identity({ did: to }, this),
-              offChainAmount: balanceToBigNumber(amount),
-              asset: ticker,
-            };
-          }
-        } else {
-          throw new Error(
-            'Instruction has already been executed/rejected and it was purged from chain'
-          );
-        }
-      });
-
-    return {
-      data,
-      next,
-    };
   }
 }

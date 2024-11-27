@@ -344,19 +344,15 @@ describe('executeManualInstruction procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext);
 
       const boundFunc = prepareStorage.bind(proc);
-      dsMockUtils.configureMocks({
-        contextOptions: {
-          getInstructionLegsFromChain: {
+      entityMockUtils.configureMocks({
+        instructionOptions: {
+          getLegsFromChain: {
             data: [
               { from, to, amount, asset },
               { from: sender, to: receiver, offChainAmount: amount, asset: 'OFF_CHAIN_ASSET' },
             ],
             next: null,
           },
-        },
-      });
-      entityMockUtils.configureMocks({
-        instructionOptions: {
           details: instructionDetails,
         },
       });
@@ -383,14 +379,9 @@ describe('executeManualInstruction procedure', () => {
       from = entityMockUtils.getDefaultPortfolioInstance({ did: fromDid, isCustodiedBy: false });
       to = entityMockUtils.getDefaultPortfolioInstance({ did: toDid, isCustodiedBy: false });
 
-      dsMockUtils.configureMocks({
-        contextOptions: {
-          getInstructionLegsFromChain: { data: [{ from, to, amount, asset }], next: null },
-        },
-      });
-
       entityMockUtils.configureMocks({
         instructionOptions: {
+          getLegsFromChain: { data: [{ from, to, amount, asset }], next: null },
           details: instructionDetails,
         },
       });

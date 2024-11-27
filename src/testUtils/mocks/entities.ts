@@ -303,6 +303,7 @@ interface InstructionOptions extends EntityOptions {
   id?: BigNumber;
   details?: EntityGetter<InstructionDetails>;
   getLegs?: EntityGetter<ResultSet<Leg>>;
+  getLegsFromChain?: EntityGetter<ResultSet<Leg>>;
   isPending?: EntityGetter<boolean>;
 }
 
@@ -1514,6 +1515,7 @@ const MockInstructionClass = createMockEntityClass<InstructionOptions>(
     id!: BigNumber;
     details!: jest.Mock;
     getLegs!: jest.Mock;
+    getLegsFromChain!: jest.Mock;
     isPending!: jest.Mock;
 
     /**
@@ -1532,6 +1534,7 @@ const MockInstructionClass = createMockEntityClass<InstructionOptions>(
       this.details = createEntityGetterMock(opts.details);
       this.getLegs = createEntityGetterMock(opts.getLegs);
       this.isPending = createEntityGetterMock(opts.isPending);
+      this.getLegsFromChain = createEntityGetterMock(opts.getLegsFromChain);
     }
   },
   () => ({
@@ -1545,6 +1548,17 @@ const MockInstructionClass = createMockEntityClass<InstructionOptions>(
       type: InstructionType.SettleOnAffirmation,
     },
     getLegs: {
+      data: [
+        {
+          from: getNumberedPortfolioInstance({ did: 'someDid', id: new BigNumber(1) }),
+          to: getNumberedPortfolioInstance({ did: 'otherDid', id: new BigNumber(1) }),
+          asset: getFungibleAssetInstance(),
+          amount: new BigNumber(100),
+        },
+      ],
+      next: null,
+    },
+    getLegsFromChain: {
       data: [
         {
           from: getNumberedPortfolioInstance({ did: 'someDid', id: new BigNumber(1) }),
