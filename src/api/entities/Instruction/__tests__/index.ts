@@ -309,15 +309,20 @@ describe('Instruction class', () => {
 
       const instructionCounterMock = dsMockUtils
         .createQueryMock('settlement', 'instructionCounter')
-        .mockResolvedValue(dsMockUtils.createMockU64(new BigNumber(10)));
+        .mockResolvedValue(dsMockUtils.createMockU64(new BigNumber(2)));
 
       let result = await instruction.exists();
 
       expect(result).toBe(true);
 
-      instructionCounterMock.mockResolvedValue(dsMockUtils.createMockU64(new BigNumber(0)));
+      instructionCounterMock.mockResolvedValue(dsMockUtils.createMockU64(new BigNumber(1)));
 
       result = await instruction.exists();
+
+      expect(result).toBe(false);
+
+      const fakeInstruction = new Instruction({ id: new BigNumber(0) }, context);
+      result = await fakeInstruction.exists();
 
       expect(result).toBe(false);
     });
