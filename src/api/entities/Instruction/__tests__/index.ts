@@ -1461,6 +1461,21 @@ describe('Instruction class', () => {
         {
           query: instructionEventsQuery(
             {
+              event: InstructionEventEnum.FailedToExecuteInstruction,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [],
+            },
+          },
+        },
+        {
+          query: instructionEventsQuery(
+            {
               event: InstructionEventEnum.InstructionRejected,
               instructionId: id.toString(),
             },
@@ -1544,6 +1559,21 @@ describe('Instruction class', () => {
         {
           query: instructionEventsQuery(
             {
+              event: InstructionEventEnum.FailedToExecuteInstruction,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [],
+            },
+          },
+        },
+        {
+          query: instructionEventsQuery(
+            {
               event: InstructionEventEnum.InstructionRejected,
               instructionId: id.toString(),
             },
@@ -1558,7 +1588,76 @@ describe('Instruction class', () => {
         },
       ]);
 
-      const result = await instruction.getStatus();
+      let result = await instruction.getStatus();
+      expect(result).toMatchObject({
+        status: InstructionStatus.Failed,
+        eventIdentifier: fakeEventIdentifierResult,
+      });
+
+      dsMockUtils.createApolloMultipleQueriesMock([
+        {
+          query: instructionEventsQuery(
+            {
+              event: InstructionEventEnum.InstructionExecuted,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [],
+            },
+          },
+        },
+        {
+          query: instructionEventsQuery(
+            {
+              event: InstructionEventEnum.InstructionFailed,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [],
+            },
+          },
+        },
+        {
+          query: instructionEventsQuery(
+            {
+              event: InstructionEventEnum.FailedToExecuteInstruction,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [fakeQueryResult],
+            },
+          },
+        },
+        {
+          query: instructionEventsQuery(
+            {
+              event: InstructionEventEnum.InstructionRejected,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [],
+            },
+          },
+        },
+      ]);
+
+      result = await instruction.getStatus();
       expect(result).toMatchObject({
         status: InstructionStatus.Failed,
         eventIdentifier: fakeEventIdentifierResult,
@@ -1613,6 +1712,21 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionFailed,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [],
+            },
+          },
+        },
+        {
+          query: instructionEventsQuery(
+            {
+              event: InstructionEventEnum.FailedToExecuteInstruction,
               instructionId: id.toString(),
             },
             new BigNumber(1),
@@ -1688,6 +1802,21 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             {
               event: InstructionEventEnum.InstructionFailed,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [],
+            },
+          },
+        },
+        {
+          query: instructionEventsQuery(
+            {
+              event: InstructionEventEnum.FailedToExecuteInstruction,
               instructionId: id.toString(),
             },
             new BigNumber(1),
