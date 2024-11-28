@@ -512,12 +512,17 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       };
     }
 
-    const [executedEventIdentifier, failedEventIdentifier, rejectedEventIdentifier] =
-      await Promise.all([
-        this.getInstructionEventFromMiddleware(InstructionEventEnum.InstructionExecuted),
-        this.getInstructionEventFromMiddleware(InstructionEventEnum.InstructionFailed),
-        this.getInstructionEventFromMiddleware(InstructionEventEnum.InstructionRejected),
-      ]);
+    const [
+      executedEventIdentifier,
+      failedEventIdentifier,
+      failedToExecuteIdentifier,
+      rejectedEventIdentifier,
+    ] = await Promise.all([
+      this.getInstructionEventFromMiddleware(InstructionEventEnum.InstructionExecuted),
+      this.getInstructionEventFromMiddleware(InstructionEventEnum.InstructionFailed),
+      this.getInstructionEventFromMiddleware(InstructionEventEnum.FailedToExecuteInstruction), // this is the new event triggered for failed to execute instruction
+      this.getInstructionEventFromMiddleware(InstructionEventEnum.InstructionRejected),
+    ]);
 
     if (executedEventIdentifier) {
       return {
@@ -530,6 +535,13 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       return {
         status: InstructionStatus.Failed,
         eventIdentifier: failedEventIdentifier,
+      };
+    }
+
+    if (failedToExecuteIdentifier) {
+      return {
+        status: InstructionStatus.Failed,
+        eventIdentifier: failedToExecuteIdentifier,
       };
     }
 
@@ -598,6 +610,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       | InstructionEventEnum.InstructionExecuted
       | InstructionEventEnum.InstructionFailed
       | InstructionEventEnum.InstructionRejected
+      | InstructionEventEnum.FailedToExecuteInstruction
   ): Promise<EventIdentifier | null> {
     const { id, context } = this;
 
