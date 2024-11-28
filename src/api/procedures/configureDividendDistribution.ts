@@ -3,7 +3,6 @@ import BigNumber from 'bignumber.js';
 
 import { assertDistributionDatesValid } from '~/api/procedures/utils';
 import {
-  BaseAsset,
   Checkpoint,
   Context,
   DefaultPortfolio,
@@ -33,7 +32,12 @@ import {
   portfolioToPortfolioId,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { filterEventRecords, getCheckpointValue, optionize } from '~/utils/internal';
+import {
+  asFungibleAsset,
+  filterEventRecords,
+  getCheckpointValue,
+  optionize,
+} from '~/utils/internal';
 
 /**
  * @hidden
@@ -174,7 +178,9 @@ export async function prepareConfigureDividendDistribution(
     }
   }
 
-  const [{ free }] = await portfolio.getAssetBalances({ assets: [currency] });
+  const currencyAsset = await asFungibleAsset(currency, context);
+
+  const [{ free }] = await portfolio.getAssetBalances({ assets: [currencyAsset] });
 
   if (free.lt(maxAmount)) {
     throw new PolymeshError({
@@ -192,7 +198,7 @@ export async function prepareConfigureDividendDistribution(
       originPortfolio instanceof BigNumber ? originPortfolio : originPortfolio.id,
       context
     );
-  const rawCurrency = assetToMeshAssetId(new BaseAsset({ assetId: currency }, context), context);
+  const rawCurrency = assetToMeshAssetId(currencyAsset, context);
 
   const rawPerShare = bigNumberToBalance(perShare, context);
   const rawAmount = bigNumberToBalance(maxAmount, context);

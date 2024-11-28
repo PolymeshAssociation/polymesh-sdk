@@ -94,6 +94,7 @@ describe('configureDividendDistribution procedure', () => {
   let dateToMomentSpy: jest.SpyInstance;
   let bigNumberToBalanceSpy: jest.SpyInstance;
   let corporateActionParamsToMeshCorporateActionArgsSpy: jest.SpyInstance;
+  let asFungibleAssetSpy: jest.SpyInstance;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -159,6 +160,7 @@ describe('configureDividendDistribution procedure', () => {
       utilsConversionModule,
       'corporateActionParamsToMeshCorporateActionArgs'
     );
+    asFungibleAssetSpy = jest.spyOn(utilsInternalModule, 'asFungibleAsset');
   });
 
   beforeEach(() => {
@@ -169,6 +171,9 @@ describe('configureDividendDistribution procedure', () => {
 
     mockContext = dsMockUtils.getContextInstance();
 
+    when(asFungibleAssetSpy)
+      .calledWith(currency, mockContext)
+      .mockResolvedValue(entityMockUtils.getFungibleAssetInstance({ assetId: currency }));
     when(assetToMeshAssetIdSpy)
       .calledWith(expect.objectContaining({ id: currency }), mockContext)
       .mockReturnValue(rawCurrency);

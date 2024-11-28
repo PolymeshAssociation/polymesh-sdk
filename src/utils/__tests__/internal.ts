@@ -121,6 +121,11 @@ jest.mock(
   '~/api/entities/Asset/Fungible',
   require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
 );
+
+jest.mock(
+  '~/api/entities/Asset/Base/BaseAsset',
+  require('~/testUtils/mocks/entities').mockBaseAssetModule('~/api/entities/Asset/Base/BaseAsset')
+);
 jest.mock(
   '~/api/entities/Asset/NonFungible',
   require('~/testUtils/mocks/entities').mockNftCollectionModule('~/api/entities/Asset/NonFungible')
@@ -2314,30 +2319,46 @@ describe('asChildIdentity', () => {
 });
 
 describe('asFungibleAsset', () => {
-  it('should return a given FungibleAsset', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return a given FungibleAsset', async () => {
     const mockContext = dsMockUtils.getContextInstance();
     const input = entityMockUtils.getFungibleAssetInstance();
 
-    const result = asFungibleAsset(input, mockContext);
+    const result = await asFungibleAsset(input, mockContext);
 
     expect(result).toEqual(input);
   });
 
-  it('should create a new FungibleAsset given an asset ID', () => {
+  it('should create a new FungibleAsset given an asset ID', async () => {
     const mockContext = dsMockUtils.getContextInstance();
     const assetId = '0x12341234123412341234123412341234';
 
-    const result = asFungibleAsset(assetId, mockContext);
+    dsMockUtils
+      .createQueryMock('asset', 'assetIdTicker')
+      .mockResolvedValue(dsMockUtils.createMockTicker('TICKER'));
 
-    expect(result).toEqual(expect.objectContaining({ id: assetId }));
+    const result = await asFungibleAsset(assetId, mockContext);
+
+    expect(result).toEqual(expect.objectContaining({ id: hexToUuid(assetId) }));
   });
 
-  it('should create a new FungibleAsset given a BaseAsset', () => {
+  it('should create a new FungibleAsset given a BaseAsset', async () => {
     const mockContext = dsMockUtils.getContextInstance();
     const assetId = '0x12341234123412341234123412341234';
     const baseAsset = entityMockUtils.getBaseAssetInstance({ assetId });
 
-    const result = asFungibleAsset(baseAsset, mockContext);
+    const result = await asFungibleAsset(baseAsset, mockContext);
 
     expect(result).toEqual(expect.objectContaining({ id: assetId }));
   });
