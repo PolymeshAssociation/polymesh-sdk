@@ -193,21 +193,21 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       }
     });
 
-    const mask: PortfolioBalance[] | undefined = args?.assets.map(asset => ({
-      total: new BigNumber(0),
-      locked: new BigNumber(0),
-      free: new BigNumber(0),
-      asset: asFungibleAsset(asset, context),
-    }));
+    if (args?.assets.length) {
+      const filteredBalances: PortfolioBalance[] = [];
+      for (const asset of args.assets) {
+        const argAsset = await asFungibleAsset(asset, context);
+        const portfolioBalance = {
+          total: new BigNumber(0),
+          locked: new BigNumber(0),
+          free: new BigNumber(0),
+          asset: argAsset,
+        };
 
-    if (mask) {
-      return mask.map(portfolioBalance => {
-        const {
-          asset: { id: assetId },
-        } = portfolioBalance;
+        filteredBalances.push(assetBalances[argAsset.id] ?? portfolioBalance);
+      }
 
-        return assetBalances[assetId] ?? portfolioBalance;
-      });
+      return filteredBalances;
     }
 
     return values(assetBalances);
