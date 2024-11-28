@@ -200,8 +200,10 @@ describe('Portfolio class', () => {
     let rawLocked1: Balance;
     let rawLocked2: Balance;
     let rawPortfolioId: PolymeshPrimitivesIdentityIdPortfolioId;
+    let asFungibleAssetSpy: jest.SpyInstance;
 
     beforeAll(() => {
+      asFungibleAssetSpy = jest.spyOn(utilsInternalModule, 'asFungibleAsset');
       did = 'someDid';
       id = new BigNumber(1);
       assetId0 = '0x11111111111181111111111111111111';
@@ -269,6 +271,17 @@ describe('Portfolio class', () => {
       const portfolio = new NonAbstract({ did, id }, context);
 
       const otherAssetId = '0x99999999999999999999999999999999';
+
+      when(asFungibleAssetSpy)
+        .calledWith(hexToUuid(assetId0), context)
+        .mockResolvedValue(
+          entityMockUtils.getFungibleAssetInstance({ assetId: hexToUuid(assetId0) })
+        );
+
+      when(asFungibleAssetSpy)
+        .calledWith(otherAssetId, context)
+        .mockResolvedValue(entityMockUtils.getFungibleAssetInstance({ assetId: otherAssetId }));
+
       const result = await portfolio.getAssetBalances({
         assets: [hexToUuid(assetId0), new FungibleAsset({ assetId: otherAssetId }, context)],
       });

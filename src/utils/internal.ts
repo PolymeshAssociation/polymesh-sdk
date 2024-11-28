@@ -1154,12 +1154,15 @@ export async function asAsset(asset: string | Asset, context: Context): Promise<
  * @hidden
  * Transforms asset or ticker into a `FungibleAsset` entity
  */
-export function asFungibleAsset(asset: string | BaseAsset, context: Context): FungibleAsset {
+export async function asFungibleAsset(
+  asset: string | BaseAsset,
+  context: Context
+): Promise<FungibleAsset> {
   if (asset instanceof FungibleAsset) {
     return asset;
   }
 
-  const assetId = typeof asset === 'string' ? asset : asset.id;
+  const assetId = await asAssetId(asset, context);
 
   return new FungibleAsset({ assetId }, context);
 }
@@ -1311,7 +1314,7 @@ export async function getCheckpointValue(
   ) {
     return checkpoint;
   }
-  const assetEntity = asFungibleAsset(asset, context);
+  const assetEntity = await asFungibleAsset(asset, context);
   const { type, id } = checkpoint;
   if (type === CaCheckpointType.Existing) {
     return assetEntity.checkpoints.getOne({ id });
