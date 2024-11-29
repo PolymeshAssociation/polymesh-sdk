@@ -322,6 +322,45 @@ describe('createNftCollection procedure', () => {
       );
     });
 
+    it('should not have a link ticker transaction if ticker is not provided', async () => {
+      const proc = procedureMockUtils.getInstance<Params, NftCollection, Storage>(mockContext, {
+        customTypeData: null,
+        needsLocalMetadata: false,
+        status: TickerReservationStatus.Reserved,
+        assetId,
+        isAssetCreated: false,
+      });
+      const rawCollectionKeys = [] as const;
+      collectionKeysSpy.mockReturnValue(rawCollectionKeys);
+      stringToBytesSpy.mockReturnValue(rawName);
+
+      const result = await prepareCreateNftCollection.call(proc, {
+        nftType: KnownNftType.Derivative,
+        collectionKeys: [],
+        securityIdentifiers: [{ type: SecurityIdentifierType.Lei, value: '' }],
+        documents,
+      });
+
+      expect(result.transactions).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            transaction: createAssetTransactionTx,
+            fee: undefined,
+            args: [rawName, rawDivisible, rawAssetType, ['fakeId'], null],
+          }),
+          expect.objectContaining({
+            transaction: addDocumentsTransaction,
+            feeMultiplier: new BigNumber(1),
+            args: [rawDocuments, rawAssetId],
+          }),
+          expect.objectContaining({
+            transaction: createNftCollectionTransaction,
+            args: expect.arrayContaining([rawAssetId, rawType, []]),
+          }),
+        ])
+      );
+    });
+
     it('should not have createAsset if Asset is already created', async () => {
       entityMockUtils.configureMocks({
         fungibleAssetOptions: {
