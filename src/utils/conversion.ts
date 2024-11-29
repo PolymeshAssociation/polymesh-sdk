@@ -265,13 +265,11 @@ import {
   CorporateActionIdentifier,
   CustomTypeData,
   ExemptKey,
-  ExtrinsicGroup,
   ExtrinsicIdentifier,
   InstructionStatus,
   InternalAssetType,
   InternalNftType,
   MeshTickerOrAssetId,
-  MiddlewarePermissions,
   PalletPermissions,
   PalletPermissionsV6,
   PalletPermissionsV7,
@@ -306,7 +304,6 @@ import {
   getAssetIdAndTicker,
   getAssetIdForMiddleware,
   getAssetIdFromMiddleware,
-  isMiddlewareV6Extrinsic,
   isModuleOrTagMatch,
   optionize,
   padString,
@@ -5133,72 +5130,58 @@ export function middlewareAgentGroupDataToPermissionGroup(
  * @hidden
  */
 function middlewareExtrinsicPermissionsDataToTransactionPermissions(
-  permissions: MiddlewarePermissions
+  permissions: Record<
+    string,
+    {
+      palletName: string;
+      dispatchableNames: Record<string, string[]>;
+    }[]
+  >
 ): TransactionPermissions | null {
-  const isLegacy = isMiddlewareV6Extrinsic(permissions);
-
-  let extrinsicType: PermissionType = 'nullish' as unknown as PermissionType;
-  let rawPallets;
+  let extrinsicType: PermissionType;
+  let pallets;
   if ('these' in permissions) {
     extrinsicType = PermissionType.Include;
-    rawPallets = permissions.these;
+    pallets = permissions.these;
   } else if ('except' in permissions) {
     extrinsicType = PermissionType.Exclude;
-    rawPallets = permissions.except;
-  }
-
-  if (!rawPallets) {
-    return null;
-  }
-
-  let pallets: {
-    palletName: string;
-    dispatchableNames: Record<string, string[]>;
-  }[] = rawPallets;
-
-  if (!isLegacy) {
-    pallets = [];
-
-    for (const [key, rawBody] of Object.entries(rawPallets)) {
-      const body = rawBody as unknown as { extrinsics: ExtrinsicGroup };
-
-      if ('these' in body.extrinsics && body.extrinsics.these) {
-        pallets.push({ palletName: key, dispatchableNames: { these: body.extrinsics.these } });
-      }
-    }
+    pallets = permissions.except;
   }
 
   let txValues: (ModuleName | TxTag)[] = [];
   let exceptions: TxTag[] = [];
 
-  pallets.forEach(({ palletName, dispatchableNames }) => {
-    const moduleName = stringLowerFirst(coerceHexToString(palletName));
-    if ('except' in dispatchableNames) {
-      const dispatchables = [...dispatchableNames.except];
-      exceptions = [
-        ...exceptions,
-        ...dispatchables.map(name => formatTxTag(coerceHexToString(name), moduleName)),
-      ];
-      txValues = [...txValues, moduleName as ModuleName];
-    } else if ('these' in dispatchableNames) {
-      const dispatchables = [...dispatchableNames.these];
-      txValues = [
-        ...txValues,
-        ...dispatchables.map(name => formatTxTag(coerceHexToString(name), moduleName)),
-      ];
-    } else {
-      txValues = [...txValues, moduleName as ModuleName];
-    }
-  });
+  if (pallets) {
+    pallets.forEach(({ palletName, dispatchableNames }) => {
+      const moduleName = stringLowerFirst(coerceHexToString(palletName));
+      if ('except' in dispatchableNames) {
+        const dispatchables = [...dispatchableNames.except];
+        exceptions = [
+          ...exceptions,
+          ...dispatchables.map(name => formatTxTag(coerceHexToString(name), moduleName)),
+        ];
+        txValues = [...txValues, moduleName as ModuleName];
+      } else if ('these' in dispatchableNames) {
+        const dispatchables = [...dispatchableNames.these];
+        txValues = [
+          ...txValues,
+          ...dispatchables.map(name => formatTxTag(coerceHexToString(name), moduleName)),
+        ];
+      } else {
+        txValues = [...txValues, moduleName as ModuleName];
+      }
+    });
 
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const result = {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    type: extrinsicType!,
-    values: txValues,
-  };
+    const result = {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      type: extrinsicType!,
+      values: txValues,
+    };
 
-  return exceptions.length ? { ...result, exceptions } : result;
+    return exceptions.length ? { ...result, exceptions } : result;
+  }
+
+  return null;
 }
 
 /**
