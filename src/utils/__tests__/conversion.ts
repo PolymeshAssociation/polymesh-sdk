@@ -2327,6 +2327,12 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
   });
 
   describe('meshPermissionsToPermissionsV2', () => {
+    beforeEach(() => {
+      dsMockUtils.createQueryMock('identity', 'keyAssetPermissions');
+      dsMockUtils.createQueryMock('identity', 'keyExtrinsicPermissions');
+      dsMockUtils.createQueryMock('identity', 'keyPortfolioPermissions');
+    });
+
     it('should convert an Account object to a Permissions', async () => {
       jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
       dsMockUtils.createQueryMock('identity', 'keyAssetPermissions');
@@ -2467,6 +2473,44 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
 
       result = await meshPermissionsToPermissionsV2(entityMockUtils.getAccountInstance(), context);
       expect(result).toEqual(fakeResult);
+    });
+
+    it('should filter out incorrectly cased modules and extrinsics', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const rawIdentityName = dsMockUtils.createMockText('identity');
+      const rawAuthorshipName = dsMockUtils.createMockText('Asset');
+
+      const rawIdentityPermissions = dsMockUtils.createMockPalletPermissions({
+        extrinsics: dsMockUtils.createMockExtrinsicName({
+          These: [dsMockUtils.createMockText('add_claim')],
+        }),
+      });
+
+      const rawAssetPermissions = dsMockUtils.createMockPalletPermissions({
+        extrinsics: dsMockUtils.createMockExtrinsicName({
+          These: [dsMockUtils.createMockText('createAsset')],
+        }),
+      });
+
+      const permissionsMap = new Map();
+      permissionsMap.set(rawIdentityName, rawIdentityPermissions);
+      permissionsMap.set(rawAuthorshipName, rawAssetPermissions);
+
+      dsMockUtils.getQueryMultiMock().mockResolvedValue([
+        dsMockUtils.createMockOption(),
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockExtrinsicPermissions({
+            These: dsMockUtils.createMockBTreeMap(permissionsMap),
+          })
+        ),
+        dsMockUtils.createMockOption(),
+      ]);
+
+      const result = await meshPermissionsToPermissionsV2(
+        entityMockUtils.getAccountInstance(),
+        context
+      );
+      expect(result.transactions?.values).toEqual([]);
     });
   });
 });

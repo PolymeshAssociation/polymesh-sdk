@@ -123,7 +123,7 @@ describe('CustomPermissionGroup class', () => {
 
       const rawAddClaimPermissions = dsMockUtils.createMockPalletPermissions({
         extrinsics: dsMockUtils.createMockExtrinsicName({
-          These: [dsMockUtils.createMockText('addClaim')],
+          These: [dsMockUtils.createMockText('add_claim')],
         }),
       });
 
