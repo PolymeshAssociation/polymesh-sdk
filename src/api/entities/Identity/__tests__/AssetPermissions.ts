@@ -297,7 +297,7 @@ describe('AssetPermissions class', () => {
       });
 
       const mockExtrinsicNames = dsMockUtils.createMockExtrinsicName({
-        Except: [dsMockUtils.createMockText('createAsset')],
+        Except: [dsMockUtils.createMockText('create_asset')],
       });
 
       const assetTextKey = dsMockUtils.createMockText('asset');

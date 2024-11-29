@@ -317,7 +317,7 @@ import {
   removePadding,
   requestMulti,
 } from '~/utils/internal';
-import { uuidToHex } from '~/utils/strings';
+import { isSnakeCase, startsWithCapital, uuidToHex } from '~/utils/strings';
 import {
   isIdentityCondition,
   isMultiClaimCondition,
@@ -1142,6 +1142,10 @@ const formatTxTag = (dispatchable: string, moduleName: string): TxTag => {
   return `${moduleName}.${camelCase(dispatchable)}` as TxTag;
 };
 
+const processDispatchName = (dispatch: BTreeSet<Text>): string[] => {
+  return [...dispatch].map(name => textToString(name)).filter(name => isSnakeCase(name));
+};
+
 /**
  * @hidden
  */
@@ -1162,21 +1166,22 @@ export function extrinsicPermissionsToTransactionPermissions(
   let exceptions: TxTag[] = [];
 
   if (pallets) {
+    // Note if a pallet or extrinsic has incorrect casing it will get filtered here
     pallets.forEach(({ extrinsics: dispatchableNames }, palletName) => {
-      const moduleName = stringLowerFirst(textToString(palletName));
+      const pallet = textToString(palletName);
+      if (!startsWithCapital(pallet)) {
+        return; // skip incorrect cased pallets
+      }
+      const moduleName = stringLowerFirst(pallet);
+
       if (dispatchableNames.isExcept) {
-        const dispatchables = [...dispatchableNames.asExcept];
-        exceptions = [
-          ...exceptions,
-          ...dispatchables.map(name => formatTxTag(textToString(name), moduleName)),
-        ];
+        const dispatchables = processDispatchName(dispatchableNames.asExcept);
+
+        exceptions = [...exceptions, ...dispatchables.map(name => formatTxTag(name, moduleName))];
         txValues = [...txValues, moduleName as ModuleName];
       } else if (dispatchableNames.isThese) {
-        const dispatchables = [...dispatchableNames.asThese];
-        txValues = [
-          ...txValues,
-          ...dispatchables.map(name => formatTxTag(textToString(name), moduleName)),
-        ];
+        const dispatchables = processDispatchName(dispatchableNames.asThese);
+        txValues = [...txValues, ...dispatchables.map(name => formatTxTag(name, moduleName))];
       } else {
         txValues = [...txValues, moduleName as ModuleName];
       }

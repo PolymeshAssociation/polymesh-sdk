@@ -66,3 +66,11 @@ export const uuidToHex = (uuid: string): string => {
 
   return `0x${trimmedUuid.replace(/-/g, '')}`;
 };
+
+export const isSnakeCase = (input: string): boolean => {
+  return /^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/.test(input);
+};
+
+export const startsWithCapital = (input: string): boolean => {
+  return input[0] === input[0].toUpperCase();
+};
