@@ -2312,18 +2312,6 @@ export function getAssetIdFromMiddleware(
 
 /**
  * @hidden
- *
- * @returns true if spec version indicates public v7 or private v2
- */
-export function isV6Spec(specName: string, specVersion: number): boolean {
-  return (
-    (specVersion > 3000000 && specVersion < 7000000) ||
-    (specName === 'polymesh_private_dev' && specVersion < 2000000)
-  );
-}
-
-/**
- * @hidden
  */
 export async function prepareStorageForCustomType(
   customType: string | BigNumber,
