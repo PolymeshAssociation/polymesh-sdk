@@ -256,15 +256,16 @@ describe('createNftCollection procedure', () => {
     let collectionKeysSpy: jest.SpyInstance;
     let metadataSpecToMeshMetadataSpecSpy: jest.SpyInstance;
     beforeEach(() => {
-      jest.spyOn(utilsConversionModule, 'nameToAssetName').mockReturnValue(rawName);
-      jest.spyOn(utilsConversionModule, 'stringToTicker').mockReturnValue(rawTicker);
+      nameToAssetNameSpy.mockReturnValue(rawName);
+      stringToTickerSpy.mockReturnValue(rawTicker);
+      securityIdentifierToAssetIdentifierSpy.mockReturnValue(
+        'fakeId' as unknown as PolymeshPrimitivesAssetIdentifier
+      );
+
       jest.spyOn(utilsConversionModule, 'booleanToBool').mockReturnValue(rawDivisible);
       jest
         .spyOn(utilsConversionModule, 'internalAssetTypeToAssetType')
         .mockReturnValue(rawAssetType);
-      jest
-        .spyOn(utilsConversionModule, 'securityIdentifierToAssetIdentifier')
-        .mockReturnValue('fakeId' as unknown as PolymeshPrimitivesAssetIdentifier);
 
       collectionKeysSpy = jest.spyOn(utilsConversionModule, 'collectionKeysToMetadataKeys');
       metadataSpecToMeshMetadataSpecSpy = jest.spyOn(
@@ -332,8 +333,6 @@ describe('createNftCollection procedure', () => {
       const result = await prepareCreateNftCollection.call(proc, {
         nftType: KnownNftType.Derivative,
         collectionKeys: [],
-        securityIdentifiers: [{ type: SecurityIdentifierType.Lei, value: '' }],
-        documents,
       });
 
       expect(result.transactions).toEqual(
@@ -341,16 +340,41 @@ describe('createNftCollection procedure', () => {
           expect.objectContaining({
             transaction: createAssetTransactionTx,
             fee: undefined,
-            args: [rawName, rawDivisible, rawAssetType, ['fakeId'], null],
-          }),
-          expect.objectContaining({
-            transaction: addDocumentsTransaction,
-            feeMultiplier: new BigNumber(1),
-            args: [rawDocuments, rawAssetId],
+            args: [rawName, rawDivisible, rawAssetType, [], null],
           }),
           expect.objectContaining({
             transaction: createNftCollectionTransaction,
             args: expect.arrayContaining([rawAssetId, rawType, []]),
+          }),
+        ])
+      );
+    });
+
+    it('should handle name being provided', async () => {
+      const proc = procedureMockUtils.getInstance<Params, NftCollection, Storage>(mockContext, {
+        customTypeData: null,
+        needsLocalMetadata: false,
+        status: TickerReservationStatus.Reserved,
+        assetId,
+        isAssetCreated: false,
+      });
+
+      const rawSomeName = dsMockUtils.createMockBytes('Some Name');
+      when(stringToBytesSpy).calledWith('Some Name', mockContext).mockReturnValue(rawSomeName);
+      nameToAssetNameSpy.mockReturnValue(rawSomeName);
+
+      const result = await prepareCreateNftCollection.call(proc, {
+        nftType: KnownNftType.Derivative,
+        collectionKeys: [],
+        name: 'Some Name',
+      });
+
+      expect(result.transactions).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            transaction: createAssetTransactionTx,
+            fee: undefined,
+            args: [rawSomeName, rawDivisible, rawAssetType, [], null],
           }),
         ])
       );
