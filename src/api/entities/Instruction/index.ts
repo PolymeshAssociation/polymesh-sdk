@@ -406,6 +406,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     const isExecuted = await this.isExecuted();
 
+    /* istanbul ignore next: this is only in v26 LTS */
     if (isExecuted) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
