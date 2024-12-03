@@ -7,20 +7,8 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Context, Entity, Instruction, PolymeshTransaction } from '~/internal';
-import {
-  instructionAffirmationsQuery,
-  instructionEventsQuery,
-  instructionsQuery,
-  legsQuery,
-  offChainAffirmationsQuery,
-} from '~/middleware/queries/settlements';
-import {
-  AffirmStatusEnum,
-  InstructionEventEnum,
-  InstructionStatusEnum,
-  InstructionTypeEnum,
-  LegTypeEnum,
-} from '~/middleware/types';
+import { instructionEventsQuery } from '~/middleware/queries/settlements';
+import { InstructionEventEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   createMockAssetId,
@@ -359,176 +347,6 @@ describe('Instruction class', () => {
       queryMultiMock = dsMockUtils.getQueryMultiMock();
     });
 
-    it('should throw an error if an Instruction does not exists', () => {
-      dsMockUtils.createQueryMock('settlement', 'instructionCounter', {
-        returnValue: dsMockUtils.createMockU64(new BigNumber(0)),
-      });
-      return expect(instruction.details()).rejects.toThrow('Instruction does not exists');
-    });
-
-    describe('querying from middleware', () => {
-      it('should return the Instruction details from middleware', async () => {
-        const status = InstructionStatus.Pending;
-        const createdAt = new Date('10/14/1987');
-        const valueDate = new Date('11/17/1987');
-        const tradeDate = new Date('11/17/1987');
-        const venueId = new BigNumber(1);
-        const type = InstructionType.SettleOnAffirmation;
-        const owner = 'someDid';
-        const blockNumber = new BigNumber(100);
-        const memo = 'someMemo';
-
-        entityMockUtils.configureMocks({ identityOptions: { did: owner } });
-
-        const middlewareInstruction = {
-          id: new BigNumber(1),
-          type: InstructionTypeEnum.SettleOnAffirmation,
-          status: InstructionStatusEnum.Created,
-          venueId,
-          createdBlock: {
-            datetime: createdAt,
-          },
-          tradeDate,
-          valueDate,
-          memo,
-        };
-        dsMockUtils.createApolloQueryMock(
-          instructionsQuery(false, {
-            id: id.toString(),
-          }),
-          {
-            instructions: {
-              nodes: [middlewareInstruction],
-            },
-          }
-        );
-
-        const expectedDetails = {
-          status,
-          createdAt,
-          tradeDate,
-          valueDate,
-          type,
-          memo,
-          venue: expect.objectContaining({
-            id: venueId,
-          }),
-        };
-        let result = await instruction.details();
-
-        expect(result).toEqual(expect.objectContaining(expectedDetails));
-
-        dsMockUtils.createApolloQueryMock(
-          instructionsQuery(false, {
-            id: id.toString(),
-          }),
-          {
-            instructions: {
-              nodes: [
-                {
-                  ...middlewareInstruction,
-                  type: InstructionTypeEnum.SettleOnBlock,
-                  endBlock: blockNumber.toNumber(),
-                },
-              ],
-            },
-          }
-        );
-        result = await instruction.details();
-
-        expect(result).toEqual(
-          expect.objectContaining({
-            ...expectedDetails,
-            type: InstructionType.SettleOnBlock,
-            endBlock: blockNumber,
-          })
-        );
-
-        dsMockUtils.createApolloQueryMock(
-          instructionsQuery(false, {
-            id: id.toString(),
-          }),
-          {
-            instructions: {
-              nodes: [
-                {
-                  ...middlewareInstruction,
-                  type: InstructionTypeEnum.SettleManual,
-                  endAfterBlock: blockNumber.toNumber(),
-                },
-              ],
-            },
-          }
-        );
-
-        result = await instruction.details();
-
-        expect(result).toEqual(
-          expect.objectContaining({
-            ...expectedDetails,
-            type: InstructionType.SettleManual,
-            endAfterBlock: blockNumber,
-          })
-        );
-
-        dsMockUtils.createApolloQueryMock(
-          instructionsQuery(false, {
-            id: id.toString(),
-          }),
-          {
-            instructions: {
-              nodes: [
-                {
-                  ...middlewareInstruction,
-                  status: InstructionStatusEnum.Failed,
-                },
-              ],
-            },
-          }
-        );
-
-        result = await instruction.details();
-
-        expect(result).toEqual(
-          expect.objectContaining({
-            ...expectedDetails,
-            status: InstructionStatus.Failed,
-          })
-        );
-
-        dsMockUtils.createApolloQueryMock(
-          instructionsQuery(false, {
-            id: id.toString(),
-          }),
-          {
-            instructions: {
-              nodes: [
-                {
-                  ...middlewareInstruction,
-                  venueId: undefined,
-                  memo: undefined,
-                },
-              ],
-            },
-          }
-        );
-        result = await instruction.details();
-
-        expect(result.venue).toBeNull();
-        expect(result.memo).toBeNull();
-      });
-
-      it('should throw an error if an Instruction is not yet processed by middleware', () => {
-        dsMockUtils.createApolloQueryMock(instructionsQuery(false, { id: id.toString() }), {
-          instructions: { nodes: [] },
-        });
-
-        return expect(instruction.details()).rejects.toThrow(
-          'Instruction is not yet processed by the middleware'
-        );
-      });
-    });
-
     describe('querying from chain', () => {
       beforeEach(() => {
         dsMockUtils.configureMocks({
@@ -783,12 +601,6 @@ describe('Instruction class', () => {
       dsMockUtils.createQueryMock('settlement', 'affirmsReceived');
     });
 
-    it('should throw an error if the start value is passed as a number when querying from chain', () => {
-      return expect(
-        instruction.getAffirmations({ start: new BigNumber(2), size: new BigNumber(1) })
-      ).rejects.toThrow('`start` should be of type string to query the data from chain');
-    });
-
     it('should throw an error if the instruction is not pending when querying from chain', () => {
       instructionStatusesMock.mockResolvedValue(dsMockUtils.createMockInstructionStatus('Success'));
 
@@ -804,160 +616,9 @@ describe('Instruction class', () => {
       expect(data[0].identity.did).toEqual(did);
       expect(data[0].status).toEqual(status);
     });
-
-    describe('querying from middleware', () => {
-      beforeEach(() => {
-        dsMockUtils.configureMocks({ contextOptions: { middlewareAvailable: true } });
-      });
-      it('should throw an error if the start value is passed as a string', () => {
-        return expect(
-          instruction.getAffirmations({ start: 'IncorrectValue', size: new BigNumber(1) })
-        ).rejects.toThrow('`start` should be of type BigNumber to query the data from middleware');
-      });
-
-      it('should return a list of Affirmation Statuses', async () => {
-        const start = new BigNumber(0);
-        const size = new BigNumber(1);
-        dsMockUtils.createApolloQueryMock(
-          instructionAffirmationsQuery({ instructionId: id.toString() }, size, start),
-          {
-            instructionAffirmations: {
-              nodes: [
-                {
-                  identity: did,
-                  status: AffirmStatusEnum.Affirmed,
-                },
-              ],
-              totalCount: new BigNumber(1),
-            },
-          }
-        );
-        let { data, next, count } = await instruction.getAffirmations({
-          start,
-          size,
-        });
-
-        expect(data).toHaveLength(1);
-        expect(data[0].identity.did).toEqual(did);
-        expect(data[0].status).toEqual(status);
-
-        expect(next).toBeNull();
-        expect(count).toEqual(new BigNumber(1));
-
-        dsMockUtils.createApolloQueryMock(
-          instructionAffirmationsQuery({ instructionId: id.toString() }),
-          {
-            instructionAffirmations: {
-              nodes: [],
-              totalCount: new BigNumber(0),
-            },
-          }
-        );
-
-        ({ data, next, count } = await instruction.getAffirmations());
-
-        expect(data).toEqual([]);
-        expect(next).toBeNull();
-        expect(count).toEqual(new BigNumber(0));
-      });
-    });
   });
 
   describe('method: getLegs', () => {
-    describe('querying from middleware', () => {
-      it('should throw an error if the start value is passed as a string', () => {
-        return expect(
-          instruction.getLegs({ start: 'IncorrectValue', size: new BigNumber(1) })
-        ).rejects.toThrow('`start` should be of type BigNumber to query the data from middleware');
-      });
-
-      it("should return the instruction's legs", async () => {
-        const fromDid = 'fromDid';
-        const toDid = 'toDid';
-        const assetId = '0x11111111111181111111111111111111';
-        const assetId2 = '0x22222222222222222222222222222222';
-        const amount = new BigNumber(1000);
-
-        entityMockUtils.configureMocks({ fungibleAssetOptions: { assetId } });
-
-        const mockLeg1 = {
-          legType: LegTypeEnum.Fungible,
-          from: fromDid,
-          fromPortfolio: new BigNumber(0),
-          to: toDid,
-          toPortfolio: new BigNumber(0),
-          assetId,
-          amount: amount.shiftedBy(6),
-          legIndex: new BigNumber(0),
-        };
-
-        const mockLeg2 = {
-          legType: LegTypeEnum.Fungible,
-          from: fromDid,
-          fromPortfolio: new BigNumber(0),
-          to: toDid,
-          toPortfolio: new BigNumber(0),
-          assetId: assetId2,
-          amount: amount.shiftedBy(6),
-          legIndex: new BigNumber(1),
-        };
-
-        dsMockUtils.createApolloQueryMock(
-          legsQuery({
-            instructionId: id.toString(),
-          }),
-          {
-            legs: {
-              nodes: [mockLeg1, mockLeg2],
-              totalCount: new BigNumber(2),
-            },
-          }
-        );
-
-        let { data, count, next } = await instruction.getLegs();
-
-        expect(count).toEqual(new BigNumber(2));
-        expect(next).toBeNull();
-
-        const resultLeg1 = data[0] as FungibleLeg;
-        expect(resultLeg1.amount).toEqual(amount);
-        expect(resultLeg1.asset.id).toBe(hexToUuid(assetId));
-        expect(resultLeg1.from.owner.did).toBe(fromDid);
-        expect(resultLeg1.to.owner.did).toBe(toDid);
-
-        const resultLeg2 = data[1] as FungibleLeg;
-        expect(resultLeg2.amount).toEqual(amount);
-        expect(resultLeg2.asset.id).toBe(hexToUuid(assetId2));
-        expect(resultLeg2.from.owner.did).toBe(fromDid);
-        expect(resultLeg2.to.owner.did).toBe(toDid);
-
-        dsMockUtils.createApolloQueryMock(
-          legsQuery(
-            {
-              instructionId: id.toString(),
-            },
-            new BigNumber(2),
-            new BigNumber(2)
-          ),
-          {
-            legs: {
-              nodes: [],
-              totalCount: new BigNumber(2),
-            },
-          }
-        );
-
-        ({ data, next, count } = await instruction.getLegs({
-          size: new BigNumber(2),
-          start: new BigNumber(2),
-        }));
-
-        expect(data).toEqual([]);
-        expect(next).toBeNull();
-        expect(count).toEqual(new BigNumber(2));
-      });
-    });
-
     describe('querying from chain', () => {
       let instructionStatusMock: jest.Mock;
 
@@ -1459,25 +1120,6 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             false,
             {
-<<<<<<< HEAD
-=======
-              event: InstructionEventEnum.FailedToExecuteInstruction,
-              instructionId: id.toString(),
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            false,
-            {
->>>>>>> 5ce3a3809 (feat: 🎸 add support for padded IDs in subquery)
               event: InstructionEventEnum.InstructionRejected,
               instructionId: id.toString(),
             },
@@ -1564,25 +1206,6 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             false,
             {
-<<<<<<< HEAD
-=======
-              event: InstructionEventEnum.FailedToExecuteInstruction,
-              instructionId: id.toString(),
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            false,
-            {
->>>>>>> 5ce3a3809 (feat: 🎸 add support for padded IDs in subquery)
               event: InstructionEventEnum.InstructionRejected,
               instructionId: id.toString(),
             },
@@ -1597,84 +1220,7 @@ describe('Instruction class', () => {
         },
       ]);
 
-<<<<<<< HEAD
       const result = await instruction.getStatus();
-=======
-      let result = await instruction.getStatus();
-      expect(result).toMatchObject({
-        status: InstructionStatus.Failed,
-        eventIdentifier: fakeEventIdentifierResult,
-      });
-
-      dsMockUtils.createApolloMultipleQueriesMock([
-        {
-          query: instructionEventsQuery(
-            false,
-            {
-              event: InstructionEventEnum.InstructionExecuted,
-              instructionId: id.toString(),
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            false,
-            {
-              event: InstructionEventEnum.InstructionFailed,
-              instructionId: id.toString(),
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            false,
-            {
-              event: InstructionEventEnum.FailedToExecuteInstruction,
-              instructionId: id.toString(),
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [fakeQueryResult],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            false,
-            {
-              event: InstructionEventEnum.InstructionRejected,
-              instructionId: id.toString(),
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-      ]);
-
-      result = await instruction.getStatus();
->>>>>>> 5ce3a3809 (feat: 🎸 add support for padded IDs in subquery)
       expect(result).toMatchObject({
         status: InstructionStatus.Failed,
         eventIdentifier: fakeEventIdentifierResult,
@@ -1746,25 +1292,6 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             false,
             {
-<<<<<<< HEAD
-=======
-              event: InstructionEventEnum.FailedToExecuteInstruction,
-              instructionId: id.toString(),
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            false,
-            {
->>>>>>> 5ce3a3809 (feat: 🎸 add support for padded IDs in subquery)
               event: InstructionEventEnum.InstructionRejected,
               instructionId: id.toString(),
             },
@@ -1843,25 +1370,6 @@ describe('Instruction class', () => {
           query: instructionEventsQuery(
             false,
             {
-<<<<<<< HEAD
-=======
-              event: InstructionEventEnum.FailedToExecuteInstruction,
-              instructionId: id.toString(),
-            },
-            new BigNumber(1),
-            new BigNumber(0)
-          ),
-          returnData: {
-            instructionEvents: {
-              nodes: [],
-            },
-          },
-        },
-        {
-          query: instructionEventsQuery(
-            false,
-            {
->>>>>>> 5ce3a3809 (feat: 🎸 add support for padded IDs in subquery)
               event: InstructionEventEnum.InstructionRejected,
               instructionId: id.toString(),
             },
@@ -1945,58 +1453,6 @@ describe('Instruction class', () => {
 
   describe('method: getMediators', () => {
     const mediatorDid1 = 'mediatorDid1';
-    const mediatorDid2 = 'mediatorDid2';
-
-    describe('querying the middleware', () => {
-      it('should return the instruction mediators', async () => {
-        dsMockUtils.createApolloQueryMock(
-          instructionsQuery(false, {
-            id: id.toString(),
-          }),
-          {
-            instructions: {
-              nodes: [
-                {
-                  mediators: [mediatorDid1, mediatorDid2],
-                },
-              ],
-            },
-          }
-        );
-        const expiry = new Date('2050/01/01');
-        dsMockUtils.createApolloQueryMock(
-          instructionAffirmationsQuery({
-            instructionId: id.toString(),
-            isMediator: true,
-          }),
-          {
-            instructionAffirmations: {
-              nodes: [
-                {
-                  identity: mediatorDid2,
-                  status: AffirmStatusEnum.Affirmed,
-                  expiry,
-                },
-              ],
-            },
-          }
-        );
-
-        const result = await instruction.getMediators();
-
-        expect(result).toEqual([
-          {
-            identity: expect.objectContaining({ did: mediatorDid1 }),
-            status: AffirmationStatus.Pending,
-          },
-          {
-            identity: expect.objectContaining({ did: mediatorDid2 }),
-            status: AffirmationStatus.Affirmed,
-            expiry,
-          },
-        ]);
-      });
-    });
 
     describe('querying the chain', () => {
       it('should return the instruction mediators', async () => {
@@ -2026,39 +1482,6 @@ describe('Instruction class', () => {
   describe('method: getOffChainAffirmations', () => {
     const legId = new BigNumber(2);
 
-    describe('querying the middleware', () => {
-      it('should return the affirmation status of offchain legs', async () => {
-        dsMockUtils.createApolloQueryMock(
-          offChainAffirmationsQuery({
-            instructionId: id.toString(),
-          }),
-          {
-            instructionAffirmations: {
-              nodes: [
-                {
-                  status: AffirmStatusEnum.Affirmed,
-                  offChainReceipt: {
-                    leg: {
-                      legIndex: legId.toString(),
-                    },
-                  },
-                },
-              ],
-            },
-          }
-        );
-
-        const result = await instruction.getOffChainAffirmations();
-
-        expect(result).toEqual([
-          expect.objectContaining({
-            legId,
-            status: AffirmationStatus.Affirmed,
-          }),
-        ]);
-      });
-    });
-
     describe('querying the chain', () => {
       it('should return the affirmation status of offchain legs', async () => {
         dsMockUtils.configureMocks({ contextOptions: { middlewareAvailable: false } });
@@ -2085,77 +1508,6 @@ describe('Instruction class', () => {
 
   describe('method: getOffChainAffirmationForLeg', () => {
     const legId = new BigNumber(2);
-
-    describe('querying the middleware', () => {
-      it('should return the affirmation status of given offchain leg', async () => {
-        dsMockUtils.createApolloQueryMock(
-          legsQuery({
-            instructionId: id.toString(),
-            legIndex: legId.toNumber(),
-            legType: LegTypeEnum.OffChain,
-          }),
-          {
-            legs: {
-              nodes: [
-                {
-                  offChainReceipts: {
-                    nodes: [
-                      {
-                        uid: '1',
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          }
-        );
-
-        let result = await instruction.getOffChainAffirmationForLeg({ legId });
-
-        expect(result).toEqual(AffirmationStatus.Affirmed);
-
-        dsMockUtils.createApolloQueryMock(
-          legsQuery({
-            instructionId: id.toString(),
-            legIndex: legId.toNumber(),
-            legType: LegTypeEnum.OffChain,
-          }),
-          {
-            legs: {
-              nodes: [
-                {
-                  offChainReceipts: {
-                    nodes: [],
-                  },
-                },
-              ],
-            },
-          }
-        );
-        result = await instruction.getOffChainAffirmationForLeg({ legId });
-
-        expect(result).toEqual(AffirmationStatus.Pending);
-      });
-
-      it('should throw an error if no leg is found', () => {
-        dsMockUtils.createApolloQueryMock(
-          legsQuery({
-            instructionId: id.toString(),
-            legIndex: legId.toNumber(),
-            legType: LegTypeEnum.OffChain,
-          }),
-          {
-            legs: {
-              nodes: [],
-            },
-          }
-        );
-        return expect(instruction.getOffChainAffirmationForLeg({ legId })).rejects.toThrow(
-          'The given leg ID is not an off-chain leg'
-        );
-      });
-    });
 
     describe('querying the chain', () => {
       it('should return the affirmation status for a specific leg', async () => {
