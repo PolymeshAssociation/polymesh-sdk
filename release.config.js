@@ -13,6 +13,7 @@ module.exports = {
     {
       name: 'v26',
       range: '26.x',
+      channel: '26.x',
     },
   ],
   /*
