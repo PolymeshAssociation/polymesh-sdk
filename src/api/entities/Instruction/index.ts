@@ -474,8 +474,8 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       return {
         status: middlewareInstructionStatusToInstructionStatus(status),
         createdAt: new Date(createdBlock!.datetime),
-        tradeDate,
-        valueDate,
+        tradeDate: new Date(tradeDate),
+        valueDate: new Date(valueDate),
         venue: venueId ? new Venue({ id: new BigNumber(venueId) }, context) : null,
         memo: memo ?? null,
         ...endCondition,
