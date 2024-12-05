@@ -521,6 +521,27 @@ describe('Instruction class', () => {
 
         expect(result.venue).toBeNull();
         expect(result.memo).toBeNull();
+
+        dsMockUtils.createApolloQueryMock(
+          instructionsQuery(false, {
+            id: id.toString(),
+          }),
+          {
+            instructions: {
+              nodes: [
+                {
+                  ...middlewareInstruction,
+                  valueDate: undefined,
+                  tradeDate: undefined,
+                },
+              ],
+            },
+          }
+        );
+        result = await instruction.details();
+
+        expect(result.tradeDate).toBeNull();
+        expect(result.valueDate).toBeNull();
       });
 
       it('should throw an error if an Instruction is not yet processed by middleware', () => {
