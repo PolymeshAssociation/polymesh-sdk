@@ -628,7 +628,7 @@ describe('Identity class', () => {
           .calledWith({ id: assetId }, context)
           .mockReturnValue(assetId)
       );
-      dsMockUtils.createApolloQueryMock(assetHoldersQuery({ identityId: did }), {
+      dsMockUtils.createApolloQueryMock(assetHoldersQuery(false, { identityId: did }), {
         assetHolders: {
           nodes: assetIds.map(assetId => ({ asset: { id: assetId } })),
           totalCount: 2,
@@ -642,6 +642,7 @@ describe('Identity class', () => {
 
       dsMockUtils.createApolloQueryMock(
         assetHoldersQuery(
+          false,
           { identityId: did },
           new BigNumber(1),
           new BigNumber(0),
@@ -679,7 +680,7 @@ describe('Identity class', () => {
           .mockReturnValue(assetId)
       );
 
-      dsMockUtils.createApolloQueryMock(nftHoldersQuery({ identityId: did }), {
+      dsMockUtils.createApolloQueryMock(nftHoldersQuery(false, { identityId: did }), {
         nftHolders: {
           nodes: assetIds.map(assetId => ({ asset: { id: assetId }, nftIds: [] })),
           totalCount: 2,
@@ -693,6 +694,7 @@ describe('Identity class', () => {
 
       dsMockUtils.createApolloQueryMock(
         nftHoldersQuery(
+          false,
           { identityId: did },
           new BigNumber(1),
           new BigNumber(0),

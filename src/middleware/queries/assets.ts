@@ -50,11 +50,21 @@ export function assetQuery(
  * Get asset held by a DID
  */
 export function assetHoldersQuery(
+  isSqIdPadded: boolean,
   filters: QueryArgs<AssetHolder, 'identityId'>,
   size?: BigNumber,
   start?: BigNumber,
   orderBy = AssetHoldersOrderBy.AssetIdAsc
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<DistributionPayment, 'distributionId'>>> {
+  if (isSqIdPadded) {
+    if (orderBy === AssetHoldersOrderBy.CreatedAtAsc) {
+      orderBy = AssetHoldersOrderBy.CreatedBlockIdAsc;
+    }
+    if (orderBy === AssetHoldersOrderBy.CreatedAtDesc) {
+      orderBy = AssetHoldersOrderBy.CreatedBlockIdDesc;
+    }
+  }
+
   const query = gql`
     query AssetHoldersQuery($identityId: String!, $size: Int, $start: Int) {
       assetHolders(
@@ -89,11 +99,21 @@ export function assetHoldersQuery(
  * Get NFTs held by a DID
  */
 export function nftHoldersQuery(
+  isSqIdPadded: boolean,
   filters: QueryArgs<NftHolder, 'identityId'>,
   size?: BigNumber,
   start?: BigNumber,
   orderBy = NftHoldersOrderBy.AssetIdAsc
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<NftHolder, 'identityId'>>> {
+  if (isSqIdPadded) {
+    if (orderBy === NftHoldersOrderBy.CreatedAtAsc) {
+      orderBy = NftHoldersOrderBy.CreatedBlockIdAsc;
+    }
+    if (orderBy === NftHoldersOrderBy.CreatedAtDesc) {
+      orderBy = NftHoldersOrderBy.CreatedBlockIdDesc;
+    }
+  }
+
   const query = gql`
     query NftHolderQuery($identityId: String!, $size: Int, $start: Int) {
       nftHolders(
