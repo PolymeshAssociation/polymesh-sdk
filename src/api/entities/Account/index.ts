@@ -225,6 +225,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       },
     } = await context.queryMiddleware<Ensured<Query, 'extrinsics'>>(
       extrinsicsByArgs(
+        context.isSqIdPadded,
         {
           blockId: blockNumber ? blockNumber.toString() : undefined,
           address,

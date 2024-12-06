@@ -845,7 +845,7 @@ describe('Instruction class', () => {
         const start = new BigNumber(0);
         const size = new BigNumber(1);
         dsMockUtils.createApolloQueryMock(
-          instructionAffirmationsQuery({ instructionId: id.toString() }, size, start),
+          instructionAffirmationsQuery(false, { instructionId: id.toString() }, size, start),
           {
             instructionAffirmations: {
               nodes: [
@@ -871,7 +871,7 @@ describe('Instruction class', () => {
         expect(count).toEqual(new BigNumber(1));
 
         dsMockUtils.createApolloQueryMock(
-          instructionAffirmationsQuery({ instructionId: id.toString() }),
+          instructionAffirmationsQuery(false, { instructionId: id.toString() }),
           {
             instructionAffirmations: {
               nodes: [],
@@ -1975,7 +1975,7 @@ describe('Instruction class', () => {
         );
         const expiry = new Date('2050/01/01');
         dsMockUtils.createApolloQueryMock(
-          instructionAffirmationsQuery({
+          instructionAffirmationsQuery(false, {
             instructionId: id.toString(),
             isMediator: true,
           }),
@@ -2039,7 +2039,7 @@ describe('Instruction class', () => {
     describe('querying the middleware', () => {
       it('should return the affirmation status of offchain legs', async () => {
         dsMockUtils.createApolloQueryMock(
-          offChainAffirmationsQuery({
+          offChainAffirmationsQuery(false, {
             instructionId: id.toString(),
           }),
           {

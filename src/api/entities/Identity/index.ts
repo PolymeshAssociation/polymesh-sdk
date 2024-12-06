@@ -391,6 +391,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       },
     } = await context.queryMiddleware<Ensured<Query, 'assetHolders'>>(
       assetHoldersQuery(
+        context.isSqIdPadded,
         {
           identityId: did,
         },
@@ -437,6 +438,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       },
     } = await context.queryMiddleware<Ensured<Query, 'nftHolders'>>(
       nftHoldersQuery(
+        context.isSqIdPadded,
         {
           identityId: did,
         },
@@ -740,7 +742,10 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     let start: BigNumber | undefined;
 
     while (!allFetched) {
-      const { data, next } = await this.getHeldAssets({ size: MAX_PAGE_SIZE, start });
+      const { data, next } = await this.getHeldAssets({
+        size: MAX_PAGE_SIZE,
+        start,
+      });
       start = next ? new BigNumber(next) : undefined;
       allFetched = !next;
       assets = [...assets, ...data];

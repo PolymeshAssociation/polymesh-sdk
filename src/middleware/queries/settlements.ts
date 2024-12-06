@@ -210,6 +210,7 @@ type InstructionAffirmationArgs = 'instructionId' | 'status' | 'identity' | 'isM
  * Get a specific instruction within a venue for a specific event
  */
 export function instructionAffirmationsQuery(
+  paddedIds: boolean,
   filters: QueryArgs<InstructionAffirmation, InstructionAffirmationArgs>,
   size?: BigNumber,
   start?: BigNumber
@@ -218,6 +219,11 @@ export function instructionAffirmationsQuery(
     status: 'AffirmStatusEnum',
     isMediator: 'Boolean',
   });
+
+  const orderBy = paddedIds
+    ? `[${InstructionAffirmationsOrderBy.CreatedBlockIdDesc}]`
+    : `[${InstructionAffirmationsOrderBy.CreatedAtAsc}, ${InstructionAffirmationsOrderBy.CreatedBlockIdAsc}]`;
+
   const query = gql`
     query InstructionAffirmationsQuery
       ${args}
@@ -226,7 +232,7 @@ export function instructionAffirmationsQuery(
         ${filter}
         first: $size
         offset: $start
-        orderBy: [${InstructionAffirmationsOrderBy.CreatedAtAsc}, ${InstructionAffirmationsOrderBy.CreatedBlockIdAsc}]
+        orderBy: ${orderBy}
       ) {
         totalCount
         nodes {
@@ -248,8 +254,13 @@ export function instructionAffirmationsQuery(
  * Get a specific instruction within a venue for a specific event
  */
 export function offChainAffirmationsQuery(
+  paddedIds: boolean,
   filters: QueryArgs<InstructionAffirmation, 'instructionId'>
 ): QueryOptions<QueryArgs<InstructionAffirmation, 'instructionId'>> {
+  const orderBy = paddedIds
+    ? `${InstructionAffirmationsOrderBy.CreatedBlockIdAsc}`
+    : `${InstructionAffirmationsOrderBy.CreatedAtAsc}, ${InstructionAffirmationsOrderBy.CreatedBlockIdAsc}`;
+
   const query = gql`
     query InstructionAffirmationsQuery($instructionId: String!) {
       instructionAffirmations(
@@ -257,7 +268,7 @@ export function offChainAffirmationsQuery(
           instructionId: { equalTo: $instructionId }
           offChainReceiptExists: true
         }
-        orderBy: [${InstructionAffirmationsOrderBy.CreatedAtAsc}, ${InstructionAffirmationsOrderBy.CreatedBlockIdAsc}]
+        orderBy: [${orderBy}]
       ) {
         nodes {
           ${instructionAffirmationAttributes}

@@ -274,6 +274,7 @@ describe('Account class', () => {
 
       dsMockUtils.createApolloQueryMock(
         extrinsicsByArgs(
+          false,
           {
             blockId: blockNumber1.toString(),
             address,
@@ -328,6 +329,7 @@ describe('Account class', () => {
 
       dsMockUtils.createApolloQueryMock(
         extrinsicsByArgs(
+          false,
           {
             blockId: blockNumber1.toString(),
             address,
@@ -367,6 +369,7 @@ describe('Account class', () => {
 
       dsMockUtils.createApolloQueryMock(
         extrinsicsByArgs(
+          false,
           {
             blockId: undefined,
             address,
@@ -396,6 +399,7 @@ describe('Account class', () => {
 
       dsMockUtils.createApolloQueryMock(
         extrinsicsByArgs(
+          false,
           {
             blockId: undefined,
             address,
