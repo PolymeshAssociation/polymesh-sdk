@@ -7,6 +7,7 @@ import {
   getMissingPortfolioPermissions,
   getMissingTransactionPermissions,
 } from '~/api/entities/Account/helpers';
+import { Staking } from '~/api/entities/Account/Staking';
 import {
   AccountIdentityRelation,
   AccountKeyType,
@@ -96,6 +97,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   // Namespaces
   public authorizations: Authorizations<Account>;
   public subsidies: Subsidies;
+  public staking: Staking;
 
   /**
    * @hidden
@@ -111,6 +113,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     this.key = addressToKey(address, context);
     this.authorizations = new Authorizations(this, context);
     this.subsidies = new Subsidies(this, context);
+    this.staking = new Staking(this, context);
   }
 
   /**
