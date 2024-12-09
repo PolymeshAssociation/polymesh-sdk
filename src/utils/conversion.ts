@@ -6,6 +6,7 @@ import {
   ExtrinsicStatus,
   Hash,
   Permill,
+  RewardDestination,
 } from '@polkadot/types/interfaces';
 import { H512 } from '@polkadot/types/interfaces/runtime';
 import { DispatchError, DispatchResult } from '@polkadot/types/interfaces/system';
@@ -5567,4 +5568,22 @@ export function middlewareProposalStateToProposalStatus(
   };
 
   return stateToStatusMap[state] || ProposalStatus.Invalid;
+}
+
+/**
+ * @hidden
+ */
+export function stakingRewardDestinationToRaw(
+  input: { stash: true } | { controller: true } | { destination: Account },
+  context: Context
+): RewardDestination {
+  if ('stash' in input) {
+    return context.createType('RewardDestination', { Stash: true });
+  } else if ('controller' in input) {
+    return context.createType('RewardDestination', { Controller: true });
+  } else {
+    const rawId = stringToAccountId(input.destination.address, context);
+
+    return context.createType('RewardDestination', { Destination: rawId });
+  }
 }

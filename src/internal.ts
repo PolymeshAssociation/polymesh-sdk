@@ -176,3 +176,4 @@ export { allowIdentityToCreatePortfolios } from '~/api/procedures/allowIdentityT
 export { revokeIdentityToCreatePortfolios } from '~/api/procedures/revokeIdentityToCreatePortfolios';
 export { rotatePrimaryKeyToSecondary } from '~/api/procedures/rotatePrimaryKeyToSecondary';
 export { registerCustomAssetType } from '~/api/procedures/registerCustomAssetType';
+export { bondPolyx } from '~/api/procedures/bondPolyx';
