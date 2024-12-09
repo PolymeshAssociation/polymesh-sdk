@@ -1747,3 +1747,9 @@ export type RevokeIdentityToCreatePortfoliosParams = {
 export interface RegisterCustomAssetTypeParams {
   name: string;
 }
+
+export interface BondPolyxParams {
+  controller: Account | string;
+
+  amount: BigNumber;
+}
