@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
 import { Context } from '~/internal';
-import { createArgsAndFilters, getSizeAndOffset } from '~/middleware/queries/common';
+import { createArgsAndFilters, getSizeAndOffset, padSqId } from '~/middleware/queries/common';
 import {
   Instruction,
   InstructionAffirmation,
@@ -174,9 +174,14 @@ export function instructionsQuery(
     status: 'InstructionStatusEnum',
   });
 
-  const orderBy = paddedIds
-    ? `[${InstructionEventsOrderBy.IdDesc}]`
-    : `[${InstructionsOrderBy.CreatedAtDesc}, ${InstructionsOrderBy.IdDesc}]`;
+  let orderBy = `[${InstructionsOrderBy.CreatedAtDesc}, ${InstructionsOrderBy.IdDesc}]`;
+
+  if (paddedIds) {
+    orderBy = `[${InstructionEventsOrderBy.IdDesc}]`;
+    if (filters.id) {
+      filters.id = padSqId(filters.id);
+    }
+  }
 
   const query = gql`
     query InstructionsQuery
