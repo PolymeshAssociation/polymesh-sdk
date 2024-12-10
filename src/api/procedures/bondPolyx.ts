@@ -9,7 +9,10 @@ import {
 import { asAccount } from '~/utils/internal';
 
 export interface Storage {
-  payeeBalance: Balance;
+  actingBalance: Balance;
+  actingAccount: Account;
+
+  currentController: Account | null;
 }
 
 /**
@@ -36,7 +39,7 @@ export async function prepareBondPolyx(
     },
     context,
     storage: {
-      payeeBalance: { free, locked },
+      actingBalance: { free, locked },
     },
   } = this;
   const { controller: controllerInput, amount } = args;
@@ -80,14 +83,17 @@ export function getAuthorization(this: Procedure<Params, void, Storage>): Proced
 /**
  * @hidden
  */
-export async function prepareStorage(
-  this: Procedure<Params, void, Storage>,
-  { payee }: Params
-): Promise<Storage> {
-  const payeeBalance = await payee.getBalance();
+export async function prepareStorage(this: Procedure<Params, void, Storage>): Promise<Storage> {
+  const { context } = this;
+
+  const actingAccount = await context.getActingAccount();
+  const actingBalance = await actingAccount.getBalance();
+  const currentController = await actingAccount.staking.getController();
 
   return {
-    payeeBalance,
+    actingAccount,
+    actingBalance,
+    currentController,
   };
 }
 
