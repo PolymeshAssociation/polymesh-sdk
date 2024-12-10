@@ -69,7 +69,7 @@ describe('bondPolyx procedure', () => {
 
   it('should throw an error if there is insufficient free balance', async () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      payeeBalance,
+      actingBalance: payeeBalance,
     });
 
     const expectedError = new PolymeshError({
@@ -88,7 +88,7 @@ describe('bondPolyx procedure', () => {
 
   it('should return a bond transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      payeeBalance,
+      actingBalance: payeeBalance,
     });
 
     const args = { payee: account, controller: account, amount };
@@ -105,7 +105,7 @@ describe('bondPolyx procedure', () => {
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-        payeeBalance,
+        actingBalance: payeeBalance,
       });
       const boundFunc = getAuthorization.bind(proc);
 
