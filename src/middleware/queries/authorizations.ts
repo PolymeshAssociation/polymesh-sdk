@@ -59,9 +59,8 @@ export function authorizationsQuery(
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<Authorization, AuthorizationArgs>>> {
   const { args, filter } = createAuthorizationFilters(filters);
 
-  const idField = paddedIds ? 'id' : 'authId: id';
   const orderBy = paddedIds
-    ? `${AuthorizationsOrderBy.CreatedBlockIdAsc}`
+    ? `${AuthorizationsOrderBy.CreatedEventIdAsc}`
     : `${AuthorizationsOrderBy.CreatedAtAsc}, ${AuthorizationsOrderBy.CreatedBlockIdAsc}`;
 
   const query = gql`
@@ -76,7 +75,7 @@ export function authorizationsQuery(
       ) {
         totalCount
         nodes {
-          ${idField}
+          id
           type
           fromId
           toId
