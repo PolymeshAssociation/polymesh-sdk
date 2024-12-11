@@ -163,12 +163,3 @@ export function removeUndefinedValues(
 ): Record<string | number | symbol, unknown> {
   return Object.fromEntries(Object.entries(variables).filter(([, value]) => value !== undefined));
 }
-
-/**
- * Pad ID for subquery
- *
- * @hidden
- */
-export function padSqId(id: string): string {
-  return id.padStart(10, '0');
-}

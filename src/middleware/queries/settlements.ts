@@ -40,8 +40,8 @@ const legAttributes = `
             }
 `;
 
-const instructionAttributes = (paddedIds: boolean): string => `
-          ${paddedIds ? 'id' : 'instructionId: id'}
+const instructionAttributes = `
+          id
           venueId
           status
           type
@@ -112,7 +112,7 @@ export function instructionEventsQuery(
   let orderBy = `[${InstructionEventsOrderBy.CreatedAtDesc}, ${InstructionEventsOrderBy.CreatedBlockIdDesc}]`;
 
   if (paddedIds) {
-    orderBy = `[${InstructionEventsOrderBy.CreatedBlockIdDesc}]`;
+    orderBy = `[${InstructionEventsOrderBy.CreatedEventIdDesc}]`;
   }
 
   const query = gql`
@@ -174,9 +174,11 @@ export function instructionsQuery(
     status: 'InstructionStatusEnum',
   });
 
-  const orderBy = paddedIds
-    ? `[${InstructionEventsOrderBy.IdDesc}]`
-    : `[${InstructionsOrderBy.CreatedAtDesc}, ${InstructionsOrderBy.IdDesc}]`;
+  let orderBy = `[${InstructionsOrderBy.CreatedAtDesc}, ${InstructionsOrderBy.IdDesc}]`;
+
+  if (paddedIds) {
+    orderBy = `[${InstructionsOrderBy.CreatedEventIdDesc}]`;
+  }
 
   const query = gql`
     query InstructionsQuery
@@ -190,7 +192,7 @@ export function instructionsQuery(
       ) {
         totalCount
         nodes {
-          ${instructionAttributes(paddedIds)}
+          ${instructionAttributes}
         }
       }
     }
@@ -422,7 +424,7 @@ export async function instructionPartiesQuery(
   const paddedIds = context.isSqIdPadded;
 
   const orderBy = paddedIds
-    ? `[${LegsOrderBy.InstructionIdAsc}]`
+    ? `[${LegsOrderBy.CreatedBlockIdAsc}]`
     : `[${LegsOrderBy.CreatedAtAsc}, ${LegsOrderBy.InstructionIdAsc}]`;
 
   const query = gql`
@@ -437,7 +439,7 @@ export async function instructionPartiesQuery(
       ) {
         nodes {
           instruction {
-            ${instructionAttributes(paddedIds)}
+            ${instructionAttributes}
           }
         }
         totalCount
@@ -516,7 +518,7 @@ function createLegFilters(
  */
 function buildSettlementsQuery(paddedIds: boolean, args: string, filter: string): DocumentNode {
   const orderBy = paddedIds
-    ? `[${LegsOrderBy.InstructionIdAsc}]`
+    ? `[${LegsOrderBy.CreatedBlockIdAsc}]`
     : `[${LegsOrderBy.CreatedAtAsc}, ${LegsOrderBy.InstructionIdAsc}]`;
 
   return gql`
@@ -529,7 +531,7 @@ function buildSettlementsQuery(paddedIds: boolean, args: string, filter: string)
     ) {
       nodes {
         instruction {
-          ${instructionAttributes(paddedIds)}
+          ${instructionAttributes}
         }
       }
     }
