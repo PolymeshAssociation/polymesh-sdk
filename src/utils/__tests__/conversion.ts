@@ -17,6 +17,7 @@ import {
   PalletCorporateActionsCaKind,
   PalletCorporateActionsRecordDateSpec,
   PalletCorporateActionsTargetIdentities,
+  PalletStakingRewardDestination,
   PalletStoPriceTier,
   PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
   PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth,
@@ -118,6 +119,7 @@ import {
   createMockU32,
   createMockU64,
   createMockU128,
+  createMockVec,
 } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -188,6 +190,7 @@ import { padString } from '~/utils/internal';
 
 import {
   accountIdToString,
+  activeEraStakingToActiveEraInfo,
   addressToKey,
   agentGroupToPermissionGroup,
   agentGroupToPermissionGroupIdentifier,
@@ -316,6 +319,9 @@ import {
   portfolioLikeToPortfolioId,
   portfolioToPortfolioKind,
   posRatioToBigNumber,
+  rawNominationToStakingNomination,
+  rawStakingLedgerToStakingLedgerEntry,
+  rawValidatorPrefToCommission,
   receiptDetailsToMeshReceiptDetails,
   requirementToComplianceRequirement,
   scopeToMeshScope,
@@ -332,6 +338,7 @@ import {
   signerValueToSigner,
   sortStatsByClaimType,
   sortTransferRestrictionByClaimValue,
+  stakingRewardDestinationToRaw,
   statisticsOpTypeToStatType,
   statisticStatTypesToBtreeStatType,
   statsClaimToStatClaimInputType,
@@ -11409,5 +11416,202 @@ describe('middlewareProposalStateToProposalStatus', () => {
     expect(
       middlewareProposalStateToProposalStatus('unknown' as unknown as MultiSigProposalStatusEnum)
     ).toEqual(ProposalStatus.Invalid);
+  });
+});
+
+describe('stakingRewardDestinationToRaw', () => {
+  let mockContext: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  beforeEach(() => {
+    mockContext = dsMockUtils.getContextInstance();
+  });
+
+  it('should return the stash account', () => {
+    const expectedResult = 'expectedStash' as unknown as PalletStakingRewardDestination;
+    when(mockContext.createType)
+      .calledWith('RewardDestination', { Stash: true })
+      .mockReturnValue(expectedResult);
+
+    const result = stakingRewardDestinationToRaw({ stash: true }, mockContext);
+
+    expect(result).toEqual(expectedResult);
+  });
+
+  it('should return auto staked', () => {
+    const expectedResult = 'expectedStaked' as unknown as PalletStakingRewardDestination;
+    when(mockContext.createType)
+      .calledWith('RewardDestination', { Staked: true })
+      .mockReturnValue(expectedResult);
+
+    const result = stakingRewardDestinationToRaw({ staked: true }, mockContext);
+
+    expect(result).toEqual(expectedResult);
+  });
+
+  it('should return the controller account', () => {
+    const expectedResult = 'expectedController' as unknown as PalletStakingRewardDestination;
+    when(mockContext.createType)
+      .calledWith('RewardDestination', { Controller: true })
+      .mockReturnValue(expectedResult);
+
+    const result = stakingRewardDestinationToRaw({ controller: true }, mockContext);
+
+    expect(result).toEqual(expectedResult);
+  });
+
+  it('should return an account', () => {
+    const expectedResult = 'expectedDestination' as unknown as PalletStakingRewardDestination;
+
+    const address = DUMMY_ACCOUNT_ID;
+    const rawAddress = dsMockUtils.createMockAccountId(address);
+    const destination = entityMockUtils.getAccountInstance({ address });
+
+    when(mockContext.createType).calledWith('AccountId', address).mockReturnValue(rawAddress);
+    when(mockContext.createType)
+      .calledWith('RewardDestination', { Account: rawAddress })
+      .mockReturnValue(expectedResult);
+
+    const result = stakingRewardDestinationToRaw({ account: destination }, mockContext);
+
+    expect(result).toEqual(expectedResult);
+  });
+});
+
+describe('activeEraStakingToActiveEraInfo', () => {
+  it('should return active era info', () => {
+    const rawEraInfo = dsMockUtils.createMockActiveEraInfo({
+      start: dsMockUtils.createMockOption(dsMockUtils.createMockU64(new BigNumber(1))),
+      index: dsMockUtils.createMockU32(new BigNumber(2)),
+    });
+
+    const result = activeEraStakingToActiveEraInfo(rawEraInfo);
+
+    expect(result).toEqual({
+      start: new BigNumber(1),
+      index: new BigNumber(2),
+    });
+  });
+
+  it('should handle none start value', () => {
+    const rawEraInfo = dsMockUtils.createMockActiveEraInfo({
+      start: dsMockUtils.createMockOption(),
+      index: dsMockUtils.createMockU32(new BigNumber(2)),
+    });
+
+    const result = activeEraStakingToActiveEraInfo(rawEraInfo);
+
+    expect(result).toEqual({
+      start: new BigNumber(0),
+      index: new BigNumber(2),
+    });
+  });
+});
+
+describe('rawNominationToStakingNomination', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return nomination info', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+
+    const rawNomination = dsMockUtils.createMockStakingNominations({
+      targets: createMockVec([dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID)]),
+      submittedIn: dsMockUtils.createMockU32(new BigNumber(1)),
+      suppressed: dsMockUtils.createMockBool(false),
+    });
+
+    const result = rawNominationToStakingNomination(rawNomination, mockContext);
+
+    expect(result).toEqual({
+      targets: expect.arrayContaining([expect.any(Account)]),
+      submittedInEra: new BigNumber(1),
+      suppressed: false,
+    });
+  });
+});
+
+describe('rawStakingLedgerToStakingLedgerEntry', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return nomination info', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+
+    const rawNomination = dsMockUtils.createMockStakingLedger({
+      total: dsMockUtils.createMockCompact(
+        dsMockUtils.createMockU128(new BigNumber(10).times(10 ** 6))
+      ),
+      active: dsMockUtils.createMockCompact(
+        dsMockUtils.createMockU128(new BigNumber(5).times(10 ** 6))
+      ),
+      unlocking: dsMockUtils.createMockVec([
+        dsMockUtils.createMockUnlockChunk({
+          value: dsMockUtils.createMockCompact(dsMockUtils.createMockU128(new BigNumber(8))),
+          era: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(new BigNumber(9))),
+        }),
+      ]),
+      claimedRewards: dsMockUtils.createMockVec([dsMockUtils.createMockU32(new BigNumber(7))]),
+      stash: dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID),
+    });
+
+    const result = rawStakingLedgerToStakingLedgerEntry(rawNomination, mockContext);
+
+    expect(result).toEqual({
+      stash: expect.any(Account),
+      total: new BigNumber(10),
+      active: new BigNumber(5),
+      unlocking: expect.arrayContaining([]),
+      claimedRewards: expect.arrayContaining([new BigNumber(7)]),
+    });
+  });
+});
+
+describe('rawValidatorPrefToCommission', () => {
+  it('should return validator preferences', () => {
+    const rawPref = dsMockUtils.createMockValidatorPref({
+      blocked: dsMockUtils.createMockBool(false),
+      commission: dsMockUtils.createMockCompact(
+        dsMockUtils.createMockU128(new BigNumber(1).times(10 ** 7))
+      ),
+    });
+
+    const result = rawValidatorPrefToCommission(rawPref);
+
+    expect(result).toEqual({
+      blocked: false,
+      commission: new BigNumber(1),
+    });
   });
 });

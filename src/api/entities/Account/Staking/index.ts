@@ -1,7 +1,19 @@
 import { Account, bondPolyx, Context, Namespace } from '~/internal';
-import { BondPolyxParams, ProcedureMethod } from '~/types';
-import { accountIdToString, stringToAccountId } from '~/utils/conversion';
-import { asAccount, createProcedureMethod } from '~/utils/internal';
+import {
+  BondPolyxParams,
+  ProcedureMethod,
+  StakingCommission,
+  StakingLedgerEntry,
+  StakingNomination,
+} from '~/types';
+import {
+  accountIdToString,
+  rawNominationToStakingNomination,
+  rawStakingLedgerToStakingLedgerEntry,
+  rawValidatorPrefToCommission,
+  stringToAccountId,
+} from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
 
 /**
  * Handles all Staking related functionality
@@ -30,9 +42,63 @@ export class Staking extends Namespace<Account> {
   public bond: ProcedureMethod<BondPolyxParams, void>;
 
   /**
+   * Fetch the ledger information for a controller account
+   *
+   * @note if a value is returned the account is a controller
+   */
+  public async getLedgerEntry(): Promise<StakingLedgerEntry | null> {
+    const {
+      context,
+      context: {
+        polymeshApi: { query },
+      },
+    } = this;
+
+    const rawAddress = stringToAccountId(this.parent.address, context);
+
+    const rawEntry = await query.staking.ledger(rawAddress);
+
+    if (rawEntry.isNone) {
+      return null;
+    }
+
+    return rawStakingLedgerToStakingLedgerEntry(rawEntry.unwrap(), context);
+  }
+
+  /**
+   * Fetch this account's current nominations
+   *
+   * @note a value returned implies the account is a controller account
+   *
+   * TODO support subscription
+   */
+  public async getNomination(): Promise<StakingNomination | null> {
+    const {
+      context,
+      context: {
+        polymeshApi: { query },
+      },
+      parent: { address },
+    } = this;
+
+    const rawAddress = stringToAccountId(address, context);
+
+    const rawNomination = await query.staking.nominators(rawAddress);
+
+    if (rawNomination.isNone) {
+      return null;
+    }
+
+    return rawNominationToStakingNomination(rawNomination.unwrap(), context);
+  }
+
+  /**
    * Fetch the controller associated to this account if there is one
    *
    * @note if this is set it implies this account is a stash account
+   * @note an account can be its own controller
+   *
+   * TODO support subscription
    */
   public async getController(): Promise<Account | null> {
     const {
@@ -50,14 +116,31 @@ export class Staking extends Namespace<Account> {
       return null;
     }
 
-    const unwrapped = rawController.unwrap();
-
-    console.log('unwrap', unwrapped.toString());
-
     const address = accountIdToString(rawController.unwrap());
 
-    console.log('address: ', address);
-
     return new Account({ address }, context);
+  }
+
+  /**
+   * @returns this Account's desire to be a validator and their expected commission
+   */
+  public async getCommission(): Promise<StakingCommission | null> {
+    const {
+      context,
+      context: {
+        polymeshApi: { query },
+      },
+      parent: { address },
+    } = this;
+
+    const rawAddress = stringToAccountId(address, context);
+
+    const rawValidator = await query.staking.validators(rawAddress);
+
+    if (rawValidator.isEmpty) {
+      return null;
+    }
+
+    return rawValidatorPrefToCommission(rawValidator);
   }
 }
