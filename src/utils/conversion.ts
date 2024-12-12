@@ -5,6 +5,7 @@ import {
   BlockHash,
   ExtrinsicStatus,
   Hash,
+  Perbill,
   Permill,
   RewardDestination,
 } from '@polkadot/types/interfaces';
@@ -18,6 +19,10 @@ import {
   PalletCorporateActionsInitiateCorporateActionArgs,
   PalletCorporateActionsRecordDateSpec,
   PalletCorporateActionsTargetIdentities,
+  PalletStakingActiveEraInfo,
+  PalletStakingNominations,
+  PalletStakingStakingLedger,
+  PalletStakingValidatorPrefs,
   PalletStoFundraiser,
   PalletStoFundraiserTier,
   PalletStoPriceTier,
@@ -169,6 +174,7 @@ import {
 } from '~/polkadot/polymesh';
 import {
   AccountWithSignature,
+  ActiveEraInfo,
   AffirmationStatus,
   AssetDocument,
   Authorization,
@@ -251,6 +257,10 @@ import {
   SignerType,
   SignerValue,
   SingleClaimCondition,
+  StakingCommission,
+  StakingLedgerEntry,
+  StakingNomination,
+  StakingUnlockingEntry,
   StatClaimType,
   StatType,
   TargetTreatment,
@@ -622,6 +632,15 @@ export function percentageToPermill(value: BigNumber, context: Context): Permill
  */
 export function permillToBigNumber(value: Permill): BigNumber {
   return new BigNumber(value.toString()).shiftedBy(-4); // (value : 10^6) * 100
+}
+
+/**
+ * @hidden
+ *
+ * @note returns a percentage value ([0, 100])
+ */
+export function perbillToBigNumber(value: Perbill): BigNumber {
+  return new BigNumber(value.toString()).shiftedBy(-7); // (value : 10^9) * 100
 }
 
 /**
@@ -5574,16 +5593,107 @@ export function middlewareProposalStateToProposalStatus(
  * @hidden
  */
 export function stakingRewardDestinationToRaw(
-  input: { stash: true } | { controller: true } | { destination: Account },
+  destination: { staked: true } | { stash: true } | { controller: true } | { account: Account },
   context: Context
 ): RewardDestination {
-  if ('stash' in input) {
+  if ('staked' in destination) {
+    return context.createType('RewardDestination', { Staked: true });
+  } else if ('stash' in destination) {
     return context.createType('RewardDestination', { Stash: true });
-  } else if ('controller' in input) {
+  } else if ('controller' in destination) {
     return context.createType('RewardDestination', { Controller: true });
   } else {
-    const rawId = stringToAccountId(input.destination.address, context);
-
-    return context.createType('RewardDestination', { Destination: rawId });
+    const rawId = stringToAccountId(destination.account.address, context);
+    return context.createType('RewardDestination', { Account: rawId });
   }
+}
+
+/**
+ * @hidden
+ */
+export function activeEraStakingToActiveEraInfo(
+  activeEra: PalletStakingActiveEraInfo
+): ActiveEraInfo {
+  const start = activeEra.start.isSome
+    ? u64ToBigNumber(activeEra.start.unwrap())
+    : new BigNumber(0);
+
+  const index = u32ToBigNumber(activeEra.index);
+
+  return {
+    start,
+    index,
+  };
+}
+
+/**
+ * @hidden
+ */
+export function rawNominationToStakingNomination(
+  nomination: PalletStakingNominations,
+  context: Context
+): StakingNomination {
+  const targets = nomination.targets.map(target => {
+    const address = accountIdToString(target);
+
+    return new Account({ address }, context);
+  });
+
+  const submittedIn = u32ToBigNumber(nomination.submittedIn);
+  const suppressed = boolToBoolean(nomination.suppressed);
+
+  return {
+    targets,
+    submittedInEra: submittedIn,
+    suppressed,
+  };
+}
+
+/**
+ * @hidden
+ */
+export function rawStakingLedgerToStakingLedgerEntry(
+  entry: PalletStakingStakingLedger,
+  context: Context
+): StakingLedgerEntry {
+  const {
+    total: rawTotal,
+    active: rawActive,
+    unlocking: rawUnlocking,
+    claimedRewards: rawClaimedRewards,
+    stash: rawStash,
+  } = entry;
+
+  const total = balanceToBigNumber(rawTotal.unwrap());
+  const active = balanceToBigNumber(rawActive.unwrap());
+  const unlocking: StakingUnlockingEntry[] = rawUnlocking.map(unlock => ({
+    value: balanceToBigNumber(unlock.value.unwrap()),
+    era: u32ToBigNumber(unlock.era.unwrap()),
+  }));
+  const claimedRewards = rawClaimedRewards.map(id => u32ToBigNumber(id));
+  const stashAddress = accountIdToString(rawStash);
+  const stash = new Account({ address: stashAddress }, context);
+
+  return {
+    stash,
+    total,
+    active,
+    unlocking,
+    claimedRewards,
+  };
+}
+
+/**
+ * @hidden
+ */
+export function rawValidatorPrefToCommission(
+  rawValidator: PalletStakingValidatorPrefs
+): StakingCommission {
+  const blocked = boolToBoolean(rawValidator.blocked);
+  const commission = perbillToBigNumber(rawValidator.commission.unwrap());
+
+  return {
+    blocked,
+    commission,
+  };
 }

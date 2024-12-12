@@ -1,4 +1,5 @@
 import { AccountId, Balance } from '@polkadot/types/interfaces';
+import { PalletStakingRewardDestination } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -25,7 +26,7 @@ describe('bondPolyx procedure', () => {
   });
 
   const amount = new BigNumber(100);
-  const payeeBalance = {
+  const actingBalance = {
     free: new BigNumber(100),
     locked: new BigNumber(0),
     total: new BigNumber(100),
@@ -33,27 +34,44 @@ describe('bondPolyx procedure', () => {
 
   let mockContext: Mocked<Context>;
   let bondTx: PolymeshTx<[AccountId, Balance, AccountId]>;
-  let account: Account;
+  let actingAccount: Account;
   let rawAccountId: AccountId;
   let rawAmount: Balance;
+  let rewardDestination: PalletStakingRewardDestination;
 
   let bigNumberToBalanceSpy: jest.SpyInstance;
   let stringToAccountIdSpy: jest.SpyInstance;
+  let stakingRewardDestinationToRawSpy: jest.SpyInstance;
+
+  let storage: Storage;
 
   beforeEach(() => {
     bondTx = dsMockUtils.createTxMock('staking', 'bond');
     mockContext = dsMockUtils.getContextInstance();
-    account = entityMockUtils.getAccountInstance({ address: DUMMY_ACCOUNT_ID });
-    rawAccountId = dsMockUtils.createMockAccountId(account.address);
+    actingAccount = entityMockUtils.getAccountInstance({ address: DUMMY_ACCOUNT_ID });
+    rawAccountId = dsMockUtils.createMockAccountId(actingAccount.address);
     rawAmount = dsMockUtils.createMockBalance(amount);
 
     bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
     stringToAccountIdSpy = jest.spyOn(utilsConversionModule, 'stringToAccountId');
+    stakingRewardDestinationToRawSpy = jest.spyOn(
+      utilsConversionModule,
+      'stakingRewardDestinationToRaw'
+    );
 
     when(bigNumberToBalanceSpy).calledWith(amount, mockContext).mockReturnValue(rawAmount);
     when(stringToAccountIdSpy)
-      .calledWith(account.address, mockContext)
+      .calledWith(actingAccount.address, mockContext)
       .mockReturnValue(rawAccountId);
+
+    when(stakingRewardDestinationToRawSpy)
+      .calledWith({ stash: true }, mockContext)
+      .mockReturnValue(rewardDestination);
+
+    storage = {
+      actingBalance,
+      actingAccount,
+    };
   });
 
   afterEach(() => {
@@ -68,45 +86,152 @@ describe('bondPolyx procedure', () => {
   });
 
   it('should throw an error if there is insufficient free balance', async () => {
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      actingBalance: payeeBalance,
-    });
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, storage);
 
     const expectedError = new PolymeshError({
       code: ErrorCode.InsufficientBalance,
-      message: 'Payee account has insufficient POLYX',
+      message: 'The stash account has insufficient POLYX',
     });
 
     await expect(
       prepareBondPolyx.call(proc, {
-        payee: account,
-        controller: account,
+        controller: actingAccount,
         amount: new BigNumber(900),
+        rewardDestination: actingAccount,
+        autoStake: false,
+      })
+    ).rejects.toThrow(expectedError);
+  });
+
+  it('should throw an error auto staked is true and there is non stash destination', async () => {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, storage);
+
+    const payeeAccount = entityMockUtils.getAccountInstance({ isEqual: false });
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'auto staking requires the payee to be the acting account',
+    });
+
+    await expect(
+      prepareBondPolyx.call(proc, {
+        controller: actingAccount,
+        amount: new BigNumber(900),
+        rewardDestination: payeeAccount,
+        autoStake: true,
       })
     ).rejects.toThrow(expectedError);
   });
 
   it('should return a bond transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      actingBalance: payeeBalance,
+      actingBalance,
+      actingAccount,
     });
 
-    const args = { payee: account, controller: account, amount };
+    const args = {
+      payee: actingAccount,
+      controller: actingAccount,
+      rewardDestination: actingAccount,
+      amount,
+      autoStake: false,
+    };
 
     const result = await prepareBondPolyx.call(proc, args);
 
     expect(result).toEqual({
       transaction: bondTx,
-      args: [rawAccountId, rawAmount, rawAccountId],
+      args: [rawAccountId, rawAmount, rewardDestination],
       resolver: undefined,
     });
   });
 
+  it('should handle auto stake', async () => {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      actingBalance,
+      actingAccount: entityMockUtils.getAccountInstance({
+        isEqual: false,
+        address: actingAccount.address,
+      }),
+    });
+
+    const args = {
+      payee: actingAccount,
+      controller: actingAccount,
+      rewardDestination: actingAccount,
+      amount,
+      autoStake: true,
+    };
+
+    await prepareBondPolyx.call(proc, args);
+
+    expect(stakingRewardDestinationToRawSpy).toHaveBeenCalledWith({ staked: true }, mockContext);
+  });
+
+  it('should handle different an account destination', async () => {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      actingBalance,
+      actingAccount: entityMockUtils.getAccountInstance({
+        isEqual: false,
+        address: actingAccount.address,
+      }),
+    });
+
+    const destination = entityMockUtils.getAccountInstance({
+      address: '5GREnjoNggSyKfD3Jhmzg2jdBi1Zb7y2r58nqo4QzxDHHhsW',
+    });
+
+    const args = {
+      payee: actingAccount,
+      controller: entityMockUtils.getAccountInstance({
+        isEqual: false,
+        address: '5CD1ydRQzG7du6Sd4EfBWTGpZc1VJjKNSc5ScyZXfRgkqUG9',
+      }),
+      rewardDestination: destination,
+      amount,
+      autoStake: false,
+    };
+
+    await prepareBondPolyx.call(proc, args);
+
+    expect(stakingRewardDestinationToRawSpy).toHaveBeenCalledWith(
+      { account: destination },
+      mockContext
+    );
+  });
+
+  it('should handle a controller destination', async () => {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      actingBalance,
+      actingAccount: entityMockUtils.getAccountInstance({
+        isEqual: false,
+        address: actingAccount.address,
+      }),
+    });
+
+    const controller = entityMockUtils.getAccountInstance({
+      isEqual: true,
+      address: '5CD1ydRQzG7du6Sd4EfBWTGpZc1VJjKNSc5ScyZXfRgkqUG9',
+    });
+    const args = {
+      payee: actingAccount,
+      controller,
+      rewardDestination: controller,
+      amount,
+      autoStake: false,
+    };
+
+    await prepareBondPolyx.call(proc, args);
+
+    expect(stakingRewardDestinationToRawSpy).toHaveBeenCalledWith(
+      { controller: true },
+      mockContext
+    );
+  });
+
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-        actingBalance: payeeBalance,
-      });
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, storage);
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc()).toEqual({
@@ -120,17 +245,21 @@ describe('bondPolyx procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    it('should return the payee balance', () => {
-      account = entityMockUtils.getAccountInstance({ getBalance: { free: new BigNumber(27) } });
+    it('should return the storage', () => {
+      actingAccount = entityMockUtils.getAccountInstance({
+        getBalance: { free: new BigNumber(27) },
+      });
+      mockContext.getActingAccount.mockResolvedValue(actingAccount);
 
       const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
-      return expect(boundFunc({ amount, payee: account, controller: account })).resolves.toEqual(
+      return expect(boundFunc()).resolves.toEqual(
         expect.objectContaining({
-          payeeBalance: {
+          actingBalance: {
             free: new BigNumber(27),
           },
+          actingAccount: expect.objectContaining({ address: 'someAddress' }),
         })
       );
     });

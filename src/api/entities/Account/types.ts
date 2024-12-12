@@ -109,3 +109,61 @@ export interface HistoricPolyxTransaction extends EventIdentifier {
   moduleId: ModuleIdEnum;
   eventId: EventIdEnum;
 }
+
+export interface StakingNomination {
+  /**
+   * The nominated validators
+   */
+  targets: Account[];
+  /**
+   * The era in which the nomination was submitted
+   *
+   * @note nominations only effect future eras (1 era is approximately 1 day)
+   */
+  submittedInEra: BigNumber;
+
+  /**
+   * Nominations maybe suppressed if they fail to meet the minimum bond or validators are over subscribed
+   *
+   * @note nominations are rarely suppressed on Polymesh
+   */
+  suppressed: boolean;
+}
+
+export interface ActiveEraInfo {
+  /**
+   * The block number in which this era became active
+   */
+  start: BigNumber;
+
+  /**
+   * The era number
+   * @note an era is roughly 1 day on most chains (dev chains may have shorter eras)
+   */
+  index: BigNumber;
+}
+
+export interface StakingUnlockingEntry {
+  value: BigNumber;
+  era: BigNumber;
+}
+
+export interface StakingLedgerEntry {
+  stash: Account;
+  total: BigNumber;
+  active: BigNumber;
+  unlocking: StakingUnlockingEntry[];
+  claimedRewards: BigNumber[];
+}
+
+export interface StakingCommission {
+  /**
+   * The commission as a percentage (0-100)
+   */
+  commission: BigNumber;
+
+  /**
+   * `true` if the validator has been blocked
+   */
+  blocked: boolean;
+}
