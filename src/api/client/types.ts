@@ -256,3 +256,29 @@ export interface HistoricalInstructionFilters {
    */
   start?: BigNumber;
 }
+
+/**
+ * A conglomeration of staking storage related to the active era
+ */
+export interface StakingEraInfo {
+  /**
+   * The active era. This is the era whose rewards and slashes are being processed and may lag the current era
+   */
+  activeEra: BigNumber;
+  /**
+   * The block in which the active era began
+   */
+  activeEraStart: BigNumber;
+  /**
+   * The current era
+   */
+  currentEra: BigNumber;
+  /**
+   * The planned session number. A session is a subdivision of an era
+   */
+  plannedSession: BigNumber;
+  /**
+   * The total amount of POLYX staked
+   */
+  totalStaked: BigNumber;
+}

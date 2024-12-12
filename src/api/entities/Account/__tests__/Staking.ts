@@ -1,9 +1,8 @@
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { Context, Namespace, PolymeshTransaction } from '~/internal';
+import { Account, Context, Namespace, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { Account } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 import { Staking } from '../Staking';
@@ -70,6 +69,8 @@ describe('Staking namespace', () => {
       const args = {
         payee: account,
         controller: account,
+        rewardDestination: account,
+        autoStake: false,
         amount,
       };
 
@@ -82,6 +83,80 @@ describe('Staking namespace', () => {
       const tx = await staking.bond(args);
 
       expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: getLedgerEntry', () => {
+    it('should return the ledger info for the account', async () => {
+      dsMockUtils.createQueryMock('staking', 'ledger', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockStakingLedger({
+            stash: dsMockUtils.createMockAccountId('someId'),
+            total: dsMockUtils.createMockCompact(
+              dsMockUtils.createMockU128(new BigNumber(10).times(10 ** 6))
+            ),
+            active: dsMockUtils.createMockCompact(
+              dsMockUtils.createMockU128(new BigNumber(5).times(10 ** 6))
+            ),
+            unlocking: dsMockUtils.createMockVec(),
+            claimedRewards: dsMockUtils.createMockVec(),
+          })
+        ),
+      });
+
+      const result = await staking.getLedgerEntry();
+
+      expect(result).toEqual({
+        stash: expect.any(Account),
+        total: new BigNumber(10),
+        active: new BigNumber(5),
+        unlocking: [],
+        claimedRewards: [],
+      });
+    });
+
+    it('should return null', async () => {
+      dsMockUtils.createQueryMock('staking', 'ledger', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      const result = await staking.getLedgerEntry();
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('method: getNomination', () => {
+    it('should return the nomination info', async () => {
+      const targetAccountId = dsMockUtils.createMockAccountId('someId');
+
+      dsMockUtils.createQueryMock('staking', 'nominators', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockStakingNominations({
+            targets: dsMockUtils.createMockVec([targetAccountId]),
+            submittedIn: dsMockUtils.createMockU32(new BigNumber(1)),
+            suppressed: dsMockUtils.createMockBool(false),
+          })
+        ),
+      });
+
+      const result = await staking.getNomination();
+
+      expect(result).toEqual({
+        targets: expect.arrayContaining([expect.any(Account)]),
+        submittedInEra: new BigNumber(1),
+        suppressed: false,
+      });
+    });
+
+    it('should return null', async () => {
+      dsMockUtils.createQueryMock('staking', 'nominators', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      const result = await staking.getNomination();
+
+      expect(result).toBeNull();
     });
   });
 
@@ -111,6 +186,36 @@ describe('Staking namespace', () => {
       const controller = await staking.getController();
 
       expect(controller).toBeNull();
+    });
+  });
+
+  describe('method: getCommission', () => {
+    it('should return commission info if the account wants to be a validator', async () => {
+      dsMockUtils.createQueryMock('staking', 'validators', {
+        returnValue: dsMockUtils.createMockValidatorPref({
+          blocked: dsMockUtils.createMockBool(false),
+          commission: dsMockUtils.createMockCompact(
+            dsMockUtils.createMockPerbill(new BigNumber(100000000))
+          ),
+        }),
+      });
+
+      const result = await staking.getCommission();
+
+      expect(result).toEqual({
+        blocked: false,
+        commission: new BigNumber(10),
+      });
+    });
+
+    it('should return null if any empty preference is found', async () => {
+      dsMockUtils.createQueryMock('staking', 'validators', {
+        returnValue: dsMockUtils.createMockValidatorPref(),
+      });
+
+      const result = await staking.getCommission();
+
+      expect(result).toBeNull();
     });
   });
 });

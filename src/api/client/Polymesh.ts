@@ -10,6 +10,7 @@ import { SigningManager } from '@polymeshassociation/signing-manager-types';
 import fetch from 'cross-fetch';
 import schema from 'polymesh-types/schema';
 
+import { Staking } from '~/api/client/Staking';
 import { Account, Context, createTransactionBatch, Identity, PolymeshError } from '~/internal';
 import {
   CreateTransactionBatchProcedureMethod,
@@ -103,6 +104,10 @@ export class Polymesh {
    */
   public settlements: Settlements;
   /**
+   * A set of methods for staking POLYX
+   */
+  public staking: Staking;
+  /**
    * A set of methods for managing a Polymesh Identity's Accounts and their permissions
    */
   public accountManagement: AccountManagement;
@@ -127,6 +132,7 @@ export class Polymesh {
     this.accountManagement = new AccountManagement(context);
     this.identities = new Identities(context);
     this.assets = new Assets(context);
+    this.staking = new Staking(context);
 
     this.createTransactionBatch = createProcedureMethod(
       {

@@ -51,7 +51,7 @@ import {
   RuntimeVersion,
   SignedBlock,
 } from '@polkadot/types/interfaces';
-import { Weight } from '@polkadot/types/interfaces/runtime';
+import { AccountId32, Perbill, Weight } from '@polkadot/types/interfaces/runtime';
 import {
   FrameSystemPhase,
   PalletAssetAssetDetails,
@@ -70,6 +70,11 @@ import {
   PalletCorporateActionsTargetTreatment,
   PalletIdentityClaim1stKey,
   PalletRelayerSubsidy,
+  PalletStakingActiveEraInfo,
+  PalletStakingNominations,
+  PalletStakingStakingLedger,
+  PalletStakingUnlockChunk,
+  PalletStakingValidatorPrefs,
   PalletStoFundraiser,
   PalletStoFundraiserStatus,
   PalletStoFundraiserTier,
@@ -2226,6 +2231,13 @@ export const createMockU128 = (value?: BigNumber | u128): MockCodec<u128> =>
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockPermill = (value?: BigNumber | Permill): MockCodec<Permill> =>
+  createMockNumberCodec(value);
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockPerbill = (value?: BigNumber | Perbill): MockCodec<Perbill> =>
   createMockNumberCodec(value);
 
 /**
@@ -4847,3 +4859,101 @@ export const createMockExtrinsicStatus = (
     | { Dropped: bool }
     | { Invalid: bool }
 ): MockCodec<ExtrinsicStatus> => createMockEnum<ExtrinsicStatus>(status);
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockValidatorPref = (validatorPerf?: {
+  commission: Compact<Perbill> | Parameters<typeof createMockPerbill>[0];
+  blocked: bool | Parameters<typeof createMockBool>[0];
+}): MockCodec<PalletStakingValidatorPrefs> => {
+  const { commission, blocked } = validatorPerf ?? {
+    commission: createMockCompact(createMockPermill()),
+    blocked: createMockBool(),
+  };
+
+  return createMockCodec<PalletStakingValidatorPrefs>({ commission, blocked }, !validatorPerf);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockStakingLedger = (
+  ledger?:
+    | {
+        stash: AccountId;
+        total: Compact<u128>;
+        active: Compact<u128>;
+        unlocking: Vec<PalletStakingUnlockChunk>;
+        claimedRewards: Vec<u32>;
+      }
+    | PalletStakingStakingLedger
+): MockCodec<PalletStakingStakingLedger> => {
+  const { stash, total, active, unlocking, claimedRewards } = ledger ?? {
+    stash: createMockAccountId(),
+    total: createMockBalance(),
+    active: createMockBalance(),
+    unlocking: createMockVec([]),
+    claimedRewards: createMockVec([]),
+  };
+
+  return createMockCodec<PalletStakingStakingLedger>(
+    {
+      stash,
+      total,
+      active,
+      unlocking,
+      claimedRewards,
+    },
+    !ledger
+  );
+};
+
+export const createMockStakingNominations = (
+  nominations?:
+    | {
+        targets: Vec<AccountId32>;
+        submittedIn: u32;
+        suppressed: bool;
+      }
+    | PalletStakingNominations
+): MockCodec<PalletStakingNominations> => {
+  const { targets, submittedIn, suppressed } = nominations ?? {
+    targets: createMockVec([]),
+    submittedIn: createMockBool(),
+    suppressed: createMockBool(),
+  };
+
+  return createMockCodec<PalletStakingNominations>(
+    {
+      targets,
+      submittedIn,
+      suppressed,
+    },
+    !nominations
+  );
+};
+
+export const createMockActiveEraInfo = (
+  activeEra?: { index: u32; start: Option<u64> } | PalletStakingActiveEraInfo
+): MockCodec<PalletStakingActiveEraInfo> => {
+  const { index, start } = activeEra ?? {
+    index: createMockU32(),
+    start: createMockOption(),
+  };
+
+  return createMockCodec<PalletStakingActiveEraInfo>({ index, start }, !activeEra);
+};
+
+export const createMockUnlockChunk = (
+  chunk?: { value: Compact<u128>; era: Compact<u32> } | PalletStakingUnlockChunk
+): MockCodec<PalletStakingUnlockChunk> => {
+  const { value, era } = chunk ?? {
+    value: createMockCompact(),
+    era: createMockCompact(),
+  };
+
+  return createMockCodec<PalletStakingUnlockChunk>({ value, era }, !chunk);
+};

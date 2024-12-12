@@ -1,3 +1,5 @@
+import { RewardDestination } from '@polkadot/types/interfaces';
+
 import { PolymeshError, Procedure } from '~/internal';
 import { Account, Balance, BondPolyxParams, ErrorCode, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
@@ -11,16 +13,12 @@ import { asAccount } from '~/utils/internal';
 export interface Storage {
   actingBalance: Balance;
   actingAccount: Account;
-
-  currentController: Account | null;
 }
 
 /**
  * @hidden
  */
-export type Params = BondPolyxParams & {
-  payee: Account;
-};
+export type Params = BondPolyxParams;
 
 /**
  * @hidden
@@ -39,27 +37,55 @@ export async function prepareBondPolyx(
     },
     context,
     storage: {
+      actingAccount,
       actingBalance: { free, locked },
     },
   } = this;
-  const { controller: controllerInput, amount } = args;
+  const { autoStake, controller: controllerInput, rewardDestination: payeeInput, amount } = args;
 
-  // const payee = asAccount(payeeInput, context);
+  const payee = asAccount(payeeInput, context);
   const controller = asAccount(controllerInput, context);
+
+  if (autoStake && !payee.isEqual(actingAccount)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'auto staking requires the payee to be the acting account',
+      data: {
+        payee: payee.address,
+        actingAccount: actingAccount.address,
+        autoStake,
+      },
+    });
+  }
 
   if (free.lt(amount)) {
     throw new PolymeshError({
       code: ErrorCode.InsufficientBalance,
-      message: 'Payee account has insufficient POLYX',
-      data: { requestAmount: amount.toString(), free: free.toString(), locked: locked.toString },
+      message: 'The stash account has insufficient POLYX',
+      data: {
+        requestAmount: amount.toString(),
+        free: free.toString(),
+        locked: locked.toString,
+        actingAccount: actingAccount.address,
+      },
     });
   }
 
   const rawAmount = bigNumberToBalance(amount, context);
-  const rawController = stringToAccountId(controller.address, context);
-  const rawPayee = stakingRewardDestinationToRaw({ stash: true }, context);
 
-  // TODO should return new balance
+  const rawController = stringToAccountId(controller.address, context);
+
+  let rawPayee: RewardDestination;
+  if (autoStake) {
+    rawPayee = stakingRewardDestinationToRaw({ staked: true }, context);
+  } else if (actingAccount.isEqual(payee)) {
+    rawPayee = stakingRewardDestinationToRaw({ stash: true }, context);
+  } else if (controller.isEqual(payee)) {
+    rawPayee = stakingRewardDestinationToRaw({ controller: true }, context);
+  } else {
+    rawPayee = stakingRewardDestinationToRaw({ account: payee }, context);
+  }
+
   return {
     transaction: bond,
     args: [rawController, rawAmount, rawPayee],
@@ -87,13 +113,12 @@ export async function prepareStorage(this: Procedure<Params, void, Storage>): Pr
   const { context } = this;
 
   const actingAccount = await context.getActingAccount();
-  const actingBalance = await actingAccount.getBalance();
-  const currentController = await actingAccount.staking.getController();
+
+  const [actingBalance] = await Promise.all([actingAccount.getBalance()]);
 
   return {
     actingAccount,
     actingBalance,
-    currentController,
   };
 }
 
