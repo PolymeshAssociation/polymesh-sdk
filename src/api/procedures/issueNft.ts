@@ -99,6 +99,7 @@ export function getAuthorization(
     permissions: {
       transactions: [TxTags.nft.IssueNft],
       assets: [collection],
+      // TODO: might need portfolio perms "ensure_origin_asset_and_portfolio_permissions" `pallets/nft/src/lib.rs` 359
       portfolios: [],
     },
   };

@@ -100,8 +100,10 @@ export async function prepareSetMultiSigAdmin(
 export function getAuthorization(this: Procedure<Params>, args: Params): ProcedureAuthorization {
   const transactions = [];
   if (args.admin) {
+    // TODO: not sure if we need this -> ms checks if signer is ms, checks if ms has did and then inserts -> `pallets/multisig/src/lib.rs` 426
     transactions.push(TxTags.multiSig.AddAdmin);
   } else {
+    // TODO: same here -> plus checks if called by admin
     transactions.push(TxTags.multiSig.RemoveAdminViaAdmin);
   }
 

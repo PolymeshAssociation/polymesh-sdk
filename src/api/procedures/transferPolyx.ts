@@ -98,6 +98,7 @@ export async function prepareTransferPolyx(
 export function getAuthorization({ memo }: TransferPolyxParams): ProcedureAuthorization {
   return {
     permissions: {
+      // TODO: might not need these the chain checks for cdd, then tries transfer
       transactions: [memo ? TxTags.balances.TransferWithMemo : TxTags.balances.Transfer],
       assets: [],
       portfolios: [],

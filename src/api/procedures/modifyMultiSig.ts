@@ -195,16 +195,19 @@ export function getAuthorization(
     storage: { signersToAdd, signersToRemove },
   } = this;
 
+  // TODO: not sure if we need to check for tx here -> permissions checks for did of caller and if the signer is multisig admin, though might need to look how transactions listed here are checked.. there are additional checks in the pallet that check for cdd auth and if the the signer to add is not a primary key of another acc
   const transactions = [];
   if (signersToAdd.length > 0) {
     transactions.push(TxTags.multiSig.AddMultisigSignersViaCreator);
   }
 
   if (signersToRemove.length > 0) {
+    // similar here
     transactions.push(TxTags.multiSig.RemoveMultisigSignersViaCreator);
   }
 
   if (newRequiredSignatures) {
+    // same here
     transactions.push(TxTags.multiSig.ChangeSigsRequiredViaCreator);
   }
 
