@@ -1956,9 +1956,10 @@ describe('Instruction class', () => {
   describe('method: getMediators', () => {
     const mediatorDid1 = 'mediatorDid1';
     const mediatorDid2 = 'mediatorDid2';
+    const mediatorDid3 = 'mediatorDid3';
 
     describe('querying the middleware', () => {
-      it('should return the instruction mediators', async () => {
+      it('should return the instruction mediators with affirmation info', async () => {
         dsMockUtils.createApolloQueryMock(
           instructionsQuery(false, {
             id: id.toString(),
@@ -1967,7 +1968,7 @@ describe('Instruction class', () => {
             instructions: {
               nodes: [
                 {
-                  mediators: [mediatorDid1, mediatorDid2],
+                  mediators: [mediatorDid1, mediatorDid2, mediatorDid3],
                 },
               ],
             },
@@ -1985,7 +1986,12 @@ describe('Instruction class', () => {
                 {
                   identity: mediatorDid2,
                   status: AffirmStatusEnum.Affirmed,
-                  expiry,
+                  expiry: expiry.toISOString(),
+                },
+                {
+                  identity: mediatorDid3,
+                  status: AffirmStatusEnum.Affirmed,
+                  expiry: null,
                 },
               ],
             },
@@ -2003,6 +2009,11 @@ describe('Instruction class', () => {
             identity: expect.objectContaining({ did: mediatorDid2 }),
             status: AffirmationStatus.Affirmed,
             expiry,
+          },
+          {
+            identity: expect.objectContaining({ did: mediatorDid3 }),
+            status: AffirmationStatus.Affirmed,
+            expiry: undefined,
           },
         ]);
       });

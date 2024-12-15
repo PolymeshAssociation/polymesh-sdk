@@ -962,14 +962,14 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       const getMediatorAffirmationStatus = (
         mediatorAffirmation?: MiddlewareInstructionAffirmation
       ): Omit<MediatorAffirmation, 'identity'> => {
-        let status = AffirmationStatus.Pending;
         if (mediatorAffirmation) {
-          status = middlewareAffirmStatusToAffirmationStatus(mediatorAffirmation.status);
-          if (mediatorAffirmation.expiry) {
-            return { status, expiry: mediatorAffirmation.expiry };
-          }
+          const status = middlewareAffirmStatusToAffirmationStatus(mediatorAffirmation.status);
+          return {
+            status,
+            expiry: mediatorAffirmation.expiry ? new Date(mediatorAffirmation.expiry) : undefined,
+          };
         }
-        return { status };
+        return { status: AffirmationStatus.Pending };
       };
 
       return (mediators as string[]).map(mediator => {
