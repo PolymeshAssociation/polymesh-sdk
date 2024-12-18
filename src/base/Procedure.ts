@@ -423,4 +423,14 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
 
     return context;
   }
+
+  /**
+   * Get the authorization data (permissions) required to run this procedure
+   *
+   * @param args - procedure arguments
+   * @returns authorization data containing required roles and permissions
+   */
+  public async requiredAuthorizations(args: Args): Promise<ProcedureAuthorization> {
+    return this.getAuthorization(args);
+  }
 }

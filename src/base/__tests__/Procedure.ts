@@ -653,4 +653,37 @@ describe('Procedure class', () => {
       expect(() => proc.context).toThrow('Attempt to access context before it was set');
     });
   });
+
+  describe('method: requiredAuthorizations', () => {
+    it('should return the required authorizations for the Procedure', async () => {
+      const func = async function (
+        this: Procedure<typeof procArgs, string>
+      ): Promise<TransactionSpec<string, [string]>> {
+        return {
+          transaction: dsMockUtils.createTxMock('asset', 'registerUniqueTicker'),
+          args: [procArgs.ticker],
+          resolver: 'success',
+        };
+      };
+
+      const proc = new Procedure(func, {
+        roles: [{ type: 'FakeRole' } as unknown as Role],
+        permissions: {
+          transactions: [TxTags.asset.RegisterUniqueTicker],
+          assets: [],
+          portfolios: [],
+        },
+      });
+
+      const result = await proc.requiredAuthorizations(procArgs);
+      expect(result).toEqual({
+        roles: [{ type: 'FakeRole' }],
+        permissions: {
+          transactions: [TxTags.asset.RegisterUniqueTicker],
+          assets: [],
+          portfolios: [],
+        },
+      });
+    });
+  });
 });
