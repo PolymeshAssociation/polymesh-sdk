@@ -86,6 +86,26 @@ describe('Staking namespace', () => {
     });
   });
 
+  describe('method: unbond', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const amount = new BigNumber(3);
+
+      const args = {
+        amount,
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, mockContext, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await staking.unbond(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
   describe('method: getLedgerEntry', () => {
     it('should return the ledger info for the account', async () => {
       dsMockUtils.createQueryMock('staking', 'ledger', {

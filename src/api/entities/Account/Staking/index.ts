@@ -1,10 +1,11 @@
-import { Account, bondPolyx, Context, Namespace } from '~/internal';
+import { Account, bondPolyx, Context, Namespace, unbondPolyx } from '~/internal';
 import {
   BondPolyxParams,
   ProcedureMethod,
   StakingCommission,
   StakingLedgerEntry,
   StakingNomination,
+  UnbondPolyxParams,
 } from '~/types';
 import {
   accountIdToString,
@@ -34,12 +35,24 @@ export class Staking extends Namespace<Account> {
       },
       context
     );
+
+    this.unbond = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [unbondPolyx, { ...args }],
+      },
+      context
+    );
   }
 
   /**
    * Bond POLYX for staking
    */
   public bond: ProcedureMethod<BondPolyxParams, void>;
+
+  /**
+   * Unbond POLYX for staking. The unbonded amount can be withdrawn after the lockup period
+   */
+  public unbond: ProcedureMethod<UnbondPolyxParams, void>;
 
   /**
    * Fetch the ledger information for a controller account

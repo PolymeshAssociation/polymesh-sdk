@@ -1786,3 +1786,10 @@ export interface BondPolyxParams {
    */
   amount: BigNumber;
 }
+
+export interface UnbondPolyxParams {
+  /**
+   * The amount of POLYX to unbond from staking
+   */
+  amount: BigNumber;
+}
