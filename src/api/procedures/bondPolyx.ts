@@ -63,9 +63,9 @@ export async function prepareBondPolyx(
       code: ErrorCode.InsufficientBalance,
       message: 'The stash account has insufficient POLYX',
       data: {
-        requestAmount: amount.toString(),
+        amount: amount.toString(),
         free: free.toString(),
-        locked: locked.toString,
+        locked: locked.toString(),
         actingAccount: actingAccount.address,
       },
     });
