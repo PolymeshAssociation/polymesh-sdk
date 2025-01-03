@@ -92,6 +92,7 @@ describe('Staking namespace', () => {
 
       const args = {
         amount,
+        type: 'unbond',
       };
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
@@ -101,6 +102,27 @@ describe('Staking namespace', () => {
         .mockResolvedValue(expectedTransaction);
 
       const tx = await staking.unbond(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: bondExtra', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const amount = new BigNumber(3);
+
+      const args = {
+        amount,
+        type: 'bondExtra',
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, mockContext, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await staking.bondExtra(args);
 
       expect(tx).toBe(expectedTransaction);
     });

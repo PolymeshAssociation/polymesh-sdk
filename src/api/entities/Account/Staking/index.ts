@@ -1,11 +1,11 @@
-import { Account, bondPolyx, Context, Namespace, unbondPolyx } from '~/internal';
+import { Account, bondPolyx, Context, Namespace, updateBondedPolyx } from '~/internal';
 import {
   BondPolyxParams,
   ProcedureMethod,
   StakingCommission,
   StakingLedgerEntry,
   StakingNomination,
-  UnbondPolyxParams,
+  UpdatePolyxBondParams,
 } from '~/types';
 import {
   accountIdToString,
@@ -38,7 +38,14 @@ export class Staking extends Namespace<Account> {
 
     this.unbond = createProcedureMethod(
       {
-        getProcedureAndArgs: args => [unbondPolyx, { ...args }],
+        getProcedureAndArgs: args => [updateBondedPolyx, { ...args, type: 'unbond' } as const],
+      },
+      context
+    );
+
+    this.bondExtra = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [updateBondedPolyx, { ...args, type: 'bondExtra' } as const],
       },
       context
     );
@@ -50,9 +57,14 @@ export class Staking extends Namespace<Account> {
   public bond: ProcedureMethod<BondPolyxParams, void>;
 
   /**
+   * Bond extra POLYX for staking
+   */
+  public bondExtra: ProcedureMethod<UpdatePolyxBondParams, void>;
+
+  /**
    * Unbond POLYX for staking. The unbonded amount can be withdrawn after the lockup period
    */
-  public unbond: ProcedureMethod<UnbondPolyxParams, void>;
+  public unbond: ProcedureMethod<UpdatePolyxBondParams, void>;
 
   /**
    * Fetch the ledger information for a controller account
@@ -109,7 +121,7 @@ export class Staking extends Namespace<Account> {
    * Fetch the controller associated to this account if there is one
    *
    * @note if this is set it implies this account is a stash account
-   * @note an account can be its own controller
+   * @note a stash can be its own controller
    *
    * TODO support subscription
    */
