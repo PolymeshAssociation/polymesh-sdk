@@ -88,8 +88,9 @@ import {
   Signer,
   SignerType,
   StakingCommission,
-  StakingLedgerEntry,
+  StakingLedger,
   StakingNomination,
+  StakingPayee,
   TargetTreatment,
   TaxWithholding,
   TickerReservationDetails,
@@ -257,8 +258,9 @@ interface AccountOptions extends EntityOptions {
   authorizationsGetOne?: EntityGetter<AuthorizationRequest>;
   stakingGetCommission?: EntityGetter<StakingCommission | null>;
   stakingGetController?: EntityGetter<Account | null>;
+  stakingGetPayee?: EntityGetter<StakingPayee | null>;
   stakingGetNomination?: EntityGetter<StakingNomination | null>;
-  stakingGetLedgerEntry?: EntityGetter<StakingLedgerEntry | null>;
+  stakingGetLedger?: EntityGetter<StakingLedger | null>;
   getMultiSig?: EntityGetter<MultiSig | null>;
   getNextAssetId?: EntityGetter<string>;
 }
@@ -849,8 +851,9 @@ const MockAccountClass = createMockEntityClass<AccountOptions>(
 
     staking = {} as {
       bond: jest.Mock;
-      getLedgerEntry: jest.Mock;
+      getLedger: jest.Mock;
       getController: jest.Mock;
+      getPayee: jest.Mock;
       getNomination: jest.Mock;
       getCommission: jest.Mock;
     };
@@ -878,8 +881,9 @@ const MockAccountClass = createMockEntityClass<AccountOptions>(
       this.authorizations.getReceived = createEntityGetterMock(opts.authorizationsGetReceived);
       this.authorizations.getOne = createEntityGetterMock(opts.authorizationsGetOne);
       this.staking.getCommission = createEntityGetterMock(opts.stakingGetCommission);
-      this.staking.getLedgerEntry = createEntityGetterMock(opts.stakingGetLedgerEntry);
+      this.staking.getLedger = createEntityGetterMock(opts.stakingGetLedger);
       this.staking.getController = createEntityGetterMock(opts.stakingGetController);
+      this.staking.getPayee = createEntityGetterMock(opts.stakingGetPayee);
       this.staking.getNomination = createEntityGetterMock(opts.stakingGetNomination);
       this.getMultiSig = createEntityGetterMock(opts.getMultiSig);
       this.getNextAssetId = createEntityGetterMock(opts.getNextAssetId);
@@ -903,8 +907,9 @@ const MockAccountClass = createMockEntityClass<AccountOptions>(
     authorizationsGetReceived: [],
     authorizationsGetOne: getAuthorizationRequestInstance(),
     stakingGetCommission: null,
-    stakingGetLedgerEntry: null,
+    stakingGetLedger: null,
     stakingGetController: null,
+    stakingGetPayee: null,
     stakingGetNomination: null,
     getMultiSig: null,
     getNextAssetId: '12341234-1234-1234-1234-123412341234',
@@ -2132,7 +2137,8 @@ const MockMultiSigClass = createMockEntityClass<MultiSigOptions>(
     authorizationsGetOne: getAuthorizationRequestInstance(),
     stakingGetCommission: null,
     stakingGetController: null,
-    stakingGetLedgerEntry: null,
+    stakingGetPayee: null,
+    stakingGetLedger: null,
     stakingGetNomination: null,
     getMultiSig: null,
     getNextAssetId: '12341234-1234-1234-1234-123412341234',

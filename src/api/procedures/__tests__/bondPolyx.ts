@@ -13,7 +13,7 @@ import {
 import { Account, Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode, TxTags } from '~/types';
+import { ErrorCode } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -90,34 +90,70 @@ describe('bondPolyx procedure', () => {
 
     const expectedError = new PolymeshError({
       code: ErrorCode.InsufficientBalance,
-      message: 'The stash account has insufficient POLYX',
+      message: 'The stash account has insufficient POLYX to bond',
     });
 
     await expect(
       prepareBondPolyx.call(proc, {
         controller: actingAccount,
         amount: new BigNumber(900),
-        rewardDestination: actingAccount,
+        payee: actingAccount,
         autoStake: false,
       })
     ).rejects.toThrow(expectedError);
   });
 
-  it('should throw an error auto staked is true and there is non stash destination', async () => {
+  it('should throw an error if the controller lacks an identity', async () => {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, storage);
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The controller should be associated to an Identity',
+    });
+
+    await expect(
+      prepareBondPolyx.call(proc, {
+        controller: entityMockUtils.getAccountInstance({ getIdentity: null }),
+        amount: new BigNumber(3),
+        payee: actingAccount,
+        autoStake: false,
+      })
+    ).rejects.toThrow(expectedError);
+  });
+
+  it('should throw an error if the payee lacks an identity', async () => {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, storage);
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The payee should have an identity',
+    });
+
+    await expect(
+      prepareBondPolyx.call(proc, {
+        controller: actingAccount,
+        amount: new BigNumber(3),
+        payee: entityMockUtils.getAccountInstance({ getIdentity: null }),
+        autoStake: false,
+      })
+    ).rejects.toThrow(expectedError);
+  });
+
+  it('should throw an error auto staked is true with a non stash destination', async () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, storage);
 
     const payeeAccount = entityMockUtils.getAccountInstance({ isEqual: false });
 
     const expectedError = new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'auto staking requires the payee to be the acting account',
+      message: 'autoStake requires the stash to be the payee',
     });
 
     await expect(
       prepareBondPolyx.call(proc, {
         controller: actingAccount,
-        amount: new BigNumber(900),
-        rewardDestination: payeeAccount,
+        amount: new BigNumber(3),
+        payee: payeeAccount,
         autoStake: true,
       })
     ).rejects.toThrow(expectedError);
@@ -182,12 +218,11 @@ describe('bondPolyx procedure', () => {
     });
 
     const args = {
-      payee: actingAccount,
+      payee: destination,
       controller: entityMockUtils.getAccountInstance({
         isEqual: false,
         address: '5CD1ydRQzG7du6Sd4EfBWTGpZc1VJjKNSc5ScyZXfRgkqUG9',
       }),
-      rewardDestination: destination,
       amount,
       autoStake: false,
     };
@@ -236,7 +271,7 @@ describe('bondPolyx procedure', () => {
 
       expect(boundFunc()).toEqual({
         permissions: {
-          transactions: [TxTags.staking.Bond],
+          transactions: [],
           assets: [],
           portfolios: [],
         },

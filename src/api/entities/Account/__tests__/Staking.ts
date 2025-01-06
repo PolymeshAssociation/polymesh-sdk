@@ -128,7 +128,44 @@ describe('Staking namespace', () => {
     });
   });
 
-  describe('method: getLedgerEntry', () => {
+  describe('method: setController', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args = {
+        controller: 'someAccount',
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, mockContext, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await staking.setController(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: setPayee', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args = {
+        payee: 'someAccount',
+        autoStake: false,
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, mockContext, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await staking.setPayee(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: getLedger', () => {
     it('should return the ledger info for the account', async () => {
       dsMockUtils.createQueryMock('staking', 'ledger', {
         returnValue: dsMockUtils.createMockOption(
@@ -146,7 +183,7 @@ describe('Staking namespace', () => {
         ),
       });
 
-      const result = await staking.getLedgerEntry();
+      const result = await staking.getLedger();
 
       expect(result).toEqual({
         stash: expect.any(Account),
@@ -162,7 +199,99 @@ describe('Staking namespace', () => {
         returnValue: dsMockUtils.createMockOption(),
       });
 
-      const result = await staking.getLedgerEntry();
+      const result = await staking.getLedger();
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('method: getPayee', () => {
+    it('should return payee info for Staked', async () => {
+      dsMockUtils.createQueryMock('staking', 'payee', {
+        returnValue: dsMockUtils.createMockRewardDestination('Staked'),
+      });
+
+      jest.spyOn(staking, 'getController').mockResolvedValue(entityMockUtils.getAccountInstance());
+
+      const result = await staking.getPayee();
+
+      expect(result).toEqual({
+        account: expect.objectContaining({ address: 'someAddress' }),
+        autoStaked: true,
+      });
+    });
+
+    it('should return payee info for Stash', async () => {
+      dsMockUtils.createQueryMock('staking', 'payee', {
+        returnValue: dsMockUtils.createMockRewardDestination('Stash'),
+      });
+
+      jest.spyOn(staking, 'getController').mockResolvedValue(entityMockUtils.getAccountInstance());
+
+      const result = await staking.getPayee();
+
+      expect(result).toEqual({
+        account: expect.objectContaining({ address: 'someAddress' }),
+        autoStaked: false,
+      });
+    });
+
+    it('should return payee info for Controller', async () => {
+      dsMockUtils.createQueryMock('staking', 'payee', {
+        returnValue: dsMockUtils.createMockRewardDestination('Controller'),
+      });
+
+      jest
+        .spyOn(staking, 'getController')
+        .mockResolvedValue(entityMockUtils.getAccountInstance({ address: 'controllerAddress' }));
+
+      const result = await staking.getPayee();
+
+      expect(result).toEqual({
+        account: expect.objectContaining({ address: 'controllerAddress' }),
+        autoStaked: false,
+      });
+    });
+
+    it('should return payee info for Account', async () => {
+      dsMockUtils.createQueryMock('staking', 'payee', {
+        returnValue: dsMockUtils.createMockRewardDestination({
+          Account: dsMockUtils.createMockAccountId('someAddress'),
+        }),
+      });
+
+      jest
+        .spyOn(staking, 'getController')
+        .mockResolvedValue(entityMockUtils.getAccountInstance({ address: 'someAddress' }));
+
+      const result = await staking.getPayee();
+
+      expect(result).toEqual({
+        account: expect.objectContaining({ address: 'someAddress' }),
+        autoStaked: false,
+      });
+    });
+
+    it('should return null for None payee', async () => {
+      dsMockUtils.createQueryMock('staking', 'payee', {
+        returnValue: dsMockUtils.createMockRewardDestination('None'),
+      });
+
+      jest.spyOn(staking, 'getController').mockResolvedValue(entityMockUtils.getAccountInstance());
+
+      const result = await staking.getPayee();
+
+      expect(result).toBeNull();
+    });
+
+    it('should return null for no controller', async () => {
+      dsMockUtils.createQueryMock('staking', 'payee', {
+        returnValue: dsMockUtils.createMockRewardDestination('Stash'),
+      });
+
+      jest.spyOn(staking, 'getController').mockResolvedValue(null);
+
+      const result = await staking.getPayee();
 
       expect(result).toBeNull();
     });

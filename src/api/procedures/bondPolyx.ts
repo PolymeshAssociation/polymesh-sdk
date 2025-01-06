@@ -1,14 +1,8 @@
-import { RewardDestination } from '@polkadot/types/interfaces';
-
 import { PolymeshError, Procedure } from '~/internal';
-import { Account, Balance, BondPolyxParams, ErrorCode, TxTags } from '~/types';
+import { Account, Balance, BondPolyxParams, ErrorCode } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import {
-  bigNumberToBalance,
-  stakingRewardDestinationToRaw,
-  stringToAccountId,
-} from '~/utils/conversion';
-import { asAccount } from '~/utils/internal';
+import { bigNumberToBalance, stringToAccountId } from '~/utils/conversion';
+import { asAccount, calculateRawStakingPayee } from '~/utils/internal';
 
 export interface Storage {
   actingBalance: Balance;
@@ -41,27 +35,24 @@ export async function prepareBondPolyx(
       actingBalance: { free, locked },
     },
   } = this;
-  const { autoStake, controller: controllerInput, rewardDestination: payeeInput, amount } = args;
+  const { autoStake, controller: controllerInput, payee: payeeInput, amount } = args;
 
   const payee = asAccount(payeeInput, context);
   const controller = asAccount(controllerInput, context);
 
-  if (autoStake && !payee.isEqual(actingAccount)) {
+  const controllerId = await controller.getIdentity();
+  if (!controllerId) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'auto staking requires the payee to be the acting account',
-      data: {
-        payee: payee.address,
-        actingAccount: actingAccount.address,
-        autoStake,
-      },
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The controller should be associated to an Identity',
+      data: { controller: controller.address },
     });
   }
 
   if (free.lt(amount)) {
     throw new PolymeshError({
       code: ErrorCode.InsufficientBalance,
-      message: 'The stash account has insufficient POLYX',
+      message: 'The stash account has insufficient POLYX to bond',
       data: {
         amount: amount.toString(),
         free: free.toString(),
@@ -72,19 +63,14 @@ export async function prepareBondPolyx(
   }
 
   const rawAmount = bigNumberToBalance(amount, context);
-
   const rawController = stringToAccountId(controller.address, context);
-
-  let rawPayee: RewardDestination;
-  if (autoStake) {
-    rawPayee = stakingRewardDestinationToRaw({ staked: true }, context);
-  } else if (actingAccount.isEqual(payee)) {
-    rawPayee = stakingRewardDestinationToRaw({ stash: true }, context);
-  } else if (controller.isEqual(payee)) {
-    rawPayee = stakingRewardDestinationToRaw({ controller: true }, context);
-  } else {
-    rawPayee = stakingRewardDestinationToRaw({ account: payee }, context);
-  }
+  const rawPayee = await calculateRawStakingPayee(
+    payee,
+    actingAccount,
+    controller,
+    autoStake,
+    context
+  );
 
   return {
     transaction: bond,
@@ -95,12 +81,13 @@ export async function prepareBondPolyx(
 
 /**
  * @hidden
+ * @note the staking module is exempt from permission checks
  */
 export function getAuthorization(this: Procedure<Params, void, Storage>): ProcedureAuthorization {
   return {
     permissions: {
       assets: [],
-      transactions: [TxTags.staking.Bond],
+      transactions: [],
       portfolios: [],
     },
   };
