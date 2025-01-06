@@ -258,8 +258,9 @@ import {
   SignerValue,
   SingleClaimCondition,
   StakingCommission,
-  StakingLedgerEntry,
+  StakingLedger,
   StakingNomination,
+  StakingPayee,
   StakingUnlockingEntry,
   StatClaimType,
   StatType,
@@ -5652,17 +5653,48 @@ export function rawNominationToStakingNomination(
 /**
  * @hidden
  */
-export function rawStakingLedgerToStakingLedgerEntry(
-  entry: PalletStakingStakingLedger,
+export function rewardDestinationToPayee(
+  destination: RewardDestination,
+  stash: Account,
+  controller: Account,
   context: Context
-): StakingLedgerEntry {
+): StakingPayee | null {
+  const { type } = destination;
+
+  switch (type) {
+    case 'Staked':
+      return { account: stash, autoStaked: true };
+    case 'Stash':
+      return { account: stash, autoStaked: false };
+    case 'Controller':
+      return { account: controller, autoStaked: false };
+    case 'Account':
+      return {
+        account: new Account({ address: accountIdToString(destination.asAccount) }, context),
+        autoStaked: false,
+      };
+    case 'None':
+      return null;
+    /* istanbul ignore next: TS will error if a case is missed */
+    default:
+      throw new UnreachableCaseError(type);
+  }
+}
+
+/**
+ * @hidden
+ */
+export function rawStakingLedgerToStakingLedgerEntry(
+  ledger: PalletStakingStakingLedger,
+  context: Context
+): StakingLedger {
   const {
     total: rawTotal,
     active: rawActive,
     unlocking: rawUnlocking,
     claimedRewards: rawClaimedRewards,
     stash: rawStash,
-  } = entry;
+  } = ledger;
 
   const total = balanceToBigNumber(rawTotal.unwrap());
   const active = balanceToBigNumber(rawActive.unwrap());
@@ -5670,8 +5702,10 @@ export function rawStakingLedgerToStakingLedgerEntry(
     value: balanceToBigNumber(unlock.value.unwrap()),
     era: u32ToBigNumber(unlock.era.unwrap()),
   }));
+
   const claimedRewards = rawClaimedRewards.map(id => u32ToBigNumber(id));
   const stashAddress = accountIdToString(rawStash);
+
   const stash = new Account({ address: stashAddress }, context);
 
   return {

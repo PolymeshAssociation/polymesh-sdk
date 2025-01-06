@@ -1,10 +1,21 @@
-import { Account, bondPolyx, Context, Namespace, updateBondedPolyx } from '~/internal';
+import {
+  Account,
+  bondPolyx,
+  Context,
+  Namespace,
+  setStakingController,
+  setStakingPayee,
+  updateBondedPolyx,
+} from '~/internal';
 import {
   BondPolyxParams,
   ProcedureMethod,
+  SetStakingControllerParams,
+  SetStakingPayeeParams,
   StakingCommission,
-  StakingLedgerEntry,
+  StakingLedger,
   StakingNomination,
+  StakingPayee,
   UpdatePolyxBondParams,
 } from '~/types';
 import {
@@ -12,6 +23,7 @@ import {
   rawNominationToStakingNomination,
   rawStakingLedgerToStakingLedgerEntry,
   rawValidatorPrefToCommission,
+  rewardDestinationToPayee,
   stringToAccountId,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
@@ -28,10 +40,7 @@ export class Staking extends Namespace<Account> {
 
     this.bond = createProcedureMethod(
       {
-        getProcedureAndArgs: args => [
-          bondPolyx,
-          { ...args, payee: this.parent, controller: this.parent },
-        ],
+        getProcedureAndArgs: args => [bondPolyx, { ...args }],
       },
       context
     );
@@ -46,6 +55,20 @@ export class Staking extends Namespace<Account> {
     this.bondExtra = createProcedureMethod(
       {
         getProcedureAndArgs: args => [updateBondedPolyx, { ...args, type: 'bondExtra' } as const],
+      },
+      context
+    );
+
+    this.setController = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [setStakingController, args],
+      },
+      context
+    );
+
+    this.setPayee = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [setStakingPayee, args],
       },
       context
     );
@@ -67,11 +90,25 @@ export class Staking extends Namespace<Account> {
   public unbond: ProcedureMethod<UpdatePolyxBondParams, void>;
 
   /**
-   * Fetch the ledger information for a controller account
+   * Allow for a stash account to update its controller
    *
-   * @note if a value is returned the account is a controller
+   * @note the transaction must be signed by a stash account
    */
-  public async getLedgerEntry(): Promise<StakingLedgerEntry | null> {
+  public setController: ProcedureMethod<SetStakingControllerParams, void>;
+
+  /**
+   * Allow for a stash account to update where it's staking rewards are deposited
+   *
+   * @note the transaction must be signed by a controller account
+   */
+  public setPayee: ProcedureMethod<SetStakingPayeeParams, void>;
+
+  /**
+   * Fetch the ledger information for a stash account
+   *
+   * @note null is returned unless the account is a controller
+   */
+  public async getLedger(): Promise<StakingLedger | null> {
     const {
       context,
       context: {
@@ -88,6 +125,33 @@ export class Staking extends Namespace<Account> {
     }
 
     return rawStakingLedgerToStakingLedgerEntry(rawEntry.unwrap(), context);
+  }
+
+  /**
+   * Fetch the payee that will receive a stash account's rewards
+   *
+   * @note null is returned when the account is not a stash
+   */
+  public async getPayee(): Promise<StakingPayee | null> {
+    const {
+      context,
+      context: {
+        polymeshApi: { query },
+      },
+    } = this;
+
+    const rawAddress = stringToAccountId(this.parent.address, context);
+
+    const [rawPayee, controller] = await Promise.all([
+      query.staking.payee(rawAddress),
+      this.getController(),
+    ]);
+
+    if (!controller) {
+      return null;
+    }
+
+    return rewardDestinationToPayee(rawPayee, this.parent, controller, context);
   }
 
   /**

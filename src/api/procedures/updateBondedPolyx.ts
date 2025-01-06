@@ -1,12 +1,5 @@
 import { PolymeshError, Procedure } from '~/internal';
-import {
-  Account,
-  Balance,
-  ErrorCode,
-  StakingLedgerEntry,
-  TxTags,
-  UpdatePolyxBondParams,
-} from '~/types';
+import { Account, Balance, ErrorCode, StakingLedger, TxTags, UpdatePolyxBondParams } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { bigNumberToBalance } from '~/utils/conversion';
 
@@ -16,7 +9,7 @@ import { bigNumberToBalance } from '~/utils/conversion';
 export interface Storage {
   actingAccount: Account;
   actingBalance: Balance;
-  controllerEntry: StakingLedgerEntry | null;
+  controllerEntry: StakingLedger | null;
   isStash: boolean;
 }
 
@@ -136,7 +129,7 @@ export async function prepareStorage(this: Procedure<Params, void, Storage>): Pr
 
   const [actingBalance, controllerEntry, controller] = await Promise.all([
     actingAccount.getBalance(),
-    actingAccount.staking.getLedgerEntry(),
+    actingAccount.staking.getLedger(),
     actingAccount.staking.getController(),
   ]);
 
