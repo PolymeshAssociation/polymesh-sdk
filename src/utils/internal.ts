@@ -8,7 +8,7 @@ import {
   ObsInnerType,
 } from '@polkadot/api/types';
 import { BTreeSet, Bytes, Option, StorageKey, u32 } from '@polkadot/types';
-import { EventRecord } from '@polkadot/types/interfaces';
+import { EventRecord, RewardDestination } from '@polkadot/types/interfaces';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import {
   PalletAssetAssetDetails,
@@ -128,6 +128,7 @@ import {
   middlewareScopeToScope,
   permillToBigNumber,
   signerToString,
+  stakingRewardDestinationToRaw,
   statisticsOpTypeToStatType,
   statsClaimToStatClaimInputType,
   stringToAccountId,
@@ -1295,7 +1296,10 @@ export async function getCheckpointValue(
   }
 }
 
-interface TxAndArgsArray<Args extends Readonly<unknown[]> = Readonly<unknown[]>> {
+/**
+ * @hidden
+ */
+export interface TxAndArgsArray<Args extends Readonly<unknown[]> = Readonly<unknown[]>> {
   transaction: PolymeshTx<Args>;
   argsArray: Args[];
 }
@@ -2260,4 +2264,47 @@ export function isMiddlewareV6Extrinsic(
   }
 
   return false;
+}
+
+/**
+ * @hidden
+ *
+ * @throws if payee is not associated with an Identity
+ *
+ * @returns raw payee for staking extrinsics
+ */
+export async function calculateRawStakingPayee(
+  payee: Account,
+  stash: Account,
+  controller: Account,
+  autoStake: boolean,
+  context: Context
+): Promise<RewardDestination> {
+  const payeeId = await payee.getIdentity();
+
+  if (!payeeId) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The payee should have an identity',
+      data: { payee: payee.address },
+    });
+  }
+
+  if (autoStake) {
+    if (!payee.isEqual(stash)) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'autoStake requires the stash to be the payee',
+        data: { stash: stash.address, payee: payee.address },
+      });
+    }
+
+    return stakingRewardDestinationToRaw({ staked: true }, context);
+  } else if (stash.isEqual(payee)) {
+    return stakingRewardDestinationToRaw({ stash: true }, context);
+  } else if (controller.isEqual(payee)) {
+    return stakingRewardDestinationToRaw({ controller: true }, context);
+  } else {
+    return stakingRewardDestinationToRaw({ account: payee }, context);
+  }
 }

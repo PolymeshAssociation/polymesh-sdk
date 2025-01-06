@@ -47,6 +47,7 @@ import {
   Index,
   Permill,
   RefCount,
+  RewardDestination,
   RuntimeDispatchInfo,
   RuntimeVersion,
   SignedBlock,
@@ -4957,3 +4958,11 @@ export const createMockUnlockChunk = (
 
   return createMockCodec<PalletStakingUnlockChunk>({ value, era }, !chunk);
 };
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockRewardDestination = (
+  status?: { Account: AccountId } | 'Stash' | 'Staked' | 'Controller' | 'None'
+): MockCodec<RewardDestination> => createMockEnum<RewardDestination>(status);

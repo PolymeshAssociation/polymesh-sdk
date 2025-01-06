@@ -148,12 +148,20 @@ export interface StakingUnlockingEntry {
   era: BigNumber;
 }
 
-export interface StakingLedgerEntry {
+export interface StakingLedger {
   stash: Account;
   total: BigNumber;
   active: BigNumber;
   unlocking: StakingUnlockingEntry[];
   claimedRewards: BigNumber[];
+}
+
+export interface StakingPayee {
+  account: Account;
+  /**
+   * If true then rewards will be auto staked
+   */
+  autoStaked: boolean;
 }
 
 export interface StakingCommission {

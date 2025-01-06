@@ -1750,28 +1750,16 @@ export interface RegisterCustomAssetTypeParams {
 
 export interface BondPolyxParams {
   /**
-   * The controller for the bonded POLYX. This should be set when the wallet storing the POLYX is
-   * inconvenient to sign with. For example an air gapped wallet can be cumbersome to sign transactions
-   * with, but to maximize POLYX yield it might be desirable switch nominations somewhat frequently
-   *
-   * This account signs extrinsics, like nominating validators, but doesn't control the bonded POLYX.
-   * The separation between controller and stash accounts allows for the POLYX to be secured in a cold
-   * wallet (the stash) and be able to update staking preferences with a hot wallet (the controller).
-   *
-   * If this is not set it will default to the signing account
-   *
-   * @note this defaults to the signing account
+   * The controller is the account responsible for managing staked POLYX. This can be the stash,
+   * but designating a different key can make it easier to update nomination preferences and maintain
+   * the POLYX in a more secure, but inconvenient, stash key.
    */
   controller: Account | string;
 
   /**
    * The account that should receive the stashing rewards
-   *
-   * @note defaults to the signing account (the stash), which is usually the desired location since
-   * it enables automatic compounding of staking rewards.
-   *
    */
-  rewardDestination: Account | string;
+  payee: Account | string;
 
   /**
    * Can be set to `true` if `rewardDestination` is the signing account. Auto stake will stake all rewards so the balance will compound
@@ -1785,6 +1773,26 @@ export interface BondPolyxParams {
    * At the minimum a stash account needs enough POLYX to sign the unbond extrinsic ()
    */
   amount: BigNumber;
+}
+
+export interface SetStakingControllerParams {
+  /**
+   * The account responsible for managing the signing stash's staking preferences
+   */
+  controller: Account | string;
+}
+
+export interface SetStakingPayeeParams {
+  /**
+   * The account who will receive the staking rewards
+   */
+  payee: Account | string;
+
+  /**
+   * If set to true then rewards will be auto staked in order to compound
+   * @note The payee must be the stash account in order to auto stake
+   */
+  autoStake: boolean;
 }
 
 export interface UpdatePolyxBondParams {
