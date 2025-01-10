@@ -50,7 +50,7 @@ export async function prepareUnbondPolyx(
     if (!controllerEntry) {
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
-        message: 'Caller must be a controller account',
+        message: 'The caller must be a controller account',
         data: { actingAccount: actingAccount.address },
       });
     }
@@ -74,7 +74,7 @@ export async function prepareUnbondPolyx(
     if (!isStash) {
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
-        message: 'Caller must be a stash account',
+        message: 'The caller must be a stash account',
         data: { actingAccount: actingAccount.address },
       });
     }

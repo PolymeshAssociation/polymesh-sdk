@@ -180,3 +180,4 @@ export { bondPolyx } from '~/api/procedures/bondPolyx';
 export { updateBondedPolyx } from '~/api/procedures/updateBondedPolyx';
 export { setStakingController } from '~/api/procedures/setStakingController';
 export { setStakingPayee } from '~/api/procedures/setStakingPayee';
+export { withdrawUnbondedPolyx } from '~/api/procedures/withdrawUnbondedPolyx';

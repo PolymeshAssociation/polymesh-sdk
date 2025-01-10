@@ -6,9 +6,11 @@ import {
   setStakingController,
   setStakingPayee,
   updateBondedPolyx,
+  withdrawUnbondedPolyx,
 } from '~/internal';
 import {
   BondPolyxParams,
+  NoArgsProcedureMethod,
   ProcedureMethod,
   SetStakingControllerParams,
   SetStakingPayeeParams,
@@ -59,6 +61,14 @@ export class Staking extends Namespace<Account> {
       context
     );
 
+    this.withdraw = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [withdrawUnbondedPolyx, undefined],
+        voidArgs: true,
+      },
+      context
+    );
+
     this.setController = createProcedureMethod(
       {
         getProcedureAndArgs: args => [setStakingController, args],
@@ -76,11 +86,15 @@ export class Staking extends Namespace<Account> {
 
   /**
    * Bond POLYX for staking
+   *
+   * @note the signing account cannot be a stash
    */
   public bond: ProcedureMethod<BondPolyxParams, void>;
 
   /**
    * Bond extra POLYX for staking
+   *
+   * @note this transaction must be signed by a stash
    */
   public bondExtra: ProcedureMethod<UpdatePolyxBondParams, void>;
 
@@ -88,6 +102,13 @@ export class Staking extends Namespace<Account> {
    * Unbond POLYX for staking. The unbonded amount can be withdrawn after the lockup period
    */
   public unbond: ProcedureMethod<UpdatePolyxBondParams, void>;
+
+  /**
+   * Withdraw unbonded POLYX to free it for the stash account
+   *
+   * @note this transaction must be signed by a controller
+   */
+  public withdraw: NoArgsProcedureMethod<void>;
 
   /**
    * Allow for a stash account to update its controller
@@ -106,7 +127,7 @@ export class Staking extends Namespace<Account> {
   /**
    * Fetch the ledger information for a stash account
    *
-   * @note null is returned unless the account is a controller
+   * @returns null unless the account is a controller
    */
   public async getLedger(): Promise<StakingLedger | null> {
     const {
@@ -157,7 +178,7 @@ export class Staking extends Namespace<Account> {
   /**
    * Fetch this account's current nominations
    *
-   * @note a value returned implies the account is a controller account
+   * @returns null unless the account is a controller
    *
    * TODO support subscription
    */
@@ -184,8 +205,8 @@ export class Staking extends Namespace<Account> {
   /**
    * Fetch the controller associated to this account if there is one
    *
-   * @note if this is set it implies this account is a stash account
    * @note a stash can be its own controller
+   * @returns null unless the account is a stash
    *
    * TODO support subscription
    */
@@ -211,7 +232,7 @@ export class Staking extends Namespace<Account> {
   }
 
   /**
-   * @returns this Account's desire to be a validator and their expected commission
+   * @returns null unless the account is seeking nominations as a validator
    */
   public async getCommission(): Promise<StakingCommission | null> {
     const {
