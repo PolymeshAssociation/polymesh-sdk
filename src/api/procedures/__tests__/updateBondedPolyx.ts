@@ -85,7 +85,7 @@ describe('updateBondedPolyx procedure', () => {
 
       const expectedError = new PolymeshError({
         code: ErrorCode.ValidationError,
-        message: 'Caller must be a controller account',
+        message: 'The caller must be a controller account',
       });
 
       await expect(
@@ -104,7 +104,7 @@ describe('updateBondedPolyx procedure', () => {
 
       const expectedError = new PolymeshError({
         code: ErrorCode.ValidationError,
-        message: 'Caller must be a stash account',
+        message: 'The caller must be a stash account',
       });
 
       await expect(
@@ -160,7 +160,7 @@ describe('updateBondedPolyx procedure', () => {
 
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
-        message: 'Caller must be a stash account',
+        message: 'The caller must be a stash account',
       });
 
       return expect(prepareUnbondPolyx.call(proc, args)).rejects.toThrow(expectedError);

@@ -73,6 +73,7 @@ import {
   PalletRelayerSubsidy,
   PalletStakingActiveEraInfo,
   PalletStakingNominations,
+  PalletStakingSlashingSlashingSpans,
   PalletStakingStakingLedger,
   PalletStakingUnlockChunk,
   PalletStakingValidatorPrefs,
@@ -4966,3 +4967,25 @@ export const createMockUnlockChunk = (
 export const createMockRewardDestination = (
   status?: { Account: AccountId } | 'Stash' | 'Staked' | 'Controller' | 'None'
 ): MockCodec<RewardDestination> => createMockEnum<RewardDestination>(status);
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockSlashingSpans = (
+  span?:
+    | { spanIndex: u32; lastStart: u32; lastNonzeroSlash: u32; prior: Vec<u32> }
+    | PalletStakingSlashingSlashingSpans
+): MockCodec<PalletStakingSlashingSlashingSpans> => {
+  const { spanIndex, lastStart, lastNonzeroSlash, prior } = span ?? {
+    spanIndex: createMockU32(),
+    lastStart: createMockU32(),
+    lastNonzeroSlash: createMockU32(),
+    prior: createMockVec<u32>(),
+  };
+
+  return createMockCodec<PalletStakingSlashingSlashingSpans>(
+    { spanIndex, lastStart, lastNonzeroSlash, prior },
+    !span
+  );
+};
