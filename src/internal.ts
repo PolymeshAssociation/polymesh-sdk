@@ -181,3 +181,4 @@ export { updateBondedPolyx } from '~/api/procedures/updateBondedPolyx';
 export { setStakingController } from '~/api/procedures/setStakingController';
 export { setStakingPayee } from '~/api/procedures/setStakingPayee';
 export { withdrawUnbondedPolyx } from '~/api/procedures/withdrawUnbondedPolyx';
+export { nominateValidators } from '~/api/procedures/nominateValidators';
