@@ -1801,3 +1801,7 @@ export interface UpdatePolyxBondParams {
    */
   amount: BigNumber;
 }
+
+export interface NominateValidatorsParams {
+  validators: (Account | string)[];
+}
