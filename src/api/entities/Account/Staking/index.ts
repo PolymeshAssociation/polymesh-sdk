@@ -3,6 +3,7 @@ import {
   bondPolyx,
   Context,
   Namespace,
+  nominateValidators,
   setStakingController,
   setStakingPayee,
   updateBondedPolyx,
@@ -11,6 +12,7 @@ import {
 import {
   BondPolyxParams,
   NoArgsProcedureMethod,
+  NominateValidatorsParams,
   ProcedureMethod,
   SetStakingControllerParams,
   SetStakingPayeeParams,
@@ -69,6 +71,13 @@ export class Staking extends Namespace<Account> {
       context
     );
 
+    this.nominate = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [nominateValidators, { ...args } as const],
+      },
+      context
+    );
+
     this.setController = createProcedureMethod(
       {
         getProcedureAndArgs: args => [setStakingController, args],
@@ -109,6 +118,13 @@ export class Staking extends Namespace<Account> {
    * @note this transaction must be signed by a controller
    */
   public withdraw: NoArgsProcedureMethod<void>;
+
+  /**
+   * Nominate validators for the bonded POLYX
+   *
+   * @note this transaction must be signed by a controller
+   */
+  public nominate: ProcedureMethod<NominateValidatorsParams, void>;
 
   /**
    * Allow for a stash account to update its controller

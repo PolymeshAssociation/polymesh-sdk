@@ -142,6 +142,20 @@ describe('Staking namespace', () => {
     });
   });
 
+  describe('method: nominate', () => {
+    it('should prepare the procedure with the correct context, and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { validators: [] }, transformer: undefined }, mockContext, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await staking.nominate({ validators: [] });
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
   describe('method: setController', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = {
