@@ -1,3 +1,5 @@
+import { Option, u32, u128 } from '@polkadot/types';
+import { PalletStakingActiveEraInfo } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import { Account, Context } from '~/internal';
@@ -7,6 +9,8 @@ import {
   ResultSet,
   StakingCommission,
   StakingEraInfo,
+  SubCallback,
+  UnsubCallback,
 } from '~/types';
 import {
   accountIdToString,
@@ -81,15 +85,112 @@ export class Staking {
   /**
    * Retrieve the current staking era
    *
-   * TODO support subscription?
-   * TODO bundle more info?
+   * @note can be subscribed to, if connected to node using a web socket
    */
-  public async eraInfo(): Promise<StakingEraInfo> {
+  public async eraInfo(): Promise<StakingEraInfo>;
+  public async eraInfo(callback: SubCallback<StakingEraInfo>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async eraInfo(
+    callback?: SubCallback<StakingEraInfo>
+  ): Promise<StakingEraInfo | UnsubCallback> {
     const {
       context: {
         polymeshApi: { query },
       },
+      context,
     } = this;
+
+    const assembleResult = (
+      rawActiveEra: Option<PalletStakingActiveEraInfo>,
+      rawCurrentEra: Option<u32>,
+      rawPlannedSession: u32,
+      rawTotalStaked: u128
+    ): StakingEraInfo => {
+      let activeEra: ActiveEraInfo;
+      if (rawActiveEra.isNone) {
+        activeEra = { index: new BigNumber(0), start: new BigNumber(0) };
+      } else {
+        activeEra = activeEraStakingToActiveEraInfo(rawActiveEra.unwrap());
+      }
+
+      let currentEra: BigNumber;
+      if (rawCurrentEra.isNone) {
+        currentEra = new BigNumber(0);
+      } else {
+        currentEra = u32ToBigNumber(rawCurrentEra.unwrap());
+      }
+
+      const plannedSession = u32ToBigNumber(rawPlannedSession);
+      const totalStaked = u128ToBigNumber(rawTotalStaked);
+
+      return {
+        activeEra: activeEra.index,
+        activeEraStart: activeEra.start,
+        currentEra,
+        plannedSession,
+        totalStaked,
+      };
+    };
+
+    if (callback) {
+      context.assertSupportsSubscription();
+
+      let rawActiveEra: Option<PalletStakingActiveEraInfo>;
+      let rawCurrentEra: Option<u32> = context.createType('Option<u32>', undefined); // workaround "no use before defined" rule
+      let rawPlannedSession: u32;
+      let rawTotalStaked: u128;
+
+      let initialized = false;
+
+      const callCb = (): void => {
+        if (!initialized) {
+          return;
+        }
+
+        const result = assembleResult(
+          rawActiveEra,
+          rawCurrentEra,
+          rawPlannedSession,
+          rawTotalStaked
+        );
+
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
+        callback(result);
+      };
+
+      const [activeUnsub, currentUnsub, plannedUnsub] = await Promise.all([
+        query.staking.activeEra(activeEra => {
+          rawActiveEra = activeEra;
+
+          callCb();
+        }),
+        query.staking.currentEra(async currentEra => {
+          rawCurrentEra = currentEra;
+          rawTotalStaked = await query.staking.erasTotalStake(rawCurrentEra.unwrapOr(0));
+
+          callCb();
+        }),
+        query.staking.currentPlannedSession(plannedSession => {
+          rawPlannedSession = plannedSession;
+
+          callCb();
+        }),
+      ]);
+
+      rawTotalStaked = await query.staking.erasTotalStake(rawCurrentEra.unwrapOr(0));
+
+      const unsub = (): void => {
+        activeUnsub();
+        currentUnsub();
+        plannedUnsub();
+      };
+
+      initialized = true;
+      callCb();
+
+      return unsub;
+    }
 
     const [rawActiveEra, rawCurrentEra, rawPlannedSession] = await Promise.all([
       query.staking.activeEra(),
@@ -99,29 +200,6 @@ export class Staking {
 
     const rawTotalStaked = await query.staking.erasTotalStake(rawCurrentEra.unwrapOr(0));
 
-    let activeEra: ActiveEraInfo;
-    if (rawActiveEra.isNone) {
-      activeEra = { index: new BigNumber(0), start: new BigNumber(0) };
-    } else {
-      activeEra = activeEraStakingToActiveEraInfo(rawActiveEra.unwrap());
-    }
-
-    let currentEra: BigNumber;
-    if (rawCurrentEra.isNone) {
-      currentEra = new BigNumber(0);
-    } else {
-      currentEra = u32ToBigNumber(rawCurrentEra.unwrap());
-    }
-
-    const plannedSession = u32ToBigNumber(rawPlannedSession);
-    const totalStaked = u128ToBigNumber(rawTotalStaked);
-
-    return {
-      activeEra: activeEra.index,
-      activeEraStart: activeEra.start,
-      currentEra,
-      plannedSession,
-      totalStaked,
-    };
+    return assembleResult(rawActiveEra, rawCurrentEra, rawPlannedSession, rawTotalStaked);
   }
 }
