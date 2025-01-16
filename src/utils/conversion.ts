@@ -5722,7 +5722,7 @@ export function rawStakingLedgerToStakingLedgerEntry(
  */
 export function rawValidatorPrefToCommission(
   rawValidator: PalletStakingValidatorPrefs
-): StakingCommission {
+): Omit<StakingCommission, 'account'> {
   const blocked = boolToBoolean(rawValidator.blocked);
   const commission = perbillToBigNumber(rawValidator.commission.unwrap());
 
