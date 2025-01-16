@@ -239,7 +239,10 @@ describe('Staking namespace', () => {
         returnValue: dsMockUtils.createMockRewardDestination('Staked'),
       });
 
-      jest.spyOn(staking, 'getController').mockResolvedValue(entityMockUtils.getAccountInstance());
+      jest
+        .spyOn(staking, 'getController')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .mockResolvedValue(entityMockUtils.getAccountInstance() as any);
 
       const result = await staking.getPayee();
 
@@ -254,7 +257,10 @@ describe('Staking namespace', () => {
         returnValue: dsMockUtils.createMockRewardDestination('Stash'),
       });
 
-      jest.spyOn(staking, 'getController').mockResolvedValue(entityMockUtils.getAccountInstance());
+      jest
+        .spyOn(staking, 'getController')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .mockResolvedValue(entityMockUtils.getAccountInstance() as any);
 
       const result = await staking.getPayee();
 
@@ -269,9 +275,10 @@ describe('Staking namespace', () => {
         returnValue: dsMockUtils.createMockRewardDestination('Controller'),
       });
 
-      jest
-        .spyOn(staking, 'getController')
-        .mockResolvedValue(entityMockUtils.getAccountInstance({ address: 'controllerAddress' }));
+      jest.spyOn(staking, 'getController').mockResolvedValue(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        entityMockUtils.getAccountInstance({ address: 'controllerAddress' }) as any
+      );
 
       const result = await staking.getPayee();
 
@@ -290,7 +297,8 @@ describe('Staking namespace', () => {
 
       jest
         .spyOn(staking, 'getController')
-        .mockResolvedValue(entityMockUtils.getAccountInstance({ address: 'someAddress' }));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .mockResolvedValue(entityMockUtils.getAccountInstance({ address: 'someAddress' }) as any);
 
       const result = await staking.getPayee();
 
@@ -305,7 +313,10 @@ describe('Staking namespace', () => {
         returnValue: dsMockUtils.createMockRewardDestination('None'),
       });
 
-      jest.spyOn(staking, 'getController').mockResolvedValue(entityMockUtils.getAccountInstance());
+      jest
+        .spyOn(staking, 'getController')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .mockResolvedValue(entityMockUtils.getAccountInstance() as any);
 
       const result = await staking.getPayee();
 
@@ -317,11 +328,48 @@ describe('Staking namespace', () => {
         returnValue: dsMockUtils.createMockRewardDestination('Stash'),
       });
 
-      jest.spyOn(staking, 'getController').mockResolvedValue(null);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      jest.spyOn(staking, 'getController').mockResolvedValue(null as any);
 
       const result = await staking.getPayee();
 
       expect(result).toBeNull();
+    });
+
+    it('should support subscription', async () => {
+      const callback = jest.fn();
+      const controllerUnsub = jest.fn();
+      const payeeUnsub = jest.fn();
+
+      const payeeQueryMock = dsMockUtils.createQueryMock('staking', 'payee');
+
+      payeeQueryMock.mockImplementation((rawAddr: unknown, cb: (arg: unknown) => void) => {
+        cb(dsMockUtils.createMockRewardDestination('Stash'));
+
+        return payeeUnsub;
+      });
+
+      jest
+        .spyOn(staking, 'getController')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .mockImplementation(async (cb: any) => {
+          await cb(entityMockUtils.getAccountInstance());
+
+          return controllerUnsub;
+        });
+
+      const unsub = await staking.getPayee(callback);
+
+      expect(callback).toHaveBeenCalled();
+      expect(unsub).toBeInstanceOf(Function);
+
+      expect(controllerUnsub).not.toHaveBeenCalled();
+      expect(payeeUnsub).not.toHaveBeenCalled();
+
+      expect(() => unsub()).not.toThrow();
+
+      expect(controllerUnsub).toHaveBeenCalled();
+      expect(payeeUnsub).toHaveBeenCalled();
     });
   });
 
@@ -348,6 +396,39 @@ describe('Staking namespace', () => {
       });
     });
 
+    it('should support subscription', async () => {
+      const callback = jest.fn();
+      const targetAccountId = dsMockUtils.createMockAccountId('someId');
+
+      const rawNominators = dsMockUtils.createMockOption(
+        dsMockUtils.createMockStakingNominations({
+          targets: dsMockUtils.createMockVec([targetAccountId]),
+          submittedIn: dsMockUtils.createMockU32(new BigNumber(1)),
+          suppressed: dsMockUtils.createMockBool(false),
+        })
+      );
+
+      const nominatorsQueryMock = dsMockUtils.createQueryMock('staking', 'nominators');
+
+      nominatorsQueryMock.mockImplementation(
+        async (rawAddr: unknown, cb: (arg: typeof rawNominators) => Promise<void>) => {
+          await cb(rawNominators);
+
+          return jest.fn();
+        }
+      );
+
+      const unsub = await staking.getNomination(callback);
+
+      expect(callback).toHaveBeenCalledWith({
+        targets: expect.arrayContaining([expect.any(Account)]),
+        submittedInEra: new BigNumber(1),
+        suppressed: false,
+      });
+
+      expect(() => unsub()).not.toThrow();
+    });
+
     it('should return null', async () => {
       dsMockUtils.createQueryMock('staking', 'nominators', {
         returnValue: dsMockUtils.createMockOption(),
@@ -361,11 +442,13 @@ describe('Staking namespace', () => {
 
   describe('method: getController', () => {
     const controllerAddress = 'controllerAddress';
-    const rawControllerAddress = dsMockUtils.createMockAccountId(controllerAddress);
+    const rawControllerAddress = dsMockUtils.createMockOption(
+      dsMockUtils.createMockAccountId(controllerAddress)
+    );
 
     it('should return the controller account', async () => {
       dsMockUtils.createQueryMock('staking', 'bonded', {
-        returnValue: dsMockUtils.createMockOption(rawControllerAddress),
+        returnValue: rawControllerAddress,
       });
 
       when(accountIdToStringSpy)
@@ -386,6 +469,30 @@ describe('Staking namespace', () => {
 
       expect(controller).toBeNull();
     });
+
+    it('should support subscription', async () => {
+      const callback = jest.fn();
+
+      const bondedQueryMock = dsMockUtils.createQueryMock('staking', 'bonded');
+
+      bondedQueryMock.mockImplementation(
+        async (rawAddr: unknown, cb: (arg: typeof rawControllerAddress) => Promise<void>) => {
+          await cb(rawControllerAddress);
+
+          return jest.fn();
+        }
+      );
+
+      const unsub = await staking.getController(callback);
+
+      expect(callback).toHaveBeenCalledWith(
+        expect.objectContaining({
+          address: controllerAddress,
+        })
+      );
+
+      expect(() => unsub()).not.toThrow();
+    });
   });
 
   describe('method: getCommission', () => {
@@ -402,6 +509,7 @@ describe('Staking namespace', () => {
       const result = await staking.getCommission();
 
       expect(result).toEqual({
+        account: expect.objectContaining({ address: account.address }),
         blocked: false,
         commission: new BigNumber(10),
       });

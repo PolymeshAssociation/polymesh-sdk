@@ -166,6 +166,11 @@ export interface StakingPayee {
 
 export interface StakingCommission {
   /**
+   * The account of the validator
+   */
+  account: Account;
+
+  /**
    * The commission as a percentage (0-100)
    */
   commission: BigNumber;
