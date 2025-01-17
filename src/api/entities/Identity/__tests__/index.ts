@@ -22,7 +22,7 @@ import {
 } from '~/internal';
 import { assetHoldersQuery, nftHoldersQuery } from '~/middleware/queries/assets';
 import { trustingAssetsQuery } from '~/middleware/queries/claims';
-import { instructionPartiesQuery } from '~/middleware/queries/settlements';
+import { historicalInstructionsQuery } from '~/middleware/queries/settlements';
 import { AssetHoldersOrderBy, NftHoldersOrderBy } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
@@ -1288,15 +1288,15 @@ describe('Identity class', () => {
         'middlewareInstructionToHistoricInstruction'
       );
 
-      const legsResponse = {
+      const instructionsResponse = {
         totalCount: 5,
-        nodes: [{ instruction: 'instruction' }],
+        nodes: [{ id: '1' }],
       };
 
-      const query = await instructionPartiesQuery({ identity: identity.did }, context);
+      const query = await historicalInstructionsQuery({ identity: identity.did }, context);
 
       dsMockUtils.createApolloQueryMock(query, {
-        instructionParties: legsResponse,
+        instructions: instructionsResponse,
       });
 
       const mockHistoricInstruction = 'mockData' as unknown as HistoricInstruction;

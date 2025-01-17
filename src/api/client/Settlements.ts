@@ -10,16 +10,16 @@ import {
   PolymeshError,
   Venue,
 } from '~/internal';
-import { instructionPartiesQuery } from '~/middleware/queries/settlements';
+import { historicalInstructionsQuery } from '~/middleware/queries/settlements';
 import { Query } from '~/middleware/types';
 import {
   AddInstructionWithVenueIdParams,
   CreateVenueParams,
   ErrorCode,
+  HistoricalInstructionFilters,
   HistoricInstruction,
   InstructionAffirmationOperation,
   InstructionIdParams,
-  InstructionPartiesFilters,
   ProcedureMethod,
 } from '~/types';
 import { Ensured } from '~/types/utils';
@@ -134,19 +134,19 @@ export class Settlements {
    *
    */
   public async getHistoricalInstructions(
-    filter: InstructionPartiesFilters
+    filter: HistoricalInstructionFilters
   ): Promise<HistoricInstruction[]> {
     const { context } = this;
 
-    const query = await instructionPartiesQuery(filter, context);
+    const query = await historicalInstructionsQuery(filter, context);
 
     const {
       data: {
-        instructionParties: { nodes: instructionsResult },
+        instructions: { nodes: instructionsResult },
       },
-    } = await context.queryMiddleware<Ensured<Query, 'instructionParties'>>(query);
+    } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(query);
 
-    return instructionsResult.map(({ instruction }) =>
+    return instructionsResult.map(instruction =>
       middlewareInstructionToHistoricInstruction(instruction!, context)
     );
   }

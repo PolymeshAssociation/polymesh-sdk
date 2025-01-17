@@ -15,7 +15,7 @@ import {
   Leg,
   LegsOrderBy,
 } from '~/middleware/types';
-import { InstructionPartiesFilters } from '~/types';
+import { HistoricalInstructionFilters } from '~/types';
 import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
 import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 import { asAssetId, asDid } from '~/utils/internal';
@@ -89,7 +89,7 @@ const instructionAffirmationAttributes = `
 type InstructionArgs = 'id' | 'venueId' | 'status';
 
 type InstructionPartiesVariables = Partial<
-  Record<keyof Omit<InstructionPartiesFilters, 'status' | 'size' | 'start'>, string> & {
+  Record<keyof Omit<HistoricalInstructionFilters, 'status' | 'size' | 'start'>, string> & {
     status?: InstructionStatusEnum;
     size?: number;
     start?: number;
@@ -327,8 +327,8 @@ export function legsQuery(
  * @hidden
  *
  */
-export const buildInstructionPartiesFilter = async (
-  filters: InstructionPartiesFilters,
+export const buildHistoricalInstructionsQueryFilter = async (
+  filters: HistoricalInstructionFilters,
   context: Context
 ): Promise<{
   args: string;
@@ -349,31 +349,31 @@ export const buildInstructionPartiesFilter = async (
 
   const args = ['$start: Int', '$size: Int'];
   const baseFilter = [];
-  const instructionFilter = [];
+  const instructionPartiesFilter = [];
   const legsFilter = [];
   const variables: InstructionPartiesVariables = {};
 
   if (identity) {
     args.push('$identity: String!');
-    baseFilter.push('identity: { equalTo: $identity }');
+    instructionPartiesFilter.push('identity: { equalTo: $identity }');
     variables.identity = asDid(identity);
-  }
-
-  if (status) {
-    args.push('$status: InstructionStatusEnum!');
-    instructionFilter.push('status: { equalTo: $status }');
-    variables.status = status;
   }
 
   if (mediator) {
     args.push('$mediator: String!');
-    instructionFilter.push('mediators: { containsKey: $mediator }');
+    baseFilter.push('mediators: { containsKey: $mediator }');
     variables.mediator = asDid(mediator);
+  }
+
+  if (status) {
+    args.push('$status: InstructionStatusEnum!');
+    baseFilter.push('status: { equalTo: $status }');
+    variables.status = status;
   }
 
   if (party) {
     args.push('$party: String!');
-    instructionFilter.push('parties: { some: { identity: { equalTo: $party } } }');
+    instructionPartiesFilter.push('identity: { equalTo: $party }');
     variables.party = asDid(party);
   }
 
@@ -396,11 +396,11 @@ export const buildInstructionPartiesFilter = async (
   }
 
   if (legsFilter.length) {
-    instructionFilter.push(`legs: { ${legsFilter.join(', ')} }`);
+    baseFilter.push(`legs: { some: { ${legsFilter.join(', ')} } }`);
   }
 
-  if (instructionFilter.length) {
-    baseFilter.push(`instruction: { ${instructionFilter.join(', ')} }`);
+  if (instructionPartiesFilter.length) {
+    baseFilter.push(`parties: { some: { ${instructionPartiesFilter.join(', ')} } }`);
   }
 
   return {
@@ -415,32 +415,33 @@ export const buildInstructionPartiesFilter = async (
  *
  * Get Instructions where an identity is involved
  */
-export async function instructionPartiesQuery(
-  filters: InstructionPartiesFilters,
+export async function historicalInstructionsQuery(
+  filters: HistoricalInstructionFilters,
   context: Context
-): Promise<QueryOptions<PaginatedQueryArgs<Omit<InstructionPartiesFilters, 'size' | 'start'>>>> {
-  const { args, filter, variables } = await buildInstructionPartiesFilter(filters, context);
+): Promise<QueryOptions<PaginatedQueryArgs<Omit<HistoricalInstructionFilters, 'size' | 'start'>>>> {
+  const { args, filter, variables } = await buildHistoricalInstructionsQueryFilter(
+    filters,
+    context
+  );
 
   const paddedIds = context.isSqIdPadded;
 
   const orderBy = paddedIds
-    ? `[${LegsOrderBy.CreatedBlockIdAsc}]`
-    : `[${LegsOrderBy.CreatedAtAsc}, ${LegsOrderBy.InstructionIdAsc}]`;
+    ? `[${InstructionsOrderBy.CreatedBlockIdAsc}]`
+    : `[${InstructionsOrderBy.CreatedAtAsc}, ${InstructionsOrderBy.IdAsc}]`;
 
   const query = gql`
-    query InstructionPartiesQuery
+    query InstructionsQuery
     ${args}
      {
-      instructionParties(
+      instructions(
         ${filter}
         orderBy: ${orderBy}
         first: $size
         offset: $start
       ) {
         nodes {
-          instruction {
             ${instructionAttributes}
-          }
         }
         totalCount
       }

@@ -218,7 +218,7 @@ export type CustomClaimTypeWithDid = CustomClaimType & { did?: string };
  * Filters for instructions
  *
  */
-export interface InstructionPartiesFilters {
+export interface HistoricalInstructionFilters {
   /**
    * The DID of the identity to filter by
    */

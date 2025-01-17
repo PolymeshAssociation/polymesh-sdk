@@ -2,9 +2,9 @@ import BigNumber from 'bignumber.js';
 
 import { Context } from '~/internal';
 import {
-  buildInstructionPartiesFilter,
+  buildHistoricalInstructionsQueryFilter,
+  historicalInstructionsQuery,
   instructionEventsQuery,
-  instructionPartiesQuery,
   instructionsQuery,
   settlementsForAllPortfoliosQuery,
   settlementsQuery,
@@ -46,7 +46,7 @@ describe('instructionsQuery', () => {
   });
 });
 
-describe('buildInstructionPartiesFilter', () => {
+describe('buildHistoricalInstructionsQueryFilter', () => {
   let context: Context;
 
   beforeEach(() => {
@@ -61,87 +61,92 @@ describe('buildInstructionPartiesFilter', () => {
   });
 
   it('should create the correct graphql filter with identity', async () => {
-    const result = await buildInstructionPartiesFilter({ identity: 'someDid' }, context);
+    const result = await buildHistoricalInstructionsQueryFilter({ identity: 'someDid' }, context);
 
     expect(result.args).toBe('($start: Int,$size: Int,$identity: String!)');
-    expect(result.filter).toBe('filter: { identity: { equalTo: $identity } }');
+    expect(result.filter).toBe(
+      'filter: { parties: { some: { identity: { equalTo: $identity } } } }'
+    );
   });
 
   it('should create the correct graphql filter with identity as Identity object', async () => {
     const did = 'someDid';
     const mockIdentity = entityMockUtils.getIdentityInstance({ did });
-    const result = await buildInstructionPartiesFilter({ identity: mockIdentity }, context);
+    const result = await buildHistoricalInstructionsQueryFilter(
+      { identity: mockIdentity },
+      context
+    );
 
     expect(result.args).toBe('($start: Int,$size: Int,$identity: String!)');
-    expect(result.filter).toBe('filter: { identity: { equalTo: $identity } }');
+    expect(result.filter).toBe(
+      'filter: { parties: { some: { identity: { equalTo: $identity } } } }'
+    );
     expect(result.variables.identity).toBe(did);
   });
 
   it('should create the correct graphql filter with status', async () => {
-    const result = await buildInstructionPartiesFilter(
+    const result = await buildHistoricalInstructionsQueryFilter(
       { status: InstructionStatusEnum.Executed },
       context
     );
 
     expect(result.args).toBe('($start: Int,$size: Int,$status: InstructionStatusEnum!)');
-    expect(result.filter).toBe('filter: { instruction: { status: { equalTo: $status } } }');
+    expect(result.filter).toBe('filter: { status: { equalTo: $status } }');
   });
 
   it('should create the correct graphql filter with mediator', async () => {
-    const result = await buildInstructionPartiesFilter({ mediator: 'someMediator' }, context);
+    const result = await buildHistoricalInstructionsQueryFilter(
+      { mediator: 'someMediator' },
+      context
+    );
 
     expect(result.args).toBe('($start: Int,$size: Int,$mediator: String!)');
-    expect(result.filter).toBe(
-      'filter: { instruction: { mediators: { containsKey: $mediator } } }'
-    );
+    expect(result.filter).toBe('filter: { mediators: { containsKey: $mediator } }');
   });
 
   it('should create the correct graphql filter with party', async () => {
-    const result = await buildInstructionPartiesFilter({ party: 'someParty' }, context);
+    const result = await buildHistoricalInstructionsQueryFilter({ party: 'someParty' }, context);
 
     expect(result.args).toBe('($start: Int,$size: Int,$party: String!)');
-    expect(result.filter).toBe(
-      'filter: { instruction: { parties: { some: { identity: { equalTo: $party } } } } }'
-    );
+    expect(result.filter).toBe('filter: { parties: { some: { identity: { equalTo: $party } } } }');
   });
 
   it('should create the correct graphql filter with assetId', async () => {
-    const result = await buildInstructionPartiesFilter({ asset: 'TICKER' }, context);
+    const result = await buildHistoricalInstructionsQueryFilter({ asset: 'TICKER' }, context);
 
     expect(result.args).toBe('($start: Int,$size: Int,$asset: String!)');
-    expect(result.filter).toBe(
-      'filter: { instruction: { legs: { assetId: { equalTo: $asset } } } }'
-    );
+    expect(result.filter).toBe('filter: { legs: { some: { assetId: { equalTo: $asset } } } }');
   });
 
   it('should create the correct graphql filter with asset as Asset object', async () => {
     const assetId = 'TICKE';
     const mockAsset = entityMockUtils.getFungibleAssetInstance({ assetId });
-    const result = await buildInstructionPartiesFilter({ asset: mockAsset }, context);
+    const result = await buildHistoricalInstructionsQueryFilter({ asset: mockAsset }, context);
 
     expect(result.args).toBe('($start: Int,$size: Int,$asset: String!)');
-    expect(result.filter).toBe(
-      'filter: { instruction: { legs: { assetId: { equalTo: $asset } } } }'
-    );
+    expect(result.filter).toBe('filter: { legs: { some: { assetId: { equalTo: $asset } } } }');
     expect(result.variables.asset).toBe(assetId);
   });
 
   it('should create the correct graphql filter with sender', async () => {
-    const result = await buildInstructionPartiesFilter({ sender: 'someSender' }, context);
+    const result = await buildHistoricalInstructionsQueryFilter({ sender: 'someSender' }, context);
 
     expect(result.args).toBe('($start: Int,$size: Int,$sender: String!)');
-    expect(result.filter).toBe('filter: { instruction: { legs: { from: { equalTo: $sender } } } }');
+    expect(result.filter).toBe('filter: { legs: { some: { from: { equalTo: $sender } } } }');
   });
 
   it('should create the correct graphql filter with receiver', async () => {
-    const result = await buildInstructionPartiesFilter({ receiver: 'someReceiver' }, context);
+    const result = await buildHistoricalInstructionsQueryFilter(
+      { receiver: 'someReceiver' },
+      context
+    );
 
     expect(result.args).toBe('($start: Int,$size: Int,$receiver: String!)');
-    expect(result.filter).toBe('filter: { instruction: { legs: { to: { equalTo: $receiver } } } }');
+    expect(result.filter).toBe('filter: { legs: { some: { to: { equalTo: $receiver } } } }');
   });
 
   it('should create the correct graphql filter with multiple parameters', async () => {
-    const result = await buildInstructionPartiesFilter(
+    const result = await buildHistoricalInstructionsQueryFilter(
       {
         identity: 'someDid',
         status: InstructionStatusEnum.Executed,
@@ -155,12 +160,12 @@ describe('buildInstructionPartiesFilter', () => {
       '($start: Int,$size: Int,$identity: String!,$status: InstructionStatusEnum!,$asset: String!,$sender: String!)'
     );
     expect(result.filter).toBe(
-      'filter: { identity: { equalTo: $identity }, instruction: { status: { equalTo: $status }, legs: { assetId: { equalTo: $asset }, from: { equalTo: $sender } } } }'
+      'filter: { status: { equalTo: $status }, legs: { some: { assetId: { equalTo: $asset }, from: { equalTo: $sender } } }, parties: { some: { identity: { equalTo: $identity } } } }'
     );
   });
 
   it('should return empty filter with default pagination when no parameters are provided', async () => {
-    const result = await buildInstructionPartiesFilter({}, context);
+    const result = await buildHistoricalInstructionsQueryFilter({}, context);
 
     expect(result.args).toBe('($start: Int,$size: Int)');
     expect(result.filter).toBe('');
@@ -169,7 +174,7 @@ describe('buildInstructionPartiesFilter', () => {
   });
 });
 
-describe('instructionPartiesQuery', () => {
+describe('historicalInstructionsQuery', () => {
   let context: Context;
 
   beforeEach(() => {
@@ -177,7 +182,7 @@ describe('instructionPartiesQuery', () => {
   });
 
   it('should pass the variables to the grapqhl query', async () => {
-    const result = await instructionPartiesQuery(
+    const result = await historicalInstructionsQuery(
       {
         identity: 'someDid',
         size: new BigNumber(10),

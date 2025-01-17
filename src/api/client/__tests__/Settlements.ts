@@ -3,7 +3,7 @@ import { when } from 'jest-when';
 
 import { Settlements } from '~/api/client/Settlements';
 import { addInstructionTransformer, Context, PolymeshTransaction, Venue } from '~/internal';
-import { instructionPartiesQuery } from '~/middleware/queries/settlements';
+import { historicalInstructionsQuery } from '~/middleware/queries/settlements';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -195,13 +195,13 @@ describe('Settlements Class', () => {
         'middlewareInstructionToHistoricInstruction'
       );
 
-      const legsResponse = {
+      const instructionsResponse = {
         totalCount: 5,
-        nodes: [{ instruction: 'instruction' }],
+        nodes: [{ id: '1' }],
       };
 
-      dsMockUtils.createApolloQueryMock(await instructionPartiesQuery({}, context), {
-        instructionParties: legsResponse,
+      dsMockUtils.createApolloQueryMock(await historicalInstructionsQuery({}, context), {
+        instructions: instructionsResponse,
       });
 
       const mockHistoricInstruction = 'mockData' as unknown as HistoricInstruction;
