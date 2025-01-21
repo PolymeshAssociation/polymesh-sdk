@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { Account, Context, Namespace, PolymeshTransaction } from '~/internal';
+import { Account, Context, Namespace } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -60,137 +60,6 @@ describe('Staking namespace', () => {
     accountIdToStringSpy = jest.spyOn(utilsConversionModule, 'accountIdToString');
 
     when(stringToAccountIdSpy).calledWith(account.address, mockContext).mockReturnValue(rawAddress);
-  });
-
-  describe('method: bond', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const amount = new BigNumber(3);
-
-      const args = {
-        payee: account,
-        controller: account,
-        rewardDestination: account,
-        autoStake: false,
-        amount,
-      };
-
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
-
-      when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args, transformer: undefined }, mockContext, {})
-        .mockResolvedValue(expectedTransaction);
-
-      const tx = await staking.bond(args);
-
-      expect(tx).toBe(expectedTransaction);
-    });
-  });
-
-  describe('method: unbond', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const amount = new BigNumber(3);
-
-      const args = {
-        amount,
-        type: 'unbond',
-      };
-
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
-
-      when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args, transformer: undefined }, mockContext, {})
-        .mockResolvedValue(expectedTransaction);
-
-      const tx = await staking.unbond(args);
-
-      expect(tx).toBe(expectedTransaction);
-    });
-  });
-
-  describe('method: bondExtra', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const amount = new BigNumber(3);
-
-      const args = {
-        amount,
-        type: 'bondExtra',
-      };
-
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
-
-      when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args, transformer: undefined }, mockContext, {})
-        .mockResolvedValue(expectedTransaction);
-
-      const tx = await staking.bondExtra(args);
-
-      expect(tx).toBe(expectedTransaction);
-    });
-  });
-
-  describe('method: withdraw', () => {
-    it('should prepare the procedure with the correct context, and return the resulting transaction', async () => {
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
-
-      when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: undefined, transformer: undefined }, mockContext, {})
-        .mockResolvedValue(expectedTransaction);
-
-      const tx = await staking.withdraw();
-
-      expect(tx).toBe(expectedTransaction);
-    });
-  });
-
-  describe('method: nominate', () => {
-    it('should prepare the procedure with the correct context, and return the resulting transaction', async () => {
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
-
-      when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: { validators: [] }, transformer: undefined }, mockContext, {})
-        .mockResolvedValue(expectedTransaction);
-
-      const tx = await staking.nominate({ validators: [] });
-
-      expect(tx).toBe(expectedTransaction);
-    });
-  });
-
-  describe('method: setController', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const args = {
-        controller: 'someAccount',
-      };
-
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
-
-      when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args, transformer: undefined }, mockContext, {})
-        .mockResolvedValue(expectedTransaction);
-
-      const tx = await staking.setController(args);
-
-      expect(tx).toBe(expectedTransaction);
-    });
-  });
-
-  describe('method: setPayee', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const args = {
-        payee: 'someAccount',
-        autoStake: false,
-      };
-
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
-
-      when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args, transformer: undefined }, mockContext, {})
-        .mockResolvedValue(expectedTransaction);
-
-      const tx = await staking.setPayee(args);
-
-      expect(tx).toBe(expectedTransaction);
-    });
   });
 
   describe('method: getLedger', () => {
