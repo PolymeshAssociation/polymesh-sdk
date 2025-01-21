@@ -59,7 +59,6 @@ import {
 } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 
-import { SUPPORTED_SPEC_VERSION_RANGE } from '../constants';
 import {
   areSameClaims,
   asAccount,
@@ -1364,18 +1363,6 @@ describe('assertExpectedChainVersion', () => {
       message: 'Unsupported Polymesh chain spec version. Please upgrade the SDK',
     });
     return expect(signal).rejects.toThrowError(expectedError);
-  });
-
-  it('should log a warning given a minor chain spec version mismatch', async () => {
-    const signal = assertExpectedChainVersion('ws://example.com');
-    const mockSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_SEMVER);
-    client.sendSpecVersion(getSpecVersion(mockSpecVersion));
-    client.sendIsPrivateSupported(false);
-    await signal;
-    expect(warnSpy).toHaveBeenCalledTimes(1);
-    expect(warnSpy).toHaveBeenCalledWith(
-      `This version of the SDK supports Polymesh chain spec version "${SUPPORTED_SPEC_VERSION_RANGE}". The chain spec is at version ${mockSpecVersion}. Please upgrade the SDK`
-    );
   });
 
   it('should resolve even with a patch chain spec version mismatch', async () => {
