@@ -2,31 +2,14 @@ import { Option } from '@polkadot/types';
 import { AccountId, RewardDestination } from '@polkadot/types/interfaces';
 import { PalletStakingNominations } from '@polkadot/types/lookup';
 
+import { Account, Namespace } from '~/internal';
 import {
-  Account,
-  bondPolyx,
-  Context,
-  Namespace,
-  nominateValidators,
-  setStakingController,
-  setStakingPayee,
-  updateBondedPolyx,
-  withdrawUnbondedPolyx,
-} from '~/internal';
-import {
-  BondPolyxParams,
-  NoArgsProcedureMethod,
-  NominateValidatorsParams,
-  ProcedureMethod,
-  SetStakingControllerParams,
-  SetStakingPayeeParams,
   StakingCommission,
   StakingLedger,
   StakingNomination,
   StakingPayee,
   SubCallback,
   UnsubCallback,
-  UpdatePolyxBondParams,
 } from '~/types';
 import {
   accountIdToString,
@@ -36,116 +19,11 @@ import {
   rewardDestinationToPayee,
   stringToAccountId,
 } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
 
 /**
- * Handles all Staking related functionality
+ * Handles Account staking related functionality
  */
 export class Staking extends Namespace<Account> {
-  /**
-   * @hidden
-   */
-  constructor(parent: Account, context: Context) {
-    super(parent, context);
-
-    this.bond = createProcedureMethod(
-      {
-        getProcedureAndArgs: args => [bondPolyx, { ...args }],
-      },
-      context
-    );
-
-    this.unbond = createProcedureMethod(
-      {
-        getProcedureAndArgs: args => [updateBondedPolyx, { ...args, type: 'unbond' } as const],
-      },
-      context
-    );
-
-    this.bondExtra = createProcedureMethod(
-      {
-        getProcedureAndArgs: args => [updateBondedPolyx, { ...args, type: 'bondExtra' } as const],
-      },
-      context
-    );
-
-    this.withdraw = createProcedureMethod(
-      {
-        getProcedureAndArgs: () => [withdrawUnbondedPolyx, undefined],
-        voidArgs: true,
-      },
-      context
-    );
-
-    this.nominate = createProcedureMethod(
-      {
-        getProcedureAndArgs: args => [nominateValidators, { ...args } as const],
-      },
-      context
-    );
-
-    this.setController = createProcedureMethod(
-      {
-        getProcedureAndArgs: args => [setStakingController, args],
-      },
-      context
-    );
-
-    this.setPayee = createProcedureMethod(
-      {
-        getProcedureAndArgs: args => [setStakingPayee, args],
-      },
-      context
-    );
-  }
-
-  /**
-   * Bond POLYX for staking
-   *
-   * @note the signing account cannot be a stash
-   */
-  public bond: ProcedureMethod<BondPolyxParams, void>;
-
-  /**
-   * Bond extra POLYX for staking
-   *
-   * @note this transaction must be signed by a stash
-   */
-  public bondExtra: ProcedureMethod<UpdatePolyxBondParams, void>;
-
-  /**
-   * Unbond POLYX for staking. The unbonded amount can be withdrawn after the lockup period
-   */
-  public unbond: ProcedureMethod<UpdatePolyxBondParams, void>;
-
-  /**
-   * Withdraw unbonded POLYX to free it for the stash account
-   *
-   * @note this transaction must be signed by a controller
-   */
-  public withdraw: NoArgsProcedureMethod<void>;
-
-  /**
-   * Nominate validators for the bonded POLYX
-   *
-   * @note this transaction must be signed by a controller
-   */
-  public nominate: ProcedureMethod<NominateValidatorsParams, void>;
-
-  /**
-   * Allow for a stash account to update its controller
-   *
-   * @note the transaction must be signed by a stash account
-   */
-  public setController: ProcedureMethod<SetStakingControllerParams, void>;
-
-  /**
-   * Allow for a stash account to update where it's staking rewards are deposited
-   *
-   * @note the transaction must be signed by a controller account
-   */
-  public setPayee: ProcedureMethod<SetStakingPayeeParams, void>;
-
   /**
    * Fetch the ledger information for a stash account
    *
