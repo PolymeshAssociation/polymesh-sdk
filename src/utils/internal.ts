@@ -1533,12 +1533,6 @@ function assertExpectedSpecVersion(
 
     reject(error);
   }
-
-  if (!satisfies(specVersionAsSemver, supportedSpecVersionRange)) {
-    console.warn(
-      `This version of the SDK supports Polymesh chain spec version "${supportedSpecVersionRange}". The chain spec is at version ${specVersionAsSemver}. Please upgrade the SDK`
-    );
-  }
 }
 
 /**
