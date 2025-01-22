@@ -38,6 +38,13 @@ export async function prepareNominateValidators(
 
   const validators = validatorsInput.map(validator => asAccount(validator, context));
 
+  if (validators.length === 0) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'At least one validator must be nominated',
+    });
+  }
+
   if (uniqBy(validators, 'address').length !== validators.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
@@ -45,27 +52,46 @@ export async function prepareNominateValidators(
     });
   }
 
-  const commissions = await Promise.all(
+  const invalidCommissions = await Promise.all(
     validators.map(validator => {
       return validator.staking.getCommission();
     })
   );
 
-  const missingCommissions = commissions.reduce((missing, commission, index) => {
-    if (!commission) {
-      missing.push(index);
-    }
+  const badValidators = invalidCommissions.reduce(
+    (invalidItems, commission, index) => {
+      if (!commission) {
+        invalidItems.missing.push(index);
+      }
 
-    return missing;
-  }, [] as number[]);
+      if (commission?.blocked) {
+        invalidItems.blocked.push(index);
+      }
 
-  if (missingCommissions.length) {
+      return invalidItems;
+    },
+    { missing: [] as number[], blocked: [] as number[] }
+  );
+
+  if (badValidators.missing.length) {
     throw new PolymeshError({
       code: ErrorCode.DataUnavailable,
       message: 'Commission not found for validator(s)',
       data: {
-        missingCommissions: missingCommissions.map(
+        missingCommissions: badValidators.missing.map(
           missingIndex => validators[missingIndex].address
+        ),
+      },
+    });
+  }
+
+  if (badValidators.blocked.length) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Validator(s) have been blocked',
+      data: {
+        blockedValidators: badValidators.blocked.map(
+          blockedIndex => validators[blockedIndex].address
         ),
       },
     });
