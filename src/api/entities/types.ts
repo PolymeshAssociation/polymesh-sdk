@@ -773,6 +773,7 @@ export interface CheckpointWithData {
 export interface PermissionedAccount {
   account: Account | MultiSig;
   permissions: Permissions;
+  unmatchedPermissions?: string[];
 }
 
 export type PortfolioLike =

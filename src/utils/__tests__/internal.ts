@@ -1942,6 +1942,7 @@ describe('method: getSecondaryAccountPermissions', () => {
           transactions: null,
           transactionGroups: [],
         },
+        unmatchedPermissions: [],
       },
     ];
 
@@ -1956,10 +1957,13 @@ describe('method: getSecondaryAccountPermissions', () => {
     });
 
     meshPermissionsToPermissionsSpy.mockReturnValue({
-      assets: null,
-      portfolios: null,
-      transactions: null,
-      transactionGroups: [],
+      permissions: {
+        assets: null,
+        portfolios: null,
+        transactions: null,
+        transactionGroups: [],
+      },
+      unmatchedPermissions: [],
     });
     stringToAccountIdSpy.mockReturnValue(dsMockUtils.createMockAccountId(accountId));
   });

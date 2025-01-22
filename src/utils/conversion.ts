@@ -227,6 +227,7 @@ import {
   MetadataType,
   MetadataValue,
   MetadataValueDetails,
+  MODULE_NAMES,
   ModuleName,
   MultiClaimCondition,
   NftMetadataInput,
@@ -274,6 +275,7 @@ import {
   TransferRestrictionType,
   TransferStatus,
   TrustedClaimIssuer,
+  TX_TAG_VALUES,
   TxGroup,
   TxTag,
   TxTags,
@@ -1163,8 +1165,18 @@ const formatTxTag = (dispatchable: string, moduleName: string): TxTag => {
   return `${moduleName}.${camelCase(dispatchable)}` as TxTag;
 };
 
-const processDispatchName = (dispatch: BTreeSet<Text>): string[] => {
-  return [...dispatch].map(name => textToString(name)).filter(name => isSnakeCase(name));
+const processDispatchName = (
+  dispatch: BTreeSet<Text>
+): {
+  dispatchables: string[];
+  unmatchedTags: string[];
+} => {
+  const allMethods = [...dispatch].map(name => textToString(name));
+
+  return {
+    dispatchables: allMethods.filter(name => isSnakeCase(name)),
+    unmatchedTags: allMethods.filter(name => !isSnakeCase(name)),
+  };
 };
 
 /**
@@ -1172,7 +1184,7 @@ const processDispatchName = (dispatch: BTreeSet<Text>): string[] => {
  */
 export function extrinsicPermissionsToTransactionPermissions(
   permissions: PolymeshPrimitivesSecondaryKeyExtrinsicPermissions
-): TransactionPermissions | null {
+): { permissions: TransactionPermissions | null; unmatched: string[] } {
   let extrinsicType: PermissionType;
   let pallets;
   if (permissions.isThese) {
@@ -1185,23 +1197,36 @@ export function extrinsicPermissionsToTransactionPermissions(
 
   let txValues: (ModuleName | TxTag)[] = [];
   let exceptions: TxTag[] = [];
+  const unmatched: string[] = [];
 
   if (pallets) {
     // Note if a pallet or extrinsic has incorrect casing it will get filtered here
     pallets.forEach(({ extrinsics: dispatchableNames }, palletName) => {
       const pallet = textToString(palletName);
+
       if (!startsWithCapital(pallet)) {
+        unmatched.push(pallet);
+
         return; // skip incorrect cased pallets
       }
       const moduleName = stringLowerFirst(pallet);
 
       if (dispatchableNames.isExcept) {
-        const dispatchables = processDispatchName(dispatchableNames.asExcept);
+        const { dispatchables, unmatchedTags } = processDispatchName(dispatchableNames.asExcept);
+
+        if (unmatchedTags.length) {
+          unmatched.push(`${pallet}.${unmatchedTags.join('.')}`);
+        }
 
         exceptions = [...exceptions, ...dispatchables.map(name => formatTxTag(name, moduleName))];
         txValues = [...txValues, moduleName as ModuleName];
       } else if (dispatchableNames.isThese) {
-        const dispatchables = processDispatchName(dispatchableNames.asThese);
+        const { dispatchables, unmatchedTags } = processDispatchName(dispatchableNames.asThese);
+
+        if (unmatchedTags.length) {
+          unmatched.push(`${pallet}.${unmatchedTags.join('.')}`);
+        }
+
         txValues = [...txValues, ...dispatchables.map(name => formatTxTag(name, moduleName))];
       } else {
         txValues = [...txValues, moduleName as ModuleName];
@@ -1214,10 +1239,10 @@ export function extrinsicPermissionsToTransactionPermissions(
       values: txValues,
     };
 
-    return exceptions.length ? { ...result, exceptions } : result;
+    return { permissions: exceptions.length ? { ...result, exceptions } : result, unmatched };
   }
 
-  return null;
+  return { permissions: null, unmatched };
 }
 
 /**
@@ -1253,7 +1278,8 @@ export function meshPermissionsToPermissions(
     };
   }
 
-  transactions = extrinsicPermissionsToTransactionPermissions(extrinsic);
+  const { permissions: transactionPerms } = extrinsicPermissionsToTransactionPermissions(extrinsic);
+  transactions = transactionPerms;
 
   let portfoliosType: PermissionType;
   let portfolioIds;
@@ -1289,7 +1315,7 @@ export function meshPermissionsToPermissions(
 export async function meshPermissionsToPermissionsV2(
   account: Account | MultiSig,
   context: Context
-): Promise<Permissions> {
+): Promise<{ permissions: Permissions; unmatchedPermissions: string[] }> {
   const {
     polymeshApi: {
       query: {
@@ -1297,6 +1323,7 @@ export async function meshPermissionsToPermissionsV2(
       },
     },
   } = context;
+  const unmatchedPermissions: string[] = [];
 
   const rawAccountId = stringToAccountId(account.address, context);
 
@@ -1338,7 +1365,15 @@ export async function meshPermissionsToPermissionsV2(
   }
 
   if (extrinsic.isSome) {
-    transactions = extrinsicPermissionsToTransactionPermissions(extrinsic.unwrap());
+    const { permissions, unmatched } = extrinsicPermissionsToTransactionPermissions(
+      extrinsic.unwrap()
+    );
+
+    transactions = permissions;
+
+    if (unmatched.length) {
+      unmatchedPermissions.push(...unmatched);
+    }
   }
 
   let portfoliosType: PermissionType;
@@ -1364,11 +1399,36 @@ export async function meshPermissionsToPermissionsV2(
     };
   }
 
-  return {
+  // get transaction permissions values and check for undefined tx tags
+  transactions?.values.forEach(value => {
+    if (value.includes('.') && !TX_TAG_VALUES.includes(value)) {
+      unmatchedPermissions.push(value);
+    }
+
+    if (!value.includes('.') && !MODULE_NAMES.includes(value)) {
+      unmatchedPermissions.push(value);
+    }
+  });
+
+  if (transactions?.exceptions) {
+    transactions.exceptions.forEach(value => {
+      if (!TX_TAG_VALUES.includes(value)) {
+        unmatchedPermissions.push(value);
+      }
+    });
+  }
+
+  // Current permission conversion logic
+  const permissions = {
     assets,
     transactions,
     transactionGroups: transactions ? transactionPermissionsToTxGroups(transactions) : [],
     portfolios,
+  };
+
+  return {
+    permissions,
+    unmatchedPermissions,
   };
 }
 
@@ -5541,6 +5601,7 @@ export function secondaryAccountWithAuthToSecondaryKeyWithAuth(
         {
           account: asAccount(account, context),
           permissions: permissionsLikeToPermissions(permissions, context),
+          unmatchedPermissions: [],
         },
         context
       ),

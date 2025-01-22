@@ -983,3 +983,9 @@ export const TxTags = {
   stateTrieMigration: StateTrieMigrationTx,
   electionProviderMultiPhase: ElectionProviderMultiPhaseTx,
 };
+
+export const TX_TAG_VALUES: string[] = Object.values(TxTags)
+  .map(v => Object.values(v))
+  .flat();
+
+export const MODULE_NAMES: string[] = Object.values(ModuleName);

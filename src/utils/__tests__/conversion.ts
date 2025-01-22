@@ -2277,7 +2277,8 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         entityMockUtils.getAccountInstance(),
         context
       );
-      expect(result).toEqual(fakeResult);
+      expect(result.permissions).toEqual(fakeResult);
+      expect(result.unmatchedPermissions).toEqual([]);
 
       fakeResult = {
         assets: null,
@@ -2295,7 +2296,8 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         ]);
 
       result = await meshPermissionsToPermissionsV2(entityMockUtils.getMultiSigInstance(), context);
-      expect(result).toEqual(fakeResult);
+      expect(result.permissions).toEqual(fakeResult);
+      expect(result.unmatchedPermissions).toEqual([]);
 
       fakeResult = {
         assets: {
@@ -2347,13 +2349,16 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       ]);
 
       result = await meshPermissionsToPermissionsV2(entityMockUtils.getAccountInstance(), context);
-      expect(result).toEqual(fakeResult);
+      expect(result.permissions).toEqual(fakeResult);
+      expect(result.unmatchedPermissions).toEqual([]);
     });
 
     it('should filter out incorrectly cased modules and extrinsics', async () => {
       const context = dsMockUtils.getContextInstance();
       const rawIdentityName = dsMockUtils.createMockText('identity');
       const rawAuthorshipName = dsMockUtils.createMockText('Asset');
+      const rawUnknownModuleName = dsMockUtils.createMockText('UnknownModule');
+      const rawKnownModuleName = dsMockUtils.createMockText('Checkpoint');
 
       const rawIdentityPermissions = dsMockUtils.createMockPalletPermissions({
         extrinsics: dsMockUtils.createMockExtrinsicName({
@@ -2367,9 +2372,21 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         }),
       });
 
+      const rawWholePermissions = dsMockUtils.createMockPalletPermissions({
+        extrinsics: dsMockUtils.createMockExtrinsicName('Whole'),
+      });
+
+      const rawUnknownExtrinsicPermissions = dsMockUtils.createMockPalletPermissions({
+        extrinsics: dsMockUtils.createMockExtrinsicName({
+          These: [dsMockUtils.createMockText('unknown_extrinsic')],
+        }),
+      });
+
       const permissionsMap = new Map();
       permissionsMap.set(rawIdentityName, rawIdentityPermissions);
       permissionsMap.set(rawAuthorshipName, rawAssetPermissions);
+      permissionsMap.set(rawUnknownModuleName, rawWholePermissions);
+      permissionsMap.set(rawKnownModuleName, rawUnknownExtrinsicPermissions);
 
       dsMockUtils.getQueryMultiMock().mockResolvedValue([
         dsMockUtils.createMockOption(),
@@ -2385,7 +2402,71 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         entityMockUtils.getAccountInstance(),
         context
       );
-      expect(result.transactions?.values).toEqual([]);
+      // we are not filtering out the unmatched extrinsics
+      expect(result.permissions?.transactions?.values).toEqual([
+        'unknownModule',
+        'checkpoint.unknownExtrinsic',
+      ]);
+      expect(result.unmatchedPermissions).toEqual([
+        'identity',
+        'Asset.createAsset',
+        // since the module and extrinsic follow the same naming convention, they are converted to lowercase and camel case
+        'unknownModule',
+        'checkpoint.unknownExtrinsic',
+      ]);
+    });
+
+    it('should handle except case for dispatchable names', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const rawIdentityName = dsMockUtils.createMockText('Identity');
+      const rawAssetName = dsMockUtils.createMockText('Asset');
+
+      // Create mock permissions with except case
+      const rawIdentityPermissions = dsMockUtils.createMockPalletPermissions({
+        extrinsics: dsMockUtils.createMockExtrinsicName({
+          Except: [
+            dsMockUtils.createMockText('add_claim'), // valid
+            dsMockUtils.createMockText('some_tag'),
+          ],
+        }),
+      });
+
+      const rawAssetPermissions = dsMockUtils.createMockPalletPermissions({
+        extrinsics: dsMockUtils.createMockExtrinsicName({
+          Except: [dsMockUtils.createMockText('invalid_Tx')],
+        }),
+      });
+
+      const permissionsMap = new Map();
+      permissionsMap.set(rawIdentityName, rawIdentityPermissions);
+      permissionsMap.set(rawAssetName, rawAssetPermissions);
+
+      dsMockUtils.getQueryMultiMock().mockResolvedValue([
+        dsMockUtils.createMockOption(),
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockExtrinsicPermissions({
+            These: dsMockUtils.createMockBTreeMap(permissionsMap),
+          })
+        ),
+        dsMockUtils.createMockOption(),
+      ]);
+
+      const result = await meshPermissionsToPermissionsV2(
+        entityMockUtils.getAccountInstance(),
+        context
+      );
+
+      // Verify exceptions are properly handled
+      expect(result.permissions?.transactions?.exceptions).toEqual([
+        'identity.addClaim',
+        'identity.someTag',
+      ]);
+
+      // Verify unmatched permissions are properly concatenated with module name
+      expect(result.unmatchedPermissions).toEqual(['Asset.invalid_Tx', 'identity.someTag']);
+
+      // Verify module level permissions
+      expect(result.permissions?.transactions?.values).toEqual(['identity', 'asset']);
     });
   });
 });

@@ -1890,9 +1890,15 @@ export async function getSecondaryAccountPermissions(
     ): Promise<void> => {
       const rawIdentityId = record.asSecondaryKey;
       if (!identity || identityIdToString(rawIdentityId) === identity.did) {
+        const { permissions, unmatchedPermissions } = await meshPermissionsToPermissionsV2(
+          account,
+          context
+        );
+
         result.push({
           account,
-          permissions: await meshPermissionsToPermissionsV2(account, context),
+          permissions,
+          unmatchedPermissions,
         });
       }
     };
