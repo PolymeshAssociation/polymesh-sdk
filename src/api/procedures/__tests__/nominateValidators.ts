@@ -75,7 +75,7 @@ describe('nominateValidators procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should throw an error if the target is not a controller', async () => {
+  it('should throw an error if the acting account is not a controller', async () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       ...storage,
       ledger: null,
@@ -88,7 +88,7 @@ describe('nominateValidators procedure', () => {
 
     await expect(
       prepareNominateValidators.call(proc, {
-        validators: [],
+        validators: [validator],
       })
     ).rejects.toThrow(expectedError);
   });
@@ -124,6 +124,40 @@ describe('nominateValidators procedure', () => {
         validators: [entityMockUtils.getAccountInstance({ stakingGetCommission: null })],
       })
     ).rejects.toThrow(expectedError);
+  });
+
+  it('should throw an error if a nominator is blocked', async () => {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, storage);
+
+    const args = {
+      validators: [
+        entityMockUtils.getAccountInstance({
+          stakingGetCommission: { blocked: true, commission: new BigNumber(10) },
+        }),
+      ],
+    };
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Validator(s) have been blocked',
+    });
+
+    await expect(prepareNominateValidators.call(proc, args)).rejects.toThrow(expectedError);
+  });
+
+  it('should throw an error if no nominators are received', async () => {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, storage);
+
+    const args = {
+      validators: [],
+    };
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'At least one validator must be nominated',
+    });
+
+    await expect(prepareNominateValidators.call(proc, args)).rejects.toThrow(expectedError);
   });
 
   it('should return a nominate transaction spec', async () => {
