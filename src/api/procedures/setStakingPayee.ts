@@ -36,7 +36,7 @@ export async function prepareSetStakingPayee(
 
   const payee = asAccount(payeeInput, context);
 
-  if (currentPayee.account.isEqual(payee)) {
+  if (currentPayee.autoStaked === autoStake && currentPayee.account.isEqual(payee)) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
       message: 'The given payee is already set',

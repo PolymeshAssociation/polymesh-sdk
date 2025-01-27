@@ -102,6 +102,23 @@ describe('setStakingPayee procedure', () => {
     return expect(prepareSetStakingPayee.call(proc, args)).rejects.toThrow(expectedError);
   });
 
+  it('should allow the same payee if auto stake value differs', async () => {
+    currentPayee.account = entityMockUtils.getAccountInstance({ isEqual: true });
+
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      actingAccount,
+      currentPayee,
+      ledger,
+    });
+
+    const args = {
+      payee: newPayee,
+      autoStake: true,
+    };
+
+    return expect(prepareSetStakingPayee.call(proc, args)).resolves.not.toThrow();
+  });
+
   it('should return a setPayee transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       actingAccount,
