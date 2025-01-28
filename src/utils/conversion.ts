@@ -227,7 +227,6 @@ import {
   MetadataType,
   MetadataValue,
   MetadataValueDetails,
-  MODULE_NAMES,
   ModuleName,
   MultiClaimCondition,
   NftMetadataInput,
@@ -275,7 +274,6 @@ import {
   TransferRestrictionType,
   TransferStatus,
   TrustedClaimIssuer,
-  TX_TAG_VALUES,
   TxGroup,
   TxTag,
   TxTags,
@@ -308,6 +306,8 @@ import {
   MAX_MODULE_LENGTH,
   MAX_OFF_CHAIN_METADATA_LENGTH,
   MAX_TICKER_LENGTH,
+  MODULE_NAMES,
+  TX_TAG_VALUES,
 } from '~/utils/constants';
 import {
   asAccount,

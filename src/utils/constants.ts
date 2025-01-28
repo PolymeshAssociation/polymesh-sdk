@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { coerce } from 'semver';
 
-import { TransactionArgumentType } from '~/types';
+import { ModuleName, TransactionArgumentType, TxTags } from '~/types';
 
 /**
  * Maximum amount of decimals for on-chain values
@@ -178,3 +178,7 @@ export const GLOBAL_TOKEN_URI_NAME = 'tokenUri';
 export const GLOBAL_BASE_TOKEN_URI_NAME = 'baseTokenUri';
 
 export const ASSET_ID_PREFIX = 'modlpy/pallet_asset';
+
+export const TX_TAG_VALUES: string[] = Object.values(TxTags).flatMap(v => Object.values(v));
+
+export const MODULE_NAMES: string[] = Object.values(ModuleName);
