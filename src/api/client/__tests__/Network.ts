@@ -538,16 +538,23 @@ describe('Network Class', () => {
   });
 
   describe('method: submitTransaction', () => {
-    beforeEach(() => {
-      dsMockUtils.configureMocks();
-    });
-
     const mockPayload = {
       payload: {},
       rawPayload: {},
       method: '0x01',
       metadata: {},
     } as unknown as TransactionPayload;
+
+    beforeEach(() => {
+      const [extrinsic] = dsMockUtils.createMockExtrinsics([
+        { toHex: (): string => '0x', hash: dsMockUtils.createMockHash('0x01') },
+      ]);
+
+      dsMockUtils.configureMocks();
+      when(context.createType)
+        .calledWith('Extrinsic', mockPayload.payload)
+        .mockReturnValue(extrinsic);
+    });
 
     it('should submit the transaction to the chain', async () => {
       const transaction = dsMockUtils.createTxMock('staking', 'bond', {
@@ -559,6 +566,25 @@ describe('Network Class', () => {
 
       const signature = '0x01';
       const result = await network.submitTransaction(mockPayload, signature);
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          transactionHash: '0x01',
+          result: expect.any(Object),
+        })
+      );
+    });
+
+    it('should support receiving only the inner payload', async () => {
+      const transaction = dsMockUtils.createTxMock('staking', 'bond', {
+        autoResolve: MockTxStatus.Succeeded,
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (context.polymeshApi as any).tx = jest.fn().mockReturnValue(transaction);
+
+      const signature = '0x01';
+      const result = await network.submitTransaction(mockPayload.payload, signature);
 
       expect(result).toEqual(
         expect.objectContaining({

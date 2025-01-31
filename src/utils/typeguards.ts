@@ -57,6 +57,8 @@ import {
   SellLockupClaim,
   SingleClaimCondition,
   TickerOwnerRole,
+  TransactionPayload,
+  TransactionPayloadInput,
   UnscopedClaim,
   VenueOwnerRole,
 } from '~/types';
@@ -431,4 +433,13 @@ export const isNftLegBuilder = async (
  */
 export const isOffChainLeg = (leg: InstructionLeg): leg is OffChainLeg => {
   return typeof leg.asset === 'string' && 'offChainAmount' in leg;
+};
+
+/**
+ * @hidden
+ */
+export const isFullOfflinePayload = (
+  input: TransactionPayload | TransactionPayloadInput
+): input is TransactionPayload => {
+  return 'metadata' in input; // Note: metadata is an arbitrary type discriminate
 };

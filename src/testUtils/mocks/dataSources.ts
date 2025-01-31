@@ -4025,6 +4025,7 @@ export const createMockExtrinsics = (
     {
       toHex: () => createMockStringCodec(),
       hash: createMockHash(),
+      addSignature: (): void => {},
     },
   ];
   return createMockCodec(
@@ -4032,6 +4033,7 @@ export const createMockExtrinsics = (
       {
         toHex,
         hash,
+        addSignature: (): void => {},
       },
     ],
     !extrinsics

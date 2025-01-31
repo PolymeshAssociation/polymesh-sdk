@@ -16,12 +16,13 @@ import {
   ProtocolFees,
   SubCallback,
   SubmissionDetails,
-  TransactionPayload,
+  TransactionPayloadInput,
   TransferPolyxParams,
   TxTag,
   UnsubCallback,
 } from '~/types';
 import { Ensured } from '~/types/utils';
+import { isFullOfflinePayload } from '~/utils';
 import { TREASURY_MODULE_ADDRESS } from '~/utils/constants';
 import {
   balanceToBigNumber,
@@ -200,12 +201,14 @@ export class Network {
    * @throws if the signature is not hex encoded
    */
   public async submitTransaction(
-    txPayload: TransactionPayload,
+    txPayload: TransactionPayloadInput,
     signature: string
   ): Promise<SubmissionDetails> {
     const { context } = this;
-    const { method, payload } = txPayload;
-    const transaction = context.polymeshApi.tx(method);
+
+    const payload = isFullOfflinePayload(txPayload) ? txPayload.payload : txPayload;
+
+    const extrinsic = context.createType('Extrinsic', payload);
 
     if (!signature.startsWith('0x')) {
       signature = `0x${signature}`;
@@ -218,11 +221,13 @@ export class Network {
         data: { signature },
       });
 
-    transaction.addSignature(payload.address, signature, payload);
+    extrinsic.addSignature(payload.address, signature, payload);
+
+    const transaction = context.polymeshApi.tx(extrinsic);
 
     const submissionDetails: SubmissionDetails = {
       blockHash: '',
-      transactionHash: transaction.hash.toString(),
+      transactionHash: extrinsic.hash.toString(),
       transactionIndex: new BigNumber(-1),
     } as SubmissionDetails;
 

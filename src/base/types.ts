@@ -171,30 +171,35 @@ export interface PayingAccountFees {
   };
 }
 
+/**
+ * Unsigned transaction data in JSON a format
+ */
 export interface TransactionPayload {
   /**
    * This is what a Polkadot signer ".signPayload" method expects
+   *
+   * @note this field needs to be passed in with the signature
    */
   readonly payload: SignerPayloadJSON;
 
   /**
    * An alternative representation of the payload for which Polkadot signers providing ".signRaw" expect.
    *
-   * @note the signature should be prefixed with a single byte to indicate its type. Prepend a zero byte (`0x00`) for ed25519 or a `0x01` byte to indicate sr25519 if the signer implementation does not already do so.
+   * @note using the field `payload` is generally recommended. The raw version is included so any polkadot compliant signer can sign.
+   * @note `signRaw` typically returns just the signature. However signatures must be prefixed with a byte to indicate the type. For ed25519 signatures prepend a zero byte (`0x00`), for sr25519 `0x01` byte to indicate sr25519 if the signer implementation does not already do so.
+
    */
   readonly rawPayload: SignerPayloadRaw;
 
   /**
    * A hex representation of the core extrinsic information. i.e. the extrinsic and args, but does not contain information about who is to sign the transaction.
-   *
-   * When submitting the transaction this will be used to construct the extrinsic, to which
-   * the signer payload and signature will be attached to.
-   *
    */
   readonly method: HexString;
 
   /**
-   * Additional information attached to the payload, such as IDs or memos about the transaction
+   * Additional information attached to the payload, such as IDs or memos about the transaction.
+   *
+   * @note this is not chain data. Its for convenience for attaching a trace ID
    */
   readonly metadata: Record<string, string>;
 
@@ -205,6 +210,13 @@ export interface TransactionPayload {
    */
   readonly multiSig: string | null;
 }
+
+/**
+ * The data needed for submitting an offline transaction.
+ *
+ * @note Either the full payload can be used or just the inner payload field. It doesn't matter which is given.
+ */
+export type TransactionPayloadInput = TransactionPayload | TransactionPayload['payload'];
 
 export type PolymeshTransaction<
   ReturnValue = unknown,
