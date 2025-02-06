@@ -281,6 +281,7 @@ export class Claims {
   public async getClaimScopes(opts: { target?: string | Identity } = {}): Promise<ClaimScope[]> {
     const { context } = this;
     const { target } = opts;
+    const size = new BigNumber(DEFAULT_GQL_PAGE_SIZE);
 
     const [did, isMiddlewareAvailable] = await Promise.all([
       getDid(target, context),
@@ -294,7 +295,10 @@ export class Claims {
         targets: [did],
         claimTypes: [ClaimType.Custom],
         includeExpired: false,
+        size,
+        start: new BigNumber(0),
       });
+
       const getClaimScopeFromClaim = (
         claim: ClaimData<CustomClaim | CustomClaimWithoutScope>
       ): ClaimScope => {
@@ -317,26 +321,27 @@ export class Claims {
         customClaimScopeList.push(...claimData.map(getClaimScopeFromClaim));
       });
 
-      if (next && count) {
+      if (next && count && new BigNumber(next).gt(0) && count.gt(0)) {
         // fetch remaining scopes
         const promises = [];
 
         let start: NextKey = next;
 
-        while (start && BigNumber.isBigNumber(start)) {
+        while (start && BigNumber.isBigNumber(start) && new BigNumber(start).gt(0)) {
           promises.push(
             this.getIdentitiesWithClaims({
               targets: [did],
               claimTypes: [ClaimType.Custom],
               includeExpired: false,
               start,
+              size,
             })
           );
 
-          start = calculateNextKey(count, data.length, start);
+          start = calculateNextKey(count, size.toNumber(), start);
         }
 
-        const results = await Promise.all(promises);
+        const results: ResultSet<IdentityWithClaims>[] = await Promise.all(promises);
 
         results.forEach(record => {
           record.data.forEach(result => {

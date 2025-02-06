@@ -589,11 +589,14 @@ describe('Claims Class', () => {
       const getIdentitiesWithClaimsSpy = jest.spyOn(claims, 'getIdentitiesWithClaims');
 
       const next = new BigNumber(4);
+
       when(getIdentitiesWithClaimsSpy)
         .calledWith({
           targets: [target],
           claimTypes: [ClaimType.Custom],
           includeExpired: false,
+          start: new BigNumber(0),
+          size: new BigNumber(DEFAULT_GQL_PAGE_SIZE),
         })
         .mockResolvedValue({
           data: [
@@ -665,6 +668,7 @@ describe('Claims Class', () => {
           claimTypes: [ClaimType.Custom],
           includeExpired: false,
           start: next,
+          size: new BigNumber(DEFAULT_GQL_PAGE_SIZE),
         })
         .mockResolvedValue({
           data: [
@@ -726,20 +730,18 @@ describe('Claims Class', () => {
               ],
             },
           ],
-          next: null,
+          next: new BigNumber(0),
           count: new BigNumber(6),
         });
 
-      let result = await claims.getClaimScopes({ target });
+      const result = await claims.getClaimScopes({ target });
 
       expect(result[0].assetId).toBeUndefined();
       expect(result[0].scope).toEqual({ type: ScopeType.Identity, value: someDid });
       expect(result[1].assetId).toEqual(assetId);
       expect(result[1].scope).toEqual({ type: ScopeType.Asset, value: assetId });
-
-      result = await claims.getClaimScopes();
-
       expect(result.length).toEqual(2);
+      expect(getIdentitiesWithClaimsSpy).toHaveBeenCalledTimes(2);
     });
   });
 
