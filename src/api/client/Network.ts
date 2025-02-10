@@ -310,6 +310,7 @@ export class Network {
   /**
    * Retrieve a list of events. Can be filtered using parameters
    *
+   * @deprecated
    * @param opts.moduleId - type of the module to fetch
    * @param opts.eventId - type of the event to fetch
    * @param opts.eventArg0 - event parameter value to filter by in position 0
