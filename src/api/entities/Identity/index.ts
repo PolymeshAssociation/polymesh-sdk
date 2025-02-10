@@ -907,20 +907,27 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    */
   public async getHistoricalInstructions(
     filter?: Omit<HistoricalInstructionFilters, 'identity'>
-  ): Promise<HistoricInstruction[]> {
+  ): Promise<ResultSet<HistoricInstruction>> {
     const { context, did } = this;
 
     const query = await historicalInstructionsQuery({ ...filter, identity: did }, context);
 
     const {
       data: {
-        instructions: { nodes: instructionsResult },
+        instructions: { nodes: instructionsResult, totalCount },
       },
     } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(query);
 
-    return instructionsResult.map(instruction =>
-      middlewareInstructionToHistoricInstruction(instruction, context)
-    );
+    const count = new BigNumber(totalCount);
+    const next = calculateNextKey(count, instructionsResult.length, filter?.start);
+
+    return {
+      data: instructionsResult.map(instruction =>
+        middlewareInstructionToHistoricInstruction(instruction, context)
+      ),
+      next,
+      count,
+    };
   }
 
   /**
