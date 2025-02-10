@@ -46,6 +46,7 @@ export class AssetHolders extends Namespace<NftCollection> {
 
     return {
       data,
+      count: new BigNumber(totalCount),
       next,
     };
   }
