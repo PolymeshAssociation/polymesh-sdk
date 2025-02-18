@@ -2912,7 +2912,8 @@ export const createMockConditionType = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockClaimType = (
-  claimType?: ClaimType
+  claimType?: ClaimType,
+  customClaimTypeId?: BigNumber
 ): MockCodec<PolymeshPrimitivesIdentityClaimClaimType> => {
   const claimIndexes = {
     Accredited: 1,
@@ -2928,6 +2929,13 @@ export const createMockClaimType = (
     InvestorUniquenessV2: 11,
     Custom: 12,
   };
+
+  if (claimType === ClaimType.Custom) {
+    return createMockEnum<PolymeshPrimitivesIdentityClaimClaimType>({
+      Custom: createMockU32(customClaimTypeId ?? new BigNumber(0)),
+    });
+  }
+
   return createMockEnum<PolymeshPrimitivesIdentityClaimClaimType>(
     claimType,
     claimType ? claimIndexes[claimType] : 0
