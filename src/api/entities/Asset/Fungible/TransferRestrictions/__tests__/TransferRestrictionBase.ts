@@ -695,6 +695,7 @@ describe('TransferRestrictionBase class', () => {
     let rawCountStatType: PolymeshPrimitivesStatisticsStatType;
     let rawPercentageStatType: PolymeshPrimitivesStatisticsStatType;
     let rawClaimCountStatType: PolymeshPrimitivesStatisticsStatType;
+    let rawCustomClaimCountStatType: PolymeshPrimitivesStatisticsStatType;
     let rawClaimPercentageStatType: PolymeshPrimitivesStatisticsStatType;
 
     let activeAssetStatsMock: jest.Mock;
@@ -718,6 +719,13 @@ describe('TransferRestrictionBase class', () => {
         operationType: dsMockUtils.createMockStatisticsOpType(StatType.Count),
         claimIssuer: dsMockUtils.createMockOption([
           dsMockUtils.createMockClaimType(ClaimType.Affiliate),
+          issuerDid,
+        ]),
+      });
+      rawCustomClaimCountStatType = dsMockUtils.createMockStatisticsStatType({
+        operationType: dsMockUtils.createMockStatisticsOpType(StatType.Count),
+        claimIssuer: dsMockUtils.createMockOption([
+          dsMockUtils.createMockClaimType(ClaimType.Custom, new BigNumber(1)),
           issuerDid,
         ]),
       });
@@ -790,7 +798,10 @@ describe('TransferRestrictionBase class', () => {
     });
 
     it('should return the active stats status for (ClaimCount) when stats enabled', async () => {
-      activeAssetStatsMock.mockResolvedValueOnce([rawClaimCountStatType]);
+      activeAssetStatsMock.mockResolvedValueOnce([
+        rawCustomClaimCountStatType,
+        rawClaimCountStatType,
+      ]);
       const claimCount = new ClaimCount(asset, context);
 
       const result = await claimCount.getStat();
@@ -798,7 +809,9 @@ describe('TransferRestrictionBase class', () => {
       expect(result.isSet).toBeTruthy();
       expect(result.claims).toBeDefined();
 
-      const [claim] = result.claims || [];
+      const [customClaim, claim] = result.claims || [];
+      expect(customClaim.claimType).toEqual(ClaimType.Custom);
+      expect(customClaim.customClaimTypeId).toEqual(new BigNumber(1));
       expect(claim.claimType).toEqual(ClaimType.Affiliate);
     });
 
