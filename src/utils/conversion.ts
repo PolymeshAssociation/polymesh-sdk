@@ -274,6 +274,7 @@ import {
   TransferRestrictionType,
   TransferStatus,
   TrustedClaimIssuer,
+  TrustedFor,
   TxGroup,
   TxTag,
   TxTags,
@@ -2627,7 +2628,7 @@ export function stringToTargetIdentity(
  */
 export function meshClaimTypeToClaimType(
   claimType: PolymeshPrimitivesIdentityClaimClaimType
-): ClaimType {
+): TrustedFor {
   const type = claimType.type;
   if (type === 'Jurisdiction') {
     return ClaimType.Jurisdiction;
@@ -2662,7 +2663,9 @@ export function meshClaimTypeToClaimType(
   }
 
   if (type === 'Custom') {
-    return ClaimType.Custom;
+    const claim = claimType.asCustom;
+
+    return { type: ClaimType.Custom, customClaimTypeId: u32ToBigNumber(claim) };
   }
 
   if (type === 'Blocked') {
@@ -2683,7 +2686,7 @@ export function trustedIssuerToTrustedClaimIssuer(
 
   const identity = new Identity({ did: identityIdToString(issuer) }, context);
 
-  let trustedFor: ClaimType[] | null = null;
+  let trustedFor: TrustedFor[] | null = null;
 
   if (claimTypes.isSpecific) {
     trustedFor = claimTypes.asSpecific.map(meshClaimTypeToClaimType);
@@ -2710,7 +2713,18 @@ export function trustedClaimIssuerToTrustedIssuer(
   if (!claimTypes) {
     trustedFor = 'Any';
   } else {
-    trustedFor = { Specific: claimTypes };
+    trustedFor = {
+      Specific: claimTypes.map(claimType => {
+        if (typeof claimType === 'object' && claimType.customClaimTypeId) {
+          // Create a proper Custom enum value
+          return context.createType('PolymeshPrimitivesIdentityClaimClaimType', {
+            Custom: bigNumberToU32(claimType.customClaimTypeId, context),
+          });
+        }
+        // For non-custom claim types
+        return claimType;
+      }),
+    };
   }
 
   return context.createType('PolymeshPrimitivesConditionTrustedIssuer', {

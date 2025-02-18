@@ -1,7 +1,7 @@
 import { Context, FungibleAsset, Identity, PolymeshError } from '~/internal';
 import { trustedClaimIssuerQuery } from '~/middleware/queries/claims';
 import { Query } from '~/middleware/types';
-import { ClaimType, ErrorCode, EventIdentifier } from '~/types';
+import { ErrorCode, EventIdentifier, TrustedFor } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
   assetToMeshAssetId,
@@ -78,7 +78,7 @@ export class DefaultTrustedClaimIssuer extends Identity {
   /**
    * Retrieve claim types for which this Claim Issuer is trusted. A null value means that the issuer is trusted for all claim types
    */
-  public async trustedFor(): Promise<ClaimType[] | null> {
+  public async trustedFor(): Promise<TrustedFor[] | null> {
     const {
       context: {
         polymeshApi: {

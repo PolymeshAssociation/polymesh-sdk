@@ -4918,12 +4918,10 @@ describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
       result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
-      fakeResult = ClaimType.Custom;
-
-      claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockClaimType(ClaimType.Custom);
 
       result = meshClaimTypeToClaimType(claimType);
-      expect(result).toEqual(fakeResult);
+      expect(result).toEqual({ type: ClaimType.Custom, customClaimTypeId: new BigNumber(0) });
     });
 
     it('should throw an error if it un-parses an unknown type', () => {
@@ -7247,12 +7245,18 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
   });
 
   describe('trustedClaimIssuerToTrustedIssuer', () => {
-    it('should convert a did string into an PolymeshPrimitivesIdentityId', () => {
-      const did = 'someDid';
-      const fakeResult = 'type' as unknown as PolymeshPrimitivesConditionTrustedIssuer;
-      const context = dsMockUtils.getContextInstance();
+    let context: Context;
+    let did: string;
+    let fakeResult: PolymeshPrimitivesConditionTrustedIssuer;
 
-      let issuer: TrustedClaimIssuer = {
+    beforeEach(() => {
+      context = dsMockUtils.getContextInstance();
+      did = 'someDid';
+      fakeResult = 'type' as unknown as PolymeshPrimitivesConditionTrustedIssuer;
+    });
+
+    it('should handle null trustedFor', () => {
+      const issuer: TrustedClaimIssuer = {
         identity: entityMockUtils.getIdentityInstance({ did }),
         trustedFor: null,
       };
@@ -7264,10 +7268,12 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
         })
         .mockReturnValue(fakeResult);
 
-      let result = trustedClaimIssuerToTrustedIssuer(issuer, context);
+      const result = trustedClaimIssuerToTrustedIssuer(issuer, context);
       expect(result).toBe(fakeResult);
+    });
 
-      issuer = {
+    it('should handle array of claim types', () => {
+      const issuer: TrustedClaimIssuer = {
         identity: entityMockUtils.getIdentityInstance({ did }),
         trustedFor: [ClaimType.Accredited, ClaimType.Blocked],
       };
@@ -7279,7 +7285,34 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
         })
         .mockReturnValue(fakeResult);
 
-      result = trustedClaimIssuerToTrustedIssuer(issuer, context);
+      const result = trustedClaimIssuerToTrustedIssuer(issuer, context);
+      expect(result).toBe(fakeResult);
+    });
+
+    it('should handle custom claim type', () => {
+      const customClaimTypeId = new BigNumber(1);
+      const issuer: TrustedClaimIssuer = {
+        identity: entityMockUtils.getIdentityInstance({ did }),
+        trustedFor: [{ type: ClaimType.Custom, customClaimTypeId }],
+      };
+
+      const mockTrustedFor = 'Custom' as unknown as PolymeshPrimitivesIdentityClaimClaimType;
+
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesIdentityClaimClaimType', {
+          Custom: bigNumberToU32(customClaimTypeId, context),
+        })
+        .mockReturnValue(mockTrustedFor);
+
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesConditionTrustedIssuer', {
+          issuer: stringToIdentityId(did, context),
+          trustedFor: { Specific: [mockTrustedFor] },
+        })
+        .mockReturnValue(fakeResult);
+
+      const result = trustedClaimIssuerToTrustedIssuer(issuer, context);
+
       expect(result).toBe(fakeResult);
     });
   });
