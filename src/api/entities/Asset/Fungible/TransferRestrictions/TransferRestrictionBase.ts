@@ -348,7 +348,15 @@ export abstract class TransferRestrictionBase<
       const claimType = meshClaimTypeToClaimType(rawClaimType);
       const issuer = new Identity({ did: identityIdToString(rawIssuer) }, context);
 
-      claims.push({ claimType, issuer });
+      if (typeof claimType === 'object') {
+        claims.push({
+          claimType: claimType.type,
+          customClaimTypeId: claimType.customClaimTypeId,
+          issuer,
+        });
+      } else {
+        claims.push({ claimType, issuer });
+      }
     };
 
     [...currentStats].forEach(stat => {
