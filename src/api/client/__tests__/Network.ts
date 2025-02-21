@@ -1,4 +1,5 @@
 import { SubmittableResult } from '@polkadot/api';
+import { GenericExtrinsic } from '@polkadot/types/extrinsic';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -9,7 +10,7 @@ import { eventsByArgs } from '~/middleware/queries/events';
 import { extrinsicByHash } from '~/middleware/queries/extrinsics';
 import { CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { MockTxStatus } from '~/testUtils/mocks/dataSources';
+import { createMockCall, MockTxStatus } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import { AccountBalance, ErrorCode, MiddlewareMetadata, TransactionPayload, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -540,13 +541,17 @@ describe('Network Class', () => {
   describe('method: submitTransaction', () => {
     const mockPayload = {
       payload: {},
-      rawPayload: {},
+      rawPayload: {
+        data: '0x00randomdata',
+        address: 'some_address',
+      },
       method: '0x01',
       metadata: {},
     } as unknown as TransactionPayload;
+    let extrinsic: GenericExtrinsic;
 
     beforeEach(() => {
-      const [extrinsic] = dsMockUtils.createMockExtrinsics([
+      [extrinsic] = dsMockUtils.createMockExtrinsics([
         { toHex: (): string => '0x', hash: dsMockUtils.createMockHash('0x01') },
       ]);
 
@@ -585,6 +590,39 @@ describe('Network Class', () => {
 
       const signature = '0x01';
       const result = await network.submitTransaction(mockPayload.payload, signature);
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          transactionHash: '0x01',
+          result: expect.any(Object),
+        })
+      );
+    });
+
+    it('should support receiving only the inner raw payload', async () => {
+      const transaction = dsMockUtils.createTxMock('staking', 'bond', {
+        autoResolve: MockTxStatus.Succeeded,
+      });
+
+      const createTypeMock = context.createType;
+
+      const mockCall = createMockCall({
+        args: [{ autoResolve: MockTxStatus.Succeeded }],
+        method: 'staking',
+        section: 'bond',
+      });
+
+      when(createTypeMock)
+        .calledWith('Call', mockPayload.rawPayload.data)
+        .mockReturnValue(mockCall);
+
+      when(createTypeMock).calledWith('Extrinsic', mockCall).mockReturnValue(extrinsic);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (context.polymeshApi as any).tx = jest.fn().mockReturnValue(transaction);
+
+      const signature = '0x01';
+      const result = await network.submitTransaction(mockPayload.rawPayload, signature);
 
       expect(result).toEqual(
         expect.objectContaining({

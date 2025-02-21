@@ -443,3 +443,9 @@ export const isFullOfflinePayload = (
 ): input is TransactionPayload => {
   return 'metadata' in input; // Note: metadata is an arbitrary type discriminate
 };
+
+export const isRawPayload = (
+  input: TransactionPayload['payload'] | TransactionPayload['rawPayload']
+): input is TransactionPayload['rawPayload'] => {
+  return 'data' in input;
+};

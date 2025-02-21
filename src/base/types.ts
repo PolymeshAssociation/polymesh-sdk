@@ -214,9 +214,15 @@ export interface TransactionPayload {
 /**
  * The data needed for submitting an offline transaction.
  *
- * @note Either the full payload can be used or just the inner payload field. It doesn't matter which is given.
+ * @note One of the following can be used to submit an offline transaction -
+ *   1. Full payload
+ *   2. Inner payload field
+ *   3. Inner raw payload field
  */
-export type TransactionPayloadInput = TransactionPayload | TransactionPayload['payload'];
+export type TransactionPayloadInput =
+  | TransactionPayload
+  | TransactionPayload['payload']
+  | TransactionPayload['rawPayload'];
 
 export type PolymeshTransaction<
   ReturnValue = unknown,

@@ -1,4 +1,4 @@
-import { isHex } from '@polkadot/util';
+import { compactToU8a, isHex, u8aConcat } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 
 import { handleExtrinsicFailure, pollForTransactionFinalization } from '~/base/utils';
@@ -22,7 +22,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { Ensured } from '~/types/utils';
-import { isFullOfflinePayload } from '~/utils';
+import { isFullOfflinePayload, isRawPayload } from '~/utils';
 import { TREASURY_MODULE_ADDRESS } from '~/utils/constants';
 import {
   balanceToBigNumber,
@@ -206,9 +206,31 @@ export class Network {
   ): Promise<SubmissionDetails> {
     const { context } = this;
 
-    const payload = isFullOfflinePayload(txPayload) ? txPayload.payload : txPayload;
+    let payload;
+    let address: string;
+    let extrinsic;
 
-    const extrinsic = context.createType('Extrinsic', payload);
+    if (isFullOfflinePayload(txPayload)) {
+      payload = txPayload.payload;
+      address = payload.address;
+      extrinsic = context.createType('Extrinsic', payload);
+    } else {
+      address = txPayload.address;
+      if (isRawPayload(txPayload)) {
+        let data: string;
+        ({ address, data } = txPayload);
+
+        const call = context.createType('Call', data);
+
+        extrinsic = context.createType('Extrinsic', call);
+
+        // The payload must be prefixed with the SCALE encoded length of the payload
+        payload = u8aConcat(compactToU8a(call.encodedLength), data);
+      } else {
+        payload = txPayload;
+        extrinsic = context.createType('Extrinsic', payload);
+      }
+    }
 
     if (!signature.startsWith('0x')) {
       signature = `0x${signature}`;
@@ -221,7 +243,7 @@ export class Network {
         data: { signature },
       });
 
-    extrinsic.addSignature(payload.address, signature, payload);
+    extrinsic.addSignature(address, signature, payload);
 
     const transaction = context.polymeshApi.tx(extrinsic);
 
