@@ -1111,7 +1111,6 @@ function initApi(): void {
   } as unknown as Registry;
   mockInstanceContainer.apiInstance.createType = jest.fn();
   mockInstanceContainer.apiInstance.runtimeVersion = {} as RuntimeVersion;
-  // mockInstanceContainer.apiInstance.errors = {} as DecoratedErrors<'promise'>;
 
   initTx();
   initQuery();
