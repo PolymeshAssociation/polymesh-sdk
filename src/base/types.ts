@@ -178,7 +178,7 @@ export interface TransactionPayload {
   /**
    * This is what a Polkadot signer ".signPayload" method expects
    *
-   * @note this field needs to be passed in with the signature
+   * @note this field is recommended to be passed in with the signature when submitting a signed transaction
    */
   readonly payload: SignerPayloadJSON;
 
@@ -187,7 +187,6 @@ export interface TransactionPayload {
    *
    * @note using the field `payload` is generally recommended. The raw version is included so any polkadot compliant signer can sign.
    * @note `signRaw` typically returns just the signature. However signatures must be prefixed with a byte to indicate the type. For ed25519 signatures prepend a zero byte (`0x00`), for sr25519 `0x01` byte to indicate sr25519 if the signer implementation does not already do so.
-
    */
   readonly rawPayload: SignerPayloadRaw;
 
