@@ -59,6 +59,7 @@ import {
   PalletAssetTickerRegistration,
   PalletAssetTickerRegistrationConfig,
   PalletContractsStorageContractInfo,
+  PalletCorporateActionsBallotBallotMeta,
   PalletCorporateActionsCaCheckpoint,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
@@ -4989,4 +4990,19 @@ export const createMockSlashingSpans = (
     { spanIndex, lastStart, lastNonzeroSlash, prior },
     !span
   );
+};
+
+/**
+ * @hidden
+ */
+export const createMockCorporateBallotMeta = (meta?: {
+  title: string;
+  motions: [];
+}): MockCodec<PalletCorporateActionsBallotBallotMeta> => {
+  const { title, motions } = meta ?? {
+    title: createMockBytes(),
+    motions: createMockVec([]),
+  };
+
+  return createMockCodec<PalletCorporateActionsBallotBallotMeta>({ title, motions }, !meta);
 };
