@@ -64,6 +64,7 @@ export function getAuthorization(
     storage: { portfolioId },
   } = this;
   return {
+    // TODO: chain checks if identity can execute tx and if it is custodian -> so no reason for checking portfolio -> roles should be fine
     permissions: {
       transactions: [TxTags.portfolio.QuitPortfolioCustody],
       assets: [],

@@ -111,6 +111,7 @@ export async function getAuthorization(
 
   return {
     permissions: {
+      // TODO: might need just check if caller is parent of the child to be created -> Self::ensure_primary_key -> so checks primary key of the signer -> no extra perm checks performed -> so tx could be removed `pallets/identity/src/keys.rs` 506
       transactions: [TxTags.identity.CreateChildIdentities],
       assets: [],
       portfolios: [],
