@@ -130,6 +130,7 @@ export { Subsidy } from '~/api/entities/Subsidy';
 export { createCheckpointSchedule } from '~/api/procedures/createCheckpointSchedule';
 export { CorporateActionBase } from '~/api/entities/CorporateActionBase';
 export { CorporateAction } from '~/api/entities/CorporateAction';
+export { CorporateBallot } from '~/api/entities/CorporateBallot';
 export { removeCheckpointSchedule } from '~/api/procedures/removeCheckpointSchedule';
 export { DividendDistribution } from '~/api/entities/DividendDistribution';
 export { modifyCorporateActionsAgent } from '~/api/procedures/modifyCorporateActionsAgent';
