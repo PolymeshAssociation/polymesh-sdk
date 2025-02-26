@@ -15,6 +15,7 @@ import {
 } from '~/utils/conversion';
 import { createProcedureMethod, requestMulti } from '~/utils/internal';
 
+import { Ballots } from './Ballots';
 import { Distributions } from './Distributions';
 import { CorporateActionDefaultConfig } from './types';
 
@@ -23,6 +24,7 @@ import { CorporateActionDefaultConfig } from './types';
  */
 export class CorporateActions extends Namespace<FungibleAsset> {
   public distributions: Distributions;
+  public ballots: Ballots;
 
   /**
    * @hidden
@@ -31,6 +33,7 @@ export class CorporateActions extends Namespace<FungibleAsset> {
     super(parent, context);
 
     this.distributions = new Distributions(parent, context);
+    this.ballots = new Ballots(parent, context);
 
     this.setDefaultConfig = createProcedureMethod(
       { getProcedureAndArgs: args => [modifyCaDefaultConfig, { asset: parent, ...args }] },
