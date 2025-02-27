@@ -109,6 +109,8 @@ import { ClaimScopeTypeEnum, MultiSigProposalStatusEnum } from '~/middleware/typ
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   createMockAssetId,
+  createMockCorporateBallotMeta,
+  createMockCorporateBallotMotion,
   createMockIdentityId,
   createMockNfts,
   createMockOption,
@@ -272,6 +274,8 @@ import {
   meshClaimToInputStatClaim,
   meshClaimTypeToClaimType,
   meshCorporateActionToCorporateActionParams,
+  meshCorporateBallotMetaToCorporateBallotMeta,
+  meshCorporateBallotMotionToCorporateBallotMotion,
   meshInstructionStatusToInstructionStatus,
   meshMetadataKeyToMetadataKey,
   meshMetadataSpecToMetadataSpec,
@@ -11694,5 +11698,71 @@ describe('rawValidatorPrefToCommission', () => {
       blocked: false,
       commission: new BigNumber(1),
     });
+  });
+});
+
+describe('meshCorporateBallotMotionToCorporateBallotMotion', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a mesh ballot motion to a ballot motion', () => {
+    const mockBallotMotion = {
+      title: 'Test Motion Title',
+      infoLink: 'https://example.com',
+      choices: ['Yes', 'No', 'Abstain'],
+    };
+
+    const result = meshCorporateBallotMotionToCorporateBallotMotion(
+      createMockCorporateBallotMotion(mockBallotMotion)
+    );
+
+    expect(result).toEqual(mockBallotMotion);
+  });
+});
+
+describe('meshCorporateBallotMetaToCorporateBallotMeta', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert mesh ballot meta to ballot meta', () => {
+    const mockBallotMeta = {
+      title: 'Test Ballot',
+      motions: [
+        {
+          title: 'Motion 1',
+          infoLink: 'https://example.com/1',
+          choices: ['Approve', 'Reject'],
+        },
+        {
+          title: 'Motion 2',
+          infoLink: 'https://example.com/2',
+          choices: ['Yes', 'No'],
+        },
+      ],
+    };
+
+    const result = meshCorporateBallotMetaToCorporateBallotMeta(
+      createMockCorporateBallotMeta(mockBallotMeta)
+    );
+
+    expect(result).toEqual(mockBallotMeta);
   });
 });

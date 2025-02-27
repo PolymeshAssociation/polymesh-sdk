@@ -12,6 +12,8 @@ import {
 import { H512 } from '@polkadot/types/interfaces/runtime';
 import { DispatchError, DispatchResult } from '@polkadot/types/interfaces/system';
 import {
+  PalletCorporateActionsBallotBallotMeta,
+  PalletCorporateActionsBallotMotion,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
   PalletCorporateActionsCorporateAction,
@@ -117,6 +119,7 @@ import {
   values,
 } from 'lodash';
 
+import { BallotMeta, BallotMotion } from '~/api/entities/CorporateBallot';
 import { assertCaTaxWithholdingsValid, UnreachableCaseError } from '~/api/procedures/utils';
 import { countryCodeToMeshCountryCode, meshCountryCodeToCountryCode } from '~/generated/utils';
 import {
@@ -5790,5 +5793,36 @@ export function rawValidatorPrefToCommission(
   return {
     blocked,
     commission,
+  };
+}
+
+/**
+ * @hidden
+ */
+export function meshCorporateBallotMotionToCorporateBallotMotion(
+  rawMotion: PalletCorporateActionsBallotMotion
+): BallotMotion {
+  const title = bytesToString(rawMotion.title);
+  const infoLink = bytesToString(rawMotion.infoLink);
+  const choices = rawMotion.choices.map(bytesToString);
+
+  return {
+    title,
+    infoLink,
+    choices,
+  };
+}
+
+/**
+ * @hidden
+ */
+export function meshCorporateBallotMetaToCorporateBallotMeta(
+  rawMeta: PalletCorporateActionsBallotBallotMeta
+): BallotMeta {
+  const title = bytesToString(rawMeta.title);
+
+  return {
+    title,
+    motions: rawMeta.motions.map(meshCorporateBallotMotionToCorporateBallotMotion),
   };
 }
