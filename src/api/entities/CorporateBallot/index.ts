@@ -9,9 +9,21 @@ export interface UniqueIdentifiers {
   assetId: string;
 }
 
+export interface BallotMotion {
+  title: string;
+  infoLink: string;
+  choices: string[];
+}
+
+export interface BallotMeta {
+  title: string;
+  motions: BallotMotion[];
+}
+
 export interface HumanReadable {
   id: string;
   assetId: string;
+  meta: BallotMeta;
 }
 
 /**
@@ -39,15 +51,21 @@ export class CorporateBallot extends Entity<UniqueIdentifiers, HumanReadable> {
   public asset: FungibleAsset;
 
   /**
+   * Ballot metadata
+   */
+  public meta: BallotMeta;
+
+  /**
    * @hidden
    */
-  public constructor(args: UniqueIdentifiers, context: Context) {
+  public constructor(args: UniqueIdentifiers & { meta: BallotMeta }, context: Context) {
     super(args, context);
 
-    const { id, assetId } = args;
+    const { id, assetId, meta } = args;
 
     this.id = id;
     this.asset = new FungibleAsset({ assetId }, context);
+    this.meta = meta;
   }
 
   /**
@@ -56,15 +74,19 @@ export class CorporateBallot extends Entity<UniqueIdentifiers, HumanReadable> {
    */
   public async exists(): Promise<boolean> {
     const {
-      polymeshApi: { query },
-    } = this.context;
+      context: {
+        polymeshApi: {
+          query: { corporateBallot },
+        },
+      },
+      id,
+      asset,
+      context,
+    } = this;
 
-    const caId = corporateActionIdentifierToCaId(
-      { localId: this.id, asset: this.asset },
-      this.context
-    );
+    const caId = corporateActionIdentifierToCaId({ localId: id, asset }, context);
 
-    const ballot = await query.corporateBallot.metas(caId);
+    const ballot = await corporateBallot.metas(caId);
 
     return ballot.isSome;
   }
@@ -73,8 +95,8 @@ export class CorporateBallot extends Entity<UniqueIdentifiers, HumanReadable> {
    * Return the Dividend Distribution's static data
    */
   public override toHuman(): HumanReadable {
-    const { id, asset } = this;
+    const { id, asset, meta } = this;
 
-    return toHumanReadable({ id, assetId: asset });
+    return toHumanReadable({ id, assetId: asset.id, meta });
   }
 }

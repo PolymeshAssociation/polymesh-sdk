@@ -17,6 +17,16 @@ describe('CorporateBallot class', () => {
   let assetId: string;
   let corporateBallot: CorporateBallot;
   let getAssetIdForMiddlewareSpy: jest.SpyInstance;
+  const mockBallotMeta = {
+    title: 'Test Ballot',
+    motions: [
+      {
+        title: 'Test Motion Title',
+        infoLink: 'https://example.com',
+        choices: ['Yes', 'No', 'Abstain'],
+      },
+    ],
+  };
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -35,6 +45,7 @@ describe('CorporateBallot class', () => {
       {
         id,
         assetId,
+        meta: mockBallotMeta,
       },
       context
     );
@@ -98,6 +109,7 @@ describe('CorporateBallot class', () => {
       expect(corporateBallot.toHuman()).toEqual({
         id: '1',
         assetId: '12341234-1234-1234-1234-123412341234',
+        meta: mockBallotMeta,
       });
     });
   });
