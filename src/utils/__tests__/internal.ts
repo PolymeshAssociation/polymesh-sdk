@@ -12,7 +12,7 @@ import BigNumber from 'bignumber.js';
 import crossFetch from 'cross-fetch';
 import { when } from 'jest-when';
 
-import { Account, Context, Identity, Nft, PolymeshError, Procedure } from '~/internal';
+import { Account, Context, Identity, MultiSig, Nft, PolymeshError, Procedure } from '~/internal';
 import { latestSqVersionQuery } from '~/middleware/queries/common';
 import { Claim as MiddlewareClaim } from '~/middleware/types';
 import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
@@ -60,6 +60,7 @@ import {
 import * as utilsConversionModule from '~/utils/conversion';
 
 import {
+  areSameAccounts,
   areSameClaims,
   asAccount,
   asBaseAsset,
@@ -2765,5 +2766,58 @@ describe('getAssetIdFromMiddleware', () => {
     });
 
     expect(result).toEqual('12341234-1234-1234-1234-123412341234');
+  });
+});
+
+describe('areSameAccounts', () => {
+  let context: Context;
+  let address1: string;
+  let account1: Account;
+  let address2: string;
+  let account2: Account;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+    address1 = DUMMY_ACCOUNT_ID;
+    address2 = '5Fs4Azv4K6y8BxDkXXQpJkxdRBvXQeg8SsQRqg9cTnv3bfec';
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return true when comparing two Accounts with the same address', async () => {
+    account1 = new Account({ address: address1 }, context);
+    account2 = new Account({ address: address1 }, context);
+    let result = areSameAccounts(account1, account2);
+
+    expect(result).toBe(true);
+
+    account2 = new MultiSig({ address: address1 }, context);
+    result = areSameAccounts(account1, account2);
+
+    expect(result).toBe(true);
+  });
+
+  it('should return false when comparing two Accounts with different addresses', async () => {
+    account1 = new Account({ address: address1 }, context);
+    account2 = new Account({ address: address2 }, context);
+    let result = areSameAccounts(account1, account2);
+
+    expect(result).toBe(false);
+
+    account2 = new MultiSig({ address: address2 }, context);
+    result = areSameAccounts(account1, account2);
+
+    expect(result).toBe(false);
   });
 });

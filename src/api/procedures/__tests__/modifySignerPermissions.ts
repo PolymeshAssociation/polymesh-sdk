@@ -68,7 +68,11 @@ describe('modifySignerPermissions procedure', () => {
         },
       },
     ]);
-    identity = entityMockUtils.getIdentityInstance();
+    identity = entityMockUtils.getIdentityInstance({
+      getPrimaryAccount: {
+        account,
+      },
+    });
     mockContext = dsMockUtils.getContextInstance({
       getIdentity: identity,
     });
@@ -211,8 +215,13 @@ describe('modifySignerPermissions procedure', () => {
         },
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (account.isEqual as any).mockReturnValue(false);
+      identity = entityMockUtils.getIdentityInstance({
+        getPrimaryAccount: {
+          account: entityMockUtils.getAccountInstance({
+            address: 'differentAddress',
+          }),
+        },
+      });
 
       proc = procedureMockUtils.getInstance<ModifySignerPermissionsParams, void, Storage>(
         dsMockUtils.getContextInstance(),

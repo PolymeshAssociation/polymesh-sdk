@@ -2308,3 +2308,10 @@ export async function calculateRawStakingPayee(
     return stakingRewardDestinationToRaw({ account: payee }, context);
   }
 }
+
+/**
+ * @hidden
+ */
+export function areSameAccounts(account1: Account, account2: Account): boolean {
+  return account1.address === account2.address;
+}

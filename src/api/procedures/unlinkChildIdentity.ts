@@ -2,7 +2,7 @@ import { Identity, PolymeshError, Procedure } from '~/internal';
 import { Account, ErrorCode, TxTags, UnlinkChildParams } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { stringToIdentityId } from '~/utils/conversion';
-import { asChildIdentity } from '~/utils/internal';
+import { areSameAccounts, asChildIdentity } from '~/utils/internal';
 
 /**
  * @hidden
@@ -71,7 +71,7 @@ export async function getAuthorization(
 
   const { account: primaryAccount } = await identity.getPrimaryAccount();
 
-  if (!actingAccount.isEqual(primaryAccount)) {
+  if (!areSameAccounts(actingAccount, primaryAccount)) {
     return {
       signerPermissions:
         'Child identity can only be unlinked by primary key of either the child Identity or parent Identity',

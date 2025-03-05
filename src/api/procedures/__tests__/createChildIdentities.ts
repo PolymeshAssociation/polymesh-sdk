@@ -64,8 +64,14 @@ describe('createChildIdentities procedure', () => {
       getIdentity: null,
     });
 
-    identity = entityMockUtils.getIdentityInstance();
-    actingAccount = entityMockUtils.getAccountInstance();
+    actingAccount = entityMockUtils.getAccountInstance({
+      address: 'actingAccount',
+    });
+    identity = entityMockUtils.getIdentityInstance({
+      getPrimaryAccount: {
+        account: actingAccount,
+      },
+    });
 
     mockContext = dsMockUtils.getContextInstance({
       getIdentity: identity,
@@ -201,8 +207,13 @@ describe('createChildIdentities procedure', () => {
         },
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (actingAccount.isEqual as any).mockReturnValue(false);
+      identity = entityMockUtils.getIdentityInstance({
+        getPrimaryAccount: {
+          account: entityMockUtils.getAccountInstance({
+            address: 'differentAddress',
+          }),
+        },
+      });
 
       proc = procedureMockUtils.getInstance<CreateChildIdentitiesParams, ChildIdentity[], Storage>(
         dsMockUtils.getContextInstance({

@@ -4,7 +4,7 @@ import { PolymeshError, Procedure } from '~/internal';
 import { Account, AddSecondaryAccountsParams, ErrorCode, Identity, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { dateToMoment, secondaryAccountWithAuthToSecondaryKeyWithAuth } from '~/utils/conversion';
-import { asAccount } from '~/utils/internal';
+import { areSameAccounts, asAccount } from '~/utils/internal';
 
 /**
  * @hidden
@@ -73,7 +73,7 @@ export async function getAuthorization(
 
   const { account: primaryAccount } = await identity.getPrimaryAccount();
 
-  if (!actingAccount.isEqual(primaryAccount)) {
+  if (!areSameAccounts(actingAccount, primaryAccount)) {
     return {
       signerPermissions: 'Secondary accounts can only be added by primary key of an Identity',
     };

@@ -5,7 +5,7 @@ import { PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RemoveSecondaryAccountsParams, TxTags } from '~/types';
 import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import { stringToAccountId } from '~/utils/conversion';
-import { getSecondaryAccountPermissions } from '~/utils/internal';
+import { areSameAccounts, getSecondaryAccountPermissions } from '~/utils/internal';
 
 /**
  * @hidden
@@ -30,7 +30,9 @@ export async function prepareRemoveSecondaryAccounts(
     getSecondaryAccountPermissions({ accounts, identity }, context),
   ]);
 
-  const isPrimaryAccountPresent = accounts.find(account => account.isEqual(primaryAccount));
+  const isPrimaryAccountPresent = accounts.find(account =>
+    areSameAccounts(account, primaryAccount)
+  );
 
   if (isPrimaryAccountPresent) {
     throw new PolymeshError({

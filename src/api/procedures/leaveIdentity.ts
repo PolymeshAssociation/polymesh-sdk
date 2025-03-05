@@ -1,7 +1,7 @@
 import { PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
 import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
-import { getSecondaryAccountPermissions } from '~/utils/internal';
+import { areSameAccounts, getSecondaryAccountPermissions } from '~/utils/internal';
 
 /**
  * @hidden
@@ -33,7 +33,8 @@ export async function prepareLeaveIdentity(
     context
   );
 
-  const isSecondaryAccount = accountPermission && actingAccount.isEqual(accountPermission.account);
+  const isSecondaryAccount =
+    accountPermission && areSameAccounts(actingAccount, accountPermission.account);
   if (!isSecondaryAccount) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,

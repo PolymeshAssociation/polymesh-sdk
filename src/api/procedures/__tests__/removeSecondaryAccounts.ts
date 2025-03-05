@@ -101,10 +101,14 @@ describe('removeSecondaryAccounts procedure', () => {
 
   it('should throw an error if at least one of the secondary Accounts to remove is not present in the secondary Accounts list', () => {
     const { accounts } = args;
+    const account = entityMockUtils.getAccountInstance({ address: 'primaryAccount' });
     const signerValue = { type: SignerType.Account, value: accounts[0].address };
 
     when(signerToSignerValueSpy).calledWith(accounts[0]).mockReturnValue(signerValue);
     getSecondaryAccountPermissionsSpy.mockReturnValue([]);
+    mockContext.getSigningIdentity = jest
+      .fn()
+      .mockReturnValue(entityMockUtils.getIdentityInstance({ getPrimaryAccount: { account } }));
 
     const proc = procedureMockUtils.getInstance<RemoveSecondaryAccountsParams, void>(mockContext);
     return expect(

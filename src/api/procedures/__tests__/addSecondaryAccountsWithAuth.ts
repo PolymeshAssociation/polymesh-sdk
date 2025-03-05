@@ -41,8 +41,14 @@ describe('addSecondaryAccounts procedure', () => {
 
   beforeEach(() => {
     // jest.spyOn()
-    identity = entityMockUtils.getIdentityInstance();
-    actingAccount = entityMockUtils.getAccountInstance();
+    actingAccount = entityMockUtils.getAccountInstance({
+      address: 'actingAccount',
+    });
+    identity = entityMockUtils.getIdentityInstance({
+      getPrimaryAccount: {
+        account: actingAccount,
+      },
+    });
 
     mockContext = dsMockUtils.getContextInstance({
       getIdentity: identity,
@@ -186,8 +192,13 @@ describe('addSecondaryAccounts procedure', () => {
         },
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (actingAccount.isEqual as any).mockReturnValue(false);
+      identity = entityMockUtils.getIdentityInstance({
+        getPrimaryAccount: {
+          account: entityMockUtils.getAccountInstance({
+            address: 'differentAddress',
+          }),
+        },
+      });
 
       proc = procedureMockUtils.getInstance<AddSecondaryAccountsParams, Identity, Storage>(
         dsMockUtils.getContextInstance(),

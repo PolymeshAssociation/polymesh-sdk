@@ -55,6 +55,7 @@ import {
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
+  areSameAccounts,
   assertAddressValid,
   calculateNextKey,
   getIdentityFromKeyRecord,
@@ -303,7 +304,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
 
     const { account } = await identity.getPrimaryAccount();
 
-    if (account.isEqual(this)) {
+    if (areSameAccounts(this, account)) {
       return false;
     }
 

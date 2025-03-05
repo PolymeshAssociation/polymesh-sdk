@@ -38,8 +38,14 @@ describe('unlinkChildIdentity procedure', () => {
   });
 
   beforeEach(() => {
-    identity = entityMockUtils.getIdentityInstance();
-    actingAccount = entityMockUtils.getAccountInstance();
+    actingAccount = entityMockUtils.getAccountInstance({
+      address: 'actingAccount',
+    });
+    identity = entityMockUtils.getIdentityInstance({
+      getPrimaryAccount: {
+        account: actingAccount,
+      },
+    });
 
     childIdentity = entityMockUtils.getChildIdentityInstance({
       did: 'someChild',
@@ -145,8 +151,13 @@ describe('unlinkChildIdentity procedure', () => {
         },
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (actingAccount.isEqual as any).mockReturnValue(false);
+      identity = entityMockUtils.getIdentityInstance({
+        getPrimaryAccount: {
+          account: entityMockUtils.getAccountInstance({
+            address: 'differentAddress',
+          }),
+        },
+      });
 
       proc = procedureMockUtils.getInstance<UnlinkChildParams, void, Storage>(
         dsMockUtils.getContextInstance(),

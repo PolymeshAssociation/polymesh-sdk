@@ -8,7 +8,7 @@ import {
   permissionsToMeshPermissions,
   stringToAccountId,
 } from '~/utils/conversion';
-import { asAccount, getSecondaryAccountPermissions } from '~/utils/internal';
+import { areSameAccounts, asAccount, getSecondaryAccountPermissions } from '~/utils/internal';
 
 /**
  * @hidden
@@ -77,7 +77,7 @@ export async function getAuthorization(
 
   const { account: primaryAccount } = await identity.getPrimaryAccount();
 
-  if (!actingAccount.isEqual(primaryAccount)) {
+  if (!areSameAccounts(actingAccount, primaryAccount)) {
     return {
       signerPermissions:
         "Secondary Account permissions can only be modified by the Identity's primary Account",

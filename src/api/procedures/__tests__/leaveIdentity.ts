@@ -89,6 +89,11 @@ describe('leaveIdentity procedure', () => {
     ]);
 
     const proc = procedureMockUtils.getInstance<void, void>(mockContext);
+    mockContext.getSigningAccount.mockReturnValue(
+      entityMockUtils.getAccountInstance({
+        address,
+      })
+    );
 
     const result = await prepareLeaveIdentity.call(proc);
 

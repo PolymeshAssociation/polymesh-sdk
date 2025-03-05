@@ -8,7 +8,7 @@ import {
   dateToMoment,
   identityIdToString,
 } from '~/utils/conversion';
-import { asAccount, filterEventRecords } from '~/utils/internal';
+import { areSameAccounts, asAccount, filterEventRecords } from '~/utils/internal';
 
 /**
  * @hidden
@@ -103,7 +103,7 @@ export async function getAuthorization(
 
   const { account: primaryAccount } = await identity.getPrimaryAccount();
 
-  if (!actingAccount.isEqual(primaryAccount)) {
+  if (!areSameAccounts(actingAccount, primaryAccount)) {
     return {
       signerPermissions: "Child Identities can only be created by an Identity's primary Account",
     };

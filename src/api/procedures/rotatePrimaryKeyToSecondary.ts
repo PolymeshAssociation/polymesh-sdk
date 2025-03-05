@@ -16,7 +16,7 @@ import {
   signerToSignatory,
   signerToString,
 } from '~/utils/conversion';
-import { asAccount } from '~/utils/internal';
+import { areSameAccounts, asAccount } from '~/utils/internal';
 
 /**
  * @hidden
@@ -80,7 +80,7 @@ export async function prepareRotatePrimaryKeyToSecondary(
     });
   }
 
-  if (target.isEqual(primaryAccount.account)) {
+  if (areSameAccounts(target, primaryAccount.account)) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
       message: 'The target Account is already the primary key of the given Identity',

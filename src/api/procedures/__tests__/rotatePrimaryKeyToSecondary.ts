@@ -27,7 +27,7 @@ describe('rotatePrimaryKeyToSecondary procedure', () => {
   let signerToSignatorySpy: jest.SpyInstance;
   let signerToStringSpy: jest.SpyInstance;
   let asAccountSpy: jest.SpyInstance;
-  let mockAccount: Account;
+  let mockTargetAccount: Account;
 
   let args: RotatePrimaryKeyToSecondaryParams;
   const authId = new BigNumber(1);
@@ -76,13 +76,11 @@ describe('rotatePrimaryKeyToSecondary procedure', () => {
     const expiry = new Date('1/1/2040');
     const target = new Account({ address }, mockContext);
     const someOtherTarget = new Account({ address: 'someOtherAccount' }, mockContext);
-    mockAccount = entityMockUtils.getAccountInstance({
-      address: 'someOtherAddress',
-      isEqual: false,
-      getIdentity: null,
+    mockTargetAccount = entityMockUtils.getAccountInstance({
+      address,
     });
 
-    when(asAccountSpy).calledWith(address, mockContext).mockReturnValue(mockAccount);
+    when(asAccountSpy).calledWith(address, mockContext).mockReturnValue(mockTargetAccount);
 
     const sentAuthorizations: ResultSet<AuthorizationRequest> = {
       data: [
@@ -192,22 +190,21 @@ describe('rotatePrimaryKeyToSecondary procedure', () => {
   it('should throw an error if the passed Account is linked to another Identity', () => {
     const target = entityMockUtils.getAccountInstance({
       address,
-      isEqual: true,
     });
     dsMockUtils.configureMocks({
       contextOptions: {
-        primaryAccount: 'someOtherAddress',
+        primaryAccount: address,
         signingIdentityIsEqual: false,
       },
     });
     dsMockUtils.createTxMock('identity', 'addAuthorization');
     const identity = entityMockUtils.getIdentityInstance({ did: 'someDid', isEqual: false });
-    mockAccount = entityMockUtils.getAccountInstance({
+    mockTargetAccount = entityMockUtils.getAccountInstance({
       address,
       getIdentity: identity,
     });
 
-    when(asAccountSpy).calledWith(address, mockContext).mockReturnValue(mockAccount);
+    when(asAccountSpy).calledWith(address, mockContext).mockReturnValue(mockTargetAccount);
 
     const sentAuthorizations: ResultSet<AuthorizationRequest> = {
       data: [],
@@ -244,21 +241,9 @@ describe('rotatePrimaryKeyToSecondary procedure', () => {
     const target = entityMockUtils.getAccountInstance({
       address,
     });
-    dsMockUtils.configureMocks({
-      contextOptions: {
-        primaryAccount: address,
-        signingIdentityIsEqual: true,
-      },
-    });
-    dsMockUtils.createTxMock('identity', 'addAuthorization');
-    mockAccount = entityMockUtils.getAccountInstance({
+    mockTargetAccount = entityMockUtils.getAccountInstance({
       address,
-      isEqual: true,
-      getIdentity: null,
     });
-
-    when(asAccountSpy).calledWith(address, mockContext).mockReturnValue(mockAccount);
-
     const sentAuthorizations: ResultSet<AuthorizationRequest> = {
       data: [],
       next: new BigNumber(0),
@@ -267,9 +252,14 @@ describe('rotatePrimaryKeyToSecondary procedure', () => {
 
     dsMockUtils.configureMocks({
       contextOptions: {
+        primaryAccount: address,
+        signingIdentityIsEqual: true,
         sentAuthorizations,
       },
     });
+    dsMockUtils.createTxMock('identity', 'addAuthorization');
+
+    when(asAccountSpy).calledWith(address, mockContext).mockReturnValue(mockTargetAccount);
 
     when(signerToStringSpy).calledWith(args.targetAccount).mockReturnValue(address);
     when(signerToStringSpy).calledWith(target).mockReturnValue(address);
