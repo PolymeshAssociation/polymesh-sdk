@@ -348,7 +348,7 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
       // parallelize the async calls
       const prepareTransactionsPromise = defusePromise(this.prepareTransactions(procArgs));
       const { roles, signerPermissions, agentPermissions, accountFrozen, noIdentity } =
-        await this._checkAuthorization(procArgs, ctx);
+        await this._checkAuthorization(procArgs, ctx, opts);
 
       if (noIdentity) {
         throw new PolymeshError({
