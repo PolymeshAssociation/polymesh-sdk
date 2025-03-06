@@ -1,8 +1,10 @@
 import BigNumber from 'bignumber.js';
 
 import { Ballots } from '~/api/entities/Asset/Fungible/CorporateActions/Ballots';
-import { Namespace } from '~/internal';
+import { Namespace, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { MockCorporateBallot } from '~/testUtils/mocks/entities';
+import { ErrorCode } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('Ballots class', () => {
@@ -105,6 +107,51 @@ describe('Ballots class', () => {
       const target = new Ballots(asset, context);
 
       await expect(target.getOne({ id })).rejects.toThrow('The Ballot does not exist');
+    });
+  });
+
+  describe('method: get', () => {
+    const assetId = '12341234-1234-1234-1234-123412341234';
+    let target: Ballots;
+    let mockBallot: MockCorporateBallot;
+
+    beforeAll(() => {
+      const context = dsMockUtils.getContextInstance();
+      const asset = entityMockUtils.getFungibleAssetInstance({ assetId });
+      jest.spyOn(utilsConversionModule, 'u32ToBigNumber').mockReturnValue(new BigNumber(2));
+
+      mockBallot = entityMockUtils.getCorporateBallotInstance({ id: new BigNumber(0), assetId });
+      target = new Ballots(asset, context);
+
+      dsMockUtils.createQueryMock('corporateAction', 'caIdSequence', {
+        returnValue: dsMockUtils.createMockU32(new BigNumber(2)),
+      });
+
+      jest.spyOn(target, 'getOne').mockImplementation(({ id }) => {
+        if (id.isEqualTo(0)) {
+          return Promise.resolve(mockBallot);
+        } else if (id.isEqualTo(1)) {
+          return Promise.reject(
+            new PolymeshError({
+              code: ErrorCode.DataUnavailable,
+              message: 'The Ballot does not exist',
+            })
+          );
+        }
+        return Promise.reject(new Error('Unexpected id'));
+      });
+    });
+
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should return all existing Ballots for the Asset', async () => {
+      const ballots = await target.get();
+
+      expect(ballots.length).toBe(1);
+      expect(ballots[0].id.isEqualTo(new BigNumber(0))).toBe(true);
+      expect(ballots[0].asset.id).toBe(assetId);
     });
   });
 });
