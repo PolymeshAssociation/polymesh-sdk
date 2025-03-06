@@ -1,4 +1,5 @@
 import {
+  Account,
   BaseAsset,
   Context,
   PolymeshError,
@@ -15,6 +16,7 @@ import {
   ProcedureAuthorizationStatus,
   ProcedureOpts,
   SignerType,
+  SkipChecksOpt,
   TxTag,
 } from '~/types';
 import {
@@ -166,29 +168,51 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
   /**
    * @hidden
    */
-  private async _checkAuthorization(
-    args: Args,
-    context: Context,
-    opts?: ProcedureOpts
-  ): Promise<ProcedureAuthorizationStatus> {
-    const ctx = await this.setup(args, context, opts);
+  private async checkSignerPermissions(
+    account: MultiSig | Account,
+    signerPermissions: NonNullable<ProcedureAuthorization['signerPermissions']>,
+    skipSignerPermissionsCheck?: boolean
+  ): Promise<CheckPermissionsResult<SignerType.Account>> {
+    if (skipSignerPermissionsCheck) {
+      return { result: true };
+    }
 
-    const checkAuthorizationResult = await this.getAuthorization(args);
+    if (typeof signerPermissions === 'boolean') {
+      return { result: signerPermissions };
+    }
 
-    const { permissions = true, roles = true } = checkAuthorizationResult;
+    if (typeof signerPermissions === 'string') {
+      return { result: false, message: signerPermissions };
+    }
 
-    const { signerPermissions = permissions, agentPermissions = permissions } =
-      checkAuthorizationResult;
+    return account.checkPermissions(signerPermissions);
+  }
+
+  /**
+   * @hidden
+   */
+  private async checkRolesAndAgentPermissions(
+    account: MultiSig | Account,
+    permissions: Required<Pick<ProcedureAuthorization, 'agentPermissions' | 'roles'>>,
+    skipChecks?: Pick<SkipChecksOpt, 'roles' | 'agentPermissions'>
+  ): Promise<{
+    rolesResult: CheckRolesResult;
+    agentPermissionsResult: CheckPermissionsResult<SignerType.Identity>;
+    noIdentity: boolean;
+  }> {
+    const { roles, agentPermissions } = permissions;
+
+    const { roles: skipRolesCheck, agentPermissions: skipAgentPermissionsCheck } = skipChecks || {};
 
     let identity: Identity | null = null;
     let rolesResult: CheckRolesResult;
     let noIdentity = false;
 
-    const account = this._signerMultiSig || ctx.getSigningAccount();
-
     const fetchIdentity = async (): Promise<Identity | null> => identity || account.getIdentity();
 
-    if (typeof roles === 'boolean') {
+    if (skipRolesCheck) {
+      rolesResult = { result: true };
+    } else if (typeof roles === 'boolean') {
       rolesResult = { result: roles };
     } else if (typeof roles === 'string') {
       rolesResult = { result: false, message: roles };
@@ -203,21 +227,10 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
     }
 
     let agentPermissionsResult: CheckPermissionsResult<SignerType.Identity>;
-    let signerPermissionsAwaitable:
-      | CheckPermissionsResult<SignerType.Account>
-      | Promise<CheckPermissionsResult<SignerType.Account>>;
 
-    const accountFrozenPromise = account.isFrozen();
-
-    if (typeof signerPermissions === 'boolean') {
-      signerPermissionsAwaitable = { result: signerPermissions };
-    } else if (typeof signerPermissions === 'string') {
-      signerPermissionsAwaitable = { result: false, message: signerPermissions };
-    } else {
-      signerPermissionsAwaitable = account.checkPermissions(signerPermissions);
-    }
-
-    if (typeof agentPermissions === 'boolean') {
+    if (skipAgentPermissionsCheck) {
+      agentPermissionsResult = { result: true };
+    } else if (typeof agentPermissions === 'boolean') {
       agentPermissionsResult = { result: agentPermissions };
     } else if (typeof agentPermissions === 'string') {
       agentPermissionsResult = { result: false, message: agentPermissions };
@@ -237,16 +250,54 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
       }
     }
 
-    const hasSignerPermissions = await signerPermissionsAwaitable;
+    return {
+      rolesResult,
+      agentPermissionsResult,
+      noIdentity,
+    };
+  }
 
-    const accountFrozen = await accountFrozenPromise;
+  /**
+   * @hidden
+   */
+  private async _checkAuthorization(
+    args: Args,
+    context: Context,
+    opts?: ProcedureOpts
+  ): Promise<ProcedureAuthorizationStatus> {
+    const ctx = await this.setup(args, context, opts);
+
+    const {
+      signerPermissions: skipSignerPermissionsCheck,
+      accountFrozen: skipAccountFrozenCheck,
+      identity: skipIdentityCheck,
+    } = opts?.skipChecks || {};
+
+    const checkAuthorizationResult = await this.getAuthorization(args);
+
+    const { permissions = true, roles = true } = checkAuthorizationResult;
+
+    const { signerPermissions = permissions, agentPermissions = permissions } =
+      checkAuthorizationResult;
+
+    const account = this._signerMultiSig || ctx.getSigningAccount();
+
+    const [
+      { rolesResult, agentPermissionsResult, noIdentity },
+      hasSignerPermissions,
+      accountFrozen,
+    ] = await Promise.all([
+      this.checkRolesAndAgentPermissions(account, { roles, agentPermissions }, opts?.skipChecks),
+      this.checkSignerPermissions(account, signerPermissions, skipSignerPermissionsCheck),
+      skipAccountFrozenCheck ? false : account.isFrozen(),
+    ]);
 
     return {
       roles: rolesResult,
       signerPermissions: hasSignerPermissions,
       agentPermissions: agentPermissionsResult,
       accountFrozen,
-      noIdentity,
+      noIdentity: !skipIdentityCheck && noIdentity,
     };
   }
 

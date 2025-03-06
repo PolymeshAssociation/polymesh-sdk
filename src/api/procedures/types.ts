@@ -87,6 +87,29 @@ export interface ProcedureAuthorizationStatus {
   noIdentity: boolean;
 }
 
+export interface SkipChecksOpt {
+  /**
+   * whether to skip the roles check
+   */
+  roles?: boolean;
+  /**
+   * whether to skip the signer permissions check
+   */
+  signerPermissions?: boolean;
+  /**
+   * whether to skip the agent permissions check
+   */
+  agentPermissions?: boolean;
+  /**
+   * whether to skip the account frozen check
+   */
+  accountFrozen?: boolean;
+  /**
+   * whether to skip the identity check (i.e. whether the signing Account has an associated Identity)
+   */
+  identity?: boolean;
+}
+
 export interface ProcedureOpts {
   /**
    * Account or address of a signing key to replace the current one (for this procedure only)
@@ -113,6 +136,15 @@ export interface ProcedureOpts {
    * These options will only apply when the `signingAccount` is a MultiSig signer and the transaction is being wrapped as a proposal
    */
   multiSigOpts?: MultiSigProcedureOpt;
+
+  /**
+   * This option allows for skipping checks for the Procedure. By default, all checks are performed.
+   *
+   * This can be useful while batching transactions which could have failed due to insufficient roles or permissions individually, but you don't want to fail the entire batch.
+   *
+   * @note even if the checks are skipped from being validated on the SDK, they will still be validated on the chain
+   */
+  skipChecks?: SkipChecksOpt;
 }
 
 /**

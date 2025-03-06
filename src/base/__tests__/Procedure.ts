@@ -126,6 +126,22 @@ describe('Procedure class', () => {
         noIdentity: false,
       });
 
+      // should skip signer permissions check
+      result = await procedure.checkAuthorization(args, context, {
+        skipChecks: {
+          signerPermissions: true,
+          roles: true,
+        },
+      });
+
+      expect(result).toEqual({
+        agentPermissions: { result: true },
+        signerPermissions: { result: true },
+        roles: { result: true },
+        accountFrozen: false,
+        noIdentity: false,
+      });
+
       context = dsMockUtils.getContextInstance({ hasAssetPermissions: true });
       authFunc.mockResolvedValue({
         roles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }],
@@ -163,6 +179,21 @@ describe('Procedure class', () => {
           message: 'Some Message',
         },
         signerPermissions: { result: false, message: 'Another Message' },
+        roles: { result: true },
+        accountFrozen: false,
+        noIdentity: false,
+      });
+
+      result = await procedure.checkAuthorization(args, context, {
+        skipChecks: {
+          agentPermissions: true,
+          signerPermissions: true,
+        },
+      });
+
+      expect(result).toEqual({
+        agentPermissions: { result: true },
+        signerPermissions: { result: true },
         roles: { result: true },
         accountFrozen: false,
         noIdentity: false,
@@ -212,7 +243,7 @@ describe('Procedure class', () => {
       context.getSigningAccount.mockReturnValue(
         entityMockUtils.getAccountInstance({
           getIdentity: null,
-          isFrozen: false,
+          isFrozen: true,
         })
       );
 
@@ -221,10 +252,31 @@ describe('Procedure class', () => {
         agentPermissions: { result: true },
         signerPermissions: { result: true },
         roles: { result: false, missingRoles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }] },
-        accountFrozen: false,
+        accountFrozen: true,
         noIdentity: true,
       });
 
+      result = await procedure.checkAuthorization(args, context, {
+        skipChecks: {
+          roles: true,
+          identity: true,
+          accountFrozen: true,
+        },
+      });
+      expect(result).toEqual({
+        agentPermissions: { result: true },
+        signerPermissions: { result: true },
+        roles: { result: true },
+        accountFrozen: false,
+        noIdentity: false,
+      });
+
+      context.getSigningAccount.mockReturnValue(
+        entityMockUtils.getAccountInstance({
+          getIdentity: null,
+          isFrozen: false,
+        })
+      );
       procedure = new Procedure(prepareFunc, { permissions: true, roles: true });
 
       result = await procedure.checkAuthorization(args, context);
@@ -292,7 +344,7 @@ describe('Procedure class', () => {
         returnValue: rawCoefficient,
       });
       when(dsMockUtils.createQueryMock('protocolFee', 'baseFees'))
-        .calledWith('AssetregisterUniqueTicker')
+        .calledWith('AssetRegisterUniqueTicker')
         .mockResolvedValue(rawFees[0]);
       when(dsMockUtils.createQueryMock('protocolFee', 'baseFees'))
         .calledWith('IdentityRegisterDid')
