@@ -435,6 +435,11 @@ describe('Assets Class', () => {
       const asset = await assets.getFungibleAsset({ assetId });
 
       expect(asset.id).toEqual(hexToUuid(assetId));
+
+      entityMockUtils.configureMocks({ fungibleAssetOptions: { exists: false } });
+      const asset2 = await assets.getFungibleAsset({ assetId, skipExistsCheck: true });
+      expect(asset2.id).toEqual(hexToUuid(assetId));
+      expect(asset2.exists).not.toHaveBeenCalled();
     });
 
     it('should return a specific Asset for a ticker', async () => {
@@ -442,6 +447,11 @@ describe('Assets Class', () => {
 
       const asset = await assets.getFungibleAsset({ ticker });
       expect(asset.id).toBe(assetId);
+
+      entityMockUtils.configureMocks({ fungibleAssetOptions: { exists: false } });
+      const asset2 = await assets.getFungibleAsset({ ticker, skipExistsCheck: true });
+      expect(asset2.id).toEqual(assetId);
+      expect(asset2.exists).not.toHaveBeenCalled();
     });
 
     it('should throw if the Asset does not exist', async () => {
@@ -465,6 +475,11 @@ describe('Assets Class', () => {
     it('should return the collection for a specific asset ID', async () => {
       const nftCollection = await assets.getNftCollection({ assetId });
       expect(nftCollection.id).toEqual(hexToUuid(assetId));
+
+      entityMockUtils.configureMocks({ nftCollectionOptions: { exists: false } });
+      const nftCollection2 = await assets.getNftCollection({ assetId, skipExistsCheck: true });
+      expect(nftCollection2.id).toEqual(hexToUuid(assetId));
+      expect(nftCollection2.exists).not.toHaveBeenCalled();
     });
 
     it('should return the collection for a specific ticker', async () => {
@@ -472,6 +487,11 @@ describe('Assets Class', () => {
 
       const nftCollection = await assets.getNftCollection({ ticker });
       expect(nftCollection.id).toEqual(hexToUuid(assetId));
+
+      entityMockUtils.configureMocks({ nftCollectionOptions: { exists: false } });
+      const nftCollection2 = await assets.getNftCollection({ ticker, skipExistsCheck: true });
+      expect(nftCollection2.id).toEqual(hexToUuid(assetId));
+      expect(nftCollection2.exists).not.toHaveBeenCalled();
     });
 
     it('should throw if the collection does not exist', async () => {

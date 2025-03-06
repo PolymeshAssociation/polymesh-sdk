@@ -269,17 +269,28 @@ export class Assets {
   /**
    * Retrieve a FungibleAsset
    *
+   * @param args.assetId - Unique Id of the Fungible Asset (for spec version 6.x, this is same as ticker)
    * @param args.ticker - Asset ticker
-   * @param args.assetId - Unique Id of the Asset (for spec version 6.x, this is same as ticker)
+   * @param args.skipExistsCheck - when true, method will not check if the Asset exists
    */
-  public async getFungibleAsset(args: { assetId: string }): Promise<FungibleAsset>;
-  public async getFungibleAsset(args: { ticker: string }): Promise<FungibleAsset>;
+  public async getFungibleAsset(args: {
+    assetId: string;
+    skipExistsCheck?: boolean;
+  }): Promise<FungibleAsset>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async getFungibleAsset(args: {
+    ticker: string;
+    skipExistsCheck?: boolean;
+  }): Promise<FungibleAsset>;
+
   // eslint-disable-next-line require-jsdoc
   public async getFungibleAsset(args: {
     ticker?: string;
     assetId?: string;
+    skipExistsCheck?: boolean;
   }): Promise<FungibleAsset> {
-    const { ticker, assetId } = args;
+    const { ticker, assetId, skipExistsCheck = false } = args;
 
     const { context } = this;
 
@@ -287,13 +298,17 @@ export class Assets {
 
     const asset = new FungibleAsset({ assetId: assetIdValue }, context);
 
-    const exists = await asset.exists();
+    if (!skipExistsCheck) {
+      const exists = await asset.exists();
 
-    if (!exists) {
-      throw new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message: `There is no Asset with ${ticker ? 'ticker' : 'asset ID'} "${ticker ?? assetId}"`,
-      });
+      if (!exists) {
+        throw new PolymeshError({
+          code: ErrorCode.DataUnavailable,
+          message: `There is no Asset with ${ticker ? 'ticker' : 'asset ID'} "${
+            ticker ?? assetId
+          }"`,
+        });
+      }
     }
 
     return asset;
@@ -302,17 +317,28 @@ export class Assets {
   /**
    * Retrieve an NftCollection
    *
+   * @param args.assetId - Unique Id of the NftCollection (for spec version 6.x, this is same as ticker)
    * @param args.ticker - NftCollection ticker
+   * @param args.skipExistsCheck - when true, method will not check if the NftCollection exists
    */
-  public async getNftCollection(args: { ticker: string }): Promise<NftCollection>;
-  public async getNftCollection(args: { assetId: string }): Promise<NftCollection>;
+  public async getNftCollection(args: {
+    ticker: string;
+    skipExistsCheck?: boolean;
+  }): Promise<NftCollection>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async getNftCollection(args: {
+    assetId: string;
+    skipExistsCheck?: boolean;
+  }): Promise<NftCollection>;
 
   // eslint-disable-next-line require-jsdoc
   public async getNftCollection(args: {
     ticker?: string;
     assetId?: string;
+    skipExistsCheck?: boolean;
   }): Promise<NftCollection> {
-    const { ticker, assetId } = args;
+    const { ticker, assetId, skipExistsCheck = false } = args;
 
     const { context } = this;
 
@@ -320,15 +346,17 @@ export class Assets {
 
     const collection = new NftCollection({ assetId: assetIdValue }, context);
 
-    const exists = await collection.exists();
+    if (!skipExistsCheck) {
+      const exists = await collection.exists();
 
-    if (!exists) {
-      throw new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message: `There is no NftCollection with ${ticker ? 'ticker' : 'asset ID'} "${
-          ticker ?? assetId
-        }"`,
-      });
+      if (!exists) {
+        throw new PolymeshError({
+          code: ErrorCode.DataUnavailable,
+          message: `There is no NftCollection with ${ticker ? 'ticker' : 'asset ID'} "${
+            ticker ?? assetId
+          }"`,
+        });
+      }
     }
 
     return collection;
