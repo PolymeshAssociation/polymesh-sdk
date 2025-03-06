@@ -7,6 +7,7 @@ import {
   bigNumberToU32,
   corporateActionIdentifierToCaId,
   meshCorporateBallotMetaToCorporateBallotMeta,
+  u32ToBigNumber,
 } from '~/utils/conversion';
 
 /**
@@ -57,5 +58,43 @@ export class Ballots extends Namespace<FungibleAsset> {
     );
 
     return ballot;
+  }
+
+  /**
+   * Retrieve all Ballots associated to this Asset
+   */
+  public async get(): Promise<CorporateBallot[]> {
+    const {
+      parent,
+      context: {
+        polymeshApi: { query },
+      },
+      context,
+    } = this;
+
+    const rawNextCaId = await query.corporateAction.caIdSequence(
+      assetToMeshAssetId(parent, context)
+    );
+    const nextCaId = u32ToBigNumber(rawNextCaId);
+
+    const getBallot = async (id: BigNumber): Promise<CorporateBallot | undefined> => {
+      try {
+        const ballot = await this.getOne({ id });
+
+        return ballot;
+      } catch {
+        return undefined;
+      }
+    };
+
+    const ballotsPromises = [];
+
+    for (let i = 0; i < nextCaId.toNumber(); i++) {
+      ballotsPromises.push(getBallot(new BigNumber(i)));
+    }
+
+    const ballots = await Promise.all(ballotsPromises);
+
+    return ballots.filter((b): b is CorporateBallot => b !== undefined);
   }
 }
