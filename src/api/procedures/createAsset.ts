@@ -329,21 +329,26 @@ export async function getAuthorization(
   const transactions: (AssetTx | StatisticsTx)[] = [TxTags.asset.CreateAsset];
 
   if (status === TickerReservationStatus.Free) {
+    // OK runs with identity perms
     transactions.push(TxTags.asset.RegisterUniqueTicker);
   }
   if (status !== TickerReservationStatus.AssetCreated) {
+    // TODO: might need asset perms as it checks it with agent permissions & that checks for the asset as well
     transactions.push(TxTags.asset.LinkTickerToAssetId);
   }
 
   if (documents?.length) {
+    // TODO: might need asset perms as it checks it with agent permissions & that checks for the asset as well
     transactions.push(TxTags.asset.AddDocuments);
   }
 
   if (customTypeData?.rawId.isEmpty) {
+    // OK runs with identity perms
     transactions.push(TxTags.asset.RegisterCustomAssetType);
   }
 
   if (initialStatistics?.length) {
+    // TODO: might need asset perms as it checks it with agent permissions & that checks for the asset as well
     transactions.push(TxTags.statistics.SetActiveAssetStats);
   }
 

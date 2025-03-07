@@ -72,6 +72,7 @@ export function getAuthorization(
     permissions: {
       transactions: [TxTags.asset.Issue],
       assets: [asset],
+      // TODO: might need portfolio perms "ensure_origin_asset_and_portfolio_permissions" `pallets/asset/src/lib.rs` 1020 -> though since it is called by the signing did, should be fine
       portfolios: [],
     },
   };

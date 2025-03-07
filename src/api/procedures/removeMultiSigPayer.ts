@@ -103,6 +103,7 @@ export function getAuthorization(this: Procedure<Params, void, Storage>): Proced
   const transactions = [];
 
   if (isMultiSigSigner) {
+    // TODO: might not need these -> chain checks if signer is multisig, checks if paying did exists and then deposits event -> so prepareRemoveMultiSigPayer does the required checks
     transactions.push(TxTags.multiSig.RemovePayer);
   } else {
     transactions.push(TxTags.multiSig.RemovePayerViaPayer);
