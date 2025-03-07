@@ -69,6 +69,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       AssetMetadataValueMaxLengthExceeded: AugmentedError<ApiType>;
       /**
+       * The extrinsic expected a different `AuthorizationType` than what the `data.auth_type()` is.
+       **/
+      BadAuthorizationType: AugmentedError<ApiType>;
+      /**
        * An overflow while calculating the balance.
        **/
       BalanceOverflow: AugmentedError<ApiType>;
@@ -743,6 +747,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       AlreadyAnAgent: AugmentedError<ApiType>;
       /**
+       * The extrinsic expected a different `AuthorizationType` than what the `data.auth_type()` is.
+       **/
+      BadAuthorizationType: AugmentedError<ApiType>;
+      /**
        * An AG with the given `AGId` did not exist for the `AssetId`.
        **/
       NoSuchAG: AugmentedError<ApiType>;
@@ -818,6 +826,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       AuthorizationsNotForSameDids: AugmentedError<ApiType>;
       /**
+       * The extrinsic expected a different `AuthorizationType` than what the `data.auth_type()` is.
+       **/
+      BadAuthorizationType: AugmentedError<ApiType>;
+      /**
        * Cannot convert a `T::AccountId` to `AnySignature::Signer::AccountId`.
        **/
       CannotDecodeSignerAccountId: AugmentedError<ApiType>;
@@ -870,6 +882,11 @@ declare module '@polkadot/api-base/types/errors' {
        * Account Id cannot be extracted from signer
        **/
       InvalidAccountKey: AugmentedError<ApiType>;
+      /**
+       * Auth identified by an `auth_id` for a given `target` does not exist.
+       * The `target` might be wrong or the `auth_id` was never created at all.
+       **/
+      InvalidAuthorization: AugmentedError<ApiType>;
       /**
        * An invalid authorization from the CDD provider.
        **/
@@ -976,6 +993,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Already voted.
        **/
       AlreadyVoted: AugmentedError<ApiType>;
+      /**
+       * The extrinsic expected a different `AuthorizationType` than what the `data.auth_type()` is.
+       **/
+      BadAuthorizationType: AugmentedError<ApiType>;
       /**
        * Changing multisig parameters not allowed since multisig is a primary key.
        **/
@@ -1196,23 +1217,27 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       CannotSkipPip: AugmentedError<ApiType>;
       /**
-       * Proposer specifies an incorrect deposit
+       * Proposer specifies an incorrect deposit amount.
        **/
       IncorrectDeposit: AugmentedError<ApiType>;
       /**
-       * Proposal is not in the correct state
+       * The proposal is not in the correct state for the requested operation.
        **/
       IncorrectProposalState: AugmentedError<ApiType>;
       /**
-       * Proposer can't afford to lock minimum deposit
+       * Proposer cannot afford to lock the minimum deposit.
        **/
       InsufficientDeposit: AugmentedError<ApiType>;
       /**
-       * When a block number is less than current block number.
+       * The specified block number is less than the current block number.
        **/
       InvalidFutureBlockNumber: AugmentedError<ApiType>;
       /**
-       * Missing current DID
+       * Invalid PIP ID. Pip id was not expected to be in the live queue.
+       **/
+      InvalidPipId: AugmentedError<ApiType>;
+      /**
+       * The current DID is missing.
        **/
       MissingCurrentIdentity: AugmentedError<ApiType>;
       /**
@@ -1220,12 +1245,12 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       NoSuchProposal: AugmentedError<ApiType>;
       /**
-       * Not part of governance committee.
+       * The caller is not a member of the governance committee.
        **/
       NotACommitteeMember: AugmentedError<ApiType>;
       /**
        * The given dispatchable call is not valid for this proposal.
-       * The proposal must be by community, but isn't.
+       * The proposal must be from a committee, but isn't.
        **/
       NotByCommittee: AugmentedError<ApiType>;
       /**
@@ -1234,7 +1259,7 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       NotFromCommunity: AugmentedError<ApiType>;
       /**
-       * When number of votes overflows.
+       * The number of votes exceeds the allowed limit.
        **/
       NumberOfVotesExceeded: AugmentedError<ApiType>;
       /**
@@ -1250,7 +1275,7 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       ScheduledProposalDoesntExist: AugmentedError<ApiType>;
       /**
-       * Tried to enact result for PIP with id different from that at the position in the queue.
+       * Tried to enact result for PIP with an ID different from that at the position in the queue.
        **/
       SnapshotIdMismatch: AugmentedError<ApiType>;
       /**
@@ -1258,11 +1283,11 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       SnapshotResultTooLarge: AugmentedError<ApiType>;
       /**
-       * When stake amount of a vote overflows.
+       * The stake amount of a vote exceeds the allowed limit.
        **/
       StakeAmountOfVotesExceeded: AugmentedError<ApiType>;
       /**
-       * The current number of active (pending | scheduled) PIPs exceed the maximum
+       * The current number of active (pending or scheduled) PIPs exceeds the maximum
        * and the proposal is not by a committee.
        **/
       TooManyActivePips: AugmentedError<ApiType>;
@@ -1360,6 +1385,10 @@ declare module '@polkadot/api-base/types/errors' {
       RuntimeCallDenied: AugmentedError<ApiType>;
     };
     portfolio: {
+      /**
+       * The extrinsic expected a different `AuthorizationType` than what the `data.auth_type()` is.
+       **/
+      BadAuthorizationType: AugmentedError<ApiType>;
       /**
        * The source and destination portfolios should be different.
        **/
@@ -1478,6 +1507,10 @@ declare module '@polkadot/api-base/types/errors' {
       UnHandledImbalances: AugmentedError<ApiType>;
     };
     relayer: {
+      /**
+       * The extrinsic expected a different `AuthorizationType` than what the `data.auth_type()` is.
+       **/
+      BadAuthorizationType: AugmentedError<ApiType>;
       /**
        * The `user_key` doesn't have a `paying_key`.
        **/
@@ -2057,7 +2090,6 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       OnlyPrimaryKeyAllowed: AugmentedError<ApiType>;
     };
-    testUtils: {};
     treasury: {
       /**
        * Proposer's balance is too low.
