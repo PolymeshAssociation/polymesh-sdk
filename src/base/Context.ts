@@ -713,9 +713,11 @@ export class Context {
       ModuleName.CorporateAction,
       ModuleName.ExternalAgents,
       ModuleName.Identity,
+      ModuleName.Nft,
       ModuleName.Portfolio,
       ModuleName.Settlement,
       ModuleName.Statistics,
+      ModuleName.Staking,
       ModuleName.Sto,
       ModuleName.Relayer,
     ].includes(moduleName);
