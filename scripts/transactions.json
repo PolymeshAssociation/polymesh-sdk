@@ -286,7 +286,8 @@
     "pre_approve_asset": "pre_approve_asset",
     "remove_asset_pre_approval": "remove_asset_pre_approval",
     "link_ticker_to_asset_id": "link_ticker_to_asset_id",
-    "unlink_ticker_from_asset_id": "unlink_ticker_from_asset_id"
+    "unlink_ticker_from_asset_id": "unlink_ticker_from_asset_id",
+    "update_global_metadata_spec": "update_global_metadata_spec"
   },
   "CapitalDistribution": {
     "distribute": "distribute",
@@ -321,7 +322,8 @@
     "link_ca_doc": "link_ca_doc",
     "remove_ca": "remove_ca",
     "change_record_date": "change_record_date",
-    "initiate_corporate_action_and_distribute": "initiate_corporate_action_and_distribute"
+    "initiate_corporate_action_and_distribute": "initiate_corporate_action_and_distribute",
+    "initiate_corporate_action_and_ballot": "initiate_corporate_action_and_ballot"
   },
   "CorporateBallot": {
     "attach_ballot": "attach_ballot",
@@ -536,5 +538,8 @@
     "set_emergency_election_result": "set_emergency_election_result",
     "submit": "submit",
     "governance_fallback": "governance_fallback"
+  },
+  "TransactionPayment": {
+    "set_disable_fees": "set_disable_fees"
   }
 }
