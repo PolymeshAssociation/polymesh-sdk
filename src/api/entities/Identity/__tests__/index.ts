@@ -1281,6 +1281,12 @@ describe('Identity class', () => {
   });
 
   describe('method: getHistoricalInstructions', () => {
+    let calculateNextSpy: jest.SpyInstance;
+
+    beforeAll(() => {
+      calculateNextSpy = jest.spyOn(utilsInternalModule, 'calculateNextKey');
+    });
+
     it('should return the list of all instructions where the Identity was involved', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const middlewareInstructionToHistoricInstructionSpy = jest.spyOn(
@@ -1305,7 +1311,47 @@ describe('Identity class', () => {
 
       const result = await identity.getHistoricalInstructions();
 
-      expect(result).toEqual([mockHistoricInstruction]);
+      expect(result).toEqual({
+        data: [mockHistoricInstruction],
+        next: new BigNumber(1),
+        count: new BigNumber(5),
+      });
+      expect(calculateNextSpy).toHaveBeenCalledWith(new BigNumber(5), 1, undefined);
+    });
+
+    it('should return the list of all instructions where the Identity was involved when using pagination', async () => {
+      const identity = new Identity({ did: 'someDid' }, context);
+      const start = new BigNumber(0);
+
+      const middlewareInstructionToHistoricInstructionSpy = jest.spyOn(
+        utilsConversionModule,
+        'middlewareInstructionToHistoricInstruction'
+      );
+
+      calculateNextSpy = jest.spyOn(utilsInternalModule, 'calculateNextKey');
+      const instructionsResponse = {
+        totalCount: 5,
+        nodes: [{ id: '1' }],
+      };
+
+      const query = await historicalInstructionsQuery({ identity: identity.did }, context);
+
+      dsMockUtils.createApolloQueryMock(query, {
+        instructions: instructionsResponse,
+      });
+
+      const mockHistoricInstruction = 'mockData' as unknown as HistoricInstruction;
+
+      middlewareInstructionToHistoricInstructionSpy.mockReturnValue(mockHistoricInstruction);
+
+      const result = await identity.getHistoricalInstructions({ start });
+
+      expect(result).toEqual({
+        data: [mockHistoricInstruction],
+        next: new BigNumber(1),
+        count: new BigNumber(5),
+      });
+      expect(calculateNextSpy).toHaveBeenCalledWith(new BigNumber(5), 1, start);
     });
   });
 
