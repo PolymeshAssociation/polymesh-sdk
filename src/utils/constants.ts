@@ -111,7 +111,7 @@ export const ROOT_TYPES = rootTypes;
 /**
  * The Polymesh chain spec version range that is compatible with this version of the SDK
  */
-export const SUPPORTED_SPEC_VERSION_RANGE = '6.3 || 7.0 || 7.1';
+export const SUPPORTED_SPEC_VERSION_RANGE = '7.0 || 7.1 || 7.2';
 
 /**
  * The Polymesh private chain spec version range that is compatible with this version of the SDK
