@@ -1,13 +1,17 @@
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 
 import { Ballots } from '~/api/entities/Asset/Fungible/CorporateActions/Ballots';
-import { Namespace, PolymeshError } from '~/internal';
+import { CorporateBallot, Namespace, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockCorporateBallot } from '~/testUtils/mocks/entities';
-import { ErrorCode } from '~/types';
+import { CreateBallotParams, ErrorCode, PolymeshTransaction } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('Ballots class', () => {
+  const start = new Date();
+  const end = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 30);
+
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
@@ -46,13 +50,13 @@ describe('Ballots class', () => {
       dsMockUtils.createQueryMock('corporateAction', 'corporateActions', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockCorporateAction({
-            kind: 'Reorganization',
+            kind: 'IssuerNotice',
             targets: {
               identities: ['someDid'],
               treatment: 'Include',
             },
             /* eslint-disable @typescript-eslint/naming-convention */
-            decl_date: new BigNumber(0),
+            decl_date: new BigNumber(start.getTime()),
             record_date: null,
             default_withholding_tax: new BigNumber(0),
             withholding_tax: [],
@@ -65,18 +69,41 @@ describe('Ballots class', () => {
         returnValue: dsMockUtils.createMockBytes('ballot details'),
       });
 
+      dsMockUtils.createQueryMock('corporateBallot', 'rcv', {
+        returnValue: dsMockUtils.createMockBool(false),
+      });
+
+      dsMockUtils.createQueryMock('corporateBallot', 'timeRanges', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockCodec(
+            {
+              start: dsMockUtils.createMockMoment(new BigNumber(start.getTime())),
+              end: dsMockUtils.createMockMoment(new BigNumber(end.getTime())),
+            },
+            false
+          )
+        ),
+      });
+
       dsMockUtils.createQueryMock('corporateBallot', 'metas', {
         returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockCorporateBallotMeta({
-            title: 'Test Ballot',
-            motions: [
-              {
-                title: 'Test Motion Title',
-                infoLink: 'https://example.com',
-                choices: ['Yes', 'No', 'Abstain'],
-              },
-            ],
-          })
+          dsMockUtils.createMockCodec(
+            {
+              title: dsMockUtils.createMockBytes('Test Ballot'),
+              motions: [
+                {
+                  title: dsMockUtils.createMockBytes('Test Motion Title'),
+                  infoLink: dsMockUtils.createMockBytes('https://example.com'),
+                  choices: [
+                    dsMockUtils.createMockBytes('Yes'),
+                    dsMockUtils.createMockBytes('No'),
+                    dsMockUtils.createMockBytes('Abstain'),
+                  ],
+                },
+              ],
+            },
+            false
+          )
         ),
       });
 
@@ -88,6 +115,21 @@ describe('Ballots class', () => {
 
       expect(ballot.id).toEqual(id);
       expect(ballot.asset.id).toBe(assetId);
+      expect(ballot.declarationDate).toEqual(start);
+      expect(ballot.startDate).toEqual(start);
+      expect(ballot.endDate).toEqual(end);
+      expect(ballot.description).toEqual('ballot details');
+      expect(ballot.rcv).toEqual(false);
+      expect(ballot.meta).toEqual({
+        title: 'Test Ballot',
+        motions: [
+          {
+            title: 'Test Motion Title',
+            infoLink: 'https://example.com',
+            choices: ['Yes', 'No', 'Abstain'],
+          },
+        ],
+      });
     });
 
     it('should throw an error if the Ballot does not exist', async () => {
@@ -98,8 +140,20 @@ describe('Ballots class', () => {
         returnValue: dsMockUtils.createMockOption(),
       });
 
+      dsMockUtils.createQueryMock('corporateAction', 'details', {
+        returnValue: dsMockUtils.createMockBytes(),
+      });
+
+      dsMockUtils.createQueryMock('corporateBallot', 'timeRanges', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
       dsMockUtils.createQueryMock('corporateBallot', 'metas', {
         returnValue: dsMockUtils.createMockOption(),
+      });
+
+      dsMockUtils.createQueryMock('corporateBallot', 'rcv', {
+        returnValue: dsMockUtils.createMockBool(),
       });
 
       const context = dsMockUtils.getContextInstance();
@@ -152,6 +206,31 @@ describe('Ballots class', () => {
       expect(ballots.length).toBe(1);
       expect(ballots[0].id.isEqualTo(new BigNumber(0))).toBe(true);
       expect(ballots[0].asset.id).toBe(assetId);
+    });
+  });
+
+  describe('method: create', () => {
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const asset = entityMockUtils.getFungibleAssetInstance();
+      const ballots = new Ballots(asset, context);
+
+      const args = { foo: 'bar' } as unknown as CreateBallotParams;
+
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<CorporateBallot>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { asset, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await ballots.create(args);
+
+      expect(tx).toBe(expectedTransaction);
     });
   });
 });

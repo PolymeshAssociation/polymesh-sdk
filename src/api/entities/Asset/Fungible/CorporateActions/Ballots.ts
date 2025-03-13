@@ -1,19 +1,47 @@
 import BigNumber from 'bignumber.js';
 
-import { CorporateBallot, FungibleAsset, Namespace, PolymeshError } from '~/internal';
-import { ErrorCode } from '~/types';
+import { createBallot } from '~/api/procedures/createBallot';
+import { Context, CorporateBallot, FungibleAsset, Namespace, PolymeshError } from '~/internal';
+import { CreateBallotParams, ErrorCode, ProcedureMethod } from '~/types';
 import {
   assetToMeshAssetId,
   bigNumberToU32,
+  boolToBoolean,
+  bytesToString,
   corporateActionIdentifierToCaId,
   meshCorporateBallotMetaToCorporateBallotMeta,
+  momentToDate,
   u32ToBigNumber,
 } from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
+
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 /**
  * Handles all Asset Ballots related functionality
  */
 export class Ballots extends Namespace<FungibleAsset> {
+  /**
+   * Create a Ballot for an Asset
+   *
+   */
+  public create: ProcedureMethod<CreateBallotParams, CorporateBallot>;
+
+  /**
+   * @hidden
+   */
+  constructor(parent: FungibleAsset, context: Context) {
+    super(parent, context);
+
+    this.create = createProcedureMethod(
+      { getProcedureAndArgs: args => [createBallot, { asset: parent, ...args }] },
+      context
+    );
+  }
+
   /**
    * Retrieve a single Ballot associated to this Asset by its ID
    *
@@ -34,10 +62,14 @@ export class Ballots extends Namespace<FungibleAsset> {
     const rawLocalId = bigNumberToU32(id, context);
     const rawCaId = corporateActionIdentifierToCaId({ asset: parent, localId: id }, context);
 
-    const [corporateAction, rawMetas] = await Promise.all([
+    const [corporateAction, rawDescription, rawMetas, rawRcv, rawTimeRange] = await Promise.all([
       query.corporateAction.corporateActions(rawAssetId, rawLocalId),
+      query.corporateAction.details(rawCaId),
       query.corporateBallot.metas(rawCaId),
+      query.corporateBallot.rcv(rawCaId),
+      query.corporateBallot.timeRanges(rawCaId),
     ]);
+    const timeRange = rawTimeRange.unwrap();
 
     if (corporateAction.isNone || rawMetas.isNone) {
       throw new PolymeshError({
@@ -53,6 +85,11 @@ export class Ballots extends Namespace<FungibleAsset> {
         id,
         assetId: parent.id,
         meta,
+        description: bytesToString(rawDescription),
+        rcv: boolToBoolean(rawRcv),
+        startDate: momentToDate(timeRange.start),
+        endDate: momentToDate(timeRange.end),
+        declarationDate: momentToDate(corporateAction.unwrap().declDate),
       },
       context
     );

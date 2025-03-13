@@ -68,10 +68,12 @@ import {
   asFungibleAsset,
   asNftId,
   assertAddressValid,
+  assertDeclarationDate,
   assertExpectedChainVersion,
   assertIdentityExists,
   assertIsInteger,
   assertIsPositive,
+  assertMetaLength,
   assertNoPendingAuthorizationExists,
   assertTickerValid,
   calculateNextKey,
@@ -2819,5 +2821,43 @@ describe('areSameAccounts', () => {
     result = areSameAccounts(account1, account2);
 
     expect(result).toBe(false);
+  });
+});
+
+describe('assertMetaLength', () => {
+  it('should throw an error if meta length exceeds maximum', () => {
+    const longMeta = 'a'.repeat(2049);
+
+    expect(() => assertMetaLength(longMeta)).toThrow(
+      'Meta length must be less than 2048 characters'
+    );
+  });
+
+  it('should not throw an error if meta length is within limit', () => {
+    const validMeta = 'a'.repeat(2048);
+
+    expect(() => assertMetaLength(validMeta)).not.toThrow();
+  });
+});
+
+describe('assertDeclarationDate', () => {
+  it('should throw an error if declaration date is in the future', () => {
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 1);
+
+    expect(() => assertDeclarationDate(futureDate)).toThrow('Declaration date must be in the past');
+  });
+
+  it('should not throw an error if declaration date is in the past', () => {
+    const pastDate = new Date();
+    pastDate.setDate(pastDate.getDate() - 1);
+
+    expect(() => assertDeclarationDate(pastDate)).not.toThrow();
+  });
+
+  it('should not throw an error if declaration date is current date', () => {
+    const currentDate = new Date();
+
+    expect(() => assertDeclarationDate(currentDate)).not.toThrow();
   });
 });

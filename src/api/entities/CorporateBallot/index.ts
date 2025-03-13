@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { Context, Entity, FungibleAsset } from '~/internal';
+import { BallotMeta, CreateBallotParams } from '~/types';
 import { corporateActionIdentifierToCaId } from '~/utils/conversion';
 import { toHumanReadable } from '~/utils/internal';
 
@@ -9,21 +10,15 @@ export interface UniqueIdentifiers {
   assetId: string;
 }
 
-export interface BallotMotion {
-  title: string;
-  infoLink: string;
-  choices: string[];
-}
-
-export interface BallotMeta {
-  title: string;
-  motions: BallotMotion[];
-}
-
 export interface HumanReadable {
   id: string;
   assetId: string;
   meta: BallotMeta;
+  description: string;
+  declarationDate: string;
+  startDate: string;
+  endDate: string;
+  rcv: boolean;
 }
 
 /**
@@ -51,21 +46,55 @@ export class CorporateBallot extends Entity<UniqueIdentifiers, HumanReadable> {
   public asset: FungibleAsset;
 
   /**
+   * Ballot description
+   */
+  public description: string;
+
+  /**
    * Ballot metadata
    */
   public meta: BallotMeta;
 
   /**
+   * Ballot declaration date
+   */
+  public declarationDate: Date;
+
+  /**
+   * Ballot start date
+   */
+  public startDate: Date;
+
+  /**
+   * Ballot end date
+   */
+  public endDate: Date;
+
+  /**
+   * Ballot Rcv
+   */
+  public rcv: boolean;
+
+  /**
    * @hidden
    */
-  public constructor(args: UniqueIdentifiers & { meta: BallotMeta }, context: Context) {
+  public constructor(
+    args: UniqueIdentifiers &
+      Omit<CreateBallotParams, 'declarationDate' | 'rcv'> & { rcv: boolean; declarationDate: Date },
+    context: Context
+  ) {
     super(args, context);
 
-    const { id, assetId, meta } = args;
+    const { id, assetId, meta, rcv, startDate, endDate, description, declarationDate } = args;
 
     this.id = id;
     this.asset = new FungibleAsset({ assetId }, context);
     this.meta = meta;
+    this.rcv = rcv;
+    this.startDate = startDate;
+    this.endDate = endDate;
+    this.description = description;
+    this.declarationDate = declarationDate;
   }
 
   /**
@@ -95,8 +124,17 @@ export class CorporateBallot extends Entity<UniqueIdentifiers, HumanReadable> {
    * Return the Dividend Distribution's static data
    */
   public override toHuman(): HumanReadable {
-    const { id, asset, meta } = this;
+    const { id, asset, meta, description, declarationDate, startDate, endDate, rcv } = this;
 
-    return toHumanReadable({ id, assetId: asset.id, meta });
+    return toHumanReadable({
+      id,
+      assetId: asset.id,
+      meta,
+      description,
+      declarationDate,
+      startDate,
+      endDate,
+      rcv,
+    });
   }
 }
