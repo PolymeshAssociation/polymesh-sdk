@@ -164,7 +164,7 @@ import { when } from 'jest-when';
 import { cloneDeep, map, merge, upperFirst } from 'lodash';
 
 import { HistoricPolyxTransaction } from '~/api/entities/Account/types';
-import { BallotMotion } from '~/api/entities/CorporateBallot';
+import { BallotMotion } from '~/api/procedures/types';
 import { Account, AuthorizationRequest, ChildIdentity, Context, Identity } from '~/internal';
 import { BalanceTypeEnum, CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import {

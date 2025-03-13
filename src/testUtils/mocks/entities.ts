@@ -6,7 +6,7 @@
 import BigNumber from 'bignumber.js';
 import { pick } from 'lodash';
 
-import { BallotMeta, CorporateBallot } from '~/api/entities/CorporateBallot';
+import { CorporateBallot } from '~/api/entities/CorporateBallot';
 import {
   Account,
   AuthorizationRequest,
@@ -45,6 +45,7 @@ import {
   AssetWithGroup,
   Authorization,
   AuthorizationType,
+  BallotMeta,
   CheckPermissionsResult,
   CheckRolesResult,
   CollectionKey,

@@ -17,6 +17,11 @@ describe('CorporateBallot class', () => {
   let assetId: string;
   let corporateBallot: CorporateBallot;
   let getAssetIdForMiddlewareSpy: jest.SpyInstance;
+  const declarationDate = new Date();
+  const startDate = new Date();
+  const endDate = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 30);
+  const description = 'Test Description';
+
   const mockBallotMeta = {
     title: 'Test Ballot',
     motions: [
@@ -46,6 +51,11 @@ describe('CorporateBallot class', () => {
         id,
         assetId,
         meta: mockBallotMeta,
+        rcv: false,
+        declarationDate,
+        startDate,
+        endDate,
+        description,
       },
       context
     );
@@ -110,6 +120,11 @@ describe('CorporateBallot class', () => {
         id: '1',
         assetId: '12341234-1234-1234-1234-123412341234',
         meta: mockBallotMeta,
+        rcv: false,
+        declarationDate: declarationDate.toISOString(),
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        description,
       });
     });
   });

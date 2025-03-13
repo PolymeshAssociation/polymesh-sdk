@@ -108,6 +108,7 @@ import {
 } from '~/types/utils';
 import {
   CONFIDENTIAL_ASSETS_SUPPORTED_CALL,
+  MAX_META_LENGTH,
   MAX_TICKER_LENGTH,
   MINIMUM_SQ_VERSION,
   PRIVATE_SUPPORTED_SPEC_SEMVER,
@@ -2314,4 +2315,30 @@ export async function calculateRawStakingPayee(
  */
 export function areSameAccounts(account1: Account, account2: Account): boolean {
   return account1.address === account2.address;
+}
+
+/**
+ * @hidden
+ */
+export function assertMetaLength(meta: string): void {
+  if (meta.length > MAX_META_LENGTH) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Meta length must be less than 2048 characters',
+      data: { meta },
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
+export function assertDeclarationDate(declarationDate: Date): void {
+  if (declarationDate > new Date()) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Declaration date must be in the past',
+      data: { declarationDate },
+    });
+  }
 }

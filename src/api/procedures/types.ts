@@ -1837,3 +1837,23 @@ export interface UpdatePolyxBondParams {
 export interface NominateValidatorsParams {
   validators: (Account | string)[];
 }
+
+export interface BallotMotion {
+  title: string;
+  infoLink: string;
+  choices: string[];
+}
+
+export interface BallotMeta {
+  title: string;
+  motions: BallotMotion[];
+}
+
+export interface CreateBallotParams {
+  meta: BallotMeta;
+  startDate: Date;
+  endDate: Date;
+  description: string;
+  declarationDate?: Date;
+  rcv?: boolean;
+}
