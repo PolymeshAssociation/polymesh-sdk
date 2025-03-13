@@ -646,6 +646,23 @@ describe('assertRequirementsNotTooComplex', () => {
         mockContext
       )
     ).toThrow('Compliance Requirement complexity limit exceeded');
+
+    expect(() =>
+      assertRequirementsNotTooComplex(
+        [
+          {
+            type: ConditionType.IsPresent,
+            target: ConditionTarget.Both,
+          },
+          {
+            type: ConditionType.IsAbsent,
+            target: ConditionTarget.Receiver,
+          },
+        ] as Condition[],
+        new BigNumber(0),
+        mockContext
+      )
+    ).toThrow('Compliance Requirement complexity limit exceeded');
   });
 
   it('should not throw an error if the complexity is less than the max condition complexity', async () => {

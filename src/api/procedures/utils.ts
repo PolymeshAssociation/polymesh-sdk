@@ -335,7 +335,9 @@ export function assertRequirementsNotTooComplex(
       conditionComplexitySum = conditionComplexitySum.multipliedBy(2);
     }
 
-    const claimIssuerLength = trustedClaimIssuers.length || defaultClaimIssuerLength;
+    // if there are no specific trusted claim issuers or default, 1 must be used for calculation
+    const claimIssuerLength =
+      trustedClaimIssuers.length || defaultClaimIssuerLength.toNumber() || 1;
     conditionComplexitySum = conditionComplexitySum.multipliedBy(claimIssuerLength);
 
     complexitySum = complexitySum.plus(conditionComplexitySum);
