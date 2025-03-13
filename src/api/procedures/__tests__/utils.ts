@@ -650,12 +650,43 @@ describe('assertRequirementsNotTooComplex', () => {
 
   it('should not throw an error if the complexity is less than the max condition complexity', async () => {
     dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {
-      returnValue: dsMockUtils.createMockU32(new BigNumber(10)),
+      returnValue: dsMockUtils.createMockU32(new BigNumber(50)),
     });
     expect(() =>
       assertRequirementsNotTooComplex(
         [{ type: ConditionType.IsPresent, target: ConditionTarget.Receiver }] as Condition[],
         new BigNumber(1),
+        mockContext
+      )
+    ).not.toThrow();
+
+    expect(() =>
+      assertRequirementsNotTooComplex(
+        [
+          {
+            type: ConditionType.IsPresent,
+            target: ConditionTarget.Both,
+          },
+          {
+            type: ConditionType.IsAbsent,
+            target: ConditionTarget.Sender,
+          },
+          {
+            type: ConditionType.IsAbsent,
+            target: ConditionTarget.Receiver,
+          },
+          {
+            type: ConditionType.IsAnyOf,
+            claims: [
+              dsMockUtils.createMockClaim(),
+              dsMockUtils.createMockClaim(),
+              dsMockUtils.createMockClaim(),
+              dsMockUtils.createMockClaim(),
+            ],
+            target: ConditionTarget.Sender,
+          },
+        ] as Condition[],
+        new BigNumber(2),
         mockContext
       )
     ).not.toThrow();

@@ -314,28 +314,31 @@ export function assertRequirementsNotTooComplex(
   let complexitySum = new BigNumber(0);
 
   conditions.forEach(condition => {
+    let conditionComplexitySum = new BigNumber(0);
     const { target, trustedClaimIssuers = [] } = condition;
     switch (condition.type) {
       case ConditionType.IsPresent:
       case ConditionType.IsIdentity:
       case ConditionType.IsAbsent:
         // single claim conditions add one to the complexity
-        complexitySum = complexitySum.plus(1);
+        conditionComplexitySum = conditionComplexitySum.plus(1);
         break;
       case ConditionType.IsAnyOf:
       case ConditionType.IsNoneOf:
         // multi claim conditions add one to the complexity per each claim
-        complexitySum = complexitySum.plus(condition.claims.length);
+        conditionComplexitySum = conditionComplexitySum.plus(condition.claims.length);
         break;
     }
 
     // if the condition affects both, it actually represents two conditions on chain
     if (target === ConditionTarget.Both) {
-      complexitySum = complexitySum.multipliedBy(2);
+      conditionComplexitySum = conditionComplexitySum.multipliedBy(2);
     }
 
     const claimIssuerLength = trustedClaimIssuers.length || defaultClaimIssuerLength;
-    complexitySum = complexitySum.multipliedBy(claimIssuerLength);
+    conditionComplexitySum = conditionComplexitySum.multipliedBy(claimIssuerLength);
+
+    complexitySum = complexitySum.plus(conditionComplexitySum);
   });
 
   if (u32ToBigNumber(maxComplexity).lt(complexitySum)) {
