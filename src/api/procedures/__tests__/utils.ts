@@ -683,7 +683,7 @@ describe('assertRequirementsNotTooComplex', () => {
               dsMockUtils.createMockClaim(),
               dsMockUtils.createMockClaim(),
             ],
-            target: ConditionTarget.Sender,
+            target: ConditionTarget.Both,
           },
         ] as Condition[],
         new BigNumber(2),
