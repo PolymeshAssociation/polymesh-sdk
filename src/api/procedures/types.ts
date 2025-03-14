@@ -529,6 +529,10 @@ interface TransferRestrictionInputBase {
    * array of Identities (or DIDs) that are exempted from the Restriction
    */
   exemptedIdentities?: (Identity | string)[];
+  /**
+   * (optional) Set to `true` to skip stat is enabled check, useful for batch transactions
+   */
+  skipStatIsEnabledCheck?: boolean;
 }
 
 export interface CountTransferRestrictionInput extends TransferRestrictionInputBase {

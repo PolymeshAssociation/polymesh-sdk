@@ -548,6 +548,22 @@ describe('addTransferRestriction procedure', () => {
     );
   });
 
+  it('should not throw an error if the appropriate stat is not set but skipStatIsEnabledCheck was set to true', () => {
+    statCompareEqMock.mockReturnValue(false);
+    const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber>(
+      mockContext
+    );
+
+    args = {
+      ...args,
+      skipStatIsEnabledCheck: true,
+    };
+
+    transferConditionsToBtreeTransferConditionsSpy.mockReturnValue(mockCountBtreeSet);
+
+    return expect(prepareAddTransferRestriction.call(proc, args)).resolves.not.toThrow();
+  });
+
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
       args = {
