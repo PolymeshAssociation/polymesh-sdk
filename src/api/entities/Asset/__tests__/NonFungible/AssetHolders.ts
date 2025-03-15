@@ -99,6 +99,7 @@ describe('AssetHolder class', () => {
           }),
         ]),
         next: null,
+        count: new BigNumber(2),
       });
     });
   });

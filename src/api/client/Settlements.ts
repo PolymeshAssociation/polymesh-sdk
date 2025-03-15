@@ -21,10 +21,11 @@ import {
   InstructionAffirmationOperation,
   InstructionIdParams,
   ProcedureMethod,
+  ResultSet,
 } from '~/types';
 import { Ensured } from '~/types/utils';
 import { middlewareInstructionToHistoricInstruction } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod } from '~/utils/internal';
 
 /**
  * Handles all Settlement related functionality
@@ -135,19 +136,29 @@ export class Settlements {
    */
   public async getHistoricalInstructions(
     filter: HistoricalInstructionFilters
-  ): Promise<HistoricInstruction[]> {
+  ): Promise<ResultSet<HistoricInstruction>> {
     const { context } = this;
 
     const query = await historicalInstructionsQuery(filter, context);
 
     const {
       data: {
-        instructions: { nodes: instructionsResult },
+        instructions: { nodes: instructionsResult, totalCount },
       },
     } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(query);
 
-    return instructionsResult.map(instruction =>
-      middlewareInstructionToHistoricInstruction(instruction!, context)
+    const data = instructionsResult.map(middlewareInstruction =>
+      middlewareInstructionToHistoricInstruction(middlewareInstruction, context)
     );
+
+    const count = new BigNumber(totalCount);
+
+    const next = calculateNextKey(count, data.length, filter.start);
+
+    return {
+      data,
+      next,
+      count,
+    };
   }
 }
