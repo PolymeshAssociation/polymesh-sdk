@@ -1,10 +1,10 @@
 import BigNumber from 'bignumber.js';
 
-import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, RemoveCorporateBallotParams, TxTags } from '~/types';
+import { FungibleAsset, Procedure } from '~/internal';
+import { RemoveCorporateBallotParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { corporateActionIdentifierToCaId } from '~/utils/conversion';
-import { assertBallotNotStarted, getCorporateBallotDetails } from '~/utils/internal';
+import { assertBallotNotStarted, getCorporateBallotDetailsOrThrow } from '~/utils/internal';
 
 /**
  * @hidden
@@ -30,17 +30,9 @@ export async function prepareRemoveBallot(
 
   const ballotId = BigNumber.isBigNumber(ballot) ? ballot : ballot.id;
 
-  const ballotDetails = await getCorporateBallotDetails(asset, ballotId, context);
+  const ballotDetails = await getCorporateBallotDetailsOrThrow(asset, ballotId, context);
 
-  if (!ballotDetails) {
-    throw new PolymeshError({
-      code: ErrorCode.DataUnavailable,
-      message: 'The CorporateBallot does not exist',
-      data: { id: ballotId },
-    });
-  }
-
-  await assertBallotNotStarted(ballotDetails);
+  assertBallotNotStarted(ballotDetails);
 
   const rawCaId = corporateActionIdentifierToCaId({ asset, localId: ballotId }, context);
 

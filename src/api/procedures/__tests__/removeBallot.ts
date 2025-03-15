@@ -103,34 +103,10 @@ describe('removeBallot procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should throw an error if ballot is not found', async () => {
-    jest.spyOn(utilsInternalModule, 'getCorporateBallotDetails').mockResolvedValue(null);
-
-    return expect(
-      prepareRemoveBallot.call(proc, {
-        asset,
-        ballot,
-      })
-    ).rejects.toThrow('The CorporateBallot does not exist');
-  });
-
-  it('should throw an error if the ballot has already started', async () => {
-    ballot = entityMockUtils.getCorporateBallotInstance({
-      id: ballotId,
-      assetId,
-      startDate: new Date(new Date().getTime() - 500000),
-    });
-
-    return expect(
-      prepareRemoveBallot.call(proc, {
-        asset,
-        ballot,
-      })
-    ).rejects.toThrow('The CorporateBallot does not exist');
-  });
-
   it('should add a removeBallot transaction to the queue', async () => {
-    jest.spyOn(utilsInternalModule, 'getCorporateBallotDetails').mockResolvedValue(ballotDetails);
+    jest
+      .spyOn(utilsInternalModule, 'getCorporateBallotDetailsOrThrow')
+      .mockResolvedValue(ballotDetails);
 
     let result = await prepareRemoveBallot.call(proc, {
       asset,

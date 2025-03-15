@@ -5836,6 +5836,7 @@ export function meshCorporateBallotMetaToCorporateBallotMeta(
 
 /**
  * @hidden
+ * Ensure that `start <= end`, `now <= end`, and `record_date <= voting start`
  */
 export function corporateBallotTimeRangeToMeshCorporateBallotTimeRange(
   declarationDate: Date,
@@ -5843,24 +5844,38 @@ export function corporateBallotTimeRangeToMeshCorporateBallotTimeRange(
   endDate: Date,
   context: Context
 ): PalletCorporateActionsBallotBallotTimeRange {
+  const now = new Date();
+
   if (startDate < declarationDate) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Start date must be after declaration date',
+      message: 'Voting start date must be after declaration date',
+      data: {
+        recordDate: declarationDate,
+        startDate,
+      },
     });
   }
 
   if (endDate < startDate) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'End date must be after start date',
+      message: 'End date must be after or same as start date',
+      data: {
+        startDate,
+        endDate,
+      },
     });
   }
 
-  if (endDate < new Date()) {
+  if (endDate <= now) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'End date must be in the future',
+      data: {
+        now,
+        endDate,
+      },
     });
   }
 
