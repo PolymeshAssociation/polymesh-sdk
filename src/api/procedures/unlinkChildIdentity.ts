@@ -80,6 +80,7 @@ export async function getAuthorization(
 
   return {
     permissions: {
+      // TODO: might not need these as prepareUnlinkChildIdentity checks if signer is primary key of either the child or parent which the same as done on chain
       transactions: [TxTags.identity.UnlinkChildIdentity],
       assets: [],
       portfolios: [],

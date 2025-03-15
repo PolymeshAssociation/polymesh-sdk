@@ -108,6 +108,7 @@ export async function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.capitalDistribution.PushBenefit],
+      // TODO: might need asset perms as it checks it with agent permissions & that checks for the asset as well `pallets/corporate-actions/src/distribution/mod.rs` 437
       assets: [],
       portfolios: [],
     },
