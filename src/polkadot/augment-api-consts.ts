@@ -23,11 +23,29 @@ export type __AugmentedConst<ApiType extends ApiTypes> = AugmentedConst<ApiType>
 declare module '@polkadot/api-base/types/consts' {
   interface AugmentedConsts<ApiType extends ApiTypes> {
     asset: {
+      /**
+       * Max length for the Asset Metadata type name.
+       **/
       assetMetadataNameMaxLength: u32 & AugmentedConst<ApiType>;
+      /**
+       * Max length for the Asset Metadata type definition.
+       **/
       assetMetadataTypeDefMaxLength: u32 & AugmentedConst<ApiType>;
+      /**
+       * Max length for the Asset Metadata value.
+       **/
       assetMetadataValueMaxLength: u32 & AugmentedConst<ApiType>;
+      /**
+       * Max length for the name of an asset.
+       **/
       assetNameMaxLength: u32 & AugmentedConst<ApiType>;
+      /**
+       * Max length of the funding round name.
+       **/
       fundingRoundNameMaxLength: u32 & AugmentedConst<ApiType>;
+      /**
+       * Maximum number of mediators for an asset.
+       **/
       maxAssetMediators: u32 & AugmentedConst<ApiType>;
     };
     babe: {
@@ -52,14 +70,24 @@ declare module '@polkadot/api-base/types/consts' {
     };
     balances: {
       /**
+       * This type is no longer needed but kept for compatibility reasons.
        * The minimum amount required to keep an account open.
        **/
       existentialDeposit: u128 & AugmentedConst<ApiType>;
     };
     base: {
+      /**
+       * The maximum length governing `TooLong`.
+       *
+       * How lengths are computed to compare against this value is situation based.
+       * For example, you could halve it, double it, compute a sum for some tree of strings, etc.
+       **/
       maxLen: u32 & AugmentedConst<ApiType>;
     };
     complianceManager: {
+      /**
+       * The maximum claim reads that are allowed to happen in worst case of a condition resolution
+       **/
       maxConditionComplexity: u32 & AugmentedConst<ApiType>;
     };
     contracts: {
@@ -142,7 +170,13 @@ declare module '@polkadot/api-base/types/consts' {
       unsafeUnstableInterface: bool & AugmentedConst<ApiType>;
     };
     corporateAction: {
+      /**
+       * Max number of per-DID withholding tax overrides.
+       **/
       maxDidWhts: u32 & AugmentedConst<ApiType>;
+      /**
+       * Max number of DID specified in `TargetIdentities`.
+       **/
       maxTargetIds: u32 & AugmentedConst<ApiType>;
     };
     electionProviderMultiPhase: {
@@ -250,7 +284,13 @@ declare module '@polkadot/api-base/types/consts' {
       maxSetIdSessionEntries: u64 & AugmentedConst<ApiType>;
     };
     identity: {
+      /**
+       * POLYX given to primary keys of all new Identities
+       **/
       initialPOLYX: u128 & AugmentedConst<ApiType>;
+      /**
+       * Maximum number of authorizations an identity can give.
+       **/
       maxGivenAuths: u32 & AugmentedConst<ApiType>;
     };
     imOnline: {
@@ -278,6 +318,22 @@ declare module '@polkadot/api-base/types/consts' {
       maxNumberOfCollectionKeys: u8 & AugmentedConst<ApiType>;
       maxNumberOfNFTsCount: u32 & AugmentedConst<ApiType>;
     };
+    pips: {
+      /**
+       * The maximum number of votes that can be pruned at once.
+       **/
+      maxRefundsAndVotesPruned: u32 & AugmentedConst<ApiType>;
+    };
+    portfolio: {
+      /**
+       * Maximum number of fungible assets that can be moved in a single transfer call.
+       **/
+      maxNumberOfFungibleMoves: u32 & AugmentedConst<ApiType>;
+      /**
+       * Maximum number of NFTs that can be moved in a single transfer call.
+       **/
+      maxNumberOfNFTsMoves: u32 & AugmentedConst<ApiType>;
+    };
     scheduler: {
       /**
        * The maximum weight that may be scheduled per block for any dispatchables.
@@ -289,11 +345,33 @@ declare module '@polkadot/api-base/types/consts' {
       maxScheduledPerBlock: u32 & AugmentedConst<ApiType>;
     };
     settlement: {
+      /**
+       * Maximum number mediators in the instruction level (this does not include asset mediators).
+       **/
+      maxInstructionMediators: u32 & AugmentedConst<ApiType>;
+      /**
+       * Maximum number of fungible assets that can be in a single instruction.
+       **/
       maxNumberOfFungibleAssets: u32 & AugmentedConst<ApiType>;
+      /**
+       * Maximum number of NFTs that can be transferred in a instruction.
+       **/
       maxNumberOfNFTs: u32 & AugmentedConst<ApiType>;
+      /**
+       * Maximum number of NFTs that can be transferred in a leg.
+       **/
       maxNumberOfNFTsPerLeg: u32 & AugmentedConst<ApiType>;
+      /**
+       * Maximum number of off-chain assets that can be transferred in a instruction.
+       **/
       maxNumberOfOffChainAssets: u32 & AugmentedConst<ApiType>;
+      /**
+       * Maximum number of portfolios.
+       **/
       maxNumberOfPortfolios: u32 & AugmentedConst<ApiType>;
+      /**
+       * Maximum number of venue signers.
+       **/
       maxNumberOfVenueSigners: u32 & AugmentedConst<ApiType>;
     };
     staking: {
@@ -374,7 +452,13 @@ declare module '@polkadot/api-base/types/consts' {
       slashDeferDuration: u32 & AugmentedConst<ApiType>;
     };
     statistics: {
+      /**
+       * Maximum stats that can be enabled for an Asset.
+       **/
       maxStatsPerAsset: u32 & AugmentedConst<ApiType>;
+      /**
+       * Maximum transfer conditions that can be enabled for an Asset.
+       **/
       maxTransferConditionsPerAsset: u32 & AugmentedConst<ApiType>;
     };
     system: {
@@ -424,7 +508,7 @@ declare module '@polkadot/api-base/types/consts' {
       /**
        * The polynomial that is applied in order to derive fee from weight.
        **/
-      weightToFee: Vec<SpWeightsWeightToFeeCoefficient> & AugmentedConst<ApiType>;
+      weightToFeeConst: Vec<SpWeightsWeightToFeeCoefficient> & AugmentedConst<ApiType>;
     };
     utility: {
       /**
