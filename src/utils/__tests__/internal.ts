@@ -32,6 +32,7 @@ import {
   AuthorizationType,
   CaCheckpointType,
   ClaimType,
+  CorporateBallotParams,
   CountryCode,
   ErrorCode,
   ModuleName,
@@ -68,6 +69,7 @@ import {
   asFungibleAsset,
   asNftId,
   assertAddressValid,
+  assertBallotNotStarted,
   assertDeclarationDate,
   assertExpectedChainVersion,
   assertIdentityExists,
@@ -2859,5 +2861,23 @@ describe('assertDeclarationDate', () => {
     const currentDate = new Date();
 
     expect(() => assertDeclarationDate(currentDate)).not.toThrow();
+  });
+});
+
+describe('assertBallotNotStarted', () => {
+  it('should throw an error if ballot has already started', async () => {
+    const pastDate = new Date(new Date().getTime() - 1000 * 60 * 60 * 24);
+
+    await expect(
+      assertBallotNotStarted({ startDate: pastDate } as CorporateBallotParams)
+    ).rejects.toThrow('The ballot has already started');
+  });
+
+  it('should not throw an error if ballot has not started yet', async () => {
+    const futureDate = new Date(new Date().getTime() + 1000 * 60 * 60 * 24);
+
+    await expect(
+      assertBallotNotStarted({ startDate: futureDate } as CorporateBallotParams)
+    ).resolves.not.toThrow();
   });
 });

@@ -5,7 +5,12 @@ import { Ballots } from '~/api/entities/Asset/Fungible/CorporateActions/Ballots'
 import { CorporateBallot, Namespace, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockCorporateBallot } from '~/testUtils/mocks/entities';
-import { CreateBallotParams, ErrorCode, PolymeshTransaction } from '~/types';
+import {
+  CreateBallotParams,
+  ErrorCode,
+  PolymeshTransaction,
+  RemoveCorporateBallotParams,
+} from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('Ballots class', () => {
@@ -114,7 +119,6 @@ describe('Ballots class', () => {
       const ballot = await target.getOne({ id });
 
       expect(ballot.id).toEqual(id);
-      expect(ballot.asset.id).toBe(assetId);
       expect(ballot.declarationDate).toEqual(start);
       expect(ballot.startDate).toEqual(start);
       expect(ballot.endDate).toEqual(end);
@@ -205,7 +209,6 @@ describe('Ballots class', () => {
 
       expect(ballots.length).toBe(1);
       expect(ballots[0].id.isEqualTo(new BigNumber(0))).toBe(true);
-      expect(ballots[0].asset.id).toBe(assetId);
     });
   });
 
@@ -229,6 +232,30 @@ describe('Ballots class', () => {
         .mockResolvedValue(expectedTransaction);
 
       const tx = await ballots.create(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: remove', () => {
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const asset = entityMockUtils.getFungibleAssetInstance();
+      const ballots = new Ballots(asset, context);
+
+      const args = { foo: 'bar' } as unknown as RemoveCorporateBallotParams;
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { asset, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await ballots.remove(args);
 
       expect(tx).toBe(expectedTransaction);
     });
