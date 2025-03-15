@@ -1871,3 +1871,9 @@ export type CorporateBallotParams = Omit<CreateBallotParams, 'declarationDate' |
   rcv: boolean;
   declarationDate: Date;
 };
+
+export type ModifyCorporateBallotParams = Partial<
+  Pick<CreateBallotParams, 'meta' | 'endDate' | 'rcv'>
+> & {
+  ballot: CorporateBallot | BigNumber;
+};

@@ -1,15 +1,10 @@
 import BigNumber from 'bignumber.js';
 
 import { createBallot } from '~/api/procedures/createBallot';
-import { Context, CorporateBallot, FungibleAsset, Namespace, PolymeshError } from '~/internal';
-import {
-  CorporateBallotWithDetails,
-  CreateBallotParams,
-  ErrorCode,
-  ProcedureMethod,
-} from '~/types';
+import { Context, CorporateBallot, FungibleAsset, Namespace } from '~/internal';
+import { CorporateBallotWithDetails, CreateBallotParams, ProcedureMethod } from '~/types';
 import { assetToMeshAssetId, u32ToBigNumber } from '~/utils/conversion';
-import { createProcedureMethod, getCorporateBallotDetails } from '~/utils/internal';
+import { createProcedureMethod, getCorporateBallotDetailsOrThrow } from '~/utils/internal';
 
 jest.mock(
   '~/base/Procedure',
@@ -48,14 +43,7 @@ export class Ballots extends Namespace<FungibleAsset> {
     const { parent, context } = this;
     const { id } = args;
 
-    const ballotDetails = await getCorporateBallotDetails(parent, id, context);
-
-    if (!ballotDetails) {
-      throw new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message: 'The Ballot does not exist',
-      });
-    }
+    const ballotDetails = await getCorporateBallotDetailsOrThrow(parent, id, context);
 
     const ballot = new CorporateBallot(
       {

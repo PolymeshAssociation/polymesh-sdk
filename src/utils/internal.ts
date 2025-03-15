@@ -2354,11 +2354,11 @@ export function assertDeclarationDate(declarationDate: Date): void {
 /**
  * @hidden
  */
-export async function getCorporateBallotDetails(
+export async function getCorporateBallotDetailsOrThrow(
   asset: FungibleAsset,
   id: BigNumber,
   context: Context
-): Promise<CorporateBallotDetails | null> {
+): Promise<CorporateBallotDetails> {
   const rawAssetId = assetToMeshAssetId(asset, context);
   const rawLocalId = bigNumberToU32(id, context);
   const rawCaId = corporateActionIdentifierToCaId({ asset, localId: id }, context);
@@ -2378,7 +2378,11 @@ export async function getCorporateBallotDetails(
   ]);
 
   if (rawCorporateAction.isNone || rawMetas.isNone || rawTimeRange.isNone) {
-    return null;
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'The CorporateBallot does not exist',
+      data: { id },
+    });
   }
 
   const timeRange = rawTimeRange.unwrap();
@@ -2396,7 +2400,7 @@ export async function getCorporateBallotDetails(
 /**
  * @hidden
  */
-export async function assertBallotNotStarted({ startDate }: CorporateBallotParams): Promise<void> {
+export function assertBallotNotStarted({ startDate }: CorporateBallotParams): void {
   if (startDate < new Date()) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
