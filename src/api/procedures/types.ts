@@ -6,6 +6,7 @@ import {
   CheckpointSchedule,
   ChildIdentity,
   CorporateActionBase,
+  CorporateBallot,
   CustomPermissionGroup,
   DefaultPortfolio,
   FungibleAsset,
@@ -1325,6 +1326,10 @@ export interface RemoveCorporateActionParams {
   corporateAction: CorporateActionBase | BigNumber;
 }
 
+export interface RemoveCorporateBallotParams {
+  ballot: CorporateBallot | BigNumber;
+}
+
 export interface ModifyCorporateActionsAgentParams {
   /**
    * Identity to be set as Corporate Actions Agent
@@ -1861,3 +1866,8 @@ export interface CreateBallotParams {
   declarationDate?: Date;
   rcv?: boolean;
 }
+
+export type CorporateBallotParams = Omit<CreateBallotParams, 'declarationDate' | 'rcv'> & {
+  rcv: boolean;
+  declarationDate: Date;
+};
