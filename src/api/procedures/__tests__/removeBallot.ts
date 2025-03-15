@@ -103,7 +103,7 @@ describe('removeBallot procedure', () => {
   });
 
   it('should throw an error if ballot is not found', async () => {
-    jest.spyOn(utilsInternalModule, 'getCorporateBallotDetails').mockResolvedValue(null);
+    jest.spyOn(utilsInternalModule, 'getCorporateBallotDetailsOrThrow').mockRejectedValue('');
 
     return expect(
       prepareRemoveBallot.call(proc, {
@@ -128,7 +128,9 @@ describe('removeBallot procedure', () => {
   });
 
   it('should add a removeBallot transaction to the queue', async () => {
-    jest.spyOn(utilsInternalModule, 'getCorporateBallotDetails').mockResolvedValue(ballotDetails);
+    jest
+      .spyOn(utilsInternalModule, 'getCorporateBallotDetailsOrThrow')
+      .mockResolvedValue(ballotDetails);
 
     let result = await prepareRemoveBallot.call(proc, {
       asset,

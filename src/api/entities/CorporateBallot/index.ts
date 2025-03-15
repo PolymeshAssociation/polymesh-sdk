@@ -6,7 +6,7 @@ import { Context, Entity, FungibleAsset, PolymeshError } from '~/internal';
 import { ErrorCode, NoArgsProcedureMethod } from '~/types';
 import {
   createProcedureMethod,
-  getCorporateBallotDetails,
+  getCorporateBallotDetailsOrThrow,
   toHumanReadable,
 } from '~/utils/internal';
 
@@ -71,9 +71,13 @@ export class CorporateBallot extends Entity<UniqueIdentifiers, HumanReadable> {
   public async exists(): Promise<boolean> {
     const { id, asset, context } = this;
 
-    const exists = await getCorporateBallotDetails(asset, id, context);
+    try {
+      await getCorporateBallotDetailsOrThrow(asset, id, context);
+    } catch (error) {
+      return false;
+    }
 
-    return !!exists;
+    return true;
   }
 
   /**
