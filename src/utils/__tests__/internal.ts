@@ -93,6 +93,7 @@ import {
   getAssetIdForTicker,
   getAssetIdFromMiddleware,
   getCheckpointValue,
+  getCorporateBallotDetailsOrThrow,
   getDid,
   getExemptedIds,
   getIdentity,
@@ -2865,19 +2866,79 @@ describe('assertDeclarationDate', () => {
 });
 
 describe('assertBallotNotStarted', () => {
-  it('should throw an error if ballot has already started', async () => {
+  it('should throw an error if ballot has already started', () => {
     const pastDate = new Date(new Date().getTime() - 1000 * 60 * 60 * 24);
 
-    await expect(
-      assertBallotNotStarted({ startDate: pastDate } as CorporateBallotParams)
-    ).rejects.toThrow('The ballot has already started');
+    expect(() => assertBallotNotStarted({ startDate: pastDate } as CorporateBallotParams)).toThrow(
+      'The ballot has already started'
+    );
   });
 
-  it('should not throw an error if ballot has not started yet', async () => {
+  it('should not throw an error if ballot has not started yet', () => {
     const futureDate = new Date(new Date().getTime() + 1000 * 60 * 60 * 24);
 
-    await expect(
+    expect(() =>
       assertBallotNotStarted({ startDate: futureDate } as CorporateBallotParams)
-    ).resolves.not.toThrow();
+    ).not.toThrow();
+  });
+});
+
+describe('getCorporateBallotDetailsOrThrow', () => {
+  let mockContext: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    mockContext = dsMockUtils.getContextInstance();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should throw an error if the ballot does not exist', () => {
+    const assetId = '12341234-1234-1234-1234-123412341234';
+    const id = new BigNumber(1);
+
+    const assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
+    const bigNumberToU32Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU32');
+    const corporateActionIdentifierToCaIdSpy = jest.spyOn(
+      utilsConversionModule,
+      'corporateActionIdentifierToCaId'
+    );
+
+    assetToMeshAssetIdSpy.mockReturnValue(dsMockUtils.createMockAssetId(assetId));
+    bigNumberToU32Spy.mockReturnValue(dsMockUtils.createMockU32(id));
+    corporateActionIdentifierToCaIdSpy.mockReturnValue(
+      dsMockUtils.createMockCAId({
+        assetId: '0x9999',
+        localId: new BigNumber(5),
+      })
+    );
+
+    dsMockUtils.createQueryMock('corporateAction', 'corporateActions', {
+      returnValue: dsMockUtils.createMockOption(),
+    });
+
+    dsMockUtils.createQueryMock('corporateAction', 'details', {
+      returnValue: dsMockUtils.createMockBytes(),
+    });
+
+    dsMockUtils.createQueryMock('corporateBallot', 'timeRanges', {
+      returnValue: dsMockUtils.createMockOption(),
+    });
+
+    dsMockUtils.createQueryMock('corporateBallot', 'metas', {
+      returnValue: dsMockUtils.createMockOption(),
+    });
+
+    dsMockUtils.createQueryMock('corporateBallot', 'rcv', {
+      returnValue: dsMockUtils.createMockBool(),
+    });
+
+    const asset = entityMockUtils.getFungibleAssetInstance({ assetId });
+
+    return expect(() => getCorporateBallotDetailsOrThrow(asset, id, mockContext)).rejects.toThrow(
+      'The CorporateBallot does not exist'
+    );
   });
 });

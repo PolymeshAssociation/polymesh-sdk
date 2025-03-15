@@ -1,8 +1,9 @@
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { Context, CorporateBallot, PolymeshTransaction } from '~/internal';
+import { Context, CorporateBallot, PolymeshError, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { ErrorCode } from '~/types';
 import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
@@ -97,7 +98,7 @@ describe('CorporateBallot class', () => {
 
   describe('method: exists', () => {
     it('should return whether the Distribution exists', async () => {
-      jest.spyOn(utilsInternalModule, 'getCorporateBallotDetails').mockResolvedValue({
+      jest.spyOn(utilsInternalModule, 'getCorporateBallotDetailsOrThrow').mockResolvedValue({
         declarationDate,
         description,
         meta: mockBallotMeta,
@@ -110,7 +111,13 @@ describe('CorporateBallot class', () => {
 
       expect(result).toBe(true);
 
-      jest.spyOn(utilsInternalModule, 'getCorporateBallotDetails').mockResolvedValue(null);
+      jest.spyOn(utilsInternalModule, 'getCorporateBallotDetailsOrThrow').mockRejectedValue(
+        new PolymeshError({
+          code: ErrorCode.DataUnavailable,
+          message: 'The CorporateBallot does not exist',
+          data: { id: corporateBallot.id },
+        })
+      );
 
       result = await corporateBallot.exists();
 

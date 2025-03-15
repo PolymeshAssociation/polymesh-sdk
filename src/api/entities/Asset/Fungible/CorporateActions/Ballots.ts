@@ -1,16 +1,17 @@
 import BigNumber from 'bignumber.js';
 
 import { createBallot } from '~/api/procedures/createBallot';
+import { modifyBallot } from '~/api/procedures/modifyBallot';
 import { removeBallot } from '~/api/procedures/removeBallot';
-import { Context, CorporateBallot, FungibleAsset, Namespace, PolymeshError } from '~/internal';
+import { Context, CorporateBallot, FungibleAsset, Namespace } from '~/internal';
 import {
   CreateBallotParams,
-  ErrorCode,
+  ModifyCorporateBallotParams,
   ProcedureMethod,
   RemoveCorporateBallotParams,
 } from '~/types';
 import { assetToMeshAssetId, u32ToBigNumber } from '~/utils/conversion';
-import { createProcedureMethod, getCorporateBallotDetails } from '~/utils/internal';
+import { createProcedureMethod, getCorporateBallotDetailsOrThrow } from '~/utils/internal';
 
 jest.mock(
   '~/base/Procedure',
@@ -42,6 +43,11 @@ export class Ballots extends Namespace<FungibleAsset> {
       { getProcedureAndArgs: args => [removeBallot, { asset: parent, ...args }] },
       context
     );
+
+    this.modify = createProcedureMethod(
+      { getProcedureAndArgs: args => [modifyBallot, { asset: parent, ...args }] },
+      context
+    );
   }
 
   /**
@@ -54,14 +60,7 @@ export class Ballots extends Namespace<FungibleAsset> {
     const { parent, context } = this;
     const { id } = args;
 
-    const ballotDetails = await getCorporateBallotDetails(parent, id, context);
-
-    if (!ballotDetails) {
-      throw new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message: 'The Ballot does not exist',
-      });
-    }
+    const ballotDetails = await getCorporateBallotDetailsOrThrow(parent, id, context);
 
     const ballot = new CorporateBallot(
       {
@@ -119,4 +118,12 @@ export class Ballots extends Namespace<FungibleAsset> {
    * @throws if the Ballot has already started
    */
   public remove: ProcedureMethod<RemoveCorporateBallotParams, void>;
+
+  /**
+   * Modify a Ballot associated to this Asset by its ID
+   *
+   * @throws if the Ballot does not exist
+   * @throws if the Ballot has already started
+   */
+  public modify: ProcedureMethod<ModifyCorporateBallotParams, CorporateBallot>;
 }
