@@ -1,13 +1,17 @@
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { Context, CorporateBallot } from '~/internal';
+import { Context, CorporateBallot, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Asset/Fungible',
   require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
+);
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 
 describe('CorporateBallot class', () => {
@@ -77,7 +81,6 @@ describe('CorporateBallot class', () => {
   describe('constructor', () => {
     it('should assign parameters to instance', () => {
       expect(corporateBallot.id).toEqual(id);
-      expect(corporateBallot.asset.id).toBe(assetId);
     });
   });
 
@@ -94,19 +97,20 @@ describe('CorporateBallot class', () => {
 
   describe('method: exists', () => {
     it('should return whether the Distribution exists', async () => {
-      dsMockUtils.createQueryMock('corporateBallot', 'metas', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockCorporateBallotMeta({ title: 'someTitle', motions: [] })
-        ),
+      jest.spyOn(utilsInternalModule, 'getCorporateBallotDetails').mockResolvedValue({
+        declarationDate,
+        description,
+        meta: mockBallotMeta,
+        startDate,
+        endDate,
+        rcv: false,
       });
 
       let result = await corporateBallot.exists();
 
       expect(result).toBe(true);
 
-      dsMockUtils.createQueryMock('corporateBallot', 'metas', {
-        returnValue: dsMockUtils.createMockOption(),
-      });
+      jest.spyOn(utilsInternalModule, 'getCorporateBallotDetails').mockResolvedValue(null);
 
       result = await corporateBallot.exists();
 
@@ -126,6 +130,20 @@ describe('CorporateBallot class', () => {
         endDate: endDate.toISOString(),
         description,
       });
+    });
+  });
+
+  describe('method: remove', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(expect.anything(), context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await corporateBallot.remove();
+
+      expect(tx).toBe(expectedTransaction);
     });
   });
 });

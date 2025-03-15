@@ -1,9 +1,13 @@
 import BigNumber from 'bignumber.js';
 
+import { removeBallot } from '~/api/procedures/removeBallot';
 import { Context, Entity, FungibleAsset } from '~/internal';
-import { BallotMeta, CreateBallotParams } from '~/types';
-import { corporateActionIdentifierToCaId } from '~/utils/conversion';
-import { toHumanReadable } from '~/utils/internal';
+import { BallotMeta, CreateBallotParams, NoArgsProcedureMethod } from '~/types';
+import {
+  createProcedureMethod,
+  getCorporateBallotDetails,
+  toHumanReadable,
+} from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
@@ -43,7 +47,7 @@ export class CorporateBallot extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * Asset affected by this Ballot
    */
-  public asset: FungibleAsset;
+  private readonly asset: FungibleAsset;
 
   /**
    * Ballot description
@@ -95,6 +99,14 @@ export class CorporateBallot extends Entity<UniqueIdentifiers, HumanReadable> {
     this.endDate = endDate;
     this.description = description;
     this.declarationDate = declarationDate;
+
+    this.remove = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [removeBallot, { ballot: this, asset: this.asset }],
+        voidArgs: true,
+      },
+      context
+    );
   }
 
   /**
@@ -102,26 +114,15 @@ export class CorporateBallot extends Entity<UniqueIdentifiers, HumanReadable> {
    *
    */
   public async exists(): Promise<boolean> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { corporateBallot },
-        },
-      },
-      id,
-      asset,
-      context,
-    } = this;
+    const { id, asset, context } = this;
 
-    const caId = corporateActionIdentifierToCaId({ localId: id, asset }, context);
+    const exists = await getCorporateBallotDetails(asset, id, context);
 
-    const ballot = await corporateBallot.metas(caId);
-
-    return ballot.isSome;
+    return !!exists;
   }
 
   /**
-   * Return the Dividend Distribution's static data
+   * Return the Corporate Ballot's static data
    */
   public override toHuman(): HumanReadable {
     const { id, asset, meta, description, declarationDate, startDate, endDate, rcv } = this;
@@ -137,4 +138,10 @@ export class CorporateBallot extends Entity<UniqueIdentifiers, HumanReadable> {
       rcv,
     });
   }
+
+  /**
+   * Remove the Ballot
+   *
+   */
+  public remove: NoArgsProcedureMethod<void>;
 }

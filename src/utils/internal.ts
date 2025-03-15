@@ -62,6 +62,7 @@ import {
   ClaimType,
   Condition,
   ConditionType,
+  CorporateBallotParams,
   CountryCode,
   DefaultPortfolio,
   ErrorCode,
@@ -119,14 +120,20 @@ import {
 } from '~/utils/constants';
 import {
   assetIdToString,
+  assetToMeshAssetId,
   bigNumberToU32,
+  boolToBoolean,
+  bytesToString,
   claimIssuerToMeshClaimIssuer,
+  corporateActionIdentifierToCaId,
   identitiesToBtreeSet,
   identityIdToString,
   meshClaimTypeToClaimType,
+  meshCorporateBallotMetaToCorporateBallotMeta,
   meshPermissionsToPermissionsV2,
   meshStatToStatType,
   middlewareScopeToScope,
+  momentToDate,
   permillToBigNumber,
   signerToString,
   stakingRewardDestinationToRaw,
@@ -2339,6 +2346,61 @@ export function assertDeclarationDate(declarationDate: Date): void {
       code: ErrorCode.ValidationError,
       message: 'Declaration date must be in the past',
       data: { declarationDate },
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
+export async function getCorporateBallotDetails(
+  asset: FungibleAsset,
+  id: BigNumber,
+  context: Context
+): Promise<CorporateBallotParams | null> {
+  const rawAssetId = assetToMeshAssetId(asset, context);
+  const rawLocalId = bigNumberToU32(id, context);
+  const rawCaId = corporateActionIdentifierToCaId({ asset, localId: id }, context);
+
+  const {
+    polymeshApi: {
+      query: { corporateBallot, corporateAction },
+    },
+  } = context;
+
+  const [rawCorporateAction, rawDescription, rawMetas, rawRcv, rawTimeRange] = await Promise.all([
+    corporateAction.corporateActions(rawAssetId, rawLocalId),
+    corporateAction.details(rawCaId),
+    corporateBallot.metas(rawCaId),
+    corporateBallot.rcv(rawCaId),
+    corporateBallot.timeRanges(rawCaId),
+  ]);
+
+  if (rawCorporateAction.isNone || rawMetas.isNone || rawTimeRange.isNone) {
+    return null;
+  }
+
+  const timeRange = rawTimeRange.unwrap();
+
+  return {
+    declarationDate: momentToDate(rawCorporateAction.unwrap().declDate),
+    description: bytesToString(rawDescription),
+    meta: meshCorporateBallotMetaToCorporateBallotMeta(rawMetas.unwrap()),
+    startDate: momentToDate(timeRange.start),
+    endDate: momentToDate(timeRange.end),
+    rcv: boolToBoolean(rawRcv),
+  };
+}
+
+/**
+ * @hidden
+ */
+export async function assertBallotNotStarted({ startDate }: CorporateBallotParams): Promise<void> {
+  if (startDate < new Date()) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The ballot has already started',
+      data: { startDate },
     });
   }
 }
