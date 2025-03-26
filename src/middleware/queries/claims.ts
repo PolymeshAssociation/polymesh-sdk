@@ -4,7 +4,6 @@ import gql from 'graphql-tag';
 
 import { getSizeAndOffset, removeUndefinedValues } from '~/middleware/queries/common';
 import {
-  ClaimsGroupBy,
   ClaimsOrderBy,
   ClaimTypeEnum,
   TrustedClaimIssuer,
@@ -66,7 +65,7 @@ export interface ClaimsQueryFilter {
 export function claimsGroupingQuery(
   variables: ClaimsQueryFilter,
   orderBy = ClaimsOrderBy.TargetIdAsc,
-  groupBy = ClaimsGroupBy.TargetId
+  groupBy = 'TARGET_ID'
 ): QueryOptions<PaginatedQueryArgs<ClaimsQueryFilter>> {
   const { args, filter } = createClaimsFilters(variables);
 

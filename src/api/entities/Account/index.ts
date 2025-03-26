@@ -168,7 +168,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
    * Retrieve a list of transactions signed by this Account. Can be filtered using parameters
    *
    * @note if both `blockNumber` and `blockHash` are passed, only `blockNumber` is taken into account.
-   * Also, for ordering by block_id, one should pass `ExtrinsicsOrderBy.CreatedAtAsc` or `ExtrinsicsOrderBy.CreatedAtDesc`
+   * Also, for ordering by block_id, one should pass `ExtrinsicsOrderBy.BlockIdAsc` or `ExtrinsicsOrderBy.BlockIdDesc`
    * in order of their choice (since block ID is a string field in middleware v2)
    *
    * @param filters.tag - tag associated with the transaction
@@ -189,14 +189,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       orderBy?: ExtrinsicsOrderBy;
     } = {}
   ): Promise<ResultSet<ExtrinsicData>> {
-    const {
-      tag,
-      success,
-      size,
-      start,
-      orderBy = ExtrinsicsOrderBy.CreatedAtAsc,
-      blockHash,
-    } = filters;
+    const { tag, success, size, start, orderBy = ExtrinsicsOrderBy.IdAsc, blockHash } = filters;
 
     const { context, address } = this;
 

@@ -6,3 +6,6 @@ generates:
       - 'typescript'
     config:
       maybeValue: T
+      disableDescriptions: true
+      useImplementingTypes: true
+      skipTypename: true

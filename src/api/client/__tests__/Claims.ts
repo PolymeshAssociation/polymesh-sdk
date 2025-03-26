@@ -10,7 +10,6 @@ import {
 } from '~/middleware/queries/claims';
 import {
   Claim,
-  ClaimsGroupBy,
   ClaimsOrderBy,
   ClaimTypeEnum,
   CustomClaimType as MiddlewareCustomClaimType,
@@ -836,7 +835,7 @@ describe('Claims Class', () => {
               includeExpired: true,
             },
             ClaimsOrderBy.IssuerIdAsc,
-            ClaimsGroupBy.IssuerId
+            'ISSUER_ID'
           ),
           returnData: {
             claims: {

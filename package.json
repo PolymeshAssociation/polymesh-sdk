@@ -22,7 +22,7 @@
   "scripts": {
     "start": "cross-env node scripts/generateTsconfigDev.js && cross-env webpack-dev-server --config=webpack.config.dev.js",
     "generate:polkadot-types": "yarn fetch-metadata && yarn fetch-definitions && yarn generate:defs && yarn generate:meta && yarn generate:consts && yarn generate:post-process",
-    "generate:process-middleware-types": "cross-env node scripts/processMiddlewareTypes.js",
+    "generate:process-middleware-types": "ts-node scripts/processMiddlewareTypes.ts",
     "generate:middleware-types": "graphql-codegen -c codegen.yaml && yarn generate:process-middleware-types",
     "fetch-definitions": "cross-env node scripts/fetchDefinitions.js",
     "fetch-metadata": "sh scripts/fetchMetadata.sh",

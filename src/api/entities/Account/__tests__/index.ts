@@ -226,7 +226,7 @@ describe('Account class', () => {
       const blockHash2 = 'otherHash';
       const blockDate1 = new Date('2022-12-25T00:00:00Z');
       const blockDate2 = new Date('2022-12-25T12:00:00Z');
-      const order = ExtrinsicsOrderBy.CreatedAtAsc;
+      const order = ExtrinsicsOrderBy.IdAsc;
 
       when(txTagToExtrinsicIdentifierSpy).calledWith(tag).mockReturnValue({
         moduleId,

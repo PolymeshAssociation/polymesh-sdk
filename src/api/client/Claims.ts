@@ -14,7 +14,7 @@ import {
   claimsQuery,
   customClaimTypeQuery,
 } from '~/middleware/queries/claims';
-import { ClaimsGroupBy, ClaimsOrderBy, ClaimTypeEnum, Query } from '~/middleware/types';
+import { ClaimsOrderBy, ClaimTypeEnum, Query } from '~/middleware/types';
 import { IdentityClaim } from '~/polkadot/polymesh';
 import {
   CddClaim,
@@ -536,7 +536,7 @@ export class Claims {
             claims: { groupedAggregates: groupedIssuers },
           },
         } = await context.queryMiddleware<Ensured<Query, 'claims'>>(
-          claimsGroupingQuery(filters, ClaimsOrderBy.IssuerIdAsc, ClaimsGroupBy.IssuerId)
+          claimsGroupingQuery(filters, ClaimsOrderBy.IssuerIdAsc, 'ISSUER_ID')
         );
 
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
