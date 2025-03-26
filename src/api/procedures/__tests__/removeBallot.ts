@@ -73,7 +73,7 @@ describe('removeBallot procedure', () => {
   });
 
   beforeEach(() => {
-    removeBallotTransaction = dsMockUtils.createTxMock('corporateBallot', 'removeBallot');
+    removeBallotTransaction = dsMockUtils.createTxMock('corporateAction', 'removeCa');
     mockContext = dsMockUtils.getContextInstance();
     proc = procedureMockUtils.getInstance<Params, void>(mockContext);
     rawCaId = dsMockUtils.createMockCAId({
@@ -139,7 +139,7 @@ describe('removeBallot procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          transactions: [TxTags.corporateBallot.RemoveBallot],
+          transactions: [TxTags.corporateAction.RemoveCa],
           assets: [asset],
           portfolios: [],
         },
