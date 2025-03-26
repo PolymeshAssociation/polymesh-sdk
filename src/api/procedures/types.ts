@@ -1844,22 +1844,70 @@ export interface NominateValidatorsParams {
 }
 
 export interface BallotMotion {
+  /**
+   * Title of the Motion
+   */
   title: string;
+
+  /**
+   * Link to more information about the Motion
+   */
   infoLink: string;
+
+  /**
+   * Choices of the Motion
+   */
   choices: string[];
 }
 
 export interface BallotMeta {
+  /**
+   * Title of the Ballot
+   */
   title: string;
+
+  /**
+   * Motions of the Ballot
+   */
   motions: BallotMotion[];
 }
 
 export interface CreateBallotParams {
+  /**
+   * Title and motions of the Ballot
+   */
   meta: BallotMeta;
+
+  /**
+   * Date on which the voting period for the Ballot starts
+   */
   startDate: Date;
+
+  /**
+   * Date on which the voting period for the Ballot ends
+   */
   endDate: Date;
+
+  /**
+   * Description of the Corporate Action to which the Ballot is attached
+   */
   description: string;
+
+  /**
+   * Asset Holder Identities to be included (or excluded) from the Ballot. Inclusion/exclusion is controlled by the `treatment`
+   *   property. When the value is `Include`, all Asset Holders not present in the array are excluded, and vice-versa. If no value is passed,
+   *   the default value for the Asset is used. If there is no default value, all Asset Holders will be part of the Ballot
+   */
+  targets?: InputCorporateActionTargets;
+
+  /**
+   * Date on which the Corporate Action is declared
+   */
   declarationDate?: Date;
+
+  /**
+   * Specifies whether RCV is enabled for this ballot.
+   */
   rcv?: boolean;
 }
 
