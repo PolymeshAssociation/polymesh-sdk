@@ -1,19 +1,17 @@
 import BigNumber from 'bignumber.js';
 
 import { createBallot } from '~/api/procedures/createBallot';
-import { Context, CorporateBallot, FungibleAsset, Namespace, PolymeshError } from '~/internal';
-import { CreateBallotParams, ErrorCode, ProcedureMethod } from '~/types';
+import { modifyBallot } from '~/api/procedures/modifyBallot';
+import { removeBallot } from '~/api/procedures/removeBallot';
+import { Context, CorporateBallot, FungibleAsset, Namespace } from '~/internal';
 import {
-  assetToMeshAssetId,
-  bigNumberToU32,
-  boolToBoolean,
-  bytesToString,
-  corporateActionIdentifierToCaId,
-  meshCorporateBallotMetaToCorporateBallotMeta,
-  momentToDate,
-  u32ToBigNumber,
-} from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+  CreateBallotParams,
+  ModifyCorporateBallotParams,
+  ProcedureMethod,
+  RemoveCorporateBallotParams,
+} from '~/types';
+import { assetToMeshAssetId, u32ToBigNumber } from '~/utils/conversion';
+import { createProcedureMethod, getCorporateBallotDetailsOrThrow } from '~/utils/internal';
 
 jest.mock(
   '~/base/Procedure',
@@ -40,6 +38,16 @@ export class Ballots extends Namespace<FungibleAsset> {
       { getProcedureAndArgs: args => [createBallot, { asset: parent, ...args }] },
       context
     );
+
+    this.remove = createProcedureMethod(
+      { getProcedureAndArgs: args => [removeBallot, { asset: parent, ...args }] },
+      context
+    );
+
+    this.modify = createProcedureMethod(
+      { getProcedureAndArgs: args => [modifyBallot, { asset: parent, ...args }] },
+      context
+    );
   }
 
   /**
@@ -49,47 +57,16 @@ export class Ballots extends Namespace<FungibleAsset> {
    * @throws if the provided Corporate Action does not exist
    */
   public async getOne(args: { id: BigNumber }): Promise<CorporateBallot> {
-    const {
-      parent,
-      context: {
-        polymeshApi: { query },
-      },
-      context,
-    } = this;
-
+    const { parent, context } = this;
     const { id } = args;
-    const rawAssetId = assetToMeshAssetId(parent, context);
-    const rawLocalId = bigNumberToU32(id, context);
-    const rawCaId = corporateActionIdentifierToCaId({ asset: parent, localId: id }, context);
 
-    const [corporateAction, rawDescription, rawMetas, rawRcv, rawTimeRange] = await Promise.all([
-      query.corporateAction.corporateActions(rawAssetId, rawLocalId),
-      query.corporateAction.details(rawCaId),
-      query.corporateBallot.metas(rawCaId),
-      query.corporateBallot.rcv(rawCaId),
-      query.corporateBallot.timeRanges(rawCaId),
-    ]);
-    const timeRange = rawTimeRange.unwrap();
-
-    if (corporateAction.isNone || rawMetas.isNone) {
-      throw new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message: 'The Ballot does not exist',
-      });
-    }
-
-    const meta = meshCorporateBallotMetaToCorporateBallotMeta(rawMetas.unwrap());
+    const ballotDetails = await getCorporateBallotDetailsOrThrow(parent, id, context);
 
     const ballot = new CorporateBallot(
       {
         id,
         assetId: parent.id,
-        meta,
-        description: bytesToString(rawDescription),
-        rcv: boolToBoolean(rawRcv),
-        startDate: momentToDate(timeRange.start),
-        endDate: momentToDate(timeRange.end),
-        declarationDate: momentToDate(corporateAction.unwrap().declDate),
+        ...ballotDetails,
       },
       context
     );
@@ -134,4 +111,19 @@ export class Ballots extends Namespace<FungibleAsset> {
 
     return ballots.filter((b): b is CorporateBallot => b !== undefined);
   }
+
+  /* Remove a Ballot associated to this Asset by its ID
+   *
+   * @throws if the Ballot does not exist
+   * @throws if the Ballot has already started
+   */
+  public remove: ProcedureMethod<RemoveCorporateBallotParams, void>;
+
+  /**
+   * Modify a Ballot associated to this Asset by its ID
+   *
+   * @throws if the Ballot does not exist
+   * @throws if the Ballot has already started
+   */
+  public modify: ProcedureMethod<ModifyCorporateBallotParams, CorporateBallot>;
 }

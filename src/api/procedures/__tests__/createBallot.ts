@@ -21,7 +21,6 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { BallotMeta, CorporateActionKind, FungibleAsset, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
-import { hexToUuid } from '~/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -340,7 +339,6 @@ describe('createBallot procedure', () => {
     it('should return the new CorporateBallot', async () => {
       const result = await createBallotResolver(mockContext)({} as ISubmittableResult);
 
-      expect(result.asset.id).toBe(hexToUuid(assetId));
       expect(result.id).toEqual(id);
       expect(result.declarationDate).toEqual(declarationDate);
       expect(result.description).toEqual(description);

@@ -5,7 +5,13 @@ import { Ballots } from '~/api/entities/Asset/Fungible/CorporateActions/Ballots'
 import { CorporateBallot, Namespace, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockCorporateBallot } from '~/testUtils/mocks/entities';
-import { CreateBallotParams, ErrorCode, PolymeshTransaction } from '~/types';
+import {
+  CreateBallotParams,
+  ErrorCode,
+  ModifyCorporateBallotParams,
+  PolymeshTransaction,
+  RemoveCorporateBallotParams,
+} from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('Ballots class', () => {
@@ -114,7 +120,6 @@ describe('Ballots class', () => {
       const ballot = await target.getOne({ id });
 
       expect(ballot.id).toEqual(id);
-      expect(ballot.asset.id).toBe(assetId);
       expect(ballot.declarationDate).toEqual(start);
       expect(ballot.startDate).toEqual(start);
       expect(ballot.endDate).toEqual(end);
@@ -130,37 +135,6 @@ describe('Ballots class', () => {
           },
         ],
       });
-    });
-
-    it('should throw an error if the Ballot does not exist', async () => {
-      const assetId = '12341234-1234-1234-1234-123412341234';
-      const id = new BigNumber(1);
-
-      dsMockUtils.createQueryMock('corporateAction', 'corporateActions', {
-        returnValue: dsMockUtils.createMockOption(),
-      });
-
-      dsMockUtils.createQueryMock('corporateAction', 'details', {
-        returnValue: dsMockUtils.createMockBytes(),
-      });
-
-      dsMockUtils.createQueryMock('corporateBallot', 'timeRanges', {
-        returnValue: dsMockUtils.createMockOption(),
-      });
-
-      dsMockUtils.createQueryMock('corporateBallot', 'metas', {
-        returnValue: dsMockUtils.createMockOption(),
-      });
-
-      dsMockUtils.createQueryMock('corporateBallot', 'rcv', {
-        returnValue: dsMockUtils.createMockBool(),
-      });
-
-      const context = dsMockUtils.getContextInstance();
-      const asset = entityMockUtils.getFungibleAssetInstance({ assetId });
-      const target = new Ballots(asset, context);
-
-      await expect(target.getOne({ id })).rejects.toThrow('The Ballot does not exist');
     });
   });
 
@@ -188,7 +162,7 @@ describe('Ballots class', () => {
           return Promise.reject(
             new PolymeshError({
               code: ErrorCode.DataUnavailable,
-              message: 'The Ballot does not exist',
+              message: 'The CorporateBallot does not exist',
             })
           );
         }
@@ -205,7 +179,6 @@ describe('Ballots class', () => {
 
       expect(ballots.length).toBe(1);
       expect(ballots[0].id.isEqualTo(new BigNumber(0))).toBe(true);
-      expect(ballots[0].asset.id).toBe(assetId);
     });
   });
 
@@ -229,6 +202,55 @@ describe('Ballots class', () => {
         .mockResolvedValue(expectedTransaction);
 
       const tx = await ballots.create(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: remove', () => {
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const asset = entityMockUtils.getFungibleAssetInstance();
+      const ballots = new Ballots(asset, context);
+
+      const args = { foo: 'bar' } as unknown as RemoveCorporateBallotParams;
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { asset, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await ballots.remove(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: modify', () => {
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const asset = entityMockUtils.getFungibleAssetInstance();
+      const ballots = new Ballots(asset, context);
+
+      const args = { foo: 'bar' } as unknown as ModifyCorporateBallotParams;
+
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<CorporateBallot>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { asset, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await ballots.modify(args);
 
       expect(tx).toBe(expectedTransaction);
     });

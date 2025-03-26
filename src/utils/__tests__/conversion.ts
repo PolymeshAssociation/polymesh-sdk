@@ -11810,7 +11810,7 @@ describe('corporateBallotTimeRangeToMeshCorporateBallotTimeRange', () => {
         endDate,
         mockContext
       )
-    ).toThrow('Start date must be after declaration date');
+    ).toThrow('Voting start date must be after declaration date');
   });
 
   it('should throw an error if end date is before start date', () => {
@@ -11825,7 +11825,7 @@ describe('corporateBallotTimeRangeToMeshCorporateBallotTimeRange', () => {
         endDate,
         mockContext
       )
-    ).toThrow('End date must be after start date');
+    ).toThrow('End date must be after or same as start date');
   });
 
   it('should throw an error if end date is in the past', () => {
@@ -11852,8 +11852,8 @@ describe('corporateBallotTimeRangeToMeshCorporateBallotTimeRange', () => {
 
   it('should convert valid dates to mesh ballot time range', () => {
     const declarationDate = new Date();
-    const startDate = new Date();
-    const endDate = new Date(new Date().getTime() + 1000);
+    const startDate = new Date(declarationDate.getTime() + 24 * 60 * 60 * 1000);
+    const endDate = new Date(declarationDate.getTime() + 48 * 60 * 60 * 1000);
     const mockStart = dsMockUtils.createMockMoment(new BigNumber(startDate.getTime()));
     const mockEnd = dsMockUtils.createMockMoment(new BigNumber(endDate.getTime()));
 
