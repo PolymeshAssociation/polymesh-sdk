@@ -62,7 +62,6 @@ import type {
   PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
   PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth,
   PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth,
-  PolymeshCommonUtilitiesMaybeBlock,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
   PolymeshContractsApi,
   PolymeshContractsChainExtensionExtrinsicId,
@@ -87,6 +86,7 @@ import type {
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesIdentityIdPortfolioKind,
+  PolymeshPrimitivesMaybeBlock,
   PolymeshPrimitivesMemo,
   PolymeshPrimitivesNftNfTs,
   PolymeshPrimitivesNftNftCollectionKeys,
@@ -129,12 +129,21 @@ declare module '@polkadot/api-base/types/submittable' {
   interface AugmentedSubmittables<ApiType extends ApiTypes> {
     asset: {
       /**
-       * This function is used to accept a token ownership transfer.
+       * Accepts an asset ownership transfer.
+       *
+       * Consumes the authorization `auth_id` (see `pallet_identity::consume_auth`).
        * NB: To reject the transfer, call remove auth function in identity module.
        *
        * # Arguments
-       * * `origin`: it contains the secondary key of the caller (i.e. who signed the transaction to execute this function).
-       * * `auth_id`: authorization ID of the token ownership transfer authorization.
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `auth_id` - Authorization ID of the asset ownership transfer authorization.
+       *
+       * # Events
+       * * `AssetOwnershipTransferred` - When a asset ownership is successfully transferred.
+       *
+       * # Errors
+       * * `TickerRegistrationNotFound` - If the ticker registration is not found.
+       * * `TickerIsAlreadyLinkedToAnAsset` - If the ticker is already linked to an asset.
        **/
       acceptAssetOwnershipTransfer: AugmentedSubmittable<
         (authId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -147,23 +156,38 @@ declare module '@polkadot/api-base/types/submittable' {
        * NB: To reject the transfer, call remove auth function in identity module.
        *
        * # Arguments
-       * * `origin`: it contains the secondary key of the caller (i.e. who signed the transaction to execute this function).
-       * * `auth_id`: authorization ID of ticker transfer authorization.
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `auth_id` - Authorization ID of ticker transfer authorization.
+       *
+       * # Events
+       * * `TickerTransferred` - When a ticker is successfully transferred.
+       *
+       * # Errors
+       * * `TickerRegistrationNotFound` - If the ticker registration is not found.
+       * * `TickerIsAlreadyLinkedToAnAsset` - If the ticker is already linked to an asset.
        **/
       acceptTickerTransfer: AugmentedSubmittable<
         (authId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [u64]
       >;
       /**
-       * Add documents for a given token.
+       * Add documents for a given asset.
+       *
+       * This function allows the asset issuer or an external agent to add documents to an asset.
        *
        * # Arguments
-       * * `origin`: is a signer that has permissions to act as an agent of `asset_id`.
-       * * `asset_id`: the [`AssetId`] associated to the token.
-       * * `docs`: documents to be attached to the token.
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `asset_id` - The [`AssetId`] associated to the asset.
+       * * `docs` - Documents to be attached to the asset.
        *
        * # Permissions
        * * Asset
+       *
+       * # Events
+       * * `DocumentAdded` - When a document is successfully added to an asset.
+       *
+       * # Errors
+       * * `CounterOverflow` - If the document ID counter overflows.
        **/
       addDocuments: AugmentedSubmittable<
         (
@@ -180,15 +204,23 @@ declare module '@polkadot/api-base/types/submittable' {
         [Vec<PolymeshPrimitivesDocument>, PolymeshPrimitivesAssetAssetId]
       >;
       /**
-       * Sets all identities in the `mediators` set as mandatory mediators for any instruction transfering `asset_id`.
+       * Sets all identities in the `mediators` set as mandatory mediators for any instruction transferring `asset_id`.
+       *
+       * This function allows the asset issuer or an external agent to add mandatory mediators for an asset.
        *
        * # Arguments
-       * * `origin`: The secondary key of the sender.
-       * * `asset_id`: the [`AssetId`] of the asset that will require the mediators.
-       * * `mediators`: A set of [`IdentityId`] of all the mandatory mediators for the given ticker.
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `asset_id` - The [`AssetId`] of the asset that will require the mediators.
+       * * `mediators` - A set of [`IdentityId`] of all the mandatory mediators for the given ticker.
        *
        * # Permissions
        * * Asset
+       *
+       * # Events
+       * * `AssetMediatorsAdded` - When the mandatory mediators are successfully added.
+       *
+       * # Errors
+       * * `NumberOfAssetMediatorsExceeded` - If the number of mandatory mediators exceeds the maximum allowed limit.
        **/
       addMandatoryMediators: AugmentedSubmittable<
         (
@@ -198,17 +230,27 @@ declare module '@polkadot/api-base/types/submittable' {
         [PolymeshPrimitivesAssetAssetId, BTreeSet<PolymeshPrimitivesIdentityId>]
       >;
       /**
-       * Forces a transfer of token from `from_portfolio` to the caller's default portfolio.
+       * Forces a transfer of tokens from `from_portfolio` to the caller's default portfolio.
+       *
+       * This function allows the asset issuer or an external agent to force a transfer of tokens from one portfolio to another.
        *
        * # Arguments
-       * * `origin`: a signer that has permissions to act as an agent of `asset_id`.
-       * * `asset_id`: the [`AssetId`] associated to the token.
-       * * `value`:  the [`Balance`] of tokens that will be transferred.
-       * * `from_portfolio`: the [`PortfolioId`] that will have its balance reduced.
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `asset_id` - The [`AssetId`] associated to the asset.
+       * * `value` - The [`Balance`] of tokens that will be transferred.
+       * * `from_portfolio` - The [`PortfolioId`] that will have its balance reduced.
        *
        * # Permissions
        * * Asset
        * * Portfolio
+       *
+       * # Events
+       * * `ControllerTransfer` - When tokens are successfully transferred.
+       *
+       * # Errors
+       * * `UnexpectedNonFungibleToken` - If the asset is a non-fungible token.
+       * * `InvalidGranularity` - If the amount to transfer does not meet the granularity requirements.
+       * * `TotalSupplyOverflow` - If the total supply exceeds the maximum allowed limit.
        **/
       controllerTransfer: AugmentedSubmittable<
         (
@@ -223,19 +265,25 @@ declare module '@polkadot/api-base/types/submittable' {
         [PolymeshPrimitivesAssetAssetId, u128, PolymeshPrimitivesIdentityIdPortfolioId]
       >;
       /**
-       * Initializes a new [`AssetDetails`], with the initiating account as its owner.
-       * The total supply will initially be zero. To mint tokens, use [`Module::issue`].
+       * Creates a new asset.
+       *
+       * The total supply will initially be zero. To mint tokens, use [`Pallet::issue`].
        *
        * # Arguments
-       * * `origin`: contains the secondary key of the caller (i.e. who signed the transaction to execute this function).
-       * * `asset_name`: the [`AssetName`] associated to the security token.
-       * * `divisible`: sets [`AssetDetails::divisible`], where `true` means the token is divisible.
-       * * `asset_type`: the [`AssetType`] that represents the security type of the [`AssetDetails`].
-       * * `asset_identifiers`: a vector of [`AssetIdentifier`].
-       * * `funding_round_name`: the name of the funding round ([`FundingRoundName`]).
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `asset_name` - The [`AssetName`] of the new asset.
+       * * `divisible` - Sets [`AssetDetails::divisible`], where `true` means the asset is divisible.
+       * * `asset_type` - The [`AssetType`] of the new asset.
+       * * `asset_identifiers` - A vector of [`AssetIdentifier`].
+       * * `funding_round_name` - The name of the funding round ([`FundingRoundName`]).
        *
-       * ## Permissions
-       * * Portfolio
+       * # Events
+       * * `AssetCreated` - When a new asset is successfully created.
+       *
+       * # Errors
+       * * `MaxLengthOfAssetNameExceeded` - If the asset name length exceeds the maximum allowed length.
+       * * `InvalidCustomAssetTypeId` - If the custom asset type ID is invalid.
+       * * `InvalidAssetIdentifier` - If any of the asset identifiers are invalid.
        **/
       createAsset: AugmentedSubmittable<
         (
@@ -280,20 +328,28 @@ declare module '@polkadot/api-base/types/submittable' {
         ]
       >;
       /**
-       * Initializes a new [`AssetDetails`], with the initiating account as its owner.
-       * The total supply will initially be zero. To mint tokens, use [`Module::issue`].
-       * Note: Utility extrinsic to batch [`Module::create_asset`] and [`Module::register_custom_asset_type`].
+       * Creates a new asset with a new custom asset type.
+       *
+       * The total supply will initially be zero. To mint tokens, use [`Pallet::issue`].
        *
        * # Arguments
-       * * `origin`: contains the secondary key of the caller (i.e. who signed the transaction to execute this function).
-       * * `asset_name`: the [`AssetName`] associated to the security token.
-       * * `divisible`: sets [`AssetDetails::divisible`], where `true` means the token is divisible.
-       * * `custom_asset_type`: the custom asset type of the token.
-       * * `asset_identifiers`: a vector of [`AssetIdentifier`].
-       * * `funding_round_name`: the name of the funding round ([`FundingRoundName`]).
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `asset_name` - The [`AssetName`] of the new asset.
+       * * `divisible` - Sets [`AssetDetails::divisible`], where `true` means the asset is divisible.
+       * * `custom_asset_type` - The custom asset type of the asset.
+       * * `asset_identifiers` - A vector of [`AssetIdentifier`].
+       * * `funding_round_name` - The name of the funding round ([`FundingRoundName`]).
        *
-       * ## Permissions
-       * * Portfolio
+       * # Events
+       * * `AssetCreated` - When a new asset is successfully created.
+       * * `CustomAssetTypeRegistered` - When a new custom asset type is successfully registered.
+       * * `CustomAssetTypeAlreadyRegistered` - When the custom asset type is already registered.
+       *
+       * # Errors
+       * * `MaxLengthOfAssetNameExceeded` - If the asset name length exceeds the maximum allowed length.
+       * * `InvalidCustomAssetTypeId` - If the custom asset type ID is invalid.
+       * * `InvalidAssetIdentifier` - If any of the asset identifiers are invalid.
+       * * `TooLong` - If the custom asset type length exceeds the maximum allowed length.
        **/
       createAssetWithCustomType: AugmentedSubmittable<
         (
@@ -319,12 +375,14 @@ declare module '@polkadot/api-base/types/submittable' {
       /**
        * Pre-approves the receivement of the asset for all identities.
        *
-       * # Arguments
-       * * `origin`: the secondary key of the sender.
-       * * `asset_id`: the [`AssetId`] that will be exempt from affirmation.
+       * This function allows the root origin to pre-approve the receivement of an asset for all identities.
        *
-       * # Permissions
-       * * Root
+       * # Arguments
+       * * `origin` - The root origin.
+       * * `asset_id` - The [`AssetId`] that will be exempt from affirmation.
+       *
+       * # Events
+       * * `AssetAffirmationExemption` - When the asset is successfully exempted from affirmation.
        **/
       exemptAssetAffirmation: AugmentedSubmittable<
         (
@@ -333,14 +391,23 @@ declare module '@polkadot/api-base/types/submittable' {
         [PolymeshPrimitivesAssetAssetId]
       >;
       /**
-       * Freezes transfers of a given token.
+       * Freezes transfers of a given asset.
+       *
+       * This function allows the asset issuer or an external agent to freeze transfers of a given asset.
        *
        * # Arguments
-       * * `origin`: the secondary key of the sender.
-       * * `asset_id`: the [`AssetId`] associated to the token.
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `asset_id` - The asset to freeze.
        *
        * # Permissions
        * * Asset
+       *
+       * # Events
+       * * `AssetFrozen` - When an asset is successfully frozen.
+       *
+       * # Errors
+       * * `NoSuchAsset` - If the asset does not exist.
+       * * `AlreadyFrozen` - If the asset is already frozen.
        **/
       freeze: AugmentedSubmittable<
         (
@@ -351,15 +418,25 @@ declare module '@polkadot/api-base/types/submittable' {
       /**
        * Issue (i.e mint) new tokens to the caller, which must be an authorized external agent.
        *
+       * This function allows the asset issuer or an external agent to mint new tokens for a given asset.
+       *
        * # Arguments
        * * `origin`: A signer that has permissions to act as an agent of `ticker`.
-       * * `asset_id`: the [`AssetId`] associated to the token.
+       * * `asset_id`: the [`AssetId`] associated to the asset.
        * * `amount`: The amount of tokens that will be issued.
        * * `portfolio_kind`: The [`PortfolioKind`] of the portfolio that will receive the minted tokens.
        *
        * # Permissions
        * * Asset
        * * Portfolio
+       *
+       * # Events
+       * * `AssetBalanceUpdated` - When the asset balance is successfully updated.
+       *
+       * # Errors
+       * * `UnexpectedNonFungibleToken` - If the asset is a non-fungible token.
+       * * `InvalidGranularity` - If the amount to issue does not meet the granularity requirements.
+       * * `TotalSupplyOverflow` - If the total supply exceeds the maximum allowed limit.
        **/
       issue: AugmentedSubmittable<
         (
@@ -377,13 +454,25 @@ declare module '@polkadot/api-base/types/submittable' {
       /**
        * Establishes a connection between a ticker and an AssetId.
        *
+       * This function allows the asset issuer or an external agent to link a ticker to an asset.
+       *
        * # Arguments
-       * * `origin`: the secondary key of the sender.
-       * * `ticker`: the [`Ticker`] that will be linked to the given `asset_id`.
-       * * `asset_id`: the [`AssetId`] that will be connected to `ticker`.
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `ticker` - The [`Ticker`] that will be linked to the given `asset_id`.
+       * * `asset_id` - The [`AssetId`] that will be connected to `ticker`.
        *
        * # Permissions
        * * Asset
+       *
+       * # Events
+       * * `TickerLinkedToAsset` - When the ticker is successfully linked to the asset.
+       *
+       * # Errors
+       * * `TickerNotRegisteredToCaller` - If the ticker is not registered to the caller.
+       * * `TickerRegistrationExpired` - If the ticker registration has expired.
+       * * `TickerRegistrationNotFound` - If the ticker registration is not found.
+       * * `TickerIsAlreadyLinkedToAnAsset` - If the ticker is already linked to an asset.
+       * * `AssetIsAlreadyLinkedToATicker` - If the asset is already linked to a ticker.
        **/
       linkTickerToAssetId: AugmentedSubmittable<
         (
@@ -393,14 +482,24 @@ declare module '@polkadot/api-base/types/submittable' {
         [PolymeshPrimitivesTicker, PolymeshPrimitivesAssetAssetId]
       >;
       /**
-       * If the token associated to `asset_id` is indivisible, sets [`AssetDetails::divisible`] to true.
+       * If the asset associated to `asset_id` is indivisible, sets [`AssetDetails::divisible`] to true.
+       *
+       * This function allows the asset issuer or an external agent to make an indivisible asset divisible.
        *
        * # Arguments
-       * * `origin`: is a signer that has permissions to act as an agent of `ticker`.
-       * * `asset_id`: the [`AssetId`] associated to the token.
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `asset_id` - The [`AssetId`] associated to the asset.
        *
        * # Permissions
        * * Asset
+       *
+       * # Events
+       * * `DivisibilityChanged` - When the divisibility of an asset is successfully changed.
+       *
+       * # Errors
+       * * `NoSuchAsset` - If the asset does not exist.
+       * * `UnexpectedNonFungibleToken` - If the asset is a non-fungible token.
+       * * `AssetAlreadyDivisible` - If the asset is already divisible.
        **/
       makeDivisible: AugmentedSubmittable<
         (
@@ -412,11 +511,14 @@ declare module '@polkadot/api-base/types/submittable' {
        * Pre-approves the receivement of an asset.
        *
        * # Arguments
-       * * `origin`: the secondary key of the sender.
-       * * `asset_id`: the [`AssetId`] that will be exempt from affirmation.
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `asset_id` - The [`AssetId`] that will be exempt from affirmation.
        *
        * # Permissions
        * * Asset
+       *
+       * # Events
+       * * `PreApprovedAsset` - When the asset is successfully pre-approved for receivement.
        **/
       preApproveAsset: AugmentedSubmittable<
         (
@@ -425,17 +527,27 @@ declare module '@polkadot/api-base/types/submittable' {
         [PolymeshPrimitivesAssetAssetId]
       >;
       /**
-       * Redeems (i.e burns) existing tokens by reducing the balance of the caller's portfolio and the total supply of the token.
+       * Redeems (i.e burns) existing tokens by reducing the balance of the caller's portfolio and the total supply of the asset.
+       *
+       * This function allows the asset issuer or an external agent to redeem tokens from a given asset.
        *
        * # Arguments
        * * `origin`: is a signer that has permissions to act as an agent of `asset_id`.
-       * * `asset_id`: the [`AssetId`] associated to the token.
+       * * `asset_id`: the [`AssetId`] associated to the asset.
        * * `value`: amount of tokens to redeem.
        * * `portfolio_kind`: the [`PortfolioKind`] that will have its balance reduced.
        *
        * # Permissions
        * * Asset
        * * Portfolio
+       *
+       * # Events
+       * * `AssetBalanceUpdated` - When the asset balance is successfully updated.
+       *
+       * # Errors
+       * * `UnexpectedNonFungibleToken` - If the asset is a non-fungible token.
+       * * `InvalidGranularity` - If the value to redeem does not meet the granularity requirements.
+       * * `TotalSupplyOverflow` - If the total supply exceeds the maximum allowed limit.
        **/
       redeem: AugmentedSubmittable<
         (
@@ -453,17 +565,27 @@ declare module '@polkadot/api-base/types/submittable' {
       /**
        * Registers and set local asset metadata.
        *
+       * This function allows the asset issuer or an external agent to register and set local metadata for an asset.
+       *
        * # Arguments
-       * * `origin`: is a signer that has permissions to act as an agent of `asset_id`.
-       * * `asset_id`: the [`AssetId`] associated to the token.
-       * * `name`: the [`AssetMetadataName`].
-       * * `spec`: the asset metadata specifications ([`AssetMetadataSpec`]).
-       * * `value`: the [`AssetMetadataValue`] of the given metadata key.
-       * * `details`: optional [`AssetMetadataValueDetail`] (expire, lock status).
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `asset_id` - The [`AssetId`] associated to the asset.
+       * * `name` - The [`AssetMetadataName`].
+       * * `spec` - The asset metadata specifications ([`AssetMetadataSpec`]).
+       * * `value` - The [`AssetMetadataValue`] of the given metadata key.
+       * * `details` - Optional [`AssetMetadataValueDetail`] (expire, lock status).
        *
        * # Permissions
-       * * Agent
        * * Asset
+       *
+       * # Events
+       * * `RegisterAssetMetadataLocalType` - When the local asset metadata type is successfully registered.
+       * * `SetAssetMetadataValue` - When the asset metadata value is successfully set.
+       *
+       * # Errors
+       * * `AssetMetadataLocalKeyAlreadyExists` - If the local metadata key already exists.
+       * * `AssetMetadataValueIsLocked` - If the metadata value is locked.
+       * * `AssetMetadataValueMaxLengthExceeded` - If the metadata value length exceeds the maximum allowed length.
        **/
       registerAndSetLocalAssetMetadata: AugmentedSubmittable<
         (
@@ -494,10 +616,20 @@ declare module '@polkadot/api-base/types/submittable' {
       /**
        * Registers asset metadata global type.
        *
+       * This function allows the root origin to register a global metadata type.
+       *
        * # Arguments
-       * * `origin`: is a signer that has permissions to act as an agent of `asset_id`.
-       * * `name`: the [`AssetMetadataName`].
-       * * `spec`: the asset metadata specifications ([`AssetMetadataSpec`]).
+       * * `origin` - The root origin.
+       * * `name` - The [`AssetMetadataName`].
+       * * `spec` - The asset metadata specifications ([`AssetMetadataSpec`]).
+       *
+       * # Events
+       * * `RegisterAssetMetadataGlobalType` - When the global asset metadata type is successfully registered.
+       *
+       * # Errors
+       * * `AssetMetadataGlobalKeyAlreadyExists` - If the global metadata key already exists.
+       * * `AssetMetadataNameMaxLengthExceeded` - If the metadata name length exceeds the maximum allowed length.
+       * * `AssetMetadataTypeDefMaxLengthExceeded` - If the metadata type definition length exceeds the maximum allowed length.
        **/
       registerAssetMetadataGlobalType: AugmentedSubmittable<
         (
@@ -513,15 +645,24 @@ declare module '@polkadot/api-base/types/submittable' {
       /**
        * Registers asset metadata local type.
        *
+       * This function allows the asset issuer or an external agent to register a local metadata type for an asset.
+       *
        * # Arguments
-       * * `origin`: is a signer that has permissions to act as an agent of `asset_id`.
-       * * `asset_id`: the [`AssetId`] associated to the token.
-       * * `name`: the [`AssetMetadataName`].
-       * * `spec`: the asset metadata specifications ([`AssetMetadataSpec`]).
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `asset_id` - The [`AssetId`] associated to the asset.
+       * * `name` - The [`AssetMetadataName`].
+       * * `spec` - The asset metadata specifications ([`AssetMetadataSpec`]).
        *
        * # Permissions
-       * * Agent
        * * Asset
+       *
+       * # Events
+       * * `RegisterAssetMetadataLocalType` - When the local asset metadata type is successfully registered.
+       *
+       * # Errors
+       * * `AssetMetadataLocalKeyAlreadyExists` - If the local metadata key already exists.
+       * * `AssetMetadataNameMaxLengthExceeded` - If the metadata name length exceeds the maximum allowed length.
+       * * `AssetMetadataTypeDefMaxLengthExceeded` - If the metadata type definition length exceeds the maximum allowed length.
        **/
       registerAssetMetadataLocalType: AugmentedSubmittable<
         (
@@ -538,28 +679,38 @@ declare module '@polkadot/api-base/types/submittable' {
       /**
        * Registers a custom asset type.
        *
-       * The provided `ty` will be bound to an ID in storage.
-       * The ID can then be used in `AssetType::Custom`.
-       * Should the `ty` already exist in storage, no second ID is assigned to it.
-       *
        * # Arguments
-       * * `origin`: who called the extrinsic.
-       * * `ty`: contains the string representation of the asset type.
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `ty` - Contains the string representation of the asset type.
+       *
+       * # Events
+       * * `CustomAssetTypeRegistered` - When a new custom asset type is successfully registered.
+       * * `CustomAssetTypeAlreadyRegistered` - When the custom asset type is already registered.
+       *
+       * # Errors
+       * * `TooLong` - If the custom asset type length exceeds the maximum allowed length.
        **/
       registerCustomAssetType: AugmentedSubmittable<
         (ty: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [Bytes]
       >;
       /**
-       * Registers a unique ticker or extends validity of an existing ticker.
-       * NB: Ticker validity does not get carry forward when renewing ticker.
+       * Registers a unique ticker or extends the validity of an existing ticker.
+       *
+       * This function allows the caller to register a new ticker or extend the registration
+       * of an existing ticker. The ticker validity does not carry forward when renewing.
        *
        * # Arguments
-       * * `origin`: it contains the secondary key of the caller (i.e. who signed the transaction to execute this function).
-       * * `ticker`: [`Ticker`] to register.
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `ticker` - The ticker to register.
        *
-       * # Permissions
-       * * Asset
+       * # Events
+       * * `TickerRegistered` - When a ticker is successfully registered.
+       *
+       * # Errors
+       * * `TickerAlreadyRegistered` - If the ticker is already registered.
+       * * `TickerTooLong` - If the ticker length exceeds the maximum allowed length.
+       * * `InvalidTickerCharacter` - If the ticker contains invalid characters.
        **/
       registerUniqueTicker: AugmentedSubmittable<
         (ticker: PolymeshPrimitivesTicker | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -568,12 +719,14 @@ declare module '@polkadot/api-base/types/submittable' {
       /**
        * Removes the pre-approval of the asset for all identities.
        *
-       * # Arguments
-       * * `origin`: the secondary key of the sender.
-       * * `asset_id`: the [`AssetId`] that will have its exemption removed.
+       * This function allows the root origin to remove the pre-approval of an asset for all identities.
        *
-       * # Permissions
-       * * Root
+       * # Arguments
+       * * `origin` - The root origin.
+       * * `asset_id` - The [`AssetId`] that will have its exemption removed.
+       *
+       * # Events
+       * * `RemoveAssetAffirmationExemption` - When the asset's affirmation exemption is successfully removed.
        **/
       removeAssetAffirmationExemption: AugmentedSubmittable<
         (
@@ -582,14 +735,17 @@ declare module '@polkadot/api-base/types/submittable' {
         [PolymeshPrimitivesAssetAssetId]
       >;
       /**
-       * Removes the pre approval of an asset.
+       * Removes the pre-approval of an asset.
        *
        * # Arguments
-       * * `origin` - the secondary key of the sender.
-       * * `asset_id`: the [`AssetId`] that will have its exemption removed.
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `asset_id` - The [`AssetId`] that will have its exemption removed.
        *
        * # Permissions
        * * Asset
+       *
+       * # Events
+       * * `RemovePreApprovedAsset` - When the asset's pre-approval is successfully removed.
        **/
       removeAssetPreApproval: AugmentedSubmittable<
         (
@@ -598,15 +754,20 @@ declare module '@polkadot/api-base/types/submittable' {
         [PolymeshPrimitivesAssetAssetId]
       >;
       /**
-       * Remove documents for a given token.
+       * Remove documents for a given asset.
+       *
+       * This function allows the asset issuer or an external agent to remove documents from an asset.
        *
        * # Arguments
-       * * `origin`: is a signer that has permissions to act as an agent of `asset_id`.
-       * * `asset_id`: the [`AssetId`] associated to the token.
-       * * `docs_id`: a vector of all [`DocumentId`] that will be removed from the token.
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `asset_id` - The [`AssetId`] associated to the asset.
+       * * `docs_id` - A vector of all [`DocumentId`] that will be removed from the asset.
        *
        * # Permissions
        * * Asset
+       *
+       * # Events
+       * * `DocumentRemoved` - When a document is successfully removed from an asset.
        **/
       removeDocuments: AugmentedSubmittable<
         (
@@ -618,13 +779,23 @@ declare module '@polkadot/api-base/types/submittable' {
       /**
        * Removes the asset metadata key and value of a local key.
        *
+       * This function allows the asset issuer or an external agent to remove a local metadata key and its value for an asset.
+       *
        * # Arguments
-       * * `origin`: the secondary key of the sender.
-       * * `asset_id`: the [`AssetId`] associated to the local metadata key.
-       * * `local_key`: the [`AssetMetadataLocalKey`] that will be removed.
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `asset_id` - The [`AssetId`] associated to the local metadata key.
+       * * `local_key` - The [`AssetMetadataLocalKey`] that will be removed.
        *
        * # Permissions
        * * Asset
+       *
+       * # Events
+       * * `LocalMetadataKeyDeleted` - When the local metadata key is successfully deleted.
+       *
+       * # Errors
+       * * `AssetMetadataKeyIsMissing` - If the local metadata key is missing.
+       * * `AssetMetadataValueIsLocked` - If the metadata value is locked.
+       * * `AssetMetadataKeyBelongsToNFTCollection` - If the metadata key belongs to an NFT collection.
        **/
       removeLocalMetadataKey: AugmentedSubmittable<
         (
@@ -636,13 +807,18 @@ declare module '@polkadot/api-base/types/submittable' {
       /**
        * Removes all identities in the `mediators` set from the mandatory mediators list for the given `asset_id`.
        *
+       * This function allows the asset issuer or an external agent to remove mandatory mediators for an asset.
+       *
        * # Arguments
-       * * `origin`: the secondary key of the sender.
-       * * `asset_id`: the [`AssetId`] of the asset that will have mediators removed.
-       * * `mediators`: A set of [`IdentityId`] of all the mediators that will be removed from the mandatory mediators list.
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `asset_id` - The [`AssetId`] of the asset that will have mediators removed.
+       * * `mediators` - A set of [`IdentityId`] of all the mediators that will be removed from the mandatory mediators list.
        *
        * # Permissions
        * * Asset
+       *
+       * # Events
+       * * `AssetMediatorsRemoved` - When the mandatory mediators are successfully removed.
        **/
       removeMandatoryMediators: AugmentedSubmittable<
         (
@@ -654,13 +830,22 @@ declare module '@polkadot/api-base/types/submittable' {
       /**
        * Removes the asset metadata value of a metadata key.
        *
+       * This function allows the asset issuer or an external agent to remove a metadata value for an asset.
+       *
        * # Arguments
-       * * `origin`: the secondary key of the sender.
-       * * `asset_id`: the [`AssetId`] associated to the metadata key.
-       * * `metadata_key`: the [`AssetMetadataKey`] that will have its value deleted.
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `asset_id` - The [`AssetId`] associated to the metadata key.
+       * * `metadata_key` - The [`AssetMetadataKey`] that will have its value deleted.
        *
        * # Permissions
        * * Asset
+       *
+       * # Events
+       * * `MetadataValueDeleted` - When the metadata value is successfully deleted.
+       *
+       * # Errors
+       * * `AssetMetadataKeyIsMissing` - If the metadata key is missing.
+       * * `AssetMetadataValueIsLocked` - If the metadata value is locked.
        **/
       removeMetadataValue: AugmentedSubmittable<
         (
@@ -675,15 +860,24 @@ declare module '@polkadot/api-base/types/submittable' {
         [PolymeshPrimitivesAssetAssetId, PolymeshPrimitivesAssetMetadataAssetMetadataKey]
       >;
       /**
-       * Updates the [`AssetName`] associated to a security token.
+       * Updates the [`AssetName`] associated to an asset.
+       *
+       * This function allows the asset issuer or an external agent to update the name of an asset.
        *
        * # Arguments
-       * * `origin`: the secondary key of the sender.
-       * * `asset_id`: the [`AssetId`] associated to the token.
-       * * `asset_name`: the [`AssetName`] that will be associated to the token.
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `asset_id` - The [`AssetId`] associated to the asset.
+       * * `asset_name` - The new [`AssetName`] that will be associated to the asset.
        *
        * # Permissions
        * * Asset
+       *
+       * # Events
+       * * `AssetRenamed` - When an asset is successfully renamed.
+       *
+       * # Errors
+       * * `MaxLengthOfAssetNameExceeded` - If the asset name length exceeds the maximum allowed length.
+       * * `NoSuchAsset` - If the asset does not exist.
        **/
       renameAsset: AugmentedSubmittable<
         (
@@ -695,16 +889,25 @@ declare module '@polkadot/api-base/types/submittable' {
       /**
        * Set asset metadata value.
        *
+       * This function allows the asset issuer or an external agent to set metadata for an asset.
+       *
        * # Arguments
-       * * `origin`: is a signer that has permissions to act as an agent of `asset_id`.
-       * * `asset_id`: the [`AssetId`] associated to the token.
-       * * `key`: the [`AssetMetadataKey`] associated to the token.
-       * * `value`: the [`AssetMetadataValue`] of the given metadata key.
-       * * `details`: optional [`AssetMetadataValueDetail`] (expire, lock status).
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `asset_id` - The [`AssetId`] associated to the asset.
+       * * `key` - The [`AssetMetadataKey`] associated to the asset.
+       * * `value` - The [`AssetMetadataValue`] of the given metadata key.
+       * * `details` - Optional [`AssetMetadataValueDetail`] (expire, lock status).
        *
        * # Permissions
-       * * Agent
        * * Asset
+       *
+       * # Events
+       * * `SetAssetMetadataValue` - When the asset metadata value is successfully set.
+       *
+       * # Errors
+       * * `AssetMetadataKeyIsMissing` - If the metadata key is missing.
+       * * `AssetMetadataValueIsLocked` - If the metadata value is locked.
+       * * `AssetMetadataValueMaxLengthExceeded` - If the metadata value length exceeds the maximum allowed length.
        **/
       setAssetMetadata: AugmentedSubmittable<
         (
@@ -734,15 +937,24 @@ declare module '@polkadot/api-base/types/submittable' {
       /**
        * Set asset metadata value details (expire, lock status).
        *
+       * This function allows the asset issuer or an external agent to set metadata details for an asset.
+       *
        * # Arguments
-       * * `origin`: is a signer that has permissions to act as an agent of `asset_id`.
-       * * `asset_id`: the [`AssetId`] associated to the token.
-       * * `key`: the [`AssetMetadataKey`] associated to the token.
-       * * `details`: the [`AssetMetadataValueDetail`] (expire, lock status) that will be associated to the token.
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `asset_id` - The [`AssetId`] associated to the asset.
+       * * `key` - The [`AssetMetadataKey`] associated to the asset.
+       * * `details` - The [`AssetMetadataValueDetail`] (expire, lock status) that will be associated to the asset.
        *
        * # Permissions
-       * * Agent
        * * Asset
+       *
+       * # Events
+       * * `SetAssetMetadataValueDetails` - When the asset metadata value details are successfully set.
+       *
+       * # Errors
+       * * `AssetMetadataKeyIsMissing` - If the metadata key is missing.
+       * * `AssetMetadataValueIsLocked` - If the metadata value is locked.
+       * * `AssetMetadataValueIsEmpty` - If the metadata value is empty.
        **/
       setAssetMetadataDetails: AugmentedSubmittable<
         (
@@ -768,30 +980,47 @@ declare module '@polkadot/api-base/types/submittable' {
       /**
        * Sets the name of the current funding round.
        *
+       * This function allows the asset issuer or an external agent to set the name of the current funding round for an asset.
+       *
        * # Arguments
-       * * `origin`:  a signer that has permissions to act as an agent of `asset_id`.
-       * * `asset_id`: the [`AssetId`] associated to the token.
-       * * `founding_round_name`: the [`FoundingRoundName`] of the current funding round.
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `asset_id` - The [`AssetId`] associated to the asset.
+       * * `funding_round_name` - The [`FundingRoundName`] of the current funding round.
        *
        * # Permissions
        * * Asset
+       *
+       * # Events
+       * * `FundingRoundSet` - When the funding round name is successfully set.
+       *
+       * # Errors
+       * * `FundingRoundNameMaxLengthExceeded` - If the funding round name length exceeds the maximum allowed length.
        **/
       setFundingRound: AugmentedSubmittable<
         (
           assetId: PolymeshPrimitivesAssetAssetId | string | Uint8Array,
-          foundingRoundName: Bytes | string | Uint8Array
+          fundingRoundName: Bytes | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [PolymeshPrimitivesAssetAssetId, Bytes]
       >;
       /**
-       * Unfreezes transfers of a given token.
+       * Unfreezes transfers of a given asset.
+       *
+       * This function allows the asset issuer or an external agent to unfreeze transfers of a given asset.
        *
        * # Arguments
-       * * `origin`: the secondary key of the sender.
-       * * `asset_id`: the [`AssetId`] associated to the token.
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `asset_id` - The asset to unfreeze.
        *
        * # Permissions
        * * Asset
+       *
+       * # Events
+       * * `AssetUnfrozen` - When an asset is successfully unfrozen.
+       *
+       * # Errors
+       * * `NoSuchAsset` - If the asset does not exist.
+       * * `NotFrozen` - If the asset is not frozen.
        **/
       unfreeze: AugmentedSubmittable<
         (
@@ -802,13 +1031,23 @@ declare module '@polkadot/api-base/types/submittable' {
       /**
        * Removes the link between a ticker and an asset.
        *
+       * This function allows the asset issuer or an external agent to unlink a ticker from an asset.
+       *
        * # Arguments
-       * * `origin`: the secondary key of the sender.
-       * * `ticker`: the [`Ticker`] that will be unlinked from the given `asset_id`.
-       * * `asset_id`: the [`AssetId`] that will be unlink from `ticker`.
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `ticker` - The [`Ticker`] that will be unlinked from the given `asset_id`.
+       * * `asset_id` - The [`AssetId`] that will be unlinked from `ticker`.
        *
        * # Permissions
        * * Asset
+       *
+       * # Events
+       * * `TickerUnlinkedFromAsset` - When the ticker is successfully unlinked from the asset.
+       *
+       * # Errors
+       * * `TickerNotRegisteredToCaller` - If the ticker is not registered to the caller.
+       * * `TickerRegistrationNotFound` - If the ticker registration is not found.
+       * * `TickerIsNotLinkedToTheAsset` - If the ticker is not linked to the asset.
        **/
       unlinkTickerFromAssetId: AugmentedSubmittable<
         (
@@ -820,13 +1059,23 @@ declare module '@polkadot/api-base/types/submittable' {
       /**
        * Updates the type of an asset.
        *
+       * This function allows the asset issuer or an external agent to update the type of an asset.
+       *
        * # Arguments
-       * * `origin`: it contains the secondary key of the sender
-       * * `asset_id`: the [`AssetId`] associated to the token.
-       * * `asset_type`: the new [`AssetType`] of the token.
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `asset_id` - The [`AssetId`] associated to the asset.
+       * * `asset_type` - The new [`AssetType`] of the asset.
        *
        * # Permissions
        * * Asset
+       *
+       * # Events
+       * * `AssetTypeChanged` - When the asset type is successfully changed.
+       *
+       * # Errors
+       * * `NoSuchAsset` - If the asset does not exist.
+       * * `InvalidCustomAssetTypeId` - If the custom asset type ID is invalid.
+       * * `IncompatibleAssetTypeUpdate` - If the new asset type is incompatible with the existing asset type.
        **/
       updateAssetType: AugmentedSubmittable<
         (
@@ -851,15 +1100,50 @@ declare module '@polkadot/api-base/types/submittable' {
         [PolymeshPrimitivesAssetAssetId, PolymeshPrimitivesAssetAssetType]
       >;
       /**
-       * Updates the asset identifiers associated to the token.
+       * Updates the global metadata specification.
        *
        * # Arguments
-       * * `origin`: a signer that has permissions to act as an agent of `asset_id`.
-       * * `asset_id`: the [`AssetId`] associated to the token.
-       * * `asset_identifiers`: a vector of [`AssetIdentifier`] that will be associated to the token.
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `asset_metadata_name` - The [`AssetMetadataName`] associated with the global metadata.
+       * * `asset_metadata_spec` - The new [`AssetMetadataSpec`] that will be associated with the global metadata.
+       *
+       * # Events
+       * * `GlobalMetadataSpecUpdated` - When the global metadata specification is successfully updated.
+       *
+       * # Errors
+       * * `BadOrigin` - If the origin is not authorized.
+       * * `TooLong` - If the metadata url or description length exceeds the maximum allowed length.
+       * * `AssetMetadataTypeDefMaxLengthExceeded` - If the metadata type definition length exceeds the maximum allowed length.
+       **/
+      updateGlobalMetadataSpec: AugmentedSubmittable<
+        (
+          assetMetadataName: Bytes | string | Uint8Array,
+          assetMetadataSpec:
+            | PolymeshPrimitivesAssetMetadataAssetMetadataSpec
+            | { url?: any; description?: any; typeDef?: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Bytes, PolymeshPrimitivesAssetMetadataAssetMetadataSpec]
+      >;
+      /**
+       * Updates the asset identifiers associated to the asset.
+       *
+       * This function allows the asset issuer or an external agent to update the asset identifiers for an asset.
+       *
+       * # Arguments
+       * * `origin` - The origin of the call, which can be the primary or secondary key of an identity.
+       * * `asset_id` - The [`AssetId`] associated to the asset.
+       * * `asset_identifiers` - A vector of [`AssetIdentifier`] that will be associated to the asset.
        *
        * # Permissions
        * * Asset
+       *
+       * # Events
+       * * `IdentifiersUpdated` - When the asset identifiers are successfully updated.
+       *
+       * # Errors
+       * * `InvalidAssetIdentifier` - If any of the asset identifiers are invalid.
        **/
       updateIdentifiers: AugmentedSubmittable<
         (
@@ -2140,6 +2424,41 @@ declare module '@polkadot/api-base/types/submittable' {
           Option<Vec<ITuple<[PolymeshPrimitivesIdentityId, Permill]>>>
         ]
       >;
+      initiateCorporateActionAndBallot: AugmentedSubmittable<
+        (
+          caArgs:
+            | PalletCorporateActionsInitiateCorporateActionArgs
+            | {
+                assetId?: any;
+                kind?: any;
+                declDate?: any;
+                recordDate?: any;
+                details?: any;
+                targets?: any;
+                defaultWithholdingTax?: any;
+                withholdingTax?: any;
+              }
+            | string
+            | Uint8Array,
+          ballotTimeRange:
+            | PalletCorporateActionsBallotBallotTimeRange
+            | { start?: any; end?: any }
+            | string
+            | Uint8Array,
+          ballotMeta:
+            | PalletCorporateActionsBallotBallotMeta
+            | { title?: any; motions?: any }
+            | string
+            | Uint8Array,
+          rcv: bool | boolean | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [
+          PalletCorporateActionsInitiateCorporateActionArgs,
+          PalletCorporateActionsBallotBallotTimeRange,
+          PalletCorporateActionsBallotBallotMeta,
+          bool
+        ]
+      >;
       /**
        * Utility extrinsic to batch `initiate_corporate_action` and `distribute`
        **/
@@ -2619,9 +2938,9 @@ declare module '@polkadot/api-base/types/submittable' {
        * - `auth_id` identifying the authorization to accept.
        *
        * # Errors
-       * - `AuthorizationError::Invalid` if `auth_id` does not exist for the given caller.
-       * - `AuthorizationError::Expired` if `auth_id` is for an auth that has expired.
-       * - `AuthorizationError::BadType` if `auth_id` was not for a `BecomeAgent` auth type.
+       * - `Error::InvalidAuthorization` if `auth_id` does not exist for the given caller.
+       * - `Error::AuthorizationExpired` if `auth_id` is for an auth that has expired.
+       * - `Error::BadAuthorizationType` if `auth_id` was not for a `BecomeAgent` auth type.
        * - `UnauthorizedAgent` if "Alice" is not permissioned to provide the auth.
        * - `NoSuchAG` if the group referred to a custom that does not exist.
        * - `AlreadyAnAgent` if the caller is already an agent of the asset.
@@ -3165,7 +3484,7 @@ declare module '@polkadot/api-base/types/submittable' {
       >;
       /**
        * Removes an authorization.
-       * _auth_issuer_pays determines whether the issuer of the authorisation pays the transaction fee
+       * `_auth_issuer_pays` determines whether the issuer of the authorisation pays the transaction fee
        **/
       removeAuthorization: AugmentedSubmittable<
         (
@@ -3845,11 +4164,20 @@ declare module '@polkadot/api-base/types/submittable' {
       /**
        * Approves the pending committee PIP given by the `id`.
        *
+       * This function can only be called by a Governance Committee (GC) voting majority.
+       *
+       * # Arguments
+       * * `origin` - The origin of the call, which must be a GC voting majority.
+       * * `id` - The proposal ID of the PIP to be approved.
+       *
        * # Errors
-       * * `BadOrigin` unless a GC voting majority executes this function.
-       * * `NoSuchProposal` if the PIP with `id` doesn't exist.
-       * * `IncorrectProposalState` if the proposal isn't pending.
-       * * `NotByCommittee` if the proposal isn't by a committee.
+       * * `BadOrigin` - If the call is not made by a GC voting majority.
+       * * `NoSuchProposal` - If the PIP with the given `id` does not exist.
+       * * `IncorrectProposalState` - If the proposal is not in a pending state.
+       * * `NotByCommittee` - If the proposal was not made by a committee.
+       *
+       * # Notes
+       * This function schedules the PIP for execution if all checks pass.
        **/
       approveCommitteeProposal: AugmentedSubmittable<
         (id: u32 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -3858,28 +4186,45 @@ declare module '@polkadot/api-base/types/submittable' {
       /**
        * Clears the snapshot and emits the event `SnapshotCleared`.
        *
+       * This function can only be called by a Governance Committee (GC) member.
+       *
+       * # Arguments
+       * * `origin` - The origin of the call, which must be a GC member.
+       *
+       * # Events
+       * * `SnapshotCleared` - Emitted when the snapshot is successfully cleared, containing the ID of the cleared snapshot.
+       *
        * # Errors
-       * * `NotACommitteeMember` - triggered when a non-GC-member executes the function.
+       * * `NotACommitteeMember` - If the call is not made by a GC member.
        **/
       clearSnapshot: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
       /**
-       * Enacts `results` for the PIPs in the snapshot queue.
+       * Enacts the results for the PIPs in the snapshot queue.
+       *
        * The snapshot will be available for further enactments until it is cleared.
        *
-       * The `results` are encoded a list of `(id, result)` where `result` is applied to `id`.
+       * The `results` parameter is a list of `(id, result)` tuples where `result` is applied to the PIP with the given `id`.
        * Note that the snapshot priority queue is encoded with the *lowest priority first*.
-       * so `results = [(id, Approve)]` will approve `SnapshotQueue[SnapshotQueue.len() - 1]`.
+       * For example, `results = [(id, Approve)]` will approve `SnapshotQueue[SnapshotQueue.len() - 1]`.
+       *
+       * # Arguments
+       * * `origin` - The origin of the call, which must be a GC voting majority.
+       * * `results` - A vector of tuples where each tuple contains a PIP ID and a `SnapshotResult` (either `Approve`, `Reject`, or `Skip`).
+       *
+       * # Events
+       * * `SnapshotResultsEnacted` - Emitted when the snapshot results are successfully enacted, containing the ID of the snapshot and the actions taken.
        *
        * # Errors
-       * * `BadOrigin` - unless a GC voting majority executes this function.
-       * * `CannotSkipPip` - a given PIP has already been skipped too many times.
-       * * `SnapshotResultTooLarge` - on len(results) > len(snapshot_queue).
-       * * `SnapshotIdMismatch` - if:
-       * ```text
-       * ∃ (i ∈ 0..SnapshotQueue.len()).
-       * results[i].0 ≠ SnapshotQueue[SnapshotQueue.len() - i].id
-       * ```
-       * This is protects against clearing queue while GC is voting.
+       * * `BadOrigin` - If the call is not made by a GC voting majority.
+       * * `CannotSkipPip` - If a given PIP has already been skipped too many times.
+       * * `SnapshotResultTooLarge` - If the length of `results` is greater than the length of the snapshot queue.
+       * * `SnapshotIdMismatch` - If there is a mismatch between the PIP IDs in `results` and the snapshot queue.
+       *
+       * # Notes
+       * This function will:
+       * - Update the skip counts for PIPs that are skipped.
+       * - Reject PIPs that are marked for rejection and refund any bonded funds.
+       * - Approve PIPs that are marked for approval and schedule them for execution.
        **/
       enactSnapshotResults: AugmentedSubmittable<
         (
@@ -3893,14 +4238,40 @@ declare module '@polkadot/api-base/types/submittable' {
         [Vec<ITuple<[u32, PalletPipsSnapshotResult]>>]
       >;
       /**
-       * Internal dispatchable that handles execution of a PIP.
+       * Executes a scheduled PIP (Polymesh Improvement Proposal).
+       *
+       * # Arguments
+       * * `origin` - The origin of the call, which must be the root.
+       * * `id` - The unique identifier of the PIP to be executed.
+       *
+       * # Errors
+       * * `BadOrigin` - If the call is not made by the root origin.
+       *
+       * # Notes
+       * This function will:
+       * - Remove the PIP from the scheduling queue.
+       * - Execute the proposal associated with the PIP.
        **/
       executeScheduledPip: AugmentedSubmittable<
         (id: u32 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [u32]
       >;
       /**
-       * Internal dispatchable that handles expiration of a PIP.
+       * Expires a scheduled PIP (Polymesh Improvement Proposal).
+       *
+       * # Arguments
+       * * `origin` - The origin of the call, which must be the root.
+       * * `did` - The identity ID of the entity initiating the expiration.
+       * * `id` - The unique identifier of the PIP to be expired.
+       *
+       * # Errors
+       * * `BadOrigin` - If the call is not made by the root origin.
+       *
+       * # Notes
+       * This function will:
+       * - Check if the PIP is in a pending state.
+       * - Unsnapshot the PIP if it was part of a snapshot.
+       * - Prune the PIP data if it is in an expired state.
        **/
       expireScheduledPip: AugmentedSubmittable<
         (
@@ -3910,15 +4281,21 @@ declare module '@polkadot/api-base/types/submittable' {
         [PolymeshPrimitivesIdentityId, u32]
       >;
       /**
-       * A network member creates a PIP by submitting a dispatchable which
-       * changes the network in someway. A minimum deposit is required to open a new proposal.
+       * Proposes a new PIP by submitting a dispatchable which changes the network.
        *
        * # Arguments
-       * * `proposer` is either a signing key or committee.
-       * Used to understand whether this is a committee proposal and verified against `origin`.
-       * * `proposal` a dispatchable call
-       * * `deposit` minimum deposit value, which is ignored if `proposer` is a committee.
-       * * `url` a link to a website for proposal discussion
+       * * `origin` - The origin of the call.
+       * * `proposal` - The dispatchable call.
+       * * `deposit` - The deposit amount for the proposal.
+       * * `url` - A link to a website for proposal discussion.
+       * * `description` - A short description of the proposal.
+       *
+       * # Events
+       * * `ProposalCreated`.
+       *
+       * # Errors
+       * * `IncorrectDeposit` - If the deposit amount is less than the required minimum.
+       * * `TooManyActivePips` - If the number of active PIPs exceeds the maximum.
        **/
       propose: AugmentedSubmittable<
         (
@@ -3930,29 +4307,45 @@ declare module '@polkadot/api-base/types/submittable' {
         [Call, u128, Option<Bytes>, Option<Bytes>]
       >;
       /**
-       * Prune the PIP given by the `id`, refunding any funds not already refunded.
-       * The PIP may not be active
+       * Prunes the PIP given by the `id`. The PIP must not be active.
        *
-       * This function is intended for storage garbage collection purposes.
+       * This function is intended for storage garbage collection purposes and can only be called by a Governance Committee (GC) voting majority.
+       *
+       * # Arguments
+       * * `origin` - The origin of the call, which must be a GC voting majority.
+       * * `id` - The proposal ID of the PIP to be pruned.
        *
        * # Errors
-       * * `BadOrigin` unless a GC voting majority executes this function.
-       * * `NoSuchProposal` if the PIP with `id` doesn't exist.
-       * * `IncorrectProposalState` if the proposal is active.
+       * * `BadOrigin` - If the call is not made by a GC voting majority.
+       * * `NoSuchProposal` - If the PIP with the given `id` does not exist.
+       * * `IncorrectProposalState` - If the proposal is active.
+       *
+       * # Notes
+       * This function will remove the PIP from storage and refund any remaining bonded funds.
        **/
       pruneProposal: AugmentedSubmittable<
         (id: u32 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [u32]
       >;
       /**
-       * Rejects the PIP given by the `id`, refunding any bonded funds,
-       * assuming it hasn't been cancelled or executed.
-       * Note that proposals scheduled-for-execution can also be rejected.
+       * Rejects the PIP given by the `id`. Bonded funds will be refunded, assuming it hasn't
+       * been cancelled or executed.
+       *
+       * This function can only be called by a Governance Committee (GC) voting majority.
+       *
+       * # Arguments
+       * * `origin` - The origin of the call, which must be a GC voting majority.
+       * * `id` - The proposal ID of the PIP to be rejected.
        *
        * # Errors
-       * * `BadOrigin` unless a GC voting majority executes this function.
-       * * `NoSuchProposal` if the PIP with `id` doesn't exist.
-       * * `IncorrectProposalState` if the proposal was cancelled or executed.
+       * * `BadOrigin` - If the call is not made by a GC voting majority.
+       * * `NoSuchProposal` - If the PIP with the given `id` does not exist.
+       * * `IncorrectProposalState` - If the proposal was cancelled or executed.
+       *
+       * # Notes
+       * This function will unschedule the PIP if it was scheduled for execution and will
+       * unsnapshot the PIP if it was part of a snapshot. It will also handle the rejection
+       * of the proposal and refund any bonded funds.
        **/
       rejectProposal: AugmentedSubmittable<
         (id: u32 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -3960,14 +4353,18 @@ declare module '@polkadot/api-base/types/submittable' {
       >;
       /**
        * Updates the execution schedule of the PIP given by `id`.
+       * This function can only be called by the release coordinator.
        *
        * # Arguments
-       * * `until` defines the future block where the enactment period will finished.
-       * `None` value means that enactment period is going to finish in the next block.
+       * * `origin` - The origin of the call, which must be the release coordinator.
+       * * `id` - The proposal ID of the PIP to be rescheduled.
+       * * `until` - An optional future block number where the enactment period will finish.
+       * If `None`, the enactment period will finish in the next block.
        *
        * # Errors
-       * * `RescheduleNotByReleaseCoordinator` unless triggered by release coordinator.
-       * * `IncorrectProposalState` unless the proposal was in a scheduled state.
+       * * `RescheduleNotByReleaseCoordinator` - If the call is not made by the release coordinator.
+       * * `IncorrectProposalState` - If the proposal is not in a scheduled state.
+       * * `InvalidFutureBlockNumber` - If the provided block number is not a valid future block number.
        **/
       rescheduleExecution: AugmentedSubmittable<
         (
@@ -3977,90 +4374,128 @@ declare module '@polkadot/api-base/types/submittable' {
         [u32, Option<u32>]
       >;
       /**
-       * Change the maximum number of active PIPs before community members cannot propose anything.
-       * Can only be called by root.
+       * Sets the limit on the number of active PIPs. This function can only be called by the root origin.
        *
        * # Arguments
-       * * `limit` of concurrent active PIPs.
+       * * `origin` - The origin of the call, which must be the root.
+       * * `limit` - The new limit on the number of active PIPs.
+       *
+       * # Events
+       * * `ActivePipLimitChanged` - Emitted when the active PIP limit is changed, containing the old and new values.
+       *
+       * # Errors
+       * * `BadOrigin` - If the call is not made by the root origin.
        **/
       setActivePipLimit: AugmentedSubmittable<
         (limit: u32 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [u32]
       >;
       /**
-       * Change the default enactment period.
-       * Can only be called by root.
+       * Changes the default enactment period. This function can only be called by the root origin.
        *
        * # Arguments
-       * * `duration` the new default enactment period it takes for a scheduled PIP to be executed.
+       * * `origin` - The origin of the call, which must be the root.
+       * * `period` - The new default enactment period.
+       *
+       * # Events
+       * * `DefaultEnactmentPeriodChanged` - Emitted when the default enactment period is changed, containing the old and new values.
+       *
+       * # Errors
+       * * `BadOrigin` - If the call is not made by the root origin.
        **/
       setDefaultEnactmentPeriod: AugmentedSubmittable<
         (duration: u32 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [u32]
       >;
       /**
-       * Change the maximum skip count (`max_pip_skip_count`).
-       * Can only be called by root.
+       * Sets the maximum number of times a PIP can be skipped. This function can only be called by the root origin.
        *
        * # Arguments
-       * * `max` skips before a PIP cannot be skipped by GC anymore.
+       * * `origin` - The origin of the call, which must be the root.
+       * * `max` - The new maximum skip count for PIPs.
+       *
+       * # Events
+       * * `MaxPipSkipCountChanged` - Emitted when the maximum PIP skip count is changed, containing the old and new values.
+       *
+       * # Errors
+       * * `BadOrigin` - If the call is not made by the root origin.
        **/
       setMaxPipSkipCount: AugmentedSubmittable<
         (max: u8 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [u8]
       >;
       /**
-       * Change the minimum proposal deposit amount required to start a proposal.
-       * Can only be called by root.
+       * Changes the minimum proposal deposit amount required to start a proposal. This function can only be called by the root origin.
        *
        * # Arguments
-       * * `deposit` the new min deposit required to start a proposal
+       * * `origin` - The origin of the call, which must be the root.
+       * * `deposit` - The new minimum deposit required to start a proposal.
+       *
+       * # Events
+       * * `MinimumProposalDepositChanged` - Emitted when the minimum proposal deposit is changed, containing the old and new values.
+       *
+       * # Errors
+       * * `BadOrigin` - If the call is not made by the root origin.
        **/
       setMinProposalDeposit: AugmentedSubmittable<
         (deposit: u128 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [u128]
       >;
       /**
-       * Change the amount of blocks after which a pending PIP is expired.
-       * If `expiry` is `None` then PIPs never expire.
-       * Can only be called by root.
+       * Sets the expiry duration (in blocks) for pending PIPs. This function can only be called by the root origin.
        *
        * # Arguments
-       * * `expiry` the block-time it takes for a still-`Pending` PIP to expire.
+       * * `origin` - The origin of the call, which must be the root.
+       * * `expiry` - The new expiry duration for pending PIPs. If `None`, PIPs never expire.
+       *
+       * # Events
+       * * `PendingPipExpiryChanged` - Emitted when the pending PIP expiry duration is changed, containing the old and new values.
+       *
+       * # Errors
+       * * `BadOrigin` - If the call is not made by the root origin.
        **/
       setPendingPipExpiry: AugmentedSubmittable<
         (
-          expiry:
-            | PolymeshCommonUtilitiesMaybeBlock
-            | { Some: any }
-            | { None: any }
-            | string
-            | Uint8Array
+          expiry: PolymeshPrimitivesMaybeBlock | { Some: any } | { None: any } | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [PolymeshCommonUtilitiesMaybeBlock]
+        [PolymeshPrimitivesMaybeBlock]
       >;
       /**
-       * Change whether completed PIPs are pruned.
-       * Can only be called by root.
+       * Sets the pruning setting for historical PIPs. This function can only be called by the root origin.
        *
        * # Arguments
-       * * `prune` specifies whether completed PIPs should be pruned.
+       * * `origin` - The origin of the call, which must be the root.
+       * * `prune` - A boolean flag indicating whether completed PIPs should be pruned (`true`) or retained (`false`).
+       *
+       * # Events
+       * * `HistoricalPipsPruned` - Emitted when the pruning setting is changed, containing the old and new values.
+       *
+       * # Errors
+       * * `BadOrigin` - If the call is not made by the root origin.
        **/
       setPruneHistoricalPips: AugmentedSubmittable<
         (prune: bool | boolean | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [bool]
       >;
       /**
-       * Takes a new snapshot of the current list of active && pending PIPs.
+       * Takes a new snapshot of the current list of active and pending PIPs.
        * The PIPs are then sorted into a priority queue based on each PIP's weight.
        *
+       * This function can only be called by a Governance Committee (GC) member.
+       *
+       * # Arguments
+       * * `origin` - The origin of the call, which must be a GC member.
+       *
+       * # Events
+       * * `SnapshotTaken` - Emitted when a snapshot is successfully taken, containing the ID of the snapshot and the queue of PIPs.
+       *
        * # Errors
-       * * `NotACommitteeMember` - triggered when a non-GC-member executes the function.
+       * * `NotACommitteeMember` - If the call is not made by a GC member.
        **/
       snapshot: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
       /**
-       * Vote either in favor (`aye_or_nay` == true) or against a PIP with `id`.
-       * The "convinction" or strength of the vote is given by `deposit`, which is reserved.
+       * Casts a vote either in favor or against a PIP with `id`.
+       * The "conviction" or strength of the vote is given by `deposit`, which is reserved.
        *
        * Note that `vote` is *not* additive.
        * That is, `vote(id, true, 50)` followed by `vote(id, true, 40)`
@@ -4068,15 +4503,20 @@ declare module '@polkadot/api-base/types/submittable' {
        * To add atop of existing votes, you'll need `existing_deposit + addition`.
        *
        * # Arguments
-       * * `id`, proposal id
-       * * `aye_or_nay`, a bool representing for or against vote
-       * * `deposit`, the "conviction" with which the vote is made.
+       * * `origin` - The origin of the call.
+       * * `id` - The proposal ID to vote on.
+       * * `aye_or_nay` - A boolean representing a vote in favor (`true`) or against (`false`).
+       * * `deposit` - The "conviction" or strength of the vote, represented by the amount of deposit.
+       *
+       * # Events
+       * * `Voted` - Emitted when a vote is successfully cast.
        *
        * # Errors
-       * * `NoSuchProposal` if `id` doesn't reference a valid PIP.
-       * * `NotFromCommunity` if proposal was made by a committee.
-       * * `IncorrectProposalState` if PIP isn't pending.
-       * * `InsufficientDeposit` if `origin` cannot reserve `deposit - old_deposit`.
+       * * `NoSuchProposal` - If the `id` does not reference a valid PIP.
+       * * `NotFromCommunity` - If the proposal was made by a committee.
+       * * `IncorrectProposalState` - If the PIP is not in a pending state.
+       * * `InsufficientDeposit` - If the `origin` cannot reserve the required deposit.
+       * * `IncorrectDeposit` - If the deposit amount is less than the required minimum.
        **/
       vote: AugmentedSubmittable<
         (
@@ -4096,14 +4536,9 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       setExpiresAfter: AugmentedSubmittable<
         (
-          expiry:
-            | PolymeshCommonUtilitiesMaybeBlock
-            | { Some: any }
-            | { None: any }
-            | string
-            | Uint8Array
+          expiry: PolymeshPrimitivesMaybeBlock | { Some: any } | { None: any } | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [PolymeshCommonUtilitiesMaybeBlock]
+        [PolymeshPrimitivesMaybeBlock]
       >;
       /**
        * Changes the release coordinator.
@@ -4669,9 +5104,9 @@ declare module '@polkadot/api-base/types/submittable' {
        * - `auth_id` the authorization id to accept a `paying_key`.
        *
        * # Errors
-       * - `AuthorizationError::Invalid` if `auth_id` does not exist for the given caller.
-       * - `AuthorizationError::Expired` if `auth_id` the authorization has expired.
-       * - `AuthorizationError::BadType` if `auth_id` was not a `AddRelayerPayingKey` authorization.
+       * - `Error::InvalidAuthorization` if `auth_id` does not exist for the given caller.
+       * - `Error::AuthorizationExpired` if `auth_id` the authorization has expired.
+       * - `Error::BadAuthorizationType` if `auth_id` was not a `AddRelayerPayingKey` authorization.
        * - `NotAuthorizedForUserKey` if `origin` is not authorized to accept the authorization for the `user_key`.
        * - `NotAuthorizedForPayingKey` if the authorization was created an identity different from the `paying_key`'s identity.
        * - `UserKeyCddMissing` if the `user_key` is not attached to a CDD'd identity.
@@ -6527,15 +6962,13 @@ declare module '@polkadot/api-base/types/submittable' {
     };
     sudo: {
       /**
-       * Authenticates the current sudo key and sets the given AccountId (`new`) as the new sudo key.
+       * Authenticates the current sudo key and sets the given AccountId (`new`) as the new sudo
+       * key.
        *
        * The dispatch origin for this call must be _Signed_.
        *
-       * # <weight>
+       * ## Complexity
        * - O(1).
-       * - Limited storage reads.
-       * - One DB change.
-       * # </weight>
        **/
       setKey: AugmentedSubmittable<
         (
@@ -6556,12 +6989,8 @@ declare module '@polkadot/api-base/types/submittable' {
        *
        * The dispatch origin for this call must be _Signed_.
        *
-       * # <weight>
+       * ## Complexity
        * - O(1).
-       * - Limited storage reads.
-       * - One DB write (event).
-       * - Weight of derivative `call` execution + 10,000.
-       * # </weight>
        **/
       sudo: AugmentedSubmittable<
         (call: Call | IMethod | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -6573,12 +7002,8 @@ declare module '@polkadot/api-base/types/submittable' {
        *
        * The dispatch origin for this call must be _Signed_.
        *
-       * # <weight>
+       * ## Complexity
        * - O(1).
-       * - Limited storage reads.
-       * - One DB write (event).
-       * - Weight of derivative `call` execution + 10,000.
-       * # </weight>
        **/
       sudoAs: AugmentedSubmittable<
         (
@@ -6602,10 +7027,8 @@ declare module '@polkadot/api-base/types/submittable' {
        *
        * The dispatch origin for this call must be _Signed_.
        *
-       * # <weight>
+       * ## Complexity
        * - O(1).
-       * - The weight of this call is defined by the caller.
-       * # </weight>
        **/
       sudoUncheckedWeight: AugmentedSubmittable<
         (
@@ -6701,14 +7124,9 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       setExpiresAfter: AugmentedSubmittable<
         (
-          expiry:
-            | PolymeshCommonUtilitiesMaybeBlock
-            | { Some: any }
-            | { None: any }
-            | string
-            | Uint8Array
+          expiry: PolymeshPrimitivesMaybeBlock | { Some: any } | { None: any } | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [PolymeshCommonUtilitiesMaybeBlock]
+        [PolymeshPrimitivesMaybeBlock]
       >;
       /**
        * Changes the release coordinator.
@@ -6896,57 +7314,6 @@ declare module '@polkadot/api-base/types/submittable' {
         [PolymeshPrimitivesIdentityId, PolymeshPrimitivesIdentityId]
       >;
     };
-    testUtils: {
-      /**
-       * Emits an event with caller's identity and CDD status.
-       **/
-      getCddOf: AugmentedSubmittable<
-        (of: AccountId32 | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [AccountId32]
-      >;
-      /**
-       * Emits an event with caller's identity.
-       **/
-      getMyDid: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
-      /**
-       * Registers a new Identity for the `target_account` and issues a CDD claim to it.
-       *
-       * # Failure
-       * - `origin` has to be an active CDD provider. Inactive CDD providers cannot add new
-       * claims.
-       * - `target_account` (primary key of the new Identity) can be linked to just one and only
-       * one identity.
-       **/
-      mockCddRegisterDid: AugmentedSubmittable<
-        (targetAccount: AccountId32 | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [AccountId32]
-      >;
-      /**
-       * Generates a new `IdentityID` for the caller, and issues a self-generated CDD claim.
-       *
-       * The caller account will be the primary key of that identity.
-       * For each account of `secondary_keys`, a new `JoinIdentity` authorization is created, so
-       * each of them will need to accept it before become part of this new `IdentityID`.
-       *
-       * # Errors
-       * - `AlreadyLinked` if the caller account or if any of the given `secondary_keys` has already linked to an `IdentityID`
-       * - `SecondaryKeysContainPrimaryKey` if `secondary_keys` contains the caller account.
-       * - `DidAlreadyExists` if auto-generated DID already exists.
-       **/
-      registerDid: AugmentedSubmittable<
-        (
-          secondaryKeys:
-            | Vec<PolymeshPrimitivesSecondaryKey>
-            | (
-                | PolymeshPrimitivesSecondaryKey
-                | { key?: any; permissions?: any }
-                | string
-                | Uint8Array
-              )[]
-        ) => SubmittableExtrinsic<ApiType>,
-        [Vec<PolymeshPrimitivesSecondaryKey>]
-      >;
-    };
     timestamp: {
       /**
        * Set the current time.
@@ -6968,6 +7335,12 @@ declare module '@polkadot/api-base/types/submittable' {
       set: AugmentedSubmittable<
         (now: Compact<u64> | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [Compact<u64>]
+      >;
+    };
+    transactionPayment: {
+      setDisableFees: AugmentedSubmittable<
+        (value: bool | boolean | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [bool]
       >;
     };
     treasury: {
@@ -7007,14 +7380,9 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       setExpiresAfter: AugmentedSubmittable<
         (
-          expiry:
-            | PolymeshCommonUtilitiesMaybeBlock
-            | { Some: any }
-            | { None: any }
-            | string
-            | Uint8Array
+          expiry: PolymeshPrimitivesMaybeBlock | { Some: any } | { None: any } | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [PolymeshCommonUtilitiesMaybeBlock]
+        [PolymeshPrimitivesMaybeBlock]
       >;
       /**
        * Changes the release coordinator.

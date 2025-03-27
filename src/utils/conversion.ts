@@ -12,6 +12,9 @@ import {
 import { H512 } from '@polkadot/types/interfaces/runtime';
 import { DispatchError, DispatchResult } from '@polkadot/types/interfaces/system';
 import {
+  PalletCorporateActionsBallotBallotMeta,
+  PalletCorporateActionsBallotBallotTimeRange,
+  PalletCorporateActionsBallotMotion,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
   PalletCorporateActionsCorporateAction,
@@ -179,6 +182,8 @@ import {
   AssetDocument,
   Authorization,
   AuthorizationType,
+  BallotMeta,
+  BallotMotion,
   ChildKeyWithAuth,
   Claim,
   ClaimCountRestrictionValue,
@@ -318,6 +323,7 @@ import {
   assertAddressValid,
   assertIsInteger,
   assertIsPositive,
+  assertMetaLength,
   assertTickerValid,
   conditionsAreEqual,
   createClaim,
@@ -4084,9 +4090,13 @@ export function corporateActionKindToCaKind(
  * @hidden
  */
 export function checkpointToRecordDateSpec(
-  checkpoint: Checkpoint | Date | CheckpointSchedule,
+  checkpoint: Checkpoint | Date | CheckpointSchedule | null,
   context: Context
-): PalletCorporateActionsRecordDateSpec {
+): PalletCorporateActionsRecordDateSpec | null {
+  if (checkpoint === null) {
+    return null;
+  }
+
   let value;
 
   if (checkpoint instanceof Checkpoint) {
@@ -4217,7 +4227,7 @@ export function corporateActionParamsToMeshCorporateActionArgs(
     asset: FungibleAsset;
     kind: CorporateActionKind;
     declarationDate: Date;
-    checkpoint: Date | Checkpoint | CheckpointSchedule;
+    checkpoint: Date | Checkpoint | CheckpointSchedule | null;
     description: string;
     targets: InputCorporateActionTargets | null;
     defaultTaxWithholding: BigNumber | null;
@@ -5791,4 +5801,115 @@ export function rawValidatorPrefToCommission(
     blocked,
     commission,
   };
+}
+
+/**
+ * @hidden
+ */
+export function meshCorporateBallotMotionToCorporateBallotMotion(
+  rawMotion: PalletCorporateActionsBallotMotion
+): BallotMotion {
+  const title = bytesToString(rawMotion.title);
+  const infoLink = bytesToString(rawMotion.infoLink);
+  const choices = rawMotion.choices.map(bytesToString);
+
+  return {
+    title,
+    infoLink,
+    choices,
+  };
+}
+
+/**
+ * @hidden
+ */
+export function meshCorporateBallotMetaToCorporateBallotMeta(
+  rawMeta: PalletCorporateActionsBallotBallotMeta
+): BallotMeta {
+  const title = bytesToString(rawMeta.title);
+
+  return {
+    title,
+    motions: rawMeta.motions.map(meshCorporateBallotMotionToCorporateBallotMotion),
+  };
+}
+
+/**
+ * @hidden
+ */
+export function corporateBallotTimeRangeToMeshCorporateBallotTimeRange(
+  declarationDate: Date,
+  startDate: Date,
+  endDate: Date,
+  context: Context
+): PalletCorporateActionsBallotBallotTimeRange {
+  if (startDate < declarationDate) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Start date must be after declaration date',
+    });
+  }
+
+  if (endDate < startDate) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'End date must be after start date',
+    });
+  }
+
+  if (endDate < new Date()) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'End date must be in the future',
+    });
+  }
+
+  const start = dateToMoment(startDate, context);
+  const end = dateToMoment(endDate, context);
+
+  return context.createType('PalletCorporateActionsBallotBallotTimeRange', {
+    start,
+    end,
+  });
+}
+
+/**
+ * @hidden
+ */
+export function corporateMotionToMeshCorporateMotion(
+  motion: BallotMotion,
+  context: Context
+): PalletCorporateActionsBallotMotion {
+  const { title, infoLink, choices } = motion;
+
+  assertMetaLength(title);
+  assertMetaLength(infoLink);
+
+  choices.forEach(choice => {
+    assertMetaLength(choice);
+  });
+
+  return context.createType('PalletCorporateActionsBallotMotion', {
+    title: stringToBytes(title, context),
+    infoLink: stringToBytes(infoLink, context),
+    choices: choices.map(choice => stringToBytes(choice, context)),
+  });
+}
+
+/**
+ * @hidden
+ */
+export function corporateBallotMetaToMeshCorporateBallotMeta(
+  meta: BallotMeta,
+  context: Context
+): PalletCorporateActionsBallotBallotMeta {
+  assertMetaLength(meta.title);
+
+  const title = stringToBytes(meta.title, context);
+  const motions = meta.motions.map(motion => corporateMotionToMeshCorporateMotion(motion, context));
+
+  return context.createType('PalletCorporateActionsBallotBallotMeta', {
+    title,
+    motions,
+  });
 }

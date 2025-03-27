@@ -12,6 +12,7 @@ export const MAX_MODULE_LENGTH = 32;
 export const MAX_MEMO_LENGTH = 32;
 export const MAX_OFF_CHAIN_METADATA_LENGTH = 32;
 export const MAX_BATCH_SIZE_SUPPORTING_SUBSIDY = 7;
+export const MAX_META_LENGTH = 2048;
 /**
  * Maximum amount of required mediators. See MESH-2156 to see if this is queryable instead
  */

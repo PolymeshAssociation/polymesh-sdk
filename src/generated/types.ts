@@ -562,6 +562,7 @@ export enum AssetTx {
   RemoveAssetPreApproval = 'asset.removeAssetPreApproval',
   LinkTickerToAssetId = 'asset.linkTickerToAssetId',
   UnlinkTickerFromAssetId = 'asset.unlinkTickerFromAssetId',
+  UpdateGlobalMetadataSpec = 'asset.updateGlobalMetadataSpec',
 }
 
 export enum CapitalDistributionTx {
@@ -601,6 +602,7 @@ export enum CorporateActionTx {
   RemoveCa = 'corporateAction.removeCa',
   ChangeRecordDate = 'corporateAction.changeRecordDate',
   InitiateCorporateActionAndDistribute = 'corporateAction.initiateCorporateActionAndDistribute',
+  InitiateCorporateActionAndBallot = 'corporateAction.initiateCorporateActionAndBallot',
 }
 
 export enum CorporateBallotTx {
@@ -837,6 +839,10 @@ export enum ElectionProviderMultiPhaseTx {
   GovernanceFallback = 'electionProviderMultiPhase.governanceFallback',
 }
 
+export enum TransactionPaymentTx {
+  SetDisableFees = 'transactionPayment.setDisableFees',
+}
+
 export enum ModuleName {
   System = 'system',
   Babe = 'babe',
@@ -884,6 +890,7 @@ export enum ModuleName {
   Nft = 'nft',
   StateTrieMigration = 'stateTrieMigration',
   ElectionProviderMultiPhase = 'electionProviderMultiPhase',
+  TransactionPayment = 'transactionPayment',
 }
 
 export type TxTag =
@@ -932,7 +939,8 @@ export type TxTag =
   | ContractsTx
   | NftTx
   | StateTrieMigrationTx
-  | ElectionProviderMultiPhaseTx;
+  | ElectionProviderMultiPhaseTx
+  | TransactionPaymentTx;
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const TxTags = {
@@ -982,4 +990,5 @@ export const TxTags = {
   nft: NftTx,
   stateTrieMigration: StateTrieMigrationTx,
   electionProviderMultiPhase: ElectionProviderMultiPhaseTx,
+  transactionPayment: TransactionPaymentTx,
 };
