@@ -86,6 +86,7 @@ export async function getAuthorization(
 
   return {
     permissions: {
+      // TODO: while set_permission_to_signer is mentioned in benchmark data, didn't find it in pallet -> might it be `set_secondary_key_permissions` ? `pallets/identity/src/lib.rs` 499 -> if so then not sure if we need to have the tx here as it checks "ensure_primary_key" and "ensure_secondary_key" plus some other validation
       transactions: [TxTags.identity.SetPermissionToSigner],
       assets: [],
       portfolios: [],

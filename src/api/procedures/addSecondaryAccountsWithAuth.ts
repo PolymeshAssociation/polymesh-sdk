@@ -81,6 +81,7 @@ export async function getAuthorization(
 
   return {
     permissions: {
+      // TODO: on chain just checks if is signed by primary key -> so we should check in prepareAddSecondaryKeysWithAuth if signer is the target primary key
       transactions: [TxTags.identity.AddSecondaryKeysWithAuthorization],
       assets: [],
       portfolios: [],

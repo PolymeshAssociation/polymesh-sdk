@@ -57,6 +57,7 @@ export async function prepareRemoveSecondaryAccounts(
 export const removeSecondaryAccounts = (): Procedure<RemoveSecondaryAccountsParams> =>
   new Procedure(prepareRemoveSecondaryAccounts, {
     permissions: {
+      // TODO: might not need this -> chain checks if called by primary key, checks if secondary key exists and can be unlinked, then unlinks
       transactions: [TxTags.identity.RemoveSecondaryKeys],
       assets: [],
       portfolios: [],

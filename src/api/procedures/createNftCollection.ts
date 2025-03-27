@@ -311,22 +311,27 @@ export async function getAuthorization(
   }
 
   if (status === TickerReservationStatus.Free) {
+    // TODO: might need asset perms as it checks it with agent permissions & that checks for the asset as well
     transactions.push(TxTags.asset.RegisterUniqueTicker);
   }
   if (status !== TickerReservationStatus.AssetCreated) {
+    // TODO: might need asset perms as it checks it with agent permissions & that checks for the asset as well
     transactions.push(TxTags.asset.LinkTickerToAssetId);
   }
 
   if (needsLocalMetadata) {
+    // TODO: might need asset perms as it checks it with agent permissions & that checks for the asset as well
     transactions.push(TxTags.asset.RegisterAssetMetadataLocalType);
   }
 
   if (documents?.length) {
+    // TODO: might need asset perms as it checks it with agent permissions & that checks for the asset as well
     transactions.push(TxTags.asset.AddDocuments);
   }
 
   const permissions = {
     transactions,
+    // TODO: might need asset perms -> `pallets/nft/src/lib.rs` 268 "Verifies if the caller has asset permission and if the asset is an NFT."
     assets: [],
     portfolios: [],
   };
