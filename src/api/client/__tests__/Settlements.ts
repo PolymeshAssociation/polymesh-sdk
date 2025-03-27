@@ -210,7 +210,11 @@ describe('Settlements Class', () => {
 
       const result = await settlements.getHistoricalInstructions({});
 
-      expect(result).toEqual([mockHistoricInstruction]);
+      expect(result).toEqual({
+        data: [mockHistoricInstruction],
+        next: new BigNumber(1),
+        count: new BigNumber(5),
+      });
     });
   });
 });
