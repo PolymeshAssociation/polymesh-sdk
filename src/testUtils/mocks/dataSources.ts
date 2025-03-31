@@ -59,6 +59,8 @@ import {
   PalletAssetTickerRegistration,
   PalletAssetTickerRegistrationConfig,
   PalletContractsStorageContractInfo,
+  PalletCorporateActionsBallotBallotMeta,
+  PalletCorporateActionsBallotMotion,
   PalletCorporateActionsCaCheckpoint,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
@@ -162,6 +164,7 @@ import { when } from 'jest-when';
 import { cloneDeep, map, merge, upperFirst } from 'lodash';
 
 import { HistoricPolyxTransaction } from '~/api/entities/Account/types';
+import { BallotMotion } from '~/api/procedures/types';
 import { Account, AuthorizationRequest, ChildIdentity, Context, Identity } from '~/internal';
 import { BalanceTypeEnum, CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import {
@@ -4988,5 +4991,44 @@ export const createMockSlashingSpans = (
   return createMockCodec<PalletStakingSlashingSlashingSpans>(
     { spanIndex, lastStart, lastNonzeroSlash, prior },
     !span
+  );
+};
+
+export const createMockCorporateBallotMotion = (
+  motion: BallotMotion
+): MockCodec<PalletCorporateActionsBallotMotion> => {
+  const formattedTitle = motion.title ? createMockBytes(motion.title) : createMockBytes();
+  const formattedInfoLink = motion.infoLink ? createMockBytes(motion.infoLink) : createMockBytes();
+  const formattedChoices = motion.choices
+    ? createMockVec(motion.choices.map(choice => createMockBytes(choice)))
+    : createMockVec([]);
+
+  return createMockCodec<PalletCorporateActionsBallotMotion>(
+    { title: formattedTitle, infoLink: formattedInfoLink, choices: formattedChoices },
+    !motion
+  );
+};
+
+/**
+ * @hidden
+ */
+export const createMockCorporateBallotMeta = ({
+  title,
+  motions,
+}: {
+  title?: string;
+  motions?: BallotMotion[];
+}): MockCodec<PalletCorporateActionsBallotBallotMeta> => {
+  const formattedTitle = title ? createMockBytes(title) : createMockBytes();
+  const formattedMotions = motions
+    ? createMockVec(motions.map(motion => createMockCorporateBallotMotion(motion)))
+    : createMockVec([]);
+
+  return createMockCodec<PalletCorporateActionsBallotBallotMeta>(
+    {
+      title: formattedTitle,
+      motions: formattedMotions,
+    },
+    !{ title, motions }
   );
 };

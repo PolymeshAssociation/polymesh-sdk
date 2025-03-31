@@ -6,6 +6,7 @@
 import BigNumber from 'bignumber.js';
 import { pick } from 'lodash';
 
+import { CorporateBallot } from '~/api/entities/CorporateBallot';
 import {
   Account,
   AuthorizationRequest,
@@ -44,6 +45,7 @@ import {
   AssetWithGroup,
   Authorization,
   AuthorizationType,
+  BallotMeta,
   CheckPermissionsResult,
   CheckRolesResult,
   CollectionKey,
@@ -121,6 +123,7 @@ export type MockCheckpoint = Mocked<Checkpoint>;
 export type MockCheckpointSchedule = Mocked<CheckpointSchedule>;
 export type MockCorporateAction = Mocked<CorporateAction>;
 export type MockDividendDistribution = Mocked<DividendDistribution>;
+export type MockCorporateBallot = Mocked<CorporateBallot>;
 export type MockCustomPermissionGroup = Mocked<CustomPermissionGroup>;
 export type MockKnownPermissionGroup = Mocked<KnownPermissionGroup>;
 export type MockMultiSig = Mocked<MultiSig>;
@@ -371,6 +374,12 @@ interface DividendDistributionOptions extends EntityOptions {
   getParticipant?: EntityGetter<DistributionParticipant | null>;
 }
 
+interface CorporateBallotOptions extends EntityOptions {
+  id?: BigNumber;
+  asset?: FungibleAsset;
+  assetId?: string;
+}
+
 interface MultiSigOptions extends AccountOptions {
   address?: string;
   details?: { signers: Signer[]; requiredSignatures: BigNumber };
@@ -405,6 +414,7 @@ type MockOptions = {
   checkpointScheduleOptions?: CheckpointScheduleOptions;
   corporateActionOptions?: CorporateActionOptions;
   dividendDistributionOptions?: DividendDistributionOptions;
+  corporateBallotOptions?: CorporateBallotOptions;
   customPermissionGroupOptions?: CustomPermissionGroupOptions;
   knownPermissionGroupOptions?: KnownPermissionGroupOptions;
   multiSigOptions?: MultiSigOptions;
@@ -2034,6 +2044,42 @@ const MockDividendDistributionClass = createMockEntityClass<DividendDistribution
   ['CorporateActionBase', 'DividendDistribution']
 );
 
+const MockCorporateBallotClass = createMockEntityClass<CorporateBallotOptions>(
+  class {
+    uuid!: string;
+    id!: BigNumber;
+    asset!: FungibleAsset;
+    meta!: BallotMeta;
+    declarationDate!: Date;
+    rcv!: boolean;
+    startDate!: Date;
+    endDate!: Date;
+    description!: string;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof CorporateBallot>) {
+      return extractFromArgs(args, ['id', 'assetId']) as Partial<CorporateBallotOptions>;
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<CorporateBallotOptions>) {
+      this.uuid = 'corporateBallot';
+      this.id = opts.id;
+      this.asset = opts.asset ?? getFungibleAssetInstance({ assetId: opts.assetId });
+    }
+  },
+  () => ({
+    id: new BigNumber(1),
+    assetId: '12341234-1234-1234-1234-123412341234',
+    asset: getFungibleAssetInstance({ assetId: '12341234-1234-1234-1234-123412341234' }),
+  }),
+  ['CorporateBallot']
+);
+
 const MockCustomPermissionGroupClass = createMockEntityClass<CustomPermissionGroupOptions>(
   class {
     uuid!: string;
@@ -2743,6 +2789,20 @@ export const getDividendDistributionInstance = (
   }
 
   return instance as unknown as MockDividendDistribution;
+};
+
+/**
+ * @hidden
+ * Retrieve a CorporateBallot instance
+ */
+export const getCorporateBallotInstance = (opts?: CorporateBallotOptions): MockCorporateBallot => {
+  const instance = new MockCorporateBallotClass();
+
+  if (opts) {
+    instance.configure(opts);
+  }
+
+  return instance as unknown as MockCorporateBallot;
 };
 
 export const getMultiSigInstance = (opts?: MultiSigOptions): MockMultiSig => {
