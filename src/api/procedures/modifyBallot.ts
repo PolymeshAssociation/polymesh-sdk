@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import _ from 'lodash';
+import { isEqual } from 'lodash';
 
 import { Context, CorporateBallot, FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import {
@@ -33,7 +33,7 @@ export type Params = ModifyCorporateBallotParams & {
  * @hidden
  */
 export function assertMetaChanged(meta: BallotMeta, ballotDetails: CorporateBallotParams): void {
-  if (_.isEqual(meta, ballotDetails.meta)) {
+  if (isEqual(meta, ballotDetails.meta)) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
       message: 'Provided CorporateBallot meta is the same as the current one',

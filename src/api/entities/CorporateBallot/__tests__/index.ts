@@ -91,12 +91,8 @@ describe('CorporateBallot class', () => {
   });
 
   describe('method: exists', () => {
-    afterEach(() => {
-      jest.spyOn(utilsInternalModule, 'getCorporateBallotDetails').mockReset();
-    });
-
-    it('should return whether the Distribution exists', async () => {
-      jest.spyOn(utilsInternalModule, 'getCorporateBallotDetailsOrThrow').mockResolvedValue({
+    it('should return whether the Corporate Ballot exists', async () => {
+      jest.spyOn(utilsInternalModule, 'getCorporateBallotDetailsOrNull').mockResolvedValue({
         declarationDate,
         description,
         meta: mockBallotMeta,
@@ -109,13 +105,7 @@ describe('CorporateBallot class', () => {
 
       expect(result).toBe(true);
 
-      jest.spyOn(utilsInternalModule, 'getCorporateBallotDetailsOrThrow').mockRejectedValue(
-        new PolymeshError({
-          code: ErrorCode.DataUnavailable,
-          message: 'The CorporateBallot does not exist',
-          data: { id: corporateBallot.id },
-        })
-      );
+      jest.spyOn(utilsInternalModule, 'getCorporateBallotDetailsOrNull').mockResolvedValue(null);
 
       result = await corporateBallot.exists();
 
@@ -148,7 +138,7 @@ describe('CorporateBallot class', () => {
 
   describe('method: details', () => {
     it('should return the details of the CorporateBallot', async () => {
-      jest.spyOn(utilsInternalModule, 'getCorporateBallotDetails').mockResolvedValue({
+      jest.spyOn(utilsInternalModule, 'getCorporateBallotDetailsOrThrow').mockResolvedValue({
         declarationDate,
         description,
         meta: mockBallotMeta,
@@ -168,7 +158,13 @@ describe('CorporateBallot class', () => {
         endDate,
       });
 
-      jest.spyOn(utilsInternalModule, 'getCorporateBallotDetails').mockResolvedValue(null);
+      jest.spyOn(utilsInternalModule, 'getCorporateBallotDetailsOrThrow').mockRejectedValue(
+        new PolymeshError({
+          code: ErrorCode.DataUnavailable,
+          message: 'The CorporateBallot does not exist',
+          data: { id: corporateBallot.id },
+        })
+      );
 
       await expect(corporateBallot.details()).rejects.toThrow('The CorporateBallot does not exist');
     });
