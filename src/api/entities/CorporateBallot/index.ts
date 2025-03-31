@@ -2,10 +2,11 @@ import BigNumber from 'bignumber.js';
 
 import { CorporateBallotDetails } from '~/api/entities/CorporateBallot/types';
 import { removeBallot } from '~/api/procedures/removeBallot';
-import { Context, Entity, FungibleAsset, PolymeshError } from '~/internal';
-import { ErrorCode, NoArgsProcedureMethod } from '~/types';
+import { Context, Entity, FungibleAsset } from '~/internal';
+import { NoArgsProcedureMethod } from '~/types';
 import {
   createProcedureMethod,
+  getCorporateBallotDetailsOrNull,
   getCorporateBallotDetailsOrThrow,
   toHumanReadable,
 } from '~/utils/internal';
@@ -71,13 +72,9 @@ export class CorporateBallot extends Entity<UniqueIdentifiers, HumanReadable> {
   public async exists(): Promise<boolean> {
     const { id, asset, context } = this;
 
-    try {
-      await getCorporateBallotDetailsOrThrow(asset, id, context);
-    } catch (error) {
-      return false;
-    }
+    const details = await getCorporateBallotDetailsOrNull(asset, id, context);
 
-    return true;
+    return !!details;
   }
 
   /**
@@ -88,14 +85,7 @@ export class CorporateBallot extends Entity<UniqueIdentifiers, HumanReadable> {
   public async details(): Promise<CorporateBallotDetails> {
     const { id, asset, context } = this;
 
-    const details = await getCorporateBallotDetails(asset, id, context);
-
-    if (!details) {
-      throw new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message: 'The CorporateBallot does not exist',
-      });
-    }
+    const details = await getCorporateBallotDetailsOrThrow(asset, id, context);
 
     return details;
   }

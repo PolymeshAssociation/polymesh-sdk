@@ -72,7 +72,6 @@ describe('removeBallot procedure', () => {
     ballot = entityMockUtils.getCorporateBallotInstance({
       id: ballotId,
       assetId,
-      startDate: new Date(new Date().getTime() + 500000),
     });
   });
 

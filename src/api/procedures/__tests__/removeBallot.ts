@@ -8,10 +8,10 @@ import {
   prepareRemoveBallot,
   removeBallot,
 } from '~/api/procedures/removeBallot';
-import { Context, CorporateBallot, Procedure } from '~/internal';
+import { Context, CorporateBallot, PolymeshError, Procedure } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { CorporateBallotParams, FungibleAsset, TxTags } from '~/types';
+import { CorporateBallotParams, ErrorCode, FungibleAsset, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -103,7 +103,13 @@ describe('removeBallot procedure', () => {
   });
 
   it('should throw an error if ballot is not found', async () => {
-    jest.spyOn(utilsInternalModule, 'getCorporateBallotDetailsOrThrow').mockRejectedValue('');
+    jest.spyOn(utilsInternalModule, 'getCorporateBallotDetailsOrThrow').mockRejectedValue(
+      new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The CorporateBallot does not exist',
+        data: { id: ballot.id },
+      })
+    );
 
     return expect(
       prepareRemoveBallot.call(proc, {
