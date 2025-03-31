@@ -378,12 +378,6 @@ interface CorporateBallotOptions extends EntityOptions {
   id?: BigNumber;
   asset?: FungibleAsset;
   assetId?: string;
-  meta?: BallotMeta;
-  rcv?: boolean;
-  declarationDate?: Date;
-  description?: string;
-  startDate?: Date;
-  endDate?: Date;
 }
 
 interface MultiSigOptions extends AccountOptions {
@@ -2066,7 +2060,7 @@ const MockCorporateBallotClass = createMockEntityClass<CorporateBallotOptions>(
      * @hidden
      */
     public argsToOpts(...args: ConstructorParameters<typeof CorporateBallot>) {
-      return extractFromArgs(args, ['id', 'assetId', 'meta']) as Partial<CorporateBallotOptions>;
+      return extractFromArgs(args, ['id', 'assetId']) as Partial<CorporateBallotOptions>;
     }
 
     /**
@@ -2076,33 +2070,12 @@ const MockCorporateBallotClass = createMockEntityClass<CorporateBallotOptions>(
       this.uuid = 'corporateBallot';
       this.id = opts.id;
       this.asset = opts.asset ?? getFungibleAssetInstance({ assetId: opts.assetId });
-      this.meta = opts.meta;
-      this.declarationDate = opts.declarationDate;
-      this.rcv = opts.rcv;
-      this.startDate = opts.startDate;
-      this.endDate = opts.endDate;
-      this.description = opts.description;
     }
   },
   () => ({
     id: new BigNumber(1),
     assetId: '12341234-1234-1234-1234-123412341234',
     asset: getFungibleAssetInstance({ assetId: '12341234-1234-1234-1234-123412341234' }),
-    meta: {
-      title: 'Test Ballot',
-      motions: [
-        {
-          title: 'Test Motion Title',
-          infoLink: 'https://example.com',
-          choices: ['Yes', 'No', 'Abstain'],
-        },
-      ],
-    },
-    declarationDate: new Date(new Date().getTime() + 500000),
-    rcv: true,
-    startDate: new Date(new Date().getTime() + 500000),
-    endDate: new Date(new Date().getTime() + 1000000),
-    description: 'description',
   }),
   ['CorporateBallot']
 );

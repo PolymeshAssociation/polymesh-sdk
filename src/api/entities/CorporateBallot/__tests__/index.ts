@@ -54,12 +54,6 @@ describe('CorporateBallot class', () => {
       {
         id,
         assetId,
-        meta: mockBallotMeta,
-        rcv: false,
-        declarationDate,
-        startDate,
-        endDate,
-        description,
       },
       context
     );
@@ -96,6 +90,10 @@ describe('CorporateBallot class', () => {
   });
 
   describe('method: exists', () => {
+    afterEach(() => {
+      jest.spyOn(utilsInternalModule, 'getCorporateBallotDetails').mockReset();
+    });
+
     it('should return whether the Distribution exists', async () => {
       jest.spyOn(utilsInternalModule, 'getCorporateBallotDetails').mockResolvedValue({
         declarationDate,
@@ -123,12 +121,6 @@ describe('CorporateBallot class', () => {
       expect(corporateBallot.toHuman()).toEqual({
         id: '1',
         assetId: '12341234-1234-1234-1234-123412341234',
-        meta: mockBallotMeta,
-        rcv: false,
-        declarationDate: declarationDate.toISOString(),
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        description,
       });
     });
   });
@@ -144,6 +136,34 @@ describe('CorporateBallot class', () => {
       const tx = await corporateBallot.remove();
 
       expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: details', () => {
+    it('should return the details of the CorporateBallot', async () => {
+      jest.spyOn(utilsInternalModule, 'getCorporateBallotDetails').mockResolvedValue({
+        declarationDate,
+        description,
+        meta: mockBallotMeta,
+        startDate,
+        endDate,
+        rcv: false,
+      });
+
+      const details = await corporateBallot.details();
+
+      expect(details).toEqual({
+        declarationDate,
+        description,
+        meta: mockBallotMeta,
+        rcv: false,
+        startDate,
+        endDate,
+      });
+
+      jest.spyOn(utilsInternalModule, 'getCorporateBallotDetails').mockResolvedValue(null);
+
+      await expect(corporateBallot.details()).rejects.toThrow('The CorporateBallot does not exist');
     });
   });
 });

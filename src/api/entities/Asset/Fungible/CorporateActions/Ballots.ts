@@ -1,13 +1,12 @@
 import BigNumber from 'bignumber.js';
 
 import { createBallot } from '~/api/procedures/createBallot';
-import { removeBallot } from '~/api/procedures/removeBallot';
 import { Context, CorporateBallot, FungibleAsset, Namespace, PolymeshError } from '~/internal';
 import {
+  CorporateBallotWithDetails,
   CreateBallotParams,
   ErrorCode,
   ProcedureMethod,
-  RemoveCorporateBallotParams,
 } from '~/types';
 import { assetToMeshAssetId, u32ToBigNumber } from '~/utils/conversion';
 import { createProcedureMethod, getCorporateBallotDetails } from '~/utils/internal';
@@ -37,11 +36,6 @@ export class Ballots extends Namespace<FungibleAsset> {
       { getProcedureAndArgs: args => [createBallot, { asset: parent, ...args }] },
       context
     );
-
-    this.remove = createProcedureMethod(
-      { getProcedureAndArgs: args => [removeBallot, { asset: parent, ...args }] },
-      context
-    );
   }
 
   /**
@@ -50,7 +44,7 @@ export class Ballots extends Namespace<FungibleAsset> {
    * @throws if there is no Ballot assigned to the provided Corporate Action with the passed ID
    * @throws if the provided Corporate Action does not exist
    */
-  public async getOne(args: { id: BigNumber }): Promise<CorporateBallot> {
+  public async getOne(args: { id: BigNumber }): Promise<CorporateBallotWithDetails> {
     const { parent, context } = this;
     const { id } = args;
 
@@ -67,18 +61,17 @@ export class Ballots extends Namespace<FungibleAsset> {
       {
         id,
         assetId: parent.id,
-        ...ballotDetails,
       },
       context
     );
 
-    return ballot;
+    return { ballot, details: ballotDetails };
   }
 
   /**
    * Retrieve all Ballots associated to this Asset
    */
-  public async get(): Promise<CorporateBallot[]> {
+  public async get(): Promise<CorporateBallotWithDetails[]> {
     const {
       parent,
       context: {
@@ -92,7 +85,9 @@ export class Ballots extends Namespace<FungibleAsset> {
     );
     const nextCaId = u32ToBigNumber(rawNextCaId);
 
-    const getBallot = async (id: BigNumber): Promise<CorporateBallot | undefined> => {
+    const getBallotWithDetails = async (
+      id: BigNumber
+    ): Promise<CorporateBallotWithDetails | undefined> => {
       try {
         const ballot = await this.getOne({ id });
 
@@ -105,18 +100,11 @@ export class Ballots extends Namespace<FungibleAsset> {
     const ballotsPromises = [];
 
     for (let i = 0; i < nextCaId.toNumber(); i++) {
-      ballotsPromises.push(getBallot(new BigNumber(i)));
+      ballotsPromises.push(getBallotWithDetails(new BigNumber(i)));
     }
 
     const ballots = await Promise.all(ballotsPromises);
 
-    return ballots.filter((b): b is CorporateBallot => b !== undefined);
+    return ballots.filter((b): b is CorporateBallotWithDetails => b !== undefined);
   }
-
-  /* Remove a Ballot associated to this Asset by its ID
-   *
-   * @throws if the Ballot does not exist
-   * @throws if the Ballot has already started
-   */
-  public remove: ProcedureMethod<RemoveCorporateBallotParams, void>;
 }

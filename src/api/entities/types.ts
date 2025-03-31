@@ -1,5 +1,6 @@
 import BigNumber from 'bignumber.js';
 
+import { CorporateBallotDetails } from '~/api/entities/CorporateBallot/types';
 import {
   Account as AccountClass,
   AuthorizationRequest as AuthorizationRequestClass,
@@ -8,6 +9,7 @@ import {
   CheckpointSchedule as CheckpointScheduleClass,
   ChildIdentity as ChildIdentityClass,
   CorporateAction as CorporateActionClass,
+  CorporateBallot,
   CustomPermissionGroup as CustomPermissionGroupClass,
   DefaultPortfolio as DefaultPortfolioClass,
   DefaultTrustedClaimIssuer as DefaultTrustedClaimIssuerClass,
@@ -587,6 +589,11 @@ export interface ScheduleWithDetails {
 export interface DistributionWithDetails {
   distribution: DividendDistribution;
   details: DividendDistributionDetails;
+}
+
+export interface CorporateBallotWithDetails {
+  ballot: CorporateBallot;
+  details: CorporateBallotDetails;
 }
 
 export interface DistributionPayment {

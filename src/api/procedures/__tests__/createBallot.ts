@@ -340,8 +340,6 @@ describe('createBallot procedure', () => {
       const result = await createBallotResolver(mockContext)({} as ISubmittableResult);
 
       expect(result.id).toEqual(id);
-      expect(result.declarationDate).toEqual(declarationDate);
-      expect(result.description).toEqual(description);
     });
   });
 

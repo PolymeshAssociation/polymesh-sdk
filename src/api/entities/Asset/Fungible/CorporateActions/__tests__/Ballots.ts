@@ -6,10 +6,10 @@ import { CorporateBallot, Namespace, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockCorporateBallot } from '~/testUtils/mocks/entities';
 import {
+  CorporateBallotWithDetails,
   CreateBallotParams,
   ErrorCode,
   PolymeshTransaction,
-  RemoveCorporateBallotParams,
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -118,13 +118,13 @@ describe('Ballots class', () => {
 
       const ballot = await target.getOne({ id });
 
-      expect(ballot.id).toEqual(id);
-      expect(ballot.declarationDate).toEqual(start);
-      expect(ballot.startDate).toEqual(start);
-      expect(ballot.endDate).toEqual(end);
-      expect(ballot.description).toEqual('ballot details');
-      expect(ballot.rcv).toEqual(false);
-      expect(ballot.meta).toEqual({
+      expect(ballot.ballot.id).toEqual(id);
+      expect(ballot.details.declarationDate).toEqual(start);
+      expect(ballot.details.startDate).toEqual(start);
+      expect(ballot.details.endDate).toEqual(end);
+      expect(ballot.details.description).toEqual('ballot details');
+      expect(ballot.details.rcv).toEqual(false);
+      expect(ballot.details.meta).toEqual({
         title: 'Test Ballot',
         motions: [
           {
@@ -187,7 +187,10 @@ describe('Ballots class', () => {
 
       jest.spyOn(target, 'getOne').mockImplementation(({ id }) => {
         if (id.isEqualTo(0)) {
-          return Promise.resolve(mockBallot);
+          return Promise.resolve({
+            ballot: mockBallot,
+            details: {},
+          } as unknown as CorporateBallotWithDetails);
         } else if (id.isEqualTo(1)) {
           return Promise.reject(
             new PolymeshError({
@@ -208,7 +211,7 @@ describe('Ballots class', () => {
       const ballots = await target.get();
 
       expect(ballots.length).toBe(1);
-      expect(ballots[0].id.isEqualTo(new BigNumber(0))).toBe(true);
+      expect(ballots[0].ballot.id.isEqualTo(new BigNumber(0))).toBe(true);
     });
   });
 
@@ -232,30 +235,6 @@ describe('Ballots class', () => {
         .mockResolvedValue(expectedTransaction);
 
       const tx = await ballots.create(args);
-
-      expect(tx).toBe(expectedTransaction);
-    });
-  });
-
-  describe('method: remove', () => {
-    afterAll(() => {
-      jest.restoreAllMocks();
-    });
-
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const context = dsMockUtils.getContextInstance();
-      const asset = entityMockUtils.getFungibleAssetInstance();
-      const ballots = new Ballots(asset, context);
-
-      const args = { foo: 'bar' } as unknown as RemoveCorporateBallotParams;
-
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
-
-      when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: { asset, ...args }, transformer: undefined }, context, {})
-        .mockResolvedValue(expectedTransaction);
-
-      const tx = await ballots.remove(args);
 
       expect(tx).toBe(expectedTransaction);
     });
