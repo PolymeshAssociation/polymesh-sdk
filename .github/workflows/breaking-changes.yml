@@ -1,0 +1,45 @@
+name: Develop Breaking Changes
+
+on:
+  pull_request:
+    types: [assigned, opened, reopened, synchronize]
+    branches: [develop]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Check commit messages for breaking changes
+        id: breaking_changes
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          # Function to check if breaking changes are present
+          check_breaking_changes() {
+            local commit=$1
+            local breaking=$(git show --pretty="format:%b" --no-patch $commit | grep -F "BREAKING CHANGE")
+
+            echo "Breaking: $breaking"
+
+            if [[ "$breaking" == *"BREAKING CHANGE"* ]]; then
+              echo "Commit $commit is a breaking change and cannot be merged into develop."
+              exit 1
+            fi
+
+          }
+
+          # Get all commits in the PR
+          commits=$(git rev-list $BASE_SHA..$HEAD_SHA)
+
+          # Iterate over all commits in the PR and verify each one
+          for COMMIT in $commits; do
+            check_breaking_changes $COMMIT
+          done
+
+          echo "No breaking changes detected."
