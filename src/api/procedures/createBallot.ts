@@ -6,13 +6,9 @@ import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/type
 import {
   assetIdToString,
   booleanToBool,
-  boolToBoolean,
-  bytesToString,
   corporateActionParamsToMeshCorporateActionArgs,
   corporateBallotMetaToMeshCorporateBallotMeta,
   corporateBallotTimeRangeToMeshCorporateBallotTimeRange,
-  meshCorporateBallotMetaToCorporateBallotMeta,
-  momentToDate,
   u32ToBigNumber,
 } from '~/utils/conversion';
 import { assertDeclarationDate, filterEventRecords } from '~/utils/internal';
@@ -37,29 +33,14 @@ export interface Storage {
 export const createBallotResolver =
   (context: Context) =>
   async (receipt: ISubmittableResult): Promise<CorporateBallot> => {
-    const {
-      polymeshApi: { query },
-    } = context;
-
     const [{ data }] = filterEventRecords(receipt, 'corporateBallot', 'Created');
-    const [, caId, ballotTimeRange, ballotMeta, rcv] = data;
+    const [, caId] = data;
     const { localId, assetId } = caId;
-
-    const [corporateAction, rawDescription] = await Promise.all([
-      query.corporateAction.corporateActions(assetId, localId),
-      query.corporateAction.details(caId),
-    ]);
 
     return new CorporateBallot(
       {
         assetId: assetIdToString(assetId),
         id: u32ToBigNumber(localId),
-        meta: meshCorporateBallotMetaToCorporateBallotMeta(ballotMeta),
-        rcv: boolToBoolean(rcv),
-        startDate: momentToDate(ballotTimeRange.start),
-        endDate: momentToDate(ballotTimeRange.end),
-        description: bytesToString(rawDescription),
-        declarationDate: momentToDate(corporateAction.unwrap().declDate),
       },
       context
     );

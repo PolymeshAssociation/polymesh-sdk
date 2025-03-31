@@ -29,6 +29,7 @@ import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 
 import { coerce, lt, major, satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
+import { CorporateBallotDetails } from '~/api/entities/CorporateBallot/types';
 import {
   Account,
   BaseAsset,
@@ -2357,7 +2358,7 @@ export async function getCorporateBallotDetails(
   asset: FungibleAsset,
   id: BigNumber,
   context: Context
-): Promise<CorporateBallotParams | null> {
+): Promise<CorporateBallotDetails | null> {
   const rawAssetId = assetToMeshAssetId(asset, context);
   const rawLocalId = bigNumberToU32(id, context);
   const rawCaId = corporateActionIdentifierToCaId({ asset, localId: id }, context);

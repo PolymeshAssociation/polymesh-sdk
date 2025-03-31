@@ -1,8 +1,9 @@
 import BigNumber from 'bignumber.js';
 
+import { CorporateBallotDetails } from '~/api/entities/CorporateBallot/types';
 import { removeBallot } from '~/api/procedures/removeBallot';
-import { Context, Entity, FungibleAsset } from '~/internal';
-import { BallotMeta, CreateBallotParams, NoArgsProcedureMethod } from '~/types';
+import { Context, Entity, FungibleAsset, PolymeshError } from '~/internal';
+import { ErrorCode, NoArgsProcedureMethod } from '~/types';
 import {
   createProcedureMethod,
   getCorporateBallotDetails,
@@ -17,12 +18,6 @@ export interface UniqueIdentifiers {
 export interface HumanReadable {
   id: string;
   assetId: string;
-  meta: BallotMeta;
-  description: string;
-  declarationDate: string;
-  startDate: string;
-  endDate: string;
-  rcv: boolean;
 }
 
 /**
@@ -50,55 +45,15 @@ export class CorporateBallot extends Entity<UniqueIdentifiers, HumanReadable> {
   private readonly asset: FungibleAsset;
 
   /**
-   * Ballot description
-   */
-  public description: string;
-
-  /**
-   * Ballot metadata
-   */
-  public meta: BallotMeta;
-
-  /**
-   * Ballot declaration date
-   */
-  public declarationDate: Date;
-
-  /**
-   * Ballot start date
-   */
-  public startDate: Date;
-
-  /**
-   * Ballot end date
-   */
-  public endDate: Date;
-
-  /**
-   * Ballot Rcv
-   */
-  public rcv: boolean;
-
-  /**
    * @hidden
    */
-  public constructor(
-    args: UniqueIdentifiers &
-      Omit<CreateBallotParams, 'declarationDate' | 'rcv'> & { rcv: boolean; declarationDate: Date },
-    context: Context
-  ) {
+  public constructor(args: UniqueIdentifiers, context: Context) {
     super(args, context);
 
-    const { id, assetId, meta, rcv, startDate, endDate, description, declarationDate } = args;
+    const { id, assetId } = args;
 
     this.id = id;
     this.asset = new FungibleAsset({ assetId }, context);
-    this.meta = meta;
-    this.rcv = rcv;
-    this.startDate = startDate;
-    this.endDate = endDate;
-    this.description = description;
-    this.declarationDate = declarationDate;
 
     this.remove = createProcedureMethod(
       {
@@ -122,26 +77,43 @@ export class CorporateBallot extends Entity<UniqueIdentifiers, HumanReadable> {
   }
 
   /**
+   * Retrieve details associated with this Ballot
+   *
+   * @throws if the Ballot does not exist
+   */
+  public async details(): Promise<CorporateBallotDetails> {
+    const { id, asset, context } = this;
+
+    const details = await getCorporateBallotDetails(asset, id, context);
+
+    if (!details) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The CorporateBallot does not exist',
+      });
+    }
+
+    return details;
+  }
+
+  /**
    * Return the Corporate Ballot's static data
    */
   public override toHuman(): HumanReadable {
-    const { id, asset, meta, description, declarationDate, startDate, endDate, rcv } = this;
+    const { id, asset } = this;
 
     return toHumanReadable({
       id,
       assetId: asset.id,
-      meta,
-      description,
-      declarationDate,
-      startDate,
-      endDate,
-      rcv,
     });
   }
 
   /**
    * Remove the Ballot
    *
+   * @note deletes the corporate action with the associated ballot if ballot has not started
+   * @throws if ballot has already started
+   * @throws if ballot is not found
    */
   public remove: NoArgsProcedureMethod<void>;
 }

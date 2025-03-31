@@ -68,12 +68,11 @@ describe('removeBallot procedure', () => {
     ballot = entityMockUtils.getCorporateBallotInstance({
       id: ballotId,
       assetId,
-      startDate: new Date(new Date().getTime() + 500000),
     });
   });
 
   beforeEach(() => {
-    removeBallotTransaction = dsMockUtils.createTxMock('corporateBallot', 'removeBallot');
+    removeBallotTransaction = dsMockUtils.createTxMock('corporateAction', 'removeCa');
     mockContext = dsMockUtils.getContextInstance();
     proc = procedureMockUtils.getInstance<Params, void>(mockContext);
     rawCaId = dsMockUtils.createMockCAId({
@@ -118,7 +117,6 @@ describe('removeBallot procedure', () => {
     ballot = entityMockUtils.getCorporateBallotInstance({
       id: ballotId,
       assetId,
-      startDate: new Date(new Date().getTime() - 500000),
     });
 
     return expect(
@@ -163,7 +161,7 @@ describe('removeBallot procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          transactions: [TxTags.corporateBallot.RemoveBallot],
+          transactions: [TxTags.corporateAction.RemoveCa],
           assets: [asset],
           portfolios: [],
         },

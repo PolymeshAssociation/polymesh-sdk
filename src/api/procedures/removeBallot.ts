@@ -19,7 +19,7 @@ export type Params = RemoveCorporateBallotParams & {
 export async function prepareRemoveBallot(
   this: Procedure<Params, void>,
   args: Params
-): Promise<TransactionSpec<void, ExtrinsicParams<'corporateBallot', 'removeBallot'>>> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'corporateAction', 'removeCa'>>> {
   const {
     context,
     context: {
@@ -45,7 +45,7 @@ export async function prepareRemoveBallot(
   const rawCaId = corporateActionIdentifierToCaId({ asset, localId: ballotId }, context);
 
   return {
-    transaction: tx.corporateBallot.removeBallot,
+    transaction: tx.corporateAction.removeCa,
     args: [rawCaId],
     resolver: undefined,
   };
@@ -60,7 +60,7 @@ export function getAuthorization(
 ): ProcedureAuthorization {
   return {
     permissions: {
-      transactions: [TxTags.corporateBallot.RemoveBallot],
+      transactions: [TxTags.corporateAction.RemoveCa],
       assets: [asset],
       portfolios: [],
     },
