@@ -1,0 +1,54 @@
+name: Auto Rebase Next onto Develop
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  rebase-next:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Ensure full history for rebase
+
+      - name: Set up Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch all branches
+        run: git fetch --all
+
+      - name: Create new branch for rebase
+        run: |
+          BRANCH_NAME="rebase-next-$(date +%s)"
+          git checkout next
+          git checkout -b "$BRANCH_NAME"
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+
+      - name: Rebase ${{ env.BRANCH_NAME }} onto develop
+        run: |
+          git rebase --onto develop origin/develop
+        continue-on-error: true # Continue even if conflicts occur
+
+      - name: Handle merge conflicts (if any)
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git add .
+            git commit -m "Resolve merge conflicts during auto-rebase"
+          fi
+
+      - name: Push rebased branch
+        run: git push origin ${{ env.BRANCH_NAME }} --force
+
+      - name: Create PR from ${{ env.BRANCH_NAME }} to next
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: ${{ env.BRANCH_NAME }}
+          base: next
+          title: 'Auto-rebase: next onto develop'
+          body: 'This PR was automatically created after rebasing `next` onto `develop`.'
+          delete-branch: true
