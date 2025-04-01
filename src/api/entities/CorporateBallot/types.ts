@@ -31,3 +31,9 @@ export interface CorporateBallotDetails {
    */
   rcv: boolean;
 }
+
+export enum CorporateBallotStatus {
+  Pending = 'Pending',
+  Active = 'Active',
+  Closed = 'Closed',
+}
