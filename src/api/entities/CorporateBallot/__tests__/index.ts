@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
+import { CorporateBallotStatus } from '~/api/entities/CorporateBallot/types';
 import { Context, CorporateBallot, PolymeshError, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { ErrorCode } from '~/types';
@@ -167,6 +168,49 @@ describe('CorporateBallot class', () => {
       );
 
       await expect(corporateBallot.details()).rejects.toThrow('The CorporateBallot does not exist');
+    });
+  });
+
+  describe('method: status', () => {
+    it('should return the status of the CorporateBallot', async () => {
+      jest.spyOn(utilsInternalModule, 'getCorporateBallotDetailsOrThrow').mockResolvedValue({
+        declarationDate,
+        description,
+        meta: mockBallotMeta,
+        startDate: new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 30),
+        endDate: new Date(new Date().getTime() + 2000 * 60 * 60 * 24 * 30),
+        rcv: false,
+      });
+
+      let status = await corporateBallot.status();
+
+      expect(status).toEqual(CorporateBallotStatus.Pending);
+
+      jest.spyOn(utilsInternalModule, 'getCorporateBallotDetailsOrThrow').mockResolvedValue({
+        declarationDate,
+        description,
+        meta: mockBallotMeta,
+        startDate: new Date(new Date().getTime() - 2000 * 60 * 60 * 24 * 30),
+        endDate: new Date(new Date().getTime() + 2000 * 60 * 60 * 24 * 30),
+        rcv: false,
+      });
+
+      status = await corporateBallot.status();
+
+      expect(status).toEqual(CorporateBallotStatus.Active);
+
+      jest.spyOn(utilsInternalModule, 'getCorporateBallotDetailsOrThrow').mockResolvedValue({
+        declarationDate,
+        description,
+        meta: mockBallotMeta,
+        startDate: new Date(new Date().getTime() - 2000 * 60 * 60 * 24 * 30),
+        endDate: new Date(new Date().getTime() - 1000 * 60 * 60 * 24 * 30),
+        rcv: false,
+      });
+
+      status = await corporateBallot.status();
+
+      expect(status).toEqual(CorporateBallotStatus.Closed);
     });
   });
 });
