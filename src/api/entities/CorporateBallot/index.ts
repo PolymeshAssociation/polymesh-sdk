@@ -1,6 +1,9 @@
 import BigNumber from 'bignumber.js';
 
-import { CorporateBallotDetails } from '~/api/entities/CorporateBallot/types';
+import {
+  CorporateBallotDetails,
+  CorporateBallotStatus,
+} from '~/api/entities/CorporateBallot/types';
 import { removeBallot } from '~/api/procedures/removeBallot';
 import { Context, Entity, FungibleAsset } from '~/internal';
 import { NoArgsProcedureMethod } from '~/types';
@@ -100,6 +103,29 @@ export class CorporateBallot extends Entity<UniqueIdentifiers, HumanReadable> {
       id,
       assetId: asset.id,
     });
+  }
+
+  /**
+   * Return the status of the Ballot
+   *
+   * @throws if the Ballot does not exist
+   */
+  public async status(): Promise<CorporateBallotStatus> {
+    const details = await this.details();
+
+    const { startDate, endDate } = details;
+
+    const now = new Date();
+
+    if (now < startDate) {
+      return CorporateBallotStatus.Pending;
+    }
+
+    if (now < endDate) {
+      return CorporateBallotStatus.Active;
+    }
+
+    return CorporateBallotStatus.Closed;
   }
 
   /**
