@@ -53,3 +53,17 @@ export type CorporateBallotMotionWithResults = Pick<BallotMotion, 'title' | 'inf
 export type CorporateBallotMetaWithResults = Omit<BallotMeta, 'motions'> & {
   motions: CorporateBallotMotionWithResults[];
 };
+
+export type ChoiceWithParticipation = {
+  choice: string;
+  power: BigNumber;
+  fallback?: string;
+};
+
+export type CorporateBallotMotionWithParticipation = Pick<BallotMotion, 'title' | 'infoLink'> & {
+  choices: ChoiceWithParticipation[];
+};
+
+export type CorporateBallotWithParticipation = Omit<BallotMeta, 'motions'> & {
+  motions: CorporateBallotMotionWithParticipation[];
+};
