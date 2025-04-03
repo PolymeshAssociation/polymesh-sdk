@@ -213,4 +213,54 @@ describe('CorporateBallot class', () => {
       expect(status).toEqual(CorporateBallotStatus.Closed);
     });
   });
+
+  describe('method: results', () => {
+    it('should return the results of the CorporateBallot', async () => {
+      jest.spyOn(utilsInternalModule, 'getCorporateBallotDetailsOrThrow').mockResolvedValue({
+        declarationDate,
+        description,
+        meta: mockBallotMeta,
+        startDate,
+        endDate,
+        rcv: false,
+      });
+
+      const mockResults = ['100', '200', '300'];
+
+      dsMockUtils.createQueryMock('corporateBallot', 'results', {
+        returnValue: dsMockUtils.createMockVec(
+          mockResults.map(result => dsMockUtils.createMockU128(new BigNumber(result)))
+        ),
+      });
+
+      const results = await corporateBallot.results();
+
+      expect(results).toEqual({
+        title: mockBallotMeta.title,
+        motions: [
+          {
+            title: mockBallotMeta.motions[0].title,
+            infoLink: mockBallotMeta.motions[0].infoLink,
+            choices: [
+              {
+                choice: mockBallotMeta.motions[0].choices[0],
+                votes: new BigNumber(mockResults[0]),
+              },
+              {
+                choice: mockBallotMeta.motions[0].choices[1],
+                votes: new BigNumber(mockResults[1]),
+              },
+              {
+                choice: mockBallotMeta.motions[0].choices[2],
+                votes: new BigNumber(mockResults[2]),
+              },
+            ],
+            total: new BigNumber(
+              mockResults.reduce((acc, result) => acc.plus(result), new BigNumber(0))
+            ),
+          },
+        ],
+      });
+    });
+  });
 });

@@ -1,4 +1,6 @@
-import { BallotMeta } from '~/types';
+import BigNumber from 'bignumber.js';
+
+import { BallotMeta, BallotMotion } from '~/types';
 
 export interface CorporateBallotDetails {
   /**
@@ -37,3 +39,17 @@ export enum CorporateBallotStatus {
   Active = 'Active',
   Closed = 'Closed',
 }
+
+type ChoiceWithVotes = {
+  choice: string;
+  votes: BigNumber;
+};
+
+export type CorporateBallotMotionWithResults = Pick<BallotMotion, 'title' | 'infoLink'> & {
+  choices: ChoiceWithVotes[];
+  total: BigNumber;
+};
+
+export type CorporateBallotMetaWithResults = Omit<BallotMeta, 'motions'> & {
+  motions: CorporateBallotMotionWithResults[];
+};
