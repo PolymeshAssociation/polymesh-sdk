@@ -5,8 +5,8 @@ import { CorporateBallotStatus } from '~/api/entities/CorporateBallot/types';
 import { Context, CorporateBallot, PolymeshError, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { ErrorCode } from '~/types';
+import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
-
 jest.mock(
   '~/api/entities/Asset/Fungible',
   require('~/testUtils/mocks/entities').mockFungibleAssetModule('~/api/entities/Asset/Fungible')
@@ -258,6 +258,79 @@ describe('CorporateBallot class', () => {
             total: new BigNumber(
               mockResults.reduce((acc, result) => acc.plus(result), new BigNumber(0))
             ),
+          },
+        ],
+      });
+    });
+  });
+
+  describe('method: votesByIdentity', () => {
+    it('should return the votes of the CorporateBallot by identity', async () => {
+      jest.spyOn(utilsInternalModule, 'getCorporateBallotDetailsOrThrow').mockResolvedValue({
+        declarationDate,
+        description,
+        meta: mockBallotMeta,
+        startDate,
+        endDate,
+        rcv: false,
+      });
+
+      const u16ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u16ToBigNumber');
+      const u128ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u128ToBigNumber');
+
+      const mockFallback = dsMockUtils.createMockU16(new BigNumber(1));
+
+      const mockVotePower = dsMockUtils.createMockU128(new BigNumber(100));
+      const mockVotePower2 = dsMockUtils.createMockU128(new BigNumber(0));
+
+      when(u16ToBigNumberSpy).calledWith(mockFallback).mockReturnValue(new BigNumber(1));
+      when(u128ToBigNumberSpy).calledWith(mockVotePower).mockReturnValue(new BigNumber(100));
+      when(u128ToBigNumberSpy).calledWith(mockVotePower2).mockReturnValue(new BigNumber(0));
+
+      const mockVotes = [
+        {
+          power: mockVotePower,
+          fallback: dsMockUtils.createMockOption(mockFallback),
+        },
+        {
+          power: mockVotePower2,
+          fallback: dsMockUtils.createMockOption(),
+        },
+        {
+          power: mockVotePower2,
+          fallback: dsMockUtils.createMockOption(),
+        },
+      ];
+
+      dsMockUtils.createQueryMock('corporateBallot', 'votes', {
+        returnValue: dsMockUtils.createMockVec(mockVotes),
+      });
+
+      const votes = await corporateBallot.votesByIdentity('12341234-1234-1234-1234-123412341234');
+
+      expect(votes).toEqual({
+        title: mockBallotMeta.title,
+        motions: [
+          {
+            title: mockBallotMeta.motions[0].title,
+            infoLink: mockBallotMeta.motions[0].infoLink,
+            choices: [
+              {
+                choice: mockBallotMeta.motions[0].choices[0],
+                power: new BigNumber(100),
+                fallback: mockBallotMeta.motions[0].choices[1],
+              },
+              {
+                choice: mockBallotMeta.motions[0].choices[1],
+                power: new BigNumber(0),
+                fallback: undefined,
+              },
+              {
+                choice: mockBallotMeta.motions[0].choices[2],
+                power: new BigNumber(0),
+                fallback: undefined,
+              },
+            ],
           },
         ],
       });

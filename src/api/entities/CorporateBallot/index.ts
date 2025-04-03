@@ -3,14 +3,22 @@ import BigNumber from 'bignumber.js';
 import {
   CorporateBallotDetails,
   CorporateBallotMetaWithResults,
+  CorporateBallotMotionWithParticipation,
   CorporateBallotMotionWithResults,
   CorporateBallotStatus,
+  CorporateBallotWithParticipation,
 } from '~/api/entities/CorporateBallot/types';
 import { removeBallot } from '~/api/procedures/removeBallot';
 import { Context, Entity, FungibleAsset } from '~/internal';
-import { NoArgsProcedureMethod } from '~/types';
-import { corporateActionIdentifierToCaId, u128ToBigNumber } from '~/utils/conversion';
+import { Identity, NoArgsProcedureMethod } from '~/types';
 import {
+  corporateActionIdentifierToCaId,
+  stringToIdentityId,
+  u16ToBigNumber,
+  u128ToBigNumber,
+} from '~/utils/conversion';
+import {
+  asIdentity,
   createProcedureMethod,
   getCorporateBallotDetailsOrNull,
   getCorporateBallotDetailsOrThrow,
@@ -183,6 +191,81 @@ export class CorporateBallot extends Entity<UniqueIdentifiers, HumanReadable> {
     });
 
     return metaWithResults;
+  }
+
+  /**
+   * Retrieve the participation of the Ballot
+   *
+   * @throws if the Ballot does not exist
+   */
+  public async votesByIdentity(did: Identity | string): Promise<CorporateBallotWithParticipation> {
+    const {
+      id,
+      asset,
+      context,
+      context: {
+        polymeshApi: { query },
+      },
+    } = this;
+
+    const {
+      meta: { title: ballotTitle, motions },
+    } = await this.details();
+
+    const caId = corporateActionIdentifierToCaId({ localId: id, asset }, context);
+    const identityId = stringToIdentityId(asIdentity(did, context).did, context);
+
+    const rawDidVotes = await query.corporateBallot.votes(caId, identityId);
+
+    const voteMap = new Map<number, BigNumber>();
+    const fallbackMap = new Map<number, string | undefined>();
+    const choicesMap = new Map<number, string>();
+
+    let choiceIndex = 0;
+
+    motions.forEach(({ choices }) => {
+      choices.forEach(choice => {
+        choicesMap.set(choiceIndex, choice);
+        choiceIndex += 1;
+      });
+    });
+
+    rawDidVotes.forEach(({ power, fallback }, index) => {
+      voteMap.set(index, u128ToBigNumber(power));
+
+      fallbackMap.set(
+        index,
+        fallback.isSome ? choicesMap.get(u16ToBigNumber(fallback.unwrap()).toNumber()) : undefined
+      );
+    });
+
+    const metaWithParticipation: CorporateBallotWithParticipation = {
+      title: ballotTitle,
+      motions: [],
+    };
+
+    let motionIndex = 0;
+
+    motions.forEach(({ title, infoLink, choices }) => {
+      const motionWithParticipation: CorporateBallotMotionWithParticipation = {
+        title,
+        infoLink,
+        choices: [],
+      };
+
+      choices.forEach(choice => {
+        motionWithParticipation.choices.push({
+          choice,
+          power: voteMap.get(motionIndex) as BigNumber,
+          fallback: fallbackMap.get(motionIndex),
+        });
+        motionIndex += 1;
+      });
+
+      metaWithParticipation.motions.push(motionWithParticipation);
+    });
+
+    return metaWithParticipation;
   }
 
   /**
