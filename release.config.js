@@ -3,12 +3,14 @@ module.exports = {
   branches: [
     'master',
     {
-      name: 'beta',
-      prerelease: true,
+      name: 'develop',
+      channel: 'beta',
+      prerelease: 'beta',
     },
     {
-      name: 'alpha',
-      prerelease: true,
+      name: 'next',
+      channel: 'next',
+      prerelease: 'next',
     },
     {
       name: 'v26',
