@@ -14,6 +14,7 @@ import { DispatchError, DispatchResult } from '@polkadot/types/interfaces/system
 import {
   PalletCorporateActionsBallotBallotMeta,
   PalletCorporateActionsBallotBallotTimeRange,
+  PalletCorporateActionsBallotBallotVote,
   PalletCorporateActionsBallotMotion,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
@@ -120,6 +121,10 @@ import {
   values,
 } from 'lodash';
 
+import {
+  CorporateBallotDetails,
+  CorporateBallotStatus,
+} from '~/api/entities/CorporateBallot/types';
 import { assertCaTaxWithholdingsValid, UnreachableCaseError } from '~/api/procedures/utils';
 import { countryCodeToMeshCountryCode, meshCountryCodeToCountryCode } from '~/generated/utils';
 import {
@@ -599,6 +604,15 @@ export function u64ToBigNumber(value: u64): BigNumber {
  */
 export function u128ToBigNumber(value: u128): BigNumber {
   return new BigNumber(value.toString());
+}
+
+/**
+ * @hidden
+ */
+export function bigNumberToU16(value: BigNumber, context: Context): u16 {
+  assertIsInteger(value);
+  assertIsPositive(value);
+  return context.createType('u16', value.toString());
 }
 
 /**
@@ -5926,5 +5940,40 @@ export function corporateBallotMetaToMeshCorporateBallotMeta(
   return context.createType('PalletCorporateActionsBallotBallotMeta', {
     title,
     motions,
+  });
+}
+
+/**
+ * @hidden
+ */
+export function ballotDetailsToBallotStatus(
+  details: CorporateBallotDetails
+): CorporateBallotStatus {
+  const { startDate, endDate } = details;
+
+  const now = new Date();
+
+  if (now < startDate) {
+    return CorporateBallotStatus.Pending;
+  }
+
+  if (now < endDate) {
+    return CorporateBallotStatus.Active;
+  }
+
+  return CorporateBallotStatus.Closed;
+}
+
+/**
+ * @hidden
+ */
+export function ballotVoteToMeshBallotVote(
+  power: BigNumber,
+  fallback: BigNumber | undefined,
+  context: Context
+): PalletCorporateActionsBallotBallotVote {
+  return context.createType('PalletCorporateActionsBallotBallotVote', {
+    power: bigNumberToU128(power, context),
+    fallback: fallback ? bigNumberToU16(new BigNumber(fallback), context) : undefined,
   });
 }

@@ -336,4 +336,24 @@ describe('CorporateBallot class', () => {
       });
     });
   });
+
+  describe('method: vote', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(expect.anything(), context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const mockVote = {
+        vote: 'Yes',
+        power: new BigNumber(100),
+        fallback: new BigNumber(0),
+      };
+
+      const tx = await corporateBallot.vote({ votes: [[mockVote]] });
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
 });
