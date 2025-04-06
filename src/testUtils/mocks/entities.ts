@@ -7,6 +7,7 @@ import BigNumber from 'bignumber.js';
 import { pick } from 'lodash';
 
 import { CorporateBallot } from '~/api/entities/CorporateBallot';
+import { CorporateBallotDetails } from '~/api/entities/CorporateBallot/types';
 import {
   Account,
   AuthorizationRequest,
@@ -378,6 +379,7 @@ interface CorporateBallotOptions extends EntityOptions {
   id?: BigNumber;
   asset?: FungibleAsset;
   assetId?: string;
+  details?: CorporateBallotDetails;
 }
 
 interface MultiSigOptions extends AccountOptions {
@@ -467,6 +469,7 @@ function createMockEntityClass<Options extends EntityOptions>(
     isEqual = jest.fn();
     exists = jest.fn();
     toHuman = jest.fn();
+    details = jest.fn();
 
     private static constructorMock = jest.fn(); // NOSONAR
 
@@ -2055,6 +2058,7 @@ const MockCorporateBallotClass = createMockEntityClass<CorporateBallotOptions>(
     startDate!: Date;
     endDate!: Date;
     description!: string;
+    details!: jest.Mock;
 
     /**
      * @hidden
@@ -2070,12 +2074,24 @@ const MockCorporateBallotClass = createMockEntityClass<CorporateBallotOptions>(
       this.uuid = 'corporateBallot';
       this.id = opts.id;
       this.asset = opts.asset ?? getFungibleAssetInstance({ assetId: opts.assetId });
+      this.details = createEntityGetterMock(opts.details);
     }
   },
   () => ({
     id: new BigNumber(1),
     assetId: '12341234-1234-1234-1234-123412341234',
     asset: getFungibleAssetInstance({ assetId: '12341234-1234-1234-1234-123412341234' }),
+    details: {
+      meta: {
+        title: 'title',
+        motions: [],
+      },
+      description: 'description',
+      declarationDate: new Date('10/14/1987'),
+      startDate: new Date('10/14/1987'),
+      endDate: new Date('10/14/1987'),
+      rcv: false,
+    },
   }),
   ['CorporateBallot']
 );

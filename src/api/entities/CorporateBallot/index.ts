@@ -8,10 +8,12 @@ import {
   CorporateBallotStatus,
   CorporateBallotWithParticipation,
 } from '~/api/entities/CorporateBallot/types';
+import { castBallotVote } from '~/api/procedures/castBallotVote';
 import { removeBallot } from '~/api/procedures/removeBallot';
 import { Context, Entity, FungibleAsset } from '~/internal';
-import { Identity, NoArgsProcedureMethod } from '~/types';
+import { CastBallotVoteParams, Identity, NoArgsProcedureMethod, ProcedureMethod } from '~/types';
 import {
+  ballotDetailsToBallotStatus,
   corporateActionIdentifierToCaId,
   stringToIdentityId,
   u16ToBigNumber,
@@ -77,6 +79,16 @@ export class CorporateBallot extends Entity<UniqueIdentifiers, HumanReadable> {
       },
       context
     );
+
+    this.vote = createProcedureMethod(
+      {
+        getProcedureAndArgs: params => [
+          castBallotVote,
+          { asset: this.asset, ballot: this, ...params },
+        ],
+      },
+      context
+    );
   }
 
   /**
@@ -124,19 +136,7 @@ export class CorporateBallot extends Entity<UniqueIdentifiers, HumanReadable> {
   public async status(): Promise<CorporateBallotStatus> {
     const details = await this.details();
 
-    const { startDate, endDate } = details;
-
-    const now = new Date();
-
-    if (now < startDate) {
-      return CorporateBallotStatus.Pending;
-    }
-
-    if (now < endDate) {
-      return CorporateBallotStatus.Active;
-    }
-
-    return CorporateBallotStatus.Closed;
+    return ballotDetailsToBallotStatus(details);
   }
 
   /**
@@ -276,4 +276,17 @@ export class CorporateBallot extends Entity<UniqueIdentifiers, HumanReadable> {
    * @throws if ballot is not found
    */
   public remove: NoArgsProcedureMethod<void>;
+
+  /**
+   * Cast a vote on the Ballot
+   *
+   * @throws if the Ballot does not exist
+   * @throws if the Ballot voting is not active
+   * @throws if the number of votes does not match the sum of all choices of all motions
+   * @throws if fallback votes are provided for a non-RCV Ballot
+   * @throws if vote does not point to the correct choice in motion
+   * @throws if the fallback vote is the same as the choice
+   * @throws if the fallback vote is not pointing to a choice in the motion
+   */
+  public vote: ProcedureMethod<CastBallotVoteParams, void>;
 }

@@ -1,5 +1,5 @@
 import { DecoratedErrors } from '@polkadot/api/types';
-import { bool, Bytes, Option, Text, U8aFixed, u32, u64, u128, Vec } from '@polkadot/types';
+import { bool, Bytes, Option, Text, U8aFixed, u16, u32, u64, u128, Vec } from '@polkadot/types';
 import {
   AccountId,
   Balance,
@@ -15,6 +15,7 @@ import { DispatchError } from '@polkadot/types/interfaces/system';
 import {
   PalletCorporateActionsBallotBallotMeta,
   PalletCorporateActionsBallotBallotTimeRange,
+  PalletCorporateActionsBallotBallotVote,
   PalletCorporateActionsBallotMotion,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
@@ -212,7 +213,9 @@ import {
   authorizationToAuthorizationData,
   authorizationTypeToMeshAuthorizationType,
   balanceToBigNumber,
+  ballotVoteToMeshBallotVote,
   bigNumberToBalance,
+  bigNumberToU16,
   bigNumberToU32,
   bigNumberToU64,
   bigNumberToU128,
@@ -2530,6 +2533,46 @@ describe('bigNumberToU64 and u64ToBigNumber', () => {
       const result = u64ToBigNumber(num);
       expect(result).toEqual(new BigNumber(fakeResult));
     });
+  });
+});
+
+describe('bigNumberToU16', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a number to a polkadot u16 object', () => {
+    const value = new BigNumber(100);
+    const fakeResult = '100' as unknown as u16;
+    const context = dsMockUtils.getContextInstance();
+
+    when(context.createType).calledWith('u16', value.toString()).mockReturnValue(fakeResult);
+
+    const result = bigNumberToU16(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  it('should throw an error if the number is negative', () => {
+    const value = new BigNumber(-100);
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => bigNumberToU16(value, context)).toThrow();
+  });
+
+  it('should throw an error if the number is not an integer', () => {
+    const value = new BigNumber(1.5);
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => bigNumberToU16(value, context)).toThrow();
   });
 });
 
@@ -12018,5 +12061,52 @@ describe('corporateBallotMetaToMeshCorporateBallotMeta', () => {
     corporateBallotMetaToMeshCorporateBallotMeta(meta, mockContext);
 
     expect(assertMetaLengthSpy).toHaveBeenCalledWith(meta.title);
+  });
+});
+
+describe('ballotVoteToMeshBallotVote', () => {
+  let mockContext: Context;
+  const fallback = new BigNumber(0);
+  const power = new BigNumber(1);
+  const mockMeshVote = 'MOCK_MESH_VOTE';
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockContext = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  it('should convert a ballot vote with fallback to a mesh ballot vote', () => {
+    when(mockContext.createType)
+      .calledWith(
+        'PalletCorporateActionsBallotBallotVote',
+        expect.objectContaining({
+          power: bigNumberToU128(power, mockContext),
+          fallback: bigNumberToU128(fallback, mockContext),
+        })
+      )
+      .mockReturnValue(mockMeshVote as unknown as PalletCorporateActionsBallotBallotVote);
+
+    const result = ballotVoteToMeshBallotVote(power, fallback, mockContext);
+
+    expect(result).toBe(mockMeshVote);
+  });
+
+  it('should convert a ballot vote without fallback to a mesh ballot vote', () => {
+    when(mockContext.createType)
+      .calledWith('PalletCorporateActionsBallotBallotVote', {
+        power: bigNumberToU128(power, mockContext),
+      })
+      .mockReturnValue(mockMeshVote as unknown as PalletCorporateActionsBallotBallotVote);
+
+    const result = ballotVoteToMeshBallotVote(power, undefined, mockContext);
+
+    expect(result).toBe(mockMeshVote);
   });
 });
