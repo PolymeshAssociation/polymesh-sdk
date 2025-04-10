@@ -1,5 +1,5 @@
 import { DecoratedErrors } from '@polkadot/api/types';
-import { bool, Bytes, Option, Text, U8aFixed, u32, u64, u128, Vec } from '@polkadot/types';
+import { bool, Bytes, Option, Text, U8aFixed, u16, u32, u64, u128, Vec } from '@polkadot/types';
 import {
   AccountId,
   Balance,
@@ -13,6 +13,10 @@ import {
 import { H512 } from '@polkadot/types/interfaces/runtime';
 import { DispatchError } from '@polkadot/types/interfaces/system';
 import {
+  PalletCorporateActionsBallotBallotMeta,
+  PalletCorporateActionsBallotBallotTimeRange,
+  PalletCorporateActionsBallotBallotVote,
+  PalletCorporateActionsBallotMotion,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
   PalletCorporateActionsRecordDateSpec,
@@ -109,6 +113,8 @@ import { ClaimScopeTypeEnum, MultiSigProposalStatusEnum } from '~/middleware/typ
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   createMockAssetId,
+  createMockCorporateBallotMeta,
+  createMockCorporateBallotMotion,
   createMockIdentityId,
   createMockNfts,
   createMockOption,
@@ -207,7 +213,9 @@ import {
   authorizationToAuthorizationData,
   authorizationTypeToMeshAuthorizationType,
   balanceToBigNumber,
+  ballotVoteToMeshBallotVote,
   bigNumberToBalance,
+  bigNumberToU16,
   bigNumberToU32,
   bigNumberToU64,
   bigNumberToU128,
@@ -231,6 +239,9 @@ import {
   corporateActionIdentifierToCaId,
   corporateActionKindToCaKind,
   corporateActionParamsToMeshCorporateActionArgs,
+  corporateBallotMetaToMeshCorporateBallotMeta,
+  corporateBallotTimeRangeToMeshCorporateBallotTimeRange,
+  corporateMotionToMeshCorporateMotion,
   countStatInputToStatUpdates,
   createRawExtrinsicStatus,
   createStat2ndKey,
@@ -272,6 +283,8 @@ import {
   meshClaimToInputStatClaim,
   meshClaimTypeToClaimType,
   meshCorporateActionToCorporateActionParams,
+  meshCorporateBallotMetaToCorporateBallotMeta,
+  meshCorporateBallotMotionToCorporateBallotMotion,
   meshInstructionStatusToInstructionStatus,
   meshMetadataKeyToMetadataKey,
   meshMetadataSpecToMetadataSpec,
@@ -2520,6 +2533,46 @@ describe('bigNumberToU64 and u64ToBigNumber', () => {
       const result = u64ToBigNumber(num);
       expect(result).toEqual(new BigNumber(fakeResult));
     });
+  });
+});
+
+describe('bigNumberToU16', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a number to a polkadot u16 object', () => {
+    const value = new BigNumber(100);
+    const fakeResult = '100' as unknown as u16;
+    const context = dsMockUtils.getContextInstance();
+
+    when(context.createType).calledWith('u16', value.toString()).mockReturnValue(fakeResult);
+
+    const result = bigNumberToU16(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  it('should throw an error if the number is negative', () => {
+    const value = new BigNumber(-100);
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => bigNumberToU16(value, context)).toThrow();
+  });
+
+  it('should throw an error if the number is not an integer', () => {
+    const value = new BigNumber(1.5);
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => bigNumberToU16(value, context)).toThrow();
   });
 });
 
@@ -8382,6 +8435,13 @@ describe('checkpointToRecordDateSpec', () => {
     dsMockUtils.cleanup();
   });
 
+  it('should return null if the checkpoint is null', () => {
+    const value = null;
+    const context = dsMockUtils.getContextInstance();
+    const result = checkpointToRecordDateSpec(value, context);
+    expect(result).toEqual(null);
+  });
+
   it('should convert a Checkpoint to a polkadot PalletCorporateActionsRecordDateSpec', () => {
     const id = new BigNumber(1);
     const value = entityMockUtils.getCheckpointInstance({ id });
@@ -11694,5 +11754,359 @@ describe('rawValidatorPrefToCommission', () => {
       blocked: false,
       commission: new BigNumber(1),
     });
+  });
+});
+
+describe('meshCorporateBallotMotionToCorporateBallotMotion', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a mesh ballot motion to a ballot motion', () => {
+    const mockBallotMotion = {
+      title: 'Test Motion Title',
+      infoLink: 'https://example.com',
+      choices: ['Yes', 'No', 'Abstain'],
+    };
+
+    const result = meshCorporateBallotMotionToCorporateBallotMotion(
+      createMockCorporateBallotMotion(mockBallotMotion)
+    );
+
+    expect(result).toEqual(mockBallotMotion);
+  });
+});
+
+describe('meshCorporateBallotMetaToCorporateBallotMeta', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert mesh ballot meta to ballot meta', () => {
+    const mockBallotMeta = {
+      title: 'Test Ballot',
+      motions: [
+        {
+          title: 'Motion 1',
+          infoLink: 'https://example.com/1',
+          choices: ['Approve', 'Reject'],
+        },
+        {
+          title: 'Motion 2',
+          infoLink: 'https://example.com/2',
+          choices: ['Yes', 'No'],
+        },
+      ],
+    };
+
+    const result = meshCorporateBallotMetaToCorporateBallotMeta(
+      createMockCorporateBallotMeta(mockBallotMeta)
+    );
+
+    expect(result).toEqual(mockBallotMeta);
+  });
+});
+
+describe('corporateBallotTimeRangeToMeshCorporateBallotTimeRange', () => {
+  let mockContext: Context;
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockContext = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should throw an error if start date is before declaration date', () => {
+    const declarationDate = new Date('2023-01-01');
+    const startDate = new Date('2022-12-31');
+    const endDate = new Date('2023-01-02');
+
+    expect(() =>
+      corporateBallotTimeRangeToMeshCorporateBallotTimeRange(
+        declarationDate,
+        startDate,
+        endDate,
+        mockContext
+      )
+    ).toThrow('Voting start date must be after declaration date');
+  });
+
+  it('should throw an error if end date is before start date', () => {
+    const declarationDate = new Date('2023-01-01');
+    const startDate = new Date('2023-01-02');
+    const endDate = new Date('2023-01-01');
+
+    expect(() =>
+      corporateBallotTimeRangeToMeshCorporateBallotTimeRange(
+        declarationDate,
+        startDate,
+        endDate,
+        mockContext
+      )
+    ).toThrow('End date must be after or same as start date');
+  });
+
+  it('should throw an error if end date is in the past', () => {
+    const declarationDate = new Date('2023-01-01');
+    const startDate = new Date('2023-01-02');
+    const endDate = new Date('2023-01-03');
+    const mockCurrentDate = new Date('2023-01-04');
+
+    // Mock current date
+    jest.useFakeTimers();
+    jest.setSystemTime(mockCurrentDate);
+
+    expect(() =>
+      corporateBallotTimeRangeToMeshCorporateBallotTimeRange(
+        declarationDate,
+        startDate,
+        endDate,
+        mockContext
+      )
+    ).toThrow('End date must be in the future');
+
+    jest.useRealTimers();
+  });
+
+  it('should convert valid dates to mesh ballot time range', () => {
+    const declarationDate = new Date();
+    const startDate = new Date(declarationDate.getTime() + 24 * 60 * 60 * 1000);
+    const endDate = new Date(declarationDate.getTime() + 48 * 60 * 60 * 1000);
+    const mockStart = dsMockUtils.createMockMoment(new BigNumber(startDate.getTime()));
+    const mockEnd = dsMockUtils.createMockMoment(new BigNumber(endDate.getTime()));
+
+    when(mockContext.createType).calledWith('u64', startDate.getTime()).mockReturnValue(mockStart);
+    when(mockContext.createType).calledWith('u64', endDate.getTime()).mockReturnValue(mockEnd);
+
+    const mockTimeRange = 'MOCK_TIME_RANGE';
+
+    when(mockContext.createType)
+      .calledWith('PalletCorporateActionsBallotBallotTimeRange', {
+        start: mockStart,
+        end: mockEnd,
+      })
+      .mockReturnValue(mockTimeRange as unknown as PalletCorporateActionsBallotBallotTimeRange);
+
+    const result = corporateBallotTimeRangeToMeshCorporateBallotTimeRange(
+      declarationDate,
+      startDate,
+      endDate,
+      mockContext
+    );
+
+    expect(result).toBe(mockTimeRange);
+  });
+});
+
+describe('corporateMotionToMeshCorporateMotion', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a ballot motion to a mesh ballot motion', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+    const motion = {
+      title: 'Test Motion',
+      infoLink: 'https://example.com',
+      choices: ['Yes', 'No', 'Abstain'],
+    };
+
+    const mockTitleBytes = 'MOCK_TITLE_BYTES';
+    const mockInfoLinkBytes = 'MOCK_INFO_LINK_BYTES';
+    const mockChoiceBytes = ['MOCK_CHOICE_1', 'MOCK_CHOICE_2', 'MOCK_CHOICE_3'];
+    const mockMeshMotion = 'MOCK_MESH_MOTION';
+
+    when(mockContext.createType)
+      .calledWith('Bytes', motion.title)
+      .mockReturnValue(mockTitleBytes as unknown as Bytes);
+
+    when(mockContext.createType)
+      .calledWith('Bytes', motion.infoLink)
+      .mockReturnValue(mockInfoLinkBytes as unknown as Bytes);
+
+    motion.choices.forEach((choice, index) => {
+      when(mockContext.createType)
+        .calledWith('Bytes', choice)
+        .mockReturnValue(mockChoiceBytes[index] as unknown as Bytes);
+    });
+
+    when(mockContext.createType)
+      .calledWith('PalletCorporateActionsBallotMotion', {
+        title: mockTitleBytes,
+        infoLink: mockInfoLinkBytes,
+        choices: mockChoiceBytes,
+      })
+      .mockReturnValue(mockMeshMotion as unknown as PalletCorporateActionsBallotMotion);
+
+    const result = corporateMotionToMeshCorporateMotion(motion, mockContext);
+
+    expect(result).toBe(mockMeshMotion);
+  });
+
+  it('should call assertMetaLength for title, infoLink and choices', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+    const motion = {
+      title: 'Test Motion',
+      infoLink: 'https://example.com',
+      choices: ['Yes', 'No', 'Abstain'],
+    };
+
+    const assertMetaLengthSpy = jest.spyOn(utilsInternalModule, 'assertMetaLength');
+
+    corporateMotionToMeshCorporateMotion(motion, mockContext);
+
+    expect(assertMetaLengthSpy).toHaveBeenCalledWith(motion.title);
+    expect(assertMetaLengthSpy).toHaveBeenCalledWith(motion.infoLink);
+    motion.choices.forEach(choice => {
+      expect(assertMetaLengthSpy).toHaveBeenCalledWith(choice);
+    });
+  });
+});
+
+describe('corporateBallotMetaToMeshCorporateBallotMeta', () => {
+  let mockContext: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockContext = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  it('should convert ballot meta to mesh ballot meta', () => {
+    const motion = {
+      title: 'Motion 1',
+      infoLink: 'https://example.com/1',
+      choices: ['Yes', 'No'],
+    };
+
+    const meta = {
+      title: 'Test Ballot',
+      motions: [motion],
+    };
+
+    const mockTitleBytes = 'MOCK_TITLE_BYTES';
+    const mockMeshMotion = 'MOCK_MOTION_1';
+    const mockMeshMeta = 'MOCK_MESH_META';
+
+    when(mockContext.createType)
+      .calledWith('Bytes', meta.title)
+      .mockReturnValue(mockTitleBytes as unknown as Bytes);
+
+    when(mockContext.createType)
+      .calledWith('PalletCorporateActionsBallotMotion', expect.anything())
+      .mockReturnValue(mockMeshMotion as unknown as PalletCorporateActionsBallotMotion);
+
+    when(mockContext.createType)
+      .calledWith(
+        'PalletCorporateActionsBallotBallotMeta',
+        expect.objectContaining({
+          title: mockTitleBytes,
+          motions: expect.arrayContaining([mockMeshMotion]),
+        })
+      )
+      .mockReturnValue(mockMeshMeta as unknown as PalletCorporateActionsBallotBallotMeta);
+
+    const result = corporateBallotMetaToMeshCorporateBallotMeta(meta, mockContext);
+
+    expect(result).toBe(mockMeshMeta);
+  });
+
+  it('should call assertMetaLength for title', () => {
+    const meta = {
+      title: 'Test Ballot',
+      motions: [],
+    };
+
+    const assertMetaLengthSpy = jest.spyOn(utilsInternalModule, 'assertMetaLength');
+
+    corporateBallotMetaToMeshCorporateBallotMeta(meta, mockContext);
+
+    expect(assertMetaLengthSpy).toHaveBeenCalledWith(meta.title);
+  });
+});
+
+describe('ballotVoteToMeshBallotVote', () => {
+  let mockContext: Context;
+  const fallback = new BigNumber(0);
+  const power = new BigNumber(1);
+  const mockMeshVote = 'MOCK_MESH_VOTE';
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockContext = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  it('should convert a ballot vote with fallback to a mesh ballot vote', () => {
+    when(mockContext.createType)
+      .calledWith(
+        'PalletCorporateActionsBallotBallotVote',
+        expect.objectContaining({
+          power: bigNumberToU128(power, mockContext),
+          fallback: bigNumberToU128(fallback, mockContext),
+        })
+      )
+      .mockReturnValue(mockMeshVote as unknown as PalletCorporateActionsBallotBallotVote);
+
+    const result = ballotVoteToMeshBallotVote(power, fallback, mockContext);
+
+    expect(result).toBe(mockMeshVote);
+  });
+
+  it('should convert a ballot vote without fallback to a mesh ballot vote', () => {
+    when(mockContext.createType)
+      .calledWith('PalletCorporateActionsBallotBallotVote', {
+        power: bigNumberToU128(power, mockContext),
+      })
+      .mockReturnValue(mockMeshVote as unknown as PalletCorporateActionsBallotBallotVote);
+
+    const result = ballotVoteToMeshBallotVote(power, undefined, mockContext);
+
+    expect(result).toBe(mockMeshVote);
   });
 });

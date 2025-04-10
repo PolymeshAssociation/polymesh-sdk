@@ -29,6 +29,7 @@ import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 
 import { coerce, lt, major, satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
+import { CorporateBallotDetails } from '~/api/entities/CorporateBallot/types';
 import {
   Account,
   BaseAsset,
@@ -62,6 +63,7 @@ import {
   ClaimType,
   Condition,
   ConditionType,
+  CorporateBallotParams,
   CountryCode,
   DefaultPortfolio,
   ErrorCode,
@@ -108,6 +110,7 @@ import {
 } from '~/types/utils';
 import {
   CONFIDENTIAL_ASSETS_SUPPORTED_CALL,
+  MAX_META_LENGTH,
   MAX_TICKER_LENGTH,
   MINIMUM_SQ_VERSION,
   PRIVATE_SUPPORTED_SPEC_SEMVER,
@@ -118,14 +121,20 @@ import {
 } from '~/utils/constants';
 import {
   assetIdToString,
+  assetToMeshAssetId,
   bigNumberToU32,
+  boolToBoolean,
+  bytesToString,
   claimIssuerToMeshClaimIssuer,
+  corporateActionIdentifierToCaId,
   identitiesToBtreeSet,
   identityIdToString,
   meshClaimTypeToClaimType,
+  meshCorporateBallotMetaToCorporateBallotMeta,
   meshPermissionsToPermissionsV2,
   meshStatToStatType,
   middlewareScopeToScope,
+  momentToDate,
   permillToBigNumber,
   signerToString,
   stakingRewardDestinationToRaw,
@@ -2314,4 +2323,114 @@ export async function calculateRawStakingPayee(
  */
 export function areSameAccounts(account1: Account, account2: Account): boolean {
   return account1.address === account2.address;
+}
+
+/**
+ * @hidden
+ */
+export function assertMetaLength(meta: string): void {
+  if (meta.length > MAX_META_LENGTH) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Meta length must be less than 2048 characters',
+      data: { meta },
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
+export function assertDeclarationDate(declarationDate: Date): void {
+  if (declarationDate >= new Date()) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Declaration date must be in the past',
+      data: { declarationDate },
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
+export async function getCorporateBallotDetailsOrNull(
+  asset: FungibleAsset,
+  id: BigNumber,
+  context: Context
+): Promise<CorporateBallotDetails | null> {
+  const rawAssetId = assetToMeshAssetId(asset, context);
+  const rawLocalId = bigNumberToU32(id, context);
+  const rawCaId = corporateActionIdentifierToCaId({ asset, localId: id }, context);
+
+  const {
+    polymeshApi: {
+      query: { corporateBallot, corporateAction },
+    },
+  } = context;
+
+  const rawMetas = await corporateBallot.metas(rawCaId);
+
+  if (rawMetas.isNone) {
+    return null;
+  }
+
+  const [rawCorporateAction, rawDescription, rawRcv, rawTimeRange] = await requestMulti<
+    [
+      typeof corporateAction.corporateActions,
+      typeof corporateAction.details,
+      typeof corporateBallot.rcv,
+      typeof corporateBallot.timeRanges
+    ]
+  >(context, [
+    [corporateAction.corporateActions, [rawAssetId, rawLocalId]],
+    [corporateAction.details, rawCaId],
+    [corporateBallot.rcv, rawCaId],
+    [corporateBallot.timeRanges, rawCaId],
+  ]);
+
+  const timeRange = rawTimeRange.unwrap();
+
+  return {
+    declarationDate: momentToDate(rawCorporateAction.unwrap().declDate),
+    description: bytesToString(rawDescription),
+    meta: meshCorporateBallotMetaToCorporateBallotMeta(rawMetas.unwrap()),
+    startDate: momentToDate(timeRange.start),
+    endDate: momentToDate(timeRange.end),
+    rcv: boolToBoolean(rawRcv),
+  };
+}
+
+/**
+ * @hidden
+ */
+export async function getCorporateBallotDetailsOrThrow(
+  asset: FungibleAsset,
+  id: BigNumber,
+  context: Context
+): Promise<CorporateBallotDetails> {
+  const details = await getCorporateBallotDetailsOrNull(asset, id, context);
+
+  if (!details) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'The CorporateBallot does not exist',
+      data: { id },
+    });
+  }
+
+  return details;
+}
+
+/**
+ * @hidden
+ */
+export function assertBallotNotStarted({ startDate }: CorporateBallotParams): void {
+  if (startDate <= new Date()) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The ballot has already started',
+      data: { startDate },
+    });
+  }
 }

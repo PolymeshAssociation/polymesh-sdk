@@ -92,8 +92,6 @@ import type {
   PalletTransactionPaymentReleases,
   PolymeshCommonUtilitiesCheckpointNextCheckpoints,
   PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
-  PolymeshCommonUtilitiesGroupInactiveMember,
-  PolymeshCommonUtilitiesMaybeBlock,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
   PolymeshContractsApi,
   PolymeshContractsApiCodeHash,
@@ -109,10 +107,12 @@ import type {
   PolymeshPrimitivesComplianceManagerAssetCompliance,
   PolymeshPrimitivesConditionTrustedIssuer,
   PolymeshPrimitivesDocument,
+  PolymeshPrimitivesGroupInactiveMember,
   PolymeshPrimitivesIdentityClaim,
   PolymeshPrimitivesIdentityDidRecord,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioId,
+  PolymeshPrimitivesMaybeBlock,
   PolymeshPrimitivesMemo,
   PolymeshPrimitivesMultisigProposalState,
   PolymeshPrimitivesMultisigProposalVoteCount,
@@ -364,7 +364,7 @@ declare module '@polkadot/api-base/types/storage' {
         [Bytes]
       >;
       /**
-       * Returns `true` if transfers for the token associated to [`AssetId`] are frozen. Otherwise, returns `false`.
+       * Returns `true` if transfers for the asset are frozen. Otherwise, returns `false`.
        **/
       frozen: AugmentedQuery<
         ApiType,
@@ -413,7 +413,7 @@ declare module '@polkadot/api-base/types/storage' {
         [PolymeshPrimitivesIdentityId, PolymeshPrimitivesAssetAssetId]
       >;
       /**
-       * All security tokens owned by a user.
+       * All assets owned by a user.
        **/
       securityTokensOwnedByUser: AugmentedQuery<
         ApiType,
@@ -457,7 +457,7 @@ declare module '@polkadot/api-base/types/storage' {
         [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker]
       >;
       /**
-       * Maps each [`Ticker`] to its registration details ([`TickerRegistration`]).
+       * Map each [`Ticker`] to its registration details ([`TickerRegistration`]).
        **/
       uniqueTickerRegistration: AugmentedQuery<
         ApiType,
@@ -747,7 +747,7 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       inactiveMembers: AugmentedQuery<
         ApiType,
-        () => Observable<Vec<PolymeshCommonUtilitiesGroupInactiveMember>>,
+        () => Observable<Vec<PolymeshPrimitivesGroupInactiveMember>>,
         []
       >;
     };
@@ -914,7 +914,7 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       inactiveMembers: AugmentedQuery<
         ApiType,
-        () => Observable<Vec<PolymeshCommonUtilitiesGroupInactiveMember>>,
+        () => Observable<Vec<PolymeshPrimitivesGroupInactiveMember>>,
         []
       >;
     };
@@ -1378,6 +1378,9 @@ declare module '@polkadot/api-base/types/storage' {
         (arg: PolymeshPrimitivesAssetAssetId | string | Uint8Array) => Observable<u32>,
         [PolymeshPrimitivesAssetAssetId]
       >;
+      /**
+       * Storage version.
+       **/
       storageVersion: AugmentedQuery<ApiType, () => Observable<u8>, []>;
     };
     grandpa: {
@@ -1498,7 +1501,7 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       currentAuthId: AugmentedQuery<ApiType, () => Observable<u64>, []>;
       /**
-       * It stores the current gas fee payer for the current transaction
+       * It stores the current gas fee payer for the current transaction.
        **/
       currentPayer: AugmentedQuery<ApiType, () => Observable<Option<AccountId32>>, []>;
       /**
@@ -1506,7 +1509,7 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       customClaimIdSequence: AugmentedQuery<ApiType, () => Observable<u32>, []>;
       /**
-       * CustomClaimTypeId -> String constant
+       * CusotmClaimTypeId -> String constant
        **/
       customClaims: AugmentedQuery<
         ApiType,
@@ -1925,7 +1928,7 @@ declare module '@polkadot/api-base/types/storage' {
         [PolymeshPrimitivesAssetAssetId, u64]
       >;
       /**
-       * The total number of NFTs in a collection
+       * The total number of NFTs in a collection.
        **/
       nfTsInCollection: AugmentedQuery<
         ApiType,
@@ -1943,10 +1946,6 @@ declare module '@polkadot/api-base/types/storage' {
         ) => Observable<u64>,
         [PolymeshPrimitivesAssetAssetId, PolymeshPrimitivesIdentityId]
       >;
-      /**
-       * Storage version.
-       **/
-      storageVersion: AugmentedQuery<ApiType, () => Observable<u8>, []>;
     };
     offences: {
       /**
@@ -1984,12 +1983,11 @@ declare module '@polkadot/api-base/types/storage' {
     };
     pips: {
       /**
-       * Total count of current pending or scheduled PIPs.
+       * Total count of pending or scheduled PIPs.
        **/
       activePipCount: AugmentedQuery<ApiType, () => Observable<u32>, []>;
       /**
-       * The maximum allowed number for `ActivePipCount`.
-       * Once reached, new PIPs cannot be proposed by community members.
+       * The maximum allowed number for active PIPs. Once reached, new PIPs cannot be proposed by community members.
        **/
       activePipLimit: AugmentedQuery<ApiType, () => Observable<u32>, []>;
       /**
@@ -2002,8 +2000,7 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       defaultEnactmentPeriod: AugmentedQuery<ApiType, () => Observable<u32>, []>;
       /**
-       * Those who have locked a deposit.
-       * proposal (id, proposer) -> deposit
+       * All locked [`DepositInfo`] per [`PipId`] for each account.
        **/
       deposits: AugmentedQuery<
         ApiType,
@@ -2031,16 +2028,19 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       minimumProposalDeposit: AugmentedQuery<ApiType, () => Observable<u128>, []>;
       /**
-       * How many blocks will it take, after a `Pending` PIP expires,
-       * assuming it has not transitioned to another `ProposalState`?
+       * Number of blocks it will take, after a `Pending` PIP expires, assuming it has not transitioned to another `ProposalState`.
        **/
-      pendingPipExpiry: AugmentedQuery<
+      pendingPipExpiry: AugmentedQuery<ApiType, () => Observable<PolymeshPrimitivesMaybeBlock>, []>;
+      /**
+       * All PIPs that still require refunds.
+       **/
+      pendingRefunds: AugmentedQuery<
         ApiType,
-        () => Observable<PolymeshCommonUtilitiesMaybeBlock>,
-        []
+        (arg: u32 | AnyNumber | Uint8Array) => Observable<Option<bool>>,
+        [u32]
       >;
       /**
-       * Proposals so far. id can be used to keep track of PIPs off-chain.
+       * Proposal's identifier.
        **/
       pipIdSequence: AugmentedQuery<ApiType, () => Observable<u32>, []>;
       /**
@@ -2053,7 +2053,7 @@ declare module '@polkadot/api-base/types/storage' {
         [u32]
       >;
       /**
-       * Maps PIPs to the block at which they will be executed, if any.
+       * Maps PIPs to the block at which they will be executed.
        **/
       pipToSchedule: AugmentedQuery<
         ApiType,
@@ -2061,7 +2061,7 @@ declare module '@polkadot/api-base/types/storage' {
         [u32]
       >;
       /**
-       * The metadata of the active proposals.
+       * The [`PipsMetadata`] for each proposal ([`PipId`]).
        **/
       proposalMetadata: AugmentedQuery<
         ApiType,
@@ -2069,8 +2069,7 @@ declare module '@polkadot/api-base/types/storage' {
         [u32]
       >;
       /**
-       * PolymeshVotes on a given proposal, if it is ongoing.
-       * proposal id -> vote count
+       * The [`VotingResult`] for each proposal ([`PipId`]).
        **/
       proposalResult: AugmentedQuery<
         ApiType,
@@ -2078,8 +2077,7 @@ declare module '@polkadot/api-base/types/storage' {
         [u32]
       >;
       /**
-       * Actual proposal for a given id, if it's current.
-       * proposal id -> proposal
+       * The [`Pip`] for each proposal ([`PipId`]).
        **/
       proposals: AugmentedQuery<
         ApiType,
@@ -2087,8 +2085,7 @@ declare module '@polkadot/api-base/types/storage' {
         [u32]
       >;
       /**
-       * Proposal state for a given id.
-       * proposal id -> proposalState
+       * The ([`ProposalState`]) of a given PIP ([`PipId`]).
        **/
       proposalStates: AugmentedQuery<
         ApiType,
@@ -2096,8 +2093,7 @@ declare module '@polkadot/api-base/types/storage' {
         [u32]
       >;
       /**
-       * Votes per Proposal and account. Used to avoid double vote issue.
-       * (proposal id, account) -> Vote
+       * The Votes ([`Vote`]) for each proposal ([`PipId`]) per account.
        **/
       proposalVotes: AugmentedQuery<
         ApiType,
@@ -2108,15 +2104,15 @@ declare module '@polkadot/api-base/types/storage' {
         [u32, AccountId32]
       >;
       /**
-       * Determines whether historical PIP data is persisted or removed
+       * Set to `true` if historical PIPs data must be removed.
        **/
       pruneHistoricalPips: AugmentedQuery<ApiType, () => Observable<bool>, []>;
       /**
-       * Snapshots so far. id can be used to keep track of snapshots off-chain.
+       * Snaphot's identifier.
        **/
       snapshotIdSequence: AugmentedQuery<ApiType, () => Observable<u32>, []>;
       /**
-       * The metadata of the snapshot, if there is one.
+       * The [`SnapshotMetadata`].
        **/
       snapshotMeta: AugmentedQuery<
         ApiType,
@@ -2131,17 +2127,24 @@ declare module '@polkadot/api-base/types/storage' {
        * Once a (configurable) threshhold is exceeded, a PIP cannot be skipped again.
        **/
       snapshotQueue: AugmentedQuery<ApiType, () => Observable<Vec<PalletPipsSnapshottedPip>>, []>;
+      /**
+       * Storage version.
+       **/
       storageVersion: AugmentedQuery<ApiType, () => Observable<u8>, []>;
+      /**
+       * All PIPs that still require votes to be pruned.
+       **/
+      votesToBePruned: AugmentedQuery<
+        ApiType,
+        (arg: u32 | AnyNumber | Uint8Array) => Observable<Option<bool>>,
+        [u32]
+      >;
     };
     polymeshCommittee: {
       /**
        * Time after which a proposal will expire.
        **/
-      expiresAfter: AugmentedQuery<
-        ApiType,
-        () => Observable<PolymeshCommonUtilitiesMaybeBlock>,
-        []
-      >;
+      expiresAfter: AugmentedQuery<ApiType, () => Observable<PolymeshPrimitivesMaybeBlock>, []>;
       /**
        * The current members of the committee.
        **/
@@ -2163,13 +2166,9 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       proposals: AugmentedQuery<ApiType, () => Observable<Vec<H256>>, []>;
       /**
-       * Release coordinator.
+       * Release cooridinator.
        **/
       releaseCoordinator: AugmentedQuery<ApiType, () => Observable<Option<U8aFixed>>, []>;
-      /**
-       * Storage version.
-       **/
-      storageVersion: AugmentedQuery<ApiType, () => Observable<u8>, []>;
       /**
        * Vote threshold for an approval.
        **/
@@ -3326,11 +3325,7 @@ declare module '@polkadot/api-base/types/storage' {
       /**
        * Time after which a proposal will expire.
        **/
-      expiresAfter: AugmentedQuery<
-        ApiType,
-        () => Observable<PolymeshCommonUtilitiesMaybeBlock>,
-        []
-      >;
+      expiresAfter: AugmentedQuery<ApiType, () => Observable<PolymeshPrimitivesMaybeBlock>, []>;
       /**
        * The current members of the committee.
        **/
@@ -3352,13 +3347,9 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       proposals: AugmentedQuery<ApiType, () => Observable<Vec<H256>>, []>;
       /**
-       * Release coordinator.
+       * Release cooridinator.
        **/
       releaseCoordinator: AugmentedQuery<ApiType, () => Observable<Option<U8aFixed>>, []>;
-      /**
-       * Storage version.
-       **/
-      storageVersion: AugmentedQuery<ApiType, () => Observable<u8>, []>;
       /**
        * Vote threshold for an approval.
        **/
@@ -3390,11 +3381,10 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       inactiveMembers: AugmentedQuery<
         ApiType,
-        () => Observable<Vec<PolymeshCommonUtilitiesGroupInactiveMember>>,
+        () => Observable<Vec<PolymeshPrimitivesGroupInactiveMember>>,
         []
       >;
     };
-    testUtils: {};
     timestamp: {
       /**
        * Did the timestamp get updated in this block?
@@ -3417,11 +3407,7 @@ declare module '@polkadot/api-base/types/storage' {
       /**
        * Time after which a proposal will expire.
        **/
-      expiresAfter: AugmentedQuery<
-        ApiType,
-        () => Observable<PolymeshCommonUtilitiesMaybeBlock>,
-        []
-      >;
+      expiresAfter: AugmentedQuery<ApiType, () => Observable<PolymeshPrimitivesMaybeBlock>, []>;
       /**
        * The current members of the committee.
        **/
@@ -3443,13 +3429,9 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       proposals: AugmentedQuery<ApiType, () => Observable<Vec<H256>>, []>;
       /**
-       * Release coordinator.
+       * Release cooridinator.
        **/
       releaseCoordinator: AugmentedQuery<ApiType, () => Observable<Option<U8aFixed>>, []>;
-      /**
-       * Storage version.
-       **/
-      storageVersion: AugmentedQuery<ApiType, () => Observable<u8>, []>;
       /**
        * Vote threshold for an approval.
        **/
@@ -3481,7 +3463,7 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       inactiveMembers: AugmentedQuery<
         ApiType,
-        () => Observable<Vec<PolymeshCommonUtilitiesGroupInactiveMember>>,
+        () => Observable<Vec<PolymeshPrimitivesGroupInactiveMember>>,
         []
       >;
     };

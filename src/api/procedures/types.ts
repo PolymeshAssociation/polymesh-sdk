@@ -6,6 +6,7 @@ import {
   CheckpointSchedule,
   ChildIdentity,
   CorporateActionBase,
+  CorporateBallot,
   CustomPermissionGroup,
   DefaultPortfolio,
   FungibleAsset,
@@ -1841,3 +1842,106 @@ export interface UpdatePolyxBondParams {
 export interface NominateValidatorsParams {
   validators: (Account | string)[];
 }
+
+export interface BallotMotion {
+  /**
+   * Title of the motion
+   */
+  title: string;
+
+  /**
+   * Link to more information about the motion
+   */
+  infoLink: string;
+
+  /**
+   * Choices for the motion excluding abstain.
+   * @note Voting power not used is considered abstained.
+   */
+  choices: string[];
+}
+
+export interface BallotMeta {
+  /**
+   * Title of the Ballot
+   */
+  title: string;
+
+  /**
+   * All the motions of the Ballot, with their associated titles, choices, etc
+   */
+  motions: BallotMotion[];
+}
+
+export interface CreateBallotParams {
+  /**
+   * Title and motions of the Ballot
+   */
+  meta: BallotMeta;
+
+  /**
+   * Date when Ballot voting starts
+   */
+  startDate: Date;
+
+  /**
+   * Date when Ballot voting ends
+   */
+  endDate: Date;
+
+  /**
+   * Description of the Corporate Action to which the Ballot is attached
+   */
+  description: string;
+
+  /**
+   * Asset Holder Identities to be included (or excluded) from the Ballot. Inclusion/exclusion is controlled by the `treatment`
+   *   property. When the value is `Include`, all Asset Holders not present in the array are excluded, and vice-versa. If no value is passed,
+   *   the default value for the Asset is used. If there is no default value, all Asset Holders will be part of the Ballot
+   */
+  targets?: InputCorporateActionTargets;
+
+  /**
+   * Date on which the Corporate Action is declared
+   */
+  declarationDate: Date;
+
+  /**
+   * Specifies whether RCV is enabled for this ballot.
+   */
+  rcv: boolean;
+}
+
+export type CorporateBallotParams = Omit<CreateBallotParams, 'declarationDate' | 'rcv'> & {
+  rcv: boolean;
+  declarationDate: Date;
+};
+
+export type ModifyCorporateBallotParams = Partial<
+  Pick<CreateBallotParams, 'meta' | 'endDate' | 'rcv'>
+> & {
+  ballot: CorporateBallot | BigNumber;
+};
+
+export type BallotVote = {
+  /**
+   * The power of the vote.
+   */
+  power: BigNumber;
+
+  /**
+   * The fallback vote to be used if the choice is not found in the ballot.
+   * @note This is only allowed for RCV ballots.
+   * @note Must point to a choice in a motion (index of the choice in the motion choices array)
+   * @note Must not point to the same choice as the `vote` property (index != choiceIndex)
+   */
+  fallback?: BigNumber;
+};
+
+export type CastBallotVoteParams = {
+  /**
+   * The votes to be cast.
+   * @note Votes for all motion choices must be provided.
+   */
+  votes: BallotVote[][];
+};

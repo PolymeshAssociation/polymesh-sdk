@@ -36,34 +36,34 @@ import type {
   FrameSystemPhase,
   PalletAssetAssetDetails,
   PalletAssetCall,
-  PalletAssetCheckpointCall,
-  PalletAssetCheckpointError,
+  PalletAssetCheckpointPalletCall,
+  PalletAssetCheckpointPalletError,
+  PalletAssetCheckpointPalletEvent,
   PalletAssetError,
+  PalletAssetEvent,
   PalletAssetTickerRegistration,
   PalletAssetTickerRegistrationConfig,
   PalletBabeCall,
   PalletBabeError,
+  PalletBalancesAccountData,
   PalletBalancesBalanceLock,
   PalletBalancesCall,
   PalletBalancesError,
+  PalletBalancesEvent,
+  PalletBalancesReasons,
   PalletBaseCall,
   PalletBaseError,
+  PalletBaseEvent,
   PalletBridgeBridgeTxDetail,
   PalletBridgeBridgeTxStatus,
   PalletCommitteeCall,
   PalletCommitteeError,
-  PalletCommitteeInstance1,
-  PalletCommitteeInstance3,
-  PalletCommitteeInstance4,
+  PalletCommitteeEvent,
   PalletCommitteePolymeshVotes,
-  PalletCommitteeRawEventInstance1,
-  PalletCommitteeRawEventInstance3,
-  PalletCommitteeRawEventInstance4,
-  PalletCommitteeRawOriginInstance1,
-  PalletCommitteeRawOriginInstance3,
-  PalletCommitteeRawOriginInstance4,
+  PalletCommitteeRawOrigin,
   PalletComplianceManagerCall,
   PalletComplianceManagerError,
+  PalletComplianceManagerEvent,
   PalletContractsCall,
   PalletContractsError,
   PalletContractsEvent,
@@ -79,19 +79,19 @@ import type {
   PalletCorporateActionsBallotBallotMeta,
   PalletCorporateActionsBallotBallotTimeRange,
   PalletCorporateActionsBallotBallotVote,
-  PalletCorporateActionsBallotCall,
-  PalletCorporateActionsBallotError,
-  PalletCorporateActionsBallotEvent,
   PalletCorporateActionsBallotMotion,
+  PalletCorporateActionsBallotPalletCall,
+  PalletCorporateActionsBallotPalletError,
+  PalletCorporateActionsBallotPalletEvent,
   PalletCorporateActionsCaCheckpoint,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
   PalletCorporateActionsCall,
   PalletCorporateActionsCorporateAction,
   PalletCorporateActionsDistribution,
-  PalletCorporateActionsDistributionCall,
-  PalletCorporateActionsDistributionError,
-  PalletCorporateActionsDistributionEvent,
+  PalletCorporateActionsDistributionPalletCall,
+  PalletCorporateActionsDistributionPalletError,
+  PalletCorporateActionsDistributionPalletEvent,
   PalletCorporateActionsError,
   PalletCorporateActionsEvent,
   PalletCorporateActionsInitiateCorporateActionArgs,
@@ -111,6 +111,7 @@ import type {
   PalletElectionProviderMultiPhaseSolutionOrSnapshotSize,
   PalletExternalAgentsCall,
   PalletExternalAgentsError,
+  PalletExternalAgentsEvent,
   PalletGrandpaCall,
   PalletGrandpaError,
   PalletGrandpaEvent,
@@ -118,14 +119,12 @@ import type {
   PalletGrandpaStoredState,
   PalletGroupCall,
   PalletGroupError,
-  PalletGroupInstance1,
-  PalletGroupInstance2,
-  PalletGroupInstance3,
-  PalletGroupInstance4,
+  PalletGroupEvent,
   PalletIdentityCall,
   PalletIdentityClaim1stKey,
   PalletIdentityClaim2ndKey,
   PalletIdentityError,
+  PalletIdentityEvent,
   PalletImOnlineBoundedOpaqueNetworkState,
   PalletImOnlineCall,
   PalletImOnlineError,
@@ -141,6 +140,7 @@ import type {
   PalletMultisigEvent,
   PalletNftCall,
   PalletNftError,
+  PalletNftEvent,
   PalletOffencesEvent,
   PalletPermissionsError,
   PalletPermissionsStoreCallMetadata,
@@ -148,12 +148,12 @@ import type {
   PalletPipsCommittee,
   PalletPipsDepositInfo,
   PalletPipsError,
+  PalletPipsEvent,
   PalletPipsPip,
   PalletPipsPipsMetadata,
   PalletPipsProposalData,
   PalletPipsProposalState,
   PalletPipsProposer,
-  PalletPipsRawEvent,
   PalletPipsSnapshotMetadata,
   PalletPipsSnapshotResult,
   PalletPipsSnapshottedPip,
@@ -161,15 +161,17 @@ import type {
   PalletPipsVotingResult,
   PalletPortfolioCall,
   PalletPortfolioError,
+  PalletPortfolioEvent,
   PalletPreimageCall,
   PalletPreimageError,
   PalletPreimageEvent,
   PalletPreimageRequestStatus,
   PalletProtocolFeeCall,
   PalletProtocolFeeError,
-  PalletProtocolFeeRawEvent,
+  PalletProtocolFeeEvent,
   PalletRelayerCall,
   PalletRelayerError,
+  PalletRelayerEvent,
   PalletRelayerSubsidy,
   PalletSchedulerCall,
   PalletSchedulerError,
@@ -180,6 +182,7 @@ import type {
   PalletSessionEvent,
   PalletSettlementCall,
   PalletSettlementError,
+  PalletSettlementEvent,
   PalletStakingActiveEraInfo,
   PalletStakingEraRewardPoints,
   PalletStakingExposure,
@@ -204,64 +207,42 @@ import type {
   PalletStakingValidatorPrefs,
   PalletStatisticsCall,
   PalletStatisticsError,
+  PalletStatisticsEvent,
   PalletStoCall,
   PalletStoError,
+  PalletStoEvent,
   PalletStoFundraiser,
   PalletStoFundraiserStatus,
   PalletStoFundraiserTier,
   PalletStoPriceTier,
-  PalletStoRawEvent,
   PalletSudoCall,
   PalletSudoError,
-  PalletSudoRawEvent,
-  PalletTestUtilsCall,
-  PalletTestUtilsError,
-  PalletTestUtilsRawEvent,
+  PalletSudoEvent,
   PalletTimestampCall,
+  PalletTransactionPaymentCall,
   PalletTransactionPaymentChargeTransactionPayment,
-  PalletTransactionPaymentRawEvent,
+  PalletTransactionPaymentEvent,
   PalletTransactionPaymentReleases,
   PalletTreasuryCall,
   PalletTreasuryError,
-  PalletTreasuryRawEvent,
+  PalletTreasuryEvent,
   PalletUtilityCall,
   PalletUtilityError,
   PalletUtilityEvent,
   PalletUtilityUniqueCall,
-  PolymeshCommonUtilitiesAssetRawEvent,
-  PolymeshCommonUtilitiesBalancesAccountData,
-  PolymeshCommonUtilitiesBalancesRawEvent,
-  PolymeshCommonUtilitiesBalancesReasons,
-  PolymeshCommonUtilitiesBaseEvent,
-  PolymeshCommonUtilitiesCheckpointEvent,
   PolymeshCommonUtilitiesCheckpointNextCheckpoints,
   PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
-  PolymeshCommonUtilitiesComplianceManagerEvent,
-  PolymeshCommonUtilitiesExternalAgentsEvent,
-  PolymeshCommonUtilitiesGroupInactiveMember,
-  PolymeshCommonUtilitiesGroupRawEventInstance1,
-  PolymeshCommonUtilitiesGroupRawEventInstance2,
-  PolymeshCommonUtilitiesGroupRawEventInstance3,
-  PolymeshCommonUtilitiesGroupRawEventInstance4,
   PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth,
-  PolymeshCommonUtilitiesIdentityRawEvent,
   PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth,
-  PolymeshCommonUtilitiesMaybeBlock,
-  PolymeshCommonUtilitiesNftEvent,
-  PolymeshCommonUtilitiesPortfolioEvent,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
-  PolymeshCommonUtilitiesRelayerRawEvent,
-  PolymeshCommonUtilitiesSettlementRawEvent,
-  PolymeshCommonUtilitiesStatisticsEvent,
   PolymeshContractsApi,
   PolymeshContractsApiCodeHash,
   PolymeshContractsCall,
   PolymeshContractsChainExtensionExtrinsicId,
   PolymeshContractsChainVersion,
   PolymeshContractsError,
+  PolymeshContractsEvent,
   PolymeshContractsNextUpgrade,
-  PolymeshContractsRawEvent,
-  PolymeshExtensionsCheckWeight,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesAssetAssetType,
@@ -285,6 +266,7 @@ import type {
   PolymeshPrimitivesDocument,
   PolymeshPrimitivesDocumentHash,
   PolymeshPrimitivesEventOnly,
+  PolymeshPrimitivesGroupInactiveMember,
   PolymeshPrimitivesIdentityClaim,
   PolymeshPrimitivesIdentityClaimClaim,
   PolymeshPrimitivesIdentityClaimClaimType,
@@ -294,6 +276,7 @@ import type {
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesIdentityIdPortfolioKind,
   PolymeshPrimitivesJurisdictionCountryCode,
+  PolymeshPrimitivesMaybeBlock,
   PolymeshPrimitivesMemo,
   PolymeshPrimitivesMultisigProposalState,
   PolymeshPrimitivesMultisigProposalVoteCount,
@@ -415,34 +398,34 @@ declare module '@polkadot/types/types/registry' {
     FrameSystemPhase: FrameSystemPhase;
     PalletAssetAssetDetails: PalletAssetAssetDetails;
     PalletAssetCall: PalletAssetCall;
-    PalletAssetCheckpointCall: PalletAssetCheckpointCall;
-    PalletAssetCheckpointError: PalletAssetCheckpointError;
+    PalletAssetCheckpointPalletCall: PalletAssetCheckpointPalletCall;
+    PalletAssetCheckpointPalletError: PalletAssetCheckpointPalletError;
+    PalletAssetCheckpointPalletEvent: PalletAssetCheckpointPalletEvent;
     PalletAssetError: PalletAssetError;
+    PalletAssetEvent: PalletAssetEvent;
     PalletAssetTickerRegistration: PalletAssetTickerRegistration;
     PalletAssetTickerRegistrationConfig: PalletAssetTickerRegistrationConfig;
     PalletBabeCall: PalletBabeCall;
     PalletBabeError: PalletBabeError;
+    PalletBalancesAccountData: PalletBalancesAccountData;
     PalletBalancesBalanceLock: PalletBalancesBalanceLock;
     PalletBalancesCall: PalletBalancesCall;
     PalletBalancesError: PalletBalancesError;
+    PalletBalancesEvent: PalletBalancesEvent;
+    PalletBalancesReasons: PalletBalancesReasons;
     PalletBaseCall: PalletBaseCall;
     PalletBaseError: PalletBaseError;
+    PalletBaseEvent: PalletBaseEvent;
     PalletBridgeBridgeTxDetail: PalletBridgeBridgeTxDetail;
     PalletBridgeBridgeTxStatus: PalletBridgeBridgeTxStatus;
     PalletCommitteeCall: PalletCommitteeCall;
     PalletCommitteeError: PalletCommitteeError;
-    PalletCommitteeInstance1: PalletCommitteeInstance1;
-    PalletCommitteeInstance3: PalletCommitteeInstance3;
-    PalletCommitteeInstance4: PalletCommitteeInstance4;
+    PalletCommitteeEvent: PalletCommitteeEvent;
     PalletCommitteePolymeshVotes: PalletCommitteePolymeshVotes;
-    PalletCommitteeRawEventInstance1: PalletCommitteeRawEventInstance1;
-    PalletCommitteeRawEventInstance3: PalletCommitteeRawEventInstance3;
-    PalletCommitteeRawEventInstance4: PalletCommitteeRawEventInstance4;
-    PalletCommitteeRawOriginInstance1: PalletCommitteeRawOriginInstance1;
-    PalletCommitteeRawOriginInstance3: PalletCommitteeRawOriginInstance3;
-    PalletCommitteeRawOriginInstance4: PalletCommitteeRawOriginInstance4;
+    PalletCommitteeRawOrigin: PalletCommitteeRawOrigin;
     PalletComplianceManagerCall: PalletComplianceManagerCall;
     PalletComplianceManagerError: PalletComplianceManagerError;
+    PalletComplianceManagerEvent: PalletComplianceManagerEvent;
     PalletContractsCall: PalletContractsCall;
     PalletContractsError: PalletContractsError;
     PalletContractsEvent: PalletContractsEvent;
@@ -458,19 +441,19 @@ declare module '@polkadot/types/types/registry' {
     PalletCorporateActionsBallotBallotMeta: PalletCorporateActionsBallotBallotMeta;
     PalletCorporateActionsBallotBallotTimeRange: PalletCorporateActionsBallotBallotTimeRange;
     PalletCorporateActionsBallotBallotVote: PalletCorporateActionsBallotBallotVote;
-    PalletCorporateActionsBallotCall: PalletCorporateActionsBallotCall;
-    PalletCorporateActionsBallotError: PalletCorporateActionsBallotError;
-    PalletCorporateActionsBallotEvent: PalletCorporateActionsBallotEvent;
     PalletCorporateActionsBallotMotion: PalletCorporateActionsBallotMotion;
+    PalletCorporateActionsBallotPalletCall: PalletCorporateActionsBallotPalletCall;
+    PalletCorporateActionsBallotPalletError: PalletCorporateActionsBallotPalletError;
+    PalletCorporateActionsBallotPalletEvent: PalletCorporateActionsBallotPalletEvent;
     PalletCorporateActionsCaCheckpoint: PalletCorporateActionsCaCheckpoint;
     PalletCorporateActionsCaId: PalletCorporateActionsCaId;
     PalletCorporateActionsCaKind: PalletCorporateActionsCaKind;
     PalletCorporateActionsCall: PalletCorporateActionsCall;
     PalletCorporateActionsCorporateAction: PalletCorporateActionsCorporateAction;
     PalletCorporateActionsDistribution: PalletCorporateActionsDistribution;
-    PalletCorporateActionsDistributionCall: PalletCorporateActionsDistributionCall;
-    PalletCorporateActionsDistributionError: PalletCorporateActionsDistributionError;
-    PalletCorporateActionsDistributionEvent: PalletCorporateActionsDistributionEvent;
+    PalletCorporateActionsDistributionPalletCall: PalletCorporateActionsDistributionPalletCall;
+    PalletCorporateActionsDistributionPalletError: PalletCorporateActionsDistributionPalletError;
+    PalletCorporateActionsDistributionPalletEvent: PalletCorporateActionsDistributionPalletEvent;
     PalletCorporateActionsError: PalletCorporateActionsError;
     PalletCorporateActionsEvent: PalletCorporateActionsEvent;
     PalletCorporateActionsInitiateCorporateActionArgs: PalletCorporateActionsInitiateCorporateActionArgs;
@@ -490,6 +473,7 @@ declare module '@polkadot/types/types/registry' {
     PalletElectionProviderMultiPhaseSolutionOrSnapshotSize: PalletElectionProviderMultiPhaseSolutionOrSnapshotSize;
     PalletExternalAgentsCall: PalletExternalAgentsCall;
     PalletExternalAgentsError: PalletExternalAgentsError;
+    PalletExternalAgentsEvent: PalletExternalAgentsEvent;
     PalletGrandpaCall: PalletGrandpaCall;
     PalletGrandpaError: PalletGrandpaError;
     PalletGrandpaEvent: PalletGrandpaEvent;
@@ -497,14 +481,12 @@ declare module '@polkadot/types/types/registry' {
     PalletGrandpaStoredState: PalletGrandpaStoredState;
     PalletGroupCall: PalletGroupCall;
     PalletGroupError: PalletGroupError;
-    PalletGroupInstance1: PalletGroupInstance1;
-    PalletGroupInstance2: PalletGroupInstance2;
-    PalletGroupInstance3: PalletGroupInstance3;
-    PalletGroupInstance4: PalletGroupInstance4;
+    PalletGroupEvent: PalletGroupEvent;
     PalletIdentityCall: PalletIdentityCall;
     PalletIdentityClaim1stKey: PalletIdentityClaim1stKey;
     PalletIdentityClaim2ndKey: PalletIdentityClaim2ndKey;
     PalletIdentityError: PalletIdentityError;
+    PalletIdentityEvent: PalletIdentityEvent;
     PalletImOnlineBoundedOpaqueNetworkState: PalletImOnlineBoundedOpaqueNetworkState;
     PalletImOnlineCall: PalletImOnlineCall;
     PalletImOnlineError: PalletImOnlineError;
@@ -520,6 +502,7 @@ declare module '@polkadot/types/types/registry' {
     PalletMultisigEvent: PalletMultisigEvent;
     PalletNftCall: PalletNftCall;
     PalletNftError: PalletNftError;
+    PalletNftEvent: PalletNftEvent;
     PalletOffencesEvent: PalletOffencesEvent;
     PalletPermissionsError: PalletPermissionsError;
     PalletPermissionsStoreCallMetadata: PalletPermissionsStoreCallMetadata;
@@ -527,12 +510,12 @@ declare module '@polkadot/types/types/registry' {
     PalletPipsCommittee: PalletPipsCommittee;
     PalletPipsDepositInfo: PalletPipsDepositInfo;
     PalletPipsError: PalletPipsError;
+    PalletPipsEvent: PalletPipsEvent;
     PalletPipsPip: PalletPipsPip;
     PalletPipsPipsMetadata: PalletPipsPipsMetadata;
     PalletPipsProposalData: PalletPipsProposalData;
     PalletPipsProposalState: PalletPipsProposalState;
     PalletPipsProposer: PalletPipsProposer;
-    PalletPipsRawEvent: PalletPipsRawEvent;
     PalletPipsSnapshotMetadata: PalletPipsSnapshotMetadata;
     PalletPipsSnapshotResult: PalletPipsSnapshotResult;
     PalletPipsSnapshottedPip: PalletPipsSnapshottedPip;
@@ -540,15 +523,17 @@ declare module '@polkadot/types/types/registry' {
     PalletPipsVotingResult: PalletPipsVotingResult;
     PalletPortfolioCall: PalletPortfolioCall;
     PalletPortfolioError: PalletPortfolioError;
+    PalletPortfolioEvent: PalletPortfolioEvent;
     PalletPreimageCall: PalletPreimageCall;
     PalletPreimageError: PalletPreimageError;
     PalletPreimageEvent: PalletPreimageEvent;
     PalletPreimageRequestStatus: PalletPreimageRequestStatus;
     PalletProtocolFeeCall: PalletProtocolFeeCall;
     PalletProtocolFeeError: PalletProtocolFeeError;
-    PalletProtocolFeeRawEvent: PalletProtocolFeeRawEvent;
+    PalletProtocolFeeEvent: PalletProtocolFeeEvent;
     PalletRelayerCall: PalletRelayerCall;
     PalletRelayerError: PalletRelayerError;
+    PalletRelayerEvent: PalletRelayerEvent;
     PalletRelayerSubsidy: PalletRelayerSubsidy;
     PalletSchedulerCall: PalletSchedulerCall;
     PalletSchedulerError: PalletSchedulerError;
@@ -559,6 +544,7 @@ declare module '@polkadot/types/types/registry' {
     PalletSessionEvent: PalletSessionEvent;
     PalletSettlementCall: PalletSettlementCall;
     PalletSettlementError: PalletSettlementError;
+    PalletSettlementEvent: PalletSettlementEvent;
     PalletStakingActiveEraInfo: PalletStakingActiveEraInfo;
     PalletStakingEraRewardPoints: PalletStakingEraRewardPoints;
     PalletStakingExposure: PalletStakingExposure;
@@ -583,64 +569,42 @@ declare module '@polkadot/types/types/registry' {
     PalletStakingValidatorPrefs: PalletStakingValidatorPrefs;
     PalletStatisticsCall: PalletStatisticsCall;
     PalletStatisticsError: PalletStatisticsError;
+    PalletStatisticsEvent: PalletStatisticsEvent;
     PalletStoCall: PalletStoCall;
     PalletStoError: PalletStoError;
+    PalletStoEvent: PalletStoEvent;
     PalletStoFundraiser: PalletStoFundraiser;
     PalletStoFundraiserStatus: PalletStoFundraiserStatus;
     PalletStoFundraiserTier: PalletStoFundraiserTier;
     PalletStoPriceTier: PalletStoPriceTier;
-    PalletStoRawEvent: PalletStoRawEvent;
     PalletSudoCall: PalletSudoCall;
     PalletSudoError: PalletSudoError;
-    PalletSudoRawEvent: PalletSudoRawEvent;
-    PalletTestUtilsCall: PalletTestUtilsCall;
-    PalletTestUtilsError: PalletTestUtilsError;
-    PalletTestUtilsRawEvent: PalletTestUtilsRawEvent;
+    PalletSudoEvent: PalletSudoEvent;
     PalletTimestampCall: PalletTimestampCall;
+    PalletTransactionPaymentCall: PalletTransactionPaymentCall;
     PalletTransactionPaymentChargeTransactionPayment: PalletTransactionPaymentChargeTransactionPayment;
-    PalletTransactionPaymentRawEvent: PalletTransactionPaymentRawEvent;
+    PalletTransactionPaymentEvent: PalletTransactionPaymentEvent;
     PalletTransactionPaymentReleases: PalletTransactionPaymentReleases;
     PalletTreasuryCall: PalletTreasuryCall;
     PalletTreasuryError: PalletTreasuryError;
-    PalletTreasuryRawEvent: PalletTreasuryRawEvent;
+    PalletTreasuryEvent: PalletTreasuryEvent;
     PalletUtilityCall: PalletUtilityCall;
     PalletUtilityError: PalletUtilityError;
     PalletUtilityEvent: PalletUtilityEvent;
     PalletUtilityUniqueCall: PalletUtilityUniqueCall;
-    PolymeshCommonUtilitiesAssetRawEvent: PolymeshCommonUtilitiesAssetRawEvent;
-    PolymeshCommonUtilitiesBalancesAccountData: PolymeshCommonUtilitiesBalancesAccountData;
-    PolymeshCommonUtilitiesBalancesRawEvent: PolymeshCommonUtilitiesBalancesRawEvent;
-    PolymeshCommonUtilitiesBalancesReasons: PolymeshCommonUtilitiesBalancesReasons;
-    PolymeshCommonUtilitiesBaseEvent: PolymeshCommonUtilitiesBaseEvent;
-    PolymeshCommonUtilitiesCheckpointEvent: PolymeshCommonUtilitiesCheckpointEvent;
     PolymeshCommonUtilitiesCheckpointNextCheckpoints: PolymeshCommonUtilitiesCheckpointNextCheckpoints;
     PolymeshCommonUtilitiesCheckpointScheduleCheckpoints: PolymeshCommonUtilitiesCheckpointScheduleCheckpoints;
-    PolymeshCommonUtilitiesComplianceManagerEvent: PolymeshCommonUtilitiesComplianceManagerEvent;
-    PolymeshCommonUtilitiesExternalAgentsEvent: PolymeshCommonUtilitiesExternalAgentsEvent;
-    PolymeshCommonUtilitiesGroupInactiveMember: PolymeshCommonUtilitiesGroupInactiveMember;
-    PolymeshCommonUtilitiesGroupRawEventInstance1: PolymeshCommonUtilitiesGroupRawEventInstance1;
-    PolymeshCommonUtilitiesGroupRawEventInstance2: PolymeshCommonUtilitiesGroupRawEventInstance2;
-    PolymeshCommonUtilitiesGroupRawEventInstance3: PolymeshCommonUtilitiesGroupRawEventInstance3;
-    PolymeshCommonUtilitiesGroupRawEventInstance4: PolymeshCommonUtilitiesGroupRawEventInstance4;
     PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth: PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth;
-    PolymeshCommonUtilitiesIdentityRawEvent: PolymeshCommonUtilitiesIdentityRawEvent;
     PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth: PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth;
-    PolymeshCommonUtilitiesMaybeBlock: PolymeshCommonUtilitiesMaybeBlock;
-    PolymeshCommonUtilitiesNftEvent: PolymeshCommonUtilitiesNftEvent;
-    PolymeshCommonUtilitiesPortfolioEvent: PolymeshCommonUtilitiesPortfolioEvent;
     PolymeshCommonUtilitiesProtocolFeeProtocolOp: PolymeshCommonUtilitiesProtocolFeeProtocolOp;
-    PolymeshCommonUtilitiesRelayerRawEvent: PolymeshCommonUtilitiesRelayerRawEvent;
-    PolymeshCommonUtilitiesSettlementRawEvent: PolymeshCommonUtilitiesSettlementRawEvent;
-    PolymeshCommonUtilitiesStatisticsEvent: PolymeshCommonUtilitiesStatisticsEvent;
     PolymeshContractsApi: PolymeshContractsApi;
     PolymeshContractsApiCodeHash: PolymeshContractsApiCodeHash;
     PolymeshContractsCall: PolymeshContractsCall;
     PolymeshContractsChainExtensionExtrinsicId: PolymeshContractsChainExtensionExtrinsicId;
     PolymeshContractsChainVersion: PolymeshContractsChainVersion;
     PolymeshContractsError: PolymeshContractsError;
+    PolymeshContractsEvent: PolymeshContractsEvent;
     PolymeshContractsNextUpgrade: PolymeshContractsNextUpgrade;
-    PolymeshContractsRawEvent: PolymeshContractsRawEvent;
-    PolymeshExtensionsCheckWeight: PolymeshExtensionsCheckWeight;
     PolymeshPrimitivesAgentAgentGroup: PolymeshPrimitivesAgentAgentGroup;
     PolymeshPrimitivesAssetAssetId: PolymeshPrimitivesAssetAssetId;
     PolymeshPrimitivesAssetAssetType: PolymeshPrimitivesAssetAssetType;
@@ -664,6 +628,7 @@ declare module '@polkadot/types/types/registry' {
     PolymeshPrimitivesDocument: PolymeshPrimitivesDocument;
     PolymeshPrimitivesDocumentHash: PolymeshPrimitivesDocumentHash;
     PolymeshPrimitivesEventOnly: PolymeshPrimitivesEventOnly;
+    PolymeshPrimitivesGroupInactiveMember: PolymeshPrimitivesGroupInactiveMember;
     PolymeshPrimitivesIdentityClaim: PolymeshPrimitivesIdentityClaim;
     PolymeshPrimitivesIdentityClaimClaim: PolymeshPrimitivesIdentityClaimClaim;
     PolymeshPrimitivesIdentityClaimClaimType: PolymeshPrimitivesIdentityClaimClaimType;
@@ -673,6 +638,7 @@ declare module '@polkadot/types/types/registry' {
     PolymeshPrimitivesIdentityIdPortfolioId: PolymeshPrimitivesIdentityIdPortfolioId;
     PolymeshPrimitivesIdentityIdPortfolioKind: PolymeshPrimitivesIdentityIdPortfolioKind;
     PolymeshPrimitivesJurisdictionCountryCode: PolymeshPrimitivesJurisdictionCountryCode;
+    PolymeshPrimitivesMaybeBlock: PolymeshPrimitivesMaybeBlock;
     PolymeshPrimitivesMemo: PolymeshPrimitivesMemo;
     PolymeshPrimitivesMultisigProposalState: PolymeshPrimitivesMultisigProposalState;
     PolymeshPrimitivesMultisigProposalVoteCount: PolymeshPrimitivesMultisigProposalVoteCount;

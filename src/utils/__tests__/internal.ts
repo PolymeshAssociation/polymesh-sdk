@@ -32,6 +32,7 @@ import {
   AuthorizationType,
   CaCheckpointType,
   ClaimType,
+  CorporateBallotParams,
   CountryCode,
   ErrorCode,
   ModuleName,
@@ -68,10 +69,13 @@ import {
   asFungibleAsset,
   asNftId,
   assertAddressValid,
+  assertBallotNotStarted,
+  assertDeclarationDate,
   assertExpectedChainVersion,
   assertIdentityExists,
   assertIsInteger,
   assertIsPositive,
+  assertMetaLength,
   assertNoPendingAuthorizationExists,
   assertTickerValid,
   calculateNextKey,
@@ -89,6 +93,7 @@ import {
   getAssetIdForTicker,
   getAssetIdFromMiddleware,
   getCheckpointValue,
+  getCorporateBallotDetailsOrThrow,
   getDid,
   getExemptedIds,
   getIdentity,
@@ -2819,5 +2824,121 @@ describe('areSameAccounts', () => {
     result = areSameAccounts(account1, account2);
 
     expect(result).toBe(false);
+  });
+});
+
+describe('assertMetaLength', () => {
+  it('should throw an error if meta length exceeds maximum', () => {
+    const longMeta = 'a'.repeat(2049);
+
+    expect(() => assertMetaLength(longMeta)).toThrow(
+      'Meta length must be less than 2048 characters'
+    );
+  });
+
+  it('should not throw an error if meta length is within limit', () => {
+    const validMeta = 'a'.repeat(2048);
+
+    expect(() => assertMetaLength(validMeta)).not.toThrow();
+  });
+});
+
+describe('assertDeclarationDate', () => {
+  it('should throw an error if declaration date is in the future', () => {
+    const futureDate = new Date(new Date().getTime() + 1000 * 60 * 60 * 24);
+
+    expect(() => assertDeclarationDate(futureDate)).toThrow('Declaration date must be in the past');
+  });
+
+  it('should not throw an error if declaration date is in the past', () => {
+    const pastDate = new Date(new Date().getTime() - 1000 * 60 * 60 * 24);
+
+    expect(() => assertDeclarationDate(pastDate)).not.toThrow();
+  });
+
+  it('should throw an error if declaration date is current date', () => {
+    const currentDate = new Date();
+
+    expect(() => assertDeclarationDate(currentDate)).toThrow(
+      'Declaration date must be in the past'
+    );
+  });
+});
+
+describe('assertBallotNotStarted', () => {
+  it('should throw an error if ballot has already started', () => {
+    const pastDate = new Date(new Date().getTime() - 1000 * 60 * 60 * 24);
+
+    expect(() => assertBallotNotStarted({ startDate: pastDate } as CorporateBallotParams)).toThrow(
+      'The ballot has already started'
+    );
+  });
+
+  it('should not throw an error if ballot has not started yet', () => {
+    const futureDate = new Date(new Date().getTime() + 1000 * 60 * 60 * 24);
+
+    expect(() =>
+      assertBallotNotStarted({ startDate: futureDate } as CorporateBallotParams)
+    ).not.toThrow();
+  });
+});
+
+describe('getCorporateBallotDetailsOrThrow', () => {
+  let mockContext: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    mockContext = dsMockUtils.getContextInstance();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should throw an error if the ballot does not exist', () => {
+    const assetId = '12341234-1234-1234-1234-123412341234';
+    const id = new BigNumber(1);
+
+    const assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
+    const bigNumberToU32Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU32');
+    const corporateActionIdentifierToCaIdSpy = jest.spyOn(
+      utilsConversionModule,
+      'corporateActionIdentifierToCaId'
+    );
+
+    assetToMeshAssetIdSpy.mockReturnValue(dsMockUtils.createMockAssetId(assetId));
+    bigNumberToU32Spy.mockReturnValue(dsMockUtils.createMockU32(id));
+    corporateActionIdentifierToCaIdSpy.mockReturnValue(
+      dsMockUtils.createMockCAId({
+        assetId: '0x9999',
+        localId: new BigNumber(5),
+      })
+    );
+
+    dsMockUtils.createQueryMock('corporateAction', 'corporateActions', {
+      returnValue: dsMockUtils.createMockOption(),
+    });
+
+    dsMockUtils.createQueryMock('corporateAction', 'details', {
+      returnValue: dsMockUtils.createMockBytes(),
+    });
+
+    dsMockUtils.createQueryMock('corporateBallot', 'timeRanges', {
+      returnValue: dsMockUtils.createMockOption(),
+    });
+
+    dsMockUtils.createQueryMock('corporateBallot', 'metas', {
+      returnValue: dsMockUtils.createMockOption(),
+    });
+
+    dsMockUtils.createQueryMock('corporateBallot', 'rcv', {
+      returnValue: dsMockUtils.createMockBool(),
+    });
+
+    const asset = entityMockUtils.getFungibleAssetInstance({ assetId });
+
+    return expect(() => getCorporateBallotDetailsOrThrow(asset, id, mockContext)).rejects.toThrow(
+      'The CorporateBallot does not exist'
+    );
   });
 });
