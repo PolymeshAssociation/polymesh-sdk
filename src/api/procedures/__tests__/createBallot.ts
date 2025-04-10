@@ -16,10 +16,16 @@ import {
   Params,
   prepareCreateBallot,
 } from '~/api/procedures/createBallot';
-import { Context, CorporateBallot, Procedure } from '~/internal';
+import { Context, Procedure } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { BallotMeta, CorporateActionKind, FungibleAsset, TxTags } from '~/types';
+import {
+  BallotMeta,
+  CorporateActionKind,
+  CorporateBallotWithDetails,
+  FungibleAsset,
+  TxTags,
+} from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -63,7 +69,7 @@ describe('createBallot procedure', () => {
 
     assetId = '0x12341234123412341234123412341234';
     asset = entityMockUtils.getFungibleAssetInstance({ assetId });
-    declarationDate = new Date();
+    declarationDate = new Date(new Date().getTime() - 1000 * 60 * 60 * 24);
     description = 'someDescription';
     meta = {
       title: 'someTitle',
@@ -161,7 +167,7 @@ describe('createBallot procedure', () => {
           kind: CorporateActionKind.IssuerNotice,
           declarationDate: expect.any(Date),
           description,
-          checkpoint: null,
+          checkpoint: expect.any(Date),
           targets: null,
           defaultTaxWithholding: null,
           taxWithholdings: null,
@@ -200,7 +206,7 @@ describe('createBallot procedure', () => {
   });
 
   it('should throw an error if the declaration date is in the future', async () => {
-    const proc = procedureMockUtils.getInstance<Params, CorporateBallot>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, CorporateBallotWithDetails>(mockContext);
 
     let err;
 
@@ -222,7 +228,7 @@ describe('createBallot procedure', () => {
   });
 
   it('should throw an error if the description length is greater than the allowed maximum', async () => {
-    const proc = procedureMockUtils.getInstance<Params, CorporateBallot>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, CorporateBallotWithDetails>(mockContext);
 
     dsMockUtils.createQueryMock('corporateAction', 'maxDetailsLength', {
       returnValue: dsMockUtils.createMockU32(new BigNumber(1)),
@@ -248,9 +254,9 @@ describe('createBallot procedure', () => {
   });
 
   it('should return an initiate corporate action and ballot transaction spec', async () => {
-    const proc = procedureMockUtils.getInstance<Params, CorporateBallot>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, CorporateBallotWithDetails>(mockContext);
 
-    let result = await prepareCreateBallot.call(proc, {
+    const result = await prepareCreateBallot.call(proc, {
       asset,
       declarationDate,
       description,
@@ -258,20 +264,6 @@ describe('createBallot procedure', () => {
       startDate,
       endDate,
       rcv,
-    });
-
-    expect(result).toEqual({
-      transaction: initiateCorporateActionAndBallotTransaction,
-      resolver: expect.any(Function),
-      args: [rawCorporateActionArgs, rawCorporateBallotTimeRange, rawCorporateBallotMeta, rawRcv],
-    });
-
-    result = await prepareCreateBallot.call(proc, {
-      asset,
-      description,
-      meta,
-      startDate,
-      endDate,
     });
 
     expect(result).toEqual({
@@ -339,13 +331,13 @@ describe('createBallot procedure', () => {
     it('should return the new CorporateBallot', async () => {
       const result = await createBallotResolver(mockContext)({} as ISubmittableResult);
 
-      expect(result.id).toEqual(id);
+      expect(result.ballot.id).toEqual(id);
     });
   });
 
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, CorporateBallot>(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, CorporateBallotWithDetails>(mockContext);
 
       const boundFunc = getAuthorization.bind(proc);
       const args = {

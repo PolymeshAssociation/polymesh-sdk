@@ -29,7 +29,10 @@ export interface CorporateBallotDetails {
   meta: BallotMeta;
 
   /**
-   * whether rcv voting has been enabled
+   * whether Ranked-Choice Voting (RCV) has been enabled
+   *
+   * Ranked-Choice Voting allows voters to select a fallback choice should their first
+   * preference fail to reach a certain threshold or e.g., be eliminated in the top-2 run-off. whether rcv voting has been enabled
    */
   rcv: boolean;
 }

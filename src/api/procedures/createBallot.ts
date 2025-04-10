@@ -1,7 +1,13 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 
 import { Context, CorporateBallot, FungibleAsset, PolymeshError, Procedure } from '~/internal';
-import { CorporateActionKind, CreateBallotParams, ErrorCode, TxTags } from '~/types';
+import {
+  CorporateActionKind,
+  CorporateBallotWithDetails,
+  CreateBallotParams,
+  ErrorCode,
+  TxTags,
+} from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   assetIdToString,
@@ -9,6 +15,7 @@ import {
   corporateActionParamsToMeshCorporateActionArgs,
   corporateBallotMetaToMeshCorporateBallotMeta,
   corporateBallotTimeRangeToMeshCorporateBallotTimeRange,
+  meshBallotDetailsToCorporateBallotDetails,
   u32ToBigNumber,
 } from '~/utils/conversion';
 import { assertDeclarationDate, filterEventRecords } from '~/utils/internal';
@@ -32,29 +39,48 @@ export interface Storage {
  */
 export const createBallotResolver =
   (context: Context) =>
-  async (receipt: ISubmittableResult): Promise<CorporateBallot> => {
+  async (receipt: ISubmittableResult): Promise<CorporateBallotWithDetails> => {
     const [{ data }] = filterEventRecords(receipt, 'corporateBallot', 'Created');
-    const [, caId] = data;
+    const [, caId, timeRange, meta, rcv] = data;
     const { localId, assetId } = caId;
 
-    return new CorporateBallot(
-      {
-        assetId: assetIdToString(assetId),
-        id: u32ToBigNumber(localId),
-      },
-      context
+    const rawCorporateAction = await context.polymeshApi.query.corporateAction.corporateActions(
+      assetId,
+      localId
     );
+    const [rawDetails, ballot] = await Promise.all([
+      context.polymeshApi.query.corporateAction.details(caId),
+      Promise.resolve(
+        new CorporateBallot(
+          {
+            assetId: assetIdToString(assetId),
+            id: u32ToBigNumber(localId),
+          },
+          context
+        )
+      ),
+    ]);
+
+    const details = meshBallotDetailsToCorporateBallotDetails(
+      rawCorporateAction.unwrap(),
+      rawDetails,
+      timeRange,
+      meta,
+      rcv
+    );
+
+    return { ballot, details };
   };
 
 /**
  * @hidden
  */
 export async function prepareCreateBallot(
-  this: Procedure<Params, CorporateBallot>,
+  this: Procedure<Params, CorporateBallotWithDetails>,
   args: Params
 ): Promise<
   TransactionSpec<
-    CorporateBallot,
+    CorporateBallotWithDetails,
     ExtrinsicParams<'corporateAction', 'initiateCorporateActionAndBallot'>
   >
 > {
@@ -73,10 +99,10 @@ export async function prepareCreateBallot(
     meta,
     description,
     targets = null,
-    declarationDate = new Date(),
+    declarationDate,
     startDate,
     endDate,
-    rcv = false,
+    rcv,
   } = args;
 
   const rawMaxDetailsLength = await query.corporateAction.maxDetailsLength();
@@ -104,7 +130,7 @@ export async function prepareCreateBallot(
           kind: CorporateActionKind.IssuerNotice,
           declarationDate,
           description,
-          checkpoint: null,
+          checkpoint: startDate,
           targets,
           defaultTaxWithholding: null,
           taxWithholdings: null,
@@ -128,7 +154,7 @@ export async function prepareCreateBallot(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, CorporateBallot>,
+  this: Procedure<Params, CorporateBallotWithDetails>,
   { asset }: Params
 ): ProcedureAuthorization {
   return {
@@ -143,5 +169,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const createBallot = (): Procedure<Params, CorporateBallot> =>
+export const createBallot = (): Procedure<Params, CorporateBallotWithDetails> =>
   new Procedure(prepareCreateBallot, getAuthorization);

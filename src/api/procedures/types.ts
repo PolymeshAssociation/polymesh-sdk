@@ -1326,10 +1326,6 @@ export interface RemoveCorporateActionParams {
   corporateAction: CorporateActionBase | BigNumber;
 }
 
-export interface RemoveCorporateBallotParams {
-  ballot: CorporateBallot | BigNumber;
-}
-
 export interface ModifyCorporateActionsAgentParams {
   /**
    * Identity to be set as Corporate Actions Agent
@@ -1849,17 +1845,18 @@ export interface NominateValidatorsParams {
 
 export interface BallotMotion {
   /**
-   * Title of the Motion
+   * Title of the motion
    */
   title: string;
 
   /**
-   * Link to more information about the Motion
+   * Link to more information about the motion
    */
   infoLink: string;
 
   /**
-   * Choices of the Motion
+   * Choices for the motion excluding abstain.
+   * @note Voting power not used is considered abstained.
    */
   choices: string[];
 }
@@ -1871,7 +1868,7 @@ export interface BallotMeta {
   title: string;
 
   /**
-   * Motions of the Ballot
+   * All the motions of the Ballot, with their associated titles, choices, etc
    */
   motions: BallotMotion[];
 }
@@ -1883,12 +1880,12 @@ export interface CreateBallotParams {
   meta: BallotMeta;
 
   /**
-   * Date on which the voting period for the Ballot starts
+   * Date when Ballot voting starts
    */
   startDate: Date;
 
   /**
-   * Date on which the voting period for the Ballot ends
+   * Date when Ballot voting ends
    */
   endDate: Date;
 
@@ -1907,12 +1904,12 @@ export interface CreateBallotParams {
   /**
    * Date on which the Corporate Action is declared
    */
-  declarationDate?: Date;
+  declarationDate: Date;
 
   /**
    * Specifies whether RCV is enabled for this ballot.
    */
-  rcv?: boolean;
+  rcv: boolean;
 }
 
 export type CorporateBallotParams = Omit<CreateBallotParams, 'declarationDate' | 'rcv'> & {

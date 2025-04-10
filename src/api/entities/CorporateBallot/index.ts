@@ -22,7 +22,6 @@ import {
 import {
   asIdentity,
   createProcedureMethod,
-  getCorporateBallotDetailsOrNull,
   getCorporateBallotDetailsOrThrow,
   toHumanReadable,
 } from '~/utils/internal';
@@ -74,7 +73,7 @@ export class CorporateBallot extends Entity<UniqueIdentifiers, HumanReadable> {
 
     this.remove = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [removeBallot, { ballot: this, asset: this.asset }],
+        getProcedureAndArgs: () => [removeBallot, { id: this.id, asset: this.asset }],
         voidArgs: true,
       },
       context
@@ -93,14 +92,21 @@ export class CorporateBallot extends Entity<UniqueIdentifiers, HumanReadable> {
 
   /**
    * Determine whether this Ballot exists on chain
-   *
    */
   public async exists(): Promise<boolean> {
-    const { id, asset, context } = this;
+    const {
+      id,
+      asset,
+      context: {
+        polymeshApi: { query },
+      },
+      context,
+    } = this;
 
-    const details = await getCorporateBallotDetailsOrNull(asset, id, context);
+    const caId = corporateActionIdentifierToCaId({ localId: id, asset }, context);
+    const meta = await query.corporateBallot.metas(caId);
 
-    return !!details;
+    return meta.isSome;
   }
 
   /**

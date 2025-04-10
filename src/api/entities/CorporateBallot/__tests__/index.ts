@@ -93,20 +93,19 @@ describe('CorporateBallot class', () => {
 
   describe('method: exists', () => {
     it('should return whether the Corporate Ballot exists', async () => {
-      jest.spyOn(utilsInternalModule, 'getCorporateBallotDetailsOrNull').mockResolvedValue({
-        declarationDate,
-        description,
-        meta: mockBallotMeta,
-        startDate,
-        endDate,
-        rcv: false,
+      dsMockUtils.createQueryMock('corporateBallot', 'metas', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockCodec({ title: dsMockUtils.createMockBytes(), motions: [] }, false)
+        ),
       });
 
       let result = await corporateBallot.exists();
 
       expect(result).toBe(true);
 
-      jest.spyOn(utilsInternalModule, 'getCorporateBallotDetailsOrNull').mockResolvedValue(null);
+      dsMockUtils.createQueryMock('corporateBallot', 'metas', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
 
       result = await corporateBallot.exists();
 

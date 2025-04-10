@@ -5977,3 +5977,23 @@ export function ballotVoteToMeshBallotVote(
     fallback: fallback ? bigNumberToU16(new BigNumber(fallback), context) : undefined,
   });
 }
+
+/**
+ * @hidden
+ */
+export function meshBallotDetailsToCorporateBallotDetails(
+  rawCorporateAction: PalletCorporateActionsCorporateAction,
+  rawDetails: Bytes,
+  rawTimeRange: PalletCorporateActionsBallotBallotTimeRange,
+  rawMeta: PalletCorporateActionsBallotBallotMeta,
+  rawRcv: bool
+): CorporateBallotDetails {
+  return {
+    description: bytesToString(rawDetails),
+    declarationDate: momentToDate(rawCorporateAction.declDate),
+    startDate: momentToDate(rawTimeRange.start),
+    endDate: momentToDate(rawTimeRange.end),
+    meta: meshCorporateBallotMetaToCorporateBallotMeta(rawMeta),
+    rcv: boolToBoolean(rawRcv),
+  };
+}

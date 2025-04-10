@@ -2845,23 +2845,23 @@ describe('assertMetaLength', () => {
 
 describe('assertDeclarationDate', () => {
   it('should throw an error if declaration date is in the future', () => {
-    const futureDate = new Date();
-    futureDate.setDate(futureDate.getDate() + 1);
+    const futureDate = new Date(new Date().getTime() + 1000 * 60 * 60 * 24);
 
     expect(() => assertDeclarationDate(futureDate)).toThrow('Declaration date must be in the past');
   });
 
   it('should not throw an error if declaration date is in the past', () => {
-    const pastDate = new Date();
-    pastDate.setDate(pastDate.getDate() - 1);
+    const pastDate = new Date(new Date().getTime() - 1000 * 60 * 60 * 24);
 
     expect(() => assertDeclarationDate(pastDate)).not.toThrow();
   });
 
-  it('should not throw an error if declaration date is current date', () => {
+  it('should throw an error if declaration date is current date', () => {
     const currentDate = new Date();
 
-    expect(() => assertDeclarationDate(currentDate)).not.toThrow();
+    expect(() => assertDeclarationDate(currentDate)).toThrow(
+      'Declaration date must be in the past'
+    );
   });
 });
 

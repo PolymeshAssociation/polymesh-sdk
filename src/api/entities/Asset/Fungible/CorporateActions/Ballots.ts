@@ -6,11 +6,6 @@ import { CorporateBallotWithDetails, CreateBallotParams, ProcedureMethod } from 
 import { assetToMeshAssetId, u32ToBigNumber } from '~/utils/conversion';
 import { createProcedureMethod, getCorporateBallotDetailsOrThrow } from '~/utils/internal';
 
-jest.mock(
-  '~/base/Procedure',
-  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
-);
-
 /**
  * Handles all Asset Ballots related functionality
  */
@@ -19,7 +14,7 @@ export class Ballots extends Namespace<FungibleAsset> {
    * Create a Ballot for an Asset
    *
    */
-  public create: ProcedureMethod<CreateBallotParams, CorporateBallot>;
+  public create: ProcedureMethod<CreateBallotParams, CorporateBallotWithDetails>;
 
   /**
    * @hidden

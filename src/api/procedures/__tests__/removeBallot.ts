@@ -114,7 +114,7 @@ describe('removeBallot procedure', () => {
     return expect(
       prepareRemoveBallot.call(proc, {
         asset,
-        ballot,
+        id: ballotId,
       })
     ).rejects.toThrow('The CorporateBallot does not exist');
   });
@@ -128,7 +128,7 @@ describe('removeBallot procedure', () => {
     return expect(
       prepareRemoveBallot.call(proc, {
         asset,
-        ballot,
+        id: ballotId,
       })
     ).rejects.toThrow('The CorporateBallot does not exist');
   });
@@ -140,7 +140,7 @@ describe('removeBallot procedure', () => {
 
     let result = await prepareRemoveBallot.call(proc, {
       asset,
-      ballot,
+      id: ballotId,
     });
 
     expect(result).toEqual({
@@ -150,7 +150,7 @@ describe('removeBallot procedure', () => {
 
     result = await prepareRemoveBallot.call(proc, {
       asset,
-      ballot: ballotId,
+      id: ballotId,
     });
 
     expect(result).toEqual({
@@ -163,8 +163,8 @@ describe('removeBallot procedure', () => {
     it('should return the appropriate roles and permissions', () => {
       const boundFunc = getAuthorization.bind(proc);
       const args = {
-        ballot,
         asset,
+        id: ballotId,
       } as Params;
 
       expect(boundFunc(args)).toEqual({

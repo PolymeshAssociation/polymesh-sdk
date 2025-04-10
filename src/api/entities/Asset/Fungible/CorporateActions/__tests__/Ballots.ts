@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Ballots } from '~/api/entities/Asset/Fungible/CorporateActions/Ballots';
-import { CorporateBallot, Namespace, PolymeshError } from '~/internal';
+import { Namespace, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockCorporateBallot } from '~/testUtils/mocks/entities';
 import {
@@ -12,6 +12,11 @@ import {
   PolymeshTransaction,
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
+
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('Ballots class', () => {
   const start = new Date();
@@ -49,11 +54,19 @@ describe('Ballots class', () => {
     });
 
     it('should return the requested Ballot', async () => {
+      const context = dsMockUtils.getContextInstance();
       const assetId = '12341234-1234-1234-1234-123412341234';
       const id = new BigNumber(1);
 
-      dsMockUtils.createQueryMock('corporateAction', 'corporateActions', {
-        returnValue: dsMockUtils.createMockOption(
+      const queryMultiMock = dsMockUtils.getQueryMultiMock();
+
+      dsMockUtils.createQueryMock('corporateAction', 'corporateActions');
+      dsMockUtils.createQueryMock('corporateAction', 'details');
+      dsMockUtils.createQueryMock('corporateBallot', 'rcv');
+      dsMockUtils.createQueryMock('corporateBallot', 'timeRanges');
+
+      queryMultiMock.mockResolvedValue([
+        dsMockUtils.createMockOption(
           dsMockUtils.createMockCorporateAction({
             kind: 'IssuerNotice',
             targets: {
@@ -68,18 +81,9 @@ describe('Ballots class', () => {
             /* eslint-enable @typescript-eslint/naming-convention */
           })
         ),
-      });
-
-      dsMockUtils.createQueryMock('corporateAction', 'details', {
-        returnValue: dsMockUtils.createMockBytes('ballot details'),
-      });
-
-      dsMockUtils.createQueryMock('corporateBallot', 'rcv', {
-        returnValue: dsMockUtils.createMockBool(false),
-      });
-
-      dsMockUtils.createQueryMock('corporateBallot', 'timeRanges', {
-        returnValue: dsMockUtils.createMockOption(
+        dsMockUtils.createMockBytes('ballot details'),
+        dsMockUtils.createMockBool(false),
+        dsMockUtils.createMockOption(
           dsMockUtils.createMockCodec(
             {
               start: dsMockUtils.createMockMoment(new BigNumber(start.getTime())),
@@ -88,7 +92,7 @@ describe('Ballots class', () => {
             false
           )
         ),
-      });
+      ]);
 
       dsMockUtils.createQueryMock('corporateBallot', 'metas', {
         returnValue: dsMockUtils.createMockOption(
@@ -112,7 +116,6 @@ describe('Ballots class', () => {
         ),
       });
 
-      const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getFungibleAssetInstance({ assetId });
       const target = new Ballots(asset, context);
 
@@ -194,10 +197,10 @@ describe('Ballots class', () => {
       const asset = entityMockUtils.getFungibleAssetInstance();
       const ballots = new Ballots(asset, context);
 
-      const args = { foo: 'bar' } as unknown as CreateBallotParams;
+      const args = { id: 'bar' } as unknown as CreateBallotParams;
 
       const expectedTransaction =
-        'someTransaction' as unknown as PolymeshTransaction<CorporateBallot>;
+        'someTransaction' as unknown as PolymeshTransaction<CorporateBallotWithDetails>;
 
       when(procedureMockUtils.getPrepareMock())
         .calledWith({ args: { asset, ...args }, transformer: undefined }, context, {})

@@ -2342,7 +2342,7 @@ export function assertMetaLength(meta: string): void {
  * @hidden
  */
 export function assertDeclarationDate(declarationDate: Date): void {
-  if (declarationDate > new Date()) {
+  if (declarationDate >= new Date()) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Declaration date must be in the past',
@@ -2369,17 +2369,25 @@ export async function getCorporateBallotDetailsOrNull(
     },
   } = context;
 
-  const [rawCorporateAction, rawDescription, rawMetas, rawRcv, rawTimeRange] = await Promise.all([
-    corporateAction.corporateActions(rawAssetId, rawLocalId),
-    corporateAction.details(rawCaId),
-    corporateBallot.metas(rawCaId),
-    corporateBallot.rcv(rawCaId),
-    corporateBallot.timeRanges(rawCaId),
-  ]);
+  const rawMetas = await corporateBallot.metas(rawCaId);
 
-  if (rawCorporateAction.isNone || rawMetas.isNone || rawTimeRange.isNone) {
+  if (rawMetas.isNone) {
     return null;
   }
+
+  const [rawCorporateAction, rawDescription, rawRcv, rawTimeRange] = await requestMulti<
+    [
+      typeof corporateAction.corporateActions,
+      typeof corporateAction.details,
+      typeof corporateBallot.rcv,
+      typeof corporateBallot.timeRanges
+    ]
+  >(context, [
+    [corporateAction.corporateActions, [rawAssetId, rawLocalId]],
+    [corporateAction.details, rawCaId],
+    [corporateBallot.rcv, rawCaId],
+    [corporateBallot.timeRanges, rawCaId],
+  ]);
 
   const timeRange = rawTimeRange.unwrap();
 
@@ -2418,7 +2426,7 @@ export async function getCorporateBallotDetailsOrThrow(
  * @hidden
  */
 export function assertBallotNotStarted({ startDate }: CorporateBallotParams): void {
-  if (startDate < new Date()) {
+  if (startDate <= new Date()) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The ballot has already started',

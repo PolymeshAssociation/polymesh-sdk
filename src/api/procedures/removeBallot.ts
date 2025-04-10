@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { FungibleAsset, Procedure } from '~/internal';
-import { RemoveCorporateBallotParams, TxTags } from '~/types';
+import { TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { corporateActionIdentifierToCaId } from '~/utils/conversion';
 import { assertBallotNotStarted, getCorporateBallotDetailsOrThrow } from '~/utils/internal';
@@ -9,8 +9,9 @@ import { assertBallotNotStarted, getCorporateBallotDetailsOrThrow } from '~/util
 /**
  * @hidden
  */
-export type Params = RemoveCorporateBallotParams & {
+export type Params = {
   asset: FungibleAsset;
+  id: BigNumber;
 };
 
 /**
@@ -26,15 +27,13 @@ export async function prepareRemoveBallot(
       polymeshApi: { tx },
     },
   } = this;
-  const { asset, ballot } = args;
+  const { asset, id: localId } = args;
 
-  const ballotId = BigNumber.isBigNumber(ballot) ? ballot : ballot.id;
-
-  const ballotDetails = await getCorporateBallotDetailsOrThrow(asset, ballotId, context);
+  const ballotDetails = await getCorporateBallotDetailsOrThrow(asset, localId, context);
 
   assertBallotNotStarted(ballotDetails);
 
-  const rawCaId = corporateActionIdentifierToCaId({ asset, localId: ballotId }, context);
+  const rawCaId = corporateActionIdentifierToCaId({ asset, localId }, context);
 
   return {
     transaction: tx.corporateAction.removeCa,
