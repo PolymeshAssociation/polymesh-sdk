@@ -24,6 +24,8 @@
     "generate:polkadot-types": "yarn fetch-metadata && yarn fetch-definitions && yarn generate:defs && yarn generate:meta && yarn generate:consts && yarn generate:post-process",
     "generate:process-middleware-types": "ts-node scripts/processMiddlewareTypes.ts",
     "generate:middleware-types": "graphql-codegen -c codegen.yaml && yarn generate:process-middleware-types",
+    "api-snapshot:generate": "ts-node scripts/generateApiSnapshot.ts",
+    "api-snapshot:compare": "ts-node scripts/compareApiSnapshot.ts",
     "fetch-definitions": "cross-env node scripts/fetchDefinitions.js",
     "fetch-metadata": "sh scripts/fetchMetadata.sh",
     "update-readme": "cross-env node scripts/updateReadme.js",
@@ -34,6 +36,7 @@
     "test": "POLKADOTJS_DISABLE_ESM_CJS_WARNING=1 jest --coverage",
     "test:no-cov": "POLKADOTJS_DISABLE_ESM_CJS_WARNING=1 jest",
     "build:ts": "ttsc -b tsconfig.lib.json",
+    "build:declaration-only": "ttsc -p tsconfig.lib.json --emitDeclarationOnly",
     "build:docs": "cross-env cp -R src src-temp && cross-env node scripts/prepareCodeForDocs.js && typedoc && rimraf src && mv src-temp src && cross-env node scripts/processDocs.js",
     "build:sdk-docs": "cross-env cp -R src src-temp && cross-env node scripts/prepareCodeForDocs.js && typedoc --options sdk-docs-typedoc.json && rimraf src && mv src-temp src",
     "commit": "npx git-cz",
@@ -134,6 +137,7 @@
     "json-stable-stringify": "^1.0.2",
     "lodash": "^4.17.21",
     "semver": "^7.5.4",
+    "ts-morph": "^25.0.1",
     "websocket": "^1.0.34"
   },
   "resolutions": {

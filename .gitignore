@@ -13,3 +13,5 @@ tsconfig.dev.json
 docs/
 sdk-docs/
 .history
+
+*api-snapshot.json

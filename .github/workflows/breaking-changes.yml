@@ -6,7 +6,7 @@ on:
     branches: [develop]
 
 jobs:
-  check:
+  check-commit-messages:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -43,3 +43,56 @@ jobs:
           done
 
           echo "No breaking changes detected."
+
+  check-api-snapshot:
+    name: Validate API snapshot
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR branch (e.g. feat branch)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # needed for full branch context
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile
+
+      # Build and snapshot current PR branch
+      - name: Build PR declaration files
+        run: yarn build:declaration-only
+
+      - name: Generate PR API snapshot
+        run: |
+          yarn api-snapshot:generate
+          mv api-snapshot.json pr-api-snapshot.json
+
+      # # Checkout and build develop snapshot
+      # - name: Stash changes
+      #   run: git stash --include-untracked
+
+      - name: Checkout develop branch
+        run: git checkout origin/develop
+
+      - name: Install dependencies (develop)
+        run: yarn --frozen-lockfile
+
+      - name: Build develop declaration files
+        run: yarn build:declaration-only
+
+      - name: Generate develop API snapshot
+        run: |
+          yarn api-snapshot:generate
+          mv api-snapshot.json develop-api-snapshot.json
+
+      # Compare snapshots: develop vs PR
+      - name: Compare API snapshots
+        run: |
+          cp develop-api-snapshot.json base-api-snapshot.json
+          cp pr-api-snapshot.json current-api-snapshot.json
+          yarn api-snapshot:compare
