@@ -3,7 +3,7 @@ name: Develop Breaking Changes
 on:
   pull_request:
     types: [assigned, opened, reopened, synchronize]
-    branches: [develop]
+    branches: [develop, chore/dev-release-config]
 
 jobs:
   check-commit-messages:
@@ -77,7 +77,10 @@ jobs:
       #   run: git stash --include-untracked
 
       - name: Checkout develop branch
-        run: git checkout origin/develop
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git checkout $BASE_SHA
 
       - name: Install dependencies (develop)
         run: yarn --frozen-lockfile
