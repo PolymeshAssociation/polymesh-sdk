@@ -1,4 +1,4 @@
-import { hexAddPrefix, hexStripPrefix } from '@polkadot/util';
+import { hexAddPrefix, hexStripPrefix, stringToHex } from '@polkadot/util';
 
 import { MultiSig } from '~/api/entities/Account/MultiSig';
 import {
@@ -342,7 +342,13 @@ export class AccountManagement {
     const rawNonce = bigNumberToU64(offChainAuthNonce, context);
     const rawExpiry = dateToMoment(expiry, context);
 
-    const payloadStrings = [rawTargetDid.toHex(), rawNonce.toHex(true), rawExpiry.toHex(true)];
+    const payloadStrings = [
+      stringToHex('<Bytes>'),
+      rawTargetDid.toHex(),
+      rawNonce.toHex(true),
+      rawExpiry.toHex(true),
+      stringToHex('</Bytes>'),
+    ];
 
     const rawPayload = hexAddPrefix(payloadStrings.map(e => hexStripPrefix(e)).join(''));
 

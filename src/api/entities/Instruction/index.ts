@@ -2,7 +2,7 @@ import {
   PolymeshPrimitivesSettlementInstructionStatus,
   PolymeshPrimitivesSettlementLeg,
 } from '@polkadot/types/lookup';
-import { hexAddPrefix, hexStripPrefix } from '@polkadot/util';
+import { hexAddPrefix, hexStripPrefix, stringToHex } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
@@ -1198,6 +1198,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     const rawUid = bigNumberToU64(uid, context);
 
     const payloadStrings = [
+      stringToHex('<Bytes>'),
       rawUid.toHex(true),
       rawId.toHex(true),
       rawLegId.toHex(true),
@@ -1205,6 +1206,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       receiverIdentity.toHex(),
       ticker.toHex(),
       amount.toHex(true),
+      stringToHex('</Bytes>'),
     ];
 
     const rawPayload = hexAddPrefix(payloadStrings.map(e => hexStripPrefix(e)).join(''));

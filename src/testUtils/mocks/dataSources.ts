@@ -156,7 +156,7 @@ import {
   Registry,
   Signer as PolkadotSigner,
 } from '@polkadot/types/types';
-import { hexToU8a, stringToU8a } from '@polkadot/util';
+import { hexToU8a, isHex, stringToHex, stringToU8a } from '@polkadot/util';
 import { SigningManager } from '@polymeshassociation/signing-manager-types';
 import BigNumber from 'bignumber.js';
 import { EventEmitter } from 'events';
@@ -1247,7 +1247,6 @@ export const createMockCodec = <T extends Codec>(
   (clone as any)._isCodec = true;
   clone.isEmpty = isEmpty;
   clone.eq = jest.fn();
-  clone.toHex = jest.fn();
 
   return clone;
 };
@@ -1264,7 +1263,7 @@ const createMockStringCodec = <T extends Codec>(value?: string | T): MockCodec<T
   return createMockCodec(
     {
       toString: () => value,
-      toHex: () => `0x${value}`,
+      toHex: () => (isHex(value) ? value : stringToHex(value)),
     },
     value === undefined
   );
@@ -1892,7 +1891,7 @@ const createMockNumberCodec = <T extends UInt>(value?: BigNumber | T): MockCodec
       toNumber: () => value?.toNumber(),
       toString: () => value?.toString(),
       isZero: () => value?.isZero(),
-      toHex: () => (value ? `0x${value.toNumber()}` : undefined),
+      toHex: () => (value ? stringToHex(value.toString()) : undefined),
     },
     value === undefined
   );

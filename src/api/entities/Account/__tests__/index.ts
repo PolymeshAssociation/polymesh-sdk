@@ -1034,21 +1034,17 @@ describe('Account class', () => {
   });
 
   describe('method: getNextAssetId', () => {
-    it('should return the list of off chain receipts redeemed by the Account', async () => {
+    it('should return the next AssetId for the Account', async () => {
       const accountId = dsMockUtils.createMockAccountId(address);
-      accountId.toHex = jest.fn();
-      accountId.toHex.mockReturnValue('0x54321');
       jest.spyOn(utilsConversionModule, 'stringToAccountId').mockReturnValue(accountId);
 
       const mockNonce = dsMockUtils.createMockU64(new BigNumber(1));
-      mockNonce.toHex = jest.fn();
-      mockNonce.toHex.mockReturnValue('0x01');
 
       const assetNonceMock = dsMockUtils.createQueryMock('asset', 'assetNonce');
       when(assetNonceMock).calledWith(accountId).mockResolvedValue(mockNonce);
 
       const result = await account.getNextAssetId();
-      expect(result).toEqual('854343c6-bd6e-8af0-bc16-65a350fb4c52');
+      expect(result).toEqual('a45321d7-a653-836d-8b83-d1152cab085a');
     });
   });
 });

@@ -2202,6 +2202,8 @@ describe('Instruction class', () => {
 
     beforeAll(() => {
       bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+      uid = new BigNumber(1);
+      legId = new BigNumber(0);
     });
 
     beforeEach(() => {
@@ -2321,6 +2323,11 @@ describe('Instruction class', () => {
           value: '0xsignature',
         },
         metadata,
+      });
+
+      expect(context.getSignature).toHaveBeenCalledWith({
+        rawPayload: expect.stringMatching(/0x3c42797465733e(.*)3c2f42797465733e/),
+        signer,
       });
     });
   });

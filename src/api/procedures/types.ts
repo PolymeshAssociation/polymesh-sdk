@@ -1058,6 +1058,10 @@ export enum SignerKeyRingType {
 
 export interface OffChainSignature {
   type: SignerKeyRingType;
+  /**
+   * The off chain signature value.
+   * NOTE: The off chain payload should be wrapped with bytes before signing. For e.g. `<Bytes>Off chain payload</Bytes>` should be signed to get the signature value
+   */
   value: `0x${string}`;
 }
 

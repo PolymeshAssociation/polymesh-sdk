@@ -239,7 +239,7 @@ describe('AccountManagement class', () => {
 
       const result = accountManagement.getSigningAccount();
 
-      expect(result && result.address).toBe(address);
+      expect(result?.address).toBe(address);
     });
 
     it('should return null if there is no set signing Account', async () => {
@@ -441,8 +441,6 @@ describe('AccountManagement class', () => {
       };
 
       const rawTargetId = dsMockUtils.createMockIdentityId(args.target.did);
-      rawTargetId.toHex = jest.fn();
-      rawTargetId.toHex.mockReturnValue('0x1000000'.padEnd(66, '0'));
 
       const rawNonce = dsMockUtils.createMockU64(new BigNumber(0));
       const rawMoment = dsMockUtils.createMockMoment(new BigNumber(args.expiry.getTime()));
@@ -456,6 +454,11 @@ describe('AccountManagement class', () => {
       const result = await accountManagement.generateOffChainAuthSignature(args);
 
       expect(result).toEqual('0xsignature');
+
+      expect(context.getSignature).toHaveBeenCalledWith({
+        rawPayload: expect.stringMatching(/0x3c42797465733e(.*)3c2f42797465733e/),
+        signer: args.signer,
+      });
     });
   });
 });
