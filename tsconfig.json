@@ -5,15 +5,21 @@
     "baseUrl": ".",
     "paths": {
       "~/*": ["src/*"],
-      "polymesh-types/*": ["src/polkadot/*"],
-      "@polkadot/api/augment": ["src/polkadot/augment-api.ts"],
-      "@polkadot/types/augment": ["src/polkadot/augment-types.ts"],
-      "@polkadot/types/lookup": ["src/polkadot/types-lookup.ts"]
+      "polymesh-types/*": ["node_modules/@polymeshassociation/polymesh-types/generated-types/*"],
+      "@polkadot/api/augment": [
+        "node_modules/@polymeshassociation/polymesh-types/generated-types/augment-api"
+      ],
+      "@polkadot/types/augment": [
+        "node_modules/@polymeshassociation/polymesh-types/generated-types/augment-types"
+      ],
+      "@polkadot/types/lookup": [
+        "node_modules/@polymeshassociation/polymesh-types/generated-types/types-lookup"
+      ]
     },
     "plugins": [
       {
         "transform": "@ovos-media/ts-transform-paths",
-        "exclude": ["*"],
+        "exclude": ["*"]
       }
     ],
     "useUnknownInCatchVariables": false,

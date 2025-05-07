@@ -7,6 +7,7 @@ import {
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, differenceWith, flatten, intersectionWith, uniqBy } from 'lodash';
+import { CddStatus } from 'polymesh-types/polymesh';
 
 import { unlinkChildIdentity } from '~/api/procedures/unlinkChildIdentity';
 import { assertPortfolioExists } from '~/api/procedures/utils';
@@ -29,7 +30,6 @@ import { assetHoldersQuery, nftHoldersQuery } from '~/middleware/queries/assets'
 import { trustingAssetsQuery } from '~/middleware/queries/claims';
 import { historicalInstructionsQuery } from '~/middleware/queries/settlements';
 import { AssetHoldersOrderBy, NftHoldersOrderBy, Query } from '~/middleware/types';
-import { CddStatus } from '~/polkadot/polymesh';
 import {
   Asset,
   CheckRolesResult,

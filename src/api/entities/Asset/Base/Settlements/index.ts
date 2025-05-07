@@ -1,6 +1,7 @@
 import { DispatchError } from '@polkadot/types/interfaces/system';
 import { Result, Vec } from '@polkadot/types-codec';
 import BigNumber from 'bignumber.js';
+import { ComplianceReport, TransferCondition } from 'polymesh-types/polymesh';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
@@ -11,7 +12,6 @@ import {
   Nft,
   toggleAssetPreApproval,
 } from '~/internal';
-import { ComplianceReport, TransferCondition } from '~/polkadot/polymesh';
 import { NftCollection, NoArgsProcedureMethod, PortfolioLike, TransferBreakdown } from '~/types';
 import { isFungibleAsset } from '~/utils';
 import {

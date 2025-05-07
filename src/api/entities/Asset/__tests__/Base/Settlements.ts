@@ -7,10 +7,10 @@ import {
 import { Result, Vec } from '@polkadot/types-codec';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
+import { ComplianceReport, TransferCondition } from 'polymesh-types/polymesh';
 
 import { FungibleSettlements, NonFungibleSettlements } from '~/api/entities/Asset/Base/Settlements';
 import { Context, Namespace, PolymeshTransaction } from '~/internal';
-import { ComplianceReport, TransferCondition } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {

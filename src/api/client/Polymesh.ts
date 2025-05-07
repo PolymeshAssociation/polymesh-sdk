@@ -6,9 +6,9 @@ import {
 } from '@apollo/client/core';
 import { ApiPromise, HttpProvider, WsProvider } from '@polkadot/api';
 import { DefinitionsCall } from '@polkadot/types/types';
+import schema from '@polymeshassociation/polymesh-types/generated-types/schema';
 import { SigningManager } from '@polymeshassociation/signing-manager-types';
 import fetch from 'cross-fetch';
-import schema from 'polymesh-types/schema';
 
 import { Staking } from '~/api/client/Staking';
 import { Account, Context, createTransactionBatch, Identity, PolymeshError } from '~/internal';

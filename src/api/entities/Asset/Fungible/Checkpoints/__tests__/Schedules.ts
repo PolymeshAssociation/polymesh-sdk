@@ -1,5 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
+import { PolymeshMoment } from 'polymesh-types/polymesh';
 
 import { Schedules } from '~/api/entities/Asset/Fungible/Checkpoints/Schedules';
 import {
@@ -9,7 +10,6 @@ import {
   Namespace,
   PolymeshTransaction,
 } from '~/internal';
-import { Moment } from '~/polkadot';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -171,7 +171,7 @@ describe('Schedules class', () => {
             [dsMockUtils.createMockAssetId(rawAssetId), rawId],
             dsMockUtils.createMockOption(
               dsMockUtils.createMockCheckpointSchedule({
-                pending: dsMockUtils.createMockBTreeSet<Moment>([
+                pending: dsMockUtils.createMockBTreeSet<PolymeshMoment>([
                   dsMockUtils.createMockMoment(new BigNumber(start.getTime())),
                   dsMockUtils.createMockMoment(new BigNumber(nextCheckpointDate.getTime())),
                 ]),

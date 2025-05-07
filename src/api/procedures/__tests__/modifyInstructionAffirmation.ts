@@ -6,6 +6,7 @@ import {
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
+import { AffirmationCount, ExecuteInstructionInfo } from 'polymesh-types/polymesh';
 
 import {
   getAuthorization,
@@ -15,7 +16,6 @@ import {
 } from '~/api/procedures/modifyInstructionAffirmation';
 import * as procedureUtilsModule from '~/api/procedures/utils';
 import { Context, DefaultPortfolio, Instruction, PolymeshError } from '~/internal';
-import { AffirmationCount, ExecuteInstructionInfo } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   createMockAssetCount,

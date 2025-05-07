@@ -1,5 +1,4 @@
 import { PolymeshPrimitivesIdentityIdPortfolioId } from '@polkadot/types/lookup';
-import { Option } from '@polkadot/types-codec';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
@@ -11,7 +10,6 @@ import {
   PolymeshError,
   Procedure,
 } from '~/internal';
-import { ExecuteInstructionInfo } from '~/polkadot/polymesh';
 import {
   ErrorCode,
   ExecuteManualInstructionParams,
@@ -57,7 +55,7 @@ export async function prepareExecuteManualInstruction(
       polymeshApi: {
         tx: { settlement: settlementTx },
         query: { settlement },
-        call,
+        call: { settlementApi },
       },
     },
     context,
@@ -99,9 +97,7 @@ export async function prepareExecuteManualInstruction(
     }
   }
 
-  const rawInfo = await call.settlementApi.getExecuteInstructionInfo<
-    Option<ExecuteInstructionInfo>
-  >(rawInstructionId);
+  const rawInfo = await settlementApi.getExecuteInstructionInfo(rawInstructionId);
 
   const { fungibleTokens, nonFungibleTokens, offChainAssets, consumedWeight } =
     rawInfo.unwrapOrDefault();

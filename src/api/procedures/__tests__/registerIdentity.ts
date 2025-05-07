@@ -3,13 +3,13 @@ import { PolymeshPrimitivesSecondaryKey } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
+import { PolymeshMoment } from 'polymesh-types/polymesh';
 
 import {
   createRegisterIdentityResolver,
   prepareRegisterIdentity,
 } from '~/api/procedures/registerIdentity';
 import { Context, Identity, PolymeshError, Procedure } from '~/internal';
-import { Moment } from '~/polkadot';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { ErrorCode, PermissionedAccount, RegisterIdentityParams } from '~/types';
@@ -49,7 +49,7 @@ describe('registerIdentity procedure', () => {
     PolymeshPrimitivesSecondaryKey,
     [PermissionedAccount, Context]
   >;
-  let dateToMomentSpy: jest.SpyInstance<Moment, [Date, Context]>;
+  let dateToMomentSpy: jest.SpyInstance<PolymeshMoment, [Date, Context]>;
   let registerIdentityTransaction: PolymeshTx<unknown[]>;
   let proc: Procedure<RegisterIdentityParams, Identity, Record<string, unknown>>;
 

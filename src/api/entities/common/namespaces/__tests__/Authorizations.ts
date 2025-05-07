@@ -2,11 +2,11 @@ import { bool } from '@polkadot/types';
 import { PolymeshPrimitivesSecondaryKeySignatory } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
+import { AuthorizationType as MeshAuthorizationType } from 'polymesh-types/polymesh';
 
 import { Context, Namespace } from '~/internal';
 import { authorizationsQuery } from '~/middleware/queries/authorizations';
 import { AuthorizationStatusEnum, AuthTypeEnum } from '~/middleware/types';
-import { AuthorizationType as MeshAuthorizationType } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { AuthorizationType, Identity, SignerValue } from '~/types';
 import { hexToUuid } from '~/utils';

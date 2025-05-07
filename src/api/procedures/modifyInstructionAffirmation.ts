@@ -8,10 +8,10 @@ import {
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
+import { AffirmationCount, ExecuteInstructionInfo, PolymeshMoment } from 'polymesh-types/polymesh';
 
 import { assertInstructionValid } from '~/api/procedures/utils';
 import { Context, Identity, Instruction, PolymeshError, Procedure } from '~/internal';
-import { AffirmationCount, ExecuteInstructionInfo, Moment } from '~/polkadot/polymesh';
 import {
   AffirmationStatus,
   AffirmInstructionParams,
@@ -348,7 +348,7 @@ export async function prepareModifyInstructionAffirmation(
           PolymeshPrimitivesSettlementAffirmationCount
         ]
       >
-    | PolymeshTx<[u64, Option<Moment>]>
+    | PolymeshTx<[u64, Option<PolymeshMoment>]>
     | PolymeshTx<[u64]>
     | PolymeshTx<
         [
@@ -640,7 +640,11 @@ export async function prepareStorage(
 ): Promise<Storage> {
   const {
     context,
-    context: { polymeshApi },
+    context: {
+      polymeshApi: {
+        call: { settlementApi },
+      },
+    },
   } = this;
   const { id } = params;
   const rawId = bigNumberToU64(id, context);
@@ -654,7 +658,7 @@ export async function prepareStorage(
   const [{ data: legs }, signer, executeInstructionInfo] = await Promise.all([
     instruction.getLegsFromChain(),
     context.getSigningIdentity(),
-    polymeshApi.call.settlementApi.getExecuteInstructionInfo(rawId),
+    settlementApi.getExecuteInstructionInfo(rawId),
   ]);
 
   const [portfolios, senderLegAmount, offChainLegIndices] = await P.reduce<

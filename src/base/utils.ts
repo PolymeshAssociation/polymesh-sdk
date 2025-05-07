@@ -3,8 +3,8 @@ import { getTypeDef, u32 } from '@polkadot/types';
 import { Hash, SignedBlock } from '@polkadot/types/interfaces';
 import { SpRuntimeDispatchError } from '@polkadot/types/lookup';
 import { RegistryError, TypeDef, TypeDefInfo } from '@polkadot/types/types';
+import { polymesh } from '@polymeshassociation/polymesh-types/generated-types/definitions';
 import { BigNumber } from 'bignumber.js';
-import { polymesh } from 'polymesh-types/definitions';
 
 import { Context, PolymeshError } from '~/internal';
 import {

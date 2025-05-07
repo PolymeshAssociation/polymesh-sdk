@@ -1,4 +1,4 @@
-import './polkadot/augment-api';
+import '@polymeshassociation/polymesh-types/generated-types/augment-api';
 
 import BigNumber from 'bignumber.js';
 

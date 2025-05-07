@@ -1,6 +1,7 @@
 import { Vec } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { filter, flatten, isEqual, uniqBy, uniqWith } from 'lodash';
+import { IdentityClaim } from 'polymesh-types/polymesh';
 
 import {
   Context,
@@ -15,7 +16,6 @@ import {
   customClaimTypeQuery,
 } from '~/middleware/queries/claims';
 import { ClaimsOrderBy, ClaimTypeEnum, Query } from '~/middleware/types';
-import { IdentityClaim } from '~/polkadot/polymesh';
 import {
   CddClaim,
   ClaimData,
@@ -431,13 +431,7 @@ export class Claims {
     const data: ClaimData<CddClaim>[] = [];
 
     result.forEach(optClaim => {
-      const {
-        claim_issuer: claimIssuer,
-        issuance_date: issuanceDate,
-        last_update_date: lastUpdateDate,
-        expiry: rawExpiry,
-        claim,
-      } = optClaim;
+      const { claimIssuer, issuanceDate, lastUpdateDate, expiry: rawExpiry, claim } = optClaim;
 
       const expiry = !rawExpiry.isEmpty ? momentToDate(rawExpiry.unwrap()) : null;
 
