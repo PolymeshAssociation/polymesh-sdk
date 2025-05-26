@@ -58,6 +58,8 @@ describe('removeAssetRequirement procedure', () => {
       returnValue: dsMockUtils.createMockU32(new BigNumber(50)),
     });
 
+    rawAssetId = dsMockUtils.createMockAssetId(assetId);
+
     removeComplianceRequirementTransaction = dsMockUtils.createTxMock(
       'complianceManager',
       'removeComplianceRequirement'
@@ -78,10 +80,8 @@ describe('removeAssetRequirement procedure', () => {
     rawComplianceRequirement = senderConditions.map(
       (sConditions, index) =>
         ({
-          /* eslint-disable @typescript-eslint/naming-convention */
-          sender_conditions: sConditions,
-          receiver_conditions: receiverConditions[index],
-          /* eslint-enable @typescript-eslint/naming-convention */
+          senderConditions: sConditions,
+          receiverConditions: receiverConditions[index],
           id: dsMockUtils.createMockU32(new BigNumber(index)),
         } as unknown as PolymeshPrimitivesComplianceManagerComplianceRequirement)
     );

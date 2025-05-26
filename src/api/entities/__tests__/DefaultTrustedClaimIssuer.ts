@@ -125,16 +125,14 @@ describe('DefaultTrustedClaimIssuer class', () => {
 
     beforeAll(() => {
       assetId = '12341234-1234-1234-1234-123412341234';
-      stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
+      stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
       claimIssuers = [
         dsMockUtils.createMockTrustedIssuer({
           issuer: dsMockUtils.createMockIdentityId('someDid'),
-          // eslint-disable-next-line @typescript-eslint/naming-convention
           trustedFor: dsMockUtils.createMockTrustedFor('Any'),
         }),
         dsMockUtils.createMockTrustedIssuer({
           issuer: dsMockUtils.createMockIdentityId('otherDid'),
-          // eslint-disable-next-line @typescript-eslint/naming-convention
           trustedFor: dsMockUtils.createMockTrustedFor({
             Specific: [dsMockUtils.createMockClaimType(ClaimType.Exempted)],
           }),
@@ -143,6 +141,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
     });
 
     beforeEach(() => {
+      rawAssetId = dsMockUtils.createMockAssetId(assetId);
       trustedClaimIssuerMock = dsMockUtils.createQueryMock(
         'complianceManager',
         'trustedClaimIssuer'
@@ -157,7 +156,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
     it('should return the claim types for which the Claim Issuer is trusted', async () => {
       let trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did: 'someDid', assetId }, context);
       when(stringToAssetIdSpy)
-        .calledWith(trustedClaimIssuer.asset, context)
+        .calledWith(expect.objectContaining({ id: assetId }), context)
         .mockReturnValue(rawAssetId);
 
       let spy = jest.spyOn(trustedClaimIssuer, 'isEqual').mockReturnValue(true);

@@ -1,7 +1,7 @@
 import { Vec } from '@polkadot/types';
+import { IdentityClaim } from '@polymeshassociation/polymesh-types/polkadot/polymesh';
 import BigNumber from 'bignumber.js';
 import { filter, flatten, isEqual, uniqBy, uniqWith } from 'lodash';
-import { IdentityClaim } from 'polymesh-types/polymesh';
 
 import {
   Context,

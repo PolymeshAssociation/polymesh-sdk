@@ -399,7 +399,7 @@ describe('NftCollection class', () => {
 
       u64ToBigNumberSpy.mockReturnValue(id);
       dsMockUtils.createQueryMock('nft', 'collectionKeys', {
-        returnValue: dsMockUtils.createMockBTreeSet([mockGlobalKey, mockLocalKey]),
+        returnValue: dsMockUtils.createMockBtreeSet([mockGlobalKey, mockLocalKey]),
       });
 
       const mockGlobalEntry = entityMockUtils.getMetadataEntryInstance({
@@ -462,7 +462,7 @@ describe('NftCollection class', () => {
 
       u64ToBigNumberSpy.mockReturnValue(id);
       dsMockUtils.createQueryMock('nft', 'collectionKeys', {
-        returnValue: dsMockUtils.createMockBTreeSet([mockMetadataKey]),
+        returnValue: dsMockUtils.createMockBtreeSet([mockMetadataKey]),
       });
 
       const mockMetadataEntry = entityMockUtils.getMetadataEntryInstance({

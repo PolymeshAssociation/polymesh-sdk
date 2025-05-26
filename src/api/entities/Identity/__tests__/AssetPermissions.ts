@@ -320,7 +320,7 @@ describe('AssetPermissions class', () => {
       dsMockUtils.createQueryMock('externalAgents', 'groupPermissions', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockExtrinsicPermissions({
-            These: dsMockUtils.createMockBTreeMap(permMap),
+            These: dsMockUtils.createMockBtreeMap(permMap),
           })
         ),
       });
@@ -355,7 +355,7 @@ describe('AssetPermissions class', () => {
       dsMockUtils.createQueryMock('externalAgents', 'groupPermissions', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockExtrinsicPermissions({
-            Except: dsMockUtils.createMockBTreeMap(exceptAllAssetPerms),
+            Except: dsMockUtils.createMockBtreeMap(exceptAllAssetPerms),
           })
         ),
       });
@@ -368,7 +368,6 @@ describe('AssetPermissions class', () => {
       expect(result).toEqual({
         result: true,
       });
-      /* eslint-enable @typescript-eslint/naming-convention */
     });
 
     it('should throw an error if the transaction array is empty', () => {

@@ -3,7 +3,7 @@ import { when } from 'jest-when';
 
 import { BaseAsset, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { createMockBTreeSet, MockContext } from '~/testUtils/mocks/dataSources';
+import { createMockBtreeSet, MockContext } from '~/testUtils/mocks/dataSources';
 import { tuple } from '~/types/utils';
 
 jest.mock(
@@ -31,7 +31,7 @@ describe('BaseAsset class', () => {
     mediatorDid = 'someDid';
 
     dsMockUtils.createQueryMock('asset', 'mandatoryMediators', {
-      returnValue: createMockBTreeSet([dsMockUtils.createMockIdentityId(mediatorDid)]),
+      returnValue: createMockBtreeSet([dsMockUtils.createMockIdentityId(mediatorDid)]),
     });
   });
 

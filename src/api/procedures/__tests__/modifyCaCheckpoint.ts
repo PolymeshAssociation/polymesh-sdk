@@ -364,7 +364,7 @@ describe('modifyCaCheckpoint procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
     const id = new BigNumber(1);
 
-    const rawCaId = dsMockUtils.createMockCAId({ assetId, localId: id });
+    const rawCaId = dsMockUtils.createMockCaId({ assetId, localId: id });
 
     jest.spyOn(utilsConversionModule, 'corporateActionIdentifierToCaId').mockReturnValue(rawCaId);
 

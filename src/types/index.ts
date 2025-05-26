@@ -1,6 +1,12 @@
 /* istanbul ignore file */
 
-import { CountryCode, ModuleName, TxTag, TxTags } from '~/generated/types';
+import {
+  CountryCode,
+  ModuleName,
+  TxTag,
+  TxTags,
+} from '@polymeshassociation/polymesh-types/generated/types';
+
 import { InstructionStatusEnum } from '~/middleware/types';
 
 export { EventRecord } from '@polkadot/types/interfaces';
@@ -9,7 +15,7 @@ export * from '~/api/client/types';
 export * from '~/api/entities/types';
 export * from '~/api/procedures/types';
 export * from '~/base/types';
-export * from '~/generated/types';
+export * from '@polymeshassociation/polymesh-types/generated/types';
 
 export {
   AssetHoldersOrderBy,

@@ -1120,7 +1120,7 @@ describe('Identity class', () => {
     it('should return all distributions where the Identity can claim funds', async () => {
       const holderPaidMock = dsMockUtils.createQueryMock('capitalDistribution', 'holderPaid');
 
-      const rawCaId = dsMockUtils.createMockCAId({
+      const rawCaId = dsMockUtils.createMockCaId({
         assetId: '0x9999',
         localId: new BigNumber(5),
       });

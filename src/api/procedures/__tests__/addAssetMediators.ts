@@ -51,7 +51,7 @@ describe('addAssetMediators procedure', () => {
       assetId,
       getRequiredMediators: [currentMediator],
     });
-    mockNewMediators = dsMockUtils.createMockBTreeSet<PolymeshPrimitivesIdentityId>([
+    mockNewMediators = dsMockUtils.createMockBtreeSet<PolymeshPrimitivesIdentityId>([
       rawNewMediatorDid,
     ]);
   });

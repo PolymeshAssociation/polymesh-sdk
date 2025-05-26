@@ -5,9 +5,12 @@ import {
   PolymeshPrimitivesIdentityIdPortfolioId,
 } from '@polkadot/types/lookup';
 import { Result, Vec } from '@polkadot/types-codec';
+import {
+  ComplianceReport,
+  TransferCondition,
+} from '@polymeshassociation/polymesh-types/polkadot/polymesh';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { ComplianceReport, TransferCondition } from 'polymesh-types/polymesh';
 
 import { FungibleSettlements, NonFungibleSettlements } from '~/api/entities/Asset/Base/Settlements';
 import { Context, Namespace, PolymeshTransaction } from '~/internal';

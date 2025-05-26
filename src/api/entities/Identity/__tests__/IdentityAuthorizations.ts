@@ -82,7 +82,6 @@ describe('IdentityAuthorizations class', () => {
         } as const,
       ];
 
-      /* eslint-disable @typescript-eslint/naming-convention */
       const authorizations = authParams.map(({ authId, expiry, data }) =>
         dsMockUtils.createMockAuthorization({
           authId: dsMockUtils.createMockU64(authId),
@@ -184,7 +183,6 @@ describe('IdentityAuthorizations class', () => {
         }),
       });
 
-      /* eslint-disable @typescript-eslint/naming-convention */
       dsMockUtils.createQueryMock('identity', 'authorizations', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockAuthorization({
@@ -197,7 +195,6 @@ describe('IdentityAuthorizations class', () => {
           })
         ),
       });
-      /* eslint-enable @typescript-eslint/naming-convention */
 
       const result = await identityAuthorization.getOne({ id });
 

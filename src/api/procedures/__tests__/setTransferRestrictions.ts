@@ -238,10 +238,10 @@ describe('setTransferRestrictions procedure', () => {
       ],
       isClaimOwnership: true,
     });
-    rawCountRestrictionBtreeSet = dsMockUtils.createMockBTreeSet([rawCountRestriction]);
-    rawPercentageRestrictionBtreeSet = dsMockUtils.createMockBTreeSet([rawPercentageRestriction]);
-    rawClaimCountRestrictionBtreeSet = dsMockUtils.createMockBTreeSet([rawClaimCountRestriction]);
-    rawClaimPercentageRestrictionBtreeSet = dsMockUtils.createMockBTreeSet([
+    rawCountRestrictionBtreeSet = dsMockUtils.createMockBtreeSet([rawCountRestriction]);
+    rawPercentageRestrictionBtreeSet = dsMockUtils.createMockBtreeSet([rawPercentageRestriction]);
+    rawClaimCountRestrictionBtreeSet = dsMockUtils.createMockBtreeSet([rawClaimCountRestriction]);
+    rawClaimPercentageRestrictionBtreeSet = dsMockUtils.createMockBtreeSet([
       rawClaimPercentageRestriction,
     ]);
 
@@ -405,7 +405,7 @@ describe('setTransferRestrictions procedure', () => {
       entityMockUtils.getIdentityInstance({ did: '0x3000' }),
     ];
     const exemptedDidsBtreeSet =
-      dsMockUtils.createMockBTreeSet<PolymeshPrimitivesIdentityId>(exemptedDids);
+      dsMockUtils.createMockBtreeSet<PolymeshPrimitivesIdentityId>(exemptedDids);
     const op = 'Count';
 
     identitiesToBtreeSetSpy.mockReturnValue(exemptedDidsBtreeSet);
@@ -495,7 +495,7 @@ describe('setTransferRestrictions procedure', () => {
 
     const exemptedDids = ['0x1000', '0x2000'];
     const exemptedDidsBtreeSet =
-      dsMockUtils.createMockBTreeSet<PolymeshPrimitivesIdentityId>(exemptedDids);
+      dsMockUtils.createMockBtreeSet<PolymeshPrimitivesIdentityId>(exemptedDids);
     const op = 'Count';
 
     identitiesToBtreeSetSpy.mockReturnValue(exemptedDidsBtreeSet);
@@ -591,7 +591,7 @@ describe('setTransferRestrictions procedure', () => {
       }
     );
     const emptyConditionsBtreeSet =
-      dsMockUtils.createMockBTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>([]);
+      dsMockUtils.createMockBtreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>([]);
     when(complianceConditionsToBtreeSetSpy)
       .calledWith([], mockContext)
       .mockReturnValue(emptyConditionsBtreeSet);
@@ -925,7 +925,7 @@ describe('setTransferRestrictions procedure', () => {
           dsMockUtils.createMockIdentityId(),
         ]),
       });
-      statBtreeSet = dsMockUtils.createMockBTreeSet([
+      statBtreeSet = dsMockUtils.createMockBtreeSet([
         rawCountStatType,
         rawBalanceStatType,
         rawClaimCountStatType,

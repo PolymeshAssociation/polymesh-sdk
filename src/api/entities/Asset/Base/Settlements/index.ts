@@ -1,7 +1,10 @@
 import { DispatchError } from '@polkadot/types/interfaces/system';
 import { Result, Vec } from '@polkadot/types-codec';
+import {
+  ComplianceReport,
+  TransferCondition,
+} from '@polymeshassociation/polymesh-types/polkadot/polymesh';
 import BigNumber from 'bignumber.js';
-import { ComplianceReport, TransferCondition } from 'polymesh-types/polymesh';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {

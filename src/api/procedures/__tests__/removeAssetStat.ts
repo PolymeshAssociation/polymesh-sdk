@@ -85,7 +85,7 @@ describe('removeAssetStat procedure', () => {
     dsMockUtils.createMockAssetTransferCompliance({
       paused: dsMockUtils.createMockBool(false),
       requirements:
-        dsMockUtils.createMockBTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>([
+        dsMockUtils.createMockBtreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>([
           dsMockUtils.createMockTransferCondition({
             MaxInvestorOwnership: dsMockUtils.createMockU64(new BigNumber(10)),
           }),
@@ -151,15 +151,15 @@ describe('removeAssetStat procedure', () => {
         dsMockUtils.createMockIdentityId(),
       ]),
     });
-    statBtreeSet = dsMockUtils.createMockBTreeSet([
+    statBtreeSet = dsMockUtils.createMockBtreeSet([
       rawCountStatType,
       rawBalanceStatType,
       rawClaimCountStatType,
     ]);
-    emptyStatTypeBtreeSet = dsMockUtils.createMockBTreeSet([]);
+    emptyStatTypeBtreeSet = dsMockUtils.createMockBtreeSet([]);
     rawAssetId = dsMockUtils.createMockAssetId(assetId);
     rawStatUpdate = dsMockUtils.createMockStatUpdate();
-    rawStatUpdateBtree = dsMockUtils.createMockBTreeSet([rawStatUpdate]);
+    rawStatUpdateBtree = dsMockUtils.createMockBtreeSet([rawStatUpdate]);
 
     rawCountCondition = dsMockUtils.createMockTransferCondition({
       MaxInvestorCount: dsMockUtils.createMockU64(new BigNumber(10)),
@@ -186,7 +186,7 @@ describe('removeAssetStat procedure', () => {
     when(statUpdatesToBtreeStatUpdateSpy)
       .calledWith([rawStatUpdate], mockContext)
       .mockReturnValue(rawStatUpdateBtree);
-    queryMultiResult = [dsMockUtils.createMockBTreeSet([]), fakeCurrentRequirements];
+    queryMultiResult = [dsMockUtils.createMockBtreeSet([]), fakeCurrentRequirements];
     queryMultiMock.mockReturnValue(queryMultiResult);
 
     when(assetToMeshAssetIdSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
@@ -255,7 +255,7 @@ describe('removeAssetStat procedure', () => {
     queryMultiMock.mockResolvedValue([
       statBtreeSet,
       {
-        requirements: dsMockUtils.createMockBTreeSet([
+        requirements: dsMockUtils.createMockBtreeSet([
           rawCountCondition,
           rawPercentageCondition,
           rawClaimCountCondition,

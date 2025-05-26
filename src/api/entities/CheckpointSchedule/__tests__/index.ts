@@ -155,7 +155,7 @@ describe('CheckpointSchedule class', () => {
       dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
         returnValue: [
           {
-            pending: dsMockUtils.createMockBTreeSet([
+            pending: dsMockUtils.createMockBtreeSet([
               dsMockUtils.createMockMoment(new BigNumber(start.getTime())),
             ]),
           },
@@ -214,7 +214,7 @@ describe('CheckpointSchedule class', () => {
       dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockCheckpointSchedule({
-            pending: dsMockUtils.createMockBTreeSet([start]),
+            pending: dsMockUtils.createMockBtreeSet([start]),
           })
         ),
       });

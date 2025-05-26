@@ -85,7 +85,7 @@ describe('linkCaDocs procedure', () => {
       asset,
       documents,
     };
-    rawCaId = dsMockUtils.createMockCAId({ assetId, localId: id });
+    rawCaId = dsMockUtils.createMockCaId({ assetId, localId: id });
     jest.spyOn(utilsConversionModule, 'corporateActionIdentifierToCaId').mockReturnValue(rawCaId);
   });
 

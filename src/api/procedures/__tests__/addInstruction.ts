@@ -206,15 +206,15 @@ describe('addInstruction procedure', () => {
       did: dsMockUtils.createMockIdentityId(to),
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
-    rawPortfolioIds = dsMockUtils.createMockBTreeSet([rawFrom, rawTo]);
+    rawPortfolioIds = dsMockUtils.createMockBtreeSet([rawFrom, rawTo]);
     sender = entityMockUtils.getIdentityInstance({ did: 'sender' });
     receiver = entityMockUtils.getIdentityInstance({ did: 'receiver' });
     rawSenderIdentity = dsMockUtils.createMockIdentityId(sender.did);
     rawReceiverIdentity = dsMockUtils.createMockIdentityId(receiver.did);
-    rawMediatorSet = dsMockUtils.createMockBTreeSet([
+    rawMediatorSet = dsMockUtils.createMockBtreeSet([
       dsMockUtils.createMockIdentityId(mediatorDid),
     ]);
-    rawEmptyMediatorSet = dsMockUtils.createMockBTreeSet([]);
+    rawEmptyMediatorSet = dsMockUtils.createMockBtreeSet([]);
     rawAssetId = dsMockUtils.createMockAssetId(uuidToHex(asset));
     rawNftAssetId = dsMockUtils.createMockAssetId(uuidToHex(nftAsset));
     rawOffChainTicker = dsMockUtils.createMockTicker(offChainTicker);

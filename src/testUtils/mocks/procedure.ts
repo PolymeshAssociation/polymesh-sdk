@@ -1,5 +1,4 @@
 /* istanbul ignore file */
-/* eslint-disable @typescript-eslint/naming-convention */
 
 import { merge } from 'lodash';
 
@@ -15,6 +14,7 @@ const mockInstanceContainer = {
 let procedureConstructorMock: jest.Mock;
 let prepareMock: jest.Mock;
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const MockProcedureClass = class {
   /**
    * @hidden

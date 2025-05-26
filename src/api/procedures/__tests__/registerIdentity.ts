@@ -1,9 +1,9 @@
 import { AccountId } from '@polkadot/types/interfaces';
 import { PolymeshPrimitivesSecondaryKey } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
+import { PolymeshMoment } from '@polymeshassociation/polymesh-types/polkadot/polymesh';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { PolymeshMoment } from 'polymesh-types/polymesh';
 
 import {
   createRegisterIdentityResolver,

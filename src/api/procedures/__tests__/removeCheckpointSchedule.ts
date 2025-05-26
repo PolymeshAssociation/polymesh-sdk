@@ -9,7 +9,7 @@ import {
 } from '~/api/procedures/removeCheckpointSchedule';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { createMockBTreeSet } from '~/testUtils/mocks/dataSources';
+import { createMockBtreeSet } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import { FungibleAsset, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -88,7 +88,7 @@ describe('removeCheckpointSchedule procedure', () => {
 
     dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
       returnValue: dsMockUtils.createMockOption(
-        dsMockUtils.createMockCheckpointSchedule({ pending: createMockBTreeSet() })
+        dsMockUtils.createMockCheckpointSchedule({ pending: createMockBtreeSet() })
       ),
     });
 

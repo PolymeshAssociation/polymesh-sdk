@@ -70,7 +70,7 @@ describe('redeemNft procedure', () => {
     when(bigNumberToU64Spy).calledWith(id, mockContext).mockReturnValue(rawId);
     when(bigNumberToU64Spy).calledWith(collectionId, mockContext).mockReturnValue(rawCollectionId);
     dsMockUtils.createQueryMock('nft', 'collectionKeys', {
-      returnValue: dsMockUtils.createMockBTreeSet(),
+      returnValue: dsMockUtils.createMockBtreeSet(),
     });
   });
 

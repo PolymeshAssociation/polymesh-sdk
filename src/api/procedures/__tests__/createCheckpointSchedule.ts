@@ -123,7 +123,7 @@ describe('createCheckpointSchedule procedure', () => {
           dsMockUtils.createMockAssetId(assetId),
           dsMockUtils.createMockU64(id),
           dsMockUtils.createMockCheckpointSchedule({
-            pending: dsMockUtils.createMockBTreeSet([
+            pending: dsMockUtils.createMockBtreeSet([
               dsMockUtils.createMockMoment(new BigNumber(start.getTime())),
             ]),
           }),

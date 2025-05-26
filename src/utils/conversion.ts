@@ -103,6 +103,17 @@ import {
   u8aToString,
 } from '@polkadot/util';
 import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
+import {
+  AssetComplianceResult,
+  AuthorizationType as MeshAuthorizationType,
+  CddStatus,
+  ComplianceReport,
+  ComplianceRequirementResult,
+  GranularCanTransferResult,
+  PolymeshMoment as Moment,
+  RequirementReport,
+  TransferCondition,
+} from '@polymeshassociation/polymesh-types/polkadot/polymesh';
 import BigNumber from 'bignumber.js';
 import { computeWithoutCheck } from 'iso-7064';
 import {
@@ -120,17 +131,6 @@ import {
   uniqWith,
   values,
 } from 'lodash';
-import {
-  AssetComplianceResult,
-  AuthorizationType as MeshAuthorizationType,
-  CddStatus,
-  ComplianceReport,
-  ComplianceRequirementResult,
-  GranularCanTransferResult,
-  PolymeshMoment as Moment,
-  RequirementReport,
-  TransferCondition,
-} from 'polymesh-types/polymesh';
 
 import {
   BallotMeta,
@@ -139,7 +139,6 @@ import {
   CorporateBallotStatus,
 } from '~/api/entities/CorporateBallot/types';
 import { assertCaTaxWithholdingsValid, UnreachableCaseError } from '~/api/procedures/utils';
-import { countryCodeToMeshCountryCode, meshCountryCodeToCountryCode } from '~/generated/utils';
 import {
   Account,
   BaseAsset,
@@ -331,12 +330,14 @@ import {
   assertMetaLength,
   assertTickerValid,
   conditionsAreEqual,
+  countryCodeToMeshCountryCode,
   createClaim,
   getAssetIdAndTicker,
   getAssetIdForMiddleware,
   getAssetIdFromMiddleware,
   isMiddlewareV6Extrinsic,
   isModuleOrTagMatch,
+  meshCountryCodeToCountryCode,
   optionize,
   padString,
   removePadding,
@@ -2637,7 +2638,6 @@ export function stringToTargetIdentity(
 ): PolymeshPrimitivesConditionTargetIdentity {
   return context.createType(
     'PolymeshPrimitivesConditionTargetIdentity',
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     did ? { Specific: stringToIdentityId(did, context) } : 'ExternalAgent'
   );
 }
@@ -4117,13 +4117,11 @@ export function checkpointToRecordDateSpec(
   let value;
 
   if (checkpoint instanceof Checkpoint) {
-    /* eslint-disable @typescript-eslint/naming-convention */
     value = { Existing: bigNumberToU64(checkpoint.id, context) };
   } else if (checkpoint instanceof Date) {
     value = { Scheduled: dateToMoment(checkpoint, context) };
   } else {
     value = { ExistingSchedule: bigNumberToU64(checkpoint.id, context) };
-    /* eslint-enable @typescript-eslint/naming-convention */
   }
 
   return context.createType('PalletCorporateActionsRecordDateSpec', value);

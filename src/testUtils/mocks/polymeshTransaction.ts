@@ -1,5 +1,4 @@
 /* istanbul ignore file */
-/* eslint-disable @typescript-eslint/naming-convention */
 
 import { merge } from 'lodash';
 
@@ -25,6 +24,7 @@ interface TransactionMockData {
 let polymeshTransactionConstructorMock: jest.Mock;
 let polymeshTransactionBatchConstructorMock: jest.Mock;
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const MockPolymeshTransactionClass = class {
   /**
    * @hidden
@@ -34,6 +34,7 @@ const MockPolymeshTransactionClass = class {
   }
 };
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const MockPolymeshTransactionBatchClass = class {
   /**
    * @hidden

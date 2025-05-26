@@ -16,7 +16,7 @@ describe('payDividends procedure', () => {
   const paymentDate = new Date('10/14/1987');
   const expiryDate = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365);
 
-  const rawCaId = dsMockUtils.createMockCAId({ assetId, localId: id });
+  const rawCaId = dsMockUtils.createMockCaId({ assetId, localId: id });
 
   let distribution: DividendDistribution;
 

@@ -1,6 +1,6 @@
+import { PolymeshMoment } from '@polymeshassociation/polymesh-types/polkadot/polymesh';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { PolymeshMoment } from 'polymesh-types/polymesh';
 
 import { Schedules } from '~/api/entities/Asset/Fungible/Checkpoints/Schedules';
 import {
@@ -171,7 +171,7 @@ describe('Schedules class', () => {
             [dsMockUtils.createMockAssetId(rawAssetId), rawId],
             dsMockUtils.createMockOption(
               dsMockUtils.createMockCheckpointSchedule({
-                pending: dsMockUtils.createMockBTreeSet<PolymeshMoment>([
+                pending: dsMockUtils.createMockBtreeSet<PolymeshMoment>([
                   dsMockUtils.createMockMoment(new BigNumber(start.getTime())),
                   dsMockUtils.createMockMoment(new BigNumber(nextCheckpointDate.getTime())),
                 ]),

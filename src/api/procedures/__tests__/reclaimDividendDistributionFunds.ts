@@ -22,7 +22,7 @@ describe('reclaimDividendDistributionFunds procedure', () => {
   const expiryDate = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365);
   const did = 'someDid';
 
-  const rawCaId = dsMockUtils.createMockCAId({ assetId, localId: id });
+  const rawCaId = dsMockUtils.createMockCaId({ assetId, localId: id });
 
   let origin: DefaultPortfolio;
   let distribution: DividendDistribution;

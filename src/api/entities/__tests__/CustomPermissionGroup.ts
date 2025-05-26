@@ -134,7 +134,7 @@ describe('CustomPermissionGroup class', () => {
       dsMockUtils.createQueryMock('externalAgents', 'groupPermissions', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockExtrinsicPermissions({
-            These: dsMockUtils.createMockBTreeMap(permissionMap),
+            These: dsMockUtils.createMockBtreeMap(permissionMap),
           })
         ),
       });

@@ -451,7 +451,7 @@ describe('DividendDistribution class', () => {
 
       jest
         .spyOn(utilsConversionModule, 'corporateActionIdentifierToCaId')
-        .mockReturnValue(dsMockUtils.createMockCAId({ assetId, localId: id }));
+        .mockReturnValue(dsMockUtils.createMockCaId({ assetId, localId: id }));
       jest.spyOn(utilsConversionModule, 'boolToBoolean').mockReturnValue(false);
 
       dsMockUtils.createQueryMock('capitalDistribution', 'holderPaid', {

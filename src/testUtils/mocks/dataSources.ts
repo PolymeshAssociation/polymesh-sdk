@@ -1,6 +1,5 @@
 /* istanbul ignore file */
 
-/* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { ApolloClient, NormalizedCacheObject, QueryOptions } from '@apollo/client/core';
@@ -157,11 +156,6 @@ import {
   Signer as PolkadotSigner,
 } from '@polkadot/types/types';
 import { hexToU8a, isHex, stringToHex, stringToU8a } from '@polkadot/util';
-import { SigningManager } from '@polymeshassociation/signing-manager-types';
-import BigNumber from 'bignumber.js';
-import { EventEmitter } from 'events';
-import { when } from 'jest-when';
-import { cloneDeep, map, merge, upperFirst } from 'lodash';
 import {
   AffirmationCount,
   AssetComplianceResult,
@@ -179,7 +173,12 @@ import {
   PortfolioValidityResult,
   RequirementReport,
   TransferConditionResult,
-} from 'polymesh-types/polymesh';
+} from '@polymeshassociation/polymesh-types/polkadot/polymesh';
+import { SigningManager } from '@polymeshassociation/signing-manager-types';
+import BigNumber from 'bignumber.js';
+import { EventEmitter } from 'events';
+import { when } from 'jest-when';
+import { cloneDeep, map, merge, upperFirst } from 'lodash';
 
 import { HistoricPolyxTransaction } from '~/api/entities/Account/types';
 import { BallotMotion } from '~/api/entities/CorporateBallot/types';
@@ -362,7 +361,7 @@ export enum MockTxStatus {
   BatchInterrupted = 'BatchInterrupted',
 }
 
-const MockApolloClientClass = class {
+const mockApolloClientClass = class {
   /**
    * @hidden
    */
@@ -379,7 +378,7 @@ const mockInstanceContainer = {
   webSocketInstance: createWebSocket(),
 };
 
-const MockWebSocketClass = class {
+const mockWebSocketClass = class {
   /**
    * @hidden
    */
@@ -390,18 +389,18 @@ const MockWebSocketClass = class {
 
 let apiPromiseCreateMock: jest.Mock;
 
-const MockApiPromiseClass = class {
+const mockApiPromiseClass = class {
   /**
    * @hidden
    */
   public static create = apiPromiseCreateMock;
 };
 
-const MockWsProviderClass = class {};
+const mockWsProviderClass = class {};
 
 let contextCreateMock: jest.Mock;
 
-const MockContextClass = class {
+const mockContextClass = class {
   /**
    * @hidden
    */
@@ -630,21 +629,21 @@ const statusToReceipt = (status: MockTxStatus, failReason?: TxFailReason): ISubm
 
 export const mockPolkadotModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
-  ApiPromise: MockApiPromiseClass,
-  WsProvider: MockWsProviderClass,
+  ApiPromise: mockApiPromiseClass,
+  WsProvider: mockWsProviderClass,
 });
 
 export const mockContextModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
-  Context: MockContextClass,
+  Context: mockContextClass,
 });
 
 export const mockApolloModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
-  ApolloClient: MockApolloClientClass,
+  ApolloClient: mockApolloClientClass,
 });
 
-export const mockWebSocketModule = () => (): unknown => ({ w3cwebsocket: MockWebSocketClass });
+export const mockWebSocketModule = () => (): unknown => ({ w3cwebsocket: mockWebSocketClass });
 
 const txMocksData = new Map<unknown, TxMockData>();
 let txModule = {} as Extrinsics;
@@ -937,7 +936,7 @@ function configureContext(opts: ContextOptions): void {
 
   Object.assign(mockInstanceContainer.contextInstance, contextInstance);
 
-  MockContextClass.create = contextCreateMock.mockResolvedValue(contextInstance);
+  mockContextClass.create = contextCreateMock.mockResolvedValue(contextInstance);
 }
 
 /**
@@ -1127,7 +1126,7 @@ function initApi(): void {
     .fn()
     .mockResolvedValue(mockInstanceContainer.apiInstance);
   apiPromiseCreateMock = jest.fn();
-  MockApiPromiseClass.create = apiPromiseCreateMock.mockResolvedValue(
+  mockApiPromiseClass.create = apiPromiseCreateMock.mockResolvedValue(
     mockInstanceContainer.apiInstance
   );
 }
@@ -1346,6 +1345,7 @@ export function createTxMock<
     return mockHandleSend(cb);
   });
 
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   const mockSignAndSend = jest.fn().mockImplementation((_, __, cb: StatusCallback) => {
     return mockHandleSend(cb);
   });
@@ -1740,7 +1740,7 @@ export function throwOnMiddlewareQuery(err?: unknown): void {
  * Make calls to `Context.create` throw an error
  */
 export function throwOnContextCreation(): void {
-  MockContextClass.create = errorMock;
+  mockContextClass.create = errorMock;
 }
 
 /**
@@ -1748,7 +1748,7 @@ export function throwOnContextCreation(): void {
  * Make calls to `ApiPromise.create` throw an error
  */
 export function throwOnApiCreation(error?: unknown): void {
-  MockApiPromiseClass.create = error
+  mockApiPromiseClass.create = error
     ? jest.fn().mockImplementation(() => {
         throw error;
       })
@@ -1963,7 +1963,7 @@ export const createMockAgentGroup = (
 /**
  * @hidden
  */
-export const createMockBTreeSet = <T extends Codec>(
+export const createMockBtreeSet = <T extends Codec>(
   items: BTreeSet<T> | unknown[] = []
 ): MockCodec<BTreeSet<T>> => {
   if (isCodec<BTreeSet<T>>(items)) {
@@ -2025,7 +2025,7 @@ export const createMockVec = <T extends Codec>(
 /**
  * @hidden
  */
-export const createMockBTreeMap = <K extends Codec, V extends Codec>(
+export const createMockBtreeMap = <K extends Codec, V extends Codec>(
   items: BTreeMap<K, V> | Map<K, V> = new Map()
 ): MockCodec<BTreeMap<K, V>> => {
   if (isCodec<BTreeMap<K, V>>(items)) {
@@ -2395,12 +2395,12 @@ export const createMockNftType = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockTickerRegistrationConfig = (regConfig?: {
-  max_ticker_length: u8;
-  registration_length: Option<Moment>;
+  maxTickerLength: u8;
+  registrationLength: Option<Moment>;
 }): MockCodec<PalletAssetTickerRegistrationConfig> => {
   const config = regConfig ?? {
-    max_ticker_length: createMockU8(),
-    registration_length: createMockOption(),
+    maxTickerLength: createMockU8(),
+    registrationLength: createMockOption(),
   };
   return createMockCodec({ ...config }, !regConfig);
 };
@@ -2437,7 +2437,7 @@ export const createMockDocument = (document?: {
 }): MockCodec<PolymeshPrimitivesDocument> => {
   const doc = document ?? {
     uri: createMockBytes(),
-    content_hash: createMockDocumentHash(),
+    contentHash: createMockDocumentHash(),
     name: createMockBytes(),
     docType: createMockOption(),
     filingDate: createMockOption(),
@@ -2788,6 +2788,7 @@ export const createMockEventRecord = (record?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const createMockIEvent = <T extends Codec[]>(data: unknown[]): IEvent<T> =>
   ({
     data,
@@ -3567,11 +3568,11 @@ export const createMockCheckpointSchedule = (
   checkpointSchedule?:
     | PolymeshCommonUtilitiesCheckpointScheduleCheckpoints
     | {
-        pending: BTreeSet<u64> | Parameters<typeof createMockBTreeSet>[0];
+        pending: BTreeSet<u64> | Parameters<typeof createMockBtreeSet>[0];
       }
 ): MockCodec<PolymeshCommonUtilitiesCheckpointScheduleCheckpoints> => {
   const { pending } = checkpointSchedule ?? {
-    pending: createMockBTreeSet(),
+    pending: createMockBtreeSet(),
   };
 
   return createMockCodec(
@@ -3603,7 +3604,7 @@ export const createMockRecordDateSpec = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockCACheckpoint = (
+export const createMockCaCheckpoint = (
   caCheckpoint?: { Scheduled: [u64, u64] } | { Existing: u64 } | PalletCorporateActionsCaCheckpoint
 ): MockCodec<PalletCorporateActionsCaCheckpoint> => {
   if (isCodec<PalletCorporateActionsCaCheckpoint>(caCheckpoint)) {
@@ -3624,18 +3625,18 @@ export const createMockRecordDate = (
         date: Moment | Parameters<typeof createMockMoment>[0];
         checkpoint:
           | PalletCorporateActionsCaCheckpoint
-          | Parameters<typeof createMockCACheckpoint>[0];
+          | Parameters<typeof createMockCaCheckpoint>[0];
       }
 ): MockCodec<PalletCorporateActionsRecordDate> => {
   const { date, checkpoint } = recordDate ?? {
     date: createMockMoment(),
-    checkpoint: createMockCACheckpoint(),
+    checkpoint: createMockCaCheckpoint(),
   };
 
   return createMockCodec(
     {
       date: createMockMoment(date),
-      checkpoint: createMockCACheckpoint(checkpoint),
+      checkpoint: createMockCaCheckpoint(checkpoint),
     },
     !recordDate
   );
@@ -3687,7 +3688,7 @@ export const createMockTargetIdentities = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockCAKind = (
+export const createMockCaKind = (
   caKind?:
     | 'PredictableBenefit'
     | 'UnpredictableBenefit'
@@ -3708,36 +3709,36 @@ export const createMockCAKind = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockCorporateAction = (corporateAction?: {
-  kind: PalletCorporateActionsCaKind | Parameters<typeof createMockCAKind>[0];
-  decl_date: Moment | Parameters<typeof createMockMoment>[0];
-  record_date: Option<PalletCorporateActionsRecordDate> | Parameters<typeof createMockOption>[0];
+  kind: PalletCorporateActionsCaKind | Parameters<typeof createMockCaKind>[0];
+  declDate: Moment | Parameters<typeof createMockMoment>[0];
+  recordDate: Option<PalletCorporateActionsRecordDate> | Parameters<typeof createMockOption>[0];
   targets:
     | PalletCorporateActionsTargetIdentities
     | Parameters<typeof createMockTargetIdentities>[0];
-  default_withholding_tax: Permill | Parameters<typeof createMockPermill>[0];
-  withholding_tax: [
+  defaultWithholdingTax: Permill | Parameters<typeof createMockPermill>[0];
+  withholdingTax: [
     PolymeshPrimitivesIdentityId | Parameters<typeof createMockIdentityId>[0],
     Permill | Parameters<typeof createMockPermill>[0]
   ][];
 }): MockCodec<PalletCorporateActionsCorporateAction> => {
-  const { kind, decl_date, record_date, targets, default_withholding_tax, withholding_tax } =
+  const { kind, declDate, recordDate, targets, defaultWithholdingTax, withholdingTax } =
     corporateAction ?? {
-      kind: createMockCAKind(),
+      kind: createMockCaKind(),
       declDate: createMockMoment(),
       recordDate: createMockOption(),
       targets: createMockTargetIdentities(),
       defaultWithholdingTax: createMockPermill(),
-      withholding_tax: [],
+      withholdingTax: [],
     };
 
   return createMockCodec(
     {
-      kind: createMockCAKind(kind),
-      declDate: createMockMoment(decl_date),
-      recordDate: createMockOption(record_date),
+      kind: createMockCaKind(kind),
+      declDate: createMockMoment(declDate),
+      recordDate: createMockOption(recordDate),
       targets: createMockTargetIdentities(targets),
-      defaultWithholdingTax: createMockPermill(default_withholding_tax),
-      withholdingTax: withholding_tax.map(([identityId, tax]) =>
+      defaultWithholdingTax: createMockPermill(defaultWithholdingTax),
+      withholdingTax: withholdingTax.map(([identityId, tax]) =>
         tuple(createMockIdentityId(identityId), createMockPermill(tax))
       ),
     },
@@ -3749,7 +3750,7 @@ export const createMockCorporateAction = (corporateAction?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockCAId = (
+export const createMockCaId = (
   caId?:
     | PalletCorporateActionsCaId
     | {
@@ -4303,7 +4304,7 @@ export const createMockInitiateCorporateActionArgs = (
     | PalletCorporateActionsInitiateCorporateActionArgs
     | {
         assetId: PolymeshPrimitivesAssetAssetId | Parameters<typeof createMockAssetId>[0];
-        kind: PalletCorporateActionsCaKind | Parameters<typeof createMockCAKind>[0];
+        kind: PalletCorporateActionsCaKind | Parameters<typeof createMockCaKind>[0];
         declDate: u64 | Parameters<typeof createMockU64>[0];
         recordDate: Option<PalletCorporateActionsRecordDateSpec>;
         details: Bytes | Parameters<typeof createMockBytes>[0];
@@ -4328,7 +4329,7 @@ export const createMockInitiateCorporateActionArgs = (
     withholdingTax,
   } = caArgs ?? {
     assetId: createMockAssetId(),
-    kind: createMockCAKind(),
+    kind: createMockCaKind(),
     declDate: createMockU64(),
     recordDate: createMockOption(),
     details: createMockBytes(),
@@ -4340,7 +4341,7 @@ export const createMockInitiateCorporateActionArgs = (
   return createMockCodec(
     {
       assetId: createMockAssetId(assetId),
-      kind: createMockCAKind(kind),
+      kind: createMockCaKind(kind),
       declDate: createMockU64(declDate),
       recordDate: createMockOption(recordDate),
       details: createMockBytes(details),
@@ -4375,7 +4376,7 @@ export const createMockAssetTransferCompliance = (
         paused: bool | Parameters<typeof createMockBool>[0];
         requirements:
           | BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>
-          | Parameters<typeof createMockBTreeSet>[0];
+          | Parameters<typeof createMockBtreeSet>[0];
       }
     | PolymeshPrimitivesTransferComplianceAssetTransferCompliance
 ): MockCodec<PolymeshPrimitivesTransferComplianceAssetTransferCompliance> => {
@@ -4384,10 +4385,10 @@ export const createMockAssetTransferCompliance = (
   }
   const { paused, requirements } = transferCompliance ?? {
     paused: dsMockUtils.createMockBool(false),
-    requirements: dsMockUtils.createMockBTreeSet([]),
+    requirements: dsMockUtils.createMockBtreeSet([]),
   };
 
-  const args = { paused: createMockBool(paused), requirements: createMockBTreeSet(requirements) };
+  const args = { paused: createMockBool(paused), requirements: createMockBtreeSet(requirements) };
 
   return createMockCodec(args, !transferCompliance);
 };

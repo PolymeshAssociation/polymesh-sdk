@@ -191,7 +191,7 @@ describe('addTransferRestriction procedure', () => {
         dsMockUtils.createMockIdentityId(),
       ]),
     });
-    mockStatTypeBtree = dsMockUtils.createMockBTreeSet([
+    mockStatTypeBtree = dsMockUtils.createMockBtreeSet([
       rawCountStatType,
       rawBalanceStatType,
       rawClaimCountStatType,
@@ -237,14 +237,14 @@ describe('addTransferRestriction procedure', () => {
     ];
     queryMultiMock.mockReturnValue(queryMultiResult);
 
-    mockCountBtreeSet = dsMockUtils.createMockBTreeSet([rawCountCondition]);
+    mockCountBtreeSet = dsMockUtils.createMockBtreeSet([rawCountCondition]);
     mockPercentBtree =
-      dsMockUtils.createMockBTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>([
+      dsMockUtils.createMockBtreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>([
         rawPercentageCondition,
       ]);
 
-    mockClaimCountBtree = dsMockUtils.createMockBTreeSet([rawClaimCountCondition]);
-    mockClaimPercentageBtree = dsMockUtils.createMockBTreeSet([rawClaimPercentageCondition]);
+    mockClaimCountBtree = dsMockUtils.createMockBtreeSet([rawClaimCountCondition]);
+    mockClaimPercentageBtree = dsMockUtils.createMockBtreeSet([rawClaimPercentageCondition]);
 
     when(stringToIdentityIdSpy).calledWith(did, mockContext).mockReturnValue(rawScopeId);
 
@@ -357,7 +357,7 @@ describe('addTransferRestriction procedure', () => {
   it('should return an add exempted entities transaction spec', async () => {
     const identityScopeId = 'anotherScopeId';
     const rawIdentityScopeId = dsMockUtils.createMockIdentityId(identityScopeId);
-    const rawIdentityBtree = dsMockUtils.createMockBTreeSet<PolymeshPrimitivesIdentityId>([
+    const rawIdentityBtree = dsMockUtils.createMockBtreeSet<PolymeshPrimitivesIdentityId>([
       rawIdentityScopeId,
     ]);
 
@@ -443,7 +443,7 @@ describe('addTransferRestriction procedure', () => {
       mockContext,
       {
         currentRestrictions:
-          dsMockUtils.createMockBTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>([
+          dsMockUtils.createMockBtreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>([
             rawCountCondition,
           ]),
       }
@@ -452,7 +452,7 @@ describe('addTransferRestriction procedure', () => {
     rawCountCondition.eq = jest.fn().mockReturnValue(true);
 
     const existingRequirements =
-      dsMockUtils.createMockBTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>([
+      dsMockUtils.createMockBtreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>([
         rawCountCondition,
         rawPercentageCondition,
       ]);
@@ -481,7 +481,7 @@ describe('addTransferRestriction procedure', () => {
       asset,
     };
     const maxedRequirements =
-      dsMockUtils.createMockBTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>([
+      dsMockUtils.createMockBtreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>([
         rawPercentageCondition,
         rawClaimCountCondition,
         rawClaimPercentageCondition,

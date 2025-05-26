@@ -631,11 +631,10 @@ describe('configureDividendDistribution procedure', () => {
     beforeAll(() => {
       entityMockUtils.initMocks();
 
-      /* eslint-disable @typescript-eslint/naming-convention */
       rawCorporateAction = dsMockUtils.createMockCorporateAction({
         kind: 'UnpredictableBenefit',
-        decl_date: new BigNumber(declarationDate.getTime()),
-        record_date: dsMockUtils.createMockRecordDate({
+        declDate: new BigNumber(declarationDate.getTime()),
+        recordDate: dsMockUtils.createMockRecordDate({
           date: new BigNumber(new Date('10/14/2021').getTime()),
           checkpoint: {
             Scheduled: [
@@ -645,8 +644,8 @@ describe('configureDividendDistribution procedure', () => {
           },
         }),
         targets,
-        default_withholding_tax: defaultTaxWithholding.shiftedBy(4),
-        withholding_tax: taxWithholdings.map(({ identity, percentage }) =>
+        defaultWithholdingTax: defaultTaxWithholding.shiftedBy(4),
+        withholdingTax: taxWithholdings.map(({ identity, percentage }) =>
           tuple(identity, percentage.shiftedBy(4))
         ),
       });
@@ -662,7 +661,6 @@ describe('configureDividendDistribution procedure', () => {
           dsMockUtils.createMockMoment(new BigNumber(expiryDate?.getTime()))
         ),
       });
-      /* eslint-enable @typescript-eslint/naming-convention */
 
       dsMockUtils.createQueryMock('corporateAction', 'corporateActions', {
         returnValue: dsMockUtils.createMockOption(rawCorporateAction),
@@ -676,7 +674,7 @@ describe('configureDividendDistribution procedure', () => {
       filterEventRecordsSpy.mockReturnValue([
         dsMockUtils.createMockIEvent([
           'data',
-          dsMockUtils.createMockCAId({
+          dsMockUtils.createMockCaId({
             assetId,
             localId: id,
           }),

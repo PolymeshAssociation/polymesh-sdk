@@ -8,7 +8,5 @@ module.exports = {
   modulePathIgnorePatterns: ['dist'],
   moduleNameMapper: {
     '~/(.*)': '<rootDir>/src/$1',
-    'polymesh-types/(.*)':
-      '<rootDir>/node_modules/@polymeshassociation/polymesh-types/generated-types/$1',
   },
 };

@@ -6,9 +6,13 @@ import {
   PolymeshPrimitivesSettlementAssetCount,
   PolymeshPrimitivesSettlementReceiptDetails,
 } from '@polkadot/types/lookup';
+import {
+  AffirmationCount,
+  ExecuteInstructionInfo,
+  PolymeshMoment,
+} from '@polymeshassociation/polymesh-types/polkadot/polymesh';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import { AffirmationCount, ExecuteInstructionInfo, PolymeshMoment } from 'polymesh-types/polymesh';
 
 import { assertInstructionValid } from '~/api/procedures/utils';
 import { Context, Identity, Instruction, PolymeshError, Procedure } from '~/internal';

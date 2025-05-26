@@ -47,7 +47,7 @@ describe('removeAssetMediators procedure', () => {
       assetId,
       getRequiredMediators: [currentMediator],
     });
-    mockRemoveMediators = dsMockUtils.createMockBTreeSet<PolymeshPrimitivesIdentityId>([
+    mockRemoveMediators = dsMockUtils.createMockBtreeSet<PolymeshPrimitivesIdentityId>([
       rawCurrentMediator,
     ]);
   });

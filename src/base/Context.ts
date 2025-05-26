@@ -881,8 +881,7 @@ export class Context {
       claimTypes.map(claimType => {
         return {
           target: signerToString(target),
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          claim_type: claimTypeToMeshClaimType(claimType, this),
+          claimType: claimTypeToMeshClaimType(claimType, this),
         };
       })
     );

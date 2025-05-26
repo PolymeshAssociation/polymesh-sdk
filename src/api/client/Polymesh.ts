@@ -6,7 +6,7 @@ import {
 } from '@apollo/client/core';
 import { ApiPromise, HttpProvider, WsProvider } from '@polkadot/api';
 import { DefinitionsCall } from '@polkadot/types/types';
-import schema from '@polymeshassociation/polymesh-types/generated-types/schema';
+import schema from '@polymeshassociation/polymesh-types/polkadot/schema';
 import { SigningManager } from '@polymeshassociation/signing-manager-types';
 import fetch from 'cross-fetch';
 

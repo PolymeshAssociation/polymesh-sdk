@@ -110,7 +110,7 @@ describe('addAssetStat procedure', () => {
     });
     statSpy = jest.spyOn(utilsConversionModule, 'meshStatToStatType');
     activeAssetStatsMock = dsMockUtils.createQueryMock('statistics', 'activeAssetStats');
-    activeAssetStatsMock.mockReturnValue(dsMockUtils.createMockBTreeSet([]));
+    activeAssetStatsMock.mockReturnValue(dsMockUtils.createMockBtreeSet([]));
     statisticStatTypesToBtreeStatTypeSpy = jest.spyOn(
       utilsConversionModule,
       'statisticStatTypesToBtreeStatType'
@@ -123,10 +123,10 @@ describe('addAssetStat procedure', () => {
     batchUpdateAssetStatsTxMock = dsMockUtils.createTxMock('statistics', 'batchUpdateAssetStats');
 
     rawStatType = dsMockUtils.createMockStatisticsStatType();
-    rawStatBtreeSet = dsMockUtils.createMockBTreeSet([rawStatType]);
+    rawStatBtreeSet = dsMockUtils.createMockBtreeSet([rawStatType]);
     rawAssetId = dsMockUtils.createMockAssetId(assetId);
     rawStatUpdate = dsMockUtils.createMockStatUpdate();
-    statUpdateBtreeSet = dsMockUtils.createMockBTreeSet([rawStatUpdate]);
+    statUpdateBtreeSet = dsMockUtils.createMockBtreeSet([rawStatUpdate]);
 
     when(createStat2ndKeySpy)
       .calledWith('NoClaimStat', mockContext, undefined)

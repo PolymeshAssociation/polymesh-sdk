@@ -34,7 +34,7 @@ describe('setGroupPermissions procedure', () => {
   const permissionsMap = new Map();
   permissionsMap.set(rawPalletName, rawPalletPermissions);
 
-  const rawPermissions = dsMockUtils.createMockBTreeMap(permissionsMap);
+  const rawPermissions = dsMockUtils.createMockBtreeMap(permissionsMap);
 
   const rawExtrinsicPermissions = dsMockUtils.createMockExtrinsicPermissions({
     These: rawPermissions,

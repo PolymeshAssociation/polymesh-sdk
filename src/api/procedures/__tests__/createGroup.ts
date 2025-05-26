@@ -37,7 +37,7 @@ describe('createGroup procedure', () => {
   permissionsMap.set(rawStoName, investPermissions);
 
   const rawExtrinsicPermissions = dsMockUtils.createMockExtrinsicPermissions({
-    These: dsMockUtils.createMockBTreeMap(permissionsMap),
+    These: dsMockUtils.createMockBtreeMap(permissionsMap),
   });
 
   let mockContext: Mocked<Context>;

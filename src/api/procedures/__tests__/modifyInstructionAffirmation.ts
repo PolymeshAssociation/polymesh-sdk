@@ -4,9 +4,12 @@ import {
   PolymeshPrimitivesSettlementAffirmationStatus,
   PolymeshPrimitivesSettlementAssetCount,
 } from '@polkadot/types/lookup';
+import {
+  AffirmationCount,
+  ExecuteInstructionInfo,
+} from '@polymeshassociation/polymesh-types/polkadot/polymesh';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { AffirmationCount, ExecuteInstructionInfo } from 'polymesh-types/polymesh';
 
 import {
   getAuthorization,
@@ -164,7 +167,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       multi: [],
     });
 
-    rawPortfolioIds = dsMockUtils.createMockBTreeSet([rawPortfolioId, rawPortfolioId]);
+    rawPortfolioIds = dsMockUtils.createMockBtreeSet([rawPortfolioId, rawPortfolioId]);
 
     when(portfolioIdsToBtreeSetSpy)
       .calledWith([rawPortfolioId, rawPortfolioId], mockContext)
@@ -509,7 +512,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       );
       receiptDetailsToMeshReceiptDetailsSpy.mockReturnValue([]);
 
-      const emptySet = dsMockUtils.createMockBTreeSet([]);
+      const emptySet = dsMockUtils.createMockBtreeSet([]);
       when(portfolioIdsToBtreeSetSpy).calledWith([], mockContext).mockReturnValue(emptySet);
 
       const proc = procedureMockUtils.getInstance<

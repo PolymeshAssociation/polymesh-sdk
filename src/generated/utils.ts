@@ -1,9 +1,9 @@
 /* istanbul ignore file */
 
 import { PolymeshPrimitivesJurisdictionCountryCode } from '@polkadot/types/lookup';
+import { CountryCode } from '@polymeshassociation/polymesh-types/generated/types';
 
 import { Context } from '~/internal';
-import { CountryCode } from '~/types';
 
 /**
  * @hidden

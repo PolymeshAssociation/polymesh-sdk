@@ -154,7 +154,7 @@ describe('removeLocalMetadata procedure', () => {
   it('should throw an error if the Metadata entry is mandatory NFT collection key', () => {
     collectionTickerMock.mockReturnValue(dsMockUtils.createMockU64(new BigNumber(1)));
     dsMockUtils.createQueryMock('nft', 'collectionKeys', {
-      returnValue: dsMockUtils.createMockBTreeSet([rawMetadataKey]),
+      returnValue: dsMockUtils.createMockBtreeSet([rawMetadataKey]),
     });
 
     jest.spyOn(utilsConversionModule, 'meshMetadataKeyToMetadataKey').mockResolvedValue({

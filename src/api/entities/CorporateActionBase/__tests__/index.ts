@@ -10,7 +10,7 @@ import {
   PolymeshTransaction,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { createMockBTreeSet, createMockU64 } from '~/testUtils/mocks/dataSources';
+import { createMockBtreeSet, createMockU64 } from '~/testUtils/mocks/dataSources';
 import {
   CorporateActionKind,
   CorporateActionTargets,
@@ -83,9 +83,8 @@ describe('CorporateAction class', () => {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockCorporateAction({
           kind,
-          /* eslint-disable @typescript-eslint/naming-convention */
-          decl_date: new BigNumber(declarationDate.getTime()),
-          record_date: dsMockUtils.createMockRecordDate({
+          declDate: new BigNumber(declarationDate.getTime()),
+          recordDate: dsMockUtils.createMockRecordDate({
             date: new BigNumber(new Date('10/14/2019').getTime()),
             checkpoint: {
               Scheduled: [
@@ -98,9 +97,8 @@ describe('CorporateAction class', () => {
             identities: [],
             treatment: TargetTreatment.Exclude,
           },
-          default_withholding_tax: new BigNumber(100000),
-          withholding_tax: [],
-          /* eslint-enable @typescript-eslint/naming-convention */
+          defaultWithholdingTax: new BigNumber(100000),
+          withholdingTax: [],
         })
       ),
     });
@@ -228,7 +226,7 @@ describe('CorporateAction class', () => {
       dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockCheckpointSchedule({
-            pending: createMockBTreeSet([createMockU64(new BigNumber(1))]),
+            pending: createMockBtreeSet([createMockU64(new BigNumber(1))]),
           })
         ),
       });
@@ -242,16 +240,14 @@ describe('CorporateAction class', () => {
         dsMockUtils.createMockOption(
           dsMockUtils.createMockCorporateAction({
             kind,
-            /* eslint-disable @typescript-eslint/naming-convention */
-            decl_date: new BigNumber(declarationDate.getTime()),
-            record_date: dsMockUtils.createMockOption(),
+            declDate: new BigNumber(declarationDate.getTime()),
+            recordDate: dsMockUtils.createMockOption(),
             targets: {
               identities: [],
               treatment: TargetTreatment.Exclude,
             },
-            default_withholding_tax: new BigNumber(100000),
-            withholding_tax: [],
-            /* eslint-enable @typescript-eslint/naming-convention */
+            defaultWithholdingTax: new BigNumber(100000),
+            withholdingTax: [],
           })
         )
       );
@@ -274,9 +270,8 @@ describe('CorporateAction class', () => {
         dsMockUtils.createMockOption(
           dsMockUtils.createMockCorporateAction({
             kind,
-            /* eslint-disable @typescript-eslint/naming-convention */
-            decl_date: new BigNumber(declarationDate.getTime()),
-            record_date: dsMockUtils.createMockOption(
+            declDate: new BigNumber(declarationDate.getTime()),
+            recordDate: dsMockUtils.createMockOption(
               dsMockUtils.createMockRecordDate({
                 date: createMockU64(new BigNumber(new Date('10/14/1987').getTime())),
                 checkpoint: { Existing: dsMockUtils.createMockU64(new BigNumber(1)) },
@@ -286,9 +281,8 @@ describe('CorporateAction class', () => {
               identities: [],
               treatment: TargetTreatment.Exclude,
             },
-            default_withholding_tax: new BigNumber(100000),
-            withholding_tax: [],
-            /* eslint-enable @typescript-eslint/naming-convention */
+            defaultWithholdingTax: new BigNumber(100000),
+            withholdingTax: [],
           })
         )
       );

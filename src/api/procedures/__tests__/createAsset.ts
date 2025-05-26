@@ -613,7 +613,7 @@ describe('createAsset procedure', () => {
   });
 
   it('should add a set statistics transaction to the batch', async () => {
-    const mockStatsBtree = dsMockUtils.createMockBTreeSet<PolymeshPrimitivesStatisticsStatType>([]);
+    const mockStatsBtree = dsMockUtils.createMockBtreeSet<PolymeshPrimitivesStatisticsStatType>([]);
 
     const proc = procedureMockUtils.getInstance<Params, FungibleAsset, Storage>(mockContext, {
       customTypeData: null,

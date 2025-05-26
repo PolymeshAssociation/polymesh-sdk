@@ -939,7 +939,6 @@ describe('Context class', () => {
 
     it('should return which DIDs in the input array are invalid', async () => {
       const inputDids = ['someDid', 'otherDid', 'invalidDid', 'otherInvalidDid'];
-      /* eslint-disable @typescript-eslint/naming-convention */
       dsMockUtils.createQueryMock('identity', 'didRecords', {
         multi: [
           dsMockUtils.createMockOption(
@@ -956,7 +955,6 @@ describe('Context class', () => {
           dsMockUtils.createMockOption(),
         ],
       });
-      /* eslint-enable @typescript-eslint/naming-convention */
 
       const context = await Context.create({
         polymeshApi,
@@ -1824,13 +1822,12 @@ describe('Context class', () => {
         when(assetIdToStringSpy).calledWith(rawAssetIds[index]).mockReturnValue(assetId);
       });
 
-      /* eslint-disable @typescript-eslint/naming-convention */
       const corporateActions = [
         dsMockUtils.createMockOption(
           dsMockUtils.createMockCorporateAction({
             kind: CorporateActionKind.PredictableBenefit,
-            decl_date: new BigNumber(new Date('10/14/1987').getTime()),
-            record_date: dsMockUtils.createMockRecordDate({
+            declDate: new BigNumber(new Date('10/14/1987').getTime()),
+            recordDate: dsMockUtils.createMockRecordDate({
               date: new BigNumber(new Date('10/14/2019').getTime()),
               checkpoint: { Existing: dsMockUtils.createMockU64(new BigNumber(2)) },
             }),
@@ -1838,28 +1835,28 @@ describe('Context class', () => {
               identities: ['someDid'],
               treatment: TargetTreatment.Exclude,
             },
-            default_withholding_tax: new BigNumber(100000),
-            withholding_tax: [tuple('someDid', new BigNumber(300000))],
+            defaultWithholdingTax: new BigNumber(100000),
+            withholdingTax: [tuple('someDid', new BigNumber(300000))],
           })
         ),
         dsMockUtils.createMockOption(
           dsMockUtils.createMockCorporateAction({
             kind: CorporateActionKind.Reorganization,
-            decl_date: new BigNumber(new Date('10/14/1987').getTime()),
-            record_date: null,
+            declDate: new BigNumber(new Date('10/14/1987').getTime()),
+            recordDate: null,
             targets: {
               identities: [],
               treatment: TargetTreatment.Exclude,
             },
-            default_withholding_tax: new BigNumber(0),
-            withholding_tax: [],
+            defaultWithholdingTax: new BigNumber(0),
+            withholdingTax: [],
           })
         ),
         dsMockUtils.createMockOption(
           dsMockUtils.createMockCorporateAction({
             kind: CorporateActionKind.UnpredictableBenefit,
-            decl_date: new BigNumber(new Date('11/26/1989').getTime()),
-            record_date: dsMockUtils.createMockRecordDate({
+            declDate: new BigNumber(new Date('11/26/1989').getTime()),
+            recordDate: dsMockUtils.createMockRecordDate({
               date: new BigNumber(new Date('11/26/2019').getTime()),
               checkpoint: { Existing: dsMockUtils.createMockU64(new BigNumber(5)) },
             }),
@@ -1867,12 +1864,11 @@ describe('Context class', () => {
               identities: [],
               treatment: TargetTreatment.Exclude,
             },
-            default_withholding_tax: new BigNumber(150000),
-            withholding_tax: [tuple('someDid', new BigNumber(200000))],
+            defaultWithholdingTax: new BigNumber(150000),
+            withholdingTax: [tuple('someDid', new BigNumber(200000))],
           })
         ),
       ];
-      /* eslint-enable @typescript-eslint/naming-convention */
 
       const usdAssetId = dsMockUtils.createMockAssetId('0x00000000000080008000000000000001');
       const cadAssetId = dsMockUtils.createMockAssetId('0x00000000000080008000000000000002');
@@ -1910,9 +1906,9 @@ describe('Context class', () => {
 
       const localIds = [new BigNumber(1), new BigNumber(2), new BigNumber(3)];
       const caIds = [
-        dsMockUtils.createMockCAId({ assetId: rawAssetIds[0], localId: localIds[0] }),
-        dsMockUtils.createMockCAId({ assetId: rawAssetIds[1], localId: localIds[1] }),
-        dsMockUtils.createMockCAId({ assetId: rawAssetIds[1], localId: localIds[2] }),
+        dsMockUtils.createMockCaId({ assetId: rawAssetIds[0], localId: localIds[0] }),
+        dsMockUtils.createMockCaId({ assetId: rawAssetIds[1], localId: localIds[1] }),
+        dsMockUtils.createMockCaId({ assetId: rawAssetIds[1], localId: localIds[2] }),
       ];
 
       dsMockUtils.createQueryMock('corporateAction', 'corporateActions', {

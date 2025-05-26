@@ -4,10 +4,10 @@ import {
   PolymeshPrimitivesIdentityDidRecord,
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
+import { CddStatus } from '@polymeshassociation/polymesh-types/polkadot/polymesh';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, differenceWith, flatten, intersectionWith, uniqBy } from 'lodash';
-import { CddStatus } from 'polymesh-types/polymesh';
 
 import { unlinkChildIdentity } from '~/api/procedures/unlinkChildIdentity';
 import { assertPortfolioExists } from '~/api/procedures/utils';

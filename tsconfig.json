@@ -5,15 +5,14 @@
     "baseUrl": ".",
     "paths": {
       "~/*": ["src/*"],
-      "polymesh-types/*": ["node_modules/@polymeshassociation/polymesh-types/generated-types/*"],
       "@polkadot/api/augment": [
-        "node_modules/@polymeshassociation/polymesh-types/generated-types/augment-api"
+        "node_modules/@polymeshassociation/polymesh-types/polkadot/augment-api"
       ],
       "@polkadot/types/augment": [
-        "node_modules/@polymeshassociation/polymesh-types/generated-types/augment-types"
+        "node_modules/@polymeshassociation/polymesh-types/polkadot/augment-types"
       ],
       "@polkadot/types/lookup": [
-        "node_modules/@polymeshassociation/polymesh-types/generated-types/types-lookup"
+        "node_modules/@polymeshassociation/polymesh-types/polkadot/types-lookup"
       ]
     },
     "plugins": [
