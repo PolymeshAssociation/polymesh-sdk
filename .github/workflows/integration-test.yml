@@ -15,10 +15,7 @@ jobs:
         with:
           node-version: '22.x'
           cache: 'yarn'
-          cache-dependency-path: 'tests/yarn.lock'
       - name: install dependencies
         run: yarn --frozen-lockfile
-        working-directory: tests
       - name: test
-        run: yarn test
-        working-directory: tests
+        run: yarn test:integration

@@ -34,6 +34,7 @@
     "generate:consts": "cross-env node scripts/generateConsts.js",
     "generate:post-process": "cross-env node scripts/postProcessTypes.js",
     "test": "POLKADOTJS_DISABLE_ESM_CJS_WARNING=1 jest --coverage",
+    "test:integration": "./scripts/integration-test.sh",
     "test:no-cov": "POLKADOTJS_DISABLE_ESM_CJS_WARNING=1 jest",
     "build:ts": "ttsc -b tsconfig.lib.json",
     "build:declaration-only": "ttsc -p tsconfig.lib.json --emitDeclarationOnly",

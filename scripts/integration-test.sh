@@ -17,10 +17,7 @@ function cleanup() {
     cd "$INTEGRATION_DIR"
     yarn test:stop
 
-    cd "$INTEGRATION_DIR"
-    yarn unlink "@polymeshassociation/polymesh-sdk"
-
-    cd "$SDK_DIR"
+    cd "$SDK_DIR/dist"
     rm -rf "$DEV_ENV_DIR"
 }
 trap cleanup EXIT
@@ -31,11 +28,14 @@ cd "$SDK_DIR"
 yarn
 yarn build:ts
 
+cp package.json dist/package.json
+
 # Link the built version
 cd dist
 yarn link
 
 cd "$INTEGRATION_DIR"
+git switch set-error # TODO remove
 
 # Link the built SDK version
 echo "Linking built SDK version"
@@ -45,5 +45,6 @@ yarn link "@polymeshassociation/polymesh-sdk"
 echo "Installing dependencies"
 yarn install --force
 
-# Run the tests
+# Run the tests and capture the exit code
+echo "Running tests"
 yarn test
