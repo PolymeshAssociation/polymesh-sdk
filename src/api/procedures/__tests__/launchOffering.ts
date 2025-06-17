@@ -345,7 +345,14 @@ describe('launchOffering procedure', () => {
 
     beforeEach(() => {
       filterEventRecordsSpy.mockReturnValue([
-        dsMockUtils.createMockIEvent(['filler', dsMockUtils.createMockU64(stoId)]),
+        dsMockUtils.createMockIEvent([
+          'filler',
+          dsMockUtils.createMockAssetId(),
+          dsMockUtils.createMockAssetId(),
+          dsMockUtils.createMockU64(stoId),
+          dsMockUtils.createMockFundraiserName(),
+          dsMockUtils.createMockFundraiser(),
+        ]),
       ]);
     });
 

@@ -42,7 +42,7 @@ export const createOfferingResolver =
   (assetId: string, context: Context) =>
   (receipt: ISubmittableResult): Offering => {
     const [{ data }] = filterEventRecords(receipt, 'sto', 'FundraiserCreated');
-    const newFundraiserId = u64ToBigNumber(data[1]);
+    const newFundraiserId = u64ToBigNumber(data[3]);
 
     return new Offering({ id: newFundraiserId, assetId }, context);
   };
