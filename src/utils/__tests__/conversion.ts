@@ -12169,7 +12169,7 @@ describe('fundingToRawFunding', () => {
       .mockReturnValue(mockResult);
 
     result = fundingToRawFunding(mockContext, {
-      portfolioId: mockPortfolio,
+      receiptDetails: mockReceiptDetails,
     });
 
     expect(result).toBe(mockResult);
