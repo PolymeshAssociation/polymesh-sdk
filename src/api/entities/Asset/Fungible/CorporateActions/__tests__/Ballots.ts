@@ -162,14 +162,14 @@ describe('Ballots class', () => {
     it('should return all existing Ballots for the Asset', async () => {
       /* eslint-disable @typescript-eslint/naming-convention */
       const params = {
-        decl_date: new BigNumber(new Date().getTime()),
-        record_date: null,
+        declDate: new BigNumber(new Date().getTime()),
+        recordDate: null,
         targets: {
           identities: [],
           treatment: TargetTreatment.Include,
         },
-        default_withholding_tax: new BigNumber(0),
-        withholding_tax: [],
+        defaultWithholdingTax: new BigNumber(0),
+        withholdingTax: [],
       };
       /* eslint-enable @typescript-eslint/naming-convention */
 
@@ -185,11 +185,11 @@ describe('Ballots class', () => {
       const mockCorporateAction = dsMockUtils.createMockCorporateAction();
       const mockCorporateActionWithBallot = dsMockUtils.createMockCorporateAction({
         ...params,
-        kind: dsMockUtils.createMockCAKind('IssuerNotice'),
+        kind: dsMockUtils.createMockCaKind('IssuerNotice'),
       });
       const mockCorporateActionWithEmptyBallot = dsMockUtils.createMockCorporateAction({
         ...params,
-        kind: dsMockUtils.createMockCAKind('IssuerNotice'),
+        kind: dsMockUtils.createMockCaKind('IssuerNotice'),
       });
       const getCorporateBallotDetailsOrNullSpy = jest.spyOn(
         utilsInternalModule,
