@@ -17,6 +17,7 @@ import {
   assetToMeshAssetId,
   bigNumberToBalance,
   bigNumberToU64,
+  fundingToRawFunding,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
@@ -175,16 +176,21 @@ export async function prepareInvestInSto(
 
   const rawAssetId = assetToMeshAssetId(asset, context);
 
+  const rawFundingPortfolioId = portfolioIdToMeshPortfolioId(fundingPortfolioId, context);
+
+  const rawFunding = fundingToRawFunding(context, {
+    portfolioId: rawFundingPortfolioId,
+  });
+
   return {
     transaction: txSto.invest,
     args: [
-      portfolioIdToMeshPortfolioId(purchasePortfolioId, context),
-      portfolioIdToMeshPortfolioId(fundingPortfolioId, context),
       rawAssetId,
       bigNumberToU64(id, context),
+      portfolioIdToMeshPortfolioId(purchasePortfolioId, context),
+      rawFunding,
       bigNumberToBalance(purchaseAmount, context),
       optionize(bigNumberToBalance)(maxPrice, context),
-      null,
     ],
     resolver: undefined,
   };

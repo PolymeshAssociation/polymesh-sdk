@@ -1,6 +1,7 @@
 import { u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import {
+  PalletStoFundingMethod,
   PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesIdentityIdPortfolioId,
 } from '@polkadot/types/lookup';
@@ -50,6 +51,7 @@ describe('investInOffering procedure', () => {
   let portfolioLikeToPortfolioIdSpy: jest.SpyInstance<PortfolioId, [PortfolioLike]>;
   let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
   let bigNumberToBalanceSpy: jest.SpyInstance<Balance, [BigNumber, Context, boolean?]>;
+  let fundingToRawFundingSpy: jest.SpyInstance;
 
   let id: BigNumber;
   let assetId: string;
@@ -64,6 +66,7 @@ describe('investInOffering procedure', () => {
   let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let rawPurchasePortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
   let rawFundingPortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
+  let rawFunding: PalletStoFundingMethod;
   let rawPurchaseAmount: Balance;
   let rawMaxPrice: Balance;
   let args: Params;
@@ -80,6 +83,7 @@ describe('investInOffering procedure', () => {
     portfolioLikeToPortfolioIdSpy = jest.spyOn(utilsConversionModule, 'portfolioLikeToPortfolioId');
     bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
     bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
+    fundingToRawFundingSpy = jest.spyOn(utilsConversionModule, 'fundingToRawFunding');
     id = new BigNumber(id);
     rawId = dsMockUtils.createMockU64(id);
     assetId = '0x12341234123412341234123412341234';
@@ -98,6 +102,9 @@ describe('investInOffering procedure', () => {
     rawFundingPortfolio = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(fundingPortfolio),
       kind: dsMockUtils.createMockPortfolioKind('Default'),
+    });
+    rawFunding = dsMockUtils.createMockFundingMethod({
+      OnChain: rawFundingPortfolio,
     });
     rawPurchaseAmount = dsMockUtils.createMockBalance(purchaseAmount);
     rawMaxPrice = dsMockUtils.createMockBalance(maxPrice);
@@ -123,6 +130,10 @@ describe('investInOffering procedure', () => {
       .calledWith(purchaseAmount, mockContext)
       .mockReturnValue(rawPurchaseAmount);
     when(bigNumberToBalanceSpy).calledWith(maxPrice, mockContext).mockReturnValue(rawMaxPrice);
+
+    when(fundingToRawFundingSpy)
+      .calledWith(mockContext, { portfolioId: rawFundingPortfolio })
+      .mockReturnValue(rawFunding);
 
     args = {
       id,
@@ -343,15 +354,7 @@ describe('investInOffering procedure', () => {
 
     expect(result).toEqual({
       transaction,
-      args: [
-        rawPurchasePortfolio,
-        rawFundingPortfolio,
-        rawAssetId,
-        rawId,
-        rawPurchaseAmount,
-        null,
-        null,
-      ],
+      args: [rawAssetId, rawId, rawPurchasePortfolio, rawFunding, rawPurchaseAmount, null],
       resolver: undefined,
     });
 
@@ -362,15 +365,7 @@ describe('investInOffering procedure', () => {
 
     expect(result).toEqual({
       transaction,
-      args: [
-        rawPurchasePortfolio,
-        rawFundingPortfolio,
-        rawAssetId,
-        rawId,
-        rawPurchaseAmount,
-        rawMaxPrice,
-        null,
-      ],
+      args: [rawAssetId, rawId, rawPurchasePortfolio, rawFunding, rawPurchaseAmount, rawMaxPrice],
       resolver: undefined,
     });
   });

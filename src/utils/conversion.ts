@@ -27,6 +27,7 @@ import {
   PalletStakingNominations,
   PalletStakingStakingLedger,
   PalletStakingValidatorPrefs,
+  PalletStoFundingMethod,
   PalletStoFundraiser,
   PalletStoFundraiserTier,
   PalletStoPriceTier,
@@ -82,6 +83,7 @@ import {
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesStatisticsStatUpdate,
+  PolymeshPrimitivesStoFundraiserReceiptDetails,
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceTransferCondition,
   SpRuntimeMultiSignature,
@@ -6002,4 +6004,28 @@ export function meshBallotDetailsToCorporateBallotDetails(
     meta: meshCorporateBallotMetaToCorporateBallotMeta(rawMeta),
     rcv: boolToBoolean(rawRcv),
   };
+}
+
+/**
+ * @hidden
+ */
+export function fundingToRawFunding(
+  context: Context,
+  args:
+    | {
+        portfolioId: PolymeshPrimitivesIdentityIdPortfolioId;
+      }
+    | {
+        receiptDetails: PolymeshPrimitivesStoFundraiserReceiptDetails;
+      }
+): PalletStoFundingMethod {
+  if ('portfolioId' in args) {
+    return context.createType('PalletStoFundingMethod', {
+      OnChain: args.portfolioId,
+    });
+  }
+
+  return context.createType('PalletStoFundingMethod', {
+    OffChain: args.receiptDetails,
+  });
 }
