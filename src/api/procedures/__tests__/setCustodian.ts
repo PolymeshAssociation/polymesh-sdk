@@ -88,11 +88,12 @@ describe('setCustodian procedure', () => {
 
   it('should throw an error if the passed Account has a pending authorization to accept', () => {
     const did = 'someDid';
-    const args = { targetIdentity: 'targetIdentity', did };
+    const id = new BigNumber(1);
+    const args = { targetIdentity: 'targetIdentity', did, id };
 
     const target = entityMockUtils.getIdentityInstance({ did: args.targetIdentity });
     const signer = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
-    const fakePortfolio = entityMockUtils.getDefaultPortfolioInstance({ did });
+    const fakePortfolio = entityMockUtils.getNumberedPortfolioInstance({ did, id });
     const receivedAuthorizations: AuthorizationRequest[] = [
       entityMockUtils.getAuthorizationRequestInstance({
         target,
@@ -124,7 +125,7 @@ describe('setCustodian procedure', () => {
     const did = 'someDid';
     const id = new BigNumber(1);
     const expiry = new Date('1/1/2040');
-    const args = { targetIdentity: 'targetIdentity', did };
+    const args = { targetIdentity: 'targetIdentity', did, id };
     const target = entityMockUtils.getIdentityInstance({ did: args.targetIdentity });
     const signer = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
     const rawSignatory = dsMockUtils.createMockSignatory({

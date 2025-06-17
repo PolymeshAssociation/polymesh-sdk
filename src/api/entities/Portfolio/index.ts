@@ -2,7 +2,6 @@ import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
 
 import {
-  AuthorizationRequest,
   Context,
   Entity,
   FungibleAsset,
@@ -12,18 +11,11 @@ import {
   NftCollection,
   PolymeshError,
   quitCustody,
-  setCustodian,
 } from '~/internal';
 import { portfolioMovementsQuery } from '~/middleware/queries/portfolios';
 import { settlementsQuery } from '~/middleware/queries/settlements';
 import { Query } from '~/middleware/types';
-import {
-  ErrorCode,
-  MoveFundsParams,
-  NoArgsProcedureMethod,
-  ProcedureMethod,
-  SetCustodianParams,
-} from '~/types';
+import { ErrorCode, MoveFundsParams, NoArgsProcedureMethod, ProcedureMethod } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
   assetIdToString,
@@ -91,10 +83,6 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     this.owner = new Identity({ did }, context);
     this._id = id;
 
-    this.setCustodian = createProcedureMethod(
-      { getProcedureAndArgs: args => [setCustodian, { ...args, did, id }] },
-      context
-    );
     this.moveFunds = createProcedureMethod(
       { getProcedureAndArgs: args => [moveFunds, { ...args, from: this }] },
       context
@@ -317,18 +305,6 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
 
     return collections;
   }
-
-  /**
-   * Send an invitation to an Identity to assign it as custodian for this Portfolio
-   *
-   * @note this will create an {@link api/entities/AuthorizationRequest!AuthorizationRequest | Authorization Request} which has to be accepted by the `targetIdentity`.
-   *   An {@link api/entities/Account!Account} or {@link api/entities/Identity!Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
-   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
-   *
-   * @note required role:
-   *   - Portfolio Custodian
-   */
-  public setCustodian: ProcedureMethod<SetCustodianParams, AuthorizationRequest>;
 
   /**
    * Moves funds from this Portfolio to another one owned by the same Identity

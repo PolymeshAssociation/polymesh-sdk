@@ -24,7 +24,7 @@ import { assertNoPendingAuthorizationExists, optionize } from '~/utils/internal'
 /**
  * @hidden
  */
-export type Params = { did: string; id?: BigNumber } & SetCustodianParams;
+export type Params = { did: string; id: BigNumber } & SetCustodianParams;
 
 /**
  * @hidden

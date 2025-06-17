@@ -199,4 +199,32 @@ describe('NumberedPortfolio class', () => {
       expect(result).toBe(true);
     });
   });
+
+  describe('method: setCustodian', () => {
+    let did: string;
+    let id: BigNumber;
+
+    beforeAll(() => {
+      did = 'someDid';
+      id = new BigNumber(1);
+    });
+
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const portfolio = new NumberedPortfolio({ id, did }, context);
+      const targetIdentity = 'someTarget';
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { id, did, targetIdentity }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await portfolio.setCustodian({ targetIdentity });
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
 });

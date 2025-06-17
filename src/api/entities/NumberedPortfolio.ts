@@ -1,9 +1,16 @@
 import BigNumber from 'bignumber.js';
 
-import { Context, PolymeshError, Portfolio, renamePortfolio } from '~/internal';
+import { Context, PolymeshError, Portfolio, renamePortfolio, setCustodian } from '~/internal';
 import { portfolioQuery } from '~/middleware/queries/portfolios';
 import { Query } from '~/middleware/types';
-import { ErrorCode, EventIdentifier, ProcedureMethod, RenamePortfolioParams } from '~/types';
+import {
+  AuthorizationRequest,
+  ErrorCode,
+  EventIdentifier,
+  ProcedureMethod,
+  RenamePortfolioParams,
+  SetCustodianParams,
+} from '~/types';
 import { Ensured } from '~/types/utils';
 import {
   bigNumberToU64,
@@ -49,6 +56,11 @@ export class NumberedPortfolio extends Portfolio {
 
     this.modifyName = createProcedureMethod(
       { getProcedureAndArgs: args => [renamePortfolio, { ...args, did, id }] },
+      context
+    );
+
+    this.setCustodian = createProcedureMethod(
+      { getProcedureAndArgs: args => [setCustodian, { ...args, did, id }] },
       context
     );
   }
@@ -136,4 +148,16 @@ export class NumberedPortfolio extends Portfolio {
 
     return !size.isZero();
   }
+
+  /**
+   * Send an invitation to an Identity to assign it as custodian for this Numbered Portfolio
+   *
+   * @note this will create an {@link api/entities/AuthorizationRequest!AuthorizationRequest | Authorization Request} which has to be accepted by the `targetIdentity`.
+   *   An {@link api/entities/Account!Account} or {@link api/entities/Identity!Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
+   *
+   * @note required role:
+   *   - Portfolio Custodian
+   */
+  public setCustodian: ProcedureMethod<SetCustodianParams, AuthorizationRequest>;
 }
