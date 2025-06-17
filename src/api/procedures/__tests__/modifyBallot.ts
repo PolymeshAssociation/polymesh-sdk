@@ -121,7 +121,7 @@ describe('modifyBallot procedure', () => {
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
     proc = procedureMockUtils.getInstance<Params, CorporateBallotWithDetails>(mockContext);
-    rawCaId = dsMockUtils.createMockCAId({
+    rawCaId = dsMockUtils.createMockCaId({
       assetId,
       localId: ballotId,
     });

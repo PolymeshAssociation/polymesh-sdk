@@ -172,7 +172,7 @@ describe('modifyCaCheckpoint procedure', () => {
   it('should throw an error if the Corporate Ballot does not exist', async () => {
     const id = new BigNumber(1);
 
-    const rawCaId = dsMockUtils.createMockCAId({ assetId, localId: id });
+    const rawCaId = dsMockUtils.createMockCaId({ assetId, localId: id });
 
     jest.spyOn(utilsConversionModule, 'corporateActionIdentifierToCaId').mockReturnValue(rawCaId);
 

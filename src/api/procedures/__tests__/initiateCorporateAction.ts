@@ -240,7 +240,7 @@ describe('initiateCorporateAction procedure', () => {
 
       assetIdToStringSpy = jest.spyOn(utilsConversionModule, 'assetIdToString');
       u32ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u32ToBigNumber');
-      mockRawCaId = dsMockUtils.createMockCAId();
+      mockRawCaId = dsMockUtils.createMockCaId();
       mockCaId = new BigNumber(1);
       mockDescription = dsMockUtils.createMockBytes(description);
       mockCorporateActionParams = {

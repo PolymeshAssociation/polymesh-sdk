@@ -75,7 +75,7 @@ describe('removeBallot procedure', () => {
     removeBallotTransaction = dsMockUtils.createTxMock('corporateAction', 'removeCa');
     mockContext = dsMockUtils.getContextInstance();
     proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-    rawCaId = dsMockUtils.createMockCAId({
+    rawCaId = dsMockUtils.createMockCaId({
       assetId,
       localId: ballotId,
     });

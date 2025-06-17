@@ -307,7 +307,7 @@ describe('createBallot procedure', () => {
       );
       assetIdToStringSpy = jest.spyOn(utilsConversionModule, 'assetIdToString');
       u32ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u32ToBigNumber');
-      mockCaId = dsMockUtils.createMockCAId();
+      mockCaId = dsMockUtils.createMockCaId();
       mockBallotId = new BigNumber(1);
       mockDescription = dsMockUtils.createMockBytes(description);
       mockCorporateActionParams = {

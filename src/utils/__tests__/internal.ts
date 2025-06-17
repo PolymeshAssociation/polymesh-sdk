@@ -2902,7 +2902,7 @@ describe('getCorporateBallotDetailsOrThrow', () => {
     assetToMeshAssetIdSpy.mockReturnValue(dsMockUtils.createMockAssetId(assetId));
     bigNumberToU32Spy.mockReturnValue(dsMockUtils.createMockU32(id));
     corporateActionIdentifierToCaIdSpy.mockReturnValue(
-      dsMockUtils.createMockCAId({
+      dsMockUtils.createMockCaId({
         assetId: '0x9999',
         localId: new BigNumber(5),
       })
