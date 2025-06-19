@@ -5,7 +5,7 @@ import { getAuthorization, prepareTransferPolyx } from '~/api/procedures/transfe
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { TransferPolyxParams, TxTags } from '~/types';
+import { TransferPolyxParams } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -57,56 +57,6 @@ describe('transferPolyx procedure', () => {
     ).rejects.toThrow('Insufficient free balance');
   });
 
-  it("should throw an error if destination Account doesn't have an associated Identity", () => {
-    entityMockUtils.configureMocks({
-      accountOptions: {
-        getIdentity: null,
-      },
-    });
-
-    const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
-
-    return expect(
-      prepareTransferPolyx.call(proc, { to: 'someAccount', amount: new BigNumber(99) })
-    ).rejects.toThrow("The destination Account doesn't have an associated Identity");
-  });
-
-  it("should throw an error if sender Identity doesn't have valid CDD", () => {
-    dsMockUtils
-      .createQueryMock('identity', 'didRecords')
-      .mockReturnValue(dsMockUtils.createMockIdentityId('signingIdentityId'));
-
-    mockContext = dsMockUtils.getContextInstance({
-      validCdd: false,
-    });
-
-    const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
-
-    return expect(
-      prepareTransferPolyx.call(proc, { to: 'someAccount', amount: new BigNumber(99) })
-    ).rejects.toThrow('The sender Identity has an invalid CDD claim');
-  });
-
-  it("should throw an error if destination Account doesn't have valid CDD", () => {
-    dsMockUtils
-      .createQueryMock('identity', 'didRecords')
-      .mockReturnValue(dsMockUtils.createMockIdentityId('signingIdentityId'));
-
-    entityMockUtils.configureMocks({
-      accountOptions: {
-        getIdentity: entityMockUtils.getIdentityInstance({
-          hasValidCdd: false,
-        }),
-      },
-    });
-
-    const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
-
-    return expect(
-      prepareTransferPolyx.call(proc, { to: 'someAccount', amount: new BigNumber(99) })
-    ).rejects.toThrow('The receiver Identity has an invalid CDD claim');
-  });
-
   it('should return a balance transfer transaction spec', async () => {
     const to = entityMockUtils.getAccountInstance({ address: 'someAccount' });
     const amount = new BigNumber(99);
@@ -114,10 +64,6 @@ describe('transferPolyx procedure', () => {
     const rawAccount = dsMockUtils.createMockAccountId(to.address);
     const rawAmount = dsMockUtils.createMockBalance(amount);
     const rawMemo = 'memo' as unknown as PolymeshPrimitivesMemo;
-
-    dsMockUtils
-      .createQueryMock('identity', 'didRecords')
-      .mockReturnValue(dsMockUtils.createMockIdentityId('signingIdentityId'));
 
     jest.spyOn(utilsConversionModule, 'stringToAccountId').mockReturnValue(rawAccount);
     jest.spyOn(utilsConversionModule, 'bigNumberToBalance').mockReturnValue(rawAmount);
@@ -154,27 +100,8 @@ describe('transferPolyx procedure', () => {
 
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
-      const memo = 'something';
-      const args = {
-        memo,
-      } as TransferPolyxParams;
-
-      expect(getAuthorization(args)).toEqual({
-        permissions: {
-          transactions: [TxTags.balances.TransferWithMemo],
-          assets: [],
-          portfolios: [],
-        },
-      });
-
-      args.memo = undefined;
-
-      expect(getAuthorization(args)).toEqual({
-        permissions: {
-          transactions: [TxTags.balances.Transfer],
-          assets: [],
-          portfolios: [],
-        },
+      expect(getAuthorization()).toEqual({
+        signerPermissions: true,
       });
     });
   });
