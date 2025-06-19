@@ -182,11 +182,7 @@ describe('nominateValidators procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc()).toEqual({
-        permissions: {
-          transactions: [],
-          assets: [],
-          portfolios: [],
-        },
+        signerPermissions: true,
       });
     });
   });

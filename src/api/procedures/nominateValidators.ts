@@ -121,11 +121,7 @@ export async function prepareNominateValidators(
  */
 export function getAuthorization(this: Procedure<Params, void, Storage>): ProcedureAuthorization {
   return {
-    permissions: {
-      assets: [],
-      portfolios: [],
-      transactions: [],
-    },
+    signerPermissions: true,
   };
 }
 
