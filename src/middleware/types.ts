@@ -1967,6 +1967,7 @@ export enum CallIdEnum {
   Distribute = 'distribute',
   EmergencyReferendum = 'emergency_referendum',
   EnableIndividualCommissions = 'enable_individual_commissions',
+  EnableOffchainFunding = 'enable_offchain_funding',
   EnactReferendum = 'enact_referendum',
   EnactSnapshotResults = 'enact_snapshot_results',
   ExecuteManualInstruction = 'execute_manual_instruction',
@@ -2040,6 +2041,7 @@ export enum CallIdEnum {
   LegacySetPermissionToSigner = 'legacy_set_permission_to_signer',
   LinkCaDoc = 'link_ca_doc',
   LinkTickerToAssetId = 'link_ticker_to_asset_id',
+  LockInstruction = 'lock_instruction',
   MakeDivisible = 'make_divisible',
   MakeMultisigPrimary = 'make_multisig_primary',
   MakeMultisigSecondary = 'make_multisig_secondary',
@@ -4015,6 +4017,7 @@ export enum EventIdEnum {
   FundraiserClosed = 'FundraiserClosed',
   FundraiserCreated = 'FundraiserCreated',
   FundraiserFrozen = 'FundraiserFrozen',
+  FundraiserOffchainFundingEnabled = 'FundraiserOffchainFundingEnabled',
   FundraiserUnfrozen = 'FundraiserUnfrozen',
   FundraiserWindowModifed = 'FundraiserWindowModifed',
   FundraiserWindowModified = 'FundraiserWindowModified',
@@ -4044,6 +4047,7 @@ export enum EventIdEnum {
   InstructionCreated = 'InstructionCreated',
   InstructionExecuted = 'InstructionExecuted',
   InstructionFailed = 'InstructionFailed',
+  InstructionLocked = 'InstructionLocked',
   InstructionMediators = 'InstructionMediators',
   InstructionRejected = 'InstructionRejected',
   InstructionRescheduled = 'InstructionRescheduled',
@@ -4927,6 +4931,7 @@ export enum InstructionEventEnum {
   InstructionCreated = 'InstructionCreated',
   InstructionExecuted = 'InstructionExecuted',
   InstructionFailed = 'InstructionFailed',
+  InstructionLocked = 'InstructionLocked',
   InstructionMediators = 'InstructionMediators',
   InstructionRejected = 'InstructionRejected',
   InstructionRescheduled = 'InstructionRescheduled',
@@ -5097,6 +5102,7 @@ export enum InstructionStatusEnum {
   Created = 'Created',
   Executed = 'Executed',
   Failed = 'Failed',
+  Locked = 'Locked',
   Rejected = 'Rejected',
 }
 export type InstructionStatusEnumFilter = {
@@ -5113,6 +5119,7 @@ export type InstructionStatusEnumFilter = {
   notIn?: InputMaybe<Array<InstructionStatusEnum>>;
 };
 export enum InstructionTypeEnum {
+  SettleAfterLock = 'SettleAfterLock',
   SettleManual = 'SettleManual',
   SettleOnAffirmation = 'SettleOnAffirmation',
   SettleOnBlock = 'SettleOnBlock',
@@ -5192,6 +5199,7 @@ export type Investment = Node & {
   raiseToken: Scalars['String']['output'];
   raiseTokenAmount: Scalars['BigFloat']['output'];
   raisingAssetId: Scalars['String']['output'];
+  raisingAssetType: RaisingAssetTypeEnum;
   stoId: Scalars['Int']['output'];
   updatedBlock?: Maybe<Block>;
   updatedBlockId: Scalars['String']['output'];
@@ -5212,6 +5220,7 @@ export type InvestmentFilter = {
   raiseToken?: InputMaybe<StringFilter>;
   raiseTokenAmount?: InputMaybe<BigFloatFilter>;
   raisingAssetId?: InputMaybe<StringFilter>;
+  raisingAssetType?: InputMaybe<RaisingAssetTypeEnumFilter>;
   stoId?: InputMaybe<IntFilter>;
   updatedBlock?: InputMaybe<BlockFilter>;
   updatedBlockId?: InputMaybe<StringFilter>;
@@ -5240,6 +5249,8 @@ export enum InvestmentsOrderBy {
   RaiseTokenDesc = 'RAISE_TOKEN_DESC',
   RaisingAssetIdAsc = 'RAISING_ASSET_ID_ASC',
   RaisingAssetIdDesc = 'RAISING_ASSET_ID_DESC',
+  RaisingAssetTypeAsc = 'RAISING_ASSET_TYPE_ASC',
+  RaisingAssetTypeDesc = 'RAISING_ASSET_TYPE_DESC',
   StoIdAsc = 'STO_ID_ASC',
   StoIdDesc = 'STO_ID_DESC',
   UpdatedBlockIdAsc = 'UPDATED_BLOCK_ID_ASC',
@@ -5906,6 +5917,10 @@ export enum NftHoldersOrderBy {
 export type Node = {
   nodeId: Scalars['ID']['output'];
 };
+export enum NullOrder {
+  NullsFirst = 'NULLS_FIRST',
+  NullsLast = 'NULLS_LAST',
+}
 export type OffChainReceipt = Node & {
   blocksByInstructionAffirmationOffChainReceiptIdAndCreatedBlockId: Connection<Block>;
   blocksByInstructionAffirmationOffChainReceiptIdAndUpdatedBlockId: Connection<Block>;
@@ -6752,6 +6767,23 @@ export type Query = Node & {
   venueByNodeId?: Maybe<Venue>;
   venues?: Maybe<Connection<Venue>>;
 };
+export enum RaisingAssetTypeEnum {
+  OffChain = 'OffChain',
+  OnChain = 'OnChain',
+}
+export type RaisingAssetTypeEnumFilter = {
+  distinctFrom?: InputMaybe<RaisingAssetTypeEnum>;
+  equalTo?: InputMaybe<RaisingAssetTypeEnum>;
+  greaterThan?: InputMaybe<RaisingAssetTypeEnum>;
+  greaterThanOrEqualTo?: InputMaybe<RaisingAssetTypeEnum>;
+  in?: InputMaybe<Array<RaisingAssetTypeEnum>>;
+  isNull?: InputMaybe<Scalars['Boolean']['input']>;
+  lessThan?: InputMaybe<RaisingAssetTypeEnum>;
+  lessThanOrEqualTo?: InputMaybe<RaisingAssetTypeEnum>;
+  notDistinctFrom?: InputMaybe<RaisingAssetTypeEnum>;
+  notEqualTo?: InputMaybe<RaisingAssetTypeEnum>;
+  notIn?: InputMaybe<Array<RaisingAssetTypeEnum>>;
+};
 export enum SignerTypeEnum {
   Account = 'Account',
   Identity = 'Identity',
@@ -6929,6 +6961,8 @@ export type Sto = Node & {
   minimumInvestment: Scalars['BigFloat']['output'];
   name: Scalars['String']['output'];
   nodeId: Scalars['ID']['output'];
+  offChainFundingEnabled: Scalars['Boolean']['output'];
+  offChainFundingToken?: Maybe<Scalars['String']['output']>;
   offeringAsset?: Maybe<Asset>;
   offeringAssetId: Scalars['String']['output'];
   offeringPortfolio?: Maybe<Portfolio>;
@@ -6957,6 +6991,8 @@ export type StoFilter = {
   minimumInvestment?: InputMaybe<BigFloatFilter>;
   name?: InputMaybe<StringFilter>;
   not?: InputMaybe<StoFilter>;
+  offChainFundingEnabled?: InputMaybe<BooleanFilter>;
+  offChainFundingToken?: InputMaybe<StringFilter>;
   offeringAsset?: InputMaybe<AssetFilter>;
   offeringAssetId?: InputMaybe<StringFilter>;
   offeringPortfolio?: InputMaybe<PortfolioFilter>;
@@ -7012,6 +7048,10 @@ export enum StosOrderBy {
   OfferingAssetIdDesc = 'OFFERING_ASSET_ID_DESC',
   OfferingPortfolioIdAsc = 'OFFERING_PORTFOLIO_ID_ASC',
   OfferingPortfolioIdDesc = 'OFFERING_PORTFOLIO_ID_DESC',
+  OffChainFundingEnabledAsc = 'OFF_CHAIN_FUNDING_ENABLED_ASC',
+  OffChainFundingEnabledDesc = 'OFF_CHAIN_FUNDING_ENABLED_DESC',
+  OffChainFundingTokenAsc = 'OFF_CHAIN_FUNDING_TOKEN_ASC',
+  OffChainFundingTokenDesc = 'OFF_CHAIN_FUNDING_TOKEN_DESC',
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
   RaisingAssetIdAsc = 'RAISING_ASSET_ID_ASC',
@@ -7608,8 +7648,9 @@ export enum VenuesOrderBy {
 }
 export type _Metadata = {
   chain?: Maybe<Scalars['String']['output']>;
+  dbSize?: Maybe<Scalars['BigInt']['output']>;
   deployments?: Maybe<Scalars['JSON']['output']>;
-  dynamicDatasources?: Maybe<Scalars['String']['output']>;
+  dynamicDatasources?: Maybe<Array<Maybe<Scalars['JSON']['output']>>>;
   evmChainId?: Maybe<Scalars['String']['output']>;
   genesisHash?: Maybe<Scalars['String']['output']>;
   indexerHealthy?: Maybe<Scalars['Boolean']['output']>;

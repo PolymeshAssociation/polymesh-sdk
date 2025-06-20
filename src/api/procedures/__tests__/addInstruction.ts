@@ -126,6 +126,7 @@ describe('addInstruction procedure', () => {
   let rawValueDate: Moment;
   let rawEndBlock: u32;
   let rawInstructionMemo: PolymeshPrimitivesMemo;
+  let rawAfterLockSettlementType: PolymeshPrimitivesSettlementSettlementType;
   let rawAuthSettlementType: PolymeshPrimitivesSettlementSettlementType;
   let rawBlockSettlementType: PolymeshPrimitivesSettlementSettlementType;
   let rawManualSettlementType: PolymeshPrimitivesSettlementSettlementType;
@@ -223,6 +224,7 @@ describe('addInstruction procedure', () => {
     rawEndBlock = dsMockUtils.createMockU32(endBlock);
     rawInstructionMemo = dsMockUtils.createMockMemo(memo);
     rawAuthSettlementType = dsMockUtils.createMockSettlementType('SettleOnAffirmation');
+    rawAfterLockSettlementType = dsMockUtils.createMockSettlementType('SettleAfterLock');
     rawBlockSettlementType = dsMockUtils.createMockSettlementType({ SettleOnBlock: rawEndBlock });
     rawManualSettlementType = dsMockUtils.createMockSettlementType({ SettleManual: rawEndBlock });
     rawNfts = dsMockUtils.createMockNfts({
@@ -351,6 +353,9 @@ describe('addInstruction procedure', () => {
     when(endConditionToSettlementTypeSpy)
       .calledWith({ type: InstructionType.SettleOnAffirmation }, mockContext)
       .mockReturnValue(rawAuthSettlementType);
+    when(endConditionToSettlementTypeSpy)
+      .calledWith({ type: InstructionType.SettleAfterLock }, mockContext)
+      .mockReturnValue(rawAfterLockSettlementType);
     when(dateToMomentSpy).calledWith(tradeDate, mockContext).mockReturnValue(rawTradeDate);
     when(dateToMomentSpy).calledWith(valueDate, mockContext).mockReturnValue(rawValueDate);
     when(stringToInstructionMemoSpy)
@@ -1073,6 +1078,34 @@ describe('addInstruction procedure', () => {
           args: [
             rawVenueId,
             rawManualSettlementType,
+            rawTradeDate,
+            rawValueDate,
+            [rawLeg],
+            rawInstructionMemo,
+            rawEmptyMediatorSet,
+          ],
+        },
+      ],
+      resolver: expect.any(Function),
+    });
+
+    result = await prepareAddInstruction.call(proc, {
+      venueId,
+      instructions: [
+        {
+          ...instructionDetails,
+          endAfterLock: true,
+        },
+      ],
+    });
+
+    expect(result).toEqual({
+      transactions: [
+        {
+          transaction: addWithMediatorsTransaction,
+          args: [
+            rawVenueId,
+            rawAfterLockSettlementType,
             rawTradeDate,
             rawValueDate,
             [rawLeg],

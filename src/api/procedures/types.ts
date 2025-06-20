@@ -1008,6 +1008,12 @@ export type AddInstructionParams = {
        */
       endAfterBlock?: BigNumber;
     }
+  | {
+      /**
+       * the Instruction will be executed when all the parties have given their affirmation and the lock is released
+       */
+      endAfterLock?: true;
+    }
 );
 
 export interface AddInstructionsParams {

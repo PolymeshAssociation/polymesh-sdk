@@ -3305,7 +3305,13 @@ export const createMockVenue = (venue?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockInstructionStatus = (
-  instructionStatus?: 'Unknown' | 'Pending' | 'Failed' | 'Success' | 'Rejected'
+  instructionStatus?:
+    | 'Unknown'
+    | 'Pending'
+    | 'Failed'
+    | 'Success'
+    | 'Rejected'
+    | 'LockedForExecution'
 ): MockCodec<PolymeshPrimitivesSettlementInstructionStatus> => {
   return createMockEnum<PolymeshPrimitivesSettlementInstructionStatus>(instructionStatus);
 };
@@ -3315,7 +3321,11 @@ export const createMockInstructionStatus = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockSettlementType = (
-  settlementType?: 'SettleOnAffirmation' | { SettleOnBlock: u32 } | { SettleManual: u32 }
+  settlementType?:
+    | 'SettleOnAffirmation'
+    | 'SettleAfterLock'
+    | { SettleOnBlock: u32 }
+    | { SettleManual: u32 }
 ): MockCodec<PolymeshPrimitivesSettlementSettlementType> => {
   return createMockEnum<PolymeshPrimitivesSettlementSettlementType>(settlementType);
 };

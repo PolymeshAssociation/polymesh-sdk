@@ -149,6 +149,8 @@ function getEndCondition(
     endCondition = { type: InstructionType.SettleOnBlock, endBlock };
   } else if ('endAfterBlock' in instruction && instruction.endAfterBlock) {
     endCondition = { type: InstructionType.SettleManual, endAfterBlock: instruction.endAfterBlock };
+  } else if ('endAfterLock' in instruction && instruction.endAfterLock) {
+    endCondition = { type: InstructionType.SettleAfterLock };
   } else {
     endCondition = { type: InstructionType.SettleOnAffirmation };
   }

@@ -112,7 +112,7 @@ export const ROOT_TYPES = rootTypes;
 /**
  * The Polymesh chain spec version range that is compatible with this version of the SDK
  */
-export const SUPPORTED_SPEC_VERSION_RANGE = '7.0 || 7.1 || 7.2';
+export const SUPPORTED_SPEC_VERSION_RANGE = '7.0 || 7.1 || 7.2 || 7.3';
 
 /**
  * The Polymesh private chain spec version range that is compatible with this version of the SDK
@@ -151,7 +151,7 @@ export const DEFAULT_CDD_ID = '0x00000000000000000000000000000000000000000000000
 /**
  * Minimum version of Middleware V2 GraphQL Service (SubQuery) that is compatible with this version of the SDK
  */
-export const MINIMUM_SQ_VERSION = '18.0.2';
+export const MINIMUM_SQ_VERSION = '19.3.0';
 
 /**
  * The first version of Subquery that pads IDs for proper lexical order

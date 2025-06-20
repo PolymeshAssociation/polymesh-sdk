@@ -7161,6 +7161,14 @@ describe('endConditionToSettlementType', () => {
     );
 
     expect(result).toBe(fakeResult);
+
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesSettlementSettlementType', InstructionType.SettleAfterLock)
+      .mockReturnValue(fakeResult);
+
+    result = endConditionToSettlementType({ type: InstructionType.SettleAfterLock }, context);
+
+    expect(result).toBe(fakeResult);
   });
 });
 

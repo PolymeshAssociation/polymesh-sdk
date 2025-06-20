@@ -16,12 +16,14 @@ export enum InstructionStatus {
   Failed = 'Failed',
   Success = 'Success',
   Rejected = 'Rejected',
+  LockedForExecution = 'LockedForExecution',
 }
 
 export enum InstructionType {
   SettleOnAffirmation = 'SettleOnAffirmation',
   SettleOnBlock = 'SettleOnBlock',
   SettleManual = 'SettleManual',
+  SettleAfterLock = 'SettleAfterLock',
 }
 
 export type InstructionEndCondition =
@@ -35,6 +37,9 @@ export type InstructionEndCondition =
   | {
       type: InstructionType.SettleManual;
       endAfterBlock: BigNumber;
+    }
+  | {
+      type: InstructionType.SettleAfterLock;
     };
 
 export type InstructionDetails = {

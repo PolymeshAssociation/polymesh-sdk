@@ -5,7 +5,6 @@ import {
   AuthorizationType,
   ErrorCode,
   SubsidizeAccountParams,
-  TxTags,
 } from '~/types';
 import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import { bigNumberToBalance, signerToString, stringToAccountId } from '~/utils/conversion';
@@ -82,9 +81,5 @@ export async function prepareSubsidizeAccount(
  */
 export const subsidizeAccount = (): Procedure<SubsidizeAccountParams, AuthorizationRequest> =>
   new Procedure(prepareSubsidizeAccount, {
-    permissions: {
-      transactions: [TxTags.relayer.SetPayingKey],
-      assets: [],
-      portfolios: [],
-    },
+    signerPermissions: true,
   });

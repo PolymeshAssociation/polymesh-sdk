@@ -260,6 +260,27 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
+   * Retrieve whether the Instruction is locked for execution on chain
+   */
+  public async isLockedForExecution(): Promise<boolean> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+      id,
+      context,
+    } = this;
+
+    const status = await settlement.instructionStatuses(bigNumberToU64(id, context));
+
+    const statusResult = meshInstructionStatusToInstructionStatus(status);
+
+    return statusResult === InternalInstructionStatus.LockedForExecution;
+  }
+
+  /**
    * Retrieve current status of the Instruction. This can be subscribed to know if instruction fails
    *
    * @note can be subscribed to, if connected to node using a web socket
@@ -743,11 +764,13 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       failedEventIdentifier,
       failedToExecuteIdentifier,
       rejectedEventIdentifier,
+      lockedEventIdentifier,
     ] = await Promise.all([
       this.getInstructionEventFromMiddleware(InstructionEventEnum.InstructionExecuted),
       this.getInstructionEventFromMiddleware(InstructionEventEnum.InstructionFailed),
       this.getInstructionEventFromMiddleware(InstructionEventEnum.FailedToExecuteInstruction), // this is the new event triggered for failed to execute instruction
       this.getInstructionEventFromMiddleware(InstructionEventEnum.InstructionRejected),
+      this.getInstructionEventFromMiddleware(InstructionEventEnum.InstructionLocked),
     ]);
 
     if (executedEventIdentifier) {
@@ -775,6 +798,13 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       return {
         status: InstructionStatus.Rejected,
         eventIdentifier: rejectedEventIdentifier,
+      };
+    }
+
+    if (lockedEventIdentifier) {
+      return {
+        status: InstructionStatus.LockedForExecution,
+        eventIdentifier: lockedEventIdentifier,
       };
     }
 
@@ -837,6 +867,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       | InstructionEventEnum.InstructionFailed
       | InstructionEventEnum.InstructionRejected
       | InstructionEventEnum.FailedToExecuteInstruction
+      | InstructionEventEnum.InstructionLocked
   ): Promise<EventIdentifier | null> {
     const { id, context } = this;
 
@@ -1139,6 +1170,8 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         return InstructionStatus.Success;
       case InternalInstructionStatus.Rejected:
         return InstructionStatus.Rejected;
+      case InternalInstructionStatus.LockedForExecution:
+        return InstructionStatus.LockedForExecution;
     }
 
     return null;

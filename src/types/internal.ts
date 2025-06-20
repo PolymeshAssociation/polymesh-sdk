@@ -325,6 +325,7 @@ export enum InstructionStatus {
   Failed = 'Failed',
   Success = 'Success',
   Rejected = 'Rejected',
+  LockedForExecution = 'LockedForExecution',
 }
 
 /**

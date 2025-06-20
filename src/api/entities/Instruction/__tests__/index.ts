@@ -208,6 +208,50 @@ describe('Instruction class', () => {
     });
   });
 
+  describe('method: isLockedForExecution', () => {
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    let bigNumberToU64Spy: jest.SpyInstance;
+
+    beforeAll(() => {
+      bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+    });
+
+    beforeEach(() => {
+      when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
+    });
+
+    it('should return whether the instruction is locked for execution', async () => {
+      const owner = 'someDid';
+
+      entityMockUtils.configureMocks({ identityOptions: { did: owner } });
+
+      const instructionStatusesMock = dsMockUtils.createQueryMock(
+        'settlement',
+        'instructionStatuses'
+      );
+      when(instructionStatusesMock)
+        .calledWith(rawId)
+        .mockResolvedValue(
+          dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.LockedForExecution)
+        );
+
+      let result = await instruction.isLockedForExecution();
+
+      expect(result).toBe(true);
+
+      instructionStatusesMock.mockResolvedValue(
+        dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Success)
+      );
+
+      result = await instruction.isLockedForExecution();
+
+      expect(result).toBe(false);
+    });
+  });
+
   describe('method: onStatusChange', () => {
     let bigNumberToU64Spy: jest.SpyInstance;
     let instructionStatusesMock: jest.Mock;
@@ -275,6 +319,18 @@ describe('Instruction class', () => {
 
       expect(result).toEqual(unsubCallback);
       expect(callback).toBeCalledWith(InstructionStatus.Rejected);
+
+      instructionStatusesMock.mockImplementationOnce(async (_, cbFunc) => {
+        cbFunc(
+          dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.LockedForExecution)
+        );
+        return unsubCallback;
+      });
+
+      result = await instruction.onStatusChange(callback);
+
+      expect(result).toEqual(unsubCallback);
+      expect(callback).toBeCalledWith(InstructionStatus.LockedForExecution);
     });
 
     it('should error on unknown instruction status', () => {
@@ -422,6 +478,30 @@ describe('Instruction class', () => {
         let result = await instruction.details();
 
         expect(result).toEqual(expect.objectContaining(expectedDetails));
+
+        dsMockUtils.createApolloQueryMock(
+          instructionsQuery(false, {
+            id: id.toString(),
+          }),
+          {
+            instructions: {
+              nodes: [
+                {
+                  ...middlewareInstruction,
+                  type: InstructionTypeEnum.SettleAfterLock,
+                },
+              ],
+            },
+          }
+        );
+        result = await instruction.details();
+
+        expect(result).toEqual(
+          expect.objectContaining({
+            ...expectedDetails,
+            type: InstructionType.SettleAfterLock,
+          })
+        );
 
         dsMockUtils.createApolloQueryMock(
           instructionsQuery(false, {
@@ -734,6 +814,34 @@ describe('Instruction class', () => {
           memo,
         });
         expect(result.venue).toBeNull();
+
+        status = InstructionStatus.LockedForExecution;
+        type = InstructionType.SettleAfterLock;
+
+        when(meshSettlementTypeToEndConditionSpy)
+          .calledWith(rawSettlementType)
+          .mockReturnValueOnce({ type });
+
+        queryMultiMock.mockResolvedValueOnce([
+          dsMockUtils.createMockInstruction({
+            ...rawInstructionDetails,
+            settlementType: dsMockUtils.createMockSettlementType('SettleAfterLock'),
+          }),
+          dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.LockedForExecution),
+          rawOptionalMemo,
+        ]);
+
+        result = await instruction.details();
+
+        expect(result).toMatchObject({
+          status,
+          createdAt,
+          tradeDate,
+          valueDate,
+          type,
+          memo,
+        });
+        expect(result.venue?.id).toEqual(venueId);
       });
 
       it('should throw an error if an Instruction leg is not present', () => {
@@ -1513,11 +1621,145 @@ describe('Instruction class', () => {
             },
           },
         },
+        {
+          query: instructionEventsQuery(
+            false,
+            {
+              event: InstructionEventEnum.InstructionLocked,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [],
+            },
+          },
+        },
       ]);
 
       const result = await instruction.getStatus();
       expect(result).toMatchObject({
         status: InstructionStatus.Success,
+        eventIdentifier: fakeEventIdentifierResult,
+      });
+    });
+
+    it('should return Locked Instruction status', async () => {
+      const blockNumber = new BigNumber(1234);
+      const blockDate = new Date('4/14/2020');
+      const eventIdx = new BigNumber(1);
+      const blockHash = 'someHash';
+      const fakeQueryResult = {
+        updatedBlock: { blockId: blockNumber.toNumber(), hash: blockHash, datetime: blockDate },
+        eventIdx: eventIdx.toNumber(),
+      };
+      const fakeEventIdentifierResult = { blockNumber, blockDate, blockHash, eventIndex: eventIdx };
+
+      const queryResult = dsMockUtils.createMockInstruction({
+        instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
+        venueId: dsMockUtils.createMockOption(dsMockUtils.createMockU64()),
+        createdAt: dsMockUtils.createMockOption(),
+        tradeDate: dsMockUtils.createMockOption(),
+        valueDate: dsMockUtils.createMockOption(),
+        settlementType: dsMockUtils.createMockSettlementType(),
+      });
+
+      when(dsMockUtils.createQueryMock('settlement', 'instructionDetails'))
+        .calledWith(rawId)
+        .mockResolvedValue(queryResult);
+
+      when(dsMockUtils.createQueryMock('settlement', 'instructionStatuses'))
+        .calledWith(rawId)
+        .mockResolvedValue(dsMockUtils.createMockInstructionStatus('LockedForExecution'));
+
+      dsMockUtils.createApolloMultipleQueriesMock([
+        {
+          query: instructionEventsQuery(
+            false,
+            {
+              event: InstructionEventEnum.InstructionExecuted,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [],
+            },
+          },
+        },
+        {
+          query: instructionEventsQuery(
+            false,
+            {
+              event: InstructionEventEnum.InstructionFailed,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [],
+            },
+          },
+        },
+        {
+          query: instructionEventsQuery(
+            false,
+            {
+              event: InstructionEventEnum.FailedToExecuteInstruction,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [],
+            },
+          },
+        },
+        {
+          query: instructionEventsQuery(
+            false,
+            {
+              event: InstructionEventEnum.InstructionRejected,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [],
+            },
+          },
+        },
+        {
+          query: instructionEventsQuery(
+            false,
+            {
+              event: InstructionEventEnum.InstructionLocked,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [fakeQueryResult],
+            },
+          },
+        },
+      ]);
+
+      const result = await instruction.getStatus();
+      expect(result).toMatchObject({
+        status: InstructionStatus.LockedForExecution,
         eventIdentifier: fakeEventIdentifierResult,
       });
     });
@@ -1615,6 +1857,22 @@ describe('Instruction class', () => {
             },
           },
         },
+        {
+          query: instructionEventsQuery(
+            false,
+            {
+              event: InstructionEventEnum.InstructionLocked,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [],
+            },
+          },
+        },
       ]);
 
       let result = await instruction.getStatus();
@@ -1677,6 +1935,22 @@ describe('Instruction class', () => {
             false,
             {
               event: InstructionEventEnum.InstructionRejected,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [],
+            },
+          },
+        },
+        {
+          query: instructionEventsQuery(
+            false,
+            {
+              event: InstructionEventEnum.InstructionLocked,
               instructionId: id.toString(),
             },
             new BigNumber(1),
@@ -1790,6 +2064,22 @@ describe('Instruction class', () => {
             },
           },
         },
+        {
+          query: instructionEventsQuery(
+            false,
+            {
+              event: InstructionEventEnum.InstructionLocked,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [],
+            },
+          },
+        },
       ]);
 
       const result = await instruction.getStatus();
@@ -1873,6 +2163,22 @@ describe('Instruction class', () => {
             false,
             {
               event: InstructionEventEnum.InstructionRejected,
+              instructionId: id.toString(),
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
+          returnData: {
+            instructionEvents: {
+              nodes: [],
+            },
+          },
+        },
+        {
+          query: instructionEventsQuery(
+            false,
+            {
+              event: InstructionEventEnum.InstructionLocked,
               instructionId: id.toString(),
             },
             new BigNumber(1),
