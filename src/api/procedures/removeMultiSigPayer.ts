@@ -102,9 +102,7 @@ export function getAuthorization(this: Procedure<Params, void, Storage>): Proced
   } = this;
   const transactions = [];
 
-  if (isMultiSigSigner) {
-    transactions.push(TxTags.multiSig.RemovePayer);
-  } else {
+  if (!isMultiSigSigner) {
     transactions.push(TxTags.multiSig.RemovePayerViaPayer);
   }
 

@@ -150,7 +150,7 @@ describe('removeMultiSigPayer procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    it('should return RemovePayer transaction when removing via signer', () => {
+    it('should require no transaction permissions when removing via signer', () => {
       const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
         currentPayer,
         signingIdentity,
@@ -160,7 +160,7 @@ describe('removeMultiSigPayer procedure', () => {
 
       expect(boundFunc()).toEqual({
         permissions: {
-          transactions: [TxTags.multiSig.RemovePayer],
+          transactions: [],
         },
       });
     });
