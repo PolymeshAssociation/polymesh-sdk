@@ -232,7 +232,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
         context.isSqIdPadded,
         {
           stoId: id.toNumber(),
-          offeringToken: middlewareAssetId,
+          offeringAssetId: middlewareAssetId,
         },
         size,
         start

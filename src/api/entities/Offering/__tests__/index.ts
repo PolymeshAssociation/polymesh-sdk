@@ -276,7 +276,7 @@ describe('Offering class', () => {
       const id = new BigNumber(1);
       const offering = new Offering({ id, assetId }, context);
       const did = 'someDid';
-      const offeringToken = '0x11111111111181111111111111111111';
+      const offeringAssetId = '0x11111111111181111111111111111111';
       const raiseToken = 'USD';
       const offeringTokenAmount = new BigNumber(10000);
       const raiseTokenAmount = new BigNumber(1000);
@@ -288,7 +288,7 @@ describe('Offering class', () => {
       const nodes = [
         {
           investorId: did,
-          offeringToken,
+          offeringAssetId,
           raiseToken,
           offeringTokenAmount: offeringTokenAmount.toNumber(),
           raiseTokenAmount: raiseTokenAmount.toNumber(),
@@ -305,7 +305,7 @@ describe('Offering class', () => {
           false,
           {
             stoId: id.toNumber(),
-            offeringToken: assetId,
+            offeringAssetId: assetId,
           },
           new BigNumber(5),
           new BigNumber(0)
@@ -329,7 +329,7 @@ describe('Offering class', () => {
       dsMockUtils.createApolloQueryMock(
         investmentsQuery(false, {
           stoId: id.toNumber(),
-          offeringToken: assetId,
+          offeringAssetId: assetId,
         }),
         {
           investments: {

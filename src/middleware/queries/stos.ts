@@ -13,18 +13,18 @@ import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
  */
 export function investmentsQuery(
   paddedIds: boolean,
-  filters: QueryArgs<Investment, 'stoId' | 'offeringToken'>,
+  filters: QueryArgs<Investment, 'stoId' | 'offeringAssetId'>,
   size?: BigNumber,
   start?: BigNumber
-): QueryOptions<PaginatedQueryArgs<QueryArgs<Investment, 'stoId' | 'offeringToken'>>> {
+): QueryOptions<PaginatedQueryArgs<QueryArgs<Investment, 'stoId' | 'offeringAssetId'>>> {
   const orderBy = paddedIds
     ? `${InvestmentsOrderBy.CreatedBlockIdAsc}`
     : `${InvestmentsOrderBy.CreatedAtAsc}, ${InvestmentsOrderBy.CreatedBlockIdAsc}`;
 
   const query = gql`
-    query InvestmentsQuery($stoId: Int!, $offeringToken: String!, $size: Int, $start: Int) {
+    query InvestmentsQuery($stoId: Int!, $offeringAssetId: String!, $size: Int, $start: Int) {
       investments(
-        filter: { stoId: { equalTo: $stoId }, offeringToken: { equalTo: $offeringToken } }
+        filter: { stoId: { equalTo: $stoId }, offeringAssetId: { equalTo: $offeringAssetId } }
         first: $size
         offset: $start
         orderBy: [${orderBy}]
@@ -32,8 +32,11 @@ export function investmentsQuery(
         totalCount
         nodes {
           investorId
+          offeringAssetId
           offeringToken
+          raisingAssetId
           raiseToken
+          raisingAssetType
           offeringTokenAmount
           raiseTokenAmount
         }

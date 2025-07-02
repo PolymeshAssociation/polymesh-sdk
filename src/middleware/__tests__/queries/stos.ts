@@ -5,7 +5,7 @@ describe('investmentsQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
     const variables = {
       stoId: 1,
-      offeringToken: 'SOME_TICKER',
+      offeringAssetId: '0x12341234123412341234123412341234',
       size: DEFAULT_GQL_PAGE_SIZE,
       start: 0,
     };
