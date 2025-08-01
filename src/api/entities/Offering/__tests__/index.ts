@@ -389,6 +389,29 @@ describe('Offering class', () => {
     });
   });
 
+  describe('method: enableOffChainFunding', () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const assetId = '0x12341234123412341234123412341234';
+      const id = new BigNumber(1);
+      const offering = new Offering({ id, assetId }, context);
+      const offChainTicker = 'OFFCHAIN';
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          { args: { asset: offering.asset, id, offChainTicker }, transformer: undefined },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await offering.enableOffChainFunding({ offChainTicker });
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
   describe('method: invest', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const assetId = '0x12341234123412341234123412341234';

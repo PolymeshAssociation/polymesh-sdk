@@ -175,3 +175,4 @@ export { setStakingController } from '~/api/procedures/setStakingController';
 export { setStakingPayee } from '~/api/procedures/setStakingPayee';
 export { withdrawUnbondedPolyx } from '~/api/procedures/withdrawUnbondedPolyx';
 export { nominateValidators } from '~/api/procedures/nominateValidators';
+export { enableOffChainFundingForOfferings } from '~/api/procedures/enableOffChainFundingForOfferings';

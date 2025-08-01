@@ -5,6 +5,7 @@ import BigNumber from 'bignumber.js';
 import {
   closeOffering,
   Context,
+  enableOffChainFundingForOfferings,
   Entity,
   FungibleAsset,
   Identity,
@@ -15,6 +16,7 @@ import {
 import { investmentsQuery } from '~/middleware/queries/stos';
 import { Query } from '~/middleware/types';
 import {
+  EnableOffChainFundingParams,
   InvestInOfferingParams,
   ModifyOfferingTimesParams,
   NoArgsProcedureMethod,
@@ -109,6 +111,15 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
       { getProcedureAndArgs: args => [investInOffering, { asset: this.asset, id, ...args }] },
       context
     );
+    this.enableOffChainFunding = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [
+          enableOffChainFundingForOfferings,
+          { asset: this.asset, id, ...args },
+        ],
+      },
+      context
+    );
   }
 
   /**
@@ -188,6 +199,16 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
    * Unfreeze the Offering
    */
   public unfreeze: NoArgsProcedureMethod<Offering>;
+
+  /**
+   * Enable off-chain funding for the Offering
+   *
+   * @throws if:
+   *   - Trying to enable off-chain funding on an Offering that does not exist
+   *   - Trying to enable off-chain funding on an Offering that has already ended
+   *   - Trying to enable off-chain funding on an Offering that is already closed
+   */
+  public enableOffChainFunding: ProcedureMethod<EnableOffChainFundingParams, void>;
 
   /**
    * Modify the start/end time of the Offering

@@ -89,3 +89,12 @@ export interface Investment {
   soldAmount: BigNumber;
   investedAmount: BigNumber;
 }
+
+export type OffChainFundingDetails =
+  | {
+      enabled: false;
+    }
+  | {
+      enabled: true;
+      offChainTicker: string;
+    };
