@@ -1,3 +1,9 @@
+import {
+  PalletStoFundraiser,
+  PolymeshPrimitivesIdentityId,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
+import { Bytes, Option, U64, U128 } from '@polkadot/types-codec';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -6,9 +12,9 @@ import { investmentsQuery } from '~/middleware/queries/stos';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   OfferingBalanceStatus,
-  OfferingDetails,
   OfferingSaleStatus,
   OfferingTimingStatus,
+  SignerKeyRingType,
 } from '~/types';
 import { uuidToHex } from '~/utils';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -205,10 +211,6 @@ describe('Offering class', () => {
 
       const callback = jest.fn();
       const result = await offering.details(callback);
-
-      jest
-        .spyOn(utilsConversionModule, 'fundraiserToOfferingDetails')
-        .mockReturnValue({} as OfferingDetails);
 
       expect(result).toBe(unsubCallback);
       expect(callback).toBeCalledWith(expect.objectContaining({}));
@@ -480,6 +482,164 @@ describe('Offering class', () => {
       expect(offering.toHuman()).toEqual({
         id: '1',
         assetId: '12341234-1234-1234-1234-123412341234',
+      });
+    });
+  });
+
+  describe('method: offChainFundingDetails', () => {
+    it('should return the offchain funding details', async () => {
+      const offering = new Offering(
+        { assetId: '12341234-1234-1234-1234-123412341234', id: new BigNumber(1) },
+        context
+      );
+
+      dsMockUtils.createQueryMock('sto', 'fundraiserOffchainAsset', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      let result = await offering.offChainFundingDetails();
+      expect(result).toEqual({ enabled: false });
+
+      dsMockUtils.createQueryMock('sto', 'fundraiserOffchainAsset', {
+        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockTicker('OFFCHAIN')),
+      });
+
+      result = await offering.offChainFundingDetails();
+      expect(result).toEqual({ enabled: true, offChainTicker: 'OFFCHAIN' });
+    });
+  });
+
+  describe('method: generateOffChainAffirmationReceipt', () => {
+    let uid: BigNumber;
+    let id: BigNumber;
+    let rawId: U64;
+    let rawUid: U64;
+    let bigNumberToU64Spy: jest.SpyInstance;
+    let bigNumberToU128Spy: jest.SpyInstance;
+    let stringToIdentityIdSpy: jest.SpyInstance;
+    let stringToTickerSpy: jest.SpyInstance;
+    let rawAmount: U128;
+    let amount: BigNumber;
+    let senderIdentity: string;
+    let rawSenderIdentity: PolymeshPrimitivesIdentityId;
+    let receiverIdentity: string;
+    let rawReceiverIdentity: PolymeshPrimitivesIdentityId;
+    let offChainTicker: string;
+    let rawTicker: PolymeshPrimitivesTicker;
+    let offering: Offering;
+    let rawFundraiser: Option<PalletStoFundraiser>;
+    let rawFundraiserName: Option<Bytes>;
+
+    beforeAll(() => {
+      bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+      bigNumberToU128Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU128');
+      stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
+      stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+      id = new BigNumber(1);
+      uid = new BigNumber(1);
+      amount = new BigNumber(100);
+      senderIdentity = '0x12'.padStart(66, '1');
+      receiverIdentity = '0x01'.padStart(66, '0');
+      offChainTicker = 'OFFCHAIN';
+    });
+
+    beforeEach(() => {
+      rawId = dsMockUtils.createMockU64(id);
+      rawUid = dsMockUtils.createMockU64(uid);
+      rawAmount = dsMockUtils.createMockU128(amount.shiftedBy(6));
+      rawSenderIdentity = dsMockUtils.createMockIdentityId(senderIdentity);
+      rawReceiverIdentity = dsMockUtils.createMockIdentityId(receiverIdentity);
+
+      rawTicker = dsMockUtils.createMockTicker(offChainTicker);
+      rawTicker.toHex = jest.fn().mockReturnValue('0x4f4646434841494e00000000');
+
+      when(stringToTickerSpy).calledWith(offChainTicker, context).mockReturnValue(rawTicker);
+      when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
+      when(bigNumberToU64Spy).calledWith(uid, context).mockReturnValue(rawUid);
+      when(bigNumberToU128Spy).calledWith(amount.shiftedBy(6), context).mockReturnValue(rawAmount);
+
+      rawFundraiser = dsMockUtils.createMockOption(
+        dsMockUtils.createMockFundraiser({
+          ...dsMockUtils.createMockFundraiser(),
+          raisingAsset: dsMockUtils.createMockAssetId('0x12341234123412341234123412341234'),
+          offeringPortfolio: dsMockUtils.createMockPortfolioId({
+            did: dsMockUtils.createMockIdentityId(senderIdentity),
+            kind: dsMockUtils.createMockPortfolioKind('Default'),
+          }),
+          raisingPortfolio: dsMockUtils.createMockPortfolioId({
+            did: dsMockUtils.createMockIdentityId(receiverIdentity),
+            kind: dsMockUtils.createMockPortfolioKind('Default'),
+          }),
+        })
+      );
+
+      rawFundraiserName = dsMockUtils.createMockOption(dsMockUtils.createMockFundraiserName());
+
+      when(stringToIdentityIdSpy)
+        .calledWith(senderIdentity, context)
+        .mockReturnValue(rawSenderIdentity);
+      when(stringToIdentityIdSpy)
+        .calledWith(receiverIdentity, context)
+        .mockReturnValue(rawReceiverIdentity);
+
+      dsMockUtils.createQueryMock('sto', 'fundraisers', {
+        returnValue: rawFundraiser,
+      });
+
+      dsMockUtils.createQueryMock('sto', 'fundraiserNames', {
+        returnValue: rawFundraiserName,
+      });
+      offering = new Offering({ assetId: '12341234-1234-1234-1234-123412341234', id }, context);
+    });
+
+    it('should return the funding receipt for offchain ticker', async () => {
+      const result = await offering.generateOffChainFundingReceipt({
+        uid,
+        offChainTicker,
+        amount,
+        sender: senderIdentity,
+      });
+
+      expect(result).toEqual({
+        uid,
+        signer: expect.objectContaining({
+          address: '0xdummy',
+        }),
+        signature: {
+          type: SignerKeyRingType.Sr25519,
+          value: '0xsignature',
+        },
+        metadata: undefined,
+      });
+    });
+
+    it('should return the funding receipt for offchain ticker with signer', async () => {
+      const signer = 'someSigner';
+      const metadata = 'some metadata';
+
+      const result = await offering.generateOffChainFundingReceipt({
+        uid,
+        offChainTicker,
+        amount,
+        sender: senderIdentity,
+        signerKeyRingType: SignerKeyRingType.Ed25519,
+        signer,
+        metadata,
+      });
+
+      expect(result).toEqual({
+        uid,
+        signer,
+        signature: {
+          type: SignerKeyRingType.Ed25519,
+          value: '0xsignature',
+        },
+        metadata,
+      });
+
+      expect(context.getSignature).toHaveBeenCalledWith({
+        rawPayload: expect.stringMatching(/0x3c42797465733e(.*)3c2f42797465733e/),
+        signer,
       });
     });
   });

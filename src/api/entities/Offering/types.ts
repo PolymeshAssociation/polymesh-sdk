@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 
-import { DefaultPortfolio, Identity, NumberedPortfolio, Venue } from '~/internal';
+import { Account, DefaultPortfolio, Identity, NumberedPortfolio, Venue } from '~/internal';
+import { OffChainSignature } from '~/types';
 
 export enum OfferingTimingStatus {
   /**
@@ -98,3 +99,22 @@ export type OffChainFundingDetails =
       enabled: true;
       offChainTicker: string;
     };
+
+export interface OffChainFundingReceipt {
+  /**
+   * Unique receipt number set by the signer for their receipts
+   */
+  uid: BigNumber;
+  /**
+   * Signer of this receipt
+   */
+  signer: string | Account;
+  /**
+   * Signature confirming the receipt details
+   */
+  signature: OffChainSignature;
+  /**
+   * (optional) Metadata value that can be used to attach messages to the receipt
+   */
+  metadata?: string;
+}

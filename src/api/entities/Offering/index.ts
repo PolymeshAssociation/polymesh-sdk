@@ -1,5 +1,6 @@
 import { Bytes, Option } from '@polkadot/types';
 import { PalletStoFundraiser } from '@polkadot/types/lookup';
+import { hexAddPrefix, hexStripPrefix, stringToHex } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 
 import {
@@ -16,12 +17,14 @@ import {
 import { investmentsQuery } from '~/middleware/queries/stos';
 import { Query } from '~/middleware/types';
 import {
+  Account,
   EnableOffChainFundingParams,
   InvestInOfferingParams,
   ModifyOfferingTimesParams,
   NoArgsProcedureMethod,
   ProcedureMethod,
   ResultSet,
+  SignerKeyRingType,
   SubCallback,
   UnsubCallback,
 } from '~/types';
@@ -29,16 +32,26 @@ import { Ensured } from '~/types/utils';
 import {
   assetToMeshAssetId,
   bigNumberToU64,
+  bigNumberToU128,
   fundraiserToOfferingDetails,
+  stringToIdentityId,
+  stringToTicker,
+  tickerToString,
 } from '~/utils/conversion';
 import {
+  asDid,
   calculateNextKey,
   createProcedureMethod,
   getAssetIdForMiddleware,
   toHumanReadable,
 } from '~/utils/internal';
 
-import { Investment, OfferingDetails } from './types';
+import {
+  Investment,
+  OffChainFundingDetails,
+  OffChainFundingReceipt,
+  OfferingDetails,
+} from './types';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
@@ -288,6 +301,33 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
   }
 
   /**
+   * Retrieve off chain funding details
+   */
+  public async offChainFundingDetails(): Promise<OffChainFundingDetails> {
+    const {
+      asset,
+      id,
+      context,
+      context: {
+        polymeshApi: {
+          query: { sto },
+        },
+      },
+    } = this;
+
+    const rawAssetId = assetToMeshAssetId(asset, context);
+    const rawU64 = bigNumberToU64(id, context);
+
+    const rawOffChainTicker = await sto.fundraiserOffchainAsset(rawAssetId, rawU64);
+
+    if (rawOffChainTicker.isNone) {
+      return { enabled: false };
+    }
+
+    return { enabled: true, offChainTicker: tickerToString(rawOffChainTicker.unwrap()) };
+  }
+
+  /**
    * Determine whether this Offering exists on chain
    */
   public async exists(): Promise<boolean> {
@@ -313,5 +353,76 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
       assetId: asset,
       id,
     });
+  }
+
+  /**
+   * Generate an offchain affirmation receipt for a specific leg and UID
+   *
+   * @param args.legId index of the offchain leg in this instruction
+   * @param args.uid UID of the receipt
+   * @param args.metadata (optional) metadata to be associated with the receipt
+   * @param args.signer (optional) Signer to be used to generate receipt signature. Defaults to signing Account associated with the SDK
+   * @param args.signerKeyRingType (optional) keyring type of the signer. Defaults to 'Sr25519'
+   */
+  public async generateOffChainFundingReceipt(args: {
+    uid: BigNumber;
+    offChainTicker: string;
+    amount: BigNumber;
+    sender: Identity | string;
+    metadata?: string;
+    signer?: string | Account;
+    signerKeyRingType?: SignerKeyRingType;
+  }): Promise<OffChainFundingReceipt> {
+    const { id, context } = this;
+
+    const {
+      uid,
+      metadata,
+      signer,
+      signerKeyRingType = SignerKeyRingType.Sr25519,
+      sender,
+      offChainTicker,
+      amount,
+    } = args;
+
+    const rawFundraiserId = bigNumberToU64(id, context);
+    const rawUid = bigNumberToU64(uid, context);
+
+    const rawSender = stringToIdentityId(asDid(sender), context);
+    const rawOffChainTicker = stringToTicker(offChainTicker, context);
+    const rawAmount = bigNumberToU128(amount.shiftedBy(6), context);
+
+    const {
+      raisingPortfolio: {
+        owner: { did: raisingPortfolioDid },
+      },
+    } = await this.details();
+
+    const rawReceiver = stringToIdentityId(raisingPortfolioDid, context);
+
+    const payloadStrings = [
+      stringToHex('<Bytes>'),
+      rawUid.toHex(true),
+      rawFundraiserId.toHex(true),
+      rawSender.toHex(),
+      rawReceiver.toHex(),
+      rawOffChainTicker.toHex(),
+      rawAmount.toHex(true),
+      stringToHex('</Bytes>'),
+    ];
+
+    const rawPayload = hexAddPrefix(payloadStrings.map(e => hexStripPrefix(e)).join(''));
+
+    const signatureValue = await context.getSignature({ rawPayload, signer });
+
+    return {
+      uid,
+      signer: signer || context.getSigningAccount(),
+      signature: {
+        type: signerKeyRingType,
+        value: signatureValue,
+      },
+      metadata,
+    };
   }
 }

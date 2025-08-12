@@ -1,3 +1,4 @@
+import { PalletStoFundingMethod } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import { Offering, PolymeshError, Procedure } from '~/internal';
@@ -5,9 +6,11 @@ import {
   ErrorCode,
   FungibleAsset,
   InvestInOfferingParams,
+  OffChainFundingReceipt,
   OfferingSaleStatus,
   OfferingTimingStatus,
   PortfolioId,
+  Role,
   RoleType,
   Tier,
   TxTags,
@@ -18,6 +21,7 @@ import {
   bigNumberToBalance,
   bigNumberToU64,
   fundingToRawFunding,
+  offChainFundingReceiptDetailsToMeshReceiptDetails,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
@@ -35,10 +39,17 @@ export type Params = InvestInOfferingParams & {
 /**
  * @hidden
  */
-export interface Storage {
+export type Storage = {
   purchasePortfolioId: PortfolioId;
-  fundingPortfolioId: PortfolioId;
-}
+} & (
+  | {
+      fundingPortfolioId: PortfolioId;
+    }
+  | {
+      offChainFundingReceipt: OffChainFundingReceipt;
+      offChainTicker: string;
+    }
+);
 
 /**
  * @hidden
@@ -115,7 +126,8 @@ export async function prepareInvestInSto(
       },
     },
     context,
-    storage: { purchasePortfolioId, fundingPortfolioId },
+    storage: { purchasePortfolioId },
+    storage,
   } = this;
   const {
     asset: { id: assetId },
@@ -127,18 +139,12 @@ export async function prepareInvestInSto(
 
   const offering = new Offering({ id, assetId }, context);
 
-  const portfolio = portfolioIdToPortfolio(fundingPortfolioId, context);
-
   const {
     status: { sale, timing },
     minInvestment,
     tiers,
     raisingCurrency,
   } = await offering.details();
-
-  const [{ free: freeAssetBalance }] = await portfolio.getAssetBalances({
-    assets: [raisingCurrency],
-  });
 
   if (sale !== OfferingSaleStatus.Live || timing !== OfferingTimingStatus.Started) {
     throw new PolymeshError({
@@ -156,6 +162,12 @@ export async function prepareInvestInSto(
       data: { priceTotal },
     });
   }
+
+  const portfolio = portfolioIdToPortfolio(purchasePortfolioId, context);
+
+  const [{ free: freeAssetBalance }] = await portfolio.getAssetBalances({
+    assets: [raisingCurrency],
+  });
 
   if (freeAssetBalance.lt(priceTotal)) {
     throw new PolymeshError({
@@ -176,11 +188,42 @@ export async function prepareInvestInSto(
 
   const rawAssetId = assetToMeshAssetId(asset, context);
 
-  const rawFundingPortfolioId = portfolioIdToMeshPortfolioId(fundingPortfolioId, context);
+  let rawFunding: PalletStoFundingMethod;
+  if ('fundingPortfolioId' in storage) {
+    const { fundingPortfolioId } = storage;
+    const rawFundingPortfolioId = portfolioIdToMeshPortfolioId(fundingPortfolioId, context);
 
-  const rawFunding = fundingToRawFunding(context, {
-    portfolioId: rawFundingPortfolioId,
-  });
+    rawFunding = fundingToRawFunding(context, {
+      portfolioId: rawFundingPortfolioId,
+    });
+  } else {
+    const { offChainFundingReceipt, offChainTicker } = storage;
+
+    const details = await offering.offChainFundingDetails();
+    if (!details.enabled) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'Offchain funding is not enabled for this Offering',
+      });
+    }
+
+    if (details.offChainTicker !== offChainTicker) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'Offchain funding is not enabled for the given ticker',
+        data: {
+          offChainTicker: details.offChainTicker,
+        },
+      });
+    }
+
+    rawFunding = fundingToRawFunding(context, {
+      receiptDetails: offChainFundingReceiptDetailsToMeshReceiptDetails(
+        offChainFundingReceipt,
+        context
+      ),
+    });
+  }
 
   return {
     transaction: txSto.invest,
@@ -200,23 +243,24 @@ export async function prepareInvestInSto(
  * @hidden
  */
 export function getAuthorization(this: Procedure<Params, void, Storage>): ProcedureAuthorization {
-  const {
-    storage: { purchasePortfolioId, fundingPortfolioId },
-    context,
-  } = this;
+  const { storage, context } = this;
+
+  const { purchasePortfolioId } = storage;
+
+  const roles: Role[] = [{ type: RoleType.PortfolioCustodian, portfolioId: purchasePortfolioId }];
+  const portfolios = [portfolioIdToPortfolio(purchasePortfolioId, context)];
+
+  if ('fundingPortfolioId' in storage) {
+    portfolios.push(portfolioIdToPortfolio(storage.fundingPortfolioId, context));
+    roles.push({ type: RoleType.PortfolioCustodian, portfolioId: storage.fundingPortfolioId });
+  }
 
   return {
-    roles: [
-      { type: RoleType.PortfolioCustodian, portfolioId: purchasePortfolioId },
-      { type: RoleType.PortfolioCustodian, portfolioId: fundingPortfolioId },
-    ],
+    roles,
     permissions: {
       transactions: [TxTags.sto.Invest],
       assets: [],
-      portfolios: [
-        portfolioIdToPortfolio(purchasePortfolioId, context),
-        portfolioIdToPortfolio(fundingPortfolioId, context),
-      ],
+      portfolios,
     },
   };
 }
@@ -224,13 +268,20 @@ export function getAuthorization(this: Procedure<Params, void, Storage>): Proced
 /**
  * @hidden
  */
-export function prepareStorage(
-  this: Procedure<Params, void, Storage>,
-  { purchasePortfolio, fundingPortfolio }: Params
-): Storage {
+export function prepareStorage(this: Procedure<Params, void, Storage>, params: Params): Storage {
+  const { purchasePortfolio } = params;
+
+  if ('offChainFundingReceipt' in params) {
+    return {
+      purchasePortfolioId: portfolioLikeToPortfolioId(purchasePortfolio),
+      offChainFundingReceipt: params.offChainFundingReceipt,
+      offChainTicker: params.offChainTicker,
+    };
+  }
+
   return {
     purchasePortfolioId: portfolioLikeToPortfolioId(purchasePortfolio),
-    fundingPortfolioId: portfolioLikeToPortfolioId(fundingPortfolio),
+    fundingPortfolioId: portfolioLikeToPortfolioId(params.fundingPortfolio),
   };
 }
 

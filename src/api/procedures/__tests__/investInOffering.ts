@@ -4,6 +4,7 @@ import {
   PalletStoFundingMethod,
   PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesIdentityIdPortfolioId,
+  PolymeshPrimitivesStoFundraiserReceiptDetails,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -19,6 +20,7 @@ import { Context, DefaultPortfolio, FungibleAsset } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
+  OffChainFundingReceipt,
   OfferingBalanceStatus,
   OfferingSaleStatus,
   OfferingTimingStatus,
@@ -26,6 +28,7 @@ import {
   PortfolioId,
   PortfolioLike,
   RoleType,
+  SignerKeyRingType,
   TxTags,
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -52,6 +55,7 @@ describe('investInOffering procedure', () => {
   let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
   let bigNumberToBalanceSpy: jest.SpyInstance<Balance, [BigNumber, Context, boolean?]>;
   let fundingToRawFundingSpy: jest.SpyInstance;
+  let offChainFundingReceiptDetailsToMeshReceiptDetailsSpy: jest.SpyInstance;
 
   let id: BigNumber;
   let assetId: string;
@@ -60,6 +64,8 @@ describe('investInOffering procedure', () => {
   let purchasePortfolioId: PortfolioId;
   let fundingPortfolio: PortfolioLike;
   let fundingPortfolioId: PortfolioId;
+  let offChainFundingReceipt: OffChainFundingReceipt;
+  let offChainTicker: string;
   let purchaseAmount: BigNumber;
   let maxPrice: BigNumber;
   let rawId: u64;
@@ -67,6 +73,8 @@ describe('investInOffering procedure', () => {
   let rawPurchasePortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
   let rawFundingPortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
   let rawFunding: PalletStoFundingMethod;
+  let rawOffChainFundingReceiptDetails: PolymeshPrimitivesStoFundraiserReceiptDetails;
+  let rawOffChainFunding: PalletStoFundingMethod;
   let rawPurchaseAmount: Balance;
   let rawMaxPrice: Balance;
   let args: Params;
@@ -84,6 +92,10 @@ describe('investInOffering procedure', () => {
     bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
     bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
     fundingToRawFundingSpy = jest.spyOn(utilsConversionModule, 'fundingToRawFunding');
+    offChainFundingReceiptDetailsToMeshReceiptDetailsSpy = jest.spyOn(
+      utilsConversionModule,
+      'offChainFundingReceiptDetailsToMeshReceiptDetails'
+    );
     id = new BigNumber(id);
     rawId = dsMockUtils.createMockU64(id);
     assetId = '0x12341234123412341234123412341234';
@@ -106,8 +118,25 @@ describe('investInOffering procedure', () => {
     rawFunding = dsMockUtils.createMockFundingMethod({
       OnChain: rawFundingPortfolio,
     });
+    rawOffChainFundingReceiptDetails =
+      'offchainFundingReceipt' as unknown as PolymeshPrimitivesStoFundraiserReceiptDetails;
+    rawOffChainFunding = dsMockUtils.createMockFundingMethod({
+      OffChain: rawOffChainFundingReceiptDetails,
+    });
     rawPurchaseAmount = dsMockUtils.createMockBalance(purchaseAmount);
     rawMaxPrice = dsMockUtils.createMockBalance(maxPrice);
+
+    offChainTicker = 'TICKER';
+
+    offChainFundingReceipt = {
+      uid: new BigNumber(123),
+      signer: '0x12341234123412341234123412341234',
+      signature: {
+        type: SignerKeyRingType.Sr25519,
+        value: '0xSomevalue',
+      },
+      metadata: 'Some metadata',
+    };
   });
 
   beforeEach(() => {
@@ -134,6 +163,16 @@ describe('investInOffering procedure', () => {
     when(fundingToRawFundingSpy)
       .calledWith(mockContext, { portfolioId: rawFundingPortfolio })
       .mockReturnValue(rawFunding);
+
+    when(offChainFundingReceiptDetailsToMeshReceiptDetailsSpy)
+      .calledWith(offChainFundingReceipt, mockContext)
+      .mockReturnValue(rawOffChainFundingReceiptDetails);
+
+    when(fundingToRawFundingSpy)
+      .calledWith(mockContext, {
+        receiptDetails: rawOffChainFundingReceiptDetails,
+      })
+      .mockReturnValue(rawOffChainFunding);
 
     args = {
       id,
@@ -366,6 +405,158 @@ describe('investInOffering procedure', () => {
     expect(result).toEqual({
       transaction,
       args: [rawAssetId, rawId, rawPurchasePortfolio, rawFunding, rawPurchaseAmount, rawMaxPrice],
+      resolver: undefined,
+    });
+  });
+
+  it('should throw an error if offchain funding is not enabled for the Offering', async () => {
+    entityMockUtils.configureMocks({
+      offeringOptions: {
+        details: {
+          status: {
+            sale: OfferingSaleStatus.Live,
+            timing: OfferingTimingStatus.Started,
+            balance: OfferingBalanceStatus.Available,
+          },
+          end: new Date('12/12/2030'),
+          minInvestment: new BigNumber(10),
+          tiers: [
+            {
+              remaining: new BigNumber(100),
+              amount: new BigNumber(100),
+              price: new BigNumber(1),
+            },
+            {
+              remaining: new BigNumber(100),
+              amount: new BigNumber(100),
+              price: new BigNumber(2),
+            },
+          ],
+        },
+        offChainFundingDetails: {
+          enabled: false,
+        },
+      },
+      defaultPortfolioOptions: {
+        getAssetBalances: [{ free: new BigNumber(500) }] as PortfolioBalance[],
+      },
+    });
+
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      purchasePortfolioId,
+      offChainFundingReceipt,
+      offChainTicker,
+    });
+
+    await expect(prepareInvestInSto.call(proc, args)).rejects.toThrow(
+      'Offchain funding is not enabled for this Offering'
+    );
+  });
+
+  it('should throw an error if offchain funding is not enabled for provided off chain ticker', async () => {
+    entityMockUtils.configureMocks({
+      offeringOptions: {
+        details: {
+          status: {
+            sale: OfferingSaleStatus.Live,
+            timing: OfferingTimingStatus.Started,
+            balance: OfferingBalanceStatus.Available,
+          },
+          end: new Date('12/12/2030'),
+          minInvestment: new BigNumber(10),
+          tiers: [
+            {
+              remaining: new BigNumber(100),
+              amount: new BigNumber(100),
+              price: new BigNumber(1),
+            },
+            {
+              remaining: new BigNumber(100),
+              amount: new BigNumber(100),
+              price: new BigNumber(2),
+            },
+          ],
+        },
+        offChainFundingDetails: {
+          enabled: true,
+          offChainTicker: 'RANDOMTICKER',
+        },
+      },
+      defaultPortfolioOptions: {
+        getAssetBalances: [{ free: new BigNumber(500) }] as PortfolioBalance[],
+      },
+    });
+
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      purchasePortfolioId,
+      offChainFundingReceipt,
+      offChainTicker,
+    });
+
+    await expect(prepareInvestInSto.call(proc, args)).rejects.toThrow(
+      'Offchain funding is not enabled for the given ticker'
+    );
+  });
+
+  it('should return an invest transaction spec for offchain funding', async () => {
+    entityMockUtils.configureMocks({
+      offeringOptions: {
+        details: {
+          status: {
+            sale: OfferingSaleStatus.Live,
+            timing: OfferingTimingStatus.Started,
+            balance: OfferingBalanceStatus.Available,
+          },
+          end: new Date('12/12/2030'),
+          minInvestment: new BigNumber(10),
+          tiers: [
+            {
+              remaining: new BigNumber(100),
+              amount: new BigNumber(100),
+              price: new BigNumber(1),
+            },
+            {
+              remaining: new BigNumber(100),
+              amount: new BigNumber(100),
+              price: new BigNumber(2),
+            },
+            {
+              remaining: new BigNumber(200),
+              amount: new BigNumber(200),
+              price: new BigNumber(20),
+            },
+          ],
+        },
+        offChainFundingDetails: {
+          enabled: true,
+          offChainTicker,
+        },
+      },
+      defaultPortfolioOptions: {
+        getAssetBalances: [{ free: new BigNumber(200) }] as PortfolioBalance[],
+      },
+    });
+
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      purchasePortfolioId,
+      offChainFundingReceipt,
+      offChainTicker,
+    });
+
+    const transaction = dsMockUtils.createTxMock('sto', 'invest');
+
+    const result = await prepareInvestInSto.call(proc, {
+      id,
+      asset,
+      purchasePortfolio,
+      purchaseAmount,
+      offChainFundingReceipt,
+      offChainTicker,
+    });
+
+    expect(result).toEqual({
+      transaction,
+      args: [rawAssetId, rawId, rawPurchasePortfolio, rawOffChainFunding, rawPurchaseAmount, null],
       resolver: undefined,
     });
   });

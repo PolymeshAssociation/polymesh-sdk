@@ -71,6 +71,7 @@ import {
   MetadataValue,
   MultiSigProposalDetails,
   NftMetadata,
+  OffChainFundingDetails,
   OfferingBalanceStatus,
   OfferingDetails,
   OfferingSaleStatus,
@@ -316,6 +317,7 @@ interface OfferingOptions extends EntityOptions {
   id?: BigNumber;
   assetId?: string;
   details?: EntityGetter<OfferingDetails>;
+  offChainFundingDetails?: EntityGetter<OffChainFundingDetails>;
 }
 
 interface CheckpointOptions extends EntityOptions {
@@ -1743,6 +1745,7 @@ const MockOfferingClass = createMockEntityClass<OfferingOptions>(
     id!: BigNumber;
     asset!: FungibleAsset;
     details!: jest.Mock;
+    offChainFundingDetails!: jest.Mock;
 
     /**
      * @hidden
@@ -1759,6 +1762,7 @@ const MockOfferingClass = createMockEntityClass<OfferingOptions>(
       this.id = opts.id;
       this.asset = getFungibleAssetInstance({ assetId: opts.assetId });
       this.details = createEntityGetterMock(opts.details);
+      this.offChainFundingDetails = createEntityGetterMock(opts.offChainFundingDetails);
     }
   },
   () => ({
@@ -1786,6 +1790,9 @@ const MockOfferingClass = createMockEntityClass<OfferingOptions>(
       totalRemaining: new BigNumber(700000000),
       raisingCurrency: 'USD',
       minInvestment: new BigNumber(100000000),
+    },
+    offChainFundingDetails: {
+      enabled: false,
     },
     assetId: '12341234-1234-1234-1234-123412341234',
     id: new BigNumber(1),

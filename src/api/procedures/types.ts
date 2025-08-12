@@ -43,6 +43,7 @@ import {
   MetadataType,
   MetadataValueDetails,
   NftCollection,
+  OffChainFundingReceipt,
   OfferingTier,
   PermissionedAccount,
   PermissionsLike,
@@ -1554,24 +1555,40 @@ export type ModifyOfferingTimesParams =
     }
   | { start: Date; end: Date | null };
 
-export interface InvestInOfferingParams {
-  /**
-   * portfolio in which the purchased Asset tokens will be stored
-   */
-  purchasePortfolio: PortfolioLike;
-  /**
-   * portfolio from which funds will be withdrawn to pay for the Asset tokens
-   */
-  fundingPortfolio: PortfolioLike;
-  /**
-   * amount of Asset tokens to purchase
-   */
-  purchaseAmount: BigNumber;
-  /**
-   * maximum average price to pay per Asset token (optional)
-   */
-  maxPrice?: BigNumber;
-}
+export type InvestInOfferingParams =
+  | {
+      /**
+       * portfolio in which the purchased Asset tokens will be stored
+       */
+      purchasePortfolio: PortfolioLike;
+      /**
+       * amount of Asset tokens to purchase
+       */
+      purchaseAmount: BigNumber;
+      /**
+       * maximum average price to pay per Asset token (optional)
+       */
+      maxPrice?: BigNumber;
+    } & (
+      | {
+          /**
+           * portfolio from which funds will be withdrawn to pay for the Asset tokens
+           */
+          fundingPortfolio: PortfolioLike;
+        }
+      | {
+          /**
+           * ticker of the offchain funding asset
+           */
+          offChainTicker: string;
+          /**
+           * (optional) offchain receipts required for investing via off chain funding
+           *
+           * Receipt can be generated using {@link api/entities/Offering!Offering.generateOffChainFundingReceipt | generateOffChainFundingReceipt} method
+           */
+          offChainFundingReceipt: OffChainFundingReceipt;
+        }
+    );
 
 export interface RenamePortfolioParams {
   name: string;

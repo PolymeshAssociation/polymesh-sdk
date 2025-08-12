@@ -248,6 +248,7 @@ import {
   NftMetadataInput,
   NonFungiblePortfolioMovement,
   OffChainAffirmationReceipt,
+  OffChainFundingReceipt,
   OfferingBalanceStatus,
   OfferingDetails,
   OfferingSaleStatus,
@@ -6174,5 +6175,23 @@ export function fundingToRawFunding(
 
   return context.createType('PalletStoFundingMethod', {
     OffChain: args.receiptDetails,
+  });
+}
+
+/**
+ * @hidden
+ */
+export function offChainFundingReceiptDetailsToMeshReceiptDetails(
+  receiptDetails: OffChainFundingReceipt,
+  context: Context
+): PolymeshPrimitivesStoFundraiserReceiptDetails {
+  const { uid, signer, signature, metadata } = receiptDetails;
+  const { address: signerAddress } = asAccount(signer, context);
+
+  return context.createType('PolymeshPrimitivesStoFundraiserReceiptDetails', {
+    uid: bigNumberToU64(uid, context),
+    signer: stringToAccountId(signerAddress, context),
+    signature: signatureToMeshRuntimeMultiSignature(signature.type, signature.value, context),
+    metadata: optionize(offChainMetadataToMeshReceiptMetadata)(metadata, context),
   });
 }
