@@ -612,5 +612,25 @@ describe('investInOffering procedure', () => {
         fundingPortfolioId,
       });
     });
+
+    it('should return the investment and off chain funding receipt', () => {
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
+      const boundFunc = prepareStorage.bind(proc);
+
+      const result = boundFunc({
+        id,
+        asset,
+        purchasePortfolio,
+        purchaseAmount,
+        offChainFundingReceipt,
+        offChainTicker,
+      });
+
+      expect(result).toEqual({
+        purchasePortfolioId,
+        offChainFundingReceipt,
+        offChainTicker,
+      });
+    });
   });
 });
