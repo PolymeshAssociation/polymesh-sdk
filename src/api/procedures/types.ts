@@ -1197,6 +1197,17 @@ export type IssueNftParams = {
   portfolioId?: BigNumber;
 };
 
+export type BatchIssueNftParams = {
+  /**
+   * List of metadata for each NFT to be issued
+   */
+  metadataList: NftMetadataInput[][];
+  /**
+   * portfolio to which the NFTCollection will be issued (optional, default is the default portfolio)
+   */
+  portfolioId?: BigNumber;
+};
+
 export interface ModifyPrimaryIssuanceAgentParams {
   /**
    * Identity to be set as primary issuance agent

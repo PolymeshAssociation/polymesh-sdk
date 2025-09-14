@@ -10,6 +10,7 @@ import { assetQuery, assetTransactionQuery } from '~/middleware/queries/assets';
 import { Query } from '~/middleware/types';
 import {
   AssetDetails,
+  BatchIssueNftParams,
   CollectionKey,
   ErrorCode,
   EventIdentifier,
@@ -55,6 +56,19 @@ const sumNftIssuance = (
 };
 
 /**
+ * @hidden
+ */
+export function issueNftTransformer([nft]: Nft[]): Nft {
+  if (!nft) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'Expected at least one nft',
+    });
+  }
+  return nft;
+}
+
+/**
  * Class used to manage NFT functionality
  */
 export class NftCollection extends BaseAsset {
@@ -65,7 +79,14 @@ export class NftCollection extends BaseAsset {
    *
    * @note Each NFT requires metadata for each value returned by `collectionKeys`. The SDK and chain only validate the presence of these fields. Additional validation may be needed to ensure each value complies with the specification.
    */
-  public issue: ProcedureMethod<IssueNftParams, Nft>;
+  public issue: ProcedureMethod<IssueNftParams, Nft[], Nft>;
+
+  /**
+   * Issues mulitple NFTs for the collection
+   *
+   * @note Each NFT requires metadata for each value returned by `collectionKeys`. The SDK and chain only validate the presence of these fields. Additional validation may be needed to ensure each value complies with the specification.
+   */
+  public batchIssue: ProcedureMethod<BatchIssueNftParams, Nft[]>;
 
   /**
    * Force a transfer from the origin portfolio to one of the caller's portfolios
@@ -89,6 +110,17 @@ export class NftCollection extends BaseAsset {
     this.settlements = new NonFungibleSettlements(this, context);
 
     this.issue = createProcedureMethod(
+      {
+        getProcedureAndArgs: ({ metadata, portfolioId }) => [
+          issueNft,
+          { collection: this, metadataList: [metadata], portfolioId },
+        ],
+        transformer: issueNftTransformer,
+      },
+      context
+    );
+
+    this.batchIssue = createProcedureMethod(
       {
         getProcedureAndArgs: args => [issueNft, { collection: this, ...args }],
       },

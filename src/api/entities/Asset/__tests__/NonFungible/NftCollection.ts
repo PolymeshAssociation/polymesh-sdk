@@ -8,6 +8,7 @@ import {
   Context,
   DefaultPortfolio,
   Entity,
+  issueNftTransformer,
   NftCollection,
   PolymeshError,
   PolymeshTransaction,
@@ -513,10 +514,48 @@ describe('NftCollection class', () => {
         'someTransaction' as unknown as PolymeshTransaction<NftCollection>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args: { collection, ...args }, transformer: undefined }, context, {})
+        .calledWith(
+          {
+            args: { collection, metadataList: [args.metadata], portfolioId: args.portfolioId },
+            transformer: issueNftTransformer,
+          },
+          context,
+          {}
+        )
         .mockResolvedValue(expectedTransaction);
 
       const tx = await collection.issue(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: batchIssue', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const assetId = '12341234-1234-1234-1234-123412341234';
+      const context = dsMockUtils.getContextInstance();
+      const collection = new NftCollection({ assetId }, context);
+
+      const args = {
+        metadataList: [[]],
+        portfolioId: new BigNumber(1),
+      };
+
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<NftCollection>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          {
+            args: { collection, ...args },
+            transformer: undefined,
+          },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await collection.batchIssue(args);
 
       expect(tx).toBe(expectedTransaction);
     });
