@@ -361,6 +361,7 @@ export enum MockTxStatus {
   Rejected = 'Rejected',
   Intermediate = 'Intermediate',
   InBlock = 'InBlock',
+  Future = 'Future',
   FinalizedFailed = 'FinalizedFailed',
   FailedToUnsubscribe = 'FailedToUnsubscribe',
   BatchInterrupted = 'BatchInterrupted',
@@ -517,6 +518,12 @@ const intermediateReceipt: ISubmittableResult = merge({}, defaultReceipt, {
   isInBlock: false,
 });
 
+const futureReceipt: ISubmittableResult = merge({}, defaultReceipt, {
+  status: { isReady: false, isInBlock: false, isFuture: true },
+  isCompleted: true,
+  isInBlock: false,
+});
+
 const inBlockReceipt: ISubmittableResult = merge({}, defaultReceipt, {
   status: { isReady: false, isInBlock: true, asInBlock: 'blockHash' },
   isCompleted: true,
@@ -621,6 +628,9 @@ const statusToReceipt = (status: MockTxStatus, failReason?: TxFailReason): ISubm
   }
   if (status === MockTxStatus.InBlock) {
     return inBlockReceipt;
+  }
+  if (status === MockTxStatus.Future) {
+    return futureReceipt;
   }
   if (status === MockTxStatus.FinalizedFailed) {
     return finalizedErrorReceipt;

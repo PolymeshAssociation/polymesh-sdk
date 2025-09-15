@@ -31,6 +31,14 @@ export enum TransactionStatus {
    */
   Running = 'Running',
   /**
+   * the transaction is in a block
+   */
+  InBlock = 'InBlock',
+  /**
+   * the transaction is scheduled for the future
+   */
+  Future = 'Future',
+  /**
    * the transaction was rejected by the signer
    */
   Rejected = 'Rejected',

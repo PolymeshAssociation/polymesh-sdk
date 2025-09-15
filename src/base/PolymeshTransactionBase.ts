@@ -391,11 +391,12 @@ export abstract class PolymeshTransactionBase<
             let unsubscribing = Promise.resolve();
             let extrinsicFailedEvent;
 
-            // isCompleted implies status is one of: isFinalized, isInBlock or isError
-            if (receipt.isCompleted) {
+            if (status.isFuture) {
+              this.updateStatus(TransactionStatus.Future);
+            } else if (receipt.isCompleted) {
+              // isCompleted implies status is one of: isFinalized, isInBlock or isError
               if (receipt.isInBlock) {
                 const inBlockHash = status.asInBlock;
-
                 /*
                  * this must be done to ensure that the block hash and number are set before the success event
                  *   is emitted, and at the same time. We do not resolve or reject the containing promise until this
@@ -409,6 +410,7 @@ export abstract class PolymeshTransactionBase<
                     // we know that the index has to be set by the time the transaction is included in a block
                     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     this.txIndex = new BigNumber(receipt.txIndex!);
+                    this.updateStatus(TransactionStatus.InBlock);
                   })
                 );
 
@@ -419,7 +421,6 @@ export abstract class PolymeshTransactionBase<
                   'ExtrinsicFailed',
                   true
                 );
-
                 // extrinsic failed so we can unsubscribe
                 isLastCallback = !!extrinsicFailedEvent;
               } else {

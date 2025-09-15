@@ -191,9 +191,21 @@ describe('Polymesh Transaction Base class', () => {
 
       dsMockUtils.updateTxStatus(transaction, dsMockUtils.MockTxStatus.Intermediate);
 
+      await fakePromise();
+
       expect(tx.status).toBe(TransactionStatus.Running);
 
+      dsMockUtils.updateTxStatus(transaction, dsMockUtils.MockTxStatus.Future);
+
+      await fakePromise();
+
+      expect(tx.status).toBe(TransactionStatus.Future);
+
       dsMockUtils.updateTxStatus(transaction, dsMockUtils.MockTxStatus.InBlock);
+
+      await fakePromise();
+
+      expect(tx.status).toBe(TransactionStatus.InBlock);
 
       dsMockUtils.updateTxStatus(transaction, dsMockUtils.MockTxStatus.Succeeded);
 
