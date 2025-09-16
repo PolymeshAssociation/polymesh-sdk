@@ -741,4 +741,20 @@ describe('NftCollection class', () => {
       expect(nftCollection.toHuman()).toBe('12341234-1234-1234-1234123412341234');
     });
   });
+
+  describe('issueNftTransformer', () => {
+    it('should return a single Nft', () => {
+      const id = new BigNumber(1);
+      const assetId = '12341234-1234-1234-1234-123412341234';
+
+      const result = issueNftTransformer([entityMockUtils.getNftInstance({ id, assetId })]);
+
+      expect(result.id).toEqual(id);
+      expect(result.collection.id).toBe(assetId);
+    });
+
+    it('should throw if no Nft is provided', () => {
+      expect(() => issueNftTransformer([])).toThrow('Expected at least one Nft');
+    });
+  });
 });

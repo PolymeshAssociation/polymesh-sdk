@@ -62,7 +62,7 @@ export function issueNftTransformer([nft]: Nft[]): Nft {
   if (!nft) {
     throw new PolymeshError({
       code: ErrorCode.DataUnavailable,
-      message: 'Expected at least one nft',
+      message: 'Expected at least one Nft',
     });
   }
   return nft;
