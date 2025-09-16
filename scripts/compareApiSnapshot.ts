@@ -64,10 +64,10 @@ function compareOverloads(
     }
 
     for (let j = 0; j < baseSig.parameters.length; j++) {
-      const bp = baseSig.parameters[j];
-      const cp = currSig.parameters[j];
+      const bp = baseSig.parameters[j]!;
+      const cp = currSig.parameters[j]!;
 
-      if (bp.name !== cp.name || bp.type !== cp.type || bp.optional !== cp.optional) {
+      if (bp?.name !== cp?.name || bp?.type !== cp?.type || bp?.optional !== cp?.optional) {
         logBreak(
           `${filePath} > ${parentName}.${methodName}: Param ${j + 1} mismatch in overload #${i + 1}`
         );
@@ -84,7 +84,7 @@ function compareOverloads(
 
 function compareSnapshots(base: APISnapshot, current: APISnapshot) {
   for (const filePath of Object.keys(base)) {
-    const baseFile = base[filePath];
+    const baseFile = base[filePath]!;
     const currFile = current[filePath];
 
     if (!currFile) {
@@ -93,7 +93,7 @@ function compareSnapshots(base: APISnapshot, current: APISnapshot) {
     }
 
     for (const exportName of Object.keys(baseFile)) {
-      const baseExport = baseFile[exportName];
+      const baseExport = baseFile[exportName]!;
       const currExport = currFile[exportName];
 
       if (!currExport) {
