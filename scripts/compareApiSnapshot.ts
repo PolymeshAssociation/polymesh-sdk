@@ -103,7 +103,7 @@ function compareSnapshots(base: APISnapshot, current: APISnapshot) {
 
       const currMethods = new Map<string, MethodSignature>(currExport.map(m => [m.name, m]));
 
-      for (const baseMethod of baseExport) {
+      for (const baseMethod of baseExport || []) {
         const currMethod = currMethods.get(baseMethod.name);
 
         if (!currMethod) {
