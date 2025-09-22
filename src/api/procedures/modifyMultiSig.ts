@@ -2,7 +2,7 @@ import { AccountId } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 
 import { PolymeshError, Procedure } from '~/internal';
-import { Account, ErrorCode, ModifyMultiSigParams, Signer, TxTags } from '~/types';
+import { Account, ErrorCode, Identity, ModifyMultiSigParams, Signer, TxTags } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import { bigNumberToU64, signerToString, stringToAccountId } from '~/utils/conversion';
 import { checkTxType } from '~/utils/internal';
@@ -12,6 +12,7 @@ export interface Storage {
   signersToRemove: Account[];
   currentSignerCount: number;
   requiredSignatures: BigNumber;
+  admin: Identity | null;
 }
 
 /**
@@ -109,22 +110,14 @@ export async function prepareModifyMultiSig(
     context: {
       polymeshApi: { tx },
     },
-    storage: { signersToAdd, signersToRemove, requiredSignatures, currentSignerCount },
+    storage: { signersToAdd, signersToRemove, requiredSignatures, currentSignerCount, admin },
     context,
   } = this;
   const { signers, multiSig, requiredSignatures: newRequiredSignatures } = args;
 
-  const [signingIdentity, admin] = await Promise.all([
-    context.getSigningIdentity(),
-    multiSig.getAdmin(),
-  ]);
+  const signingIdentity = await context.getSigningIdentity();
 
-  if (!admin?.isEqual(signingIdentity)) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'A MultiSig can only be modified by its admin',
-    });
-  }
+  const isAdmin = admin?.isEqual(signingIdentity);
 
   const rawAddress = stringToAccountId(multiSig.address, context);
 
@@ -150,32 +143,57 @@ export async function prepareModifyMultiSig(
   if (newRequiredSignatures) {
     const rawSignersRequired = bigNumberToU64(newRequiredSignatures, context);
 
-    transactions.push(
-      checkTxType({
-        transaction: tx.multiSig.changeSigsRequiredViaAdmin,
-        args: [rawAddress, rawSignersRequired],
-      })
-    );
+    if (isAdmin) {
+      transactions.push(
+        checkTxType({
+          transaction: tx.multiSig.changeSigsRequiredViaAdmin,
+          args: [rawAddress, rawSignersRequired],
+        })
+      );
+    } else {
+      transactions.push(
+        checkTxType({
+          transaction: tx.multiSig.changeSigsRequired,
+          args: [rawSignersRequired],
+        })
+      );
+    }
   }
 
   if (signersToAdd.length > 0) {
     const rawAddedSigners = signersToAdd.map(signer => toRawSignerTx(signer));
-    transactions.push(
-      checkTxType({
-        transaction: tx.multiSig.addMultisigSignersViaAdmin,
-        args: [rawAddress, rawAddedSigners],
-      })
-    );
+    if (isAdmin) {
+      transactions.push(
+        checkTxType({
+          transaction: tx.multiSig.addMultisigSignersViaAdmin,
+          args: [rawAddress, rawAddedSigners],
+        })
+      );
+    } else {
+      transactions.push(
+        checkTxType({
+          transaction: tx.multiSig.addMultisigSigners,
+          args: [rawAddedSigners],
+        })
+      );
+    }
   }
 
   if (signersToRemove.length > 0) {
     const rawRemovedSigners = signersToRemove.map(signer => toRawSignerTx(signer));
-    transactions.push(
-      checkTxType({
-        transaction: tx.multiSig.removeMultisigSignersViaAdmin,
-        args: [rawAddress, rawRemovedSigners],
-      })
-    );
+
+    if (isAdmin) {
+      transactions.push(
+        checkTxType({
+          transaction: tx.multiSig.removeMultisigSignersViaAdmin,
+          args: [rawAddress, rawRemovedSigners],
+        })
+      );
+    } else {
+      transactions.push(
+        checkTxType({ transaction: tx.multiSig.removeMultisigSigners, args: [rawRemovedSigners] })
+      );
+    }
   }
 
   return {
@@ -187,25 +205,43 @@ export async function prepareModifyMultiSig(
 /**
  * @hidden
  */
-export function getAuthorization(
+export async function getAuthorization(
   this: Procedure<ModifyMultiSigParams, void, Storage>,
   { requiredSignatures: newRequiredSignatures }: Pick<ModifyMultiSigParams, 'requiredSignatures'>
-): ProcedureAuthorization {
+): Promise<ProcedureAuthorization> {
   const {
-    storage: { signersToAdd, signersToRemove },
+    storage: { signersToAdd, signersToRemove, admin },
+    context,
   } = this;
 
+  const signingIdentity = await context.getSigningIdentity();
+
+  const isAdmin = admin?.isEqual(signingIdentity);
+
   const transactions = [];
-  if (signersToAdd.length > 0) {
-    transactions.push(TxTags.multiSig.AddMultisigSignersViaCreator);
-  }
 
-  if (signersToRemove.length > 0) {
-    transactions.push(TxTags.multiSig.RemoveMultisigSignersViaCreator);
-  }
+  if (isAdmin) {
+    if (signersToAdd.length > 0) {
+      transactions.push(TxTags.multiSig.AddMultisigSignersViaCreator);
+    }
 
-  if (newRequiredSignatures) {
-    transactions.push(TxTags.multiSig.ChangeSigsRequiredViaCreator);
+    if (signersToRemove.length > 0) {
+      transactions.push(TxTags.multiSig.RemoveMultisigSignersViaCreator);
+    }
+
+    if (newRequiredSignatures) {
+      transactions.push(TxTags.multiSig.ChangeSigsRequiredViaCreator);
+    }
+  } else {
+    if (signersToAdd.length > 0) {
+      transactions.push(TxTags.multiSig.AddMultisigSigners);
+    }
+    if (signersToRemove.length > 0) {
+      transactions.push(TxTags.multiSig.RemoveMultisigSigners);
+    }
+    if (newRequiredSignatures) {
+      transactions.push(TxTags.multiSig.ChangeSigsRequired);
+    }
   }
 
   return {
@@ -222,11 +258,15 @@ export async function prepareStorage(
   this: Procedure<ModifyMultiSigParams, void, Storage>,
   { signers, multiSig }: ModifyMultiSigParams
 ): Promise<Storage> {
-  const { signers: currentSigners, requiredSignatures } = await multiSig.details();
+  const [{ signers: currentSigners, requiredSignatures }, admin] = await Promise.all([
+    multiSig.details(),
+    multiSig.getAdmin(),
+  ]);
   return {
     ...calculateSignerDelta(currentSigners, signers),
     requiredSignatures,
     currentSignerCount: currentSigners.length,
+    admin,
   };
 }
 

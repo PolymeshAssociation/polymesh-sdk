@@ -121,6 +121,7 @@ describe('modifyMultiSig procedure', () => {
         signersToRemove: [],
         requiredSignatures: new BigNumber(2),
         currentSignerCount: 2,
+        admin: entityMockUtils.getIdentityInstance(),
       }
     );
 
@@ -131,41 +132,6 @@ describe('modifyMultiSig procedure', () => {
     });
 
     return expect(prepareModifyMultiSig.call(proc, args)).rejects.toThrowError(expectedError);
-  });
-
-  it('should throw an error if called by someone who is not the admin', async () => {
-    const args = {
-      multiSig: entityMockUtils.getMultiSigInstance({
-        getAdmin: getIdentityInstance({ isEqual: false }),
-      }),
-      signers: [getAccountInstance()],
-    };
-
-    const proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
-      mockContext,
-      {
-        signersToAdd: [newSigner1],
-        signersToRemove: [],
-        requiredSignatures: new BigNumber(1),
-        currentSignerCount: 2,
-      }
-    );
-
-    const expectedError = new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'A MultiSig can only be modified by its admin',
-    });
-
-    await expect(prepareModifyMultiSig.call(proc, args)).rejects.toThrowError(expectedError);
-
-    await expect(
-      prepareModifyMultiSig.call(proc, {
-        ...args,
-        multiSig: entityMockUtils.getMultiSigInstance({
-          getAdmin: null,
-        }),
-      })
-    ).rejects.toThrowError(expectedError);
   });
 
   it('should add update and remove signer transactions to the queue', async () => {
@@ -189,6 +155,7 @@ describe('modifyMultiSig procedure', () => {
         signersToRemove: [oldSigner1, oldSigner2],
         requiredSignatures: new BigNumber(2),
         currentSignerCount: 2,
+        admin: entityMockUtils.getIdentityInstance(),
       }
     );
 
@@ -219,28 +186,53 @@ describe('modifyMultiSig procedure', () => {
       signers: [oldSigner1, oldSigner2, newSigner1, newSigner2],
     };
 
-    const addTransaction = dsMockUtils.createTxMock('multiSig', 'addMultisigSignersViaAdmin');
+    const addTransactionAdmin = dsMockUtils.createTxMock('multiSig', 'addMultisigSignersViaAdmin');
 
     when(signerToSignatorySpy).calledWith(newSigner1, mockContext).mockReturnValue('newOne');
     when(signerToSignatorySpy).calledWith(newSigner2, mockContext).mockReturnValue('newTwo');
 
-    const proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
+    let proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
       mockContext,
       {
         signersToAdd: [newSigner1, newSigner2],
         signersToRemove: [],
         requiredSignatures: new BigNumber(2),
         currentSignerCount: 2,
+        admin: entityMockUtils.getIdentityInstance(),
       }
     );
 
-    const result = await prepareModifyMultiSig.call(proc, args);
+    let result = await prepareModifyMultiSig.call(proc, args);
+
+    expect(result).toEqual({
+      transactions: [
+        {
+          transaction: addTransactionAdmin,
+          args: [rawAccountId, [rawNewSigner1, rawNewSigner2]],
+        },
+      ],
+    });
+
+    const addTransaction = dsMockUtils.createTxMock('multiSig', 'addMultisigSigners');
+
+    proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
+      mockContext,
+      {
+        signersToAdd: [newSigner1, newSigner2],
+        signersToRemove: [],
+        requiredSignatures: new BigNumber(2),
+        currentSignerCount: 2,
+        admin: entityMockUtils.getIdentityInstance({ isEqual: false }),
+      }
+    );
+
+    result = await prepareModifyMultiSig.call(proc, args);
 
     expect(result).toEqual({
       transactions: [
         {
           transaction: addTransaction,
-          args: [rawAccountId, [rawNewSigner1, rawNewSigner2]],
+          args: [[rawNewSigner1, rawNewSigner2]],
         },
       ],
     });
@@ -257,23 +249,49 @@ describe('modifyMultiSig procedure', () => {
       signers: [oldSigner1],
     };
 
-    const removeTransaction = dsMockUtils.createTxMock('multiSig', 'removeMultisigSignersViaAdmin');
+    const removeTransactionAdmin = dsMockUtils.createTxMock(
+      'multiSig',
+      'removeMultisigSignersViaAdmin'
+    );
 
-    const proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
+    let proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
       mockContext,
       {
         signersToAdd: [],
         signersToRemove: [oldSigner2],
         requiredSignatures: new BigNumber(1),
         currentSignerCount: 2,
+        admin: entityMockUtils.getIdentityInstance(),
       }
     );
 
-    const result = await prepareModifyMultiSig.call(proc, args);
+    let result = await prepareModifyMultiSig.call(proc, args);
 
     expect(result).toEqual({
       resolver: undefined,
-      transactions: [{ transaction: removeTransaction, args: [rawAccountId, [rawOldSigner2]] }],
+      transactions: [
+        { transaction: removeTransactionAdmin, args: [rawAccountId, [rawOldSigner2]] },
+      ],
+    });
+
+    const removeTransaction = dsMockUtils.createTxMock('multiSig', 'removeMultisigSigners');
+
+    proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
+      mockContext,
+      {
+        signersToAdd: [],
+        signersToRemove: [oldSigner2],
+        requiredSignatures: new BigNumber(1),
+        currentSignerCount: 2,
+        admin: entityMockUtils.getIdentityInstance({ isEqual: false }),
+      }
+    );
+
+    result = await prepareModifyMultiSig.call(proc, args);
+
+    expect(result).toEqual({
+      resolver: undefined,
+      transactions: [{ transaction: removeTransaction, args: [[rawOldSigner2]] }],
     });
   });
 
@@ -291,15 +309,19 @@ describe('modifyMultiSig procedure', () => {
       requiredSignatures: newRequiredSignatures,
     };
 
-    const changeSigsRequiredTx = dsMockUtils.createTxMock('multiSig', 'changeSigsRequiredViaAdmin');
+    const changeSigsRequiredAdminTx = dsMockUtils.createTxMock(
+      'multiSig',
+      'changeSigsRequiredViaAdmin'
+    );
 
-    const proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
+    let proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
       mockContext,
       {
         signersToAdd: [],
         signersToRemove: [],
         requiredSignatures: new BigNumber(1),
         currentSignerCount: 3,
+        admin: entityMockUtils.getIdentityInstance(),
       }
     );
 
@@ -308,15 +330,36 @@ describe('modifyMultiSig procedure', () => {
       .calledWith(newRequiredSignatures, mockContext)
       .mockReturnValue(rawSigsRequired);
 
-    const result = await prepareModifyMultiSig.call(proc, args);
+    let result = await prepareModifyMultiSig.call(proc, args);
 
     expect(result).toEqual({
-      transactions: [{ transaction: changeSigsRequiredTx, args: [rawAccountId, rawSigsRequired] }],
+      transactions: [
+        { transaction: changeSigsRequiredAdminTx, args: [rawAccountId, rawSigsRequired] },
+      ],
+    });
+
+    const changeSigsRequiredTx = dsMockUtils.createTxMock('multiSig', 'changeSigsRequired');
+
+    proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
+      mockContext,
+      {
+        signersToAdd: [],
+        signersToRemove: [],
+        requiredSignatures: new BigNumber(1),
+        currentSignerCount: 3,
+        admin: null,
+      }
+    );
+
+    result = await prepareModifyMultiSig.call(proc, args);
+
+    expect(result).toEqual({
+      transactions: [{ transaction: changeSigsRequiredTx, args: [rawSigsRequired] }],
     });
   });
 
   describe('getAuthorization', () => {
-    it('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', async () => {
       let proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
         mockContext,
         {
@@ -324,12 +367,13 @@ describe('modifyMultiSig procedure', () => {
           signersToRemove: [],
           requiredSignatures: new BigNumber(1),
           currentSignerCount: 2,
+          admin: entityMockUtils.getIdentityInstance(),
         }
       );
 
       let boundFunc = getAuthorization.bind(proc);
 
-      let result = boundFunc({});
+      let result = await boundFunc({});
       expect(result).toEqual({
         permissions: {
           transactions: [TxTags.multiSig.AddMultisigSignersViaCreator],
@@ -345,12 +389,13 @@ describe('modifyMultiSig procedure', () => {
           signersToRemove: [oldSigner1],
           requiredSignatures: new BigNumber(1),
           currentSignerCount: 2,
+          admin: entityMockUtils.getIdentityInstance(),
         }
       );
 
       boundFunc = getAuthorization.bind(proc);
 
-      result = boundFunc({});
+      result = await boundFunc({});
 
       expect(result).toEqual({
         permissions: {
@@ -367,16 +412,44 @@ describe('modifyMultiSig procedure', () => {
           signersToRemove: [],
           requiredSignatures: new BigNumber(1),
           currentSignerCount: 2,
+          admin: entityMockUtils.getIdentityInstance(),
         }
       );
 
       boundFunc = getAuthorization.bind(proc);
 
-      result = boundFunc({ requiredSignatures: new BigNumber(2) });
+      result = await boundFunc({ requiredSignatures: new BigNumber(2) });
 
       expect(result).toEqual({
         permissions: {
           transactions: [TxTags.multiSig.ChangeSigsRequiredViaCreator],
+          assets: undefined,
+          portfolios: undefined,
+        },
+      });
+
+      proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
+        mockContext,
+        {
+          signersToAdd: [newSigner1],
+          signersToRemove: [newSigner2],
+          requiredSignatures: new BigNumber(1),
+          currentSignerCount: 2,
+          admin: null,
+        }
+      );
+
+      boundFunc = getAuthorization.bind(proc);
+
+      result = await boundFunc({ requiredSignatures: new BigNumber(2) });
+
+      expect(result).toEqual({
+        permissions: {
+          transactions: [
+            TxTags.multiSig.AddMultisigSigners,
+            TxTags.multiSig.RemoveMultisigSigners,
+            TxTags.multiSig.ChangeSigsRequired,
+          ],
           assets: undefined,
           portfolios: undefined,
         },
@@ -392,6 +465,8 @@ describe('modifyMultiSig procedure', () => {
         requiredSignatures: new BigNumber(3),
       });
 
+      const admin = entityMockUtils.getIdentityInstance();
+
       const proc = procedureMockUtils.getInstance<
         ModifyMultiSigParams,
         void,
@@ -401,6 +476,7 @@ describe('modifyMultiSig procedure', () => {
         signersToRemove: [],
         requiredSignatures: new BigNumber(3),
         currentSignerCount: 2,
+        admin,
       });
 
       const boundFunc = prepareStorage.bind(proc);
@@ -411,6 +487,7 @@ describe('modifyMultiSig procedure', () => {
         signersToAdd: [newSigner1, newSigner2],
         requiredSignatures: new BigNumber(3),
         currentSignerCount: 2,
+        admin: expect.objectContaining({ did: admin.did }),
       });
     });
 
@@ -421,6 +498,7 @@ describe('modifyMultiSig procedure', () => {
         requiredSignatures: new BigNumber(3),
       });
 
+      const admin = entityMockUtils.getIdentityInstance();
       const proc = procedureMockUtils.getInstance<
         ModifyMultiSigParams,
         void,
@@ -430,6 +508,7 @@ describe('modifyMultiSig procedure', () => {
         signersToRemove: [],
         requiredSignatures: new BigNumber(3),
         currentSignerCount: 2,
+        admin,
       });
 
       const boundFunc = prepareStorage.bind(proc);
@@ -440,6 +519,7 @@ describe('modifyMultiSig procedure', () => {
         signersToAdd: [],
         requiredSignatures: new BigNumber(3),
         currentSignerCount: 2,
+        admin: expect.objectContaining({ did: admin.did }),
       });
     });
   });
