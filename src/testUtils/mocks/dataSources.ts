@@ -253,37 +253,21 @@ function createApolloClient(): Mocked<Mutable<ApolloClient<NormalizedCacheObject
 
 let apolloConstructorMock: jest.Mock;
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Creates mock websocket class. Contains additional methods for tests to control it
  */
 export class MockWebSocket {
-  /**
-   * @hidden
-   */
-  onopen(): void {
-    // mock for onopen
-  }
+  private readonly listeners: Map<string, unknown[]> = new Map();
 
   /**
    * @hidden
    */
-  onclose(): void {
-    // mock for onclose
-  }
-
-  /* eslint-disable @typescript-eslint/no-unused-vars */
-  /**
-   * @hidden
-   */
-  onerror(_err: Error): void {
-    // mock for onerror
-  }
-
-  /**
-   * @hidden
-   */
-  onmessage(_msg: Record<string, unknown>): void {
-    // mock for onmessage
+  on(event: string, listener: unknown): void {
+    if (!this.listeners.has(event)) {
+      this.listeners.set(event, []);
+    }
+    this.listeners.get(event)!.push(listener);
   }
 
   /**
@@ -297,11 +281,13 @@ export class MockWebSocket {
    * @hidden
    */
   send(msg: string): void {
+    const jsonString = `{ "result": { "specVersion": "6000000"}, "id": "${STATE_RUNTIME_VERSION_CALL.id}" }`;
     const response = {
-      data: `{ "result": { "specVersion": "6000000"}, "id": "${STATE_RUNTIME_VERSION_CALL.id}" }`,
+      data: jsonString,
+      toString: () => jsonString,
     };
 
-    this.onmessage(response);
+    this.triggerEvent('message', response);
   }
   /* eslint-enable @typescript-eslint/no-unused-vars */
 
@@ -310,7 +296,7 @@ export class MockWebSocket {
    * Calls the onerror handler with the given error
    */
   triggerError(err: Error): void {
-    this.onerror(err);
+    this.triggerEvent('error', err);
   }
 
   /**
@@ -318,27 +304,42 @@ export class MockWebSocket {
    * Calls onmessage with the given version
    */
   sendSpecVersion(version: string): void {
+    const jsonString = `{ "result": { "specVersion": "${version}" }, "id": "${STATE_RUNTIME_VERSION_CALL.id}" }`;
     const response = {
-      data: `{ "result": { "specVersion": "${version}" }, "id": "${STATE_RUNTIME_VERSION_CALL.id}" }`,
+      data: jsonString,
+      toString: () => jsonString,
     };
-    this.onmessage(response);
+    this.triggerEvent('message', response);
   }
 
   /**
    * @hidden
    */
   sendIsPrivateSupported(supported: boolean): void {
+    let jsonString: string;
     if (supported) {
-      const response = {
-        data: `{ "result": "0x0500", "id": "${CONFIDENTIAL_ASSETS_SUPPORTED_CALL.id}" }`,
-      };
-      this.onmessage(response);
+      jsonString = `{ "result": "0x0500", "id": "${CONFIDENTIAL_ASSETS_SUPPORTED_CALL.id}" }`;
     } else {
-      const response = {
-        data: `{ "result": null, "id": "${CONFIDENTIAL_ASSETS_SUPPORTED_CALL.id}" }`,
-      };
-      this.onmessage(response);
+      jsonString = `{ "result": null, "id": "${CONFIDENTIAL_ASSETS_SUPPORTED_CALL.id}" }`;
     }
+    const response = {
+      data: jsonString,
+      toString: () => jsonString,
+    };
+    this.triggerEvent('message', response);
+  }
+
+  /**
+   * @hidden
+   * Triggers an event by calling all registered listeners
+   */
+  private triggerEvent(event: string, data: unknown): void {
+    const eventListeners = this.listeners.get(event) || [];
+    eventListeners.forEach((listener: unknown) => {
+      if (typeof listener === 'function') {
+        listener(data);
+      }
+    });
   }
 }
 
@@ -659,7 +660,7 @@ export const mockApolloModule = (path: string) => (): Record<string, unknown> =>
   ApolloClient: mockApolloClientClass,
 });
 
-export const mockWebSocketModule = () => (): unknown => ({ w3cwebsocket: mockWebSocketClass });
+export const mockWebSocketModule = () => (): unknown => mockWebSocketClass;
 
 const txMocksData = new Map<unknown, TxMockData>();
 let txModule = {} as Extrinsics;

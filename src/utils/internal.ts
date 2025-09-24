@@ -27,7 +27,7 @@ import fetch from 'cross-fetch';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
 import { coerce, lt, major, satisfies } from 'semver';
-import { w3cwebsocket as W3CWebSocket } from 'websocket';
+import WebSocket from 'ws';
 
 import { CorporateBallotDetails } from '~/api/entities/CorporateBallot/types';
 import {
@@ -1615,14 +1615,15 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<number> {
     };
 
     if (protocol.startsWith('ws')) {
-      const client = new W3CWebSocket(nodeUrl);
-      client.onopen = (): void => {
+      const client = new WebSocket(nodeUrl);
+
+      client.on('open', (): void => {
         client.send(JSON.stringify(CONFIDENTIAL_ASSETS_SUPPORTED_CALL));
         client.send(JSON.stringify(STATE_RUNTIME_VERSION_CALL));
-      };
+      });
 
-      client.onmessage = (msg): void => {
-        const data = JSON.parse(msg.data.toString());
+      client.on('message', (rawData: WebSocket.RawData): void => {
+        const data = JSON.parse(rawData.toString());
         const { id } = data;
 
         if (id === CONFIDENTIAL_ASSETS_SUPPORTED_CALL.id) {
@@ -1632,15 +1633,16 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<number> {
         }
 
         checkResponses(() => client.close());
-      };
+      });
 
-      client.onerror = (error: Error): void => {
+      client.on('error', (error: Error): void => {
         client.close();
         handleError(error);
-      };
+      });
     } else {
       // eslint-disable-next-line @typescript-eslint/naming-convention
       const headers = { 'Content-Type': 'application/json' };
+
       fetch(nodeUrl, {
         method: 'POST',
         headers,
@@ -1649,7 +1651,6 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<number> {
         .then(response => response.json())
         .then(data => {
           confidentialAssetsSupported = !!data.result;
-
           checkResponses();
         })
         .catch(error => handleError(error));
@@ -1662,7 +1663,6 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<number> {
         .then(response => response.json())
         .then(data => {
           specResponse = data;
-
           checkResponses();
         })
         .catch(error => handleError(error));
