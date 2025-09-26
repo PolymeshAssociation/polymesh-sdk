@@ -36,7 +36,9 @@ function createClaimsFilters(variables: ClaimsQueryFilter): {
   }
   if (!includeExpired) {
     args.push('$expiryTimestamp: BigFloat');
-    filters.push('filterExpiry: { lessThan: $expiryTimestamp } , expiry: { isNull: true }');
+    filters.push(
+      'or: [{ expiry: { isNull: true } }, { filterExpiry: { greaterThan: $expiryTimestamp } }]'
+    );
   }
 
   if (claimTypes && !customClaimTypeIds) {
