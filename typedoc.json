@@ -5,6 +5,7 @@
     "src/api/entities",
     "src/api/procedures/types.ts",
     "src/types/index.ts",
+    "src/types/txGroupConstants.ts",
     "src/types/utils",
     "src/base"
   ],
@@ -26,7 +27,16 @@
   "excludeExternals": true,
   "excludePrivate": true,
   "excludeProtected": true,
-  "blockTags": ["@param", "@remarks", "@returns", "@note", "@example", "@throws", "@see"],
+  "blockTags": [
+    "@deprecated",
+    "@param",
+    "@remarks",
+    "@returns",
+    "@note",
+    "@example",
+    "@throws",
+    "@see"
+  ],
   "parametersFormat": "table",
   "outputFileStrategy": "modules",
   "membersWithOwnFile": ["Class", "Enum", "Interface"],

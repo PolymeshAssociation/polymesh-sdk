@@ -95,7 +95,11 @@ describe('KnownPermissionGroup class', () => {
           values: ['capitalDistribution', 'corporateAction', 'corporateBallot'],
           type: 'Include',
         },
-        transactionGroups: [],
+        transactionGroups: [
+          'CapitalDistribution',
+          'CorporateActionsManagement',
+          'CorporateBallotManagement',
+        ],
       });
 
       type = PermissionGroupType.PolymeshV1Pia;
@@ -109,7 +113,7 @@ describe('KnownPermissionGroup class', () => {
           exceptions: ['sto.invest'],
           type: 'Include',
         },
-        transactionGroups: ['Issuance'],
+        transactionGroups: ['StoManagement'],
       });
 
       type = PermissionGroupType.Full;

@@ -1,7 +1,13 @@
 import BigNumber from 'bignumber.js';
 
 import { Context, PermissionGroup, setGroupPermissions } from '~/internal';
-import { GroupPermissions, ProcedureMethod, SetGroupPermissionsParams } from '~/types';
+import {
+  AGENT_TX_GROUP_VALUES,
+  AgentTxGroup,
+  GroupPermissions,
+  ProcedureMethod,
+  SetGroupPermissionsParams,
+} from '~/types';
 import {
   assetToMeshAssetId,
   bigNumberToU32,
@@ -83,7 +89,10 @@ export class CustomPermissionGroup extends PermissionGroup {
       rawGroupPermissions.unwrap()
     );
 
-    const transactionGroups = transactionPermissionsToTxGroups(permissions);
+    const allTransactionGroups = transactionPermissionsToTxGroups(permissions);
+    const transactionGroups = allTransactionGroups.filter(group =>
+      AGENT_TX_GROUP_VALUES.includes(group as AgentTxGroup)
+    );
 
     return {
       transactions: permissions,

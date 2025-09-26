@@ -15,8 +15,8 @@ export * from '~/api/client/types';
 export * from '~/api/entities/types';
 export * from '~/api/procedures/types';
 export * from '~/base/types';
+export * from '~/types/txGroupConstants';
 export * from '@polymeshassociation/polymesh-types/generated/types';
-
 export {
   AssetHoldersOrderBy,
   AuthorizationStatusEnum,

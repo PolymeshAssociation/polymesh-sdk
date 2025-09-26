@@ -7442,7 +7442,7 @@ describe('permissionsLikeToPermissions', () => {
         values: [TxTags.asset.MakeDivisible],
         type: PermissionType.Include,
       },
-      transactionGroups: [TxGroup.TrustedClaimIssuersManagement],
+      transactionGroups: [TxGroup.ComplianceManagement],
       portfolios: {
         values: [portfolio],
         type: PermissionType.Include,
@@ -7489,7 +7489,7 @@ describe('permissionsLikeToPermissions', () => {
 
     result = permissionsLikeToPermissions(
       {
-        transactionGroups: [TxGroup.TrustedClaimIssuersManagement],
+        transactionGroups: [TxGroup.ComplianceManagement],
       },
       context
     );
@@ -7500,12 +7500,26 @@ describe('permissionsLikeToPermissions', () => {
       },
       transactions: {
         values: [
-          TxTags.complianceManager.AddDefaultTrustedClaimIssuer,
-          TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer,
+          TxTags.asset.AddMandatoryMediators,
+          TxTags.asset.RemoveMandatoryMediators,
+          TxTags.complianceManager.AddComplianceRequirement,
+          TxTags.complianceManager.ChangeComplianceRequirement,
+          TxTags.complianceManager.PauseAssetCompliance,
+          TxTags.complianceManager.RemoveComplianceRequirement,
+          TxTags.complianceManager.ReplaceAssetCompliance,
+          TxTags.complianceManager.ResetAssetCompliance,
+          TxTags.complianceManager.ResumeAssetCompliance,
+          TxTags.settlement.AllowVenues,
+          TxTags.settlement.DisallowVenues,
+          TxTags.settlement.SetVenueFiltering,
+          TxTags.statistics.BatchUpdateAssetStats,
+          TxTags.statistics.SetActiveAssetStats,
+          TxTags.statistics.SetAssetTransferCompliance,
+          TxTags.statistics.SetEntitiesExempt,
         ],
         type: PermissionType.Include,
       },
-      transactionGroups: [TxGroup.TrustedClaimIssuersManagement],
+      transactionGroups: [TxGroup.ComplianceManagement],
       portfolios: {
         values: [],
         type: PermissionType.Include,
@@ -7860,101 +7874,77 @@ describe('offeringTierToPriceTier', () => {
 });
 
 describe('txGroupToTxTags', () => {
-  it('should return the corresponding group of TxTags', () => {
-    let result = txGroupToTxTags(TxGroup.PortfolioManagement);
+  it('should return the corresponding group of TxTags for all transaction groups', () => {
+    // Import the mapping to test against the source of truth
+    const { TX_GROUP_TO_TAGS_MAP } = require('~/types/txGroupConstants');
 
-    expect(result).toEqual([
-      TxTags.identity.AddInvestorUniquenessClaim,
-      TxTags.portfolio.MovePortfolioFunds,
-      TxTags.settlement.AddInstruction,
-      TxTags.settlement.AddInstructionWithMemo,
-      TxTags.settlement.AddAndAffirmInstruction,
-      TxTags.settlement.AddAndAffirmInstructionWithMemo,
-      TxTags.settlement.AffirmInstruction,
-      TxTags.settlement.RejectInstruction,
-      TxTags.settlement.CreateVenue,
-    ]);
+    // Test all transaction groups dynamically
+    Object.values(TxGroup).forEach(group => {
+      const result = txGroupToTxTags(group);
+      const expected = TX_GROUP_TO_TAGS_MAP[group];
 
-    result = txGroupToTxTags(TxGroup.AssetManagement);
+      expect(result).toEqual(expected);
+      expect(result).toBeInstanceOf(Array);
+      expect(result.length).toBeGreaterThan(0);
 
-    expect(result).toEqual([
+      // Ensure all returned values are strings
+      result.forEach(tag => {
+        expect(typeof tag).toBe('string');
+      });
+    });
+  });
+
+  it('should handle specific transaction groups correctly', () => {
+    // Test specific groups with hardcoded expected values to ensure functionality
+    const assetManagementResult = txGroupToTxTags(TxGroup.AssetManagement);
+    const expectedAssetManagement = [
+      TxTags.asset.LinkTickerToAssetId,
       TxTags.asset.MakeDivisible,
       TxTags.asset.RenameAsset,
       TxTags.asset.SetFundingRound,
-      TxTags.asset.AddDocuments,
-      TxTags.asset.RemoveDocuments,
-    ]);
+      TxTags.asset.UnlinkTickerFromAssetId,
+      TxTags.asset.UpdateAssetType,
+      TxTags.asset.UpdateIdentifiers,
+    ];
+    expect(assetManagementResult).toEqual(expectedAssetManagement);
 
-    result = txGroupToTxTags(TxGroup.AdvancedAssetManagement);
-
-    expect(result).toEqual([
-      TxTags.asset.Freeze,
-      TxTags.asset.Unfreeze,
-      TxTags.identity.AddAuthorization,
-      TxTags.identity.RemoveAuthorization,
-    ]);
-
-    result = txGroupToTxTags(TxGroup.Distribution);
-
-    expect(result).toEqual([
-      TxTags.identity.AddInvestorUniquenessClaim,
-      TxTags.settlement.CreateVenue,
-      TxTags.settlement.AddInstruction,
-      TxTags.settlement.AddInstructionWithMemo,
-      TxTags.settlement.AddAndAffirmInstruction,
-      TxTags.settlement.AddAndAffirmInstructionWithMemo,
-    ]);
-
-    result = txGroupToTxTags(TxGroup.Issuance);
-
-    expect(result).toEqual([TxTags.asset.Issue]);
-
-    result = txGroupToTxTags(TxGroup.TrustedClaimIssuersManagement);
-
-    expect(result).toEqual([
-      TxTags.complianceManager.AddDefaultTrustedClaimIssuer,
-      TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer,
-    ]);
-
-    result = txGroupToTxTags(TxGroup.ClaimsManagement);
-
-    expect(result).toEqual([TxTags.identity.AddClaim, TxTags.identity.RevokeClaim]);
-
-    result = txGroupToTxTags(TxGroup.ComplianceRequirementsManagement);
-
-    expect(result).toEqual([
+    const complianceResult = txGroupToTxTags(TxGroup.ComplianceManagement);
+    const expectedCompliance = [
+      TxTags.asset.AddMandatoryMediators,
+      TxTags.asset.RemoveMandatoryMediators,
       TxTags.complianceManager.AddComplianceRequirement,
-      TxTags.complianceManager.RemoveComplianceRequirement,
+      TxTags.complianceManager.ChangeComplianceRequirement,
       TxTags.complianceManager.PauseAssetCompliance,
-      TxTags.complianceManager.ResumeAssetCompliance,
+      TxTags.complianceManager.RemoveComplianceRequirement,
+      TxTags.complianceManager.ReplaceAssetCompliance,
       TxTags.complianceManager.ResetAssetCompliance,
-    ]);
+      TxTags.complianceManager.ResumeAssetCompliance,
+      TxTags.settlement.AllowVenues,
+      TxTags.settlement.DisallowVenues,
+      TxTags.settlement.SetVenueFiltering,
+      TxTags.statistics.BatchUpdateAssetStats,
+      TxTags.statistics.SetActiveAssetStats,
+      TxTags.statistics.SetAssetTransferCompliance,
+      TxTags.statistics.SetEntitiesExempt,
+    ];
+    expect(complianceResult).toEqual(expectedCompliance);
 
-    result = txGroupToTxTags(TxGroup.CorporateActionsManagement);
+    const corporateVotingResult = txGroupToTxTags(TxGroup.CorporateVoting);
+    const expectedCorporateVoting = [TxTags.corporateBallot.Vote];
+    expect(corporateVotingResult).toEqual(expectedCorporateVoting);
 
-    expect(result).toEqual([
-      TxTags.checkpoint.CreateSchedule,
-      TxTags.checkpoint.RemoveSchedule,
-      TxTags.checkpoint.CreateCheckpoint,
-      TxTags.corporateAction.InitiateCorporateAction,
-      TxTags.capitalDistribution.Distribute,
-      TxTags.capitalDistribution.Claim,
-      TxTags.identity.AddInvestorUniquenessClaim,
-    ]);
-
-    result = txGroupToTxTags(TxGroup.StoManagement);
-
-    expect(result).toEqual([
-      TxTags.sto.CreateFundraiser,
-      TxTags.sto.FreezeFundraiser,
-      TxTags.sto.Invest,
-      TxTags.sto.ModifyFundraiserWindow,
-      TxTags.sto.Stop,
-      TxTags.sto.UnfreezeFundraiser,
-      TxTags.identity.AddInvestorUniquenessClaim,
-      TxTags.asset.Issue,
-      TxTags.settlement.CreateVenue,
-    ]);
+    const portfolioManagementResult = txGroupToTxTags(TxGroup.PortfolioManagement);
+    const expectedPortfolioManagement = [
+      TxTags.portfolio.AcceptPortfolioCustody,
+      TxTags.portfolio.CreateCustodyPortfolio,
+      TxTags.portfolio.CreatePortfolio,
+      TxTags.portfolio.DeletePortfolio,
+      TxTags.portfolio.MovePortfolioFunds,
+      TxTags.portfolio.MovePortfolioFundsV2,
+      TxTags.portfolio.QuitPortfolioCustody,
+      TxTags.portfolio.RenamePortfolio,
+    ];
+    expect(portfolioManagementResult).toEqual(expectedPortfolioManagement);
   });
 });
 
@@ -7963,60 +7953,46 @@ describe('transactionPermissionsToTxGroups', () => {
     expect(
       transactionPermissionsToTxGroups({
         values: [
-          TxTags.identity.AddInvestorUniquenessClaim,
+          TxTags.portfolio.AcceptPortfolioCustody,
+          TxTags.portfolio.CreateCustodyPortfolio,
+          TxTags.portfolio.CreatePortfolio,
+          TxTags.portfolio.DeletePortfolio,
           TxTags.portfolio.MovePortfolioFunds,
-          TxTags.settlement.AddInstruction,
-          TxTags.settlement.AddInstructionWithMemo,
-          TxTags.settlement.AddAndAffirmInstruction,
-          TxTags.settlement.AddAndAffirmInstructionWithMemo,
-          TxTags.settlement.AffirmInstruction,
-          TxTags.settlement.RejectInstruction,
-          TxTags.settlement.CreateVenue,
-          TxTags.asset.MakeDivisible,
-          TxTags.asset.RenameAsset,
-          TxTags.asset.SetFundingRound,
-          TxTags.asset.AddDocuments,
-          TxTags.asset.RemoveDocuments,
-          TxTags.asset.Freeze,
-          TxTags.asset.Unfreeze,
-          TxTags.identity.AddAuthorization,
-          TxTags.identity.RemoveAuthorization,
+          TxTags.portfolio.MovePortfolioFundsV2,
+          TxTags.portfolio.QuitPortfolioCustody,
+          TxTags.portfolio.RenamePortfolio,
         ],
         type: PermissionType.Include,
       })
-    ).toEqual([
-      TxGroup.AdvancedAssetManagement,
-      TxGroup.AssetManagement,
-      TxGroup.Distribution,
-      TxGroup.PortfolioManagement,
-    ]);
+    ).toEqual([TxGroup.PortfolioManagement]);
 
     expect(
       transactionPermissionsToTxGroups({
         values: [
-          TxTags.identity.AddInvestorUniquenessClaim,
-          TxTags.portfolio.MovePortfolioFunds,
-          TxTags.settlement.AddInstruction,
-          TxTags.settlement.AddInstructionWithMemo,
-          TxTags.settlement.AddAndAffirmInstruction,
-          TxTags.settlement.AddAndAffirmInstructionWithMemo,
-          TxTags.settlement.AffirmInstruction,
-          TxTags.settlement.RejectInstruction,
-          TxTags.settlement.CreateVenue,
-          TxTags.identity.AddAuthorization,
-          TxTags.identity.RemoveAuthorization,
+          TxTags.asset.AddMandatoryMediators,
+          TxTags.asset.RemoveMandatoryMediators,
+          TxTags.complianceManager.AddComplianceRequirement,
+          TxTags.complianceManager.ChangeComplianceRequirement,
+          TxTags.complianceManager.PauseAssetCompliance,
+          TxTags.complianceManager.RemoveComplianceRequirement,
+          TxTags.complianceManager.ReplaceAssetCompliance,
+          TxTags.complianceManager.ResetAssetCompliance,
+          TxTags.complianceManager.ResumeAssetCompliance,
+          TxTags.settlement.AllowVenues,
+          TxTags.settlement.DisallowVenues,
+          TxTags.settlement.SetVenueFiltering,
+          TxTags.statistics.BatchUpdateAssetStats,
+          TxTags.statistics.SetActiveAssetStats,
+          TxTags.statistics.SetAssetTransferCompliance,
+          TxTags.statistics.SetEntitiesExempt,
         ],
         type: PermissionType.Include,
       })
-    ).toEqual([TxGroup.Distribution, TxGroup.PortfolioManagement]);
+    ).toEqual([TxGroup.ComplianceManagement]);
 
     expect(
       transactionPermissionsToTxGroups({
-        values: [
-          TxTags.identity.AddInvestorUniquenessClaim,
-          TxTags.portfolio.MovePortfolioFunds,
-          TxTags.settlement.AddInstruction,
-        ],
+        values: [TxTags.nft.CreateNftCollection, TxTags.nft.IssueNft],
         type: PermissionType.Exclude,
       })
     ).toEqual([]);

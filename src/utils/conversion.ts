@@ -295,6 +295,7 @@ import {
   TransferStatus,
   TrustedClaimIssuer,
   TrustedFor,
+  TX_GROUP_TO_TAGS_MAP,
   TxGroup,
   TxTag,
   TxTags,
@@ -363,6 +364,7 @@ import {
   isNumberedPortfolio,
   isSingleClaimCondition,
 } from '~/utils/typeguards';
+
 export * from '~/generated/utils';
 
 /**
@@ -882,93 +884,7 @@ export function textToString(value: Text): string {
  * Retrieve every Transaction Tag associated to a Transaction Group
  */
 export function txGroupToTxTags(group: TxGroup): TxTag[] {
-  switch (group) {
-    case TxGroup.PortfolioManagement: {
-      return [
-        TxTags.identity.AddInvestorUniquenessClaim,
-        TxTags.portfolio.MovePortfolioFunds,
-        TxTags.settlement.AddInstruction,
-        TxTags.settlement.AddInstructionWithMemo,
-        TxTags.settlement.AddAndAffirmInstruction,
-        TxTags.settlement.AddAndAffirmInstructionWithMemo,
-        TxTags.settlement.AffirmInstruction,
-        TxTags.settlement.RejectInstruction,
-        TxTags.settlement.CreateVenue,
-      ];
-    }
-    case TxGroup.AssetManagement: {
-      return [
-        TxTags.asset.MakeDivisible,
-        TxTags.asset.RenameAsset,
-        TxTags.asset.SetFundingRound,
-        TxTags.asset.AddDocuments,
-        TxTags.asset.RemoveDocuments,
-      ];
-    }
-    case TxGroup.AdvancedAssetManagement: {
-      return [
-        TxTags.asset.Freeze,
-        TxTags.asset.Unfreeze,
-        TxTags.identity.AddAuthorization,
-        TxTags.identity.RemoveAuthorization,
-      ];
-    }
-    case TxGroup.Distribution: {
-      return [
-        TxTags.identity.AddInvestorUniquenessClaim,
-        TxTags.settlement.CreateVenue,
-        TxTags.settlement.AddInstruction,
-        TxTags.settlement.AddInstructionWithMemo,
-        TxTags.settlement.AddAndAffirmInstruction,
-        TxTags.settlement.AddAndAffirmInstructionWithMemo,
-      ];
-    }
-    case TxGroup.Issuance: {
-      return [TxTags.asset.Issue];
-    }
-    case TxGroup.TrustedClaimIssuersManagement: {
-      return [
-        TxTags.complianceManager.AddDefaultTrustedClaimIssuer,
-        TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer,
-      ];
-    }
-    case TxGroup.ClaimsManagement: {
-      return [TxTags.identity.AddClaim, TxTags.identity.RevokeClaim];
-    }
-    case TxGroup.ComplianceRequirementsManagement: {
-      return [
-        TxTags.complianceManager.AddComplianceRequirement,
-        TxTags.complianceManager.RemoveComplianceRequirement,
-        TxTags.complianceManager.PauseAssetCompliance,
-        TxTags.complianceManager.ResumeAssetCompliance,
-        TxTags.complianceManager.ResetAssetCompliance,
-      ];
-    }
-    case TxGroup.CorporateActionsManagement: {
-      return [
-        TxTags.checkpoint.CreateSchedule,
-        TxTags.checkpoint.RemoveSchedule,
-        TxTags.checkpoint.CreateCheckpoint,
-        TxTags.corporateAction.InitiateCorporateAction,
-        TxTags.capitalDistribution.Distribute,
-        TxTags.capitalDistribution.Claim,
-        TxTags.identity.AddInvestorUniquenessClaim,
-      ];
-    }
-    case TxGroup.StoManagement: {
-      return [
-        TxTags.sto.CreateFundraiser,
-        TxTags.sto.FreezeFundraiser,
-        TxTags.sto.Invest,
-        TxTags.sto.ModifyFundraiserWindow,
-        TxTags.sto.Stop,
-        TxTags.sto.UnfreezeFundraiser,
-        TxTags.identity.AddInvestorUniquenessClaim,
-        TxTags.asset.Issue,
-        TxTags.settlement.CreateVenue,
-      ];
-    }
-  }
+  return TX_GROUP_TO_TAGS_MAP[group];
 }
 
 /**

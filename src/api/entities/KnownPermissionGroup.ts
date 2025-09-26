@@ -1,5 +1,13 @@
 import { Context, PermissionGroup } from '~/internal';
-import { GroupPermissions, ModuleName, PermissionGroupType, PermissionType, TxTags } from '~/types';
+import {
+  AGENT_TX_GROUP_VALUES,
+  AgentTxGroup,
+  GroupPermissions,
+  ModuleName,
+  PermissionGroupType,
+  PermissionType,
+  TxTags,
+} from '~/types';
 import { transactionPermissionsToTxGroups } from '~/utils/conversion';
 import { toHumanReadable } from '~/utils/internal';
 
@@ -78,9 +86,14 @@ export class KnownPermissionGroup extends PermissionGroup {
         break;
     }
 
+    const allTransactionGroups = transactions ? transactionPermissionsToTxGroups(transactions) : [];
+    const transactionGroups = allTransactionGroups.filter(group =>
+      AGENT_TX_GROUP_VALUES.includes(group as AgentTxGroup)
+    );
+
     return Promise.resolve({
       transactions,
-      transactionGroups: transactions ? transactionPermissionsToTxGroups(transactions) : [],
+      transactionGroups,
     });
   }
 

@@ -361,15 +361,15 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
    * @param args.metadata - (optional) additional metadata to be associated with the receipt
    * @param args.signer - (optional) authorized venue receipt signer to generate the cryptographic signature. Defaults to signing Account associated with the SDK
    * @param args.signerKeyRingType - (optional) keyring type for signature generation. Defaults to 'Sr25519'. Supported types: SR25519, ED25519, ECDSA
-   * 
+   *
    * @note The generated receipt contains SCALE-encoded data wrapped with `<Bytes>` tags, including:
    * - Receipt UID
-   * - Fundraiser ID  
+   * - Fundraiser ID
    * - Sender's DID (investor)
    * - Receiver's DID (raising portfolio owner)
    * - Off-chain asset ticker
    * - Equivalent investment amount in raising asset (calculated from STO tier pricing)
-   * 
+   *
    * @note The amount must represent the exact investment cost as calculated by the STO's blended pricing mechanism
    */
   public async generateOffChainFundingReceipt(args: {

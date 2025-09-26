@@ -146,6 +146,56 @@ describe('CustomPermissionGroup class', () => {
         transactionGroups: [],
       });
     });
+
+    it('should filter out secondary key groups and only return agent groups', async () => {
+      const customPermissionGroup = new CustomPermissionGroup({ id, assetId }, context);
+
+      const rawIdentityName = dsMockUtils.createMockText('Identity');
+      const rawCapitalDistributionName = dsMockUtils.createMockText('CapitalDistribution');
+      const rawCorporateActionName = dsMockUtils.createMockText('CorporateAction');
+      const rawCorporateBallotName = dsMockUtils.createMockText('CorporateBallot');
+
+      const rawIdentityPermissions = dsMockUtils.createMockPalletPermissions({
+        extrinsics: dsMockUtils.createMockExtrinsicName('Whole'),
+      });
+      const rawCapitalDistributionPermissions = dsMockUtils.createMockPalletPermissions({
+        extrinsics: dsMockUtils.createMockExtrinsicName('Whole'),
+      });
+      const rawCorporateActionPermissions = dsMockUtils.createMockPalletPermissions({
+        extrinsics: dsMockUtils.createMockExtrinsicName('Whole'),
+      });
+      const rawCorporateBallotPermissions = dsMockUtils.createMockPalletPermissions({
+        extrinsics: dsMockUtils.createMockExtrinsicName('Whole'),
+      });
+
+      const permissionMap = new Map();
+      permissionMap.set(rawIdentityName, rawIdentityPermissions);
+      permissionMap.set(rawCapitalDistributionName, rawCapitalDistributionPermissions);
+      permissionMap.set(rawCorporateActionName, rawCorporateActionPermissions);
+      permissionMap.set(rawCorporateBallotName, rawCorporateBallotPermissions);
+
+      dsMockUtils.createQueryMock('externalAgents', 'groupPermissions', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockExtrinsicPermissions({
+            These: dsMockUtils.createMockBtreeMap(permissionMap),
+          })
+        ),
+      });
+
+      const result = await customPermissionGroup.getPermissions();
+
+      expect(result).toEqual({
+        transactions: {
+          type: 'Include',
+          values: ['identity', 'capitalDistribution', 'corporateAction', 'corporateBallot'],
+        },
+        transactionGroups: [
+          'CapitalDistribution',
+          'CorporateActionsManagement',
+          'CorporateBallotManagement',
+        ],
+      });
+    });
   });
 
   describe('method: exists', () => {

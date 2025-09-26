@@ -22,6 +22,7 @@ import {
 } from '~/internal';
 import {
   AddCountStatInput,
+  AGENT_TX_GROUP_VALUES,
   AssetDocument,
   CheckPermissionsResult,
   CheckRolesResult,
@@ -314,90 +315,162 @@ export type Role =
   | IdentityRole;
 
 /**
- * Transaction Groups (for permissions purposes)
+ * Transaction Groups (for secondary key permissions purposes)
+ * Includes all transactions that agents can perform plus secondary key specific transactions
  */
 export enum TxGroup {
   /**
-   * - TxTags.identity.AddInvestorUniquenessClaim
-   * - TxTags.portfolio.MovePortfolioFunds
-   * - TxTags.settlement.AddInstruction
-   * - TxTags.settlement.AddInstructionWithMemo
-   * - TxTags.settlement.AddAndAffirmInstruction
-   * - TxTags.settlement.AddAndAffirmInstructionWithMemo
-   * - TxTags.settlement.AffirmInstruction
-   * - TxTags.settlement.RejectInstruction
-   * - TxTags.settlement.CreateVenue
-   */
-  PortfolioManagement = 'PortfolioManagement',
-  /**
-   * - TxTags.asset.MakeDivisible
-   * - TxTags.asset.RenameAsset
-   * - TxTags.asset.SetFundingRound
-   * - TxTags.asset.AddDocuments
-   * - TxTags.asset.RemoveDocuments
-   */
-  AssetManagement = 'AssetManagement',
-  /**
-   * - TxTags.asset.Freeze
-   * - TxTags.asset.Unfreeze
-   * - TxTags.identity.AddAuthorization
-   * - TxTags.identity.RemoveAuthorization
+   * Advanced Asset Management operations
+   * @see {@link types/txGroupConstants!ADVANCED_ASSET_MANAGEMENT_TX_TAGS} for the complete list of transactions
    */
   AdvancedAssetManagement = 'AdvancedAssetManagement',
+
   /**
-   * - TxTags.identity.AddInvestorUniquenessClaim
-   * - TxTags.settlement.CreateVenue
-   * - TxTags.settlement.AddInstruction
-   * - TxTags.settlement.AddInstructionWithMemo
-   * - TxTags.settlement.AddAndAffirmInstruction
-   * - TxTags.settlement.AddAndAffirmInstructionWithMemo
+   * Asset management operations
+   * @see {@link types/txGroupConstants!ASSET_MANAGEMENT_TX_TAGS} for the complete list of transactions
    */
-  Distribution = 'Distribution',
+  AssetManagement = 'AssetManagement',
+
   /**
-   * - TxTags.asset.Issue
+   * Asset Document Management operations
+   * @see {@link types/txGroupConstants!ASSET_DOCUMENT_MANAGEMENT_TX_TAGS} for the complete list of transactions
    */
-  Issuance = 'Issuance',
+  AssetDocumentManagement = 'AssetDocumentManagement',
+
   /**
-   * - TxTags.complianceManager.AddDefaultTrustedClaimIssuer
-   * - TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer
+   * Asset Metadata Management operations
+   * @see {@link types/txGroupConstants!ASSET_METADATA_MANAGEMENT_TX_TAGS} for the complete list of transactions
    */
-  TrustedClaimIssuersManagement = 'TrustedClaimIssuersManagement',
+  AssetMetadataManagement = 'AssetMetadataManagement',
+
   /**
-   * - TxTags.identity.AddClaim
-   * - TxTags.identity.RevokeClaim
+   * Asset Registration operations
+   * @see {@link types/txGroupConstants!ASSET_REGISTRATION_TX_TAGS} for the complete list of transactions
+   */
+  AssetRegistration = 'AssetRegistration',
+
+  /**
+   * Authorization Management operations
+   * @see {@link types/txGroupConstants!AUTHORIZATION_MANAGEMENT_TX_TAGS} for the complete list of transactions
+   */
+  AuthorizationManagement = 'AuthorizationManagement',
+
+  /**
+   * Capital distribution management
+   * @see {@link types/txGroupConstants!CAPITAL_DISTRIBUTION_TX_TAGS} for the complete list of transactions
+   */
+  CapitalDistribution = 'CapitalDistribution',
+
+  /**
+   * CDD Registration operations
+   * @see {@link types/txGroupConstants!CDD_REGISTRATION_TX_TAGS} for the complete list of transactions
+   */
+  CddRegistration = 'CddRegistration',
+
+  /**
+   * Checkpoint management
+   * @see {@link types/txGroupConstants!CHECKPOINT_MANAGEMENT_TX_TAGS} for the complete list of transactions
+   */
+  CheckpointManagement = 'CheckpointManagement',
+
+  /**
+   * Claims Management operations
+   * @see {@link types/txGroupConstants!CLAIMS_MANAGEMENT_TX_TAGS} for the complete list of transactions
    */
   ClaimsManagement = 'ClaimsManagement',
+
   /**
-   * - TxTags.complianceManager.AddComplianceRequirement
-   * - TxTags.complianceManager.RemoveComplianceRequirement
-   * - TxTags.complianceManager.PauseAssetCompliance
-   * - TxTags.complianceManager.ResumeAssetCompliance
-   * - TxTags.complianceManager.ResetAssetCompliance
+   * Compliance management operations
+   * @see {@link types/txGroupConstants!COMPLIANCE_MANAGEMENT_TX_TAGS} for the complete list of transactions
    */
-  ComplianceRequirementsManagement = 'ComplianceRequirementsManagement',
+  ComplianceManagement = 'ComplianceManagement',
+
   /**
-   * - TxTags.checkpoint.CreateSchedule,
-   * - TxTags.checkpoint.RemoveSchedule,
-   * - TxTags.checkpoint.CreateCheckpoint,
-   * - TxTags.corporateAction.InitiateCorporateAction,
-   * - TxTags.capitalDistribution.Distribute,
-   * - TxTags.capitalDistribution.Claim,
-   * - TxTags.identity.AddInvestorUniquenessClaim,
+   * Corporate actions management
+   * @see {@link types/txGroupConstants!CORPORATE_ACTIONS_MANAGEMENT_TX_TAGS} for the complete list of transactions
    */
   CorporateActionsManagement = 'CorporateActionsManagement',
+
   /**
-   * - TxTags.sto.CreateFundraiser,
-   * - TxTags.sto.FreezeFundraiser,
-   * - TxTags.sto.Invest,
-   * - TxTags.sto.ModifyFundraiserWindow,
-   * - TxTags.sto.Stop,
-   * - TxTags.sto.UnfreezeFundraiser,
-   * - TxTags.identity.AddInvestorUniquenessClaim,
-   * - TxTags.asset.Issue,
-   * - TxTags.settlement.CreateVenue
+   * Corporate ballot management
+   * @see {@link types/txGroupConstants!CORPORATE_BALLOT_MANAGEMENT_TX_TAGS} for the complete list of transactions
+   */
+  CorporateBallotManagement = 'CorporateBallotManagement',
+
+  /**
+   * Corporate voting operations
+   * @see {@link types/txGroupConstants!CORPORATE_VOTING_TX_TAGS} for the complete list of transactions
+   */
+  CorporateVoting = 'CorporateVoting',
+
+  /**
+   * External Agent Management operations
+   * @see {@link types/txGroupConstants!EXTERNAL_AGENT_MANAGEMENT_TX_TAGS} for the complete list of transactions
+   */
+  ExternalAgentManagement = 'ExternalAgentManagement',
+
+  /**
+   * External Agent Participation operations
+   * @see {@link types/txGroupConstants!EXTERNAL_AGENT_PARTICIPATION_TX_TAGS} for the complete list of transactions
+   */
+  ExternalAgentParticipation = 'ExternalAgentParticipation',
+
+  /**
+   * Issuance operations
+   * @see {@link types/txGroupConstants!ISSUANCE_TX_TAGS} for the complete list of transactions
+   */
+  Issuance = 'Issuance',
+
+  /**
+   * MultiSig account management
+   * @see {@link types/txGroupConstants!MULTISIG_MANAGEMENT_TX_TAGS} for the complete list of transactions
+   */
+  MultiSigManagement = 'MultiSigManagement',
+
+  /**
+   * Portfolio management operations
+   * @see {@link types/txGroupConstants!PORTFOLIO_MANAGEMENT_TX_TAGS} for the complete list of transactions
+   */
+  PortfolioManagement = 'PortfolioManagement',
+
+  /**
+   * Relayer Management operations
+   * @see {@link types/txGroupConstants!RELAYER_MANAGEMENT_TX_TAGS} for the complete list of transactions
+   */
+  RelayerManagement = 'RelayerManagement',
+
+  /**
+   * Redemption operations
+   * @see {@link types/txGroupConstants!REDEMPTION_TX_TAGS} for the complete list of transactions
+   */
+  Redemption = 'Redemption',
+
+  /**
+   * Settlement Management operations
+   * @see {@link types/txGroupConstants!SETTLEMENT_MANAGEMENT_TX_TAGS} for the complete list of transactions
+   */
+  SettlementManagement = 'SettlementManagement',
+
+  /**
+   * STO Management operations
+   * @see {@link types/txGroupConstants!STO_MANAGEMENT_TX_TAGS} for the complete list of transactions
    */
   StoManagement = 'StoManagement',
+
+  /**
+   * Trusted Claim Issuers Management operations
+   * @see {@link types/txGroupConstants!TRUSTED_CLAIM_ISSUERS_MANAGEMENT_TX_TAGS} for the complete list of transactions
+   */
+  TrustedClaimIssuersManagement = 'TrustedClaimIssuersManagement',
 }
+/**
+ * Type-level union of the `TxGroup` values that External Agents can use.
+ *
+ * - Derived from {@link types/txGroupConstants!AGENT_TX_GROUP_VALUES}
+ * - For iteration or runtime checks, prefer the {@link types/txGroupConstants!AGENT_TX_GROUP_VALUES} constant.
+ * - All transactions in these groups are available to both Agents and Secondary Keys.
+ */
+export type AgentTxGroup = (typeof AGENT_TX_GROUP_VALUES)[number];
 
 export type SetTransferRestrictionParams =
   | CountTransferRestrictionInput
@@ -1441,7 +1514,7 @@ export interface CreateGroupParams {
         transactions: TransactionPermissions;
       }
     | {
-        transactionGroups: TxGroup[];
+        transactionGroups: AgentTxGroup[];
       };
 }
 
@@ -1454,7 +1527,7 @@ export interface InviteExternalAgentParams {
         transactions: TransactionPermissions | null;
       }
     | {
-        transactionGroups: TxGroup[];
+        transactionGroups: AgentTxGroup[];
       };
   /**
    * date at which the authorization request for invitation expires (optional)
@@ -1493,7 +1566,7 @@ export interface SetGroupPermissionsParams {
         transactions: TransactionPermissions;
       }
     | {
-        transactionGroups: TxGroup[];
+        transactionGroups: AgentTxGroup[];
       };
 }
 
@@ -1624,7 +1697,7 @@ export interface TransactionsParams extends AssetBase {
 }
 
 export interface TxGroupParams extends AssetBase {
-  transactionGroups: TxGroup[];
+  transactionGroups: AgentTxGroup[];
 }
 
 /**
@@ -1633,7 +1706,7 @@ export interface TxGroupParams extends AssetBase {
  *   - A Known Permission Group and an Asset. The Identity will be assigned as an Agent of that Group for that Asset
  *   - A set of Transaction Permissions and an Asset. If there is no Custom Permission Group with those permissions, a Custom Permission Group will be created for that Asset with those permissions, and
  *     the Identity will be assigned as an Agent of that Group for that Asset. Otherwise, the existing Group will be used
- *   - An array of {@link types!TxGroup | Transaction Groups} that represent a set of permissions. If there is no Custom Permission Group with those permissions, a Custom Permission Group will be created with those permissions, and
+ *   - An array of {@link AgentTxGroup | Agent Transaction Groups} that represent a set of permissions. If there is no Custom Permission Group with those permissions, a Custom Permission Group will be created with those permissions, and
  *     the Identity will be assigned as an Agent of that Group for that Asset. Otherwise, the existing Group will be used
  */
 export interface SetPermissionGroupParams {

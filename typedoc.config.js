@@ -17,6 +17,7 @@ const config = {
     'src/api/entities',
     'src/api/procedures/types.ts',
     'src/types/index.ts',
+    'src/types/txGroupConstants.ts',
     'src/types/utils',
     'src/base',
   ],
