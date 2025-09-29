@@ -7,8 +7,9 @@ module.exports = {
       prerelease: 'beta',
     },
     {
-      name: 'next',
+      name: 'next-bc-+([0-9])',
       prerelease: true,
+      channel: 'next'
     },
     {
       name: 'v26',

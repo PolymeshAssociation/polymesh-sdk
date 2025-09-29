@@ -1,0 +1,131 @@
+name: Validate Breaking Change Branch Names
+
+on:
+  pull_request:
+    branches: [develop]
+  push:
+    branches: ['bc-**']
+
+jobs:
+  validate-branch-name:
+    if: startsWith(github.ref_name, 'bc-') || startsWith(github.head_ref, 'bc-')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Extract branch name
+        id: extract_branch
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BRANCH_NAME="${{ github.head_ref }}"
+          else
+            BRANCH_NAME="${{ github.ref_name }}"
+          fi
+          echo "branch_name=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
+          echo "Validating branch: $BRANCH_NAME"
+
+      - name: Validate branch naming convention
+        run: |
+          BRANCH_NAME="${{ steps.extract_branch.outputs.branch_name }}"
+
+          # Check if branch follows bc-<number>-<description> pattern
+          if ! echo "$BRANCH_NAME" | grep -E '^bc-[0-9]+-[a-z0-9-]+$'; then
+            echo "❌ Invalid branch name: $BRANCH_NAME"
+            echo ""
+            echo "✅ Expected format: bc-<number>-<description>"
+            echo ""
+            echo "Examples of valid branch names:"
+            echo "  - bc-1-remove-deprecated-apis"
+            echo "  - bc-10-async-interface-changes"
+            echo "  - bc-25-new-error-handling"
+            echo ""
+            echo "Branch naming rules:"
+            echo "  - Must start with 'bc-'"
+            echo "  - Must include a number (determines integration order)"
+            echo "  - Must include a descriptive name with hyphens"
+            echo "  - Only lowercase letters, numbers, and hyphens allowed"
+            echo ""
+            echo "The number determines the order in which breaking changes are applied:"
+            echo "  - bc-1-* is applied first"
+            echo "  - bc-2-* is applied second"
+            echo "  - bc-10-* is applied after bc-2-* but before bc-15-*"
+            exit 1
+          fi
+
+          echo "✅ Branch name validation passed for: $BRANCH_NAME"
+
+      - name: Extract and validate branch number
+        run: |
+          BRANCH_NAME="${{ steps.extract_branch.outputs.branch_name }}"
+          BRANCH_NUMBER=$(echo "$BRANCH_NAME" | sed -n 's/^bc-\([0-9]\+\)-.*/\1/p')
+
+          if [ -z "$BRANCH_NUMBER" ]; then
+            echo "❌ Could not extract branch number from: $BRANCH_NAME"
+            exit 1
+          fi
+
+          echo "📋 Branch details:"
+          echo "  - Branch name: $BRANCH_NAME"
+          echo "  - Branch number: $BRANCH_NUMBER"
+          echo "  - Integration order: This branch will be applied as #${BRANCH_NUMBER} in the sequence"
+
+          # Warnings for unusual numbers
+          if [ "$BRANCH_NUMBER" -lt 1 ] || [ "$BRANCH_NUMBER" -gt 999 ]; then
+            echo "⚠️  Warning: Branch number $BRANCH_NUMBER is outside recommended range (1-999)"
+          fi
+
+          if [ "$BRANCH_NUMBER" -gt 50 ]; then
+            echo "⚠️  Warning: High branch numbers (>50) may indicate too many breaking changes for a single major release"
+            echo "Consider whether all these changes need to be in the same major version"
+          fi
+
+          # Add summary to PR if this is a pull request
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "## Breaking Change Branch Information" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **Branch**: \`$BRANCH_NAME\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Integration Order**: #$BRANCH_NUMBER" >> $GITHUB_STEP_SUMMARY
+            echo "- **Status**: ✅ Valid naming convention" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "This branch will be automatically discovered and integrated in position $BRANCH_NUMBER when the next major preview is generated." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Check for number conflicts
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const branchName = '${{ steps.extract_branch.outputs.branch_name }}';
+            const match = branchName.match(/^bc-(\d+)-/);
+            if (!match) return;
+
+            const branchNumber = parseInt(match[1]);
+
+            // Get all branches
+            const { data: branches } = await github.rest.repos.listBranches({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+
+            // Find other bc-* branches with the same number
+            const conflicts = branches
+              .map(b => b.name)
+              .filter(name => name.startsWith('bc-'))
+              .filter(name => name !== branchName)
+              .filter(name => {
+                const m = name.match(/^bc-(\d+)-/);
+                return m && parseInt(m[1]) === branchNumber;
+              });
+
+            if (conflicts.length > 0) {
+              console.log(`⚠️ Warning: Found other branches with the same number (${branchNumber}):`);
+              conflicts.forEach(b => console.log(`  - ${b}`));
+              console.log('\nConsider using a different number to avoid confusion.');
+
+              // Add warning to summary
+              await core.summary
+                .addHeading('⚠️ Number Conflict Warning', 3)
+                .addRaw(`Found ${conflicts.length} other branch(es) using number ${branchNumber}:`)
+                .addList(conflicts.map(b => `\`${b}\``))
+                .write();
+            }
