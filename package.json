@@ -44,6 +44,7 @@
     "build:sdk-docs": "cross-env cp -R src src-temp && cross-env node scripts/prepareCodeForDocs.js && typedoc --options typedoc.config.js --tsconfig tsconfig.docs.json && rimraf src && mv src-temp src && node scripts/postProcessSdkDocs.js",
     "commit": "npx git-cz",
     "semantic-release": "semantic-release",
+    "preview:generate": "gh workflow run generate-next-preview.yml",
     "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
     "format": "cross-env prettier-eslint $PWD\"/src/**/*.{ts,tsx,js,jsx}\" --write",
     "ts-node": "yarn build:ts && ts-node --",

@@ -1,4 +1,4 @@
-name: Develop Breaking Changes
+name: Develop Breaking Changes Check
 
 on:
   pull_request:
@@ -6,7 +6,9 @@ on:
     branches: [develop]
 
 jobs:
-  check-commit-messages:
+  check-breaking-changes:
+    # Skip this check for bc-* branches (they're meant for breaking changes)
+    if: ${{ !startsWith(github.head_ref, 'bc-') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -15,35 +17,41 @@ jobs:
           fetch-depth: 0
 
       - name: Check commit messages for breaking changes
-        id: breaking_changes
         env:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
-          # Function to check if breaking changes are present
-          check_breaking_changes() {
-            local commit=$1
-            local breaking=$(git show --pretty="format:%b" --no-patch $commit | grep -F "BREAKING CHANGE")
-
-            echo "Breaking: $breaking"
-
-            if [[ "$breaking" == *"BREAKING CHANGE"* ]]; then
-              echo "Commit $commit is a breaking change and cannot be merged into develop."
-              exit 1
-            fi
-
-          }
-
           # Get all commits in the PR
           commits=$(git rev-list $BASE_SHA..$HEAD_SHA)
 
-          # Iterate over all commits in the PR and verify each one
-          for COMMIT in $commits; do
-            check_breaking_changes $COMMIT
+          # Check each commit for breaking changes
+          for commit in $commits; do
+            commit_msg=$(git show --pretty="format:%s" --no-patch $commit)
+            commit_body=$(git show --pretty="format:%b" --no-patch $commit)
+
+            # Check for breaking change indicators
+            if [[ "$commit_msg" == *"!"* ]] || [[ "$commit_body" == *"BREAKING CHANGE:"* ]]; then
+              echo "❌ Breaking change detected in commit $commit"
+              echo ""
+              echo "Breaking changes should not be merged directly to develop."
+              echo "Please create a breaking change branch instead:"
+              echo ""
+              echo "1. Create a new branch: bc-<number>-<description>"
+              echo "2. Cherry-pick or move your commits there"
+              echo "3. Push the bc-* branch"
+              echo "4. Breaking changes will be integrated in the next major release"
+              echo ""
+              echo "Example:"
+              echo "  git checkout -b bc-1-remove-deprecated-api develop"
+              echo "  git cherry-pick $commit"
+              echo "  git push origin bc-1-remove-deprecated-api"
+              exit 1
+            fi
           done
 
-          echo "No breaking changes detected."
+          echo "✅ No breaking changes detected - safe to merge to develop"
 
+  # Keep existing check-api-snapshot job unchanged
   check-api-snapshot:
     name: Validate API snapshot
     runs-on: ubuntu-latest

@@ -1,0 +1,595 @@
+name: Generate Next Major Preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      debug_mode:
+        description: 'Enable debug logging'
+        required: false
+        default: false
+        type: boolean
+  # schedule:
+    # Optional: Run weekly on Sundays at 2 AM UTC
+    # - cron: '0 2 * * 0'
+
+# Security: Minimal permissions following principle of least privilege
+permissions:
+  contents: write
+  issues: write
+  pull-requests: read
+  packages: write
+
+# Prevent concurrent runs to avoid conflicts
+concurrency:
+  group: generate-next-preview
+  cancel-in-progress: false
+
+env:
+  # Enable debug logging if requested
+  ACTIONS_STEP_DEBUG: ${{ github.event.inputs.debug_mode == 'true' && 'true' || '' }}
+
+jobs:
+  generate-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    outputs:
+      preview_version: ${{ steps.publish.outputs.preview_version }}
+      breaking_changes_found: ${{ steps.discovery.outputs.found }}
+      conflicts_detected: ${{ steps.validation.outputs.all_clean == 'false' }}
+      npm_package_url: ${{ steps.publish.outputs.package_url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enable Corepack (for Yarn)
+        run: corepack enable
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'yarn'
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "Polymesh Bot"
+          git config --global user.email "bot@polymesh.network"
+
+      - name: Determine integration branch name
+        run: |
+          echo "🔢 Generating integration branch name with timestamp..."
+
+          # Generate timestamp: YYYYMMDDHHMM (UTC)
+          TIMESTAMP=$(date -u +"%Y%m%d%H%M")
+          INTEGRATION_BRANCH="next-bc-${TIMESTAMP}"
+
+          echo "INTEGRATION_BRANCH=$INTEGRATION_BRANCH" >> "$GITHUB_ENV"
+          echo "✅ Will create branch: $INTEGRATION_BRANCH (timestamp: $TIMESTAMP UTC)"
+
+      - name: Discover breaking change branches
+        id: discovery
+        run: |
+          echo "🔍 Discovering breaking change branches..."
+
+          # Fetch all remote branches to ensure they're available locally
+          git fetch --all --prune
+
+          # Find all bc-<number>-* branches and sort numerically
+          BC_BRANCHES=$(git branch -r | grep -E 'origin/bc-[0-9]+-' | sed 's/origin\///' | while read -r branch; do
+            number=$(echo "$branch" | sed -n 's/bc-\([0-9]\+\)-.*/\1/p')
+            if [[ "$number" =~ ^[0-9]+$ ]]; then
+              echo "$number $branch"
+            fi
+          done | sort -n | awk '{print $2}' | tr '\n' ' ')
+
+          echo "BC_BRANCHES=$BC_BRANCHES" >> "$GITHUB_ENV"
+
+          if [[ -z "$BC_BRANCHES" ]]; then
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "ℹ️ No breaking change branches found"
+            echo "## 📋 Branch Discovery Results" >> $GITHUB_STEP_SUMMARY
+            echo "No breaking change branches (bc-*) were found." >> $GITHUB_STEP_SUMMARY
+            echo "Breaking changes should use the naming pattern: \`bc-<number>-<description>\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            echo "✅ Found breaking change branches: $BC_BRANCHES"
+
+            # Add to GitHub Step Summary
+            echo "## 📋 Branch Discovery Results" >> $GITHUB_STEP_SUMMARY
+            echo "Found the following breaking change branches:" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            for branch in $BC_BRANCHES; do
+              echo "- \`$branch\`" >> $GITHUB_STEP_SUMMARY
+            done
+          fi
+
+      - name: Validate breaking change compatibility
+        if: steps.discovery.outputs.found == 'true'
+        id: validation
+        run: |
+          echo "🔄 Validating breaking change branches with sequential integration test..."
+
+          ALL_CLEAN=true
+          CLEAN_BRANCHES=""
+          CONFLICTED_BRANCHES=""
+          VALIDATION_DETAILS=""
+
+          # Create temporary integration branch for full sequence validation
+          TEMP_VALIDATION_BRANCH="temp-sequential-validation-$(date +%Y%m%d%H%M%S)"
+          git checkout -b "$TEMP_VALIDATION_BRANCH" origin/develop
+          echo "📝 Created temporary validation branch: $TEMP_VALIDATION_BRANCH"
+
+          # Test the full integration sequence exactly as it will be performed
+          for branch in $BC_BRANCHES; do
+            echo "🔍 Validating sequential integration of: $branch"
+
+            # Get commits from this branch not in develop (same as integration step)
+            COMMITS=$(git rev-list --reverse "origin/develop..origin/$branch" 2>/dev/null || echo "")
+
+            if [[ -z "$COMMITS" ]]; then
+              echo "⚠️ No new commits found in $branch (may be already integrated)"
+              CLEAN_BRANCHES="$CLEAN_BRANCHES $branch"
+              continue
+            fi
+
+            # Count commits for reporting
+            COMMIT_COUNT=$(echo "$COMMITS" | wc -l | xargs)
+            echo "  Found $COMMIT_COUNT commit(s) to validate"
+
+            # Try to cherry-pick each commit in chronological order (mirroring integration)
+            BRANCH_CLEAN=true
+            for commit in $COMMITS; do
+              COMMIT_MSG=$(git log -1 --format="%s" "$commit")
+              echo "  Testing cherry-pick: $commit ($COMMIT_MSG)"
+
+              if git cherry-pick "$commit" --no-commit 2>/dev/null; then
+                git commit -m "temp: $(git log -1 --format="%s" "$commit")" --no-verify
+                echo "  ✅ Sequential integration test passed: $commit"
+              else
+                echo "  ❌ Sequential integration conflict detected: $commit"
+
+                # Capture detailed conflict information
+                CONFLICTED_FILES=$(git status --porcelain | grep "^UU\|^AA\|^DD" | awk '{print $2}' | tr '\n' ' ')
+                CONFLICT_INFO="Branch: $branch\nCommit: $commit\nMessage: $COMMIT_MSG\nConflicted files: $CONFLICTED_FILES\nConflict type: Sequential integration (conflicts with previously applied changes)"
+
+                if [[ -z "$VALIDATION_DETAILS" ]]; then
+                  VALIDATION_DETAILS="$CONFLICT_INFO"
+                else
+                  VALIDATION_DETAILS="$VALIDATION_DETAILS\n\n$CONFLICT_INFO"
+                fi
+
+                CONFLICTED_BRANCHES="$CONFLICTED_BRANCHES $branch"
+                git cherry-pick --abort 2>/dev/null || git reset --hard
+                BRANCH_CLEAN=false
+                ALL_CLEAN=false
+                break
+              fi
+            done
+
+            # Track branch status
+            if [[ "$BRANCH_CLEAN" == "true" ]]; then
+              CLEAN_BRANCHES="$CLEAN_BRANCHES $branch"
+              echo "✅ $branch - sequential integration successful"
+            else
+              echo "❌ $branch - sequential integration failed"
+              # Stop processing remaining branches since we found a conflict
+              break
+            fi
+          done
+
+          # Cleanup temporary validation branch
+          git checkout develop
+          git branch -D "$TEMP_VALIDATION_BRANCH"
+          echo "🧹 Cleaned up temporary validation branch"
+
+          # Set environment variables for later steps
+          echo "CLEAN_BRANCHES=$CLEAN_BRANCHES" >> "$GITHUB_ENV"
+          echo "CONFLICTED_BRANCHES=$CONFLICTED_BRANCHES" >> "$GITHUB_ENV"
+          echo -e "$VALIDATION_DETAILS" > validation_conflicts.txt
+
+          # Add to GitHub Step Summary
+          echo "## 🔍 Validation Results" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "$ALL_CLEAN" == "true" ]]; then
+            echo "all_clean=true" >> "$GITHUB_OUTPUT"
+            echo "✅ Sequential integration validation passed - all breaking changes apply cleanly in order"
+            echo "✅ Proceeding with integration (guaranteed to succeed)"
+
+            echo "✅ **All breaking changes validated successfully!**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Clean branches:" >> $GITHUB_STEP_SUMMARY
+            for branch in $CLEAN_BRANCHES; do
+              echo "- ✅ \`$branch\`" >> $GITHUB_STEP_SUMMARY
+            done
+          else
+            echo "all_clean=false" >> "$GITHUB_OUTPUT"
+            echo "❌ RELEASE BLOCKED: Sequential integration conflicts detected in branches:$CONFLICTED_BRANCHES"
+            echo "❌ Conflicts occur when applying breaking changes in numerical order"
+            echo "❌ No preview release will be generated until all conflicts are resolved"
+
+            echo "❌ **Release blocked due to conflicts!**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Conflicted branches:$CONFLICTED_BRANCHES" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Create integration branch
+        if: steps.discovery.outputs.found == 'true' && steps.validation.outputs.all_clean == 'true'
+        run: |
+          echo "🌿 Creating new integration branch: $INTEGRATION_BRANCH"
+
+          # Create new branch from develop
+          git checkout -b "$INTEGRATION_BRANCH" origin/develop
+
+          echo "✅ Created integration branch: $INTEGRATION_BRANCH"
+
+      - name: Cherry-pick breaking changes
+        if: steps.discovery.outputs.found == 'true' && steps.validation.outputs.all_clean == 'true'
+        id: integration
+        run: |
+          echo "🚀 Cherry-picking breaking changes (all branches pre-validated as conflict-free)..."
+
+          INTEGRATED_COMMITS=""
+          TOTAL_COMMITS=0
+
+          for branch in $BC_BRANCHES; do
+            echo "📦 Processing branch: $branch"
+
+            # Get commits from this branch not in develop
+            COMMITS=$(git rev-list --reverse "origin/develop..origin/$branch" 2>/dev/null || echo "")
+
+            if [[ -z "$COMMITS" ]]; then
+              echo "⚠️ No new commits found in $branch"
+              continue
+            fi
+
+            # Cherry-pick each commit in chronological order
+            for commit in $COMMITS; do
+              COMMIT_MSG=$(git log -1 --format="%s" "$commit")
+              echo "Applying commit: $commit ($COMMIT_MSG)"
+
+              # Cherry-pick will succeed since we pre-validated
+              git cherry-pick "$commit"
+              INTEGRATED_COMMITS="$INTEGRATED_COMMITS $commit"
+              TOTAL_COMMITS=$((TOTAL_COMMITS + 1))
+              echo "✅ Successfully applied: $commit"
+            done
+          done
+
+          # Set outputs for downstream steps
+          {
+            echo "SUCCESSFUL_BRANCHES=$BC_BRANCHES"
+            echo "INTEGRATED_COMMITS=$INTEGRATED_COMMITS"
+            echo "TOTAL_COMMITS=$TOTAL_COMMITS"
+          } >> "$GITHUB_ENV"
+          echo "✅ All breaking changes applied successfully ($TOTAL_COMMITS commits integrated)"
+
+      - name: Install dependencies
+        if: steps.discovery.outputs.found == 'true' && steps.validation.outputs.all_clean == 'true'
+        run: |
+          echo "📦 Installing dependencies on integrated branch..."
+          yarn install --immutable
+          echo "✅ Dependencies installed successfully"
+
+      - name: Run tests
+        if: steps.discovery.outputs.found == 'true' && steps.validation.outputs.all_clean == 'true'
+        run: |
+          echo "🧪 Running tests on integrated codebase..."
+          yarn test
+          echo "✅ Tests passed successfully"
+
+      - name: Build integrated codebase
+        if: steps.discovery.outputs.found == 'true' && steps.validation.outputs.all_clean == 'true'
+        run: |
+          echo "🔨 Building integrated codebase..."
+          yarn build:ts
+
+          # Validate build outputs
+          if [[ ! -d "dist" ]]; then
+            echo "❌ Build failed: dist directory not found"
+            exit 1
+          fi
+
+          echo "✅ Build completed successfully"
+
+      - name: Prepare package for semantic-release
+        if: steps.discovery.outputs.found == 'true' && steps.validation.outputs.all_clean == 'true'
+        run: |
+          echo "📦 Preparing package structure for semantic-release..."
+
+          # Build and prepare the package structure
+          yarn build:ts
+          sed 's|dist/|./|' package.json > dist/package.json
+          cp README.md dist/README.md
+          cp yarn.lock dist/yarn.lock
+          cp release.config.js dist/
+
+          echo "✅ Package prepared for semantic-release"
+
+          # Add to GitHub Step Summary
+          echo "## 📦 Package Preparation" >> $GITHUB_STEP_SUMMARY
+          echo "Package prepared for semantic-release with next-major configuration" >> $GITHUB_STEP_SUMMARY
+
+      - name: Push integration branch to remote
+        if: steps.discovery.outputs.found == 'true' && steps.validation.outputs.all_clean == 'true'
+        run: |
+          echo "📤 Pushing integration branch to remote..."
+          echo "Branch: $INTEGRATION_BRANCH"
+
+          # Push the integration branch (semantic-release requires it on remote)
+          git push -u origin "$INTEGRATION_BRANCH"
+
+          echo "✅ Integration branch pushed to remote"
+
+          # Verify the branch exists on remote
+          echo "Verifying branch on remote:"
+          git ls-remote --heads origin "$INTEGRATION_BRANCH"
+
+      - name: Release with semantic-release
+        if: steps.discovery.outputs.found == 'true' && steps.validation.outputs.all_clean == 'true'
+        id: publish
+        run: |
+          echo "🚀 Running semantic-release for preview package..."
+
+          # Change to dist directory where the built package is
+          cd dist
+
+          # Override GITHUB_REF to match the actual checked-out branch
+          export GITHUB_REF="refs/heads/$INTEGRATION_BRANCH"
+
+          # Install dependencies for the built package
+          yarn install --immutable
+
+          # Run semantic-release (will match next-bc-* pattern from config)
+          yarn semantic-release
+
+          # Capture version for output
+          RELEASED_VERSION=$(node -p "require('./package.json').version")
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+
+          echo "preview_version=$RELEASED_VERSION" >> "$GITHUB_OUTPUT"
+          echo "package_url=https://www.npmjs.com/package/$PACKAGE_NAME/v/$RELEASED_VERSION" >> "$GITHUB_OUTPUT"
+
+          echo "✅ Preview package released: $PACKAGE_NAME@$RELEASED_VERSION"
+
+          # Add to GitHub Step Summary
+          echo "## 🚀 Released Package" >> $GITHUB_STEP_SUMMARY
+          echo "[\`$PACKAGE_NAME@$RELEASED_VERSION\`](https://www.npmjs.com/package/$PACKAGE_NAME/v/$RELEASED_VERSION)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Install with:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "npm install $PACKAGE_NAME@$RELEASED_VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "# or" >> $GITHUB_STEP_SUMMARY
+          echo "yarn add $PACKAGE_NAME@$RELEASED_VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        env:
+          GITHUB_TOKEN: ${{ secrets.ASSOCIATION_RELEASE_TOKEN }}
+          NPM_TOKEN: ${{ secrets.ASSOCIATION_NPM_TOKEN }}
+
+      - name: Release summary
+        if: steps.discovery.outputs.found == 'true' && steps.validation.outputs.all_clean == 'true'
+        run: |
+          echo "📝 Semantic-release has automatically created the GitHub release"
+          echo "Integrated branches: ${{ env.SUCCESSFUL_BRANCHES }}"
+          echo "Total commits integrated: ${{ env.TOTAL_COMMITS }}"
+
+          # Add to GitHub Step Summary
+          echo "## 🚀 Release Created" >> $GITHUB_STEP_SUMMARY
+          echo "Semantic-release has automatically created the GitHub release with:" >> $GITHUB_STEP_SUMMARY
+          echo "- Automated version calculation based on conventional commits" >> $GITHUB_STEP_SUMMARY
+          echo "- Generated release notes from commit messages" >> $GITHUB_STEP_SUMMARY
+          echo "- NPM package publication with next-major tag" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Integrated branches:** ${{ env.SUCCESSFUL_BRANCHES }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Total commits:** ${{ env.TOTAL_COMMITS }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check for stale branches
+        if: steps.discovery.outputs.found == 'true'
+        id: staleness
+        run: |
+          STALE_BRANCHES=""
+
+          for branch in $BC_BRANCHES; do
+            COMMITS_BEHIND=$(git rev-list --count "origin/$branch..origin/develop" 2>/dev/null || echo "0")
+
+            if [[ "$COMMITS_BEHIND" -gt 50 ]]; then
+              echo "⚠️ $branch is $COMMITS_BEHIND commits behind develop"
+              STALE_BRANCHES="$STALE_BRANCHES $branch"
+            fi
+          done
+
+          echo "STALE_BRANCHES=$STALE_BRANCHES" >> "$GITHUB_ENV"
+
+          if [[ -n "$STALE_BRANCHES" ]]; then
+            echo "stale_found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "stale_found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Report release blocked due to conflicts
+        if: steps.discovery.outputs.found == 'true' && steps.validation.outputs.all_clean == 'false'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const allBranches = process.env.BC_BRANCHES.trim().split(' ').filter(b => b);
+            const cleanBranches = process.env.CLEAN_BRANCHES ? process.env.CLEAN_BRANCHES.trim().split(' ').filter(b => b) : [];
+            const conflictedBranches = process.env.CONFLICTED_BRANCHES.trim().split(' ').filter(b => b);
+
+            const title = `🚨 Next Major Release Blocked - Integration Conflicts Detected`;
+            const body = `# Release Status: BLOCKED ❌
+
+            The next major preview release has been **completely blocked** due to **sequential integration conflicts** detected during comprehensive validation.
+
+            ## Validation Method: Sequential Integration Test
+
+            This system tests the **full integration sequence** exactly as it will be performed:
+            1. Start with \`develop\` branch
+            2. Apply \`bc-1\` changes → \`bc-2\` changes → \`bc-3\` changes... in numerical order
+            3. Block release if **any step** in this sequence conflicts
+
+            ## Branch Status Summary (Sequential Order)
+
+            ${allBranches.map(branch => {
+              const status = conflictedBranches.includes(branch) ? '❌ Sequential Conflict' : '✅ Sequential Integration Clean';
+              return `- \`${branch}\`: ${status}`;
+            }).join('\n')}
+
+            ## Root Cause: Sequential Integration Conflicts
+
+            The conflicted branch(es) may apply cleanly against \`develop\` individually, but **conflict when applied in the numerical sequence** after previous breaking changes:
+
+            ${conflictedBranches.map(branch => `- \`${branch}\`: Conflicts with changes from previously applied bc-* branches`).join('\n')}
+
+            ## Resolution Required
+
+            **ALL conflicted branches must be resolved before ANY release can proceed.**
+
+            ### Resolution Steps
+
+            1. **Checkout the conflicted branch locally**:
+               \`\`\`bash
+               git checkout ${conflictedBranches[0] || '<conflicted-branch>'}
+               git fetch origin develop
+               \`\`\`
+
+            2. **Create a temporary integration branch to test the sequence**:
+               \`\`\`bash
+               git checkout -b temp-integration develop
+               # Apply clean branches first (in order)
+               ${cleanBranches.map(b => `git cherry-pick \$(git rev-list --reverse origin/develop..origin/${b})`).join('\n               ')}
+               # Now your conflicted branch should rebase cleanly against this state
+               \`\`\`
+
+            3. **Rebase the conflicted branch against the integrated state**:
+               \`\`\`bash
+               git checkout ${conflictedBranches[0] || '<conflicted-branch>'}
+               git rebase temp-integration
+               # Resolve any conflicts that appear
+               git add .
+               git rebase --continue
+               \`\`\`
+
+            4. **Test locally** to ensure changes work correctly
+
+            5. **Force push the updated branch**:
+               \`\`\`bash
+               git push --force-with-lease origin ${conflictedBranches[0] || '<conflicted-branch>'}
+               \`\`\`
+
+            6. **Clean up temporary branch**:
+               \`\`\`bash
+               git branch -D temp-integration
+               \`\`\`
+
+            7. **Manually trigger workflow** after ALL conflicts resolved:
+               - Go to [Actions tab](../../actions)
+               - Select "Generate Next Major Preview" workflow
+               - Click "Run workflow"
+
+            ## Conflict Details
+
+            \`\`\`
+            ${fs.existsSync('validation_conflicts.txt') ? fs.readFileSync('validation_conflicts.txt', 'utf8') : 'Conflict details not available'}
+            \`\`\`
+
+            ## No Partial Releases
+
+            This system uses **zero-tolerance conflict prevention**:
+            - ❌ No preview release generated
+            - ❌ No npm package published
+            - ❌ No GitHub release created
+            - ⚠️ Manual workflow dispatch required after resolution
+
+            ## Why This Approach?
+
+            This strict approach ensures that:
+            - Preview releases are always functional and complete
+            - Integration conflicts are caught early, before they affect other developers
+            - The next major release will have a clean, predictable integration
+            - No partially-integrated state ever reaches published packages
+
+            ---
+            **Triggered by**: ${{ github.sha }}
+            **Workflow run**: [#${{ github.run_id }}](../../actions/runs/${{ github.run_id }})
+            **Auto-generated by**: Ephemeral Next Major Release Integration`;
+
+            // Create issue
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['breaking-changes', 'conflicts', 'release-blocked', 'automation']
+            });
+
+      - name: Report stale branches
+        if: steps.staleness.outputs.stale_found == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const staleBranches = process.env.STALE_BRANCHES.trim().split(' ').filter(b => b);
+
+            const title = `⚠️ Stale Breaking Change Branches Detected`;
+            const body = `# Stale Breaking Change Branches
+
+            The following breaking change branches are significantly behind develop:
+
+            ${staleBranches.map(b => `- \`${b}\``).join('\n')}
+
+            ## Recommendation
+
+            Rebase these branches to avoid future conflicts:
+
+            \`\`\`bash
+            git checkout <branch-name>
+            git fetch origin develop
+            git rebase origin/develop
+            git push --force-with-lease origin <branch-name>
+            \`\`\`
+
+            Branches more than 50 commits behind develop have higher conflict risk and should be updated before the next integration attempt.
+
+            ## Why This Matters
+
+            Stale branches are more likely to:
+            - Conflict during sequential integration
+            - Block the entire release process
+            - Require more complex conflict resolution
+            - Affect other breaking changes in the sequence
+
+            Regular rebasing keeps branches current and reduces integration complexity.
+
+            ---
+            **Auto-generated by**: Ephemeral Next Major Release Integration`;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['breaking-changes', 'maintenance', 'stale-branches']
+            });
+
+      - name: Cleanup temporary resources
+        if: always()
+        run: |
+          echo "🧹 Cleaning up temporary resources..."
+
+          # Clean up temporary files
+          rm -f validation_conflicts.txt
+
+          # Reset to original state
+          git checkout develop 2>/dev/null || git checkout ${{ github.ref_name }}
+
+          # Note: Integration branches (next-bc-*) are kept permanently for version history
+          # Each workflow run creates a new numbered branch (next-bc-1, next-bc-2, etc.)
+
+          echo "✅ Cleanup completed"
