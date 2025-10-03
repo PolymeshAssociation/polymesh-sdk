@@ -20,6 +20,7 @@ export interface Storage {
   processedTransactions: TxWithArgs[];
   tags: TxTag[];
   resolvers: ResolverFunction<unknown>[];
+  preRunValidations: (((args: { asProposal: boolean }) => Promise<void>) | undefined)[];
 }
 
 /**
@@ -28,12 +29,27 @@ export interface Storage {
 export async function prepareCreateTransactionBatch<ReturnValues extends unknown[]>(
   this: Procedure<CreateTransactionBatchParams<ReturnValues>, ReturnValues, Storage>
 ): Promise<BatchTransactionSpec<ReturnValues, unknown[][]>> {
-  const { processedTransactions: transactions, resolvers } = this.storage;
+  const { processedTransactions: transactions, resolvers, preRunValidations } = this.storage;
+
+  // Combine all preRunValidation functions into one
+  const combinedPreRunValidation = preRunValidations.some(v => v !== undefined)
+    ? async (args: { asProposal: boolean }): Promise<void> => {
+        await Promise.all(
+          preRunValidations.map(validation => {
+            if (validation) {
+              return validation(args);
+            }
+            return Promise.resolve();
+          })
+        );
+      }
+    : undefined;
 
   return {
     transactions,
     resolver: receipt =>
       Promise.all(resolvers.map(resolver => resolver(receipt))) as Promise<ReturnValues>,
+    preRunValidation: combinedPreRunValidation,
   };
 }
 
@@ -66,6 +82,7 @@ export function prepareStorage<ReturnValues extends unknown[]>(
   const resolvers: ResolverFunction<unknown>[] = [];
   const transactions: TxWithArgs[] = [];
   const tags: TxTag[] = [];
+  const preRunValidations: (((args: { asProposal: boolean }) => Promise<void>) | undefined)[] = [];
 
   /*
    * We extract each transaction spec and build an array of all transactions (with args and fees), resolvers and transformers,
@@ -81,7 +98,7 @@ export function prepareStorage<ReturnValues extends unknown[]>(
 
   if (inputTransactions.length === 1 && isPolymeshTransaction(firstTx)) {
     const spec = PolymeshTransaction.toTransactionSpec(firstTx);
-    const { transaction: tx, args: txArgs, fee, feeMultiplier } = spec;
+    const { transaction: tx, args: txArgs, fee, feeMultiplier, preRunValidation } = spec;
 
     transactions.push({
       transaction: tx,
@@ -91,6 +108,7 @@ export function prepareStorage<ReturnValues extends unknown[]>(
     });
 
     tags.push(transactionToTxTag(tx));
+    preRunValidations.push(preRunValidation);
 
     const { transformer = identity, resolver } = spec;
 
@@ -110,17 +128,18 @@ export function prepareStorage<ReturnValues extends unknown[]>(
       processedTransactions: transactions,
       resolvers,
       tags,
+      preRunValidations,
     };
   }
 
-  inputTransactions.forEach(transaction => {
+  for (const transaction of inputTransactions) {
     let spec: TransactionSpec<unknown, unknown[]> | BatchTransactionSpec<unknown, unknown[][]>;
 
     const startIndex = transactions.length;
 
     if (isPolymeshTransaction(transaction)) {
       spec = PolymeshTransaction.toTransactionSpec(transaction);
-      const { transaction: tx, args: txArgs, fee, feeMultiplier } = spec;
+      const { transaction: tx, args: txArgs, fee, feeMultiplier, preRunValidation } = spec;
 
       transactions.push({
         transaction: tx,
@@ -130,11 +149,12 @@ export function prepareStorage<ReturnValues extends unknown[]>(
       });
 
       tags.push(transactionToTxTag(tx));
+      preRunValidations.push(preRunValidation);
     } else {
       spec = PolymeshTransactionBatch.toTransactionSpec(transaction);
-      const { transactions: batchTransactions } = spec;
+      const { transactions: batchTransactions, preRunValidation } = spec;
 
-      batchTransactions.forEach(({ transaction: tx, args: txArgs, fee, feeMultiplier }) => {
+      for (const { transaction: tx, args: txArgs, fee, feeMultiplier } of batchTransactions) {
         transactions.push({
           transaction: tx,
           args: txArgs,
@@ -143,7 +163,9 @@ export function prepareStorage<ReturnValues extends unknown[]>(
         });
 
         tags.push(transactionToTxTag(tx));
-      });
+      }
+
+      preRunValidations.push(preRunValidation);
     }
 
     const { transformer = identity, resolver } = spec;
@@ -165,12 +187,13 @@ export function prepareStorage<ReturnValues extends unknown[]>(
 
       return transformer(value);
     });
-  });
+  }
 
   return {
     processedTransactions: transactions,
     resolvers,
     tags,
+    preRunValidations,
   };
 }
 

@@ -19,7 +19,7 @@ import { CreateTransactionBatchParams, TxTags } from '~/types';
 import { BatchTransactionSpec, PolymeshTx, ProcedureAuthorization } from '~/types/internal';
 import * as utilsInternalModule from '~/utils/internal';
 
-type ReturnValues = [number, number];
+type ReturnValues = number[];
 type SingleReturnValues = [number];
 
 describe('createTransactionBatch procedure', () => {
@@ -80,6 +80,7 @@ describe('createTransactionBatch procedure', () => {
         TxTags.portfolio.CreatePortfolio,
       ],
       resolvers: [(): number => 1, (): number => 2],
+      preRunValidations: [],
     });
 
     const result = await prepareCreateTransactionBatch.call<
@@ -112,6 +113,7 @@ describe('createTransactionBatch procedure', () => {
         processedTransactions: [],
         tags,
         resolvers: [],
+        preRunValidations: [],
       });
 
       const boundFunc = (getAuthorization as (this: typeof proc) => ProcedureAuthorization).bind(
@@ -202,6 +204,7 @@ describe('createTransactionBatch procedure', () => {
           TxTags.portfolio.CreatePortfolio,
         ],
         resolvers: [expect.any(Function), expect.any(Function)],
+        preRunValidations: [undefined, undefined],
       });
 
       jest.spyOn(utilsInternalModule, 'sliceBatchReceipt').mockImplementation();
@@ -250,6 +253,7 @@ describe('createTransactionBatch procedure', () => {
       ],
       tags: [TxTags.portfolio.CreatePortfolio],
       resolvers: [expect.any(Function)],
+      preRunValidations: [undefined],
     });
 
     jest.spyOn(utilsInternalModule, 'sliceBatchReceipt').mockImplementation();
@@ -295,6 +299,7 @@ describe('createTransactionBatch procedure', () => {
       ],
       tags: [TxTags.portfolio.CreatePortfolio],
       resolvers: [expect.any(Function)],
+      preRunValidations: [undefined],
     });
 
     jest.spyOn(utilsInternalModule, 'sliceBatchReceipt').mockImplementation();
@@ -340,10 +345,203 @@ describe('createTransactionBatch procedure', () => {
       ],
       tags: [TxTags.portfolio.CreatePortfolio],
       resolvers: [expect.any(Function)],
+      preRunValidations: [undefined],
     });
 
     jest.spyOn(utilsInternalModule, 'sliceBatchReceipt').mockImplementation();
 
     await expect(result!.resolvers[0]!({} as ISubmittableResult)).resolves.toBe(3);
+  });
+
+  it('should combine preRunValidation functions from multiple transactions', async () => {
+    const validation1 = jest.fn().mockResolvedValue(undefined);
+    const validation2 = jest.fn().mockResolvedValue(undefined);
+
+    const transactions = [
+      new PolymeshTransaction(
+        {
+          transaction: tx1,
+          args: ['tx1'] as unknown[],
+          resolver: 1,
+          signingAddress: 'someAddress',
+          signer: {} as PolkadotSigner,
+          mortality: { immortal: false },
+          preRunValidation: validation1,
+        },
+        mockContext
+      ),
+      new PolymeshTransaction(
+        {
+          transaction: tx2,
+          args: ['tx2'] as unknown[],
+          resolver: 2,
+          signingAddress: 'someAddress',
+          signer: {} as PolkadotSigner,
+          mortality: { immortal: false },
+          preRunValidation: validation2,
+        },
+        mockContext
+      ),
+    ] as const;
+
+    const proc = procedureMockUtils.getInstance<
+      CreateTransactionBatchParams<ReturnValues>,
+      ReturnValues,
+      Storage
+    >(mockContext);
+
+    const boundFunc = (
+      prepareStorage as (
+        this: typeof proc,
+        args: CreateTransactionBatchParams<ReturnValues>
+      ) => Storage
+    ).bind(proc);
+
+    const result = boundFunc({ transactions });
+
+    expect(result.preRunValidations).toEqual([validation1, validation2]);
+
+    // Test that prepareCreateTransactionBatch combines them
+    const batchProc = procedureMockUtils.getInstance<
+      CreateTransactionBatchParams<ReturnValues>,
+      ReturnValues,
+      Storage
+    >(mockContext, result);
+
+    const batchResult = await prepareCreateTransactionBatch.call<
+      typeof batchProc,
+      never[],
+      Promise<BatchTransactionSpec<ReturnValues, unknown[][]>>
+    >(batchProc);
+
+    expect(batchResult.preRunValidation).toBeDefined();
+
+    // Call the combined validation
+    await batchResult.preRunValidation!({ asProposal: true });
+
+    expect(validation1).toHaveBeenCalledWith({ asProposal: true });
+    expect(validation2).toHaveBeenCalledWith({ asProposal: true });
+  });
+
+  it('should handle mixed transactions with and without preRunValidation', async () => {
+    const validation1 = jest.fn().mockResolvedValue(undefined);
+    const validation2 = jest.fn().mockResolvedValue(undefined);
+
+    const transactions = [
+      new PolymeshTransaction(
+        {
+          transaction: tx1,
+          args: ['tx1'] as unknown[],
+          resolver: 1,
+          signingAddress: 'someAddress',
+          signer: {} as PolkadotSigner,
+          mortality: { immortal: false },
+          preRunValidation: validation1,
+        },
+        mockContext
+      ),
+      new PolymeshTransaction(
+        {
+          transaction: tx2,
+          args: ['tx2'] as unknown[],
+          resolver: 2,
+          signingAddress: 'someAddress',
+          signer: {} as PolkadotSigner,
+          mortality: { immortal: false },
+        },
+        mockContext
+      ),
+      new PolymeshTransaction(
+        {
+          transaction: tx3,
+          args: ['tx3'] as unknown[],
+          resolver: 3,
+          signingAddress: 'someAddress',
+          signer: {} as PolkadotSigner,
+          mortality: { immortal: false },
+          preRunValidation: validation2,
+        },
+        mockContext
+      ),
+    ] as const;
+
+    const proc = procedureMockUtils.getInstance<
+      CreateTransactionBatchParams<ReturnValues>,
+      ReturnValues,
+      Storage
+    >(mockContext);
+
+    const boundFunc = (
+      prepareStorage as (
+        this: typeof proc,
+        args: CreateTransactionBatchParams<ReturnValues>
+      ) => Storage
+    ).bind(proc);
+
+    const result = boundFunc({ transactions });
+
+    const batchProc = procedureMockUtils.getInstance<
+      CreateTransactionBatchParams<ReturnValues>,
+      ReturnValues,
+      Storage
+    >(mockContext, result);
+
+    const batchResult = await prepareCreateTransactionBatch.call<
+      typeof batchProc,
+      never[],
+      Promise<BatchTransactionSpec<ReturnValues, unknown[][]>>
+    >(batchProc);
+
+    expect(batchResult.preRunValidation).toBeDefined();
+
+    await batchResult.preRunValidation!({ asProposal: false });
+
+    expect(validation1).toHaveBeenCalledWith({ asProposal: false });
+    expect(validation2).toHaveBeenCalledWith({ asProposal: false });
+  });
+
+  it('should not include preRunValidation if no transactions have it', async () => {
+    const transactions = [
+      new PolymeshTransaction(
+        {
+          transaction: tx1,
+          args: ['tx1'] as unknown[],
+          resolver: 1,
+          signingAddress: 'someAddress',
+          signer: {} as PolkadotSigner,
+          mortality: { immortal: false },
+        },
+        mockContext
+      ),
+    ] as const;
+
+    const proc = procedureMockUtils.getInstance<
+      CreateTransactionBatchParams<SingleReturnValues>,
+      SingleReturnValues,
+      Storage
+    >(mockContext);
+
+    const boundFunc = (
+      prepareStorage as (
+        this: typeof proc,
+        args: CreateTransactionBatchParams<SingleReturnValues>
+      ) => Storage
+    ).bind(proc);
+
+    const result = boundFunc({ transactions });
+
+    const batchProc = procedureMockUtils.getInstance<
+      CreateTransactionBatchParams<SingleReturnValues>,
+      SingleReturnValues,
+      Storage
+    >(mockContext, result);
+
+    const batchResult = await prepareCreateTransactionBatch.call<
+      typeof batchProc,
+      never[],
+      Promise<BatchTransactionSpec<SingleReturnValues, unknown[][]>>
+    >(batchProc);
+
+    expect(batchResult.preRunValidation).toBeUndefined();
   });
 });
