@@ -2,10 +2,10 @@ import { PolymeshPrimitivesMemo } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import { getAuthorization, prepareTransferPolyx } from '~/api/procedures/transferPolyx';
-import { Context } from '~/internal';
+import { Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { TransferPolyxParams } from '~/types';
+import { ErrorCode, TransferPolyxParams } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -44,20 +44,7 @@ describe('transferPolyx procedure', () => {
     jest.restoreAllMocks();
   });
 
-  it('should throw an error if the user has insufficient balance to transfer', () => {
-    dsMockUtils.createQueryMock('identity', 'didRecords', { returnValue: {} });
-
-    const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
-
-    return expect(
-      prepareTransferPolyx.call(proc, {
-        to: 'someAccount',
-        amount: new BigNumber(101),
-      })
-    ).rejects.toThrow('Insufficient free balance');
-  });
-
-  it('should return a balance transfer transaction spec', async () => {
+  it('should return a balance transfer transaction spec with preRunValidation', async () => {
     const to = entityMockUtils.getAccountInstance({ address: 'someAccount' });
     const amount = new BigNumber(99);
     const memo = 'someMessage';
@@ -69,19 +56,21 @@ describe('transferPolyx procedure', () => {
     jest.spyOn(utilsConversionModule, 'bigNumberToBalance').mockReturnValue(rawAmount);
     jest.spyOn(utilsConversionModule, 'stringToMemo').mockReturnValue(rawMemo);
 
-    let tx = dsMockUtils.createTxMock('balances', 'transfer');
     const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
+
+    let tx = dsMockUtils.createTxMock('balances', 'transfer');
 
     let result = await prepareTransferPolyx.call(proc, {
       to,
       amount,
     });
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       transaction: tx,
       args: [rawAccount, rawAmount],
       resolver: undefined,
     });
+    expect(result.preRunValidation).toBeDefined();
 
     tx = dsMockUtils.createTxMock('balances', 'transferWithMemo');
 
@@ -91,10 +80,159 @@ describe('transferPolyx procedure', () => {
       memo,
     });
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       transaction: tx,
       args: [rawAccount, rawAmount, rawMemo],
       resolver: undefined,
+    });
+    expect(result.preRunValidation).toBeDefined();
+  });
+
+  describe('preRunValidation', () => {
+    it('should check signing account balance when asProposal is false', async () => {
+      const amount = new BigNumber(101);
+      const signingAccount = entityMockUtils.getAccountInstance({
+        address: 'signerAddress',
+        getBalance: {
+          free: new BigNumber(100),
+          locked: new BigNumber(0),
+          total: new BigNumber(100),
+        },
+      });
+
+      const rawAccount = dsMockUtils.createMockAccountId('someAccount');
+      const rawAmount = dsMockUtils.createMockBalance(amount);
+
+      jest.spyOn(utilsConversionModule, 'stringToAccountId').mockReturnValue(rawAccount);
+      jest.spyOn(utilsConversionModule, 'bigNumberToBalance').mockReturnValue(rawAmount);
+      dsMockUtils.createTxMock('balances', 'transfer');
+
+      mockContext.getSigningAccount.mockReturnValue(signingAccount);
+
+      const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
+
+      const result = await prepareTransferPolyx.call(proc, {
+        to: 'someAccount',
+        amount,
+      });
+
+      await expect(result.preRunValidation!({ asProposal: false })).rejects.toThrow(
+        new PolymeshError({
+          code: ErrorCode.InsufficientBalance,
+          message: 'Insufficient free balance',
+          data: {
+            freeBalance: new BigNumber(100),
+            fromAccount: 'signerAddress',
+          },
+        })
+      );
+    });
+
+    it('should check acting account balance when asProposal is true', async () => {
+      const amount = new BigNumber(101);
+      const signingAccount = entityMockUtils.getAccountInstance({
+        address: 'signerAddress',
+      });
+      const actingAccount = entityMockUtils.getAccountInstance({
+        address: 'multiSigAddress',
+        getBalance: {
+          free: new BigNumber(100),
+          locked: new BigNumber(0),
+          total: new BigNumber(100),
+        },
+      });
+
+      const rawAccount = dsMockUtils.createMockAccountId('someAccount');
+      const rawAmount = dsMockUtils.createMockBalance(amount);
+
+      jest.spyOn(utilsConversionModule, 'stringToAccountId').mockReturnValue(rawAccount);
+      jest.spyOn(utilsConversionModule, 'bigNumberToBalance').mockReturnValue(rawAmount);
+      dsMockUtils.createTxMock('balances', 'transfer');
+
+      mockContext.getSigningAccount.mockReturnValue(signingAccount);
+      mockContext.getActingAccount.mockResolvedValue(actingAccount);
+
+      const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
+
+      const result = await prepareTransferPolyx.call(proc, {
+        to: 'someAccount',
+        amount,
+      });
+
+      await expect(result.preRunValidation!({ asProposal: true })).rejects.toThrow(
+        new PolymeshError({
+          code: ErrorCode.InsufficientBalance,
+          message: 'Insufficient free balance',
+          data: {
+            freeBalance: new BigNumber(100),
+            fromAccount: 'multiSigAddress',
+          },
+        })
+      );
+    });
+
+    it('should pass validation when signing account has sufficient balance (asProposal=false)', async () => {
+      const amount = new BigNumber(50);
+      const signingAccount = entityMockUtils.getAccountInstance({
+        address: 'signerAddress',
+        getBalance: {
+          free: new BigNumber(100),
+          locked: new BigNumber(0),
+          total: new BigNumber(100),
+        },
+      });
+
+      const rawAccount = dsMockUtils.createMockAccountId('someAccount');
+      const rawAmount = dsMockUtils.createMockBalance(amount);
+
+      jest.spyOn(utilsConversionModule, 'stringToAccountId').mockReturnValue(rawAccount);
+      jest.spyOn(utilsConversionModule, 'bigNumberToBalance').mockReturnValue(rawAmount);
+      dsMockUtils.createTxMock('balances', 'transfer');
+
+      mockContext.getSigningAccount.mockReturnValue(signingAccount);
+
+      const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
+
+      const result = await prepareTransferPolyx.call(proc, {
+        to: 'someAccount',
+        amount,
+      });
+
+      await expect(result.preRunValidation!({ asProposal: false })).resolves.not.toThrow();
+    });
+
+    it('should pass validation when acting account has sufficient balance (asProposal=true)', async () => {
+      const amount = new BigNumber(50);
+      const signingAccount = entityMockUtils.getAccountInstance({
+        address: 'signerAddress',
+      });
+      const actingAccount = entityMockUtils.getAccountInstance({
+        address: 'multiSigAddress',
+        getBalance: {
+          free: new BigNumber(100),
+          locked: new BigNumber(0),
+          total: new BigNumber(100),
+        },
+      });
+
+      const rawAccount = dsMockUtils.createMockAccountId('someAccount');
+      const rawAmount = dsMockUtils.createMockBalance(amount);
+
+      jest.spyOn(utilsConversionModule, 'stringToAccountId').mockReturnValue(rawAccount);
+      jest.spyOn(utilsConversionModule, 'bigNumberToBalance').mockReturnValue(rawAmount);
+      dsMockUtils.createTxMock('balances', 'transfer');
+
+      mockContext.getSigningAccount.mockReturnValue(signingAccount);
+      mockContext.getActingAccount.mockResolvedValue(actingAccount);
+
+      const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
+
+      const result = await prepareTransferPolyx.call(proc, {
+        to: 'someAccount',
+        amount,
+      });
+
+      await expect(result.preRunValidation!({ asProposal: true })).resolves.not.toThrow();
     });
   });
 

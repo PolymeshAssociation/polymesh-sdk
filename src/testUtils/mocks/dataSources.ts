@@ -881,7 +881,8 @@ function configureContext(opts: ContextOptions): void {
     : getSigningAccount.mockImplementation(() => {
         throw new Error('There is no Account associated with the SDK');
       });
-  const getActingAccount = getSigningAccount;
+  const getActingAccount = jest.fn();
+  getActingAccount.mockImplementation(() => getSigningAccount());
   const signingAddress = opts.withSigningManager ? opts.signingAddress : undefined;
   const getSigningAddress = jest.fn();
   opts.withSigningManager
