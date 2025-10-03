@@ -186,6 +186,13 @@ export interface BaseTransactionSpec<ReturnValue, TransformedReturnValue = Retur
   multiSig?: MultiSig | null | undefined;
 
   /**
+   * Optional validation function that runs before the transaction is executed.
+   * Receives an object indicating whether the transaction will run as a MultiSig proposal.
+   * This allows procedures to defer validation logic (like balance checks) until the execution method is known.
+   */
+  preRunValidation?: ((args: { asProposal: boolean }) => Promise<void>) | undefined;
+
+  /**
    * value that the transaction will return once it has run, or a function that returns that value
    */
   resolver: MaybeResolverFunction<ReturnValue>;

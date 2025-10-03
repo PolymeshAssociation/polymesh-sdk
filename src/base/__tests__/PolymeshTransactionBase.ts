@@ -90,6 +90,33 @@ describe('Polymesh Transaction Base class', () => {
         resolver,
         transformer,
         paidForBy,
+        preRunValidation: undefined,
+      });
+    });
+
+    it('should include preRunValidation in the returned spec', () => {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+      const args = tuple('BAR');
+      const resolver = (): number => 1;
+      const preRunValidation = jest.fn().mockResolvedValue(undefined);
+
+      const tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          transaction,
+          args,
+          resolver,
+          preRunValidation,
+        },
+        context
+      );
+
+      expect(PolymeshTransactionBase.toTransactionSpec(tx)).toEqual({
+        multiSig: null,
+        resolver,
+        transformer: undefined,
+        paidForBy: undefined,
+        preRunValidation,
       });
     });
   });
@@ -954,6 +981,73 @@ describe('Polymesh Transaction Base class', () => {
 
       return expect(tx.run()).rejects.toThrow(expectedError);
     });
+
+    it('should call preRunValidation with false before running the transaction', async () => {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+      const args = tuple('VALIDATION_TEST');
+      const preRunValidation = jest.fn().mockResolvedValue(undefined);
+
+      const tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          transaction,
+          args,
+          resolver: undefined,
+          preRunValidation,
+        },
+        context
+      );
+
+      await tx.run();
+
+      expect(preRunValidation).toHaveBeenCalledWith({ asProposal: false });
+      expect(transaction).toHaveBeenCalledWith(...args);
+    });
+
+    it('should throw an error if preRunValidation fails', async () => {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+      const args = tuple('VALIDATION_FAILURE_TEST');
+      const validationError = new PolymeshError({
+        code: ErrorCode.InsufficientBalance,
+        message: 'Insufficient balance',
+      });
+      const preRunValidation = jest.fn().mockRejectedValue(validationError);
+
+      const tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          transaction,
+          args,
+          resolver: undefined,
+          preRunValidation,
+        },
+        context
+      );
+
+      await expect(tx.run()).rejects.toThrow(validationError);
+      expect(preRunValidation).toHaveBeenCalledWith({ asProposal: false });
+      expect(transaction).not.toHaveBeenCalled();
+    });
+
+    it('should not call preRunValidation if it is not provided', async () => {
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+      const args = tuple('NO_VALIDATION_TEST');
+
+      const tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          transaction,
+          args,
+          resolver: undefined,
+        },
+        context
+      );
+
+      await tx.run();
+
+      expect(transaction).toHaveBeenCalledWith(...args);
+      expect(tx.status).toBe(TransactionStatus.Succeeded);
+    });
   });
 
   describe('method: runAsProposal', () => {
@@ -1163,6 +1257,90 @@ describe('Polymesh Transaction Base class', () => {
       );
 
       await expect(tx.runAsProposal()).rejects.toThrow(PolymeshError);
+    });
+
+    it('should call preRunValidation with true before running as proposal', async () => {
+      const underlyingTx = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+      const args = [dsMockUtils.createMockText('VALIDATION_PROPOSAL_TEST')];
+      const preRunValidation = jest.fn().mockResolvedValue(undefined);
+
+      dsMockUtils.createTxMock('multiSig', 'createProposal', {
+        autoResolve: MockTxStatus.Succeeded,
+      });
+
+      const tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          transaction: underlyingTx,
+          args,
+          resolver: 3,
+          multiSig,
+          preRunValidation,
+        },
+        context
+      );
+
+      await tx.runAsProposal();
+
+      expect(preRunValidation).toHaveBeenCalledWith({ asProposal: true });
+      expect(underlyingTx).toHaveBeenCalledWith(...args);
+    });
+
+    it('should throw an error if preRunValidation fails when running as proposal', async () => {
+      const underlyingTx = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+      const args = [dsMockUtils.createMockText('VALIDATION_FAILURE_PROPOSAL_TEST')];
+      const validationError = new PolymeshError({
+        code: ErrorCode.InsufficientBalance,
+        message: 'MultiSig has insufficient balance',
+      });
+      const preRunValidation = jest.fn().mockRejectedValue(validationError);
+
+      dsMockUtils.createTxMock('multiSig', 'createProposal', {
+        autoResolve: MockTxStatus.Succeeded,
+      });
+
+      const tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          transaction: underlyingTx,
+          args,
+          resolver: 3,
+          multiSig,
+          preRunValidation,
+        },
+        context
+      );
+
+      await expect(tx.runAsProposal()).rejects.toThrow(validationError);
+      expect(preRunValidation).toHaveBeenCalledWith({ asProposal: true });
+      expect(underlyingTx).not.toHaveBeenCalled();
+    });
+
+    it('should not call preRunValidation if it is not provided when running as proposal', async () => {
+      const underlyingTx = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+      const args = [dsMockUtils.createMockText('NO_VALIDATION_PROPOSAL_TEST')];
+
+      const transaction = dsMockUtils.createTxMock('multiSig', 'createProposal', {
+        autoResolve: MockTxStatus.Succeeded,
+      });
+
+      const tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          transaction: underlyingTx,
+          args,
+          resolver: 3,
+          multiSig,
+        },
+        context
+      );
+
+      const result = await tx.runAsProposal();
+
+      expect(underlyingTx).toHaveBeenCalledWith(...args);
+      expect(transaction).toHaveBeenCalled();
+      expect(result).toBeInstanceOf(MultiSigProposal);
+      expect(tx.status).toBe(TransactionStatus.Succeeded);
     });
   });
 

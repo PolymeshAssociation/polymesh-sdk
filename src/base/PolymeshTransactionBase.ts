@@ -65,13 +65,14 @@ export abstract class PolymeshTransactionBase<
   public static toTransactionSpec<R, T>(
     transaction: PolymeshTransactionBase<R, T>
   ): BaseTransactionSpec<R, T> {
-    const { resolver, transformer, paidForBy, multiSig } = transaction;
+    const { resolver, transformer, paidForBy, multiSig, preRunValidation } = transaction;
 
     return {
       resolver,
       transformer,
       paidForBy,
       multiSig,
+      preRunValidation,
     };
   }
 
@@ -178,6 +179,13 @@ export abstract class PolymeshTransactionBase<
     | undefined
     | ((result: ReturnValue) => Promise<TransformedReturnValue> | TransformedReturnValue);
 
+  /**
+   * @hidden
+   *
+   * Optional validation function that runs before the transaction. Receives an object indicating whether it's running as a proposal.
+   */
+  protected preRunValidation?: ((args: { asProposal: boolean }) => Promise<void>) | undefined;
+
   protected context: Context;
 
   /**
@@ -209,6 +217,7 @@ export abstract class PolymeshTransactionBase<
       mortality,
       multiSig,
       multiSigOpts,
+      preRunValidation,
     } = transactionSpec;
 
     this.signingAddress = signingAddress;
@@ -220,6 +229,7 @@ export abstract class PolymeshTransactionBase<
     this.paidForBy = paidForBy;
     this.transformer = transformer;
     this.resolver = resolver;
+    this.preRunValidation = preRunValidation;
   }
 
   /**
@@ -243,6 +253,10 @@ export abstract class PolymeshTransactionBase<
     }
 
     try {
+      if (this.preRunValidation) {
+        await this.preRunValidation({ asProposal: true });
+      }
+
       await this.assertFeesCovered();
 
       const receipt = await this.internalRun();
@@ -286,6 +300,10 @@ export abstract class PolymeshTransactionBase<
     }
 
     try {
+      if (this.preRunValidation) {
+        await this.preRunValidation({ asProposal: false });
+      }
+
       await this.assertFeesCovered();
 
       const receipt = await this.internalRun();

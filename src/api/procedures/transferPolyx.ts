@@ -1,4 +1,4 @@
-import { PolymeshError, Procedure } from '~/internal';
+import { Account, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TransferPolyxParams } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
@@ -11,7 +11,7 @@ import {
 /**
  * @hidden
  */
-export async function prepareTransferPolyx(
+export function prepareTransferPolyx(
   this: Procedure<TransferPolyxParams>,
   args: TransferPolyxParams
 ): Promise<
@@ -28,34 +28,49 @@ export async function prepareTransferPolyx(
   const { to, amount, memo } = args;
 
   const rawAccountId = stringToAccountId(signerToString(to), context);
-
-  const { free: freeBalance } = await context.accountBalance();
-
-  if (amount.isGreaterThan(freeBalance)) {
-    throw new PolymeshError({
-      code: ErrorCode.InsufficientBalance,
-      message: 'Insufficient free balance',
-      data: {
-        freeBalance,
-      },
-    });
-  }
-
   const rawAmount = bigNumberToBalance(amount, context);
 
+  const preRunValidation = async ({ asProposal }: { asProposal: boolean }): Promise<void> => {
+    const signingAccount = context.getSigningAccount();
+    let fromAccount: Account;
+
+    if (asProposal) {
+      // Running as proposal - use MultiSig account balance
+      fromAccount = await context.getActingAccount();
+    } else {
+      // Running directly - use signing account balance
+      fromAccount = signingAccount;
+    }
+
+    const { free: freeBalance } = await fromAccount.getBalance();
+
+    if (amount.isGreaterThan(freeBalance)) {
+      throw new PolymeshError({
+        code: ErrorCode.InsufficientBalance,
+        message: 'Insufficient free balance',
+        data: {
+          freeBalance,
+          fromAccount: fromAccount.address,
+        },
+      });
+    }
+  };
+
   if (memo) {
-    return {
+    return Promise.resolve({
       transaction: tx.balances.transferWithMemo,
       args: [rawAccountId, rawAmount, stringToMemo(memo, context)],
       resolver: undefined,
-    };
+      preRunValidation,
+    });
   }
 
-  return {
+  return Promise.resolve({
     transaction: tx.balances.transfer,
     args: [rawAccountId, rawAmount],
     resolver: undefined,
-  };
+    preRunValidation,
+  });
 }
 
 /**
