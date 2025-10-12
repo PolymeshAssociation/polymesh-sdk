@@ -1,13 +1,21 @@
 import { BaseAsset } from '~/api/entities/Asset/Base/BaseAsset';
-import { Context, Namespace, setAssetDocuments } from '~/internal';
 import {
-  AssetDocument,
+  addAssetDocuments,
+  Context,
+  Namespace,
+  removeAssetDocuments,
+  setAssetDocuments,
+} from '~/internal';
+import {
+  AddAssetDocumentsParams,
+  AssetDocumentWithId,
   PaginationOptions,
   ProcedureMethod,
+  RemoveAssetDocumentsParams,
   ResultSet,
   SetAssetDocumentsParams,
 } from '~/types';
-import { assetToMeshAssetId, documentToAssetDocument } from '~/utils/conversion';
+import { assetToMeshAssetId, documentToAssetDocumentWithId } from '~/utils/conversion';
 import { createProcedureMethod, requestPaginated } from '~/utils/internal';
 
 /**
@@ -24,19 +32,42 @@ export class Documents extends Namespace<BaseAsset> {
       { getProcedureAndArgs: args => [setAssetDocuments, { asset: parent, ...args }] },
       context
     );
+
+    this.add = createProcedureMethod(
+      { getProcedureAndArgs: args => [addAssetDocuments, { asset: parent, ...args }] },
+      context
+    );
+
+    this.remove = createProcedureMethod(
+      { getProcedureAndArgs: args => [removeAssetDocuments, { asset: parent, ...args }] },
+      context
+    );
   }
 
   /**
    * Assign a new list of documents to the Asset by replacing the existing list of documents with the ones passed in the parameters
+   *
+   * @note this removes all existing documents and adds the new ones
    */
   public set: ProcedureMethod<SetAssetDocumentsParams, void>;
+
+  /**
+   * Add documents to the Asset's existing list of documents
+   */
+  public add: ProcedureMethod<AddAssetDocumentsParams, void>;
+
+  /**
+   * Remove specific documents from the Asset by their IDs
+   */
+  public remove: ProcedureMethod<RemoveAssetDocumentsParams, void>;
 
   /**
    * Retrieve all documents linked to the Asset
    *
    * @note supports pagination
+   * @note returns documents with their on-chain IDs which can be used with the `remove` method
    */
-  public async get(paginationOpts?: PaginationOptions): Promise<ResultSet<AssetDocument>> {
+  public async get(paginationOpts?: PaginationOptions): Promise<ResultSet<AssetDocumentWithId>> {
     const {
       context: {
         polymeshApi: { query },
@@ -51,7 +82,10 @@ export class Documents extends Namespace<BaseAsset> {
       paginationOpts,
     });
 
-    const data: AssetDocument[] = entries.map(([, doc]) => documentToAssetDocument(doc.unwrap()));
+    const data: AssetDocumentWithId[] = entries.map(([key, doc]) => {
+      const [, id] = key.args;
+      return documentToAssetDocumentWithId({ document: doc.unwrap(), id });
+    });
 
     return {
       data,

@@ -5,7 +5,7 @@ import { when } from 'jest-when';
 import { Documents } from '~/api/entities/Asset/Base/Documents';
 import { FungibleAsset, Namespace, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { AssetDocument } from '~/types';
+import { AssetDocument, AssetDocumentWithId } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -69,6 +69,64 @@ describe('Documents class', () => {
     });
   });
 
+  describe('method: add', () => {
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const asset = entityMockUtils.getFungibleAssetInstance();
+      const documents = new Documents(asset, context);
+
+      const args = {
+        documents: [
+          {
+            name: 'someName',
+            uri: 'someUri',
+            contentHash: 'someHash',
+          },
+        ],
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { asset, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await documents.add(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: remove', () => {
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const asset = entityMockUtils.getFungibleAssetInstance();
+      const documents = new Documents(asset, context);
+
+      const args = {
+        documentIds: [new BigNumber(1), new BigNumber(2)],
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { asset, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await documents.remove(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
   describe('method: get', () => {
     afterAll(() => {
       jest.restoreAllMocks();
@@ -91,6 +149,12 @@ describe('Documents class', () => {
           contentHash: '0x02',
         },
       ];
+      const expectedDocumentsWithId: AssetDocumentWithId[] = expectedDocuments.map(
+        (doc, index) => ({
+          ...doc,
+          id: new BigNumber(index),
+        })
+      );
       const entries = expectedDocuments.map(({ name, uri, contentHash, type, filedAt }, index) =>
         tuple(
           {
@@ -139,11 +203,11 @@ describe('Documents class', () => {
         { arg: undefined }
       );
 
-      expect(result).toEqual({ data: expectedDocuments, next: null });
+      expect(result).toEqual({ data: expectedDocumentsWithId, next: null });
 
       result = await documents.get({ size, start });
 
-      expect(result).toEqual({ data: expectedDocuments.slice(1), next: null });
+      expect(result).toEqual({ data: expectedDocumentsWithId.slice(1), next: null });
     });
   });
 });

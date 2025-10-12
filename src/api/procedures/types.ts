@@ -1468,6 +1468,20 @@ export interface SetAssetDocumentsParams {
   documents: AssetDocument[];
 }
 
+export interface AddAssetDocumentsParams {
+  /**
+   * documents to add to the asset
+   */
+  documents: AssetDocument[];
+}
+
+export interface RemoveAssetDocumentsParams {
+  /**
+   * IDs of documents to remove from the asset
+   */
+  documentIds: BigNumber[];
+}
+
 export interface LaunchOfferingParams {
   /**
    * portfolio in which the Asset tokens to be sold are stored
