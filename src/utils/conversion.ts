@@ -194,6 +194,7 @@ import {
   AddCountStatInput,
   AffirmationStatus,
   AssetDocument,
+  AssetDocumentWithId,
   AssetStat,
   Authorization,
   AuthorizationType,
@@ -2242,6 +2243,24 @@ export function documentToAssetDocument({
   }
 
   return doc;
+}
+
+/**
+ * @hidden
+ * Convert a Document and its ID to an AssetDocumentWithId
+ */
+export function documentToAssetDocumentWithId({
+  document,
+  id,
+}: {
+  document: PolymeshPrimitivesDocument;
+  id: u32;
+}): AssetDocumentWithId {
+  const assetDoc = documentToAssetDocument(document);
+  return {
+    ...assetDoc,
+    id: u32ToBigNumber(id),
+  };
 }
 
 /**

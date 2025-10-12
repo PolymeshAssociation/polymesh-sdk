@@ -84,6 +84,16 @@ export interface AssetDocument {
 }
 
 /**
+ * Asset Document with its on-chain identifier
+ */
+export interface AssetDocumentWithId extends AssetDocument {
+  /**
+   * Document ID as stored on-chain
+   */
+  id: BigNumber;
+}
+
+/**
  * Properties that uniquely identify an Asset
  */
 export interface UniqueIdentifiers {

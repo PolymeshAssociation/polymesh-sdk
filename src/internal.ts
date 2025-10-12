@@ -57,6 +57,8 @@ export {
 } from '~/api/procedures/modifySignerPermissions';
 export { reserveTicker } from '~/api/procedures/reserveTicker';
 export { setAssetDocuments } from '~/api/procedures/setAssetDocuments';
+export { addAssetDocuments } from '~/api/procedures/addAssetDocuments';
+export { removeAssetDocuments } from '~/api/procedures/removeAssetDocuments';
 export { setAssetRequirements } from '~/api/procedures/setAssetRequirements';
 export { modifyComplianceRequirement } from '~/api/procedures/modifyComplianceRequirement';
 export { addAssetRequirement } from '~/api/procedures/addAssetRequirement';

@@ -135,6 +135,7 @@ import {
   AccountWithSignature,
   AffirmationStatus,
   AssetDocument,
+  AssetDocumentWithId,
   Authorization,
   AuthorizationType,
   ChildKeyWithAuth,
@@ -257,6 +258,7 @@ import {
   distributionToDividendDistributionParams,
   documentHashToString,
   documentToAssetDocument,
+  documentToAssetDocumentWithId,
   endConditionToSettlementType,
   exemptionToTransferExemption,
   expiryToMoment,
@@ -3825,6 +3827,57 @@ describe('assetDocumentToDocument and documentToAssetDocument', () => {
       });
 
       result = documentToAssetDocument(doc);
+      expect(result).toEqual(fakeResult);
+    });
+  });
+
+  describe('documentToAssetDocumentWithId', () => {
+    it('should convert a polkadot Document object with ID to an AssetDocumentWithId object', () => {
+      const name = 'someName';
+      const uri = 'someUri';
+      const contentHash = '0x111111';
+      const filedAt = new Date();
+      const type = 'someType';
+      const docId = new BigNumber(42);
+      const mockId = dsMockUtils.createMockU32(docId);
+
+      let fakeResult: AssetDocumentWithId = {
+        name,
+        uri,
+        id: docId,
+      };
+
+      let doc = dsMockUtils.createMockDocument({
+        uri: dsMockUtils.createMockBytes(uri),
+        name: dsMockUtils.createMockBytes(name),
+        contentHash: dsMockUtils.createMockDocumentHash('None'),
+        docType: dsMockUtils.createMockOption(),
+        filingDate: dsMockUtils.createMockOption(),
+      });
+
+      let result = documentToAssetDocumentWithId({ document: doc, id: mockId });
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        ...fakeResult,
+        contentHash,
+        filedAt,
+        type,
+      };
+
+      doc = dsMockUtils.createMockDocument({
+        uri: dsMockUtils.createMockBytes(uri),
+        name: dsMockUtils.createMockBytes(name),
+        contentHash: dsMockUtils.createMockDocumentHash({
+          H128: dsMockUtils.createMockU8aFixed(contentHash, true),
+        }),
+        docType: dsMockUtils.createMockOption(dsMockUtils.createMockBytes(type)),
+        filingDate: dsMockUtils.createMockOption(
+          dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime()))
+        ),
+      });
+
+      result = documentToAssetDocumentWithId({ document: doc, id: mockId });
       expect(result).toEqual(fakeResult);
     });
   });
