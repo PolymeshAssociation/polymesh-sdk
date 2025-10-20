@@ -18,6 +18,7 @@ import {
   SetTransferExemptionsParams,
   SetTransferRestrictionParams,
   setTransferRestrictions,
+  SetTransferRestrictionsStorage,
 } from '~/internal';
 import {
   ActiveTransferRestrictions,
@@ -62,7 +63,8 @@ export class TransferRestrictions extends Namespace<FungibleAsset> {
     this.setRestrictions = createProcedureMethod<
       TransferRestrictionParams,
       SetTransferRestrictionParams,
-      void
+      void,
+      SetTransferRestrictionsStorage
     >(
       {
         getProcedureAndArgs: args => [setTransferRestrictions, { ...args, asset: parent }],
@@ -230,7 +232,7 @@ export class TransferRestrictions extends Namespace<FungibleAsset> {
       claimType?: TrustedFor;
     }[] = [];
 
-    activeStats.forEach(stat => {
+    for (const stat of activeStats) {
       const stat1stKey = getStat1stKey(rawAssetId, stat, context);
       const statType = meshStatToStatType(stat);
 
@@ -282,7 +284,7 @@ export class TransferRestrictions extends Namespace<FungibleAsset> {
           statType,
         });
       }
-    });
+    }
 
     return {
       jurisdictionQueries,
@@ -290,6 +292,194 @@ export class TransferRestrictions extends Namespace<FungibleAsset> {
       nonJurisdictionQueries,
       nonJurisdictionMappings,
     };
+  }
+
+  /**
+   * Process jurisdiction entries and extract jurisdiction values
+   */
+  private processJurisdictionEntries(
+    entries:
+      | [
+          StorageKey<
+            [PolymeshPrimitivesStatisticsStat1stKey, PolymeshPrimitivesStatisticsStat2ndKey]
+          >,
+          u128
+        ][]
+      | undefined,
+    statType: StatType
+  ): JurisdictionValue[] {
+    const jurisdictionValues: JurisdictionValue[] = [];
+
+    for (const [key, rawValue] of entries ?? []) {
+      const secondKey = key.args[1];
+
+      if (secondKey.isNoClaimStat) {
+        // No jurisdiction claim
+        jurisdictionValues.push({
+          countryCode: null,
+          value: u128ToStatValue(rawValue, statType),
+        });
+      } else if (secondKey.isClaim && secondKey.asClaim.isJurisdiction) {
+        // Specific jurisdiction
+        const countryCode = secondKey.asClaim.asJurisdiction.toString() as CountryCode;
+        jurisdictionValues.push({
+          countryCode,
+          value: u128ToStatValue(rawValue, statType),
+        });
+      }
+    }
+
+    return jurisdictionValues;
+  }
+
+  /**
+   * Process jurisdiction results and add them to the result array
+   */
+  private processJurisdictionResults(
+    jurisdictionResults: [
+      StorageKey<[PolymeshPrimitivesStatisticsStat1stKey, PolymeshPrimitivesStatisticsStat2ndKey]>,
+      u128
+    ][][],
+    jurisdictionMappings: {
+      statType: StatType;
+      issuer: Identity;
+      claimType: TrustedFor;
+    }[],
+    result: TransferRestrictionStatValues[]
+  ): void {
+    for (let index = 0; index < jurisdictionMappings.length; index++) {
+      const mapping = jurisdictionMappings[index]!;
+      const entries = jurisdictionResults[index];
+      const { statType, issuer, claimType } = mapping;
+
+      const jurisdictionValues = this.processJurisdictionEntries(entries, statType);
+      const totalValue = jurisdictionValues.reduce(
+        (sum, jv) => sum.plus(jv.value),
+        new BigNumber(0)
+      );
+
+      result.push({
+        type: statType,
+        value: totalValue,
+        claim: {
+          issuer,
+          claimType,
+          value: jurisdictionValues,
+        },
+      });
+    }
+  }
+
+  /**
+   * Get claim type for comparison
+   */
+  private getClaimTypeForComparison(claimType: TrustedFor): ClaimType {
+    return typeof claimType === 'object' ? claimType.type : claimType;
+  }
+
+  /**
+   * Process accredited/affiliate claim types
+   */
+  private processAccreditedAffiliateClaim(
+    statType: StatType,
+    issuer: Identity,
+    claimType: TrustedFor,
+    nonJurisdictionResults: u128[],
+    resultIndex: number
+  ): { result: TransferRestrictionStatValues; newIndex: number } {
+    const withClaimValue = u128ToStatValue(nonJurisdictionResults[resultIndex]!, statType);
+    const withoutClaimValue = u128ToStatValue(nonJurisdictionResults[resultIndex + 1]!, statType);
+    const totalValue = withClaimValue.plus(withoutClaimValue);
+
+    return {
+      result: {
+        type: statType,
+        value: totalValue,
+        claim: {
+          issuer,
+          claimType,
+          value: { withClaim: withClaimValue, withoutClaim: withoutClaimValue },
+        },
+      },
+      newIndex: resultIndex + 2,
+    };
+  }
+
+  /**
+   * Process custom claim types
+   */
+  private processCustomClaim(
+    statType: StatType,
+    issuer: Identity,
+    claimType: TrustedFor,
+    nonJurisdictionResults: u128[],
+    resultIndex: number
+  ): { result: TransferRestrictionStatValues; newIndex: number } {
+    return {
+      result: {
+        claim: {
+          issuer,
+          claimType,
+        },
+        type: statType,
+        value: u128ToStatValue(nonJurisdictionResults[resultIndex]!, statType),
+      },
+      newIndex: resultIndex + 1,
+    };
+  }
+
+  /**
+   * Process non-jurisdiction results and add them to the result array
+   */
+  private processNonJurisdictionResults(
+    nonJurisdictionMappings: {
+      statType: StatType;
+      issuer?: Identity;
+      claimType?: TrustedFor;
+    }[],
+    nonJurisdictionResults: u128[],
+    result: TransferRestrictionStatValues[]
+  ): void {
+    let resultIndex = 0;
+
+    for (const mapping of nonJurisdictionMappings) {
+      const { statType, issuer, claimType } = mapping;
+
+      if (claimType && issuer) {
+        const claimTypeForComparison = this.getClaimTypeForComparison(claimType);
+
+        if (
+          claimTypeForComparison === ClaimType.Accredited ||
+          claimTypeForComparison === ClaimType.Affiliate
+        ) {
+          const { result: claimResult, newIndex } = this.processAccreditedAffiliateClaim(
+            statType,
+            issuer,
+            claimType,
+            nonJurisdictionResults,
+            resultIndex
+          );
+          result.push(claimResult);
+          resultIndex = newIndex;
+        } else {
+          const { result: claimResult, newIndex } = this.processCustomClaim(
+            statType,
+            issuer,
+            claimType,
+            nonJurisdictionResults,
+            resultIndex
+          );
+          result.push(claimResult);
+          resultIndex = newIndex;
+        }
+      } else {
+        result.push({
+          type: statType,
+          value: u128ToStatValue(nonJurisdictionResults[resultIndex]!, statType),
+        });
+        resultIndex++;
+      }
+    }
   }
 
   /**
@@ -323,105 +513,13 @@ export class TransferRestrictions extends Namespace<FungibleAsset> {
       nonJurisdictionMappings,
     } = this.assembleAssetMappings(activeStats, rawAssetId, context);
 
-    // Execute all queries in parallel
     const [jurisdictionResults, nonJurisdictionResults] = await Promise.all([
       Promise.all(jurisdictionQueries),
       nonJurisdictionQueries.length > 0 ? requestMulti(context, nonJurisdictionQueries) : [],
     ]);
 
-    // Process jurisdiction results
-    jurisdictionMappings.forEach((mapping, index) => {
-      const entries = jurisdictionResults[index];
-      const { statType, issuer, claimType } = mapping;
-
-      const jurisdictionValues: JurisdictionValue[] = [];
-
-      entries!.forEach(([key, rawValue]) => {
-        const secondKey = key.args[1];
-
-        if (secondKey.isNoClaimStat) {
-          // No jurisdiction claim
-          jurisdictionValues.push({
-            countryCode: null,
-            value: u128ToStatValue(rawValue, statType),
-          });
-        } else if (secondKey.isClaim && secondKey.asClaim.isJurisdiction) {
-          // Specific jurisdiction
-          const countryCode = secondKey.asClaim.asJurisdiction.toString() as CountryCode;
-          jurisdictionValues.push({
-            countryCode,
-            value: u128ToStatValue(rawValue, statType),
-          });
-        }
-      });
-
-      const totalValue = jurisdictionValues.reduce(
-        (sum, jv) => sum.plus(jv.value),
-        new BigNumber(0)
-      );
-
-      result.push({
-        type: statType,
-        value: totalValue,
-        claim: {
-          issuer,
-          claimType,
-          value: jurisdictionValues,
-        },
-      });
-    });
-
-    // Process non-jurisdiction results
-    let resultIndex = 0;
-    nonJurisdictionMappings.forEach(mapping => {
-      const { statType, issuer, claimType } = mapping;
-
-      if (claimType && issuer) {
-        const claimTypeForComparison = typeof claimType === 'object' ? claimType.type : claimType;
-
-        if (
-          claimTypeForComparison === ClaimType.Accredited ||
-          claimTypeForComparison === ClaimType.Affiliate
-        ) {
-          // Get the specific claim values (true/false queries only)
-          const withClaimValue = u128ToStatValue(nonJurisdictionResults[resultIndex]!, statType);
-          const withoutClaimValue = u128ToStatValue(
-            nonJurisdictionResults[resultIndex + 1]!,
-            statType
-          );
-          resultIndex += 2;
-
-          const totalValue = withClaimValue.plus(withoutClaimValue);
-          result.push({
-            type: statType,
-            value: totalValue,
-            claim: {
-              issuer,
-              claimType,
-              value: { withClaim: withClaimValue, withoutClaim: withoutClaimValue },
-            },
-          });
-        } else {
-          // Custom claims and other unsupported types - get NoClaimStat total holder/balance value only
-          result.push({
-            claim: {
-              issuer,
-              claimType,
-            },
-            type: statType,
-            value: u128ToStatValue(nonJurisdictionResults[resultIndex]!, statType),
-          });
-          resultIndex++;
-        }
-      } else {
-        // Handle non-claim stats
-        result.push({
-          type: statType,
-          value: u128ToStatValue(nonJurisdictionResults[resultIndex]!, statType),
-        });
-        resultIndex++;
-      }
-    });
+    this.processJurisdictionResults(jurisdictionResults, jurisdictionMappings, result);
+    this.processNonJurisdictionResults(nonJurisdictionMappings, nonJurisdictionResults, result);
 
     return result;
   }

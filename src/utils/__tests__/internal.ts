@@ -27,6 +27,7 @@ import {
   MockWebSocket,
 } from '~/testUtils/mocks/dataSources';
 import {
+  AssetStat,
   Authorization,
   AuthorizationRequest,
   AuthorizationType,
@@ -43,6 +44,7 @@ import {
   ScopeType,
   StatType,
   SubCallback,
+  TransferRestriction,
   TransferRestrictionType,
   TxTags,
 } from '~/types';
@@ -2668,16 +2670,123 @@ describe('getCorporateActionWithDescription', () => {
 });
 
 describe('assertStatIsSet', () => {
-  it('should throw an error', () => {
-    const current = dsMockUtils.createMockBtreeSet<PolymeshPrimitivesStatisticsStatType>();
-    const needed = dsMockUtils.createMockStatisticsStatType();
+  const expectedError = new PolymeshError({
+    code: ErrorCode.UnmetPrerequisite,
+    message: 'The appropriate stat type for this restriction is not set',
+  });
 
-    const expectedError = new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'The appropriate stat type for this restriction is not set',
-    });
+  it('should throw when no matching stat exists', () => {
+    const stats: AssetStat[] = [{ type: StatType.Count }];
+    const restriction: TransferRestriction = {
+      type: TransferRestrictionType.Percentage,
+      value: new BigNumber(10),
+    };
 
-    expect(() => assertStatIsSet(current, needed)).toThrow(expectedError);
+    expect(() => assertStatIsSet(stats, restriction)).toThrow(expectedError);
+  });
+
+  it('should not throw when a matching scoped stat exists', () => {
+    const issuer = entityMockUtils.getIdentityInstance({ did: 'issuerDid' });
+    const stats: AssetStat[] = [
+      {
+        type: StatType.ScopedCount,
+        claimIssuer: {
+          issuer,
+          claimType: ClaimType.Accredited,
+        },
+      },
+    ];
+    const restriction: TransferRestriction = {
+      type: TransferRestrictionType.ClaimCount,
+      value: {
+        min: new BigNumber(1),
+        claim: { type: ClaimType.Accredited, accredited: true },
+        issuer,
+      },
+    };
+
+    expect(() => assertStatIsSet(stats, restriction)).not.toThrow();
+  });
+
+  it('should not throw when a matching Count stat exists', () => {
+    const stats: AssetStat[] = [{ type: StatType.Count }];
+    const restriction: TransferRestriction = {
+      type: TransferRestrictionType.Count,
+      value: new BigNumber(10),
+    };
+
+    expect(() => assertStatIsSet(stats, restriction)).not.toThrow();
+  });
+
+  it('should not throw when a matching ClaimPercentage stat exists', () => {
+    const issuer = entityMockUtils.getIdentityInstance({ did: 'issuerDid' });
+    const stats: AssetStat[] = [
+      {
+        type: StatType.ScopedBalance,
+        claimIssuer: {
+          issuer,
+          claimType: ClaimType.Accredited,
+        },
+      },
+    ];
+    const restriction: TransferRestriction = {
+      type: TransferRestrictionType.ClaimPercentage,
+      value: {
+        min: new BigNumber(1),
+        max: new BigNumber(100),
+        claim: { type: ClaimType.Accredited, accredited: true },
+        issuer,
+      },
+    };
+
+    expect(() => assertStatIsSet(stats, restriction)).not.toThrow();
+  });
+
+  it('should throw when restriction type is not supported', () => {
+    const stats: AssetStat[] = [{ type: StatType.Count }];
+    const restriction = {
+      type: 'UnsupportedType' as unknown as TransferRestrictionType,
+      value: new BigNumber(10),
+    } as TransferRestriction;
+
+    expect(() => assertStatIsSet(stats, restriction)).toThrow(expectedError);
+  });
+
+  it('should throw when ClaimCount stat has wrong type or missing claimIssuer', () => {
+    const stats: AssetStat[] = [
+      { type: StatType.Count }, // Wrong type
+      { type: StatType.ScopedCount }, // Missing claimIssuer
+    ];
+    const issuer = entityMockUtils.getIdentityInstance({ did: 'issuerDid' });
+    const restriction: TransferRestriction = {
+      type: TransferRestrictionType.ClaimCount,
+      value: {
+        min: new BigNumber(1),
+        claim: { type: ClaimType.Accredited, accredited: true },
+        issuer,
+      },
+    };
+
+    expect(() => assertStatIsSet(stats, restriction)).toThrow(expectedError);
+  });
+
+  it('should throw when ClaimPercentage stat has wrong type or missing claimIssuer', () => {
+    const stats: AssetStat[] = [
+      { type: StatType.Balance }, // Wrong type
+      { type: StatType.ScopedBalance }, // Missing claimIssuer
+    ];
+    const issuer = entityMockUtils.getIdentityInstance({ did: 'issuerDid' });
+    const restriction: TransferRestriction = {
+      type: TransferRestrictionType.ClaimPercentage,
+      value: {
+        min: new BigNumber(1),
+        max: new BigNumber(100),
+        claim: { type: ClaimType.Accredited, accredited: true },
+        issuer,
+      },
+    };
+
+    expect(() => assertStatIsSet(stats, restriction)).toThrow(expectedError);
   });
 });
 
