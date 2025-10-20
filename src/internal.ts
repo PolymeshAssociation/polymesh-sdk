@@ -84,6 +84,7 @@ export { launchOffering } from '~/api/procedures/launchOffering';
 export {
   setTransferRestrictions,
   Params as SetTransferRestrictionParams,
+  SetTransferRestrictionsStorage,
 } from '~/api/procedures/setTransferRestrictions';
 export { setAssetStats, SetAssetStatParams } from '~/api/procedures/setAssetStats';
 export {

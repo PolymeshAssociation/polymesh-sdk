@@ -7,7 +7,7 @@ import {
   DropLast,
   ObsInnerType,
 } from '@polkadot/api/types';
-import { BTreeSet, Bytes, Option, StorageKey, u32 } from '@polkadot/types';
+import { Bytes, Option, StorageKey, u32 } from '@polkadot/types';
 import { EventRecord, RewardDestination } from '@polkadot/types/interfaces';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import {
@@ -49,12 +49,15 @@ import { Claim as MiddlewareClaim, ClaimTypeEnum, Query } from '~/middleware/typ
 import { MiddlewareScope } from '~/middleware/typesV1';
 import {
   Asset,
+  AssetStat,
   AttestPrimaryKeyRotationAuthorizationData,
   Authorization,
   AuthorizationRequest,
   AuthorizationType,
   CaCheckpointType,
   Claim,
+  ClaimCountRestrictionValue,
+  ClaimPercentageRestrictionValue,
   ClaimType,
   Condition,
   ConditionType,
@@ -79,6 +82,7 @@ import {
   StatClaimIssuer,
   StatType,
   SubCallback,
+  TransferRestriction,
   TransferRestrictionType,
   TxTag,
   UnsubCallback,
@@ -1737,13 +1741,37 @@ export function neededStatTypeForRestrictionInput(
  * @hidden
  * @throws if stat is not found in the given set
  */
-export function assertStatIsSet(
-  currentStats: BTreeSet<PolymeshPrimitivesStatisticsStatType>,
-  neededStat: PolymeshPrimitivesStatisticsStatType
-): void {
-  const needStat = ![...currentStats].find(s => s.eq(neededStat));
+export function assertStatIsSet(currentStats: AssetStat[], restriction: TransferRestriction): void {
+  const matches = currentStats.some(stat => {
+    switch (restriction.type) {
+      case TransferRestrictionType.Count:
+        return stat.type === StatType.Count;
+      case TransferRestrictionType.Percentage:
+        return stat.type === StatType.Balance;
+      case TransferRestrictionType.ClaimCount: {
+        if (stat.type !== StatType.ScopedCount || !stat.claimIssuer) {
+          return false;
+        }
+        const { issuer, claim } = restriction.value as ClaimCountRestrictionValue;
+        return (
+          stat.claimIssuer.issuer.did === issuer.did && stat.claimIssuer.claimType === claim.type
+        );
+      }
+      case TransferRestrictionType.ClaimPercentage: {
+        if (stat.type !== StatType.ScopedBalance || !stat.claimIssuer) {
+          return false;
+        }
+        const { issuer, claim } = restriction.value as ClaimPercentageRestrictionValue;
+        return (
+          stat.claimIssuer.issuer.did === issuer.did && stat.claimIssuer.claimType === claim.type
+        );
+      }
+      default:
+        return false;
+    }
+  });
 
-  if (needStat) {
+  if (!matches) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'The appropriate stat type for this restriction is not set',

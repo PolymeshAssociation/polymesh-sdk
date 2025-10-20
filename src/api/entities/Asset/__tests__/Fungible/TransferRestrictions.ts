@@ -802,5 +802,194 @@ describe('TransferRestrictions class', () => {
         returnValue: originalActiveAssetStats,
       });
     });
+
+    it('should handle jurisdiction entries when entries is undefined', async () => {
+      // Set up only the jurisdiction stat (which is ScopedBalance type)
+      dsMockUtils.createQueryMock('statistics', 'activeAssetStats', {
+        returnValue: [rawJurisdictionBalanceStatType],
+      });
+
+      // Mock jurisdiction entries to return undefined (this should trigger the ?? [] fallback)
+      const jurisdictionEntriesMock = dsMockUtils.createQueryMock('statistics', 'assetStats', {
+        returnValue: jest.fn(),
+      });
+      jurisdictionEntriesMock.entries = jest.fn().mockResolvedValue(undefined);
+
+      const result = await asset.transferRestrictions.getValues();
+
+      // Should handle undefined entries gracefully and return empty jurisdiction values
+      expect(result).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            claim: expect.objectContaining({
+              claimType: ClaimType.Jurisdiction,
+              issuer: expect.anything(),
+              value: [], // Empty array when entries is undefined
+            }),
+            type: StatType.ScopedBalance,
+            value: new BigNumber(0), // No values to sum
+          }),
+        ])
+      );
+    });
+
+    it('should handle jurisdiction mappings with falsy mapping values', async () => {
+      // Set up only the jurisdiction stat (which is ScopedBalance type)
+      dsMockUtils.createQueryMock('statistics', 'activeAssetStats', {
+        returnValue: [rawJurisdictionBalanceStatType],
+      });
+
+      // Mock jurisdiction entries to return empty array
+      const jurisdictionEntriesMock = dsMockUtils.createQueryMock('statistics', 'assetStats', {
+        returnValue: jest.fn(),
+      });
+      jurisdictionEntriesMock.entries = jest.fn().mockResolvedValue([]);
+
+      // Mock the jurisdiction queries to return some falsy values (null/undefined) in the mappings
+      // This will trigger the !mapping check on line 338
+      queryMultiMock.mockResolvedValue([
+        [], // jurisdictionResults with some falsy mappings
+      ]);
+
+      const result = await asset.transferRestrictions.getValues();
+
+      // Should handle falsy mappings gracefully
+      expect(result).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            claim: expect.objectContaining({
+              claimType: ClaimType.Jurisdiction,
+              issuer: expect.anything(),
+              value: [], // Empty array when mappings are falsy
+            }),
+            type: StatType.ScopedBalance,
+            value: new BigNumber(0), // No values to sum
+          }),
+        ])
+      );
+    });
+
+    it('should handle jurisdiction mappings array with falsy values at specific indices', async () => {
+      // Simple test to cover the continue statement when mapping is falsy
+
+      // Set up only the jurisdiction stat (which is ScopedBalance type)
+      dsMockUtils.createQueryMock('statistics', 'activeAssetStats', {
+        returnValue: [rawJurisdictionBalanceStatType],
+      });
+
+      // Mock jurisdiction entries to return empty array
+      const jurisdictionEntriesMock = dsMockUtils.createQueryMock('statistics', 'assetStats', {
+        returnValue: jest.fn(),
+      });
+      jurisdictionEntriesMock.entries = jest.fn().mockResolvedValue([]);
+
+      // Mock the assembleAssetMappings method to return jurisdictionMappings with a falsy value
+      const assembleAssetMappingsSpy = jest.spyOn(
+        transferRestrictions as unknown as { assembleAssetMappings: () => unknown },
+        'assembleAssetMappings'
+      );
+
+      // Create a sparse array with a hole at index 0
+      const sparseMappings = [];
+      sparseMappings[0] = null; // Falsy value at index 0
+      sparseMappings[1] = {
+        statType: StatType.ScopedBalance,
+        issuer: expect.anything(),
+        claimType: ClaimType.Jurisdiction,
+      };
+
+      assembleAssetMappingsSpy.mockReturnValue({
+        jurisdictionQueries: [
+          Promise.resolve([]), // Empty entries for index 0
+          Promise.resolve([]), // Empty entries for index 1
+        ],
+        jurisdictionMappings: sparseMappings,
+        nonJurisdictionQueries: [],
+        nonJurisdictionMappings: [],
+      });
+
+      const result = await asset.transferRestrictions.getValues();
+
+      // Should handle falsy mappings gracefully and skip the null entry
+      expect(result).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            claim: expect.objectContaining({
+              claimType: ClaimType.Jurisdiction,
+              issuer: expect.anything(),
+              value: [], // Empty array when entries is empty
+            }),
+            type: StatType.ScopedBalance,
+            value: new BigNumber(0), // No values to sum
+          }),
+        ])
+      );
+
+      // Restore the spy
+      assembleAssetMappingsSpy.mockRestore();
+    });
+
+    it('should handle jurisdiction mappings with undefined values', async () => {
+      // Test to cover the continue statement by creating a scenario where mapping is undefined
+
+      // Set up only the jurisdiction stat (which is ScopedBalance type)
+      dsMockUtils.createQueryMock('statistics', 'activeAssetStats', {
+        returnValue: [rawJurisdictionBalanceStatType],
+      });
+
+      // Mock jurisdiction entries to return empty array
+      const jurisdictionEntriesMock = dsMockUtils.createQueryMock('statistics', 'assetStats', {
+        returnValue: jest.fn(),
+      });
+      jurisdictionEntriesMock.entries = jest.fn().mockResolvedValue([]);
+
+      // Mock the assembleAssetMappings method to return jurisdictionMappings with undefined values
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const assembleAssetMappingsSpy = jest.spyOn(
+        transferRestrictions as unknown as { assembleAssetMappings: () => void },
+        'assembleAssetMappings'
+      );
+
+      // Create an array with undefined at index 0
+      const mappingsWithUndefined = [
+        undefined, // This should trigger the continue statement
+        {
+          statType: StatType.ScopedBalance,
+          issuer: expect.anything(),
+          claimType: ClaimType.Jurisdiction,
+        },
+      ];
+
+      // @ts-expect-error mockReturnValue typing mismatch is intentional for test
+      assembleAssetMappingsSpy.mockReturnValue({
+        jurisdictionQueries: [
+          Promise.resolve([]), // Empty entries for index 0
+          Promise.resolve([]), // Empty entries for index 1
+        ],
+        jurisdictionMappings: mappingsWithUndefined,
+        nonJurisdictionQueries: [],
+        nonJurisdictionMappings: [],
+      });
+
+      const result = await asset.transferRestrictions.getValues();
+
+      // Should handle undefined mappings gracefully and skip the undefined entry
+      expect(result).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            claim: expect.objectContaining({
+              claimType: ClaimType.Jurisdiction,
+              issuer: expect.anything(),
+              value: [], // Empty array when entries is empty
+            }),
+            type: StatType.ScopedBalance,
+            value: new BigNumber(0), // No values to sum
+          }),
+        ])
+      );
+
+      // Restore the spy
+      assembleAssetMappingsSpy.mockRestore();
+    });
   });
 });

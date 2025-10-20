@@ -1,10 +1,7 @@
-import BigNumber from 'bignumber.js';
-
 import { FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import {
-  ClaimCountRestrictionValue,
+  AssetStat,
   ClaimCountTransferRestrictionInput,
-  ClaimPercentageTransferRestriction,
   ClaimType,
   ErrorCode,
   TransferRestriction,
@@ -14,114 +11,182 @@ import {
 } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
+  assetStatToStat,
   assetToMeshAssetId,
   complianceConditionsToBtreeSet,
   transferRestrictionToPolymeshTransferCondition,
 } from '~/utils/conversion';
-import { assertStatIsSet, neededStatTypeForRestrictionInput } from '~/utils/internal';
+import { assertStatIsSet } from '~/utils/internal';
 
 export type Params = { asset: FungibleAsset } & TransferRestrictionParams;
+
+export interface SetTransferRestrictionsStorage {
+  currentStats: AssetStat[];
+}
 
 /**
  * @hidden
  * Checks if the input restrictions are valid
  */
-function assertInputValid(input: TransferRestrictionParams): void {
-  input.restrictions.forEach(restriction => {
-    const type = restriction.type;
-    if (type === TransferRestrictionType.ClaimCount) {
-      const seenJurisdictions = new Set<string>();
-      const seenClaimTypes = new Set<string>();
+/**
+ * Ensure claim-count restrictions do not contain duplicate identifiers.
+ */
+function ensureClaimCountRestrictionIsUnique(
+  restriction: ClaimCountTransferRestrictionInput,
+  seenJurisdictions: Set<string>,
+  seenClaimTypes: Set<ClaimType>
+): void {
+  const { claim } = restriction;
 
-      input.restrictions.forEach(rest => {
-        const { claim } = rest as ClaimCountTransferRestrictionInput;
+  /* istanbul ignore next */
+  if (!claim) {
+    return;
+  }
 
-        if (!claim) {
-          return;
-        }
+  if (claim.type === ClaimType.Jurisdiction) {
+    const key = claim.countryCode ?? 'none';
 
-        if (claim.type === ClaimType.Jurisdiction) {
-          // cannot add two claims with same country code restrictions will result in internal error
-          if (seenJurisdictions.has(claim.countryCode || 'none')) {
-            throw new PolymeshError({
-              code: ErrorCode.ValidationError,
-              message: 'Duplicate Jurisdiction CountryCode found in input',
-              data: { countryCode: claim.countryCode },
-            });
-          }
-          seenJurisdictions.add(claim.countryCode ?? 'none');
-        } else {
-          // cannot add two ClaimType.Accredited or ClaimType.Affiliate restrictions will result in internal error
-          if (seenClaimTypes.has(claim.type)) {
-            throw new PolymeshError({
-              code: ErrorCode.ValidationError,
-              message: 'Duplicate ClaimType found in input',
-              data: { claimType: claim.type },
-            });
-          }
-          seenClaimTypes.add(claim.type);
-        }
+    if (seenJurisdictions.has(key)) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'Duplicate Jurisdiction CountryCode found in input',
+        data: { countryCode: claim.countryCode },
       });
     }
+
+    seenJurisdictions.add(key);
+
+    return;
+  }
+
+  if (seenClaimTypes.has(claim.type)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Duplicate ClaimType found in input',
+      data: { claimType: claim.type },
+    });
+  }
+
+  seenClaimTypes.add(claim.type);
+}
+
+/**
+ * Ensure there are no duplicate claim-based restrictions in the provided input.
+ */
+function assertInputValid(input: TransferRestrictionParams): void {
+  const seenJurisdictions = new Set<string>();
+  const seenClaimTypes = new Set<ClaimType>();
+
+  for (const restriction of input.restrictions) {
+    if (restriction.type === TransferRestrictionType.ClaimCount) {
+      ensureClaimCountRestrictionIsUnique(
+        restriction as ClaimCountTransferRestrictionInput,
+        seenJurisdictions,
+        seenClaimTypes
+      );
+    }
+  }
+}
+
+type RestrictionInput = TransferRestrictionParams['restrictions'][number];
+
+/**
+ * Convert loose restriction input into a normalized transfer restriction.
+ */
+function toTransferRestriction(restriction: RestrictionInput): TransferRestriction {
+  if ('count' in restriction) {
+    return {
+      type: TransferRestrictionType.Count,
+      value: restriction.count,
+    };
+  }
+
+  if ('percentage' in restriction) {
+    return {
+      type: TransferRestrictionType.Percentage,
+      value: restriction.percentage,
+    };
+  }
+
+  if (restriction.type === TransferRestrictionType.ClaimCount) {
+    const { min, max, claim, issuer } = restriction;
+
+    return {
+      type: TransferRestrictionType.ClaimCount,
+      value: {
+        min,
+        max,
+        claim,
+        issuer,
+      },
+    };
+  }
+
+  if (restriction.type === TransferRestrictionType.ClaimPercentage) {
+    const { min, max, claim, issuer } = restriction;
+
+    return {
+      type: TransferRestrictionType.ClaimPercentage,
+      value: {
+        min,
+        max,
+        claim,
+        issuer,
+      },
+    };
+  }
+
+  /* istanbul ignore next */
+  throw new PolymeshError({
+    code: ErrorCode.UnexpectedError,
+    message: `Unexpected transfer restriction: "${JSON.stringify(
+      restriction
+    )}". Please report this to the Polymesh team`,
   });
 }
 
 /**
  * @hidden
  */
-export async function prepareSetTransferRestrictions(
-  this: Procedure<Params, void>,
+export function prepareSetTransferRestrictions(
+  this: Procedure<Params, void, SetTransferRestrictionsStorage>,
   args: Params
 ): Promise<TransactionSpec<void, ExtrinsicParams<'statistics', 'setAssetTransferCompliance'>>> {
   const {
     context: {
       polymeshApi: {
-        query,
         tx: { statistics },
       },
     },
     context,
+    storage: { currentStats },
   } = this;
   const { restrictions, asset } = args;
   const rawAssetId = assetToMeshAssetId(asset, context);
 
   assertInputValid(args);
 
-  const currentStats = await query.statistics.activeAssetStats(rawAssetId);
-
   const conditions = restrictions.map(restriction => {
-    let value: BigNumber | ClaimCountRestrictionValue | ClaimPercentageTransferRestriction;
-    if ('count' in restriction) {
-      value = restriction.count;
-    } else if ('percentage' in restriction) {
-      value = restriction.percentage;
-    } else {
-      value = restriction;
-    }
-
-    const condition = { type: restriction.type, value } as TransferRestriction;
-
-    const neededStat = neededStatTypeForRestrictionInput(restriction, context);
-
-    assertStatIsSet(currentStats, neededStat);
+    const condition = toTransferRestriction(restriction);
+    assertStatIsSet(currentStats, condition);
 
     return transferRestrictionToPolymeshTransferCondition(condition, context);
   });
 
   const rawConditions = complianceConditionsToBtreeSet(conditions, context);
 
-  return {
+  return Promise.resolve({
     transaction: statistics.setAssetTransferCompliance,
     args: [rawAssetId, rawConditions],
     resolver: undefined,
-  };
+  });
 }
 
 /**
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, void>,
+  this: Procedure<Params, void, SetTransferRestrictionsStorage>,
   { asset }: Params
 ): ProcedureAuthorization {
   return {
@@ -136,5 +201,33 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const setTransferRestrictions = (): Procedure<Params, void> =>
-  new Procedure(prepareSetTransferRestrictions, getAuthorization);
+export async function prepareStorage(
+  this: Procedure<Params, void, SetTransferRestrictionsStorage>,
+  { asset }: Params
+): Promise<SetTransferRestrictionsStorage> {
+  const {
+    context: {
+      polymeshApi: {
+        query: { statistics },
+      },
+    },
+    context,
+  } = this;
+
+  const rawAssetId = assetToMeshAssetId(asset, context);
+  const rawCurrentStats = await statistics.activeAssetStats(rawAssetId);
+  const currentStats = [...rawCurrentStats].map(stat => assetStatToStat(stat, context));
+
+  return {
+    currentStats,
+  };
+}
+
+/**
+ * @hidden
+ */
+export const setTransferRestrictions = (): Procedure<
+  Params,
+  void,
+  SetTransferRestrictionsStorage
+> => new Procedure(prepareSetTransferRestrictions, getAuthorization, prepareStorage);
