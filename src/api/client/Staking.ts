@@ -137,6 +137,7 @@ export class Staking {
    * Allow for a stash account to update its controller
    *
    * @note the transaction must be signed by a stash account
+   * @note Polymesh v8 makes it so the stash will become its own controller account
    */
   public setController: ProcedureMethod<SetStakingControllerParams, void>;
 

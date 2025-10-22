@@ -6,9 +6,11 @@ import {
   QueryOptions,
 } from '@apollo/client/core';
 import { ApiPromise } from '@polkadot/api';
+import { UnsubscribePromise } from '@polkadot/api/types';
 import { getTypeDef, Option } from '@polkadot/types';
 import { AccountInfo, Header } from '@polkadot/types/interfaces';
 import {
+  FrameSystemAccountInfo,
   PalletCorporateActionsCaId,
   PalletCorporateActionsDistribution,
   PalletRelayerSubsidy,
@@ -97,6 +99,7 @@ import {
   delay,
   getApiAtBlock,
   getLatestSqVersion,
+  isV7Spec,
 } from '~/utils/internal';
 
 interface ConstructorParams {
@@ -133,7 +136,15 @@ export class Context {
 
   private _isArchiveNodeResult?: boolean;
 
+  public isV7 = false;
+
   public isSqIdPadded = false;
+
+  public specVersion: number;
+
+  public specName: string;
+
+  private readonly unsubChainVersion: UnsubscribePromise;
 
   /**
    * @hidden
@@ -144,6 +155,18 @@ export class Context {
     this._middlewareApi = middlewareApiV2;
     this.polymeshApi = polymeshApi;
     this.ss58Format = ss58Format;
+
+    this.specVersion = polymeshApi.runtimeVersion.specVersion.toNumber();
+    this.specName = polymeshApi.runtimeVersion.specName.toString();
+    this.isV7 = isV7Spec(this.specVersion);
+
+    this.unsubChainVersion = polymeshApi.query.system.lastRuntimeUpgrade(upgrade => {
+      /* istanbul ignore next: this will be removed after dual version support for v7-v8 */
+      if (upgrade.isSome) {
+        this.specVersion = upgrade.unwrap().specVersion.toNumber();
+        this.isV7 = isV7Spec(this.specVersion);
+      }
+    });
   }
 
   /**
@@ -351,7 +374,8 @@ export class Context {
 
     const rawAddress = stringToAccountId(address, this);
 
-    const assembleResult = ({
+    // istanbul ignore next: will be removed with v7 support
+    const legacyAssembleResult = ({
       data: { free: rawFree, miscFrozen, feeFrozen, reserved: rawReserved },
     }: AccountInfo): AccountBalance => {
       /*
@@ -367,6 +391,27 @@ export class Context {
         free: total.minus(locked).minus(reserved),
       };
     };
+
+    const v8AssembleResult = ({ data }: FrameSystemAccountInfo): AccountBalance => {
+      const { free: rawFree, frozen: feeFrozen, reserved: rawReserved } = data;
+      /*
+       * The chain's "free" balance is the balance that isn't locked. Here we calculate it so
+       * the free balance is what the Account is able to spend
+       */
+      const reserved = balanceToBigNumber(rawReserved);
+      const total = balanceToBigNumber(rawFree).plus(reserved);
+      const locked = balanceToBigNumber(feeFrozen);
+      return {
+        total,
+        locked,
+        free: total.minus(locked).minus(reserved),
+      };
+    };
+
+    // istanbul ignore next: will be removed with v7 support
+    const assembleResult = this.isV7
+      ? (legacyAssembleResult as unknown as typeof v8AssembleResult)
+      : v8AssembleResult;
 
     if (callback) {
       this.assertSupportsSubscription();

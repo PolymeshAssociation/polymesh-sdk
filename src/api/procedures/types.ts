@@ -1945,6 +1945,8 @@ export interface BondPolyxParams {
 export interface SetStakingControllerParams {
   /**
    * The account responsible for managing the signing stash's staking preferences
+   *
+   * @deprecated Chain v8 will ignore this argument. Instead the stash will become its own controller
    */
   controller: Account | string;
 }

@@ -72,9 +72,6 @@ import {
   PolymeshPrimitivesStoFundraiserReceiptDetails,
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceTransferCondition,
-  SpCoreEcdsaSignature,
-  SpCoreEd25519Signature,
-  SpCoreSr25519Signature,
   SpRuntimeMultiSignature,
 } from '@polkadot/types/lookup';
 import { BTreeSet, Result } from '@polkadot/types-codec';
@@ -11880,11 +11877,9 @@ describe('signatureToMeshRuntimeMultiSignature', () => {
 
     const signature = 'someSignature';
 
-    let fakeSignature = 'fakeSignature' as unknown as SpCoreEcdsaSignature;
+    const fakeSignature = 'fakeSignature' as unknown as U8aFixed;
 
-    when(context.createType)
-      .calledWith('SpCoreEcdsaSignature', signature)
-      .mockReturnValue(fakeSignature as unknown as SpCoreEcdsaSignature);
+    when(context.createType).calledWith('U8aFixed', signature).mockReturnValue(fakeSignature);
 
     when(context.createType)
       .calledWith('SpRuntimeMultiSignature', { Ecdsa: fakeSignature })
@@ -11894,12 +11889,6 @@ describe('signatureToMeshRuntimeMultiSignature', () => {
 
     expect(result).toEqual(fakeResult);
 
-    fakeSignature = 'fakeSignature' as unknown as SpCoreEd25519Signature;
-
-    when(context.createType)
-      .calledWith('SpCoreEd25519Signature', signature)
-      .mockReturnValue(fakeSignature);
-
     when(context.createType)
       .calledWith('SpRuntimeMultiSignature', { Ed25519: fakeSignature })
       .mockReturnValue(fakeResult);
@@ -11907,12 +11896,6 @@ describe('signatureToMeshRuntimeMultiSignature', () => {
     result = signatureToMeshRuntimeMultiSignature(SignerKeyRingType.Ed25519, signature, context);
 
     expect(result).toEqual(fakeResult);
-
-    fakeSignature = 'fakeSignature' as unknown as SpCoreSr25519Signature;
-
-    when(context.createType)
-      .calledWith('SpCoreSr25519Signature', signature)
-      .mockReturnValue(fakeSignature);
 
     when(context.createType)
       .calledWith('SpRuntimeMultiSignature', { Sr25519: fakeSignature })
@@ -12377,6 +12360,39 @@ describe('rawStakingLedgerToStakingLedgerEntry', () => {
 
   it('should return nomination info', () => {
     const mockContext = dsMockUtils.getContextInstance();
+
+    const rawNomination = dsMockUtils.createMockStakingLedger({
+      total: dsMockUtils.createMockCompact(
+        dsMockUtils.createMockU128(new BigNumber(10).times(10 ** 6))
+      ),
+      active: dsMockUtils.createMockCompact(
+        dsMockUtils.createMockU128(new BigNumber(5).times(10 ** 6))
+      ),
+      unlocking: dsMockUtils.createMockVec([
+        dsMockUtils.createMockUnlockChunk({
+          value: dsMockUtils.createMockCompact(dsMockUtils.createMockU128(new BigNumber(8))),
+          era: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(new BigNumber(9))),
+        }),
+      ]),
+      legacyClaimedRewards: dsMockUtils.createMockVec([
+        dsMockUtils.createMockU32(new BigNumber(7)),
+      ]),
+      stash: dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID),
+    });
+
+    const result = rawStakingLedgerToStakingLedgerEntry(rawNomination, mockContext);
+
+    expect(result).toEqual({
+      stash: expect.any(Account),
+      total: new BigNumber(10),
+      active: new BigNumber(5),
+      unlocking: expect.arrayContaining([]),
+      claimedRewards: expect.arrayContaining([new BigNumber(7)]),
+    });
+  });
+
+  it('should handle v7 staking ledger format', () => {
+    const mockContext = dsMockUtils.getContextInstance({ isV7: true });
 
     const rawNomination = dsMockUtils.createMockStakingLedger({
       total: dsMockUtils.createMockCompact(

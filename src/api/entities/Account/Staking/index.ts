@@ -1,6 +1,6 @@
 import { Option } from '@polkadot/types';
 import { AccountId, RewardDestination } from '@polkadot/types/interfaces';
-import { PalletStakingNominations } from '@polkadot/types/lookup';
+import { PalletStakingNominations, PalletStakingRewardDestination } from '@polkadot/types/lookup';
 
 import { Account, Namespace } from '~/internal';
 import {
@@ -79,10 +79,10 @@ export class Staking extends Namespace<Account> {
     const rawAddress = stringToAccountId(this.parent.address, context);
 
     const assembleResult = (
-      rawPayee: RewardDestination,
+      rawPayee: RewardDestination | null,
       controller: Account | null
     ): StakingPayee | null => {
-      if (!controller) {
+      if (!controller || !rawPayee) {
         return null;
       }
 
@@ -96,7 +96,11 @@ export class Staking extends Namespace<Account> {
       });
 
       const payeeUnsub = await query.staking.payee(rawAddress, rawPayee => {
-        const result = assembleResult(rawPayee, controller);
+        // istanbul ignore next: will be removed with v7 support
+        const payee = context.isV7
+          ? (rawPayee as unknown as PalletStakingRewardDestination)
+          : rawPayee.unwrapOr(null);
+        const result = assembleResult(payee, controller);
 
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
         callback(result);
@@ -113,7 +117,12 @@ export class Staking extends Namespace<Account> {
       this.getController(),
     ]);
 
-    return assembleResult(rawPayee, controller);
+    // istanbul ignore next: will be removed with v7 support
+    const payee = context.isV7
+      ? (rawPayee as unknown as PalletStakingRewardDestination)
+      : rawPayee.unwrap();
+
+    return assembleResult(payee, controller);
   }
 
   /**

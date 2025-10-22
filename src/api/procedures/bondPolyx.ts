@@ -72,11 +72,21 @@ export async function prepareBondPolyx(
     context
   );
 
-  return {
-    transaction: bond,
-    args: [rawController, rawAmount, rawPayee],
-    resolver: undefined,
-  };
+  if (context.isV7) {
+    return {
+      transaction: bond,
+      args: [rawController, rawAmount, rawPayee],
+      resolver: undefined,
+      // v8 no longer allows controllers to be specified
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any;
+  } else {
+    return {
+      transaction: bond,
+      args: [rawAmount, rawPayee],
+      resolver: undefined,
+    };
+  }
 }
 
 /**
@@ -101,7 +111,7 @@ export async function prepareStorage(this: Procedure<Params, void, Storage>): Pr
 
   const actingAccount = await context.getActingAccount();
 
-  const [actingBalance] = await Promise.all([actingAccount.getBalance()]);
+  const actingBalance = await actingAccount.getBalance();
 
   return {
     actingAccount,

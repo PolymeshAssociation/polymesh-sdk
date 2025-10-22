@@ -59,11 +59,22 @@ export function prepareSetStakingController(
 
   const rawController = stringToAccountId(controller.address, context);
 
-  return Promise.resolve({
-    transaction: setController,
-    args: [rawController],
-    resolver: undefined,
-  });
+  if (context.isV7) {
+    return Promise.resolve({
+      transaction: setController,
+      args: [rawController],
+      resolver: undefined,
+      // v8 no longer allows for a controller to be specified
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+  } else {
+    // This is now a no arg extrinsic
+    return Promise.resolve({
+      transaction: setController,
+      args: undefined,
+      resolver: undefined,
+    });
+  }
 }
 
 /**
