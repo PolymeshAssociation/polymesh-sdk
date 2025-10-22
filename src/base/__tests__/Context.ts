@@ -84,6 +84,12 @@ describe('Context class', () => {
   beforeEach(() => {
     polymeshApi = dsMockUtils.getApiInstance();
 
+    // These `any` casts can be removed with v7 support
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    (polymeshApi as any).runtimeVersion.specVersion = dsMockUtils.createMockU64();
+    (polymeshApi as any).runtimeVersion.specName = dsMockUtils.createMockText();
+    /* eslint-enable @typescript-eslint/no-explicit-any */
+
     dsMockUtils.setConstMock('system', 'ss58Prefix', {
       returnValue: dsMockUtils.createMockU8(new BigNumber(42)),
     });
@@ -361,8 +367,7 @@ describe('Context class', () => {
 
     const free = new BigNumber(100);
     const reserved = new BigNumber(40);
-    const miscFrozen = new BigNumber(50);
-    const feeFrozen = new BigNumber(25);
+    const frozen = new BigNumber(25);
 
     it('should throw if there is no signing Account and no Account is passed', async () => {
       const context = await Context.create({
@@ -382,8 +387,7 @@ describe('Context class', () => {
         data: dsMockUtils.createMockAccountData({
           free,
           reserved,
-          miscFrozen,
-          feeFrozen,
+          frozen,
         }),
       });
 
@@ -397,8 +401,8 @@ describe('Context class', () => {
 
       const result = await context.accountBalance();
       expect(result).toEqual({
-        free: free.minus(miscFrozen).shiftedBy(-6),
-        locked: miscFrozen.shiftedBy(-6),
+        free: free.minus(frozen).shiftedBy(-6),
+        locked: frozen.shiftedBy(-6),
         total: free.plus(reserved).shiftedBy(-6),
       });
     });
@@ -410,8 +414,7 @@ describe('Context class', () => {
         data: dsMockUtils.createMockAccountData({
           free,
           reserved,
-          miscFrozen,
-          feeFrozen,
+          frozen,
         }),
       });
 
@@ -424,8 +427,8 @@ describe('Context class', () => {
 
       const result = await context.accountBalance('someAddress');
       expect(result).toEqual({
-        free: free.minus(miscFrozen).shiftedBy(-6),
-        locked: miscFrozen.shiftedBy(-6),
+        free: free.minus(frozen).shiftedBy(-6),
+        locked: frozen.shiftedBy(-6),
         total: free.plus(reserved).shiftedBy(-6),
       });
     });
@@ -439,8 +442,7 @@ describe('Context class', () => {
         data: dsMockUtils.createMockAccountData({
           free,
           reserved,
-          miscFrozen,
-          feeFrozen,
+          frozen,
         }),
       });
 
@@ -460,8 +462,8 @@ describe('Context class', () => {
 
       expect(result).toEqual(unsubCallback);
       expect(callback).toHaveBeenCalledWith({
-        free: free.minus(miscFrozen).shiftedBy(-6),
-        locked: miscFrozen.shiftedBy(-6),
+        free: free.minus(frozen).shiftedBy(-6),
+        locked: frozen.shiftedBy(-6),
         total: free.plus(reserved).shiftedBy(-6),
       });
     });

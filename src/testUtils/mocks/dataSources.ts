@@ -470,6 +470,7 @@ interface ContextOptions {
   supportsSubscription?: boolean;
   getSignature?: `0x${string}`;
   getNextAssetId?: string;
+  isV7?: boolean;
 }
 
 interface SigningManagerOptions {
@@ -946,6 +947,7 @@ function configureContext(opts: ContextOptions): void {
     assertHasSigningAddress: jest.fn(),
     assertSupportsSubscription: jest.fn(),
     getSignature: jest.fn().mockReturnValue(opts.getSignature),
+    isV7: opts.isV7,
   } as unknown as MockContext;
 
   contextInstance.clone = jest.fn().mockReturnValue(contextInstance);
@@ -2560,22 +2562,19 @@ export const createMockPalletPermissions = (permissions?: {
 export const createMockAccountData = (accountData?: {
   free: Balance | Parameters<typeof createMockBalance>[0];
   reserved: Balance | Parameters<typeof createMockBalance>[0];
-  miscFrozen: Balance | Parameters<typeof createMockBalance>[0];
-  feeFrozen: Balance | Parameters<typeof createMockBalance>[0];
+  frozen: Balance | Parameters<typeof createMockBalance>[0];
 }): MockCodec<AccountData> => {
-  const { free, reserved, miscFrozen, feeFrozen } = accountData ?? {
+  const { free, reserved, frozen } = accountData ?? {
     free: createMockBalance(),
     reserved: createMockBalance(),
-    miscFrozen: createMockBalance(),
-    feeFrozen: createMockBalance(),
+    frozen: createMockBalance(),
   };
 
   return createMockCodec(
     {
       free: createMockBalance(free),
       reserved: createMockBalance(reserved),
-      miscFrozen: createMockBalance(miscFrozen),
-      feeFrozen: createMockBalance(feeFrozen),
+      frozen: createMockBalance(frozen),
     },
     !accountData
   );
@@ -4957,17 +4956,32 @@ export const createMockStakingLedger = (
         total: Compact<u128>;
         active: Compact<u128>;
         unlocking: Vec<PalletStakingUnlockChunk>;
+        legacyClaimedRewards: Vec<u32>;
+      }
+    | {
+        stash: AccountId;
+        total: Compact<u128>;
+        active: Compact<u128>;
+        unlocking: Vec<PalletStakingUnlockChunk>;
         claimedRewards: Vec<u32>;
       }
     | PalletStakingStakingLedger
 ): MockCodec<PalletStakingStakingLedger> => {
-  const { stash, total, active, unlocking, claimedRewards } = ledger ?? {
+  const defaultLedger = {
     stash: createMockAccountId(),
     total: createMockBalance(),
     active: createMockBalance(),
     unlocking: createMockVec([]),
-    claimedRewards: createMockVec([]),
+    legacyClaimedRewards: createMockVec([]),
   };
+
+  if (!ledger) {
+    return createMockCodec<PalletStakingStakingLedger>(defaultLedger, true);
+  }
+
+  const { stash, total, active, unlocking } = ledger;
+  const claimedRewards =
+    'claimedRewards' in ledger ? ledger.claimedRewards : ledger.legacyClaimedRewards;
 
   return createMockCodec<PalletStakingStakingLedger>(
     {
@@ -4976,8 +4990,9 @@ export const createMockStakingLedger = (
       active,
       unlocking,
       claimedRewards,
+      legacyClaimedRewards: claimedRewards,
     },
-    !ledger
+    false
   );
 };
 

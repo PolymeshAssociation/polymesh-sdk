@@ -180,6 +180,40 @@ describe('bondPolyx procedure', () => {
 
     expect(result).toEqual({
       transaction: bondTx,
+      args: [rawAmount, rewardDestination],
+      resolver: undefined,
+    });
+  });
+
+  it('should return a v7 bond transaction spec with controller', async () => {
+    mockContext = dsMockUtils.getContextInstance({ isV7: true });
+    bondTx = dsMockUtils.createTxMock('staking', 'bond');
+
+    when(bigNumberToBalanceSpy).calledWith(amount, mockContext).mockReturnValue(rawAmount);
+    when(stringToAccountIdSpy)
+      .calledWith(actingAccount.address, mockContext)
+      .mockReturnValue(rawAccountId);
+    when(stakingRewardDestinationToRawSpy)
+      .calledWith({ stash: true }, mockContext)
+      .mockReturnValue(rewardDestination);
+
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      actingBalance,
+      actingAccount,
+    });
+
+    const args = {
+      payee: actingAccount,
+      controller: actingAccount,
+      rewardDestination: actingAccount,
+      amount,
+      autoStake: false,
+    };
+
+    const result = await prepareBondPolyx.call(proc, args);
+
+    expect(result).toEqual({
+      transaction: bondTx,
       args: [rawAccountId, rawAmount, rewardDestination],
       resolver: undefined,
     });

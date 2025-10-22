@@ -129,6 +129,33 @@ describe('setStakingController procedure', () => {
 
     expect(result).toEqual({
       transaction: setControllerTx,
+      args: undefined,
+      resolver: undefined,
+    });
+  });
+
+  it('should return a v7 setController transaction spec with controller arg', async () => {
+    mockContext = dsMockUtils.getContextInstance({ isV7: true });
+    setControllerTx = dsMockUtils.createTxMock('staking', 'setController');
+
+    when(stringToAccountIdSpy)
+      .calledWith(newController.address, mockContext)
+      .mockReturnValue(rawAccountId);
+
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      actingAccount,
+      currentController,
+      newControllerLedger: null,
+    });
+
+    const args = {
+      controller: newController,
+    };
+
+    const result = await prepareSetStakingController.call(proc, args);
+
+    expect(result).toEqual({
+      transaction: setControllerTx,
       args: [rawAccountId],
       resolver: undefined,
     });

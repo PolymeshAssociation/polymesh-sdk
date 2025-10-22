@@ -2383,3 +2383,14 @@ export async function getCorporateActionWithDescription(
 
   return { corporateAction: ca.unwrap(), description };
 }
+
+/**
+ * @hidden
+ */
+export function isV7Spec(specVersion: number): boolean {
+  if (specVersion < 8000000) {
+    return true;
+  }
+
+  return false;
+}

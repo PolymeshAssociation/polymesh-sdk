@@ -169,6 +169,7 @@ export class Polymesh {
         : new WsProvider(nodeUrl);
 
       polymeshApi = await ApiPromise.create({
+        // @ts-expect-error - exactPropertyType causes provider from ttl?.
         provider,
         types,
         rpc,

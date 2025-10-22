@@ -9,7 +9,7 @@ import {
   Permill,
   RewardDestination,
 } from '@polkadot/types/interfaces';
-import { H512 } from '@polkadot/types/interfaces/runtime';
+import { AccountId32, H512 } from '@polkadot/types/interfaces/runtime';
 import { DispatchError, DispatchResult } from '@polkadot/types/interfaces/system';
 import {
   PalletCorporateActionsBallotBallotMeta,
@@ -26,6 +26,7 @@ import {
   PalletStakingActiveEraInfo,
   PalletStakingNominations,
   PalletStakingStakingLedger,
+  PalletStakingUnlockChunk,
   PalletStakingValidatorPrefs,
   PalletStoFundingMethod,
   PalletStoFundraiser,
@@ -93,7 +94,7 @@ import {
 } from '@polkadot/types/lookup';
 import type { IsError } from '@polkadot/types/metadata/decorate/types';
 import { ITuple } from '@polkadot/types/types';
-import { BTreeSet, Result } from '@polkadot/types-codec';
+import { BTreeSet, Compact, Result } from '@polkadot/types-codec';
 import {
   hexHasPrefix,
   hexToString,
@@ -5471,15 +5472,7 @@ export function signatureToMeshRuntimeMultiSignature(
   value: string,
   context: Context
 ): SpRuntimeMultiSignature {
-  let rawValue;
-  if (type === SignerKeyRingType.Ecdsa) {
-    rawValue = context.createType('SpCoreEcdsaSignature', value);
-  } else if (type === SignerKeyRingType.Ed25519) {
-    rawValue = context.createType('SpCoreEd25519Signature', value);
-  } else {
-    // assume sr 25519
-    rawValue = context.createType('SpCoreSr25519Signature', value);
-  }
+  const rawValue = context.createType('U8aFixed', value);
 
   return context.createType('SpRuntimeMultiSignature', {
     [type]: rawValue,
@@ -5696,13 +5689,30 @@ export function rawStakingLedgerToStakingLedgerEntry(
   ledger: PalletStakingStakingLedger,
   context: Context
 ): StakingLedger {
-  const {
-    total: rawTotal,
-    active: rawActive,
-    unlocking: rawUnlocking,
-    claimedRewards: rawClaimedRewards,
-    stash: rawStash,
-  } = ledger;
+  let rawTotal: Compact<u128>;
+  let rawActive: Compact<u128>;
+  let rawClaimedRewards: Vec<u32>;
+  let rawUnlocking: Vec<PalletStakingUnlockChunk>;
+  let rawStash: AccountId32;
+
+  if (context.isV7) {
+    ({
+      total: rawTotal,
+      active: rawActive,
+      unlocking: rawUnlocking,
+      claimedRewards: rawClaimedRewards,
+      stash: rawStash,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } = ledger as any);
+  } else {
+    ({
+      total: rawTotal,
+      active: rawActive,
+      unlocking: rawUnlocking,
+      legacyClaimedRewards: rawClaimedRewards,
+      stash: rawStash,
+    } = ledger);
+  }
 
   const total = balanceToBigNumber(rawTotal.unwrap());
   const active = balanceToBigNumber(rawActive.unwrap());

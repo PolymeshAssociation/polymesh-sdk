@@ -74,7 +74,7 @@ describe('Staking namespace', () => {
               dsMockUtils.createMockU128(new BigNumber(5).times(10 ** 6))
             ),
             unlocking: dsMockUtils.createMockVec(),
-            claimedRewards: dsMockUtils.createMockVec(),
+            legacyClaimedRewards: dsMockUtils.createMockVec(),
           })
         ),
       });
@@ -104,7 +104,9 @@ describe('Staking namespace', () => {
   describe('method: getPayee', () => {
     it('should return payee info for Staked', async () => {
       dsMockUtils.createQueryMock('staking', 'payee', {
-        returnValue: dsMockUtils.createMockRewardDestination('Staked'),
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockRewardDestination('Staked')
+        ),
       });
 
       jest
@@ -122,7 +124,7 @@ describe('Staking namespace', () => {
 
     it('should return payee info for Stash', async () => {
       dsMockUtils.createQueryMock('staking', 'payee', {
-        returnValue: dsMockUtils.createMockRewardDestination('Stash'),
+        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockRewardDestination('Stash')),
       });
 
       jest
@@ -140,7 +142,9 @@ describe('Staking namespace', () => {
 
     it('should return payee info for Controller', async () => {
       dsMockUtils.createQueryMock('staking', 'payee', {
-        returnValue: dsMockUtils.createMockRewardDestination('Controller'),
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockRewardDestination('Controller')
+        ),
       });
 
       jest.spyOn(staking, 'getController').mockResolvedValue(
@@ -158,9 +162,11 @@ describe('Staking namespace', () => {
 
     it('should return payee info for Account', async () => {
       dsMockUtils.createQueryMock('staking', 'payee', {
-        returnValue: dsMockUtils.createMockRewardDestination({
-          Account: dsMockUtils.createMockAccountId('someAddress'),
-        }),
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockRewardDestination({
+            Account: dsMockUtils.createMockAccountId('someAddress'),
+          })
+        ),
       });
 
       jest
@@ -178,7 +184,7 @@ describe('Staking namespace', () => {
 
     it('should return null for None payee', async () => {
       dsMockUtils.createQueryMock('staking', 'payee', {
-        returnValue: dsMockUtils.createMockRewardDestination('None'),
+        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockRewardDestination('None')),
       });
 
       jest
@@ -193,7 +199,7 @@ describe('Staking namespace', () => {
 
     it('should return null for no controller', async () => {
       dsMockUtils.createQueryMock('staking', 'payee', {
-        returnValue: dsMockUtils.createMockRewardDestination('Stash'),
+        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockRewardDestination('Stash')),
       });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -212,7 +218,7 @@ describe('Staking namespace', () => {
       const payeeQueryMock = dsMockUtils.createQueryMock('staking', 'payee');
 
       payeeQueryMock.mockImplementation((rawAddr: unknown, cb: (arg: unknown) => void) => {
-        cb(dsMockUtils.createMockRewardDestination('Stash'));
+        cb(dsMockUtils.createMockOption(dsMockUtils.createMockRewardDestination('Stash')));
 
         return payeeUnsub;
       });
