@@ -723,7 +723,7 @@ describe('isPrintableAscii', () => {
   });
 
   it("should return false if the string doesn't contain only printable ASCII characters", () => {
-    expect(isPrintableAscii(String.fromCodePoint(10000000))).toBe(false);
+    expect(isPrintableAscii(String.fromCodePoint(65533))).toBe(false);
   });
 });
 
