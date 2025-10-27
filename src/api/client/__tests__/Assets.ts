@@ -264,7 +264,7 @@ describe('Assets Class', () => {
 
     it('should filter out tickers with unreadable characters', async () => {
       const fakeTicker = 'TEST';
-      const unreadableTicker = String.fromCharCode(65533);
+      const unreadableTicker = String.fromCodePoint(65533);
       const did = 'someDid';
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });

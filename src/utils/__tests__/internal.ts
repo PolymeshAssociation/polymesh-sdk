@@ -723,7 +723,7 @@ describe('isPrintableAscii', () => {
   });
 
   it("should return false if the string doesn't contain only printable ASCII characters", () => {
-    expect(isPrintableAscii(String.fromCharCode(10000000))).toBe(false);
+    expect(isPrintableAscii(String.fromCodePoint(10000000))).toBe(false);
   });
 });
 
@@ -1405,7 +1405,7 @@ describe('assertTickerValid', () => {
   });
 
   it('should throw an error if the string contains unreadable characters', () => {
-    const ticker = `ILLEGAL_${String.fromCharCode(65533)}`;
+    const ticker = `ILLEGAL_${String.fromCodePoint(65533)}`;
 
     expect(() => assertTickerValid(ticker)).toThrow(
       'Only printable ASCII is allowed as ticker name'

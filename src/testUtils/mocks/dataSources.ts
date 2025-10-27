@@ -335,11 +335,11 @@ export class MockWebSocket {
    */
   private triggerEvent(event: string, data: unknown): void {
     const eventListeners = this.listeners.get(event) || [];
-    eventListeners.forEach((listener: unknown) => {
+    for (const listener of eventListeners) {
       if (typeof listener === 'function') {
         listener(data);
       }
-    });
+    }
   }
 }
 
