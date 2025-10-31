@@ -31,6 +31,7 @@ import {
   ClaimType,
   CorporateActionKind,
   CorporateActionTargets,
+  CountryCode,
   InputCaCheckpoint,
   InputCondition,
   InputStatClaim,
@@ -55,7 +56,6 @@ import {
   SecurityIdentifier,
   Signer,
   SignerType,
-  StatClaimIssuer,
   StatType,
   TaxWithholding,
   TransactionPermissions,
@@ -482,7 +482,17 @@ export type AddCountStatParams = AddCountStatInput & {
   type: StatType.Count;
 };
 
-export type AddPercentageStatParams = {
+export type AddBalanceStatInput = {
+  /**
+   * The total asset holder balance value for the stat
+   *
+   * @note If not provided when enabling a stat, it will default to zero.
+   *   If not provided when updating stats, the current value will remain unchanged
+   */
+  balance?: BigNumber;
+};
+
+export type AddBalanceStatParams = AddBalanceStatInput & {
   type: StatType.Balance;
 };
 
@@ -490,23 +500,58 @@ export type AddClaimCountStatParams = ClaimCountStatInput & {
   type: StatType.ScopedCount;
 };
 
-export type AddClaimPercentageStatParams = StatClaimIssuer & {
+export type ClaimBalanceStatInput =
+  | {
+      issuer: Identity;
+      claimType: ClaimType.Accredited;
+      /**
+       * The total balance values for token holder with the accredited and non-accredited claim
+       *
+       * @note If not provided when enabling a stat, values will default to zero.
+       *   If not provided when updating stats, the current values will remain unchanged
+       */
+      value?: { accredited: BigNumber; nonAccredited: BigNumber };
+    }
+  | {
+      issuer: Identity;
+      claimType: ClaimType.Affiliate;
+      /**
+       * The total balance values for token holder with the affiliate and non-affiliate claim
+       *
+       * @note If not provided when enabling a stat, values will default to zero.
+       *   If not provided when updating stats, the current values will remain unchanged
+       */
+      value?: { affiliate: BigNumber; nonAffiliate: BigNumber };
+    }
+  | {
+      issuer: Identity;
+      claimType: ClaimType.Jurisdiction;
+      /**
+       * The total balance values for token holder per jurisdiction claim
+       *
+       * @note If not provided when enabling a stat, values will default to zero.
+       *   If not provided when updating stats, the current values will remain unchanged
+       */
+      value?: { countryCode: CountryCode | undefined; balance: BigNumber }[];
+    };
+
+export type AddClaimBalanceStatParams = ClaimBalanceStatInput & {
   type: StatType.ScopedBalance;
 };
 
 export type AddAssetStatParams = { asset: FungibleAsset } & (
   | AddCountStatParams
-  | AddPercentageStatParams
+  | AddBalanceStatParams
   | AddClaimCountStatParams
-  | AddClaimPercentageStatParams
+  | AddClaimBalanceStatParams
 );
 
 export type SetTransferRestrictionStatParams = {
   stats: (
     | AddCountStatParams
-    | AddPercentageStatParams
+    | AddBalanceStatParams
     | AddClaimCountStatParams
-    | AddClaimPercentageStatParams
+    | AddClaimBalanceStatParams
   )[];
 };
 

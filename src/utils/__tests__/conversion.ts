@@ -90,6 +90,12 @@ import {
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
+import {
+  AddBalanceStatParams,
+  AddClaimBalanceStatParams,
+  AddClaimCountStatParams,
+  AddCountStatParams,
+} from '~/api/procedures/types';
 import { UnreachableCaseError } from '~/api/procedures/utils';
 import {
   Account,
@@ -219,6 +225,7 @@ import {
   authorizationDataToAuthorization,
   authorizationToAuthorizationData,
   authorizationTypeToMeshAuthorizationType,
+  balanceStatInputToStatUpdates,
   balanceToBigNumber,
   ballotVoteToMeshBallotVote,
   bigNumberToBalance,
@@ -234,6 +241,7 @@ import {
   cddStatusToBoolean,
   checkpointToRecordDateSpec,
   childKeysWithAuthToCreateChildIdentitiesWithAuth,
+  claimBalanceStatInputToStatUpdates,
   claimCountStatInputToStatUpdates,
   claimCountToClaimCountRestrictionValue,
   claimToMeshClaim,
@@ -369,6 +377,7 @@ import {
   stakingRewardDestinationToRaw,
   statisticsOpTypeToStatType,
   statisticStatTypesToBtreeStatType,
+  statParamsToMeshStatType,
   statsClaimToStatClaimInputType,
   statUpdatesToBtreeStatUpdate,
   stringToAccountId,
@@ -9600,6 +9609,26 @@ describe('claimCountStatInputToStatUpdates', () => {
     );
     expect(result).toEqual('jurisdictionBtreeSet');
   });
+
+  it('should return empty BTreeSet when value is undefined', () => {
+    const context = dsMockUtils.getContextInstance();
+    const issuer = entityMockUtils.getIdentityInstance();
+
+    when(context.createType)
+      .calledWith('BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>', [])
+      .mockReturnValue(
+        'emptyResult' as unknown as BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>
+      );
+
+    const result = claimCountStatInputToStatUpdates(
+      {
+        issuer,
+        claimType: ClaimType.Accredited,
+      },
+      context
+    );
+    expect(result).toEqual('emptyResult');
+  });
 });
 
 describe('countStatInputToStatUpdates', () => {
@@ -9633,6 +9662,327 @@ describe('countStatInputToStatUpdates', () => {
 
     const result = countStatInputToStatUpdates({ count }, context);
     expect(result).toEqual('fakeResult');
+  });
+
+  it('should return empty BTreeSet when count is undefined', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    when(context.createType)
+      .calledWith('BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>', [])
+      .mockReturnValue(
+        'emptyResult' as unknown as BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>
+      );
+
+    const result = countStatInputToStatUpdates({}, context);
+    expect(result).toEqual('emptyResult');
+  });
+});
+
+describe('balanceStatInputToStatUpdates', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert balance input into a StatUpdate', () => {
+    const context = dsMockUtils.getContextInstance();
+    const balance = new BigNumber(1000);
+    const shiftedBalance = balance.shiftedBy(6);
+
+    const mockBalance = dsMockUtils.createMockBalance(shiftedBalance);
+    const mockU128 = dsMockUtils.createMockU128(shiftedBalance);
+    const mock2ndKey = dsMockUtils.createMock2ndKey();
+    const mockStatUpdate = dsMockUtils.createMockStatUpdate({
+      key2: mock2ndKey,
+      value: dsMockUtils.createMockOption(mockU128),
+    });
+    const mockBtreeSet = dsMockUtils.createMockBtreeSet([mockStatUpdate]);
+
+    when(context.createType)
+      .calledWith('Balance', shiftedBalance.toString())
+      .mockReturnValue(mockBalance);
+    when(context.createType).calledWith('u128', mockBalance.toString()).mockReturnValue(mockU128);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStatisticsStat2ndKey', 'NoClaimStat')
+      .mockReturnValue(mock2ndKey);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStatisticsStatUpdate', {
+        key2: mock2ndKey,
+        value: mockU128,
+      })
+      .mockReturnValue(mockStatUpdate);
+    when(context.createType)
+      .calledWith('BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>', [mockStatUpdate])
+      .mockReturnValue(mockBtreeSet);
+
+    const result = balanceStatInputToStatUpdates({ balance }, context);
+
+    expect(result).toBe(mockBtreeSet);
+    expect(result.size).toBe(1);
+    const statUpdate = [...result][0]!;
+    expect(statUpdate.value.unwrap().toString()).toBe(shiftedBalance.toString());
+  });
+
+  it('should return empty BTreeSet when balance is undefined', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    when(context.createType)
+      .calledWith('BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>', [])
+      .mockReturnValue(
+        'emptyResult' as unknown as BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>
+      );
+
+    const result = balanceStatInputToStatUpdates({}, context);
+    expect(result).toEqual('emptyResult');
+  });
+});
+
+describe('claimBalanceStatInputToStatUpdates', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert Accredited claim balance input into StatUpdates', () => {
+    const context = dsMockUtils.getContextInstance();
+    const issuer = entityMockUtils.getIdentityInstance();
+    const accredited = new BigNumber(100);
+    const nonAccredited = new BigNumber(200);
+    const shiftedAccredited = accredited.shiftedBy(6);
+    const shiftedNonAccredited = nonAccredited.shiftedBy(6);
+
+    const mockAccreditedBalance = dsMockUtils.createMockBalance(shiftedAccredited);
+    const mockNonAccreditedBalance = dsMockUtils.createMockBalance(shiftedNonAccredited);
+    const mockAccreditedU128 = dsMockUtils.createMockU128(shiftedAccredited);
+    const mockNonAccreditedU128 = dsMockUtils.createMockU128(shiftedNonAccredited);
+    const mockYes2ndKey = dsMockUtils.createMock2ndKey();
+    const mockNo2ndKey = dsMockUtils.createMock2ndKey();
+    const mockYesUpdate = dsMockUtils.createMockStatUpdate({
+      key2: mockYes2ndKey,
+      value: dsMockUtils.createMockOption(mockAccreditedU128),
+    });
+    const mockNoUpdate = dsMockUtils.createMockStatUpdate({
+      key2: mockNo2ndKey,
+      value: dsMockUtils.createMockOption(mockNonAccreditedU128),
+    });
+    const mockBtreeSet = dsMockUtils.createMockBtreeSet([mockYesUpdate, mockNoUpdate]);
+
+    when(context.createType)
+      .calledWith('Balance', shiftedAccredited.toString())
+      .mockReturnValue(mockAccreditedBalance);
+    when(context.createType)
+      .calledWith('Balance', shiftedNonAccredited.toString())
+      .mockReturnValue(mockNonAccreditedBalance);
+    when(context.createType)
+      .calledWith('u128', mockAccreditedBalance.toString())
+      .mockReturnValue(mockAccreditedU128);
+    when(context.createType)
+      .calledWith('u128', mockNonAccreditedBalance.toString())
+      .mockReturnValue(mockNonAccreditedU128);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStatisticsStat2ndKey', {
+        claim: { Accredited: true },
+      })
+      .mockReturnValue(mockYes2ndKey);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStatisticsStat2ndKey', {
+        claim: { Accredited: false },
+      })
+      .mockReturnValue(mockNo2ndKey);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStatisticsStatUpdate', expect.objectContaining({}))
+      .mockReturnValueOnce(mockYesUpdate)
+      .mockReturnValueOnce(mockNoUpdate);
+    when(context.createType)
+      .calledWith('BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>', [mockYesUpdate, mockNoUpdate])
+      .mockReturnValue(mockBtreeSet);
+
+    const result = claimBalanceStatInputToStatUpdates(
+      {
+        issuer,
+        claimType: ClaimType.Accredited,
+        value: { accredited, nonAccredited },
+      },
+      context
+    );
+
+    expect(result).toBe(mockBtreeSet);
+    expect(result.size).toBe(2);
+    const updates = [...result];
+    const values = updates.map(update => update.value.unwrap().toString());
+    expect(values).toContain(shiftedAccredited.toString());
+    expect(values).toContain(shiftedNonAccredited.toString());
+  });
+
+  it('should convert Affiliate claim balance input into StatUpdates', () => {
+    const context = dsMockUtils.getContextInstance();
+    const issuer = entityMockUtils.getIdentityInstance();
+    const affiliate = new BigNumber(50);
+    const nonAffiliate = new BigNumber(150);
+    const shiftedAffiliate = affiliate.shiftedBy(6);
+    const shiftedNonAffiliate = nonAffiliate.shiftedBy(6);
+
+    const mockAffiliateBalance = dsMockUtils.createMockBalance(shiftedAffiliate);
+    const mockNonAffiliateBalance = dsMockUtils.createMockBalance(shiftedNonAffiliate);
+    const mockAffiliateU128 = dsMockUtils.createMockU128(shiftedAffiliate);
+    const mockNonAffiliateU128 = dsMockUtils.createMockU128(shiftedNonAffiliate);
+    const mockYes2ndKey = dsMockUtils.createMock2ndKey();
+    const mockNo2ndKey = dsMockUtils.createMock2ndKey();
+    const mockYesUpdate = dsMockUtils.createMockStatUpdate({
+      key2: mockYes2ndKey,
+      value: dsMockUtils.createMockOption(mockAffiliateU128),
+    });
+    const mockNoUpdate = dsMockUtils.createMockStatUpdate({
+      key2: mockNo2ndKey,
+      value: dsMockUtils.createMockOption(mockNonAffiliateU128),
+    });
+    const mockBtreeSet = dsMockUtils.createMockBtreeSet([mockYesUpdate, mockNoUpdate]);
+
+    when(context.createType)
+      .calledWith('Balance', shiftedAffiliate.toString())
+      .mockReturnValue(mockAffiliateBalance);
+    when(context.createType)
+      .calledWith('Balance', shiftedNonAffiliate.toString())
+      .mockReturnValue(mockNonAffiliateBalance);
+    when(context.createType)
+      .calledWith('u128', mockAffiliateBalance.toString())
+      .mockReturnValue(mockAffiliateU128);
+    when(context.createType)
+      .calledWith('u128', mockNonAffiliateBalance.toString())
+      .mockReturnValue(mockNonAffiliateU128);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStatisticsStat2ndKey', {
+        claim: { Affiliate: true },
+      })
+      .mockReturnValue(mockYes2ndKey);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStatisticsStat2ndKey', {
+        claim: { Affiliate: false },
+      })
+      .mockReturnValue(mockNo2ndKey);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStatisticsStatUpdate', expect.objectContaining({}))
+      .mockReturnValueOnce(mockYesUpdate)
+      .mockReturnValueOnce(mockNoUpdate);
+    when(context.createType)
+      .calledWith('BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>', [mockYesUpdate, mockNoUpdate])
+      .mockReturnValue(mockBtreeSet);
+
+    const result = claimBalanceStatInputToStatUpdates(
+      {
+        issuer,
+        claimType: ClaimType.Affiliate,
+        value: { affiliate, nonAffiliate },
+      },
+      context
+    );
+
+    expect(result).toBe(mockBtreeSet);
+    expect(result.size).toBe(2);
+    const updates = [...result];
+    const values = updates.map(update => update.value.unwrap().toString());
+    expect(values).toContain(shiftedAffiliate.toString());
+    expect(values).toContain(shiftedNonAffiliate.toString());
+  });
+
+  it('should convert Jurisdiction claim balance input into StatUpdates', () => {
+    const context = dsMockUtils.getContextInstance();
+    const issuer = entityMockUtils.getIdentityInstance();
+    const usBalance = new BigNumber(300);
+    const caBalance = new BigNumber(400);
+    const shiftedUsBalance = usBalance.shiftedBy(6);
+    const shiftedCaBalance = caBalance.shiftedBy(6);
+
+    const mockUsBalance = dsMockUtils.createMockBalance(shiftedUsBalance);
+    const mockCaBalance = dsMockUtils.createMockBalance(shiftedCaBalance);
+    const mockUsU128 = dsMockUtils.createMockU128(shiftedUsBalance);
+    const mockCaU128 = dsMockUtils.createMockU128(shiftedCaBalance);
+    const mockUs2ndKey = dsMockUtils.createMock2ndKey();
+    const mockCa2ndKey = dsMockUtils.createMock2ndKey();
+    const mockUsUpdate = dsMockUtils.createMockStatUpdate({
+      key2: mockUs2ndKey,
+      value: dsMockUtils.createMockOption(mockUsU128),
+    });
+    const mockCaUpdate = dsMockUtils.createMockStatUpdate({
+      key2: mockCa2ndKey,
+      value: dsMockUtils.createMockOption(mockCaU128),
+    });
+    const mockBtreeSet = dsMockUtils.createMockBtreeSet([mockUsUpdate, mockCaUpdate]);
+
+    when(context.createType)
+      .calledWith('Balance', shiftedUsBalance.toString())
+      .mockReturnValue(mockUsBalance);
+    when(context.createType)
+      .calledWith('Balance', shiftedCaBalance.toString())
+      .mockReturnValue(mockCaBalance);
+    when(context.createType)
+      .calledWith('u128', mockUsBalance.toString())
+      .mockReturnValue(mockUsU128);
+    when(context.createType)
+      .calledWith('u128', mockCaBalance.toString())
+      .mockReturnValue(mockCaU128);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStatisticsStat2ndKey', {
+        claim: { Jurisdiction: CountryCode.Us },
+      })
+      .mockReturnValue(mockUs2ndKey);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStatisticsStat2ndKey', {
+        claim: { Jurisdiction: CountryCode.Ca },
+      })
+      .mockReturnValue(mockCa2ndKey);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStatisticsStatUpdate', expect.objectContaining({}))
+      .mockReturnValueOnce(mockUsUpdate)
+      .mockReturnValueOnce(mockCaUpdate);
+    when(context.createType)
+      .calledWith('BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>', [mockUsUpdate, mockCaUpdate])
+      .mockReturnValue(mockBtreeSet);
+
+    const result = claimBalanceStatInputToStatUpdates(
+      {
+        issuer,
+        claimType: ClaimType.Jurisdiction,
+        value: [
+          { countryCode: CountryCode.Us, balance: usBalance },
+          { countryCode: CountryCode.Ca, balance: caBalance },
+        ],
+      },
+      context
+    );
+
+    expect(result).toBe(mockBtreeSet);
+    expect(result.size).toBe(2);
+    const updates = [...result];
+    const values = updates.map(update => update.value.unwrap().toString());
+    expect(values).toContain(shiftedUsBalance.toString());
+    expect(values).toContain(shiftedCaBalance.toString());
+  });
+
+  it('should return empty BTreeSet when value is undefined', () => {
+    const context = dsMockUtils.getContextInstance();
+    const issuer = entityMockUtils.getIdentityInstance();
+
+    when(context.createType)
+      .calledWith('BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>', [])
+      .mockReturnValue(
+        'emptyResult' as unknown as BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>
+      );
+
+    const result = claimBalanceStatInputToStatUpdates(
+      {
+        issuer,
+        claimType: ClaimType.Accredited,
+      },
+      context
+    );
+    expect(result).toEqual('emptyResult');
   });
 });
 
@@ -9888,6 +10238,155 @@ describe('inputStatTypeToMeshStatType', () => {
     } as const;
     result = inputStatTypeToMeshStatType(scopedInput, mockContext);
     expect(result).toEqual(fakeStatistic);
+  });
+});
+
+describe('statParamsToMeshStatType', () => {
+  let mockContext: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    mockContext = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert Count stat params to mesh stat type', () => {
+    const fakeStatType = 'fakeStatType' as unknown as PolymeshPrimitivesStatisticsStatType;
+    const fakeOp = 'fakeOp' as unknown as PolymeshPrimitivesStatisticsStatOpType;
+    const createTypeMock = mockContext.createType;
+
+    when(createTypeMock)
+      .calledWith('PolymeshPrimitivesStatisticsStatOpType', StatType.Count)
+      .mockReturnValue(fakeOp);
+
+    when(createTypeMock)
+      .calledWith('PolymeshPrimitivesStatisticsStatType', {
+        operationType: fakeOp,
+        claimIssuer: undefined,
+      })
+      .mockReturnValue(fakeStatType);
+
+    const countParams: AddCountStatParams = {
+      type: StatType.Count,
+      count: new BigNumber(10),
+    };
+
+    const result = statParamsToMeshStatType(countParams, mockContext);
+
+    expect(result).toBe(fakeStatType);
+  });
+
+  it('should convert Balance stat params to mesh stat type', () => {
+    const fakeStatType = 'fakeStatType' as unknown as PolymeshPrimitivesStatisticsStatType;
+    const fakeOp = 'fakeOp' as unknown as PolymeshPrimitivesStatisticsStatOpType;
+    const createTypeMock = mockContext.createType;
+
+    when(createTypeMock)
+      .calledWith('PolymeshPrimitivesStatisticsStatOpType', StatType.Balance)
+      .mockReturnValue(fakeOp);
+
+    when(createTypeMock)
+      .calledWith('PolymeshPrimitivesStatisticsStatType', {
+        operationType: fakeOp,
+        claimIssuer: undefined,
+      })
+      .mockReturnValue(fakeStatType);
+
+    const balanceParams: AddBalanceStatParams = {
+      type: StatType.Balance,
+      balance: new BigNumber(1000),
+    };
+
+    const result = statParamsToMeshStatType(balanceParams, mockContext);
+
+    expect(result).toBe(fakeStatType);
+  });
+
+  it('should convert ScopedCount stat params to mesh stat type', () => {
+    const fakeStatType = 'fakeStatType' as unknown as PolymeshPrimitivesStatisticsStatType;
+    const fakeOp = 'fakeOp' as unknown as PolymeshPrimitivesStatisticsStatOpType;
+    const fakeIssuer = 'fakeIssuer' as unknown as PolymeshPrimitivesIdentityId;
+    const fakeClaimType = 'fakeClaimType' as unknown as PolymeshPrimitivesIdentityClaimClaimType;
+    const createTypeMock = mockContext.createType;
+    const did = 'someDid';
+    const issuer = entityMockUtils.getIdentityInstance({ did });
+
+    when(createTypeMock)
+      .calledWith('PolymeshPrimitivesStatisticsStatOpType', StatType.ScopedCount)
+      .mockReturnValue(fakeOp);
+
+    when(createTypeMock)
+      .calledWith('PolymeshPrimitivesIdentityClaimClaimType', ClaimType.Accredited)
+      .mockReturnValue(fakeClaimType);
+
+    when(createTypeMock)
+      .calledWith('PolymeshPrimitivesIdentityId', did)
+      .mockReturnValue(fakeIssuer);
+
+    when(createTypeMock)
+      .calledWith('PolymeshPrimitivesStatisticsStatType', {
+        operationType: fakeOp,
+        claimIssuer: [fakeClaimType, fakeIssuer],
+      })
+      .mockReturnValue(fakeStatType);
+
+    const scopedCountParams: AddClaimCountStatParams = {
+      type: StatType.ScopedCount,
+      issuer,
+      claimType: ClaimType.Accredited,
+      value: { accredited: new BigNumber(5), nonAccredited: new BigNumber(3) },
+    };
+
+    const result = statParamsToMeshStatType(scopedCountParams, mockContext);
+
+    expect(result).toBe(fakeStatType);
+  });
+
+  it('should convert ScopedBalance stat params to mesh stat type', () => {
+    const fakeStatType = 'fakeStatType' as unknown as PolymeshPrimitivesStatisticsStatType;
+    const fakeOp = 'fakeOp' as unknown as PolymeshPrimitivesStatisticsStatOpType;
+    const fakeIssuer = 'fakeIssuer' as unknown as PolymeshPrimitivesIdentityId;
+    const fakeClaimType = 'fakeClaimType' as unknown as PolymeshPrimitivesIdentityClaimClaimType;
+    const createTypeMock = mockContext.createType;
+    const did = 'someDid';
+    const issuer = entityMockUtils.getIdentityInstance({ did });
+
+    when(createTypeMock)
+      .calledWith('PolymeshPrimitivesStatisticsStatOpType', StatType.ScopedBalance)
+      .mockReturnValue(fakeOp);
+
+    when(createTypeMock)
+      .calledWith('PolymeshPrimitivesIdentityClaimClaimType', ClaimType.Affiliate)
+      .mockReturnValue(fakeClaimType);
+
+    when(createTypeMock)
+      .calledWith('PolymeshPrimitivesIdentityId', did)
+      .mockReturnValue(fakeIssuer);
+
+    when(createTypeMock)
+      .calledWith('PolymeshPrimitivesStatisticsStatType', {
+        operationType: fakeOp,
+        claimIssuer: [fakeClaimType, fakeIssuer],
+      })
+      .mockReturnValue(fakeStatType);
+
+    const scopedBalanceParams: AddClaimBalanceStatParams = {
+      type: StatType.ScopedBalance,
+      issuer,
+      claimType: ClaimType.Affiliate,
+      value: { affiliate: new BigNumber(2000), nonAffiliate: new BigNumber(1000) },
+    };
+
+    const result = statParamsToMeshStatType(scopedBalanceParams, mockContext);
+
+    expect(result).toBe(fakeStatType);
   });
 });
 

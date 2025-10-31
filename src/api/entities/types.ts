@@ -553,7 +553,13 @@ export interface ClaimPercentageTransferRestriction extends TransferRestrictionB
 }
 
 export interface AddCountStatInput {
-  count: BigNumber;
+  /**
+   * The token holder count value for the stat
+   *
+   * @note If not provided when enabling a stat, it will default to zero.
+   *   If not provided when updating stats, the current value will remain unchanged
+   */
+  count?: BigNumber;
 }
 
 export interface StatClaimIssuer {
@@ -565,17 +571,35 @@ export type ClaimCountStatInput =
   | {
       issuer: Identity;
       claimType: ClaimType.Accredited;
-      value: { accredited: BigNumber; nonAccredited: BigNumber };
+      /**
+       * The count values for token holders with the accredited and non-accredited claim
+       *
+       * @note If not provided when enabling a stat, values will default to zero.
+       *   If not provided when updating stats, the current values will remain unchanged
+       */
+      value?: { accredited: BigNumber; nonAccredited: BigNumber };
     }
   | {
       issuer: Identity;
       claimType: ClaimType.Affiliate;
-      value: { affiliate: BigNumber; nonAffiliate: BigNumber };
+      /**
+       * The count values for token holders with the affiliate and non-affiliate claim
+       *
+       * @note If not provided when enabling a stat, values will default to zero.
+       *   If not provided when updating stats, the current values will remain unchanged
+       */
+      value?: { affiliate: BigNumber; nonAffiliate: BigNumber };
     }
   | {
       issuer: Identity;
       claimType: ClaimType.Jurisdiction;
-      value: { countryCode: CountryCode | undefined; count: BigNumber }[];
+      /**
+       * The count values for token holders per jurisdiction claim
+       *
+       * @note If not provided when enabling a stat, values will default to zero.
+       *   If not provided when updating stats, the current values will remain unchanged
+       */
+      value?: { countryCode: CountryCode | undefined; count: BigNumber }[];
     };
 
 export interface ScheduleWithDetails {

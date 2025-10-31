@@ -15,6 +15,7 @@ import {
   Namespace,
   SetAssetStatParams,
   setAssetStats,
+  SetAssetStatsStorage,
   SetTransferExemptionsParams,
   SetTransferRestrictionParams,
   setTransferRestrictions,
@@ -75,7 +76,8 @@ export class TransferRestrictions extends Namespace<FungibleAsset> {
     this.setStats = createProcedureMethod<
       SetTransferRestrictionStatParams,
       SetAssetStatParams,
-      void
+      void,
+      SetAssetStatsStorage
     >(
       {
         getProcedureAndArgs: args => [
