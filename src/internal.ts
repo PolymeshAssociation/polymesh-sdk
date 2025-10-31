@@ -86,7 +86,11 @@ export {
   Params as SetTransferRestrictionParams,
   SetTransferRestrictionsStorage,
 } from '~/api/procedures/setTransferRestrictions';
-export { setAssetStats, SetAssetStatParams } from '~/api/procedures/setAssetStats';
+export {
+  setAssetStats,
+  SetAssetStatParams,
+  SetAssetStatsStorage,
+} from '~/api/procedures/setAssetStats';
 export {
   setTransferRestrictionsExemptions,
   Params as SetTransferExemptionsParams,

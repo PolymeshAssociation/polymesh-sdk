@@ -1289,8 +1289,24 @@ const createMockStringCodec = <T extends Codec>(value?: string | T): MockCodec<T
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockHash = (value?: string | Hash): MockCodec<Hash> =>
-  createMockStringCodec(value);
+export const createMockHash = (value?: string | Hash): MockCodec<Hash> => {
+  const hash = createMockStringCodec(value);
+  // Override eq to properly compare hash values
+  hash.eq = jest.fn((other?: unknown) => {
+    if (!other) {
+      return false;
+    }
+    // Support both Codec objects and plain strings for test flexibility
+    if (isCodec(other)) {
+      return hash.toString() === (other as Codec).toString();
+    }
+    if (typeof other === 'string') {
+      return hash.toString() === other;
+    }
+    return false;
+  });
+  return hash;
+};
 
 /**
  * @hidden
@@ -2015,7 +2031,26 @@ export const createMockBtreeSet = <T extends Codec>(
     return createMockCodec(item, !item);
   });
 
-  const res = createMockCodec(new Set(codecItems), !items) as unknown as Mutable<BTreeSet>;
+  const res = createMockCodec(
+    new Set(codecItems),
+    items.length === 0
+  ) as unknown as Mutable<BTreeSet>;
+
+  // Create a deterministic string from the set content to act as a stable hash
+  const contentHash = codecItems
+    .map(item => {
+      // Use toHex if available (most stable), otherwise toString
+      if (isCodec(item) && 'toHex' in item && typeof item.toHex === 'function') {
+        return item.toHex();
+      }
+      if (isCodec(item) && 'toString' in item) {
+        return item.toString();
+      }
+      return String(item);
+    })
+    .join('|');
+
+  res.hash = createMockHash(contentHash);
 
   return res as MockCodec<BTreeSet<T>>;
 };

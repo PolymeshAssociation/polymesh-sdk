@@ -191,7 +191,12 @@ import {
   AccountWithSignature,
   ActiveEraInfo,
   ActiveTransferRestrictions,
+  AddBalanceStatInput,
+  AddBalanceStatParams,
+  AddClaimBalanceStatParams,
+  AddClaimCountStatParams,
   AddCountStatInput,
+  AddCountStatParams,
   AffirmationStatus,
   AssetDocument,
   AssetDocumentWithId,
@@ -200,6 +205,7 @@ import {
   AuthorizationType,
   ChildKeyWithAuth,
   Claim,
+  ClaimBalanceStatInput,
   ClaimCountRestrictionValue,
   ClaimCountStatInput,
   ClaimData,
@@ -4336,6 +4342,12 @@ export function claimCountStatInputToStatUpdates(
   context: Context
 ): BTreeSet<PolymeshPrimitivesStatisticsStatUpdate> {
   const { value, claimType: type } = args;
+
+  if (!value) {
+    // Return empty BTreeSet if no value provided
+    return statUpdatesToBtreeStatUpdate([], context);
+  }
+
   let updateArgs;
 
   if (type === ClaimType.Jurisdiction) {
@@ -4371,9 +4383,82 @@ export function countStatInputToStatUpdates(
   context: Context
 ): BTreeSet<PolymeshPrimitivesStatisticsStatUpdate> {
   const { count } = args;
+
+  if (!count) {
+    // Return empty BTreeSet if no count provided
+    return statUpdatesToBtreeStatUpdate([], context);
+  }
+
   const secondKey = createStat2ndKey('NoClaimStat', context);
   const stat = keyAndValueToStatUpdate(secondKey, bigNumberToU128(count, context), context);
   return statUpdatesToBtreeStatUpdate([stat], context);
+}
+
+/**
+ * @hidden
+ * transforms a non scoped balance stat to a StatUpdate type
+ */
+export function balanceStatInputToStatUpdates(
+  args: AddBalanceStatInput,
+  context: Context
+): BTreeSet<PolymeshPrimitivesStatisticsStatUpdate> {
+  const { balance } = args;
+
+  if (!balance) {
+    // Return empty BTreeSet if no balance provided
+    return statUpdatesToBtreeStatUpdate([], context);
+  }
+
+  const secondKey = createStat2ndKey('NoClaimStat', context);
+  const rawBalance = bigNumberToBalance(balance, context);
+  const rawValue = context.createType('u128', rawBalance.toString());
+  const stat = keyAndValueToStatUpdate(secondKey, rawValue, context);
+  return statUpdatesToBtreeStatUpdate([stat], context);
+}
+
+/**
+ * @hidden
+ * transforms a scoped balance stat to a StatUpdate type
+ */
+export function claimBalanceStatInputToStatUpdates(
+  args: ClaimBalanceStatInput,
+  context: Context
+): BTreeSet<PolymeshPrimitivesStatisticsStatUpdate> {
+  const { value, claimType: type } = args;
+
+  if (!value) {
+    // Return empty BTreeSet if no value provided
+    return statUpdatesToBtreeStatUpdate([], context);
+  }
+
+  let updateArgs;
+
+  if (type === ClaimType.Jurisdiction) {
+    updateArgs = value.map(({ countryCode, balance }) => {
+      const rawSecondKey = createStat2ndKey(type, context, countryCode);
+      const rawBalance = bigNumberToBalance(balance, context);
+      const rawValue = context.createType('u128', rawBalance.toString());
+      return keyAndValueToStatUpdate(rawSecondKey, rawValue, context);
+    });
+  } else {
+    let yes, no;
+    if (type === ClaimType.Accredited) {
+      ({ accredited: yes, nonAccredited: no } = value);
+    } else {
+      ({ affiliate: yes, nonAffiliate: no } = value);
+    }
+    const yes2ndKey = createStat2ndKey(type, context, 'yes');
+    const yesBalance = bigNumberToBalance(yes, context);
+    const yesValue = context.createType('u128', yesBalance.toString());
+    const no2ndKey = createStat2ndKey(type, context, 'no');
+    const noBalance = bigNumberToBalance(no, context);
+    const noValue = context.createType('u128', noBalance.toString());
+    updateArgs = [
+      keyAndValueToStatUpdate(yes2ndKey, yesValue, context),
+      keyAndValueToStatUpdate(no2ndKey, noValue, context),
+    ];
+  }
+  return statUpdatesToBtreeStatUpdate(updateArgs, context);
 }
 
 /**
@@ -4393,6 +4478,26 @@ export function inputStatTypeToMeshStatType(
     { operationType: op, ...(claimIssuer ? { claimIssuer } : {}) },
     context
   );
+}
+
+/**
+ * @hidden
+ * Converts stat params to InputStatType and then to mesh stat type
+ */
+export function statParamsToMeshStatType(
+  stat:
+    | AddCountStatParams
+    | AddBalanceStatParams
+    | AddClaimCountStatParams
+    | AddClaimBalanceStatParams,
+  context: Context
+): PolymeshPrimitivesStatisticsStatType {
+  const { type } = stat;
+  const inputStatType =
+    type === StatType.ScopedCount || type === StatType.ScopedBalance
+      ? { type, claimIssuer: { issuer: stat.issuer, claimType: stat.claimType } }
+      : { type };
+  return inputStatTypeToMeshStatType(inputStatType, context);
 }
 
 /**

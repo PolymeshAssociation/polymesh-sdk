@@ -1,16 +1,35 @@
-import { PolymeshPrimitivesStatisticsStatType } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesStatisticsStatType,
+  PolymeshPrimitivesStatisticsStatUpdate,
+} from '@polkadot/types/lookup';
+import { BTreeSet } from '@polkadot/types-codec';
 
-import { Procedure } from '~/internal';
-import { FungibleAsset, SetTransferRestrictionStatParams, StatType, TxTags } from '~/types';
-import { BatchTransactionSpec, ProcedureAuthorization, TxWithArgs } from '~/types/internal';
+import { Context, PolymeshError, Procedure } from '~/internal';
+import {
+  AddBalanceStatParams,
+  AddClaimBalanceStatParams,
+  AddClaimCountStatParams,
+  AddCountStatParams,
+  ErrorCode,
+  FungibleAsset,
+  SetTransferRestrictionStatParams,
+  StatType,
+  TxTag,
+  TxTags,
+} from '~/types';
+import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import {
   assetToMeshAssetId,
+  balanceStatInputToStatUpdates,
+  claimBalanceStatInputToStatUpdates,
   claimCountStatInputToStatUpdates,
   claimIssuerToMeshClaimIssuer,
   countStatInputToStatUpdates,
   statisticsOpTypeToStatType,
   statisticStatTypesToBtreeStatType,
+  statParamsToMeshStatType,
   statTypeToStatOpType,
+  statUpdatesToBtreeStatUpdate,
 } from '~/utils/conversion';
 import { checkTxType } from '~/utils/internal';
 
@@ -22,8 +41,48 @@ export type SetAssetStatParams = { asset: FungibleAsset } & SetTransferRestricti
 /**
  * @hidden
  */
+export interface SetAssetStatsStorage {
+  currentStats: BTreeSet<PolymeshPrimitivesStatisticsStatType>;
+}
+
+/**
+ * @hidden
+ */
+function statToStatUpdates(
+  stat:
+    | AddCountStatParams
+    | AddBalanceStatParams
+    | AddClaimCountStatParams
+    | AddClaimBalanceStatParams,
+  context: Context
+): BTreeSet<PolymeshPrimitivesStatisticsStatUpdate> {
+  const { type } = stat;
+
+  if (type === StatType.Count && stat.count !== undefined) {
+    return countStatInputToStatUpdates(stat, context);
+  }
+
+  if (type === StatType.ScopedCount && stat.value !== undefined) {
+    return claimCountStatInputToStatUpdates(stat, context);
+  }
+
+  if (type === StatType.Balance && stat.balance !== undefined) {
+    return balanceStatInputToStatUpdates(stat, context);
+  }
+
+  if (type === StatType.ScopedBalance && stat.value !== undefined) {
+    return claimBalanceStatInputToStatUpdates(stat, context);
+  }
+
+  // Return empty BTreeSet when no value is provided
+  return statUpdatesToBtreeStatUpdate([], context);
+}
+
+/**
+ * @hidden
+ */
 export function prepareSetAssetStats(
-  this: Procedure<SetAssetStatParams, void>,
+  this: Procedure<SetAssetStatParams, void, SetAssetStatsStorage>,
   args: SetAssetStatParams
 ): Promise<BatchTransactionSpec<void, unknown[][]>> {
   const {
@@ -33,16 +92,29 @@ export function prepareSetAssetStats(
       },
     },
     context,
+    storage: { currentStats },
   } = this;
   const { asset, stats } = args;
 
   const rawAssetId = assetToMeshAssetId(asset, context);
-
-  const newStats: PolymeshPrimitivesStatisticsStatType[] = [];
   const transactions = [];
-  const updateTransactions: TxWithArgs<unknown[]>[] = [];
 
-  stats.forEach(stat => {
+  // Build new stats list and compare with current stats
+  const rawStats = stats.map(stat => statParamsToMeshStatType(stat, context));
+  const rawNewStats = statisticStatTypesToBtreeStatType(rawStats, context);
+
+  // If the new stats set differs from the current one, create a setActiveAssetStats transaction
+  if (!rawNewStats.hash.eq(currentStats.hash)) {
+    transactions.push(
+      checkTxType({
+        transaction: statistics.setActiveAssetStats,
+        args: [rawAssetId, rawNewStats],
+      })
+    );
+  }
+
+  // Create a separate batchUpdateAssetStats transaction for each stat that has a value
+  for (const stat of stats) {
     const type = stat.type;
     const operationType = statTypeToStatOpType(type, context);
 
@@ -51,44 +123,29 @@ export function prepareSetAssetStats(
       rawClaimIssuer = claimIssuerToMeshClaimIssuer(stat, context);
     }
 
-    const newStat = statisticsOpTypeToStatType(
+    const statType = statisticsOpTypeToStatType(
       { operationType, claimIssuer: rawClaimIssuer },
       context
     );
 
-    newStats.push(newStat);
+    const rawUpdates = statToStatUpdates(stat, context);
 
-    // Count stats need the user to provide the initial value for the counter as computing may cause prohibitive gas charges on the chain
-    // We require users to provide initial stats in this method so they won't miss setting initial values. It could be its own step
-    if (type === StatType.Count) {
-      const statValue = countStatInputToStatUpdates(stat, context);
-      updateTransactions.push(
+    if (!rawUpdates.isEmpty) {
+      transactions.push(
         checkTxType({
           transaction: statistics.batchUpdateAssetStats,
-          args: [rawAssetId, newStat, statValue],
-        })
-      );
-    } else if (type === StatType.ScopedCount) {
-      const statValue = claimCountStatInputToStatUpdates(stat, context);
-      updateTransactions.push(
-        checkTxType({
-          transaction: statistics.batchUpdateAssetStats,
-          args: [rawAssetId, newStat, statValue],
+          args: [rawAssetId, statType, rawUpdates],
         })
       );
     }
-  });
+  }
 
-  const rawNewStats = statisticStatTypesToBtreeStatType(newStats, context);
-
-  transactions.push(
-    checkTxType({
-      transaction: statistics.setActiveAssetStats,
-      args: [rawAssetId, rawNewStats],
-    })
-  );
-
-  transactions.push(...updateTransactions);
+  if (transactions.length === 0) {
+    throw new PolymeshError({
+      code: ErrorCode.NoDataChange,
+      message: 'The supplied stat types are already set and no new values were provided',
+    });
+  }
 
   return Promise.resolve({ transactions, resolver: undefined });
 }
@@ -96,18 +153,69 @@ export function prepareSetAssetStats(
 /**
  * @hidden
  */
+export async function prepareStorage(
+  this: Procedure<SetAssetStatParams, void, SetAssetStatsStorage>,
+  { asset }: SetAssetStatParams
+): Promise<SetAssetStatsStorage> {
+  const {
+    context: {
+      polymeshApi: {
+        query: { statistics },
+      },
+    },
+    context,
+  } = this;
+
+  const rawAssetId = assetToMeshAssetId(asset, context);
+  const currentStats = await statistics.activeAssetStats(rawAssetId);
+
+  return {
+    currentStats,
+  };
+}
+
+/**
+ * @hidden
+ */
 export function getAuthorization(
-  this: Procedure<SetAssetStatParams, void>,
+  this: Procedure<SetAssetStatParams, void, SetAssetStatsStorage>,
   { asset, stats }: SetAssetStatParams
 ): ProcedureAuthorization {
-  const hasCount = stats.some(
-    stat => stat.type === StatType.Count || stat.type === StatType.ScopedCount
-  );
+  const {
+    storage: { currentStats },
+    context,
+  } = this;
 
-  const transactions = [TxTags.statistics.SetActiveAssetStats];
-  if (hasCount) {
+  const hasValues = stats.some(stat => {
+    const { type } = stat;
+    if (type === StatType.Count) {
+      return stat.count !== undefined;
+    } else if (type === StatType.ScopedCount) {
+      return stat.value !== undefined;
+    } else if (type === StatType.Balance) {
+      return stat.balance !== undefined;
+    } else if (type === StatType.ScopedBalance) {
+      return stat.value !== undefined;
+    }
+    throw new PolymeshError({
+      code: ErrorCode.UnexpectedError,
+      message: `Unsupported stat type: ${type}. Please report this to the Polymesh team`,
+    });
+  });
+
+  // Build new stats list and compare with current stats
+  const rawStats = stats.map(stat => statParamsToMeshStatType(stat, context));
+  const rawNewStats = statisticStatTypesToBtreeStatType(rawStats, context);
+  const transactions: TxTag[] = [];
+  // If the new stats set differs from the current one, push a setActiveAssetStats transaction
+  if (!rawNewStats.hash.eq(currentStats.hash)) {
+    transactions.push(TxTags.statistics.SetActiveAssetStats);
+  }
+
+  if (hasValues) {
     transactions.push(TxTags.statistics.BatchUpdateAssetStats);
   }
+
   return {
     permissions: {
       transactions,
@@ -120,5 +228,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const setAssetStats = (): Procedure<SetAssetStatParams, void> =>
-  new Procedure(prepareSetAssetStats, getAuthorization);
+export const setAssetStats = (): Procedure<SetAssetStatParams, void, SetAssetStatsStorage> =>
+  new Procedure(prepareSetAssetStats, getAuthorization, prepareStorage);
