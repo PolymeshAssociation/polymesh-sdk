@@ -86,6 +86,13 @@ export class PolymeshTransactionBatch<
    * @hidden
    */
   protected composeTx(): SubmittableExtrinsic<'promise', ISubmittableResult> {
+    const baseTx = this.getBaseTransaction();
+
+    return this.wrapProposalIfNeeded(baseTx);
+  }
+
+  // eslint-disable-next-line require-jsdoc
+  protected getBaseTransaction(): SubmittableExtrinsic<'promise', ISubmittableResult> {
     const {
       context: {
         polymeshApi: {
@@ -94,11 +101,9 @@ export class PolymeshTransactionBatch<
       },
     } = this;
 
-    const tx = utility.batchAll(
+    return utility.batchAll(
       this.transactionData.map(({ transaction, args }) => transaction(...args))
     );
-
-    return this.wrapProposalIfNeeded(tx);
   }
 
   /**

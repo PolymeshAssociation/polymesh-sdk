@@ -212,7 +212,8 @@ export interface TransactionPayload {
   /**
    * The address of the MultiSig if the transaction is a proposal.
    *
-   * Will be set only if the signing account is a MultiSig signer and the transaction is not approving or rejecting an existing proposal
+   * Will be set only if the signing account is a MultiSig signer, the transaction is not approving or rejecting an existing proposal,
+   * @note `asProposal: false` will force this to be null, even if the signing account is a MultiSig signer
    */
   readonly multiSig: string | null;
 }

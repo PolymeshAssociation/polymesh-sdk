@@ -557,24 +557,27 @@ export abstract class PolymeshTransactionBase<
   /**
    * Retrieve a breakdown of the fees required to run this transaction, as well as the Account responsible for paying them
    *
+   * @param asProposal - When `true` (default), treats the transaction as a MultiSig proposal if the signing account is a MultiSig signer.
+   *   When `false`, treats the transaction as a direct transaction from the signing account, ignoring the MultiSig.
+   *
    * @note these values might be inaccurate if the transaction is run at a later time. This can be due to a governance vote or other
    *   chain related factors (like modifications to a specific subsidizer relationship or a chain upgrade)
    */
-  public async getTotalFees(): Promise<PayingAccountFees> {
+  public async getTotalFees(asProposal = true): Promise<PayingAccountFees> {
     const { signingAddress } = this;
 
-    const composedTx = this.composeTx();
+    const composedTx = this.composeTxForFees(asProposal);
 
     const paymentInfoPromise = composedTx.paymentInfo(signingAddress);
 
     const protocol = await this.getProtocolFees();
 
-    const [payingAccount, { partialFee }] = await Promise.all([
-      this.getPayingAccount(),
-      paymentInfoPromise,
-    ]);
+    const payingAccount = await this.getPayingAccount(asProposal);
 
-    const { free: balance } = await payingAccount.account.getBalance();
+    const [{ partialFee }, { free: balance }] = await Promise.all([
+      paymentInfoPromise,
+      payingAccount.account.getBalance(),
+    ]);
     const gas = balanceToBigNumber(partialFee);
 
     return {
@@ -850,13 +853,18 @@ export abstract class PolymeshTransactionBase<
   /**
    * Returns a representation intended for offline signers.
    *
+   * @param metadata - Additional information attached to the payload, such as IDs or memos about the transaction
+   * @param asProposal - When `true` (default), treats the transaction as a MultiSig proposal if the signing account is a MultiSig signer.
+   *   When `false`, treats the transaction as a direct transaction from the signing account, ignoring the MultiSig.
+   *
    * @note Usually `.run()` should be preferred due to is simplicity.
    *
    * @note When using this method, details like account nonces, and transaction mortality require extra consideration. Generating a payload for offline sign implies asynchronicity. If using this API, be sure each procedure is created with the correct nonce, accounting for in flight transactions, and the lifetime is sufficient.
    *
    */
   public async toSignablePayload(
-    metadata: Record<string, string> = {}
+    metadata: Record<string, string> = {},
+    asProposal = true
   ): Promise<TransactionPayload> {
     const {
       mortality,
@@ -864,7 +872,7 @@ export abstract class PolymeshTransactionBase<
       context,
       context: { polymeshApi },
     } = this;
-    const tx = this.composeTx();
+    const tx = this.composeTxForFees(asProposal);
 
     const [tipHash, latestBlockNumber] = await Promise.all([
       polymeshApi.rpc.chain.getFinalizedHead(),
@@ -911,7 +919,7 @@ export abstract class PolymeshTransactionBase<
       rawPayload: rawSignerPayload.toRaw(),
       method: tx.toHex(),
       metadata,
-      multiSig: this.multiSig?.address ?? null,
+      multiSig: asProposal ? this.multiSig?.address ?? null : null,
     };
   }
 
@@ -928,11 +936,14 @@ export abstract class PolymeshTransactionBase<
    * Retrieve the Account that would pay fees for the transaction if it was run at this moment, as well as the total amount that can be
    *   charged to it (allowance) in case of a subsidy
    *
+   * @param asProposal - When `true` (default), uses MultiSig payer if the signing account is a MultiSig signer.
+   *   When `false`, uses the signing account directly, ignoring the MultiSig.
+   *
    * @note the paying Account might change if, before running the transaction, the caller Account enters (or leaves)
    *   a subsidizer relationship. A governance vote or chain upgrade could also cause the value to change between the time
    *   this method is called and the time the transaction is run
    */
-  private async getPayingAccount(): Promise<PayingAccount> {
+  private async getPayingAccount(asProposal: boolean): Promise<PayingAccount> {
     const { paidForBy, multiSig, context } = this;
 
     if (paidForBy) {
@@ -960,16 +971,26 @@ export abstract class PolymeshTransactionBase<
     }
 
     // For MultiSig the fees come from the creator's primary key
-    if (multiSig) {
+    // Only use MultiSig payer when asProposal is true
+    if (multiSig && asProposal) {
       const multiId = await multiSig.getPayer();
 
       if (multiId) {
-        const { account } = await multiId.getPrimaryAccount();
+        try {
+          const { account } = await multiId.getPrimaryAccount();
 
-        return {
-          account,
-          type: PayingAccountType.MultiSigCreator,
-        };
+          return {
+            account,
+            type: PayingAccountType.MultiSigCreator,
+          };
+        } catch {
+          // If we can't get the primary account (e.g., it doesn't have an identity),
+          // fall back to using the MultiSig account directly
+          return {
+            type: PayingAccountType.Caller,
+            account: multiSig,
+          };
+        }
       } else {
         return {
           type: PayingAccountType.Caller,
@@ -1012,4 +1033,32 @@ export abstract class PolymeshTransactionBase<
 
     return tx;
   }
+
+  /**
+   * @hidden
+   *
+   * Compose a transaction for fee calculation or payload generation, conditionally wrapping as a proposal
+   *
+   * @param asProposal - When `true` (default), wraps the transaction as a proposal if the signing account is a MultiSig signer.
+   *   When `false`, returns the unwrapped transaction.
+   */
+  protected composeTxForFees(
+    asProposal: boolean
+  ): SubmittableExtrinsic<'promise', ISubmittableResult> {
+    // Get the base transaction without wrapping
+    const baseTx = this.getBaseTransaction();
+
+    if (asProposal) {
+      return this.wrapProposalIfNeeded(baseTx);
+    }
+
+    return baseTx;
+  }
+
+  /**
+   * @hidden
+   *
+   * Get the base transaction without any proposal wrapping
+   */
+  protected abstract getBaseTransaction(): SubmittableExtrinsic<'promise', ISubmittableResult>;
 }

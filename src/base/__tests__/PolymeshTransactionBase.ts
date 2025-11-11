@@ -1554,6 +1554,172 @@ describe('Polymesh Transaction Base class', () => {
       expect(payingAccountData.account.address).toBe('0xdummy');
       expect(payingAccountData.balance).toEqual(new BigNumber(100000));
     });
+
+    it('should use MultiSig payer when asProposal is true and signing account is MultiSig signer', async () => {
+      const tx1 = dsMockUtils.createTxMock('asset', 'registerUniqueTicker', {
+        gas: rawGasFees[0]!,
+      });
+      dsMockUtils.createTxMock('multiSig', 'createProposal');
+
+      const multiSig = entityMockUtils.getMultiSigInstance({ address: DUMMY_ACCOUNT_ID });
+      const payerIdentity = entityMockUtils.getIdentityInstance({ did: 'payerDid' });
+      const payerAccount = entityMockUtils.getAccountInstance({ address: 'payerAddress' });
+
+      multiSig.getPayer = jest.fn().mockResolvedValue(payerIdentity);
+      payerIdentity.getPrimaryAccount = jest.fn().mockResolvedValue({ account: payerAccount });
+      payerAccount.getBalance = jest.fn().mockResolvedValue({
+        free: new BigNumber(50000),
+        locked: new BigNumber(0),
+        total: new BigNumber(50000),
+      });
+
+      const args = tuple('TEST');
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { fee, ...rest } = txSpec;
+
+      const tx = new PolymeshTransaction<void>(
+        {
+          ...rest,
+          transaction: tx1,
+          args,
+          resolver: undefined,
+          multiSig,
+        },
+        context
+      );
+
+      // Test with explicit true to cover that path
+      const { payingAccountData } = await tx.getTotalFees(true);
+
+      expect(payingAccountData.type).toBe(PayingAccountType.MultiSigCreator);
+      expect(payingAccountData.account.address).toBe('payerAddress');
+      expect(multiSig.getPayer).toHaveBeenCalled();
+
+      // Test with default parameter (no argument) to cover default assignment in getPayingAccount
+      const { payingAccountData: payingAccountDataDefault } = await tx.getTotalFees();
+      expect(payingAccountDataDefault.type).toBe(PayingAccountType.MultiSigCreator);
+      expect(payingAccountDataDefault.account.address).toBe('payerAddress');
+    });
+
+    it('should use signing account when asProposal is false even if MultiSig is set', async () => {
+      const tx1 = dsMockUtils.createTxMock('asset', 'registerUniqueTicker', {
+        gas: rawGasFees[0]!,
+      });
+
+      const multiSig = entityMockUtils.getMultiSigInstance({ address: DUMMY_ACCOUNT_ID });
+
+      const args = tuple('TEST');
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { fee, ...rest } = txSpec;
+
+      const tx = new PolymeshTransaction<void>(
+        {
+          ...rest,
+          transaction: tx1,
+          args,
+          resolver: undefined,
+          multiSig,
+        },
+        context
+      );
+
+      // Mock createProposal to verify it's not called when asProposal is false
+      const createProposalMock = dsMockUtils.createTxMock('multiSig', 'createProposal');
+
+      const { payingAccountData } = await tx.getTotalFees(false);
+
+      expect(payingAccountData.type).toBe(PayingAccountType.Caller);
+      expect(payingAccountData.account.address).toBe('0xdummy');
+      // getPayer should not be called when asProposal is false
+      if (multiSig.getPayer) {
+        expect(multiSig.getPayer).not.toHaveBeenCalled();
+      }
+      // createProposal should not be called when asProposal is false
+      expect(createProposalMock).not.toHaveBeenCalled();
+    });
+
+    it('should fall back to MultiSig account when payer primary account has no identity', async () => {
+      const tx1 = dsMockUtils.createTxMock('asset', 'registerUniqueTicker', {
+        gas: rawGasFees[0]!,
+      });
+      dsMockUtils.createTxMock('multiSig', 'createProposal');
+
+      const multiSig = entityMockUtils.getMultiSigInstance({ address: DUMMY_ACCOUNT_ID });
+      const payerIdentity = entityMockUtils.getIdentityInstance({ did: 'payerDid' });
+
+      // Mock getPayer to return an identity
+      multiSig.getPayer = jest.fn().mockResolvedValue(payerIdentity);
+
+      // Mock getPrimaryAccount to throw an error (simulating no identity on primary account)
+      payerIdentity.getPrimaryAccount = jest.fn().mockRejectedValue(
+        new PolymeshError({
+          code: ErrorCode.DataUnavailable,
+          message: 'There is no Identity associated with this Account',
+        })
+      );
+
+      const args = tuple('TEST');
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { fee, ...rest } = txSpec;
+
+      const tx = new PolymeshTransaction<void>(
+        {
+          ...rest,
+          transaction: tx1,
+          args,
+          resolver: undefined,
+          multiSig,
+        },
+        context
+      );
+
+      const { payingAccountData } = await tx.getTotalFees(true);
+
+      // Should fall back to using MultiSig account directly
+      expect(payingAccountData.type).toBe(PayingAccountType.Caller);
+      expect(payingAccountData.account.address).toBe(DUMMY_ACCOUNT_ID);
+      expect(multiSig.getPayer).toHaveBeenCalled();
+      expect(payerIdentity.getPrimaryAccount).toHaveBeenCalled();
+    });
+
+    it('should use MultiSig account when payer is null', async () => {
+      const tx1 = dsMockUtils.createTxMock('asset', 'registerUniqueTicker', {
+        gas: rawGasFees[0]!,
+      });
+      dsMockUtils.createTxMock('multiSig', 'createProposal');
+
+      const multiSig = entityMockUtils.getMultiSigInstance({ address: DUMMY_ACCOUNT_ID });
+
+      // Mock getPayer to return null (no payer set)
+      multiSig.getPayer = jest.fn().mockResolvedValue(null);
+      multiSig.getBalance = jest.fn().mockResolvedValue({
+        free: new BigNumber(100000),
+        locked: new BigNumber(0),
+        total: new BigNumber(100000),
+      });
+
+      const args = tuple('TEST');
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { fee, ...rest } = txSpec;
+
+      const tx = new PolymeshTransaction<void>(
+        {
+          ...rest,
+          transaction: tx1,
+          args,
+          resolver: undefined,
+          multiSig,
+        },
+        context
+      );
+
+      const { payingAccountData } = await tx.getTotalFees(true);
+
+      // Should use MultiSig account directly when payer is null
+      expect(payingAccountData.type).toBe(PayingAccountType.Caller);
+      expect(payingAccountData.account.address).toBe(DUMMY_ACCOUNT_ID);
+      expect(multiSig.getPayer).toHaveBeenCalled();
+    });
   });
 
   describe('method: onProcessedByMiddleware', () => {
@@ -1910,6 +2076,114 @@ describe('Polymesh Transaction Base class', () => {
       await tx.toSignablePayload();
 
       expect(mockNextIndex).toHaveBeenCalled();
+    });
+
+    it('should set multiSig to null when asProposal is false even if MultiSig is set', async () => {
+      const mockBlockNumber = dsMockUtils.createMockU32(new BigNumber(1));
+
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          nonce: new BigNumber(3),
+        },
+      });
+
+      dsMockUtils.createRpcMock('chain', 'getFinalizedHead', {
+        returnValue: dsMockUtils.createMockSignedBlock({
+          block: {
+            header: {
+              parentHash: 'hash',
+              number: dsMockUtils.createMockCompact(mockBlockNumber),
+              extrinsicsRoot: 'hash',
+              stateRoot: 'hash',
+            },
+            extrinsics: undefined,
+          },
+        }),
+      });
+
+      const genesisHash = '0x12341234123412341234123412341234';
+      jest.spyOn(context.polymeshApi.genesisHash, 'toString').mockReturnValue(genesisHash);
+
+      dsMockUtils.createMockExtrinsicsEra();
+      const mockSignerPayload = createMockSigningPayload();
+
+      when(context.createType)
+        .calledWith('SignerPayload', expect.objectContaining({ genesisHash }))
+        .mockReturnValue(mockSignerPayload);
+
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+      const args = tuple('FOO');
+
+      const tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          transaction,
+          args,
+          resolver: undefined,
+          mortality: { immortal: true },
+          multiSig: entityMockUtils.getMultiSigInstance({ address: DUMMY_ACCOUNT_ID }),
+        },
+        context
+      );
+
+      const result = await tx.toSignablePayload({}, false);
+
+      expect(result.multiSig).toBeNull();
+    });
+
+    it('should set multiSig address when asProposal is true and MultiSig is set', async () => {
+      const mockBlockNumber = dsMockUtils.createMockU32(new BigNumber(1));
+
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          nonce: new BigNumber(3),
+        },
+      });
+
+      dsMockUtils.createRpcMock('chain', 'getFinalizedHead', {
+        returnValue: dsMockUtils.createMockSignedBlock({
+          block: {
+            header: {
+              parentHash: 'hash',
+              number: dsMockUtils.createMockCompact(mockBlockNumber),
+              extrinsicsRoot: 'hash',
+              stateRoot: 'hash',
+            },
+            extrinsics: undefined,
+          },
+        }),
+      });
+
+      const genesisHash = '0x12341234123412341234123412341234';
+      jest.spyOn(context.polymeshApi.genesisHash, 'toString').mockReturnValue(genesisHash);
+
+      dsMockUtils.createMockExtrinsicsEra();
+      const mockSignerPayload = createMockSigningPayload();
+
+      when(context.createType)
+        .calledWith('SignerPayload', expect.objectContaining({ genesisHash }))
+        .mockReturnValue(mockSignerPayload);
+
+      dsMockUtils.createTxMock('multiSig', 'createProposal');
+
+      const transaction = dsMockUtils.createTxMock('asset', 'registerUniqueTicker');
+      const args = tuple('FOO');
+
+      const tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          transaction,
+          args,
+          resolver: undefined,
+          mortality: { immortal: true },
+          multiSig: entityMockUtils.getMultiSigInstance({ address: DUMMY_ACCOUNT_ID }),
+        },
+        context
+      );
+
+      const result = await tx.toSignablePayload({}, true);
+
+      expect(result.multiSig).toEqual(DUMMY_ACCOUNT_ID);
     });
   });
 });
