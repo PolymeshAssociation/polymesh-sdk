@@ -1,9 +1,11 @@
-import { BTreeSet, StorageKey, u128 } from '@polkadot/types';
+import { bool, BTreeSet, StorageKey, u128 } from '@polkadot/types';
 import {
   PolymeshPrimitivesAssetAssetId,
+  PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesStatisticsStat1stKey,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatType,
+  PolymeshPrimitivesTransferComplianceTransferConditionExemptKey,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
@@ -34,10 +36,13 @@ import {
   TransferRestrictionExemptionParams,
   TransferRestrictionParams,
   TransferRestrictionStatValues,
+  TransferRestrictionType,
   TrustedFor,
 } from '~/types';
+import type { ExemptKey } from '~/types/internal';
 import {
   assetComplianceToTransferRestrictions,
+  assetIdToString,
   assetStatToStat,
   assetToMeshAssetId,
   exemptionToTransferExemption,
@@ -47,6 +52,8 @@ import {
   meshClaimTypeToClaimType,
   meshStatToStatType,
   stringToAssetId,
+  toExemptKey,
+  transferRestrictionTypeToStatOpType,
   u128ToStatValue,
 } from '~/utils/conversion';
 import { createProcedureMethod, requestMulti } from '~/utils/internal';
@@ -527,6 +534,105 @@ export class TransferRestrictions extends Namespace<FungibleAsset> {
   }
 
   /**
+   * @hidden
+   * Stringify claimType for deduplication key generation
+   */
+  private stringifyClaimType(claimType: TrustedFor | null): string {
+    if (claimType === null) {
+      return 'null';
+    }
+    if (typeof claimType === 'object') {
+      return JSON.stringify(claimType);
+    }
+    return String(claimType);
+  }
+
+  /**
+   * @hidden
+   * Build exempt keys map from active restrictions
+   */
+  private buildExemptKeysFromRestrictions(
+    restrictions: ActiveTransferRestrictions,
+    rawAssetId: PolymeshPrimitivesAssetAssetId,
+    context: Context
+  ): Map<
+    string,
+    { rawExemptKey: ExemptKey; statOpType: StatType; claimType?: ClaimType | undefined }
+  > {
+    const exemptKeysToQuery = new Map<
+      string,
+      { rawExemptKey: ExemptKey; statOpType: StatType; claimType?: ClaimType | undefined }
+    >();
+
+    for (const restriction of restrictions.restrictions) {
+      const rawOpType = transferRestrictionTypeToStatOpType(restriction.type, context);
+      const statOpType =
+        restriction.type === TransferRestrictionType.Count ||
+        restriction.type === TransferRestrictionType.ClaimCount
+          ? StatType.Count
+          : StatType.Balance;
+      let claimType: ClaimType | undefined;
+
+      if (
+        restriction.type === TransferRestrictionType.ClaimCount ||
+        restriction.type === TransferRestrictionType.ClaimPercentage
+      ) {
+        claimType = restriction.value.claim.type;
+      }
+
+      const rawExemptKey = toExemptKey(rawAssetId, rawOpType, claimType);
+      const assetIdString = assetIdToString(rawAssetId);
+      const keyString = JSON.stringify({
+        assetId: assetIdString,
+        op: statOpType,
+        claimType: claimType?.toString() || null,
+      });
+
+      if (!exemptKeysToQuery.has(keyString)) {
+        exemptKeysToQuery.set(keyString, { rawExemptKey, statOpType, claimType });
+      }
+    }
+
+    return exemptKeysToQuery;
+  }
+
+  /**
+   * @hidden
+   * Process exemptions from storage and add to results if not already seen
+   */
+  private processExemptionsFromStorage(
+    rawExemptions: [
+      StorageKey<
+        [
+          PolymeshPrimitivesTransferComplianceTransferConditionExemptKey,
+          PolymeshPrimitivesIdentityId
+        ]
+      >,
+      bool
+    ][],
+    seenExemptions: Set<string>,
+    allExemptions: TransferRestrictionExemption[],
+    context: Context
+  ): void {
+    for (const [exemption] of rawExemptions) {
+      const [rawExemptKeyFromStorage, rawIdentity] = exemption.args;
+      const exemptKeyResult = exemptionToTransferExemption(rawExemptKeyFromStorage);
+      const did = identityIdToString(rawIdentity);
+
+      const claimTypeString = this.stringifyClaimType(exemptKeyResult.claimType);
+      const exemptionKey = `${did}-${exemptKeyResult.assetId}-${exemptKeyResult.opType}-${claimTypeString}`;
+
+      if (!seenExemptions.has(exemptionKey)) {
+        seenExemptions.add(exemptionKey);
+        allExemptions.push({
+          exemptKey: exemptKeyResult,
+          identity: new Identity({ did }, context),
+        });
+      }
+    }
+  }
+
+  /**
    * Return identities with exemptions.
    */
   public async getExemptions(): Promise<TransferRestrictionExemption[]> {
@@ -541,20 +647,26 @@ export class TransferRestrictions extends Namespace<FungibleAsset> {
     } = this;
 
     const rawAssetId = stringToAssetId(parent.id, context);
-    const rawExemptions = await statistics.transferConditionExemptEntities.entries(rawAssetId);
+    const restrictions = await this.getRestrictions();
+    const exemptKeysToQuery = this.buildExemptKeysFromRestrictions(
+      restrictions,
+      rawAssetId,
+      context
+    );
 
-    const exemptions = rawExemptions.map(([exemption]) => {
-      const [rawExemptKey, rawIdentity] = exemption.args;
-      const exemptKey = exemptionToTransferExemption(rawExemptKey);
-      const did = identityIdToString(rawIdentity);
+    if (exemptKeysToQuery.size === 0) {
+      return [];
+    }
 
-      return {
-        exemptKey,
-        identity: new Identity({ did }, context),
-      };
-    });
+    const allExemptions: TransferRestrictionExemption[] = [];
+    const seenExemptions = new Set<string>();
 
-    return exemptions;
+    for (const { rawExemptKey } of exemptKeysToQuery.values()) {
+      const rawExemptions = await statistics.transferConditionExemptEntities.entries(rawExemptKey);
+      this.processExemptionsFromStorage(rawExemptions, seenExemptions, allExemptions, context);
+    }
+
+    return allExemptions;
   }
 
   /**
