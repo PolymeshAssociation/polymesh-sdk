@@ -380,7 +380,7 @@ describe('setTransferRestrictions procedure', () => {
       });
     });
 
-    it('should throw an error for duplicate ClaimType.Accredited restrictions', async () => {
+    it('should not throw an error for duplicate ClaimType.Accredited restrictions with different values', async () => {
       const proc = getProc();
       const args: Params = {
         asset,
@@ -408,18 +408,69 @@ describe('setTransferRestrictions procedure', () => {
         ],
       };
 
+      when(transferRestrictionToPolymeshTransferConditionSpy)
+        .calledWith(expect.any(Object), mockContext)
+        .mockReturnValue(rawClaimCountRestriction);
+
+      const multipleConditionsBtreeSet = dsMockUtils.createMockBtreeSet([
+        rawClaimCountRestriction,
+        rawClaimCountRestriction,
+      ]) as BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
+      when(complianceConditionsToBtreeSetSpy)
+        .calledWith([rawClaimCountRestriction, rawClaimCountRestriction], mockContext)
+        .mockReturnValue(multipleConditionsBtreeSet);
+
+      const result = await prepareSetTransferRestrictions.call(proc, args);
+
+      expect(result).toEqual({
+        transaction: setAssetTransferComplianceTransaction,
+        args: [rawAssetId, multipleConditionsBtreeSet],
+        resolver: undefined,
+      });
+    });
+
+    it('should throw an error for duplicate ClaimType.Accredited restrictions with same values', async () => {
+      const proc = getProc();
+      const args: Params = {
+        asset,
+        restrictions: [
+          {
+            min,
+            max,
+            issuer,
+            claim: {
+              type: ClaimType.Accredited,
+              accredited: true,
+            } as const,
+            type: TransferRestrictionType.ClaimCount,
+          },
+          {
+            min,
+            max,
+            issuer,
+            claim: {
+              type: ClaimType.Accredited,
+              accredited: true,
+            } as const,
+            type: TransferRestrictionType.ClaimCount,
+          },
+        ],
+      };
+
       try {
         await prepareSetTransferRestrictions.call(proc, args);
         fail('Expected error to be thrown');
       } catch (error) {
         expect(error).toBeInstanceOf(PolymeshError);
-        expect((error as PolymeshError).message).toBe('Duplicate ClaimType found in input');
+        expect((error as PolymeshError).message).toBe('Duplicate restriction found in input');
         expect((error as PolymeshError).code).toBe(ErrorCode.ValidationError);
-        expect((error as PolymeshError).data).toEqual({ claimType: ClaimType.Accredited });
+        expect((error as PolymeshError).data).toEqual({
+          restriction: args.restrictions[1],
+        });
       }
     });
 
-    it('should throw an error for duplicate ClaimType.Affiliate restrictions', async () => {
+    it('should not throw an error for duplicate ClaimType.Affiliate restrictions with different values', async () => {
       const proc = getProc();
       const args: Params = {
         asset,
@@ -447,14 +498,65 @@ describe('setTransferRestrictions procedure', () => {
         ],
       };
 
+      when(transferRestrictionToPolymeshTransferConditionSpy)
+        .calledWith(expect.any(Object), mockContext)
+        .mockReturnValue(rawClaimCountRestriction);
+
+      const multipleConditionsBtreeSet = dsMockUtils.createMockBtreeSet([
+        rawClaimCountRestriction,
+        rawClaimCountRestriction,
+      ]) as BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
+      when(complianceConditionsToBtreeSetSpy)
+        .calledWith([rawClaimCountRestriction, rawClaimCountRestriction], mockContext)
+        .mockReturnValue(multipleConditionsBtreeSet);
+
+      const result = await prepareSetTransferRestrictions.call(proc, args);
+
+      expect(result).toEqual({
+        transaction: setAssetTransferComplianceTransaction,
+        args: [rawAssetId, multipleConditionsBtreeSet],
+        resolver: undefined,
+      });
+    });
+
+    it('should throw an error for duplicate ClaimType.Affiliate restrictions with same values', async () => {
+      const proc = getProc();
+      const args: Params = {
+        asset,
+        restrictions: [
+          {
+            min,
+            max,
+            issuer,
+            claim: {
+              type: ClaimType.Affiliate,
+              affiliate: true,
+            } as const,
+            type: TransferRestrictionType.ClaimCount,
+          },
+          {
+            min,
+            max,
+            issuer,
+            claim: {
+              type: ClaimType.Affiliate,
+              affiliate: true,
+            } as const,
+            type: TransferRestrictionType.ClaimCount,
+          },
+        ],
+      };
+
       try {
         await prepareSetTransferRestrictions.call(proc, args);
         fail('Expected error to be thrown');
       } catch (error) {
         expect(error).toBeInstanceOf(PolymeshError);
-        expect((error as PolymeshError).message).toBe('Duplicate ClaimType found in input');
+        expect((error as PolymeshError).message).toBe('Duplicate restriction found in input');
         expect((error as PolymeshError).code).toBe(ErrorCode.ValidationError);
-        expect((error as PolymeshError).data).toEqual({ claimType: ClaimType.Affiliate });
+        expect((error as PolymeshError).data).toEqual({
+          restriction: args.restrictions[1],
+        });
       }
     });
 
@@ -491,11 +593,11 @@ describe('setTransferRestrictions procedure', () => {
         fail('Expected error to be thrown');
       } catch (error) {
         expect(error).toBeInstanceOf(PolymeshError);
-        expect((error as PolymeshError).message).toBe(
-          'Duplicate Jurisdiction CountryCode found in input'
-        );
+        expect((error as PolymeshError).message).toBe('Duplicate restriction found in input');
         expect((error as PolymeshError).code).toBe(ErrorCode.ValidationError);
-        expect((error as PolymeshError).data).toEqual({ countryCode: CountryCode.Us });
+        expect((error as PolymeshError).data).toEqual({
+          restriction: args.restrictions[1],
+        });
       }
     });
 
@@ -532,11 +634,11 @@ describe('setTransferRestrictions procedure', () => {
         fail('Expected error to be thrown');
       } catch (error) {
         expect(error).toBeInstanceOf(PolymeshError);
-        expect((error as PolymeshError).message).toBe(
-          'Duplicate Jurisdiction CountryCode found in input'
-        );
+        expect((error as PolymeshError).message).toBe('Duplicate restriction found in input');
         expect((error as PolymeshError).code).toBe(ErrorCode.ValidationError);
-        expect((error as PolymeshError).data).toEqual({ countryCode: undefined });
+        expect((error as PolymeshError).data).toEqual({
+          restriction: args.restrictions[1],
+        });
       }
     });
 

@@ -31,58 +31,54 @@ export interface SetTransferRestrictionsStorage {
 /**
  * Ensure claim-count restrictions do not contain duplicate identifiers.
  */
+/**
+ * Ensure claim-count restrictions do not contain duplicate identifiers.
+ */
 function ensureClaimCountRestrictionIsUnique(
   restriction: ClaimCountTransferRestrictionInput,
-  seenJurisdictions: Set<string>,
-  seenClaimTypes: Set<ClaimType>
+  seenRestrictions: Set<string>
 ): void {
-  const { claim } = restriction;
+  const { claim, issuer } = restriction;
 
   /* istanbul ignore next */
   if (!claim) {
     return;
   }
 
+  let claimValue = '';
+
   if (claim.type === ClaimType.Jurisdiction) {
-    const key = claim.countryCode ?? 'none';
-
-    if (seenJurisdictions.has(key)) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'Duplicate Jurisdiction CountryCode found in input',
-        data: { countryCode: claim.countryCode },
-      });
-    }
-
-    seenJurisdictions.add(key);
-
-    return;
+    claimValue = claim.countryCode ?? 'none';
+  } else if (claim.type === ClaimType.Accredited) {
+    claimValue = claim.accredited ? 'true' : 'false';
+  } else if (claim.type === ClaimType.Affiliate) {
+    claimValue = claim.affiliate ? 'true' : 'false';
   }
 
-  if (seenClaimTypes.has(claim.type)) {
+  const key = `${claim.type}:${issuer.did}:${claimValue}`;
+
+  if (seenRestrictions.has(key)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Duplicate ClaimType found in input',
-      data: { claimType: claim.type },
+      message: 'Duplicate restriction found in input',
+      data: { restriction },
     });
   }
 
-  seenClaimTypes.add(claim.type);
+  seenRestrictions.add(key);
 }
 
 /**
  * Ensure there are no duplicate claim-based restrictions in the provided input.
  */
 function assertInputValid(input: TransferRestrictionParams): void {
-  const seenJurisdictions = new Set<string>();
-  const seenClaimTypes = new Set<ClaimType>();
+  const seenRestrictions = new Set<string>();
 
   for (const restriction of input.restrictions) {
     if (restriction.type === TransferRestrictionType.ClaimCount) {
       ensureClaimCountRestrictionIsUnique(
         restriction as ClaimCountTransferRestrictionInput,
-        seenJurisdictions,
-        seenClaimTypes
+        seenRestrictions
       );
     }
   }
