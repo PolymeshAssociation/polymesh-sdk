@@ -640,9 +640,9 @@ describe('Assets Class', () => {
     });
 
     beforeEach(() => {
-      rawIds.forEach(rawId => {
+      for (const rawId of rawIds) {
         when(rawId.eq).calledWith(rawId).mockReturnValue(true);
-      });
+      }
       rawGlobalMetadata = globalMetadata.map(({ id, name, specs }, index) => {
         const rawId = rawIds[index];
         const rawName = dsMockUtils.createMockBytes(name);
