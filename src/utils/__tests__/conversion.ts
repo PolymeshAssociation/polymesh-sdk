@@ -11905,6 +11905,62 @@ describe('signatureToMeshRuntimeMultiSignature', () => {
 
     expect(result).toEqual(fakeResult);
   });
+
+  it('should return a SpRuntimeMultiSignature for v7+ chain versions', () => {
+    const context = dsMockUtils.getContextInstance();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (context as any).isV7 = true;
+
+    const fakeResult = 'SpCoreEcdsaSignature' as unknown as SpRuntimeMultiSignature;
+
+    const signature = 'someSignature';
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fakeEcdsaSignature = 'fakeEcdsaSignature' as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fakeEd25519Signature = 'fakeEd25519Signature' as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fakeSr25519Signature = 'fakeSr25519Signature' as any;
+
+    // Test Ecdsa
+    when(context.createType)
+      .calledWith('SpCoreEcdsaSignature', signature)
+      .mockReturnValue(fakeEcdsaSignature);
+
+    when(context.createType)
+      .calledWith('SpRuntimeMultiSignature', { Ecdsa: fakeEcdsaSignature })
+      .mockReturnValue(fakeResult);
+
+    let result = signatureToMeshRuntimeMultiSignature(SignerKeyRingType.Ecdsa, signature, context);
+
+    expect(result).toEqual(fakeResult);
+
+    // Test Ed25519
+    when(context.createType)
+      .calledWith('SpCoreEd25519Signature', signature)
+      .mockReturnValue(fakeEd25519Signature);
+
+    when(context.createType)
+      .calledWith('SpRuntimeMultiSignature', { Ed25519: fakeEd25519Signature })
+      .mockReturnValue(fakeResult);
+
+    result = signatureToMeshRuntimeMultiSignature(SignerKeyRingType.Ed25519, signature, context);
+
+    expect(result).toEqual(fakeResult);
+
+    // Test Sr25519
+    when(context.createType)
+      .calledWith('SpCoreSr25519Signature', signature)
+      .mockReturnValue(fakeSr25519Signature);
+
+    when(context.createType)
+      .calledWith('SpRuntimeMultiSignature', { Sr25519: fakeSr25519Signature })
+      .mockReturnValue(fakeResult);
+
+    result = signatureToMeshRuntimeMultiSignature(SignerKeyRingType.Sr25519, signature, context);
+
+    expect(result).toEqual(fakeResult);
+  });
 });
 
 describe('offChainMetadataToMeshReceiptMetadata', () => {
