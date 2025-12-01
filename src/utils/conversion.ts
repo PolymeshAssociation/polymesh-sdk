@@ -5472,7 +5472,19 @@ export function signatureToMeshRuntimeMultiSignature(
   value: string,
   context: Context
 ): SpRuntimeMultiSignature {
-  const rawValue = context.createType('U8aFixed', value);
+  let rawValue;
+  if (context.isV7) {
+    if (type === SignerKeyRingType.Ecdsa) {
+      rawValue = context.createType('SpCoreEcdsaSignature', value);
+    } else if (type === SignerKeyRingType.Ed25519) {
+      rawValue = context.createType('SpCoreEd25519Signature', value);
+    } else {
+      // assume sr 25519
+      rawValue = context.createType('SpCoreSr25519Signature', value);
+    }
+  } else {
+    rawValue = context.createType('U8aFixed', value);
+  }
 
   return context.createType('SpRuntimeMultiSignature', {
     [type]: rawValue,
