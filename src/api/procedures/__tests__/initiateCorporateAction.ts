@@ -15,7 +15,14 @@ import {
   Params,
   prepareInitiateCorporateAction,
 } from '~/api/procedures/initiateCorporateAction';
-import { Checkpoint, CheckpointSchedule, Context, CorporateAction, Procedure } from '~/internal';
+import {
+  Checkpoint,
+  CheckpointSchedule,
+  Context,
+  CorporateAction,
+  Identity,
+  Procedure,
+} from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -45,7 +52,7 @@ describe('assertCheckpointValue', () => {
   });
 
   it('should throw an error if the provided Date is in the past', () => {
-    const checkpoint = new Date(new Date().getTime() - 1000 * 60 * 60 * 24);
+    const checkpoint = new Date(Date.now() - 1000 * 60 * 60 * 24);
 
     return expect(assertCheckpointValue(checkpoint)).rejects.toThrow(
       'Checkpoint must be in the future'
@@ -56,7 +63,7 @@ describe('assertCheckpointValue', () => {
     const mockCheckpoint = new Checkpoint({ id: new BigNumber(1), assetId: asset.id }, context);
     mockCheckpoint.createdAt = jest
       .fn()
-      .mockResolvedValue(new Date(new Date().getTime() - 1000 * 60 * 60 * 24));
+      .mockResolvedValue(new Date(Date.now() - 1000 * 60 * 60 * 24));
 
     return expect(assertCheckpointValue(mockCheckpoint)).rejects.toThrow(
       'Checkpoint must be in the future'
@@ -89,6 +96,9 @@ describe('initiateCorporateAction procedure', () => {
   let initiateCorporateActionTransaction: PolymeshTx<unknown[]>;
 
   let corporateActionParamsToMeshCorporateActionArgsSpy: jest.SpyInstance;
+  let stringToIdentityIdSpy: jest.SpyInstance;
+  let assetToMeshAssetIdSpy: jest.SpyInstance;
+  let signingIdentity: Identity;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -97,10 +107,10 @@ describe('initiateCorporateAction procedure', () => {
 
     assetId = '0x12341234123412341234123412341234';
     asset = entityMockUtils.getFungibleAssetInstance({ assetId });
-    checkpoint = new Date(new Date().getTime() + 1000 * 60 * 60 * 24);
+    checkpoint = new Date(Date.now() + 1000 * 60 * 60 * 24);
     kind = CorporateActionKind.IssuerNotice;
 
-    declarationDate = new Date(new Date().getTime() - 1000 * 60 * 60 * 24);
+    declarationDate = new Date(Date.now() - 1000 * 60 * 60 * 24);
     description = 'someDescription';
     rawCorporateActionArgs = dsMockUtils.createMockInitiateCorporateActionArgs({
       assetId,
@@ -117,6 +127,10 @@ describe('initiateCorporateAction procedure', () => {
       utilsConversionModule,
       'corporateActionParamsToMeshCorporateActionArgs'
     );
+    stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
+    assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
+
+    signingIdentity = entityMockUtils.getIdentityInstance({ did: 'someDid' });
   });
 
   beforeEach(() => {
@@ -126,6 +140,20 @@ describe('initiateCorporateAction procedure', () => {
     );
 
     mockContext = dsMockUtils.getContextInstance();
+    mockContext.getSigningIdentity = jest.fn().mockResolvedValue(signingIdentity);
+
+    const rawAssetId = dsMockUtils.createMockAssetId(assetId);
+    const rawIdentityId = dsMockUtils.createMockIdentityId(signingIdentity.did);
+
+    when(assetToMeshAssetIdSpy).calledWith(asset, mockContext).mockReturnValue(rawAssetId);
+    when(stringToIdentityIdSpy)
+      .calledWith(signingIdentity.did, mockContext)
+      .mockReturnValue(rawIdentityId);
+
+    // Default: mock Full agent (asset owner scenario)
+    dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
+      returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('Full')),
+    });
 
     when(corporateActionParamsToMeshCorporateActionArgsSpy)
       .calledWith(
@@ -210,6 +238,81 @@ describe('initiateCorporateAction procedure', () => {
         rawCorporateActionArgs.defaultWithholdingTax,
         rawCorporateActionArgs.withholdingTax,
       ],
+    });
+  });
+
+  describe('tax withholdings validation', () => {
+    it('should validate tax withholdings and detect duplicates', async () => {
+      const proc = procedureMockUtils.getInstance<Params, CorporateAction>(mockContext);
+
+      // Set maxDidWhts to at least 2 to allow duplicate check to run before limit check
+      dsMockUtils.setConstMock('corporateAction', 'maxDidWhts', {
+        returnValue: dsMockUtils.createMockU32(new BigNumber(10)),
+      });
+
+      const identity1 = entityMockUtils.getIdentityInstance({ did: 'did1' });
+      const identity2 = entityMockUtils.getIdentityInstance({ did: 'did2' });
+
+      const asIdentitySpy = jest.spyOn(utilsInternalModule, 'asIdentity');
+      when(asIdentitySpy).calledWith(identity1, mockContext).mockReturnValue(identity1);
+      when(asIdentitySpy).calledWith(identity2, mockContext).mockReturnValue(identity2);
+
+      await expect(
+        prepareInitiateCorporateAction.call(proc, {
+          asset,
+          declarationDate,
+          description,
+          kind,
+          checkpoint,
+          taxWithholdings: [
+            { identity: identity1, percentage: new BigNumber(10) },
+            { identity: identity1, percentage: new BigNumber(20) }, // Duplicate
+          ],
+          targets: null,
+          defaultTaxWithholding: null,
+        })
+      ).rejects.toMatchObject({
+        message: 'Identity included more than once in the tax withholding list',
+        data: {
+          identity: identity1,
+        },
+      });
+
+      asIdentitySpy.mockRestore();
+    });
+
+    it('should validate tax withholdings limit', async () => {
+      const proc = procedureMockUtils.getInstance<Params, CorporateAction>(mockContext);
+
+      const identity1 = entityMockUtils.getIdentityInstance({ did: 'did1' });
+      const identity2 = entityMockUtils.getIdentityInstance({ did: 'did2' });
+
+      const asIdentitySpy = jest.spyOn(utilsInternalModule, 'asIdentity');
+      when(asIdentitySpy).calledWith(identity1, mockContext).mockReturnValue(identity1);
+      when(asIdentitySpy).calledWith(identity2, mockContext).mockReturnValue(identity2);
+
+      // Set maxDidWhts to 1, but provide 2 tax withholdings
+      dsMockUtils.setConstMock('corporateAction', 'maxDidWhts', {
+        returnValue: dsMockUtils.createMockU32(new BigNumber(1)),
+      });
+
+      await expect(
+        prepareInitiateCorporateAction.call(proc, {
+          asset,
+          declarationDate,
+          description,
+          kind,
+          checkpoint,
+          taxWithholdings: [
+            { identity: identity1, percentage: new BigNumber(10) },
+            { identity: identity2, percentage: new BigNumber(20) },
+          ],
+          targets: null,
+          defaultTaxWithholding: null,
+        })
+      ).rejects.toThrow(); // Should throw from assertCaTaxWithholdingsValid
+
+      asIdentitySpy.mockRestore();
     });
   });
 

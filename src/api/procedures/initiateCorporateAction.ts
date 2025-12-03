@@ -1,5 +1,6 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 
+import { assertCaTaxWithholdingsValid } from '~/api/procedures/utils';
 import {
   Checkpoint,
   CheckpointSchedule,
@@ -132,8 +133,10 @@ export async function prepareInitiateCorporateAction(
     defaultTaxWithholding,
   } = args;
 
+  // Validate declarationDate is in the past
   assertDeclarationDate(declarationDate);
 
+  // Validate checkpoint/recordDate
   let checkpointValue: Checkpoint | CheckpointSchedule | Date | null = null;
 
   if (checkpoint) {
@@ -142,6 +145,7 @@ export async function prepareInitiateCorporateAction(
     await assertCheckpointValue(checkpointValue);
   }
 
+  // Validate details length (max_details_length)
   const rawMaxDetailsLength = await query.corporateAction.maxDetailsLength();
   const maxDetailsLength = u32ToBigNumber(rawMaxDetailsLength);
 
@@ -154,6 +158,13 @@ export async function prepareInitiateCorporateAction(
         maxLength: maxDetailsLength.toNumber(),
       },
     });
+  }
+
+  // Validate targets limit (handled in targetsToTargetIdentities conversion)
+  // Validate withholding_tax: check limit and detect duplicates (chain throws error on duplicates)
+  if (taxWithholdings && taxWithholdings.length > 0) {
+    // Check limit and detect duplicates (assertCaTaxWithholdingsValid handles both)
+    assertCaTaxWithholdingsValid(taxWithholdings, context);
   }
 
   const rawArgs = corporateActionParamsToMeshCorporateActionArgs(
