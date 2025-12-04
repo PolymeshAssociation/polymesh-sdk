@@ -9,7 +9,7 @@ module.exports = {
     {
       name: 'next-bc-+([0-9])',
       prerelease: true,
-      channel: 'next'
+      channel: 'next',
     },
     {
       name: 'v26',
