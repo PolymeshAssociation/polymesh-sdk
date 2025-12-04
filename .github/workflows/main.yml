@@ -95,6 +95,7 @@ jobs:
           cp README.md dist/README.md
           cp yarn.lock dist/yarn.lock
           cp -R node_modules dist/node_modules
+          cp .releaserc.js dist/.releaserc.js
       # - name: integration test
       #   run: yarn test:integration
       - name: release
