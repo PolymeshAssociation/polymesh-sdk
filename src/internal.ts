@@ -177,3 +177,11 @@ export { setStakingPayee } from '~/api/procedures/setStakingPayee';
 export { withdrawUnbondedPolyx } from '~/api/procedures/withdrawUnbondedPolyx';
 export { nominateValidators } from '~/api/procedures/nominateValidators';
 export { enableOffChainFundingForOfferings } from '~/api/procedures/enableOffChainFundingForOfferings';
+
+// Confidential Assets (DART)
+export { ConfidentialAccount } from '~/api/entities/ConfidentialAccount';
+export { ConfidentialAsset } from '~/api/entities/ConfidentialAsset';
+export { ConfidentialSettlement } from '~/api/entities/ConfidentialSettlement';
+export { createConfidentialAsset } from '~/api/procedures/createConfidentialAsset';
+export { registerConfidentialAccounts } from '~/api/procedures/registerConfidentialAccounts';
+export { createConfidentialSettlement } from '~/api/procedures/createConfidentialSettlement';

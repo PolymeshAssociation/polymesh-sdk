@@ -13,6 +13,9 @@ import fetch from 'cross-fetch';
 import { AccountManagement } from '~/api/client/AccountManagement';
 import { Assets } from '~/api/client/Assets';
 import { Claims } from '~/api/client/Claims';
+import { ConfidentialAccounts } from '~/api/client/ConfidentialAccounts';
+import { ConfidentialAssets } from '~/api/client/ConfidentialAssets';
+import { ConfidentialSettlements } from '~/api/client/ConfidentialSettlements';
 import { Identities } from '~/api/client/Identities';
 import { Network } from '~/api/client/Network';
 import { Settlements } from '~/api/client/Settlements';
@@ -120,6 +123,25 @@ export class Polymesh {
   public assets: Assets;
 
   /**
+   * A set of methods for interacting with DART Confidential Assets
+   *
+   * @note Confidential Assets use zero-knowledge proofs for privacy-preserving transfers
+   */
+  public confidentialAssets: ConfidentialAssets;
+
+  /**
+   * A set of methods for managing DART Confidential Accounts
+   */
+  public confidentialAccounts: ConfidentialAccounts;
+
+  /**
+   * A set of methods for DART Confidential Settlements
+   *
+   * @note Unlike regular settlements, confidential settlements do not use venues
+   */
+  public confidentialSettlements: ConfidentialSettlements;
+
+  /**
    * @hidden
    */
   protected constructor(context: Context) {
@@ -132,6 +154,9 @@ export class Polymesh {
     this.identities = new Identities(context);
     this.assets = new Assets(context);
     this.staking = new Staking(context);
+    this.confidentialAssets = new ConfidentialAssets(context);
+    this.confidentialAccounts = new ConfidentialAccounts(context);
+    this.confidentialSettlements = new ConfidentialSettlements(context);
 
     this.createTransactionBatch = createProcedureMethod(
       {
@@ -169,6 +194,7 @@ export class Polymesh {
         : new WsProvider(nodeUrl);
 
       polymeshApi = await ApiPromise.create({
+        // @ts-expect-error - exactPropertyType causes provider from ttl?.
         provider,
         types,
         rpc,
