@@ -107,7 +107,7 @@
     "typedoc-github-wiki-theme": "^2.1.0",
     "typedoc-plugin-markdown": "^4.8.0",
     "typescript": "5.8.3",
-    "webpack": "5.94.0",
+    "webpack": "5.104.1",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^5.2.1",
     "websocket-as-promised": "^2.0.1"
