@@ -16,7 +16,7 @@ jobs:
         run: corepack enable
       - uses: actions/setup-node@v4
         with:
-          node-version: '22.x'
+          node-version: "22.x"
       - name: install dependencies
         run: yarn install --immutable
       - name: lint
@@ -34,12 +34,12 @@ jobs:
         run: corepack enable
       - uses: actions/setup-node@v4
         with:
-          node-version: '22.x'
+          node-version: "22.x"
       - name: install dependencies
         run: yarn install --immutable
       - name: test
         env:
-          NODE_OPTIONS: '--max-old-space-size=8192'
+          NODE_OPTIONS: "--max-old-space-size=8192"
         run: yarn test --runInBand --shard=${{ matrix.shard }}/${{ strategy.job-total }}
       - name: Rename coverage to shard coverage
         run: |
@@ -79,13 +79,18 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint, sonar]
     if: github.event_name == 'push'
+    permissions:
+      contents: write # push release commits, tags, create GitHub Releases
+      issues: write # @semantic-release/github comments on resolved issues
+      pull-requests: write # @semantic-release/github comments on merged PRs
+      id-token: write # OIDC token for npm trusted publishing
     steps:
       - uses: actions/checkout@v4
       - name: Enable Corepack
         run: corepack enable
       - uses: actions/setup-node@v4
         with:
-          node-version: '22.x'
+          node-version: "22.x"
       - name: install dependencies
         run: yarn install --immutable
       - name: build
@@ -101,7 +106,6 @@ jobs:
       - name: release
         env:
           GITHUB_TOKEN: ${{ secrets.ASSOCIATION_RELEASE_TOKEN }}
-          NPM_TOKEN: ${{ secrets.ASSOCIATION_NPM_TOKEN }}
         run: |
           cd dist
           yarn install --immutable
