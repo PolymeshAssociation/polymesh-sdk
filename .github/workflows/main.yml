@@ -66,6 +66,8 @@ jobs:
         run: npx nyc report --reporter lcov --reporter text --reporter clover -t coverage
       - name: sonarcloud scan
         uses: SonarSource/sonarqube-scan-action@v7
+        with:
+          scannerVersion: 7.0.2.4839
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
