@@ -65,7 +65,9 @@ jobs:
       - name: Process Coverage
         run: npx nyc report --reporter lcov --reporter text --reporter clover -t coverage
       - name: sonarcloud scan
-        uses: SonarSource/sonarcloud-github-action@master
+        uses: SonarSource/sonarqube-scan-action@v7
+        with:
+          args: -Dsonar.verbose=true
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.ASSOCIATION_RELEASE_TOKEN }}
