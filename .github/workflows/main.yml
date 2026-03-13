@@ -66,11 +66,9 @@ jobs:
         run: npx nyc report --reporter lcov --reporter text --reporter clover -t coverage
       - name: sonarcloud scan
         uses: SonarSource/sonarqube-scan-action@v7
-        with:
-          scannerVersion: 7.0.2.4839
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.ASSOCIATION_RELEASE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: geekyeggo/delete-artifact@v5
         with:
           name: coverage-artifacts-*
