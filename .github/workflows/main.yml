@@ -55,8 +55,6 @@ jobs:
     name: Merge coverage and SonarCloud scan
     runs-on: ubuntu-latest
     needs: [test]
-    permissions:
-      pull-requests: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -67,10 +65,10 @@ jobs:
       - name: Process Coverage
         run: npx nyc report --reporter lcov --reporter text --reporter clover -t coverage
       - name: sonarcloud scan
-        uses: SonarSource/sonarqube-scan-action@v7
+        uses: SonarSource/sonarcloud-github-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.ASSOCIATION_RELEASE_TOKEN }}
       - uses: geekyeggo/delete-artifact@v5
         with:
           name: coverage-artifacts-*
