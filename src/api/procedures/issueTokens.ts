@@ -3,9 +3,9 @@ import { ErrorCode, IssueTokensParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { MAX_BALANCE } from '~/utils/constants';
 import {
+  assetHolderToAssetHolderKind,
   assetToMeshAssetId,
   bigNumberToBalance,
-  portfolioToPortfolioKind,
 } from '~/utils/conversion';
 
 export type Params = IssueTokensParams & {
@@ -52,11 +52,11 @@ export async function prepareIssueTokens(
 
   const rawAssetId = assetToMeshAssetId(assetEntity, context);
   const rawValue = bigNumberToBalance(amount, context, isDivisible);
-  const rawPortfolio = portfolioToPortfolioKind(portfolio, context);
+  const rawAssetHolder = assetHolderToAssetHolderKind(portfolio, context);
 
   return {
     transaction: asset.issue,
-    args: [rawAssetId, rawValue, rawPortfolio],
+    args: [rawAssetId, rawValue, rawAssetHolder],
     resolver: assetEntity,
   };
 }

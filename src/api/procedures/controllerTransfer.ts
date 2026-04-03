@@ -2,9 +2,9 @@ import { DefaultPortfolio, FungibleAsset, PolymeshError, Procedure } from '~/int
 import { ControllerTransferParams, ErrorCode, RoleType, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
+  assetHolderIdToMeshAssetHolder,
   assetToMeshAssetId,
   bigNumberToBalance,
-  portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
 } from '~/utils/conversion';
@@ -66,7 +66,7 @@ export async function prepareControllerTransfer(
     args: [
       rawAssetId,
       bigNumberToBalance(amount, context),
-      portfolioIdToMeshPortfolioId(originPortfolioId, context),
+      assetHolderIdToMeshAssetHolder(originPortfolioId, context),
     ],
     resolver: undefined,
   };

@@ -32,7 +32,8 @@ export async function prepareConsumeAddRelayerPayingKeyAuthorization(
   args: ConsumeAddRelayerPayingKeyAuthorizationParams
 ): Promise<
   | TransactionSpec<void, ExtrinsicParams<'identity', 'removeAuthorization'>>
-  | TransactionSpec<void, ExtrinsicParams<'relayer', 'acceptPayingKey'>>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | TransactionSpec<void, any>
 > {
   const {
     context: {
@@ -80,10 +81,18 @@ export async function prepareConsumeAddRelayerPayingKeyAuthorization(
     };
   }
 
+  if (!context.isV7) {
+    throw new PolymeshError({
+      code: ErrorCode.NotSupported,
+      message: 'acceptPayingKey type authorization is not supported in chain 8.x',
+    });
+  }
+
   await assertAuthorizationRequestValid(authRequest, context);
 
   return {
-    transaction: relayer.acceptPayingKey,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    transaction: (relayer as any).acceptPayingKey,
     paidForBy: issuer,
     args: [rawAuthId],
     resolver: undefined,

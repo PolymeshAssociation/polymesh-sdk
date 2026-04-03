@@ -84,8 +84,6 @@ import {
   PalletStoFundraiserStatus,
   PalletStoFundraiserTier,
   PalletStoPriceTier,
-  PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
-  PolymeshCommonUtilitiesProtocolFeeProtocolOp,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesAssetAssetType,
@@ -98,6 +96,7 @@ import {
   PolymeshPrimitivesAuthorization,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesCddId,
+  PolymeshPrimitivesCheckpointScheduleCheckpoints,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesCondition,
   PolymeshPrimitivesConditionConditionType,
@@ -121,6 +120,7 @@ import {
   PolymeshPrimitivesNftNfTs,
   PolymeshPrimitivesPortfolioFund,
   PolymeshPrimitivesPosRatio,
+  PolymeshPrimitivesProtocolFeeProtocolOp,
   PolymeshPrimitivesSecondaryKey,
   PolymeshPrimitivesSecondaryKeyExtrinsicPermissions,
   PolymeshPrimitivesSecondaryKeyKeyRecord,
@@ -3648,11 +3648,11 @@ export const createMockCalendarPeriod = (
  */
 export const createMockCheckpointSchedule = (
   checkpointSchedule?:
-    | PolymeshCommonUtilitiesCheckpointScheduleCheckpoints
+    | PolymeshPrimitivesCheckpointScheduleCheckpoints
     | {
         pending: BTreeSet<u64> | Parameters<typeof createMockBtreeSet>[0];
       }
-): MockCodec<PolymeshCommonUtilitiesCheckpointScheduleCheckpoints> => {
+): MockCodec<PolymeshPrimitivesCheckpointScheduleCheckpoints> => {
   const { pending } = checkpointSchedule ?? {
     pending: createMockBtreeSet(),
   };
@@ -4255,8 +4255,8 @@ export const createMockProtocolOp = (
     | 'ContractsPutCode'
     | 'CorporateBallotAttachBallot'
     | 'CapitalDistributionDistribute'
-): MockCodec<MockCodec<PolymeshCommonUtilitiesProtocolFeeProtocolOp>> => {
-  return createMockEnum<PolymeshCommonUtilitiesProtocolFeeProtocolOp>(protocolOp);
+): MockCodec<MockCodec<PolymeshPrimitivesProtocolFeeProtocolOp>> => {
+  return createMockEnum<PolymeshPrimitivesProtocolFeeProtocolOp>(protocolOp);
 };
 
 /**

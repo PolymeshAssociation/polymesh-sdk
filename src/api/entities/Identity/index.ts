@@ -4,7 +4,6 @@ import {
   PolymeshPrimitivesIdentityDidRecord,
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
-import { CddStatus } from '@polymeshassociation/polymesh-types/polkadot/polymesh';
 import BigNumber from 'bignumber.js';
 import { chunk, differenceWith, flatten, intersectionWith, uniqBy } from 'lodash';
 
@@ -12,7 +11,7 @@ import { AssetPermissions } from '~/api/entities/Identity/AssetPermissions';
 import { IdentityAuthorizations } from '~/api/entities/Identity/IdentityAuthorizations';
 import { Portfolios } from '~/api/entities/Identity/Portfolios';
 import { unlinkChildIdentity } from '~/api/procedures/unlinkChildIdentity';
-import { assertPortfolioExists } from '~/api/procedures/utils';
+import { assertAssetHolderExists } from '~/api/procedures/utils';
 import {
   Account,
   BaseAsset,
@@ -66,6 +65,8 @@ import {
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   accountIdToString,
+  assetHolderIdToMeshAssetHolder,
+  assetHolderLikeToAssetHolderId,
   assetIdToString,
   assetToMeshAssetId,
   balanceToBigNumber,
@@ -74,9 +75,7 @@ import {
   corporateActionIdentifierToCaId,
   identityIdToString,
   middlewareInstructionToHistoricInstruction,
-  portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
-  portfolioLikeToPortfolioId,
   stringToAccountId,
   stringToIdentityId,
   transactionPermissionsToTxGroups,
@@ -160,14 +159,13 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       const { owner } = await reservation.details();
 
       return owner ? this.isEqual(owner) : false;
-    } else if (isCddProviderRole(role)) {
+    } else if (context.isV7 && isCddProviderRole(role)) {
       const {
-        polymeshApi: {
-          query: { cddServiceProviders },
-        },
+        polymeshApi: { query },
       } = context;
 
-      const activeMembers = await cddServiceProviders.activeMembers();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const activeMembers = await (query as any).cddServiceProviders.activeMembers();
       const memberDids = activeMembers.map(identityIdToString);
 
       return memberDids.includes(did);
@@ -286,6 +284,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
   /**
    * Check whether this Identity has a valid CDD claim
+   *
+   * @deprecated
    */
   public async hasValidCdd(): Promise<boolean> {
     const {
@@ -296,7 +296,14 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       },
     } = this;
     const identityId = stringToIdentityId(did, context);
-    const result = await call.identityApi.isIdentityHasValidCdd<CddStatus>(identityId, null);
+    if (!context.isV7) {
+      throw new PolymeshError({
+        code: ErrorCode.General,
+        message: 'CDD claims are discontinued from chain v8',
+      });
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = await (call.identityApi as any).isIdentityHasValidCdd(identityId, null);
     return cddStatusToBoolean(result);
   }
 
@@ -323,14 +330,21 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   public async isCddProvider(): Promise<boolean> {
     const {
       context: {
-        polymeshApi: {
-          query: { cddServiceProviders },
-        },
+        polymeshApi: { query },
       },
+      context,
       did,
     } = this;
 
-    const activeMembers = await cddServiceProviders.activeMembers();
+    if (context.isV7) {
+      throw new PolymeshError({
+        code: ErrorCode.General,
+        message: 'CDD providers are discontinued from chain v8',
+      });
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const activeMembers = await (query as any).cddServiceProviders.activeMembers();
     return activeMembers.map(identityIdToString).includes(did);
   }
 
@@ -594,7 +608,10 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   public async getInstructions(): Promise<GroupedInstructions> {
     const { did, portfolios } = this;
 
-    const ownedPortfolios = await portfolios.getPortfolios();
+    const [ownedPortfolios, secondaryPermissionedAccounts] = await Promise.all([
+      portfolios.getPortfolios(),
+      this.getSecondaryAccounts(),
+    ]);
 
     const ownedPortfolioChecks = await Promise.all(
       ownedPortfolios.map(async portfolio => {
@@ -610,9 +627,11 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       this.portfolios.getCustodiedPortfolios(),
     ]);
 
-    const allPortfolios = [...ownedCustodiedPortfolios, ...custodiedPortfolios];
+    const secondaryAccounts = secondaryPermissionedAccounts.data.map(({ account }) => account);
 
-    const { affirmed, pending, failed } = await this.assembleGroupedInstructions(allPortfolios);
+    const allHolders = [...ownedCustodiedPortfolios, ...custodiedPortfolios, ...secondaryAccounts];
+
+    const { affirmed, pending, failed } = await this.assembleGroupedInstructions(allHolders);
 
     return {
       affirmed: differenceWith(affirmed, pending, (obj1, obj2) => obj1.id.eq(obj2.id)),
@@ -627,7 +646,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    * @hidden
    */
   private async assembleGroupedInstructions(
-    portfolios: (DefaultPortfolio | NumberedPortfolio)[]
+    accountHolders: (DefaultPortfolio | NumberedPortfolio | Account)[]
   ): Promise<GroupedInstructions> {
     const {
       context: {
@@ -642,16 +661,18 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const pending: Instruction[] = [];
     const failed: Instruction[] = [];
 
-    const portfolioIds = portfolios.map(portfolioLikeToPortfolioId);
+    const accountHolderIds = accountHolders.map(assetHolderLikeToAssetHolderId);
 
-    await Promise.all(portfolioIds.map(portfolioId => assertPortfolioExists(portfolioId, context)));
+    await Promise.all(
+      accountHolderIds.map(accountHolderId => assertAssetHolderExists(accountHolderId, context))
+    );
 
-    const portfolioIdChunks = chunk(portfolioIds, MAX_CONCURRENT_REQUESTS);
+    const portfolioIdChunks = chunk(accountHolderIds, MAX_CONCURRENT_REQUESTS);
 
     for (const portfolioIdChunk of portfolioIdChunks) {
       const auths = await Promise.all(
         portfolioIdChunk.map(portfolioId =>
-          settlement.userAffirmations.entries(portfolioIdToMeshPortfolioId(portfolioId, context))
+          settlement.userAffirmations.entries(assetHolderIdToMeshAssetHolder(portfolioId, context))
         )
       );
 
@@ -692,10 +713,12 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   public async getInvolvedInstructions(): Promise<GroupedInvolvedInstructions> {
     const { portfolios, did } = this;
 
-    const [allPortfolios, { data: custodiedPortfolios }] = await Promise.all([
-      portfolios.getPortfolios(),
-      portfolios.getCustodiedPortfolios(),
-    ]);
+    const [allPortfolios, { data: custodiedPortfolios }, { data: secondaryPermissionedAccounts }] =
+      await Promise.all([
+        portfolios.getPortfolios(),
+        portfolios.getCustodiedPortfolios(),
+        this.getSecondaryAccounts(),
+      ]);
 
     const ownedPortfolios: (DefaultPortfolio | NumberedPortfolio)[] = [];
     const ownedCustodiedPortfolios: (DefaultPortfolio | NumberedPortfolio)[] = [];
@@ -712,6 +735,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         ownedPortfolios.push(portfolio);
       }
     });
+
+    const secondaryAccounts = secondaryPermissionedAccounts.map(({ account }) => account);
 
     /**
      * This gathers all the partiallyAffirmed Instructions as the intersection of pending + affirmed.
@@ -735,7 +760,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     };
 
     const [owned, custodied] = await Promise.all([
-      this.assembleGroupedInstructions(ownedPortfolios),
+      this.assembleGroupedInstructions([...ownedPortfolios, ...secondaryAccounts]),
       this.assembleGroupedInstructions([...ownedCustodiedPortfolios, ...custodiedPortfolios]),
     ]);
 

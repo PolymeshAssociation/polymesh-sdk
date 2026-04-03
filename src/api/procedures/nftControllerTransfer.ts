@@ -10,12 +10,12 @@ import {
 } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
+  assetHolderIdToMeshAssetHolder,
+  assetHolderToAssetHolderKind,
   nftToMeshNft,
-  portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
   portfolioToPortfolioId,
-  portfolioToPortfolioKind,
 } from '~/utils/conversion';
 import { asNftId } from '~/utils/internal';
 
@@ -86,8 +86,8 @@ export async function prepareNftControllerTransfer(
     transaction: tx.nft.controllerTransfer,
     args: [
       rawNfts,
-      portfolioIdToMeshPortfolioId(originPortfolioId, context),
-      portfolioToPortfolioKind(destinationPortfolio, context),
+      assetHolderIdToMeshAssetHolder(originPortfolioId, context),
+      assetHolderToAssetHolderKind(destinationPortfolio, context),
     ],
     resolver: undefined,
   };

@@ -29,13 +29,13 @@ import {
 } from '~/types/internal';
 import {
   assetDocumentToDocument,
+  assetHolderToAssetHolderKind,
   bigNumberToBalance,
   booleanToBool,
   fundingRoundToAssetFundingRound,
   inputStatTypeToMeshStatType,
   internalAssetTypeToAssetType,
   nameToAssetName,
-  portfolioToPortfolioKind,
   securityIdentifierToAssetIdentifier,
   statisticStatTypesToBtreeStatType,
   stringToAssetId,
@@ -225,12 +225,12 @@ async function getDocumentsAndIssueTransaction(
       ? await signingIdentity.portfolios.getPortfolio({ portfolioId })
       : await signingIdentity.portfolios.getPortfolio();
 
-    const rawPortfolio = portfolioToPortfolioKind(portfolio, context);
+    const rawAssetHolder = assetHolderToAssetHolderKind(portfolio, context);
 
     transactions.push(
       checkTxType({
         transaction: tx.asset.issue,
-        args: [rawAssetId, rawInitialSupply, rawPortfolio],
+        args: [rawAssetId, rawInitialSupply, rawAssetHolder],
       })
     );
   }

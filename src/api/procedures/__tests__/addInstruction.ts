@@ -390,7 +390,7 @@ describe('addInstruction procedure', () => {
 
   it('should throw an error if the instructions array is empty', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      portfoliosToAffirm: [],
+      assetHoldersToAffirm: [],
     });
 
     let error;
@@ -407,7 +407,7 @@ describe('addInstruction procedure', () => {
 
   it('should throw an error if the legs array is empty', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      portfoliosToAffirm: [],
+      assetHoldersToAffirm: [],
     });
 
     entityMockUtils.configureMocks({
@@ -429,7 +429,7 @@ describe('addInstruction procedure', () => {
 
   it('should throw an error if any instruction contains leg with zero amount', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      portfoliosToAffirm: [],
+      assetHoldersToAffirm: [],
     });
 
     entityMockUtils.configureMocks({
@@ -458,7 +458,7 @@ describe('addInstruction procedure', () => {
 
   it('should throw an error if any instruction of type SettleAfterLock has no mediators', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      portfoliosToAffirm: [],
+      assetHoldersToAffirm: [],
     });
 
     entityMockUtils.configureMocks({
@@ -490,7 +490,7 @@ describe('addInstruction procedure', () => {
 
   it('should throw an error if any instruction contains leg with zero NFTs', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      portfoliosToAffirm: [],
+      assetHoldersToAffirm: [],
     });
 
     entityMockUtils.configureMocks({
@@ -519,7 +519,7 @@ describe('addInstruction procedure', () => {
 
   it('should throw an error if any instruction contains off chain leg with zero amount', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      portfoliosToAffirm: [],
+      assetHoldersToAffirm: [],
     });
 
     entityMockUtils.configureMocks({
@@ -547,7 +547,7 @@ describe('addInstruction procedure', () => {
 
   it('should throw an error if any instruction contains off chain leg without a venue', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      portfoliosToAffirm: [],
+      assetHoldersToAffirm: [],
     });
 
     let error;
@@ -571,7 +571,7 @@ describe('addInstruction procedure', () => {
 
   it('should throw an error if given an string asset that does not exist', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      portfoliosToAffirm: [],
+      assetHoldersToAffirm: [],
     });
 
     entityMockUtils.configureMocks({
@@ -605,7 +605,7 @@ describe('addInstruction procedure', () => {
 
   it('should throw an error if any instruction contains leg with transferring Assets within same Identity portfolios', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      portfoliosToAffirm: [],
+      assetHoldersToAffirm: [],
     });
 
     entityMockUtils.configureMocks({
@@ -634,7 +634,7 @@ describe('addInstruction procedure', () => {
 
   it('should throw an error if any instruction contains offchain leg with transferring offchain Asset within same Identity', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      portfoliosToAffirm: [],
+      assetHoldersToAffirm: [],
     });
 
     entityMockUtils.configureMocks({
@@ -661,7 +661,7 @@ describe('addInstruction procedure', () => {
 
   it("should throw an error if the Venue doesn't exist", async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      portfoliosToAffirm: [],
+      assetHoldersToAffirm: [],
     });
 
     entityMockUtils.configureMocks({
@@ -682,7 +682,7 @@ describe('addInstruction procedure', () => {
 
   it('should throw an error if the legs array exceeds limit', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      portfoliosToAffirm: [],
+      assetHoldersToAffirm: [],
     });
 
     entityMockUtils.configureMocks({
@@ -712,7 +712,7 @@ describe('addInstruction procedure', () => {
 
   it('should throw an error if the specified venue is not valid for any asset', () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      portfoliosToAffirm: [],
+      assetHoldersToAffirm: [],
     });
 
     const legOne = {
@@ -759,7 +759,7 @@ describe('addInstruction procedure', () => {
 
   it('should throw an error if no venue is specified and an asset has filtering enabled', () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      portfoliosToAffirm: [],
+      assetHoldersToAffirm: [],
     });
 
     const legOne = {
@@ -799,7 +799,7 @@ describe('addInstruction procedure', () => {
     });
 
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      portfoliosToAffirm: [],
+      assetHoldersToAffirm: [],
     });
 
     const expectedError = new PolymeshError({
@@ -839,7 +839,7 @@ describe('addInstruction procedure', () => {
       },
     });
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      portfoliosToAffirm: [],
+      assetHoldersToAffirm: [],
     });
 
     let error;
@@ -883,7 +883,7 @@ describe('addInstruction procedure', () => {
     });
     getCustodianMock.mockReturnValue({ did: fromDid });
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      portfoliosToAffirm: [[fromPortfolio, toPortfolio]],
+      assetHoldersToAffirm: [[fromPortfolio, toPortfolio]],
     });
 
     const result = await prepareAddInstruction.call(proc, args);
@@ -923,7 +923,7 @@ describe('addInstruction procedure', () => {
     });
     getCustodianMock.mockReturnValue({ did: fromDid });
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      portfoliosToAffirm: [[fromPortfolio, toPortfolio]],
+      assetHoldersToAffirm: [[fromPortfolio, toPortfolio]],
     });
 
     const expectedError = new PolymeshError({
@@ -954,7 +954,7 @@ describe('addInstruction procedure', () => {
     });
     getCustodianMock.mockReturnValue({ did: fromDid });
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      portfoliosToAffirm: [[fromPortfolio, toPortfolio]],
+      assetHoldersToAffirm: [[fromPortfolio, toPortfolio]],
     });
 
     const expectedError = new PolymeshError({
@@ -982,7 +982,7 @@ describe('addInstruction procedure', () => {
     getCustodianMock.mockReturnValue({ did: fromDid });
 
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      portfoliosToAffirm: [[fromPortfolio, toPortfolio]],
+      assetHoldersToAffirm: [[fromPortfolio, toPortfolio]],
     });
 
     const result = await prepareAddInstruction.call(proc, {
@@ -1021,7 +1021,7 @@ describe('addInstruction procedure', () => {
     });
     getCustodianMock.mockReturnValue({ did: toDid });
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      portfoliosToAffirm: [[]],
+      assetHoldersToAffirm: [[]],
     });
 
     const instructionDetails = {
@@ -1132,7 +1132,7 @@ describe('addInstruction procedure', () => {
       },
     });
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      portfoliosToAffirm: [[]],
+      assetHoldersToAffirm: [[]],
     });
 
     const result = await prepareAddInstruction.call(proc, {
@@ -1173,7 +1173,7 @@ describe('addInstruction procedure', () => {
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
       let proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-        portfoliosToAffirm: [[fromPortfolio, toPortfolio]],
+        assetHoldersToAffirm: [[fromPortfolio, toPortfolio]],
       });
       let boundFunc = getAuthorization.bind(proc);
 
@@ -1197,7 +1197,7 @@ describe('addInstruction procedure', () => {
       });
 
       proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-        portfoliosToAffirm: [[]],
+        assetHoldersToAffirm: [[]],
       });
       boundFunc = getAuthorization.bind(proc);
 

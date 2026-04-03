@@ -132,6 +132,10 @@ export enum ErrorCode {
    * general purpose errors that don't fit well into the other categories
    */
   General = 'General',
+  /**
+   * method not supported
+   */
+  NotSupported = 'NotSupported',
 }
 
 export interface MiddlewareConfig {

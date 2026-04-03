@@ -143,7 +143,7 @@ describe('executeManualInstruction procedure', () => {
 
   it('should throw an error if the signing identity is not the custodian of any of the involved portfolios', async () => {
     let proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
-      portfolios: [],
+      assetHolders: [],
       offChainParties: new Set<string>(['offChainSender', 'offChainReceiver']),
       instructionDetails,
       signerDid: 'someOtherDid',
@@ -157,7 +157,7 @@ describe('executeManualInstruction procedure', () => {
     ).rejects.toThrow('The signing identity is not involved in this Instruction');
 
     proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
-      portfolios: [],
+      assetHolders: [],
       offChainParties: new Set<string>(['offChainSender', 'offChainReceiver']),
       instructionDetails: {
         ...instructionDetails,
@@ -179,7 +179,7 @@ describe('executeManualInstruction procedure', () => {
     });
 
     const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
-      portfolios: [portfolio, portfolio],
+      assetHolders: [portfolio, portfolio],
       offChainParties: new Set<string>(),
       instructionDetails,
       signerDid: did,
@@ -199,7 +199,7 @@ describe('executeManualInstruction procedure', () => {
     });
 
     const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
-      portfolios: [portfolio, portfolio],
+      assetHolders: [portfolio, portfolio],
       offChainParties: new Set<string>(),
       instructionDetails,
       signerDid: did,
@@ -221,7 +221,7 @@ describe('executeManualInstruction procedure', () => {
     });
 
     let proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
-      portfolios: [portfolio, portfolio],
+      assetHolders: [portfolio, portfolio],
       offChainParties: new Set<string>(),
       instructionDetails,
       signerDid: did,
@@ -247,7 +247,7 @@ describe('executeManualInstruction procedure', () => {
     });
 
     proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
-      portfolios: [],
+      assetHolders: [],
       offChainParties: new Set<string>(),
       instructionDetails,
       signerDid: did,
@@ -274,7 +274,7 @@ describe('executeManualInstruction procedure', () => {
 
     // one of the off chain parties is executing the settlement manually
     proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
-      portfolios: [],
+      assetHolders: [],
       offChainParties: new Set<string>(['offChainSender', 'offChainReceiver']),
       instructionDetails,
       signerDid: 'offChainSender',
@@ -306,7 +306,7 @@ describe('executeManualInstruction procedure', () => {
       const to = entityMockUtils.getDefaultPortfolioInstance();
 
       const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
-        portfolios: [from, to],
+        assetHolders: [from, to],
         offChainParties: new Set<string>(),
         instructionDetails,
         signerDid: did,

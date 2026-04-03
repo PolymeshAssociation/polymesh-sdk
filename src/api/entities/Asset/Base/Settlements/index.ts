@@ -6,7 +6,7 @@ import {
 } from '@polymeshassociation/polymesh-types/polkadot/polymesh';
 import BigNumber from 'bignumber.js';
 
-import { assertPortfolioExists } from '~/api/procedures/utils';
+import { assertAssetHolderExists } from '~/api/procedures/utils';
 import {
   BaseAsset,
   Context,
@@ -15,15 +15,15 @@ import {
   Nft,
   toggleAssetPreApproval,
 } from '~/internal';
-import { NftCollection, NoArgsProcedureMethod, PortfolioLike, TransferBreakdown } from '~/types';
+import { AssetHolderLike, NftCollection, NoArgsProcedureMethod, TransferBreakdown } from '~/types';
 import { isFungibleAsset } from '~/utils';
 import {
+  assetHolderIdToMeshAssetHolder,
+  assetHolderLikeToAssetHolderId,
   assetToMeshAssetId,
   bigNumberToBalance,
   booleanToBool,
   nftToMeshNft,
-  portfolioIdToMeshPortfolioId,
-  portfolioLikeToPortfolioId,
   stringToIdentityId,
   transferReportToTransferBreakdown,
 } from '~/utils/conversion';
@@ -85,13 +85,13 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
   protected async canTransferBase(
     args:
       | {
-          from?: PortfolioLike;
-          to: PortfolioLike;
+          from?: AssetHolderLike;
+          to: AssetHolderLike;
           amount: BigNumber;
         }
       | {
-          from?: PortfolioLike;
-          to: PortfolioLike;
+          from?: AssetHolderLike;
+          to: AssetHolderLike;
           nfts: (Nft | BigNumber)[];
         }
   ): Promise<TransferBreakdown> {
@@ -110,20 +110,20 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
 
     let isDivisible = false;
     let amount = new BigNumber(0);
-    const fromPortfolioId = portfolioLikeToPortfolioId(from);
-    const toPortfolioId = portfolioLikeToPortfolioId(to);
+    const fromAccountHolderId = assetHolderLikeToAssetHolderId(from);
+    const toAccountHolderId = assetHolderLikeToAssetHolderId(to);
 
     await Promise.all([
-      assertPortfolioExists(fromPortfolioId, context),
-      assertPortfolioExists(toPortfolioId, context),
+      assertAssetHolderExists(fromAccountHolderId, context),
+      assertAssetHolderExists(toAccountHolderId, context),
     ]);
 
     if (isFungibleAsset(parent)) {
       ({ isDivisible } = await parent.details());
     }
 
-    const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromPortfolioId, context);
-    const rawToPortfolio = portfolioIdToMeshPortfolioId(toPortfolioId, context);
+    const rawFromAccountHolder = assetHolderIdToMeshAssetHolder(fromAccountHolderId, context);
+    const rawToAccountHolder = assetHolderIdToMeshAssetHolder(toAccountHolderId, context);
 
     const rawAssetId = assetToMeshAssetId(parent, context);
 
@@ -131,16 +131,21 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
     let nftResult: Vec<DispatchError> | undefined;
     let complianceResult: Result<ComplianceReport, DispatchError>;
     let transferRestrictionsReport: Result<Vec<TransferCondition>, DispatchError>;
-    const rawFromDid = stringToIdentityId(fromPortfolioId.did, context);
-    const rawToDid = stringToIdentityId(toPortfolioId.did, context);
+
+    // TODO Confirm this case
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rawFromDid = stringToIdentityId((fromAccountHolderId as any).did, context);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rawToDid = stringToIdentityId((toAccountHolderId as any).did, context);
+
     if ('amount' in args) {
       amount = args.amount;
       ({ isDivisible } = await parent.details());
       const rawAmount = bigNumberToBalance(amount, context, isDivisible);
       [granularResult, complianceResult, transferRestrictionsReport] = await Promise.all([
         assetApi.transferReport<Vec<DispatchError>>(
-          rawFromPortfolio,
-          rawToPortfolio,
+          rawFromAccountHolder,
+          rawToAccountHolder,
           rawAssetId,
           rawAmount,
           booleanToBool(false, context)
@@ -162,8 +167,8 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
       const rawAmount = bigNumberToBalance(amount, context, isDivisible);
       [nftResult, complianceResult, transferRestrictionsReport] = await Promise.all([
         nftApi.transferReport<Vec<DispatchError>>(
-          rawFromPortfolio,
-          rawToPortfolio,
+          rawFromAccountHolder,
+          rawToAccountHolder,
           rawNfts,
           booleanToBool(false, context)
         ),
@@ -211,8 +216,8 @@ export class FungibleSettlements extends BaseSettlements<FungibleAsset> {
    *
    */
   public canTransfer(args: {
-    from?: PortfolioLike;
-    to: PortfolioLike;
+    from?: AssetHolderLike;
+    to: AssetHolderLike;
     amount: BigNumber;
   }): Promise<TransferBreakdown> {
     return this.canTransferBase(args);
@@ -239,8 +244,8 @@ export class NonFungibleSettlements extends BaseSettlements<NftCollection> {
    *
    */
   public canTransfer(args: {
-    from?: PortfolioLike;
-    to: PortfolioLike;
+    from?: AssetHolderLike;
+    to: AssetHolderLike;
     nfts: (BigNumber | Nft)[];
   }): Promise<TransferBreakdown> {
     return this.canTransferBase(args);

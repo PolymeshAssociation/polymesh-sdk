@@ -1,3 +1,4 @@
+import { PolymeshPrimitivesNftNfTs } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
@@ -6,10 +7,10 @@ import { Context, NftCollection, PolymeshError, Procedure } from '~/internal';
 import { CollectionKey, ErrorCode, NftMetadataInput, TxTags } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import {
+  assetHolderToAssetHolderKind,
   assetToMeshAssetId,
   meshNftToNftId,
   nftInputToNftMetadataVec,
-  portfolioToPortfolioKind,
 } from '~/utils/conversion';
 import { checkTxType, filterEventRecords } from '~/utils/internal';
 
@@ -25,10 +26,16 @@ export type Params = {
 export const issuedNftsResolver =
   (context: Context) =>
   (receipt: ISubmittableResult): Nft[] => {
-    const records = filterEventRecords(receipt, 'nft', 'NFTPortfolioUpdated');
+    let records;
+    if (context.isV7) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      records = filterEventRecords(receipt, 'nft' as any, 'NFTPortfolioUpdated');
+    } else {
+      records = filterEventRecords(receipt, 'nft', 'NFTHoldingsUpdated');
+    }
 
     return records.map(({ data }) => {
-      const { assetId, ids } = meshNftToNftId(data[1]);
+      const { assetId, ids } = meshNftToNftId(data[1] as PolymeshPrimitivesNftNfTs);
       const id = ids[0]!;
 
       return new Nft({ id, assetId }, context);
@@ -99,12 +106,12 @@ export async function prepareIssueNft(
     : await signingIdentity.portfolios.getPortfolio();
 
   const rawAssetId = assetToMeshAssetId(collection, context);
-  const rawPortfolio = portfolioToPortfolioKind(portfolio, context);
+  const rawAssetHolder = assetHolderToAssetHolderKind(portfolio, context);
 
   const transactions = rawMetadataValues.map(metadata =>
     checkTxType({
       transaction: tx.nft.issueNft,
-      args: [rawAssetId, metadata, rawPortfolio],
+      args: [rawAssetId, metadata, rawAssetHolder],
     })
   );
 
