@@ -6,17 +6,22 @@ import {
   ErrorCode,
   SubsidizeAccountParams,
 } from '~/types';
-import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
+import { TransactionSpec } from '~/types/internal';
 import { bigNumberToBalance, signerToString, stringToAccountId } from '~/utils/conversion';
 import { asAccount } from '~/utils/internal';
+
+export type Params = SubsidizeAccountParams & {
+  isV7Method: boolean;
+};
 
 /**
  * @hidden
  */
 export async function prepareSubsidizeAccount(
-  this: Procedure<SubsidizeAccountParams, AuthorizationRequest>,
-  args: SubsidizeAccountParams
-): Promise<TransactionSpec<AuthorizationRequest, ExtrinsicParams<'relayer', 'setPayingKey'>>> {
+  this: Procedure<Params, AuthorizationRequest>,
+  args: Params
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): Promise<TransactionSpec<any, any>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -69,17 +74,42 @@ export async function prepareSubsidizeAccount(
     },
   };
 
+  if (args.isV7Method) {
+    if (context.isV7) {
+      return {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        transaction: (tx.relayer as any).setPayingKey,
+        resolver: createAuthorizationResolver(authRequest, identity, account, null, context),
+        args: [rawBeneficiary, rawAllowance],
+      };
+    }
+
+    throw new PolymeshError({
+      code: ErrorCode.NotSupported,
+      message: 'This method is no longer supported for chain 8.x. Use approveSubsidy instead',
+    });
+  }
+
+  if (context.isV7) {
+    throw new PolymeshError({
+      code: ErrorCode.NotSupported,
+      message: 'This method is not supported for chain 7.x. Use subsidizeAccount instead',
+    });
+  }
+
+  // TODO check if a request is already present with same beneficiary in PendingSubsidies
   return {
-    transaction: tx.relayer.setPayingKey,
-    resolver: createAuthorizationResolver(authRequest, identity, account, null, context),
+    transaction: tx.relayer.approveSubsidy,
     args: [rawBeneficiary, rawAllowance],
+    resolver: undefined,
   };
 }
 
 /**
  * @hidden
  */
-export const subsidizeAccount = (): Procedure<SubsidizeAccountParams, AuthorizationRequest> =>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const subsidizeAccount = (): Procedure<Params, any> =>
   new Procedure(prepareSubsidizeAccount, {
     signerPermissions: true,
   });

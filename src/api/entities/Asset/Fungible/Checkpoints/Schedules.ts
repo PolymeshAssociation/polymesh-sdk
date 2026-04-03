@@ -1,4 +1,4 @@
-import { PolymeshCommonUtilitiesCheckpointScheduleCheckpoints } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesCheckpointScheduleCheckpoints } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import {
@@ -96,7 +96,7 @@ export class Schedules extends Namespace<FungibleAsset> {
 
     return rawSchedulesEntries.map(([key, rawScheduleOpt]) => {
       const rawSchedule =
-        rawScheduleOpt.unwrap() as PolymeshCommonUtilitiesCheckpointScheduleCheckpoints;
+        rawScheduleOpt.unwrap() as PolymeshPrimitivesCheckpointScheduleCheckpoints;
       const rawId = key.args[1];
       const checkpointId = u64ToBigNumber(rawId);
       const points = [...rawSchedule.pending].map(rawPoint => momentToDate(rawPoint));

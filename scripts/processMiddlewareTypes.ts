@@ -1,3 +1,4 @@
+/* eslint-disable import/order */
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 /* eslint-disable no-console */
 /* eslint-disable require-jsdoc */
@@ -95,9 +96,8 @@ function shouldRemoveProperty(typeName: string, propertyName: string): boolean {
   return propertiesToRemove.includes(propertyName) || propertyName.endsWith('Exist');
 }
 
-// Function to extract the element type from a nodes property
-function extractTypeFromSpecificProperty(typeNode: ts.TypeNode): string | null {
-  // Handle Array<Maybe<T>> pattern
+// Helper to handle Array<Maybe<T>> pattern
+function extractFromMaybeArray(typeNode: ts.TypeNode): string | null {
   if (
     ts.isTypeReferenceNode(typeNode) &&
     ts.isIdentifier(typeNode.typeName) &&
@@ -109,6 +109,7 @@ function extractTypeFromSpecificProperty(typeNode: ts.TypeNode): string | null {
 
     // Check if it's Maybe<T>
     if (
+      arrayElementType &&
       ts.isTypeReferenceNode(arrayElementType) &&
       ts.isIdentifier(arrayElementType.typeName) &&
       arrayElementType.typeName.text === 'Maybe' &&
@@ -118,13 +119,20 @@ function extractTypeFromSpecificProperty(typeNode: ts.TypeNode): string | null {
       const maybeElementType = arrayElementType.typeArguments[0];
 
       // Get the actual type T
-      if (ts.isTypeReferenceNode(maybeElementType) && ts.isIdentifier(maybeElementType.typeName)) {
+      if (
+        maybeElementType &&
+        ts.isTypeReferenceNode(maybeElementType) &&
+        ts.isIdentifier(maybeElementType.typeName)
+      ) {
         return maybeElementType.typeName.text;
       }
     }
   }
+  return null;
+}
 
-  // Check if it's InputMaybe<T>
+// Helper to handle InputMaybe<T> pattern
+function extractFromInputMaybe(typeNode: ts.TypeNode): string | null {
   if (
     ts.isTypeReferenceNode(typeNode) &&
     ts.isIdentifier(typeNode.typeName) &&
@@ -134,11 +142,20 @@ function extractTypeFromSpecificProperty(typeNode: ts.TypeNode): string | null {
   ) {
     const maybeElementType = typeNode.typeArguments[0];
     // Get the actual type T
-    if (ts.isTypeReferenceNode(maybeElementType) && ts.isIdentifier(maybeElementType.typeName)) {
+    if (
+      maybeElementType &&
+      ts.isTypeReferenceNode(maybeElementType) &&
+      ts.isIdentifier(maybeElementType.typeName)
+    ) {
       return maybeElementType.typeName.text;
     }
   }
   return null;
+}
+
+// Function to extract the element type from a nodes property
+function extractTypeFromSpecificProperty(typeNode: ts.TypeNode): string | null {
+  return extractFromMaybeArray(typeNode) || extractFromInputMaybe(typeNode);
 }
 
 // Function to extract the element type from a connection type
@@ -225,122 +242,159 @@ const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
 // Track referenced types to identify potentially dangling types
 const referencedTypes = new Set<string>();
 
+const handleTypeReference = (
+  node: ts.TypeReferenceNode,
+  connections: Map<string, string>,
+  oneToManyFilters: Map<string, string>
+): ts.Node => {
+  if (ts.isIdentifier(node.typeName)) {
+    if (connections.has(node.typeName.text)) {
+      const elementType = connections.get(node.typeName.text)!;
+      return ts.factory.createTypeReferenceNode('Connection', [
+        ts.factory.createTypeReferenceNode(elementType, undefined),
+      ]);
+    } else if (oneToManyFilters.has(node.typeName.text)) {
+      const elementType = oneToManyFilters.get(node.typeName.text)!;
+      return ts.factory.createTypeReferenceNode('OneToManyFilter', [
+        ts.factory.createTypeReferenceNode(elementType, undefined),
+      ]);
+    }
+  }
+  return node;
+};
+
+const shouldNotEmit = (
+  node: ts.Node,
+  connections: Map<string, string>,
+  oneToManyFilters: Map<string, string>
+): boolean => {
+  return (
+    (ts.isTypeAliasDeclaration(node) ||
+      ts.isInterfaceDeclaration(node) ||
+      ts.isEnumDeclaration(node)) &&
+    (shouldRemoveType(node.name.text) ||
+      connections.has(node.name.text) ||
+      oneToManyFilters.has(node.name.text))
+  );
+};
+
+const handleInterfaceDeclaration = (
+  node: ts.InterfaceDeclaration,
+  visit: (node: ts.Node) => ts.Node,
+  context: ts.TransformationContext
+): ts.Node => {
+  if (node.name.text === 'ClaimsConnection') {
+    return ts.visitEachChild(node, visit, context);
+  }
+  const filteredMembers = node.members.filter(member => {
+    if (ts.isPropertySignature(member) && member.name && ts.isIdentifier(member.name)) {
+      return !shouldRemoveProperty(node.name.text, member.name.text);
+    }
+    return true;
+  });
+
+  return ts.factory.updateInterfaceDeclaration(
+    node,
+    node.modifiers,
+    node.name,
+    node.typeParameters,
+    node.heritageClauses,
+    filteredMembers.map(member => ts.visitNode(member, visit) as ts.TypeElement)
+  );
+};
+
+const handleEnumDeclaration = (node: ts.EnumDeclaration): ts.Node => {
+  if (!node.name.text.endsWith('OrderBy')) {
+    return node;
+  }
+  const filteredMembers = node.members.filter(member => {
+    if (ts.isEnumMember(member) && member.name && ts.isIdentifier(member.name)) {
+      return !isUnwantedOrderByEnum(member.name.text);
+    }
+    return true;
+  });
+
+  filteredMembers.push(
+    ts.factory.createEnumMember(
+      ts.factory.createIdentifier('CreatedAtAsc'),
+      ts.factory.createStringLiteral('CREATED_AT_ASC')
+    ),
+    ts.factory.createEnumMember(
+      ts.factory.createIdentifier('CreatedAtDesc'),
+      ts.factory.createStringLiteral('CREATED_AT_DESC')
+    )
+  );
+
+  return ts.factory.updateEnumDeclaration(node, node.modifiers, node.name, filteredMembers);
+};
+
+const handleTypeAliasDeclaration = (
+  node: ts.TypeAliasDeclaration,
+  visit: (node: ts.Node) => ts.Node,
+  context: ts.TransformationContext
+): ts.Node => {
+  if (!node.type || !ts.isTypeLiteralNode(node.type)) {
+    return ts.visitEachChild(node, visit, context);
+  }
+  const filteredMembers = node.type.members.filter(member => {
+    if (ts.isPropertySignature(member) && member.name && ts.isIdentifier(member.name)) {
+      return !shouldRemoveProperty(node.name.text, member.name.text);
+    }
+    return true;
+  });
+
+  const newTypeLiteral = ts.factory.createTypeLiteralNode(
+    filteredMembers.map(member => ts.visitNode(member, visit) as ts.TypeElement)
+  );
+
+  return ts.factory.updateTypeAliasDeclaration(
+    node,
+    node.modifiers,
+    node.name,
+    node.typeParameters,
+    newTypeLiteral
+  );
+};
+
+const handlePropertySignature = (
+  node: ts.PropertySignature,
+  visit: (node: ts.Node) => ts.Node,
+  refs: Set<string>
+): ts.Node => {
+  if (node.type && ts.isTypeReferenceNode(node.type) && ts.isIdentifier(node.type.typeName)) {
+    refs.add(node.type.typeName.text);
+  }
+
+  return ts.factory.updatePropertySignature(
+    node,
+    node.modifiers,
+    node.name,
+    node.questionToken,
+    ts.visitNode(node.type, visit) as ts.TypeNode
+  );
+};
+
 // Create a transformer factory
 const transformer = <T extends ts.Node>(context: ts.TransformationContext) => {
   const visit = (node: ts.Node): ts.Node => {
-    // Replace type references that are connection types or one to many connection filters
-    if (ts.isTypeReferenceNode(node) && ts.isIdentifier(node.typeName)) {
-      if (connectionTypes.has(node.typeName.text)) {
-        const elementType = connectionTypes.get(node.typeName.text)!;
-        return ts.factory.createTypeReferenceNode('Connection', [
-          ts.factory.createTypeReferenceNode(elementType, undefined),
-        ]);
-      } else if (oneToManyConnectionFilters.has(node.typeName.text)) {
-        const elementType = oneToManyConnectionFilters.get(node.typeName.text)!;
-        return ts.factory.createTypeReferenceNode('OneToManyFilter', [
-          ts.factory.createTypeReferenceNode(elementType, undefined),
-        ]);
-      }
-    }
+    let result: ts.Node = node;
 
-    // Remove types with unwanted suffixes and connection types
-    if (
-      (ts.isTypeAliasDeclaration(node) ||
-        ts.isInterfaceDeclaration(node) ||
-        ts.isEnumDeclaration(node)) &&
-      (shouldRemoveType(node.name.text) ||
-        connectionTypes.has(node.name.text) ||
-        oneToManyConnectionFilters.has(node.name.text))
-    ) {
+    if (ts.isTypeReferenceNode(node)) {
+      result = handleTypeReference(node, connectionTypes, oneToManyConnectionFilters);
+    } else if (shouldNotEmit(node, connectionTypes, oneToManyConnectionFilters)) {
       return ts.factory.createNotEmittedStatement(node);
+    } else if (ts.isInterfaceDeclaration(node)) {
+      result = handleInterfaceDeclaration(node, visit, context);
+    } else if (ts.isEnumDeclaration(node)) {
+      result = handleEnumDeclaration(node);
+    } else if (ts.isTypeAliasDeclaration(node)) {
+      result = handleTypeAliasDeclaration(node, visit, context);
+    } else if (ts.isPropertySignature(node)) {
+      result = handlePropertySignature(node, visit, referencedTypes);
     }
 
-    // Process interface declarations to remove unwanted properties
-    if (ts.isInterfaceDeclaration(node) && node.name.text !== 'ClaimsConnection') {
-      const filteredMembers = node.members.filter(member => {
-        if (ts.isPropertySignature(member) && member.name && ts.isIdentifier(member.name)) {
-          return !shouldRemoveProperty(node.name.text, member.name.text);
-        }
-        return true;
-      });
-
-      return ts.factory.updateInterfaceDeclaration(
-        node,
-        node.decorators,
-        node.modifiers,
-        node.name,
-        node.typeParameters,
-        node.heritageClauses,
-        filteredMembers.map(member => ts.visitEachChild(member, visit, context))
-      );
-    }
-
-    // Process interface declarations to remove unwanted properties
-    if (ts.isEnumDeclaration(node) && node.name.text.endsWith('OrderBy')) {
-      const filteredMembers = node.members.filter(member => {
-        if (ts.isEnumMember(member) && member.name && ts.isIdentifier(member.name)) {
-          return !isUnwantedOrderByEnum(member.name.text);
-        }
-        return true;
-      });
-
-      // Add createdAt ordering options to all OrderBy enums for backward compatibility
-      filteredMembers.push(
-        ts.factory.createEnumMember(
-          ts.factory.createIdentifier('CreatedAtAsc'),
-          ts.factory.createStringLiteral('CREATED_AT_ASC')
-        ),
-        ts.factory.createEnumMember(
-          ts.factory.createIdentifier('CreatedAtDesc'),
-          ts.factory.createStringLiteral('CREATED_AT_DESC')
-        )
-      );
-
-      return ts.factory.updateEnumDeclaration(
-        node,
-        node.decorators,
-        node.modifiers,
-        node.name,
-        filteredMembers
-      );
-    }
-
-    // Process type alias declarations with type literals
-    if (ts.isTypeAliasDeclaration(node) && node.type && ts.isTypeLiteralNode(node.type)) {
-      const filteredMembers = node.type.members.filter(member => {
-        if (ts.isPropertySignature(member) && member.name && ts.isIdentifier(member.name)) {
-          return !shouldRemoveProperty(node.name.text, member.name.text);
-        }
-        return true;
-      });
-
-      const newTypeLiteral = ts.factory.createTypeLiteralNode(
-        filteredMembers.map(member => ts.visitEachChild(member, visit, context))
-      );
-
-      return ts.factory.updateTypeAliasDeclaration(
-        node,
-        node.decorators,
-        node.modifiers,
-        node.name,
-        node.typeParameters,
-        newTypeLiteral
-      );
-    }
-
-    // Process property signatures to track referenced types
-    if (ts.isPropertySignature(node) && node.type) {
-      if (ts.isTypeReferenceNode(node.type) && ts.isIdentifier(node.type.typeName)) {
-        referencedTypes.add(node.type.typeName.text);
-      }
-
-      return ts.factory.updatePropertySignature(
-        node,
-        node.modifiers,
-        node.name,
-        node.questionToken,
-        ts.visitNode(node.type, visit)
-      );
+    if (result !== node) {
+      return result;
     }
 
     return ts.visitEachChild(node, visit, context);
@@ -351,7 +405,7 @@ const transformer = <T extends ts.Node>(context: ts.TransformationContext) => {
 
 // Apply transformation
 const result = ts.transform(sourceFile, [transformer]);
-const transformedSourceFile = result.transformed[0];
+const transformedSourceFile = result.transformed[0]!;
 
 // Generate the output
 let outputText = printer.printNode(ts.EmitHint.SourceFile, transformedSourceFile, sourceFile);

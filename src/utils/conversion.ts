@@ -32,11 +32,9 @@ import {
   PalletStoFundraiser,
   PalletStoFundraiserTier,
   PalletStoPriceTier,
-  PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
-  PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth,
-  PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth,
-  PolymeshCommonUtilitiesProtocolFeeProtocolOp,
   PolymeshPrimitivesAgentAgentGroup,
+  PolymeshPrimitivesAssetAssetHolder,
+  PolymeshPrimitivesAssetAssetHolderKind,
   PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesAssetAssetType,
   PolymeshPrimitivesAssetIdentifier,
@@ -46,6 +44,7 @@ import {
   PolymeshPrimitivesAssetNonFungibleType,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesCddId,
+  PolymeshPrimitivesCheckpointScheduleCheckpoints,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesCondition,
   PolymeshPrimitivesConditionConditionType,
@@ -56,9 +55,11 @@ import {
   PolymeshPrimitivesIdentityClaimClaim,
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityClaimScope,
+  PolymeshPrimitivesIdentityCreateChildIdentityWithAuth,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesIdentityIdPortfolioKind,
+  PolymeshPrimitivesIdentitySecondaryKeyWithAuth,
   PolymeshPrimitivesJurisdictionCountryCode,
   PolymeshPrimitivesMemo,
   PolymeshPrimitivesMultisigProposalState,
@@ -66,6 +67,7 @@ import {
   PolymeshPrimitivesNftNfTs,
   PolymeshPrimitivesPortfolioFund,
   PolymeshPrimitivesPosRatio,
+  PolymeshPrimitivesProtocolFeeProtocolOp,
   PolymeshPrimitivesSecondaryKey,
   PolymeshPrimitivesSecondaryKeyExtrinsicPermissions,
   PolymeshPrimitivesSecondaryKeyPermissions,
@@ -112,7 +114,7 @@ import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto
 import {
   AssetComplianceResult,
   AuthorizationType as MeshAuthorizationType,
-  CddStatus,
+  // CddStatus,
   ComplianceReport,
   ComplianceRequirementResult,
   GranularCanTransferResult,
@@ -201,6 +203,9 @@ import {
   AffirmationStatus,
   AssetDocument,
   AssetDocumentWithId,
+  AssetHolder,
+  AssetHolderId,
+  AssetHolderLike,
   AssetStat,
   Authorization,
   AuthorizationType,
@@ -783,6 +788,19 @@ export function meshPortfolioIdToPortfolio(
 /**
  * @hidden
  */
+export function meshAccountHolderToAccountHolder(
+  rawAccountHolder: PolymeshPrimitivesAssetAssetHolder,
+  context: Context
+): Account | DefaultPortfolio | NumberedPortfolio {
+  if (rawAccountHolder.isAccount) {
+    return new Account({ address: rawAccountHolder.asAccount.toString() }, context);
+  }
+  return meshPortfolioIdToPortfolio(rawAccountHolder.asPortfolio, context);
+}
+
+/**
+ * @hidden
+ */
 export function portfolioToPortfolioId(
   portfolio: DefaultPortfolio | NumberedPortfolio
 ): PortfolioId {
@@ -824,6 +842,21 @@ export function portfolioLikeToPortfolioId(value: PortfolioLike): PortfolioId {
 /**
  * @hidden
  */
+export function assetHolderLikeToAssetHolderId(value: AssetHolderLike): AssetHolderId {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (value instanceof Account) {
+    return value.address;
+  }
+
+  return portfolioLikeToPortfolioId(value);
+}
+
+/**
+ * @hidden
+ */
 export function portfolioIdToPortfolio(
   portfolioId: PortfolioId,
   context: Context
@@ -847,6 +880,24 @@ export function portfolioLikeToPortfolio(
 /**
  * @hidden
  */
+export function assetHolderLikeToAssetHolder(
+  value: AssetHolderLike,
+  context: Context
+): Account | DefaultPortfolio | NumberedPortfolio {
+  if (typeof value === 'string') {
+    return new Account({ address: value }, context);
+  }
+
+  if (value instanceof Account) {
+    return value;
+  }
+
+  return portfolioLikeToPortfolio(value, context);
+}
+
+/**
+ * @hidden
+ */
 export function portfolioIdToMeshPortfolioId(
   portfolioId: PortfolioId,
   context: Context
@@ -861,6 +912,22 @@ export function portfolioIdToMeshPortfolioId(
 /**
  * @hidden
  */
+export function assetHolderIdToMeshAssetHolder(
+  assetHolderId: AssetHolderId,
+  context: Context
+): PolymeshPrimitivesAssetAssetHolder {
+  if (typeof assetHolderId === 'string') {
+    return context.createType('PolymeshPrimitivesAssetAssetHolder', {
+      Account: stringToAccountId(assetHolderId, context),
+    });
+  }
+  return context.createType('PolymeshPrimitivesAssetAssetHolder', {
+    Portfolio: portfolioIdToMeshPortfolioId(assetHolderId, context),
+  });
+}
+/**
+ * @hidden
+ */
 export function portfolioToPortfolioKind(
   portfolio: DefaultPortfolio | NumberedPortfolio,
   context: Context
@@ -872,6 +939,29 @@ export function portfolioToPortfolioKind(
     portfolioKind = 'Default';
   }
   return context.createType('PolymeshPrimitivesIdentityIdPortfolioKind', portfolioKind);
+}
+
+/**
+ * @hidden
+ */
+export function assetHolderToAssetHolderKind(
+  assetHolder: AssetHolder,
+  context: Context
+): PolymeshPrimitivesAssetAssetHolderKind {
+  if (assetHolder instanceof Account) {
+    if (context.isV7) {
+      return context.createType('PolymeshPrimitivesAssetAssetHolder', {
+        Account: stringToAccountId(assetHolder.address, context),
+      });
+    }
+    return context.createType('PolymeshPrimitivesAssetAssetHolder', 'Account');
+  }
+  if (assetHolder instanceof DefaultPortfolio) {
+    return context.createType('PolymeshPrimitivesAssetAssetHolder', 'DefaultPortfolio');
+  }
+  return context.createType('PolymeshPrimitivesAssetAssetHolder', {
+    UserPortfolio: portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(assetHolder), context),
+  });
 }
 
 /**
@@ -1655,16 +1745,26 @@ export function authorizationDataToAuthorization(
     };
   }
 
-  if (auth.isAddRelayerPayingKey) {
-    const [userKey, payingKey, polyxLimit] = auth.asAddRelayerPayingKey;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((auth as any).isAddRelayerPayingKey || auth.isOldAddRelayerPayingKey) {
+    const [userKey, payingKey, polyxLimit] = auth.asOldAddRelayerPayingKey;
+
+    const value = {
+      beneficiary: new Account({ address: accountIdToString(userKey) }, context),
+      subsidizer: new Account({ address: accountIdToString(payingKey) }, context),
+      allowance: balanceToBigNumber(polyxLimit),
+    };
+
+    if (context.isV7) {
+      return {
+        type: AuthorizationType.AddRelayerPayingKey,
+        value,
+      };
+    }
 
     return {
-      type: AuthorizationType.AddRelayerPayingKey,
-      value: {
-        beneficiary: new Account({ address: accountIdToString(userKey) }, context),
-        subsidizer: new Account({ address: accountIdToString(payingKey) }, context),
-        allowance: balanceToBigNumber(polyxLimit),
-      },
+      type: AuthorizationType.OldAddRelayerPayingKey,
+      value,
     };
   }
 
@@ -2273,8 +2373,9 @@ export function documentToAssetDocumentWithId({
 /**
  * @hidden
  */
-export function cddStatusToBoolean(cddStatus: CddStatus): boolean {
-  if (cddStatus.isOk) {
+export function cddStatusToBoolean(cddStatus: unknown): boolean {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((cddStatus as any).isOk) {
     return true;
   }
   return false;
@@ -2998,7 +3099,7 @@ export function complianceRequirementToRequirement(
 export function txTagToProtocolOp(
   tag: TxTag,
   context: Context
-): PolymeshCommonUtilitiesProtocolFeeProtocolOp {
+): PolymeshPrimitivesProtocolFeeProtocolOp {
   const protocolOpTags = [
     TxTags.asset.RegisterUniqueTicker,
     TxTags.asset.RegisterUniqueTicker,
@@ -3022,11 +3123,11 @@ export function txTagToProtocolOp(
   if (!includes(protocolOpTags, tag)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: `${value} does not match any PolymeshCommonUtilitiesProtocolFeeProtocolOp`,
+      message: `${value} does not match any PolymeshPrimitivesProtocolFeeProtocolOp`,
     });
   }
 
-  return context.createType('PolymeshCommonUtilitiesProtocolFeeProtocolOp', value);
+  return context.createType('PolymeshPrimitivesProtocolFeeProtocolOp', value);
 }
 
 /**
@@ -3535,6 +3636,19 @@ export function portfolioIdsToBtreeSet(
 /**
  * @hidden
  */
+export function assetHolderIdsToBtreeSet(
+  rawAssetHolderIds: PolymeshPrimitivesAssetAssetHolder[],
+  context: Context
+): BTreeSet<PolymeshPrimitivesAssetAssetHolder> {
+  return context.createType(
+    'BTreeSet<PolymeshPrimitivesAssetAssetHolder>',
+    uniqWith(rawAssetHolderIds, isEqual)
+  ) as unknown as BTreeSet<PolymeshPrimitivesAssetAssetHolder>;
+}
+
+/**
+ * @hidden
+ */
 export function identitiesSetToIdentities(
   identitySet: BTreeSet<PolymeshPrimitivesIdentityId>,
   context: Context
@@ -3561,10 +3675,10 @@ export function assetDispatchErrorToTransferError(
     [assetErrors.NoSuchAsset, TransferError.AssetDoesNotExists],
     [assetErrors.InvalidGranularity, TransferError.InvalidGranularity],
     [assetErrors.SenderSameAsReceiver, TransferError.SelfTransfer],
-    [portfolioErrors.InvalidTransferSenderIdMatchesReceiverId, TransferError.SelfTransfer],
+    // [portfolioErrors.InvalidTransferSenderIdMatchesReceiverId, TransferError.SelfTransfer],
     [assetErrors.BalanceOverflow, TransferError.BalanceOverflow],
-    [assetErrors.InvalidTransferInvalidReceiverCDD, TransferError.InvalidReceiverCdd],
-    [assetErrors.InvalidTransferInvalidSenderCDD, TransferError.InvalidSenderCdd],
+    // [assetErrors.InvalidTransferInvalidReceiverCDD, TransferError.InvalidReceiverCdd],
+    // [assetErrors.InvalidTransferInvalidSenderCDD, TransferError.InvalidSenderCdd],
     [assetErrors.InsufficientBalance, TransferError.InsufficientBalance],
     [assetErrors.InvalidTransferFrozenAsset, TransferError.TransfersFrozen],
     [portfolioErrors.PortfolioDoesNotExist, TransferError.InvalidSenderPortfolio],
@@ -3731,6 +3845,25 @@ export function middlewarePortfolioToPortfolio(
   }
 
   return new DefaultPortfolio({ did }, context);
+}
+
+/**
+ * @hidden
+ */
+export function middlewareAssetHolderToAssetHolder(
+  middlewareAssetHolder: {
+    identityId?: string | undefined;
+    number?: number | undefined;
+    account?: string | undefined;
+  },
+  context: Context
+): AssetHolder {
+  const { account } = middlewareAssetHolder;
+
+  if (account) {
+    return new Account({ address: account }, context);
+  }
+  return middlewarePortfolioToPortfolio(middlewareAssetHolder as MiddlewarePortfolio, context);
 }
 
 /**
@@ -4734,18 +4867,30 @@ export function portfolioIdStringToPortfolio(id: string): MiddlewarePortfolio {
  * @hidden
  */
 export function middlewareLegToLeg(leg: MiddlewareLeg, context: Context): Leg {
-  const { legType, from, fromPortfolio, to, toPortfolio, assetId, ticker, nftIds, amount } = leg;
+  const {
+    legType,
+    from,
+    fromPortfolio,
+    fromAccount,
+    to,
+    toPortfolio,
+    toAccount,
+    assetId,
+    ticker,
+    nftIds,
+    amount,
+  } = leg;
 
   if (legType === LegTypeEnum.Fungible) {
     return {
       asset: new FungibleAsset({ assetId: getAssetIdFromMiddleware(assetId) }, context),
       amount: new BigNumber(amount).shiftedBy(-6),
-      from: middlewarePortfolioToPortfolio(
-        { identityId: from, number: fromPortfolio! } as MiddlewarePortfolio,
+      from: middlewareAssetHolderToAssetHolder(
+        { identityId: from, account: fromAccount, number: fromPortfolio },
         context
       ),
-      to: middlewarePortfolioToPortfolio(
-        { identityId: to, number: toPortfolio! } as MiddlewarePortfolio,
+      to: middlewareAssetHolderToAssetHolder(
+        { identityId: to, account: toAccount, number: toPortfolio },
         context
       ),
     };
@@ -4754,12 +4899,12 @@ export function middlewareLegToLeg(leg: MiddlewareLeg, context: Context): Leg {
   if (legType === LegTypeEnum.NonFungible) {
     const id = getAssetIdFromMiddleware(assetId);
     return {
-      from: middlewarePortfolioToPortfolio(
-        { identityId: from, number: fromPortfolio! } as MiddlewarePortfolio,
+      from: middlewareAssetHolderToAssetHolder(
+        { identityId: from, account: fromAccount, number: fromPortfolio },
         context
       ),
-      to: middlewarePortfolioToPortfolio(
-        { identityId: to, number: toPortfolio! } as MiddlewarePortfolio,
+      to: middlewareAssetHolderToAssetHolder(
+        { identityId: to, account: toAccount, number: toPortfolio },
         context
       ),
       nfts: nftIds.map(
@@ -4914,8 +5059,8 @@ export function middlewarePortfolioDataToPortfolio(
  */
 export function legToFungibleLeg(
   leg: {
-    sender: PolymeshPrimitivesIdentityIdPortfolioId;
-    receiver: PolymeshPrimitivesIdentityIdPortfolioId;
+    sender: PolymeshPrimitivesAssetAssetHolder;
+    receiver: PolymeshPrimitivesAssetAssetHolder;
     amount: Balance;
   } & MeshTickerOrAssetId,
   context: Context
@@ -4928,8 +5073,8 @@ export function legToFungibleLeg(
  */
 export function legToNonFungibleLeg(
   leg: {
-    sender: PolymeshPrimitivesIdentityIdPortfolioId;
-    receiver: PolymeshPrimitivesIdentityIdPortfolioId;
+    sender: PolymeshPrimitivesAssetAssetHolder;
+    receiver: PolymeshPrimitivesAssetAssetHolder;
     nfts: PolymeshPrimitivesNftNfTs;
   },
   context: Context
@@ -5057,12 +5202,12 @@ function middlewareExtrinsicPermissionsDataToTransactionPermissions(
 export function datesToScheduleCheckpoints(
   points: Date[],
   context: Context
-): PolymeshCommonUtilitiesCheckpointScheduleCheckpoints {
+): PolymeshPrimitivesCheckpointScheduleCheckpoints {
   const rawPoints = points.map(point => dateToMoment(point, context));
 
   const pending = context.createType('BTreeSet<Moment>', rawPoints);
 
-  return context.createType('PolymeshCommonUtilitiesCheckpointScheduleCheckpoints', { pending });
+  return context.createType('PolymeshPrimitivesCheckpointScheduleCheckpoints', { pending });
 }
 
 /**
@@ -5325,8 +5470,9 @@ function portfolioMovementsToHistoricSettlements(
   context: Context,
   handleMiddlewareAddress: (address: string, context: Context) => Account
 ): HistoricSettlement[] {
-  return portfolioMovements.map(
-    ({ createdBlock, fromId, toId, asset, amount, address: accountAddress }) => {
+  return portfolioMovements
+    .filter(({ fromId, toId }) => fromId !== undefined && toId !== undefined)
+    .map(({ createdBlock, fromId, toId, asset, amount, address: accountAddress }) => {
       const { blockId, hash } = createdBlock!;
       return {
         blockNumber: new BigNumber(blockId),
@@ -5338,13 +5484,12 @@ function portfolioMovementsToHistoricSettlements(
             asset: new FungibleAsset({ assetId: getAssetIdFromMiddleware(asset!.id) }, context),
             amount: new BigNumber(amount).shiftedBy(-6),
             direction: SettlementDirectionEnum.None,
-            from: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(fromId), context),
-            to: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(toId), context),
+            from: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(fromId!), context),
+            to: middlewarePortfolioToPortfolio(portfolioIdStringToPortfolio(toId!), context),
           },
         ],
       };
-    }
-  );
+    });
 }
 
 /**
@@ -5545,7 +5690,7 @@ export function receiptDetailsToMeshReceiptDetails(
 export function secondaryAccountWithAuthToSecondaryKeyWithAuth(
   accounts: AccountWithSignature[],
   context: Context
-): Vec<PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth> {
+): Vec<PolymeshPrimitivesIdentitySecondaryKeyWithAuth> {
   const keyWithAuths = accounts.map(({ secondaryAccount, authSignature }) => {
     const { account, permissions } = secondaryAccount;
     return {
@@ -5561,10 +5706,13 @@ export function secondaryAccountWithAuthToSecondaryKeyWithAuth(
     };
   });
 
-  return context.createType(
-    'Vec<PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth>',
-    keyWithAuths
-  );
+  if (context.isV7) {
+    return context.createType(
+      'Vec<PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth>',
+      keyWithAuths
+    );
+  }
+  return context.createType('Vec<PolymeshPrimitivesIdentitySecondaryKeyWithAuth>', keyWithAuths);
 }
 
 /**
@@ -5573,14 +5721,20 @@ export function secondaryAccountWithAuthToSecondaryKeyWithAuth(
 export function childKeysWithAuthToCreateChildIdentitiesWithAuth(
   childKeyAuths: ChildKeyWithAuth[],
   context: Context
-): Vec<PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth> {
+): Vec<PolymeshPrimitivesIdentityCreateChildIdentityWithAuth> {
   const keyWithAuths = childKeyAuths.map(({ key, authSignature }) => ({
     key: stringToAccountId(asAccount(key, context).address, context),
     authSignature: stringToH512(authSignature, context),
   }));
 
+  if (context.isV7) {
+    return context.createType(
+      'Vec<PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth>',
+      keyWithAuths
+    );
+  }
   return context.createType(
-    'Vec<PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth>',
+    'Vec<PolymeshPrimitivesIdentityCreateChildIdentityWithAuth>',
     keyWithAuths
   );
 }

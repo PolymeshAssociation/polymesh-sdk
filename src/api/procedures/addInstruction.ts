@@ -1,5 +1,6 @@
 import { BTreeSet, u64 } from '@polkadot/types';
 import {
+  PolymeshPrimitivesAssetAssetHolder,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesMemo,
@@ -10,8 +11,9 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { flatten, isEqual, union, unionWith } from 'lodash';
 
-import { assertPortfolioExists, assertValidCdd, assertVenueExists } from '~/api/procedures/utils';
+import { assertAssetHolderExists, assertValidCdd, assertVenueExists } from '~/api/procedures/utils';
 import {
+  Account,
   BaseAsset,
   Context,
   DefaultPortfolio,
@@ -23,6 +25,7 @@ import {
 import {
   AddInstructionParams,
   AddInstructionsParams,
+  AssetHolder,
   ErrorCode,
   FungibleLeg,
   InstructionEndCondition,
@@ -32,6 +35,7 @@ import {
   InstructionOffChainLeg,
   InstructionType,
   NftLeg,
+  PortfolioId,
   RoleType,
   SettlementTx,
   TxTags,
@@ -41,6 +45,10 @@ import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import { isFungibleLegBuilder, isNftLegBuilder, isOffChainLeg } from '~/utils';
 import { MAX_LEGS_LENGTH } from '~/utils/constants';
 import {
+  assetHolderIdsToBtreeSet,
+  assetHolderIdToMeshAssetHolder,
+  assetHolderLikeToAssetHolder,
+  assetHolderLikeToAssetHolderId,
   bigNumberToBalance,
   bigNumberToU64,
   dateToMoment,
@@ -50,10 +58,6 @@ import {
   legToNonFungibleLeg,
   legToOffChainLeg,
   nftToMeshNft,
-  portfolioIdsToBtreeSet,
-  portfolioIdToMeshPortfolioId,
-  portfolioLikeToPortfolio,
-  portfolioLikeToPortfolioId,
   stringToAssetId,
   stringToIdentityId,
   stringToMemo,
@@ -82,7 +86,7 @@ export type Params = AddInstructionsParams & {
  * @hidden
  */
 export interface Storage {
-  portfoliosToAffirm: (DefaultPortfolio | NumberedPortfolio)[][];
+  assetHoldersToAffirm: (DefaultPortfolio | NumberedPortfolio | Account)[][];
 }
 
 /**
@@ -94,7 +98,7 @@ type InternalAddAndAffirmInstructionParams = [
   u64 | null,
   u64 | null,
   PolymeshPrimitivesSettlementLeg[],
-  BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>,
+  BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId> | BTreeSet<PolymeshPrimitivesAssetAssetHolder>,
   PolymeshPrimitivesMemo | null,
   BTreeSet<PolymeshPrimitivesIdentityId>
 ][];
@@ -137,7 +141,7 @@ function checkAllErrorsAreEmpty(errors: ErrIndexes): boolean {
     legAmountErrIndexes,
     endBlockErrIndexes,
     datesErrIndexes,
-    sameIdentityErrIndexes,
+    sameSenderReceiverIndexes,
     offChainNoVenueErrIndexes,
     mediatorErrIndexes,
   } = errors;
@@ -148,7 +152,7 @@ function checkAllErrorsAreEmpty(errors: ErrIndexes): boolean {
     !legAmountErrIndexes.length &&
     !endBlockErrIndexes.length &&
     !datesErrIndexes.length &&
-    !sameIdentityErrIndexes.length &&
+    !sameSenderReceiverIndexes.length &&
     !offChainNoVenueErrIndexes.length &&
     !mediatorErrIndexes.length
   );
@@ -162,24 +166,32 @@ async function mapFungibleLeg(
   context: Context
 ): Promise<PolymeshPrimitivesSettlementLeg> {
   const { from, to, amount, asset } = leg;
-  const fromId = portfolioLikeToPortfolioId(from);
-  const toId = portfolioLikeToPortfolioId(to);
+  const fromId = assetHolderLikeToAssetHolderId(from);
+  const toId = assetHolderLikeToAssetHolderId(to);
 
-  await Promise.all([
-    assertPortfolioExists(fromId, context),
-    assertPortfolioExists(toId, context),
-    assertValidCdd(fromId.did, context),
-    assertValidCdd(toId.did, context),
-  ]);
+  const assertPromises = [
+    assertAssetHolderExists(fromId, context),
+    assertAssetHolderExists(toId, context),
+  ];
 
-  const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromId, context);
-  const rawToPortfolio = portfolioIdToMeshPortfolioId(toId, context);
+  if (context.isV7) {
+    if (typeof fromId !== 'string') {
+      assertPromises.push(assertValidCdd(fromId.did, context));
+    }
+    if (typeof toId !== 'string') {
+      assertPromises.push(assertValidCdd(toId.did, context));
+    }
+  }
+  await Promise.all(assertPromises);
+
+  const rawSender = assetHolderIdToMeshAssetHolder(fromId, context);
+  const rawReceiver = assetHolderIdToMeshAssetHolder(toId, context);
 
   const assetId = await asAssetId(asset, context);
   const rawLeg = legToFungibleLeg(
     {
-      sender: rawFromPortfolio,
-      receiver: rawToPortfolio,
+      sender: rawSender,
+      receiver: rawReceiver,
       assetId: stringToAssetId(assetId, context),
       amount: bigNumberToBalance(amount, context),
     },
@@ -196,25 +208,32 @@ async function mapNftLeg(
   context: Context
 ): Promise<PolymeshPrimitivesSettlementLeg> {
   const { from, to, nfts, asset } = leg;
-  const fromId = portfolioLikeToPortfolioId(from);
-  const toId = portfolioLikeToPortfolioId(to);
+  const fromId = assetHolderLikeToAssetHolderId(from);
+  const toId = assetHolderLikeToAssetHolderId(to);
 
-  await Promise.all([
-    assertPortfolioExists(fromId, context),
-    assertPortfolioExists(toId, context),
-    assertValidCdd(fromId.did, context),
-    assertValidCdd(toId.did, context),
-  ]);
+  const assertPromises = [
+    assertAssetHolderExists(fromId, context),
+    assertAssetHolderExists(toId, context),
+  ];
+
+  if (context.isV7) {
+    if (typeof fromId !== 'string') {
+      assertPromises.push(assertValidCdd(fromId.did, context));
+    }
+    if (typeof toId !== 'string') {
+      assertPromises.push(assertValidCdd(toId.did, context));
+    }
+  }
+  await Promise.all(assertPromises);
+
+  const rawSender = assetHolderIdToMeshAssetHolder(fromId, context);
+  const rawReceiver = assetHolderIdToMeshAssetHolder(toId, context);
 
   const baseAsset = await asBaseAsset(asset, context);
-
-  const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromId, context);
-  const rawToPortfolio = portfolioIdToMeshPortfolioId(toId, context);
-
   const rawLeg = legToNonFungibleLeg(
     {
-      sender: rawFromPortfolio,
-      receiver: rawToPortfolio,
+      sender: rawSender,
+      receiver: rawReceiver,
       nfts: nftToMeshNft(baseAsset, nfts, context),
     },
     context
@@ -328,7 +347,7 @@ function validateInstructionErrors(errIndexes: ErrIndexes): void {
     legLengthErrIndexes,
     endBlockErrIndexes,
     datesErrIndexes,
-    sameIdentityErrIndexes,
+    sameSenderReceiverIndexes,
     offChainNoVenueErrIndexes,
     mediatorErrIndexes,
   } = errIndexes;
@@ -384,12 +403,12 @@ function validateInstructionErrors(errIndexes: ErrIndexes): void {
     });
   }
 
-  if (sameIdentityErrIndexes.length) {
+  if (sameSenderReceiverIndexes.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Instruction leg cannot transfer Assets between same identity',
+      message: 'Instruction leg cannot transfer Assets between same asset holder',
       data: {
-        failedInstructionIndexes: sameIdentityErrIndexes,
+        failedInstructionIndexes: sameSenderReceiverIndexes,
       },
     });
   }
@@ -521,7 +540,7 @@ type ErrIndexes = {
   legAmountErrIndexes: number[];
   endBlockErrIndexes: number[];
   datesErrIndexes: number[];
-  sameIdentityErrIndexes: number[];
+  sameSenderReceiverIndexes: number[];
   offChainNoVenueErrIndexes: number[];
   mediatorErrIndexes: number[];
 };
@@ -573,19 +592,26 @@ async function validateInstruction(
     errors.legAmountErrIndexes = [index];
   }
 
-  const sameIdentityLegs = legs.filter(leg => {
+  const sameSenderReceiver = legs.filter(leg => {
     if (isOffChainLeg(leg)) {
       return asDid(leg.from) === asDid(leg.to);
     } else {
       const { from, to } = leg;
-      const fromId = portfolioLikeToPortfolioId(from);
-      const toId = portfolioLikeToPortfolioId(to);
-      return fromId.did === toId.did;
+      const fromId = assetHolderLikeToAssetHolderId(from);
+      const toId = assetHolderLikeToAssetHolderId(to);
+
+      if (typeof fromId === 'string' && typeof toId === 'string') {
+        return fromId === toId;
+      }
+      if (typeof fromId !== typeof toId) {
+        return false;
+      }
+      return (fromId as PortfolioId).did === (toId as PortfolioId).did;
     }
   });
 
-  if (sameIdentityLegs.length) {
-    errors.sameIdentityErrIndexes = [index];
+  if (sameSenderReceiver.length) {
+    errors.sameSenderReceiverIndexes = [index];
   }
 
   if (tradeDate && valueDate && tradeDate > valueDate) {
@@ -643,7 +669,7 @@ function buildInstructionParams(
  */
 async function getTxArgsAndErrors(
   instructions: AddInstructionParams[],
-  portfoliosToAffirm: (DefaultPortfolio | NumberedPortfolio)[][],
+  assetHoldersToAffirm: AssetHolder[][],
   latestBlock: BigNumber,
   venueId: BigNumber | undefined,
   context: Context
@@ -661,7 +687,7 @@ async function getTxArgsAndErrors(
     legAmountErrIndexes: [],
     endBlockErrIndexes: [],
     datesErrIndexes: [],
-    sameIdentityErrIndexes: [],
+    sameSenderReceiverIndexes: [],
     offChainNoVenueErrIndexes: [],
     mediatorErrIndexes: [],
   };
@@ -701,14 +727,14 @@ async function getTxArgsAndErrors(
       const rawLegValues = await Promise.all([
         ...legs.fungibleLegs.map(async leg => await mapFungibleLeg(leg, context)),
         ...legs.nftLegs.map(async leg => await mapNftLeg(leg, context)),
-        ...legs.offChainLegs.map(leg => mapOffChainLeg(leg, context)),
+        ...legs.offChainLegs.map(async leg => await Promise.resolve(mapOffChainLeg(leg, context))),
       ]);
 
       const rawLegs: PolymeshPrimitivesSettlementLeg[] = rawLegValues.flat();
 
-      if (portfoliosToAffirm[i]!.length) {
-        const rawPortfolioIds = portfoliosToAffirm[i]!.map(portfolio =>
-          portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
+      if (assetHoldersToAffirm[i]!.length) {
+        const rawAssetHolders = assetHoldersToAffirm[i]!.map(portfolio =>
+          assetHolderIdToMeshAssetHolder(assetHolderLikeToAssetHolderId(portfolio), context)
         );
         addAndAffirmInstructionParams.push([
           baseParams.rawVenueId,
@@ -716,7 +742,7 @@ async function getTxArgsAndErrors(
           baseParams.rawTradeDate,
           baseParams.rawValueDate,
           rawLegs,
-          portfolioIdsToBtreeSet(rawPortfolioIds, context),
+          assetHolderIdsToBtreeSet(rawAssetHolders, context),
           baseParams.rawInstructionMemo,
           baseParams.rawMediators,
         ]);
@@ -755,7 +781,7 @@ export async function prepareAddInstruction(
       },
     },
     context,
-    storage: { portfoliosToAffirm },
+    storage: { assetHoldersToAffirm: portfoliosToAffirm },
   } = this;
   const { instructions, venueId } = args;
 
@@ -816,7 +842,7 @@ export function getAuthorization(
   { venueId }: Params
 ): ProcedureAuthorization {
   const {
-    storage: { portfoliosToAffirm },
+    storage: { assetHoldersToAffirm },
   } = this;
 
   const addAndAffirmTag = TxTags.settlement.AddAndAffirmWithMediators;
@@ -826,11 +852,16 @@ export function getAuthorization(
   let transactions: SettlementTx[] = [];
   let portfolios: (DefaultPortfolio | NumberedPortfolio)[] = [];
 
-  portfoliosToAffirm.forEach(portfoliosList => {
-    transactions = union(transactions, [
-      portfoliosList.length ? addAndAffirmTag : addInstructionTag,
-    ]);
-    portfolios = unionWith(portfolios, portfoliosList, isEqual);
+  assetHoldersToAffirm.forEach(assetHolders => {
+    transactions = union(transactions, [assetHolders.length ? addAndAffirmTag : addInstructionTag]);
+    portfolios = unionWith(
+      portfolios,
+      assetHolders.filter(holder => !(holder instanceof Account)) as (
+        | DefaultPortfolio
+        | NumberedPortfolio
+      )[],
+      isEqual
+    );
   });
 
   return {
@@ -854,6 +885,21 @@ export async function prepareStorage(
 
   const identity = await context.getSigningIdentity();
 
+  const checkCustodiedPortfolio = async (
+    assetHolder: AssetHolder
+  ): Promise<DefaultPortfolio | NumberedPortfolio | null> => {
+    if (assetHolder instanceof Account) {
+      return null;
+    }
+
+    const isCustodied = await assetHolder.isCustodiedBy({ identity });
+    if (isCustodied) {
+      return assetHolder;
+    }
+
+    return null;
+  };
+
   const portfoliosToAffirm = await Promise.all(
     instructions.map(async ({ legs }) => {
       const portfolios = await Promise.all(
@@ -861,19 +907,19 @@ export async function prepareStorage(
           const result = [];
           if (!isOffChainLeg(leg)) {
             const { from, to } = leg;
-            const fromPortfolio = portfolioLikeToPortfolio(from, context);
-            const toPortfolio = portfolioLikeToPortfolio(to, context);
+            const fromAssetHolder = assetHolderLikeToAssetHolder(from, context);
+            const toAssetHolder = assetHolderLikeToAssetHolder(to, context);
 
-            const [fromCustodied, toCustodied] = await Promise.all([
-              fromPortfolio.isCustodiedBy({ identity }),
-              toPortfolio.isCustodiedBy({ identity }),
+            const [fromPortfolio, toPortfolio] = await Promise.all([
+              checkCustodiedPortfolio(fromAssetHolder),
+              checkCustodiedPortfolio(toAssetHolder),
             ]);
 
-            if (fromCustodied) {
+            if (fromPortfolio) {
               result.push(fromPortfolio);
             }
 
-            if (toCustodied) {
+            if (toPortfolio) {
               result.push(toPortfolio);
             }
           }
@@ -885,7 +931,7 @@ export async function prepareStorage(
   );
 
   return {
-    portfoliosToAffirm,
+    assetHoldersToAffirm: portfoliosToAffirm,
   };
 }
 

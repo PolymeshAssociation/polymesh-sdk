@@ -9,7 +9,11 @@ import {
 } from '~/internal';
 import { ErrorCode, RedeemNftParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { assetToMeshAssetId, bigNumberToU64, portfolioToPortfolioKind } from '~/utils/conversion';
+import {
+  assetHolderToAssetHolderKind,
+  assetToMeshAssetId,
+  bigNumberToU64,
+} from '~/utils/conversion';
 
 export interface Storage {
   fromPortfolio: DefaultPortfolio | NumberedPortfolio;
@@ -59,7 +63,7 @@ export async function prepareRedeemNft(
 
   return {
     transaction: tx.nft.redeemNft,
-    args: [rawAssetId, rawId, portfolioToPortfolioKind(fromPortfolio, context), rawKeySet.size],
+    args: [rawAssetId, rawId, assetHolderToAssetHolderKind(fromPortfolio, context), rawKeySet.size],
     resolver: undefined,
   };
 }

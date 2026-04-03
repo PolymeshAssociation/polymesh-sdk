@@ -19,7 +19,7 @@ import {
   Venue,
 } from '~/internal';
 import {
-  AddRelayerPayingKeyAuthorizationData,
+  AssetHolderId,
   Authorization,
   AuthorizationType,
   Condition,
@@ -36,6 +36,7 @@ import {
   PermissionGroupType,
   PortfolioId,
   Signer,
+  SubsidyData,
   TickerReservationStatus,
   TransactionPermissions,
   TxTag,
@@ -165,6 +166,18 @@ export async function assertPortfolioExists(
         },
       });
     }
+  }
+}
+
+/**
+ * @hidden
+ */
+export async function assertAssetHolderExists(
+  assetHolderId: AssetHolderId,
+  context: Context
+): Promise<void> {
+  if (typeof assetHolderId !== 'string') {
+    await assertPortfolioExists(assetHolderId, context);
   }
 }
 
@@ -495,11 +508,10 @@ export async function assertMultiSigSignerAuthorizationValid(
  *
  * Asserts valid add relayer paying key authorization
  */
-export async function assertAddRelayerPayingKeyAuthorizationValid(
-  data: AddRelayerPayingKeyAuthorizationData
+export async function assertOldAddRelayerPayingKeyAuthorizationValid(
+  subsidy: SubsidyData,
+  context: Context
 ): Promise<void> {
-  const subsidy = data.value;
-
   const [beneficiaryIdentity, subsidizerIdentity] = await Promise.all([
     subsidy.beneficiary.getIdentity(),
     subsidy.subsidizer.getIdentity(),
@@ -518,6 +530,11 @@ export async function assertAddRelayerPayingKeyAuthorizationValid(
       message: 'Subsidizer Account does not have an Identity',
     });
   }
+
+  if (!context.isV7) {
+    return;
+  }
+
   const [isBeneficiaryCddValid, isSubsidizerCddValid] = await Promise.all([
     beneficiaryIdentity.hasValidCdd(),
     subsidizerIdentity.hasValidCdd(),
@@ -640,7 +657,8 @@ export async function assertAuthorizationRequestValid(
     case AuthorizationType.JoinIdentity:
       return assertJoinOrRotateAuthorizationValid(authRequest);
     case AuthorizationType.AddRelayerPayingKey:
-      return assertAddRelayerPayingKeyAuthorizationValid(data);
+    case AuthorizationType.OldAddRelayerPayingKey:
+      return assertOldAddRelayerPayingKeyAuthorizationValid(data.value, context);
     case AuthorizationType.RotatePrimaryKeyToSecondary:
       return assertJoinOrRotateAuthorizationValid(authRequest);
     default:

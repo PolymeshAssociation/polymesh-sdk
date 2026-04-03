@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
 
 import { assertAuthorizationRequestValid } from '~/api/procedures/utils';
-import { AuthorizationRequest, Procedure } from '~/internal';
-import { AcceptPrimaryKeyRotationParams, AuthorizationType } from '~/types';
+import { AuthorizationRequest, PolymeshError, Procedure } from '~/internal';
+import { AcceptPrimaryKeyRotationParams, AuthorizationType, ErrorCode } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { bigNumberToU64 } from '~/utils/conversion';
 import { optionize } from '~/utils/internal';
@@ -40,13 +40,23 @@ export async function prepareAcceptPrimaryKeyRotation(
   await Promise.all(validationPromises);
 
   const { authId: ownerAuthId, issuer } = ownerAuthRequest;
+
+  if (context.isV7) {
+    return {
+      transaction: identity.acceptPrimaryKey,
+      paidForBy: issuer,
+      args: [
+        bigNumberToU64(ownerAuthId, context),
+        optionize(bigNumberToU64)(cddAuthRequest?.authId, context),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ] as any,
+      resolver: undefined,
+    };
+  }
   return {
     transaction: identity.acceptPrimaryKey,
     paidForBy: issuer,
-    args: [
-      bigNumberToU64(ownerAuthId, context),
-      optionize(bigNumberToU64)(cddAuthRequest?.authId, context),
-    ],
+    args: [bigNumberToU64(ownerAuthId, context)],
     resolver: undefined,
   };
 }
@@ -78,6 +88,13 @@ export async function prepareStorage(
   const { context } = this;
 
   const actingAccount = await context.getActingAccount();
+
+  if (!context.isV7 && cddAuth) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'CDD is discontinued since v8',
+    });
+  }
 
   const getAuthRequest = (
     auth: BigNumber | AuthorizationRequest

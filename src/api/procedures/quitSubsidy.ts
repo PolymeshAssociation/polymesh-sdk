@@ -13,7 +13,7 @@ export interface QuitSubsidyParams {
 export async function prepareQuitSubsidy(
   this: Procedure<QuitSubsidyParams, void>,
   args: QuitSubsidyParams
-): Promise<TransactionSpec<void, ExtrinsicParams<'relayer', 'removePayingKey'>>> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'relayer', 'removeSubsidy'>>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -42,8 +42,17 @@ export async function prepareQuitSubsidy(
 
   const rawSubsidizerAccount = stringToAccountId(subsidizerAddress, context);
 
+  if (context.isV7) {
+    return {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      transaction: (tx.relayer as any).removePayingKey,
+      args: [rawBeneficiaryAccount, rawSubsidizerAccount],
+      resolver: undefined,
+    };
+  }
+
   return {
-    transaction: tx.relayer.removePayingKey,
+    transaction: tx.relayer.removeSubsidy,
     args: [rawBeneficiaryAccount, rawSubsidizerAccount],
     resolver: undefined,
   };

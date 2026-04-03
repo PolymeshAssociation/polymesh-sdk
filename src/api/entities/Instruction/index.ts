@@ -46,6 +46,7 @@ import {
 import {
   AffirmAsMediatorParams,
   AffirmInstructionParams,
+  AssetHolder,
   DefaultPortfolio,
   ErrorCode,
   EventIdentifier,
@@ -75,10 +76,10 @@ import {
   identityIdToString,
   instructionMemoToString,
   mediatorAffirmationStatusToStatus,
+  meshAccountHolderToAccountHolder,
   meshAffirmationStatusToAffirmationStatus,
   meshInstructionStatusToInstructionStatus,
   meshNftToNftId,
-  meshPortfolioIdToPortfolio,
   meshSettlementTypeToEndCondition,
   middlewareAffirmStatusToAffirmationStatus,
   middlewareEventDetailsToEventIdentifier,
@@ -643,10 +644,18 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     });
 
     const data = entries.map(([{ args }, meshAffirmationStatus]) => {
-      const [, { did }] = args;
+      const [, rawAccountHolder] = args;
+      const accountHolder = meshAccountHolderToAccountHolder(rawAccountHolder, context);
+      const status = meshAffirmationStatusToAffirmationStatus(meshAffirmationStatus);
+      if (accountHolder instanceof Account) {
+        return {
+          identity: accountHolder,
+          status,
+        };
+      }
       return {
-        identity: new Identity({ did: identityIdToString(did) }, context),
-        status: meshAffirmationStatusToAffirmationStatus(meshAffirmationStatus),
+        identity: accountHolder.owner,
+        status,
       };
     });
 
@@ -700,20 +709,20 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
             const { sender, receiver, amount, assetId: rawAssetId } = legValue.asFungible;
 
             const assetId = assetIdToString(rawAssetId);
-            const fromPortfolio = meshPortfolioIdToPortfolio(sender, context);
-            const toPortfolio = meshPortfolioIdToPortfolio(receiver, context);
+            const from = meshAccountHolderToAccountHolder(sender, context);
+            const to = meshAccountHolderToAccountHolder(receiver, context);
 
             return {
-              from: fromPortfolio,
-              to: toPortfolio,
+              from,
+              to,
               amount: balanceToBigNumber(amount),
               asset: new FungibleAsset({ assetId }, context),
             };
           } else if (legValue.isNonFungible) {
             const { sender, receiver, nfts } = legValue.asNonFungible;
 
-            const from = meshPortfolioIdToPortfolio(sender, context);
-            const to = meshPortfolioIdToPortfolio(receiver, context);
+            const from = meshAccountHolderToAccountHolder(sender, context);
+            const to = meshAccountHolderToAccountHolder(receiver, context);
             const { assetId, ids } = meshNftToNftId(nfts);
 
             return {
@@ -996,23 +1005,23 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
       if (!isOffChainLeg(leg)) {
         const { from, to } = leg;
-        const [fromExists, toExists] = await Promise.all([from.exists(), to.exists()]);
 
-        const checkCustody = async (
-          legPortfolio: DefaultPortfolio | NumberedPortfolio,
-          exists: boolean
-        ): Promise<void> => {
+        const checkCustody = async (assetHolder: AssetHolder): Promise<void> => {
+          if (assetHolder instanceof Account) {
+            return;
+          }
+          const exists = await assetHolder.exists();
           if (exists) {
-            const isCustodied = await legPortfolio.isCustodiedBy({ identity: did });
+            const isCustodied = await assetHolder.isCustodiedBy({ identity: did });
             if (isCustodied) {
-              involvedPortfolios.push(legPortfolio);
+              involvedPortfolios.push(assetHolder);
             }
-          } else if (legPortfolio.owner.did === did) {
-            involvedPortfolios.push(legPortfolio);
+          } else if (assetHolder.owner.did === did) {
+            involvedPortfolios.push(assetHolder);
           }
         };
 
-        await Promise.all([checkCustody(from, fromExists), checkCustody(to, toExists)]);
+        await Promise.all([checkCustody(from), checkCustody(to)]);
       }
 
       return involvedPortfolios;

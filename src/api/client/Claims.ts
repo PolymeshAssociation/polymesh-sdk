@@ -389,6 +389,8 @@ export class Claims {
   /**
    * Retrieve the list of CDD claims for a target Identity
    *
+   * @deprecated
+   *
    * @param opts.target - Identity for which to fetch CDD claims (optional, defaults to the signing Identity)
    * @param opts.includeExpired - whether to include expired claims. Defaults to true
    */
@@ -405,6 +407,13 @@ export class Claims {
       },
     } = this;
 
+    if (!context.isV7) {
+      throw new PolymeshError({
+        code: ErrorCode.General,
+        message: 'CDD claims are no longer supported in chain v8',
+      });
+    }
+
     const { identityApi: identity } = call;
 
     const { target, includeExpired = true } = opts;
@@ -413,7 +422,8 @@ export class Claims {
 
     const rawDid = stringToIdentityId(did, context);
 
-    const result: Vec<IdentityClaim> = await identity.validCddClaims(rawDid, null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result: Vec<IdentityClaim> = await (identity as any).validCddClaims(rawDid, null);
 
     const data: ClaimData<CddClaim>[] = [];
 

@@ -14,7 +14,7 @@ import {
   PalletCorporateActionsCaId,
   PalletCorporateActionsDistribution,
   PalletRelayerSubsidy,
-  PolymeshCommonUtilitiesProtocolFeeProtocolOp,
+  PolymeshPrimitivesProtocolFeeProtocolOp,
 } from '@polkadot/types/lookup';
 import { CallFunction, Codec, DetectCodec, Signer as PolkadotSigner } from '@polkadot/types/types';
 import { SigningManager } from '@polymeshassociation/signing-manager-types';
@@ -686,7 +686,7 @@ export class Context {
       },
     } = this;
 
-    const tagsMap = new Map<TxTag, PolymeshCommonUtilitiesProtocolFeeProtocolOp | undefined>();
+    const tagsMap = new Map<TxTag, PolymeshPrimitivesProtocolFeeProtocolOp | undefined>();
 
     tags.forEach(tag => {
       try {
@@ -713,7 +713,7 @@ export class Context {
     ]);
 
     const assembleResult = (
-      rawProtocolOp: PolymeshCommonUtilitiesProtocolFeeProtocolOp | undefined
+      rawProtocolOp: PolymeshPrimitivesProtocolFeeProtocolOp | undefined
     ): BigNumber => {
       const baseFeeEntry = baseFeesEntries.find(
         ([
