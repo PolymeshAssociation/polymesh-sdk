@@ -67,20 +67,20 @@ export type TickerReservation = TickerReservationClass;
 export type Venue = VenueClass;
 export type Subsidy = SubsidyClass;
 
+export * from './Account/MultiSig/types';
+export * from './Account/types';
+export * from './Asset/types';
 export * from './CheckpointSchedule/types';
 export * from './CorporateActionBase/types';
 export * from './DividendDistribution/types';
 export * from './Instruction/types';
-export * from './Portfolio/types';
-export * from './Asset/types';
+export * from './MetadataEntry/types';
+export * from './MultiSigProposal/types';
 export * from './Offering/types';
+export * from './Portfolio/types';
+export * from './Subsidy/types';
 export * from './TickerReservation/types';
 export * from './Venue/types';
-export * from './Subsidy/types';
-export * from './Account/types';
-export * from './Account/MultiSig/types';
-export * from './MultiSigProposal/types';
-export * from './MetadataEntry/types';
 
 export type SubCallback<T> = (result: T) => void | Promise<void>;
 
@@ -137,7 +137,11 @@ export enum AuthorizationType {
   JoinIdentity = 'JoinIdentity',
   PortfolioCustody = 'PortfolioCustody',
   BecomeAgent = 'BecomeAgent',
+  /**
+   * @deprecated in favour of OldRelayerPayingKey
+   */
   AddRelayerPayingKey = 'AddRelayerPayingKey',
+  OldAddRelayerPayingKey = 'OldAddRelayerPayingKey',
   RotatePrimaryKeyToSecondary = 'RotatePrimaryKeyToSecondary',
 }
 
@@ -471,8 +475,16 @@ export type BecomeAgentAuthorizationData = {
   value: KnownPermissionGroup | CustomPermissionGroup;
 };
 
+/**
+ * @deprecated in favour of OldAddRelayerPayingKeyAuthorizationData
+ */
 export type AddRelayerPayingKeyAuthorizationData = {
   type: AuthorizationType.AddRelayerPayingKey;
+  value: SubsidyData;
+};
+
+export type OldAddRelayerPayingKeyAuthorizationData = {
+  type: AuthorizationType.OldAddRelayerPayingKey;
   value: SubsidyData;
 };
 
@@ -484,6 +496,7 @@ export type GenericAuthorizationData = {
     | AuthorizationType.PortfolioCustody
     | AuthorizationType.BecomeAgent
     | AuthorizationType.AddRelayerPayingKey
+    | AuthorizationType.OldAddRelayerPayingKey
     | AuthorizationType.RotatePrimaryKeyToSecondary
     | AuthorizationType.AttestPrimaryKeyRotation
   >;
@@ -499,6 +512,7 @@ export type Authorization =
   | PortfolioCustodyAuthorizationData
   | BecomeAgentAuthorizationData
   | AddRelayerPayingKeyAuthorizationData
+  | OldAddRelayerPayingKeyAuthorizationData
   | RotatePrimaryKeyToSecondaryData
   | GenericAuthorizationData;
 
@@ -810,6 +824,12 @@ export type PortfolioLike =
   | NumberedPortfolio
   | DefaultPortfolio
   | { identity: string | Identity; id: BigNumber };
+
+export type AccountLike = string | Account;
+
+export type AssetHolderLike = AccountLike | PortfolioLike;
+
+export type AssetHolder = Account | NumberedPortfolio | DefaultPortfolio;
 
 /**
  * Permissions to grant to a Signer over an Identity

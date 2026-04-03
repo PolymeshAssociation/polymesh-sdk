@@ -1,27 +1,34 @@
-import { PolymeshPrimitivesIdentityIdPortfolioId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import { assertInstructionValidForManualExecution } from '~/api/procedures/utils';
 import {
+  Account,
   DefaultPortfolio,
   Instruction,
   NumberedPortfolio,
   PolymeshError,
   Procedure,
 } from '~/internal';
-import { ErrorCode, ExecuteManualInstructionParams, InstructionDetails, TxTags } from '~/types';
+import {
+  AssetHolder,
+  ErrorCode,
+  ExecuteManualInstructionParams,
+  InstructionDetails,
+  TxTags,
+} from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { isOffChainLeg } from '~/utils';
 import {
+  assetHolderIdToMeshAssetHolder,
+  assetHolderLikeToAssetHolder,
+  assetHolderLikeToAssetHolderId,
   bigNumberToU64,
-  portfolioIdToMeshPortfolioId,
-  portfolioLikeToPortfolioId,
   u64ToBigNumber,
 } from '~/utils/conversion';
 
 export interface Storage {
-  portfolios: (DefaultPortfolio | NumberedPortfolio)[];
+  assetHolders: (DefaultPortfolio | NumberedPortfolio)[];
   offChainParties: Set<string>;
   instructionDetails: InstructionDetails;
   signerDid: string;
@@ -52,7 +59,7 @@ export async function prepareExecuteManualInstruction(
       },
     },
     context,
-    storage: { portfolios, instructionDetails, signerDid, offChainParties },
+    storage: { assetHolders, instructionDetails, signerDid, offChainParties },
   } = this;
 
   const { id, skipAffirmationCheck } = args;
@@ -61,7 +68,7 @@ export async function prepareExecuteManualInstruction(
 
   await assertInstructionValidForManualExecution(instructionDetails, context);
 
-  if (!portfolios.length) {
+  if (!assetHolders.length) {
     const details = await instructionDetails.venue?.details();
 
     if (details?.owner.did !== signerDid && !offChainParties.has(signerDid)) {
@@ -73,8 +80,8 @@ export async function prepareExecuteManualInstruction(
   }
 
   const rawInstructionId = bigNumberToU64(id, context);
-  const rawPortfolioIds: PolymeshPrimitivesIdentityIdPortfolioId[] = portfolios.map(portfolio =>
-    portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
+  const rawAssetHolders = assetHolders.map(portfolio =>
+    assetHolderIdToMeshAssetHolder(assetHolderLikeToAssetHolderId(portfolio), context)
   );
 
   if (!skipAffirmationCheck) {
@@ -100,7 +107,7 @@ export async function prepareExecuteManualInstruction(
     resolver: instruction,
     args: [
       rawInstructionId,
-      rawPortfolioIds.length ? rawPortfolioIds[0] : null,
+      rawAssetHolders.length ? rawAssetHolders[0] : null,
       fungibleTokens,
       nonFungibleTokens,
       offChainAssets,
@@ -116,7 +123,7 @@ export function getAuthorization(
   this: Procedure<Params, Instruction, Storage>
 ): ProcedureAuthorization {
   const {
-    storage: { portfolios },
+    storage: { assetHolders: portfolios },
   } = this;
 
   return {
@@ -150,23 +157,40 @@ export async function prepareStorage(
   >(async (accPromise, leg) => {
     const [custodiedPortfolios, offChainDids] = await accPromise;
 
+    const checkCustodiedPortfolio = async (
+      assetHolder: AssetHolder
+    ): Promise<DefaultPortfolio | NumberedPortfolio | null> => {
+      if (assetHolder instanceof Account) {
+        return null;
+      }
+
+      const isCustodied = await assetHolder.isCustodiedBy({ identity: did });
+      if (isCustodied) {
+        return assetHolder;
+      }
+
+      return null;
+    };
     if (isOffChainLeg(leg)) {
       const { from, to } = leg;
       offChainDids.add(from.did);
       offChainDids.add(to.did);
     } else {
       const { from, to } = leg;
-      const [fromIsCustodied, toIsCustodied] = await Promise.all([
-        from.isCustodiedBy({ identity: did }),
-        to.isCustodiedBy({ identity: did }),
+      const fromAssetHolder = assetHolderLikeToAssetHolder(from, context);
+      const toAssetHolder = assetHolderLikeToAssetHolder(to, context);
+
+      const [fromPortfolio, toPortfolio] = await Promise.all([
+        checkCustodiedPortfolio(fromAssetHolder),
+        checkCustodiedPortfolio(toAssetHolder),
       ]);
 
-      if (fromIsCustodied) {
-        custodiedPortfolios.push(from);
+      if (fromPortfolio) {
+        custodiedPortfolios.push(fromPortfolio);
       }
 
-      if (toIsCustodied) {
-        custodiedPortfolios.push(to);
+      if (toPortfolio) {
+        custodiedPortfolios.push(toPortfolio);
       }
     }
 
@@ -174,7 +198,7 @@ export async function prepareStorage(
   }, Promise.resolve(tuple([], new Set<string>())));
 
   return {
-    portfolios,
+    assetHolders: portfolios,
     instructionDetails: details,
     signerDid: did,
     offChainParties,

@@ -24,6 +24,7 @@ import {
   AddCountStatInput,
   AGENT_TX_GROUP_VALUES,
   AssetDocument,
+  AssetHolderLike,
   CheckPermissionsResult,
   CheckRolesResult,
   ClaimCountStatInput,
@@ -296,6 +297,8 @@ export interface PortfolioId {
   did: string;
   number?: BigNumber | undefined;
 }
+
+export type AssetHolderId = string | PortfolioId;
 
 export interface PortfolioCustodianRole {
   type: RoleType.PortfolioCustodian;
@@ -697,6 +700,7 @@ export interface AcceptPrimaryKeyRotationParams {
   ownerAuth: BigNumber | AuthorizationRequest;
   /**
    * (optional) Authorization from a CDD service provider attesting the rotation of primary key
+   * @deprecated since v8.0.0
    */
   cddAuth?: BigNumber | AuthorizationRequest;
 }
@@ -1025,15 +1029,15 @@ export interface TransferPolyxParams {
 
 export interface InstructionFungibleLeg {
   amount: BigNumber;
-  from: PortfolioLike;
-  to: PortfolioLike;
+  from: AssetHolderLike;
+  to: AssetHolderLike;
   asset: string | FungibleAsset;
 }
 
 export interface InstructionNftLeg {
   nfts: (BigNumber | Nft)[];
-  from: PortfolioLike;
-  to: PortfolioLike;
+  from: AssetHolderLike;
+  to: AssetHolderLike;
   asset: string | NftCollection;
 }
 
@@ -1234,6 +1238,7 @@ export interface UpdateVenueSignersParams {
   signers: (string | Account)[];
 }
 
+// TODO @prashantasdeveloper add support of controller transfer from account
 export interface ControllerTransferParams {
   /**
    * portfolio (or portfolio ID) from which Assets will be transferred
@@ -1245,6 +1250,7 @@ export interface ControllerTransferParams {
   amount: BigNumber;
 }
 
+// TODO @prashantasdeveloper add support of controller transfer from account
 export interface NftControllerTransferParams {
   /**
    * portfolio (or portfolio ID) from which NFTs will be transferred from

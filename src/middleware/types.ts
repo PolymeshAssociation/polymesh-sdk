@@ -350,6 +350,8 @@ export type Asset = Node & {
   blocksByTickerExternalAgentAssetIdAndUpdatedBlockId: Connection<Block>;
   blocksByTickerExternalAgentHistoryAssetIdAndCreatedBlockId: Connection<Block>;
   blocksByTickerExternalAgentHistoryAssetIdAndUpdatedBlockId: Connection<Block>;
+  blocksByTickerReservationAssetIdAndCreatedBlockId: Connection<Block>;
+  blocksByTickerReservationAssetIdAndUpdatedBlockId: Connection<Block>;
   blocksByTransferComplianceAssetIdAndCreatedBlockId: Connection<Block>;
   blocksByTransferComplianceAssetIdAndUpdatedBlockId: Connection<Block>;
   blocksByTransferComplianceExemptionAssetIdAndCreatedBlockId: Connection<Block>;
@@ -391,6 +393,7 @@ export type Asset = Node & {
   identitiesByTickerExternalAgentActionAssetIdAndCallerId: Connection<Identity>;
   identitiesByTickerExternalAgentAssetIdAndCallerId: Connection<Identity>;
   identitiesByTickerExternalAgentHistoryAssetIdAndIdentityId: Connection<Identity>;
+  identitiesByTickerReservationAssetIdAndIdentityId: Connection<Identity>;
   identitiesByTransferComplianceAssetIdAndClaimIssuerId: Connection<Identity>;
   instructionsByAssetTransactionAssetIdAndInstructionId: Connection<Instruction>;
   isCompliancePaused: Scalars['Boolean']['output'];
@@ -420,6 +423,7 @@ export type Asset = Node & {
   tickerExternalAgentActions: Connection<TickerExternalAgentAction>;
   tickerExternalAgentHistories: Connection<TickerExternalAgentHistory>;
   tickerExternalAgents: Connection<TickerExternalAgent>;
+  tickerReservations: Connection<TickerReservation>;
   totalSupply: Scalars['BigFloat']['output'];
   totalTransfers: Scalars['BigFloat']['output'];
   transferComplianceExemptions: Connection<TransferComplianceExemption>;
@@ -530,6 +534,7 @@ export type AssetFilter = {
   tickerExternalAgentActions?: InputMaybe<OneToManyFilter<TickerExternalAgentActionFilter>>;
   tickerExternalAgentHistories?: InputMaybe<OneToManyFilter<TickerExternalAgentHistoryFilter>>;
   tickerExternalAgents?: InputMaybe<OneToManyFilter<TickerExternalAgentFilter>>;
+  tickerReservations?: InputMaybe<OneToManyFilter<TickerReservationFilter>>;
   totalSupply?: InputMaybe<BigFloatFilter>;
   totalTransfers?: InputMaybe<BigFloatFilter>;
   transferComplianceExemptions?: InputMaybe<OneToManyFilter<TransferComplianceExemptionFilter>>;
@@ -687,6 +692,7 @@ export type AssetTransaction = Node & {
   eventId: EventIdEnum;
   eventIdx: Scalars['Int']['output'];
   extrinsicIdx?: Maybe<Scalars['Int']['output']>;
+  fromAccount?: Maybe<Scalars['String']['output']>;
   fromPortfolio?: Maybe<Portfolio>;
   fromPortfolioId?: Maybe<Scalars['String']['output']>;
   fundingRound?: Maybe<Scalars['String']['output']>;
@@ -696,6 +702,7 @@ export type AssetTransaction = Node & {
   instructionMemo?: Maybe<Scalars['String']['output']>;
   nftIds?: Maybe<Scalars['JSON']['output']>;
   nodeId: Scalars['ID']['output'];
+  toAccount?: Maybe<Scalars['String']['output']>;
   toPortfolio?: Maybe<Portfolio>;
   toPortfolioId?: Maybe<Scalars['String']['output']>;
   updatedBlock?: Maybe<Block>;
@@ -714,6 +721,7 @@ export type AssetTransactionFilter = {
   eventId?: InputMaybe<EventIdEnumFilter>;
   eventIdx?: InputMaybe<IntFilter>;
   extrinsicIdx?: InputMaybe<IntFilter>;
+  fromAccount?: InputMaybe<StringFilter>;
   fromPortfolio?: InputMaybe<PortfolioFilter>;
   fromPortfolioExists?: InputMaybe<Scalars['Boolean']['input']>;
   fromPortfolioId?: InputMaybe<StringFilter>;
@@ -726,6 +734,7 @@ export type AssetTransactionFilter = {
   nftIds?: InputMaybe<JsonFilter>;
   not?: InputMaybe<AssetTransactionFilter>;
   or?: InputMaybe<Array<AssetTransactionFilter>>;
+  toAccount?: InputMaybe<StringFilter>;
   toPortfolio?: InputMaybe<PortfolioFilter>;
   toPortfolioExists?: InputMaybe<Scalars['Boolean']['input']>;
   toPortfolioId?: InputMaybe<StringFilter>;
@@ -749,6 +758,8 @@ export enum AssetTransactionsOrderBy {
   EventIdDesc = 'EVENT_ID_DESC',
   ExtrinsicIdxAsc = 'EXTRINSIC_IDX_ASC',
   ExtrinsicIdxDesc = 'EXTRINSIC_IDX_DESC',
+  FromAccountAsc = 'FROM_ACCOUNT_ASC',
+  FromAccountDesc = 'FROM_ACCOUNT_DESC',
   FromPortfolioIdAsc = 'FROM_PORTFOLIO_ID_ASC',
   FromPortfolioIdDesc = 'FROM_PORTFOLIO_ID_DESC',
   FundingRoundAsc = 'FUNDING_ROUND_ASC',
@@ -764,6 +775,8 @@ export enum AssetTransactionsOrderBy {
   NftIdsDesc = 'NFT_IDS_DESC',
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
+  ToAccountAsc = 'TO_ACCOUNT_ASC',
+  ToAccountDesc = 'TO_ACCOUNT_DESC',
   ToPortfolioIdAsc = 'TO_PORTFOLIO_ID_ASC',
   ToPortfolioIdDesc = 'TO_PORTFOLIO_ID_DESC',
   UpdatedBlockIdAsc = 'UPDATED_BLOCK_ID_ASC',
@@ -1032,6 +1045,8 @@ export type Block = Node & {
   assetsByTickerExternalAgentHistoryCreatedBlockIdAndAssetId: Connection<Asset>;
   assetsByTickerExternalAgentHistoryUpdatedBlockIdAndAssetId: Connection<Asset>;
   assetsByTickerExternalAgentUpdatedBlockIdAndAssetId: Connection<Asset>;
+  assetsByTickerReservationCreatedBlockIdAndAssetId: Connection<Asset>;
+  assetsByTickerReservationUpdatedBlockIdAndAssetId: Connection<Asset>;
   assetsByTransferComplianceCreatedBlockIdAndAssetId: Connection<Asset>;
   assetsByTransferComplianceExemptionCreatedBlockIdAndAssetId: Connection<Asset>;
   assetsByTransferComplianceExemptionUpdatedBlockIdAndAssetId: Connection<Asset>;
@@ -1154,6 +1169,8 @@ export type Block = Node & {
   blocksByTickerExternalAgentHistoryCreatedBlockIdAndUpdatedBlockId: Connection<Block>;
   blocksByTickerExternalAgentHistoryUpdatedBlockIdAndCreatedBlockId: Connection<Block>;
   blocksByTickerExternalAgentUpdatedBlockIdAndCreatedBlockId: Connection<Block>;
+  blocksByTickerReservationCreatedBlockIdAndUpdatedBlockId: Connection<Block>;
+  blocksByTickerReservationUpdatedBlockIdAndCreatedBlockId: Connection<Block>;
   blocksByTransferComplianceCreatedBlockIdAndUpdatedBlockId: Connection<Block>;
   blocksByTransferComplianceExemptionCreatedBlockIdAndUpdatedBlockId: Connection<Block>;
   blocksByTransferComplianceExemptionUpdatedBlockIdAndCreatedBlockId: Connection<Block>;
@@ -1366,6 +1383,8 @@ export type Block = Node & {
   identitiesByTickerExternalAgentHistoryCreatedBlockIdAndIdentityId: Connection<Identity>;
   identitiesByTickerExternalAgentHistoryUpdatedBlockIdAndIdentityId: Connection<Identity>;
   identitiesByTickerExternalAgentUpdatedBlockIdAndCallerId: Connection<Identity>;
+  identitiesByTickerReservationCreatedBlockIdAndIdentityId: Connection<Identity>;
+  identitiesByTickerReservationUpdatedBlockIdAndIdentityId: Connection<Identity>;
   identitiesByTransferComplianceCreatedBlockIdAndClaimIssuerId: Connection<Identity>;
   identitiesByTransferComplianceUpdatedBlockIdAndClaimIssuerId: Connection<Identity>;
   identitiesByUpdatedBlockId: Connection<Identity>;
@@ -1474,6 +1493,8 @@ export type Block = Node & {
   tickerExternalAgentHistoriesByUpdatedBlockId: Connection<TickerExternalAgentHistory>;
   tickerExternalAgentsByCreatedBlockId: Connection<TickerExternalAgent>;
   tickerExternalAgentsByUpdatedBlockId: Connection<TickerExternalAgent>;
+  tickerReservationsByCreatedBlockId: Connection<TickerReservation>;
+  tickerReservationsByUpdatedBlockId: Connection<TickerReservation>;
   transferComplianceExemptionsByCreatedBlockId: Connection<TransferComplianceExemption>;
   transferComplianceExemptionsByUpdatedBlockId: Connection<TransferComplianceExemption>;
   transferCompliancesByCreatedBlockId: Connection<TransferCompliance>;
@@ -1656,6 +1677,8 @@ export type BlockFilter = {
   >;
   tickerExternalAgentsByCreatedBlockId?: InputMaybe<OneToManyFilter<TickerExternalAgentFilter>>;
   tickerExternalAgentsByUpdatedBlockId?: InputMaybe<OneToManyFilter<TickerExternalAgentFilter>>;
+  tickerReservationsByCreatedBlockId?: InputMaybe<OneToManyFilter<TickerReservationFilter>>;
+  tickerReservationsByUpdatedBlockId?: InputMaybe<OneToManyFilter<TickerReservationFilter>>;
   transferComplianceExemptionsByCreatedBlockId?: InputMaybe<
     OneToManyFilter<TransferComplianceExemptionFilter>
   >;
@@ -1845,6 +1868,7 @@ export enum CallIdEnum {
   AllowIdentityToCreatePortfolios = 'allow_identity_to_create_portfolios',
   AllowVenues = 'allow_venues',
   AmendProposal = 'amend_proposal',
+  ApplyAuthorizedUpgrade = 'apply_authorized_upgrade',
   ApplyIncomingBalance = 'apply_incoming_balance',
   ApplyIncomingBalances = 'apply_incoming_balances',
   Approve = 'approve',
@@ -1856,6 +1880,8 @@ export enum CallIdEnum {
   AsDerivative = 'as_derivative',
   AttachBallot = 'attach_ballot',
   AuthorizeInstruction = 'authorize_instruction',
+  AuthorizeUpgrade = 'authorize_upgrade',
+  AuthorizeUpgradeWithoutChecks = 'authorize_upgrade_without_checks',
   AuthorizeWithReceipts = 'authorize_with_receipts',
   Batch = 'batch',
   BatchAcceptAuthorization = 'batch_accept_authorization',
@@ -1895,6 +1921,8 @@ export enum CallIdEnum {
   CancelDeferredSlash = 'cancel_deferred_slash',
   CancelNamed = 'cancel_named',
   CancelProposal = 'cancel_proposal',
+  CancelRetry = 'cancel_retry',
+  CancelRetryNamed = 'cancel_retry_named',
   CddRegisterDid = 'cdd_register_did',
   CddRegisterDidWithCdd = 'cdd_register_did_with_cdd',
   ChangeAdmin = 'change_admin',
@@ -1960,6 +1988,7 @@ export enum CallIdEnum {
   DecreasePolyxLimit = 'decrease_polyx_limit',
   DeletePortfolio = 'delete_portfolio',
   DepositBlockRewardReserveBalance = 'deposit_block_reward_reserve_balance',
+  DeprecateControllerBatch = 'deprecate_controller_batch',
   DisableMember = 'disable_member',
   DisallowVenues = 'disallow_venues',
   Disbursement = 'disbursement',
@@ -1970,6 +1999,7 @@ export enum CallIdEnum {
   EnableOffchainFunding = 'enable_offchain_funding',
   EnactReferendum = 'enact_referendum',
   EnactSnapshotResults = 'enact_snapshot_results',
+  EnsureUpdated = 'ensure_updated',
   ExecuteManualInstruction = 'execute_manual_instruction',
   ExecuteScheduledInstruction = 'execute_scheduled_instruction',
   ExecuteScheduledInstructionV2 = 'execute_scheduled_instruction_v2',
@@ -1983,14 +2013,17 @@ export enum CallIdEnum {
   FastTrackProposal = 'fast_track_proposal',
   FillBlock = 'fill_block',
   FinalHint = 'final_hint',
+  ForceAdjustTotalIssuance = 'force_adjust_total_issuance',
   ForceApplyMinCommission = 'force_apply_min_commission',
   ForceBatch = 'force_batch',
   ForceHandleBridgeTx = 'force_handle_bridge_tx',
   ForceNewEra = 'force_new_era',
   ForceNewEraAlways = 'force_new_era_always',
   ForceNoEras = 'force_no_eras',
+  ForceSetBalance = 'force_set_balance',
   ForceSetProgress = 'force_set_progress',
   ForceTransfer = 'force_transfer',
+  ForceUnreserve = 'force_unreserve',
   ForceUnstake = 'force_unstake',
   ForwardedCall = 'forwarded_call',
   Free = 'free',
@@ -2046,8 +2079,11 @@ export enum CallIdEnum {
   MakeMultisigPrimary = 'make_multisig_primary',
   MakeMultisigSecondary = 'make_multisig_secondary',
   MakeMultisigSigner = 'make_multisig_signer',
+  ManualSlash = 'manual_slash',
   MediatorAffirmTransaction = 'mediator_affirm_transaction',
   MediatorUnaffirmTransaction = 'mediator_unaffirm_transaction',
+  Migrate = 'migrate',
+  MigrateCurrency = 'migrate_currency',
   MigrateCustomChild = 'migrate_custom_child',
   MigrateCustomTop = 'migrate_custom_top',
   Mint = 'mint',
@@ -2066,6 +2102,7 @@ export enum CallIdEnum {
   PauseAssetRules = 'pause_asset_rules',
   PauseSto = 'pause_sto',
   PayoutStakers = 'payout_stakers',
+  PayoutStakersByPage = 'payout_stakers_by_page',
   PayoutStakersBySystem = 'payout_stakers_by_system',
   PlaceholderAddAndAffirmInstruction = 'placeholder_add_and_affirm_instruction',
   PlaceholderAddAndAffirmInstructionWithMemo = 'placeholder_add_and_affirm_instruction_with_memo',
@@ -2079,6 +2116,7 @@ export enum CallIdEnum {
   PlaceholderUnclaimReceipt = 'placeholder_unclaim_receipt',
   PlaceholderWithdrawAffirmation = 'placeholder_withdraw_affirmation',
   PlanConfigChange = 'plan_config_change',
+  PokeDeposit = 'poke_deposit',
   PreApproveAsset = 'pre_approve_asset',
   PreApprovePortfolio = 'pre_approve_portfolio',
   PreApproveTicker = 'pre_approve_ticker',
@@ -2091,6 +2129,7 @@ export enum CallIdEnum {
   QuitPortfolioCustody = 'quit_portfolio_custody',
   ReapStash = 'reap_stash',
   Rebond = 'rebond',
+  ReceiverAffirmAssetTransfer = 'receiver_affirm_asset_transfer',
   ReceiverAffirmTransaction = 'receiver_affirm_transaction',
   ReceiverUnaffirmTransaction = 'receiver_unaffirm_transaction',
   Reclaim = 'reclaim',
@@ -2110,6 +2149,7 @@ export enum CallIdEnum {
   Reject = 'reject',
   RejectAsIdentity = 'reject_as_identity',
   RejectAsKey = 'reject_as_key',
+  RejectAssetTransfer = 'reject_asset_transfer',
   RejectInstruction = 'reject_instruction',
   RejectInstructionAsMediator = 'reject_instruction_as_mediator',
   RejectInstructionV2 = 'reject_instruction_v2',
@@ -2174,6 +2214,7 @@ export enum CallIdEnum {
   ResetAssetCompliance = 'reset_asset_compliance',
   ResetCaa = 'reset_caa',
   ResetMembers = 'reset_members',
+  RestoreLedger = 'restore_ledger',
   ResumeAssetCompliance = 'resume_asset_compliance',
   ResumeAssetRules = 'resume_asset_rules',
   RevokeClaim = 'revoke_claim',
@@ -2236,6 +2277,8 @@ export enum CallIdEnum {
   SetProposalDuration = 'set_proposal_duration',
   SetPruneHistoricalPips = 'set_prune_historical_pips',
   SetReleaseCoordinator = 'set_release_coordinator',
+  SetRetry = 'set_retry',
+  SetRetryNamed = 'set_retry_named',
   SetSchedulesMaxComplexity = 'set_schedules_max_complexity',
   SetSecondaryKeyPermissions = 'set_secondary_key_permissions',
   SetSignedMaxLimits = 'set_signed_max_limits',
@@ -2256,6 +2299,10 @@ export enum CallIdEnum {
   SumbitUnsigned = 'sumbit_unsigned',
   SwapMember = 'swap_member',
   Transfer = 'transfer',
+  TransferAll = 'transfer_all',
+  TransferAllowDeath = 'transfer_allow_death',
+  TransferAsset = 'transfer_asset',
+  TransferKeepAlive = 'transfer_keep_alive',
   TransferWithMemo = 'transfer_with_memo',
   Unbond = 'unbond',
   UnclaimReceipt = 'unclaim_receipt',
@@ -2272,11 +2319,13 @@ export enum CallIdEnum {
   UpdateCallRuntimeWhitelist = 'update_call_runtime_whitelist',
   UpdateGlobalMetadataSpec = 'update_global_metadata_spec',
   UpdateIdentifiers = 'update_identifiers',
+  UpdatePayee = 'update_payee',
   UpdatePermissionedValidatorIntendedCount = 'update_permissioned_validator_intended_count',
   UpdatePolyxLimit = 'update_polyx_limit',
   UpdateVenueDetails = 'update_venue_details',
   UpdateVenueSigners = 'update_venue_signers',
   UpdateVenueType = 'update_venue_type',
+  UpgradeAccounts = 'upgrade_accounts',
   UpgradeApi = 'upgrade_api',
   UploadCode = 'upload_code',
   Validate = 'validate',
@@ -3870,6 +3919,7 @@ export enum EventIdEnum {
   ActivePipLimitChanged = 'ActivePipLimitChanged',
   AdminChanged = 'AdminChanged',
   AffirmationWithdrawn = 'AffirmationWithdrawn',
+  AgendaIncomplete = 'AgendaIncomplete',
   AgentAdded = 'AgentAdded',
   AgentRemoved = 'AgentRemoved',
   AllGood = 'AllGood',
@@ -3955,10 +4005,13 @@ export enum EventIdEnum {
   ContractCodeUpdated = 'ContractCodeUpdated',
   ContractEmitted = 'ContractEmitted',
   ContractExecution = 'ContractExecution',
+  ControllerBatchDeprecated = 'ControllerBatchDeprecated',
   ControllerChanged = 'ControllerChanged',
   ControllerRedemption = 'ControllerRedemption',
   ControllerTransfer = 'ControllerTransfer',
   Created = 'Created',
+  CreatedAssetTransfer = 'CreatedAssetTransfer',
+  CurrencyMigrated = 'CurrencyMigrated',
   CustodyAllowanceChanged = 'CustodyAllowanceChanged',
   CustodyTransfer = 'CustodyTransfer',
   CustomAssetTypeExists = 'CustomAssetTypeExists',
@@ -3968,6 +4021,8 @@ export enum EventIdEnum {
   DefaultTargetIdentitiesChanged = 'DefaultTargetIdentitiesChanged',
   DefaultWithholdingTaxChanged = 'DefaultWithholdingTaxChanged',
   DelegateCalled = 'DelegateCalled',
+  Deposit = 'Deposit',
+  DepositPoked = 'DepositPoked',
   DidCreated = 'DidCreated',
   DidStatus = 'DidStatus',
   DidWithholdingTaxChanged = 'DidWithholdingTaxChanged',
@@ -3981,6 +4036,7 @@ export enum EventIdEnum {
   DocumentAdded = 'DocumentAdded',
   DocumentRemoved = 'DocumentRemoved',
   Dummy = 'Dummy',
+  DustLost = 'DustLost',
   ElectionFailed = 'ElectionFailed',
   ElectionFinalized = 'ElectionFinalized',
   Endowed = 'Endowed',
@@ -4067,6 +4123,7 @@ export enum EventIdEnum {
   KilledAccount = 'KilledAccount',
   LegFailedExecution = 'LegFailedExecution',
   LocalMetadataKeyDeleted = 'LocalMetadataKeyDeleted',
+  Locked = 'Locked',
   MasterKeyUpdated = 'MasterKeyUpdated',
   MaxDetailsLengthChanged = 'MaxDetailsLengthChanged',
   MaxPipSkipCountChanged = 'MaxPipSkipCountChanged',
@@ -4082,6 +4139,7 @@ export enum EventIdEnum {
   MetadataValueDeleted = 'MetadataValueDeleted',
   MinimumBondThresholdUpdated = 'MinimumBondThresholdUpdated',
   MinimumProposalDepositChanged = 'MinimumProposalDepositChanged',
+  Minted = 'Minted',
   MockInvestorUidCreated = 'MockInvestorUIDCreated',
   MovedBetweenPortfolios = 'MovedBetweenPortfolios',
   MultiSigAddedAdmin = 'MultiSigAddedAdmin',
@@ -4165,6 +4223,7 @@ export enum EventIdEnum {
   RegisterAssetMetadataGlobalType = 'RegisterAssetMetadataGlobalType',
   RegisterAssetMetadataLocalType = 'RegisterAssetMetadataLocalType',
   Rejected = 'Rejected',
+  RejectedInvalidAuthorizedUpgrade = 'RejectedInvalidAuthorizedUpgrade',
   RelayedTx = 'RelayedTx',
   ReleaseCoordinatorUpdated = 'ReleaseCoordinatorUpdated',
   Remarked = 'Remarked',
@@ -4173,10 +4232,14 @@ export enum EventIdEnum {
   Removed = 'Removed',
   RemovedPayingKey = 'RemovedPayingKey',
   Requested = 'Requested',
+  Rescinded = 'Rescinded',
   ReserveRepatriated = 'ReserveRepatriated',
   Reserved = 'Reserved',
   Restored = 'Restored',
   Resumed = 'Resumed',
+  RetryCancelled = 'RetryCancelled',
+  RetryFailed = 'RetryFailed',
+  RetrySet = 'RetrySet',
   RevokeCreatePortfoliosPermission = 'RevokeCreatePortfoliosPermission',
   RevokePreApprovedPortfolio = 'RevokePreApprovedPortfolio',
   Reward = 'Reward',
@@ -4214,6 +4277,8 @@ export enum EventIdEnum {
   SnapshotCleared = 'SnapshotCleared',
   SnapshotResultsEnacted = 'SnapshotResultsEnacted',
   SnapshotTaken = 'SnapshotTaken',
+  SnapshotTargetsSizeExceeded = 'SnapshotTargetsSizeExceeded',
+  SnapshotVotersSizeExceeded = 'SnapshotVotersSizeExceeded',
   SolutionStored = 'SolutionStored',
   SomeOffline = 'SomeOffline',
   StakersElected = 'StakersElected',
@@ -4221,18 +4286,23 @@ export enum EventIdEnum {
   StakingElectionFailed = 'StakingElectionFailed',
   StatTypesAdded = 'StatTypesAdded',
   StatTypesRemoved = 'StatTypesRemoved',
+  StorageDepositTransferredAndHeld = 'StorageDepositTransferredAndHeld',
+  StorageDepositTransferredAndReleased = 'StorageDepositTransferredAndReleased',
   Sudid = 'Sudid',
   SudoAsDone = 'SudoAsDone',
+  Suspended = 'Suspended',
   TemplateInstantiationFeeChanged = 'TemplateInstantiationFeeChanged',
   TemplateMetaUrlChanged = 'TemplateMetaUrlChanged',
   TemplateOwnershipTransferred = 'TemplateOwnershipTransferred',
   TemplateUsageFeeChanged = 'TemplateUsageFeeChanged',
   Terminated = 'Terminated',
+  Thawed = 'Thawed',
   TickerLinkedToAsset = 'TickerLinkedToAsset',
   TickerRegistered = 'TickerRegistered',
   TickerTransferred = 'TickerTransferred',
   TickerUnlinkedFromAsset = 'TickerUnlinkedFromAsset',
   TimelockChanged = 'TimelockChanged',
+  TotalIssuanceForced = 'TotalIssuanceForced',
   TransactionAffirmed = 'TransactionAffirmed',
   TransactionCreated = 'TransactionCreated',
   TransactionExecuted = 'TransactionExecuted',
@@ -4244,6 +4314,7 @@ export enum EventIdEnum {
   TransferManagerAdded = 'TransferManagerAdded',
   TransferManagerRemoved = 'TransferManagerRemoved',
   TransferWithData = 'TransferWithData',
+  TransferWithMemo = 'TransferWithMemo',
   TreasuryDidSet = 'TreasuryDidSet',
   TreasuryDisbursement = 'TreasuryDisbursement',
   TreasuryDisbursementFailed = 'TreasuryDisbursementFailed',
@@ -4257,10 +4328,15 @@ export enum EventIdEnum {
   Unfrozen = 'Unfrozen',
   UnfrozenTx = 'UnfrozenTx',
   Unknown = 'Unknown',
+  Unlocked = 'Unlocked',
   Unreserved = 'Unreserved',
   UpdatedPolyxLimit = 'UpdatedPolyxLimit',
+  UpgradeAuthorized = 'UpgradeAuthorized',
+  Upgraded = 'Upgraded',
   UserPortfolios = 'UserPortfolios',
+  ValidatorDisabled = 'ValidatorDisabled',
   ValidatorPrefsSet = 'ValidatorPrefsSet',
+  ValidatorReenabled = 'ValidatorReenabled',
   VenueCreated = 'VenueCreated',
   VenueDetailsUpdated = 'VenueDetailsUpdated',
   VenueFiltering = 'VenueFiltering',
@@ -4276,6 +4352,7 @@ export enum EventIdEnum {
   VoteRetracted = 'VoteRetracted',
   VoteThresholdUpdated = 'VoteThresholdUpdated',
   Voted = 'Voted',
+  Withdraw = 'Withdraw',
   Withdrawn = 'Withdrawn',
 }
 export type EventIdEnumFilter = {
@@ -4588,6 +4665,7 @@ export type Identity = Node & {
   assetsByTickerExternalAgentActionCallerIdAndAssetId: Connection<Asset>;
   assetsByTickerExternalAgentCallerIdAndAssetId: Connection<Asset>;
   assetsByTickerExternalAgentHistoryIdentityIdAndAssetId: Connection<Asset>;
+  assetsByTickerReservationIdentityIdAndAssetId: Connection<Asset>;
   assetsByTransferComplianceClaimIssuerIdAndAssetId: Connection<Asset>;
   authorizationsByFromId: Connection<Authorization>;
   blocksByAccountIdentityIdAndCreatedBlockId: Connection<Block>;
@@ -4652,6 +4730,8 @@ export type Identity = Node & {
   blocksByTickerExternalAgentCallerIdAndUpdatedBlockId: Connection<Block>;
   blocksByTickerExternalAgentHistoryIdentityIdAndCreatedBlockId: Connection<Block>;
   blocksByTickerExternalAgentHistoryIdentityIdAndUpdatedBlockId: Connection<Block>;
+  blocksByTickerReservationIdentityIdAndCreatedBlockId: Connection<Block>;
+  blocksByTickerReservationIdentityIdAndUpdatedBlockId: Connection<Block>;
   blocksByTransferComplianceClaimIssuerIdAndCreatedBlockId: Connection<Block>;
   blocksByTransferComplianceClaimIssuerIdAndUpdatedBlockId: Connection<Block>;
   blocksByVenueOwnerIdAndCreatedBlockId: Connection<Block>;
@@ -4728,6 +4808,7 @@ export type Identity = Node & {
   tickerExternalAgentActionsByCallerId: Connection<TickerExternalAgentAction>;
   tickerExternalAgentHistories: Connection<TickerExternalAgentHistory>;
   tickerExternalAgentsByCallerId: Connection<TickerExternalAgent>;
+  tickerReservations: Connection<TickerReservation>;
   transferCompliancesByClaimIssuerId: Connection<TransferCompliance>;
   updatedBlock?: Maybe<Block>;
   updatedBlockId: Scalars['String']['output'];
@@ -4781,6 +4862,7 @@ export type IdentityFilter = {
   >;
   tickerExternalAgentHistories?: InputMaybe<OneToManyFilter<TickerExternalAgentHistoryFilter>>;
   tickerExternalAgentsByCallerId?: InputMaybe<OneToManyFilter<TickerExternalAgentFilter>>;
+  tickerReservations?: InputMaybe<OneToManyFilter<TickerReservationFilter>>;
   transferCompliancesByClaimIssuerId?: InputMaybe<OneToManyFilter<TransferComplianceFilter>>;
   updatedBlock?: InputMaybe<BlockFilter>;
   updatedBlockId?: InputMaybe<StringFilter>;
@@ -4831,6 +4913,7 @@ export type Instruction = Node & {
   venueId?: Maybe<Scalars['String']['output']>;
 };
 export type InstructionAffirmation = Node & {
+  account?: Maybe<Scalars['String']['output']>;
   createdBlock?: Maybe<Block>;
   createdBlockId: Scalars['String']['output'];
   expiry?: Maybe<Scalars['Datetime']['output']>;
@@ -4851,6 +4934,7 @@ export type InstructionAffirmation = Node & {
   updatedBlockId: Scalars['String']['output'];
 };
 export type InstructionAffirmationFilter = {
+  account?: InputMaybe<StringFilter>;
   and?: InputMaybe<Array<InstructionAffirmationFilter>>;
   createdBlock?: InputMaybe<BlockFilter>;
   createdBlockId?: InputMaybe<StringFilter>;
@@ -4874,6 +4958,8 @@ export type InstructionAffirmationFilter = {
   updatedBlockId?: InputMaybe<StringFilter>;
 };
 export enum InstructionAffirmationsOrderBy {
+  AccountAsc = 'ACCOUNT_ASC',
+  AccountDesc = 'ACCOUNT_DESC',
   CreatedBlockIdAsc = 'CREATED_BLOCK_ID_ASC',
   CreatedBlockIdDesc = 'CREATED_BLOCK_ID_DESC',
   ExpiryAsc = 'EXPIRY_ASC',
@@ -4905,6 +4991,7 @@ export enum InstructionAffirmationsOrderBy {
   CreatedAtDesc = 'CREATED_AT_DESC',
 }
 export type InstructionEvent = Node & {
+  account?: Maybe<Scalars['String']['output']>;
   createdBlock?: Maybe<Block>;
   createdBlockId: Scalars['String']['output'];
   createdEvent?: Maybe<Event>;
@@ -4964,6 +5051,7 @@ export type InstructionEventEnumFilter = {
   notIn?: InputMaybe<Array<InstructionEventEnum>>;
 };
 export type InstructionEventFilter = {
+  account?: InputMaybe<StringFilter>;
   and?: InputMaybe<Array<InstructionEventFilter>>;
   createdBlock?: InputMaybe<BlockFilter>;
   createdBlockId?: InputMaybe<StringFilter>;
@@ -4986,6 +5074,8 @@ export type InstructionEventFilter = {
   updatedBlockId?: InputMaybe<StringFilter>;
 };
 export enum InstructionEventsOrderBy {
+  AccountAsc = 'ACCOUNT_ASC',
+  AccountDesc = 'ACCOUNT_DESC',
   CreatedBlockIdAsc = 'CREATED_BLOCK_ID_ASC',
   CreatedBlockIdDesc = 'CREATED_BLOCK_ID_DESC',
   CreatedEventIdAsc = 'CREATED_EVENT_ID_ASC',
@@ -5194,9 +5284,9 @@ export type Investment = Node & {
   investorId: Scalars['String']['output'];
   nodeId: Scalars['ID']['output'];
   offeringAssetId: Scalars['String']['output'];
-  offeringToken: Scalars['String']['output'];
+  offeringToken?: Maybe<Scalars['String']['output']>;
   offeringTokenAmount: Scalars['BigFloat']['output'];
-  raiseToken: Scalars['String']['output'];
+  raiseToken?: Maybe<Scalars['String']['output']>;
   raiseTokenAmount: Scalars['BigFloat']['output'];
   raisingAssetId: Scalars['String']['output'];
   raisingAssetType: RaisingAssetTypeEnum;
@@ -5285,6 +5375,7 @@ export type Leg = Node & {
   createdBlock?: Maybe<Block>;
   createdBlockId: Scalars['String']['output'];
   from: Scalars['String']['output'];
+  fromAccount?: Maybe<Scalars['String']['output']>;
   fromPortfolio?: Maybe<Scalars['Int']['output']>;
   id: Scalars['String']['output'];
   instruction?: Maybe<Instruction>;
@@ -5296,6 +5387,7 @@ export type Leg = Node & {
   offChainReceipts: Connection<OffChainReceipt>;
   ticker?: Maybe<Scalars['String']['output']>;
   to: Scalars['String']['output'];
+  toAccount?: Maybe<Scalars['String']['output']>;
   toPortfolio?: Maybe<Scalars['Int']['output']>;
   updatedBlock?: Maybe<Block>;
   updatedBlockId: Scalars['String']['output'];
@@ -5308,6 +5400,7 @@ export type LegFilter = {
   createdBlock?: InputMaybe<BlockFilter>;
   createdBlockId?: InputMaybe<StringFilter>;
   from?: InputMaybe<StringFilter>;
+  fromAccount?: InputMaybe<StringFilter>;
   fromPortfolio?: InputMaybe<IntFilter>;
   id?: InputMaybe<StringFilter>;
   instruction?: InputMaybe<InstructionFilter>;
@@ -5320,6 +5413,7 @@ export type LegFilter = {
   or?: InputMaybe<Array<LegFilter>>;
   ticker?: InputMaybe<StringFilter>;
   to?: InputMaybe<StringFilter>;
+  toAccount?: InputMaybe<StringFilter>;
   toPortfolio?: InputMaybe<IntFilter>;
   updatedBlock?: InputMaybe<BlockFilter>;
   updatedBlockId?: InputMaybe<StringFilter>;
@@ -5351,6 +5445,8 @@ export enum LegsOrderBy {
   AssetIdDesc = 'ASSET_ID_DESC',
   CreatedBlockIdAsc = 'CREATED_BLOCK_ID_ASC',
   CreatedBlockIdDesc = 'CREATED_BLOCK_ID_DESC',
+  FromAccountAsc = 'FROM_ACCOUNT_ASC',
+  FromAccountDesc = 'FROM_ACCOUNT_DESC',
   FromAsc = 'FROM_ASC',
   FromDesc = 'FROM_DESC',
   FromPortfolioAsc = 'FROM_PORTFOLIO_ASC',
@@ -5370,6 +5466,8 @@ export enum LegsOrderBy {
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
   TickerAsc = 'TICKER_ASC',
   TickerDesc = 'TICKER_DESC',
+  ToAccountAsc = 'TO_ACCOUNT_ASC',
+  ToAccountDesc = 'TO_ACCOUNT_DESC',
   ToAsc = 'TO_ASC',
   ToDesc = 'TO_DESC',
   ToPortfolioAsc = 'TO_PORTFOLIO_ASC',
@@ -5475,6 +5573,7 @@ export enum ModuleIdEnum {
   Upgradecommittee = 'upgradecommittee',
   Upgradecommitteemembership = 'upgradecommitteemembership',
   Utility = 'utility',
+  Validators = 'validators',
 }
 export type ModuleIdEnumFilter = {
   distinctFrom?: InputMaybe<ModuleIdEnum>;
@@ -6241,13 +6340,15 @@ export type PortfolioMovement = Node & {
   createdBlock?: Maybe<Block>;
   createdBlockId: Scalars['String']['output'];
   from?: Maybe<Portfolio>;
-  fromId: Scalars['String']['output'];
+  fromAccount?: Maybe<Scalars['String']['output']>;
+  fromId?: Maybe<Scalars['String']['output']>;
   id: Scalars['String']['output'];
   memo?: Maybe<Scalars['String']['output']>;
   nftIds?: Maybe<Scalars['JSON']['output']>;
   nodeId: Scalars['ID']['output'];
   to?: Maybe<Portfolio>;
-  toId: Scalars['String']['output'];
+  toAccount?: Maybe<Scalars['String']['output']>;
+  toId?: Maybe<Scalars['String']['output']>;
   type: PortfolioMovementTypeEnum;
   updatedBlock?: Maybe<Block>;
   updatedBlockId: Scalars['String']['output'];
@@ -6261,6 +6362,8 @@ export type PortfolioMovementFilter = {
   createdBlock?: InputMaybe<BlockFilter>;
   createdBlockId?: InputMaybe<StringFilter>;
   from?: InputMaybe<PortfolioFilter>;
+  fromAccount?: InputMaybe<StringFilter>;
+  fromExists?: InputMaybe<Scalars['Boolean']['input']>;
   fromId?: InputMaybe<StringFilter>;
   id?: InputMaybe<StringFilter>;
   memo?: InputMaybe<StringFilter>;
@@ -6268,6 +6371,8 @@ export type PortfolioMovementFilter = {
   not?: InputMaybe<PortfolioMovementFilter>;
   or?: InputMaybe<Array<PortfolioMovementFilter>>;
   to?: InputMaybe<PortfolioFilter>;
+  toAccount?: InputMaybe<StringFilter>;
+  toExists?: InputMaybe<Scalars['Boolean']['input']>;
   toId?: InputMaybe<StringFilter>;
   type?: InputMaybe<PortfolioMovementTypeEnumFilter>;
   updatedBlock?: InputMaybe<BlockFilter>;
@@ -6299,6 +6404,8 @@ export enum PortfolioMovementsOrderBy {
   AssetIdDesc = 'ASSET_ID_DESC',
   CreatedBlockIdAsc = 'CREATED_BLOCK_ID_ASC',
   CreatedBlockIdDesc = 'CREATED_BLOCK_ID_DESC',
+  FromAccountAsc = 'FROM_ACCOUNT_ASC',
+  FromAccountDesc = 'FROM_ACCOUNT_DESC',
   FromIdAsc = 'FROM_ID_ASC',
   FromIdDesc = 'FROM_ID_DESC',
   IdAsc = 'ID_ASC',
@@ -6310,6 +6417,8 @@ export enum PortfolioMovementsOrderBy {
   NftIdsDesc = 'NFT_IDS_DESC',
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
+  ToAccountAsc = 'TO_ACCOUNT_ASC',
+  ToAccountDesc = 'TO_ACCOUNT_DESC',
   ToIdAsc = 'TO_ID_ASC',
   ToIdDesc = 'TO_ID_DESC',
   TypeAsc = 'TYPE_ASC',
@@ -6701,6 +6810,7 @@ export type Query = Node & {
     | TickerExternalAgent
     | TickerExternalAgentAction
     | TickerExternalAgentHistory
+    | TickerReservation
     | TransferCompliance
     | TransferComplianceExemption
     | TransferManager
@@ -6751,6 +6861,9 @@ export type Query = Node & {
   tickerExternalAgentHistory?: Maybe<TickerExternalAgentHistory>;
   tickerExternalAgentHistoryByNodeId?: Maybe<TickerExternalAgentHistory>;
   tickerExternalAgents?: Maybe<Connection<TickerExternalAgent>>;
+  tickerReservation?: Maybe<TickerReservation>;
+  tickerReservationByNodeId?: Maybe<TickerReservation>;
+  tickerReservations?: Maybe<Connection<TickerReservation>>;
   transferCompliance?: Maybe<TransferCompliance>;
   transferComplianceByNodeId?: Maybe<TransferCompliance>;
   transferComplianceExemption?: Maybe<TransferComplianceExemption>;
@@ -6970,7 +7083,7 @@ export type Sto = Node & {
   raisingAssetId: Scalars['String']['output'];
   raisingPortfolio?: Maybe<Portfolio>;
   raisingPortfolioId: Scalars['String']['output'];
-  raisingTicker: Scalars['String']['output'];
+  raisingTicker?: Maybe<Scalars['String']['output']>;
   start?: Maybe<Scalars['Datetime']['output']>;
   status: StoStatus;
   stoId: Scalars['Int']['output'];
@@ -7320,6 +7433,58 @@ export enum TickerExternalAgentsOrderBy {
   Natural = 'NATURAL',
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
+  UpdatedBlockIdAsc = 'UPDATED_BLOCK_ID_ASC',
+  UpdatedBlockIdDesc = 'UPDATED_BLOCK_ID_DESC',
+  CreatedAtAsc = 'CREATED_AT_ASC',
+  CreatedAtDesc = 'CREATED_AT_DESC',
+}
+export type TickerReservation = Node & {
+  asset?: Maybe<Asset>;
+  assetId?: Maybe<Scalars['String']['output']>;
+  createdBlock?: Maybe<Block>;
+  createdBlockId: Scalars['String']['output'];
+  expiry?: Maybe<Scalars['Datetime']['output']>;
+  id: Scalars['String']['output'];
+  identity?: Maybe<Identity>;
+  identityId: Scalars['String']['output'];
+  nodeId: Scalars['ID']['output'];
+  ticker: Scalars['String']['output'];
+  updatedBlock?: Maybe<Block>;
+  updatedBlockId: Scalars['String']['output'];
+};
+export type TickerReservationFilter = {
+  and?: InputMaybe<Array<TickerReservationFilter>>;
+  asset?: InputMaybe<AssetFilter>;
+  assetExists?: InputMaybe<Scalars['Boolean']['input']>;
+  assetId?: InputMaybe<StringFilter>;
+  createdBlock?: InputMaybe<BlockFilter>;
+  createdBlockId?: InputMaybe<StringFilter>;
+  expiry?: InputMaybe<DatetimeFilter>;
+  id?: InputMaybe<StringFilter>;
+  identity?: InputMaybe<IdentityFilter>;
+  identityId?: InputMaybe<StringFilter>;
+  not?: InputMaybe<TickerReservationFilter>;
+  or?: InputMaybe<Array<TickerReservationFilter>>;
+  ticker?: InputMaybe<StringFilter>;
+  updatedBlock?: InputMaybe<BlockFilter>;
+  updatedBlockId?: InputMaybe<StringFilter>;
+};
+export enum TickerReservationsOrderBy {
+  AssetIdAsc = 'ASSET_ID_ASC',
+  AssetIdDesc = 'ASSET_ID_DESC',
+  CreatedBlockIdAsc = 'CREATED_BLOCK_ID_ASC',
+  CreatedBlockIdDesc = 'CREATED_BLOCK_ID_DESC',
+  ExpiryAsc = 'EXPIRY_ASC',
+  ExpiryDesc = 'EXPIRY_DESC',
+  IdentityIdAsc = 'IDENTITY_ID_ASC',
+  IdentityIdDesc = 'IDENTITY_ID_DESC',
+  IdAsc = 'ID_ASC',
+  IdDesc = 'ID_DESC',
+  Natural = 'NATURAL',
+  PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
+  PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
+  TickerAsc = 'TICKER_ASC',
+  TickerDesc = 'TICKER_DESC',
   UpdatedBlockIdAsc = 'UPDATED_BLOCK_ID_ASC',
   UpdatedBlockIdDesc = 'UPDATED_BLOCK_ID_DESC',
   CreatedAtAsc = 'CREATED_AT_ASC',

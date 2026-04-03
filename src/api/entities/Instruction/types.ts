@@ -9,7 +9,7 @@ import {
   NumberedPortfolio,
   Venue,
 } from '~/internal';
-import { EventIdentifier, NftCollection } from '~/types';
+import { Account, EventIdentifier, NftCollection } from '~/types';
 
 export enum InstructionStatus {
   Pending = 'Pending',
@@ -65,16 +65,18 @@ export type InstructionDetails = {
   memo: string | null;
 } & InstructionEndCondition;
 
+export type AssetHolder = DefaultPortfolio | NumberedPortfolio | Account;
+
 export interface FungibleLeg {
-  from: DefaultPortfolio | NumberedPortfolio;
-  to: DefaultPortfolio | NumberedPortfolio;
+  from: AssetHolder;
+  to: AssetHolder;
   amount: BigNumber;
   asset: FungibleAsset;
 }
 
 export interface NftLeg {
-  from: DefaultPortfolio | NumberedPortfolio;
-  to: DefaultPortfolio | NumberedPortfolio;
+  from: AssetHolder;
+  to: AssetHolder;
   nfts: Nft[];
   asset: NftCollection;
 }
@@ -99,7 +101,7 @@ export enum AffirmationStatus {
 }
 
 export interface InstructionAffirmation {
-  identity: Identity;
+  identity: Identity | Account;
   status: AffirmationStatus;
 }
 

@@ -48,6 +48,7 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
    */
   public collection: NftCollection;
 
+  // TODO @prashantasdeveloper add support for burning from account
   /**
    * Redeem (or "burns") the NFT, removing it from circulation
    */
@@ -210,9 +211,7 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
       id,
       context: {
         polymeshApi: {
-          query: {
-            nft: { nftOwner },
-          },
+          query: { nft },
         },
       },
       context,
@@ -222,7 +221,10 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
 
     const rawNftId = bigNumberToU64(id, context);
 
-    const owner = await nftOwner(rawAssetId, rawNftId);
+    const owner = await (context.isV7
+      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (nft as any).nftOwner(rawAssetId, rawNftId)
+      : nft.owner(rawAssetId, rawNftId));
 
     if (owner.isEmpty) {
       return null;

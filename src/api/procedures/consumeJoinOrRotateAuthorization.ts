@@ -103,10 +103,20 @@ export async function prepareConsumeJoinOrRotateAuthorization(
         ? identity.acceptPrimaryKey
         : identity.rotatePrimaryKeyToSecondary;
 
+    if (context.isV7) {
+      return {
+        transaction,
+        paidForBy: issuer,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        args: [rawAuthId, null] as any,
+        resolver: undefined,
+      };
+    }
+
     return {
       transaction,
       paidForBy: issuer,
-      args: [rawAuthId, null],
+      args: [rawAuthId],
       resolver: undefined,
     };
   }

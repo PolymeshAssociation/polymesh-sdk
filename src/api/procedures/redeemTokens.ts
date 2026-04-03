@@ -10,9 +10,9 @@ import {
 import { ErrorCode, RedeemTokensParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
+  assetHolderToAssetHolderKind,
   assetToMeshAssetId,
   bigNumberToBalance,
-  portfolioToPortfolioKind,
 } from '~/utils/conversion';
 
 export interface Storage {
@@ -62,7 +62,7 @@ export async function prepareRedeemTokens(
 
   return {
     transaction: tx.asset.redeem,
-    args: [rawAssetId, rawAmount, portfolioToPortfolioKind(fromPortfolio, context)],
+    args: [rawAssetId, rawAmount, assetHolderToAssetHolderKind(fromPortfolio, context)],
     resolver: undefined,
   };
 }

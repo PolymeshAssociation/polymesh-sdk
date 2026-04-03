@@ -118,7 +118,11 @@ export class AccountManagement {
       context
     );
     this.subsidizeAccount = createProcedureMethod(
-      { getProcedureAndArgs: args => [subsidizeAccount, { ...args }] },
+      { getProcedureAndArgs: args => [subsidizeAccount, { ...args, isV7Method: true }] },
+      context
+    );
+    this.approveSubsidy = createProcedureMethod(
+      { getProcedureAndArgs: args => [subsidizeAccount, { ...args, isV7Method: false }] },
       context
     );
     this.createMultiSigAccount = createProcedureMethod(
@@ -187,8 +191,19 @@ export class AccountManagement {
    * @note this will create an {@link AuthorizationRequest | Authorization Request} which has to be accepted by the `beneficiary` Account.
    *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
    *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
+   *
+   * @deprecated use {@link approveSubsidy} instead from chain v8
    */
   public subsidizeAccount: ProcedureMethod<SubsidizeAccountParams, AuthorizationRequest>;
+
+  /**
+   * Approves a subsidy request
+   *
+   * @note to be used from chain v8 onwards
+   */
+  public approveSubsidy: ProcedureMethod<SubsidizeAccountParams, void>;
+
+  // TODO add support for accept & revoke subsidy
 
   /**
    * Create a MultiSig Account
