@@ -27,7 +27,6 @@ import {
   PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
   PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth,
   PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth,
-  PolymeshCommonUtilitiesProtocolFeeProtocolOp,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesAssetAssetType,
@@ -55,6 +54,7 @@ import {
   PolymeshPrimitivesNftNftMetadataAttribute,
   PolymeshPrimitivesNftNfTs,
   PolymeshPrimitivesPortfolioFund,
+  PolymeshPrimitivesProtocolFeeProtocolOp,
   PolymeshPrimitivesSecondaryKeyExtrinsicPermissions,
   PolymeshPrimitivesSecondaryKeySignatory,
   PolymeshPrimitivesSettlementAssetCount,
@@ -5925,40 +5925,39 @@ describe('txTagToProtocolOp', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should convert a TxTag to a polkadot PolymeshCommonUtilitiesProtocolFeeProtocolOp object', () => {
-    const fakeResult =
-      'convertedProtocolOp' as unknown as PolymeshCommonUtilitiesProtocolFeeProtocolOp;
+  it('should convert a TxTag to a polkadot PolymeshPrimitivesProtocolFeeProtocolOp object', () => {
+    const fakeResult = 'convertedProtocolOp' as unknown as PolymeshPrimitivesProtocolFeeProtocolOp;
     const context = dsMockUtils.getContextInstance();
 
     const createTypeMock = context.createType;
     when(createTypeMock)
-      .calledWith('PolymeshCommonUtilitiesProtocolFeeProtocolOp', 'AssetRegisterUniqueTicker')
+      .calledWith('PolymeshPrimitivesProtocolFeeProtocolOp', 'AssetRegisterUniqueTicker')
       .mockReturnValue(fakeResult);
     expect(txTagToProtocolOp(TxTags.asset.RegisterUniqueTicker, context)).toEqual(fakeResult);
 
     when(createTypeMock)
-      .calledWith('PolymeshCommonUtilitiesProtocolFeeProtocolOp', 'AssetIssue')
+      .calledWith('PolymeshPrimitivesProtocolFeeProtocolOp', 'AssetIssue')
       .mockReturnValue(fakeResult);
     expect(txTagToProtocolOp(TxTags.asset.Issue, context)).toEqual(fakeResult);
 
     when(createTypeMock)
-      .calledWith('PolymeshCommonUtilitiesProtocolFeeProtocolOp', 'AssetAddDocuments')
+      .calledWith('PolymeshPrimitivesProtocolFeeProtocolOp', 'AssetAddDocuments')
       .mockReturnValue(fakeResult);
     expect(txTagToProtocolOp(TxTags.asset.AddDocuments, context)).toEqual(fakeResult);
 
     when(createTypeMock)
-      .calledWith('PolymeshCommonUtilitiesProtocolFeeProtocolOp', 'AssetCreateAsset')
+      .calledWith('PolymeshPrimitivesProtocolFeeProtocolOp', 'AssetCreateAsset')
       .mockReturnValue(fakeResult);
     expect(txTagToProtocolOp(TxTags.asset.CreateAsset, context)).toEqual(fakeResult);
 
     when(createTypeMock)
-      .calledWith('PolymeshCommonUtilitiesProtocolFeeProtocolOp', 'CheckpointCreateSchedule')
+      .calledWith('PolymeshPrimitivesProtocolFeeProtocolOp', 'CheckpointCreateSchedule')
       .mockReturnValue(fakeResult);
     expect(txTagToProtocolOp(TxTags.checkpoint.CreateSchedule, context)).toEqual(fakeResult);
 
     when(createTypeMock)
       .calledWith(
-        'PolymeshCommonUtilitiesProtocolFeeProtocolOp',
+        'PolymeshPrimitivesProtocolFeeProtocolOp',
         'ComplianceManagerAddComplianceRequirement'
       )
       .mockReturnValue(fakeResult);
@@ -5967,18 +5966,18 @@ describe('txTagToProtocolOp', () => {
     );
 
     when(createTypeMock)
-      .calledWith('PolymeshCommonUtilitiesProtocolFeeProtocolOp', 'IdentityCddRegisterDid')
+      .calledWith('PolymeshPrimitivesProtocolFeeProtocolOp', 'IdentityCddRegisterDid')
       .mockReturnValue(fakeResult);
     expect(txTagToProtocolOp(TxTags.identity.CddRegisterDid, context)).toEqual(fakeResult);
 
     when(createTypeMock)
-      .calledWith('PolymeshCommonUtilitiesProtocolFeeProtocolOp', 'IdentityAddClaim')
+      .calledWith('PolymeshPrimitivesProtocolFeeProtocolOp', 'IdentityAddClaim')
       .mockReturnValue(fakeResult);
     expect(txTagToProtocolOp(TxTags.identity.AddClaim, context)).toEqual(fakeResult);
 
     when(createTypeMock)
       .calledWith(
-        'PolymeshCommonUtilitiesProtocolFeeProtocolOp',
+        'PolymeshPrimitivesProtocolFeeProtocolOp',
         'IdentityAddSecondaryKeysWithAuthorization'
       )
       .mockReturnValue(fakeResult);
@@ -5987,28 +5986,28 @@ describe('txTagToProtocolOp', () => {
     );
 
     when(createTypeMock)
-      .calledWith('PolymeshCommonUtilitiesProtocolFeeProtocolOp', 'PipsPropose')
+      .calledWith('PolymeshPrimitivesProtocolFeeProtocolOp', 'PipsPropose')
       .mockReturnValue(fakeResult);
     expect(txTagToProtocolOp(TxTags.pips.Propose, context)).toEqual(fakeResult);
 
     when(createTypeMock)
-      .calledWith('PolymeshCommonUtilitiesProtocolFeeProtocolOp', 'CorporateBallotAttachBallot')
+      .calledWith('PolymeshPrimitivesProtocolFeeProtocolOp', 'CorporateBallotAttachBallot')
       .mockReturnValue(fakeResult);
     expect(txTagToProtocolOp(TxTags.corporateBallot.AttachBallot, context)).toEqual(fakeResult);
 
     when(createTypeMock)
-      .calledWith('PolymeshCommonUtilitiesProtocolFeeProtocolOp', 'CapitalDistributionDistribute')
+      .calledWith('PolymeshPrimitivesProtocolFeeProtocolOp', 'CapitalDistributionDistribute')
       .mockReturnValue(fakeResult);
     expect(txTagToProtocolOp(TxTags.capitalDistribution.Distribute, context)).toEqual(fakeResult);
   });
 
-  it('should throw an error if tag does not match any PolymeshCommonUtilitiesProtocolFeeProtocolOp', () => {
+  it('should throw an error if tag does not match any PolymeshPrimitivesProtocolFeeProtocolOp', () => {
     const value = TxTags.asset.MakeDivisible;
     const context = dsMockUtils.getContextInstance();
     const mockTag = 'AssetMakeDivisible';
 
     expect(() => txTagToProtocolOp(value, context)).toThrow(
-      `${mockTag} does not match any PolymeshCommonUtilitiesProtocolFeeProtocolOp`
+      `${mockTag} does not match any PolymeshPrimitivesProtocolFeeProtocolOp`
     );
   });
 });

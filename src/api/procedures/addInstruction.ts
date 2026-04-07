@@ -184,8 +184,8 @@ async function mapFungibleLeg(
   }
   await Promise.all(assertPromises);
 
-  const rawSender = assetHolderIdToMeshAssetHolder(fromId, context);
-  const rawReceiver = assetHolderIdToMeshAssetHolder(toId, context);
+  const rawSender = await assetHolderIdToMeshAssetHolder(fromId, context);
+  const rawReceiver = await assetHolderIdToMeshAssetHolder(toId, context);
 
   const assetId = await asAssetId(asset, context);
   const rawLeg = legToFungibleLeg(
@@ -226,8 +226,8 @@ async function mapNftLeg(
   }
   await Promise.all(assertPromises);
 
-  const rawSender = assetHolderIdToMeshAssetHolder(fromId, context);
-  const rawReceiver = assetHolderIdToMeshAssetHolder(toId, context);
+  const rawSender = await assetHolderIdToMeshAssetHolder(fromId, context);
+  const rawReceiver = await assetHolderIdToMeshAssetHolder(toId, context);
 
   const baseAsset = await asBaseAsset(asset, context);
   const rawLeg = legToNonFungibleLeg(
@@ -733,8 +733,14 @@ async function getTxArgsAndErrors(
       const rawLegs: PolymeshPrimitivesSettlementLeg[] = rawLegValues.flat();
 
       if (assetHoldersToAffirm[i]!.length) {
-        const rawAssetHolders = assetHoldersToAffirm[i]!.map(portfolio =>
-          assetHolderIdToMeshAssetHolder(assetHolderLikeToAssetHolderId(portfolio), context)
+        const rawAssetHolders = await Promise.all(
+          assetHoldersToAffirm[i]!.map(
+            async portfolio =>
+              await assetHolderIdToMeshAssetHolder(
+                assetHolderLikeToAssetHolderId(portfolio),
+                context
+              )
+          )
         );
         addAndAffirmInstructionParams.push([
           baseParams.rawVenueId,

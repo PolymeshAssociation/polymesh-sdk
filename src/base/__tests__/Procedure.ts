@@ -1,7 +1,7 @@
 import { Balance } from '@polkadot/types/interfaces';
 import {
-  PolymeshCommonUtilitiesProtocolFeeProtocolOp,
   PolymeshPrimitivesPosRatio,
+  PolymeshPrimitivesProtocolFeeProtocolOp,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -315,7 +315,7 @@ describe('Procedure class', () => {
     let posRatioToBigNumberSpy: jest.SpyInstance<BigNumber, [PolymeshPrimitivesPosRatio]>;
     let balanceToBigNumberSpy: jest.SpyInstance<BigNumber, [Balance]>;
     let txTagToProtocolOpSpy: jest.SpyInstance<
-      PolymeshCommonUtilitiesProtocolFeeProtocolOp,
+      PolymeshPrimitivesProtocolFeeProtocolOp,
       [TxTag, Context]
     >;
     let txTags: TxTag[];
@@ -354,7 +354,7 @@ describe('Procedure class', () => {
       txTags.forEach(txTag =>
         when(txTagToProtocolOpSpy)
           .calledWith(txTag, context)
-          .mockReturnValue(txTag as unknown as PolymeshCommonUtilitiesProtocolFeeProtocolOp)
+          .mockReturnValue(txTag as unknown as PolymeshPrimitivesProtocolFeeProtocolOp)
       );
 
       rawFees.forEach((rawFee, index) =>

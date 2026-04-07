@@ -25,8 +25,10 @@ const legAttributes = `
             legType
             from
             fromPortfolio
+            fromAccount
             to
             toPortfolio
+            toAccount
             assetId
             ticker
             amount

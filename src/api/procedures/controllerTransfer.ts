@@ -1,8 +1,11 @@
+import { getAssetHolderDid } from '~/api/procedures/utils';
 import { DefaultPortfolio, FungibleAsset, PolymeshError, Procedure } from '~/internal';
 import { ControllerTransferParams, ErrorCode, RoleType, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   assetHolderIdToMeshAssetHolder,
+  assetHolderLikeToAssetHolder,
+  assetHolderLikeToAssetHolderId,
   assetToMeshAssetId,
   bigNumberToBalance,
   portfolioIdToPortfolio,
@@ -34,16 +37,18 @@ export async function prepareControllerTransfer(
   } = this;
   const { asset, originPortfolio, amount } = args;
 
-  const originPortfolioId = portfolioLikeToPortfolioId(originPortfolio);
+  const originAssetHolderId = assetHolderLikeToAssetHolderId(originPortfolio);
 
-  if (did === originPortfolioId.did) {
+  const originHolderDid = await getAssetHolderDid(originPortfolio, context);
+
+  if (originPortfolio && did === originHolderDid) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'Controller transfers to self are not allowed',
     });
   }
 
-  const fromPortfolio = portfolioIdToPortfolio(originPortfolioId, context);
+  const fromPortfolio = assetHolderLikeToAssetHolder(originPortfolio, context);
 
   const [balance] = await fromPortfolio.getAssetBalances({
     assets: [asset],
@@ -66,7 +71,7 @@ export async function prepareControllerTransfer(
     args: [
       rawAssetId,
       bigNumberToBalance(amount, context),
-      assetHolderIdToMeshAssetHolder(originPortfolioId, context),
+      await assetHolderIdToMeshAssetHolder(originAssetHolderId, context),
     ],
     resolver: undefined,
   };

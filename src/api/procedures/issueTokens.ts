@@ -7,6 +7,7 @@ import {
   assetToMeshAssetId,
   bigNumberToBalance,
 } from '~/utils/conversion';
+import { asAccount } from '~/utils/internal';
 
 export type Params = IssueTokensParams & {
   asset: FungibleAsset;
@@ -27,7 +28,14 @@ export async function prepareIssueTokens(
     },
     context,
   } = this;
-  const { asset: assetEntity, amount, portfolioId } = args;
+  const { asset: assetEntity, amount, portfolioId, account } = args;
+
+  if (portfolioId && account) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Only one of portfolioId or account can be provided to issue tokens',
+    });
+  }
 
   const [{ isDivisible, totalSupply }, signingIdentity] = await Promise.all([
     assetEntity.details(),
@@ -46,13 +54,18 @@ export async function prepareIssueTokens(
     });
   }
 
-  const portfolio = portfolioId
-    ? await signingIdentity.portfolios.getPortfolio({ portfolioId })
-    : await signingIdentity.portfolios.getPortfolio();
-
   const rawAssetId = assetToMeshAssetId(assetEntity, context);
   const rawValue = bigNumberToBalance(amount, context, isDivisible);
-  const rawAssetHolder = assetHolderToAssetHolderKind(portfolio, context);
+
+  let rawAssetHolder;
+  if (account) {
+    rawAssetHolder = assetHolderToAssetHolderKind(asAccount(account, context), context);
+  } else {
+    const portfolio = portfolioId
+      ? await signingIdentity.portfolios.getPortfolio({ portfolioId })
+      : await signingIdentity.portfolios.getPortfolio();
+    rawAssetHolder = assetHolderToAssetHolderKind(portfolio, context);
+  }
 
   return {
     transaction: asset.issue,

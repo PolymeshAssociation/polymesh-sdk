@@ -7,6 +7,7 @@ import {
   PolymeshPrimitivesSettlementAssetCount,
   PolymeshPrimitivesSettlementReceiptDetails,
 } from '@polkadot/types/lookup';
+import { hexHasPrefix } from '@polkadot/util';
 import {
   AffirmationCount,
   ExecuteInstructionInfo,
@@ -20,6 +21,7 @@ import {
   AffirmationStatus,
   AffirmInstructionParams,
   AssetHolder,
+  AssetHolderId,
   DefaultPortfolio,
   ErrorCode,
   InstructionAffirmationOperation,
@@ -27,7 +29,7 @@ import {
   NumberedPortfolio,
   OffChainAffirmationReceipt,
   PortfolioId,
-  PortfolioLike,
+  PortfolioLike as AssetHolderLike,
   TxTag,
   TxTags,
 } from '~/types';
@@ -73,10 +75,10 @@ const getAssetCount = (
 };
 
 export interface Storage {
-  portfolios: AssetHolder[];
-  portfolioParams: PortfolioLike[];
-  senderLegAmount: BigNumber;
-  totalLegAmount: BigNumber;
+  allowedAssetHolders: AssetHolder[];
+  assetHolderParams: AssetHolderLike[];
+  senderLegCount: BigNumber;
+  totalLegCount: BigNumber;
   signer: Identity;
   offChainLegIndices: number[];
   instructionInfo: ExecuteInstructionInfo;
@@ -85,9 +87,9 @@ export interface Storage {
 /**
  * @hidden
  */
-const assertPortfoliosValid = (
-  portfolioParams: PortfolioLike[],
-  portfolios: AssetHolder[],
+const assertAssetHoldersAreValid = (
+  assetHolderLikeParams: AssetHolderLike[],
+  assetHolders: AssetHolder[],
   operation: InstructionAffirmationOperation
 ): void => {
   if (
@@ -95,17 +97,18 @@ const assertPortfoliosValid = (
     operation === InstructionAffirmationOperation.RejectAsMediator ||
     operation === InstructionAffirmationOperation.WithdrawAsMediator
   ) {
+    // since no asset holders are involved in these operations, consider them as valid
     return;
   }
 
-  if (portfolioParams.length && portfolioParams.length !== portfolios.length) {
+  if (assetHolderLikeParams.length && assetHolderLikeParams.length !== assetHolders.length) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'Some of the portfolios are not a involved in this instruction',
+      message: 'Some of the asset holders are not a involved in this instruction',
     });
   }
 
-  if (!portfolios.length) {
+  if (!assetHolders.length) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'The signing Identity is not involved in this Instruction',
@@ -342,8 +345,8 @@ function reject(
   context: Context,
   instructionInfo: ExecuteInstructionInfo,
   instruction: Instruction,
-  totalLegAmount: BigNumber,
-  rawPortfolioIds: PolymeshPrimitivesAssetAssetHolder[]
+  totalLegCount: BigNumber,
+  rawAllowedAssetHolders: PolymeshPrimitivesAssetAssetHolder[]
 ): TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'rejectInstructionWithCount'>> {
   const rawInstructionId = bigNumberToU64(instruction.id, context);
   const rawAssetCount = getAssetCount(context, instructionInfo);
@@ -351,8 +354,9 @@ function reject(
   return {
     transaction: context.polymeshApi.tx.settlement.rejectInstructionWithCount,
     resolver: instruction,
-    feeMultiplier: totalLegAmount,
-    args: [rawInstructionId, rawPortfolioIds[0], rawAssetCount],
+    feeMultiplier: totalLegCount,
+    // since only one asset holder is allowed while rejecting, it is safe to assume 0th index
+    args: [rawInstructionId, rawAllowedAssetHolders[0], rawAssetCount],
   };
 }
 
@@ -436,10 +440,10 @@ export async function prepareModifyInstructionAffirmation(
     },
     context,
     storage: {
-      portfolios,
-      portfolioParams,
-      senderLegAmount,
-      totalLegAmount,
+      allowedAssetHolders,
+      assetHolderParams,
+      senderLegCount,
+      totalLegCount,
       signer,
       instructionInfo,
       offChainLegIndices,
@@ -453,18 +457,23 @@ export async function prepareModifyInstructionAffirmation(
   await assertInstructionValid(instruction, context);
 
   if (!('receipts' in args)) {
-    assertPortfoliosValid(portfolioParams, portfolios, operation);
+    assertAssetHoldersAreValid(assetHolderParams, allowedAssetHolders, operation);
   }
 
   const rawInstructionId = bigNumberToU64(id, context);
 
-  const rawAssetHolders: PolymeshPrimitivesAssetAssetHolder[] = portfolios.map(portfolio =>
-    assetHolderIdToMeshAssetHolder(assetHolderLikeToAssetHolderId(portfolio), context)
+  const rawAllowedAssetHolders = await Promise.all(
+    allowedAssetHolders.map(
+      async assetHolder =>
+        await assetHolderIdToMeshAssetHolder(assetHolderLikeToAssetHolderId(assetHolder), context)
+    )
   );
 
   const rawDid = stringToIdentityId(signer.did, context);
 
-  const multiArgs = rawAssetHolders.map(assetHolder => tuple(assetHolder, rawInstructionId));
+  const multiArgs = rawAllowedAssetHolders.map(rawAssetHolder =>
+    tuple(rawAssetHolder, rawInstructionId)
+  );
 
   const [rawAffirmationStatuses, rawMediatorAffirmation] = await Promise.all([
     settlement.userAffirmations.multi(multiArgs),
@@ -501,7 +510,7 @@ export async function prepareModifyInstructionAffirmation(
     case InstructionAffirmationOperation.Reject: {
       await validateInstructionNotLocked(instruction);
 
-      return reject(context, instructionInfo, instruction, totalLegAmount, rawAssetHolders);
+      return reject(context, instructionInfo, instruction, totalLegCount, rawAllowedAssetHolders);
     }
 
     case InstructionAffirmationOperation.Affirm: {
@@ -528,7 +537,7 @@ export async function prepareModifyInstructionAffirmation(
     }
   }
 
-  const validAssetHolders = rawAssetHolders.filter(
+  const validAssetHolders = rawAllowedAssetHolders.filter(
     (_, index) => !excludeCriteria.includes(affirmationStatuses[index]!)
   );
 
@@ -541,7 +550,7 @@ export async function prepareModifyInstructionAffirmation(
 
   const rawAffirmCount = await call.settlementApi.getAffirmationCount<AffirmationCount>(
     rawInstructionId,
-    rawAssetHolders
+    rawAllowedAssetHolders
   );
 
   const portfolioIds = assetHolderIdsToBtreeSet(validAssetHolders, context);
@@ -558,7 +567,7 @@ export async function prepareModifyInstructionAffirmation(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     transaction: transaction as any,
     resolver: instruction,
-    feeMultiplier: senderLegAmount,
+    feeMultiplier: senderLegCount,
     args: [rawInstructionId, portfolioIds, rawAffirmCount],
   };
 }
@@ -571,7 +580,7 @@ export function getAuthorization(
   args: ModifyInstructionAffirmationParams
 ): ProcedureAuthorization {
   const {
-    storage: { portfolios },
+    storage: { allowedAssetHolders: assetHolders },
   } = this;
 
   let transactions: TxTag[];
@@ -617,7 +626,7 @@ export function getAuthorization(
 
   return {
     permissions: {
-      portfolios: portfolios.filter(p => !(p instanceof Account)) as (
+      portfolios: assetHolders.filter(p => !(p instanceof Account)) as (
         | DefaultPortfolio
         | NumberedPortfolio
       )[],
@@ -630,13 +639,13 @@ export function getAuthorization(
 /**
  * @hidden
  */
-function extractPortfolioParams(params: ModifyInstructionAffirmationParams): PortfolioLike[] {
+function extractAssetHolderParams(params: ModifyInstructionAffirmationParams): AssetHolderLike[] {
   const { operation } = params;
-  let portfolioParams: PortfolioLike[] = [];
+  let assetHolderParams: AssetHolderLike[] = [];
   if (operation === InstructionAffirmationOperation.Reject) {
     const { portfolio } = params;
     if (portfolio) {
-      portfolioParams.push(portfolio);
+      assetHolderParams.push(portfolio as AssetHolderLike);
     }
   } else if (
     operation === InstructionAffirmationOperation.Affirm ||
@@ -644,47 +653,54 @@ function extractPortfolioParams(params: ModifyInstructionAffirmationParams): Por
   ) {
     const { portfolios } = params;
     if (portfolios) {
-      portfolioParams = [...portfolioParams, ...portfolios];
+      assetHolderParams = [...assetHolderParams, ...(portfolios as AssetHolderLike[])];
     }
   }
-  return portfolioParams;
+  return assetHolderParams;
 }
 
 /**
  * @hidden
  */
-export const isParam = (legAssetHolder: AssetHolder, portfolioIdParams: PortfolioId[]): boolean => {
-  const assetHolder = assetHolderLikeToAssetHolderId(legAssetHolder);
-  if (typeof assetHolder === 'string') {
-    return false;
+export const isParam = (
+  legAssetHolder: AssetHolder,
+  assetHolderIdParams: AssetHolderId[]
+): boolean => {
+  const legAssetHolderId = assetHolderLikeToAssetHolderId(legAssetHolder);
+
+  if (!assetHolderIdParams.length) {
+    return true;
   }
-  const { did: legPortfolioDid, number: legPortfolioNumber } = assetHolder;
-  return (
-    !portfolioIdParams.length ||
-    portfolioIdParams.some(
-      ({ did, number }) =>
-        did === legPortfolioDid &&
-        new BigNumber(legPortfolioNumber ?? 0).eq(new BigNumber(number ?? 0))
-    )
-  );
+
+  return assetHolderIdParams.some(assetHolderId => {
+    if (typeof assetHolderId === 'string') {
+      return typeof legAssetHolderId === 'string' && assetHolderId === legAssetHolderId;
+    }
+    const { did, number } = assetHolderId;
+    return (
+      typeof legAssetHolderId !== 'string' &&
+      did === legAssetHolderId.did &&
+      new BigNumber(legAssetHolderId.number ?? 0).eq(new BigNumber(number ?? 0))
+    );
+  });
 };
 
 /**
  * @hidden
  */
-const assemblePortfolios = async (
+const assembleAssetHolders = async (
   result: [AssetHolder[], BigNumber],
   from: AssetHolder,
   to: AssetHolder,
   signingDid: string,
-  portfolioIdParams: PortfolioId[]
+  assetHolderIdParams: AssetHolderId[]
 ): Promise<[AssetHolder[], BigNumber]> => {
   const [fromExists, toExists] = await Promise.all([from.exists(), to.exists()]);
 
-  const [custodiedPortfolios, amount] = result;
+  const [custodiedAssetHolders, count] = result;
 
-  let res = [...custodiedPortfolios];
-  let legAmount = amount;
+  let res = [...custodiedAssetHolders];
+  let senderLegCount = count;
 
   const checkCustody = async (
     legAssetHolder: AssetHolder,
@@ -692,13 +708,20 @@ const assemblePortfolios = async (
     sender: boolean
   ): Promise<void> => {
     if (legAssetHolder instanceof Account) {
-      res = [...res, legAssetHolder];
+      // TODO assuming that the account address should be the same as signing did
+      const identity = await legAssetHolder.getIdentity();
+      if (identity?.did === signingDid) {
+        res = [...res, legAssetHolder];
+        if (sender) {
+          senderLegCount = senderLegCount.plus(1);
+        }
+      }
     } else if (exists) {
       const isCustodied = await legAssetHolder.isCustodiedBy({ identity: signingDid });
       if (isCustodied) {
         res = [...res, legAssetHolder];
         if (sender) {
-          legAmount = legAmount.plus(1);
+          senderLegCount = senderLegCount.plus(1);
         }
       }
     } else if (legAssetHolder.owner.did === signingDid) {
@@ -707,17 +730,17 @@ const assemblePortfolios = async (
   };
 
   const promises = [];
-  if (isParam(from, portfolioIdParams)) {
+  if (isParam(from, assetHolderIdParams)) {
     promises.push(checkCustody(from, fromExists, true));
   }
 
-  if (isParam(to, portfolioIdParams)) {
+  if (isParam(to, assetHolderIdParams)) {
     promises.push(checkCustody(to, toExists, false));
   }
 
   await Promise.all(promises);
 
-  return tuple(res, legAmount);
+  return tuple(res, senderLegCount);
 };
 
 /**
@@ -738,9 +761,9 @@ export async function prepareStorage(
   const { id } = params;
   const rawId = bigNumberToU64(id, context);
 
-  const portfolioParams = extractPortfolioParams(params);
+  const assetHolderParams = extractAssetHolderParams(params);
 
-  const portfolioIdParams = portfolioParams.map(portfolioLikeToPortfolioId);
+  const assetHolderIdParams = assetHolderParams.map(assetHolderLikeToAssetHolderId);
 
   const instruction = new Instruction({ id }, context);
 
@@ -754,27 +777,27 @@ export async function prepareStorage(
     legs.map(async (leg, index) => {
       if (isOffChainLeg(leg)) {
         return {
-          addedPortfolios: [] as (DefaultPortfolio | NumberedPortfolio)[],
-          deltaAmount: new BigNumber(0),
+          allowedAssetHolders: [] as AssetHolder[],
+          senderLegCount: new BigNumber(0),
           offChainIndex: index,
         };
       } else {
         const { from, to } = leg;
-        const [addedPortfolios, deltaAmount] = await assemblePortfolios(
+        const [allowedAssetHolders, senderLegCount] = await assembleAssetHolders(
           tuple([], new BigNumber(0)),
           from,
           to,
           signer.did,
-          portfolioIdParams
+          assetHolderIdParams
         );
-        return { addedPortfolios, deltaAmount, offChainIndex: undefined };
+        return { allowedAssetHolders, senderLegCount, offChainIndex: undefined };
       }
     })
   );
 
-  const portfolios = legContributions.flatMap(c => c.addedPortfolios);
-  const senderLegAmount = legContributions.reduce(
-    (sum, c) => sum.plus(c.deltaAmount),
+  const allowedAssetHolders = legContributions.flatMap(c => c.allowedAssetHolders);
+  const senderLegCount = legContributions.reduce(
+    (sum, c) => sum.plus(c.senderLegCount),
     new BigNumber(0)
   );
   const offChainLegIndices = legContributions
@@ -784,10 +807,10 @@ export async function prepareStorage(
   const instructionInfo = executeInstructionInfo.unwrapOrDefault();
 
   return {
-    portfolios,
-    portfolioParams,
-    senderLegAmount,
-    totalLegAmount: new BigNumber(legs.length),
+    allowedAssetHolders,
+    assetHolderParams,
+    senderLegCount,
+    totalLegCount: new BigNumber(legs.length),
     signer,
     offChainLegIndices,
     instructionInfo,

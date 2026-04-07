@@ -28,7 +28,7 @@ import {
 } from '~/utils/conversion';
 
 export interface Storage {
-  assetHolders: (DefaultPortfolio | NumberedPortfolio)[];
+  allowedAssetHolders: AssetHolder[];
   offChainParties: Set<string>;
   instructionDetails: InstructionDetails;
   signerDid: string;
@@ -59,7 +59,7 @@ export async function prepareExecuteManualInstruction(
       },
     },
     context,
-    storage: { assetHolders, instructionDetails, signerDid, offChainParties },
+    storage: { allowedAssetHolders, instructionDetails, signerDid, offChainParties },
   } = this;
 
   const { id, skipAffirmationCheck } = args;
@@ -68,7 +68,7 @@ export async function prepareExecuteManualInstruction(
 
   await assertInstructionValidForManualExecution(instructionDetails, context);
 
-  if (!assetHolders.length) {
+  if (!allowedAssetHolders.length) {
     const details = await instructionDetails.venue?.details();
 
     if (details?.owner.did !== signerDid && !offChainParties.has(signerDid)) {
@@ -80,8 +80,11 @@ export async function prepareExecuteManualInstruction(
   }
 
   const rawInstructionId = bigNumberToU64(id, context);
-  const rawAssetHolders = assetHolders.map(portfolio =>
-    assetHolderIdToMeshAssetHolder(assetHolderLikeToAssetHolderId(portfolio), context)
+  const rawAssetHolders = await Promise.all(
+    allowedAssetHolders.map(
+      async assetHolder =>
+        await assetHolderIdToMeshAssetHolder(assetHolderLikeToAssetHolderId(assetHolder), context)
+    )
   );
 
   if (!skipAffirmationCheck) {
@@ -123,12 +126,15 @@ export function getAuthorization(
   this: Procedure<Params, Instruction, Storage>
 ): ProcedureAuthorization {
   const {
-    storage: { assetHolders: portfolios },
+    storage: { allowedAssetHolders },
   } = this;
 
   return {
     permissions: {
-      portfolios,
+      portfolios: allowedAssetHolders.filter(assetHolder => !(assetHolder instanceof Account)) as (
+        | DefaultPortfolio
+        | NumberedPortfolio
+      )[],
       transactions: [TxTags.settlement.ExecuteManualInstruction],
       assets: [],
     },
@@ -152,15 +158,17 @@ export async function prepareStorage(
     instruction.detailsFromChain(),
   ]);
 
-  const [portfolios, offChainParties] = await legs.reduce<
-    Promise<[(DefaultPortfolio | NumberedPortfolio)[], Set<string>]>
+  const [allowedAssetHolders, offChainParties] = await legs.reduce<
+    Promise<[AssetHolder[], Set<string>]>
   >(async (accPromise, leg) => {
-    const [custodiedPortfolios, offChainDids] = await accPromise;
+    const [allowedAssetHolders, offChainDids] = await accPromise;
 
-    const checkCustodiedPortfolio = async (
-      assetHolder: AssetHolder
-    ): Promise<DefaultPortfolio | NumberedPortfolio | null> => {
+    const isAssetHolderAllowed = async (assetHolder: AssetHolder): Promise<AssetHolder | null> => {
       if (assetHolder instanceof Account) {
+        const identity = await assetHolder.getIdentity();
+        if (identity?.did === did) {
+          return assetHolder;
+        }
         return null;
       }
 
@@ -171,6 +179,7 @@ export async function prepareStorage(
 
       return null;
     };
+
     if (isOffChainLeg(leg)) {
       const { from, to } = leg;
       offChainDids.add(from.did);
@@ -181,24 +190,24 @@ export async function prepareStorage(
       const toAssetHolder = assetHolderLikeToAssetHolder(to, context);
 
       const [fromPortfolio, toPortfolio] = await Promise.all([
-        checkCustodiedPortfolio(fromAssetHolder),
-        checkCustodiedPortfolio(toAssetHolder),
+        isAssetHolderAllowed(fromAssetHolder),
+        isAssetHolderAllowed(toAssetHolder),
       ]);
 
       if (fromPortfolio) {
-        custodiedPortfolios.push(fromPortfolio);
+        allowedAssetHolders.push(fromPortfolio);
       }
 
       if (toPortfolio) {
-        custodiedPortfolios.push(toPortfolio);
+        allowedAssetHolders.push(toPortfolio);
       }
     }
 
-    return tuple(custodiedPortfolios, offChainDids);
+    return tuple(allowedAssetHolders, offChainDids);
   }, Promise.resolve(tuple([], new Set<string>())));
 
   return {
-    assetHolders: portfolios,
+    allowedAssetHolders,
     instructionDetails: details,
     signerDid: did,
     offChainParties,
