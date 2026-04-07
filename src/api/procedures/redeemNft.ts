@@ -1,22 +1,24 @@
 import BigNumber from 'bignumber.js';
 
 import {
+  Account,
   DefaultPortfolio,
   NftCollection,
   NumberedPortfolio,
   PolymeshError,
   Procedure,
 } from '~/internal';
-import { ErrorCode, RedeemNftParams, TxTags } from '~/types';
+import { AssetHolder, ErrorCode, RedeemNftParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   assetHolderToAssetHolderKind,
   assetToMeshAssetId,
   bigNumberToU64,
 } from '~/utils/conversion';
+import { asAccount, toHumanReadable } from '~/utils/internal';
 
 export interface Storage {
-  fromPortfolio: DefaultPortfolio | NumberedPortfolio;
+  fromAssetHolder: AssetHolder;
 }
 
 /**
@@ -36,7 +38,7 @@ export async function prepareRedeemNft(
     context: {
       polymeshApi: { tx, query },
     },
-    storage: { fromPortfolio },
+    storage: { fromAssetHolder },
   } = this;
 
   const { collection, id } = args;
@@ -46,15 +48,15 @@ export async function prepareRedeemNft(
   const rawId = bigNumberToU64(id, context);
   const rawCollectionId = bigNumberToU64(collectionId, context);
 
-  const [[portfolioCollection], rawKeySet] = await Promise.all([
-    fromPortfolio.getCollections({ collections: [collection.id] }),
+  const [[assetHolderCollection], rawKeySet] = await Promise.all([
+    fromAssetHolder.getCollections({ collections: [collection.id] }),
     query.nft.collectionKeys(rawCollectionId),
   ]);
 
-  if (!portfolioCollection!.free.find(heldNft => heldNft.id.eq(id))) {
+  if (!assetHolderCollection!.free.find(heldNft => heldNft.id.eq(id))) {
     throw new PolymeshError({
       code: ErrorCode.InsufficientBalance,
-      message: 'Portfolio does not hold NFT to redeem',
+      message: 'Asset Holder does not hold NFT to redeem',
       data: {
         nftId: id.toString(),
       },
@@ -63,7 +65,12 @@ export async function prepareRedeemNft(
 
   return {
     transaction: tx.nft.redeemNft,
-    args: [rawAssetId, rawId, assetHolderToAssetHolderKind(fromPortfolio, context), rawKeySet.size],
+    args: [
+      rawAssetId,
+      rawId,
+      assetHolderToAssetHolderKind(fromAssetHolder, context),
+      rawKeySet.size,
+    ],
     resolver: undefined,
   };
 }
@@ -76,14 +83,14 @@ export function getAuthorization(
   { collection }: Params
 ): ProcedureAuthorization {
   const {
-    storage: { fromPortfolio },
+    storage: { fromAssetHolder },
   } = this;
 
   return {
     permissions: {
       transactions: [TxTags.nft.RedeemNft],
       assets: [collection],
-      portfolios: [fromPortfolio],
+      portfolios: fromAssetHolder instanceof Account ? [] : [fromAssetHolder],
     },
   };
 }
@@ -93,20 +100,32 @@ export function getAuthorization(
  */
 export async function prepareStorage(
   this: Procedure<Params, void, Storage>,
-  { from }: Params
+  { from, fromAccount }: Params
 ): Promise<Storage> {
   const { context } = this;
 
   const { did } = await context.getSigningIdentity();
 
-  if (!from) {
-    return { fromPortfolio: new DefaultPortfolio({ did }, context) };
+  let fromAssetHolder: AssetHolder;
+
+  if (from && fromAccount) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Only one of `from` or `fromAccount` can be provided to redeem',
+    });
+  }
+  if (fromAccount) {
+    fromAssetHolder = asAccount(fromAccount, context);
+  } else if (!from) {
+    fromAssetHolder = new DefaultPortfolio({ did }, context);
   } else if (from instanceof BigNumber) {
-    return { fromPortfolio: new NumberedPortfolio({ did, id: from }, context) };
+    fromAssetHolder = new NumberedPortfolio({ did, id: from }, context);
+  } else {
+    fromAssetHolder = from;
   }
 
   return {
-    fromPortfolio: from,
+    fromAssetHolder,
   };
 }
 

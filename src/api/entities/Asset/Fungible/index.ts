@@ -101,7 +101,6 @@ export class FungibleAsset extends BaseAsset {
     return optionize(middlewareEventDetailsToEventIdentifier)(asset?.createdBlock, asset?.eventIdx);
   }
 
-  // TODO @prashantasdeveloper add support for burning from account
   /**
    * Redeem (burn) an amount of this Asset's tokens
    */

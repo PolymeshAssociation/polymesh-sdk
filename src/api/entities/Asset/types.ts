@@ -142,7 +142,7 @@ export interface TransferBreakdown {
   /**
    * list of general transfer errors
    */
-  general: TransferError[];
+  general: (TransferError | string)[];
   /**
    * how the transfer adheres to the asset's compliance rules
    */
@@ -510,4 +510,10 @@ export interface TransferExemptKey {
 export interface TransferRestrictionExemption {
   identity: Identity;
   exemptKey: TransferExemptKey;
+}
+
+export enum NftOwnerStatus {
+  NotOwned = 'NotOwned',
+  Owner = 'Owner',
+  OwnerLocked = 'OwnerLocked',
 }

@@ -73,11 +73,12 @@ import {
   assetIdToString,
   balanceToBigNumber,
   bigNumberToU64,
+  dateToMoment,
   identityIdToString,
   instructionMemoToString,
   mediatorAffirmationStatusToStatus,
-  meshAccountHolderToAccountHolder,
   meshAffirmationStatusToAffirmationStatus,
+  meshAssetHolderToAssetHolder,
   meshInstructionStatusToInstructionStatus,
   meshNftToNftId,
   meshSettlementTypeToEndCondition,
@@ -645,7 +646,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     const data = entries.map(([{ args }, meshAffirmationStatus]) => {
       const [, rawAccountHolder] = args;
-      const accountHolder = meshAccountHolderToAccountHolder(rawAccountHolder, context);
+      const accountHolder = meshAssetHolderToAssetHolder(rawAccountHolder, context);
       const status = meshAffirmationStatusToAffirmationStatus(meshAffirmationStatus);
       if (accountHolder instanceof Account) {
         return {
@@ -709,8 +710,8 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
             const { sender, receiver, amount, assetId: rawAssetId } = legValue.asFungible;
 
             const assetId = assetIdToString(rawAssetId);
-            const from = meshAccountHolderToAccountHolder(sender, context);
-            const to = meshAccountHolderToAccountHolder(receiver, context);
+            const from = meshAssetHolderToAssetHolder(sender, context);
+            const to = meshAssetHolderToAssetHolder(receiver, context);
 
             return {
               from,
@@ -721,8 +722,8 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
           } else if (legValue.isNonFungible) {
             const { sender, receiver, nfts } = legValue.asNonFungible;
 
-            const from = meshAccountHolderToAccountHolder(sender, context);
-            const to = meshAccountHolderToAccountHolder(receiver, context);
+            const from = meshAssetHolderToAssetHolder(sender, context);
+            const to = meshAssetHolderToAssetHolder(receiver, context);
             const { assetId, ids } = meshNftToNftId(nfts);
 
             return {
@@ -1276,6 +1277,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     metadata?: string;
     signer?: string | Account;
     signerKeyRingType?: SignerKeyRingType;
+    expiresAt?: Date;
   }): Promise<OffChainAffirmationReceipt> {
     const {
       id,
@@ -1287,7 +1289,21 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       },
     } = this;
 
-    const { legId, uid, metadata, signer, signerKeyRingType = SignerKeyRingType.Sr25519 } = args;
+    const {
+      legId,
+      uid,
+      metadata,
+      signer,
+      signerKeyRingType = SignerKeyRingType.Sr25519,
+      expiresAt,
+    } = args;
+
+    if (!expiresAt && !context.isV7) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: '`expiresAt` is mandatory from chain 8.x',
+      });
+    }
 
     const rawId = bigNumberToU64(id, context);
     const rawLegId = bigNumberToU64(legId, context);
@@ -1314,17 +1330,35 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     const rawUid = bigNumberToU64(uid, context);
 
-    const payloadStrings = [
-      stringToHex('<Bytes>'),
-      rawUid.toHex(true),
-      rawId.toHex(true),
-      rawLegId.toHex(true),
-      senderIdentity.toHex(),
-      receiverIdentity.toHex(),
-      ticker.toHex(),
-      amount.toHex(true),
-      stringToHex('</Bytes>'),
-    ];
+    let payloadStrings: string[];
+
+    if (context.isV7) {
+      payloadStrings = [
+        stringToHex('<Bytes>'),
+        rawUid.toHex(true),
+        rawId.toHex(true),
+        rawLegId.toHex(true),
+        senderIdentity.toHex(),
+        receiverIdentity.toHex(),
+        ticker.toHex(),
+        amount.toHex(true),
+        stringToHex('</Bytes>'),
+      ];
+    } else {
+      payloadStrings = [
+        stringToHex('<Bytes>'),
+        rawUid.toHex(true),
+        stringToHex('Polymesh Settlement Receipt'),
+        dateToMoment(expiresAt!, context).toHex(),
+        rawId.toHex(true),
+        rawLegId.toHex(true),
+        senderIdentity.toHex(),
+        receiverIdentity.toHex(),
+        ticker.toHex(),
+        amount.toHex(true),
+        stringToHex('</Bytes>'),
+      ];
+    }
 
     const rawPayload = hexAddPrefix(payloadStrings.map(e => hexStripPrefix(e)).join(''));
 
