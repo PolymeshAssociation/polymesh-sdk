@@ -1,6 +1,7 @@
 import { hexAddPrefix, hexStripPrefix, stringToHex, u8aToHex } from '@polkadot/util';
 import { blake2AsU8a } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
+import { values } from 'lodash';
 
 import {
   getMissingAssetPermissions,
@@ -18,9 +19,12 @@ import {
   Authorizations,
   Context,
   Entity,
+  FungibleAsset,
   Identity,
   MultiSig,
   MultiSigProposal,
+  Nft,
+  NftCollection,
   PolymeshError,
   Staking,
 } from '~/internal';
@@ -28,12 +32,17 @@ import { extrinsicsByArgs } from '~/middleware/queries/extrinsics';
 import { ExtrinsicsOrderBy, Query } from '~/middleware/types';
 import {
   AccountBalance,
+  AccountCollection,
+  AssetHolderBalance,
   CheckPermissionsResult,
   ErrorCode,
   ExtrinsicData,
   MultiSigTx,
+  NftOwnerStatus,
   Permissions,
   PermissionType,
+  PortfolioBalance,
+  PortfolioCollection,
   ResultSet,
   SignerType,
   SimplePermissions,
@@ -47,7 +56,10 @@ import { ASSET_ID_PREFIX } from '~/utils/constants';
 import {
   accountIdToString,
   addressToKey,
+  assetIdToString,
+  balanceToBigNumber,
   extrinsicIdentifierToTxTag,
+  meshNftOwnerStatusToNftOwnerStatus,
   stringToAccountId,
   stringToHash,
   txTagToExtrinsicIdentifier,
@@ -56,6 +68,8 @@ import {
 } from '~/utils/conversion';
 import {
   areSameAccounts,
+  asAssetId,
+  asFungibleAsset,
   assertAddressValid,
   calculateNextKey,
   getIdentityFromKeyRecord,
@@ -654,5 +668,175 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     rawBytes[8] = (rawBytesEight & 0x3f) | 0x80;
 
     return hexToUuid(u8aToHex(rawBytes));
+  }
+
+  /**
+   * Retrieve the balances of all fungible assets in this Account
+   *
+   * @param args.assets - array of FungibleAssets (or tickers) for which to fetch balances (optional, all balances are retrieved if not passed)
+   */
+  public async getAssetBalances(args?: {
+    assets: (string | FungibleAsset)[];
+  }): Promise<AssetHolderBalance[]> {
+    const {
+      address,
+      context: {
+        polymeshApi: {
+          query: { asset },
+        },
+      },
+      context,
+    } = this;
+
+    const rawAccountId = stringToAccountId(address, context);
+    const [totalBalanceEntries, lockedBalanceEntries] = await Promise.all([
+      asset.assetBalance.entries(rawAccountId),
+      asset.lockedBalance.entries(rawAccountId),
+    ]);
+
+    const assetBalances: Record<string, AssetHolderBalance> = {};
+
+    totalBalanceEntries.forEach(([key, balance]) => {
+      const assetId = assetIdToString(key.args[1]);
+      const total = balanceToBigNumber(balance);
+
+      assetBalances[assetId] = {
+        asset: new FungibleAsset({ assetId }, context),
+        total,
+        locked: new BigNumber(0),
+        free: total,
+      };
+    });
+
+    lockedBalanceEntries.forEach(([key, balance]) => {
+      const assetId = assetIdToString(key.args[1]);
+      const locked = balanceToBigNumber(balance);
+
+      if (!locked.isZero()) {
+        const tickerBalance = assetBalances[assetId]!;
+
+        tickerBalance.locked = locked;
+        tickerBalance.free = assetBalances[assetId]!.total.minus(locked);
+      }
+    });
+
+    if (args?.assets.length) {
+      const filteredBalances: PortfolioBalance[] = [];
+      for (const asset of args.assets) {
+        const argAsset = await asFungibleAsset(asset, context);
+        const portfolioBalance = {
+          total: new BigNumber(0),
+          locked: new BigNumber(0),
+          free: new BigNumber(0),
+          asset: argAsset,
+        };
+
+        filteredBalances.push(assetBalances[argAsset.id] ?? portfolioBalance);
+      }
+
+      return filteredBalances;
+    }
+
+    return values(assetBalances);
+  }
+
+  /**
+   * Retrieve the NFTs held in this portfolio
+   *
+   *  @param args.collections - array of NftCollection (or tickers) for which to fetch holdings (optional, all holdings are retrieved if not passed)
+   */
+  public async getCollections(args?: {
+    collections: (string | NftCollection)[];
+  }): Promise<AccountCollection[]> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { nft },
+        },
+      },
+      address,
+      context,
+    } = this;
+
+    const rawAccountId = stringToAccountId(address, context);
+    const collectionEntries = await nft.nftHolder.entries(rawAccountId);
+
+    let queriedCollections: string[] | undefined;
+
+    if (args?.collections) {
+      queriedCollections = await Promise.all(
+        args.collections.map(asset => asAssetId(asset, context))
+      );
+    }
+
+    const seenAssetIds = new Set<string>();
+
+    const processCollectionEntry = (
+      collectionRecord: Record<string, Nft[]>,
+      entry: (typeof collectionEntries)[0],
+      status: NftOwnerStatus
+    ): Record<string, Nft[]> => {
+      const [
+        {
+          args: [, [rawAssetId, rawNftId]],
+        },
+        rawStatus,
+      ] = entry;
+
+      const ownerStatus = meshNftOwnerStatusToNftOwnerStatus(rawStatus);
+      const assetId = assetIdToString(rawAssetId);
+      const heldId = u64ToBigNumber(rawNftId);
+
+      if (queriedCollections && !queriedCollections.includes(assetId)) {
+        return collectionRecord;
+      }
+
+      if (ownerStatus !== status) {
+        return collectionRecord;
+      }
+
+      // if the user provided a filter arg, then ignore any asset not specified
+      if (!queriedCollections || queriedCollections.includes(assetId)) {
+        seenAssetIds.add(assetId);
+        const nft = new Nft({ id: heldId, assetId }, context);
+
+        if (!collectionRecord[assetId]) {
+          collectionRecord[assetId] = [nft];
+        } else {
+          collectionRecord[assetId]!.push(nft);
+        }
+      }
+
+      return collectionRecord;
+    };
+
+    const heldCollections: Record<string, Nft[]> = collectionEntries.reduce(
+      (collection, entry) => processCollectionEntry(collection, entry, NftOwnerStatus.Owner),
+      {}
+    );
+
+    const lockedCollections: Record<string, Nft[]> = collectionEntries.reduce(
+      (collection, entry) => processCollectionEntry(collection, entry, NftOwnerStatus.OwnerLocked),
+      {}
+    );
+
+    const collections: PortfolioCollection[] = [];
+    seenAssetIds.forEach(assetId => {
+      const held = heldCollections[assetId]!;
+      const locked = lockedCollections[assetId] || [];
+      // calculate free NFTs by filtering held NFTs by locked NFT IDs
+      const lockedIds = new Set(locked.map(({ id }) => id.toString()));
+      const free = held.filter(({ id }) => !lockedIds.has(id.toString()));
+      const total = new BigNumber(held.length);
+
+      collections.push({
+        collection: new NftCollection({ assetId }, context),
+        free,
+        locked,
+        total,
+      });
+    });
+
+    return collections;
   }
 }

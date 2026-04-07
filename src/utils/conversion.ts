@@ -64,6 +64,7 @@ import {
   PolymeshPrimitivesMemo,
   PolymeshPrimitivesMultisigProposalState,
   PolymeshPrimitivesNftNftMetadataAttribute,
+  PolymeshPrimitivesNftNftOwnerStatus,
   PolymeshPrimitivesNftNfTs,
   PolymeshPrimitivesPortfolioFund,
   PolymeshPrimitivesPosRatio,
@@ -260,6 +261,7 @@ import {
   ModuleName,
   MultiClaimCondition,
   NftMetadataInput,
+  NftOwnerStatus,
   NonFungiblePortfolioMovement,
   OffChainAffirmationReceipt,
   OffChainFundingReceipt,
@@ -788,14 +790,14 @@ export function meshPortfolioIdToPortfolio(
 /**
  * @hidden
  */
-export function meshAccountHolderToAccountHolder(
+export function meshAssetHolderToAssetHolder(
   rawAccountHolder: PolymeshPrimitivesAssetAssetHolder,
   context: Context
 ): Account | DefaultPortfolio | NumberedPortfolio {
-  if (rawAccountHolder.isAccount) {
-    return new Account({ address: rawAccountHolder.asAccount.toString() }, context);
+  if (rawAccountHolder.isPortfolio) {
+    return meshPortfolioIdToPortfolio(rawAccountHolder.asPortfolio, context);
   }
-  return meshPortfolioIdToPortfolio(rawAccountHolder.asPortfolio, context);
+  return new Account({ address: rawAccountHolder.asAccount.toString() }, context);
 }
 
 /**
@@ -844,6 +846,9 @@ export function portfolioLikeToPortfolioId(value: PortfolioLike): PortfolioId {
  */
 export function assetHolderLikeToAssetHolderId(value: AssetHolderLike): AssetHolderId {
   if (typeof value === 'string') {
+    if (hexHasPrefix(value)) {
+      return portfolioLikeToPortfolioId(value);
+    }
     return value;
   }
 
@@ -884,7 +889,7 @@ export function assetHolderLikeToAssetHolder(
   value: AssetHolderLike,
   context: Context
 ): Account | DefaultPortfolio | NumberedPortfolio {
-  if (typeof value === 'string') {
+  if (typeof value === 'string' && !hexHasPrefix(value)) {
     return new Account({ address: value }, context);
   }
 
@@ -912,18 +917,53 @@ export function portfolioIdToMeshPortfolioId(
 /**
  * @hidden
  */
-export function assetHolderIdToMeshAssetHolder(
+export async function assetHolderIdToMeshAssetHolder(
   assetHolderId: AssetHolderId,
   context: Context
-): PolymeshPrimitivesAssetAssetHolder {
+): Promise<PolymeshPrimitivesAssetAssetHolder> {
+  context;
   if (typeof assetHolderId === 'string') {
-    return context.createType('PolymeshPrimitivesAssetAssetHolder', {
-      Account: stringToAccountId(assetHolderId, context),
-    });
+    if (hexHasPrefix(assetHolderId)) {
+      if (context.isV7) {
+        return portfolioIdToMeshPortfolioId({ did: assetHolderId }, context) as any;
+      }
+      return context.createType<PolymeshPrimitivesAssetAssetHolder>(
+        'PolymeshPrimitivesAssetAssetHolder',
+        {
+          Portfolio: portfolioIdToMeshPortfolioId({ did: assetHolderId }, context),
+        }
+      );
+    }
+    if (context.isV7) {
+      const account = new Account({ address: assetHolderId }, context);
+      const identity = await account.getIdentity();
+      if (!identity) {
+        throw new PolymeshError({
+          code: ErrorCode.UnmetPrerequisite,
+          message: 'Invalid string value',
+        });
+      }
+      return context.createType('PolymeshPrimitivesIdentityIdPortfolioId', {
+        did: stringToIdentityId(identity.did, context),
+        kind: { AccountId: stringToAccountId(assetHolderId, context) },
+      }) as any;
+    }
+    return context.createType<PolymeshPrimitivesAssetAssetHolder>(
+      'PolymeshPrimitivesAssetAssetHolder',
+      {
+        Account: stringToAccountId(assetHolderId, context),
+      }
+    );
   }
-  return context.createType('PolymeshPrimitivesAssetAssetHolder', {
-    Portfolio: portfolioIdToMeshPortfolioId(assetHolderId, context),
-  });
+  if (context.isV7) {
+    return portfolioIdToMeshPortfolioId(assetHolderId, context) as any;
+  }
+  return context.createType<PolymeshPrimitivesAssetAssetHolder>(
+    'PolymeshPrimitivesAssetAssetHolder',
+    {
+      Portfolio: portfolioIdToMeshPortfolioId(assetHolderId, context),
+    }
+  );
 }
 /**
  * @hidden
@@ -948,12 +988,15 @@ export function assetHolderToAssetHolderKind(
   assetHolder: AssetHolder,
   context: Context
 ): PolymeshPrimitivesAssetAssetHolderKind {
-  if (assetHolder instanceof Account) {
-    if (context.isV7) {
-      return context.createType('PolymeshPrimitivesAssetAssetHolder', {
-        Account: stringToAccountId(assetHolder.address, context),
+  if (context.isV7) {
+    if (assetHolder instanceof Account) {
+      return context.createType('PolymeshPrimitivesIdentityIdPortfolioKind', {
+        AccountId: stringToAccountId(assetHolder.address, context),
       });
     }
+    return portfolioToPortfolioKind(assetHolder, context) as any;
+  }
+  if (assetHolder instanceof Account) {
     return context.createType('PolymeshPrimitivesAssetAssetHolder', 'Account');
   }
   if (assetHolder instanceof DefaultPortfolio) {
@@ -3102,7 +3145,7 @@ export function txTagToProtocolOp(
 ): PolymeshPrimitivesProtocolFeeProtocolOp {
   const protocolOpTags = [
     TxTags.asset.RegisterUniqueTicker,
-    TxTags.asset.RegisterUniqueTicker,
+    TxTags.asset.RegisterTicker,
     TxTags.asset.Issue,
     TxTags.asset.AddDocuments,
     TxTags.asset.CreateAsset,
@@ -3115,6 +3158,8 @@ export function txTagToProtocolOp(
     TxTags.pips.Propose,
     TxTags.corporateBallot.AttachBallot,
     TxTags.capitalDistribution.Distribute,
+    TxTags.nft.CreateNftCollection,
+    TxTags.nft.IssueNft,
   ];
 
   const [moduleName, extrinsicName] = tag.split('.');
@@ -3127,6 +3172,9 @@ export function txTagToProtocolOp(
     });
   }
 
+  if (context.isV7) {
+    return context.createType('PolymeshCommonUtilitiesProtocolFeeProtocolOp', value);
+  }
   return context.createType('PolymeshPrimitivesProtocolFeeProtocolOp', value);
 }
 
@@ -3640,6 +3688,12 @@ export function assetHolderIdsToBtreeSet(
   rawAssetHolderIds: PolymeshPrimitivesAssetAssetHolder[],
   context: Context
 ): BTreeSet<PolymeshPrimitivesAssetAssetHolder> {
+  if (context.isV7) {
+    return portfolioIdsToBtreeSet(
+      rawAssetHolderIds as unknown as PolymeshPrimitivesIdentityIdPortfolioId[],
+      context
+    ) as any;
+  }
   return context.createType(
     'BTreeSet<PolymeshPrimitivesAssetAssetHolder>',
     uniqWith(rawAssetHolderIds, isEqual)
@@ -3662,7 +3716,7 @@ export function identitiesSetToIdentities(
 export function assetDispatchErrorToTransferError(
   error: DispatchError,
   context: Context
-): TransferError {
+): TransferError | string {
   const {
     asset: assetErrors,
     portfolio: portfolioErrors,
@@ -3671,7 +3725,7 @@ export function assetDispatchErrorToTransferError(
 
   type ErrorCase = [IsError, TransferError];
 
-  const record: ErrorCase[] = [
+  let record: ErrorCase[] = [
     [assetErrors.NoSuchAsset, TransferError.AssetDoesNotExists],
     [assetErrors.InvalidGranularity, TransferError.InvalidGranularity],
     [assetErrors.SenderSameAsReceiver, TransferError.SelfTransfer],
@@ -3687,13 +3741,28 @@ export function assetDispatchErrorToTransferError(
     [assetErrors.InvalidTransfer, TransferError.ComplianceFailure],
     [statisticsError.InvalidTransferStatisticsFailure, TransferError.TransferNotAllowed],
   ];
+
+  if (context.isV7) {
+    record = [
+      ...record,
+      [
+        (portfolioErrors as any).InvalidTransferSenderIdMatchesReceiverId,
+        TransferError.SelfTransfer,
+      ],
+      [(assetErrors as any).InvalidTransferInvalidReceiverCDD, TransferError.InvalidReceiverCdd],
+      [(assetErrors as any).InvalidTransferInvalidSenderCDD, TransferError.InvalidSenderCdd],
+    ];
+  }
   if (error.isModule) {
     const moduleErr = error.asModule;
 
     const errorCase = record.find(([augmentedError]) => augmentedError.is(moduleErr));
-
     if (errorCase) {
       return errorCase[1];
+    } else {
+      // Extract the actual error details from the registry metadata:
+      const { section, name, docs } = moduleErr.registry.findMetaError(moduleErr);
+      return name;
     }
   }
 
@@ -6227,7 +6296,7 @@ export function transferReportToTransferBreakdown(
   transferRestrictionsReport: Result<Vec<TransferCondition>, DispatchError>,
   context: Context
 ): TransferBreakdown {
-  let general: TransferError[] = [];
+  let general: (TransferError | string)[] = [];
   let canTransfer = true;
 
   if (validateNftResult?.length) {
@@ -6422,4 +6491,31 @@ export function claimTypeInputToMiddlewareClaimTypeDetails(claimTypes?: TrustedF
   }
 
   return result;
+}
+
+/**
+ * @hidden
+ */
+export function meshNftOwnerStatusToNftOwnerStatus(
+  rawStatus: PolymeshPrimitivesNftNftOwnerStatus
+): NftOwnerStatus {
+  if (rawStatus.isNotOwned) {
+    return NftOwnerStatus.NotOwned;
+  }
+
+  if (rawStatus.isOwner) {
+    return NftOwnerStatus.Owner;
+  }
+
+  if (rawStatus.isOwnerLocked) {
+    return NftOwnerStatus.OwnerLocked;
+  }
+
+  throw new PolymeshError({
+    code: ErrorCode.UnexpectedError,
+    message: 'Unsupported Nft Owner Status. Please contact the Polymesh team',
+    data: {
+      rawStatus,
+    },
+  });
 }

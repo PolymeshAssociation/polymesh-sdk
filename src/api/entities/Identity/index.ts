@@ -671,8 +671,10 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     for (const portfolioIdChunk of portfolioIdChunks) {
       const auths = await Promise.all(
-        portfolioIdChunk.map(portfolioId =>
-          settlement.userAffirmations.entries(assetHolderIdToMeshAssetHolder(portfolioId, context))
+        portfolioIdChunk.map(async portfolioId =>
+          settlement.userAffirmations.entries(
+            await assetHolderIdToMeshAssetHolder(portfolioId, context)
+          )
         )
       );
 

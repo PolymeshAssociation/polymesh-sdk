@@ -1,4 +1,5 @@
 import { ISubmittableResult } from '@polkadot/types/types';
+import { hexHasPrefix } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import { isEqual } from 'lodash';
 
@@ -20,6 +21,7 @@ import {
 } from '~/internal';
 import {
   AssetHolderId,
+  AssetHolderLike,
   Authorization,
   AuthorizationType,
   Condition,
@@ -41,7 +43,12 @@ import {
   TransactionPermissions,
   TxTag,
 } from '~/types';
-import { assetIdToString, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
+import {
+  assetHolderLikeToAssetHolderId,
+  assetIdToString,
+  u32ToBigNumber,
+  u64ToBigNumber,
+} from '~/utils/conversion';
 import { asAsset, asIdentity, filterEventRecords } from '~/utils/internal';
 
 /**
@@ -176,7 +183,11 @@ export async function assertAssetHolderExists(
   assetHolderId: AssetHolderId,
   context: Context
 ): Promise<void> {
-  if (typeof assetHolderId !== 'string') {
+  if (typeof assetHolderId === 'string') {
+    if (hexHasPrefix(assetHolderId)) {
+      await assertPortfolioExists({ did: assetHolderId }, context);
+    }
+  } else {
     await assertPortfolioExists(assetHolderId, context);
   }
 }
@@ -807,5 +818,22 @@ export async function assertBallotRecordDateValid(
         startDate,
       },
     });
+  }
+}
+
+/**
+ * @hidden
+ */
+export async function getAssetHolderDid(
+  assetHolderLike: AssetHolderLike,
+  context: Context
+): Promise<string | undefined> {
+  const assetHolderId = assetHolderLikeToAssetHolderId(assetHolderLike);
+  if (typeof assetHolderId === 'string') {
+    const account = new Account({ address: assetHolderId }, context);
+    const identity = await account.getIdentity();
+    return identity?.did;
+  } else {
+    return assetHolderId.did;
   }
 }

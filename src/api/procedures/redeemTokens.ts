@@ -1,22 +1,24 @@
 import BigNumber from 'bignumber.js';
 
 import {
+  Account,
   DefaultPortfolio,
   FungibleAsset,
   NumberedPortfolio,
   PolymeshError,
   Procedure,
 } from '~/internal';
-import { ErrorCode, RedeemTokensParams, TxTags } from '~/types';
+import { AssetHolder, ErrorCode, RedeemTokensParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   assetHolderToAssetHolderKind,
   assetToMeshAssetId,
   bigNumberToBalance,
 } from '~/utils/conversion';
+import { asAccount } from '~/utils/internal';
 
 export interface Storage {
-  fromPortfolio: DefaultPortfolio | NumberedPortfolio;
+  fromAssetHolder: AssetHolder;
 }
 
 /**
@@ -36,7 +38,7 @@ export async function prepareRedeemTokens(
     context: {
       polymeshApi: { tx },
     },
-    storage: { fromPortfolio },
+    storage: { fromAssetHolder },
   } = this;
 
   const { asset, amount } = args;
@@ -44,7 +46,7 @@ export async function prepareRedeemTokens(
   const rawAssetId = assetToMeshAssetId(asset, context);
 
   const [[portfolioBalance], { isDivisible }] = await Promise.all([
-    fromPortfolio.getAssetBalances({ assets: [asset.id] }),
+    fromAssetHolder.getAssetBalances({ assets: [asset.id] }),
     asset.details(),
   ]);
 
@@ -62,7 +64,7 @@ export async function prepareRedeemTokens(
 
   return {
     transaction: tx.asset.redeem,
-    args: [rawAssetId, rawAmount, assetHolderToAssetHolderKind(fromPortfolio, context)],
+    args: [rawAssetId, rawAmount, assetHolderToAssetHolderKind(fromAssetHolder, context)],
     resolver: undefined,
   };
 }
@@ -75,14 +77,20 @@ export function getAuthorization(
   { asset, from }: Params
 ): ProcedureAuthorization {
   const {
-    storage: { fromPortfolio },
+    storage: { fromAssetHolder },
+    context,
   } = this;
+
+  let transaction = TxTags.asset.Redeem;
+  if (context.isV7 && from) {
+    transaction = TxTags.asset.RedeemFromPortfolio;
+  }
 
   return {
     permissions: {
-      transactions: [from ? TxTags.asset.RedeemFromPortfolio : TxTags.asset.Redeem],
+      transactions: [transaction],
       assets: [asset],
-      portfolios: [fromPortfolio],
+      portfolios: fromAssetHolder instanceof Account ? [] : [fromAssetHolder],
     },
   };
 }
@@ -92,24 +100,34 @@ export function getAuthorization(
  */
 export async function prepareStorage(
   this: Procedure<Params, void, Storage>,
-  { from }: Params
+  { from, fromAccount }: Params
 ): Promise<Storage> {
   const { context } = this;
 
   const { did } = await context.getSigningIdentity();
 
-  let fromPortfolio: DefaultPortfolio | NumberedPortfolio;
+  let fromAssetHolder: AssetHolder;
 
+  if (from && fromAccount) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Only one of `from` or `fromAccount` can be provided to redeem',
+    });
+  }
+
+  if (fromAccount) {
+    fromAssetHolder = asAccount(fromAccount, context);
+  }
   if (!from) {
-    fromPortfolio = new DefaultPortfolio({ did }, context);
+    fromAssetHolder = new DefaultPortfolio({ did }, context);
   } else if (from instanceof BigNumber) {
-    fromPortfolio = new NumberedPortfolio({ did, id: from }, context);
+    fromAssetHolder = new NumberedPortfolio({ did, id: from }, context);
   } else {
-    fromPortfolio = from;
+    fromAssetHolder = from;
   }
 
   return {
-    fromPortfolio,
+    fromAssetHolder,
   };
 }
 

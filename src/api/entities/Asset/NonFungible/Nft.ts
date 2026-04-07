@@ -1,10 +1,12 @@
 import BigNumber from 'bignumber.js';
 
-import { Context, Entity, NftCollection, PolymeshError, redeemNft } from '~/internal';
+import { Account, Context, Entity, NftCollection, PolymeshError, redeemNft } from '~/internal';
 import {
+  AssetHolder,
   DefaultPortfolio,
   ErrorCode,
   NftMetadata,
+  NftOwnerStatus,
   NumberedPortfolio,
   OptionalArgsProcedureMethod,
   RedeemNftParams,
@@ -20,9 +22,12 @@ import {
   bigNumberToU64,
   boolToBoolean,
   bytesToString,
+  meshAssetHolderToAssetHolder,
   meshMetadataKeyToMetadataKey,
+  meshNftOwnerStatusToNftOwnerStatus,
   meshPortfolioIdToPortfolio,
   portfolioToPortfolioId,
+  stringToAccountId,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
@@ -205,7 +210,7 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
    *
    * @note This method returns `null` if there is no existing holder for the token. This may happen even if the token has been redeemed/burned
    */
-  public async getOwner(): Promise<DefaultPortfolio | NumberedPortfolio | null> {
+  public async getOwner(): Promise<AssetHolder | null> {
     const {
       collection,
       id,
@@ -221,16 +226,13 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
 
     const rawNftId = bigNumberToU64(id, context);
 
-    const owner = await (context.isV7
-      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (nft as any).nftOwner(rawAssetId, rawNftId)
-      : nft.owner(rawAssetId, rawNftId));
+    const owner = await nft.owner(rawAssetId, rawNftId);
 
     if (owner.isEmpty) {
       return null;
     }
 
-    return meshPortfolioIdToPortfolio(owner.unwrap(), context);
+    return meshAssetHolderToAssetHolder(owner.unwrap(), context);
   }
 
   /**
@@ -244,7 +246,7 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
       id,
       context: {
         polymeshApi: {
-          query: { portfolio },
+          query: { portfolio, nft },
         },
       },
       context,
@@ -260,10 +262,19 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
     }
 
     const rawAssetId = assetToMeshAssetId(collection, context);
+    const rawNftId = bigNumberToU64(id, context);
+
+    if (owner instanceof Account) {
+      const rawLocked = await nft.nftHolder(stringToAccountId(owner.address, context), [
+        rawAssetId,
+        rawNftId,
+      ]);
+      return meshNftOwnerStatusToNftOwnerStatus(rawLocked) === NftOwnerStatus.OwnerLocked;
+    }
 
     const rawLocked = await portfolio.portfolioLockedNFT(portfolioToPortfolioId(owner), [
       rawAssetId,
-      bigNumberToU64(id, context),
+      rawNftId,
     ]);
 
     return boolToBoolean(rawLocked);

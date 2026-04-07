@@ -819,6 +819,13 @@ export interface IssueTokensParams {
    * portfolio to which the Asset tokens will be issued (optional, default is the default portfolio)
    */
   portfolioId?: BigNumber;
+
+  /**
+   * (optional) Account to which the Asset tokens will be issued
+   *
+   * @note only one of `portfolioId` or `account` can be provided. If both are not provided, assets are issued in default portfolio
+   */
+  account?: string;
 }
 
 export interface CreateAssetWithTickerParams extends CreateAssetParams {
@@ -1125,7 +1132,7 @@ export type RejectInstructionParams = {
   /**
    * (optional) Portfolio that the signer controls and wants to reject the instruction
    */
-  portfolio?: PortfolioLike;
+  portfolio?: AssetHolderLike;
 };
 
 export type WithdrawInstructionParams = {
@@ -1134,7 +1141,7 @@ export type WithdrawInstructionParams = {
    *
    * @note if empty, all the legs containing any custodied Portfolios of the signer will be affirmed/affirmation will be withdrawn, based on the operation.
    */
-  portfolios?: PortfolioLike[];
+  portfolios?: AssetHolderLike[];
 };
 
 export enum SignerKeyRingType {
@@ -1180,8 +1187,10 @@ export type AffirmInstructionParams = {
    * (optional) Portfolios that the signer controls and wants to affirm the instruction
    *
    * @note if empty, all the legs containing any custodied Portfolios of the signer will be affirmed
+   *
+   * TODO add comments
    */
-  portfolios?: PortfolioLike[];
+  portfolios?: AssetHolderLike[];
 
   /**
    * (optional) list of offchain receipts required for affirming offchain legs(if any) in the instruction
@@ -1248,6 +1257,11 @@ export interface ControllerTransferParams {
    * amount of Asset tokens to transfer
    */
   amount: BigNumber;
+
+  /**
+   * (optional) portfolio (or portfolio ID) or account to which Assets will be transferred to. Defaults to default. If specified it must be one of the callers own portfolios or accounts
+   */
+  destination?: AssetHolderLike;
 }
 
 // TODO @prashantasdeveloper add support of controller transfer from account
@@ -1350,15 +1364,33 @@ export interface RedeemTokensParams {
   amount: BigNumber;
   /**
    * portfolio (or portfolio ID) from which Assets will be redeemed (optional, defaults to the default Portfolio)
+   *
+   * @note either `from` or `fromAccount` must be provided
    */
   from?: BigNumber | DefaultPortfolio | NumberedPortfolio;
+
+  /**
+   * (optional) Account from which Assets will be redeemed
+   *
+   * @note either `from` or `fromAccount` must be provided
+   */
+  fromAccount?: string | Account;
 }
 
 export interface RedeemNftParams {
   /**
    * portfolio (or portfolio ID) from which Assets will be redeemed (optional, defaults to the default Portfolio)
+   *
+   * @note either `from` or `fromAccount` must be provided
    */
   from?: BigNumber | DefaultPortfolio | NumberedPortfolio;
+
+  /**
+   * (optional) Account from which Assets will be redeemed
+   *
+   * @note only one of `from` or `fromAccount` can be provided. If none are provided, defaults to the default Portfolio
+   */
+  fromAccount?: string | Account;
 }
 
 export interface TransferAssetOwnershipParams {

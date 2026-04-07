@@ -34,6 +34,8 @@ import {
   DividendDistributionDetails,
   ModuleName,
   OfferingDetails,
+  PortfolioBalance,
+  PortfolioCollection,
   Role,
   ScheduleDetails,
   SubsidyData,
@@ -830,6 +832,10 @@ export type AccountLike = string | Account;
 export type AssetHolderLike = AccountLike | PortfolioLike;
 
 export type AssetHolder = Account | NumberedPortfolio | DefaultPortfolio;
+
+export type AssetHolderBalance = PortfolioBalance;
+
+export type AccountCollection = PortfolioCollection;
 
 /**
  * Permissions to grant to a Signer over an Identity

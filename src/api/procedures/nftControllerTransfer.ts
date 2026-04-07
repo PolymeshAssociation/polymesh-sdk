@@ -1,7 +1,11 @@
 import BigNumber from 'bignumber.js';
 
-import { DefaultPortfolio, NftCollection, PolymeshError, Procedure } from '~/internal';
+import { getAssetHolderDid } from '~/api/procedures/utils';
+import { Account, DefaultPortfolio, NftCollection, PolymeshError, Procedure } from '~/internal';
 import {
+  AssetHolder,
+  AssetHolderId,
+  AssetHolderLike,
   ErrorCode,
   NftControllerTransferParams,
   NumberedPortfolio,
@@ -11,6 +15,8 @@ import {
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   assetHolderIdToMeshAssetHolder,
+  assetHolderLikeToAssetHolder,
+  assetHolderLikeToAssetHolderId,
   assetHolderToAssetHolderKind,
   nftToMeshNft,
   portfolioIdToPortfolio,
@@ -21,7 +27,7 @@ import { asNftId } from '~/utils/internal';
 
 export interface Storage {
   did: string;
-  destinationPortfolio: DefaultPortfolio | NumberedPortfolio;
+  destinationAssetHolder: AssetHolder;
 }
 
 /**
@@ -40,31 +46,32 @@ export async function prepareNftControllerTransfer(
     context: {
       polymeshApi: { tx },
     },
-    storage: { did, destinationPortfolio },
+    storage: { did, destinationAssetHolder },
     context,
   } = this;
   const { collection, originPortfolio, nfts: givenNfts } = args;
   const nftIds = givenNfts.map(nft => asNftId(nft));
 
-  const originPortfolioId = portfolioLikeToPortfolioId(originPortfolio);
+  const originHolderDid = await getAssetHolderDid(originPortfolio, context);
 
-  if (did === originPortfolioId.did) {
+  if (originPortfolio && did === originHolderDid) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'Controller transfers to self are not allowed',
     });
   }
 
-  if (did !== destinationPortfolio.owner.did) {
+  const destinationDid = await getAssetHolderDid(destinationAssetHolder, context);
+
+  if (did !== destinationDid) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: "Controller transfer must send to one of the signer's portfolios",
     });
   }
 
-  const fromPortfolio = portfolioIdToPortfolio(originPortfolioId, context);
-
-  const [heldCollection] = await fromPortfolio.getCollections({
+  const fromAssetHolder = assetHolderLikeToAssetHolder(originPortfolio, context);
+  const [heldCollection] = await fromAssetHolder.getCollections({
     collections: [collection],
   });
 
@@ -86,8 +93,11 @@ export async function prepareNftControllerTransfer(
     transaction: tx.nft.controllerTransfer,
     args: [
       rawNfts,
-      assetHolderIdToMeshAssetHolder(originPortfolioId, context),
-      assetHolderToAssetHolderKind(destinationPortfolio, context),
+      await assetHolderIdToMeshAssetHolder(
+        assetHolderLikeToAssetHolderId(fromAssetHolder),
+        context
+      ),
+      assetHolderToAssetHolderKind(destinationAssetHolder, context),
     ],
     resolver: undefined,
   };
@@ -101,17 +111,26 @@ export function getAuthorization(
   { collection }: Params
 ): ProcedureAuthorization {
   const {
-    storage: { destinationPortfolio },
+    storage: { destinationAssetHolder },
   } = this;
 
-  const portfolioId = portfolioToPortfolioId(destinationPortfolio);
+  if (destinationAssetHolder instanceof Account) {
+    return {
+      permissions: {
+        assets: [collection],
+        transactions: [TxTags.nft.ControllerTransfer],
+        portfolios: [],
+      },
+    };
+  }
+  const portfolioId = portfolioToPortfolioId(destinationAssetHolder);
 
   return {
     roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
     permissions: {
       assets: [collection],
       transactions: [TxTags.nft.ControllerTransfer],
-      portfolios: [destinationPortfolio],
+      portfolios: [destinationAssetHolder],
     },
   };
 }
@@ -121,20 +140,18 @@ export function getAuthorization(
  */
 export async function prepareStorage(
   this: Procedure<Params, void, Storage>,
-  { destinationPortfolio: givenPortfolio }: Params
+  { destinationPortfolio: givenAssetHolder }: Params
 ): Promise<Storage> {
   const { context } = this;
 
   const { did } = await context.getSigningIdentity();
-  const destinationPortfolioId = givenPortfolio
-    ? portfolioLikeToPortfolioId(givenPortfolio)
-    : portfolioLikeToPortfolioId({ identity: did, id: new BigNumber(0) });
-
-  const destinationPortfolio = portfolioIdToPortfolio(destinationPortfolioId, context);
+  const destinationAssetHolder = givenAssetHolder
+    ? assetHolderLikeToAssetHolder(givenAssetHolder, context)
+    : new DefaultPortfolio({ did }, context);
 
   return {
     did,
-    destinationPortfolio,
+    destinationAssetHolder,
   };
 }
 
