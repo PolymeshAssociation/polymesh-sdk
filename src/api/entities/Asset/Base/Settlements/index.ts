@@ -6,16 +6,23 @@ import {
 } from '@polymeshassociation/polymesh-types/polkadot/polymesh';
 import BigNumber from 'bignumber.js';
 
-import { assertAssetHolderExists } from '~/api/procedures/utils';
+import { assertAssetHolderExists, getAssetHolderDid } from '~/api/procedures/utils';
 import {
   BaseAsset,
   Context,
   FungibleAsset,
   Namespace,
   Nft,
+  PolymeshError,
   toggleAssetPreApproval,
 } from '~/internal';
-import { AssetHolderLike, NftCollection, NoArgsProcedureMethod, TransferBreakdown } from '~/types';
+import {
+  AssetHolderLike,
+  ErrorCode,
+  NftCollection,
+  NoArgsProcedureMethod,
+  TransferBreakdown,
+} from '~/types';
 import { isFungibleAsset } from '~/utils';
 import {
   assetHolderIdToMeshAssetHolder,
@@ -132,11 +139,19 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
     let complianceResult: Result<ComplianceReport, DispatchError>;
     let transferRestrictionsReport: Result<Vec<TransferCondition>, DispatchError>;
 
-    // TODO Confirm this case
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rawFromDid = stringToIdentityId((fromAccountHolderId as any).did, context);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rawToDid = stringToIdentityId((toAccountHolderId as any).did, context);
+    const [fromDid, toDid] = await Promise.all([
+      getAssetHolderDid(from, context),
+      getAssetHolderDid(to, context),
+    ]);
+
+    if (!fromDid || !toDid) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'No DID associated with either from or to account holder',
+      });
+    }
+    const rawFromDid = stringToIdentityId(fromDid, context);
+    const rawToDid = stringToIdentityId(toDid, context);
 
     if ('amount' in args) {
       amount = args.amount;

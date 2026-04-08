@@ -741,7 +741,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieve the NFTs held in this portfolio
+   * Retrieve the NFTs held in this Account
    *
    *  @param args.collections - array of NftCollection (or tickers) for which to fetch holdings (optional, all holdings are retrieved if not passed)
    */

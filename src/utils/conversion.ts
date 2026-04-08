@@ -997,13 +997,13 @@ export function assetHolderToAssetHolderKind(
     return portfolioToPortfolioKind(assetHolder, context) as any;
   }
   if (assetHolder instanceof Account) {
-    return context.createType('PolymeshPrimitivesAssetAssetHolder', 'Account');
+    return context.createType('PolymeshPrimitivesAssetAssetHolderKind', 'Account');
   }
   if (assetHolder instanceof DefaultPortfolio) {
-    return context.createType('PolymeshPrimitivesAssetAssetHolder', 'DefaultPortfolio');
+    return context.createType('PolymeshPrimitivesAssetAssetHolderKind', 'DefaultPortfolio');
   }
-  return context.createType('PolymeshPrimitivesAssetAssetHolder', {
-    UserPortfolio: portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(assetHolder), context),
+  return context.createType('PolymeshPrimitivesAssetAssetHolderKind', {
+    UserPortfolio: bigNumberToU64(assetHolder.id, context),
   });
 }
 
