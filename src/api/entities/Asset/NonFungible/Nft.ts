@@ -3,11 +3,9 @@ import BigNumber from 'bignumber.js';
 import { Account, Context, Entity, NftCollection, PolymeshError, redeemNft } from '~/internal';
 import {
   AssetHolder,
-  DefaultPortfolio,
   ErrorCode,
   NftMetadata,
   NftOwnerStatus,
-  NumberedPortfolio,
   OptionalArgsProcedureMethod,
   RedeemNftParams,
 } from '~/types';
@@ -25,7 +23,6 @@ import {
   meshAssetHolderToAssetHolder,
   meshMetadataKeyToMetadataKey,
   meshNftOwnerStatusToNftOwnerStatus,
-  meshPortfolioIdToPortfolio,
   portfolioToPortfolioId,
   stringToAccountId,
   u64ToBigNumber,
@@ -257,7 +254,7 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
     if (!owner) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
-        message: 'NFT does not exists. The token may have been redeemed',
+        message: 'NFT does not exist. The token may have been redeemed',
       });
     }
 
@@ -265,10 +262,11 @@ export class Nft extends Entity<NftUniqueIdentifiers, HumanReadable> {
     const rawNftId = bigNumberToU64(id, context);
 
     if (owner instanceof Account) {
-      const rawLocked = await nft.nftHolder(stringToAccountId(owner.address, context), [
+      const rawLocked = await nft.nftHolder(
+        stringToAccountId(owner.address, context),
         rawAssetId,
-        rawNftId,
-      ]);
+        rawNftId
+      );
       return meshNftOwnerStatusToNftOwnerStatus(rawLocked) === NftOwnerStatus.OwnerLocked;
     }
 

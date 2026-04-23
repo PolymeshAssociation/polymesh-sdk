@@ -25,10 +25,12 @@ export interface Storage {
 export const createChildIdentityResolver =
   (context: Context) =>
   (receipt: ISubmittableResult): ChildIdentity => {
-    const [record] = filterEventRecords(receipt, 'identity', 'ChildDidCreated');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [record] = filterEventRecords(receipt, 'identity' as any, 'ChildDidCreated');
 
     const { data } = record!;
-    const did = identityIdToString(data[1]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const did = identityIdToString(data[1] as any);
 
     return new ChildIdentity({ did }, context);
   };
@@ -39,7 +41,8 @@ export const createChildIdentityResolver =
 export async function prepareCreateChildIdentity(
   this: Procedure<CreateChildIdentityParams, ChildIdentity, Storage>,
   args: CreateChildIdentityParams
-): Promise<TransactionSpec<ChildIdentity, ExtrinsicParams<'identity', 'createChildIdentity'>>> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): Promise<TransactionSpec<ChildIdentity, ExtrinsicParams<'identity', any>>> {
   const {
     context: {
       polymeshApi: { tx, query },
@@ -49,6 +52,13 @@ export async function prepareCreateChildIdentity(
       identity: { did: signingDid },
     },
   } = this;
+
+  if (!context.isV7) {
+    throw new PolymeshError({
+      code: ErrorCode.NotSupported,
+      message: 'Child Identiteis are no longer supported in v8',
+    });
+  }
 
   const { secondaryKey } = args;
 
@@ -95,7 +105,8 @@ export async function prepareCreateChildIdentity(
   }
 
   return {
-    transaction: tx.identity.createChildIdentity,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    transaction: (tx.identity as any).createChildIdentity,
     args: [rawChildAccount],
     resolver: createChildIdentityResolver(context),
   };

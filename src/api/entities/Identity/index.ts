@@ -1,4 +1,4 @@
-import { Option, StorageKey, u64 } from '@polkadot/types';
+import { Option, StorageKey, u64, Vec } from '@polkadot/types';
 import { AccountId32 } from '@polkadot/types/interfaces';
 import {
   PolymeshPrimitivesIdentityDidRecord,
@@ -159,14 +159,18 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       const { owner } = await reservation.details();
 
       return owner ? this.isEqual(owner) : false;
-    } else if (context.isV7 && isCddProviderRole(role)) {
+    } else if (isCddProviderRole(role)) {
       const {
         polymeshApi: { query },
       } = context;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const activeMembers = await (query as any).cddServiceProviders.activeMembers();
-      const memberDids = activeMembers.map(identityIdToString);
+      const activeMembersStorage = context.isV7
+        ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (query as any).cddServiceProviders.activeMembers
+        : query.didRegistrars.activeMembers;
+
+      const rawMembers: Vec<PolymeshPrimitivesIdentityId> = await activeMembersStorage();
+      const memberDids = rawMembers.map(identityIdToString);
 
       return memberDids.includes(did);
     } else if (isVenueOwnerRole(role)) {
@@ -285,7 +289,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   /**
    * Check whether this Identity has a valid CDD claim
    *
-   * @deprecated
+   * @deprecated CDD claims are discontinued from chain v8. If invoked with a v8 chain, this returns true if DID exists
    */
   public async hasValidCdd(): Promise<boolean> {
     const {
@@ -296,12 +300,11 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       },
     } = this;
     const identityId = stringToIdentityId(did, context);
+
     if (!context.isV7) {
-      throw new PolymeshError({
-        code: ErrorCode.General,
-        message: 'CDD claims are discontinued from chain v8',
-      });
+      return this.exists();
     }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result = await (call.identityApi as any).isIdentityHasValidCdd(identityId, null);
     return cddStatusToBoolean(result);
@@ -336,15 +339,12 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       did,
     } = this;
 
-    if (context.isV7) {
-      throw new PolymeshError({
-        code: ErrorCode.General,
-        message: 'CDD providers are discontinued from chain v8',
-      });
-    }
+    const activeMembersStorage = context.isV7
+      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (query as any).cddServiceProviders.activeMembers
+      : query.didRegistrars.activeMembers;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const activeMembers = await (query as any).cddServiceProviders.activeMembers();
+    const activeMembers = await activeMembersStorage();
     return activeMembers.map(identityIdToString).includes(did);
   }
 
@@ -608,8 +608,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   public async getInstructions(): Promise<GroupedInstructions> {
     const { did, portfolios } = this;
 
-    const [ownedPortfolios, secondaryPermissionedAccounts] = await Promise.all([
+    const [ownedPortfolios, primaryAccount, secondaryPermissionedAccounts] = await Promise.all([
       portfolios.getPortfolios(),
+      this.getPrimaryAccount(),
       this.getSecondaryAccounts(),
     ]);
 
@@ -629,7 +630,12 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const secondaryAccounts = secondaryPermissionedAccounts.data.map(({ account }) => account);
 
-    const allHolders = [...ownedCustodiedPortfolios, ...custodiedPortfolios, ...secondaryAccounts];
+    const allHolders = [
+      ...ownedCustodiedPortfolios,
+      ...custodiedPortfolios,
+      primaryAccount.account,
+      ...secondaryAccounts,
+    ];
 
     const { affirmed, pending, failed } = await this.assembleGroupedInstructions(allHolders);
 
@@ -715,12 +721,17 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   public async getInvolvedInstructions(): Promise<GroupedInvolvedInstructions> {
     const { portfolios, did } = this;
 
-    const [allPortfolios, { data: custodiedPortfolios }, { data: secondaryPermissionedAccounts }] =
-      await Promise.all([
-        portfolios.getPortfolios(),
-        portfolios.getCustodiedPortfolios(),
-        this.getSecondaryAccounts(),
-      ]);
+    const [
+      allPortfolios,
+      { data: custodiedPortfolios },
+      primaryAccount,
+      { data: secondaryPermissionedAccounts },
+    ] = await Promise.all([
+      portfolios.getPortfolios(),
+      portfolios.getCustodiedPortfolios(),
+      this.getPrimaryAccount(),
+      this.getSecondaryAccounts(),
+    ]);
 
     const ownedPortfolios: (DefaultPortfolio | NumberedPortfolio)[] = [];
     const ownedCustodiedPortfolios: (DefaultPortfolio | NumberedPortfolio)[] = [];
@@ -762,7 +773,11 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     };
 
     const [owned, custodied] = await Promise.all([
-      this.assembleGroupedInstructions([...ownedPortfolios, ...secondaryAccounts]),
+      this.assembleGroupedInstructions([
+        ...ownedPortfolios,
+        primaryAccount.account,
+        ...secondaryAccounts,
+      ]),
       this.assembleGroupedInstructions([...ownedCustodiedPortfolios, ...custodiedPortfolios]),
     ]);
 
@@ -1051,6 +1066,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    * Returns the list of all child identities
    *
    * @note this query can be potentially **SLOW** depending on the number of parent Identities present on the chain
+   *
+   * @deprecated this method will be removed in the next version
    */
   public async getChildIdentities(): Promise<ChildIdentity[]> {
     const {
@@ -1063,7 +1080,15 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       did,
     } = this;
 
-    const rawEntries = await identity.parentDid.entries();
+    if (!context.isV7) {
+      throw new PolymeshError({
+        code: ErrorCode.NotSupported,
+        message: 'getChildIdentities is not supported in v8',
+      });
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rawEntries: any[] = await (identity as any).parentDid.entries();
 
     return rawEntries
       .filter(([, rawParentDid]) => identityIdToString(rawParentDid.unwrapOrDefault()) === did)

@@ -1213,9 +1213,7 @@ export type ModifyInstructionAffirmationParams = InstructionIdParams &
         operation: InstructionAffirmationOperation.Withdraw;
       } & WithdrawInstructionParams)
     | ({
-        operation:
-          | InstructionAffirmationOperation.Reject
-          | InstructionAffirmationOperation.RejectAsMediator;
+        operation: InstructionAffirmationOperation.Reject;
       } & RejectInstructionParams)
     | ({
         operation: InstructionAffirmationOperation.AffirmAsMediator;
@@ -1259,7 +1257,7 @@ export interface ControllerTransferParams {
   amount: BigNumber;
 
   /**
-   * (optional) portfolio (or portfolio ID) or account to which Assets will be transferred to. Defaults to default. If specified it must be one of the callers own portfolios or accounts
+   * (optional) portfolio (or portfolio ID) or account to which Assets will be transferred to. Defaults to default portfolio. If specified it must be one of the callers own portfolios or accounts
    */
   destination?: AssetHolderLike;
 }
@@ -1276,9 +1274,18 @@ export interface NftControllerTransferParams {
   nfts: (Nft | BigNumber)[];
 
   /**
-   * Optional portfolio (or portfolio ID) to which NFTs will be transferred to. Defaults to default. If specified it must be one of the callers own portfolios
+   * Optional portfolio (or portfolio ID) to which NFTs will be transferred to. Defaults to default portfolio. If specified it must be one of the callers own portfolios
+   *
+   * @deprecated in favour of `destination`. If both are passed `destination` will take precedence
    */
   destinationPortfolio?: PortfolioLike;
+
+  /**
+   * (optional) portfolio (or portfolio ID) or account to which Assets will be transferred to. Defaults to default portfolio. If specified it must be one of the callers own portfolios or accounts
+   *
+   * @note this takes precedence over `destinationPortfolio`
+   */
+  destination?: AssetHolderLike;
 }
 
 export type ModifyAssetParams =

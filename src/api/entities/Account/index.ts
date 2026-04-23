@@ -47,7 +47,6 @@ import {
   NftOwnerStatus,
   Permissions,
   PermissionType,
-  PortfolioBalance,
   PortfolioCollection,
   ResultSet,
   SignerType,
@@ -56,7 +55,7 @@ import {
   TxTag,
   UnsubCallback,
 } from '~/types';
-import { Ensured } from '~/types/utils';
+import { Ensured, tuple } from '~/types/utils';
 import { hexToUuid } from '~/utils';
 import { ASSET_ID_PREFIX } from '~/utils/constants';
 import {
@@ -67,6 +66,7 @@ import {
   extrinsicIdentifierToTxTag,
   meshNftOwnerStatusToNftOwnerStatus,
   stringToAccountId,
+  stringToAssetId,
   stringToHash,
   txTagToExtrinsicIdentifier,
   u32ToBigNumber,
@@ -695,6 +695,33 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     } = this;
 
     const rawAccountId = stringToAccountId(address, context);
+    if (args?.assets.length) {
+      const queriedAssets = await Promise.all(
+        args.assets.map(assetToQuery => asFungibleAsset(assetToQuery, context))
+      );
+
+      const multiParams = queriedAssets.map(({ id }) =>
+        tuple(rawAccountId, stringToAssetId(id, context))
+      );
+
+      const [totalBalances, lockedBalances] = await Promise.all([
+        asset.assetBalance.multi(multiParams),
+        asset.lockedBalance.multi(multiParams),
+      ]);
+
+      return queriedAssets.map((queriedAsset, index) => {
+        const total = balanceToBigNumber(totalBalances[index]!);
+        const locked = balanceToBigNumber(lockedBalances[index]!);
+
+        return {
+          asset: queriedAsset,
+          total,
+          locked,
+          free: total.minus(locked),
+        };
+      });
+    }
+
     const [totalBalanceEntries, lockedBalanceEntries] = await Promise.all([
       asset.assetBalance.entries(rawAccountId),
       asset.lockedBalance.entries(rawAccountId),
@@ -719,29 +746,12 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       const locked = balanceToBigNumber(balance);
 
       if (!locked.isZero()) {
-        const tickerBalance = assetBalances[assetId]!;
+        const assetBalance = assetBalances[assetId]!;
 
-        tickerBalance.locked = locked;
-        tickerBalance.free = assetBalances[assetId]!.total.minus(locked);
+        assetBalance.locked = locked;
+        assetBalance.free = assetBalances[assetId]!.total.minus(locked);
       }
     });
-
-    if (args?.assets.length) {
-      const filteredBalances: PortfolioBalance[] = [];
-      for (const requestedAsset of args.assets) {
-        const argAsset = await asFungibleAsset(requestedAsset, context);
-        const portfolioBalance = {
-          total: new BigNumber(0),
-          locked: new BigNumber(0),
-          free: new BigNumber(0),
-          asset: argAsset,
-        };
-
-        filteredBalances.push(assetBalances[argAsset.id] ?? portfolioBalance);
-      }
-
-      return filteredBalances;
-    }
 
     return values(assetBalances);
   }

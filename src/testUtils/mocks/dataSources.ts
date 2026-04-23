@@ -85,6 +85,8 @@ import {
   PalletStoFundraiserTier,
   PalletStoPriceTier,
   PolymeshPrimitivesAgentAgentGroup,
+  PolymeshPrimitivesAssetAssetHolder,
+  PolymeshPrimitivesAssetAssetHolderKind,
   PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesAssetAssetType,
   PolymeshPrimitivesAssetIdentifier,
@@ -1569,7 +1571,7 @@ export function createCallMock<
 
   type CallMock = Calls[ModuleName][CallName] & jest.Mock;
 
-  let mock: CallMock;
+  let mock: CallMock | undefined;
 
   // @ts-expect-error - this is a mock
   if (!runtimeModule[query]) {
@@ -1580,15 +1582,17 @@ export function createCallMock<
     updateCall();
   } else {
     const instance = mockInstanceContainer.apiInstance;
-    // @ts-expect-error - this is a mock
-    mock = instance.call[mod][query] as CallMock;
+    if (instance.call[mod]) {
+      // @ts-expect-error - this is a mock
+      mock = instance.call[mod][query] as CallMock;
+    }
   }
 
-  if (opts?.returnValue) {
+  if (opts?.returnValue && mock) {
     mock.mockResolvedValue(opts.returnValue);
   }
 
-  return mock;
+  return mock as any;
 }
 
 let count = 0;
@@ -2387,6 +2391,23 @@ export const createMockPortfolioId = (
     },
     !portfolioId
   );
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAssetHolder = (
+  assetHolder?:
+    | PolymeshPrimitivesAssetAssetHolder
+    | { Portfolio: PolymeshPrimitivesIdentityIdPortfolioId }
+    | { Account: AccountId }
+): MockCodec<PolymeshPrimitivesAssetAssetHolder> => {
+  if (isCodec<PolymeshPrimitivesAssetAssetHolder>(assetHolder)) {
+    return assetHolder as MockCodec<PolymeshPrimitivesAssetAssetHolder>;
+  }
+
+  return createMockEnum<PolymeshPrimitivesAssetAssetHolder>(assetHolder as any);
 };
 
 /**
@@ -3446,16 +3467,16 @@ export const createMockInstructionLeg = (
   leg?:
     | {
         Fungible: {
-          sender: PolymeshPrimitivesIdentityIdPortfolioId;
-          receiver: PolymeshPrimitivesIdentityIdPortfolioId;
+          sender: PolymeshPrimitivesAssetAssetHolder;
+          receiver: PolymeshPrimitivesAssetAssetHolder;
           assetId: PolymeshPrimitivesAssetAssetId;
           amount: Balance;
         };
       }
     | {
         NonFungible: {
-          sender: PolymeshPrimitivesIdentityIdPortfolioId;
-          receiver: PolymeshPrimitivesIdentityIdPortfolioId;
+          sender: PolymeshPrimitivesAssetAssetHolder;
+          receiver: PolymeshPrimitivesAssetAssetHolder;
           nfts: PolymeshPrimitivesNftNfTs;
         };
       }
