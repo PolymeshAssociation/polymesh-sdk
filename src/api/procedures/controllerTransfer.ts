@@ -1,11 +1,12 @@
 import { getAssetHolderDid } from '~/api/procedures/utils';
 import { DefaultPortfolio, FungibleAsset, PolymeshError, Procedure } from '~/internal';
-import { ControllerTransferParams, ErrorCode, RoleType, TxTags } from '~/types';
+import { AssetHolder, ControllerTransferParams, ErrorCode, RoleType, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   assetHolderIdToMeshAssetHolder,
   assetHolderLikeToAssetHolder,
   assetHolderLikeToAssetHolderId,
+  assetHolderToAssetHolderKind,
   assetToMeshAssetId,
   bigNumberToBalance,
   portfolioIdToPortfolio,
@@ -14,6 +15,7 @@ import {
 
 export interface Storage {
   did: string;
+  destinationAssetHolder: AssetHolder;
 }
 
 /**
@@ -32,10 +34,10 @@ export async function prepareControllerTransfer(
     context: {
       polymeshApi: { tx },
     },
-    storage: { did },
+    storage: { did, destinationAssetHolder },
     context,
   } = this;
-  const { asset, originPortfolio, amount } = args;
+  const { asset, originPortfolio, amount, destination } = args;
 
   const originAssetHolderId = assetHolderLikeToAssetHolderId(originPortfolio);
 
@@ -45,6 +47,15 @@ export async function prepareControllerTransfer(
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'Controller transfers to self are not allowed',
+    });
+  }
+
+  const destinationDid = await getAssetHolderDid(destinationAssetHolder, context);
+
+  if (did !== destinationDid) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: "Controller transfer must send to one of the signer's portfolios or accounts",
     });
   }
 
@@ -72,6 +83,7 @@ export async function prepareControllerTransfer(
       rawAssetId,
       bigNumberToBalance(amount, context),
       await assetHolderIdToMeshAssetHolder(originAssetHolderId, context),
+      assetHolderToAssetHolderKind(destinationAssetHolder, context),
     ],
     resolver: undefined,
   };
@@ -104,13 +116,20 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export async function prepareStorage(this: Procedure<Params, void, Storage>): Promise<Storage> {
+export async function prepareStorage(
+  this: Procedure<Params, void, Storage>,
+  { destination }: Params
+): Promise<Storage> {
   const { context } = this;
 
   const { did } = await context.getSigningIdentity();
+  const destinationAssetHolder = destination
+    ? assetHolderLikeToAssetHolder(destination, context)
+    : new DefaultPortfolio({ did }, context);
 
   return {
     did,
+    destinationAssetHolder,
   };
 }
 

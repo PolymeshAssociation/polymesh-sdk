@@ -24,10 +24,12 @@ export interface Storage {
 export const createChildIdentityResolver =
   (context: Context) =>
   (receipt: ISubmittableResult): ChildIdentity[] => {
-    const childDids = filterEventRecords(receipt, 'identity', 'ChildDidCreated');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const childDids = filterEventRecords(receipt, 'identity' as any, 'ChildDidCreated');
 
     return childDids.map(
-      ({ data }) => new ChildIdentity({ did: identityIdToString(data[1]) }, context)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ({ data }) => new ChildIdentity({ did: identityIdToString(data[1] as any) }, context)
     );
   };
 
@@ -37,7 +39,8 @@ export const createChildIdentityResolver =
 export async function prepareCreateChildIdentities(
   this: Procedure<CreateChildIdentitiesParams, ChildIdentity[], Storage>,
   args: CreateChildIdentitiesParams
-): Promise<TransactionSpec<ChildIdentity[], ExtrinsicParams<'identity', 'createChildIdentities'>>> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): Promise<TransactionSpec<ChildIdentity[], ExtrinsicParams<'identity', any>>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -47,6 +50,13 @@ export async function prepareCreateChildIdentities(
       identity: { did: signingDid },
     },
   } = this;
+
+  if (context.isV7) {
+    throw new PolymeshError({
+      code: ErrorCode.NotSupported,
+      message: 'Child Identities are no longer supported in v8',
+    });
+  }
 
   const { childKeyAuths, expiresAt } = args;
 
@@ -85,7 +95,8 @@ export async function prepareCreateChildIdentities(
   const rawExpiry = dateToMoment(expiresAt, context);
 
   return {
-    transaction: tx.identity.createChildIdentities,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    transaction: (tx.identity as any).createChildIdentities,
     args: [childKeysWithAuthToCreateChildIdentitiesWithAuth(childKeyAuths, context), rawExpiry],
     resolver: createChildIdentityResolver(context),
   };

@@ -1,3 +1,9 @@
+import { StorageKey, u64 } from '@polkadot/types';
+import { AccountId32 } from '@polkadot/types/interfaces';
+import {
+  PolymeshPrimitivesAssetAssetId,
+  PolymeshPrimitivesNftNftOwnerStatus,
+} from '@polkadot/types/lookup';
 import { hexAddPrefix, hexStripPrefix, stringToHex, u8aToHex } from '@polkadot/util';
 import { blake2AsU8a } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
@@ -41,7 +47,6 @@ import {
   NftOwnerStatus,
   Permissions,
   PermissionType,
-  PortfolioBalance,
   PortfolioCollection,
   ResultSet,
   SignerType,
@@ -50,7 +55,7 @@ import {
   TxTag,
   UnsubCallback,
 } from '~/types';
-import { Ensured } from '~/types/utils';
+import { Ensured, tuple } from '~/types/utils';
 import { hexToUuid } from '~/utils';
 import { ASSET_ID_PREFIX } from '~/utils/constants';
 import {
@@ -61,6 +66,7 @@ import {
   extrinsicIdentifierToTxTag,
   meshNftOwnerStatusToNftOwnerStatus,
   stringToAccountId,
+  stringToAssetId,
   stringToHash,
   txTagToExtrinsicIdentifier,
   u32ToBigNumber,
@@ -689,6 +695,33 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     } = this;
 
     const rawAccountId = stringToAccountId(address, context);
+    if (args?.assets.length) {
+      const queriedAssets = await Promise.all(
+        args.assets.map(assetToQuery => asFungibleAsset(assetToQuery, context))
+      );
+
+      const multiParams = queriedAssets.map(({ id }) =>
+        tuple(rawAccountId, stringToAssetId(id, context))
+      );
+
+      const [totalBalances, lockedBalances] = await Promise.all([
+        asset.assetBalance.multi(multiParams),
+        asset.lockedBalance.multi(multiParams),
+      ]);
+
+      return queriedAssets.map((queriedAsset, index) => {
+        const total = balanceToBigNumber(totalBalances[index]!);
+        const locked = balanceToBigNumber(lockedBalances[index]!);
+
+        return {
+          asset: queriedAsset,
+          total,
+          locked,
+          free: total.minus(locked),
+        };
+      });
+    }
+
     const [totalBalanceEntries, lockedBalanceEntries] = await Promise.all([
       asset.assetBalance.entries(rawAccountId),
       asset.lockedBalance.entries(rawAccountId),
@@ -713,29 +746,12 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       const locked = balanceToBigNumber(balance);
 
       if (!locked.isZero()) {
-        const tickerBalance = assetBalances[assetId]!;
+        const assetBalance = assetBalances[assetId]!;
 
-        tickerBalance.locked = locked;
-        tickerBalance.free = assetBalances[assetId]!.total.minus(locked);
+        assetBalance.locked = locked;
+        assetBalance.free = assetBalances[assetId]!.total.minus(locked);
       }
     });
-
-    if (args?.assets.length) {
-      const filteredBalances: PortfolioBalance[] = [];
-      for (const asset of args.assets) {
-        const argAsset = await asFungibleAsset(asset, context);
-        const portfolioBalance = {
-          total: new BigNumber(0),
-          locked: new BigNumber(0),
-          free: new BigNumber(0),
-          asset: argAsset,
-        };
-
-        filteredBalances.push(assetBalances[argAsset.id] ?? portfolioBalance);
-      }
-
-      return filteredBalances;
-    }
 
     return values(assetBalances);
   }
@@ -758,8 +774,13 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
+    if (context.isV7) {
+      throw new PolymeshError({
+        code: ErrorCode.NotSupported,
+        message: 'Account.getCollections is not supported for chain 7.x',
+      });
+    }
     const rawAccountId = stringToAccountId(address, context);
-    const collectionEntries = await nft.nftHolder.entries(rawAccountId);
 
     let queriedCollections: string[] | undefined;
 
@@ -768,6 +789,25 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         args.collections.map(asset => asAssetId(asset, context))
       );
     }
+
+    const collectionEntries = queriedCollections
+      ? (
+          await Promise.all(
+            queriedCollections.map(assetId => nft.nftHolder.entries(rawAccountId, assetId))
+          )
+        ).flat()
+      : await (
+          nft.nftHolder as unknown as {
+            entries: (
+              arg1: AccountId32 | string | Uint8Array
+            ) => Promise<
+              [
+                StorageKey<[AccountId32, PolymeshPrimitivesAssetAssetId, u64]>,
+                PolymeshPrimitivesNftNftOwnerStatus
+              ][]
+            >;
+          }
+        ).entries(rawAccountId);
 
     const seenAssetIds = new Set<string>();
 
@@ -778,33 +818,25 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     ): Record<string, Nft[]> => {
       const [
         {
-          args: [, [rawAssetId, rawNftId]],
+          args: [, rawAssetId, rawNftId],
         },
         rawStatus,
       ] = entry;
-
       const ownerStatus = meshNftOwnerStatusToNftOwnerStatus(rawStatus);
       const assetId = assetIdToString(rawAssetId);
       const heldId = u64ToBigNumber(rawNftId);
-
-      if (queriedCollections && !queriedCollections.includes(assetId)) {
-        return collectionRecord;
-      }
 
       if (ownerStatus !== status) {
         return collectionRecord;
       }
 
-      // if the user provided a filter arg, then ignore any asset not specified
-      if (!queriedCollections || queriedCollections.includes(assetId)) {
-        seenAssetIds.add(assetId);
-        const nft = new Nft({ id: heldId, assetId }, context);
+      seenAssetIds.add(assetId);
+      const heldNft = new Nft({ id: heldId, assetId }, context);
 
-        if (!collectionRecord[assetId]) {
-          collectionRecord[assetId] = [nft];
-        } else {
-          collectionRecord[assetId]!.push(nft);
-        }
+      if (!collectionRecord[assetId]) {
+        collectionRecord[assetId] = [heldNft];
+      } else {
+        collectionRecord[assetId]!.push(heldNft);
       }
 
       return collectionRecord;

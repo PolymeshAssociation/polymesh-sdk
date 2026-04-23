@@ -1,5 +1,5 @@
 overwrite: true
-schema: 'https://dev.polymesh.tech/playground/testnet'
+schema: 'http://localhost:3001'
 generates:
   ./src/middleware/types.ts:
     plugins:

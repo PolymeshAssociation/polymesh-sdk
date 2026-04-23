@@ -11,7 +11,12 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { flatten, isEqual, union, unionWith } from 'lodash';
 
-import { assertAssetHolderExists, assertValidCdd, assertVenueExists } from '~/api/procedures/utils';
+import {
+  assertAssetHolderExists,
+  assertValidCdd,
+  assertVenueExists,
+  getAssetHolderDid,
+} from '~/api/procedures/utils';
 import {
   Account,
   BaseAsset,
@@ -86,7 +91,7 @@ export type Params = AddInstructionsParams & {
  * @hidden
  */
 export interface Storage {
-  assetHoldersToAffirm: (DefaultPortfolio | NumberedPortfolio | Account)[][];
+  assetHoldersToAffirm: AssetHolder[][];
 }
 
 /**
@@ -158,14 +163,15 @@ function checkAllErrorsAreEmpty(errors: ErrIndexes): boolean {
   );
 }
 
-/**
- * @hidden
- */
-async function mapFungibleLeg(
-  leg: InstructionFungibleLeg,
+async function getRawLegDetails(
+  leg: InstructionFungibleLeg | InstructionNftLeg,
   context: Context
-): Promise<PolymeshPrimitivesSettlementLeg> {
-  const { from, to, amount, asset } = leg;
+): Promise<{
+  sender: PolymeshPrimitivesAssetAssetHolder;
+  receiver: PolymeshPrimitivesAssetAssetHolder;
+  baseAsset: BaseAsset;
+}> {
+  const { from, to, asset } = leg;
   const fromId = assetHolderLikeToAssetHolderId(from);
   const toId = assetHolderLikeToAssetHolderId(to);
 
@@ -175,24 +181,52 @@ async function mapFungibleLeg(
   ];
 
   if (context.isV7) {
-    if (typeof fromId !== 'string') {
-      assertPromises.push(assertValidCdd(fromId.did, context));
+    const [fromDid, toDid] = await Promise.all([
+      getAssetHolderDid(from, context),
+      getAssetHolderDid(to, context),
+    ]);
+
+    if (!fromDid) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'From Asset Holder does not exist',
+      });
     }
-    if (typeof toId !== 'string') {
-      assertPromises.push(assertValidCdd(toId.did, context));
+    if (!toDid) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'To Asset Holder does not exist',
+      });
     }
+    assertPromises.push(assertValidCdd(fromDid, context));
+    assertPromises.push(assertValidCdd(toDid, context));
   }
   await Promise.all(assertPromises);
 
-  const rawSender = await assetHolderIdToMeshAssetHolder(fromId, context);
-  const rawReceiver = await assetHolderIdToMeshAssetHolder(toId, context);
+  const sender = await assetHolderIdToMeshAssetHolder(fromId, context);
+  const receiver = await assetHolderIdToMeshAssetHolder(toId, context);
 
-  const assetId = await asAssetId(asset, context);
+  const baseAsset = await asBaseAsset(asset, context);
+
+  return { sender, receiver, baseAsset };
+}
+
+/**
+ * @hidden
+ */
+async function mapFungibleLeg(
+  leg: InstructionFungibleLeg,
+  context: Context
+): Promise<PolymeshPrimitivesSettlementLeg> {
+  const { amount } = leg;
+  const { sender, receiver, baseAsset } = await getRawLegDetails(leg, context);
+
+  const assetId = stringToAssetId(baseAsset.id, context);
   const rawLeg = legToFungibleLeg(
     {
-      sender: rawSender,
-      receiver: rawReceiver,
-      assetId: stringToAssetId(assetId, context),
+      sender,
+      receiver,
+      assetId,
       amount: bigNumberToBalance(amount, context),
     },
     context
@@ -207,34 +241,12 @@ async function mapNftLeg(
   leg: InstructionNftLeg,
   context: Context
 ): Promise<PolymeshPrimitivesSettlementLeg> {
-  const { from, to, nfts, asset } = leg;
-  const fromId = assetHolderLikeToAssetHolderId(from);
-  const toId = assetHolderLikeToAssetHolderId(to);
-
-  const assertPromises = [
-    assertAssetHolderExists(fromId, context),
-    assertAssetHolderExists(toId, context),
-  ];
-
-  if (context.isV7) {
-    if (typeof fromId !== 'string') {
-      assertPromises.push(assertValidCdd(fromId.did, context));
-    }
-    if (typeof toId !== 'string') {
-      assertPromises.push(assertValidCdd(toId.did, context));
-    }
-  }
-  await Promise.all(assertPromises);
-
-  const rawSender = await assetHolderIdToMeshAssetHolder(fromId, context);
-  const rawReceiver = await assetHolderIdToMeshAssetHolder(toId, context);
-
-  const baseAsset = await asBaseAsset(asset, context);
+  const { sender, receiver, baseAsset } = await getRawLegDetails(leg, context);
   const rawLeg = legToNonFungibleLeg(
     {
-      sender: rawSender,
-      receiver: rawReceiver,
-      nfts: nftToMeshNft(baseAsset, nfts, context),
+      sender,
+      receiver,
+      nfts: nftToMeshNft(baseAsset, leg.nfts, context),
     },
     context
   );
@@ -592,21 +604,16 @@ async function validateInstruction(
     errors.legAmountErrIndexes = [index];
   }
 
-  const sameSenderReceiver = legs.filter(leg => {
+  const sameSenderReceiver = legs.filter(async leg => {
     if (isOffChainLeg(leg)) {
       return asDid(leg.from) === asDid(leg.to);
     } else {
       const { from, to } = leg;
-      const fromId = assetHolderLikeToAssetHolderId(from);
-      const toId = assetHolderLikeToAssetHolderId(to);
-
-      if (typeof fromId === 'string' && typeof toId === 'string') {
-        return fromId === toId;
-      }
-      if (typeof fromId !== typeof toId) {
-        return false;
-      }
-      return (fromId as PortfolioId).did === (toId as PortfolioId).did;
+      const [fromDid, toDid] = await Promise.all([
+        getAssetHolderDid(from, context),
+        getAssetHolderDid(to, context),
+      ]);
+      return fromDid === toDid;
     }
   });
 
@@ -626,11 +633,6 @@ async function validateInstruction(
  */
 function buildInstructionParams(
   instruction: AddInstructionParams,
-  legs: {
-    fungibleLegs: InstructionFungibleLeg[];
-    nftLegs: InstructionNftLeg[];
-    offChainLegs: InstructionOffChainLeg[];
-  },
   endCondition: InstructionEndCondition,
   venueId: BigNumber | undefined,
   context: Context
@@ -722,7 +724,7 @@ async function getTxArgsAndErrors(
     }
 
     if (checkAllErrorsAreEmpty(errIndexes)) {
-      const baseParams = buildInstructionParams(instruction, legs, endCondition, venueId, context);
+      const baseParams = buildInstructionParams(instruction, endCondition, venueId, context);
 
       const rawLegValues = await Promise.all([
         ...legs.fungibleLegs.map(async leg => await mapFungibleLeg(leg, context)),
@@ -891,11 +893,11 @@ export async function prepareStorage(
 
   const identity = await context.getSigningIdentity();
 
-  const checkCustodiedPortfolio = async (
+  const checkIfAssetHolderCanBeAffirmed = async (
     assetHolder: AssetHolder
-  ): Promise<DefaultPortfolio | NumberedPortfolio | null> => {
+  ): Promise<AssetHolder | null> => {
     if (assetHolder instanceof Account) {
-      return null;
+      return assetHolder.address === context.getSigningAddress() ? null : assetHolder;
     }
 
     const isCustodied = await assetHolder.isCustodiedBy({ identity });
@@ -906,7 +908,7 @@ export async function prepareStorage(
     return null;
   };
 
-  const portfoliosToAffirm = await Promise.all(
+  const assetHoldersToAffirm = await Promise.all(
     instructions.map(async ({ legs }) => {
       const portfolios = await Promise.all(
         legs.map(async leg => {
@@ -916,17 +918,17 @@ export async function prepareStorage(
             const fromAssetHolder = assetHolderLikeToAssetHolder(from, context);
             const toAssetHolder = assetHolderLikeToAssetHolder(to, context);
 
-            const [fromPortfolio, toPortfolio] = await Promise.all([
-              checkCustodiedPortfolio(fromAssetHolder),
-              checkCustodiedPortfolio(toAssetHolder),
+            const [fromHolder, toHolder] = await Promise.all([
+              checkIfAssetHolderCanBeAffirmed(fromAssetHolder),
+              checkIfAssetHolderCanBeAffirmed(toAssetHolder),
             ]);
 
-            if (fromPortfolio) {
-              result.push(fromPortfolio);
+            if (fromHolder) {
+              result.push(fromHolder);
             }
 
-            if (toPortfolio) {
-              result.push(toPortfolio);
+            if (toHolder) {
+              result.push(toHolder);
             }
           }
           return result;
@@ -937,7 +939,7 @@ export async function prepareStorage(
   );
 
   return {
-    assetHoldersToAffirm: portfoliosToAffirm,
+    assetHoldersToAffirm,
   };
 }
 

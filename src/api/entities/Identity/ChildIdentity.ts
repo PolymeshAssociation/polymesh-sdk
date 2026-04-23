@@ -1,7 +1,7 @@
 import { UniqueIdentifiers } from '~/api/entities/Identity';
 import { unlinkChildIdentity } from '~/api/procedures/unlinkChildIdentity';
-import { Context, Identity } from '~/internal';
-import { NoArgsProcedureMethod } from '~/types';
+import { Context, Identity, PolymeshError } from '~/internal';
+import { ErrorCode, NoArgsProcedureMethod } from '~/types';
 import { identityIdToString, stringToIdentityId } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
@@ -26,6 +26,8 @@ export class ChildIdentity extends Identity {
 
   /**
    * Returns the parent of this Identity (if any)
+   *
+   * @deprecated this method will be removed in the next version
    */
   public async getParentDid(): Promise<Identity | null> {
     const {
@@ -38,8 +40,16 @@ export class ChildIdentity extends Identity {
       did,
     } = this;
 
+    if (!context.isV7) {
+      throw new PolymeshError({
+        code: ErrorCode.NotSupported,
+        message: 'getParentDid is not supported in v8',
+      });
+    }
+
     const rawIdentityId = stringToIdentityId(did, context);
-    const rawParentDid = await identity.parentDid(rawIdentityId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rawParentDid = await (identity as any).parentDid(rawIdentityId);
 
     if (rawParentDid.isEmpty) {
       return null;

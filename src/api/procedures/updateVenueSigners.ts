@@ -4,6 +4,7 @@ import { PolymeshError, Procedure, Venue } from '~/internal';
 import { ErrorCode, RoleType, TxTags, UpdateVenueSignersParams } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
+  addressesToBtreeSet,
   bigNumberToU64,
   booleanToBool,
   stringToAccountId,
@@ -76,13 +77,15 @@ export async function prepareUpdateVenueSigners(
     }
   }
 
+  let accountArgs = addressesToBtreeSet(signerParams, context);
+  if (context.isV7) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    accountArgs = signerParams.map(signer => stringToAccountId(signer, context)) as any;
+  }
+
   return {
     transaction: settlement.updateVenueSigners,
-    args: [
-      bigNumberToU64(venue.id, context),
-      signerParams.map(signer => stringToAccountId(signer, context)),
-      booleanToBool(addSigners, context),
-    ],
+    args: [bigNumberToU64(venue.id, context), accountArgs, booleanToBool(addSigners, context)],
     resolver: undefined,
   };
 }

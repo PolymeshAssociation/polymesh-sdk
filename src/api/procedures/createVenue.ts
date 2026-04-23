@@ -4,6 +4,7 @@ import { Context, PolymeshError, Procedure, Venue } from '~/internal';
 import { CreateVenueParams, ErrorCode, TxTags } from '~/types';
 import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import {
+  addressesToBtreeSet,
   stringToAccountId,
   stringToBytes,
   u32ToBigNumber,
@@ -59,13 +60,16 @@ export function prepareCreateVenue(
     });
   }
 
-  const rawSigners = signers.map(signer =>
-    stringToAccountId(asAccount(signer, context).address, context)
-  );
+  const signerAddresses = signers.map(signer => asAccount(signer, context).address);
+  let accountArgs = addressesToBtreeSet(signerAddresses, context);
+  if (context.isV7) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    accountArgs = signerAddresses.map(address => stringToAccountId(address, context)) as any;
+  }
 
   return Promise.resolve({
     transaction: settlement.createVenue,
-    args: [rawDetails, rawSigners, rawType],
+    args: [rawDetails, accountArgs, rawType],
     resolver: createCreateVenueResolver(context),
   });
 }

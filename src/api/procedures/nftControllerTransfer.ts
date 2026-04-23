@@ -66,7 +66,7 @@ export async function prepareNftControllerTransfer(
   if (did !== destinationDid) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: "Controller transfer must send to one of the signer's portfolios",
+      message: "Controller transfer must send to one of the signer's portfolios or accouts",
     });
   }
 
@@ -140,9 +140,14 @@ export function getAuthorization(
  */
 export async function prepareStorage(
   this: Procedure<Params, void, Storage>,
-  { destinationPortfolio: givenAssetHolder }: Params
+  { destinationPortfolio, destination }: Params
 ): Promise<Storage> {
   const { context } = this;
+
+  let givenAssetHolder = destination;
+  if (!destination) {
+    givenAssetHolder = destinationPortfolio;
+  }
 
   const { did } = await context.getSigningIdentity();
   const destinationAssetHolder = givenAssetHolder

@@ -32,6 +32,7 @@ export interface Storage {
   offChainParties: Set<string>;
   instructionDetails: InstructionDetails;
   signerDid: string;
+  mediatorDids: string[];
 }
 
 /**
@@ -59,7 +60,7 @@ export async function prepareExecuteManualInstruction(
       },
     },
     context,
-    storage: { allowedAssetHolders, instructionDetails, signerDid, offChainParties },
+    storage: { allowedAssetHolders, instructionDetails, signerDid, offChainParties, mediatorDids },
   } = this;
 
   const { id, skipAffirmationCheck } = args;
@@ -71,10 +72,14 @@ export async function prepareExecuteManualInstruction(
   if (!allowedAssetHolders.length) {
     const details = await instructionDetails.venue?.details();
 
-    if (details?.owner.did !== signerDid && !offChainParties.has(signerDid)) {
+    if (
+      details?.owner.did !== signerDid &&
+      !offChainParties.has(signerDid) &&
+      !mediatorDids.includes(signerDid)
+    ) {
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
-        message: 'The signing identity is not involved in this Instruction',
+        message: 'The signer is not involved in this Instruction',
       });
     }
   }
@@ -152,13 +157,18 @@ export async function prepareStorage(
 
   const instruction = new Instruction({ id }, context);
 
-  const [{ data: legs }, { did }, details] = await Promise.all([
+  const [{ data: legs }, { did }, details, mediatorAffirmations] = await Promise.all([
     instruction.getLegsFromChain(),
     context.getSigningIdentity(),
     instruction.detailsFromChain(),
+    instruction.getMediators(),
   ]);
 
-  const [allowedAssetHolders, offChainParties] = await legs.reduce<
+  const mediatorDids = mediatorAffirmations.map(
+    ({ identity: { did: mediatorDid } }) => mediatorDid
+  );
+
+  const [allowedHolders, offChainParties] = await legs.reduce<
     Promise<[AssetHolder[], Set<string>]>
   >(async (accPromise, leg) => {
     const [allowedAssetHolders, offChainDids] = await accPromise;
@@ -207,10 +217,11 @@ export async function prepareStorage(
   }, Promise.resolve(tuple([], new Set<string>())));
 
   return {
-    allowedAssetHolders,
+    allowedAssetHolders: allowedHolders,
     instructionDetails: details,
     signerDid: did,
     offChainParties,
+    mediatorDids,
   };
 }
 

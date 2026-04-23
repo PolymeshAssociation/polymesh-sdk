@@ -416,6 +416,10 @@ export class Claims {
 
     const { identityApi: identity } = call;
 
+    if (!identity) {
+      return [];
+    }
+
     const { target, includeExpired = true } = opts;
 
     const did = await getDid(target, context);

@@ -496,6 +496,46 @@ export class Context {
   /**
    * @hidden
    *
+   * Retrive all pending subsidies for approval
+   */
+  public async getPendingSubsidies(account?: string | Account): Promise<SubsidyWithAllowance[]> {
+    const {
+      polymeshApi: {
+        query: { relayer },
+      },
+    } = this;
+    let address: string;
+
+    if (account) {
+      address = signerToString(account);
+    } else {
+      ({ address } = this.getSigningAccount());
+    }
+
+    const rawAddress = stringToAccountId(address, this);
+
+    const rawEntries = await relayer.pendingSubsidies.entries(rawAddress);
+
+    return rawEntries.map(
+      ([
+        {
+          args: [, rawSubsidizer],
+        },
+        rawAllowance,
+      ]) => {
+        const subsidy = new Subsidy(
+          { beneficiary: address, subsidizer: accountIdToString(rawSubsidizer) },
+          this
+        );
+        const allowance = balanceToBigNumber(rawAllowance.unwrap());
+        return { subsidy, allowance };
+      }
+    );
+  }
+
+  /**
+   * @hidden
+   *
    * Retrieve the account that will sign the transaction
    *
    * @throws if there is no signing Account associated to the SDK instance

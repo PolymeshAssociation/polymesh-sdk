@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 import { BTreeSet, Option, u64, Vec } from '@polkadot/types';
 import {
   PolymeshPrimitivesAssetAssetHolder,
@@ -7,7 +8,6 @@ import {
   PolymeshPrimitivesSettlementAssetCount,
   PolymeshPrimitivesSettlementReceiptDetails,
 } from '@polkadot/types/lookup';
-import { hexHasPrefix } from '@polkadot/util';
 import {
   AffirmationCount,
   ExecuteInstructionInfo,
@@ -22,14 +22,13 @@ import {
   AffirmInstructionParams,
   AssetHolder,
   AssetHolderId,
+  AssetHolderLike,
   DefaultPortfolio,
   ErrorCode,
   InstructionAffirmationOperation,
   ModifyInstructionAffirmationParams,
   NumberedPortfolio,
   OffChainAffirmationReceipt,
-  PortfolioId,
-  PortfolioLike as AssetHolderLike,
   TxTag,
   TxTags,
 } from '~/types';
@@ -51,7 +50,6 @@ import {
   dateToMoment,
   mediatorAffirmationStatusToStatus,
   meshAffirmationStatusToAffirmationStatus,
-  portfolioLikeToPortfolioId,
   receiptDetailsToMeshReceiptDetails,
   stringToAccountId,
   stringToIdentityId,
@@ -111,7 +109,7 @@ const assertAssetHoldersAreValid = (
   if (!assetHolders.length) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'The signing Identity is not involved in this Instruction',
+      message: 'The signer is not involved in this Instruction',
     });
   }
 };
@@ -497,7 +495,8 @@ export async function prepareModifyInstructionAffirmation(
       validateMediatorStatusForWithdrawl(mediatorStatus, signer, id);
 
       return {
-        transaction: settlementTx.withdrawAffirmationAsMediator,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        transaction: (settlementTx as any).withdrawAffirmationAsMediator,
         resolver: instruction,
         args: [rawInstructionId],
       };
@@ -527,11 +526,17 @@ export async function prepareModifyInstructionAffirmation(
     }
 
     case InstructionAffirmationOperation.Withdraw: {
+      if (!context.isV7) {
+        throw new PolymeshError({
+          code: ErrorCode.UnmetPrerequisite,
+          message: 'Withdrawal of affirmed instructions has been discontinued from v8 chain',
+        });
+      }
       await validateInstructionNotLocked(instruction);
 
       excludeCriteria.push(AffirmationStatus.Pending);
       errorMessage = 'The instruction is not affirmed';
-      transaction = settlementTx.withdrawAffirmationWithCount as ModifyInstructionType;
+      transaction = (settlementTx as any).withdrawAffirmationWithCount as ModifyInstructionType;
 
       break;
     }
@@ -653,7 +658,7 @@ function extractAssetHolderParams(params: ModifyInstructionAffirmationParams): A
   ) {
     const { portfolios } = params;
     if (portfolios) {
-      assetHolderParams = [...assetHolderParams, ...(portfolios as AssetHolderLike[])];
+      assetHolderParams = [...assetHolderParams, ...portfolios];
     }
   }
   return assetHolderParams;
@@ -672,15 +677,29 @@ export const isParam = (
     return true;
   }
 
-  return assetHolderIdParams.some(assetHolderId => {
-    if (typeof assetHolderId === 'string') {
-      return typeof legAssetHolderId === 'string' && assetHolderId === legAssetHolderId;
+  const getNormalizedId = (id: string | AssetHolderId): { did: string; number: string } => {
+    if (typeof id === 'string') {
+      return { did: id, number: '0' };
     }
-    const { did, number } = assetHolderId;
+    return {
+      did: id.did,
+      number: !id.number || id.number.isZero() ? '0' : id.number.toString(),
+    };
+  };
+
+  const normalizedLegId = getNormalizedId(
+    (legAssetHolderId as AssetHolderId) ?? {
+      did: (legAssetHolder as any).did ?? (legAssetHolder as any).owner?.did,
+      number: (legAssetHolder as any).id ?? (legAssetHolder as any).number,
+    }
+  );
+
+  return assetHolderIdParams.some(assetHolderId => {
+    const normalizedParamId = getNormalizedId(assetHolderId);
+
     return (
-      typeof legAssetHolderId !== 'string' &&
-      did === legAssetHolderId.did &&
-      new BigNumber(legAssetHolderId.number ?? 0).eq(new BigNumber(number ?? 0))
+      normalizedParamId.did === normalizedLegId.did &&
+      normalizedParamId.number === normalizedLegId.number
     );
   });
 };
@@ -699,34 +718,38 @@ const assembleAssetHolders = async (
 
   const [custodiedAssetHolders, count] = result;
 
-  let res = [...custodiedAssetHolders];
-  let senderLegCount = count;
+  const res = [...custodiedAssetHolders];
+  const senderLegCount = count;
 
   const checkCustody = async (
     legAssetHolder: AssetHolder,
     exists: boolean,
     sender: boolean
-  ): Promise<void> => {
+  ): Promise<[AssetHolder[], BigNumber]> => {
+    let localAllowedAssetHolders: AssetHolder[] = [];
+    let localSenderLegCount = new BigNumber(0);
+
     if (legAssetHolder instanceof Account) {
-      // TODO assuming that the account address should be the same as signing did
       const identity = await legAssetHolder.getIdentity();
       if (identity?.did === signingDid) {
-        res = [...res, legAssetHolder];
+        localAllowedAssetHolders = [legAssetHolder];
         if (sender) {
-          senderLegCount = senderLegCount.plus(1);
+          localSenderLegCount = new BigNumber(1);
         }
       }
     } else if (exists) {
       const isCustodied = await legAssetHolder.isCustodiedBy({ identity: signingDid });
       if (isCustodied) {
-        res = [...res, legAssetHolder];
+        localAllowedAssetHolders = [legAssetHolder];
         if (sender) {
-          senderLegCount = senderLegCount.plus(1);
+          localSenderLegCount = new BigNumber(1);
         }
       }
     } else if (legAssetHolder.owner.did === signingDid) {
-      res = [...res, legAssetHolder];
+      localAllowedAssetHolders = [legAssetHolder];
     }
+
+    return [localAllowedAssetHolders, localSenderLegCount];
   };
 
   const promises = [];
@@ -738,9 +761,17 @@ const assembleAssetHolders = async (
     promises.push(checkCustody(to, toExists, false));
   }
 
-  await Promise.all(promises);
+  const results = await Promise.all(promises);
 
-  return tuple(res, senderLegCount);
+  const [finalAssetHolders, finalSenderLegCount] = results.reduce(
+    ([accAssetHolders, accCount], [currAssetHolders, currCount]) => [
+      [...accAssetHolders, ...currAssetHolders],
+      accCount.plus(currCount),
+    ],
+    result
+  );
+
+  return tuple(finalAssetHolders, finalSenderLegCount);
 };
 
 /**

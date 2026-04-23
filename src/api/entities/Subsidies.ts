@@ -85,4 +85,12 @@ export class Subsidies extends Namespace<Account> {
 
     return context.accountSubsidy(address);
   }
+
+  /**
+   * Get pending subsidies (for which this Account is the beneficiary) that have been authorised but not yet accepted.
+   */
+  public getPendingSubsidies(): Promise<SubsidyWithAllowance[]> {
+    const { context } = this;
+    return context.getPendingSubsidies();
+  }
 }

@@ -55,7 +55,6 @@ import {
   PolymeshPrimitivesIdentityClaimClaim,
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityClaimScope,
-  PolymeshPrimitivesIdentityCreateChildIdentityWithAuth,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesIdentityIdPortfolioKind,
@@ -96,7 +95,7 @@ import {
   SpRuntimeMultiSignature,
 } from '@polkadot/types/lookup';
 import type { IsError } from '@polkadot/types/metadata/decorate/types';
-import { ITuple } from '@polkadot/types/types';
+import { Codec, ITuple } from '@polkadot/types/types';
 import { BTreeSet, Compact, Result } from '@polkadot/types-codec';
 import {
   hexHasPrefix,
@@ -794,10 +793,20 @@ export function meshAssetHolderToAssetHolder(
   rawAccountHolder: PolymeshPrimitivesAssetAssetHolder,
   context: Context
 ): Account | DefaultPortfolio | NumberedPortfolio {
-  if (rawAccountHolder.isPortfolio) {
-    return meshPortfolioIdToPortfolio(rawAccountHolder.asPortfolio, context);
+  if (!rawAccountHolder) {
+    throw new Error('meshAssetHolderToAssetHolder: rawAccountHolder is undefined');
   }
-  return new Account({ address: rawAccountHolder.asAccount.toString() }, context);
+  if (rawAccountHolder.isPortfolio) {
+    const portfolioId =
+      (rawAccountHolder as any).asPortfolio || (rawAccountHolder as any).asIdentity;
+    if (!portfolioId) {
+      throw new Error(
+        `meshAssetHolderToAssetHolder: portfolioId is undefined. Variant: ${rawAccountHolder.type}`
+      );
+    }
+    return meshPortfolioIdToPortfolio(portfolioId, context);
+  }
+  return new Account({ address: (rawAccountHolder as any).asAccount?.toString() }, context);
 }
 
 /**
@@ -809,13 +818,9 @@ export function portfolioToPortfolioId(
   const {
     owner: { did },
   } = portfolio;
-  if (portfolio instanceof DefaultPortfolio) {
-    return { did };
-  } else {
-    const { id: number } = portfolio;
+  const { id: number } = portfolio as any;
 
-    return { did, number };
-  }
+  return { did, number };
 }
 
 /**
@@ -827,15 +832,19 @@ export function portfolioLikeToPortfolioId(value: PortfolioLike): PortfolioId {
 
   if (typeof value === 'string') {
     did = value;
-  } else if (value instanceof Identity) {
-    ({ did } = value);
-  } else if (value instanceof Portfolio) {
-    ({ did, number } = portfolioToPortfolioId(value));
-  } else {
+  } else if ('identity' in value) {
     const { identity: valueIdentity } = value;
     ({ id: number } = value);
 
     did = asDid(valueIdentity);
+  } else {
+    const isPortfolio = 'owner' in value;
+
+    if (isPortfolio) {
+      ({ did, number } = portfolioToPortfolioId(value as any));
+    } else {
+      ({ did } = value as any);
+    }
   }
 
   return { did, number: number?.gt(0) ? number : undefined };
@@ -921,7 +930,6 @@ export async function assetHolderIdToMeshAssetHolder(
   assetHolderId: AssetHolderId,
   context: Context
 ): Promise<PolymeshPrimitivesAssetAssetHolder> {
-  context;
   if (typeof assetHolderId === 'string') {
     if (hexHasPrefix(assetHolderId)) {
       if (context.isV7) {
@@ -1384,6 +1392,9 @@ export function meshPermissionsToPermissions(
 
   let portfoliosType: PermissionType;
   let portfolioIds;
+  if (!portfolio) {
+    console.error('meshPermissionsToPermissionsV2: portfolio is undefined', permissions);
+  }
   if (portfolio.isThese) {
     portfoliosType = PermissionType.Include;
     portfolioIds = portfolio.asThese;
@@ -1394,9 +1405,12 @@ export function meshPermissionsToPermissions(
 
   if (portfolioIds) {
     portfolios = {
-      values: [...portfolioIds].map(portfolioId =>
-        meshPortfolioIdToPortfolio(portfolioId, context)
-      ),
+      values: [...portfolioIds].map(portfolioId => {
+        if (!portfolioId) {
+          console.error('meshPermissionsToPermissionsV2: portfolioId is undefined in map');
+        }
+        return meshPortfolioIdToPortfolio(portfolioId, context);
+      }),
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       type: portfoliosType!,
     };
@@ -1777,7 +1791,10 @@ export function authorizationDataToAuthorization(
   if (auth.isPortfolioCustody) {
     return {
       type: AuthorizationType.PortfolioCustody,
-      value: meshPortfolioIdToPortfolio(auth.asPortfolioCustody, context),
+      value: meshPortfolioIdToPortfolio(
+        (auth as any).asPortfolioCustody || (auth as any).asCustody,
+        context
+      ),
     };
   }
 
@@ -1789,8 +1806,9 @@ export function authorizationDataToAuthorization(
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if ((auth as any).isAddRelayerPayingKey || auth.isOldAddRelayerPayingKey) {
-    const [userKey, payingKey, polyxLimit] = auth.asOldAddRelayerPayingKey;
+  if ((auth as any).isAddRelayerPayingKey || (auth as any).isOldAddRelayerPayingKey) {
+    const [userKey, payingKey, polyxLimit] = ((auth as any).asOldAddRelayerPayingKey ||
+      (auth as any).asAddRelayerPayingKey) as [AccountId, AccountId, Balance];
 
     const value = {
       beneficiary: new Account({ address: accountIdToString(userKey) }, context),
@@ -1800,13 +1818,13 @@ export function authorizationDataToAuthorization(
 
     if (context.isV7) {
       return {
-        type: AuthorizationType.AddRelayerPayingKey,
+        type: AuthorizationType.OldAddRelayerPayingKey,
         value,
       };
     }
 
     return {
-      type: AuthorizationType.OldAddRelayerPayingKey,
+      type: AuthorizationType.AddRelayerPayingKey,
       value,
     };
   }
@@ -3671,6 +3689,15 @@ export function identitiesToBtreeSet(
 /**
  * @hidden
  */
+export function addressesToBtreeSet(addresses: string[], context: Context): BTreeSet<AccountId32> {
+  const rawIds = addresses.map(address => stringToAccountId(address, context));
+
+  return context.createType('BTreeSet<AccountId32>', rawIds) as unknown as BTreeSet<AccountId32>;
+}
+
+/**
+ * @hidden
+ */
 export function portfolioIdsToBtreeSet(
   rawPortfolioIds: PolymeshPrimitivesIdentityIdPortfolioId[],
   context: Context
@@ -3740,29 +3767,26 @@ export function assetDispatchErrorToTransferError(
     [assetErrors.InvalidTransferComplianceFailure, TransferError.ComplianceFailure],
     [assetErrors.InvalidTransfer, TransferError.ComplianceFailure],
     [statisticsError.InvalidTransferStatisticsFailure, TransferError.TransferNotAllowed],
+    [(portfolioErrors as any).InvalidTransferSenderIdMatchesReceiverId, TransferError.SelfTransfer],
+    [(assetErrors as any).InvalidTransferInvalidReceiverCDD, TransferError.InvalidReceiverCdd],
+    [(assetErrors as any).InvalidTransferInvalidSenderCDD, TransferError.InvalidSenderCdd],
   ];
 
   if (context.isV7) {
-    record = [
-      ...record,
-      [
-        (portfolioErrors as any).InvalidTransferSenderIdMatchesReceiverId,
-        TransferError.SelfTransfer,
-      ],
-      [(assetErrors as any).InvalidTransferInvalidReceiverCDD, TransferError.InvalidReceiverCdd],
-      [(assetErrors as any).InvalidTransferInvalidSenderCDD, TransferError.InvalidSenderCdd],
-    ];
+    record = [...record];
   }
   if (error.isModule) {
     const moduleErr = error.asModule;
 
-    const errorCase = record.find(([augmentedError]) => augmentedError.is(moduleErr));
+    const errorCase = record.find(([augmentedError]) => augmentedError?.is(moduleErr));
     if (errorCase) {
       return errorCase[1];
     } else {
       // Extract the actual error details from the registry metadata:
-      const { section, name, docs } = moduleErr.registry.findMetaError(moduleErr);
-      return name;
+      const errorMeta = (moduleErr as any).registry?.findMetaError(moduleErr);
+      if (errorMeta) {
+        return errorMeta.name;
+      }
     }
   }
 
@@ -5790,20 +5814,14 @@ export function secondaryAccountWithAuthToSecondaryKeyWithAuth(
 export function childKeysWithAuthToCreateChildIdentitiesWithAuth(
   childKeyAuths: ChildKeyWithAuth[],
   context: Context
-): Vec<PolymeshPrimitivesIdentityCreateChildIdentityWithAuth> {
+): Vec<Codec> {
   const keyWithAuths = childKeyAuths.map(({ key, authSignature }) => ({
     key: stringToAccountId(asAccount(key, context).address, context),
     authSignature: stringToH512(authSignature, context),
   }));
 
-  if (context.isV7) {
-    return context.createType(
-      'Vec<PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth>',
-      keyWithAuths
-    );
-  }
   return context.createType(
-    'Vec<PolymeshPrimitivesIdentityCreateChildIdentityWithAuth>',
+    'Vec<PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth>',
     keyWithAuths
   );
 }
