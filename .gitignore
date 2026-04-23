@@ -26,3 +26,4 @@ sdk-docs/
 .pnp.loader.mjs
 
 *api-snapshot.json
+.agent/

@@ -1,3 +1,8 @@
+import { StorageKey, u64 } from '@polkadot/types';
+import {
+  PolymeshPrimitivesAssetAssetId,
+  PolymeshPrimitivesIdentityIdPortfolioId,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
 
@@ -224,89 +229,75 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     } = this;
 
     const rawPortfolioId = portfolioIdToMeshPortfolioId({ did, number: portfolioId }, context);
+
+    // TODO: clean up v7 support - in v7 portfolioNFT uses key [portfolioId, [assetId, nftId]];
+    // v8 changed it to [portfolioId, assetId, nftId]. Cast required to query with a single arg
+    // as Polkadot defaults to N-1 args.
     const [exists, heldCollectionEntries, lockedCollectionEntries] = await Promise.all([
       this.exists(),
-      portfolio.portfolioNFT.entries(rawPortfolioId),
+      (
+        portfolio.portfolioNFT as unknown as {
+          entries: (
+            arg1: PolymeshPrimitivesIdentityIdPortfolioId
+          ) => Promise<
+            [
+              StorageKey<
+                [PolymeshPrimitivesIdentityIdPortfolioId, PolymeshPrimitivesAssetAssetId, u64]
+              >,
+              boolean
+            ][]
+          >;
+        }
+      ).entries(rawPortfolioId),
       portfolio.portfolioLockedNFT.entries(rawPortfolioId),
     ]);
 
     if (!exists) {
-      throw new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message: notExistsMessage,
-      });
+      throw new PolymeshError({ code: ErrorCode.DataUnavailable, message: notExistsMessage });
     }
 
-    let queriedCollections: string[] | undefined;
-
-    if (args?.collections) {
-      queriedCollections = await Promise.all(
-        args.collections.map(asset => asAssetId(asset, context))
-      );
-    }
+    const queriedCollections = args?.collections
+      ? await Promise.all(args.collections.map(asset => asAssetId(asset, context)))
+      : undefined;
 
     const seenAssetIds = new Set<string>();
+    const heldCollections: Record<string, Nft[]> = {};
+    const lockedCollections: Record<string, Nft[]> = {};
 
-    const processCollectionEntry = (
-      collectionRecord: Record<string, Nft[]>,
-      entry: (typeof heldCollectionEntries)[0]
-    ): Record<string, Nft[]> => {
-      const [
-        {
-          args: [, [rawAssetId, rawNftId]],
-        },
-      ] = entry;
-
-      const assetId = assetIdToString(rawAssetId);
-      const heldId = u64ToBigNumber(rawNftId);
-
-      if (queriedCollections && !queriedCollections.includes(assetId)) {
-        return collectionRecord;
-      }
-
-      // if the user provided a filter arg, then ignore any asset not specified
-      if (!queriedCollections || queriedCollections.includes(assetId)) {
-        seenAssetIds.add(assetId);
-        const nft = new Nft({ id: heldId, assetId }, context);
-
-        if (!collectionRecord[assetId]) {
-          collectionRecord[assetId] = [nft];
-        } else {
-          collectionRecord[assetId]!.push(nft);
-        }
-      }
-
-      return collectionRecord;
+    const addNft = (record: Record<string, Nft[]>, assetId: string, nftId: BigNumber): void => {
+      if (queriedCollections && !queriedCollections.includes(assetId)) return;
+      seenAssetIds.add(assetId);
+      const nft = new Nft({ id: nftId, assetId }, context);
+      record[assetId] ? record[assetId]!.push(nft) : (record[assetId] = [nft]);
     };
 
-    const heldCollections: Record<string, Nft[]> = heldCollectionEntries.reduce(
-      (collection, entry) => processCollectionEntry(collection, entry),
-      {}
-    );
+    for (const [{ args: entryArgs }] of heldCollectionEntries) {
+      // TODO: clean up v7 support - v7 key: [portfolioId, [assetId, nftId]], v8 key: [portfolioId, assetId, nftId]
+      const [rawAssetId, rawNftId] = context.isV7
+        ? (entryArgs as unknown as [unknown, [PolymeshPrimitivesAssetAssetId, u64]])[1]
+        : [entryArgs[1], entryArgs[2]];
+      addNft(heldCollections, assetIdToString(rawAssetId), u64ToBigNumber(rawNftId));
+    }
 
-    const lockedCollections: Record<string, Nft[]> = lockedCollectionEntries.reduce(
-      (collection, entry) => processCollectionEntry(collection, entry),
-      {}
-    );
+    for (const [
+      {
+        args: [, [rawAssetId, rawNftId]],
+      },
+    ] of lockedCollectionEntries) {
+      addNft(lockedCollections, assetIdToString(rawAssetId), u64ToBigNumber(rawNftId));
+    }
 
-    const collections: PortfolioCollection[] = [];
-    seenAssetIds.forEach(assetId => {
+    return [...seenAssetIds].map(assetId => {
       const held = heldCollections[assetId]!;
       const locked = lockedCollections[assetId] || [];
-      // calculate free NFTs by filtering held NFTs by locked NFT IDs
       const lockedIds = new Set(locked.map(({ id }) => id.toString()));
-      const free = held.filter(({ id }) => !lockedIds.has(id.toString()));
-      const total = new BigNumber(held.length);
-
-      collections.push({
+      return {
         collection: new NftCollection({ assetId }, context),
-        free,
+        free: held.filter(({ id }) => !lockedIds.has(id.toString())),
         locked,
-        total,
-      });
+        total: new BigNumber(held.length),
+      };
     });
-
-    return collections;
   }
 
   /**

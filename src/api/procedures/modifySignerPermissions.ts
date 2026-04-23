@@ -86,7 +86,7 @@ export async function getAuthorization(
 
   return {
     permissions: {
-      transactions: [TxTags.identity.SetPermissionToSigner],
+      transactions: [TxTags.identity.SetSecondaryKeyPermissions],
       assets: [],
       portfolios: [],
     },

@@ -183,11 +183,7 @@ export async function assertAssetHolderExists(
   assetHolderId: AssetHolderId,
   context: Context
 ): Promise<void> {
-  if (typeof assetHolderId === 'string') {
-    if (hexHasPrefix(assetHolderId)) {
-      await assertPortfolioExists({ did: assetHolderId }, context);
-    }
-  } else {
+  if (typeof assetHolderId !== 'string') {
     await assertPortfolioExists(assetHolderId, context);
   }
 }
@@ -523,6 +519,10 @@ export async function assertOldAddRelayerPayingKeyAuthorizationValid(
   subsidy: SubsidyData,
   context: Context
 ): Promise<void> {
+  if (!context.isV7) {
+    return;
+  }
+
   const [beneficiaryIdentity, subsidizerIdentity] = await Promise.all([
     subsidy.beneficiary.getIdentity(),
     subsidy.subsidizer.getIdentity(),
@@ -540,10 +540,6 @@ export async function assertOldAddRelayerPayingKeyAuthorizationValid(
       code: ErrorCode.UnmetPrerequisite,
       message: 'Subsidizer Account does not have an Identity',
     });
-  }
-
-  if (!context.isV7) {
-    return;
   }
 
   const [isBeneficiaryCddValid, isSubsidizerCddValid] = await Promise.all([

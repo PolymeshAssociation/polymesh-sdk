@@ -78,17 +78,11 @@ export function getAuthorization(
 ): ProcedureAuthorization {
   const {
     storage: { fromAssetHolder },
-    context,
   } = this;
-
-  let transaction = TxTags.asset.Redeem;
-  if (context.isV7 && from) {
-    transaction = TxTags.asset.RedeemFromPortfolio;
-  }
 
   return {
     permissions: {
-      transactions: [transaction],
+      transactions: [TxTags.asset.Redeem],
       assets: [asset],
       portfolios: fromAssetHolder instanceof Account ? [] : [fromAssetHolder],
     },

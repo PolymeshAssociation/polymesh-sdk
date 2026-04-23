@@ -18,7 +18,8 @@ export interface Storage {
 export async function prepareUnlinkChildIdentity(
   this: Procedure<UnlinkChildParams, void, Storage>,
   args: UnlinkChildParams
-): Promise<TransactionSpec<void, ExtrinsicParams<'identity', 'unlinkChildIdentity'>>> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): Promise<TransactionSpec<void, ExtrinsicParams<'identity', any>>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -28,6 +29,13 @@ export async function prepareUnlinkChildIdentity(
       identity: { did: signingDid },
     },
   } = this;
+
+  if (!context.isV7) {
+    throw new PolymeshError({
+      code: ErrorCode.NotSupported,
+      message: 'Child Identiteis are no longer supported in v8',
+    });
+  }
 
   const { child } = args;
 
@@ -53,7 +61,8 @@ export async function prepareUnlinkChildIdentity(
   }
 
   return {
-    transaction: tx.identity.unlinkChildIdentity,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    transaction: (tx.identity as any).unlinkChildIdentity,
     args: [stringToIdentityId(childDid, context)],
     resolver: undefined,
   };
