@@ -225,12 +225,12 @@ async function getDocumentsAndIssueTransaction(
       ? await signingIdentity.portfolios.getPortfolio({ portfolioId })
       : await signingIdentity.portfolios.getPortfolio();
 
-    const rawAssetHolder = assetHolderToAssetHolderKind(portfolio, context);
+    const rawAssetHolderKind = assetHolderToAssetHolderKind(portfolio, context);
 
     transactions.push(
       checkTxType({
         transaction: tx.asset.issue,
-        args: [rawAssetId, rawInitialSupply, rawAssetHolder],
+        args: [rawAssetId, rawInitialSupply, rawAssetHolderKind],
       })
     );
   }

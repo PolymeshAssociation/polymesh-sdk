@@ -100,18 +100,18 @@ describe('redeemNft procedure', () => {
       ],
     });
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      fromPortfolio: from,
+      fromAssetHolder: from,
     });
 
     const transaction = dsMockUtils.createTxMock('nft', 'redeemNft');
 
-    const rawPortfolioKind = dsMockUtils.createMockPortfolioKind({
-      User: dsMockUtils.createMockU64(new BigNumber(1)),
+    const rawAssetHolderKind = dsMockUtils.createMockAssetHolderKind({
+      UserPortfolio: dsMockUtils.createMockU64(new BigNumber(1)),
     });
 
-    when(jest.spyOn(utilsConversionModule, 'portfolioToPortfolioKind'))
+    when(jest.spyOn(utilsConversionModule, 'assetHolderToAssetHolderKind'))
       .calledWith(from, mockContext)
-      .mockReturnValue(rawPortfolioKind);
+      .mockReturnValue(rawAssetHolderKind);
 
     const result = await prepareRedeemNft.call(proc, {
       collection,
@@ -120,14 +120,14 @@ describe('redeemNft procedure', () => {
     });
     expect(result).toEqual({
       transaction,
-      args: [rawAssetId, rawId, rawPortfolioKind, 0],
+      args: [rawAssetId, rawId, rawAssetHolderKind, 0],
       resolver: undefined,
     });
   });
 
   it('should throw an error if the portfolio does not have the NFT to redeem', () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      fromPortfolio: entityMockUtils.getNumberedPortfolioInstance({
+      fromAssetHolder: entityMockUtils.getNumberedPortfolioInstance({
         getCollections: [
           {
             collection,
@@ -141,7 +141,7 @@ describe('redeemNft procedure', () => {
 
     const expectedError = new PolymeshError({
       code: ErrorCode.InsufficientBalance,
-      message: 'Portfolio does not hold NFT to redeem',
+      message: 'Asset Holder does not hold NFT to redeem',
     });
 
     return expect(
@@ -158,12 +158,12 @@ describe('redeemNft procedure', () => {
 
       dsMockUtils.getContextInstance({ did: someDid });
 
-      const fromPortfolio = entityMockUtils.getDefaultPortfolioInstance({
+      const fromAssetHolder = entityMockUtils.getDefaultPortfolioInstance({
         did: someDid,
       });
 
       const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-        fromPortfolio,
+        fromAssetHolder,
       });
 
       const params = {
@@ -178,7 +178,7 @@ describe('redeemNft procedure', () => {
         permissions: {
           transactions: [TxTags.nft.RedeemNft],
           assets: [expect.objectContaining({ id: assetId })],
-          portfolios: [fromPortfolio],
+          portfolios: [fromAssetHolder],
         },
       });
     });
@@ -191,7 +191,7 @@ describe('redeemNft procedure', () => {
       let result = await boundFunc({} as Params);
 
       expect(result).toEqual({
-        fromPortfolio: expect.objectContaining({
+        fromAssetHolder: expect.objectContaining({
           owner: expect.objectContaining({
             did: 'someDid',
           }),
@@ -203,7 +203,7 @@ describe('redeemNft procedure', () => {
       } as Params);
 
       expect(result).toEqual({
-        fromPortfolio: expect.objectContaining({
+        fromAssetHolder: expect.objectContaining({
           id: new BigNumber(1),
           owner: expect.objectContaining({
             did: 'someDid',
@@ -217,7 +217,7 @@ describe('redeemNft procedure', () => {
       } as Params);
 
       expect(result).toEqual({
-        fromPortfolio: from,
+        fromAssetHolder: from,
       });
     });
   });

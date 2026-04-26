@@ -492,6 +492,13 @@ export async function prepareModifyInstructionAffirmation(
     }
 
     case InstructionAffirmationOperation.WithdrawAsMediator: {
+      if (!context.isV7) {
+        throw new PolymeshError({
+          code: ErrorCode.NotSupported,
+          message: 'Withdrawal of affirmed instructions has been discontinued from v8 chain',
+        });
+      }
+
       validateMediatorStatusForWithdrawl(mediatorStatus, signer, id);
 
       return {
@@ -536,6 +543,7 @@ export async function prepareModifyInstructionAffirmation(
 
       excludeCriteria.push(AffirmationStatus.Pending);
       errorMessage = 'The instruction is not affirmed';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       transaction = (settlementTx as any).withdrawAffirmationWithCount as ModifyInstructionType;
 
       break;
@@ -650,7 +658,7 @@ function extractAssetHolderParams(params: ModifyInstructionAffirmationParams): A
   if (operation === InstructionAffirmationOperation.Reject) {
     const { portfolio } = params;
     if (portfolio) {
-      assetHolderParams.push(portfolio as AssetHolderLike);
+      assetHolderParams.push(portfolio);
     }
   } else if (
     operation === InstructionAffirmationOperation.Affirm ||
@@ -671,37 +679,25 @@ export const isParam = (
   legAssetHolder: AssetHolder,
   assetHolderIdParams: AssetHolderId[]
 ): boolean => {
-  const legAssetHolderId = assetHolderLikeToAssetHolderId(legAssetHolder);
-
   if (!assetHolderIdParams.length) {
     return true;
   }
 
-  const getNormalizedId = (id: string | AssetHolderId): { did: string; number: string } => {
-    if (typeof id === 'string') {
-      return { did: id, number: '0' };
+  const areAssetHolderIdsEqual = (holder1: AssetHolderId, holder2: AssetHolderId): boolean => {
+    if (typeof holder1 === 'string' && typeof holder2 === 'string') {
+      return holder1 === holder2;
     }
-    return {
-      did: id.did,
-      number: !id.number || id.number.isZero() ? '0' : id.number.toString(),
-    };
+    if (typeof holder1 !== 'string' && typeof holder2 !== 'string') {
+      return holder1.did === holder2.did && (holder1.number ?? 0) === (holder2.number ?? 0);
+    }
+    return false;
   };
 
-  const normalizedLegId = getNormalizedId(
-    (legAssetHolderId as AssetHolderId) ?? {
-      did: (legAssetHolder as any).did ?? (legAssetHolder as any).owner?.did,
-      number: (legAssetHolder as any).id ?? (legAssetHolder as any).number,
-    }
+  const legAssetHolderId = assetHolderLikeToAssetHolderId(legAssetHolder);
+
+  return assetHolderIdParams.some(assetHolderId =>
+    areAssetHolderIdsEqual(legAssetHolderId, assetHolderId)
   );
-
-  return assetHolderIdParams.some(assetHolderId => {
-    const normalizedParamId = getNormalizedId(assetHolderId);
-
-    return (
-      normalizedParamId.did === normalizedLegId.did &&
-      normalizedParamId.number === normalizedLegId.number
-    );
-  });
 };
 
 /**
@@ -715,11 +711,6 @@ const assembleAssetHolders = async (
   assetHolderIdParams: AssetHolderId[]
 ): Promise<[AssetHolder[], BigNumber]> => {
   const [fromExists, toExists] = await Promise.all([from.exists(), to.exists()]);
-
-  const [custodiedAssetHolders, count] = result;
-
-  const res = [...custodiedAssetHolders];
-  const senderLegCount = count;
 
   const checkCustody = async (
     legAssetHolder: AssetHolder,

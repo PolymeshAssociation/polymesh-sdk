@@ -1,7 +1,6 @@
 import { Vec } from '@polkadot/types/codec';
 import { Moment } from '@polkadot/types/interfaces/runtime';
-import { PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth } from '@polkadot/types/lookup';
-import { ISubmittableResult } from '@polkadot/types/types';
+import { Codec, ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -34,7 +33,7 @@ describe('createChildIdentities procedure', () => {
   let childAccount: Account;
   let childKeysWithAuthToCreateChildIdentitiesWithAuthSpy: jest.SpyInstance;
 
-  let rawChildKeyWithAuths: Vec<PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth>;
+  let rawChildKeyWithAuths: Vec<Codec>;
   let args: CreateChildIdentitiesParams;
   let expiresAt: Date;
   let rawExpiresAt: Moment;
@@ -75,6 +74,7 @@ describe('createChildIdentities procedure', () => {
 
     mockContext = dsMockUtils.getContextInstance({
       getIdentity: identity,
+      isV7: true,
     });
 
     expiresAt = new Date('2050/01/01');
@@ -92,8 +92,7 @@ describe('createChildIdentities procedure', () => {
     rawExpiresAt = dsMockUtils.createMockMoment(new BigNumber(expiresAt.getTime()));
     when(dateToMomentSpy).calledWith(expiresAt, mockContext).mockReturnValue(rawExpiresAt);
 
-    rawChildKeyWithAuths =
-      'someKeysWithAuth' as unknown as Vec<PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth>;
+    rawChildKeyWithAuths = 'someKeysWithAuth' as unknown as Vec<Codec>;
 
     when(childKeysWithAuthToCreateChildIdentitiesWithAuthSpy)
       .calledWith(args.childKeyAuths, mockContext)
@@ -176,7 +175,8 @@ describe('createChildIdentities procedure', () => {
     >(mockContext, { identity, actingAccount });
 
     const createChildIdentitiesTransaction = dsMockUtils.createTxMock(
-      'identity',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      'identity' as any,
       'createChildIdentities'
     );
 

@@ -251,7 +251,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
     expect(result).toEqual({
       transaction,
       paidForBy: issuer,
-      args: [rawAuthId, null],
+      args: [rawAuthId],
       resolver: undefined,
     });
   });
@@ -293,7 +293,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
     expect(result).toEqual({
       transaction,
       paidForBy: issuer,
-      args: [rawAuthId, null],
+      args: [rawAuthId],
       resolver: undefined,
     });
   });

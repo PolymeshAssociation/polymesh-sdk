@@ -496,7 +496,7 @@ export class Context {
   /**
    * @hidden
    *
-   * Retrive all pending subsidies for approval
+   * Retrieve all pending subsidies for approval
    */
   public async getPendingSubsidies(account?: string | Account): Promise<SubsidyWithAllowance[]> {
     const {

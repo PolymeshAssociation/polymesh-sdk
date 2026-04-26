@@ -84,7 +84,7 @@ describe('redeemTokens procedure', () => {
 
   it('should return a redeem transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      fromPortfolio: entityMockUtils.getDefaultPortfolioInstance({
+      fromAssetHolder: entityMockUtils.getDefaultPortfolioInstance({
         getAssetBalances: [
           {
             asset,
@@ -115,18 +115,18 @@ describe('redeemTokens procedure', () => {
       ],
     });
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      fromPortfolio: from,
+      fromAssetHolder: from,
     });
 
     const transaction = dsMockUtils.createTxMock('asset', 'redeem');
 
-    const rawPortfolioKind = dsMockUtils.createMockPortfolioKind({
-      User: dsMockUtils.createMockU64(new BigNumber(1)),
+    const rawPortfolioHolderKind = dsMockUtils.createMockAssetHolderKind({
+      UserPortfolio: dsMockUtils.createMockU64(new BigNumber(1)),
     });
 
-    when(jest.spyOn(utilsConversionModule, 'portfolioToPortfolioKind'))
+    when(jest.spyOn(utilsConversionModule, 'assetHolderToAssetHolderKind'))
       .calledWith(from, mockContext)
-      .mockReturnValue(rawPortfolioKind);
+      .mockReturnValue(rawPortfolioHolderKind);
 
     const result = await prepareRedeemTokens.call(proc, {
       asset,
@@ -135,14 +135,14 @@ describe('redeemTokens procedure', () => {
     });
     expect(result).toEqual({
       transaction,
-      args: [rawAssetId, rawAmount, rawPortfolioKind],
+      args: [rawAssetId, rawAmount, rawPortfolioHolderKind],
       resolver: undefined,
     });
   });
 
   it('should throw an error if the portfolio has not sufficient balance to redeem', () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      fromPortfolio: entityMockUtils.getNumberedPortfolioInstance({
+      fromAssetHolder: entityMockUtils.getNumberedPortfolioInstance({
         getAssetBalances: [
           {
             asset,
@@ -166,12 +166,12 @@ describe('redeemTokens procedure', () => {
 
       dsMockUtils.getContextInstance({ did: someDid });
 
-      let fromPortfolio = entityMockUtils.getDefaultPortfolioInstance({
+      const fromAssetHolder = entityMockUtils.getDefaultPortfolioInstance({
         did: someDid,
       });
 
       let proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-        fromPortfolio,
+        fromAssetHolder,
       });
 
       const params = {
@@ -186,25 +186,25 @@ describe('redeemTokens procedure', () => {
         permissions: {
           transactions: [TxTags.asset.Redeem],
           assets: [expect.objectContaining({ id: assetId })],
-          portfolios: [fromPortfolio],
+          portfolios: [fromAssetHolder],
         },
       });
 
-      fromPortfolio = entityMockUtils.getNumberedPortfolioInstance();
+      const from = entityMockUtils.getNumberedPortfolioInstance();
 
       proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-        fromPortfolio,
+        fromAssetHolder,
       });
 
       boundFunc = getAuthorization.bind(proc);
 
-      result = boundFunc({ ...params, from: fromPortfolio });
+      result = boundFunc({ ...params, from });
 
       expect(result).toEqual({
         permissions: {
-          transactions: [TxTags.asset.RedeemFromPortfolio],
+          transactions: [TxTags.asset.Redeem],
           assets: [expect.objectContaining({ id: assetId })],
-          portfolios: [fromPortfolio],
+          portfolios: [fromAssetHolder],
         },
       });
     });
@@ -217,7 +217,7 @@ describe('redeemTokens procedure', () => {
       let result = await boundFunc({} as Params);
 
       expect(result).toEqual({
-        fromPortfolio: expect.objectContaining({
+        fromAssetHolder: expect.objectContaining({
           owner: expect.objectContaining({
             did: 'someDid',
           }),
@@ -229,7 +229,7 @@ describe('redeemTokens procedure', () => {
       } as Params);
 
       expect(result).toEqual({
-        fromPortfolio: expect.objectContaining({
+        fromAssetHolder: expect.objectContaining({
           id: new BigNumber(1),
           owner: expect.objectContaining({
             did: 'someDid',
@@ -243,7 +243,7 @@ describe('redeemTokens procedure', () => {
       } as Params);
 
       expect(result).toEqual({
-        fromPortfolio: from,
+        fromAssetHolder: from,
       });
     });
   });

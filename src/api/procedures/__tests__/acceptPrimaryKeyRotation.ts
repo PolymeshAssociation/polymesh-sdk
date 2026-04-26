@@ -51,7 +51,7 @@ describe('acceptPrimaryKeyRotation procedure', () => {
   });
 
   beforeEach(() => {
-    mockContext = dsMockUtils.getContextInstance();
+    mockContext = dsMockUtils.getContextInstance({ isV7: true });
     when(bigNumberToU64Spy).calledWith(ownerAuthId, mockContext).mockReturnValue(rawOwnerAuthId);
     when(bigNumberToU64Spy).calledWith(cddAuthId, mockContext).mockReturnValue(rawCddAuthId);
     mockContext.getSigningAccount().authorizations.getOne = getOneMock;
@@ -127,6 +127,7 @@ describe('acceptPrimaryKeyRotation procedure', () => {
       dsMockUtils.getContextInstance({
         signingAddress: targetAddress,
         signingAccountIsEqual: true,
+        isV7: true,
       });
 
       mockContext.getSigningAccount().authorizations.getOne = getOneMock;

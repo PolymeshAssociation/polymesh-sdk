@@ -432,6 +432,7 @@ describe('Claims Class', () => {
       jest.restoreAllMocks();
     });
     it('should return a list of cdd claims', async () => {
+      context.isV7 = true;
       const target = 'someTarget';
       jest.spyOn(utilsInternalModule, 'getDid').mockResolvedValue(target);
 
@@ -457,7 +458,8 @@ describe('Claims Class', () => {
       };
 
       jest.spyOn(utilsConversionModule, 'identityIdToString').mockReturnValue(claimIssuer);
-      dsMockUtils.createCallMock('identityApi', 'validCddClaims', {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      dsMockUtils.createCallMock('identityApi' as any, 'validCddClaims', {
         returnValue: [rawIdentityClaim],
       });
 
@@ -478,7 +480,8 @@ describe('Claims Class', () => {
       expect(result).toEqual([mockResult]);
 
       const expiry = new Date('2030/01/01');
-      dsMockUtils.createCallMock('identityApi', 'validCddClaims', {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      dsMockUtils.createCallMock('identityApi' as any, 'validCddClaims', {
         returnValue: [
           {
             ...rawIdentityClaim,

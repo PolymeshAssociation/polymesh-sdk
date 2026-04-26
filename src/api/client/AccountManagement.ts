@@ -84,7 +84,7 @@ export class AccountManagement {
             return {
               account,
               permissions: {
-                tokens: { type: PermissionType.Include, values: [] },
+                assets: { type: PermissionType.Include, values: [] },
                 transactions: { type: PermissionType.Include, values: [] },
                 portfolios: { type: PermissionType.Include, values: [] },
               },

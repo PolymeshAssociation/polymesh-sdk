@@ -37,6 +37,13 @@ export async function prepareIssueTokens(
     });
   }
 
+  if (account && context.getSigningAccount().address !== account) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Account should be same as the signing account',
+    });
+  }
+
   const [{ isDivisible, totalSupply }, signingIdentity] = await Promise.all([
     assetEntity.details(),
     context.getSigningIdentity(),

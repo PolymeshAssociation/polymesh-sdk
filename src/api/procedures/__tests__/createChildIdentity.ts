@@ -70,6 +70,7 @@ describe('createChildIdentity procedure', () => {
 
     mockContext = dsMockUtils.getContextInstance({
       getIdentity: identity,
+      isV7: true,
     });
 
     when(stringToIdentityIdSpy).calledWith(identity.did, mockContext).mockReturnValue(rawIdentity);
@@ -170,7 +171,8 @@ describe('createChildIdentity procedure', () => {
     );
 
     const createChildIdentityTransaction = dsMockUtils.createTxMock(
-      'identity',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      'identity' as any,
       'createChildIdentity'
     );
 

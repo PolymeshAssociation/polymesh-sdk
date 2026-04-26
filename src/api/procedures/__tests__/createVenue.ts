@@ -1,4 +1,5 @@
 import { Bytes } from '@polkadot/types';
+import { AccountId } from '@polkadot/types/interfaces';
 import { PolymeshPrimitivesSettlementVenueType } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
@@ -88,6 +89,9 @@ describe('createVenue procedure', () => {
   it('should return a createVenue transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<CreateVenueParams, Venue>(mockContext);
 
+    const addressesToBtreeSetSpy = jest.spyOn(utilsConversionModule, 'addressesToBtreeSet');
+    let rawAccountArgs = dsMockUtils.createMockBtreeSet<AccountId>([]);
+    addressesToBtreeSetSpy.mockReturnValue(rawAccountArgs);
     when(stringToBytes).calledWith(description, mockContext).mockReturnValue(rawDetails);
     when(venueTypeToMeshVenueTypeSpy).calledWith(type, mockContext).mockReturnValue(rawType);
 
@@ -95,19 +99,21 @@ describe('createVenue procedure', () => {
 
     expect(result).toEqual({
       transaction: createVenueTransaction,
-      args: [rawDetails, [], rawType],
+      args: [rawDetails, rawAccountArgs, rawType],
       resolver: expect.any(Function),
     });
 
     const rawSigner = dsMockUtils.createMockAccountId('newSigner');
 
+    rawAccountArgs = dsMockUtils.createMockBtreeSet<AccountId>([rawSigner]);
+    addressesToBtreeSetSpy.mockReturnValue(rawAccountArgs);
     jest.spyOn(utilsConversionModule, 'stringToAccountId').mockReturnValue(rawSigner);
 
     result = await prepareCreateVenue.call(proc, { ...args, signers: ['newSigner'] });
 
     expect(result).toEqual({
       transaction: createVenueTransaction,
-      args: [rawDetails, [rawSigner], rawType],
+      args: [rawDetails, rawAccountArgs, rawType],
       resolver: expect.any(Function),
     });
   });

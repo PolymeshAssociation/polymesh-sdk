@@ -271,12 +271,16 @@ export interface TxData<Args extends unknown[] = unknown[]> {
 
 export enum RoleType {
   TickerOwner = 'TickerOwner',
+  /**
+   * @deprecated `CddProvider` role has been deprecated in favor of `DidRegistrar` role for chain v8
+   */
   CddProvider = 'CddProvider',
   VenueOwner = 'VenueOwner',
   PortfolioCustodian = 'PortfolioCustodian',
   CorporateActionsAgent = 'CorporateActionsAgent',
   // eslint-disable-next-line @typescript-eslint/no-shadow
   Identity = 'Identity',
+  DidRegistrar = 'DidRegistrar',
 }
 
 export interface TickerOwnerRole {
@@ -286,6 +290,10 @@ export interface TickerOwnerRole {
 
 export interface CddProviderRole {
   type: RoleType.CddProvider;
+}
+
+export interface DidRegistrarRole {
+  type: RoleType.DidRegistrar;
 }
 
 export interface VenueOwnerRole {
@@ -315,7 +323,8 @@ export type Role =
   | CddProviderRole
   | VenueOwnerRole
   | PortfolioCustodianRole
-  | IdentityRole;
+  | IdentityRole
+  | DidRegistrarRole;
 
 /**
  * Transaction Groups (for secondary key permissions purposes)
@@ -1121,9 +1130,15 @@ export interface InstructionIdParams {
 
 export enum InstructionAffirmationOperation {
   Affirm = 'Affirm',
+  /**
+   * @deprecated withdrawing an affirmation is no longer supported in chain v8
+   */
   Withdraw = 'Withdraw',
   Reject = 'Reject',
   AffirmAsMediator = 'AffirmAsMediator',
+  /**
+   * @deprecated withdrawing an affirmation as a mediator is no longer supported in chain v8
+   */
   WithdrawAsMediator = 'WithdrawAsMediator',
   RejectAsMediator = 'RejectAsMediator',
 }

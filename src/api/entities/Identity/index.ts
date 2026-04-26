@@ -57,6 +57,7 @@ import {
 import { Ensured, tuple } from '~/types/utils';
 import {
   isCddProviderRole,
+  isDidRegistrarRole,
   isIdentityRole,
   isPortfolioCustodianRole,
   isTickerOwnerRole,
@@ -159,7 +160,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       const { owner } = await reservation.details();
 
       return owner ? this.isEqual(owner) : false;
-    } else if (isCddProviderRole(role)) {
+    } else if (isCddProviderRole(role) || isDidRegistrarRole(role)) {
       const {
         polymeshApi: { query },
       } = context;
@@ -602,7 +603,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieve all Instructions where this Identity is a custodian of one or more portfolios in the legs,
+   * Retrieve all Instructions where this Identity is either the custodian of one or more portfolios in the legs or owns one or more accounts in the legs,
    *   grouped by status
    */
   public async getInstructions(): Promise<GroupedInstructions> {
@@ -673,13 +674,13 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       accountHolderIds.map(accountHolderId => assertAssetHolderExists(accountHolderId, context))
     );
 
-    const portfolioIdChunks = chunk(accountHolderIds, MAX_CONCURRENT_REQUESTS);
+    const accountHolderIdChunks = chunk(accountHolderIds, MAX_CONCURRENT_REQUESTS);
 
-    for (const portfolioIdChunk of portfolioIdChunks) {
+    for (const accountHolderIdChunk of accountHolderIdChunks) {
       const auths = await Promise.all(
-        portfolioIdChunk.map(async portfolioId =>
+        accountHolderIdChunk.map(async accountHolderId =>
           settlement.userAffirmations.entries(
-            await assetHolderIdToMeshAssetHolder(portfolioId, context)
+            await assetHolderIdToMeshAssetHolder(accountHolderId, context)
           )
         )
       );
@@ -1067,7 +1068,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    *
    * @note this query can be potentially **SLOW** depending on the number of parent Identities present on the chain
    *
-   * @deprecated this method will be removed in the next version
+   * @deprecated Child identites are no longer supported in chain v8
    */
   public async getChildIdentities(): Promise<ChildIdentity[]> {
     const {
