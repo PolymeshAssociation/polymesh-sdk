@@ -1,17 +1,6 @@
-import BigNumber from 'bignumber.js';
-
 import { getAssetHolderDid } from '~/api/procedures/utils';
 import { Account, DefaultPortfolio, NftCollection, PolymeshError, Procedure } from '~/internal';
-import {
-  AssetHolder,
-  AssetHolderId,
-  AssetHolderLike,
-  ErrorCode,
-  NftControllerTransferParams,
-  NumberedPortfolio,
-  RoleType,
-  TxTags,
-} from '~/types';
+import { AssetHolder, ErrorCode, NftControllerTransferParams, RoleType, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   assetHolderIdToMeshAssetHolder,
@@ -19,8 +8,6 @@ import {
   assetHolderLikeToAssetHolderId,
   assetHolderToAssetHolderKind,
   nftToMeshNft,
-  portfolioIdToPortfolio,
-  portfolioLikeToPortfolioId,
   portfolioToPortfolioId,
 } from '~/utils/conversion';
 import { asNftId } from '~/utils/internal';
@@ -66,7 +53,7 @@ export async function prepareNftControllerTransfer(
   if (did !== destinationDid) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: "Controller transfer must send to one of the signer's portfolios or accouts",
+      message: "Controller transfer must send to one of the signer's portfolios or accounts",
     });
   }
 

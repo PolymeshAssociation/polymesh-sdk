@@ -2,11 +2,11 @@ import { AccountId, Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { prepareSubsidizeAccount } from '~/api/procedures/subsidizeAccount';
+import { Params, prepareSubsidizeAccount } from '~/api/procedures/subsidizeAccount';
 import { Account, AuthorizationRequest, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AuthorizationType, Identity, ResultSet, SubsidizeAccountParams } from '~/types';
+import { AuthorizationType, Identity, ResultSet } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -21,7 +21,7 @@ describe('subsidizeAccount procedure', () => {
   let stringToAccountIdSpy: jest.SpyInstance<AccountId, [string, Context]>;
   let bigNumberToBalanceSpy: jest.SpyInstance<Balance, [BigNumber, Context, boolean?]>;
 
-  let args: SubsidizeAccountParams;
+  let args: Params;
   const authId = new BigNumber(1);
   const address = 'beneficiary';
   const allowance = new BigNumber(1000);
@@ -42,7 +42,7 @@ describe('subsidizeAccount procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    args = { beneficiary: address, allowance };
+    args = { beneficiary: address, allowance, isV7Method: false };
     beneficiary = entityMockUtils.getAccountInstance({ address });
   });
 
@@ -90,9 +90,8 @@ describe('subsidizeAccount procedure', () => {
 
     when(signerToStringSpy).calledWith(beneficiary).mockReturnValue(address);
 
-    const proc = procedureMockUtils.getInstance<SubsidizeAccountParams, AuthorizationRequest>(
-      mockContext
-    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const proc = procedureMockUtils.getInstance<Params, any>(mockContext);
 
     return expect(prepareSubsidizeAccount.call(proc, args)).rejects.toThrow(
       'The Beneficiary Account already has a pending invitation to add this account as a subsidizer'
@@ -161,11 +160,10 @@ describe('subsidizeAccount procedure', () => {
 
     when(bigNumberToBalanceSpy).calledWith(allowance, mockContext).mockReturnValue(rawAllowance);
 
-    const proc = procedureMockUtils.getInstance<SubsidizeAccountParams, AuthorizationRequest>(
-      mockContext
-    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const proc = procedureMockUtils.getInstance<Params, any>(mockContext);
 
-    const transaction = dsMockUtils.createTxMock('relayer', 'setPayingKey');
+    const transaction = dsMockUtils.createTxMock('relayer', 'approveSubsidy');
 
     const result = await prepareSubsidizeAccount.call(proc, { ...args, beneficiary });
 

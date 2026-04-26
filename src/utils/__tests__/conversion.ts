@@ -24,9 +24,6 @@ import {
   PalletStakingRewardDestination,
   PalletStoFundingMethod,
   PalletStoPriceTier,
-  PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
-  PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth,
-  PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesAssetAssetType,
@@ -37,6 +34,7 @@ import {
   PolymeshPrimitivesAssetNonFungibleType,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesCddId,
+  PolymeshPrimitivesCheckpointScheduleCheckpoints,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesCondition,
   PolymeshPrimitivesConditionTargetIdentity,
@@ -49,6 +47,7 @@ import {
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesIdentityIdPortfolioKind,
+  PolymeshPrimitivesIdentitySecondaryKeyWithAuth,
   PolymeshPrimitivesMemo,
   PolymeshPrimitivesMultisigProposalState,
   PolymeshPrimitivesNftNftMetadataAttribute,
@@ -75,7 +74,7 @@ import {
   SpRuntimeMultiSignature,
 } from '@polkadot/types/lookup';
 import { BTreeSet, Result } from '@polkadot/types-codec';
-import type { ITuple } from '@polkadot/types-codec/types';
+import type { Codec, ITuple } from '@polkadot/types-codec/types';
 import { hexToU8a, stringToHex } from '@polkadot/util';
 import {
   AuthorizationType as MeshAuthorizationType,
@@ -101,6 +100,7 @@ import {
   Identity,
   NumberedPortfolio,
   PolymeshError,
+  Portfolio,
 } from '~/internal';
 import {
   AuthTypeEnum,
@@ -118,13 +118,13 @@ import {
 import { ClaimScopeTypeEnum, MultiSigProposalStatusEnum } from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
+  createMockAssetHolder,
   createMockAssetId,
   createMockCorporateBallotMeta,
   createMockCorporateBallotMotion,
   createMockIdentityId,
   createMockNfts,
   createMockOption,
-  createMockPortfolioId,
   createMockTicker,
   createMockU8,
   createMockU8aFixed,
@@ -5282,8 +5282,8 @@ describe('middlewareInstructionToHistoricInstruction', () => {
     resultLeg = result.legs[0] as FungibleLeg;
     expect(resultLeg.asset.id).toBe(hexToUuid(assetId));
     expect(resultLeg.amount).toEqual(amount1);
-    expect(resultLeg.from.owner.did).toBe(portfolioDid1);
-    expect(resultLeg.to.owner.did).toBe(portfolioDid2);
+    expect((resultLeg.from as Portfolio).owner.did).toBe(portfolioDid1);
+    expect((resultLeg.to as Portfolio).owner.did).toBe(portfolioDid2);
     expect((result.legs[0]!.to as NumberedPortfolio).id).toEqual(new BigNumber(portfolioKind2));
 
     instruction = {
@@ -5318,8 +5318,8 @@ describe('middlewareInstructionToHistoricInstruction', () => {
         id: nftId,
       }),
     ]);
-    expect(resultLeg.from.owner.did).toBe(portfolioDid2);
-    expect(resultLeg.to.owner.did).toBe(portfolioDid1);
+    expect((resultLeg.from as Portfolio).owner.did).toBe(portfolioDid2);
+    expect((resultLeg.to as Portfolio).owner.did).toBe(portfolioDid1);
     expect((result.legs[0]!.from as NumberedPortfolio).id).toEqual(new BigNumber(portfolioKind2));
 
     instruction = {
@@ -11393,8 +11393,8 @@ describe('legToFungibleLeg', () => {
     const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesSettlementLeg;
 
     const value = {
-      sender: createMockPortfolioId(),
-      receiver: createMockPortfolioId(),
+      sender: createMockAssetHolder(),
+      receiver: createMockAssetHolder(),
       assetId: createMockAssetId(),
       amount: createMockU128(),
     } as const;
@@ -11427,8 +11427,8 @@ describe('legToNonFungibleLeg', () => {
     const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesSettlementLeg;
 
     const value = {
-      sender: createMockPortfolioId(),
-      receiver: createMockPortfolioId(),
+      sender: createMockAssetHolder(),
+      receiver: createMockAssetHolder(),
       nfts: createMockNfts(),
     } as const;
 
@@ -11496,8 +11496,7 @@ describe('datesToScheduleCheckpoints', () => {
 
     const fakeBtree = 'fakeBtree' as unknown as BTreeSet<Moment>;
 
-    const fakeResult =
-      'fakeResult' as unknown as PolymeshCommonUtilitiesCheckpointScheduleCheckpoints;
+    const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesCheckpointScheduleCheckpoints;
 
     const input = [new Date()];
 
@@ -11507,7 +11506,7 @@ describe('datesToScheduleCheckpoints', () => {
       .mockReturnValue(fakeBtree);
 
     when(context.createType)
-      .calledWith('PolymeshCommonUtilitiesCheckpointScheduleCheckpoints', {
+      .calledWith('PolymeshPrimitivesCheckpointScheduleCheckpoints', {
         pending: fakeBtree,
       })
       .mockReturnValue(fakeResult);
@@ -12106,10 +12105,10 @@ describe('secondaryAccountWithAuthToSecondaryKeyWithAuth', () => {
     ] as unknown as AccountWithSignature[];
 
     const fakeResult =
-      'fakeSecondaryKeysWithAuth' as unknown as Vec<PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth>;
+      'fakeSecondaryKeysWithAuth' as unknown as Vec<PolymeshPrimitivesIdentitySecondaryKeyWithAuth>;
 
     when(context.createType)
-      .calledWith('Vec<PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth>', expect.any(Object))
+      .calledWith('Vec<PolymeshPrimitivesIdentitySecondaryKeyWithAuth>', expect.any(Object))
       .mockReturnValue(fakeResult);
 
     const result = secondaryAccountWithAuthToSecondaryKeyWithAuth(accounts, context);
@@ -12149,11 +12148,10 @@ describe('childKeysWithAuthToCreateChildIdentitiesWithAuth', () => {
     const h512Signature = '0xSignature' as unknown as H512;
     when(context.createType).calledWith('H512', '0xSignature').mockReturnValue(h512Signature);
 
-    const fakeResult =
-      'fakeSecondaryKeysWithAuth' as unknown as Vec<PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth>;
+    const fakeResult = 'fakeSecondaryKeysWithAuth' as unknown as Vec<Codec>;
 
     when(context.createType)
-      .calledWith('Vec<PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth>', [
+      .calledWith('Vec<PolymeshPrimitivesIdentityCreateChildIdentityWithAuth>', [
         {
           key: childAccountId,
           authSignature: h512Signature,

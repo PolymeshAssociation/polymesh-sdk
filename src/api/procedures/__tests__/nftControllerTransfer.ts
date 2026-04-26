@@ -142,7 +142,7 @@ describe('nftControllerTransfer procedure', () => {
     });
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       did: signerDid,
-      destinationPortfolio,
+      destinationAssetHolder: destinationPortfolio,
     });
 
     return expect(
@@ -157,7 +157,7 @@ describe('nftControllerTransfer procedure', () => {
   it('should throw an error if transferring to another identity portfolio', () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       did: signerDid,
-      destinationPortfolio: entityMockUtils.getDefaultPortfolioInstance({ did: 'strangerDid' }),
+      destinationAssetHolder: entityMockUtils.getDefaultPortfolioInstance({ did: 'strangerDid' }),
     });
 
     return expect(
@@ -172,7 +172,7 @@ describe('nftControllerTransfer procedure', () => {
   it('should throw an error if the Portfolio does not have enough balance to transfer', () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       did: signerDid,
-      destinationPortfolio,
+      destinationAssetHolder: destinationPortfolio,
     });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -190,7 +190,7 @@ describe('nftControllerTransfer procedure', () => {
   it('should return an nft controller transfer transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       did: signerDid,
-      destinationPortfolio,
+      destinationAssetHolder: destinationPortfolio,
     });
 
     const transaction = dsMockUtils.createTxMock('nft', 'controllerTransfer');
@@ -214,7 +214,7 @@ describe('nftControllerTransfer procedure', () => {
 
       const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
         did: 'oneDid',
-        destinationPortfolio,
+        destinationAssetHolder: destinationPortfolio,
       });
       const boundFunc = getAuthorization.bind(proc);
 
@@ -246,7 +246,7 @@ describe('nftControllerTransfer procedure', () => {
 
       expect(result).toEqual({
         did: 'someDid',
-        destinationPortfolio,
+        destinationAssetHolder: destinationPortfolio,
       });
     });
 
@@ -261,7 +261,7 @@ describe('nftControllerTransfer procedure', () => {
       expect(result).toEqual(
         expect.objectContaining({
           did: 'signerDid',
-          destinationPortfolio,
+          destinationAssetHolder: expect.any(Object),
         })
       );
     });

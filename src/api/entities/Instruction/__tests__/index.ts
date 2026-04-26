@@ -7,7 +7,14 @@ import {
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { Context, Entity, Instruction, PolymeshTransaction } from '~/internal';
+import {
+  Context,
+  DefaultPortfolio,
+  Entity,
+  Identity,
+  Instruction,
+  PolymeshTransaction,
+} from '~/internal';
 import {
   instructionAffirmationsQuery,
   instructionEventsQuery,
@@ -931,7 +938,14 @@ describe('Instruction class', () => {
       const authsReceivedEntries = rawStorageKey.map(([instructionId, portfolioId]) =>
         tuple(
           {
-            args: [instructionId, portfolioId],
+            args: [
+              instructionId,
+              {
+                isPortfolio: true,
+                asPortfolio: portfolioId,
+                isAccount: false,
+              },
+            ],
           } as unknown as StorageKey,
           dsMockUtils.createMockAffirmationStatus(AffirmationStatus.Affirmed)
         )
@@ -977,7 +991,7 @@ describe('Instruction class', () => {
       const { data } = await instruction.getAffirmations();
 
       expect(data).toHaveLength(1);
-      expect(data[0]!.identity.did).toEqual(did);
+      expect((data[0]!.identity as Identity).did).toEqual(did);
       expect(data[0]!.status).toEqual(status);
     });
 
@@ -1014,7 +1028,7 @@ describe('Instruction class', () => {
         });
 
         expect(data).toHaveLength(1);
-        expect(data[0]!.identity.did).toEqual(did);
+        expect((data[0]!.identity as Identity).did).toEqual(did);
         expect(data[0]!.status).toEqual(status);
 
         expect(next).toBeNull();
@@ -1048,8 +1062,8 @@ describe('Instruction class', () => {
       });
 
       it("should return the instruction's legs", async () => {
-        const fromDid = 'fromDid';
-        const toDid = 'toDid';
+        const fromDid = '0x0100000000000000000000000000000000000000000000000000000000000000';
+        const toDid = '0x0600000000000000000000000000000000000000000000000000000000000000';
         const assetId = '0x11111111111181111111111111111111';
         const assetId2 = '0x22222222222222222222222222222222';
         const amount = new BigNumber(1000);
@@ -1098,14 +1112,14 @@ describe('Instruction class', () => {
         const resultLeg1 = data[0] as FungibleLeg;
         expect(resultLeg1.amount).toEqual(amount);
         expect(resultLeg1.asset.id).toBe(hexToUuid(assetId));
-        expect(resultLeg1.from.owner.did).toBe(fromDid);
-        expect(resultLeg1.to.owner.did).toBe(toDid);
+        expect((resultLeg1.from as DefaultPortfolio).owner.did).toBe(fromDid);
+        expect((resultLeg1.to as DefaultPortfolio).owner.did).toBe(toDid);
 
         const resultLeg2 = data[1] as FungibleLeg;
         expect(resultLeg2.amount).toEqual(amount);
         expect(resultLeg2.asset.id).toBe(hexToUuid(assetId2));
-        expect(resultLeg2.from.owner.did).toBe(fromDid);
-        expect(resultLeg2.to.owner.did).toBe(toDid);
+        expect((resultLeg2.from as DefaultPortfolio).owner.did).toBe(fromDid);
+        expect((resultLeg2.to as DefaultPortfolio).owner.did).toBe(toDid);
 
         dsMockUtils.createApolloQueryMock(
           legsQuery(
@@ -1154,8 +1168,8 @@ describe('Instruction class', () => {
       });
 
       it("should return the instruction's legs", async () => {
-        const fromDid = 'fromDid';
-        const toDid = 'toDid';
+        const fromDid = '0x0100000000000000000000000000000000000000000000000000000000000000';
+        const toDid = '0x0600000000000000000000000000000000000000000000000000000000000000';
         const assetId = '0x11111111111181111111111111111111';
         const assetId2 = '0x22222222222222222222222222222222';
         const amount = new BigNumber(1000);
@@ -1167,13 +1181,17 @@ describe('Instruction class', () => {
         const mockLeg1 = dsMockUtils.createMockOption(
           dsMockUtils.createMockInstructionLeg({
             Fungible: {
-              sender: dsMockUtils.createMockPortfolioId({
-                did: dsMockUtils.createMockIdentityId(fromDid),
-                kind: dsMockUtils.createMockPortfolioKind('Default'),
+              sender: dsMockUtils.createMockAssetHolder({
+                Portfolio: dsMockUtils.createMockPortfolioId({
+                  did: dsMockUtils.createMockIdentityId(fromDid),
+                  kind: dsMockUtils.createMockPortfolioKind('Default'),
+                }),
               }),
-              receiver: dsMockUtils.createMockPortfolioId({
-                did: dsMockUtils.createMockIdentityId(toDid),
-                kind: dsMockUtils.createMockPortfolioKind('Default'),
+              receiver: dsMockUtils.createMockAssetHolder({
+                Portfolio: dsMockUtils.createMockPortfolioId({
+                  did: dsMockUtils.createMockIdentityId(toDid),
+                  kind: dsMockUtils.createMockPortfolioKind('Default'),
+                }),
               }),
               assetId: dsMockUtils.createMockAssetId(assetId),
               amount: dsMockUtils.createMockU128(amount.shiftedBy(6)),
@@ -1184,13 +1202,17 @@ describe('Instruction class', () => {
         const mockLeg2 = dsMockUtils.createMockOption(
           dsMockUtils.createMockInstructionLeg({
             Fungible: {
-              sender: dsMockUtils.createMockPortfolioId({
-                did: dsMockUtils.createMockIdentityId(fromDid),
-                kind: dsMockUtils.createMockPortfolioKind('Default'),
+              sender: dsMockUtils.createMockAssetHolder({
+                Portfolio: dsMockUtils.createMockPortfolioId({
+                  did: dsMockUtils.createMockIdentityId(fromDid),
+                  kind: dsMockUtils.createMockPortfolioKind('Default'),
+                }),
               }),
-              receiver: dsMockUtils.createMockPortfolioId({
-                did: dsMockUtils.createMockIdentityId(toDid),
-                kind: dsMockUtils.createMockPortfolioKind('Default'),
+              receiver: dsMockUtils.createMockAssetHolder({
+                Portfolio: dsMockUtils.createMockPortfolioId({
+                  did: dsMockUtils.createMockIdentityId(toDid),
+                  kind: dsMockUtils.createMockPortfolioKind('Default'),
+                }),
               }),
               assetId: dsMockUtils.createMockAssetId(assetId2),
               amount: dsMockUtils.createMockU128(amount.shiftedBy(6)),
@@ -1223,14 +1245,14 @@ describe('Instruction class', () => {
         const resultLeg1 = leg[0] as FungibleLeg;
         expect(resultLeg1.amount).toEqual(amount);
         expect(resultLeg1.asset.id).toBe(hexToUuid(assetId2));
-        expect(resultLeg1.from.owner.did).toBe(fromDid);
-        expect(resultLeg1.to.owner.did).toBe(toDid);
+        expect((resultLeg1.from as DefaultPortfolio).owner.did).toBe(fromDid);
+        expect((resultLeg1.to as DefaultPortfolio).owner.did).toBe(toDid);
 
         const resultLeg2 = leg[1] as FungibleLeg;
         expect(resultLeg2.amount).toEqual(amount);
         expect(resultLeg2.asset.id).toBe(hexToUuid(assetId));
-        expect(resultLeg2.from.owner.did).toBe(fromDid);
-        expect(resultLeg2.to.owner.did).toBe(toDid);
+        expect((resultLeg2.from as DefaultPortfolio).owner.did).toBe(fromDid);
+        expect((resultLeg2.to as DefaultPortfolio).owner.did).toBe(toDid);
       });
 
       it('should throw an error if the instruction is not pending', () => {
@@ -1241,8 +1263,8 @@ describe('Instruction class', () => {
       });
 
       it('should handle NFT legs', async () => {
-        const fromDid = 'fromDid';
-        const toDid = 'toDid';
+        const fromDid = '0x0100000000000000000000000000000000000000000000000000000000000000';
+        const toDid = '0x0600000000000000000000000000000000000000000000000000000000000000';
         const assetId = '0x11111111111181111111111111111111';
 
         entityMockUtils.configureMocks({ fungibleAssetOptions: { assetId } });
@@ -1252,13 +1274,17 @@ describe('Instruction class', () => {
         const mockLeg = dsMockUtils.createMockOption(
           dsMockUtils.createMockInstructionLeg({
             NonFungible: {
-              sender: dsMockUtils.createMockPortfolioId({
-                did: dsMockUtils.createMockIdentityId(fromDid),
-                kind: dsMockUtils.createMockPortfolioKind('Default'),
+              sender: dsMockUtils.createMockAssetHolder({
+                Portfolio: dsMockUtils.createMockPortfolioId({
+                  did: dsMockUtils.createMockIdentityId(fromDid),
+                  kind: dsMockUtils.createMockPortfolioKind('Default'),
+                }),
               }),
-              receiver: dsMockUtils.createMockPortfolioId({
-                did: dsMockUtils.createMockIdentityId(toDid),
-                kind: dsMockUtils.createMockPortfolioKind('Default'),
+              receiver: dsMockUtils.createMockAssetHolder({
+                Portfolio: dsMockUtils.createMockPortfolioId({
+                  did: dsMockUtils.createMockIdentityId(toDid),
+                  kind: dsMockUtils.createMockPortfolioKind('Default'),
+                }),
               }),
               nfts: createMockNfts({
                 assetId: createMockAssetId(assetId),
@@ -1284,14 +1310,14 @@ describe('Instruction class', () => {
           expect.arrayContaining([expect.objectContaining({ id: new BigNumber(1) })])
         );
         expect(resultLeg.asset.id).toBe(hexToUuid(assetId));
-        expect(resultLeg.from.owner.did).toBe(fromDid);
-        expect(resultLeg.to.owner.did).toBe(toDid);
+        expect((resultLeg.from as DefaultPortfolio).owner.did).toBe(fromDid);
+        expect((resultLeg.to as DefaultPortfolio).owner.did).toBe(toDid);
       });
 
       it('should handle off chain legs', async () => {
-        const fromDid = 'fromDid';
+        const fromDid = '0x0100000000000000000000000000000000000000000000000000000000000000';
         const rawFromId = dsMockUtils.createMockIdentityId(fromDid);
-        const toDid = 'toDid';
+        const toDid = '0x0600000000000000000000000000000000000000000000000000000000000000';
         const rawToId = dsMockUtils.createMockIdentityId(toDid);
         const offChainAsset = 'SOME_TICKER';
         const amount = new BigNumber(10);
@@ -2574,6 +2600,9 @@ describe('Instruction class', () => {
       when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
       when(bigNumberToU64Spy).calledWith(uid, context).mockReturnValue(rawUid);
       when(bigNumberToU64Spy).calledWith(legId, context).mockReturnValue(rawLegId);
+      jest
+        .spyOn(utilsConversionModule, 'dateToMoment')
+        .mockReturnValue(dsMockUtils.createMockMoment(new BigNumber(1000)));
     });
 
     it('should throw an error for an invalid leg ID', () => {
@@ -2585,6 +2614,7 @@ describe('Instruction class', () => {
         instruction.generateOffChainAffirmationReceipt({
           legId,
           uid,
+          expiresAt: new Date(),
         })
       ).rejects.toThrow('Leg does not exist');
     });
@@ -2594,13 +2624,17 @@ describe('Instruction class', () => {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockInstructionLeg({
             Fungible: {
-              sender: dsMockUtils.createMockPortfolioId({
-                did: dsMockUtils.createMockIdentityId('fromDid'),
-                kind: dsMockUtils.createMockPortfolioKind('Default'),
+              sender: dsMockUtils.createMockAssetHolder({
+                Portfolio: dsMockUtils.createMockPortfolioId({
+                  did: dsMockUtils.createMockIdentityId('fromDid'),
+                  kind: dsMockUtils.createMockPortfolioKind('Default'),
+                }),
               }),
-              receiver: dsMockUtils.createMockPortfolioId({
-                did: dsMockUtils.createMockIdentityId('toDid'),
-                kind: dsMockUtils.createMockPortfolioKind('Default'),
+              receiver: dsMockUtils.createMockAssetHolder({
+                Portfolio: dsMockUtils.createMockPortfolioId({
+                  did: dsMockUtils.createMockIdentityId('toDid'),
+                  kind: dsMockUtils.createMockPortfolioKind('Default'),
+                }),
               }),
               assetId: dsMockUtils.createMockAssetId('0x12345'),
               amount: dsMockUtils.createMockU128(new BigNumber(10)),
@@ -2613,6 +2647,7 @@ describe('Instruction class', () => {
         instruction.generateOffChainAffirmationReceipt({
           legId,
           uid,
+          expiresAt: new Date(),
         })
       ).rejects.toThrow('Receipt payload can only be generated for offchain legs');
     });
@@ -2649,6 +2684,7 @@ describe('Instruction class', () => {
       let result = await instruction.generateOffChainAffirmationReceipt({
         legId,
         uid,
+        expiresAt: new Date(),
       });
 
       expect(result).toEqual({
@@ -2673,6 +2709,7 @@ describe('Instruction class', () => {
         signer,
         signerKeyRingType: SignerKeyRingType.Ed25519,
         metadata,
+        expiresAt: new Date(),
       });
 
       expect(result).toEqual({

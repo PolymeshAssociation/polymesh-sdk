@@ -33,7 +33,7 @@ export async function prepareUnlinkChildIdentity(
   if (!context.isV7) {
     throw new PolymeshError({
       code: ErrorCode.NotSupported,
-      message: 'Child Identiteis are no longer supported in v8',
+      message: 'Child identities are no longer supported in chain v8',
     });
   }
 

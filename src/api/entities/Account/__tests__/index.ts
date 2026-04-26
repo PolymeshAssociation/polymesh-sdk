@@ -92,8 +92,7 @@ describe('Account class', () => {
     });
 
     expect(
-      // cSpell: disable-next-line
-      () => new Account({ address: 'ajYMsCKsEAhEvHpeA4XqsfiA9v1CdzZPrCfS6pEfeGHW9j8' }, context)
+      () => new Account({ address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY' }, context)
     ).toThrow();
   });
 

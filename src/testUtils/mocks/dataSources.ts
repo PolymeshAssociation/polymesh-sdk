@@ -841,7 +841,7 @@ function configureContext(opts: ContextOptions): void {
         address: opts.primaryAccount,
       },
       permissions: {
-        tokens: null,
+        assets: null,
         transactions: null,
         transactionGroups: [],
         portfolios: null,
@@ -2407,7 +2407,7 @@ export const createMockAssetHolder = (
     return assetHolder as MockCodec<PolymeshPrimitivesAssetAssetHolder>;
   }
 
-  return createMockEnum<PolymeshPrimitivesAssetAssetHolder>(assetHolder as any);
+  return createMockEnum<PolymeshPrimitivesAssetAssetHolder>(assetHolder);
 };
 
 /**

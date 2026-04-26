@@ -7,6 +7,8 @@ import { createProcedureMethod } from '~/utils/internal';
 
 /**
  * Represents a child identity
+ *
+ * @deprecated child identities are no longer supported in chain v8
  */
 export class ChildIdentity extends Identity {
   /**

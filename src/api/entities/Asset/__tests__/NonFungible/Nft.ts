@@ -442,7 +442,7 @@ describe('Nft class', () => {
 
       const error = new PolymeshError({
         code: ErrorCode.DataUnavailable,
-        message: 'NFT does not exists. The token may have been redeemed',
+        message: 'NFT does not exist. The token may have been redeemed',
       });
       return expect(nft.isLocked()).rejects.toThrow(error);
     });

@@ -55,6 +55,7 @@ describe('unlinkChildIdentity procedure', () => {
 
     mockContext = dsMockUtils.getContextInstance({
       getIdentity: identity,
+      isV7: true,
     });
 
     when(stringToIdentityIdSpy)
@@ -119,7 +120,8 @@ describe('unlinkChildIdentity procedure', () => {
     });
 
     const unlinkChildIdentityTransaction = dsMockUtils.createTxMock(
-      'identity',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      'identity' as any,
       'unlinkChildIdentity'
     );
 

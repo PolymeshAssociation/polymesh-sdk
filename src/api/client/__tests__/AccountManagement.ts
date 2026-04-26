@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { AccountManagement } from '~/api/client/AccountManagement';
-import { Account, MultiSig, PolymeshTransaction, Subsidy } from '~/internal';
+import { Account, AuthorizationRequest, MultiSig, PolymeshTransaction, Subsidy } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import { AccountBalance, Identity, PermissionType, SubCallback } from '~/types';
@@ -86,7 +86,7 @@ describe('AccountManagement class', () => {
         {
           account,
           permissions: {
-            tokens: { type: PermissionType.Include, values: [] },
+            assets: { type: PermissionType.Include, values: [] },
             transactions: { type: PermissionType.Include, values: [] },
             portfolios: { type: PermissionType.Include, values: [] },
           },
@@ -110,7 +110,7 @@ describe('AccountManagement class', () => {
       const secondaryAccounts = [
         {
           account: entityMockUtils.getAccountInstance({ address: 'someAccount' }),
-          permissions: { tokens: null, transactions: null, portfolios: null },
+          permissions: { assets: null, transactions: null, portfolios: null },
         },
       ];
 
@@ -187,15 +187,36 @@ describe('AccountManagement class', () => {
         allowance: new BigNumber(1000),
       };
 
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<AuthorizationRequest>;
 
       when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args, transformer: undefined }, context, {})
+        .calledWith({ args: { ...args, isV7Method: true }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
       const tx = await accountManagement.subsidizeAccount(args);
 
-      expect(tx).toBe(expectedTransaction);
+      expect(tx).toEqual(expectedTransaction);
+    });
+  });
+
+  describe('method: approveSubsidy', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args = {
+        beneficiary: 'someAccount',
+        allowance: new BigNumber(1000),
+      };
+
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<AuthorizationRequest>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { ...args, isV7Method: false }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await accountManagement.approveSubsidy(args);
+
+      expect(tx).toEqual(expectedTransaction);
     });
   });
 
