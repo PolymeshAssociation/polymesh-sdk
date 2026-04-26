@@ -209,7 +209,7 @@ describe('modifySignerPermissions procedure', () => {
       let result = await boundFunc();
       expect(result).toEqual({
         permissions: {
-          transactions: [TxTags.identity.SetPermissionToSigner],
+          transactions: [TxTags.identity.SetSecondaryKeyPermissions],
           assets: [],
           portfolios: [],
         },

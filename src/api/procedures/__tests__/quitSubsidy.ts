@@ -67,7 +67,7 @@ describe('quitSubsidy procedure', () => {
   });
 
   it('should return a transaction spec', async () => {
-    const removePayingKeyTransaction = dsMockUtils.createTxMock('relayer', 'removePayingKey');
+    const removeSubsidyTransaction = dsMockUtils.createTxMock('relayer', 'removeSubsidy');
 
     const rawBeneficiaryAccountId = dsMockUtils.createMockAccountId('beneficiary');
     const rawSubsidizerAccountId = dsMockUtils.createMockAccountId('subsidizer');
@@ -83,7 +83,7 @@ describe('quitSubsidy procedure', () => {
     const result = await prepareQuitSubsidy.call(proc, args);
 
     expect(result).toEqual({
-      transaction: removePayingKeyTransaction,
+      transaction: removeSubsidyTransaction,
       args: [rawBeneficiaryAccountId, rawSubsidizerAccountId],
       resolver: undefined,
     });

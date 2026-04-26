@@ -31,7 +31,9 @@ describe('ChildIdentity class', () => {
   });
 
   beforeEach(() => {
-    context = dsMockUtils.getContextInstance();
+    context = dsMockUtils.getContextInstance({
+      isV7: true,
+    });
     childIdentity = new ChildIdentity({ did }, context);
   });
 
@@ -61,7 +63,8 @@ describe('ChildIdentity class', () => {
       const rawIdentity = dsMockUtils.createMockIdentityId(did);
       when(stringToIdentityIdSpy).calledWith(did, context).mockReturnValue(rawIdentity);
 
-      dsMockUtils.createQueryMock('identity', 'parentDid', {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      dsMockUtils.createQueryMock('identity' as any, 'parentDid', {
         returnValue: dsMockUtils.createMockOption(),
       });
 
@@ -74,7 +77,8 @@ describe('ChildIdentity class', () => {
       const rawParentDid = dsMockUtils.createMockIdentityId(parentDid);
       when(identityIdToStringSpy).calledWith(rawParentDid).mockReturnValue(parentDid);
 
-      dsMockUtils.createQueryMock('identity', 'parentDid', {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      dsMockUtils.createQueryMock('identity' as any, 'parentDid', {
         returnValue: dsMockUtils.createMockOption(rawParentDid),
       });
 

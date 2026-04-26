@@ -147,16 +147,17 @@ class BaseSettlements<T extends BaseAsset> extends Namespace<T> {
     if (!fromDid) {
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
-        message: 'No DID associated with from account holder',
+        message: 'No DID associated with `from` account holder',
       });
     }
 
     if (!toDid) {
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
-        message: 'No DID associated with to account holder',
+        message: 'No DID associated with `to` account holder',
       });
     }
+
     const rawFromDid = stringToIdentityId(fromDid, context);
     const rawToDid = stringToIdentityId(toDid, context);
 

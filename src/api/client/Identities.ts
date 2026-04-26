@@ -222,6 +222,8 @@ export class Identities {
    *  - the `secondaryKey` can't be unlinked (can happen when it's part of a multisig with some balance)
    *  - the signing account is not a primary key
    *  - the signing Identity is already a child of some other identity
+   *
+   * @deprecated Child identities are no longer supported in chain v8
    */
   public createChild: ProcedureMethod<CreateChildIdentityParams, ChildIdentity>;
 
@@ -235,6 +237,8 @@ export class Identities {
    *  - the signing Identity is already a child of some other identity
    *  - `expiresAt` is not a future date
    *  - the any `key` in `childKeyAuths` is already linked to an Identity
+   *
+   * @deprecated Child identities are no longer supported in chain v8
    */
   public createChildren: ProcedureMethod<CreateChildIdentitiesParams, ChildIdentity[]>;
 

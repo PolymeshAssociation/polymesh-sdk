@@ -841,7 +841,7 @@ function configureContext(opts: ContextOptions): void {
         address: opts.primaryAccount,
       },
       permissions: {
-        tokens: null,
+        assets: null,
         transactions: null,
         transactionGroups: [],
         portfolios: null,
@@ -2370,6 +2370,24 @@ export const createMockPortfolioKind = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockAssetHolderKind = (
+  assetHolderKind?:
+    | 'Account'
+    | 'DefaultPortfolio'
+    | { UserPortfolio: u64 }
+    | PolymeshPrimitivesAssetAssetHolderKind
+): MockCodec<PolymeshPrimitivesAssetAssetHolderKind> => {
+  if (isCodec<PolymeshPrimitivesAssetAssetHolderKind>(assetHolderKind)) {
+    return assetHolderKind as MockCodec<PolymeshPrimitivesAssetAssetHolderKind>;
+  }
+
+  return createMockEnum<PolymeshPrimitivesAssetAssetHolderKind>(assetHolderKind);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockPortfolioId = (
   portfolioId?:
     | PolymeshPrimitivesIdentityIdPortfolioId
@@ -2407,7 +2425,7 @@ export const createMockAssetHolder = (
     return assetHolder as MockCodec<PolymeshPrimitivesAssetAssetHolder>;
   }
 
-  return createMockEnum<PolymeshPrimitivesAssetAssetHolder>(assetHolder as any);
+  return createMockEnum<PolymeshPrimitivesAssetAssetHolder>(assetHolder);
 };
 
 /**

@@ -114,7 +114,7 @@ import { blake2AsHex, decodeAddress, encodeAddress } from '@polkadot/util-crypto
 import {
   AssetComplianceResult,
   AuthorizationType as MeshAuthorizationType,
-  // CddStatus,
+  CddStatus,
   ComplianceReport,
   ComplianceRequirementResult,
   GranularCanTransferResult,
@@ -793,20 +793,10 @@ export function meshAssetHolderToAssetHolder(
   rawAccountHolder: PolymeshPrimitivesAssetAssetHolder,
   context: Context
 ): Account | DefaultPortfolio | NumberedPortfolio {
-  if (!rawAccountHolder) {
-    throw new Error('meshAssetHolderToAssetHolder: rawAccountHolder is undefined');
-  }
   if (rawAccountHolder.isPortfolio) {
-    const portfolioId =
-      (rawAccountHolder as any).asPortfolio || (rawAccountHolder as any).asIdentity;
-    if (!portfolioId) {
-      throw new Error(
-        `meshAssetHolderToAssetHolder: portfolioId is undefined. Variant: ${rawAccountHolder.type}`
-      );
-    }
-    return meshPortfolioIdToPortfolio(portfolioId, context);
+    return meshPortfolioIdToPortfolio(rawAccountHolder.asPortfolio, context);
   }
-  return new Account({ address: (rawAccountHolder as any).asAccount?.toString() }, context);
+  return new Account({ address: rawAccountHolder.asAccount.toString() }, context);
 }
 
 /**
@@ -818,9 +808,14 @@ export function portfolioToPortfolioId(
   const {
     owner: { did },
   } = portfolio;
-  const { id: number } = portfolio as any;
 
-  return { did, number };
+  if (portfolio instanceof DefaultPortfolio) {
+    return { did };
+  } else {
+    const { id: number } = portfolio;
+
+    return { did, number };
+  }
 }
 
 /**
@@ -832,19 +827,15 @@ export function portfolioLikeToPortfolioId(value: PortfolioLike): PortfolioId {
 
   if (typeof value === 'string') {
     did = value;
-  } else if ('identity' in value) {
+  } else if (value instanceof Identity) {
+    ({ did } = value);
+  } else if (value instanceof Portfolio) {
+    ({ did, number } = portfolioToPortfolioId(value));
+  } else {
     const { identity: valueIdentity } = value;
     ({ id: number } = value);
 
     did = asDid(valueIdentity);
-  } else {
-    const isPortfolio = 'owner' in value;
-
-    if (isPortfolio) {
-      ({ did, number } = portfolioToPortfolioId(value as any));
-    } else {
-      ({ did } = value as any);
-    }
   }
 
   return { did, number: number?.gt(0) ? number : undefined };
@@ -933,6 +924,7 @@ export async function assetHolderIdToMeshAssetHolder(
   if (typeof assetHolderId === 'string') {
     if (hexHasPrefix(assetHolderId)) {
       if (context.isV7) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return portfolioIdToMeshPortfolioId({ did: assetHolderId }, context) as any;
       }
       return context.createType<PolymeshPrimitivesAssetAssetHolder>(
@@ -954,6 +946,7 @@ export async function assetHolderIdToMeshAssetHolder(
       return context.createType('PolymeshPrimitivesIdentityIdPortfolioId', {
         did: stringToIdentityId(identity.did, context),
         kind: { AccountId: stringToAccountId(assetHolderId, context) },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       }) as any;
     }
     return context.createType<PolymeshPrimitivesAssetAssetHolder>(
@@ -964,6 +957,7 @@ export async function assetHolderIdToMeshAssetHolder(
     );
   }
   if (context.isV7) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return portfolioIdToMeshPortfolioId(assetHolderId, context) as any;
   }
   return context.createType<PolymeshPrimitivesAssetAssetHolder>(
@@ -1002,6 +996,7 @@ export function assetHolderToAssetHolderKind(
         AccountId: stringToAccountId(assetHolder.address, context),
       });
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return portfolioToPortfolioKind(assetHolder, context) as any;
   }
   if (assetHolder instanceof Account) {
@@ -1392,9 +1387,7 @@ export function meshPermissionsToPermissions(
 
   let portfoliosType: PermissionType;
   let portfolioIds;
-  if (!portfolio) {
-    console.error('meshPermissionsToPermissionsV2: portfolio is undefined', permissions);
-  }
+
   if (portfolio.isThese) {
     portfoliosType = PermissionType.Include;
     portfolioIds = portfolio.asThese;
@@ -1405,12 +1398,9 @@ export function meshPermissionsToPermissions(
 
   if (portfolioIds) {
     portfolios = {
-      values: [...portfolioIds].map(portfolioId => {
-        if (!portfolioId) {
-          console.error('meshPermissionsToPermissionsV2: portfolioId is undefined in map');
-        }
-        return meshPortfolioIdToPortfolio(portfolioId, context);
-      }),
+      values: [...portfolioIds].map(portfolioId =>
+        meshPortfolioIdToPortfolio(portfolioId, context)
+      ),
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       type: portfoliosType!,
     };
@@ -1791,10 +1781,7 @@ export function authorizationDataToAuthorization(
   if (auth.isPortfolioCustody) {
     return {
       type: AuthorizationType.PortfolioCustody,
-      value: meshPortfolioIdToPortfolio(
-        (auth as any).asPortfolioCustody || (auth as any).asCustody,
-        context
-      ),
+      value: meshPortfolioIdToPortfolio(auth.asPortfolioCustody, context),
     };
   }
 
@@ -1806,9 +1793,8 @@ export function authorizationDataToAuthorization(
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if ((auth as any).isAddRelayerPayingKey || (auth as any).isOldAddRelayerPayingKey) {
-    const [userKey, payingKey, polyxLimit] = ((auth as any).asOldAddRelayerPayingKey ||
-      (auth as any).asAddRelayerPayingKey) as [AccountId, AccountId, Balance];
+  if ((auth as any).isAddRelayerPayingKey || auth.isOldAddRelayerPayingKey) {
+    const [userKey, payingKey, polyxLimit] = auth.asOldAddRelayerPayingKey;
 
     const value = {
       beneficiary: new Account({ address: accountIdToString(userKey) }, context),
@@ -1818,13 +1804,13 @@ export function authorizationDataToAuthorization(
 
     if (context.isV7) {
       return {
-        type: AuthorizationType.OldAddRelayerPayingKey,
+        type: AuthorizationType.AddRelayerPayingKey,
         value,
       };
     }
 
     return {
-      type: AuthorizationType.AddRelayerPayingKey,
+      type: AuthorizationType.OldAddRelayerPayingKey,
       value,
     };
   }
@@ -2434,9 +2420,8 @@ export function documentToAssetDocumentWithId({
 /**
  * @hidden
  */
-export function cddStatusToBoolean(cddStatus: unknown): boolean {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if ((cddStatus as any).isOk) {
+export function cddStatusToBoolean(cddStatus: CddStatus): boolean {
+  if (cddStatus.isOk) {
     return true;
   }
   return false;
@@ -3719,6 +3704,7 @@ export function assetHolderIdsToBtreeSet(
     return portfolioIdsToBtreeSet(
       rawAssetHolderIds as unknown as PolymeshPrimitivesIdentityIdPortfolioId[],
       context
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ) as any;
   }
   return context.createType(
@@ -3767,13 +3753,21 @@ export function assetDispatchErrorToTransferError(
     [assetErrors.InvalidTransferComplianceFailure, TransferError.ComplianceFailure],
     [assetErrors.InvalidTransfer, TransferError.ComplianceFailure],
     [statisticsError.InvalidTransferStatisticsFailure, TransferError.TransferNotAllowed],
-    [(portfolioErrors as any).InvalidTransferSenderIdMatchesReceiverId, TransferError.SelfTransfer],
-    [(assetErrors as any).InvalidTransferInvalidReceiverCDD, TransferError.InvalidReceiverCdd],
-    [(assetErrors as any).InvalidTransferInvalidSenderCDD, TransferError.InvalidSenderCdd],
   ];
 
   if (context.isV7) {
-    record = [...record];
+    record = [
+      ...record,
+      [
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (portfolioErrors as any).InvalidTransferSenderIdMatchesReceiverId,
+        TransferError.SelfTransfer,
+      ],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      [(assetErrors as any).InvalidTransferInvalidReceiverCDD, TransferError.InvalidReceiverCdd],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      [(assetErrors as any).InvalidTransferInvalidSenderCDD, TransferError.InvalidSenderCdd],
+    ];
   }
   if (error.isModule) {
     const moduleErr = error.asModule;
@@ -3783,6 +3777,8 @@ export function assetDispatchErrorToTransferError(
       return errorCase[1];
     } else {
       // Extract the actual error details from the registry metadata:
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const errorMeta = (moduleErr as any).registry?.findMetaError(moduleErr);
       if (errorMeta) {
         return errorMeta.name;
@@ -5810,6 +5806,8 @@ export function secondaryAccountWithAuthToSecondaryKeyWithAuth(
 
 /**
  * @hidden
+ *
+ * @deprecated no longer supported in chain v8
  */
 export function childKeysWithAuthToCreateChildIdentitiesWithAuth(
   childKeyAuths: ChildKeyWithAuth[],

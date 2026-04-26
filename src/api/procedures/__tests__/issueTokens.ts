@@ -25,14 +25,17 @@ describe('issueTokens procedure', () => {
   let rawAssetId: PolymeshPrimitivesAssetAssetId;
   let amount: BigNumber;
   let rawAmount: Balance;
-  let portfolioToPortfolioKindSpy: jest.SpyInstance;
+  let assetHolderToAssetHolderKindSpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     assetToMeshAssetIdSpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
-    portfolioToPortfolioKindSpy = jest.spyOn(utilsConversionModule, 'portfolioToPortfolioKind');
+    assetHolderToAssetHolderKindSpy = jest.spyOn(
+      utilsConversionModule,
+      'assetHolderToAssetHolderKind'
+    );
     bigNumberToBalance = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
     assetId = '0x12341234123412341234123412341234';
     asset = entityMockUtils.getFungibleAssetInstance({ assetId });
@@ -121,9 +124,9 @@ describe('issueTokens procedure', () => {
     const defaultPortfolioId = new BigNumber(0);
     const numberedPortfolioId = new BigNumber(1);
 
-    const defaultPortfolioKind = dsMockUtils.createMockPortfolioKind('Default');
-    const numberedPortfolioKind = dsMockUtils.createMockPortfolioKind({
-      User: dsMockUtils.createMockU64(numberedPortfolioId),
+    const defaultPortfolioHolderKind = dsMockUtils.createMockAssetHolderKind('DefaultPortfolio');
+    const numberedPortfolioHolderKind = dsMockUtils.createMockAssetHolderKind({
+      UserPortfolio: dsMockUtils.createMockU64(numberedPortfolioId),
     });
 
     const getPortfolio: EntityGetter<Portfolio> = jest.fn();
@@ -134,12 +137,6 @@ describe('issueTokens procedure', () => {
     });
 
     beforeEach(() => {
-      when(mockContext.createType)
-        .calledWith('PolymeshPrimitivesIdentityIdPortfolioKind', 'Default')
-        .mockReturnValue(defaultPortfolioKind);
-      when(mockContext.createType)
-        .calledWith('PolymeshPrimitivesIdentityIdPortfolioKind', numberedPortfolioKind)
-        .mockReturnValue(numberedPortfolioKind);
       when(getPortfolio)
         .calledWith()
         .mockResolvedValue(mockDefaultPortfolio)
@@ -148,11 +145,11 @@ describe('issueTokens procedure', () => {
         .calledWith({ portfolioId: numberedPortfolioId })
         .mockResolvedValue(mockNumberedPortfolio);
 
-      when(portfolioToPortfolioKindSpy)
+      when(assetHolderToAssetHolderKindSpy)
         .calledWith(mockDefaultPortfolio, mockContext)
-        .mockReturnValue(defaultPortfolioKind)
+        .mockReturnValue(defaultPortfolioHolderKind)
         .calledWith(mockNumberedPortfolio, mockContext)
-        .mockReturnValue(numberedPortfolioKind);
+        .mockReturnValue(numberedPortfolioHolderKind);
     });
 
     it('should issue tokens to Default portfolio if portfolioId is not specified', async () => {
@@ -179,7 +176,7 @@ describe('issueTokens procedure', () => {
 
       expect(result).toEqual({
         transaction,
-        args: [rawAssetId, rawAmount, defaultPortfolioKind],
+        args: [rawAssetId, rawAmount, defaultPortfolioHolderKind],
         resolver: expect.objectContaining({ id: assetId }),
       });
     });
@@ -209,7 +206,7 @@ describe('issueTokens procedure', () => {
 
       expect(result).toEqual({
         transaction,
-        args: [rawAssetId, rawAmount, defaultPortfolioKind],
+        args: [rawAssetId, rawAmount, defaultPortfolioHolderKind],
         resolver: expect.objectContaining({ id: assetId }),
       });
     });
@@ -239,7 +236,7 @@ describe('issueTokens procedure', () => {
 
       expect(result).toEqual({
         transaction,
-        args: [rawAssetId, rawAmount, numberedPortfolioKind],
+        args: [rawAssetId, rawAmount, numberedPortfolioHolderKind],
         resolver: expect.objectContaining({ id: assetId }),
       });
     });

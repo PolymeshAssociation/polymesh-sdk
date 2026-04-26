@@ -1,6 +1,6 @@
 import { Vec } from '@polkadot/types/codec';
 import { Moment } from '@polkadot/types/interfaces';
-import { PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesIdentitySecondaryKeyWithAuth } from '@polkadot/types/lookup';
 import { BigNumber } from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -21,7 +21,7 @@ describe('addSecondaryAccounts procedure', () => {
   let identity: Identity;
   let actingAccount: Account;
   let params: AddSecondaryAccountsParams;
-  let rawAdditionalKeys: Vec<PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth>;
+  let rawAdditionalKeys: Vec<PolymeshPrimitivesIdentitySecondaryKeyWithAuth>;
   let rawExpiry: Moment;
   let dateToMomentSpy: jest.SpyInstance;
   let secondaryAccountWithAuthToSecondaryKeyWithAuthSpy: jest.SpyInstance;
@@ -77,7 +77,7 @@ describe('addSecondaryAccounts procedure', () => {
     };
 
     rawAdditionalKeys =
-      'someKeys' as unknown as Vec<PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth>;
+      'someKeys' as unknown as Vec<PolymeshPrimitivesIdentitySecondaryKeyWithAuth>;
 
     when(secondaryAccountWithAuthToSecondaryKeyWithAuthSpy)
       .calledWith(params.accounts, mockContext)

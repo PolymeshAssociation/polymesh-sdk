@@ -239,12 +239,10 @@ describe('Identity class', () => {
     it('should check whether the Identity has the CDD Provider role', async () => {
       const did = 'someDid';
       const identity = new Identity({ did }, context);
-      const role: Role = { type: RoleType.CddProvider };
+      const role: Role = { type: RoleType.DidRegistrar };
       const rawDid = dsMockUtils.createMockIdentityId(did);
 
-      dsMockUtils
-        .createQueryMock('cddServiceProviders', 'activeMembers')
-        .mockResolvedValue([rawDid]);
+      dsMockUtils.createQueryMock('didRegistrars', 'activeMembers').mockResolvedValue([rawDid]);
 
       when(identityIdToStringSpy).calledWith(rawDid).mockReturnValue(did);
 
@@ -451,7 +449,7 @@ describe('Identity class', () => {
     it('should return whether the Identity has valid CDD', async () => {
       const did = 'someDid';
       const statusResponse = true;
-      const mockContext = dsMockUtils.getContextInstance();
+      const mockContext = dsMockUtils.getContextInstance({ isV7: true });
       const rawIdentityId = dsMockUtils.createMockIdentityId(did);
       const fakeHasValidCdd = dsMockUtils.createMockCddStatus({
         Ok: rawIdentityId,
@@ -459,7 +457,8 @@ describe('Identity class', () => {
 
       when(stringToIdentityIdSpy).calledWith(did, mockContext).mockReturnValue(rawIdentityId);
 
-      when(dsMockUtils.createCallMock('identityApi', 'isIdentityHasValidCdd'))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      when(dsMockUtils.createCallMock('identityApi' as any, 'isIdentityHasValidCdd'))
         .calledWith(rawIdentityId, null)
         .mockResolvedValue(fakeHasValidCdd);
 
@@ -467,7 +466,7 @@ describe('Identity class', () => {
         .calledWith(fakeHasValidCdd)
         .mockReturnValue(statusResponse);
 
-      const identity = new Identity({ did }, context);
+      const identity = new Identity({ did }, mockContext);
       const result = await identity.hasValidCdd();
 
       expect(result).toEqual(statusResponse);
@@ -503,7 +502,7 @@ describe('Identity class', () => {
       when(identityIdToStringSpy).calledWith(rawDid).mockReturnValue(did);
 
       dsMockUtils
-        .createQueryMock('cddServiceProviders', 'activeMembers')
+        .createQueryMock('didRegistrars', 'activeMembers')
         .mockResolvedValue([rawDid, dsMockUtils.createMockIdentityId('otherDid')]);
 
       const result = await identity.isCddProvider();
@@ -790,8 +789,20 @@ describe('Identity class', () => {
       id4 = new BigNumber(4);
       id5 = new BigNumber(5);
 
+      jest
+        .spyOn(utilsConversionModule, 'stringToAccountId')
+        .mockReturnValue(dsMockUtils.createMockAccountId('someAddress'));
       const did = 'someDid';
       identity = new Identity({ did }, context);
+      identity.getPrimaryAccount = jest.fn().mockResolvedValue({
+        account: entityMockUtils.getAccountInstance(),
+        permissions: {
+          assets: null,
+          transactions: null,
+          portfolios: null,
+        },
+      });
+      identity.getSecondaryAccounts = jest.fn().mockResolvedValue({ data: [], next: null });
 
       const defaultPortfolioDid = 'someDid';
       const numberedPortfolioDid = 'someDid';
@@ -835,41 +846,55 @@ describe('Identity class', () => {
         .calledWith(numberedPortfolio)
         .mockReturnValue({ did: numberedPortfolioDid, number: numberedPortfolioId });
 
-      const rawPortfolio = dsMockUtils.createMockPortfolioId({
-        did: dsMockUtils.createMockIdentityId(did),
-        kind: dsMockUtils.createMockPortfolioKind('Default'),
-      });
-
-      const rawNumberedPortfolio = dsMockUtils.createMockPortfolioId({
-        did: dsMockUtils.createMockIdentityId(numberedPortfolioDid),
-        kind: dsMockUtils.createMockPortfolioKind({
-          User: dsMockUtils.createMockU64(numberedPortfolioId),
+      const rawPortfolioHolder = dsMockUtils.createMockAssetHolder({
+        Portfolio: dsMockUtils.createMockPortfolioId({
+          did: dsMockUtils.createMockIdentityId(did),
+          kind: dsMockUtils.createMockPortfolioKind('Default'),
         }),
       });
 
-      const rawCustodiedPortfolio = dsMockUtils.createMockPortfolioId({
-        did: dsMockUtils.createMockIdentityId(custodiedPortfolioDid),
-        kind: dsMockUtils.createMockPortfolioKind({
-          User: dsMockUtils.createMockU64(custodiedPortfolioId),
+      const rawNumberedPortfolioHolder = dsMockUtils.createMockAssetHolder({
+        Portfolio: dsMockUtils.createMockPortfolioId({
+          did: dsMockUtils.createMockIdentityId(numberedPortfolioDid),
+          kind: dsMockUtils.createMockPortfolioKind({
+            User: dsMockUtils.createMockU64(numberedPortfolioId),
+          }),
         }),
       });
 
-      const portfolioIdToMeshPortfolioIdSpy = jest.spyOn(
+      const rawCustodiedPortfolioHolder = dsMockUtils.createMockAssetHolder({
+        Portfolio: dsMockUtils.createMockPortfolioId({
+          did: dsMockUtils.createMockIdentityId(custodiedPortfolioDid),
+          kind: dsMockUtils.createMockPortfolioKind({
+            User: dsMockUtils.createMockU64(custodiedPortfolioId),
+          }),
+        }),
+      });
+
+      const rawAccountHolder = dsMockUtils.createMockAssetHolder({
+        Account: dsMockUtils.createMockAccountId('someAddress'),
+      });
+
+      const assetHolderToMeshAssetHolderIdSpy = jest.spyOn(
         utilsConversionModule,
-        'portfolioIdToMeshPortfolioId'
+        'assetHolderIdToMeshAssetHolder'
       );
 
-      when(portfolioIdToMeshPortfolioIdSpy)
+      when(assetHolderToMeshAssetHolderIdSpy)
         .calledWith({ did, number: undefined }, context)
-        .mockReturnValue(rawPortfolio);
+        .mockResolvedValue(rawPortfolioHolder);
 
-      when(portfolioIdToMeshPortfolioIdSpy)
+      when(assetHolderToMeshAssetHolderIdSpy)
         .calledWith({ did: numberedPortfolioDid, number: numberedPortfolioId }, context)
-        .mockReturnValue(rawNumberedPortfolio);
+        .mockResolvedValue(rawNumberedPortfolioHolder);
 
-      when(portfolioIdToMeshPortfolioIdSpy)
+      when(assetHolderToMeshAssetHolderIdSpy)
         .calledWith({ did: custodiedPortfolioDid, number: custodiedPortfolioId }, context)
-        .mockReturnValue(rawCustodiedPortfolio);
+        .mockResolvedValue(rawCustodiedPortfolioHolder);
+
+      when(assetHolderToMeshAssetHolderIdSpy)
+        .calledWith('someAddress', context)
+        .mockResolvedValue(rawAccountHolder);
 
       const userAuthsMock = dsMockUtils.createQueryMock('settlement', 'userAffirmations');
 
@@ -881,44 +906,46 @@ describe('Identity class', () => {
 
       const entriesMock = jest.fn();
       when(entriesMock)
-        .calledWith(rawPortfolio)
+        .calledWith(rawPortfolioHolder)
         .mockResolvedValue([
           tuple(
-            { args: [rawPortfolio, rawId1] },
+            { args: [rawPortfolioHolder, rawId1] },
             dsMockUtils.createMockAffirmationStatus('Affirmed')
           ),
           tuple(
-            { args: [rawPortfolio, rawId2] },
+            { args: [rawPortfolioHolder, rawId2] },
             dsMockUtils.createMockAffirmationStatus('Pending')
           ),
           tuple(
-            { args: [rawPortfolio, rawId3] },
+            { args: [rawPortfolioHolder, rawId3] },
             dsMockUtils.createMockAffirmationStatus('Unknown')
           ),
           tuple(
-            { args: [rawPortfolio, rawId4] },
+            { args: [rawPortfolioHolder, rawId4] },
+            dsMockUtils.createMockAffirmationStatus('Affirmed')
+          ),
+        ]);
+
+      when(entriesMock).calledWith(rawAccountHolder).mockResolvedValue([]);
+
+      when(entriesMock)
+        .calledWith(rawCustodiedPortfolioHolder)
+        .mockResolvedValue([
+          tuple(
+            { args: [rawCustodiedPortfolioHolder, rawId1] },
+            dsMockUtils.createMockAffirmationStatus('Affirmed')
+          ),
+          tuple(
+            { args: [rawCustodiedPortfolioHolder, rawId2] },
             dsMockUtils.createMockAffirmationStatus('Affirmed')
           ),
         ]);
 
       when(entriesMock)
-        .calledWith(rawCustodiedPortfolio)
+        .calledWith(rawNumberedPortfolioHolder)
         .mockResolvedValue([
           tuple(
-            { args: [rawCustodiedPortfolio, rawId1] },
-            dsMockUtils.createMockAffirmationStatus('Affirmed')
-          ),
-          tuple(
-            { args: [rawCustodiedPortfolio, rawId2] },
-            dsMockUtils.createMockAffirmationStatus('Affirmed')
-          ),
-        ]);
-
-      when(entriesMock)
-        .calledWith(rawNumberedPortfolio)
-        .mockResolvedValue([
-          tuple(
-            { args: [rawNumberedPortfolio, rawId5] },
+            { args: [rawNumberedPortfolioHolder, rawId5] },
             dsMockUtils.createMockAffirmationStatus('Pending')
           ),
         ]);
@@ -1340,7 +1367,11 @@ describe('Identity class', () => {
 
   describe('method: getChildIdentities', () => {
     it('should return the list of all child identities of which the given Identity is a parent', async () => {
-      const identity = new Identity({ did: 'someDid' }, context);
+      const mockContext = dsMockUtils.getContextInstance({
+        middlewareEnabled: true,
+        isV7: true,
+      });
+      const identity = new Identity({ did: 'someDid' }, mockContext);
 
       const rawIdentity = dsMockUtils.createMockIdentityId(identity.did);
       when(identityIdToStringSpy).calledWith(rawIdentity).mockReturnValue(identity.did);
@@ -1351,7 +1382,8 @@ describe('Identity class', () => {
       when(identityIdToStringSpy).calledWith(rawChildren[0]!).mockReturnValue(children[0]!);
       when(identityIdToStringSpy).calledWith(rawChildren[1]!).mockReturnValue(children[1]!);
 
-      dsMockUtils.createQueryMock('identity', 'parentDid', {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      dsMockUtils.createQueryMock('identity' as any, 'parentDid', {
         entries: rawChildren.map(child =>
           tuple([child], dsMockUtils.createMockOption(rawIdentity))
         ),

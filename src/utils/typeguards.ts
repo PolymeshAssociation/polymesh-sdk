@@ -37,6 +37,7 @@ import {
   Claim,
   ClaimType,
   ConditionType,
+  DidRegistrarRole,
   ExemptedClaim,
   FungibleLeg,
   IdentityCondition,
@@ -315,6 +316,13 @@ export function isVenueOwnerRole(role: Role): role is VenueOwnerRole {
  */
 export function isCddProviderRole(role: Role): role is CddProviderRole {
   return role.type === RoleType.CddProvider;
+}
+
+/**
+ * Return whether Role is DidRegistrarRole
+ */
+export function isDidRegistrarRole(role: Role): role is DidRegistrarRole {
+  return role.type === RoleType.DidRegistrar;
 }
 
 /**
