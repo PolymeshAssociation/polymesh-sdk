@@ -120,13 +120,13 @@ describe('redeemTokens procedure', () => {
 
     const transaction = dsMockUtils.createTxMock('asset', 'redeem');
 
-    const rawPortfolioKind = dsMockUtils.createMockPortfolioKind({
-      User: dsMockUtils.createMockU64(new BigNumber(1)),
+    const rawPortfolioHolderKind = dsMockUtils.createMockAssetHolderKind({
+      UserPortfolio: dsMockUtils.createMockU64(new BigNumber(1)),
     });
 
-    when(jest.spyOn(utilsConversionModule, 'portfolioToPortfolioKind'))
+    when(jest.spyOn(utilsConversionModule, 'assetHolderToAssetHolderKind'))
       .calledWith(from, mockContext)
-      .mockReturnValue(rawPortfolioKind);
+      .mockReturnValue(rawPortfolioHolderKind);
 
     const result = await prepareRedeemTokens.call(proc, {
       asset,
@@ -135,7 +135,7 @@ describe('redeemTokens procedure', () => {
     });
     expect(result).toEqual({
       transaction,
-      args: [rawAssetId, rawAmount, rawPortfolioKind],
+      args: [rawAssetId, rawAmount, rawPortfolioHolderKind],
       resolver: undefined,
     });
   });
@@ -202,7 +202,7 @@ describe('redeemTokens procedure', () => {
 
       expect(result).toEqual({
         permissions: {
-          transactions: [TxTags.asset.RedeemFromPortfolio],
+          transactions: [TxTags.asset.Redeem],
           assets: [expect.objectContaining({ id: assetId })],
           portfolios: [fromAssetHolder],
         },

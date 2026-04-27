@@ -15,7 +15,7 @@ import {
   assetToMeshAssetId,
   bigNumberToU64,
 } from '~/utils/conversion';
-import { asAccount, toHumanReadable } from '~/utils/internal';
+import { asAccount } from '~/utils/internal';
 
 export interface Storage {
   fromAssetHolder: AssetHolder;
@@ -53,7 +53,7 @@ export async function prepareRedeemNft(
     query.nft.collectionKeys(rawCollectionId),
   ]);
 
-  if (!assetHolderCollection!.free.find(heldNft => heldNft.id.eq(id))) {
+  if (!assetHolderCollection?.free.some(heldNft => heldNft.id.eq(id))) {
     throw new PolymeshError({
       code: ErrorCode.InsufficientBalance,
       message: 'Asset Holder does not hold NFT to redeem',

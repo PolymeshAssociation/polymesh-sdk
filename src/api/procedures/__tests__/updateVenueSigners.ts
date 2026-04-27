@@ -1,3 +1,4 @@
+import { AccountId } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 
 import {
@@ -114,8 +115,10 @@ describe('updateVenueSigners procedure', () => {
     const rawAddSigners = dsMockUtils.createMockBool(args.addSigners);
     const rawSigner = dsMockUtils.createMockAccountId(args.signers[0] as string);
 
+    const rawSignerBtreeSet = dsMockUtils.createMockBtreeSet<AccountId>([rawSigner]);
+
     jest.spyOn(utilsConversionModule, 'bigNumberToU64').mockReturnValue(rawId);
-    jest.spyOn(utilsConversionModule, 'stringToAccountId').mockReturnValue(rawSigner);
+    jest.spyOn(utilsConversionModule, 'addressesToBtreeSet').mockReturnValue(rawSignerBtreeSet);
     jest.spyOn(utilsConversionModule, 'booleanToBool').mockReturnValue(rawAddSigners);
 
     const updateVenueSignersTransaction = dsMockUtils.createTxMock(
@@ -129,7 +132,7 @@ describe('updateVenueSigners procedure', () => {
 
     expect(result).toEqual({
       transaction: updateVenueSignersTransaction,
-      args: [rawId, [rawSigner], rawAddSigners],
+      args: [rawId, rawSignerBtreeSet, rawAddSigners],
       resolver: undefined,
     });
   });

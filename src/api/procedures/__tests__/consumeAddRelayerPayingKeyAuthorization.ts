@@ -55,7 +55,9 @@ describe('consumeAddRelayerPayingKeyAuthorization procedure', () => {
   });
 
   beforeEach(() => {
-    mockContext = dsMockUtils.getContextInstance();
+    mockContext = dsMockUtils.getContextInstance({
+      isV7: true,
+    });
 
     when(bigNumberToU64Spy).calledWith(authId, mockContext).mockReturnValue(rawAuthId);
 
@@ -120,7 +122,8 @@ describe('consumeAddRelayerPayingKeyAuthorization procedure', () => {
       calledByTarget: true,
     });
 
-    const transaction = dsMockUtils.createTxMock('relayer', 'acceptPayingKey');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const transaction = dsMockUtils.createTxMock('relayer' as any, 'acceptPayingKey');
 
     const result = await prepareConsumeAddRelayerPayingKeyAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(

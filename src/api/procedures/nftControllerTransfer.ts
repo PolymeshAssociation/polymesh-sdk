@@ -58,6 +58,7 @@ export async function prepareNftControllerTransfer(
   }
 
   const fromAssetHolder = assetHolderLikeToAssetHolder(originPortfolio, context);
+
   const [heldCollection] = await fromAssetHolder.getCollections({
     collections: [collection],
   });
@@ -110,6 +111,7 @@ export function getAuthorization(
       },
     };
   }
+
   const portfolioId = portfolioToPortfolioId(destinationAssetHolder);
 
   return {

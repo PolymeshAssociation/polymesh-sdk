@@ -105,13 +105,13 @@ describe('redeemNft procedure', () => {
 
     const transaction = dsMockUtils.createTxMock('nft', 'redeemNft');
 
-    const rawPortfolioKind = dsMockUtils.createMockPortfolioKind({
-      User: dsMockUtils.createMockU64(new BigNumber(1)),
+    const rawAssetHolderKind = dsMockUtils.createMockAssetHolderKind({
+      UserPortfolio: dsMockUtils.createMockU64(new BigNumber(1)),
     });
 
-    when(jest.spyOn(utilsConversionModule, 'portfolioToPortfolioKind'))
+    when(jest.spyOn(utilsConversionModule, 'assetHolderToAssetHolderKind'))
       .calledWith(from, mockContext)
-      .mockReturnValue(rawPortfolioKind);
+      .mockReturnValue(rawAssetHolderKind);
 
     const result = await prepareRedeemNft.call(proc, {
       collection,
@@ -120,7 +120,7 @@ describe('redeemNft procedure', () => {
     });
     expect(result).toEqual({
       transaction,
-      args: [rawAssetId, rawId, rawPortfolioKind, 0],
+      args: [rawAssetId, rawId, rawAssetHolderKind, 0],
       resolver: undefined,
     });
   });
@@ -141,7 +141,7 @@ describe('redeemNft procedure', () => {
 
     const expectedError = new PolymeshError({
       code: ErrorCode.InsufficientBalance,
-      message: 'Portfolio does not hold NFT to redeem',
+      message: 'Asset Holder does not hold NFT to redeem',
     });
 
     return expect(

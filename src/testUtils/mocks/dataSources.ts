@@ -2370,6 +2370,24 @@ export const createMockPortfolioKind = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockAssetHolderKind = (
+  assetHolderKind?:
+    | 'Account'
+    | 'DefaultPortfolio'
+    | { UserPortfolio: u64 }
+    | PolymeshPrimitivesAssetAssetHolderKind
+): MockCodec<PolymeshPrimitivesAssetAssetHolderKind> => {
+  if (isCodec<PolymeshPrimitivesAssetAssetHolderKind>(assetHolderKind)) {
+    return assetHolderKind as MockCodec<PolymeshPrimitivesAssetAssetHolderKind>;
+  }
+
+  return createMockEnum<PolymeshPrimitivesAssetAssetHolderKind>(assetHolderKind);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockPortfolioId = (
   portfolioId?:
     | PolymeshPrimitivesIdentityIdPortfolioId

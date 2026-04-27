@@ -53,7 +53,11 @@ export async function prepareConsumeAddRelayerPayingKeyAuthorization(
     data: { type },
   } = authRequest;
 
-  if (type !== AuthorizationType.AddRelayerPayingKey) {
+  if (
+    ![AuthorizationType.AddRelayerPayingKey, AuthorizationType.OldAddRelayerPayingKey].includes(
+      type
+    )
+  ) {
     throw new PolymeshError({
       code: ErrorCode.UnexpectedError,
       message: `Unrecognized auth type: "${type}" for consumeAddRelayerPayingKeyAuthorization method`,

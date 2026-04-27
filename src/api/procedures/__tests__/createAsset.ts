@@ -1,11 +1,11 @@
 import { bool, BTreeSet, Bytes } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import {
+  PolymeshPrimitivesAssetAssetHolderKind,
   PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesAssetAssetType,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesDocument,
-  PolymeshPrimitivesIdentityIdPortfolioKind,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
@@ -64,6 +64,7 @@ describe('createAsset procedure', () => {
   let nameToAssetNameSpy: jest.SpyInstance<Bytes, [string, Context]>;
   let fundingRoundToAssetFundingRoundSpy: jest.SpyInstance<Bytes, [string, Context]>;
   let booleanToBoolSpy: jest.SpyInstance<bool, [boolean, Context]>;
+  let assetHolderKindToAssetHolderKindSpy: jest.SpyInstance;
   let statisticStatTypesToBtreeStatTypeSpy: jest.SpyInstance<
     BTreeSet<PolymeshPrimitivesStatisticsStatType>,
     [PolymeshPrimitivesStatisticsStatType[], Context]
@@ -103,8 +104,8 @@ describe('createAsset procedure', () => {
   let protocolFees: BigNumber[];
   let defaultPortfolioId: BigNumber;
   let numberedPortfolioId: BigNumber;
-  let defaultPortfolioKind: MockCodec<PolymeshPrimitivesIdentityIdPortfolioKind>;
-  let numberedPortfolioKind: MockCodec<PolymeshPrimitivesIdentityIdPortfolioKind>;
+  let defaultPortfolioHolderKind: MockCodec<PolymeshPrimitivesAssetAssetHolderKind>;
+  let numberedPortfolioHolderKind: MockCodec<PolymeshPrimitivesAssetAssetHolderKind>;
   let mockDefaultPortfolio: MockDefaultPortfolio;
   let mockNumberedPortfolio: MockNumberedPortfolio;
   let portfolioToPortfolioKindSpy: jest.SpyInstance;
@@ -136,6 +137,10 @@ describe('createAsset procedure', () => {
     statisticStatTypesToBtreeStatTypeSpy = jest.spyOn(
       utilsConversionModule,
       'statisticStatTypesToBtreeStatType'
+    );
+    assetHolderKindToAssetHolderKindSpy = jest.spyOn(
+      utilsConversionModule,
+      'assetHolderToAssetHolderKind'
     );
     internalAssetTypeToAssetTypeSpy = jest.spyOn(
       utilsConversionModule,
@@ -264,9 +269,9 @@ describe('createAsset procedure', () => {
       .calledWith({ tags: [TxTags.asset.RegisterCustomAssetType] })
       .mockResolvedValue([{ tag: TxTags.asset.RegisterCustomAssetType, fees: protocolFees[2]! }]);
 
-    defaultPortfolioKind = dsMockUtils.createMockPortfolioKind('Default');
-    numberedPortfolioKind = dsMockUtils.createMockPortfolioKind({
-      User: dsMockUtils.createMockU64(numberedPortfolioId),
+    defaultPortfolioHolderKind = dsMockUtils.createMockAssetHolderKind('DefaultPortfolio');
+    numberedPortfolioHolderKind = dsMockUtils.createMockAssetHolderKind({
+      UserPortfolio: dsMockUtils.createMockU64(numberedPortfolioId),
     });
 
     mockDefaultPortfolio = entityMockUtils.getDefaultPortfolioInstance();
@@ -275,12 +280,13 @@ describe('createAsset procedure', () => {
       id: numberedPortfolioId,
     });
 
-    when(mockContext.createType)
-      .calledWith('PolymeshPrimitivesIdentityIdPortfolioKind', 'Default')
-      .mockReturnValue(defaultPortfolioKind);
-    when(mockContext.createType)
-      .calledWith('PolymeshPrimitivesIdentityIdPortfolioKind', numberedPortfolioKind)
-      .mockReturnValue(numberedPortfolioKind);
+    when(assetHolderKindToAssetHolderKindSpy)
+      .calledWith(mockDefaultPortfolio, mockContext)
+      .mockReturnValue(defaultPortfolioHolderKind);
+    when(assetHolderKindToAssetHolderKindSpy)
+      .calledWith(mockNumberedPortfolio, mockContext)
+      .mockReturnValue(numberedPortfolioHolderKind);
+
     when(getPortfolio)
       .calledWith()
       .mockResolvedValue(mockDefaultPortfolio)
@@ -291,9 +297,9 @@ describe('createAsset procedure', () => {
 
     when(portfolioToPortfolioKindSpy)
       .calledWith(mockDefaultPortfolio, mockContext)
-      .mockReturnValue(defaultPortfolioKind)
+      .mockReturnValue(defaultPortfolioHolderKind)
       .calledWith(mockNumberedPortfolio, mockContext)
-      .mockReturnValue(numberedPortfolioKind);
+      .mockReturnValue(numberedPortfolioHolderKind);
   });
 
   afterEach(() => {
@@ -435,7 +441,7 @@ describe('createAsset procedure', () => {
         },
         {
           transaction: issueTransaction,
-          args: [rawAssetId, rawInitialSupply, defaultPortfolioKind],
+          args: [rawAssetId, rawInitialSupply, defaultPortfolioHolderKind],
         },
       ],
       fee: undefined,
@@ -469,7 +475,7 @@ describe('createAsset procedure', () => {
         },
         {
           transaction: issueTransaction,
-          args: [rawAssetId, rawInitialSupply, defaultPortfolioKind],
+          args: [rawAssetId, rawInitialSupply, defaultPortfolioHolderKind],
         },
       ],
       fee: undefined,
@@ -503,7 +509,7 @@ describe('createAsset procedure', () => {
         },
         {
           transaction: issueTransaction,
-          args: [rawAssetId, rawInitialSupply, numberedPortfolioKind],
+          args: [rawAssetId, rawInitialSupply, numberedPortfolioHolderKind],
         },
       ],
       fee: undefined,

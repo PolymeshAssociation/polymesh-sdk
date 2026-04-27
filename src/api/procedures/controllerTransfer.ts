@@ -9,8 +9,6 @@ import {
   assetHolderToAssetHolderKind,
   assetToMeshAssetId,
   bigNumberToBalance,
-  portfolioIdToPortfolio,
-  portfolioLikeToPortfolioId,
 } from '~/utils/conversion';
 
 export interface Storage {
@@ -37,7 +35,7 @@ export async function prepareControllerTransfer(
     storage: { did, destinationAssetHolder },
     context,
   } = this;
-  const { asset, originPortfolio, amount, destination } = args;
+  const { asset, originPortfolio, amount } = args;
 
   const originAssetHolderId = assetHolderLikeToAssetHolderId(originPortfolio);
 
