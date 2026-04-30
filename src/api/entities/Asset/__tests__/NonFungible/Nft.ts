@@ -386,7 +386,7 @@ describe('Nft class', () => {
 
     beforeEach(() => {
       context = dsMockUtils.getContextInstance();
-      nftOwnerMock = dsMockUtils.createQueryMock('nft', 'nftOwner');
+      nftOwnerMock = dsMockUtils.createQueryMock('nft', 'owner');
       nft = new Nft({ assetId, id }, context);
     });
 
@@ -399,22 +399,24 @@ describe('Nft class', () => {
     });
 
     it('should return the owner of the NFT', async () => {
-      const meshPortfolioIdToPortfolioSpy = jest.spyOn(
+      const meshAssetHolderToAssetHolderSpy = jest.spyOn(
         utilsConversionModule,
-        'meshPortfolioIdToPortfolio'
+        'meshAssetHolderToAssetHolder'
       );
 
-      const rawPortfolio = dsMockUtils.createMockPortfolioId({
-        did: 'someDid',
-        kind: dsMockUtils.createMockPortfolioKind({
-          User: dsMockUtils.createMockU64(new BigNumber(1)),
+      const rawPortfolio = dsMockUtils.createMockAssetHolder({
+        Portfolio: dsMockUtils.createMockPortfolioId({
+          did: 'someDid',
+          kind: dsMockUtils.createMockPortfolioKind({
+            User: dsMockUtils.createMockU64(new BigNumber(1)),
+          }),
         }),
       });
 
       nftOwnerMock.mockResolvedValueOnce(dsMockUtils.createMockOption(rawPortfolio));
       const portfolio = entityMockUtils.getNumberedPortfolioInstance();
 
-      when(meshPortfolioIdToPortfolioSpy)
+      when(meshAssetHolderToAssetHolderSpy)
         .calledWith(rawPortfolio, context)
         .mockReturnValue(portfolio);
 

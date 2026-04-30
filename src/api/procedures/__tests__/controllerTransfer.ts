@@ -75,7 +75,7 @@ describe('controllerTransfer procedure', () => {
       getAssetBalances: [{ free: new BigNumber(90) }] as PortfolioBalance[],
     });
 
-    destinationPortfolio = entityMockUtils.getDefaultPortfolioInstance({ did });
+    destinationPortfolio = entityMockUtils.getDefaultPortfolioInstance({ did: 'someDid' });
 
     amount = new BigNumber(50);
     rawAmount = dsMockUtils.createMockBalance(amount);
@@ -186,16 +186,25 @@ describe('controllerTransfer procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    it('should return the DID of signing Identity', async () => {
-      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-        did: 'someDid',
-        destinationAssetHolder: destinationPortfolio,
-      });
+    it('should return the DID of signing Identity and destination asset holder', async () => {
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
-      const result = await boundFunc({ asset, originPortfolio, amount });
+      assetHolderLikeToAssetHolderSpy.mockReturnValue(destinationPortfolio);
+
+      let result = await boundFunc({ asset, originPortfolio, amount });
+
+      expect(JSON.stringify(result)).toEqual(
+        JSON.stringify({ did: 'someDid', destinationAssetHolder: destinationPortfolio })
+      );
+
+      const mockAccount = entityMockUtils.getAccountInstance();
+      assetHolderLikeToAssetHolderSpy.mockReturnValue(mockAccount);
+
+      result = await boundFunc({ asset, originPortfolio, amount, destination: 'someAddress' });
 
       expect(result).toEqual({
         did: 'someDid',
+        destinationAssetHolder: mockAccount,
       });
     });
   });

@@ -1,8 +1,8 @@
 import { AccountId, Balance, DispatchError } from '@polkadot/types/interfaces';
 import {
+  PolymeshPrimitivesAssetAssetHolder,
   PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesIdentityId,
-  PolymeshPrimitivesIdentityIdPortfolioId,
 } from '@polkadot/types/lookup';
 import { Result, Vec } from '@polkadot/types-codec';
 import {
@@ -16,15 +16,7 @@ import { FungibleSettlements, NonFungibleSettlements } from '~/api/entities/Asse
 import { Context, Namespace, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import {
-  DefaultPortfolio,
-  FungibleAsset,
-  NftCollection,
-  NumberedPortfolio,
-  PortfolioId,
-  PortfolioLike,
-  TransferBreakdown,
-} from '~/types';
+import { FungibleAsset, NftCollection, PortfolioId, TransferBreakdown } from '~/types';
 import { uuidToHex } from '~/utils';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -40,15 +32,8 @@ describe('Settlements class', () => {
   let stringToAccountIdSpy: jest.SpyInstance<AccountId, [string, Context]>;
   let stringToAssetIdSpy: jest.SpyInstance<PolymeshPrimitivesAssetAssetId, [string, Context]>;
   let bigNumberToBalanceSpy: jest.SpyInstance;
-  let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance<
-    PolymeshPrimitivesIdentityIdPortfolioId,
-    [PortfolioId, Context]
-  >;
-  let portfolioLikeToPortfolioIdSpy: jest.SpyInstance<PortfolioId, [PortfolioLike]>;
-  let portfolioIdToPortfolioSpy: jest.SpyInstance<
-    DefaultPortfolio | NumberedPortfolio,
-    [PortfolioId, Context]
-  >;
+  let assetHolderIdToMeshAssetHolderSpy: jest.SpyInstance;
+  let assetHolderLikeToAssetHolderIdSpy: jest.SpyInstance;
   let stringToIdentityIdSpy: jest.SpyInstance<PolymeshPrimitivesIdentityId, [string, Context]>;
   let rawAccountId: AccountId;
   let rawAssetId: PolymeshPrimitivesAssetAssetId;
@@ -58,10 +43,10 @@ describe('Settlements class', () => {
   let toDid: string;
   let assetId: string;
   let fromDid: string;
-  let fromPortfolioId: PortfolioId;
-  let toPortfolioId: PortfolioId;
-  let rawFromPortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
-  let rawToPortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
+  let fromPortfolioHolderId: PortfolioId;
+  let toPortfolioHolderId: PortfolioId;
+  let rawFromPortfolioHolder: PolymeshPrimitivesAssetAssetHolder;
+  let rawToPortfolioHolder: PolymeshPrimitivesAssetAssetHolder;
   let rawFromDid: PolymeshPrimitivesIdentityId;
   let fromPortfolio: entityMockUtils.MockDefaultPortfolio;
   let toPortfolio: entityMockUtils.MockDefaultPortfolio;
@@ -77,20 +62,27 @@ describe('Settlements class', () => {
     stringToAccountIdSpy = jest.spyOn(utilsConversionModule, 'stringToAccountId');
     stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
     bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
-    portfolioIdToMeshPortfolioIdSpy = jest.spyOn(
+    assetHolderIdToMeshAssetHolderSpy = jest.spyOn(
       utilsConversionModule,
-      'portfolioIdToMeshPortfolioId'
+      'assetHolderIdToMeshAssetHolder'
     );
-    portfolioLikeToPortfolioIdSpy = jest.spyOn(utilsConversionModule, 'portfolioLikeToPortfolioId');
-    portfolioIdToPortfolioSpy = jest.spyOn(utilsConversionModule, 'portfolioIdToPortfolio');
+    assetHolderLikeToAssetHolderIdSpy = jest.spyOn(
+      utilsConversionModule,
+      'assetHolderLikeToAssetHolderId'
+    );
+    // assetHolderIdToAssetHolderSpy = jest.spyOn(utilsConversionModule, 'assetHolderLikeToAssetHolder');
     stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
     rawAmount = dsMockUtils.createMockBalance(amount);
     fromDid = 'fromDid';
-    fromPortfolioId = { did: fromDid };
-    toPortfolioId = { did: toDid };
+    fromPortfolioHolderId = { did: fromDid };
+    toPortfolioHolderId = { did: toDid };
     rawFromDid = dsMockUtils.createMockIdentityId(fromDid);
-    rawFromPortfolio = dsMockUtils.createMockPortfolioId({ did: fromDid, kind: 'Default' });
-    rawToPortfolio = dsMockUtils.createMockPortfolioId({ did: toDid, kind: 'Default' });
+    rawFromPortfolioHolder = dsMockUtils.createMockAssetHolder({
+      Portfolio: dsMockUtils.createMockPortfolioId({ did: fromDid, kind: 'Default' }),
+    });
+    rawToPortfolioHolder = dsMockUtils.createMockAssetHolder({
+      Portfolio: dsMockUtils.createMockPortfolioId({ did: toDid, kind: 'Default' }),
+    });
     transferReportToTransferBreakdownSpy = jest.spyOn(
       utilsConversionModule,
       'transferReportToTransferBreakdown'
@@ -106,24 +98,20 @@ describe('Settlements class', () => {
     rawAssetId = dsMockUtils.createMockAssetId(uuidToHex(assetId));
     rawToDid = dsMockUtils.createMockIdentityId(toDid);
     toPortfolio = entityMockUtils.getDefaultPortfolioInstance({
-      ...toPortfolioId,
-      getCustodian: entityMockUtils.getIdentityInstance({ did: toPortfolioId.did }),
+      ...toPortfolioHolderId,
+      getCustodian: entityMockUtils.getIdentityInstance({ did: toPortfolioHolderId.did }),
     });
     fromPortfolio = entityMockUtils.getDefaultPortfolioInstance({
-      ...fromPortfolioId,
-      getCustodian: entityMockUtils.getIdentityInstance({ did: fromPortfolioId.did }),
+      ...fromPortfolioHolderId,
+      getCustodian: entityMockUtils.getIdentityInstance({ did: fromPortfolioHolderId.did }),
     });
-    when(portfolioLikeToPortfolioIdSpy).calledWith(toDid).mockReturnValue(toPortfolioId);
-    when(portfolioLikeToPortfolioIdSpy).calledWith(fromDid).mockReturnValue(fromPortfolioId);
-    when(portfolioIdToMeshPortfolioIdSpy)
-      .calledWith(toPortfolioId, mockContext)
-      .mockReturnValue(rawToPortfolio);
-    when(portfolioIdToPortfolioSpy)
-      .calledWith(toPortfolioId, mockContext)
-      .mockReturnValue(toPortfolio);
-    when(portfolioIdToPortfolioSpy)
-      .calledWith(fromPortfolioId, mockContext)
-      .mockReturnValue(fromPortfolio);
+    when(assetHolderLikeToAssetHolderIdSpy).calledWith(toDid).mockReturnValue(toPortfolioHolderId);
+    when(assetHolderLikeToAssetHolderIdSpy)
+      .calledWith(fromDid)
+      .mockReturnValue(fromPortfolioHolderId);
+    when(assetHolderIdToMeshAssetHolderSpy)
+      .calledWith(toPortfolioHolderId, mockContext)
+      .mockReturnValue(rawToPortfolioHolder);
     when(stringToIdentityIdSpy).calledWith(fromDid, mockContext).mockReturnValue(rawFromDid);
     when(stringToAccountIdSpy)
       .calledWith(DUMMY_ACCOUNT_ID, mockContext)
@@ -166,20 +154,20 @@ describe('Settlements class', () => {
         when(stringToIdentityIdSpy)
           .calledWith(signingDid, mockContext)
           .mockReturnValue(rawSigningDid);
-        when(portfolioLikeToPortfolioIdSpy)
+        when(assetHolderLikeToAssetHolderIdSpy)
           .calledWith(signingIdentity)
           .mockReturnValue(currentDefaultPortfolioId);
-        when(portfolioIdToMeshPortfolioIdSpy)
+        when(assetHolderIdToMeshAssetHolderSpy)
           .calledWith(currentDefaultPortfolioId, mockContext)
-          .mockReturnValue(rawFromPortfolio);
-        when(portfolioIdToPortfolioSpy)
-          .calledWith(currentDefaultPortfolioId, mockContext)
-          .mockReturnValue(
-            entityMockUtils.getDefaultPortfolioInstance({
-              did: signingDid,
-              getCustodian: entityMockUtils.getIdentityInstance({ did: signingDid }),
-            })
-          );
+          .mockReturnValue(rawFromPortfolioHolder);
+        // when(assetHolderIdToAssetHolderSpy)
+        //   .calledWith(currentDefaultPortfolioId, mockContext)
+        //   .mockReturnValue(
+        //     entityMockUtils.getDefaultPortfolioInstance({
+        //       did: signingDid,
+        //       getCustodian: entityMockUtils.getIdentityInstance({ did: signingDid }),
+        //     })
+        //   );
 
         const transferReportResponse = 'transferReportResponse' as unknown as Vec<DispatchError>;
 
@@ -267,9 +255,9 @@ describe('Settlements class', () => {
     });
 
     it('should work for NftCollections', async () => {
-      when(portfolioIdToMeshPortfolioIdSpy)
+      when(assetHolderIdToMeshAssetHolderSpy)
         .calledWith({ did: fromDid }, mockContext)
-        .mockReturnValue(rawFromPortfolio);
+        .mockReturnValue(rawFromPortfolioHolder);
 
       fromPortfolio.getCustodian.mockResolvedValue(
         entityMockUtils.getIdentityInstance({ did: fromDid })

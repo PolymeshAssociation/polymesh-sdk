@@ -40,7 +40,6 @@ import {
   InstructionOffChainLeg,
   InstructionType,
   NftLeg,
-  PortfolioId,
   RoleType,
   SettlementTx,
   TxTags,
@@ -163,6 +162,9 @@ function checkAllErrorsAreEmpty(errors: ErrIndexes): boolean {
   );
 }
 
+/**
+ * @hidden
+ */
 async function getRawLegDetails(
   leg: InstructionFungibleLeg | InstructionNftLeg,
   context: Context

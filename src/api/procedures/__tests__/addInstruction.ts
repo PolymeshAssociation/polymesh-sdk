@@ -1,9 +1,9 @@
 import { BTreeSet, u32, u64 } from '@polkadot/types';
 import { Balance, Moment } from '@polkadot/types/interfaces';
 import {
+  PolymeshPrimitivesAssetAssetHolder,
   PolymeshPrimitivesAssetAssetId,
   PolymeshPrimitivesIdentityId,
-  PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesMemo,
   PolymeshPrimitivesNftNfTs,
   PolymeshPrimitivesSettlementLeg,
@@ -70,6 +70,10 @@ jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
+jest.mock(
+  '~/api/entities/Account',
+  require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
+);
 
 describe('addInstruction procedure', () => {
   let mockContext: Mocked<Context>;
@@ -94,7 +98,7 @@ describe('addInstruction procedure', () => {
   let legToNonFungibleLegSpy: jest.SpyInstance;
   let legToOffChainLegSpy: jest.SpyInstance;
   let identityToBtreeSetSpy: jest.SpyInstance;
-  let portfolioIdsToBtreeSetSpy: jest.SpyInstance;
+  let assetHolderIdsToBtreeSetSpy: jest.SpyInstance;
   let venueId: BigNumber;
   let amount: BigNumber;
   let from: PortfolioLike;
@@ -117,8 +121,8 @@ describe('addInstruction procedure', () => {
 
   let rawVenueId: u64;
   let rawAmount: Balance;
-  let rawFrom: PolymeshPrimitivesIdentityIdPortfolioId;
-  let rawTo: PolymeshPrimitivesIdentityIdPortfolioId;
+  let rawFromHolder: PolymeshPrimitivesAssetAssetHolder;
+  let rawToHolder: PolymeshPrimitivesAssetAssetHolder;
   let rawSenderIdentity: PolymeshPrimitivesIdentityId;
   let rawReceiverIdentity: PolymeshPrimitivesIdentityId;
   let rawAssetId: PolymeshPrimitivesAssetAssetId;
@@ -138,7 +142,7 @@ describe('addInstruction procedure', () => {
   let rawOffChainLeg: PolymeshPrimitivesSettlementLeg;
   let rawMediatorSet: BTreeSet<PolymeshPrimitivesIdentityId>;
   let rawEmptyMediatorSet: BTreeSet<PolymeshPrimitivesIdentityId>;
-  let rawPortfolioIds: BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>;
+  let rawAssetHolderIds: BTreeSet<PolymeshPrimitivesAssetAssetHolder>;
 
   beforeAll(() => {
     dsMockUtils.initMocks({
@@ -174,7 +178,7 @@ describe('addInstruction procedure', () => {
     legToNonFungibleLegSpy = jest.spyOn(utilsConversionModule, 'legToNonFungibleLeg');
     legToOffChainLegSpy = jest.spyOn(utilsConversionModule, 'legToOffChainLeg');
     identityToBtreeSetSpy = jest.spyOn(utilsConversionModule, 'identitiesToBtreeSet');
-    portfolioIdsToBtreeSetSpy = jest.spyOn(utilsConversionModule, 'portfolioIdsToBtreeSet');
+    assetHolderIdsToBtreeSetSpy = jest.spyOn(utilsConversionModule, 'assetHolderIdsToBtreeSet');
 
     venueId = new BigNumber(1);
     amount = new BigNumber(100);
@@ -201,15 +205,19 @@ describe('addInstruction procedure', () => {
     memo = 'SOME_MEMO';
     rawVenueId = dsMockUtils.createMockU64(venueId);
     rawAmount = dsMockUtils.createMockBalance(amount);
-    rawFrom = dsMockUtils.createMockPortfolioId({
-      did: dsMockUtils.createMockIdentityId(from),
-      kind: dsMockUtils.createMockPortfolioKind('Default'),
+    rawFromHolder = dsMockUtils.createMockAssetHolder({
+      Portfolio: dsMockUtils.createMockPortfolioId({
+        did: dsMockUtils.createMockIdentityId(from),
+        kind: dsMockUtils.createMockPortfolioKind('Default'),
+      }),
     });
-    rawTo = dsMockUtils.createMockPortfolioId({
-      did: dsMockUtils.createMockIdentityId(to),
-      kind: dsMockUtils.createMockPortfolioKind('Default'),
+    rawToHolder = dsMockUtils.createMockAssetHolder({
+      Portfolio: dsMockUtils.createMockPortfolioId({
+        did: dsMockUtils.createMockIdentityId(to),
+        kind: dsMockUtils.createMockPortfolioKind('Default'),
+      }),
     });
-    rawPortfolioIds = dsMockUtils.createMockBtreeSet([rawFrom, rawTo]);
+    rawAssetHolderIds = dsMockUtils.createMockBtreeSet([rawFromHolder, rawToHolder]);
     sender = entityMockUtils.getIdentityInstance({ did: 'sender' });
     receiver = entityMockUtils.getIdentityInstance({ did: 'receiver' });
     rawSenderIdentity = dsMockUtils.createMockIdentityId(sender.did);
@@ -235,16 +243,16 @@ describe('addInstruction procedure', () => {
     });
     rawLeg = dsMockUtils.createMockInstructionLeg({
       Fungible: {
-        sender: rawFrom,
-        receiver: rawTo,
+        sender: rawFromHolder,
+        receiver: rawToHolder,
         amount: rawAmount,
         assetId: rawAssetId,
       },
     });
     rawNftLeg = dsMockUtils.createMockInstructionLeg({
       NonFungible: {
-        sender: rawFrom,
-        receiver: rawTo,
+        sender: rawFromHolder,
+        receiver: rawToHolder,
         nfts: rawNfts,
       },
     });
@@ -298,10 +306,10 @@ describe('addInstruction procedure', () => {
     when(portfolioLikeToPortfolioSpy).calledWith(to, mockContext).mockReturnValue(toPortfolio);
     when(portfolioIdToMeshPortfolioIdSpy)
       .calledWith({ did: fromDid }, mockContext)
-      .mockReturnValue(rawFrom);
+      .mockReturnValue(rawFromHolder);
     when(portfolioIdToMeshPortfolioIdSpy)
       .calledWith({ did: toDid }, mockContext)
-      .mockReturnValue(rawTo);
+      .mockReturnValue(rawToHolder);
     getCustodianMock.mockReturnValueOnce({ did: fromDid }).mockReturnValue({ did: toDid });
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
@@ -354,9 +362,9 @@ describe('addInstruction procedure', () => {
 
     when(identityToBtreeSetSpy).calledWith([], mockContext).mockReturnValue(rawEmptyMediatorSet);
 
-    when(portfolioIdsToBtreeSetSpy)
-      .calledWith([rawFrom, rawTo], mockContext)
-      .mockReturnValue(rawPortfolioIds);
+    when(assetHolderIdsToBtreeSetSpy)
+      .calledWith([rawFromHolder, rawToHolder], mockContext)
+      .mockReturnValue(rawAssetHolderIds);
 
     args = {
       venueId,
@@ -898,7 +906,7 @@ describe('addInstruction procedure', () => {
             null,
             null,
             [rawLeg],
-            rawPortfolioIds,
+            rawAssetHolderIds,
             null,
             rawMediatorSet,
           ],
@@ -1000,7 +1008,7 @@ describe('addInstruction procedure', () => {
             null,
             null,
             [undefined],
-            new Set([rawFrom, rawTo]),
+            new Set([rawFromHolder, rawToHolder]),
             null,
             rawEmptyMediatorSet,
           ],

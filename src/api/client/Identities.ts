@@ -14,12 +14,14 @@ import {
   revokeIdentityToCreatePortfolios,
   rotatePrimaryKey,
   rotatePrimaryKeyToSecondary,
+  selfRegisterDid,
 } from '~/internal';
 import {
   AllowIdentityToCreatePortfoliosParams,
   AttestPrimaryKeyRotationParams,
   CreateChildIdentitiesParams,
   CreateChildIdentityParams,
+  NoArgsProcedureMethod,
   ProcedureMethod,
   RegisterIdentityParams,
   RevokeIdentityToCreatePortfoliosParams,
@@ -43,6 +45,11 @@ export class Identities {
 
     this.registerIdentity = createProcedureMethod(
       { getProcedureAndArgs: args => [registerIdentity, args] },
+      context
+    );
+
+    this.selfRegisterDid = createProcedureMethod(
+      { getProcedureAndArgs: () => [selfRegisterDid, undefined], voidArgs: true },
       context
     );
 
@@ -115,17 +122,24 @@ export class Identities {
   }
 
   /**
-   * Register an Identity, possibly with a CDD claim
+   * Register an Identity
    *
-   * @note the transaction signer must be a CDD provider
+   * @note the transaction signer must be a DID Registrar
    * @note this may create {@link AuthorizationRequest | Authorization Requests} which have to be accepted by the `targetAccount`.
    *   An {@link api/entities/Account!Account | Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
    *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
    *
    * @note required role:
-   *   - Customer Due Diligence Provider
+   *   - DID Registrar
    */
   public registerIdentity: ProcedureMethod<RegisterIdentityParams, Identity>;
+
+  /**
+   * Register a new DID for the signing Account
+   *
+   * @throws if the signing Account is already linked to an Identity
+   */
+  public selfRegisterDid: NoArgsProcedureMethod<Identity>;
 
   /**
    * Get CDD Provider's attestation to change primary key
@@ -198,6 +212,8 @@ export class Identities {
 
   /**
    * Create a ChildIdentity instance from a DID
+   *
+   * @deprecated Child identities are no longer supported in chain v8
    *
    * @throws if there is no ChildIdentity with the passed DID
    */
