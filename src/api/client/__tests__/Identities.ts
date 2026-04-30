@@ -139,6 +139,20 @@ describe('Identities Class', () => {
     });
   });
 
+  describe('method: selfRegisterDid', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Identity>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: undefined, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await identities.selfRegisterDid();
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
   describe('method: createPortfolio', () => {
     it('should prepare the procedure and return the resulting transaction', async () => {
       const args = { name: 'someName' };
