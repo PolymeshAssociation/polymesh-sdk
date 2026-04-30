@@ -1632,7 +1632,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       const relayerAddress = 'relayerAddress';
       const allowance = new BigNumber(1000);
       fakeResult = {
-        type: AuthorizationType.AddRelayerPayingKey,
+        type: AuthorizationType.OldAddRelayerPayingKey,
         value: {
           beneficiary: expect.objectContaining({ address: beneficiaryAddress }),
           subsidizer: expect.objectContaining({ address: relayerAddress }),
@@ -1640,7 +1640,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
         },
       };
       authorizationData = dsMockUtils.createMockAuthorizationData({
-        AddRelayerPayingKey: [
+        OldAddRelayerPayingKey: [
           dsMockUtils.createMockAccountId(beneficiaryAddress),
           dsMockUtils.createMockAccountId(relayerAddress),
           dsMockUtils.createMockBalance(allowance.shiftedBy(6)),
@@ -4249,7 +4249,7 @@ describe('assetDispatchErrorToTransferError', () => {
   });
 
   it('should process errors', () => {
-    const context = dsMockUtils.getContextInstance();
+    const context = dsMockUtils.getContextInstance({ isV7: true });
 
     context.polymeshApi.errors.asset = {
       InvalidGranularity: { is: jest.fn().mockReturnValue(false) },
@@ -12151,7 +12151,7 @@ describe('childKeysWithAuthToCreateChildIdentitiesWithAuth', () => {
     const fakeResult = 'fakeSecondaryKeysWithAuth' as unknown as Vec<Codec>;
 
     when(context.createType)
-      .calledWith('Vec<PolymeshPrimitivesIdentityCreateChildIdentityWithAuth>', [
+      .calledWith('Vec<PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth>', [
         {
           key: childAccountId,
           authSignature: h512Signature,

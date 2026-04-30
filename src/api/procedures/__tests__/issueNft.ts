@@ -34,7 +34,7 @@ describe('issueNft procedure', () => {
   let assetId: string;
   let collection: NftCollection;
   let rawAssetId: PolymeshPrimitivesAssetAssetId;
-  let portfolioToPortfolioKindSpy: jest.SpyInstance;
+  let assetHolderToAssetHolderKindSpy: jest.SpyInstance;
   let nftInputToMetadataValueSpy: jest.SpyInstance;
 
   beforeAll(() => {
@@ -43,7 +43,10 @@ describe('issueNft procedure', () => {
     entityMockUtils.initMocks();
     assetToMeshAssetIdSpySpy = jest.spyOn(utilsConversionModule, 'assetToMeshAssetId');
     nftInputToMetadataValueSpy = jest.spyOn(utilsConversionModule, 'nftInputToNftMetadataVec');
-    portfolioToPortfolioKindSpy = jest.spyOn(utilsConversionModule, 'portfolioToPortfolioKind');
+    assetHolderToAssetHolderKindSpy = jest.spyOn(
+      utilsConversionModule,
+      'assetHolderToAssetHolderKind'
+    );
     assetId = '12341234-1234-1234-1234-123412341234';
     collection = entityMockUtils.getNftCollectionInstance({ assetId });
     rawAssetId = dsMockUtils.createMockAssetId(uuidToHex(assetId));
@@ -69,9 +72,9 @@ describe('issueNft procedure', () => {
     const defaultPortfolioId = new BigNumber(0);
     const numberedPortfolioId = new BigNumber(1);
 
-    const defaultPortfolioKind = dsMockUtils.createMockPortfolioKind('Default');
-    const numberedPortfolioKind = dsMockUtils.createMockPortfolioKind({
-      User: dsMockUtils.createMockU64(numberedPortfolioId),
+    const defaultPortfolioHolderKind = dsMockUtils.createMockAssetHolderKind('DefaultPortfolio');
+    const numberedPortfolioHolderKind = dsMockUtils.createMockAssetHolderKind({
+      UserPortfolio: dsMockUtils.createMockU64(numberedPortfolioId),
     });
 
     const getPortfolio: EntityGetter<Portfolio> = jest.fn();
@@ -82,12 +85,6 @@ describe('issueNft procedure', () => {
     });
 
     beforeEach(() => {
-      when(mockContext.createType)
-        .calledWith('PolymeshPrimitivesIdentityIdPortfolioKind', 'Default')
-        .mockReturnValue(defaultPortfolioKind);
-      when(mockContext.createType)
-        .calledWith('PolymeshPrimitivesIdentityIdPortfolioKind', numberedPortfolioKind)
-        .mockReturnValue(numberedPortfolioKind);
       when(getPortfolio)
         .calledWith()
         .mockResolvedValue(mockDefaultPortfolio)
@@ -96,20 +93,25 @@ describe('issueNft procedure', () => {
         .calledWith({ portfolioId: numberedPortfolioId })
         .mockResolvedValue(mockNumberedPortfolio);
 
-      when(portfolioToPortfolioKindSpy)
+      when(assetHolderToAssetHolderKindSpy)
         .calledWith(mockDefaultPortfolio, mockContext)
-        .mockReturnValue(defaultPortfolioKind)
+        .mockReturnValue(defaultPortfolioHolderKind)
         .calledWith(mockNumberedPortfolio, mockContext)
-        .mockReturnValue(numberedPortfolioKind);
+        .mockReturnValue(numberedPortfolioHolderKind);
     });
 
     it('should return an issueNft transaction spec', async () => {
       const args = {
         metadataList: [[]],
         collection,
+        portfolioId: defaultPortfolioId,
       };
       nftInputToMetadataValueSpy.mockReturnValue([]);
-      mockContext.getSigningIdentity.mockResolvedValue(entityMockUtils.getIdentityInstance());
+      mockContext.getSigningIdentity.mockResolvedValue(
+        entityMockUtils.getIdentityInstance({
+          portfoliosGetPortfolio: getPortfolio,
+        })
+      );
 
       const transaction = dsMockUtils.createTxMock('nft', 'issueNft');
       const proc = procedureMockUtils.getInstance<Params, Nft[]>(mockContext);
@@ -119,7 +121,7 @@ describe('issueNft procedure', () => {
         transactions: [
           {
             transaction,
-            args: [rawAssetId, [], defaultPortfolioKind],
+            args: [rawAssetId, [], defaultPortfolioHolderKind],
           },
         ],
         resolver: expect.any(Function),
@@ -143,7 +145,7 @@ describe('issueNft procedure', () => {
         transactions: [
           {
             transaction,
-            args: [rawAssetId, [], defaultPortfolioKind],
+            args: [rawAssetId, [], defaultPortfolioHolderKind],
           },
         ],
         resolver: expect.any(Function),
@@ -168,7 +170,7 @@ describe('issueNft procedure', () => {
         transactions: [
           {
             transaction,
-            args: [rawAssetId, [], defaultPortfolioKind],
+            args: [rawAssetId, [], defaultPortfolioHolderKind],
           },
         ],
         resolver: expect.any(Function),
@@ -195,7 +197,7 @@ describe('issueNft procedure', () => {
         transactions: [
           {
             transaction,
-            args: [rawAssetId, [], numberedPortfolioKind],
+            args: [rawAssetId, [], numberedPortfolioHolderKind],
           },
         ],
         resolver: expect.any(Function),

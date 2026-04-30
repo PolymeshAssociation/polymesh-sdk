@@ -74,7 +74,7 @@ export async function prepareRedeemTokens(
  */
 export function getAuthorization(
   this: Procedure<Params, void, Storage>,
-  { asset, from }: Params
+  { asset }: Params
 ): ProcedureAuthorization {
   const {
     storage: { fromAssetHolder },

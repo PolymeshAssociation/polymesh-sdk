@@ -1,5 +1,4 @@
 import { ISubmittableResult } from '@polkadot/types/types';
-import { hexHasPrefix } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import { isEqual } from 'lodash';
 

@@ -355,10 +355,10 @@ describe('Portfolio class', () => {
         }),
       });
       jest.spyOn(utilsConversionModule, 'portfolioIdToMeshPortfolioId').mockImplementation();
-      dsMockUtils.configureMocks({ contextOptions: { did } });
     });
 
     beforeEach(() => {
+      dsMockUtils.configureMocks({ contextOptions: { did, isV7: true } });
       dsMockUtils.createQueryMock('portfolio', 'portfolioNFT', {
         entries: [
           tuple([rawPortfolioId, [rawAssetId, rawNftId]], rawTrue),
