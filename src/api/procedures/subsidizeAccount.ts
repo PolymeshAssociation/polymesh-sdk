@@ -20,6 +20,7 @@ export type Params = SubsidizeAccountParams & {
 export async function prepareSubsidizeAccount(
   this: Procedure<Params, AuthorizationRequest | void>,
   args: Params
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<TransactionSpec<AuthorizationRequest | void, any>> {
   const {
     context: {
