@@ -337,7 +337,7 @@ describe('assertInstructionValidForManualExecution', () => {
         } as InstructionDetails,
         mockContext
       )
-    ).rejects.toThrowError(expectedError);
+    ).rejects.toThrow(expectedError);
   });
 
   it('should not throw an error', async () => {
@@ -802,14 +802,17 @@ describe('authorization request validations', () => {
 
   describe('assertAuthorizationRequestValid', () => {
     it('should throw with an expired request', () => {
-      const auth = entityMockUtils.getAuthorizationRequestInstance({ isExpired: true });
+      const auth = entityMockUtils.getAuthorizationRequestInstance({
+        isExpired: true,
+        exists: true,
+      });
 
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'The Authorization Request has expired',
       });
 
-      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrow(
         expectedError
       );
     });
@@ -822,7 +825,7 @@ describe('authorization request validations', () => {
         message: 'The Authorization Request no longer exists',
       });
 
-      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrow(
         expectedError
       );
     });
@@ -852,7 +855,7 @@ describe('authorization request validations', () => {
         message: 'An Identity can not become the primary Account of another Identity',
       });
 
-      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrow(
         expectedError
       );
     });
@@ -898,7 +901,7 @@ describe('authorization request validations', () => {
         message: 'Issuer must be a CDD provider',
       });
 
-      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrow(
         expectedError
       );
     });
@@ -950,7 +953,7 @@ describe('authorization request validations', () => {
         code: ErrorCode.UnmetPrerequisite,
         message: 'The Ticker is not reserved',
       });
-      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrow(
         expectedError
       );
     });
@@ -979,7 +982,7 @@ describe('authorization request validations', () => {
         message: 'The Ticker has already been used to create an Asset',
       });
 
-      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrow(
         expectedError
       );
     });
@@ -1054,7 +1057,7 @@ describe('authorization request validations', () => {
         message: 'No asset exists with asset ID: "12341234-1234-1234-1234-123412341234"',
       });
 
-      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrow(
         expectedError
       );
     });
@@ -1126,7 +1129,7 @@ describe('authorization request validations', () => {
         message: 'Issuing Identity does not have a valid CDD claim',
       });
 
-      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrow(
         expectedError
       );
     });
@@ -1150,7 +1153,7 @@ describe('authorization request validations', () => {
         message: 'The target cannot be an Identity',
       });
 
-      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrow(
         expectedError
       );
     });
@@ -1176,7 +1179,7 @@ describe('authorization request validations', () => {
         message: 'The target Account already has an associated Identity',
       });
 
-      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrow(
         expectedError
       );
     });
@@ -1216,7 +1219,7 @@ describe('authorization request validations', () => {
         remaining: allowance,
       };
       const data: Authorization = {
-        type: AuthorizationType.AddRelayerPayingKey,
+        type: AuthorizationType.OldAddRelayerPayingKey,
         value: subsidy,
       };
 
@@ -1235,6 +1238,7 @@ describe('authorization request validations', () => {
     });
 
     it('should throw with a beneficiary that does not have a CDD Claim', () => {
+      dsMockUtils.configureMocks({ contextOptions: { isV7: true } });
       const subsidizer = entityMockUtils.getAccountInstance({
         getIdentity: entityMockUtils.getIdentityInstance(),
       });
@@ -1268,12 +1272,13 @@ describe('authorization request validations', () => {
         message: 'Beneficiary Account does not have a valid CDD Claim',
       });
 
-      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrow(
         expectedError
       );
     });
 
     it('should throw with a Subsidizer that does not have a CDD Claim', () => {
+      dsMockUtils.configureMocks({ contextOptions: { isV7: true } });
       const beneficiary = entityMockUtils.getAccountInstance({
         getIdentity: entityMockUtils.getIdentityInstance({ hasValidCdd: true }),
       });
@@ -1310,12 +1315,13 @@ describe('authorization request validations', () => {
         message: 'Subsidizer Account does not have a valid CDD Claim',
       });
 
-      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrow(
         expectedError
       );
     });
 
     it('should throw with a beneficiary that does not have an Identity', () => {
+      dsMockUtils.configureMocks({ contextOptions: { isV7: true } });
       const subsidizer = entityMockUtils.getAccountInstance({
         getIdentity: entityMockUtils.getIdentityInstance({ hasValidCdd: false }),
       });
@@ -1346,12 +1352,13 @@ describe('authorization request validations', () => {
         message: 'Beneficiary Account does not have an Identity',
       });
 
-      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrow(
         expectedError
       );
     });
 
     it('should throw with a Subsidizer that does not have an Identity', () => {
+      dsMockUtils.configureMocks({ contextOptions: { isV7: true } });
       const beneficiary = entityMockUtils.getAccountInstance({
         getIdentity: entityMockUtils.getIdentityInstance({ hasValidCdd: true }),
       });
@@ -1386,7 +1393,7 @@ describe('authorization request validations', () => {
         message: 'Subsidizer Account does not have an Identity',
       });
 
-      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrow(
         expectedError
       );
     });
@@ -1445,7 +1452,7 @@ describe('authorization request validations', () => {
         message: 'A multisig cannot be its own signer',
       });
 
-      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrow(
         expectedError
       );
     });
@@ -1478,7 +1485,7 @@ describe('authorization request validations', () => {
         message: 'The target Account is already part of an Identity',
       });
 
-      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrow(
         expectedError
       );
     });
@@ -1571,7 +1578,7 @@ describe('authorization request validations', () => {
         message: 'Issuing Identity does not have a valid CDD claim',
       });
 
-      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrow(
         expectedError
       );
     });
@@ -1595,7 +1602,7 @@ describe('authorization request validations', () => {
         message: 'The target cannot be an Identity',
       });
 
-      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrow(
         expectedError
       );
     });
@@ -1621,7 +1628,7 @@ describe('authorization request validations', () => {
         message: 'The target Account already has an associated Identity',
       });
 
-      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrow(
         expectedError
       );
     });
@@ -1639,7 +1646,7 @@ describe('authorization request validations', () => {
           } as never,
           mockContext
         )
-      ).rejects.toThrowError(expectedError);
+      ).rejects.toThrow(expectedError);
     });
   });
 });

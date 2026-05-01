@@ -230,7 +230,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
 
     const rawPortfolioId = portfolioIdToMeshPortfolioId({ did, number: portfolioId }, context);
 
-    // TODO: clean up v7 support - in v7 portfolioNFT uses key [portfolioId, [assetId, nftId]];
+    // clean up v7 support - in v7 portfolioNFT uses key [portfolioId, [assetId, nftId]];
     // v8 changed it to [portfolioId, assetId, nftId]. Cast required to query with a single arg
     // as Polkadot defaults to N-1 args.
     const [exists, heldCollectionEntries, lockedCollectionEntries] = await Promise.all([
@@ -272,7 +272,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     };
 
     for (const [{ args: entryArgs }] of heldCollectionEntries) {
-      // TODO: clean up v7 support - v7 key: [portfolioId, [assetId, nftId]], v8 key: [portfolioId, assetId, nftId]
+      // clean up v7 support - v7 key: [portfolioId, [assetId, nftId]], v8 key: [portfolioId, assetId, nftId]
       const [rawAssetId, rawNftId] = context.isV7
         ? (entryArgs as unknown as [unknown, [PolymeshPrimitivesAssetAssetId, u64]])[1]
         : [entryArgs[1], entryArgs[2]];

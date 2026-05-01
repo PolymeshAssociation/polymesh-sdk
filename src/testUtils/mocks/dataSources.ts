@@ -2809,7 +2809,7 @@ export const createMockAuthorizationData = (
     | { TransferAssetOwnership: PolymeshPrimitivesTicker }
     | { JoinIdentity: PolymeshPrimitivesSecondaryKeyPermissions }
     | { PortfolioCustody: PolymeshPrimitivesIdentityIdPortfolioId }
-    | { AddRelayerPayingKey: [AccountId, AccountId, Balance] }
+    | { OldAddRelayerPayingKey: [AccountId, AccountId, Balance] }
     | { BecomeAgent: [PolymeshPrimitivesTicker, PolymeshPrimitivesAgentAgentGroup] }
     | PolymeshPrimitivesAuthorizationAuthorizationData
 ): MockCodec<PolymeshPrimitivesAuthorizationAuthorizationData> => {

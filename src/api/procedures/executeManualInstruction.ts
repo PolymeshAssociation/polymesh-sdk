@@ -173,7 +173,9 @@ export async function prepareStorage(
   >(async (accPromise, leg) => {
     const [allowedAssetHolders, offChainDids] = await accPromise;
 
-    const isAssetHolderAllowed = async (assetHolder: AssetHolder): Promise<AssetHolder | null> => {
+    const getAssetHolderIfAllowed = async (
+      assetHolder: AssetHolder
+    ): Promise<AssetHolder | null> => {
       if (assetHolder instanceof Account) {
         const identity = await assetHolder.getIdentity();
         if (identity?.did === did) {
@@ -183,6 +185,7 @@ export async function prepareStorage(
       }
 
       const isCustodied = await assetHolder.isCustodiedBy({ identity: did });
+
       if (isCustodied) {
         return assetHolder;
       }
@@ -200,8 +203,8 @@ export async function prepareStorage(
       const toAssetHolder = assetHolderLikeToAssetHolder(to, context);
 
       const [fromPortfolio, toPortfolio] = await Promise.all([
-        isAssetHolderAllowed(fromAssetHolder),
-        isAssetHolderAllowed(toAssetHolder),
+        getAssetHolderIfAllowed(fromAssetHolder),
+        getAssetHolderIfAllowed(toAssetHolder),
       ]);
 
       if (fromPortfolio) {

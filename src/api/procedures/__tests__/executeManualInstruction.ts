@@ -1,5 +1,4 @@
 import { u32, u64 } from '@polkadot/types';
-import { PolymeshPrimitivesIdentityIdPortfolioId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -20,7 +19,6 @@ import {
   InstructionStatus,
   InstructionType,
   PortfolioId,
-  PortfolioLike,
   TxTags,
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -43,9 +41,11 @@ jest.mock(
 describe('executeManualInstruction procedure', () => {
   const id = new BigNumber(1);
   const rawInstructionId = dsMockUtils.createMockU64(id);
-  const rawPortfolioId = dsMockUtils.createMockPortfolioId({
-    did: dsMockUtils.createMockIdentityId('someDid'),
-    kind: dsMockUtils.createMockPortfolioKind('Default'),
+  const rawPortfolioHolderId = dsMockUtils.createMockAssetHolder({
+    Portfolio: dsMockUtils.createMockPortfolioId({
+      did: dsMockUtils.createMockIdentityId('someDid'),
+      kind: dsMockUtils.createMockPortfolioKind('Default'),
+    }),
   });
   const fungibleTokens = dsMockUtils.createMockU32(new BigNumber(1));
   const nonFungibleTokens = dsMockUtils.createMockU32(new BigNumber(2));
@@ -66,11 +66,8 @@ describe('executeManualInstruction procedure', () => {
   let mockContext: Mocked<Context>;
   let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
   let bigNumberToU32Spy: jest.SpyInstance<u32, [BigNumber, Context]>;
-  let portfolioLikeToPortfolioIdSpy: jest.SpyInstance<PortfolioId, [PortfolioLike]>;
-  let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance<
-    PolymeshPrimitivesIdentityIdPortfolioId,
-    [PortfolioId, Context]
-  >;
+  let assetHolderLikeToAssetHolderIdSpy: jest.SpyInstance;
+  let assetHolderIdToMeshAssetHolderSpy: jest.SpyInstance;
   let instructionDetails: InstructionDetails;
 
   beforeAll(() => {
@@ -86,10 +83,13 @@ describe('executeManualInstruction procedure', () => {
     legAmount = new BigNumber(2);
     bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
     bigNumberToU32Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU32');
-    portfolioLikeToPortfolioIdSpy = jest.spyOn(utilsConversionModule, 'portfolioLikeToPortfolioId');
-    portfolioIdToMeshPortfolioIdSpy = jest.spyOn(
+    assetHolderLikeToAssetHolderIdSpy = jest.spyOn(
       utilsConversionModule,
-      'portfolioIdToMeshPortfolioId'
+      'assetHolderLikeToAssetHolderId'
+    );
+    assetHolderIdToMeshAssetHolderSpy = jest.spyOn(
+      utilsConversionModule,
+      'assetHolderIdToMeshAssetHolder'
     );
 
     jest
@@ -103,10 +103,10 @@ describe('executeManualInstruction procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
     when(bigNumberToU64Spy).calledWith(id, mockContext).mockReturnValue(rawInstructionId);
     when(bigNumberToU32Spy).calledWith(legAmount, mockContext).mockReturnValue(rawLegAmount);
-    when(portfolioLikeToPortfolioIdSpy).calledWith(portfolio).mockReturnValue(portfolioId);
-    when(portfolioIdToMeshPortfolioIdSpy)
+    when(assetHolderLikeToAssetHolderIdSpy).calledWith(portfolio).mockReturnValue(portfolioId);
+    when(assetHolderIdToMeshAssetHolderSpy)
       .calledWith(portfolioId, mockContext)
-      .mockReturnValue(rawPortfolioId);
+      .mockReturnValue(rawPortfolioHolderId);
     instructionDetails = {
       status: InstructionStatus.Pending,
       createdAt: new Date('2022/01/01'),
@@ -141,12 +141,13 @@ describe('executeManualInstruction procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should throw an error if the signing identity is not the custodian of any of the involved portfolios', async () => {
+  it('should throw an error if the signer is not involved in the instruction', async () => {
     let proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
-      assetHolders: [],
+      allowedAssetHolders: [],
       offChainParties: new Set<string>(['offChainSender', 'offChainReceiver']),
       instructionDetails,
       signerDid: 'someOtherDid',
+      mediatorDids: [],
     });
 
     await expect(
@@ -154,23 +155,24 @@ describe('executeManualInstruction procedure', () => {
         id,
         skipAffirmationCheck: false,
       })
-    ).rejects.toThrow('The signing identity is not involved in this Instruction');
+    ).rejects.toThrow('The signer is not involved in this Instruction');
 
     proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
-      assetHolders: [],
+      allowedAssetHolders: [],
       offChainParties: new Set<string>(['offChainSender', 'offChainReceiver']),
       instructionDetails: {
         ...instructionDetails,
         venue: null,
       },
       signerDid: 'someOtherDid',
+      mediatorDids: [],
     });
     await expect(
       prepareExecuteManualInstruction.call(proc, {
         id,
         skipAffirmationCheck: false,
       })
-    ).rejects.toThrow('The signing identity is not involved in this Instruction');
+    ).rejects.toThrow('The signer is not involved in this Instruction');
   });
 
   it('should throw an error if there are some pending affirmations', () => {
@@ -179,10 +181,11 @@ describe('executeManualInstruction procedure', () => {
     });
 
     const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
-      assetHolders: [portfolio, portfolio],
+      allowedAssetHolders: [portfolio, portfolio],
       offChainParties: new Set<string>(),
       instructionDetails,
       signerDid: did,
+      mediatorDids: [],
     });
 
     return expect(
@@ -199,10 +202,11 @@ describe('executeManualInstruction procedure', () => {
     });
 
     const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
-      assetHolders: [portfolio, portfolio],
+      allowedAssetHolders: [portfolio, portfolio],
       offChainParties: new Set<string>(),
       instructionDetails,
       signerDid: did,
+      mediatorDids: [],
     });
 
     return expect(
@@ -221,10 +225,11 @@ describe('executeManualInstruction procedure', () => {
     });
 
     let proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
-      assetHolders: [portfolio, portfolio],
+      allowedAssetHolders: [portfolio, portfolio],
       offChainParties: new Set<string>(),
       instructionDetails,
       signerDid: did,
+      mediatorDids: [],
     });
 
     let result = await prepareExecuteManualInstruction.call(proc, {
@@ -237,7 +242,7 @@ describe('executeManualInstruction procedure', () => {
       transaction,
       args: [
         rawInstructionId,
-        rawPortfolioId,
+        rawPortfolioHolderId,
         fungibleTokens,
         nonFungibleTokens,
         offChainAssets,
@@ -247,10 +252,11 @@ describe('executeManualInstruction procedure', () => {
     });
 
     proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
-      assetHolders: [],
+      allowedAssetHolders: [],
       offChainParties: new Set<string>(),
       instructionDetails,
       signerDid: did,
+      mediatorDids: [],
     });
 
     result = await prepareExecuteManualInstruction.call(proc, {
@@ -274,10 +280,11 @@ describe('executeManualInstruction procedure', () => {
 
     // one of the off chain parties is executing the settlement manually
     proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
-      assetHolders: [],
+      allowedAssetHolders: [],
       offChainParties: new Set<string>(['offChainSender', 'offChainReceiver']),
       instructionDetails,
       signerDid: 'offChainSender',
+      mediatorDids: [],
     });
 
     result = await prepareExecuteManualInstruction.call(proc, {
@@ -306,10 +313,11 @@ describe('executeManualInstruction procedure', () => {
       const to = entityMockUtils.getDefaultPortfolioInstance();
 
       const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
-        assetHolders: [from, to],
+        allowedAssetHolders: [from, to],
         offChainParties: new Set<string>(),
         instructionDetails,
         signerDid: did,
+        mediatorDids: [],
       });
       const boundFunc = getAuthorization.bind(proc);
 
@@ -331,8 +339,10 @@ describe('executeManualInstruction procedure', () => {
     const senderDid = 'senderDid';
     const receiverDid = 'receiverDid';
 
-    let from = entityMockUtils.getDefaultPortfolioInstance({ did: fromDid, isCustodiedBy: true });
-    let to = entityMockUtils.getDefaultPortfolioInstance({ did: toDid, isCustodiedBy: true });
+    let assetHolderLikeToAssetHolderSpy: jest.SpyInstance;
+
+    const from = entityMockUtils.getDefaultPortfolioInstance({ did: fromDid, isCustodiedBy: true });
+    const to = entityMockUtils.getDefaultPortfolioInstance({ did: toDid, isCustodiedBy: true });
     const sender = entityMockUtils.getIdentityInstance({ did: senderDid });
     const receiver = entityMockUtils.getIdentityInstance({ did: receiverDid });
     const amount = new BigNumber(1);
@@ -340,7 +350,17 @@ describe('executeManualInstruction procedure', () => {
       assetId: '0x12341234123412341234123412341234',
     });
 
-    it('should return the custodied portfolios and offChain parties associated in the instruction legs for the signing identity', async () => {
+    beforeEach(() => {
+      assetHolderLikeToAssetHolderSpy = jest.spyOn(
+        utilsConversionModule,
+        'assetHolderLikeToAssetHolder'
+      );
+
+      when(assetHolderLikeToAssetHolderSpy).calledWith(from, mockContext).mockReturnValue(from);
+      when(assetHolderLikeToAssetHolderSpy).calledWith(to, mockContext).mockReturnValue(to);
+    });
+
+    it('should return the custodied portfolios as asset holders and offChain parties associated in the instruction legs for the signing identity', async () => {
       const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext);
 
       const boundFunc = prepareStorage.bind(proc);
@@ -354,6 +374,7 @@ describe('executeManualInstruction procedure', () => {
             next: null,
           },
           detailsFromChain: instructionDetails,
+          getMediators: [],
         },
       });
       const result = await boundFunc({
@@ -362,29 +383,36 @@ describe('executeManualInstruction procedure', () => {
       });
 
       expect(result).toEqual({
-        portfolios: [
+        allowedAssetHolders: [
           expect.objectContaining({ owner: expect.objectContaining({ did: fromDid }) }),
           expect.objectContaining({ owner: expect.objectContaining({ did: toDid }) }),
         ],
         instructionDetails,
         signerDid: did,
         offChainParties: new Set<string>([senderDid, receiverDid]),
+        mediatorDids: [],
       });
     });
 
-    it('should return no portfolios when signing identity is not part of any legs', async () => {
-      const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext);
+    it('should return no asset holders when signers are not part of any legs', async () => {
+      from.isCustodiedBy = jest.fn().mockResolvedValue(false);
+      const toAccount = entityMockUtils.getAccountInstance({
+        getIdentity: entityMockUtils.getIdentityInstance({ did: 'randomDid' }),
+      });
 
-      const boundFunc = prepareStorage.bind(proc);
-      from = entityMockUtils.getDefaultPortfolioInstance({ did: fromDid, isCustodiedBy: false });
-      to = entityMockUtils.getDefaultPortfolioInstance({ did: toDid, isCustodiedBy: false });
+      when(assetHolderLikeToAssetHolderSpy)
+        .calledWith(toAccount, mockContext)
+        .mockReturnValue(toAccount);
 
       entityMockUtils.configureMocks({
         instructionOptions: {
-          getLegsFromChain: { data: [{ from, to, amount, asset }], next: null },
+          getLegsFromChain: { data: [{ from, to: toAccount, amount, asset }], next: null },
           detailsFromChain: instructionDetails,
         },
       });
+      const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext);
+
+      const boundFunc = prepareStorage.bind(proc);
 
       const result = await boundFunc({
         id: new BigNumber(1),
@@ -392,10 +420,11 @@ describe('executeManualInstruction procedure', () => {
       });
 
       expect(result).toEqual({
-        portfolios: [],
+        allowedAssetHolders: [],
         instructionDetails,
         signerDid: did,
         offChainParties: new Set<string>(),
+        mediatorDids: [],
       });
     });
   });
