@@ -688,7 +688,10 @@ export const isParam = (
       return holder1 === holder2;
     }
     if (typeof holder1 !== 'string' && typeof holder2 !== 'string') {
-      return holder1.did === holder2.did && (holder1.number ?? 0) === (holder2.number ?? 0);
+      return (
+        holder1.did === holder2.did &&
+        (holder1.number ?? new BigNumber(0)).eq(holder2.number ?? new BigNumber(0))
+      );
     }
     return false;
   };

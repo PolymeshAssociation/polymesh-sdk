@@ -420,7 +420,7 @@ function validateInstructionErrors(errIndexes: ErrIndexes): void {
   if (sameSenderReceiverIndexes.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Instruction leg cannot transfer Assets between same asset holder',
+      message: 'Instruction leg cannot transfer Assets between same asset holders',
       data: {
         failedInstructionIndexes: sameSenderReceiverIndexes,
       },
@@ -606,20 +606,22 @@ async function validateInstruction(
     errors.legAmountErrIndexes = [index];
   }
 
-  const sameSenderReceiver = legs.filter(async leg => {
-    if (isOffChainLeg(leg)) {
-      return asDid(leg.from) === asDid(leg.to);
-    } else {
-      const { from, to } = leg;
-      const [fromDid, toDid] = await Promise.all([
-        getAssetHolderDid(from, context),
-        getAssetHolderDid(to, context),
-      ]);
-      return fromDid === toDid;
-    }
-  });
+  const sameSenderReceiver = await Promise.all(
+    legs.map(async leg => {
+      if (isOffChainLeg(leg)) {
+        return asDid(leg.from) === asDid(leg.to);
+      } else {
+        const { from, to } = leg;
+        const [fromDid, toDid] = await Promise.all([
+          getAssetHolderDid(from, context),
+          getAssetHolderDid(to, context),
+        ]);
+        return fromDid === toDid;
+      }
+    })
+  );
 
-  if (sameSenderReceiver.length) {
+  if (sameSenderReceiver.filter(Boolean).length) {
     errors.sameSenderReceiverIndexes = [index];
   }
 

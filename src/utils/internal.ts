@@ -27,7 +27,6 @@ import fetch from 'cross-fetch';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
 import { coerce, lt, major, satisfies } from 'semver';
-import WebSocket from 'ws';
 
 import { CorporateBallotDetails } from '~/api/entities/CorporateBallot/types';
 import {
@@ -1570,25 +1569,51 @@ export function extractProtocol(url: string): string | undefined {
 
 /**
  * @hidden
+ */
+function nodeWsDataToString(data: import('ws').RawData): string {
+  if (typeof data === 'string') {
+    return data;
+  }
+
+  if (data instanceof ArrayBuffer) {
+    return Buffer.from(data).toString();
+  }
+
+  if (Array.isArray(data)) {
+    return Buffer.concat(data).toString();
+  }
+
+  return data.toString();
+}
+
+/**
+ * @hidden
  *
  * Checks chain version. This function uses a websocket/fetch as it's intended to be called during initialization
  * @param nodeUrl - URL for the chain node
  * @returns A promise that resolves if the version is in the expected range, otherwise it will reject
  */
-export function assertExpectedChainVersion(nodeUrl: string): Promise<number> {
+export async function assertExpectedChainVersion(nodeUrl: string): Promise<number> {
+  const protocol = extractProtocol(nodeUrl);
+
+  if (!protocol) {
+    throw new PolymeshError({
+      code: ErrorCode.General,
+      message: 'nodeUrl must start with protocol. http(s) and ws(s) are supported',
+      data: { nodeUrl, protocol },
+    });
+  }
+
+  // Lazily import the Node ws implementation only when needed, so browser bundles never pull it in
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  const NodeWs =
+    protocol.startsWith('ws') &&
+    typeof globalThis.WebSocket === 'function' &&
+    (typeof process === 'undefined' || !process.versions?.node)
+      ? null
+      : (await import('ws')).default;
+
   return new Promise<number>((resolve, reject) => {
-    const protocol = extractProtocol(nodeUrl);
-
-    if (!protocol) {
-      const err = new PolymeshError({
-        code: ErrorCode.General,
-        message: 'nodeUrl must start with protocol. http(s) and ws(s) are supported',
-        data: { nodeUrl, protocol },
-      });
-      reject(err);
-      return;
-    }
-
     let confidentialAssetsSupported: boolean;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let specResponse: any;
@@ -1614,31 +1639,58 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<number> {
       reject(err);
     };
 
+    const parseWsResponse = (payload: string): void => {
+      const data = JSON.parse(payload);
+      const { id } = data;
+
+      if (id === CONFIDENTIAL_ASSETS_SUPPORTED_CALL.id) {
+        confidentialAssetsSupported = !!data.result;
+      } else {
+        specResponse = data;
+      }
+    };
+
     if (protocol.startsWith('ws')) {
-      const client = new WebSocket(nodeUrl);
+      if (NodeWs === null) {
+        const client = new globalThis.WebSocket(nodeUrl);
 
-      client.on('open', (): void => {
-        client.send(JSON.stringify(CONFIDENTIAL_ASSETS_SUPPORTED_CALL));
-        client.send(JSON.stringify(STATE_RUNTIME_VERSION_CALL));
-      });
+        client.onopen = (): void => {
+          client.send(JSON.stringify(CONFIDENTIAL_ASSETS_SUPPORTED_CALL));
+          client.send(JSON.stringify(STATE_RUNTIME_VERSION_CALL));
+        };
 
-      client.on('message', (rawData: WebSocket.RawData): void => {
-        const data = JSON.parse(rawData.toString());
-        const { id } = data;
+        client.onmessage = (event): void => {
+          const { data } = event;
+          if (typeof data !== 'string') {
+            handleError(new Error('Unexpected WebSocket message data type'));
+            return;
+          }
 
-        if (id === CONFIDENTIAL_ASSETS_SUPPORTED_CALL.id) {
-          confidentialAssetsSupported = !!data.result;
-        } else {
-          specResponse = data;
-        }
+          parseWsResponse(data);
+          checkResponses(() => client.close());
+        };
 
-        checkResponses(() => client.close());
-      });
+        client.onerror = (): void => {
+          handleError(new Error('WebSocket connection error'));
+        };
+      } else {
+        const client = new NodeWs(nodeUrl);
 
-      client.on('error', (error: Error): void => {
-        client.close();
-        handleError(error);
-      });
+        client.on('open', (): void => {
+          client.send(JSON.stringify(CONFIDENTIAL_ASSETS_SUPPORTED_CALL));
+          client.send(JSON.stringify(STATE_RUNTIME_VERSION_CALL));
+        });
+
+        client.on('message', (rawData): void => {
+          parseWsResponse(nodeWsDataToString(rawData));
+          checkResponses(() => client.close());
+        });
+
+        client.on('error', (error: Error): void => {
+          client.close();
+          handleError(error);
+        });
+      }
     } else {
       // eslint-disable-next-line @typescript-eslint/naming-convention
       const headers = { 'Content-Type': 'application/json' };
