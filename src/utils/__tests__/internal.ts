@@ -1326,8 +1326,9 @@ describe('assertExpectedChainVersion', () => {
     });
   });
 
-  it('should resolve if it receives both expected RPC node and chain spec version', () => {
+  it('should resolve if it receives both expected RPC node and chain spec version', async () => {
     const signal = assertExpectedChainVersion('ws://example.com');
+    await new Promise(resolve => setImmediate(resolve)); // drain microtasks so the dynamic ws import resolves and the client is created
     client.on('open', () => {});
     client.sendSpecVersion(getSpecVersion(SUPPORTED_SPEC_SEMVER));
     client.sendIsPrivateSupported(false);
@@ -1335,8 +1336,9 @@ describe('assertExpectedChainVersion', () => {
     return expect(signal).resolves.not.toThrow();
   });
 
-  it('should resolve if it receives both expected RPC node and chain spec version for a private node', () => {
+  it('should resolve if it receives both expected RPC node and chain spec version for a private node', async () => {
     const signal = assertExpectedChainVersion('ws://example.com');
+    await new Promise(resolve => setImmediate(resolve)); // drain microtasks so the dynamic ws import resolves and the client is created
     client.on('open', () => {});
     client.sendSpecVersion(getSpecVersion(PRIVATE_SUPPORTED_SPEC_SEMVER));
     client.sendIsPrivateSupported(true);
@@ -1355,8 +1357,9 @@ describe('assertExpectedChainVersion', () => {
     return expect(signal).rejects.toThrow(expectedError);
   });
 
-  it('should throw an error given a major chain spec version mismatch', () => {
+  it('should throw an error given a major chain spec version mismatch', async () => {
     const signal = assertExpectedChainVersion('ws://example.com');
+    await new Promise(resolve => setImmediate(resolve)); // drain microtasks so the dynamic ws import resolves and the client is created
     const mismatchedSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_SEMVER, 0);
     client.sendSpecVersion(getSpecVersion(mismatchedSpecVersion));
     client.sendIsPrivateSupported(false);
@@ -1369,6 +1372,7 @@ describe('assertExpectedChainVersion', () => {
 
   it('should resolve even with a patch chain spec version mismatch', async () => {
     const signal = assertExpectedChainVersion('ws://example.com');
+    await new Promise(resolve => setImmediate(resolve)); // drain microtasks so the dynamic ws import resolves and the client is created
     const mockSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_SEMVER, 2);
     client.sendSpecVersion(getSpecVersion(mockSpecVersion));
     client.sendIsPrivateSupported(false);
@@ -1376,8 +1380,9 @@ describe('assertExpectedChainVersion', () => {
     expect(warnSpy).toHaveBeenCalledTimes(0);
   });
 
-  it('should throw an error if the node cannot be reached', () => {
+  it('should throw an error if the node cannot be reached', async () => {
     const signal = assertExpectedChainVersion('ws://example.com');
+    await new Promise(resolve => setImmediate(resolve)); // drain microtasks so the dynamic ws import resolves and the client is created
     const expectedError = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Could not connect to the Polymesh node at ws://example.com',

@@ -36,7 +36,6 @@ import {
   NumberedPortfolio,
   OffChainAffirmationReceipt,
   PortfolioId,
-  PortfolioLike,
   SignerKeyRingType,
   TxTags,
 } from '~/types';
@@ -74,14 +73,11 @@ describe('modifyInstructionAffirmation procedure', () => {
   const portfolioId: PortfolioId = { did };
   const latestBlock = new BigNumber(100);
   let mockContext: Mocked<Context>;
-  let portfolioIdsToBtreeSetSpy: jest.SpyInstance;
+  let assetHolderIdsToBtreeSetSpy: jest.SpyInstance;
   let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
   let bigNumberToU32Spy: jest.SpyInstance<u32, [BigNumber, Context]>;
-  let portfolioLikeToPortfolioIdSpy: jest.SpyInstance<PortfolioId, [PortfolioLike]>;
-  let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance<
-    PolymeshPrimitivesIdentityIdPortfolioId,
-    [PortfolioId, Context]
-  >;
+  let assetHolderLikeToAssetHolderIdSpy: jest.SpyInstance;
+  let assetHolderIdToMeshAssetHolderSpy: jest.SpyInstance;
   let meshAffirmationStatusToAffirmationStatusSpy: jest.SpyInstance<
     AffirmationStatus,
     [PolymeshPrimitivesSettlementAffirmationStatus]
@@ -118,10 +114,13 @@ describe('modifyInstructionAffirmation procedure', () => {
     });
     bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
     bigNumberToU32Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU32');
-    portfolioLikeToPortfolioIdSpy = jest.spyOn(utilsConversionModule, 'portfolioLikeToPortfolioId');
-    portfolioIdToMeshPortfolioIdSpy = jest.spyOn(
+    assetHolderLikeToAssetHolderIdSpy = jest.spyOn(
       utilsConversionModule,
-      'portfolioIdToMeshPortfolioId'
+      'assetHolderLikeToAssetHolderId'
+    );
+    assetHolderIdToMeshAssetHolderSpy = jest.spyOn(
+      utilsConversionModule,
+      'assetHolderIdToMeshAssetHolder'
     );
     meshAffirmationStatusToAffirmationStatusSpy = jest.spyOn(
       utilsConversionModule,
@@ -136,16 +135,18 @@ describe('modifyInstructionAffirmation procedure', () => {
 
     jest.spyOn(procedureUtilsModule, 'assertInstructionValid').mockImplementation();
 
-    portfolioIdsToBtreeSetSpy = jest.spyOn(utilsConversionModule, 'portfolioIdsToBtreeSet');
+    assetHolderIdsToBtreeSetSpy = jest.spyOn(utilsConversionModule, 'assetHolderIdsToBtreeSet');
   });
 
   beforeEach(() => {
     rawLegAmount = dsMockUtils.createMockU32(new BigNumber(2));
     dsMockUtils.createTxMock('settlement', 'affirmInstructionWithCount');
-    dsMockUtils.createTxMock('settlement', 'withdrawAffirmationWithCount');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    dsMockUtils.createTxMock('settlement' as any, 'withdrawAffirmationWithCount');
     dsMockUtils.createTxMock('settlement', 'rejectInstructionWithCount');
     dsMockUtils.createTxMock('settlement', 'affirmInstructionAsMediator');
-    dsMockUtils.createTxMock('settlement', 'withdrawAffirmationAsMediator');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    dsMockUtils.createTxMock('settlement' as any, 'withdrawAffirmationAsMediator');
     dsMockUtils.createTxMock('settlement', 'rejectInstructionAsMediator');
     dsMockUtils.createCallMock('settlementApi', 'getExecuteInstructionInfo', {
       returnValue: dsMockUtils.createMockOption(mockExecuteInfo),
@@ -158,8 +159,8 @@ describe('modifyInstructionAffirmation procedure', () => {
     bigNumberToU32Spy.mockReturnValue(rawLegAmount);
     assetCountToRawSpy.mockReturnValue(mockAssetCount);
     signer = entityMockUtils.getIdentityInstance({ did });
-    when(portfolioLikeToPortfolioIdSpy).calledWith(portfolio).mockReturnValue(portfolioId);
-    when(portfolioIdToMeshPortfolioIdSpy)
+    when(assetHolderLikeToAssetHolderIdSpy).calledWith(portfolio).mockReturnValue(portfolioId);
+    when(assetHolderIdToMeshAssetHolderSpy)
       .calledWith(portfolioId, mockContext)
       .mockReturnValue(rawPortfolioId);
     dsMockUtils.createQueryMock('settlement', 'instructionMediatorsAffirmations', {
@@ -171,7 +172,7 @@ describe('modifyInstructionAffirmation procedure', () => {
 
     rawPortfolioIds = dsMockUtils.createMockBtreeSet([rawPortfolioId, rawPortfolioId]);
 
-    when(portfolioIdsToBtreeSetSpy)
+    when(assetHolderIdsToBtreeSetSpy)
       .calledWith([rawPortfolioId, rawPortfolioId], mockContext)
       .mockReturnValue(rawPortfolioIds);
   });
@@ -193,10 +194,10 @@ describe('modifyInstructionAffirmation procedure', () => {
       Instruction,
       Storage
     >(mockContext, {
-      portfolios: [],
-      portfolioParams: ['someDid'],
-      senderLegAmount: legAmount,
-      totalLegAmount: legAmount,
+      allowedAssetHolders: [],
+      assetHolderParams: ['someDid'],
+      senderLegCount: legAmount,
+      totalLegCount: legAmount,
       signer,
       offChainLegIndices: [],
       instructionInfo: mockExecuteInfo,
@@ -207,7 +208,7 @@ describe('modifyInstructionAffirmation procedure', () => {
         id,
         operation: InstructionAffirmationOperation.Affirm,
       })
-    ).rejects.toThrow('Some of the portfolios are not a involved in this instruction');
+    ).rejects.toThrow('Some of the asset holders are not a involved in this instruction');
   });
 
   it('should throw an error if the signing Identity is not the custodian of any of the involved portfolios', () => {
@@ -224,10 +225,10 @@ describe('modifyInstructionAffirmation procedure', () => {
       Instruction,
       Storage
     >(mockContext, {
-      portfolios: [],
-      portfolioParams: [],
-      senderLegAmount: legAmount,
-      totalLegAmount: legAmount,
+      allowedAssetHolders: [],
+      assetHolderParams: [],
+      senderLegCount: legAmount,
+      totalLegCount: legAmount,
       signer,
       offChainLegIndices: [],
       instructionInfo: mockExecuteInfo,
@@ -238,7 +239,7 @@ describe('modifyInstructionAffirmation procedure', () => {
         id,
         operation: InstructionAffirmationOperation.Affirm,
       })
-    ).rejects.toThrow('The signing Identity is not involved in this Instruction');
+    ).rejects.toThrow('The signer is not involved in this Instruction');
   });
 
   it("should throw an error if the operation is Affirm and all of the signing Identity's Portfolios are affirmed", () => {
@@ -255,10 +256,10 @@ describe('modifyInstructionAffirmation procedure', () => {
       Instruction,
       Storage
     >(mockContext, {
-      portfolios: [portfolio, portfolio],
-      portfolioParams: [],
-      senderLegAmount: legAmount,
-      totalLegAmount: legAmount,
+      allowedAssetHolders: [portfolio, portfolio],
+      assetHolderParams: [],
+      senderLegCount: legAmount,
+      totalLegCount: legAmount,
       signer,
       offChainLegIndices: [],
       instructionInfo: mockExecuteInfo,
@@ -286,10 +287,10 @@ describe('modifyInstructionAffirmation procedure', () => {
       Instruction,
       Storage
     >(mockContext, {
-      portfolios: [portfolio, portfolio],
-      portfolioParams: [],
-      senderLegAmount: legAmount,
-      totalLegAmount: legAmount,
+      allowedAssetHolders: [portfolio, portfolio],
+      assetHolderParams: [],
+      senderLegCount: legAmount,
+      totalLegCount: legAmount,
       signer,
       offChainLegIndices: [],
       instructionInfo: mockExecuteInfo,
@@ -332,10 +333,10 @@ describe('modifyInstructionAffirmation procedure', () => {
       transaction = dsMockUtils.createTxMock('settlement', 'affirmWithReceiptsWithCount');
 
       storage = {
-        portfolios: [],
-        portfolioParams: [],
-        senderLegAmount: new BigNumber(0),
-        totalLegAmount: legAmount,
+        allowedAssetHolders: [],
+        assetHolderParams: [],
+        senderLegCount: new BigNumber(0),
+        totalLegCount: legAmount,
         signer,
         offChainLegIndices: [0],
         instructionInfo: mockExecuteInfo,
@@ -513,7 +514,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       receiptDetailsToMeshReceiptDetailsSpy.mockReturnValue([]);
 
       const emptySet = dsMockUtils.createMockBtreeSet([]);
-      when(portfolioIdsToBtreeSetSpy).calledWith([], mockContext).mockReturnValue(emptySet);
+      when(assetHolderIdsToBtreeSetSpy).calledWith([], mockContext).mockReturnValue(emptySet);
 
       const proc = procedureMockUtils.getInstance<
         ModifyInstructionAffirmationParams,
@@ -549,10 +550,10 @@ describe('modifyInstructionAffirmation procedure', () => {
       Instruction,
       Storage
     >(mockContext, {
-      portfolios: [portfolio, portfolio],
-      portfolioParams: [],
-      senderLegAmount: legAmount,
-      totalLegAmount: legAmount,
+      allowedAssetHolders: [portfolio, portfolio],
+      assetHolderParams: [],
+      senderLegCount: legAmount,
+      totalLegCount: legAmount,
       signer,
       offChainLegIndices: [],
       instructionInfo: mockExecuteInfo,
@@ -585,10 +586,10 @@ describe('modifyInstructionAffirmation procedure', () => {
       Instruction,
       Storage
     >(mockContext, {
-      portfolios: [portfolio, portfolio],
-      portfolioParams: [],
-      senderLegAmount: legAmount,
-      totalLegAmount: legAmount,
+      allowedAssetHolders: [portfolio, portfolio],
+      assetHolderParams: [],
+      senderLegCount: legAmount,
+      totalLegCount: legAmount,
       signer,
       offChainLegIndices: [],
       instructionInfo: mockExecuteInfo,
@@ -625,10 +626,10 @@ describe('modifyInstructionAffirmation procedure', () => {
       Instruction,
       Storage
     >(mockContext, {
-      portfolios: [portfolio, portfolio],
-      portfolioParams: [],
-      senderLegAmount: legAmount,
-      totalLegAmount: legAmount,
+      allowedAssetHolders: [portfolio, portfolio],
+      assetHolderParams: [],
+      senderLegCount: legAmount,
+      totalLegCount: legAmount,
       signer,
       offChainLegIndices: [],
       instructionInfo: mockExecuteInfo,
@@ -647,6 +648,9 @@ describe('modifyInstructionAffirmation procedure', () => {
   });
 
   it('should throw an error if operation is Withdraw and the current status of the instruction is pending', () => {
+    dsMockUtils.configureMocks({
+      contextOptions: { isV7: true },
+    });
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Pending');
     dsMockUtils.createQueryMock('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
@@ -660,10 +664,10 @@ describe('modifyInstructionAffirmation procedure', () => {
       Instruction,
       Storage
     >(mockContext, {
-      portfolios: [portfolio, portfolio],
-      portfolioParams: [],
-      senderLegAmount: legAmount,
-      totalLegAmount: legAmount,
+      allowedAssetHolders: [portfolio, portfolio],
+      assetHolderParams: [],
+      senderLegCount: legAmount,
+      totalLegCount: legAmount,
       signer,
       offChainLegIndices: [],
       instructionInfo: mockExecuteInfo,
@@ -678,6 +682,9 @@ describe('modifyInstructionAffirmation procedure', () => {
   });
 
   it('should throw an error if operation is Withdraw/Reject and the current status of the instruction is LockedForExecution', async () => {
+    dsMockUtils.configureMocks({
+      contextOptions: { isV7: true },
+    });
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Affirmed');
     dsMockUtils.createQueryMock('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
@@ -705,10 +712,10 @@ describe('modifyInstructionAffirmation procedure', () => {
       Instruction,
       Storage
     >(mockContext, {
-      portfolios: [portfolio, portfolio],
-      portfolioParams: [],
-      senderLegAmount: legAmount,
-      totalLegAmount: legAmount,
+      allowedAssetHolders: [portfolio, portfolio],
+      assetHolderParams: [],
+      senderLegCount: legAmount,
+      totalLegCount: legAmount,
       signer,
       offChainLegIndices: [],
       instructionInfo: mockExecuteInfo,
@@ -730,6 +737,11 @@ describe('modifyInstructionAffirmation procedure', () => {
   });
 
   it('should return a withdraw instruction transaction spec', async () => {
+    dsMockUtils.configureMocks({
+      contextOptions: {
+        isV7: true,
+      },
+    });
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Affirmed');
     dsMockUtils.createQueryMock('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
@@ -743,16 +755,20 @@ describe('modifyInstructionAffirmation procedure', () => {
       Instruction,
       Storage
     >(mockContext, {
-      portfolios: [portfolio, portfolio],
-      portfolioParams: [],
-      senderLegAmount: legAmount,
-      totalLegAmount: legAmount,
+      allowedAssetHolders: [portfolio, portfolio],
+      assetHolderParams: [],
+      senderLegCount: legAmount,
+      totalLegCount: legAmount,
       signer,
       offChainLegIndices: [],
       instructionInfo: mockExecuteInfo,
     });
 
-    const transaction = dsMockUtils.createTxMock('settlement', 'withdrawAffirmationWithCount');
+    const transaction = dsMockUtils.createTxMock(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      'settlement' as any,
+      'withdrawAffirmationWithCount'
+    );
 
     const result = await prepareModifyInstructionAffirmation.call(proc, {
       id,
@@ -768,6 +784,11 @@ describe('modifyInstructionAffirmation procedure', () => {
   });
 
   it('should throw an error if a mediator attempts to withdraw a non affirmed transaction', () => {
+    dsMockUtils.configureMocks({
+      contextOptions: {
+        isV7: true,
+      },
+    });
     const rawAffirmationStatus = createMockMediatorAffirmationStatus(AffirmationStatus.Pending);
     dsMockUtils.createQueryMock('settlement', 'instructionMediatorsAffirmations', {
       returnValue: rawAffirmationStatus,
@@ -781,10 +802,10 @@ describe('modifyInstructionAffirmation procedure', () => {
       Instruction,
       Storage
     >(mockContext, {
-      portfolios: [portfolio, portfolio],
-      portfolioParams: [],
-      senderLegAmount: legAmount,
-      totalLegAmount: legAmount,
+      allowedAssetHolders: [portfolio, portfolio],
+      assetHolderParams: [],
+      senderLegCount: legAmount,
+      totalLegCount: legAmount,
       signer,
       offChainLegIndices: [],
       instructionInfo: mockExecuteInfo,
@@ -804,6 +825,11 @@ describe('modifyInstructionAffirmation procedure', () => {
   });
 
   it('should return a withdraw as mediator instruction transaction spec', async () => {
+    dsMockUtils.configureMocks({
+      contextOptions: {
+        isV7: true,
+      },
+    });
     const rawAffirmationStatus = createMockMediatorAffirmationStatus({
       Affirmed: dsMockUtils.createMockOption(),
     });
@@ -819,16 +845,20 @@ describe('modifyInstructionAffirmation procedure', () => {
       Instruction,
       Storage
     >(mockContext, {
-      portfolios: [portfolio, portfolio],
-      portfolioParams: [],
-      senderLegAmount: legAmount,
-      totalLegAmount: legAmount,
+      allowedAssetHolders: [portfolio, portfolio],
+      assetHolderParams: [],
+      senderLegCount: legAmount,
+      totalLegCount: legAmount,
       signer,
       offChainLegIndices: [],
       instructionInfo: mockExecuteInfo,
     });
 
-    const transaction = dsMockUtils.createTxMock('settlement', 'withdrawAffirmationAsMediator');
+    const transaction = dsMockUtils.createTxMock(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      'settlement' as any,
+      'withdrawAffirmationAsMediator'
+    );
 
     const result = await prepareModifyInstructionAffirmation.call(proc, {
       id,
@@ -870,10 +900,10 @@ describe('modifyInstructionAffirmation procedure', () => {
       Instruction,
       Storage
     >(mockContext, {
-      portfolios: [portfolio, portfolio],
-      portfolioParams: [],
-      senderLegAmount: legAmount,
-      totalLegAmount: legAmount,
+      allowedAssetHolders: [portfolio, portfolio],
+      assetHolderParams: [],
+      senderLegCount: legAmount,
+      totalLegCount: legAmount,
       signer,
       offChainLegIndices: [],
       instructionInfo: mockExecuteInfo,
@@ -906,10 +936,10 @@ describe('modifyInstructionAffirmation procedure', () => {
       Instruction,
       Storage
     >(mockContext, {
-      portfolios: [portfolio, portfolio],
-      portfolioParams: [],
-      senderLegAmount: legAmount,
-      totalLegAmount: legAmount,
+      allowedAssetHolders: [portfolio, portfolio],
+      assetHolderParams: [],
+      senderLegCount: legAmount,
+      totalLegCount: legAmount,
       signer: entityMockUtils.getIdentityInstance({ did: 'someOtherDid' }),
       offChainLegIndices: [],
       instructionInfo: mockExecuteInfo,
@@ -943,10 +973,10 @@ describe('modifyInstructionAffirmation procedure', () => {
       Instruction,
       Storage
     >(mockContext, {
-      portfolios: [portfolio, portfolio],
-      portfolioParams: [],
-      senderLegAmount: legAmount,
-      totalLegAmount: legAmount,
+      allowedAssetHolders: [portfolio, portfolio],
+      assetHolderParams: [],
+      senderLegCount: legAmount,
+      totalLegCount: legAmount,
       signer,
       offChainLegIndices: [],
       instructionInfo: mockExecuteInfo,
@@ -978,10 +1008,10 @@ describe('modifyInstructionAffirmation procedure', () => {
         Instruction,
         Storage
       >(mockContext, {
-        portfolios: [from, to],
-        portfolioParams: [],
-        senderLegAmount: legAmount,
-        totalLegAmount: legAmount,
+        allowedAssetHolders: [from, to],
+        assetHolderParams: [],
+        senderLegCount: legAmount,
+        totalLegCount: legAmount,
         signer,
         offChainLegIndices: [],
         instructionInfo: mockExecuteInfo,
@@ -1003,10 +1033,10 @@ describe('modifyInstructionAffirmation procedure', () => {
         Instruction,
         Storage
       >(mockContext, {
-        portfolios: [],
-        portfolioParams: [],
-        senderLegAmount: legAmount,
-        totalLegAmount: legAmount,
+        allowedAssetHolders: [],
+        assetHolderParams: [],
+        senderLegCount: legAmount,
+        totalLegCount: legAmount,
         signer,
         offChainLegIndices: [2],
         instructionInfo: mockExecuteInfo,
@@ -1033,10 +1063,10 @@ describe('modifyInstructionAffirmation procedure', () => {
         Instruction,
         Storage
       >(mockContext, {
-        portfolios: [],
-        portfolioParams: [],
-        senderLegAmount: legAmount,
-        totalLegAmount: legAmount,
+        allowedAssetHolders: [],
+        assetHolderParams: [],
+        senderLegCount: legAmount,
+        totalLegCount: legAmount,
         signer,
         offChainLegIndices: [],
         instructionInfo: mockExecuteInfo,
@@ -1162,7 +1192,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       });
 
       expect(result).toEqual({
-        portfolios: [
+        allowedAssetHolders: [
           expect.objectContaining({ owner: expect.objectContaining({ did: fromDid }) }),
           expect.objectContaining({ owner: expect.objectContaining({ did: toDid }) }),
           expect.objectContaining({
@@ -1170,9 +1200,9 @@ describe('modifyInstructionAffirmation procedure', () => {
             id: new BigNumber(1),
           }),
         ],
-        portfolioParams: [],
-        senderLegAmount: new BigNumber(1),
-        totalLegAmount: new BigNumber(3),
+        assetHolderParams: [],
+        senderLegCount: new BigNumber(1),
+        totalLegCount: new BigNumber(3),
         signer: expect.objectContaining({ did: signer.did }),
         offChainLegIndices: [2],
         instructionInfo: mockExecuteInfo,
@@ -1185,26 +1215,10 @@ describe('modifyInstructionAffirmation procedure', () => {
       });
 
       expect(result).toEqual({
-        portfolios: [expect.objectContaining({ owner: expect.objectContaining({ did: fromDid }) })],
-        portfolioParams: [fromDid],
-        senderLegAmount: new BigNumber(1),
-        totalLegAmount: new BigNumber(3),
-        signer: expect.objectContaining({ did: signer.did }),
-        offChainLegIndices: [2],
-        instructionInfo: mockExecuteInfo,
-      });
-
-      result = await boundFunc({
-        id: new BigNumber(1),
-        operation: InstructionAffirmationOperation.Withdraw,
-        portfolios: [fromDid],
-      });
-
-      expect(result).toEqual({
-        portfolios: [expect.objectContaining({ owner: expect.objectContaining({ did: fromDid }) })],
-        portfolioParams: [fromDid],
-        senderLegAmount: new BigNumber(1),
-        totalLegAmount: new BigNumber(3),
+        allowedAssetHolders: [],
+        assetHolderParams: [fromDid],
+        senderLegCount: new BigNumber(0),
+        totalLegCount: new BigNumber(3),
         signer: expect.objectContaining({ did: signer.did }),
         offChainLegIndices: [2],
         instructionInfo: mockExecuteInfo,
@@ -1217,10 +1231,10 @@ describe('modifyInstructionAffirmation procedure', () => {
       });
 
       expect(result).toEqual({
-        portfolios: [expect.objectContaining({ owner: expect.objectContaining({ did: fromDid }) })],
-        portfolioParams: [fromDid],
-        senderLegAmount: new BigNumber(1),
-        totalLegAmount: new BigNumber(3),
+        allowedAssetHolders: [],
+        assetHolderParams: [fromDid],
+        senderLegCount: new BigNumber(0),
+        totalLegCount: new BigNumber(3),
         signer: expect.objectContaining({ did: signer.did }),
         offChainLegIndices: [2],
         instructionInfo: mockExecuteInfo,
@@ -1250,10 +1264,10 @@ describe('modifyInstructionAffirmation procedure', () => {
       });
 
       expect(result).toEqual({
-        portfolios: [],
-        portfolioParams: [],
-        senderLegAmount: new BigNumber(0),
-        totalLegAmount: new BigNumber(1),
+        allowedAssetHolders: [],
+        assetHolderParams: [],
+        senderLegCount: new BigNumber(0),
+        totalLegCount: new BigNumber(1),
         signer: expect.objectContaining({ did: signer.did }),
         offChainLegIndices: [],
         instructionInfo: mockExecuteInfo,
@@ -1265,6 +1279,14 @@ describe('modifyInstructionAffirmation procedure', () => {
 describe('isParam', () => {
   let defaultPortfolio: DefaultPortfolio;
   let numberedPortfolio: NumberedPortfolio;
+  let assetHolderLikeToAssetHolderIdSpy: jest.SpyInstance;
+
+  beforeAll(() => {
+    assetHolderLikeToAssetHolderIdSpy = jest.spyOn(
+      utilsConversionModule,
+      'assetHolderLikeToAssetHolderId'
+    );
+  });
 
   beforeEach(() => {
     defaultPortfolio = entityMockUtils.getDefaultPortfolioInstance({ did: 'someDid' });
@@ -1272,6 +1294,12 @@ describe('isParam', () => {
       did: 'someDid',
       id: new BigNumber(1),
     });
+    when(assetHolderLikeToAssetHolderIdSpy)
+      .calledWith(defaultPortfolio)
+      .mockReturnValue({ did: 'someDid' });
+    when(assetHolderLikeToAssetHolderIdSpy)
+      .calledWith(numberedPortfolio)
+      .mockReturnValue({ did: 'someDid', number: new BigNumber(1) });
   });
 
   it('should return true when there are no portfolio parameters', () => {

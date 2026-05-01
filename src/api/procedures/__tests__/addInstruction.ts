@@ -77,9 +77,9 @@ jest.mock(
 
 describe('addInstruction procedure', () => {
   let mockContext: Mocked<Context>;
-  let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance;
-  let portfolioLikeToPortfolioIdSpy: jest.SpyInstance;
-  let portfolioLikeToPortfolioSpy: jest.SpyInstance;
+  let assetHolderIdToMeshAssetHolderSpy: jest.SpyInstance;
+  let assetHolderLikeToAssetHolderIdSpy: jest.SpyInstance;
+  let assetHolderLikeToAssetHolderSpy: jest.SpyInstance;
   let getCustodianMock: jest.Mock;
   let stringToAssetIdSpy: jest.SpyInstance<PolymeshPrimitivesAssetAssetId, [string, Context]>;
   let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
@@ -157,12 +157,18 @@ describe('addInstruction procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    portfolioIdToMeshPortfolioIdSpy = jest.spyOn(
+    assetHolderIdToMeshAssetHolderSpy = jest.spyOn(
       utilsConversionModule,
-      'portfolioIdToMeshPortfolioId'
+      'assetHolderIdToMeshAssetHolder'
     );
-    portfolioLikeToPortfolioIdSpy = jest.spyOn(utilsConversionModule, 'portfolioLikeToPortfolioId');
-    portfolioLikeToPortfolioSpy = jest.spyOn(utilsConversionModule, 'portfolioLikeToPortfolio');
+    assetHolderLikeToAssetHolderIdSpy = jest.spyOn(
+      utilsConversionModule,
+      'assetHolderLikeToAssetHolderId'
+    );
+    assetHolderLikeToAssetHolderSpy = jest.spyOn(
+      utilsConversionModule,
+      'assetHolderLikeToAssetHolder'
+    );
     getCustodianMock = jest.fn();
     stringToAssetIdSpy = jest.spyOn(utilsConversionModule, 'stringToAssetId');
     stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
@@ -298,16 +304,20 @@ describe('addInstruction procedure', () => {
 
     mockContext = dsMockUtils.getContextInstance();
 
-    when(portfolioLikeToPortfolioIdSpy).calledWith(from).mockReturnValue({ did: fromDid });
-    when(portfolioLikeToPortfolioIdSpy).calledWith(to).mockReturnValue({ did: toDid });
-    when(portfolioLikeToPortfolioIdSpy).calledWith(fromPortfolio).mockReturnValue({ did: fromDid });
-    when(portfolioLikeToPortfolioIdSpy).calledWith(toPortfolio).mockReturnValue({ did: toDid });
-    when(portfolioLikeToPortfolioSpy).calledWith(from, mockContext).mockReturnValue(fromPortfolio);
-    when(portfolioLikeToPortfolioSpy).calledWith(to, mockContext).mockReturnValue(toPortfolio);
-    when(portfolioIdToMeshPortfolioIdSpy)
+    when(assetHolderLikeToAssetHolderIdSpy).calledWith(from).mockReturnValue({ did: fromDid });
+    when(assetHolderLikeToAssetHolderIdSpy).calledWith(to).mockReturnValue({ did: toDid });
+    when(assetHolderLikeToAssetHolderIdSpy)
+      .calledWith(fromPortfolio)
+      .mockReturnValue({ did: fromDid });
+    when(assetHolderLikeToAssetHolderIdSpy).calledWith(toPortfolio).mockReturnValue({ did: toDid });
+    when(assetHolderLikeToAssetHolderSpy)
+      .calledWith(from, mockContext)
+      .mockReturnValue(fromPortfolio);
+    when(assetHolderLikeToAssetHolderSpy).calledWith(to, mockContext).mockReturnValue(toPortfolio);
+    when(assetHolderIdToMeshAssetHolderSpy)
       .calledWith({ did: fromDid }, mockContext)
       .mockReturnValue(rawFromHolder);
-    when(portfolioIdToMeshPortfolioIdSpy)
+    when(assetHolderIdToMeshAssetHolderSpy)
       .calledWith({ did: toDid }, mockContext)
       .mockReturnValue(rawToHolder);
     getCustodianMock.mockReturnValueOnce({ did: fromDid }).mockReturnValue({ did: toDid });
@@ -635,7 +645,7 @@ describe('addInstruction procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe('Instruction leg cannot transfer Assets between same identity');
+    expect(error.message).toBe('Instruction leg cannot transfer Assets between same asset holders');
     expect(error.code).toBe(ErrorCode.ValidationError);
     expect(error.data.failedInstructionIndexes[0]).toBe(0);
   });
@@ -662,7 +672,7 @@ describe('addInstruction procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe('Instruction leg cannot transfer Assets between same identity');
+    expect(error.message).toBe('Instruction leg cannot transfer Assets between same asset holders');
     expect(error.code).toBe(ErrorCode.ValidationError);
     expect(error.data.failedInstructionIndexes[0]).toBe(0);
   });
@@ -1255,29 +1265,33 @@ describe('addInstruction procedure', () => {
       fromPortfolio = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: true });
       toPortfolio = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: true });
 
-      when(portfolioLikeToPortfolioSpy)
+      when(assetHolderLikeToAssetHolderSpy)
         .calledWith(from, mockContext)
         .mockReturnValue(fromPortfolio);
-      when(portfolioLikeToPortfolioSpy).calledWith(to, mockContext).mockReturnValue(toPortfolio);
+      when(assetHolderLikeToAssetHolderSpy)
+        .calledWith(to, mockContext)
+        .mockReturnValue(toPortfolio);
 
       let result = await boundFunc(args);
 
       expect(result).toEqual({
-        portfoliosToAffirm: [[fromPortfolio, toPortfolio]],
+        assetHoldersToAffirm: [[fromPortfolio, toPortfolio]],
       });
 
       fromPortfolio = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: false });
       toPortfolio = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: false });
 
-      when(portfolioLikeToPortfolioSpy)
+      when(assetHolderLikeToAssetHolderSpy)
         .calledWith(from, mockContext)
         .mockReturnValue(fromPortfolio);
-      when(portfolioLikeToPortfolioSpy).calledWith(to, mockContext).mockReturnValue(toPortfolio);
+      when(assetHolderLikeToAssetHolderSpy)
+        .calledWith(to, mockContext)
+        .mockReturnValue(toPortfolio);
 
       result = await boundFunc(args);
 
       expect(result).toEqual({
-        portfoliosToAffirm: [[]],
+        assetHoldersToAffirm: [[]],
       });
     });
   });
