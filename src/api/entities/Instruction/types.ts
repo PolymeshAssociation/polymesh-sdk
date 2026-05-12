@@ -101,7 +101,7 @@ export enum AffirmationStatus {
 }
 
 export interface InstructionAffirmation {
-  identity: Identity | Account;
+  party: Identity | Account;
   status: AffirmationStatus;
 }
 

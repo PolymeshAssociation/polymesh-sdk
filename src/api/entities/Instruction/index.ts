@@ -615,9 +615,16 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       const count = new BigNumber(totalCount);
 
       const data = affirmations.map(affirmation => {
-        const { identity, status } = affirmation!;
+        const { identity, account, status } = affirmation;
+
+        if (account) {
+          return {
+            party: new Account({ address: account }, context),
+            status: middlewareAffirmStatusToAffirmationStatus(status),
+          };
+        }
         return {
-          identity: new Identity({ did: identity }, context),
+          party: new Identity({ did: identity as string }, context),
           status: middlewareAffirmStatusToAffirmationStatus(status),
         };
       });
@@ -650,12 +657,12 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       const status = meshAffirmationStatusToAffirmationStatus(meshAffirmationStatus);
       if (accountHolder instanceof Account) {
         return {
-          identity: accountHolder,
+          party: accountHolder,
           status,
         };
       }
       return {
-        identity: accountHolder.owner,
+        party: accountHolder.owner,
         status,
       };
     });
