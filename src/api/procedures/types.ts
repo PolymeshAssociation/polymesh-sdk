@@ -21,6 +21,7 @@ import {
   Venue,
 } from '~/internal';
 import {
+  AccountLike,
   AddCountStatInput,
   AGENT_TX_GROUP_VALUES,
   AssetDocument,
@@ -2136,3 +2137,19 @@ export interface EnableOffChainFundingParams {
    */
   offChainTicker: string;
 }
+
+export interface ApproveAllowanceParams {
+  /**
+   * Account authorized to spend the Asset
+   */
+  spender: AccountLike;
+
+  /**
+   * Maximum amount the `spender` may transfer. Passing `0` will revoke the approval. Balance::MAX = unlimited.
+   */
+  amount: BigNumber;
+}
+
+export type TransferFundsParams = (InstructionFungibleLeg | InstructionNftLeg) & {
+  memo?: string;
+};

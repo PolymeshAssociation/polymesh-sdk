@@ -165,7 +165,7 @@ function checkAllErrorsAreEmpty(errors: ErrIndexes): boolean {
 /**
  * @hidden
  */
-async function getRawLegDetails(
+export async function getRawLegDetails(
   leg: InstructionFungibleLeg | InstructionNftLeg,
   context: Context
 ): Promise<{
@@ -200,8 +200,7 @@ async function getRawLegDetails(
         message: 'To Asset Holder does not exist',
       });
     }
-    assertPromises.push(assertValidCdd(fromDid, context));
-    assertPromises.push(assertValidCdd(toDid, context));
+    assertPromises.push(assertValidCdd(fromDid, context), assertValidCdd(toDid, context));
   }
   await Promise.all(assertPromises);
 

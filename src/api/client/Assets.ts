@@ -12,6 +12,7 @@ import {
   registerCustomAssetType,
   reserveTicker,
   TickerReservation,
+  transferFunds,
 } from '~/internal';
 import {
   Asset,
@@ -26,6 +27,7 @@ import {
   ResultSet,
   SubCallback,
   TickerReservationStatus,
+  TransferFundsParams,
   UnsubCallback,
 } from '~/types';
 import {
@@ -84,6 +86,13 @@ export class Assets {
     this.registerCustomAssetType = createProcedureMethod(
       {
         getProcedureAndArgs: args => [registerCustomAssetType, args],
+      },
+      context
+    );
+
+    this.transferFunds = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [transferFunds, args],
       },
       context
     );
@@ -507,4 +516,11 @@ export class Assets {
 
     return u32ToBigNumber(rawId).plus(1);
   }
+
+  /**
+   * Transfer funds between two asset holders owned by same identity.
+   *
+   * @note To transfer between asset holders owned by separate DID use settlement instructions
+   */
+  public transferFunds: ProcedureMethod<TransferFundsParams, void>;
 }

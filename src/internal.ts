@@ -191,3 +191,5 @@ export { setStakingPayee } from '~/api/procedures/setStakingPayee';
 export { withdrawUnbondedPolyx } from '~/api/procedures/withdrawUnbondedPolyx';
 export { nominateValidators } from '~/api/procedures/nominateValidators';
 export { enableOffChainFundingForOfferings } from '~/api/procedures/enableOffChainFundingForOfferings';
+export { approveAllowance } from '~/api/procedures/approveAllowance';
+export { transferFunds } from '~/api/procedures/transferFunds';

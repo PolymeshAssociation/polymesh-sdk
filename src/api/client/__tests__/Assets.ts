@@ -722,4 +722,28 @@ describe('Assets Class', () => {
       expect(result).toEqual(currentMaxCustomAssetTypeId.plus(1));
     });
   });
+
+  describe('method: transferFunds', () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const args = {
+        asset: 'SOME_ASSET',
+        amount: new BigNumber(100),
+        to: {
+          identity: 'someDid',
+          id: new BigNumber(1),
+        },
+        from: 'someAccount',
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await assets.transferFunds(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
 });

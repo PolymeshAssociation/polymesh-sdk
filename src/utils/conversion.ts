@@ -66,6 +66,7 @@ import {
   PolymeshPrimitivesNftNftOwnerStatus,
   PolymeshPrimitivesNftNfTs,
   PolymeshPrimitivesPortfolioFund,
+  PolymeshPrimitivesPortfolioFundDescription,
   PolymeshPrimitivesPosRatio,
   PolymeshPrimitivesProtocolFeeProtocolOp,
   PolymeshPrimitivesSecondaryKey,
@@ -5003,7 +5004,7 @@ export function middlewareLegToLeg(leg: MiddlewareLeg, context: Context): Leg {
   // presume off chain
   return {
     from: new Identity({ did: from }, context),
-    to: new Identity({ did: to }, context),
+    to: new Identity({ did: to! }, context),
     asset: ticker!,
     offChainAmount: new BigNumber(amount).shiftedBy(-6),
   };
@@ -6530,5 +6531,33 @@ export function meshNftOwnerStatusToNftOwnerStatus(
     data: {
       rawStatus,
     },
+  });
+}
+
+/**
+ * @hidden
+ */
+export function fundDetailsToMeshFund(
+  description:
+    | { assetId: PolymeshPrimitivesAssetAssetId; amount: u128 }
+    | PolymeshPrimitivesNftNfTs,
+  memo: string | undefined,
+  context: Context
+): PolymeshPrimitivesPortfolioFund {
+  let rawDescription: PolymeshPrimitivesPortfolioFundDescription;
+
+  if ('assetId' in description) {
+    rawDescription = context.createType('PolymeshPrimitivesPortfolioFundDescription', {
+      Fungible: description,
+    });
+  } else {
+    rawDescription = context.createType('PolymeshPrimitivesPortfolioFundDescription', {
+      NonFungible: description,
+    });
+  }
+
+  return context.createType('PolymeshPrimitivesPortfolioFund', {
+    description: rawDescription,
+    memo: optionize(stringToMemo)(memo, context),
   });
 }
