@@ -955,4 +955,24 @@ describe('Fungible class', () => {
       expect(result).toEqual(expect.arrayContaining([expect.objectContaining({ did: 'someDid' })]));
     });
   });
+
+  describe('method: approveAllowance', () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const assetId = '12341234-1234-1234-1234-123412341234';
+      const spender = 'someAccount';
+      const amount = new BigNumber(100);
+      const context = dsMockUtils.getContextInstance();
+      const asset = new FungibleAsset({ assetId }, context);
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { asset, spender, amount }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const queue = await asset.approveAllowance({ spender, amount });
+
+      expect(queue).toBe(expectedTransaction);
+    });
+  });
 });

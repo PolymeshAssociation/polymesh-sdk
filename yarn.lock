@@ -3755,7 +3755,7 @@ __metadata:
     "@polkadot/util": "npm:13.5.8"
     "@polkadot/util-crypto": "npm:13.5.8"
     "@polymeshassociation/local-signing-manager": "npm:^4.1.1"
-    "@polymeshassociation/polymesh-types": "npm:^7.3.0"
+    "@polymeshassociation/polymesh-types": "npm:^7.4.0"
     "@polymeshassociation/signing-manager-types": "npm:^3.7.1"
     "@semantic-release/changelog": "npm:^6.0.3"
     "@types/jest": "npm:^29.5.14"
@@ -3821,16 +3821,16 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@polymeshassociation/polymesh-types@npm:^7.3.0":
-  version: 7.3.0
-  resolution: "@polymeshassociation/polymesh-types@npm:7.3.0"
+"@polymeshassociation/polymesh-types@npm:^7.4.0":
+  version: 7.4.0
+  resolution: "@polymeshassociation/polymesh-types@npm:7.4.0"
   dependencies:
     "@polkadot/api": "npm:16.5.2"
     "@polkadot/api-base": "npm:16.5.2"
     "@polkadot/rpc-core": "npm:16.5.2"
     "@polkadot/types": "npm:16.5.2"
     "@polkadot/types-codec": "npm:16.5.2"
-  checksum: 10c0/59e6610585fb2d8c8f5147545dc6a8efb167fd8657f7f2f7c4b41ca415f5f5027f7c847ad579e142319f99e5c201ab347f4b4bcb095eb49b71a47161518f2298
+  checksum: 10c0/e0ba7d34eee7171f8ed02dfe47295fdbb55bcc4b315d327a724312242fcea3b485064f64a453c9f13cdd1b75197626714482a0e16fe15274223bd3f150c554b8
   languageName: node
   linkType: hard
 
