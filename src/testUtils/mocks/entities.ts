@@ -195,6 +195,7 @@ interface FungibleAssetOptions extends BaseAssetOptions {
   corporateActionsGetDefaultConfig?: EntityGetter<CorporateActionDefaultConfig>;
   checkpointsGetOne?: EntityGetter<Checkpoint>;
   checkpointsSchedulesGetOne?: EntityGetter<ScheduleWithDetails>;
+  getAllowance?: EntityGetter<BigNumber>;
 }
 
 interface NftCollectionOptions extends BaseAssetOptions {
@@ -1070,6 +1071,7 @@ const MockFungibleAssetClass = createMockEntityClass<FungibleAssetOptions>(
     investorCount!: jest.Mock;
     getRequiredMediators!: jest.Mock;
     getVenueFilteringDetails!: jest.Mock;
+    getAllowance!: jest.Mock;
 
     /**
      * @hidden
@@ -1103,6 +1105,7 @@ const MockFungibleAssetClass = createMockEntityClass<FungibleAssetOptions>(
       this.metadata.getNextLocalId = createEntityGetterMock(opts.getNextLocalId);
       this.getRequiredMediators = createEntityGetterMock(opts.getRequiredMediators);
       this.getVenueFilteringDetails = createEntityGetterMock(opts.getVenueFilteringDetails);
+      this.getAllowance = createEntityGetterMock(opts.getAllowance);
     }
   },
   () => ({
@@ -1166,6 +1169,7 @@ const MockFungibleAssetClass = createMockEntityClass<FungibleAssetOptions>(
     investorCount: new BigNumber(0),
     getRequiredMediators: [],
     getVenueFilteringDetails: { isEnabled: false, allowedVenues: [] },
+    getAllowance: new BigNumber(0),
   }),
   ['FungibleAsset']
 );

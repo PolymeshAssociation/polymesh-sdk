@@ -385,6 +385,8 @@ export type Asset = Node & {
   identitiesByAssetHolderAssetIdAndIdentityId: Connection<Identity>;
   identitiesByAssetMandatoryMediatorAssetIdAndAddedById: Connection<Identity>;
   identitiesByAssetPreApprovalAssetIdAndIdentityId: Connection<Identity>;
+  identitiesByAssetTransactionAssetIdAndFromIdentityId: Connection<Identity>;
+  identitiesByAssetTransactionAssetIdAndToIdentityId: Connection<Identity>;
   identitiesByDistributionAssetIdAndIdentityId: Connection<Identity>;
   identitiesByDistributionCurrencyIdAndIdentityId: Connection<Identity>;
   identitiesByNftHolderAssetIdAndIdentityId: Connection<Identity>;
@@ -553,7 +555,7 @@ export type AssetHolder = Node & {
   createdBlockId: Scalars['String']['output'];
   id: Scalars['String']['output'];
   identity?: Maybe<Identity>;
-  identityId: Scalars['String']['output'];
+  identityId?: Maybe<Scalars['String']['output']>;
   nodeId: Scalars['ID']['output'];
   updatedBlock?: Maybe<Block>;
   updatedBlockId: Scalars['String']['output'];
@@ -567,6 +569,7 @@ export type AssetHolderFilter = {
   createdBlockId?: InputMaybe<StringFilter>;
   id?: InputMaybe<StringFilter>;
   identity?: InputMaybe<IdentityFilter>;
+  identityExists?: InputMaybe<Scalars['Boolean']['input']>;
   identityId?: InputMaybe<StringFilter>;
   not?: InputMaybe<AssetHolderFilter>;
   or?: InputMaybe<Array<AssetHolderFilter>>;
@@ -693,6 +696,8 @@ export type AssetTransaction = Node & {
   eventIdx: Scalars['Int']['output'];
   extrinsicIdx?: Maybe<Scalars['Int']['output']>;
   fromAccount?: Maybe<Scalars['String']['output']>;
+  fromIdentity?: Maybe<Identity>;
+  fromIdentityId?: Maybe<Scalars['String']['output']>;
   fromPortfolio?: Maybe<Portfolio>;
   fromPortfolioId?: Maybe<Scalars['String']['output']>;
   fundingRound?: Maybe<Scalars['String']['output']>;
@@ -703,6 +708,8 @@ export type AssetTransaction = Node & {
   nftIds?: Maybe<Scalars['JSON']['output']>;
   nodeId: Scalars['ID']['output'];
   toAccount?: Maybe<Scalars['String']['output']>;
+  toIdentity?: Maybe<Identity>;
+  toIdentityId?: Maybe<Scalars['String']['output']>;
   toPortfolio?: Maybe<Portfolio>;
   toPortfolioId?: Maybe<Scalars['String']['output']>;
   updatedBlock?: Maybe<Block>;
@@ -722,6 +729,9 @@ export type AssetTransactionFilter = {
   eventIdx?: InputMaybe<IntFilter>;
   extrinsicIdx?: InputMaybe<IntFilter>;
   fromAccount?: InputMaybe<StringFilter>;
+  fromIdentity?: InputMaybe<IdentityFilter>;
+  fromIdentityExists?: InputMaybe<Scalars['Boolean']['input']>;
+  fromIdentityId?: InputMaybe<StringFilter>;
   fromPortfolio?: InputMaybe<PortfolioFilter>;
   fromPortfolioExists?: InputMaybe<Scalars['Boolean']['input']>;
   fromPortfolioId?: InputMaybe<StringFilter>;
@@ -735,6 +745,9 @@ export type AssetTransactionFilter = {
   not?: InputMaybe<AssetTransactionFilter>;
   or?: InputMaybe<Array<AssetTransactionFilter>>;
   toAccount?: InputMaybe<StringFilter>;
+  toIdentity?: InputMaybe<IdentityFilter>;
+  toIdentityExists?: InputMaybe<Scalars['Boolean']['input']>;
+  toIdentityId?: InputMaybe<StringFilter>;
   toPortfolio?: InputMaybe<PortfolioFilter>;
   toPortfolioExists?: InputMaybe<Scalars['Boolean']['input']>;
   toPortfolioId?: InputMaybe<StringFilter>;
@@ -760,6 +773,8 @@ export enum AssetTransactionsOrderBy {
   ExtrinsicIdxDesc = 'EXTRINSIC_IDX_DESC',
   FromAccountAsc = 'FROM_ACCOUNT_ASC',
   FromAccountDesc = 'FROM_ACCOUNT_DESC',
+  FromIdentityIdAsc = 'FROM_IDENTITY_ID_ASC',
+  FromIdentityIdDesc = 'FROM_IDENTITY_ID_DESC',
   FromPortfolioIdAsc = 'FROM_PORTFOLIO_ID_ASC',
   FromPortfolioIdDesc = 'FROM_PORTFOLIO_ID_DESC',
   FundingRoundAsc = 'FUNDING_ROUND_ASC',
@@ -777,6 +792,8 @@ export enum AssetTransactionsOrderBy {
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
   ToAccountAsc = 'TO_ACCOUNT_ASC',
   ToAccountDesc = 'TO_ACCOUNT_DESC',
+  ToIdentityIdAsc = 'TO_IDENTITY_ID_ASC',
+  ToIdentityIdDesc = 'TO_IDENTITY_ID_DESC',
   ToPortfolioIdAsc = 'TO_PORTFOLIO_ID_ASC',
   ToPortfolioIdDesc = 'TO_PORTFOLIO_ID_DESC',
   UpdatedBlockIdAsc = 'UPDATED_BLOCK_ID_ASC',
@@ -1329,6 +1346,10 @@ export type Block = Node & {
   identitiesByAssetMandatoryMediatorUpdatedBlockIdAndAddedById: Connection<Identity>;
   identitiesByAssetPreApprovalCreatedBlockIdAndIdentityId: Connection<Identity>;
   identitiesByAssetPreApprovalUpdatedBlockIdAndIdentityId: Connection<Identity>;
+  identitiesByAssetTransactionCreatedBlockIdAndFromIdentityId: Connection<Identity>;
+  identitiesByAssetTransactionCreatedBlockIdAndToIdentityId: Connection<Identity>;
+  identitiesByAssetTransactionUpdatedBlockIdAndFromIdentityId: Connection<Identity>;
+  identitiesByAssetTransactionUpdatedBlockIdAndToIdentityId: Connection<Identity>;
   identitiesByAssetUpdatedBlockIdAndOwnerId: Connection<Identity>;
   identitiesByAuthorizationCreatedBlockIdAndFromId: Connection<Identity>;
   identitiesByAuthorizationUpdatedBlockIdAndFromId: Connection<Identity>;
@@ -1821,6 +1842,7 @@ export enum CallIdEnum {
   AcceptPortfolioCustody = 'accept_portfolio_custody',
   AcceptPrimaryIssuanceAgentTransfer = 'accept_primary_issuance_agent_transfer',
   AcceptPrimaryKey = 'accept_primary_key',
+  AcceptSubsidy = 'accept_subsidy',
   AcceptTickerTransfer = 'accept_ticker_transfer',
   AddActiveRule = 'add_active_rule',
   AddAdmin = 'add_admin',
@@ -1876,6 +1898,7 @@ export enum CallIdEnum {
   ApproveAsKey = 'approve_as_key',
   ApproveCommitteeProposal = 'approve_committee_proposal',
   ApproveJoinIdentity = 'approve_join_identity',
+  ApproveSubsidy = 'approve_subsidy',
   ArchiveExtension = 'archive_extension',
   AsDerivative = 'as_derivative',
   AttachBallot = 'attach_ballot',
@@ -1993,6 +2016,7 @@ export enum CallIdEnum {
   DisallowVenues = 'disallow_venues',
   Disbursement = 'disbursement',
   DispatchAs = 'dispatch_as',
+  DispatchAsFallbackAccount = 'dispatch_as_fallback_account',
   Distribute = 'distribute',
   EmergencyReferendum = 'emergency_referendum',
   EnableIndividualCommissions = 'enable_individual_commissions',
@@ -2000,6 +2024,10 @@ export enum CallIdEnum {
   EnactReferendum = 'enact_referendum',
   EnactSnapshotResults = 'enact_snapshot_results',
   EnsureUpdated = 'ensure_updated',
+  EthCall = 'eth_call',
+  EthInstantiateWithCode = 'eth_instantiate_with_code',
+  EthSubstrateCall = 'eth_substrate_call',
+  EthTransact = 'eth_transact',
   ExecuteManualInstruction = 'execute_manual_instruction',
   ExecuteScheduledInstruction = 'execute_scheduled_instruction',
   ExecuteScheduledInstructionV2 = 'execute_scheduled_instruction_v2',
@@ -2080,6 +2108,7 @@ export enum CallIdEnum {
   MakeMultisigSecondary = 'make_multisig_secondary',
   MakeMultisigSigner = 'make_multisig_signer',
   ManualSlash = 'manual_slash',
+  MapAccount = 'map_account',
   MediatorAffirmTransaction = 'mediator_affirm_transaction',
   MediatorUnaffirmTransaction = 'mediator_unaffirm_transaction',
   Migrate = 'migrate',
@@ -2177,6 +2206,7 @@ export enum CallIdEnum {
   RemoveDocuments = 'remove_documents',
   RemoveExemptedEntities = 'remove_exempted_entities',
   RemoveFreezeAdmin = 'remove_freeze_admin',
+  RemoveKey = 'remove_key',
   RemoveLocalMetadataKey = 'remove_local_metadata_key',
   RemoveMandatoryMediators = 'remove_mandatory_mediators',
   RemoveMember = 'remove_member',
@@ -2196,6 +2226,7 @@ export enum CallIdEnum {
   RemoveSecondaryKeysOld = 'remove_secondary_keys_old',
   RemoveSigningKeys = 'remove_signing_keys',
   RemoveSmartExtension = 'remove_smart_extension',
+  RemoveSubsidy = 'remove_subsidy',
   RemoveTickerAffirmationExemption = 'remove_ticker_affirmation_exemption',
   RemoveTickerPreApproval = 'remove_ticker_pre_approval',
   RemoveTransferManager = 'remove_transfer_manager',
@@ -2204,8 +2235,14 @@ export enum CallIdEnum {
   RenamePortfolio = 'rename_portfolio',
   ReplaceAssetCompliance = 'replace_asset_compliance',
   ReplaceAssetRules = 'replace_asset_rules',
+  ReportDoubleVoting = 'report_double_voting',
+  ReportDoubleVotingUnsigned = 'report_double_voting_unsigned',
   ReportEquivocation = 'report_equivocation',
   ReportEquivocationUnsigned = 'report_equivocation_unsigned',
+  ReportForkVoting = 'report_fork_voting',
+  ReportForkVotingUnsigned = 'report_fork_voting_unsigned',
+  ReportFutureBlockVoting = 'report_future_block_voting',
+  ReportFutureBlockVotingUnsigned = 'report_future_block_voting_unsigned',
   RequestPreimage = 'request_preimage',
   RescheduleExecution = 'reschedule_execution',
   RescheduleInstruction = 'reschedule_instruction',
@@ -2221,12 +2258,14 @@ export enum CallIdEnum {
   RevokeClaimByIndex = 'revoke_claim_by_index',
   RevokeCreatePortfoliosPermission = 'revoke_create_portfolios_permission',
   RevokeOffchainAuthorization = 'revoke_offchain_authorization',
+  RevokeSubsidy = 'revoke_subsidy',
   RotatePrimaryKeyToSecondary = 'rotate_primary_key_to_secondary',
   ScaleValidatorCount = 'scale_validator_count',
   Schedule = 'schedule',
   ScheduleAfter = 'schedule_after',
   ScheduleNamed = 'schedule_named',
   ScheduleNamedAfter = 'schedule_named_after',
+  SelfRegisterDid = 'self_register_did',
   SenderAffirmTransaction = 'sender_affirm_transaction',
   SenderUnaffirmTransaction = 'sender_unaffirm_transaction',
   Set = 'set',
@@ -2261,6 +2300,7 @@ export enum CallIdEnum {
   SetItnRewardStatus = 'set_itn_reward_status',
   SetKey = 'set_key',
   SetKeys = 'set_keys',
+  SetMandatoryReceiverAffirmation = 'set_mandatory_receiver_affirmation',
   SetMasterKey = 'set_master_key',
   SetMaxDetailsLength = 'set_max_details_length',
   SetMaxPipSkipCount = 'set_max_pip_skip_count',
@@ -2268,6 +2308,7 @@ export enum CallIdEnum {
   SetMinCommission = 'set_min_commission',
   SetMinProposalDeposit = 'set_min_proposal_deposit',
   SetMinimumUntrustedScore = 'set_minimum_untrusted_score',
+  SetNewGenesis = 'set_new_genesis',
   SetPayee = 'set_payee',
   SetPayingKey = 'set_paying_key',
   SetPendingPipExpiry = 'set_pending_pip_expiry',
@@ -2302,7 +2343,9 @@ export enum CallIdEnum {
   TransferAll = 'transfer_all',
   TransferAllowDeath = 'transfer_allow_death',
   TransferAsset = 'transfer_asset',
+  TransferFunds = 'transfer_funds',
   TransferKeepAlive = 'transfer_keep_alive',
+  TransferNft = 'transfer_nft',
   TransferWithMemo = 'transfer_with_memo',
   Unbond = 'unbond',
   UnclaimReceipt = 'unclaim_receipt',
@@ -2313,6 +2356,8 @@ export enum CallIdEnum {
   Unknown = 'unknown',
   UnlinkChildIdentity = 'unlink_child_identity',
   UnlinkTickerFromAssetId = 'unlink_ticker_from_asset_id',
+  UnlockInstruction = 'unlock_instruction',
+  UnmapAccount = 'unmap_account',
   UnnotePreimage = 'unnote_preimage',
   UnrequestPreimage = 'unrequest_preimage',
   UpdateAssetType = 'update_asset_type',
@@ -3795,6 +3840,8 @@ export type Event = Node & {
   fundraiserOfferingAsset?: Maybe<Scalars['String']['output']>;
   id: Scalars['String']['output'];
   identitiesByAssetCreatedEventIdAndOwnerId: Connection<Identity>;
+  identitiesByAssetTransactionCreatedEventIdAndFromIdentityId: Connection<Identity>;
+  identitiesByAssetTransactionCreatedEventIdAndToIdentityId: Connection<Identity>;
   identitiesByAuthorizationCreatedEventIdAndFromId: Connection<Identity>;
   identitiesByBridgeEventCreatedEventIdAndIdentityId: Connection<Identity>;
   identitiesByClaimCreatedEventIdAndIssuerId: Connection<Identity>;
@@ -3908,6 +3955,7 @@ export type EventFilter = {
 };
 export enum EventIdEnum {
   AcceptedPayingKey = 'AcceptedPayingKey',
+  AcceptedSubsidy = 'AcceptedSubsidy',
   AccountAssetFrozen = 'AccountAssetFrozen',
   AccountAssetUnfrozen = 'AccountAssetUnfrozen',
   AccountBalanceBurned = 'AccountBalanceBurned',
@@ -3927,6 +3975,7 @@ export enum EventIdEnum {
   ApiHashUpdated = 'ApiHashUpdated',
   Approval = 'Approval',
   Approved = 'Approved',
+  ApprovedSubsidy = 'ApprovedSubsidy',
   AssetAffirmationExemption = 'AssetAffirmationExemption',
   AssetBalanceUpdated = 'AssetBalanceUpdated',
   AssetCompliancePaused = 'AssetCompliancePaused',
@@ -3973,6 +4022,8 @@ export enum EventIdEnum {
   BridgeTxScheduled = 'BridgeTxScheduled',
   Bridged = 'Bridged',
   Burned = 'Burned',
+  BurnedDebt = 'BurnedDebt',
+  BurnedHeld = 'BurnedHeld',
   CaaTransferred = 'CAATransferred',
   CaInitiated = 'CAInitiated',
   CaLinkedToDoc = 'CALinkedToDoc',
@@ -4042,6 +4093,7 @@ export enum EventIdEnum {
   Endowed = 'Endowed',
   EraPaid = 'EraPaid',
   EraPayout = 'EraPayout',
+  EthExtrinsicRevert = 'EthExtrinsicRevert',
   Evicted = 'Evicted',
   Executed = 'Executed',
   ExecutionCancellingFailed = 'ExecutionCancellingFailed',
@@ -4080,6 +4132,7 @@ export enum EventIdEnum {
   FundsMoved = 'FundsMoved',
   FundsMovedBetweenPortfolios = 'FundsMovedBetweenPortfolios',
   FundsRaised = 'FundsRaised',
+  FundsTransferred = 'FundsTransferred',
   FungibleTokensMovedBetweenPortfolios = 'FungibleTokensMovedBetweenPortfolios',
   GlobalCommissionUpdated = 'GlobalCommissionUpdated',
   GlobalMetadataSpecUpdated = 'GlobalMetadataSpecUpdated',
@@ -4087,6 +4140,7 @@ export enum EventIdEnum {
   GroupCreated = 'GroupCreated',
   GroupPermissionsUpdated = 'GroupPermissionsUpdated',
   HeartbeatReceived = 'HeartbeatReceived',
+  Held = 'Held',
   HistoricalPipsPruned = 'HistoricalPipsPruned',
   IdentifiersUpdated = 'IdentifiersUpdated',
   IndexAssigned = 'IndexAssigned',
@@ -4108,6 +4162,7 @@ export enum EventIdEnum {
   InstructionRejected = 'InstructionRejected',
   InstructionRescheduled = 'InstructionRescheduled',
   InstructionUnauthorized = 'InstructionUnauthorized',
+  InstructionUnlocked = 'InstructionUnlocked',
   InstructionV2Created = 'InstructionV2Created',
   InvalidatedNominators = 'InvalidatedNominators',
   Invested = 'Invested',
@@ -4119,11 +4174,13 @@ export enum EventIdEnum {
   ItemFailed = 'ItemFailed',
   ItnRewardClaimed = 'ItnRewardClaimed',
   KeyChanged = 'KeyChanged',
+  KeyRemoved = 'KeyRemoved',
   Kicked = 'Kicked',
   KilledAccount = 'KilledAccount',
   LegFailedExecution = 'LegFailedExecution',
   LocalMetadataKeyDeleted = 'LocalMetadataKeyDeleted',
   Locked = 'Locked',
+  MandatoryReceiverAffirmationSet = 'MandatoryReceiverAffirmationSet',
   MasterKeyUpdated = 'MasterKeyUpdated',
   MaxDetailsLengthChanged = 'MaxDetailsLengthChanged',
   MaxPipSkipCountChanged = 'MaxPipSkipCountChanged',
@@ -4140,6 +4197,7 @@ export enum EventIdEnum {
   MinimumBondThresholdUpdated = 'MinimumBondThresholdUpdated',
   MinimumProposalDepositChanged = 'MinimumProposalDepositChanged',
   Minted = 'Minted',
+  MintedCredit = 'MintedCredit',
   MockInvestorUidCreated = 'MockInvestorUIDCreated',
   MovedBetweenPortfolios = 'MovedBetweenPortfolios',
   MultiSigAddedAdmin = 'MultiSigAddedAdmin',
@@ -4153,11 +4211,13 @@ export enum EventIdEnum {
   MultiSigSignersAuthorized = 'MultiSigSignersAuthorized',
   MultiSigSignersRemoved = 'MultiSigSignersRemoved',
   MultiSigSignersRequiredChanged = 'MultiSigSignersRequiredChanged',
+  NftHoldingsUpdated = 'NFTHoldingsUpdated',
   NftPortfolioUpdated = 'NFTPortfolioUpdated',
   NfTsMovedBetweenPortfolios = 'NFTsMovedBetweenPortfolios',
   NewAccount = 'NewAccount',
   NewAssetRuleCreated = 'NewAssetRuleCreated',
   NewAuthorities = 'NewAuthorities',
+  NewQueued = 'NewQueued',
   NewSession = 'NewSession',
   NftCollectionCreated = 'NftCollectionCreated',
   Nominated = 'Nominated',
@@ -4226,11 +4286,14 @@ export enum EventIdEnum {
   RejectedInvalidAuthorizedUpgrade = 'RejectedInvalidAuthorizedUpgrade',
   RelayedTx = 'RelayedTx',
   ReleaseCoordinatorUpdated = 'ReleaseCoordinatorUpdated',
+  Released = 'Released',
   Remarked = 'Remarked',
   RemoveAssetAffirmationExemption = 'RemoveAssetAffirmationExemption',
   RemovePreApprovedAsset = 'RemovePreApprovedAsset',
   Removed = 'Removed',
   RemovedPayingKey = 'RemovedPayingKey',
+  RemovedPendingSubsidy = 'RemovedPendingSubsidy',
+  RemovedSubsidy = 'RemovedSubsidy',
   Requested = 'Requested',
   Rescinded = 'Rescinded',
   ReserveRepatriated = 'ReserveRepatriated',
@@ -4245,6 +4308,8 @@ export enum EventIdEnum {
   Reward = 'Reward',
   RewardPaymentSchedulingInterrupted = 'RewardPaymentSchedulingInterrupted',
   Rewarded = 'Rewarded',
+  RootStored = 'RootStored',
+  RootsPruned = 'RootsPruned',
   ScRuntimeCall = 'SCRuntimeCall',
   ScheduleCreated = 'ScheduleCreated',
   ScheduleRemoved = 'ScheduleRemoved',
@@ -4288,6 +4353,7 @@ export enum EventIdEnum {
   StatTypesRemoved = 'StatTypesRemoved',
   StorageDepositTransferredAndHeld = 'StorageDepositTransferredAndHeld',
   StorageDepositTransferredAndReleased = 'StorageDepositTransferredAndReleased',
+  SubsidyDebited = 'SubsidyDebited',
   Sudid = 'Sudid',
   SudoAsDone = 'SudoAsDone',
   Suspended = 'Suspended',
@@ -4309,10 +4375,12 @@ export enum EventIdEnum {
   TransactionFeePaid = 'TransactionFeePaid',
   TransactionRejected = 'TransactionRejected',
   Transfer = 'Transfer',
+  TransferAndHold = 'TransferAndHold',
   TransferConditionExemptionsAdded = 'TransferConditionExemptionsAdded',
   TransferConditionExemptionsRemoved = 'TransferConditionExemptionsRemoved',
   TransferManagerAdded = 'TransferManagerAdded',
   TransferManagerRemoved = 'TransferManagerRemoved',
+  TransferOnHold = 'TransferOnHold',
   TransferWithData = 'TransferWithData',
   TransferWithMemo = 'TransferWithMemo',
   TreasuryDidSet = 'TreasuryDidSet',
@@ -4324,6 +4392,7 @@ export enum EventIdEnum {
   TxRemoved = 'TxRemoved',
   TxsHandled = 'TxsHandled',
   Unbonded = 'Unbonded',
+  Unexpected = 'Unexpected',
   UnexpectedError = 'UnexpectedError',
   Unfrozen = 'Unfrozen',
   UnfrozenTx = 'UnfrozenTx',
@@ -4653,9 +4722,13 @@ export type Identity = Node & {
   accountsByMultiSigCreatorIdAndCreatorAccountId: Connection<Account>;
   assetMandatoryMediatorsByAddedById: Connection<AssetMandatoryMediator>;
   assetPreApprovals: Connection<AssetPreApproval>;
+  assetTransactionsByFromIdentityId: Connection<AssetTransaction>;
+  assetTransactionsByToIdentityId: Connection<AssetTransaction>;
   assetsByAssetHolderIdentityIdAndAssetId: Connection<Asset>;
   assetsByAssetMandatoryMediatorAddedByIdAndAssetId: Connection<Asset>;
   assetsByAssetPreApprovalIdentityIdAndAssetId: Connection<Asset>;
+  assetsByAssetTransactionFromIdentityIdAndAssetId: Connection<Asset>;
+  assetsByAssetTransactionToIdentityIdAndAssetId: Connection<Asset>;
   assetsByDistributionIdentityIdAndAssetId: Connection<Asset>;
   assetsByDistributionIdentityIdAndCurrencyId: Connection<Asset>;
   assetsByNftHolderIdentityIdAndAssetId: Connection<Asset>;
@@ -4678,6 +4751,10 @@ export type Identity = Node & {
   blocksByAssetOwnerIdAndUpdatedBlockId: Connection<Block>;
   blocksByAssetPreApprovalIdentityIdAndCreatedBlockId: Connection<Block>;
   blocksByAssetPreApprovalIdentityIdAndUpdatedBlockId: Connection<Block>;
+  blocksByAssetTransactionFromIdentityIdAndCreatedBlockId: Connection<Block>;
+  blocksByAssetTransactionFromIdentityIdAndUpdatedBlockId: Connection<Block>;
+  blocksByAssetTransactionToIdentityIdAndCreatedBlockId: Connection<Block>;
+  blocksByAssetTransactionToIdentityIdAndUpdatedBlockId: Connection<Block>;
   blocksByAuthorizationFromIdAndCreatedBlockId: Connection<Block>;
   blocksByAuthorizationFromIdAndUpdatedBlockId: Connection<Block>;
   blocksByBridgeEventIdentityIdAndCreatedBlockId: Connection<Block>;
@@ -4759,6 +4836,8 @@ export type Identity = Node & {
   distributionsByDistributionPaymentTargetIdAndDistributionId: Connection<Distribution>;
   eventId: EventIdEnum;
   eventsByAssetOwnerIdAndCreatedEventId: Connection<Event>;
+  eventsByAssetTransactionFromIdentityIdAndCreatedEventId: Connection<Event>;
+  eventsByAssetTransactionToIdentityIdAndCreatedEventId: Connection<Event>;
   eventsByAuthorizationFromIdAndCreatedEventId: Connection<Event>;
   eventsByBridgeEventIdentityIdAndCreatedEventId: Connection<Event>;
   eventsByClaimIssuerIdAndCreatedEventId: Connection<Event>;
@@ -4779,12 +4858,16 @@ export type Identity = Node & {
   heldAssets: Connection<AssetHolder>;
   heldNfts: Connection<NftHolder>;
   id: Scalars['String']['output'];
+  identitiesByAssetTransactionFromIdentityIdAndToIdentityId: Connection<Identity>;
+  identitiesByAssetTransactionToIdentityIdAndFromIdentityId: Connection<Identity>;
   identitiesByChildIdentityChildIdAndParentId: Connection<Identity>;
   identitiesByChildIdentityParentIdAndChildId: Connection<Identity>;
   identitiesByClaimIssuerIdAndTargetId: Connection<Identity>;
   identitiesByClaimTargetIdAndIssuerId: Connection<Identity>;
   identitiesByPortfolioCustodianIdAndIdentityId: Connection<Identity>;
   identitiesByPortfolioIdentityIdAndCustodianId: Connection<Identity>;
+  instructionsByAssetTransactionFromIdentityIdAndInstructionId: Connection<Instruction>;
+  instructionsByAssetTransactionToIdentityIdAndInstructionId: Connection<Instruction>;
   investmentsByInvestorId: Connection<Investment>;
   multiSigProposalsByCreatorId: Connection<MultiSigProposal>;
   multiSigsByCreatorId: Connection<MultiSig>;
@@ -4793,6 +4876,10 @@ export type Identity = Node & {
   parentChildIdentities: Connection<ChildIdentity>;
   permissionsByAccountIdentityIdAndPermissionsId: Connection<Permission>;
   portfolios: Connection<Portfolio>;
+  portfoliosByAssetTransactionFromIdentityIdAndFromPortfolioId: Connection<Portfolio>;
+  portfoliosByAssetTransactionFromIdentityIdAndToPortfolioId: Connection<Portfolio>;
+  portfoliosByAssetTransactionToIdentityIdAndFromPortfolioId: Connection<Portfolio>;
+  portfoliosByAssetTransactionToIdentityIdAndToPortfolioId: Connection<Portfolio>;
   portfoliosByCustodianId: Connection<Portfolio>;
   portfoliosByDistributionIdentityIdAndPortfolioId: Connection<Portfolio>;
   portfoliosByStoCreatorIdAndOfferingPortfolioId: Connection<Portfolio>;
@@ -4819,6 +4906,8 @@ export type IdentityFilter = {
   and?: InputMaybe<Array<IdentityFilter>>;
   assetMandatoryMediatorsByAddedById?: InputMaybe<OneToManyFilter<AssetMandatoryMediatorFilter>>;
   assetPreApprovals?: InputMaybe<OneToManyFilter<AssetPreApprovalFilter>>;
+  assetTransactionsByFromIdentityId?: InputMaybe<OneToManyFilter<AssetTransactionFilter>>;
+  assetTransactionsByToIdentityId?: InputMaybe<OneToManyFilter<AssetTransactionFilter>>;
   assetsByOwnerId?: InputMaybe<OneToManyFilter<AssetFilter>>;
   authorizationsByFromId?: InputMaybe<OneToManyFilter<AuthorizationFilter>>;
   bridgeEvents?: InputMaybe<OneToManyFilter<BridgeEventFilter>>;
@@ -4893,6 +4982,8 @@ export type Instruction = Node & {
   eventsByInstructionEventInstructionIdAndCreatedEventId: Connection<Event>;
   failureReason?: Maybe<Scalars['JSON']['output']>;
   id: Scalars['String']['output'];
+  identitiesByAssetTransactionInstructionIdAndFromIdentityId: Connection<Identity>;
+  identitiesByAssetTransactionInstructionIdAndToIdentityId: Connection<Identity>;
   instructionPartiesByInstructionAffirmationInstructionIdAndPartyId: Connection<InstructionParty>;
   legs: Connection<Leg>;
   mediators: Scalars['JSON']['output'];
@@ -4918,7 +5009,7 @@ export type InstructionAffirmation = Node & {
   createdBlockId: Scalars['String']['output'];
   expiry?: Maybe<Scalars['Datetime']['output']>;
   id: Scalars['String']['output'];
-  identity: Scalars['String']['output'];
+  identity?: Maybe<Scalars['String']['output']>;
   instruction?: Maybe<Instruction>;
   instructionId: Scalars['String']['output'];
   isAutomaticallyAffirmed: Scalars['Boolean']['output'];
@@ -5386,7 +5477,7 @@ export type Leg = Node & {
   nodeId: Scalars['ID']['output'];
   offChainReceipts: Connection<OffChainReceipt>;
   ticker?: Maybe<Scalars['String']['output']>;
-  to: Scalars['String']['output'];
+  to?: Maybe<Scalars['String']['output']>;
   toAccount?: Maybe<Scalars['String']['output']>;
   toPortfolio?: Maybe<Scalars['Int']['output']>;
   updatedBlock?: Maybe<Block>;
@@ -5519,6 +5610,7 @@ export enum ModuleIdEnum {
   Babe = 'babe',
   Balances = 'balances',
   Base = 'base',
+  Beefy = 'beefy',
   Bridge = 'bridge',
   Capitaldistribution = 'capitaldistribution',
   Cddserviceproviders = 'cddserviceproviders',
@@ -5552,6 +5644,7 @@ export enum ModuleIdEnum {
   Protocolfee = 'protocolfee',
   Randomnesscollectiveflip = 'randomnesscollectiveflip',
   Relayer = 'relayer',
+  Revive = 'revive',
   Rewards = 'rewards',
   Scheduler = 'scheduler',
   Session = 'session',
@@ -5973,7 +6066,7 @@ export type NftHolder = Node & {
   createdBlockId: Scalars['String']['output'];
   id: Scalars['String']['output'];
   identity?: Maybe<Identity>;
-  identityId: Scalars['String']['output'];
+  identityId?: Maybe<Scalars['String']['output']>;
   nftIds?: Maybe<Scalars['JSON']['output']>;
   nodeId: Scalars['ID']['output'];
   updatedBlock?: Maybe<Block>;
@@ -5987,6 +6080,7 @@ export type NftHolderFilter = {
   createdBlockId?: InputMaybe<StringFilter>;
   id?: InputMaybe<StringFilter>;
   identity?: InputMaybe<IdentityFilter>;
+  identityExists?: InputMaybe<Scalars['Boolean']['input']>;
   identityId?: InputMaybe<StringFilter>;
   nftIds?: InputMaybe<JsonFilter>;
   not?: InputMaybe<NftHolderFilter>;
@@ -6279,6 +6373,10 @@ export type Portfolio = Node & {
   eventsByAssetTransactionFromPortfolioIdAndCreatedEventId: Connection<Event>;
   eventsByAssetTransactionToPortfolioIdAndCreatedEventId: Connection<Event>;
   id: Scalars['String']['output'];
+  identitiesByAssetTransactionFromPortfolioIdAndFromIdentityId: Connection<Identity>;
+  identitiesByAssetTransactionFromPortfolioIdAndToIdentityId: Connection<Identity>;
+  identitiesByAssetTransactionToPortfolioIdAndFromIdentityId: Connection<Identity>;
+  identitiesByAssetTransactionToPortfolioIdAndToIdentityId: Connection<Identity>;
   identitiesByDistributionPortfolioIdAndIdentityId: Connection<Identity>;
   identitiesByStoOfferingPortfolioIdAndCreatorId: Connection<Identity>;
   identitiesByStoRaisingPortfolioIdAndCreatorId: Connection<Identity>;
