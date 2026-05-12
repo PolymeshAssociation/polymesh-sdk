@@ -991,7 +991,7 @@ describe('Instruction class', () => {
       const { data } = await instruction.getAffirmations();
 
       expect(data).toHaveLength(1);
-      expect((data[0]!.identity as Identity).did).toEqual(did);
+      expect((data[0]!.party as Identity).did).toEqual(did);
       expect(data[0]!.status).toEqual(status);
     });
 
@@ -1028,7 +1028,7 @@ describe('Instruction class', () => {
         });
 
         expect(data).toHaveLength(1);
-        expect((data[0]!.identity as Identity).did).toEqual(did);
+        expect((data[0]!.party as Identity).did).toEqual(did);
         expect(data[0]!.status).toEqual(status);
 
         expect(next).toBeNull();

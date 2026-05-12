@@ -59,7 +59,7 @@ async function segregateItems(
           data: { assetId },
         });
       }
-      fungibleMovements.push(item as FungiblePortfolioMovement);
+      fungibleMovements.push(item);
     } else if (isNftCollection(typedAsset)) {
       if (!('nfts' in item)) {
         throw new PolymeshError({
@@ -68,7 +68,7 @@ async function segregateItems(
           data: { assetId },
         });
       }
-      nftMovements.push(item as NonFungiblePortfolioMovement);
+      nftMovements.push(item);
     }
   }
 

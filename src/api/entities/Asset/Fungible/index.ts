@@ -9,12 +9,13 @@ import { CorporateActions } from '~/api/entities/Asset/Fungible/CorporateActions
 import { Issuance } from '~/api/entities/Asset/Fungible/Issuance';
 import { Offerings } from '~/api/entities/Asset/Fungible/Offerings';
 import { TransferRestrictions } from '~/api/entities/Asset/Fungible/TransferRestrictions';
-import { UniqueIdentifiers } from '~/api/entities/types';
-import { Context, controllerTransfer, Identity, redeemTokens } from '~/internal';
+import { AccountLike, UniqueIdentifiers } from '~/api/entities/types';
+import { approveAllowance, Context, controllerTransfer, Identity, redeemTokens } from '~/internal';
 import { assetQuery, assetTransactionQuery } from '~/middleware/queries/assets';
 import { tickerExternalAgentHistoryQuery } from '~/middleware/queries/externalAgents';
 import { Query } from '~/middleware/types';
 import {
+  ApproveAllowanceParams,
   ControllerTransferParams,
   EventIdentifier,
   HistoricAgentOperation,
@@ -30,8 +31,10 @@ import {
   middlewareEventDetailsToEventIdentifier,
   middlewarePortfolioToPortfolio,
   portfolioIdStringToPortfolio,
+  stringToAccountId,
 } from '~/utils/conversion';
 import {
+  asAccount,
   calculateNextKey,
   createProcedureMethod,
   getAssetIdForMiddleware,
@@ -71,6 +74,11 @@ export class FungibleAsset extends BaseAsset {
     );
     this.controllerTransfer = createProcedureMethod(
       { getProcedureAndArgs: args => [controllerTransfer, { asset: this, ...args }] },
+      context
+    );
+
+    this.approveAllowance = createProcedureMethod(
+      { getProcedureAndArgs: args => [approveAllowance, { asset: this, ...args }] },
       context
     );
   }
@@ -265,5 +273,41 @@ export class FungibleAsset extends BaseAsset {
     ]);
 
     return !tokenSize.isZero() && nftId.isZero();
+  }
+
+  /**
+   * Approval spender allowance
+   */
+  public approveAllowance: ProcedureMethod<ApproveAllowanceParams, void>;
+
+  /**
+   * Retrieve the amount of allowance for a spender account as approved by owner
+   */
+  public async getAllowance(args: {
+    owner: AccountLike;
+    spender: AccountLike;
+  }): Promise<BigNumber> {
+    const {
+      context,
+      context: {
+        polymeshApi: {
+          query: { asset },
+        },
+      },
+    } = this;
+
+    const { owner, spender } = args;
+
+    const rawAssetId = assetToMeshAssetId(this, context);
+
+    const { address: ownerAddress } = asAccount(owner, context);
+    const { address: spenderAddress } = asAccount(spender, context);
+
+    const rawOwner = stringToAccountId(ownerAddress, context);
+    const rawSpender = stringToAccountId(spenderAddress, context);
+
+    const allowance = await asset.allowances(rawOwner, rawSpender, rawAssetId);
+
+    return balanceToBigNumber(allowance);
   }
 }

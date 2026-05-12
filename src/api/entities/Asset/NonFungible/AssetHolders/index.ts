@@ -38,7 +38,7 @@ export class AssetHolders extends Namespace<NftCollection> {
     );
 
     const data = nodes.map(({ nftIds, identityId }) => ({
-      identity: new Identity({ did: identityId }, context),
+      identity: new Identity({ did: identityId as string }, context),
       nfts: nftIds.map((id: string) => new Nft({ id: new BigNumber(id), assetId }, context)),
     }));
 

@@ -125,7 +125,7 @@
     "@polkadot/api": "16.5.2",
     "@polkadot/util": "13.5.8",
     "@polkadot/util-crypto": "13.5.8",
-    "@polymeshassociation/polymesh-types": "^7.3.0",
+    "@polymeshassociation/polymesh-types": "^7.4.0",
     "bignumber.js": "9.0.1",
     "cross-fetch": "^4.0.0",
     "dayjs": "1.11.9",
