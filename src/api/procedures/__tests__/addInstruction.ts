@@ -1272,6 +1272,11 @@ describe('addInstruction procedure', () => {
         .calledWith(to, mockContext)
         .mockReturnValue(toPortfolio);
 
+      // Receiver has opted into mandatory affirmation with no exemptions, so they must affirm explicitly
+      dsMockUtils.createCallMock('settlementApi', 'getReceiverAffirmationRequirement', {
+        returnValue: { isAutomatic: false },
+      });
+
       let result = await boundFunc(args);
 
       expect(result).toEqual({
@@ -1292,6 +1297,151 @@ describe('addInstruction procedure', () => {
 
       expect(result).toEqual({
         assetHoldersToAffirm: [[]],
+      });
+    });
+
+    it("should include only the signer's own Account key in the affirmation set", async () => {
+      const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext);
+      const boundFunc = prepareStorage.bind(proc);
+
+      // signingAddress is '0xdummy' in the mock context
+      const signerAccount = entityMockUtils.getAccountInstance({ address: '0xdummy' });
+      const otherAccount = entityMockUtils.getAccountInstance({ address: 'someOtherAddress' });
+
+      jest.spyOn(mockContext, 'getSigningAddress').mockReturnValue('0xdummy');
+
+      when(assetHolderLikeToAssetHolderSpy)
+        .calledWith(from, mockContext)
+        .mockReturnValue(signerAccount);
+      when(assetHolderLikeToAssetHolderSpy)
+        .calledWith(to, mockContext)
+        .mockReturnValue(otherAccount);
+
+      const result = await boundFunc(args);
+
+      // Only the signer's own account should be included; the other account must be excluded
+      expect(result).toEqual({
+        assetHoldersToAffirm: [[signerAccount]],
+      });
+    });
+
+    it('should exclude Account holders whose address differs from the signing address', async () => {
+      const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext);
+      const boundFunc = prepareStorage.bind(proc);
+
+      const otherFromAccount = entityMockUtils.getAccountInstance({ address: 'senderAddress' });
+      const otherToAccount = entityMockUtils.getAccountInstance({ address: 'receiverAddress' });
+
+      jest.spyOn(mockContext, 'getSigningAddress').mockReturnValue('0xdummy');
+
+      when(assetHolderLikeToAssetHolderSpy)
+        .calledWith(from, mockContext)
+        .mockReturnValue(otherFromAccount);
+      when(assetHolderLikeToAssetHolderSpy)
+        .calledWith(to, mockContext)
+        .mockReturnValue(otherToAccount);
+
+      const result = await boundFunc(args);
+
+      // Neither account matches the signer, so the affirmation set must be empty
+      expect(result).toEqual({
+        assetHoldersToAffirm: [[]],
+      });
+    });
+
+    describe('auto-affirmation checks for Portfolio receiver', () => {
+      beforeEach(() => {
+        fromPortfolio = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: true });
+        toPortfolio = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: true });
+
+        when(assetHolderLikeToAssetHolderSpy)
+          .calledWith(from, mockContext)
+          .mockReturnValue(fromPortfolio);
+        when(assetHolderLikeToAssetHolderSpy)
+          .calledWith(to, mockContext)
+          .mockReturnValue(toPortfolio);
+      });
+
+      it('should exclude a receiver Portfolio that is auto-affirmed', async () => {
+        const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext);
+        const boundFunc = prepareStorage.bind(proc);
+
+        dsMockUtils.createCallMock('settlementApi', 'getReceiverAffirmationRequirement', {
+          returnValue: { isAutomatic: true },
+        });
+
+        const result = await boundFunc(args);
+
+        expect(result).toEqual({ assetHoldersToAffirm: [[fromPortfolio]] });
+      });
+
+      it('should include a receiver Portfolio when affirmation is explicitly required', async () => {
+        const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext);
+        const boundFunc = prepareStorage.bind(proc);
+
+        dsMockUtils.createCallMock('settlementApi', 'getReceiverAffirmationRequirement', {
+          returnValue: { isAutomatic: false },
+        });
+
+        const result = await boundFunc(args);
+
+        expect(result).toEqual({ assetHoldersToAffirm: [[fromPortfolio, toPortfolio]] });
+      });
+    });
+
+    describe('auto-affirmation checks for Account receiver', () => {
+      let signerAccount: ReturnType<typeof entityMockUtils.getAccountInstance>;
+
+      beforeEach(() => {
+        fromPortfolio = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: true });
+        signerAccount = entityMockUtils.getAccountInstance({ address: '0xdummy' });
+
+        jest.spyOn(mockContext, 'getSigningAddress').mockReturnValue('0xdummy');
+
+        when(assetHolderLikeToAssetHolderSpy)
+          .calledWith(from, mockContext)
+          .mockReturnValue(fromPortfolio);
+        when(assetHolderLikeToAssetHolderSpy)
+          .calledWith(to, mockContext)
+          .mockReturnValue(signerAccount);
+      });
+
+      it('should exclude an Account receiver that is auto-affirmed', async () => {
+        const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext);
+        const boundFunc = prepareStorage.bind(proc);
+
+        dsMockUtils.createCallMock('settlementApi', 'getReceiverAffirmationRequirement', {
+          returnValue: { isAutomatic: true },
+        });
+
+        const result = await boundFunc(args);
+
+        expect(result).toEqual({ assetHoldersToAffirm: [[fromPortfolio]] });
+      });
+
+      it('should include an Account receiver when affirmation is explicitly required', async () => {
+        const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext);
+        const boundFunc = prepareStorage.bind(proc);
+
+        dsMockUtils.createCallMock('settlementApi', 'getReceiverAffirmationRequirement', {
+          returnValue: { isAutomatic: false },
+        });
+
+        const result = await boundFunc(args);
+
+        expect(result).toEqual({ assetHoldersToAffirm: [[fromPortfolio, signerAccount]] });
+      });
+
+      it('should skip auto-affirmation check on v7 and include the receiver', async () => {
+        const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(
+          dsMockUtils.getContextInstance({ isV7: true })
+        );
+        const boundFunc = prepareStorage.bind(proc);
+
+        // No call mock needed — v7 path returns false immediately
+        const result = await boundFunc(args);
+
+        expect(result).toEqual({ assetHoldersToAffirm: [[fromPortfolio, signerAccount]] });
       });
     });
   });

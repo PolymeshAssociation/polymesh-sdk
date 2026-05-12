@@ -900,7 +900,8 @@ export async function prepareStorage(
     assetHolder: AssetHolder
   ): Promise<AssetHolder | null> => {
     if (assetHolder instanceof Account) {
-      return assetHolder.address === context.getSigningAddress() ? null : assetHolder;
+      // Only the signer can affirm for their own account key; other accounts cannot be affirmed on their behalf
+      return assetHolder.address === context.getSigningAddress() ? assetHolder : null;
     }
 
     const isCustodied = await assetHolder.isCustodiedBy({ identity });
@@ -909,6 +910,27 @@ export async function prepareStorage(
     }
 
     return null;
+  };
+
+  /**
+   * Returns true if the chain will auto-affirm this receiver (i.e. it should NOT be included
+   * in the holder set passed to `addAndAffirmWithMediators`).
+   * Uses the `settlementApi.getReceiverAffirmationRequirement` runtime API which encapsulates
+   * all chain-side auto-affirmation logic (mandatory affirmation flag, asset exemptions,
+   * pre-approved assets/portfolios).
+   */
+  const checkIfReceiverIsAutoAffirmed = async (
+    rawToHolder: PolymeshPrimitivesAssetAssetHolder,
+    rawAssetId: ReturnType<typeof stringToAssetId>
+  ): Promise<boolean> => {
+    if (context.isV7) return false;
+
+    const requirement =
+      await context.polymeshApi.call.settlementApi.getReceiverAffirmationRequirement(
+        rawToHolder,
+        rawAssetId
+      );
+    return requirement.isAutomatic;
   };
 
   const assetHoldersToAffirm = await Promise.all(
@@ -920,8 +942,11 @@ export async function prepareStorage(
             const { from, to } = leg;
             const fromAssetHolder = assetHolderLikeToAssetHolder(from, context);
             const toAssetHolder = assetHolderLikeToAssetHolder(to, context);
+            const legAssetId = await asAssetId(leg.asset, context);
+            const rawAssetId = stringToAssetId(legAssetId, context);
+            const toId = assetHolderLikeToAssetHolderId(to);
 
-            const [fromHolder, toHolder] = await Promise.all([
+            const [fromHolder, toCanAffirm] = await Promise.all([
               checkIfAssetHolderCanBeAffirmed(fromAssetHolder),
               checkIfAssetHolderCanBeAffirmed(toAssetHolder),
             ]);
@@ -930,8 +955,12 @@ export async function prepareStorage(
               result.push(fromHolder);
             }
 
-            if (toHolder) {
-              result.push(toHolder);
+            if (toCanAffirm) {
+              const rawToHolder = await assetHolderIdToMeshAssetHolder(toId, context);
+              const isAutoAffirmed = await checkIfReceiverIsAutoAffirmed(rawToHolder, rawAssetId);
+              if (!isAutoAffirmed) {
+                result.push(toCanAffirm);
+              }
             }
           }
           return result;
