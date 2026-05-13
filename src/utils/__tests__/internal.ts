@@ -2753,7 +2753,7 @@ describe('assertStatIsSet', () => {
     const restriction = {
       type: 'UnsupportedType' as unknown as TransferRestrictionType,
       value: new BigNumber(10),
-    } as TransferRestriction;
+    } as TransferRestriction; // NOSONAR
 
     expect(() => assertStatIsSet(stats, restriction)).toThrow(expectedError);
   });

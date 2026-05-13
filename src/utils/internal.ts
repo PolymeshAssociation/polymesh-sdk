@@ -55,8 +55,6 @@ import {
   AuthorizationType,
   CaCheckpointType,
   Claim,
-  ClaimCountRestrictionValue,
-  ClaimPercentageRestrictionValue,
   ClaimType,
   Condition,
   ConditionType,
@@ -1804,7 +1802,7 @@ export function assertStatIsSet(currentStats: AssetStat[], restriction: Transfer
         if (stat.type !== StatType.ScopedCount || !stat.claimIssuer) {
           return false;
         }
-        const { issuer, claim } = restriction.value as ClaimCountRestrictionValue;
+        const { issuer, claim } = restriction.value;
         return (
           stat.claimIssuer.issuer.did === issuer.did && stat.claimIssuer.claimType === claim.type
         );
@@ -1813,7 +1811,7 @@ export function assertStatIsSet(currentStats: AssetStat[], restriction: Transfer
         if (stat.type !== StatType.ScopedBalance || !stat.claimIssuer) {
           return false;
         }
-        const { issuer, claim } = restriction.value as ClaimPercentageRestrictionValue;
+        const { issuer, claim } = restriction.value;
         return (
           stat.claimIssuer.issuer.did === issuer.did && stat.claimIssuer.claimType === claim.type
         );
@@ -2201,7 +2199,9 @@ export async function prepareStorageForCustomType(
       rawValue,
       isAlreadyCreated: true,
     };
-  } else if (!knownTypes.includes(customType)) {
+  } else if (knownTypes.includes(customType)) {
+    customTypeData = null;
+  } else {
     const rawValue = stringToBytes(customType, context);
     const rawId = await context.polymeshApi.query.asset.customTypesInverse(rawValue);
 
@@ -2221,8 +2221,6 @@ export async function prepareStorageForCustomType(
         isAlreadyCreated: true,
       };
     }
-  } else {
-    customTypeData = null;
   }
 
   return customTypeData;
