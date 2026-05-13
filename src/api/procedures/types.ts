@@ -1146,18 +1146,21 @@ export enum InstructionAffirmationOperation {
 
 export type RejectInstructionParams = {
   /**
-   * (optional) Portfolio that the signer controls and wants to reject the instruction
+   * (optional) Asset holder that the signer controls and wants to reject the instruction
    */
-  portfolio?: AssetHolderLike;
+  assetHolder?: AssetHolderLike;
 };
 
+/**
+ * @deprecated withdrawing affirmation is no longer supported in chain v8
+ */
 export type WithdrawInstructionParams = {
   /**
-   * (optional) Portfolios that the signer controls and wants to affirm the instruction or withdraw affirmation
+   * (optional) Asset holders that the signer controls and wants to affirm the instruction or withdraw affirmation
    *
-   * @note if empty, all the legs containing any custodied Portfolios of the signer will be affirmed/affirmation will be withdrawn, based on the operation.
+   * @note if empty, all the legs containing any custodied Asset Holders of the signer will be affirmed/affirmation will be withdrawn, based on the operation.
    */
-  portfolios?: AssetHolderLike[];
+  holders?: AssetHolderLike[];
 };
 
 export enum SignerKeyRingType {
@@ -1203,10 +1206,8 @@ export type AffirmInstructionParams = {
    * (optional) Portfolios that the signer controls and wants to affirm the instruction
    *
    * @note if empty, all the legs containing any custodied Portfolios of the signer will be affirmed
-   *
-   * TODO add comments
    */
-  portfolios?: AssetHolderLike[];
+  holders?: AssetHolderLike[];
 
   /**
    * (optional) list of offchain receipts required for affirming offchain legs(if any) in the instruction
@@ -1261,7 +1262,6 @@ export interface UpdateVenueSignersParams {
   signers: (string | Account)[];
 }
 
-// TODO @prashantasdeveloper add support of controller transfer from account
 export interface ControllerTransferParams {
   /**
    * portfolio (or portfolio ID) from which Assets will be transferred
@@ -1278,7 +1278,6 @@ export interface ControllerTransferParams {
   destination?: AssetHolderLike;
 }
 
-// TODO @prashantasdeveloper add support of controller transfer from account
 export interface NftControllerTransferParams {
   /**
    * portfolio (or portfolio ID) from which NFTs will be transferred from
@@ -1395,7 +1394,7 @@ export interface RedeemTokensParams {
   /**
    * (optional) Account from which Assets will be redeemed
    *
-   * @note either `from` or `fromAccount` must be provided
+   * @note either `from` or `fromAccount` must be provided. `fromAccount` takes precedence over `from`
    */
   fromAccount?: string | Account;
 }

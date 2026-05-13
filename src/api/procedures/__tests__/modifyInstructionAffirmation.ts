@@ -1211,7 +1211,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       result = await boundFunc({
         id: new BigNumber(1),
         operation: InstructionAffirmationOperation.Affirm,
-        portfolios: [fromDid],
+        holders: [fromDid],
       });
 
       expect(result).toEqual({
@@ -1227,7 +1227,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       result = await boundFunc({
         id: new BigNumber(1),
         operation: InstructionAffirmationOperation.Reject,
-        portfolio: fromDid,
+        assetHolder: fromDid,
       });
 
       expect(result).toEqual({

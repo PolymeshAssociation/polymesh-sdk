@@ -3703,7 +3703,7 @@ export function assetHolderIdsToBtreeSet(
 ): BTreeSet<PolymeshPrimitivesAssetAssetHolder> {
   if (context.isV7) {
     return portfolioIdsToBtreeSet(
-      rawAssetHolderIds as unknown as PolymeshPrimitivesIdentityIdPortfolioId[],
+      rawAssetHolderIds as unknown as PolymeshPrimitivesIdentityIdPortfolioId[], // NOSONAR
       context
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ) as any;
