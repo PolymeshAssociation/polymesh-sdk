@@ -656,7 +656,7 @@ function extractAssetHolderParams(params: ModifyInstructionAffirmationParams): A
   const { operation } = params;
   let assetHolderParams: AssetHolderLike[] = [];
   if (operation === InstructionAffirmationOperation.Reject) {
-    const { portfolio } = params;
+    const { assetHolder: portfolio } = params;
     if (portfolio) {
       assetHolderParams.push(portfolio);
     }
@@ -664,9 +664,9 @@ function extractAssetHolderParams(params: ModifyInstructionAffirmationParams): A
     operation === InstructionAffirmationOperation.Affirm ||
     operation === InstructionAffirmationOperation.Withdraw
   ) {
-    const { portfolios } = params;
-    if (portfolios) {
-      assetHolderParams = [...assetHolderParams, ...portfolios];
+    const { holders } = params;
+    if (holders) {
+      assetHolderParams = [...assetHolderParams, ...holders];
     }
   }
   return assetHolderParams;

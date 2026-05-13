@@ -1,7 +1,14 @@
 import { PolymeshPrimitivesPortfolioFund } from '@polkadot/types/lookup';
 
 import { getAssetHolderDid } from '~/api/procedures/utils';
-import { Account, DefaultPortfolio, NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
+import {
+  Account,
+  Context,
+  DefaultPortfolio,
+  NumberedPortfolio,
+  PolymeshError,
+  Procedure,
+} from '~/internal';
 import {
   AssetHolder,
   ErrorCode,
@@ -31,49 +38,14 @@ export interface Storage {
 /**
  * @hidden
  */
-export async function prepareMoveFunds(
-  this: Procedure<TransferFundsParams, void, Storage>,
-  args: TransferFundsParams
-): Promise<TransactionSpec<void, ExtrinsicParams<'settlement', 'transferFunds'>>> {
-  const {
-    context: {
-      polymeshApi: {
-        tx: { settlement },
-      },
-    },
-    context,
-    storage: { fromHolder, toHolder, signingDid, signingAccount },
-  } = this;
-
+export async function getFund(
+  context: Context,
+  args: TransferFundsParams,
+  fromDid: string,
+  storage: Storage
+): Promise<PolymeshPrimitivesPortfolioFund> {
   const { memo, ...leg } = args;
-
-  if (fromHolder.isEqual(toHolder)) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'from and to asset holders cannot be the same',
-    });
-  }
-
-  const [fromDid, toDid] = await Promise.all([
-    getAssetHolderDid(fromHolder, context),
-    getAssetHolderDid(toHolder, context),
-  ]);
-
-  if (!fromDid || !toDid) {
-    throw new PolymeshError({
-      code: ErrorCode.DataUnavailable,
-      message: 'Unable to retrieve the DID from one or both asset holders',
-    });
-  }
-
-  if (fromDid !== toDid) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message:
-        'For transferring funds between different DIDs, use `addInstruction` method instead.',
-    });
-  }
-
+  const { fromHolder, signingDid, signingAccount } = storage;
   const isFungible = await isFungibleLegBuilder(leg, context);
 
   let rawFund: PolymeshPrimitivesPortfolioFund;
@@ -125,6 +97,54 @@ export async function prepareMoveFunds(
     );
   }
 
+  return rawFund;
+}
+
+/**
+ * @hidden
+ */
+export async function prepareTransferFunds(
+  this: Procedure<TransferFundsParams, void, Storage>,
+  args: TransferFundsParams
+): Promise<TransactionSpec<void, ExtrinsicParams<'settlement', 'transferFunds'>>> {
+  const {
+    context: {
+      polymeshApi: {
+        tx: { settlement },
+      },
+    },
+    context,
+    storage: { fromHolder, toHolder },
+    storage,
+  } = this;
+
+  if (fromHolder.isEqual(toHolder)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'from and to asset holders cannot be the same',
+    });
+  }
+
+  const [fromDid, toDid] = await Promise.all([
+    getAssetHolderDid(fromHolder, context),
+    getAssetHolderDid(toHolder, context),
+  ]);
+
+  if (!fromDid || !toDid) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'Unable to retrieve the DID from one or both asset holders',
+    });
+  }
+
+  if (fromDid !== toDid) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message:
+        'For transferring funds between different DIDs, use `addInstruction` method instead.',
+    });
+  }
+
   const rawFrom = await assetHolderIdToMeshAssetHolder(
     assetHolderLikeToAssetHolderId(fromHolder),
     context
@@ -133,6 +153,7 @@ export async function prepareMoveFunds(
     assetHolderLikeToAssetHolderId(toHolder),
     context
   );
+  const rawFund = await getFund(context, args, fromDid, storage);
 
   return {
     transaction: settlement.transferFunds,
@@ -193,4 +214,4 @@ export async function prepareStorage(
  * @hidden
  */
 export const transferFunds = (): Procedure<TransferFundsParams, void, Storage> =>
-  new Procedure(prepareMoveFunds, getAuthorization, prepareStorage);
+  new Procedure(prepareTransferFunds, getAuthorization, prepareStorage);

@@ -76,10 +76,7 @@ function assertInputValid(input: TransferRestrictionParams): void {
 
   for (const restriction of input.restrictions) {
     if (restriction.type === TransferRestrictionType.ClaimCount) {
-      ensureClaimCountRestrictionIsUnique(
-        restriction as ClaimCountTransferRestrictionInput,
-        seenRestrictions
-      );
+      ensureClaimCountRestrictionIsUnique(restriction, seenRestrictions);
     }
   }
 }

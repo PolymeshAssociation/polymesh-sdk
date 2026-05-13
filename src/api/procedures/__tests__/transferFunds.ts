@@ -2,8 +2,8 @@ import BigNumber from 'bignumber.js';
 
 import {
   getAuthorization,
-  prepareMoveFunds,
   prepareStorage,
+  prepareTransferFunds,
   Storage,
 } from '~/api/procedures/transferFunds';
 import * as procedureUtilsModule from '~/api/procedures/utils';
@@ -115,7 +115,7 @@ describe('transferFunds procedure', () => {
       });
 
       await expect(
-        prepareMoveFunds.call(proc, {
+        prepareTransferFunds.call(proc, {
           from: fromHolder,
           to: toHolder,
           asset: 'someAsset',
@@ -145,7 +145,7 @@ describe('transferFunds procedure', () => {
       });
 
       await expect(
-        prepareMoveFunds.call(proc, {
+        prepareTransferFunds.call(proc, {
           from: fromHolder,
           to: toHolder,
           asset: 'someAsset',
@@ -175,7 +175,7 @@ describe('transferFunds procedure', () => {
       });
 
       await expect(
-        prepareMoveFunds.call(proc, {
+        prepareTransferFunds.call(proc, {
           from: fromHolder,
           to: toHolder,
           asset: 'someAsset',
@@ -207,7 +207,7 @@ describe('transferFunds procedure', () => {
       });
 
       await expect(
-        prepareMoveFunds.call(proc, {
+        prepareTransferFunds.call(proc, {
           from: fromHolder,
           to: toHolder,
           asset: 'someAsset',
@@ -240,7 +240,7 @@ describe('transferFunds procedure', () => {
       });
 
       await expect(
-        prepareMoveFunds.call(proc, {
+        prepareTransferFunds.call(proc, {
           from: fromHolder,
           to: toHolder,
           asset: 'someAsset',
@@ -269,7 +269,7 @@ describe('transferFunds procedure', () => {
       });
 
       await expect(
-        prepareMoveFunds.call(proc, {
+        prepareTransferFunds.call(proc, {
           from: fromHolder,
           to: toHolder,
           asset,
@@ -308,7 +308,7 @@ describe('transferFunds procedure', () => {
 
       const transaction = dsMockUtils.createTxMock('settlement', 'transferFunds');
 
-      const result = await prepareMoveFunds.call(proc, {
+      const result = await prepareTransferFunds.call(proc, {
         from: fromHolder,
         to: toHolder,
         asset,
@@ -350,7 +350,7 @@ describe('transferFunds procedure', () => {
 
       const transaction = dsMockUtils.createTxMock('settlement', 'transferFunds');
 
-      const result = await prepareMoveFunds.call(proc, {
+      const result = await prepareTransferFunds.call(proc, {
         from: fromHolder,
         to: toHolder,
         asset,
