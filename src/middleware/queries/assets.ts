@@ -170,7 +170,11 @@ export function assetTransactionQuery(
           amount
           nftIds
           fromPortfolioId
+          fromAccount
+          fromIdentityId
           toPortfolioId
+          toAccount
+          toIdentityId
           eventId
           eventIdx
           extrinsicIdx

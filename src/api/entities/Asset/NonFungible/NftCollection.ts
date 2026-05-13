@@ -5,7 +5,7 @@ import BigNumber from 'bignumber.js';
 import { BaseAsset } from '~/api/entities/Asset/Base';
 import { NonFungibleSettlements } from '~/api/entities/Asset/Base/Settlements';
 import { AssetHolders } from '~/api/entities/Asset/NonFungible/AssetHolders';
-import { Context, issueNft, Nft, nftControllerTransfer, PolymeshError } from '~/internal';
+import { Account, Context, issueNft, Nft, nftControllerTransfer, PolymeshError } from '~/internal';
 import { assetQuery, assetTransactionQuery } from '~/middleware/queries/assets';
 import { Query } from '~/middleware/types';
 import {
@@ -381,11 +381,15 @@ export class NftCollection extends BaseAsset {
 
     const data: HistoricNftTransaction[] = [];
 
+    const getAccount = (address: string): Account => new Account({ address }, context);
+
     for (const {
       asset,
       nftIds,
       fromPortfolioId,
+      fromAccount: fromAddress,
       toPortfolioId,
+      toAccount: toAddress,
       createdBlock,
       eventId,
       eventIdx,
@@ -396,6 +400,8 @@ export class NftCollection extends BaseAsset {
     } of nodes) {
       const fromPortfolio = optionize(portfolioIdStringToPortfolio)(fromPortfolioId);
       const toPortfolio = optionize(portfolioIdStringToPortfolio)(toPortfolioId);
+      const fromAccount = optionize(getAccount)(fromAddress);
+      const toAccount = optionize(getAccount)(toAddress);
 
       const assetId = getAssetIdFromMiddleware(asset!.id);
       const collection = new NftCollection({ assetId }, context);
@@ -406,7 +412,9 @@ export class NftCollection extends BaseAsset {
         ),
         event: eventId,
         to: optionize(middlewarePortfolioToPortfolio)(toPortfolio, context),
+        toAccount,
         from: optionize(middlewarePortfolioToPortfolio)(fromPortfolio, context),
+        fromAccount,
         fundingRound,
         instructionId: instructionId ? new BigNumber(instructionId) : undefined,
         instructionMemo,

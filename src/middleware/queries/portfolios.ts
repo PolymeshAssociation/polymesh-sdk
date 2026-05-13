@@ -104,7 +104,9 @@ function buildPortfolioMovementsQuery(
       nodes {
         id
         fromId
+        fromAccount
         toId
+        toAccount
         asset {
           id
           ticker
