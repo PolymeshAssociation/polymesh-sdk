@@ -11,6 +11,7 @@ import {
 } from '~/internal';
 import { EventIdEnum } from '~/middleware/types';
 import {
+  Account,
   ClaimType,
   Compliance,
   CountryCode,
@@ -167,10 +168,14 @@ export interface BaseHistoricAssetTransaction extends EventIdentifier {
    * Origin portfolio involved in the transaction. This value will be null when the `event` value is `Issued`
    */
   from: DefaultPortfolio | NumberedPortfolio | null;
+
+  fromAccount: Account | null;
   /**
    * Destination portfolio involved in the transaction . This value will be null when the `event` value is `Redeemed`
    */
   to: DefaultPortfolio | NumberedPortfolio | null;
+
+  toAccount: Account | null;
 
   /**
    * Event identifying the type of transaction

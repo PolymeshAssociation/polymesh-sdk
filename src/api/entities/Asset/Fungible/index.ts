@@ -10,7 +10,14 @@ import { Issuance } from '~/api/entities/Asset/Fungible/Issuance';
 import { Offerings } from '~/api/entities/Asset/Fungible/Offerings';
 import { TransferRestrictions } from '~/api/entities/Asset/Fungible/TransferRestrictions';
 import { AccountLike, UniqueIdentifiers } from '~/api/entities/types';
-import { approveAllowance, Context, controllerTransfer, Identity, redeemTokens } from '~/internal';
+import {
+  Account,
+  approveAllowance,
+  Context,
+  controllerTransfer,
+  Identity,
+  redeemTokens,
+} from '~/internal';
 import { assetQuery, assetTransactionQuery } from '~/middleware/queries/assets';
 import { tickerExternalAgentHistoryQuery } from '~/middleware/queries/externalAgents';
 import { Query } from '~/middleware/types';
@@ -209,11 +216,15 @@ export class FungibleAsset extends BaseAsset {
 
     const data: HistoricAssetTransaction[] = [];
 
+    const getAccount = (address: string) => new Account({ address }, context);
+
     for (const {
       asset,
       amount,
       fromPortfolioId,
+      fromAccount: fromAddress,
       toPortfolioId,
+      toAccount: toAddress,
       createdBlock,
       eventId,
       eventIdx,
@@ -224,6 +235,8 @@ export class FungibleAsset extends BaseAsset {
     } of nodes) {
       const fromPortfolio = optionize(portfolioIdStringToPortfolio)(fromPortfolioId);
       const toPortfolio = optionize(portfolioIdStringToPortfolio)(toPortfolioId);
+      const fromAccount = optionize(getAccount)(fromAddress);
+      const toAccount = optionize(getAccount)(toAddress);
 
       const assetId = getAssetIdFromMiddleware(asset!.id);
 
@@ -232,7 +245,9 @@ export class FungibleAsset extends BaseAsset {
         amount: new BigNumber(amount).shiftedBy(-6),
         event: eventId,
         from: optionize(middlewarePortfolioToPortfolio)(fromPortfolio, context),
+        fromAccount,
         to: optionize(middlewarePortfolioToPortfolio)(toPortfolio, context),
+        toAccount,
         fundingRound,
         instructionId: instructionId ? new BigNumber(instructionId) : undefined,
         instructionMemo,
