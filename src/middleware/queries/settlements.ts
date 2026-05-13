@@ -73,6 +73,7 @@ const instructionAttributes = `
 const instructionAffirmationAttributes = `
       id
       identity
+      account
       portfolios
       offChainReceiptId
       offChainReceipt {
@@ -133,6 +134,7 @@ export function instructionEventsQuery(
           event
           eventIdx
           identity
+          account
           portfolio
           offChainReceiptId
           offChainReceipt {
